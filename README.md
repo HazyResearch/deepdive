@@ -40,7 +40,7 @@ The input format is inferred by looking at the file extension. DeepDive currentl
 Next, you will define how to generate feature relations. There are several ways this can be done:
 
 - By defining new relations with Datalog rules.
-- By running user-defined functions (UDFs) over your relations. UDFs can be written in SQL, Python, or C.
+- By running user-defined functions (UDFs) over your relations. UDFs can be written in Python (more languages coming soon). The input to the UDF is a relation defined by a SQL statement, and the function maps each tuple to a new tuple in the output relation.
 
 #### Using Datalog
 
@@ -52,17 +52,13 @@ features.twoHop.type = "datalog"
 features.twoHop.expression = "twoHop(Source, Destination) <- link(Source, Z), link(Z, Destination), !link(Source, Desintation)"
 ```
 
-#### Defining UDFs in SQL
-
-TODO
-
 #### Defining UDFs in Python
 
-TODO
+TODO 
 
-#### Defining UDFs in C
+### 3. Inference
 
-TODO
+
 
 
 
