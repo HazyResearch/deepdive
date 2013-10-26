@@ -10,7 +10,7 @@ Configuration is read from the `config/` directory by merging all files ending i
 
 DeepDive requires a postgresql-compatible relational data store. 
 
-```json
+```
 global.connection.host : "localhost"
 global.connection.port : 5432
 globa.connection.db : "deepdive"
@@ -22,7 +22,7 @@ global.connection.password : "password"
 
 The DeepDive pipeline loads data into a the data store. In this section you will define the data sources that are needed for your application.
 
-```json
+```
 # A "links" relation backed by a TSV file
 ingest.links.source : "data/links.tsv"
 ingest.links.schema : [[Source, String], [Destination, String], [text, String]]
