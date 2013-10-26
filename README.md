@@ -48,7 +48,8 @@ TODO
 
 ```
 # Defines a new twoHop relation. The destination is reachable only by going through at least one additional hop.
-features.  twoHop(Source, Destination) <- link(Source, Z), link(Z, Destination), !link(Source, Desintation)
+features.twoHop.type = "datalog"
+features.twoHop.expression = "twoHop(Source, Destination) <- link(Source, Z), link(Z, Destination), !link(Source, Desintation)""
 ```
 
 #### Defining UDFs in SQL
