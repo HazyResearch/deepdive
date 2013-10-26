@@ -20,7 +20,7 @@ global.connection.password : "password"
 
 ### 1. Data Ingestion
 
-The DeepDive pipeline loads data into a the data store. In this section you will define the data sources that are needed for your application.
+The DeepDive pipeline loads data into a the data store. In this section you will define the data sources your application needs.
 
 ```
 # A "links" relation backed by a TSV file
@@ -30,9 +30,9 @@ ingest.links.schema : [[Source, String], [Destination, String], [text, String]]
 
 The name of the relation in the example above is products, as defined by the second level atttribute: `ingest.[relation_name].source: ... `
 
-The supprted data types are Integer, String, Decimal, Float, Text, Timestamp, Boolean, Binary
+The supprted data types are `Integer`, `String`, `Decimal`, `Float`, `Text`, `Timestamp`, `Boolean`, and `Binary`.
 
-The input format is inferred by looking at the file extension. We currently support ".csv" and ".tsv" files.
+The input format is inferred by looking at the file extension. DeepDive currently support `.csv` and `.tsv` files.
 
 
 ### 2. Feature Extraction
