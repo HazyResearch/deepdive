@@ -23,8 +23,9 @@ global.connection.password : "password"
 The DeepDive pipelines uses a relational data store. In this section you will define the schema for relations.
 
 ```
-schema.links : [[Source, String], [Destination, String], [text, String]]
-schema.pages : [[Url, String], [html, Text], [content, Text]]
+relations.links.schema : [[Source, String], [Destination, String], [text, String]]
+relations.pages.schema : [[Url, String], [html, Text], [content, Text]]
+relations.pages.dumo : False
 # ... 
 ```
 
