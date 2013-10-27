@@ -62,7 +62,7 @@ TODO: Which Datalog features do we need to support?
 ```
 # Defines a new twoHop relation. The destination is reachable only by going through at least one additional hop.
 features.twoHop.type = "datalog"
-features.twoHop.expression = "twoHop(Source, Destination) <- link(Source, Z), link(Z, Destination), !link(Source, Desintation)"
+features.twoHop.expression = "twoHop(Source, Destination) :- link(Source, Z), link(Z, Destination), !link(Source, Desintation)"
 ```
 
 #### Defining extractors in Python
@@ -87,13 +87,9 @@ features.twpHop.input_sql = "SELECT * FROM links"
 features.twoHop.extractor = "MyExtractor"
 ```
 
+### 3. Statistical Inference
 
-
-
-
-### 3. Inference
-
-
+Can we keep what we have right now?
 
 
 
