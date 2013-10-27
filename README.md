@@ -18,33 +18,46 @@ global.connection.user : "ubuntu"
 global.connection.password : "password"
 ```
 
-### 1. Data Ingestion
+### 1. Schema Definition
+
+The DeepDive pipelines uses a relational data store. In this section you will define the schema for relations.
+
+```
+schema.links : [[Source, String], [Destination, String], [text, String]]
+schema.pages : [[Url, String], [html, Text], [content, Text]]
+# ... 
+```
+
+The name of the relation in the example above is links, as defined by the second level atttribute: `schema.[relation_name]`
+
+The supprted data types are `Integer`, `String`, `Decimal`, `Float`, `Text`, `Timestamp`, `Boolean`, and `Binary`.
+
+
+### 2. Data Ingestion
 
 The DeepDive pipeline loads data into a the data store. In this section you will define the data sources your application needs.
 
 ```
 # A "links" relation backed by a TSV file
 ingest.links.source : "data/links.tsv"
-ingest.links.schema : [[Source, String], [Destination, String], [text, String]]
+ingest.links.destination : "links"
 ```
-
-The name of the relation in the example above is products, as defined by the second level atttribute: `ingest.[relation_name].source: ... `
-
-The supprted data types are `Integer`, `String`, `Decimal`, `Float`, `Text`, `Timestamp`, `Boolean`, and `Binary`.
 
 The input format is inferred by looking at the file extension. DeepDive currently support `.csv` and `.tsv` files.
 
 
-### 2. Feature Extraction
+### 3. Feature Extraction
 
 Next, you will define how to generate feature relations. There are several ways this can be done:
 
 - By defining new relations with Datalog rules.
-- By running user-defined functions (UDFs) over your relations. UDFs can be written in Python (more languages coming soon). The input to the UDF is a relation defined by a SQL statement, and the function maps each tuple to a new tuple in the output relation.
+- By running extractors over your relations. Extractors can be written in Python (more languages coming). The input to an extractor is a relation defined by a SQL statement, and the function maps each tuple to a new tuple in the output relation.
+
+Extractors should be saved in the `extractor/` directory. We automatically parse each file in this directory and look for classes matching the definitions defined below. (TODO: Is there a better way?)
 
 #### Using Datalog
 
-TODO 
+TODO: Which Datalog features do we need to support?
 
 ```
 # Defines a new twoHop relation. The destination is reachable only by going through at least one additional hop.
@@ -52,9 +65,31 @@ features.twoHop.type = "datalog"
 features.twoHop.expression = "twoHop(Source, Destination) <- link(Source, Z), link(Z, Destination), !link(Source, Desintation)"
 ```
 
-#### Defining UDFs in Python
+#### Defining extractors in Python
 
-TODO 
+When using Python functions as feature extractors the relation is loaded into memory and each tuple is mapped to a new output tuple. A Python feature extractor class must adhere to the following interface:
+
+```python
+class MyExtractor(FeatureExtractor):
+  def map(tuple):
+    for tuple in input_relation:
+      # do something
+      return output_tuple
+```
+
+TODO: Do we need to be able to take teh whole relation as an input to enable grouping, or is a simple MapReduce-like scheme good enough?
+
+You define a Python extractor in the configuration as follows:
+
+```
+features.twoHop.type = "python"
+features.twpHop.input_sql = "SELECT * FROM links"
+features.twoHop.extractor = "MyExtractor"
+```
+
+
+
+
 
 ### 3. Inference
 
