@@ -50,8 +50,8 @@ The input format is inferred by looking at the file extension. DeepDive currentl
 
 Next, you will define how to generate feature relations. There are several ways this can be done:
 
-- By defining new relations with Datalog rules.
-- By running extractors over your relations. Extractors can be written in Python (more languages coming). The input to an extractor is a relation defined by a SQL statement, and the function maps each tuple to a new tuple in the output relation.
+- Writing Datalog rules.
+- Running extractors over your relations. Extractors can be written in Python (more languages coming). The input to an extractor is a relation defined by a SQL statement, and the function maps each tuple to a new tuple in the output relation.
 
 Extractors should be saved in the `extractor/` directory. We automatically parse each file in this directory and look for classes matching the definitions defined below. (TODO: Is there a better way?)
 
@@ -77,7 +77,7 @@ class MyExtractor(FeatureExtractor):
       return output_tuple
 ```
 
-TODO: Do we need to be able to take teh whole relation as an input to enable grouping, or is a simple MapReduce-like scheme good enough?
+TODO: Do we need to be able to take teh whole relation as an input to enable in-memory grouping, or is the mapreduce-like schema good enough?
 
 You define a Python extractor in the configuration as follows:
 
