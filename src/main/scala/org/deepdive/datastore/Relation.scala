@@ -4,7 +4,7 @@ package org.deepdive.datastore
   * 
   * TODO
   */
-class Relation {
+class Relation(val name: String, val attributes: Array[Attribute]) {
 
   // TODO
 
