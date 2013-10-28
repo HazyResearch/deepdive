@@ -97,6 +97,8 @@ Can we keep what we have right now?
 
 DeepDive is written in [Scala (2.10)](http://www.scala-lang.org/) and makes heavy use of the [Akka](http://akka.io/) framework. We use [Slick](http://slick.typesafe.com/) for RDBMS access. Unit- and integration tests are written using [Scalatest](http://www.scalatest.org/). DeepDive uses [sbt](http://www.scala-sbt.org/) for dependency management.
 
+Please follow the [Scala Style Guide](http://docs.scala-lang.org/style/) when contributing.
+
 ### Compiling 
 
 ```shell
