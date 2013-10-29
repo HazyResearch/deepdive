@@ -1,5 +1,7 @@
 package org.deepdive.datastore
 
+import scala.slick.driver.PostgresDriver._
+
 /* A postgresql database */
 class PostgresDataStore extends DataStore {
 
