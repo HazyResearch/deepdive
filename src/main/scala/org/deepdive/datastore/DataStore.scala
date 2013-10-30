@@ -17,6 +17,6 @@ abstract class DataStore {
   def createRelation(relation: Relation)
 
   /* Returns the schema of the data store */
-  def getSchema() : Array[Relation]
+  def getSchema(): Array[Relation]
 
 }

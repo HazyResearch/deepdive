@@ -7,7 +7,7 @@ import Domain._
   * An attribute has name ("column name" in the database) 
   * and a Domain ("column type").
   */
-class Attribute(val name: String, val domain: Domain) {
+case class Attribute(name: String, domain: Domain) {
   
   // TODO
 
