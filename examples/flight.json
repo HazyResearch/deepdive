@@ -1,0 +1,58 @@
+global.connection.host : "localhost"
+global.connection.port : 5432
+global.connection.db : "flight"
+global.connection.user : "ubuntu"
+global.connection.password : "password"
+
+relations.flight.schema : 
+  [[varid, Integer], [flightId, String], [airlineId, Integer]]
+relations.airline.schema :
+  [[varid, Integer], [airlineId, Integer], [airlineName, String]]
+relations.flightStat.schema :
+  [[varid, Integer], [flightId, Integer], 
+   [fromCity, String], [toCity, String], [price, Float]]
+relations.lateRate.schema : 
+  [[varid, Integer], [airlineId, Integer], [lateRate, Float]]
+
+// What is different between "String" and "Text"?
+// Where are these data types defined? 
+
+// A "lateRate" relation backed by a CSV file
+ingest.flight.source : "data/flight.csv"
+ingest.airline.source : "data/airline.csv"
+ingest.flightStat.source : "data/flightStat.csv"
+ingest.lateRate.source : "data/lateRate.csv"
+// Will ingest import "varid"?
+// what is supported csv format?
+
+// what is meaning of "destination"? how it is different with ingest.**lateRate** ? Why not neglect it?
+//// ingest.lateRate.destination : "lateRate"
+
+// how are they stored in CSV? Are All data stored in files or some already in database?
+
+
+// not sure the naming here
+
+// Define a statement named "LateRate"
+statement.LateRate.dml = """
+SELECT flight.flightId, fromCity, toCity, lateRate
+FROM flight, flightStat, lateRate
+WHERE flight.flightId == flightStat.flightId 
+  AND flight.flightId == lateRate.flightId 
+GROUP_BY flight.flightId
+"""
+// # WHERE not needed since keys are the same? 
+// # I am not familiar with Group_by. Maybe errors here. 
+
+// How to connect to python scripts?
+statement.LateRate.udf = "udf/LateRateExtractor"
+
+// statement_factor_definition
+statement.LateRate.factor.AirlineLateF : [[airlineId, lateLevel], 30]
+statement.LateRate.factor.FromCityLateF: [[fromCity, lateLevel], 10]
+statement.LateRate.factor.ToCityLateF  : [[toCity, lateLevel], "?"]
+
+
+// Evidence
+// ====
+// # Not sure how to write this part...
