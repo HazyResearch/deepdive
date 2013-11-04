@@ -1,6 +1,8 @@
-package deepdive.context
+package org.deepdive.context
 
 import com.typesafe.config._
+import org.deepdive._
+import org.deepdive.context.parsing._
 import scala.collection.JavaConversions._
 
 class Settings(config: Config) {
@@ -8,7 +10,7 @@ class Settings(config: Config) {
   case class Relation(name: String, schema: Map[String, String])
   case class EtlTask(relation: String, source: String)
   case class Extractor(name:String, outputRelation: String, inputQuery: String, udf: String, factor: Factor)
-  case class Factor(name: String, func: String, weight: String)
+  case class Factor(name: String, func: FactorFunction, weight: String)
 
   // Validations makes sure that the supplied config includes all the required settings.
   config.checkValid(ConfigFactory.defaultReference(), "deepdive")
@@ -37,7 +39,8 @@ class Settings(config: Config) {
     val udf = config.getString(s"deepdive.extractions.$extractorName.udf")
     val factor = Factor(
       config.getString(s"deepdive.extractions.$extractorName.factor.name"),
-      config.getString(s"deepdive.extractions.$extractorName.factor.function"),
+      FactorFunctionParser.parse(FactorFunctionParser.factorFunc, 
+        config.getString(s"deepdive.extractions.$extractorName.factor.function")).get,
       config.getString(s"deepdive.extractions.$extractorName.factor.weight")
     )
     Extractor(extractorName, outputRelation, inputQuery, udf, factor)
