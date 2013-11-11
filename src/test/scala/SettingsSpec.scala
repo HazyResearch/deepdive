@@ -7,7 +7,7 @@ class SettingsSpec extends FunSpec {
   describe("Settings") {
 
     it("should parse a simple configuration file") {
-      val settings = new Settings(ConfigFactory.load("simple_config"))
+      val settings = Settings.loadFromConfig(ConfigFactory.load("simple_config"))
       
       assert(settings.connection == Connection("localhost", 5432, "deepdive_test", 
         "root", "password"))

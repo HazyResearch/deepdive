@@ -113,6 +113,13 @@ Note: The "~" means that sbt will watch files and automatically recompile when a
 sbt ~test
 ```
 
+### Actor System
+
+- ContextManager
+- ExtractorManager: Manages ExtractorExecutors
+- ExtractorExecutor: Executes a single extractor 
+- InferenceManager: Adds variables and Factors to the inference schema
+
 
 
 
