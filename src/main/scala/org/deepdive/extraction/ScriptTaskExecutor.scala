@@ -29,19 +29,14 @@ class ScriptTaskExecutor(task: ExtractionTask, databaseUrl: String) {
       var result : List[JsValue] = Nil;
 
       val io = new ProcessIO(
-        in => { 
-          inputData.foreach { x => in.write(x.getBytes) }
-          in.close()
+        in => { inputData.foreach { x => in.write((x + "\n").getBytes)}; in.close(); },
+        out => Source.fromInputStream(out).getLines.map(_.asJson).foreach { tuple =>
+          result = result :+ tuple 
         },
-        out => { 
-          result = Source.fromInputStream(out).getLines().map(_.asJson).toList
-          out.close()
-        },
-        err => { err.close() }
+        err => Source.fromInputStream(err).getLines.foreach(println)
       )
       val process = task.udf run(io)
       process.exitValue()
-      
       result
     }
 

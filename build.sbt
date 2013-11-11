@@ -11,6 +11,7 @@ resolvers += "spray" at "http://repo.spray.io/"
 libraryDependencies ++= List(
   "com.typesafe.akka" %% "akka-actor" % "2.2.3",
   "com.typesafe.akka" %% "akka-testkit" % "2.2.3",
+  "com.typesafe.akka" %% "akka-slf4j" % "2.2.3",
   "com.typesafe" % "config" % "1.0.2",
   "org.scalatest" % "scalatest_2.10" % "2.0.RC2" % "test",
   "play" %% "anorm" % "2.1.5",

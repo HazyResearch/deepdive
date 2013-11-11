@@ -6,7 +6,10 @@ import scalikejdbc.ConnectionPool
 object PostgresDataStore {
 
   Class.forName("org.postgresql.Driver")
-  ConnectionPool.singleton("jdbc:postgresql://localhost/deepdive_paleo", "dennybritz", "")
+  
+  def init(connectionStr: String, username: String, password: String) {
+    ConnectionPool.singleton(connectionStr, username, password)
+  }
 
   def withConnection[A](block: Connection => A): A = {
     val connection: Connection = ConnectionPool.borrow()

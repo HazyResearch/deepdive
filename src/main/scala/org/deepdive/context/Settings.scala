@@ -14,7 +14,7 @@ case class Settings(connection: Connection, relations: List[Relation], etlTasks:
 
 object Settings {
  
-  lazy val _settings = loadDefault()
+  private var _settings : Settings = null;
 
   def getRelation(name: String) : Option[Relation] = _settings.relations.find(_.name == name)
   def getExtractor(name: String) : Option[Extractor] = _settings.extractors.find(_.name == name)
@@ -24,9 +24,9 @@ object Settings {
 
   def get() : Settings = _settings
 
-  def loadDefault() : Settings = loadFromConfig(ConfigFactory.load)
+  def loadDefault() = loadFromConfig(ConfigFactory.load)
 
-  def loadFromConfig(config: Config) : Settings = {
+  def loadFromConfig(config: Config) {
     // Validations makes sure that the supplied config includes all the required settings.
     config.checkValid(ConfigFactory.defaultReference(), "deepdive")
 
@@ -62,7 +62,7 @@ object Settings {
       )
       Extractor(extractorName, outputRelation, inputQuery, udf, factor)
     }.toList
-    Settings(connection, relations, etlTasks, extractors)
+    _settings = Settings(connection, relations, etlTasks, extractors)
   }
 
 }

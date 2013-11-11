@@ -8,6 +8,7 @@ case class ExtractionTask(outputRelation: String, inputQuery: String, udf: Strin
 
 object ExtracorExecutor {
   def props(databaseUrl: String): Props = Props(classOf[ExtracorExecutor], databaseUrl)
+  case class Execute(task: ExtractionTask)
 }
 
 class ExtracorExecutor(databaseUrl: String) extends Actor with ActorLogging {
@@ -16,22 +17,25 @@ class ExtracorExecutor(databaseUrl: String) extends Actor with ActorLogging {
     log.debug("Starting")
   }
 
-  case class Execute(task: ExtractionTask)
-
+  
   def receive = {
-    case Execute(task) => 
-      val executor = new ScriptTaskExecutor(task, databaseUrl)
-      val result = executor.run()
-      writeResult(result)
+    case ExtracorExecutor.Execute(task) => 
+      doExecute(task)
+    case _ =>
+      log.warning("Huh?")
   }
 
   private def doExecute(task: ExtractionTask) {
-    log.debug("Executing $task")
+    log.debug(s"Executing $task")
+    val executor = new ScriptTaskExecutor(task, databaseUrl)
+    val result = executor.run()
+    writeResult(result)
   }
 
   private def writeResult(result: List[JsValue]) {
+    log.debug(s"Writing extraction result back to the database, length=${result.length}")
     DB.withConnection { implicit conn =>
-      // TODO insert data here
+      // TODO insert data
     }
   }
 
