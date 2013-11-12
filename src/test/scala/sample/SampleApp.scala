@@ -55,6 +55,14 @@ class SampleApp extends FunSpec {
     prepareData()
     val config = ConfigFactory.parseString(getConfig)
     Pipeline.run(config)
+    // Make sure the data is in the database
+    PostgresDataStore.withConnection { implicit conn =>
+      val result = SQL("SELECT * FROM entities;")().map { row =>
+       row[String]("text")
+      }.toList
+      assert(result.size == 3)
+      assert(result == List("Sam", "Alice", "Bob"))
+    }
   }
 
 

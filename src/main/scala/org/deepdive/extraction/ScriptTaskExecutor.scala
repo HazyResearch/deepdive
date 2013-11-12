@@ -3,6 +3,7 @@ package org.deepdive.extraction
 import anorm._ 
 import java.sql.Connection
 import spray.json._
+import org.deepdive.context.Settings
 import org.deepdive.datastore.{PostgresDataStore => DB}
 import scala.sys.process._
 import scala.io.Source
@@ -12,7 +13,7 @@ import DefaultJsonProtocol._
 
 class ScriptTaskExecutor(task: ExtractionTask, databaseUrl: String) {
 
-  def run() : List[JsValue] = {
+  def run() : List[JsArray] = {
     
     // Set the script to be executable
     val file = new File(task.udf)
@@ -37,7 +38,7 @@ class ScriptTaskExecutor(task: ExtractionTask, databaseUrl: String) {
       )
       val process = task.udf run(io)
       process.exitValue()
-      result
+      result.map(_.asInstanceOf[JsArray])
     }
 
   }
