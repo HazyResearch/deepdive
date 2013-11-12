@@ -6,7 +6,7 @@ import com.typesafe.config._
 import org.deepdive.context.ContextManager
 import org.deepdive.inference.InferenceManager
 import org.deepdive.context.Settings
-import org.deepdive.extraction.{ExtractorExecutor, ExtractionTask}
+import org.deepdive.extraction.{ExtractionManager, ExtractionTask}
 
 object Pipeline {
 
@@ -29,14 +29,16 @@ object Pipeline {
 
     // TODO: Have an extraction manager that manages and parallelizes the extractions
     // Start the ExtractorExecutor for each defined Extractor
-    val extractorExecutor = system.actorOf(ExtractorExecutor.props(Settings.databaseUrl), "ExtractorExecutor")
+    val extractionManager = system.actorOf(ExtractionManager.props(Settings.databaseUrl), "ExtractionManager")
+    // val extractorExecutor = system.actorOf(ExtractorExecutor.props(Settings.databaseUrl), "ExtractorExecutor")
     Settings.get().extractors.foreach { extractor =>
-      extractorExecutor ! ExtractorExecutor.Execute(ExtractionTask(extractor.outputRelation, extractor.inputQuery, extractor.udf))
+      extractionManager ! ExtractionManager.AddTask(
+        ExtractionTask(extractor.name, extractor.outputRelation, extractor.inputQuery, extractor.udf))
     }
   
     // Run until the system terminates
-    Thread.sleep(500)
-    system.shutdown()
+    // Thread.sleep(500)
+    // system.shutdown()
     system.awaitTermination()
     // Thread.sleep(5000)
   }

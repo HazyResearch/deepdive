@@ -6,7 +6,7 @@ import akka.actor.{Actor, ActorRef, Props, ActorLogging}
 import org.deepdive.context.{Relation, Settings}
 import org.deepdive.datastore.{PostgresDataStore => DB}
 
-case class ExtractionTask(outputRelation: String, inputQuery: String, udf: String)
+case class ExtractionTask(name: String, outputRelation: String, inputQuery: String, udf: String)
 
 object ExtractorExecutor {
   def props(databaseUrl: String): Props = Props(classOf[ExtractorExecutor], databaseUrl)
@@ -27,11 +27,13 @@ class ExtractorExecutor(databaseUrl: String) extends Actor with ActorLogging {
   override def preStart() {
     log.debug("Starting")
   }
-
   
   def receive = {
     case ExtractorExecutor.Execute(task) => 
+      val manager = sender
       doExecute(task)
+      log.debug(s"Finished executing task ${task.name}")
+      manager ! ExtractionManager.TaskCompleted(task.name)
     case _ =>
       log.warning("Huh?")
   }

@@ -3,7 +3,6 @@ package org.deepdive.extraction
 import anorm._ 
 import java.sql.Connection
 import spray.json._
-import org.deepdive.context.Settings
 import org.deepdive.datastore.{PostgresDataStore => DB}
 import scala.sys.process._
 import scala.io.Source
