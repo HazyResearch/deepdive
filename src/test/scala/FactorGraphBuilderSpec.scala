@@ -58,6 +58,9 @@ class FactorGraphBuilderSpec extends FunSpec {
       assert(actor.factorFunctions.size == 2)
 
       // TODO: Make sure the factors are correct
+
+      // Insert into database
+      actor.writeToDatabase()
     }
       
   }

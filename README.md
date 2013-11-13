@@ -122,5 +122,17 @@ sbt ~test
 
 
 
+### Inference Database Schema
+
+d: Integer, variableType: VariableType, lowerBound: Double, upperBound: Double, initialValue: Double)
+(id: Integer, factorFunctionId: Integer, weight: Weight, variables: List[FactorVariable])
+```
+  variables(id, variable_type, lower_bound, uppper_bound, initial_value)
+  factors(id, weight_id, factor_function_id)
+  factor_variables(factor_id, variable_id, position, is_positive)
+  weights(id, value, is_fixed)
+  factor_functions(id, description)
+```
+
 
 
