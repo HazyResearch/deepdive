@@ -11,6 +11,8 @@ object PostgresDataStore {
     ConnectionPool.singleton(connectionStr, username, password)
   }
 
+  def borrowConnection() = ConnectionPool.borrow()
+
   def withConnection[A](block: Connection => A): A = {
     val connection: Connection = ConnectionPool.borrow()
     try {

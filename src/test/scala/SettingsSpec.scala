@@ -15,9 +15,9 @@ class SettingsSpec extends FunSpec {
       
       assert(settings.relations == List(
         Relation("documents", Map[String,String]("varid" -> "Integer", 
-          "text" -> "Text", "meta" -> "Text")),
+          "text" -> "Text", "meta" -> "Text"), Nil),
         Relation("entities", Map[String,String]("varid" -> "Integer", 
-          "document_id" -> "Integer", "name" -> "String", "meta" -> "Text"))
+          "document_id" -> "Integer", "name" -> "String", "meta" -> "Text"), Nil)
       ))
 
       assert(settings.etlTasks == List(

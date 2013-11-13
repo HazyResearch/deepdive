@@ -6,7 +6,8 @@ import org.deepdive.context.parsing._
 import scala.collection.JavaConversions._
 
 case class Connection(host: String, port: Int, db: String, user: String, password: String)
-case class Relation(name: String, schema: Map[String, String])
+case class ForeignKey(childRelation: String, childAttribute: String, parentRelation: String, parentAttribute: String)
+case class Relation(name: String, schema: Map[String, String], foreignKeys: List[ForeignKey])
 case class EtlTask(relation: String, source: String)
 case class Extractor(name:String, outputRelation: String, inputQuery: String, udf: String, factor: Factor)
 case class Factor(name: String, func: FactorFunction, weight: String)
@@ -42,7 +43,12 @@ object Settings {
     // Schema Settings
     val relations = config.getObject("deepdive.relations").keySet().map { relationName =>
       val schema =  config.getObject(s"deepdive.relations.$relationName.schema").unwrapped
-      Relation(relationName,schema.toMap.mapValues(_.toString))
+      val foreignKeys = config.getObject(s"deepdive.relations.$relationName.fkeys").keySet().map { childAttr =>
+        val Array(parentRelation, parentAttribute) = 
+          config.getString(s"deepdive.relations.$relationName.fkeys.$childAttr").split(".")
+        ForeignKey(relationName, childAttr, parentRelation, parentAttribute)
+      }.toList
+      Relation(relationName,schema.toMap.mapValues(_.toString), foreignKeys)
     }.toList
 
     val etlTasks = config.getObject("deepdive.ingest").keySet().map { relationName =>

@@ -12,14 +12,14 @@ class ExtractorExecutorObjectSpec extends FunSpec {
   describe("buildInsert") {
 
     it("should work for one row") {
-      val relation = Relation("words", Map("id" -> "Integer", "length" -> "Integer", "text" -> "Text"))
+      val relation = Relation("words", Map("id" -> "Integer", "length" -> "Integer", "text" -> "Text"), Nil)
       val row = JsArray(List(5.toJson,"Hello".toJson))
       assert(ExtractorExecutor.buildInsert(List(row), relation) ===
         "INSERT INTO words (length, text) VALUES (5, 'Hello');")
     }
 
     it ("should work for multiple rows") {
-      val relation = Relation("words", Map("id" -> "Integer", "length" -> "Integer", "text" -> "Text"))
+      val relation = Relation("words", Map("id" -> "Integer", "length" -> "Integer", "text" -> "Text"), Nil)
       val row1 = JsArray(List(5.toJson,"Hello".toJson))
       val row2 = JsArray(List(5.toJson,"James".toJson))
       val row3 = JsArray(List(1.toJson,"B".toJson))
