@@ -108,7 +108,8 @@ for line in fileinput.input():
   data = json.loads(line)
   # The input is a JSON array with each field defined in the schema definition
   if data[3][0].isupper():
-    # The ouput is a JSON array with each field, except for id, defined in the schema definition
+    # The ouput is a JSON array with each field, 
+    # except for id, defined in the schema definition
     print json.dumps([int(data[0]), data[3]])
 ```
 
