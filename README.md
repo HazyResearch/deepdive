@@ -1,96 +1,121 @@
-## Configuration
+## DeepDive Language
 
 ### Overview
 
 DeepDive uses [HOCON](https://github.com/typesafehub/config/blob/master/HOCON.md) as its configuration format. HOCON is a superset of JSON, which means that all valid JSON configuration files are valid HOCON configuration files. HOCON supports additional features such as path expression and variable substitution.
 
-Configuration is read from the `config/` directory by merging all files ending in `.conf`. Therefore, you can organize your configuration files as you wish. You may have one large configuration file, or one hundred smaller configuration files. We recommend having at least separate configuration files for each of the sections described below.
-
-### Global Configuration
+### Connection Configuration
 
 DeepDive requires a postgresql-compatible relational data store. 
 
 ```
-global.connection.host : "localhost"
-global.connection.port : 5432
-globa.connection.db : "deepdive"
-global.connection.user : "ubuntu"
-global.connection.password : "password"
+deepdive.global.connection.host : "localhost"
+deepdive.global.connection.port : 5432
+deepdive.global.connection.db : "deepdive"
+deepdive.global.connection.user : "ubuntu"
+deepdive.global.connection.password : "password"
 ```
 
-### 1. Schema Definition
+### Schema Definition
 
 The DeepDive pipelines uses a relational data store. In this section you will define the schema for relations.
 
 ```
-relations.links.schema : [[Source, String], [Destination, String], [text, String]]
-relations.pages.schema : [[Url, String], [html, Text], [content, Text]]
-relations.pages.dumo : False
+deepdive.relations.links.schema : { source: String, destination: String, text: String }
+deepdive.relations.pages.schema : { url: String, html: Text, content: Text }
 # ... 
 ```
 
 The name of the relation in the example above is links, as defined by the second level atttribute: `schema.[relation_name]`
 
-The supprted data types are `Integer`, `String`, `Decimal`, `Float`, `Text`, `Timestamp`, `Boolean`, and `Binary`.
+The supprted data types are `Integer`, `Long`, `String`, `Decimal`, `Float`, `Text`, `Timestamp`, `Boolean`, and `Binary`.
 
 
 ### 2. Data Ingestion
 
 The DeepDive pipeline loads data into a the data store. In this section you will define the data sources your application needs.
 
-```
-# A "links" relation backed by a TSV file
-ingest.links.source : "data/links.tsv"
-ingest.links.destination : "links"
-```
-
-The input format is inferred by looking at the file extension. DeepDive currently support `.csv` and `.tsv` files.
+TODO: Right now DeepDive assumes all data is already loaded into the data store in the relations defined previously. Later on we will support loading data from files automatically.
 
 
-### 3. Feature Extraction
 
-Next, you will define how to generate feature relations. There are several ways this can be done:
+### 3. Feature Extractors
 
-- Writing Datalog rules.
-- Running extractors over your relations. Extractors can be written in Python (more languages coming). The input to an extractor is a relation defined by a SQL statement, and the function maps each tuple to a new tuple in the output relation.
-
-Extractors should be saved in the `extractor/` directory. We automatically parse each file in this directory and look for classes matching the definitions defined below. (TODO: Is there a better way?)
-
-#### Using Datalog
-
-TODO: Which Datalog features do we need to support?
+Extractors can be an arbitary executable, we will use Python as an example. Let's start with an example. You would define an extractor for entities as follows:
 
 ```
-# Defines a new twoHop relation. The destination is reachable only by going through at least one additional hop.
-features.twoHop.type = "datalog"
-features.twoHop.expression = "twoHop(Source, Destination) :- link(Source, Z), link(Z, Destination), !link(Source, Desintation)"
+deepdive.extractions: {
+  entitiesExtractor.output_relation: "entities"
+  entitiesExtractor.input: "SELECT * FROM words"
+  entitiesExtractor.udf: "sample/sample_entities.py"
+  entitiesExtractor.factor.name: "Entities"
+  entitiesExtractor.factor.function: "Imply()"
+  entitiesExtractor.factor.weight: 1
+
+  # More Extractors...
+}
 ```
 
-#### Defining extractors in Python
+- **Output Relation:** Each extraction tuple will be written to the specified output relation. The output relation must be defined in the schema definition and exist in the database.
+- **Input:** A SQL statement that defines the input to the extrator. The extractor will receive one tuple at a time, smilar to a MapReduce scheme.
+- **UDF** The path of the extractor executable file.
+- **Factor Name:** The name of the factor. This is used for debugging purposes.
+- **Factor function:** Refer to the section of factor functions below.
+- **Factor weight:** Refer to the section of factor weights below.
 
-When using Python functions as feature extractors the relation is loaded into memory and each tuple is mapped to a new output tuple. A Python feature extractor class must adhere to the following interface:
+#### Factor Functions
+
+Currently we support factor functions of the form "A and B -> Z". In other words, if A and B are true, Z, the output variable, is true. An empty imply function means that the assignment to the output variable does not depend on other variables. Examples of Factor functions:
+
+```
+# A and B -> Z
+entitiesExtractor.factor.function: Imply(entity1_id, entity2_id) 
+
+# -> Z
+entitiesExtractor.factor.function: Imply() 
+```
+
+When using variables in a factor functions, the variable names must correspond to the column names of the extractor relation.
+
+#### Factor Weights
+
+The weight of a factor can either be assigned manually, or learned by the system. When the weight is learned it may depend on one or more variables. Example of weights are:
+
+```
+# Known weight
+entitiesExtractor.factor.weight: 1 
+
+# Learn weight, not depending on any variales
+entitiesExtractor.factor.weight: ?
+
+# Learn weight, depending on variables.
+# The variable names must correspond to column in the extractor relation.
+entitiesExtractor.factor.weight: ?(entity1_id)
+```
+
+
+#### Writng Extractors in Python
+
+Extractors work in a MapReduce-like way, mapping each input tuple to one or more output tuples. The extractor executable will receive each input tuple as a JSON object in stdin, and output each output tuple in stdout. An extrator in Python that outputs uppercase words may look like this:
 
 ```python
-class MyExtractor(FeatureExtractor):
-  def map(tuple):
-    for tuple in input_relation:
-      # do something
-      return output_tuple
+#! /usr/bin/env python
+
+import fileinput
+import json
+
+for line in fileinput.input():
+  data = json.loads(line)
+  # The input is a JSON array with each field defined in the schema definition
+  if data[3][0].isupper():
+    # The ouput is a JSON array with each field, except for id, defined in the schema definition
+    print json.dumps([int(data[0]), data[3]])
 ```
 
-TODO: Do we need to be able to take teh whole relation as an input to enable in-memory grouping, or is the mapreduce-like schema good enough?
 
-You define a Python extractor in the configuration as follows:
+### 4. Defining Evidence Relations
 
-```
-features.twoHop.type = "python"
-features.twpHop.input_sql = "SELECT * FROM links"
-features.twoHop.extractor = "MyExtractor"
-```
-
-### 3. Statistical Inference
-
-Can we keep what we have right now? 
+TODO 
 
 
 ## Developer Guide & System Architecture 
@@ -113,19 +138,17 @@ Note: The "~" means that sbt will watch files and automatically recompile when a
 sbt ~test
 ```
 
-### Actor System
+### Actor system structure
 
 - ContextManager
-- ExtractorManager: Manages ExtractorExecutors
-- ExtractorExecutor: Executes a single extractor 
-- InferenceManager: Adds variables and Factors to the inference schema
+- ExtractionManager: Mabages the execution and ordering of extractors and starts ExtractorExecutors
+- ExtractorExecutor: Executes a extractors, one at a time
+- FactorGraphBuilder: Notified when the extractors are finished and build the factor graph in the database
 
+### Inference Relation Schema
 
+TODO: What future functionality do we need to support?
 
-### Inference Database Schema
-
-d: Integer, variableType: VariableType, lowerBound: Double, upperBound: Double, initialValue: Double)
-(id: Integer, factorFunctionId: Integer, weight: Weight, variables: List[FactorVariable])
 ```
   variables(id, variable_type, lower_bound, uppper_bound, initial_value)
   factors(id, weight_id, factor_function_id)
