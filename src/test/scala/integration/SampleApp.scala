@@ -67,7 +67,6 @@ class SampleApp extends FunSpec {
       assert(result.size == 3)
       assert(result == List("Sam", "Alice", "Bob"))
     }
-    .3
   }
 
 

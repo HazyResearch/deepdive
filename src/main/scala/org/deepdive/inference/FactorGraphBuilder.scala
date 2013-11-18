@@ -99,8 +99,8 @@ class FactorGraphBuilder extends Actor with Connected with ActorLogging {
     }
   }
 
-  def writeToDatabase() {
-    factorStore.flush()
+  def writeToDatabase(relationName: String) {
+    factorStore.flush(relationName)
   }
 
 }

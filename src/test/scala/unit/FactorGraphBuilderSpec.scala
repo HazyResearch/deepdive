@@ -1,4 +1,4 @@
-package org.deepdive.test
+package org.deepdive.test.unit
 
 import anorm._
 import org.deepdive.datastore.PostgresDataStore
@@ -44,6 +44,7 @@ class FactorGraphBuilderSpec extends FunSpec {
       assert(actor.factorStore.factors.size == 6)
       // We have seen one factor function
       assert(actor.factorStore.factorFunctions.size == 1)
+      actor.writeToDatabase("entities")
 
       // Add Factors and Variables for the parents relations
       val parentsRelation = Relation("parents",
@@ -55,13 +56,14 @@ class FactorGraphBuilderSpec extends FunSpec {
         ImplyFactorFunction(List("entity1_id", "entity2_id")), UnknownFactorWeight(List("entity1_id")))
       actor.addVariableAndFactorsForRelation(parentsRelation, parentsFactorDesc, false)
       assert(actor.factorStore.variables.size == 9)
-      assert(actor.factorStore.factors.size == 9)
-      assert(actor.factorStore.factorFunctions.size == 2)
+      assert(actor.factorStore.factors.size == 3)
+      assert(actor.factorStore.factorFunctions.size == 1)
+      actor.writeToDatabase("parents")
 
       // TODO: Make sure the factors are correct
 
-      // Insert into database
-      actor.writeToDatabase()
+      
+      // Make sure the dat ain the RDBMS is correct.
       PostgresDataStore.withConnection { implicit conn =>
         val factorCount = SQL("select count(*) as c from factors")().head[Long]("c")
         assert(factorCount == 9)

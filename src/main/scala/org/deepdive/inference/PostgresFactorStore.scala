@@ -50,7 +50,7 @@ class PostgresFactorStore(implicit val connection: Connection) {
   def addWeight(identifier: String, weight: Weight) = { weights += Tuple2(identifier, weight) }
 
   // Flush out
-  def flush() {
+  def flush(relationName: String) {
     
     // Insert Weights
     log.debug("Writing weights")
@@ -58,6 +58,8 @@ class PostgresFactorStore(implicit val connection: Connection) {
       s"""(${weight.id}, ${weight.value}, ${weight.isFixed})"""
     }.mkString(", ")
     SQL(s"insert into weights(id, value, is_fixed) values $weightValues;").execute()
+    // Clear the weights
+    weights.clear()
 
     // Insert Factor Functions
     log.debug("Writing factor functions")
@@ -65,14 +67,17 @@ class PostgresFactorStore(implicit val connection: Connection) {
       s"""(${func.id}, '${func.desc}')"""
     }.mkString(", ")
     SQL(s"insert into factor_functions(id, description) values $functionValues;").execute()
+    factorFunctions.clear()
 
     // Insert Variables. TODO: Batch
     log.debug("Writing variables")
-    variables.values.foreach { variable =>
+    variables.filterKeys(_._1 == relationName).values.foreach { variable =>
       SQL(s"""insert into variables(id, variable_type, lower_bound, uppper_bound, initial_value) VALUES
         (${variable.id}, '${variable.variableType}', ${variable.lowerBound}, ${variable.upperBound}, 
           ${variable.initialValue});""").execute()
     }
+    // We keep the variables so that we can refer to them later on.
+    // TODO: We need to make this more efficient. It's likely that the variables won't fit into memory.
 
     // Insert Factors. TODO: Batch
     log.debug("Writing factors")
@@ -84,6 +89,7 @@ class PostgresFactorStore(implicit val connection: Connection) {
           (${factor.id}, ${factorVariable.value.id}, ${factorVariable.position}, ${factorVariable.positive});""").execute()
       }
     }
+    factors.clear()
   }
 
 

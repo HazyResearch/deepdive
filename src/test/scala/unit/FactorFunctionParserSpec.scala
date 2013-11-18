@@ -1,4 +1,4 @@
-package org.deepdive.test
+package org.deepdive.test.unit
 
 import org.scalatest._
 import org.deepdive.context.parsing.FactorFunctionParser
