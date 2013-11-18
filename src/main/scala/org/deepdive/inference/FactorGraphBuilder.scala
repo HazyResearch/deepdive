@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger
 object FactorGraphBuilder {
   
   // Messages
-  case class AddFactorsForRelation(relation: Relation, factorDesc: FactorDescription)
+  case class AddFactorsForRelation(relation: Relation, factorDesc: FactorDescription, isEvidence: Boolean)
 
   def props: Props = Props[FactorGraphBuilder]()
 
@@ -32,14 +32,14 @@ class FactorGraphBuilder extends Actor with Connected with ActorLogging {
   }
 
   def receive = {
-    case AddFactorsForRelation(relation, factorDesc) =>
+    case AddFactorsForRelation(relation, factorDesc, isEvidence) =>
       log.debug(s"Adding variables and factors for ${relation.name}")
-      addVariableAndFactorsForRelation(relation, factorDesc)
+      addVariableAndFactorsForRelation(relation, factorDesc, isEvidence)
     case _ => 
   }
 
   def addVariableAndFactorsForRelation(relation: Relation, 
-    factorDesc: FactorDescription) {
+    factorDesc: FactorDescription, isEvidence: Boolean) {
 
     // Create a new Factor Function
     val factorFunction = new FactorFunction(factorFunctionIdCounter.getAndIncrement(), factorDesc.name)
@@ -55,7 +55,9 @@ class FactorGraphBuilder extends Actor with Connected with ActorLogging {
       val localId = row[Long]("id")
       val globalId = variableIdCounter.getAndIncrement()
       // TODO: Set variable properties based on the variable type
-      val newVariable = Variable(globalId, VariableType.CQS, 0.0, 1.0, 0.0)
+      val newVariable = Variable(globalId, 
+        (if (isEvidence) VariableType.CES else VariableType.CQS),
+        0.0, 1.0, 0.0)
       factorStore.addVariable(relation.name, localId, newVariable)
       
       // Build and get or add the factorWeight
