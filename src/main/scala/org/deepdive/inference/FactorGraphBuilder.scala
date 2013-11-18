@@ -86,7 +86,7 @@ class FactorGraphBuilder extends Actor with Connected with ActorLogging {
       factorStore.addFactor(newFactor)
     }
   }
-  
+
   private def buildWeightVariableValue(row: SqlRow, variableName: String, variableType: String) = {
     variableType match {
       case "Long" => row[Long](variableName).toString

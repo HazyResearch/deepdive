@@ -116,7 +116,12 @@ for line in fileinput.input():
 
 ### 4. Defining Evidence Relations
 
-TODO 
+```
+deepdive.evidence.entity_evidence.relation: "entity_evidence"
+deepdive.evidence.entity_evidence.factor: "entitiesExtractor"
+```
+
+Note: The evidence relation must have exactly the same schema as the output_relation that created the factor.
 
 
 ## Developer Guide & System Architecture 
@@ -157,6 +162,7 @@ TODO: What future functionality do we need to support?
   weights(id, value, is_fixed)
   factor_functions(id, description)
 ```
+
 
 
 

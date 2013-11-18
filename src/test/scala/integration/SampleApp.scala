@@ -40,7 +40,7 @@ class SampleApp extends FunSpec {
       deepdive.relations.entities.schema: { id: Integer, word_id: Integer, text: Text }
       deepdive.relations.entities.fkeys : {}
 
-      deepdive.ingest = {}
+      deepdive.ingest : {}
 
       deepdive.extractions: {
         entitiesExtractor.output_relation: "entities"
@@ -50,6 +50,8 @@ class SampleApp extends FunSpec {
         entitiesExtractor.factor.function: "Imply()"
         entitiesExtractor.factor.weight: 5
       }
+
+      deepdive.evidence : {}
     """
   }
 
@@ -65,6 +67,7 @@ class SampleApp extends FunSpec {
       assert(result.size == 3)
       assert(result == List("Sam", "Alice", "Bob"))
     }
+    .3
   }
 
 
