@@ -40,7 +40,7 @@ class ExtractorExecutor(databaseUrl: String) extends Actor with ActorLogging {
 
   private def doExecute(task: ExtractionTask) {
     log.debug(s"Executing $task")
-    val executor = new ScriptTaskExecutor(task, databaseUrl)
+    val executor = new ScriptTaskExecutor(task)
     val result = executor.run()
     writeResult(result, task.outputRelation)
   }

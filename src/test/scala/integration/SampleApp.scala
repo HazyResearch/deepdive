@@ -1,4 +1,4 @@
-package org.deepdive.test
+package org.deepdive.test.integration
 
 import anorm._ 
 import com.typesafe.config._
@@ -36,7 +36,9 @@ class SampleApp extends FunSpec {
       }
 
       deepdive.relations.words.schema: { id: Integer, sentence_id: Integer, position: Integer, text: Text }
+      deepdive.relations.words.fkeys : {}
       deepdive.relations.entities.schema: { id: Integer, word_id: Integer, text: Text }
+      deepdive.relations.entities.fkeys : {}
 
       deepdive.ingest = {}
 

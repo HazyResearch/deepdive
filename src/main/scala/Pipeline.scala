@@ -36,9 +36,8 @@ object Pipeline {
         ExtractionTask(extractor.name, extractor.outputRelation, extractor.inputQuery, extractor.udf))
     }
   
-    // Run until the system terminates
-    // Thread.sleep(500)
-    // system.shutdown()
+    // TODO: Generate factor graph
+
     system.awaitTermination()
     // Thread.sleep(5000)
   }

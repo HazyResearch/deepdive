@@ -10,8 +10,21 @@ case class ForeignKey(childRelation: String, childAttribute: String, parentRelat
 case class Relation(name: String, schema: Map[String, String], foreignKeys: List[ForeignKey])
 case class EtlTask(relation: String, source: String)
 case class Extractor(name:String, outputRelation: String, inputQuery: String, udf: String, factor: Factor)
-case class Factor(name: String, func: FactorFunction, weight: String)
+case class Factor(name: String, func: FactorFunction, weight: FactorWeight)
 case class Settings(connection: Connection, relations: List[Relation], etlTasks: List[EtlTask], extractors: List[Extractor])
+
+sealed trait FactorWeight {
+  def variables : List[String]
+}
+case class KnownFactorWeight(value: Double) extends FactorWeight {
+  def variables = Nil
+}
+case class UnknownFactorWeight(variables: List[String]) extends FactorWeight
+
+sealed trait FactorFunction {
+  def variables : Seq[String]
+}
+case class ImplyFactorFunction(variables: Seq[String]) extends FactorFunction
 
 object Settings {
  
@@ -64,7 +77,8 @@ object Settings {
         config.getString(s"deepdive.extractions.$extractorName.factor.name"),
         FactorFunctionParser.parse(FactorFunctionParser.factorFunc, 
           config.getString(s"deepdive.extractions.$extractorName.factor.function")).get,
-        config.getString(s"deepdive.extractions.$extractorName.factor.weight")
+        FactorWeightParser.parse(FactorWeightParser.factorWeight,
+           config.getString(s"deepdive.extractions.$extractorName.factor.weight")).get 
       )
       Extractor(extractorName, outputRelation, inputQuery, udf, factor)
     }.toList

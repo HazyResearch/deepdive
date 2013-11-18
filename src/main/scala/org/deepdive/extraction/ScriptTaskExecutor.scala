@@ -10,7 +10,7 @@ import java.io.File
 
 import DefaultJsonProtocol._
 
-class ScriptTaskExecutor(task: ExtractionTask, databaseUrl: String) {
+class ScriptTaskExecutor(task: ExtractionTask) {
 
   def run() : List[JsArray] = {
     
