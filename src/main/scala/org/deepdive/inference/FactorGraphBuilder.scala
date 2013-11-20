@@ -66,6 +66,7 @@ class FactorGraphBuilder extends Actor with Connected with ActorLogging {
         variableType <- relation.schema.get(variableName)
         variableValue <- Some(buildWeightVariableValue(row, variableName, variableType))
       } yield variableValue
+      // TODO: Share weight across factor function
       val weightIdentifier = relation.name + "_" + factorWeightValues.mkString(",")
       val weight = factorStore.getWeight(weightIdentifier) match {
         case Some(weight) => weight

@@ -21,15 +21,16 @@ deepdive.global.connection.password : "password"
 The DeepDive pipelines uses a relational data store. In this section you will define the schema for relations.
 
 ```
-deepdive.relations.links.schema : { source: String, destination: String, text: String }
-deepdive.relations.pages.schema : { url: String, html: Text, content: Text }
+deepdive.relations.titles.schema: { id: Integer, title: Text, has_entities: Boolean }
+deepdive.relations.words.schema { id: Integer, title_id: Integer word: String }
+# Defining foreign keys
+deepdive.relations.words.fkeys { title_id: titles.id }
 # ... 
 ```
 
 The name of the relation in the example above is links, as defined by the second level atttribute: `schema.[relation_name]`
 
 The supprted data types are `Integer`, `Long`, `String`, `Decimal`, `Float`, `Text`, `Timestamp`, `Boolean`, and `Binary`.
-
 
 ### 2. Data Ingestion
 
