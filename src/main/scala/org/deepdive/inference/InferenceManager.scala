@@ -5,18 +5,18 @@ import akka.actor.{Actor, ActorRef, ActorLogging, Props}
 /* Manages the Factor and Variable relations in the database */
 class InferenceManager(contextManager: ActorRef, databaseUrl: String) extends Actor with ActorLogging {
 
-  case class AddFactor(id: Integer)
-  case class AddVariable(id: Integer)
+  val factorGraphBuilder = context.actorOf(FactorGraphBuilder.props)
 
   override def preStart() {
     log.debug("Starting")
   }
 
   def receive = {
-    case AddFactor(id) =>
-      log.debug("Adding factor=$id")
-    case AddVariable(id) =>
-      log.debug("Adding variable=$id")
+    case msg : FactorGraphBuilder.AddFactorsForRelation =>
+      log.debug(s"Adding factors for ${msg.relation.name}")
+      factorGraphBuilder forward msg
+    case other =>
+      log.debug("Huh?")
   }
 }
 

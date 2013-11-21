@@ -11,7 +11,11 @@ import java.util.concurrent.atomic.AtomicInteger
 object FactorGraphBuilder {
   
   // Messages
-  case class AddFactorsForRelation(relation: Relation, factorDesc: FactorDescription, isEvidence: Boolean)
+  sealed trait Message
+  case class AddFactorsForRelation(name: String, relation: Relation, factorDesc: FactorDescription, 
+    isEvidence: Boolean) extends Message
+  case class AddFactorsResult(name: String, success: Boolean)
+
 
   def props: Props = Props[FactorGraphBuilder]()
 
@@ -32,9 +36,11 @@ class FactorGraphBuilder extends Actor with Connected with ActorLogging {
   }
 
   def receive = {
-    case AddFactorsForRelation(relation, factorDesc, isEvidence) =>
+    case AddFactorsForRelation(name, relation, factorDesc, isEvidence) =>
       log.debug(s"Adding variables and factors for ${relation.name}")
       addVariableAndFactorsForRelation(relation, factorDesc, isEvidence)
+      writeToDatabase(relation.name)
+      sender ! AddFactorsResult(name, true)
     case _ => 
   }
 
@@ -66,7 +72,7 @@ class FactorGraphBuilder extends Actor with Connected with ActorLogging {
         variableType <- relation.schema.get(variableName)
         variableValue <- Some(buildWeightVariableValue(row, variableName, variableType))
       } yield variableValue
-      // TODO: Share weight across factor function
+
       val weightIdentifier = relation.name + "_" + factorWeightValues.mkString(",")
       val weight = factorStore.getWeight(weightIdentifier) match {
         case Some(weight) => weight

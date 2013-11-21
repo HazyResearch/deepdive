@@ -1,6 +1,7 @@
 package org.deepdive.extraction
 
 import akka.actor.{Actor, ActorRef, Props, ActorLogging, FSM}
+import scala.collection.mutable.Map
 import scala.concurrent.duration._
 
 object ExtractionManager {
@@ -25,12 +26,13 @@ object ExtractionManager {
 // This actor is an FSM that shuts down after a given timeout
 class ExtractionManager(databaseUrl: String) extends Actor 
   with FSM[ExtractionManager.State, ExtractionManager.Tasks] with ActorLogging {
-
   import ExtractionManager._
 
   startWith(Idle, Tasks(Nil))
-
+    
+  val taskListeners = Map[String, ActorRef]()
   val executor = context.actorOf(ExtractorExecutor.props(databaseUrl), "ExtractorExecutor")
+
 
   override def preStart(){
     log.debug("Starting")
@@ -41,9 +43,7 @@ class ExtractionManager(databaseUrl: String) extends Actor
       sendTask(task)
       goto(Active) using Tasks(currentTasks.queue :+ task)
     case Event(StateTimeout, _) => 
-      log.debug("Shutting down.")
-      // We are done here
-      context.system.shutdown()
+      // Nothing to do
       stay
   }
 
@@ -54,6 +54,9 @@ class ExtractionManager(databaseUrl: String) extends Actor
     case Event(TaskCompleted(name), currentTasks) =>
       log.debug(s"Completed task $name. Removing from the queue.")
       val newQueue = currentTasks.queue.filterNot { _.name == name}
+      
+      // Notify the original task sender of the completion
+      taskListeners.get(name).foreach(_ ! TaskCompleted(name))
       
       if(newQueue.size == 0) {
         goto(Idle) using Tasks(newQueue)
@@ -68,6 +71,7 @@ class ExtractionManager(databaseUrl: String) extends Actor
   }
 
   private def sendTask(task: ExtractionTask) {
+    taskListeners += Tuple2(task.name, sender)
     log.debug(s"Sending ${task.name} to executor.")
     executor ! ExtractorExecutor.Execute(task)
   }

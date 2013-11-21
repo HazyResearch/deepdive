@@ -8,8 +8,6 @@ object ContextManager {
 
 class ContextManager extends Actor with ActorLogging {
 
-  case class GetContext
-  
   override def preStart() {
     log.info("Starting")
   }

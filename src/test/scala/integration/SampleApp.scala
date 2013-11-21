@@ -47,7 +47,7 @@ class SampleApp extends FunSpec {
         entitiesExtractor.input: "SELECT * FROM words"
         entitiesExtractor.udf: "${getClass.getResource("/sample/sample_entities.py").getFile}"
         entitiesExtractor.factor.name: "Entities"
-        entitiesExtractor.factor.function: "Imply()"
+        entitiesExtractor.factor.function: "id = Imply()"
         entitiesExtractor.factor.weight: 5
       }
 
@@ -61,11 +61,21 @@ class SampleApp extends FunSpec {
     Pipeline.run(config)
     // Make sure the data is in the database
     PostgresDataStore.withConnection { implicit conn =>
-      val result = SQL("SELECT * FROM entities;")().map { row =>
+     
+      val extractionResult = SQL("SELECT * FROM entities;")().map { row =>
        row[String]("text")
       }.toList
-      assert(result.size == 3)
-      assert(result == List("Sam", "Alice", "Bob"))
+      assert(extractionResult.size == 3)
+      assert(extractionResult == List("Sam", "Alice", "Bob"))
+
+      val numFactors = SQL("select count(*) as c from factors;")().head[Long]("c")
+      val numVariables = SQL("select count(*) as c from variables;")().head[Long]("c")
+      val numWeights = SQL("select count(*) as c from weights;")().head[Long]("c")
+
+      assert(numFactors == 3)
+      assert(numVariables == 3)
+      assert(numWeights == 1)
+
     }
   }
 

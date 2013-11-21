@@ -1,23 +1,27 @@
 package org.deepdive
 
-import akka.actor.ActorSystem
+
 import akka.event.Logging
+import akka.pattern.ask
+import akka.util.Timeout
 import com.typesafe.config._
 import org.deepdive.context.ContextManager
-import org.deepdive.inference.InferenceManager
-import org.deepdive.context.Settings
+import org.deepdive.inference.{InferenceManager, FactorGraphBuilder}
+import org.deepdive.context.{Context, Settings}
 import org.deepdive.extraction.{ExtractionManager, ExtractionTask}
+import scala.concurrent.duration._
 
 object Pipeline {
 
   def run(config: Config) {
 
-    // Parse Settings
-    val settings = Settings.loadFromConfig(config)
+    // Get the actor system
+    val system = Context.system
 
-    // Start an actor system
-    val system = ActorSystem("deepdive")
-    val log = Logging.getLogger(system, this)
+    // Load Settings
+    Settings.loadFromConfig(config)
+
+    val log = Logging.getLogger(Context.system, this)
 
     // Start the Context manager
     val contextManager = system.actorOf(ContextManager.props, "ContextManager")
@@ -31,15 +35,21 @@ object Pipeline {
     // Start the ExtractorExecutor for each defined Extractor
     val extractionManager = system.actorOf(ExtractionManager.props(Settings.databaseUrl), "ExtractionManager")
     // val extractorExecutor = system.actorOf(ExtractorExecutor.props(Settings.databaseUrl), "ExtractorExecutor")
-    Settings.get().extractors.foreach { extractor =>
-      extractionManager ! ExtractionManager.AddTask(
-        ExtractionTask(extractor.name, extractor.outputRelation, extractor.inputQuery, extractor.udf))
-    }
-  
-    // TODO: Generate factor graph
 
+    implicit val timeout = Timeout(5 seconds)
+    implicit val ec = system.dispatcher
+    for {
+      extractor <- Settings.get().extractors
+      relation <- Settings.getRelation(extractor.outputRelation)
+      task <- Some(ExtractionTask(extractor.name, extractor.outputRelation, extractor.inputQuery, extractor.udf))
+      extractionResult <- ask(extractionManager, ExtractionManager.AddTask(task))
+      graphResult <- ask(inferenceManager, 
+        FactorGraphBuilder.AddFactorsForRelation(relation.name, relation, extractor.factor, false))
+    }
+
+    system.shutdown()
     system.awaitTermination()
-    // Thread.sleep(5000)
+
   }
 
 }

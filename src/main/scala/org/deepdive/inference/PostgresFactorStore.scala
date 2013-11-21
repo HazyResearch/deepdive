@@ -5,10 +5,11 @@ import java.sql.Connection
 import akka.event.Logging
 import scala.collection.mutable.{Map, ArrayBuffer, Set}
 import org.slf4j.LoggerFactory
+import org.deepdive.context.Context
 
 class PostgresFactorStore(implicit val connection: Connection) {
 
-  val log = LoggerFactory.getLogger(getClass);
+  val log = Logging.getLogger(Context.system, this)
 
   val factorFunctions = Set[FactorFunction]()
   val variables = Map[(String, Long), Variable]()
@@ -53,7 +54,7 @@ class PostgresFactorStore(implicit val connection: Connection) {
   def flush(relationName: String) {
     
     // Insert Weights
-    log.debug("Writing weights")
+    log.debug(s"Storing ${weights.size} weights")
     val weightValues = weights.values.map { weight =>
       s"""(${weight.id}, ${weight.value}, ${weight.isFixed})"""
     }.mkString(", ")
@@ -62,7 +63,7 @@ class PostgresFactorStore(implicit val connection: Connection) {
     weights.clear()
 
     // Insert Factor Functions
-    log.debug("Writing factor functions")
+    log.debug(s"Storing ${factorFunctions.size} factor functions")
     val functionValues = factorFunctions.map { case func =>
       s"""(${func.id}, '${func.desc}')"""
     }.mkString(", ")
@@ -70,8 +71,9 @@ class PostgresFactorStore(implicit val connection: Connection) {
     factorFunctions.clear()
 
     // Insert Variables. TODO: Batch
-    log.debug("Writing variables")
-    variables.filterKeys(_._1 == relationName).values.foreach { variable =>
+    val relationVariables = variables.filterKeys(_._1 == relationName)
+    log.debug(s"Storing ${relationVariables.size} variables")
+    relationVariables.values.foreach { variable =>
       SQL(s"""insert into variables(id, variable_type, lower_bound, uppper_bound, initial_value) VALUES
         (${variable.id}, '${variable.variableType}', ${variable.lowerBound}, ${variable.upperBound}, 
           ${variable.initialValue});""").execute()
@@ -80,7 +82,7 @@ class PostgresFactorStore(implicit val connection: Connection) {
     // TODO: We need to make this more efficient. It's likely that the variables won't fit into memory.
 
     // Insert Factors. TODO: Batch
-    log.debug("Writing factors")
+    log.debug(s"Storing ${factors.size} factors")
     factors.foreach { factor => 
       SQL(s"""insert into factors(id, weight_id, factor_function_id) VALUES
         (${factor.id}, ${factor.weight.id}, ${factor.factorFunction.id});""").execute()
