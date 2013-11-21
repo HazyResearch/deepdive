@@ -84,7 +84,7 @@ class FactorGraphBuilder extends Actor with Connected with ActorLogging {
           variable <- factorStore.getVariable(foreignKey.parentRelation, row[Int](attributeName))
           factorVariable <- Some(FactorVariable(position, true, variable))
         } yield factorVariable
-      }.flatten :+ FactorVariable(factorDesc.func.variables.size, true, newVariable)
+      }.flatten
       val newFactor = Factor(factorIdCounter.getAndIncrement(), factorFunction, weight, factorVariables.toList)
       factorStore.addFactor(newFactor)
     }

@@ -5,8 +5,9 @@ import org.deepdive.context.ImplyFactorFunction
 
 object FactorFunctionParser extends RegexParsers {
   def factorVariable = """\w+""".r
-  def factorFunc = "Imply" ~>  "(" ~> repsep(factorVariable, ",") <~ ")" ^^ { case varList =>
-    ImplyFactorFunction(varList)
+  def factorFunc = factorVariable ~ ("=" ~> "Imply" ~>  "(" ~> repsep(factorVariable, ",") <~ ")") ^^ { 
+    case headVariable ~ varList =>
+      ImplyFactorFunction(headVariable, varList)
   }
 
 }

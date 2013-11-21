@@ -27,7 +27,9 @@ case class UnknownFactorWeight(variables: List[String]) extends FactorWeight
 sealed trait FactorFunction {
   def variables : Seq[String]
 }
-case class ImplyFactorFunction(variables: Seq[String]) extends FactorFunction
+case class ImplyFactorFunction(head: String, body: Seq[String]) extends FactorFunction {
+  def variables = body :+ head
+}
 
 object Settings {
  

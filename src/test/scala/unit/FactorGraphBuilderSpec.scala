@@ -37,7 +37,7 @@ class FactorGraphBuilderSpec extends FunSpec {
 
       // Add Factors and Variables for the entities relation
       val entityRelation = Relation("entities", Map("id" -> "Long", "word_id" -> "Integer"), Nil)
-      val entityFactorDesc = FactorDesc("entitity", ImplyFactorFunction(Nil), UnknownFactorWeight(Nil))
+      val entityFactorDesc = FactorDesc("entitity", ImplyFactorFunction("id", Nil), UnknownFactorWeight(Nil))
       actor.addVariableAndFactorsForRelation(entityRelation, entityFactorDesc, false)
       // Should have one variable and factor for each tuple
       assert(actor.factorStore.variables.size == 6)
@@ -53,7 +53,7 @@ class FactorGraphBuilderSpec extends FunSpec {
           ForeignKey("parents", "entity2_id", "entities", "id"))
       )
       val parentsFactorDesc = FactorDesc("parent", 
-        ImplyFactorFunction(List("entity1_id", "entity2_id")), UnknownFactorWeight(List("entity1_id")))
+        ImplyFactorFunction("id", List("entity1_id", "entity2_id")), UnknownFactorWeight(List("entity1_id")))
       actor.addVariableAndFactorsForRelation(parentsRelation, parentsFactorDesc, false)
       assert(actor.factorStore.variables.size == 9)
       assert(actor.factorStore.factors.size == 3)
