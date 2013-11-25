@@ -1,16 +1,21 @@
 package org.deepdive.extraction
 
+import akka.event.Logging
 import anorm._ 
+import java.io.{File, PrintWriter}
 import java.sql.Connection
-import spray.json._
+import org.deepdive.context.Context
 import org.deepdive.datastore.{PostgresDataStore => DB}
-import scala.sys.process._
+import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
-import java.io.File
+import scala.sys.process._
+import spray.json._
 
 import DefaultJsonProtocol._
 
 class ScriptTaskExecutor(task: ExtractionTask) {
+
+  val log = Logging.getLogger(Context.system, this)
 
   def run() : List[JsArray] = {
     
@@ -18,27 +23,42 @@ class ScriptTaskExecutor(task: ExtractionTask) {
     val file = new File(task.udf)
     file.setExecutable(true)
 
+    log.info(s"Running UDF: ${file.getAbsolutePath}")
+
+    // Result will be stored here
+    val result : ArrayBuffer[JsValue] = ArrayBuffer[JsValue]();
+
     DB.withConnection { implicit conn =>
 
       // Query for the input data
       val inputData = SQL(task.inputQuery)().map { row =>
-        row.data.map(_.toString).toList.toJson.compactPrint
+        row.data.map { x =>
+          Option(x).map(_.toString)
+        }.toList.toJson.compactPrint
       }
 
-      // Result will be stored here
-      var result : List[JsValue] = Nil;
+      log.debug(s"Streaming num=${inputData.size} tuples.")
 
       val io = new ProcessIO(
-        in => { inputData.foreach { x => in.write((x + "\n").getBytes)}; in.close(); },
-        out => Source.fromInputStream(out).getLines.map(_.asJson).foreach { tuple =>
-          result = result :+ tuple 
+        in => { 
+          val writer = new PrintWriter(in, true)
+          inputData.foreach { tuple => writer.println(tuple) }
+          in.close()
         },
-        err => Source.fromInputStream(err).getLines.foreach(println)
-      )
+        out => {
+          Source.fromInputStream(out).getLines.map(_.asJson).foreach { tuple => result += tuple }
+          out.close()
+        },
+        err => {
+          Source.fromInputStream(err).getLines.foreach(println)
+        }
+      ).daemonized()
       val process = task.udf run(io)
       process.exitValue()
-      result.map(_.asInstanceOf[JsArray])
     }
+
+    log.debug(s"UDF process has exited. Generated num=${result.size} records.")
+    result.map(_.asInstanceOf[JsArray]).toList
 
   }
 

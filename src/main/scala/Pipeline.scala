@@ -6,6 +6,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 import com.typesafe.config._
 import org.deepdive.context.ContextManager
+import org.deepdive.datastore.{PostgresDataStore}
 import org.deepdive.inference.{InferenceManager, FactorGraphBuilder}
 import org.deepdive.context.{Context, Settings}
 import org.deepdive.extraction.{ExtractionManager, ExtractionTask}
@@ -15,13 +16,16 @@ object Pipeline {
 
   def run(config: Config) {
 
+    val log = Logging.getLogger(Context.system, this)
+
     // Get the actor system
     val system = Context.system
 
     // Load Settings
-    Settings.loadFromConfig(config)
+    Settings.loadFromConfig(config)    
 
-    val log = Logging.getLogger(Context.system, this)
+    // Initialize the data store
+    PostgresDataStore.init(Settings.databaseUrl, Settings.get().connection.user, Settings.get().connection.password)
 
     // Start the Context manager
     val contextManager = system.actorOf(ContextManager.props, "ContextManager")
@@ -36,7 +40,7 @@ object Pipeline {
     val extractionManager = system.actorOf(ExtractionManager.props(Settings.databaseUrl), "ExtractionManager")
     // val extractorExecutor = system.actorOf(ExtractorExecutor.props(Settings.databaseUrl), "ExtractorExecutor")
 
-    implicit val timeout = Timeout(5 seconds)
+    implicit val timeout = Timeout(30 minutes)
     implicit val ec = system.dispatcher
     for {
       extractor <- Settings.get().extractors

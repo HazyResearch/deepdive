@@ -12,17 +12,34 @@ object ExtractorExecutor {
   def props(databaseUrl: String): Props = Props(classOf[ExtractorExecutor], databaseUrl)
   case class Execute(task: ExtractionTask)
 
-  def buildInsert(rows: List[JsArray], relation: Relation) = {
+  def buildInsert(relation: Relation) = {
     val relation_fields =  "(" + relation.schema.keys.filterNot(_ == "id").mkString(", ") + ")"
-    val values = rows.map { row =>
-      "(" + row.elements.map(_.compactPrint).mkString(", ").replaceAll("\"","'") + ")"
-    }.mkString(", ")
-    s"INSERT INTO ${relation.name} ${relation_fields} VALUES ${values};"
+    val relationPlaceholders =  "(" + relation.schema.keys.filterNot(_ == "id").map { field =>
+      "{" + field + "}"
+    }.mkString(", ") + ")"
+    s"INSERT INTO ${relation.name} ${relation_fields} VALUES ${relationPlaceholders};"
+  }
+
+  def buildTupleMap(relation: Relation, result: List[JsArray]) : 
+    Seq[Seq[(String, ParameterValue[_])]] = {
+    val keys = relation.schema.keys.filterNot(_ == "id")
+    val schemaDomain = relation.schema.filterKeys(_ != "id").values.toList
+    val values = result.map { tuple =>
+      tuple.elements.zipWithIndex.map { case (x,i) =>
+        schemaDomain(i) match {
+          case "String" => toParameterValue(x.compactPrint)
+          case "Integer" => toParameterValue(x.compactPrint.toInt)
+        }
+      }
+    }
+    values.map { tuple => keys.zip(tuple).toSeq }.toSeq
   }
 
 }
 
 class ExtractorExecutor(databaseUrl: String) extends Actor with ActorLogging {
+
+  val WINDOW_SIZE = 1000
 
   override def preStart() {
     log.debug("Starting")
@@ -46,11 +63,22 @@ class ExtractorExecutor(databaseUrl: String) extends Actor with ActorLogging {
   }
 
   private def writeResult(result: List[JsArray], outputRelation: String) {
-    log.debug(s"Writing extraction result back to the database, length=${result.length}")
-    val insertStatement = ExtractorExecutor.buildInsert(result, Settings.getRelation(outputRelation).orNull)
-    DB.withConnection { implicit conn =>
-      SQL(insertStatement).execute()
+    val relation = Settings.getRelation(outputRelation).orNull
+    val insertStatement = result match {
+      case Nil => ""
+      case _ => ExtractorExecutor.buildInsert(relation)
     }
+    log.debug(s"Writing extraction result back to the database, length=${result.length}")
+    DB.withConnection { implicit conn =>
+      val sqlStatement = SQL(insertStatement)
+      result.grouped(WINDOW_SIZE).zipWithIndex.foreach { case(window, i) =>
+        log.debug(s"${WINDOW_SIZE * i}/${result.size}")
+        val tuples = ExtractorExecutor.buildTupleMap(relation, window)
+        val batchInsert = new BatchSql(sqlStatement, tuples)
+        batchInsert.execute()
+      }
+    }
+    log.debug(s"Wrote num=${result.length} records.")
   }
 
 }

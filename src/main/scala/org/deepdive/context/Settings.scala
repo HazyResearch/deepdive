@@ -37,9 +37,12 @@ object Settings {
 
   def getRelation(name: String) : Option[Relation] = _settings.relations.find(_.name == name)
   def getExtractor(name: String) : Option[Extractor] = _settings.extractors.find(_.name == name)
+  
   // TODO: Generate database URL
-  def databaseUrl = "jdbc:postgresql://localhost/deepdive_paleo"
-
+  def databaseUrl : String = {
+    val c = _settings.connection
+    s"jdbc:postgresql://${c.host}:${c.port}/${c.db}"
+  }
 
   def get() : Settings = _settings
 
@@ -65,8 +68,8 @@ object Settings {
 
       val foreignKeys = Option(config.hasPath(s"relations.$relationName.fkeys")).filter(_ == true).map { x =>
         config.getObject(s"relations.$relationName.fkeys").keySet().map { childAttr =>
-          val Array(parentRelation, parentAttribute) = 
-            config.getString(s"relations.$relationName.fkeys.$childAttr").split(".")
+          val Array(parentRelation, parentAttribute) =
+            config.getString(s"relations.${relationName}.fkeys.${childAttr}").split('.')
           ForeignKey(relationName, childAttr, parentRelation, parentAttribute)
         }.toList
       }.getOrElse(Nil)

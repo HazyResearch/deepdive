@@ -58,8 +58,10 @@ class PostgresFactorStore(implicit val connection: Connection) {
     val weightValues = weights.values.map { weight =>
       s"""(${weight.id}, ${weight.value}, ${weight.isFixed})"""
     }.mkString(", ")
-    SQL(s"insert into weights(id, value, is_fixed) values $weightValues;").execute()
-    // Clear the weights
+    weights.size match {
+      case 0 => // Nothing to do
+      case _ => SQL(s"insert into weights(id, value, is_fixed) values $weightValues;").execute()
+    }    
     weights.clear()
 
     // Insert Factor Functions
@@ -67,7 +69,11 @@ class PostgresFactorStore(implicit val connection: Connection) {
     val functionValues = factorFunctions.map { case func =>
       s"""(${func.id}, '${func.desc}')"""
     }.mkString(", ")
-    SQL(s"insert into factor_functions(id, description) values $functionValues;").execute()
+    functionValues.size match {
+      case 0 => 
+      case _ => 
+        SQL(s"insert into factor_functions(id, description) values $functionValues;").execute()
+    }
     factorFunctions.clear()
 
     // Insert Variables. TODO: Batch
