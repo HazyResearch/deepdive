@@ -7,14 +7,13 @@ import scala.collection.JavaConversions._
 case class Connection(host: String, port: Int, db: String, user: String, password: String)
 case class ForeignKey(childRelation: String, childAttribute: String, parentRelation: String, 
   parentAttribute: String)
-case class Relation(name: String, schema: Map[String, String], foreignKeys: List[ForeignKey])
+case class Relation(name: String, schema: Map[String, String], foreignKeys: List[ForeignKey], evidenceField: Option[String])
 case class EtlTask(relation: String, source: String)
 case class Extractor(name:String, outputRelation: String, inputQuery: String, udf: String, 
   factor: Factor)
 case class Factor(name: String, func: FactorFunction, weight: FactorWeight)
-case class Evidence(relation: String, factor: String)
 case class Settings(connection: Connection, relations: List[Relation], etlTasks: List[EtlTask], 
-  extractors: List[Extractor], evidence: List[Evidence])
+  extractors: List[Extractor])
 
 sealed trait FactorWeight {
   def variables : List[String]
@@ -62,24 +61,41 @@ object Settings {
       config.getString("global.connection.password")
     )
 
-    // Schema Settings
-    val relations = config.getObject("relations").keySet().map { relationName =>
-      val schema =  config.getObject(s"relations.$relationName.schema").unwrapped
+    // Relation Settings
+    // ==================================================
 
-      val foreignKeys = Option(config.hasPath(s"relations.$relationName.fkeys")).filter(_ == true).map { x =>
-        config.getObject(s"relations.$relationName.fkeys").keySet().map { childAttr =>
-          val Array(parentRelation, parentAttribute) =
-            config.getString(s"relations.${relationName}.fkeys.${childAttr}").split('.')
+    val relations = config.getObject("relations").keySet().map { relationName =>
+      val relationConfig = config.getConfig(s"relations.$relationName")
+      
+      // Schema
+      val schema = relationConfig.getObject("schema").unwrapped
+      val foreignKeys = Option(relationConfig.hasPath("fkeys")).filter(_ == true).map { x =>
+        relationConfig.getObject("fkeys").keySet().map { childAttr =>
+          val Array(parentRelation, parentAttribute) = relationConfig.getString(s"fkeys.${childAttr}").split('.')
           ForeignKey(relationName, childAttr, parentRelation, parentAttribute)
         }.toList
       }.getOrElse(Nil)
-      Relation(relationName,schema.toMap.mapValues(_.toString), foreignKeys)
+
+      // Evidence
+      val evidence = Option(relationConfig.hasPath(s"evidence_field")).filter(_ == true).map { x =>
+        relationConfig.getString("evidence_field")
+      }
+
+      Relation(relationName,schema.toMap.mapValues(_.toString), foreignKeys, evidence)
     }.toList
+
+
+    // ETL Settings
+    // ==================================================
 
     val etlTasks = config.getObject("ingest").keySet().map { relationName =>
       val source = config.getString(s"ingest.$relationName.source")
       EtlTask(relationName, source)
     }.toList
+
+
+    // Extractor Settings
+    // ==================================================
 
     val extractors = config.getObject("extractions").keySet().map { extractorName =>
       val outputRelation = config.getString(s"extractions.$extractorName.output_relation")
@@ -95,13 +111,8 @@ object Settings {
       Extractor(extractorName, outputRelation, inputQuery, udf, factor)
     }.toList
 
-    val evidence = config.getObject("evidence").keySet().map { evidenceName =>
-      val relation = config.getString(s"evidence.$evidenceName.relation")
-      val factorName = config.getString(s"evidence.$evidenceName.factor")
-      Evidence(relation, factorName)
-    }.toList
 
-    _settings = Settings(connection, relations, etlTasks, extractors, evidence)
+    _settings = Settings(connection, relations, etlTasks, extractors)
   }
 
 }

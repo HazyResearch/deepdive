@@ -37,7 +37,7 @@ class FactorGraphBuilder extends Actor with Connected with ActorLogging {
 
   def receive = {
     case AddFactorsForRelation(name, relation, factorDesc, isEvidence) =>
-      log.debug(s"Adding variables and factors for ${relation.name}")
+      log.debug(s"Adding variables and factors for ${relation}")
       addVariableAndFactorsForRelation(relation, factorDesc, isEvidence)
       writeToDatabase(relation.name)
       sender ! AddFactorsResult(name, true)
@@ -53,17 +53,27 @@ class FactorGraphBuilder extends Actor with Connected with ActorLogging {
     // Select the primary key, all foreign keys, and all weight variables from the relation
     val selectFields = (Seq("id") ++ 
       relation.foreignKeys.map(_.childAttribute) ++ 
-      factorDesc.weight.variables
+      factorDesc.weight.variables ++
+      relation.evidenceField.map(List(_)).getOrElse(Nil)
     ).mkString(", ")
     SQL(s"SELECT $selectFields FROM ${relation.name}")().foreach { row =>
       
       // Build and add a new variable
       val localId = row[Long]("id")
       val globalId = variableIdCounter.getAndIncrement()
-      // TODO: Set variable properties based on the variable type
-      val newVariable = Variable(globalId, 
-        (if (isEvidence) VariableType.CES else VariableType.CQS),
-        0.0, 1.0, 0.0)
+
+      val evidenceValue = relation.evidenceField.map { field =>
+        row.asMap.get(s"${relation.name}.${field}").orNull
+      }.map {
+        case Some(x) => x
+        case _ => null
+      }.filter(_ != null)
+
+      val newVariable = evidenceValue match {
+        case None => Variable(globalId, VariableType.CQS, 0.0, 1.0, 0.0)
+        case Some(value) => Variable(globalId, VariableType.CES, 0.0, 1.0, 1.0)
+      }
+
       factorStore.addVariable(relation.name, localId, newVariable)
       
       // Build and get or add the factorWeight
@@ -84,14 +94,15 @@ class FactorGraphBuilder extends Actor with Connected with ActorLogging {
       }
 
       // Build and Add Factor
+      val newFactorId = factorIdCounter.getAndIncrement()
       val factorVariables = factorDesc.func.variables.zipWithIndex.map { case(attributeName, position) =>
         for {
-          foreignKey <- relation.foreignKeys.find(_.childAttribute == attributeName)
-          variable <- factorStore.getVariable(foreignKey.parentRelation, row[Int](attributeName))
-          factorVariable <- Some(FactorVariable(position, true, variable))
+          foreignKey <- relation.foreignKeys.find(_.parentAttribute == attributeName)
+          variable <- factorStore.getVariable(foreignKey.childRelation, row[Long](attributeName))
+          factorVariable <- Some(FactorVariable(newFactorId.toLong, position, true, variable))
         } yield factorVariable
       }.flatten
-      val newFactor = Factor(factorIdCounter.getAndIncrement(), factorFunction, weight, factorVariables.toList)
+      val newFactor = Factor(newFactorId, factorFunction, weight, factorVariables.toList)
       factorStore.addFactor(newFactor)
     }
   }
@@ -99,6 +110,7 @@ class FactorGraphBuilder extends Actor with Connected with ActorLogging {
   private def buildWeightVariableValue(row: SqlRow, variableName: String, variableType: String) = {
     variableType match {
       case "Long" => row[Long](variableName).toString
+      case "Integer" => row[Long](variableName).toString
       case "String" => row[String](variableName)
       case "Text" => row[String](variableName)
       // TODO: Add More

@@ -15,20 +15,16 @@ class SettingsSpec extends FunSpec {
       assert(settings.connection == Connection("localhost", 5432, "deepdive_test", 
         "root", "password"))
       
-      assert(settings.relations == List(
+      assert(settings.relations.toSet == Set(
         Relation("documents", Map[String,String]("id" -> "Integer", 
-          "text" -> "Text", "meta" -> "Text"), Nil),
+          "text" -> "Text", "meta" -> "Text"), Nil, None),
         Relation("entities", Map[String,String]("id" -> "Integer", 
-          "document_id" -> "Integer", "name" -> "String", "meta" -> "Text"), Nil)
+          "document_id" -> "Integer", "name" -> "String", "meta" -> "Text"), Nil, None)
       ))
 
       assert(settings.extractors == List(
         Extractor("extractor1", "entities", "SELECT * FROM documents", "udf/entities.py", 
           Factor("Entities", ImplyFactorFunction("id", Nil), UnknownFactorWeight(Nil)))
-      ))
-
-      assert(settings.evidence == List(
-        Evidence("entity_evidence", "Entities")
       ))
 
     }

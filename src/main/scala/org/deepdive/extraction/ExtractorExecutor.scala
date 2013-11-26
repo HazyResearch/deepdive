@@ -2,13 +2,17 @@ package org.deepdive.extraction
 
 import anorm._
 import spray.json._
+import akka.event.Logging
 import akka.actor.{Actor, ActorRef, Props, ActorLogging}
-import org.deepdive.context.{Relation, Settings}
+import org.deepdive.context.{Relation, Settings, Context}
 import org.deepdive.datastore.{PostgresDataStore => DB}
 
 case class ExtractionTask(name: String, outputRelation: String, inputQuery: String, udf: String)
 
 object ExtractorExecutor {
+
+  val log = Logging.getLogger(Context.system, this)
+
   def props(databaseUrl: String): Props = Props(classOf[ExtractorExecutor], databaseUrl)
   case class Execute(task: ExtractionTask)
 
@@ -26,9 +30,15 @@ object ExtractorExecutor {
     val schemaDomain = relation.schema.filterKeys(_ != "id").values.toList
     val values = result.map { tuple =>
       tuple.elements.zipWithIndex.map { case (x,i) =>
-        schemaDomain(i) match {
-          case "String" => toParameterValue(x.compactPrint)
-          case "Integer" => toParameterValue(x.compactPrint.toInt)
+        (x, schemaDomain(i)) match {
+          case (JsNull, _) => toParameterValue(null)
+          case (x : JsString, "String") => toParameterValue(x.value)
+          case (x : JsString, "Text") => toParameterValue(x.value)
+          case (x : JsNumber, "Integer") => toParameterValue(x.value.toLong)
+          case (x : JsBoolean, "Boolean") => toParameterValue(x.asInstanceOf[JsBoolean].value)
+          case _ => 
+            log.error(s"Field is supposed to be of type ${schemaDomain(i)}, but got JSON type ${x.getClass}")
+            toParameterValue(null)
         }
       }
     }
@@ -39,7 +49,7 @@ object ExtractorExecutor {
 
 class ExtractorExecutor(databaseUrl: String) extends Actor with ActorLogging {
 
-  val WINDOW_SIZE = 1000
+  val BATCH_SIZE = 1000
 
   override def preStart() {
     log.debug("Starting")
@@ -68,11 +78,11 @@ class ExtractorExecutor(databaseUrl: String) extends Actor with ActorLogging {
       case Nil => ""
       case _ => ExtractorExecutor.buildInsert(relation)
     }
-    log.debug(s"Writing extraction result back to the database, length=${result.length}")
+    log.debug(s"Writing extraction result back to the database, length=${result.length}, sql=${insertStatement}")
     DB.withConnection { implicit conn =>
       val sqlStatement = SQL(insertStatement)
-      result.grouped(WINDOW_SIZE).zipWithIndex.foreach { case(window, i) =>
-        log.debug(s"${WINDOW_SIZE * i}/${result.size}")
+      result.grouped(BATCH_SIZE).zipWithIndex.foreach { case(window, i) =>
+        log.debug(s"${BATCH_SIZE * i}/${result.size}")
         val tuples = ExtractorExecutor.buildTupleMap(relation, window)
         val batchInsert = new BatchSql(sqlStatement, tuples)
         batchInsert.execute()

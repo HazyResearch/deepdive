@@ -6,8 +6,11 @@ import akka.event.Logging
 import scala.collection.mutable.{Map, ArrayBuffer, Set}
 import org.slf4j.LoggerFactory
 import org.deepdive.context.Context
+import org.deepdive.datastore.Utils.AnormSeq
 
 class PostgresFactorStore(implicit val connection: Connection) {
+
+  val BATCH_SIZE = 1000
 
   val log = Logging.getLogger(Context.system, this)
 
@@ -25,7 +28,7 @@ class PostgresFactorStore(implicit val connection: Connection) {
     SQL("""drop table if exists factor_variables; create table factor_variables(factor_id bigint, 
       variable_id bigint, position int, is_positive boolean);""").execute()
     SQL("""drop table if exists weights; create table weights(id bigint primary key, value decimal, is_fixed boolean);""").execute()
-    SQL("""drop table if exists factor_functions; create table factor_functions(id bigint primary key, description varchar);""").execute()
+    SQL("""drop table if exists factor_functions; create table factor_functions(id bigint primary key, description text);""").execute()
   }
 
   // Add a new Factor to the datastore
@@ -54,50 +57,68 @@ class PostgresFactorStore(implicit val connection: Connection) {
   def flush(relationName: String) {
     
     // Insert Weights
-    log.debug(s"Storing ${weights.size} weights")
-    val weightValues = weights.values.map { weight =>
-      s"""(${weight.id}, ${weight.value}, ${weight.isFixed})"""
-    }.mkString(", ")
-    weights.size match {
-      case 0 => // Nothing to do
-      case _ => SQL(s"insert into weights(id, value, is_fixed) values $weightValues;").execute()
-    }    
+    log.debug(s"Storing num=${weights.size} weights")
+    writeWeights(weights.values)
     weights.clear()
 
     // Insert Factor Functions
-    log.debug(s"Storing ${factorFunctions.size} factor functions")
-    val functionValues = factorFunctions.map { case func =>
-      s"""(${func.id}, '${func.desc}')"""
-    }.mkString(", ")
-    functionValues.size match {
-      case 0 => 
-      case _ => 
-        SQL(s"insert into factor_functions(id, description) values $functionValues;").execute()
-    }
+    log.debug(s"Storing num=${factorFunctions.size} factor functions")
+    writeFactorFunctions(factorFunctions)
     factorFunctions.clear()
 
-    // Insert Variables. TODO: Batch
-    val relationVariables = variables.filterKeys(_._1 == relationName)
-    log.debug(s"Storing ${relationVariables.size} variables")
-    relationVariables.values.foreach { variable =>
-      SQL(s"""insert into variables(id, variable_type, lower_bound, uppper_bound, initial_value) VALUES
-        (${variable.id}, '${variable.variableType}', ${variable.lowerBound}, ${variable.upperBound}, 
-          ${variable.initialValue});""").execute()
-    }
-    // We keep the variables so that we can refer to them later on.
-    // TODO: We need to make this more efficient. It's likely that the variables won't fit into memory.
+    // Insert Variables
+    val relationVariables = variables.filterKeys(_._1 == relationName).values
+    log.debug(s"Storing num=${relationVariables.size} variables")
+    writeVariables(relationVariables)
 
-    // Insert Factors. TODO: Batch
+    // Insert Factors 
     log.debug(s"Storing ${factors.size} factors")
-    factors.foreach { factor => 
-      SQL(s"""insert into factors(id, weight_id, factor_function_id) VALUES
-        (${factor.id}, ${factor.weight.id}, ${factor.factorFunction.id});""").execute()
-      factor.variables.foreach { factorVariable =>
-        SQL(s"""insert into factor_variables(factor_id, variable_id, position, is_positive) VALUES
-          (${factor.id}, ${factorVariable.value.id}, ${factorVariable.position}, ${factorVariable.positive});""").execute()
-      }
-    }
+    writeFactors(factors)
+
+    // Insert Factor Variables
+    val factorVariables = factors.flatMap(_.variables)
+    log.debug(s"Storing ${factorVariables.size} factor variables")
+    writeFactorVariables(factorVariables)
     factors.clear()
+    
+  }
+
+  private def writeWeights(values: Iterable[Weight]) {
+    val sqlStatement = SQL("insert into weights(id, value, is_fixed) values ({id}, {value}, {is_fixed})")
+    writeBatch(sqlStatement, values.map(Weight.toAnormSeq))
+  }
+
+  private def writeFactorFunctions(values: Iterable[FactorFunction]) {
+    val sqlStatement = SQL("insert into factor_functions(id, description) values ({id}, {description})")
+    writeBatch(sqlStatement, values.map(FactorFunction.toAnormSeq))
+  }
+
+  private def writeVariables(values: Iterable[Variable]) {
+    val sqlStatement = SQL("""insert into variables(id, variable_type, lower_bound, uppper_bound, initial_value) 
+      values ({id}, {variable_type}, {lower_bound}, {uppper_bound}, {initial_value})""")
+    writeBatch(sqlStatement, values.map(Variable.toAnormSeq))
+  }
+
+  private def writeFactors(values: Iterable[Factor]) {
+    val sqlStatement = SQL("""insert into factors (id, weight_id, factor_function_id)
+      values ({id}, {weight_id}, {factor_function_id})""")
+    writeBatch(sqlStatement, values.map(Factor.toAnormSeq))
+  }
+
+  private def writeFactorVariables(values: Iterable[FactorVariable]) {
+    val sqlStatement = SQL("""insert into factor_variables(factor_id, variable_id, position, is_positive)
+      values ({factor_id}, {variable_id}, {position}, {is_positive})""");
+    writeBatch(sqlStatement, values.map(FactorVariable.toAnormSeq))
+  }
+
+
+  private def writeBatch(sqlStatement: SqlQuery, values: Iterable[AnormSeq]) {
+    values.grouped(BATCH_SIZE).zipWithIndex.foreach { case(batch, i) =>
+      log.debug(s"${BATCH_SIZE * i}/${values.size}")
+      val batchInsert = new BatchSql(sqlStatement, batch.toSeq)
+      batchInsert.execute()
+    }
+    log.debug(s"${values.size}/${values.size}")
   }
 
 
