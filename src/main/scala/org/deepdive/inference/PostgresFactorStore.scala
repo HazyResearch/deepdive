@@ -10,7 +10,7 @@ import org.deepdive.datastore.Utils.AnormSeq
 
 class PostgresFactorStore(implicit val connection: Connection) {
 
-  val BATCH_SIZE = 1000
+  val BATCH_SIZE = 5000
 
   val log = Logging.getLogger(Context.system, this)
 
@@ -58,7 +58,7 @@ class PostgresFactorStore(implicit val connection: Connection) {
     
     // Insert Weights
     log.debug(s"Storing num=${weights.size} weights")
-    writeWeights(weights.values)
+    writeWeights(weights.iterator.map { x => x._2})
     weights.clear()
 
     // Insert Factor Functions
@@ -83,42 +83,41 @@ class PostgresFactorStore(implicit val connection: Connection) {
     
   }
 
-  private def writeWeights(values: Iterable[Weight]) {
+  private def writeWeights(values: Iterator[Weight]) {
     val sqlStatement = SQL("insert into weights(id, value, is_fixed) values ({id}, {value}, {is_fixed})")
-    writeBatch(sqlStatement, values.map(Weight.toAnormSeq))
+    writeBatch(sqlStatement, values.map(Weight.toAnormSeq(_)))
   }
 
   private def writeFactorFunctions(values: Iterable[FactorFunction]) {
     val sqlStatement = SQL("insert into factor_functions(id, description) values ({id}, {description})")
-    writeBatch(sqlStatement, values.map(FactorFunction.toAnormSeq))
+    writeBatch(sqlStatement, values.iterator.map(FactorFunction.toAnormSeq))
   }
 
   private def writeVariables(values: Iterable[Variable]) {
     val sqlStatement = SQL("""insert into variables(id, variable_type, lower_bound, uppper_bound, initial_value) 
       values ({id}, {variable_type}, {lower_bound}, {uppper_bound}, {initial_value})""")
-    writeBatch(sqlStatement, values.map(Variable.toAnormSeq))
+    writeBatch(sqlStatement, values.iterator.map(Variable.toAnormSeq))
   }
 
   private def writeFactors(values: Iterable[Factor]) {
     val sqlStatement = SQL("""insert into factors (id, weight_id, factor_function_id)
       values ({id}, {weight_id}, {factor_function_id})""")
-    writeBatch(sqlStatement, values.map(Factor.toAnormSeq))
+    writeBatch(sqlStatement, values.iterator.map(Factor.toAnormSeq))
   }
 
   private def writeFactorVariables(values: Iterable[FactorVariable]) {
     val sqlStatement = SQL("""insert into factor_variables(factor_id, variable_id, position, is_positive)
       values ({factor_id}, {variable_id}, {position}, {is_positive})""");
-    writeBatch(sqlStatement, values.map(FactorVariable.toAnormSeq))
+    writeBatch(sqlStatement, values.iterator.map(FactorVariable.toAnormSeq))
   }
 
 
-  private def writeBatch(sqlStatement: SqlQuery, values: Iterable[AnormSeq]) {
+  private def writeBatch(sqlStatement: SqlQuery, values: Iterator[AnormSeq]) {
     values.grouped(BATCH_SIZE).zipWithIndex.foreach { case(batch, i) =>
-      log.debug(s"${BATCH_SIZE * i}/${values.size}")
+      log.debug(s"${BATCH_SIZE * i}")
       val batchInsert = new BatchSql(sqlStatement, batch.toSeq)
       batchInsert.execute()
     }
-    log.debug(s"${values.size}/${values.size}")
   }
 
 
