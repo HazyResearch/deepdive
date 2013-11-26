@@ -13,7 +13,6 @@ class InferenceManager(contextManager: ActorRef, databaseUrl: String) extends Ac
 
   def receive = {
     case msg : FactorGraphBuilder.AddFactorsForRelation =>
-      log.debug(s"Adding factors for ${msg.relation.name}")
       factorGraphBuilder forward msg
     case other =>
       log.debug("Huh?")

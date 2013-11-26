@@ -27,7 +27,7 @@ sealed trait FactorFunction {
   def variables : Seq[String]
 }
 case class ImplyFactorFunction(head: String, body: Seq[String]) extends FactorFunction {
-  def variables = body :+ head
+  def variables = Seq(head) ++ body 
 }
 
 object Settings {
@@ -36,6 +36,8 @@ object Settings {
 
   def getRelation(name: String) : Option[Relation] = _settings.relations.find(_.name == name)
   def getExtractor(name: String) : Option[Extractor] = _settings.extractors.find(_.name == name)
+  def extractorForRelation(name: String) : Option[Extractor] = 
+    _settings.extractors.find(_.outputRelation == name)
   
   // TODO: Generate database URL
   def databaseUrl : String = {
@@ -75,13 +77,16 @@ object Settings {
           ForeignKey(relationName, childAttr, parentRelation, parentAttribute)
         }.toList
       }.getOrElse(Nil)
+      // We add "id" as a key so that it can be used as a variable. 
+      // TODO: Rename foreign keys to something more appropriate
+      val allKeys = foreignKeys :+ ForeignKey(relationName, "id", relationName, "id")
 
       // Evidence
       val evidence = Option(relationConfig.hasPath(s"evidence_field")).filter(_ == true).map { x =>
         relationConfig.getString("evidence_field")
       }
 
-      Relation(relationName,schema.toMap.mapValues(_.toString), foreignKeys, evidence)
+      Relation(relationName,schema.toMap.mapValues(_.toString), allKeys, evidence)
     }.toList
 
 
