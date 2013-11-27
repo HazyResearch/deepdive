@@ -18,7 +18,7 @@ object Variable {
       ("id", toParameterValue(value.id)), 
       ("variable_type", toParameterValue(value.variableType.toString)),
       ("lower_bound", toParameterValue(value.lowerBound)),
-      ("uppper_bound", toParameterValue(value.upperBound)),
+      ("upper_bound", toParameterValue(value.upperBound)),
       ("initial_value", toParameterValue(value.initialValue))
     )
   }

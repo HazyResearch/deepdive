@@ -156,7 +156,7 @@ sbt ~test
 TODO: What future functionality do we need to support?
 
 ```
-  variables(id, variable_type, lower_bound, uppper_bound, initial_value)
+  variables(id, variable_type, lower_bound, upper_bound, initial_value)
   factors(id, weight_id, factor_function_id)
   factor_variables(factor_id, variable_id, position, is_positive)
   weights(id, value, is_fixed)

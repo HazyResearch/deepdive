@@ -21,14 +21,25 @@ class PostgresFactorStore(implicit val connection: Connection) {
 
   // Prepares the data store to store the factor graph
   def init() {
-    SQL("""drop table if exists variables; create table variables(id bigint primary key, variable_type varchar(4), 
-      lower_bound decimal, uppper_bound decimal, initial_value decimal);""").execute()
-    SQL("""drop table if exists factors; create table factors(id bigint primary key, weight_id bigint, 
-      factor_function_id bigint);""").execute()
-    SQL("""drop table if exists factor_variables; create table factor_variables(factor_id bigint, 
-      variable_id bigint, position int, is_positive boolean);""").execute()
-    SQL("""drop table if exists weights; create table weights(id bigint primary key, value decimal, is_fixed boolean);""").execute()
-    SQL("""drop table if exists factor_functions; create table factor_functions(id bigint primary key, description text);""").execute()
+    // weights(id, value, is_fixed)
+    SQL("""drop table if exists weights; create table weights(id bigint primary key, 
+      value double precision, is_fixed boolean);""").execute()
+    // factor_functions(id, description)
+    SQL("""drop table if exists factor_functions; 
+      create table factor_functions(id bigint primary key, description text);""").execute()
+    // variables(id, variable_type, lower_bound, upper_bound, initial_value)
+    SQL("""drop table if exists variables; 
+      create table variables(id bigint primary key, variable_type varchar(4), 
+      lower_bound double precision, upper_bound double precision, 
+      initial_value double precision);""").execute()
+    // factors(id, weight_id, factor_function_id)
+    SQL("""drop table if exists factors; create table 
+      factors(id bigint primary key, weight_id bigint, factor_function_id bigint);""").execute()
+    // factor_variables(factor_id, variable_id, position, is_positive)
+    SQL("""drop table if exists factor_variables; 
+      create table factor_variables(factor_id bigint, variable_id bigint, 
+      position int, is_positive boolean);""").execute()
+    
   }
 
   def addFactorFunction(factorName: String, factorFunction: FactorFunction) = {
@@ -102,8 +113,8 @@ class PostgresFactorStore(implicit val connection: Connection) {
   }
 
   private def writeVariables(values: Iterable[Variable]) {
-    val sqlStatement = SQL("""insert into variables(id, variable_type, lower_bound, uppper_bound, initial_value) 
-      values ({id}, {variable_type}, {lower_bound}, {uppper_bound}, {initial_value})""")
+    val sqlStatement = SQL("""insert into variables(id, variable_type, lower_bound, upper_bound, initial_value) 
+      values ({id}, {variable_type}, {lower_bound}, {upper_bound}, {initial_value})""")
     writeBatch(sqlStatement, values.iterator.map(Variable.toAnormSeq))
   }
 

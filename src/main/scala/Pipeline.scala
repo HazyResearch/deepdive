@@ -5,11 +5,12 @@ import akka.event.Logging
 import akka.pattern.ask
 import akka.util.Timeout
 import com.typesafe.config._
+import java.io.File
+import org.deepdive.context.{Context, Settings}
 import org.deepdive.context.{ContextManager, FactorTaskOrdering}
 import org.deepdive.datastore.{PostgresDataStore}
-import org.deepdive.inference.{InferenceManager, FactorGraphBuilder}
-import org.deepdive.context.{Context, Settings}
 import org.deepdive.extraction.{ExtractionManager, ExtractionTask}
+import org.deepdive.inference.{InferenceManager, FactorGraphBuilder, FileGraphWriter}
 import scala.concurrent.duration._
 import scala.concurrent.{Future, Await}
 import scala.util.Sorting
@@ -58,11 +59,18 @@ object Pipeline {
 
     // Build the factor graph
     log.debug("Building factor graph")
-    for {
+    val graphResults = for {
       relation <- Settings.get().relations.sorted(FactorTaskOrdering)
       factor <- Option(Settings.extractorForRelation(relation.name).map(_.factor))
-      graphResult <- ask(inferenceManager, 
-        FactorGraphBuilder.AddFactorsForRelation(relation.name, relation, factor))
+      graphResult <- Some(ask(inferenceManager, 
+        FactorGraphBuilder.AddFactorsForRelation(relation.name, relation, factor)))
+    } yield graphResult
+
+    Await.result(Future.sequence(graphResults), 30 minutes)
+
+    // Write result
+    PostgresDataStore.withConnection { implicit conn =>
+      FileGraphWriter.dump(new File("variables.tsv"), new File("factors.tsv"), new File("weights.tsv"))
     }
 
     system.shutdown()
