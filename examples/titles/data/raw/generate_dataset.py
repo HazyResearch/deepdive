@@ -8,7 +8,7 @@ titles = {}
 with open("titles.csv", "rU") as csvfile:
   reader = csv.reader(csvfile, quotechar="\"", escapechar="\\")
   for row in [x for x in reader if len(x) > 0]:
-    titles[row[0]] = False
+    titles[row[0]] = None
 
 with open("extractions.csv", "r") as csvfile:
   reader = csv.reader(csvfile, quotechar="\"", escapechar="\\")

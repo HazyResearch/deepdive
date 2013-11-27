@@ -73,7 +73,10 @@ class PostgresFactorStore(implicit val connection: Connection) {
 
     // Insert Variables
     val relationVariables = variables.filterKeys(_._1 == relationName).values
-    log.debug(s"Storing num=${relationVariables.size} relation=variables")
+    val numEvidenceVariables = relationVariables.count(_.variableType == VariableType.CES)
+    val numQueryVariables = relationVariables.count(_.variableType == VariableType.CQS)
+    log.debug(s"Storing num=${relationVariables.size} num_evidence=${numEvidenceVariables} " +
+      s"num_query=${numQueryVariables} relation=variables")
     writeVariables(relationVariables)
 
     // Insert Factors 
