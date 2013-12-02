@@ -42,8 +42,6 @@ class FactorGraphBuilderSpec extends FunSpec {
       // Should have one variable and factor for each tuple
       assert(actor.factorStore.variables.size == 6)
       assert(actor.factorStore.factors.size == 6)
-      // We have seen one factor function
-      assert(actor.factorStore.factorFunctions.size == 1)
       actor.writeToDatabase("entities")
 
       // Add Factors and Variables for the parents relations
@@ -58,7 +56,6 @@ class FactorGraphBuilderSpec extends FunSpec {
       actor.addVariableAndFactorsForRelation(parentsRelation, Option(parentsFactorDesc))
       assert(actor.factorStore.variables.size == 9)
       assert(actor.factorStore.factors.size == 3)
-      assert(actor.factorStore.factorFunctions.size == 1)
       actor.writeToDatabase("parents")
 
       // TODO: Make sure the factors are correct
@@ -72,8 +69,6 @@ class FactorGraphBuilderSpec extends FunSpec {
         assert(variableCount == 9)
         val weightCount = SQL("select count(*) as c from weights")().head[Long]("c")
         assert(weightCount == 3)
-        val factorFunctionCount = SQL("select count(*) as c from factor_functions")().head[Long]("c")
-        assert(factorFunctionCount == 2)
       }
     }
       

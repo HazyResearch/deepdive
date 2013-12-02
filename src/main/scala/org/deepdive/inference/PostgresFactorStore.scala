@@ -14,38 +14,39 @@ class PostgresFactorStore(implicit val connection: Connection) {
 
   val log = Logging.getLogger(Context.system, this)
 
-  val factorFunctions = Map[String, FactorFunction]()
+  // val factorFunctions = Map[String, FactorFunction]()
   val variables = Map[(String, Long), Variable]()
   val factors = ArrayBuffer[Factor]()
   val weights = Map[String, Weight]()
 
   // Prepares the data store to store the factor graph
   def init() {
-    // weights(id, value, is_fixed)
-    SQL("""drop table if exists weights; create table weights(id bigint primary key, 
-      value double precision, is_fixed boolean);""").execute()
-    // factor_functions(id, description)
-    SQL("""drop table if exists factor_functions; 
-      create table factor_functions(id bigint primary key, description text);""").execute()
-    // variables(id, variable_type, lower_bound, upper_bound, initial_value)
+    // weights(id, initial_value, is_fixed)
+    SQL("""drop table if exists weights; 
+      create table weights(id bigint primary key, 
+      initial_value double precision, is_fixed boolean);""").execute()
+    
+    // factors(id, weight_id, factor_function)
+    SQL("""drop table if exists factors; 
+      create table factors(id bigint primary key, 
+      weight_id bigint, factor_function text);""").execute()
+
+    // variables(id, data_type, initial_value, is_evidence, is_query)
     SQL("""drop table if exists variables; 
-      create table variables(id bigint primary key, variable_type varchar(4), 
-      lower_bound double precision, upper_bound double precision, 
-      initial_value double precision);""").execute()
-    // factors(id, weight_id, factor_function_id)
-    SQL("""drop table if exists factors; create table 
-      factors(id bigint primary key, weight_id bigint, factor_function_id bigint);""").execute()
+      create table variables(id bigint primary key, data_type text,
+      initial_value double precision, is_evidence boolean, is_query boolean);""").execute()
+    
     // factor_variables(factor_id, variable_id, position, is_positive)
     SQL("""drop table if exists factor_variables; 
       create table factor_variables(factor_id bigint, variable_id bigint, 
       position int, is_positive boolean);""").execute()
   }
 
-  def addFactorFunction(factorName: String, factorFunction: FactorFunction) = {
-    factorFunctions += Tuple2(factorName, factorFunction)
-  }
+  // def addFactorFunction(factorName: String, factorFunction: FactorFunction) = {
+  //   factorFunctions += Tuple2(factorName, factorFunction)
+  // }
 
-  def getFactorFunction(factorName: String) : Option[FactorFunction] = factorFunctions.get(factorName)
+  // def getFactorFunction(factorName: String) : Option[FactorFunction] = factorFunctions.get(factorName)
 
   // Add a new Factor to the datastore
   def addFactor(factor: Factor) {
@@ -76,22 +77,17 @@ class PostgresFactorStore(implicit val connection: Connection) {
     writeWeights(weights.values)
     weights.clear()
 
-    // Insert Factor Functions
-    log.debug(s"Storing num=${factorFunctions.size} relation=factor_functions")
-    writeFactorFunctions(factorFunctions.values)
-    factorFunctions.clear()
-
-    // Insert Variables
-    val relationVariables = variables.filterKeys(_._1 == relationName).values
-    val numEvidenceVariables = relationVariables.count(_.variableType == VariableType.CES)
-    val numQueryVariables = relationVariables.count(_.variableType == VariableType.CQS)
-    log.debug(s"Storing num=${relationVariables.size} num_evidence=${numEvidenceVariables} " +
-      s"num_query=${numQueryVariables} relation=variables")
-    writeVariables(relationVariables)
-
     // Insert Factors 
     log.debug(s"Storing num=${factors.size} relation=factors")
     writeFactors(factors)
+
+    // Insert Variables
+    val relationVariables = variables.filterKeys(_._1 == relationName).values
+    val numEvidenceVariables = relationVariables.count(_.isEvidence)
+    val numQueryVariables = relationVariables.count(_.isQuery)
+    log.debug(s"Storing num=${relationVariables.size} num_evidence=${numEvidenceVariables} " +
+      s"num_query=${numQueryVariables} relation=variables")
+    writeVariables(relationVariables)
 
     // Insert Factor Variables
     val factorVariables = factors.flatMap(_.variables)
@@ -102,25 +98,21 @@ class PostgresFactorStore(implicit val connection: Connection) {
   }
 
   private def writeWeights(values: Iterable[Weight]) {
-    val sqlStatement = SQL("insert into weights(id, value, is_fixed) values ({id}, {value}, {is_fixed})")
+    val sqlStatement = SQL("""insert into weights(id, initial_value, is_fixed) 
+      values ({id}, {initial_value}, {is_fixed})""")
     writeBatch(sqlStatement, values.iterator.map(Weight.toAnormSeq(_)))
   }
 
-  private def writeFactorFunctions(values: Iterable[FactorFunction]) {
-    val sqlStatement = SQL("insert into factor_functions(id, description) values ({id}, {description})")
-    writeBatch(sqlStatement, values.iterator.map(FactorFunction.toAnormSeq))
+  private def writeFactors(values: Iterable[Factor]) {
+    val sqlStatement = SQL("""insert into factors (id, weight_id, factor_function)
+      values ({id}, {weight_id}, {factor_function})""")
+    writeBatch(sqlStatement, values.iterator.map(Factor.toAnormSeq))
   }
 
   private def writeVariables(values: Iterable[Variable]) {
-    val sqlStatement = SQL("""insert into variables(id, variable_type, lower_bound, upper_bound, initial_value) 
-      values ({id}, {variable_type}, {lower_bound}, {upper_bound}, {initial_value})""")
+    val sqlStatement = SQL("""insert into variables(id, data_type, initial_value, is_evidence, is_query) 
+      values ({id}, {data_type}, {initial_value}, {is_evidence}, {is_query})""")
     writeBatch(sqlStatement, values.iterator.map(Variable.toAnormSeq))
-  }
-
-  private def writeFactors(values: Iterable[Factor]) {
-    val sqlStatement = SQL("""insert into factors (id, weight_id, factor_function_id)
-      values ({id}, {weight_id}, {factor_function_id})""")
-    writeBatch(sqlStatement, values.iterator.map(Factor.toAnormSeq))
   }
 
   private def writeFactorVariables(values: Iterable[FactorVariable]) {
@@ -132,7 +124,6 @@ class PostgresFactorStore(implicit val connection: Connection) {
 
   private def writeBatch(sqlStatement: SqlQuery, values: Iterator[AnormSeq]) {
     values.grouped(BATCH_SIZE).zipWithIndex.foreach { case(batch, i) =>
-      // log.debug(s"${BATCH_SIZE * i}")
       val batchInsert = new BatchSql(sqlStatement, batch.toSeq)
       batchInsert.execute()
     }

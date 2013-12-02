@@ -1,25 +1,36 @@
 package org.deepdive.inference
 
 import anorm._
+import org.deepdive.Logging
 import org.deepdive.datastore.Utils.AnormSeq
 
 // Variable Type: CQS (Discrete, Query, Gibbs Sampling) or CES (Discrete, Evidence, Gibbs Sampling)
-object VariableType extends Enumeration {
-  type VariableType = Value
-  val CQS, CES = Value
-}
-import VariableType._
+object VariableDataType extends Enumeration with Logging {
+  type VariableDataType = Value
+  val `Boolean`, Discrete, Continuous = Value
 
-case class Variable(id: Integer, variableType: VariableType, lowerBound: Double, upperBound: Double, initialValue: Double)
+  def forAttributeType(attributeType: String) = attributeType match {
+    case "Boolean" => `Boolean`
+    case ("Long" | "Integer") => Discrete
+    case ("Decimal" | "Float") => Continuous
+    case x =>
+      log.warning(s"Unknown variable_field_type=$x")
+      `Boolean`
+  }
+}
+import VariableDataType._
+
+case class Variable(id: Integer, dataType: VariableDataType, initialValue: Double, 
+  isEvidence: Boolean, isQuery: Boolean)
 
 object Variable {
   implicit def toAnormSeq(value: Variable) : AnormSeq = {
     Seq(
       ("id", toParameterValue(value.id)), 
-      ("variable_type", toParameterValue(value.variableType.toString)),
-      ("lower_bound", toParameterValue(value.lowerBound)),
-      ("upper_bound", toParameterValue(value.upperBound)),
-      ("initial_value", toParameterValue(value.initialValue))
+      ("data_type", toParameterValue(value.dataType.toString)),
+      ("initial_value", toParameterValue(value.initialValue)),
+      ("is_evidence", toParameterValue(value.isEvidence)),
+      ("is_query", toParameterValue(value.isQuery))
     )
   }
 }

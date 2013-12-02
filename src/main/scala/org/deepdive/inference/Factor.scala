@@ -3,20 +3,13 @@ package org.deepdive.inference
 import anorm._
 import org.deepdive.datastore.Utils.AnormSeq
 
-case class Factor(id: Integer, factorFunction: FactorFunction, weight: Weight, variables: List[FactorVariable])
+case class Factor(id: Integer, factorFunction: String, weight: Weight, variables: List[FactorVariable])
 case class FactorVariable(factorId: Long, position: Integer, positive: Boolean, value: Variable)
-case class FactorFunction(id: Long, desc: String)
-
-object FactorFunction {
-  implicit def toAnormSeq(value: FactorFunction) : AnormSeq = {
-    Seq(("id", toParameterValue(value.id)), ("description", toParameterValue(value.desc)))
-  }
-}
 
 object Factor {
   implicit def toAnormSeq(value: Factor) : AnormSeq = {
     Seq(("id", toParameterValue(value.id)), ("weight_id", toParameterValue(value.weight.id)),
-      ("factor_function_id", toParameterValue(value.factorFunction.id)))
+      ("factor_function", toParameterValue(value.factorFunction)))
   }
 }
 
