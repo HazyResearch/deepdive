@@ -38,6 +38,11 @@ object Settings {
   def getExtractor(name: String) : Option[Extractor] = _settings.extractors.find(_.name == name)
   def extractorForRelation(name: String) : Option[Extractor] = 
     _settings.extractors.find(_.outputRelation == name)
+
+  def getRelationParents(name: String) : List[String] = {
+    getRelation(name).map(_.foreignKeys.map(_.parentRelation)).getOrElse(Nil).filter(_ != name)
+      .flatMap(Settings.getRelationParents)
+  }
   
   // TODO: Generate database URL
   def databaseUrl : String = {

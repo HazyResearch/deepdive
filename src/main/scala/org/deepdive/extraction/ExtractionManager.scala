@@ -66,14 +66,8 @@ class ExtractionManager extends Actor with ActorLogging {
     val eligibleTasks = (1 to capacity).map { i =>
       Try(taskQueue.dequeue)
     }.flatMap(_.toOption).filter { task =>
-      val relation = Settings.getRelation(task.outputRelation)
-      val dependencies = for {
-        foreignKey <- relation.get.foreignKeys
-        parentRelation = foreignKey.parentRelation
-        if Settings.getExtractor(parentRelation).isDefined
-      } yield (parentRelation)
-      // log.debug(s"$dependencies in ${completedRelations + task.outputRelation}" )
-      dependencies.toSet.subsetOf(completedRelations + task.outputRelation)
+      val dependencies = Settings.getRelationParents(task.outputRelation).toSet
+      dependencies.subsetOf(completedRelations + task.outputRelation)
     }
     log.debug(s"${eligibleTasks.size} tasks are eligible")
     eligibleTasks.foreach { task =>

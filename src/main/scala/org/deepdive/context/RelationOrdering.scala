@@ -4,8 +4,8 @@ import scala.math.Ordering
 
 object RelationTaskOrdering extends Ordering[Relation] {
   def compare(a: Relation, b: Relation) : Int = {
-    val parentRelationsA = a.foreignKeys.map(_.parentRelation.toLowerCase).toSet
-    val parentRelationsB = a.foreignKeys.map(_.parentRelation.toLowerCase).toSet
+    val parentRelationsA = Settings.getRelationParents(a.name)
+    val parentRelationsB = Settings.getRelationParents(b.name)
 
     if (parentRelationsA.contains(b.name.toLowerCase)) {
       return 1
