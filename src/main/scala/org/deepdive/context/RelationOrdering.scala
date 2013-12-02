@@ -2,7 +2,7 @@ package org.deepdive.context
 
 import scala.math.Ordering
 
-object FactorTaskOrdering extends Ordering[Relation] {
+object RelationTaskOrdering extends Ordering[Relation] {
   def compare(a: Relation, b: Relation) : Int = {
     val parentRelationsA = a.foreignKeys.map(_.parentRelation.toLowerCase).toSet
     val parentRelationsB = a.foreignKeys.map(_.parentRelation.toLowerCase).toSet

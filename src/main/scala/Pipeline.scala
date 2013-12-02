@@ -1,13 +1,11 @@
 package org.deepdive
 
-
-import akka.event.Logging
 import akka.pattern.ask
 import akka.util.Timeout
 import com.typesafe.config._
 import java.io.File
 import org.deepdive.context.{Context, Settings}
-import org.deepdive.context.{ContextManager, FactorTaskOrdering}
+import org.deepdive.context.{ContextManager, RelationTaskOrdering}
 import org.deepdive.datastore.{PostgresDataStore}
 import org.deepdive.extraction.{ExtractionManager, ExtractionTask}
 import org.deepdive.inference.{InferenceManager, FactorGraphBuilder, FileGraphWriter}
@@ -15,11 +13,9 @@ import scala.concurrent.duration._
 import scala.concurrent.{Future, Await}
 import scala.util.Sorting
 
-object Pipeline {
+object Pipeline extends Logging {
 
   def run(config: Config) {
-
-    val log = Logging.getLogger(Context.system, this)
 
     // Get the actor system
     val system = Context.system
@@ -40,7 +36,7 @@ object Pipeline {
 
     // TODO: Have an extraction manager that manages and parallelizes the extractions
     // Start the ExtractorExecutor for each defined Extractor
-    val extractionManager = system.actorOf(ExtractionManager.props(Settings.databaseUrl), "ExtractionManager")
+    val extractionManager = system.actorOf(ExtractionManager.props, "ExtractionManager")
     // val extractorExecutor = system.actorOf(ExtractorExecutor.props(Settings.databaseUrl), "ExtractorExecutor")
 
     implicit val timeout = Timeout(30 minutes)
@@ -60,7 +56,7 @@ object Pipeline {
     // Build the factor graph
     log.debug("Building factor graph")
     val graphResults = for {
-      relation <- Settings.get().relations.sorted(FactorTaskOrdering)
+      relation <- Settings.get().relations.sorted(RelationTaskOrdering)
       factor <- Option(Settings.extractorForRelation(relation.name).map(_.factor))
       graphResult <- Some(ask(inferenceManager, 
         FactorGraphBuilder.AddFactorsForRelation(relation.name, relation, factor)))
@@ -70,7 +66,7 @@ object Pipeline {
 
     // Write result
     PostgresDataStore.withConnection { implicit conn =>
-      FileGraphWriter.dump(new File("variables.tsv"), new File("factors.tsv"), new File("weights.tsv"))
+      // FileGraphWriter.dump(new File("variables.tsv"), new File("factors.tsv"), new File("weights.tsv"))
     }
 
     system.shutdown()

@@ -15,7 +15,7 @@ class ScriptTaskExecutorSpec extends FunSpec {
     val task = ExtractionTask("test", "output", "SELECT id, docid FROM documents", extractorFile.getFile)
     val executor = new ScriptTaskExecutor(task)
     val result = executor.run()
-    assert(result.head.compactPrint == List("469","469").toJson.compactPrint)
+    assert(result.rows.head.compactPrint == List("469","469").toJson.compactPrint)
   }
 
 }

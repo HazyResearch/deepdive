@@ -21,7 +21,7 @@ object Main extends App {
     head("deepdive", "0.1")
     opt[File]('c', "config") required() valueName("<config>") action { (x,c) =>
       c.copy(configFile = x)
-    } text("the configuration file path (required)")
+    } text("configuration file path (required)")
   }
 
   parser.parse(args, CliOptions(null)) map { c =>
@@ -31,7 +31,8 @@ object Main extends App {
     System.exit(1)
   }
 
-  log.info(s"Running the pipeline with configuration from ${Context.configFile.getAbsolutePath}")
+  // Starting the pipeline
+  log.info(s"Running pipeline with configuration from ${Context.configFile.getAbsolutePath}")
   val userConfig = ConfigFactory.parseFile(Context.configFile)
   val defaultConfig = ConfigFactory.load
   Pipeline.run(userConfig.withFallback(defaultConfig))

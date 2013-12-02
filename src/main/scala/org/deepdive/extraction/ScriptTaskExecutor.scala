@@ -17,7 +17,7 @@ class ScriptTaskExecutor(task: ExtractionTask) {
 
   val log = Logging.getLogger(Context.system, this)
 
-  def run() : List[JsArray] = {
+  def run() : ExtractionResult = {
     
     // Set the script to be executable
     val file = new File(task.udf)
@@ -58,7 +58,7 @@ class ScriptTaskExecutor(task: ExtractionTask) {
     }
 
     log.debug(s"UDF process has exited. Generated num=${result.size} records.")
-    result.map(_.asInstanceOf[JsArray]).toList
+    ExtractionResult(result.map(_.asInstanceOf[JsArray]).toList)
 
   }
 

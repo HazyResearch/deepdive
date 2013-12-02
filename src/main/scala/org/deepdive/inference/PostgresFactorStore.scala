@@ -39,7 +39,6 @@ class PostgresFactorStore(implicit val connection: Connection) {
     SQL("""drop table if exists factor_variables; 
       create table factor_variables(factor_id bigint, variable_id bigint, 
       position int, is_positive boolean);""").execute()
-    
   }
 
   def addFactorFunction(factorName: String, factorFunction: FactorFunction) = {
