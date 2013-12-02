@@ -66,7 +66,7 @@ object Pipeline extends Logging {
 
     // Write result
     PostgresDataStore.withConnection { implicit conn =>
-      // FileGraphWriter.dump(new File("variables.tsv"), new File("factors.tsv"), new File("weights.tsv"))
+      FileGraphWriter.dump(new File("target/variables.tsv"), new File("target/factors.tsv"), new File("target/weights.tsv"))
     }
 
     system.shutdown()

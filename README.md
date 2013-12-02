@@ -151,18 +151,41 @@ sbt ~test
 - ExtractorExecutor: Executes a extractors, one at a time
 - FactorGraphBuilder: Notified when the extractors are finished and build the factor graph in the database
 
-### Inference Relation Schema
+### Factor Graph Database Schema
 
 TODO: What future functionality do we need to support?
 
 ```
-  variables(id, variable_type, lower_bound, upper_bound, initial_value)
-  factors(id, weight_id, factor_function_id)
-  factor_variables(factor_id, variable_id, position, is_positive)
-  weights(id, value, is_fixed)
-  factor_functions(id, description)
+weights(id, initial_value, is_fixed)
+factors(id, weight_id, factor_function)
+variables(id, data_type, initial_value, is_evidence, is_query)
+factor_variables(factor_id, variable_id, position, is_positive)
 ```
 
+### Factor Graph Output Schema
+
+The systems outputs three **tab-separated** files for weights, factors and variables, with the following schemas, respectively:
+
+```
+weight_id initial_value is_fixed
+1013  0.0 false
+585 0.0 false
+```
+
+```
+factor_id weight_id factor_function
+251 187 ImplyFactorFunction
+2026  382 ImplyFactorFunction
+```
+
+```
+variable_id factor_id position  is_positive data_type initial_value is_evidence is_query
+0 0 1 true  Discrete  0.0 true  false
+1 1 1 true  Discrete  0.0 true  false
+2 2 1 true  Discrete  0.0 true  false
+```
+
+Note the the last file is effectively a map between variables and factors. This means that a variable id can appear multiple times. `data_type` `initial_value` `is_evidence` `is_query` are properties of a variable as opposed to properties the variable mapping, thus these are equal for a variable id and may be redundant.
 
 
 

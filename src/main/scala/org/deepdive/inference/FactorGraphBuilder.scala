@@ -66,7 +66,7 @@ class FactorGraphBuilder extends Actor with Connected with ActorLogging {
         case x => x
       }.filter(_ != null)
 
-      val evidenceFieldType = relation.evidenceField.map(f => relation.schema(f)).orNull
+      val evidenceFieldType = relation.evidenceField.map(x => relation.schema(x)).orNull
       val newVariable = Variable(globalId, VariableDataType.forAttributeType(evidenceFieldType), 
           0.0, evidenceValue.isDefined, !evidenceValue.isDefined)
       factorStore.addVariable(relation.name, localId, newVariable)
@@ -105,7 +105,8 @@ class FactorGraphBuilder extends Actor with Connected with ActorLogging {
           factorVariable <- Some(FactorVariable(newFactorId.toLong, position, true, variable))
         } yield factorVariable
       }.flatten
-      val newFactor = Factor(newFactorId, factorDesc.func.getClass.toString, weight, factorVariables.toList)
+      val newFactor = Factor(newFactorId, factorDesc.func.getClass.getSimpleName, weight, 
+        factorVariables.toList)
       factorStore.addFactor(newFactor)
   }
 
