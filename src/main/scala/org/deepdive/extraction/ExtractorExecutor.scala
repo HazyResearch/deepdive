@@ -33,7 +33,7 @@ trait ExtractorExecutor extends Actor with ActorLogging  {
       log.debug(s"Executing $task")
       doExecute(task)
       log.debug(s"Finished executing task_name=${task.name}")
-      sender ! ExtractionManager.TaskCompleted(task)
+      context.parent ! ExtractionManager.TaskCompleted(task)
       context.stop(self)
     case _ =>
       log.warning("Huh?")

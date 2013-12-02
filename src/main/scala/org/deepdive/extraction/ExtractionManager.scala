@@ -1,6 +1,7 @@
 package org.deepdive.extraction
 
-import akka.actor.{Actor, ActorRef, Props, ActorLogging, FSM}
+import akka.actor.SupervisorStrategy._
+import akka.actor.{Actor, ActorRef, Props, ActorLogging, FSM, OneForOneStrategy}
 import org.deepdive.context.Settings
 import org.deepdive.extraction._
 import scala.collection.mutable.{PriorityQueue, ArrayBuffer, Map}
@@ -8,14 +9,11 @@ import scala.concurrent.duration._
 import scala.util.Try
 
 object ExtractionManager {
-  
   def props : Props = Props(classOf[ExtractionManager])
-
   // Messages
   sealed trait Message
   case class AddTask(task: ExtractionTask) extends Message
   case class TaskCompleted(task: ExtractionTask) extends Message
-  
 }
 
 /* 
@@ -26,6 +24,7 @@ class ExtractionManager extends Actor with ActorLogging {
   import ExtractionManager._
     
   val PARALLELISM = 1
+  val RETRY_TIMEOUT = 5.seconds
 
   // Keeps track of the tasks
   val taskQueue = PriorityQueue[ExtractionTask]()(ExtractionTaskOrdering)
@@ -37,6 +36,18 @@ class ExtractionManager extends Actor with ActorLogging {
   override def preStart(){
     log.debug("Starting")
   }
+
+  /* When a failure happens we stop the executor and requeue the task */
+  override val supervisorStrategy = OneForOneStrategy() {
+    case _: Exception =>
+      runningTasks.find(_._2 == sender).foreach { case(task, executor) =>
+        runningTasks -= task
+        log.error(s"Failed to execute task=$task.name. Retrying.")
+        import context.dispatcher
+        context.system.scheduler.scheduleOnce(RETRY_TIMEOUT, self, AddTask(task))
+      }
+      Stop
+    }
 
   def receive = {
     case AddTask(task) =>
