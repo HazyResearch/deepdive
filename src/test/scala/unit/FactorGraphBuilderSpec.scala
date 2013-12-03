@@ -5,7 +5,7 @@ import org.deepdive.datastore.PostgresDataStore
 import org.scalatest._
 import org.deepdive._
 import org.deepdive.context._
-import org.deepdive.context.{Factor => FactorDesc}
+import org.deepdive.settings._
 import org.deepdive.inference.{FactorGraphBuilder}
 import akka.actor._
 import akka.testkit.{TestActorRef, TestKit}

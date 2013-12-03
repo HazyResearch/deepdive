@@ -4,7 +4,7 @@ import akka.event.Logging
 import anorm._ 
 import java.io.{File, PrintWriter}
 import java.sql.Connection
-import org.deepdive.context.Context
+import org.deepdive.Logging
 import org.deepdive.datastore.{PostgresDataStore => DB}
 import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
@@ -13,9 +13,7 @@ import spray.json._
 
 import DefaultJsonProtocol._
 
-class ScriptTaskExecutor(task: ExtractionTask) {
-
-  val log = Logging.getLogger(Context.system, this)
+class ScriptTaskExecutor(task: ExtractionTask) extends Logging {
 
   def run() : ExtractionResult = {
     

@@ -2,7 +2,8 @@ package org.deepdive.extraction
 
 import akka.actor.SupervisorStrategy._
 import akka.actor.{Actor, ActorRef, Props, ActorLogging, FSM, OneForOneStrategy}
-import org.deepdive.context.Settings
+import org.deepdive.context._
+import org.deepdive.settings._
 import org.deepdive.extraction._
 import scala.collection.mutable.{PriorityQueue, ArrayBuffer, Map}
 import scala.concurrent.duration._
@@ -77,7 +78,7 @@ class ExtractionManager extends Actor with ActorLogging {
     val eligibleTasks = (1 to capacity).map { i =>
       Try(taskQueue.dequeue)
     }.flatMap(_.toOption).filter { task =>
-      val dependencies = Settings.getRelationParents(task.outputRelation).toSet
+      val dependencies = Context.settings.findExtractorDependencies(task.name)
       dependencies.subsetOf(completedRelations + task.outputRelation)
     }
     log.debug(s"${eligibleTasks.size} tasks are eligible")

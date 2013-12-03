@@ -1,7 +1,7 @@
 package org.deepdive.datastore
 
 import org.deepdive.Logging
-import org.deepdive.context.{Relation}
+import org.deepdive.settings._
 import spray.json._
 import anorm._
 

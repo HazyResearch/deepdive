@@ -79,11 +79,14 @@ class SampleApp extends FunSpec {
       assert(numWeights == 3)
 
       // Make sure the variables types are correct
-      val variables_types = SQL("select variable_type from variables;")().map { row =>
-        row[String]("variable_type")
-      }.toList.sorted
-      assert(variables_types == List("CES", "CES", "CES", "CES", "CES", "CES", "CES", 
-        "CES", "CQS", "CQS", "CQS", "CES").sorted)
+      val numEvidence = SQL("""
+        select count(*) as c from variables 
+        WHERE is_evidence = true""")().head[Long]("c")
+      val numQuery = SQL("""
+        select count(*) as c from variables 
+        WHERE is_query = true""")().head[Long]("c")
+      assert(numEvidence == 9)
+      assert(numQuery == 3)
 
     }
   }

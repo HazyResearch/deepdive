@@ -1,8 +1,8 @@
 package org.deepdive.test.unit
 
 import org.scalatest._
-import org.deepdive.context.parsing.FactorFunctionParser
 import org.deepdive.context._
+import org.deepdive.settings._
 
 class FactorFunctionParserSpec extends FunSpec {
 

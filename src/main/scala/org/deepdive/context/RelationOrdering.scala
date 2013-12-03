@@ -1,11 +1,12 @@
 package org.deepdive.context
 
 import scala.math.Ordering
+import org.deepdive.settings._
 
 object RelationTaskOrdering extends Ordering[Relation] {
   def compare(a: Relation, b: Relation) : Int = {
-    val parentRelationsA = Settings.getRelationParents(a.name)
-    val parentRelationsB = Settings.getRelationParents(b.name)
+    val parentRelationsA = Context.settings.findRelationDependencies(a.name) - a.name
+    val parentRelationsB = Context.settings.findRelationDependencies(b.name) - b.name
 
     if (parentRelationsA.contains(b.name.toLowerCase)) {
       return 1

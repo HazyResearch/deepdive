@@ -2,7 +2,8 @@ package org.deepdive.extraction
 
 import anorm._
 import akka.actor.{Actor, ActorRef, Props, ActorLogging}
-import org.deepdive.context.{Relation, Settings, Context}
+import org.deepdive.settings._
+import org.deepdive.context._
 import org.deepdive.datastore.{PostgresDataStore => DB}
 import org.deepdive.extraction._
 import org.deepdive.extraction.datastore._

@@ -3,7 +3,7 @@ package org.deepdive.inference
 import akka.actor.{Actor, ActorRef, ActorLogging, Props}
 
 /* Manages the Factor and Variable relations in the database */
-class InferenceManager(contextManager: ActorRef, databaseUrl: String) extends Actor with ActorLogging {
+class InferenceManager extends Actor with ActorLogging {
 
   val factorGraphBuilder = context.actorOf(FactorGraphBuilder.props)
 
@@ -20,6 +20,5 @@ class InferenceManager(contextManager: ActorRef, databaseUrl: String) extends Ac
 }
 
 object InferenceManager {
-  def props(contextManager: ActorRef, databaseUrl: String) : Props = 
-    Props(classOf[InferenceManager], contextManager, databaseUrl)
+  def props : Props = Props(classOf[InferenceManager])
 }

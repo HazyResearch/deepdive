@@ -1,20 +1,17 @@
 package org.deepdive
 
-import akka.event.Logging
 import com.typesafe.config.ConfigFactory
-import org.deepdive.context.Context
+import org.deepdive.context._
+import org.deepdive.settings._
 import org.deepdive.inference.InferenceManager
-import org.deepdive.context.Settings
 import org.deepdive.extraction.{ExtractorExecutor, ExtractionTask}
 import scopt._
 import java.io.File
 
 
 /* DeepDive main entry point */
-object Main extends App {
+object Main extends App with Logging {
   
-  val log = Logging.getLogger(Context.system, this)
-
   // Parsing command-line options
   case class CliOptions(configFile: File)
   val parser = new scopt.OptionParser[CliOptions]("scopt") {

@@ -2,7 +2,8 @@ package org.deepdive.extraction.datastore
 
 import anorm._
 import java.lang.RuntimeException
-import org.deepdive.context.{Relation, Settings, Context}
+import org.deepdive.context._
+import org.deepdive.settings._
 import org.deepdive.datastore.PostgresDataStore
 import org.deepdive.datastore.Utils._
 import org.deepdive.Logging
@@ -34,7 +35,7 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
 
     def writeResult(result: List[JsArray], outputRelation: String) : Unit = {
       
-      val relation = Settings.getRelation(outputRelation) match {
+      val relation = Context.settings.findRelation(outputRelation) match {
         case None => throw new RuntimeException(
           s"relation=${outputRelation} not found in configuration.")
         case Some(relation) => relation

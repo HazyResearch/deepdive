@@ -4,8 +4,8 @@ import akka.pattern.ask
 import akka.util.Timeout
 import com.typesafe.config._
 import java.io.File
-import org.deepdive.context.{Context, Settings}
-import org.deepdive.context.{ContextManager, RelationTaskOrdering}
+import org.deepdive.context._
+import org.deepdive.settings.Settings
 import org.deepdive.datastore.{PostgresDataStore}
 import org.deepdive.extraction.{ExtractionManager, ExtractionTask}
 import org.deepdive.inference.{InferenceManager, FactorGraphBuilder, FileGraphWriter}
@@ -21,16 +21,14 @@ object Pipeline extends Logging {
     val system = Context.system
 
     // Load Settings
-    Settings.loadFromConfig(config)    
+    Context.settings = Settings.loadFromConfig(config)    
 
     // Initialize the data store
-    PostgresDataStore.init(Settings.databaseUrl, Settings.get().connection.user, Settings.get().connection.password)
-
-    // Start the Context manager
-    val contextManager = system.actorOf(ContextManager.props, "ContextManager")
+    PostgresDataStore.init(Context.settings.databaseUrl, Context.settings.connection.user, 
+      Context.settings.connection.password)
 
     // Start the Inference Manager
-    val inferenceManager = system.actorOf(InferenceManager.props(contextManager, Settings.databaseUrl), "InferenceManager")
+    val inferenceManager = system.actorOf(InferenceManager.props, "InferenceManager")
 
     // TODO: ETL Tasks: We ignore this for now
 
@@ -45,8 +43,8 @@ object Pipeline extends Logging {
     // Run extractions
     log.debug("Running extractors")
     val extractionResults = for {
-      extractor <- Settings.get().extractors
-      relation <- Settings.getRelation(extractor.outputRelation)
+      extractor <- Context.settings.extractors
+      relation <- Context.settings.findRelation(extractor.outputRelation)
       task <- Some(ExtractionTask(extractor.name, extractor.outputRelation, extractor.inputQuery, extractor.udf))
       extractionResult <- Some(ask(extractionManager, ExtractionManager.AddTask(task)))
     } yield extractionResult
@@ -55,9 +53,10 @@ object Pipeline extends Logging {
 
     // Build the factor graph
     log.debug("Building factor graph")
+
     val graphResults = for {
-      relation <- Settings.get().relations.sorted(RelationTaskOrdering)
-      factor <- Settings.extractorForRelation(relation.name).map(_.factor)
+      relation <- Context.settings.relationsWithVariables.toList.sorted(RelationTaskOrdering)
+      factor = Context.settings.findExtractorForRelation(relation.name).flatMap(_.factor)
       graphResult <- Some(ask(inferenceManager, 
         FactorGraphBuilder.AddFactorsForRelation(relation.name, relation, factor)))
     } yield graphResult

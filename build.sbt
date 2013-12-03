@@ -25,3 +25,5 @@ libraryDependencies ++= List(
   "com.h2database" % "h2" % "1.3.166",
   "io.spray" %%  "spray-json" % "1.2.5"
 )
+
+parallelExecution in Test := false

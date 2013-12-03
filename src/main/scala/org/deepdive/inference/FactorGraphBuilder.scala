@@ -2,8 +2,7 @@ package org.deepdive.inference
 
 import anorm._
 import org.deepdive.datastore.Connected
-import org.deepdive.context._
-import org.deepdive.context.{Factor => FactorDescription, FactorFunction => FactorFunctionDesc}
+import org.deepdive.settings._
 import akka.actor.{Actor, ActorRef, Props, ActorLogging}
 import scala.collection.mutable.{Map, ArrayBuffer}
 import java.util.concurrent.atomic.AtomicInteger
@@ -12,9 +11,8 @@ object FactorGraphBuilder {
   
   // Messages
   sealed trait Message
-  case class AddFactorsForRelation(name: String, relation: Relation, factorDesc: Option[FactorDescription]) extends Message
+  case class AddFactorsForRelation(name: String, relation: Relation, factorDesc: Option[FactorDesc]) extends Message
   case class AddFactorsResult(name: String, success: Boolean)
-
 
   def props: Props = Props[FactorGraphBuilder]()
 
@@ -44,7 +42,7 @@ class FactorGraphBuilder extends Actor with Connected with ActorLogging {
   }
 
   def addVariableAndFactorsForRelation(relation: Relation, 
-    factorDesc: Option[FactorDescription]) {
+    factorDesc: Option[FactorDesc]) {
 
     // Select the primary key, all foreign keys, and all weight variables from the relation
     val selectFields = (Seq("id") ++ 
@@ -77,7 +75,7 @@ class FactorGraphBuilder extends Actor with Connected with ActorLogging {
     }
   }
 
-  private def addFactorForRow(row: SqlRow, relation: Relation, factorDesc: FactorDescription) = {
+  private def addFactorForRow(row: SqlRow, relation: Relation, factorDesc: FactorDesc) = {
 
     // Build and get or add the factorWeight
     val factorWeightValues = for {
