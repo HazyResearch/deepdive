@@ -57,7 +57,7 @@ object Pipeline extends Logging {
     log.debug("Building factor graph")
     val graphResults = for {
       relation <- Settings.get().relations.sorted(RelationTaskOrdering)
-      factor <- Option(Settings.extractorForRelation(relation.name).map(_.factor))
+      factor <- Settings.extractorForRelation(relation.name).map(_.factor)
       graphResult <- Some(ask(inferenceManager, 
         FactorGraphBuilder.AddFactorsForRelation(relation.name, relation, factor)))
     } yield graphResult

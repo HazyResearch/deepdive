@@ -24,7 +24,7 @@ class SettingsSpec extends FunSpec {
 
       assert(settings.extractors == List(
         Extractor("extractor1", "entities", "SELECT * FROM documents", "udf/entities.py", 
-          Factor("Entities", ImplyFactorFunction("id", Nil), UnknownFactorWeight(Nil)))
+          Option(Factor("Entities", ImplyFactorFunction("id", Nil), UnknownFactorWeight(Nil))))
       ))
 
     }

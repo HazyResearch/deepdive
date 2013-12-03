@@ -3,6 +3,7 @@ package org.deepdive.context
 import com.typesafe.config._
 import org.deepdive.context.parsing._
 import scala.collection.JavaConversions._
+import scala.util.Try
 
 case class Connection(host: String, port: Int, db: String, user: String, password: String)
 case class ForeignKey(childRelation: String, childAttribute: String, parentRelation: String, 
@@ -10,7 +11,7 @@ case class ForeignKey(childRelation: String, childAttribute: String, parentRelat
 case class Relation(name: String, schema: Map[String, String], foreignKeys: List[ForeignKey], evidenceField: Option[String])
 case class EtlTask(relation: String, source: String)
 case class Extractor(name:String, outputRelation: String, inputQuery: String, udf: String, 
-  factor: Factor)
+  factor: Option[Factor])
 case class Factor(name: String, func: FactorFunction, weight: FactorWeight)
 case class Settings(connection: Connection, relations: List[Relation], etlTasks: List[EtlTask], 
   extractors: List[Extractor])
@@ -76,21 +77,16 @@ object Settings {
       
       // Schema
       val schema = relationConfig.getObject("schema").unwrapped
-      val foreignKeys = Option(relationConfig.hasPath("fkeys")).filter(_ == true).map { x =>
-        relationConfig.getObject("fkeys").keySet().map { childAttr =>
-          val Array(parentRelation, parentAttribute) = relationConfig.getString(s"fkeys.${childAttr}").split('.')
-          ForeignKey(relationName, childAttr, parentRelation, parentAttribute)
-        }.toList
-      }.getOrElse(Nil)
+      val foreignKeys = Try(relationConfig.getObject("fkeys").keySet().map { childAttr =>
+        val Array(parentRelation, parentAttribute) = relationConfig.getString(s"fkeys.${childAttr}").split('.')
+        ForeignKey(relationName, childAttr, parentRelation, parentAttribute)
+      }).getOrElse(Nil).toList
       // We add "id" as a key so that it can be used as a variable. 
       // TODO: Rename foreign keys to something more appropriate
       val allKeys = foreignKeys :+ ForeignKey(relationName, "id", relationName, "id")
 
       // Evidence
-      val evidence = Option(relationConfig.hasPath(s"evidence_field")).filter(_ == true).map { x =>
-        relationConfig.getString("evidence_field")
-      }
-
+      val evidence = Try(relationConfig.getString("evidence_field")).toOption
       Relation(relationName,schema.toMap.mapValues(_.toString), allKeys, evidence)
     }.toList
 
@@ -106,18 +102,18 @@ object Settings {
 
     // Extractor Settings
     // ==================================================
-
     val extractors = config.getObject("extractions").keySet().map { extractorName =>
-      val outputRelation = config.getString(s"extractions.$extractorName.output_relation")
-      val inputQuery = config.getString(s"extractions.$extractorName.input")
-      val udf = config.getString(s"extractions.$extractorName.udf")
-      val factor = Factor(
+      val extractorConfig = config.getConfig(s"extractions.$extractorName")
+      val outputRelation = extractorConfig.getString("output_relation")
+      val inputQuery = extractorConfig.getString(s"input")
+      val udf = extractorConfig.getString(s"udf")
+      val factor = Try(Factor(
         config.getString(s"extractions.$extractorName.factor.name"),
         FactorFunctionParser.parse(FactorFunctionParser.factorFunc, 
           config.getString(s"extractions.$extractorName.factor.function")).get,
         FactorWeightParser.parse(FactorWeightParser.factorWeight,
            config.getString(s"extractions.$extractorName.factor.weight")).get 
-      )
+      )).toOption
       Extractor(extractorName, outputRelation, inputQuery, udf, factor)
     }.toList
 

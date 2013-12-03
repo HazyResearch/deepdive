@@ -11,8 +11,10 @@ object VariableDataType extends Enumeration with Logging {
 
   def forAttributeType(attributeType: String) = attributeType match {
     case "Boolean" => `Boolean`
-    case ("Long" | "Integer") => Discrete
-    case ("Decimal" | "Float") => Continuous
+    case "Long" => Discrete
+    case "Integer" => Discrete
+    case "Decimal" => Continuous
+    case "Float" => Continuous
     case x =>
       log.warning(s"Unknown variable_field_type=$x")
       `Boolean`
