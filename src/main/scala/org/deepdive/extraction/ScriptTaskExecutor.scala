@@ -31,10 +31,9 @@ class ScriptTaskExecutor(task: ExtractionTask) extends Logging {
       // Query for the input data
       val inputData = SQL(task.inputQuery)().map { row =>
         row.asMap.toMap.mapValues { 
-          case Some(x) => x.toString
-          case None => ""
-          case x : String => x
-          case x => x.toString
+          case Some(x) => x.toString.toJson
+          case None | null => JsNull
+          case x => x.toString.toJson
         }.toJson
       }
 
