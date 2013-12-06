@@ -24,7 +24,6 @@ object Utils extends Logging {
   implicit def jsonRowsToAnormSeq[T <% Iterable[JsObject]]
     (relationRows: (Relation, T)): Seq[AnormSeq] = {
     val (relation, rows) = relationRows;
-    val keys = relation.schema.keys.filterNot(_ == "id")
     val domain = relation.schema.filterKeys(_ != "id")
 
     rows.map { row =>

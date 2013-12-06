@@ -25,8 +25,9 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
      * Example: "INSERT INTO entities(name, sentence_id) VALUES ({name}, {sentence_id});"
      */
     private def buildInsert(relation: Relation) = {
-      val relation_fields =  "(" + relation.schema.keys.filterNot(_ == "id").mkString(", ") + ")"
-      val relationPlaceholders =  "(" + relation.schema.keys.filterNot(_ == "id").map { field =>
+      val fields = relation.schema.keys.filterNot(_ == "id").toList.sorted
+      val relation_fields =  "(" + fields.mkString(", ") + ")"
+      val relationPlaceholders =  "(" + fields.map { field =>
         "{" + field + "}"
       }.mkString(", ") + ")"
       s"INSERT INTO ${relation.name} ${relation_fields} VALUES ${relationPlaceholders};"
