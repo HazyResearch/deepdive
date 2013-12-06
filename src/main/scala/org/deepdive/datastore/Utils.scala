@@ -9,26 +9,28 @@ object Utils extends Logging {
   type AnormSeq = Seq[(String, ParameterValue[_])]  
 
   /* 
-   * Converts a JSON array row to a object that can be handled by Anorm
+   * Converts a JSON objects row to a object that can be handled by Anorm
    * Example: ["John", 15, True] => AnormSeq(...)
    */
-  implicit def jsonRowToAnormSeq(relationRow: (Relation, JsArray)) : AnormSeq = {
+  implicit def jsonRowToAnormSeq(relationRow: (Relation, JsObject)) : AnormSeq = {
     val (relation, row) = relationRow;
     jsonRowsToAnormSeq((relation, List(row))).head
   }
 
   /* 
-   * Converts a multiple JSON array rows to a object that can be handled by Anorm
+   * Converts a multiple JSON objects rows to a object that can be handled by Anorm
    * Example: [["John", 15, True], ...] => Seq[AnormSeq(...), ...]
    */
-  implicit def jsonRowsToAnormSeq[T <% Iterable[JsArray]]
+  implicit def jsonRowsToAnormSeq[T <% Iterable[JsObject]]
     (relationRows: (Relation, T)): Seq[AnormSeq] = {
     val (relation, rows) = relationRows;
     val keys = relation.schema.keys.filterNot(_ == "id")
-    val domain = relation.schema.filterKeys(_ != "id").values.toList
+    val domain = relation.schema.filterKeys(_ != "id")
 
     rows.map { row =>
-      val anormSeq = row.elements.zip(domain).map {
+      val anormSeq = row.fields.map { case(field, value) =>
+        (field, (value, domain.get(field).orNull))
+      }.mapValues { 
         case (JsNull, _) => toParameterValue(null)
         case (x : JsString, "String") => toParameterValue(x.value)
         case (x : JsString, "Text") => toParameterValue(x.value)
@@ -38,7 +40,7 @@ object Utils extends Logging {
           log.error(s"Expected value of type ${domain}, but got JSON type ${value.getClass}")
           toParameterValue(null)
       }
-      keys.zip(anormSeq).toSeq
+      anormSeq.toSeq
     }.toSeq
   }
 }

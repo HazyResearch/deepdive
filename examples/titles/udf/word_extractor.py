@@ -5,10 +5,12 @@ import json
 
 # For each tuple..
 for line in fileinput.input():
-  title_id, title, has_entities = json.loads(line)
+  # From: titles(id, title, has_extractions)
+  # To: words(id, title_id, word)
+  row = json.loads(line)
   # We are emitting one variable and one factor for each word.
-  if title is not None:
+  if row["titles.title"] is not None:
     # print json.dumps(list(set(title.split(" "))))
-    for word in set(title.split(" ")):
+    for word in set(row["titles.title"].split(" ")):
       # (title_id, word) - The id is automatically assigned.
-      print json.dumps([int(title_id), word])
+      print json.dumps({"title_id": int(row["titles.id"]), "word": word})

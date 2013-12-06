@@ -33,7 +33,7 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
     }
 
 
-    def writeResult(result: List[JsArray], outputRelation: String) : Unit = {
+    def writeResult(result: List[JsObject], outputRelation: String) : Unit = {
       
       val relation = Context.settings.findRelation(outputRelation) match {
         case None => throw new RuntimeException(

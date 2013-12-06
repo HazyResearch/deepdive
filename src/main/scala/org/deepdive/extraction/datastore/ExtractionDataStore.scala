@@ -8,7 +8,7 @@ trait ExtractionDataStoreComponent {
   def dataStore : ExtractionDataStore
 
   trait ExtractionDataStore {
-    def writeResult(result: List[JsArray], outputRelation: String) : Unit
+    def writeResult(result: List[JsObject], outputRelation: String) : Unit
   }
   
 }

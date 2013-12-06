@@ -4,5 +4,5 @@ import fileinput
 import json
 
 for line in fileinput.input():
-  _id, docid, text = json.loads(line)
-  print json.dumps([docid])
+  row = json.loads(line)
+  print json.dumps({"document_id" : row["documents.docid"]})

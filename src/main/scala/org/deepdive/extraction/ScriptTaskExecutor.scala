@@ -10,8 +10,8 @@ import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
 import scala.sys.process._
 import spray.json._
-
-import DefaultJsonProtocol._
+import scala.collection.JavaConversions._
+import spray.json.DefaultJsonProtocol._
 
 class ScriptTaskExecutor(task: ExtractionTask) extends Logging {
 
@@ -30,9 +30,12 @@ class ScriptTaskExecutor(task: ExtractionTask) extends Logging {
 
       // Query for the input data
       val inputData = SQL(task.inputQuery)().map { row =>
-        row.data.map { x =>
-          Option(x).map(_.toString)
-        }.toList.toJson.compactPrint
+        row.asMap.toMap.mapValues { 
+          case Some(x) => x.toString
+          case None => ""
+          case x : String => x
+          case x => x.toString
+        }.toJson
       }
 
       log.debug(s"Streaming num=${inputData.size} tuples.")
@@ -56,7 +59,7 @@ class ScriptTaskExecutor(task: ExtractionTask) extends Logging {
     }
 
     log.debug(s"UDF process has exited. Generated num=${result.size} records.")
-    ExtractionResult(result.map(_.asInstanceOf[JsArray]).toList)
+    ExtractionResult(result.map(_.asInstanceOf[JsObject]).toList)
 
   }
 
