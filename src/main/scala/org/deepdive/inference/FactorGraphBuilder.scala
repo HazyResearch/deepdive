@@ -48,14 +48,14 @@ class FactorGraphBuilder extends Actor with Connected with ActorLogging {
     val selectFields = (Seq("id") ++ 
       relation.foreignKeys.map(_.childAttribute) ++ 
       factorDesc.map(_.weight.variables).getOrElse(Nil) ++
-      relation.evidenceField.map(List(_)).getOrElse(Nil)
+      relation.queryField.map(List(_)).getOrElse(Nil)
     ).mkString(", ")
     SQL(s"SELECT $selectFields FROM ${relation.name}")().foreach { row =>
       
       // Build and add a new variable
       val localId = row[Long]("id")
       val globalId = variableIdCounter.getAndIncrement()
-      val evidenceValue = relation.evidenceField.map { field =>
+      val evidenceValue = relation.queryField.map { field =>
         row.asMap.get(s"${relation.name}.${field}").orNull
       }.map {
         case None => null
@@ -64,8 +64,8 @@ class FactorGraphBuilder extends Actor with Connected with ActorLogging {
         case x => x
       }.filter(_ != null)
 
-      val evidenceFieldType = relation.evidenceField.map(x => relation.schema(x)).orNull
-      val newVariable = Variable(globalId, VariableDataType.forAttributeType(evidenceFieldType), 
+      val queryFieldType = relation.queryField.map(x => relation.schema(x)).orNull
+      val newVariable = Variable(globalId, VariableDataType.forAttributeType(queryFieldType), 
           0.0, evidenceValue.isDefined, !evidenceValue.isDefined)
       factorStore.addVariable(relation.name, localId, newVariable)
     

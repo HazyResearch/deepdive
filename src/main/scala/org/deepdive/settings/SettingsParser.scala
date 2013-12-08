@@ -42,7 +42,7 @@ object SettingsParser {
       // TODO: Rename foreign keys to something more appropriate
       val allKeys = foreignKeys :+ ForeignKey(relationName, "id", relationName, "id")
       // Evidence
-      val evidence = Try(relationConfig.getString("evidence_field")).toOption
+      val evidence = Try(relationConfig.getString("query_field")).toOption
       Relation(relationName,schema.toMap.mapValues(_.toString), allKeys, evidence)
     }.toList
   }

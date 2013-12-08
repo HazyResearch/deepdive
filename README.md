@@ -1,46 +1,58 @@
-## DeepDive Language
+## DeepDive Configuration
 
 ### Overview
 
-DeepDive uses [HOCON](https://github.com/typesafehub/config/blob/master/HOCON.md) as its configuration format. HOCON is a superset of JSON, which means that all valid JSON configuration files are valid HOCON configuration files. HOCON supports additional features such as path expression and variable substitution.
+DeepDive uses [HOCON](https://github.com/typesafehub/config/blob/master/HOCON.md) as its configuration format. HOCON is a superset of JSON, which means that all valid JSON configuration files are valid HOCON configuration files. HOCON supports additional features such as path expression and variable substitution, and easy nesting.
 
 ### Connection Configuration
 
 DeepDive requires a postgresql-compatible relational data store. 
 
 ```
-deepdive.global.connection.host : "localhost"
-deepdive.global.connection.port : 5432
-deepdive.global.connection.db : "deepdive"
-deepdive.global.connection.user : "ubuntu"
-deepdive.global.connection.password : "password"
+deepdive.global.connection {
+  host : "localhost"
+  port : 5432
+  db : "deepdive"
+  user : "ubuntu"
+  password : "password"
+}
 ```
 
 ### Schema Definition
 
-The DeepDive pipelines uses a relational data store. In this section you will define the schema for relations.
+Deepdive uses a relational schema which must be defined in the configuration file. 
 
 ```
-deepdive.relations.titles.schema: { id: Integer, title: Text, has_entities: Boolean }
-deepdive.relations.words.schema { id: Integer, title_id: Integer word: String }
-# Defining foreign keys
-deepdive.relations.words.fkeys { title_id: titles.id }
-# ... 
+deepdive.relations {
+  titles.schema: { id: Long, title: Text, has_entities: Boolean }
+  titles.query_field : "has_entities"
+  words.schema { id: Long, title_id: Integer word: String }
+  words.fkeys { title_id: titles.id }
+  # ... 
+}
 ```
 
-The name of the relation in the example above is links, as defined by the second level atttribute: `schema.[relation_name]`
+The above defines two relations, *titles* and *words*.  The supprted data types are `Long`, `String`, `Decimal`, `Float`, `Text`, `Timestamp`, `Boolean`, and `Binary`. These data types will be mapped to database-specific types.
 
-The supprted data types are `Integer`, `Long`, `String`, `Decimal`, `Float`, `Text`, `Timestamp`, `Boolean`, and `Binary`.
+#### Foreign Keys
 
-### 2. Data Ingestion
+Foreign keys are used to declare dependencies between relations. If a relation is populated by an extractor (see below), then all its parent relations must have been populated previously. See below for more information on extractor ordering.
 
-The DeepDive pipeline loads data into a the data store. In this section you will define the data sources your application needs.
+#### Query and Evidence Fields
 
-TODO: Right now DeepDive assumes all data is already loaded into the data store in the relations defined previously. Later on we will support loading data from files automatically.
+A relation can contain both evidence and query tuples. Tuples are used as evidence if their *query_field* is not null. In that case, the value of the query_field is used as the value for the variable for learning. If the *query_field*  is null, then DeepDive will user probabilitic inference to predict its value. In the above example, we are trying to predict if a title contains entities. Each variable that is used inside a factor function (see below) shoild be defined as an *query_field*. We have at most one query field per relation.
+
+### 2. Data Ingestion (not yet supported)
+
+Currently DeepDive assumes that all intiial data is already stored in the database, and that you have defined appropriate relations in the configuration. We are planning to support automatic data ingestion in the future.
 
 
+### 3. Feature Extraction
 
-### 3. Feature Extractors
+A feature extractor takes data defined by an arbitary SQL query as input, and produces new tuples as ouput which are written to the *output_relation*. The function for this transformation is defined by the *udf* setting, which can be an arbitary executable. 
+
+The following examples 
+
 
 Extractors can be an arbitary executable, we will use Python as an example. Let's start with an example. You would define an extractor for entities as follows:
 
@@ -57,47 +69,24 @@ deepdive.extractions: {
 }
 ```
 
-- **Output Relation:** Each extraction tuple will be written to the specified output relation. The output relation must be defined in the schema definition and exist in the database.
-- **Input:** A SQL statement that defines the input to the extrator. The extractor will receive one tuple at a time, smilar to a MapReduce scheme.
-- **UDF** The path of the extractor executable file.
-- **Factor Name:** The name of the factor. This is used for debugging purposes.
-- **Factor function:** Refer to the section of factor functions below.
-- **Factor weight:** Refer to the section of factor weights below.
+#### Writing Extractors
 
-#### Factor Functions
+DeepDive will stream tuples into an extract in JSON format, one per line. In the example above, each line may look as follows:
 
-Currently we support factor functions of the form "A and B -> Z". In other words, if A and B are true, Z, the output variable, is true. An empty imply function means that the assignment to the output variable does not depend on other variables. Examples of Factor functions:
-
-```
-# A and B -> Z
-entitiesExtractor.factor.function: Imply(entity1_id, entity2_id) 
-
-# -> Z
-entitiesExtractor.factor.function: Imply() 
+```JSON
+{ id: 5, title: "I am a title", has_entities: true }
 ```
 
-When using variables in a factor functions, the variable names must correspond to the column names of the extractor relation.
+The extractor should output tuples in JSON format to stdout in the same way, but without the `id` field, which is automatically assigned:
 
-#### Factor Weights
-
-The weight of a factor can either be assigned manually, or learned by the system. When the weight is learned it may depend on one or more variables. Example of weights are:
-
-```
-# Known weight
-entitiesExtractor.factor.weight: 1 
-
-# Learn weight, not depending on any variales
-entitiesExtractor.factor.weight: ?
-
-# Learn weight, depending on variables.
-# The variable names must correspond to column in the extractor relation.
-entitiesExtractor.factor.weight: ?(entity1_id)
+```JSON
+{ title_id: 5, word: "I" } 
+{ title_id: 5, word: "am" } 
+{ title_id: 5, word: "a" } 
+{ title_id: 5, word: "title" } 
 ```
 
-
-#### Writng Extractors in Python
-
-Extractors work in a MapReduce-like way, mapping each input tuple to one or more output tuples. The extractor executable will receive each input tuple as a JSON object in stdin, and output each output tuple in stdout. An extrator in Python that outputs uppercase words may look like this:
+Such an extractor could be written in Python as follows:
 
 ```python
 #! /usr/bin/env python
@@ -105,28 +94,57 @@ Extractors work in a MapReduce-like way, mapping each input tuple to one or more
 import fileinput
 import json
 
+# For each tuple..
 for line in fileinput.input():
-  data = json.loads(line)
-  # The input is a JSON array with each field defined in the schema definition
-  if data[3][0].isupper():
-    # The ouput is a JSON array with each field, 
-    # except for id, defined in the schema definition
-    print json.dumps([int(data[0]), data[3]])
+  # From: titles(id, title, has_extractions)
+  # To: words(id, title_id, word)
+  row = json.loads(line)
+  # We are emitting one variable and one factor for each word.
+  if row["titles.title"] is not None:
+    # print json.dumps(list(set(title.split(" "))))
+    for word in set(row["titles.title"].split(" ")):
+      # (title_id, word) - The id is automatically assigned.
+      print json.dumps({"title_id": int(row["titles.id"]), "word": word})
 ```
 
+#### Ordering of Extractor Execution
 
-### 4. Defining Evidence
+DeepDive uses the foreign keys defined in the relations section to impose an ordering on extractor execution. If relation A has a foreign key to relation B, then the extractor that populates B will be executed before the extractor the populates A. When there is no depedency path between extractors, then DeepDive may execute them in parallel to increase performance.
+
+### Rules (Factors)
+
+Domain-specific rules are defined as *factors*. Each factor has a name, a factor function, and a weight associated with it. The factor function encodes the semantics of the rule.
+
+#### Factor Functions
+
+Currently, DeepDive only supports factor functions of the form "A and B and ... -> Z". In other words, if A, B, ... are true then the output variable Z is true. An empty imply function ( -> Z) means that the assignment of the output variable does not depend on other variables.
+
+Examples of Factor functions:
 
 ```
-deepdive.relations.titles.evidence_field: "has_entities"
+someExtractor.factor.function: id = Imply(relation1.someQueryField, relation3.someQueryField) 
+someExtractor.factor.function: id = Imply() 
 ```
 
-DeepDive will treat rows that are not NULL as evidence variables, all other rows as query variables.
+All variables used in a factor function must correspond to *query_fields* defined in the relation configuration.
 
+
+#### Factor Weights
+
+Factor weights describe how much weight we put on a rule (factor function). DeepDive uses evidence to automatically learn the weights for factor functions, but weights can also assigned manually. A weight can be a function of existing variables. In that case the weight will be different based on the assignment of its variables. The following are examples of weight definitions:
+
+```
+# Known weight
+entitiesExtractor.factor.weight: 1 
+# Learn weight, not depending on any variales
+entitiesExtractor.factor.weight: ?
+# Learn weight, depending on variables.
+entitiesExtractor.factor.weight: ?(entity1_id)
+```
 
 ## Developer Guide & System Architecture 
 
-DeepDive is written in [Scala (2.10)](http://www.scala-lang.org/) and makes heavy use of the [Akka](http://akka.io/) framework. We use [Slick](http://slick.typesafe.com/) for RDBMS access. Unit- and integration tests are written using [Scalatest](http://www.scalatest.org/). DeepDive uses [sbt](http://www.scala-sbt.org/) for dependency management.
+DeepDive is written in [Scala (2.10)](http://www.scala-lang.org/) and makes heavy use of the [Akka](http://akka.io/) framework. We use [Anorm](http://www.playframework.com/documentation/2.2.1/ScalaAnorm) for RDBMS access. Unit- and integration tests are written using [Scalatest](http://www.scalatest.org/). DeepDive uses [sbt](http://www.scala-sbt.org/) for dependency management.
 
 Please follow the [Scala Style Guide](http://docs.scala-lang.org/style/) when contributing.
 
@@ -144,16 +162,7 @@ Note: The "~" means that sbt will watch files and automatically recompile when a
 sbt ~test
 ```
 
-### Actor system structure
-
-- ContextManager
-- ExtractionManager: Mabages the execution and ordering of extractors and starts ExtractorExecutors
-- ExtractorExecutor: Executes a extractors, one at a time
-- FactorGraphBuilder: Notified when the extractors are finished and build the factor graph in the database
-
 ### Factor Graph Database Schema
-
-TODO: What future functionality do we need to support?
 
 ```
 weights(id, initial_value, is_fixed)

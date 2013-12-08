@@ -37,10 +37,10 @@ class SampleApp extends FunSpec {
       }
 
       deepdive.relations.words.schema: { id: Integer, sentence_id: Integer, position: Integer, text: Text }
-      deepdive.relations.words.evidence_field : "id"
+      deepdive.relations.words.query_field : "id"
       deepdive.relations.entities.schema: { id: Integer, word_id: Integer, text: Text, is_evidence: Boolean }
       deepdive.relations.entities.fkeys : { word_id: "words.id" }
-      deepdive.relations.entities.evidence_field : "is_evidence"
+      deepdive.relations.entities.query_field : "is_evidence"
 
       deepdive.ingest : {}
 

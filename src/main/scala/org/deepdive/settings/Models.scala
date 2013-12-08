@@ -6,7 +6,7 @@ case class Connection(host: String, port: Int, db: String, user: String, passwor
 
 /* A relation */
 case class Relation(name: String, schema: Map[String, String], 
-  foreignKeys: List[ForeignKey], evidenceField: Option[String])
+  foreignKeys: List[ForeignKey], queryField: Option[String])
 case class ForeignKey(childRelation: String, childAttribute: String, parentRelation: String, 
   parentAttribute: String)
 
