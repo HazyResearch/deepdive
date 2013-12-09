@@ -32,15 +32,17 @@ deepdive.relations {
 }
 ```
 
-The above defines two relations, *titles* and *words*.  The supprted data types are `Long`, `String`, `Decimal`, `Float`, `Text`, `Timestamp`, `Boolean`, and `Binary`. These data types will be mapped to database-specific types.
+The above defines two relations, *titles* and *words*.  The supprted data types are `Long`, `String`, `Decimal`, `Float`, `Text`, `Timestamp`, `Boolean`, and `Binary`. These data types will be mapped to database-specific types by DeepDive.
 
 #### Foreign Keys
 
-Foreign keys are used to declare dependencies between relations. If a relation is populated by an extractor (see below), then all its parent relations must have been populated previously. See below for more information on extractor ordering.
+Foreign keys are used to declare dependencies between relations. If a relation is populated by an extractor (see below), then all its parent relations must have been populated previously. 
 
 #### Query and Evidence Fields
 
-A relation can contain both evidence and query tuples. Tuples are used as evidence if their *query_field* is not null. In that case, the value of the query_field is used as the value for the variable for learning. If the *query_field*  is null, then DeepDive will user probabilitic inference to predict its value. In the above example, we are trying to predict if a title contains entities. Each variable that is used inside a factor function (see below) shoild be defined as an *query_field*. We have at most one query field per relation.
+A relation can contain both evidence and query tuples. Tuples are used as evidence if their *query_field* is not null. In that case, the value of the query_field is used as the value for the variable in statistical learning. If the *query_field*  is null, then DeepDive will user probabilitic inference to predict its value. In the above example, we are trying to predict if a title contains entities. 
+
+Each variable that is used inside a factor function (see below) must be defined to be a *query_field*. We have at most one query field per relation.
 
 ### 2. Data Ingestion (not yet supported)
 
