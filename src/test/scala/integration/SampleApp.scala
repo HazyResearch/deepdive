@@ -42,8 +42,6 @@ class SampleApp extends FunSpec {
       deepdive.relations.entities.fkeys : { word_id: "words.id" }
       deepdive.relations.entities.query_field : "is_evidence"
 
-      deepdive.ingest : {}
-
       deepdive.extractions: {
         entitiesExtractor.output_relation: "entities"
         entitiesExtractor.input: "SELECT * FROM words"
