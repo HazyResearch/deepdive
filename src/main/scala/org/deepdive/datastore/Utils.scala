@@ -27,8 +27,9 @@ object Utils extends Logging {
     val domain = relation.schema.filterKeys(_ != "id")
 
     rows.map { row =>
-      val anormSeq = row.fields.map { case(field, value) =>
-        (field, (value, domain.get(field).orNull))
+      val anormSeq = domain.map { case(fieldName, fieldType) =>
+        val rowValue = row.fields.get(fieldName).getOrElse(JsNull)
+        (fieldName, (rowValue, fieldType))
       }.mapValues { 
         case (JsNull, _) => toParameterValue(null)
         case (x : JsString, "String") => toParameterValue(x.value)

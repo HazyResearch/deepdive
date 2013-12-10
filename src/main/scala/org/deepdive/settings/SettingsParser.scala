@@ -16,8 +16,9 @@ object SettingsParser {
     val relations = loadRelations(config)
     val etlTasks = loadEtlTasks(config)
     val extractors = loadExtractors(config)
+    val factors = loadFactors(config)
 
-    Settings(connection, relations, etlTasks, extractors)
+    Settings(connection, relations, etlTasks, extractors, factors)
   }
 
   private def loadConnection(config: Config) : Connection = {
@@ -60,15 +61,20 @@ object SettingsParser {
       val outputRelation = extractorConfig.getString("output_relation")
       val inputQuery = extractorConfig.getString(s"input")
       val udf = extractorConfig.getString(s"udf")
-      val factor = Try(FactorDesc(
-        config.getString(s"extractions.$extractorName.factor.name"),
-        FactorFunctionParser.parse(FactorFunctionParser.factorFunc, 
-          config.getString(s"extractions.$extractorName.factor.function")).get,
-        FactorWeightParser.parse(FactorWeightParser.factorWeight,
-           config.getString(s"extractions.$extractorName.factor.weight")).get 
-      )).toOption
-      Extractor(extractorName, outputRelation, inputQuery, udf, factor)
+      Extractor(extractorName, outputRelation, inputQuery, udf)
     }.toList
+  }
+
+  private def loadFactors(config: Config): List[FactorDesc] = {
+    Try(config.getObject("factors").keySet().map { factorName =>
+      val factorConfig = config.getConfig(s"factors.$factorName")
+      val factorRelation = factorConfig.getString("relation")
+      val factorFunction = FactorFunctionParser.parse(
+        FactorFunctionParser.factorFunc, factorConfig.getString("function"))
+      val factorWeight = FactorWeightParser.parse(
+        FactorWeightParser.factorWeight, factorConfig.getString("weight"))
+      FactorDesc(factorRelation, factorName, factorFunction.get, factorWeight.get)
+    }.toList).getOrElse(Nil)
   }
 
 }

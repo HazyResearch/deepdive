@@ -22,7 +22,7 @@ object VariableDataType extends Enumeration with Logging {
 }
 import VariableDataType._
 
-case class Variable(id: Integer, dataType: VariableDataType, initialValue: Double, 
+case class Variable(id: Long, dataType: VariableDataType, initialValue: Double, 
   isEvidence: Boolean, isQuery: Boolean)
 
 object Variable {

@@ -15,9 +15,10 @@ class PostgresFactorStore(implicit val connection: Connection) {
   val log = Logging.getLogger(Context.system, this)
 
   // val factorFunctions = Map[String, FactorFunction]()
-  val variables = Map[(String, Long), Variable]()
+  val variables = Map[(String, String), Variable]()
   val factors = ArrayBuffer[Factor]()
   val weights = Map[String, Weight]()
+  val variableIdMap = Map[(String, String), Long]()
 
   // Prepares the data store to store the factor graph
   def init() {
@@ -54,13 +55,13 @@ class PostgresFactorStore(implicit val connection: Connection) {
   }
 
   // Add a new Variable to the datastore
-  def addVariable(relationName: String, localId: Long, variable: Variable) {
-    variables += Tuple2((relationName, localId), variable)
+  def addVariable(relationName: String, localKey: String, variable: Variable) {
+    variables += Tuple2((relationName, localKey), variable)
   }
 
   // Get a specific variable from the data store
-  def getVariable(relationName: String, localId: Long) : Option[Variable] = {
-    variables.get((relationName, localId))
+  def getVariableId(relationName: String, localKey: String) : Option[Long] = {
+    variableIdMap.get((relationName, localKey))
   }
 
   // Get a specific weight form the data store
@@ -82,12 +83,16 @@ class PostgresFactorStore(implicit val connection: Connection) {
     writeFactors(factors)
 
     // Insert Variables
-    val relationVariables = variables.filterKeys(_._1 == relationName).values
-    val numEvidenceVariables = relationVariables.count(_.isEvidence)
-    val numQueryVariables = relationVariables.count(_.isQuery)
+    val relationVariables = variables.filterKeys(_._1 == relationName)
+    val numEvidenceVariables = relationVariables.values.count(_.isEvidence)
+    val numQueryVariables = relationVariables.values.count(_.isQuery)
     log.debug(s"Storing num=${relationVariables.size} num_evidence=${numEvidenceVariables} " +
       s"num_query=${numQueryVariables} relation=variables")
-    writeVariables(relationVariables)
+    writeVariables(relationVariables.values)
+    // Add to the variable Id map, then clear
+    variableIdMap ++= relationVariables.mapValues(_.id)
+    variables --= relationVariables.keys
+
 
     // Insert Factor Variables
     val factorVariables = factors.flatMap(_.variables)

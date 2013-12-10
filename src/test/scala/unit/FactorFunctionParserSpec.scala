@@ -9,17 +9,24 @@ class FactorFunctionParserSpec extends FunSpec {
   describe("The Factor function parser") {
 
     it("should parse empty imply expressions") {
-      val expr = "id = Imply()"
+      val expr = "is_true = Imply()"
       val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
       assert(result.successful)
-      assert(result.get == ImplyFactorFunction("id", List()))
+      assert(result.get == ImplyFactorFunction(
+        FactorFunctionVariable(None, "is_true"), List())
+      )
     }
 
     it("should parse imply expressions with multiple arguments") {
-      val expr = "id = Imply(a,b)"
+      val expr = "is_true = Imply(relation2_id->a, relation3_id->b)"
       val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
       assert(result.successful)
-      assert(result.get == ImplyFactorFunction("id", List("a","b")))
+      assert(result.get == ImplyFactorFunction(
+        FactorFunctionVariable(None, "is_true"), 
+        List(
+          FactorFunctionVariable(Option("relation2_id"), "a"), 
+          FactorFunctionVariable(Option("relation3_id"), "b"))
+      ))
     }
 
     it("should not parse malformed Imply expressions") {

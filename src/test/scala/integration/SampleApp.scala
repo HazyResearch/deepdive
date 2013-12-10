@@ -14,15 +14,15 @@ class SampleApp extends FunSpec {
     PostgresDataStore.init("jdbc:postgresql://localhost/deepdive_test", "dennybritz", "")
     PostgresDataStore.withConnection { implicit conn =>
        SQL("drop schema if exists public cascade; create schema public;").execute()
-       SQL("create table words (id bigserial primary key, sentence_id integer, position integer, text text);").execute()
-       SQL("create table entities (id bigserial primary key, word_id bigint references words(id), text text, is_evidence Boolean);").execute()
+       SQL("create table words (id bigserial primary key, sentence_id integer, position integer, text text, is_word boolean);").execute()
+       SQL("create table entities (id bigserial primary key, word_id bigint references words(id), text text, is_true boolean);").execute()
        SQL(
         """
-          insert into words(sentence_id, position, text) VALUES
-          (1, 0, 'Sam'), (1, 1, 'is'), (1, 2, 'very'), (1, 3, 'happy'),
-          (2, 0, 'Alice'), (2, 1, 'loves'), (2, 2, 'Sam'), (2, 3, 'today')
+          insert into words(sentence_id, position, text, is_word) VALUES
+          (1, 0, 'Sam', true), (1, 1, 'is', true), (1, 2, 'very', true), (1, 3, 'happy', true),
+          (2, 0, 'Alice', true), (2, 1, 'loves', true), (2, 2, 'Sam', true), (2, 3, 'today', true)
         """).execute()
-       SQL("insert into entities(word_id, text, is_evidence) VALUES (1, 'Lara', True)").execute()
+       SQL("insert into entities(word_id, text, is_true) VALUES (1, 'Lara', True)").execute()
     }
   }
 
@@ -36,19 +36,22 @@ class SampleApp extends FunSpec {
         password: ""
       }
 
-      deepdive.relations.words.schema: { id: Integer, sentence_id: Integer, position: Integer, text: Text }
-      deepdive.relations.words.query_field : "id"
-      deepdive.relations.entities.schema: { id: Integer, word_id: Integer, text: Text, is_evidence: Boolean }
+      deepdive.relations.words.schema: { id: Integer, sentence_id: Integer, position: Integer, text: Text, is_word: Boolean }
+      deepdive.relations.words.query_field : "is_word"
+      deepdive.relations.entities.schema: { id: Integer, word_id: Integer, text: Text, is_true: Boolean}
       deepdive.relations.entities.fkeys : { word_id: "words.id" }
-      deepdive.relations.entities.query_field : "is_evidence"
+      deepdive.relations.entities.query_field : "is_true"
 
       deepdive.extractions: {
         entitiesExtractor.output_relation: "entities"
         entitiesExtractor.input: "SELECT * FROM words"
         entitiesExtractor.udf: "${getClass.getResource("/sample/sample_entities.py").getFile}"
-        entitiesExtractor.factor.name: "Entities"
-        entitiesExtractor.factor.function: "id = Imply(word_id)"
-        entitiesExtractor.factor.weight: "?(text)"
+      }
+
+      deepdive.factors {
+        entities.relation = "entities"
+        entities.function: "is_true = Imply(word_id->is_word)"
+        entities.weight: "?(text)"
       }
     """
   }
@@ -71,9 +74,12 @@ class SampleApp extends FunSpec {
       val numFactorVariables = SQL("select count(*) as c from factor_variables;")().head[Long]("c")
       val numWeights = SQL("select count(*) as c from weights;")().head[Long]("c")
 
+      // One factor for each variable in entities
       assert(numFactors == 4)
       assert(numVariables == 12)
+      // Entitiy factors have two variables
       assert(numFactorVariables == 8)
+      // 3 different weights for entities
       assert(numWeights == 3)
 
       // Make sure the variables types are correct

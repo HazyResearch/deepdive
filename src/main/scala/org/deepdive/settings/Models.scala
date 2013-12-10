@@ -12,12 +12,11 @@ case class ForeignKey(childRelation: String, childAttribute: String, parentRelat
 
 
 /* Extractors */
-case class Extractor(name:String, outputRelation: String, inputQuery: String, udf: String, 
-  factor: Option[FactorDesc])
+case class Extractor(name:String, outputRelation: String, inputQuery: String, udf: String)
 
 
 /* Factor Description */
-case class FactorDesc(name: String, func: FactorFunction, weight: FactorWeight)
+case class FactorDesc(name: String, relation: String, func: FactorFunction, weight: FactorWeight)
 
 
 /* Factor Weights */
@@ -32,10 +31,21 @@ case class UnknownFactorWeight(variables: List[String]) extends FactorWeight
 
 /* Factor Functions */
 sealed trait FactorFunction {
-  def variables : Seq[String]
+  def variables : Seq[FactorFunctionVariable]
+  def newVariables : Seq[FactorFunctionVariable]
 }
-case class ImplyFactorFunction(head: String, body: Seq[String]) extends FactorFunction {
+case class ImplyFactorFunction(head: FactorFunctionVariable, 
+  body: Seq[FactorFunctionVariable]) extends FactorFunction {
   def variables = Seq(head) ++ body 
+  def newVariables = Seq(head)
+}
+
+case class FactorFunctionVariable(foreignKey: Option[String], field: String)
+
+object FactorFunctionVariable {
+  implicit def stringToFactorFunctionVariable(str: String) : FactorFunctionVariable = {
+    FactorFunctionParser.parse(FactorFunctionParser.factorVariable, str).get
+  }
 }
 
 

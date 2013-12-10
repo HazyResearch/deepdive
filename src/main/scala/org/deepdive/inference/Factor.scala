@@ -4,7 +4,7 @@ import anorm._
 import org.deepdive.datastore.Utils.AnormSeq
 
 case class Factor(id: Integer, factorFunction: String, weight: Weight, variables: List[FactorVariable])
-case class FactorVariable(factorId: Long, position: Integer, positive: Boolean, value: Variable)
+case class FactorVariable(factorId: Long, position: Integer, positive: Boolean, variableId: Long)
 
 object Factor {
   implicit def toAnormSeq(value: Factor) : AnormSeq = {
@@ -15,7 +15,7 @@ object Factor {
 
 object FactorVariable {
   implicit def toAnormSeq(value: FactorVariable) : AnormSeq = {
-    Seq(("factor_id", toParameterValue(value.factorId)), ("variable_id", toParameterValue(value.value.id)),
+    Seq(("factor_id", toParameterValue(value.factorId)), ("variable_id", toParameterValue(value.variableId)),
       ("position", toParameterValue(value.position)), ("is_positive", toParameterValue(value.positive)))
   }
 }

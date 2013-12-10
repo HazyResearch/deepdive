@@ -16,6 +16,7 @@ trait SettingsImpl {
   def relations : List[Relation]
   def etlTasks : List[EtlTask]
   def extractors : List[Extractor]
+  def factors : List[FactorDesc]
 
   def findRelation(name: String) : Option[Relation] = relations.find(_.name == name)
   
@@ -36,16 +37,17 @@ trait SettingsImpl {
     deps.filter(x => extractorRelations.contains(x))
   }
 
-  def relationsWithVariables : Set[Relation] = {
-
-    val a = extractors.filter(_.factor.isDefined).map(_.outputRelation)
-    val b = extractors.filter(_.factor.isDefined).map(_.outputRelation).flatMap(findRelationDependencies)
-    Console.println(a.toString)
-    Console.println(b.toString)
-    extractors.filter(_.factor.isDefined).map(_.outputRelation).flatMap(findRelationDependencies).flatMap(findRelation).toSet
-
-    // val relationsWithFactors = extractors.filter(_.factor.isDefined).map(_.outputRelation).flatMap(findRelation)
-    // relationsWithFactors.map(_.name).flatMap(findRelationDependencies).toSet.flatMap(findRelation)
+  def findVariableFieldsForRelation(name: String) : Set[String] = {
+    factors.flatMap { factorDesc =>
+      val relation = findRelation(factorDesc.relation).get
+      factorDesc.func.variables.map {
+        case(FactorFunctionVariable(Some(foreignKey), field)) =>
+          val parentRelation = relation.foreignKeys.find(_.childAttribute == foreignKey).map(_.parentRelation).get
+          (parentRelation, field)
+        case(FactorFunctionVariable(None, field)) => 
+          (relation.name, field)
+      }
+    }.filter(_._1 == name).map(_._2).toSet
   }
 
   def databaseUrl : String = {
@@ -55,6 +57,7 @@ trait SettingsImpl {
 }
 
 case class Settings(connection: Connection, relations: List[Relation], 
-  etlTasks: List[EtlTask], extractors: List[Extractor]) extends SettingsImpl
+  etlTasks: List[EtlTask], extractors: List[Extractor], factors: List[FactorDesc]) 
+  extends SettingsImpl
 
 
