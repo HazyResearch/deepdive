@@ -85,7 +85,6 @@ class FactorGraphBuilder extends Actor with Connected with ActorLogging {
            0.0, varValue.isDefined, !varValue.isDefined)
         // Store the variable using a unique key
         val variableKey = s"${localId}_${field}"
-        log.debug(s"Added variable=$variableKey for relation=${relation.name}")
         factorStore.addVariable(relation.name, variableKey, varObj)
       }
     }
@@ -122,7 +121,6 @@ class FactorGraphBuilder extends Actor with Connected with ActorLogging {
       case None =>
         val newWeight = Weight(weightIdCounter.getAndIncrement(), 0.0, 
           factorDesc.weight.isInstanceOf[KnownFactorWeight])
-        log.debug(s"Added weight=$weightIdentifier")
         factorStore.addWeight(weightIdentifier, newWeight)
         newWeight
     }
@@ -141,7 +139,6 @@ class FactorGraphBuilder extends Actor with Connected with ActorLogging {
     }.flatten
     val newFactor = Factor(newFactorId, factorDesc.func.getClass.getSimpleName, weight, 
       factorVariables.toList)
-    log.debug(s"Added factor=$newFactor")
     factorStore.addFactor(newFactor)
   }
 

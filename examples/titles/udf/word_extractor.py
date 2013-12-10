@@ -13,4 +13,4 @@ for line in fileinput.input():
     # print json.dumps(list(set(title.split(" "))))
     for word in set(row["titles.title"].split(" ")):
       # (title_id, word) - The id is automatically assigned.
-      print json.dumps({"title_id": int(row["titles.id"]), "word": word})
+      print json.dumps({"title_id": int(row["titles.id"]), "word": word, "is_word": True})
