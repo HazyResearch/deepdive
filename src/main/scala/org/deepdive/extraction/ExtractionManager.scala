@@ -28,7 +28,7 @@ class ExtractionManager extends Actor with ActorLogging {
   val RETRY_TIMEOUT = 5.seconds
 
   // Keeps track of the tasks
-  val taskQueue = PriorityQueue[ExtractionTask]()(ExtractionTaskOrdering)
+  val taskQueue = PriorityQueue[ExtractionTask]()(ExtractionTaskOrdering.reverse)
   val runningTasks = Map[ExtractionTask, ActorRef]()
   val completedTasks = ArrayBuffer[ExtractionTask]()
   // Who wants to be notified when a task is done?
@@ -75,13 +75,16 @@ class ExtractionManager extends Actor with ActorLogging {
     val completedRelations = completedTasks.map(_.outputRelation).toSet
 
     // A bit ugly, but unfortunately Scala's Queue doesn't provide functional abstractions
-    val eligibleTasks = (1 to capacity).map { i =>
+    val (eligibleTasks, notEligibleTasks) = (1 to capacity).map { i =>
       Try(taskQueue.dequeue)
-    }.flatMap(_.toOption).filter { task =>
+    }.flatMap(_.toOption).partition { task =>
       val dependencies = Context.settings.findExtractorDependencies(task.name)
       dependencies.subsetOf(completedRelations + task.outputRelation)
     }
-    log.debug(s"${eligibleTasks.size} tasks are eligible")
+
+    log.debug(s"${eligibleTasks.size} tasks are eligible. ${notEligibleTasks.size} not eligible.")
+    taskQueue ++= notEligibleTasks
+    
     eligibleTasks.foreach { task =>
       log.debug(s"executing $task")
       // TODO: Send to worker
