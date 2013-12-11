@@ -14,17 +14,16 @@ class SampleApp extends FunSpec {
     PostgresDataStore.init("jdbc:postgresql://localhost/deepdive_test", "dennybritz", "")
     PostgresDataStore.withConnection { implicit conn =>
        SQL("drop schema if exists public cascade; create schema public;").execute()
-       SQL("create table words (id bigserial primary key, sentence_id integer, position integer, text text, is_word boolean);").execute()
-       SQL("create table entities (id bigserial primary key, word_id bigint references words(id), text text, is_true boolean);").execute()
+       SQL("create table titles(id bigserial primary key, title text, has_extractions boolean);").execute()
+       SQL("""create table word_presences(id bigserial primary key, 
+        title_id bigint references titles(id), word text, is_present boolean);""").execute()
        SQL(
         """
-          insert into words(sentence_id, position, text, is_word) VALUES
-          (1, 0, 'Sam', true), (1, 1, 'is', true), (1, 2, 'very', true), (1, 3, 'happy', true),
-          (2, 0, 'Alice', true), (2, 1, 'loves', true), (2, 2, 'Sam', true), (2, 3, 'today', true)
+          insert into titles(title, has_extractions) VALUES
+          ('I am title 1', NULL), ('I am title 2', NULL), ('I am another Title', true)
         """).execute()
-       SQL("insert into entities(word_id, text, is_true) VALUES (1, 'Lara', True)").execute()
     }
-  }
+  }1
 
   def getConfig = {
     s"""
