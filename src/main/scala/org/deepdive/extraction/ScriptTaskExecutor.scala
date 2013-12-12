@@ -13,6 +13,27 @@ import spray.json._
 import scala.collection.JavaConversions._
 import spray.json.DefaultJsonProtocol._
 
+object ScriptTaskExecutor extends Logging {
+
+  def valToJson(x: Any) : JsValue = x match {
+    case Some(x) => valToJson(x)
+    case None | null => JsNull
+    case x : String => x.toJson
+    case x : Boolean => x.toJson
+    case x : Int => x.toJson
+    case x : Long => x.toJson
+    case x : Double => x.toJson
+    case x : org.postgresql.jdbc4.Jdbc4Array => x.getArray().asInstanceOf[Array[_]].map(valToJson).toJson
+    case x =>
+      log.error("Could not convert type ${x.getClass.name} to JSON")
+      JsNull
+  }
+
+  def sqlRowToJson(row: SqlRow) : Map[String, JsValue] = {
+    row.asMap.toMap.mapValues(valToJson)
+  }
+}
+
 class ScriptTaskExecutor(task: ExtractionTask) extends Logging {
 
   def run() : ExtractionResult = {
@@ -30,11 +51,7 @@ class ScriptTaskExecutor(task: ExtractionTask) extends Logging {
 
       // Query for the input data
       val inputData = SQL(task.inputQuery)().map { row =>
-        row.asMap.toMap.mapValues { 
-          case Some(x) => x.toString.toJson
-          case None | null => JsNull
-          case x => x.toString.toJson
-        }.toJson
+        JsObject(ScriptTaskExecutor.sqlRowToJson(row))
       }
 
       log.debug(s"Streaming num=${inputData.size} tuples.")
