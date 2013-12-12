@@ -19,7 +19,7 @@ class SettingsSpec extends FunSpec {
     }
 
     relations.documents.schema: { id: Integer, text: Text, meta: Text }
-    relations.entities.schema: { id: Integer, document_id: Integer, name: String, meta: Text }
+    relations.entities.schema: { id: Integer, document_id: Integer, name: String, meta: Text, is_present: Boolean}
     relations.entities.fkeys: { document_id: documents.id }
 
     extractions: {
@@ -29,8 +29,8 @@ class SettingsSpec extends FunSpec {
     }
 
     factors: {
-      entities.relation = "entities"
-      entities.function: "id = Imply()"
+      entities.input_query = "SELECT documents.*, entities.* FROM documents INNER JOIN entities ON entities.document_id = documents.id"
+      entities.function: "entities.is_present = Imply()"
       entities.weight: "?"
     }
   }
@@ -52,7 +52,7 @@ class SettingsSpec extends FunSpec {
           None),
         Relation("entities", 
           Map[String,String]("id" -> "Integer", "document_id" -> "Integer", 
-            "name" -> "String", "meta" -> "Text"), 
+            "name" -> "String", "meta" -> "Text", "is_present" -> "Boolean"), 
           List[ForeignKey](
             ForeignKey("entities","document_id","documents","id"),
             ForeignKey("entities","id","entities","id")),
@@ -64,8 +64,9 @@ class SettingsSpec extends FunSpec {
       ))
 
       assert(settings.factors == List(
-        FactorDesc("entities", "entities",
-          ImplyFactorFunction(FactorFunctionVariable(None, "id"), Nil), 
+        FactorDesc("entities", 
+          """SELECT documents.*, entities.* FROM documents INNER JOIN entities ON entities.document_id = documents.id""",
+          ImplyFactorFunction(FactorFunctionVariable("entities", "is_present"), Nil), 
           UnknownFactorWeight(Nil))
       ))
 

@@ -22,8 +22,7 @@ Deepdive uses a relational schema which must be defined in the configuration fil
 
     deepdive.relations {
       titles.schema: { id: Long, title: Text, has_entities: Boolean }
-      titles.query_field : "has_entities"
-      words.schema { id: Long, title_id: Integer word: String }
+      words.schema { id: Long, title_id: Integer word: String, is_present: True }
       words.fkeys { title_id: titles.id }
       # ... 
     }
@@ -34,11 +33,6 @@ The above defines two relations, *titles* and *words*.  The supprted data types 
 
 Foreign keys are used to declare dependencies between relations. If a relation is populated by an extractor (see below), then all its parent relations must have been populated previously. 
 
-#### Query and Evidence Fields
-
-A relation can contain both evidence and query tuples. Tuples are used as evidence if their *query_field* is not null. In that case, the value of the query_field is used as the value for the variable in statistical learning. If the *query_field*  is null, then DeepDive will user probabilitic inference to predict its value. In the above example, we are trying to predict if a title contains entities. 
-
-Each variable that is used inside a factor function (see below) must be defined to be a *query_field*. We have at most one query field per relation.
 
 ### 2. Data Ingestion (not yet supported)
 
@@ -49,19 +43,12 @@ Currently DeepDive assumes that all intiial data is already stored in the databa
 
 A feature extractor takes data defined by an arbitary SQL query as input, and produces new tuples as ouput which are written to the *output_relation*. The function for this transformation is defined by the *udf* setting, which can be an arbitary executable. 
 
-The following examples 
-
-
-Extractors can be an arbitary executable, we will use Python as an example. Let's start with an example. You would define an extractor for entities as follows:
+Extractors can be an arbitary executable, but we will use Python as an example. Let's start with an example. You would define an extractor for words as follows:
 
     deepdive.extractions: {
-      entitiesExtractor.output_relation: "entities"
-      entitiesExtractor.input: "SELECT * FROM words"
-      entitiesExtractor.udf: "sample/sample_entities.py"
-      entitiesExtractor.factor.name: "Entities"
-      entitiesExtractor.factor.function: "Imply()"
-      entitiesExtractor.factor.weight: 1
-
+      wordsExtractor.output_relation: "words"
+      wordsExtractor.input: "SELECT * FROM titles"
+      wordsExtractor.udf: "words.py"
       # More Extractors...
     }
 
@@ -74,10 +61,10 @@ DeepDive will stream tuples into an extract in JSON format, one per line. In the
 The extractor should output tuples in JSON format to stdout in the same way, but without the `id` field, which is automatically assigned:
 
 
-    { title_id: 5, word: "I" } 
-    { title_id: 5, word: "am" } 
-    { title_id: 5, word: "a" } 
-    { title_id: 5, word: "title" } 
+    { title_id: 5, word: "I", is_present: true } 
+    { title_id: 5, word: "am", is_present: true } 
+    { title_id: 5, word: "a", is_present: true } 
+    { title_id: 5, word: "title", is_present: true } 
 
 
 Such an extractor could be written in Python as follows:
@@ -97,41 +84,57 @@ Such an extractor could be written in Python as follows:
         # print json.dumps(list(set(title.split(" "))))
         for word in set(row["titles.title"].split(" ")):
           # (title_id, word) - The id is automatically assigned.
-          print json.dumps({"title_id": int(row["titles.id"]), "word": word})
+          print json.dumps({"title_id": int(row["titles.id"]), "word": word, "is_present": True})
+
 
 #### Ordering of Extractor Execution
 
 DeepDive uses the foreign keys defined in the relations section to impose an ordering on extractor execution. If relation A has a foreign key to relation B, then the extractor that populates B will be executed before the extractor the populates A. When there is no depedency path between extractors, then DeepDive may execute them in parallel to increase performance.
 
-### Rules (Factors)
+## Defining Rules (Factors)
 
-Domain-specific rules are defined as *factors*. Each factor has a name, a factor function, and a weight associated with it. The factor function encodes the semantics of the rule.
+Domain-specific rules are defined as *factors*. Each factor has a name, an input query, a factor function, and a weight associated with it. The factor function encodes the semantics of the rule.
 
-#### Factor Functions
+### Factor Input Query
+
+The input query of a factor combines all exracted features the factor is using. It usually is a join query using the feature relations produced by the extractors.
+
+### Factor Functions
 
 Currently, DeepDive only supports factor functions of the form "A and B and ... -> Z". In other words, if A, B, ... are true then the output variable Z is true. An empty imply function ( -> Z) means that the assignment of the output variable does not depend on other variables.
 
 Examples of Factor functions:
 
+    someExtractor.factor.function: titles.has_extractions = Imply(words.is_present) 
+    someExtractor.factor.function: words.is_present = Imply()
 
-    someExtractor.factor.function: id = Imply(relation1.someQueryField, relation3.someQueryField) 
-    someExtractor.factor.function: id = Imply()
+All variables used in a factor function must be fields made available by the input query. 
 
-All variables used in a factor function must correspond to *query_fields* defined in the relation configuration.
-
-
-#### Factor Weights
+### Factor Weights
 
 Factor weights describe how much weight we put on a rule (factor function). DeepDive uses evidence to automatically learn the weights for factor functions, but weights can also assigned manually. A weight can be a function of existing variables. In that case the weight will be different based on the assignment of its variables. The following are examples of weight definitions:
 
-
     # Known weight
-    entitiesExtractor.factor.weight: 1 
+    wordsExtractor.factor.weight: 1 
     # Learn weight, not depending on any variales
-    entitiesExtractor.factor.weight: ?
+    wordsExtractor.factor.weight: ?
     # Learn weight, depending on variables.
-    entitiesExtractor.factor.weight: ?(entity1_id)
+    wordsExtractor.factor.weight: ?(words.text)
 
+
+### Example
+
+A complete factor definition may look as follows:
+
+    deepdive.factors: {
+      words.input_query:  "SELECT words.*, titles.* FROM words INNER JOIN titles ON words.title_id = titles.id"
+      words.function: "titles.has_extractions = Imply(words.is_present)"
+      words.weight: "?(words.word)"
+    }
+
+## Full Example
+
+A full example for a logistic regression title classifier can be found in `examples/titles`.
 
 ## Developer Guide & System Architecture 
 

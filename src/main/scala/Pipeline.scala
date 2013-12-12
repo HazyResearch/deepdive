@@ -5,7 +5,7 @@ import akka.util.Timeout
 import com.typesafe.config._
 import java.io.File
 import org.deepdive.context._
-import org.deepdive.settings.{Settings, FactorOrdering}
+import org.deepdive.settings.{Settings}
 import org.deepdive.datastore.{PostgresDataStore}
 import org.deepdive.extraction.{ExtractionManager, ExtractionTask}
 import org.deepdive.inference.{InferenceManager, FactorGraphBuilder, FileGraphWriter}
@@ -54,34 +54,13 @@ object Pipeline extends Logging {
     // Build the factor graph
     log.info("Building factor graph")
 
-    log.info("Adding variables to the factor graph")
-    
-    // Find relations that need variables
-    val relationsAndVariables = Context.settings.relations.map { relation =>
-      (relation, Context.settings.findVariableFieldsForRelation(relation.name))
-    }.filter { case(relation, vars) =>
-      vars.size > 0
-    }
-
-    // Add variables
-    val variablesResult = for {
-      relationAndVariables <- relationsAndVariables
-      result = ask(inferenceManager, FactorGraphBuilder.AddVariables(relationAndVariables._1, relationAndVariables._2))
-    } yield result
-
-    Await.result(Future.sequence(variablesResult), 30 minutes)
-    log.info("Successfully added variables to the factor graph.")
-
-    // Add Factors
-     log.info("Adding factors to the factor graph.")
     val graphResults = for {
-      factor <- Context.settings.factors.sorted(FactorOrdering)
-      graphResult <- Some(ask(inferenceManager, 
-        FactorGraphBuilder.AddFactors(factor)))
+      factor <- Context.settings.factors
+      graphResult <- Some(ask(inferenceManager, FactorGraphBuilder.AddFactorsAndVariables(factor)))
     } yield graphResult
-
+    
     Await.result(Future.sequence(graphResults), 30 minutes)
-     log.info("Successfully added factors to the factor graph.")
+    log.info("Successfully built factor graph.")
 
     // Write result
     PostgresDataStore.withConnection { implicit conn =>

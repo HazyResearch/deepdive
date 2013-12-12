@@ -18,10 +18,10 @@ class FactorGraphBuilderSpec extends FunSpec {
     PostgresDataStore.init("jdbc:postgresql://localhost/deepdive_test", "dennybritz", "")
     PostgresDataStore.withConnection { implicit conn =>
      SQL("drop schema if exists public cascade; create schema public;").execute()
-     SQL("create table entities (id bigserial primary key, word_id integer, is_true boolean)").execute()
+     SQL("create table entities (id bigserial primary key, word_id integer, is_present boolean)").execute()
      SQL("""create table parents(id bigserial primary key, entity1_id integer, 
         entity2_id integer, meta text, is_true boolean)""").execute()
-     SQL("""insert into entities(word_id, is_true) VALUES (1, true), (2, true), (3, true), 
+     SQL("""insert into entities(word_id, is_present) VALUES (1, true), (2, true), (3, true), 
         (4, true), (5, true), (6, true);""").execute()
      SQL("""insert into parents(entity1_id, entity2_id, meta, is_true) 
         VALUES (1, 2, 'A', NULL), (2, 3, 'B', NULL), (1, 5, 'C', NULL);""").execute()
@@ -38,15 +38,14 @@ class FactorGraphBuilderSpec extends FunSpec {
 
       // Add Factors and Variables for the entities relation
       val entityRelation = Relation("entities", Map("id" -> "Long", "word_id" -> "Integer", 
-        "is_true" -> "Boolean"), Nil, None)
-      val entityFactorDesc = FactorDesc("entitity", "entities", 
-        ImplyFactorFunction("is_true", Nil), KnownFactorWeight(1.0))
-      actor.addVariables(entityRelation, Set("is_true"))
-      actor.addFactors(entityFactorDesc, entityRelation)
+        "is_present" -> "Boolean"), Nil, None)
+      val entityFactorDesc = FactorDesc("entititiesFactor", "SELECT * FROM entities", 
+        ImplyFactorFunction("entities.is_present", Nil), KnownFactorWeight(1.0))
+      actor.addFactorsAndVariables(entityFactorDesc)
       // Should have one variable and fact,or for each tuple
       assert(actor.factorStore.variables.size == 6)
       assert(actor.factorStore.factors.size == 6)
-      actor.writeToDatabase("entities")
+      actor.factorStore.flush()
       assert(actor.factorStore.variables.size == 0)
       assert(actor.factorStore.factors.size == 0)
       assert(actor.factorStore.variableIdMap.size == 6)
@@ -54,19 +53,25 @@ class FactorGraphBuilderSpec extends FunSpec {
       // Add Factors and Variables for the parents relations
       val parentsRelation = Relation("parents",
         Map("id" -> "Long", "entity1_id" -> "Long", "entity2_id" -> "Long", "is_true" -> "Boolean"),
-        List(ForeignKey("parents", "entity1_id", "entities", "id"), 
-          ForeignKey("parents", "entity2_id", "entities", "id")),
+        Nil,
         None
       )
-      val parentsFactorDesc = FactorDesc("parent", "parents",
-        ImplyFactorFunction("is_true", List("entity1_id->is_true", "entity2_id->is_true")), 
-          UnknownFactorWeight(List("entity1_id")))
+      val parentsFactorDesc = FactorDesc(
+        "parentsFactor", 
+        """SELECT parents.*, e1.id AS "e1.id", e1.is_present AS "e1.is_present",
+        e2.id as "e2.id", e2.is_present AS "e2.is_present"
+        FROM parents
+        INNER JOIN entities e1 ON parents.entity1_id = e1.id
+        INNER JOIN entities e2 ON parents.entity2_id = e2.id
+        """,
+        ImplyFactorFunction("parents.is_true", List("entities.e1.is_present", "entities.e2.is_present")), 
+        UnknownFactorWeight(List("parents.entity1_id"))
+      )
 
-      actor.addVariables(parentsRelation, Set("is_true"))
-      actor.addFactors(parentsFactorDesc, parentsRelation)
+      actor.addFactorsAndVariables(parentsFactorDesc)
       assert(actor.factorStore.variables.size == 3)
       assert(actor.factorStore.factors.size == 3)
-      actor.writeToDatabase("parents")
+      actor.factorStore.flush()
       assert(actor.factorStore.variables.size == 0)
       assert(actor.factorStore.factors.size == 0)
       assert(actor.factorStore.variableIdMap.size == 9)

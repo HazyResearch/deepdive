@@ -12,5 +12,5 @@ dropdb deepdive_titles
 createdb deepdive_titles
 psql -c "drop schema if exists public cascade; create schema public;" $DB_NAME
 psql -c "create table titles(id bigserial primary key, title text, has_extractions boolean);" $DB_NAME
-psql -c "create table words(id bigserial primary key, title_id bigint references titles(id), word text, is_word boolean);" $DB_NAME
+psql -c "create table words(id bigserial primary key, title_id bigint references titles(id), word text, is_present boolean);" $DB_NAME
 psql -c "COPY titles(title, has_extractions) FROM '$BASE_DIR/data/titles_taxonomy_extractions_sample.csv' DELIMITER ',' CSV;" $DB_NAME

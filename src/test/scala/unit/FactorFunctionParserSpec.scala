@@ -9,23 +9,33 @@ class FactorFunctionParserSpec extends FunSpec {
   describe("The Factor function parser") {
 
     it("should parse empty imply expressions") {
-      val expr = "is_true = Imply()"
+      val expr = "words.is_present = Imply()"
       val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
       assert(result.successful)
       assert(result.get == ImplyFactorFunction(
-        FactorFunctionVariable(None, "is_true"), List())
+        FactorFunctionVariable("words", "is_present"), List())
       )
     }
 
     it("should parse imply expressions with multiple arguments") {
-      val expr = "is_true = Imply(relation2_id->a, relation3_id->b)"
+      val expr = "words.is_true = Imply(relation2.predicate, relation3.predicate)"
       val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
       assert(result.successful)
       assert(result.get == ImplyFactorFunction(
-        FactorFunctionVariable(None, "is_true"), 
+        FactorFunctionVariable("words", "is_true"), 
         List(
-          FactorFunctionVariable(Option("relation2_id"), "a"), 
-          FactorFunctionVariable(Option("relation3_id"), "b"))
+          FactorFunctionVariable("relation2", "predicate"), 
+          FactorFunctionVariable("relation3", "predicate"))
+      ))
+    }
+
+    it("should parse expressions with deep identifiers") {
+      val expr = "words.is_true = Imply(relation2.r2.predicate)"
+      val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
+      assert(result.successful)
+      assert(result.get == ImplyFactorFunction(
+        FactorFunctionVariable("words", "is_true"), 
+        List(FactorFunctionVariable("relation2.r2", "predicate"))
       ))
     }
 

@@ -22,10 +22,10 @@ class FactorWeightParserSpec extends FunSpec {
     }
 
     it("should parse an unknown weight with variables") {
-      val expr = "?(entity_text, uppercase)"
+      val expr = "?(relation1.is_present, relation2.is_present)"
       val result = FactorWeightParser.parse(FactorWeightParser.factorWeight, expr)
       assert(result.successful)
-      assert(result.get == UnknownFactorWeight(List("entity_text", "uppercase")))
+      assert(result.get == UnknownFactorWeight(List("relation1.is_present", "relation2.is_present")))
     }
 
   }

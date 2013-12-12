@@ -12,9 +12,7 @@ class InferenceManager extends Actor with ActorLogging {
   }
 
   def receive = {
-    case msg : FactorGraphBuilder.AddVariables =>
-      factorGraphBuilder forward msg
-    case msg : FactorGraphBuilder.AddFactors =>
+    case msg : FactorGraphBuilder.AddFactorsAndVariables =>
       factorGraphBuilder forward msg
     case other =>
       log.debug("Huh?")

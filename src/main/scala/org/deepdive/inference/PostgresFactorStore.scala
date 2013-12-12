@@ -15,10 +15,10 @@ class PostgresFactorStore(implicit val connection: Connection) {
   val log = Logging.getLogger(Context.system, this)
 
   // val factorFunctions = Map[String, FactorFunction]()
-  val variables = Map[(String, String), Variable]()
+  val variables = Map[String, Variable]()
   val factors = ArrayBuffer[Factor]()
   val weights = Map[String, Weight]()
-  val variableIdMap = Map[(String, String), Long]()
+  val variableIdMap = Map[String, Long]()
 
   // Prepares the data store to store the factor graph
   def init() {
@@ -55,13 +55,17 @@ class PostgresFactorStore(implicit val connection: Connection) {
   }
 
   // Add a new Variable to the datastore
-  def addVariable(relationName: String, localKey: String, variable: Variable) {
-    variables += Tuple2((relationName, localKey), variable)
+  def addVariable(key: String, variable: Variable) {
+    variables += Tuple2(key, variable)
+  }
+
+  def hasVariable(key: String) : Boolean = {
+    getVariableId(key).isDefined
   }
 
   // Get a specific variable from the data store
-  def getVariableId(relationName: String, localKey: String) : Option[Long] = {
-    variableIdMap.get((relationName, localKey))
+  def getVariableId(key: String) : Option[Long] = {
+    (variableIdMap ++ variables.mapValues(_.id)).get(key)
   }
 
   // Get a specific weight form the data store
@@ -71,7 +75,7 @@ class PostgresFactorStore(implicit val connection: Connection) {
   def addWeight(identifier: String, weight: Weight) = { weights += Tuple2(identifier, weight) }
 
   // Flush out
-  def flush(relationName: String) {
+  def flush() : Unit = {
     
     // Insert Weights
     log.debug(s"Storing num=${weights.size} relation=weights")
@@ -83,15 +87,15 @@ class PostgresFactorStore(implicit val connection: Connection) {
     writeFactors(factors)
 
     // Insert Variables
-    val relationVariables = variables.filterKeys(_._1 == relationName)
-    val numEvidenceVariables = relationVariables.values.count(_.isEvidence)
-    val numQueryVariables = relationVariables.values.count(_.isQuery)
-    log.debug(s"Storing num=${relationVariables.size} num_evidence=${numEvidenceVariables} " +
+    val variablesToFlush = variables
+    val numEvidenceVariables = variablesToFlush.values.count(_.isEvidence)
+    val numQueryVariables = variablesToFlush.values.count(_.isQuery)
+    log.debug(s"Storing num=${variablesToFlush.size} num_evidence=${numEvidenceVariables} " +
       s"num_query=${numQueryVariables} relation=variables")
-    writeVariables(relationVariables.values)
+    writeVariables(variablesToFlush.values)
     // Add to the variable Id map, then clear
-    variableIdMap ++= relationVariables.mapValues(_.id)
-    variables --= relationVariables.keys
+    variableIdMap ++= variablesToFlush.mapValues(_.id)
+    variables --= variablesToFlush.keys
 
 
     // Insert Factor Variables

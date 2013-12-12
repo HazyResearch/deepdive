@@ -68,12 +68,12 @@ object SettingsParser {
   private def loadFactors(config: Config): List[FactorDesc] = {
     Try(config.getObject("factors").keySet().map { factorName =>
       val factorConfig = config.getConfig(s"factors.$factorName")
-      val factorRelation = factorConfig.getString("relation")
+      val factorInputQuery = factorConfig.getString("input_query")
       val factorFunction = FactorFunctionParser.parse(
         FactorFunctionParser.factorFunc, factorConfig.getString("function"))
       val factorWeight = FactorWeightParser.parse(
         FactorWeightParser.factorWeight, factorConfig.getString("weight"))
-      FactorDesc(factorRelation, factorName, factorFunction.get, factorWeight.get)
+      FactorDesc(factorName, factorInputQuery, factorFunction.get, factorWeight.get)
     }.toList).getOrElse(Nil)
   }
 

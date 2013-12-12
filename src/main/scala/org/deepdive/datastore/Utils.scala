@@ -35,6 +35,7 @@ object Utils extends Logging {
         case (x : JsString, "String") => toParameterValue(x.value)
         case (x : JsString, "Text") => toParameterValue(x.value)
         case (x : JsNumber, "Integer") => toParameterValue(x.value.toLong)
+        case (x : JsNumber, "Long") => toParameterValue(x.value.toLong)
         case (x : JsBoolean, "Boolean") => toParameterValue(x.value)
         case (value, domain) => 
           log.error(s"Expected value of type ${domain}, but got JSON type ${value.getClass}")

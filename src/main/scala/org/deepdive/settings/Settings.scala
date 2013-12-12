@@ -37,18 +37,6 @@ trait SettingsImpl {
     deps.filter(x => extractorRelations.contains(x))
   }
 
-  def findVariableFieldsForRelation(name: String) : Set[String] = {
-    factors.flatMap { factorDesc =>
-      val relation = findRelation(factorDesc.relation).get
-      factorDesc.func.variables.map {
-        case(FactorFunctionVariable(Some(foreignKey), field)) =>
-          val parentRelation = relation.foreignKeys.find(_.childAttribute == foreignKey).map(_.parentRelation).get
-          (parentRelation, field)
-        case(FactorFunctionVariable(None, field)) => 
-          (relation.name, field)
-      }
-    }.filter(_._1 == name).map(_._2).toSet
-  }
 
   def databaseUrl : String = {
     s"jdbc:postgresql://${connection.host}:${connection.port}/${connection.db}"

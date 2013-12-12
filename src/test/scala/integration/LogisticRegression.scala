@@ -8,7 +8,7 @@ import org.deepdive.datastore.PostgresDataStore
 import org.scalatest._
 import scalikejdbc.ConnectionPool
 
-class SampleApp extends FunSpec {
+class LogisticRegressionApp extends FunSpec {
 
   def prepareData() {
     PostgresDataStore.init("jdbc:postgresql://localhost/deepdive_test", "dennybritz", "")
@@ -19,11 +19,11 @@ class SampleApp extends FunSpec {
         title_id bigint references titles(id), word text, is_present boolean);""").execute()
        SQL(
         """
-          insert into titles(title, has_extractions) VALUES
+          INSERT INTO titles(title, has_extractions) VALUES
           ('I am title 1', NULL), ('I am title 2', NULL), ('I am another Title', true)
         """).execute()
     }
-  }1
+  }
 
   def getConfig = {
     s"""
@@ -35,22 +35,20 @@ class SampleApp extends FunSpec {
         password: ""
       }
 
-      deepdive.relations.words.schema: { id: Integer, sentence_id: Integer, position: Integer, text: Text, is_word: Boolean }
-      deepdive.relations.words.query_field : "is_word"
-      deepdive.relations.entities.schema: { id: Integer, word_id: Integer, text: Text, is_true: Boolean}
-      deepdive.relations.entities.fkeys : { word_id: "words.id" }
-      deepdive.relations.entities.query_field : "is_true"
+      deepdive.relations.titles.schema: { id: Long, title: Text, has_extractions: Boolean }
+      deepdive.relations.word_presences.schema: { id: Long, title_id: Long, word: Text, is_present: Boolean}
+      deepdive.relations.word_presences.fkeys : { title_id: "titles.id" }
 
       deepdive.extractions: {
-        entitiesExtractor.output_relation: "entities"
-        entitiesExtractor.input: "SELECT * FROM words"
-        entitiesExtractor.udf: "${getClass.getResource("/sample/sample_entities.py").getFile}"
+        wordsExtractor.output_relation: "word_presences"
+        wordsExtractor.input: "SELECT * FROM titles"
+        wordsExtractor.udf: "${getClass.getResource("/logistic_regression/word_extractor.py").getFile}"
       }
 
       deepdive.factors {
-        entities.relation = "entities"
-        entities.function: "is_true = Imply(word_id->is_word)"
-        entities.weight: "?(text)"
+        wordFactor.input_query = "SELECT word_presences.*, titles.* FROM word_presences INNER JOIN titles ON word_presences.title_id = titles.id"
+        wordFactor.function: "titles.has_extractions = Imply(word_presences.is_present)"
+        wordFactor.weight: "?(word_presences.word)"
       }
     """
   }
@@ -62,24 +60,24 @@ class SampleApp extends FunSpec {
     // Make sure the data is in the database
     PostgresDataStore.withConnection { implicit conn =>
      
-      val extractionResult = SQL("SELECT * FROM entities;")().map { row =>
-       row[String]("text")
+      val extractionResult = SQL("SELECT * FROM word_presences;")().map { row =>
+       row[Long]("id")
       }.toList
-      assert(extractionResult.size == 4)
-      assert(extractionResult == List("Lara", "Sam", "Alice", "Sam"))
-
+      assert(extractionResult.size == 12)
+      
       val numFactors = SQL("select count(*) as c from factors;")().head[Long]("c")
       val numVariables = SQL("select count(*) as c from variables;")().head[Long]("c")
       val numFactorVariables = SQL("select count(*) as c from factor_variables;")().head[Long]("c")
       val numWeights = SQL("select count(*) as c from weights;")().head[Long]("c")
 
-      // One factor for each variable in entities
-      assert(numFactors == 4)
-      assert(numVariables == 12)
-      // Entitiy factors have two variables
-      assert(numFactorVariables == 8)
-      // 3 different weights for entities
-      assert(numWeights == 3)
+      // One variable for each word, and one variable for each title
+      assert(numVariables == 15)
+      // One factor for each word
+      assert(numFactors == 12)
+      // Each factor connects one word and one title (12*2)
+      assert(numFactorVariables == 24)
+      // Different weight for each unique word
+      assert(numWeights == 7)
 
       // Make sure the variables types are correct
       val numEvidence = SQL("""
@@ -88,8 +86,9 @@ class SampleApp extends FunSpec {
       val numQuery = SQL("""
         select count(*) as c from variables 
         WHERE is_query = true""")().head[Long]("c")
-      assert(numEvidence == 9)
-      assert(numQuery == 3)
+      // 1 title and 12 words are evidence
+      assert(numEvidence == 13)
+      assert(numQuery == 2)
 
     }
   }

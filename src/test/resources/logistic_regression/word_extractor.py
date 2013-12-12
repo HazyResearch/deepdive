@@ -3,9 +3,14 @@
 import fileinput
 import json
 
+# For each tuple..
 for line in fileinput.input():
+  # From: titles(id, title, has_extractions)
+  # To: words(id, title_id, word)
   row = json.loads(line)
-  # From: words{ id: Integer, sentence_id: Integer, position: Integer, text: Text }
-  # To: entities{ id: Integer, word_id: Integer, text: Text, is_evidence: Boolean }
-  if row["words.text"][0].isupper():
-    print json.dumps({"word_id" : int(row["words.id"]), "text": row["words.text"], "is_evidence": None})
+  # We are emitting one variable and one factor for each word.
+  if row["titles.title"] is not None:
+    # print json.dumps(list(set(title.split(" "))))
+    for word in set(row["titles.title"].split(" ")):
+      # (title_id, word) - The id is automatically assigned.
+      print json.dumps({"title_id": int(row["titles.id"]), "word": word, "is_present": True})

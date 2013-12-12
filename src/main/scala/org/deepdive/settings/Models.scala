@@ -16,7 +16,7 @@ case class Extractor(name:String, outputRelation: String, inputQuery: String, ud
 
 
 /* Factor Description */
-case class FactorDesc(name: String, relation: String, func: FactorFunction, weight: FactorWeight)
+case class FactorDesc(name: String, inputQuery: String, func: FactorFunction, weight: FactorWeight)
 
 
 /* Factor Weights */
@@ -40,7 +40,11 @@ case class ImplyFactorFunction(head: FactorFunctionVariable,
   def newVariables = Seq(head)
 }
 
-case class FactorFunctionVariable(foreignKey: Option[String], field: String)
+case class FactorFunctionVariable(relation: String, field: String) {
+  override def toString = s"${relation}.${field}"
+  def headRelation = relation.split('.').headOption.getOrElse(relation)
+  def key = s"${headRelation}.${field}"
+}
 
 object FactorFunctionVariable {
   implicit def stringToFactorFunctionVariable(str: String) : FactorFunctionVariable = {
