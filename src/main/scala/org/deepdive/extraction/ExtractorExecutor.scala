@@ -41,7 +41,7 @@ trait ExtractorExecutor extends Actor with ActorLogging  {
   }
 
   private def doExecute(task: ExtractionTask) {
-    val executor = new ScriptTaskExecutor(task)
+    val executor = new PostgresScriptTaskExecutor(task)
     val result = executor.run()
     writeResult(result, task.outputRelation)
   }
@@ -54,3 +54,7 @@ trait ExtractorExecutor extends Actor with ActorLogging  {
 /* Implementation of an ExtractorExecutor that uses postgresql to store extraction results. */
 class PostgresExtractorExecutor extends ExtractorExecutor 
   with PostgresExtractionDataStoreComponent
+
+case class PostgresScriptTaskExecutor(task: ExtractionTask) extends ScriptTaskExecutor 
+  with PostgresExtractionDataStoreComponent
+

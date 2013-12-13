@@ -8,8 +8,9 @@ import org.deepdive.datastore.PostgresDataStore
 import org.deepdive.datastore.Utils._
 import org.deepdive.Logging
 import spray.json._
+import spray.json.DefaultJsonProtocol._
 
-trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent  {
+trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent {
 
   val dataStore = new PostgresExtractionDataStore
 
@@ -35,7 +36,6 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
 
 
     def writeResult(result: List[JsObject], outputRelation: String) : Unit = {
-      
       val relation = Context.settings.findRelation(outputRelation) match {
         case None => throw new RuntimeException(
           s"relation=${outputRelation} not found in configuration.")
@@ -52,6 +52,30 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
         batchInsert.execute()
       }
       log.debug(s"Wrote num=${result.length} records.")
+    }
+
+    def getInput(query: String) : Stream[JsObject] = {
+      SQL(query)().map { row =>
+        JsObject(sqlRowToJson(row))
+      }
+    }
+
+    def valToJson(x: Any) : JsValue = x match {
+      case Some(x) => valToJson(x)
+      case None | null => JsNull
+      case x : String => x.toJson
+      case x : Boolean => x.toJson
+      case x : Int => x.toJson
+      case x : Long => x.toJson
+      case x : Double => x.toJson
+      case x : org.postgresql.jdbc4.Jdbc4Array => x.getArray().asInstanceOf[Array[_]].map(valToJson).toJson
+      case x =>
+        log.error("Could not convert type ${x.getClass.name} to JSON")
+        JsNull
+    }
+
+    def sqlRowToJson(row: SqlRow) : Map[String, JsValue] = {
+      row.asMap.toMap.mapValues(valToJson)
     }
   }
 
