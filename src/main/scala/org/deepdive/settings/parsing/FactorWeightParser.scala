@@ -6,8 +6,8 @@ import org.deepdive.context._
 
 object FactorWeightParser extends RegexParsers {
   def relationOrField = """\w+""".r
-  def weightVariable = (relationOrField <~ ".") ~ (relationOrField) ^^ { 
-    case relationName ~ field => s"${relationName}.${field}"
+  def weightVariable = rep1sep(relationOrField, ".") ^^ { 
+    case fields => fields.mkString(".")
   }
   def constantWeight = """-?\d+""".r ^^ { x => KnownFactorWeight(x.toDouble) } 
   def unknownWeight = "?" ~> ("(" ~> repsep(weightVariable, ",") <~ ")").? ^^ {
