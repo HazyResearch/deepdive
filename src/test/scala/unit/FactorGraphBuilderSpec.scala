@@ -7,6 +7,7 @@ import org.deepdive._
 import org.deepdive.context._
 import org.deepdive.settings._
 import org.deepdive.inference.{FactorGraphBuilder}
+import org.deepdive.test._
 import akka.actor._
 import akka.testkit.{TestActorRef, TestKit}
 
@@ -15,7 +16,7 @@ class FactorGraphBuilderSpec extends FunSpec {
   implicit val system = ActorSystem("Test")
 
   def prepareData() {
-    PostgresDataStore.init("jdbc:postgresql://localhost/deepdive_test", "dennybritz", "")
+    TestDataStore.init()
     PostgresDataStore.withConnection { implicit conn =>
      SQL("drop schema if exists public cascade; create schema public;").execute()
      SQL("create table entities (id bigserial primary key, word_id integer, is_present boolean)").execute()

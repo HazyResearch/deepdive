@@ -23,9 +23,7 @@ object SettingsParser {
 
   private def loadConnection(config: Config) : Connection = {
     Connection(
-      config.getString("global.connection.host"),
-      config.getInt("global.connection.port"),
-      config.getString("global.connection.db"),
+      config.getString("global.connection.url"),
       config.getString("global.connection.user"),
       config.getString("global.connection.password")
     )

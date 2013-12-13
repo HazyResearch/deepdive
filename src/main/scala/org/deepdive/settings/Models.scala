@@ -1,7 +1,7 @@
 package org.deepdive.settings
 
 /* Described the database connection */
-case class Connection(host: String, port: Int, db: String, user: String, password: String)
+case class Connection(url: String, user: String, password: String)
 
 
 /* A relation */

@@ -24,7 +24,7 @@ object Pipeline extends Logging {
     Context.settings = Settings.loadFromConfig(config)    
 
     // Initialize the data store
-    PostgresDataStore.init(Context.settings.databaseUrl, Context.settings.connection.user, 
+    PostgresDataStore.init(Context.settings.connection.url, Context.settings.connection.user, 
       Context.settings.connection.password)
 
     // Start the Inference Manager

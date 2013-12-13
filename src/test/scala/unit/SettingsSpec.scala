@@ -11,10 +11,8 @@ class SettingsSpec extends FunSpec {
   deepdive {
     
     global.connection: {
-      host: "localhost"
-      port: 5432
-      db: "deepdive_test"
-      user: "root"
+      url: "jdbc:postgresql://localhost/deepdive_test"
+      user: "deepdive"
       password: "password"
     }
 
@@ -41,8 +39,8 @@ class SettingsSpec extends FunSpec {
     it("should parse a simple configuration file") {
       val settings = Settings.loadFromConfig(ConfigFactory.parseString(settingsFile))
 
-      assert(settings.connection == Connection("localhost", 5432, "deepdive_test", 
-        "root", "password"))
+      assert(settings.connection == Connection("jdbc:postgresql://localhost/deepdive_test",
+        "deepdive", "password"))
       
       assert(settings.relations.toSet == Set(
         Relation(

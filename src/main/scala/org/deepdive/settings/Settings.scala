@@ -37,11 +37,6 @@ trait SettingsImpl {
     deps.filter(x => extractorRelations.contains(x))
   }
 
-
-  def databaseUrl : String = {
-    s"jdbc:postgresql://${connection.host}:${connection.port}/${connection.db}"
-  }
-
 }
 
 case class Settings(connection: Connection, relations: List[Relation], 

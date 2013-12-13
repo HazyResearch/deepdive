@@ -2,6 +2,7 @@ package org.deepdive.test.integration
 
 import anorm._ 
 import com.typesafe.config._
+import org.deepdive.test._
 import org.deepdive.context._
 import org.deepdive.Pipeline
 import org.deepdive.datastore.PostgresDataStore
@@ -11,7 +12,7 @@ import scalikejdbc.ConnectionPool
 class LogisticRegressionApp extends FunSpec {
 
   def prepareData() {
-    PostgresDataStore.init("jdbc:postgresql://localhost/deepdive_test", "dennybritz", "")
+    TestDataStore.init()
     PostgresDataStore.withConnection { implicit conn =>
        SQL("drop schema if exists public cascade; create schema public;").execute()
        SQL("create table titles(id bigserial primary key, title text, has_extractions boolean);").execute()
@@ -28,10 +29,8 @@ class LogisticRegressionApp extends FunSpec {
   def getConfig = {
     s"""
       deepdive.global.connection: {
-        host: "localhost"
-        port: 5432
-        db: "deepdive_test"
-        user: "dennybritz"
+        url: "${TestDataStore.databaseUrl}"
+        user: "${TestDataStore.databaseUser}"
         password: ""
       }
 

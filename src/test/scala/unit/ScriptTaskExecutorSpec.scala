@@ -1,10 +1,11 @@
 package org.deepdive.test.unit
 
 import anorm._
-import org.scalatest._
-import scala.io.Source
 import org.deepdive.datastore.PostgresDataStore
 import org.deepdive.extraction._
+import org.deepdive.test._
+import org.scalatest._
+import scala.io.Source
 import spray.json._
 import DefaultJsonProtocol._
 
@@ -14,7 +15,7 @@ class ScriptTaskExecutorSpec extends FunSpec {
   describe("Serializing to JSON") {
 
     def prepareData() {
-      PostgresDataStore.init("jdbc:postgresql://localhost/deepdive_test", "dennybritz", "")
+      TestDataStore.init()
       PostgresDataStore.withConnection { implicit conn =>
        SQL("drop schema if exists public cascade; create schema public;").execute()
        SQL("""create table datatype_test(id bigserial primary key, key integer, some_text text, 
@@ -44,7 +45,6 @@ class ScriptTaskExecutorSpec extends FunSpec {
 
     it("should work with simple data types") {
       prepareData()
-      PostgresDataStore.init("jdbc:postgresql://localhost/deepdive_test", "dennybritz", "")
       implicit val conn = PostgresDataStore.borrowConnection()
       val result = SQL("SELECT * from datatype_test")().map { row =>
         ScriptTaskExecutor.sqlRowToJson(row)
@@ -63,7 +63,7 @@ class ScriptTaskExecutorSpec extends FunSpec {
   describe("running") {
     
     def prepareData() {
-      PostgresDataStore.init("jdbc:postgresql://localhost/deepdive_test", "dennybritz", "")
+      TestDataStore.init()
       PostgresDataStore.withConnection { implicit conn =>
          SQL("drop schema if exists public cascade; create schema public;").execute()
          SQL("create table documents(id bigserial primary key, docid integer, text text);").execute()
