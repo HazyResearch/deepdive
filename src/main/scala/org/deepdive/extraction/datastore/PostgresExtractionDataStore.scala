@@ -76,10 +76,10 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
       case x : Double => x.toJson
       case x : org.postgresql.jdbc4.Jdbc4Array => x.getArray().asInstanceOf[Array[_]].map(valToJson).toJson
       case x =>
-        log.error("Could not convert type ${x.getClass.name} to JSON")
+        log.error("Could not convert ${x.toString} of type=${x.getClass.name} to JSON")
         JsNull
     }
-    
+
   }
 
 }
