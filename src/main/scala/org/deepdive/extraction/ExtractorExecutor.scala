@@ -12,6 +12,11 @@ import org.deepdive.Logging
 
 object ExtractorExecutor {
   
+  // Implementation of an ExtractorExecutor that uses postgresql to store extraction results.
+  // TODO: Refactor this
+  class PostgresExtractorExecutor extends ExtractorExecutor 
+    with PostgresExtractionDataStoreComponent
+
   def props: Props = Props(classOf[PostgresExtractorExecutor])
 
   // Messages we can receive
@@ -41,7 +46,7 @@ trait ExtractorExecutor extends Actor with ActorLogging  {
   }
 
   private def doExecute(task: ExtractionTask) {
-    val executor = new PostgresScriptTaskExecutor(task)
+    val executor = new ScriptTaskExecutor(task, this)
     val result = executor.run()
     writeResult(result, task.extractor.outputRelation)
   }
@@ -51,10 +56,4 @@ trait ExtractorExecutor extends Actor with ActorLogging  {
   }
 }
 
-/* Implementation of an ExtractorExecutor that uses postgresql to store extraction results. */
-class PostgresExtractorExecutor extends ExtractorExecutor 
-  with PostgresExtractionDataStoreComponent
-
-case class PostgresScriptTaskExecutor(task: ExtractionTask) extends ScriptTaskExecutor 
-  with PostgresExtractionDataStoreComponent
 

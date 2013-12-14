@@ -11,10 +11,8 @@ import scala.io.Source
 import scala.sys.process._
 import spray.json._
 
-trait ScriptTaskExecutor extends Logging { 
-  this : ExtractionDataStoreComponent =>
-
-  def task : ExtractionTask
+class ScriptTaskExecutor(task: ExtractionTask, 
+  dataStoreComp: ExtractionDataStoreComponent) extends Logging { 
 
   def run() : ExtractionResult = {
     
@@ -25,7 +23,7 @@ trait ScriptTaskExecutor extends Logging {
     log.info(s"Running UDF: ${file.getAbsolutePath}")
 
     // Get the input data
-    val inputData = dataStore.queryAsJson(task.extractor.inputQuery)
+    val inputData = dataStoreComp.dataStore.queryAsJson(task.extractor.inputQuery)
 
     // Result will be stored here
     val result : ArrayBuffer[JsValue] = ArrayBuffer[JsValue]();

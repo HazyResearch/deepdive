@@ -3,13 +3,14 @@ package org.deepdive.test.unit
 import anorm._
 import org.deepdive.datastore.PostgresDataStore
 import org.deepdive.extraction._
+import org.deepdive.extraction.datastore._
 import org.deepdive.test._
 import org.deepdive.settings.Extractor
 import org.scalatest._
 import spray.json._
 import DefaultJsonProtocol._
 
-class PostgresScriptTaskExecutorSpec extends FunSpec {
+class ScriptTaskExecutorSpec extends FunSpec {
 
   describe("running") {    
     def prepareData() {
@@ -30,7 +31,8 @@ class PostgresScriptTaskExecutorSpec extends FunSpec {
       TestDataStore.init()
       val extractorFile = getClass.getResource("/simple_extractor.py")
       val task = ExtractionTask(Extractor("test", "output", "SELECT * FROM documents", extractorFile.getFile, Set()))
-      val executor = new PostgresScriptTaskExecutor(task)
+      val pgDataStoreComp = new PostgresExtractionDataStoreComponent { }
+      val executor = new ScriptTaskExecutor(task, pgDataStoreComp)
       val result = executor.run()
       assert(result.rows.map(_.compactPrint) == List(Map("document_id" -> 469), Map
         ("document_id" -> 470)).map(_.toJson.compactPrint))
