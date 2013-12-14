@@ -46,7 +46,7 @@ object FileGraphWriter {
     // writer.println(List("factor_id", "weight_id", "factor_function").mkString("\t"))
     SQL("""select factors.*, count(factor_variables.variable_id) AS num_variables 
       FROM factors INNER JOIN factor_variables on factor_variables.factor_id = factors.id 
-      GROUP BY factors.id""")().map { row => 
+      GROUP BY factors.id, factors.weight_id""")().map { row => 
       List(
         row[Long]("id"),
         row[Long]("weight_id"),
