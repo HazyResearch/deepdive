@@ -44,9 +44,7 @@ object FileGraphWriter {
     val writer = new PrintWriter(f)
     // [FACTOR_ID] [WEIGHT ID] [FACTOR_FUNC_TYPE] 
     // writer.println(List("factor_id", "weight_id", "factor_function").mkString("\t"))
-    SQL("""select factors.*, count(factor_variables.variable_id) AS num_variables 
-      FROM factors INNER JOIN factor_variables on factor_variables.factor_id = factors.id 
-      GROUP BY factors.id, factors.weight_id""")().map { row => 
+    SQL("""select * from factors""")().map { row => 
       List(
         row[Long]("id"),
         row[Long]("weight_id"),
