@@ -44,12 +44,12 @@ class FactorGraphBuilderSpec extends FunSpec {
         ImplyFactorFunction("entities.is_present", Nil), KnownFactorWeight(1.0))
       actor.addFactorsAndVariables(entityFactorDesc)
       // Should have one variable and fact,or for each tuple
-      assert(actor.factorStore.variables.size == 6)
-      assert(actor.factorStore.factors.size == 6)
-      actor.factorStore.flush()
-      assert(actor.factorStore.variables.size == 0)
-      assert(actor.factorStore.factors.size == 0)
-      assert(actor.factorStore.variableIdMap.size == 6)
+      assert(actor.inferenceDataStore.variables.size == 6)
+      assert(actor.inferenceDataStore.factors.size == 6)
+      actor.inferenceDataStore.flush()
+      assert(actor.inferenceDataStore.variables.size == 0)
+      assert(actor.inferenceDataStore.factors.size == 0)
+      assert(actor.inferenceDataStore.variableIdMap.size == 6)
 
       // Add Factors and Variables for the parents relations
       val parentsRelation = Relation("parents",
@@ -68,12 +68,12 @@ class FactorGraphBuilderSpec extends FunSpec {
       )
 
       actor.addFactorsAndVariables(parentsFactorDesc)
-      assert(actor.factorStore.variables.size == 3)
-      assert(actor.factorStore.factors.size == 3)
-      actor.factorStore.flush()
-      assert(actor.factorStore.variables.size == 0)
-      assert(actor.factorStore.factors.size == 0)
-      assert(actor.factorStore.variableIdMap.size == 9)
+      assert(actor.inferenceDataStore.variables.size == 3)
+      assert(actor.inferenceDataStore.factors.size == 3)
+      actor.inferenceDataStore.flush()
+      assert(actor.inferenceDataStore.variables.size == 0)
+      assert(actor.inferenceDataStore.factors.size == 0)
+      assert(actor.inferenceDataStore.variableIdMap.size == 9)
 
       // Make sure the data in the RDBMS is correct.
       PostgresDataStore.withConnection { implicit conn =>

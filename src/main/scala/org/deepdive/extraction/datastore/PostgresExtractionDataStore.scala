@@ -54,7 +54,13 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
       log.debug(s"Wrote num=${result.length} records.")
     }
 
-    def getInput(query: String) : Stream[JsObject] = {
+    def queryAsMap(query: String) : Stream[Map[String, Any]] = {
+      SQL(query)().map { row =>
+        row.asMap.toMap
+      }
+    }
+
+    def queryAsJson(query: String) : Stream[JsObject] = {
       SQL(query)().map { row =>
         JsObject(sqlRowToJson(row))
       }

@@ -25,7 +25,7 @@ trait ScriptTaskExecutor extends Logging {
     log.info(s"Running UDF: ${file.getAbsolutePath}")
 
     // Get the input data
-    val inputData = dataStore.getInput(task.extractor.inputQuery)
+    val inputData = dataStore.queryAsJson(task.extractor.inputQuery)
 
     // Result will be stored here
     val result : ArrayBuffer[JsValue] = ArrayBuffer[JsValue]();
