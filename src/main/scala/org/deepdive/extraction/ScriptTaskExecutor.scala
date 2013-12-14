@@ -48,7 +48,7 @@ class ScriptTaskExecutor(task: ExtractionTask,
     val process = task.extractor.udf run(io)
     process.exitValue()
 
-    log.debug(s"UDF process has exited. Generated num=${result.size} records.")
+    log.info(s"UDF process has exited. Generated num=${result.size} records.")
     ExtractionResult(result.map(_.asInstanceOf[JsObject]).toList)
   }
 }

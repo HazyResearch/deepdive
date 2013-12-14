@@ -9,20 +9,26 @@ import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.JavaConversions._
 
 object FactorGraphBuilder {
-  
+
+  // Implementation of FactorGraphBuilder using postgres components
+  // TODO: Refactor this
+  class PostgresFactorGraphBuilder extends FactorGraphBuilder with 
+    PostgresExtractionDataStoreComponent with PostgresInferenceDataStoreComponent
+
+  def props: Props = Props[PostgresFactorGraphBuilder]()
+
   // Messages
   sealed trait Message
   case class AddFactorsAndVariables(factorDesc: FactorDesc) extends Message
   // case class AddVariables(relation: Relation, fields: Set[String]) extends Message
   case class AddFactorsResult(name: String, success: Boolean)
   // case class AddVariablesResult(name: String, success: Boolean)
-
-  def props: Props = Props[FactorGraphBuilder]()
-
 }
 
-class FactorGraphBuilder extends Actor with ActorLogging 
-  with PostgresExtractionDataStoreComponent with PostgresInferenceDataStoreComponent {
+
+
+trait FactorGraphBuilder extends Actor with ActorLogging { 
+  self: ExtractionDataStoreComponent with InferenceDataStoreComponent =>
   
   import FactorGraphBuilder._
 
@@ -32,14 +38,15 @@ class FactorGraphBuilder extends Actor with ActorLogging
   val weightIdCounter = new AtomicInteger
 
   override def preStart() {
-    log.debug("Starting")
+    log.info("Starting")
     inferenceDataStore.init()
   }
 
   def receive = {
     case AddFactorsAndVariables(factorDesc) =>
-      log.debug(s"Adding factors and variables for factor_name=${factorDesc.name}")
+      log.info(s"Adding factors and variables for factor_name=${factorDesc.name}")
       addFactorsAndVariables(factorDesc)
+      log.info(s"flushing data store")
       inferenceDataStore.flush()
       sender ! AddFactorsResult(factorDesc.name, true)
     case _ => 
@@ -47,16 +54,13 @@ class FactorGraphBuilder extends Actor with ActorLogging
 
 
   def addFactorsAndVariables(factorDesc: FactorDesc) {
-
     dataStore.queryAsMap(factorDesc.inputQuery).foreach { row =>
       addVariablesForRow(row, factorDesc)
       addFactorForRow(row, factorDesc)
     }
-
   }
 
   private def addVariablesForRow(rowMap: Map[String, Any], factorDesc: FactorDesc) : Unit = {
-
     val variableColumns = factorDesc.func.variables.toList
     val variableLocalIds = variableColumns.map { varColumn =>
       rowMap(s"${varColumn.relation}.id").asInstanceOf[Long]

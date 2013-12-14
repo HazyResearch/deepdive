@@ -35,7 +35,7 @@ class ExtractionManager extends Actor with ActorLogging {
   val taskListeners = Map[ExtractionTask, ActorRef]()
 
   override def preStart(){
-    log.debug("Starting")
+    log.info("Starting")
   }
 
   /* When a failure happens we stop the executor and requeue the task */
@@ -52,12 +52,12 @@ class ExtractionManager extends Actor with ActorLogging {
 
   def receive = {
     case AddTask(task) =>
-      log.debug(s"Adding task_name=${task.extractor.name}")
+      log.info(s"Adding task_name=${task.extractor.name}")
       taskQueue += task
       taskListeners += Tuple2(task, sender)
       scheduleTasks
     case TaskCompleted(task) =>
-      log.debug(s"Completed task_name=${task.extractor.name}")
+      log.info(s"Completed task_name=${task.extractor.name}")
       runningTasks -= task
       completedTasks += task
       // Notify the listener
@@ -68,7 +68,7 @@ class ExtractionManager extends Actor with ActorLogging {
 
   // Schedules new taks based on the queue and capacity
   private def scheduleTasks() : Unit = {
-    log.debug("scheduling tasks")
+    log.info("scheduling tasks")
     // How many more tasks can we execute in parallel right now?
     val capacity = PARALLELISM - runningTasks.size
     
@@ -77,10 +77,10 @@ class ExtractionManager extends Actor with ActorLogging {
     val (eligibleTasks, notEligibleTasks) = taskQueue.partition { x =>
       x.extractor.dependencies.subsetOf(completedExtractors)
     }
-    log.debug(s"numEligibleTasks=${eligibleTasks.size} numNotEligibleTasks=${notEligibleTasks.size}")
+    log.info(s"numEligibleTasks=${eligibleTasks.size} numNotEligibleTasks=${notEligibleTasks.size}")
     
     eligibleTasks.take(capacity).foreach { task =>
-      log.debug(s"executing extractorName=${task.extractor.name}")
+      log.info(s"executing extractorName=${task.extractor.name}")
       val newWorker = context.actorOf(ExtractorExecutor.props)
       newWorker ! ExtractorExecutor.ExecuteTask(task)
       taskQueue -= task

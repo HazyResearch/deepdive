@@ -14,13 +14,13 @@ object FileGraphWriter {
   def dump(factorMapFile: File, factorsFile: File, 
     weightsFile: File)(implicit connection: Connection) {
     
-    log.debug(s"Writing weights to file=${weightsFile.getAbsolutePath}")
+    log.info(s"Writing weights to file=${weightsFile.getAbsolutePath}")
     writeWeights(weightsFile)
 
-    log.debug(s"Writing factors to file=${factorsFile.getAbsolutePath}")
+    log.info(s"Writing factors to file=${factorsFile.getAbsolutePath}")
     writeFactors(factorsFile)
     
-    log.debug(s"Writing factor_map to file=${factorMapFile.getAbsolutePath}")
+    log.info(s"Writing factor_map to file=${factorMapFile.getAbsolutePath}")
     writeVariables(factorMapFile)
   
   

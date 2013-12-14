@@ -8,14 +8,14 @@ class InferenceManager extends Actor with ActorLogging {
   val factorGraphBuilder = context.actorOf(FactorGraphBuilder.props)
 
   override def preStart() {
-    log.debug("Starting")
+    log.info("Starting")
   }
 
   def receive = {
     case msg : FactorGraphBuilder.AddFactorsAndVariables =>
       factorGraphBuilder forward msg
     case other =>
-      log.debug("Huh?")
+      log.warning("Huh?")
   }
 }
 

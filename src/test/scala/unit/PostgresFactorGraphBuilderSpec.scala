@@ -35,7 +35,7 @@ class FactorGraphBuilderSpec extends FunSpec {
     it("should work") {
       prepareData()
       
-      val actor = TestActorRef[FactorGraphBuilder].underlyingActor
+      val actor = TestActorRef[FactorGraphBuilder.PostgresFactorGraphBuilder].underlyingActor
 
       // Add Factors and Variables for the entities relation
       val entityRelation = Relation("entities", Map("id" -> "Long", "word_id" -> "Integer", 

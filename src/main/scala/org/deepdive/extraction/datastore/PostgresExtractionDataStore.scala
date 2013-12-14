@@ -44,14 +44,14 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
 
       val insertStatement = buildInsert(relation)
       val sqlStatement = SQL(insertStatement)
-      log.debug(s"Writing extraction result to postgres. length=${result.length}, sql=${insertStatement}")
+      log.info(s"Writing extraction result to postgres. length=${result.length}, sql=${insertStatement}")
       result.grouped(BATCH_SIZE).zipWithIndex.foreach { case(window, i) =>
         log.debug(s"${BATCH_SIZE * i}/${result.size}")
         // Implicit conversion to Anorm Sequence through Utils
         val batchInsert = new BatchSql(sqlStatement, (relation, window))
         batchInsert.execute()
       }
-      log.debug(s"Wrote num=${result.length} records.")
+      log.info(s"Wrote num=${result.length} records.")
     }
 
     def queryAsMap(query: String) : Stream[Map[String, Any]] = {

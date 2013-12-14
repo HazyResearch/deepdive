@@ -41,7 +41,7 @@ object Pipeline extends Logging {
     implicit val ec = system.dispatcher
     
     // Run extractions
-    log.debug("Running extractors")
+    log.info("Running extractors")
     val extractionResults = for {
       extractor <- Context.settings.extractors
       relation <- Context.settings.findRelation(extractor.outputRelation)

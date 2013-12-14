@@ -31,14 +31,14 @@ trait ExtractorExecutor extends Actor with ActorLogging  {
   import ExtractorExecutor._
 
   override def preStart() {
-    log.debug("Starting")
+    log.info("Starting")
   }
 
   def receive = {
     case ExecuteTask(task) => 
-      log.debug(s"Executing $task")
+      log.info(s"Executing $task")
       doExecute(task)
-      log.debug(s"Finished executing task_name=${task.extractor.name}")
+      log.info(s"Finished executing task_name=${task.extractor.name}")
       context.parent ! ExtractionManager.TaskCompleted(task)
       context.stop(self)
     case _ =>
