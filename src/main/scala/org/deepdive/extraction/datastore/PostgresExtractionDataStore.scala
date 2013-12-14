@@ -61,8 +61,8 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
     }
 
     def queryAsJson(query: String) : Stream[JsObject] = {
-      SQL(query)().map { row =>
-        JsObject(sqlRowToJson(row))
+      queryAsMap(query).map { row =>
+        JsObject(row.mapValues(valToJson))
       }
     }
 
@@ -79,10 +79,7 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
         log.error("Could not convert type ${x.getClass.name} to JSON")
         JsNull
     }
-
-    def sqlRowToJson(row: SqlRow) : Map[String, JsValue] = {
-      row.asMap.toMap.mapValues(valToJson)
-    }
+    
   }
 
 }
