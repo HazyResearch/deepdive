@@ -11,9 +11,17 @@ import org.deepdive.extraction.{ExtractionManager, ExtractionTask}
 import org.deepdive.inference.{InferenceManager, FactorGraphBuilder, FileGraphWriter}
 import scala.concurrent.duration._
 import scala.concurrent.{Future, Await}
+import scala.sys.process._
 import scala.util.Sorting
 
 object Pipeline extends Logging {
+
+  lazy val VARIABLES_DUMP_FILE = new File("target/variables.tsv")
+  lazy val FACTORS_DUMP_FILE = new File("target/factors.tsv")
+  lazy val WEIGHTS_DUMP_FILE = new File("target/weights.tsv")
+  lazy val SAMPLING_OUTPUT_FILE = new File("target/inference_result.out")
+  val NUM_SAMPLES = 1000
+  val NUM_SAMPLING_THREADS = 4
 
   def run(config: Config) {
 
@@ -48,25 +56,35 @@ object Pipeline extends Logging {
       task = ExtractionTask(extractor)
       extractionResult <- Some(ask(extractionManager, ExtractionManager.AddTask(task)))
     } yield extractionResult
-
     Await.result(Future.sequence(extractionResults), 30 minutes)
+    log.info("Extractors execution finished")
 
     // Build the factor graph
     log.info("Building factor graph")
-
     val graphResults = for {
       factor <- Context.settings.factors
       graphResult <- Some(ask(inferenceManager, FactorGraphBuilder.AddFactorsAndVariables(factor)))
     } yield graphResult
-    
     Await.result(Future.sequence(graphResults), 30 minutes)
-    log.info("Successfully built factor graph.")
+    log.info("Successfully built factor graph")
 
-    // Write result
+    // Dump the factor graph to a file
     PostgresDataStore.withConnection { implicit conn =>
-      FileGraphWriter.dump(new File("target/variables.tsv"), new File("target/factors.tsv"), new File("target/weights.tsv"))
+      FileGraphWriter.dump(VARIABLES_DUMP_FILE, FACTORS_DUMP_FILE, WEIGHTS_DUMP_FILE)
     }
 
+    // Call the sampler executable
+    log.info(s"Running gibbs sampler with num_samples=${NUM_SAMPLES} num_threads=${NUM_SAMPLING_THREADS}")
+    val samplerOutput = Seq("java", "-jar", "lib/gibbs_sampling-assembly-0.1.jar", 
+      "--variables", VARIABLES_DUMP_FILE.getCanonicalPath, 
+      "--factors", FACTORS_DUMP_FILE.getCanonicalPath, 
+      "--weights", WEIGHTS_DUMP_FILE.getCanonicalPath,
+      "-n", NUM_SAMPLES.toString, "-t", NUM_SAMPLING_THREADS.toString, 
+      "--output", SAMPLING_OUTPUT_FILE.getCanonicalPath).!!
+    log.info(samplerOutput)
+    log.info(s"Gibbs sampling finished, output in file=${SAMPLING_OUTPUT_FILE.getCanonicalPath}")
+
+    // Shut down actor system
     system.shutdown()
     system.awaitTermination()
 

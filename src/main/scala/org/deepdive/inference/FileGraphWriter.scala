@@ -29,7 +29,7 @@ object FileGraphWriter {
   private def writeWeights(f: File)(implicit connection: Connection) {
     val writer = new PrintWriter(f)
     // [WEIGHT ID] [VALUE] [IS_FIXED_WEIGHT]
-    writer.println(List("weight_id", "initial_value", "is_fixed").mkString("\t"))
+    // writer.println(List("weight_id", "initial_value", "is_fixed").mkString("\t"))
     SQL("select * from weights")().map { row => 
       List(
         row[Long]("id"), 
@@ -43,7 +43,7 @@ object FileGraphWriter {
   private def writeFactors(f: File)(implicit connection: Connection) {
     val writer = new PrintWriter(f)
     // [FACTOR_ID] [WEIGHT ID] [FACTOR_FUNC_TYPE] 
-    writer.println(List("factor_id", "weight_id", "factor_function").mkString("\t"))
+    // writer.println(List("factor_id", "weight_id", "factor_function").mkString("\t"))
     SQL("""select factors.*, count(factor_variables.variable_id) AS num_variables 
       FROM factors INNER JOIN factor_variables on factor_variables.factor_id = factors.id 
       GROUP BY factors.id""")().map { row => 
@@ -61,8 +61,8 @@ object FileGraphWriter {
     val writer = new PrintWriter(f)
 
     // [VARIABLE_ID] [FACTOR_ID] [POSITION] [IS_POSITIVE] [DATA_TYPE] [INITAL_VALUE] [IS_EVIDENCE] [IS_QUERY]
-    writer.println(List("variable_id", "factor_id", "position", "is_positive",
-      "data_type", "initial_value", "is_evidence", "is_query").mkString("\t"))
+    // writer.println(List("variable_id", "factor_id", "position", "is_positive",
+    //  "data_type", "initial_value", "is_evidence", "is_query").mkString("\t"))
     SQL("""SELECT variables.*, factor_variables.* 
       FROM variables LEFT JOIN factor_variables
       ON factor_variables.variable_id = variables.id""")().map{ row =>
