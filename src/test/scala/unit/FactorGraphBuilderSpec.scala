@@ -39,7 +39,7 @@ class FactorGraphBuilderSpec extends FunSpec {
 
       // Add Factors and Variables for the entities relation
       val entityRelation = Relation("entities", Map("id" -> "Long", "word_id" -> "Integer", 
-        "is_present" -> "Boolean"), Nil, None)
+        "is_present" -> "Boolean"))
       val entityFactorDesc = FactorDesc("entititiesFactor", "SELECT * FROM entities", 
         ImplyFactorFunction("entities.is_present", Nil), KnownFactorWeight(1.0))
       actor.addFactorsAndVariables(entityFactorDesc)
@@ -53,9 +53,7 @@ class FactorGraphBuilderSpec extends FunSpec {
 
       // Add Factors and Variables for the parents relations
       val parentsRelation = Relation("parents",
-        Map("id" -> "Long", "entity1_id" -> "Long", "entity2_id" -> "Long", "is_true" -> "Boolean"),
-        Nil,
-        None
+        Map("id" -> "Long", "entity1_id" -> "Long", "entity2_id" -> "Long", "is_true" -> "Boolean")
       )
       val parentsFactorDesc = FactorDesc(
         "parentsFactor", 

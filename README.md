@@ -23,21 +23,13 @@ Deepdive uses a relational schema which must be defined in the configuration fil
     deepdive.relations {
       titles.schema: { id: Long, title: Text, has_entities: Boolean }
       words.schema { id: Long, title_id: Integer word: String, is_present: True }
-      words.fkeys { title_id: titles.id }
-      # ... 
     }
 
 The above defines two relations, *titles* and *words*.  The supprted data types are `Long`, `String`, `Decimal`, `Float`, `Text`, `Timestamp`, `Boolean`, and `Binary`. These data types will be mapped to database-specific types by DeepDive.
 
-#### Foreign Keys
-
-Foreign keys are used to declare dependencies between relations. If a relation is populated by an extractor (see below), then all its parent relations must have been populated previously. 
-
-
 ### 2. Data Ingestion (not yet supported)
 
 Currently DeepDive assumes that all intiial data is already stored in the database, and that you have defined appropriate relations in the configuration. We are planning to support automatic data ingestion in the future.
-
 
 ### 3. Feature Extraction
 
@@ -89,7 +81,13 @@ Such an extractor could be written in Python as follows:
 
 #### Ordering of Extractor Execution
 
-DeepDive uses the foreign keys defined in the relations section to impose an ordering on extractor execution. If relation A has a foreign key to relation B, then the extractor that populates B will be executed before the extractor the populates A. When there is no depedency path between extractors, then DeepDive may execute them in parallel to increase performance.
+You can specify dependencies for your extractors as follows:
+
+    deepdive.extractions: {
+      wordsExtractor.dependencies: ["anotherExtractorName"]
+    }
+
+Extractors will be executed in order of their dependencies. If the dependencies of several extractors ar satisfied at the same time, these may be executed in parallel, or in any order.
 
 ## Defining Rules (Factors)
 

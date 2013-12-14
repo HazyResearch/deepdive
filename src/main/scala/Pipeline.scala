@@ -45,7 +45,7 @@ object Pipeline extends Logging {
     val extractionResults = for {
       extractor <- Context.settings.extractors
       relation <- Context.settings.findRelation(extractor.outputRelation)
-      task <- Some(ExtractionTask(extractor.name, extractor.outputRelation, extractor.inputQuery, extractor.udf))
+      task = ExtractionTask(extractor)
       extractionResult <- Some(ask(extractionManager, ExtractionManager.AddTask(task)))
     } yield extractionResult
 

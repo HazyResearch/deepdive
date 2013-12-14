@@ -15,6 +15,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with PostgresExtractionDat
   describe("Serializing to JSON") {
     
     lazy implicit val connection = dataStore.connection
+    
     def prepareData() {
       TestDataStore.init()
       SQL("drop schema if exists public cascade; create schema public;").execute()

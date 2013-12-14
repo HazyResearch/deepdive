@@ -1,4 +1,5 @@
 package org.deepdive.extraction
 
-case class ExtractionTask(name: String, outputRelation: String, 
-  inputQuery: String, udf: String)
+import org.deepdive.settings.Extractor
+
+case class ExtractionTask(extractor: Extractor)

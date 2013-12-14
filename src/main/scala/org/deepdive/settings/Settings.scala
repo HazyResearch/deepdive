@@ -18,23 +18,11 @@ trait SettingsImpl {
   def extractors : List[Extractor]
   def factors : List[FactorDesc]
 
-  def findRelation(name: String) : Option[Relation] = relations.find(_.name == name)
-  
+  def findRelation(name: String) : Option[Relation] = relations.find(_.name == name)  
   def findExtractor(name: String) : Option[Extractor] = extractors.find(_.name == name)
   
-  def findExtractorForRelation(name: String) : Option[Extractor] = 
-    extractors.find(_.outputRelation == name)
-
-  def findRelationDependencies(name: String) : Set[String] = {
-    findRelation(name).map(_.foreignKeys.filter(_.parentRelation != name)
-      .map(_.parentRelation)).getOrElse(Nil)
-      .flatMap(findRelationDependencies).toSet + name
-  }
-
-  def findExtractorDependencies(name: String) : Set[String] = {
-    val extractorRelations = extractors.map(_.outputRelation).toSet
-    val deps = extractors.find(_.name == name).map(_.outputRelation).map(findRelationDependencies).getOrElse(Set())
-    deps.filter(x => extractorRelations.contains(x))
+  def findExtractorDependencies(extractor: Extractor) : Set[String] = {
+    extractor.dependencies.flatMap(findExtractor).flatMap(findExtractorDependencies)
   }
 
 }

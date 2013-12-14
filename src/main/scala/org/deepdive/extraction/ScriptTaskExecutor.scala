@@ -19,13 +19,13 @@ trait ScriptTaskExecutor extends Logging {
   def run() : ExtractionResult = {
     
     // Set the script to be executable
-    val file = new File(task.udf)
+    val file = new File(task.extractor.udf)
     file.setExecutable(true)
 
     log.info(s"Running UDF: ${file.getAbsolutePath}")
 
     // Get the input data
-    val inputData = dataStore.getInput(task.inputQuery)
+    val inputData = dataStore.getInput(task.extractor.inputQuery)
 
     // Result will be stored here
     val result : ArrayBuffer[JsValue] = ArrayBuffer[JsValue]();
@@ -47,7 +47,7 @@ trait ScriptTaskExecutor extends Logging {
     ).daemonized()
     
     // Run the process
-    val process = task.udf run(io)
+    val process = task.extractor.udf run(io)
     process.exitValue()
 
     log.debug(s"UDF process has exited. Generated num=${result.size} records.")

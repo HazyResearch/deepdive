@@ -36,7 +36,6 @@ class LogisticRegressionApp extends FunSpec {
 
       deepdive.relations.titles.schema: { id: Long, title: Text, has_extractions: Boolean }
       deepdive.relations.word_presences.schema: { id: Long, title_id: Long, word: Text, is_present: Boolean}
-      deepdive.relations.word_presences.fkeys : { title_id: "titles.id" }
 
       deepdive.extractions: {
         wordsExtractor.output_relation: "word_presences"

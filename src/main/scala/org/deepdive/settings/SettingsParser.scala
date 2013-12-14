@@ -33,16 +33,7 @@ object SettingsParser {
     config.getObject("relations").keySet().map { relationName =>
       val relationConfig = config.getConfig(s"relations.$relationName")
       val schema = relationConfig.getObject("schema").unwrapped
-      val foreignKeys = Try(relationConfig.getObject("fkeys").keySet().map { childAttr =>
-        val Array(parentRelation, parentAttribute) = relationConfig.getString(s"fkeys.${childAttr}").split('.')
-        ForeignKey(relationName, childAttr, parentRelation, parentAttribute)
-      }).getOrElse(Nil).toList
-      // We add "id" as a key so that it can be used as a variable. 
-      // TODO: Rename foreign keys to something more appropriate
-      val allKeys = foreignKeys :+ ForeignKey(relationName, "id", relationName, "id")
-      // Evidence
-      val evidence = Try(relationConfig.getString("query_field")).toOption
-      Relation(relationName,schema.toMap.mapValues(_.toString), allKeys, evidence)
+      Relation(relationName,schema.toMap.mapValues(_.toString))
     }.toList
   }
 
@@ -59,7 +50,8 @@ object SettingsParser {
       val outputRelation = extractorConfig.getString("output_relation")
       val inputQuery = extractorConfig.getString(s"input")
       val udf = extractorConfig.getString(s"udf")
-      Extractor(extractorName, outputRelation, inputQuery, udf)
+      val dependencies = Try(extractorConfig.getStringList("dependencies").toSet).getOrElse(Set())
+      Extractor(extractorName, outputRelation, inputQuery, udf, dependencies)
     }.toList
   }
 

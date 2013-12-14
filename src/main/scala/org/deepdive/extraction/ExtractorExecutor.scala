@@ -33,7 +33,7 @@ trait ExtractorExecutor extends Actor with ActorLogging  {
     case ExecuteTask(task) => 
       log.debug(s"Executing $task")
       doExecute(task)
-      log.debug(s"Finished executing task_name=${task.name}")
+      log.debug(s"Finished executing task_name=${task.extractor.name}")
       context.parent ! ExtractionManager.TaskCompleted(task)
       context.stop(self)
     case _ =>
@@ -43,7 +43,7 @@ trait ExtractorExecutor extends Actor with ActorLogging  {
   private def doExecute(task: ExtractionTask) {
     val executor = new PostgresScriptTaskExecutor(task)
     val result = executor.run()
-    writeResult(result, task.outputRelation)
+    writeResult(result, task.extractor.outputRelation)
   }
 
   private def writeResult(result: ExtractionResult, outputRelation: String) {

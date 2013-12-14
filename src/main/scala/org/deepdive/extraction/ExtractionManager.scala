@@ -28,7 +28,7 @@ class ExtractionManager extends Actor with ActorLogging {
   val RETRY_TIMEOUT = 5.seconds
 
   // Keeps track of the tasks
-  val taskQueue = PriorityQueue[ExtractionTask]()(ExtractionTaskOrdering.reverse)
+  val taskQueue = ArrayBuffer[ExtractionTask]()
   val runningTasks = Map[ExtractionTask, ActorRef]()
   val completedTasks = ArrayBuffer[ExtractionTask]()
   // Who wants to be notified when a task is done?
@@ -52,12 +52,12 @@ class ExtractionManager extends Actor with ActorLogging {
 
   def receive = {
     case AddTask(task) =>
-      log.debug(s"Adding task_name=${task.name}")
+      log.debug(s"Adding task_name=${task.extractor.name}")
       taskQueue += task
       taskListeners += Tuple2(task, sender)
       scheduleTasks
     case TaskCompleted(task) =>
-      log.debug(s"Completed task_name=${task.name}")
+      log.debug(s"Completed task_name=${task.extractor.name}")
       runningTasks -= task
       completedTasks += task
       // Notify the listener
@@ -71,27 +71,22 @@ class ExtractionManager extends Actor with ActorLogging {
     log.debug("scheduling tasks")
     // How many more tasks can we execute in parallel right now?
     val capacity = PARALLELISM - runningTasks.size
-    // Get the tasks from the queue, but only take those that have all dependencies satisfied
-    val completedRelations = completedTasks.map(_.outputRelation).toSet
-
-    // A bit ugly, but unfortunately Scala's Queue doesn't provide functional abstractions
-    val (eligibleTasks, notEligibleTasks) = (1 to capacity).map { i =>
-      Try(taskQueue.dequeue)
-    }.flatMap(_.toOption).partition { task =>
-      val dependencies = Context.settings.findExtractorDependencies(task.name)
-      dependencies.subsetOf(completedRelations + task.outputRelation)
-    }
-
-    log.debug(s"${eligibleTasks.size} tasks are eligible. ${notEligibleTasks.size} not eligible.")
-    taskQueue ++= notEligibleTasks
     
-    eligibleTasks.foreach { task =>
-      log.debug(s"executing $task")
-      // TODO: Send to worker
+    // Get the tasks from the queue, but only take those that have all dependencies satisfied
+    val completedExtractors = completedTasks.map(_.extractor.name).toSet
+    val (eligibleTasks, notEligibleTasks) = taskQueue.partition { x =>
+      x.extractor.dependencies.subsetOf(completedExtractors)
+    }
+    log.debug(s"numEligibleTasks=${eligibleTasks.size} numNotEligibleTasks=${notEligibleTasks.size}")
+    
+    eligibleTasks.take(capacity).foreach { task =>
+      log.debug(s"executing extractorName=${task.extractor.name}")
       val newWorker = context.actorOf(ExtractorExecutor.props)
       newWorker ! ExtractorExecutor.ExecuteTask(task)
+      taskQueue -= task
       runningTasks += Tuple2(task, newWorker)
     }
     log.info(s"num=${taskQueue.size} tasks left")
   }
+
 }

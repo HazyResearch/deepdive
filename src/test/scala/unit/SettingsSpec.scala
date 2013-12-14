@@ -18,7 +18,6 @@ class SettingsSpec extends FunSpec {
 
     relations.documents.schema: { id: Integer, text: Text, meta: Text }
     relations.entities.schema: { id: Integer, document_id: Integer, name: String, meta: Text, is_present: Boolean}
-    relations.entities.fkeys: { document_id: documents.id }
 
     extractions: {
       extractor1.output_relation: "entities"
@@ -45,20 +44,14 @@ class SettingsSpec extends FunSpec {
       assert(settings.relations.toSet == Set(
         Relation(
           "documents", 
-          Map[String,String]("id" -> "Integer", "text" -> "Text", "meta" -> "Text"), 
-          List[ForeignKey](ForeignKey("documents","id","documents","id")),
-          None),
+          Map[String,String]("id" -> "Integer", "text" -> "Text", "meta" -> "Text")),
         Relation("entities", 
           Map[String,String]("id" -> "Integer", "document_id" -> "Integer", 
-            "name" -> "String", "meta" -> "Text", "is_present" -> "Boolean"), 
-          List[ForeignKey](
-            ForeignKey("entities","document_id","documents","id"),
-            ForeignKey("entities","id","entities","id")),
-          None)
+            "name" -> "String", "meta" -> "Text", "is_present" -> "Boolean"))
       ))
 
       assert(settings.extractors == List(
-        Extractor("extractor1", "entities", "SELECT * FROM documents", "udf/entities.py")
+        Extractor("extractor1", "entities", "SELECT * FROM documents", "udf/entities.py", Set())
       ))
 
       assert(settings.factors == List(
