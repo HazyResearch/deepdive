@@ -1,19 +1,19 @@
 package org.deepdive.extraction
 
-import anorm._ 
-import java.io.{File, PrintWriter}
-import java.sql.Connection
-import org.deepdive.extraction.datastore._
+import java.io.{File, PrintWriter, OutputStream, InputStream}
 import org.deepdive.Logging
-import scala.collection.JavaConversions._
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{ArrayBuffer, SynchronizedBuffer}
+import java.util.concurrent.SynchronousQueue
+import java.util.concurrent.atomic.AtomicBoolean
+import scala.concurrent.duration._
 import scala.io.Source
 import scala.sys.process._
 import scala.util.Try
 import spray.json._
 
-class ScriptTaskExecutor(task: ExtractionTask, 
-  dataStoreComp: ExtractionDataStoreComponent) extends Logging { 
+class ScriptTaskExecutor(task: ExtractionTask, inputData: Stream[JsObject]) extends Logging { 
+
+  val POLL_TIMEOUT = 1.seconds
 
   def run() : ExtractionResult = {
     
@@ -21,40 +21,75 @@ class ScriptTaskExecutor(task: ExtractionTask,
     val file = new File(task.extractor.udf)
     file.setExecutable(true)
 
-    log.info(s"Running UDF: ${file.getAbsolutePath}")
+    log.info(s"Running UDF: ${file.getAbsolutePath} with parallelism=${task.extractor.parallelism} " + 
+      "batch_size=${task.extractor.batchSize}")
 
-    // Get the input data
-    val inputData = dataStoreComp.dataStore.queryAsJson(task.extractor.inputQuery)
+    // Create one input queue for each worker 
+    val inputQueues = (1 to task.extractor.parallelism).map { x =>
+      new SynchronousQueue[List[JsObject]]()
+    }
 
     // Result will be stored here
-    val result : ArrayBuffer[JsValue] = ArrayBuffer[JsValue]();
-      
-    // Build the process
-    val io = new ProcessIO(
-      in => { 
-        val writer = new PrintWriter(in, true)
-        inputData.foreach { tuple => writer.println(tuple) }
-        in.close()
-      },
-      out => {
-        Source.fromInputStream(out).getLines.map { line =>
-          Try(line.asJson.asJsObject).getOrElse {
-            log.warning(s"Could not parse JSON: ${line}")
-            JsObject()
-          }
-        }.foreach { tuple => result += tuple }
-        out.close()
-      },
-      err => {
-        Source.fromInputStream(err).getLines.foreach(l => log.debug(l))
-      }
-    ).daemonized()
+    val result : ArrayBuffer[JsValue] = new ArrayBuffer[JsValue] with SynchronizedBuffer[JsValue]
+    val isDone = new AtomicBoolean(false)
     
-    // Run the process
-    val process = task.extractor.udf run(io)
-    process.exitValue()
+    // Build process descriptions based on different queues
+    val processDescs = inputQueues.zipWithIndex.map { case(inputQueue, i) =>
+      buildProcessIO(s"${task.extractor.name}[$i]", inputQueue, isDone, result)
+    }
+    
+    // Run the processes
+    val processes = processDescs.map { io =>
+      task.extractor.udf run(io)
+    }
+
+    // Put data into the queue
+    val queueStream = Stream.continually(inputQueues.toStream).flatten
+    inputData.grouped(task.extractor.batchSize).toStream.zip(queueStream).foreach { case(batch, q) =>
+      q.put(batch.toList)
+    }
+    isDone.set(true)
+
+    processes.foreach(_.exitValue())
 
     log.info(s"UDF process has exited. Generated num=${result.size} records.")
     ExtractionResult(result.map(_.asInstanceOf[JsObject]).toList)
   }
+
+  private def buildProcessIO(name: String, inputQueue: SynchronousQueue[List[JsObject]], 
+    isDone: AtomicBoolean, result: ArrayBuffer[JsValue]) = {
+    new ProcessIO(
+      in => handleProcessIOInput(in, name, inputQueue, isDone),
+      out => handleProcessIOOutput(out, name, result),
+      err => {
+        Source.fromInputStream(err).getLines.foreach(l => log.debug(l))
+      }
+    ).daemonized()
+  }
+
+  private def handleProcessIOInput(in: OutputStream, name: String, 
+    inputQueue: SynchronousQueue[List[JsObject]], isDone: AtomicBoolean) : Unit = {
+    log.debug(s"${name} ready")
+    val writer = new PrintWriter(in, true)
+    while(!isDone.get()) {
+      Option(inputQueue.poll(POLL_TIMEOUT.length, POLL_TIMEOUT.unit)).getOrElse(Nil).foreach { tuple =>
+        writer.println(tuple.compactPrint)
+        // log.debug(s"${name}: ${tuple.compactPrint}")
+      }
+    }
+    log.debug(s"${name} done")
+    in.close()
+  } 
+
+  private def handleProcessIOOutput(out: InputStream, name: String, 
+    result: ArrayBuffer[JsValue]) : Unit = {
+    Source.fromInputStream(out).getLines.map { line =>
+      Try(line.asJson.asJsObject).getOrElse {
+        log.warning(s"Could not parse JSON: ${line}")
+        JsObject()
+      }
+    }.foreach { tuple => result += tuple }
+    out.close()
+  }
+
 }

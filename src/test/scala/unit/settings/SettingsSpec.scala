@@ -23,6 +23,8 @@ class SettingsSpec extends FunSpec {
       extractor1.output_relation: "entities"
       extractor1.input: "SELECT * FROM documents"
       extractor1.udf: "udf/entities.py"
+      extractor1.parallelism = 4
+      extractor1.batch_size = 100
     }
 
     factors: {
@@ -51,7 +53,8 @@ class SettingsSpec extends FunSpec {
       ))
 
       assert(settings.extractors == List(
-        Extractor("extractor1", "entities", "SELECT * FROM documents", "udf/entities.py", Set())
+        Extractor("extractor1", "entities", "SELECT * FROM documents", "udf/entities.py", 
+          4, 100, Set())
       ))
 
       assert(settings.factors == List(

@@ -50,8 +50,10 @@ object SettingsParser {
       val outputRelation = extractorConfig.getString("output_relation")
       val inputQuery = extractorConfig.getString(s"input")
       val udf = extractorConfig.getString(s"udf")
+      val parallelism = Try(extractorConfig.getInt(s"parallelism")).getOrElse(1)
+      val batchSize = Try(extractorConfig.getInt(s"batch_size")).getOrElse(1000)
       val dependencies = Try(extractorConfig.getStringList("dependencies").toSet).getOrElse(Set())
-      Extractor(extractorName, outputRelation, inputQuery, udf, dependencies)
+      Extractor(extractorName, outputRelation, inputQuery, udf, parallelism, batchSize, dependencies)
     }.toList
   }
 

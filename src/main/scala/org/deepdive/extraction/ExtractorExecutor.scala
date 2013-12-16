@@ -46,7 +46,7 @@ trait ExtractorExecutor extends Actor with ActorLogging  {
   }
 
   def doExecute(task: ExtractionTask) {
-    val executor = new ScriptTaskExecutor(task, this)
+    val executor = new ScriptTaskExecutor(task, dataStore.queryAsJson(task.extractor.inputQuery))
     val result = executor.run()
     writeResult(result, task.extractor.outputRelation)
   }

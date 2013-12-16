@@ -10,7 +10,7 @@ import org.scalatest._
 import spray.json._
 import DefaultJsonProtocol._
 
-class ScriptTaskExecutorSpec extends FunSpec with BeforeAndAfter 
+class PostgresScriptTaskExecutorSpec extends FunSpec with BeforeAndAfter 
   with PostgresExtractionDataStoreComponent {
 
   lazy implicit val connection = dataStore.connection
@@ -26,8 +26,9 @@ class ScriptTaskExecutorSpec extends FunSpec with BeforeAndAfter
 
     it("should work with a simple query") {
       val extractorFile = getClass.getResource("/simple_extractor.py")
-      val task = ExtractionTask(Extractor("test", "output", "SELECT * FROM documents", extractorFile.getFile, Set()))
-      val executor = new ScriptTaskExecutor(task, this)
+      val task = ExtractionTask(Extractor("test", "output", "SELECT * FROM documents", extractorFile.getFile, 1, 1000,
+        Set()))
+      val executor = new ScriptTaskExecutor(task, dataStore.queryAsJson(task.extractor.inputQuery))
       val result = executor.run()
       assert(result.rows.map(_.compactPrint) == List(Map("document_id" -> 469), Map
         ("document_id" -> 470)).map(_.toJson.compactPrint))
