@@ -16,7 +16,7 @@ class FactorGraphBuilderSpec extends FunSpec {
   implicit val system = ActorSystem("Test")
 
   def prepareData() {
-    TestDataStore.init()
+    PostgresTestDataStore.init()
     PostgresDataStore.withConnection { implicit conn =>
      SQL("drop schema if exists public cascade; create schema public;").execute()
      SQL("create table entities (id bigserial primary key, word_id integer, is_present boolean)").execute()

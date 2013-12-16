@@ -3,7 +3,7 @@ package org.deepdive.test
 import com.typesafe.config.ConfigFactory
 import org.deepdive.datastore.PostgresDataStore
 
-  object TestDataStore {
+  object PostgresTestDataStore {
     
     val config = ConfigFactory.load()
     lazy val databaseUrl = config.getString("deepdive.test.database_url")

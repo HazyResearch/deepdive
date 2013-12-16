@@ -25,7 +25,7 @@ Deepdive uses a relational schema which must be defined in the configuration fil
       words.schema { id: Long, title_id: Integer word: String, is_present: True }
     }
 
-The above defines two relations, *titles* and *words*.  The supprted data types are `Long`, `String`, `Decimal`, `Float`, `Text`, `Timestamp`, `Boolean`, and `Binary`. These data types will be mapped to database-specific types by DeepDive.
+The above defines two relations, *titles* and *words*.  The supprted data types are `Long`, `String`, `Double`, `Text`, `Boolean`, and `Binary`. These data types will be mapped to database-specific types by DeepDive.
 
 ### 2. Data Ingestion (not yet supported)
 
@@ -50,13 +50,15 @@ DeepDive will stream tuples into an extract in JSON format, one per line. In the
 
     { id: 5, title: "I am a title", has_entities: true }
 
-The extractor should output tuples in JSON format to stdout in the same way, but without the `id` field, which is automatically assigned:
+The extractor should output tuples in JSON format to stdout in the same way, but without the `id` field, which is automatically assigned.
 
 
     { title_id: 5, word: "I", is_present: true } 
     { title_id: 5, word: "am", is_present: true } 
     { title_id: 5, word: "a", is_present: true } 
     { title_id: 5, word: "title", is_present: true } 
+
+**Note: You must output all fields in each json row, even if they are null. **
 
 
 Such an extractor could be written in Python as follows:

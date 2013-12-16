@@ -45,13 +45,13 @@ trait ExtractorExecutor extends Actor with ActorLogging  {
       log.warning("Huh?")
   }
 
-  private def doExecute(task: ExtractionTask) {
+  def doExecute(task: ExtractionTask) {
     val executor = new ScriptTaskExecutor(task, this)
     val result = executor.run()
     writeResult(result, task.extractor.outputRelation)
   }
 
-  private def writeResult(result: ExtractionResult, outputRelation: String) {
+  def writeResult(result: ExtractionResult, outputRelation: String) {
     dataStore.writeResult(result.rows, outputRelation)
   }
 }

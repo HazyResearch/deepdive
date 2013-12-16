@@ -25,30 +25,29 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
      * Builds a parameterized INSERT statement for a relation, excluding the id column.
      * Example: "INSERT INTO entities(name, sentence_id) VALUES ({name}, {sentence_id});"
      */
-    private def buildInsert(relation: Relation) = {
-      val fields = relation.schema.keys.filterNot(_ == "id").toList.sorted
+    private def buildInsert(relationName: String, keys: Set[String]) = {
+      val fields =keys.filterNot(_ == "id").toList.sorted
       val relation_fields =  "(" + fields.mkString(", ") + ")"
       val relationPlaceholders =  "(" + fields.map { field =>
         "{" + field + "}"
       }.mkString(", ") + ")"
-      s"INSERT INTO ${relation.name} ${relation_fields} VALUES ${relationPlaceholders};"
+      s"INSERT INTO ${relationName} ${relation_fields} VALUES ${relationPlaceholders};"
     }
 
 
     def writeResult(result: List[JsObject], outputRelation: String) : Unit = {
-      val relation = Context.settings.findRelation(outputRelation) match {
-        case None => throw new RuntimeException(
-          s"relation=${outputRelation} not found in configuration.")
-        case Some(relation) => relation
-      }
+      // We sample the keys to figure out which fields to insert into
+      // This is a ugly, but using this we don't need an explicit schema definition.
+      // Is there a better way?
+      val sampledKeys = result.take(BATCH_SIZE).flatMap(_.fields.keySet).toSet
 
-      val insertStatement = buildInsert(relation)
+      val insertStatement = buildInsert(outputRelation, sampledKeys)
       val sqlStatement = SQL(insertStatement)
       log.info(s"Writing extraction result to postgres. length=${result.length}, sql=${insertStatement}")
       result.grouped(BATCH_SIZE).zipWithIndex.foreach { case(window, i) =>
         log.debug(s"${BATCH_SIZE * i}/${result.size}")
         // Implicit conversion to Anorm Sequence through Utils
-        val batchInsert = new BatchSql(sqlStatement, (relation, window))
+        val batchInsert = new BatchSql(sqlStatement, window)
         batchInsert.execute()
       }
       log.info(s"Wrote num=${result.length} records.")
@@ -66,7 +65,7 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
       }
     }
 
-    def valToJson(x: Any) : JsValue = x match {
+    private def valToJson(x: Any) : JsValue = x match {
       case Some(x) => valToJson(x)
       case None | null => JsNull
       case x : String => x.toJson

@@ -9,6 +9,7 @@ import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
 import scala.sys.process._
+import scala.util.Try
 import spray.json._
 
 class ScriptTaskExecutor(task: ExtractionTask, 
@@ -36,11 +37,16 @@ class ScriptTaskExecutor(task: ExtractionTask,
         in.close()
       },
       out => {
-        Source.fromInputStream(out).getLines.map(_.asJson).foreach { tuple => result += tuple }
+        Source.fromInputStream(out).getLines.map { line =>
+          Try(line.asJson.asJsObject).getOrElse {
+            log.warning(s"Could not parse JSON: ${line}")
+            JsObject()
+          }
+        }.foreach { tuple => result += tuple }
         out.close()
       },
       err => {
-        Source.fromInputStream(err).getLines.foreach(println)
+        Source.fromInputStream(err).getLines.foreach(l => log.debug(l))
       }
     ).daemonized()
     

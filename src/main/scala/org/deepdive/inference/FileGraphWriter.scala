@@ -6,7 +6,7 @@ import akka.event.Logging
 import org.deepdive.context.Context
 import java.io.{File, PrintWriter}
 
-// Writes the factor Graph to CSV files. Ce's Format :)
+/* Writes the factor graph to three TSV files for factors, weights and variables */
 object FileGraphWriter {
 
   val log = Logging.getLogger(Context.system, this)

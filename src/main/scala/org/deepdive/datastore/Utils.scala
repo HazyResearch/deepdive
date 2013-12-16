@@ -6,15 +6,15 @@ import spray.json._
 import anorm._
 
 object Utils extends Logging {
+
   type AnormSeq = Seq[(String, ParameterValue[_])]  
 
   /* 
    * Converts a JSON objects row to a object that can be handled by Anorm
    * Example: ["John", 15, True] => AnormSeq(...)
    */
-  implicit def jsonRowToAnormSeq(relationRow: (Relation, JsObject)) : AnormSeq = {
-    val (relation, row) = relationRow;
-    jsonRowsToAnormSeq((relation, List(row))).head
+  implicit def jsonRowToAnormSeq(row: JsObject) : AnormSeq = {
+    jsonRowsToAnormSeq(List(row)).head
   }
 
   /* 
@@ -22,26 +22,17 @@ object Utils extends Logging {
    * Example: [["John", 15, True], ...] => Seq[AnormSeq(...), ...]
    */
   implicit def jsonRowsToAnormSeq[T <% Iterable[JsObject]]
-    (relationRows: (Relation, T)): Seq[AnormSeq] = {
-    val (relation, rows) = relationRows;
-    val domain = relation.schema.filterKeys(_ != "id")
-
+    (rows: T): Seq[AnormSeq] = {
     rows.map { row =>
-      val anormSeq = domain.map { case(fieldName, fieldType) =>
-        val rowValue = row.fields.get(fieldName).getOrElse(JsNull)
-        (fieldName, (rowValue, fieldType))
-      }.mapValues { 
-        case (JsNull, _) => toParameterValue(null)
-        case (x : JsString, "String") => toParameterValue(x.value)
-        case (x : JsString, "Text") => toParameterValue(x.value)
-        case (x : JsNumber, "Integer") => toParameterValue(x.value.toLong)
-        case (x : JsNumber, "Long") => toParameterValue(x.value.toLong)
-        case (x : JsBoolean, "Boolean") => toParameterValue(x.value)
-        case (value, domain) => 
-          log.error(s"Expected value of type ${domain}, but got JSON type ${value.getClass}")
+      row.fields.mapValues { 
+        case(JsNull) => toParameterValue(null)
+        case(x: JsString) => toParameterValue(x.value)
+        case(x: JsNumber) => toParameterValue(x.value.toLong)
+        case(x: JsBoolean) => toParameterValue(x.value)
+        case (value) => 
+          log.error("Found value of type ${value.getClass.name} which is not supported.")
           toParameterValue(null)
-      }
-      anormSeq.toSeq
+      }.toSeq
     }.toSeq
   }
 }

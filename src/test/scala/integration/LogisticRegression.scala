@@ -12,7 +12,7 @@ import scalikejdbc.ConnectionPool
 class LogisticRegressionApp extends FunSpec {
 
   def prepareData() {
-    TestDataStore.init()
+    PostgresTestDataStore.init()
     PostgresDataStore.withConnection { implicit conn =>
        SQL("drop schema if exists public cascade; create schema public;").execute()
        SQL("create table titles(id bigserial primary key, title text, has_extractions boolean);").execute()
@@ -29,8 +29,8 @@ class LogisticRegressionApp extends FunSpec {
   def getConfig = {
     s"""
       deepdive.global.connection: {
-        url: "${TestDataStore.databaseUrl}"
-        user: "${TestDataStore.databaseUser}"
+        url: "${PostgresTestDataStore.databaseUrl}"
+        user: "${PostgresTestDataStore.databaseUser}"
         password: ""
       }
 
