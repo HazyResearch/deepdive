@@ -91,6 +91,16 @@ You can specify dependencies for your extractors as follows:
 
 Extractors will be executed in order of their dependencies. If the dependencies of several extractors ar satisfied at the same time, these may be executed in parallel, or in any order.
 
+#### Parallel extractor execution
+
+To improve performance, you can specify the number of processes and the batch size for each extractor. Your executable script will be run on N threads in parallel and data will be streamed to this processes in a round-robin fashion. By default each extractor uses 1 process and a batch size of 1000.
+    
+    # Start 5 processes for this extractor
+    wordsExtractor.parallelism: 5
+    # Stream 1000 tuples to each process in a round-robin fashion
+    wordsExtractor.batch_size: 1000
+
+
 ## Defining Rules (Factors)
 
 Domain-specific rules are defined as *factors*. Each factor has a name, an input query, a factor function, and a weight associated with it. The factor function encodes the semantics of the rule.
