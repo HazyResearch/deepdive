@@ -84,6 +84,12 @@ object Pipeline extends Logging {
     log.info(samplerOutput)
     log.info(s"Gibbs sampling finished, output in file=${SAMPLING_OUTPUT_FILE.getCanonicalPath}")
 
+    // Write the inference result back to the database
+    val inferenceWritebackResult = inferenceManager ? 
+      InferenceManager.WriteInferenceResult(SAMPLING_OUTPUT_FILE.getCanonicalPath)
+    Await.result(inferenceWritebackResult, 5.minutes)
+
+
     // Shut down actor system
     system.shutdown()
     system.awaitTermination()

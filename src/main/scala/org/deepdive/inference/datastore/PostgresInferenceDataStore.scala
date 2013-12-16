@@ -5,6 +5,7 @@ import org.deepdive.datastore.PostgresDataStore
 import org.deepdive.datastore.Utils.AnormSeq
 import org.deepdive.Logging
 import scala.collection.mutable.{Map, ArrayBuffer, Set}
+import scala.io.Source
 
 /* Stores the factor graph */
 trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
@@ -44,6 +45,17 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       SQL("""drop table if exists factor_variables; 
         create table factor_variables(factor_id bigint, variable_id bigint, 
         position int, is_positive boolean);""").execute()
+
+      // inference_result(id, last_sample, probability)
+      SQL("""drop table if exists inference_result; 
+        create table inference_result(id bigint, last_sample boolean, 
+        probability double precision);""").execute()
+
+      // A view for the mapped inference result
+      SQL("""drop view if exists mapped_inference_result; 
+      CREATE VIEW mapped_inference_result AS SELECT variables.*, inference_result.last_sample, inference_result.probability 
+      FROM variables INNER JOIN inference_result ON variables.id = inference_result.id;
+      """).execute()
     }
 
     def addFactor(factor: Factor) : Unit = {
@@ -65,6 +77,39 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
     def getWeight(identifier: String) : Option[Weight] = weights.get(identifier)
 
     def addWeight(identifier: String, weight: Weight) = { weights += Tuple2(identifier, weight) }
+
+    def writeInferenceResult(file: String) : Unit = {
+      val sqlStatement = SQL("""insert into inference_result(id, last_sample, probability)
+        values ({id}, {last_sample}, {probability})""")
+      Source.fromFile(file).getLines.grouped(BATCH_SIZE).foreach { values =>
+        writeBatch(sqlStatement, values.map { row =>
+          val Array(id, last_sample, probability) = row.split('\t')
+          Seq(
+            ("id", toParameterValue(id.toLong)), 
+            ("last_sample", toParameterValue(last_sample.toInt > 0)),
+            ("probability", toParameterValue(probability.toDouble))
+          )
+        }.iterator)
+      }
+      // Generate a view for each (relation, column) combination.
+      val relationsColumns = 
+        SQL("SELECT DISTINCT mapping_relation, mapping_column from variables;")().map { row =>
+        Tuple2(row[String]("mapping_relation"), row[String]("mapping_column"))
+      }.toSet
+
+      relationsColumns.foreach { case(relationName, columnName) => 
+        val view_name = s"${relationName}_${columnName}_inference"
+        log.info(s"creating view ${view_name}")
+        SQL(s"""DROP VIEW IF EXISTS ${view_name}; CREATE VIEW ${view_name} AS
+          SELECT ${relationName}.*, mir.last_sample, mir.probability FROM
+          ${relationName} JOIN
+            (SELECT mir.last_sample, mir.probability, mir.mapping_id 
+            FROM mapped_inference_result mir 
+            WHERE mapping_relation = '${relationName}' AND mapping_column = '${columnName}') 
+          mir ON ${relationName}.id = mir.mapping_id
+        """).execute()
+      }
+    }
 
     def flush() : Unit = {
       
@@ -94,7 +139,6 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       log.debug(s"Storing num=${factorVariables.size} relation=factor_variables")
       writeFactorVariables(factorVariables)
       factors.clear()
-      
     }
 
     private def writeWeights(values: Iterable[Weight]) {
