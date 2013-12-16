@@ -8,17 +8,6 @@ import org.deepdive.datastore.Utils.AnormSeq
 object VariableDataType extends Enumeration with Logging {
   type VariableDataType = Value
   val `Boolean`, Discrete, Continuous = Value
-
-  def forAttributeType(attributeType: String) = attributeType match {
-    case "Boolean" => `Boolean`
-    case "Long" => Discrete
-    case "Integer" => Discrete
-    case "Decimal" => Continuous
-    case "Float" => Continuous
-    case x =>
-      log.warning(s"Unknown variable_field_type=$x")
-      `Boolean`
-  }
 }
 import VariableDataType._
 
@@ -33,6 +22,18 @@ object Variable {
       ("initial_value", toParameterValue(value.initialValue)),
       ("is_evidence", toParameterValue(value.isEvidence)),
       ("is_query", toParameterValue(value.isQuery))
+    )
+  }
+}
+
+case class VariableMappingKey(relation: String, id: Long, column: String)
+
+object VariableMappingKey {
+  implicit def toAnormSeq(value: VariableMappingKey) : AnormSeq = {
+    Seq(
+      ("mapping_relation", toParameterValue(value.relation)), 
+      ("mapping_id", toParameterValue(value.id)),
+      ("mapping_column", toParameterValue(value.column))
     )
   }
 }

@@ -18,10 +18,10 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
     val BATCH_SIZE = 5000
 
     // val factorFunctions = Map[String, FactorFunction]()
-    val variables = Map[String, Variable]()
+    val variables = Map[VariableMappingKey, Variable]()
     val factors = ArrayBuffer[Factor]()
     val weights = Map[String, Weight]()
-    val variableIdMap = Map[String, Long]()
+    val variableIdMap = Map[VariableMappingKey, Long]()
 
     def init() : Unit = {
       // weights(id, initial_value, is_fixed)
@@ -34,10 +34,11 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
         create table factors(id bigint primary key, 
         weight_id bigint, factor_function text);""").execute()
 
-      // variables(id, data_type, initial_value, is_evidence, is_query)
+      // variables(id, data_type, initial_value, is_evidence, is_query, mapping_relation, mapping_column, mapping_id)
       SQL("""drop table if exists variables; 
         create table variables(id bigint primary key, data_type text,
-        initial_value double precision, is_evidence boolean, is_query boolean);""").execute()
+        initial_value double precision, is_evidence boolean, is_query boolean,
+        mapping_relation text, mapping_column text, mapping_id integer);""").execute()
       
       // factor_variables(factor_id, variable_id, position, is_positive)
       SQL("""drop table if exists factor_variables; 
@@ -49,15 +50,15 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       factors += factor
     }
 
-    def addVariable(key: String, variable: Variable) : Unit = {
+    def addVariable(key: VariableMappingKey, variable: Variable) : Unit = {
       variables += Tuple2(key, variable)
     }
 
-    def hasVariable(key: String) : Boolean = {
+    def hasVariable(key: VariableMappingKey) : Boolean = {
       getVariableId(key).isDefined
     }
 
-    def getVariableId(key: String) : Option[Long] = {
+    def getVariableId(key: VariableMappingKey) : Option[Long] = {
       (variableIdMap ++ variables.mapValues(_.id)).get(key)
     }
 
@@ -82,7 +83,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       val numQueryVariables = variablesToFlush.values.count(_.isQuery)
       log.debug(s"Storing num=${variablesToFlush.size} num_evidence=${numEvidenceVariables} " +
         s"num_query=${numQueryVariables} relation=variables")
-      writeVariables(variablesToFlush.values)
+      writeVariables(variablesToFlush)
       // Add to the variable Id map, then clear
       variableIdMap ++= variablesToFlush.mapValues(_.id)
       variables --= variablesToFlush.keys
@@ -108,10 +109,13 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       writeBatch(sqlStatement, values.iterator.map(Factor.toAnormSeq))
     }
 
-    private def writeVariables(values: Iterable[Variable]) {
-      val sqlStatement = SQL("""insert into variables(id, data_type, initial_value, is_evidence, is_query) 
-        values ({id}, {data_type}, {initial_value}, {is_evidence}, {is_query})""")
-      writeBatch(sqlStatement, values.iterator.map(Variable.toAnormSeq))
+    private def writeVariables(values: Iterable[(VariableMappingKey, Variable)]) {
+      val sqlStatement = SQL("""insert into variables(id, data_type, initial_value, is_evidence, is_query,
+        mapping_relation, mapping_id, mapping_column) values ({id}, {data_type}, {initial_value}, {is_evidence}, 
+        {is_query}, {mapping_relation}, {mapping_id}, {mapping_column})""")
+      writeBatch(sqlStatement, values.iterator.map { case(key, variable) =>
+        Variable.toAnormSeq(variable) ++ VariableMappingKey.toAnormSeq(key)
+      })
     }
 
     private def writeFactorVariables(values: Iterable[FactorVariable]) {
