@@ -42,7 +42,7 @@ class FactorGraphBuilderSpec extends FunSpec {
         "is_present" -> "Boolean"))
       val entityFactorDesc = FactorDesc("entititiesFactor", "SELECT * FROM entities", 
         ImplyFactorFunction("entities.is_present", Nil), KnownFactorWeight(1.0))
-      actor.addFactorsAndVariables(entityFactorDesc)
+      actor.addFactorsAndVariables(entityFactorDesc, 0.0)
       // Should have one variable and fact,or for each tuple
       assert(actor.inferenceDataStore.variables.size == 6)
       assert(actor.inferenceDataStore.factors.size == 6)
@@ -67,7 +67,7 @@ class FactorGraphBuilderSpec extends FunSpec {
         UnknownFactorWeight(List("parents.entity1_id"))
       )
 
-      actor.addFactorsAndVariables(parentsFactorDesc)
+      actor.addFactorsAndVariables(parentsFactorDesc, 0.0)
       assert(actor.inferenceDataStore.variables.size == 3)
       assert(actor.inferenceDataStore.factors.size == 3)
       actor.inferenceDataStore.flush()

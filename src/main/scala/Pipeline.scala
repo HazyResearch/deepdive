@@ -9,6 +9,7 @@ import org.deepdive.settings.{Settings}
 import org.deepdive.datastore.{PostgresDataStore}
 import org.deepdive.extraction.{ExtractionManager, ExtractionTask}
 import org.deepdive.inference.{InferenceManager, FactorGraphBuilder, FileGraphWriter}
+import org.deepdive.calibration._
 import scala.concurrent.duration._
 import scala.concurrent.{Future, Await}
 import scala.sys.process._
@@ -52,7 +53,6 @@ object Pipeline extends Logging {
     log.info("Running extractors")
     val extractionResults = for {
       extractor <- Context.settings.extractors
-      relation <- Context.settings.findRelation(extractor.outputRelation)
       task = ExtractionTask(extractor)
       extractionResult <- Some(ask(extractionManager, ExtractionManager.AddTask(task)))
     } yield extractionResult
@@ -63,7 +63,8 @@ object Pipeline extends Logging {
     log.info("Building factor graph")
     val graphResults = for {
       factor <- Context.settings.factors
-      graphResult <- Some(ask(inferenceManager, FactorGraphBuilder.AddFactorsAndVariables(factor)))
+      graphResult <- Some(ask(inferenceManager, FactorGraphBuilder.AddFactorsAndVariables(factor, 
+        Context.settings.calibrationSettings.holdoutFraction)))
     } yield graphResult
     Await.result(Future.sequence(graphResults), 30 minutes)
     log.info("Successfully built factor graph")
@@ -89,6 +90,10 @@ object Pipeline extends Logging {
       InferenceManager.WriteInferenceResult(SAMPLING_OUTPUT_FILE.getCanonicalPath)
     Await.result(inferenceWritebackResult, 5.minutes)
 
+    // Writer calibration data
+    val calibrationWriter = new CalibrationDataWriter(new PostgresCalibrationData)
+    calibrationWriter.writeBucketCounts("target/calibration_data/counts")
+    calibrationWriter.writeBucketPrecision("target/calibration_data/precision")
 
     // Shut down actor system
     system.shutdown()

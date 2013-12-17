@@ -7,6 +7,7 @@ import org.deepdive.context.Context
 import akka.actor.{Actor, ActorRef, Props, ActorLogging}
 import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.JavaConversions._
+import scala.util.Random
 
 object FactorGraphBuilder {
 
@@ -19,7 +20,7 @@ object FactorGraphBuilder {
 
   // Messages
   sealed trait Message
-  case class AddFactorsAndVariables(factorDesc: FactorDesc) extends Message
+  case class AddFactorsAndVariables(factorDesc: FactorDesc, holdoutFraction: Double) extends Message
   // case class AddVariables(relation: Relation, fields: Set[String]) extends Message
   case class AddFactorsResult(name: String, success: Boolean)
   // case class AddVariablesResult(name: String, success: Boolean)
@@ -32,6 +33,7 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
   
   import FactorGraphBuilder._
 
+  val rng = new Random(1337)
   val factorFunctionIdCounter = new AtomicInteger
   val variableIdCounter = new AtomicInteger
   val factorIdCounter = new AtomicInteger
@@ -43,9 +45,9 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
   }
 
   def receive = {
-    case AddFactorsAndVariables(factorDesc) =>
+    case AddFactorsAndVariables(factorDesc, holdoutFraction) =>
       log.info(s"Adding factors and variables for factor_name=${factorDesc.name}")
-      addFactorsAndVariables(factorDesc)
+      addFactorsAndVariables(factorDesc, holdoutFraction)
       log.info(s"flushing data store")
       inferenceDataStore.flush()
       sender ! AddFactorsResult(factorDesc.name, true)
@@ -53,14 +55,15 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
   }
 
 
-  def addFactorsAndVariables(factorDesc: FactorDesc) {
+  def addFactorsAndVariables(factorDesc: FactorDesc, holdoutFraction: Double) {
     dataStore.queryAsMap(factorDesc.inputQuery).foreach { row =>
-      addVariablesForRow(row, factorDesc)
+      addVariablesForRow(row, factorDesc, holdoutFraction)
       addFactorForRow(row, factorDesc)
     }
   }
 
-  private def addVariablesForRow(rowMap: Map[String, Any], factorDesc: FactorDesc) : Unit = {
+  private def addVariablesForRow(rowMap: Map[String, Any], factorDesc: FactorDesc,
+    holdoutFraction: Double) : Unit = {
     val variableColumns = factorDesc.func.variables.toList
     val variableLocalIds = variableColumns.map { varColumn =>
       rowMap(s"${varColumn.relation}.id").asInstanceOf[Long]
@@ -72,15 +75,21 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
         case x => Option(x)
       }
     }
+
     val newVariables = (variableColumns, variableLocalIds, 
       variableValues).zipped.foreach { case(varColumn, varId, varValue) => 
+
+        // Flip a coin to check if the variable should part of the holdout
+        val isEvidence = varValue.isDefined
+        val isHoldout = isEvidence && (rng.nextDouble() < holdoutFraction)
+        val isQuery = !isEvidence || (isEvidence && isHoldout)
+
         // Build the variable
         // TODO: Right now, all our variables are boolean. How do we support others?
         val varObj = Variable(variableIdCounter.getAndIncrement(), VariableDataType.Boolean, 
-           0.0, varValue.isDefined, !varValue.isDefined)
+           0.0, !isQuery, isQuery)
         // Store the variable using a unique key
-
-        val variableKey = VariableMappingKey(varColumn.relation, varId, varColumn.field)
+        val variableKey = VariableMappingKey(varColumn.headRelation, varId, varColumn.field)
         if (!inferenceDataStore.hasVariable(variableKey)) {
           // log.debug(s"added variable=${variableKey}")
           inferenceDataStore.addVariable(variableKey, varObj)
@@ -112,7 +121,7 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
     val newFactorId = factorIdCounter.getAndIncrement()
     val factorVariables = factorDesc.func.variables.zipWithIndex.map { case(factorVar, position) =>
       val localId = rowMap(s"${factorVar.relation}.id").asInstanceOf[Long]
-      val variableKey = VariableMappingKey(factorVar.relation, localId, factorVar.field)
+      val variableKey = VariableMappingKey(factorVar.headRelation, localId, factorVar.field)
       val variableId = inferenceDataStore.getVariableId(variableKey).getOrElse {
         log.error(s"variable_key=${variableKey} not found.")
         throw new RuntimeException(s"variable_key=${variableKey} not found.")

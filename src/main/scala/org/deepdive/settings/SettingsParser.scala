@@ -17,8 +17,9 @@ object SettingsParser {
     val etlTasks = loadEtlTasks(config)
     val extractors = loadExtractors(config)
     val factors = loadFactors(config)
+    val calibrationSettings = loadCalibrationSettings(config)
 
-    Settings(connection, relations, etlTasks, extractors, factors)
+    Settings(connection, relations, etlTasks, extractors, factors, calibrationSettings)
   }
 
   private def loadConnection(config: Config) : Connection = {
@@ -67,6 +68,13 @@ object SettingsParser {
         FactorWeightParser.factorWeight, factorConfig.getString("weight"))
       FactorDesc(factorName, factorInputQuery, factorFunction.get, factorWeight.get)
     }.toList).getOrElse(Nil)
+  }
+
+  private def loadCalibrationSettings(config: Config) : CalibrationSettings = {
+    Try(config.getConfig("calibration")).map { calibrationConfig =>
+      val holdoutFraction = Try(calibrationConfig.getDouble("holdout_fraction")).getOrElse(0.0)
+      CalibrationSettings(holdoutFraction)
+    }.getOrElse(CalibrationSettings(0.0))
   }
 
 }

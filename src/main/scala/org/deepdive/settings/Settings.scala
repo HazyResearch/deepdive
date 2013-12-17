@@ -28,7 +28,8 @@ trait SettingsImpl {
 }
 
 case class Settings(connection: Connection, relations: List[Relation], 
-  etlTasks: List[EtlTask], extractors: List[Extractor], factors: List[FactorDesc]) 
+  etlTasks: List[EtlTask], extractors: List[Extractor], factors: List[FactorDesc], 
+  calibrationSettings: CalibrationSettings) 
   extends SettingsImpl
 
 

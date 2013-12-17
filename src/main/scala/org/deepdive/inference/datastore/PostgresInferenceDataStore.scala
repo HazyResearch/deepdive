@@ -86,7 +86,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
           val Array(id, last_sample, probability) = row.split('\t')
           Seq(
             ("id", toParameterValue(id.toLong)), 
-            ("last_sample", toParameterValue(last_sample.toInt > 0)),
+            ("last_sample", toParameterValue(last_sample.toBoolean)),
             ("probability", toParameterValue(probability.toDouble))
           )
         }.iterator)
