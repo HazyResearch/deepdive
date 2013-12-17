@@ -51,7 +51,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       SQL("""drop table if exists inference_result; 
         create table inference_result(id bigint primary key, last_sample boolean, 
         probability double precision);""").execute()
-      SQL("CREATE INDEX ON inference_result (probability);")
+      SQL("CREATE INDEX ON inference_result (probability) using btree;")
 
       // A view for the mapped inference result
       SQL("""drop view if exists mapped_inference_result; 
