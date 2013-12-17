@@ -14,7 +14,7 @@ trait InferenceDataStoreComponent {
     def getVariableId(key: VariableMappingKey) : Option[Long]
     
     def addWeight(identifier: String, weight: Weight)
-    def getWeight(identifier: String) : Option[Weight]
+    def getWeightId(identifier: String) : Option[Long]
     
     def writeInferenceResult(file: String) : Unit
 

@@ -33,6 +33,7 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
   
   import FactorGraphBuilder._
 
+  val BATCH_SIZE = 10000
   val rng = new Random(1337)
   val factorFunctionIdCounter = new AtomicInteger
   val variableIdCounter = new AtomicInteger
@@ -49,16 +50,19 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
       log.info(s"Processing factor_name=${factorDesc.name} with holdout_faction=${holdoutFraction}")
       addFactorsAndVariables(factorDesc, holdoutFraction)
       log.info(s"flushing data store")
-      inferenceDataStore.flush()
       sender ! AddFactorsResult(factorDesc.name, true)
     case _ => 
   }
 
 
   def addFactorsAndVariables(factorDesc: FactorDesc, holdoutFraction: Double) {
-    dataStore.queryAsMap(factorDesc.inputQuery).zipWithIndex.foreach { case (row, i) =>
+    dataStore.queryAsMap(factorDesc.inputQuery).iterator.grouped(BATCH_SIZE).foreach { group =>
+     group.foreach { case row =>
       addVariablesForRow(row, factorDesc, holdoutFraction)
       addFactorForRow(row, factorDesc)
+     }
+     log.debug(s"flushing batch_size=${group.size} for factor_name=${factorDesc.name}.")
+     inferenceDataStore.flush()
     }
   }
 
@@ -108,14 +112,10 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
     // log.debug(s"added weight=${weightIdentifier}")
 
     // Add the weight to the factor store
-    val weight = inferenceDataStore.getWeight(weightIdentifier) match {
-      case Some(weight) => weight
-      case None =>
-        val newWeight = Weight(weightIdCounter.getAndIncrement(), 0.0, 
-          factorDesc.weight.isInstanceOf[KnownFactorWeight])
-        inferenceDataStore.addWeight(weightIdentifier, newWeight)
-        newWeight
-    }
+    val weightId = inferenceDataStore.getWeightId(weightIdentifier).getOrElse(
+      weightIdCounter.getAndIncrement().toLong)
+    val weight = Weight(weightId, 0.0, factorDesc.weight.isInstanceOf[KnownFactorWeight])
+    inferenceDataStore.addWeight(weightIdentifier, weight)
 
     // Build and Add Factor
     val newFactorId = factorIdCounter.getAndIncrement()

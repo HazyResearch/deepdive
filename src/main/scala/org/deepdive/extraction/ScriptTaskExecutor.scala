@@ -45,7 +45,7 @@ class ScriptTaskExecutor(task: ExtractionTask, inputData: Stream[JsObject]) exte
 
     // Put data into the queue
     val queueStream = Stream.continually(inputQueues.toStream).flatten
-    inputData.grouped(task.extractor.batchSize).toStream.zip(queueStream).foreach { case(batch, q) =>
+    inputData.iterator.grouped(task.extractor.batchSize).toStream.zip(queueStream).foreach { case(batch, q) =>
       q.put(batch.toList)
     }
     isDone.set(true)

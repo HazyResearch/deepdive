@@ -19,7 +19,7 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
     implicit lazy val connection = PostgresDataStore.borrowConnection()
 
     /* How many tuples to insert at once */
-    val BATCH_SIZE = 1000
+    val BATCH_SIZE = 5000
 
     /* 
      * Builds a parameterized INSERT statement for a relation, excluding the id column.

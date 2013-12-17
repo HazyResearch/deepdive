@@ -23,6 +23,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
     val factors = ArrayBuffer[Factor]()
     val weights = Map[String, Weight]()
     val variableIdMap = Map[VariableMappingKey, Long]()
+    val weightIdMap = Map[String, Long]()
 
     def init() : Unit = {
       // weights(id, initial_value, is_fixed)
@@ -46,6 +47,8 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       SQL("""drop table if exists factor_variables; 
         create table factor_variables(factor_id bigint, variable_id bigint, 
         position int, is_positive boolean);""").execute()
+      SQL("CREATE INDEX ON factor_variables (factor_id) using hash;")
+      SQL("CREATE INDEX ON factor_variables (variable_id) using hash;")
 
       // inference_result(id, last_sample, probability)
       SQL("""drop table if exists inference_result; 
@@ -77,9 +80,14 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       variableIdMap.get(key)
     }
 
-    def getWeight(identifier: String) : Option[Weight] = weights.get(identifier)
+    def getWeightId(identifier: String) : Option[Long] = weightIdMap.get(identifier)
 
-    def addWeight(identifier: String, weight: Weight) = { weights += Tuple2(identifier, weight) }
+    def addWeight(identifier: String, weight: Weight) = { 
+      if (!weightIdMap.contains(identifier)) {
+        weights += Tuple2(identifier, weight)
+        weightIdMap += Tuple2(identifier, weight.id)
+      }
+    }
 
     def writeInferenceResult(file: String) : Unit = {
       val sqlStatement = SQL("""insert into inference_result(id, last_sample, probability)
@@ -126,15 +134,13 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       writeFactors(factors)
 
       // Insert Variables
-      val variablesToFlush = variables
-      val numEvidenceVariables = variablesToFlush.values.count(_.isEvidence)
-      val numQueryVariables = variablesToFlush.values.count(_.isQuery)
-      log.debug(s"Storing num=${variablesToFlush.size} num_evidence=${numEvidenceVariables} " +
+      val numEvidenceVariables = variables.values.count(_.isEvidence)
+      val numQueryVariables = variables.values.count(_.isQuery)
+      log.debug(s"Storing num=${variables.size} num_evidence=${numEvidenceVariables} " +
         s"num_query=${numQueryVariables} relation=variables")
-      writeVariables(variablesToFlush)
+      writeVariables(variables)
       // Clear variables
-      variables --= variablesToFlush.keys
-
+      variables.clear()
 
       // Insert Factor Variables
       val factorVariables = factors.flatMap(_.variables)

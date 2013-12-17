@@ -3,7 +3,7 @@ package org.deepdive.inference
 import anorm._
 import org.deepdive.datastore.Utils.AnormSeq
 
-case class Weight(id: Integer, value: Double, isFixed: Boolean)
+case class Weight(id: Long, value: Double, isFixed: Boolean)
 
 object Weight {
 
