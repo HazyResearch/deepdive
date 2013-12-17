@@ -69,7 +69,7 @@ class ScriptTaskExecutor(task: ExtractionTask, inputData: Stream[JsObject]) exte
 
   private def handleProcessIOInput(in: OutputStream, name: String, 
     inputQueue: SynchronousQueue[List[JsObject]], isDone: AtomicBoolean) : Unit = {
-    log.debug(s"${name} ready")
+    log.debug(s"${name} running")
     val writer = new PrintWriter(in, true)
     while(!isDone.get()) {
       Option(inputQueue.poll(POLL_TIMEOUT.length, POLL_TIMEOUT.unit)).getOrElse(Nil).foreach { tuple =>

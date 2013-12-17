@@ -38,4 +38,10 @@ object VariableMappingKey {
       ("mapping_column", toParameterValue(value.column))
     )
   }
+  // implicit def stringToVariableMappingKey(str: String) : VariableMappingKey = {
+  //   val Array(relation, id, column) = str.split('-')
+  //   VariableMappingKey(relation, id.toLong, column)
+  // }
+  // implicit def variableMappingKeytoString(x: VariableMappingKey) : String = 
+  //   s"${x.relation}-${x.id}-${x.column}" 
 }
