@@ -22,7 +22,7 @@ class ScriptTaskExecutor(task: ExtractionTask, inputData: Stream[JsObject]) exte
     file.setExecutable(true)
 
     log.info(s"Running UDF: ${file.getAbsolutePath} with parallelism=${task.extractor.parallelism} " + 
-      "batch_size=${task.extractor.batchSize}")
+      s"batch_size=${task.extractor.batchSize}")
 
     // Create one input queue for each worker 
     val inputQueues = (1 to task.extractor.parallelism).map { x =>

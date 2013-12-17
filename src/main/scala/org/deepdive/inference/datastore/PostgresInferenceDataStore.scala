@@ -66,14 +66,15 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
 
     def addVariable(key: VariableMappingKey, variable: Variable) : Unit = {
       variables += Tuple2(key, variable)
+      variableIdMap += Tuple2(key, variable.id)
     }
 
     def hasVariable(key: VariableMappingKey) : Boolean = {
-      getVariableId(key).isDefined
+      variableIdMap.contains(key)
     }
 
     def getVariableId(key: VariableMappingKey) : Option[Long] = {
-      (variableIdMap ++ variables.mapValues(_.id)).get(key)
+      variableIdMap.get(key)
     }
 
     def getWeight(identifier: String) : Option[Weight] = weights.get(identifier)
@@ -131,8 +132,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       log.debug(s"Storing num=${variablesToFlush.size} num_evidence=${numEvidenceVariables} " +
         s"num_query=${numQueryVariables} relation=variables")
       writeVariables(variablesToFlush)
-      // Add to the variable Id map, then clear
-      variableIdMap ++= variablesToFlush.mapValues(_.id)
+      // Clear variables
       variables --= variablesToFlush.keys
 
 

@@ -46,7 +46,7 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
 
   def receive = {
     case AddFactorsAndVariables(factorDesc, holdoutFraction) =>
-      log.info(s"Adding factors and variables for factor_name=${factorDesc.name}")
+      log.info(s"Processing factor_name=${factorDesc.name} with holdout_faction=${holdoutFraction}")
       addFactorsAndVariables(factorDesc, holdoutFraction)
       log.info(s"flushing data store")
       inferenceDataStore.flush()
@@ -56,7 +56,7 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
 
 
   def addFactorsAndVariables(factorDesc: FactorDesc, holdoutFraction: Double) {
-    dataStore.queryAsMap(factorDesc.inputQuery).foreach { row =>
+    dataStore.queryAsMap(factorDesc.inputQuery).zipWithIndex.foreach { case (row, i) =>
       addVariablesForRow(row, factorDesc, holdoutFraction)
       addFactorForRow(row, factorDesc)
     }
