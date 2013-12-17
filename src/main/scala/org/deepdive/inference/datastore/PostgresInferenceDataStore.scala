@@ -40,6 +40,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
         create table variables(id bigint primary key, data_type text,
         initial_value double precision, is_evidence boolean, is_query boolean,
         mapping_relation text, mapping_column text, mapping_id integer);""").execute()
+      SQL("CREATE INDEX ON variables (mapping_id) using hash;")
       
       // factor_variables(factor_id, variable_id, position, is_positive)
       SQL("""drop table if exists factor_variables; 
@@ -48,8 +49,9 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
 
       // inference_result(id, last_sample, probability)
       SQL("""drop table if exists inference_result; 
-        create table inference_result(id bigint, last_sample boolean, 
+        create table inference_result(id bigint primary key, last_sample boolean, 
         probability double precision);""").execute()
+      SQL("CREATE INDEX ON inference_result (probability);")
 
       // A view for the mapped inference result
       SQL("""drop view if exists mapped_inference_result; 
