@@ -26,7 +26,9 @@ object Variable {
   }
 }
 
-case class VariableMappingKey(relation: String, id: Long, column: String)
+case class VariableMappingKey(relation: String, id: Long, column: String) {
+  override val hashCode: Int = scala.runtime.ScalaRunTime._hashCode(VariableMappingKey.this)
+}
 
 object VariableMappingKey {
   implicit def toAnormSeq(value: VariableMappingKey) : AnormSeq = {
