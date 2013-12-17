@@ -49,7 +49,6 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
       // Is there a better way?
       val sampledKeys = result.take(BATCH_SIZE).flatMap(_.fields.keySet).toSet
 
-
       // We use Postgres' copy manager isntead of anorm to do efficient batch inserting
       // Do some magic to ge the underlying connection
       val del = new org.apache.commons.dbcp.DelegatingConnection(connection)

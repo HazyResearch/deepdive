@@ -6,6 +6,8 @@ import org.deepdive.datastore.Utils.AnormSeq
 import org.deepdive.Logging
 import scala.collection.mutable.{Map, ArrayBuffer, Set}
 import scala.io.Source
+import java.io.{ByteArrayInputStream, StringWriter}
+import au.com.bytecode.opencsv.CSVWriter
 
 /* Stores the factor graph */
 trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
@@ -150,30 +152,28 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
     }
 
     private def writeWeights(values: Iterable[Weight]) {
-      val sqlStatement = SQL("""insert into weights(id, initial_value, is_fixed) 
-        values ({id}, {initial_value}, {is_fixed})""")
-      writeBatch(sqlStatement, values.iterator.map(Weight.toAnormSeq(_)))
+      val sqlStatement = """COPY weights(id, initial_value, is_fixed) FROM STDIN CSV"""
+      copyBatchData(sqlStatement, toCSVData(values.iterator))
     }
 
     private def writeFactors(values: Iterable[Factor]) {
-      val sqlStatement = SQL("""insert into factors (id, weight_id, factor_function)
-        values ({id}, {weight_id}, {factor_function})""")
-      writeBatch(sqlStatement, values.iterator.map(Factor.toAnormSeq))
+      val sqlStatement = """COPY factors(id, weight_id, factor_function) FROM STDIN CSV"""
+      copyBatchData(sqlStatement, toCSVData(values.iterator))
     }
 
     private def writeVariables(values: Iterable[(VariableMappingKey, Variable)]) {
-      val sqlStatement = SQL("""insert into variables(id, data_type, initial_value, is_evidence, is_query,
-        mapping_relation, mapping_id, mapping_column) values ({id}, {data_type}, {initial_value}, {is_evidence}, 
-        {is_query}, {mapping_relation}, {mapping_id}, {mapping_column})""")
-      writeBatch(sqlStatement, values.iterator.map { case(key, variable) =>
-        Variable.toAnormSeq(variable) ++ VariableMappingKey.toAnormSeq(key)
-      })
+      val sqlStatement = """COPY variables(id, data_type, initial_value, is_evidence, is_query,
+        mapping_relation, mapping_id, mapping_column) FROM STDIN CSV"""
+      
+      val varCSV = toCSVData(values.map(_._2).iterator)
+      val mappingCSV = toCSVData(values.map(_._1).iterator)
+      val fullCSV = varCSV.lines.zip(mappingCSV.lines).map { case(x,y) => s"$x,$y" }
+      copyBatchData(sqlStatement, fullCSV.mkString("\n"))
     }
 
     private def writeFactorVariables(values: Iterable[FactorVariable]) {
-      val sqlStatement = SQL("""insert into factor_variables(factor_id, variable_id, position, is_positive)
-        values ({factor_id}, {variable_id}, {position}, {is_positive})""");
-      writeBatch(sqlStatement, values.iterator.map(FactorVariable.toAnormSeq))
+      val sqlStatement = """COPY factor_variables(factor_id, variable_id, position, is_positive) FROM STDIN CSV"""
+      copyBatchData(sqlStatement, toCSVData(values.iterator))
     }
 
     private def writeBatch(sqlStatement: SqlQuery, values: Iterator[AnormSeq]) {
@@ -181,6 +181,24 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
         val batchInsert = new BatchSql(sqlStatement, batch.toSeq)
         batchInsert.execute()
       }
+    }
+
+    private def toCSVData[T <: CSVFormattable](data: Iterator[T]) : String = {
+      val strWriter = new StringWriter
+      val writer = new CSVWriter(strWriter)
+      data.foreach (obj => writer.writeNext(obj.toCSVRow))
+      writer.close()
+      strWriter.toString
+    }
+
+    private def copyBatchData(sqlStatement: String, rawData: String) {
+      // We use Postgres' copy manager isntead of anorm to do efficient batch inserting
+      // Do some magic to ge the underlying connection
+      val del = new org.apache.commons.dbcp.DelegatingConnection(connection)
+      val pg_conn = del.getInnermostDelegate().asInstanceOf[org.postgresql.core.BaseConnection]
+      val cm = new org.postgresql.copy.CopyManager(pg_conn)
+      val is = new ByteArrayInputStream(rawData.getBytes)
+      cm.copyIn(sqlStatement, is)
     }
 
   }
