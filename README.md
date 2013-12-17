@@ -155,7 +155,7 @@ The system generated two types of data files for calibration purposes.
 
 1. The number of variabless for 10 probability buckets from 0.0 to 1.0. This file is generated regardless of whether you specify a holdout in the configuration or not. It can be found in `calibration_data/counts_[relation_name]_[column_name].tsv`. It contains three columns: *bucket_lower_bound*, *bucket_upper_bound*, *number_of_variables*.
 
-2. The number of correct and incorrect predictions for 10 probability buckets from 0.0 to 1.0. This file can be found in `calibration_data/precision_[relation_name]_[column_name].tsv`. It contains three columns: *bucket_lower_bound*,  *bucket_upper_bound*, *number_of_variables_correct*, *number_of_variables_incorrect*. This file only contains useful data if you specify a holdout section in the configuration.
+2. The number of correct and incorrect predictions for 10 probability buckets from 0.0 to 1.0. This file can be found in `calibration_data/precision_[relation_name]_[column_name].tsv`. It contains four columns: *bucket_lower_bound*,  *bucket_upper_bound*, *number_of_variables_correct*, *number_of_variables_incorrect*. This file only contains useful data if you specify a holdout section in the configuration.
 
 ## Full Example
 
