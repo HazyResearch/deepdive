@@ -9,6 +9,8 @@ import org.deepdive.datastore.Utils._
 import org.deepdive.Logging
 import spray.json._
 import spray.json.DefaultJsonProtocol._
+import java.io.{ByteArrayInputStream, StringWriter}
+import au.com.bytecode.opencsv.CSVWriter
 
 trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent {
 
@@ -21,17 +23,23 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
     /* How many tuples to insert at once */
     val BATCH_SIZE = 5000
 
-    /* 
-     * Builds a parameterized INSERT statement for a relation, excluding the id column.
-     * Example: "INSERT INTO entities(name, sentence_id) VALUES ({name}, {sentence_id});"
-     */
-    private def buildInsert(relationName: String, keys: Set[String]) = {
-      val fields =keys.filterNot(_ == "id").toList.sorted
-      val relation_fields =  "(" + fields.mkString(", ") + ")"
-      val relationPlaceholders =  "(" + fields.map { field =>
-        "{" + field + "}"
-      }.mkString(", ") + ")"
-      s"INSERT INTO ${relationName} ${relation_fields} VALUES ${relationPlaceholders};"
+    /* Builds a COPY statement for a given relation and column names */
+    def buildCopySql(relationName: String, keys: Set[String]) = {
+      val fields = keys.filterNot(_ == "id").toList.sorted
+      s"""COPY ${relationName}(${fields.mkString(", ")}) FROM STDIN CSV"""
+    }
+
+    /* Builds a CSV dat astring for given JSON data and column names */
+    def buildCopyData(data: List[JsObject], keys: Set[String]) = {
+      val strWriter = new StringWriter()
+      val writer = new CSVWriter(strWriter)
+      data.foreach { obj =>
+        val dataList = obj.fields.filterKeys(_ != "id").toList.sortBy(_._1)
+        val strList = dataList.map (x => jsValueToString(x._2))
+        writer.writeNext(strList.toArray)
+      }
+      writer.close()
+      strWriter.toString
     }
 
 
@@ -41,15 +49,21 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
       // Is there a better way?
       val sampledKeys = result.take(BATCH_SIZE).flatMap(_.fields.keySet).toSet
 
-      val insertStatement = buildInsert(outputRelation, sampledKeys)
-      val sqlStatement = SQL(insertStatement)
-      log.info(s"Writing extraction result to postgres. length=${result.length}, sql=${insertStatement}")
-      result.grouped(BATCH_SIZE).zipWithIndex.foreach { case(window, i) =>
-        log.debug(s"${BATCH_SIZE * i}/${result.size}")
-        // Implicit conversion to Anorm Sequence through Utils
-        val batchInsert = new BatchSql(sqlStatement, window)
-        batchInsert.execute()
-      }
+
+      // We use Postgres' copy manager isntead of anorm to do efficient batch inserting
+      // Do some magic to ge the underlying connection
+      val del = new org.apache.commons.dbcp.DelegatingConnection(connection)
+      val pg_conn = del.getInnermostDelegate().asInstanceOf[org.postgresql.core.BaseConnection]
+      val cm = new org.postgresql.copy.CopyManager(pg_conn)
+      val copySQL = buildCopySql(outputRelation, sampledKeys)
+
+      log.info(s"Writing extraction result to postgres. length=${result.length}, sql=${copySQL}")
+
+      // Build the dataset as a TSV string
+      val strData = buildCopyData(result, sampledKeys)
+      val is = new ByteArrayInputStream(strData.getBytes)
+      cm.copyIn(copySQL, is)
+
       log.info(s"Wrote num=${result.length} records.")
     }
 
@@ -63,6 +77,16 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
       queryAsMap(query).map { row =>
         JsObject(row.mapValues(valToJson))
       }
+    }
+
+    private def jsValueToString(x: JsValue) : String = x match {
+      case JsString(x) => x
+      case JsNumber(x) => x.toString
+      case JsNull => ""
+      case JsBoolean(x) => x.toString
+      case _ => 
+        log.warning(s"Could not convert JSON value ${x} to String")
+        ""
     }
 
     private def valToJson(x: Any) : JsValue = x match {

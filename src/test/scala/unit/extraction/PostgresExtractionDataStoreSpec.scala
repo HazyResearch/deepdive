@@ -54,6 +54,28 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
     }
   }
 
+  describe ("Building the COPY SQL Statement") {
+
+    it ("should work") {
+      val result = dataStore.buildCopySql("someRelation", Set("key1", "key2", "id", "anotherKey"))
+      assert(result == "COPY someRelation(anotherKey, key1, key2) FROM STDIN CSV")
+    }
+
+  }
+
+  describe ("Building the COPY FROM STDIN data") {
+
+    it ("should work") {
+      val data = List[JsObject](
+       JsObject(Map("key1" -> JsString("hi"), "key2" -> JsString("hello"))),
+       JsObject(Map("key1" -> JsString("hi2"), "key2" -> JsString("hello2")))
+      )
+      val result = dataStore.buildCopyData(data, Set("key1", "key2"))
+      println(result)
+      assert(result == "\"hi\",\"hello\"\n\"hi2\",\"hello2\"\n")
+    }
+  }
+
   describe ("Writing JSON to the data store") {
 
     it("should work") {

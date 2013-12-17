@@ -22,7 +22,8 @@ libraryDependencies ++= List(
   "com.github.seratch" %% "scalikejdbc" % "[0.5,)",
   "org.postgresql" % "postgresql" % "9.2-1003-jdbc4",
   "com.h2database" % "h2" % "1.3.166",
-  "io.spray" %%  "spray-json" % "1.2.5"
+  "io.spray" %%  "spray-json" % "1.2.5",
+  "net.sf.opencsv" % "opencsv" % "2.3"
 )
 
 parallelExecution in Test := false
