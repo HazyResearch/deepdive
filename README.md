@@ -8,7 +8,7 @@ DeepDive uses [HOCON](https://github.com/typesafehub/config/blob/master/HOCON.md
 
 DeepDive uses a postgresql-compatible relational data store. 
 
-    deepdive.global.connection {
+    deepdive.connection {
       url: "jdbc:postgresql://localhost/deepdive_titles"
       user: "deepdive"
       password : "password"
