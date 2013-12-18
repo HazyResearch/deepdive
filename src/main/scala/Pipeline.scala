@@ -76,12 +76,15 @@ object Pipeline extends Logging {
 
     // Call the sampler executable
     log.info(s"Running gibbs sampler with num_samples=${NUM_SAMPLES} num_threads=${NUM_SAMPLING_THREADS}")
-    val samplerOutput = Seq("java", "-Xmx4g", "-jar", "lib/gibbs_sampling-assembly-0.1.jar", 
+    val samplerCmd = Seq("java", Context.settings.samplerSettings.cmdOptions, 
+      "-jar", "lib/gibbs_sampling-assembly-0.1.jar", 
       "--variables", VARIABLES_DUMP_FILE.getCanonicalPath, 
       "--factors", FACTORS_DUMP_FILE.getCanonicalPath, 
       "--weights", WEIGHTS_DUMP_FILE.getCanonicalPath,
       "-n", NUM_SAMPLES.toString, "-t", NUM_SAMPLING_THREADS.toString, 
-      "--output", SAMPLING_OUTPUT_FILE.getCanonicalPath).!!
+      "--output", SAMPLING_OUTPUT_FILE.getCanonicalPath)
+    log.info(s"""Executing: ${samplerCmd.mkString(" ")}""")
+    val samplerOutput = samplerCmd.!!
     log.info(samplerOutput)
     log.info(s"Gibbs sampling finished, output in file=${SAMPLING_OUTPUT_FILE.getCanonicalPath}")
 

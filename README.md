@@ -6,17 +6,15 @@ DeepDive uses [HOCON](https://github.com/typesafehub/config/blob/master/HOCON.md
 
 ### Connection Configuration
 
-DeepDive requires a postgresql-compatible relational data store. 
+DeepDive uses a postgresql-compatible relational data store. 
 
     deepdive.global.connection {
-      host : "localhost"
-      port : 5432
-      db : "deepdive"
-      user : "ubuntu"
+      url: "jdbc:postgresql://localhost/deepdive_titles"
+      user: "deepdive"
       password : "password"
     }
 
-### Schema Definition
+<!-- ### Schema Definition
 
 Deepdive uses a relational schema which must be defined in the configuration file. 
 
@@ -29,7 +27,7 @@ The above defines two relations, *titles* and *words*.  The supprted data types 
 
 ### 2. Data Ingestion (not yet supported)
 
-Currently DeepDive assumes that all intiial data is already stored in the database, and that you have defined appropriate relations in the configuration. We are planning to support automatic data ingestion in the future.
+Currently DeepDive assumes that all intiial data is already stored in the database, and that you have defined appropriate relations in the configuration. We are planning to support automatic data ingestion in the future. -->
 
 ### 3. Feature Extraction
 
@@ -156,6 +154,13 @@ The system generated two types of data files for calibration purposes.
 1. The number of variabless for 10 probability buckets from 0.0 to 1.0. This file is generated regardless of whether you specify a holdout in the configuration or not. It can be found in `calibration_data/counts_[relation_name]_[column_name].tsv`. It contains three columns: *bucket_lower_bound*, *bucket_upper_bound*, *number_of_variables*.
 
 2. The number of correct and incorrect predictions for 10 probability buckets from 0.0 to 1.0. This file can be found in `calibration_data/precision_[relation_name]_[column_name].tsv`. It contains four columns: *bucket_lower_bound*,  *bucket_upper_bound*, *number_of_variables_correct*, *number_of_variables_incorrect*. This file only contains useful data if you specify a holdout section in the configuration.
+
+## Sampler Settings
+
+You can optionally parse command line arguments (such as -Xmx) to the sampler binary.
+
+    deepdive.sampler.options: "-Xms1g -Xmx8g"
+
 
 ## Full Example
 

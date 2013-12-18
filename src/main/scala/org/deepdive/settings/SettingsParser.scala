@@ -18,8 +18,10 @@ object SettingsParser {
     val extractors = loadExtractors(config)
     val factors = loadFactors(config)
     val calibrationSettings = loadCalibrationSettings(config)
+    val SamplerSettings = loadSamplerSettings(config)
 
-    Settings(connection, relations, etlTasks, extractors, factors, calibrationSettings)
+    Settings(connection, relations, etlTasks, extractors, factors, 
+      calibrationSettings, SamplerSettings)
   }
 
   private def loadConnection(config: Config) : Connection = {
@@ -75,6 +77,14 @@ object SettingsParser {
       val holdoutFraction = Try(calibrationConfig.getDouble("holdout_fraction")).getOrElse(0.0)
       CalibrationSettings(holdoutFraction)
     }.getOrElse(CalibrationSettings(0.0))
+  }
+
+  private def loadSamplerSettings(config: Config) : SamplerSettings = {
+    val defaultSamplerSettings = SamplerSettings("-Xmx4g")
+    Try(config.getConfig("sampler")).map { samplingConfig =>
+      val options = Try(samplingConfig.getString("options")).getOrElse(defaultSamplerSettings.cmdOptions)
+      SamplerSettings(options)
+    }.getOrElse(defaultSamplerSettings)
   }
 
 }
