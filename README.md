@@ -159,7 +159,8 @@ The system generated two types of data files for calibration purposes.
 
 You can optionally parse command line arguments (such as -Xmx) to the sampler binary.
 
-    deepdive.sampler.options: "-Xms1g -Xmx8g"
+    deepdive.sampler.java_args: "-Xms1g -Xmx8g"
+    deepdive.sampler.sampler_args: "-l 1000 -s 10 -i 1000 -t 4"
 
 
 ## Full Example

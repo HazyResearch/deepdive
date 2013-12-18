@@ -80,10 +80,11 @@ object SettingsParser {
   }
 
   private def loadSamplerSettings(config: Config) : SamplerSettings = {
-    val defaultSamplerSettings = SamplerSettings("-Xmx4g")
+    val defaultSamplerSettings = SamplerSettings("-Xmx4g", "-l 1000 -s 10 -i 1000 -t 4")
     Try(config.getConfig("sampler")).map { samplingConfig =>
-      val options = Try(samplingConfig.getString("options")).getOrElse(defaultSamplerSettings.cmdOptions)
-      SamplerSettings(options)
+      val javaArgs = Try(samplingConfig.getString("java_args")).getOrElse(defaultSamplerSettings.javaArgs)
+      val samplerArgs = Try(samplingConfig.getString("sampler_args")).getOrElse(defaultSamplerSettings.samplerArgs)
+      SamplerSettings(javaArgs, samplerArgs)
     }.getOrElse(defaultSamplerSettings)
   }
 

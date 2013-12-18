@@ -71,17 +71,20 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester {
 
   describe("Parsing Sampler Settings") {
     it ("should work when specified") {
-      val config = ConfigFactory.parseString("""sampler.options = "-Xmx8g" """)
+      val config = ConfigFactory.parseString("""
+        sampler.java_args = "-Xmx8g"
+        sampler.sampler_args = "-i 1000"
+      """)
       val loadSamplerSettings = PrivateMethod[SamplerSettings]('loadSamplerSettings)
       val result = SettingsParser invokePrivate loadSamplerSettings(config)
-      assert(result == SamplerSettings("-Xmx8g"))
+      assert(result == SamplerSettings("-Xmx8g", "-i 1000"))
     }
     
     it ("should work when not specified") {
       val config = ConfigFactory.parseString("")
       val loadSamplerSettings = PrivateMethod[SamplerSettings]('loadSamplerSettings)
       val result = SettingsParser invokePrivate loadSamplerSettings(config)
-      assert(result == SamplerSettings("-Xmx4g"))
+      assert(result == SamplerSettings("-Xmx4g", "-l 1000 -s 10 -i 1000 -t 4"))
     }
   }
 
