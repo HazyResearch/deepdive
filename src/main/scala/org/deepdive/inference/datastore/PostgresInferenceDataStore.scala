@@ -6,8 +6,9 @@ import org.deepdive.datastore.Utils.AnormSeq
 import org.deepdive.Logging
 import scala.collection.mutable.{Map, ArrayBuffer, Set}
 import scala.io.Source
-import java.io.{ByteArrayInputStream, StringWriter}
+import java.io.{ByteArrayInputStream, File, FileOutputStream, StringWriter}
 import au.com.bytecode.opencsv.CSVWriter
+import CSVFormattable._
 
 /* Stores the factor graph */
 trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
@@ -18,7 +19,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
 
     implicit lazy val connection = PostgresDataStore.borrowConnection()
 
-    val BATCH_SIZE = 5000
+    val BatchSize = Some(5000)
 
     // val factorFunctions = Map[String, FactorFunction]()
     val variables = Map[VariableMappingKey, Variable]()
@@ -91,19 +92,35 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       }
     }
 
+    def dumpFactorGraph(factorMapFile: File, factorsFile: File, weightsFile: File) : Unit = {
+      // Write weights
+      log.info(s"Writing weights to file=${weightsFile.getAbsolutePath}")
+      copySQLToTSV("""SELECT id, initial_value, 
+        case when is_fixed then 'true' else 'false' end
+        FROM weights""", weightsFile)
+
+      // Write factors
+      log.info(s"Writing factors to file=${factorsFile.getAbsolutePath}")
+      copySQLToTSV("SELECT id, weight_id, factor_function FROM factors", factorsFile)
+
+      // Write variables
+      log.info(s"Writing factor_map to file=${factorMapFile.getAbsolutePath}")
+      copySQLToTSV("""SELECT variables.id, factor_variables.factor_id, factor_variables.position,
+      case when factor_variables.is_positive then 'true' else 'false' end, 
+      variables.data_type, variables.initial_value, 
+      case when variables.is_evidence then 'true' else 'false' end,
+      case when variables.is_query then 'true' else 'false' end
+      FROM variables LEFT JOIN factor_variables ON factor_variables.variable_id = variables.id""", 
+      factorMapFile)
+
+    }
+
+
     def writeInferenceResult(file: String) : Unit = {
-      val sqlStatement = SQL("""insert into inference_result(id, last_sample, probability)
-        values ({id}, {last_sample}, {probability})""")
-      Source.fromFile(file).getLines.grouped(BATCH_SIZE).foreach { values =>
-        writeBatch(sqlStatement, values.map { row =>
-          val Array(id, last_sample, probability) = row.split('\t')
-          Seq(
-            ("id", toParameterValue(id.toLong)), 
-            ("last_sample", toParameterValue(last_sample.toBoolean)),
-            ("probability", toParameterValue(probability.toDouble))
-          )
-        }.iterator)
-      }
+      // Copy the inference result back to the database
+      copyBatchData("COPY inference_result(id, last_sample, probability) FROM STDIN",
+        Source.fromFile(file).getLines.mkString("\n"))
+      
       // Generate a view for each (relation, column) combination.
       val relationsColumns = 
         SQL("SELECT DISTINCT mapping_relation, mapping_column from variables;")().map { row =>
@@ -128,59 +145,30 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       
       // Insert Weights
       log.debug(s"Storing num=${weights.size} relation=weights")
-      writeWeights(weights.values)
+      copyBatchData("""COPY weights(id, initial_value, is_fixed) FROM STDIN CSV""", 
+        toCSVData(weights.values.iterator))
       weights.clear()
 
       // Insert Factors 
       log.debug(s"Storing num=${factors.size} relation=factors")
-      writeFactors(factors)
+      copyBatchData( """COPY factors(id, weight_id, factor_function) FROM STDIN CSV""", 
+        toCSVData(factors.iterator))
 
       // Insert Variables
-      val numEvidenceVariables = variables.values.count(_.isEvidence)
-      val numQueryVariables = variables.values.count(_.isQuery)
-      log.debug(s"Storing num=${variables.size} num_evidence=${numEvidenceVariables} " +
-        s"num_query=${numQueryVariables} relation=variables")
-      writeVariables(variables)
+      val numEvidence = variables.values.count(_.isEvidence)
+      val numQuery = variables.values.count(_.isQuery)
+      log.debug(s"Storing num=${variables.size} num_evidence=${numEvidence} " +
+        s"num_query=${numQuery} relation=variables")
+      copyBatchData("""COPY variables(mapping_relation, mapping_id, mapping_column, 
+        id, data_type, initial_value, is_evidence, is_query) FROM STDIN CSV""", 
+        toCSVData(CSVFormattable.combineCSVIterators(variables.iterator)))
       // Clear variables
       variables.clear()
 
       // Insert Factor Variables
-      val factorVariables = factors.flatMap(_.variables)
-      log.debug(s"Storing num=${factorVariables.size} relation=factor_variables")
-      writeFactorVariables(factorVariables)
+      copyBatchData("""COPY factor_variables(factor_id, variable_id, position, is_positive) 
+        FROM STDIN CSV""", toCSVData(factors.iterator.flatMap(_.variables)))
       factors.clear()
-    }
-
-    private def writeWeights(values: Iterable[Weight]) {
-      val sqlStatement = """COPY weights(id, initial_value, is_fixed) FROM STDIN CSV"""
-      copyBatchData(sqlStatement, toCSVData(values.iterator))
-    }
-
-    private def writeFactors(values: Iterable[Factor]) {
-      val sqlStatement = """COPY factors(id, weight_id, factor_function) FROM STDIN CSV"""
-      copyBatchData(sqlStatement, toCSVData(values.iterator))
-    }
-
-    private def writeVariables(values: Iterable[(VariableMappingKey, Variable)]) {
-      val sqlStatement = """COPY variables(id, data_type, initial_value, is_evidence, is_query,
-        mapping_relation, mapping_id, mapping_column) FROM STDIN CSV"""
-      
-      val varCSV = toCSVData(values.map(_._2).iterator)
-      val mappingCSV = toCSVData(values.map(_._1).iterator)
-      val fullCSV = varCSV.lines.zip(mappingCSV.lines).map { case(x,y) => s"$x,$y" }
-      copyBatchData(sqlStatement, fullCSV.mkString("\n"))
-    }
-
-    private def writeFactorVariables(values: Iterable[FactorVariable]) {
-      val sqlStatement = """COPY factor_variables(factor_id, variable_id, position, is_positive) FROM STDIN CSV"""
-      copyBatchData(sqlStatement, toCSVData(values.iterator))
-    }
-
-    private def writeBatch(sqlStatement: SqlQuery, values: Iterator[AnormSeq]) {
-      values.grouped(BATCH_SIZE).zipWithIndex.foreach { case(batch, i) =>
-        val batchInsert = new BatchSql(sqlStatement, batch.toSeq)
-        batchInsert.execute()
-      }
     }
 
     private def toCSVData[T <: CSVFormattable](data: Iterator[T]) : String = {
@@ -192,13 +180,21 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
     }
 
     private def copyBatchData(sqlStatement: String, rawData: String) {
-      // We use Postgres' copy manager isntead of anorm to do efficient batch inserting
-      // Do some magic to ge the underlying connection
       val del = new org.apache.commons.dbcp.DelegatingConnection(connection)
       val pg_conn = del.getInnermostDelegate().asInstanceOf[org.postgresql.core.BaseConnection]
       val cm = new org.postgresql.copy.CopyManager(pg_conn)
       val is = new ByteArrayInputStream(rawData.getBytes)
       cm.copyIn(sqlStatement, is)
+    }
+
+    private def copySQLToTSV(sqlSelect: String, f: File) {
+      val del = new org.apache.commons.dbcp.DelegatingConnection(connection)
+      val pg_conn = del.getInnermostDelegate().asInstanceOf[org.postgresql.core.BaseConnection]
+      val cm = new org.postgresql.copy.CopyManager(pg_conn)
+      val os = new FileOutputStream(f)
+      val copySql = s"COPY ($sqlSelect) TO STDOUT"
+      cm.copyOut(copySql, os)
+      os.close()
     }
 
   }

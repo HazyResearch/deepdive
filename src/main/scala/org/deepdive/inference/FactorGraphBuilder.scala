@@ -49,19 +49,26 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
     case AddFactorsAndVariables(factorDesc, holdoutFraction) =>
       log.info(s"Processing factor_name=${factorDesc.name} with holdout_faction=${holdoutFraction}")
       addFactorsAndVariables(factorDesc, holdoutFraction)
-      log.info(s"flushing data store")
       sender ! AddFactorsResult(factorDesc.name, true)
     case _ => 
   }
 
 
   def addFactorsAndVariables(factorDesc: FactorDesc, holdoutFraction: Double) {
-    dataStore.queryAsMap(factorDesc.inputQuery).iterator.grouped(BATCH_SIZE).foreach { group =>
+
+    // If the underlying data store defines a batch size we use that.
+    // If not, we process one big batch
+    val batchIterator = inferenceDataStore.BatchSize match {
+      case Some(x) => dataStore.queryAsMap(factorDesc.inputQuery).iterator.grouped(x)
+      case None => Iterator(dataStore.queryAsMap(factorDesc.inputQuery))
+    }
+
+    batchIterator.foreach { group =>
      group.foreach { case row =>
       addVariablesForRow(row, factorDesc, holdoutFraction)
       addFactorForRow(row, factorDesc)
      }
-     log.debug(s"flushing batch_size=${group.size} for factor_name=${factorDesc.name}.")
+     log.debug(s"flushing data for factor_name=${factorDesc.name}.")
      inferenceDataStore.flush()
     }
   }

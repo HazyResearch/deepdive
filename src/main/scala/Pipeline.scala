@@ -8,7 +8,7 @@ import org.deepdive.context._
 import org.deepdive.settings.{Settings}
 import org.deepdive.datastore.{PostgresDataStore}
 import org.deepdive.extraction.{ExtractionManager, ExtractionTask}
-import org.deepdive.inference.{InferenceManager, FactorGraphBuilder, FileGraphWriter}
+import org.deepdive.inference.{InferenceManager, FactorGraphBuilder}
 import org.deepdive.calibration._
 import scala.concurrent.duration._
 import scala.concurrent.{Future, Await}
@@ -70,9 +70,9 @@ object Pipeline extends Logging {
     log.info("Successfully built factor graph")
 
     // Dump the factor graph to a file
-    PostgresDataStore.withConnection { implicit conn =>
-      FileGraphWriter.dump(VARIABLES_DUMP_FILE, FACTORS_DUMP_FILE, WEIGHTS_DUMP_FILE)
-    }
+    val dumpResult = inferenceManager ? InferenceManager.DumpFactorGraph(VARIABLES_DUMP_FILE.getCanonicalPath, 
+      FACTORS_DUMP_FILE.getCanonicalPath, WEIGHTS_DUMP_FILE.getCanonicalPath)
+    Await.result(dumpResult, 30 minutes)
 
     // Call the sampler executable
     log.info(s"Running gibbs sampler with num_samples=${NUM_SAMPLES} num_threads=${NUM_SAMPLING_THREADS}")
@@ -94,9 +94,9 @@ object Pipeline extends Logging {
     Await.result(inferenceWritebackResult, 5.minutes)
 
     // Writer calibration data
-    val calibrationWriter = new CalibrationDataWriter(new PostgresCalibrationData)
-    calibrationWriter.writeBucketCounts("target/calibration_data/counts")
-    calibrationWriter.writeBucketPrecision("target/calibration_data/precision")
+    val calibrationWritebackResult = inferenceManager ? InferenceManager.WriteCalibrationData(
+      "target/calibration_data/counts", "target/calibration_data/precision")
+    Await.result(calibrationWritebackResult, 5.minutes)
 
     // Shut down actor system
     system.shutdown()
