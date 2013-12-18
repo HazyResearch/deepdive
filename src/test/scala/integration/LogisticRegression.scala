@@ -28,7 +28,7 @@ class LogisticRegressionApp extends FunSpec {
 
   def getConfig = {
     s"""
-      deepdive.global.connection: {
+      deepdive.connection: {
         url: "${PostgresTestDataStore.databaseUrl}"
         user: "${PostgresTestDataStore.databaseUser}"
         password: ""
