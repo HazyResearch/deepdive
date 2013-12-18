@@ -81,7 +81,7 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
     private def jsValueToString(x: JsValue) : String = x match {
       case JsString(x) => x
       case JsNumber(x) => x.toString
-      case JsNull => ""
+      case JsNull => "NULL"
       case JsBoolean(x) => x.toString
       case _ => 
         log.warning(s"Could not convert JSON value ${x} to String")

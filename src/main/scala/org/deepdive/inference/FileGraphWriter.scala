@@ -4,7 +4,7 @@ import anorm._
 import java.sql.Connection
 import akka.event.Logging
 import org.deepdive.context.Context
-import java.io.{File, BufferedWriter, FileWriter}
+import java.io.{File, BufferedWriter, FileWriter, FileOutputStream}
 
 /* Writes the factor graph to three TSV files for factors, weights and variables */
 object FileGraphWriter {
@@ -29,52 +29,35 @@ object FileGraphWriter {
     val writer = new BufferedWriter(new FileWriter(f))
     // [WEIGHT ID] [VALUE] [IS_FIXED_WEIGHT]
     // writer.println(List("weight_id", "initial_value", "is_fixed").mkString("\t"))
-    SQL("select * from weights")().map { row => 
-      List(
-        row[Long]("id"), 
-        row[Double]("initial_value"), 
-        row[Boolean]("is_fixed")
-      ).mkString("\t") + "\n"
-    }.iterator.foreach(writer.write(_))
+    copySQLToTSV("""SELECT id, initial_value, 
+      case when is_fixed then 'true' else 'false' end
+      FROM weights""", f)
     writer.close()
   }
 
   private def writeFactors(f: File)(implicit connection: Connection) {
-    val writer = new BufferedWriter(new FileWriter(f))
-    // [FACTOR_ID] [WEIGHT ID] [FACTOR_FUNC_TYPE] 
-    // writer.println(List("factor_id", "weight_id", "factor_function").mkString("\t"))
-    SQL("""select * from factors""")().map { row => 
-      List(
-        row[Long]("id"),
-        row[Long]("weight_id"),
-        row[String]("factor_function")
-      ).mkString("\t") + "\n"
-    }.iterator.foreach(writer.write(_))
-    writer.close()
+    copySQLToTSV("SELECT id, weight_id, factor_function FROM factors", f)
   }
 
   private def writeVariables(f: File)(implicit connection: Connection) {
-    
-    val writer = new BufferedWriter(new FileWriter(f))
+    copySQLToTSV("""SELECT variables.id, factor_variables.factor_id, factor_variables.position,
+      case when factor_variables.is_positive then 'true' else 'false' end, 
+      variables.data_type, variables.initial_value, 
+      case when variables.is_evidence then 'true' else 'false' end,
+      case when variables.is_query then 'true' else 'false' end
+      FROM variables LEFT JOIN factor_variables ON factor_variables.variable_id = variables.id""", f)
+  }
 
-    // [VARIABLE_ID] [FACTOR_ID] [POSITION] [IS_POSITIVE] [DATA_TYPE] [INITAL_VALUE] [IS_EVIDENCE] [IS_QUERY]
-    // writer.println(List("variable_id", "factor_id", "position", "is_positive",
-    //  "data_type", "initial_value", "is_evidence", "is_query").mkString("\t"))
-    SQL("""SELECT variables.*, factor_variables.* 
-      FROM variables LEFT JOIN factor_variables
-      ON factor_variables.variable_id = variables.id""")().map{ row =>
-      List(
-        row[Long]("id"),
-        row.get[Long]("factor_id").e.right.getOrElse(""),
-        row.get[Long]("position").e.right.getOrElse(""),
-        row.get[Boolean]("is_positive").e.right.getOrElse(""),
-        row[String]("data_type"),
-        row[Double]("initial_value"),
-        row[Boolean]("is_evidence"),
-        row[Boolean]("is_query")
-      ).mkString("\t") + "\n"
-    }.iterator.foreach(writer.write(_))
-    writer.close()
+  private def copySQLToTSV(sqlSelect: String, f: File)(implicit connection: Connection) {
+    // We use Postgres' copy manager isntead of anorm to do efficient batch inserting
+    // Do some magic to ge the underlying connection
+    val del = new org.apache.commons.dbcp.DelegatingConnection(connection)
+    val pg_conn = del.getInnermostDelegate().asInstanceOf[org.postgresql.core.BaseConnection]
+    val cm = new org.postgresql.copy.CopyManager(pg_conn)
+    val os = new FileOutputStream(f)
+    val copySql = s"COPY ($sqlSelect) TO STDOUT"
+    cm.copyOut(copySql, os)
+    os.close()
   }
 
 }
