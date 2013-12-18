@@ -19,7 +19,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
     PostgresTestDataStore.init()
     SQL("drop schema if exists public cascade; create schema public;").execute()
     SQL("""create table datatype_test(id bigserial primary key, key integer, some_text text, 
-      some_boolean boolean, some_double double precision);""").execute()
+      some_boolean boolean, some_double double precision, some_null boolean);""").execute()
   }
 
   describe("Serializing to JSON") {  
@@ -49,7 +49,8 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
         "datatype_test.key" -> JsNumber(1),
         "datatype_test.some_text" -> JsString("Hello"),
         "datatype_test.some_boolean" -> JsBoolean(true),
-        "datatype_test.some_double" -> JsNumber(1.0)
+        "datatype_test.some_double" -> JsNumber(1.0),
+        "datatype_test.some_null" -> JsNull
       ))
     }
   }
@@ -68,11 +69,11 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
     it ("should work") {
       val data = List[JsObject](
        JsObject(Map("key1" -> JsString("hi"), "key2" -> JsString("hello"))),
-       JsObject(Map("key1" -> JsString("hi2"), "key2" -> JsString("hello2")))
+       JsObject(Map("key1" -> JsString("hi2"), "key2" -> JsNull))
       )
       val result = dataStore.buildCopyData(data, Set("key1", "key2"))
       println(result)
-      assert(result == "\"hi\",\"hello\"\n\"hi2\",\"hello2\"\n")
+      assert(result == "\"hi\",\"hello\"\n\"hi2\",\n")
     }
   }
 
@@ -84,7 +85,8 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
         "key" -> JsNumber(100),
         "some_text" -> JsString("I am sample text."),
         "some_boolean" -> JsBoolean(false),
-        "some_double" -> JsNumber(13.37)
+        "some_double" -> JsNumber(13.37),
+        "some_null" -> JsNull
       ))
       dataStore.writeResult(List(testRow), "datatype_test")
       val rowCount = SQL("select count(*) as c from datatype_test")().head[Long]("c")
