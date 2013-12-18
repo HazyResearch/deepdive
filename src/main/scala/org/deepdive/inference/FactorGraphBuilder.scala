@@ -114,7 +114,11 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
     // Add the weight to the factor store
     val weightId = inferenceDataStore.getWeightId(weightIdentifier).getOrElse(
       weightIdCounter.getAndIncrement().toLong)
-    val weight = Weight(weightId, 0.0, factorDesc.weight.isInstanceOf[KnownFactorWeight])
+    val weightValue = factorDesc.weight match { 
+      case x : KnownFactorWeight => x.value
+      case _ => 0.0
+    }
+    val weight = Weight(weightId, weightValue, factorDesc.weight.isInstanceOf[KnownFactorWeight])
     inferenceDataStore.addWeight(weightIdentifier, weight)
 
     // Build and Add Factor
