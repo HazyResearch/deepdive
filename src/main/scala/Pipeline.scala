@@ -76,7 +76,7 @@ object Pipeline extends Logging {
 
     // Call the sampler executable
     log.info(s"Running gibbs sampler with num_samples=${NUM_SAMPLES} num_threads=${NUM_SAMPLING_THREADS}")
-    val samplerOutput = Seq("java", "-jar", "lib/gibbs_sampling-assembly-0.1.jar", 
+    val samplerOutput = Seq("java", "-Xmx4g", "-jar", "lib/gibbs_sampling-assembly-0.1.jar", 
       "--variables", VARIABLES_DUMP_FILE.getCanonicalPath, 
       "--factors", FACTORS_DUMP_FILE.getCanonicalPath, 
       "--weights", WEIGHTS_DUMP_FILE.getCanonicalPath,

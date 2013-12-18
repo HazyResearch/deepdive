@@ -39,7 +39,7 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
         writer.writeNext(strList.toArray)
       }
       writer.close()
-      strWriter.toString.replace("\"\\NULL\"","")
+      strWriter.toString
     }
 
 
@@ -81,7 +81,7 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
     private def jsValueToString(x: JsValue) : String = x match {
       case JsString(x) => x
       case JsNumber(x) => x.toString
-      case JsNull => "\\NULL"
+      case JsNull => null
       case JsBoolean(x) => x.toString
       case _ => 
         log.warning(s"Could not convert JSON value ${x} to String")
