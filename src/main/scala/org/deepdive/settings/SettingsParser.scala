@@ -31,11 +31,11 @@ object SettingsParser {
   }
 
   private def loadRelations(config: Config) : List[Relation] = {
-    config.getObject("relations").keySet().map { relationName =>
+   Try(config.getObject("relations").keySet().map { relationName =>
       val relationConfig = config.getConfig(s"relations.$relationName")
       val schema = relationConfig.getObject("schema").unwrapped
       Relation(relationName,schema.toMap.mapValues(_.toString))
-    }.toList
+    }.toList).getOrElse(Nil)
   }
 
   private def loadEtlTasks(config: Config) : List[EtlTask] = {
