@@ -24,4 +24,6 @@ object PostgresDataStore extends Logging {
     }
   }
 
+  def close() = ConnectionPool.closeAll()
+
 }

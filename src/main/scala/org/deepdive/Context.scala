@@ -1,13 +1,14 @@
 package org.deepdive
 
-import org.deepdive.profiling.Profiler
+import akka.actor.ActorSystem
 import akka.pattern.ask
 import akka.util.Timeout
-import akka.actor.ActorSystem
+import java.io.File
+import org.deepdive.datastore._
+import org.deepdive.profiling.Profiler
+import org.deepdive.settings._
 import scala.concurrent.Await
 import scala.concurrent.duration._
-import java.io.File
-import org.deepdive.settings._
 
 /* Describes the context of the DeepDive application */
 object Context extends Logging {
@@ -26,6 +27,7 @@ object Context extends Logging {
     log.info("shutting down")
     system.shutdown()
     system.awaitTermination()
+    PostgresDataStore.close()
   }
 
 }

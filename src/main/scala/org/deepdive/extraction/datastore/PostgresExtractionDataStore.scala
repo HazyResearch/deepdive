@@ -44,6 +44,12 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
 
 
     def writeResult(result: List[JsObject], outputRelation: String) : Unit = {
+
+      if (result.size == 0) {
+        log.info("nothing to write.")
+        return
+      }
+
       // We sample the keys to figure out which fields to insert into
       // This is a ugly, but using this we don't need an explicit schema definition.
       // Is there a better way?
@@ -83,6 +89,7 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
       case JsNumber(x) => x.toString
       case JsNull => null
       case JsBoolean(x) => x.toString
+      case JsArray(x) => "{" + x.map(jsValueToString).map ( ele => s""" "${ele}" """).mkString(",") + "}"
       case _ => 
         log.warning(s"Could not convert JSON value ${x} to String")
         ""
@@ -96,9 +103,10 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
       case x : Int => x.toJson
       case x : Long => x.toJson
       case x : Double => x.toJson
+      case x : java.sql.Date => JsString(x.toString)
       case x : org.postgresql.jdbc4.Jdbc4Array => x.getArray().asInstanceOf[Array[_]].map(valToJson).toJson
       case x =>
-        log.error("Could not convert ${x.toString} of type=${x.getClass.name} to JSON")
+        log.error(s"Could not convert ${x.toString} of type=${x.getClass.getName} to JSON")
         JsNull
     }
 

@@ -30,17 +30,17 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
 
     def init() : Unit = {
       // weights(id, initial_value, is_fixed)
-      SQL("""drop table if exists weights; 
+      SQL("""drop table if exists weights ; 
         create table weights(id bigint primary key, 
         initial_value double precision, is_fixed boolean);""").execute()
       
       // factors(id, weight_id, factor_function)
-      SQL("""drop table if exists factors; 
+      SQL("""drop table if exists factors CASCADE; 
         create table factors(id bigint primary key, 
         weight_id bigint, factor_function text);""").execute()
 
       // variables(id, data_type, initial_value, is_evidence, is_query, mapping_relation, mapping_column, mapping_id)
-      SQL("""drop table if exists variables; 
+      SQL("""drop table if exists variables CASCADE; 
         create table variables(id bigint primary key, data_type text,
         initial_value double precision, is_evidence boolean, is_query boolean,
         mapping_relation text, mapping_column text, mapping_id integer);""").execute()
@@ -54,7 +54,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       SQL("CREATE INDEX ON factor_variables (variable_id) using hash;")
 
       // inference_result(id, last_sample, probability)
-      SQL("""drop table if exists inference_result; 
+      SQL("""drop table if exists inference_result CASCADE; 
         create table inference_result(id bigint primary key, last_sample boolean, 
         probability double precision);""").execute()
       SQL("CREATE INDEX ON inference_result (probability) using btree;")

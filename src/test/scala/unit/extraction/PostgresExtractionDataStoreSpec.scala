@@ -19,14 +19,15 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
     PostgresTestDataStore.init()
     SQL("drop schema if exists public cascade; create schema public;").execute()
     SQL("""create table datatype_test(id bigserial primary key, key integer, some_text text, 
-      some_boolean boolean, some_double double precision, some_null boolean);""").execute()
+      some_boolean boolean, some_double double precision, some_null boolean, 
+      some_array text[]);""").execute()
   }
 
   describe("Serializing to JSON") {  
 
     def insertSampleRow() : Unit = {
-      SQL("""insert into datatype_test(key, some_text, some_boolean, some_double) 
-        VALUES (1, 'Hello', true, 1.0), (1, 'Ce', false, 2.3)""").execute()
+      SQL("""insert into datatype_test(key, some_text, some_boolean, some_double, some_array) 
+        VALUES (1, 'Hello', true, 1.0, '{"A","B"}'), (1, 'Ce', false, 2.3, '{"C","D"}')""").execute()
     }
 
     it("should work with aggregate data types") {
@@ -50,7 +51,8 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
         "datatype_test.some_text" -> JsString("Hello"),
         "datatype_test.some_boolean" -> JsBoolean(true),
         "datatype_test.some_double" -> JsNumber(1.0),
-        "datatype_test.some_null" -> JsNull
+        "datatype_test.some_null" -> JsNull,
+        "datatype_test.some_array" -> JsArray(List(JsString("A"), JsString("B")))
       ))
     }
   }
@@ -86,11 +88,12 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
         "some_text" -> JsString("I am sample text."),
         "some_boolean" -> JsBoolean(false),
         "some_double" -> JsNumber(13.37),
-        "some_null" -> JsNull
+        "some_null" -> JsNull,
+        "some_array" -> JsArray(List(JsString("13"), JsString("37")))
       ))
       dataStore.writeResult(List(testRow), "datatype_test")
-      val rowCount = SQL("select count(*) as c from datatype_test")().head[Long]("c")
-      assert(rowCount == 1)
+      val result = dataStore.queryAsJson("SELECT * from datatype_test").toList.head.fields
+      assert(result.values.toSet == testRow.fields.values.toSet)
     }
 
   }
