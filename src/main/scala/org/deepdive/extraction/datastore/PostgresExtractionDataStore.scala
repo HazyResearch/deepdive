@@ -2,7 +2,7 @@ package org.deepdive.extraction.datastore
 
 import anorm._
 import java.lang.RuntimeException
-import org.deepdive.context._
+import org.deepdive.Context
 import org.deepdive.settings._
 import org.deepdive.datastore.PostgresDataStore
 import org.deepdive.datastore.Utils._

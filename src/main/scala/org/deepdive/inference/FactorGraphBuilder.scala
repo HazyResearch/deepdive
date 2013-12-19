@@ -3,7 +3,8 @@ package org.deepdive.inference
 import anorm._
 import org.deepdive.extraction.datastore._
 import org.deepdive.settings._
-import org.deepdive.context.Context
+import org.deepdive.Context
+import org.deepdive.profiling.Profiler
 import akka.actor.{Actor, ActorRef, Props, ActorLogging}
 import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.JavaConversions._
@@ -40,6 +41,8 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
   val factorIdCounter = new AtomicInteger
   val weightIdCounter = new AtomicInteger
 
+  val profiler = context.actorSelection("/user/profiler")
+
   override def preStart() {
     log.info("Starting")
     inferenceDataStore.init()
@@ -47,8 +50,11 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
 
   def receive = {
     case AddFactorsAndVariables(factorDesc, holdoutFraction) =>
+      val startTime = System.currentTimeMillis
       log.info(s"Processing factor_name=${factorDesc.name} with holdout_faction=${holdoutFraction}")
       addFactorsAndVariables(factorDesc, holdoutFraction)
+      val endTime = System.currentTimeMillis
+      profiler ! Profiler.FactorAdded(factorDesc, startTime, endTime)
       sender ! AddFactorsResult(factorDesc.name, true)
     case _ => 
   }

@@ -1,7 +1,7 @@
 package org.deepdive.settings
 
 import scala.util.parsing.combinator.RegexParsers
-import org.deepdive.context._
+import org.deepdive.Context
 
 
 object FactorWeightParser extends RegexParsers {

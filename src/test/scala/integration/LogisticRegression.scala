@@ -3,7 +3,7 @@ package org.deepdive.test.integration
 import anorm._ 
 import com.typesafe.config._
 import org.deepdive.test._
-import org.deepdive.context._
+import org.deepdive.Context
 import org.deepdive.Pipeline
 import org.deepdive.datastore.PostgresDataStore
 import org.scalatest._

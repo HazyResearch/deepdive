@@ -2,7 +2,8 @@ package org.deepdive.extraction
 
 import akka.actor.SupervisorStrategy._
 import akka.actor.{Actor, ActorRef, Props, ActorLogging, FSM, OneForOneStrategy}
-import org.deepdive.context._
+import akka.pattern.{ask, pipe}
+import org.deepdive.Context
 import org.deepdive.settings._
 import org.deepdive.extraction._
 import scala.collection.mutable.{PriorityQueue, ArrayBuffer, Map}
@@ -14,7 +15,6 @@ object ExtractionManager {
   // Messages
   sealed trait Message
   case class AddTask(task: ExtractionTask) extends Message
-  case class TaskCompleted(task: ExtractionTask) extends Message
 }
 
 /* 
@@ -23,7 +23,8 @@ object ExtractionManager {
  */ 
 class ExtractionManager extends Actor with ActorLogging {
   import ExtractionManager._
-    
+  
+  val EXTRACTOR_TIMEOUT = 30.minutes
   val PARALLELISM = 1
   val RETRY_TIMEOUT = 5.seconds
 
@@ -38,36 +39,25 @@ class ExtractionManager extends Actor with ActorLogging {
     log.info("Starting")
   }
 
-  /* When a failure happens we stop the executor and requeue the task */
-  override val supervisorStrategy = OneForOneStrategy() {
-    case _: Exception =>
-      runningTasks.find(_._2 == sender).foreach { case(task, executor) =>
-        runningTasks -= task
-        log.error(s"Failed to execute task=$task.name. Retrying.")
-        import context.dispatcher
-        context.system.scheduler.scheduleOnce(RETRY_TIMEOUT, self, AddTask(task))
-      }
-      Stop
-    }
-
   def receive = {
     case AddTask(task) =>
       log.info(s"Adding task_name=${task.extractor.name}")
       taskQueue += task
       taskListeners += Tuple2(task, sender)
       scheduleTasks
-    case TaskCompleted(task) =>
+    case msg @ ExtractionTaskResult(task, success) =>
       log.info(s"Completed task_name=${task.extractor.name}")
       runningTasks -= task
       completedTasks += task
       // Notify the listener
-      taskListeners.get(task).foreach(_ ! TaskCompleted(task))
+      taskListeners.get(task).foreach(_ ! msg)
       scheduleTasks
     case msg => log.warning(s"Huh? ($msg)")
   }
 
   // Schedules new taks based on the queue and capacity
   private def scheduleTasks() : Unit = {
+
     log.info("scheduling tasks")
     // How many more tasks can we execute in parallel right now?
     val capacity = PARALLELISM - runningTasks.size
@@ -82,7 +72,7 @@ class ExtractionManager extends Actor with ActorLogging {
     eligibleTasks.take(capacity).foreach { task =>
       log.info(s"executing extractorName=${task.extractor.name}")
       val newWorker = context.actorOf(ExtractorExecutor.props)
-      newWorker ! ExtractorExecutor.ExecuteTask(task)
+      val result = newWorker.ask(ExtractorExecutor.ExecuteTask(task))(EXTRACTOR_TIMEOUT)
       taskQueue -= task
       runningTasks += Tuple2(task, newWorker)
     }

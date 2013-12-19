@@ -1,7 +1,6 @@
 package org.deepdive
 
 import com.typesafe.config.ConfigFactory
-import org.deepdive.context._
 import org.deepdive.settings._
 import org.deepdive.inference.InferenceManager
 import org.deepdive.extraction.{ExtractorExecutor, ExtractionTask}

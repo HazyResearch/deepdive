@@ -50,10 +50,14 @@ class ScriptTaskExecutor(task: ExtractionTask, inputData: Stream[JsObject]) exte
     }
     isDone.set(true)
 
-    processes.foreach(_.exitValue())
-
-    log.info(s"UDF process has exited. Generated num=${result.size} records.")
-    ExtractionResult(result.map(_.asInstanceOf[JsObject]).toList)
+    val exitValues = processes.map(_.exitValue()).toSet
+    if (exitValues.contains(1)) {
+      log.error(s"${task.extractor.name} FAILED.")
+      throw new RuntimeException(s"${task.extractor.name} FAILED.")
+    } else {
+      log.info(s"UDF process has exited. Generated num=${result.size} records.")
+      ExtractionResult(result.map(_.asInstanceOf[JsObject]).toList)
+    }
   }
 
   private def buildProcessIO(name: String, inputQueue: SynchronousQueue[List[JsObject]], 
@@ -62,7 +66,7 @@ class ScriptTaskExecutor(task: ExtractionTask, inputData: Stream[JsObject]) exte
       in => handleProcessIOInput(in, name, inputQueue, isDone),
       out => handleProcessIOOutput(out, name, result),
       err => {
-        Source.fromInputStream(err).getLines.foreach(l => log.debug(l))
+        Source.fromInputStream(err).getLines.foreach(l => log.error(l))
       }
     ).daemonized()
   }

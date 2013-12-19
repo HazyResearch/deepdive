@@ -2,7 +2,7 @@ package org.deepdive.test.unit
 
 import com.typesafe.config._
 import org.deepdive.settings._
-import org.deepdive.context._
+import org.deepdive.Context
 import org.scalatest._
 
 class SettingsParserSpec extends FunSpec with PrivateMethodTester {

@@ -4,7 +4,7 @@ import anorm._
 import org.deepdive.datastore.PostgresDataStore
 import org.scalatest._
 import org.deepdive._
-import org.deepdive.context._
+import org.deepdive.Context
 import org.deepdive.settings._
 import org.deepdive.inference.{FactorGraphBuilder}
 import org.deepdive.test._

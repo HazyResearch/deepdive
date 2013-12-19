@@ -7,7 +7,7 @@ import java.io.File
 /* Manages the Factor and Variable relations in the database */
 trait InferenceManager extends Actor with ActorLogging {
   self: InferenceDataStoreComponent with CalibrationDataComponent =>
-  
+    
   val factorGraphBuilder = context.actorOf(FactorGraphBuilder.props)
 
   override def preStart() {
