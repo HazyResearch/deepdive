@@ -5,12 +5,13 @@ import org.deepdive.settings._
 import spray.json._
 import anorm._
 
+/* Utilities for working with data stores */
 object Utils extends Logging {
 
   type AnormSeq = Seq[(String, ParameterValue[_])]  
 
   /* 
-   * Converts a JSON objects row to a object that can be handled by Anorm
+   * Converts a JSON objects row to a object that can be handled by the Anorm library
    * Example: ["John", 15, True] => AnormSeq(...)
    */
   implicit def jsonRowToAnormSeq(row: JsObject) : AnormSeq = {
