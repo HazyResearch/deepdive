@@ -121,7 +121,7 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
       variableValue <- rowMap.get(variableName)
     } yield variableValue.asInstanceOf[Option[_]].getOrElse("")
     // A unique identifier for the weight based on the factor name
-    val weightIdentifier = factorDesc.name + "_" + factorWeightValues.mkString
+    val weightIdentifier = factorDesc.weightPrefix + "_" + factorWeightValues.mkString
     // log.debug(s"added weight=${weightIdentifier}")
 
     // Add the weight to the factor store

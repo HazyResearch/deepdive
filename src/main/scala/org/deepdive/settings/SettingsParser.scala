@@ -68,7 +68,9 @@ object SettingsParser {
         FactorFunctionParser.factorFunc, factorConfig.getString("function"))
       val factorWeight = FactorWeightParser.parse(
         FactorWeightParser.factorWeight, factorConfig.getString("weight"))
-      FactorDesc(factorName, factorInputQuery, factorFunction.get, factorWeight.get)
+      val factorWeightPrefix = Try(factorConfig.getString("weightPrefix")).getOrElse(factorName)
+      FactorDesc(factorName, factorInputQuery, factorFunction.get, 
+        factorWeight.get, factorWeightPrefix)
     }.toList).getOrElse(Nil)
   }
 
