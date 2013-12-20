@@ -81,7 +81,6 @@ class ScriptTaskExecutor(task: ExtractionTask, inputData: Stream[JsObject]) exte
         // log.debug(s"${name}: ${tuple.compactPrint}")
       }
     }
-    log.debug(s"${name} done")
     in.close()
   } 
 
@@ -94,6 +93,7 @@ class ScriptTaskExecutor(task: ExtractionTask, inputData: Stream[JsObject]) exte
       }
     }.foreach { tuple => result += tuple }
     out.close()
+    log.debug(s"${name} done")
   }
 
 }

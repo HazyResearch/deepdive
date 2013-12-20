@@ -3,6 +3,7 @@ package org.deepdive.calibration
 import org.deepdive.Logging
 import org.deepdive.inference.InferenceDataStoreComponent
 
+
 trait CalibrationDataComponent { self: InferenceDataStoreComponent =>
 
   def calibrationData : CalibrationData
@@ -18,7 +19,7 @@ trait CalibrationDataComponent { self: InferenceDataStoreComponent =>
     /* The number of (correct, incorrect) predictions for each bucket */
     def predictionCounts(relation: String, column: String, buckets: List[Bucket]) : Map[Bucket, (Long, Long)]
 
-    // Writes the counts for ten buckets from 0.0 to 1.0
+    /* Writes the counts for ten buckets from 0.0 to 1.0 */
     def writeBucketCounts(filePrefix: String) {
       val relationsAndColumns = calibrationData.relationsAndColumns()
       relationsAndColumns.foreach { case(relation, column) =>
