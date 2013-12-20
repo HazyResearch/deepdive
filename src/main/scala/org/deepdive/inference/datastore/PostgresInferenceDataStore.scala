@@ -44,20 +44,20 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
         create table variables(id bigint primary key, data_type text,
         initial_value double precision, is_evidence boolean, is_query boolean,
         mapping_relation text, mapping_column text, mapping_id integer);""").execute()
-      SQL("CREATE INDEX ON variables (mapping_id) using hash;")
+      SQL("CREATE INDEX ON variables using hash (mapping_id);").execute()
       
       // factor_variables(factor_id, variable_id, position, is_positive)
       SQL("""drop table if exists factor_variables; 
         create table factor_variables(factor_id bigint, variable_id bigint, 
         position int, is_positive boolean);""").execute()
-      SQL("CREATE INDEX ON factor_variables (factor_id) using hash;")
-      SQL("CREATE INDEX ON factor_variables (variable_id) using hash;")
+      SQL("CREATE INDEX ON factor_variables using hash (factor_id);").execute()
+      SQL("CREATE INDEX ON factor_variables using hash (variable_id);").execute()
 
       // inference_result(id, last_sample, probability)
       SQL("""drop table if exists inference_result CASCADE; 
         create table inference_result(id bigint primary key, last_sample boolean, 
         probability double precision);""").execute()
-      SQL("CREATE INDEX ON inference_result (probability) using btree;")
+      SQL("CREATE INDEX ON inference_result using btree (probability);").execute()
 
       // A view for the mapped inference result
       SQL("""drop view if exists mapped_inference_result; 

@@ -41,7 +41,7 @@ class PostgresFactorGraphBuilderSpec extends FunSpec {
       val entityRelation = Relation("entities", Map("id" -> "Long", "word_id" -> "Integer", 
         "is_present" -> "Boolean"))
       val entityFactorDesc = FactorDesc("entititiesFactor", "SELECT * FROM entities", 
-        ImplyFactorFunction("entities.is_present", Nil), KnownFactorWeight(1.0))
+        ImplyFactorFunction("entities.is_present", Nil), KnownFactorWeight(1.0), "entititiesFactor")
       actor.addFactorsAndVariables(entityFactorDesc, 0.0)
       // Should have one variable and fact,or for each tuple
       // assert(actor.inferenceDataStore.variables.size == 6)
@@ -64,7 +64,7 @@ class PostgresFactorGraphBuilderSpec extends FunSpec {
         INNER JOIN entities e2 ON parents.entity2_id = e2.id
         """,
         ImplyFactorFunction("parents.is_true", List("entities.e1.is_present", "entities.e2.is_present")), 
-        UnknownFactorWeight(List("parents.entity1_id"))
+        UnknownFactorWeight(List("parents.entity1_id")), "parentsFactor"
       )
 
       actor.addFactorsAndVariables(parentsFactorDesc, 0.0)

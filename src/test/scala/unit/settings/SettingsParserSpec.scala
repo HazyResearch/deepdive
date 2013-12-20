@@ -50,7 +50,7 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester {
       assert(result == List(FactorDesc("factor1", 
         "SELECT a.*, b.* FROM a INNER JOIN b ON a.document_id = b.id",
         ImplyFactorFunction(FactorFunctionVariable("a", "is_present"), Nil), 
-        UnknownFactorWeight(Nil))))
+        UnknownFactorWeight(Nil), "factor1")))
     }
   }
 

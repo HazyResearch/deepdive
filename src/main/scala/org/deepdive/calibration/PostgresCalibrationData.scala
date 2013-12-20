@@ -4,6 +4,7 @@ import anorm._
 import org.deepdive.Logging
 import org.deepdive.inference.PostgresInferenceDataStoreComponent
 
+/* Obtains calibration data from the inference result stored in Postgres */
 trait PostgresCalibrationDataComponent extends CalibrationDataComponent with
   PostgresInferenceDataStoreComponent {
 
@@ -12,8 +13,8 @@ trait PostgresCalibrationDataComponent extends CalibrationDataComponent with
   class PostgresCalibrationData extends CalibrationData with Logging {
 
     implicit lazy val connection = inferenceDataStore.connection
-
-    def relationsAndColumns() : Set[(String, String)] = {
+    
+    def relationsAndAttributes() : Set[(String, String)] = {
       SQL("SELECT DISTINCT mapping_relation, mapping_column from variables;")().map { row =>
         Tuple2(row[String]("mapping_relation"), row[String]("mapping_column"))
       }.toSet
