@@ -74,7 +74,11 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
 
     def queryAsMap(query: String) : Stream[Map[String, Any]] = {
       SQL(query)().map { row =>
-        row.asMap.toMap
+        row.asMap.toMap.mapValues { 
+          case x : org.postgresql.jdbc4.Jdbc4Array => x.getArray()
+          case x : java.sql.Date => x.toString
+          case other => other
+        }
       }
     }
 
@@ -109,7 +113,7 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
       case x : Double => x.toJson
       case x : java.sql.Date => JsString(x.toString)
       case x : Array[_] => JsArray(x.toList.map(x => valToJson(x)))
-      case x : org.postgresql.jdbc4.Jdbc4Array => x.getArray().asInstanceOf[Array[_]].map(valToJson).toJson
+      case x : org.postgresql.jdbc4.Jdbc4Array => JsArray(x.getArray().asInstanceOf[Array[_]].map(valToJson).toList)
       case x =>
         log.error(s"Could not convert ${x.toString} of type=${x.getClass.getName} to JSON")
         JsNull

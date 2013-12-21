@@ -83,8 +83,7 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
     factorVar: FactorFunctionVariable) : Array[Long] = {
     if (factorVar.isArray)
       // TODO: Decouple this from the underlying datastore
-      rowMap(s".${factorVar.relation}.id").asInstanceOf[org.postgresql.jdbc4.Jdbc4Array]
-        .getArray().asInstanceOf[Array[Long]]
+      rowMap(s".${factorVar.relation}.id").asInstanceOf[Array[Long]]
     else
       Array(rowMap(s"${factorVar.relation}.id").asInstanceOf[Long])
   }
