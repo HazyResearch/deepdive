@@ -13,7 +13,7 @@ class FactorFunctionParserSpec extends FunSpec {
       val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
       assert(result.successful)
       assert(result.get == ImplyFactorFunction(
-        FactorFunctionVariable("words", "is_present", false), List())
+        FactorFunctionVariable("words", "is_present", false, false), List())
       )
     }
 
@@ -46,6 +46,16 @@ class FactorFunctionParserSpec extends FunSpec {
       assert(result.get == ImplyFactorFunction(
         FactorFunctionVariable("words", "is_present", false), List(
           FactorFunctionVariable("words", "char", true)))
+      )
+    }
+
+    it("should parse expression with negated variables") {
+      val expr = "titles.is_present = Imply(!words.is_present)"
+      val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
+      assert(result.successful)
+      assert(result.get == ImplyFactorFunction(
+        FactorFunctionVariable("titles", "is_present", false), List(
+          FactorFunctionVariable("words", "is_present", false, true)))
       )
     }
 

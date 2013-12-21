@@ -9,9 +9,10 @@ object FactorFunctionParser extends RegexParsers with Logging {
   def factorFunctionName = "Imply" | "Dummy"
 
   
-  def factorVariable = rep1sep(relationOrField, ".") ~ (arrayDefinition?) ^^ { 
-    case (varList ~ isArray)  => 
-      FactorFunctionVariable(varList.take(varList.size - 1).mkString("."), varList.last, isArray.isDefined)
+  def factorVariable = ("!"?) ~ rep1sep(relationOrField, ".") ~ (arrayDefinition?) ^^ { 
+    case (isNegated ~ varList ~ isArray)  => 
+      FactorFunctionVariable(varList.take(varList.size - 1).mkString("."), varList.last, 
+        isArray.isDefined, isNegated.isDefined)
   }
 
   def factorFunc = ((factorVariable <~ "=")?) ~ factorFunctionName ~ ("(" ~> repsep(factorVariable, ",")) <~ ")" ^^ { 

@@ -160,8 +160,7 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
           throw new RuntimeException(s"variable_key=${variableKey} not found.")
         }
         positionCounter += 1
-        // Always positive.
-        FactorVariable(newFactorId.toLong, positionCounter, true, variableId)
+        FactorVariable(newFactorId.toLong, positionCounter, !factorVar.isNegated, variableId)
       } 
     }
     val newFactor = Factor(newFactorId, factorDesc.func.getClass.getSimpleName, weight, 
