@@ -13,7 +13,7 @@ class FactorFunctionParserSpec extends FunSpec {
       val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
       assert(result.successful)
       assert(result.get == ImplyFactorFunction(
-        FactorFunctionVariable("words", "is_present"), List())
+        FactorFunctionVariable("words", "is_present", false), List())
       )
     }
 
@@ -22,10 +22,10 @@ class FactorFunctionParserSpec extends FunSpec {
       val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
       assert(result.successful)
       assert(result.get == ImplyFactorFunction(
-        FactorFunctionVariable("words", "is_true"), 
+        FactorFunctionVariable("words", "is_true", false), 
         List(
-          FactorFunctionVariable("relation2", "predicate"), 
-          FactorFunctionVariable("relation3", "predicate"))
+          FactorFunctionVariable("relation2", "predicate", false), 
+          FactorFunctionVariable("relation3", "predicate", false))
       ))
     }
 
@@ -34,10 +34,21 @@ class FactorFunctionParserSpec extends FunSpec {
       val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
       assert(result.successful)
       assert(result.get == ImplyFactorFunction(
-        FactorFunctionVariable("words", "is_true"), 
-        List(FactorFunctionVariable("relation2.r2", "predicate"))
+        FactorFunctionVariable("words", "is_true", false), 
+        List(FactorFunctionVariable("relation2.r2", "predicate", false))
       ))
     }
+
+    it("should parse array factor functions") {
+      val expr = "words.is_present = Imply(words.char[])"
+      val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
+      assert(result.successful)
+      assert(result.get == ImplyFactorFunction(
+        FactorFunctionVariable("words", "is_present", false), List(
+          FactorFunctionVariable("words", "char", true)))
+      )
+    }
+
 
     it("should not parse malformed Imply expressions") {
       val expr = "id = Imply(a"

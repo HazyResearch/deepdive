@@ -56,6 +56,7 @@ class LogisticRegressionApp extends FunSpec {
     val config = ConfigFactory.parseString(getConfig)
     Pipeline.run(config)
     // Make sure the data is in the database
+    PostgresTestDataStore.init()
     PostgresDataStore.withConnection { implicit conn =>
      
       val extractionResult = SQL("SELECT * FROM word_presences;")().map { row =>

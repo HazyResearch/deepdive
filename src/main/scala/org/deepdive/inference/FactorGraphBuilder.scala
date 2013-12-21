@@ -83,7 +83,12 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
     holdoutFraction: Double) : Unit = {
     val variableColumns = factorDesc.func.variables.toList
     val variableLocalIds = variableColumns.map { varColumn =>
-      rowMap(s"${varColumn.relation}.id").asInstanceOf[Long]
+      if (varColumn.isArray)
+        // TODO: Decouple this from the underlying datastore
+        rowMap(s".${varColumn.relation}.id").asInstanceOf[org.postgresql.jdbc4.Jdbc4Array]
+          .getArray().asInstanceOf[Array[Long]]
+      else
+        Array(rowMap(s"${varColumn.relation}.id").asInstanceOf[Long])
     }
     val variableValues = variableColumns.map { varColumn =>
       rowMap.get(varColumn.toString).get match {
@@ -94,22 +99,24 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
     }
 
     val newVariables = (variableColumns, variableLocalIds, 
-      variableValues).zipped.foreach { case(varColumn, varId, varValue) => 
+      variableValues).zipped.foreach { case(varColumn, varIds, varValue) => 
 
         // Flip a coin to check if the variable should part of the holdout
         val isEvidence = varValue.isDefined
         val isHoldout = isEvidence && (rng.nextDouble() < holdoutFraction)
         val isQuery = !isEvidence || (isEvidence && isHoldout)
 
-        // Build the variable
-        // TODO: Right now, all our variables are boolean. How do we support others?
-        val varObj = Variable(variableIdCounter.getAndIncrement(), VariableDataType.Boolean, 
-           0.0, !isQuery, isQuery)
-        // Store the variable using a unique key
-        val variableKey = VariableMappingKey(varColumn.headRelation, varId, varColumn.field)
-        if (!inferenceDataStore.hasVariable(variableKey)) {
-          // log.debug(s"added variable=${variableKey}")
-          inferenceDataStore.addVariable(variableKey, varObj)
+        // Build the variable, one for each ID
+        for (varId <- varIds) {
+          // TODO: Right now, all our variables are boolean. How do we support others?
+          val varObj = Variable(variableIdCounter.getAndIncrement(), VariableDataType.Boolean, 
+             0.0, !isQuery, isQuery)
+          // Store the variable using a unique key
+          val variableKey = VariableMappingKey(varColumn.headRelation, varId, varColumn.field)
+          if (!inferenceDataStore.hasVariable(variableKey)) {
+            // log.debug(s"added variable=${variableKey}")
+            inferenceDataStore.addVariable(variableKey, varObj)
+          }
         }
       }
   }
