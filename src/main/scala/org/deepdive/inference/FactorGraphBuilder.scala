@@ -79,16 +79,21 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
     }
   }
 
+  private def getLocalVariableIds(rowMap: Map[String, Any], 
+    factorVar: FactorFunctionVariable) : Array[Long] = {
+    if (factorVar.isArray)
+      // TODO: Decouple this from the underlying datastore
+      rowMap(s".${factorVar.relation}.id").asInstanceOf[org.postgresql.jdbc4.Jdbc4Array]
+        .getArray().asInstanceOf[Array[Long]]
+    else
+      Array(rowMap(s"${factorVar.relation}.id").asInstanceOf[Long])
+  }
+
   private def addVariablesForRow(rowMap: Map[String, Any], factorDesc: FactorDesc,
     holdoutFraction: Double) : Unit = {
     val variableColumns = factorDesc.func.variables.toList
     val variableLocalIds = variableColumns.map { varColumn =>
-      if (varColumn.isArray)
-        // TODO: Decouple this from the underlying datastore
-        rowMap(s".${varColumn.relation}.id").asInstanceOf[org.postgresql.jdbc4.Jdbc4Array]
-          .getArray().asInstanceOf[Array[Long]]
-      else
-        Array(rowMap(s"${varColumn.relation}.id").asInstanceOf[Long])
+      getLocalVariableIds(rowMap, varColumn)
     }
     val variableValues = variableColumns.map { varColumn =>
       rowMap.get(varColumn.toString).get match {
@@ -144,14 +149,20 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
 
     // Build and Add Factor
     val newFactorId = factorIdCounter.getAndIncrement()
-    val factorVariables = factorDesc.func.variables.zipWithIndex.map { case(factorVar, position) =>
-      val localId = rowMap(s"${factorVar.relation}.id").asInstanceOf[Long]
-      val variableKey = VariableMappingKey(factorVar.headRelation, localId, factorVar.field)
-      val variableId = inferenceDataStore.getVariableId(variableKey).getOrElse {
-        log.error(s"variable_key=${variableKey} not found.")
-        throw new RuntimeException(s"variable_key=${variableKey} not found.")
-      }
-      FactorVariable(newFactorId.toLong, position, true, variableId)
+    // TODO: Really ugly. Make this functional. I was in a hurry :)
+    var positionCounter = -1
+    val factorVariables = factorDesc.func.variables.zipWithIndex.flatMap { case(factorVar, position) =>
+      val localIds = getLocalVariableIds(rowMap, factorVar)
+      localIds.zipWithIndex.map { case(localId, index) =>
+        val variableKey = VariableMappingKey(factorVar.headRelation, localId, factorVar.field)
+        val variableId = inferenceDataStore.getVariableId(variableKey).getOrElse {
+          log.error(s"variable_key=${variableKey} not found.")
+          throw new RuntimeException(s"variable_key=${variableKey} not found.")
+        }
+        positionCounter += 1
+        // Always positive.
+        FactorVariable(newFactorId.toLong, positionCounter, true, variableId)
+      } 
     }
     val newFactor = Factor(newFactorId, factorDesc.func.getClass.getSimpleName, weight, 
       factorVariables.toList)
