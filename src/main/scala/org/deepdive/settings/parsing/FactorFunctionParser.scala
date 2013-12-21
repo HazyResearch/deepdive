@@ -14,10 +14,11 @@ object FactorFunctionParser extends RegexParsers with Logging {
       FactorFunctionVariable(varList.take(varList.size - 1).mkString("."), varList.last, isArray.isDefined)
   }
 
-  def factorFunc = factorVariable ~ ("=" ~> factorFunctionName) ~ ("(" ~> repsep(factorVariable, ",")) <~ ")" ^^ { 
+  def factorFunc = ((factorVariable <~ "=")?) ~ factorFunctionName ~ ("(" ~> repsep(factorVariable, ",")) <~ ")" ^^ { 
     case headVariable ~ functionName ~ varList =>
-      functionName match {
-        case "Imply" => ImplyFactorFunction(headVariable, varList)
+      (headVariable, functionName) match {
+        case (Some(headVar), "Imply") => ImplyFactorFunction(headVar, varList)
+        case (_, "Dummy") => DummyFactorFunction(varList)
         case _ => 
           log.error(s"Factor function not supported: ${functionName}")
           null

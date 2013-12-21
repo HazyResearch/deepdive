@@ -14,7 +14,7 @@ case class ImplyFactorFunction(head: FactorFunctionVariable,
   override def variableDataType = "Boolean"
 }
 
-/* A factor function of fom A and B and C ... -> Z */
+/* Dummy factor function */
 case class DummyFactorFunction(val variables: Seq[FactorFunctionVariable]) extends FactorFunction {
   override def variableDataType = "Discrete"
 }
