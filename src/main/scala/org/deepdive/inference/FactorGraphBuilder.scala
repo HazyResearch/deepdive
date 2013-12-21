@@ -108,8 +108,9 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
 
         // Build the variable, one for each ID
         for (varId <- varIds) {
-          // TODO: Right now, all our variables are boolean. How do we support others?
-          val varObj = Variable(variableIdCounter.getAndIncrement(), VariableDataType.Boolean, 
+          val varObj = Variable(
+            variableIdCounter.getAndIncrement(), 
+            VariableDataType.withName(factorDesc.func.variableDataType), 
              0.0, !isQuery, isQuery)
           // Store the variable using a unique key
           val variableKey = VariableMappingKey(varColumn.headRelation, varId, varColumn.field)
