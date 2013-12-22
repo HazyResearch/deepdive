@@ -57,16 +57,13 @@ trait ExtractorExecutor extends Actor with ActorLogging  {
     result match {
       case Success(x) =>
         profiler ! Profiler.ExtractorFinished(task.extractor, startTime, endTime)
-        writeResult(x, task.extractor.outputRelation)
+        dataStore.write(x.rows, task.extractor.outputRelation)
       case Failure(ex) =>
         profiler ! Profiler.ExtractorFailed(task.extractor, startTime, System.currentTimeMillis, ex)
     }
     ExtractionTaskResult(task, result.isSuccess)
   }
 
-  def writeResult(result: ExtractionResult, outputRelation: String) {
-    dataStore.writeResult(result.rows, outputRelation)
-  }
 }
 
 

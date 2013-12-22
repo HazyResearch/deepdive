@@ -4,7 +4,7 @@
 
 ### Overview
 
-DeepDive helps scientists and developers solve complex inference problems, such as Knowledge Base Constructions (KBC). This is generally done in two steps: Feature Extraction and Probabilistic Inference. During feature extraction, users write extractors that operate on JSON input and produce JSON output. These feature extractors can be written in any programming language, such as Python. To perform probabilistic inference, DeepDive provides a language similar to Markov Logic (see below). Using the DeepDive languages, users declare "rules" to construct a factor graph on which DeepDive efficient weight learning and inference on the factor graph.
+DeepDive helps scientists and developers solve complex inference problems such as Knowledge Base Constructions (KBC). This is generally done in two steps: Feature Extraction and Probabilistic Inference. During feature extraction, users write extractor programs that operate on JSON input and produce JSON output. These feature extractors can be written in any programming language, such as Python. To perform probabilistic inference, DeepDive provides a language similar to Markov Logic (see below). Using the DeepDive languages, users can declare "rules" to construct a factor graph on which DeepDive performs efficient weight learning and inference.
 
 
 ### Related Research

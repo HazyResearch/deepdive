@@ -18,7 +18,7 @@ class MemoryExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
         "some_boolean" -> JsBoolean(false),
         "some_double" -> JsNumber(13.37)
       ))
-      dataStore.writeResult(List(testRow), "testRelation")
+      dataStore.write(List(testRow), "testRelation")
       assert(dataStore.data.size == 1)
     }
 
@@ -32,7 +32,7 @@ class MemoryExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
       "some_boolean" -> JsBoolean(false),
       "some_double" -> JsNumber(13.37)
     ))
-    dataStore.writeResult(List(testRow), "testRelation")
+    dataStore.write(List(testRow), "testRelation")
     val queryResult = dataStore.queryAsJson("testRelation")
     assert(queryResult.head == testRow)
 
@@ -46,7 +46,7 @@ class MemoryExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
       "some_boolean" -> JsBoolean(false),
       "some_double" -> JsNumber(13.37)
     ))
-    dataStore.writeResult(List(testRow), "testRelation")
+    dataStore.write(List(testRow), "testRelation")
     val queryResult = dataStore.queryAsMap("testRelation")
     assert(queryResult.head == Map[String, Any](
       "id" -> BigDecimal(1),

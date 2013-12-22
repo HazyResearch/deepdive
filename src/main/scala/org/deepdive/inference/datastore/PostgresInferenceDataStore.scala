@@ -2,7 +2,6 @@ package org.deepdive.inference
 
 import anorm._
 import org.deepdive.datastore.PostgresDataStore
-import org.deepdive.datastore.Utils.AnormSeq
 import org.deepdive.Logging
 import scala.collection.mutable.{Map, ArrayBuffer, Set}
 import scala.io.Source

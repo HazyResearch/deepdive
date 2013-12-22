@@ -91,7 +91,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
         "some_null" -> JsNull,
         "some_array" -> JsArray(List(JsString("13"), JsString("37")))
       ))
-      dataStore.writeResult(List(testRow), "datatype_test")
+      dataStore.write(List(testRow), "datatype_test")
       val result = dataStore.queryAsJson("SELECT * from datatype_test").toList.head.fields
       assert(result.values.toSet == testRow.fields.values.toSet)
     }
