@@ -9,7 +9,7 @@ import org.deepdive.datastore.Utils._
 import org.deepdive.Logging
 import spray.json._
 import spray.json.DefaultJsonProtocol._
-import java.io.{ByteArrayInputStream, StringWriter}
+import java.io.{FileReader, ByteArrayInputStream, StringWriter, FileWriter}
 import au.com.bytecode.opencsv.CSVWriter
 
 trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent {
@@ -31,7 +31,8 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
 
     /* Builds a CSV dat astring for given JSON data and column names */
     def buildCopyData(data: List[JsObject], keys: Set[String]) = {
-      val strWriter = new StringWriter()
+      //val strWriter = new StringWriter()
+      val strWriter = new FileWriter("/tmp/toload")  // ugly, but avoids out-of-memory -- need refactring
       val writer = new CSVWriter(strWriter)
       data.foreach { obj =>
         val dataList = obj.fields.filterKeys(_ != "id").toList.sortBy(_._1)
@@ -39,7 +40,11 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
         writer.writeNext(strList.toArray)
       }
       writer.close()
-      strWriter.toString
+      //strWriter.toString
+      //strWriter
+      strWriter.close()
+      val filereader = new FileReader("/tmp/toload")
+      filereader
     }
 
 
@@ -66,8 +71,8 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
 
       // Build the dataset as a TSV string
       val strData = buildCopyData(result, sampledKeys)
-      val is = new ByteArrayInputStream(strData.getBytes)
-      cm.copyIn(copySQL, is)
+      //val is = new ByteArrayInputStream(strData.getBytes)
+      cm.copyIn(copySQL, strData)
 
       log.info(s"Wrote num=${result.length} records.")
     }

@@ -30,6 +30,11 @@ class ScriptTaskExecutor(task: ExtractionTask, inputData: Stream[JsObject]) exte
     }
 
     // Result will be stored here
+    /******
+      * The code here is problematic... It assumes all Json object fit in memory...
+      * Which is not true...
+      * It also make GC extremely slow in Java
+      ****************/
     val result : ArrayBuffer[JsValue] = new ArrayBuffer[JsValue] with SynchronizedBuffer[JsValue]
     val isDone = new AtomicBoolean(false)
     

@@ -110,12 +110,22 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
         val isHoldout = isEvidence && (rng.nextDouble() < holdoutFraction)
         val isQuery = !isEvidence || (isEvidence && isHoldout)
 
+        var evidvalue = 0.0
+
+        if (isEvidence){
+          if(varValue.get.asInstanceOf[Boolean]){
+            evidvalue = 1.0
+          }else{
+            evidvalue = 0.0
+          }
+        }
+
         // Build the variable, one for each ID
         for (varId <- varIds) {
           val varObj = Variable(
             variableIdCounter.getAndIncrement(), 
             VariableDataType.withName(factorDesc.func.variableDataType), 
-             0.0, !isQuery, isQuery)
+             evidvalue, !isQuery, isQuery)
           // Store the variable using a unique key
           val variableKey = VariableMappingKey(varColumn.headRelation, varId, varColumn.field)
           if (!inferenceDataStore.hasVariable(variableKey)) {

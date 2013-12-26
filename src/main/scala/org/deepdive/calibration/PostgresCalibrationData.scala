@@ -37,11 +37,11 @@ trait PostgresCalibrationDataComponent extends CalibrationDataComponent with
         val firstRow = SQL(s"""SELECT
           (SELECT COUNT(*) from ${inferenceRelation} 
           WHERE probability >= ${bucket.from} AND probability <= ${bucket.to} AND 
-            ${column} IS NOT NULL AND last_sample = ${column}) 
+            ${column}=True) 
           AS count_correct,
           (SELECT COUNT(*) from ${inferenceRelation} 
-          WHERE probability >= ${bucket.from} AND probability <= ${bucket.to} AND last_sample IS NOT NULL 
-          AND last_sample != ${column})
+          WHERE probability >= ${bucket.from} AND probability <= ${bucket.to} AND
+            ${column}=False )
           AS count_incorrect;""")().head
         val numCorrect = firstRow[Long]("count_correct")
         val numIncorrect = firstRow[Long]("count_incorrect")

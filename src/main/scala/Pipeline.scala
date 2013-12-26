@@ -44,7 +44,7 @@ object Pipeline extends Logging {
     val extractionManager = system.actorOf(ExtractionManager.props, "ExtractionManager")
     // val extractorExecutor = system.actorOf(ExtractorExecutor.props(Settings.databaseUrl), "ExtractorExecutor")
 
-    implicit val timeout = Timeout(30 minutes)
+    implicit val timeout = Timeout(3000 minutes)
     implicit val ec = system.dispatcher
     
     // Run extractions
@@ -54,7 +54,7 @@ object Pipeline extends Logging {
       task = ExtractionTask(extractor)
       extractionResult <- Some(ask(extractionManager, ExtractionManager.AddTask(task)))
     } yield extractionResult.mapTo[ExtractionTaskResult]
-    val results = Await.result(Future.sequence(extractionResults), 30 minutes)
+    val results = Await.result(Future.sequence(extractionResults), 3000 minutes)
     
     // Shut down if an extract failed.
     if (results.exists(!_.success)) {
@@ -71,13 +71,13 @@ object Pipeline extends Logging {
       graphResult <- Some(ask(inferenceManager, FactorGraphBuilder.AddFactorsAndVariables(factor, 
         Context.settings.calibrationSettings.holdoutFraction)))
     } yield graphResult
-    Await.result(Future.sequence(graphResults), 30 minutes)
+    Await.result(Future.sequence(graphResults), 3000 minutes)
     log.info("Successfully built factor graph")
 
     // Dump the factor graph to a file
     val dumpResult = inferenceManager ? InferenceManager.DumpFactorGraph(VARIABLES_DUMP_FILE.getCanonicalPath, 
       FACTORS_DUMP_FILE.getCanonicalPath, WEIGHTS_DUMP_FILE.getCanonicalPath)
-    Await.result(dumpResult, 30 minutes)
+    Await.result(dumpResult, 3000 minutes)
 
     // Call the sampler executable
     val samplingStartTime = System.currentTimeMillis
@@ -99,12 +99,12 @@ object Pipeline extends Logging {
     // Write the inference result back to the database
     val inferenceWritebackResult = inferenceManager ? 
       InferenceManager.WriteInferenceResult(SAMPLING_OUTPUT_FILE.getCanonicalPath)
-    Await.result(inferenceWritebackResult, 5.minutes)
+    Await.result(inferenceWritebackResult, 500.minutes)
 
     // Writer calibration data
     val calibrationWritebackResult = inferenceManager ? InferenceManager.WriteCalibrationData(
       "target/calibration_data/counts", "target/calibration_data/precision")
-    Await.result(calibrationWritebackResult, 5.minutes)
+    Await.result(calibrationWritebackResult, 500.minutes)
 
     // Shut down actor system
     Context.shutdown()
