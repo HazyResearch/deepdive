@@ -1,12 +1,13 @@
 package org.deepdive.datastore
 
+import anorm._
 import org.deepdive.Logging
 import org.deepdive.settings._
 import spray.json._
-import anorm._
+import spray.json.DefaultJsonProtocol._
 
 /* Utilities for working with data stores */
-object Utils extends Logging {
+object DataStoreUtils extends Logging {
 
   type AnormSeq = Seq[(String, ParameterValue[_])]  
 
@@ -36,4 +37,5 @@ object Utils extends Logging {
       }.toSeq
     }.toSeq
   }
+  
 }

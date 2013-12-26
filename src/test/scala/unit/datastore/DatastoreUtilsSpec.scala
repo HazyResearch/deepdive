@@ -4,7 +4,7 @@ import anorm._
 import org.scalatest._
 import spray.json._
 import spray.json.DefaultJsonProtocol._
-import org.deepdive.datastore.{Utils => DatastoreUtils}
+import org.deepdive.datastore.DataStoreUtils
 
 class DatabaseUtilsSpec extends FunSpec {
 
@@ -17,7 +17,7 @@ class DatabaseUtilsSpec extends FunSpec {
         "longField" -> JsNumber(100),
         "booleanField" -> JsBoolean(true)
       ))
-      val result = DatastoreUtils.jsonRowToAnormSeq(row).toMap
+      val result = DataStoreUtils.jsonRowToAnormSeq(row).toMap
       assert(result.mapValues(_.aValue) == Map(
         ("nullField", null),
         ("stringField", "I am a string"),

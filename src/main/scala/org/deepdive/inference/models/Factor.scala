@@ -1,7 +1,6 @@
 package org.deepdive.inference
 
 import anorm._
-import org.deepdive.datastore.Utils.AnormSeq
 
 case class Factor(id: Integer, factorFunction: String, weight: Weight, 
   variables: List[FactorVariable]) extends CSVFormattable {

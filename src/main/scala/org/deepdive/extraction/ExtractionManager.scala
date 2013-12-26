@@ -10,16 +10,18 @@ import scala.collection.mutable.{PriorityQueue, ArrayBuffer, Map}
 import scala.concurrent.duration._
 import scala.util.Try
 
+/* Companion Object for the Extraction Mangager */
 object ExtractionManager {
   def props : Props = Props(classOf[ExtractionManager])
-  // Messages
+  
+  // Messages 
   sealed trait Message
   case class AddTask(task: ExtractionTask) extends Message
 }
 
 /* 
  * Manages extraction tasks. The ExtractionManager is responsible for executing
- * extractions tasks in the correct order. It also parallelizes execution when possible.
+ * extractions tasks in the correct order. It parallelizes execution when possible.
  */ 
 class ExtractionManager extends Actor with ActorLogging {
   import ExtractionManager._

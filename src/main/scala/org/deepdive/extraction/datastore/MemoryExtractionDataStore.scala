@@ -13,7 +13,7 @@ trait MemoryExtractionDataStoreComponent extends ExtractionDataStoreComponent{
     
     val data = MMap[String, ArrayBuffer[JsObject]]()
 
-    def queryAsJson(relation: String) : Stream[JsObject] = {
+    override def queryAsJson(relation: String) : Stream[JsObject] = {
       data.get(relation).map(_.toList).getOrElse(Nil).toStream
     }
     
@@ -27,7 +27,7 @@ trait MemoryExtractionDataStoreComponent extends ExtractionDataStoreComponent{
       })
     }
     
-    def writeResult(result: List[JsObject], outputRelation: String) : Unit = {
+    def write(result: List[JsObject], outputRelation: String) : Unit = {
       data.get(outputRelation) match {
         case Some(rows) => rows ++= result
         case None => data += Tuple2(outputRelation, ArrayBuffer(result: _*))

@@ -2,7 +2,6 @@ package org.deepdive.inference
 
 import anorm._
 import org.deepdive.Logging
-import org.deepdive.datastore.Utils.AnormSeq
 
 // Variable Type: CQS (Discrete, Query, Gibbs Sampling) or CES (Discrete, Evidence, Gibbs Sampling)
 object VariableDataType extends Enumeration with Logging {
