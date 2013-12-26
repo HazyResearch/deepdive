@@ -22,7 +22,7 @@ class PostgresCalibrationDataSpec extends FunSpec with BeforeAndAfter
       last_sample boolean, probability double precision)""").execute()
     SQL("""insert into t1_c1_inference(c1, last_sample, probability) VALUES
       (null, false, 0.31), (null, true, 0.93), (null, true, 0.97), 
-      (true, false, 0.0), (true, true, 0.77), (true, true, 0.81)""").execute()
+      (false, false, 0.0), (true, true, 0.77), (true, true, 0.81)""").execute()
   }
 
   describe("Finding all variable relations and attributes") {
