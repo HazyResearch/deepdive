@@ -32,9 +32,9 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
 
     def init() : Unit = {
       // weights(id, initial_value, is_fixed)
-      SQL("""drop table if exists weights ; 
+      SQL("""drop table if exists weights; 
         create table weights(id bigint primary key, 
-        initial_value double precision, is_fixed boolean);""").execute()
+        initial_value double precision, is_fixed boolean, description text);""").execute()
       
       // factors(id, weight_id, factor_function)
       SQL("""drop table if exists factors CASCADE; 
@@ -91,7 +91,8 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       // Write weights
       log.info(s"Writing weights to file=${weightsFile.getAbsolutePath}")
       copySQLToTSV("""SELECT id, initial_value, 
-        case when is_fixed then 'true' else 'false' end
+        case when is_fixed then 'true' else 'false' end,
+        description
         FROM weights""", weightsFile)
 
       // Write factors
@@ -140,7 +141,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       
       // Insert Weights
       log.debug(s"Storing num=${weights.size} relation=weights")
-      copyBatchData("""COPY weights(id, initial_value, is_fixed) FROM STDIN CSV""", 
+      copyBatchData("""COPY weights(id, initial_value, is_fixed, description) FROM STDIN CSV""", 
         toCSVData(weights.values.iterator))
       weights.clear()
 

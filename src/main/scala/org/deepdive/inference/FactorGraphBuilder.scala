@@ -130,13 +130,20 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
 
   private def addFactorForRow(rowMap: Map[String, Any], factorDesc: FactorDesc) : Unit = {
     // Build and get or add the factorWeight
-    val factorWeightValues = for {
-      variableName <- factorDesc.weight.variables
-      variableValue <- rowMap.get(variableName)
-    } yield variableValue.asInstanceOf[Option[_]].getOrElse("")
-    // A unique identifier for the weight based on the factor name
+    val factorWeightValues = factorDesc.weight.variables.map { key => 
+      rowMap.get(key).map(_.toString).getOrElse {
+        val errorMsg = s"Could not find key=${key}. Available keys: ${rowMap.keySet.mkString(", ")}"
+        log.error(errorMsg)
+        throw new RuntimeException(errorMsg)
+      }
+    }
+
     val weightIdentifier = factorDesc.weightPrefix + "_" + factorWeightValues.mkString
-    // log.debug(s"added weight=${weightIdentifier}")
+    val valueAssignments =  factorDesc.weight.variables
+      .zip(factorWeightValues)
+      .map(_.productIterator.mkString("="))
+      .mkString(",")
+    val weightDescription = s"${factorDesc.name}(${valueAssignments})"
 
     // Add the weight to the factor store
     val weightId = inferenceDataStore.getWeightId(weightIdentifier).getOrElse(
@@ -145,7 +152,8 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
       case x : KnownFactorWeight => x.value
       case _ => 0.0
     }
-    val weight = Weight(weightId, weightValue, factorDesc.weight.isInstanceOf[KnownFactorWeight])
+    val weight = Weight(weightId, weightValue, 
+      factorDesc.weight.isInstanceOf[KnownFactorWeight], weightDescription)
     inferenceDataStore.addWeight(weightIdentifier, weight)
 
     // Build and Add Factor
