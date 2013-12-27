@@ -16,7 +16,7 @@ class ScriptTaskExecutorSpec extends FunSpec {
       val data = (1 to 1000).toList.map(i => s"""{"id":$i}""".asJson.asJsObject).toStream
       val executor = new ScriptTaskExecutor(task, data)
       val result = executor.run()
-      assert(result.rows.size == 1000)
+      assert(result.rows.toBlockingObservable.toList.size == 1000)
     }
 
   }

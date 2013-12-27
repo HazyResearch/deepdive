@@ -11,6 +11,9 @@ trait ExtractionDataStoreComponent {
   /* Stores extraction results and queries the database for extracted data */
   trait ExtractionDataStore {
 
+    /* How many extracted tuples to insert at once */
+    def BatchSize : Int
+
     /* 
      * Returns the result of the query as a stream of untyped Maps. 
      * How the query string is interpreted depends on the implementing data store.

@@ -6,10 +6,20 @@ import scala.collection.mutable.{ArrayBuffer, SynchronizedBuffer}
 import java.util.concurrent.SynchronousQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.duration._
+import scala.collection.JavaConversions._
 import scala.io.Source
 import scala.sys.process._
 import scala.util.Try
 import spray.json._
+import rx.{Observable => JObservable}
+import rx.lang.scala._
+import rx.lang.scala.ImplicitFunctionConversions._
+import rx.lang.scala.concurrency._
+import rx.lang.scala.subjects._
+import scala.collection.JavaConverters._
+import scala.concurrent._
+import scala.concurrent.ExecutionContext.Implicits.global
+
 
 class ScriptTaskExecutor(task: ExtractionTask, inputData: Stream[JsObject]) extends Logging { 
 
@@ -24,52 +34,40 @@ class ScriptTaskExecutor(task: ExtractionTask, inputData: Stream[JsObject]) exte
     log.info(s"Running UDF: ${file.getAbsolutePath} with parallelism=${task.extractor.parallelism} " + 
       s"batch_size=${task.extractor.batchSize}")
 
-    // Create one input queue for each worker 
-    val inputQueues = (1 to task.extractor.parallelism).map { x =>
-      new SynchronousQueue[List[JsObject]]()
+    // An input stream for each process
+    val inputSubjects = (1 to task.extractor.parallelism).map ( i => ReplaySubject[JsObject]() )
+
+    // Build process descriptions based on different data inputs
+    val outputSubjects = inputSubjects.zipWithIndex.map { case(inputSubject, i) =>
+      val subjectOut = ReplaySubject[JsObject]()
+      // Build and run the process
+      val process = buildProcessIO(s"${task.extractor.name}[$i]", subjectOut, inputSubject)
+      task.extractor.udf run(process)
+      subjectOut
     }
 
-    // Result will be stored here
-    /******
-      * The code here is problematic... It assumes all Json object fit in memory...
-      * Which is not true...
-      * It also make GC extremely slow in Java
-      ****************/
-    val result : ArrayBuffer[JsValue] = new ArrayBuffer[JsValue] with SynchronizedBuffer[JsValue]
-    val isDone = new AtomicBoolean(false)
-    
-    // Build process descriptions based on different queues
-    val processDescs = inputQueues.zipWithIndex.map { case(inputQueue, i) =>
-      buildProcessIO(s"${task.extractor.name}[$i]", inputQueue, isDone, result)
-    }
-    
-    // Run the processes
-    val processes = processDescs.map { io =>
-      task.extractor.udf run(io)
-    }
+    // We merge all output streams into one stream
+    val tmpObs = JObservable.from(outputSubjects.map(_.asJavaObservable).toIterable.asJava)
+    val mergedObservables : Observable[JsObject] = JObservable.merge[JsObject](tmpObs)    
 
-    // Put data into the queue
-    val queueStream = Stream.continually(inputQueues.toStream).flatten
-    inputData.iterator.grouped(task.extractor.batchSize).toStream.zip(queueStream).foreach { case(batch, q) =>
-      q.put(batch.toList)
-    }
-    isDone.set(true)
+    // Send the input data in a batch-wise round-robin fashion.
+    // We execute this on another thread, so that we don't block.
+    Future {
+      val cyclingInput = Stream.continually(inputSubjects.toStream).flatten
+      inputData.iterator.grouped(task.extractor.batchSize).toStream.zip(cyclingInput).foreach { case(batch, obs) =>
+        batch.foreach ( tuple => obs.onNext(tuple) )
+      }
+      inputSubjects.foreach { x => x.onCompleted() } 
+    }  
 
-    val exitValues = processes.map(_.exitValue()).toSet
-    if (exitValues.contains(1)) {
-      log.error(s"${task.extractor.name} FAILED.")
-      throw new RuntimeException(s"${task.extractor.name} FAILED.")
-    } else {
-      log.info(s"UDF process has exited. Generated num=${result.size} records.")
-      ExtractionResult(result.map(_.asInstanceOf[JsObject]).toList)
-    }
+    ExtractionResult(mergedObservables)
   }
 
-  private def buildProcessIO(name: String, inputQueue: SynchronousQueue[List[JsObject]], 
-    isDone: AtomicBoolean, result: ArrayBuffer[JsValue]) = {
+  private def buildProcessIO(name: String, subject: ReplaySubject[JsObject], 
+    input: ReplaySubject[JsObject]) = {
     new ProcessIO(
-      in => handleProcessIOInput(in, name, inputQueue, isDone),
-      out => handleProcessIOOutput(out, name, result),
+      in => handleProcessIOInput(in, name, input),
+      out => handleProcessIOOutput(out, name, subject),
       err => {
         Source.fromInputStream(err).getLines.foreach(l => log.error(l))
       }
@@ -77,28 +75,31 @@ class ScriptTaskExecutor(task: ExtractionTask, inputData: Stream[JsObject]) exte
   }
 
   private def handleProcessIOInput(in: OutputStream, name: String, 
-    inputQueue: SynchronousQueue[List[JsObject]], isDone: AtomicBoolean) : Unit = {
+     input: ReplaySubject[JsObject]) : Unit = {
     log.debug(s"${name} running")
     val writer = new PrintWriter(in, true)
-    while(!isDone.get()) {
-      Option(inputQueue.poll(POLL_TIMEOUT.length, POLL_TIMEOUT.unit)).getOrElse(Nil).foreach { tuple =>
-        writer.println(tuple.compactPrint)
-        // log.debug(s"${name}: ${tuple.compactPrint}")
-      }
-    }
-    in.close()
+    input.subscribe(
+      tuple => writer.println(tuple.compactPrint),
+      ex => {},
+      () => in.close()
+    )
+    
   } 
 
   private def handleProcessIOOutput(out: InputStream, name: String, 
-    result: ArrayBuffer[JsValue]) : Unit = {
-    Source.fromInputStream(out).getLines.map { line =>
+    subject: ReplaySubject[JsObject]) : Unit = {
+
+    val jsonIterable = Source.fromInputStream(out).getLines.map { line =>
       Try(line.asJson.asJsObject).getOrElse {
         log.warning(s"Could not parse JSON: ${line}")
         JsObject()
       }
-    }.foreach { tuple => result += tuple }
+    }
+
+    // We create an observable from the stream and subscribe the output to it
+    JObservable.from(jsonIterable.toIterable.asJava).subscribe(subject)
     out.close()
-    log.debug(s"${name} done")
+    log.debug(s"${name} done")   
   }
 
 }

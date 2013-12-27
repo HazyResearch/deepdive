@@ -23,7 +23,8 @@ libraryDependencies ++= List(
   "org.postgresql" % "postgresql" % "9.2-1003-jdbc4",
   "com.h2database" % "h2" % "1.3.166",
   "io.spray" %%  "spray-json" % "1.2.5",
-  "net.sf.opencsv" % "opencsv" % "2.3"
+  "net.sf.opencsv" % "opencsv" % "2.3",
+  "com.netflix.rxjava" % "rxjava-scala" % "0.15.1"
 )
 
 parallelExecution in Test := false

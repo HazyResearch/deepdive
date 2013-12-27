@@ -20,6 +20,8 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
 
     implicit lazy val connection = PostgresDataStore.borrowConnection()
 
+    def BatchSize = 100000
+
     def queryAsMap(query: String) : Stream[Map[String, Any]] = {
       SQL(query)().map { row =>
         row.asMap.toMap.mapValues { 

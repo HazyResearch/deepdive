@@ -10,6 +10,8 @@ import org.deepdive.extraction.datastore._
 import org.deepdive.Logging
 import org.deepdive.profiling._
 import scala.util.{Try, Success, Failure}
+import scala.concurrent._
+import scala.concurrent.duration._
 
 
 object ExtractorExecutor {
@@ -52,16 +54,25 @@ trait ExtractorExecutor extends Actor with ActorLogging  {
   def doExecute(task: ExtractionTask) : ExtractionTaskResult = {
     val startTime = System.currentTimeMillis
     val executor = new ScriptTaskExecutor(task, dataStore.queryAsJson(task.extractor.inputQuery))
-    val result = Try(executor.run())
-    val endTime = System.currentTimeMillis
-    result match {
-      case Success(x) =>
+    
+    val isDone = Promise[ExtractionTaskResult]()
+
+    val result = executor.run()
+    result.rows.buffer(dataStore.BatchSize).subscribe(
+      rowBatch => dataStore.write(rowBatch.toList, task.extractor.outputRelation),
+      exception => {
+        val endTime = System.currentTimeMillis
+        log.error(exception.toString)
+        profiler ! Profiler.ExtractorFailed(task.extractor, startTime, endTime, exception)
+        isDone.success(ExtractionTaskResult(task, false))
+      },
+      () => { 
+        val endTime = System.currentTimeMillis
         profiler ! Profiler.ExtractorFinished(task.extractor, startTime, endTime)
-        dataStore.write(x.rows, task.extractor.outputRelation)
-      case Failure(ex) =>
-        profiler ! Profiler.ExtractorFailed(task.extractor, startTime, System.currentTimeMillis, ex)
-    }
-    ExtractionTaskResult(task, result.isSuccess)
+        isDone.success(ExtractionTaskResult(task, true))
+      }
+    )
+    Await.result(isDone.future, Duration.Inf)
   }
 
 }

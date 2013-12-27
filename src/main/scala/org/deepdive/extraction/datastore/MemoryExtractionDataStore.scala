@@ -11,6 +11,8 @@ trait MemoryExtractionDataStoreComponent extends ExtractionDataStoreComponent{
 
   class MemoryExtractionDataStore extends ExtractionDataStore with Logging {
     
+    def BatchSize = 100000
+    
     val data = MMap[String, ArrayBuffer[JsObject]]()
 
     override def queryAsJson(relation: String) : Stream[JsObject] = {
