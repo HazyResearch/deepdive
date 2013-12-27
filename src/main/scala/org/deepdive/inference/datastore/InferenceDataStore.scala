@@ -18,10 +18,9 @@ trait InferenceDataStoreComponent {
     // Data is flushed automatically after each batch
     def BatchSize : Option[Int]
     
+    def hasVariable(id: Long) : Boolean
     def addFactor(factor: Factor) : Unit
-    def addVariable(key: VariableMappingKey, variable: Variable) : Unit
-    def hasVariable(key: VariableMappingKey) : Boolean 
-    def getVariableId(key: VariableMappingKey) : Option[Long]
+    def addVariable(variable: Variable) : Unit
     def addWeight(identifier: String, weight: Weight)
     def getWeightId(identifier: String) : Option[Long]
     

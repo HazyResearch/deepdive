@@ -117,15 +117,12 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
 
         // Build the variable, one for each ID
         for (varId <- varIds) {
-          val varObj = Variable(
-            variableIdCounter.getAndIncrement(), 
-            VariableDataType.withName(factorDesc.func.variableDataType), 
-             evidenceValue, !isQuery, isQuery)
+          val varObj = Variable(varId, VariableDataType.withName(factorDesc.func.variableDataType), 
+             evidenceValue, !isQuery, isQuery, varColumn.headRelation, varColumn.field)
           // Store the variable using a unique key
-          val variableKey = VariableMappingKey(varColumn.headRelation, varId, varColumn.field)
-          if (!inferenceDataStore.hasVariable(variableKey)) {
+          if (!inferenceDataStore.hasVariable(varId)) {
             // log.debug(s"added variable=${variableKey}")
-            inferenceDataStore.addVariable(variableKey, varObj)
+            inferenceDataStore.addVariable(varObj)
           }
         }
       }
@@ -158,13 +155,8 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
     val factorVariables = factorDesc.func.variables.zipWithIndex.flatMap { case(factorVar, position) =>
       val localIds = getLocalVariableIds(rowMap, factorVar)
       localIds.zipWithIndex.map { case(localId, index) =>
-        val variableKey = VariableMappingKey(factorVar.headRelation, localId, factorVar.field)
-        val variableId = inferenceDataStore.getVariableId(variableKey).getOrElse {
-          log.error(s"variable_key=${variableKey} not found.")
-          throw new RuntimeException(s"variable_key=${variableKey} not found.")
-        }
         positionCounter += 1
-        FactorVariable(newFactorId.toLong, positionCounter, !factorVar.isNegated, variableId)
+        FactorVariable(newFactorId.toLong, positionCounter, !factorVar.isNegated, localId)
       } 
     }
     val newFactor = Factor(newFactorId, factorDesc.func.getClass.getSimpleName, weight, 

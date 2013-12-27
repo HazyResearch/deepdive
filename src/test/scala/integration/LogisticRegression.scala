@@ -15,12 +15,13 @@ class LogisticRegressionApp extends FunSpec {
     PostgresTestDataStore.init()
     PostgresDataStore.withConnection { implicit conn =>
        SQL("drop schema if exists public cascade; create schema public;").execute()
+       SQL("create table titles_tmp(id bigserial primary key, title text, has_extractions boolean);").execute()
        SQL("create table titles(id bigserial primary key, title text, has_extractions boolean);").execute()
        SQL("""create table word_presences(id bigserial primary key, 
         title_id bigint references titles(id), word text, is_present boolean);""").execute()
        SQL(
         """
-          INSERT INTO titles(title, has_extractions) VALUES
+          INSERT INTO titles_tmp(title, has_extractions) VALUES
           ('I am title 1', NULL), ('I am title 2', NULL), ('I am another Title', true)
         """).execute()
     }
@@ -38,9 +39,13 @@ class LogisticRegressionApp extends FunSpec {
       deepdive.relations.word_presences.schema: { id: Long, title_id: Long, word: Text, is_present: Boolean}
 
       deepdive.extractions: {
+        titlesExtractor.output_relation: "titles"
+        titlesExtractor.input: "SELECT * from titles_tmp"
+        titlesExtractor.udf: "/usr/bin/sed -e s/titles_tmp.//g"
         wordsExtractor.output_relation: "word_presences"
         wordsExtractor.input: "SELECT * FROM titles"
         wordsExtractor.udf: "${getClass.getResource("/logistic_regression/word_extractor.py").getFile}"
+        wordsExtractor.dependencies = ["titlesExtractor"]
       }
 
       deepdive.factors {

@@ -61,7 +61,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
 
     it ("should work") {
       val result = dataStore.buildCopySql("someRelation", Set("key1", "key2", "id", "anotherKey"))
-      assert(result == "COPY someRelation(anotherKey, key1, key2) FROM STDIN CSV")
+      assert(result == "COPY someRelation(id, anotherKey, key1, key2) FROM STDIN CSV")
     }
 
   }
@@ -74,8 +74,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
        JsObject(Map("key1" -> JsString("hi2"), "key2" -> JsNull))
       )
       val result = dataStore.buildCopyData(data, Set("key1", "key2"))
-      println(result)
-      assert(result == "\"hi\",\"hello\"\n\"hi2\",\n")
+      assert(result == "\"0\",\"hi\",\"hello\"\n\"1\",\"hi2\",\n")
     }
   }
 
@@ -83,7 +82,6 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
 
     it("should work") {
       val testRow = JsObject(Map[String, JsValue](
-        "id" -> JsNumber(1),
         "key" -> JsNumber(100),
         "some_text" -> JsString("I am sample text."),
         "some_boolean" -> JsBoolean(false),
@@ -93,7 +91,8 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
       ))
       dataStore.write(List(testRow), "datatype_test")
       val result = dataStore.queryAsJson("SELECT * from datatype_test").toList.head.fields
-      assert(result.values.toSet == testRow.fields.values.toSet)
+      val expectedResult = testRow.fields + Tuple2("id", JsNumber(0))
+      assert(result.values.toSet == expectedResult.values.toSet)
     }
 
   }

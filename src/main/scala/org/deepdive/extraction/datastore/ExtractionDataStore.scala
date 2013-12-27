@@ -24,8 +24,10 @@ trait ExtractionDataStoreComponent {
     /* Returns the result of the query as a stream of JSON objects */
     def queryAsJson(query: String) : Stream[JsObject]
 
-    // TODO: We should produce a stream instead of keeping the whole list in memory
-    /* Writes a list of tuples back to the datastore */
+    /* 
+     * Writes a list of tuples back to the datastore.
+     * IMPORTANT: This method must assign a globally unique variable id to each record 
+     */
     def write(result: List[JsObject], outputRelation: String) : Unit
 
   }

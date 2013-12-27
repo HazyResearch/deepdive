@@ -1,13 +1,15 @@
 package org.deepdive.inference
 
 import anorm._
+import au.com.bytecode.opencsv.CSVWriter
+import CSVFormattable._
+import java.io.{ByteArrayInputStream, File, FileOutputStream, StringWriter}
+import java.util.Collections
+import java.util.concurrent.ConcurrentHashMap
 import org.deepdive.datastore.PostgresDataStore
 import org.deepdive.Logging
 import scala.collection.mutable.{Map, ArrayBuffer, Set}
 import scala.io.Source
-import java.io.{ByteArrayInputStream, File, FileOutputStream, StringWriter}
-import au.com.bytecode.opencsv.CSVWriter
-import CSVFormattable._
 
 /* Stores the factor graph */
 trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
@@ -21,10 +23,11 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
     val BatchSize = Some(5000)
 
     // val factorFunctions = Map[String, FactorFunction]()
-    val variables = Map[VariableMappingKey, Variable]()
+    val variableIdSet = Collections.newSetFromMap[Long](
+      new ConcurrentHashMap[Long, java.lang.Boolean]())
+    val variables = ArrayBuffer[Variable]()
     val factors = ArrayBuffer[Factor]()
     val weights = Map[String, Weight]()
-    val variableIdMap = Map[VariableMappingKey, Long]()
     val weightIdMap = Map[String, Long]()
 
     def init() : Unit = {
@@ -42,8 +45,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       SQL("""drop table if exists variables CASCADE; 
         create table variables(id bigint primary key, data_type text,
         initial_value double precision, is_evidence boolean, is_query boolean,
-        mapping_relation text, mapping_column text, mapping_id integer);""").execute()
-      SQL("CREATE INDEX ON variables using hash (mapping_id);").execute()
+        mapping_relation text, mapping_column text);""").execute()
       
       // factor_variables(factor_id, variable_id, position, is_positive)
       SQL("""drop table if exists factor_variables; 
@@ -69,18 +71,12 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       factors += factor
     }
 
-    def addVariable(key: VariableMappingKey, variable: Variable) : Unit = {
-      variables += Tuple2(key, variable)
-      variableIdMap += Tuple2(key, variable.id)
+    def addVariable(variable: Variable) : Unit = {
+      variables += variable
+      variableIdSet.add(variable.id)
     }
 
-    def hasVariable(key: VariableMappingKey) : Boolean = {
-      variableIdMap.contains(key)
-    }
-
-    def getVariableId(key: VariableMappingKey) : Option[Long] = {
-      variableIdMap.get(key)
-    }
+    def hasVariable(id: Long) : Boolean = variableIdSet.contains(id)
 
     def getWeightId(identifier: String) : Option[Long] = weightIdMap.get(identifier)
 
@@ -132,10 +128,10 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
         SQL(s"""DROP VIEW IF EXISTS ${view_name}; CREATE VIEW ${view_name} AS
           SELECT ${relationName}.*, mir.last_sample, mir.probability FROM
           ${relationName} JOIN
-            (SELECT mir.last_sample, mir.probability, mir.mapping_id 
+            (SELECT mir.last_sample, mir.probability, mir.id 
             FROM mapped_inference_result mir 
             WHERE mapping_relation = '${relationName}' AND mapping_column = '${columnName}') 
-          mir ON ${relationName}.id = mir.mapping_id
+          mir ON ${relationName}.id = mir.id
         """).execute()
       }
     }
@@ -154,13 +150,13 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
         toCSVData(factors.iterator))
 
       // Insert Variables
-      val numEvidence = variables.values.count(_.isEvidence)
-      val numQuery = variables.values.count(_.isQuery)
+      val numEvidence = variables.count(_.isEvidence)
+      val numQuery = variables.count(_.isQuery)
       log.debug(s"Storing num=${variables.size} num_evidence=${numEvidence} " +
         s"num_query=${numQuery} relation=variables")
-      copyBatchData("""COPY variables(mapping_relation, mapping_id, mapping_column, 
-        id, data_type, initial_value, is_evidence, is_query) FROM STDIN CSV""", 
-        toCSVData(CSVFormattable.combineCSVIterators(variables.iterator)))
+      copyBatchData("""COPY variables( id, data_type, initial_value, is_evidence, is_query,
+        mapping_relation, mapping_column) FROM STDIN CSV""", 
+        toCSVData(variables.iterator))
       // Clear variables
       variables.clear()
 
