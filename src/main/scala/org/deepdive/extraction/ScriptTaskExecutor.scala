@@ -2,23 +2,18 @@ package org.deepdive.extraction
 
 import java.io.{File, PrintWriter, OutputStream, InputStream}
 import org.deepdive.Logging
-import scala.collection.mutable.{ArrayBuffer, SynchronizedBuffer}
-import java.util.concurrent.SynchronousQueue
-import java.util.concurrent.atomic.AtomicBoolean
-import scala.concurrent.duration._
+import rx.lang.scala._
+import rx.lang.scala.ImplicitFunctionConversions._
+import rx.lang.scala.subjects._
+import rx.{Observable => JObservable}
 import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
+import scala.concurrent._
+import scala.concurrent.duration._
 import scala.io.Source
 import scala.sys.process._
 import scala.util.Try
 import spray.json._
-import rx.{Observable => JObservable}
-import rx.lang.scala._
-import rx.lang.scala.ImplicitFunctionConversions._
-import rx.lang.scala.concurrency._
-import rx.lang.scala.subjects._
-import scala.collection.JavaConverters._
-import scala.concurrent._
-import scala.concurrent.ExecutionContext.Implicits.global
 
 
 class ScriptTaskExecutor(task: ExtractionTask, inputData: Stream[JsObject]) extends Logging { 
@@ -52,6 +47,7 @@ class ScriptTaskExecutor(task: ExtractionTask, inputData: Stream[JsObject]) exte
 
     // Send the input data in a batch-wise round-robin fashion.
     // We execute this on another thread, so that we don't block.
+    import scala.concurrent.ExecutionContext.Implicits.global
     Future {
       val cyclingInput = Stream.continually(inputSubjects.toStream).flatten
       inputData.iterator.grouped(task.extractor.batchSize).toStream.zip(cyclingInput).foreach { case(batch, obs) =>
