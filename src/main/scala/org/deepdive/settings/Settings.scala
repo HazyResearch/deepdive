@@ -15,11 +15,11 @@ trait SettingsImpl {
   def connection : Connection
   def relations : List[Relation]
   def etlTasks : List[EtlTask]
-  def extractors : List[Extractor]
+  def extractionSettings : ExtractionSettings
   def factors : List[FactorDesc]
 
   def findRelation(name: String) : Option[Relation] = relations.find(_.name == name)  
-  def findExtractor(name: String) : Option[Extractor] = extractors.find(_.name == name)
+  def findExtractor(name: String) : Option[Extractor] = extractionSettings.extractors.find(_.name == name)
   
   def findExtractorDependencies(extractor: Extractor) : Set[String] = {
     extractor.dependencies.flatMap(findExtractor).flatMap(findExtractorDependencies)
@@ -27,9 +27,12 @@ trait SettingsImpl {
 
 }
 
-case class Settings(connection: Connection, relations: List[Relation], 
-  etlTasks: List[EtlTask], extractors: List[Extractor], factors: List[FactorDesc], 
-  calibrationSettings: CalibrationSettings, samplerSettings: SamplerSettings) 
-  extends SettingsImpl
+case class Settings(connection: Connection, 
+  relations: List[Relation], 
+  etlTasks: List[EtlTask],
+  extractionSettings: ExtractionSettings, 
+  factors: List[FactorDesc], 
+  calibrationSettings: CalibrationSettings, 
+  samplerSettings: SamplerSettings) extends SettingsImpl
 
 

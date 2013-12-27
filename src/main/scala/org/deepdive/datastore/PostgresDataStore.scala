@@ -39,4 +39,6 @@ object PostgresDataStore extends Logging {
   /* Returns the next globally unique id and increases the id counter by one */
   def nextId() = variableIdCounter.getAndIncrement()
 
+  def currentId = variableIdCounter.get()
+
 }

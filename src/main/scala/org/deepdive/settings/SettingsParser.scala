@@ -15,7 +15,7 @@ object SettingsParser {
     val connection = loadConnection(config)
     val relations = loadRelations(config)
     val etlTasks = loadEtlTasks(config)
-    val extractors = loadExtractors(config)
+    val extractors = loadExtractionSettings(config)
     val factors = loadFactors(config)
     val calibrationSettings = loadCalibrationSettings(config)
     val SamplerSettings = loadSamplerSettings(config)
@@ -47,9 +47,11 @@ object SettingsParser {
     }.toList).getOrElse(Nil)
   }
 
-  private def loadExtractors(config: Config) : List[Extractor] = {
-    config.getObject("extractions").keySet().map { extractorName =>
-      val extractorConfig = config.getConfig(s"extractions.$extractorName")
+  private def loadExtractionSettings(config: Config) : ExtractionSettings = {
+    val extractionConfig = config.getConfig("extraction")
+    val initialVariableId = Try(extractionConfig.getLong("initial_vid")).getOrElse(0l)
+    val extractors = extractionConfig.getObject("extractors").keySet().map { extractorName =>
+      val extractorConfig = extractionConfig.getConfig(s"extractors.$extractorName")
       val outputRelation = extractorConfig.getString("output_relation")
       val inputQuery = extractorConfig.getString(s"input")
       val udf = extractorConfig.getString(s"udf")
@@ -58,6 +60,7 @@ object SettingsParser {
       val dependencies = Try(extractorConfig.getStringList("dependencies").toSet).getOrElse(Set())
       Extractor(extractorName, outputRelation, inputQuery, udf, parallelism, batchSize, dependencies)
     }.toList
+    ExtractionSettings(initialVariableId, extractors)
   }
 
   private def loadFactors(config: Config): List[FactorDesc] = {

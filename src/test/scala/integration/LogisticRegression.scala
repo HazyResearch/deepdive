@@ -38,10 +38,11 @@ class LogisticRegressionApp extends FunSpec {
       deepdive.relations.titles.schema: { id: Long, title: Text, has_extractions: Boolean }
       deepdive.relations.word_presences.schema: { id: Long, title_id: Long, word: Text, is_present: Boolean}
 
-      deepdive.extractions: {
+      deepdive.extraction.extractors: {
         titlesExtractor.output_relation: "titles"
         titlesExtractor.input: "SELECT * from titles_tmp"
         titlesExtractor.udf: "/usr/bin/sed -e s/titles_tmp.//g"
+        
         wordsExtractor.output_relation: "word_presences"
         wordsExtractor.input: "SELECT * FROM titles"
         wordsExtractor.udf: "${getClass.getResource("/logistic_regression/word_extractor.py").getFile}"

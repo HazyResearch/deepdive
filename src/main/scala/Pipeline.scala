@@ -50,7 +50,7 @@ object Pipeline extends Logging {
     // Run extractions
     log.info("Running extractors")
     val extractionResults = for {
-      extractor <- Context.settings.extractors
+      extractor <- Context.settings.extractionSettings.extractors
       task = ExtractionTask(extractor)
       extractionResult <- Some(ask(extractionManager, ExtractionManager.AddTask(task)))
     } yield extractionResult.mapTo[ExtractionTaskResult]
@@ -78,6 +78,8 @@ object Pipeline extends Logging {
     val dumpResult = inferenceManager ? InferenceManager.DumpFactorGraph(VARIABLES_DUMP_FILE.getCanonicalPath, 
       FACTORS_DUMP_FILE.getCanonicalPath, WEIGHTS_DUMP_FILE.getCanonicalPath)
     Await.result(dumpResult, 3000 minutes)
+
+    log.debug(s"largest_variable_id=${PostgresDataStore.currentId}")
 
     // Call the sampler executable
     val samplingStartTime = System.currentTimeMillis
