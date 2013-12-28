@@ -19,7 +19,6 @@ object Context extends Logging {
     system.shutdown()
     system.awaitTermination()
     PostgresDataStore.close()
-    System.exit(exitValue)
   }
 
 }
