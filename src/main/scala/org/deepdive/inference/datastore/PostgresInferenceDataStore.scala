@@ -22,13 +22,18 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
 
     val BatchSize = Some(50000)
 
-    // val factorFunctions = Map[String, FactorFunction]()
+    // We keep track of the variables and weights we have already added
+    // These will be kept in memory
     val variableIdSet = Collections.newSetFromMap[Long](
       new ConcurrentHashMap[Long, java.lang.Boolean]())
+    val weightIdMap = new ConcurrentHashMap[String, Long]()
+    
+    // Temorary buffer for the next batch
+    // These collections will the cleared when we write the next batch to postgres
     val variables = ArrayBuffer[Variable]()
     val factors = ArrayBuffer[Factor]()
     val weights = Map[String, Weight]()
-    val weightIdMap = Map[String, Long]()
+    
 
     def init() : Unit = {
       // weights(id, initial_value, is_fixed)
@@ -78,12 +83,12 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
 
     def hasVariable(id: Long) : Boolean = variableIdSet.contains(id)
 
-    def getWeightId(identifier: String) : Option[Long] = weightIdMap.get(identifier)
+    def getWeightId(identifier: String) : Option[Long] = Option(weightIdMap.get(identifier))
 
     def addWeight(identifier: String, weight: Weight) = { 
       if (!weightIdMap.contains(identifier)) {
         weights += Tuple2(identifier, weight)
-        weightIdMap += Tuple2(identifier, weight.id)
+        weightIdMap.put(identifier, weight.id)
       }
     }
 
