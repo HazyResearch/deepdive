@@ -47,8 +47,7 @@ object Pipeline extends Logging {
     val extractionTasks = for {
       extractor <- settings.extractionSettings.extractors
       extractionTask = ExtractionTask(extractor)
-    } yield Task(s"extractor_${extractor.name}", 
-      extractor.dependencies.toList.map("extractor_" + _), 
+    } yield Task(s"${extractor.name}", extractor.dependencies.toList, 
       extractionTask, extractionManager)
 
     // Build task to construct the factor graph
@@ -57,7 +56,7 @@ object Pipeline extends Logging {
       factorTask = FactorTask(factor, settings.calibrationSettings.holdoutFraction)
       // TODO: We don't actually neeed to wait for all extractions to finish. For now it's fine.
       taskDeps = extractionTasks.map(_.id)
-    } yield Task("factor_" + factor.name, taskDeps, factorTask, inferenceManager)
+    } yield Task(factor.name, taskDeps, factorTask, inferenceManager)
 
     val inferenceTask = Task("inference", factorTasks.map(_.id),
       InferenceManager.RunInference(settings.samplerSettings.javaArgs, 
