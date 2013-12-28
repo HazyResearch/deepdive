@@ -40,7 +40,8 @@ object Pipeline extends Logging {
     val profiler = system.actorOf(Profiler.props, "profiler")
 
     // Start the Inference and Extractions managers
-    val inferenceManager = system.actorOf(InferenceManager.props, "InferenceManager")
+    val inferenceManager = system.actorOf(InferenceManager.props(
+      Context.settings.schemaSettings.variables), "InferenceManager")
     val extractionManager = system.actorOf(ExtractionManager.props, "ExtractionManager")
     // val extractorExecutor = system.actorOf(ExtractorExecutor.props(Settings.databaseUrl), "ExtractorExecutor")
 
@@ -78,8 +79,6 @@ object Pipeline extends Logging {
     val dumpResult = inferenceManager ? InferenceManager.DumpFactorGraph(VARIABLES_DUMP_FILE.getCanonicalPath, 
       FACTORS_DUMP_FILE.getCanonicalPath, WEIGHTS_DUMP_FILE.getCanonicalPath)
     Await.result(dumpResult, 3000 minutes)
-
-    log.debug(s"largest_variable_id=${PostgresDataStore.currentId}")
 
     // Call the sampler executable
     val samplingStartTime = System.currentTimeMillis

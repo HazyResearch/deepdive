@@ -20,6 +20,22 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester {
     }
   }
 
+  describe("Parsing Schema Settings") {
+    it ("should work"){
+      val config = ConfigFactory.parseString("""
+      schema.variables.relation1.var1 : Boolean
+      schema.variables.relation1.var2 : Boolean
+      schema.variables.relation2.var3 : Boolean
+      """)
+      val loadSchemaSettings = PrivateMethod[SchemaSettings]('loadSchemaSettings)
+      val result = SettingsParser invokePrivate loadSchemaSettings(config)
+      assert(result == SchemaSettings(
+        Map("relation1.var1" -> "Boolean",
+          "relation1.var2" -> "Boolean",
+          "relation2.var3" -> "Boolean")))
+    }
+  }
+
   describe("Parsing Extractor Settings") {
     it ("should work"){
       val config = ConfigFactory.parseString("""

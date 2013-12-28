@@ -22,10 +22,10 @@ class PostgresFactorGraphBuilderSpec extends FunSpec {
      SQL("create table entities (id bigserial primary key, word_id integer, is_present boolean)").execute()
      SQL("""create table parents(id bigserial primary key, entity1_id integer, 
         entity2_id integer, meta text, is_true boolean)""").execute()
-     SQL("""insert into entities(word_id, is_present) VALUES (1, true), (2, true), (3, true), 
-        (4, true), (5, true), (6, true);""").execute()
-     SQL("""insert into parents(entity1_id, entity2_id, meta, is_true) 
-        VALUES (1, 2, 'A', NULL), (2, 3, 'B', NULL), (1, 5, 'C', NULL);""").execute()
+     SQL("""insert into entities(id, word_id, is_present) VALUES (0, 1, true), (1, 2, true), (2, 3, true), 
+        (3, 4, true), (4, 5, true), (5, 6, true);""").execute()
+     SQL("""insert into parents(id, entity1_id, entity2_id, meta, is_true) 
+        VALUES (6, 1, 2, 'A', NULL), (7, 2, 3, 'B', NULL), (8, 1, 5, 'C', NULL);""").execute()
    }
   }
 
@@ -34,12 +34,12 @@ class PostgresFactorGraphBuilderSpec extends FunSpec {
     
     it("should work") {
       prepareData()
-      
-      val actor = TestActorRef[FactorGraphBuilder.PostgresFactorGraphBuilder].underlyingActor
+        
+      val actorProps = Props(classOf[FactorGraphBuilder.PostgresFactorGraphBuilder], 
+        Map("entities.is_present" -> "Boolean", "parents.is_true" -> "Boolean"))
+      val actor = TestActorRef[FactorGraphBuilder.PostgresFactorGraphBuilder](actorProps).underlyingActor
 
       // Add Factors and Variables for the entities relation
-      val entityRelation = Relation("entities", Map("id" -> "Long", "word_id" -> "Integer", 
-        "is_present" -> "Boolean"))
       val entityFactorDesc = FactorDesc("entititiesFactor", "SELECT * FROM entities", 
         ImplyFactorFunction("entities.is_present", Nil), KnownFactorWeight(1.0), "entititiesFactor")
       actor.addFactorsAndVariables(entityFactorDesc, 0.0)
@@ -52,9 +52,6 @@ class PostgresFactorGraphBuilderSpec extends FunSpec {
       // assert(actor.inferenceDataStore.variableIdMap.size == 6)
 
       // Add Factors and Variables for the parents relations
-      val parentsRelation = Relation("parents",
-        Map("id" -> "Long", "entity1_id" -> "Long", "entity2_id" -> "Long", "is_true" -> "Boolean")
-      )
       val parentsFactorDesc = FactorDesc(
         "parentsFactor", 
         """SELECT parents.*, e1.id AS "e1.id", e1.is_present AS "e1.is_present",

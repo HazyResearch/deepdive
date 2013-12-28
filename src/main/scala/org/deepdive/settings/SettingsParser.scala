@@ -13,15 +13,14 @@ object SettingsParser {
 
     // Connection settings
     val connection = loadConnection(config)
-    val relations = loadRelations(config)
-    val etlTasks = loadEtlTasks(config)
+    val schemaSettings = loadSchemaSettings(config)
     val extractors = loadExtractionSettings(config)
     val factors = loadFactors(config)
     val calibrationSettings = loadCalibrationSettings(config)
-    val SamplerSettings = loadSamplerSettings(config)
+    val samplerSettings = loadSamplerSettings(config)
 
-    Settings(connection, relations, etlTasks, extractors, factors, 
-      calibrationSettings, SamplerSettings)
+    Settings(connection, schemaSettings, extractors, factors, 
+      calibrationSettings, samplerSettings)
   }
 
   private def loadConnection(config: Config) : Connection = {
@@ -32,19 +31,19 @@ object SettingsParser {
     )
   }
 
-  private def loadRelations(config: Config) : List[Relation] = {
-   Try(config.getObject("relations").keySet().map { relationName =>
-      val relationConfig = config.getConfig(s"relations.$relationName")
-      val schema = relationConfig.getObject("schema").unwrapped
-      Relation(relationName,schema.toMap.mapValues(_.toString))
-    }.toList).getOrElse(Nil)
-  }
-
-  private def loadEtlTasks(config: Config) : List[EtlTask] = {
-    Try(config.getObject("ingest").keySet().map { relationName =>
-      val source = config.getString(s"ingest.$relationName.source")
-      EtlTask(relationName, source)
-    }.toList).getOrElse(Nil)
+  private def loadSchemaSettings(config: Config) : SchemaSettings = {
+    Try(config.getConfig("schema")).map { schemaConfig =>
+      val variableConfig = schemaConfig.getConfig("variables")
+      val relations = variableConfig.root.keySet.toList
+      val relationsWithConfig = relations.zip(relations.map(variableConfig.getConfig))
+      val variableMap = relationsWithConfig.flatMap { case(relation, relationConf) =>
+        relationConf.root.keySet.map { attributeName =>
+          Tuple2(s"${relation}.${attributeName}", 
+            relationConf.getString(attributeName))
+        }
+      }.toMap
+      SchemaSettings(variableMap)
+    }.getOrElse(SchemaSettings(Map()))
   }
 
   private def loadExtractionSettings(config: Config) : ExtractionSettings = {

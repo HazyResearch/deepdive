@@ -14,10 +14,12 @@ object FactorGraphBuilder {
 
   // Implementation of FactorGraphBuilder using postgres components
   // TODO: Refactor this
-  class PostgresFactorGraphBuilder extends FactorGraphBuilder with 
-    PostgresExtractionDataStoreComponent with PostgresInferenceDataStoreComponent
+  class PostgresFactorGraphBuilder(val variableSchema: Map[String, String]) 
+    extends FactorGraphBuilder with PostgresExtractionDataStoreComponent 
+    with PostgresInferenceDataStoreComponent
 
-  def props: Props = Props[PostgresFactorGraphBuilder]()
+  def props(variableSchema: Map[String, String]): Props = 
+    Props(classOf[PostgresFactorGraphBuilder], variableSchema)
 
   // Messages
   sealed trait Message
@@ -32,6 +34,11 @@ object FactorGraphBuilder {
 trait FactorGraphBuilder extends Actor with ActorLogging { 
   self: ExtractionDataStoreComponent with InferenceDataStoreComponent =>
   
+  def variableSchema: Map[String, String]
+
+  val variableOffsetMap = variableSchema.keys.toList.sorted.zipWithIndex.toMap
+
+
   import FactorGraphBuilder._
 
   val BATCH_SIZE = 20000
@@ -117,10 +124,11 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
 
         // Build the variable, one for each ID
         for (varId <- varIds) {
-          val varObj = Variable(varId, VariableDataType.withName(factorDesc.func.variableDataType), 
+          val globalVariableId = getVariableId(varId, varColumn.key)
+          val varObj = Variable(globalVariableId, VariableDataType.withName(factorDesc.func.variableDataType), 
              evidenceValue, !isQuery, isQuery, varColumn.headRelation, varColumn.field)
           // Store the variable using a unique key
-          if (!inferenceDataStore.hasVariable(varId)) {
+          if (!inferenceDataStore.hasVariable(globalVariableId)) {
             // log.debug(s"added variable=${variableKey}")
             inferenceDataStore.addVariable(varObj)
           }
@@ -164,12 +172,21 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
       val localIds = getLocalVariableIds(rowMap, factorVar)
       localIds.zipWithIndex.map { case(localId, index) =>
         positionCounter += 1
-        FactorVariable(newFactorId.toLong, positionCounter, !factorVar.isNegated, localId)
+        val globalId = getVariableId(localId, factorVar.key)
+        FactorVariable(newFactorId.toLong, positionCounter, !factorVar.isNegated, globalId)
       } 
     }
     val newFactor = Factor(newFactorId, factorDesc.func.getClass.getSimpleName, weight, 
       factorVariables.toList)
     inferenceDataStore.addFactor(newFactor)
+  }
+
+  private def getVariableId(localId: Long, key: String) : Long = {
+    (localId * variableOffsetMap.size) + variableOffsetMap.get(key).getOrElse {
+      val errorMsg = s"${key} not found in variable definitions. " + 
+        s"Available variables: ${variableOffsetMap.keySet.mkString(",")}"
+      throw new RuntimeException(errorMsg)
+    }
   }
 
 

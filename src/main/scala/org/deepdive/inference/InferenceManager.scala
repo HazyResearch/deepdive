@@ -8,7 +8,9 @@ import java.io.File
 trait InferenceManager extends Actor with ActorLogging {
   self: InferenceDataStoreComponent with CalibrationDataComponent =>
     
-  val factorGraphBuilder = context.actorOf(FactorGraphBuilder.props)
+  def variableSchema: Map[String, String]
+
+  val factorGraphBuilder = context.actorOf(FactorGraphBuilder.props(variableSchema))
 
   override def preStart() {
     log.info("Starting")
@@ -39,10 +41,11 @@ trait InferenceManager extends Actor with ActorLogging {
 object InferenceManager {
 
   // TODO: Refactor this
-  class PostgresInferenceManager extends InferenceManager with 
+  class PostgresInferenceManager(val variableSchema: Map[String, String]) extends InferenceManager with 
     PostgresInferenceDataStoreComponent with PostgresCalibrationDataComponent
 
-  def props : Props = Props(classOf[PostgresInferenceManager])
+  def props(variableSchema: Map[String, String]) : Props = Props(classOf[PostgresInferenceManager], 
+    variableSchema: Map[String, String])
 
   // Messages
   case class WriteInferenceResult(file: String)
