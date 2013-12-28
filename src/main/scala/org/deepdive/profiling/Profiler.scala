@@ -50,7 +50,7 @@ class Profiler extends Actor with ActorLogging {
 
   private def printReports() = {
     log.info("--------------------------------------------------")
-    log.info("Pipeline Summary")
+    log.info("Summary Report")
     log.info("--------------------------------------------------")
     reports.sortBy(_.endTime).foreach { report =>
       val ms = (report.endTime - report.startTime)
