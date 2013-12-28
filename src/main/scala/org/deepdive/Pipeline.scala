@@ -27,11 +27,11 @@ object Pipeline extends Logging {
     val system = Context.system
 
     // Load Settings
-    Context.settings = Settings.loadFromConfig(config)    
+    val settings = Settings.loadFromConfig(config)    
 
     // Initialize the data store
-    PostgresDataStore.init(Context.settings.connection.url, Context.settings.connection.user, 
-      Context.settings.connection.password)
+    PostgresDataStore.init(settings.connection.url, settings.connection.user, 
+      settings.connection.password)
 
     implicit val timeout = Timeout(1337 hours)
     implicit val ec = system.dispatcher
@@ -40,12 +40,12 @@ object Pipeline extends Logging {
     val profiler = system.actorOf(Profiler.props, "profiler")
     val taskManager = system.actorOf(TaskManager.props, "taskManager")
     val inferenceManager = system.actorOf(InferenceManager.props(
-      Context.settings.schemaSettings.variables), "inferenceManager")
+      settings.schemaSettings.variables), "inferenceManager")
     val extractionManager = system.actorOf(ExtractionManager.props, "extractionManager")
     
     // Build tasks for extractors
     val extractionTasks = for {
-      extractor <- Context.settings.extractionSettings.extractors
+      extractor <- settings.extractionSettings.extractors
       extractionTask = ExtractionTask(extractor)
     } yield Task(s"extractor_${extractor.name}", 
       extractor.dependencies.toList.map("extractor_" + _), 
@@ -53,8 +53,8 @@ object Pipeline extends Logging {
 
     // Build task to construct the factor graph
     val factorTasks = for {
-      factor <- Context.settings.factors
-      factorTask = FactorTask(factor, Context.settings.calibrationSettings.holdoutFraction)
+      factor <- settings.factors
+      factorTask = FactorTask(factor, settings.calibrationSettings.holdoutFraction)
       // TODO: We don't actually neeed to wait for all extractions to finish. For now it's fine.
       taskDeps = extractionTasks.map(_.id)
     } yield Task("factor_" + factor.name, taskDeps, factorTask, inferenceManager)
@@ -67,12 +67,12 @@ object Pipeline extends Logging {
       inferenceManager)
 
     // Buld task to run inference
-    val samplerCmd = Seq("java", Context.settings.samplerSettings.javaArgs, 
+    val samplerCmd = Seq("java", settings.samplerSettings.javaArgs, 
       "-jar", "lib/gibbs_sampling-assembly-0.1.jar", 
       "--variables", VARIABLES_DUMP_FILE.getCanonicalPath, 
       "--factors", FACTORS_DUMP_FILE.getCanonicalPath, 
       "--weights", WEIGHTS_DUMP_FILE.getCanonicalPath,
-      "--output", SAMPLING_OUTPUT_FILE.getCanonicalPath) ++ Context.settings.samplerSettings.samplerArgs.split(" ")
+      "--output", SAMPLING_OUTPUT_FILE.getCanonicalPath) ++ settings.samplerSettings.samplerArgs.split(" ")
     val samplerTask = Task("sampling", List("dump_factor_graph"), 
       InferenceManager.RunSampler(samplerCmd), inferenceManager)
 

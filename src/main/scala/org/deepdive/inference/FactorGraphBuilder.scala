@@ -28,8 +28,6 @@ object FactorGraphBuilder {
   // case class AddVariablesResult(name: String, success: Boolean)
 }
 
-
-
 trait FactorGraphBuilder extends Actor with ActorLogging { 
   self: ExtractionDataStoreComponent with InferenceDataStoreComponent =>
   

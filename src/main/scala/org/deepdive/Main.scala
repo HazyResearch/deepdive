@@ -20,16 +20,11 @@ object Main extends App with Logging {
     } text("configuration file path (required)")
   }
 
-  parser.parse(args, CliOptions(null)) map { c =>
-    Context.configFile = c.configFile
-  } getOrElse {
-    // Option parsing failed.
-    System.exit(1)
-  }
+  val options = parser.parse(args, CliOptions(null)).get
 
   // Starting the pipeline
-  log.info(s"Running pipeline with configuration from ${Context.configFile.getAbsolutePath}")
-  val userConfig = ConfigFactory.parseFile(Context.configFile)
+  log.info(s"Running pipeline with configuration from ${options.configFile.getAbsolutePath}")
+  val userConfig = ConfigFactory.parseFile(options.configFile)
   val defaultConfig = ConfigFactory.load
   Pipeline.run(userConfig.withFallback(defaultConfig))
 

@@ -14,14 +14,12 @@ import scala.concurrent.duration._
 object Context extends Logging {
 
   lazy val system = ActorSystem("deepdive")
-  var configFile : File = null
-  var settings : Settings = null
-
 
   def shutdown(exitValue: Int = 0) {
     system.shutdown()
     system.awaitTermination()
     PostgresDataStore.close()
+    System.exit(exitValue)
   }
 
 }
