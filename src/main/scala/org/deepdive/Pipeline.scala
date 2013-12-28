@@ -59,27 +59,11 @@ object Pipeline extends Logging {
       taskDeps = extractionTasks.map(_.id)
     } yield Task("factor_" + factor.name, taskDeps, factorTask, inferenceManager)
 
-    // Build a task to dump the factor graph
-    val dumpFactorGraphTask = Task(
-      "dump_factor_graph", factorTasks.map(_.id), 
-      InferenceManager.DumpFactorGraph(VARIABLES_DUMP_FILE.getCanonicalPath, 
-        FACTORS_DUMP_FILE.getCanonicalPath, WEIGHTS_DUMP_FILE.getCanonicalPath), 
-      inferenceManager)
+    val inferenceTask = Task("inference", factorTasks.map(_.id),
+      InferenceManager.RunInference(settings.samplerSettings.javaArgs, 
+        settings.samplerSettings.samplerArgs), inferenceManager)
 
-    // Buld task to run inference
-    val samplerCmd = Seq("java", settings.samplerSettings.javaArgs, 
-      "-jar", "lib/gibbs_sampling-assembly-0.1.jar", 
-      "--variables", VARIABLES_DUMP_FILE.getCanonicalPath, 
-      "--factors", FACTORS_DUMP_FILE.getCanonicalPath, 
-      "--weights", WEIGHTS_DUMP_FILE.getCanonicalPath,
-      "--output", SAMPLING_OUTPUT_FILE.getCanonicalPath) ++ settings.samplerSettings.samplerArgs.split(" ")
-    val samplerTask = Task("sampling", List("dump_factor_graph"), 
-      InferenceManager.RunSampler(samplerCmd), inferenceManager)
-
-    val writebackTask = Task("writeback_inference_result", List("sampling"),
-      InferenceManager.WriteInferenceResult(SAMPLING_OUTPUT_FILE.getCanonicalPath), inferenceManager)
-
-    val calibrationTask = Task("calibration_plots", List("writeback_inference_result"), 
+    val calibrationTask = Task("calibration_plots", List("inference"), 
       InferenceManager.WriteCalibrationData("target/calibration_data/counts", 
         "target/calibration_data/precision"), inferenceManager)
     
@@ -88,8 +72,7 @@ object Pipeline extends Logging {
     val terminationTask = Task("shutdown", List("report"), "shutdown", taskManager)
 
     val allTasks = extractionTasks ++ factorTasks ++ 
-      List(dumpFactorGraphTask, samplerTask, writebackTask, calibrationTask, 
-        reportingTask, terminationTask) 
+      List(inferenceTask, calibrationTask, reportingTask, terminationTask) 
 
     // Schedule all Tasks. 
     allTasks.foreach( task => taskManager ! TaskManager.AddTask(task) )
