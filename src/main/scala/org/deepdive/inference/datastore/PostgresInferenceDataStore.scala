@@ -20,7 +20,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
 
     implicit lazy val connection = PostgresDataStore.borrowConnection()
 
-    val BatchSize = Some(5000)
+    val BatchSize = Some(50000)
 
     // val factorFunctions = Map[String, FactorFunction]()
     val variableIdSet = Collections.newSetFromMap[Long](

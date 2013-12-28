@@ -37,7 +37,6 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
 
   import FactorGraphBuilder._
 
-  val BATCH_SIZE = 20000
   val rng = new Random(1337)
   val factorFunctionIdCounter = new AtomicInteger
   val variableIdCounter = new AtomicInteger
