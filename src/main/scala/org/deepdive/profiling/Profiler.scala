@@ -4,6 +4,7 @@ import akka.actor.{Actor, ActorLogging, Props}
 import scala.collection.mutable.ArrayBuffer
 import org.deepdive.settings._
 import java.util.Date
+import scala.util.{Try, Success}
 
 object Profiler {
   def props = Props(classOf[Profiler])
@@ -42,7 +43,7 @@ class Profiler extends Actor with ActorLogging {
       reports += TaskReport(startTime, endTime, "sampling")
     case Report =>
       doReport()
-      sender ! "Done"
+      sender ! Success()
   }
 
   private def doReport() : Unit = {

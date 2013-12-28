@@ -24,10 +24,10 @@ class ExtractorExecutorSpec extends FunSpec with BeforeAndAfter  {
       val testActor = TestActorRef[TestExtractorExeuctor].underlyingActor
       // Add test record to the data store
       testActor.dataStore.write(List("""{"id": 5}""".asJson.asJsObject), "relation1")
-      val task = new ExtractionTask(Extractor("testExtractor", "relation1", "relation1", 
-        "/bin/cat", 1, 1000, Nil.toSet))
+      val task = new ExtractionTask(Extractor("testExtractor", "relation1", 
+        "relation1", "/bin/cat", 1, 1000, Nil.toSet))
       val result = testActor.doExecute(task)
-      assert(result.success)
+      assert(result.result.isSuccess)
       assert(testActor.dataStore.data("relation1").size == 2)
     }
 

@@ -1,15 +1,24 @@
 package org.deepdive.inference
 
-import org.deepdive.calibration._
 import akka.actor.{Actor, ActorRef, ActorLogging, Props}
+import akka.pattern.{ask, pipe}
+import akka.util.Timeout
 import java.io.File
+import org.deepdive.TaskManager
+import org.deepdive.calibration._
+import scala.concurrent.duration._
+import scala.util.{Try, Success, Failure}
 
 /* Manages the Factor and Variable relations in the database */
 trait InferenceManager extends Actor with ActorLogging {
   self: InferenceDataStoreComponent with CalibrationDataComponent =>
-    
+  
+  implicit val taskTimeout = Timeout(24 hours)
+  import context.dispatcher
+
   def variableSchema: Map[String, String]
 
+  val taskManager = context.actorSelection("../taskManager")
   val factorGraphBuilder = context.actorOf(FactorGraphBuilder.props(variableSchema))
 
   override def preStart() {
@@ -17,22 +26,27 @@ trait InferenceManager extends Actor with ActorLogging {
   }
 
   def receive = {
-    case msg : FactorGraphBuilder.AddFactorsAndVariables =>
-      factorGraphBuilder forward msg
+    case msg @ FactorTask(factorDesc, holdoutFraction) =>
+      val result = factorGraphBuilder ? FactorGraphBuilder.AddFactorsAndVariables(
+        factorDesc, holdoutFraction) 
+      result.mapTo[Try[Unit]] pipeTo sender
     case InferenceManager.WriteInferenceResult(file) =>
       log.info("writing inference result back to datastore")
       inferenceDataStore.writeInferenceResult(file)
-      sender ! "Done"
+      sender ! Success()
     case InferenceManager.DumpFactorGraph(factorMapFile, factorsFile, weightsFile) =>
       log.info("dumping factor graph")
       inferenceDataStore.dumpFactorGraph(new File(factorMapFile), new File(factorsFile), 
         new File(weightsFile))
-      sender ! "Done"
+      sender ! Success()
+    case InferenceManager.RunSampler(cmd) =>
+      val sampler = context.actorOf(Sampler.props, "sampler")
+      sampler ? Sampler.Run(cmd) pipeTo sender
     case InferenceManager.WriteCalibrationData(countFilePrefix, precisionFilePrefix) =>
       log.info("writing calibration data")
       calibrationData.writeBucketCounts(countFilePrefix)
       calibrationData.writeBucketPrecision(precisionFilePrefix)
-      sender ! "Done"
+      sender ! Success()
     case other =>
       log.warning("Huh?")
   }
@@ -51,5 +65,6 @@ object InferenceManager {
   case class WriteInferenceResult(file: String)
   case class DumpFactorGraph(factorMapFile: String, factorsFile: String, weightsFile: String)
   case class WriteCalibrationData(countFilePrefix: String, precisionFilePrefix: String)
+  case class RunSampler(cmd: Seq[String])
 
 }

@@ -5,6 +5,8 @@ sealed trait FactorFunction {
   def variables : Seq[FactorFunctionVariable]
   /* Data type can be one of: Boolean, Discrete, Continuous */
   def variableDataType : String = "Boolean"
+  /* The relations used in this factor function */
+  def relations = variables.map(_.relation).toSet
 }
 
 /* A factor function of fom A and B and C ... -> Z */

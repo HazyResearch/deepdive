@@ -8,7 +8,7 @@ import org.deepdive.profiling.Profiler
 import akka.actor.{Actor, ActorRef, Props, ActorLogging}
 import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.JavaConversions._
-import scala.util.Random
+import scala.util.{Random, Try, Success, Failure}
 
 object FactorGraphBuilder {
 
@@ -38,7 +38,6 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
 
   val variableOffsetMap = variableSchema.keys.toList.sorted.zipWithIndex.toMap
 
-
   import FactorGraphBuilder._
 
   val BATCH_SIZE = 20000
@@ -59,10 +58,11 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
     case AddFactorsAndVariables(factorDesc, holdoutFraction) =>
       val startTime = System.currentTimeMillis
       log.info(s"Processing factor_name=${factorDesc.name} with holdout_faction=${holdoutFraction}")
+      // TODO: Failure handling
       addFactorsAndVariables(factorDesc, holdoutFraction)
       val endTime = System.currentTimeMillis
       profiler ! Profiler.FactorAdded(factorDesc, startTime, endTime)
-      sender ! AddFactorsResult(factorDesc.name, true)
+      sender ! Success()
     case _ => 
   }
 

@@ -81,12 +81,12 @@ trait ExtractorExecutor extends Actor with ActorLogging  {
         val endTime = System.currentTimeMillis
         log.error(exception.toString)
         profiler ! Profiler.ExtractorFailed(task.extractor, startTime, endTime, exception)
-        isDone.success(ExtractionTaskResult(task, false))
+        isDone.success(ExtractionTaskResult(task, Failure(exception)))
       },
       () => { 
         val endTime = System.currentTimeMillis
         profiler ! Profiler.ExtractorFinished(task.extractor, startTime, endTime)
-        isDone.success(ExtractionTaskResult(task, true))
+        isDone.success(ExtractionTaskResult(task, Success[Unit]()))
       }
     )
     Await.result(isDone.future, Duration.Inf)

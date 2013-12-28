@@ -17,14 +17,8 @@ object Context extends Logging {
   var configFile : File = null
   var settings : Settings = null
 
-  def report() {
-    implicit val timeout = Timeout(5.seconds)
-    Await.result(system.actorSelection("/user/profiler") ? Profiler.Report, 5.seconds)
-  }
 
   def shutdown(exitValue: Int = 0) {
-    report()
-    log.info("shutting down")
     system.shutdown()
     system.awaitTermination()
     PostgresDataStore.close()
