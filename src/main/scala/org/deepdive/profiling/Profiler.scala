@@ -1,7 +1,7 @@
 package org.deepdive.profiling
 
 import akka.actor.{Actor, ActorLogging, Props}
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{ArrayBuffer, Map}
 import org.deepdive.settings._
 import java.util.Date
 import scala.util.{Try, Success}
@@ -9,49 +9,54 @@ import scala.util.{Try, Success}
 object Profiler {
   def props = Props(classOf[Profiler])
 
-  case class ExtractorFinished(extractor: Extractor, startTime: Long, endTime: Long)
-  case class ExtractorFailed(extractor: Extractor, startTime: Long, endTime: Long, exception: Throwable)
-  case class FactorAdded(factorDesc: FactorDesc, startTime: Long, endTime: Long)
-  case class SamplerFinished(startTime: Long, endTime: Long)
-  case object Report
-  case class TaskReport(startTime: Long, endTime: Long, desc: String)
+  sealed trait Message 
+  case object PrintReports extends Message
+
+  case class Report(id: String, startDescription: String, endDescription: String, 
+    startTime: Long, endTime: Long)
 }
 
 class Profiler extends Actor with ActorLogging {
 
   import Profiler._
 
-  val reports = ArrayBuffer[TaskReport]()
-
-  // val finishedExtractors = ArrayBuffer[ExtractorFinished]()
-  // val failedExtractors = ArrayBuffer[ExtractorFailed]()
-  // val finishedFactors = ArrayBuffer[FactorAdded]()
-  // val finishedSampler = ArrayBuffer[SamplerFinished]()
+  val reports = ArrayBuffer[Report]()
+  val startedReports = Map[String, (StartReport, Long)]()
 
   override def preStart() {
     log.info(s"starting at ${self.path}")
+    context.system.eventStream.subscribe(self, classOf[ReportingEvent])
   }
 
   def receive = {
-    case ExtractorFinished(extractor, startTime, endTime) =>
-      reports += TaskReport(startTime, endTime, s"extractor ${extractor.name}")
-    case ExtractorFailed(extractor, startTime, endTime, exception) =>
-      reports += TaskReport(startTime, endTime, s"extractor ${extractor.name} FAILED")
-    case FactorAdded(factorDesc, startTime, endTime) =>
-      reports += TaskReport(startTime, endTime, s"adding ${factorDesc.name} to factor graph")
-    case SamplerFinished(startTime, endTime) =>
-      reports += TaskReport(startTime, endTime, "sampling")
-    case Report =>
-      doReport()
+    case msg @ StartReport(id, startDescription) =>
+      log.debug(s"starting report_id=${id}")
+      startedReports += Tuple2(id, Tuple2(msg, System.currentTimeMillis))
+    case EndReport(id, endDescription) =>
+      startedReports.get(id) match {
+        case Some((startReport, startTime)) =>
+          log.debug(s"ending report_id=${id}")
+          val finalReport = Report(id, startReport.description, 
+            endDescription.map(" " + _).getOrElse(""), 
+            startTime, System.currentTimeMillis)
+          reports += finalReport
+        case None =>
+          log.warning(s"report_id=${id} was not started")
+      }
+    case PrintReports =>
+      printReports()
       sender ! Success()
   }
 
-  private def doReport() : Unit = {
-    log.info("Pipeline Summary:")
+  private def printReports() = {
+    log.info("--------------------------------------------------")
+    log.info("Pipeline Summary")
+    log.info("--------------------------------------------------")
     reports.sortBy(_.endTime).foreach { report =>
       val ms = (report.endTime - report.startTime)
-      log.info(s"${report.desc} (${ms} ms)")
+      log.info(s"${report.startDescription}${report.endDescription} [${ms} ms]")
     }
+    log.info("--------------------------------------------------")
   }
 
 

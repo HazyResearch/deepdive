@@ -5,6 +5,7 @@ import akka.pattern.{ask, pipe}
 import akka.util.Timeout
 import org.deepdive.extraction.ExtractionTask
 import org.deepdive.inference.FactorTask
+import org.deepdive.profiling._
 import scala.collection.mutable.{Set, Map}
 import scala.concurrent.duration._
 import scala.util.Try
@@ -45,6 +46,8 @@ class TaskManager extends Actor with ActorLogging {
       scheduleTasks()
     
     case msg @ Done(task, result) =>
+      val reportDesc = if (result.isSuccess) "SUCCESS" else "FAILURE"
+      context.system.eventStream.publish(EndReport(task.id, Option(reportDesc)))
       runningTasks -= task
       completedTasks += msg
       log.info(s"Completed task_id=${task.id}")
@@ -83,12 +86,15 @@ class TaskManager extends Actor with ActorLogging {
     }
 
     log.info(s"${eligibileTasks.size}/${taskQueue.size} tasks eligible")
+    log.info(s"not_eligible=${notEligibleTasks.map(_.id).toSet}")
     
     // Forward eligible tasks
     eligibileTasks.foreach { task =>
       log.debug(s"Sending task_id=${task.id} to ${task.worker}")
+      context.system.eventStream.publish(StartReport(task.id, task.id))
       val taskResult = (task.worker ? task.taskDescription).mapTo[Try[Unit]]
       taskResult.map ( x => Done(task, x) ) pipeTo self
+
       taskQueue -= task
       runningTasks += task
     }

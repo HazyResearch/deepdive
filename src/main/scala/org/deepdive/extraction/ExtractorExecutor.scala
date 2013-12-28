@@ -8,7 +8,6 @@ import org.deepdive.datastore.{PostgresDataStore => DB}
 import org.deepdive.extraction._
 import org.deepdive.extraction.datastore._
 import org.deepdive.Logging
-import org.deepdive.profiling._
 import scala.util.{Try, Success, Failure}
 import scala.concurrent._
 import scala.concurrent.duration._
@@ -35,8 +34,6 @@ trait ExtractorExecutor extends Actor with ActorLogging  {
 
   import ExtractorExecutor._
 
-  val profiler = context.actorSelection("/user/profiler")
-
   override def preStart() {
     log.info("Starting")
   }
@@ -53,10 +50,8 @@ trait ExtractorExecutor extends Actor with ActorLogging  {
   }
 
   def doExecute(task: ExtractionTask) : ExtractionTaskResult = {
-    val startTime = System.currentTimeMillis
+
     val executor = new ScriptTaskExecutor(task, dataStore.queryAsJson(task.extractor.inputQuery))
-    
-    
     val result = executor.run()
 
     // We execute writing to the database asynchronously because it may be a long operation
@@ -77,17 +72,8 @@ trait ExtractorExecutor extends Actor with ActorLogging  {
     val isDone = Promise[ExtractionTaskResult]()
     writtenResults.subscribe(
       rowBatch => {},
-      exception => {
-        val endTime = System.currentTimeMillis
-        log.error(exception.toString)
-        profiler ! Profiler.ExtractorFailed(task.extractor, startTime, endTime, exception)
-        isDone.success(ExtractionTaskResult(task, Failure(exception)))
-      },
-      () => { 
-        val endTime = System.currentTimeMillis
-        profiler ! Profiler.ExtractorFinished(task.extractor, startTime, endTime)
-        isDone.success(ExtractionTaskResult(task, Success[Unit]()))
-      }
+      exception => log.error(exception.toString),
+      () => isDone.success(ExtractionTaskResult(task, Success[Unit]()))
     )
     Await.result(isDone.future, Duration.Inf)
   }

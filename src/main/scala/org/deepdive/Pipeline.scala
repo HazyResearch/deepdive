@@ -47,17 +47,17 @@ object Pipeline extends Logging {
     val extractionTasks = for {
       extractor <- Context.settings.extractionSettings.extractors
       extractionTask = ExtractionTask(extractor)
-    } yield Task(extractor.name, extractor.dependencies.toList, extractionTask, extractionManager)
+    } yield Task(s"extractor_${extractor.name}", 
+      extractor.dependencies.toList.map("extractor_" + _), 
+      extractionTask, extractionManager)
 
     // Build task to construct the factor graph
     val factorTasks = for {
-       factor <- Context.settings.factors
-       factorTask = FactorTask(factor, Context.settings.calibrationSettings.holdoutFraction)
-       relationDependencies = factor.func.relations
-       extractors = Context.settings.extractionSettings.extractors
-       extractionDeps = extractors.filter ( x => relationDependencies.contains(x.outputRelation) )
-       taskDeps = extractionDeps.map(_.name)
-    } yield Task(factor.name, taskDeps, factorTask, inferenceManager)
+      factor <- Context.settings.factors
+      factorTask = FactorTask(factor, Context.settings.calibrationSettings.holdoutFraction)
+      // TODO: We don't actually neeed to wait for all extractions to finish. For now it's fine.
+      taskDeps = extractionTasks.map(_.id)
+    } yield Task("factor_" + factor.name, taskDeps, factorTask, inferenceManager)
 
     // Build a task to dump the factor graph
     val dumpFactorGraphTask = Task(
@@ -83,7 +83,7 @@ object Pipeline extends Logging {
       InferenceManager.WriteCalibrationData("target/calibration_data/counts", 
         "target/calibration_data/precision"), inferenceManager)
     
-    val reportingTask = Task("report", List("calibration_plots"), Profiler.Report, profiler)
+    val reportingTask = Task("report", List("calibration_plots"), Profiler.PrintReports, profiler)
 
     val terminationTask = Task("shutdown", List("report"), "shutdown", taskManager)
 

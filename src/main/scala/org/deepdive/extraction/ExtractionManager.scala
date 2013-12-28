@@ -1,7 +1,7 @@
 package org.deepdive.extraction
 
 import akka.actor.SupervisorStrategy._
-import akka.actor.{Actor, ActorRef, Props, ActorLogging, FSM, OneForOneStrategy}
+import akka.actor._
 import akka.pattern.{ask, pipe}
 import akka.util.Timeout
 import org.deepdive.{Context, TaskManager}
@@ -48,6 +48,8 @@ class ExtractionManager extends Actor with ActorLogging {
       log.info(s"Completed task_name=${task.extractor.name}")
       listeners.get(task).foreach(_ ! result)
       scheduleTasks()
+    case Terminated(worker) =>
+      scheduleTasks()
     case msg => 
       log.warning(s"Huh? ($msg)")
   }
@@ -62,9 +64,9 @@ class ExtractionManager extends Actor with ActorLogging {
       log.info(s"executing extractorName=${task.extractor.name}")
       val newWorker = context.actorOf(ExtractorExecutor.props)
       val result = newWorker ? ExtractorExecutor.ExecuteTask(task) pipeTo self
+      context.watch(newWorker)
       taskQueue -= task
     }
-    log.info(s"num_tasks=${taskQueue.size} left")
   }
 
 }

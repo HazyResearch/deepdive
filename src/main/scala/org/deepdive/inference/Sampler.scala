@@ -15,12 +15,10 @@ class Sampler extends Actor with ActorLogging {
 
   def receive = {
     case Sampler.Run(samplerCmd) =>
-      // val samplingStartTime = System.currentTimeMillis
       log.info(s"Executing: ${samplerCmd.mkString(" ")}")
       val samplerOutput = samplerCmd.!!
       log.debug(samplerOutput)
       log.info(s"sampling finished.")
-      // val samplingEndTime = System.currentTimeMillis
       sender ! Success()
   }
 
