@@ -1,8 +1,6 @@
 package org.deepdive.inference
 
-import anorm._
-
-case class Factor(id: Integer, factorFunction: String, weight: Weight, 
+case class Factor(id: Long, factorFunction: String, weight: Weight, 
   variables: List[FactorVariable]) extends CSVFormattable {
   def toCSVRow = Array(id.toString, weight.id.toString, factorFunction.toString)
 }

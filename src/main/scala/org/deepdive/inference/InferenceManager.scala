@@ -56,7 +56,7 @@ trait InferenceManager extends Actor with ActorLogging {
     // Kill the sampler after it's done :)
     sampler ! PoisonPill
     samplingResult.map { x =>
-      inferenceDataStore.writeInferenceResult(SamplingOutputFile.getCanonicalPath)
+      inferenceDataStore.writebackInferenceResult(SamplingOutputFile.getCanonicalPath)
     }
   }
 

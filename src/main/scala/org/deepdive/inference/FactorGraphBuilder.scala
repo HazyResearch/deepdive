@@ -118,17 +118,15 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
           val globalVariableId = getVariableId(varId, varColumn.key)
           val varObj = Variable(globalVariableId, VariableDataType.withName(factorDesc.func.variableDataType), 
              evidenceValue, !isQuery, isQuery, varColumn.headRelation, varColumn.field)
-          // Store the variable using a unique key
-          if (!inferenceDataStore.hasVariable(globalVariableId)) {
-            // log.debug(s"added variable=${variableKey}")
-            inferenceDataStore.addVariable(varObj)
-          }
+          // Store the variable
+          inferenceDataStore.addVariable(varObj)
         }
       }
   }
 
   private def addFactorForRow(rowMap: Map[String, Any], factorDesc: FactorDesc) : Unit = {
-    // Build and get or add the factorWeight
+    
+    // Find values for the variables in the weight
     val factorWeightValues = factorDesc.weight.variables.map { key => 
       rowMap.get(key).map(_.toString).getOrElse {
         val errorMsg = s"Could not find key=${key}. Available keys: ${rowMap.keySet.mkString(", ")}"
@@ -137,23 +135,29 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
       }
     }
 
+    // Generate a unique ID for the weight
+    // TODO: We generate a unique weight Id based on the String hash code. 
+    // Can we really be that sure this is unique enough?
     val weightIdentifier = factorDesc.weightPrefix + "_" + factorWeightValues.mkString
+    val weightId = weightIdentifier.hashCode
+
+    // Build a human-friendly description fo the weight
     val valueAssignments =  factorDesc.weight.variables
       .zip(factorWeightValues)
       .map(_.productIterator.mkString("="))
       .mkString(",")
     val weightDescription = s"${factorDesc.name}(${valueAssignments})"
 
-    // Add the weight to the factor store
-    val weightId = inferenceDataStore.getWeightId(weightIdentifier).getOrElse(
-      weightIdCounter.getAndIncrement().toLong)
+    // Find the initial value for the weight
     val weightValue = factorDesc.weight match { 
       case x : KnownFactorWeight => x.value
       case _ => 0.0
     }
+
+    // Add the weight to the factor store
     val weight = Weight(weightId, weightValue, 
       factorDesc.weight.isInstanceOf[KnownFactorWeight], weightDescription)
-    inferenceDataStore.addWeight(weightIdentifier, weight)
+    inferenceDataStore.addWeight(weight)
 
     // Build and Add Factor
     val newFactorId = factorIdCounter.getAndIncrement()
