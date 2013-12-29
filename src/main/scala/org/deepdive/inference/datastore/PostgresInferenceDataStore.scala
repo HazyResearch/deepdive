@@ -2,7 +2,6 @@ package org.deepdive.inference
 
 import anorm._
 import au.com.bytecode.opencsv.CSVWriter
-import CSVFormattable._
 import java.io.{ByteArrayInputStream, File, FileOutputStream, StringWriter}
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
