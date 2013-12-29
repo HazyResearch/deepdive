@@ -61,7 +61,7 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
 
       // Build the dataset as a TSV string
       val strData = buildCopyData(result, sampledKeys)
-      val is = new ByteArrayInputStream(strData.getBytes)
+      val is = new ByteArrayInputStream(strData.getBytes("UTF-8"))
       cm.copyIn(copySQL, is)
 
       log.info(s"Wrote num=${result.length} records.")
