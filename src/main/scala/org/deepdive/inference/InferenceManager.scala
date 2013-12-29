@@ -37,8 +37,9 @@ trait InferenceManager extends Actor with ActorLogging {
         factorDesc, holdoutFraction) 
       result.mapTo[Try[Unit]] pipeTo sender
     case InferenceManager.RunInference(samplerJavaArgs, samplerOptions) =>
+      val _sender = sender
       val result = runInference(samplerJavaArgs, samplerOptions)
-      result pipeTo sender
+      result onComplete { maybeResult => _sender ! maybeResult } 
     case InferenceManager.WriteCalibrationData(countFilePrefix, precisionFilePrefix) =>
       log.info("writing calibration data")
       calibrationData.writeBucketCounts(countFilePrefix)
@@ -46,23 +47,17 @@ trait InferenceManager extends Actor with ActorLogging {
       sender ! Success()
   }
 
-  def runInference(samplerJavaArgs: String, samplerOptions: String) : Future[Try[_]] = {
+  def runInference(samplerJavaArgs: String, samplerOptions: String) = {
     inferenceDataStore.dumpFactorGraph(VariablesDumpFile, FactorsDumpFile, WeightsDumpFile)
     val sampler = context.actorOf(Sampler.props, "sampler")
-    val samplingResult = sampler ? Sampler.Run(buildSamplerCmd(samplerJavaArgs, samplerOptions))
+    val samplingResult = sampler ? Sampler.Run(samplerJavaArgs, samplerOptions,
+      VariablesDumpFile.getCanonicalPath, FactorsDumpFile.getCanonicalPath, 
+      WeightsDumpFile.getCanonicalPath, SamplingOutputFile.getCanonicalPath)
+    // Kill the sampler after it's done :)
     sampler ! PoisonPill
     samplingResult.map { x =>
-      Try(inferenceDataStore.writeInferenceResult(SamplingOutputFile.getCanonicalPath))
+      inferenceDataStore.writeInferenceResult(SamplingOutputFile.getCanonicalPath)
     }
-  }
-
-  private def buildSamplerCmd(samplerJavaArgs: String, samplerOptions: String) = {
-    Seq("java", samplerJavaArgs, 
-      "-jar", "lib/gibbs_sampling-assembly-0.1.jar", 
-      "--variables", VariablesDumpFile.getCanonicalPath, 
-      "--factors", FactorsDumpFile.getCanonicalPath, 
-      "--weights", WeightsDumpFile.getCanonicalPath,
-      "--output", SamplingOutputFile.getCanonicalPath) ++ samplerOptions.split(" ")
   }
 
 }
