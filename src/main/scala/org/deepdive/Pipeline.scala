@@ -41,7 +41,8 @@ object Pipeline extends Logging {
     val taskManager = system.actorOf(TaskManager.props, "taskManager")
     val inferenceManager = system.actorOf(InferenceManager.props(
       settings.schemaSettings.variables), "inferenceManager")
-    val extractionManager = system.actorOf(ExtractionManager.props, "extractionManager")
+    // TODO Configuration setting for parallelism. Right now we execute extractors sequentially
+    val extractionManager = system.actorOf(ExtractionManager.props(1), "extractionManager")
     
     // Build tasks for extractors
     val extractionTasks = for {

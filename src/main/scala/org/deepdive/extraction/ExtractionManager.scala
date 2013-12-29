@@ -14,9 +14,11 @@ import scala.util.{Try, Success, Failure}
 
 /* Companion Object for the Extraction Mangager */
 object ExtractionManager {
-  def props : Props = Props(classOf[PostgresExtractionManager])
+
+  // TODO: Refactor this to take an argument for the dataStore type
+  def props(parallelism: Int) : Props = Props(classOf[PostgresExtractionManager], parallelism)
   
-  class PostgresExtractionManager extends ExtractionManager
+  class PostgresExtractionManager(val parallelism: Int) extends ExtractionManager
     with PostgresExtractionDataStoreComponent
 
   // Messages 
@@ -32,7 +34,11 @@ trait ExtractionManager extends Actor with ActorLogging {
 
   import ExtractionManager._
   
-  val PARALLELISM = 1
+  def extractorExecutorProps = ExtractorExecutor.props(dataStore)
+
+  // Number of executors we can run in parallel
+  def parallelism : Int
+
   implicit val ExtractorTimeout = Timeout(24 hours)
   import context.dispatcher
   
@@ -56,19 +62,17 @@ trait ExtractionManager extends Actor with ActorLogging {
       scheduleTasks()
     case Terminated(worker) =>
       scheduleTasks()
-    case msg => 
-      log.warning(s"Huh? ($msg)")
   }
 
   // Schedules new taks based on the queue and capacity
   private def scheduleTasks() : Unit = {
 
     // How many more tasks can we execute in parallel right now?
-    val capacity = PARALLELISM - context.children.size
+    val capacity = parallelism - context.children.size
     
     taskQueue.take(capacity).foreach { task =>
       log.info(s"executing extractorName=${task.extractor.name}")
-      val newWorker = context.actorOf(ExtractorExecutor.props(dataStore))
+      val newWorker = context.actorOf(extractorExecutorProps)
       val result = newWorker ? ExtractorExecutor.ExecuteTask(task) pipeTo self
       context.watch(newWorker)
       taskQueue -= task
