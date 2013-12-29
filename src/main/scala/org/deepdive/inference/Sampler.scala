@@ -22,22 +22,22 @@ class Sampler extends Actor with ActorLogging {
     case Sampler.Run(samplerJavaArgs, samplerOptions, variablesPath, factorsPath, weightsPath, 
       variableOutPath) =>
       // Build the command
-      val samplerCmd = buildSamplerCmd(samplerJavaArgs, samplerOptions, variablesPath, factorsPath, weightsPath, 
-        variableOutPath)
+      val samplerCmd = buildSamplerCmd(samplerJavaArgs, samplerOptions, 
+        variablesPath, factorsPath, weightsPath, variableOutPath)
       log.info(s"Executing: ${samplerCmd.mkString(" ")}")
-      // We run the process, get its exit value, and print its output to the log
+      // We run the process, get its exit value, and print its output to the log file
       val exitValue = samplerCmd!(ProcessLogger(
         out => log.debug(out),
         err => log.error(err)
       ))
-      // Depending on the exitvalue we return success or throw an exception
+      // Depending on the exit value we return success or throw an exception
       exitValue match {
         case 0 => sender ! Success()
-        case _ => throw new RuntimeException("sampling failed (see error log)")
+        case _ => throw new RuntimeException("sampling failed (see error log for more details)")
       }
-      
   }
 
+  // Build the command to run the sampler
   def buildSamplerCmd(samplerJavaArgs: String, samplerOptions: String, variablesPath: String,
     factorsPath: String, weightsPath: String, variableOutPath: String) = {
     Seq("java", samplerJavaArgs, 
