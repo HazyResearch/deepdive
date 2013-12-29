@@ -16,12 +16,8 @@ import rx.lang.scala.subjects._
 
 object ExtractorExecutor {
   
-  // Implementation of an ExtractorExecutor that uses postgresql to store extraction results.
-  // TODO: Refactor this
-  class PostgresExtractorExecutor extends ExtractorExecutor 
-    with PostgresExtractionDataStoreComponent
-
-  def props: Props = Props(classOf[PostgresExtractorExecutor])
+  def props(dataStore: ExtractionDataStoreComponent#ExtractionDataStore): Props = 
+    Props(classOf[ExtractorExecutor], dataStore)
 
   // Messages we can receive
   sealed trait Message
@@ -29,8 +25,7 @@ object ExtractorExecutor {
 }
 
 /* Executes a single extraction task, shuts down when done. */
-trait ExtractorExecutor extends Actor with ActorLogging  { 
-  self: ExtractionDataStoreComponent =>
+class ExtractorExecutor(dataStore: ExtractionDataStoreComponent#ExtractionDataStore) extends Actor with ActorLogging  { 
 
   import ExtractorExecutor._
 

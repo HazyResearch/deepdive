@@ -7,14 +7,18 @@ import akka.util.Timeout
 import org.deepdive.{Context, TaskManager}
 import org.deepdive.settings._
 import org.deepdive.extraction._
+import org.deepdive.extraction.datastore._
 import scala.collection.mutable.{PriorityQueue, ArrayBuffer, Map}
 import scala.concurrent.duration._
 import scala.util.{Try, Success, Failure}
 
 /* Companion Object for the Extraction Mangager */
 object ExtractionManager {
-  def props : Props = Props(classOf[ExtractionManager])
+  def props : Props = Props(classOf[PostgresExtractionManager])
   
+  class PostgresExtractionManager extends ExtractionManager
+    with PostgresExtractionDataStoreComponent
+
   // Messages 
   sealed trait Message
 }
@@ -23,7 +27,9 @@ object ExtractionManager {
  * Manages extraction tasks. The ExtractionManager is responsible for executing
  * extractions tasks in the correct order. It parallelizes execution when possible.
  */ 
-class ExtractionManager extends Actor with ActorLogging {
+trait ExtractionManager extends Actor with ActorLogging {
+  this: ExtractionDataStoreComponent =>
+
   import ExtractionManager._
   
   val PARALLELISM = 1
@@ -62,7 +68,7 @@ class ExtractionManager extends Actor with ActorLogging {
     
     taskQueue.take(capacity).foreach { task =>
       log.info(s"executing extractorName=${task.extractor.name}")
-      val newWorker = context.actorOf(ExtractorExecutor.props)
+      val newWorker = context.actorOf(ExtractorExecutor.props(dataStore))
       val result = newWorker ? ExtractorExecutor.ExecuteTask(task) pipeTo self
       context.watch(newWorker)
       taskQueue -= task
