@@ -59,7 +59,6 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
 
 
   def addFactorsAndVariables(factorDesc: FactorDesc, holdoutFraction: Double) {
-
     // If the underlying data store defines a batch size we use that.
     // If not, we process one big batch
     val batchIterator = inferenceDataStore.BatchSize match {
@@ -68,41 +67,42 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
     }
 
     batchIterator.foreach { group =>
-     group.foreach { case row =>
-      addVariablesForRow(row, factorDesc, holdoutFraction)
-      addFactorForRow(row, factorDesc)
-     }
-     log.debug(s"flushing data for factor_name=${factorDesc.name}.")
-     inferenceDataStore.flush()
+      group.foreach { case row =>
+        processRow(row, factorDesc, holdoutFraction)
+      }
+      log.debug(s"flushing data for factor_name=${factorDesc.name}.")
+      inferenceDataStore.flush()
     }
   }
 
-  private def getLocalVariableIds(rowMap: Map[String, Any], 
-    factorVar: FactorFunctionVariable) : Array[Long] = {
-    if (factorVar.isArray)
-      // TODO: Decouple this from the underlying datastore
-      rowMap(s".${factorVar.relation}.id").asInstanceOf[Array[Long]]
-    else
-      Array(rowMap(s"${factorVar.relation}.id").asInstanceOf[Long])
+  def processRow(row: Map[String, Any], factorDesc: FactorDesc, holdoutFraction: Double) = {
+    val newVariables = buildVariablesForRow(row, factorDesc, holdoutFraction)
+    newVariables.map(inferenceDataStore.addVariable)
+    val newWeight = buildWeightForRow(row, factorDesc)
+    inferenceDataStore.addWeight(newWeight)
+    val newFactor = buildFactorForRow(row, factorDesc, newWeight)
+    inferenceDataStore.addFactor(newFactor)
   }
 
-  private def addVariablesForRow(rowMap: Map[String, Any], factorDesc: FactorDesc,
-    holdoutFraction: Double) : Unit = {
+  def buildVariablesForRow(rowMap: Map[String, Any], factorDesc: FactorDesc,
+    holdoutFraction: Double) = {
     val variableColumns = factorDesc.func.variables.toList
     val variableLocalIds = variableColumns.map { varColumn =>
-      getLocalVariableIds(rowMap, varColumn)
+      inferenceDataStore.getLocalVariableIds(rowMap, varColumn)
     }
+    // Ugly matching because different data stores return different values.
     val variableValues = variableColumns.map { varColumn =>
-      rowMap.get(varColumn.toString).get match {
+      rowMap.get(varColumn.toString) match {
+        case Some(None) => None
+        case Some(Some(x)) => Option(x)
         case Some(x) => Option(x)
         case None => None
         case x => Option(x)
       }
     }
 
-    val newVariables = (variableColumns, variableLocalIds, 
-      variableValues).zipped.foreach { case(varColumn, varIds, varValue) => 
-
+    (variableColumns, variableLocalIds, variableValues).zipped
+      .flatMap { case(varColumn, varIds, varValue) => 
         // Flip a coin to check if the variable should part of the holdout
         val isEvidence = varValue.isDefined
         val isHoldout = isEvidence && (rng.nextDouble() < holdoutFraction)
@@ -114,18 +114,15 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
         }
 
         // Build the variable, one for each ID
-        for (varId <- varIds) {
-          val globalVariableId = getVariableId(varId, varColumn.key)
-          val varObj = Variable(globalVariableId, VariableDataType.withName(factorDesc.func.variableDataType), 
+        varIds.map { varId =>
+          val globalVariableId = generateVariableId(varId, varColumn.key)
+          Variable(globalVariableId, VariableDataType.withName(factorDesc.func.variableDataType), 
              evidenceValue, !isQuery, isQuery, varColumn.headRelation, varColumn.field)
-          // Store the variable
-          inferenceDataStore.addVariable(varObj)
         }
       }
   }
 
-  private def addFactorForRow(rowMap: Map[String, Any], factorDesc: FactorDesc) : Unit = {
-    
+  def buildWeightForRow(rowMap: Map[String, Any], factorDesc: FactorDesc) = {
     // Find values for the variables in the weight
     val factorWeightValues = factorDesc.weight.variables.map { key => 
       rowMap.get(key).map(_.toString).getOrElse {
@@ -154,29 +151,24 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
       case _ => 0.0
     }
 
-    // Add the weight to the factor store
-    val weight = Weight(weightId, weightValue, 
-      factorDesc.weight.isInstanceOf[KnownFactorWeight], weightDescription)
-    inferenceDataStore.addWeight(weight)
-
-    // Build and Add Factor
-    val newFactorId = factorIdCounter.getAndIncrement()
-    // TODO: Really ugly. Make this functional. I was in a hurry :)
-    var positionCounter = -1
-    val factorVariables = factorDesc.func.variables.zipWithIndex.flatMap { case(factorVar, position) =>
-      val localIds = getLocalVariableIds(rowMap, factorVar)
-      localIds.zipWithIndex.map { case(localId, index) =>
-        positionCounter += 1
-        val globalId = getVariableId(localId, factorVar.key)
-        FactorVariable(newFactorId.toLong, positionCounter, !factorVar.isNegated, globalId)
-      } 
-    }
-    val newFactor = Factor(newFactorId, factorDesc.func.getClass.getSimpleName, weightId, 
-      factorVariables.toList)
-    inferenceDataStore.addFactor(newFactor)
+    Weight(weightId, weightValue, factorDesc.weight.isInstanceOf[KnownFactorWeight], 
+      weightDescription)
   }
 
-  private def getVariableId(localId: Long, key: String) : Long = {
+  def buildFactorForRow(rowMap: Map[String, Any], factorDesc: FactorDesc, weight: Weight) = {
+    val newFactorId = factorIdCounter.getAndIncrement()
+    val factorVariables = factorDesc.func.variables.flatMap { factorVar =>
+      inferenceDataStore.getLocalVariableIds(rowMap, factorVar).map { localId => 
+        (factorVar, localId)
+      }
+    }.zipWithIndex.map { case((factorVar, localId), position) =>
+      val globalId = generateVariableId(localId, factorVar.key)
+      FactorVariable(newFactorId.toLong, position, !factorVar.isNegated, globalId)
+    }
+    Factor(newFactorId, factorDesc.func.getClass.getSimpleName, weight.id, factorVariables.toList)
+  }
+
+  def generateVariableId(localId: Long, key: String) : Long = {
     (localId * variableOffsetMap.size) + variableOffsetMap.get(key).getOrElse {
       val errorMsg = s"${key} not found in variable definitions. " + 
         s"Available variables: ${variableOffsetMap.keySet.mkString(",")}"

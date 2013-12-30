@@ -5,9 +5,10 @@ import au.com.bytecode.opencsv.CSVWriter
 import java.io.{ByteArrayInputStream, File, FileOutputStream, StringWriter}
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
+import org.deepdive.settings.FactorFunctionVariable
 import org.deepdive.datastore.PostgresDataStore
 import org.deepdive.Logging
-import scala.collection.mutable.{Map, ArrayBuffer, Set}
+import scala.collection.mutable.{ArrayBuffer, Set}
 import scala.io.Source
 
 /* Stores the factor graph and inference results in a postges database. */
@@ -82,6 +83,14 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       CREATE VIEW mapped_inference_result AS SELECT variables.*, inference_result.last_sample, inference_result.probability 
       FROM variables INNER JOIN inference_result ON variables.id = inference_result.id;
       """).execute()
+    }
+
+    def getLocalVariableIds(rowMap: Map[String, Any], factorVar: FactorFunctionVariable) : Array[Long] = {
+      if (factorVar.isArray)
+        // Postgres prefixes aggregated colimns with a dot
+        rowMap(s".${factorVar.relation}.id").asInstanceOf[Array[Long]]
+      else
+        Array(rowMap(s"${factorVar.relation}.id").asInstanceOf[Long])
     }
 
     def addFactor(factor: Factor) = { 

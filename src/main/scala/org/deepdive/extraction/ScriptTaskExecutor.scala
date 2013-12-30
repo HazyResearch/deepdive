@@ -67,7 +67,7 @@ class ScriptTaskExecutor(task: ExtractionTask, inputData: Stream[JsObject]) exte
       err => {
         Source.fromInputStream(err).getLines.foreach(l => log.error(l))
       }
-    ).daemonized()
+    )
   }
 
   private def handleProcessIOInput(in: OutputStream, name: String, 

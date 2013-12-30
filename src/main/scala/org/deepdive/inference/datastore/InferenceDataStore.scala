@@ -1,5 +1,6 @@
 package org.deepdive.inference
 
+import org.deepdive.settings.FactorFunctionVariable
 import java.io.File
 
 /* Stores the factor graph and inference results. */
@@ -20,6 +21,9 @@ trait InferenceDataStoreComponent {
 
     /* The number of tuples in each batch. If not defined, we use one large batch. */
     def BatchSize : Option[Int]
+
+    /* Returns a list of variable IDs for all variables in the given factor function */
+    def getLocalVariableIds(rowMap: Map[String, Any], factorVar: FactorFunctionVariable) : Array[Long]
 
     /* 
      * Add a new factor. 
