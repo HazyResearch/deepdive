@@ -28,7 +28,7 @@ trait ExtractionDataStoreComponent {
      * Writes a list of tuples back to the datastore.
      * IMPORTANT: This method must assign a globally unique variable id to each record 
      */
-    def write(result: List[JsObject], outputRelation: String) : Unit
+    def write(result: Seq[JsObject], outputRelation: String) : Unit
 
   }
   

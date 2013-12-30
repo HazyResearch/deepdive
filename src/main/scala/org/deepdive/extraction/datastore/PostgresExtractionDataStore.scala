@@ -39,7 +39,7 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
       }
     }
 
-    def write(result: List[JsObject], outputRelation: String) : Unit = {
+    def write(result: Seq[JsObject], outputRelation: String) : Unit = {
 
       implicit val connection = PostgresDataStore.borrowConnection()
 
@@ -78,7 +78,7 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
     }
 
     /* Builds a CSV dat astring for given JSON data and column names */
-    def buildCopyData(data: List[JsObject], keys: Set[String]) = {
+    def buildCopyData(data: Seq[JsObject], keys: Set[String]) = {
       val strWriter = new StringWriter()
       val writer = new CSVWriter(strWriter)
       data.foreach { obj =>

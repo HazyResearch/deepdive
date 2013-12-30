@@ -29,7 +29,7 @@ trait MemoryExtractionDataStoreComponent extends ExtractionDataStoreComponent{
       })
     }
     
-    def write(result: List[JsObject], outputRelation: String) : Unit = {
+    def write(result: Seq[JsObject], outputRelation: String) : Unit = {
       data.get(outputRelation) match {
         case Some(rows) => rows ++= result
         case None => data += Tuple2(outputRelation, ArrayBuffer(result: _*))
