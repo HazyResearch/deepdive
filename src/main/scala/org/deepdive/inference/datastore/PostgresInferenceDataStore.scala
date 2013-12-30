@@ -22,12 +22,14 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
     // TODO: We should tune this based on experiments.
     val BatchSize = Some(50000)
 
-    // We keep track of the variables and weights already added
+    // We keep track of the variables, weights and factors already added
     // These will be kept in memory at all times.
     // TODO: Ideally, we don't keep anything in memory and resolve conflicts in the database.
     val variableIdSet = Collections.newSetFromMap[Long](
       new ConcurrentHashMap[Long, java.lang.Boolean]())
     val weightIdSet = Collections.newSetFromMap[Long](
+      new ConcurrentHashMap[Long, java.lang.Boolean]())
+    val factorIdSet = Collections.newSetFromMap[Long](
       new ConcurrentHashMap[Long, java.lang.Boolean]())
     
     // Temorary buffer for the next batch.
@@ -37,6 +39,13 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
     val weights = ArrayBuffer[Weight]()
     
     def init() : Unit = {
+      
+      variableIdSet.clear()
+      weightIdSet.clear()
+      factorIdSet.clear()
+      variables.clear()
+      factors.clear()
+      weights.clear()
 
       // weights(id, initial_value, is_fixed, description)
       SQL("""drop table if exists weights; 
@@ -75,9 +84,14 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       """).execute()
     }
 
-    def addFactor(factor: Factor) : Unit = { factors += factor }
+    def addFactor(factor: Factor) = { 
+      if (!factorIdSet.contains(factor.id)) {
+        factors += factor
+        factorIdSet.add(factor.id)
+      }
+    }
 
-    def addVariable(variable: Variable) : Unit = {
+    def addVariable(variable: Variable) = {
       if (!variableIdSet.contains(variable.id)) {
         variables += variable
         variableIdSet.add(variable.id)
@@ -86,7 +100,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
     
     def addWeight(weight: Weight) = { 
       if (!weightIdSet.contains(weight.id)) {
-        weights +=weight
+        weights += weight
         weightIdSet.add(weight.id)
       }
     }

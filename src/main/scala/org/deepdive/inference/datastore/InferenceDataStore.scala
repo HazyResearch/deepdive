@@ -42,15 +42,16 @@ trait InferenceDataStoreComponent {
      */
     def addWeight(weight: Weight)
 
-    /* Dumps the factor graphs to three files that will be read by the sampler.
+    /* 
+     * Dumps the factor graphs to three files that will be read by the sampler.
      * Refer to the developer guide for the format of these files. 
      */
     def dumpFactorGraph(variablesFile: File, factorsFile: File, weightsFile: File) : Unit
 
     /* 
-     * Writes inference results produced by the sampler  back to the data store.
+     * Writes inference results produced by the sampler back to the data store.
      * The given file is a space-separated file with three columns:
-     * VariableID, LastSample, ExpectedValue
+     * VariableID, LastSampleValue, ExpectedValue
      */
     def writebackInferenceResult(variableOutputFile: String) : Unit
 

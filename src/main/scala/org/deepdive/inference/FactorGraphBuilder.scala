@@ -171,7 +171,7 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
         FactorVariable(newFactorId.toLong, positionCounter, !factorVar.isNegated, globalId)
       } 
     }
-    val newFactor = Factor(newFactorId, factorDesc.func.getClass.getSimpleName, weight, 
+    val newFactor = Factor(newFactorId, factorDesc.func.getClass.getSimpleName, weightId, 
       factorVariables.toList)
     inferenceDataStore.addFactor(newFactor)
   }
