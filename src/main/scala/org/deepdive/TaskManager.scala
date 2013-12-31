@@ -3,8 +3,6 @@ package org.deepdive
 import akka.actor._
 import akka.pattern.{ask, pipe}
 import akka.util.Timeout
-import org.deepdive.extraction.ExtractionTask
-import org.deepdive.inference.FactorTask
 import org.deepdive.profiling._
 import scala.collection.mutable.{Set, Map}
 import scala.concurrent.duration._

@@ -7,7 +7,7 @@ import java.io.File
 import org.deepdive.settings.{Settings}
 import org.deepdive.datastore.{PostgresDataStore}
 import org.deepdive.extraction.{ExtractionManager, ExtractionTask, ExtractionTaskResult}
-import org.deepdive.inference.{InferenceManager, FactorGraphBuilder, FactorTask}
+import org.deepdive.inference.{InferenceManager, FactorGraphBuilder}
 import org.deepdive.profiling._
 import org.deepdive.calibration._
 import scala.concurrent.duration._
@@ -54,7 +54,7 @@ object Pipeline extends Logging {
     // Build task to construct the factor graph
     val factorTasks = for {
       factor <- settings.factors
-      factorTask = FactorTask(factor, settings.calibrationSettings.holdoutFraction)
+      factorTask = InferenceManager.FactorTask(factor, settings.calibrationSettings.holdoutFraction)
       // TODO: We don't actually neeed to wait for all extractions to finish. For now it's fine.
       taskDeps = extractionTasks.map(_.id)
     } yield Task(factor.name, taskDeps, factorTask, inferenceManager)

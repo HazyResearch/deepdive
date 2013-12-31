@@ -6,9 +6,10 @@ import akka.util.Timeout
 import java.io.File
 import org.deepdive.TaskManager
 import org.deepdive.calibration._
+import org.deepdive.settings.FactorDesc
 import scala.concurrent.duration._
 import scala.concurrent.{Future, Await}
-import scala.util.{Try, Success, Failure}
+import scala.util.Try
 
 /* Manages the Factor and Variable relations in the database */
 trait InferenceManager extends Actor with ActorLogging {
@@ -25,6 +26,9 @@ trait InferenceManager extends Actor with ActorLogging {
   def factorGraphBuilderProps : Props
   // Describes how to start the sampler
   def samplerProps : Props = Sampler.props
+  // Describes how to start the calibration data writer
+  def calibrationDataWriterProps = CalibrationDataWriter.props
+
 
   lazy val VariablesDumpFile = new File("target/variables.tsv")
   lazy val FactorsDumpFile = new File("target/factors.tsv")
@@ -38,11 +42,11 @@ trait InferenceManager extends Actor with ActorLogging {
   }
 
   def receive = {
-    case msg @ FactorTask(factorDesc, holdoutFraction) =>
+    case InferenceManager.FactorTask(factorDesc, holdoutFraction) =>
       val _sender = sender
       val result = factorGraphBuilder ? FactorGraphBuilder.AddFactorsAndVariables(
         factorDesc, holdoutFraction) 
-      result.mapTo[Try[Unit]] pipeTo _sender
+      result pipeTo _sender
     case InferenceManager.RunInference(samplerJavaArgs, samplerOptions) =>
       val _sender = sender
       val result = runInference(samplerJavaArgs, samplerOptions)
@@ -50,7 +54,7 @@ trait InferenceManager extends Actor with ActorLogging {
     case InferenceManager.WriteCalibrationData =>
       val _sender = sender
       log.info("writing calibration data")
-      val calibrationWriter = context.actorOf(CalibrationDataWriter.props)
+      val calibrationWriter = context.actorOf(calibrationDataWriterProps)
       // Get and write calibraton data for each variable
       val futures = variableSchema.keys.map { variable =>
         val filename = s"target/calibration/${variable}.tsv"
@@ -63,7 +67,7 @@ trait InferenceManager extends Actor with ActorLogging {
 
   def runInference(samplerJavaArgs: String, samplerOptions: String) = {
     inferenceDataStore.dumpFactorGraph(VariablesDumpFile, FactorsDumpFile, WeightsDumpFile)
-    val sampler = context.actorOf(Sampler.props, "sampler")
+    val sampler = context.actorOf(samplerProps, "sampler")
     val samplingResult = sampler ? Sampler.Run(samplerJavaArgs, samplerOptions,
       VariablesDumpFile.getCanonicalPath, FactorsDumpFile.getCanonicalPath, 
       WeightsDumpFile.getCanonicalPath, SamplingOutputFile.getCanonicalPath)
@@ -90,6 +94,7 @@ object InferenceManager {
     Props(classOf[PostgresInferenceManager], taskManager, variableSchema: Map[String, String])
 
   // Messages
+  case class FactorTask(factorDesc: FactorDesc, holdoutFraction: Double)
   case class RunInference(samplerJavaArgs: String, samplerOptions: String)
   case object WriteCalibrationData
 
