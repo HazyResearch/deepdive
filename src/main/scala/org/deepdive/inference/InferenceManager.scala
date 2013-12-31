@@ -17,15 +17,21 @@ trait InferenceManager extends Actor with ActorLogging {
   implicit val taskTimeout = Timeout(24 hours)
   import context.dispatcher
 
+  // All variables used in the system with their types
+  def variableSchema: Map[String, String]
+  // Reference to the task manager
+  def taskManager: ActorRef
+  // Described how to start the factor graph builder
+  def factorGraphBuilderProps : Props
+  // Describes how to start the sampler
+  def samplerProps : Props = Sampler.props
+
   lazy val VariablesDumpFile = new File("target/variables.tsv")
   lazy val FactorsDumpFile = new File("target/factors.tsv")
   lazy val WeightsDumpFile = new File("target/weights.tsv")
   lazy val SamplingOutputFile = new File("target/inference_result.out")
 
-  def variableSchema: Map[String, String]
-
-  val taskManager = context.actorSelection("../taskManager")
-  val factorGraphBuilder = context.actorOf(FactorGraphBuilder.props(variableSchema))
+  val factorGraphBuilder = context.actorOf(factorGraphBuilderProps)
 
   override def preStart() {
     log.info("Starting")
@@ -64,12 +70,17 @@ trait InferenceManager extends Actor with ActorLogging {
 
 object InferenceManager {
 
-  // TODO: Refactor this
-  class PostgresInferenceManager(val variableSchema: Map[String, String]) extends InferenceManager with 
-    PostgresInferenceDataStoreComponent with PostgresCalibrationDataComponent
+  class PostgresInferenceManager(val taskManager: ActorRef, val variableSchema: Map[String, String]) 
+    extends InferenceManager with PostgresInferenceDataStoreComponent 
+    with PostgresCalibrationDataComponent {
+    
+    def factorGraphBuilderProps = 
+      Props(classOf[FactorGraphBuilder.PostgresFactorGraphBuilder], variableSchema)
+  }
 
-  def props(variableSchema: Map[String, String]) : Props = Props(classOf[PostgresInferenceManager], 
-    variableSchema: Map[String, String])
+  // TODO: Refactor this to take the data store type as an argument
+  def props(taskManager: ActorRef, variableSchema: Map[String, String]) = 
+    Props(classOf[PostgresInferenceManager], taskManager, variableSchema: Map[String, String])
 
   // Messages
   case class RunInference(samplerJavaArgs: String, samplerOptions: String)

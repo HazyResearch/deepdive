@@ -17,9 +17,6 @@ object FactorGraphBuilder {
     extends FactorGraphBuilder with PostgresExtractionDataStoreComponent 
     with PostgresInferenceDataStoreComponent
 
-  def props(variableSchema: Map[String, String]): Props = 
-    Props(classOf[PostgresFactorGraphBuilder], variableSchema)
-
   // Messages
   sealed trait Message
   case class AddFactorsAndVariables(factorDesc: FactorDesc, holdoutFraction: Double) extends Message

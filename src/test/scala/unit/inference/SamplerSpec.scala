@@ -1,4 +1,4 @@
-package org.deepdive.test
+package org.deepdive.test.unit
 
 import akka.actor._
 import akka.testkit._
