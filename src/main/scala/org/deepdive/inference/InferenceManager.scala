@@ -12,7 +12,7 @@ import scala.util.{Try, Success, Failure}
 
 /* Manages the Factor and Variable relations in the database */
 trait InferenceManager extends Actor with ActorLogging {
-  self: InferenceDataStoreComponent with CalibrationDataComponent =>
+  self: InferenceDataStoreComponent =>
   
   implicit val taskTimeout = Timeout(24 hours)
   import context.dispatcher
@@ -39,18 +39,26 @@ trait InferenceManager extends Actor with ActorLogging {
 
   def receive = {
     case msg @ FactorTask(factorDesc, holdoutFraction) =>
+      val _sender = sender
       val result = factorGraphBuilder ? FactorGraphBuilder.AddFactorsAndVariables(
         factorDesc, holdoutFraction) 
-      result.mapTo[Try[Unit]] pipeTo sender
+      result.mapTo[Try[Unit]] pipeTo _sender
     case InferenceManager.RunInference(samplerJavaArgs, samplerOptions) =>
       val _sender = sender
       val result = runInference(samplerJavaArgs, samplerOptions)
       result onComplete { maybeResult => _sender ! maybeResult } 
-    case InferenceManager.WriteCalibrationData(countFilePrefix, precisionFilePrefix) =>
+    case InferenceManager.WriteCalibrationData =>
+      val _sender = sender
       log.info("writing calibration data")
-      calibrationData.writeBucketCounts(countFilePrefix)
-      calibrationData.writeBucketPrecision(precisionFilePrefix)
-      sender ! Success()
+      val calibrationWriter = context.actorOf(CalibrationDataWriter.props)
+      // Get and write calibraton data for each variable
+      val futures = variableSchema.keys.map { variable =>
+        val filename = s"target/calibration/${variable}.tsv"
+        val data = inferenceDataStore.getCalibrationData(variable, Bucket.ten)
+        calibrationWriter ? CalibrationDataWriter.WriteCalibrationData(filename, data)
+      }
+      Future.sequence(futures) pipeTo _sender
+      calibrationWriter ! PoisonPill
   }
 
   def runInference(samplerJavaArgs: String, samplerOptions: String) = {
@@ -71,8 +79,7 @@ trait InferenceManager extends Actor with ActorLogging {
 object InferenceManager {
 
   class PostgresInferenceManager(val taskManager: ActorRef, val variableSchema: Map[String, String]) 
-    extends InferenceManager with PostgresInferenceDataStoreComponent 
-    with PostgresCalibrationDataComponent {
+    extends InferenceManager with PostgresInferenceDataStoreComponent {
     
     def factorGraphBuilderProps = 
       Props(classOf[FactorGraphBuilder.PostgresFactorGraphBuilder], variableSchema)
@@ -84,6 +91,6 @@ object InferenceManager {
 
   // Messages
   case class RunInference(samplerJavaArgs: String, samplerOptions: String)
-  case class WriteCalibrationData(countFilePrefix: String, precisionFilePrefix: String)
+  case object WriteCalibrationData
 
 }

@@ -5,10 +5,8 @@ import org.deepdive.inference._
 import org.deepdive.calibration._
 
 trait DataStoreComponent { 
-  self: ExtractionDataStoreComponent with InferenceDataStoreComponent
-  with CalibrationDataComponent =>
+  this: ExtractionDataStoreComponent with InferenceDataStoreComponent =>
 }
 
 trait PostgresDataStoreComponent extends DataStoreComponent with 
-  PostgresExtractionDataStoreComponent with PostgresInferenceDataStoreComponent with 
-  PostgresCalibrationDataComponent
+  PostgresExtractionDataStoreComponent with PostgresInferenceDataStoreComponent

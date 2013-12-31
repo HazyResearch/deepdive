@@ -64,8 +64,7 @@ object Pipeline extends Logging {
         settings.samplerSettings.samplerArgs), inferenceManager)
 
     val calibrationTask = Task("calibration_plots", List("inference"), 
-      InferenceManager.WriteCalibrationData("target/calibration_data/counts", 
-        "target/calibration_data/precision"), inferenceManager)
+      InferenceManager.WriteCalibrationData, inferenceManager)
     
     val reportingTask = Task("report", List("calibration_plots"), Profiler.PrintReports, profiler)
 

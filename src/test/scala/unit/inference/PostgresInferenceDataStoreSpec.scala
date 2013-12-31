@@ -1,8 +1,10 @@
-package org.deepdive.test
+package org.deepdive.test.unit
 
 import anorm._
 import java.io.File
+import org.deepdive.calibration._
 import org.deepdive.inference._
+import org.deepdive.test._
 import org.scalatest._
 import scala.io.Source
 
@@ -136,7 +138,36 @@ class PostgresInferenceDataStoreSpec extends FunSpec with BeforeAndAfter
         assert(Source.fromFile(variablesFile).getLines.size == 3)
         assert(Source.fromFile(factorsFile).getLines.size == 2)
         assert(Source.fromFile(weightsFile).getLines.size == 2)
+      }
 
+    }
+
+    describe ("Getting the calibration data") {
+
+      def createSampleInferenceRelation() {
+        SQL("""create table t1_c1_inference(id bigserial primary key, c1 boolean, 
+          last_sample boolean, probability double precision)""").execute()
+        SQL("""insert into t1_c1_inference(c1, last_sample, probability) VALUES
+          (null, false, 0.31), (null, true, 0.93), (null, true, 0.97), 
+          (false, false, 0.0), (true, true, 0.77), (true, true, 0.81)""").execute()
+      }
+
+      it("should work") {
+        createSampleInferenceRelation()
+        val buckets = Bucket.ten
+        val result = inferenceDataStore.getCalibrationData("t1.c1", buckets)
+        assert(result == buckets.zip(List(
+          BucketData(1, 0, 1),
+          BucketData(0, 0, 0),
+          BucketData(0, 0, 0),
+          BucketData(1, 0, 0),
+          BucketData(0, 0, 0),
+          BucketData(0, 0, 0),
+          BucketData(0, 0, 0),
+          BucketData(1, 1, 0),
+          BucketData(1, 1, 0),
+          BucketData(2, 0, 0)
+        )).toMap)
       }
 
     }

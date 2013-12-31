@@ -1,9 +1,10 @@
 package org.deepdive.inference
 
-import scala.collection.mutable.{Map => MMap}
-import org.deepdive.settings.FactorFunctionVariable
-import org.deepdive.Logging
 import java.io.File
+import org.deepdive.calibration._
+import org.deepdive.Logging
+import org.deepdive.settings.FactorFunctionVariable
+import scala.collection.mutable.{Map => MMap}
 
 trait MemoryInferenceDataStoreComponent extends InferenceDataStoreComponent{
 
@@ -53,6 +54,10 @@ trait MemoryInferenceDataStoreComponent extends InferenceDataStoreComponent{
     }
 
     def writebackInferenceResult(variableOutputFile: String) = {
+      throw new RuntimeException("not yet implemented")
+    }
+
+    def getCalibrationData(variable: String, buckets: List[Bucket]) : Map[Bucket, BucketData] = {
       throw new RuntimeException("not yet implemented")
     }
 

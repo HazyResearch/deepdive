@@ -1,6 +1,7 @@
 package org.deepdive.inference
 
 import org.deepdive.settings.FactorFunctionVariable
+import org.deepdive.calibration._
 import java.io.File
 
 /* Stores the factor graph and inference results. */
@@ -58,6 +59,13 @@ trait InferenceDataStoreComponent {
      * VariableID, LastSampleValue, ExpectedValue
      */
     def writebackInferenceResult(variableOutputFile: String) : Unit
+
+    
+    /* 
+     * Gets calibration data for the given buckets.
+     * writebackInferenceResult must be called before this method can be called.
+     */
+    def getCalibrationData(variable: String, buckets: List[Bucket]) : Map[Bucket, BucketData]
 
   }
   

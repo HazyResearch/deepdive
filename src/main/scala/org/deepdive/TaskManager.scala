@@ -75,7 +75,6 @@ class TaskManager extends Actor with ActorLogging {
     case msg =>
       log.warning(s"Huh? ${msg}")
 
-
   }
 
   // Forwards eligible task to the responsible actor
@@ -92,9 +91,7 @@ class TaskManager extends Actor with ActorLogging {
     eligibileTasks.foreach { task =>
       log.debug(s"Sending task_id=${task.id} to ${task.worker}")
       context.system.eventStream.publish(StartReport(task.id, task.id))
-      val taskResult = (task.worker ? task.taskDescription).mapTo[Try[Unit]]
-      taskResult.map ( x => Done(task, x) ) pipeTo self
-
+      (task.worker ? task.taskDescription).onComplete ( x => self ! Done(task, x) )
       taskQueue -= task
       runningTasks += task
     }

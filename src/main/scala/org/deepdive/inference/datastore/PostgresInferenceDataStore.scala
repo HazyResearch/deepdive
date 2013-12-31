@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap
 import org.deepdive.settings.FactorFunctionVariable
 import org.deepdive.datastore.PostgresDataStore
 import org.deepdive.Logging
+import org.deepdive.calibration._
 import scala.collection.mutable.{ArrayBuffer, Set}
 import scala.io.Source
 
@@ -162,6 +163,47 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
             WHERE mapping_relation = '${relationName}' AND mapping_column = '${columnName}') 
           mir ON ${relationName}.id = mir.mapping_id""").execute()
       }
+    }
+
+    def getCalibrationData(variable: String, buckets: List[Bucket]) : Map[Bucket, BucketData] = {
+      val Array(relationName, columnName) = variable.split('.')
+      val inference_view = s"${relationName}_${columnName}_inference"
+      val bucketed_view = s"${relationName}_${columnName}_inference_bucketed"
+      val calibration_view = s"${relationName}_${columnName}_calibration"
+      
+      // Generate a temporary bucketed view
+      val bucketCaseStatement = buckets.zipWithIndex.map { case(bucket, index) =>
+        s"when probability >= ${bucket.from} and probability <= ${bucket.to} then ${index}"
+      }.mkString("\n")
+      SQL(s"""create or replace view ${bucketed_view} AS
+        SELECT ${inference_view}.*, case ${bucketCaseStatement} end bucket
+        FROM ${inference_view} ORDER BY bucket ASC""").execute()
+      log.info(s"created bucketed_inference_view=${bucketed_view}")
+
+      // Generate the calibration view
+      SQL(s"""create or replace view ${calibration_view} AS
+        SELECT b1.bucket, b1.numVariables, b2.numTrue, b3.numFalse FROM
+        (SELECT bucket, COUNT(*) AS numVariables from ${bucketed_view} GROUP BY bucket) b1
+        LEFT JOIN (SELECT bucket, COUNT(*) AS numTrue from ${bucketed_view} 
+          WHERE ${columnName}=true GROUP BY bucket) b2 ON b1.bucket = b2.bucket
+        LEFT JOIN (SELECT bucket, COUNT(*) AS numFalse from ${bucketed_view} 
+          WHERE ${columnName}=false GROUP BY bucket) b3 ON b1.bucket = b3.bucket 
+        ORDER BY b1.bucket ASC""").execute()
+
+      log.info(s"created calibration_view=${calibration_view}")
+
+      // Build and Return the final calibration data
+      val bucketData = SQL(s"SELECT * from ${calibration_view}")().map { row =>
+        val bucket = row[Long]("bucket")
+        val data = BucketData(row[Option[Long]]("numVariables").getOrElse(0),
+          row[Option[Long]]("numTrue").getOrElse(0), 
+          row[Option[Long]]("numFalse").getOrElse(0))
+        (bucket, data)
+      }.toMap
+
+      buckets.zipWithIndex.map { case (bucket, index) =>
+        (bucket, bucketData.get(index).getOrElse(BucketData(0,0,0)))
+      }.toMap
     }
 
     def flush() : Unit = {
