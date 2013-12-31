@@ -78,9 +78,3 @@ Such an extractor could be written in Python as follows:
         for word in set(row["titles.title"].split(" ")):
           # (title_id, word) - The id is automatically assigned.
           print json.dumps({"title_id": int(row["titles.id"]), "word": word, "is_present": True})
-
-
-
-
-#### Parallel extractor execution
-
