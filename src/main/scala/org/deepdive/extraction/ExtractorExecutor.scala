@@ -51,7 +51,7 @@ class ExtractorExecutor(dataStore: ExtractionDataStoreComponent#ExtractionDataSt
 
     // We execute writing to the database asynchronously because it may be a long operation
     // TODO: We are using Akka's default dispatcher here, maybe we should define our own.
-    val writtenResults = result.rows.buffer(dataStore.BatchSize).flatMap { rowBatch =>
+    val writtenResults = result.rows.flatMap { rowBatch =>
       import context.dispatcher
       val writeFuture = Future { dataStore.write(rowBatch, task.extractor.outputRelation) }
       val subject = AsyncSubject[Unit]()

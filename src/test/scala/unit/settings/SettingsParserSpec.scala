@@ -44,14 +44,15 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester {
       extraction.extractors.extractor1.input: "SELECT * FROM documents"
       extraction.extractors.extractor1.udf: "udf/entities.py"
       extraction.extractors.extractor1.parallelism = 4
-      extraction.extractors.extractor1.batch_size = 100
+      extraction.extractors.extractor1.input_batch_size = 100
+      extraction.extractors.extractor1.output_batch_size = 1000
       extraction.extractors.extractor1.dependencies = ["extractor2"]
       """)
       val loadExtractionSettings = PrivateMethod[ExtractionSettings]('loadExtractionSettings)
       val result = SettingsParser invokePrivate loadExtractionSettings(config)
       assert(result == ExtractionSettings(100, List(
         Extractor("extractor1", "entities", "SELECT * FROM documents", "udf/entities.py", 
-          4, 100, Set("extractor2")))))
+          4, 100, 1000, Set("extractor2")))))
     }
   }
 

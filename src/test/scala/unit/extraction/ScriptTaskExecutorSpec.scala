@@ -12,11 +12,11 @@ class ScriptTaskExecutorSpec extends FunSpec {
 
     it("should work") {
       val task = new ExtractionTask(Extractor("testExtractor", "relation1", 
-        "relation1", "/bin/cat", 4, 100, Nil.toSet))
+        "relation1", "/bin/cat", 4, 100, 1000, Nil.toSet))
       val data = (1 to 1000).toList.map(i => s"""{"id":$i}""".asJson.asJsObject).toStream
       val executor = new ScriptTaskExecutor(task, data)
       val result = executor.run()
-      assert(result.rows.toBlockingObservable.toList.size == 1000)
+      assert(result.rows.toBlockingObservable.toList.flatten.size == 1000)
     }
 
   }

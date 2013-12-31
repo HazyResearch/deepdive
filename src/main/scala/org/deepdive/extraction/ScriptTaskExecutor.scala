@@ -27,7 +27,7 @@ class ScriptTaskExecutor(task: ExtractionTask, inputData: Stream[JsObject]) exte
     file.setExecutable(true)
 
     log.info(s"Running UDF: ${file.getAbsolutePath} with parallelism=${task.extractor.parallelism} " + 
-      s"batch_size=${task.extractor.batchSize}")
+      s"batch_size=${task.extractor.inputBatchSize}")
 
     // An input stream for each process
     val inputSubjects = (1 to task.extractor.parallelism).map ( i => ReplaySubject[JsObject]() )
@@ -50,13 +50,13 @@ class ScriptTaskExecutor(task: ExtractionTask, inputData: Stream[JsObject]) exte
     import scala.concurrent.ExecutionContext.Implicits.global
     Future {
       val cyclingInput = Stream.continually(inputSubjects.toStream).flatten
-      inputData.iterator.grouped(task.extractor.batchSize).toStream.zip(cyclingInput).foreach { case(batch, obs) =>
+      inputData.iterator.grouped(task.extractor.inputBatchSize).toStream.zip(cyclingInput).foreach { case(batch, obs) =>
         batch.foreach ( tuple => obs.onNext(tuple) )
       }
       inputSubjects.foreach { x => x.onCompleted() } 
     }  
 
-    ExtractionResult(mergedObservables)
+    ExtractionResult(mergedObservables.buffer(task.extractor.outputBatchSize))
   }
 
   private def buildProcessIO(name: String, subject: ReplaySubject[JsObject], 
