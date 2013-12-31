@@ -29,7 +29,6 @@ trait InferenceManager extends Actor with ActorLogging {
   // Describes how to start the calibration data writer
   def calibrationDataWriterProps = CalibrationDataWriter.props
 
-
   lazy val VariablesDumpFile = new File("target/variables.tsv")
   lazy val FactorsDumpFile = new File("target/factors.tsv")
   lazy val WeightsDumpFile = new File("target/weights.tsv")
@@ -82,6 +81,7 @@ trait InferenceManager extends Actor with ActorLogging {
 
 object InferenceManager {
 
+  /* An inference manager that uses postgres as its datastore */
   class PostgresInferenceManager(val taskManager: ActorRef, val variableSchema: Map[String, String]) 
     extends InferenceManager with PostgresInferenceDataStoreComponent {
     
@@ -94,8 +94,13 @@ object InferenceManager {
     Props(classOf[PostgresInferenceManager], taskManager, variableSchema: Map[String, String])
 
   // Messages
+  // ==================================================
+
+  // Executes a task to build part of the factor graph
   case class FactorTask(factorDesc: FactorDesc, holdoutFraction: Double)
+  // Runs the sampler with the given arguments
   case class RunInference(samplerJavaArgs: String, samplerOptions: String)
+  // Writes calibration data to predefined files
   case object WriteCalibrationData
 
 }

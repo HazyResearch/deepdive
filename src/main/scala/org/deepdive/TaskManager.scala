@@ -6,7 +6,7 @@ import akka.util.Timeout
 import org.deepdive.profiling._
 import scala.collection.mutable.{Set, Map}
 import scala.concurrent.duration._
-import scala.util.Try
+import scala.util.{Try, Failure, Success}
 
 object TaskManager {
   
@@ -38,6 +38,8 @@ class TaskManager extends Actor with ActorLogging {
   def receive = {
     case AddTask(task) =>
       taskQueue += task
+      // We watch the worker, so we can fail the task if it crashes
+      context.watch(task.worker)
       log.info(s"Added task_id=${task.id}")
       // Subscribe the sender
       // self.tell(Subscribe(task.id), sender)
@@ -66,6 +68,15 @@ class TaskManager extends Actor with ActorLogging {
       val newSubscribers = currentSubscribers.filterNot(_ == sender)
       subscribers +=  Tuple2(taskId, newSubscribers)
       log.info(s"Unsubscribed actorRef=${sender} from task_id=${taskId}")
+
+    case x : Terminated =>
+      val worker = x.actor
+      log.debug(s"$worker was terminated. Canceling its tasks.")
+      val workerTasks = runningTasks.find(_.worker == worker)
+      workerTasks.foreach { task =>
+        self ! Done(task, Failure(new RuntimeException("worker terminated")))
+      }
+      context.unwatch(worker)
 
     case "shutdown" =>
       context.system.shutdown()
