@@ -62,7 +62,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       SQL("""drop table if exists variables CASCADE; 
         create table variables(id bigint primary key, data_type text,
         initial_value double precision, is_evidence boolean, is_query boolean,
-        mapping_relation text, mapping_column text);""").execute()
+        mapping_relation text, mapping_column text, mapping_id bigint);""").execute()
       
       // factor_variables(factor_id, variable_id, position, is_positive)
       SQL("""drop table if exists factor_variables; 
@@ -160,7 +160,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
             (SELECT mir.last_sample, mir.probability, mir.id 
             FROM mapped_inference_result mir 
             WHERE mapping_relation = '${relationName}' AND mapping_column = '${columnName}') 
-          mir ON ${relationName}.id = mir.id""").execute()
+          mir ON ${relationName}.id = mir.mapping_id""").execute()
       }
     }
 
@@ -176,7 +176,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       log.debug(s"Storing num_variables=${variables.size} num_evidence=${numEvidence} " +
         s"num_query=${numQuery}")
       copyBatchData("""COPY variables( id, data_type, initial_value, is_evidence, is_query,
-        mapping_relation, mapping_column) FROM STDIN CSV""", 
+        mapping_relation, mapping_column, mapping_id) FROM STDIN CSV""", 
         toCSVData(variables.iterator))
       
       // Insert factors 

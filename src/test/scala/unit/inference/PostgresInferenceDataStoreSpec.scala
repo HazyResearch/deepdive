@@ -28,7 +28,7 @@ class PostgresInferenceDataStoreSpec extends FunSpec with BeforeAndAfter
     describe("adding variables") {
       it("should work") {
         inferenceDataStore.init()
-        inferenceDataStore.addVariable(Variable(0, VariableDataType.Boolean, 0.0, true, false, "r1", "c1"))
+        inferenceDataStore.addVariable(Variable(0, VariableDataType.Boolean, 0.0, true, false, "r1", "c1", 0))
       }
     }
 
@@ -50,7 +50,7 @@ class PostgresInferenceDataStoreSpec extends FunSpec with BeforeAndAfter
     describe("flushing the factor graph") {
       it("should work") {
         val variables = (1 to 100).map { variableId =>
-          Variable(variableId, VariableDataType.Boolean, 0.0, true, false, "r1", "c1")
+          Variable(variableId, VariableDataType.Boolean, 0.0, true, false, "r1", "c1", variableId)
         }.toList
         
         val weights = (1 to 10).map { weightId => 
@@ -82,7 +82,7 @@ class PostgresInferenceDataStoreSpec extends FunSpec with BeforeAndAfter
     describe("dumping the factor graph") {
 
       def addSampleData() = {
-        val variable1 = Variable(0, VariableDataType.Boolean, 0.0, true, false, "r1", "c1")
+        val variable1 = Variable(0, VariableDataType.Boolean, 0.0, true, false, "r1", "c1", 0)
         val variable2 = variable1.copy(id=1)
         val variable3 = variable1.copy(id=2)
         val weight1 = Weight(0, 0.0, false, "someWeight")
@@ -120,7 +120,7 @@ class PostgresInferenceDataStoreSpec extends FunSpec with BeforeAndAfter
          addSampleData()
 
         // Add the same data again, make sure it does not appear in the output
-        val variable1 = Variable(0, VariableDataType.Boolean, 0.0, true, false, "r1", "c1")
+        val variable1 = Variable(0, VariableDataType.Boolean, 0.0, true, false, "r1", "c1", 0)
         val weight1 = Weight(0, 0.0, false, "someWeight")
         val factor1 =  Factor(0, "someFactorFunction", 0, 
           List[FactorVariable](FactorVariable(0,0,true,0)))

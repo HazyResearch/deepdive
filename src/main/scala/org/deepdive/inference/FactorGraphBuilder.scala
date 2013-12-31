@@ -99,7 +99,7 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
     }
 
     (variableColumns, variableLocalIds, variableValues).zipped
-      .flatMap { case(varColumn, varIds, varValue) => 
+      .flatMap { case(varColumn, localVarIds, varValue) => 
         // Flip a coin to check if the variable should part of the holdout
         val isEvidence = varValue.isDefined
         val isHoldout = isEvidence && (rng.nextDouble() < holdoutFraction)
@@ -111,10 +111,10 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
         }
 
         // Build the variable, one for each ID
-        varIds.map { varId =>
-          val globalVariableId = generateVariableId(varId, varColumn.key)
+        localVarIds.map { localVarId =>
+          val globalVariableId = generateVariableId(localVarId, varColumn.key)
           Variable(globalVariableId, VariableDataType.withName(factorDesc.func.variableDataType), 
-             evidenceValue, !isQuery, isQuery, varColumn.headRelation, varColumn.field)
+             evidenceValue, !isQuery, isQuery, varColumn.headRelation, varColumn.field, localVarId)
         }
       }
   }
