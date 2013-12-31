@@ -20,17 +20,16 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
 
     def BatchSize = 50000
 
+    implicit lazy val connection = PostgresDataStore.borrowConnection()
+
     def queryAsMap(query: String) : Stream[Map[String, Any]] = {
-      PostgresDataStore.withConnection { implicit conn =>
-        SQL(query)().map { row =>
-          row.asMap.toMap.mapValues { 
-            case x : org.postgresql.jdbc4.Jdbc4Array => x.getArray()
-            case x : java.sql.Date => x.toString
-            case other => other
-          }
+      SQL(query)().map { row =>
+        row.asMap.toMap.mapValues { 
+          case x : org.postgresql.jdbc4.Jdbc4Array => x.getArray()
+          case x : java.sql.Date => x.toString
+          case other => other
         }
       }
-
     }
 
     def queryAsJson(query: String) : Stream[JsObject] = { 
@@ -40,9 +39,6 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
     }
 
     def write(result: Seq[JsObject], outputRelation: String) : Unit = {
-
-      implicit val connection = PostgresDataStore.borrowConnection()
-
       if (result.size == 0) {
         log.info("nothing to write.")
         return
@@ -67,7 +63,6 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
       val is = new ByteArrayInputStream(strData.getBytes("UTF-8"))
       cm.copyIn(copySQL, is)
 
-      connection.close()
       log.info(s"Wrote num=${result.length} records.")
     }
 
