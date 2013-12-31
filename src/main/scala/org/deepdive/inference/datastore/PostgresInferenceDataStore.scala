@@ -157,7 +157,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
         SQL(s"""DROP VIEW IF EXISTS ${view_name}; CREATE VIEW ${view_name} AS
           SELECT ${relationName}.*, mir.last_sample, mir.probability FROM
           ${relationName} JOIN
-            (SELECT mir.last_sample, mir.probability, mir.id 
+            (SELECT mir.last_sample, mir.probability, mir.id, mir.mapping_id 
             FROM mapped_inference_result mir 
             WHERE mapping_relation = '${relationName}' AND mapping_column = '${columnName}') 
           mir ON ${relationName}.id = mir.mapping_id""").execute()
