@@ -13,7 +13,7 @@ import DefaultJsonProtocol._
 class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
   with PostgresExtractionDataStoreComponent {
 
-  lazy implicit val connection = dataStore.connection
+  lazy implicit val connection = PostgresDataStore.borrowConnection()
 
   before {
     PostgresTestDataStore.init()

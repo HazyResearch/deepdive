@@ -20,9 +20,9 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
 
     def BatchSize = 50000
 
-    implicit lazy val connection = PostgresDataStore.borrowConnection()
-
     def queryAsMap(query: String) : Stream[Map[String, Any]] = {
+      // TODO: This is ugly, we need to close the connection
+      implicit val connection = PostgresDataStore.borrowConnection()
       SQL(query)().map { row =>
         row.asMap.toMap.mapValues { 
           case x : org.postgresql.jdbc4.Jdbc4Array => x.getArray()
@@ -39,31 +39,34 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
     }
 
     def write(result: Seq[JsObject], outputRelation: String) : Unit = {
-      if (result.size == 0) {
-        log.info("nothing to write.")
-        return
+      PostgresDataStore.withConnection { implicit connection =>
+
+        if (result.size == 0) {
+          log.info("nothing to write.")
+          return
+        }
+
+        // We sample the keys to figure out which fields to insert into
+        // This is a ugly, but using this we don't need an explicit schema definition.
+        // Is there a better way?
+        val sampledKeys = result.take(100).flatMap(_.fields.keySet).toSet
+
+        // We use Postgres' copy manager isntead of anorm to do efficient batch inserting
+        // Need to do do some magic to get the underlying connection
+        val del = new org.apache.commons.dbcp.DelegatingConnection(connection)
+        val pg_conn = del.getInnermostDelegate().asInstanceOf[org.postgresql.core.BaseConnection]
+        val cm = new org.postgresql.copy.CopyManager(pg_conn)
+        val copySQL = buildCopySql(outputRelation, sampledKeys)
+
+        log.info(s"Writing extraction result to postgres. length=${result.length}, sql=${copySQL}")
+
+        // Build the dataset as a TSV string
+        val strData = buildCopyData(result, sampledKeys)
+        val is = new ByteArrayInputStream(strData.getBytes("UTF-8"))
+        cm.copyIn(copySQL, is)
+
+        log.info(s"Wrote num=${result.length} records.")
       }
-
-      // We sample the keys to figure out which fields to insert into
-      // This is a ugly, but using this we don't need an explicit schema definition.
-      // Is there a better way?
-      val sampledKeys = result.take(100).flatMap(_.fields.keySet).toSet
-
-      // We use Postgres' copy manager isntead of anorm to do efficient batch inserting
-      // Need to do do some magic to get the underlying connection
-      val del = new org.apache.commons.dbcp.DelegatingConnection(connection)
-      val pg_conn = del.getInnermostDelegate().asInstanceOf[org.postgresql.core.BaseConnection]
-      val cm = new org.postgresql.copy.CopyManager(pg_conn)
-      val copySQL = buildCopySql(outputRelation, sampledKeys)
-
-      log.info(s"Writing extraction result to postgres. length=${result.length}, sql=${copySQL}")
-
-      // Build the dataset as a TSV string
-      val strData = buildCopyData(result, sampledKeys)
-      val is = new ByteArrayInputStream(strData.getBytes("UTF-8"))
-      cm.copyIn(copySQL, is)
-
-      log.info(s"Wrote num=${result.length} records.")
     }
 
     /* Builds a COPY statement for a given relation and column names */
