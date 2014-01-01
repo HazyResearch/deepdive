@@ -29,9 +29,9 @@ trait InferenceManager extends Actor with ActorLogging {
   // Describes how to start the calibration data writer
   def calibrationDataWriterProps = CalibrationDataWriter.props
 
-  lazy val VariablesDumpFile = new File("target/variables.tsv")
-  lazy val FactorsDumpFile = new File("target/factors.tsv")
-  lazy val WeightsDumpFile = new File("target/weights.tsv")
+  lazy val VariablesDumpFile = new File("target/variables.txt")
+  lazy val FactorsDumpFile = new File("target/factors.txt")
+  lazy val WeightsDumpFile = new File("target/weights.txt")
   lazy val SamplingOutputFile = new File("target/inference_result.out")
 
   val factorGraphBuilder = context.actorOf(factorGraphBuilderProps)
