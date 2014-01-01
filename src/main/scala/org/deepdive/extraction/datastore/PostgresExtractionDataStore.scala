@@ -18,11 +18,12 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
 
   class PostgresExtractionDataStore extends ExtractionDataStore with Logging {
 
+    // TOOD: Can we use more than one connection?
+    lazy implicit val connection = PostgresDataStore.borrowConnection()
+
     def BatchSize = 50000
 
-    def queryAsMap(query: String) : Stream[Map[String, Any]] = {
-      // TODO: This is ugly, we need to close the connection
-      implicit val connection = PostgresDataStore.borrowConnection()
+    def queryAsMap(query: String) : Stream[Map[String, Any]] = {      
       SQL(query)().map { row =>
         row.asMap.toMap.mapValues { 
           case x : org.postgresql.jdbc4.Jdbc4Array => x.getArray()
