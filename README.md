@@ -1,8 +1,6 @@
 # DeepDive
 
-### About
-
-### [Official Website](http://dennybritz.github.io/deepdive/)
+### [Visit The Official Website](http://dennybritz.github.io/deepdive/)
 
 ### Related Research
 
