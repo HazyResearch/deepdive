@@ -1,4 +1,3 @@
 source:      .
 safe:        true
-baseurl: dennybritz.github.io/deepdive/
-url: dennybritz.github.io/deepdive/
+baseurl: dennybritz.github.io/deepdive
