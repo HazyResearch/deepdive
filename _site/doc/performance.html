@@ -1,0 +1,78 @@
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Deepdive" />
+    <link href='http://fonts.googleapis.com/css?family=Lato:300,400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="/stylesheets/application.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deepdive</title>
+  </head>
+
+  <body>
+      
+      <div id="header">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <a href="/" class="deepdive-logo">DeepDive Logo comes here</a> 
+            </div>
+          </row>
+        </div>
+      </div>
+
+      <section id="main">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <h1 id="performance_tuning">Performance Tuning</h1>
+
+<p>If you are dealing with large amounts of data then you may find bottlenecks in various parts of the system. The following describes parameters you can use to improve performance.</p>
+
+<h3 id="setting_the_jvm_heap_size">Setting the JVM heap size</h3>
+
+<p>When running DeepDive you should set the maximum heap size for the Java virtual machine using the “-Xmx” flag. The default heap size is the smaller of 1/4th of the physical memory or 1GB. When using <a href="http://www.scala-sbt.org/">SBT</a> to run DeepDive, you can set the option as follows:</p>
+
+<pre><code>SBT_OPTS=&quot;-Xmx8g&quot; sbt &quot;run -c path_to_application.conf&quot;</code></pre>
+
+<h3 id="setting_extractor_parallelism_and_batch_sizes">Setting extractor parallelism and batch sizes</h3>
+
+<p>You can execute one extractor in parallel on multiple threads using the <code>paralleism</code> option. You can use the <code>input_batch_size</code> option to define how many tuples each extractor should receive at once, and the <code>output_batch_size</code> option to define how many extracted tuples should be inserted into the data store at once. The <a href="extractor.html">extractor documentation</a> contains more details about these options.</p>
+
+<h3 id="gibbs_sampler_options">Gibbs sampler options</h3>
+
+<p>You can optionally parse java options (such as -Xmx) and command line options to the gibbs sampler executable. The default Java options are <code>-Xmx4g</code> and the default sampler options are <code>-l 1000 -s 10 -i 1000 -t 4</code>. Allowed options are:</p>
+
+<pre><code>-l &lt;value&gt; | --learning_epochs &lt;value&gt;
+      number of epochs for learning (required)
+-i &lt;value&gt; | --inference_epochs &lt;value&gt;
+      number of epochs for inference (required)
+-s &lt;value&gt; | --learning_samples_per_epoch &lt;value&gt;
+      number of samples for learning per epoch
+-t &lt;value&gt; | --threads &lt;value&gt;
+      number of threads (required)</code></pre>
+
+<p>You an specify options in DeepDive as follows:</p>
+
+<pre><code>deepdive.sampler.java_args: &quot;-Xms1g -Xmx8g&quot;
+deepdive.sampler.sampler_args: &quot;-l 1000 -s 10 -i 1000 -t 4&quot;</code></pre>
+            </div>
+          </row>
+        </div>
+      </section>
+    
+      <footer id="footer">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <!-- <p class="copyright">Deepdive maintained by <a href="https://github.com/dennybritz">dennybritz</a></p> -->
+            </div>
+          </row>
+        </div>
+      </footer>
+
+    
+  
+  </body>
+</html>

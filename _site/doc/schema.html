@@ -1,0 +1,62 @@
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Deepdive" />
+    <link href='http://fonts.googleapis.com/css?family=Lato:300,400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="/stylesheets/application.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deepdive</title>
+  </head>
+
+  <body>
+      
+      <div id="header">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <a href="/" class="deepdive-logo">DeepDive Logo comes here</a> 
+            </div>
+          </row>
+        </div>
+      </div>
+
+      <section id="main">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <h1 id="defining_schema">Defining Schema</h1>
+
+<h3 id="defining_variable_attributes">Defining variable attributes</h3>
+
+<p>You must tell DeepDive which variables you want to use in your inference rules. Each variable has a data type associated with it. Currently, DeepDive only supports <em>Boolean</em> variables.</p>
+<div class='highlight'><pre><code class='bash'>deepdive.schema.variables <span class='o'>{</span>
+  people.smokes: Boolean
+  people.has_cancer: Boolean
+<span class='o'>}</span>
+</code></pre></div>
+<p>In the above example <em>smokes</em> and <em>has_cancer</em> are boolean attributes in the <em>people</em> table. DeepDive will assign a unique variable id to each entry in the <em>smokes</em> and <em>has_cancer</em> column. This variable id is used during probabilistic inference.</p>
+
+<h3 id="evidence_and_query_variables">Evidence and Query variables</h3>
+
+<p>Evidence is training data that is used for automatically learning <a href="inference_rules.html">factor weights</a>. DeepDive will treat variables with existing values as evidence. In the above example, rows in the <em>people</em> table with a <code>true</code> or <code>false</code> value in the <em>smokes</em> or <em>has_cancer</em> column will be treated as evidence for that variable. Cells without a value (NULL) value will be treated as query variables.</p>
+            </div>
+          </row>
+        </div>
+      </section>
+    
+      <footer id="footer">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <!-- <p class="copyright">Deepdive maintained by <a href="https://github.com/dennybritz">dennybritz</a></p> -->
+            </div>
+          </row>
+        </div>
+      </footer>
+
+    
+  
+  </body>
+</html>

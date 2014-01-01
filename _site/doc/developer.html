@@ -1,0 +1,113 @@
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Deepdive" />
+    <link href='http://fonts.googleapis.com/css?family=Lato:300,400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="/stylesheets/application.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deepdive</title>
+  </head>
+
+  <body>
+      
+      <div id="header">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <a href="/" class="deepdive-logo">DeepDive Logo comes here</a> 
+            </div>
+          </row>
+        </div>
+      </div>
+
+      <section id="main">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <h1 id="developer_guide__system_architecture">Developer Guide &amp; System Architecture</h1>
+
+<p>DeepDive is written using the following frameworks and libraries:</p>
+
+<ul>
+<li><a href="http://www.scala-lang.org/">Scala (2.10)</a></li>
+
+<li><a href="http://akka.io/">Akka</a> for concurrent programming using actors</li>
+
+<li><a href="http://www.scalatest.org/">Scalatest</a> (and Akka’s Testkit) for unit- and integration testing</li>
+
+<li><a href="http://rxscala.github.io/">RxScala</a> and <a href="https://github.com/Netflix/RxJava">RxJava</a> for Observables</li>
+
+<li><a href="http://www.playframework.com/documentation/2.2.1/ScalaAnorm">Anorm</a> for RDBMS access</li>
+
+<li><a href="http://www.scala-sbt.org/">SBT</a> for dependency management</li>
+</ul>
+
+<h3 id="style_guide">Style Guide</h3>
+
+<p>Please follow the <a href="http://docs.scala-lang.org/style/">Scala Style Guide</a> when contributing.</p>
+
+<h3 id="compiling">Compiling</h3>
+
+<p>You must install <a href="http://www.scala-sbt.org/">SBT</a> to compile DeepDive. On Mac OS X, you can install SBT using <a href="http://brew.sh/">Homebrew</a>. You can then compile DeepDive using the following command in the root directory. SBT should download all required dependencies (including Scala) for you.</p>
+
+<pre><code>sbt compile</code></pre>
+
+<p>During development we recommend running <code>sbt ~compile</code> instead. The tilde will automatically watch the directory for changes, and recompile modified files.</p>
+
+<h3 id="running_tests">Running Tests</h3>
+
+<p>DeepDive comes with a number of unit- and integration test. For tests that require connection to a database (such as postgres), you must modify the <code>stc/test/recources/application.conf</code> file with your connection parameters. You can run all tests with:</p>
+
+<pre><code>sbt test</code></pre>
+
+<p>To run a specific test, you can use:</p>
+
+<pre><code>sbt &quot;test-only org.deepdive.test.unit.[TestClassName]&quot;</code></pre>
+
+<p>You can use <code>sbt ~test</code> to keep running tests in the backgroud while you are modifying files.</p>
+
+<h3 id="reference_factor_graph_output_schema">Reference: Factor Graph Output Schema</h3>
+
+<p>The systems outputs three <strong>space-separated</strong> files for weights, factors and variables in the following format.</p>
+
+<p>Weights file:</p>
+
+<pre><code>[weight_id] [initial_value] [is_fixed] [description]
+1013 0.0 false words(words.word=Some(Kelly))
+585 0.0 false words(words.word=Some(James))</code></pre>
+
+<p>Factors file:</p>
+
+<pre><code>[factor_id] [weight_id] [factor_function]
+251 187 ImplyFactorFunction
+2026 382 ImplyFactorFunction</code></pre>
+
+<p>Variables file:</p>
+
+<pre><code>[variable_id] [factor_id] [position]  [is_positive] [data_type] [initial_value] [is_evidence] [is_query]
+0 0 1 true Discrete 0.0 true false
+1 1 1 true Discrete 0.0 true false
+2 2 1 true Discrete 0.0 true false</code></pre>
+
+<p>Note the the last file is effectively a map between variables and factors. This means that a variable id can appear multiple times. <code>data_type</code> <code>initial_value</code> <code>is_evidence</code> <code>is_query</code> are properties of a variable as opposed to properties the variable mapping, thus these are equal for a variable id and may be redundant.</p>
+            </div>
+          </row>
+        </div>
+      </section>
+    
+      <footer id="footer">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <!-- <p class="copyright">Deepdive maintained by <a href="https://github.com/dennybritz">dennybritz</a></p> -->
+            </div>
+          </row>
+        </div>
+      </footer>
+
+    
+  
+  </body>
+</html>

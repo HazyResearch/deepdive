@@ -1,0 +1,118 @@
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Deepdive : " />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="..//stylesheets/stylesheet.css">
+
+    <title>Deepdive</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/dennybritz/deepdive">View on GitHub</a>
+
+          <h1 id="project_title">Deepdive</h1>
+          <h2 id="project_tagline"></h2>
+
+<!--             <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/dennybritz/deepdive/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/dennybritz/deepdive/tarball/master">Download this project as a tar.gz file</a>
+            </section> -->
+        </header>
+    </div>
+    
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+      <h1 id='writing_extractors'>Writing Extractors</h1>
+
+<h3 id='defining_extractors_in_the_configuration_file'>Defining extractors in the configuration file</h3>
+
+<p>A feature extractor takes data defined by an arbitary SQL query as input, and produces new tuples as ouput. These tuples are written to the <em>output_relation</em>. The function for this transformation is defined by the <em>udf</em> setting, which can be an arbitary executable (more on that below)</p>
+
+<p>A simple extractor definition looks as folllows:</p>
+
+<pre><code>deepdive.extractions: {
+  wordsExtractor.output_relation: &quot;words&quot;
+  wordsExtractor.input: &quot;SELECT * FROM titles&quot;
+  wordsExtractor.udf: &quot;words.py&quot;
+  # More Extractors...
+}</code></pre>
+
+<h3 id='extractor_dependencies'>Extractor Dependencies</h3>
+
+<p>You can specify dependencies for your extractors as follows:</p>
+
+<pre><code>deepdive.extractions: {
+  wordsExtractor.dependencies: [&quot;anotherExtractorName&quot;]
+}</code></pre>
+
+<p>Extractors will be executed in order of their dependencies. If the dependencies of several extractors ar satisfied at the same time, these may be executed in parallel, or in any order.</p>
+
+<h3 id='extractor_parallelism_and_input_batch_size'>Extractor parallelism and input batch size</h3>
+
+<p>To improve performance, you can specify the number of processes and the inptu batch size for each extractor. Your executable script will be run on N threads in parallel and data will be streamed to this processes in a round-robin fashion. By default each extractor uses 1 process and a batch size of 1000.</p>
+
+<pre><code># Start 5 processes for this extractor
+wordsExtractor.parallelism: 5
+# Stream 1000 tuples to each process in a round-robin fashion
+wordsExtractor.input_batch_size: 1000</code></pre>
+
+<h3 id='extractor_output_batch_size'>Extractor output batch size</h3>
+
+<p>To improve performance when writing extracted data back to the database you can optionally specify an <code>output_batch_size</code> for each extractor. The output batch size specifies how many extracted tuples we insert into the database at once. For example, if your tuples are very large, a smaller batch size may help avoid out-of-memory errors. The default value is 10,000.</p>
+
+<pre><code># Insert each 5000 tuples into the data store
+wordsExtractor.output_batch_size: 5000</code></pre>
+
+<h3 id='writing_extractors'>Writing Extractors</h3>
+
+<p>DeepDive will stream tuples into an extract in JSON format, one per line. In the example above, each line may look as follows:</p>
+
+<pre><code>{ id: 5, title: &quot;I am a title&quot;, has_entities: true }</code></pre>
+
+<p>The extractor should output tuples in JSON format to stdout in the same way, but without the <code>id</code> field, which is automatically assigned.</p>
+
+<pre><code>{ title_id: 5, word: &quot;I&quot;, is_present: true } 
+{ title_id: 5, word: &quot;am&quot;, is_present: true } 
+{ title_id: 5, word: &quot;a&quot;, is_present: true } 
+{ title_id: 5, word: &quot;title&quot;, is_present: true } </code></pre>
+
+<p><strong>Note: You must output all fields in each json row, even if they are null.</strong></p>
+
+<p>Such an extractor could be written in Python as follows:</p>
+<div class='highlight'><pre><code class='python'><span class='c'>#! /usr/bin/env python</span>
+
+<span class='kn'>import</span> <span class='nn'>fileinput</span>
+<span class='kn'>import</span> <span class='nn'>json</span>
+
+<span class='c'># For each tuple..</span>
+<span class='k'>for</span> <span class='n'>line</span> <span class='ow'>in</span> <span class='n'>fileinput</span><span class='o'>.</span><span class='n'>input</span><span class='p'>():</span>
+  <span class='c'># From: titles(id, title, has_extractions)</span>
+  <span class='c'># To: words(id, title_id, word)</span>
+  <span class='n'>row</span> <span class='o'>=</span> <span class='n'>json</span><span class='o'>.</span><span class='n'>loads</span><span class='p'>(</span><span class='n'>line</span><span class='p'>)</span>
+  <span class='c'># We are emitting one variable and one factor for each word.</span>
+  <span class='k'>if</span> <span class='n'>row</span><span class='p'>[</span><span class='s'>&quot;titles.title&quot;</span><span class='p'>]</span> <span class='ow'>is</span> <span class='ow'>not</span> <span class='bp'>None</span><span class='p'>:</span>
+    <span class='c'># print json.dumps(list(set(title.split(&quot; &quot;))))</span>
+    <span class='k'>for</span> <span class='n'>word</span> <span class='ow'>in</span> <span class='nb'>set</span><span class='p'>(</span><span class='n'>row</span><span class='p'>[</span><span class='s'>&quot;titles.title&quot;</span><span class='p'>]</span><span class='o'>.</span><span class='n'>split</span><span class='p'>(</span><span class='s'>&quot; &quot;</span><span class='p'>)):</span>
+      <span class='c'># (title_id, word) - The id is automatically assigned.</span>
+      <span class='k'>print</span> <span class='n'>json</span><span class='o'>.</span><span class='n'>dumps</span><span class='p'>({</span><span class='s'>&quot;title_id&quot;</span><span class='p'>:</span> <span class='nb'>int</span><span class='p'>(</span><span class='n'>row</span><span class='p'>[</span><span class='s'>&quot;titles.id&quot;</span><span class='p'>]),</span> 
+        <span class='s'>&quot;word&quot;</span><span class='p'>:</span> <span class='n'>word</span><span class='p'>,</span> <span class='s'>&quot;is_present&quot;</span><span class='p'>:</span> <span class='bp'>True</span><span class='p'>})</span>
+</code></pre></div>
+      </section>
+    </div>
+
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Deepdive maintained by <a href="https://github.com/dennybritz">dennybritz</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+  </body>
+</html>
