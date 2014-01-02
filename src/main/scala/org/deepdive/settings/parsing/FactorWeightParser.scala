@@ -9,7 +9,7 @@ object FactorWeightParser extends RegexParsers {
   def weightVariable = rep1sep(relationOrField, ".") ^^ { 
     case fields => fields.mkString(".")
   }
-  def constantWeight = """-?\d+""".r ^^ { x => KnownFactorWeight(x.toDouble) } 
+  def constantWeight = """-?[\d\.]+""".r ^^ { x => KnownFactorWeight(x.toDouble) } 
   def unknownWeight = "?" ~> ("(" ~> repsep(weightVariable, ",") <~ ")").? ^^ {
     case Some(varList) => UnknownFactorWeight(varList.toList)
     case _ => UnknownFactorWeight(List())
