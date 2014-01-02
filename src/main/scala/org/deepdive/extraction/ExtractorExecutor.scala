@@ -46,7 +46,12 @@ class ExtractorExecutor(dataStore: ExtractionDataStoreComponent#ExtractionDataSt
 
   def doExecute(task: ExtractionTask) : ExtractionTaskResult = {
 
-    val executor = new ScriptTaskExecutor(task, dataStore.queryAsJson(task.extractor.inputQuery))
+    val extractorInput = Try(dataStore.queryAsJson(task.extractor.inputQuery)).getOrElse {
+      log.warning(s"No results returned by extractor=${task.extractor.name}")
+      return ExtractionTaskResult(task, Success[Unit]())
+    }
+
+    val executor = new ScriptTaskExecutor(task, extractorInput)
     val result = executor.run()
 
     // We execute writing to the database asynchronously because it may be a long operation

@@ -20,7 +20,10 @@ trait InferenceDataStoreComponent {
      */
     def flush() : Unit
 
-    /* The number of tuples in each batch. If not defined, we use one large batch. */
+    /* 
+     * The number of tuples in each batch. If not defined, we use one large batch. 
+     * The user can overwrite this number using the inference.batch_size config setting.
+     */
     def BatchSize : Option[Int]
 
     /* Returns a list of variable IDs for all variables in the given factor function */
@@ -58,7 +61,8 @@ trait InferenceDataStoreComponent {
      * The given file is a space-separated file with three columns:
      * VariableID, LastSampleValue, ExpectedValue
      */
-    def writebackInferenceResult(variableOutputFile: String) : Unit
+    def writebackInferenceResult(variableSchema: Map[String, String],
+        variableOutputFile: String, weightsOutputFile: String) : Unit
 
     
     /* 

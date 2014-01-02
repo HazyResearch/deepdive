@@ -1,39 +1,57 @@
 package org.deepdive.extraction.datastore
 
 import anorm._
+import au.com.bytecode.opencsv.CSVWriter
+import java.io.{File, StringWriter, FileWriter}
 import java.lang.RuntimeException
+import java.sql.Connection
 import org.deepdive.Context
-import org.deepdive.settings._
 import org.deepdive.datastore.{PostgresDataStore, DataStoreUtils}
 import org.deepdive.Logging
+import org.deepdive.settings._
+import scala.collection.JavaConversions._
 import spray.json._
 import spray.json.DefaultJsonProtocol._
-import java.io.{FileReader, ByteArrayInputStream, StringWriter, FileWriter}
-import au.com.bytecode.opencsv.CSVWriter
-import scala.collection.JavaConversions._
 
 trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent {
 
   val dataStore = new PostgresExtractionDataStore
 
+  /* An iterator with a connection */
+  class PostgresDataIterator[A](iter: Iterator[A], conn: Connection) extends Iterator[A] {
+    implicit val connection = conn
+    // TODO: We close the connection when the iterator is done.
+    // It's ugly because we assume we completely iterate over all the data.
+    // This is true in our case, but not generally
+    def hasNext = { iter.hasNext match {
+      case true => true
+      case false =>
+        connection.close()
+        false
+    } }
+    def next() = iter.next()
+  }
+
   class PostgresExtractionDataStore extends ExtractionDataStore with Logging {
 
     // TOOD: Can we use more than one connection?
-    lazy implicit val connection = PostgresDataStore.borrowConnection()
+    // lazy implicit val connection = PostgresDataStore.borrowConnection()
 
     def BatchSize = 50000
 
-    def queryAsMap(query: String) : Stream[Map[String, Any]] = {      
-      SQL(query)().map { row =>
+    def queryAsMap(query: String) : Iterator[Map[String, Any]] = {    
+      implicit val connection = PostgresDataStore.borrowConnection() 
+      val iter = SQL(query)().map { row =>
         row.asMap.toMap.mapValues { 
           case x : org.postgresql.jdbc4.Jdbc4Array => x.getArray()
           case x : java.sql.Date => x.toString
           case other => other
         }
-      }
+      }.iterator
+      new PostgresDataIterator(iter, connection)
     }
 
-    def queryAsJson(query: String) : Stream[JsObject] = { 
+    def queryAsJson(query: String) : Iterator[JsObject] = { 
       queryAsMap(query).map { row =>
         JsObject(row.mapValues(anyValToJson))
       }
@@ -41,7 +59,6 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
 
     def write(result: Seq[JsObject], outputRelation: String) : Unit = {
       PostgresDataStore.withConnection { implicit connection =>
-
         if (result.size == 0) {
           log.info("nothing to write.")
           return
@@ -51,21 +68,13 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
         // This is a ugly, but using this we don't need an explicit schema definition.
         // Is there a better way?
         val sampledKeys = result.take(100).flatMap(_.fields.keySet).toSet
-
-        // We use Postgres' copy manager isntead of anorm to do efficient batch inserting
-        // Need to do do some magic to get the underlying connection
-        val del = new org.apache.commons.dbcp.DelegatingConnection(connection)
-        val pg_conn = del.getInnermostDelegate().asInstanceOf[org.postgresql.core.BaseConnection]
-        val cm = new org.postgresql.copy.CopyManager(pg_conn)
         val copySQL = buildCopySql(outputRelation, sampledKeys)
 
-        log.info(s"Writing extraction result to postgres. length=${result.length}, sql=${copySQL}")
-
         // Build the dataset as a TSV string
-        val strData = buildCopyData(result, sampledKeys)
-        val is = new ByteArrayInputStream(strData.getBytes("UTF-8"))
-        cm.copyIn(copySQL, is)
+        val tmpFile = buildCopyData(result, sampledKeys)
 
+        log.info(s"Writing extraction result to postgres. length=${result.length}, sql=${copySQL}")
+        PostgresDataStore.copyBatchData(copySQL, tmpFile)
         log.info(s"Wrote num=${result.length} records.")
       }
     }
@@ -77,10 +86,10 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
     }
 
     /* Builds a CSV dat astring for given JSON data and column names */
-    def buildCopyData(data: Seq[JsObject], keys: Set[String]) = {
-      val strWriter = new StringWriter()
-      val writer = new CSVWriter(strWriter)
-      data.foreach { obj =>
+    def buildCopyData(data: Seq[JsObject], keys: Set[String]) : File = {
+      val tmpFile = File.createTempFile("csv", "")
+      val writer = new CSVWriter(new FileWriter(tmpFile))
+      for (obj <- data) { 
         val dataList = obj.fields.filterKeys(_ != "id").toList.sortBy(_._1)
         val strList = dataList.map (x => jsValueToString(x._2))
         // We get a unique id for the record
@@ -88,7 +97,7 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
         writer.writeNext((List(id.toString) ++ strList).toArray)
       }
       writer.close()
-      strWriter.toString
+      tmpFile
     }
 
     /* Translates a JSON value to a String that can be insert using COPY statement */

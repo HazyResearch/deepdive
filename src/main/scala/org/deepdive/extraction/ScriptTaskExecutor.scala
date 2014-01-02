@@ -16,7 +16,7 @@ import scala.util.Try
 import spray.json._
 
 
-class ScriptTaskExecutor(task: ExtractionTask, inputData: Stream[JsObject]) extends Logging { 
+class ScriptTaskExecutor(task: ExtractionTask, inputData: Iterator[JsObject]) extends Logging { 
 
   val POLL_TIMEOUT = 1.seconds
 
@@ -50,7 +50,7 @@ class ScriptTaskExecutor(task: ExtractionTask, inputData: Stream[JsObject]) exte
     import scala.concurrent.ExecutionContext.Implicits.global
     Future {
       val cyclingInput = Stream.continually(inputSubjects.toStream).flatten
-      inputData.iterator.grouped(task.extractor.inputBatchSize).toStream.zip(cyclingInput).foreach { case(batch, obs) =>
+      inputData.grouped(task.extractor.inputBatchSize).toStream.zip(cyclingInput).foreach { case(batch, obs) =>
         batch.foreach ( tuple => obs.onNext(tuple) )
       }
       inputSubjects.foreach { x => x.onCompleted() } 

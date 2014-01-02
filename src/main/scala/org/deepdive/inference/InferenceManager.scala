@@ -33,18 +33,20 @@ trait InferenceManager extends Actor with ActorLogging {
   lazy val FactorsDumpFile = new File("target/factors.txt")
   lazy val WeightsDumpFile = new File("target/weights.txt")
   lazy val SamplingOutputFile = new File("target/inference_result.out")
+  lazy val SamplingOutputFileWeights = new File("target/inference_result.out.weights")
 
   val factorGraphBuilder = context.actorOf(factorGraphBuilderProps)
 
   override def preStart() {
     log.info("Starting")
+    inferenceDataStore.init()
   }
 
   def receive = {
-    case InferenceManager.FactorTask(factorDesc, holdoutFraction) =>
+    case InferenceManager.FactorTask(factorDesc, holdoutFraction, batchSize) =>
       val _sender = sender
       val result = factorGraphBuilder ? FactorGraphBuilder.AddFactorsAndVariables(
-        factorDesc, holdoutFraction) 
+        factorDesc, holdoutFraction, batchSize) 
       result pipeTo _sender
     case InferenceManager.RunInference(samplerJavaArgs, samplerOptions) =>
       val _sender = sender
@@ -73,7 +75,9 @@ trait InferenceManager extends Actor with ActorLogging {
     // Kill the sampler after it's done :)
     sampler ! PoisonPill
     samplingResult.map { x =>
-      inferenceDataStore.writebackInferenceResult(SamplingOutputFile.getCanonicalPath)
+      inferenceDataStore.writebackInferenceResult(
+        variableSchema, SamplingOutputFile.getCanonicalPath, 
+        SamplingOutputFileWeights.getCanonicalPath)
     }
   }
 
@@ -90,14 +94,15 @@ object InferenceManager {
   }
 
   // TODO: Refactor this to take the data store type as an argument
-  def props(taskManager: ActorRef, variableSchema: Map[String, String]) = 
+  def props(
+    taskManager: ActorRef, variableSchema: Map[String, String]) = 
     Props(classOf[PostgresInferenceManager], taskManager, variableSchema: Map[String, String])
 
   // Messages
   // ==================================================
 
   // Executes a task to build part of the factor graph
-  case class FactorTask(factorDesc: FactorDesc, holdoutFraction: Double)
+  case class FactorTask(factorDesc: FactorDesc, holdoutFraction: Double, batchSize: Option[Int])
   // Runs the sampler with the given arguments
   case class RunInference(samplerJavaArgs: String, samplerOptions: String)
   // Writes calibration data to predefined files

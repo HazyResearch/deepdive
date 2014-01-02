@@ -19,7 +19,8 @@ object FactorGraphBuilder {
 
   // Messages
   sealed trait Message
-  case class AddFactorsAndVariables(factorDesc: FactorDesc, holdoutFraction: Double) extends Message
+  case class AddFactorsAndVariables(factorDesc: FactorDesc, holdoutFraction: Double, 
+    batchSize: Option[Int]) extends Message
   // case class AddVariables(relation: Relation, fields: Set[String]) extends Message
   case class AddFactorsResult(name: String, success: Boolean)
   // case class AddVariablesResult(name: String, success: Boolean)
@@ -42,24 +43,25 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
 
   override def preStart() {
     log.info("Starting")
-    inferenceDataStore.init()
   }
 
   def receive = {
-    case AddFactorsAndVariables(factorDesc, holdoutFraction) =>
+    case AddFactorsAndVariables(factorDesc, holdoutFraction, batchSize) =>
       log.info(s"Processing factor_name=${factorDesc.name} with holdout_faction=${holdoutFraction}")
       // TODO: Failure handling
-      addFactorsAndVariables(factorDesc, holdoutFraction)
+      addFactorsAndVariables(factorDesc, holdoutFraction, batchSize)
       sender ! Success()
     case _ => 
   }
 
 
-  def addFactorsAndVariables(factorDesc: FactorDesc, holdoutFraction: Double) {
-    // If the underlying data store defines a batch size we use that.
-    // If not, we process one big batch
-    val batchIterator = inferenceDataStore.BatchSize match {
-      case Some(x) => dataStore.queryAsMap(factorDesc.inputQuery).iterator.grouped(x)
+  def addFactorsAndVariables(factorDesc: FactorDesc, holdoutFraction: Double, 
+    batchSize: Option[Int]) {
+    
+    // If the user or the data store defines a batch size we use that.
+    val chosenBatchSize = batchSize orElse inferenceDataStore.BatchSize
+    val batchIterator = chosenBatchSize match {
+      case Some(x) => dataStore.queryAsMap(factorDesc.inputQuery).grouped(x)
       case None => Iterator(dataStore.queryAsMap(factorDesc.inputQuery))
     }
 
@@ -85,7 +87,11 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
     holdoutFraction: Double) = {
     val variableColumns = factorDesc.func.variables.toList
     val variableLocalIds = variableColumns.map { varColumn =>
-      inferenceDataStore.getLocalVariableIds(rowMap, varColumn)
+      Try(inferenceDataStore.getLocalVariableIds(rowMap, varColumn)).getOrElse {
+        val errorStr = s"Could not find ${varColumn}. Available columns: ${rowMap.keys.mkString(", ")}" 
+        log.error(errorStr)
+        throw new RuntimeException(errorStr)
+      }
     }
     // Ugly matching because different data stores return different values.
     val variableValues = variableColumns.map { varColumn =>

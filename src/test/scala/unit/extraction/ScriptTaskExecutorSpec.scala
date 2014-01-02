@@ -13,7 +13,7 @@ class ScriptTaskExecutorSpec extends FunSpec {
     it("should work with one batch") {
       val task = new ExtractionTask(Extractor("testExtractor", "relation1", 
         "relation1", "/bin/cat", 4, 100, 10000, Nil.toSet))
-      val data = (1 to 1000).toList.map(i => s"""{"id":$i}""".asJson.asJsObject).toStream
+      val data = (1 to 1000).toList.map(i => s"""{"id":$i}""".asJson.asJsObject).iterator
       val executor = new ScriptTaskExecutor(task, data)
       val result = executor.run()
       assert(result.rows.toBlockingObservable.toList.size == 1)
@@ -23,7 +23,7 @@ class ScriptTaskExecutorSpec extends FunSpec {
     it("should work with multiple batches") {
       val task = new ExtractionTask(Extractor("testExtractor", "relation1", 
         "relation1", "/bin/cat", 4, 100, 100, Nil.toSet))
-      val data = (1 to 1000).toList.map(i => s"""{"id":$i}""".asJson.asJsObject).toStream
+      val data = (1 to 1000).toList.map(i => s"""{"id":$i}""".asJson.asJsObject).iterator
             val executor = new ScriptTaskExecutor(task, data)
       val result = executor.run()
       assert(result.rows.toBlockingObservable.toList.size == 10)

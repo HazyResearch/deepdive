@@ -2,7 +2,8 @@ package org.deepdive.inference
 
 import anorm._
 import au.com.bytecode.opencsv.CSVWriter
-import java.io.{ByteArrayInputStream, File, FileOutputStream, StringWriter}
+import java.io.{ByteArrayInputStream, File, FileOutputStream, FileWriter,
+  StringWriter, Reader, FileReader, InputStream, InputStreamReader}
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 import org.deepdive.settings.FactorFunctionVariable
@@ -21,7 +22,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
 
     implicit lazy val connection = PostgresDataStore.borrowConnection()
 
-    // TODO: We should tune this based on experiments.
+    // Default batch size, if not overwritten by user
     val BatchSize = Some(50000)
 
     // We keep track of the variables, weights and factors already added
@@ -77,6 +78,12 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
         create table inference_result(id bigint primary key, last_sample boolean, 
         probability double precision);""").execute()
       SQL("CREATE INDEX ON inference_result using btree (probability);").execute()
+
+      // inference_result_weights(id, weight)
+      SQL("""drop table if exists inference_result_weights CASCADE; 
+        create table inference_result_weights(id bigint primary key, 
+          weight double precision);""").execute()
+       SQL("CREATE INDEX ON inference_result_weights using btree (weight);").execute()
 
       // A view for the mapped inference result.
       // The view is a join of the variables and inference result tables.
@@ -139,17 +146,19 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
 
     }
 
-    def writebackInferenceResult(variableOutputFile: String) : Unit = {
+    def writebackInferenceResult(variableSchema: Map[String, String],
+      variableOutputFile: String, weightsOutputFile: String) = {
+      log.info("writing back inference result")
+
       // Copy the inference result back to the database
-      copyBatchData("COPY inference_result(id, last_sample, probability) FROM STDIN",
-        Source.fromFile(variableOutputFile).getLines.mkString("\n"))
-      
+      PostgresDataStore.copyBatchData("COPY inference_result(id, last_sample, probability) FROM STDIN",
+        Source.fromFile(variableOutputFile).reader())
+
       // Each (relation, column) tuple is a variable in the plate model.
       // Find all (relation, column) combinations
-      val relationsColumns = 
-        SQL("SELECT DISTINCT mapping_relation, mapping_column from variables;")().map { row =>
-        Tuple2(row[String]("mapping_relation"), row[String]("mapping_column"))
-      }.toSet
+      val relationsColumns = variableSchema.keys map (_.split('.')) map {
+        case Array(relation, column) => (relation, column)
+      } 
 
       // Generate a view for each (relation, column) combination.
       relationsColumns.foreach { case(relationName, columnName) => 
@@ -163,6 +172,19 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
             WHERE mapping_relation = '${relationName}' AND mapping_column = '${columnName}') 
           mir ON ${relationName}.id = mir.mapping_id""").execute()
       }
+
+      // Copy the weight result back to the database
+      PostgresDataStore.copyBatchData("COPY inference_result_weights(id, weight) FROM STDIN",
+        Source.fromFile(weightsOutputFile).reader())
+      
+      // Create a view that maps weight descriptions to the weight values
+      val mappedVeightsView = "inference_result_mapped_weights"
+      log.info(s"creating view=${mappedVeightsView}")
+      SQL(s"""create or replace view ${mappedVeightsView} AS
+        SELECT weights.*, inference_result_weights.weight FROM
+        weights JOIN inference_result_weights ON weights.id = inference_result_weights.id
+        ORDER BY weight DESC""").execute()
+      
     }
 
     def getCalibrationData(variable: String, buckets: List[Bucket]) : Map[Bucket, BucketData] = {
@@ -209,7 +231,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
     def flush() : Unit = {
       // Insert weight
       log.debug(s"Storing num_weights=${weights.size}")
-      copyBatchData("""COPY weights(id, initial_value, is_fixed, description) FROM STDIN CSV""", 
+      PostgresDataStore.copyBatchData("""COPY weights(id, initial_value, is_fixed, description) FROM STDIN CSV""", 
         toCSVData(weights.iterator))
       
       // Insert variables
@@ -217,17 +239,17 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       val numQuery = variables.count(_.isQuery)
       log.debug(s"Storing num_variables=${variables.size} num_evidence=${numEvidence} " +
         s"num_query=${numQuery}")
-      copyBatchData("""COPY variables( id, data_type, initial_value, is_evidence, is_query,
+      PostgresDataStore.copyBatchData("""COPY variables( id, data_type, initial_value, is_evidence, is_query,
         mapping_relation, mapping_column, mapping_id) FROM STDIN CSV""", 
         toCSVData(variables.iterator))
       
       // Insert factors 
       log.debug(s"Storing num_factors=${factors.size}")
-      copyBatchData( """COPY factors(id, weight_id, factor_function) FROM STDIN CSV""", 
+      PostgresDataStore.copyBatchData( """COPY factors(id, weight_id, factor_function) FROM STDIN CSV""", 
         toCSVData(factors.iterator))
       
       // Insert Factor Variables
-      copyBatchData("""COPY factor_variables(factor_id, variable_id, position, is_positive) 
+      PostgresDataStore.copyBatchData("""COPY factor_variables(factor_id, variable_id, position, is_positive) 
         FROM STDIN CSV""", toCSVData(factors.iterator.flatMap(_.variables)))
       
       // Clear the temporary buffer
@@ -237,22 +259,12 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
     }
 
     // Converts CSV-formattable data to a CSV string
-    private def toCSVData[T <: CSVFormattable](data: Iterator[T]) = {
-      val strWriter = new StringWriter
-      val writer = new CSVWriter(strWriter)
+    private def toCSVData[T <: CSVFormattable](data: Iterator[T]) : File = {
+      val tmpFile = File.createTempFile("csv", "")
+      val writer = new CSVWriter(new FileWriter(tmpFile))
       data.foreach (obj => writer.writeNext(obj.toCSVRow))
       writer.close()
-      strWriter.toString
-    }
-
-    // Executes a "COPY FROM STDIN" statement using a string of raw data */
-    private def copyBatchData(sqlStatement: String, rawData: String) = {
-      val del = new org.apache.commons.dbcp.DelegatingConnection(connection)
-      val pg_conn = del.getInnermostDelegate().asInstanceOf[org.postgresql.core.BaseConnection]
-      val cm = new org.postgresql.copy.CopyManager(pg_conn)
-      val is = new ByteArrayInputStream(rawData.getBytes("UTF-8"))
-      cm.copyIn(sqlStatement, is)
-      is.close()
+      tmpFile
     }
 
     // Executes a SELECT statement and saves the result in a postgres text format file

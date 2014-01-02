@@ -38,7 +38,7 @@ class InferenceManagerSpec(_system: ActorSystem) extends TestKit(_system) with F
   describe("Executing a factor task") {
     it("should work") {
       val actor = TestActorRef(actorProps)
-      actor ! InferenceManager.FactorTask(null, 0.0)
+      actor ! InferenceManager.FactorTask(null, 0.0, None)
       factorGraphBuilder.expectMsgClass(classOf[FactorGraphBuilder.AddFactorsAndVariables])
       factorGraphBuilder.reply("Done")
       expectMsg("Done")

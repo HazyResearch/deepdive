@@ -15,11 +15,11 @@ object SettingsParser {
     val connection = loadConnection(config)
     val schemaSettings = loadSchemaSettings(config)
     val extractors = loadExtractionSettings(config)
-    val factors = loadFactors(config)
+    val inferenceSettings = loadInferenceSettings(config)
     val calibrationSettings = loadCalibrationSettings(config)
     val samplerSettings = loadSamplerSettings(config)
 
-    Settings(connection, schemaSettings, extractors, factors, 
+    Settings(connection, schemaSettings, extractors, inferenceSettings, 
       calibrationSettings, samplerSettings)
   }
 
@@ -64,18 +64,22 @@ object SettingsParser {
     ExtractionSettings(initialVariableId, extractors)
   }
 
-  private def loadFactors(config: Config): List[FactorDesc] = {
-    Try(config.getObject("factors").keySet().map { factorName =>
-      val factorConfig = config.getConfig(s"factors.$factorName")
-      val factorInputQuery = factorConfig.getString("input_query")
-      val factorFunction = FactorFunctionParser.parse(
-        FactorFunctionParser.factorFunc, factorConfig.getString("function"))
-      val factorWeight = FactorWeightParser.parse(
-        FactorWeightParser.factorWeight, factorConfig.getString("weight"))
-      val factorWeightPrefix = Try(factorConfig.getString("weightPrefix")).getOrElse(factorName)
-      FactorDesc(factorName, factorInputQuery, factorFunction.get, 
-        factorWeight.get, factorWeightPrefix)
-    }.toList).getOrElse(Nil)
+  private def loadInferenceSettings(config: Config): InferenceSettings = {
+    Try(config.getConfig("inference")).map { inferenceConfig =>
+      val batchSize = Try(inferenceConfig.getInt("batch_size")).toOption
+      val factors = Try(inferenceConfig.getObject("factors").keySet().map { factorName =>
+        val factorConfig = inferenceConfig.getConfig(s"factors.$factorName")
+        val factorInputQuery = factorConfig.getString("input_query")
+        val factorFunction = FactorFunctionParser.parse(
+          FactorFunctionParser.factorFunc, factorConfig.getString("function"))
+        val factorWeight = FactorWeightParser.parse(
+          FactorWeightParser.factorWeight, factorConfig.getString("weight"))
+        val factorWeightPrefix = Try(factorConfig.getString("weightPrefix")).getOrElse(factorName)
+        FactorDesc(factorName, factorInputQuery, factorFunction.get, 
+          factorWeight.get, factorWeightPrefix)
+      }.toList).getOrElse(Nil)
+      InferenceSettings(factors, batchSize)
+    }.getOrElse(InferenceSettings(Nil, None))
   }
 
   private def loadCalibrationSettings(config: Config) : CalibrationSettings = {
@@ -86,12 +90,10 @@ object SettingsParser {
   }
 
   private def loadSamplerSettings(config: Config) : SamplerSettings = {
-    val defaultSamplerSettings = SamplerSettings("-Xmx4g", "-l 1000 -s 10 -i 1000 -t 4")
-    Try(config.getConfig("sampler")).map { samplingConfig =>
-      val javaArgs = Try(samplingConfig.getString("java_args")).getOrElse(defaultSamplerSettings.javaArgs)
-      val samplerArgs = Try(samplingConfig.getString("sampler_args")).getOrElse(defaultSamplerSettings.samplerArgs)
-      SamplerSettings(javaArgs, samplerArgs)
-    }.getOrElse(defaultSamplerSettings)
+    val samplingConfig = config.getConfig("sampler")
+    val javaArgs = Try(samplingConfig.getString("java_args")).getOrElse("")
+    val samplerArgs = samplingConfig.getString("sampler_args")
+    SamplerSettings(javaArgs, samplerArgs)
   }
 
 }

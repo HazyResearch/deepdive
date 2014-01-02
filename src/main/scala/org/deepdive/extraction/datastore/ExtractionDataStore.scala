@@ -19,10 +19,10 @@ trait ExtractionDataStoreComponent {
      * How the query string is interpreted depends on the implementing data store.
      * For example, Postgres interprets the query as a SQL statement
      */
-    def queryAsMap(query: String) : Stream[Map[String, Any]]
+    def queryAsMap(query: String) : Iterator[Map[String, Any]]
 
     /* Returns the result of the query as a stream of JSON objects */
-    def queryAsJson(query: String) : Stream[JsObject]
+    def queryAsJson(query: String) : Iterator[JsObject]
 
     /* 
      * Writes a list of tuples back to the datastore.
