@@ -75,7 +75,7 @@ wordsExtractor.factor.weight: ?(people.gender)</code></pre>
 
 <h3 id="full_example">Full Example</h3>
 
-<pre><code>deepdive.factors: {
+<pre><code>deepdive.inference.factors: {
   smokesFactor.input_query: &quot;SELECT people.* FROM people&quot;
   smokesFactor.function: &quot;people.has_cancer = Imply(people.smokes)&quot;
   smokesFactor.weight: &quot;?(people.gender)&quot;

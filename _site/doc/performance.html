@@ -41,6 +41,12 @@
 
 <p>You can execute one extractor in parallel on multiple threads using the <code>paralleism</code> option. You can use the <code>input_batch_size</code> option to define how many tuples each extractor should receive at once, and the <code>output_batch_size</code> option to define how many extracted tuples should be inserted into the data store at once. The <a href="extractor.html">extractor documentation</a> contains more details about these options.</p>
 
+<h3 id="setting_the_batch_size_for_factor_graph_construction">Setting the batch size for factor graph construction</h3>
+
+<p>By default, DeepDive inserts variables, factors and weights in batches defined by the underlying data store. The default for PostgreSQL is 50,000. If you have a large amount of memory you may overwrite the batch size using the following configuration setting.</p>
+
+<pre><code>deepdive.inference.batch_size = 100000</code></pre>
+
 <h3 id="gibbs_sampler_options">Gibbs sampler options</h3>
 
 <p>You can optionally parse java options (such as -Xmx) and command line options to the gibbs sampler executable. The default Java options are <code>-Xmx4g</code> and the default sampler options are <code>-l 1000 -s 10 -i 1000 -t 4</code>. Allowed options are:</p>

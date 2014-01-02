@@ -48,7 +48,7 @@ Each factor is assigned a *weight*, which expresses how confident you are in its
 
 ### Full Example
 
-    deepdive.factors: {
+    deepdive.inference.factors: {
       smokesFactor.input_query: "SELECT people.* FROM people"
       smokesFactor.function: "people.has_cancer = Imply(people.smokes)"
       smokesFactor.weight: "?(people.gender)"

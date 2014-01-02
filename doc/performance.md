@@ -16,6 +16,13 @@ When running DeepDive you should set the maximum heap size for the Java virtual 
 
 You can execute one extractor in parallel on multiple threads using the `paralleism` option. You can use the `input_batch_size` option to define how many tuples each extractor should receive at once, and the `output_batch_size` option to define how many extracted tuples should be inserted into the data store at once. The [extractor documentation](extractor.html) contains more details about these options. 
 
+### Setting the batch size for factor graph construction
+
+By default, DeepDive inserts variables, factors and weights in batches defined by the underlying data store. The default for PostgreSQL is 50,000. If you have a large amount of memory you may overwrite the batch size using the following configuration setting.
+
+    deepdive.inference.batch_size = 100000
+
+
 ### Gibbs sampler options
 
 You can optionally parse java options (such as -Xmx) and command line options to the gibbs sampler executable. The default Java options are `-Xmx4g` and the default sampler options are `-l 1000 -s 10 -i 1000 -t 4`. Allowed options are:
