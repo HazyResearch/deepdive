@@ -14,6 +14,13 @@ class FactorWeightParserSpec extends FunSpec {
       assert(result.get == KnownFactorWeight(5.0))
     }
 
+    it("should parse a floating point factor weight") {
+      val expr = "0.5"
+      val result = FactorWeightParser.parse(FactorWeightParser.factorWeight, expr)
+      assert(result.successful)
+      assert(result.get == KnownFactorWeight(.5))
+    }
+
     it("should parse an unknown weight without variables") {
       val expr = "?"
       val result = FactorWeightParser.parse(FactorWeightParser.factorWeight, expr)
