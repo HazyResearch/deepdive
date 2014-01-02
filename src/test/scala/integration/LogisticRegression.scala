@@ -62,7 +62,7 @@ class LogisticRegressionApp extends FunSpec {
 
   it("should work") {
     prepareData()
-    val config = ConfigFactory.parseString(getConfig)
+    val config = ConfigFactory.parseString(getConfig).withFallback(ConfigFactory.load)
     Pipeline.run(config)
     // Make sure the data is in the database
     PostgresTestDataStore.init()
