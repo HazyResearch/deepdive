@@ -43,7 +43,6 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
 
   override def preStart() {
     log.info("Starting")
-    inferenceDataStore.init()
   }
 
   def receive = {

@@ -33,11 +33,13 @@ trait InferenceManager extends Actor with ActorLogging {
   lazy val FactorsDumpFile = new File("target/factors.txt")
   lazy val WeightsDumpFile = new File("target/weights.txt")
   lazy val SamplingOutputFile = new File("target/inference_result.out")
+  lazy val SamplingOutputFileWeights = new File("target/inference_result.out.weights")
 
   val factorGraphBuilder = context.actorOf(factorGraphBuilderProps)
 
   override def preStart() {
     log.info("Starting")
+    inferenceDataStore.init()
   }
 
   def receive = {
@@ -73,7 +75,9 @@ trait InferenceManager extends Actor with ActorLogging {
     // Kill the sampler after it's done :)
     sampler ! PoisonPill
     samplingResult.map { x =>
-      inferenceDataStore.writebackInferenceResult(SamplingOutputFile.getCanonicalPath)
+      inferenceDataStore.writebackInferenceResult(
+        variableSchema, SamplingOutputFile.getCanonicalPath, 
+        SamplingOutputFileWeights.getCanonicalPath)
     }
   }
 

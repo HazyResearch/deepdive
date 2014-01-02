@@ -61,7 +61,8 @@ trait InferenceDataStoreComponent {
      * The given file is a space-separated file with three columns:
      * VariableID, LastSampleValue, ExpectedValue
      */
-    def writebackInferenceResult(variableOutputFile: String) : Unit
+    def writebackInferenceResult(variableSchema: Map[String, String],
+        variableOutputFile: String, weightsOutputFile: String) : Unit
 
     
     /* 

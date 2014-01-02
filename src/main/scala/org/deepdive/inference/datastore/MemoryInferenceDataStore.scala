@@ -80,7 +80,8 @@ trait MemoryInferenceDataStoreComponent extends InferenceDataStoreComponent{
       log.info(s"wrote variables to file=${variablesFile.getAbsolutePath}")
     }
 
-    def writebackInferenceResult(variableOutputFile: String) : Unit = {
+    def writebackInferenceResult(variableSchema: Map[String, String], 
+      variableOutputFile: String, weightsOutputFile: String) : Unit = {
       val reader = new CSVReader(new FileReader(variableOutputFile), '\t')
       val inferenceResult = reader.readAll()
       inferenceResult.foreach { case Array(variableId, lastSample, probability) => 
@@ -88,6 +89,7 @@ trait MemoryInferenceDataStoreComponent extends InferenceDataStoreComponent{
       }
       reader.close()
       log.info(s"read inference result from file=${variableOutputFile}")
+      // TODO: Write back the weights
     }
 
     def getCalibrationData(variable: String, buckets: List[Bucket]) : Map[Bucket, BucketData] = {

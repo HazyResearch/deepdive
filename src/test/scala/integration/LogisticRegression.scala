@@ -56,6 +56,7 @@ class LogisticRegressionApp extends FunSpec {
         wordFactor.function: "titles.has_extractions = Imply(word_presences.is_present)"
         wordFactor.weight: "?(word_presences.word)"
       }
+
     """
   }
 
