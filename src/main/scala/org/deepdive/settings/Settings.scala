@@ -15,7 +15,7 @@ trait SettingsImpl {
   def connection : Connection
   def schemaSettings : SchemaSettings
   def extractionSettings : ExtractionSettings
-  def factors : List[FactorDesc]
+  def inferenceSettings : InferenceSettings
 
   def findExtractor(name: String) : Option[Extractor] = extractionSettings.extractors.find(_.name == name)
   
@@ -27,8 +27,8 @@ trait SettingsImpl {
 
 case class Settings(connection: Connection, 
   schemaSettings : SchemaSettings,
-  extractionSettings: ExtractionSettings, 
-  factors: List[FactorDesc], 
+  extractionSettings: ExtractionSettings,
+  inferenceSettings: InferenceSettings, 
   calibrationSettings: CalibrationSettings, 
   samplerSettings: SamplerSettings) extends SettingsImpl
 

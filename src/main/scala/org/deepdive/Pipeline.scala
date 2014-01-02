@@ -53,8 +53,9 @@ object Pipeline extends Logging {
 
     // Build task to construct the factor graph
     val factorTasks = for {
-      factor <- settings.factors
-      factorTask = InferenceManager.FactorTask(factor, settings.calibrationSettings.holdoutFraction)
+      factor <- settings.inferenceSettings.factors
+      factorTask = InferenceManager.FactorTask(factor, 
+        settings.calibrationSettings.holdoutFraction, settings.inferenceSettings.insertBatchSize)
       // TODO: We don't actually neeed to wait for all extractions to finish. For now it's fine.
       taskDeps = extractionTasks.map(_.id)
     } yield Task(factor.name, taskDeps, factorTask, inferenceManager)

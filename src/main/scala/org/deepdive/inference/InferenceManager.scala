@@ -41,10 +41,10 @@ trait InferenceManager extends Actor with ActorLogging {
   }
 
   def receive = {
-    case InferenceManager.FactorTask(factorDesc, holdoutFraction) =>
+    case InferenceManager.FactorTask(factorDesc, holdoutFraction, batchSize) =>
       val _sender = sender
       val result = factorGraphBuilder ? FactorGraphBuilder.AddFactorsAndVariables(
-        factorDesc, holdoutFraction) 
+        factorDesc, holdoutFraction, batchSize) 
       result pipeTo _sender
     case InferenceManager.RunInference(samplerJavaArgs, samplerOptions) =>
       val _sender = sender
@@ -90,14 +90,15 @@ object InferenceManager {
   }
 
   // TODO: Refactor this to take the data store type as an argument
-  def props(taskManager: ActorRef, variableSchema: Map[String, String]) = 
+  def props(
+    taskManager: ActorRef, variableSchema: Map[String, String]) = 
     Props(classOf[PostgresInferenceManager], taskManager, variableSchema: Map[String, String])
 
   // Messages
   // ==================================================
 
   // Executes a task to build part of the factor graph
-  case class FactorTask(factorDesc: FactorDesc, holdoutFraction: Double)
+  case class FactorTask(factorDesc: FactorDesc, holdoutFraction: Double, batchSize: Option[Int])
   // Runs the sampler with the given arguments
   case class RunInference(samplerJavaArgs: String, samplerOptions: String)
   // Writes calibration data to predefined files

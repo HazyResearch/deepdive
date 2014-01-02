@@ -51,7 +51,7 @@ class LogisticRegressionApp extends FunSpec {
         wordsExtractor.dependencies = ["titlesExtractor"]
       }
 
-      deepdive.factors {
+      deepdive.inference.factors {
         wordFactor.input_query = "SELECT word_presences.*, titles.* FROM word_presences INNER JOIN titles ON word_presences.title_id = titles.id"
         wordFactor.function: "titles.has_extractions = Imply(word_presences.is_present)"
         wordFactor.weight: "?(word_presences.word)"

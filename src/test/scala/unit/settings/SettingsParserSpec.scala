@@ -56,19 +56,20 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester {
     }
   }
 
-  describe("Parsing Factor Settings") {
+  describe("Parsing Inference Settings") {
     it ("should work"){
       val config = ConfigFactory.parseString("""
-      factors.factor1.input_query = "SELECT a.*, b.* FROM a INNER JOIN b ON a.document_id = b.id"
-      factors.factor1.function: "a.is_present = Imply()"
-      factors.factor1.weight: "?"
+      inference.batch_size: 100000
+      inference.factors.factor1.input_query = "SELECT a.*, b.* FROM a INNER JOIN b ON a.document_id = b.id"
+      inference.factors.factor1.function: "a.is_present = Imply()"
+      inference.factors.factor1.weight: "?"
       """)
-      val loadFactors = PrivateMethod[List[FactorDesc]]('loadFactors)
-      val result = SettingsParser invokePrivate loadFactors(config)
-      assert(result == List(FactorDesc("factor1", 
+      val loadInferenceSettings = PrivateMethod[InferenceSettings]('loadInferenceSettings)
+      val result = SettingsParser invokePrivate loadInferenceSettings(config)
+      assert(result == InferenceSettings(List(FactorDesc("factor1", 
         "SELECT a.*, b.* FROM a INNER JOIN b ON a.document_id = b.id",
         ImplyFactorFunction(FactorFunctionVariable("a", "is_present", false), Nil), 
-        UnknownFactorWeight(Nil), "factor1")))
+        UnknownFactorWeight(Nil), "factor1")), Option(100000)))
     }
   }
 
