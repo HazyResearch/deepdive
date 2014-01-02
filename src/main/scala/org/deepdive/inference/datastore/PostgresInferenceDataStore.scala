@@ -151,7 +151,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       log.info("writing back inference result")
 
       // Copy the inference result back to the database
-      copyBatchData("COPY inference_result(id, last_sample, probability) FROM STDIN",
+      PostgresDataStore.copyBatchData("COPY inference_result(id, last_sample, probability) FROM STDIN",
         Source.fromFile(variableOutputFile).reader())
 
       // Each (relation, column) tuple is a variable in the plate model.
@@ -174,7 +174,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       }
 
       // Copy the weight result back to the database
-      copyBatchData("COPY inference_result_weights(id, weight) FROM STDIN",
+      PostgresDataStore.copyBatchData("COPY inference_result_weights(id, weight) FROM STDIN",
         Source.fromFile(weightsOutputFile).reader())
       
       // Create a view that maps weight descriptions to the weight values
@@ -231,7 +231,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
     def flush() : Unit = {
       // Insert weight
       log.debug(s"Storing num_weights=${weights.size}")
-      copyBatchData("""COPY weights(id, initial_value, is_fixed, description) FROM STDIN CSV""", 
+      PostgresDataStore.copyBatchData("""COPY weights(id, initial_value, is_fixed, description) FROM STDIN CSV""", 
         toCSVData(weights.iterator))
       
       // Insert variables
@@ -239,17 +239,17 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       val numQuery = variables.count(_.isQuery)
       log.debug(s"Storing num_variables=${variables.size} num_evidence=${numEvidence} " +
         s"num_query=${numQuery}")
-      copyBatchData("""COPY variables( id, data_type, initial_value, is_evidence, is_query,
+      PostgresDataStore.copyBatchData("""COPY variables( id, data_type, initial_value, is_evidence, is_query,
         mapping_relation, mapping_column, mapping_id) FROM STDIN CSV""", 
         toCSVData(variables.iterator))
       
       // Insert factors 
       log.debug(s"Storing num_factors=${factors.size}")
-      copyBatchData( """COPY factors(id, weight_id, factor_function) FROM STDIN CSV""", 
+      PostgresDataStore.copyBatchData( """COPY factors(id, weight_id, factor_function) FROM STDIN CSV""", 
         toCSVData(factors.iterator))
       
       // Insert Factor Variables
-      copyBatchData("""COPY factor_variables(factor_id, variable_id, position, is_positive) 
+      PostgresDataStore.copyBatchData("""COPY factor_variables(factor_id, variable_id, position, is_positive) 
         FROM STDIN CSV""", toCSVData(factors.iterator.flatMap(_.variables)))
       
       // Clear the temporary buffer
@@ -265,21 +265,6 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       data.foreach (obj => writer.writeNext(obj.toCSVRow))
       writer.close()
       tmpFile
-    }
-
-    private def copyBatchData(sqlStatement: String, file: File) : Unit = {
-       copyBatchData(sqlStatement, new FileReader(file)) }
-
-    private def copyBatchData(sqlStatement: String, rawData: InputStream) : Unit = {
-       copyBatchData(sqlStatement, new InputStreamReader(rawData)) }
-
-    // Executes a "COPY FROM STDIN" statement using raw data */
-    private def copyBatchData(sqlStatement: String, dataReader: Reader) : Unit = {
-      val del = new org.apache.commons.dbcp.DelegatingConnection(connection)
-      val pg_conn = del.getInnermostDelegate().asInstanceOf[org.postgresql.core.BaseConnection]
-      val cm = new org.postgresql.copy.CopyManager(pg_conn)
-      cm.copyIn(sqlStatement, dataReader)
-      dataReader.close()
     }
 
     // Executes a SELECT statement and saves the result in a postgres text format file

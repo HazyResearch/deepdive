@@ -15,11 +15,11 @@ trait MemoryExtractionDataStoreComponent extends ExtractionDataStoreComponent{
     
     val data = MMap[String, ArrayBuffer[JsObject]]()
 
-    override def queryAsJson(relation: String) : Stream[JsObject] = {
-      data.get(relation).map(_.toList).getOrElse(Nil).toStream
+    override def queryAsJson(relation: String) : Iterator[JsObject] = {
+      data.get(relation).map(_.toList).getOrElse(Nil).iterator
     }
     
-    def queryAsMap(relation: String) : Stream[Map[String, Any]] = {
+    def queryAsMap(relation: String) : Iterator[Map[String, Any]] = {
       queryAsJson(relation).map(_.fields.mapValues {
         case JsNull => null
         case JsString(x) => x

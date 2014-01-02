@@ -61,7 +61,7 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
     // If the user or the data store defines a batch size we use that.
     val chosenBatchSize = batchSize orElse inferenceDataStore.BatchSize
     val batchIterator = chosenBatchSize match {
-      case Some(x) => dataStore.queryAsMap(factorDesc.inputQuery).iterator.grouped(x)
+      case Some(x) => dataStore.queryAsMap(factorDesc.inputQuery).grouped(x)
       case None => Iterator(dataStore.queryAsMap(factorDesc.inputQuery))
     }
 

@@ -34,7 +34,7 @@ class MemoryExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
     ))
     dataStore.write(List(testRow), "testRelation")
     val queryResult = dataStore.queryAsJson("testRelation")
-    assert(queryResult.head == testRow)
+    assert(queryResult.toList.head == testRow)
 
   }
 
@@ -48,7 +48,7 @@ class MemoryExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
     ))
     dataStore.write(List(testRow), "testRelation")
     val queryResult = dataStore.queryAsMap("testRelation")
-    assert(queryResult.head == Map[String, Any](
+    assert(queryResult.toList.head == Map[String, Any](
       "id" -> BigDecimal(1),
       "key" -> BigDecimal(100),
       "some_text" -> "I am sample text.",
