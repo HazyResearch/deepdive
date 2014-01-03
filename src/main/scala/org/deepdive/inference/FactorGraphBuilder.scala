@@ -88,7 +88,7 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
     val variableColumns = factorDesc.func.variables.toList
     val variableLocalIds = variableColumns.map { varColumn =>
       Try(inferenceDataStore.getLocalVariableIds(rowMap, varColumn)).getOrElse {
-        val errorStr = s"Could not find ${varColumn}. Available columns: ${rowMap.keys.mkString(", ")}" 
+        val errorStr = s"Could not find ${varColumn} or ${varColumn.relation}.id. Available columns: ${rowMap.keys.mkString(", ")}." 
         log.error(errorStr)
         throw new RuntimeException(errorStr)
       }
