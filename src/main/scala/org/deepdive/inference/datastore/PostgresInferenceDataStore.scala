@@ -51,7 +51,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       weights.clear()
 
       // weights(id, initial_value, is_fixed, description)
-      SQL("""drop table if exists weights; 
+      SQL("""drop table if exists weights CASCADE; 
         create table weights(id bigint primary key, 
         initial_value double precision, is_fixed boolean, description text);""").execute()
       
