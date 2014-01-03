@@ -23,6 +23,33 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
       some_array text[]);""").execute()
   }
 
+  describe("Querying") {
+
+    def insertSampleData() = {
+      SQL("""insert into datatype_test(key) 
+        VALUES (1), (2), (3), (4)""").execute()
+    }
+
+    it("should work for simple attributes") {
+      insertSampleData()
+      val result = dataStore.queryAsMap("SELECT key from datatype_test;").toList
+      assert(result.head.contains("datatype_test.key"))
+    }
+
+    it("should work for alaised attributes") {
+      insertSampleData()
+      val result = dataStore.queryAsMap("SELECT key AS \"d1.key2\" from datatype_test;").toList
+      assert(result.head.contains("datatype_test.d1.key2"))
+    }
+
+    it("should work for aggregated attributes") {
+      insertSampleData()
+      val result = dataStore.queryAsMap("SELECT COUNT(*) AS num from datatype_test GROUP BY key").toList
+      assert(result.head.contains(".num"))
+    }
+
+  }
+
   describe("Serializing to JSON") {  
 
     def insertSampleRow() : Unit = {

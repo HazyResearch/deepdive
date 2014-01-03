@@ -19,7 +19,7 @@ libraryDependencies ++= List(
   "com.github.scopt" %% "scopt" % "3.2.0",
   "org.scalatest" % "scalatest_2.10" % "2.0.RC2" % "test",
   "play" %% "anorm" % "2.1.5",
-  "com.github.seratch" %% "scalikejdbc" % "[0.5,)",
+  "org.scalikejdbc" %% "scalikejdbc" % "[1.7,)",
   "org.postgresql" % "postgresql" % "9.2-1003-jdbc4",
   "com.h2database" % "h2" % "1.3.166",
   "io.spray" %%  "spray-json" % "1.2.5",

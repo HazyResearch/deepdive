@@ -41,6 +41,7 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
 
     def queryAsMap(query: String) : Iterator[Map[String, Any]] = {    
       implicit val connection = PostgresDataStore.borrowConnection() 
+      connection.setReadOnly(true)
       val iter = SQL(query)().map { row =>
         row.asMap.toMap.mapValues { 
           case x : org.postgresql.jdbc4.Jdbc4Array => x.getArray()

@@ -142,6 +142,12 @@ class PostgresInferenceDataStoreSpec extends FunSpec with BeforeAndAfter
 
     }
 
+    describe ("writing back the inference Result") {
+
+      it("should work")(pending)
+
+    }
+
     describe ("Getting the calibration data") {
 
       def createSampleInferenceRelation() {
