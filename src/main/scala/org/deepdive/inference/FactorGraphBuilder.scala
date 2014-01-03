@@ -48,9 +48,11 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
   def receive = {
     case AddFactorsAndVariables(factorDesc, holdoutFraction, batchSize) =>
       log.info(s"Processing factor_name=${factorDesc.name} with holdout_faction=${holdoutFraction}")
-      // TODO: Failure handling
-      addFactorsAndVariables(factorDesc, holdoutFraction, batchSize)
-      sender ! Success()
+      Try(addFactorsAndVariables(factorDesc, holdoutFraction, batchSize)) match {
+        case Success(x) => sender ! x
+        case Failure(exception) => 
+          sender ! akka.actor.Status.Failure(exception)
+      }
     case _ => 
   }
 

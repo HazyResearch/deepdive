@@ -5,6 +5,7 @@ import akka.pattern.{ask, pipe}
 import akka.util.Timeout
 import org.deepdive.profiling._
 import scala.collection.mutable.{Set, Map}
+import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.{Try, Failure, Success}
 
@@ -14,8 +15,8 @@ object TaskManager {
 
   case class AddTask(task: Task)
   case class Done(task: Task, result: Try[_])
-  case class Subscribe(taskId: String)
-  case class Unsubscribe(taskId: String)
+  case object ForceShutdown
+  case object Shutdown
 
 }
 
@@ -28,6 +29,7 @@ class TaskManager extends Actor with ActorLogging {
 
   val taskQueue = Set[Task]()
   val runningTasks = Set[Task]()
+  val resultsQueue = Map[Task, Future[_]]()
   val completedTasks = Set[Done]()
   val subscribers = Map[String, List[ActorRef]]()
 
@@ -39,46 +41,58 @@ class TaskManager extends Actor with ActorLogging {
     case AddTask(task) =>
       taskQueue += task
       // We watch the worker, so we can fail the task if it crashes
-      context.watch(task.worker)
+      if (task.worker != self) {
+        context.watch(task.worker)
+      }
       log.info(s"Added task_id=${task.id}")
       // Subscribe the sender
       // self.tell(Subscribe(task.id), sender)
       scheduleTasks()
     
     case msg @ Done(task, result) =>
-      val reportDesc = if (result.isSuccess) "SUCCESS" else "FAILURE"
+      val reportDesc = result match {
+        case Success(x) => "SUCCESS"
+        case Failure(ex) => "FAILURE"
+      }
       context.system.eventStream.publish(EndReport(task.id, Option(reportDesc)))
       runningTasks -= task
       completedTasks += msg
-      log.info(s"Completed task_id=${task.id}")
-      // Notify the subscribers
-      subscribers.get(task.id).getOrElse(Nil).foreach(_ ! result)
-      scheduleTasks()
-    
-    case Subscribe(taskId) =>
-      val currentSubscribers = subscribers.get(taskId).getOrElse(Nil)
-      subscribers += Tuple2(taskId, (currentSubscribers :+ sender))
-      log.info(s"Subscribed actorRef=${sender} to task_id=${taskId}")
-      // If the task is already completed, notify the sender immediately
-      val completedTask = completedTasks.find(_.task.id == taskId)
-      completedTask.foreach ( task => sender ! completedTask)
-    
-    case Unsubscribe(taskId) =>
-      val currentSubscribers = subscribers.get(taskId).getOrElse(Nil)
-      val newSubscribers = currentSubscribers.filterNot(_ == sender)
-      subscribers +=  Tuple2(taskId, newSubscribers)
-      log.info(s"Unsubscribed actorRef=${sender} from task_id=${taskId}")
+      log.info(s"Completed task_id=${task.id} with ${result.toString}")
+      result match {
+        case Success(x) => 
+          scheduleTasks()
+        case Failure(exception) => 
+          log.error(s"${task.id} Failed: ${exception}")
+          self ! ForceShutdown
+      }        
 
     case x : Terminated =>
       val worker = x.actor
-      log.debug(s"$worker was terminated. Canceling its tasks.")
+      log.info(s"$worker was terminated. Canceling its tasks.")
       val workerTasks = runningTasks.find(_.worker == worker)
       workerTasks.foreach { task =>
-        self ! Done(task, Failure(new RuntimeException("worker terminated")))
+        self ! Done(task, Failure(new RuntimeException("worker was terminated")))
       }
       context.unwatch(worker)
 
-    case "shutdown" =>
+    case ForceShutdown =>
+      log.error("Forcing shutdown")
+      // Stop all running tasks
+      for (task <- runningTasks) {
+        log.error(s"Stopping task=${task.id}")
+        context.unwatch(task.worker)
+        self ! Done(task, Failure(new RuntimeException("Task stopped")))
+      }
+      // Clear all cancellable outstanding tasks
+      for (task <- taskQueue if task.cancellable) {
+        log.error(s"Cancelling task=${task.id}")
+        taskQueue -=task
+        completedTasks += Done(task, Failure(new RuntimeException("Task cancelled")))
+      }
+      scheduleTasks()
+
+    case Shutdown =>
+      context.stop(self)
       context.system.shutdown()
 
     case msg =>
@@ -93,14 +107,15 @@ class TaskManager extends Actor with ActorLogging {
       task.dependencies.toSet.subsetOf(completedTasks.map(_.task.id))
     }
 
-    log.info(s"${eligibileTasks.size}/${taskQueue.size} tasks eligible")
-    log.info(s"not_eligible=${notEligibleTasks.map(_.id).toSet}")
+    log.info(s"${eligibileTasks.size}/${taskQueue.size} tasks eligible.")
+    log.info(s"Tasks not_eligible: ${notEligibleTasks.map(_.id).toSet}")
     
     // Forward eligible tasks
     eligibileTasks.foreach { task =>
       log.debug(s"Sending task_id=${task.id} to ${task.worker}")
       context.system.eventStream.publish(StartReport(task.id, task.id))
-      (task.worker ? task.taskDescription).onComplete ( x => self ! Done(task, x) )
+      val result = task.worker ? task.taskDescription
+      result.onComplete ( x => self ! Done(task, x) )
       taskQueue -= task
       runningTasks += task
     }
