@@ -10,9 +10,12 @@ trait ExtractionDataStoreComponent {
 
   /* Stores extraction results and queries the database for extracted data */
   trait ExtractionDataStore {
-
+    
     /* How many extracted tuples to insert at once */
     def BatchSize : Int
+
+    /* Initialize the data store. Must be called before anything else */
+    def init() : Unit
 
     /* 
      * Returns the result of the query as a stream of untyped Maps. 

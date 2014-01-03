@@ -6,6 +6,7 @@ import org.deepdive.calibration._
 import org.deepdive.inference._
 import org.deepdive.test._
 import org.scalatest._
+import org.deepdive.datastore._
 import scala.io.Source
 
 class PostgresInferenceDataStoreSpec extends FunSpec with BeforeAndAfter
@@ -15,7 +16,7 @@ class PostgresInferenceDataStoreSpec extends FunSpec with BeforeAndAfter
 
   /* Initialize and clear the data store before each test */
   before {
-    PostgresTestDataStore.init()
+    JdbcDataStore.init()
     SQL("drop schema if exists public cascade; create schema public;").execute()
   }
 

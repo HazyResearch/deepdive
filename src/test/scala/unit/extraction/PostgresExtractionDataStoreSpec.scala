@@ -1,7 +1,7 @@
 package org.deepdive.test.unit
 
 import anorm._
-import org.deepdive.datastore.PostgresDataStore
+import org.deepdive.datastore._
 import org.deepdive.extraction._
 import org.deepdive.extraction.datastore._
 import org.deepdive.test._
@@ -16,7 +16,8 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
   lazy implicit val connection = PostgresDataStore.borrowConnection()
 
   before {
-    PostgresTestDataStore.init()
+    JdbcDataStore.init()
+    dataStore.init()
     SQL("drop schema if exists public cascade; create schema public;").execute()
     SQL("""create table datatype_test(id bigserial primary key, key integer, some_text text, 
       some_boolean boolean, some_double double precision, some_null boolean, 

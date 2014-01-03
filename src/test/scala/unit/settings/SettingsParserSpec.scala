@@ -8,20 +8,7 @@ import org.scalatest._
 class SettingsParserSpec extends FunSpec with PrivateMethodTester {
   
   val defaultConfig = ConfigFactory.load().getConfig("deepdive")
-
-  describe("Parsing Connection Settings") {
-    it ("should work") {
-      val config = ConfigFactory.parseString("""
-      connection.url: "jdbc:postgresql://localhost/deepdive_test"
-      connection.user: "deepdive"
-      connection.password: "password"
-      """).withFallback(defaultConfig)
-      val loadConnection = PrivateMethod[Connection]('loadConnection)
-      val result = SettingsParser invokePrivate loadConnection(config)
-      assert(result === Connection("jdbc:postgresql://localhost/deepdive_test", "deepdive", "password"))
-    }
-  }
-
+  
   describe("Parsing Schema Settings") {
     it ("should work"){
       val config = ConfigFactory.parseString("""

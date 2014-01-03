@@ -5,6 +5,7 @@ import au.com.bytecode.opencsv.CSVWriter
 import java.io.{File, StringWriter, FileWriter}
 import java.lang.RuntimeException
 import java.sql.Connection
+import java.util.concurrent.atomic.AtomicLong
 import org.deepdive.Context
 import org.deepdive.datastore.{PostgresDataStore, DataStoreUtils}
 import org.deepdive.Logging
@@ -34,8 +35,12 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
 
   class PostgresExtractionDataStore extends ExtractionDataStore with Logging {
 
-    // TOOD: Can we use more than one connection?
-    // lazy implicit val connection = PostgresDataStore.borrowConnection()
+    /* Globally unique variable id for this data store */
+    private val variableIdCounter = new AtomicLong(0)
+
+    def init() = {
+      variableIdCounter.set(0)
+    }
 
     def BatchSize = 50000
 
@@ -94,7 +99,7 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
         val dataList = obj.fields.filterKeys(_ != "id").toList.sortBy(_._1)
         val strList = dataList.map (x => jsValueToString(x._2))
         // We get a unique id for the record
-        val id = PostgresDataStore.nextId()
+        val id = variableIdCounter.getAndIncrement()
         writer.writeNext((List(id.toString) ++ strList).toArray)
       }
       writer.close()
