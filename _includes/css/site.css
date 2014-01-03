@@ -24,9 +24,6 @@ body {
   font-family: 'Lato', 'Lucida Grande', 'Calibri', 'Helvetica Neue', Arial, sans-serif;
 }
 
-ul {
-  margin-top: 10px; display: inline-block;
-}
 
 ul li {
   margin-bottom: 5px;
