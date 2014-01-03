@@ -20,6 +20,10 @@ class PostgresInferenceDataStoreSpec extends FunSpec with BeforeAndAfter
     SQL("drop schema if exists public cascade; create schema public;").execute()
   }
 
+  after {
+    JdbcDataStore.close()
+  }
+
   describe("Postgres inference data store") {
     
     describe("intializing") {

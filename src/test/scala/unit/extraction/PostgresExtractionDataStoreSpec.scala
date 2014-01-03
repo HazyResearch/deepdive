@@ -24,6 +24,10 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
       some_array text[]);""").execute()
   }
 
+  after {
+    JdbcDataStore.close()
+  }
+
   describe("Querying") {
 
     def insertSampleData() = {

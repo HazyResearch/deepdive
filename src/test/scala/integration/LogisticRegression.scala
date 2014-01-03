@@ -94,6 +94,7 @@ class LogisticRegressionApp extends FunSpec {
       assert(numQuery == 2)
 
     }
+    JdbcDataStore.close()
   }
 
 
