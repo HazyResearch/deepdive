@@ -62,7 +62,7 @@ class TaskManager extends Actor with ActorLogging {
         case Success(x) => 
           scheduleTasks()
         case Failure(exception) => 
-          log.error(s"${task.id} Failed: ${exception}")
+          log.error(s"task=${task.id} Failed: ${exception}")
           self ! ForceShutdown
       }        
 
