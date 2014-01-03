@@ -29,21 +29,21 @@
             <div class="col-md-10 col-md-offset-1">
               <h1 id="deepdive_overview">DeepDive Overview</h1>
 
-<p>A DeepDive applications consists of several phases:</p>
+<p>A DeepDive applications generally consists of several phases:</p>
 
 <ol>
-<li>Data Preparation</li>
+<li><strong>Data Preparation</strong> - Set up the datastore and load initial data</li>
 
-<li>Feature Extraction</li>
+<li><strong>Feature Extraction</strong> - Write <em>extractors</em> to extract features from your data</li>
 
-<li>Probabilistic Inference</li>
+<li><strong>Probabilistic Inference</strong> - Write <em>inference rules</em> that describe how variables are related</li>
 
-<li>Calibration</li>
+<li><strong>Calibration</strong> - Iterate on your feature extractors and inference rules</li>
 </ol>
 
 <h3 id="1_data_preparation">1. Data Preparation</h3>
 
-<p>DeepDive assumes that you have initial data stored in a relational datastore, such as <a href="http://postgresql.org/">PostgreSQL</a>. We hope to support different types of SQL- and NoSQL datastores in the future. Loading initial data is not part of the DeepDive pipeline and should be done in a data preparation script. All examples that ship with DeepDive include a script called <code>prepare_data.sh</code> for this purpose.</p>
+<p>DeepDive assumes that you have initial data stored in a relational datastore, such as <a href="http://postgresql.org/">PostgreSQL</a>. We hope to support different types of SQL- and NoSQL datastores in the future, but right now you are limited to Postgres. Loading initial data is not part of the DeepDive pipeline and should be done in a data preparation script. For an example of how such a script may look like, take a look at the examples that ship with Deepdive.</p>
 
 <h3 id="2_feature_extraction">2. Feature Extraction</h3>
 
@@ -72,7 +72,7 @@
 </code></pre></div>
 <h3 id="3_probabilistic_inference">3. Probabilistic Inference</h3>
 
-<p>The goal of inference is to make predictions on a set of <em>variables</em>. For example, you may want to predict whether or not a person has cancer based on a number of symptoms (features). DeepDive uses <a href="http://en.wikipedia.org/wiki/Factor_graph">factor graphs</a> to perform probabilistic inference. On a high-level, a factor graph has two types of nodes:</p>
+<p>The goal of inference is to make predictions on a set of <em>variables</em>. For example, you may want to predict whether or not a person has cancer based on a number of symptoms (features). DeepDive uses <a href="http://en.wikipedia.org/wiki/Factor_graph">factor graphs</a>, a type of graphical model, to perform probabilistic inference. On a high-level, a factor graph has two types of nodes:</p>
 
 <ul>
 <li><em>Variables</em>, which are called <em>evidence variables</em> when their value is known, or <em>query varibles</em> when their value should be predicted. <em>Evidence variables</em> can be used as training data to learn weights for factors.</li>
@@ -80,12 +80,18 @@
 <li><em>Factors</em> define how variables in the graph are related to each other. Each factor can be connected to many variables, and uses a <em>factor function</em> to define the relationship between these variables. Each <em>factor function</em> has a <em>weight</em> associated with it, which describes how much influence the factor has on its variables in relative terms. The weight can be learned from training data, or assigned manually.</li>
 </ul>
 
-<p>While you don’t need to be initimately familiar with factor graphs to be able to use DeepDive, it is a good idea to have a basic understanding of how they work. A few good resources cound be found here:</p>
+<p>While you don’t need to be initimately familiar with factor graphs to be able to use DeepDive, it is a good idea to have a basic understanding of how they work. A few good resources can be found here:</p>
 
 <ul>
-<li><a href="http://www.comm.utoronto.ca/~frank/papers/KFL01.pdf">http://www.comm.utoronto.ca/~frank/papers/KFL01.pdf</a></li>
+<li><a href="http://www.comm.utoronto.ca/~frank/papers/KFL01.pdf">Factor Graphs and the Sum-Product Algorithm</a></li>
 
-<li><a href="http://www.robots.ox.ac.uk/~parg/mlrg/papers/factorgraphs.pdf">http://www.robots.ox.ac.uk/~parg/mlrg/papers/factorgraphs.pdf</a></li>
+<li><a href="http://cs.stanford.edu/people/chrismre/papers/elementary_sigmod.pdf">Towards High-Throughput Gibbs Sampling at Scale: A Study across Storage Managers</a></li>
+
+<li><a href="http://arxiv.org/pdf/1005.1934v1.pdf">Scalable Probabilistic Databases with Factor Graphs and MCMC</a></li>
+
+<li><a href="http://alex.smola.org/teaching/cmu2013-10-701x/pgm.html">Graphical Models Lecture at CMU</a></li>
+
+<li><a href="https://www.coursera.org/course/pgm">PGM class on Coursera</a></li>
 </ul>
 
 <p>DeepDive exposes a language to easily build factor graphs by writing <em>rules</em> that define the relationships between varibles.</p>

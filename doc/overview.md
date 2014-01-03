@@ -4,18 +4,16 @@ layout: default
 
 # DeepDive Overview
 
+A DeepDive applications generally consists of several phases:
 
-
-A DeepDive applications consists of several phases:
-
-1. Data Preparation
-2. Feature Extraction
-3. Probabilistic Inference
-4. Calibration
+1. **Data Preparation** - Set up the datastore and load initial data
+2. **Feature Extraction** - Write *extractors* to extract features from your data
+3. **Probabilistic Inference** - Write *inference rules* that describe how variables are related
+4. **Calibration** - Iterate on your feature extractors and inference rules
 
 ### 1. Data Preparation
 
-DeepDive assumes that you have initial data stored in a relational datastore, such as [PostgreSQL](http://postgresql.org/). We hope to support different types of SQL- and NoSQL datastores in the future. Loading initial data is not part of the DeepDive pipeline and should be done in a data preparation script. All examples that ship with DeepDive include a script called `prepare_data.sh` for this purpose.
+DeepDive assumes that you have initial data stored in a relational datastore, such as [PostgreSQL](http://postgresql.org/). We hope to support different types of SQL- and NoSQL datastores in the future, but right now you are limited to Postgres. Loading initial data is not part of the DeepDive pipeline and should be done in a data preparation script. For an example of how such a script may look like, take a look at the examples that ship with Deepdive.
 
 ### 2. Feature Extraction
 
@@ -48,15 +46,19 @@ for line in fileinput.input():
 
 ### 3. Probabilistic Inference
 
-The goal of inference is to make predictions on a set of *variables*. For example, you may want to predict whether or not a person has cancer based on a number of symptoms (features). DeepDive uses [factor graphs](http://en.wikipedia.org/wiki/Factor_graph) to perform probabilistic inference. On a high-level, a factor graph has two types of nodes:
+The goal of inference is to make predictions on a set of *variables*. For example, you may want to predict whether or not a person has cancer based on a number of symptoms (features). DeepDive uses [factor graphs](http://en.wikipedia.org/wiki/Factor_graph), a type of graphical model, to perform probabilistic inference. On a high-level, a factor graph has two types of nodes:
 
 - *Variables*, which are called *evidence variables* when their value is known, or *query varibles* when their value should be predicted. *Evidence variables* can be used as training data to learn weights for factors.
 - *Factors* define how variables in the graph are related to each other. Each factor can be connected to many variables, and uses a *factor function* to define the relationship between these variables. Each *factor function* has a *weight* associated with it, which describes how much influence the factor has on its variables in relative terms. The weight can be learned from training data, or assigned manually.
 
-While you don't need to be initimately familiar with factor graphs to be able to use DeepDive, it is a good idea to have a basic understanding of how they work. A few good resources cound be found here:
+While you don't need to be initimately familiar with factor graphs to be able to use DeepDive, it is a good idea to have a basic understanding of how they work. A few good resources can be found here:
 
-- [http://www.comm.utoronto.ca/~frank/papers/KFL01.pdf](http://www.comm.utoronto.ca/~frank/papers/KFL01.pdf)
-- [http://www.robots.ox.ac.uk/~parg/mlrg/papers/factorgraphs.pdf](http://www.robots.ox.ac.uk/~parg/mlrg/papers/factorgraphs.pdf)
+
+- [Factor Graphs and the Sum-Product Algorithm](http://www.comm.utoronto.ca/~frank/papers/KFL01.pdf)
+- [Towards High-Throughput Gibbs Sampling at Scale: A Study across Storage Managers](http://cs.stanford.edu/people/chrismre/papers/elementary_sigmod.pdf)
+- [Scalable Probabilistic Databases with Factor Graphs and MCMC](http://arxiv.org/pdf/1005.1934v1.pdf)
+- [Graphical Models Lecture at CMU](http://alex.smola.org/teaching/cmu2013-10-701x/pgm.html)
+- [PGM class on Coursera](https://www.coursera.org/course/pgm)
 
 DeepDive exposes a language to easily build factor graphs by writing *rules* that define the relationships between varibles. 
 
