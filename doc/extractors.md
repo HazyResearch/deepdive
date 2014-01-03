@@ -63,9 +63,12 @@ import json
 
 # For each input row
 for line in fileinput.input():
+  # Load the JSON object
   row = json.loads(line)
   if row["titles.title"] is not None:
+    # Split the sentence by space
     for word in set(row["titles.title"].split(" ")):
+      # Output the word
       print json.dumps({
         "title_id": int(row["titles.id"]), 
         "word": word

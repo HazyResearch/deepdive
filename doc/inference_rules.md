@@ -12,9 +12,18 @@ Inference rules describe how to [factor graph]() is constructed. Each rule, or *
 
 ### Factor Input Query
 
-The input query of a factor combines all variables that a factor is using. It usually takes the form of a join query using feature relations produced extractors. The input query result must contain all variable attributes that are used in the factor functions.
+The input query of a factor combines all variables that a factor is using. It usually takes the form of a join query using feature relations produced extractors.
 
     someFactor.input_query: "SELECT people.*, friends.* FROM people INNER JOIN friends ON people.id = friends.person_id"
+
+There are a couple of caveats when writing input queries for factors:
+
+- The query result must contain all variable attributes that are used in your factor function. For example, if you are using `people.has_cancer` in your factor function, then an attribute called `people.has_cancer` must be part of the query result.
+- The query result must contain a *unique identifier* for each relation. DeepDive uses this identifier to assign unique variable ids. For example, if you are using an RDBMS like PostgreSQL and you have a `people.has_cancer` variable in your factor function, then `people.id` must also be part of the query result. 
+
+Refer to the database-specific guides to learn about more caveats:
+
+- [Using DeepDive with PostgreSQL](postgresql.html) 
 
 ### Factor Function
 

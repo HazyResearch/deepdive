@@ -17,7 +17,7 @@
         <div class="container">
           <row>
             <div class="col-md-10 col-md-offset-1">
-              <a href="" class="deepdive-logo">DeepDive Logo comes here</a> 
+              <a href="/" class="deepdive-logo">DeepDive Logo comes here</a> 
             </div>
           </row>
         </div>
@@ -81,9 +81,12 @@ wordsExtractor.output_batch_size: 5000</code></pre>
 
 <span class='c'># For each input row</span>
 <span class='k'>for</span> <span class='n'>line</span> <span class='ow'>in</span> <span class='n'>fileinput</span><span class='o'>.</span><span class='n'>input</span><span class='p'>():</span>
+  <span class='c'># Load the JSON object</span>
   <span class='n'>row</span> <span class='o'>=</span> <span class='n'>json</span><span class='o'>.</span><span class='n'>loads</span><span class='p'>(</span><span class='n'>line</span><span class='p'>)</span>
   <span class='k'>if</span> <span class='n'>row</span><span class='p'>[</span><span class='s'>&quot;titles.title&quot;</span><span class='p'>]</span> <span class='ow'>is</span> <span class='ow'>not</span> <span class='bp'>None</span><span class='p'>:</span>
+    <span class='c'># Split the sentence by space</span>
     <span class='k'>for</span> <span class='n'>word</span> <span class='ow'>in</span> <span class='nb'>set</span><span class='p'>(</span><span class='n'>row</span><span class='p'>[</span><span class='s'>&quot;titles.title&quot;</span><span class='p'>]</span><span class='o'>.</span><span class='n'>split</span><span class='p'>(</span><span class='s'>&quot; &quot;</span><span class='p'>)):</span>
+      <span class='c'># Output the word</span>
       <span class='k'>print</span> <span class='n'>json</span><span class='o'>.</span><span class='n'>dumps</span><span class='p'>({</span>
         <span class='s'>&quot;title_id&quot;</span><span class='p'>:</span> <span class='nb'>int</span><span class='p'>(</span><span class='n'>row</span><span class='p'>[</span><span class='s'>&quot;titles.id&quot;</span><span class='p'>]),</span> 
         <span class='s'>&quot;word&quot;</span><span class='p'>:</span> <span class='n'>word</span>

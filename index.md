@@ -29,6 +29,10 @@ Learn more about DeepDive's features:
 - [Calibration](doc/calibration.html)
 - [Performance tuning](doc/performance.html)
 
-If you want to contribute to DeepDive:
+Learn about using various databases with DeepDive:
+
+- [Using PostgreSQL with DeepDive](doc/postgresql.html)
+
+Contribute to DeepDive:
 
 - [Developer guide](doc/developer.html)

@@ -17,7 +17,7 @@
         <div class="container">
           <row>
             <div class="col-md-10 col-md-offset-1">
-              <a href="" class="deepdive-logo">DeepDive Logo comes here</a> 
+              <a href="/" class="deepdive-logo">DeepDive Logo comes here</a> 
             </div>
           </row>
         </div>
@@ -41,9 +41,23 @@
 
 <h3 id="factor_input_query">Factor Input Query</h3>
 
-<p>The input query of a factor combines all variables that a factor is using. It usually takes the form of a join query using feature relations produced extractors. The input query result must contain all variable attributes that are used in the factor functions.</p>
+<p>The input query of a factor combines all variables that a factor is using. It usually takes the form of a join query using feature relations produced extractors.</p>
 
 <pre><code>someFactor.input_query: &quot;SELECT people.*, friends.* FROM people INNER JOIN friends ON people.id = friends.person_id&quot;</code></pre>
+
+<p>There are a couple of caveats when writing input queries for factors:</p>
+
+<ul>
+<li>The query result must contain all variable attributes that are used in your factor function. For example, if you are using <code>people.has_cancer</code> in your factor function, then an attribute called <code>people.has_cancer</code> must be part of the query result.</li>
+
+<li>The query result must contain a <em>unique identifier</em> for each relation. DeepDive uses this identifier to assign unique variable ids. For example, if you are using an RDBMS like PostgreSQL and you have a <code>people.has_cancer</code> variable in your factor function, then <code>people.id</code> must also be part of the query result.</li>
+</ul>
+
+<p>Refer to the database-specific guides to learn about more caveats:</p>
+
+<ul>
+<li><a href="postgresql.html">Using DeepDive with PostgreSQL</a></li>
+</ul>
 
 <h3 id="factor_function">Factor Function</h3>
 
