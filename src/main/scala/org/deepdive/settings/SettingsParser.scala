@@ -12,23 +12,14 @@ object SettingsParser {
     val config = rootConfig.getConfig("deepdive")
 
     // Connection settings
-    val connection = loadConnection(config)
     val schemaSettings = loadSchemaSettings(config)
     val extractors = loadExtractionSettings(config)
     val inferenceSettings = loadInferenceSettings(config)
     val calibrationSettings = loadCalibrationSettings(config)
     val samplerSettings = loadSamplerSettings(config)
 
-    Settings(connection, schemaSettings, extractors, inferenceSettings, 
+    Settings(schemaSettings, extractors, inferenceSettings, 
       calibrationSettings, samplerSettings)
-  }
-
-  private def loadConnection(config: Config) : Connection = {
-    Connection(
-      config.getString("connection.url"),
-      config.getString("connection.user"),
-      config.getString("connection.password")
-    )
   }
 
   private def loadSchemaSettings(config: Config) : SchemaSettings = {

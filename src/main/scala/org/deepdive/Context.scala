@@ -16,9 +16,9 @@ object Context extends Logging {
   lazy val system = ActorSystem("deepdive")
 
   def shutdown(exitValue: Int = 0) {
+    JdbcDataStore.close()
     system.shutdown()
     system.awaitTermination()
-    PostgresDataStore.close()
   }
 
 }

@@ -48,6 +48,7 @@ trait ExtractionManager extends Actor with ActorLogging {
 
   override def preStart(){
     log.info("starting")
+    dataStore.init()
   }
 
   def receive = {

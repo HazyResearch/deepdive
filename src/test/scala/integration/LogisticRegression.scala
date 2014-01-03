@@ -5,14 +5,14 @@ import com.typesafe.config._
 import org.deepdive.test._
 import org.deepdive.Context
 import org.deepdive.Pipeline
-import org.deepdive.datastore.PostgresDataStore
+import org.deepdive.datastore.{PostgresDataStore, JdbcDataStore}
 import org.scalatest._
 import scalikejdbc.ConnectionPool
 
 class LogisticRegressionApp extends FunSpec {
 
   def prepareData() {
-    PostgresTestDataStore.init()
+    JdbcDataStore.init(ConfigFactory.load)
     PostgresDataStore.withConnection { implicit conn =>
        SQL("drop schema if exists public cascade; create schema public;").execute()
        SQL("create table titles_tmp(id bigserial primary key, title text, has_extractions boolean);").execute()
@@ -25,16 +25,11 @@ class LogisticRegressionApp extends FunSpec {
           ('I am title 1', NULL), ('I am title 2', NULL), ('I am another Title', true)
         """).execute()
     }
+    JdbcDataStore.close()
   }
 
   def getConfig = {
     s"""
-      deepdive.connection: {
-        url: "${PostgresTestDataStore.databaseUrl}"
-        user: "${PostgresTestDataStore.databaseUser}"
-        password: ""
-      }
-
       deepdive.schema.variables {
         word_presences.is_present: Boolean
         titles.has_extractions: Boolean
@@ -65,7 +60,7 @@ class LogisticRegressionApp extends FunSpec {
     val config = ConfigFactory.parseString(getConfig).withFallback(ConfigFactory.load)
     Pipeline.run(config)
     // Make sure the data is in the database
-    PostgresTestDataStore.init()
+    JdbcDataStore.init(ConfigFactory.load)
     PostgresDataStore.withConnection { implicit conn =>
      
       val extractionResult = SQL("SELECT * FROM word_presences;")().map { row =>
@@ -99,6 +94,7 @@ class LogisticRegressionApp extends FunSpec {
       assert(numQuery == 2)
 
     }
+    JdbcDataStore.close()
   }
 
 

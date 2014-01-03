@@ -1,7 +1,7 @@
 package org.deepdive.test.unit
 
 import anorm._
-import org.deepdive.datastore.PostgresDataStore
+import org.deepdive.datastore._
 import org.deepdive.extraction._
 import org.deepdive.extraction.datastore._
 import org.deepdive.test._
@@ -16,11 +16,43 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
   lazy implicit val connection = PostgresDataStore.borrowConnection()
 
   before {
-    PostgresTestDataStore.init()
+    JdbcDataStore.init()
+    dataStore.init()
     SQL("drop schema if exists public cascade; create schema public;").execute()
     SQL("""create table datatype_test(id bigserial primary key, key integer, some_text text, 
       some_boolean boolean, some_double double precision, some_null boolean, 
       some_array text[]);""").execute()
+  }
+
+  after {
+    JdbcDataStore.close()
+  }
+
+  describe("Querying") {
+
+    def insertSampleData() = {
+      SQL("""insert into datatype_test(key) 
+        VALUES (1), (2), (3), (4)""").execute()
+    }
+
+    it("should work for simple attributes") {
+      insertSampleData()
+      val result = dataStore.queryAsMap("SELECT key from datatype_test;").toList
+      assert(result.head.contains("datatype_test.key"))
+    }
+
+    it("should work for alaised attributes") {
+      insertSampleData()
+      val result = dataStore.queryAsMap("SELECT key AS \"d1.key2\" from datatype_test;").toList
+      assert(result.head.contains("datatype_test.d1.key2"))
+    }
+
+    it("should work for aggregated attributes") {
+      insertSampleData()
+      val result = dataStore.queryAsMap("SELECT COUNT(*) AS num from datatype_test GROUP BY key").toList
+      assert(result.head.contains(".num"))
+    }
+
   }
 
   describe("Serializing to JSON") {  
