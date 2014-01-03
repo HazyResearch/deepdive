@@ -1,10 +1,11 @@
 package org.deepdive.settings
 
+import org.deepdive.Logging
 import com.typesafe.config._
 import scala.collection.JavaConversions._
 import scala.util.Try
 
-object SettingsParser {
+object SettingsParser extends Logging {
 
    def loadFromConfig(rootConfig: Config) : Settings = {
     // Validations makes sure that the supplied config includes all the required settings.
@@ -23,22 +24,26 @@ object SettingsParser {
   }
 
   private def loadSchemaSettings(config: Config) : SchemaSettings = {
-    Try(config.getConfig("schema")).map { schemaConfig =>
-      val variableConfig = schemaConfig.getConfig("variables")
-      val relations = variableConfig.root.keySet.toList
-      val relationsWithConfig = relations.zip(relations.map(variableConfig.getConfig))
-      val variableMap = relationsWithConfig.flatMap { case(relation, relationConf) =>
-        relationConf.root.keySet.map { attributeName =>
-          Tuple2(s"${relation}.${attributeName}", 
-            relationConf.getString(attributeName))
-        }
-      }.toMap
-      SchemaSettings(variableMap)
-    }.getOrElse(SchemaSettings(Map()))
+    val schemaConfig = Try(config.getConfig("schema")).getOrElse {
+      log.warning("No schema defined.")
+      return SchemaSettings(Nil.toMap)
+    }
+    val variableConfig = schemaConfig.getConfig("variables")
+    val relations = variableConfig.root.keySet.toList
+    val relationsWithConfig = relations.zip(relations.map(variableConfig.getConfig))
+    val variableMap = relationsWithConfig.flatMap { case(relation, relationConf) =>
+      relationConf.root.keySet.map { attributeName =>
+        Tuple2(s"${relation}.${attributeName}", 
+          relationConf.getString(attributeName))
+      }
+    }.toMap
+    SchemaSettings(variableMap)
   }
 
   private def loadExtractionSettings(config: Config) : ExtractionSettings = {
-    val extractionConfig = config.getConfig("extraction")
+    val extractionConfig = Try(config.getConfig("extraction")).getOrElse {
+      return ExtractionSettings(0l, Nil) 
+    }
     val initialVariableId = Try(extractionConfig.getLong("initial_vid")).getOrElse(0l)
     val extractors = extractionConfig.getObject("extractors").keySet().map { extractorName =>
       val extractorConfig = extractionConfig.getConfig(s"extractors.$extractorName")
@@ -56,28 +61,37 @@ object SettingsParser {
   }
 
   private def loadInferenceSettings(config: Config): InferenceSettings = {
-    Try(config.getConfig("inference")).map { inferenceConfig =>
-      val batchSize = Try(inferenceConfig.getInt("batch_size")).toOption
-      val factors = Try(inferenceConfig.getObject("factors").keySet().map { factorName =>
-        val factorConfig = inferenceConfig.getConfig(s"factors.$factorName")
-        val factorInputQuery = factorConfig.getString("input_query")
-        val factorFunction = FactorFunctionParser.parse(
-          FactorFunctionParser.factorFunc, factorConfig.getString("function"))
-        val factorWeight = FactorWeightParser.parse(
-          FactorWeightParser.factorWeight, factorConfig.getString("weight"))
-        val factorWeightPrefix = Try(factorConfig.getString("weightPrefix")).getOrElse(factorName)
-        FactorDesc(factorName, factorInputQuery, factorFunction.get, 
-          factorWeight.get, factorWeightPrefix)
-      }.toList).getOrElse(Nil)
-      InferenceSettings(factors, batchSize)
-    }.getOrElse(InferenceSettings(Nil, None))
+    val inferenceConfig = Try(config.getConfig("inference")).getOrElse {
+      return InferenceSettings(Nil, None)
+    }
+    val batchSize = Try(inferenceConfig.getInt("batch_size")).toOption
+    val factorConfig = Try(inferenceConfig.getObject("factors")).getOrElse {
+      return InferenceSettings(Nil, batchSize)
+    }
+    val factors = factorConfig.keySet().map { factorName =>
+      val factorConfig = inferenceConfig.getConfig(s"factors.$factorName")
+      val factorInputQuery = factorConfig.getString("input_query")
+      val factorFunction = FactorFunctionParser.parse(
+        FactorFunctionParser.factorFunc, factorConfig.getString("function")).getOrElse {
+        throw new RuntimeException(s"parsing ${factorConfig.getString("function")} failed")
+      }
+      val factorWeight = FactorWeightParser.parse(
+        FactorWeightParser.factorWeight, factorConfig.getString("weight")).getOrElse {
+        throw new RuntimeException(s"parsing ${factorConfig.getString("weight")} failed")
+      }
+      val factorWeightPrefix = Try(factorConfig.getString("weightPrefix")).getOrElse(factorName)
+      FactorDesc(factorName, factorInputQuery, factorFunction, 
+          factorWeight, factorWeightPrefix)
+    }.toList
+    InferenceSettings(factors, batchSize)
   }
 
   private def loadCalibrationSettings(config: Config) : CalibrationSettings = {
-    Try(config.getConfig("calibration")).map { calibrationConfig =>
-      val holdoutFraction = Try(calibrationConfig.getDouble("holdout_fraction")).getOrElse(0.0)
-      CalibrationSettings(holdoutFraction)
-    }.getOrElse(CalibrationSettings(0.0))
+    val calibrationConfig = Try(config.getConfig("calibration")).getOrElse { 
+      return CalibrationSettings(0.0)
+    }
+    val holdoutFraction = Try(calibrationConfig.getDouble("holdout_fraction")).getOrElse(0.0)
+    CalibrationSettings(holdoutFraction)
   }
 
   private def loadSamplerSettings(config: Config) : SamplerSettings = {
