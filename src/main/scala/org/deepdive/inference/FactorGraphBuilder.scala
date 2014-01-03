@@ -48,9 +48,11 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
   def receive = {
     case AddFactorsAndVariables(factorDesc, holdoutFraction, batchSize) =>
       log.info(s"Processing factor_name=${factorDesc.name} with holdout_faction=${holdoutFraction}")
-      // TODO: Failure handling
-      addFactorsAndVariables(factorDesc, holdoutFraction, batchSize)
-      sender ! Success()
+      Try(addFactorsAndVariables(factorDesc, holdoutFraction, batchSize)) match {
+        case Success(x) => sender ! x
+        case Failure(exception) => 
+          sender ! akka.actor.Status.Failure(exception)
+      }
     case _ => 
   }
 
@@ -88,7 +90,7 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
     val variableColumns = factorDesc.func.variables.toList
     val variableLocalIds = variableColumns.map { varColumn =>
       Try(inferenceDataStore.getLocalVariableIds(rowMap, varColumn)).getOrElse {
-        val errorStr = s"Could not find ${varColumn}. Available columns: ${rowMap.keys.mkString(", ")}" 
+        val errorStr = s"Could not find ${varColumn} or ${varColumn.relation}.id. Available columns: ${rowMap.keys.mkString(", ")}." 
         log.error(errorStr)
         throw new RuntimeException(errorStr)
       }

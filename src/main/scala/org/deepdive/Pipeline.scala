@@ -67,9 +67,9 @@ object Pipeline extends Logging {
     val calibrationTask = Task("calibration_plots", List("inference"), 
       InferenceManager.WriteCalibrationData, inferenceManager)
     
-    val reportingTask = Task("report", List("calibration_plots"), Profiler.PrintReports, profiler)
+    val reportingTask = Task("report", List("calibration_plots"), Profiler.PrintReports, profiler, false)
 
-    val terminationTask = Task("shutdown", List("report"), "shutdown", taskManager)
+    val terminationTask = Task("shutdown", List("report"), TaskManager.Shutdown, taskManager, false)
 
     val allTasks = extractionTasks ++ factorTasks ++ 
       List(inferenceTask, calibrationTask, reportingTask, terminationTask) 

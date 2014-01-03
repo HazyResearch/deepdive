@@ -1,6 +1,7 @@
 package org.deepdive.inference
 
 import akka.actor._
+import akka.actor.SupervisorStrategy._
 import akka.pattern.{ask, pipe}
 import akka.util.Timeout
 import java.io.File
@@ -39,19 +40,23 @@ trait InferenceManager extends Actor with ActorLogging {
 
   override def preStart() {
     log.info("Starting")
+    context.watch(factorGraphBuilder)
     inferenceDataStore.init()
+  }
+
+  override val supervisorStrategy = OneForOneStrategy() {
+    case _ : Exception => Escalate
   }
 
   def receive = {
     case InferenceManager.FactorTask(factorDesc, holdoutFraction, batchSize) =>
       val _sender = sender
-      val result = factorGraphBuilder ? FactorGraphBuilder.AddFactorsAndVariables(
-        factorDesc, holdoutFraction, batchSize) 
-      result pipeTo _sender
+      factorGraphBuilder ? FactorGraphBuilder.AddFactorsAndVariables(
+        factorDesc, holdoutFraction, batchSize) pipeTo _sender
     case InferenceManager.RunInference(samplerJavaArgs, samplerOptions) =>
       val _sender = sender
       val result = runInference(samplerJavaArgs, samplerOptions)
-      result onComplete { maybeResult => _sender ! maybeResult } 
+      result pipeTo _sender
     case InferenceManager.WriteCalibrationData =>
       val _sender = sender
       log.info("writing calibration data")

@@ -51,7 +51,7 @@ class InferenceManagerSpec(_system: ActorSystem) extends TestKit(_system) with F
       actor ! InferenceManager.RunInference("javaArgs", "samplerOptions")
       sampler.expectMsgClass(classOf[Sampler.Run])
       sampler.reply("Done")
-      expectMsg(Success())
+      expectMsg(())
     }
   }
 
