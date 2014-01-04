@@ -20,6 +20,7 @@ object ExtractionManager {
   
   class PostgresExtractionManager(val parallelism: Int) extends ExtractionManager
     with PostgresExtractionDataStoreComponent
+  case object ScheduleTasks
 
   // Messages 
   sealed trait Message
@@ -43,8 +44,7 @@ trait ExtractionManager extends Actor with ActorLogging {
   import context.dispatcher
   
   // Keeps track of the tasks
-  val taskQueue = ArrayBuffer[ExtractionTask]()
-  val listeners = Map[ExtractionTask, ActorRef]()
+  val taskQueue = Map[ExtractionTask, ActorRef]()
 
   override def preStart(){
     log.info("starting")
@@ -54,15 +54,12 @@ trait ExtractionManager extends Actor with ActorLogging {
   def receive = {
     case task : ExtractionTask =>
       log.info(s"Adding task_name=${task.extractor.name}")
-      taskQueue += task
-      listeners += Tuple2(task, sender)
-      scheduleTasks()
-    case ExtractionTaskResult(task, result) =>
-      log.info(s"Completed task_name=${task.extractor.name}")
-      listeners.get(task).foreach(_ ! result)
+      taskQueue += Tuple2(task, sender)
+      self ! ScheduleTasks
+    case ScheduleTasks =>
       scheduleTasks()
     case Terminated(worker) =>
-      scheduleTasks()
+      self ! ScheduleTasks
   }
 
   // Schedules new taks based on the queue and capacity
@@ -71,10 +68,10 @@ trait ExtractionManager extends Actor with ActorLogging {
     // How many more tasks can we execute in parallel right now?
     val capacity = parallelism - context.children.size
     
-    taskQueue.take(capacity).foreach { task =>
+    taskQueue.take(capacity).foreach { case(task, sender) =>
       log.info(s"executing extractorName=${task.extractor.name}")
       val newWorker = context.actorOf(extractorExecutorProps)
-      val result = newWorker ? ExtractorExecutor.ExecuteTask(task) pipeTo self
+      val result = newWorker ? ExtractorExecutor.ExecuteTask(task) pipeTo sender
       context.watch(newWorker)
       taskQueue -= task
     }
