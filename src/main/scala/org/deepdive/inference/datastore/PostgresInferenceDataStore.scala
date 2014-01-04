@@ -184,7 +184,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       SQL(s"""create or replace view ${mappedVeightsView} AS
         SELECT weights.*, inference_result_weights.weight FROM
         weights JOIN inference_result_weights ON weights.id = inference_result_weights.id
-        ORDER BY weight DESC""").execute()
+        ORDER BY abs(weight) DESC""").execute()
       
     }
 
