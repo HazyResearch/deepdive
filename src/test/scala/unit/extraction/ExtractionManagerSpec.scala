@@ -16,7 +16,7 @@ object ExtractionManagerSpec {
       def receive = {
         case ExtractorExecutor.ExecuteTask(task) =>
           Thread.sleep(100) 
-          sender ! ExtractionTaskResult(task, Success())
+          sender ! ExtractionTaskResult(task.extractor.name)
           context.stop(self)
       }
     })

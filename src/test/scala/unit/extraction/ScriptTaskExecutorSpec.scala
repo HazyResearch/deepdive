@@ -30,6 +30,18 @@ class ScriptTaskExecutorSpec extends FunSpec {
       assert(result.rows.toBlockingObservable.toList.flatten.size == 1000)
     }
 
+    it("should work when the extractor fails") {
+      val failingExtractorFile = getClass.getResource("/failing_extractor.py").getFile
+      val task = new ExtractionTask(Extractor("testExtractor", "relation1", 
+        "relation1", failingExtractorFile, 4, 100, 100, Nil.toSet))
+      val data = (1 to 1000).toList.map(i => s"""{"id":$i}""".asJson.asJsObject).iterator
+            val executor = new ScriptTaskExecutor(task, data)
+      val result = executor.run()
+      intercept[RuntimeException] {
+        assert(result.rows.toBlockingObservable.toList.size == 10)
+      }
+    }
+
 
   }
 

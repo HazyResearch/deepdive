@@ -33,13 +33,14 @@ class ScriptTaskExecutor(task: ExtractionTask, inputData: Iterator[JsObject]) ex
     val inputSubjects = (1 to task.extractor.parallelism).map ( i => ReplaySubject[JsObject]() )
 
     // Build process descriptions based on different data inputs
-    val outputSubjects = inputSubjects.zipWithIndex.map { case(inputSubject, i) =>
+    val (processes, outputSubjects) = inputSubjects.zipWithIndex.map { case(inputSubject, i) =>
       val subjectOut = ReplaySubject[JsObject]()
       // Build and run the process
-      val process = buildProcessIO(s"${task.extractor.name}[$i]", subjectOut, inputSubject)
-      task.extractor.udf run(process)
-      subjectOut
-    }
+      val processBuilder = buildProcessIO(s"${task.extractor.name}[$i]", subjectOut, inputSubject)
+      val process = task.extractor.udf run(processBuilder)
+      (process, subjectOut)
+    }.unzip
+
 
     // We merge all output streams into one stream
     val tmpObs = JObservable.from(outputSubjects.map(_.asJavaObservable).toIterable.asJava)
@@ -55,6 +56,17 @@ class ScriptTaskExecutor(task: ExtractionTask, inputData: Iterator[JsObject]) ex
       }
       inputSubjects.foreach { x => x.onCompleted() } 
     }  
+
+    // We wait for the process on a separate thread
+    processes.zip(outputSubjects).foreach { case(process, subj) =>
+      Future {
+        process.exitValue() match {
+          case 0 =>  subj.onCompleted()
+          case x => subj.onError(new RuntimeException(s"process had exit value $x"))
+        }
+      }
+    }
+
 
     ExtractionResult(mergedObservables.buffer(task.extractor.outputBatchSize))
   }
@@ -91,9 +103,11 @@ class ScriptTaskExecutor(task: ExtractionTask, inputData: Iterator[JsObject]) ex
         JsObject()
       }
     }
-
     // We create an observable from the stream and subscribe the output to it
-    JObservable.from(jsonIterable.toIterable.asJava).subscribe(subject)
+    // We only handle the onNext event. The onComplete is handled when the process exists.
+    Observable(JObservable.from(jsonIterable.toIterable.asJava)).subscribe(
+      input => subject.onNext(input)
+    )
     out.close()
     log.debug(s"${name} done")   
   }

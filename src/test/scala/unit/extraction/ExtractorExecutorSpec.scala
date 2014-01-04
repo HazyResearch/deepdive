@@ -24,8 +24,19 @@ class ExtractorExecutorSpec extends FunSpec with BeforeAndAfter
       val task = new ExtractionTask(Extractor("testExtractor", "relation1", 
         "relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet))
       val result = testActor.doExecute(task)
-      assert(result.result.isSuccess)
+      assert(result.isSuccess)
       assert(dataStore.data("relation1").size == 2)
+    }
+
+    it("should return failure when the task fails") {
+      val failingExtractorFile = getClass.getResource("/failing_extractor.py").getFile
+      val testActor = TestActorRef[ExtractorExecutor](Props(classOf[ExtractorExecutor], dataStore)).underlyingActor
+      // Add test record to the data store
+      dataStore.write(List("""{"id": 5}""".asJson.asJsObject), "relation1")
+      val task = new ExtractionTask(Extractor("testExtractor", "relation1", 
+        "relation1", failingExtractorFile, 1, 1000, 1000, Nil.toSet))
+      val result = testActor.doExecute(task)
+      assert(result.isFailure)
     }
 
   }
