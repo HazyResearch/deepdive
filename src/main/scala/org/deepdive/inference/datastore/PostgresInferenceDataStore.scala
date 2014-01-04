@@ -169,7 +169,8 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
           ${relationName} JOIN
             (SELECT mir.last_sample, mir.probability, mir.id, mir.mapping_id 
             FROM mapped_inference_result mir 
-            WHERE mapping_relation = '${relationName}' AND mapping_column = '${columnName}') 
+            WHERE mapping_relation = '${relationName}' AND mapping_column = '${columnName}'
+            ORDER BY mir.probability DESC) 
           mir ON ${relationName}.id = mir.mapping_id""").execute()
       }
 
