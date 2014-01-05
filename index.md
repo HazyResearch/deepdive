@@ -5,7 +5,7 @@ root: "."
 
 ### What is DeepDive all about?
 
-DeepDive is a new type of system that enables developers to to analyze data on a deeper level than ever before. DeepDive is a *trained* system, which means that it uses Machine Learning techniques to incorporate domain knowledge and user feedback to improve the quality of the analysis. DeepDive is differnet from traditional systems in several ways:
+DeepDive is a new type of system that enables developers to to analyze data on a deeper level than ever before. DeepDive is a *trained* system, which means that it uses Machine Learning techniques to incorporate domain knowledge and user feedback to improve the quality of the analysis. DeepDive is different from traditional systems in several ways:
 
 
 - Traditional systems assume that data is perfectly accurate. In contrast, DeepDive is aware that useful data is often noisy and imprecise: Names are misspelled, natural language is ambiguous, and human errors exist. To deal with such imprecision, DeepDive uses a principled approach based on probability theory. DeepDive produces [calibrated](doc/calibration.html) probabilities for every fact or mapping it produces. For example, if DeepDive produces a fact with probability 0.9 it means it is 90% likely to be correct.
@@ -19,7 +19,7 @@ Over the last few years, we have built applications that [scale to the Web](http
 
 In research papers, we have demonstrated DeepDive on financial, oil and gas documents, and NMR data. For example, we [have shown](http://cs.stanford.edu/people/chrismre/papers/jointable-acl.pdf) that DeepDive is able to understand tabular data by reading the text of the reports. We are using DeepDive to support our own research into how knowledge can be used to build the next generation of data processing systems.
 
-We are posting the complete code for our examples on this site. We are workin on other more domains with even more collaborators in this year. Stay tuned, and get in [touch with us]() to talk about interesting projects.
+We are posting the complete code for our examples on this site. We are working on other more domains with even more collaborators in this year. Stay tuned, and get in [touch with us]() to talk about interesting projects.
 
 
 
