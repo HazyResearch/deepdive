@@ -51,7 +51,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       weights.clear()
 
       // weights(id, initial_value, is_fixed, description)
-      SQL("""drop table if exists weights; 
+      SQL("""drop table if exists weights CASCADE; 
         create table weights(id bigint primary key, 
         initial_value double precision, is_fixed boolean, description text);""").execute()
       
@@ -169,7 +169,8 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
           ${relationName} JOIN
             (SELECT mir.last_sample, mir.probability, mir.id, mir.mapping_id 
             FROM mapped_inference_result mir 
-            WHERE mapping_relation = '${relationName}' AND mapping_column = '${columnName}') 
+            WHERE mapping_relation = '${relationName}' AND mapping_column = '${columnName}'
+            ORDER BY mir.probability DESC) 
           mir ON ${relationName}.id = mir.mapping_id""").execute()
       }
 
@@ -183,7 +184,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       SQL(s"""create or replace view ${mappedVeightsView} AS
         SELECT weights.*, inference_result_weights.weight FROM
         weights JOIN inference_result_weights ON weights.id = inference_result_weights.id
-        ORDER BY weight DESC""").execute()
+        ORDER BY abs(weight) DESC""").execute()
       
     }
 

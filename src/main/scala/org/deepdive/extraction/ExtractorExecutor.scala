@@ -1,7 +1,6 @@
 package org.deepdive.extraction
 
-import anorm._
-import akka.actor.{Actor, ActorRef, Props, ActorLogging}
+import akka.actor._
 import org.deepdive.settings._
 import org.deepdive.Context
 import org.deepdive.datastore.{PostgresDataStore => DB}
@@ -38,17 +37,20 @@ class ExtractorExecutor(dataStore: ExtractionDataStoreComponent#ExtractionDataSt
       log.info(s"Executing $task")
       val taskResult = doExecute(task)
       log.info(s"Finished executing task_name=${task.extractor.name}")
-      context.parent ! taskResult
+      taskResult match {
+        case Success(x) => sender ! x
+        case Failure(ex) => sender ! Status.Failure(ex)
+      }
       context.stop(self)
     case _ =>
       log.warning("Huh?")
   }
 
-  def doExecute(task: ExtractionTask) : ExtractionTaskResult = {
+  def doExecute(task: ExtractionTask) : Try[ExtractionTaskResult] = {
 
     val extractorInput = Try(dataStore.queryAsJson(task.extractor.inputQuery)).getOrElse {
       log.warning(s"No results returned by extractor=${task.extractor.name}")
-      return ExtractionTaskResult(task, Success[Unit]())
+      return Success(ExtractionTaskResult(task.extractor.name))
     }
 
     val executor = new ScriptTaskExecutor(task, extractorInput)
@@ -69,11 +71,14 @@ class ExtractorExecutor(dataStore: ExtractionDataStoreComponent#ExtractionDataSt
 
     // Handle the results of writing back to the database.
     // Block until all results are written
-    val isDone = Promise[ExtractionTaskResult]()
+    val isDone = Promise[Try[ExtractionTaskResult]]()
     writtenResults.subscribe(
       rowBatch => {},
-      exception => log.error(exception.toString),
-      () => isDone.success(ExtractionTaskResult(task, Success[Unit]()))
+      exception => {
+        log.error(exception.toString)
+        isDone.success(Failure(exception))
+      },  
+      () => isDone.success(Success(ExtractionTaskResult(task.extractor.name)))
     )
     Await.result(isDone.future, Duration.Inf)
   }

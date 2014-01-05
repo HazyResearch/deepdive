@@ -8,20 +8,7 @@ import org.scalatest._
 class SettingsParserSpec extends FunSpec with PrivateMethodTester {
   
   val defaultConfig = ConfigFactory.load().getConfig("deepdive")
-
-  describe("Parsing Connection Settings") {
-    it ("should work") {
-      val config = ConfigFactory.parseString("""
-      connection.url: "jdbc:postgresql://localhost/deepdive_test"
-      connection.user: "deepdive"
-      connection.password: "password"
-      """).withFallback(defaultConfig)
-      val loadConnection = PrivateMethod[Connection]('loadConnection)
-      val result = SettingsParser invokePrivate loadConnection(config)
-      assert(result === Connection("jdbc:postgresql://localhost/deepdive_test", "deepdive", "password"))
-    }
-  }
-
+  
   describe("Parsing Schema Settings") {
     it ("should work"){
       val config = ConfigFactory.parseString("""
@@ -59,6 +46,7 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester {
   }
 
   describe("Parsing Inference Settings") {
+    
     it ("should work"){
       val config = ConfigFactory.parseString("""
       inference.batch_size: 100000
@@ -73,6 +61,19 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester {
         ImplyFactorFunction(FactorFunctionVariable("a", "is_present", false), Nil), 
         UnknownFactorWeight(Nil), "factor1")), Option(100000)))
     }
+
+    it("should throw an exception when there's a syntax error") {
+      val config = ConfigFactory.parseString("""
+      inference.factors.factor1.input_query = "SELECT a.*, b.* FROM a INNER JOIN b ON a.document_id = b.id"
+      inference.factors.factor1.function: ":)))"
+      inference.factors.factor1.weight: "?"
+      """).withFallback(defaultConfig)
+      val loadInferenceSettings = PrivateMethod[InferenceSettings]('loadInferenceSettings)
+      intercept[RuntimeException] {
+        val result = SettingsParser invokePrivate loadInferenceSettings(config)
+      }
+    }
+
   }
 
   describe("Parsing Calibration Settings") {

@@ -12,7 +12,6 @@ object Settings {
 
 trait SettingsImpl {
 
-  def connection : Connection
   def schemaSettings : SchemaSettings
   def extractionSettings : ExtractionSettings
   def inferenceSettings : InferenceSettings
@@ -25,8 +24,7 @@ trait SettingsImpl {
 
 }
 
-case class Settings(connection: Connection, 
-  schemaSettings : SchemaSettings,
+case class Settings(schemaSettings : SchemaSettings,
   extractionSettings: ExtractionSettings,
   inferenceSettings: InferenceSettings, 
   calibrationSettings: CalibrationSettings, 

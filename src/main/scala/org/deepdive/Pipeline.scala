@@ -5,7 +5,7 @@ import akka.util.Timeout
 import com.typesafe.config._
 import java.io.File
 import org.deepdive.settings.{Settings}
-import org.deepdive.datastore.{PostgresDataStore}
+import org.deepdive.datastore.{JdbcDataStore}
 import org.deepdive.extraction.{ExtractionManager, ExtractionTask, ExtractionTaskResult}
 import org.deepdive.inference.{InferenceManager, FactorGraphBuilder}
 import org.deepdive.profiling._
@@ -27,11 +27,10 @@ object Pipeline extends Logging {
     val system = Context.system
 
     // Load Settings
-    val settings = Settings.loadFromConfig(config)    
+    val settings = Settings.loadFromConfig(config)
 
-    // Initialize the data store
-    PostgresDataStore.init(settings.connection.url, settings.connection.user, 
-      settings.connection.password)
+    // Setup the data store
+    JdbcDataStore.init(config)
 
     implicit val timeout = Timeout(1337 hours)
     implicit val ec = system.dispatcher
