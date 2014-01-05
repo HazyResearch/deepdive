@@ -4,7 +4,7 @@ layout: default
 
 # DeepDive Overview
 
-A DeepDive applications generally consists of several phases:
+A DeepDive application generally consists of several phases:
 
 1. **Data Preparation** - Set up the datastore and load initial data
 2. **Feature Extraction** - Write *extractors* to extract features from your data
