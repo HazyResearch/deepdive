@@ -25,7 +25,7 @@ We are posting the complete code for our examples on this site. We are working o
 
 ### Download
 
-Using the [Virtual Machine]() is the easiest way to get started with DeepDive. It comes pre-loaded with a ready-to-run example application. You can also download and compile the [DeepDive code](http://github.com/dennybritz/deepdive) yourself. For instructions on how to compile DeepDive, refer to the [developer guide]().
+Using the [Virtual Machine]() is the easiest way to get started with DeepDive. It comes pre-loaded with a ready-to-run example application. You can also download and compile the [DeepDive code](http://github.com/dennybritz/deepdive) yourself. For instructions on how to compile DeepDive, refer to the [developer guide](doc/developer.html).
 
 - [Download the Virtual Machine]()
 - [Download the source code](https://github.com/dennybritz/deepdive/archive/master.zip)
