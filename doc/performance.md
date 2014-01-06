@@ -14,7 +14,7 @@ When running DeepDive you should set the maximum heap size for the Java virtual 
 
 ### Setting extractor parallelism and batch sizes
 
-You can execute one extractor in parallel on multiple threads using the `paralleism` option. You can use the `input_batch_size` option to define how many tuples each extractor should receive at once, and the `output_batch_size` option to define how many extracted tuples should be inserted into the data store at once. The [extractor documentation](extractor.html) contains more details about these options. 
+You can execute one extractor in parallel on multiple threads using the `paralleism` option. You can use the `input_batch_size` option to define how many tuples each extractor should receive at once, and the `output_batch_size` option to define how many extracted tuples should be inserted into the data store at once. The [extractor documentation](extractors.html) contains more details about these options. 
 
 ### Setting the batch size for factor graph construction
 

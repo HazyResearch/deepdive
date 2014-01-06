@@ -4,7 +4,7 @@ layout: default
 
 ## Writing Inference Rules
 
-Inference rules describe how to [factor graph]() is constructed. Each rule, or *factor*, consists of three components:
+Inference rules describe how [factor graph]() is constructed. Each rule, or *factor*, consists of three components:
 
 - The **input query** joins together feature relations from your extractors. One factor will be created for each row in the query result.
 - The **factor function** defines the variables that will be connected to each factor, and how they are related to each other.
@@ -43,7 +43,7 @@ Currently, DeepDive only supports one type of factor function:  `Imply(...)`. Th
 
 ### Factor Weights
 
-Each factor is assigned a *weight*, which expresses how confident you are in its rule. During probabilistic inference, factors with a large weights will have a greater impact on variables than factors with small weights. Factor weights can be any real number, and are relative to each other. You can assign factor weights manually, or you can let DeepDive learn weights automatically. In order to learn weights automatically, you must have enough [training data](schema.html) available. A weight can also be a function of variables, in which case each factor instance will get a different weight depending on the variable value.
+Each factor is assigned a *weight*, which expresses how confident you are in its rule. During probabilistic inference, factors with large weights will have a greater impact on variables than factors with small weights. Factor weights can be any real number, and are relative to each other. You can assign factor weights manually, or you can let DeepDive learn weights automatically. In order to learn weights automatically, you must have enough [training data](schema.html) available. A weight can also be a function of variables, in which case each factor instance will get a different weight depending on the variable value.
 
     # Known weight
     wordsExtractor.factor.weight: 100
