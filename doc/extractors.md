@@ -58,6 +58,14 @@ To improve performance when writing extracted data back to the database you can 
     wordsExtractor.output_batch_size: 5000
 
 
+You can also execute indepdent extractors in parallel:
+
+    deepdive.extractions: {
+      parallelism: 5
+      # Extractors...
+    }
+
+
 ### Writing extractor UDFs
 
 When your extractor is executed, DeepDive will stream JSON tuples to its *stdin*, one tuple per line. Such a tuple may look as follows:

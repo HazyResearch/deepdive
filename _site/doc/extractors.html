@@ -77,6 +77,13 @@ wordsExtractor.input_batch_size: 1000</code></pre>
 <pre><code># Insert each 5000 tuples into the data store
 wordsExtractor.output_batch_size: 5000</code></pre>
 
+<p>You can also execute indepdent extractors in parallel:</p>
+
+<pre><code>deepdive.extractions: {
+  parallelism: 5
+  # Extractors...
+}</code></pre>
+
 <h3 id="writing_extractor_udfs">Writing extractor UDFs</h3>
 
 <p>When your extractor is executed, DeepDive will stream JSON tuples to its <em>stdin</em>, one tuple per line. Such a tuple may look as follows:</p>
