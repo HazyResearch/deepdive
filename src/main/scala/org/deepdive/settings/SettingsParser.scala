@@ -18,9 +18,10 @@ object SettingsParser extends Logging {
     val inferenceSettings = loadInferenceSettings(config)
     val calibrationSettings = loadCalibrationSettings(config)
     val samplerSettings = loadSamplerSettings(config)
+    val pipelineSettings = loadPipelineSettings(config)
 
     Settings(schemaSettings, extractors, inferenceSettings, 
-      calibrationSettings, samplerSettings)
+      calibrationSettings, samplerSettings, pipelineSettings)
   }
 
   private def loadSchemaSettings(config: Config) : SchemaSettings = {
@@ -102,6 +103,21 @@ object SettingsParser extends Logging {
     val javaArgs = Try(samplingConfig.getString("java_args")).getOrElse("")
     val samplerArgs = samplingConfig.getString("sampler_args")
     SamplerSettings(javaArgs, samplerArgs)
+  }
+
+  private def loadPipelineSettings(config: Config) : PipelineSettings = {
+    val pipelineConfig = Try(config.getConfig("pipeline")).getOrElse {
+      return PipelineSettings(None, Nil)
+    }
+    val activePipeline = Try(pipelineConfig.getString("run")).toOption
+    val pipelinesObj = Try(pipelineConfig.getObject("pipelines")).getOrElse {
+      return PipelineSettings(None, Nil)
+    }
+    val pipelines = pipelinesObj.keySet().map { pipelineName =>
+      val tasks = pipelineConfig.getStringList(s"pipelines.$pipelineName").toSet
+      Pipeline(pipelineName, tasks)
+    }.toList
+    PipelineSettings(activePipeline, pipelines)
   }
 
 }

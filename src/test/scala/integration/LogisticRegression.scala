@@ -4,7 +4,7 @@ import anorm._
 import com.typesafe.config._
 import org.deepdive.test._
 import org.deepdive.Context
-import org.deepdive.Pipeline
+import org.deepdive._
 import org.deepdive.datastore.{PostgresDataStore, JdbcDataStore}
 import org.scalatest._
 import scalikejdbc.ConnectionPool
@@ -52,7 +52,7 @@ class LogisticRegressionApp extends FunSpec {
   it("should work") {
     prepareData()
     val config = ConfigFactory.parseString(getConfig).withFallback(ConfigFactory.load)
-    Pipeline.run(config)
+    DeepDive.run(config)
     // Make sure the data is in the database
     JdbcDataStore.init(ConfigFactory.load)
     PostgresDataStore.withConnection { implicit conn =>

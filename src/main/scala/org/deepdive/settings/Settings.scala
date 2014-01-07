@@ -15,6 +15,8 @@ trait SettingsImpl {
   def schemaSettings : SchemaSettings
   def extractionSettings : ExtractionSettings
   def inferenceSettings : InferenceSettings
+  def calibrationSettings: CalibrationSettings
+  def pipelineSettings : PipelineSettings
 
   def findExtractor(name: String) : Option[Extractor] = extractionSettings.extractors.find(_.name == name)
   
@@ -28,6 +30,7 @@ case class Settings(schemaSettings : SchemaSettings,
   extractionSettings: ExtractionSettings,
   inferenceSettings: InferenceSettings, 
   calibrationSettings: CalibrationSettings, 
-  samplerSettings: SamplerSettings) extends SettingsImpl
+  samplerSettings: SamplerSettings,
+  pipelineSettings: PipelineSettings) extends SettingsImpl
 
 

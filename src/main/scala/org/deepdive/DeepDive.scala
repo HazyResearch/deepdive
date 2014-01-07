@@ -4,7 +4,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 import com.typesafe.config._
 import java.io.File
-import org.deepdive.settings.{Settings}
+import org.deepdive.settings._
 import org.deepdive.datastore.{JdbcDataStore}
 import org.deepdive.extraction.{ExtractionManager, ExtractionTask, ExtractionTaskResult}
 import org.deepdive.inference.{InferenceManager, FactorGraphBuilder}
@@ -14,7 +14,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{Future, Await}
 import scala.util.{Try, Success, Failure}
 
-object Pipeline extends Logging {
+object DeepDive extends Logging {
 
   lazy val VARIABLES_DUMP_FILE = new File("target/variables.tsv")
   lazy val FACTORS_DUMP_FILE = new File("target/factors.tsv")
@@ -63,18 +63,29 @@ object Pipeline extends Logging {
       InferenceManager.RunInference(settings.samplerSettings.javaArgs, 
         settings.samplerSettings.samplerArgs), inferenceManager)
 
-    val calibrationTask = Task("calibration_plots", List("inference"), 
+    val calibrationTask = Task("calibration", List("inference"), 
       InferenceManager.WriteCalibrationData, inferenceManager)
     
-    val reportingTask = Task("report", List("calibration_plots"), Profiler.PrintReports, profiler, false)
+    val reportingTask = Task("report", List("calibration"), Profiler.PrintReports, profiler, false)
 
     val terminationTask = Task("shutdown", List("report"), TaskManager.Shutdown, taskManager, false)
 
     val allTasks = extractionTasks ++ factorTasks ++ 
       List(inferenceTask, calibrationTask, reportingTask, terminationTask) 
 
+    // Create a default pipeline that executes all tasks
+    val defaultPipeline = Pipeline("_default", allTasks.map(_.id).toSet)
+
+    // Figure out which pipeline to run
+    val activePipeline = settings.pipelineSettings.activePipeline match {
+      case Some(pipeline) => pipeline
+      case None => defaultPipeline
+    }
+
     // Schedule all Tasks. 
-    allTasks.foreach( task => taskManager ! TaskManager.AddTask(task) )
+    for (task <- allTasks if activePipeline.tasks.contains(task.id)) {
+      taskManager ! TaskManager.AddTask(task)
+    }
 
     // Wait for the system to shutdown
     system.awaitTermination()

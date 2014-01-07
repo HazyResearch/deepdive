@@ -110,5 +110,27 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester {
     }
   }
 
+  describe("Parsing Pipelines Settings") {
+    it ("should work when specified") {
+      val config = ConfigFactory.parseString("""
+        pipeline.run: p1
+        pipeline.pipelines {
+          p1 : ["f1", "inference", "calibration", "report", "shutdown"]
+        }
+      """)
+      val loadPipelineSettings = PrivateMethod[PipelineSettings]('loadPipelineSettings)
+      val result = SettingsParser invokePrivate loadPipelineSettings(config)
+      assert(result == PipelineSettings(Some("p1"), 
+        List(Pipeline("p1", Set("f1", "inference", "calibration", "report", "shutdown")))
+      ))
+    }
+
+    it ("should work when not specified") {
+      val loadPipelineSettings = PrivateMethod[PipelineSettings]('loadPipelineSettings)
+      val result = SettingsParser invokePrivate loadPipelineSettings(ConfigFactory.parseString(""))
+      assert(result == PipelineSettings(None, Nil))
+    }
+  }
+
 
 }

@@ -26,6 +26,6 @@ object Main extends App with Logging {
   log.info(s"Running pipeline with configuration from ${options.configFile.getAbsolutePath}")
   val userConfig = ConfigFactory.parseFile(options.configFile)
   val defaultConfig = ConfigFactory.load
-  Pipeline.run(userConfig.withFallback(defaultConfig))
+  DeepDive.run(userConfig.withFallback(defaultConfig))
 
 }
