@@ -6,10 +6,10 @@ import spray.json._
 /* Stores extraction results and queries the database for extracted data */
 trait ExtractionDataStoreComponent {
 
-  def dataStore : ExtractionDataStore
+  def dataStore : ExtractionDataStore[_ <: JsValue]
 
   /* Stores extraction results and queries the database for extracted data */
-  trait ExtractionDataStore {
+  trait ExtractionDataStore[A <: JsValue] {
     
     /* How many extracted tuples to insert at once */
     def BatchSize : Int
@@ -22,10 +22,10 @@ trait ExtractionDataStoreComponent {
      * How the query string is interpreted depends on the implementing data store.
      * For example, Postgres interprets the query as a SQL statement
      */
-    def queryAsMap(query: String) : Iterator[Map[String, Any]]
+    def queryAsMap[B](query: String)(block: Iterator[Map[String, Any]] => B) : B
 
     /* Returns the result of the query as a stream of JSON objects */
-    def queryAsJson(query: String) : Iterator[JsObject]
+    def queryAsJson[B](query: String)(block: Iterator[A] => B) : B
 
     /* 
      * Writes a list of tuples back to the datastore.

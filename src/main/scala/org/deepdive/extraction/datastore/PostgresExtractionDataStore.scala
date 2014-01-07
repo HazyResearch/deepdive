@@ -18,22 +18,7 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
 
   val dataStore = new PostgresExtractionDataStore
 
-  /* An iterator with a connection */
-  class PostgresDataIterator[A](iter: Iterator[A], conn: Connection) extends Iterator[A] {
-    implicit val connection = conn
-    // TODO: We close the connection when the iterator is done.
-    // It's ugly because we assume we completely iterate over all the data.
-    // This is true in our case, but not generally
-    def hasNext = { iter.hasNext match {
-      case true => true
-      case false =>
-        connection.close()
-        false
-    } }
-    def next() = iter.next()
-  }
-
-  class PostgresExtractionDataStore extends ExtractionDataStore with Logging {
+  class PostgresExtractionDataStore extends ExtractionDataStore[JsObject] with Logging {
 
     /* Globally unique variable id for this data store */
     private val variableIdCounter = new AtomicLong(0)
@@ -44,22 +29,25 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
 
     def BatchSize = 50000
 
-    def queryAsMap(query: String) : Iterator[Map[String, Any]] = {    
-      implicit val connection = PostgresDataStore.borrowConnection() 
-      connection.setReadOnly(true)
-      val iter = SQL(query)().map { row =>
-        row.asMap.toMap.mapValues { 
-          case x : org.postgresql.jdbc4.Jdbc4Array => x.getArray()
-          case x : java.sql.Date => x.toString
-          case other => other
-        }
-      }.iterator
-      new PostgresDataIterator(iter, connection)
+    def queryAsMap[A](query: String)(block: Iterator[Map[String, Any]] => A) : A = {
+      PostgresDataStore.withConnection { implicit conn =>
+        val iter = SQL(query)().map { row =>
+          row.asMap.toMap.mapValues { 
+            case x : org.postgresql.jdbc4.Jdbc4Array => x.getArray()
+            case x : java.sql.Date => x.toString
+            case other => other
+          }
+        }.iterator
+        block(iter)
+      }
     }
 
-    def queryAsJson(query: String) : Iterator[JsObject] = { 
-      queryAsMap(query).map { row =>
-        JsObject(row.mapValues(anyValToJson))
+    def queryAsJson[A](query: String)(block: Iterator[JsObject] => A) : A = {
+      queryAsMap(query) { iter =>
+        val jsonIter = iter.map { row =>
+          JsObject(row.mapValues(anyValToJson))
+        }
+        block(jsonIter)
       }
     }
 

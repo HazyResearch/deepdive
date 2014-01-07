@@ -9,7 +9,7 @@ trait MemoryExtractionDataStoreComponent extends ExtractionDataStoreComponent{
 
   val dataStore = new MemoryExtractionDataStore
 
-  class MemoryExtractionDataStore extends ExtractionDataStore with Logging {
+  class MemoryExtractionDataStore extends ExtractionDataStore[JsObject] with Logging {
     
     def BatchSize = 100000
     
@@ -17,18 +17,20 @@ trait MemoryExtractionDataStoreComponent extends ExtractionDataStoreComponent{
 
     def init() = {}
 
-    override def queryAsJson(relation: String) : Iterator[JsObject] = {
-      data.get(relation).map(_.toList).getOrElse(Nil).iterator
+    def queryAsJson[A](query: String)(block: Iterator[JsObject] => A) : A = {
+      block(data.get(query).map(_.toList).getOrElse(Nil).iterator)
     }
     
-    def queryAsMap(relation: String) : Iterator[Map[String, Any]] = {
-      queryAsJson(relation).map(_.fields.mapValues {
-        case JsNull => null
-        case JsString(x) => x
-        case JsNumber(x) => x
-        case JsBoolean(x) => x
-        case _ => null
-      })
+    def queryAsMap[A](query: String)(block: Iterator[Map[String, Any]] => A) : A = {
+      queryAsJson(query) { iter => 
+        block(iter.map(_.fields.mapValues {
+          case JsNull => null
+          case JsString(x) => x
+          case JsNumber(x) => x
+          case JsBoolean(x) => x
+          case _ => null
+        }))
+      }
     }
     
     def write(result: Seq[JsObject], outputRelation: String) : Unit = {

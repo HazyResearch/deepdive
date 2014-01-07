@@ -48,7 +48,10 @@ object SettingsParser extends Logging {
     val extractors = extractionConfig.getObject("extractors").keySet().map { extractorName =>
       val extractorConfig = extractionConfig.getConfig(s"extractors.$extractorName")
       val outputRelation = extractorConfig.getString("output_relation")
-      val inputQuery = extractorConfig.getString(s"input")
+      val inputQuery = InputQueryParser.parse(InputQueryParser.inputQueryExpr, 
+        extractorConfig.getString(s"input")).getOrElse {
+        throw new RuntimeException(s"parsing ${extractorConfig.getString(s"input")} failed")
+      }
       val udf = extractorConfig.getString(s"udf")
       val parallelism = Try(extractorConfig.getInt(s"parallelism")).getOrElse(1)
       val inputBatchSize = Try(extractorConfig.getInt(s"input_batch_size")).getOrElse(10000)

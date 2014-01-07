@@ -15,15 +15,9 @@ class LogisticRegressionApp extends FunSpec {
     JdbcDataStore.init(ConfigFactory.load)
     PostgresDataStore.withConnection { implicit conn =>
        SQL("drop schema if exists public cascade; create schema public;").execute()
-       SQL("create table titles_tmp(id bigserial primary key, title text, has_extractions boolean);").execute()
        SQL("create table titles(id bigserial primary key, title text, has_extractions boolean);").execute()
        SQL("""create table word_presences(id bigserial primary key, 
         title_id bigint references titles(id), word text, is_present boolean);""").execute()
-       SQL(
-        """
-          INSERT INTO titles_tmp(title, has_extractions) VALUES
-          ('I am title 1', NULL), ('I am title 2', NULL), ('I am another Title', true)
-        """).execute()
     }
     JdbcDataStore.close()
   }
@@ -36,14 +30,14 @@ class LogisticRegressionApp extends FunSpec {
       }
 
       deepdive.extraction.extractors: {
-        titlesExtractor.output_relation: "titles"
-        titlesExtractor.input: "SELECT * from titles_tmp"
-        titlesExtractor.udf: "/usr/bin/sed -e s/titles_tmp.//g"
+        titlesLoader.output_relation: "titles"
+        titlesLoader.input: "CSV('${getClass.getResource("/logistic_regression/titles.csv").getFile}')"
+        titlesLoader.udf: "${getClass.getResource("/logistic_regression/title_loader.py").getFile}"
         
         wordsExtractor.output_relation: "word_presences"
         wordsExtractor.input: "SELECT * FROM titles"
         wordsExtractor.udf: "${getClass.getResource("/logistic_regression/word_extractor.py").getFile}"
-        wordsExtractor.dependencies = ["titlesExtractor"]
+        wordsExtractor.dependencies = ["titlesLoader"]
       }
 
       deepdive.inference.factors {

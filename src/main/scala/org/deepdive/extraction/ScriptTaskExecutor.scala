@@ -16,7 +16,7 @@ import scala.util.Try
 import spray.json._
 
 
-class ScriptTaskExecutor(task: ExtractionTask, inputData: Iterator[JsObject]) extends Logging { 
+class ScriptTaskExecutor[A <: JsValue](task: ExtractionTask, inputData: Iterator[A]) extends Logging { 
 
   val POLL_TIMEOUT = 1.seconds
 
@@ -30,7 +30,7 @@ class ScriptTaskExecutor(task: ExtractionTask, inputData: Iterator[JsObject]) ex
       s"batch_size=${task.extractor.inputBatchSize}")
 
     // An input stream for each process
-    val inputSubjects = (1 to task.extractor.parallelism).map ( i => ReplaySubject[JsObject]() )
+    val inputSubjects = (1 to task.extractor.parallelism).map ( i => ReplaySubject[A]() )
 
     // Build process descriptions based on different data inputs
     val (processes, outputSubjects) = inputSubjects.zipWithIndex.map { case(inputSubject, i) =>
@@ -72,7 +72,7 @@ class ScriptTaskExecutor(task: ExtractionTask, inputData: Iterator[JsObject]) ex
   }
 
   private def buildProcessIO(name: String, subject: ReplaySubject[JsObject], 
-    input: ReplaySubject[JsObject]) = {
+    input: ReplaySubject[A]) = {
     new ProcessIO(
       in => handleProcessIOInput(in, name, input),
       out => handleProcessIOOutput(out, name, subject),
@@ -83,7 +83,7 @@ class ScriptTaskExecutor(task: ExtractionTask, inputData: Iterator[JsObject]) ex
   }
 
   private def handleProcessIOInput(in: OutputStream, name: String, 
-     input: ReplaySubject[JsObject]) : Unit = {
+     input: ReplaySubject[A]) : Unit = {
     log.debug(s"${name} running")
     val writer = new PrintWriter(in, true)
     input.subscribe(

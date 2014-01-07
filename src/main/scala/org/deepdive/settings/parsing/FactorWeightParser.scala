@@ -3,7 +3,6 @@ package org.deepdive.settings
 import scala.util.parsing.combinator.RegexParsers
 import org.deepdive.Context
 
-
 object FactorWeightParser extends RegexParsers {
   def relationOrField = """\w+""".r
   def weightVariable = rep1sep(relationOrField, ".") ^^ { 

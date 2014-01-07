@@ -37,19 +37,20 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
 
     it("should work for simple attributes") {
       insertSampleData()
-      val result = dataStore.queryAsMap("SELECT key from datatype_test;").toList
+      val result = dataStore.queryAsMap("SELECT key from datatype_test;")(_.toList)
       assert(result.head.contains("datatype_test.key"))
     }
 
     it("should work for alaised attributes") {
       insertSampleData()
-      val result = dataStore.queryAsMap("SELECT key AS \"d1.key2\" from datatype_test;").toList
+      val result = dataStore.queryAsMap("SELECT key AS \"d1.key2\" from datatype_test;")(_.toList)
       assert(result.head.contains("datatype_test.d1.key2"))
     }
 
     it("should work for aggregated attributes") {
       insertSampleData()
-      val result = dataStore.queryAsMap("SELECT COUNT(*) AS num from datatype_test GROUP BY key").toList
+      val result = dataStore.queryAsMap("""SELECT COUNT(*) AS num 
+        from datatype_test GROUP BY key""")(_.toList)
       assert(result.head.contains(".num"))
     }
 
@@ -67,8 +68,8 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
       val result = dataStore.queryAsJson(
         """SELECT key, array_agg(some_text) AS "datatype_test.texts"
         FROM datatype_test GROUP BY key"""
-      ).toList
-      assert(result.head.fields == Map[String, JsValue](
+      )(_.toList)
+      assert(result.head.asInstanceOf[JsObject].fields == Map[String, JsValue](
         "datatype_test.key" -> JsNumber(1),
         ".datatype_test.texts" -> JsArray(JsString("Hello"), JsString("Ce"))
       ))
@@ -76,8 +77,8 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
 
     it("should work with simple data types") {
       insertSampleRow()
-      val result = dataStore.queryAsJson("SELECT * from datatype_test").toList
-      assert(result.head.fields == Map[String, JsValue](
+      val result = dataStore.queryAsJson("SELECT * from datatype_test")(_.toList)
+      assert(result.head.asInstanceOf[JsObject].fields == Map[String, JsValue](
         "datatype_test.id" -> JsNumber(1),
         "datatype_test.key" -> JsNumber(1),
         "datatype_test.some_text" -> JsString("Hello"),
@@ -123,9 +124,10 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
         "some_array" -> JsArray(List(JsString("13"), JsString("37")))
       ))
       dataStore.write(List(testRow), "datatype_test")
-      val result = dataStore.queryAsJson("SELECT * from datatype_test").toList.head.fields
+      val result = dataStore.queryAsJson("SELECT * from datatype_test")(_.toList)
+      val resultFields = result.head.fields
       val expectedResult = testRow.fields + Tuple2("id", JsNumber(0))
-      assert(result.values.toSet == expectedResult.values.toSet)
+      assert(resultFields.values.toSet == expectedResult.values.toSet)
     }
 
   }
