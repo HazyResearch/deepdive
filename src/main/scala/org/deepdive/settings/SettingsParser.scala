@@ -43,9 +43,9 @@ object SettingsParser extends Logging {
 
   private def loadExtractionSettings(config: Config) : ExtractionSettings = {
     val extractionConfig = Try(config.getConfig("extraction")).getOrElse {
-      return ExtractionSettings(0l, Nil) 
+      return ExtractionSettings(Nil, 1) 
     }
-    val initialVariableId = Try(extractionConfig.getLong("initial_vid")).getOrElse(0l)
+    val extractorParallelism = Try(extractionConfig.getInt("parallelism")).getOrElse(1)
     val extractors = extractionConfig.getObject("extractors").keySet().map { extractorName =>
       val extractorConfig = extractionConfig.getConfig(s"extractors.$extractorName")
       val outputRelation = extractorConfig.getString("output_relation")
@@ -61,7 +61,7 @@ object SettingsParser extends Logging {
       Extractor(extractorName, outputRelation, inputQuery, udf, parallelism, 
         inputBatchSize, outputBatchSize, dependencies)
     }.toList
-    ExtractionSettings(initialVariableId, extractors)
+    ExtractionSettings(extractors, extractorParallelism)
   }
 
   private def loadInferenceSettings(config: Config): InferenceSettings = {

@@ -1,4 +1,4 @@
 package org.deepdive.settings
 
 /* Extraction Settings */
-case class ExtractionSettings(initialVariableId: Long, extractors: List[Extractor])
+case class ExtractionSettings(extractors: List[Extractor], parallelism: Int)

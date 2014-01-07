@@ -40,8 +40,9 @@ object DeepDive extends Logging {
     val taskManager = system.actorOf(TaskManager.props, "taskManager")
     val inferenceManager = system.actorOf(InferenceManager.props(
       taskManager, settings.schemaSettings.variables), "inferenceManager")
-    // TODO Configuration setting for parallelism. Right now we execute extractors sequentially
-    val extractionManager = system.actorOf(ExtractionManager.props(1), "extractionManager")
+    val extractionManager = system.actorOf(
+      ExtractionManager.props(settings.extractionSettings.parallelism), 
+      "extractionManager")
     
     // Build tasks for extractors
     val extractionTasks = for {
