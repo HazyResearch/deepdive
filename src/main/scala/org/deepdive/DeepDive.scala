@@ -78,7 +78,8 @@ object DeepDive extends Logging {
 
     // Figure out which pipeline to run
     val activePipeline = settings.pipelineSettings.activePipeline match {
-      case Some(pipeline) => pipeline
+      case Some(pipeline) => pipeline.copy(tasks = pipeline.tasks ++ 
+        Set("inference", "calibration", "report", "shutdown"))
       case None => defaultPipeline
     }
 
