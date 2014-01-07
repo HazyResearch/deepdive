@@ -43,6 +43,7 @@ Learn more about DeepDive's features:
 - [Writing extractors](doc/extractors.html)
 - [Writing inference rules](doc/inference_rules.html)
 - [Calibration](doc/calibration.html)
+- [Pipelines](doc/pipelines.html)
 - [Performance tuning](doc/performance.html)
 
 Learn about using various databases with DeepDive:
