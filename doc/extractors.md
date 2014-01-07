@@ -37,7 +37,7 @@ For example, a SQL statement for Postgres:
 
 ### Extractor Dependencies
 
-You can also specify dependencies for an extractor. Extractors will be executed in order of their dependencies. If the dependencies of several extractors ar satisfied at the same time, these may be executed in parallel, or in any order.
+You can also specify dependencies for an extractor. Extractors will be executed in order of their dependencies. If the dependencies of several extractors are satisfied at the same time, these may be executed in parallel, or in any order.
 
     wordsExtractor.dependencies: ["anotherExtractorName"]
 
