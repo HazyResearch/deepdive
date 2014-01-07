@@ -31,7 +31,7 @@
 
 <h3 id="defining_extractors_in_the_configuration_file">Defining extractors in the configuration file</h3>
 
-<p>A feature extractor takes data defined by an arbitary SQL query as <code>input</code>, and produces new tuples as ouput. These tuples are written to the <code>output_relation</code>. The function for this transformation is defined by the <code>udf</code> key, which can be an arbitary executable (more on that below).</p>
+<p>A feature extractor takes data defined by an <code>input</code> (for example, a SQL statement), and produces new tuples as ouput. These tuples are written to the <code>output_relation</code>. The function for this transformation is defined by the <code>udf</code> key, which can be an arbitary executable (more on that below).</p>
 
 <pre><code>deepdive.extractions: {
   wordsExtractor.output_relation: &quot;words&quot;
@@ -39,6 +39,23 @@
   wordsExtractor.udf: &quot;words.py&quot;
   # More Extractors...
 }</code></pre>
+
+<h3 id="extractor_inputs">Extractor inputs</h3>
+
+<p>Currently DeepDive supports two types of extractor inputs:</p>
+
+<p><strong>1. Reading from a CSV or TSV File</strong></p>
+
+<p>Reading a file is useful to load initial data.</p>
+
+<pre><code>wordsExtractor.input: CSV(&#39;path/to/file.csv&#39;)
+wordsExtractor.input: TSV(&#39;path/to/file.tsv&#39;)</code></pre>
+
+<p><strong>2. Executing a database query</strong></p>
+
+<p>For example, a SQL statement for Postgres:</p>
+
+<pre><code>wordsExtractor.input: &quot;SELECT * FROM customers&quot;</code></pre>
 
 <h3 id="extractor_dependencies">Extractor Dependencies</h3>
 

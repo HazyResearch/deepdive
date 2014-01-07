@@ -6,7 +6,7 @@ layout: default
 
 ### Defining extractors in the configuration file
 
-A feature extractor takes data defined by an arbitary SQL query as `input`, and produces new tuples as ouput. These tuples are written to the `output_relation`. The function for this transformation is defined by the `udf` key, which can be an arbitary executable (more on that below).
+A feature extractor takes data defined by an `input` (for example, a SQL statement), and produces new tuples as ouput. These tuples are written to the `output_relation`. The function for this transformation is defined by the `udf` key, which can be an arbitary executable (more on that below).
 
     deepdive.extractions: {
       wordsExtractor.output_relation: "words"
@@ -14,6 +14,25 @@ A feature extractor takes data defined by an arbitary SQL query as `input`, and 
       wordsExtractor.udf: "words.py"
       # More Extractors...
     }
+
+
+### Extractor inputs
+
+Currently DeepDive supports two types of extractor inputs:
+
+**1. Reading from a CSV or TSV File**
+
+Reading a file is useful to load initial data.
+
+    wordsExtractor.input: CSV('path/to/file.csv')
+    wordsExtractor.input: TSV('path/to/file.tsv')
+
+**2. Executing a database query**
+
+For example, a SQL statement for Postgres:
+
+    wordsExtractor.input: "SELECT * FROM customers"
+
 
 
 ### Extractor Dependencies
