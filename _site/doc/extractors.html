@@ -59,7 +59,7 @@ wordsExtractor.input: TSV(&#39;path/to/file.tsv&#39;)</code></pre>
 
 <h3 id="extractor_dependencies">Extractor Dependencies</h3>
 
-<p>You can also specify dependencies for an extractor. Extractors will be executed in order of their dependencies. If the dependencies of several extractors ar satisfied at the same time, these may be executed in parallel, or in any order.</p>
+<p>You can also specify dependencies for an extractor. Extractors will be executed in order of their dependencies. If the dependencies of several extractors are satisfied at the same time, these may be executed in parallel, or in any order.</p>
 
 <pre><code>wordsExtractor.dependencies: [&quot;anotherExtractorName&quot;]</code></pre>
 
@@ -83,7 +83,11 @@ wordsExtractor.output_batch_size: 5000</code></pre>
 
 <pre><code>{ id: 5, title: &quot;I am a title&quot; }</code></pre>
 
-<p>The extractor should output JSON tuples to <em>stdout</em> in the same way, but <strong>without the <code>id</code> field</strong>, which is automatically assigned by DeepDive. All output tuples you must have the same fields. If you do not want to set a value for a field you can set it to <code>null</code>.</p>
+<p>In case of reading from a CSV or TSV file, each line will be an array instead of a JSON object, for example:</p>
+
+<pre><code>[&quot;1&quot;, &quot;true&quot;, &quot;Hello World&quot;, &quot;&quot;]</code></pre>
+
+<p>The extractor should output JSON objects to <em>stdout</em> in the same fashion, but <strong>without the <code>id</code> field</strong>, which is automatically assigned by DeepDive. All output tuples you must have the same fields. If you do not want to set a value for a field you can set it to <code>null</code>.</p>
 
 <pre><code>{ title_id: 5, word: &quot;I&quot; } 
 { title_id: 5, word: &quot;am&quot; } 

@@ -29,7 +29,7 @@
             <div class="col-md-10 col-md-offset-1">
               <h2 id="writing_inference_rules">Writing Inference Rules</h2>
 
-<p>Inference rules describe how to <a href="">factor graph</a> is constructed. Each rule, or <em>factor</em>, consists of three components:</p>
+<p>Inference rules describe how <a href="">factor graph</a> is constructed. Each rule, or <em>factor</em>, consists of three components:</p>
 
 <ul>
 <li>The <strong>input query</strong> joins together feature relations from your extractors. One factor will be created for each row in the query result.</li>
@@ -76,7 +76,7 @@ someFactor.function: &quot;people.has_cancer = Imply(!people.smokes)&quot; </cod
 
 <h3 id="factor_weights">Factor Weights</h3>
 
-<p>Each factor is assigned a <em>weight</em>, which expresses how confident you are in its rule. During probabilistic inference, factors with a large weights will have a greater impact on variables than factors with small weights. Factor weights can be any real number, and are relative to each other. You can assign factor weights manually, or you can let DeepDive learn weights automatically. In order to learn weights automatically, you must have enough <a href="schema.html">training data</a> available. A weight can also be a function of variables, in which case each factor instance will get a different weight depending on the variable value.</p>
+<p>Each factor is assigned a <em>weight</em>, which expresses how confident you are in its rule. During probabilistic inference, factors with large weights will have a greater impact on variables than factors with small weights. Factor weights can be any real number, and are relative to each other. You can assign factor weights manually, or you can let DeepDive learn weights automatically. In order to learn weights automatically, you must have enough <a href="schema.html">training data</a> available. A weight can also be a function of variables, in which case each factor instance will get a different weight depending on the variable value.</p>
 
 <pre><code># Known weight
 wordsExtractor.factor.weight: 100

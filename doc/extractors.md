@@ -64,7 +64,11 @@ When your extractor is executed, DeepDive will stream JSON tuples to its *stdin*
 
     { id: 5, title: "I am a title" }
 
-The extractor should output JSON tuples to *stdout* in the same way, but **without the `id` field**, which is automatically assigned by DeepDive. All output tuples you must have the same fields. If you do not want to set a value for a field you can set it to `null`.
+In case of reading from a CSV or TSV file, each line will be an array instead of a JSON object, for example:
+
+    ["1", "true", "Hello World", ""]
+
+The extractor should output JSON objects to *stdout* in the same fashion, but **without the `id` field**, which is automatically assigned by DeepDive. All output tuples you must have the same fields. If you do not want to set a value for a field you can set it to `null`.
 
 
     { title_id: 5, word: "I" } 
