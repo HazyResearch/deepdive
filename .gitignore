@@ -3,3 +3,5 @@
 target/
 app/
 log/
+*.sublime-project
+*.sublime-workspace
