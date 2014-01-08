@@ -58,8 +58,10 @@ object SettingsParser extends Logging {
       val inputBatchSize = Try(extractorConfig.getInt(s"input_batch_size")).getOrElse(10000)
       val outputBatchSize = Try(extractorConfig.getInt(s"output_batch_size")).getOrElse(50000)
       val dependencies = Try(extractorConfig.getStringList("dependencies").toSet).getOrElse(Set())
+      val beforeScript = Try(extractorConfig.getString("before")).toOption
+      val afterScript = Try(extractorConfig.getString("after")).toOption
       Extractor(extractorName, outputRelation, inputQuery, udf, parallelism, 
-        inputBatchSize, outputBatchSize, dependencies)
+        inputBatchSize, outputBatchSize, dependencies, beforeScript, afterScript)
     }.toList
     ExtractionSettings(extractors, extractorParallelism)
   }

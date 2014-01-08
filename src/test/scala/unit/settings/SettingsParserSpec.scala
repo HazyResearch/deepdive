@@ -34,15 +34,17 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester {
       extraction.extractors.extractor1.input: "SELECT * FROM documents"
       extraction.extractors.extractor1.udf: "udf/entities.py"
       extraction.extractors.extractor1.parallelism = 4
-      extraction.extractors.extractor1.input_batch_size = 100
-      extraction.extractors.extractor1.output_batch_size = 1000
-      extraction.extractors.extractor1.dependencies = ["extractor2"]
+      extraction.extractors.extractor1.input_batch_size: 100
+      extraction.extractors.extractor1.output_batch_size:1000
+      extraction.extractors.extractor1.dependencies:["extractor2"]
+      extraction.extractors.extractor1.before: "/bin/cat"
+      extraction.extractors.extractor1.after: "/bin/dog"
       """).withFallback(defaultConfig)
       val loadExtractionSettings = PrivateMethod[ExtractionSettings]('loadExtractionSettings)
       val result = SettingsParser invokePrivate loadExtractionSettings(config)
       assert(result == ExtractionSettings(List(
         Extractor("extractor1", "entities", "SELECT * FROM documents", "udf/entities.py", 
-          4, 100, 1000, Set("extractor2"))), 5))
+          4, 100, 1000, Set("extractor2"), Option("/bin/cat"), Option("/bin/dog"))), 5))
     }
   }
 

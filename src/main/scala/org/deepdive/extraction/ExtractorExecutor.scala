@@ -10,6 +10,7 @@ import org.deepdive.Logging
 import scala.util.{Try, Success, Failure}
 import scala.concurrent._
 import scala.concurrent.duration._
+import scala.sys.process._
 import rx.lang.scala.subjects._
 import spray.json.JsValue
 
@@ -48,8 +49,17 @@ class ExtractorExecutor(dataStore: ExtractionDataStoreComponent#ExtractionDataSt
       log.warning("Huh?")
   }
 
-  def doExecute(task: ExtractionTask) : Try[ExtractionTaskResult] = {
+  def executeCmd(cmd: String) : Try[Int] = {
+    log.info(s"""Executing: "$cmd" """)
+    Try(cmd!(ProcessLogger(line => log.info(line)))) match {
+      case Success(0) => Success(0)
+      case Success(errorExitValue) => 
+        Failure(new RuntimeException("BeforeScript exited with exit_value=$errorExitValue"))
+      case Failure(ex) => Failure(ex)
+    }
+  } 
 
+  def executeUDF(task: ExtractionTask) : Try[ExtractionTaskResult] = {
     val extractorInput = task.extractor.inputQuery match {
       case CSVInputQuery(filename, seperator) =>
         FileDataUtils.queryAsJson[Try[ExtractionTaskResult]](filename, seperator)_
@@ -87,6 +97,29 @@ class ExtractorExecutor(dataStore: ExtractionDataStoreComponent#ExtractionDataSt
       )
       Await.result(isDone.future, Duration.Inf)
     }
+  }
+
+  def doExecute(task: ExtractionTask) : Try[ExtractionTaskResult] = {
+    
+    // Execute the before script if specified
+    task.extractor.beforeScript.map(executeCmd) match {
+      case (Some(Success(_)) | None) => // All good
+      case Some(Failure(exception)) => 
+        log.error(exception.toString) 
+        return Failure(exception)
+    }
+
+    val extractionResult = executeUDF(task)
+
+    // Execute the after script if specified
+    task.extractor.afterScript.map(executeCmd) match {
+      case (Some(Success(_)) | None) => // All good
+      case Some(Failure(exception)) => 
+        log.error(exception.toString) 
+        return Failure(exception)
+    }
+
+    extractionResult
   }
 
 }

@@ -39,6 +39,33 @@ class ExtractorExecutorSpec extends FunSpec with BeforeAndAfter
       assert(result.isFailure)
     }
 
+    it("should successfully execute before and after scripts") {
+      val testActor = TestActorRef[ExtractorExecutor](
+        Props(classOf[ExtractorExecutor], dataStore)).underlyingActor
+      val task = new ExtractionTask(Extractor("testExtractor", "relation1", 
+        "relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet, Option("echo Hello"), Option("echo World")))
+      val result = testActor.doExecute(task)
+      assert(result.isSuccess)
+    }
+
+    it("should return a failure when the before or afer script doesn't exit with value=0") {
+      val testActor = TestActorRef[ExtractorExecutor](
+        Props(classOf[ExtractorExecutor], dataStore)).underlyingActor
+      val task = new ExtractionTask(Extractor("testExtractor", "relation1", 
+        "relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet, Option("ls NO!"), Option("echo World")))
+      val result = testActor.doExecute(task)
+      assert(result.isFailure)
+    }
+
+    it("should return a failure when the before or after script crashes") {
+      val testActor = TestActorRef[ExtractorExecutor](
+        Props(classOf[ExtractorExecutor], dataStore)).underlyingActor
+      val task = new ExtractionTask(Extractor("testExtractor", "relation1", 
+        "relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet, Option("/bin/OHNO!"), Option("echo World")))
+      val result = testActor.doExecute(task)
+      assert(result.isFailure)
+    }
+
   }
 
 }
