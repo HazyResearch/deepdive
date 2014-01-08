@@ -105,6 +105,7 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
         case JsString(x) => jsValueToString(JsString(s""" "${x}" """))
         case x: JsValue => jsValueToString(x)
       }.map (ele => s"""${ele}""").mkString(",") + "}"
+      case x : JsObject => x.compactPrint
       case _ =>
         log.warning(s"Could not convert JSON value ${x} to String")
         ""
@@ -123,6 +124,13 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
       case x : Array[_] => JsArray(x.toList.map(x => anyValToJson(x)))
       case x : org.postgresql.jdbc4.Jdbc4Array => 
         JsArray(x.getArray().asInstanceOf[Array[_]].map(anyValToJson).toList)
+      case x : org.postgresql.util.PGobject =>
+        x.getType match {
+          case "json" => x.getValue.asJson
+          case _ =>
+            log.error(s"Could not convert ${x.toString} of type=${x.getType} to JSON")
+            JsNull
+        }
       case x =>
         log.error(s"Could not convert ${x.toString} of type=${x.getClass.getName} to JSON")
         JsNull
