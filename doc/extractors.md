@@ -34,12 +34,21 @@ For example, a SQL statement for Postgres:
     wordsExtractor.input: "SELECT * FROM customers"
 
 
-
 ### Extractor Dependencies
 
 You can also specify dependencies for an extractor. Extractors will be executed in order of their dependencies. If the dependencies of several extractors are satisfied at the same time, these may be executed in parallel, or in any order.
 
     wordsExtractor.dependencies: ["anotherExtractorName"]
+
+
+
+### Before and After scripts
+
+Sometimes it is useful to execute a commond, or call a script, before an extractor starts or after an extractor finishes. You can specify arbitary commands to be executed as follows:
+
+  
+    wordsExtractor.before: "echo Hello World"
+    wordsExtractor.after: "/path/to/my/script.sh"
 
 
 ### Extractor parallelism and input batch size
@@ -105,3 +114,6 @@ for line in fileinput.input():
         "word": word
       })
 {% endhighlight %}
+
+
+

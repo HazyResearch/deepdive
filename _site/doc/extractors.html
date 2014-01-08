@@ -63,6 +63,13 @@ wordsExtractor.input: TSV(&#39;path/to/file.tsv&#39;)</code></pre>
 
 <pre><code>wordsExtractor.dependencies: [&quot;anotherExtractorName&quot;]</code></pre>
 
+<h3 id="before_and_after_scripts">Before and After scripts</h3>
+
+<p>Sometimes it is useful to execute a commond, or call a script, before an extractor starts or after an extractor finishes. You can specify arbitary commands to be executed as follows:</p>
+
+<pre><code>wordsExtractor.before: &quot;echo Hello World&quot;
+wordsExtractor.after: &quot;/path/to/my/script.sh&quot;</code></pre>
+
 <h3 id="extractor_parallelism_and_input_batch_size">Extractor parallelism and input batch size</h3>
 
 <p>To improve performance, you can specify the number of processes and the input batch size for each extractor. Your executable script will be run on N threads in parallel and data will be streamed to this processes in a round-robin fashion. By default each extractor uses 1 process and a batch size of 1000.</p>
