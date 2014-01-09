@@ -49,14 +49,15 @@ class ScriptTaskExecutor[A <: JsValue](task: ExtractionTask, inputData: Iterator
     // Send the input data in a batch-wise round-robin fashion.
     // We execute this on another thread, so that we don't block.
     import scala.concurrent.ExecutionContext.Implicits.global
-    Future {
-      val cyclingInput = Stream.continually(inputSubjects.toStream).flatten
-      inputData.grouped(task.extractor.inputBatchSize).toStream.zip(cyclingInput).foreach { case(batch, obs) =>
-        Future { batch.foreach ( tuple => obs.onNext(tuple) ) }
-      }
+    val cyclingInput = Stream.continually(inputSubjects.toStream).flatten
+    val groupedInputData = inputData.grouped(task.extractor.inputBatchSize)
+    val dataInputFutures = groupedInputData.zip(cyclingInput.iterator).map { case(batch, obs) =>
+      Future { batch.foreach ( tuple => obs.onNext(tuple) ) }
+    }
+    Future.sequence(dataInputFutures).onComplete { result =>
       inputSubjects.foreach { x => x.onCompleted() } 
-    }  
-
+    }
+    
     // We wait for the process on a separate thread
     processes.zip(outputSubjects).foreach { case(process, subj) =>
       Future {

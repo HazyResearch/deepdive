@@ -54,7 +54,7 @@ class ExtractorExecutor(dataStore: ExtractionDataStoreComponent#ExtractionDataSt
     Try(cmd!(ProcessLogger(line => log.info(line)))) match {
       case Success(0) => Success(0)
       case Success(errorExitValue) => 
-        Failure(new RuntimeException("BeforeScript exited with exit_value=$errorExitValue"))
+        Failure(new RuntimeException(s"Script exited with exit_value=$errorExitValue"))
       case Failure(ex) => Failure(ex)
     }
   } 
