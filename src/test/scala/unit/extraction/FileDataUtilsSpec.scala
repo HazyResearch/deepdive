@@ -21,7 +21,7 @@ class FileDataUtilsSpec extends FunSpec {
     }
 
     it("should work with globs") {
-      FileDataUtils.queryAsJson("src/**/sample.csv", ',') { data =>
+      FileDataUtils.queryAsJson("**/resources/sample.csv", ',') { data =>
         assert(data.toList == List(
           JsArray(JsString("1"), JsString("2"), JsString("3")),
           JsArray(JsString("Hello"), JsString("you"), JsString("")),

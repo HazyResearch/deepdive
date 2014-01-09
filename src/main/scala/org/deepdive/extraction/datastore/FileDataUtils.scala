@@ -11,7 +11,7 @@ import scala.collection.JavaConversions._
 object FileDataUtils extends Logging {
 
   def queryAsJson[A](fileGlob: String, sep: Char)(block: Iterator[JsValue] => A) : A = {
-    val files = FileUtils.glob(fileGlob)
+    val files = FileUtils.absoluteFileOrGlob(fileGlob)
     
     // TODO: readAll loads the data into memory, this should be an iterator
     // Unfortunately the CSV library doesn't support that.

@@ -5,7 +5,7 @@ import java.nio.file.attribute._
 import java.nio.file.FileVisitResult._
 import scala.collection.JavaConversions._
 import scala.collection.mutable.{Set => MutableSet}
-import java.io.IOException
+import java.io.{IOException, File}
 import java.util.EnumSet
 
 object FileUtils {
@@ -22,16 +22,18 @@ object FileUtils {
   }
 
   def glob(globPattern: String) : Set[String] = {
-    // We don't glob if the path is an absolute path - just return the path
-    val startDirectory = globPattern.substring(0,1) match {
-      case "/" => Paths.get("/")
-      case _ => Paths.get(".")
-    }
     val matcher = FileSystems.getDefault().getPathMatcher("glob:" + globPattern)
     val visitor = new SetFileVisitor(matcher)
-    Files.walkFileTree(startDirectory, visitor)
+    Files.walkFileTree(Paths.get("."), visitor)
     visitor.paths.toSet
+  }
 
+  def absoluteFileOrGlob(fileStr: String) : Set[String] = {
+    val file = new File(fileStr)
+    if (file.exists && file.isAbsolute)
+      return Set(file.getCanonicalPath)
+    else
+      return glob(fileStr)
   }
 
 
