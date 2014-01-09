@@ -71,6 +71,10 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
          s"tmpfile='${tmpFile.getCanonicalPath}'")
         PostgresDataStore.copyBatchData(copySQL, tmpFile)
         log.info(s"Wrote num=${result.length} records.")
+
+        // Delete the temporary file
+        tmpFile.delete()
+
       }
     }
 
