@@ -35,6 +35,13 @@ class FactorWeightParserSpec extends FunSpec {
       assert(result.get == UnknownFactorWeight(List("relation1.is_present", "relation2.is_present")))
     }
 
+    it("should parse a variable with .") {
+      val expr = "?(.someField.is_present)"
+      val result = FactorWeightParser.parse(FactorWeightParser.factorWeight, expr)
+      assert(result.successful)
+      assert(result.get == UnknownFactorWeight(List(".someField.is_present")))
+    }
+
   }
 
 }
