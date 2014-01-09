@@ -9,7 +9,8 @@ class FileDataUtilsSpec extends FunSpec {
   val sampleCSVFile = getClass.getResource("/sample.csv").getFile
 
   describe("Querying a file as JSON") {
-    it("should work") {
+    
+    it("should work with absolute paths") {
       FileDataUtils.queryAsJson(sampleCSVFile, ',') { data =>
         assert(data.toList == List(
           JsArray(JsString("1"), JsString("2"), JsString("3")),
@@ -18,6 +19,17 @@ class FileDataUtilsSpec extends FunSpec {
         ))
       }
     }
+
+    it("should work with globs") {
+      FileDataUtils.queryAsJson("src/**/sample.csv", ',') { data =>
+        assert(data.toList == List(
+          JsArray(JsString("1"), JsString("2"), JsString("3")),
+          JsArray(JsString("Hello"), JsString("you"), JsString("")),
+          JsArray(JsString("A"), JsString("B"), JsString("C"))
+        ))
+      }
+    }
+
   }
 
 }

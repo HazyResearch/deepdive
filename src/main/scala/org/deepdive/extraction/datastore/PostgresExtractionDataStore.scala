@@ -67,7 +67,8 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
         // Build the dataset as a TSV string
         val tmpFile = buildCopyData(result, sampledKeys)
 
-        log.info(s"Writing extraction result to postgres. length=${result.length}, sql=${copySQL}")
+        log.info(s"Writing extraction result to postgres. length=${result.length}, sql=${copySQL}" +
+         s"tmpfile='${tmpFile.getCanonicalPath}'")
         PostgresDataStore.copyBatchData(copySQL, tmpFile)
         log.info(s"Wrote num=${result.length} records.")
       }

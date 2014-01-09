@@ -115,7 +115,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
     }
   }
 
-  describe ("Writing JSON to the data store") {
+  describe ("Writing to the data store") {
 
     it("should work") {
       val testRow = JsObject(Map[String, JsValue](
@@ -131,7 +131,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
       val result = dataStore.queryAsJson("SELECT * from datatype_test")(_.toList)
       val resultFields = result.head.fields
       val expectedResult = testRow.fields + Tuple2("id", JsNumber(0))
-      assert(resultFields.values.toSet == expectedResult.values.toSet)
+      assert(resultFields.values.toSet == expectedResult.values.toSet) 
     }
 
   }
