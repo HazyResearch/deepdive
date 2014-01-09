@@ -46,10 +46,14 @@
 
 <p><strong>1. Reading from a CSV or TSV File</strong></p>
 
-<p>Reading a file is useful to load initial data.</p>
+<p>Reading a file is useful for loading initial data. <strong>The path to the files must be relative to the current working directory and cannot include parent pointers like “..”</strong></p>
 
 <pre><code>wordsExtractor.input: CSV(&#39;path/to/file.csv&#39;)
 wordsExtractor.input: TSV(&#39;path/to/file.tsv&#39;)</code></pre>
+
+<p>You can also specify a <a href="http://docs.oracle.com/javase/tutorial/essential/io/fileOps.html#glob">Glob</a> to select multiple files:</p>
+
+<pre><code>wordsExtractor.input: CSV(&#39;path/**/prefix*.csv&#39;)</code></pre>
 
 <p><strong>2. Executing a database query</strong></p>
 

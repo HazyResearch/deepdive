@@ -22,10 +22,15 @@ Currently DeepDive supports two types of extractor inputs:
 
 **1. Reading from a CSV or TSV File**
 
-Reading a file is useful to load initial data.
+Reading a file is useful for loading initial data. **The path to the files must be relative to the current working directory and cannot include parent pointers like ".." **
 
     wordsExtractor.input: CSV('path/to/file.csv')
     wordsExtractor.input: TSV('path/to/file.tsv')
+
+You can also specify a [Glob](http://docs.oracle.com/javase/tutorial/essential/io/fileOps.html#glob) to select multiple files:
+  
+    wordsExtractor.input: CSV('path/**/prefix*.csv')
+
 
 **2. Executing a database query**
 
