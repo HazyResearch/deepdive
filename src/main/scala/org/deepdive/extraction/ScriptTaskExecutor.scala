@@ -52,7 +52,7 @@ class ScriptTaskExecutor[A <: JsValue](task: ExtractionTask, inputData: Iterator
     Future {
       val cyclingInput = Stream.continually(inputSubjects.toStream).flatten
       inputData.grouped(task.extractor.inputBatchSize).toStream.zip(cyclingInput).foreach { case(batch, obs) =>
-        batch.foreach ( tuple => obs.onNext(tuple) )
+        Future { batch.foreach ( tuple => obs.onNext(tuple) ) }
       }
       inputSubjects.foreach { x => x.onCompleted() } 
     }  
