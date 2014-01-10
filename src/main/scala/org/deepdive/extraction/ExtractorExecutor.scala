@@ -75,7 +75,7 @@ class ExtractorExecutor(dataStore: ExtractionDataStoreComponent#ExtractionDataSt
       // TODO: We are using Akka's default dispatcher here, maybe we should define our own.
       val writtenResults = result.rows.flatMap { rowBatch =>
         import context.dispatcher
-        val writeFuture = Future { dataStore.write(rowBatch, task.extractor.outputRelation) }
+        val writeFuture = Future { dataStore.addBatch(rowBatch, task.extractor.outputRelation) }
         val subject = AsyncSubject[Unit]()
         writeFuture onComplete {
           case Failure(x) => { subject.onError(x) }
@@ -93,7 +93,10 @@ class ExtractorExecutor(dataStore: ExtractionDataStoreComponent#ExtractionDataSt
           log.error(exception.toString)
           isDone.success(Failure(exception))
         },  
-        () => isDone.success(Success(ExtractionTaskResult(task.extractor.name)))
+        () => {
+          dataStore.flushBatches(task.extractor.outputRelation)
+          isDone.success(Success(ExtractionTaskResult(task.extractor.name)))
+        }
       )
       Await.result(isDone.future, Duration.Inf)
     }

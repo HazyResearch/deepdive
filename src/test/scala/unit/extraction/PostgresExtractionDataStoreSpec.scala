@@ -9,6 +9,7 @@ import org.scalatest._
 import scala.io.Source
 import spray.json._
 import DefaultJsonProtocol._
+import java.io.StringWriter
 
 class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
   with PostgresExtractionDataStoreComponent {
@@ -109,9 +110,10 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
        JsObject(Map("key1" -> JsString("hi"), "key2" -> JsString("hello"))),
        JsObject(Map("key1" -> JsString("hi2"), "key2" -> JsNull))
       )
-      val resultFile = dataStore.buildCopyData(data, Set("key1", "key2"))
-      val result = Source.fromFile(resultFile).getLines.mkString("\n")
-      assert(result == "\"0\",\"hi\",\"hello\"\n\"1\",\"hi2\",")
+      val strWriter = new StringWriter()
+      val resultFile = dataStore.writeCopyData(data, strWriter)
+      val result = strWriter.toString
+      assert(result == "\"0\",\"hi\",\"hello\"\n\"1\",\"hi2\",\n")
     }
   }
 
@@ -127,7 +129,8 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
         "some_array" -> JsArray(List(JsString("13"), JsString("37"))),
         "some_json" -> JsObject("Hello" -> JsString("World"))
       ))
-      dataStore.write(List(testRow), "datatype_test")
+      dataStore.addBatch(List(testRow), "datatype_test")
+      dataStore.flushBatches("datatype_test")
       val result = dataStore.queryAsJson("SELECT * from datatype_test")(_.toList)
       val resultFields = result.head.fields
       val expectedResult = testRow.fields + Tuple2("id", JsNumber(0))

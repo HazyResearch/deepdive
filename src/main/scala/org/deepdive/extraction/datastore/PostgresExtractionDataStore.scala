@@ -2,7 +2,7 @@ package org.deepdive.extraction.datastore
 
 import anorm._
 import au.com.bytecode.opencsv.CSVWriter
-import java.io.{File, StringWriter, FileWriter}
+import java.io.{File, StringWriter, FileWriter, PrintWriter, BufferedWriter, Writer}
 import java.lang.RuntimeException
 import java.sql.Connection
 import java.util.concurrent.atomic.AtomicLong
@@ -51,30 +51,25 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
       }
     }
 
-    def write(result: Seq[JsObject], outputRelation: String) : Unit = {
+    def addBatch(result: Seq[JsObject], outputRelation: String) : Unit = {
+      this.synchronized {
+        val file = new File(s"/tmp/${outputRelation}.csv")
+        log.info(s"Writing data of length=${result.length} to file=${file.getCanonicalPath}")
+        val writer = new PrintWriter(new BufferedWriter(new FileWriter(file, true)))
+        // Write the dataset to the file for the relation
+        writeCopyData(result, writer)
+      }
+    }
+
+    def flushBatches(outputRelation: String) : Unit = {
       PostgresDataStore.withConnection { implicit connection =>
-        if (result.size == 0) {
-          log.info("nothing to write.")
-          return
-        }
-
-        // We sample the keys to figure out which fields to insert into
-        // This is a ugly, but using this we don't need an explicit schema definition.
-        // Is there a better way?
-        val sampledKeys = result.take(100).flatMap(_.fields.keySet).toSet
-        val copySQL = buildCopySql(outputRelation, sampledKeys)
-
-        // Build the dataset as a TSV string
-        val tmpFile = buildCopyData(result, sampledKeys)
-
-        log.info(s"Writing extraction result to postgres. length=${result.length}, sql=${copySQL}" +
-         s"tmpfile='${tmpFile.getCanonicalPath}'")
-        PostgresDataStore.copyBatchData(copySQL, tmpFile)
-        log.info(s"Wrote num=${result.length} records.")
-
-        // Delete the temporary file
-        tmpFile.delete()
-
+        val file = new File(s"/tmp/${outputRelation}.csv")
+        val columnNames = scalikejdbc.DB.getColumnNames(outputRelation).toSet
+        val copySQL = buildCopySql(outputRelation, columnNames)
+        log.info(s"Copying batch data to postgres. sql=${copySQL}" +
+          s"file='${file.getCanonicalPath}'")
+        PostgresDataStore.copyBatchData(copySQL, file)
+        file.delete()
       }
     }
 
@@ -85,9 +80,8 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
     }
 
     /* Builds a CSV dat astring for given JSON data and column names */
-    def buildCopyData(data: Seq[JsObject], keys: Set[String]) : File = {
-      val tmpFile = File.createTempFile("csv", "")
-      val writer = new CSVWriter(new FileWriter(tmpFile))
+    def writeCopyData(data: Seq[JsObject], fileWriter: Writer)  = {
+      val writer = new CSVWriter(fileWriter)
       for (obj <- data) { 
         val dataList = obj.fields.filterKeys(_ != "id").toList.sortBy(_._1)
         val strList = dataList.map (x => jsValueToString(x._2))
@@ -96,7 +90,6 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
         writer.writeNext((List(id.toString) ++ strList).toArray)
       }
       writer.close()
-      tmpFile
     }
 
     /* Translates a JSON value to a String that can be insert using COPY statement */
