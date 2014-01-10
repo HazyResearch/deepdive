@@ -12,11 +12,11 @@ object ExtractionManagerSpec {
   class MemoryExtractionManager(val parallelism: Int) extends ExtractionManager with
     MemoryExtractionDataStoreComponent {
 
-    override def extractorExecutorProps = Props(new Actor {
+    override def extractorRunnerProps = Props(new Actor {
       def receive = {
-        case ExtractorExecutor.ExecuteTask(task) =>
+        case ExtractorRunner.SetTask(task) =>
           Thread.sleep(100) 
-          sender ! ExtractionTaskResult(task.extractor.name)
+          sender ! "Done!"
           context.stop(self)
       }
     })
@@ -36,7 +36,7 @@ class ExtractionManagerSpec(_system: ActorSystem) extends TestKit(_system)
       val manager = TestActorRef[MemoryExtractionManager](Props(classOf[MemoryExtractionManager], 1))
       val someExtractor = Extractor("e1", "r1", "query", "udf", 3, 1000, 1000, Set())
       manager ! ExtractionTask(someExtractor)
-      expectMsgClass(classOf[ExtractionTaskResult])
+      expectMsg("Done!")
     }
 
     it("should execute tasks when parallelism=1") {
@@ -45,9 +45,9 @@ class ExtractionManagerSpec(_system: ActorSystem) extends TestKit(_system)
       manager ! ExtractionTask(someExtractor)
       manager ! ExtractionTask(someExtractor.copy(name="e2"))
       manager ! ExtractionTask(someExtractor.copy(name="e3"))
-      expectMsgClass(classOf[ExtractionTaskResult])
-      expectMsgClass(classOf[ExtractionTaskResult])
-      expectMsgClass(classOf[ExtractionTaskResult])
+      expectMsg("Done!")
+      expectMsg("Done!")
+      expectMsg("Done!")
     }
 
     it("should execute tasks when paralleism > 1") {
@@ -56,9 +56,9 @@ class ExtractionManagerSpec(_system: ActorSystem) extends TestKit(_system)
       manager ! ExtractionTask(someExtractor)
       manager ! ExtractionTask(someExtractor.copy(name="e2"))
       manager ! ExtractionTask(someExtractor.copy(name="e3"))
-      expectMsgClass(classOf[ExtractionTaskResult])
-      expectMsgClass(classOf[ExtractionTaskResult])
-      expectMsgClass(classOf[ExtractionTaskResult])
+      expectMsg("Done!")
+      expectMsg("Done!")
+      expectMsg("Done!")
     }
 
   }

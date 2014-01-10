@@ -3,6 +3,10 @@ package org.deepdive.extraction.datastore
 import org.deepdive.datastore.DataStoreUtils
 import spray.json._
 
+object ExtractionDataStore {
+  type JsonExtractionDataStore = ExtractionDataStoreComponent#ExtractionDataStore[_ <: JsValue]
+}
+
 /* Stores extraction results and queries the database for extracted data */
 trait ExtractionDataStoreComponent {
 

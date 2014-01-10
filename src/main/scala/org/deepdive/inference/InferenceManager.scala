@@ -36,7 +36,7 @@ trait InferenceManager extends Actor with ActorLogging {
   lazy val SamplingOutputFile = new File("target/inference_result.out")
   lazy val SamplingOutputFileWeights = new File("target/inference_result.out.weights")
 
-  val factorGraphBuilder = context.actorOf(factorGraphBuilderProps)
+  val factorGraphBuilder = context.actorOf(factorGraphBuilderProps, "factorGraphBuilder")
 
   override def preStart() {
     log.info("Starting")

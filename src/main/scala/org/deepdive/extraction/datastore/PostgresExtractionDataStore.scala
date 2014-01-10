@@ -53,24 +53,25 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
 
     def addBatch(result: Seq[JsObject], outputRelation: String) : Unit = {
       this.synchronized {
-        val file = new File(s"/tmp/${outputRelation}.csv")
+        val file = File.createTempFile(s"deepdive_$outputRelation", ".csv")
         log.info(s"Writing data of length=${result.length} to file=${file.getCanonicalPath}")
         val writer = new PrintWriter(new BufferedWriter(new FileWriter(file, true)))
         // Write the dataset to the file for the relation
         writeCopyData(result, writer)
-      }
-    }
-
-    def flushBatches(outputRelation: String) : Unit = {
-      PostgresDataStore.withConnection { implicit connection =>
-        val file = new File(s"/tmp/${outputRelation}.csv")
+        writer.close()
         val columnNames = scalikejdbc.DB.getColumnNames(outputRelation).toSet
         val copySQL = buildCopySql(outputRelation, columnNames)
         log.info(s"Copying batch data to postgres. sql=${copySQL}" +
           s"file='${file.getCanonicalPath}'")
-        PostgresDataStore.copyBatchData(copySQL, file)
+        PostgresDataStore.withConnection { implicit connection =>
+          PostgresDataStore.copyBatchData(copySQL, file)
+        }
         file.delete()
       }
+    }
+
+    def flushBatches(outputRelation: String) : Unit = {
+      // Nothing to do
     }
 
     /* Builds a COPY statement for a given relation and column names */
@@ -89,7 +90,6 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
         val id = variableIdCounter.getAndIncrement()
         writer.writeNext((List(id.toString) ++ strList).toArray)
       }
-      writer.close()
     }
 
     /* Translates a JSON value to a String that can be insert using COPY statement */

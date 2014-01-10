@@ -35,7 +35,7 @@ trait ExtractionManager extends Actor with ActorLogging {
 
   import ExtractionManager._
   
-  def extractorExecutorProps = ExtractorExecutor.props(dataStore)
+  def extractorRunnerProps = ExtractorRunner.props(dataStore)
 
   // Number of executors we can run in parallel
   def parallelism : Int
@@ -70,8 +70,8 @@ trait ExtractionManager extends Actor with ActorLogging {
     
     taskQueue.take(capacity).foreach { case(task, sender) =>
       log.info(s"executing extractorName=${task.extractor.name}")
-      val newWorker = context.actorOf(extractorExecutorProps)
-      val result = newWorker ? ExtractorExecutor.ExecuteTask(task) pipeTo sender
+      val newWorker = context.actorOf(extractorRunnerProps, s"extractorRunner-${task.extractor.name}")
+      val result = newWorker ? ExtractorRunner.SetTask(task) pipeTo sender
       context.watch(newWorker)
       taskQueue -= task
     }

@@ -15,7 +15,9 @@ trait MemoryExtractionDataStoreComponent extends ExtractionDataStoreComponent{
     
     val data = MMap[String, ArrayBuffer[JsObject]]()
 
-    def init() = {}
+    def init() = {
+      data.clear()
+    }
 
     def queryAsJson[A](query: String)(block: Iterator[JsObject] => A) : A = {
       block(data.get(query).map(_.toList).getOrElse(Nil).iterator)
