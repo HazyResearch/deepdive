@@ -5,6 +5,7 @@ import org.deepdive.settings.Extractor
 import org.scalatest._
 import spray.json._
 import spray.json.DefaultJsonProtocol._
+import rx.lang.scala.subjects._
 
 class ScriptTaskExecutorSpec extends FunSpec {
 
@@ -15,9 +16,10 @@ class ScriptTaskExecutorSpec extends FunSpec {
         "relation1", "/bin/cat", 4, 100, 10000, Nil.toSet))
       val data = (1 to 1000).toList.map(i => s"""{"id":$i}""".asJson.asJsObject).iterator
       val executor = new ScriptTaskExecutor(task, data)
-      val result = executor.run()
-      assert(result.rows.toBlockingObservable.toList.size == 1)
-      assert(result.rows.toBlockingObservable.toList.flatten.size == 1000)
+      val outputSubject = ReplaySubject[Seq[JsObject]]()
+      executor.run(outputSubject)
+      assert(outputSubject.toBlockingObservable.toList.size == 1)
+      assert(outputSubject.toBlockingObservable.toList.flatten.size == 1000)
     }
 
     it("should work with multiple batches") {
@@ -25,9 +27,10 @@ class ScriptTaskExecutorSpec extends FunSpec {
         "relation1", "/bin/cat", 4, 100, 100, Nil.toSet))
       val data = (1 to 1000).toList.map(i => s"""{"id":$i}""".asJson.asJsObject).iterator
             val executor = new ScriptTaskExecutor(task, data)
-      val result = executor.run()
-      assert(result.rows.toBlockingObservable.toList.size == 10)
-      assert(result.rows.toBlockingObservable.toList.flatten.size == 1000)
+      val outputSubject = ReplaySubject[Seq[JsObject]]()
+      executor.run(outputSubject)
+      assert(outputSubject.toBlockingObservable.toList.size == 10)
+      assert(outputSubject.toBlockingObservable.toList.flatten.size == 1000)
     }
 
     it("should work when the extractor fails") {
@@ -35,10 +38,11 @@ class ScriptTaskExecutorSpec extends FunSpec {
       val task = new ExtractionTask(Extractor("testExtractor", "relation1", 
         "relation1", failingExtractorFile, 4, 100, 100, Nil.toSet))
       val data = (1 to 1000).toList.map(i => s"""{"id":$i}""".asJson.asJsObject).iterator
-            val executor = new ScriptTaskExecutor(task, data)
-      val result = executor.run()
+      val executor = new ScriptTaskExecutor(task, data)
+      val outputSubject = ReplaySubject[Seq[JsObject]]()
+      executor.run(outputSubject)
       intercept[RuntimeException] {
-        assert(result.rows.toBlockingObservable.toList.size == 10)
+        assert(outputSubject.toBlockingObservable.toList.size == 10)
       }
     }
 

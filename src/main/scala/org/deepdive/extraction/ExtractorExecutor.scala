@@ -12,7 +12,7 @@ import scala.concurrent._
 import scala.concurrent.duration._
 import scala.sys.process._
 import rx.lang.scala.subjects._
-import spray.json.JsValue
+import spray.json._
 
 
 object ExtractorExecutor {
@@ -69,12 +69,12 @@ class ExtractorExecutor(dataStore: ExtractionDataStoreComponent#ExtractionDataSt
 
     extractorInput { iterator =>
       val executor = new ScriptTaskExecutor(task, iterator)
-      val result = executor.run()
+      val outputSubject = PublishSubject[Seq[JsObject]]()
 
       // Handle the results of writing back to the database.
       // Block until all results are written
       val isDone = Promise[Try[ExtractionTaskResult]]()
-      result.rows.subscribe(
+      outputSubject.subscribe(
         rowBatch => {
           dataStore.addBatch(rowBatch, task.extractor.outputRelation)
         },
@@ -88,6 +88,7 @@ class ExtractorExecutor(dataStore: ExtractionDataStoreComponent#ExtractionDataSt
           isDone.success(Success(ExtractionTaskResult(task.extractor.name)))
         }
       )
+      executor.run(outputSubject)
       Await.result(isDone.future, Duration.Inf)
     }
   }
