@@ -70,30 +70,20 @@ class ExtractorExecutor(dataStore: ExtractionDataStoreComponent#ExtractionDataSt
     extractorInput { iterator =>
       val executor = new ScriptTaskExecutor(task, iterator)
       val result = executor.run()
-    
-      // We execute writing to the database asynchronously because it may be a long operation
-      // TODO: We are using Akka's default dispatcher here, maybe we should define our own.
-      val writtenResults = result.rows.flatMap { rowBatch =>
-        import context.dispatcher
-        val writeFuture = Future { dataStore.addBatch(rowBatch, task.extractor.outputRelation) }
-        val subject = AsyncSubject[Unit]()
-        writeFuture onComplete {
-          case Failure(x) => { subject.onError(x) }
-          case Success(x) => { subject.onNext(x); subject.onCompleted() }
-        }
-        subject
-      }
 
       // Handle the results of writing back to the database.
       // Block until all results are written
       val isDone = Promise[Try[ExtractionTaskResult]]()
-      writtenResults.subscribe(
-        rowBatch => {},
+      result.rows.subscribe(
+        rowBatch => {
+          dataStore.addBatch(rowBatch, task.extractor.outputRelation)
+        },
         exception => {
           log.error(exception.toString)
           isDone.success(Failure(exception))
         },  
         () => {
+          log.info("Flushing batches to the data store")
           dataStore.flushBatches(task.extractor.outputRelation)
           isDone.success(Success(ExtractionTaskResult(task.extractor.name)))
         }
