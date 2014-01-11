@@ -27,17 +27,24 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
       variableIdCounter.set(0)
     }
 
-    def BatchSize = 50000
+    def BatchSize = 20000
 
     def queryAsMap[A](query: String)(block: Iterator[Map[String, Any]] => A) : A = {
       PostgresDataStore.withConnection { implicit conn =>
-        val iter = SQL(query)().map { row =>
+        val sqlQuery = SQL(query)
+        val statement = sqlQuery.filledStatement
+        // If we don't set the fetch size then postgres will return all rows at once 
+        // and load them into memory. We don't want that ;)
+        // TODO: What is a good value for this?
+        conn.setAutoCommit(false)
+        statement.setFetchSize(1000)
+        val iter = Sql.resultSetToStream(statement.executeQuery()).iterator.map { row =>
           row.asMap.toMap.mapValues { 
             case x : org.postgresql.jdbc4.Jdbc4Array => x.getArray()
             case x : java.sql.Date => x.toString
             case other => other
           }
-        }.iterator
+        }
         block(iter)
       }
     }
