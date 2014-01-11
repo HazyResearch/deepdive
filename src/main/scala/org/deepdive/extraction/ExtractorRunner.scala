@@ -101,9 +101,12 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
       workers.foreach ( _ ! ProcessExecutor.CloseInputStream )
       stay
     case Event(ProcessExecutor.OutputData(chunk), Task(task, taskSender, workers)) =>
-      // log.debug(s"adding chunk of size=${chunk.size} data store: ${chunk.toString}")
       val jsonData = chunk map (_.asJson.asInstanceOf[JsObject])
-      Future { dataStore.addBatch(jsonData, task.extractor.outputRelation) } pipeTo sender
+      Future { 
+        log.debug(s"adding chunk of size=${chunk.size} data store.")
+        dataStore.addBatch(jsonData, task.extractor.outputRelation) 
+        log.debug(s"added chunk of size=${chunk.size} data store.")
+      } pipeTo sender
       stay
     case Event(ProcessExecutor.ProcessExited(exitCode), Task(task, sender, workers)) =>
       if (exitCode == 0) {
