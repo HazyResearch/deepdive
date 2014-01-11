@@ -98,22 +98,18 @@ class ProcessExecutor extends Actor with FSM[State, Data] with ActorLogging {
       in => inputStreamFuture.success(in),
       out => {
         outputStreamFuture.success(out)
-        Future {
-          Source.fromInputStream(out).getLines.grouped(batchSize).foreach { batch =>
-            log.debug(s"Sending data back to database, ${dataCallback}")
-            // We wait for the result here, because we don't want to read too much data at once
-            Await.result(dataCallback ? OutputData(batch), 1.hour)
-            // dataCallback ! OutputData(batch)
-          }
-          log.debug(s"closing output stream")
-          out.close()
+        Source.fromInputStream(out).getLines.grouped(batchSize).foreach { batch =>
+          log.debug(s"Sending data back to database, ${dataCallback}")
+          // We wait for the result here, because we don't want to read too much data at once
+          Await.result(dataCallback ? OutputData(batch), 1.hour)
+          // dataCallback ! OutputData(batch)
         }
+        log.debug(s"closing output stream")
+        out.close()
       },
       err => { 
         errorStreamFuture.success(err)
-        Future {
-          Source.fromInputStream(err).getLines foreach (log.debug)
-        }
+        Source.fromInputStream(err).getLines foreach (log.debug)
       }
     )
     val process = cmd run (processBuilder)

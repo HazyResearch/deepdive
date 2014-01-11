@@ -35,7 +35,7 @@ trait ExtractionManager extends Actor with ActorLogging {
 
   import ExtractionManager._
   
-  def extractorRunnerProps = ExtractorRunner.props(dataStore)
+  def extractorRunnerProps = ExtractorRunner.props(dataStore).withDispatcher("akka.actor.extractor-executor-dispatcher")
 
   // Number of executors we can run in parallel
   def parallelism : Int
