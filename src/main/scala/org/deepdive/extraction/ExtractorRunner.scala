@@ -106,7 +106,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
         log.debug(s"adding chunk of size=${chunk.size} data store.")
         dataStore.addBatch(jsonData, task.extractor.outputRelation) 
         log.debug(s"added chunk of size=${chunk.size} data store.")
-      } pipeTo sender
+      }.map (x => "Done!") pipeTo sender
       stay
     case Event(ProcessExecutor.ProcessExited(exitCode), Task(task, sender, workers)) =>
       if (exitCode == 0) {
@@ -138,7 +138,8 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
     log.info(s"Starting ${task.extractor.parallelism} children process workers")
     // Start workers accoridng tot he specified parallelism
     (1 to task.extractor.parallelism).map { i =>
-      val worker = context.actorOf(workerProps, s"processExecutor${i}")
+      val worker = context.actorOf(
+        workerProps.withDispatcher("akka.actor.process-runner-dispatcher"), s"processExecutor${i}")
       context.watch(worker)
       worker ! ProcessExecutor.Start(task.extractor.udf, task.extractor.outputBatchSize)
       worker
