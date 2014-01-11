@@ -135,7 +135,25 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
       val expectedResult = testRow.value + Tuple2("id", JsNumber(0))
       assert(resultFields.toMap.values.toSet == expectedResult.values.toSet) 
     }
+  }
 
+  it("should correctly insert arrays with escape characters") {
+    val jsonArr = Json.parse("""["dobj@","@prep_as","dobj@nsubj","dobj@prep_\\","dobj@prep_to"]""")
+    val testRow = JsObject(Map[String, JsValue](
+        "key" -> JsNull,
+        "some_text" -> JsNull,
+        "some_boolean" -> JsNull,
+        "some_double" -> JsNull,
+        "some_null" -> JsNull,
+        "some_array" -> jsonArr,
+        "some_json" -> JsNull
+      ).toSeq)
+    dataStore.addBatch(List(testRow).iterator, "datatype_test")
+    dataStore.flushBatches("datatype_test")
+    val result = dataStore.queryAsJson("SELECT * from datatype_test")(_.toList)
+    val resultFields = result.head.fields
+    val expectedResult = testRow.value + Tuple2("id", JsNumber(0))
+    assert(resultFields.toMap.values.toSet == expectedResult.values.toSet) 
   }
 }
   

@@ -99,7 +99,7 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
 
     /* Translates a JSON value to a String that can be insert using COPY statement */
     private def jsValueToString(x: JsValue) : String = x match {
-      case JsString(x) => x
+      case JsString(x) => x.replace("\\", "\\\\")
       case JsNumber(x) => x.toString
       case JsNull => null
       case JsBoolean(x) => x.toString
