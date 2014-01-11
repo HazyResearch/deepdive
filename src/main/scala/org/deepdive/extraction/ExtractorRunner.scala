@@ -162,6 +162,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
         self ! WriteData(chunk)
       }
     }
+    log.debug("all data was sent to workers.")
     self ! AllDataDone
   }
 
