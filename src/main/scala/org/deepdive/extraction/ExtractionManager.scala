@@ -70,7 +70,7 @@ trait ExtractionManager extends Actor with ActorLogging {
     
     taskQueue.take(capacity).foreach { case(task, sender) =>
       log.info(s"executing extractorName=${task.extractor.name}")
-      val newWorker = context.actorOf(extractorRunnerProps, s"extractorRunner[${task.extractor.name}]")
+      val newWorker = context.actorOf(extractorRunnerProps, s"extractorRunner-${task.extractor.name}")
       val result = newWorker ? ExtractorRunner.SetTask(task) pipeTo sender
       context.watch(newWorker)
       taskQueue -= task
