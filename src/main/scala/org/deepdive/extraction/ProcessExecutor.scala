@@ -3,8 +3,9 @@ package org.deepdive.extraction
 import akka.actor._
 import akka.pattern.{ask, pipe}
 import akka.util.Timeout
-import java.io.{OutputStream, InputStream, PrintWriter}
+import java.io.{OutputStream, InputStream, PrintWriter, BufferedWriter, OutputStreamWriter, Writer}
 import ProcessExecutor._
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent._
 import scala.concurrent.duration._
 import scala.io.Source
@@ -43,7 +44,7 @@ object ProcessExecutor {
   sealed trait Data
   case object Uninitialized extends Data
   case class TaskInfo(cmd: String, outputBatchSize: Int, sender: ActorRef)
-  case class ProcessInfo(process: Process, inputStream: OutputStream,
+  case class ProcessInfo(process: Process, inputStream: PrintWriter,
     errorStream: InputStream, outputStream: InputStream)
   case class RuntimeData(processInfo: ProcessInfo, taskInfo: TaskInfo) extends Data
 
@@ -62,7 +63,11 @@ class ProcessExecutor extends Actor with FSM[State, Data] with ActorLogging {
       val _sender = sender
       val processInfo = startProcess(cmd, outputBatchSize, _sender)
       // Signal that the process has started
-      Future { self ! ProcessExited(processInfo.process.exitValue()) }
+      Future { 
+        val exitValue = processInfo.process.exitValue()
+        self ! ProcessExited(exitValue) 
+        processInfo.process.destroy()
+      }
       // Transition to the running state
       goto(Running) using RuntimeData(processInfo, TaskInfo(cmd, outputBatchSize, sender))
   }
@@ -71,8 +76,7 @@ class ProcessExecutor extends Actor with FSM[State, Data] with ActorLogging {
     case Event(Write(data), RuntimeData(processInfo, taskInfo)) =>
       // Write data to the process. Do this in a different thread
       log.debug("writing data to process.")
-      val writer = new PrintWriter(processInfo.inputStream, true)
-      writer.println(data)
+      processInfo.inputStream.println(data)
       stay
     case Event(CloseInputStream, RuntimeData(processInfo, taskInfo)) =>
       // Close the input stream. 
@@ -89,21 +93,30 @@ class ProcessExecutor extends Actor with FSM[State, Data] with ActorLogging {
   initialize()
 
   private def startProcess(cmd: String, batchSize: Int, dataCallback: ActorRef) : ProcessInfo = {
-    val inputStreamFuture = Promise[OutputStream]()
+    val inputStreamFuture = Promise[PrintWriter]()
     val errorStreamFuture = Promise[InputStream]()
     val outputStreamFuture = Promise[InputStream]()
 
     log.info(s"""starting process with cmd="$cmd" and batch_size=$batchSize""")
     val processBuilder = new ProcessIO(
-      in => inputStreamFuture.success(in),
+      in => {
+        val writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(in)))
+        inputStreamFuture.success(writer)
+      },  
       out => {
         outputStreamFuture.success(out)
-        Source.fromInputStream(out).getLines.grouped(batchSize).foreach { batch =>
-          log.debug(s"Sending data back to database, ${dataCallback}")
-          // We wait for the result here, because we don't want to read too much data at once
-          Await.result(dataCallback ? OutputData(batch), 1.hour)
-          // dataCallback ! OutputData(batch)
+        // This is ugly but trying it because of memory leak
+        var buffer = ArrayBuffer[String]()
+        for (line <- Source.fromInputStream(out).getLines) {
+          buffer += line
+          if(buffer.size >= batchSize) {
+            log.debug(s"Sending data back to database, ${dataCallback}")
+            Await.result(dataCallback ? OutputData(buffer.toSeq), 1.hour)
+            buffer.clear()
+          }
         }
+        Await.result(dataCallback ? OutputData(buffer.toSeq), 1.hour)
+        buffer.clear()
         log.debug(s"closing output stream")
         out.close()
       },
