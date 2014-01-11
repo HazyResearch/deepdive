@@ -49,7 +49,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
   import ExtractorRunner._
   
 
-  def workerProps = ProcessExecutor.props.withDispatcher("akka.actor.process-executor-dispatcher")
+  def workerProps = ProcessExecutor.props
 
   override def preStart() { log.info("waiting for task") }
 
@@ -108,7 +108,8 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
         log.debug(s"adding chunk of size=${chunk.size} data store.")
         dataStore.addBatch(jsonData, task.extractor.outputRelation) 
         log.debug(s"added chunk of size=${chunk.size} data store.")
-      }.map (x => "Done!") pipeTo sender
+      }
+      sender ! "OK!"
       stay
     case Event(ProcessExecutor.ProcessExited(exitCode), Task(task, sender, workers)) =>
       if (exitCode == 0) {
