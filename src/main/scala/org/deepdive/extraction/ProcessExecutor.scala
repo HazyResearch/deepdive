@@ -59,7 +59,8 @@ class ProcessExecutor extends Actor with FSM[State, Data] with ActorLogging {
   when(Idle) {
     case Event(Start(cmd, outputBatchSize), Uninitialized) =>
       // Start the process
-      val processInfo = startProcess(cmd, outputBatchSize, sender)
+      val _sender = sender
+      val processInfo = startProcess(cmd, outputBatchSize, _sender)
       // Signal that the process has started
       Future { self ! ProcessExited(processInfo.process.exitValue()) }
       // Transition to the running state
@@ -97,7 +98,7 @@ class ProcessExecutor extends Actor with FSM[State, Data] with ActorLogging {
       out => {
         outputStreamFuture.success(out)
         Source.fromInputStream(out).getLines.grouped(batchSize).foreach { batch =>
-          // log.debug(s"Received: ${batch.toString}")
+          log.debug(s"Sending data back to database, ${dataCallback}")
           // We wait for the result here, because we don't want to read too much data at once
           Await.result(dataCallback ? OutputData(batch), 1.hour)
         }
