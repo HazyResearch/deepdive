@@ -31,7 +31,7 @@ object ProcessExecutor {
 
   // Sent Messages
   // An output batch from the process
-  case class OutputData(block: Seq[String])
+  case class OutputData(block: List[String])
 
   // States
   sealed trait State
@@ -106,17 +106,12 @@ class ProcessExecutor extends Actor with FSM[State, Data] with ActorLogging {
       out => {
         outputStreamFuture.success(out)
         // This is ugly but trying it because of memory leak
-        var buffer = ArrayBuffer[String]()
-        for (line <- Source.fromInputStream(out).getLines) {
-          buffer += line
-          if(buffer.size >= batchSize) {
-            log.debug(s"Sending data back to database, ${dataCallback}")
-            Await.result(dataCallback ? OutputData(buffer.toSeq), 1.hour)
-            buffer.clear()
-          }
+        Source.fromInputStream(out).getLines.grouped(batchSize).foreach { batch =>
+          log.debug(s"Sending data back to database, ${dataCallback}")
+          // We wait for the result here, because we don't want to read too much data at once
+          Await.result(dataCallback ? OutputData(batch.toList), 1.hour)
+          // dataCallback ! OutputData(batch)
         }
-        Await.result(dataCallback ? OutputData(buffer.toSeq), 1.hour)
-        buffer.clear()
         log.debug(s"closing output stream")
         out.close()
       },

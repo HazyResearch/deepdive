@@ -51,16 +51,16 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
       }
     }
 
-    def addBatch(result: Seq[JsObject], outputRelation: String) : Unit = {
+    def addBatch(result: Iterator[JsObject], outputRelation: String) : Unit = {
       val file = File.createTempFile(s"deepdive_$outputRelation", ".csv")
-      log.info(s"Writing data of length=${result.length} to file=${file.getCanonicalPath}")
+      log.info(s"Writing data of to file=${file.getCanonicalPath}")
       val writer = new PrintWriter(new BufferedWriter(new FileWriter(file, true)))
       // Write the dataset to the file for the relation
       writeCopyData(result, writer)
       writer.close()
       val columnNames = scalikejdbc.DB.getColumnNames(outputRelation).toSet
       val copySQL = buildCopySql(outputRelation, columnNames)
-      log.info(s"Copying batch data to postgres. sql=${copySQL}" +
+      log.info(s"Copying batch data to postgres. sql='${copySQL}'" +
         s"file='${file.getCanonicalPath}'")
       PostgresDataStore.withConnection { implicit connection =>
         PostgresDataStore.copyBatchData(copySQL, file)
@@ -79,7 +79,7 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
     }
 
     /* Builds a CSV dat astring for given JSON data and column names */
-    def writeCopyData(data: Seq[JsObject], fileWriter: Writer)  = {
+    def writeCopyData(data: Iterator[JsObject], fileWriter: Writer) : Unit = {
       val writer = new CSVWriter(fileWriter)
       for (obj <- data) { 
         val dataList = obj.fields.filterKeys(_ != "id").toList.sortBy(_._1)

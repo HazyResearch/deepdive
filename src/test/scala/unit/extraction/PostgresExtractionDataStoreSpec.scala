@@ -111,7 +111,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
        JsObject(Map("key1" -> JsString("hi2"), "key2" -> JsNull))
       )
       val strWriter = new StringWriter()
-      val resultFile = dataStore.writeCopyData(data, strWriter)
+      val resultFile = dataStore.writeCopyData(data.iterator, strWriter)
       val result = strWriter.toString
       assert(result == "\"0\",\"hi\",\"hello\"\n\"1\",\"hi2\",\n")
     }
@@ -129,7 +129,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
         "some_array" -> JsArray(List(JsString("13"), JsString("37"))),
         "some_json" -> JsObject("Hello" -> JsString("World"))
       ))
-      dataStore.addBatch(List(testRow), "datatype_test")
+      dataStore.addBatch(List(testRow).iterator, "datatype_test")
       dataStore.flushBatches("datatype_test")
       val result = dataStore.queryAsJson("SELECT * from datatype_test")(_.toList)
       val resultFields = result.head.fields

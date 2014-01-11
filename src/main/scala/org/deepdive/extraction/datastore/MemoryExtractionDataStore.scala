@@ -35,10 +35,10 @@ trait MemoryExtractionDataStoreComponent extends ExtractionDataStoreComponent{
       }
     }
     
-    def addBatch(result: Seq[JsObject], outputRelation: String) : Unit = {
+    def addBatch(result: Iterator[JsObject], outputRelation: String) : Unit = {
       data.get(outputRelation) match {
-        case Some(rows) => rows ++= result
-        case None => data += Tuple2(outputRelation, ArrayBuffer(result: _*))
+        case Some(rows) => rows ++= result.toSeq
+        case None => data += Tuple2(outputRelation, ArrayBuffer(result.toList: _*))
       }
     }
 

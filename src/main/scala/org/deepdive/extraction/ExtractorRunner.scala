@@ -25,7 +25,7 @@ object ExtractorRunner {
   // Messages
   sealed trait Message
   case class SetTask(task: ExtractionTask) extends Message
-  case class WriteData(data: Seq[String]) extends Message
+  case class WriteData(data: List[String]) extends Message
   case object AllDataDone extends Message
   case object ExecuteAfterScript
   case object Shutdown
@@ -106,7 +106,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
       import context.dispatcher
       Future {
         log.debug(s"adding chunk of size=${chunk.size} data store.")
-        val jsonData = chunk map (_.asJson.asInstanceOf[JsObject])
+        val jsonData = chunk.iterator map (_.asJson.asInstanceOf[JsObject])
         dataStore.addBatch(jsonData, task.extractor.outputRelation) 
         log.debug(s"added chunk of size=${chunk.size} data store.")
       }.map ( x => "OK!") pipeTo _sender
@@ -163,7 +163,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
     // Send the input to myself
     extractorInput { iterator =>
       iterator map(_.toString) grouped(task.extractor.inputBatchSize) foreach { chunk =>
-        self ! WriteData(chunk)
+        self ! WriteData(chunk.toList)
       }
     }
     log.debug("all data was sent to workers.")

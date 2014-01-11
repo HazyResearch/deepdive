@@ -35,7 +35,7 @@ trait ExtractionDataStoreComponent {
      * Writes a list of tuples back to the datastore.
      * IMPORTANT: This method must assign a globally unique variable id to each record 
      */
-    def addBatch(result: Seq[JsObject], outputRelation: String) : Unit
+    def addBatch(result: Iterator[JsObject], outputRelation: String) : Unit
 
     def flushBatches(outputRelation: String) : Unit
 
