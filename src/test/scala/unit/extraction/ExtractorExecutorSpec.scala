@@ -7,8 +7,8 @@
 // import org.deepdive.extraction._
 // import org.deepdive.extraction.datastore._
 // import org.deepdive.settings.Extractor
-// import spray.json._
-// import spray.json.DefaultJsonProtocol._
+// import play.api.libs.json._
+// import play.api.libs.json._
 
 // class ExtractorExecutorSpec extends FunSpec with BeforeAndAfter 
 //   with MemoryExtractionDataStoreComponent  {

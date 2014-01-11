@@ -1,7 +1,7 @@
 package org.deepdive.extraction.datastore
 
 import org.deepdive.datastore.DataStoreUtils
-import spray.json._
+import play.api.libs.json._
 
 object ExtractionDataStore {
   type JsonExtractionDataStore = ExtractionDataStoreComponent#ExtractionDataStore[_ <: JsValue]

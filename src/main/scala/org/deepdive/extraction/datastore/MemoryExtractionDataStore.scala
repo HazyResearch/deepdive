@@ -2,7 +2,7 @@ package org.deepdive.extraction.datastore
 
 import org.deepdive.Logging
 import scala.collection.mutable.{Map => MMap, ArrayBuffer}
-import spray.json._
+import play.api.libs.json._
 
 /* Stores Extraction Results */
 trait MemoryExtractionDataStoreComponent extends ExtractionDataStoreComponent{
@@ -25,7 +25,7 @@ trait MemoryExtractionDataStoreComponent extends ExtractionDataStoreComponent{
     
     def queryAsMap[A](query: String)(block: Iterator[Map[String, Any]] => A) : A = {
       queryAsJson(query) { iter => 
-        block(iter.map(_.fields.mapValues {
+        block(iter.map(_.value.toMap.mapValues {
           case JsNull => null
           case JsString(x) => x
           case JsNumber(x) => x

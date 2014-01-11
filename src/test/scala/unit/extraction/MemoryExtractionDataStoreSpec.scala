@@ -2,7 +2,7 @@ package org.deepdive.test.unit
 
 import org.deepdive.extraction.datastore._
 import org.scalatest._
-import spray.json._
+import play.api.libs.json._
 
 class MemoryExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
   with MemoryExtractionDataStoreComponent {
@@ -17,7 +17,7 @@ class MemoryExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
         "some_text" -> JsString("I am sample text."),
         "some_boolean" -> JsBoolean(false),
         "some_double" -> JsNumber(13.37)
-      ))
+      ).toSeq)
       dataStore.addBatch(List(testRow).iterator, "testRelation")
       assert(dataStore.data.size == 1)
     }
@@ -31,7 +31,7 @@ class MemoryExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
       "some_text" -> JsString("I am sample text."),
       "some_boolean" -> JsBoolean(false),
       "some_double" -> JsNumber(13.37)
-    ))
+    ).toSeq)
     dataStore.addBatch(List(testRow).iterator, "testRelation")
     val queryResult = dataStore.queryAsJson("testRelation") { data =>
       assert(data.toList.head == testRow)
@@ -46,7 +46,7 @@ class MemoryExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
       "some_text" -> JsString("I am sample text."),
       "some_boolean" -> JsBoolean(false),
       "some_double" -> JsNumber(13.37)
-    ))
+    ).toSeq)
     dataStore.addBatch(List(testRow).iterator, "testRelation")
     val queryResult = dataStore.queryAsMap("testRelation")(_.toList)
     assert(queryResult.head == Map[String, Any](
@@ -55,7 +55,7 @@ class MemoryExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
       "some_text" -> "I am sample text.",
       "some_boolean" -> false,
       "some_double" -> BigDecimal(13.37)
-    ))
+    ).toSeq)
   }
 
 }

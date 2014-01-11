@@ -11,8 +11,8 @@ import org.deepdive.datastore.{PostgresDataStore, DataStoreUtils}
 import org.deepdive.Logging
 import org.deepdive.settings._
 import scala.collection.JavaConversions._
-import spray.json._
-import spray.json.DefaultJsonProtocol._
+import play.api.libs.json._
+import play.api.libs.json._
 
 trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent {
 
@@ -45,7 +45,7 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
     def queryAsJson[A](query: String)(block: Iterator[JsObject] => A) : A = {
       queryAsMap(query) { iter =>
         val jsonIter = iter.map { row =>
-          JsObject(row.mapValues(anyValToJson))
+          JsObject(row.mapValues(anyValToJson).toSeq)
         }
         block(jsonIter)
       }
@@ -82,7 +82,7 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
     def writeCopyData(data: Iterator[JsObject], fileWriter: Writer) : Unit = {
       val writer = new CSVWriter(fileWriter)
       for (obj <- data) { 
-        val dataList = obj.fields.filterKeys(_ != "id").toList.sortBy(_._1)
+        val dataList = obj.value.filterKeys(_ != "id").toList.sortBy(_._1)
         val strList = dataList.map (x => jsValueToString(x._2))
         // We get a unique id for the record
         val id = variableIdCounter.getAndIncrement()
@@ -101,7 +101,7 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
         case JsString(x) => jsValueToString(JsString(s""" "${x}" """))
         case x: JsValue => jsValueToString(x)
       }.map (ele => s"""${ele}""").mkString(",") + "}"
-      case x : JsObject => x.compactPrint
+      case x : JsObject => Json.stringify(x)
       case _ =>
         log.warning(s"Could not convert JSON value ${x} to String")
         ""
@@ -122,7 +122,7 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
         JsArray(x.getArray().asInstanceOf[Array[_]].map(anyValToJson).toList)
       case x : org.postgresql.util.PGobject =>
         x.getType match {
-          case "json" => x.getValue.asJson
+          case "json" => Json.parse(x.getValue)
           case _ =>
             log.error(s"Could not convert ${x.toString} of type=${x.getType} to JSON")
             JsNull

@@ -1,116 +1,116 @@
-package org.deepdive.extraction
+// package org.deepdive.extraction
 
-import java.io.{File, PrintWriter, OutputStream, InputStream}
-import org.deepdive.Logging
-import rx.lang.scala._
-import rx.lang.scala.ImplicitFunctionConversions._
-import rx.lang.scala.subjects._
-import rx.{Observable => JObservable}
-import scala.collection.JavaConversions._
-import scala.collection.JavaConverters._
-import scala.concurrent._
-import scala.concurrent.duration._
-import scala.io.Source
-import scala.sys.process._
-import scala.util.Try
-import spray.json._
+// import java.io.{File, PrintWriter, OutputStream, InputStream}
+// import org.deepdive.Logging
+// import rx.lang.scala._
+// import rx.lang.scala.ImplicitFunctionConversions._
+// import rx.lang.scala.subjects._
+// import rx.{Observable => JObservable}
+// import scala.collection.JavaConversions._
+// import scala.collection.JavaConverters._
+// import scala.concurrent._
+// import scala.concurrent.duration._
+// import scala.io.Source
+// import scala.sys.process._
+// import scala.util.Try
+// import play.api.libs.json._
 
 
-class ScriptTaskExecutor[A <: JsValue](task: ExtractionTask, inputData: Iterator[A]) extends Logging { 
+// class ScriptTaskExecutor[A <: JsValue](task: ExtractionTask, inputData: Iterator[A]) extends Logging { 
 
-  val POLL_TIMEOUT = 1.seconds
+//   val POLL_TIMEOUT = 1.seconds
 
-  def run(output: Observer[Seq[JsObject]]) : Unit = {
+//   def run(output: Observer[Seq[JsObject]]) : Unit = {
     
-    // Set the script to be executable
-    val file = new File(task.extractor.udf)
-    file.setExecutable(true)
+//     // Set the script to be executable
+//     val file = new File(task.extractor.udf)
+//     file.setExecutable(true)
 
-    log.info(s"Running UDF: ${file.getAbsolutePath} with parallelism=${task.extractor.parallelism} " + 
-      s"batch_size=${task.extractor.inputBatchSize}")
+//     log.info(s"Running UDF: ${file.getAbsolutePath} with parallelism=${task.extractor.parallelism} " + 
+//       s"batch_size=${task.extractor.inputBatchSize}")
 
-    // An input stream for each process
-    val inputSubjects = (1 to task.extractor.parallelism).map ( i => PublishSubject[A]() )
+//     // An input stream for each process
+//     val inputSubjects = (1 to task.extractor.parallelism).map ( i => PublishSubject[A]() )
 
-    // Build process descriptions based on different data inputs
-    val (processes, outputSubjects) = inputSubjects.zipWithIndex.map { case(inputSubject, i) =>
-      val subjectOut = PublishSubject[JsObject]()
-      // Build and run the process
-      val processBuilder = buildProcessIO(s"${task.extractor.name}[$i]", subjectOut, inputSubject)
-      val process = task.extractor.udf run(processBuilder)
-      (process, subjectOut)
-    }.unzip
+//     // Build process descriptions based on different data inputs
+//     val (processes, outputSubjects) = inputSubjects.zipWithIndex.map { case(inputSubject, i) =>
+//       val subjectOut = PublishSubject[JsObject]()
+//       // Build and run the process
+//       val processBuilder = buildProcessIO(s"${task.extractor.name}[$i]", subjectOut, inputSubject)
+//       val process = task.extractor.udf run(processBuilder)
+//       (process, subjectOut)
+//     }.unzip
 
 
-    // We merge all output streams into one stream
-    val tmpObs = JObservable.from(outputSubjects.map(_.asJavaObservable).toIterable.asJava)
-    val mergedObservables : Observable[JsObject] = JObservable.merge[JsObject](tmpObs)    
+//     // We merge all output streams into one stream
+//     val tmpObs = JObservable.from(outputSubjects.map(_.asJavaObservable).toIterable.asJava)
+//     val mergedObservables : Observable[JsObject] = JObservable.merge[JsObject](tmpObs)    
 
-    // Subscriber the caller to the output
-    mergedObservables.buffer(task.extractor.outputBatchSize).subscribe(output)
+//     // Subscriber the caller to the output
+//     mergedObservables.buffer(task.extractor.outputBatchSize).subscribe(output)
 
-    // Send the input data in a batch-wise round-robin fashion.
-    // We execute this on another thread, so that we don't block.
-    import scala.concurrent.ExecutionContext.Implicits.global
-    val cyclingInput = Stream.continually(inputSubjects.toStream).flatten
-    val groupedInputData = inputData.grouped(task.extractor.inputBatchSize)
-    val dataInputFutures = groupedInputData.zip(cyclingInput.iterator).map { case(batch, obs) =>
-      Future { batch.foreach ( tuple => obs.onNext(tuple) ) }
-    }
-    Future.sequence(dataInputFutures).onComplete { result =>
-      inputSubjects.foreach { x => x.onCompleted() } 
-    }
+//     // Send the input data in a batch-wise round-robin fashion.
+//     // We execute this on another thread, so that we don't block.
+//     import scala.concurrent.ExecutionContext.Implicits.global
+//     val cyclingInput = Stream.continually(inputSubjects.toStream).flatten
+//     val groupedInputData = inputData.grouped(task.extractor.inputBatchSize)
+//     val dataInputFutures = groupedInputData.zip(cyclingInput.iterator).map { case(batch, obs) =>
+//       Future { batch.foreach ( tuple => obs.onNext(tuple) ) }
+//     }
+//     Future.sequence(dataInputFutures).onComplete { result =>
+//       inputSubjects.foreach { x => x.onCompleted() } 
+//     }
     
-    // We wait for the process on a separate thread
-    processes.zip(outputSubjects).foreach { case(process, subj) =>
-      Future {
-        process.exitValue() match {
-          case 0 =>  subj.onCompleted()
-          case x => subj.onError(new RuntimeException(s"process had exit value $x"))
-        }
-      }
-    }
-  }
+//     // We wait for the process on a separate thread
+//     processes.zip(outputSubjects).foreach { case(process, subj) =>
+//       Future {
+//         process.exitValue() match {
+//           case 0 =>  subj.onCompleted()
+//           case x => subj.onError(new RuntimeException(s"process had exit value $x"))
+//         }
+//       }
+//     }
+//   }
 
-  private def buildProcessIO(name: String, subject: PublishSubject[JsObject], 
-    input: PublishSubject[A]) = {
-    new ProcessIO(
-      in => handleProcessIOInput(in, name, input),
-      out => handleProcessIOOutput(out, name, subject),
-      err => {
-        Source.fromInputStream(err).getLines.foreach(l => log.error(l))
-      }
-    )
-  }
+//   private def buildProcessIO(name: String, subject: PublishSubject[JsObject], 
+//     input: PublishSubject[A]) = {
+//     new ProcessIO(
+//       in => handleProcessIOInput(in, name, input),
+//       out => handleProcessIOOutput(out, name, subject),
+//       err => {
+//         Source.fromInputStream(err).getLines.foreach(l => log.error(l))
+//       }
+//     )
+//   }
 
-  private def handleProcessIOInput(in: OutputStream, name: String, 
-     input: PublishSubject[A]) : Unit = {
-    log.debug(s"${name} running")
-    val writer = new PrintWriter(in, true)
-    input.subscribe(
-      tuple => writer.println(tuple.compactPrint),
-      ex => {},
-      () => in.close()
-    )
+//   private def handleProcessIOInput(in: OutputStream, name: String, 
+//      input: PublishSubject[A]) : Unit = {
+//     log.debug(s"${name} running")
+//     val writer = new PrintWriter(in, true)
+//     input.subscribe(
+//       tuple => writer.println(tuple.compactPrint),
+//       ex => {},
+//       () => in.close()
+//     )
     
-  } 
+//   } 
 
-  private def handleProcessIOOutput(out: InputStream, name: String, 
-    subject: PublishSubject[JsObject]) : Unit = {
+//   private def handleProcessIOOutput(out: InputStream, name: String, 
+//     subject: PublishSubject[JsObject]) : Unit = {
 
-    val jsonIterable = Source.fromInputStream(out).getLines.map { line =>
-      Try(line.asJson.asJsObject).getOrElse {
-        log.warning(s"Could not parse JSON: ${line}")
-        JsObject()
-      }
-    }
-    // We create an observable from the stream and subscribe the output to it
-    // We only handle the onNext event. The onComplete is handled when the process exists.
-    Observable(JObservable.from(jsonIterable.toIterable.asJava)).subscribe(
-      input => subject.onNext(input)
-    )
-    out.close()
-    log.debug(s"${name} done")   
-  }
+//     val jsonIterable = Source.fromInputStream(out).getLines.map { line =>
+//       Try(line.asJson.asJsObject).getOrElse {
+//         log.warning(s"Could not parse JSON: ${line}")
+//         JsObject()
+//       }
+//     }
+//     // We create an observable from the stream and subscribe the output to it
+//     // We only handle the onNext event. The onComplete is handled when the process exists.
+//     Observable(JObservable.from(jsonIterable.toIterable.asJava)).subscribe(
+//       input => subject.onNext(input)
+//     )
+//     out.close()
+//     log.debug(s"${name} done")   
+//   }
 
-}
+// }

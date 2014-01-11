@@ -12,7 +12,7 @@
 // import scala.concurrent.duration._
 // import scala.sys.process._
 // import rx.lang.scala.subjects._
-// import spray.json._
+// import play.api.libs.json._
 
 
 // object ExtractorExecutor {

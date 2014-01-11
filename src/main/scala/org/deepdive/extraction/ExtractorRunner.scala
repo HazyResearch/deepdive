@@ -14,7 +14,7 @@ import scala.concurrent._
 import scala.concurrent.duration._
 import scala.sys.process._
 import rx.lang.scala.subjects._
-import spray.json._
+import play.api.libs.json._
 import scala.util.Random
 
 
@@ -102,12 +102,13 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
       workers.foreach ( _ ! ProcessExecutor.CloseInputStream )
       stay
     case Event(ProcessExecutor.OutputData(chunk), Task(task, taskSender, workers)) =>
-      val _sender = sender
       import context.dispatcher
+      val _sender = sender
+      val _chunk = chunk
       Future {
         log.debug(s"adding chunk of size=${chunk.size} data store.")
-        val jsonData = chunk.iterator map (_.asJson.asInstanceOf[JsObject])
-        dataStore.addBatch(jsonData, task.extractor.outputRelation) 
+        val jsonData = _chunk.map(Json.parse).map(_.asInstanceOf[JsObject])
+        dataStore.addBatch(jsonData.iterator, task.extractor.outputRelation) 
         log.debug(s"added chunk of size=${chunk.size} data store.")
       }.map ( x => "OK!") pipeTo _sender
       stay

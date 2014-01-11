@@ -7,8 +7,7 @@ import org.deepdive.extraction.datastore._
 import org.deepdive.test._
 import org.scalatest._
 import scala.io.Source
-import spray.json._
-import DefaultJsonProtocol._
+import play.api.libs.json._
 import java.io.StringWriter
 
 class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
@@ -72,16 +71,16 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
         """SELECT key, array_agg(some_text) AS "datatype_test.texts"
         FROM datatype_test GROUP BY key"""
       )(_.toList)
-      assert(result.head.asInstanceOf[JsObject].fields == Map[String, JsValue](
+      assert(result.head.asInstanceOf[JsObject].value == Map[String, JsValue](
         "datatype_test.key" -> JsNumber(1),
-        ".datatype_test.texts" -> JsArray(JsString("Hello"), JsString("Ce"))
+        ".datatype_test.texts" -> JsArray(Seq(JsString("Hello"), JsString("Ce")))
       ))
     }
 
     it("should work with simple data types") {
       insertSampleRow()
       val result = dataStore.queryAsJson("SELECT * from datatype_test")(_.toList)
-      assert(result.head.asInstanceOf[JsObject].fields == Map[String, JsValue](
+      assert(result.head.asInstanceOf[JsObject].value == Map[String, JsValue](
         "datatype_test.id" -> JsNumber(1),
         "datatype_test.key" -> JsNumber(1),
         "datatype_test.some_text" -> JsString("Hello"),
@@ -89,7 +88,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
         "datatype_test.some_double" -> JsNumber(1.0),
         "datatype_test.some_null" -> JsNull,
         "datatype_test.some_array" -> JsArray(List(JsString("A"), JsString("B"))),
-        "datatype_test.some_json" -> JsObject("hello" -> JsString("world"))
+        "datatype_test.some_json" -> JsObject(Map("hello" -> JsString("world")).toSeq)
       ))
     }
   }
@@ -107,8 +106,8 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
 
     it ("should work") {
       val data = List[JsObject](
-       JsObject(Map("key1" -> JsString("hi"), "key2" -> JsString("hello"))),
-       JsObject(Map("key1" -> JsString("hi2"), "key2" -> JsNull))
+       JsObject(Map("key1" -> JsString("hi"), "key2" -> JsString("hello")).toSeq),
+       JsObject(Map("key1" -> JsString("hi2"), "key2" -> JsNull).toSeq)
       )
       val strWriter = new StringWriter()
       val resultFile = dataStore.writeCopyData(data.iterator, strWriter)
@@ -127,14 +126,14 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
         "some_double" -> JsNumber(13.37),
         "some_null" -> JsNull,
         "some_array" -> JsArray(List(JsString("13"), JsString("37"))),
-        "some_json" -> JsObject("Hello" -> JsString("World"))
-      ))
+        "some_json" -> JsObject(Map("Hello" -> JsString("World")).toSeq)
+      ).toSeq)
       dataStore.addBatch(List(testRow).iterator, "datatype_test")
       dataStore.flushBatches("datatype_test")
       val result = dataStore.queryAsJson("SELECT * from datatype_test")(_.toList)
       val resultFields = result.head.fields
-      val expectedResult = testRow.fields + Tuple2("id", JsNumber(0))
-      assert(resultFields.values.toSet == expectedResult.values.toSet) 
+      val expectedResult = testRow.value + Tuple2("id", JsNumber(0))
+      assert(resultFields.toMap.values.toSet == expectedResult.values.toSet) 
     }
 
   }

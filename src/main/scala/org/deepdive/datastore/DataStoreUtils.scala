@@ -3,8 +3,7 @@ package org.deepdive.datastore
 import anorm._
 import org.deepdive.Logging
 import org.deepdive.settings._
-import spray.json._
-import spray.json.DefaultJsonProtocol._
+import play.api.libs.json._
 
 /* Utilities for working with data stores */
 object DataStoreUtils extends Logging {
@@ -26,7 +25,7 @@ object DataStoreUtils extends Logging {
   implicit def jsonRowsToAnormSeq[T <% Iterable[JsObject]]
     (rows: T): Seq[AnormSeq] = {
     rows.map { row =>
-      row.fields.mapValues { 
+      row.value.mapValues { 
         case(JsNull) => toParameterValue(null)
         case(x: JsString) => toParameterValue(x.value)
         case(x: JsNumber) => toParameterValue(x.value.toLong)
