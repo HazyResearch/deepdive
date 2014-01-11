@@ -69,10 +69,14 @@ class ProcessExecutor extends Actor with FSM[State, Data] with ActorLogging {
 
   when(Running) {
     case Event(Write(data), RuntimeData(processInfo, taskInfo)) =>
-      // Write data to the process
-      log.debug("writing data to proces.")
-      val writer = new PrintWriter(processInfo.inputStream, true)
-      writer.println(data)
+      // Write data to the process. Do this in a different thread
+      Future {
+        processInfo.inputStream.synchronized {
+          log.debug("writing data to proces.")
+          val writer = new PrintWriter(processInfo.inputStream, true)
+          writer.println(data)
+        }
+      }
       stay
     case Event(CloseInputStream, RuntimeData(processInfo, taskInfo)) =>
       // Close the input stream. 
