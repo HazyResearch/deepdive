@@ -49,7 +49,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
   import ExtractorRunner._
   import context.dispatcher
 
-  def workerProps = ProcessExecutor.props
+  def workerProps = ProcessExecutor.props.withDispatcher("deepdive.actor.processExecutorDispatcher")
 
   override def preStart() { log.info("waiting for task") }
 
@@ -139,7 +139,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
     // Start workers accoridng tot he specified parallelism
     (1 to task.extractor.parallelism).map { i =>
       val worker = context.actorOf(
-        workerProps.withDispatcher("akka.actor.process-runner-dispatcher"), s"processExecutor${i}")
+        workerProps, s"processExecutor${i}")
       context.watch(worker)
       worker ! ProcessExecutor.Start(task.extractor.udf, task.extractor.outputBatchSize)
       worker
