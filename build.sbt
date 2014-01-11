@@ -14,6 +14,7 @@ libraryDependencies ++= List(
   "com.typesafe.akka" %% "akka-actor" % "2.2.3",
   "com.typesafe.akka" %% "akka-testkit" % "2.2.3",
   "com.typesafe.akka" %% "akka-slf4j" % "2.2.3",
+  "com.typesafe.atmos" % "trace-akka-2.2.1_2.10" % "1.3.0",
   "ch.qos.logback" % "logback-classic" % "1.0.7",
   "com.typesafe" % "config" % "1.0.2",
   "com.github.scopt" %% "scopt" % "3.2.0",
@@ -29,3 +30,5 @@ libraryDependencies ++= List(
 )
 
 parallelExecution in Test := false
+
+atmosSettings
