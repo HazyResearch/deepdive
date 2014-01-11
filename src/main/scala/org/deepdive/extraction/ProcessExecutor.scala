@@ -101,8 +101,8 @@ class ProcessExecutor extends Actor with FSM[State, Data] with ActorLogging {
         Source.fromInputStream(out).getLines.grouped(batchSize).foreach { batch =>
           log.debug(s"Sending data back to database, ${dataCallback}")
           // We wait for the result here, because we don't want to read too much data at once
-          // Await.result(dataCallback ? OutputData(batch), 1.hour)
-          dataCallback ! OutputData(batch)
+          Await.result(dataCallback ? OutputData(batch), 1.hour)
+          // dataCallback ! OutputData(batch)
         }
         log.debug(s"closing output stream")
         out.close()

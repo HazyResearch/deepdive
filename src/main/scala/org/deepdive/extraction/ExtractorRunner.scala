@@ -103,10 +103,12 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
       stay
     case Event(ProcessExecutor.OutputData(chunk), Task(task, taskSender, workers)) =>
       val jsonData = chunk map (_.asJson.asInstanceOf[JsObject])
+      val _sender = sender
       import context.dispatcher
       log.debug(s"adding chunk of size=${chunk.size} data store.")
       dataStore.addBatch(jsonData, task.extractor.outputRelation) 
       log.debug(s"added chunk of size=${chunk.size} data store.")
+      sender ! "OK"
       stay
     case Event(ProcessExecutor.ProcessExited(exitCode), Task(task, sender, workers)) =>
       if (exitCode == 0) {
