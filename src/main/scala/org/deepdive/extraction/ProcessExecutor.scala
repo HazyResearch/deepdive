@@ -70,13 +70,9 @@ class ProcessExecutor extends Actor with FSM[State, Data] with ActorLogging {
   when(Running) {
     case Event(Write(data), RuntimeData(processInfo, taskInfo)) =>
       // Write data to the process. Do this in a different thread
-      Future {
-        processInfo.inputStream.synchronized {
-          log.debug("writing data to proces.")
-          val writer = new PrintWriter(processInfo.inputStream, true)
-          writer.println(data)
-        }
-      }
+      log.debug("writing data to process.")
+      val writer = new PrintWriter(processInfo.inputStream, true)
+      writer.println(data)
       stay
     case Event(CloseInputStream, RuntimeData(processInfo, taskInfo)) =>
       // Close the input stream. 
@@ -102,18 +98,22 @@ class ProcessExecutor extends Actor with FSM[State, Data] with ActorLogging {
       in => inputStreamFuture.success(in),
       out => {
         outputStreamFuture.success(out)
-        Source.fromInputStream(out).getLines.grouped(batchSize).foreach { batch =>
-          log.debug(s"Sending data back to database, ${dataCallback}")
-          // We wait for the result here, because we don't want to read too much data at once
-          Await.result(dataCallback ? OutputData(batch), 1.hour)
-          // dataCallback ! OutputData(batch)
+        Future {
+          Source.fromInputStream(out).getLines.grouped(batchSize).foreach { batch =>
+            log.debug(s"Sending data back to database, ${dataCallback}")
+            // We wait for the result here, because we don't want to read too much data at once
+            Await.result(dataCallback ? OutputData(batch), 1.hour)
+            // dataCallback ! OutputData(batch)
+          }
+          log.debug(s"closing output stream")
+          out.close()
         }
-        log.debug(s"closing output stream")
-        out.close()
       },
       err => { 
         errorStreamFuture.success(err)
-        Source.fromInputStream(err).getLines foreach (log.debug)
+        Future {
+          Source.fromInputStream(err).getLines foreach (log.debug)
+        }
       }
     )
     val process = cmd run (processBuilder)
