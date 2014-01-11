@@ -47,9 +47,9 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
   with ActorLogging with FSM[State, Data] {
 
   import ExtractorRunner._
-  import context.dispatcher
+  
 
-  def workerProps = ProcessExecutor.props.withDispatcher("deepdive.actor.processExecutorDispatcher")
+  def workerProps = ProcessExecutor.props.withDispatcher("akka.actor.process-executor-dispatcher")
 
   override def preStart() { log.info("waiting for task") }
 
@@ -72,6 +72,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
       // Start the children workers
       val workers = startWorkers(task)
       // Schedule the input data to be sent to myself
+      import context.dispatcher
       Future { sendData(task) }
       goto(Running) using Task(task, sender, workers)
   }
@@ -102,6 +103,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
       stay
     case Event(ProcessExecutor.OutputData(chunk), Task(task, taskSender, workers)) =>
       val jsonData = chunk map (_.asJson.asInstanceOf[JsObject])
+      import context.dispatcher
       Future { 
         log.debug(s"adding chunk of size=${chunk.size} data store.")
         dataStore.addBatch(jsonData, task.extractor.outputRelation) 
