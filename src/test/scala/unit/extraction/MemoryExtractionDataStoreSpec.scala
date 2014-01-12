@@ -25,37 +25,42 @@ class MemoryExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
   }
 
   describe("Reading as JSON") {
-    val testRow = JsObject(Map[String, JsValue](
-      "id" -> JsNumber(1),
-      "key" -> JsNumber(100),
-      "some_text" -> JsString("I am sample text."),
-      "some_boolean" -> JsBoolean(false),
-      "some_double" -> JsNumber(13.37)
-    ).toSeq)
-    dataStore.addBatch(List(testRow).iterator, "testRelation")
-    val queryResult = dataStore.queryAsJson("testRelation") { data =>
-      assert(data.toList.head == testRow)
+    it("should work") {
+      val testRow = JsObject(Map[String, JsValue](
+        "id" -> JsNumber(1),
+        "key" -> JsNumber(100),
+        "some_text" -> JsString("I am sample text."),
+        "some_boolean" -> JsBoolean(false),
+        "some_double" -> JsNumber(13.37)
+      ).toSeq)
+      dataStore.addBatch(List(testRow).iterator, "testRelation")
+      val queryResult = dataStore.queryAsJson("testRelation") { data =>
+        assert(data.toList.head == testRow)
+      }
     }
-    
   }
 
   describe("Reading as Map") {
-    val testRow = JsObject(Map[String, JsValue](
-      "id" -> JsNumber(1),
-      "key" -> JsNumber(100),
-      "some_text" -> JsString("I am sample text."),
-      "some_boolean" -> JsBoolean(false),
-      "some_double" -> JsNumber(13.37)
-    ).toSeq)
-    dataStore.addBatch(List(testRow).iterator, "testRelation")
-    val queryResult = dataStore.queryAsMap("testRelation")(_.toList)
-    assert(queryResult.head == Map[String, Any](
-      "id" -> BigDecimal(1),
-      "key" -> BigDecimal(100),
-      "some_text" -> "I am sample text.",
-      "some_boolean" -> false,
-      "some_double" -> BigDecimal(13.37)
-    ).toSeq)
+
+    it("should work"){
+      val testRow = JsObject(Map[String, JsValue](
+        "id" -> JsNumber(1),
+        "key" -> JsNumber(100),
+        "some_text" -> JsString("I am sample text."),
+        "some_boolean" -> JsBoolean(false),
+        "some_double" -> JsNumber(13.37)
+      ).toSeq)
+      dataStore.addBatch(List(testRow).iterator, "testRelation")
+      val queryResult = dataStore.queryAsMap("testRelation")(_.toList)
+      assert(queryResult.head == Map[String, Any](
+        "id" -> BigDecimal(1),
+        "key" -> BigDecimal(100),
+        "some_text" -> "I am sample text.",
+        "some_boolean" -> false,
+        "some_double" -> BigDecimal(13.37)
+      ))
+    }
+
   }
 
 }

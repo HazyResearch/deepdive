@@ -55,6 +55,8 @@ class ProcessExecutor extends Actor with FSM[State, Data] with ActorLogging {
   import context.dispatcher
   implicit val taskTimeout = Timeout(24 hours)
 
+  override def preStart() { log.info("started") }
+
   startWith(Idle, Uninitialized)
 
   when(Idle) {
@@ -106,7 +108,7 @@ class ProcessExecutor extends Actor with FSM[State, Data] with ActorLogging {
         outputStreamFuture.success(out)
         // This is ugly but trying it because of memory leak
         Source.fromInputStream(out).getLines.grouped(batchSize).foreach { batch =>
-          log.debug(s"Sending data back to database, ${dataCallback}")
+          // log.debug(s"Sending data back to database, ${dataCallback}")
           // We wait for the result here, because we don't want to read too much data at once
           Await.result(dataCallback ? OutputData(batch.toList), 1.hour)
           // dataCallback ! OutputData(batch)

@@ -2,8 +2,6 @@ package org.deepdive
 
 import com.typesafe.config.ConfigFactory
 import org.deepdive.settings._
-import org.deepdive.inference.InferenceManager
-import org.deepdive.extraction.{ExtractorExecutor, ExtractionTask}
 import scopt._
 import java.io.File
 
