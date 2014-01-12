@@ -4,7 +4,7 @@ import anorm._
 import com.typesafe.config._
 import org.deepdive.test._
 import org.deepdive.Context
-import org.deepdive.Pipeline
+import org.deepdive._
 import org.deepdive.datastore.{PostgresDataStore, JdbcDataStore}
 import org.scalatest._
 import scalikejdbc.ConnectionPool
@@ -15,15 +15,9 @@ class LogisticRegressionApp extends FunSpec {
     JdbcDataStore.init(ConfigFactory.load)
     PostgresDataStore.withConnection { implicit conn =>
        SQL("drop schema if exists public cascade; create schema public;").execute()
-       SQL("create table titles_tmp(id bigserial primary key, title text, has_extractions boolean);").execute()
        SQL("create table titles(id bigserial primary key, title text, has_extractions boolean);").execute()
        SQL("""create table word_presences(id bigserial primary key, 
         title_id bigint references titles(id), word text, is_present boolean);""").execute()
-       SQL(
-        """
-          INSERT INTO titles_tmp(title, has_extractions) VALUES
-          ('I am title 1', NULL), ('I am title 2', NULL), ('I am another Title', true)
-        """).execute()
     }
     JdbcDataStore.close()
   }
@@ -36,14 +30,14 @@ class LogisticRegressionApp extends FunSpec {
       }
 
       deepdive.extraction.extractors: {
-        titlesExtractor.output_relation: "titles"
-        titlesExtractor.input: "SELECT * from titles_tmp"
-        titlesExtractor.udf: "/usr/bin/sed -e s/titles_tmp.//g"
+        titlesLoader.output_relation: "titles"
+        titlesLoader.input: "CSV('${getClass.getResource("/logistic_regression/titles.csv").getFile}')"
+        titlesLoader.udf: "${getClass.getResource("/logistic_regression/title_loader.py").getFile}"
         
         wordsExtractor.output_relation: "word_presences"
         wordsExtractor.input: "SELECT * FROM titles"
         wordsExtractor.udf: "${getClass.getResource("/logistic_regression/word_extractor.py").getFile}"
-        wordsExtractor.dependencies = ["titlesExtractor"]
+        wordsExtractor.dependencies = ["titlesLoader"]
       }
 
       deepdive.inference.factors {
@@ -58,7 +52,7 @@ class LogisticRegressionApp extends FunSpec {
   it("should work") {
     prepareData()
     val config = ConfigFactory.parseString(getConfig).withFallback(ConfigFactory.load)
-    Pipeline.run(config)
+    DeepDive.run(config)
     // Make sure the data is in the database
     JdbcDataStore.init(ConfigFactory.load)
     PostgresDataStore.withConnection { implicit conn =>

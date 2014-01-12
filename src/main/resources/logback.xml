@@ -1,7 +1,7 @@
 <configuration>
 
   <timestamp key="bySecond" datePattern="yyyyMMdd'T'HHmmss"/>
-  <property name="defaultPattern" value="%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
+  <property name="defaultPattern" value="%d{HH:mm:ss.SSS} [%X{sourceThread}] [%X{akkaSource}][%c{0}] %-5level %msg%n"/>
 
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <encoder><pattern>${defaultPattern}</pattern></encoder>

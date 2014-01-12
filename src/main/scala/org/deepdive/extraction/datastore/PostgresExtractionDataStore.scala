@@ -2,7 +2,7 @@ package org.deepdive.extraction.datastore
 
 import anorm._
 import au.com.bytecode.opencsv.CSVWriter
-import java.io.{File, StringWriter, FileWriter}
+import java.io.{File, StringWriter, FileWriter, PrintWriter, BufferedWriter, Writer}
 import java.lang.RuntimeException
 import java.sql.Connection
 import java.util.concurrent.atomic.AtomicLong
@@ -11,29 +11,15 @@ import org.deepdive.datastore.{PostgresDataStore, DataStoreUtils}
 import org.deepdive.Logging
 import org.deepdive.settings._
 import scala.collection.JavaConversions._
-import spray.json._
-import spray.json.DefaultJsonProtocol._
+import play.api.libs.json._
+import play.api.libs.json._
+import scala.util.{Try, Success, Failure}
 
 trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent {
 
   val dataStore = new PostgresExtractionDataStore
 
-  /* An iterator with a connection */
-  class PostgresDataIterator[A](iter: Iterator[A], conn: Connection) extends Iterator[A] {
-    implicit val connection = conn
-    // TODO: We close the connection when the iterator is done.
-    // It's ugly because we assume we completely iterate over all the data.
-    // This is true in our case, but not generally
-    def hasNext = { iter.hasNext match {
-      case true => true
-      case false =>
-        connection.close()
-        false
-    } }
-    def next() = iter.next()
-  }
-
-  class PostgresExtractionDataStore extends ExtractionDataStore with Logging {
+  class PostgresExtractionDataStore extends ExtractionDataStore[JsObject] with Logging {
 
     /* Globally unique variable id for this data store */
     private val variableIdCounter = new AtomicLong(0)
@@ -42,47 +28,59 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
       variableIdCounter.set(0)
     }
 
-    def BatchSize = 50000
+    def BatchSize = 20000
 
-    def queryAsMap(query: String) : Iterator[Map[String, Any]] = {    
-      implicit val connection = PostgresDataStore.borrowConnection() 
-      connection.setReadOnly(true)
-      val iter = SQL(query)().map { row =>
-        row.asMap.toMap.mapValues { 
-          case x : org.postgresql.jdbc4.Jdbc4Array => x.getArray()
-          case x : java.sql.Date => x.toString
-          case other => other
+    def queryAsMap[A](query: String)(block: Iterator[Map[String, Any]] => A) : A = {
+      PostgresDataStore.withConnection { implicit conn =>
+        val sqlQuery = SQL(query)
+        val statement = sqlQuery.filledStatement
+        // If we don't set the fetch size then postgres will return all rows at once 
+        // and load them into memory. We don't want that ;)
+        // TODO: What is a good value for this?
+        conn.setAutoCommit(false)
+        statement.setFetchSize(1000)
+        val iter = Sql.resultSetToStream(statement.executeQuery()).iterator.map { row =>
+          row.asMap.toMap.mapValues { 
+            case x : org.postgresql.jdbc4.Jdbc4Array => x.getArray()
+            case x : java.sql.Date => x.toString
+            case other => other
+          }
         }
-      }.iterator
-      new PostgresDataIterator(iter, connection)
-    }
-
-    def queryAsJson(query: String) : Iterator[JsObject] = { 
-      queryAsMap(query).map { row =>
-        JsObject(row.mapValues(anyValToJson))
+        block(iter)
       }
     }
 
-    def write(result: Seq[JsObject], outputRelation: String) : Unit = {
+    def queryAsJson[A](query: String)(block: Iterator[JsObject] => A) : A = {
+      queryAsMap(query) { iter =>
+        val jsonIter = iter.map { row =>
+          JsObject(row.mapValues(anyValToJson).toSeq)
+        }
+        block(jsonIter)
+      }
+    }
+
+    def addBatch(result: Iterator[JsObject], outputRelation: String) : Unit = {
+      val file = File.createTempFile(s"deepdive_$outputRelation", ".csv")
+      log.info(s"Writing data of to file=${file.getCanonicalPath}")
+      val writer = new PrintWriter(new BufferedWriter(new FileWriter(file, true)))
+      // Write the dataset to the file for the relation
+      writeCopyData(result, writer)
+      writer.close()
+      val columnNames = scalikejdbc.DB.getColumnNames(outputRelation).toSet
+      val copySQL = buildCopySql(outputRelation, columnNames)
+      log.info(s"Copying batch data to postgres. sql='${copySQL}'" +
+        s"file='${file.getCanonicalPath}'")
       PostgresDataStore.withConnection { implicit connection =>
-        if (result.size == 0) {
-          log.info("nothing to write.")
-          return
+        Try(PostgresDataStore.copyBatchData(copySQL, file)) match {
+          case Success(_) => 
+            log.info("Successfully copied batch data to postgres.") 
+            file.delete()
+          case Failure(ex) => 
+            log.error(s"Error during copy: ${ex}")
+            log.error(s"Problematic CSV file can be found at file=${file.getCanonicalPath}")
+            throw ex
         }
-
-        // We sample the keys to figure out which fields to insert into
-        // This is a ugly, but using this we don't need an explicit schema definition.
-        // Is there a better way?
-        val sampledKeys = result.take(100).flatMap(_.fields.keySet).toSet
-        val copySQL = buildCopySql(outputRelation, sampledKeys)
-
-        // Build the dataset as a TSV string
-        val tmpFile = buildCopyData(result, sampledKeys)
-
-        log.info(s"Writing extraction result to postgres. length=${result.length}, sql=${copySQL}")
-        PostgresDataStore.copyBatchData(copySQL, tmpFile)
-        log.info(s"Wrote num=${result.length} records.")
-      }
+      } 
     }
 
     /* Builds a COPY statement for a given relation and column names */
@@ -92,31 +90,34 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
     }
 
     /* Builds a CSV dat astring for given JSON data and column names */
-    def buildCopyData(data: Seq[JsObject], keys: Set[String]) : File = {
-      val tmpFile = File.createTempFile("csv", "")
-      val writer = new CSVWriter(new FileWriter(tmpFile))
+    def writeCopyData(data: Iterator[JsObject], fileWriter: Writer) : Unit = {
+      val writer = new CSVWriter(fileWriter)
       for (obj <- data) { 
-        val dataList = obj.fields.filterKeys(_ != "id").toList.sortBy(_._1)
+        val dataList = obj.value.filterKeys(_ != "id").toList.sortBy(_._1)
         val strList = dataList.map (x => jsValueToString(x._2))
         // We get a unique id for the record
         val id = variableIdCounter.getAndIncrement()
         writer.writeNext((List(id.toString) ++ strList).toArray)
       }
-      writer.close()
-      tmpFile
     }
 
     /* Translates a JSON value to a String that can be insert using COPY statement */
     private def jsValueToString(x: JsValue) : String = x match {
-      case JsString(x) => x
+      case JsString(x) => x.replace("\\", "\\\\")
       case JsNumber(x) => x.toString
       case JsNull => null
       case JsBoolean(x) => x.toString
-      case JsArray(x) => "{" + x.map {
-        // This is ugly, but we need to quote strings
-        case JsString(x) => jsValueToString(JsString(s""" "${x}" """))
-        case x: JsValue => jsValueToString(x)
-      }.map (ele => s"""${ele}""").mkString(",") + "}"
+      case JsArray(x) => 
+        val innerData = x.map {
+          case JsString(x) => 
+            val convertedStr = jsValueToString(JsString(x))
+            val escapedStr = convertedStr.replace("\"", "\\\"")
+            s""" "${escapedStr}" """ 
+          case x: JsValue => jsValueToString(x)
+        }.mkString(",")
+        val arrayStr = s"{${innerData}}"
+        arrayStr
+      case x : JsObject => Json.stringify(x)
       case _ =>
         log.warning(s"Could not convert JSON value ${x} to String")
         ""
@@ -135,6 +136,13 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
       case x : Array[_] => JsArray(x.toList.map(x => anyValToJson(x)))
       case x : org.postgresql.jdbc4.Jdbc4Array => 
         JsArray(x.getArray().asInstanceOf[Array[_]].map(anyValToJson).toList)
+      case x : org.postgresql.util.PGobject =>
+        x.getType match {
+          case "json" => Json.parse(x.getValue)
+          case _ =>
+            log.error(s"Could not convert ${x.toString} of type=${x.getType} to JSON")
+            JsNull
+        }
       case x =>
         log.error(s"Could not convert ${x.toString} of type=${x.getClass.getName} to JSON")
         JsNull
