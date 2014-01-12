@@ -1,27 +1,30 @@
+body {
+  color: #373723;
+  font-family: 'Lato', 'Lucida Grande', 'Calibri', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+}
+
 #header { 
   color: #ccc;
-  background-color: #102a29; 
+  background-color: #333; 
   height: 40px; 
   padding: 10px 0px;
 }
 
 #footer { 
   color: #ccc;
-  background-color: #102a29; 
+  background-color: #333; 
   height: 40px; 
   padding: 10px 0px;
 }
 
+#footer p { font-size: small; color: #fff;}
+
 #main {
   padding-top: 20px;
-  background-color: #f2f2f2;
-  padding-bottom: 40px;
+  /*background-color: #f2f2f2;*/
+  padding-bottom: 100px;
   min-height: 600px;
-}
-
-body {
-  color: #373723;
-  font-family: 'Lato', 'Lucida Grande', 'Calibri', 'Helvetica Neue', Arial, sans-serif;
 }
 
 
@@ -35,8 +38,8 @@ ul li:last-child {
 
 h1, h2, h3, h4, h5, h6 { 
   color: #222222; 
-  font-weight: 700;
-  letter-spacing: -1px;
+  font-weight: 300;
+  /*letter-spacing: -1px;*/
 }
 
 h3 { margin-top: 1.5em;}
