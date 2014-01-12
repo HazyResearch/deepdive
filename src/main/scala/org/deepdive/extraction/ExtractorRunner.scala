@@ -81,7 +81,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
     case Event(WriteData(chunk), Task(task, sender, workers)) =>
       // Pick a random child to receive the data
       val randomWorker = workers(Random.nextInt(workers.size))
-      log.debug(s"sending data chunk of size=${chunk.size} to worker=${randomWorker.path.name}")
+      // log.debug(s"sending data chunk of size=${chunk.size} to worker=${randomWorker.path.name}")
       randomWorker ! ProcessExecutor.Write(chunk.mkString("\n"))
       stay
     case Event(Terminated(actor), Task(task, sender, workers)) =>
