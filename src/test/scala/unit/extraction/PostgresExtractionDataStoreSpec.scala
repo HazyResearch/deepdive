@@ -129,7 +129,6 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
         "some_json" -> JsObject(Map("Hello" -> JsString("World")).toSeq)
       ).toSeq)
       dataStore.addBatch(List(testRow).iterator, "datatype_test")
-      dataStore.flushBatches("datatype_test")
       val result = dataStore.queryAsJson("SELECT * from datatype_test")(_.toList)
       val resultFields = result.head.fields
       val expectedResult = testRow.value + Tuple2("id", JsNumber(0))
@@ -149,7 +148,6 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
         "some_json" -> JsNull
       ).toSeq)
     dataStore.addBatch(List(testRow).iterator, "datatype_test")
-    dataStore.flushBatches("datatype_test")
     val result = dataStore.queryAsJson("SELECT * from datatype_test")(_.toList)
     val resultFields = result.head.fields
     val expectedResult = testRow.value + Tuple2("id", JsNumber(0))

@@ -83,10 +83,6 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
       } 
     }
 
-    def flushBatches(outputRelation: String) : Unit = {
-      // Nothing to do
-    }
-
     /* Builds a COPY statement for a given relation and column names */
     def buildCopySql(relationName: String, keys: Set[String]) = {
       val fields =  List("id") ++ keys.filterNot(_ == "id").toList.sorted

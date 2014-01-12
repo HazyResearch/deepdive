@@ -45,10 +45,6 @@ trait MemoryExtractionDataStoreComponent extends ExtractionDataStoreComponent{
       }
     }
 
-    def flushBatches(outputRelation: String) : Unit = {
-      // Do nothing, already flushed the batch
-    }
-
   }
   
 }

@@ -26,7 +26,7 @@ object ExtractorRunner {
   // Messages
   sealed trait Message
   case class SetTask(task: ExtractionTask) extends Message
-  case class WriteData(data: List[String]) extends Message
+  case class RouteData(data: List[String]) extends Message
   case object AllDataDone extends Message
   case object ExecuteAfterScript
   case object Shutdown
@@ -74,54 +74,47 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
       val workers = startWorkers(task)
       // Schedule the input data to be sent to myself.
       // We will then forward the data to our workers
-      Future { sendData(task) }
+      Future { sendData(task, workers) }
       goto(Running) using Task(task, sender, workers)
   }
 
   when(Running) {
-
-    case Event(WriteData(chunk), Task(task, sender, workers)) =>
-      // Pick a random child to receive the data
-      // log.debug(s"sending data chunk of size=${chunk.size} to worker=${randomWorker.path.name}")
-      workers.route(ProcessExecutor.Write(chunk.mkString("\n")), self)
-      stay
     
-    case Event(Terminated(actor), Task(task, sender, workers)) =>
+    case Event(Terminated(actor), Task(task, taskSender, workers)) =>
+      // A worker has terminated, remove it from our list
       log.debug(s"worker=${actor.path.name} has terminated")
       val newWorkers = workers.removeRoutee(actor)
+      // If we have no workers left, move to the next state
       newWorkers.routees.size match {
         case 0 => 
           log.info(s"All workers are done. Finishing up.")
           self ! ExecuteAfterScript
           self ! Shutdown
-          dataStore.flushBatches(task.extractor.outputRelation)
-          goto(Finishing) using(Task(task, sender, newWorkers))
+          goto(Finishing) using(Task(task, taskSender, newWorkers))
         case _ => 
-          stay using(Task(task, sender, newWorkers)) 
+          stay using(Task(task, taskSender, newWorkers)) 
       }
     
-    case Event(AllDataDone, Task(task, sender, workers)) =>
-      log.info("Sent all data to workers. Waiting for them to terminate")
-      workers.route(Broadcast(ProcessExecutor.CloseInputStream), self)
-      stay
-    
     case Event(ProcessExecutor.OutputData(chunk), Task(task, taskSender, workers)) =>
+      // Don't close over this
       val _sender = sender
-      val _chunk = chunk
+      // We write the data to the data store, asynchronously
       Future {
         log.debug(s"adding chunk of size=${chunk.size} data store.")
-        val jsonData = _chunk.map(Json.parse).map(_.asInstanceOf[JsObject])
+        val jsonData = chunk.map(Json.parse).map(_.asInstanceOf[JsObject])
         dataStore.addBatch(jsonData.iterator, task.extractor.outputRelation) 
       }.map ( x => "OK!") pipeTo _sender
       stay
     
-    case Event(ProcessExecutor.ProcessExited(exitCode), Task(task, sender, workers)) =>
-      if (exitCode == 0) {
-        stay
-      } else {
-        sender ! Status.Failure(new RuntimeException(s"process exited with exit_code=${exitCode}"))
-        stop
-      } 
+    case Event(ProcessExecutor.ProcessExited(exitCode), Task(task, taskSender, workers)) =>
+      // A worker process has exited. If successful, continue.
+      // If the process failed, shutdown and respond with failure
+      exitCode match {
+        case 0 => stay
+        case exitCode => 
+          taskSender ! Status.Failure(new RuntimeException(s"process exited with exit_code=${exitCode}"))
+          stop
+      }
   }
 
   when(Finishing) {
@@ -133,11 +126,13 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
       }
       stay
     case(Event(Shutdown, Task(task, taskSender, workers))) =>
+      // All done, shutting down
       log.info(s"Shutting down")
       taskSender ! "Done!"
       stop
   }
 
+  /* Starts all workers, watches them, and returns a round-robin fashion router */
   private def startWorkers(task: ExtractionTask) : Router = {
     log.info(s"Starting ${task.extractor.parallelism} children process workers")
     // Start workers accoridng tot he specified parallelism
@@ -154,7 +149,8 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
     router
   }
 
-  private def sendData(task: ExtractionTask) {
+  /* Queries the data store and gets all the data */
+  private def sendData(task: ExtractionTask, workers: Router) {
     log.info(s"Getting data from the data store and sending it to the workers")
 
     // Figure out where to get the input from
@@ -165,14 +161,16 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
         dataStore.queryAsJson[Unit](query)_
     }
 
-    // Send the input to myself
+    // Send the input to myself, we will forward it to the workers
     extractorInput { iterator =>
       iterator map(_.toString) grouped(task.extractor.inputBatchSize) foreach { chunk =>
-        self ! WriteData(chunk.toList)
+        workers.route(ProcessExecutor.Write(chunk.mkString("\n")), self)
       }
     }
+    
+    // Notify all workers that they don't receive more data
+    workers.route(Broadcast(ProcessExecutor.CloseInputStream), self)
     log.debug("all data was sent to workers.")
-    self ! AllDataDone
   }
 
   // Executes a given command. If it fails, shutdown and respond to the sender with failure.

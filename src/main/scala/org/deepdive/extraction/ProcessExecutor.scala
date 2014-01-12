@@ -11,7 +11,7 @@ import scala.concurrent.duration._
 import scala.io.Source
 import scala.sys.process._
 
-
+/* Companion object to process executor */
 object ProcessExecutor {
   
   // Start the actor using this method
@@ -50,8 +50,10 @@ object ProcessExecutor {
 
 }
 
+/* Executes a process and channels input and output data */
 class ProcessExecutor extends Actor with FSM[State, Data] with ActorLogging {
 
+  /* We use the current dispatcher for Futures */
   import context.dispatcher
   implicit val taskTimeout = Timeout(24 hours)
 
@@ -61,10 +63,10 @@ class ProcessExecutor extends Actor with FSM[State, Data] with ActorLogging {
 
   when(Idle) {
     case Event(Start(cmd, outputBatchSize), Uninitialized) =>
-      // Start the process
+      // Start the process (don't close over the sender)
       val _sender = sender
       val processInfo = startProcess(cmd, outputBatchSize, _sender)
-      // Signal that the process has started
+      // Schedule a message when the process has exited
       Future { 
         val exitValue = processInfo.process.exitValue()
         self ! ProcessExited(exitValue) 
@@ -86,6 +88,7 @@ class ProcessExecutor extends Actor with FSM[State, Data] with ActorLogging {
       processInfo.inputStream.close()
       stay
     case Event(ProcessExited(exitValue), RuntimeData(processInfo, taskInfo)) =>
+      // The process has exited, notify the task sender and stop
       log.info(s"process exited with exit_value=$exitValue")
       taskInfo.sender ! ProcessExited(exitValue)
       stop()
@@ -93,12 +96,14 @@ class ProcessExecutor extends Actor with FSM[State, Data] with ActorLogging {
 
   initialize()
 
+  /* Starts the process, blocks until all streams are connected, then return a ProcessInfo */
   private def startProcess(cmd: String, batchSize: Int, dataCallback: ActorRef) : ProcessInfo = {
     val inputStreamFuture = Promise[PrintWriter]()
     val errorStreamFuture = Promise[InputStream]()
     val outputStreamFuture = Promise[InputStream]()
 
     log.info(s"""starting process with cmd="$cmd" and batch_size=$batchSize""")
+    // Build a process object and handle the input, output, and error streams
     val processBuilder = new ProcessIO(
       in => {
         val writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(in)))
@@ -106,12 +111,9 @@ class ProcessExecutor extends Actor with FSM[State, Data] with ActorLogging {
       },  
       out => {
         outputStreamFuture.success(out)
-        // This is ugly but trying it because of memory leak
         Source.fromInputStream(out).getLines.grouped(batchSize).foreach { batch =>
-          // log.debug(s"Sending data back to database, ${dataCallback}")
           // We wait for the result here, because we don't want to read too much data at once
           Await.result(dataCallback ? OutputData(batch.toList), 1.hour)
-          // dataCallback ! OutputData(batch)
         }
         log.debug(s"closing output stream")
         out.close()
@@ -121,15 +123,18 @@ class ProcessExecutor extends Actor with FSM[State, Data] with ActorLogging {
         Source.fromInputStream(err).getLines foreach (log.debug)
       }
     )
+
+    // Run the process
     val process = cmd run (processBuilder)
 
+    // Wait for all streams to be connected
     val processInfoFuture = for {
       inputStream <- inputStreamFuture.future
       errorStream <- errorStreamFuture.future
       outputStream <- outputStreamFuture.future
     } yield ProcessInfo(process, inputStream, errorStream, outputStream)
 
-    Await.result(processInfoFuture, 5.seconds)
+    Await.result(processInfoFuture, 15.seconds)
   }
 
 }

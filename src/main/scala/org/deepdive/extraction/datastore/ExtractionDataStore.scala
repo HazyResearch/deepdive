@@ -37,8 +37,6 @@ trait ExtractionDataStoreComponent {
      */
     def addBatch(result: Iterator[JsObject], outputRelation: String) : Unit
 
-    def flushBatches(outputRelation: String) : Unit
-
   }
   
 }
