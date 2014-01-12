@@ -138,7 +138,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
   }
 
   it("should correctly insert arrays with escape characters") {
-    val jsonArr = Json.parse("""["dobj@","@prep_as","dobj@nsubj","dobj@prep_\\","dobj@prep_to"]""")
+    val jsonArr = Json.parse("""["dobj@","@prep_}as","dobj\"@nsubj","dobj@prep_\\","dobj@prep_to"]""")
     val testRow = JsObject(Map[String, JsValue](
         "key" -> JsNull,
         "some_text" -> JsNull,

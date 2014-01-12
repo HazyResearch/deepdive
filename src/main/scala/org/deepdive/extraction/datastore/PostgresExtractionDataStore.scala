@@ -103,11 +103,16 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
       case JsNumber(x) => x.toString
       case JsNull => null
       case JsBoolean(x) => x.toString
-      case JsArray(x) => "{" + x.map {
-        // This is ugly, but we need to quote strings
-        case JsString(x) => jsValueToString(JsString(s""" "${x}" """))
-        case x: JsValue => jsValueToString(x)
-      }.map (ele => s"""${ele}""").mkString(",") + "}"
+      case JsArray(x) => 
+        val innerData = x.map {
+          case JsString(x) => 
+            val convertedStr = jsValueToString(JsString(x))
+            val escapedStr = convertedStr.replace("\"", "\\\"")
+            s""" "${escapedStr}" """ 
+          case x: JsValue => jsValueToString(x)
+        }.mkString(",")
+        val arrayStr = s"{${innerData}}"
+        arrayStr
       case x : JsObject => Json.stringify(x)
       case _ =>
         log.warning(s"Could not convert JSON value ${x} to String")
