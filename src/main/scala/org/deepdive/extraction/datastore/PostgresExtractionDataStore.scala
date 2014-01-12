@@ -13,6 +13,7 @@ import org.deepdive.settings._
 import scala.collection.JavaConversions._
 import play.api.libs.json._
 import play.api.libs.json._
+import scala.util.{Try, Success, Failure}
 
 trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent {
 
@@ -70,9 +71,16 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
       log.info(s"Copying batch data to postgres. sql='${copySQL}'" +
         s"file='${file.getCanonicalPath}'")
       PostgresDataStore.withConnection { implicit connection =>
-        PostgresDataStore.copyBatchData(copySQL, file)
-      }
-      file.delete()
+        Try(PostgresDataStore.copyBatchData(copySQL, file)) match {
+          case Success(_) => 
+            log.info("Successfully copied batch data to postgres.") 
+            file.delete()
+          case Failure(ex) => 
+            log.error(s"Error during copy: ${ex}")
+            log.error(s"Problematic CSV file can be found at file=${file.getCanonicalPath}")
+            throw ex
+        }
+      } 
     }
 
     def flushBatches(outputRelation: String) : Unit = {

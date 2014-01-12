@@ -109,7 +109,6 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
         log.debug(s"adding chunk of size=${chunk.size} data store.")
         val jsonData = _chunk.map(Json.parse).map(_.asInstanceOf[JsObject])
         dataStore.addBatch(jsonData.iterator, task.extractor.outputRelation) 
-        log.debug(s"added chunk of size=${chunk.size} data store.")
       }.map ( x => "OK!") pipeTo _sender
       stay
     case Event(ProcessExecutor.ProcessExited(exitCode), Task(task, sender, workers)) =>
