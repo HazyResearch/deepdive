@@ -70,20 +70,19 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       SQL("""drop table if exists factor_variables; 
         create table factor_variables(factor_id bigint, variable_id bigint, 
         position int, is_positive boolean);""").execute()
-      SQL("CREATE INDEX ON factor_variables using hash (factor_id);").execute()
-      SQL("CREATE INDEX ON factor_variables using hash (variable_id);").execute()
+      SQL("CREATE INDEX factor_idx ON factor_variables using hash (factor_id);").execute()
+      SQL("CREATE INDEX factor_variables_idx ON factor_variables using hash (variable_id);").execute()
+      SQL("analyze").execute()
 
       // inference_result(id, last_sample, probability)
       SQL("""drop table if exists inference_result CASCADE; 
         create table inference_result(id bigint primary key, last_sample boolean, 
         probability double precision);""").execute()
-      SQL("CREATE INDEX ON inference_result using btree (probability);").execute()
 
       // inference_result_weights(id, weight)
       SQL("""drop table if exists inference_result_weights CASCADE; 
         create table inference_result_weights(id bigint primary key, 
           weight double precision);""").execute()
-       SQL("CREATE INDEX ON inference_result_weights using btree (weight);").execute()
 
       // A view for the mapped inference result.
       // The view is a join of the variables and inference result tables.
@@ -153,6 +152,8 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       // Copy the inference result back to the database
       PostgresDataStore.copyBatchData("COPY inference_result(id, last_sample, probability) FROM STDIN",
         Source.fromFile(variableOutputFile).reader())
+      SQL("CREATE INDEX inference_result_idx ON inference_result using btree (probability);").execute()
+      SQL("analyze").execute()
 
       // Each (relation, column) tuple is a variable in the plate model.
       // Find all (relation, column) combinations
@@ -177,6 +178,9 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       // Copy the weight result back to the database
       PostgresDataStore.copyBatchData("COPY inference_result_weights(id, weight) FROM STDIN",
         Source.fromFile(weightsOutputFile).reader())
+      SQL("""CREATE INDEX inference_result_weights_idx 
+        ON inference_result_weights using btree (weight);""").execute()
+      SQL("analyze").execute()
       
       // Create a view that maps weight descriptions to the weight values
       val mappedVeightsView = "inference_result_mapped_weights"
