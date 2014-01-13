@@ -70,8 +70,8 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       SQL("""drop table if exists factor_variables; 
         create table factor_variables(factor_id bigint, variable_id bigint, 
         position int, is_positive boolean);""").execute()
-      SQL("CREATE INDEX factor_idx ON factor_variables using hash (factor_id);").execute()
-      SQL("CREATE INDEX factor_variables_idx ON factor_variables using hash (variable_id);").execute()
+      SQL("CREATE INDEX factor_idx ON factor_variables (factor_id);").execute()
+      SQL("CREATE INDEX factor_variables_idx ON factor_variables (variable_id);").execute()
       SQL("analyze").execute()
 
       // inference_result(id, last_sample, probability)
