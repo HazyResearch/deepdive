@@ -59,6 +59,14 @@ class ProcessExecutor extends Actor with FSM[State, Data] with ActorLogging {
 
   override def preStart() { log.info("started") }
 
+  override def postStop() {
+    // Stop the process on shutdown
+    stateData match {
+      case RuntimeData(ProcessInfo(process, _, _, _), _) => process.destroy()
+      case _ =>
+    }
+  }
+
   startWith(Idle, Uninitialized)
 
   when(Idle) {
