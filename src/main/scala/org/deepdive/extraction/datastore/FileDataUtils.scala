@@ -4,7 +4,6 @@ import org.deepdive.Logging
 import au.com.bytecode.opencsv.CSVReader
 import scala.io.Source
 import play.api.libs.json._
-import play.api.libs.json._
 import scala.collection.JavaConversions._
 
 object FileDataUtils extends Logging {

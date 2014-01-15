@@ -3,7 +3,6 @@ package org.deepdive.test.unit
 import anorm._
 import org.scalatest._
 import play.api.libs.json._
-import play.api.libs.json._
 import org.deepdive.datastore.DataStoreUtils
 
 class DatabaseUtilsSpec extends FunSpec {

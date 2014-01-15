@@ -60,7 +60,7 @@ object DeepDive extends Logging {
       taskDeps = extractionTasks.map(_.id)
     } yield Task(factor.name, taskDeps, factorTask, inferenceManager)
 
-    val inferenceTask = Task("inference", factorTasks.map(_.id),
+    val inferenceTask = Task("inference", factorTasks.map(_.id) ++ extractionTasks.map(_.id),
       InferenceManager.RunInference(settings.samplerSettings.javaArgs, 
         settings.samplerSettings.samplerArgs), inferenceManager)
 

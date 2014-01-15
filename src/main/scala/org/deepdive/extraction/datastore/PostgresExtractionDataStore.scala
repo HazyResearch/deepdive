@@ -12,7 +12,6 @@ import org.deepdive.Logging
 import org.deepdive.settings._
 import scala.collection.JavaConversions._
 import play.api.libs.json._
-import play.api.libs.json._
 import scala.util.{Try, Success, Failure}
 
 trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent {
