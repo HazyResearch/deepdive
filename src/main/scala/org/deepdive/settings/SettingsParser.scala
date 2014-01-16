@@ -8,8 +8,6 @@ import scala.util.Try
 object SettingsParser extends Logging {
 
    def loadFromConfig(rootConfig: Config) : Settings = {
-    // Validations makes sure that the supplied config includes all the required settings.
-    rootConfig.checkValid(ConfigFactory.defaultReference(), "deepdive")
     val config = rootConfig.getConfig("deepdive")
 
     // Connection settings

@@ -181,6 +181,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
         log.error(exception.toString) 
         failureReceiver ! Status.Failure(exception)
         context.stop(self)
+        throw new RuntimeException(exception.toString)
     }
   }
 
