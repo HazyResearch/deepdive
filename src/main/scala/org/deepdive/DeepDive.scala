@@ -84,8 +84,16 @@ object DeepDive extends Logging {
       case None => defaultPipeline
     }
 
+    // We remove all tasks dependencies that are not in the pipeline
+    val filteredTasks = allTasks.filter(t => activePipeline.tasks.contains(t.id)).map { task =>
+      val newDependencies = task.dependencies.filter(activePipeline.tasks.contains(_))
+      task.copy(dependencies=newDependencies)
+    }
+
+    log.info(s"Running pipeline=${activePipeline.id} with tasks=${filteredTasks.map(_.id)}")
+
     // Schedule all Tasks. 
-    for (task <- allTasks if activePipeline.tasks.contains(task.id)) {
+    for (task <- filteredTasks) {
       taskManager ! TaskManager.AddTask(task)
     }
 
