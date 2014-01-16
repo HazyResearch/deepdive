@@ -3,7 +3,7 @@ package org.deepdive.extraction
 import akka.actor._
 import akka.pattern.{ask, pipe}
 import akka.util.Timeout
-import java.io.{OutputStream, InputStream, PrintWriter, BufferedWriter, OutputStreamWriter, Writer}
+import java.io.{File, OutputStream, InputStream, PrintWriter, BufferedWriter, OutputStreamWriter, Writer}
 import ProcessExecutor._
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent._
@@ -131,6 +131,10 @@ class ProcessExecutor extends Actor with FSM[State, Data] with ActorLogging {
         Source.fromInputStream(err).getLines foreach (log.debug)
       }
     )
+
+    // If the process is a file, make it executable
+    val file = new File(cmd)
+    if (file.isFile) file.setExecutable(true, false)
 
     // Run the process
     val process = cmd run (processBuilder)
