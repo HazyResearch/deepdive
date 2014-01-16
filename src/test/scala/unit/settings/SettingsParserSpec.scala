@@ -46,6 +46,17 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester {
         Extractor("extractor1", "entities", "SELECT * FROM documents", "udf/entities.py", 
           4, 100, 1000, Set("extractor2"), Option("/bin/cat"), Option("/bin/dog"))), 5))
     }
+
+    it("should fail when the input query is not defined") {
+      val config = ConfigFactory.parseString("""
+      extraction.extractors.extractor1.output_relation: "entities"
+      extraction.extractors.extractor1.udf: "udf/entities.py"
+      """).withFallback(defaultConfig)
+      val loadExtractionSettings = PrivateMethod[ExtractionSettings]('loadExtractionSettings)
+      intercept[Exception] {
+        val result = SettingsParser invokePrivate loadExtractionSettings(config)
+      }
+    }
   }
 
   describe("Parsing Inference Settings") {
