@@ -20,7 +20,7 @@ class SamplerSpec(_system: ActorSystem) extends TestKit(_system) with ImplicitSe
     it("should work with a trivial factor graph") {
       val sampler = TestActorRef[Sampler]
       val javaArgs = "-Xmx4g"
-      val samplerOptions = "-l 10 -s 10 -i 10 -t 1"
+      val samplerOptions = "-l 10 -s 10 -i 10"
       val variablesOutputFile = File.createTempFile("sampler_output", "")
       sampler ! Sampler.Run(javaArgs, samplerOptions, VariablesFile, 
         FactorsFile, WeightsFile, variablesOutputFile.getCanonicalPath)
@@ -31,7 +31,7 @@ class SamplerSpec(_system: ActorSystem) extends TestKit(_system) with ImplicitSe
       val sampler = TestActorRef[Sampler]
       watch(sampler)
       val javaArgs = "-Xmx4g"
-      val samplerOptions = "-l 10 -s 10 -i 10 -t 1"
+      val samplerOptions = "-l 10 -s 10 -i 10"
       val variablesOutputFile = File.createTempFile("sampler_output", "")
       intercept[RuntimeException] {
         sampler.receive(Sampler.Run(javaArgs, samplerOptions, VariablesFile, 

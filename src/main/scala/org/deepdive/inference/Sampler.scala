@@ -27,8 +27,8 @@ class Sampler extends Actor with ActorLogging {
       log.info(s"Executing: ${samplerCmd.mkString(" ")}")
       // We run the process, get its exit value, and print its output to the log file
       val exitValue = samplerCmd!(ProcessLogger(
-        out => log.debug(out),
-        err => log.error(err)
+        out => Console.println(out),
+        err => System.err.println(err)
       ))
       // Depending on the exit value we return success or throw an exception
       exitValue match {
@@ -41,11 +41,11 @@ class Sampler extends Actor with ActorLogging {
   def buildSamplerCmd(samplerJavaArgs: String, samplerOptions: String, variablesPath: String,
     factorsPath: String, weightsPath: String, variableOutPath: String) = {
     Seq("java", samplerJavaArgs, 
-      "-jar", "lib/gibbs_sampling-assembly-0.1.jar", 
+      "-jar", "lib/sampler-assembly-0.1.jar", 
       "--variables", variablesPath, 
       "--factors", factorsPath, 
       "--weights", weightsPath,
-      "--output", variableOutPath) ++ samplerOptions.split(" ")
+      "--outputFile", variableOutPath) ++ samplerOptions.split(" ")
   }
 
 }
