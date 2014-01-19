@@ -191,6 +191,9 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
    * Returns failure of the process fails, or returns exit value != 0.
    */
   def executeCmd(cmd: String) : Try[Int] = {
+    // Make the file executable, if necessary
+    val file = new java.io.File(cmd)
+    if (file.isFile) file.setExecutable(true, false)
     log.info(s"""Executing: "$cmd" """)
     val processLogger = ProcessLogger(line => log.info(line))
     Try(cmd!(processLogger)) match {
