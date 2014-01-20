@@ -84,7 +84,7 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
 
     /* Builds a COPY statement for a given relation and column names */
     def buildCopySql(relationName: String, keys: Set[String]) = {
-      val fields =  List("id") ++ keys.filterNot(_ == "id").toList.sorted
+      val fields = List("id") ++ keys.filterNot(_ == "id").toList.sorted
       s"""COPY ${relationName}(${fields.mkString(", ")}) FROM STDIN CSV"""
     }
 
