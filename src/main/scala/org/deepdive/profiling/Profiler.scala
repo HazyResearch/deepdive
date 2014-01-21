@@ -29,6 +29,8 @@ class Profiler extends Actor with ActorLogging {
   }
 
   def receive = {
+    case QuickReport(id, description) =>
+      reports += Report(id, description, "", System.currentTimeMillis, System.currentTimeMillis)
     case msg @ StartReport(id, startDescription) =>
       log.debug(s"starting report_id=${id}")
       startedReports += Tuple2(id, Tuple2(msg, System.currentTimeMillis))
