@@ -11,6 +11,7 @@ resolvers += "spray" at "http://repo.spray.io/"
 resolvers += Resolver.sonatypeRepo("public")
 
 libraryDependencies ++= List(
+  "commons-io" % "commons-io" % "2.0",
   "ch.qos.logback" % "logback-classic" % "1.0.7",
   "com.github.scopt" %% "scopt" % "3.2.0",
   "com.h2database" % "h2" % "1.3.166",

@@ -1,34 +1,28 @@
+#! /usr/bin/env python
+
+# Usage: calibration.py [target/calibration_data_file.csv] [output_file.png]
+
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
-## Example Call: 
-# python cali.py ../../target/calibration_data lines_is_intable b.png
-
-CALI_DIR = sys.argv[1]
-OUT_IMG  = sys.argv[2]
-
-COUNT_FILE = CALI_DIR
-
-#PRECI_FILE = CALI_DIR + "/precision_" + CALI_TASK + ".tsv"
+CALIBRATION_FILE = sys.argv[1]
+OUT_IMG_FILE  = sys.argv[2]
 
 labels = []
 counts = []
 prec = []
 counts_train = []
-for l in open(COUNT_FILE):
+for l in open(CALIBRATION_FILE):
 	(a,b,c,d,e) = l.rstrip().split('\t')
 	labels.append((float(a) + float(b))/2)
 	counts.append(int(c))
-
 	if float(d) + float(e) == 0: 
 		prec.append(0.0)
 	else:
 		prec.append(float(d)/(float(d) + float(e)))
 	counts_train.append(float(d)+float(e))
-
-
 
 fig, ax = plt.subplots(figsize=(12,3))
 
@@ -71,8 +65,6 @@ plt.ylabel("# Predictions")
 plt.xlabel("Probability")
 plt.xlim(0,1.1)
 
-
-
-plt.savefig(OUT_IMG)
+plt.savefig(OUT_IMG_FILE)
 
 
