@@ -236,26 +236,33 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
     def flush() : Unit = {
       // Insert weight
       log.debug(s"Storing num_weights=${weights.size}")
+      val weightsCSV : File = toCSVData(weights.iterator)
       PostgresDataStore.copyBatchData("""COPY weights(id, initial_value, is_fixed, description) FROM STDIN CSV""", 
-        toCSVData(weights.iterator))
+        weightsCSV)
+      weightsCSV.delete()
       
       // Insert variables
       val numEvidence = variables.count(_.isEvidence)
       val numQuery = variables.count(_.isQuery)
       log.debug(s"Storing num_variables=${variables.size} num_evidence=${numEvidence} " +
         s"num_query=${numQuery}")
+      val variablesCSV = toCSVData(variables.iterator)
       PostgresDataStore.copyBatchData("""COPY variables( id, data_type, initial_value, is_evidence, is_query,
-        mapping_relation, mapping_column, mapping_id) FROM STDIN CSV""", 
-        toCSVData(variables.iterator))
+        mapping_relation, mapping_column, mapping_id) FROM STDIN CSV""", variablesCSV)
+      variablesCSV.delete()
       
       // Insert factors 
       log.debug(s"Storing num_factors=${factors.size}")
+      val factorsCSV = toCSVData(factors.iterator)
       PostgresDataStore.copyBatchData( """COPY factors(id, weight_id, factor_function) FROM STDIN CSV""", 
-        toCSVData(factors.iterator))
+        factorsCSV)
+      factorsCSV.delete()
       
       // Insert Factor Variables
+      val factorVarCSV = toCSVData(factors.iterator.flatMap(_.variables))
       PostgresDataStore.copyBatchData("""COPY factor_variables(factor_id, variable_id, position, is_positive) 
-        FROM STDIN CSV""", toCSVData(factors.iterator.flatMap(_.variables)))
+        FROM STDIN CSV""", factorVarCSV)
+      factorVarCSV.delete()
       
       // Clear the temporary buffer
       weights.clear()
