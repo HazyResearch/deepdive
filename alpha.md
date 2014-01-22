@@ -62,6 +62,7 @@ Learn more about DeepDive's features:
 - [Calibration](doc/calibration.html)
 - [Pipelines](doc/pipelines.html)
 - [Performance tuning](doc/performance.html)
+- [FAQ](doc/faq.html)
 
 Learn about using various databases with DeepDive:
 
