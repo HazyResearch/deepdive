@@ -57,9 +57,9 @@ To get started:
 Background knowledge:
 
 - [Probabilistc Inference](doc/general/inference.html)
-- [Distant Supervision (TODO)](doc/general/distant_supervision.html)
+- [Distant Supervision (coming soon)](doc/general/distant_supervision.html)
 - [Using calibration data](doc/general/calibration.html)
-- [Generating negative examples (TODO)](doc/general/negative_examples.html)
+- [Generating negative examples (coming soon)](doc/general/negative_examples.html)
 
 Learn more about DeepDive's features:
 
@@ -74,7 +74,7 @@ Learn more about DeepDive's features:
 Learn about using various databases with DeepDive:
 
 - [Using PostgreSQL with DeepDive](doc/postgresql.html)
-- [Using GreenPlum with DeepDive (TODO)](doc/grenplum.html)
+- [Using GreenPlum with DeepDive (coming soon)](doc/grenplum.html)
 
 Contribute to DeepDive:
 
