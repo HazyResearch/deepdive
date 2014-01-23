@@ -28,7 +28,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
     JdbcDataStore.close()
   }
 
-  describe("Querying") {
+  describe("Querying as a Map") {
 
     def insertSampleData() = {
       SQL("""insert into datatype_test(key) 
@@ -52,6 +52,25 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
       val result = dataStore.queryAsMap("""SELECT COUNT(*) AS num 
         from datatype_test GROUP BY key""")(_.toList)
       assert(result.head.contains(".num"))
+    }
+
+    it("should work with empty tables") {
+      val result = dataStore.queryAsMap("SELECT * from datatype_test;")(_.toList)
+      assert(result == Nil)
+    }
+
+  }
+
+  describe("Querying as JSON") {
+
+    def insertSampleData() = {
+      SQL("""insert into datatype_test(key) 
+        VALUES (1), (2), (3), (4)""").execute()
+    }
+
+    it("should work with empty tables") {
+      val result = dataStore.queryAsJson("SELECT * from datatype_test;")(_.toList)
+      assert(result == Nil)
     }
 
   }

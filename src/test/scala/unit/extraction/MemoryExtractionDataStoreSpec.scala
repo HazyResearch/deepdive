@@ -25,6 +25,7 @@ class MemoryExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
   }
 
   describe("Reading as JSON") {
+    
     it("should work") {
       val testRow = JsObject(Map[String, JsValue](
         "id" -> JsNumber(1),
@@ -38,6 +39,13 @@ class MemoryExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
         assert(data.toList.head == testRow)
       }
     }
+
+    it("should work with empty relations") {
+      val queryResult = dataStore.queryAsJson("doesNotExist") { data =>
+        assert(data.toList === Nil)
+      }
+    }
+
   }
 
   describe("Reading as Map") {

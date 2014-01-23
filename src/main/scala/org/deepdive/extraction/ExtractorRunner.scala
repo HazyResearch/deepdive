@@ -169,8 +169,10 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
 
     // Send the input to myself, we will forward it to the workers
     extractorInput { iterator =>
-      iterator map(_.toString) grouped(task.extractor.inputBatchSize) foreach { chunk =>
-        workers.route(ProcessExecutor.Write(chunk.mkString("\n")), self)
+      if (!iterator.isEmpty) {
+        iterator map(_.toString) grouped(task.extractor.inputBatchSize) foreach { chunk =>
+          workers.route(ProcessExecutor.Write(chunk.mkString("\n")), self)
+        }
       }
     }
     

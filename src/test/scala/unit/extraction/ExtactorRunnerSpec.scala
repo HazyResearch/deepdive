@@ -33,6 +33,17 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       assert(dataStore.data("relation1").size == 2)
     }
 
+    it("should work when the input is empty") {
+      val actor = system.actorOf(ExtractorRunner.props(dataStore))
+      val task = new ExtractionTask(Extractor("testExtractor", "relation1", 
+        "relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet))
+      actor ! ExtractorRunner.SetTask(task)
+      watch(actor)
+      expectMsg("Done!")
+      expectTerminated(actor)
+      assert(dataStore.data.get("relation1") === None)
+    }
+
     it("should work with parallelism") {
       val actor = system.actorOf(ExtractorRunner.props(dataStore))
       for (i <- (1 to 1000)) {
