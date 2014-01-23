@@ -24,9 +24,4 @@ Evidence is often obtained through [Distant Supervision (TODO: Link)](), for exa
 
 In Deepdive, you specify evidence by simply setting a field to its desired value. For example, if you know that Sarah has cancer you would set her `has_cancer` field value to `true`. All fields that map to random variales and have an contain an existing value are treated as evidence. Fields that do not have a value (they are NULL) are predicted by DeepDive.
 
-### A simple example
-
-TODO
-
-
 

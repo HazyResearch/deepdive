@@ -54,6 +54,13 @@ To get started:
 - [DeepDive overview](doc/overview.html)
 - [Example application walkthrough (coming soon)](doc/example.html)
 
+Background knowledge:
+
+- [Probabilistc Inference](doc/general/inference.html)
+- [Distant Supervision (TODO)](doc/general/distant_supervision.html)
+- [Using calibration data](doc/general/calibration.html)
+- [Generating negative examples (TODO)](doc/general/negative_examples.html)
+
 Learn more about DeepDive's features:
 
 - [Defining schema](doc/schema.html)
@@ -67,6 +74,7 @@ Learn more about DeepDive's features:
 Learn about using various databases with DeepDive:
 
 - [Using PostgreSQL with DeepDive](doc/postgresql.html)
+- [Using GreenPlum with DeepDive (TODO)](doc/grenplum.html)
 
 Contribute to DeepDive:
 
