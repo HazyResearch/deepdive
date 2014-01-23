@@ -49,7 +49,7 @@ Using the [Virtual Machine]() is the easiest way to get started with DeepDive. I
 
 ---
 
-To get started:
+Getting started:
 
 - [DeepDive overview](doc/overview.html)
 - [Example application walkthrough (coming soon)](doc/example.html)
