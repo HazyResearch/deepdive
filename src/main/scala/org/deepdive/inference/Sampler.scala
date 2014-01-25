@@ -27,7 +27,7 @@ class Sampler extends Actor with ActorLogging {
       log.info(s"Executing: ${samplerCmd.mkString(" ")}")
       // We run the process, get its exit value, and print its output to the log file
       val exitValue = samplerCmd!(ProcessLogger(
-        out => Console.println(out),
+        out => log.info(out),
         err => System.err.println(err)
       ))
       // Depending on the exit value we return success or throw an exception
