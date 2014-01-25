@@ -157,7 +157,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
 
   /* Queries the data store and gets all the data */
   private def sendData(task: ExtractionTask, workers: Router) {
-    log.info(s"Getting data from the data store and sending it to the workers")
+    log.info(s"Getting data from the data store and sending it to the workers. query='${task.extractor.inputQuery}'")
 
     // Figure out where to get the input from
     val extractorInput = task.extractor.inputQuery match {
