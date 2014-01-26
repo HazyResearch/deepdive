@@ -6,7 +6,28 @@ import scala.util.parsing.combinator.RegexParsers
 object FactorFunctionParser extends RegexParsers with Logging {
   def relationOrField = """[\w]+""".r
   def arrayDefinition = """\[\]""".r
-  def factorFunctionName = "Imply" | "Dummy"
+  // def factorFunctionName = "Imply" | "Or" | "And" | "Equal" | "IsTrue"
+
+  def implyFactorFunction = "Imply" ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
+    ImplyFactorFunction(varList.last, varList.slice(0, varList.size-1))
+  }
+
+  def orFactorFunction = "Or" ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
+    OrFactorFunction(varList)
+  }
+
+  def andFactorFunction = "And" ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
+    AndFactorFunction(varList)
+  }
+
+  def equalFactorFunction = "Equal" ~> "(" ~> factorVariable ~ ("," ~> factorVariable) <~ ")" ^^ { 
+    case v1 ~ v2 =>
+    EqualFactorFunction(List(v1, v2))
+  }
+
+  def isTrueFactorFunction = "IsTrue" ~> "(" ~> factorVariable <~ ")" ^^ { variable =>
+    IsTrueFactorFunction(List(variable))
+  }
 
   
   def factorVariable = ("!"?) ~ rep1sep(relationOrField, ".") ~ (arrayDefinition?) ^^ { 
@@ -15,16 +36,7 @@ object FactorFunctionParser extends RegexParsers with Logging {
         isArray.isDefined, isNegated.isDefined)
   }
 
-  def factorFunc = ((factorVariable <~ "=")?) ~ factorFunctionName ~ ("(" ~> repsep(factorVariable, ",")) <~ ")" ^^ { 
-    case headVariable ~ functionName ~ varList =>
-      (headVariable, functionName) match {
-        case (Some(headVar), "Imply") => ImplyFactorFunction(headVar, varList)
-        case (_, "Dummy") => DummyFactorFunction(varList)
-        case _ => 
-          log.error(s"Factor function not supported: ${functionName}")
-          null
-      }
-      
-  }
+  def factorFunc = implyFactorFunction | orFactorFunction | andFactorFunction | 
+    equalFactorFunction | isTrueFactorFunction
 
 }

@@ -65,7 +65,7 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester {
       val config = ConfigFactory.parseString("""
       inference.batch_size: 100000
       inference.factors.factor1.input_query = "SELECT a.*, b.* FROM a INNER JOIN b ON a.document_id = b.id"
-      inference.factors.factor1.function: "a.is_present = Imply()"
+      inference.factors.factor1.function: "Imply(a.is_present)"
       inference.factors.factor1.weight: "?"
       """).withFallback(defaultConfig)
       val loadInferenceSettings = PrivateMethod[InferenceSettings]('loadInferenceSettings)
