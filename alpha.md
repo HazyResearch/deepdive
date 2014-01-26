@@ -67,6 +67,7 @@ Learn more about DeepDive's features:
 - [Defining schema](doc/schema.html)
 - [Writing extractors](doc/extractors.html)
 - [Writing inference rules](doc/inference_rules.html)
+- [Inference rule function reference](doc/inference_rule_functions.html)
 - [Calibration](doc/calibration.html)
 - [Pipelines](doc/pipelines.html)
 - [Performance tuning](doc/performance.html)
