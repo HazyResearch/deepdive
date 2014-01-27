@@ -52,15 +52,15 @@ Using the [Virtual Machine]() is the easiest way to get started with DeepDive. I
 Getting started:
 
 - [DeepDive overview](doc/overview.html)
-- [Example application walkthrough](doc/example.html)
+- [Example application walkthrough (Coming soon)](doc/example.html)
 
 Background knowledge:
 
-- [Probabilistc Inference](doc/general/inference.html)
+- [Introduction to Relation Extraction](doc/general/relation_extraction.html)
 - [Distant Supervision](doc/general/distant_supervision.html)
-- [Features for Information Extraction applications (coming soon)](doc/general/ie_features.html)
+- [Generating negative examples (Coming soon)](doc/general/generating_negative_examples.html)
+- [Probabilistc Inference](doc/general/inference.html)
 - [Using calibration data](doc/general/calibration.html)
-- [Generating negative examples](doc/general/generating_negative_examples.html)
 
 Learn more about DeepDive's features:
 

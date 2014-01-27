@@ -67,7 +67,7 @@ Data processing steps:
 
 - Raw mention data is converted to CSV using generate_csv.py.
  - To extract possible PERSON mentions, named-entity recognition is done using [NLTK](http://nltk.org/). For example, in the sentence "Barack Obama is the president" NLTK would recognize that Barack Obama is a PERSON.
- - generate_csv.py extracts the article text from the <text> tag, performs entity recognition on the text, and outputs potential PERSON instances to a CSV file.
+ - generate_csv.py extracts the article text from the `<text>` tag, performs entity recognition on the text, and outputs potential PERSON instances to a CSV file.
 
 - The CSV entity and mention data is loaded into the Postgres database with prepare_data.sh.
 
@@ -96,9 +96,7 @@ Note that the features are the same as the predicates that are used to determine
 
 For example, for the (e, m) pair with the text (Barack Obama, Barack Obama), all 3 features would be True and thus 3 tuples would be generated in the link_feature relation: (e, m, 'exact_string_match'), (e, m, 'similarity_above_threshold', 'levenshtein_distance_below_3').
 
-```
-[insert extractor code from application.conf with explanation]
-```
+    [insert extractor code from application.conf with explanation]
 
 ### 4. Inference
 
@@ -115,5 +113,3 @@ The factors are as follows:
 ```
 
 ### 5. Evaluation
-
-// TODO
