@@ -21,22 +21,23 @@ Install GreenPlum using the downloaded package.  From now on, we assume your Gre
 ### Set Greenplum related session variables
 
 Run the script in the GreenPlum home folder: 
-`sh /usr/local/greenplum-db-x.x.x.x/greenplum_path.sh`
+
+    $ sh /usr/local/greenplum-db-x.x.x.x/greenplum_path.sh
 
 This will create a symbolic link in `/usr/local/greenplum-db/`.
 
 To set Greenplum related session variables: add into your bash source `/usr/local/greenplum-db/greenplum_path.sh`. Specifically, modify your `~/.bash_profile` and add a line:
 
-`$ vi ~/.bash_profile`
+    $ vi ~/.bash_profile
 
     source /usr/local/greenplum-db/greenplum_path.sh
 
 
 ### Configure Host settings
 
-Open a terminal window and connect to root and modify /etc/sysctl.conf file.
+Open a terminal window and connect to root and modify /etc/sysctl.conf file (add following lines).
 
-`$ sudo vi /etc/sysctl.conf`
+    $ sudo vi /etc/sysctl.conf
 
     kern.sysv.shmmax=2147483648
     kern.sysv.shmmin=1
@@ -47,9 +48,9 @@ Open a terminal window and connect to root and modify /etc/sysctl.conf file.
     kern.maxfilesperproc=65535
     net.inet.tcp.msl=60
 
-Add the following line in /etc/hostconfig:
+Add the line `HOSTNAME=localhost` in `/etc/hostconfig`:
 
-`$ vi /etc/hostconfig`
+    $ vi /etc/hostconfig
 
     HOSTNAME=localhost
 
@@ -62,9 +63,9 @@ Now you need to generate ssh keys for localhost.
 
 Be sure that you are able to ssh into localhost without password. Try running `$ gpssh-exkeys -h localhost`. If it fails, try to first be able to ssh into localhost with password, then follow these steps:
 
-1. `ssh-keygen -t rsa` (Press enter for each line)
-2. `cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys`
-3. `chmod og-wx ~/.ssh/authorized_keys`
+1. `$ ssh-keygen -t rsa` (Press enter for each line)
+2. `$ cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys`
+3. `$ chmod og-wx ~/.ssh/authorized_keys`
 
 After you are able to `ssh` into `localhost` without password, you can move on.
 
@@ -86,32 +87,30 @@ Copy sample configuration files `$ gpinitsystem_singlenode` and `$ hostlist_sing
 
 Assume your working directory is `~`.
 
-```
-$ cd ~
-$ cp /usr/local/greenplum-db/docs/cli_help/gpconfigs/gpinitsystem_singlenode .
-$ cp /usr/local/greenplum-db/docs/cli_help/gpconfigs/hostlist_singlenode .
-chmod 755 hostlist_singlenode gpinitsystem_singlenode
-```
+
+    $ cd ~
+    $ cp /usr/local/greenplum-db/docs/cli_help/gpconfigs/gpinitsystem_singlenode .
+    $ cp /usr/local/greenplum-db/docs/cli_help/gpconfigs/hostlist_singlenode .
+    $ chmod 755 hostlist_singlenode gpinitsystem_singlenode
 
 Open `hostlist_singlenode` and replace the existing line with `localhost`:
 
-`$ vi hostlist_singlenode`
+    $ vi hostlist_singlenode
 
     localhost
 
 Open `gpinitsystem_singlenode` and make the following changes:
 
+    $ vi gpinitsystem_singlenode
+
     # MACHINE_LIST_FILE=./hostlist_singlenode
-
     declare -a DATA_DIRECTORY=(/greenplumdb/data1)
-
     MASTER_HOSTNAME=localhost
-
     MASTER_DIRECTORY=/greenplumdb/master
         
 Save and exit. Then run the following command to create the database:
 
-`$ gpinitsystem -c gpinitsystem_singlenode -h hostlist_singlenode`
+    $ gpinitsystem -c gpinitsystem_singlenode -h hostlist_singlenode
 
 After a while, your database server is created.
 
@@ -119,21 +118,21 @@ After a while, your database server is created.
 
 Configure the `MASTER_DATA_DIRECTORY` path into your bash source:
 
-`$ echo "export MASTER_DATA_DIRECTORY=/greenplumdb/master/gpsne-1" >> ~/.bash_profile`
+    $ echo "export MASTER_DATA_DIRECTORY=/greenplumdb/master/gpsne-1" >> ~/.bash_profile
 
 
 ### Verify the installation
 
 Follow the links and you should get similar output.
 
-`$ psql postgres`
+    $ psql postgres
 
     psql (8.2.15)
     Type “help” for help.
 
     postgres=#
 
-`postgres=# \l`
+    postgres=# \l
 
                     List of databases
        Name    | Owner | Encoding | Access privileges
@@ -145,7 +144,7 @@ Follow the links and you should get similar output.
                                   : Xxx=CTc/Xxx  
     (3 rows)
 
-`postgres=# \q` to exit the database.
+    postgres=# \q
 
 ### Stop and Start the database server
 
