@@ -147,6 +147,12 @@ Follow the links and you should get similar output.
 You may use `gpstop` and `gpstart` to stop / start the Greenplum server at any time.
 
 
+### Greenplum FAQ
+
+**When I use Greeplum, I see the error "ERROR: data line too long. likely due to invalid csv data". But my program runs fine using PostgreSQL.**
+
+Tune `gp_max_csv_line_length` in Greenplum.
+
 ### References
 
 References: [http://dwarehouse.wordpress.com/2012/06/05/installing-greenplum-database-community-edition-on-a-mac-os-x-10-7/](http://dwarehouse.wordpress.com/2012/06/05/installing-greenplum-database-community-edition-on-a-mac-os-x-10-7)
