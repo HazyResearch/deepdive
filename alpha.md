@@ -57,10 +57,10 @@ Getting started:
 Background knowledge:
 
 - [Probabilistc Inference](doc/general/inference.html)
-- [Distant Supervision (coming soon)](doc/general/distant_supervision.html)
+- [Distant Supervision](doc/general/distant_supervision.html)
 - [Features for Information Extraction applications (coming soon)](doc/general/ie_features.html)
 - [Using calibration data](doc/general/calibration.html)
-- [Generating negative examples (coming soon)](doc/general/negative_examples.html)
+- [Generating negative examples](doc/general/generating_negative_examples.html)
 
 Learn more about DeepDive's features:
 
