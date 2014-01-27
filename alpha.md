@@ -49,23 +49,34 @@ Using the [Virtual Machine]() is the easiest way to get started with DeepDive. I
 
 ---
 
-To get started:
+Getting started:
 
 - [DeepDive overview](doc/overview.html)
 - [Example application walkthrough](doc/example.html)
+
+Background knowledge:
+
+- [Probabilistc Inference](doc/general/inference.html)
+- [Distant Supervision (coming soon)](doc/general/distant_supervision.html)
+- [Features for Information Extraction applications (coming soon)](doc/general/ie_features.html)
+- [Using calibration data](doc/general/calibration.html)
+- [Generating negative examples (coming soon)](doc/general/negative_examples.html)
 
 Learn more about DeepDive's features:
 
 - [Defining schema](doc/schema.html)
 - [Writing extractors](doc/extractors.html)
 - [Writing inference rules](doc/inference_rules.html)
+- [Inference rule function reference](doc/inference_rule_functions.html)
 - [Calibration](doc/calibration.html)
 - [Pipelines](doc/pipelines.html)
 - [Performance tuning](doc/performance.html)
+- [FAQ](doc/faq.html)
 
 Learn about using various databases with DeepDive:
 
 - [Using PostgreSQL with DeepDive](doc/postgresql.html)
+- [Using GreenPlum with DeepDive](doc/greenplum.html)
 
 Contribute to DeepDive:
 

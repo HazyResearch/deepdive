@@ -33,10 +33,8 @@ You can optionally parse java options (such as -Xmx) and command line options to
           number of epochs for inference (required)
     -s <value> | --learning_samples_per_epoch <value>
           number of samples for learning per epoch
-    -t <value> | --threads <value>
-          number of threads (required)
 
 You an specify options in DeepDive as follows:
 
     deepdive.sampler.java_args: "-Xms1g -Xmx8g"
-    deepdive.sampler.sampler_args: "-l 1000 -s 10 -i 1000 -t 4"
+    deepdive.sampler.sampler_args: "-l 1000 -s 10 -i 1000"

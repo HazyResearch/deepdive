@@ -53,9 +53,12 @@ pre {
 }
 
 code {
-  background: #ffffff;
+  background: #f3f3f3;
 }
 
 p img {
   width: 100%;
+  padding: 20px 10px;
+  margin: 10px 0px;
+  border: 1px solid #eee;
 }
