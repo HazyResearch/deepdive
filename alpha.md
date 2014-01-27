@@ -75,7 +75,7 @@ Learn more about DeepDive's features:
 Learn about using various databases with DeepDive:
 
 - [Using PostgreSQL with DeepDive](doc/postgresql.html)
-- [Using GreenPlum with DeepDive (coming soon)](doc/grenplum.html)
+- [Using GreenPlum with DeepDive](doc/greenplum.html)
 
 Contribute to DeepDive:
 
