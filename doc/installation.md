@@ -1,11 +1,14 @@
+---
+layout: default
+---
+
 # Installation Guide
 
 ### Dependencies
 
-DeepDive uses PostgreSQL, Scala (which needs Java), and Python (version 2.X), so before downloading the system, please make sure to download the following:
+DeepDive uses PostgreSQL, Scala, and Python (version 2.X), so before downloading the system, please make sure to install the following:
 
-- [Java](http://www.oracle.com/technetwork/java/javase/downloads/jre7-downloads-1880261.html)
-  - If you already have Java installed, make sure it is version 6 or higher
+- [Java](http://www.oracle.com/technetwork/java/javase/downloads/jre7-downloads-1880261.html) (If you already have Java installed, make sure it is version 6 or higher)
 - [Python](http://www.python.org/getit/) 2.X (not Python 3.X)
 - [PostgreSQL](http://wiki.postgresql.org/wiki/Detailed_installation_guides)
 - [SBT](http://www.scala-sbt.org/release/docs/Getting-Started/Setup.html)
@@ -19,7 +22,7 @@ Now you are ready to setup DeepDive. You will need git, so [install](http://git-
 
 This will create a directory named deepdive. Now go into the directory and compile the system:
 
-    >> cd deepdive-master
+    >> cd deepdive
     >> sbt compile
 
 This step downloads all the necessary frameworks and libraries the system uses internally, and may take a minute or two. If all goes well the last line of the output should look something like this:
@@ -30,16 +33,13 @@ If you do not see this, check to make sure you have all the dependencies set up 
 
 ### Running Tests
 
-Now let's run some sanity check tests. Before we can run, we must make sure the PG_USER and PG_PASSWORD variables are set correctly. By default, PostgreSQL sets PG_USER to be the current system user and PG_PASSWORD to be the blank string (this is set during the PostgreSQL installation). If you did not change these variables then simply run this command from the deepdive directory:
+Now let's run some sanity check tests. By default, DeepDive uses the currently logged in user and no password to connect to the database. You can change these by setting the `PG_USER` and `PG_PASSWORD` environment variables, respectively. Then, run this command from the deepdive directory:
 
     >> ./test.sh
 
-If, after installing PostgreSQL, you changed the PG_USER and PG_PASSWORD variables to username and password, then run the following command instead:
-
-    >> PGUSER=[username] PG_PASSWORD=[password] ./test.sh
-
 You should see the following output:
-   [info] All tests passed.
-   [success] Total time: 35 s, completed Jan 29, 2014 9:59:57 AM
+  
+    [info] All tests passed.
+    [success] Total time: 35 s, completed Jan 29, 2014 9:59:57 AM
 
-Congratulations! DeepDive is now working.
+Congratulations! DeepDive is now running, and you can proceed to the [example application walkthrough](/doc/example.html)
