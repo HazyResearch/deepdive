@@ -2,7 +2,7 @@
 layout: default
 ---
 
-# Installation Guide
+# DeepDive Installation Guide
 
 ### Dependencies
 
