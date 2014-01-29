@@ -14,6 +14,9 @@ body {
 
 #header a { color: #fff; }
 
+#header #header-nav { margin-top: 20px;}
+#header #header-nav li {margin-right: 10px; }
+
 #footer { 
   color: #ccc;
   background-color: #08608A; 

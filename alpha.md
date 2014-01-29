@@ -23,6 +23,7 @@ In research papers, we have demonstrated DeepDive on financial, oil and gas docu
 
 We are posting the complete code for our examples on this site. We are working on other more domains with even more collaborators in this year. Stay tuned, and get in [touch with us]() to talk about interesting projects.
 
+<a id="#download" href="#"> </a>
 
 ### Download
 
@@ -32,6 +33,7 @@ Using the [Virtual Machine]() is the easiest way to get started with DeepDive. I
 - [Download the source code](https://github.com/dennybritz/deepdive/archive/master.zip)
 
 
+<a id="#documentation" href="#"> </a>
 
 ### Documentation
 
