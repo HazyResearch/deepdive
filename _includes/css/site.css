@@ -51,7 +51,15 @@ h1, h2, h3, h4, h5, h6 {
   /*letter-spacing: -1px;*/
 }
 
-#main h3 { margin-top: 1.5em; font-weight: 300; margin-bottom: 0.5em; }
+#main h3 { 
+  margin-top: 1.5em; 
+  font-weight: 300; 
+  margin-bottom: 1em; 
+  font-weight: 300;
+  color: #333;
+  padding: 10px 0px;
+  border-bottom: 1px dotted #ccc;
+}
 
 #main p, #main ul { color: #555; }
 
