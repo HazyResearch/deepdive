@@ -16,11 +16,6 @@ import scala.util.{Try, Success, Failure}
 
 object DeepDive extends Logging {
 
-  lazy val VARIABLES_DUMP_FILE = new File("target/variables.tsv")
-  lazy val FACTORS_DUMP_FILE = new File("target/factors.tsv")
-  lazy val WEIGHTS_DUMP_FILE = new File("target/weights.tsv")
-  lazy val SAMPLING_OUTPUT_FILE = new File("target/inference_result.out")
-
   def run(config: Config) {
 
     // Get the actor system

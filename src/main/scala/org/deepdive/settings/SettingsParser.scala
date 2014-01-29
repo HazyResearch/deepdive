@@ -10,7 +10,6 @@ object SettingsParser extends Logging {
    def loadFromConfig(rootConfig: Config) : Settings = {
     val config = rootConfig.getConfig("deepdive")
 
-    // Connection settings
     val schemaSettings = loadSchemaSettings(config)
     val extractors = loadExtractionSettings(config)
     val inferenceSettings = loadInferenceSettings(config)

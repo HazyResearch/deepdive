@@ -41,7 +41,6 @@ case class DummyFactorFunction(val variables: Seq[FactorFunctionVariable]) exten
   override def variableDataType = "Discrete"
 }
 
-
 /* A variable used in a Factor function */
 case class FactorFunctionVariable(relation: String, field: String, isArray: Boolean = false, 
   isNegated: Boolean = false) {
