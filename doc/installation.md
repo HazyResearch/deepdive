@@ -29,7 +29,7 @@ This step downloads all the necessary frameworks and libraries the system uses i
 
     [success] Total time: 110 s, completed Jan 28, 2014 6:31:09 PM
 
-If you do not see this, check to make sure you have all the dependencies set up correctly (most recent version of PostgreSQL, Java 6.0 or later, SBT, Python 2.X).
+If you do not see this, check the log for detailed error information.
 
 ### Running Tests
 
