@@ -42,4 +42,4 @@ You should see the following output:
     [info] All tests passed.
     [success] Total time: 35 s, completed Jan 29, 2014 9:59:57 AM
 
-Congratulations! DeepDive is now running, and you can proceed to the [example application walkthrough](/doc/example.html)
+Congratulations! DeepDive is now running, and you can proceed to the [example application walkthrough](/doc/example.html).
