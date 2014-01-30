@@ -61,7 +61,12 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 300;
   color: #333;
   padding: 10px 0px;
-  border-bottom: 1px dotted #ccc;
+  /* border-bottom: 5px dotted #08608A; */
+  background-color: #5FA3C4;
+  padding: 10px 15px;
+  color: white;
+  border-radius: 0.2em;
+
 }
 
 #main p, #main ul { color: #555; }
