@@ -12,7 +12,7 @@ DeepDive assumes that you have created the schema for your application in the da
 
 ### Connection Information
 
-You deifne the connection string to your postgresql instance in your application configuration in [JDBC format](http://jdbc.postgresql.org/documentation/80/connect.html). You can optionally specify a username and password for your connection.
+You define the connection string to your postgresql instance in your application configuration in [JDBC format](http://jdbc.postgresql.org/documentation/80/connect.html). You can optionally specify a username and password for your connection.
     
     deepdive: {
       db.default {

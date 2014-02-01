@@ -2,7 +2,7 @@
 layout: default
 ---
 
-## Writing Inference Rules
+# Writing Inference Rules
 
 Inference rules describe how [factor graph]() is constructed. Each rule, or *factor*, consists of three components:
 

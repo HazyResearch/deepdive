@@ -4,12 +4,14 @@ layout: default
 
 # Using GreenPlum with DeepDive
 
-This documentation provides a simple installation guide for [GreenPlum](http://www.gopivotal.com/products/pivotal-greenplum-database) to work with DeepDive. We will use the single-node mode of GreenPlum.
+This documentation provides a simple installation guide for [GreenPlum](http://www.gopivotal.com/products/pivotal-greenplum-database) to work with DeepDive. We will use the single-node mode of GreenPlum for demonstration purposes. It should work identically with the multi-node configuration.
+
+**After installing GreenPlum, DeepDive should work well with it. The rest steps are identical with the documentation for [PostgreSQL](postgresql.html)**.
 
 
 ## Installation with Centos Linux
 
-The following guide sets up GreenPlum on [Centos 6.5 x64](http://isoredirect.centos.org/centos/6/isos/x86_64/).
+The following guide sets up GreenPlum on Centos 5.6 x64.
 
 ### Setting the Greenplum Recommended OS Parameters
 
@@ -96,24 +98,17 @@ From now on, we assume your Greenplum are installed into `/usr/local/greenplum-d
 
 ### Set Greenplum related session variables
 
-Run the script in the GreenPlum home folder: 
-
-    $ sh /usr/local/greenplum-db-4.2.x.x/greenplum_path.sh
-
-This will create a symbolic link in `/usr/local/greenplum-db/`.
-
 To set Greenplum related session variables: add into your bash source `/usr/local/greenplum-db/greenplum_path.sh`. Specifically, modify your `~/.bashrc` and add a line:
 
     $ vi ~/.bashrc
 
     source /usr/local/greenplum-db/greenplum_path.sh
 
-
 ### Configure ssh with localhost
 
 Now you need to generate ssh keys for localhost. Run: 
 
-`$ gpssh-exkeys -h localhost`
+    $ gpssh-exkeys -h localhost
 
 Then you should be able to `ssh` into `localhost` without password, and you can move on.
 
@@ -122,14 +117,12 @@ Then you should be able to `ssh` into `localhost` without password, and you can 
 ### Create folders for database
 
 Create master and segment folders. This is where the database files will
-be stored. Be sure that you have write permission to these folders.
+be stored. **Be sure that you have write permission to these folders**.
 
-```
-$ mkdir /greenplumdb
-$ mkdir /greenplumdb/master
-$ mkdir /greenplumdb/data1
-```
 
+    $ mkdir ~/greenplumdb
+    $ mkdir ~/greenplumdb/master
+    $ mkdir ~/greenplumdb/data1
 
 ### Configure Greenplum database on single-node mode
 
@@ -154,9 +147,9 @@ Open `gpinitsystem_singlenode` and make the following changes:
     $ vi gpinitsystem_singlenode
 
     # MACHINE_LIST_FILE=./hostlist_singlenode
-    declare -a DATA_DIRECTORY=(/greenplumdb/data1)
+    declare -a DATA_DIRECTORY=(~/greenplumdb/data1)
     MASTER_HOSTNAME=localhost
-    MASTER_DIRECTORY=/greenplumdb/master
+    MASTER_DIRECTORY=~/greenplumdb/master
         
 Save and exit. Then run the following command to create the database:
 
@@ -171,6 +164,10 @@ Configure the `MASTER_DATA_DIRECTORY` path into your bash source:
     $ echo "export MASTER_DATA_DIRECTORY=/greenplumdb/master/gpsne-1" >> ~/.bashrc
 
     $ source ~/.bashrc
+
+Start the database:
+
+    $ gpstart
 
 
 ### Verify the installation
@@ -212,9 +209,10 @@ You may use `gpstop` and `gpstart` to stop / start the Greenplum server at any t
 
 ### Installing GreenPlum
 
-Download GreenPlum for your operating system. For a free Community Edition, find a download link as well as an official guide at [http://www.gopivotal.com/products/pivotal-greenplum-database](http://www.gopivotal.com/products/pivotal-greenplum-database). 
+1. Download GreenPlum for your operating system. For a free Community Edition, you can find a download link as well as an official guide at [http://www.gopivotal.com/products/pivotal-greenplum-database](http://www.gopivotal.com/products/pivotal-greenplum-database). 
 
-Install GreenPlum using the downloaded package.  From now on, we assume your Greenplum are installed into `/usr/local/greenplum-db-x.x.x.x`. If not, be aware of changes in the following guide.
+
+2. Install GreenPlum using the downloaded package.  From now on, we assume your Greenplum is installed into `/usr/local/greenplum-db-x.x.x.x`. If not, be aware of changes in the following guide.
 
 ### Set Greenplum related session variables
 
@@ -257,7 +255,7 @@ Be sure to **reboot your Mac** after changing kernel parameters.
 
 ### Configure ssh with localhost
 
-Now you need to generate ssh keys for localhost.
+If you have not done so previousy, you akso need to generate ssh keys for your localhost.
 
 Be sure that you are able to ssh into localhost without password. Try running `$ gpssh-exkeys -h localhost`. If it fails, try to first be able to ssh into localhost with password, then follow these steps:
 
@@ -265,26 +263,23 @@ Be sure that you are able to ssh into localhost without password. Try running `$
 2. `$ cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys`
 3. `$ chmod og-wx ~/.ssh/authorized_keys`
 
-After you are able to `ssh` into `localhost` without password, you can move on.
+After you are able to `ssh` into `localhost` without a password you can move on.
 
-### Create folders for database
+### Create database folders
 
 Create master and segment folders. This is where the database files will
-be stored. Be sure that you have write permission to these folders.
+be stored. Make sure that you have write permission to these folders.
 
-```
-$ mkdir /greenplumdb
-$ mkdir /greenplumdb/master
-$ mkdir /greenplumdb/data1
-```
+    $ mkdir /greenplumdb
+    $ mkdir /greenplumdb/master
+    $ mkdir /greenplumdb/data1
 
 
 ### Configure Greenplum database on single-node mode
 
 Copy sample configuration files `$ gpinitsystem_singlenode` and `$ hostlist_singlenode` to your working directory.
 
-Assume your working directory is `~`.
-
+Assuming your working directory is `~`:
 
     $ cd ~
     $ cp /usr/local/greenplum-db/docs/cli_help/gpconfigs/gpinitsystem_singlenode .
@@ -363,3 +358,16 @@ GreenPlum Specific Problems:
 2. TODO
 
 -->
+
+
+
+## Greenplum FAQ
+
+**When I use Greeplum, I see the error "ERROR: data line too long. likely due to invalid csv data". But my program runs fine using PostgreSQL.**
+
+Tune `gp_max_csv_line_length` in Greenplum.
+
+
+**Could not reserve enough space for object heap. Error: Could not create the Java Virtual Machine.**
+
+Tune `MaxPermSize` in Java. e.g. `-XX:MaxPermSize=128m`.
