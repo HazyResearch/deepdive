@@ -29,16 +29,13 @@ Refer to the database-specific guides to learn about more caveats:
 
 The factor function defines the variables that will be connected to the factor, and how they are related to each other. All variables used in a factor function must have been previously [defined in the schema](schema.html).
 
-Currently, DeepDive only supports one type of factor function:  `Imply(...)`. The `Imply` function expresses a first-order logic statement. For example, `A = Imply(B, C)` means that, if B and C are true, then A is true.
+DeepDive supports [several types of factor functions](/doc/inference_rule_functions.html). One example of a factor function is the `Imply` function, which expresses a first-order logic statement. For example, `Imply(B, C, A)` means "if B and C, then A".
 
-    # If people.smokes is true, then people.has_cancer is true
-    someFactor.function: "people.has_cancer = Imply(people.smokes)"
+    # If people.smokes, then people.has_cancer
+    someFactor.function: "Imply(people.smokes, people.has_cancer)"
     
-    # people.has_cancer is always true
-    someFactor.function: "people.has_cancer = Imply()"
-    
-    # Variable negation is possible: If people.smokes is false, then people.has_cancer is true
-    someFactor.function: "people.has_cancer = Imply(!people.smokes)" 
+    # Evaluates to true, when people.has_cancer is true
+    someFactor.function: "Imply(people.has_cancer)"
 
 
 ### Factor Weights
@@ -59,7 +56,7 @@ Each factor is assigned a *weight*, which expresses how confident you are in its
 
     deepdive.inference.factors: {
       smokesFactor.input_query: "SELECT people.* FROM people"
-      smokesFactor.function: "people.has_cancer = Imply(people.smokes)"
+      smokesFactor.function: "Imply(people.smokes, people.has_cancer)"
       smokesFactor.weight: "?(people.gender)"
 
       # More factors...
