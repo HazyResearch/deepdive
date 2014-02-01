@@ -1,0 +1,51 @@
+# Usage: gnuplot -e "input_file='<target/calibration_data_file.tsv>';output_file='<output_file.png>'" calibration.plg
+
+set term png size 1200,300
+set output output_file
+
+set bmargin at screen 0.25
+
+set label "* (a) and (b) are produced using hold-out on evidence variables; (c) also includes all non-evidence variables of the same relation." at screen 0.5, screen 0.05 center front
+
+set multiplot layout 1,3      # engage multiplot mode
+set datafile separator "\t"
+
+# first plot (accuracy)
+set title "(a) Accuracy (Testing Set)"
+set xlabel "Probability"
+set ylabel "Accuracy"
+
+set style line 1 lt 0 lc rgb "blue" lw 1
+set style line 2 lt 1 lw 1 lc rgb "red"
+set style line 3 lw 2 pt 7 ps 1 lc rgb "red"
+set xrange [0:1]
+set yrange [0:1.1]
+unset key
+plot input_file using (($4+$5)!=0 ? ($1+$2)/2 : 1/0):(($4+$5)!=0 ? (($4+$5)==0 ? 0.0 : $4/($4+$5)) : 1/0) with line ls 2, x with line ls 1, '' using (($4+$5)!=0 ? ($1+$2)/2 : 1/0):(($4+$5)!=0 ? (($4+$5)==0 ? 0.0 : $4/($4+$5)) : 1/0) with points ls 3
+
+# need these definition for the histograms
+hist(x,width)=width*floor(x/width)+width/2.0
+width = 0.1
+
+# second plot (predictions: test set)
+set xrange [0:1] 
+set auto y
+set title "(b) # Predictions (Testing Set)"
+set xlabel "Probability"
+set ylabel "Accuracy"
+set style fill solid border -1
+unset key
+plot input_file using (hist(($1+$2)/2,width)):($4+$5) smooth freq w boxes fillcolor rgb 'blue'
+
+
+# third plot (predictions: whole set)
+set xrange [0:1] 
+set auto y
+set title "(c) # Predictions (Whole Set)"
+set xlabel "Probability"
+set ylabel "Accuracy"
+set style fill solid border -1
+unset key
+plot input_file using (hist(($1+$2)/2,width)):($3) smooth freq w boxes fillcolor rgb 'blue'
+
+unset multiplot
