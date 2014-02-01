@@ -4,6 +4,14 @@ layout: default
 
 # Probabilistic Inference
 
+The goal of this article is to give a high-level overview of Probabilistic inference. If you are interested in more details, there are several good resources:
+
+- [PGM class on Coursera](https://www.coursera.org/course/pgm)
+- [Graphical Models Lecture at CMU](http://alex.smola.org/teaching/cmu2013-10-701x/pgm.html)
+- [Towards High-Throughput Gibbs Sampling at Scale: A Study across Storage Managers](http://cs.stanford.edu/people/chrismre/papers/elementary_sigmod.pdf)
+- [Factor Graphs and the Sum-Product Algorithm](http://www.comm.utoronto.ca/~frank/papers/KFL01.pdf)
+- [Scalable Probabilistic Databases with Factor Graphs and MCMC](http://arxiv.org/pdf/1005.1934v1.pdf)
+
 ### Random Variables and Joint Inference
 
 Probabilistic inference is the task of assigning values to unobserved [random variables](http://en.wikipedia.org/wiki/Random_variable). For example, a random variable may describe the event that John has cancer. Such a variable could take a value of 1 (John has cancer) or 0 (John does not have cancer). Deepdive uses *probabilistic inference* to estimate the expected value of a random variable. In the case of Boolean variables, a value of of 0.78 would mean that John is 78% likely to have cancer.
@@ -26,6 +34,6 @@ In Deepdive, you specify evidence by simply setting a field to its desired value
 
 ### What algorithms does DeepDive use?
 
-DeepDive uses [factor graphs](http://en.wikipedia.org/wiki/Factor_graph), a type of probabilistic graphical model to perform learning and inference. In the learning step, DeepDive uses a custom varient of the [Expectation Maximization algorithm](http://en.wikipedia.org/wiki/Expectation%E2%80%93maximization_algorithm). To perform inference, DeepDive uses [high-throughput Gibbs Sampling](http://cs.stanford.edu/people/chrismre/papers/elementary_sigmod.pdf).
+DeepDive uses [factor graphs](http://en.wikipedia.org/wiki/Factor_graph), a type of probabilistic graphical model to perform learning and inference. In the learning step, DeepDive uses a type of [Maximum Likelihood Estimation](http://en.wikipedia.org/wiki/Maximum_likelihood_estimation). To perform inference, DeepDive uses [high-throughput Gibbs Sampling](http://cs.stanford.edu/people/chrismre/papers/elementary_sigmod.pdf).
 
 

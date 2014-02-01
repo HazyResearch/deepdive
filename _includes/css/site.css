@@ -5,6 +5,10 @@ body {
   background-color: #FAFAFA;
 }
 
+body ul, body ol {
+  color: #373723; 
+}
+
 #header { 
   color: #fff;
   background-color: #08608A; 

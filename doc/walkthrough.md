@@ -4,14 +4,39 @@ layout: default
 
 # Example Application Walkthrough
 
+
 ### Introduction
 
 A typical use case for Deepdive is [Relation Extraction](/doc/general/relation_extraction.html). This tutorial will walk you through building a full DeepDive application that extracts `has_spouse` relationships from raw text. We use news articles as our input data and want to extract all pairs of people that participate in a `has_spouse` relation. For example *Barack Obama* and *Michelle Obama*. One can imagine how this example can be translated to other domains, such as extracting intractions between drugs, or relationships among companies.
 
 
+
+### Contents
+
+
+1. <a href="#installing">Installing Deepdive</a>
+2. <a href="#setup">Setting up the database</a>
+3. <a href="#newapp">Creating a new DeepDive application</a>
+4. <a href="#high_level_picture">High-level picture of the application</a>
+5. <a href="#loading_data">Loading initial data</a>
+6. <a href="#nlp_extractor">Adding a NLP extractor</a>
+7. <a href="#people_extractor">Adding a people extractor</a>
+8. <a href="#pipelines">Using pipelines</a>
+9. <a href="#candidate_relations">Extracing candidate relations</a>
+10. <a href="#candidate_relation_features">Adding Features for candidate relations</a>
+11. <a href="#inference_rules">Adding domain-specific inference rules</a> 
+12. <a href="#evaluation">Evaluating the result</a>
+
+
+
+<a id="#installing" href="#"> </a>
+
 ### Installing Deepdive
 
 Start by [downloading and installing Deepdive on your machine](/doc/installation.html). In the rest of this tutorial we will assume that you have a `deepdive` directory that contais the system.
+
+
+<a id="#setup" href="#"> </a>
 
 ### Setting up the database
 
@@ -20,6 +45,9 @@ We will be using PostgreSQL as our primary database in this example. If you foll
 {% highlight bash %}
 createdb deepdive_spouse
 {% endhighlight %}
+
+
+<div id="#newapp" href="#"> </div>
 
 ### Creating a new DeepDive application
 
@@ -53,6 +81,9 @@ You can now try executing the `run.sh` file. Because you have not defined any ex
     12:15:18.351 [default-dispatcher-5][profiler][Profiler] INFO  calibration SUCCESS [5 ms]
     12:15:18.352 [default-dispatcher-5][profiler][Profiler] INFO  --------------------------------------------------
 
+
+<a id="#high_level_picture" href="#"> </a>
+
 ### High-level picture of the application
 
 In order to extract `has_spouse` relations from our text we must first identify people in the next. To extract features that help us with this task we also need to run natural language processing on our input data. On a high level, the application we want to build should:
@@ -64,6 +95,9 @@ In order to extract `has_spouse` relations from our text we must first identify 
 5. Write inference rules to incorporate domain knowledge that improves our predictions
 
 Our goal in this tutorial is get an initial application up and running. There are a couple of problems with the approach above which are worth drawing attention to: If two separate sentences mention the fact that Barack Obama and Michelle Obama are in a `has_spouse` relationship, then our approach does not know that they refer to the same fact. In other words, we ignore the fact that "Barack Obama" and "Michelle Obama" in both of these sentence refer to the same entity in the real world. We also don't recognize *coreference* of two mentions. That is, we don't know that "Barack Obama" and "Obama" probably refer to the same person. We will address these issues in the [second part of the tutorial](/doc/walkthrough2.html).
+
+
+<a id="#loading_data" href="#"> </a>
 
 ### Loading initial data
 
@@ -81,6 +115,9 @@ CREATE TABLE articles(
 cp -r ../../examples/spouse_example/data data
 psql -d deepdive_spouse -c "copy articles(text) from STDIN CSV;" < data/reuters.csv
 {% endhighlight %}
+
+
+<a id="#nlp_extractor" href="#"> </a>
 
 ### Adding a NLP extractor
 
@@ -129,6 +166,9 @@ psql -c "TRUNCATE sentences CASCADE;" $DB_NAME
 {% endhighlight %}
 
 Great, our first extractor is ready! When you execute `run.sh` DeepDive should run the new extractor and populate the `sentences` table with the result. Note that natural language processing is quite CPU intensive and may take a while to run.
+
+
+<a id="#people_extractor" href="#"> </a>
 
 ### Adding a people extractor
 
@@ -197,6 +237,8 @@ for row in fileinput.input():
 The `udf/ext_people.py` Python script takes sentences records as an input, and outputs a people record for each (potentially multi-word) person phrase found in the sentence. When executing `run.sh`, your people table should be populated with the results.
 
 
+<a id="#pipelines" href="#"> </a>
+
 ### Using pipelines
 
 By default, DeepDive runs all extractors that are defined in the configuration file. Sometimes you only want to run some of your extractors to test them, or to save time when the output of an early extractor hasn't changed. The NLP extractor is a good example of this. It takes a long time to run, and its output will be the same every time, so we don't want to run it more than once. Deepdive allows you to deifne a [pipeline](/doc/pipelines.html) for this purpose. Add the following to your `application.conf`:
@@ -205,6 +247,9 @@ By default, DeepDive runs all extractors that are defined in the configuration f
     pipelines.pipelines.nonlp: ["ext_people"]
 
 The above setting tells DeepDive to execute the "nonlp" pipeline, which only contains the "ext_people" extractor.
+
+
+<a id="#candidate_relations" href="#"> </a>
 
 ### Extracting candidate relations between mention pairs
 
@@ -302,6 +347,8 @@ We also need to add our new extractor to the pipeline:
 
 
 
+<a id="#candidate_relation_features" href="#"> </a>
+
 ### Adding Features for candidate relations
 
 For DeepDive to make predictions, we need to add *features* to our candidate relations. Features are properties that help decide whether or not the given relation is correct. For example, one feature may be the sequence of words between the two mentions. We could have saved the features in the `has_spouse` table that we created above, but it is often cleaner to have a separate table for them:
@@ -365,6 +412,8 @@ psql -c "TRUNCATE has_spouse_features CASCADE;" $DB_NAME
 {% endhighlight %}
 
 
+<a id="#inference_rules" href="#"> </a>
+
 ### Adding domain-specific inference rules
 
 Now we need to tell DeepDive how to perform [probabilistic inference](/doc/general/probabilistic_inference.html) on the data we have generated.  We want to predict the `is_true` column of the `has_spouse` table based on the features we have extracted. This is the simplest rule you can write, because it does not involve domain knowledge or  relationships among variales. Add the following to your `application.conf`
@@ -384,6 +433,8 @@ The next step is to incorporate domain knowledge into our model. For example, we
     f_has_spouse_features.weight: ?
 
 There are many [other kinds of factor functions](/doc/inference_rule_functions.html) you can use to encode domain knowledge.
+
+<a id="#evaluation" href="#"> </a>
 
 ### Evaluating the result
 
