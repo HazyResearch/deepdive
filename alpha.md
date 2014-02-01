@@ -49,7 +49,7 @@ Getting started:
 
 - [DeepDive overview](doc/overview.html)
 - [Installation guide](doc/installation.html)
-- [Example application walkthrough (Coming soon)](doc/walkthrough.html)
+- [Example application walkthrough](doc/walkthrough.html)
 
 Learn more about DeepDive's features:
 
