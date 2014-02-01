@@ -35,10 +35,11 @@ class CalibrationDataWriter extends Actor with ActorLogging {
       // Generate the calibration plot
       val deepDiveDir = System.getProperty("user.dir")
       val plotOutputFile = FilenameUtils.removeExtension(file.getCanonicalPath) + ".png"
-      val calibrationCmd = s"""gnuplot -e \"input_file='${file.getCanonicalPath}';output_file='${plotOutputFile}'\" ${deepDiveDir}/util/calibration.plg"""
+      val calibrationCmd = Seq("gnuplot", 
+        "-e", s"""input_file='${file.getCanonicalPath}';output_file='${plotOutputFile}'""", 
+        s"${deepDiveDir}/util/calibration.plg")
       log.info(s"Running '${calibrationCmd}' to generate the calibration plot.")
       calibrationCmd! match {
-        // TODO: how to deal with gnuplot warnings? they can be benign
         case 0 => 
           context.system.eventStream.publish(QuickReport("calibration", s"calibration plot written to ${plotOutputFile}"))
         case other =>
