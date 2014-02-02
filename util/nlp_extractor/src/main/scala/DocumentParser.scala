@@ -16,10 +16,8 @@ import java.io.{StringReader, StringWriter, PrintWriter}
 import java.util.Properties
 
 
-class DocumentParser {
+class DocumentParser(props: Properties) {
 
-  val props = new Properties()
-  props.put("annotators", "tokenize, cleanxml, ssplit, pos, lemma, ner, parse, dcoref")
   val pipeline = new StanfordCoreNLP(props)
 
   def parseDocumentString(doc: String) = {

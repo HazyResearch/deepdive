@@ -5,6 +5,7 @@ import org.deepdive.udf.nlp._
 import org.scalatest._
 import play.api.libs.json._
 import scala.io.Source
+import java.util.Properties
 
 class DocumentParserSpec extends FunSpec {
 
@@ -13,7 +14,11 @@ class DocumentParserSpec extends FunSpec {
     it("should work with plain text") {
       val inputFile = getClass.getResource("/testdoc.txt").getFile
       val documentStr = Source.fromFile(inputFile).mkString
-      val dp = new DocumentParser()
+      
+      val props = new Properties()
+      props.put("annotators", "tokenize, cleanxml, ssplit, pos, lemma, ner, parse, dcoref")
+      val dp = new DocumentParser(props)
+
       val result = dp.parseDocumentString(documentStr)
       assert(result.sentences.size == 3)
     }
@@ -21,7 +26,11 @@ class DocumentParserSpec extends FunSpec {
     it("should work with HTML documents") {
       val inputFile = getClass.getResource("/testdoc.html").getFile
       val documentStr = Source.fromFile(inputFile).mkString
-      val dp = new DocumentParser()
+
+      val props = new Properties()
+      props.put("annotators", "tokenize, cleanxml, ssplit, pos, lemma, ner, parse, dcoref")
+      val dp = new DocumentParser(props)
+
       val result = dp.parseDocumentString(documentStr)
       assert(result.sentences.size == 23)
     }

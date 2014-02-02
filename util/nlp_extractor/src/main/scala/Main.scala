@@ -2,11 +2,12 @@ package org.deepdive.udf.nlp
 
 import play.api.libs.json._
 import scala.io.Source
+import java.util.Properties
 
 object Main extends App {
 
   // Parse command line options
-  case class Config(documentKey: String, idKey: String)
+  case class Config(documentKey: String, idKey: String, maxSentenceLength: Int)
 
   val parser = new scopt.OptionParser[Config]("DeepDive DocumentParser") {
     head("documentParser", "0.1")
@@ -16,14 +17,21 @@ object Main extends App {
     opt[String]('k', "idKey") required() action { (x, c) =>
       c.copy(idKey = x) 
     } text("JSON key that contains the document id, for example \"documents.id\"")
+    opt[Int]('l', "maxLength") action { (x, c) =>
+      c.copy(maxSentenceLength = x) 
+    } text("Maximum length of sentences to parse (makes things faster) (default: 40)")
   }
 
-  val conf = parser.parse(args, Config("documents.text", "documents.id")) getOrElse { 
+  val conf = parser.parse(args, Config("documents.text", "documents.id", 40)) getOrElse { 
     throw new IllegalArgumentException
   }
 
   // Configuration has been parsed, execute the Document parser
-  val dp = new DocumentParser()
+  val props = new Properties()
+  props.put("annotators", "tokenize, cleanxml, ssplit, pos, lemma, ner, parse, dcoref")
+  props.put("parse.maxlen", conf.maxSentenceLength.toString)
+  props.put("pos.maxlen", conf.maxSentenceLength.toString)
+  val dp = new DocumentParser(props)
 
   // Read each json object from stdin and parse the document
   Source.stdin.getLines.foreach { line =>
