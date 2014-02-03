@@ -44,7 +44,7 @@ You can also specify dependencies for an extractor. Extractors will be executed 
 
 ### Before and After scripts
 
-Sometimes it is useful to execute a commond, or call a script, before an extractor starts or after an extractor finishes. You can specify arbitary commands to be executed as follows:
+Sometimes it is useful to execute a command, or call a script, before an extractor starts or after an extractor finishes. You can specify arbitary commands to be executed as follows:
 
   
     wordsExtractor.before: "echo Hello World"
@@ -67,7 +67,7 @@ To improve performance when writing extracted data back to the database you can 
     wordsExtractor.output_batch_size: 5000
 
 
-You can also execute indepdent extractors in parallel:
+You can also execute independent extractors in parallel:
 
     deepdive.extractions: {
       parallelism: 5
@@ -77,7 +77,7 @@ You can also execute indepdent extractors in parallel:
 
 ### Writing extractor UDFs
 
-When your extractor is executed, DeepDive will stream JSON tuples to its *stdin*, one tuple per line. Such a tuple may look as follows:
+When your extractor is executed, DeepDive will stream JSON tuples from the database to its *stdin*, one tuple per line. Such a tuple may look as follows:
 
     { id: 5, title: "I am a title" }
 

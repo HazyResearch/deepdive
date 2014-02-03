@@ -4,6 +4,8 @@ layout: default
 
 # DeepDive Installation Guide
 
+Using the [Virtual Machine]() is the easiest way to get started with DeepDive. It comes pre-loaded with a ready-to-run example application. This tutorial explains how to install DeepDive on your own machine.
+
 ### Dependencies
 
 DeepDive uses PostgreSQL, Scala, and Python (version 2.X), so before downloading the system, please make sure to install the following:

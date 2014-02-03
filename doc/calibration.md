@@ -4,8 +4,7 @@ layout: default
 
 # Calibration
 
-Writing factors and inference rules using DeepDive is an iterative process. After the DeepDive pipeline is finished, you should inspect the results, improve your extractors, and modify inference rules. To make this process easier, DeepDive writes calibration data for each variable. 
-
+Writing factors and inference rules using DeepDive is an iterative process. After the DeepDive pipeline is finished, you should inspect the results, improve your extractors, and modify inference rules. To make this process easier, DeepDive writes calibration data for each variable. [Refer to the calibration guide for more information](/doc/general/calibration.html).
 
 ### Defining holdout
 
@@ -19,7 +18,7 @@ The system assigns holdout variables at random. That is, for each evidence varia
 
 ### Inspecting Probabilities and Weights
 
-To improve prediction accuracy it is useful to inspect the probabilites for each variable, and the learned weights. DeepDive creates a view called `inference_result_mapped_weights` in the database, which contains the weight names and the learned values sorted by absolute value.
+To improve prediction accuracy it is useful to inspect the probabilities for each variable, and the learned weights. DeepDive creates a view called `inference_result_mapped_weights` in the database, which contains the weight names and the learned values sorted by absolute value.
 
 For each variable, DeepDive generates a view called `[variable_name]_inference`, which contains your original data, augmented with a `probability` column, the result of our inference algorithm.
 
@@ -36,9 +35,7 @@ DeepDive buckets the inference results into ten buckets from 0.0 to 1.0. Thus, e
   - `num_true` is the number of variables in the probability bucket for which the holdout value is true. The number should be high for buckets with large probabilities and small for buckets with small probabilities. Only the holdout data is used.
   - `num_false` is the number of variables in the probability bucket for which the holdout value is false. The number should be small for buckets with large probabilities and large for buckets with small probabilities. Only the holdout data is used.
 
-You can generate a plot from these files by running the calibration plot tool in `examples/tools/cali.py`:
-
-    examples/tools/cali.py [calibration_file.tsv] [output_file.png]
+Deepdive also generates a calibration plot for each of the variables you defined in your schema:
 
 <br/>
 ![]({{site.baseurl}}/images/calibration_example.png)

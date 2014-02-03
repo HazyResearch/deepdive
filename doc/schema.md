@@ -19,4 +19,4 @@ In the above example *smokes* and *has_cancer* are boolean attributes in the *pe
 
 ### Evidence and Query variables
 
-Evidence is training data that is used for automatically learning [factor weights](inference_rules.html). DeepDive will treat variables with existing values as evidence. In the above example, rows in the *people* table with a `true` or `false` value in the *smokes* or *has_cancer* column will be treated as evidence for that variable. Cells without a value (NULL) value will be treated as query variables.
+Evidence is training data that is used to automatically learn [factor weights](inference_rules.html). DeepDive will treat variables with existing values as evidence. In the above example, rows in the *people* table with a `true` or `false` value in the *smokes* or *has_cancer* column will be treated as evidence for that variable. Cells without a value (NULL) value will be treated as query variables.

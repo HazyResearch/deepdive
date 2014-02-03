@@ -6,14 +6,14 @@ layout: default
 
 ### Variable Negation
 
-Oen may negate variables using a `!` in each of the functions below. For example, `Or(A,!B)`. 
+One may negate variables using a `!` in each of the functions below. For example, `Or(A,!B)`. 
 
 ### Imply function
     
     # B and C and D => A
     Imply(B,C,D,A)
 
-The *Imply* function describes a logical consequence. The last variable is the head. The variables in the body (`B,C,D`) are combined using a conjuction (logical AND). [Its truth table can be found here](http://en.wikipedia.org/wiki/Truth_table#Logical_implication)
+The *Imply* function describes a logical consequence. The last variable is the head. The variables in the body (`B,C,D`) are combined using a conjunction (logical AND). [Its truth table can be found here](http://en.wikipedia.org/wiki/Truth_table#Logical_implication)
 
 ### Or function
 

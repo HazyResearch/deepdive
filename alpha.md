@@ -6,12 +6,12 @@ root: "."
 
 ### What is DeepDive all about?
 
-DeepDive is a new type of system that enables developers to to analyze data on a deeper level than ever before. DeepDive is a **trained system**, which means that it uses machine learning techniques to incorporate domain-specific knowledge and user feedback to improve the quality of its analysis. DeepDive is different from traditional systems in several ways:
+DeepDive is a new type of system that enables developers to analyze data on a deeper level than ever before. DeepDive is a **trained system**, which means that it uses machine learning techniques to incorporate domain-specific knowledge and user feedback to improve the quality of its analysis. DeepDive is different from traditional systems in several ways:
 
 - DeepDive is aware that useful **data is often noisy and imprecise**: Names are misspelled, natural language is ambiguous, and humans make errors. To help deal with such imprecision, DeepDive produces a [calibrated](doc/calibration.html) probabilities for every assertion it makes. For example, if DeepDive produces a fact with probability 0.9 it means the fact is 90% likely to be correct. 
 - DeepDive is able to use large amounts of data from a **variety of sources**. Applications built using DeepDive have extracted data from millions of documents, web pages, PDFs, tables, and figures.
 - DeepDive allows developers to **use their knowledge of a given domain** to improve the quality by [writing simple rules](doc/inference_rules.html) and giving feedback on whether predictions are correct or not.
-- DeepDive is able to use your data to ["distantly" learn](http://www.stanford.edu/~jurafsky/mintz.pdf). In contrast, most machine learning systems require one to tediously train each prediction. In fact, first versions of DeepDive-based systems often do not have any traditional training data at all!
+- DeepDive is able to use your data to ["distantly" learn](/doc/general/distant_supervision.html). In contrast, most machine learning systems require one to tediously train each prediction. In fact, first versions of DeepDive-based systems often do not have any traditional training data at all!
 - DeepDive’s secret is a **scalable, high-performance inference and learning engine**. For the past few years, we have been working to make the underlying algorithms run as fast as possible. The underlying techniques pioneered in this project are part of commercial and open source tools including [MADlib](http://madlib.net/), [Impala](http://www.cloudera.com/content/cloudera/en/products-and-services/cdh/impala.html), a product from Oracle, and low-level techniques, such as [Hogwild!](http://www.eecs.berkeley.edu/~brecht/papers/hogwildTR.pdf), have been adopted in [Google Brain](http://static.googleusercontent.com/media/research.google.com/en/us/archive/unsupervised_icml2012.pdf).
 
 
@@ -23,21 +23,11 @@ In research papers, we have demonstrated DeepDive on financial, oil and gas docu
 
 We are posting the complete code for our examples on this site. We are working on other more domains with even more collaborators in this year. Stay tuned, and get in [touch with us]() to talk about interesting projects.
 
-<a id="#download" href="#"> </a>
-
-### Download
-
-Using the [Virtual Machine]() is the easiest way to get started with DeepDive. It comes pre-loaded with a ready-to-run example application. You can also download and compile the [DeepDive code](http://github.com/dennybritz/deepdive) yourself. For instructions on how to compile DeepDive, refer to the [developer guide](doc/developer.html).
-
-- [Download the Virtual Machine (coming soon)]()
-- [Download the source code](https://github.com/dennybritz/deepdive/archive/master.zip)
-
-
 <a id="#documentation" href="#"> </a>
 
 ### Documentation
 
-Background knowledge:
+General & Background knowledge:
 
 - [Probabilistc Inference](doc/general/inference.html)
 - [Introduction to Relation Extraction](doc/general/relation_extraction.html)
@@ -51,7 +41,7 @@ Getting started:
 - [Installation guide](doc/installation.html)
 - [Example application walkthrough](doc/walkthrough.html)
 
-Learn more about DeepDive's features:
+API Documentation:
 
 - [Defining schema](doc/schema.html)
 - [Writing extractors](doc/extractors.html)
