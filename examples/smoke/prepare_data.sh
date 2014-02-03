@@ -2,8 +2,6 @@
 
 # Configuration
 DB_NAME=deepdive_smoke
-DB_USER=
-DB_PASSWORD=
 
 cd `dirname $0`
 BASE_DIR=`pwd`
