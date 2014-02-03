@@ -1,5 +1,8 @@
 #! /bin/bash
 
+export PGUSER=${PGUSER:-`whoami`}
+export PGPASSWORD=${PGPASSWORD:-}
+
 cd data/raw/
 ROOT_PATH=`pwd`
 python gen_feature_table.py
