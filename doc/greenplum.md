@@ -9,80 +9,116 @@ This documentation provides a simple installation guide for [GreenPlum](http://w
 **After installing GreenPlum, DeepDive should work well with it. The rest steps are identical with the documentation for [PostgreSQL](postgresql.html)**.
 
 
-### Installing GreenPlum on Mac OS X
+## Installation with Linux
 
-We provide an installation guide for Mac OS X. Other operating systems should go through a similar process.
+The following guide sets up GreenPlum on Centos 5.6 x64 with a single-node mode.
 
-1. Download GreenPlum for your operating system. For a free Community Edition, you can find a download link as well as an official guide at [http://www.gopivotal.com/products/pivotal-greenplum-database](http://www.gopivotal.com/products/pivotal-greenplum-database). 
+### Setting the Greenplum Recommended OS Parameters
 
-2. Install GreenPlum using the downloaded package.  From now on, we assume your Greenplum is installed into `/usr/local/greenplum-db-x.x.x.x`. If not, be aware of changes in the following guide.
-
-### Set Greenplum related session variables
-
-Run the script in the GreenPlum home folder: 
-
-    $ sh /usr/local/greenplum-db-x.x.x.x/greenplum_path.sh
-
-This will create a symbolic link in `/usr/local/greenplum-db/`.
-
-To set Greenplum related session variables: add into your bash source `/usr/local/greenplum-db/greenplum_path.sh`. Specifically, modify your `~/.bash_profile` and add a line:
-
-    $ vi ~/.bash_profile
-
-    source /usr/local/greenplum-db/greenplum_path.sh
-
-
-### Configure Host settings
-
-Open a terminal window and connect to root and modify /etc/sysctl.conf file (add following lines).
+Set the following parameters in the `/etc/sysctl.conf` file and reboot: 
 
     $ sudo vi /etc/sysctl.conf
 
-    kern.sysv.shmmax=2147483648
-    kern.sysv.shmmin=1
-    kern.sysv.shmmni=64
-    kern.sysv.shmseg=16
-    kern.sysv.shmall=524288
-    kern.maxfiles=65535
-    kern.maxfilesperproc=65535
-    net.inet.tcp.msl=60
+    xfs_mount_options = rw,noatime,inode64,allocsize=16m
+    sysctl.kernel.shmmax = 500000000
+    sysctl.kernel.shmmni = 4096
+    sysctl.kernel.shmall = 4000000000
+    sysctl.kernel.sem = 250 512000 100 2048
+    sysctl.kernel.sysrq = 1
+    sysctl.kernel.core_uses_pid = 1
+    sysctl.kernel.msgmnb = 65536
+    sysctl.kernel.msgmax = 65536
+    sysctl.kernel.msgmni = 2048
+    sysctl.net.ipv4.tcp_syncookies = 1
+    sysctl.net.ipv4.ip_forward = 0
+    sysctl.net.ipv4.conf.default.accept_source_route = 0
+    sysctl.net.ipv4.tcp_tw_recycle = 1
+    sysctl.net.ipv4.tcp_max_syn_backlog = 4096
+    sysctl.net.ipv4.conf.all.arp_filter = 1
+    sysctl.net.ipv4.ip_local_port_range = 1025 65535
+    sysctl.net.core.netdev_max_backlog = 10000
+    sysctl.vm.overcommit_memory = 2
 
-Add the line `HOSTNAME=localhost` in `/etc/hostconfig`:
+*NOTE:* For RHEL version 6.x platforms, the above parameters do not include the `sysctl.` prefix, as follows:
 
-    $ vi /etc/hostconfig
+    xfs_mount_options = rw,noatime,inode64,allocsize=16m
+    kernel.shmmax = 500000000
+    kernel.shmmni = 4096
+    kernel.shmall = 4000000000
+    kernel.sem = 250 512000 100 2048
+    kernel.sysrq = 1
+    kernel.core_uses_pid = 1
+    kernel.msgmnb = 65536
+    kernel.msgmax = 65536
+    kernel.msgmni = 2048
+    net.ipv4.tcp_syncookies = 1
+    net.ipv4.ip_forward = 0
+    net.ipv4.conf.default.accept_source_route = 0
+    net.ipv4.tcp_tw_recycle = 1
+    net.ipv4.tcp_max_syn_backlog = 4096
+    net.ipv4.conf.all.arp_filter = 1
+    net.ipv4.ip_local_port_range = 1025 65535
+    net.core.netdev_max_backlog = 10000
+    vm.overcommit_memory = 2
 
-    HOSTNAME=localhost
+Set the following parameters in the `/etc/security/limits.conf` file: 
 
+    $ sudo vi /etc/security/limits.conf
 
-Be sure to **restart your Mac** after changing kernel parameters.
+    * soft nofile 65536
+    * hard nofile 65536
+    * soft nproc 131072
+    * hard nproc 131072
+
+Be sure to **reboot** after changing kernel parameters.
+
+    $ sudo reboot
+
+### Running the GreenPlum Installer
+
+Download GreenPlum for your operating system. For a free Community Edition, find a download link as well as an official guide at [http://www.gopivotal.com/products/pivotal-greenplum-database](http://www.gopivotal.com/products/pivotal-greenplum-database), or directly download [here](http://downloads.cfapps.io/gpdb_db_el5_64). 
+
+Install GreenPlum using the downloaded package: 
+
+    $ unzip greenplum-db-4.2.x.x-PLATFORM.zip
+    $ /bin/bash greenplum-db-4.2.x.x-PLATFORM.bin
+
+From now on, we assume your Greenplum are installed into `/usr/local/greenplum-db-4.2.x.x`. If not, be aware of changes in the following guide.
+
+### Set Greenplum related session variables
+
+To set Greenplum related session variables: add into your bash source `/usr/local/greenplum-db/greenplum_path.sh`. Specifically, modify your `~/.bashrc` and add a line:
+
+    $ vi ~/.bashrc
+
+    source /usr/local/greenplum-db/greenplum_path.sh
 
 ### Configure ssh with localhost
 
-If you have not done so previousy, you akso need to generate ssh keys for your localhost.
+Now you need to generate ssh keys for localhost. Run: 
 
-Be sure that you are able to ssh into localhost without password. Try running `$ gpssh-exkeys -h localhost`. If it fails, try to first be able to ssh into localhost with password, then follow these steps:
+    $ gpssh-exkeys -h localhost
 
-1. `$ ssh-keygen -t rsa` (Press enter for each line)
-2. `$ cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys`
-3. `$ chmod og-wx ~/.ssh/authorized_keys`
+Then you should be able to `ssh` into `localhost` without password, and you can move on.
 
-After you are able to `ssh` into `localhost` without a password you can move on.
 
-### Create database folders
+
+### Create folders for database
 
 Create master and segment folders. This is where the database files will
-be stored. Make sure that you have write permission to these folders.
+be stored. **Be sure that you have write permission to these folders**.
 
-    $ mkdir /greenplumdb
-    $ mkdir /greenplumdb/master
-    $ mkdir /greenplumdb/data1
 
+    $ mkdir ~/greenplumdb
+    $ mkdir ~/greenplumdb/master
+    $ mkdir ~/greenplumdb/data1
 
 ### Configure Greenplum database on single-node mode
 
 Copy sample configuration files `$ gpinitsystem_singlenode` and `$ hostlist_singlenode` to your working directory.
 
-Assuming your working directory is `~`:
+Assume your working directory is `~`.
+
 
     $ cd ~
     $ cp /usr/local/greenplum-db/docs/cli_help/gpconfigs/gpinitsystem_singlenode .
@@ -100,9 +136,9 @@ Open `gpinitsystem_singlenode` and make the following changes:
     $ vi gpinitsystem_singlenode
 
     # MACHINE_LIST_FILE=./hostlist_singlenode
-    declare -a DATA_DIRECTORY=(/greenplumdb/data1)
+    declare -a DATA_DIRECTORY=(~/greenplumdb/data1)
     MASTER_HOSTNAME=localhost
-    MASTER_DIRECTORY=/greenplumdb/master
+    MASTER_DIRECTORY=~/greenplumdb/master
         
 Save and exit. Then run the following command to create the database:
 
@@ -110,11 +146,17 @@ Save and exit. Then run the following command to create the database:
 
 After a while, your database server is created.
 
-### Configure
+### Configure PATH to add master data directory
 
 Configure the `MASTER_DATA_DIRECTORY` path into your bash source:
 
-    $ echo "export MASTER_DATA_DIRECTORY=/greenplumdb/master/gpsne-1" >> ~/.bash_profile
+    $ echo "export MASTER_DATA_DIRECTORY=/greenplumdb/master/gpsne-1" >> ~/.bashrc
+
+    $ source ~/.bashrc
+
+Start the database:
+
+    $ gpstart
 
 
 ### Verify the installation
@@ -147,13 +189,18 @@ Follow the links and you should get similar output.
 You may use `gpstop` and `gpstart` to stop / start the Greenplum server at any time.
 
 
-### Greenplum FAQ
+
+## Greenplum FAQ
 
 **When I use Greeplum, I see the error "ERROR: data line too long. likely due to invalid csv data". But my program runs fine using PostgreSQL.**
 
 Tune `gp_max_csv_line_length` in Greenplum.
 
-### References
 
-References: [http://dwarehouse.wordpress.com/2012/06/05/installing-greenplum-database-community-edition-on-a-mac-os-x-10-7/](http://dwarehouse.wordpress.com/2012/06/05/installing-greenplum-database-community-edition-on-a-mac-os-x-10-7)
+**Could not reserve enough space for object heap. Error: Could not create the Java Virtual Machine.**
 
+Tune `MaxPermSize` in Java. e.g. `-XX:MaxPermSize=128m`.
+
+**How to enable fuzzy string match / install "contrib" module in GreenPlum?**
+
+To enable *fuzzystringmatch* / the *contrib* module available for PostgreSQL for GreenPlum, please check out [this link](http://blog.2ndquadrant.com/fuzzystrmatch_greenplum/).
