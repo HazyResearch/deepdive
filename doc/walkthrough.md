@@ -307,14 +307,8 @@ spouses = defaultdict(lambda: None)
 with open (BASE_DIR + "/../data/spouses.csv") as csvfile:
   reader = csv.reader(csvfile)
   for line in reader:
-    spouses[line[0].strip()] = spouses[line[1].strip()]
+    spouses[line[0].strip().lower()] = line[1].strip().lower()
 
-# Load the parents dictionary for distant supervision
-parents = defaultdict(lambda: None)
-with open (BASE_DIR + "/../data/parents.csv") as csvfile:
-  reader = csv.reader(csvfile)
-  for line in reader:
-    spouses[line[0].strip()] = parents[line[1].strip()]
 
 # For each input tuple
 for row in fileinput.input():
@@ -330,9 +324,9 @@ for row in fileinput.input():
   # See if the combination of people is in our supervision dictionary
   # If so, set is_correct to true or false
   is_true = None
-  if spouses[p1_text] == p2_text:
+  if spouses[p1_text.strip().lower()] == p2_text.strip().lower():
     is_true = True
-  if parents[p1_text] == p2_text:
+  if p1_text.strip().lower() == p2_text.strip().lower():
     is_true = False
 
   print json.dumps({
