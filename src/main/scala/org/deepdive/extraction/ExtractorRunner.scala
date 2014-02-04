@@ -3,6 +3,7 @@ package org.deepdive.extraction
 import akka.actor._
 import akka.routing._
 import akka.pattern.{ask, pipe}
+import akka.util.Timeout
 import org.deepdive.settings._
 import org.deepdive.Context
 import org.deepdive.extraction._
@@ -51,6 +52,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
   import ExtractorRunner._
   // Execute futures using the current Akka dispatcher
   import context.dispatcher
+  implicit val timeout = Timeout(1337.hours)
   
   // Properties to start workers
   def workerProps = ProcessExecutor.props
@@ -167,12 +169,18 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
         dataStore.queryAsJson[Unit](query)_
     }
 
-    // Send the input to myself, we will forward it to the workers
+    // Forward output to the workers
     extractorInput { iterator =>
-      if (!iterator.isEmpty) {
-        iterator map(_.toString) grouped(task.extractor.inputBatchSize) foreach { chunk =>
-          workers.route(ProcessExecutor.Write(chunk.mkString("\n")), self)
+      val batchSize = workers.routees.size * task.extractor.inputBatchSize
+      iterator map(_.toString) grouped(batchSize) foreach { chunk =>
+        val futures = chunk.grouped(task.extractor.inputBatchSize).map { batch =>
+          val msg = ProcessExecutor.Write(batch.mkString("\n"))
+          val destinationWorker = workers.logic.select(msg, workers.routees).asInstanceOf[ActorRefRoutee].ref
+          destinationWorker ? msg
         }
+        val allRouteeAcks = Future.sequence(futures)
+        // Wait for all workers to write the data to the output stream to avoid overloading them
+        Await.result(allRouteeAcks, 1337.hours)
       }
     }
     

@@ -80,6 +80,7 @@ class ProcessExecutor extends Actor with FSM[State, Data] with ActorLogging {
     case Event(Write(data), RuntimeData(processInfo, taskInfo)) =>
       // Write data to the process. Do this in a different thread
       processInfo.inputStream.println(data)
+      sender ! "OK!"
       stay
     case Event(CloseInputStream, RuntimeData(processInfo, taskInfo)) =>
       // Close the input stream. 
