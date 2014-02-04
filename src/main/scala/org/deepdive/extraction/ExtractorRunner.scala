@@ -82,8 +82,8 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
     
     case Event(Terminated(actor), Task(task, taskSender, workers)) =>
       // A worker has terminated, remove it from our list
-      log.debug(s"worker=${actor.path.name} has terminated")
       val newWorkers = workers.removeRoutee(actor)
+      log.debug(s"worker=${actor.path.name} has terminated. Waiting for ${newWorkers.routees.size} others.")
       // If we have no workers left, move to the next state
       newWorkers.routees.size match {
         case 0 => 
