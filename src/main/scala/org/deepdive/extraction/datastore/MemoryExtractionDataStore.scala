@@ -19,11 +19,13 @@ trait MemoryExtractionDataStoreComponent extends ExtractionDataStoreComponent{
       data.clear()
     }
 
-    def queryAsJson[A](query: String)(block: Iterator[JsObject] => A) : A = {
+    def queryAsJson[A](query: String, batchSize: Option[Int] = None)
+      (block: Iterator[JsObject] => A) : A = {
       block(data.get(query).map(_.toList).getOrElse(Nil).iterator)
     }
     
-    def queryAsMap[A](query: String)(block: Iterator[Map[String, Any]] => A) : A = {
+    def queryAsMap[A](query: String, batchSize: Option[Int] = None)
+      (block: Iterator[Map[String, Any]] => A) : A = {
       queryAsJson(query) { iter => 
         block(iter.map(_.value.toMap.mapValues {
           case JsNull => null

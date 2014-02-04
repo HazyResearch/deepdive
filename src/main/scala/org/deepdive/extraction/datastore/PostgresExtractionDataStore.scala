@@ -29,15 +29,15 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
 
     def BatchSize = 20000
 
-    def queryAsMap[A](query: String)(block: Iterator[Map[String, Any]] => A) : A = {
+    def queryAsMap[A](query: String, batchSize: Option[Int] = None)
+      (block: Iterator[Map[String, Any]] => A) : A = {
       PostgresDataStore.withConnection { implicit conn =>
         val sqlQuery = SQL(query)
         val statement = sqlQuery.filledStatement
         // If we don't set the fetch size then postgres will return all rows at once 
         // and load them into memory. We don't want that ;)
-        // TODO: What is a good value for this?
         conn.setAutoCommit(false)
-        statement.setFetchSize(1000)
+        statement.setFetchSize(batchSize.getOrElse(1000))
         val iter = Sql.resultSetToStream(statement.executeQuery()).iterator.map { row =>
           row.asMap.toMap.mapValues { 
             case x : org.postgresql.jdbc4.Jdbc4Array => x.getArray()
@@ -49,8 +49,9 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
       }
     }
 
-    def queryAsJson[A](query: String)(block: Iterator[JsObject] => A) : A = {
-      queryAsMap(query) { iter =>
+    def queryAsJson[A](query: String, batchSize: Option[Int] = None)
+      (block: Iterator[JsObject] => A) : A = {
+      queryAsMap(query, batchSize) { iter =>
         val jsonIter = iter.map { row =>
           JsObject(row.mapValues(anyValToJson).toSeq)
         }

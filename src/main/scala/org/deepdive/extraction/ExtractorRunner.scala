@@ -166,7 +166,8 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
       case CSVInputQuery(filename, seperator) =>
         FileDataUtils.queryAsJson[Unit](filename, seperator)_
       case DatastoreInputQuery(query) =>
-        dataStore.queryAsJson[Unit](query)_
+        val totalBatchSize = workers.routees.size * task.extractor.inputBatchSize
+        dataStore.queryAsJson[Unit](query, Option(totalBatchSize))_
     }
 
     // Forward output to the workers
