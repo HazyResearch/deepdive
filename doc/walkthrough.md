@@ -514,7 +514,7 @@ psql -d deepdive_spouse -c "select sentence_id, description, probability from ha
          1786337 | Ethan Coen-Catalina Sandino Moreno      |           1
 
 
-We can see that some of these tuples are actually correct instances of married people. Soem of the prediction are movie actors appearing together in a movie. How can we improve these predictions? DeepDives generates [calibration plots](/doc/general/calibration.html) for all variables defined in the schema. Let's take a look at the geneated calibration plot, written to the file outputted in the summary report above. It should look something like this:
+We can see that some of these tuples are actually correct instances of married people. Others are movie actors appearing together in a movie. How can we improve these predictions? DeepDives generates [calibration plots](/doc/general/calibration.html) for all variables defined in the schema to help with debugging. Let's take a look at the geneated calibration plot, written to the file outputted in the summary report above. It should look something like this:
 
 ![Calibration](/assets/walkthrough_has_spouse_is_true.png)
 
