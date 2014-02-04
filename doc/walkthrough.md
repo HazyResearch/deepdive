@@ -492,7 +492,27 @@ Let's try running the full pipeline using `./run.sh`. All extractors other than 
     09:32:13.534 [default-dispatcher-2][profiler][Profiler] INFO  calibration SUCCESS [1601 ms]
     09:32:13.534 [default-dispatcher-2][profiler][Profiler] INFO  --------------------------------------------------
 
-DeepDives generates [calibration plots](/doc/general/calibration.html) for all variables defined in the schema. Let's take a look at the geneated calibration plot, written to the file specified in the summary report above. It should look something like this:
+Great, let's take a look at some of the predictions that DeepDive has made. Deepdive creates a view for each variable you have defined in the database:
+
+{% highlight bash %}
+psql -d deepdive_spouse -c "select sentence_id, description, probability from has_spouse_is_true_inference where probability > 0.9 limit 10;"
+{% endhighlight %}
+
+     sentence_id |               description               | probability 
+    -------------+-----------------------------------------+-------------
+         3092294 | John Turturro-Lisa Pepper               |           1
+         2524571 | Kris Marshall-Ewen Bremner              |           1
+         5570873 | John McCain-Ethan Tucker                |           1
+          837393 | Lynn Collins-Jim Carrey                 |           1
+         1786337 | Catalina Sandino Moreno-Tom Tykwer      |           1
+         6391166 | John Surratt-Henry Wadsworth Longfellow |           1
+         4415973 | Isla Fisher-Will Arnett                 |           1
+          787294 | Alison Schwartz-Kevin                   |           1
+         2906528 | Fionnula Flanagan-Annabeth Gish         |           1
+         1786337 | Ethan Coen-Catalina Sandino Moreno      |           1
+
+
+DeepDives also generates [calibration plots](/doc/general/calibration.html) for all variables defined in the schema. Let's take a look at the geneated calibration plot, written to the file outputted in the summary report above. It should look something like this:
 
 ![Calibration](/assets/walkthrough_has_spouse_is_true.png)
 
@@ -503,6 +523,27 @@ The calibration plot contains useful information that help you to improve the qu
 - Adding more inference rules that encode your domain knowledge
 - Adding more (or better) positive or negative training examples
 - Adding more (or better) features
+
+
+
+Often, it is also useful to look at the *weights* that were learned for features or rules. You can do this by looking at the `mapped_inference_results_weights` table in the database:
+
+{% highlight bash %}
+psql -d deepdive_spouse -c "select * from inference_result_mapped_weights limit 10;" 
+{% endhighlight %}
+
+                                           description                                       |      weight       
+    -----------------------------------------------------------------------------------------+-------------------
+     f_has_spouse_features(has_spouse_features.feature=Some(pos_tags=(NNP,NNP)))             | -55.9473277306201
+     f_has_spouse_symmetry()                                                                 |  40.7592407592408
+     f_has_spouse_features(has_spouse_features.feature=Some(pos_tags=(NNP-NNP-NNP,NNP-NNP))) |  10.7051914081208
+     f_has_spouse_features(has_spouse_features.feature=Some(pos_tags=(NNP-NNP,NNP-NNP-NNP))) |  10.3710946266592
+     f_has_spouse_features(has_spouse_features.feature=Some(words_between_bag=and))          |  8.69130869130869
+     f_has_spouse_features(has_spouse_features.feature=Some(words_between=and))              |  8.69130869130869
+     f_has_spouse_features(has_spouse_features.feature=Some(num_words_between=1))            |  3.53484326516511
+     f_has_spouse_features(has_spouse_features.feature=Some(words_between=directs))          |   -2.855061500858
+     f_has_spouse_features(has_spouse_features.feature=Some(words_between_bag=directs))      |   -2.855061500858
+     f_has_spouse_features(has_spouse_features.feature=Some(words_between=-LRB-))            | -2.69667301119316
 
 
 
