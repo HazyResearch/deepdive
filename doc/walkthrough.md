@@ -287,7 +287,9 @@ Let's create an extractor that extracts all candidates relations and puts them i
     ext_has_spouse_candidates.before: ${APP_HOME}"/udf/before_has_spouse.sh"
     ext_has_spouse_candidates.dependencies: ["ext_people"]
 
-Here we select all pairs of people mentions that occur in the same sentence, together with the sentence itself. It may seem like we could skip writing an extractor completely and instead do this operation SQL, but there is a good reason for why want the extractor: To generate training data using [distant supervision](/doc/general/distant_supervision.html). There are some pairs of people that we know for sure are married, and we can use them as training data for DeepDive. Similarly, if we know that two people are not married, we can use them as negative training examples. In our case we will be using data from [Freebase](http://www.freebase.com/) for distant supervision. We have exported all pairs of people with a `has_spouse` relationship from the [Freebase data dump](https://developers.google.com/freebase/data) and included the CSV file in `data/spouses.csv`. For negative example we we will use pairs of the same person. That is, "Barack Obama" cannot be married to "Barack Obama."
+Here we select all pairs of people mentions that occur in the same sentence, together with the sentence itself. It may seem like we could skip writing an extractor completely and instead do this operation SQL, but there is a good reason for why want the extractor: To generate training data using [distant supervision](/doc/general/distant_supervision.html). There are some pairs of people that we know for sure are married, and we can use them as training data for DeepDive. Similarly, if we know that two people are not married, we can use them as negative training examples. In our case we will be using data from [Freebase](http://www.freebase.com/) for distant supervision. We have exported all pairs of people with a `has_spouse` relationship from the [Freebase data dump](https://developers.google.com/freebase/data) and included the CSV file in `data/spouses.csv`. 
+
+For negative example we we will use pairs of the same person. That is, "Barack Obama" cannot be married to "Barack Obama." Note that the way we generate negative examples has an inherent bias and is less than ideal. A better approach would be to use a separate relation, such as "father" or "son" as negative evidence for a marriage relation.
 
 
 {% highlight python %}
@@ -512,18 +514,17 @@ psql -d deepdive_spouse -c "select sentence_id, description, probability from ha
          1786337 | Ethan Coen-Catalina Sandino Moreno      |           1
 
 
-DeepDives also generates [calibration plots](/doc/general/calibration.html) for all variables defined in the schema. Let's take a look at the geneated calibration plot, written to the file outputted in the summary report above. It should look something like this:
+We can see that some of these tuples are actually correct instances of married people. Soem of the prediction are movie actors appearing together in a movie. How can we improve these predictions? DeepDives generates [calibration plots](/doc/general/calibration.html) for all variables defined in the schema. Let's take a look at the geneated calibration plot, written to the file outputted in the summary report above. It should look something like this:
 
 ![Calibration](/assets/walkthrough_has_spouse_is_true.png)
 
-The calibration plot contains useful information that help you to improve the quality of your predictions. For actionable advice about interpreeting calibration plots, refer to the [calibration guide](/doc/general/calibration.html). There are many ways you can improve the predictions above, including:
+The calibration plot contains useful information that help you to improve the quality of your predictions. For actionable advice about interpreeting calibration plots, refer to the [calibration guide](/doc/general/calibration.html). There are many different ways to improve the predictions above, including:
 
 - Making use of coreference information ([see the advanced walkthorugh](/doc/walkthrough2.html))
 - Performing entity linking instead of extraction relations among mentions in the text ([see the advanced walkthorugh](/doc/walkthrough2.html))
 - Adding more inference rules that encode your domain knowledge
 - Adding more (or better) positive or negative training examples
 - Adding more (or better) features
-
 
 
 Often, it is also useful to look at the *weights* that were learned for features or rules. You can do this by looking at the `mapped_inference_results_weights` table in the database:
