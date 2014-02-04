@@ -4,4 +4,4 @@ layout: default
 
 # Generating negative examples
 
-Coming soon!
+We are still working on it, stay tuned!

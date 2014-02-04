@@ -9,7 +9,7 @@ layout: default
 
 A typical use case for Deepdive is [Relation Extraction](/doc/general/relation_extraction.html). This tutorial will walk you through building a full DeepDive application that extracts `has_spouse` relationships from raw text. We use news articles as our input data and want to extract all pairs of people that participate in a `has_spouse` relation. For example *Barack Obama* and *Michelle Obama*. One can imagine how this example can be translated to other domains, such as extracting intractions between drugs, or relationships among companies.
 
-
+The full application is also available in the `/examples` folder of Deepdive and includes a `setup_database.sh` script.
 
 ### Contents
 
@@ -94,7 +94,7 @@ In order to extract `has_spouse` relations from our text we must first identify 
 4. Add features to our has_spouse candidates to predict which ones are correct or incorrect
 5. Write inference rules to incorporate domain knowledge that improves our predictions
 
-Our goal in this tutorial is get an initial application up and running. There are a couple of problems with the approach above which are worth drawing attention to: If two separate sentences mention the fact that Barack Obama and Michelle Obama are in a `has_spouse` relationship, then our approach does not know that they refer to the same fact. In other words, we ignore the fact that "Barack Obama" and "Michelle Obama" in both of these sentence refer to the same entity in the real world. We also don't recognize *coreference* of two mentions. That is, we don't know that "Barack Obama" and "Obama" probably refer to the same person. We will address these issues in the [second part of the tutorial](/doc/walkthrough2.html).
+Our goal in this tutorial is get an initial application up and running. There are a couple of problems with the approach above which are worth drawing attention to: If two separate sentences mention the fact that Barack Obama and Michelle Obama are in a `has_spouse` relationship, then our approach does not know that they refer to the same fact. In other words, we ignore the fact that "Barack Obama" and "Michelle Obama" in both of these sentence refer to the same entity in the real world. We also don't recognize *coreference* of two mentions. That is, we don't know that "Barack Obama" and "Obama" probably refer to the same person. We will address these issues in the [advanced part of the tutorial](/doc/walkthrough2.html).
 
 
 <a id="loading_data" href="#"> </a>
@@ -113,7 +113,7 @@ CREATE TABLE articles(
 
 {% highlight bash %}
 cp -r ../../examples/spouse_example/data data
-psql -d deepdive_spouse -c "copy articles(text) from STDIN CSV;" < data/nyt_sample.csv
+psql -d deepdive_spouse -c "copy articles from STDIN CSV;" < data/articles_dump.csv
 {% endhighlight %}
 
 
@@ -155,7 +155,8 @@ Let's go through each line:
 
   1. The input to the `ext_sentences` extractor are all articles, selected using a SQL statement.
   2. The output of the extractor will be written to the `sentences` table.
-  3. The extractor script is `udf/nlp_extractor/run.sh`. DeepDive will execute this command and stream input to the *stdin* of the process, and read output from *stdout* of the process. We give two command line arguments to the extractor which specifify the key and the value of the input JSON and the maximum sentence length. These are used by the NLP extractor and are not a function of DeepDive.
+  3. The extractor script is `udf/nlp_extractor/run.sh`. DeepDive will execute this command and stream input to the *stdin* of the process, and rea
+  d output from *stdout* of the process. We give two command line arguments to the extractor which specifify the key and the value of the input JSON and the maximum sentence length. These are used by the NLP extractor and are not a function of DeepDive.
   4. We execute a script before the extractor runs.
 
 There are other options you can give to extractor, refer to the [extractor guide](/doc/extractors.html) for a more comprehensive list. At this point you may be wondering about the `before` script. Why do we need that? Each time before the extractor runs we want to clear out the `sentences` table and remove old data, so let's create a `udf/before_sentences.sh`  script that does that:
@@ -168,7 +169,7 @@ psql -c "TRUNCATE sentences CASCADE;" deepdive_spouse
 Great, our first extractor is ready! When you execute `run.sh` DeepDive should run the new extractor and populate the `sentences` table with the result. Note that natural language processing is quite CPU intensive and may take a while to run. On a 2013 Macbook Pro the NLP extractor needed 1 hour to process all of the raw text documents. You can speed up this process by working with a smaller subset of the documents and using `"SELECT * FROM articles order by id asc LIMIT 100"` as the input query to the extractor. Alternatively, you can also load the finished NLP result into the database directly. We provide a dump of the full `sentences` table in `data/sentences.dump`.
 
 {% highlight bash %}
-psql -d deepdive_spouse < data/sentences.dump
+psql -d deepdive_spouse -c "copy sentences from STDIN CSV;" < data/sentences_dump.csv
 {% endhighlight %}
 
 
@@ -286,7 +287,7 @@ Let's create an extractor that extracts all candidates relations and puts them i
     ext_has_spouse_candidates.before: ${APP_HOME}"/udf/before_has_spouse.sh"
     ext_has_spouse_candidates.dependencies: ["ext_people"]
 
-Here we select all pairs of people mentions that occur in the same sentence, together with the sentence itself. It may seem like we could skip writing an extractor completely and instead do this operation SQL, but there is a good reason for why want the extractor: To generate training data using [distant supervision](/doc/general/distant_supervision.html). There are some pairs of people that we know for sure are married, and we can use them as training data for DeepDive. Similarly, if we know that two people are not married, we can use them as negative training examples. In our case we will be using data from [Freebase](http://www.freebase.com/) for distant supervision. We have exported all pairs of people with a `has_spouse` relationship from the [Freebase data dump](https://developers.google.com/freebase/data) and included the CSV file in `data/spouses.csv`. For negative example we exported pairs of people that have `parent` relationship to `data/parents.csv`
+Here we select all pairs of people mentions that occur in the same sentence, together with the sentence itself. It may seem like we could skip writing an extractor completely and instead do this operation SQL, but there is a good reason for why want the extractor: To generate training data using [distant supervision](/doc/general/distant_supervision.html). There are some pairs of people that we know for sure are married, and we can use them as training data for DeepDive. Similarly, if we know that two people are not married, we can use them as negative training examples. In our case we will be using data from [Freebase](http://www.freebase.com/) for distant supervision. We have exported all pairs of people with a `has_spouse` relationship from the [Freebase data dump](https://developers.google.com/freebase/data) and included the CSV file in `data/spouses.csv`. For negative example we we will use pairs of the same person. That is, "Barack Obama" cannot be married to "Barack Obama."
 
 
 {% highlight python %}
@@ -398,6 +399,9 @@ for row in fileinput.input():
   p2_length = obj["people_mentions.p2.length"]
   p2_end = p2_start + p2_length
 
+  p1_text = obj["sentences.words"][p1_start:p1_length]
+  p2_text = obj["sentences.words"][p2_start:p2_length]
+
   # Features for this pair come in here
   features = set()
   
@@ -405,9 +409,25 @@ for row in fileinput.input():
   left_idx = min(p1_end, p2_end)
   right_idx = max(p1_start, p2_start)
   words_between = obj["sentences.words"][left_idx:right_idx]
-  if words_between: features.add("words_between=" + "-".join(words_between))
+  if words_between: 
+    features.add("words_between=" + "-".join(words_between))
+    features.add("words_between_bag=" + "-".join(sorted(set(words_between))))
 
-  # TODO: Add more features
+  # Feature 2: Number of words between the two phrases
+  features.add("num_words_between=%s" % len(words_between))
+
+  # Feature 4: POS tags of the two words
+  left_pos_tags = "-".join(obj["sentences.pos_tags"][p1_start:p1_end])
+  right_pos_tags = "-".join(obj["sentences.pos_tags"][p2_start:p2_end])
+  features.add("pos_tags=(%s,%s)" %(left_pos_tags, right_pos_tags))
+
+  # Feature 5: Does the last word (last name) match assuming the words are not equal?
+  last_word_left = obj["sentences.words"][p1_end-1]
+  last_word_right = obj["sentences.words"][p2_end-1]
+  if (last_word_left == last_word_right) and (p1_text != p2_text):
+    features.add("last_word_matches")
+
+  # TODO: Add more features, look at dependency paths, etc
 
   for feature in features:  
     print json.dumps({
@@ -448,7 +468,7 @@ The next step is to incorporate domain knowledge into our model. For example, we
       SELECT r1.is_true AS "r1.is_true", r2.is_true AS "r2.is_true", r1.id AS "r1.id", r2.id AS "r2.id"
       FROM has_spouse r1, has_spouse r2 
       WHERE r1.person1_id = r2.person2_id AND r1.person2_id = r2.person1_id"""
-    f_has_spouse_symmetry.function: "Equal(has_spouse.r1.is_true, has_spouse.r2.is_true)"
+    f_has_spouse_symmetry.function: "Imply(has_spouse.r1.is_true, has_spouse.r2.is_true)"
     f_has_spouse_symmetry.weight: "?"
 
 There are many [other kinds of factor functions](/doc/inference_rule_functions.html) you could use to encode domain knowledge. The final step is to add the new inference rules to our pipeline:
@@ -465,6 +485,31 @@ In order to evaluate our results, we also want to define a *holdout fraction* fo
 
 Let's try running the full pipeline using `./run.sh`. All extractors other than the NLP extractor will run, and you should see a summary report similar to:
 
-    TODO
+    09:32:13.529 [default-dispatcher-2][profiler][Profiler] INFO  --------------------------------------------------
+    09:32:13.529 [default-dispatcher-2][profiler][Profiler] INFO  Summary Report
+    09:32:13.530 [default-dispatcher-2][profiler][Profiler] INFO  --------------------------------------------------
+    09:32:13.531 [default-dispatcher-2][profiler][Profiler] INFO  ext_people SUCCESS [24144 ms]
+    09:32:13.532 [default-dispatcher-2][profiler][Profiler] INFO  ext_has_spouse_candidates SUCCESS [19528 ms]
+    09:32:13.533 [default-dispatcher-2][profiler][Profiler] INFO  ext_has_spouse_features SUCCESS [22779 ms]
+    09:32:13.533 [default-dispatcher-2][profiler][Profiler] INFO  f_has_spouse_features SUCCESS [11324 ms]
+    09:32:13.533 [default-dispatcher-2][profiler][Profiler] INFO  f_has_spouse_symmetry SUCCESS [14280 ms]
+    09:32:13.533 [default-dispatcher-2][profiler][Profiler] INFO  inference SUCCESS [160501 ms]
+    09:32:13.534 [default-dispatcher-2][profiler][Profiler] INFO  calibration plot written to /Users/dennybritz/deepdive/target/calibration/has_spouse.is_true.png [0 ms]
+    09:32:13.534 [default-dispatcher-2][profiler][Profiler] INFO  calibration SUCCESS [1601 ms]
+    09:32:13.534 [default-dispatcher-2][profiler][Profiler] INFO  --------------------------------------------------
 
 DeepDives generates [calibration plots](/doc/general/calibration.html) for all variables defined in the schema. Let's take a look at the geneated calibration plot, written to the file specified in the summary report above. It should look something like this:
+
+![Calibration](/assets/walkthrough_has_spouse_is_true.png)
+
+The calibration plot contains useful information that help you to improve the quality of your predictions. For actionable advice about interpreeting calibration plots, refer to the [calibration guide](/doc/general/calibration.html). There are many ways you can improve the predictions above, including:
+
+- Making use of coreference information ([see the advanced walkthorugh](/doc/walkthrough2.html))
+- Performing entity linking instead of extraction relations among mentions in the text ([see the advanced walkthorugh](/doc/walkthrough2.html))
+- Adding more inference rules that encode your domain knowledge
+- Adding more (or better) positive or negative training examples
+- Adding more (or better) features
+
+
+
+

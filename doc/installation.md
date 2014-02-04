@@ -2,9 +2,9 @@
 layout: default
 ---
 
-# DeepDive Installation Guide
+# Installing DeepDive
 
-Using the [Virtual Machine]() is the easiest way to get started with DeepDive. It comes pre-loaded with a ready-to-run example application. This tutorial explains how to install DeepDive on your own machine.
+This tutorial explains how to install DeepDive on your own machine.
 
 ### Dependencies
 
