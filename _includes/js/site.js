@@ -1,5 +1,5 @@
 if (window.location.href.indexOf('http://dennybritz.github.io') === 0) {
-  window.location.href = 'http://deepdive.stanford.edu/{{ page.url }}';
+  window.location.href = 'http://deepdive.stanford.edu/';
 }
 
 $(function(){
