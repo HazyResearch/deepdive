@@ -1,7 +1,7 @@
 #! /bin/bash
 
 export DEEPDIVE_HOME=`cd $(dirname $0)/../..; pwd`
-export APP_HOME="$DEEPDIVE_HOME/app/$(dirname $0)"
+export APP_HOME=`pwd`
 
 # Database Configuration
 export DBNAME=
