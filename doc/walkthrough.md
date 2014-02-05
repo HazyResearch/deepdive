@@ -412,12 +412,7 @@ for row in fileinput.input():
   # Feature 2: Number of words between the two phrases
   features.add("num_words_between=%s" % len(words_between))
 
-  # Feature 4: POS tags of the two words
-  left_pos_tags = "-".join(obj["sentences.pos_tags"][p1_start:p1_end])
-  right_pos_tags = "-".join(obj["sentences.pos_tags"][p2_start:p2_end])
-  features.add("pos_tags=(%s,%s)" %(left_pos_tags, right_pos_tags))
-
-  # Feature 5: Does the last word (last name) match assuming the words are not equal?
+  # Feature 3: Does the last word (last name) match assuming the words are not equal?
   last_word_left = obj["sentences.words"][p1_end-1]
   last_word_right = obj["sentences.words"][p2_end-1]
   if (last_word_left == last_word_right) and (p1_text != p2_text):
@@ -530,22 +525,15 @@ The calibration plot contains useful information that help you to improve the qu
 Often, it is also useful to look at the *weights* that were learned for features or rules. You can do this by looking at the `mapped_inference_results_weights` table in the database:
 
 {% highlight bash %}
-psql -d deepdive_spouse -c "select * from inference_result_mapped_weights limit 10;" 
+psql -d deepdive_spouse -c "select * from inference_result_mapped_weights limit 5;" 
 {% endhighlight %}
 
-                                           description                                       |      weight       
-    -----------------------------------------------------------------------------------------+-------------------
-     f_has_spouse_features(has_spouse_features.feature=Some(pos_tags=(NNP,NNP)))             | -55.9473277306201
-     f_has_spouse_symmetry()                                                                 |  40.7592407592408
-     f_has_spouse_features(has_spouse_features.feature=Some(pos_tags=(NNP-NNP-NNP,NNP-NNP))) |  10.7051914081208
-     f_has_spouse_features(has_spouse_features.feature=Some(pos_tags=(NNP-NNP,NNP-NNP-NNP))) |  10.3710946266592
-     f_has_spouse_features(has_spouse_features.feature=Some(words_between_bag=and))          |  8.69130869130869
-     f_has_spouse_features(has_spouse_features.feature=Some(words_between=and))              |  8.69130869130869
-     f_has_spouse_features(has_spouse_features.feature=Some(num_words_between=1))            |  3.53484326516511
-     f_has_spouse_features(has_spouse_features.feature=Some(words_between=directs))          |   -2.855061500858
-     f_has_spouse_features(has_spouse_features.feature=Some(words_between_bag=directs))      |   -2.855061500858
-     f_has_spouse_features(has_spouse_features.feature=Some(words_between=-LRB-))            | -2.69667301119316
-
-
+                                      description                                   |      weight       
+    --------------------------------------------------------------------------------+-------------------
+     f_has_spouse_symmetry()                                                        |  36.6633366633367
+     f_has_spouse_features(has_spouse_features.feature=Some(words_between=and))     |  8.29170829170829
+     f_has_spouse_features(has_spouse_features.feature=Some(words_between_bag=and)) |  8.29170829170829
+     f_has_spouse_features(has_spouse_features.feature=Some(num_words_between=1))   |  2.43922518609113
+     f_has_spouse_features(has_spouse_features.feature=Some(num_words_between=43))  | -2.23634552248249
 
 
