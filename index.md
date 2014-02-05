@@ -28,7 +28,9 @@ A few demonstrations of DeepDive applications:
 
 We are posting the complete code for our examples on this site. We are working on other more domains with even more collaborators in this year. Stay tuned, and get in [touch with us](mailto:dbritz@stanford.edu) to talk about interesting projects.
 
+### Who are we?
 
+DeepDive is project led by [Chris Re](http://cs.stanford.edu/people/chrismre/) at Stanford university and the University of Wisconsin-Madison. Current group members include [Ce Zhang](http://pages.cs.wisc.edu/~czhang/), [Denny Britz](http://www.linkedin.com/in/dennybritz), [Victor Bittorf](http://pages.cs.wisc.edu/~bittorf/), [Zifei Shan](http://www.zifeishan.org/) and [Feiran Wang]().
 
 
 <a id="#documentation" href="#"> </a>
