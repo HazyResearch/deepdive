@@ -35,7 +35,7 @@ set xlabel "Probability"
 set ylabel "Accuracy"
 set style fill solid border -1
 unset key
-plot input_file using (hist(($1+$2)/2,width)):($4+$5) smooth freq w boxes fillcolor rgb 'blue'
+plot input_file using (hist(($1+$2)/2,width)):($4+$5) smooth freq w boxes lc rgb 'blue'
 
 
 # third plot (predictions: whole set)
@@ -46,6 +46,6 @@ set xlabel "Probability"
 set ylabel "Accuracy"
 set style fill solid border -1
 unset key
-plot input_file using (hist(($1+$2)/2,width)):($3) smooth freq w boxes fillcolor rgb 'blue'
+plot input_file using (hist(($1+$2)/2,width)):($3) smooth freq w boxes lc rgb 'blue'
 
 unset multiplot
