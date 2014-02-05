@@ -7,6 +7,7 @@ layout: default
 The goal of this article is to give a high-level overview of Probabilistic inference. If you are interested in more details, there are several good resources:
 
 - [Factor Graph tutorial by Feiran Wang](/assets/factor_graph.pdf)
+- [An Introduction to Conditional Random Fields for Relational Learning](http://people.cs.umass.edu/~mccallum/papers/crf-tutorial.pdf)
 - [PGM class on Coursera](https://www.coursera.org/course/pgm)
 - [Graphical Models Lecture at CMU](http://alex.smola.org/teaching/cmu2013-10-701x/pgm.html)
 - [Towards High-Throughput Gibbs Sampling at Scale: A Study across Storage Managers](http://cs.stanford.edu/people/chrismre/papers/elementary_sigmod.pdf)
