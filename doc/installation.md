@@ -35,7 +35,7 @@ If you do not see this, check the log for detailed error information.
 
 ### Running Tests
 
-Now let's run some sanity check tests. By default, DeepDive uses the currently logged in user and no password to connect to the database. You can change these by setting the `PG_USER` and `PG_PASSWORD` environment variables, respectively. Then, run this command from the deepdive directory:
+Now let's run some sanity check tests. By default, DeepDive uses the currently logged in user and no password to connect to the database. You can change these by setting the `PGUSER` and `PGPASSWORD` environment variables, respectively. Then, run this command from the deepdive directory:
 
     >> ./test.sh
 
