@@ -381,6 +381,7 @@ And our extractor:
     ext_has_spouse_features.before: ${APP_HOME}"/udf/before_has_spouse_features.sh"
     ext_has_spouse_features.dependencies: ["ext_has_spouse_candidates"]
 
+Create script `udf/ext_has_spouse_features.py` as follows:
 
 {% highlight python %}
 #! /usr/bin/env python
@@ -432,6 +433,7 @@ for row in fileinput.input():
   })
 {% endhighlight %}
 
+Create script `udf/before_has_spouse_features.sh` as follows:
 
 {% highlight bash %}
 #! /usr/bin/env bash
