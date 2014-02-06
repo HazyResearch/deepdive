@@ -269,7 +269,7 @@ psql -d deepdive_spouse -c "CREATE TABLE has_spouse(
   is_true boolean);"
 {% endhighlight %}
 
-Note the special `is_true` column in the above table. We need this column because we want DeepDive to predict how likely it is that a given entry in the table is correct. In other words, DeepDive will create a [random variable](/doc/general/probabilistic_inference.html) for each instance of it. More concretely, each unique id in the `has_spouse` table will be assigned random variable for its `is_true` column. Let's tell DeepDive to use the `is_true` column for probabilistic inference in the `application.conf`
+Note the special `is_true` column in the above table. We need this column because we want DeepDive to predict how likely it is that a given entry in the table is correct. In other words, DeepDive will create a [random variable](/doc/general/inference.html) for each instance of it. More concretely, each unique id in the `has_spouse` table will be assigned random variable for its `is_true` column. Let's tell DeepDive to use the `is_true` column for probabilistic inference in the `application.conf`
 
     schema.variables {
       has_spouse.is_true: Boolean
