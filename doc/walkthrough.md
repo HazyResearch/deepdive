@@ -46,7 +46,6 @@ We will be using PostgreSQL as our primary database in this example. If you foll
 createdb deepdive_spouse
 {% endhighlight %}
 
-
 <div id="#newapp" href="#"> </div>
 
 ### Creating a new DeepDive application
@@ -103,11 +102,11 @@ Our goal in this tutorial is get an initial application up and running. There ar
 
 In this example we will be using raw text from a couple of New York Times articles. Note that there is nothing special about our data set, and you are free to use whatever raw text data you want. Let's copy the data into our directory and create anmd load it into the database.
 
-{% highlight sql %}
-CREATE TABLE articles(
+{% highlight bash %}
+psql -d deepdive_spouse -c "CREATE TABLE articles(
   id bigserial primary key,
   text text
-);
+);"
 {% endhighlight %}
 
 
@@ -130,15 +129,15 @@ The first step towards performing Entity and Relation Extraction is to extract n
 
 The `sbt stage` command compiles the extractor (written in Scala) and generates a handy start script. The extractor itself takes JSON tuples of raw document text as input, and outputs JSON tuples of sentences with information such as part-of-speech tags and dependency parses. Let's now create a new table for the output of the extractor in our database. Beause the output format of the NLP extractor is fixed by us, you must create a compatible table, such as:
 
-{% highlight sql %}  
-CREATE TABLE sentences(
+{% highlight bash %}  
+psql -d deepdive_spouse -c "CREATE TABLE sentences(
   id bigserial primary key, 
   document_id bigint,
   sentence text, 
   words text[],
   pos_tags text[],
   dependencies text[],
-  ner_tags text[]);
+  ner_tags text[]);"
 {% endhighlight %}
 
 
@@ -169,7 +168,7 @@ psql -c "TRUNCATE sentences CASCADE;" deepdive_spouse
 Great, our first extractor is ready! When you execute `run.sh` DeepDive should run the new extractor and populate the `sentences` table with the result. Note that natural language processing is quite CPU intensive and may take a while to run. On a 2013 Macbook Pro the NLP extractor needed 1 hour to process all of the raw text documents. You can speed up this process by working with a smaller subset of the documents and using `"SELECT * FROM articles order by id asc LIMIT 100"` as the input query to the extractor. Alternatively, you can also load the finished NLP result into the database directly. We provide a dump of the full `sentences` table in `data/sentences.dump`.
 
 {% highlight bash %}
-psql -d deepdive_spouse -c "copy sentences from STDIN CSV;" < data/sentences_dump.csv
+psql -d deepdive_spouse -c "copy sentences from STDIN CSV;" < ../../examples/spouse_example/data/sentences_dump.csv
 {% endhighlight %}
 
 
@@ -181,13 +180,13 @@ Our next task is to extract people mentions from the sentences. Ideally you woul
 
 Let's write a simple extractor that puts all people mentions into their own table. This time we will write our extractor in Python. Again, we first create a new table in the database:
   
-{% highlight sql %}
-CREATE TABLE people_mentions(
+{% highlight bash %}
+psql -d deepdive_spouse -c "CREATE TABLE people_mentions(
   id bigserial primary key, 
   sentence_id bigint references sentences(id),
   start_position int,
   length int,
-  text text);
+  text text);"
 {% endhighlight %}
 
 As before, we also add a new extractor to our `application.conf` file:
@@ -249,7 +248,7 @@ The `udf/ext_people.py` Python script takes sentences records as an input, and o
 By default, DeepDive runs all extractors that are defined in the configuration file. Sometimes you only want to run some of your extractors to test them, or to save time when the output of an early extractor hasn't changed. The NLP extractor is a good example of this. It takes a long time to run, and its output will be the same every time, so we don't want to run it more than once. Deepdive allows you to deifne a [pipeline](/doc/pipelines.html) for this purpose. Add the following to your `application.conf`:
 
     pipeline.run: "nonlp"
-    pipelines.pipelines.nonlp: ["ext_people"]
+    pipeline.pipelines.nonlp: ["ext_people"]
 
 The above setting tells DeepDive to execute the "nonlp" pipeline, which only contains the "ext_people" extractor. When executing `run.sh`, your people table should be populated with the results.
 
@@ -260,14 +259,14 @@ The above setting tells DeepDive to execute the "nonlp" pipeline, which only con
 
 Now comes the interesting part! We have layed all the groundwork to extract the `has_spouse` relation we care about. Let's create a table for it:
 
-{% highlight sql %}
-CREATE TABLE has_spouse(
+{% highlight bash %}
+psql -d deepdive_spouse -c "CREATE TABLE has_spouse(
   id bigserial primary key, 
   person1_id bigint references people_mentions(id),
   person2_id bigint references people_mentions(id),
   sentence_id bigint references sentences(id),
   description text,
-  is_true boolean);
+  is_true boolean);"
 {% endhighlight %}
 
 Note the special `is_true` column in the above table. We need this column because we want DeepDive to predict how likely it is that a given entry in the table is correct. In other words, DeepDive will create a [random variable](/doc/general/probabilistic_inference.html) for each instance of it. More concretely, each unique id in the `has_spouse` table will be assigned random variable for its `is_true` column. Let's tell DeepDive to use the `is_true` column for probabilistic inference in the `application.conf`
@@ -318,17 +317,19 @@ for row in fileinput.input():
 
   # Get useful data from the JSON
   p1_id = obj["people_mentions.p1.id"]
-  p1_text = obj["people_mentions.p1.text"]
+  p1_text = obj["people_mentions.p1.text"].strip()
+  p1_text_lower = p1_text.lower()
   p2_id = obj["people_mentions.p2.id"]
-  p2_text = obj["people_mentions.p2.text"]
+  p2_text = obj["people_mentions.p2.text"].strip()
+  p2_text_lower = p2_text.lower()
   sentence_id = obj["sentences.id"]
 
   # See if the combination of people is in our supervision dictionary
   # If so, set is_correct to true or false
   is_true = None
-  if spouses[p1_text.strip().lower()] == p2_text.strip().lower():
+  if spouses[p1_text_lower] == p2_text_lower:
     is_true = True
-  if p1_text.strip().lower() == p2_text.strip().lower():
+  elif (p1_text == p2_text) or (p1_text in p2_text) or (p2_text in p1_text):
     is_true = False
 
   print json.dumps({
@@ -356,11 +357,11 @@ We also need to add our new extractor to the pipeline:
 
 For DeepDive to make predictions, we need to add *features* to our candidate relations. Features are properties that help decide whether or not the given relation is correct. For example, one feature may be the sequence of words between the two mentions. We could have saved the features in the `has_spouse` table that we created above, but it is often cleaner to have a separate table for them:
 
-{% highlight sql %}
-CREATE TABLE has_spouse_features(
+{% highlight bash %}
+psql -d deepdive_spouse -c "CREATE TABLE has_spouse_features(
   id bigserial primary key, 
   relation_id bigint references has_spouse(id),
-  feature text);
+  feature text);"
 {% endhighlight %}
 
 And our extractor:
@@ -382,49 +383,49 @@ And our extractor:
 
 import fileinput
 import json
+import csv
+import os
+import sys
+from collections import defaultdict
+
+BASE_DIR = os.path.dirname(os.path.realpath(__file__))
+
+# Load the spouse dictionary for distant supervision
+spouses = defaultdict(lambda: None)
+with open (BASE_DIR + "/../data/spouses.csv") as csvfile:
+  reader = csv.reader(csvfile)
+  for line in reader:
+    spouses[line[0].strip().lower()] = line[1].strip().lower()
+
 
 # For each input tuple
 for row in fileinput.input():
   obj = json.loads(row)
 
   # Get useful data from the JSON
-  p1_start = obj["people_mentions.p1.start_position"]
-  p1_length = obj["people_mentions.p1.length"]
-  p1_end = p1_start + p1_length
-  p2_start = obj["people_mentions.p2.start_position"]
-  p2_length = obj["people_mentions.p2.length"]
-  p2_end = p2_start + p2_length
+  p1_id = obj["people_mentions.p1.id"]
+  p1_text = obj["people_mentions.p1.text"].strip()
+  p1_text_lower = p1_text.lower()
+  p2_id = obj["people_mentions.p2.id"]
+  p2_text = obj["people_mentions.p2.text"].strip()
+  p2_text_lower = p2_text.lower()
+  sentence_id = obj["sentences.id"]
 
-  p1_text = obj["sentences.words"][p1_start:p1_length]
-  p2_text = obj["sentences.words"][p2_start:p2_length]
+  # See if the combination of people is in our supervision dictionary
+  # If so, set is_correct to true or false
+  is_true = None
+  if spouses[p1_text_lower] == p2_text_lower:
+    is_true = True
+  elif (p1_text == p2_text) or (p1_text in p2_text) or (p2_text in p1_text):
+    is_true = False
 
-  # Features for this pair come in here
-  features = set()
-  
-  # Feature 1: Words between the two phrases
-  left_idx = min(p1_end, p2_end)
-  right_idx = max(p1_start, p2_start)
-  words_between = obj["sentences.words"][left_idx:right_idx]
-  if words_between: 
-    features.add("words_between=" + "-".join(words_between))
-    features.add("words_between_bag=" + "-".join(sorted(set(words_between))))
-
-  # Feature 2: Number of words between the two phrases
-  features.add("num_words_between=%s" % len(words_between))
-
-  # Feature 3: Does the last word (last name) match assuming the words are not equal?
-  last_word_left = obj["sentences.words"][p1_end-1]
-  last_word_right = obj["sentences.words"][p2_end-1]
-  if (last_word_left == last_word_right) and (p1_text != p2_text):
-    features.add("last_word_matches")
-
-  # TODO: Add more features, look at dependency paths, etc
-
-  for feature in features:  
-    print json.dumps({
-      "relation_id": obj["has_spouse.id"],
-      "feature": feature
-    })
+  print json.dumps({
+    "person1_id": p1_id,
+    "person2_id": p2_id,
+    "sentence_id": sentence_id,
+    "description": "%s-%s" %(p1_text, p2_text),
+    "is_true": is_true
+  })
 {% endhighlight %}
 
 
@@ -521,19 +522,20 @@ The calibration plot contains useful information that help you to improve the qu
 - Adding more (or better) positive or negative training examples
 - Adding more (or better) features
 
-
 Often, it is also useful to look at the *weights* that were learned for features or rules. You can do this by looking at the `mapped_inference_results_weights` table in the database:
 
 {% highlight bash %}
-psql -d deepdive_spouse -c "select * from inference_result_mapped_weights limit 5;" 
+psql -d deepdive_spouse -c "select description, weight from inference_result_mapped_weights limit 5;" 
 {% endhighlight %}
 
-                                      description                                   |      weight       
-    --------------------------------------------------------------------------------+-------------------
-     f_has_spouse_symmetry()                                                        |  36.6633366633367
-     f_has_spouse_features(has_spouse_features.feature=Some(words_between=and))     |  8.29170829170829
-     f_has_spouse_features(has_spouse_features.feature=Some(words_between_bag=and)) |  8.29170829170829
-     f_has_spouse_features(has_spouse_features.feature=Some(num_words_between=1))   |  2.43922518609113
-     f_has_spouse_features(has_spouse_features.feature=Some(num_words_between=43))  | -2.23634552248249
+                                             description                                         |      weight       
+    ---------------------------------------------------------------------------------------------+-------------------
+     f_has_spouse_symmetry()                                                                     |  70.2297702297702
+     f_has_spouse_features(has_spouse_features.feature=Some(words_between=and-former-President)) |  4.10097479790514
+     f_has_spouse_features(has_spouse_features.feature=Some(words_between=,-the-wife-of-Sen.))   |  3.39799946241785
+     f_has_spouse_features(has_spouse_features.feature=Some(num_words_between=43))               | -3.21234959136931
+     f_has_spouse_features(has_spouse_features.feature=Some(words_between=,-the-widower-of))     |  3.19385679336731
 
+
+Here we can see that the word phrase "and-former-Presiden" in between the two person names has a rather high weight. This seems strange, since the word "and" is not an indicator of a marriage relationship. One way to improve our predictions would be to add more negative evidence that would lower the weight of that feature.
 
