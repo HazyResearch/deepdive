@@ -537,5 +537,5 @@ psql -d deepdive_spouse -c "select description, weight from inference_result_map
      f_has_spouse_features(has_spouse_features.feature=Some(words_between=,-the-widower-of))     |  3.19385679336731
 
 
-Here we can see that the word phrase "and-former-Presiden" in between the two person names has a rather high weight. This seems strange, since the word "and" is not an indicator of a marriage relationship. One way to improve our predictions would be to add more negative evidence that would lower the weight of that feature.
+Here we can see that the word phrase "and-former-Presiden" in between the two person names has a rather high weight. This seems strange, since this phrase is not an indicator of a marriage relationship. One way to improve our predictions would be to add more negative evidence that would lower the weight of that feature.
 
