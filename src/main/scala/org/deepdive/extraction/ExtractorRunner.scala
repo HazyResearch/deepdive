@@ -58,10 +58,15 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
   // Properties to start workers
   def workerProps = ProcessExecutor.props
 
+  // Periodically print the status
+  val scheduledStatus = context.system.scheduler.schedule(30.seconds, 30.seconds, self, PrintStatus)
+
   override def preStart() { 
     log.info("waiting for tasks")
-    // Periodically print the status
-    context.system.scheduler.schedule(30.seconds, 30.seconds, self, PrintStatus)
+  }
+
+  override def postStop() {
+    scheduledStatus.cancel()
   }
 
   // Start in the idle state

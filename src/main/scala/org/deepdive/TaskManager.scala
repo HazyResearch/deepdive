@@ -104,7 +104,7 @@ class TaskManager extends Actor with ActorLogging {
       val freeMemory = runtime.freeMemory / (1024 * 1024)
       val totalMemory = runtime.totalMemory / (1024 * 1024)
       val maxMemory = runtime.maxMemory / (1024 * 1024)
-      log.info(s"Memory usage: ${usedMemory}/${totalMemory} (max: ${maxMemory})")
+      log.info(s"Memory usage: ${usedMemory}/${totalMemory}MB (max: ${maxMemory}MB)")
 
     case msg =>
       log.warning(s"Huh? ${msg}")
