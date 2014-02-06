@@ -101,23 +101,29 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
     }
 
     def addFactor(factor: Factor) = { 
-      if (!factorIdSet.contains(factor.id)) {
-        factors += factor
-        factorIdSet.add(factor.id)
+      factorIdSet.synchronized {
+        if (!factorIdSet.contains(factor.id)) {
+          factors += factor
+          factorIdSet.add(factor.id)
+        }
       }
     }
 
     def addVariable(variable: Variable) = {
-      if (!variableIdSet.contains(variable.id)) {
-        variables += variable
-        variableIdSet.add(variable.id)
+      variableIdSet.synchronized {
+        if (!variableIdSet.contains(variable.id)) {
+          variables += variable
+          variableIdSet.add(variable.id)
+        }
       }
     }
     
     def addWeight(weight: Weight) = { 
-      if (!weightIdSet.contains(weight.id)) {
-        weights += weight
-        weightIdSet.add(weight.id)
+      weightIdSet.synchronized {
+        if (!weightIdSet.contains(weight.id)) {
+          weights += weight
+          weightIdSet.add(weight.id)
+        }
       }
     }
 

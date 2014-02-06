@@ -8,6 +8,8 @@ import akka.actor.{Actor, ActorRef, Props, ActorLogging}
 import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.JavaConversions._
 import scala.util.{Random, Try, Success, Failure}
+import scala.concurrent.{Future, Await}
+import scala.concurrent.duration._
 
 object FactorGraphBuilder {
 
@@ -34,12 +36,16 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
   val variableOffsetMap = variableSchema.keys.toList.sorted.zipWithIndex.toMap
 
   import FactorGraphBuilder._
+  import context.dispatcher
 
   val rng = new Random(1337)
   val factorFunctionIdCounter = new AtomicInteger
   val variableIdCounter = new AtomicInteger
   val factorIdCounter = new AtomicInteger
   val weightIdCounter = new AtomicInteger
+
+  // TODO: Make this parameters tunable
+  lazy val parallelism = Runtime.getRuntime.availableProcessors.toInt
 
   override def preStart() {
     log.info("Starting")
@@ -69,9 +75,13 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
       }
 
       batchIterator.foreach { group =>
-        group.foreach { case row =>
-          processRow(row, factorDesc, holdoutFraction)
+        // Group by parallelism
+        val parallelGroupSize = Math.max((group.size / parallelism).toInt, 1)
+        val tasks = group.toList.toIterable.grouped(parallelGroupSize).map { case rows =>
+          Future { rows.foreach { row => processRow(row, factorDesc, holdoutFraction) }  }
         }
+        val mergedResults = Future.sequence(tasks)
+        Await.result(mergedResults, 1337.hours)
         log.debug(s"flushing data for factor_name=${factorDesc.name}.")
         inferenceDataStore.flush()
       }
