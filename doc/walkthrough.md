@@ -383,49 +383,48 @@ And our extractor:
 
 import fileinput
 import json
-import csv
-import os
-import sys
-from collections import defaultdict
-
-BASE_DIR = os.path.dirname(os.path.realpath(__file__))
-
-# Load the spouse dictionary for distant supervision
-spouses = defaultdict(lambda: None)
-with open (BASE_DIR + "/../data/spouses.csv") as csvfile:
-  reader = csv.reader(csvfile)
-  for line in reader:
-    spouses[line[0].strip().lower()] = line[1].strip().lower()
-
 
 # For each input tuple
 for row in fileinput.input():
   obj = json.loads(row)
 
   # Get useful data from the JSON
-  p1_id = obj["people_mentions.p1.id"]
-  p1_text = obj["people_mentions.p1.text"].strip()
-  p1_text_lower = p1_text.lower()
-  p2_id = obj["people_mentions.p2.id"]
-  p2_text = obj["people_mentions.p2.text"].strip()
-  p2_text_lower = p2_text.lower()
-  sentence_id = obj["sentences.id"]
+  p1_start = obj["people_mentions.p1.start_position"]
+  p1_length = obj["people_mentions.p1.length"]
+  p1_end = p1_start + p1_length
+  p2_start = obj["people_mentions.p2.start_position"]
+  p2_length = obj["people_mentions.p2.length"]
+  p2_end = p2_start + p2_length
 
-  # See if the combination of people is in our supervision dictionary
-  # If so, set is_correct to true or false
-  is_true = None
-  if spouses[p1_text_lower] == p2_text_lower:
-    is_true = True
-  elif (p1_text == p2_text) or (p1_text in p2_text) or (p2_text in p1_text):
-    is_true = False
+  p1_text = obj["sentences.words"][p1_start:p1_length]
+  p2_text = obj["sentences.words"][p2_start:p2_length]
 
-  print json.dumps({
-    "person1_id": p1_id,
-    "person2_id": p2_id,
-    "sentence_id": sentence_id,
-    "description": "%s-%s" %(p1_text, p2_text),
-    "is_true": is_true
-  })
+  # Features for this pair come in here
+  features = set()
+  
+  # Feature 1: Words between the two phrases
+  left_idx = min(p1_end, p2_end)
+  right_idx = max(p1_start, p2_start)
+  words_between = obj["sentences.words"][left_idx:right_idx]
+  if words_between: 
+    features.add("words_between=" + "-".join(words_between))
+
+  # Feature 2: Number of words between the two phrases
+  features.add("num_words_between=%s" % len(words_between))
+
+  # Feature 3: Does the last word (last name) match assuming the words are not equal?
+  last_word_left = obj["sentences.words"][p1_end-1]
+  last_word_right = obj["sentences.words"][p2_end-1]
+  if (last_word_left == last_word_right) and (p1_text != p2_text):
+    features.add("last_word_matches")
+
+  # TODO: Add more features, look at dependency paths, etc
+
+  for feature in features:  
+    print json.dumps({
+      "relation_id": obj["has_spouse.id"],
+      "feature": feature
+    })
 {% endhighlight %}
 
 
