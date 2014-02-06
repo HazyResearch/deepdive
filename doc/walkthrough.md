@@ -197,7 +197,7 @@ As before, we also add a new extractor to our `application.conf` file:
     ext_people.before: ${APP_HOME}"/udf/before_people.sh"
     ext_people.dependencies: ["ext_sentences"]
 
-The configuration is similar to the `ext_sentences`, but note that the `ext_people` has a dependency on the `ext_sentences` extractor. This means, `ext_sentences` must be run before `ext_sentences` can be executed. Let's create the `udf/before_people.py` script and a `udf/ext_people.py` Python script:
+The configuration is similar to the `ext_sentences`, but note that the `ext_people` has a dependency on the `ext_sentences` extractor. This means, `ext_sentences` must be run before `ext_sentences` can be executed. Let's create the `udf/before_people.sh` script and a `udf/ext_people.py` Python script:
 
 {% highlight bash %}  
 #! /usr/bin/env bash
@@ -269,7 +269,7 @@ psql -d deepdive_spouse -c "CREATE TABLE has_spouse(
   is_true boolean);"
 {% endhighlight %}
 
-Note the special `is_true` column in the above table. We need this column because we want DeepDive to predict how likely it is that a given entry in the table is correct. In other words, DeepDive will create a [random variable](/doc/general/probabilistic_inference.html) for each instance of it. More concretely, each unique id in the `has_spouse` table will be assigned random variable for its `is_true` column. Let's tell DeepDive to use the `is_true` column for probabilistic inference in the `application.conf`
+Note the special `is_true` column in the above table. We need this column because we want DeepDive to predict how likely it is that a given entry in the table is correct. In other words, DeepDive will create a [random variable](/doc/general/inference.html) for each instance of it. More concretely, each unique id in the `has_spouse` table will be assigned random variable for its `is_true` column. Let's tell DeepDive to use the `is_true` column for probabilistic inference in the `application.conf`
 
     schema.variables {
       has_spouse.is_true: Boolean
@@ -290,6 +290,7 @@ Here we select all pairs of people mentions that occur in the same sentence, tog
 
 For negative example we we will use pairs of the same person. That is, "Barack Obama" cannot be married to "Barack Obama." Note that the way we generate negative examples has an inherent bias and is less than ideal. A better approach would be to use a separate relation, such as "father" or "son" as negative evidence for a marriage relation.
 
+Let's create a script `udf/ext_has_spouse.py` as below:
 
 {% highlight python %}
 #! /usr/bin/env python
@@ -341,6 +342,9 @@ for row in fileinput.input():
   })
 {% endhighlight %}
 
+
+Create a script `udf/before_has_spouse.sh` as below:
+
 {% highlight bash %}
 #! /usr/bin/env bash
 psql -c "TRUNCATE has_spouse CASCADE;" deepdive_spouse
@@ -348,7 +352,7 @@ psql -c "TRUNCATE has_spouse CASCADE;" deepdive_spouse
 
 We also need to add our new extractor to the pipeline:
 
-    pipelines.pipelines.nonlp: ["ext_people", "ext_has_spouse_candidates"]
+    pipeline.pipelines.nonlp: ["ext_people", "ext_has_spouse_candidates"]
 
 
 <a id="candidate_relation_features" href="#"> </a>
@@ -377,6 +381,7 @@ And our extractor:
     ext_has_spouse_features.before: ${APP_HOME}"/udf/before_has_spouse_features.sh"
     ext_has_spouse_features.dependencies: ["ext_has_spouse_candidates"]
 
+Create script `udf/ext_has_spouse_features.py` as follows:
 
 {% highlight python %}
 #! /usr/bin/env python
@@ -427,6 +432,7 @@ for row in fileinput.input():
     })
 {% endhighlight %}
 
+Create script `udf/before_has_spouse_features.sh` as follows:
 
 {% highlight bash %}
 #! /usr/bin/env bash
@@ -442,7 +448,7 @@ Don't forget to add the new extractor to your pipeline:
 
 ### Adding domain-specific inference rules
 
-Now we need to tell DeepDive how to perform [probabilistic inference](/doc/general/probabilistic_inference.html) on the data we have generated.  We want to predict the `is_true` column of the `has_spouse` table based on the features we have extracted. This is the simplest rule you can write, because it does not involve domain knowledge or  relationships among variales. Add the following to your `application.conf`
+Now we need to tell DeepDive how to perform [probabilistic inference](/doc/general/inference.html) on the data we have generated.  We want to predict the `is_true` column of the `has_spouse` table based on the features we have extracted. This is the simplest rule you can write, because it does not involve domain knowledge or  relationships among variales. Add the following to your `application.conf`
   
     inference.factors {
       f_has_spouse_features.input_query: """SELECT * FROM has_spouse, has_spouse_features 
