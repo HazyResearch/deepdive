@@ -352,7 +352,7 @@ psql -c "TRUNCATE has_spouse CASCADE;" deepdive_spouse
 
 We also need to add our new extractor to the pipeline:
 
-    pipelines.pipelines.nonlp: ["ext_people", "ext_has_spouse_candidates"]
+    pipeline.pipelines.nonlp: ["ext_people", "ext_has_spouse_candidates"]
 
 
 <a id="candidate_relation_features" href="#"> </a>
