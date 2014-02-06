@@ -27,7 +27,6 @@ for row in fileinput.input():
   words_between = obj["sentences.words"][left_idx:right_idx]
   if words_between: 
     features.add("words_between=" + "-".join(words_between))
-    features.add("words_between_bag=" + "-".join(sorted(set(words_between))))
 
   # Feature 2: Number of words between the two phrases
   features.add("num_words_between=%s" % len(words_between))

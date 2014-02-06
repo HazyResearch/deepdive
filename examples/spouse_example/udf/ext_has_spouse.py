@@ -23,17 +23,19 @@ for row in fileinput.input():
 
   # Get useful data from the JSON
   p1_id = obj["people_mentions.p1.id"]
-  p1_text = obj["people_mentions.p1.text"]
+  p1_text = obj["people_mentions.p1.text"].strip()
+  p1_text_lower = p1_text.lower()
   p2_id = obj["people_mentions.p2.id"]
-  p2_text = obj["people_mentions.p2.text"]
+  p2_text = obj["people_mentions.p2.text"].strip()
+  p2_text_lower = p2_text.lower()
   sentence_id = obj["sentences.id"]
 
   # See if the combination of people is in our supervision dictionary
   # If so, set is_correct to true or false
   is_true = None
-  if spouses[p1_text.strip().lower()] == p2_text.strip().lower():
+  if spouses[p1_text_lower] == p2_text_lower:
     is_true = True
-  if p1_text.strip().lower() == p2_text.strip().lower():
+  elif (p1_text == p2_text) or (p1_text in p2_text) or (p2_text in p1_text):
     is_true = False
 
   print json.dumps({
