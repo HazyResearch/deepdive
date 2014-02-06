@@ -93,6 +93,8 @@ The extractor should output JSON objects to *stdout* in the same fashion, but **
     { title_id: 5, word: "a" } 
     { title_id: 5, word: "title" } 
 
+You can debug extractors by printing output to *stderr* instead of stdin. The output will appear in the DeepDive log file.
+
 An extractor UDF could be written in Python as follows:
 
 {% highlight python %}

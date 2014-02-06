@@ -13,3 +13,7 @@ Refer to the [Performance Tuning guide](/doc/performance.html) and try the follo
 - Set the JVM heap size using the `-Xmx` option flag
 - If the errors happens while executing an extractor, try decreasing the input or output batch size for your extractors
 - If the errors happens during sampling, try setting the JVM heap size for the sampler using the `-Xmx` option flag
+
+### How can I debug extractors?
+
+If you print to *stderr* instead of *stdout* the messages will appear in the log file.

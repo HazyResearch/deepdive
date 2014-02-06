@@ -238,7 +238,7 @@ for row in fileinput.input():
     })
 {% endhighlight %}
 
-The `udf/ext_people.py` Python script takes sentences records as an input, and outputs a people record for each (potentially multi-word) person phrase found in the sentence.
+The `udf/ext_people.py` Python script takes sentences records as an input, and outputs a people record for each (potentially multi-word) person phrase found in the sentence. Note that if you wanted to add debug output, you can print to *stderr* instead of stdout and the messages would appear in the log file.
 
 
 <a id="pipelines" href="#"> </a>
