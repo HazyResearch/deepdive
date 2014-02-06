@@ -197,7 +197,7 @@ As before, we also add a new extractor to our `application.conf` file:
     ext_people.before: ${APP_HOME}"/udf/before_people.sh"
     ext_people.dependencies: ["ext_sentences"]
 
-The configuration is similar to the `ext_sentences`, but note that the `ext_people` has a dependency on the `ext_sentences` extractor. This means, `ext_sentences` must be run before `ext_sentences` can be executed. Let's create the `udf/before_people.py` script and a `udf/ext_people.py` Python script:
+The configuration is similar to the `ext_sentences`, but note that the `ext_people` has a dependency on the `ext_sentences` extractor. This means, `ext_sentences` must be run before `ext_sentences` can be executed. Let's create the `udf/before_people.sh` script and a `udf/ext_people.py` Python script:
 
 {% highlight bash %}  
 #! /usr/bin/env bash
