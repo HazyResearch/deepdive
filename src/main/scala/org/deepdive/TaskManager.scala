@@ -17,6 +17,7 @@ object TaskManager {
   case class Done(task: Task, result: Try[_])
   case object ForceShutdown
   case object Shutdown
+  case object PrintStatus
 
 }
 
@@ -35,6 +36,8 @@ class TaskManager extends Actor with ActorLogging {
 
   override def preStart() {
     log.info(s"starting at ${self.path}")
+    // Periodically print the status
+    context.system.scheduler.schedule(30.seconds, 30.seconds, self, PrintStatus)
   }
 
   def receive = {
@@ -94,6 +97,14 @@ class TaskManager extends Actor with ActorLogging {
     case Shutdown =>
       context.stop(self)
       context.system.shutdown()
+
+    case PrintStatus =>
+      val runtime = Runtime.getRuntime
+      val usedMemory = (runtime.totalMemory - runtime.freeMemory) / (1024 * 1024)
+      val freeMemory = runtime.freeMemory / (1024 * 1024)
+      val totalMemory = runtime.totalMemory / (1024 * 1024)
+      val maxMemory = runtime.maxMemory / (1024 * 1024)
+      log.info(s"Memory usage: ${usedMemory}/${totalMemory} (max: ${maxMemory})")
 
     case msg =>
       log.warning(s"Huh? ${msg}")

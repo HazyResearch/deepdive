@@ -31,6 +31,7 @@ object ExtractorRunner {
   case object AllDataDone extends Message
   case object ExecuteAfterScript
   case object Shutdown
+  case object PrintStatus
 
   // States
   sealed trait State
@@ -57,7 +58,11 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
   // Properties to start workers
   def workerProps = ProcessExecutor.props
 
-  override def preStart() { log.info("waiting for task") }
+  override def preStart() { 
+    log.info("waiting for tasks")
+    // Periodically print the status
+    context.system.scheduler.schedule(30.seconds, 30.seconds, self, PrintStatus)
+  }
 
   // Start in the idle state
   startWith(Idle, Uninitialized)
@@ -123,6 +128,10 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
           taskSender ! Status.Failure(new RuntimeException(s"process exited with exit_code=${exitCode}"))
           stop
       }
+
+    case Event(PrintStatus, Task(task, taskSender, workers)) =>
+      log.info(s"Status: ${workers.routees.size} workers are running.")
+      stay
   }
 
   when(Finishing) {
