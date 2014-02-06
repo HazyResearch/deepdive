@@ -290,6 +290,7 @@ Here we select all pairs of people mentions that occur in the same sentence, tog
 
 For negative example we we will use pairs of the same person. That is, "Barack Obama" cannot be married to "Barack Obama." Note that the way we generate negative examples has an inherent bias and is less than ideal. A better approach would be to use a separate relation, such as "father" or "son" as negative evidence for a marriage relation.
 
+Let's create a script `udf/ext_has_spouse.py` as below:
 
 {% highlight python %}
 #! /usr/bin/env python
@@ -340,6 +341,9 @@ for row in fileinput.input():
     "is_true": is_true
   })
 {% endhighlight %}
+
+
+Create a script `udf/before_has_spouse.sh` as below:
 
 {% highlight bash %}
 #! /usr/bin/env bash
@@ -443,7 +447,7 @@ Don't forget to add the new extractor to your pipeline:
 
 ### Adding domain-specific inference rules
 
-Now we need to tell DeepDive how to perform [probabilistic inference](/doc/general/probabilistic_inference.html) on the data we have generated.  We want to predict the `is_true` column of the `has_spouse` table based on the features we have extracted. This is the simplest rule you can write, because it does not involve domain knowledge or  relationships among variales. Add the following to your `application.conf`
+Now we need to tell DeepDive how to perform [probabilistic inference](/doc/general/inference.html) on the data we have generated.  We want to predict the `is_true` column of the `has_spouse` table based on the features we have extracted. This is the simplest rule you can write, because it does not involve domain knowledge or  relationships among variales. Add the following to your `application.conf`
   
     inference.factors {
       f_has_spouse_features.input_query: """SELECT * FROM has_spouse, has_spouse_features 
