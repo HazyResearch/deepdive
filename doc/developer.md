@@ -28,7 +28,7 @@ During development we recommend running `sbt ~compile` instead. The tilde will a
 
 ### Running Tests
 
-DeepDive comes with a number of unit- and integration test. For tests that require connection to a database (such as postgres), you must modify the `stc/test/recources/application.conf` file with your connection parameters. You can run all tests with:
+DeepDive comes with a number of unit- and integration test. For tests that require connection to a database (such as postgres), you must modify the `src/test/recources/application.conf` file with your connection parameters. You can run all tests with:
 
     sbt test
 
