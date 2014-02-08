@@ -39,7 +39,6 @@ To run a specific test, you can use:
 You can use `sbt ~test` to keep running tests in the backgroud while you are modifying files.
 
 
-
 ### Reference: Factor Graph Output Schema
 
 The systems outputs three **space-separated** files for weights, factors and variables in the following format.
