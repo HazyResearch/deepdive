@@ -135,9 +135,11 @@ psql -d deepdive_spouse -c "CREATE TABLE sentences(
   document_id bigint,
   sentence text, 
   words text[],
+  lemma text[],
   pos_tags text[],
   dependencies text[],
-  ner_tags text[]);"
+  ner_tags text[],
+  dcoref text[]);"
 {% endhighlight %}
 
 
