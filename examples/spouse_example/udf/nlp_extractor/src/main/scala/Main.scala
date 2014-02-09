@@ -58,8 +58,10 @@ object Main extends App {
         "sentence" -> JsString(sentenceResult.sentence),
         "words" -> JsArray(sentenceResult.words.map(JsString.apply)),
         "pos_tags" -> JsArray(sentenceResult.wordsWithPos.map(JsString.apply)),
+        "lemma" -> JsArray(sentenceResult.lemma.map(JsString.apply)),
         "dependencies" -> JsArray(sentenceResult.deps.map(JsString.apply)),
-        "ner_tags" -> JsArray(sentenceResult.nerTags.map(JsString.apply))
+        "ner_tags" -> JsArray(sentenceResult.nerTags.map(JsString.apply)),
+        "dcoref" -> JsArray(sentenceResult.dcoref.map(JsString.apply))
       ).toSeq)
       Console.println(Json.stringify(json))
     }  
