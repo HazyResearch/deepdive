@@ -32,17 +32,20 @@ class DocumentParser(props: Properties) {
       val posList = tokens.map(_.get(classOf[PartOfSpeechAnnotation]))
       val nerList = tokens.map(_.get(classOf[NamedEntityTagAnnotation]))
       val lemmaList = tokens.map(_.get(classOf[LemmaAnnotation]))
-      val dcoref = tokens.map(_.get(classOf[CorefChainAnnotation]))
-      val dcorefMaps = dcoref.map { 
-        case null => Map[String,String]()
-        case corefChain => corefChain.map { case(key, value) =>
-          (key.toString, value.toString)
-        }.toMap
-      } 
+      val dcoref = tokens.map(_.get(classOf[CorefChainAnnotation])).map {
+        case null => ""
+        case x => x.toString
+      }
+      // val dcorefMaps = dcoref.map { 
+      //   case null => Map[String,String]()
+      //   case corefChain => corefChain.map { case(key, value) =>
+      //     (key.toString, value.toString)
+      //   }.toMap
+      // } 
 
       val depList = sentence.get(classOf[CollapsedCCProcessedDependenciesAnnotation]).toList.lines
       SentenceParseResult(wordList.mkString(" "), wordList.toList, lemmaList.toList, 
-        posList.toList, depList.toList, nerList.toList, dcorefMaps.toList)
+        posList.toList, depList.toList, nerList.toList, dcoref.toList)
     }
 
     DocumentParseResult(sentenceResults.toList) 
