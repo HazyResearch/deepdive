@@ -123,7 +123,7 @@ psql -d deepdive_spouse -c "copy articles from STDIN CSV;" < data/articles_dump.
 The first step towards performing Entity and Relation Extraction is to extract natural language features from the raw text. This is usually done using an NLP library such as [the Stanford Parser](http://nlp.stanford.edu/software/lex-parser.shtml) or [NLTK](http://nltk.org/). Because natural language processing is such a common first step we provide a pre-built extractor which uses the [Stanford CoreNLP Kit](http://nlp.stanford.edu/software/corenlp.shtml) to split documents into sentences and tag them. Let's copy it into our project.
   
     mkdir udf
-    cp -r ../../util/nlp_extractor udf/
+    cp -r ../../examples/nlp_extractor udf/
     cd udf/nlp_extractor/
     sbt stage
 
