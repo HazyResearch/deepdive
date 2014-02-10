@@ -48,6 +48,7 @@ Getting started:
 
 - [DeepDive overview](doc/overview.html)
 - [Installation guide](doc/installation.html)
+- [Amazon EC2 AMI guide](doc/ec2.html)
 - [Example application walkthrough](doc/walkthrough.html)
 
 API Documentation:
