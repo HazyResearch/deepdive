@@ -35,7 +35,7 @@ class DocumentParser(props: Properties) {
       val lemmaList = tokens.map(_.get(classOf[LemmaAnnotation]))
       val depList = sentence.get(classOf[CollapsedCCProcessedDependenciesAnnotation]).toList.lines
       SentenceParseResult(wordList.mkString(" "), wordList.toList, lemmaList.toList, 
-        posList.toList, depList.toList, nerList.toList, Nil)
+        posList.toList, depList.toList, nerList.toList)
     }
 
     DocumentParseResult(sentenceResults.toList) 

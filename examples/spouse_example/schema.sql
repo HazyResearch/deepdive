@@ -13,8 +13,7 @@ CREATE TABLE sentences(
   lemma text[],
   pos_tags text[],
   dependencies text[],
-  ner_tags text[],
-  dcoref text[]);
+  ner_tags text[]);
 
 
 DROP TABLE IF EXISTS people_mentions CASCADE;
