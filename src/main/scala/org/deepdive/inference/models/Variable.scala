@@ -9,10 +9,10 @@ object VariableDataType extends Enumeration with Logging {
 }
 import VariableDataType._
 
-case class Variable(id: Long, dataType: VariableDataType, initialValue: Double, 
+case class Variable(id: Long, dataType: VariableDataType, initialValue: Option[Double], 
   isEvidence: Boolean, isQuery: Boolean, mappingRelation: String, 
   mappingColumn: String, mappingId: Long) extends CSVFormattable {
   
-  def toCSVRow = Array(id.toString, dataType.toString, initialValue.toString, isEvidence.toString, 
-      isQuery.toString, mappingRelation, mappingColumn, mappingId.toString)
+  def toCSVRow = Array(id.toString, dataType.toString, initialValue.map(_.toString).getOrElse(null), 
+    isEvidence.toString, isQuery.toString, mappingRelation, mappingColumn, mappingId.toString)
 }

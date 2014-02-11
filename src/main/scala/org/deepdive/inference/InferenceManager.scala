@@ -30,9 +30,7 @@ trait InferenceManager extends Actor with ActorLogging {
   // Describes how to start the calibration data writer
   def calibrationDataWriterProps = CalibrationDataWriter.props
 
-  lazy val VariablesDumpFile = new File("target/variables.txt")
-  lazy val FactorsDumpFile = new File("target/factors.txt")
-  lazy val WeightsDumpFile = new File("target/weights.txt")
+  lazy val factorGraphDumpFile = new File("target/graph.pb")
   lazy val SamplingOutputFile = new File("target/inference_result.out")
   lazy val SamplingOutputFileWeights = new File("target/inference_result.out.weights")
 
@@ -72,11 +70,12 @@ trait InferenceManager extends Actor with ActorLogging {
   }
 
   def runInference(samplerJavaArgs: String, samplerOptions: String) = {
-    inferenceDataStore.dumpFactorGraph(VariablesDumpFile, FactorsDumpFile, WeightsDumpFile)
+    // TODO: Make serializier configurable
+    val serializier = new ProtobufSerializer
+    inferenceDataStore.dumpFactorGraph(serializier,factorGraphDumpFile)
     val sampler = context.actorOf(samplerProps, "sampler")
     val samplingResult = sampler ? Sampler.Run(samplerJavaArgs, samplerOptions,
-      VariablesDumpFile.getCanonicalPath, FactorsDumpFile.getCanonicalPath, 
-      WeightsDumpFile.getCanonicalPath, SamplingOutputFile.getCanonicalPath)
+      factorGraphDumpFile.getCanonicalPath, SamplingOutputFile.getCanonicalPath)
     // Kill the sampler after it's done :)
     sampler ! PoisonPill
     samplingResult.map { x =>

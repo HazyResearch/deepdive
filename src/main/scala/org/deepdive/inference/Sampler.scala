@@ -9,8 +9,7 @@ object Sampler {
   def props = Props[Sampler]
 
   // Tells the Sampler to run inference
-  case class Run(samplerJavaArgs: String, samplerOptions: String, variablesPath: String, 
-    factorsPath: String, weightsPath: String, variableOutPath: String)
+  case class Run(samplerJavaArgs: String, samplerOptions: String, factorGraphDumpFile: String, variableOutPath: String)
 }
 
 /* Runs inferece on a dumped factor graph. */
@@ -19,11 +18,11 @@ class Sampler extends Actor with ActorLogging {
   override def preStart() = { log.info("starting") }
 
   def receive = {
-    case Sampler.Run(samplerJavaArgs, samplerOptions, variablesPath, factorsPath, weightsPath, 
+    case Sampler.Run(samplerJavaArgs, samplerOptions, factorGraphDumpFile, 
       variableOutPath) =>
       // Build the command
       val samplerCmd = buildSamplerCmd(samplerJavaArgs, samplerOptions, 
-        variablesPath, factorsPath, weightsPath, variableOutPath)
+        factorGraphDumpFile, variableOutPath)
       log.info(s"Executing: ${samplerCmd.mkString(" ")}")
       // We run the process, get its exit value, and print its output to the log file
       val exitValue = samplerCmd!(ProcessLogger(
@@ -38,13 +37,11 @@ class Sampler extends Actor with ActorLogging {
   }
 
   // Build the command to run the sampler
-  def buildSamplerCmd(samplerJavaArgs: String, samplerOptions: String, variablesPath: String,
-    factorsPath: String, weightsPath: String, variableOutPath: String) = {
+  def buildSamplerCmd(samplerJavaArgs: String, samplerOptions: String, factorGraphDumpFile: String, 
+    variableOutPath: String) = {
     Seq("java", samplerJavaArgs, 
       "-jar", "lib/sampler-assembly-0.1.jar", 
-      "--variables", variablesPath, 
-      "--factors", factorsPath, 
-      "--weights", weightsPath,
+      "--input", factorGraphDumpFile,
       "--outputFile", variableOutPath) ++ samplerOptions.split(" ")
   }
 
