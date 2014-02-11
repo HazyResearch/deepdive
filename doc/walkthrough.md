@@ -138,8 +138,7 @@ psql -d deepdive_spouse -c "CREATE TABLE sentences(
   lemma text[],
   pos_tags text[],
   dependencies text[],
-  ner_tags text[],
-  dcoref text[]);"
+  ner_tags text[]);"
 {% endhighlight %}
 
 
