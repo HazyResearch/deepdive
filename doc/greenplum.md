@@ -10,9 +10,7 @@ This documentation provides a simple installation guide for [GreenPlum](http://w
 
 ## Note
 
-If you are installing Greenplum on a machine without root access, skip the following steps below:
-- Setting the Greenplum Recommended OS Parameters
-- Configure ssh with localhost
+If you are installing Greenplum on a machine without root access, skip the step **Setting the Greenplum Recommended OS Parameters**, and if you cannot change your settings to login to localhost without a password, skip the step **Configure ssh with localhost**.
 
 Note that you will be prompted to enter your password to `localhost` several times throughout the installation process.
 
