@@ -24,28 +24,18 @@ class DocumentParser(props: Properties) {
 
     val document = new Annotation(doc)
     pipeline.annotate(document)
+    val dcoref = document.get(classOf[CorefChainAnnotation])
     val sentences = document.get(classOf[SentencesAnnotation])
 
-    val sentenceResults = sentences.map { sentence =>
+    val sentenceResults = sentences.zipWithIndex.map { case(sentence, sentIdx) =>
       val tokens = sentence.get(classOf[TokensAnnotation])
       val wordList = tokens.map(_.get(classOf[TextAnnotation]))
       val posList = tokens.map(_.get(classOf[PartOfSpeechAnnotation]))
       val nerList = tokens.map(_.get(classOf[NamedEntityTagAnnotation]))
       val lemmaList = tokens.map(_.get(classOf[LemmaAnnotation]))
-      val dcoref = tokens.map(_.get(classOf[CorefChainAnnotation])).map {
-        case null => ""
-        case x => x.toString
-      }
-      // val dcorefMaps = dcoref.map { 
-      //   case null => Map[String,String]()
-      //   case corefChain => corefChain.map { case(key, value) =>
-      //     (key.toString, value.toString)
-      //   }.toMap
-      // } 
-
       val depList = sentence.get(classOf[CollapsedCCProcessedDependenciesAnnotation]).toList.lines
       SentenceParseResult(wordList.mkString(" "), wordList.toList, lemmaList.toList, 
-        posList.toList, depList.toList, nerList.toList, dcoref.toList)
+        posList.toList, depList.toList, nerList.toList, Nil)
     }
 
     DocumentParseResult(sentenceResults.toList) 
