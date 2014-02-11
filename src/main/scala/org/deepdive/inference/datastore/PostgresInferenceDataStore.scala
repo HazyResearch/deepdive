@@ -131,7 +131,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       // Add all weights
       log.info(s"Deumping factor graph to file='${file.getCanonicalPath}'")
       log.info("Serializing weights...")
-      SQL(s"SELECT * from weights")().iterator.foreach { row =>
+      SQL(s"SELECT * from weights order by id asc")().iterator.foreach { row =>
         serializer.addWeight(
           row[Long]("id"),
           row[Boolean]("is_fixed"),
@@ -141,16 +141,16 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       }
       // Add all variables
       log.info("Serializing variables...")
-      SQL(s"SELECT * from variables")().iterator.foreach { row =>
+      SQL(s"SELECT * from variables order by id asc")().iterator.foreach { row =>
         serializer.addVariable(
           row[Long]("id"),
-          row[Option[Double]]("initial_value"),
+          if (row[Boolean]("is_evidence")) row[Option[Double]]("initial_value") else None,
           row[String]("data_type")
         )
       }
       // Add all factors
       log.info("Serializing factors...")
-      SQL(s"SELECT * from factors")().iterator.foreach { row =>
+      SQL(s"SELECT * from factors order by id asc")().iterator.foreach { row =>
         serializer.addFactor(
           row[Long]("id"),
           row[Long]("weight_id"),
