@@ -14,7 +14,7 @@ If you are installing Greenplum on a machine without root access, skip the step 
 
 Note that you will be prompted to enter your password to `localhost` several times throughout the installation process.
 
-You will also not be able to save to the /usr/local/ directory, so let GREENPLUM_DIR be the directory where you wish to install Greenplum. In the steps below, replace /usr/local/ with GREENPLUM_DIR.
+If you do not have write permissions to the /usr/local/ directory: let GREENPLUM_DIR be the directory where you wish to install Greenplum. In the steps below, replace /usr/local/ with GREENPLUM_DIR.
 
 In the steps **Set Greenplum related session variables** and **Configure PATH to add master data directory**, if you do not have write permissions to the ~/.bashrc file, simply run the commands `source GREENPLUM_DIR/greenplum-db/greenplum_path.sh` and `export MASTER_DATA_DIRECTORY=GREENPLUM_DIR/greenplumdb/master/gpsne-1`. In order to have these commands run every time you log in to the system, save a new script called greenplum_startup.sh with the following contents:
 
