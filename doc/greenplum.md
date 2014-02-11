@@ -8,6 +8,22 @@ This documentation provides a simple installation guide for [GreenPlum](http://w
 
 **After installing GreenPlum, DeepDive should work well with it. The rest steps are identical with the documentation for [PostgreSQL](postgresql.html)**.
 
+## Note
+
+If you are installing Greenplum on a machine without root access, skip the following steps below:
+- Setting the Greenplum Recommended OS Parameters
+- Configure ssh with localhost
+
+Note that you will be prompted to enter your password to `localhost` several times throughout the installation process.
+
+You will also not be able to save to the /usr/local/ directory, so let GREENPLUM_DIR be the directory where you wish to install Greenplum. In the steps below, replace /usr/local/ with GREENPLUM_DIR.
+
+In the steps **Set Greenplum related session variables** and **Configure PATH to add master data directory**, if you do not have write permissions to the ~/.bashrc file, simply run the commands `source GREENPLUM_DIR/greenplum-db/greenplum_path.sh` and `export MASTER_DATA_DIRECTORY=GREENPLUM_DIR/greenplumdb/master/gpsne-1`. In order to have these commands run every time you log in to the system, save a new script called greenplum_startup.sh with the following contents:
+
+    source GREENPLUM_DIR/greenplum-db/greenplum_path.sh
+    export MASTER_DATA_DIRECTORY=GREENPLUM_DIR/greenplumdb/master/gpsne-1
+
+and edit your terminal settings so that this script gets executed every time the shell opens.
 
 ## Installation with Linux
 
@@ -154,7 +170,7 @@ Configure the `MASTER_DATA_DIRECTORY` path into your bash source:
 
     $ source ~/.bashrc
 
-Start the database:
+### Start the database:
 
     $ gpstart
 
