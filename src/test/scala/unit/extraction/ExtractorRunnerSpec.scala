@@ -19,7 +19,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
   def this() = this(ActorSystem("ExtractorRunnerSpec"))
 
-  describe("Running an extraction task with not parallelism") {
+  describe("Running an extraction task") {
 
     it("should work without parallelism") {
       val actor = system.actorOf(ExtractorRunner.props(dataStore))
@@ -50,7 +50,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         dataStore.addBatch(List(Json.parse(s"""{"id": ${i}}""").asInstanceOf[JsObject]).iterator, "relation1")
       }
       val task = new ExtractionTask(Extractor("testExtractor", "relation1", 
-        "relation1", "/bin/cat", 10, 10, 10, Nil.toSet))
+        "relation1", "/bin/cat", 4, 10, 10, Nil.toSet))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       expectMsg("Done!")
