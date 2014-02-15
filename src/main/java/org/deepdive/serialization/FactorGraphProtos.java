@@ -11,13 +11,13 @@ public final class FactorGraphProtos {
   public interface WeightOrBuilder
       extends com.google.protobuf.MessageOrBuilder {
 
-    // required sint64 id = 1;
+    // required uint64 id = 1;
     /**
-     * <code>required sint64 id = 1;</code>
+     * <code>required uint64 id = 1;</code>
      */
     boolean hasId();
     /**
-     * <code>required sint64 id = 1;</code>
+     * <code>required uint64 id = 1;</code>
      */
     long getId();
 
@@ -109,7 +109,7 @@ public final class FactorGraphProtos {
             }
             case 8: {
               bitField0_ |= 0x00000001;
-              id_ = input.readSInt64();
+              id_ = input.readUInt64();
               break;
             }
             case 17: {
@@ -167,17 +167,17 @@ public final class FactorGraphProtos {
     }
 
     private int bitField0_;
-    // required sint64 id = 1;
+    // required uint64 id = 1;
     public static final int ID_FIELD_NUMBER = 1;
     private long id_;
     /**
-     * <code>required sint64 id = 1;</code>
+     * <code>required uint64 id = 1;</code>
      */
     public boolean hasId() {
       return ((bitField0_ & 0x00000001) == 0x00000001);
     }
     /**
-     * <code>required sint64 id = 1;</code>
+     * <code>required uint64 id = 1;</code>
      */
     public long getId() {
       return id_;
@@ -285,7 +285,7 @@ public final class FactorGraphProtos {
                         throws java.io.IOException {
       getSerializedSize();
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeSInt64(1, id_);
+        output.writeUInt64(1, id_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         output.writeDouble(2, initialValue_);
@@ -307,7 +307,7 @@ public final class FactorGraphProtos {
       size = 0;
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeSInt64Size(1, id_);
+          .computeUInt64Size(1, id_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
@@ -554,22 +554,22 @@ public final class FactorGraphProtos {
       }
       private int bitField0_;
 
-      // required sint64 id = 1;
+      // required uint64 id = 1;
       private long id_ ;
       /**
-       * <code>required sint64 id = 1;</code>
+       * <code>required uint64 id = 1;</code>
        */
       public boolean hasId() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       /**
-       * <code>required sint64 id = 1;</code>
+       * <code>required uint64 id = 1;</code>
        */
       public long getId() {
         return id_;
       }
       /**
-       * <code>required sint64 id = 1;</code>
+       * <code>required uint64 id = 1;</code>
        */
       public Builder setId(long value) {
         bitField0_ |= 0x00000001;
@@ -578,7 +578,7 @@ public final class FactorGraphProtos {
         return this;
       }
       /**
-       * <code>required sint64 id = 1;</code>
+       * <code>required uint64 id = 1;</code>
        */
       public Builder clearId() {
         bitField0_ = (bitField0_ & ~0x00000001);
@@ -4600,7 +4600,7 @@ public final class FactorGraphProtos {
   static {
     java.lang.String[] descriptorData = {
       "\n\021FactorGraph.proto\022\010deepdive\"S\n\006Weight\022" +
-      "\n\n\002id\030\001 \002(\022\022\027\n\014initialValue\030\002 \001(\001:\0010\022\017\n\007" +
+      "\n\n\002id\030\001 \002(\004\022\027\n\014initialValue\030\002 \001(\001:\0010\022\017\n\007" +
       "isFixed\030\003 \002(\010\022\023\n\013description\030\004 \001(\t\"\204\001\n\010V" +
       "ariable\022\n\n\002id\030\001 \002(\004\022\024\n\014initialValue\030\002 \001(" +
       "\001\0225\n\010dataType\030\003 \002(\0162#.deepdive.Variable." +

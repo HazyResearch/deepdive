@@ -4,7 +4,7 @@ option java_package = "org.deepdive.serialization";
 option java_outer_classname = "FactorGraphProtos";
 
 message Weight {
-  required sint64 id = 1;
+  required uint64 id = 1;
   optional double initialValue = 2 [default = 0.0];
   required bool isFixed = 3;
   optional string description = 4;  

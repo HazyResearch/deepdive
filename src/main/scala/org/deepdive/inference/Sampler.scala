@@ -40,7 +40,7 @@ class Sampler extends Actor with ActorLogging {
   def buildSamplerCmd(samplerJavaArgs: String, samplerOptions: String, factorGraphDumpFile: String, 
     variableOutPath: String) = {
     Seq("java", samplerJavaArgs, 
-      "-jar", "lib/sampler-assembly-0.1.jar", 
+      "-jar", "util/sampler-assembly-0.1.jar", 
       "--input", factorGraphDumpFile,
       "--outputFile", variableOutPath) ++ samplerOptions.split(" ")
   }
