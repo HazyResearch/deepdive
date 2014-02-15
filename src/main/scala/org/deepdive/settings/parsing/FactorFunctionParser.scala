@@ -9,7 +9,7 @@ object FactorFunctionParser extends RegexParsers with Logging {
   // def factorFunctionName = "Imply" | "Or" | "And" | "Equal" | "IsTrue"
 
   def implyFactorFunction = "Imply" ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
-    ImplyFactorFunction(varList.last, varList.slice(0, varList.size-1))
+    ImplyFactorFunction(varList)
   }
 
   def orFactorFunction = "Or" ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
