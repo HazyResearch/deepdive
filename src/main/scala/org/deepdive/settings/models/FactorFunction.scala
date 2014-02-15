@@ -10,9 +10,7 @@ sealed trait FactorFunction {
 }
 
 /* A factor function of fom A and B and C ... -> Z */
-case class ImplyFactorFunction(head: FactorFunctionVariable, 
-  body: Seq[FactorFunctionVariable]) extends FactorFunction {
-  def variables = Seq(head) ++ body 
+case class ImplyFactorFunction(variables: Seq[FactorFunctionVariable]) extends FactorFunction {
   override def variableDataType = "Boolean"
 }
 
