@@ -12,6 +12,3 @@ createdb deepdive_test
 
 # Run the test
 SBT_OPTS="-Xmx2g" sbt "test"
-
-# Drop test database
-dropdb deepdive_test

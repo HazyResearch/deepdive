@@ -52,32 +52,15 @@ trait MemoryInferenceDataStoreComponent extends InferenceDataStoreComponent{
       weights += Tuple2(weight.id, weight)
     }
 
-    def dumpFactorGraph(variablesFile: File, factorsFile: File, weightsFile: File) = {
-      val weightsData = weights.values.iterator.map(_.asInstanceOf[CSVFormattable])
-      writeCSV(weightsData, weightsFile)
-      log.info(s"wrote weights to file=${weightsFile.getAbsolutePath}")
-
-      val factorData = factors.values.iterator.map { factor =>
-        new CSVFormattable {
-          def toCSVRow = Array(factor.id.toString, factor.weightId.toString, 
-            factor.factorFunction.toString)
-        }
+    def dumpFactorGraph(serializer: Serializer, file: File) = {
+      // Weights
+      weights.values.foreach { w => serializer.addWeight(w.id, w.isFixed, w.value, w.description) }
+      variables.values.foreach { v =>  serializer.addVariable(v.id, v.initialValue, v.dataType.toString) }
+      factors.values.foreach { f => serializer.addFactor(f.id, f.weightId, f.factorFunction) }
+      factors.values.flatMap(_.variables).foreach { edge =>
+        serializer.addEdge(edge.variableId, edge.factorId, edge.position, edge.positive)
       }
-      writeCSV(factorData, factorsFile)
-      log.info(s"wrote factors to file=${factorsFile.getAbsolutePath}")
-
-
-      val variablesData = factors.values.flatMap(_.variables).iterator.map { fVariable =>
-        val variable = variables(fVariable.variableId)
-        new CSVFormattable {
-          def toCSVRow = Array(variable.id.toString, fVariable.factorId.toString,
-            fVariable.position.toString, fVariable.positive.toString, 
-            variable.dataType.toString, variable.initialValue.toString,
-            variable.isEvidence.toString, variable.isQuery.toString)
-        }
-      }
-      writeCSV(variablesData, variablesFile)
-      log.info(s"wrote variables to file=${variablesFile.getAbsolutePath}")
+      serializer.write(file)
     }
 
     def writebackInferenceResult(variableSchema: Map[String, String], 
@@ -102,8 +85,8 @@ trait MemoryInferenceDataStoreComponent extends InferenceDataStoreComponent{
           variableValue >= bucket.from && variableValue <= bucket.to
         }
         val numVariables = relevantVars.size
-        val numTrue = relevantVars.map(_._1).count(v => v.initialValue == 1.0 && v.isEvidence == true)
-        val numFalse = relevantVars.map(_._1).count(v => v.initialValue == 0.0 && v.isEvidence == true)
+        val numTrue = relevantVars.map(_._1).count(v => v.initialValue == Option(1.0) && v.isEvidence == true)
+        val numFalse = relevantVars.map(_._1).count(v => v.initialValue == Option(0.0) && v.isEvidence == true)
         (bucket, BucketData(numVariables, numTrue, numFalse))
       }.toMap
     }

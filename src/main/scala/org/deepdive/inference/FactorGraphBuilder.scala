@@ -126,8 +126,8 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
         val isQuery = !isEvidence || (isEvidence && isHoldout)
 
         val evidenceValue = varValue match {
-          case Some(x: Boolean) => if (x) 1.0 else 0.0
-          case _ => 0.0
+          case Some(x: Boolean) => if (x) Option(1.0) else Option(0.0)
+          case _ => None
         }
 
         // Build the variable, one for each ID

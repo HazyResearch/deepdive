@@ -35,7 +35,7 @@ class PostgresInferenceDataStoreSpec extends FunSpec with BeforeAndAfter
     describe("adding variables") {
       it("should work") {
         inferenceDataStore.init()
-        inferenceDataStore.addVariable(Variable(0, VariableDataType.Boolean, 0.0, true, false, "r1", "c1", 0))
+        inferenceDataStore.addVariable(Variable(0, VariableDataType.Boolean, Option(0.0), true, false, "r1", "c1", 0))
       }
     }
 
@@ -49,7 +49,7 @@ class PostgresInferenceDataStoreSpec extends FunSpec with BeforeAndAfter
     describe("adding factors") {
       it("should work") {
         inferenceDataStore.init()
-        inferenceDataStore.addFactor(Factor(0, "someFactorFunction", 0, List[FactorVariable](
+        inferenceDataStore.addFactor(Factor(0, "ImplyFactorFunction", 0, List[FactorVariable](
           FactorVariable(0,0,true,0))))
       }
     }
@@ -57,7 +57,7 @@ class PostgresInferenceDataStoreSpec extends FunSpec with BeforeAndAfter
     describe("flushing the factor graph") {
       it("should work") {
         val variables = (1 to 100).map { variableId =>
-          Variable(variableId, VariableDataType.Boolean, 0.0, true, false, "r1", "c1", variableId)
+          Variable(variableId, VariableDataType.Boolean, Option(0.0), true, false, "r1", "c1", variableId)
         }.toList
         
         val weights = (1 to 10).map { weightId => 
@@ -65,7 +65,7 @@ class PostgresInferenceDataStoreSpec extends FunSpec with BeforeAndAfter
         }.toList
         
         val factors = (1 to 10).map { factorId =>
-          Factor(factorId, "someFactorFunction", 0, List[FactorVariable](FactorVariable(factorId,0,true,0)))
+          Factor(factorId, "ImplyFactorFunction", 0, List[FactorVariable](FactorVariable(factorId,0,true,0)))
         }.toList
 
         inferenceDataStore.init()
@@ -89,14 +89,14 @@ class PostgresInferenceDataStoreSpec extends FunSpec with BeforeAndAfter
     describe("dumping the factor graph") {
 
       def addSampleData() = {
-        val variable1 = Variable(0, VariableDataType.Boolean, 0.0, true, false, "r1", "c1", 0)
+        val variable1 = Variable(0, VariableDataType.Boolean, Option(0.0), true, false, "r1", "c1", 0)
         val variable2 = variable1.copy(id=1)
         val variable3 = variable1.copy(id=2)
         val weight1 = Weight(0, 0.0, false, "someWeight")
         val weight2 = Weight(1, 0.0, false, "someWeight")
-        val factor1 =  Factor(0, "someFactorFunction", 0, 
+        val factor1 =  Factor(0, "ImplyFactorFunction", 0, 
           List[FactorVariable](FactorVariable(0,0,true,0)))
-        val factor2 =  Factor(1, "someFactorFunction", 0, 
+        val factor2 =  Factor(1, "ImplyFactorFunction", 0, 
           List[FactorVariable](FactorVariable(1,0,true,1), FactorVariable(2,0,true,2)))
 
         inferenceDataStore.init()
@@ -113,36 +113,30 @@ class PostgresInferenceDataStoreSpec extends FunSpec with BeforeAndAfter
       it("should work with unique variables, weights, and factors") {
         addSampleData()
 
-        val variablesFile = File.createTempFile("variables", "")
-        val factorsFile = File.createTempFile("factors", "")
-        val weightsFile = File.createTempFile("weights", "")
-        inferenceDataStore.dumpFactorGraph(variablesFile, factorsFile, weightsFile)
+        val serializier = new ProtobufSerializer
+        val graphDumpFile = File.createTempFile("factorGraph", "pg")
+        inferenceDataStore.dumpFactorGraph(serializier, graphDumpFile)
 
-        assert(Source.fromFile(variablesFile).getLines.size == 3)
-        assert(Source.fromFile(factorsFile).getLines.size == 2)
-        assert(Source.fromFile(weightsFile).getLines.size == 2)
+        assert(graphDumpFile.exists == true)
       }
 
       it("should work when we add variables, weight, or factors several times") {
          addSampleData()
 
         // Add the same data again, make sure it does not appear in the output
-        val variable1 = Variable(0, VariableDataType.Boolean, 0.0, true, false, "r1", "c1", 0)
+        val variable1 = Variable(0, VariableDataType.Boolean, Option(0.0), true, false, "r1", "c1", 0)
         val weight1 = Weight(0, 0.0, false, "someWeight")
-        val factor1 =  Factor(0, "someFactorFunction", 0, 
+        val factor1 =  Factor(0, "ImplyFactorFunction", 0, 
           List[FactorVariable](FactorVariable(0,0,true,0)))
         inferenceDataStore.addVariable(variable1)
         inferenceDataStore.addWeight(weight1)
         inferenceDataStore.addFactor(factor1)
 
-        val variablesFile = File.createTempFile("variables", "")
-        val factorsFile = File.createTempFile("factors", "")
-        val weightsFile = File.createTempFile("weights", "")
-        inferenceDataStore.dumpFactorGraph(variablesFile, factorsFile, weightsFile)
+        val serializier = new ProtobufSerializer
+        val graphDumpFile = File.createTempFile("factorGraph", "pg")
+        inferenceDataStore.dumpFactorGraph(serializier, graphDumpFile)
 
-        assert(Source.fromFile(variablesFile).getLines.size == 3)
-        assert(Source.fromFile(factorsFile).getLines.size == 2)
-        assert(Source.fromFile(weightsFile).getLines.size == 2)
+        assert(graphDumpFile.exists == true)
       }
 
     }

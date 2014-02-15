@@ -11,9 +11,7 @@ class SamplerSpec(_system: ActorSystem) extends TestKit(_system) with ImplicitSe
 
   def this() = this(ActorSystem("SamplerSpec"))
 
-  val VariablesFile = getClass.getResource("/inference/trivial_factor_graph/variables.tsv").getFile()
-  val FactorsFile = getClass.getResource("/inference/trivial_factor_graph/factors.tsv").getFile()
-  val WeightsFile = getClass.getResource("/inference/trivial_factor_graph/weights.tsv").getFile()
+  val graphFile = getClass.getResource("/inference/trivial_factor_graph/graph.pb").getFile()
 
   describe("The Sampler") {
     
@@ -22,8 +20,7 @@ class SamplerSpec(_system: ActorSystem) extends TestKit(_system) with ImplicitSe
       val javaArgs = "-Xmx4g"
       val samplerOptions = "-l 10 -s 10 -i 10"
       val variablesOutputFile = File.createTempFile("sampler_output", "")
-      sampler ! Sampler.Run(javaArgs, samplerOptions, VariablesFile, 
-        FactorsFile, WeightsFile, variablesOutputFile.getCanonicalPath)
+      sampler ! Sampler.Run(javaArgs, samplerOptions, graphFile, variablesOutputFile.getCanonicalPath)
       expectMsg(Success())
     }
 
@@ -34,8 +31,8 @@ class SamplerSpec(_system: ActorSystem) extends TestKit(_system) with ImplicitSe
       val samplerOptions = "-l 10 -s 10 -i 10"
       val variablesOutputFile = File.createTempFile("sampler_output", "")
       intercept[RuntimeException] {
-        sampler.receive(Sampler.Run(javaArgs, samplerOptions, VariablesFile, 
-        FactorsFile, "DOES_NOT_EXIST_FILE", variablesOutputFile.getCanonicalPath))
+        sampler.receive(Sampler.Run(javaArgs, samplerOptions, "DOES_NOT_EXIST_FILE", 
+          variablesOutputFile.getCanonicalPath))
       }
     }
 

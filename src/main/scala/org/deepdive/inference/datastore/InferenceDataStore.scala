@@ -51,10 +51,9 @@ trait InferenceDataStoreComponent {
     def addWeight(weight: Weight)
 
     /* 
-     * Dumps the factor graphs to three files that will be read by the sampler.
-     * Refer to the developer guide for the format of these files. 
+     * Dumps the factor graphs with the given serializier
      */
-    def dumpFactorGraph(variablesFile: File, factorsFile: File, weightsFile: File) : Unit
+    def dumpFactorGraph(serializer: Serializer, file: File) : Unit
 
     /* 
      * Writes inference results produced by the sampler back to the data store.

@@ -127,28 +127,48 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       }
     }
 
-    def dumpFactorGraph(variablesFile: File, factorsFile: File, weightsFile: File) : Unit = {
-      // Write the weights file
-      log.info(s"Writing weights to file=${weightsFile.getAbsolutePath}")
-      copySQLToFile("""SELECT id, initial_value, 
-        case when is_fixed then 'true' else 'false' end,
-        description
-        FROM weights""", weightsFile)
-
-      // Write factors file
-      log.info(s"Writing factors to file=${factorsFile.getAbsolutePath}")
-      copySQLToFile("SELECT id, weight_id, factor_function FROM factors", factorsFile)
-
-      // Write variables file
-      log.info(s"Writing factor_map to file=${variablesFile.getAbsolutePath}")
-      copySQLToFile("""SELECT variables.id, factor_variables.factor_id, factor_variables.position,
-        case when factor_variables.is_positive then 'true' else 'false' end, 
-        variables.data_type, variables.initial_value, 
-        case when variables.is_evidence then 'true' else 'false' end,
-        case when variables.is_query then 'true' else 'false' end
-        FROM variables LEFT JOIN factor_variables ON factor_variables.variable_id = variables.id""", 
-      variablesFile)
-
+    def dumpFactorGraph(serializer: Serializer, file: File) : Unit = {
+      // Add all weights
+      log.info(s"Deumping factor graph to file='${file.getCanonicalPath}'")
+      log.info("Serializing weights...")
+      SQL(s"SELECT * from weights order by id asc")().iterator.foreach { row =>
+        serializer.addWeight(
+          row[Long]("id"),
+          row[Boolean]("is_fixed"),
+          row[Double]("initial_value"),
+          row[String]("description")
+        )
+      }
+      // Add all variables
+      log.info("Serializing variables...")
+      SQL(s"SELECT * from variables order by id asc")().iterator.foreach { row =>
+        serializer.addVariable(
+          row[Long]("id"),
+          if (row[Boolean]("is_evidence")) row[Option[Double]]("initial_value") else None,
+          row[String]("data_type")
+        )
+      }
+      // Add all factors
+      log.info("Serializing factors...")
+      SQL(s"SELECT * from factors order by id asc")().iterator.foreach { row =>
+        serializer.addFactor(
+          row[Long]("id"),
+          row[Long]("weight_id"),
+          row[String]("factor_function")
+        )
+      }
+      // Add all edges
+      log.info("Serializing edges...")
+      SQL(s"SELECT * from factor_variables")().iterator.foreach { row =>
+        serializer.addEdge(
+          row[Long]("variable_id"),
+          row[Long]("factor_id"),
+          row[Long]("position"),
+          row[Boolean]("is_positive")
+        )
+      }
+      log.info("Writing serialization result...")
+      serializer.write(file)
     }
 
     def writebackInferenceResult(variableSchema: Map[String, String],
