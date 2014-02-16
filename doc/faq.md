@@ -39,3 +39,20 @@ No, weights are unique within each inference rule. You can force the sharing of 
     rule1.weightPrefix: "myPrefix"
     rule2.weight: ?(relation.someField)
     rule2.weightPrefix: "myPrefix"
+
+
+<br/>
+<br/>
+
+#### I added an inference rule that I am very confident about, but now my results are no longer calibrated. What happened?
+---
+This can happen with "fixed" rules that are always true. When you add such a rule, DeepDive will learn a very large weight for it, which may result in the inference engine "getting stuck". In such a case, try to lower the learning rate parameter `--alpha` for the sampler, for example:
+
+    deepdive.sampler.sampler_args: "-l 120 -s 1 -i 200 --alpha 0.001"
+
+The default value of alpha is set to `0.1`, and during testing it makes sense to increase or decrease it one order of magnitude at a time. We are actively workign on implementing an adaptive learning rate computation into our sampler which will help avoid this problem.
+
+
+
+
+
