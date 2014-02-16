@@ -24,7 +24,7 @@ class FactorGraphBuilderSpec(_system: ActorSystem) extends TestKit(_system) with
     it("should work with query variables") {
       val actor = TestActorRef[MemoryFactorGraphBuilder](actorProps(schema)).underlyingActor
       val factorDesc = FactorDesc("f1", "inputQuery", 
-        ImplyFactorFunction("r1.c1", Nil), KnownFactorWeight(0), "weightPrefix")      
+        ImplyFactorFunction(Seq("r1.c1")), KnownFactorWeight(0), "weightPrefix")      
       val sampleRow = Map[String, Any]("r1.id" -> 0l)
       val variables = actor.buildVariablesForRow(sampleRow, factorDesc, 0)
       assert(variables.size == 1)
@@ -34,7 +34,7 @@ class FactorGraphBuilderSpec(_system: ActorSystem) extends TestKit(_system) with
     it("should work with evidence variables") {
       val actor = TestActorRef[MemoryFactorGraphBuilder](actorProps(schema)).underlyingActor
       val factorDesc = FactorDesc("f1", "inputQuery", 
-        ImplyFactorFunction("r1.c1", Nil), KnownFactorWeight(0), "weightPrefix")      
+        ImplyFactorFunction(Seq("r1.c1")), KnownFactorWeight(0), "weightPrefix")      
       val sampleRow = Map[String, Any]("r1.id" -> 0l, "r1.c1" -> true)
       val variables = actor.buildVariablesForRow(sampleRow, factorDesc, 0)
       assert(variables.size == 1)
@@ -44,7 +44,7 @@ class FactorGraphBuilderSpec(_system: ActorSystem) extends TestKit(_system) with
     it("should work with multiple variable columns") {
       val actor = TestActorRef[MemoryFactorGraphBuilder](actorProps(schema)).underlyingActor
       val factorDesc = FactorDesc("f1", "inputQuery", 
-        ImplyFactorFunction("r1.c1", Seq("r2.c1")), KnownFactorWeight(0), "weightPrefix")      
+        ImplyFactorFunction(Seq("r2.c1", "r1.c1")), KnownFactorWeight(0), "weightPrefix")      
       val sampleRow = Map[String, Any]("r1.id" -> 0l, "r2.id" -> 1l, "r2.c1" -> true)
       val variables = actor.buildVariablesForRow(sampleRow, factorDesc, 0)
       assert(variables.size == 2)
@@ -56,7 +56,7 @@ class FactorGraphBuilderSpec(_system: ActorSystem) extends TestKit(_system) with
     it("should work with an array column") {
       val actor = TestActorRef[MemoryFactorGraphBuilder](actorProps(schema)).underlyingActor
       val factorDesc = FactorDesc("f1", "inputQuery", 
-        ImplyFactorFunction("r1.c1[]", Seq("r2.c1[]")), KnownFactorWeight(0), "weightPrefix")   
+        ImplyFactorFunction(Seq("r2.c1[]", "r1.c1[]")), KnownFactorWeight(0), "weightPrefix")   
       val sampleRow = Map[String, Any]("r1.id" -> Array(0l,1l,2l), "r2.id" -> Array(3l,4l,5l), 
         "r2.c1" -> Array(true, false, true))
       val variables = actor.buildVariablesForRow(sampleRow, factorDesc, 0)
@@ -72,7 +72,7 @@ class FactorGraphBuilderSpec(_system: ActorSystem) extends TestKit(_system) with
     it("should work for fixed weights") {
       val actor = TestActorRef[MemoryFactorGraphBuilder](actorProps(schema)).underlyingActor
       val factorDesc = FactorDesc("f1", "inputQuery", 
-        ImplyFactorFunction("r1.c1", Nil), KnownFactorWeight(100), "weightPrefix")
+        ImplyFactorFunction(Seq("r1.c1")), KnownFactorWeight(100), "weightPrefix")
       val sampleRow = Map[String, Any]("r1.id" -> 0l)
       val weight = actor.buildWeightForRow(sampleRow, factorDesc)
       assert(weight.value == 100.0)
@@ -82,7 +82,7 @@ class FactorGraphBuilderSpec(_system: ActorSystem) extends TestKit(_system) with
     it("should work for weights without variables") {
       val actor = TestActorRef[MemoryFactorGraphBuilder](actorProps(schema)).underlyingActor
       val factorDesc = FactorDesc("f1", "inputQuery", 
-        ImplyFactorFunction("r1.c1", Nil), UnknownFactorWeight(Nil), "weightPrefix")
+        ImplyFactorFunction(Seq("r1.c1")), UnknownFactorWeight(Nil), "weightPrefix")
       val sampleRow = Map[String, Any]("r1.id" -> 0l)
       val weight = actor.buildWeightForRow(sampleRow, factorDesc)
       assert(weight.value == 0.0)
@@ -92,7 +92,7 @@ class FactorGraphBuilderSpec(_system: ActorSystem) extends TestKit(_system) with
     it("should work for weights with variables") {
       val actor = TestActorRef[MemoryFactorGraphBuilder](actorProps(schema)).underlyingActor
       val factorDesc = FactorDesc("f1", "inputQuery", 
-        ImplyFactorFunction("r1.c1", Nil), UnknownFactorWeight(List("r1.value")), "weightPrefix")
+        ImplyFactorFunction(Seq("r1.c1")), UnknownFactorWeight(List("r1.value")), "weightPrefix")
       val sampleRow = Map[String, Any]("r1.id" -> 0l, "r1.value" -> "Hello")
       val weight = actor.buildWeightForRow(sampleRow, factorDesc)
       assert(weight.value == 0.0)
@@ -108,7 +108,7 @@ class FactorGraphBuilderSpec(_system: ActorSystem) extends TestKit(_system) with
     it("should work for simple factors") {
        val actor = TestActorRef[MemoryFactorGraphBuilder](actorProps(schema)).underlyingActor
        val factorDesc = FactorDesc("f1", "inputQuery", 
-        ImplyFactorFunction("r1.c1", Nil), UnknownFactorWeight(Nil), "weightPrefix")
+        ImplyFactorFunction(Seq("r1.c1")), UnknownFactorWeight(Nil), "weightPrefix")
        val weight = Weight(0l, 0.0, true, "someWeight")
        val sampleRow = Map[String, Any]("r1.id" -> 0l, "r1.value" -> "Hello")
        val factor = actor.buildFactorForRow(sampleRow, factorDesc, weight)
@@ -119,7 +119,7 @@ class FactorGraphBuilderSpec(_system: ActorSystem) extends TestKit(_system) with
     it("should work for factors using array variables") {
       val actor = TestActorRef[MemoryFactorGraphBuilder](actorProps(schema)).underlyingActor
       val factorDesc = FactorDesc("f1", "inputQuery", 
-        ImplyFactorFunction("r1.c1[]", Seq("r2.c1[]")), KnownFactorWeight(0), "weightPrefix")   
+        ImplyFactorFunction(Seq("r2.c1[]", "r1.c1[]")), KnownFactorWeight(0), "weightPrefix")   
       val sampleRow = Map[String, Any]("r1.id" -> Array(0l,1l,2l), "r2.id" -> Array(3l,4l,5l), 
         "r2.c1" -> Array(true, false, true))
       val weight = Weight(0l, 0.0, true, "someWeight")
@@ -152,28 +152,24 @@ class FactorGraphBuilderSpec(_system: ActorSystem) extends TestKit(_system) with
     it("should work for simple factors") {
       val actor = TestActorRef[MemoryFactorGraphBuilder](actorProps(schema)).underlyingActor
       val factorDesc = FactorDesc("f1", "inputQuery", 
-        ImplyFactorFunction("r1.c1", Nil), UnknownFactorWeight(List("r1.value")), "weightPrefix")
+        ImplyFactorFunction(Seq("r1.c1")), UnknownFactorWeight(List("r1.value")), "weightPrefix")
       val sampleRow = Map[String, Any]("r1.id" -> 0l, "r1.value" -> "Hello")
-      actor.processRow(sampleRow, factorDesc, 0)
-      val dataStore = actor.inferenceDataStore
-        .asInstanceOf[MemoryInferenceDataStoreComponent#MemoryInferenceDataStore]
-      assert(dataStore.variables.size == 1)
-      assert(dataStore.weights.size == 1)
-      assert(dataStore.factors.size == 1)
+      val result = actor.processRow(sampleRow, factorDesc, 0)
+      assert(result.variables.size === 1)
+      assert(result.weight.isInstanceOf[Weight])
+      assert(result.factor.isInstanceOf[Factor])
     }
 
     it("should work for with array factor function variables") {
       val actor = TestActorRef[MemoryFactorGraphBuilder](actorProps(schema)).underlyingActor
       val factorDesc = FactorDesc("f1", "inputQuery", 
-        ImplyFactorFunction("r1.c1[]", Seq("r2.c1[]")), KnownFactorWeight(0), "weightPrefix")  
+        ImplyFactorFunction(Seq("r2.c1[]", "r1.c1[]")), KnownFactorWeight(0), "weightPrefix")  
       val sampleRow = Map[String, Any]("r1.id" -> Array(0l,1l,2l), "r2.id" -> Array(3l,4l,5l), 
         "r2.c1" -> Array(true, false, true))
-      actor.processRow(sampleRow, factorDesc, 0)
-      val dataStore = actor.inferenceDataStore
-        .asInstanceOf[MemoryInferenceDataStoreComponent#MemoryInferenceDataStore]
-      assert(dataStore.variables.size == 6)
-      assert(dataStore.weights.size == 1)
-      assert(dataStore.factors.size == 1)
+      val result = actor.processRow(sampleRow, factorDesc, 0)
+      assert(result.variables.size === 6)
+      assert(result.weight.isInstanceOf[Weight])
+      assert(result.factor.isInstanceOf[Factor])
     }
 
   }

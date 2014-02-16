@@ -4,8 +4,6 @@ import anorm._
 import au.com.bytecode.opencsv.CSVWriter
 import java.io.{ByteArrayInputStream, File, FileOutputStream, FileWriter,
   StringWriter, Reader, FileReader, InputStream, InputStreamReader}
-import java.util.Collections
-import java.util.concurrent.ConcurrentHashMap
 import org.deepdive.settings.FactorFunctionVariable
 import org.deepdive.datastore.PostgresDataStore
 import org.deepdive.Logging
@@ -23,17 +21,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
     implicit lazy val connection = PostgresDataStore.borrowConnection()
 
     // Default batch size, if not overwritten by user
-    val BatchSize = Some(50000)
-
-    // We keep track of the variables, weights and factors already added
-    // These will be kept in memory at all times.
-    // TODO: Ideally, we don't keep anything in memory and resolve conflicts in the database.
-    val variableIdSet = Collections.newSetFromMap[Long](
-      new ConcurrentHashMap[Long, java.lang.Boolean]())
-    val weightIdSet = Collections.newSetFromMap[Long](
-      new ConcurrentHashMap[Long, java.lang.Boolean]())
-    val factorIdSet = Collections.newSetFromMap[Long](
-      new ConcurrentHashMap[Long, java.lang.Boolean]())
+    val BatchSize = Some(250000)
     
     // Temorary buffer for the next batch.
     // These collections will the cleared when we write the next batch to postgres
@@ -43,9 +31,6 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
     
     def init() : Unit = {
       
-      variableIdSet.clear()
-      weightIdSet.clear()
-      factorIdSet.clear()
       variables.clear()
       factors.clear()
       weights.clear()
@@ -101,30 +86,15 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
     }
 
     def addFactor(factor: Factor) = { 
-      factorIdSet.synchronized {
-        if (!factorIdSet.contains(factor.id)) {
-          factors += factor
-          factorIdSet.add(factor.id)
-        }
-      }
+      factors += factor
     }
 
     def addVariable(variable: Variable) = {
-      variableIdSet.synchronized {
-        if (!variableIdSet.contains(variable.id)) {
-          variables += variable
-          variableIdSet.add(variable.id)
-        }
-      }
+      variables += variable
     }
     
     def addWeight(weight: Weight) = { 
-      weightIdSet.synchronized {
-        if (!weightIdSet.contains(weight.id)) {
-          weights += weight
-          weightIdSet.add(weight.id)
-        }
-      }
+      weights += weight
     }
 
     def dumpFactorGraph(serializer: Serializer, file: File) : Unit = {

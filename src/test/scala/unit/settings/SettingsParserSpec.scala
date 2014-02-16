@@ -72,7 +72,7 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester {
       val result = SettingsParser invokePrivate loadInferenceSettings(config)
       assert(result == InferenceSettings(List(FactorDesc("factor1", 
         "SELECT a.*, b.* FROM a INNER JOIN b ON a.document_id = b.id",
-        ImplyFactorFunction(FactorFunctionVariable("a", "is_present", false), Nil), 
+        ImplyFactorFunction(Seq(FactorFunctionVariable("a", "is_present", false))), 
         UnknownFactorWeight(Nil), "factor1")), Option(100000)))
     }
 

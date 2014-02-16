@@ -1,15 +1,17 @@
 package org.deepdive.inference
 
+import akka.actor.{Actor, ActorRef, Props, ActorLogging}
 import anorm._
+import java.util.Collections
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.ConcurrentHashMap
+import org.deepdive.Context
 import org.deepdive.extraction.datastore._
 import org.deepdive.settings._
-import org.deepdive.Context
-import akka.actor.{Actor, ActorRef, Props, ActorLogging}
-import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.JavaConversions._
-import scala.util.{Random, Try, Success, Failure}
-import scala.concurrent.{Future, Await}
 import scala.concurrent.duration._
+import scala.concurrent.{Future, Await}
+import scala.util.{Random, Try, Success, Failure}
 
 object FactorGraphBuilder {
 
@@ -24,7 +26,7 @@ object FactorGraphBuilder {
   case class AddFactorsAndVariables(factorDesc: FactorDesc, holdoutFraction: Double, 
     batchSize: Option[Int]) extends Message
   // case class AddVariables(relation: Relation, fields: Set[String]) extends Message
-  case class AddFactorsResult(name: String, success: Boolean)
+  case class ProcessRowResult(variables: Seq[Variable], weight: Weight, factor: Factor)
   // case class AddVariablesResult(name: String, success: Boolean)
 }
 
@@ -39,16 +41,29 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
   import context.dispatcher
 
   val rng = new Random(1337)
-  val factorFunctionIdCounter = new AtomicInteger
-  val variableIdCounter = new AtomicInteger
   val factorIdCounter = new AtomicInteger
   val weightIdCounter = new AtomicInteger
+  // Keeps track of weights
+  val weights = new ConcurrentHashMap[String, Long]()
+
+  // We keep track of the variables, weights and factors already added
+  // These will be kept in memory at all times.
+  // TODO: Ideally, we don't keep anything in memory and resolve conflicts in the database.
+  val variableIdSet = Collections.newSetFromMap[Long](
+    new ConcurrentHashMap[Long, java.lang.Boolean]())
+  val weightIdSet = Collections.newSetFromMap[Long](
+    new ConcurrentHashMap[Long, java.lang.Boolean]())
+  val factorIdSet = Collections.newSetFromMap[Long](
+    new ConcurrentHashMap[Long, java.lang.Boolean]())
 
   // TODO: Make this parameters tunable
   lazy val parallelism = Runtime.getRuntime.availableProcessors.toInt
 
   override def preStart() {
     log.info("Starting")
+    variableIdSet.clear()
+    weightIdSet.clear()
+    factorIdSet.clear()
   }
 
   def receive = {
@@ -77,24 +92,33 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
       batchIterator.foreach { group =>
         // Group by parallelism
         val parallelGroupSize = Math.max((group.size / parallelism).toInt, 1)
-        val tasks = group.toList.toIterable.grouped(parallelGroupSize).map { case rows =>
-          Future { rows.foreach { row => processRow(row, factorDesc, holdoutFraction) }  }
+        val tasks = group.toList.grouped(parallelGroupSize).map { case rows =>
+          Future { 
+            log.info(s"processing num_rows=${rows.size}")
+            val res = rows.map { row => processRow(row, factorDesc, holdoutFraction) }
+            res
+          }.mapTo[List[ProcessRowResult]]
         }
         val mergedResults = Future.sequence(tasks)
-        Await.result(mergedResults, 1337.hours)
+        // Wait for result from all threads and flush the datastore
+        val results = Await.result(mergedResults, 1337.hours).toList
+        for (result <- results.flatten) {
+          if (weightIdSet.add(result.weight.id)) inferenceDataStore.addWeight(result.weight)
+          result.variables.foreach { v => if (variableIdSet.add(v.id)) inferenceDataStore.addVariable(v) }
+          if (factorIdSet.add(result.factor.id)) inferenceDataStore.addFactor(result.factor)
+        }
+        
         log.debug(s"flushing data for factor_name=${factorDesc.name}.")
         inferenceDataStore.flush()
       }
     }
   }
 
-  def processRow(row: Map[String, Any], factorDesc: FactorDesc, holdoutFraction: Double) = {
+  def processRow(row: Map[String, Any], factorDesc: FactorDesc, holdoutFraction: Double) : ProcessRowResult = {
     val newVariables = buildVariablesForRow(row, factorDesc, holdoutFraction)
-    newVariables.map(inferenceDataStore.addVariable)
     val newWeight = buildWeightForRow(row, factorDesc)
-    inferenceDataStore.addWeight(newWeight)
     val newFactor = buildFactorForRow(row, factorDesc, newWeight)
-    inferenceDataStore.addFactor(newFactor)
+    ProcessRowResult(newVariables, newWeight, newFactor)
   }
 
   def buildVariablesForRow(rowMap: Map[String, Any], factorDesc: FactorDesc,
@@ -153,7 +177,12 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
     // TODO: We generate a unique weight Id based on the String hash code. 
     // Can we really be that sure this is unique enough?
     val weightIdentifier = factorDesc.weightPrefix + "_" + factorWeightValues.mkString
-    val weightId = weightIdentifier.hashCode
+    if (!weights.containsKey(weightIdentifier))
+      weights.put(weightIdentifier, weightIdCounter.getAndIncrement())
+    val weightId = weights.get(weightIdentifier) 
+
+
+    weights.getOrElseUpdate(weightIdentifier, factorIdCounter.getAndIncrement() )
 
     // Build a human-friendly description fo the weight
     val valueAssignments =  factorDesc.weight.variables

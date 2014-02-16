@@ -12,8 +12,7 @@ class FactorFunctionParserSpec extends FunSpec {
       val expr = "Imply(words.is_present)"
       val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
       assert(result.successful)
-      assert(result.get == ImplyFactorFunction(
-        FactorFunctionVariable("words", "is_present", false, false), List())
+      assert(result.get == ImplyFactorFunction(List(FactorFunctionVariable("words", "is_present", false, false)))
       )
     }
 
@@ -23,10 +22,10 @@ class FactorFunctionParserSpec extends FunSpec {
       val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
       assert(result.successful)
       assert(result.get == ImplyFactorFunction(
-        FactorFunctionVariable("words", "is_true", false), 
         List(
           FactorFunctionVariable("relation2", "predicate", false), 
-          FactorFunctionVariable("relation3", "predicate", false))
+          FactorFunctionVariable("relation3", "predicate", false),
+          FactorFunctionVariable("words", "is_true", false))
       ))
     }
 
