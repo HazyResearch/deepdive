@@ -97,9 +97,9 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       weights += weight
     }
 
-    def dumpFactorGraph(serializer: Serializer, file: File) : Unit = {
+    def dumpFactorGraph(serializer: Serializer) : Unit = {
       // Add all weights
-      log.info(s"Deumping factor graph to file='${file.getCanonicalPath}'")
+      log.info(s"Dumping factor graph...")
       log.info("Serializing weights...")
       SQL(s"SELECT * from weights order by id asc")().iterator.foreach { row =>
         serializer.addWeight(
@@ -138,7 +138,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
         )
       }
       log.info("Writing serialization result...")
-      serializer.write(file)
+      serializer.close()
     }
 
     def writebackInferenceResult(variableSchema: Map[String, String],

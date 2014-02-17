@@ -53,7 +53,7 @@ trait InferenceDataStoreComponent {
     /* 
      * Dumps the factor graphs with the given serializier
      */
-    def dumpFactorGraph(serializer: Serializer, file: File) : Unit
+    def dumpFactorGraph(serializer: Serializer) : Unit
 
     /* 
      * Writes inference results produced by the sampler back to the data store.

@@ -1,7 +1,7 @@
 package org.deepdive.test.unit
 
 import anorm._
-import java.io.File
+import java.io.{File, FileOutputStream}
 import org.deepdive.calibration._
 import org.deepdive.inference._
 import org.deepdive.test._
@@ -113,11 +113,22 @@ class PostgresInferenceDataStoreSpec extends FunSpec with BeforeAndAfter
       it("should work with unique variables, weights, and factors") {
         addSampleData()
 
-        val serializier = new ProtobufSerializer
-        val graphDumpFile = File.createTempFile("factorGraph", "pg")
-        inferenceDataStore.dumpFactorGraph(serializier, graphDumpFile)
+        val (f1, f2, f3, f4) = (File.createTempFile("weights", "pb"), 
+          File.createTempFile("variables", "pb"), File.createTempFile("factors", "pb"),
+          File.createTempFile("edges", "pb"))
 
-        assert(graphDumpFile.exists == true)
+        val serializier = new ProtobufSerializer(
+          new FileOutputStream(f1),
+          new FileOutputStream(f2),
+          new FileOutputStream(f3),
+          new FileOutputStream(f4)
+        )
+        // val graphDumpFile = File.createTempFile("factorGraph", "pg")
+        inferenceDataStore.dumpFactorGraph(serializier)
+        assert(f1.exists === true)
+        assert(f2.exists === true)
+        assert(f3.exists === true)
+        assert(f4.exists === true)
       }
 
       it("should work when we add variables, weight, or factors several times") {
@@ -132,11 +143,22 @@ class PostgresInferenceDataStoreSpec extends FunSpec with BeforeAndAfter
         inferenceDataStore.addWeight(weight1)
         inferenceDataStore.addFactor(factor1)
 
-        val serializier = new ProtobufSerializer
+        val (f1, f2, f3, f4) = (File.createTempFile("weights", "pb"), 
+          File.createTempFile("variables", "pb"), File.createTempFile("factors", "pb"),
+          File.createTempFile("edges", "pb"))
+        val serializier = new ProtobufSerializer(
+          new FileOutputStream(f1),
+          new FileOutputStream(f2),
+          new FileOutputStream(f3),
+          new FileOutputStream(f4)
+        )
         val graphDumpFile = File.createTempFile("factorGraph", "pg")
-        inferenceDataStore.dumpFactorGraph(serializier, graphDumpFile)
+        inferenceDataStore.dumpFactorGraph(serializier)
 
-        assert(graphDumpFile.exists == true)
+        assert(f1.exists === true)
+        assert(f2.exists === true)
+        assert(f3.exists === true)
+        assert(f4.exists === true)
       }
 
     }

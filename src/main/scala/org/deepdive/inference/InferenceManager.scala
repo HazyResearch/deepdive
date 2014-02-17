@@ -30,7 +30,10 @@ trait InferenceManager extends Actor with ActorLogging {
   // Describes how to start the calibration data writer
   def calibrationDataWriterProps = CalibrationDataWriter.props
 
-  lazy val factorGraphDumpFile = new File("target/graph.pb")
+  lazy val factorGraphDumpFileWeights = new File("target/graph.weights.pb")
+  lazy val factorGraphDumpFileVariables = new File("target/graph.variables.pb")
+  lazy val factorGraphDumpFileFactors = new File("target/graph.factors.pb")
+  lazy val factorGraphDumpFileEdges = new File("target/graph.edges.pb")
   lazy val SamplingOutputFile = new File("target/inference_result.out")
   lazy val SamplingOutputFileWeights = new File("target/inference_result.out.weights")
 
@@ -71,11 +74,21 @@ trait InferenceManager extends Actor with ActorLogging {
 
   def runInference(samplerJavaArgs: String, samplerOptions: String) = {
     // TODO: Make serializier configurable
-    val serializier = new ProtobufSerializer
-    inferenceDataStore.dumpFactorGraph(serializier,factorGraphDumpFile)
+    val weightsOutput = new java.io.FileOutputStream(factorGraphDumpFileWeights, false)
+    val variablesOutput = new java.io.FileOutputStream(factorGraphDumpFileVariables, false)
+    val factorsOutput = new java.io.FileOutputStream(factorGraphDumpFileFactors, false)
+    val edgesOutput = new java.io.FileOutputStream(factorGraphDumpFileEdges, false)
+    val serializier = new ProtobufSerializer(weightsOutput, variablesOutput, factorsOutput, edgesOutput)
+    inferenceDataStore.dumpFactorGraph(serializier)
+    weightsOutput.close()
+    variablesOutput.close()
+    factorsOutput.close()
+    serializier.close()
     val sampler = context.actorOf(samplerProps, "sampler")
     val samplingResult = sampler ? Sampler.Run(samplerJavaArgs, samplerOptions,
-      factorGraphDumpFile.getCanonicalPath, SamplingOutputFile.getCanonicalPath)
+      factorGraphDumpFileWeights.getCanonicalPath, factorGraphDumpFileVariables.getCanonicalPath,
+      factorGraphDumpFileFactors.getCanonicalPath, factorGraphDumpFileEdges.getCanonicalPath,
+      SamplingOutputFile.getCanonicalPath)
     // Kill the sampler after it's done :)
     sampler ! PoisonPill
     samplingResult.map { x =>

@@ -6,6 +6,6 @@ trait Serializer {
   def addVariable(variableId: Long, initialValue: Option[Double], dataType: String) : Unit
   def addFactor(factorId: Long, weightId: Long, factorFunction: String) : Unit
   def addEdge(variableId: Long, factorId: Long, position: Long, isPositive: Boolean) : Unit
-  def write(path: java.io.File) : Unit
+  def close() : Unit
 
 }

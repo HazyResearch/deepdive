@@ -9,7 +9,8 @@ object Sampler {
   def props = Props[Sampler]
 
   // Tells the Sampler to run inference
-  case class Run(samplerJavaArgs: String, samplerOptions: String, factorGraphDumpFile: String, variableOutPath: String)
+  case class Run(samplerJavaArgs: String, samplerOptions: String, weightsFile: String, variablesFile: String,
+    factorsFile: String, edgesFile: String, variableOutPath: String)
 }
 
 /* Runs inferece on a dumped factor graph. */
@@ -18,11 +19,11 @@ class Sampler extends Actor with ActorLogging {
   override def preStart() = { log.info("starting") }
 
   def receive = {
-    case Sampler.Run(samplerJavaArgs, samplerOptions, factorGraphDumpFile, 
-      variableOutPath) =>
+    case Sampler.Run(samplerJavaArgs, samplerOptions, weightsFile, variablesFile,
+      factorsFile, edgesFile, variableOutPath) =>
       // Build the command
-      val samplerCmd = buildSamplerCmd(samplerJavaArgs, samplerOptions, 
-        factorGraphDumpFile, variableOutPath)
+      val samplerCmd = buildSamplerCmd(samplerJavaArgs, samplerOptions, weightsFile, variablesFile,
+      factorsFile, edgesFile, variableOutPath)
       log.info(s"Executing: ${samplerCmd.mkString(" ")}")
       // We run the process, get its exit value, and print its output to the log file
       val exitValue = samplerCmd!(ProcessLogger(
@@ -37,11 +38,14 @@ class Sampler extends Actor with ActorLogging {
   }
 
   // Build the command to run the sampler
-  def buildSamplerCmd(samplerJavaArgs: String, samplerOptions: String, factorGraphDumpFile: String, 
-    variableOutPath: String) = {
+  def buildSamplerCmd(samplerJavaArgs: String, samplerOptions: String, weightsFile: String, 
+    variablesFile: String, factorsFile: String, edgesFile: String, variableOutPath: String) = {
     Seq("java", samplerJavaArgs, 
       "-jar", "util/sampler-assembly-0.1.jar", 
-      "--input", factorGraphDumpFile,
+      "--input-weights", weightsFile,
+      "--input-variables", variablesFile,
+      "--input-factors", factorsFile,
+      "--input-edges", edgesFile,
       "--outputFile", variableOutPath) ++ samplerOptions.split(" ")
   }
 

@@ -2,8 +2,10 @@ package org.deepdive.inference
 
 import org.deepdive.Logging
 import org.deepdive.serialization.FactorGraphProtos
+import java.io.OutputStream
 
-class ProtobufSerializer extends Serializer with Logging {
+class ProtobufSerializer(weightsOuput: OutputStream, variablesOutput: OutputStream, 
+  factorsOutput: OutputStream, edgesOutput: OutputStream) extends Serializer with Logging {
 
   val factorGraphbuilder = FactorGraphProtos.FactorGraph.newBuilder
 
@@ -13,7 +15,7 @@ class ProtobufSerializer extends Serializer with Logging {
     weightBuilder.setIsFixed(isFixed)
     if (isFixed) weightBuilder.setInitialValue(initialValue)
     weightBuilder.setDescription(desc)
-    factorGraphbuilder.addWeight(weightBuilder.build)
+    weightBuilder.build().writeDelimitedTo(weightsOuput)
   }
   
   def addVariable(variableId: Long, initialValue: Option[Double], dataType: String) : Unit = {
@@ -24,7 +26,7 @@ class ProtobufSerializer extends Serializer with Logging {
       case "Boolean" => FactorGraphProtos.Variable.VariableDataType.BOOLEAN
     }
     variableBuilder.setDataType(variableDataType)
-    factorGraphbuilder.addVariable(variableBuilder.build)
+    variableBuilder.build().writeDelimitedTo(variablesOutput)
   }
 
   def addFactor(factorId: Long, weightId: Long, factorFunction: String) : Unit = {
@@ -39,7 +41,7 @@ class ProtobufSerializer extends Serializer with Logging {
       case "IsTrueFactorFunction" =>  FactorGraphProtos.Factor.FactorFunctionType.ISTRUE
     }
     factorBuilder.setFactorFunction(factorFunctionType)
-    factorGraphbuilder.addFactor(factorBuilder.build)
+    factorBuilder.build().writeDelimitedTo(factorsOutput)
   }
 
 
@@ -49,13 +51,14 @@ class ProtobufSerializer extends Serializer with Logging {
     edgeBuilder.setFactorId(factorId)
     edgeBuilder.setPosition(position)
     if (!isPositive) edgeBuilder.setIsPositive(isPositive)
-    factorGraphbuilder.addEdge(edgeBuilder.build)
+    edgeBuilder.build().writeDelimitedTo(edgesOutput)
   }
 
-  def write(path: java.io.File) : Unit = {
-    val output = new java.io.FileOutputStream(path)
-    factorGraphbuilder.build().writeTo(output)
-    output.close()
+  def close() : Unit = {
+    weightsOuput.flush()
+    variablesOutput.flush()
+    factorsOutput.flush()
+    edgesOutput.flush()
   }
 
 }
