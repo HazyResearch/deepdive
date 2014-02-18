@@ -80,7 +80,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
     def getLocalVariableIds(rowMap: Map[String, Any], factorVar: FactorFunctionVariable) : Array[Long] = {
       if (factorVar.isArray)
         // Postgres prefixes aggregated colimns with a dot
-        rowMap(s".${factorVar.relation}.id").asInstanceOf[Array[Long]]
+        rowMap(s".${factorVar.relation}.id").asInstanceOf[Array[java.lang.Long]].map(_.toLong)
       else
         Array(rowMap(s"${factorVar.relation}.id").asInstanceOf[Long])
     }

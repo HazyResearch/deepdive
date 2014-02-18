@@ -125,10 +125,12 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
     holdoutFraction: Double) = {
     val variableColumns = factorDesc.func.variables.toList
     val variableLocalIds = variableColumns.map { varColumn =>
-      Try(inferenceDataStore.getLocalVariableIds(rowMap, varColumn)).getOrElse {
-        val errorStr = s"Could not find ${varColumn} or ${varColumn.relation}.id. Available columns: ${rowMap.keys.mkString(", ")}." 
-        log.error(errorStr)
-        throw new RuntimeException(errorStr)
+      Try(inferenceDataStore.getLocalVariableIds(rowMap, varColumn)) match {
+        case Failure(ex) =>
+          val errorStr = s"Could not find ${varColumn} or ${varColumn.relation}.id. Available columns: ${rowMap.keys.mkString(", ")}." 
+          log.error(ex.toString)
+          throw new RuntimeException(s"${errorStr} (${ex.toString})")
+        case Success(x) => x
       }
     }
     // Ugly matching because different data stores return different values.
