@@ -16,6 +16,10 @@ object FactorFunctionParser extends RegexParsers with Logging {
     OrFactorFunction(varList)
   }
 
+  def xorFactorFunction = "Xor" ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
+    XorFactorFunction(varList)
+  }
+
   def andFactorFunction = "And" ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
     AndFactorFunction(varList)
   }

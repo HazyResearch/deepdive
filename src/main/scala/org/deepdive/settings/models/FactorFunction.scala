@@ -34,6 +34,11 @@ case class IsTrueFactorFunction(variables: Seq[FactorFunctionVariable]) extends 
   override def variableDataType = "Boolean"
 }
 
+/* A factor function describing XOR(A,B,C,...) */
+case class XorFactorFunction(variables: Seq[FactorFunctionVariable]) extends FactorFunction {
+  override def variableDataType = "Boolean"
+}
+
 /* Dummy factor function */
 case class DummyFactorFunction(val variables: Seq[FactorFunctionVariable]) extends FactorFunction {
   override def variableDataType = "Discrete"
