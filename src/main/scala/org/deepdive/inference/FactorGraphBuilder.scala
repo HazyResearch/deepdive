@@ -43,8 +43,10 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
   val rng = new Random(1337)
   val factorIdCounter = new AtomicInteger
   val weightIdCounter = new AtomicInteger
+  val variableIdCounter = new AtomicInteger
   // Keeps track of weights
   val weights = new ConcurrentHashMap[String, Long]()
+  val variableIdMap = new ConcurrentHashMap[Long, Long]()
 
   // We keep track of the variables, weights and factors already added
   // These will be kept in memory at all times.
@@ -64,6 +66,11 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
     variableIdSet.clear()
     weightIdSet.clear()
     factorIdSet.clear()
+    weights.clear()
+    variableIdMap.clear()
+    weightIdCounter.set(0)
+    factorIdCounter.set(0)
+    variableIdCounter.set(0)
   }
 
   def receive = {
@@ -183,9 +190,6 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
       weights.put(weightIdentifier, weightIdCounter.getAndIncrement())
     val weightId = weights.get(weightIdentifier) 
 
-
-    weights.getOrElseUpdate(weightIdentifier, factorIdCounter.getAndIncrement() )
-
     // Build a human-friendly description fo the weight
     val valueAssignments =  factorDesc.weight.variables
       .zip(factorWeightValues)
@@ -217,11 +221,15 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
   }
 
   def generateVariableId(localId: Long, key: String) : Long = {
-    (localId * variableOffsetMap.size) + variableOffsetMap.get(key).getOrElse {
+    val mappedId = (localId * variableOffsetMap.size) + variableOffsetMap.get(key).getOrElse {
       val errorMsg = s"${key} not found in variable definitions. " + 
         s"Available variables: ${variableOffsetMap.keySet.mkString(",")}"
       throw new RuntimeException(errorMsg)
     }
+    if (!variableIdMap.containsKey(mappedId)) {
+      variableIdMap.put(mappedId, variableIdCounter.getAndIncrement())
+    } 
+    return variableIdMap.get(mappedId)
   }
 
 
