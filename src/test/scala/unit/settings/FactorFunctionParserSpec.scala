@@ -61,6 +61,19 @@ class FactorFunctionParserSpec extends FunSpec {
 
   }
 
+  describe("Parsing XOR factor functions") {
+
+    it("should work") {
+      val expr = "XOr(a.b, c.d)"
+      val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
+      assert(result.successful)
+      assert(result.get === XOrFactorFunction(List(
+        FactorFunctionVariable("a", "b", false, false),
+        FactorFunctionVariable("c", "d", false, false))))
+    }
+
+  }
+
   describe("Parsing EQUAL factor functions") {
 
     it("should work for two variables") {
