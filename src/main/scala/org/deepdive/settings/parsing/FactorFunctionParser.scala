@@ -41,6 +41,6 @@ object FactorFunctionParser extends RegexParsers with Logging {
   }
 
   def factorFunc = implyFactorFunction | orFactorFunction | andFactorFunction | 
-    equalFactorFunction | isTrueFactorFunction
+    equalFactorFunction | isTrueFactorFunction | xorFactorFunction
 
 }
