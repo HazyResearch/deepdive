@@ -171,6 +171,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
           mir ON ${relationName}.id = mir.mapping_id""").execute()
       }
 
+
       // Copy the weight result back to the database
       PostgresDataStore.copyBatchData("COPY inference_result_weights(id, weight) FROM STDIN",
         Source.fromFile(weightsOutputFile).reader())
@@ -185,6 +186,32 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
         SELECT weights.*, inference_result_weights.weight FROM
         weights JOIN inference_result_weights ON weights.id = inference_result_weights.id
         ORDER BY abs(weight) DESC""").execute()
+
+      relationsColumns.foreach { case(relationName, columnName) => 
+        val view_name = s"${relationName}_${columnName}_weights"
+        log.info(s"creating view=${view_name}")
+        SQL(s"""CREATE OR REPLACE VIEW ${view_name} AS
+            WITH top_weights AS (SELECT id
+            FROM inference_result_mapped_weights 
+            ORDER BY abs(weight) DESC),
+          relevant_variables AS (SELECT top_weights.id, is_evidence, initial_value FROM top_weights 
+            INNER JOIN factors ON factors.weight_id = top_weights.id 
+            INNER JOIN factor_variables ON factors.id = factor_variables.factor_id 
+            INNER JOIN variables ON factor_variables.variable_id = variables.id
+            WHERE variables.mapping_relation = '${relationName}' 
+              AND variables.mapping_column = '${columnName}'),
+          grouped_weights AS (SELECT relevant_variables.id,
+            COUNT(CASE WHEN relevant_variables.is_evidence=true 
+              AND relevant_variables.initial_value=1.0 THEN 1 END) AS true_count,
+            COUNT(CASE WHEN relevant_variables.is_evidence=true 
+              AND relevant_variables.initial_value=0.0 THEN 1 END) AS false_count,
+            COUNT(CASE WHEN relevant_variables.is_evidence=false THEN 1 END) AS total_count
+            FROM relevant_variables GROUP BY (id))
+          SELECT description, weight, true_count, false_count, total_count
+            FROM grouped_weights INNER JOIN inference_result_mapped_weights 
+              ON grouped_weights.id = inference_result_mapped_weights.id
+            ORDER BY abs(weight) DESC""").execute()
+      }
       
     }
 
