@@ -186,10 +186,13 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
     // TODO: We generate a unique weight Id based on the String hash code. 
     // Can we really be that sure this is unique enough?
     val weightIdentifier = factorDesc.weightPrefix + "_" + factorWeightValues.mkString
-    if (weights.putIfAbsent(weightIdentifier, weightIdCounter.get) == null) {
-      weightIdCounter.incrementAndGet()
+    // TODO: Parallelize
+    weights.synchronized {
+      if (weights.putIfAbsent(weightIdentifier, weightIdCounter.get) == null) {
+        weightIdCounter.incrementAndGet()
+      }
     }
-    val weightId = weights.get(weightIdentifier) 
+    val weightId = weights.get(weightIdentifier)
 
     // Build a human-friendly description fo the weight
     val valueAssignments =  factorDesc.weight.variables
@@ -227,8 +230,11 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
         s"Available variables: ${variableOffsetMap.keySet.mkString(",")}"
       throw new RuntimeException(errorMsg)
     }
-    if (variableIdMap.putIfAbsent(mappedId, variableIdCounter.get) == null) {
-      variableIdCounter.incrementAndGet()
+    // TODO: Parallelize
+    variableIdMap.synchronized {
+      if (variableIdMap.putIfAbsent(mappedId, variableIdCounter.get) == null) {
+        variableIdCounter.incrementAndGet()
+      }
     }
     return variableIdMap.get(mappedId)
   }
