@@ -80,8 +80,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
 
       // A view for the mapped inference result.
       // The view is a join of the variables and inference result tables.
-      SQL(s"""drop view if exists ${MappedInferenceResultView}; 
-        CREATE VIEW ${MappedInferenceResultView} 
+      SQL(s"""CREATE OR REPLACE VIEW ${MappedInferenceResultView} 
         AS SELECT ${VariablesTable}.*, ${VariableResultTable}.last_sample, ${VariableResultTable}.probability 
         FROM ${VariablesTable} 
           INNER JOIN ${VariableResultTable} ON ${VariablesTable}.id = ${VariableResultTable}.id;
@@ -179,7 +178,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       relationsColumns.foreach { case(relationName, columnName) => 
         val view_name = s"${relationName}_${columnName}_inference"
         log.info(s"creating view=${view_name}")
-        SQL(s"""DROP VIEW IF EXISTS ${view_name}; CREATE VIEW ${view_name} AS
+        SQL(s"""CREATE OR REPLACE VIEW ${view_name} AS
           SELECT ${relationName}.*, mir.last_sample, mir.probability FROM
           ${relationName} JOIN
             (SELECT mir.last_sample, mir.probability, mir.id, mir.mapping_id 
