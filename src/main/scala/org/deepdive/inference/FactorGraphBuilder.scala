@@ -225,7 +225,6 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
     // TODO: Parallelize
     variableIdMap.synchronized {
       if (variableIdMap.putIfAbsent(mappedId, variableIdCounter.get) == null) {
-        log.debug(variableIdCounter.get.toString)
         variableIdCounter.incrementAndGet()
       }
     }
