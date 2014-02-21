@@ -167,14 +167,11 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
   def buildWeightForRow(rowMap: Map[String, Any], factorDesc: FactorDesc) = {
     // Find values for the variables in the weight
     val factorWeightValues = factorDesc.weight.variables.map { key => 
-      rowMap.get(key).getOrElse {
+      rowMap.get(key).map(_.toString).getOrElse {
         val errorMsg = s"Could not find key=${key}. Available keys: ${rowMap.keySet.mkString(", ")}"
         log.error(errorMsg)
         throw new RuntimeException(errorMsg)
       }
-    }.collect { 
-      case Some(x) => x.toString
-      case None => ""
     }
 
     // Generate a unique ID for the weight
