@@ -164,9 +164,9 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       SQL(s"CREATE INDEX ${EdgesTable}_variable_id_idx ON ${EdgesTable} (variable_id);").execute()
 
       // Copy the inference result back to the database
-      PostgresDataStore.copyBatchData("COPY ${VariableResultTable}(id, last_sample, probability) FROM STDIN",
+      PostgresDataStore.copyBatchData(s"COPY ${VariableResultTable}(id, last_sample, probability) FROM STDIN",
         Source.fromFile(variableOutputFile).reader())
-      SQL("CREATE INDEX ${VariableResultTable}_idx ON ${VariableResultTable} using btree (probability);").execute()
+      SQL(s"CREATE INDEX ${VariableResultTable}_idx ON ${VariableResultTable} using btree (probability);").execute()
       SQL("analyze").execute()
 
       // Each (relation, column) tuple is a variable in the plate model.
@@ -201,8 +201,8 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       val mappedVeightsView = s"${VariableResultTable}_mapped_weights"
       log.info(s"creating view=${mappedVeightsView}")
       SQL(s"""create or replace view ${mappedVeightsView} AS
-        SELECT weights.*, ${WeightResultTable}.weight FROM
-        weights JOIN ${WeightResultTable} ON ${WeightsTable}.id = ${WeightResultTable}.id
+        SELECT ${WeightsTable}.*, ${WeightResultTable}.weight FROM
+        ${WeightsTable} JOIN ${WeightResultTable} ON ${WeightsTable}.id = ${WeightResultTable}.id
         ORDER BY abs(weight) DESC""").execute()
 
       relationsColumns.foreach { case(relationName, columnName) => 
