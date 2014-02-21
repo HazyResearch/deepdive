@@ -8,7 +8,7 @@ import org.deepdive.settings.FactorFunctionVariable
 import org.deepdive.datastore.PostgresDataStore
 import org.deepdive.Logging
 import org.deepdive.calibration._
-import scala.collection.mutable.{ArrayBuffer, Set}
+import scala.collection.mutable.{ArrayBuffer, Set, SynchronizedBuffer}
 import scala.io.Source
 
 /* Stores the factor graph and inference results in a postges database. */
@@ -35,9 +35,9 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
     
     // Temorary buffer for the next batch.
     // These collections will the cleared when we write the next batch to postgres
-    val variables = ArrayBuffer[Variable]()
-    val factors = ArrayBuffer[Factor]()
-    val weights = ArrayBuffer[Weight]()
+    val variables = new ArrayBuffer[Variable] with SynchronizedBuffer[Variable]
+    val factors = new ArrayBuffer[Factor] with SynchronizedBuffer[Factor]
+    val weights = new ArrayBuffer[Weight] with SynchronizedBuffer[Weight]
     
     def init() : Unit = {
       
@@ -277,34 +277,47 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
 
       // Insert weight
       log.debug(s"Storing num_weights=${weights.size}")
-      val weightsCSV : File = toCSVData(weights.iterator)
+      val weightsCSV : File = toCSVData(weights)
+      log.debug(s"Wrote weights_csv_file=${weightsCSV.getCanonicalPath}")
       PostgresDataStore.copyBatchData(s"""COPY ${WeightsTable}(id, initial_value, is_fixed, description) FROM STDIN CSV""", 
         weightsCSV)
-      weightsCSV.delete()
+      log.debug(s"Stored num_weights=${weights.size}")
       
       // Insert variables
       val numEvidence = variables.count(_.isEvidence)
       val numQuery = variables.count(_.isQuery)
       log.debug(s"Storing num_variables=${variables.size} num_evidence=${numEvidence} " +
         s"num_query=${numQuery}")
-      val variablesCSV = toCSVData(variables.iterator)
-      PostgresDataStore.copyBatchData(s"""COPY ${VariablesTable}( id, data_type, initial_value, is_evidence, is_query,
+      val variablesCSV = toCSVData(variables)
+      log.debug(s"Wrote variables_csv_file=${variablesCSV.getCanonicalPath}")
+      PostgresDataStore.copyBatchData(s"""COPY ${VariablesTable}(id, data_type, initial_value, is_evidence, is_query,
         mapping_relation, mapping_column, mapping_id) FROM STDIN CSV""", variablesCSV)
-      variablesCSV.delete()
+      log.debug(s"Stored num_variables=${variables.size}")
+      
       
       // Insert factors 
       log.debug(s"Storing num_factors=${factors.size}")
-      val factorsCSV = toCSVData(factors.iterator)
+      val factorsCSV = toCSVData(factors)
+      log.debug(s"Wrote factors_csv_file=${factorsCSV.getCanonicalPath}")
       PostgresDataStore.copyBatchData(s"""COPY ${FactorsTable}(id, weight_id, factor_function) FROM STDIN CSV""", 
         factorsCSV)
-      factorsCSV.delete()
+      log.debug(s"Stored num_factors=${factors.size}")
       
       // Insert Factor Variables
-      val factorVarCSV = toCSVData(factors.iterator.flatMap(_.variables))
+      val edges = factors.flatMap(_.variables)
+      log.debug(s"Storing num_edges=${edges.size}")
+      val edgeCSV = toCSVData(edges)
+      log.debug(s"Wrote edge_csv_file=${edgeCSV.getCanonicalPath}")
       PostgresDataStore.copyBatchData(s"""COPY ${EdgesTable}(factor_id, variable_id, position, is_positive) 
-        FROM STDIN CSV""", factorVarCSV)
-      factorVarCSV.delete()
+        FROM STDIN CSV""", edgeCSV)
+      log.debug(s"Stored num_edges=${edges.size}")
       
+      // Remove tmp files
+      variablesCSV.delete()
+      factorsCSV.delete()
+      edgeCSV.delete()
+      weightsCSV.delete()
+
       // Clear the temporary buffer
       weights.clear()
       factors.clear()
@@ -312,7 +325,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
     }
 
     // Converts CSV-formattable data to a CSV string
-    private def toCSVData[T <: CSVFormattable](data: Iterator[T]) : File = {
+    private def toCSVData[T <: CSVFormattable](data: Iterable[T]) : File = {
       val tmpFile = File.createTempFile("csv", "")
       val writer = new CSVWriter(new FileWriter(tmpFile))
       data.foreach (obj => writer.writeNext(obj.toCSVRow))

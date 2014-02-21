@@ -98,23 +98,15 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
 
       batchIterator.foreach { group =>
         // Group by parallelism
-        val parallelGroupSize = Math.max((group.size / parallelism).toInt, 1)
-        val tasks = group.toList.grouped(parallelGroupSize).map { case rows =>
-          Future { 
-            log.info(s"processing num_rows=${rows.size}")
-            val res = rows.map { row => processRow(row, factorDesc, holdoutFraction) }
-            res
-          }.mapTo[List[ProcessRowResult]]
-        }
-        val mergedResults = Future.sequence(tasks)
-        // Wait for result from all threads and flush the datastore
-        val results = Await.result(mergedResults, 1337.hours).toList
-        for (result <- results.flatten) {
+        // val parallelGroupSize = Math.max((group.size / parallelism).toInt, 1)
+        log.info(s"processing num_rows=${group.size} parallelism=${parallelism}")
+        val results = group.toList.par.map(row => processRow(row, factorDesc, holdoutFraction))
+        log.info(s"Writing grounding result to datastore...")
+        for (result <- results) {
           if (weightIdSet.add(result.weight.id)) inferenceDataStore.addWeight(result.weight)
           result.variables.foreach { v => if (variableIdSet.add(v.id)) inferenceDataStore.addVariable(v) }
           if (factorIdSet.add(result.factor.id)) inferenceDataStore.addFactor(result.factor)
         }
-        
         log.debug(s"flushing data for factor_name=${factorDesc.name}.")
         inferenceDataStore.flush()
       }
@@ -233,6 +225,7 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
     // TODO: Parallelize
     variableIdMap.synchronized {
       if (variableIdMap.putIfAbsent(mappedId, variableIdCounter.get) == null) {
+        log.debug(variableIdCounter.get.toString)
         variableIdCounter.incrementAndGet()
       }
     }
