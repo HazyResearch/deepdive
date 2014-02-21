@@ -45,8 +45,8 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
   val weightIdCounter = new AtomicInteger
   val variableIdCounter = new AtomicInteger
   // Keeps track of weights
-  val weights = new ConcurrentHashMap[String, Long]()
-  val variableIdMap = new ConcurrentHashMap[Long, Long]()
+  val weights = new ConcurrentHashMap[String, java.lang.Long]()
+  val variableIdMap = new ConcurrentHashMap[Long, java.lang.Long]()
 
   // We keep track of the variables, weights and factors already added
   // These will be kept in memory at all times.
@@ -186,8 +186,9 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
     // TODO: We generate a unique weight Id based on the String hash code. 
     // Can we really be that sure this is unique enough?
     val weightIdentifier = factorDesc.weightPrefix + "_" + factorWeightValues.mkString
-    if (!weights.containsKey(weightIdentifier))
-      weights.put(weightIdentifier, weightIdCounter.getAndIncrement())
+    if (weights.putIfAbsent(weightIdentifier, weightIdCounter.get) == null) {
+      weightIdCounter.incrementAndGet()
+    }
     val weightId = weights.get(weightIdentifier) 
 
     // Build a human-friendly description fo the weight
@@ -226,9 +227,9 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
         s"Available variables: ${variableOffsetMap.keySet.mkString(",")}"
       throw new RuntimeException(errorMsg)
     }
-    if (!variableIdMap.containsKey(mappedId)) {
-      variableIdMap.put(mappedId, variableIdCounter.getAndIncrement())
-    } 
+    if (variableIdMap.putIfAbsent(mappedId, variableIdCounter.get) == null) {
+      variableIdCounter.incrementAndGet()
+    }
     return variableIdMap.get(mappedId)
   }
 
