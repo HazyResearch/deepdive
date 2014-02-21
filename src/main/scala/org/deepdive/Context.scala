@@ -14,6 +14,7 @@ import scala.concurrent.duration._
 object Context extends Logging {
 
   lazy val system = ActorSystem("deepdive")
+  var outputDir = "out"
 
   def shutdown(exitValue: Int = 0) {
     JdbcDataStore.close()

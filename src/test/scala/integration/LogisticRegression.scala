@@ -52,7 +52,7 @@ class LogisticRegressionApp extends FunSpec {
   it("should work") {
     prepareData()
     val config = ConfigFactory.parseString(getConfig).withFallback(ConfigFactory.load)
-    DeepDive.run(config)
+    DeepDive.run(config, "out/test_lr")
     // Make sure the data is in the database
     JdbcDataStore.init(ConfigFactory.load)
     PostgresDataStore.withConnection { implicit conn =>

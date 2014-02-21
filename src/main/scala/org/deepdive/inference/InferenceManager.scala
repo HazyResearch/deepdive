@@ -8,6 +8,7 @@ import java.io.File
 import org.deepdive.TaskManager
 import org.deepdive.calibration._
 import org.deepdive.settings.FactorDesc
+import org.deepdive.Context
 import scala.concurrent.duration._
 import scala.concurrent.{Future, Await}
 import scala.util.Try
@@ -30,12 +31,12 @@ trait InferenceManager extends Actor with ActorLogging {
   // Describes how to start the calibration data writer
   def calibrationDataWriterProps = CalibrationDataWriter.props
 
-  lazy val factorGraphDumpFileWeights = new File("target/graph.weights.pb")
-  lazy val factorGraphDumpFileVariables = new File("target/graph.variables.pb")
-  lazy val factorGraphDumpFileFactors = new File("target/graph.factors.pb")
-  lazy val factorGraphDumpFileEdges = new File("target/graph.edges.pb")
-  lazy val SamplingOutputFile = new File("target/inference_result.out")
-  lazy val SamplingOutputFileWeights = new File("target/inference_result.out.weights")
+  lazy val factorGraphDumpFileWeights = new File(s"${Context.outputDir}/graph.weights.pb")
+  lazy val factorGraphDumpFileVariables = new File(s"${Context.outputDir}/graph.variables.pb")
+  lazy val factorGraphDumpFileFactors = new File(s"${Context.outputDir}/graph.factors.pb")
+  lazy val factorGraphDumpFileEdges = new File(s"${Context.outputDir}/graph.edges.pb")
+  lazy val SamplingOutputFile = new File(s"${Context.outputDir}/inference_result.out")
+  lazy val SamplingOutputFileWeights = new File(s"${Context.outputDir}/inference_result.out.weights")
 
   val factorGraphBuilder = context.actorOf(factorGraphBuilderProps, "factorGraphBuilder")
 
@@ -64,7 +65,7 @@ trait InferenceManager extends Actor with ActorLogging {
       val calibrationWriter = context.actorOf(calibrationDataWriterProps)
       // Get and write calibraton data for each variable
       val futures = variableSchema.keys.map { variable =>
-        val filename = s"target/calibration/${variable}.tsv"
+        val filename = s"${Context.outputDir}/calibration/${variable}.tsv"
         val data = inferenceDataStore.getCalibrationData(variable, Bucket.ten)
         calibrationWriter ? CalibrationDataWriter.WriteCalibrationData(filename, data)
       }

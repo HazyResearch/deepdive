@@ -16,10 +16,16 @@ import scala.util.{Try, Success, Failure}
 
 object DeepDive extends Logging {
 
-  def run(config: Config) {
+  def run(config: Config, outputDir: String) {
 
     // Get the actor system
     val system = Context.system
+    Context.outputDir = outputDir
+
+    // Create the output directory
+    val outputDirFile = new File(outputDir)
+    outputDirFile.mkdirs()
+    log.info(s"outputDir=${outputDir}")
 
     // Load Settings
     val settings = Settings.loadFromConfig(config)
