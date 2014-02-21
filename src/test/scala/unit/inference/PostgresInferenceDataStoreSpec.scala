@@ -74,10 +74,10 @@ class PostgresInferenceDataStoreSpec extends FunSpec with BeforeAndAfter
         factors.foreach(inferenceDataStore.addFactor)
         inferenceDataStore.flush()
 
-        val numVariables = SQL("select count(*) from variables")().head[Long]("count")
-        val numWeights = SQL("select count(*) from factors")().head[Long]("count")
-        val numFactors = SQL("select count(*) from weights")().head[Long]("count")
-        val numFactorVariables = SQL("select count(*) from factor_variables")().head[Long]("count")
+        val numVariables = SQL("select count(*) from dd_graph_variables")().head[Long]("count")
+        val numWeights = SQL("select count(*) from dd_graph_factors")().head[Long]("count")
+        val numFactors = SQL("select count(*) from dd_graph_weights")().head[Long]("count")
+        val numFactorVariables = SQL("select count(*) from dd_graph_edges")().head[Long]("count")
 
         assert(numVariables == 100)
         assert(numWeights == 10)

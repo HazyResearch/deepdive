@@ -20,6 +20,16 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
 
     implicit lazy val connection = PostgresDataStore.borrowConnection()
 
+    // Table names
+    val WeightsTable = "dd_graph_weights"
+    val FactorsTable = "dd_graph_factors"
+    val VariablesTable = "dd_graph_variables"
+    val EdgesTable = "dd_graph_edges"
+    val WeightResultTable = "dd_inference_result_weights"
+    val VariableResultTable = "dd_inference_result_variables"
+    val MappedInferenceResultView = "dd_mapped_inference_result"
+
+
     // Default batch size, if not overwritten by user
     val BatchSize = Some(250000)
     
@@ -36,45 +46,48 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       weights.clear()
 
       // weights(id, initial_value, is_fixed, description)
-      SQL("""drop table if exists weights CASCADE; 
-        create table weights(id bigint primary key, 
+      SQL(s"""drop table if exists ${WeightsTable} CASCADE; 
+        create table ${WeightsTable}(id bigint primary key, 
         initial_value double precision, is_fixed boolean, description text);""").execute()
       
       // factors(id, weight_id, factor_function)
-      SQL("""drop table if exists factors CASCADE; 
-        create table factors(id bigint primary key, 
+      SQL(s"""drop table if exists ${FactorsTable} CASCADE; 
+        create table ${FactorsTable}(id bigint primary key, 
         weight_id bigint, factor_function text);""").execute()
 
       // variables(id, data_type, initial_value, is_evidence, is_query, mapping_relation, mapping_column)
-      SQL("""drop table if exists variables CASCADE; 
-        create table variables(id bigint primary key, data_type text,
+      SQL(s"""drop table if exists ${VariablesTable} CASCADE; 
+        create table ${VariablesTable}(id bigint primary key, data_type text,
         initial_value double precision, is_evidence boolean, is_query boolean,
         mapping_relation text, mapping_column text, mapping_id bigint);""").execute()
       
       // factor_variables(factor_id, variable_id, position, is_positive)
-      SQL("""drop table if exists factor_variables; 
-        create table factor_variables(factor_id bigint, variable_id bigint, 
+      SQL(s"""drop table if exists ${EdgesTable}; 
+        create table ${EdgesTable}(
+        factor_id bigint, 
+        variable_id bigint, 
         position int, is_positive boolean);""").execute()
-      SQL("CREATE INDEX factor_idx ON factor_variables (factor_id);").execute()
-      SQL("CREATE INDEX factor_variables_idx ON factor_variables (variable_id);").execute()
-      SQL("analyze").execute()
 
       // inference_result(id, last_sample, probability)
-      SQL("""drop table if exists inference_result CASCADE; 
-        create table inference_result(id bigint primary key, last_sample boolean, 
+      SQL(s"""drop table if exists ${VariableResultTable} CASCADE; 
+        create table ${VariableResultTable}(id bigint primary key, last_sample boolean, 
         probability double precision);""").execute()
 
       // inference_result_weights(id, weight)
-      SQL("""drop table if exists inference_result_weights CASCADE; 
-        create table inference_result_weights(id bigint primary key, 
+      SQL(s"""drop table if exists ${WeightResultTable} CASCADE; 
+        create table ${WeightResultTable}(id bigint primary key, 
           weight double precision);""").execute()
 
       // A view for the mapped inference result.
       // The view is a join of the variables and inference result tables.
-      SQL("""drop view if exists mapped_inference_result; 
-      CREATE VIEW mapped_inference_result AS SELECT variables.*, inference_result.last_sample, inference_result.probability 
-      FROM variables INNER JOIN inference_result ON variables.id = inference_result.id;
+      SQL(s"""drop view if exists ${MappedInferenceResultView}; 
+        CREATE VIEW ${MappedInferenceResultView} 
+        AS SELECT ${VariablesTable}.*, ${VariableResultTable}.last_sample, ${VariableResultTable}.probability 
+        FROM ${VariablesTable} 
+          INNER JOIN ${VariableResultTable} ON ${VariablesTable}.id = ${VariableResultTable}.id;
       """).execute()
+
+      SQL("analyze").execute()
     }
 
     def getLocalVariableIds(rowMap: Map[String, Any], factorVar: FactorFunctionVariable) : Array[Long] = {
@@ -101,7 +114,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       // Add all weights
       log.info(s"Dumping factor graph...")
       log.info("Serializing weights...")
-      SQL(s"SELECT * from weights order by id asc")().iterator.foreach { row =>
+      SQL(s"SELECT * from ${WeightsTable} order by id asc")().iterator.foreach { row =>
         serializer.addWeight(
           row[Long]("id"),
           row[Boolean]("is_fixed"),
@@ -111,7 +124,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       }
       // Add all variables
       log.info("Serializing variables...")
-      SQL(s"SELECT * from variables order by id asc")().iterator.foreach { row =>
+      SQL(s"SELECT * from ${VariablesTable} order by id asc")().iterator.foreach { row =>
         serializer.addVariable(
           row[Long]("id"),
           if (row[Boolean]("is_evidence")) row[Option[Double]]("initial_value") else None,
@@ -120,7 +133,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       }
       // Add all factors
       log.info("Serializing factors...")
-      SQL(s"SELECT * from factors order by id asc")().iterator.foreach { row =>
+      SQL(s"SELECT * from ${FactorsTable} order by id asc")().iterator.foreach { row =>
         serializer.addFactor(
           row[Long]("id"),
           row[Long]("weight_id"),
@@ -129,7 +142,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       }
       // Add all edges
       log.info("Serializing edges...")
-      SQL(s"SELECT * from factor_variables")().iterator.foreach { row =>
+      SQL(s"SELECT * from ${EdgesTable}")().iterator.foreach { row =>
         serializer.addEdge(
           row[Long]("variable_id"),
           row[Long]("factor_id"),
@@ -145,10 +158,15 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       variableOutputFile: String, weightsOutputFile: String) = {
       log.info("writing back inference result")
 
+      // Create useful indicies
+      SQL(s"CREATE INDEX ${FactorsTable}_weight_id_idx ON ${FactorsTable} (weight_id);").execute()
+      SQL(s"CREATE INDEX ${EdgesTable}_factor_id_idx ON ${EdgesTable} (factor_id);").execute()
+      SQL(s"CREATE INDEX ${EdgesTable}_variable_id_idx ON ${EdgesTable} (variable_id);").execute()
+
       // Copy the inference result back to the database
-      PostgresDataStore.copyBatchData("COPY inference_result(id, last_sample, probability) FROM STDIN",
+      PostgresDataStore.copyBatchData("COPY ${VariableResultTable}(id, last_sample, probability) FROM STDIN",
         Source.fromFile(variableOutputFile).reader())
-      SQL("CREATE INDEX inference_result_idx ON inference_result using btree (probability);").execute()
+      SQL("CREATE INDEX ${VariableResultTable}_idx ON ${VariableResultTable} using btree (probability);").execute()
       SQL("analyze").execute()
 
       // Each (relation, column) tuple is a variable in the plate model.
@@ -165,7 +183,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
           SELECT ${relationName}.*, mir.last_sample, mir.probability FROM
           ${relationName} JOIN
             (SELECT mir.last_sample, mir.probability, mir.id, mir.mapping_id 
-            FROM mapped_inference_result mir 
+            FROM ${MappedInferenceResultView} mir 
             WHERE mapping_relation = '${relationName}' AND mapping_column = '${columnName}'
             ORDER BY mir.probability DESC) 
           mir ON ${relationName}.id = mir.mapping_id""").execute()
@@ -173,18 +191,18 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
 
 
       // Copy the weight result back to the database
-      PostgresDataStore.copyBatchData("COPY inference_result_weights(id, weight) FROM STDIN",
+      PostgresDataStore.copyBatchData(s"COPY ${WeightResultTable}(id, weight) FROM STDIN",
         Source.fromFile(weightsOutputFile).reader())
-      SQL("""CREATE INDEX inference_result_weights_idx 
-        ON inference_result_weights using btree (weight);""").execute()
+      SQL(s"""CREATE INDEX ${WeightResultTable}_idx 
+        ON ${WeightResultTable} using btree (weight);""").execute()
       SQL("analyze").execute()
       
       // Create a view that maps weight descriptions to the weight values
-      val mappedVeightsView = "inference_result_mapped_weights"
+      val mappedVeightsView = s"${VariableResultTable}_mapped_weights"
       log.info(s"creating view=${mappedVeightsView}")
       SQL(s"""create or replace view ${mappedVeightsView} AS
-        SELECT weights.*, inference_result_weights.weight FROM
-        weights JOIN inference_result_weights ON weights.id = inference_result_weights.id
+        SELECT weights.*, ${WeightResultTable}.weight FROM
+        weights JOIN ${WeightResultTable} ON ${WeightsTable}.id = ${WeightResultTable}.id
         ORDER BY abs(weight) DESC""").execute()
 
       relationsColumns.foreach { case(relationName, columnName) => 
@@ -192,14 +210,14 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
         log.info(s"creating view=${view_name}")
         SQL(s"""CREATE OR REPLACE VIEW ${view_name} AS
             WITH top_weights AS (SELECT id
-            FROM inference_result_mapped_weights 
+            FROM ${VariableResultTable}_mapped_weights 
             ORDER BY abs(weight) DESC),
           relevant_variables AS (SELECT top_weights.id, is_evidence, initial_value FROM top_weights 
-            INNER JOIN factors ON factors.weight_id = top_weights.id 
-            INNER JOIN factor_variables ON factors.id = factor_variables.factor_id 
-            INNER JOIN variables ON factor_variables.variable_id = variables.id
-            WHERE variables.mapping_relation = '${relationName}' 
-              AND variables.mapping_column = '${columnName}'),
+            INNER JOIN ${FactorsTable} ON ${FactorsTable}.weight_id = top_weights.id 
+            INNER JOIN ${EdgesTable} ON ${FactorsTable}.id = ${EdgesTable}.factor_id 
+            INNER JOIN ${VariablesTable} ON ${EdgesTable}.variable_id = ${VariablesTable}.id
+            WHERE ${VariablesTable}.mapping_relation = '${relationName}' 
+              AND ${VariablesTable}.mapping_column = '${columnName}'),
           grouped_weights AS (SELECT relevant_variables.id,
             COUNT(CASE WHEN relevant_variables.is_evidence=true 
               AND relevant_variables.initial_value=1.0 THEN 1 END) AS true_count,
@@ -208,8 +226,8 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
             COUNT(CASE WHEN relevant_variables.is_evidence=false THEN 1 END) AS total_count
             FROM relevant_variables GROUP BY (id))
           SELECT description, weight, true_count, false_count, total_count
-            FROM grouped_weights INNER JOIN inference_result_mapped_weights 
-              ON grouped_weights.id = inference_result_mapped_weights.id
+            FROM grouped_weights INNER JOIN ${VariableResultTable}_mapped_weights 
+              ON grouped_weights.id = ${VariableResultTable}_mapped_weights.id
             ORDER BY abs(weight) DESC""").execute()
       }
       
@@ -257,10 +275,11 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
     }
 
     def flush() : Unit = {
+
       // Insert weight
       log.debug(s"Storing num_weights=${weights.size}")
       val weightsCSV : File = toCSVData(weights.iterator)
-      PostgresDataStore.copyBatchData("""COPY weights(id, initial_value, is_fixed, description) FROM STDIN CSV""", 
+      PostgresDataStore.copyBatchData(s"""COPY ${WeightsTable}(id, initial_value, is_fixed, description) FROM STDIN CSV""", 
         weightsCSV)
       weightsCSV.delete()
       
@@ -270,20 +289,20 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       log.debug(s"Storing num_variables=${variables.size} num_evidence=${numEvidence} " +
         s"num_query=${numQuery}")
       val variablesCSV = toCSVData(variables.iterator)
-      PostgresDataStore.copyBatchData("""COPY variables( id, data_type, initial_value, is_evidence, is_query,
+      PostgresDataStore.copyBatchData(s"""COPY ${VariablesTable}( id, data_type, initial_value, is_evidence, is_query,
         mapping_relation, mapping_column, mapping_id) FROM STDIN CSV""", variablesCSV)
       variablesCSV.delete()
       
       // Insert factors 
       log.debug(s"Storing num_factors=${factors.size}")
       val factorsCSV = toCSVData(factors.iterator)
-      PostgresDataStore.copyBatchData( """COPY factors(id, weight_id, factor_function) FROM STDIN CSV""", 
+      PostgresDataStore.copyBatchData(s"""COPY ${FactorsTable}(id, weight_id, factor_function) FROM STDIN CSV""", 
         factorsCSV)
       factorsCSV.delete()
       
       // Insert Factor Variables
       val factorVarCSV = toCSVData(factors.iterator.flatMap(_.variables))
-      PostgresDataStore.copyBatchData("""COPY factor_variables(factor_id, variable_id, position, is_positive) 
+      PostgresDataStore.copyBatchData(s"""COPY ${EdgesTable}(factor_id, variable_id, position, is_positive) 
         FROM STDIN CSV""", factorVarCSV)
       factorVarCSV.delete()
       

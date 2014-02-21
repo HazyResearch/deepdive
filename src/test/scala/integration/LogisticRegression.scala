@@ -62,10 +62,10 @@ class LogisticRegressionApp extends FunSpec {
       }.toList
       assert(extractionResult.size == 12)
       
-      val numFactors = SQL("select count(*) as c from factors;")().head[Long]("c")
-      val numVariables = SQL("select count(*) as c from variables;")().head[Long]("c")
-      val numFactorVariables = SQL("select count(*) as c from factor_variables;")().head[Long]("c")
-      val numWeights = SQL("select count(*) as c from weights;")().head[Long]("c")
+      val numFactors = SQL("select count(*) as c from dd_graph_factors;")().head[Long]("c")
+      val numVariables = SQL("select count(*) as c from dd_graph_variables;")().head[Long]("c")
+      val numFactorVariables = SQL("select count(*) as c from dd_graph_edges;")().head[Long]("c")
+      val numWeights = SQL("select count(*) as c from dd_graph_weights;")().head[Long]("c")
 
       // One variable for each word, and one variable for each title
       assert(numVariables == 15)
@@ -78,10 +78,10 @@ class LogisticRegressionApp extends FunSpec {
 
       // Make sure the variables types are correct
       val numEvidence = SQL("""
-        select count(*) as c from variables 
+        select count(*) as c from dd_graph_variables 
         WHERE is_evidence = true""")().head[Long]("c")
       val numQuery = SQL("""
-        select count(*) as c from variables 
+        select count(*) as c from dd_graph_variables 
         WHERE is_query = true""")().head[Long]("c")
       // 1 title and 12 words are evidence
       assert(numEvidence == 13)
