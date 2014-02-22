@@ -40,22 +40,26 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       SQL(s"""drop table if exists ${WeightsTable} CASCADE; 
         create table ${WeightsTable}(id bigserial primary key, 
         initial_value double precision, is_fixed boolean, description text);""").execute()
+      SQL(s"""ALTER SEQUENCE ${WeightsTable}_id_seq MINVALUE -1 RESTART WITH 0;""").execute()
       SQL(s"""CREATE INDEX ${WeightsTable}_desc_idx ON ${WeightsTable}(description);""").execute()
       
       // factors(id, weight_id, factor_function)
       SQL(s"""drop table if exists ${FactorsTable} CASCADE; 
         create table ${FactorsTable}(id bigserial primary key, 
         weight_id bigint, factor_function text, factor_group text, qid bigint);""").execute()
+      SQL(s"""ALTER SEQUENCE ${FactorsTable}_id_seq MINVALUE -1 RESTART WITH 0;""").execute()
 
       // variables(id, data_type, initial_value, is_evidence, is_query, mrel, mcol)
       SQL(s"""drop table if exists ${VariablesTable} CASCADE; 
         create table ${VariablesTable}(id bigserial primary key, data_type text,
         initial_value double precision, is_evidence boolean);""").execute()
+      SQL(s"""ALTER SEQUENCE ${VariablesTable}_id_seq MINVALUE -1 RESTART WITH 0;""").execute()
 
       SQL(s"""DROP TABLE IF EXISTS ${LocalVariableMapTable} CASCADE;
         CREATE TABLE ${LocalVariableMapTable}(id bigserial,
           mrel text, mcol text, mid bigint,
           CONSTRAINT c_pkey PRIMARY KEY (mrel, mcol, mid));""").execute()
+      SQL(s"""ALTER SEQUENCE ${LocalVariableMapTable}_id_seq MINVALUE -1 RESTART WITH 0;""").execute()
       
       // factor_variables(factor_id, variable_id, position, is_positive)
       SQL(s"""drop table if exists ${EdgesTable}; 
@@ -89,7 +93,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
     def groundFactorGraph(factorDesc: FactorDesc, holdoutFraction: Double) {
 
       val weightVariableSep = ","
-      val weightVars = factorDesc.weight.variables.map(_+"::text").mkString(", ") match {
+      val weightVars = factorDesc.weight.variables.map(v => s""""${v}"::text""").mkString(", ") match {
         case "" => "''"
         case x => x
       }
@@ -111,12 +115,10 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
         DROP MATERIALIZED VIEW IF EXISTS ${queryView} CASCADE;""").execute()
       SQL(s"""
         CREATE MATERIALIZED VIEW ${queryView} AS 
-        SELECT row_number() OVER() as id, 
+        SELECT row_number() OVER() - 1 as id, 
           ${queryViewTmp}.*, ${weightIdCmd} AS dd_weight 
           FROM ${queryViewTmp};""").execute()
       SQL(s"""CREATE INDEX ${queryView}_idx ON ${queryView}(id);""").execute()
-      SQL(s"""CREATE INDEX ${queryView}_dd_weight_idx ON ${queryView}(dd_weight);""").execute()
-
       // Insert weights
       
       log.info("Inserting weights...")
@@ -157,7 +159,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
           INSERT INTO ${VariablesTable}(id, data_type, initial_value, is_evidence)
           SELECT DISTINCT ON (${LocalVariableMapTable}.id) ${LocalVariableMapTable}.id, '${variableDataType}', 
             CASE WHEN "${variable.toString}" = true THEN 1.0 ELSE 0.0 END,
-            CASE WHEN (random() < ${holdoutFraction} OR "${variable.toString}" IS NULL) THEN false ELSE true END
+            CASE WHEN ("${variable.toString}" IS NULL OR random() < ${holdoutFraction}) THEN false ELSE true END
           FROM 
             ${LocalVariableMapTable} LEFT JOIN ${VariablesTable} 
               ON ${LocalVariableMapTable}.id=${VariablesTable}.id,
@@ -188,7 +190,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       log.info("Serializing weights...")
       SQL(s"SELECT * from ${WeightsTable} order by id asc")().par.foreach { row =>
         serializer.addWeight(
-          row[Long]("id") - 1,
+          row[Long]("id"),
           row[Boolean]("is_fixed"),
           row[Double]("initial_value"),
           row[String]("description")
@@ -196,28 +198,28 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       }
       // Add all variables
       log.info("Serializing variables...")
-      SQL(s"SELECT * from ${VariablesTable} order by id asc")().iterator.foreach { row =>
+      SQL(s"SELECT * from ${VariablesTable} order by id asc")().par.foreach { row =>
         serializer.addVariable(
-          row[Long]("id") - 1,
+          row[Long]("id"),
           if (row[Boolean]("is_evidence")) row[Option[Double]]("initial_value") else None,
           row[String]("data_type")
         )
       }
       // Add all factors
       log.info("Serializing factors...")
-      SQL(s"SELECT * from ${FactorsTable} order by id asc")().iterator.foreach { row =>
+      SQL(s"SELECT * from ${FactorsTable} order by id asc")().par.foreach { row =>
         serializer.addFactor(
-          row[Long]("id") - 1,
-          row[Long]("weight_id") - 1,
+          row[Long]("id"),
+          row[Long]("weight_id"),
           row[String]("factor_function")
         )
       }
       // Add all edges
       log.info("Serializing edges...")
-      SQL(s"SELECT * from ${EdgesTable}")().iterator.foreach { row =>
+      SQL(s"SELECT * from ${EdgesTable}")().par.foreach { row =>
         serializer.addEdge(
-          row[Long]("variable_id") - 1,
-          row[Long]("factor_id") - 1,
+          row[Long]("variable_id"),
+          row[Long]("factor_id"),
           row[Long]("position"),
           row[Boolean]("is_positive")
         )
