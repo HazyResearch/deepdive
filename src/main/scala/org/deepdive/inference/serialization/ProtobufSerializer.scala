@@ -15,7 +15,8 @@ class ProtobufSerializer(weightsOuput: OutputStream, variablesOutput: OutputStre
     weightBuilder.setIsFixed(isFixed)
     if (isFixed) weightBuilder.setInitialValue(initialValue)
     weightBuilder.setDescription(desc)
-    weightBuilder.build().writeDelimitedTo(weightsOuput)
+    val obj = weightBuilder.build()
+    weightsOuput.synchronized { obj.writeDelimitedTo(weightsOuput) } 
   }
   
   def addVariable(variableId: Long, initialValue: Option[Double], dataType: String) : Unit = {
@@ -26,7 +27,8 @@ class ProtobufSerializer(weightsOuput: OutputStream, variablesOutput: OutputStre
       case "Boolean" => FactorGraphProtos.Variable.VariableDataType.BOOLEAN
     }
     variableBuilder.setDataType(variableDataType)
-    variableBuilder.build().writeDelimitedTo(variablesOutput)
+    val obj = variableBuilder.build()
+    variablesOutput.synchronized { obj.writeDelimitedTo(variablesOutput) }
   }
 
   def addFactor(factorId: Long, weightId: Long, factorFunction: String) : Unit = {
@@ -41,7 +43,8 @@ class ProtobufSerializer(weightsOuput: OutputStream, variablesOutput: OutputStre
       case "IsTrueFactorFunction" =>  FactorGraphProtos.Factor.FactorFunctionType.ISTRUE
     }
     factorBuilder.setFactorFunction(factorFunctionType)
-    factorBuilder.build().writeDelimitedTo(factorsOutput)
+    val obj = factorBuilder.build()
+    factorsOutput.synchronized { obj.writeDelimitedTo(factorsOutput) }
   }
 
 
@@ -51,7 +54,8 @@ class ProtobufSerializer(weightsOuput: OutputStream, variablesOutput: OutputStre
     edgeBuilder.setFactorId(factorId)
     edgeBuilder.setPosition(position)
     if (!isPositive) edgeBuilder.setIsPositive(isPositive)
-    edgeBuilder.build().writeDelimitedTo(edgesOutput)
+    val obj = edgeBuilder.build()
+    edgesOutput.synchronized { obj.writeDelimitedTo(edgesOutput) }
   }
 
   def close() : Unit = {

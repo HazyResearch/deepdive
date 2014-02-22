@@ -4,7 +4,7 @@ import au.com.bytecode.opencsv.{CSVWriter, CSVReader}
 import java.io.{File, FileWriter, FileReader}
 import org.deepdive.calibration._
 import org.deepdive.Logging
-import org.deepdive.settings.FactorFunctionVariable
+import org.deepdive.settings._
 import scala.collection.mutable.{Map => MMap}
 import scala.collection.JavaConversions._
 
@@ -24,6 +24,10 @@ trait MemoryInferenceDataStoreComponent extends InferenceDataStoreComponent{
       factors.clear()
       weights.clear()
       log.info("initialized")
+    }
+
+    def groundFactorGraph(factorDesc: FactorDesc, holdoutFraction: Double) : Unit = {
+
     }
 
     def getLocalVariableIds(rowMap: Map[String, Any], factorVar: FactorFunctionVariable) : Array[Long] = {

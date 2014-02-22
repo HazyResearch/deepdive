@@ -42,8 +42,8 @@ trait InferenceManager extends Actor with ActorLogging {
 
   override def preStart() {
     log.info("Starting")
-    context.watch(factorGraphBuilder)
     inferenceDataStore.init()
+    context.watch(factorGraphBuilder)
   }
 
   override val supervisorStrategy = OneForOneStrategy() {

@@ -4,10 +4,10 @@ import anorm._
 import au.com.bytecode.opencsv.CSVWriter
 import java.io.{ByteArrayInputStream, File, FileOutputStream, FileWriter,
   StringWriter, Reader, FileReader, InputStream, InputStreamReader}
-import org.deepdive.settings.FactorFunctionVariable
+import org.deepdive.calibration._
 import org.deepdive.datastore.PostgresDataStore
 import org.deepdive.Logging
-import org.deepdive.calibration._
+import org.deepdive.settings._
 import scala.collection.mutable.{ArrayBuffer, Set, SynchronizedBuffer}
 import scala.io.Source
 
@@ -24,6 +24,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
     val WeightsTable = "dd_graph_weights"
     val FactorsTable = "dd_graph_factors"
     val VariablesTable = "dd_graph_variables"
+    val LocalVariableMapTable = "dd_graph_local_variable_map"
     val EdgesTable = "dd_graph_edges"
     val WeightResultTable = "dd_inference_result_weights"
     val VariableResultTable = "dd_inference_result_variables"
@@ -33,33 +34,28 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
     // Default batch size, if not overwritten by user
     val BatchSize = Some(250000)
     
-    // Temorary buffer for the next batch.
-    // These collections will the cleared when we write the next batch to postgres
-    val variables = new ArrayBuffer[Variable] with SynchronizedBuffer[Variable]
-    val factors = new ArrayBuffer[Factor] with SynchronizedBuffer[Factor]
-    val weights = new ArrayBuffer[Weight] with SynchronizedBuffer[Weight]
-    
     def init() : Unit = {
-      
-      variables.clear()
-      factors.clear()
-      weights.clear()
 
       // weights(id, initial_value, is_fixed, description)
       SQL(s"""drop table if exists ${WeightsTable} CASCADE; 
-        create table ${WeightsTable}(id bigint primary key, 
+        create table ${WeightsTable}(id bigserial primary key, 
         initial_value double precision, is_fixed boolean, description text);""").execute()
+      SQL(s"""CREATE INDEX ${WeightsTable}_desc_idx ON ${WeightsTable}(description);""").execute()
       
       // factors(id, weight_id, factor_function)
       SQL(s"""drop table if exists ${FactorsTable} CASCADE; 
-        create table ${FactorsTable}(id bigint primary key, 
-        weight_id bigint, factor_function text);""").execute()
+        create table ${FactorsTable}(id bigserial primary key, 
+        weight_id bigint, factor_function text, factor_group text, qid bigint);""").execute()
 
-      // variables(id, data_type, initial_value, is_evidence, is_query, mapping_relation, mapping_column)
+      // variables(id, data_type, initial_value, is_evidence, is_query, mrel, mcol)
       SQL(s"""drop table if exists ${VariablesTable} CASCADE; 
-        create table ${VariablesTable}(id bigint primary key, data_type text,
-        initial_value double precision, is_evidence boolean, is_query boolean,
-        mapping_relation text, mapping_column text, mapping_id bigint);""").execute()
+        create table ${VariablesTable}(id bigserial primary key, data_type text,
+        initial_value double precision, is_evidence boolean);""").execute()
+
+      SQL(s"""DROP TABLE IF EXISTS ${LocalVariableMapTable} CASCADE;
+        CREATE TABLE ${LocalVariableMapTable}(id bigserial,
+          mrel text, mcol text, mid bigint,
+          CONSTRAINT c_pkey PRIMARY KEY (mrel, mcol, mid));""").execute()
       
       // factor_variables(factor_id, variable_id, position, is_positive)
       SQL(s"""drop table if exists ${EdgesTable}; 
@@ -81,41 +77,118 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       // A view for the mapped inference result.
       // The view is a join of the variables and inference result tables.
       SQL(s"""CREATE OR REPLACE VIEW ${MappedInferenceResultView} 
-        AS SELECT ${VariablesTable}.*, ${VariableResultTable}.last_sample, ${VariableResultTable}.probability 
-        FROM ${VariablesTable} 
-          INNER JOIN ${VariableResultTable} ON ${VariablesTable}.id = ${VariableResultTable}.id;
-      """).execute()
+        AS SELECT ${VariablesTable}.*, ${LocalVariableMapTable}.mid, 
+          ${LocalVariableMapTable}.mcol, ${LocalVariableMapTable}.mrel,
+          ${VariableResultTable}.last_sample, ${VariableResultTable}.probability 
+        FROM ${VariablesTable}, ${LocalVariableMapTable}, ${VariableResultTable}
+        WHERE ${VariablesTable}.id = ${VariableResultTable}.id
+          AND ${VariablesTable}.id = ${LocalVariableMapTable}.id;""").execute()
 
-      SQL("analyze").execute()
     }
 
-    def getLocalVariableIds(rowMap: Map[String, Any], factorVar: FactorFunctionVariable) : Array[Long] = {
-      if (factorVar.isArray)
-        // Postgres prefixes aggregated colimns with a dot
-        rowMap(s".${factorVar.relation}.id").asInstanceOf[Array[java.lang.Long]].map(_.toLong)
-      else
-        Array(rowMap(s"${factorVar.relation}.id").asInstanceOf[Long])
-    }
+    def groundFactorGraph(factorDesc: FactorDesc, holdoutFraction: Double) {
 
-    def addFactor(factor: Factor) = { 
-      factors += factor
-    }
+      val weightVariableSep = ","
+      val weightVars = factorDesc.weight.variables.map(_+"::text").mkString(", ") match {
+        case "" => "''"
+        case x => x
+      }
+      val weightValue = factorDesc.weight match { 
+        case x : KnownFactorWeight => x.value
+        case _ => 0.0
+      }
+      val weightIdCmd = s"""concat_ws('${weightVariableSep}', '${factorDesc.weightPrefix}', ${weightVars})"""
 
-    def addVariable(variable: Variable) = {
-      variables += variable
-    }
-    
-    def addWeight(weight: Weight) = { 
-      weights += weight
+      // Materialize the query to get unique ids
+      val queryViewTmp = s"dd_${factorDesc.name}_query_tmp"
+      val queryView = s"dd_${factorDesc.name}_query"
+      log.info("Materializing grounding query...")
+      SQL(s"""
+        DROP VIEW IF EXISTS ${queryViewTmp} CASCADE;""").execute()
+      SQL(s"""
+        CREATE OR REPLACE VIEW ${queryViewTmp} AS ${factorDesc.inputQuery};""").execute()
+      SQL(s"""
+        DROP MATERIALIZED VIEW IF EXISTS ${queryView} CASCADE;""").execute()
+      SQL(s"""
+        CREATE MATERIALIZED VIEW ${queryView} AS 
+        SELECT row_number() OVER() as id, 
+          ${queryViewTmp}.*, ${weightIdCmd} AS dd_weight 
+          FROM ${queryViewTmp};""").execute()
+      SQL(s"""CREATE INDEX ${queryView}_idx ON ${queryView}(id);""").execute()
+      SQL(s"""CREATE INDEX ${queryView}_dd_weight_idx ON ${queryView}(dd_weight);""").execute()
+
+      // Insert weights
+      
+      log.info("Inserting weights...")
+      SQL(s"""
+        INSERT INTO ${WeightsTable}(description, initial_value, is_fixed)
+        (SELECT DISTINCT dd_weight, ${weightValue}, ${factorDesc.weight.isInstanceOf[KnownFactorWeight]}
+        FROM ${queryView});""").execute()
+
+      // Insert Factors
+      val factorGroup = factorDesc.name
+      val factorFunction = factorDesc.func.getClass.getSimpleName
+      log.info("Inserting factors...")
+      SQL(s"""
+        INSERT INTO ${FactorsTable}(weight_id, factor_function, factor_group, qid)
+        (SELECT ${WeightsTable}.id, '${factorFunction}', '${factorGroup}', ${queryView}.id
+        FROM ${queryView}, ${WeightsTable}
+        WHERE dd_weight = ${WeightsTable}.description);""").execute()
+
+
+      // Insert variables, and edges
+      factorDesc.func.variables.zipWithIndex.foreach { case(variable, position) =>
+        // Insert local variables
+        val vColumn = variable.field
+        val vRelation = variable.headRelation
+        val vidColumn = s"${variable.relation}.id"
+        log.info(s"""Inserting variable="${variable.toString}"...""")
+        SQL(s"""
+          INSERT INTO ${LocalVariableMapTable}(mrel, mcol, mid)
+          (SELECT DISTINCT '${vRelation}', '${vColumn}', "${vidColumn}"
+          FROM ${queryView}
+          EXCEPT SELECT '${vRelation}', '${vColumn}', mid 
+            FROM ${LocalVariableMapTable}
+            WHERE mrel='${vRelation}' AND mcol='${vColumn}');""").execute()
+
+        // Insert Global Variables
+        val variableDataType = factorDesc.func.variableDataType
+        SQL(s"""
+          INSERT INTO ${VariablesTable}(id, data_type, initial_value, is_evidence)
+          SELECT DISTINCT ON (${LocalVariableMapTable}.id) ${LocalVariableMapTable}.id, '${variableDataType}', 
+            CASE WHEN "${variable.toString}" = true THEN 1.0 ELSE 0.0 END,
+            CASE WHEN (random() < ${holdoutFraction} OR "${variable.toString}" IS NULL) THEN false ELSE true END
+          FROM 
+            ${LocalVariableMapTable} LEFT JOIN ${VariablesTable} 
+              ON ${LocalVariableMapTable}.id=${VariablesTable}.id,
+            ${queryView}
+          WHERE mrel='${vRelation}' 
+            AND mcol='${vColumn}'
+            AND mid="${vidColumn}"
+            AND ${VariablesTable}.id IS NULL;""").execute()
+
+        // Insert edges
+        log.info(s"""Inserting edges for variable="${variable.toString}"...""")
+        SQL(s"""
+          INSERT INTO ${EdgesTable}(factor_id, variable_id, position, is_positive)
+          (SELECT ${FactorsTable}.id, ${LocalVariableMapTable}.id, ${position}, ${!variable.isNegated}
+          FROM ${queryView}, ${FactorsTable}, ${LocalVariableMapTable}
+          WHERE ${queryView}.id = ${FactorsTable}.qid
+            AND ${LocalVariableMapTable}.mrel = '${vRelation}'
+            AND ${LocalVariableMapTable}.mcol = '${vColumn}'
+            AND ${LocalVariableMapTable}.mid = "${vidColumn}"
+            AND ${FactorsTable}.factor_group = '${factorGroup}')""").execute()
+      }
+
     }
 
     def dumpFactorGraph(serializer: Serializer) : Unit = {
       // Add all weights
       log.info(s"Dumping factor graph...")
       log.info("Serializing weights...")
-      SQL(s"SELECT * from ${WeightsTable} order by id asc")().iterator.foreach { row =>
+      SQL(s"SELECT * from ${WeightsTable} order by id asc")().par.foreach { row =>
         serializer.addWeight(
-          row[Long]("id"),
+          row[Long]("id") - 1,
           row[Boolean]("is_fixed"),
           row[Double]("initial_value"),
           row[String]("description")
@@ -125,7 +198,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       log.info("Serializing variables...")
       SQL(s"SELECT * from ${VariablesTable} order by id asc")().iterator.foreach { row =>
         serializer.addVariable(
-          row[Long]("id"),
+          row[Long]("id") - 1,
           if (row[Boolean]("is_evidence")) row[Option[Double]]("initial_value") else None,
           row[String]("data_type")
         )
@@ -134,8 +207,8 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       log.info("Serializing factors...")
       SQL(s"SELECT * from ${FactorsTable} order by id asc")().iterator.foreach { row =>
         serializer.addFactor(
-          row[Long]("id"),
-          row[Long]("weight_id"),
+          row[Long]("id") - 1,
+          row[Long]("weight_id") - 1,
           row[String]("factor_function")
         )
       }
@@ -143,8 +216,8 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       log.info("Serializing edges...")
       SQL(s"SELECT * from ${EdgesTable}")().iterator.foreach { row =>
         serializer.addEdge(
-          row[Long]("variable_id"),
-          row[Long]("factor_id"),
+          row[Long]("variable_id") - 1,
+          row[Long]("factor_id") - 1,
           row[Long]("position"),
           row[Boolean]("is_positive")
         )
@@ -181,11 +254,11 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
         SQL(s"""CREATE OR REPLACE VIEW ${view_name} AS
           SELECT ${relationName}.*, mir.last_sample, mir.probability FROM
           ${relationName} JOIN
-            (SELECT mir.last_sample, mir.probability, mir.id, mir.mapping_id 
+            (SELECT mir.last_sample, mir.probability, mir.id, mir.mid 
             FROM ${MappedInferenceResultView} mir 
-            WHERE mapping_relation = '${relationName}' AND mapping_column = '${columnName}'
+            WHERE mrel = '${relationName}' AND mcol = '${columnName}'
             ORDER BY mir.probability DESC) 
-          mir ON ${relationName}.id = mir.mapping_id""").execute()
+          mir ON ${relationName}.id = mir.mid""").execute()
       }
 
 
@@ -215,8 +288,9 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
             INNER JOIN ${FactorsTable} ON ${FactorsTable}.weight_id = top_weights.id 
             INNER JOIN ${EdgesTable} ON ${FactorsTable}.id = ${EdgesTable}.factor_id 
             INNER JOIN ${VariablesTable} ON ${EdgesTable}.variable_id = ${VariablesTable}.id
-            WHERE ${VariablesTable}.mapping_relation = '${relationName}' 
-              AND ${VariablesTable}.mapping_column = '${columnName}'),
+            INNER JOIN ${LocalVariableMapTable} ON ${LocalVariableMapTable}.id = ${VariablesTable}.id
+            WHERE ${LocalVariableMapTable}.mrel = '${relationName}' 
+              AND ${LocalVariableMapTable}.mcol = '${columnName}'),
           grouped_weights AS (SELECT relevant_variables.id,
             COUNT(CASE WHEN relevant_variables.is_evidence=true 
               AND relevant_variables.initial_value=1.0 THEN 1 END) AS true_count,
@@ -271,78 +345,6 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       buckets.zipWithIndex.map { case (bucket, index) =>
         (bucket, bucketData.get(index).getOrElse(BucketData(0,0,0)))
       }.toMap
-    }
-
-    def flush() : Unit = {
-
-      // Insert weight
-      log.debug(s"Storing num_weights=${weights.size}")
-      val weightsCSV : File = toCSVData(weights)
-      log.debug(s"Wrote weights_csv_file=${weightsCSV.getCanonicalPath}")
-      PostgresDataStore.copyBatchData(s"""COPY ${WeightsTable}(id, initial_value, is_fixed, description) FROM STDIN CSV""", 
-        weightsCSV)
-      log.debug(s"Stored num_weights=${weights.size}")
-      
-      // Insert variables
-      val numEvidence = variables.count(_.isEvidence)
-      val numQuery = variables.count(_.isQuery)
-      log.debug(s"Storing num_variables=${variables.size} num_evidence=${numEvidence} " +
-        s"num_query=${numQuery}")
-      val variablesCSV = toCSVData(variables)
-      log.debug(s"Wrote variables_csv_file=${variablesCSV.getCanonicalPath}")
-      PostgresDataStore.copyBatchData(s"""COPY ${VariablesTable}(id, data_type, initial_value, is_evidence, is_query,
-        mapping_relation, mapping_column, mapping_id) FROM STDIN CSV""", variablesCSV)
-      log.debug(s"Stored num_variables=${variables.size}")
-      
-      
-      // Insert factors 
-      log.debug(s"Storing num_factors=${factors.size}")
-      val factorsCSV = toCSVData(factors)
-      log.debug(s"Wrote factors_csv_file=${factorsCSV.getCanonicalPath}")
-      PostgresDataStore.copyBatchData(s"""COPY ${FactorsTable}(id, weight_id, factor_function) FROM STDIN CSV""", 
-        factorsCSV)
-      log.debug(s"Stored num_factors=${factors.size}")
-      
-      // Insert Factor Variables
-      val edges = factors.flatMap(_.variables)
-      log.debug(s"Storing num_edges=${edges.size}")
-      val edgeCSV = toCSVData(edges)
-      log.debug(s"Wrote edge_csv_file=${edgeCSV.getCanonicalPath}")
-      PostgresDataStore.copyBatchData(s"""COPY ${EdgesTable}(factor_id, variable_id, position, is_positive) 
-        FROM STDIN CSV""", edgeCSV)
-      log.debug(s"Stored num_edges=${edges.size}")
-      
-      // Remove tmp files
-      variablesCSV.delete()
-      factorsCSV.delete()
-      edgeCSV.delete()
-      weightsCSV.delete()
-
-      // Clear the temporary buffer
-      weights.clear()
-      factors.clear()
-      variables.clear()
-    }
-
-    // Converts CSV-formattable data to a CSV string
-    private def toCSVData[T <: CSVFormattable](data: Iterable[T]) : File = {
-      val tmpFile = File.createTempFile("csv", "")
-      val writer = new CSVWriter(new FileWriter(tmpFile))
-      data.foreach (obj => writer.writeNext(obj.toCSVRow))
-      writer.close()
-      tmpFile
-    }
-
-    // Executes a SELECT statement and saves the result in a postgres text format file
-    // (http://www.postgresql.org/docs/9.1/static/sql-copy.html#AEN64107)
-    private def copySQLToFile(sqlSelect: String, f: File) = {
-      val del = new org.apache.commons.dbcp.DelegatingConnection(connection)
-      val pg_conn = del.getInnermostDelegate().asInstanceOf[org.postgresql.core.BaseConnection]
-      val cm = new org.postgresql.copy.CopyManager(pg_conn)
-      val os = new FileOutputStream(f)
-      val copySql = s"COPY ($sqlSelect) TO STDOUT"
-      cm.copyOut(copySql, os)
-      os.close()
     }
 
   }

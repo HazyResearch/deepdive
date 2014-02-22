@@ -2,7 +2,9 @@ package org.deepdive.inference
 
 import org.deepdive.settings.FactorFunctionVariable
 import org.deepdive.calibration._
+import org.deepdive.settings.FactorDesc
 import java.io.File
+
 
 /* Stores the factor graph and inference results. */
 trait InferenceDataStoreComponent {
@@ -15,40 +17,14 @@ trait InferenceDataStoreComponent {
     def init() : Unit
 
     /* 
-     * Flushes the data store. This is called after each batch. 
-     * If no batch size is defined, this method is called once for all tuples
-     */
-    def flush() : Unit
-
-    /* 
      * The number of tuples in each batch. If not defined, we use one large batch. 
      * The user can overwrite this number using the inference.batch_size config setting.
      */
     def BatchSize : Option[Int]
 
-    /* Returns a list of variable IDs for all variables in the given factor function */
-    def getLocalVariableIds(rowMap: Map[String, Any], factorVar: FactorFunctionVariable) : Array[Long]
+    /* Generate a grounded graph based on the factor description */
+    def groundFactorGraph(factorDesc: FactorDesc, holdoutFraction: Double) : Unit 
 
-    /* 
-     * Add a new factor. 
-     * IMPORTANT: This method may be called more than once for each factor. The implementation is
-     * responsible for making sure that all factors are unique based on their id.
-     */
-    def addFactor(factor: Factor) : Unit
-    
-    /* 
-     * Add a new variable. 
-     * IMPORTANT: This method may be called more than once for each variable. The implementation is
-     * responsible for making sure that all variables are unique based on their id.
-     */
-    def addVariable(variable: Variable) : Unit
-    
-    /* 
-     * Add a new weight. 
-     * IMPORTANT: This method may be called more than once for each weight. The implementation is
-     * responsible for making sure that all weights are unique based on their id.
-     */
-    def addWeight(weight: Weight)
 
     /* 
      * Dumps the factor graphs with the given serializier
