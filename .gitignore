@@ -5,3 +5,4 @@ app/
 log/
 *.sublime-project
 *.sublime-workspace
+out/
