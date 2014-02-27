@@ -1,27 +1,38 @@
 package org.deepdive.test.unit
 
 import anorm._
+import com.typesafe.config._
+import java.io.StringWriter
 import org.deepdive.datastore._
 import org.deepdive.extraction._
 import org.deepdive.extraction.datastore._
 import org.deepdive.test._
 import org.scalatest._
-import scala.io.Source
 import play.api.libs.json._
-import java.io.StringWriter
+import scala.io.Source
 
-class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
-  with PostgresExtractionDataStoreComponent {
+class HSQLExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
+  with HSQLExtractionDataStoreComponent {
 
   lazy implicit val connection = PostgresDataStore.borrowConnection()
 
+  val configurationStr = """
+    deepdive.db.default: {
+      driver: "org.hsqldb.jdbc.JDBCDriver"
+      url: "jdbc:hsqldb:hsql://localhost/deepdive_test"
+      user: "SA"
+      password: ""
+    }"""
+
   before {
-    JdbcDataStore.init()
+    val config = ConfigFactory.parseString(configurationStr)
+    JdbcDataStore.init(config)
     dataStore.init()
-    SQL("drop schema if exists public cascade; create schema public;").execute()
-    SQL("""create table datatype_test(id bigserial primary key, key integer, some_text text, 
+    //SQL("drop schema if exists public cascade; create schema public;").execute()
+    SQL("""drop table if exists datatype_test;""").execute()
+    SQL("""create table datatype_test(id bigint identity primary key, key integer, some_text longvarchar, 
       some_boolean boolean, some_double double precision, some_null boolean, 
-      some_array text[], some_json json);""").execute()
+      some_array longvarchar array);""").execute()
   }
 
   after {
@@ -31,27 +42,26 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
   describe("Querying as a Map") {
 
     def insertSampleData() = {
-      SQL("""insert into datatype_test(key) 
-        VALUES (1), (2), (3), (4)""").execute()
+      SQL("""insert into datatype_test(key) VALUES (1), (2), (3), (4)""").execute()
     }
 
     it("should work for simple attributes") {
       insertSampleData()
-      val result = dataStore.queryAsMap("SELECT key from datatype_test order by key asc;")(_.toList)
-      assert(result.head === Map("key" -> 1))
+      val result = dataStore.queryAsMap("SELECT key from datatype_test;")(_.toList)
+      assert(result.head === Map("KEY" -> 1))
     }
 
-    it("should work for aliased attributes") {
+    it("should work for alaised attributes") {
       insertSampleData()
-      val result = dataStore.queryAsMap("SELECT key AS \"d1.key2\" from datatype_test order by \"d1.key2\" asc;")(_.toList)
+      val result = dataStore.queryAsMap("SELECT key AS \"d1.key2\" from datatype_test;")(_.toList)
       assert(result.head === Map("d1.key2" -> 1))
     }
 
     it("should work for aggregated attributes") {
       insertSampleData()
       val result = dataStore.queryAsMap("""SELECT COUNT(*) AS num 
-        from datatype_test GROUP BY key""")(_.toList)
-      assert(result.head === Map("num" -> 1))
+        from DATATYPE_TEST GROUP BY key""")(_.toList)
+      assert(result.head === Map("NUM" -> 1))
     }
 
     it("should work with empty tables") {
@@ -78,10 +88,10 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
   describe("Serializing to JSON") {  
 
     def insertSampleRow() : Unit = {
-      SQL("""insert into datatype_test(key, some_text, some_boolean, some_double, some_array, some_json) 
+      SQL("""insert into datatype_test(key, some_text, some_boolean, some_double, some_array) 
         VALUES 
-          (1, 'Hello', true, 1.0, '{"A","B"}', '{"hello":"world"}'), 
-          (1, 'Ce', false, 2.3, '{"C","D"}', null)""").execute()
+          (1, 'Hello', true, 1.0, ARRAY['A', 'B']), 
+          (1, 'Ce', false, 2.3, ARRAY['C', 'D'])""").execute()
     }
 
     it("should work with aggregate data types") {
@@ -91,7 +101,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
         FROM datatype_test GROUP BY key"""
       )(_.toList)
       assert(result.head.asInstanceOf[JsObject].value == Map[String, JsValue](
-        "key" -> JsNumber(1),
+        "KEY" -> JsNumber(1),
         "datatype_test.texts" -> JsArray(Seq(JsString("Hello"), JsString("Ce")))
       ))
     }
@@ -100,37 +110,13 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
       insertSampleRow()
       val result = dataStore.queryAsJson("SELECT * from datatype_test")(_.toList)
       assert(result.head.asInstanceOf[JsObject].value == Map[String, JsValue](
-        "id" -> JsNumber(1),
-        "key" -> JsNumber(1),
-        "some_text" -> JsString("Hello"),
-        "some_boolean" -> JsBoolean(true),
-        "some_double" -> JsNumber(1.0),
-        "some_array" -> JsArray(List(JsString("A"), JsString("B"))),
-        "some_json" -> JsObject(Map("hello" -> JsString("world")).toSeq)
+        "ID" -> JsNumber(0),
+        "KEY" -> JsNumber(1),
+        "SOME_TEXT" -> JsString("Hello"),
+        "SOME_BOOLEAN" -> JsBoolean(true),
+        "SOME_DOUBLE" -> JsNumber(1.0),
+        "SOME_ARRAY" -> JsArray(List(JsString("A"), JsString("B")))
       ))
-    }
-  }
-
-  describe ("Building the COPY SQL Statement") {
-
-    it ("should work") {
-      val result = dataStore.buildCopySql("someRelation", Set("key1", "key2", "id", "anotherKey"))
-      assert(result == "COPY someRelation(anotherKey, key1, key2) FROM STDIN CSV")
-    }
-
-  }
-
-  describe ("Building the COPY FROM STDIN data") {
-
-    it ("should work") {
-      val data = List[JsObject](
-       JsObject(Map("key1" -> JsString("hi"), "key2" -> JsString("hello")).toSeq),
-       JsObject(Map("key1" -> JsString("hi2"), "key2" -> JsNull).toSeq)
-      )
-      val strWriter = new StringWriter()
-      val resultFile = dataStore.writeCopyData(data.iterator, strWriter)
-      val result = strWriter.toString
-      assert(result == "\"hi\",\"hello\"\n\"hi2\",\n")
     }
   }
 
@@ -143,14 +129,19 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
         "some_boolean" -> JsBoolean(false),
         "some_double" -> JsNumber(13.37),
         "some_null" -> JsNull,
-        "some_array" -> JsArray(List(JsString("13"), JsString("37"))),
-        "some_json" -> JsObject(Map("Hello" -> JsString("World")).toSeq)
+        "some_array" -> JsArray(List(JsString("13"), JsString("37")))
       ).toSeq)
       dataStore.addBatch(List(testRow).iterator, "datatype_test")
-      val result = dataStore.queryAsJson("SELECT * from datatype_test")(_.toList)
-      val resultFields = result.head.fields
-      val expectedResult = testRow.value.filterKeys(_ != "some_null")
-      assert(resultFields.toMap.filterKeys(_ != "id").values.toSet == expectedResult.values.toSet) 
+      val result = dataStore.queryAsMap("SELECT * from datatype_test")(_.toList)
+      val resultFields = result.head
+      val expectedResult = testRow.value
+      assert(resultFields.filterKeys(_ != "ID") === Map[String, Any](
+        "KEY" -> 100,
+        "SOME_TEXT" -> "I am sample text.",
+        "SOME_BOOLEAN" -> false,
+        "SOME_DOUBLE" -> 13.37,
+        "SOME_ARRAY" -> List("13", "37")
+      )) 
     }
   }
 
@@ -162,14 +153,15 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
         "some_boolean" -> JsNull,
         "some_double" -> JsNull,
         "some_null" -> JsNull,
-        "some_array" -> jsonArr,
-        "some_json" -> JsNull
+        "some_array" -> jsonArr
       ).toSeq)
     dataStore.addBatch(List(testRow).iterator, "datatype_test")
-    val result = dataStore.queryAsJson("SELECT * from datatype_test")(_.toList)
-    val resultFields = result.head.fields
+    val result = dataStore.queryAsMap("SELECT * from datatype_test")(_.toList)
+    val resultFields = result.head
     val expectedResult = testRow.value
-    assert(resultFields.toMap.filterKeys(_ != "id") == Map("some_array" -> jsonArr)) 
+    assert(resultFields.filterKeys(_ != "ID") === Map[String, Any](
+        "SOME_ARRAY" -> List("dobj@","@prep_}as","dobj\"@nsubj","dobj@prep_\\","dobj@prep_to")
+      )) 
   }
 }
   

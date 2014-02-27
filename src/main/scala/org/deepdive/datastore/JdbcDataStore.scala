@@ -6,7 +6,9 @@ import scalikejdbc.config._
 import org.deepdive.Logging
 import com.typesafe.config._
 
-trait JdbcDataStore {
+trait JdbcDataStore extends Logging {
+
+  def DB = scalikejdbc.DB
 
   /* Borrows a connection from the connection pool. You should close the connection when done. */
   def borrowConnection() : Connection = ConnectionPool.borrow()
@@ -16,6 +18,19 @@ trait JdbcDataStore {
 
   /* Closes the connection pool and all of its connections */
   def close() = ConnectionPool.closeAll()
+
+  def bulkInsert(outputRelation: String, data: Iterator[Map[String, Any]])(implicit session: DBSession) = {
+    val columnNames = HSQLDataStore.DB.getColumnNames(outputRelation).sorted
+    val columnValues = columnNames.map (x => "?")
+    val copySQL = s"""INSERT INTO ${outputRelation}(${columnNames.mkString(", ")}) 
+      VALUES (${columnValues.mkString(", ")})"""
+    val tuples = data.map { tuple =>
+      columnNames.map(c => tuple.get(c).orElse(tuple.get(c.toLowerCase)).getOrElse(null))
+    }.toSeq
+    log.debug(s"copying num_records=${tuples.size} into relation=${outputRelation}")
+    SQL(copySQL).batch(tuples: _*).apply()
+  }
+
 
 }
 

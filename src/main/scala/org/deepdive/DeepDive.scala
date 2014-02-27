@@ -7,6 +7,7 @@ import java.io.File
 import org.deepdive.settings._
 import org.deepdive.datastore.{JdbcDataStore}
 import org.deepdive.extraction.{ExtractionManager, ExtractionTask, ExtractionTaskResult}
+import org.deepdive.extraction.datastore._
 import org.deepdive.inference.{InferenceManager, FactorGraphBuilder}
 import org.deepdive.profiling._
 import org.deepdive.calibration._
@@ -30,6 +31,8 @@ object DeepDive extends Logging {
     // Load Settings
     val settings = Settings.loadFromConfig(config)
 
+    val dbDriver = config.getString("deepdive.db.default.driver")
+    
     // Setup the data store
     JdbcDataStore.init(config)
 
@@ -40,9 +43,9 @@ object DeepDive extends Logging {
     val profiler = system.actorOf(Profiler.props, "profiler")
     val taskManager = system.actorOf(TaskManager.props, "taskManager")
     val inferenceManager = system.actorOf(InferenceManager.props(
-      taskManager, settings.schemaSettings.variables), "inferenceManager")
+      taskManager, settings.schemaSettings.variables, dbDriver), "inferenceManager")
     val extractionManager = system.actorOf(
-      ExtractionManager.props(settings.extractionSettings.parallelism), 
+      ExtractionManager.props(settings.extractionSettings.parallelism, dbDriver), 
       "extractionManager")
     
     // Build tasks for extractors

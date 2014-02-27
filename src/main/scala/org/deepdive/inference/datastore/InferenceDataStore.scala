@@ -6,12 +6,7 @@ import org.deepdive.settings.{FactorDesc, VariableDataType}
 import java.io.File
 
 
-/* Stores the factor graph and inference results. */
-trait InferenceDataStoreComponent {
-
-  def inferenceDataStore : InferenceDataStore
-
-  trait InferenceDataStore {
+trait InferenceDataStore {
 
     /* Initializes the data store. This method must be called before any other methods in this class. */
     def init() : Unit
@@ -24,7 +19,6 @@ trait InferenceDataStoreComponent {
 
     /* Generate a grounded graph based on the factor description */
     def groundFactorGraph(factorDesc: FactorDesc, holdoutFraction: Double) : Unit 
-
 
     /* 
      * Dumps the factor graphs with the given serializier
@@ -39,13 +33,18 @@ trait InferenceDataStoreComponent {
     def writebackInferenceResult(variableSchema: Map[String, _ <: VariableDataType],
         variableOutputFile: String, weightsOutputFile: String) : Unit
 
-    
+
     /* 
      * Gets calibration data for the given buckets.
      * writebackInferenceResult must be called before this method can be called.
      */
     def getCalibrationData(variable: String, dataType: VariableDataType, buckets: List[Bucket]) : Map[Bucket, BucketData]
 
-  }
-  
+}
+
+/* Stores the factor graph and inference results. */
+trait InferenceDataStoreComponent {
+
+  def inferenceDataStore : InferenceDataStore
+
 }
