@@ -4,6 +4,7 @@ import java.io.{File, FileInputStream, FileOutputStream}
 import org.deepdive.inference.ProtobufSerializer
 import org.deepdive.serialization.FactorGraphProtos
 import org.scalatest._
+import org.deepdive.settings._
 
 class ProtobufSerializerSpec extends FunSpec with BeforeAndAfter {
 
@@ -23,8 +24,8 @@ class ProtobufSerializerSpec extends FunSpec with BeforeAndAfter {
       val serializier = new ProtobufSerializer(oWeights, oVariables, oFactors, oEdges)
       serializier.addWeight(0, false, 0.0, "someFeature1")
       serializier.addWeight(1, true, 10.0, "someFeature2")
-      serializier.addVariable(0, None, "Boolean")
-      serializier.addVariable(1, None, "Boolean")
+      serializier.addVariable(0, None, BooleanType, None)
+      serializier.addVariable(1, None, BooleanType, None)
       serializier.addFactor(0, 0, "IsTrueFactorFunction")
       serializier.addFactor(1, 1, "ImplyFactorFunction")
       serializier.addEdge(0, 0, 0, true)

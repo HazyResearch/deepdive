@@ -14,14 +14,14 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester {
       val config = ConfigFactory.parseString("""
       schema.variables.relation1.var1 : Boolean
       schema.variables.relation1.var2 : Boolean
-      schema.variables.relation2.var3 : Boolean
+      schema.variables.relation2.var3 : Categorical(2)
       """).withFallback(defaultConfig)
       val loadSchemaSettings = PrivateMethod[SchemaSettings]('loadSchemaSettings)
       val result = SettingsParser invokePrivate loadSchemaSettings(config)
       assert(result == SchemaSettings(
-        Map("relation1.var1" -> "Boolean",
-          "relation1.var2" -> "Boolean",
-          "relation2.var3" -> "Boolean")))
+        Map("relation1.var1" -> BooleanType,
+          "relation1.var2" -> BooleanType,
+          "relation2.var3" -> MultinomialType(2))))
     }
   }
 

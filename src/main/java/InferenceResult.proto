@@ -1,0 +1,15 @@
+package deepdive;
+
+option java_package = "org.deepdive.serialization";
+option java_outer_classname = "InferenceResultProtos";
+
+message WeightInferenceResult {
+  required uint64 id = 1;
+  required double value = 2;
+}
+
+message VariableInferenceResult {
+  required uint64 id = 1;
+  optional uint64 category = 2;
+  required double expectation = 3;
+}

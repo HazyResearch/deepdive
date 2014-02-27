@@ -56,10 +56,10 @@ trait MemoryInferenceDataStoreComponent extends InferenceDataStoreComponent{
       weights += Tuple2(weight.id, weight)
     }
 
-    def dumpFactorGraph(serializer: Serializer) = {
+    def dumpFactorGraph(serializer: Serializer, schema: Map[String, _ <: VariableDataType]) = {
       // Weights
       weights.values.foreach { w => serializer.addWeight(w.id, w.isFixed, w.value, w.description) }
-      variables.values.foreach { v =>  serializer.addVariable(v.id, v.initialValue, v.dataType.toString) }
+      variables.values.foreach { v =>  serializer.addVariable(v.id, v.initialValue, v.dataType, v.dataType.cardinality) }
       factors.values.foreach { f => serializer.addFactor(f.id, f.weightId, f.factorFunction) }
       factors.values.flatMap(_.variables).foreach { edge =>
         serializer.addEdge(edge.variableId, edge.factorId, edge.position, edge.positive)
@@ -67,19 +67,14 @@ trait MemoryInferenceDataStoreComponent extends InferenceDataStoreComponent{
       serializer.close()
     }
 
-    def writebackInferenceResult(variableSchema: Map[String, String], 
+    def writebackInferenceResult(variableSchema: Map[String, _ <: VariableDataType], 
       variableOutputFile: String, weightsOutputFile: String) : Unit = {
-      val reader = new CSVReader(new FileReader(variableOutputFile), '\t')
-      val inferenceResult = reader.readAll()
-      inferenceResult.foreach { case Array(variableId, lastSample, probability) => 
-        variableValues += Tuple2(variableId.toLong, probability.toDouble)
-      }
-      reader.close()
-      log.info(s"read inference result from file=${variableOutputFile}")
-      // TODO: Write back the weights
+      // TODO
     }
 
-    def getCalibrationData(variable: String, buckets: List[Bucket]) : Map[Bucket, BucketData] = {
+    def getCalibrationData(variable: String, dataType: VariableDataType, buckets: List[Bucket]) : Map[Bucket, BucketData] = {
+      // TODO
+      return Map[Bucket, BucketData]()
       val Array(relation, column) = variable.split('.')
       val variablesWithValues = variables.values
         .filter(v => v.mappingRelation == relation && v.mappingColumn == column)

@@ -7,7 +7,7 @@ import akka.util.Timeout
 import java.io.File
 import org.deepdive.TaskManager
 import org.deepdive.calibration._
-import org.deepdive.settings.FactorDesc
+import org.deepdive.settings.{FactorDesc, VariableDataType}
 import org.deepdive.Context
 import scala.concurrent.duration._
 import scala.concurrent.{Future, Await}
@@ -21,7 +21,7 @@ trait InferenceManager extends Actor with ActorLogging {
   import context.dispatcher
 
   // All variables used in the system with their types
-  def variableSchema: Map[String, String]
+  def variableSchema: Map[String, _ <: VariableDataType]
   // Reference to the task manager
   def taskManager: ActorRef
   // Described how to start the factor graph builder
@@ -64,9 +64,9 @@ trait InferenceManager extends Actor with ActorLogging {
       log.info("writing calibration data")
       val calibrationWriter = context.actorOf(calibrationDataWriterProps)
       // Get and write calibraton data for each variable
-      val futures = variableSchema.keys.map { variable =>
+      val futures = variableSchema.map { case(variable, dataType) =>
         val filename = s"${Context.outputDir}/calibration/${variable}.tsv"
-        val data = inferenceDataStore.getCalibrationData(variable, Bucket.ten)
+        val data = inferenceDataStore.getCalibrationData(variable, dataType, Bucket.ten)
         calibrationWriter ? CalibrationDataWriter.WriteCalibrationData(filename, data)
       }
       Future.sequence(futures) pipeTo _sender
@@ -80,7 +80,7 @@ trait InferenceManager extends Actor with ActorLogging {
     val factorsOutput = new java.io.FileOutputStream(factorGraphDumpFileFactors, false)
     val edgesOutput = new java.io.FileOutputStream(factorGraphDumpFileEdges, false)
     val serializier = new ProtobufSerializer(weightsOutput, variablesOutput, factorsOutput, edgesOutput)
-    inferenceDataStore.dumpFactorGraph(serializier)
+    inferenceDataStore.dumpFactorGraph(serializier, variableSchema)
     weightsOutput.close()
     variablesOutput.close()
     factorsOutput.close()
@@ -104,7 +104,7 @@ trait InferenceManager extends Actor with ActorLogging {
 object InferenceManager {
 
   /* An inference manager that uses postgres as its datastore */
-  class PostgresInferenceManager(val taskManager: ActorRef, val variableSchema: Map[String, String]) 
+  class PostgresInferenceManager(val taskManager: ActorRef, val variableSchema: Map[String, _ <: VariableDataType]) 
     extends InferenceManager with PostgresInferenceDataStoreComponent {
     
     def factorGraphBuilderProps = 
@@ -113,8 +113,8 @@ object InferenceManager {
 
   // TODO: Refactor this to take the data store type as an argument
   def props(
-    taskManager: ActorRef, variableSchema: Map[String, String]) = 
-    Props(classOf[PostgresInferenceManager], taskManager, variableSchema: Map[String, String])
+    taskManager: ActorRef, variableSchema: Map[String, _ <: VariableDataType]) = 
+    Props(classOf[PostgresInferenceManager], taskManager, variableSchema)
 
   // Messages
   // ==================================================

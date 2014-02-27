@@ -14,11 +14,15 @@ message Variable {
     
   enum VariableDataType {
     BOOLEAN = 0;
+    MULTINOMIAL = 1;
+    REAL = 2;
   }
 
   required uint64 id = 1;
   optional double initialValue = 2;
   required VariableDataType dataType = 3;
+  optional bool isEvidence = 4;
+  optional uint64 cardinality = 5;
 
 }
 

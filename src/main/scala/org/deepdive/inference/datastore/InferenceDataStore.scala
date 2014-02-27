@@ -2,7 +2,7 @@ package org.deepdive.inference
 
 import org.deepdive.settings.FactorFunctionVariable
 import org.deepdive.calibration._
-import org.deepdive.settings.FactorDesc
+import org.deepdive.settings.{FactorDesc, VariableDataType}
 import java.io.File
 
 
@@ -29,14 +29,14 @@ trait InferenceDataStoreComponent {
     /* 
      * Dumps the factor graphs with the given serializier
      */
-    def dumpFactorGraph(serializer: Serializer) : Unit
+    def dumpFactorGraph(serializer: Serializer, schema: Map[String, _ <: VariableDataType]) : Unit
 
     /* 
      * Writes inference results produced by the sampler back to the data store.
      * The given file is a space-separated file with three columns:
      * VariableID, LastSampleValue, ExpectedValue
      */
-    def writebackInferenceResult(variableSchema: Map[String, String],
+    def writebackInferenceResult(variableSchema: Map[String, _ <: VariableDataType],
         variableOutputFile: String, weightsOutputFile: String) : Unit
 
     
@@ -44,7 +44,7 @@ trait InferenceDataStoreComponent {
      * Gets calibration data for the given buckets.
      * writebackInferenceResult must be called before this method can be called.
      */
-    def getCalibrationData(variable: String, buckets: List[Bucket]) : Map[Bucket, BucketData]
+    def getCalibrationData(variable: String, dataType: VariableDataType, buckets: List[Bucket]) : Map[Bucket, BucketData]
 
   }
   

@@ -1,6 +1,7 @@
 package org.deepdive.inference
 
 import org.deepdive.Logging
+import org.deepdive.settings._
 import org.deepdive.serialization.FactorGraphProtos
 import java.io.OutputStream
 
@@ -19,14 +20,18 @@ class ProtobufSerializer(weightsOuput: OutputStream, variablesOutput: OutputStre
     weightsOuput.synchronized { obj.writeDelimitedTo(weightsOuput) } 
   }
   
-  def addVariable(variableId: Long, initialValue: Option[Double], dataType: String) : Unit = {
+  def addVariable(variableId: Long, initialValue: Option[Double], dataType: VariableDataType, 
+    cardinality: Option[Long]) : Unit = {
     val variableBuilder = FactorGraphProtos.Variable.newBuilder
     variableBuilder.setId(variableId)
     if (initialValue.isDefined) variableBuilder.setInitialValue(initialValue.get)
-    val variableDataType = dataType match {
-      case "Boolean" => FactorGraphProtos.Variable.VariableDataType.BOOLEAN
-    }
-    variableBuilder.setDataType(variableDataType)
+    dataType match {
+      case BooleanType => 
+        variableBuilder.setDataType(FactorGraphProtos.Variable.VariableDataType.BOOLEAN)
+      case MultinomialType(n) =>
+        variableBuilder.setDataType(FactorGraphProtos.Variable.VariableDataType.MULTINOMIAL)
+        variableBuilder.setCardinality(n)
+    }    
     val obj = variableBuilder.build()
     variablesOutput.synchronized { obj.writeDelimitedTo(variablesOutput) }
   }

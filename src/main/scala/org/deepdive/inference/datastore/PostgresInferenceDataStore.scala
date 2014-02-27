@@ -68,10 +68,10 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
         variable_id bigint, 
         position int, is_positive boolean);""").execute()
 
-      // inference_result(id, last_sample, probability)
+      // inference_result(id, category, expectation)
       SQL(s"""drop table if exists ${VariableResultTable} CASCADE; 
-        create table ${VariableResultTable}(id bigint primary key, last_sample boolean, 
-        probability double precision);""").execute()
+        create table ${VariableResultTable}(id bigint, category bigint, 
+        expectation double precision);""").execute()
 
       // inference_result_weights(id, weight)
       SQL(s"""drop table if exists ${WeightResultTable} CASCADE; 
@@ -83,7 +83,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       SQL(s"""CREATE OR REPLACE VIEW ${MappedInferenceResultView} 
         AS SELECT ${VariablesTable}.*, ${LocalVariableMapTable}.mid, 
           ${LocalVariableMapTable}.mcol, ${LocalVariableMapTable}.mrel,
-          ${VariableResultTable}.last_sample, ${VariableResultTable}.probability 
+          ${VariableResultTable}.category, ${VariableResultTable}.expectation 
         FROM ${VariablesTable}, ${LocalVariableMapTable}, ${VariableResultTable}
         WHERE ${VariablesTable}.id = ${VariableResultTable}.id
           AND ${VariablesTable}.id = ${LocalVariableMapTable}.id;""").execute()
@@ -184,7 +184,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
 
     }
 
-    def dumpFactorGraph(serializer: Serializer) : Unit = {
+    def dumpFactorGraph(serializer: Serializer, schema: Map[String, _ <: VariableDataType]) : Unit = {
       // Add all weights
       log.info(s"Dumping factor graph...")
       log.info("Serializing weights...")
@@ -196,15 +196,25 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
           row[String]("description")
         )
       }
-      // Add all variables
-      log.info("Serializing variables...")
-      SQL(s"SELECT * from ${VariablesTable} order by id asc")().par.foreach { row =>
-        serializer.addVariable(
-          row[Long]("id"),
-          if (row[Boolean]("is_evidence")) row[Option[Double]]("initial_value") else None,
-          row[String]("data_type")
-        )
+      // Add all variables 
+      schema.foreach { case(relationField, dataType) => 
+        val Array(relationName, columnName) = relationField.split('.')
+        log.info(s"""Serializing variable=" ${relationField} " """)
+        SQL(s"""SELECT ${VariablesTable}.* FROM 
+            ${VariablesTable} INNER JOIN ${LocalVariableMapTable} 
+            ON ${VariablesTable}.id = ${LocalVariableMapTable}.id
+            WHERE ${LocalVariableMapTable}.mrel = '${relationName}'
+              AND ${LocalVariableMapTable}.mcol = '${columnName}'
+            ORDER BY ${VariablesTable}.id asc""")().par.foreach { row =>
+          serializer.addVariable(
+            row[Long](s"id"),
+            if (row[Boolean]("is_evidence")) row[Option[Double]]("initial_value") else None,
+            dataType,
+            dataType.cardinality
+          )
+        }
       }
+
       // Add all factors
       log.info("Serializing factors...")
       SQL(s"SELECT * from ${FactorsTable} order by id asc")().par.foreach { row =>
@@ -228,20 +238,34 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       serializer.close()
     }
 
-    def writebackInferenceResult(variableSchema: Map[String, String],
+    def writebackInferenceResult(variableSchema: Map[String, _ <: VariableDataType],
       variableOutputFile: String, weightsOutputFile: String) = {
       log.info("writing back inference result")
+
+      val deserializier = new ProtobufInferenceResultDeserializier()
+
+      // Copy the weight result back to the database
+      val weightResultStr = deserializier.getWeights(weightsOutputFile).map { w =>
+        s"${w.weightId}\t${w.value}"
+      }.mkString("\n")
+      PostgresDataStore.copyBatchData(s"COPY ${WeightResultTable}(id, weight) FROM STDIN",
+        new java.io.StringReader(weightResultStr))
+      SQL(s"""CREATE INDEX ${WeightResultTable}_idx 
+        ON ${WeightResultTable} using btree (weight);""").execute()
+
+      // Copy the variable result back into the database
+      val variableResultStr = deserializier.getVariables(variableOutputFile).map { v =>
+        s"${v.variableId}\t${v.category}\t${v.expectation}"
+      }.mkString("\n")
+       PostgresDataStore.copyBatchData(s"COPY ${VariableResultTable}(id, category, expectation) FROM STDIN",
+        new java.io.StringReader(variableResultStr))
+      SQL(s"CREATE INDEX ${VariableResultTable}_idx ON ${VariableResultTable} using btree (expectation);").execute()
+      SQL("analyze").execute()
 
       // Create useful indicies
       SQL(s"CREATE INDEX ${FactorsTable}_weight_id_idx ON ${FactorsTable} (weight_id);").execute()
       SQL(s"CREATE INDEX ${EdgesTable}_factor_id_idx ON ${EdgesTable} (factor_id);").execute()
       SQL(s"CREATE INDEX ${EdgesTable}_variable_id_idx ON ${EdgesTable} (variable_id);").execute()
-
-      // Copy the inference result back to the database
-      PostgresDataStore.copyBatchData(s"COPY ${VariableResultTable}(id, last_sample, probability) FROM STDIN",
-        Source.fromFile(variableOutputFile).reader())
-      SQL(s"CREATE INDEX ${VariableResultTable}_idx ON ${VariableResultTable} using btree (probability);").execute()
-      SQL("analyze").execute()
 
       // Each (relation, column) tuple is a variable in the plate model.
       // Find all (relation, column) combinations
@@ -249,27 +273,20 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
         case Array(relation, column) => (relation, column)
       } 
 
+      // TODO: Handle different data types
       // Generate a view for each (relation, column) combination.
       relationsColumns.foreach { case(relationName, columnName) => 
         val view_name = s"${relationName}_${columnName}_inference"
         log.info(s"creating view=${view_name}")
         SQL(s"""CREATE OR REPLACE VIEW ${view_name} AS
-          SELECT ${relationName}.*, mir.last_sample, mir.probability FROM
+          SELECT ${relationName}.*, mir.category, mir.expectation FROM
           ${relationName} JOIN
-            (SELECT mir.last_sample, mir.probability, mir.id, mir.mid 
+            (SELECT mir.category, mir.expectation, mir.id, mir.mid 
             FROM ${MappedInferenceResultView} mir 
             WHERE mrel = '${relationName}' AND mcol = '${columnName}'
-            ORDER BY mir.probability DESC) 
+            ORDER BY mir.expectation DESC) 
           mir ON ${relationName}.id = mir.mid""").execute()
       }
-
-
-      // Copy the weight result back to the database
-      PostgresDataStore.copyBatchData(s"COPY ${WeightResultTable}(id, weight) FROM STDIN",
-        Source.fromFile(weightsOutputFile).reader())
-      SQL(s"""CREATE INDEX ${WeightResultTable}_idx 
-        ON ${WeightResultTable} using btree (weight);""").execute()
-      SQL("analyze").execute()
       
       // Create a view that maps weight descriptions to the weight values
       val mappedVeightsView = s"${VariableResultTable}_mapped_weights"
@@ -308,7 +325,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       
     }
 
-    def getCalibrationData(variable: String, buckets: List[Bucket]) : Map[Bucket, BucketData] = {
+    def getCalibrationData(variable: String, dataType: VariableDataType, buckets: List[Bucket]) : Map[Bucket, BucketData] = {
       val Array(relationName, columnName) = variable.split('.')
       val inference_view = s"${relationName}_${columnName}_inference"
       val bucketed_view = s"${relationName}_${columnName}_inference_bucketed"
@@ -316,7 +333,7 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       
       // Generate a temporary bucketed view
       val bucketCaseStatement = buckets.zipWithIndex.map { case(bucket, index) =>
-        s"when probability >= ${bucket.from} and probability <= ${bucket.to} then ${index}"
+        s"when expectation >= ${bucket.from} and expectation <= ${bucket.to} then ${index}"
       }.mkString("\n")
       SQL(s"""create or replace view ${bucketed_view} AS
         SELECT ${inference_view}.*, case ${bucketCaseStatement} end bucket
@@ -324,14 +341,28 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       log.info(s"created bucketed_inference_view=${bucketed_view}")
 
       // Generate the calibration view
-      SQL(s"""create or replace view ${calibration_view} AS
-        SELECT b1.bucket, b1.numVariables, b2.numTrue, b3.numFalse FROM
-        (SELECT bucket, COUNT(*) AS numVariables from ${bucketed_view} GROUP BY bucket) b1
-        LEFT JOIN (SELECT bucket, COUNT(*) AS numTrue from ${bucketed_view} 
-          WHERE ${columnName}=true GROUP BY bucket) b2 ON b1.bucket = b2.bucket
-        LEFT JOIN (SELECT bucket, COUNT(*) AS numFalse from ${bucketed_view} 
-          WHERE ${columnName}=false GROUP BY bucket) b3 ON b1.bucket = b3.bucket 
-        ORDER BY b1.bucket ASC""").execute()
+      val calibrationViewQuery = dataType match {
+        case BooleanType => 
+          s"""create or replace view ${calibration_view} AS
+            SELECT b1.bucket, b1.numVariables, b2.numCorrect, b3.numIncorrect FROM
+            (SELECT bucket, COUNT(*) AS numVariables from ${bucketed_view} GROUP BY bucket) b1
+            LEFT JOIN (SELECT bucket, COUNT(*) AS numCorrect from ${bucketed_view} 
+              WHERE ${columnName}=true GROUP BY bucket) b2 ON b1.bucket = b2.bucket
+            LEFT JOIN (SELECT bucket, COUNT(*) AS numIncorrect from ${bucketed_view} 
+              WHERE ${columnName}=false GROUP BY bucket) b3 ON b1.bucket = b3.bucket 
+          ORDER BY b1.bucket ASC"""
+        case MultinomialType(_) =>
+          s"""create or replace view ${calibration_view} AS
+            SELECT b1.bucket, b1.numVariables, b2.numCorrect, b3.numIncorrect FROM
+            (SELECT bucket, COUNT(*) AS numVariables from ${bucketed_view} GROUP BY bucket) b1
+            LEFT JOIN (SELECT bucket, COUNT(*) AS numCorrect from ${bucketed_view} 
+              WHERE ${columnName} = category GROUP BY bucket) b2 ON b1.bucket = b2.bucket
+            LEFT JOIN (SELECT bucket, COUNT(*) AS numIncorrect from ${bucketed_view} 
+              WHERE ${columnName} != category GROUP BY bucket) b3 ON b1.bucket = b3.bucket 
+          ORDER BY b1.bucket ASC"""
+
+      }
+      SQL(calibrationViewQuery).execute()
 
       log.info(s"created calibration_view=${calibration_view}")
 
@@ -339,8 +370,8 @@ trait PostgresInferenceDataStoreComponent extends InferenceDataStoreComponent {
       val bucketData = SQL(s"SELECT * from ${calibration_view}")().map { row =>
         val bucket = row[Long]("bucket")
         val data = BucketData(row[Option[Long]]("numVariables").getOrElse(0),
-          row[Option[Long]]("numTrue").getOrElse(0), 
-          row[Option[Long]]("numFalse").getOrElse(0))
+          row[Option[Long]]("numCorrect").getOrElse(0), 
+          row[Option[Long]]("numIncorrect").getOrElse(0))
         (bucket, data)
       }.toMap
 

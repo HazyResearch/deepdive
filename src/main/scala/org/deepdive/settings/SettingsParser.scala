@@ -31,8 +31,11 @@ object SettingsParser extends Logging {
     val relationsWithConfig = relations.zip(relations.map(variableConfig.getConfig))
     val variableMap = relationsWithConfig.flatMap { case(relation, relationConf) =>
       relationConf.root.keySet.map { attributeName =>
-        Tuple2(s"${relation}.${attributeName}", 
-          relationConf.getString(attributeName))
+        val dataTypeStr = relationConf.getString(attributeName)
+        val dataType = DataTypeParser.parse(DataTypeParser.dataType, dataTypeStr).getOrElse {
+          throw new RuntimeException(s"Unknown data type: ${dataTypeStr}")
+        }
+        Tuple2(s"${relation}.${attributeName}", dataType)
       }
     }.toMap
     SchemaSettings(variableMap)

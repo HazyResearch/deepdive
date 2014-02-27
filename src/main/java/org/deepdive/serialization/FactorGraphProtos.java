@@ -770,6 +770,26 @@ public final class FactorGraphProtos {
      * <code>required .deepdive.Variable.VariableDataType dataType = 3;</code>
      */
     org.deepdive.serialization.FactorGraphProtos.Variable.VariableDataType getDataType();
+
+    // optional bool isEvidence = 4;
+    /**
+     * <code>optional bool isEvidence = 4;</code>
+     */
+    boolean hasIsEvidence();
+    /**
+     * <code>optional bool isEvidence = 4;</code>
+     */
+    boolean getIsEvidence();
+
+    // optional uint64 cardinality = 5;
+    /**
+     * <code>optional uint64 cardinality = 5;</code>
+     */
+    boolean hasCardinality();
+    /**
+     * <code>optional uint64 cardinality = 5;</code>
+     */
+    long getCardinality();
   }
   /**
    * Protobuf type {@code deepdive.Variable}
@@ -843,6 +863,16 @@ public final class FactorGraphProtos {
               }
               break;
             }
+            case 32: {
+              bitField0_ |= 0x00000008;
+              isEvidence_ = input.readBool();
+              break;
+            }
+            case 40: {
+              bitField0_ |= 0x00000010;
+              cardinality_ = input.readUInt64();
+              break;
+            }
           }
         }
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -891,12 +921,28 @@ public final class FactorGraphProtos {
        * <code>BOOLEAN = 0;</code>
        */
       BOOLEAN(0, 0),
+      /**
+       * <code>MULTINOMIAL = 1;</code>
+       */
+      MULTINOMIAL(1, 1),
+      /**
+       * <code>REAL = 2;</code>
+       */
+      REAL(2, 2),
       ;
 
       /**
        * <code>BOOLEAN = 0;</code>
        */
       public static final int BOOLEAN_VALUE = 0;
+      /**
+       * <code>MULTINOMIAL = 1;</code>
+       */
+      public static final int MULTINOMIAL_VALUE = 1;
+      /**
+       * <code>REAL = 2;</code>
+       */
+      public static final int REAL_VALUE = 2;
 
 
       public final int getNumber() { return value; }
@@ -904,6 +950,8 @@ public final class FactorGraphProtos {
       public static VariableDataType valueOf(int value) {
         switch (value) {
           case 0: return BOOLEAN;
+          case 1: return MULTINOMIAL;
+          case 2: return REAL;
           default: return null;
         }
       }
@@ -1004,10 +1052,44 @@ public final class FactorGraphProtos {
       return dataType_;
     }
 
+    // optional bool isEvidence = 4;
+    public static final int ISEVIDENCE_FIELD_NUMBER = 4;
+    private boolean isEvidence_;
+    /**
+     * <code>optional bool isEvidence = 4;</code>
+     */
+    public boolean hasIsEvidence() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    /**
+     * <code>optional bool isEvidence = 4;</code>
+     */
+    public boolean getIsEvidence() {
+      return isEvidence_;
+    }
+
+    // optional uint64 cardinality = 5;
+    public static final int CARDINALITY_FIELD_NUMBER = 5;
+    private long cardinality_;
+    /**
+     * <code>optional uint64 cardinality = 5;</code>
+     */
+    public boolean hasCardinality() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    /**
+     * <code>optional uint64 cardinality = 5;</code>
+     */
+    public long getCardinality() {
+      return cardinality_;
+    }
+
     private void initFields() {
       id_ = 0L;
       initialValue_ = 0D;
       dataType_ = org.deepdive.serialization.FactorGraphProtos.Variable.VariableDataType.BOOLEAN;
+      isEvidence_ = false;
+      cardinality_ = 0L;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -1038,6 +1120,12 @@ public final class FactorGraphProtos {
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         output.writeEnum(3, dataType_.getNumber());
       }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeBool(4, isEvidence_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeUInt64(5, cardinality_);
+      }
       getUnknownFields().writeTo(output);
     }
 
@@ -1058,6 +1146,14 @@ public final class FactorGraphProtos {
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
           .computeEnumSize(3, dataType_.getNumber());
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(4, isEvidence_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt64Size(5, cardinality_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -1181,6 +1277,10 @@ public final class FactorGraphProtos {
         bitField0_ = (bitField0_ & ~0x00000002);
         dataType_ = org.deepdive.serialization.FactorGraphProtos.Variable.VariableDataType.BOOLEAN;
         bitField0_ = (bitField0_ & ~0x00000004);
+        isEvidence_ = false;
+        bitField0_ = (bitField0_ & ~0x00000008);
+        cardinality_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000010);
         return this;
       }
 
@@ -1221,6 +1321,14 @@ public final class FactorGraphProtos {
           to_bitField0_ |= 0x00000004;
         }
         result.dataType_ = dataType_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.isEvidence_ = isEvidence_;
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        result.cardinality_ = cardinality_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1245,6 +1353,12 @@ public final class FactorGraphProtos {
         }
         if (other.hasDataType()) {
           setDataType(other.getDataType());
+        }
+        if (other.hasIsEvidence()) {
+          setIsEvidence(other.getIsEvidence());
+        }
+        if (other.hasCardinality()) {
+          setCardinality(other.getCardinality());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -1379,6 +1493,72 @@ public final class FactorGraphProtos {
       public Builder clearDataType() {
         bitField0_ = (bitField0_ & ~0x00000004);
         dataType_ = org.deepdive.serialization.FactorGraphProtos.Variable.VariableDataType.BOOLEAN;
+        onChanged();
+        return this;
+      }
+
+      // optional bool isEvidence = 4;
+      private boolean isEvidence_ ;
+      /**
+       * <code>optional bool isEvidence = 4;</code>
+       */
+      public boolean hasIsEvidence() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      /**
+       * <code>optional bool isEvidence = 4;</code>
+       */
+      public boolean getIsEvidence() {
+        return isEvidence_;
+      }
+      /**
+       * <code>optional bool isEvidence = 4;</code>
+       */
+      public Builder setIsEvidence(boolean value) {
+        bitField0_ |= 0x00000008;
+        isEvidence_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional bool isEvidence = 4;</code>
+       */
+      public Builder clearIsEvidence() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        isEvidence_ = false;
+        onChanged();
+        return this;
+      }
+
+      // optional uint64 cardinality = 5;
+      private long cardinality_ ;
+      /**
+       * <code>optional uint64 cardinality = 5;</code>
+       */
+      public boolean hasCardinality() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
+      }
+      /**
+       * <code>optional uint64 cardinality = 5;</code>
+       */
+      public long getCardinality() {
+        return cardinality_;
+      }
+      /**
+       * <code>optional uint64 cardinality = 5;</code>
+       */
+      public Builder setCardinality(long value) {
+        bitField0_ |= 0x00000010;
+        cardinality_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional uint64 cardinality = 5;</code>
+       */
+      public Builder clearCardinality() {
+        bitField0_ = (bitField0_ & ~0x00000010);
+        cardinality_ = 0L;
         onChanged();
         return this;
       }
@@ -4601,23 +4781,24 @@ public final class FactorGraphProtos {
     java.lang.String[] descriptorData = {
       "\n\021FactorGraph.proto\022\010deepdive\"S\n\006Weight\022" +
       "\n\n\002id\030\001 \002(\004\022\027\n\014initialValue\030\002 \001(\001:\0010\022\017\n\007" +
-      "isFixed\030\003 \002(\010\022\023\n\013description\030\004 \001(\t\"\204\001\n\010V" +
+      "isFixed\030\003 \002(\010\022\023\n\013description\030\004 \001(\t\"\310\001\n\010V" +
       "ariable\022\n\n\002id\030\001 \002(\004\022\024\n\014initialValue\030\002 \001(" +
       "\001\0225\n\010dataType\030\003 \002(\0162#.deepdive.Variable." +
-      "VariableDataType\"\037\n\020VariableDataType\022\013\n\007" +
-      "BOOLEAN\020\000\"\254\001\n\006Factor\022\n\n\002id\030\001 \002(\004\022\020\n\010weig" +
-      "htId\030\002 \002(\004\022;\n\016factorFunction\030\003 \002(\0162#.dee" +
-      "pdive.Factor.FactorFunctionType\"G\n\022Facto" +
-      "rFunctionType\022\t\n\005IMPLY\020\000\022\006\n\002OR\020\001\022\007\n\003AND\020",
-      "\002\022\t\n\005EQUAL\020\003\022\n\n\006ISTRUE\020\004\"]\n\tGraphEdge\022\022\n" +
-      "\nvariableId\030\001 \002(\004\022\020\n\010factorId\030\002 \002(\004\022\020\n\010p" +
-      "osition\030\003 \002(\004\022\030\n\nisPositive\030\004 \001(\010:\004true\"" +
-      "\232\001\n\013FactorGraph\022 \n\006weight\030\001 \003(\0132\020.deepdi" +
-      "ve.Weight\022$\n\010variable\030\002 \003(\0132\022.deepdive.V" +
-      "ariable\022 \n\006factor\030\003 \003(\0132\020.deepdive.Facto" +
-      "r\022!\n\004edge\030\004 \003(\0132\023.deepdive.GraphEdgeB/\n\032" +
-      "org.deepdive.serializationB\021FactorGraphP" +
-      "rotos"
+      "VariableDataType\022\022\n\nisEvidence\030\004 \001(\010\022\023\n\013" +
+      "cardinality\030\005 \001(\004\":\n\020VariableDataType\022\013\n" +
+      "\007BOOLEAN\020\000\022\017\n\013MULTINOMIAL\020\001\022\010\n\004REAL\020\002\"\254\001" +
+      "\n\006Factor\022\n\n\002id\030\001 \002(\004\022\020\n\010weightId\030\002 \002(\004\022;" +
+      "\n\016factorFunction\030\003 \002(\0162#.deepdive.Factor",
+      ".FactorFunctionType\"G\n\022FactorFunctionTyp" +
+      "e\022\t\n\005IMPLY\020\000\022\006\n\002OR\020\001\022\007\n\003AND\020\002\022\t\n\005EQUAL\020\003" +
+      "\022\n\n\006ISTRUE\020\004\"]\n\tGraphEdge\022\022\n\nvariableId\030" +
+      "\001 \002(\004\022\020\n\010factorId\030\002 \002(\004\022\020\n\010position\030\003 \002(" +
+      "\004\022\030\n\nisPositive\030\004 \001(\010:\004true\"\232\001\n\013FactorGr" +
+      "aph\022 \n\006weight\030\001 \003(\0132\020.deepdive.Weight\022$\n" +
+      "\010variable\030\002 \003(\0132\022.deepdive.Variable\022 \n\006f" +
+      "actor\030\003 \003(\0132\020.deepdive.Factor\022!\n\004edge\030\004 " +
+      "\003(\0132\023.deepdive.GraphEdgeB/\n\032org.deepdive" +
+      ".serializationB\021FactorGraphProtos"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -4635,7 +4816,7 @@ public final class FactorGraphProtos {
           internal_static_deepdive_Variable_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_deepdive_Variable_descriptor,
-              new java.lang.String[] { "Id", "InitialValue", "DataType", });
+              new java.lang.String[] { "Id", "InitialValue", "DataType", "IsEvidence", "Cardinality", });
           internal_static_deepdive_Factor_descriptor =
             getDescriptor().getMessageTypes().get(2);
           internal_static_deepdive_Factor_fieldAccessorTable = new

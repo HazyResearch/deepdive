@@ -5,6 +5,7 @@ import akka.testkit._
 import org.deepdive.calibration._
 import org.deepdive.inference._
 import org.scalatest._
+import org.deepdive.settings.{BooleanType, VariableDataType}
 import scala.util.Success
 
 class Forwarder(target: ActorRef) extends Actor {
@@ -16,7 +17,7 @@ class TestInferenceManager(
   val samplerProbe: ActorRef,
   val factorGraphBuilderProbe: ActorRef,
   val cdwProbe: ActorRef,
-  val variableSchema: Map[String, String]) 
+  val variableSchema: Map[String, _ <: VariableDataType]) 
   extends InferenceManager with MemoryInferenceDataStoreComponent {
     def factorGraphBuilderProps = Props(classOf[Forwarder], factorGraphBuilderProbe)
     override def samplerProps  = Props(classOf[Forwarder], samplerProbe)
@@ -31,7 +32,7 @@ class InferenceManagerSpec(_system: ActorSystem) extends TestKit(_system) with F
   val sampler = TestProbe()
   val factorGraphBuilder = TestProbe()
   val cdw = TestProbe()
-  val schema = Map("r1.c1" -> "Boolean", "r2.c1" -> "Boolean", "r2.c2" -> "Boolean")
+  val schema = Map("r1.c1" -> BooleanType, "r2.c1" -> BooleanType, "r2.c2" -> BooleanType)
   def actorProps = Props(classOf[TestInferenceManager], taskManager.ref, sampler.ref, 
     factorGraphBuilder.ref, cdw.ref, schema)
 
@@ -65,7 +66,7 @@ class InferenceManagerSpec(_system: ActorSystem) extends TestKit(_system) with F
       cdw.reply("Done")
       cdw.expectMsgClass(classOf[CalibrationDataWriter.WriteCalibrationData])
       cdw.reply("Done")
-      expectMsg(Set("Done"))
+      expectMsg(List("Done", "Done", "Done"))
     }
   }
 

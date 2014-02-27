@@ -23,6 +23,12 @@ class LogisticRegressionApp extends FunSpec {
   }
 
   def getConfig = {
+    val sqlQuery = s"""${"\"\"\""}
+      SELECT word_presences.id AS "word_presences.id", word_presences.is_present AS "word_presences.is_present", 
+      titles.id as "titles.id", titles.has_extractions AS "titles.has_extractions" ,
+      word_presences.word AS "word_presences.word"
+      FROM word_presences INNER JOIN titles ON word_presences.title_id = titles.id${"\"\"\""}"""
+
     s"""
       deepdive.schema.variables {
         word_presences.is_present: Boolean
@@ -41,7 +47,7 @@ class LogisticRegressionApp extends FunSpec {
       }
 
       deepdive.inference.factors {
-        wordFactor.input_query = "SELECT word_presences.*, titles.* FROM word_presences INNER JOIN titles ON word_presences.title_id = titles.id"
+        wordFactor.input_query = ${sqlQuery}
         wordFactor.function: "Imply(word_presences.is_present, titles.has_extractions)"
         wordFactor.weight: "?(word_presences.word)"
       }
@@ -82,7 +88,7 @@ class LogisticRegressionApp extends FunSpec {
         WHERE is_evidence = true""")().head[Long]("c")
       val numQuery = SQL("""
         select count(*) as c from dd_graph_variables 
-        WHERE is_query = true""")().head[Long]("c")
+        WHERE is_evidence = false""")().head[Long]("c")
       // 1 title and 12 words are evidence
       assert(numEvidence == 13)
       assert(numQuery == 2)
