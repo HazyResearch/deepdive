@@ -478,6 +478,13 @@ In order to evaluate our results, we also want to define a *holdout fraction* fo
 
     calibration.holdout_fraction: 0.25
 
+Finally, there is one last technical details we need to pay attention to. Our first rule is very sparse, in other words, the same features usually only applies to a few candidates that we extract. Our second rule on the other hand applies to every candidate, which means that DeepDive will learn a very high weight for it. This discrepancy can lead to longer convergence times during the inference step if we don't select a correct "learning rate". For such a case, let's change the learning rate from the default of "0.1" to the "0.001" by adding the following sampler options to the configuration file:
+
+    sampler.sampler_args: "-l 125 -s 1 -i 200 --alpha 0.001"
+
+For more information about these options take a look at [the sampler README on github](https://github.com/dennybritz/sampler).
+
+
 <a id="evaluation" href="#"> </a>
 
 ### Evaluating the result
