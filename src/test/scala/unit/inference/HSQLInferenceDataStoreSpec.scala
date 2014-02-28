@@ -16,7 +16,7 @@ class HSQLInferenceDataStoreSpec extends SQLInferenceDataStoreSpec
     val configurationStr = """
     deepdive.db.default: {
       driver: "org.hsqldb.jdbc.JDBCDriver"
-      url: "jdbc:hsqldb:hsql://localhost/deepdive_test"
+      url: "jdbc:hsqldb:mem:deepdive_test"
       user: "SA"
       password: ""
     }"""

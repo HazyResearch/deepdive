@@ -4,6 +4,7 @@ import org.deepdive.datastore.JdbcDataStore
 import org.deepdive.Logging
 import play.api.libs.json._
 import scalikejdbc._
+import java.io.BufferedReader
 
 trait JdbcExtractionDataStore extends ExtractionDataStore[JsObject] with Logging {
 
@@ -30,6 +31,9 @@ trait JdbcExtractionDataStore extends ExtractionDataStore[JsObject] with Logging
     def unwrapSQLType(x: Any) : Any = {
       x match {
         case x : org.hsqldb.jdbc.JDBCArray => x.getArray().asInstanceOf[Array[_]].toList
+        case x : org.hsqldb.jdbc.JDBCClobClient => 
+          val reader = new BufferedReader(x.getCharacterStream)
+          Stream.continually(reader.readLine()).takeWhile(_ != null).mkString("\n")
         case x : org.postgresql.jdbc4.Jdbc4Array => x.getArray().asInstanceOf[Array[_]].toList
         case x : org.postgresql.util.PGobject =>
           x.getType match {

@@ -111,7 +111,7 @@ object InferenceManager {
   }
 
   class HSQLInferenceManager(val taskManager: ActorRef, val variableSchema: Map[String, _ <: VariableDataType]) 
-    extends InferenceManager with PostgresInferenceDataStoreComponent {
+    extends InferenceManager with HSQLInferenceDataStoreComponent {
     def factorGraphBuilderProps = 
       Props(classOf[FactorGraphBuilder.HSQLFactorGraphBuilder], variableSchema)
   }

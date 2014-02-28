@@ -19,7 +19,7 @@ class HSQLExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
   val configurationStr = """
     deepdive.db.default: {
       driver: "org.hsqldb.jdbc.JDBCDriver"
-      url: "jdbc:hsqldb:hsql://localhost/deepdive_test"
+      url: "jdbc:hsqldb:mem:deepdive_test"
       user: "SA"
       password: ""
     }"""
@@ -32,7 +32,7 @@ class HSQLExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
     SQL("""drop table if exists datatype_test;""").execute()
     SQL("""create table datatype_test(id bigint identity primary key, key integer, some_text longvarchar, 
       some_boolean boolean, some_double double precision, some_null boolean, 
-      some_array longvarchar array);""").execute()
+      some_array longvarchar array, some_longtext clob);""").execute()
   }
 
   after {
@@ -88,10 +88,10 @@ class HSQLExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
   describe("Serializing to JSON") {  
 
     def insertSampleRow() : Unit = {
-      SQL("""insert into datatype_test(key, some_text, some_boolean, some_double, some_array) 
+      SQL("""insert into datatype_test(key, some_text, some_boolean, some_double, some_array, some_longtext) 
         VALUES 
-          (1, 'Hello', true, 1.0, ARRAY['A', 'B']), 
-          (1, 'Ce', false, 2.3, ARRAY['C', 'D'])""").execute()
+          (1, 'Hello', true, 1.0, ARRAY['A', 'B'], '0'), 
+          (1, 'Ce', false, 2.3, ARRAY['C', 'D'], '1')""").execute()
     }
 
     it("should work with aggregate data types") {
@@ -115,7 +115,8 @@ class HSQLExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
         "SOME_TEXT" -> JsString("Hello"),
         "SOME_BOOLEAN" -> JsBoolean(true),
         "SOME_DOUBLE" -> JsNumber(1.0),
-        "SOME_ARRAY" -> JsArray(List(JsString("A"), JsString("B")))
+        "SOME_ARRAY" -> JsArray(List(JsString("A"), JsString("B"))),
+        "SOME_LONGTEXT" -> JsString("0")
       ))
     }
   }
@@ -129,7 +130,8 @@ class HSQLExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
         "some_boolean" -> JsBoolean(false),
         "some_double" -> JsNumber(13.37),
         "some_null" -> JsNull,
-        "some_array" -> JsArray(List(JsString("13"), JsString("37")))
+        "some_array" -> JsArray(List(JsString("13"), JsString("37"))),
+        "some_longtext" -> JsString("Hello")
       ).toSeq)
       dataStore.addBatch(List(testRow).iterator, "datatype_test")
       val result = dataStore.queryAsMap("SELECT * from datatype_test")(_.toList)
@@ -140,7 +142,8 @@ class HSQLExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
         "SOME_TEXT" -> "I am sample text.",
         "SOME_BOOLEAN" -> false,
         "SOME_DOUBLE" -> 13.37,
-        "SOME_ARRAY" -> List("13", "37")
+        "SOME_ARRAY" -> List("13", "37"),
+        "SOME_LONGTEXT" -> "Hello"
       )) 
     }
   }
