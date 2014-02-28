@@ -64,9 +64,10 @@ DeepDive's main entry point is a file called `application.conf` which contains d
 {% highlight bash %}
 cp ../../examples/template/application.conf application.conf
 cp ../../examples/template/run.sh run.sh
+cp ../../examples/template/env.sh env.sh
 {% endhighlight %}
 
-Starty modifying the `run.sh` file with your database name:
+Starty modifying the `env.sh` file with your database name:
   
 {% highlight bash %}
 export DBNAME=deepdive_spouse
