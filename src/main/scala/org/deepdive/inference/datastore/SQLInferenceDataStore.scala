@@ -70,6 +70,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       factor_function ${stringType}, 
       factor_group ${stringType}, 
       qid bigint);
+    CREATE INDEX ${FactorsTable}_id_idx ON ${FactorsTable}(id);
+    CREATE INDEX ${FactorsTable}_qid_idx ON ${FactorsTable}(qid);
   """
 
   def createVariablesSQL = s"""
@@ -89,6 +91,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       mcol ${stringType},
       mid bigint,
       CONSTRAINT c_pkey UNIQUE (mrel, mcol, mid));
+    CREATE INDEX ${LocalVariableMapTable}_id_idx ON ${LocalVariableMapTable}(id);
+    CREATE INDEX ${LocalVariableMapTable}_id_all_idx ON ${LocalVariableMapTable}(mrel, mcol, mid);
   """
 
   def alterSequencesSQL = s"""
@@ -386,8 +390,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       val vColumn = variable.field
       val vidColumn = s"${variable.relation}.id"
       val variableDataType = factorDesc.func.variableDataType
-      log.info(s"""Inserting variable="${variable.toString}"...""")
+      log.info(s"""Inserting local variable="${variable.toString}"...""")
       execute(groundInsertLocalVariablesSQL(vRelation, vColumn, vidColumn, queryName))
+      log.info(s"""Inserting global variable="${variable.toString}"...""")
       execute(groundInsertGlobalVariablesSQL(vRelation, vColumn, vidColumn, 
         variable.toString, variableDataType, holdoutFraction, queryName))
       log.info(s"""Inserting edges for variable="${variable.toString}"...""")
