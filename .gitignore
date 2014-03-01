@@ -6,3 +6,4 @@ log/
 out/
 *.sublime-project
 *.sublime-workspace
+hsql:*

@@ -13,6 +13,7 @@ import org.deepdive.profiling._
 import org.deepdive.calibration._
 import scala.concurrent.duration._
 import scala.concurrent.{Future, Await}
+import scala.io.Source
 import scala.util.{Try, Success, Failure}
 
 object DeepDive extends Logging {
@@ -35,6 +36,11 @@ object DeepDive extends Logging {
     
     // Setup the data store
     JdbcDataStore.init(config)
+    settings.schemaSettings.setupFile.foreach { file =>
+      log.info(s"Setting up the schema using ${file}")
+      val cmd = Source.fromFile(file).getLines.mkString("\n")
+      JdbcDataStore.executeCmd(cmd)
+    }
 
     implicit val timeout = Timeout(1337 hours)
     implicit val ec = system.dispatcher

@@ -24,7 +24,7 @@ object SettingsParser extends Logging {
   private def loadSchemaSettings(config: Config) : SchemaSettings = {
     val schemaConfig = Try(config.getConfig("schema")).getOrElse {
       log.warning("No schema defined.")
-      return SchemaSettings(Nil.toMap)
+      return SchemaSettings(Nil.toMap, None)
     }
     val variableConfig = schemaConfig.getConfig("variables")
     val relations = variableConfig.root.keySet.toList
@@ -38,7 +38,8 @@ object SettingsParser extends Logging {
         Tuple2(s"${relation}.${attributeName}", dataType)
       }
     }.toMap
-    SchemaSettings(variableMap)
+    val setupFile = Try(schemaConfig.getString("setup"))
+    SchemaSettings(variableMap, setupFile.toOption)
   }
 
   private def loadExtractionSettings(config: Config) : ExtractionSettings = {

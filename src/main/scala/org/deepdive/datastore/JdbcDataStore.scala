@@ -31,10 +31,15 @@ trait JdbcDataStore extends Logging {
     SQL(copySQL).batch(tuples: _*).apply()
   }
 
-
 }
 
 object JdbcDataStore extends Logging {
+
+  def executeCmd(cmd: String) : Unit = {
+    DB.autoCommit { implicit session =>
+      """;\s+""".r.split(cmd.trim()).filterNot(_.isEmpty).foreach(q => SQL(q.trim()).execute.apply())
+    }
+  }
 
   class JdbcDBsWithEnv(envValue: String, configObj: Config) extends DBsWithEnv(envValue) {
     override lazy val config = configObj

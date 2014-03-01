@@ -1,7 +1,7 @@
 package org.deepdive.settings
 
 /* Schema Settings */
-case class SchemaSettings(variables: Map[String, _ <: VariableDataType])
+case class SchemaSettings(variables: Map[String, _ <: VariableDataType], setupFile: Option[String])
 
 sealed trait VariableDataType {
   def cardinality: Option[Long]
