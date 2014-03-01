@@ -169,23 +169,25 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     DROP VIEW IF EXISTS ${name}_tmp CASCADE;
     DROP VIEW IF EXISTS ${name} CASCADE;
     CREATE VIEW ${name}_tmp AS (${query});
-    CREATE VIEW ${name} AS 
+    CREATE TABLE ${name} AS 
     (SELECT row_number() OVER() - 1 as factor_id,
-      ${name}_tmp.*, ${weightCmd} AS "dd_weight"
-    FROM ${name}_tmp);
+      ${name}_tmp.*, ${weightCmd} AS dd_weight
+    FROM ${name}_tmp) WITH DATA;
+    CREATE INDEX ${name}_factor_id_idx ON ${name}(factor_id);
+    CREATE INDEX ${name}_weight_idx ON ${name}(dd_weight);
     """
   }
 
   def groundInsertWeightsSQL(weightValue: Double, is_fixed: Boolean, queryName: String) = s"""
     INSERT INTO ${WeightsTable}(description, initial_value, is_fixed)
-    (SELECT DISTINCT "dd_weight", ${weightValue}, ${is_fixed} FROM ${queryName});
+    (SELECT DISTINCT dd_weight, ${weightValue}, ${is_fixed} FROM ${queryName});
   """
 
   def groundInsertFactorsSQL(factorFunc: String, factorGroup: String, queryName: String) = s"""
     INSERT INTO ${FactorsTable}(weight_id, factor_function, factor_group, qid)
     (SELECT ${WeightsTable}.id, '${factorFunc}', '${factorGroup}', factor_id
     FROM ${queryName}, ${WeightsTable}
-    WHERE "dd_weight" = ${WeightsTable}.description);
+    WHERE dd_weight = ${WeightsTable}.description);
   """
 
   def groundInsertLocalVariablesSQL(relation: String, valueColumn: String, idColumn: String, 
