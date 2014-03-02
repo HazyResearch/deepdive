@@ -210,23 +210,48 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   def groundInsertGlobalVariablesSQL(relation: String, valueColumn: String, idColumn: String, 
     field: String, dataType: String, holdoutFraction: Double, queryName: String) = s"""
-    INSERT INTO ${VariablesTable}(id, data_type, initial_value, is_evidence)
-    (SELECT ${LocalVariableMapTable}.id, '${dataType}', 
-      (CASE WHEN every("${field}") = true THEN 1.0 ELSE 0.0 END),
-      (CASE WHEN (COUNT("${field}") = 0 OR ${randomFunc} < ${holdoutFraction}) THEN false ELSE true END)
-    FROM 
-      ${LocalVariableMapTable} INNER JOIN 
-        (SELECT max(id) AS id from ${LocalVariableMapTable} group by id) tmp
-      ON ${LocalVariableMapTable}.id = tmp.id
-      LEFT JOIN ${VariablesTable} 
+    DROP VIEW IF EXISTS ${queryName}_new_variables CASCADE;
+    CREATE VIEW ${queryName}_new_variables AS (
+      SELECT DISTINCT ${LocalVariableMapTable}.id AS id, '${dataType}' as data_type, 
+        (CASE WHEN "${field}" THEN 1.0 ELSE 0.0 END) AS initial_value, ("${field}" IS NOT NULL) AS is_evidence
+      FROM ${LocalVariableMapTable} LEFT JOIN ${VariablesTable}
         ON ${LocalVariableMapTable}.id=${VariablesTable}.id,
       ${queryName}
-    WHERE mrel='${relation}' 
-      AND mcol='${valueColumn}'
-      AND mid="${idColumn}"
-      AND ${VariablesTable}.id IS NULL
-    GROUP BY ${LocalVariableMapTable}.id);
+      WHERE mrel='${relation}' AND mcol='${valueColumn}' AND mid="${idColumn}" 
+        AND ${VariablesTable}.id IS NULL);
+    
+    DROP TABLE IF EXISTS ${queryName}_holdout CASCADE;
+    CREATE TABLE ${queryName}_holdout AS (
+      SELECT id 
+      FROM ${queryName}_new_variables 
+      WHERE ${randomFunc} < ${holdoutFraction} AND is_evidence = true) WITH DATA;
+    
+    INSERT INTO ${VariablesTable}(id, data_type, initial_value, is_evidence)
+    (SELECT id, data_type, initial_value, is_evidence FROM ${queryName}_new_variables);
+
+    UPDATE ${VariablesTable} SET is_evidence=false
+    WHERE ${VariablesTable}.id IN (SELECT id FROM ${queryName}_holdout)
   """
+
+  // def groundInsertGlobalVariablesSQL(relation: String, valueColumn: String, idColumn: String, 
+  //   field: String, dataType: String, holdoutFraction: Double, queryName: String) = s"""
+  //   INSERT INTO ${VariablesTable}(id, data_type, initial_value, is_evidence)
+  //   (SELECT ${LocalVariableMapTable}.id, '${dataType}', 
+  //     (CASE WHEN every("${field}") = true THEN 1.0 ELSE 0.0 END),
+  //     (CASE WHEN (COUNT("${field}") = 0 OR ${randomFunc} < ${holdoutFraction}) THEN false ELSE true END)
+  //   FROM 
+  //     ${LocalVariableMapTable} INNER JOIN 
+  //       (SELECT max(id) AS id from ${LocalVariableMapTable} group by id) tmp
+  //     ON ${LocalVariableMapTable}.id = tmp.id
+  //     LEFT JOIN ${VariablesTable} 
+  //       ON ${LocalVariableMapTable}.id=${VariablesTable}.id,
+  //     ${queryName}
+  //   WHERE mrel='${relation}' 
+  //     AND mcol='${valueColumn}'
+  //     AND mid="${idColumn}"
+  //     AND ${VariablesTable}.id IS NULL
+  //   GROUP BY ${LocalVariableMapTable}.id);
+  // """
 
   def groundInsertEdgesSQL(relation: String, valueColumn: String, idColumn: String, factorGroup: String,
     position: Long, isNegated: Boolean, queryName: String) = s"""
