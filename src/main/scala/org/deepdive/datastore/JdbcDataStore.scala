@@ -45,7 +45,7 @@ object JdbcDataStore extends Logging {
     override lazy val config = configObj
   }
 
-  /* Initializes the data store */
+  /* Initializes the data stores */
   def init(config: Config) : Unit = {
     val initializer = new JdbcDBsWithEnv("deepdive", config)
     log.info("Intializing all JDBC data stores")

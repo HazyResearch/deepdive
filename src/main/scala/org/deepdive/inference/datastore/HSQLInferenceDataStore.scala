@@ -17,6 +17,7 @@ trait HSQLInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
     override def randomFunc = "RAND()"
 
     override def alterSequencesSQL = ""
+    override def groundRebuildIndiciesSQL = ""
 
     // Default batch size, if not overwritten by user
     val BatchSize = Some(250000)

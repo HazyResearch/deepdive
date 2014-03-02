@@ -30,8 +30,10 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   /* Executes an arbitary SQL statement */
   def execute(sql: String) = ds.DB.autoCommit { implicit session =>
-
-    """;\s+""".r.split(sql.trim()).filterNot(_.isEmpty).foreach(q => SQL(q.trim()).execute.apply())
+    """;\s+""".r.split(sql.trim()).filterNot(_.isEmpty).map(_.trim).foreach { query => 
+      log.debug("\n" + query)
+      SQL(query).execute.apply()
+    }
   }
 
   /* Issues a query */
@@ -70,9 +72,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       factor_function ${stringType}, 
       factor_group ${stringType}, 
       qid bigint);
-    CREATE INDEX ${FactorsTable}_id_idx ON ${FactorsTable}(id);
-    CREATE INDEX ${FactorsTable}_qid_idx ON ${FactorsTable}(qid);
   """
+  // CREATE INDEX ${FactorsTable}_id_idx ON ${FactorsTable}(id);
+  // CREATE INDEX ${FactorsTable}_qid_idx ON ${FactorsTable}(qid);
 
   def createVariablesSQL = s"""
     DROP TABLE IF EXISTS ${VariablesTable} CASCADE; 
@@ -92,8 +94,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       mid bigint,
       CONSTRAINT c_pkey UNIQUE (mrel, mcol, mid));
     CREATE INDEX ${LocalVariableMapTable}_id_idx ON ${LocalVariableMapTable}(id);
-    CREATE INDEX ${LocalVariableMapTable}_id_all_idx ON ${LocalVariableMapTable}(mrel, mcol, mid);
   """
+  // CREATE INDEX ${LocalVariableMapTable}_id_all_idx ON ${LocalVariableMapTable}(mrel, mcol, mid);
 
   def alterSequencesSQL = s"""
     ALTER SEQUENCE ${WeightsTable}_id_seq MINVALUE -1 RESTART WITH 0;
@@ -171,16 +173,16 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
     s"""
     DROP VIEW IF EXISTS ${name}_tmp CASCADE;
-    DROP VIEW IF EXISTS ${name} CASCADE;
+    DROP TABLE IF EXISTS ${name} CASCADE;
     CREATE VIEW ${name}_tmp AS (${query});
     CREATE TABLE ${name} AS 
     (SELECT row_number() OVER() - 1 as factor_id,
       ${name}_tmp.*, ${weightCmd} AS dd_weight
     FROM ${name}_tmp) WITH DATA;
     CREATE INDEX ${name}_factor_id_idx ON ${name}(factor_id);
-    CREATE INDEX ${name}_weight_idx ON ${name}(dd_weight);
     """
   }
+  // CREATE INDEX ${name}_weight_idx ON ${name}(dd_weight);
 
   def groundInsertWeightsSQL(weightValue: Double, is_fixed: Boolean, queryName: String) = s"""
     INSERT INTO ${WeightsTable}(description, initial_value, is_fixed)
@@ -203,6 +205,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       FROM ${LocalVariableMapTable}
       WHERE mrel='${relation}' AND mcol='${valueColumn}');
   """
+
+  def groundRebuildIndiciesSQL = s"""ANALYZE;"""
 
   def groundInsertGlobalVariablesSQL(relation: String, valueColumn: String, idColumn: String, 
     field: String, dataType: String, holdoutFraction: Double, queryName: String) = s"""
@@ -379,12 +383,11 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       case x : KnownFactorWeight => x.value
       case _ => 0.0
     }
-
+    log.info("Grounding rule query...")
     execute(materializeQuerySQL(queryName, factorDesc.inputQuery, factorDesc.weight.variables, factorDesc.weightPrefix))
     log.info("Inserting weights...")
     execute(groundInsertWeightsSQL(weightValue, factorDesc.weight.isInstanceOf[KnownFactorWeight], queryName))
-    log.info("Inserting factors...")
-    execute(groundInsertFactorsSQL(factorDesc.func.getClass.getSimpleName, factorDesc.name, queryName))
+    
     factorDesc.func.variables.zipWithIndex.foreach { case(variable, position) =>
       val vRelation = variable.headRelation
       val vColumn = variable.field
@@ -392,6 +395,19 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       val variableDataType = factorDesc.func.variableDataType
       log.info(s"""Inserting local variable="${variable.toString}"...""")
       execute(groundInsertLocalVariablesSQL(vRelation, vColumn, vidColumn, queryName))
+    }
+
+    log.info("Rebuilding indicies...")
+    execute(groundRebuildIndiciesSQL)
+    
+    log.info("Inserting factors...")
+    execute(groundInsertFactorsSQL(factorDesc.func.getClass.getSimpleName, factorDesc.name, queryName))
+    
+    factorDesc.func.variables.zipWithIndex.foreach { case(variable, position) =>
+      val vRelation = variable.headRelation
+      val vColumn = variable.field
+      val vidColumn = s"${variable.relation}.id"
+      val variableDataType = factorDesc.func.variableDataType
       log.info(s"""Inserting global variable="${variable.toString}"...""")
       execute(groundInsertGlobalVariablesSQL(vRelation, vColumn, vidColumn, 
         variable.toString, variableDataType, holdoutFraction, queryName))

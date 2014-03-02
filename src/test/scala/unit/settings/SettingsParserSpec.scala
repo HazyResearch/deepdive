@@ -21,7 +21,7 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester {
       assert(result == SchemaSettings(
         Map("relation1.var1" -> BooleanType,
           "relation1.var2" -> BooleanType,
-          "relation2.var3" -> MultinomialType(2))))
+          "relation2.var3" -> MultinomialType(2)), None))
     }
   }
 
