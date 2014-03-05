@@ -185,14 +185,14 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   def groundInsertWeightsSQL(weightValue: Double, is_fixed: Boolean, queryName: String) = s"""
     INSERT INTO ${WeightsTable}(description, initial_value, is_fixed)
-    (SELECT DISTINCT dd_weight, ${weightValue}, ${is_fixed} FROM ${queryName});
+    (SELECT DISTINCT dd_weight::text, ${weightValue}, ${is_fixed} FROM ${queryName});
   """
 
   def groundInsertFactorsSQL(factorFunc: String, factorGroup: String, queryName: String) = s"""
     INSERT INTO ${FactorsTable}(weight_id, factor_function, factor_group, qid)
     (SELECT ${WeightsTable}.id, '${factorFunc}', '${factorGroup}', factor_id
     FROM ${queryName}, ${WeightsTable}
-    WHERE dd_weight = ${WeightsTable}.description);
+    WHERE dd_weight::text = ${WeightsTable}.description);
   """
 
   def groundInsertLocalVariablesSQL(relation: String, valueColumn: String, idColumn: String, 
