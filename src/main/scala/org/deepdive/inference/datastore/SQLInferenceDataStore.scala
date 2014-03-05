@@ -31,7 +31,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   /* Executes an arbitary SQL statement */
   def execute(sql: String) = ds.DB.autoCommit { implicit session =>
     """;\s+""".r.split(sql.trim()).filterNot(_.isEmpty).map(_.trim).foreach { query => 
-      log.debug("\n" + query)
       SQL(query).execute.apply()
     }
   }
