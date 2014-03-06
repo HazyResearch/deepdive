@@ -790,6 +790,16 @@ public final class FactorGraphProtos {
      * <code>optional uint64 cardinality = 5;</code>
      */
     long getCardinality();
+
+    // optional uint64 edgeCount = 6;
+    /**
+     * <code>optional uint64 edgeCount = 6;</code>
+     */
+    boolean hasEdgeCount();
+    /**
+     * <code>optional uint64 edgeCount = 6;</code>
+     */
+    long getEdgeCount();
   }
   /**
    * Protobuf type {@code deepdive.Variable}
@@ -871,6 +881,11 @@ public final class FactorGraphProtos {
             case 40: {
               bitField0_ |= 0x00000010;
               cardinality_ = input.readUInt64();
+              break;
+            }
+            case 48: {
+              bitField0_ |= 0x00000020;
+              edgeCount_ = input.readUInt64();
               break;
             }
           }
@@ -1084,12 +1099,29 @@ public final class FactorGraphProtos {
       return cardinality_;
     }
 
+    // optional uint64 edgeCount = 6;
+    public static final int EDGECOUNT_FIELD_NUMBER = 6;
+    private long edgeCount_;
+    /**
+     * <code>optional uint64 edgeCount = 6;</code>
+     */
+    public boolean hasEdgeCount() {
+      return ((bitField0_ & 0x00000020) == 0x00000020);
+    }
+    /**
+     * <code>optional uint64 edgeCount = 6;</code>
+     */
+    public long getEdgeCount() {
+      return edgeCount_;
+    }
+
     private void initFields() {
       id_ = 0L;
       initialValue_ = 0D;
       dataType_ = org.deepdive.serialization.FactorGraphProtos.Variable.VariableDataType.BOOLEAN;
       isEvidence_ = false;
       cardinality_ = 0L;
+      edgeCount_ = 0L;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -1126,6 +1158,9 @@ public final class FactorGraphProtos {
       if (((bitField0_ & 0x00000010) == 0x00000010)) {
         output.writeUInt64(5, cardinality_);
       }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        output.writeUInt64(6, edgeCount_);
+      }
       getUnknownFields().writeTo(output);
     }
 
@@ -1154,6 +1189,10 @@ public final class FactorGraphProtos {
       if (((bitField0_ & 0x00000010) == 0x00000010)) {
         size += com.google.protobuf.CodedOutputStream
           .computeUInt64Size(5, cardinality_);
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt64Size(6, edgeCount_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -1281,6 +1320,8 @@ public final class FactorGraphProtos {
         bitField0_ = (bitField0_ & ~0x00000008);
         cardinality_ = 0L;
         bitField0_ = (bitField0_ & ~0x00000010);
+        edgeCount_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000020);
         return this;
       }
 
@@ -1329,6 +1370,10 @@ public final class FactorGraphProtos {
           to_bitField0_ |= 0x00000010;
         }
         result.cardinality_ = cardinality_;
+        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+          to_bitField0_ |= 0x00000020;
+        }
+        result.edgeCount_ = edgeCount_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1359,6 +1404,9 @@ public final class FactorGraphProtos {
         }
         if (other.hasCardinality()) {
           setCardinality(other.getCardinality());
+        }
+        if (other.hasEdgeCount()) {
+          setEdgeCount(other.getEdgeCount());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -1563,6 +1611,39 @@ public final class FactorGraphProtos {
         return this;
       }
 
+      // optional uint64 edgeCount = 6;
+      private long edgeCount_ ;
+      /**
+       * <code>optional uint64 edgeCount = 6;</code>
+       */
+      public boolean hasEdgeCount() {
+        return ((bitField0_ & 0x00000020) == 0x00000020);
+      }
+      /**
+       * <code>optional uint64 edgeCount = 6;</code>
+       */
+      public long getEdgeCount() {
+        return edgeCount_;
+      }
+      /**
+       * <code>optional uint64 edgeCount = 6;</code>
+       */
+      public Builder setEdgeCount(long value) {
+        bitField0_ |= 0x00000020;
+        edgeCount_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional uint64 edgeCount = 6;</code>
+       */
+      public Builder clearEdgeCount() {
+        bitField0_ = (bitField0_ & ~0x00000020);
+        edgeCount_ = 0L;
+        onChanged();
+        return this;
+      }
+
       // @@protoc_insertion_point(builder_scope:deepdive.Variable)
     }
 
@@ -1606,6 +1687,16 @@ public final class FactorGraphProtos {
      * <code>required .deepdive.Factor.FactorFunctionType factorFunction = 3;</code>
      */
     org.deepdive.serialization.FactorGraphProtos.Factor.FactorFunctionType getFactorFunction();
+
+    // optional uint64 edgeCount = 4;
+    /**
+     * <code>optional uint64 edgeCount = 4;</code>
+     */
+    boolean hasEdgeCount();
+    /**
+     * <code>optional uint64 edgeCount = 4;</code>
+     */
+    long getEdgeCount();
   }
   /**
    * Protobuf type {@code deepdive.Factor}
@@ -1677,6 +1768,11 @@ public final class FactorGraphProtos {
                 bitField0_ |= 0x00000004;
                 factorFunction_ = value;
               }
+              break;
+            }
+            case 32: {
+              bitField0_ |= 0x00000008;
+              edgeCount_ = input.readUInt64();
               break;
             }
           }
@@ -1876,10 +1972,27 @@ public final class FactorGraphProtos {
       return factorFunction_;
     }
 
+    // optional uint64 edgeCount = 4;
+    public static final int EDGECOUNT_FIELD_NUMBER = 4;
+    private long edgeCount_;
+    /**
+     * <code>optional uint64 edgeCount = 4;</code>
+     */
+    public boolean hasEdgeCount() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    /**
+     * <code>optional uint64 edgeCount = 4;</code>
+     */
+    public long getEdgeCount() {
+      return edgeCount_;
+    }
+
     private void initFields() {
       id_ = 0L;
       weightId_ = 0L;
       factorFunction_ = org.deepdive.serialization.FactorGraphProtos.Factor.FactorFunctionType.IMPLY;
+      edgeCount_ = 0L;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -1914,6 +2027,9 @@ public final class FactorGraphProtos {
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         output.writeEnum(3, factorFunction_.getNumber());
       }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeUInt64(4, edgeCount_);
+      }
       getUnknownFields().writeTo(output);
     }
 
@@ -1934,6 +2050,10 @@ public final class FactorGraphProtos {
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
           .computeEnumSize(3, factorFunction_.getNumber());
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt64Size(4, edgeCount_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -2057,6 +2177,8 @@ public final class FactorGraphProtos {
         bitField0_ = (bitField0_ & ~0x00000002);
         factorFunction_ = org.deepdive.serialization.FactorGraphProtos.Factor.FactorFunctionType.IMPLY;
         bitField0_ = (bitField0_ & ~0x00000004);
+        edgeCount_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
 
@@ -2097,6 +2219,10 @@ public final class FactorGraphProtos {
           to_bitField0_ |= 0x00000004;
         }
         result.factorFunction_ = factorFunction_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.edgeCount_ = edgeCount_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -2121,6 +2247,9 @@ public final class FactorGraphProtos {
         }
         if (other.hasFactorFunction()) {
           setFactorFunction(other.getFactorFunction());
+        }
+        if (other.hasEdgeCount()) {
+          setEdgeCount(other.getEdgeCount());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -2259,6 +2388,39 @@ public final class FactorGraphProtos {
       public Builder clearFactorFunction() {
         bitField0_ = (bitField0_ & ~0x00000004);
         factorFunction_ = org.deepdive.serialization.FactorGraphProtos.Factor.FactorFunctionType.IMPLY;
+        onChanged();
+        return this;
+      }
+
+      // optional uint64 edgeCount = 4;
+      private long edgeCount_ ;
+      /**
+       * <code>optional uint64 edgeCount = 4;</code>
+       */
+      public boolean hasEdgeCount() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      /**
+       * <code>optional uint64 edgeCount = 4;</code>
+       */
+      public long getEdgeCount() {
+        return edgeCount_;
+      }
+      /**
+       * <code>optional uint64 edgeCount = 4;</code>
+       */
+      public Builder setEdgeCount(long value) {
+        bitField0_ |= 0x00000008;
+        edgeCount_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional uint64 edgeCount = 4;</code>
+       */
+      public Builder clearEdgeCount() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        edgeCount_ = 0L;
         onChanged();
         return this;
       }
@@ -4781,24 +4943,25 @@ public final class FactorGraphProtos {
     java.lang.String[] descriptorData = {
       "\n\021FactorGraph.proto\022\010deepdive\"S\n\006Weight\022" +
       "\n\n\002id\030\001 \002(\004\022\027\n\014initialValue\030\002 \001(\001:\0010\022\017\n\007" +
-      "isFixed\030\003 \002(\010\022\023\n\013description\030\004 \001(\t\"\310\001\n\010V" +
+      "isFixed\030\003 \002(\010\022\023\n\013description\030\004 \001(\t\"\333\001\n\010V" +
       "ariable\022\n\n\002id\030\001 \002(\004\022\024\n\014initialValue\030\002 \001(" +
       "\001\0225\n\010dataType\030\003 \002(\0162#.deepdive.Variable." +
       "VariableDataType\022\022\n\nisEvidence\030\004 \001(\010\022\023\n\013" +
-      "cardinality\030\005 \001(\004\":\n\020VariableDataType\022\013\n" +
-      "\007BOOLEAN\020\000\022\017\n\013MULTINOMIAL\020\001\022\010\n\004REAL\020\002\"\254\001" +
-      "\n\006Factor\022\n\n\002id\030\001 \002(\004\022\020\n\010weightId\030\002 \002(\004\022;" +
-      "\n\016factorFunction\030\003 \002(\0162#.deepdive.Factor",
-      ".FactorFunctionType\"G\n\022FactorFunctionTyp" +
-      "e\022\t\n\005IMPLY\020\000\022\006\n\002OR\020\001\022\007\n\003AND\020\002\022\t\n\005EQUAL\020\003" +
-      "\022\n\n\006ISTRUE\020\004\"]\n\tGraphEdge\022\022\n\nvariableId\030" +
-      "\001 \002(\004\022\020\n\010factorId\030\002 \002(\004\022\020\n\010position\030\003 \002(" +
-      "\004\022\030\n\nisPositive\030\004 \001(\010:\004true\"\232\001\n\013FactorGr" +
-      "aph\022 \n\006weight\030\001 \003(\0132\020.deepdive.Weight\022$\n" +
-      "\010variable\030\002 \003(\0132\022.deepdive.Variable\022 \n\006f" +
-      "actor\030\003 \003(\0132\020.deepdive.Factor\022!\n\004edge\030\004 " +
-      "\003(\0132\023.deepdive.GraphEdgeB/\n\032org.deepdive" +
-      ".serializationB\021FactorGraphProtos"
+      "cardinality\030\005 \001(\004\022\021\n\tedgeCount\030\006 \001(\004\":\n\020" +
+      "VariableDataType\022\013\n\007BOOLEAN\020\000\022\017\n\013MULTINO" +
+      "MIAL\020\001\022\010\n\004REAL\020\002\"\277\001\n\006Factor\022\n\n\002id\030\001 \002(\004\022" +
+      "\020\n\010weightId\030\002 \002(\004\022;\n\016factorFunction\030\003 \002(",
+      "\0162#.deepdive.Factor.FactorFunctionType\022\021" +
+      "\n\tedgeCount\030\004 \001(\004\"G\n\022FactorFunctionType\022" +
+      "\t\n\005IMPLY\020\000\022\006\n\002OR\020\001\022\007\n\003AND\020\002\022\t\n\005EQUAL\020\003\022\n" +
+      "\n\006ISTRUE\020\004\"]\n\tGraphEdge\022\022\n\nvariableId\030\001 " +
+      "\002(\004\022\020\n\010factorId\030\002 \002(\004\022\020\n\010position\030\003 \002(\004\022" +
+      "\030\n\nisPositive\030\004 \001(\010:\004true\"\232\001\n\013FactorGrap" +
+      "h\022 \n\006weight\030\001 \003(\0132\020.deepdive.Weight\022$\n\010v" +
+      "ariable\030\002 \003(\0132\022.deepdive.Variable\022 \n\006fac" +
+      "tor\030\003 \003(\0132\020.deepdive.Factor\022!\n\004edge\030\004 \003(" +
+      "\0132\023.deepdive.GraphEdgeB/\n\032org.deepdive.s",
+      "erializationB\021FactorGraphProtos"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -4816,13 +4979,13 @@ public final class FactorGraphProtos {
           internal_static_deepdive_Variable_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_deepdive_Variable_descriptor,
-              new java.lang.String[] { "Id", "InitialValue", "DataType", "IsEvidence", "Cardinality", });
+              new java.lang.String[] { "Id", "InitialValue", "DataType", "IsEvidence", "Cardinality", "EdgeCount", });
           internal_static_deepdive_Factor_descriptor =
             getDescriptor().getMessageTypes().get(2);
           internal_static_deepdive_Factor_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_deepdive_Factor_descriptor,
-              new java.lang.String[] { "Id", "WeightId", "FactorFunction", });
+              new java.lang.String[] { "Id", "WeightId", "FactorFunction", "EdgeCount", });
           internal_static_deepdive_GraphEdge_descriptor =
             getDescriptor().getMessageTypes().get(3);
           internal_static_deepdive_GraphEdge_fieldAccessorTable = new

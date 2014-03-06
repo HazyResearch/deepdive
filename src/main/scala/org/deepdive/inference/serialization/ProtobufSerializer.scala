@@ -21,9 +21,10 @@ class ProtobufSerializer(weightsOuput: OutputStream, variablesOutput: OutputStre
   }
   
   def addVariable(variableId: Long, initialValue: Option[Double], dataType: VariableDataType, 
-    cardinality: Option[Long]) : Unit = {
+    edgeCount: Long, cardinality: Option[Long]) : Unit = {
     val variableBuilder = FactorGraphProtos.Variable.newBuilder
     variableBuilder.setId(variableId)
+    variableBuilder.setEdgeCount(edgeCount)
     if (initialValue.isDefined) variableBuilder.setInitialValue(initialValue.get)
     dataType match {
       case BooleanType => 
@@ -36,10 +37,11 @@ class ProtobufSerializer(weightsOuput: OutputStream, variablesOutput: OutputStre
     variablesOutput.synchronized { obj.writeDelimitedTo(variablesOutput) }
   }
 
-  def addFactor(factorId: Long, weightId: Long, factorFunction: String) : Unit = {
+  def addFactor(factorId: Long, weightId: Long, factorFunction: String, edgeCount: Long) : Unit = {
     val factorBuilder = FactorGraphProtos.Factor.newBuilder
     factorBuilder.setId(factorId)
     factorBuilder.setWeightId(weightId)
+    factorBuilder.setEdgeCount(edgeCount)
     val factorFunctionType = factorFunction match {
       case "ImplyFactorFunction" => FactorGraphProtos.Factor.FactorFunctionType.IMPLY
       case "OrFactorFunction" => FactorGraphProtos.Factor.FactorFunctionType.OR

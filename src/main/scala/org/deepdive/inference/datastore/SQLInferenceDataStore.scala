@@ -145,17 +145,26 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   def selectVariablesForDumpSQL(relation: String, attribute: String) = s"""
     SELECT ${VariablesTable}.id AS "id", ${VariablesTable}.is_evidence AS "is_evidence",
-      ${VariablesTable}.initial_value AS "initial_value" 
-    FROM ${VariablesTable}, ${LocalVariableMapTable}
+      ${VariablesTable}.initial_value AS "initial_value", "edge_count"
+    FROM ${VariablesTable}, ${LocalVariableMapTable}, 
+    (SELECT variable_id AS "edges.vid", 
+      COUNT(*) as "edge_count" 
+      FROM ${EdgesTable} GROUP BY variable_id) tmp
     WHERE ${VariablesTable}.id = ${LocalVariableMapTable}.id
       AND ${LocalVariableMapTable}.mrel = '${relation}'
       AND ${LocalVariableMapTable}.mcol = '${attribute}'
+      AND ${VariablesTable}.id = "edges.vid"
     ORDER BY ${VariablesTable}.id ASC;
   """
 
   def selectFactorsForDumpSQL = s"""
-    SELECT id AS "id", weight_id AS "weight_id", factor_function AS "factor_function"
-    FROM ${FactorsTable} ORDER BY ID ASC;
+    SELECT id AS "id", weight_id AS "weight_id", factor_function AS "factor_function", "edge_count"
+    FROM ${FactorsTable},
+    (SELECT factor_id AS "edges.fid", 
+      COUNT(*) as edge_count 
+      FROM ${EdgesTable} GROUP BY factor_id) tmp
+    WHERE id = "edges.fid"
+    ORDER BY ID ASC;
   """
 
   def selectEdgesForDumpSQL = s"""
@@ -385,12 +394,14 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           rs.long("id"),
           if (rs.boolean("is_evidence")) rs.doubleOpt("initial_value") else None,
           dataType, 
+          rs.long("edge_count"),
           dataType.cardinality)
       }
     }
     log.info("Serializing factors...")
     selectForeach(selectFactorsForDumpSQL) { rs => 
-      serializer.addFactor(rs.long("id"), rs.long("weight_id"),rs.string("factor_function"))
+      serializer.addFactor(rs.long("id"), rs.long("weight_id"),
+        rs.string("factor_function"), rs.long("edge_count"))
     }
     log.info("Serializing edges...")
     selectForeach(selectEdgesForDumpSQL) { rs => 

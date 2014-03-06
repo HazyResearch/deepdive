@@ -23,6 +23,7 @@ message Variable {
   required VariableDataType dataType = 3;
   optional bool isEvidence = 4;
   optional uint64 cardinality = 5;
+  optional uint64 edgeCount = 6;
 
 }
 
@@ -39,6 +40,7 @@ message Factor {
   required uint64 id = 1;
   required uint64 weightId = 2;
   required FactorFunctionType factorFunction = 3;
+  optional uint64 edgeCount = 4;
 
 }
 
