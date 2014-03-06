@@ -6,7 +6,7 @@ import org.deepdive.serialization.FactorGraphProtos
 import java.io.OutputStream
 
 class ProtobufSerializer(weightsOuput: OutputStream, variablesOutput: OutputStream, 
-  factorsOutput: OutputStream, edgesOutput: OutputStream) extends Serializer with Logging {
+  factorsOutput: OutputStream, edgesOutput: OutputStream, metaDataOutput: OutputStream) extends Serializer with Logging {
 
   val factorGraphbuilder = FactorGraphProtos.FactorGraph.newBuilder
 
@@ -65,11 +65,27 @@ class ProtobufSerializer(weightsOuput: OutputStream, variablesOutput: OutputStre
     edgesOutput.synchronized { obj.writeDelimitedTo(edgesOutput) }
   }
 
+  def writeMetadata(numWeights: Long, numVariables: Long, numFactors: Long, numEdges: Long,
+    weightsFile: String, variablesFile: String, factorsFile: String, edgesFile: String) : Unit = {
+      val graphDataBuilder = FactorGraphProtos.FactorGraph.newBuilder
+      graphDataBuilder.setNumWeights(numWeights)
+      graphDataBuilder.setNumVariables(numVariables)
+      graphDataBuilder.setNumFactors(numFactors)
+      graphDataBuilder.setNumEdges(numEdges)
+      graphDataBuilder.setWeightsFile(weightsFile)
+      graphDataBuilder.setVariablesFile(variablesFile)
+      graphDataBuilder.setFactorsFile(factorsFile)
+      graphDataBuilder.setEdgesFile(edgesFile)
+      val obj = graphDataBuilder.build()
+      metaDataOutput.synchronized { obj.writeTo(metaDataOutput) }
+  }
+
   def close() : Unit = {
     weightsOuput.flush()
     variablesOutput.flush()
     factorsOutput.flush()
     edgesOutput.flush()
+    metaDataOutput.flush()
   }
 
 }

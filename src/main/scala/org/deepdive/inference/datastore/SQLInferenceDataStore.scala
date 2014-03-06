@@ -173,6 +173,14 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     FROM ${EdgesTable};
   """
 
+  def selectMetaDataForDumpSQL = s"""
+    SELECT 
+      (SELECT COUNT(*) from ${WeightsTable}) num_weights,
+      (SELECT COUNT(*) from ${VariablesTable}) num_variables,
+      (SELECT COUNT(*) from ${FactorsTable}) num_factors,
+      (SELECT COUNT(*) from ${EdgesTable}) num_edges;
+  """
+
   def materializeQuerySQL(name: String, query: String, weightVariables: Seq[String], weightPrefix: String) = {
     // Command for generating the weight string
     val weightCmd = weightVariables.map ( v => s""" "${v}" """ ).mkString(", ") match { 
@@ -379,7 +387,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     execute(alterSequencesSQL)
   }
 
-  def dumpFactorGraph(serializer: Serializer, schema: Map[String, _ <: VariableDataType]) : Unit = {
+  def dumpFactorGraph(serializer: Serializer, schema: Map[String, _ <: VariableDataType],
+    weightsPath: String, variablesPath: String, factorsPath: String, edgesPath: String) : Unit = {
     log.info(s"Dumping factor graph...")
     log.info("Serializing weights...")
     selectForeach(selectWeightsForDumpSQL) { rs => 
@@ -408,6 +417,14 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       serializer.addEdge(rs.long("variable_id"), rs.long("factor_id"),
         rs.long("position"), rs.boolean("is_positive"))
     }
+
+    selectForeach(selectMetaDataForDumpSQL) { rs =>
+      serializer.writeMetadata(
+        rs.long("num_weights"), rs.long("num_variables"), rs.long("num_factors"), rs.long("num_edges"),
+        weightsPath, variablesPath, factorsPath, edgesPath)
+    }
+
+
     log.info("Writing serialization result...")
     serializer.close()
   }

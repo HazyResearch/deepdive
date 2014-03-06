@@ -35,6 +35,7 @@ trait InferenceManager extends Actor with ActorLogging {
   lazy val factorGraphDumpFileVariables = new File(s"${Context.outputDir}/graph.variables.pb")
   lazy val factorGraphDumpFileFactors = new File(s"${Context.outputDir}/graph.factors.pb")
   lazy val factorGraphDumpFileEdges = new File(s"${Context.outputDir}/graph.edges.pb")
+  lazy val factorGraphDumpFileMeta = new File(s"${Context.outputDir}/graph.meta.pb")
   lazy val SamplingOutputFile = new File(s"${Context.outputDir}/inference_result.out")
   lazy val SamplingOutputFileWeights = new File(s"${Context.outputDir}/inference_result.out.weights")
 
@@ -79,12 +80,16 @@ trait InferenceManager extends Actor with ActorLogging {
     val variablesOutput = new java.io.FileOutputStream(factorGraphDumpFileVariables, false)
     val factorsOutput = new java.io.FileOutputStream(factorGraphDumpFileFactors, false)
     val edgesOutput = new java.io.FileOutputStream(factorGraphDumpFileEdges, false)
-    val serializier = new ProtobufSerializer(weightsOutput, variablesOutput, factorsOutput, edgesOutput)
-    inferenceDataStore.dumpFactorGraph(serializier, variableSchema)
+    val metaOutput = new java.io.FileOutputStream(factorGraphDumpFileMeta, false)
+    val serializier = new ProtobufSerializer(weightsOutput, variablesOutput, factorsOutput, edgesOutput, metaOutput)
+    inferenceDataStore.dumpFactorGraph(serializier, variableSchema, factorGraphDumpFileWeights.getCanonicalPath,
+      factorGraphDumpFileVariables.getCanonicalPath, factorGraphDumpFileFactors.getCanonicalPath,
+      factorGraphDumpFileEdges.getCanonicalPath)
+    serializier.close()
     weightsOutput.close()
     variablesOutput.close()
     factorsOutput.close()
-    serializier.close()
+    metaOutput.close()
     val sampler = context.actorOf(samplerProps, "sampler")
     val samplingResult = sampler ? Sampler.Run(samplerJavaArgs, samplerOptions,
       factorGraphDumpFileWeights.getCanonicalPath, factorGraphDumpFileVariables.getCanonicalPath,

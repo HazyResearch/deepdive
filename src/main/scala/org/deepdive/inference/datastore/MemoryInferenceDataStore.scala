@@ -56,7 +56,8 @@ trait MemoryInferenceDataStoreComponent extends InferenceDataStoreComponent{
       weights += Tuple2(weight.id, weight)
     }
 
-    def dumpFactorGraph(serializer: Serializer, schema: Map[String, _ <: VariableDataType]) = {
+    def dumpFactorGraph(serializer: Serializer, schema: Map[String, _ <: VariableDataType],
+      weightsPath: String, variablesPath: String, factorsPath: String, edgesPath: String) = {
       // Weights
       weights.values.foreach { w => serializer.addWeight(w.id, w.isFixed, w.value, w.description) }
       variables.values.foreach { v =>  serializer.addVariable(v.id, v.initialValue, v.dataType, 0, v.dataType.cardinality) }

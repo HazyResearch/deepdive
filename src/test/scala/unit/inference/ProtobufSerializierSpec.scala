@@ -16,12 +16,14 @@ class ProtobufSerializerSpec extends FunSpec with BeforeAndAfter {
       val variablesFile = File.createTempFile("variables", "pb")
       val factorsFile = File.createTempFile("factors", "pb")
       val edgesFile = File.createTempFile("edges", "pb")
+      val metaFile = File.createTempFile("meta", "pb")
       val oWeights = new FileOutputStream(weightsFile)
       val oVariables = new FileOutputStream(variablesFile)
       val oFactors = new FileOutputStream(factorsFile)
       val oEdges = new FileOutputStream(edgesFile)
+      val oMeta = new FileOutputStream(metaFile)
 
-      val serializier = new ProtobufSerializer(oWeights, oVariables, oFactors, oEdges)
+      val serializier = new ProtobufSerializer(oWeights, oVariables, oFactors, oEdges, oMeta)
       serializier.addWeight(0, false, 0.0, "someFeature1")
       serializier.addWeight(1, true, 10.0, "someFeature2")
       serializier.addVariable(0, None, BooleanType, 2, None)
@@ -31,22 +33,27 @@ class ProtobufSerializerSpec extends FunSpec with BeforeAndAfter {
       serializier.addEdge(0, 0, 0, true)
       serializier.addEdge(0, 1, 0, true)
       serializier.addEdge(1, 1, 1, false)
+      serializier.writeMetadata(2, 2, 2, 3, weightsFile.getCanonicalPath, variablesFile.getCanonicalPath,
+        factorsFile.getCanonicalPath, edgesFile.getCanonicalPath)
       serializier.close()
 
       oWeights.close()
       oVariables.close()
       oFactors.close()
       oEdges.close()
+      oMeta.close()
 
       // Read the factor graph
       val weightsInput = new FileInputStream(weightsFile)
       val variablesInput = new FileInputStream(variablesFile)
       val factorsInput = new FileInputStream(factorsFile)
       val edgesInput = new FileInputStream(edgesFile)
+      val metaDataInput = new FileInputStream(metaFile)
       val weights = List(1,2).map(i => FactorGraphProtos.Weight.parseDelimitedFrom(weightsInput))
       val variables = List(1,2).map(i => FactorGraphProtos.Variable.parseDelimitedFrom(variablesInput))
       val factors = List(1,2).map(i => FactorGraphProtos.Factor.parseDelimitedFrom(factorsInput))
       val edges = List(1,2,3).map(i => FactorGraphProtos.GraphEdge.parseDelimitedFrom(edgesInput))
+      val meta = FactorGraphProtos.FactorGraph.parseFrom(metaDataInput)
 
       assert(weights(0).getId === 0)
       assert(weights(0).getIsFixed === false)
@@ -87,6 +94,8 @@ class ProtobufSerializerSpec extends FunSpec with BeforeAndAfter {
       assert(edges(2).getFactorId === 1)
       assert(edges(2).getPosition === 1)
       assert(edges(2).getIsPositive === false)
+
+      assert(meta.getNumWeights == 2)
 
     }
   

@@ -54,8 +54,15 @@ message GraphEdge {
 }
 
 message FactorGraph {
-  repeated Weight weight = 1; 
-  repeated Variable variable = 2; 
-  repeated Factor factor = 3;
-  repeated GraphEdge edge = 4;
+  
+  required uint64 numWeights = 1;
+  required uint64 numVariables = 2;
+  required uint64 numFactors = 3;
+  required uint64 numEdges = 4;
+  
+  required string weightsFile = 5;
+  required string variablesFile = 6;
+  required string factorsFile = 7;
+  required string edgesFile = 8;
+
 }

@@ -23,7 +23,8 @@ trait InferenceDataStore {
     /* 
      * Dumps the factor graphs with the given serializier
      */
-    def dumpFactorGraph(serializer: Serializer, schema: Map[String, _ <: VariableDataType]) : Unit
+    def dumpFactorGraph(serializer: Serializer, schema: Map[String, _ <: VariableDataType],
+        weightsPath: String, variablesPath: String, factorsPath: String, edgesPath: String) : Unit
 
     /* 
      * Writes inference results produced by the sampler back to the data store.
