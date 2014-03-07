@@ -11,7 +11,7 @@ for row in fileinput.input():
   # Find phrases that are tagged with PERSON
   phrases_indicies = []
   start_index = 0
-  ner_list = list(enumerate(sentence_obj["sentences.ner_tags"]))
+  ner_list = list(enumerate(sentence_obj["ner_tags"]))
   while True:
     sublist = ner_list[start_index:]
     next_phrase = list(itertools.takewhile(lambda x: (x[1] in ["PERSON"]), sublist))
@@ -24,8 +24,8 @@ for row in fileinput.input():
   # Output a tuple for each PERSON phrase
   for phrase in phrases_indicies:
     print json.dumps({
-      "sentence_id": sentence_obj["sentences.id"],
+      "sentence_id": sentence_obj["id"],
       "start_index": phrase[0],
       "length": len(phrase),
-      "text": " ".join(sentence_obj["sentences.words"][phrase[0]:phrase[-1]+1])
+      "text": " ".join(sentence_obj["words"][phrase[0]:phrase[-1]+1])
     })
