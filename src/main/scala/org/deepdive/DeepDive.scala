@@ -71,7 +71,7 @@ object DeepDive extends Logging {
     } yield Task(factor.name, taskDeps, factorTask, inferenceManager)
 
     val inferenceTask = Task("inference", factorTasks.map(_.id) ++ extractionTasks.map(_.id),
-      InferenceManager.RunInference(settings.samplerSettings.javaArgs, 
+      InferenceManager.RunInference(settings.samplerSettings.samplerCmd, 
         settings.samplerSettings.samplerArgs), inferenceManager, true)
 
     val calibrationTask = Task("calibration", List("inference"), 

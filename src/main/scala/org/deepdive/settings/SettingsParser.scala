@@ -103,9 +103,9 @@ object SettingsParser extends Logging {
 
   private def loadSamplerSettings(config: Config) : SamplerSettings = {
     val samplingConfig = config.getConfig("sampler")
-    val javaArgs = Try(samplingConfig.getString("java_args")).getOrElse("")
+    val samplerCmd = samplingConfig.getString("sampler_cmd")
     val samplerArgs = samplingConfig.getString("sampler_args")
-    SamplerSettings(javaArgs, samplerArgs)
+    SamplerSettings(samplerCmd, samplerArgs)
   }
 
   private def loadPipelineSettings(config: Config) : PipelineSettings = {
