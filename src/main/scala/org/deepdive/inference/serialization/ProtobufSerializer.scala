@@ -20,18 +20,18 @@ class ProtobufSerializer(weightsOuput: OutputStream, variablesOutput: OutputStre
     weightsOuput.synchronized { obj.writeDelimitedTo(weightsOuput) } 
   }
   
-  def addVariable(variableId: Long, initialValue: Option[Double], dataType: VariableDataType, 
+  def addVariable(variableId: Long, initialValue: Option[Double], dataType: String, 
     edgeCount: Long, cardinality: Option[Long]) : Unit = {
     val variableBuilder = FactorGraphProtos.Variable.newBuilder
     variableBuilder.setId(variableId)
     variableBuilder.setEdgeCount(edgeCount)
     if (initialValue.isDefined) variableBuilder.setInitialValue(initialValue.get)
     dataType match {
-      case BooleanType => 
+      case "Boolean" => 
         variableBuilder.setDataType(FactorGraphProtos.Variable.VariableDataType.BOOLEAN)
-      case MultinomialType(n) =>
+      case "Multinomial" =>
         variableBuilder.setDataType(FactorGraphProtos.Variable.VariableDataType.MULTINOMIAL)
-        variableBuilder.setCardinality(n)
+        // variableBuilder.setCardinality(n)
     }    
     val obj = variableBuilder.build()
     variablesOutput.synchronized { obj.writeDelimitedTo(variablesOutput) }

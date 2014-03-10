@@ -15,9 +15,7 @@ trait HSQLInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
     override def keyType = "identity"
     override def stringType = "longvarchar"
     override def randomFunc = "RAND()"
-
     override def alterSequencesSQL = ""
-    override def groundRebuildIndiciesSQL = ""
 
     // Default batch size, if not overwritten by user
     val BatchSize = Some(250000)

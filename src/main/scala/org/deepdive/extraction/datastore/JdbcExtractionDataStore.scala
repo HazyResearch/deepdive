@@ -11,6 +11,8 @@ trait JdbcExtractionDataStore extends ExtractionDataStore[JsObject] with Logging
 
   def ds : JdbcDataStore
 
+  val variableIdCounter = new java.util.concurrent.atomic.AtomicLong(0) 
+
   def queryAsMap[A](query: String, batchSize: Option[Int] = None)
       (block: Iterator[Map[String, Any]] => A) : A = {
       ds.DB.readOnly { implicit session =>

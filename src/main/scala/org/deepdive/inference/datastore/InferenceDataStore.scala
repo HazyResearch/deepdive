@@ -18,7 +18,8 @@ trait InferenceDataStore {
     def BatchSize : Option[Int]
 
     /* Generate a grounded graph based on the factor description */
-    def groundFactorGraph(factorDesc: FactorDesc, holdoutFraction: Double) : Unit 
+    def groundFactorGraph(schema: Map[String, _ <: VariableDataType],
+        factorDescs: Seq[FactorDesc], holdoutFraction: Double) : Unit 
 
     /* 
      * Dumps the factor graphs with the given serializier

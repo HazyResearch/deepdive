@@ -8,8 +8,10 @@ sealed trait VariableDataType {
 }
 case object BooleanType extends VariableDataType {
   def cardinality = None
+  override def toString() = "Boolean"
 }
 case class MultinomialType(numCategories: Int) extends VariableDataType {
   def cardinality = Some(numCategories)
+  override def toString() = "Multinomial"
 }
 

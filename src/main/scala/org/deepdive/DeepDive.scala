@@ -62,15 +62,18 @@ object DeepDive extends Logging {
       extractionTask, extractionManager)
 
     // Build task to construct the factor graph
-    val factorTasks = for {
-      factor <- settings.inferenceSettings.factors
-      factorTask = InferenceManager.FactorTask(factor, 
-        settings.calibrationSettings.holdoutFraction, settings.inferenceSettings.insertBatchSize)
-      // TODO: We don't actually neeed to wait for all extractions to finish. For now it's fine.
-      taskDeps = extractionTasks.map(_.id)
-    } yield Task(factor.name, taskDeps, factorTask, inferenceManager)
+    val activeFactors = settings.pipelineSettings.activePipeline match { 
+      case Some(pipeline) => 
+        settings.inferenceSettings.factors.filter(f => pipeline.tasks.contains(f.name))
+      case None => settings.inferenceSettings.factors
+    }
+    val groundFactorGraphMsg = InferenceManager.GroundFactorGraph(
+      activeFactors, settings.calibrationSettings.holdoutFraction
+    )
+    val groundFactorGraphTask = Task("inference_grounding", extractionTasks.map(_.id), 
+      groundFactorGraphMsg, inferenceManager)
 
-    val inferenceTask = Task("inference", factorTasks.map(_.id) ++ extractionTasks.map(_.id),
+    val inferenceTask = Task("inference", extractionTasks.map(_.id) ++ Seq("inference_grounding"),
       InferenceManager.RunInference(settings.samplerSettings.samplerCmd, 
         settings.samplerSettings.samplerArgs), inferenceManager, true)
 
@@ -81,7 +84,7 @@ object DeepDive extends Logging {
 
     val terminationTask = Task("shutdown", List("report"), TaskManager.Shutdown, taskManager, false)
 
-    val allTasks = extractionTasks ++ factorTasks ++ 
+    val allTasks = extractionTasks ++ Seq(groundFactorGraphTask) ++
       List(inferenceTask, calibrationTask, reportingTask, terminationTask) 
 
     // Create a default pipeline that executes all tasks
@@ -90,7 +93,7 @@ object DeepDive extends Logging {
     // Figure out which pipeline to run
     val activePipeline = settings.pipelineSettings.activePipeline match {
       case Some(pipeline) => pipeline.copy(tasks = pipeline.tasks ++ 
-        Set("inference", "calibration", "report", "shutdown"))
+        Set("inference_grounding", "inference", "calibration", "report", "shutdown"))
       case None => defaultPipeline
     }
 
