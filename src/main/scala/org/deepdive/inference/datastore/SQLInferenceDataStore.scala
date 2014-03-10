@@ -161,8 +161,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     FROM ${WeightsTable} ORDER BY ID ASC;
   """
 
-  def selectVariablesForDumpSQL(relation: String, attribute: String) = s"""
+  def selectVariablesForDumpSQL = s"""
     SELECT ${VariablesMapTable}.id AS "id", ${VariablesTable}.is_evidence AS "is_evidence",
+      ${VariablesTable}.data_type AS "data_type",
       ${VariablesTable}.initial_value AS "initial_value", "edge_count"
     FROM ${VariablesTable}, ${VariablesMapTable},
     (SELECT variable_id AS "edges.vid", 
@@ -411,17 +412,14 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       serializer.addWeight(rs.long("id"), rs.boolean("is_fixed"), 
         rs.double("initial_value"), rs.string("description"))
     }
-    schema.foreach { case(relationField, dataType) => 
-      val Array(relationName, columnName) = relationField.split('.')
-      log.info(s"""Serializing variable=" ${relationField} " """)
-      selectForeach(selectVariablesForDumpSQL(relationName, columnName)) { rs => 
-        serializer.addVariable(
-          rs.long("id"),
-          if (rs.boolean("is_evidence")) rs.doubleOpt("initial_value") else None,
-          dataType, 
-          rs.long("edge_count"),
-          dataType.cardinality)
-      }
+    log.info(s"""Serializing variables...""")
+    selectForeach(selectVariablesForDumpSQL) { rs => 
+      serializer.addVariable(
+        rs.long("id"),
+        if (rs.boolean("is_evidence")) rs.doubleOpt("initial_value") else None,
+        rs.string("data_type"), 
+        rs.long("edge_count"),
+        None)
     }
     log.info("Serializing factors...")
     selectForeach(selectFactorsForDumpSQL) { rs => 
