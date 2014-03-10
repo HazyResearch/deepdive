@@ -152,7 +152,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     AS SELECT ${VariablesTable}.*, ${VariableResultTable}.category, ${VariableResultTable}.expectation 
     FROM ${VariablesTable}, ${VariablesMapTable}, ${VariableResultTable}
     WHERE ${VariablesTable}.id = ${VariablesMapTable}.variable_id
-      AND ${VariablesMapTable}.variable_id = ${VariableResultTable}.id;
+      AND ${VariablesMapTable}.id = ${VariableResultTable}.id;
   """
 
   def selectWeightsForDumpSQL = s"""
