@@ -464,7 +464,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // We write the grounding queries to this SQL file
     val sqlFile = File.createTempFile(s"grounding", ".sql")
     val writer = new PrintWriter(sqlFile)
-    log.info(s"""Writing commands to file="${sqlFile}" """)
+    log.info(s"""Writing grounding queries to file="${sqlFile}" """)
 
     writer.println(createWeightsSQL)
     writer.println(createFactorsSQL)
