@@ -1,11 +1,13 @@
 package org.deepdive.inference
 
+import java.io.{File, PrintWriter}
 import org.deepdive.calibration._
 import org.deepdive.datastore.JdbcDataStore
 import org.deepdive.Logging
 import org.deepdive.settings._
 import scalikejdbc._
 import scala.util.matching._
+import scala.io.Source
 
 /* Stores the factor graph and inference results. */
 trait SQLInferenceDataStoreComponent extends InferenceDataStoreComponent {
@@ -18,10 +20,14 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   def ds : JdbcDataStore
 
+  val factorOffset = new java.util.concurrent.atomic.AtomicLong(0)
+
   /* Internal Table names */
   def WeightsTable = "dd_graph_weights"
   def FactorsTable = "dd_graph_factors"
   def VariablesTable = "dd_graph_variables"
+  def VariablesHoldoutTable = "dd_graph_variables_holdout"
+  def VariablesMapTable = "dd_graph_variables_map"
   def LocalVariableMapTable = "dd_graph_local_variable_map"
   def EdgesTable = "dd_graph_edges"
   def WeightResultTable = "dd_inference_result_weights"
@@ -60,7 +66,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       initial_value double precision,
       is_fixed boolean,
       description ${stringType});
-    CREATE INDEX ${WeightsTable}_desc_idx ON ${WeightsTable}(description);
   """
 
   def createFactorsSQL = s"""
@@ -84,22 +89,37 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       is_evidence boolean);
   """
 
-  def createVariablesMapSQL = s"""
-    DROP TABLE IF EXISTS ${LocalVariableMapTable} CASCADE;
-    CREATE TABLE ${LocalVariableMapTable}(
-      id ${keyType},
-      mrel ${stringType},
-      mcol ${stringType},
-      mid bigint,
-      CONSTRAINT c_pkey UNIQUE (mrel, mcol, mid));
-    CREATE INDEX ${LocalVariableMapTable}_id_idx ON ${LocalVariableMapTable}(id);
+  def createVariablesHoldoutSQL = s"""
+    DROP TABLE IF EXISTS ${VariablesHoldoutTable} CASCADE; 
+    CREATE TABLE ${VariablesHoldoutTable}(
+      variable_id bigint primary key);
   """
+
+  def createVariablesMapSQL = s"""
+    DROP TABLE IF EXISTS ${VariablesMapTable} CASCADE;
+    CREATE TABLE ${VariablesMapTable}(
+      id ${keyType},
+      variable_id bigint);
+    CREATE INDEX ${VariablesMapTable}_variable_id_idx ON ${VariablesMapTable}(variable_id);
+  """
+
+  // def createVariablesMapSQL = s"""
+  //   DROP TABLE IF EXISTS ${LocalVariableMapTable} CASCADE;
+  //   CREATE TABLE ${LocalVariableMapTable}(
+  //     id ${keyType},
+  //     mrel ${stringType},
+  //     mcol ${stringType},
+  //     mid bigint,
+  //     CONSTRAINT c_pkey UNIQUE (mrel, mcol, mid));
+  //   CREATE INDEX ${LocalVariableMapTable}_id_idx ON ${LocalVariableMapTable}(id);
+  // """
   // CREATE INDEX ${LocalVariableMapTable}_id_all_idx ON ${LocalVariableMapTable}(mrel, mcol, mid);
 
   def alterSequencesSQL = s"""
     ALTER SEQUENCE ${WeightsTable}_id_seq MINVALUE -1 RESTART WITH 0;
     ALTER SEQUENCE ${FactorsTable}_id_seq MINVALUE -1 RESTART WITH 0;
     ALTER SEQUENCE ${VariablesTable}_id_seq MINVALUE -1 RESTART WITH 0;
+    ALTER SEQUENCE ${VariablesMapTable}_id_seq MINVALUE -1 RESTART WITH 0;
     ALTER SEQUENCE ${LocalVariableMapTable}_id_seq MINVALUE -1 RESTART WITH 0;
   """
 
@@ -129,12 +149,10 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   def createMappedInferenceResultView = s"""
     CREATE VIEW ${MappedInferenceResultView} 
-    AS SELECT ${VariablesTable}.*, ${LocalVariableMapTable}.mid, 
-      ${LocalVariableMapTable}.mcol, ${LocalVariableMapTable}.mrel,
-      ${VariableResultTable}.category, ${VariableResultTable}.expectation 
-    FROM ${VariablesTable}, ${LocalVariableMapTable}, ${VariableResultTable}
-    WHERE ${VariablesTable}.id = ${VariableResultTable}.id
-      AND ${VariablesTable}.id = ${LocalVariableMapTable}.id;
+    AS SELECT ${VariablesTable}.*, ${VariableResultTable}.category, ${VariableResultTable}.expectation 
+    FROM ${VariablesTable}, ${VariablesMapTable}, ${VariableResultTable}
+    WHERE ${VariablesTable}.id = ${VariablesMapTable}.variable_id
+      AND ${VariablesMapTable}.variable_id = ${VariableResultTable}.id;
   """
 
   def selectWeightsForDumpSQL = s"""
@@ -144,17 +162,15 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   """
 
   def selectVariablesForDumpSQL(relation: String, attribute: String) = s"""
-    SELECT ${VariablesTable}.id AS "id", ${VariablesTable}.is_evidence AS "is_evidence",
+    SELECT ${VariablesMapTable}.id AS "id", ${VariablesTable}.is_evidence AS "is_evidence",
       ${VariablesTable}.initial_value AS "initial_value", "edge_count"
-    FROM ${VariablesTable}, ${LocalVariableMapTable}, 
+    FROM ${VariablesTable}, ${VariablesMapTable},
     (SELECT variable_id AS "edges.vid", 
       COUNT(*) as "edge_count" 
       FROM ${EdgesTable} GROUP BY variable_id) tmp
-    WHERE ${VariablesTable}.id = ${LocalVariableMapTable}.id
-      AND ${LocalVariableMapTable}.mrel = '${relation}'
-      AND ${LocalVariableMapTable}.mcol = '${attribute}'
+    WHERE ${VariablesTable}.id = ${VariablesMapTable}.variable_id
       AND ${VariablesTable}.id = "edges.vid"
-    ORDER BY ${VariablesTable}.id ASC;
+    ORDER BY ${VariablesMapTable}.id ASC;
   """
 
   def selectFactorsForDumpSQL = s"""
@@ -168,9 +184,11 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   """
 
   def selectEdgesForDumpSQL = s"""
-    SELECT variable_id AS "variable_id", factor_id AS "factor_id", position AS "position",
+    SELECT ${VariablesMapTable}.id AS "variable_id", factor_id AS "factor_id", position AS "position",
       is_positive AS "is_positive"
-    FROM ${EdgesTable};
+    FROM ${EdgesTable}, ${VariablesMapTable}
+    WHERE ${VariablesMapTable}.variable_id = ${EdgesTable}.variable_id
+    ORDER BY ${VariablesMapTable}.id ASC;
   """
 
   def selectMetaDataForDumpSQL = s"""
@@ -181,105 +199,105 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       (SELECT COUNT(*) from ${EdgesTable}) num_edges;
   """
 
-  def materializeQuerySQL(name: String, query: String, weightVariables: Seq[String], weightPrefix: String) = {
-    // Command for generating the weight string
-    val weightCmd = weightVariables.map ( v => s""" "${v}" """ ).mkString(", ") match { 
-      case "" => "''"
-      case x => s"""concat_ws(',','${weightPrefix}', ${x})"""
-    }
-    s"""
-    DROP VIEW IF EXISTS ${name}_tmp CASCADE;
-    DROP TABLE IF EXISTS ${name} CASCADE;
-    CREATE VIEW ${name}_tmp AS (${query});
-    CREATE TABLE ${name} AS 
-    (SELECT row_number() OVER() - 1 as factor_id,
-      ${name}_tmp.*, ${weightCmd} AS dd_weight
-    FROM ${name}_tmp) WITH DATA;
-    CREATE INDEX ${name}_factor_id_idx ON ${name}(factor_id);
-    """
-  }
-  // CREATE INDEX ${name}_weight_idx ON ${name}(dd_weight);
+  // def materializeQuerySQL(name: String, query: String, weightVariables: Seq[String], weightPrefix: String) = {
+  //   // Command for generating the weight string
+  //   val weightCmd = weightVariables.map ( v => s""" "${v}" """ ).mkString(", ") match { 
+  //     case "" => "''"
+  //     case x => s"""concat_ws(',','${weightPrefix}', ${x})"""
+  //   }
+  //   s"""
+  //   DROP VIEW IF EXISTS ${name}_tmp CASCADE;
+  //   DROP TABLE IF EXISTS ${name} CASCADE;
+  //   CREATE VIEW ${name}_tmp AS (${query});
+  //   CREATE TABLE ${name} AS 
+  //   (SELECT row_number() OVER() - 1 as factor_id,
+  //     ${name}_tmp.*, ${weightCmd} AS dd_weight
+  //   FROM ${name}_tmp) WITH DATA;
+  //   CREATE INDEX ${name}_factor_id_idx ON ${name}(factor_id);
+  //   """
+  // }
+  // // CREATE INDEX ${name}_weight_idx ON ${name}(dd_weight);
 
-  def groundInsertWeightsSQL(weightValue: Double, is_fixed: Boolean, queryName: String) = s"""
-    INSERT INTO ${WeightsTable}(description, initial_value, is_fixed)
-    (SELECT DISTINCT dd_weight::text, ${weightValue}, ${is_fixed} FROM ${queryName});
-  """
+  // def groundInsertWeightsSQL(weightValue: Double, is_fixed: Boolean, queryName: String) = s"""
+  //   INSERT INTO ${WeightsTable}(description, initial_value, is_fixed)
+  //   (SELECT DISTINCT dd_weight::text, ${weightValue}, ${is_fixed} FROM ${queryName});
+  // """
 
-  def groundInsertFactorsSQL(factorFunc: String, factorGroup: String, queryName: String) = s"""
-    INSERT INTO ${FactorsTable}(weight_id, factor_function, factor_group, qid)
-    (SELECT ${WeightsTable}.id, '${factorFunc}', '${factorGroup}', factor_id
-    FROM ${queryName}, ${WeightsTable}
-    WHERE dd_weight::text = ${WeightsTable}.description);
-  """
+  // def groundInsertFactorsSQL(factorFunc: String, factorGroup: String, queryName: String) = s"""
+  //   INSERT INTO ${FactorsTable}(weight_id, factor_function, factor_group, qid)
+  //   (SELECT ${WeightsTable}.id, '${factorFunc}', '${factorGroup}', factor_id
+  //   FROM ${queryName}, ${WeightsTable}
+  //   WHERE dd_weight::text = ${WeightsTable}.description);
+  // """
 
-  def groundInsertLocalVariablesSQL(relation: String, valueColumn: String, idColumn: String, 
-    queryName: String) = s"""
-    INSERT INTO ${LocalVariableMapTable}(mrel, mcol, mid)
-    (SELECT DISTINCT '${relation}', '${valueColumn}', "${idColumn}"
-    FROM ${queryName}
-    EXCEPT SELECT '${relation}', '${valueColumn}', mid 
-      FROM ${LocalVariableMapTable}
-      WHERE mrel='${relation}' AND mcol='${valueColumn}');
-  """
+  // def groundInsertLocalVariablesSQL(relation: String, valueColumn: String, idColumn: String, 
+  //   queryName: String) = s"""
+  //   INSERT INTO ${LocalVariableMapTable}(mrel, mcol, mid)
+  //   (SELECT DISTINCT '${relation}', '${valueColumn}', "${idColumn}"
+  //   FROM ${queryName}
+  //   EXCEPT SELECT '${relation}', '${valueColumn}', mid 
+  //     FROM ${LocalVariableMapTable}
+  //     WHERE mrel='${relation}' AND mcol='${valueColumn}');
+  // """
 
-  def groundRebuildIndiciesSQL = s"""ANALYZE;"""
-
-  def groundInsertGlobalVariablesSQL(relation: String, valueColumn: String, idColumn: String, 
-    field: String, dataType: String, holdoutFraction: Double, queryName: String) = s"""
-    DROP VIEW IF EXISTS ${queryName}_new_variables CASCADE;
-    CREATE VIEW ${queryName}_new_variables AS (
-      SELECT DISTINCT ${LocalVariableMapTable}.id AS id, '${dataType}' as data_type, 
-        (CASE WHEN "${field}" THEN 1.0 ELSE 0.0 END) AS initial_value, ("${field}" IS NOT NULL) AS is_evidence
-      FROM ${LocalVariableMapTable} LEFT JOIN ${VariablesTable}
-        ON ${LocalVariableMapTable}.id=${VariablesTable}.id,
-      ${queryName}
-      WHERE mrel='${relation}' AND mcol='${valueColumn}' AND mid="${idColumn}" 
-        AND ${VariablesTable}.id IS NULL);
-    
-    DROP TABLE IF EXISTS ${queryName}_holdout CASCADE;
-    CREATE TABLE ${queryName}_holdout AS (
-      SELECT id 
-      FROM ${queryName}_new_variables 
-      WHERE ${randomFunc} < ${holdoutFraction} AND is_evidence = true) WITH DATA;
-    
-    INSERT INTO ${VariablesTable}(id, data_type, initial_value, is_evidence)
-    (SELECT id, data_type, initial_value, is_evidence FROM ${queryName}_new_variables);
-
-    UPDATE ${VariablesTable} SET is_evidence=false
-    WHERE ${VariablesTable}.id IN (SELECT id FROM ${queryName}_holdout)
-  """
+  // def groundRebuildIndiciesSQL = s"""ANALYZE;"""
 
   // def groundInsertGlobalVariablesSQL(relation: String, valueColumn: String, idColumn: String, 
   //   field: String, dataType: String, holdoutFraction: Double, queryName: String) = s"""
-  //   INSERT INTO ${VariablesTable}(id, data_type, initial_value, is_evidence)
-  //   (SELECT ${LocalVariableMapTable}.id, '${dataType}', 
-  //     (CASE WHEN every("${field}") = true THEN 1.0 ELSE 0.0 END),
-  //     (CASE WHEN (COUNT("${field}") = 0 OR ${randomFunc} < ${holdoutFraction}) THEN false ELSE true END)
-  //   FROM 
-  //     ${LocalVariableMapTable} INNER JOIN 
-  //       (SELECT max(id) AS id from ${LocalVariableMapTable} group by id) tmp
-  //     ON ${LocalVariableMapTable}.id = tmp.id
-  //     LEFT JOIN ${VariablesTable} 
+  //   DROP VIEW IF EXISTS ${queryName}_new_variables CASCADE;
+  //   CREATE VIEW ${queryName}_new_variables AS (
+  //     SELECT DISTINCT ${LocalVariableMapTable}.id AS id, '${dataType}' as data_type, 
+  //       (CASE WHEN "${field}" THEN 1.0 ELSE 0.0 END) AS initial_value, ("${field}" IS NOT NULL) AS is_evidence
+  //     FROM ${LocalVariableMapTable} LEFT JOIN ${VariablesTable}
   //       ON ${LocalVariableMapTable}.id=${VariablesTable}.id,
   //     ${queryName}
-  //   WHERE mrel='${relation}' 
-  //     AND mcol='${valueColumn}'
-  //     AND mid="${idColumn}"
-  //     AND ${VariablesTable}.id IS NULL
-  //   GROUP BY ${LocalVariableMapTable}.id);
+  //     WHERE mrel='${relation}' AND mcol='${valueColumn}' AND mid="${idColumn}" 
+  //       AND ${VariablesTable}.id IS NULL);
+    
+  //   DROP TABLE IF EXISTS ${queryName}_holdout CASCADE;
+  //   CREATE TABLE ${queryName}_holdout AS (
+  //     SELECT id 
+  //     FROM ${queryName}_new_variables 
+  //     WHERE ${randomFunc} < ${holdoutFraction} AND is_evidence = true) WITH DATA;
+    
+  //   INSERT INTO ${VariablesTable}(id, data_type, initial_value, is_evidence)
+  //   (SELECT id, data_type, initial_value, is_evidence FROM ${queryName}_new_variables);
+
+  //   UPDATE ${VariablesTable} SET is_evidence=false
+  //   WHERE ${VariablesTable}.id IN (SELECT id FROM ${queryName}_holdout)
   // """
 
-  def groundInsertEdgesSQL(relation: String, valueColumn: String, idColumn: String, factorGroup: String,
-    position: Long, isNegated: Boolean, queryName: String) = s"""
-     INSERT INTO ${EdgesTable}(factor_id, variable_id, position, is_positive)
-      (SELECT ${FactorsTable}.id, ${LocalVariableMapTable}.id, ${position}, ${!isNegated}
-      FROM ${queryName}, ${FactorsTable}, ${LocalVariableMapTable}
-      WHERE ${queryName}.factor_id = ${FactorsTable}.qid
-        AND ${LocalVariableMapTable}.mrel = '${relation}'
-        AND ${LocalVariableMapTable}.mcol = '${valueColumn}'
-        AND ${LocalVariableMapTable}.mid = "${idColumn}"
-        AND ${FactorsTable}.factor_group = '${factorGroup}')
-  """
+  // // def groundInsertGlobalVariablesSQL(relation: String, valueColumn: String, idColumn: String, 
+  // //   field: String, dataType: String, holdoutFraction: Double, queryName: String) = s"""
+  // //   INSERT INTO ${VariablesTable}(id, data_type, initial_value, is_evidence)
+  // //   (SELECT ${LocalVariableMapTable}.id, '${dataType}', 
+  // //     (CASE WHEN every("${field}") = true THEN 1.0 ELSE 0.0 END),
+  // //     (CASE WHEN (COUNT("${field}") = 0 OR ${randomFunc} < ${holdoutFraction}) THEN false ELSE true END)
+  // //   FROM 
+  // //     ${LocalVariableMapTable} INNER JOIN 
+  // //       (SELECT max(id) AS id from ${LocalVariableMapTable} group by id) tmp
+  // //     ON ${LocalVariableMapTable}.id = tmp.id
+  // //     LEFT JOIN ${VariablesTable} 
+  // //       ON ${LocalVariableMapTable}.id=${VariablesTable}.id,
+  // //     ${queryName}
+  // //   WHERE mrel='${relation}' 
+  // //     AND mcol='${valueColumn}'
+  // //     AND mid="${idColumn}"
+  // //     AND ${VariablesTable}.id IS NULL
+  // //   GROUP BY ${LocalVariableMapTable}.id);
+  // // """
+
+  // def groundInsertEdgesSQL(relation: String, valueColumn: String, idColumn: String, factorGroup: String,
+  //   position: Long, isNegated: Boolean, queryName: String) = s"""
+  //    INSERT INTO ${EdgesTable}(factor_id, variable_id, position, is_positive)
+  //     (SELECT ${FactorsTable}.id, ${LocalVariableMapTable}.id, ${position}, ${!isNegated}
+  //     FROM ${queryName}, ${FactorsTable}, ${LocalVariableMapTable}
+  //     WHERE ${queryName}.factor_id = ${FactorsTable}.qid
+  //       AND ${LocalVariableMapTable}.mrel = '${relation}'
+  //       AND ${LocalVariableMapTable}.mcol = '${valueColumn}'
+  //       AND ${LocalVariableMapTable}.mid = "${idColumn}"
+  //       AND ${FactorsTable}.factor_group = '${factorGroup}')
+  // """
 
   def createInferenceResultIndiciesSQL = s"""
     CREATE INDEX ${WeightResultTable}_idx ON ${WeightResultTable} (weight);
@@ -292,12 +310,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def createInferenceViewSQL(relationName: String, columnName: String) = s"""
     CREATE VIEW ${relationName}_${columnName}_inference AS
     (SELECT ${relationName}.*, mir.category, mir.expectation FROM
-    ${relationName} JOIN
-      (SELECT mir.category, mir.expectation, mir.id, mir.mid 
-      FROM ${MappedInferenceResultView} mir 
-      WHERE mrel = '${relationName}' AND mcol = '${columnName}'
-      ORDER BY mir.expectation DESC) 
-    mir ON ${relationName}.id = mir.mid);
+    ${relationName}, ${MappedInferenceResultView} mir
+    WHERE ${relationName}.id = mir.id
+    ORDER BY mir.expectation DESC);
   """
 
   def createMappedWeightsViewSQL = s"""
@@ -376,15 +391,16 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
 
   def init() : Unit = {
-    execute(createWeightsSQL)
-    execute(createFactorsSQL)
-    execute(createVariablesSQL)
-    execute(createVariablesMapSQL)
-    execute(creatEdgesSQL)
-    execute(createInferenceResultSQL)
-    execute(createInferenceResultWeightsSQL)
-    execute(createMappedInferenceResultView)
-    execute(alterSequencesSQL)
+    // execute(createWeightsSQL)
+    // execute(createFactorsSQL)
+    // execute(createVariablesSQL)
+    // execute(createVariablesHoldoutSQL)
+    // execute(createVariablesMapSQL)
+    // execute(creatEdgesSQL)
+    // execute(createInferenceResultSQL)
+    // execute(createInferenceResultWeightsSQL)
+    // execute(createMappedInferenceResultView)
+    // execute(alterSequencesSQL)
   }
 
   def dumpFactorGraph(serializer: Serializer, schema: Map[String, _ <: VariableDataType],
@@ -429,44 +445,159 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     serializer.close()
   }
 
-  def groundFactorGraph(factorDesc: FactorDesc, holdoutFraction: Double) {
-    val queryName = s"dd_${factorDesc.name}_query"
-    val weightValue = factorDesc.weight match { 
-      case x : KnownFactorWeight => x.value
-      case _ => 0.0
-    }
-    log.info("Grounding rule query...")
-    execute(materializeQuerySQL(queryName, factorDesc.inputQuery, factorDesc.weight.variables, factorDesc.weightPrefix))
-    log.info("Inserting weights...")
-    execute(groundInsertWeightsSQL(weightValue, factorDesc.weight.isInstanceOf[KnownFactorWeight], queryName))
-    
-    factorDesc.func.variables.zipWithIndex.foreach { case(variable, position) =>
-      val vRelation = variable.headRelation
-      val vColumn = variable.field
-      val vidColumn = s"${variable.relation}.id"
-      val variableDataType = factorDesc.func.variableDataType
-      log.info(s"""Inserting local variable="${variable.toString}"...""")
-      execute(groundInsertLocalVariablesSQL(vRelation, vColumn, vidColumn, queryName))
+  def groundFactorGraph(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
+    holdoutFraction: Double) {
+
+    // We write the grounding queries to this SQL file
+    val sqlFile = File.createTempFile(s"grounding", ".sql")
+    val writer = new PrintWriter(sqlFile)
+    log.info(s"""Writing commands to file="${sqlFile}" """)
+
+    writer.println(createWeightsSQL)
+    writer.println(createFactorsSQL)
+    writer.println(createVariablesSQL)
+    writer.println(createVariablesHoldoutSQL)
+    writer.println(createVariablesMapSQL)
+    writer.println(creatEdgesSQL)
+    writer.println(alterSequencesSQL)
+
+    // Ground all variables in the schema
+    schema.foreach { case(variable, dataType) =>
+      val Array(relation, column) = variable.split('.')
+      writer.println(
+        s"""INSERT INTO ${VariablesTable}(id, data_type, initial_value, is_evidence)
+        SELECT ${relation}.id, '${dataType}', ${variable}::int, (${variable} IS NOT NULL)
+        FROM ${relation};""")
     }
 
-    log.info("Rebuilding indicies...")
-    execute(groundRebuildIndiciesSQL)
-    
-    log.info("Inserting factors...")
-    execute(groundInsertFactorsSQL(factorDesc.func.getClass.getSimpleName, factorDesc.name, queryName))
-    
-    factorDesc.func.variables.zipWithIndex.foreach { case(variable, position) =>
-      val vRelation = variable.headRelation
-      val vColumn = variable.field
-      val vidColumn = s"${variable.relation}.id"
-      val variableDataType = factorDesc.func.variableDataType
-      log.info(s"""Inserting global variable="${variable.toString}"...""")
-      execute(groundInsertGlobalVariablesSQL(vRelation, vColumn, vidColumn, 
-        variable.toString, variableDataType, holdoutFraction, queryName))
-      log.info(s"""Inserting edges for variable="${variable.toString}"...""")
-      execute(groundInsertEdgesSQL(vRelation, vColumn, vidColumn, factorDesc.name,
-        position, variable.isNegated, queryName))
+    // Map variables to sequential IDs
+    writer.println(
+      s"""INSERT INTO ${VariablesMapTable}(variable_id)
+      SELECT id FROM ${VariablesTable};""")
+
+    // Assign the holdout
+    writer.println(s"""INSERT INTO ${VariablesHoldoutTable}(variable_id)
+      SELECT id FROM ${VariablesTable}
+      WHERE ${randomFunc} < ${holdoutFraction} AND is_evidence = true;""")
+    writer.println(s"""UPDATE ${VariablesTable} SET is_evidence=false
+      WHERE ${VariablesTable}.id IN (SELECT variable_id FROM ${VariablesHoldoutTable});""")
+
+    // Create views for each inference rule
+    factorDescs.zipWithIndex.foreach { case(factorDesc, i) =>
+
+      val factorOffsetCmd = i match {
+        case 0 => "0"
+        case x => s"""(SELECT max(factor_id)+1 FROM ${factorDescs(i-1).name}_query)"""
+      }
+
+      writer.println(s"""
+        DROP VIEW IF EXISTS ${factorDesc.name}_query_user CASCADE;
+        CREATE VIEW ${factorDesc.name}_query_user AS ${factorDesc.inputQuery};""")
+      writer.println(s"""
+        DROP MATERIALIZED VIEW IF EXISTS ${factorDesc.name}_query CASCADE;
+        CREATE MATERIALIZED VIEW ${factorDesc.name}_query AS 
+        SELECT 
+          row_number() OVER() - 1 + ${factorOffsetCmd} as factor_id,
+          ${factorDesc.name}_query_user.*
+        FROM ${factorDesc.name}_query_user;""")
+      
     }
+
+    // Ground weights for each inference rule
+    factorDescs.foreach { factorDesc =>
+      val weightValue = factorDesc.weight match { 
+        case x : KnownFactorWeight => x.value
+        case _ => 0.0
+      }
+      val isFixed = factorDesc.weight.isInstanceOf[KnownFactorWeight]
+      val weightPrefix = factorDesc.weightPrefix
+      val weightCmd = factorDesc.weight.variables.map ( v => s""" "${v}" """ ).mkString(", ") match { 
+        case "" => weightPrefix
+        case x => s"""concat_ws('-','${weightPrefix}', ${x})"""
+      }
+
+      writer.println(s"""
+        INSERT INTO ${WeightsTable}(initial_value, is_fixed, description)
+        SELECT DISTINCT ${weightValue}, ${isFixed}, ${weightCmd}
+        FROM ${factorDesc.name}_query;""")
+    }
+    // Add index to the weights
+    writer.println(s"""CREATE INDEX ${WeightsTable}_desc_idx ON ${WeightsTable}(description);""")
+    writer.println(s"""ANALYZE ${WeightsTable};""")
+
+
+    // Ground all factors
+    factorDescs.foreach { factorDesc =>
+      val weightPrefix = factorDesc.weightPrefix
+      val weightCmd = factorDesc.weight.variables.map ( v => s""" "${v}" """ ).mkString(", ") match { 
+        case "" => weightPrefix
+        case x => s"""concat_ws('-','${weightPrefix}', ${x})"""
+      }
+      val functionName = factorDesc.func.getClass.getSimpleName
+      writer.println(s"""
+        INSERT INTO ${FactorsTable}(id, weight_id, factor_function, factor_group)
+        SELECT factor_id, ${WeightsTable}.id, '${functionName}', '${factorDesc.name}'
+        FROM ${factorDesc.name}_query, ${WeightsTable}
+        WHERE ${weightCmd} = ${WeightsTable}.description;""")
+    }
+
+    // Ground all edges
+    factorDescs.foreach { factorDesc =>
+      factorDesc.func.variables.zipWithIndex.foreach { case(variable, position) =>
+        val vRelation = variable.headRelation
+        val vColumn = variable.field
+        val vidColumn = s"${variable.relation}.id"
+        val isPositive = !variable.isNegated
+        writer.println(s"""
+          INSERT INTO ${EdgesTable}(factor_id, variable_id, position, is_positive)
+          SELECT factor_id, "${vidColumn}", ${position}, ${isPositive}
+          FROM ${factorDesc.name}_query;""")
+      }
+    }
+
+    writer.close()
+
+    log.info("Executing grounding query...")
+    execute(Source.fromFile(sqlFile).getLines.mkString)
+
+
+    // val queryName = s"dd_${factorDesc.name}_query"
+    // val weightValue = factorDesc.weight match { 
+    //   case x : KnownFactorWeight => x.value
+    //   case _ => 0.0
+    // }
+    // log.info("Grounding rule query...")
+    // execute(materializeQuerySQL(queryName, factorDesc.inputQuery, factorDesc.weight.variables, factorDesc.weightPrefix))
+    // log.info("Inserting weights...")
+    // execute(groundInsertWeightsSQL(weightValue, factorDesc.weight.isInstanceOf[KnownFactorWeight], queryName))
+    
+    // factorDesc.func.variables.zipWithIndex.foreach { case(variable, position) =>
+    //   val vRelation = variable.headRelation
+    //   val vColumn = variable.field
+    //   val vidColumn = s"${variable.relation}.id"
+    //   val variableDataType = factorDesc.func.variableDataType
+    //   log.info(s"""Inserting local variable="${variable.toString}"...""")
+    //   execute(groundInsertLocalVariablesSQL(vRelation, vColumn, vidColumn, queryName))
+    // }
+
+    // log.info("Rebuilding indicies...")
+    // execute(groundRebuildIndiciesSQL)
+    
+    // log.info("Inserting factors...")
+    // execute(groundInsertFactorsSQL(factorDesc.func.getClass.getSimpleName, factorDesc.name, queryName))
+    
+    // factorDesc.func.variables.zipWithIndex.foreach { case(variable, position) =>
+    //   val vRelation = variable.headRelation
+    //   val vColumn = variable.field
+    //   val vidColumn = s"${variable.relation}.id"
+    //   val variableDataType = factorDesc.func.variableDataType
+    //   log.info(s"""Inserting global variable="${variable.toString}"...""")
+    //   execute(groundInsertGlobalVariablesSQL(vRelation, vColumn, vidColumn, 
+    //     variable.toString, variableDataType, holdoutFraction, queryName))
+    //   log.info(s"""Inserting edges for variable="${variable.toString}"...""")
+    //   execute(groundInsertEdgesSQL(vRelation, vColumn, vidColumn, factorDesc.name,
+    //     position, variable.isNegated, queryName))
+    // }
   }
 
   def bulkCopyWeights(weightsFile: String) : Unit
@@ -475,10 +606,15 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def writebackInferenceResult(variableSchema: Map[String, _ <: VariableDataType],
     variableOutputFile: String, weightsOutputFile: String) = {
 
-    log.info("Copying inference result into the database...")
-    bulkCopyWeights(weightsOutputFile)
-    bulkCopyVariables(variableOutputFile)
+    execute(createInferenceResultSQL)
+    execute(createInferenceResultWeightsSQL)
+    execute(createMappedInferenceResultView)
 
+    log.info("Copying inference result weights...")
+    bulkCopyWeights(weightsOutputFile)
+    log.info("Copying inference result variables...")
+    bulkCopyVariables(variableOutputFile)
+    log.info("Creating indicies on the inference result...")
     execute(createInferenceResultIndiciesSQL)
 
     // Each (relation, column) tuple is a variable in the plate model.

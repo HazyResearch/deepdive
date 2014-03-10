@@ -56,8 +56,8 @@ trait FactorGraphBuilder extends Actor with ActorLogging {
   def addFactorsAndVariables(factorDesc: FactorDesc, holdoutFraction: Double, 
     batchSize: Option[Int]) {
     // Query the data store..
-    inferenceDataStore.asInstanceOf[SQLInferenceDataStore]
-      .groundFactorGraph(factorDesc, holdoutFraction)
+    // inferenceDataStore.asInstanceOf[SQLInferenceDataStore]
+    //   .groundFactorGraph(factorDesc, holdoutFraction)
 
   }
 

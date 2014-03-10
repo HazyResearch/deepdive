@@ -26,7 +26,8 @@ trait MemoryInferenceDataStoreComponent extends InferenceDataStoreComponent{
       log.info("initialized")
     }
 
-    def groundFactorGraph(factorDesc: FactorDesc, holdoutFraction: Double) : Unit = {
+    def groundFactorGraph(schema: Map[String, _ <: VariableDataType],
+      factorDescs: Seq[FactorDesc], holdoutFraction: Double) : Unit = {
 
     }
 
