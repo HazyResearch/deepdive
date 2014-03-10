@@ -408,30 +408,45 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     weightsPath: String, variablesPath: String, factorsPath: String, edgesPath: String) : Unit = {
     log.info(s"Dumping factor graph...")
     log.info("Serializing weights...")
-    selectForeach(selectWeightsForDumpSQL) { rs => 
-      serializer.addWeight(rs.long("id"), rs.boolean("is_fixed"), 
-        rs.double("initial_value"), rs.string("description"))
-    }
-    log.info(s"""Serializing variables...""")
-    selectForeach(selectVariablesForDumpSQL) { rs => 
-      serializer.addVariable(
-        rs.long("id"),
+    
+    DB.readOnly { implicit session =>
+      SQL(selectWeightsForDumpSQL).map { rs =>
+        (rs.long("id"), rs.boolean("is_fixed"), 
+          rs.double("initial_value"), rs.string("description"))
+      }.traversable.apply().par.foreach { case(id, isFixed, initialValue, desc) =>
+        serializer.addWeight(id, isFixed, initialValue, desc)
+      }
+
+      log.info(s"""Serializing variables...""")
+      SQL(selectVariablesForDumpSQL).map { rs =>
+        (rs.long("id"),
         if (rs.boolean("is_evidence")) rs.doubleOpt("initial_value") else None,
         rs.string("data_type"), 
         rs.long("edge_count"),
         None)
-    }
-    log.info("Serializing factors...")
-    selectForeach(selectFactorsForDumpSQL) { rs => 
-      serializer.addFactor(rs.long("id"), rs.long("weight_id"),
+      }.traversable.apply().par.foreach { case(id, initialValue, dataType, edgeCount, cardinality) =>
+        serializer.addVariable(id, initialValue, dataType, edgeCount, cardinality)
+      }
+
+      log.info("Serializing factors...")
+      SQL(selectFactorsForDumpSQL).map { rs => 
+      (rs.long("id"), rs.long("weight_id"),
         rs.string("factor_function"), rs.long("edge_count"))
-    }
-    log.info("Serializing edges...")
-    selectForeach(selectEdgesForDumpSQL) { rs => 
-      serializer.addEdge(rs.long("variable_id"), rs.long("factor_id"),
-        rs.long("position"), rs.boolean("is_positive"))
+      }.traversable.apply().par.foreach { case(id, weightId, factorFunction, edgeCount) =>
+        serializer.addFactor(id, weightId, factorFunction, edgeCount)
+      }
+
+      log.info("Serializing edges...")
+      SQL(selectEdgesForDumpSQL).map { rs => 
+        (rs.long("variable_id"), rs.long("factor_id"),
+          rs.long("position"), rs.boolean("is_positive"))
+      }.traversable.apply().par.foreach { case(variableId, factorId, position, isPositive) =>
+        serializer.addEdge(variableId, factorId, position, isPositive)
+      }
+
     }
 
+    log.info("Serializing metadata...")
     selectForeach(selectMetaDataForDumpSQL) { rs =>
       serializer.writeMetadata(
         rs.long("num_weights"), rs.long("num_variables"), rs.long("num_factors"), rs.long("num_edges"),
