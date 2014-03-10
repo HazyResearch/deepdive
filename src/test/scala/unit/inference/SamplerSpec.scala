@@ -21,7 +21,7 @@ class SamplerSpec(_system: ActorSystem) extends TestKit(_system) with ImplicitSe
     
     it("should work with a trivial factor graph") {
       val sampler = TestActorRef[Sampler]
-      val samplerCmd = "java -Xmx4g -jar util/sampler-assembly-0.1.jar"
+      val samplerCmd = "LD_LIBRARY_PATH=/dfs/rulk/0/hazy_share/lib64/:/dfs/rulk/0/hazy_share/lib/protobuf/lib/:/dfs/rulk/0/hazy_share/lib/tclap/lib/ /dfs/rulk/0/hazy_share/./dw gibbs"
       val samplerOptions = "-l 10 -s 10 -i 10"
       // val variablesOutputFile = File.createTempFile("sampler_output", "")
       sampler ! Sampler.Run(samplerCmd, samplerOptions, weightsFile, variablesFile, factorsFile, edgesFile,
@@ -32,7 +32,7 @@ class SamplerSpec(_system: ActorSystem) extends TestKit(_system) with ImplicitSe
     it("should throw an exception when sampling fails") {
       val sampler = TestActorRef[Sampler]
       watch(sampler)
-      val samplerCmd = "java -Xmx4g -jar util/sampler-assembly-0.1.jar"
+      val samplerCmd = "LD_LIBRARY_PATH=/dfs/rulk/0/hazy_share/lib64/:/dfs/rulk/0/hazy_share/lib/protobuf/lib/:/dfs/rulk/0/hazy_share/lib/tclap/lib/ /dfs/rulk/0/hazy_share/./dw gibbs"
       val samplerOptions = "-l 10 -s 10 -i 10"
       val variablesOutputFile = File.createTempFile("sampler_output", "")
       intercept[RuntimeException] {

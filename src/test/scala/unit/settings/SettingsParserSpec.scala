@@ -108,12 +108,12 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester {
   describe("Parsing Sampler Settings") {
     it ("should work when specified") {
       val config = ConfigFactory.parseString("""
-        sampler.sampler_cmd = "java -jar util/sampler-assembly-0.1.jar"
+        sampler.sampler_cmd = "LD_LIBRARY_PATH=/dfs/rulk/0/hazy_share/lib64/:/dfs/rulk/0/hazy_share/lib/protobuf/lib/:/dfs/rulk/0/hazy_share/lib/tclap/lib/ /dfs/rulk/0/hazy_share/./dw gibbs"
         sampler.sampler_args = "-i 1000"
       """).withFallback(defaultConfig)
       val loadSamplerSettings = PrivateMethod[SamplerSettings]('loadSamplerSettings)
       val result = SettingsParser invokePrivate loadSamplerSettings(config)
-      assert(result == SamplerSettings("java -jar util/sampler-assembly-0.1.jar", "-i 1000"))
+      assert(result == SamplerSettings("LD_LIBRARY_PATH=/dfs/rulk/0/hazy_share/lib64/:/dfs/rulk/0/hazy_share/lib/protobuf/lib/:/dfs/rulk/0/hazy_share/lib/tclap/lib/ /dfs/rulk/0/hazy_share/./dw gibbs", "-i 1000"))
     }
     
     it ("should work when not specified") {

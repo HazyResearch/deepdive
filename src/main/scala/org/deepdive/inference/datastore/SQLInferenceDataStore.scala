@@ -185,7 +185,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // Command for generating the weight string
     val weightCmd = weightVariables.map ( v => s""" "${v}" """ ).mkString(", ") match { 
       case "" => "''"
-      case x => s"""concat_ws(',','${weightPrefix}', ${x})"""
+      // case x => s"""concat_ws(',','${weightPrefix}', ${x})"""
+      case x => s"""',' || '${weightPrefix}' || ${x}"""
     }
     s"""
     DROP VIEW IF EXISTS ${name}_tmp CASCADE;
