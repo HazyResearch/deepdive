@@ -510,7 +510,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       }
       val isFixed = factorDesc.weight.isInstanceOf[KnownFactorWeight]
       val weightPrefix = factorDesc.weightPrefix
-      val weightCmd = factorDesc.weight.variables.map ( v => s""" "${v}" """ ).mkString(", ") match { 
+      val weightCmd = factorDesc.weight.variables.map ( v => s""" "${v}"::text """ ).mkString(" || ") match { 
         case "" => weightPrefix
         // case x => s"""concat_ws('-','${weightPrefix}', ${x})"""
         case x => s"""'-'||'${weightPrefix}'|| ${x}"""
@@ -529,9 +529,13 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // Ground all factors
     factorDescs.foreach { factorDesc =>
       val weightPrefix = factorDesc.weightPrefix
-      val weightCmd = factorDesc.weight.variables.map ( v => s""" "${v}" """ ).mkString(", ") match { 
+      val weightCmd = factorDesc.weight.variables.map ( v => s""" "${v}"::text """ ).mkString(", ") match { 
         case "" => weightPrefix
+<<<<<<< HEAD
         case x => s"""'-'||'${weightPrefix}'|| ${x}"""
+=======
+        case x => s"""'${weightPrefix}-' || ${x} """
+>>>>>>> a7a3d6a12ae3079e4e6e72803821283858376828
       }
       val functionName = factorDesc.func.getClass.getSimpleName
       writer.println(s"""
