@@ -120,7 +120,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     ALTER SEQUENCE ${FactorsTable}_id_seq MINVALUE -1 RESTART WITH 0;
     ALTER SEQUENCE ${VariablesTable}_id_seq MINVALUE -1 RESTART WITH 0;
     ALTER SEQUENCE ${VariablesMapTable}_id_seq MINVALUE -1 RESTART WITH 0;
-    ALTER SEQUENCE ${LocalVariableMapTable}_id_seq MINVALUE -1 RESTART WITH 0;
   """
 
   def creatEdgesSQL = s"""
@@ -624,7 +623,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     relationsColumns.foreach { case(relationName, columnName) => 
       execute(createInferenceViewSQL(relationName, columnName))
-      execute(createVariableWeightsViewSQL(relationName, columnName))
+      // execute(createVariableWeightsViewSQL(relationName, columnName))
     }
   }
 
