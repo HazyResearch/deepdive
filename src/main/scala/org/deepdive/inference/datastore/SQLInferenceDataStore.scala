@@ -508,9 +508,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       }
       val isFixed = factorDesc.weight.isInstanceOf[KnownFactorWeight]
       val weightPrefix = factorDesc.weightPrefix
-      val weightCmd = factorDesc.weight.variables.map ( v => s""" "${v}" """ ).mkString(", ") match { 
+      val weightCmd = factorDesc.weight.variables.map ( v => s""" "${v}" """ ).mkString(" || ") match { 
         case "" => weightPrefix
-        case x => s"""concat_ws('-','${weightPrefix}', ${x})"""
+        case x => s"""'${weightPrefix}-' || ${x} """
       }
 
       writer.println(s"""
