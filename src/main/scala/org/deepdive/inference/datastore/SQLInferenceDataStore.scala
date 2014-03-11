@@ -86,6 +86,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       id ${keyType} primary key, 
       data_type ${stringType},
       initial_value double precision, 
+      cardinality bigint, 
       is_evidence boolean);
   """
 
@@ -122,13 +123,14 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     ALTER SEQUENCE ${VariablesMapTable}_id_seq MINVALUE -1 RESTART WITH 0;
   """
 
-  def creatEdgesSQL = s"""
+  def createEdgesSQL = s"""
     DROP TABLE IF EXISTS ${EdgesTable}; 
     CREATE TABLE ${EdgesTable}(
       factor_id bigint, 
       variable_id bigint, 
       position int, 
-      is_positive boolean);
+      is_positive boolean,
+      equal_predicate bigint);
   """
 
   def createInferenceResultSQL = s"""
@@ -395,7 +397,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // execute(createVariablesSQL)
     // execute(createVariablesHoldoutSQL)
     // execute(createVariablesMapSQL)
-    // execute(creatEdgesSQL)
+    // execute(createEdgesSQL)
     // execute(createInferenceResultSQL)
     // execute(createInferenceResultWeightsSQL)
     // execute(createMappedInferenceResultView)
@@ -414,7 +416,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     selectForeach(selectVariablesForDumpSQL) { rs => 
       serializer.addVariable(
         rs.long("id"),
-        if (rs.boolean("is_evidence")) rs.doubleOpt("initial_value") else None,
+        rs.boolean("is_evidence"),
+        rs.doubleOpt("initial_value"),
         rs.string("data_type"), 
         rs.longOpt("edge_count").getOrElse(0),
         None)
@@ -426,8 +429,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
     log.info("Serializing edges...")
     selectForeach(selectEdgesForDumpSQL) { rs => 
-      serializer.addEdge(rs.long("variable_id"), rs.long("factor_id"),
-        rs.long("position"), rs.boolean("is_positive"))
+      serializer.addEdge(
+        rs.long("variable_id"),
+        rs.long("factor_id"),
+        rs.long("position"), 
+        rs.boolean("is_positive"),
+        rs.longOpt("equal_predicate"))
     }
 
     selectForeach(selectMetaDataForDumpSQL) { rs =>
@@ -454,7 +461,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     writer.println(createVariablesSQL)
     writer.println(createVariablesHoldoutSQL)
     writer.println(createVariablesMapSQL)
-    writer.println(creatEdgesSQL)
+    writer.println(createEdgesSQL)
     writer.println(alterSequencesSQL)
 
     // Ground all variables in the schema

@@ -61,10 +61,11 @@ trait MemoryInferenceDataStoreComponent extends InferenceDataStoreComponent{
       weightsPath: String, variablesPath: String, factorsPath: String, edgesPath: String) = {
       // Weights
       weights.values.foreach { w => serializer.addWeight(w.id, w.isFixed, w.value, w.description) }
-      variables.values.foreach { v =>  serializer.addVariable(v.id, v.initialValue, v.dataType.toString, 0, v.dataType.cardinality) }
+      variables.values.foreach { v =>  serializer.addVariable(v.id, v.initialValue.isDefined, 
+        v.initialValue, v.dataType.toString, 0, v.dataType.cardinality) }
       factors.values.foreach { f => serializer.addFactor(f.id, f.weightId, f.factorFunction, 0) }
       factors.values.flatMap(_.variables).foreach { edge =>
-        serializer.addEdge(edge.variableId, edge.factorId, edge.position, edge.positive)
+        serializer.addEdge(edge.variableId, edge.factorId, edge.position, edge.positive, None)
       }
       serializer.close()
     }

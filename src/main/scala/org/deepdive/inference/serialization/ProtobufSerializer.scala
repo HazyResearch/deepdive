@@ -20,12 +20,13 @@ class ProtobufSerializer(weightsOuput: OutputStream, variablesOutput: OutputStre
     weightsOuput.synchronized { obj.writeDelimitedTo(weightsOuput) } 
   }
   
-  def addVariable(variableId: Long, initialValue: Option[Double], dataType: String, 
-    edgeCount: Long, cardinality: Option[Long]) : Unit = {
+  def addVariable(variableId: Long, isEvidence: Boolean, initialValue: Option[Double], 
+    dataType: String, edgeCount: Long, cardinality: Option[Long]) : Unit = {
     val variableBuilder = FactorGraphProtos.Variable.newBuilder
     variableBuilder.setId(variableId)
     variableBuilder.setEdgeCount(edgeCount)
-    if (initialValue.isDefined) variableBuilder.setInitialValue(initialValue.get)
+    variableBuilder.setIsEvidence(isEvidence)
+    initialValue.foreach(variableBuilder.setInitialValue)
     dataType match {
       case "Boolean" => 
         variableBuilder.setDataType(FactorGraphProtos.Variable.VariableDataType.BOOLEAN)
@@ -55,12 +56,14 @@ class ProtobufSerializer(weightsOuput: OutputStream, variablesOutput: OutputStre
   }
 
 
-  def addEdge(variableId: Long, factorId: Long, position: Long, isPositive: Boolean) : Unit = {
+  def addEdge(variableId: Long, factorId: Long, position: Long, isPositive: Boolean, 
+    equalPredicate: Option[Long]) : Unit = {
     val edgeBuilder = FactorGraphProtos.GraphEdge.newBuilder
     edgeBuilder.setVariableId(variableId)
     edgeBuilder.setFactorId(factorId)
+    equalPredicate.foreach(edgeBuilder.setEqualPredicate)
     edgeBuilder.setPosition(position)
-    if (!isPositive) edgeBuilder.setIsPositive(isPositive)
+    edgeBuilder.setIsPositive(isPositive)
     val obj = edgeBuilder.build()
     edgesOutput.synchronized { obj.writeDelimitedTo(edgesOutput) }
   }
