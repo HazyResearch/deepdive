@@ -490,18 +490,20 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
       val factorOffsetCmd = i match {
         case 0 => "0"
-        case x => s"""(SELECT max(factor_id)+1 FROM ${factorDescs(i-1).name}_query)"""
+        // case x => s"""(SELECT max(factor_id)+1 FROM ${factorDescs(i-1).name}_query)"""
+        case x => s"""(SELECT COALESCE(max(factor_id) + 1, ${i * 1000000}) FROM ${factorDescs(i-1).name}_query)"""
+        // TODO Zifei: Handle the case that max(factor_id) returns a null (query table is empty). Should replace i*1000000 to the maximum value + 1 of factor_id across all existing tables.
       }
 
       writer.println(s"""
         DROP VIEW IF EXISTS ${factorDesc.name}_query_user CASCADE;
         CREATE VIEW ${factorDesc.name}_query_user AS ${factorDesc.inputQuery};""")
       writer.println(s"""
-        DROP MATERIALIZED VIEW IF EXISTS ${factorDesc.name}_query CASCADE;
-        CREATE MATERIALIZED VIEW ${factorDesc.name}_query AS 
+        DROP TABLE IF EXISTS ${factorDesc.name}_query CASCADE;
         SELECT 
           row_number() OVER() - 1 + ${factorOffsetCmd} as factor_id,
           ${factorDesc.name}_query_user.*
+        INTO ${factorDesc.name}_query 
         FROM ${factorDesc.name}_query_user;""")
       
     }
@@ -515,7 +517,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       val isFixed = factorDesc.weight.isInstanceOf[KnownFactorWeight]
       val weightPrefix = factorDesc.weightPrefix
       val weightCmd = factorDesc.weight.variables.map ( v => s""" "${v}"::text """ ).mkString(" || ") match { 
-        case "" => weightPrefix
+        case "" => s"""'${weightPrefix}'"""
         case x => s"""'${weightPrefix}-' || ${x} """
       }
 
@@ -533,7 +535,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     factorDescs.foreach { factorDesc =>
       val weightPrefix = factorDesc.weightPrefix
       val weightCmd = factorDesc.weight.variables.map ( v => s""" "${v}"::text """ ).mkString(", ") match { 
-        case "" => weightPrefix
+        case "" => s"""'${weightPrefix}'"""
         case x => s"""'${weightPrefix}-' || ${x} """
       }
       val functionName = factorDesc.func.getClass.getSimpleName
