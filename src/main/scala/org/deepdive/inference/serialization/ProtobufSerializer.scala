@@ -17,7 +17,7 @@ class ProtobufSerializer(weightsOuput: OutputStream, variablesOutput: OutputStre
     if (isFixed) weightBuilder.setInitialValue(initialValue)
     weightBuilder.setDescription(desc)
     val obj = weightBuilder.build()
-    weightsOuput.synchronized { obj.writeDelimitedTo(weightsOuput) } 
+    obj.writeDelimitedTo(weightsOuput)
   }
   
   def addVariable(variableId: Long, isEvidence: Boolean, initialValue: Option[Double], 
@@ -35,7 +35,7 @@ class ProtobufSerializer(weightsOuput: OutputStream, variablesOutput: OutputStre
         // variableBuilder.setCardinality(n)
     }    
     val obj = variableBuilder.build()
-    variablesOutput.synchronized { obj.writeDelimitedTo(variablesOutput) }
+    obj.writeDelimitedTo(variablesOutput)
   }
 
   def addFactor(factorId: Long, weightId: Long, factorFunction: String, edgeCount: Long) : Unit = {
@@ -52,7 +52,7 @@ class ProtobufSerializer(weightsOuput: OutputStream, variablesOutput: OutputStre
     }
     factorBuilder.setFactorFunction(factorFunctionType)
     val obj = factorBuilder.build()
-    factorsOutput.synchronized { obj.writeDelimitedTo(factorsOutput) }
+    obj.writeDelimitedTo(factorsOutput)
   }
 
 
@@ -65,7 +65,7 @@ class ProtobufSerializer(weightsOuput: OutputStream, variablesOutput: OutputStre
     edgeBuilder.setPosition(position)
     edgeBuilder.setIsPositive(isPositive)
     val obj = edgeBuilder.build()
-    edgesOutput.synchronized { obj.writeDelimitedTo(edgesOutput) }
+    obj.writeDelimitedTo(edgesOutput)
   }
 
   def writeMetadata(numWeights: Long, numVariables: Long, numFactors: Long, numEdges: Long,
@@ -80,7 +80,7 @@ class ProtobufSerializer(weightsOuput: OutputStream, variablesOutput: OutputStre
       graphDataBuilder.setFactorsFile(factorsFile)
       graphDataBuilder.setEdgesFile(edgesFile)
       val obj = graphDataBuilder.build()
-      metaDataOutput.synchronized { obj.writeTo(metaDataOutput) }
+      obj.writeTo(metaDataOutput)
   }
 
   def close() : Unit = {
