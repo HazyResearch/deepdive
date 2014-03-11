@@ -152,7 +152,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     AS SELECT ${VariablesTable}.*, ${VariableResultTable}.category, ${VariableResultTable}.expectation 
     FROM ${VariablesTable}, ${VariablesMapTable}, ${VariableResultTable}
     WHERE ${VariablesTable}.id = ${VariablesMapTable}.variable_id
-      AND ${VariablesMapTable}.variable_id = ${VariableResultTable}.id;
+      AND ${VariablesMapTable}.id = ${VariableResultTable}.id;
   """
 
   def selectWeightsForDumpSQL = s"""
@@ -162,15 +162,14 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   """
 
   def selectVariablesForDumpSQL = s"""
-    SELECT ${VariablesMapTable}.id AS "id", ${VariablesTable}.is_evidence AS "is_evidence",
-      ${VariablesTable}.data_type AS "data_type",
-      ${VariablesTable}.initial_value AS "initial_value", "edge_count"
-    FROM ${VariablesTable}, ${VariablesMapTable},
+    SELECT ${VariablesMapTable}.id AS "id", is_evidence, data_type, initial_value, edge_count
+    FROM ${VariablesTable} INNER JOIN ${VariablesMapTable}
+      ON ${VariablesTable}.id = ${VariablesMapTable}.variable_id
+    LEFT JOIN
     (SELECT variable_id AS "edges.vid", 
       COUNT(*) as "edge_count" 
-      FROM ${EdgesTable} GROUP BY variable_id) tmp
-    WHERE ${VariablesTable}.id = ${VariablesMapTable}.variable_id
-      AND ${VariablesTable}.id = "edges.vid"
+      FROM ${EdgesTable} GROUP BY variable_id) tmp 
+    ON ${VariablesTable}.id = "edges.vid"
     ORDER BY ${VariablesMapTable}.id ASC;
   """
 
@@ -419,7 +418,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         rs.long("id"),
         if (rs.boolean("is_evidence")) rs.doubleOpt("initial_value") else None,
         rs.string("data_type"), 
-        rs.long("edge_count"),
+        rs.longOpt("edge_count").getOrElse(0),
         None)
     }
     log.info("Serializing factors...")
@@ -450,7 +449,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // We write the grounding queries to this SQL file
     val sqlFile = File.createTempFile(s"grounding", ".sql")
     val writer = new PrintWriter(sqlFile)
-    log.info(s"""Writing commands to file="${sqlFile}" """)
+    log.info(s"""Writing grounding queries to file="${sqlFile}" """)
 
     writer.println(createWeightsSQL)
     writer.println(createFactorsSQL)
