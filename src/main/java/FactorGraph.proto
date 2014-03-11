@@ -50,6 +50,7 @@ message GraphEdge {
   required uint64 factorId = 2;
   required uint64 position = 3;
   optional bool isPositive = 4 [default = true];
+  optional uint64 equalPredicate = 5;
 
 }
 

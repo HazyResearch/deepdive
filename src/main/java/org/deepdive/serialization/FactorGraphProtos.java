@@ -2478,6 +2478,16 @@ public final class FactorGraphProtos {
      * <code>optional bool isPositive = 4 [default = true];</code>
      */
     boolean getIsPositive();
+
+    // optional uint64 equalPredicate = 5;
+    /**
+     * <code>optional uint64 equalPredicate = 5;</code>
+     */
+    boolean hasEqualPredicate();
+    /**
+     * <code>optional uint64 equalPredicate = 5;</code>
+     */
+    long getEqualPredicate();
   }
   /**
    * Protobuf type {@code deepdive.GraphEdge}
@@ -2548,6 +2558,11 @@ public final class FactorGraphProtos {
             case 32: {
               bitField0_ |= 0x00000008;
               isPositive_ = input.readBool();
+              break;
+            }
+            case 40: {
+              bitField0_ |= 0x00000010;
+              equalPredicate_ = input.readUInt64();
               break;
             }
           }
@@ -2654,11 +2669,28 @@ public final class FactorGraphProtos {
       return isPositive_;
     }
 
+    // optional uint64 equalPredicate = 5;
+    public static final int EQUALPREDICATE_FIELD_NUMBER = 5;
+    private long equalPredicate_;
+    /**
+     * <code>optional uint64 equalPredicate = 5;</code>
+     */
+    public boolean hasEqualPredicate() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    /**
+     * <code>optional uint64 equalPredicate = 5;</code>
+     */
+    public long getEqualPredicate() {
+      return equalPredicate_;
+    }
+
     private void initFields() {
       variableId_ = 0L;
       factorId_ = 0L;
       position_ = 0L;
       isPositive_ = true;
+      equalPredicate_ = 0L;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -2696,6 +2728,9 @@ public final class FactorGraphProtos {
       if (((bitField0_ & 0x00000008) == 0x00000008)) {
         output.writeBool(4, isPositive_);
       }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeUInt64(5, equalPredicate_);
+      }
       getUnknownFields().writeTo(output);
     }
 
@@ -2720,6 +2755,10 @@ public final class FactorGraphProtos {
       if (((bitField0_ & 0x00000008) == 0x00000008)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBoolSize(4, isPositive_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt64Size(5, equalPredicate_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -2845,6 +2884,8 @@ public final class FactorGraphProtos {
         bitField0_ = (bitField0_ & ~0x00000004);
         isPositive_ = true;
         bitField0_ = (bitField0_ & ~0x00000008);
+        equalPredicate_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000010);
         return this;
       }
 
@@ -2889,6 +2930,10 @@ public final class FactorGraphProtos {
           to_bitField0_ |= 0x00000008;
         }
         result.isPositive_ = isPositive_;
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        result.equalPredicate_ = equalPredicate_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -2916,6 +2961,9 @@ public final class FactorGraphProtos {
         }
         if (other.hasIsPositive()) {
           setIsPositive(other.getIsPositive());
+        }
+        if (other.hasEqualPredicate()) {
+          setEqualPredicate(other.getEqualPredicate());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -3084,6 +3132,39 @@ public final class FactorGraphProtos {
       public Builder clearIsPositive() {
         bitField0_ = (bitField0_ & ~0x00000008);
         isPositive_ = true;
+        onChanged();
+        return this;
+      }
+
+      // optional uint64 equalPredicate = 5;
+      private long equalPredicate_ ;
+      /**
+       * <code>optional uint64 equalPredicate = 5;</code>
+       */
+      public boolean hasEqualPredicate() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
+      }
+      /**
+       * <code>optional uint64 equalPredicate = 5;</code>
+       */
+      public long getEqualPredicate() {
+        return equalPredicate_;
+      }
+      /**
+       * <code>optional uint64 equalPredicate = 5;</code>
+       */
+      public Builder setEqualPredicate(long value) {
+        bitField0_ |= 0x00000010;
+        equalPredicate_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional uint64 equalPredicate = 5;</code>
+       */
+      public Builder clearEqualPredicate() {
+        bitField0_ = (bitField0_ & ~0x00000010);
+        equalPredicate_ = 0L;
         onChanged();
         return this;
       }
@@ -4473,15 +4554,15 @@ public final class FactorGraphProtos {
       "\0162#.deepdive.Factor.FactorFunctionType\022\021" +
       "\n\tedgeCount\030\004 \001(\004\"G\n\022FactorFunctionType\022" +
       "\t\n\005IMPLY\020\000\022\006\n\002OR\020\001\022\007\n\003AND\020\002\022\t\n\005EQUAL\020\003\022\n" +
-      "\n\006ISTRUE\020\004\"]\n\tGraphEdge\022\022\n\nvariableId\030\001 " +
+      "\n\006ISTRUE\020\004\"u\n\tGraphEdge\022\022\n\nvariableId\030\001 " +
       "\002(\004\022\020\n\010factorId\030\002 \002(\004\022\020\n\010position\030\003 \002(\004\022" +
-      "\030\n\nisPositive\030\004 \001(\010:\004true\"\261\001\n\013FactorGrap" +
-      "h\022\022\n\nnumWeights\030\001 \002(\004\022\024\n\014numVariables\030\002 " +
-      "\002(\004\022\022\n\nnumFactors\030\003 \002(\004\022\020\n\010numEdges\030\004 \002(" +
-      "\004\022\023\n\013weightsFile\030\005 \002(\t\022\025\n\rvariablesFile\030" +
-      "\006 \002(\t\022\023\n\013factorsFile\030\007 \002(\t\022\021\n\tedgesFile\030",
-      "\010 \002(\tB/\n\032org.deepdive.serializationB\021Fac" +
-      "torGraphProtos"
+      "\030\n\nisPositive\030\004 \001(\010:\004true\022\026\n\016equalPredic" +
+      "ate\030\005 \001(\004\"\261\001\n\013FactorGraph\022\022\n\nnumWeights\030" +
+      "\001 \002(\004\022\024\n\014numVariables\030\002 \002(\004\022\022\n\nnumFactor" +
+      "s\030\003 \002(\004\022\020\n\010numEdges\030\004 \002(\004\022\023\n\013weightsFile" +
+      "\030\005 \002(\t\022\025\n\rvariablesFile\030\006 \002(\t\022\023\n\013factors",
+      "File\030\007 \002(\t\022\021\n\tedgesFile\030\010 \002(\tB/\n\032org.dee" +
+      "pdive.serializationB\021FactorGraphProtos"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -4511,7 +4592,7 @@ public final class FactorGraphProtos {
           internal_static_deepdive_GraphEdge_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_deepdive_GraphEdge_descriptor,
-              new java.lang.String[] { "VariableId", "FactorId", "Position", "IsPositive", });
+              new java.lang.String[] { "VariableId", "FactorId", "Position", "IsPositive", "EqualPredicate", });
           internal_static_deepdive_FactorGraph_descriptor =
             getDescriptor().getMessageTypes().get(4);
           internal_static_deepdive_FactorGraph_fieldAccessorTable = new
