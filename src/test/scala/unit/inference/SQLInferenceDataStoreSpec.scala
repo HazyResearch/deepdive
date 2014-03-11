@@ -49,6 +49,8 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         }
         dataStoreHelper.bulkInsert("r1", data.iterator)
 
+        val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
+
         // Build the factor description
         val factorDesc = FactorDesc("testFactor", 
             """SELECT id AS "r1.id", weight AS "weight", is_correct AS "r1.is_correct" FROM r1""", 
@@ -57,7 +59,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         val holdoutFraction = 0.0
 
         // Ground the graph
-        inferenceDataStore.groundFactorGraph(factorDesc, holdoutFraction)
+        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction)
 
         // Check the result
         val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")

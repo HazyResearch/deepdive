@@ -27,6 +27,7 @@ class ProtobufSerializer(weightsOuput: OutputStream, variablesOutput: OutputStre
     variableBuilder.setEdgeCount(edgeCount)
     variableBuilder.setIsEvidence(isEvidence)
     initialValue.foreach(variableBuilder.setInitialValue)
+    cardinality.foreach(variableBuilder.setCardinality)
     dataType match {
       case "Boolean" => 
         variableBuilder.setDataType(FactorGraphProtos.Variable.VariableDataType.BOOLEAN)

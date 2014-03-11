@@ -36,14 +36,9 @@ class InferenceManagerSpec(_system: ActorSystem) extends TestKit(_system) with F
   def actorProps = Props(classOf[TestInferenceManager], taskManager.ref, sampler.ref, 
     factorGraphBuilder.ref, cdw.ref, schema)
 
-  describe("Executing a factor task") {
-    it("should work") {
-      val actor = TestActorRef(actorProps)
-      actor ! InferenceManager.FactorTask(null, 0.0, None)
-      factorGraphBuilder.expectMsgClass(classOf[FactorGraphBuilder.AddFactorsAndVariables])
-      factorGraphBuilder.reply("Done")
-      expectMsg("Done")
-    }
+  describe("Grounding the factor graph") {
+    // TODO
+    it("should work")(pending)
   }
 
   describe("Running inference") {
