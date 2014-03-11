@@ -120,7 +120,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     ALTER SEQUENCE ${FactorsTable}_id_seq MINVALUE -1 RESTART WITH 0;
     ALTER SEQUENCE ${VariablesTable}_id_seq MINVALUE -1 RESTART WITH 0;
     ALTER SEQUENCE ${VariablesMapTable}_id_seq MINVALUE -1 RESTART WITH 0;
-    ALTER SEQUENCE ${LocalVariableMapTable}_id_seq MINVALUE -1 RESTART WITH 0;
   """
 
   def creatEdgesSQL = s"""
@@ -509,10 +508,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       }
       val isFixed = factorDesc.weight.isInstanceOf[KnownFactorWeight]
       val weightPrefix = factorDesc.weightPrefix
-      val weightCmd = factorDesc.weight.variables.map ( v => s""" "${v}" """ ).mkString(", ") match { 
+      val weightCmd = factorDesc.weight.variables.map ( v => s""" "${v}" """ ).mkString(" || ") match { 
         case "" => weightPrefix
-        // case x => s"""concat_ws('-','${weightPrefix}', ${x})"""
-        case x => s"""'-'|'${weightPrefix}'| ${x}"""
+        case x => s"""'${weightPrefix}-' || ${x} """
       }
 
       writer.println(s"""
@@ -626,7 +624,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     relationsColumns.foreach { case(relationName, columnName) => 
       execute(createInferenceViewSQL(relationName, columnName))
-      execute(createVariableWeightsViewSQL(relationName, columnName))
+      // execute(createVariableWeightsViewSQL(relationName, columnName))
     }
   }
 
