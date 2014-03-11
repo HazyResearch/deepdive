@@ -483,7 +483,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
       val factorOffsetCmd = i match {
         case 0 => "0"
-        case x => s"""(SELECT max(factor_id)+1 FROM ${factorDescs(i-1).name}_query)"""
+        // case x => s"""(SELECT max(factor_id)+1 FROM ${factorDescs(i-1).name}_query)"""
+        case x => s"""(SELECT COALESCE(max(factor_id) + 1, ${i * 1000000}) FROM ${factorDescs(i-1).name}_query)"""
+        // TODO Zifei: Handle the case that max(factor_id) returns a null (query table is empty). Should replace i*1000000 to the maximum value + 1 of factor_id across all existing tables.
       }
 
       writer.println(s"""
@@ -508,7 +510,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       val isFixed = factorDesc.weight.isInstanceOf[KnownFactorWeight]
       val weightPrefix = factorDesc.weightPrefix
       val weightCmd = factorDesc.weight.variables.map ( v => s""" "${v}"::text """ ).mkString(" || ") match { 
-        case "" => weightPrefix
+        case "" => s"""'${weightPrefix}'"""
         case x => s"""'${weightPrefix}-' || ${x} """
       }
 
@@ -526,7 +528,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     factorDescs.foreach { factorDesc =>
       val weightPrefix = factorDesc.weightPrefix
       val weightCmd = factorDesc.weight.variables.map ( v => s""" "${v}"::text """ ).mkString(", ") match { 
-        case "" => weightPrefix
+        case "" => s"""'${weightPrefix}'"""
         case x => s"""'${weightPrefix}-' || ${x} """
       }
       val functionName = factorDesc.func.getClass.getSimpleName
