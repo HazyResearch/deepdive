@@ -490,11 +490,11 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         DROP VIEW IF EXISTS ${factorDesc.name}_query_user CASCADE;
         CREATE VIEW ${factorDesc.name}_query_user AS ${factorDesc.inputQuery};""")
       writer.println(s"""
-        DROP MATERIALIZED VIEW IF EXISTS ${factorDesc.name}_query CASCADE;
-        CREATE MATERIALIZED VIEW ${factorDesc.name}_query AS 
+        DROP TABLE IF EXISTS ${factorDesc.name}_query CASCADE;
         SELECT 
           row_number() OVER() - 1 + ${factorOffsetCmd} as factor_id,
           ${factorDesc.name}_query_user.*
+        INTO ${factorDesc.name}_query 
         FROM ${factorDesc.name}_query_user;""")
       
     }
