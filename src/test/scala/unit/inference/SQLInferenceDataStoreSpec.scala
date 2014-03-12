@@ -40,8 +40,9 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
 
     describe("grounding the factor graph with Boolean variables") {
       
-      it("should work") {
+      it("should work with a one-variable factor rule") {
         inferenceDataStore.init()
+        
         // Insert sample data
         SQL(s"""CREATE TABLE r1(id ${inferenceDataStore.keyType}, weight ${inferenceDataStore.stringType},
           is_correct boolean);""").execute.apply()        
@@ -76,6 +77,49 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
           .map(rs => rs.long("count")).single.apply().get
         assert(numEdges === 100)
       }
+
+      it("should work with multi-variable factor rules") {
+        inferenceDataStore.init()
+        SQL(s"""CREATE TABLE r1(id ${inferenceDataStore.keyType}, weight ${inferenceDataStore.stringType},
+          is_correct boolean);""").execute.apply()
+        SQL(s"""CREATE TABLE r2(id ${inferenceDataStore.keyType}, weight ${inferenceDataStore.stringType},
+          is_correct boolean);""").execute.apply()
+        val data1 = (1 to 100).map { i =>
+          Map("id" -> i, "weight" -> s"weight_${i}", "is_correct" -> s"${i%2==0}".toBoolean)
+        }
+        val data2 = (101 to 200).map { i =>
+          Map("id" -> i, "weight" -> s"weight_${i}", "is_correct" -> s"${i%3==0}".toBoolean)
+        }
+
+        dataStoreHelper.bulkInsert("r1", data1.iterator)
+        dataStoreHelper.bulkInsert("r2", data2.iterator)
+
+        val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType, "r2.is_correct" -> BooleanType)
+        val factorDesc = FactorDesc("testFactor", 
+          """SELECT r1.id AS "r1.id", r1.weight AS "weight", r1.is_correct AS "r1.is_correct",
+          r2.id AS "r2.id", r2.is_correct AS "r2.is_correct" FROM r1, r2
+          WHERE r1.id = (r2.id-100)""",
+          AndFactorFunction(Seq("r1.is_correct", "r2.is_correct")), 
+          UnknownFactorWeight(List("weight")), "weight_prefix")
+
+        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), 0.0)
+
+        val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numWeights === 100)
+        val numVariables = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.VariablesTable}""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numVariables === 200)
+        val numFactors = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.FactorsTable}""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numFactors === 100)
+        val numEdges = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.EdgesTable}""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numEdges === 200)
+
+
+      }
+
     }
 
     describe("grounding the factor graph with Multinomial variables") {
