@@ -106,7 +106,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
 
         val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")
           .map(rs => rs.long("count")).single.apply().get
-        assert(numWeights === 100)
+        assert(numWeights === 400)
         
         val numVariables = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.VariablesTable}
           WHERE data_type = 'Multinomial' AND cardinality=4""")
