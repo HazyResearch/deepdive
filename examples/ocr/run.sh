@@ -18,4 +18,4 @@ env SBT_OPTS="-Xmx4g" sbt "run -c examples/ocr/application.conf"
 
 cd $ROOT_PATH/examples/ocr/
 ROOT_PATH=`pwd`
-python feature-analysis.py
+# python feature-analysis.py
