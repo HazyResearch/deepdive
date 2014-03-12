@@ -163,7 +163,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   """
 
   def selectVariablesForDumpSQL = s"""
-    SELECT ${VariablesMapTable}.id AS "id", is_evidence, data_type, initial_value, edge_count
+    SELECT ${VariablesMapTable}.id AS "id", is_evidence, data_type, initial_value, edge_count, cardinality
     FROM ${VariablesTable} INNER JOIN ${VariablesMapTable}
       ON ${VariablesTable}.id = ${VariablesMapTable}.variable_id
     LEFT JOIN
@@ -185,8 +185,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   """
 
   def selectEdgesForDumpSQL = s"""
-    SELECT ${VariablesMapTable}.id AS "variable_id", factor_id AS "factor_id", position AS "position",
-      is_positive AS "is_positive"
+    SELECT ${VariablesMapTable}.id AS "variable_id", factor_id, position, is_positive, equal_predicate
     FROM ${EdgesTable}, ${VariablesMapTable}
     WHERE ${VariablesMapTable}.variable_id = ${EdgesTable}.variable_id
     ORDER BY ${VariablesMapTable}.id ASC;
@@ -420,7 +419,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         rs.doubleOpt("initial_value"),
         rs.string("data_type"), 
         rs.longOpt("edge_count").getOrElse(0),
-        None)
+        rs.longOpt("cardinality"))
     }
     log.info("Serializing factors...")
     selectForeach(selectFactorsForDumpSQL) { rs => 
@@ -467,10 +466,25 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // Ground all variables in the schema
     schema.foreach { case(variable, dataType) =>
       val Array(relation, column) = variable.split('.')
+      val cardinalityStr = dataType match {
+        case BooleanType => "null"
+        case MultinomialType(x) => x.toString
+      }
+
       writer.println(
-        s"""INSERT INTO ${VariablesTable}(id, data_type, initial_value, is_evidence)
-        SELECT ${relation}.id, '${dataType}', ${variable}::int, (${variable} IS NOT NULL)
+        s"""INSERT INTO ${VariablesTable}(id, data_type, initial_value, is_evidence, cardinality)
+        SELECT ${relation}.id, '${dataType}', ${variable}::int, (${variable} IS NOT NULL), ${cardinalityStr}
         FROM ${relation};""")
+
+      // Create a cardinality table for the variable
+      val cardinalityValues = dataType match {
+        case BooleanType => "(0)"
+        case MultinomialType(x) => (0 to x-1).map (x => s"(${x})").mkString(", ")
+      }
+      val cardinalityTableName = s"${relation}_${column}_cardinality"
+      writer.println(
+        s"""CREATE TABLE ${cardinalityTableName}(${cardinalityTableName}) AS VALUES ${cardinalityValues} WITH DATA;""")
+
     }
 
     // Map variables to sequential IDs
@@ -495,16 +509,19 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         // TODO Zifei: Handle the case that max(factor_id) returns a null (query table is empty). Should replace i*1000000 to the maximum value + 1 of factor_id across all existing tables.
       }
 
+      val cardinalityTables = factorDesc.func.variables.map(v => s"${v.headRelation}_${v.field}_cardinality")
+
       writer.println(s"""
         DROP VIEW IF EXISTS ${factorDesc.name}_query_user CASCADE;
         CREATE VIEW ${factorDesc.name}_query_user AS ${factorDesc.inputQuery};""")
       writer.println(s"""
         DROP TABLE IF EXISTS ${factorDesc.name}_query CASCADE;
-        SELECT 
+        SELECT
           row_number() OVER() - 1 + ${factorOffsetCmd} as factor_id,
-          ${factorDesc.name}_query_user.*
+          ${factorDesc.name}_query_user.*,
+          ${cardinalityTables.mkString(", ")}
         INTO ${factorDesc.name}_query 
-        FROM ${factorDesc.name}_query_user;""")
+        FROM ${factorDesc.name}_query_user, ${cardinalityTables.mkString(", ")};""")
       
     }
 
@@ -554,8 +571,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         val vidColumn = s"${variable.relation}.id"
         val isPositive = !variable.isNegated
         writer.println(s"""
-          INSERT INTO ${EdgesTable}(factor_id, variable_id, position, is_positive)
-          SELECT factor_id, "${vidColumn}", ${position}, ${isPositive}
+          INSERT INTO ${EdgesTable}(factor_id, variable_id, position, is_positive, equal_predicate)
+          SELECT factor_id, "${vidColumn}", ${position}, ${isPositive}, ${vRelation}_${vColumn}_cardinality
           FROM ${factorDesc.name}_query;""")
       }
     }

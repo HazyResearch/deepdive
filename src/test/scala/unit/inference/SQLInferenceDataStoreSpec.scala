@@ -38,7 +38,8 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
       }
     }
 
-    describe("grounding the factor graph") {
+    describe("grounding the factor graph with Boolean variables") {
+      
       it("should work") {
         inferenceDataStore.init()
         // Insert sample data
@@ -75,7 +76,58 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
           .map(rs => rs.long("count")).single.apply().get
         assert(numEdges === 100)
       }
+    }
 
+    describe("grounding the factor graph with Multinomial variables") {
+
+      it("should work") {
+        inferenceDataStore.init()
+        
+        // Create table with multinomial data
+        SQL(s"""CREATE TABLE r1(id ${inferenceDataStore.keyType}, weight ${inferenceDataStore.stringType},
+          value bigint);""").execute.apply() 
+        val data = (1 to 100).map { i =>
+          Map("id" -> i, "weight" -> s"weight_${i}", "value" -> (i%4))
+        }
+        dataStoreHelper.bulkInsert("r1", data.iterator)
+
+        // Define the schema
+        val schema = Map[String, VariableDataType]("r1.value" -> MultinomialType(4))
+
+        // Build the factor description
+        val factorDesc = FactorDesc("testFactor", 
+          """SELECT id AS "r1.id", weight AS "weight", value AS "r1.value" FROM r1""", 
+          IsTrueFactorFunction(Seq("r1.value")), 
+          UnknownFactorWeight(List("weight")), "weight_prefix")
+        val holdoutFraction = 0.0
+
+        // Ground the graph
+        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction)
+
+        val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numWeights === 100)
+        
+        val numVariables = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.VariablesTable}
+          WHERE data_type = 'Multinomial' AND cardinality=4""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numVariables === 100)
+
+        // One factor for each possible predicate assignment
+        val numFactors = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.FactorsTable}""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numFactors === 400)
+
+        // One edge for each possible predicate assignment
+        val numEdges = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.EdgesTable}""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numEdges === 400)
+        val numEdgesPred0 = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.EdgesTable} WHERE equal_predicate=0""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numEdgesPred0 === 100)
+
+
+      }
 
     }
 
@@ -83,23 +135,23 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
 
       it("should work") {
         inferenceDataStore.init()
+        inferenceDataStore.groundFactorGraph(Map(), Seq(), 0.0)
 
         // Insert weights
         SQL("""INSERT INTO dd_graph_weights(id, initial_value, is_fixed, description)
           VALUES (0, 0.0, false, 'w1'), (1, 0.0, false, 'w2')""").execute.apply()
         // Insert variables
-        SQL("""INSERT INTO dd_graph_variables(id, data_type, initial_value, is_evidence)
-          VALUES (0, 'Boolean', 0.0, false), (1, 'Boolean', 1.0, true), 
-          (2, 'Multinomial', 3.0, false)""").execute.apply()
-        SQL("""INSERT INTO dd_graph_local_variable_map(id, mrel, mcol, mid)
-          VALUES (0, 'r1', 'c1', 0), (1, 'r1', 'c1', 1), 
-          (2, 'r2', 'c2', 2)""").execute.apply()
+        SQL("""INSERT INTO dd_graph_variables(id, data_type, initial_value, is_evidence, cardinality)
+          VALUES (0, 'Boolean', 0.0, false, null), (1, 'Boolean', 1.0, true, null), 
+          (2, 'Multinomial', 3.0, false, 3)""").execute.apply()
+        SQL("""INSERT INTO dd_graph_variables_map(id, variable_id)
+          VALUES (0, 0), (1, 1), (2,2)""").execute.apply()
         // Insert factors
         SQL("""INSERT INTO dd_graph_factors(id, weight_id, factor_function)
           VALUES (0, 0, 'ImplyFactorFunction'), (1, 1, 'ImplyFactorFunction')""").execute.apply()
         // Insert edges
-        SQL("""INSERT INTO dd_graph_edges(factor_id, variable_id, position, is_positive)
-          VALUES (0, 0, 0, true), (1, 1, 0, true), (1, 2, 1, true)""").execute.apply()
+        SQL("""INSERT INTO dd_graph_edges(factor_id, variable_id, position, is_positive, equal_predicate)
+          VALUES (0, 0, 0, true, null), (1, 1, 0, true, null), (1, 2, 1, true, null)""").execute.apply()
 
         // Dump the factor graph
         val weightsFile = File.createTempFile("weights", "pb")
@@ -139,6 +191,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
 
       it("should work") {
         inferenceDataStore.init()
+        inferenceDataStore.groundFactorGraph(Map(), Seq(), 0.0)
         SQL(s"""create table has_spouse(id ${inferenceDataStore.keyType} primary key, is_true boolean)""").execute.apply()
         inferenceDataStore.writebackInferenceResult(schema, variablesFile, weightsFile)
       }
