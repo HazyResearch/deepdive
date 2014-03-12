@@ -10,8 +10,15 @@ class ProtobufSerializer(weightsOuput: OutputStream, variablesOutput: OutputStre
 
   val factorGraphbuilder = FactorGraphProtos.FactorGraph.newBuilder
 
+  val weightBuilder = FactorGraphProtos.Weight.newBuilder
+
+  val variableBuilder = FactorGraphProtos.Variable.newBuilder
+
+  val factorBuilder = FactorGraphProtos.Factor.newBuilder
+
+  val edgeBuilder = FactorGraphProtos.GraphEdge.newBuilder
+
   def addWeight(weightId: Long, isFixed: Boolean, initialValue: Double, desc: String) : Unit = {
-    val weightBuilder = FactorGraphProtos.Weight.newBuilder
     weightBuilder.setId(weightId)
     weightBuilder.setIsFixed(isFixed)
     if (isFixed) weightBuilder.setInitialValue(initialValue)
@@ -22,7 +29,7 @@ class ProtobufSerializer(weightsOuput: OutputStream, variablesOutput: OutputStre
   
   def addVariable(variableId: Long, isEvidence: Boolean, initialValue: Option[Double], 
     dataType: String, edgeCount: Long, cardinality: Option[Long]) : Unit = {
-    val variableBuilder = FactorGraphProtos.Variable.newBuilder
+
     variableBuilder.setId(variableId)
     variableBuilder.setEdgeCount(edgeCount)
     variableBuilder.setIsEvidence(isEvidence)
@@ -40,7 +47,7 @@ class ProtobufSerializer(weightsOuput: OutputStream, variablesOutput: OutputStre
   }
 
   def addFactor(factorId: Long, weightId: Long, factorFunction: String, edgeCount: Long) : Unit = {
-    val factorBuilder = FactorGraphProtos.Factor.newBuilder
+    
     factorBuilder.setId(factorId)
     factorBuilder.setWeightId(weightId)
     factorBuilder.setEdgeCount(edgeCount)
@@ -59,7 +66,7 @@ class ProtobufSerializer(weightsOuput: OutputStream, variablesOutput: OutputStre
 
   def addEdge(variableId: Long, factorId: Long, position: Long, isPositive: Boolean, 
     equalPredicate: Option[Long]) : Unit = {
-    val edgeBuilder = FactorGraphProtos.GraphEdge.newBuilder
+    
     edgeBuilder.setVariableId(variableId)
     edgeBuilder.setFactorId(factorId)
     equalPredicate.foreach(edgeBuilder.setEqualPredicate)

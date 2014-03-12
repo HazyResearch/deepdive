@@ -80,11 +80,11 @@ trait InferenceManager extends Actor with ActorLogging {
 
   def runInference(samplerJavaArgs: String, samplerOptions: String) = {
     // TODO: Make serializier configurable
-    val weightsOutput = new java.io.FileOutputStream(factorGraphDumpFileWeights, false)
-    val variablesOutput = new java.io.FileOutputStream(factorGraphDumpFileVariables, false)
-    val factorsOutput = new java.io.FileOutputStream(factorGraphDumpFileFactors, false)
-    val edgesOutput = new java.io.FileOutputStream(factorGraphDumpFileEdges, false)
-    val metaOutput = new java.io.FileOutputStream(factorGraphDumpFileMeta, false)
+    val weightsOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileWeights, false))
+    val variablesOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileVariables, false))
+    val factorsOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileFactors, false))
+    val edgesOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileEdges, false))
+    val metaOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileMeta, false))
     val serializier = new ProtobufSerializer(weightsOutput, variablesOutput, factorsOutput, edgesOutput, metaOutput)
     inferenceDataStore.dumpFactorGraph(serializier, variableSchema, factorGraphDumpFileWeights.getCanonicalPath,
       factorGraphDumpFileVariables.getCanonicalPath, factorGraphDumpFileFactors.getCanonicalPath,
