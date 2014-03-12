@@ -561,15 +561,24 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     writer.println(s"""UPDATE ${VariablesTable} SET is_evidence=false
       WHERE ${VariablesTable}.id IN (SELECT variable_id FROM ${VariablesHoldoutTable});""")
 
+    writer.println(s"""
+       DROP TABLE IF EXISTS factornum;""")
+    writer.println(s"""
+       CREATE TABLE factornum(nfactor bigint);""")
+    writer.println(s"""
+       INSERT INTO factornum VALUES (0);""")
+
     // Create views for each inference rule
     factorDescs.zipWithIndex.foreach { case(factorDesc, i) =>
 
-      val factorOffsetCmd = i match {
-        case 0 => "0"
-        // case x => s"""(SELECT max(factor_id)+1 FROM ${factorDescs(i-1).name}_query)"""
-        case x => s"""(SELECT COALESCE(max(factor_id) + 1, ${i * 1000000}) FROM ${factorDescs(i-1).name}_query)"""
-        // TODO Zifei: Handle the case that max(factor_id) returns a null (query table is empty). Should replace i*1000000 to the maximum value + 1 of factor_id across all existing tables.
-      }
+      //val factorOffsetCmd = i match {
+      //  case 0 => "0"
+      //  // case x => s"""(SELECT max(factor_id)+1 FROM ${factorDescs(i-1).name}_query)"""
+      //  case x => s"""(SELECT COALESCE(max(factor_id) + 1, ${i * 1000000}) FROM ${factorDescs(i-1).name}_query)"""
+      //  // TODO Zifei: Handle the case that max(factor_id) returns a null (query table is empty). Should replace i*1000000 to the maximum value + 1 of factor_id across all existing tables.
+      //}
+
+      val factorOffsetCmd = s"""(SELECT sum(nfactor) FROM factornum)"""
 
       val cardinalityTables = factorDesc.func.variables.zipWithIndex.map { case(v,idx) => 
         s"${v.headRelation}_${v.field}_cardinality c${idx}"
@@ -589,7 +598,13 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           ${cardinalityValues.mkString(", ")}
         INTO ${factorDesc.name}_query 
         FROM ${factorDesc.name}_query_user, ${cardinalityTables.mkString(", ")};""")
-      
+
+
+      writer.println(s"""
+        INSERT INTO factornum SELECT count(*) FROM ${factorDesc.name}_query ;""")
+      writer.println(s"""
+        COMMIT;""")
+     
     }
 
     // Ground weights for each inference rule
@@ -617,6 +632,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         INSERT INTO ${WeightsTable}(initial_value, is_fixed, description)
         SELECT DISTINCT ${weightValue}, ${isFixed}, ${weightCmd}
         FROM ${factorDesc.name}_query;""")
+
     }
     // Add index to the weights
     writer.println(s"""CREATE INDEX ${WeightsTable}_desc_idx ON ${WeightsTable}(description);""")
