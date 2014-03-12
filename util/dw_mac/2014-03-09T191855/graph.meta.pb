@@ -1,0 +1,1 @@
+ƒî¾ÍÎï Œ½*E/Users/czhang/Desktop/deepdive/out/2014-03-09T191855/graph.weights.pb2G/Users/czhang/Desktop/deepdive/out/2014-03-09T191855/graph.variables.pb:E/Users/czhang/Desktop/deepdive/out/2014-03-09T191855/graph.factors.pbBC/Users/czhang/Desktop/deepdive/out/2014-03-09T191855/graph.edges.pb
