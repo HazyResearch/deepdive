@@ -482,6 +482,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         case MultinomialType(x) => (0 to x-1).map (x => s"(${x})").mkString(", ")
       }
       val cardinalityTableName = s"${relation}_${column}_cardinality"
+      writer.println(s"""
+        DROP TABLE IF EXISTS ${cardinalityTableName};""")
       writer.println(
         s"""CREATE TABLE ${cardinalityTableName}(${cardinalityTableName}) AS VALUES ${cardinalityValues} WITH DATA;""")
 
@@ -509,7 +511,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         // TODO Zifei: Handle the case that max(factor_id) returns a null (query table is empty). Should replace i*1000000 to the maximum value + 1 of factor_id across all existing tables.
       }
 
-      val cardinalityTables = factorDesc.func.variables.map(v => s"${v.headRelation}_${v.field}_cardinality")
+      val cardinalityTables = factorDesc.func.variables.zipWithIndex.map { case(v,idx) => 
+        s"${v.headRelation}_${v.field}_cardinality c${idx}"
+      }
+      val cardinalityValues = factorDesc.func.variables.zipWithIndex.map { case(v,idx) => 
+        s"""c${idx}.${v.headRelation}_${v.field}_cardinality AS "${v.relation}_${v.field}_cardinality" """
+      }
 
       writer.println(s"""
         DROP VIEW IF EXISTS ${factorDesc.name}_query_user CASCADE;
@@ -519,7 +526,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         SELECT
           row_number() OVER() - 1 + ${factorOffsetCmd} as factor_id,
           ${factorDesc.name}_query_user.*,
-          ${cardinalityTables.mkString(", ")}
+          ${cardinalityValues.mkString(", ")}
         INTO ${factorDesc.name}_query 
         FROM ${factorDesc.name}_query_user, ${cardinalityTables.mkString(", ")};""")
       
@@ -572,7 +579,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         val isPositive = !variable.isNegated
         writer.println(s"""
           INSERT INTO ${EdgesTable}(factor_id, variable_id, position, is_positive, equal_predicate)
-          SELECT factor_id, "${vidColumn}", ${position}, ${isPositive}, ${vRelation}_${vColumn}_cardinality
+          SELECT factor_id, "${vidColumn}", ${position}, ${isPositive}, "${variable.relation}_${vColumn}_cardinality"
           FROM ${factorDesc.name}_query;""")
       }
     }
