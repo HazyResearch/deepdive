@@ -538,11 +538,16 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         case x : KnownFactorWeight => x.value
         case _ => 0.0
       }
+
+      val cardinalityValues = factorDesc.func.variables.zipWithIndex.map { case(v,idx) => 
+        s""" "${v.relation}_${v.field}_cardinality" """
+      }
+
       val isFixed = factorDesc.weight.isInstanceOf[KnownFactorWeight]
       val weightPrefix = factorDesc.weightPrefix
       val weightCmd = factorDesc.weight.variables.map ( v => s""" "${v}"::text """ ).mkString(" || ") match { 
-        case "" => s"""'${weightPrefix}'"""
-        case x => s"""'${weightPrefix}-' || ${x} """
+        case "" => s"""'${weightPrefix}-' || ${cardinalityValues.mkString(" || ")} """
+        case x => s"""'${weightPrefix}-' || ${x} || ${cardinalityValues.mkString(" || ")}"""
       }
 
       writer.println(s"""
@@ -557,11 +562,17 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     // Ground all factors
     factorDescs.foreach { factorDesc =>
-      val weightPrefix = factorDesc.weightPrefix
-      val weightCmd = factorDesc.weight.variables.map ( v => s""" "${v}"::text """ ).mkString(", ") match { 
-        case "" => s"""'${weightPrefix}'"""
-        case x => s"""'${weightPrefix}-' || ${x} """
+
+      val cardinalityValues = factorDesc.func.variables.zipWithIndex.map { case(v,idx) => 
+        s""" "${v.relation}_${v.field}_cardinality" """
       }
+
+      val weightPrefix = factorDesc.weightPrefix
+      val weightCmd = factorDesc.weight.variables.map ( v => s""" "${v}"::text """ ).mkString(" || ") match { 
+        case "" => s"""'${weightPrefix}-' || ${cardinalityValues.mkString(" || ")} """
+        case x => s"""'${weightPrefix}-' || ${x} || ${cardinalityValues.mkString(" || ")}"""
+      }
+      
       val functionName = factorDesc.func.getClass.getSimpleName
       writer.println(s"""
         INSERT INTO ${FactorsTable}(id, weight_id, factor_function, factor_group)
