@@ -1,29 +1,31 @@
-package org.deepdive.test.unit
+// TODO: HSQL currently not supported
 
-import com.typesafe.config._
-import org.deepdive.inference._
-import org.deepdive.test._
-import org.scalatest._
-import org.deepdive.datastore._
-import scalikejdbc._
+// package org.deepdive.test.unit
 
-class HSQLInferenceDataStoreSpec extends SQLInferenceDataStoreSpec
-  with HSQLInferenceDataStoreComponent {
+// import com.typesafe.config._
+// import org.deepdive.inference._
+// import org.deepdive.test._
+// import org.scalatest._
+// import org.deepdive.datastore._
+// import scalikejdbc._
 
-  def dataStoreHelper : JdbcDataStore = HSQLDataStore
+// class HSQLInferenceDataStoreSpec extends SQLInferenceDataStoreSpec
+//   with HSQLInferenceDataStoreComponent {
 
-  override def init : Unit = {
-    val configurationStr = """
-    deepdive.db.default: {
-      driver: "org.hsqldb.jdbc.JDBCDriver"
-      url: "jdbc:hsqldb:mem:deepdive_test"
-      user: "SA"
-      password: ""
-    }"""
-    val config = ConfigFactory.parseString(configurationStr)
-    JdbcDataStore.init(config)
-    SQL("drop schema if exists public cascade;").execute.apply()
-    inferenceDataStore.init()
-  }
+//   def dataStoreHelper : JdbcDataStore = HSQLDataStore
 
-}
+//   override def init : Unit = {
+//     val configurationStr = """
+//     deepdive.db.default: {
+//       driver: "org.hsqldb.jdbc.JDBCDriver"
+//       url: "jdbc:hsqldb:mem:deepdive_test"
+//       user: "SA"
+//       password: ""
+//     }"""
+//     val config = ConfigFactory.parseString(configurationStr)
+//     JdbcDataStore.init(config)
+//     SQL("drop schema if exists public cascade;").execute.apply()
+//     inferenceDataStore.init()
+//   }
+
+// }
