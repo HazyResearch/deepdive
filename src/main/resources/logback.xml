@@ -17,6 +17,6 @@
     <appender-ref ref="FILE" />
   </root>
 
-  <logger name="scalikejdbc" level="INFO" />
+  <logger name="scalikejdbc" level="DEBUG" />
 
 </configuration>
