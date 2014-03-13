@@ -64,6 +64,7 @@ API Documentation:
 - [Pipelines](doc/pipelines.html)
 - [Performance tuning](doc/performance.html)
 - [Internal database schema](doc/reserved_tables.html)
+- [](doc/reserved_tables.html)
 - [FAQ](doc/faq.html)
 
 Learn about using various databases with DeepDive:
