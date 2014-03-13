@@ -10,8 +10,8 @@ This tutorial explains how to use DimmWitted, a faster sampler for DeepDive.
 
 Download athe sampler from
   
-  - [{{site.baseurl}}/assets/dw.tar.bz2 (Linux Version)]({{site.baseurl}}/assets/dw.tar.bz2)
-  - [{{site.baseurl}}/assets/dw_mac.tar.bz2 (Mac Version)]({{site.baseurl}}/assets/dw_mac.tar.bz2)
+  - [Linux Version]({{site.baseurl}}/assets/dw.tar.bz2)
+  - [Mac Version]({{site.baseurl}}/assets/dw_mac.tar.bz2)
 
 Unpack the file as follows:
 
