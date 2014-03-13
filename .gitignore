@@ -1,1 +1,4 @@
 _site/
+.DS_Store
+log/
+out/
