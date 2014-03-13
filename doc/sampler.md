@@ -8,12 +8,12 @@ This tutorial explains how to use DimmWitted, a faster sampler for DeepDive.
 
 ### Downloading DimmWitted
 
-Download the sampler from github using the following commands
+Download athe sampler from
+  
+  - [{{site.baseurl}}/assets/dw.tar.bz2 (Linux Version)]({{site.baseurl}}/assets/dw.tar.bz2)
+  - [{{site.baseurl}}/assets/dw_mac.tar.bz2 (Mac Version)]({{site.baseurl}}/assets/dw_mac.tar.bz2)
 
-    >> cd [desired directory for the sampler]
-    >> git clone https://github.com/zhangce/dimmwitted.git
-
-This will create a directory named dimmwitted. The release subdirectory includes pre-built binaries in the for both Linux and Mac. Now go into that directory and decompress the file
+Unpack the file as follows:
 
 	>> tar xf dw.tar.bz2
 
