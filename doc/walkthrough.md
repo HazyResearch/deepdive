@@ -220,7 +220,7 @@ for row in fileinput.input():
   # Find phrases that are tagged with PERSON
   phrases_indicies = []
   start_index = 0
-  ner_list = list(enumerate(sentence_obj["sentences.ner_tags"]))
+  ner_list = list(enumerate(sentence_obj["ner_tags"]))
   while True:
     sublist = ner_list[start_index:]
     next_phrase = list(itertools.takewhile(lambda x: (x[1] in ["PERSON"]), sublist))
@@ -233,10 +233,10 @@ for row in fileinput.input():
   # Output a tuple for each PERSON phrase
   for phrase in phrases_indicies:
     print json.dumps({
-      "sentence_id": sentence_obj["sentences.id"],
+      "sentence_id": sentence_obj["id"],
       "start_index": phrase[0],
       "length": len(phrase),
-      "text": " ".join(sentence_obj["sentences.words"][phrase[0]:phrase[-1]+1])
+      "text": " ".join(sentence_obj["words"][phrase[0]:phrase[-1]+1])
     })
 {% endhighlight %}
 
@@ -319,13 +319,13 @@ for row in fileinput.input():
   obj = json.loads(row)
 
   # Get useful data from the JSON
-  p1_id = obj["people_mentions.p1.id"]
-  p1_text = obj["people_mentions.p1.text"].strip()
+  p1_id = obj["p1.id"]
+  p1_text = obj["p1.text"].strip()
   p1_text_lower = p1_text.lower()
-  p2_id = obj["people_mentions.p2.id"]
-  p2_text = obj["people_mentions.p2.text"].strip()
+  p2_id = obj["p2.id"]
+  p2_text = obj["p2.text"].strip()
   p2_text_lower = p2_text.lower()
-  sentence_id = obj["sentences.id"]
+  sentence_id = obj["sentence_id"]
 
   # See if the combination of people is in our supervision dictionary
   # If so, set is_correct to true or false
