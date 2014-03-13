@@ -34,7 +34,7 @@ DeepDive is project led by [Chris Re](http://cs.stanford.edu/people/chrismre/) a
 
 ### Updates & Changelog 
 
-- [Changelog for version 0.2-alpha (03/12/2014)](doc/changelog/02-alpha.html)
+- [Changelog for version 0.2-alpha (03/12/2014)](doc/changelog/0.2-alpha.html)
 
 <a id="#documentation" href="#"> </a>
 
