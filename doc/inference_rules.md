@@ -13,7 +13,9 @@ Inference rules describe how [factor graph](/doc/general/inference.html) is cons
 For example:
 
     deepdive.inference.factors: {
-      smokesFactor.input_query: "SELECT people.id as \"people.id\", people.smokes as \"people.smokes\", people.has_cancer as \"people.has_cancer\" FROM people"
+      smokesFactor.input_query: """
+        SELECT people.id as "people.id", people.smokes as "people.smokes", 
+        people.has_cancer as "people.has_cancer" FROM people"""
       smokesFactor.function: "Imply(people.smokes, people.has_cancer)"
       smokesFactor.weight: "?(people.gender)"
 
@@ -24,9 +26,13 @@ For example:
 
 The input query of a factor combines all variables that a factor is using. It usually takes the form of a join query using feature relations produced extractors.
 
-    someFactor.input_query: """SELECT p1.id AS \"people.p1.id\", p2.id AS \"people.p2.id\", 
-    p1.smokes AS \"people.p1.smokes\", p2.smokes AS \"people.p2.smokes\", friends.person_id AS \"friends.person_id\" 
-    FROM friends INNER JOIN people as p1 ON (friends.person_id = p1.id) INNER JOIN people as p2 ON (friends.friend_id = p2.id)"""
+    someFactor.input_query: """SELECT p1.id AS "people.p1.id", p2.id AS "people.p2.id", 
+      p1.smokes AS "people.p1.smokes", p2.smokes AS "people.p2.smokes", 
+      friends.person_id AS "friends.person_id" 
+      FROM friends 
+        INNER JOIN people as p1 ON (friends.person_id = p1.id) 
+        INNER JOIN people as p2 ON (friends.friend_id = p2.id)
+    """
 
 There are a couple of caveats when writing input queries for factors:
 
