@@ -1,13 +1,14 @@
 package org.deepdive.inference
 
 import org.deepdive.Logging
+import org.deepdive.settings.VariableDataType
 
-// Variable Type: CQS (Discrete, Query, Gibbs Sampling) or CES (Discrete, Evidence, Gibbs Sampling)
-object VariableDataType extends Enumeration with Logging {
-  type VariableDataType = Value
-  val `Boolean`, Discrete, Continuous = Value
-}
-import VariableDataType._
+// // Variable Type: CQS (Discrete, Query, Gibbs Sampling) or CES (Discrete, Evidence, Gibbs Sampling)
+// object VariableDataType extends Enumeration with Logging {
+//   type VariableDataType = Value
+//   val `Boolean`, Discrete, Continuous = Value
+// }
+// import VariableDataType._
 
 case class Variable(id: Long, dataType: VariableDataType, initialValue: Option[Double], 
   isEvidence: Boolean, isQuery: Boolean, mappingRelation: String, 

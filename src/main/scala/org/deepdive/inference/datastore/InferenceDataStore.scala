@@ -2,23 +2,14 @@ package org.deepdive.inference
 
 import org.deepdive.settings.FactorFunctionVariable
 import org.deepdive.calibration._
+import org.deepdive.settings.{FactorDesc, VariableDataType}
 import java.io.File
 
-/* Stores the factor graph and inference results. */
-trait InferenceDataStoreComponent {
 
-  def inferenceDataStore : InferenceDataStore
-
-  trait InferenceDataStore {
+trait InferenceDataStore {
 
     /* Initializes the data store. This method must be called before any other methods in this class. */
     def init() : Unit
-
-    /* 
-     * Flushes the data store. This is called after each batch. 
-     * If no batch size is defined, this method is called once for all tuples
-     */
-    def flush() : Unit
 
     /* 
      * The number of tuples in each batch. If not defined, we use one large batch. 
@@ -26,50 +17,36 @@ trait InferenceDataStoreComponent {
      */
     def BatchSize : Option[Int]
 
-    /* Returns a list of variable IDs for all variables in the given factor function */
-    def getLocalVariableIds(rowMap: Map[String, Any], factorVar: FactorFunctionVariable) : Array[Long]
-
-    /* 
-     * Add a new factor. 
-     * IMPORTANT: This method may be called more than once for each factor. The implementation is
-     * responsible for making sure that all factors are unique based on their id.
-     */
-    def addFactor(factor: Factor) : Unit
-    
-    /* 
-     * Add a new variable. 
-     * IMPORTANT: This method may be called more than once for each variable. The implementation is
-     * responsible for making sure that all variables are unique based on their id.
-     */
-    def addVariable(variable: Variable) : Unit
-    
-    /* 
-     * Add a new weight. 
-     * IMPORTANT: This method may be called more than once for each weight. The implementation is
-     * responsible for making sure that all weights are unique based on their id.
-     */
-    def addWeight(weight: Weight)
+    /* Generate a grounded graph based on the factor description */
+    def groundFactorGraph(schema: Map[String, _ <: VariableDataType],
+        factorDescs: Seq[FactorDesc], holdoutFraction: Double) : Unit 
 
     /* 
      * Dumps the factor graphs with the given serializier
      */
-    def dumpFactorGraph(serializer: Serializer) : Unit
+    def dumpFactorGraph(serializer: Serializer, schema: Map[String, _ <: VariableDataType],
+        weightsPath: String, variablesPath: String, factorsPath: String, edgesPath: String) : Unit
 
     /* 
      * Writes inference results produced by the sampler back to the data store.
      * The given file is a space-separated file with three columns:
      * VariableID, LastSampleValue, ExpectedValue
      */
-    def writebackInferenceResult(variableSchema: Map[String, String],
+    def writebackInferenceResult(variableSchema: Map[String, _ <: VariableDataType],
         variableOutputFile: String, weightsOutputFile: String) : Unit
 
-    
+
     /* 
      * Gets calibration data for the given buckets.
      * writebackInferenceResult must be called before this method can be called.
      */
-    def getCalibrationData(variable: String, buckets: List[Bucket]) : Map[Bucket, BucketData]
+    def getCalibrationData(variable: String, dataType: VariableDataType, buckets: List[Bucket]) : Map[Bucket, BucketData]
 
-  }
-  
+}
+
+/* Stores the factor graph and inference results. */
+trait InferenceDataStoreComponent {
+
+  def inferenceDataStore : InferenceDataStore
+
 }

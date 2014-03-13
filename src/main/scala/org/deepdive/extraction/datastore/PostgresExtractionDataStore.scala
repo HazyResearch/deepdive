@@ -1,6 +1,5 @@
 package org.deepdive.extraction.datastore
 
-import anorm._
 import au.com.bytecode.opencsv.CSVWriter
 import java.io.{File, StringWriter, FileWriter, PrintWriter, BufferedWriter, Writer}
 import java.lang.RuntimeException
@@ -13,51 +12,18 @@ import org.deepdive.settings._
 import scala.collection.JavaConversions._
 import play.api.libs.json._
 import scala.util.{Try, Success, Failure}
+import scalikejdbc._
 
 trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent {
-
   val dataStore = new PostgresExtractionDataStore
+}
 
-  class PostgresExtractionDataStore extends ExtractionDataStore[JsObject] with Logging {
-
-    /* Globally unique variable id for this data store */
-    private val variableIdCounter = new AtomicLong(0)
+class PostgresExtractionDataStore extends ExtractionDataStore[JsObject] with JdbcExtractionDataStore with Logging {
 
     def init() = {
-      variableIdCounter.set(0)
     }
 
-    def BatchSize = 20000
-
-    def queryAsMap[A](query: String, batchSize: Option[Int] = None)
-      (block: Iterator[Map[String, Any]] => A) : A = {
-      PostgresDataStore.withConnection { implicit conn =>
-        val sqlQuery = SQL(query)
-        val statement = sqlQuery.filledStatement
-        // If we don't set the fetch size then postgres will return all rows at once 
-        // and load them into memory. We don't want that ;)
-        conn.setAutoCommit(false)
-        statement.setFetchSize(batchSize.getOrElse(1000))
-        val iter = Sql.resultSetToStream(statement.executeQuery()).iterator.map { row =>
-          row.asMap.toMap.mapValues { 
-            case x : org.postgresql.jdbc4.Jdbc4Array => x.getArray()
-            case x : java.sql.Date => x.toString
-            case other => other
-          }
-        }
-        block(iter)
-      }
-    }
-
-    def queryAsJson[A](query: String, batchSize: Option[Int] = None)
-      (block: Iterator[JsObject] => A) : A = {
-      queryAsMap(query, batchSize) { iter =>
-        val jsonIter = iter.map { row =>
-          JsObject(row.mapValues(anyValToJson).toSeq)
-        }
-        block(jsonIter)
-      }
-    }
+    def ds = PostgresDataStore
 
     def addBatch(result: Iterator[JsObject], outputRelation: String) : Unit = {
       val file = File.createTempFile(s"deepdive_$outputRelation", ".csv")
@@ -85,7 +51,7 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
 
     /* Builds a COPY statement for a given relation and column names */
     def buildCopySql(relationName: String, keys: Set[String]) = {
-      val fields = keys.filterNot(_ == "id").toList.sorted
+      val fields = List("id") ++ keys.filterNot(_ == "id").toList.sorted
       s"""COPY ${relationName}(${fields.mkString(", ")}) FROM STDIN CSV"""
     }
 
@@ -96,8 +62,8 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
         val dataList = obj.value.filterKeys(_ != "id").toList.sortBy(_._1)
         val strList = dataList.map (x => jsValueToString(x._2))
         // We get a unique id for the record
-        // val id = variableIdCounter.getAndIncrement()
-        writer.writeNext(strList.toArray)
+        val id = variableIdCounter.getAndIncrement().toString
+        writer.writeNext((Seq(id) ++ strList)toArray)
       }
     }
 
@@ -123,31 +89,4 @@ trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent 
         ""
     }
 
-    /* Translates an arbitary values that comes back from the database to a JSON value */
-    private def anyValToJson(x: Any) : JsValue = x match {
-      case Some(x) => anyValToJson(x)
-      case None | null => JsNull
-      case x : String => JsString(x)
-      case x : Boolean => JsBoolean(x)
-      case x : Int => JsNumber(x)
-      case x : Long => JsNumber(x)
-      case x : Double => JsNumber(x)
-      case x : java.sql.Date => JsString(x.toString)
-      case x : Array[_] => JsArray(x.toList.map(x => anyValToJson(x)))
-      case x : org.postgresql.jdbc4.Jdbc4Array => 
-        JsArray(x.getArray().asInstanceOf[Array[_]].map(anyValToJson).toList)
-      case x : org.postgresql.util.PGobject =>
-        x.getType match {
-          case "json" => Json.parse(x.getValue)
-          case _ =>
-            log.error(s"Could not convert ${x.toString} of type=${x.getType} to JSON")
-            JsNull
-        }
-      case x =>
-        log.error(s"Could not convert ${x.toString} of type=${x.getClass.getName} to JSON")
-        JsNull
-    }
-
   }
-
-}

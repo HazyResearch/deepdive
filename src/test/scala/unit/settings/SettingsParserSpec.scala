@@ -14,14 +14,14 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester {
       val config = ConfigFactory.parseString("""
       schema.variables.relation1.var1 : Boolean
       schema.variables.relation1.var2 : Boolean
-      schema.variables.relation2.var3 : Boolean
+      schema.variables.relation2.var3 : Categorical(2)
       """).withFallback(defaultConfig)
       val loadSchemaSettings = PrivateMethod[SchemaSettings]('loadSchemaSettings)
       val result = SettingsParser invokePrivate loadSchemaSettings(config)
       assert(result == SchemaSettings(
-        Map("relation1.var1" -> "Boolean",
-          "relation1.var2" -> "Boolean",
-          "relation2.var3" -> "Boolean")))
+        Map("relation1.var1" -> BooleanType,
+          "relation1.var2" -> BooleanType,
+          "relation2.var3" -> MultinomialType(2)), None))
     }
   }
 
@@ -108,12 +108,12 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester {
   describe("Parsing Sampler Settings") {
     it ("should work when specified") {
       val config = ConfigFactory.parseString("""
-        sampler.java_args = "-Xmx8g"
+        sampler.sampler_cmd = "java -jar util/sampler-assembly-0.1.jar"
         sampler.sampler_args = "-i 1000"
       """).withFallback(defaultConfig)
       val loadSamplerSettings = PrivateMethod[SamplerSettings]('loadSamplerSettings)
       val result = SettingsParser invokePrivate loadSamplerSettings(config)
-      assert(result == SamplerSettings("-Xmx8g", "-i 1000"))
+      assert(result == SamplerSettings("java -jar util/sampler-assembly-0.1.jar", "-i 1000"))
     }
     
     it ("should work when not specified") {

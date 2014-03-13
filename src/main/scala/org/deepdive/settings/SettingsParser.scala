@@ -24,18 +24,22 @@ object SettingsParser extends Logging {
   private def loadSchemaSettings(config: Config) : SchemaSettings = {
     val schemaConfig = Try(config.getConfig("schema")).getOrElse {
       log.warning("No schema defined.")
-      return SchemaSettings(Nil.toMap)
+      return SchemaSettings(Nil.toMap, None)
     }
     val variableConfig = schemaConfig.getConfig("variables")
     val relations = variableConfig.root.keySet.toList
     val relationsWithConfig = relations.zip(relations.map(variableConfig.getConfig))
     val variableMap = relationsWithConfig.flatMap { case(relation, relationConf) =>
       relationConf.root.keySet.map { attributeName =>
-        Tuple2(s"${relation}.${attributeName}", 
-          relationConf.getString(attributeName))
+        val dataTypeStr = relationConf.getString(attributeName)
+        val dataType = DataTypeParser.parse(DataTypeParser.dataType, dataTypeStr).getOrElse {
+          throw new RuntimeException(s"Unknown data type: ${dataTypeStr}")
+        }
+        Tuple2(s"${relation}.${attributeName}", dataType)
       }
     }.toMap
-    SchemaSettings(variableMap)
+    val setupFile = Try(schemaConfig.getString("setup"))
+    SchemaSettings(variableMap, setupFile.toOption)
   }
 
   private def loadExtractionSettings(config: Config) : ExtractionSettings = {
@@ -99,9 +103,9 @@ object SettingsParser extends Logging {
 
   private def loadSamplerSettings(config: Config) : SamplerSettings = {
     val samplingConfig = config.getConfig("sampler")
-    val javaArgs = Try(samplingConfig.getString("java_args")).getOrElse("")
+    val samplerCmd = samplingConfig.getString("sampler_cmd")
     val samplerArgs = samplingConfig.getString("sampler_args")
-    SamplerSettings(javaArgs, samplerArgs)
+    SamplerSettings(samplerCmd, samplerArgs)
   }
 
   private def loadPipelineSettings(config: Config) : PipelineSettings = {

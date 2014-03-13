@@ -1,0 +1,1 @@
+LD_LIBRARY_PATH=./lib/protobuf/lib ./dw gibbs -w ./2014-03-09T191855/graph.weights.pb -v ./2014-03-09T191855/graph.variables.pb -f ./2014-03-09T191855/graph.factors.pb -e ./2014-03-09T191855/graph.edges.pb -m ./2014-03-09T191855/graph.meta.pb -o ./2014-03-09T191855 -l 100 -s 1 -i 100 --alpha 0.01

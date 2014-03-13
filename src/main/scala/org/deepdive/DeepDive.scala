@@ -7,25 +7,40 @@ import java.io.File
 import org.deepdive.settings._
 import org.deepdive.datastore.{JdbcDataStore}
 import org.deepdive.extraction.{ExtractionManager, ExtractionTask, ExtractionTaskResult}
+import org.deepdive.extraction.datastore._
 import org.deepdive.inference.{InferenceManager, FactorGraphBuilder}
 import org.deepdive.profiling._
 import org.deepdive.calibration._
 import scala.concurrent.duration._
 import scala.concurrent.{Future, Await}
+import scala.io.Source
 import scala.util.{Try, Success, Failure}
 
 object DeepDive extends Logging {
 
-  def run(config: Config) {
+  def run(config: Config, outputDir: String) {
 
     // Get the actor system
     val system = Context.system
+    Context.outputDir = outputDir
+
+    // Create the output directory
+    val outputDirFile = new File(outputDir)
+    outputDirFile.mkdirs()
+    log.info(s"outputDir=${outputDir}")
 
     // Load Settings
     val settings = Settings.loadFromConfig(config)
 
+    val dbDriver = config.getString("deepdive.db.default.driver")
+    
     // Setup the data store
     JdbcDataStore.init(config)
+    settings.schemaSettings.setupFile.foreach { file =>
+      log.info(s"Setting up the schema using ${file}")
+      val cmd = Source.fromFile(file).getLines.mkString("\n")
+      JdbcDataStore.executeCmd(cmd)
+    }
 
     implicit val timeout = Timeout(1337 hours)
     implicit val ec = system.dispatcher
@@ -34,9 +49,9 @@ object DeepDive extends Logging {
     val profiler = system.actorOf(Profiler.props, "profiler")
     val taskManager = system.actorOf(TaskManager.props, "taskManager")
     val inferenceManager = system.actorOf(InferenceManager.props(
-      taskManager, settings.schemaSettings.variables), "inferenceManager")
+      taskManager, settings.schemaSettings.variables, dbDriver), "inferenceManager")
     val extractionManager = system.actorOf(
-      ExtractionManager.props(settings.extractionSettings.parallelism), 
+      ExtractionManager.props(settings.extractionSettings.parallelism, dbDriver), 
       "extractionManager")
     
     // Build tasks for extractors
@@ -47,16 +62,19 @@ object DeepDive extends Logging {
       extractionTask, extractionManager)
 
     // Build task to construct the factor graph
-    val factorTasks = for {
-      factor <- settings.inferenceSettings.factors
-      factorTask = InferenceManager.FactorTask(factor, 
-        settings.calibrationSettings.holdoutFraction, settings.inferenceSettings.insertBatchSize)
-      // TODO: We don't actually neeed to wait for all extractions to finish. For now it's fine.
-      taskDeps = extractionTasks.map(_.id)
-    } yield Task(factor.name, taskDeps, factorTask, inferenceManager)
+    val activeFactors = settings.pipelineSettings.activePipeline match { 
+      case Some(pipeline) => 
+        settings.inferenceSettings.factors.filter(f => pipeline.tasks.contains(f.name))
+      case None => settings.inferenceSettings.factors
+    }
+    val groundFactorGraphMsg = InferenceManager.GroundFactorGraph(
+      activeFactors, settings.calibrationSettings.holdoutFraction
+    )
+    val groundFactorGraphTask = Task("inference_grounding", extractionTasks.map(_.id), 
+      groundFactorGraphMsg, inferenceManager)
 
-    val inferenceTask = Task("inference", factorTasks.map(_.id) ++ extractionTasks.map(_.id),
-      InferenceManager.RunInference(settings.samplerSettings.javaArgs, 
+    val inferenceTask = Task("inference", extractionTasks.map(_.id) ++ Seq("inference_grounding"),
+      InferenceManager.RunInference(settings.samplerSettings.samplerCmd, 
         settings.samplerSettings.samplerArgs), inferenceManager, true)
 
     val calibrationTask = Task("calibration", List("inference"), 
@@ -66,7 +84,7 @@ object DeepDive extends Logging {
 
     val terminationTask = Task("shutdown", List("report"), TaskManager.Shutdown, taskManager, false)
 
-    val allTasks = extractionTasks ++ factorTasks ++ 
+    val allTasks = extractionTasks ++ Seq(groundFactorGraphTask) ++
       List(inferenceTask, calibrationTask, reportingTask, terminationTask) 
 
     // Create a default pipeline that executes all tasks
@@ -75,7 +93,7 @@ object DeepDive extends Logging {
     // Figure out which pipeline to run
     val activePipeline = settings.pipelineSettings.activePipeline match {
       case Some(pipeline) => pipeline.copy(tasks = pipeline.tasks ++ 
-        Set("inference", "calibration", "report", "shutdown"))
+        Set("inference_grounding", "inference", "calibration", "report", "shutdown"))
       case None => defaultPipeline
     }
 

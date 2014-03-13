@@ -770,6 +770,36 @@ public final class FactorGraphProtos {
      * <code>required .deepdive.Variable.VariableDataType dataType = 3;</code>
      */
     org.deepdive.serialization.FactorGraphProtos.Variable.VariableDataType getDataType();
+
+    // optional bool isEvidence = 4;
+    /**
+     * <code>optional bool isEvidence = 4;</code>
+     */
+    boolean hasIsEvidence();
+    /**
+     * <code>optional bool isEvidence = 4;</code>
+     */
+    boolean getIsEvidence();
+
+    // optional uint64 cardinality = 5;
+    /**
+     * <code>optional uint64 cardinality = 5;</code>
+     */
+    boolean hasCardinality();
+    /**
+     * <code>optional uint64 cardinality = 5;</code>
+     */
+    long getCardinality();
+
+    // optional uint64 edgeCount = 6;
+    /**
+     * <code>optional uint64 edgeCount = 6;</code>
+     */
+    boolean hasEdgeCount();
+    /**
+     * <code>optional uint64 edgeCount = 6;</code>
+     */
+    long getEdgeCount();
   }
   /**
    * Protobuf type {@code deepdive.Variable}
@@ -843,6 +873,21 @@ public final class FactorGraphProtos {
               }
               break;
             }
+            case 32: {
+              bitField0_ |= 0x00000008;
+              isEvidence_ = input.readBool();
+              break;
+            }
+            case 40: {
+              bitField0_ |= 0x00000010;
+              cardinality_ = input.readUInt64();
+              break;
+            }
+            case 48: {
+              bitField0_ |= 0x00000020;
+              edgeCount_ = input.readUInt64();
+              break;
+            }
           }
         }
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -891,12 +936,28 @@ public final class FactorGraphProtos {
        * <code>BOOLEAN = 0;</code>
        */
       BOOLEAN(0, 0),
+      /**
+       * <code>MULTINOMIAL = 1;</code>
+       */
+      MULTINOMIAL(1, 1),
+      /**
+       * <code>REAL = 2;</code>
+       */
+      REAL(2, 2),
       ;
 
       /**
        * <code>BOOLEAN = 0;</code>
        */
       public static final int BOOLEAN_VALUE = 0;
+      /**
+       * <code>MULTINOMIAL = 1;</code>
+       */
+      public static final int MULTINOMIAL_VALUE = 1;
+      /**
+       * <code>REAL = 2;</code>
+       */
+      public static final int REAL_VALUE = 2;
 
 
       public final int getNumber() { return value; }
@@ -904,6 +965,8 @@ public final class FactorGraphProtos {
       public static VariableDataType valueOf(int value) {
         switch (value) {
           case 0: return BOOLEAN;
+          case 1: return MULTINOMIAL;
+          case 2: return REAL;
           default: return null;
         }
       }
@@ -1004,10 +1067,61 @@ public final class FactorGraphProtos {
       return dataType_;
     }
 
+    // optional bool isEvidence = 4;
+    public static final int ISEVIDENCE_FIELD_NUMBER = 4;
+    private boolean isEvidence_;
+    /**
+     * <code>optional bool isEvidence = 4;</code>
+     */
+    public boolean hasIsEvidence() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    /**
+     * <code>optional bool isEvidence = 4;</code>
+     */
+    public boolean getIsEvidence() {
+      return isEvidence_;
+    }
+
+    // optional uint64 cardinality = 5;
+    public static final int CARDINALITY_FIELD_NUMBER = 5;
+    private long cardinality_;
+    /**
+     * <code>optional uint64 cardinality = 5;</code>
+     */
+    public boolean hasCardinality() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    /**
+     * <code>optional uint64 cardinality = 5;</code>
+     */
+    public long getCardinality() {
+      return cardinality_;
+    }
+
+    // optional uint64 edgeCount = 6;
+    public static final int EDGECOUNT_FIELD_NUMBER = 6;
+    private long edgeCount_;
+    /**
+     * <code>optional uint64 edgeCount = 6;</code>
+     */
+    public boolean hasEdgeCount() {
+      return ((bitField0_ & 0x00000020) == 0x00000020);
+    }
+    /**
+     * <code>optional uint64 edgeCount = 6;</code>
+     */
+    public long getEdgeCount() {
+      return edgeCount_;
+    }
+
     private void initFields() {
       id_ = 0L;
       initialValue_ = 0D;
       dataType_ = org.deepdive.serialization.FactorGraphProtos.Variable.VariableDataType.BOOLEAN;
+      isEvidence_ = false;
+      cardinality_ = 0L;
+      edgeCount_ = 0L;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -1038,6 +1152,15 @@ public final class FactorGraphProtos {
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         output.writeEnum(3, dataType_.getNumber());
       }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeBool(4, isEvidence_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeUInt64(5, cardinality_);
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        output.writeUInt64(6, edgeCount_);
+      }
       getUnknownFields().writeTo(output);
     }
 
@@ -1058,6 +1181,18 @@ public final class FactorGraphProtos {
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
           .computeEnumSize(3, dataType_.getNumber());
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(4, isEvidence_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt64Size(5, cardinality_);
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt64Size(6, edgeCount_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -1181,6 +1316,12 @@ public final class FactorGraphProtos {
         bitField0_ = (bitField0_ & ~0x00000002);
         dataType_ = org.deepdive.serialization.FactorGraphProtos.Variable.VariableDataType.BOOLEAN;
         bitField0_ = (bitField0_ & ~0x00000004);
+        isEvidence_ = false;
+        bitField0_ = (bitField0_ & ~0x00000008);
+        cardinality_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000010);
+        edgeCount_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000020);
         return this;
       }
 
@@ -1221,6 +1362,18 @@ public final class FactorGraphProtos {
           to_bitField0_ |= 0x00000004;
         }
         result.dataType_ = dataType_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.isEvidence_ = isEvidence_;
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        result.cardinality_ = cardinality_;
+        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+          to_bitField0_ |= 0x00000020;
+        }
+        result.edgeCount_ = edgeCount_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1245,6 +1398,15 @@ public final class FactorGraphProtos {
         }
         if (other.hasDataType()) {
           setDataType(other.getDataType());
+        }
+        if (other.hasIsEvidence()) {
+          setIsEvidence(other.getIsEvidence());
+        }
+        if (other.hasCardinality()) {
+          setCardinality(other.getCardinality());
+        }
+        if (other.hasEdgeCount()) {
+          setEdgeCount(other.getEdgeCount());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -1383,6 +1545,105 @@ public final class FactorGraphProtos {
         return this;
       }
 
+      // optional bool isEvidence = 4;
+      private boolean isEvidence_ ;
+      /**
+       * <code>optional bool isEvidence = 4;</code>
+       */
+      public boolean hasIsEvidence() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      /**
+       * <code>optional bool isEvidence = 4;</code>
+       */
+      public boolean getIsEvidence() {
+        return isEvidence_;
+      }
+      /**
+       * <code>optional bool isEvidence = 4;</code>
+       */
+      public Builder setIsEvidence(boolean value) {
+        bitField0_ |= 0x00000008;
+        isEvidence_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional bool isEvidence = 4;</code>
+       */
+      public Builder clearIsEvidence() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        isEvidence_ = false;
+        onChanged();
+        return this;
+      }
+
+      // optional uint64 cardinality = 5;
+      private long cardinality_ ;
+      /**
+       * <code>optional uint64 cardinality = 5;</code>
+       */
+      public boolean hasCardinality() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
+      }
+      /**
+       * <code>optional uint64 cardinality = 5;</code>
+       */
+      public long getCardinality() {
+        return cardinality_;
+      }
+      /**
+       * <code>optional uint64 cardinality = 5;</code>
+       */
+      public Builder setCardinality(long value) {
+        bitField0_ |= 0x00000010;
+        cardinality_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional uint64 cardinality = 5;</code>
+       */
+      public Builder clearCardinality() {
+        bitField0_ = (bitField0_ & ~0x00000010);
+        cardinality_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      // optional uint64 edgeCount = 6;
+      private long edgeCount_ ;
+      /**
+       * <code>optional uint64 edgeCount = 6;</code>
+       */
+      public boolean hasEdgeCount() {
+        return ((bitField0_ & 0x00000020) == 0x00000020);
+      }
+      /**
+       * <code>optional uint64 edgeCount = 6;</code>
+       */
+      public long getEdgeCount() {
+        return edgeCount_;
+      }
+      /**
+       * <code>optional uint64 edgeCount = 6;</code>
+       */
+      public Builder setEdgeCount(long value) {
+        bitField0_ |= 0x00000020;
+        edgeCount_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional uint64 edgeCount = 6;</code>
+       */
+      public Builder clearEdgeCount() {
+        bitField0_ = (bitField0_ & ~0x00000020);
+        edgeCount_ = 0L;
+        onChanged();
+        return this;
+      }
+
       // @@protoc_insertion_point(builder_scope:deepdive.Variable)
     }
 
@@ -1426,6 +1687,16 @@ public final class FactorGraphProtos {
      * <code>required .deepdive.Factor.FactorFunctionType factorFunction = 3;</code>
      */
     org.deepdive.serialization.FactorGraphProtos.Factor.FactorFunctionType getFactorFunction();
+
+    // optional uint64 edgeCount = 4;
+    /**
+     * <code>optional uint64 edgeCount = 4;</code>
+     */
+    boolean hasEdgeCount();
+    /**
+     * <code>optional uint64 edgeCount = 4;</code>
+     */
+    long getEdgeCount();
   }
   /**
    * Protobuf type {@code deepdive.Factor}
@@ -1497,6 +1768,11 @@ public final class FactorGraphProtos {
                 bitField0_ |= 0x00000004;
                 factorFunction_ = value;
               }
+              break;
+            }
+            case 32: {
+              bitField0_ |= 0x00000008;
+              edgeCount_ = input.readUInt64();
               break;
             }
           }
@@ -1696,10 +1972,27 @@ public final class FactorGraphProtos {
       return factorFunction_;
     }
 
+    // optional uint64 edgeCount = 4;
+    public static final int EDGECOUNT_FIELD_NUMBER = 4;
+    private long edgeCount_;
+    /**
+     * <code>optional uint64 edgeCount = 4;</code>
+     */
+    public boolean hasEdgeCount() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    /**
+     * <code>optional uint64 edgeCount = 4;</code>
+     */
+    public long getEdgeCount() {
+      return edgeCount_;
+    }
+
     private void initFields() {
       id_ = 0L;
       weightId_ = 0L;
       factorFunction_ = org.deepdive.serialization.FactorGraphProtos.Factor.FactorFunctionType.IMPLY;
+      edgeCount_ = 0L;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -1734,6 +2027,9 @@ public final class FactorGraphProtos {
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         output.writeEnum(3, factorFunction_.getNumber());
       }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeUInt64(4, edgeCount_);
+      }
       getUnknownFields().writeTo(output);
     }
 
@@ -1754,6 +2050,10 @@ public final class FactorGraphProtos {
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
           .computeEnumSize(3, factorFunction_.getNumber());
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt64Size(4, edgeCount_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -1877,6 +2177,8 @@ public final class FactorGraphProtos {
         bitField0_ = (bitField0_ & ~0x00000002);
         factorFunction_ = org.deepdive.serialization.FactorGraphProtos.Factor.FactorFunctionType.IMPLY;
         bitField0_ = (bitField0_ & ~0x00000004);
+        edgeCount_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
 
@@ -1917,6 +2219,10 @@ public final class FactorGraphProtos {
           to_bitField0_ |= 0x00000004;
         }
         result.factorFunction_ = factorFunction_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.edgeCount_ = edgeCount_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1941,6 +2247,9 @@ public final class FactorGraphProtos {
         }
         if (other.hasFactorFunction()) {
           setFactorFunction(other.getFactorFunction());
+        }
+        if (other.hasEdgeCount()) {
+          setEdgeCount(other.getEdgeCount());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -2083,6 +2392,39 @@ public final class FactorGraphProtos {
         return this;
       }
 
+      // optional uint64 edgeCount = 4;
+      private long edgeCount_ ;
+      /**
+       * <code>optional uint64 edgeCount = 4;</code>
+       */
+      public boolean hasEdgeCount() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      /**
+       * <code>optional uint64 edgeCount = 4;</code>
+       */
+      public long getEdgeCount() {
+        return edgeCount_;
+      }
+      /**
+       * <code>optional uint64 edgeCount = 4;</code>
+       */
+      public Builder setEdgeCount(long value) {
+        bitField0_ |= 0x00000008;
+        edgeCount_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional uint64 edgeCount = 4;</code>
+       */
+      public Builder clearEdgeCount() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        edgeCount_ = 0L;
+        onChanged();
+        return this;
+      }
+
       // @@protoc_insertion_point(builder_scope:deepdive.Factor)
     }
 
@@ -2136,6 +2478,16 @@ public final class FactorGraphProtos {
      * <code>optional bool isPositive = 4 [default = true];</code>
      */
     boolean getIsPositive();
+
+    // optional uint64 equalPredicate = 5;
+    /**
+     * <code>optional uint64 equalPredicate = 5;</code>
+     */
+    boolean hasEqualPredicate();
+    /**
+     * <code>optional uint64 equalPredicate = 5;</code>
+     */
+    long getEqualPredicate();
   }
   /**
    * Protobuf type {@code deepdive.GraphEdge}
@@ -2206,6 +2558,11 @@ public final class FactorGraphProtos {
             case 32: {
               bitField0_ |= 0x00000008;
               isPositive_ = input.readBool();
+              break;
+            }
+            case 40: {
+              bitField0_ |= 0x00000010;
+              equalPredicate_ = input.readUInt64();
               break;
             }
           }
@@ -2312,11 +2669,28 @@ public final class FactorGraphProtos {
       return isPositive_;
     }
 
+    // optional uint64 equalPredicate = 5;
+    public static final int EQUALPREDICATE_FIELD_NUMBER = 5;
+    private long equalPredicate_;
+    /**
+     * <code>optional uint64 equalPredicate = 5;</code>
+     */
+    public boolean hasEqualPredicate() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    /**
+     * <code>optional uint64 equalPredicate = 5;</code>
+     */
+    public long getEqualPredicate() {
+      return equalPredicate_;
+    }
+
     private void initFields() {
       variableId_ = 0L;
       factorId_ = 0L;
       position_ = 0L;
       isPositive_ = true;
+      equalPredicate_ = 0L;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -2354,6 +2728,9 @@ public final class FactorGraphProtos {
       if (((bitField0_ & 0x00000008) == 0x00000008)) {
         output.writeBool(4, isPositive_);
       }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeUInt64(5, equalPredicate_);
+      }
       getUnknownFields().writeTo(output);
     }
 
@@ -2378,6 +2755,10 @@ public final class FactorGraphProtos {
       if (((bitField0_ & 0x00000008) == 0x00000008)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBoolSize(4, isPositive_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt64Size(5, equalPredicate_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -2503,6 +2884,8 @@ public final class FactorGraphProtos {
         bitField0_ = (bitField0_ & ~0x00000004);
         isPositive_ = true;
         bitField0_ = (bitField0_ & ~0x00000008);
+        equalPredicate_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000010);
         return this;
       }
 
@@ -2547,6 +2930,10 @@ public final class FactorGraphProtos {
           to_bitField0_ |= 0x00000008;
         }
         result.isPositive_ = isPositive_;
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        result.equalPredicate_ = equalPredicate_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -2574,6 +2961,9 @@ public final class FactorGraphProtos {
         }
         if (other.hasIsPositive()) {
           setIsPositive(other.getIsPositive());
+        }
+        if (other.hasEqualPredicate()) {
+          setEqualPredicate(other.getEqualPredicate());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -2746,6 +3136,39 @@ public final class FactorGraphProtos {
         return this;
       }
 
+      // optional uint64 equalPredicate = 5;
+      private long equalPredicate_ ;
+      /**
+       * <code>optional uint64 equalPredicate = 5;</code>
+       */
+      public boolean hasEqualPredicate() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
+      }
+      /**
+       * <code>optional uint64 equalPredicate = 5;</code>
+       */
+      public long getEqualPredicate() {
+        return equalPredicate_;
+      }
+      /**
+       * <code>optional uint64 equalPredicate = 5;</code>
+       */
+      public Builder setEqualPredicate(long value) {
+        bitField0_ |= 0x00000010;
+        equalPredicate_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional uint64 equalPredicate = 5;</code>
+       */
+      public Builder clearEqualPredicate() {
+        bitField0_ = (bitField0_ & ~0x00000010);
+        equalPredicate_ = 0L;
+        onChanged();
+        return this;
+      }
+
       // @@protoc_insertion_point(builder_scope:deepdive.GraphEdge)
     }
 
@@ -2760,105 +3183,105 @@ public final class FactorGraphProtos {
   public interface FactorGraphOrBuilder
       extends com.google.protobuf.MessageOrBuilder {
 
-    // repeated .deepdive.Weight weight = 1;
+    // required uint64 numWeights = 1;
     /**
-     * <code>repeated .deepdive.Weight weight = 1;</code>
+     * <code>required uint64 numWeights = 1;</code>
      */
-    java.util.List<org.deepdive.serialization.FactorGraphProtos.Weight> 
-        getWeightList();
+    boolean hasNumWeights();
     /**
-     * <code>repeated .deepdive.Weight weight = 1;</code>
+     * <code>required uint64 numWeights = 1;</code>
      */
-    org.deepdive.serialization.FactorGraphProtos.Weight getWeight(int index);
-    /**
-     * <code>repeated .deepdive.Weight weight = 1;</code>
-     */
-    int getWeightCount();
-    /**
-     * <code>repeated .deepdive.Weight weight = 1;</code>
-     */
-    java.util.List<? extends org.deepdive.serialization.FactorGraphProtos.WeightOrBuilder> 
-        getWeightOrBuilderList();
-    /**
-     * <code>repeated .deepdive.Weight weight = 1;</code>
-     */
-    org.deepdive.serialization.FactorGraphProtos.WeightOrBuilder getWeightOrBuilder(
-        int index);
+    long getNumWeights();
 
-    // repeated .deepdive.Variable variable = 2;
+    // required uint64 numVariables = 2;
     /**
-     * <code>repeated .deepdive.Variable variable = 2;</code>
+     * <code>required uint64 numVariables = 2;</code>
      */
-    java.util.List<org.deepdive.serialization.FactorGraphProtos.Variable> 
-        getVariableList();
+    boolean hasNumVariables();
     /**
-     * <code>repeated .deepdive.Variable variable = 2;</code>
+     * <code>required uint64 numVariables = 2;</code>
      */
-    org.deepdive.serialization.FactorGraphProtos.Variable getVariable(int index);
-    /**
-     * <code>repeated .deepdive.Variable variable = 2;</code>
-     */
-    int getVariableCount();
-    /**
-     * <code>repeated .deepdive.Variable variable = 2;</code>
-     */
-    java.util.List<? extends org.deepdive.serialization.FactorGraphProtos.VariableOrBuilder> 
-        getVariableOrBuilderList();
-    /**
-     * <code>repeated .deepdive.Variable variable = 2;</code>
-     */
-    org.deepdive.serialization.FactorGraphProtos.VariableOrBuilder getVariableOrBuilder(
-        int index);
+    long getNumVariables();
 
-    // repeated .deepdive.Factor factor = 3;
+    // required uint64 numFactors = 3;
     /**
-     * <code>repeated .deepdive.Factor factor = 3;</code>
+     * <code>required uint64 numFactors = 3;</code>
      */
-    java.util.List<org.deepdive.serialization.FactorGraphProtos.Factor> 
-        getFactorList();
+    boolean hasNumFactors();
     /**
-     * <code>repeated .deepdive.Factor factor = 3;</code>
+     * <code>required uint64 numFactors = 3;</code>
      */
-    org.deepdive.serialization.FactorGraphProtos.Factor getFactor(int index);
-    /**
-     * <code>repeated .deepdive.Factor factor = 3;</code>
-     */
-    int getFactorCount();
-    /**
-     * <code>repeated .deepdive.Factor factor = 3;</code>
-     */
-    java.util.List<? extends org.deepdive.serialization.FactorGraphProtos.FactorOrBuilder> 
-        getFactorOrBuilderList();
-    /**
-     * <code>repeated .deepdive.Factor factor = 3;</code>
-     */
-    org.deepdive.serialization.FactorGraphProtos.FactorOrBuilder getFactorOrBuilder(
-        int index);
+    long getNumFactors();
 
-    // repeated .deepdive.GraphEdge edge = 4;
+    // required uint64 numEdges = 4;
     /**
-     * <code>repeated .deepdive.GraphEdge edge = 4;</code>
+     * <code>required uint64 numEdges = 4;</code>
      */
-    java.util.List<org.deepdive.serialization.FactorGraphProtos.GraphEdge> 
-        getEdgeList();
+    boolean hasNumEdges();
     /**
-     * <code>repeated .deepdive.GraphEdge edge = 4;</code>
+     * <code>required uint64 numEdges = 4;</code>
      */
-    org.deepdive.serialization.FactorGraphProtos.GraphEdge getEdge(int index);
+    long getNumEdges();
+
+    // required string weightsFile = 5;
     /**
-     * <code>repeated .deepdive.GraphEdge edge = 4;</code>
+     * <code>required string weightsFile = 5;</code>
      */
-    int getEdgeCount();
+    boolean hasWeightsFile();
     /**
-     * <code>repeated .deepdive.GraphEdge edge = 4;</code>
+     * <code>required string weightsFile = 5;</code>
      */
-    java.util.List<? extends org.deepdive.serialization.FactorGraphProtos.GraphEdgeOrBuilder> 
-        getEdgeOrBuilderList();
+    java.lang.String getWeightsFile();
     /**
-     * <code>repeated .deepdive.GraphEdge edge = 4;</code>
+     * <code>required string weightsFile = 5;</code>
      */
-    org.deepdive.serialization.FactorGraphProtos.GraphEdgeOrBuilder getEdgeOrBuilder(
-        int index);
+    com.google.protobuf.ByteString
+        getWeightsFileBytes();
+
+    // required string variablesFile = 6;
+    /**
+     * <code>required string variablesFile = 6;</code>
+     */
+    boolean hasVariablesFile();
+    /**
+     * <code>required string variablesFile = 6;</code>
+     */
+    java.lang.String getVariablesFile();
+    /**
+     * <code>required string variablesFile = 6;</code>
+     */
+    com.google.protobuf.ByteString
+        getVariablesFileBytes();
+
+    // required string factorsFile = 7;
+    /**
+     * <code>required string factorsFile = 7;</code>
+     */
+    boolean hasFactorsFile();
+    /**
+     * <code>required string factorsFile = 7;</code>
+     */
+    java.lang.String getFactorsFile();
+    /**
+     * <code>required string factorsFile = 7;</code>
+     */
+    com.google.protobuf.ByteString
+        getFactorsFileBytes();
+
+    // required string edgesFile = 8;
+    /**
+     * <code>required string edgesFile = 8;</code>
+     */
+    boolean hasEdgesFile();
+    /**
+     * <code>required string edgesFile = 8;</code>
+     */
+    java.lang.String getEdgesFile();
+    /**
+     * <code>required string edgesFile = 8;</code>
+     */
+    com.google.protobuf.ByteString
+        getEdgesFileBytes();
   }
   /**
    * Protobuf type {@code deepdive.FactorGraph}
@@ -2911,36 +3334,44 @@ public final class FactorGraphProtos {
               }
               break;
             }
-            case 10: {
-              if (!((mutable_bitField0_ & 0x00000001) == 0x00000001)) {
-                weight_ = new java.util.ArrayList<org.deepdive.serialization.FactorGraphProtos.Weight>();
-                mutable_bitField0_ |= 0x00000001;
-              }
-              weight_.add(input.readMessage(org.deepdive.serialization.FactorGraphProtos.Weight.PARSER, extensionRegistry));
+            case 8: {
+              bitField0_ |= 0x00000001;
+              numWeights_ = input.readUInt64();
               break;
             }
-            case 18: {
-              if (!((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
-                variable_ = new java.util.ArrayList<org.deepdive.serialization.FactorGraphProtos.Variable>();
-                mutable_bitField0_ |= 0x00000002;
-              }
-              variable_.add(input.readMessage(org.deepdive.serialization.FactorGraphProtos.Variable.PARSER, extensionRegistry));
+            case 16: {
+              bitField0_ |= 0x00000002;
+              numVariables_ = input.readUInt64();
               break;
             }
-            case 26: {
-              if (!((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
-                factor_ = new java.util.ArrayList<org.deepdive.serialization.FactorGraphProtos.Factor>();
-                mutable_bitField0_ |= 0x00000004;
-              }
-              factor_.add(input.readMessage(org.deepdive.serialization.FactorGraphProtos.Factor.PARSER, extensionRegistry));
+            case 24: {
+              bitField0_ |= 0x00000004;
+              numFactors_ = input.readUInt64();
               break;
             }
-            case 34: {
-              if (!((mutable_bitField0_ & 0x00000008) == 0x00000008)) {
-                edge_ = new java.util.ArrayList<org.deepdive.serialization.FactorGraphProtos.GraphEdge>();
-                mutable_bitField0_ |= 0x00000008;
-              }
-              edge_.add(input.readMessage(org.deepdive.serialization.FactorGraphProtos.GraphEdge.PARSER, extensionRegistry));
+            case 32: {
+              bitField0_ |= 0x00000008;
+              numEdges_ = input.readUInt64();
+              break;
+            }
+            case 42: {
+              bitField0_ |= 0x00000010;
+              weightsFile_ = input.readBytes();
+              break;
+            }
+            case 50: {
+              bitField0_ |= 0x00000020;
+              variablesFile_ = input.readBytes();
+              break;
+            }
+            case 58: {
+              bitField0_ |= 0x00000040;
+              factorsFile_ = input.readBytes();
+              break;
+            }
+            case 66: {
+              bitField0_ |= 0x00000080;
+              edgesFile_ = input.readBytes();
               break;
             }
           }
@@ -2951,18 +3382,6 @@ public final class FactorGraphProtos {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e.getMessage()).setUnfinishedMessage(this);
       } finally {
-        if (((mutable_bitField0_ & 0x00000001) == 0x00000001)) {
-          weight_ = java.util.Collections.unmodifiableList(weight_);
-        }
-        if (((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
-          variable_ = java.util.Collections.unmodifiableList(variable_);
-        }
-        if (((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
-          factor_ = java.util.Collections.unmodifiableList(factor_);
-        }
-        if (((mutable_bitField0_ & 0x00000008) == 0x00000008)) {
-          edge_ = java.util.Collections.unmodifiableList(edge_);
-        }
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
       }
@@ -2994,184 +3413,289 @@ public final class FactorGraphProtos {
       return PARSER;
     }
 
-    // repeated .deepdive.Weight weight = 1;
-    public static final int WEIGHT_FIELD_NUMBER = 1;
-    private java.util.List<org.deepdive.serialization.FactorGraphProtos.Weight> weight_;
+    private int bitField0_;
+    // required uint64 numWeights = 1;
+    public static final int NUMWEIGHTS_FIELD_NUMBER = 1;
+    private long numWeights_;
     /**
-     * <code>repeated .deepdive.Weight weight = 1;</code>
+     * <code>required uint64 numWeights = 1;</code>
      */
-    public java.util.List<org.deepdive.serialization.FactorGraphProtos.Weight> getWeightList() {
-      return weight_;
+    public boolean hasNumWeights() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
     }
     /**
-     * <code>repeated .deepdive.Weight weight = 1;</code>
+     * <code>required uint64 numWeights = 1;</code>
      */
-    public java.util.List<? extends org.deepdive.serialization.FactorGraphProtos.WeightOrBuilder> 
-        getWeightOrBuilderList() {
-      return weight_;
-    }
-    /**
-     * <code>repeated .deepdive.Weight weight = 1;</code>
-     */
-    public int getWeightCount() {
-      return weight_.size();
-    }
-    /**
-     * <code>repeated .deepdive.Weight weight = 1;</code>
-     */
-    public org.deepdive.serialization.FactorGraphProtos.Weight getWeight(int index) {
-      return weight_.get(index);
-    }
-    /**
-     * <code>repeated .deepdive.Weight weight = 1;</code>
-     */
-    public org.deepdive.serialization.FactorGraphProtos.WeightOrBuilder getWeightOrBuilder(
-        int index) {
-      return weight_.get(index);
+    public long getNumWeights() {
+      return numWeights_;
     }
 
-    // repeated .deepdive.Variable variable = 2;
-    public static final int VARIABLE_FIELD_NUMBER = 2;
-    private java.util.List<org.deepdive.serialization.FactorGraphProtos.Variable> variable_;
+    // required uint64 numVariables = 2;
+    public static final int NUMVARIABLES_FIELD_NUMBER = 2;
+    private long numVariables_;
     /**
-     * <code>repeated .deepdive.Variable variable = 2;</code>
+     * <code>required uint64 numVariables = 2;</code>
      */
-    public java.util.List<org.deepdive.serialization.FactorGraphProtos.Variable> getVariableList() {
-      return variable_;
+    public boolean hasNumVariables() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
     }
     /**
-     * <code>repeated .deepdive.Variable variable = 2;</code>
+     * <code>required uint64 numVariables = 2;</code>
      */
-    public java.util.List<? extends org.deepdive.serialization.FactorGraphProtos.VariableOrBuilder> 
-        getVariableOrBuilderList() {
-      return variable_;
-    }
-    /**
-     * <code>repeated .deepdive.Variable variable = 2;</code>
-     */
-    public int getVariableCount() {
-      return variable_.size();
-    }
-    /**
-     * <code>repeated .deepdive.Variable variable = 2;</code>
-     */
-    public org.deepdive.serialization.FactorGraphProtos.Variable getVariable(int index) {
-      return variable_.get(index);
-    }
-    /**
-     * <code>repeated .deepdive.Variable variable = 2;</code>
-     */
-    public org.deepdive.serialization.FactorGraphProtos.VariableOrBuilder getVariableOrBuilder(
-        int index) {
-      return variable_.get(index);
+    public long getNumVariables() {
+      return numVariables_;
     }
 
-    // repeated .deepdive.Factor factor = 3;
-    public static final int FACTOR_FIELD_NUMBER = 3;
-    private java.util.List<org.deepdive.serialization.FactorGraphProtos.Factor> factor_;
+    // required uint64 numFactors = 3;
+    public static final int NUMFACTORS_FIELD_NUMBER = 3;
+    private long numFactors_;
     /**
-     * <code>repeated .deepdive.Factor factor = 3;</code>
+     * <code>required uint64 numFactors = 3;</code>
      */
-    public java.util.List<org.deepdive.serialization.FactorGraphProtos.Factor> getFactorList() {
-      return factor_;
+    public boolean hasNumFactors() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
     }
     /**
-     * <code>repeated .deepdive.Factor factor = 3;</code>
+     * <code>required uint64 numFactors = 3;</code>
      */
-    public java.util.List<? extends org.deepdive.serialization.FactorGraphProtos.FactorOrBuilder> 
-        getFactorOrBuilderList() {
-      return factor_;
-    }
-    /**
-     * <code>repeated .deepdive.Factor factor = 3;</code>
-     */
-    public int getFactorCount() {
-      return factor_.size();
-    }
-    /**
-     * <code>repeated .deepdive.Factor factor = 3;</code>
-     */
-    public org.deepdive.serialization.FactorGraphProtos.Factor getFactor(int index) {
-      return factor_.get(index);
-    }
-    /**
-     * <code>repeated .deepdive.Factor factor = 3;</code>
-     */
-    public org.deepdive.serialization.FactorGraphProtos.FactorOrBuilder getFactorOrBuilder(
-        int index) {
-      return factor_.get(index);
+    public long getNumFactors() {
+      return numFactors_;
     }
 
-    // repeated .deepdive.GraphEdge edge = 4;
-    public static final int EDGE_FIELD_NUMBER = 4;
-    private java.util.List<org.deepdive.serialization.FactorGraphProtos.GraphEdge> edge_;
+    // required uint64 numEdges = 4;
+    public static final int NUMEDGES_FIELD_NUMBER = 4;
+    private long numEdges_;
     /**
-     * <code>repeated .deepdive.GraphEdge edge = 4;</code>
+     * <code>required uint64 numEdges = 4;</code>
      */
-    public java.util.List<org.deepdive.serialization.FactorGraphProtos.GraphEdge> getEdgeList() {
-      return edge_;
+    public boolean hasNumEdges() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
     }
     /**
-     * <code>repeated .deepdive.GraphEdge edge = 4;</code>
+     * <code>required uint64 numEdges = 4;</code>
      */
-    public java.util.List<? extends org.deepdive.serialization.FactorGraphProtos.GraphEdgeOrBuilder> 
-        getEdgeOrBuilderList() {
-      return edge_;
+    public long getNumEdges() {
+      return numEdges_;
+    }
+
+    // required string weightsFile = 5;
+    public static final int WEIGHTSFILE_FIELD_NUMBER = 5;
+    private java.lang.Object weightsFile_;
+    /**
+     * <code>required string weightsFile = 5;</code>
+     */
+    public boolean hasWeightsFile() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
     }
     /**
-     * <code>repeated .deepdive.GraphEdge edge = 4;</code>
+     * <code>required string weightsFile = 5;</code>
      */
-    public int getEdgeCount() {
-      return edge_.size();
+    public java.lang.String getWeightsFile() {
+      java.lang.Object ref = weightsFile_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          weightsFile_ = s;
+        }
+        return s;
+      }
     }
     /**
-     * <code>repeated .deepdive.GraphEdge edge = 4;</code>
+     * <code>required string weightsFile = 5;</code>
      */
-    public org.deepdive.serialization.FactorGraphProtos.GraphEdge getEdge(int index) {
-      return edge_.get(index);
+    public com.google.protobuf.ByteString
+        getWeightsFileBytes() {
+      java.lang.Object ref = weightsFile_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        weightsFile_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    // required string variablesFile = 6;
+    public static final int VARIABLESFILE_FIELD_NUMBER = 6;
+    private java.lang.Object variablesFile_;
+    /**
+     * <code>required string variablesFile = 6;</code>
+     */
+    public boolean hasVariablesFile() {
+      return ((bitField0_ & 0x00000020) == 0x00000020);
     }
     /**
-     * <code>repeated .deepdive.GraphEdge edge = 4;</code>
+     * <code>required string variablesFile = 6;</code>
      */
-    public org.deepdive.serialization.FactorGraphProtos.GraphEdgeOrBuilder getEdgeOrBuilder(
-        int index) {
-      return edge_.get(index);
+    public java.lang.String getVariablesFile() {
+      java.lang.Object ref = variablesFile_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          variablesFile_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string variablesFile = 6;</code>
+     */
+    public com.google.protobuf.ByteString
+        getVariablesFileBytes() {
+      java.lang.Object ref = variablesFile_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        variablesFile_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    // required string factorsFile = 7;
+    public static final int FACTORSFILE_FIELD_NUMBER = 7;
+    private java.lang.Object factorsFile_;
+    /**
+     * <code>required string factorsFile = 7;</code>
+     */
+    public boolean hasFactorsFile() {
+      return ((bitField0_ & 0x00000040) == 0x00000040);
+    }
+    /**
+     * <code>required string factorsFile = 7;</code>
+     */
+    public java.lang.String getFactorsFile() {
+      java.lang.Object ref = factorsFile_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          factorsFile_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string factorsFile = 7;</code>
+     */
+    public com.google.protobuf.ByteString
+        getFactorsFileBytes() {
+      java.lang.Object ref = factorsFile_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        factorsFile_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    // required string edgesFile = 8;
+    public static final int EDGESFILE_FIELD_NUMBER = 8;
+    private java.lang.Object edgesFile_;
+    /**
+     * <code>required string edgesFile = 8;</code>
+     */
+    public boolean hasEdgesFile() {
+      return ((bitField0_ & 0x00000080) == 0x00000080);
+    }
+    /**
+     * <code>required string edgesFile = 8;</code>
+     */
+    public java.lang.String getEdgesFile() {
+      java.lang.Object ref = edgesFile_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          edgesFile_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string edgesFile = 8;</code>
+     */
+    public com.google.protobuf.ByteString
+        getEdgesFileBytes() {
+      java.lang.Object ref = edgesFile_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        edgesFile_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
     }
 
     private void initFields() {
-      weight_ = java.util.Collections.emptyList();
-      variable_ = java.util.Collections.emptyList();
-      factor_ = java.util.Collections.emptyList();
-      edge_ = java.util.Collections.emptyList();
+      numWeights_ = 0L;
+      numVariables_ = 0L;
+      numFactors_ = 0L;
+      numEdges_ = 0L;
+      weightsFile_ = "";
+      variablesFile_ = "";
+      factorsFile_ = "";
+      edgesFile_ = "";
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
       if (isInitialized != -1) return isInitialized == 1;
 
-      for (int i = 0; i < getWeightCount(); i++) {
-        if (!getWeight(i).isInitialized()) {
-          memoizedIsInitialized = 0;
-          return false;
-        }
+      if (!hasNumWeights()) {
+        memoizedIsInitialized = 0;
+        return false;
       }
-      for (int i = 0; i < getVariableCount(); i++) {
-        if (!getVariable(i).isInitialized()) {
-          memoizedIsInitialized = 0;
-          return false;
-        }
+      if (!hasNumVariables()) {
+        memoizedIsInitialized = 0;
+        return false;
       }
-      for (int i = 0; i < getFactorCount(); i++) {
-        if (!getFactor(i).isInitialized()) {
-          memoizedIsInitialized = 0;
-          return false;
-        }
+      if (!hasNumFactors()) {
+        memoizedIsInitialized = 0;
+        return false;
       }
-      for (int i = 0; i < getEdgeCount(); i++) {
-        if (!getEdge(i).isInitialized()) {
-          memoizedIsInitialized = 0;
-          return false;
-        }
+      if (!hasNumEdges()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasWeightsFile()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasVariablesFile()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasFactorsFile()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasEdgesFile()) {
+        memoizedIsInitialized = 0;
+        return false;
       }
       memoizedIsInitialized = 1;
       return true;
@@ -3180,17 +3704,29 @@ public final class FactorGraphProtos {
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      for (int i = 0; i < weight_.size(); i++) {
-        output.writeMessage(1, weight_.get(i));
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeUInt64(1, numWeights_);
       }
-      for (int i = 0; i < variable_.size(); i++) {
-        output.writeMessage(2, variable_.get(i));
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeUInt64(2, numVariables_);
       }
-      for (int i = 0; i < factor_.size(); i++) {
-        output.writeMessage(3, factor_.get(i));
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeUInt64(3, numFactors_);
       }
-      for (int i = 0; i < edge_.size(); i++) {
-        output.writeMessage(4, edge_.get(i));
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeUInt64(4, numEdges_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeBytes(5, getWeightsFileBytes());
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        output.writeBytes(6, getVariablesFileBytes());
+      }
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        output.writeBytes(7, getFactorsFileBytes());
+      }
+      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+        output.writeBytes(8, getEdgesFileBytes());
       }
       getUnknownFields().writeTo(output);
     }
@@ -3201,21 +3737,37 @@ public final class FactorGraphProtos {
       if (size != -1) return size;
 
       size = 0;
-      for (int i = 0; i < weight_.size(); i++) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(1, weight_.get(i));
+          .computeUInt64Size(1, numWeights_);
       }
-      for (int i = 0; i < variable_.size(); i++) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(2, variable_.get(i));
+          .computeUInt64Size(2, numVariables_);
       }
-      for (int i = 0; i < factor_.size(); i++) {
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(3, factor_.get(i));
+          .computeUInt64Size(3, numFactors_);
       }
-      for (int i = 0; i < edge_.size(); i++) {
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(4, edge_.get(i));
+          .computeUInt64Size(4, numEdges_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(5, getWeightsFileBytes());
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(6, getVariablesFileBytes());
+      }
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(7, getFactorsFileBytes());
+      }
+      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(8, getEdgesFileBytes());
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -3325,10 +3877,6 @@ public final class FactorGraphProtos {
       }
       private void maybeForceBuilderInitialization() {
         if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
-          getWeightFieldBuilder();
-          getVariableFieldBuilder();
-          getFactorFieldBuilder();
-          getEdgeFieldBuilder();
         }
       }
       private static Builder create() {
@@ -3337,30 +3885,22 @@ public final class FactorGraphProtos {
 
       public Builder clear() {
         super.clear();
-        if (weightBuilder_ == null) {
-          weight_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000001);
-        } else {
-          weightBuilder_.clear();
-        }
-        if (variableBuilder_ == null) {
-          variable_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000002);
-        } else {
-          variableBuilder_.clear();
-        }
-        if (factorBuilder_ == null) {
-          factor_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000004);
-        } else {
-          factorBuilder_.clear();
-        }
-        if (edgeBuilder_ == null) {
-          edge_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000008);
-        } else {
-          edgeBuilder_.clear();
-        }
+        numWeights_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        numVariables_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        numFactors_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        numEdges_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000008);
+        weightsFile_ = "";
+        bitField0_ = (bitField0_ & ~0x00000010);
+        variablesFile_ = "";
+        bitField0_ = (bitField0_ & ~0x00000020);
+        factorsFile_ = "";
+        bitField0_ = (bitField0_ & ~0x00000040);
+        edgesFile_ = "";
+        bitField0_ = (bitField0_ & ~0x00000080);
         return this;
       }
 
@@ -3388,42 +3928,40 @@ public final class FactorGraphProtos {
       public org.deepdive.serialization.FactorGraphProtos.FactorGraph buildPartial() {
         org.deepdive.serialization.FactorGraphProtos.FactorGraph result = new org.deepdive.serialization.FactorGraphProtos.FactorGraph(this);
         int from_bitField0_ = bitField0_;
-        if (weightBuilder_ == null) {
-          if (((bitField0_ & 0x00000001) == 0x00000001)) {
-            weight_ = java.util.Collections.unmodifiableList(weight_);
-            bitField0_ = (bitField0_ & ~0x00000001);
-          }
-          result.weight_ = weight_;
-        } else {
-          result.weight_ = weightBuilder_.build();
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        if (variableBuilder_ == null) {
-          if (((bitField0_ & 0x00000002) == 0x00000002)) {
-            variable_ = java.util.Collections.unmodifiableList(variable_);
-            bitField0_ = (bitField0_ & ~0x00000002);
-          }
-          result.variable_ = variable_;
-        } else {
-          result.variable_ = variableBuilder_.build();
+        result.numWeights_ = numWeights_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
         }
-        if (factorBuilder_ == null) {
-          if (((bitField0_ & 0x00000004) == 0x00000004)) {
-            factor_ = java.util.Collections.unmodifiableList(factor_);
-            bitField0_ = (bitField0_ & ~0x00000004);
-          }
-          result.factor_ = factor_;
-        } else {
-          result.factor_ = factorBuilder_.build();
+        result.numVariables_ = numVariables_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
         }
-        if (edgeBuilder_ == null) {
-          if (((bitField0_ & 0x00000008) == 0x00000008)) {
-            edge_ = java.util.Collections.unmodifiableList(edge_);
-            bitField0_ = (bitField0_ & ~0x00000008);
-          }
-          result.edge_ = edge_;
-        } else {
-          result.edge_ = edgeBuilder_.build();
+        result.numFactors_ = numFactors_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
         }
+        result.numEdges_ = numEdges_;
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        result.weightsFile_ = weightsFile_;
+        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+          to_bitField0_ |= 0x00000020;
+        }
+        result.variablesFile_ = variablesFile_;
+        if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
+          to_bitField0_ |= 0x00000040;
+        }
+        result.factorsFile_ = factorsFile_;
+        if (((from_bitField0_ & 0x00000080) == 0x00000080)) {
+          to_bitField0_ |= 0x00000080;
+        }
+        result.edgesFile_ = edgesFile_;
+        result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
       }
@@ -3439,138 +3977,74 @@ public final class FactorGraphProtos {
 
       public Builder mergeFrom(org.deepdive.serialization.FactorGraphProtos.FactorGraph other) {
         if (other == org.deepdive.serialization.FactorGraphProtos.FactorGraph.getDefaultInstance()) return this;
-        if (weightBuilder_ == null) {
-          if (!other.weight_.isEmpty()) {
-            if (weight_.isEmpty()) {
-              weight_ = other.weight_;
-              bitField0_ = (bitField0_ & ~0x00000001);
-            } else {
-              ensureWeightIsMutable();
-              weight_.addAll(other.weight_);
-            }
-            onChanged();
-          }
-        } else {
-          if (!other.weight_.isEmpty()) {
-            if (weightBuilder_.isEmpty()) {
-              weightBuilder_.dispose();
-              weightBuilder_ = null;
-              weight_ = other.weight_;
-              bitField0_ = (bitField0_ & ~0x00000001);
-              weightBuilder_ = 
-                com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders ?
-                   getWeightFieldBuilder() : null;
-            } else {
-              weightBuilder_.addAllMessages(other.weight_);
-            }
-          }
+        if (other.hasNumWeights()) {
+          setNumWeights(other.getNumWeights());
         }
-        if (variableBuilder_ == null) {
-          if (!other.variable_.isEmpty()) {
-            if (variable_.isEmpty()) {
-              variable_ = other.variable_;
-              bitField0_ = (bitField0_ & ~0x00000002);
-            } else {
-              ensureVariableIsMutable();
-              variable_.addAll(other.variable_);
-            }
-            onChanged();
-          }
-        } else {
-          if (!other.variable_.isEmpty()) {
-            if (variableBuilder_.isEmpty()) {
-              variableBuilder_.dispose();
-              variableBuilder_ = null;
-              variable_ = other.variable_;
-              bitField0_ = (bitField0_ & ~0x00000002);
-              variableBuilder_ = 
-                com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders ?
-                   getVariableFieldBuilder() : null;
-            } else {
-              variableBuilder_.addAllMessages(other.variable_);
-            }
-          }
+        if (other.hasNumVariables()) {
+          setNumVariables(other.getNumVariables());
         }
-        if (factorBuilder_ == null) {
-          if (!other.factor_.isEmpty()) {
-            if (factor_.isEmpty()) {
-              factor_ = other.factor_;
-              bitField0_ = (bitField0_ & ~0x00000004);
-            } else {
-              ensureFactorIsMutable();
-              factor_.addAll(other.factor_);
-            }
-            onChanged();
-          }
-        } else {
-          if (!other.factor_.isEmpty()) {
-            if (factorBuilder_.isEmpty()) {
-              factorBuilder_.dispose();
-              factorBuilder_ = null;
-              factor_ = other.factor_;
-              bitField0_ = (bitField0_ & ~0x00000004);
-              factorBuilder_ = 
-                com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders ?
-                   getFactorFieldBuilder() : null;
-            } else {
-              factorBuilder_.addAllMessages(other.factor_);
-            }
-          }
+        if (other.hasNumFactors()) {
+          setNumFactors(other.getNumFactors());
         }
-        if (edgeBuilder_ == null) {
-          if (!other.edge_.isEmpty()) {
-            if (edge_.isEmpty()) {
-              edge_ = other.edge_;
-              bitField0_ = (bitField0_ & ~0x00000008);
-            } else {
-              ensureEdgeIsMutable();
-              edge_.addAll(other.edge_);
-            }
-            onChanged();
-          }
-        } else {
-          if (!other.edge_.isEmpty()) {
-            if (edgeBuilder_.isEmpty()) {
-              edgeBuilder_.dispose();
-              edgeBuilder_ = null;
-              edge_ = other.edge_;
-              bitField0_ = (bitField0_ & ~0x00000008);
-              edgeBuilder_ = 
-                com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders ?
-                   getEdgeFieldBuilder() : null;
-            } else {
-              edgeBuilder_.addAllMessages(other.edge_);
-            }
-          }
+        if (other.hasNumEdges()) {
+          setNumEdges(other.getNumEdges());
+        }
+        if (other.hasWeightsFile()) {
+          bitField0_ |= 0x00000010;
+          weightsFile_ = other.weightsFile_;
+          onChanged();
+        }
+        if (other.hasVariablesFile()) {
+          bitField0_ |= 0x00000020;
+          variablesFile_ = other.variablesFile_;
+          onChanged();
+        }
+        if (other.hasFactorsFile()) {
+          bitField0_ |= 0x00000040;
+          factorsFile_ = other.factorsFile_;
+          onChanged();
+        }
+        if (other.hasEdgesFile()) {
+          bitField0_ |= 0x00000080;
+          edgesFile_ = other.edgesFile_;
+          onChanged();
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
 
       public final boolean isInitialized() {
-        for (int i = 0; i < getWeightCount(); i++) {
-          if (!getWeight(i).isInitialized()) {
-            
-            return false;
-          }
+        if (!hasNumWeights()) {
+          
+          return false;
         }
-        for (int i = 0; i < getVariableCount(); i++) {
-          if (!getVariable(i).isInitialized()) {
-            
-            return false;
-          }
+        if (!hasNumVariables()) {
+          
+          return false;
         }
-        for (int i = 0; i < getFactorCount(); i++) {
-          if (!getFactor(i).isInitialized()) {
-            
-            return false;
-          }
+        if (!hasNumFactors()) {
+          
+          return false;
         }
-        for (int i = 0; i < getEdgeCount(); i++) {
-          if (!getEdge(i).isInitialized()) {
-            
-            return false;
-          }
+        if (!hasNumEdges()) {
+          
+          return false;
+        }
+        if (!hasWeightsFile()) {
+          
+          return false;
+        }
+        if (!hasVariablesFile()) {
+          
+          return false;
+        }
+        if (!hasFactorsFile()) {
+          
+          return false;
+        }
+        if (!hasEdgesFile()) {
+          
+          return false;
         }
         return true;
       }
@@ -3594,964 +4068,432 @@ public final class FactorGraphProtos {
       }
       private int bitField0_;
 
-      // repeated .deepdive.Weight weight = 1;
-      private java.util.List<org.deepdive.serialization.FactorGraphProtos.Weight> weight_ =
-        java.util.Collections.emptyList();
-      private void ensureWeightIsMutable() {
-        if (!((bitField0_ & 0x00000001) == 0x00000001)) {
-          weight_ = new java.util.ArrayList<org.deepdive.serialization.FactorGraphProtos.Weight>(weight_);
-          bitField0_ |= 0x00000001;
-         }
+      // required uint64 numWeights = 1;
+      private long numWeights_ ;
+      /**
+       * <code>required uint64 numWeights = 1;</code>
+       */
+      public boolean hasNumWeights() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>required uint64 numWeights = 1;</code>
+       */
+      public long getNumWeights() {
+        return numWeights_;
+      }
+      /**
+       * <code>required uint64 numWeights = 1;</code>
+       */
+      public Builder setNumWeights(long value) {
+        bitField0_ |= 0x00000001;
+        numWeights_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required uint64 numWeights = 1;</code>
+       */
+      public Builder clearNumWeights() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        numWeights_ = 0L;
+        onChanged();
+        return this;
       }
 
-      private com.google.protobuf.RepeatedFieldBuilder<
-          org.deepdive.serialization.FactorGraphProtos.Weight, org.deepdive.serialization.FactorGraphProtos.Weight.Builder, org.deepdive.serialization.FactorGraphProtos.WeightOrBuilder> weightBuilder_;
-
+      // required uint64 numVariables = 2;
+      private long numVariables_ ;
       /**
-       * <code>repeated .deepdive.Weight weight = 1;</code>
+       * <code>required uint64 numVariables = 2;</code>
        */
-      public java.util.List<org.deepdive.serialization.FactorGraphProtos.Weight> getWeightList() {
-        if (weightBuilder_ == null) {
-          return java.util.Collections.unmodifiableList(weight_);
-        } else {
-          return weightBuilder_.getMessageList();
-        }
+      public boolean hasNumVariables() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       /**
-       * <code>repeated .deepdive.Weight weight = 1;</code>
+       * <code>required uint64 numVariables = 2;</code>
        */
-      public int getWeightCount() {
-        if (weightBuilder_ == null) {
-          return weight_.size();
-        } else {
-          return weightBuilder_.getCount();
-        }
+      public long getNumVariables() {
+        return numVariables_;
       }
       /**
-       * <code>repeated .deepdive.Weight weight = 1;</code>
+       * <code>required uint64 numVariables = 2;</code>
        */
-      public org.deepdive.serialization.FactorGraphProtos.Weight getWeight(int index) {
-        if (weightBuilder_ == null) {
-          return weight_.get(index);
-        } else {
-          return weightBuilder_.getMessage(index);
-        }
-      }
-      /**
-       * <code>repeated .deepdive.Weight weight = 1;</code>
-       */
-      public Builder setWeight(
-          int index, org.deepdive.serialization.FactorGraphProtos.Weight value) {
-        if (weightBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureWeightIsMutable();
-          weight_.set(index, value);
-          onChanged();
-        } else {
-          weightBuilder_.setMessage(index, value);
-        }
+      public Builder setNumVariables(long value) {
+        bitField0_ |= 0x00000002;
+        numVariables_ = value;
+        onChanged();
         return this;
       }
       /**
-       * <code>repeated .deepdive.Weight weight = 1;</code>
+       * <code>required uint64 numVariables = 2;</code>
        */
-      public Builder setWeight(
-          int index, org.deepdive.serialization.FactorGraphProtos.Weight.Builder builderForValue) {
-        if (weightBuilder_ == null) {
-          ensureWeightIsMutable();
-          weight_.set(index, builderForValue.build());
-          onChanged();
-        } else {
-          weightBuilder_.setMessage(index, builderForValue.build());
-        }
+      public Builder clearNumVariables() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        numVariables_ = 0L;
+        onChanged();
         return this;
-      }
-      /**
-       * <code>repeated .deepdive.Weight weight = 1;</code>
-       */
-      public Builder addWeight(org.deepdive.serialization.FactorGraphProtos.Weight value) {
-        if (weightBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureWeightIsMutable();
-          weight_.add(value);
-          onChanged();
-        } else {
-          weightBuilder_.addMessage(value);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .deepdive.Weight weight = 1;</code>
-       */
-      public Builder addWeight(
-          int index, org.deepdive.serialization.FactorGraphProtos.Weight value) {
-        if (weightBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureWeightIsMutable();
-          weight_.add(index, value);
-          onChanged();
-        } else {
-          weightBuilder_.addMessage(index, value);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .deepdive.Weight weight = 1;</code>
-       */
-      public Builder addWeight(
-          org.deepdive.serialization.FactorGraphProtos.Weight.Builder builderForValue) {
-        if (weightBuilder_ == null) {
-          ensureWeightIsMutable();
-          weight_.add(builderForValue.build());
-          onChanged();
-        } else {
-          weightBuilder_.addMessage(builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .deepdive.Weight weight = 1;</code>
-       */
-      public Builder addWeight(
-          int index, org.deepdive.serialization.FactorGraphProtos.Weight.Builder builderForValue) {
-        if (weightBuilder_ == null) {
-          ensureWeightIsMutable();
-          weight_.add(index, builderForValue.build());
-          onChanged();
-        } else {
-          weightBuilder_.addMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .deepdive.Weight weight = 1;</code>
-       */
-      public Builder addAllWeight(
-          java.lang.Iterable<? extends org.deepdive.serialization.FactorGraphProtos.Weight> values) {
-        if (weightBuilder_ == null) {
-          ensureWeightIsMutable();
-          super.addAll(values, weight_);
-          onChanged();
-        } else {
-          weightBuilder_.addAllMessages(values);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .deepdive.Weight weight = 1;</code>
-       */
-      public Builder clearWeight() {
-        if (weightBuilder_ == null) {
-          weight_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000001);
-          onChanged();
-        } else {
-          weightBuilder_.clear();
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .deepdive.Weight weight = 1;</code>
-       */
-      public Builder removeWeight(int index) {
-        if (weightBuilder_ == null) {
-          ensureWeightIsMutable();
-          weight_.remove(index);
-          onChanged();
-        } else {
-          weightBuilder_.remove(index);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .deepdive.Weight weight = 1;</code>
-       */
-      public org.deepdive.serialization.FactorGraphProtos.Weight.Builder getWeightBuilder(
-          int index) {
-        return getWeightFieldBuilder().getBuilder(index);
-      }
-      /**
-       * <code>repeated .deepdive.Weight weight = 1;</code>
-       */
-      public org.deepdive.serialization.FactorGraphProtos.WeightOrBuilder getWeightOrBuilder(
-          int index) {
-        if (weightBuilder_ == null) {
-          return weight_.get(index);  } else {
-          return weightBuilder_.getMessageOrBuilder(index);
-        }
-      }
-      /**
-       * <code>repeated .deepdive.Weight weight = 1;</code>
-       */
-      public java.util.List<? extends org.deepdive.serialization.FactorGraphProtos.WeightOrBuilder> 
-           getWeightOrBuilderList() {
-        if (weightBuilder_ != null) {
-          return weightBuilder_.getMessageOrBuilderList();
-        } else {
-          return java.util.Collections.unmodifiableList(weight_);
-        }
-      }
-      /**
-       * <code>repeated .deepdive.Weight weight = 1;</code>
-       */
-      public org.deepdive.serialization.FactorGraphProtos.Weight.Builder addWeightBuilder() {
-        return getWeightFieldBuilder().addBuilder(
-            org.deepdive.serialization.FactorGraphProtos.Weight.getDefaultInstance());
-      }
-      /**
-       * <code>repeated .deepdive.Weight weight = 1;</code>
-       */
-      public org.deepdive.serialization.FactorGraphProtos.Weight.Builder addWeightBuilder(
-          int index) {
-        return getWeightFieldBuilder().addBuilder(
-            index, org.deepdive.serialization.FactorGraphProtos.Weight.getDefaultInstance());
-      }
-      /**
-       * <code>repeated .deepdive.Weight weight = 1;</code>
-       */
-      public java.util.List<org.deepdive.serialization.FactorGraphProtos.Weight.Builder> 
-           getWeightBuilderList() {
-        return getWeightFieldBuilder().getBuilderList();
-      }
-      private com.google.protobuf.RepeatedFieldBuilder<
-          org.deepdive.serialization.FactorGraphProtos.Weight, org.deepdive.serialization.FactorGraphProtos.Weight.Builder, org.deepdive.serialization.FactorGraphProtos.WeightOrBuilder> 
-          getWeightFieldBuilder() {
-        if (weightBuilder_ == null) {
-          weightBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
-              org.deepdive.serialization.FactorGraphProtos.Weight, org.deepdive.serialization.FactorGraphProtos.Weight.Builder, org.deepdive.serialization.FactorGraphProtos.WeightOrBuilder>(
-                  weight_,
-                  ((bitField0_ & 0x00000001) == 0x00000001),
-                  getParentForChildren(),
-                  isClean());
-          weight_ = null;
-        }
-        return weightBuilder_;
       }
 
-      // repeated .deepdive.Variable variable = 2;
-      private java.util.List<org.deepdive.serialization.FactorGraphProtos.Variable> variable_ =
-        java.util.Collections.emptyList();
-      private void ensureVariableIsMutable() {
-        if (!((bitField0_ & 0x00000002) == 0x00000002)) {
-          variable_ = new java.util.ArrayList<org.deepdive.serialization.FactorGraphProtos.Variable>(variable_);
-          bitField0_ |= 0x00000002;
-         }
+      // required uint64 numFactors = 3;
+      private long numFactors_ ;
+      /**
+       * <code>required uint64 numFactors = 3;</code>
+       */
+      public boolean hasNumFactors() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      /**
+       * <code>required uint64 numFactors = 3;</code>
+       */
+      public long getNumFactors() {
+        return numFactors_;
+      }
+      /**
+       * <code>required uint64 numFactors = 3;</code>
+       */
+      public Builder setNumFactors(long value) {
+        bitField0_ |= 0x00000004;
+        numFactors_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required uint64 numFactors = 3;</code>
+       */
+      public Builder clearNumFactors() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        numFactors_ = 0L;
+        onChanged();
+        return this;
       }
 
-      private com.google.protobuf.RepeatedFieldBuilder<
-          org.deepdive.serialization.FactorGraphProtos.Variable, org.deepdive.serialization.FactorGraphProtos.Variable.Builder, org.deepdive.serialization.FactorGraphProtos.VariableOrBuilder> variableBuilder_;
-
+      // required uint64 numEdges = 4;
+      private long numEdges_ ;
       /**
-       * <code>repeated .deepdive.Variable variable = 2;</code>
+       * <code>required uint64 numEdges = 4;</code>
        */
-      public java.util.List<org.deepdive.serialization.FactorGraphProtos.Variable> getVariableList() {
-        if (variableBuilder_ == null) {
-          return java.util.Collections.unmodifiableList(variable_);
-        } else {
-          return variableBuilder_.getMessageList();
-        }
+      public boolean hasNumEdges() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       /**
-       * <code>repeated .deepdive.Variable variable = 2;</code>
+       * <code>required uint64 numEdges = 4;</code>
        */
-      public int getVariableCount() {
-        if (variableBuilder_ == null) {
-          return variable_.size();
-        } else {
-          return variableBuilder_.getCount();
-        }
+      public long getNumEdges() {
+        return numEdges_;
       }
       /**
-       * <code>repeated .deepdive.Variable variable = 2;</code>
+       * <code>required uint64 numEdges = 4;</code>
        */
-      public org.deepdive.serialization.FactorGraphProtos.Variable getVariable(int index) {
-        if (variableBuilder_ == null) {
-          return variable_.get(index);
-        } else {
-          return variableBuilder_.getMessage(index);
-        }
-      }
-      /**
-       * <code>repeated .deepdive.Variable variable = 2;</code>
-       */
-      public Builder setVariable(
-          int index, org.deepdive.serialization.FactorGraphProtos.Variable value) {
-        if (variableBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureVariableIsMutable();
-          variable_.set(index, value);
-          onChanged();
-        } else {
-          variableBuilder_.setMessage(index, value);
-        }
+      public Builder setNumEdges(long value) {
+        bitField0_ |= 0x00000008;
+        numEdges_ = value;
+        onChanged();
         return this;
       }
       /**
-       * <code>repeated .deepdive.Variable variable = 2;</code>
+       * <code>required uint64 numEdges = 4;</code>
        */
-      public Builder setVariable(
-          int index, org.deepdive.serialization.FactorGraphProtos.Variable.Builder builderForValue) {
-        if (variableBuilder_ == null) {
-          ensureVariableIsMutable();
-          variable_.set(index, builderForValue.build());
-          onChanged();
-        } else {
-          variableBuilder_.setMessage(index, builderForValue.build());
-        }
+      public Builder clearNumEdges() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        numEdges_ = 0L;
+        onChanged();
         return this;
-      }
-      /**
-       * <code>repeated .deepdive.Variable variable = 2;</code>
-       */
-      public Builder addVariable(org.deepdive.serialization.FactorGraphProtos.Variable value) {
-        if (variableBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureVariableIsMutable();
-          variable_.add(value);
-          onChanged();
-        } else {
-          variableBuilder_.addMessage(value);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .deepdive.Variable variable = 2;</code>
-       */
-      public Builder addVariable(
-          int index, org.deepdive.serialization.FactorGraphProtos.Variable value) {
-        if (variableBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureVariableIsMutable();
-          variable_.add(index, value);
-          onChanged();
-        } else {
-          variableBuilder_.addMessage(index, value);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .deepdive.Variable variable = 2;</code>
-       */
-      public Builder addVariable(
-          org.deepdive.serialization.FactorGraphProtos.Variable.Builder builderForValue) {
-        if (variableBuilder_ == null) {
-          ensureVariableIsMutable();
-          variable_.add(builderForValue.build());
-          onChanged();
-        } else {
-          variableBuilder_.addMessage(builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .deepdive.Variable variable = 2;</code>
-       */
-      public Builder addVariable(
-          int index, org.deepdive.serialization.FactorGraphProtos.Variable.Builder builderForValue) {
-        if (variableBuilder_ == null) {
-          ensureVariableIsMutable();
-          variable_.add(index, builderForValue.build());
-          onChanged();
-        } else {
-          variableBuilder_.addMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .deepdive.Variable variable = 2;</code>
-       */
-      public Builder addAllVariable(
-          java.lang.Iterable<? extends org.deepdive.serialization.FactorGraphProtos.Variable> values) {
-        if (variableBuilder_ == null) {
-          ensureVariableIsMutable();
-          super.addAll(values, variable_);
-          onChanged();
-        } else {
-          variableBuilder_.addAllMessages(values);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .deepdive.Variable variable = 2;</code>
-       */
-      public Builder clearVariable() {
-        if (variableBuilder_ == null) {
-          variable_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000002);
-          onChanged();
-        } else {
-          variableBuilder_.clear();
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .deepdive.Variable variable = 2;</code>
-       */
-      public Builder removeVariable(int index) {
-        if (variableBuilder_ == null) {
-          ensureVariableIsMutable();
-          variable_.remove(index);
-          onChanged();
-        } else {
-          variableBuilder_.remove(index);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .deepdive.Variable variable = 2;</code>
-       */
-      public org.deepdive.serialization.FactorGraphProtos.Variable.Builder getVariableBuilder(
-          int index) {
-        return getVariableFieldBuilder().getBuilder(index);
-      }
-      /**
-       * <code>repeated .deepdive.Variable variable = 2;</code>
-       */
-      public org.deepdive.serialization.FactorGraphProtos.VariableOrBuilder getVariableOrBuilder(
-          int index) {
-        if (variableBuilder_ == null) {
-          return variable_.get(index);  } else {
-          return variableBuilder_.getMessageOrBuilder(index);
-        }
-      }
-      /**
-       * <code>repeated .deepdive.Variable variable = 2;</code>
-       */
-      public java.util.List<? extends org.deepdive.serialization.FactorGraphProtos.VariableOrBuilder> 
-           getVariableOrBuilderList() {
-        if (variableBuilder_ != null) {
-          return variableBuilder_.getMessageOrBuilderList();
-        } else {
-          return java.util.Collections.unmodifiableList(variable_);
-        }
-      }
-      /**
-       * <code>repeated .deepdive.Variable variable = 2;</code>
-       */
-      public org.deepdive.serialization.FactorGraphProtos.Variable.Builder addVariableBuilder() {
-        return getVariableFieldBuilder().addBuilder(
-            org.deepdive.serialization.FactorGraphProtos.Variable.getDefaultInstance());
-      }
-      /**
-       * <code>repeated .deepdive.Variable variable = 2;</code>
-       */
-      public org.deepdive.serialization.FactorGraphProtos.Variable.Builder addVariableBuilder(
-          int index) {
-        return getVariableFieldBuilder().addBuilder(
-            index, org.deepdive.serialization.FactorGraphProtos.Variable.getDefaultInstance());
-      }
-      /**
-       * <code>repeated .deepdive.Variable variable = 2;</code>
-       */
-      public java.util.List<org.deepdive.serialization.FactorGraphProtos.Variable.Builder> 
-           getVariableBuilderList() {
-        return getVariableFieldBuilder().getBuilderList();
-      }
-      private com.google.protobuf.RepeatedFieldBuilder<
-          org.deepdive.serialization.FactorGraphProtos.Variable, org.deepdive.serialization.FactorGraphProtos.Variable.Builder, org.deepdive.serialization.FactorGraphProtos.VariableOrBuilder> 
-          getVariableFieldBuilder() {
-        if (variableBuilder_ == null) {
-          variableBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
-              org.deepdive.serialization.FactorGraphProtos.Variable, org.deepdive.serialization.FactorGraphProtos.Variable.Builder, org.deepdive.serialization.FactorGraphProtos.VariableOrBuilder>(
-                  variable_,
-                  ((bitField0_ & 0x00000002) == 0x00000002),
-                  getParentForChildren(),
-                  isClean());
-          variable_ = null;
-        }
-        return variableBuilder_;
       }
 
-      // repeated .deepdive.Factor factor = 3;
-      private java.util.List<org.deepdive.serialization.FactorGraphProtos.Factor> factor_ =
-        java.util.Collections.emptyList();
-      private void ensureFactorIsMutable() {
-        if (!((bitField0_ & 0x00000004) == 0x00000004)) {
-          factor_ = new java.util.ArrayList<org.deepdive.serialization.FactorGraphProtos.Factor>(factor_);
-          bitField0_ |= 0x00000004;
-         }
+      // required string weightsFile = 5;
+      private java.lang.Object weightsFile_ = "";
+      /**
+       * <code>required string weightsFile = 5;</code>
+       */
+      public boolean hasWeightsFile() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
+      }
+      /**
+       * <code>required string weightsFile = 5;</code>
+       */
+      public java.lang.String getWeightsFile() {
+        java.lang.Object ref = weightsFile_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          weightsFile_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string weightsFile = 5;</code>
+       */
+      public com.google.protobuf.ByteString
+          getWeightsFileBytes() {
+        java.lang.Object ref = weightsFile_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          weightsFile_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string weightsFile = 5;</code>
+       */
+      public Builder setWeightsFile(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000010;
+        weightsFile_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string weightsFile = 5;</code>
+       */
+      public Builder clearWeightsFile() {
+        bitField0_ = (bitField0_ & ~0x00000010);
+        weightsFile_ = getDefaultInstance().getWeightsFile();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string weightsFile = 5;</code>
+       */
+      public Builder setWeightsFileBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000010;
+        weightsFile_ = value;
+        onChanged();
+        return this;
       }
 
-      private com.google.protobuf.RepeatedFieldBuilder<
-          org.deepdive.serialization.FactorGraphProtos.Factor, org.deepdive.serialization.FactorGraphProtos.Factor.Builder, org.deepdive.serialization.FactorGraphProtos.FactorOrBuilder> factorBuilder_;
-
+      // required string variablesFile = 6;
+      private java.lang.Object variablesFile_ = "";
       /**
-       * <code>repeated .deepdive.Factor factor = 3;</code>
+       * <code>required string variablesFile = 6;</code>
        */
-      public java.util.List<org.deepdive.serialization.FactorGraphProtos.Factor> getFactorList() {
-        if (factorBuilder_ == null) {
-          return java.util.Collections.unmodifiableList(factor_);
+      public boolean hasVariablesFile() {
+        return ((bitField0_ & 0x00000020) == 0x00000020);
+      }
+      /**
+       * <code>required string variablesFile = 6;</code>
+       */
+      public java.lang.String getVariablesFile() {
+        java.lang.Object ref = variablesFile_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          variablesFile_ = s;
+          return s;
         } else {
-          return factorBuilder_.getMessageList();
+          return (java.lang.String) ref;
         }
       }
       /**
-       * <code>repeated .deepdive.Factor factor = 3;</code>
+       * <code>required string variablesFile = 6;</code>
        */
-      public int getFactorCount() {
-        if (factorBuilder_ == null) {
-          return factor_.size();
+      public com.google.protobuf.ByteString
+          getVariablesFileBytes() {
+        java.lang.Object ref = variablesFile_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          variablesFile_ = b;
+          return b;
         } else {
-          return factorBuilder_.getCount();
+          return (com.google.protobuf.ByteString) ref;
         }
       }
       /**
-       * <code>repeated .deepdive.Factor factor = 3;</code>
+       * <code>required string variablesFile = 6;</code>
        */
-      public org.deepdive.serialization.FactorGraphProtos.Factor getFactor(int index) {
-        if (factorBuilder_ == null) {
-          return factor_.get(index);
-        } else {
-          return factorBuilder_.getMessage(index);
-        }
-      }
-      /**
-       * <code>repeated .deepdive.Factor factor = 3;</code>
-       */
-      public Builder setFactor(
-          int index, org.deepdive.serialization.FactorGraphProtos.Factor value) {
-        if (factorBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureFactorIsMutable();
-          factor_.set(index, value);
-          onChanged();
-        } else {
-          factorBuilder_.setMessage(index, value);
-        }
+      public Builder setVariablesFile(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000020;
+        variablesFile_ = value;
+        onChanged();
         return this;
       }
       /**
-       * <code>repeated .deepdive.Factor factor = 3;</code>
+       * <code>required string variablesFile = 6;</code>
        */
-      public Builder setFactor(
-          int index, org.deepdive.serialization.FactorGraphProtos.Factor.Builder builderForValue) {
-        if (factorBuilder_ == null) {
-          ensureFactorIsMutable();
-          factor_.set(index, builderForValue.build());
-          onChanged();
-        } else {
-          factorBuilder_.setMessage(index, builderForValue.build());
-        }
+      public Builder clearVariablesFile() {
+        bitField0_ = (bitField0_ & ~0x00000020);
+        variablesFile_ = getDefaultInstance().getVariablesFile();
+        onChanged();
         return this;
       }
       /**
-       * <code>repeated .deepdive.Factor factor = 3;</code>
+       * <code>required string variablesFile = 6;</code>
        */
-      public Builder addFactor(org.deepdive.serialization.FactorGraphProtos.Factor value) {
-        if (factorBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureFactorIsMutable();
-          factor_.add(value);
-          onChanged();
-        } else {
-          factorBuilder_.addMessage(value);
-        }
+      public Builder setVariablesFileBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000020;
+        variablesFile_ = value;
+        onChanged();
         return this;
-      }
-      /**
-       * <code>repeated .deepdive.Factor factor = 3;</code>
-       */
-      public Builder addFactor(
-          int index, org.deepdive.serialization.FactorGraphProtos.Factor value) {
-        if (factorBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureFactorIsMutable();
-          factor_.add(index, value);
-          onChanged();
-        } else {
-          factorBuilder_.addMessage(index, value);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .deepdive.Factor factor = 3;</code>
-       */
-      public Builder addFactor(
-          org.deepdive.serialization.FactorGraphProtos.Factor.Builder builderForValue) {
-        if (factorBuilder_ == null) {
-          ensureFactorIsMutable();
-          factor_.add(builderForValue.build());
-          onChanged();
-        } else {
-          factorBuilder_.addMessage(builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .deepdive.Factor factor = 3;</code>
-       */
-      public Builder addFactor(
-          int index, org.deepdive.serialization.FactorGraphProtos.Factor.Builder builderForValue) {
-        if (factorBuilder_ == null) {
-          ensureFactorIsMutable();
-          factor_.add(index, builderForValue.build());
-          onChanged();
-        } else {
-          factorBuilder_.addMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .deepdive.Factor factor = 3;</code>
-       */
-      public Builder addAllFactor(
-          java.lang.Iterable<? extends org.deepdive.serialization.FactorGraphProtos.Factor> values) {
-        if (factorBuilder_ == null) {
-          ensureFactorIsMutable();
-          super.addAll(values, factor_);
-          onChanged();
-        } else {
-          factorBuilder_.addAllMessages(values);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .deepdive.Factor factor = 3;</code>
-       */
-      public Builder clearFactor() {
-        if (factorBuilder_ == null) {
-          factor_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000004);
-          onChanged();
-        } else {
-          factorBuilder_.clear();
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .deepdive.Factor factor = 3;</code>
-       */
-      public Builder removeFactor(int index) {
-        if (factorBuilder_ == null) {
-          ensureFactorIsMutable();
-          factor_.remove(index);
-          onChanged();
-        } else {
-          factorBuilder_.remove(index);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .deepdive.Factor factor = 3;</code>
-       */
-      public org.deepdive.serialization.FactorGraphProtos.Factor.Builder getFactorBuilder(
-          int index) {
-        return getFactorFieldBuilder().getBuilder(index);
-      }
-      /**
-       * <code>repeated .deepdive.Factor factor = 3;</code>
-       */
-      public org.deepdive.serialization.FactorGraphProtos.FactorOrBuilder getFactorOrBuilder(
-          int index) {
-        if (factorBuilder_ == null) {
-          return factor_.get(index);  } else {
-          return factorBuilder_.getMessageOrBuilder(index);
-        }
-      }
-      /**
-       * <code>repeated .deepdive.Factor factor = 3;</code>
-       */
-      public java.util.List<? extends org.deepdive.serialization.FactorGraphProtos.FactorOrBuilder> 
-           getFactorOrBuilderList() {
-        if (factorBuilder_ != null) {
-          return factorBuilder_.getMessageOrBuilderList();
-        } else {
-          return java.util.Collections.unmodifiableList(factor_);
-        }
-      }
-      /**
-       * <code>repeated .deepdive.Factor factor = 3;</code>
-       */
-      public org.deepdive.serialization.FactorGraphProtos.Factor.Builder addFactorBuilder() {
-        return getFactorFieldBuilder().addBuilder(
-            org.deepdive.serialization.FactorGraphProtos.Factor.getDefaultInstance());
-      }
-      /**
-       * <code>repeated .deepdive.Factor factor = 3;</code>
-       */
-      public org.deepdive.serialization.FactorGraphProtos.Factor.Builder addFactorBuilder(
-          int index) {
-        return getFactorFieldBuilder().addBuilder(
-            index, org.deepdive.serialization.FactorGraphProtos.Factor.getDefaultInstance());
-      }
-      /**
-       * <code>repeated .deepdive.Factor factor = 3;</code>
-       */
-      public java.util.List<org.deepdive.serialization.FactorGraphProtos.Factor.Builder> 
-           getFactorBuilderList() {
-        return getFactorFieldBuilder().getBuilderList();
-      }
-      private com.google.protobuf.RepeatedFieldBuilder<
-          org.deepdive.serialization.FactorGraphProtos.Factor, org.deepdive.serialization.FactorGraphProtos.Factor.Builder, org.deepdive.serialization.FactorGraphProtos.FactorOrBuilder> 
-          getFactorFieldBuilder() {
-        if (factorBuilder_ == null) {
-          factorBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
-              org.deepdive.serialization.FactorGraphProtos.Factor, org.deepdive.serialization.FactorGraphProtos.Factor.Builder, org.deepdive.serialization.FactorGraphProtos.FactorOrBuilder>(
-                  factor_,
-                  ((bitField0_ & 0x00000004) == 0x00000004),
-                  getParentForChildren(),
-                  isClean());
-          factor_ = null;
-        }
-        return factorBuilder_;
       }
 
-      // repeated .deepdive.GraphEdge edge = 4;
-      private java.util.List<org.deepdive.serialization.FactorGraphProtos.GraphEdge> edge_ =
-        java.util.Collections.emptyList();
-      private void ensureEdgeIsMutable() {
-        if (!((bitField0_ & 0x00000008) == 0x00000008)) {
-          edge_ = new java.util.ArrayList<org.deepdive.serialization.FactorGraphProtos.GraphEdge>(edge_);
-          bitField0_ |= 0x00000008;
-         }
+      // required string factorsFile = 7;
+      private java.lang.Object factorsFile_ = "";
+      /**
+       * <code>required string factorsFile = 7;</code>
+       */
+      public boolean hasFactorsFile() {
+        return ((bitField0_ & 0x00000040) == 0x00000040);
+      }
+      /**
+       * <code>required string factorsFile = 7;</code>
+       */
+      public java.lang.String getFactorsFile() {
+        java.lang.Object ref = factorsFile_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          factorsFile_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string factorsFile = 7;</code>
+       */
+      public com.google.protobuf.ByteString
+          getFactorsFileBytes() {
+        java.lang.Object ref = factorsFile_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          factorsFile_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string factorsFile = 7;</code>
+       */
+      public Builder setFactorsFile(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000040;
+        factorsFile_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string factorsFile = 7;</code>
+       */
+      public Builder clearFactorsFile() {
+        bitField0_ = (bitField0_ & ~0x00000040);
+        factorsFile_ = getDefaultInstance().getFactorsFile();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string factorsFile = 7;</code>
+       */
+      public Builder setFactorsFileBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000040;
+        factorsFile_ = value;
+        onChanged();
+        return this;
       }
 
-      private com.google.protobuf.RepeatedFieldBuilder<
-          org.deepdive.serialization.FactorGraphProtos.GraphEdge, org.deepdive.serialization.FactorGraphProtos.GraphEdge.Builder, org.deepdive.serialization.FactorGraphProtos.GraphEdgeOrBuilder> edgeBuilder_;
-
+      // required string edgesFile = 8;
+      private java.lang.Object edgesFile_ = "";
       /**
-       * <code>repeated .deepdive.GraphEdge edge = 4;</code>
+       * <code>required string edgesFile = 8;</code>
        */
-      public java.util.List<org.deepdive.serialization.FactorGraphProtos.GraphEdge> getEdgeList() {
-        if (edgeBuilder_ == null) {
-          return java.util.Collections.unmodifiableList(edge_);
+      public boolean hasEdgesFile() {
+        return ((bitField0_ & 0x00000080) == 0x00000080);
+      }
+      /**
+       * <code>required string edgesFile = 8;</code>
+       */
+      public java.lang.String getEdgesFile() {
+        java.lang.Object ref = edgesFile_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          edgesFile_ = s;
+          return s;
         } else {
-          return edgeBuilder_.getMessageList();
+          return (java.lang.String) ref;
         }
       }
       /**
-       * <code>repeated .deepdive.GraphEdge edge = 4;</code>
+       * <code>required string edgesFile = 8;</code>
        */
-      public int getEdgeCount() {
-        if (edgeBuilder_ == null) {
-          return edge_.size();
+      public com.google.protobuf.ByteString
+          getEdgesFileBytes() {
+        java.lang.Object ref = edgesFile_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          edgesFile_ = b;
+          return b;
         } else {
-          return edgeBuilder_.getCount();
+          return (com.google.protobuf.ByteString) ref;
         }
       }
       /**
-       * <code>repeated .deepdive.GraphEdge edge = 4;</code>
+       * <code>required string edgesFile = 8;</code>
        */
-      public org.deepdive.serialization.FactorGraphProtos.GraphEdge getEdge(int index) {
-        if (edgeBuilder_ == null) {
-          return edge_.get(index);
-        } else {
-          return edgeBuilder_.getMessage(index);
-        }
-      }
-      /**
-       * <code>repeated .deepdive.GraphEdge edge = 4;</code>
-       */
-      public Builder setEdge(
-          int index, org.deepdive.serialization.FactorGraphProtos.GraphEdge value) {
-        if (edgeBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureEdgeIsMutable();
-          edge_.set(index, value);
-          onChanged();
-        } else {
-          edgeBuilder_.setMessage(index, value);
-        }
+      public Builder setEdgesFile(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000080;
+        edgesFile_ = value;
+        onChanged();
         return this;
       }
       /**
-       * <code>repeated .deepdive.GraphEdge edge = 4;</code>
+       * <code>required string edgesFile = 8;</code>
        */
-      public Builder setEdge(
-          int index, org.deepdive.serialization.FactorGraphProtos.GraphEdge.Builder builderForValue) {
-        if (edgeBuilder_ == null) {
-          ensureEdgeIsMutable();
-          edge_.set(index, builderForValue.build());
-          onChanged();
-        } else {
-          edgeBuilder_.setMessage(index, builderForValue.build());
-        }
+      public Builder clearEdgesFile() {
+        bitField0_ = (bitField0_ & ~0x00000080);
+        edgesFile_ = getDefaultInstance().getEdgesFile();
+        onChanged();
         return this;
       }
       /**
-       * <code>repeated .deepdive.GraphEdge edge = 4;</code>
+       * <code>required string edgesFile = 8;</code>
        */
-      public Builder addEdge(org.deepdive.serialization.FactorGraphProtos.GraphEdge value) {
-        if (edgeBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureEdgeIsMutable();
-          edge_.add(value);
-          onChanged();
-        } else {
-          edgeBuilder_.addMessage(value);
-        }
+      public Builder setEdgesFileBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000080;
+        edgesFile_ = value;
+        onChanged();
         return this;
-      }
-      /**
-       * <code>repeated .deepdive.GraphEdge edge = 4;</code>
-       */
-      public Builder addEdge(
-          int index, org.deepdive.serialization.FactorGraphProtos.GraphEdge value) {
-        if (edgeBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureEdgeIsMutable();
-          edge_.add(index, value);
-          onChanged();
-        } else {
-          edgeBuilder_.addMessage(index, value);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .deepdive.GraphEdge edge = 4;</code>
-       */
-      public Builder addEdge(
-          org.deepdive.serialization.FactorGraphProtos.GraphEdge.Builder builderForValue) {
-        if (edgeBuilder_ == null) {
-          ensureEdgeIsMutable();
-          edge_.add(builderForValue.build());
-          onChanged();
-        } else {
-          edgeBuilder_.addMessage(builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .deepdive.GraphEdge edge = 4;</code>
-       */
-      public Builder addEdge(
-          int index, org.deepdive.serialization.FactorGraphProtos.GraphEdge.Builder builderForValue) {
-        if (edgeBuilder_ == null) {
-          ensureEdgeIsMutable();
-          edge_.add(index, builderForValue.build());
-          onChanged();
-        } else {
-          edgeBuilder_.addMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .deepdive.GraphEdge edge = 4;</code>
-       */
-      public Builder addAllEdge(
-          java.lang.Iterable<? extends org.deepdive.serialization.FactorGraphProtos.GraphEdge> values) {
-        if (edgeBuilder_ == null) {
-          ensureEdgeIsMutable();
-          super.addAll(values, edge_);
-          onChanged();
-        } else {
-          edgeBuilder_.addAllMessages(values);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .deepdive.GraphEdge edge = 4;</code>
-       */
-      public Builder clearEdge() {
-        if (edgeBuilder_ == null) {
-          edge_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000008);
-          onChanged();
-        } else {
-          edgeBuilder_.clear();
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .deepdive.GraphEdge edge = 4;</code>
-       */
-      public Builder removeEdge(int index) {
-        if (edgeBuilder_ == null) {
-          ensureEdgeIsMutable();
-          edge_.remove(index);
-          onChanged();
-        } else {
-          edgeBuilder_.remove(index);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .deepdive.GraphEdge edge = 4;</code>
-       */
-      public org.deepdive.serialization.FactorGraphProtos.GraphEdge.Builder getEdgeBuilder(
-          int index) {
-        return getEdgeFieldBuilder().getBuilder(index);
-      }
-      /**
-       * <code>repeated .deepdive.GraphEdge edge = 4;</code>
-       */
-      public org.deepdive.serialization.FactorGraphProtos.GraphEdgeOrBuilder getEdgeOrBuilder(
-          int index) {
-        if (edgeBuilder_ == null) {
-          return edge_.get(index);  } else {
-          return edgeBuilder_.getMessageOrBuilder(index);
-        }
-      }
-      /**
-       * <code>repeated .deepdive.GraphEdge edge = 4;</code>
-       */
-      public java.util.List<? extends org.deepdive.serialization.FactorGraphProtos.GraphEdgeOrBuilder> 
-           getEdgeOrBuilderList() {
-        if (edgeBuilder_ != null) {
-          return edgeBuilder_.getMessageOrBuilderList();
-        } else {
-          return java.util.Collections.unmodifiableList(edge_);
-        }
-      }
-      /**
-       * <code>repeated .deepdive.GraphEdge edge = 4;</code>
-       */
-      public org.deepdive.serialization.FactorGraphProtos.GraphEdge.Builder addEdgeBuilder() {
-        return getEdgeFieldBuilder().addBuilder(
-            org.deepdive.serialization.FactorGraphProtos.GraphEdge.getDefaultInstance());
-      }
-      /**
-       * <code>repeated .deepdive.GraphEdge edge = 4;</code>
-       */
-      public org.deepdive.serialization.FactorGraphProtos.GraphEdge.Builder addEdgeBuilder(
-          int index) {
-        return getEdgeFieldBuilder().addBuilder(
-            index, org.deepdive.serialization.FactorGraphProtos.GraphEdge.getDefaultInstance());
-      }
-      /**
-       * <code>repeated .deepdive.GraphEdge edge = 4;</code>
-       */
-      public java.util.List<org.deepdive.serialization.FactorGraphProtos.GraphEdge.Builder> 
-           getEdgeBuilderList() {
-        return getEdgeFieldBuilder().getBuilderList();
-      }
-      private com.google.protobuf.RepeatedFieldBuilder<
-          org.deepdive.serialization.FactorGraphProtos.GraphEdge, org.deepdive.serialization.FactorGraphProtos.GraphEdge.Builder, org.deepdive.serialization.FactorGraphProtos.GraphEdgeOrBuilder> 
-          getEdgeFieldBuilder() {
-        if (edgeBuilder_ == null) {
-          edgeBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
-              org.deepdive.serialization.FactorGraphProtos.GraphEdge, org.deepdive.serialization.FactorGraphProtos.GraphEdge.Builder, org.deepdive.serialization.FactorGraphProtos.GraphEdgeOrBuilder>(
-                  edge_,
-                  ((bitField0_ & 0x00000008) == 0x00000008),
-                  getParentForChildren(),
-                  isClean());
-          edge_ = null;
-        }
-        return edgeBuilder_;
       }
 
       // @@protoc_insertion_point(builder_scope:deepdive.FactorGraph)
@@ -4601,23 +4543,26 @@ public final class FactorGraphProtos {
     java.lang.String[] descriptorData = {
       "\n\021FactorGraph.proto\022\010deepdive\"S\n\006Weight\022" +
       "\n\n\002id\030\001 \002(\004\022\027\n\014initialValue\030\002 \001(\001:\0010\022\017\n\007" +
-      "isFixed\030\003 \002(\010\022\023\n\013description\030\004 \001(\t\"\204\001\n\010V" +
+      "isFixed\030\003 \002(\010\022\023\n\013description\030\004 \001(\t\"\333\001\n\010V" +
       "ariable\022\n\n\002id\030\001 \002(\004\022\024\n\014initialValue\030\002 \001(" +
       "\001\0225\n\010dataType\030\003 \002(\0162#.deepdive.Variable." +
-      "VariableDataType\"\037\n\020VariableDataType\022\013\n\007" +
-      "BOOLEAN\020\000\"\254\001\n\006Factor\022\n\n\002id\030\001 \002(\004\022\020\n\010weig" +
-      "htId\030\002 \002(\004\022;\n\016factorFunction\030\003 \002(\0162#.dee" +
-      "pdive.Factor.FactorFunctionType\"G\n\022Facto" +
-      "rFunctionType\022\t\n\005IMPLY\020\000\022\006\n\002OR\020\001\022\007\n\003AND\020",
-      "\002\022\t\n\005EQUAL\020\003\022\n\n\006ISTRUE\020\004\"]\n\tGraphEdge\022\022\n" +
-      "\nvariableId\030\001 \002(\004\022\020\n\010factorId\030\002 \002(\004\022\020\n\010p" +
-      "osition\030\003 \002(\004\022\030\n\nisPositive\030\004 \001(\010:\004true\"" +
-      "\232\001\n\013FactorGraph\022 \n\006weight\030\001 \003(\0132\020.deepdi" +
-      "ve.Weight\022$\n\010variable\030\002 \003(\0132\022.deepdive.V" +
-      "ariable\022 \n\006factor\030\003 \003(\0132\020.deepdive.Facto" +
-      "r\022!\n\004edge\030\004 \003(\0132\023.deepdive.GraphEdgeB/\n\032" +
-      "org.deepdive.serializationB\021FactorGraphP" +
-      "rotos"
+      "VariableDataType\022\022\n\nisEvidence\030\004 \001(\010\022\023\n\013" +
+      "cardinality\030\005 \001(\004\022\021\n\tedgeCount\030\006 \001(\004\":\n\020" +
+      "VariableDataType\022\013\n\007BOOLEAN\020\000\022\017\n\013MULTINO" +
+      "MIAL\020\001\022\010\n\004REAL\020\002\"\277\001\n\006Factor\022\n\n\002id\030\001 \002(\004\022" +
+      "\020\n\010weightId\030\002 \002(\004\022;\n\016factorFunction\030\003 \002(",
+      "\0162#.deepdive.Factor.FactorFunctionType\022\021" +
+      "\n\tedgeCount\030\004 \001(\004\"G\n\022FactorFunctionType\022" +
+      "\t\n\005IMPLY\020\000\022\006\n\002OR\020\001\022\007\n\003AND\020\002\022\t\n\005EQUAL\020\003\022\n" +
+      "\n\006ISTRUE\020\004\"u\n\tGraphEdge\022\022\n\nvariableId\030\001 " +
+      "\002(\004\022\020\n\010factorId\030\002 \002(\004\022\020\n\010position\030\003 \002(\004\022" +
+      "\030\n\nisPositive\030\004 \001(\010:\004true\022\026\n\016equalPredic" +
+      "ate\030\005 \001(\004\"\261\001\n\013FactorGraph\022\022\n\nnumWeights\030" +
+      "\001 \002(\004\022\024\n\014numVariables\030\002 \002(\004\022\022\n\nnumFactor" +
+      "s\030\003 \002(\004\022\020\n\010numEdges\030\004 \002(\004\022\023\n\013weightsFile" +
+      "\030\005 \002(\t\022\025\n\rvariablesFile\030\006 \002(\t\022\023\n\013factors",
+      "File\030\007 \002(\t\022\021\n\tedgesFile\030\010 \002(\tB/\n\032org.dee" +
+      "pdive.serializationB\021FactorGraphProtos"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -4635,25 +4580,25 @@ public final class FactorGraphProtos {
           internal_static_deepdive_Variable_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_deepdive_Variable_descriptor,
-              new java.lang.String[] { "Id", "InitialValue", "DataType", });
+              new java.lang.String[] { "Id", "InitialValue", "DataType", "IsEvidence", "Cardinality", "EdgeCount", });
           internal_static_deepdive_Factor_descriptor =
             getDescriptor().getMessageTypes().get(2);
           internal_static_deepdive_Factor_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_deepdive_Factor_descriptor,
-              new java.lang.String[] { "Id", "WeightId", "FactorFunction", });
+              new java.lang.String[] { "Id", "WeightId", "FactorFunction", "EdgeCount", });
           internal_static_deepdive_GraphEdge_descriptor =
             getDescriptor().getMessageTypes().get(3);
           internal_static_deepdive_GraphEdge_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_deepdive_GraphEdge_descriptor,
-              new java.lang.String[] { "VariableId", "FactorId", "Position", "IsPositive", });
+              new java.lang.String[] { "VariableId", "FactorId", "Position", "IsPositive", "EqualPredicate", });
           internal_static_deepdive_FactorGraph_descriptor =
             getDescriptor().getMessageTypes().get(4);
           internal_static_deepdive_FactorGraph_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_deepdive_FactorGraph_descriptor,
-              new java.lang.String[] { "Weight", "Variable", "Factor", "Edge", });
+              new java.lang.String[] { "NumWeights", "NumVariables", "NumFactors", "NumEdges", "WeightsFile", "VariablesFile", "FactorsFile", "EdgesFile", });
           return null;
         }
       };

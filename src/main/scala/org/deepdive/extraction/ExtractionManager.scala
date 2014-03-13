@@ -16,10 +16,20 @@ import scala.util.{Try, Success, Failure}
 object ExtractionManager {
 
   // TODO: Refactor this to take an argument for the dataStore type
-  def props(parallelism: Int) : Props = Props(classOf[PostgresExtractionManager], parallelism)
-  
+  def props(parallelism: Int, dbDriver: String) : Props = {
+    dbDriver match {
+      case "org.postgresql.Driver" => Props(classOf[PostgresExtractionManager], parallelism)
+      case "org.hsqldb.jdbc.JDBCDriver" => Props(classOf[HSQLExtractionManager], parallelism)
+    }
+  }
+
   class PostgresExtractionManager(val parallelism: Int) extends ExtractionManager
     with PostgresExtractionDataStoreComponent
+
+  class HSQLExtractionManager(val parallelism: Int) extends ExtractionManager
+    with HSQLExtractionDataStoreComponent
+
+
   case object ScheduleTasks
 
   // Messages 

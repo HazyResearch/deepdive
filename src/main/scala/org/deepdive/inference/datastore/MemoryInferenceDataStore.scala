@@ -4,7 +4,7 @@ import au.com.bytecode.opencsv.{CSVWriter, CSVReader}
 import java.io.{File, FileWriter, FileReader}
 import org.deepdive.calibration._
 import org.deepdive.Logging
-import org.deepdive.settings.FactorFunctionVariable
+import org.deepdive.settings._
 import scala.collection.mutable.{Map => MMap}
 import scala.collection.JavaConversions._
 
@@ -24,6 +24,11 @@ trait MemoryInferenceDataStoreComponent extends InferenceDataStoreComponent{
       factors.clear()
       weights.clear()
       log.info("initialized")
+    }
+
+    def groundFactorGraph(schema: Map[String, _ <: VariableDataType],
+      factorDescs: Seq[FactorDesc], holdoutFraction: Double) : Unit = {
+
     }
 
     def getLocalVariableIds(rowMap: Map[String, Any], factorVar: FactorFunctionVariable) : Array[Long] = {
@@ -52,30 +57,27 @@ trait MemoryInferenceDataStoreComponent extends InferenceDataStoreComponent{
       weights += Tuple2(weight.id, weight)
     }
 
-    def dumpFactorGraph(serializer: Serializer) = {
+    def dumpFactorGraph(serializer: Serializer, schema: Map[String, _ <: VariableDataType],
+      weightsPath: String, variablesPath: String, factorsPath: String, edgesPath: String) = {
       // Weights
       weights.values.foreach { w => serializer.addWeight(w.id, w.isFixed, w.value, w.description) }
-      variables.values.foreach { v =>  serializer.addVariable(v.id, v.initialValue, v.dataType.toString) }
-      factors.values.foreach { f => serializer.addFactor(f.id, f.weightId, f.factorFunction) }
+      variables.values.foreach { v =>  serializer.addVariable(v.id, v.initialValue.isDefined, 
+        v.initialValue, v.dataType.toString, 0, v.dataType.cardinality) }
+      factors.values.foreach { f => serializer.addFactor(f.id, f.weightId, f.factorFunction, 0) }
       factors.values.flatMap(_.variables).foreach { edge =>
-        serializer.addEdge(edge.variableId, edge.factorId, edge.position, edge.positive)
+        serializer.addEdge(edge.variableId, edge.factorId, edge.position, edge.positive, None)
       }
       serializer.close()
     }
 
-    def writebackInferenceResult(variableSchema: Map[String, String], 
+    def writebackInferenceResult(variableSchema: Map[String, _ <: VariableDataType], 
       variableOutputFile: String, weightsOutputFile: String) : Unit = {
-      val reader = new CSVReader(new FileReader(variableOutputFile), '\t')
-      val inferenceResult = reader.readAll()
-      inferenceResult.foreach { case Array(variableId, lastSample, probability) => 
-        variableValues += Tuple2(variableId.toLong, probability.toDouble)
-      }
-      reader.close()
-      log.info(s"read inference result from file=${variableOutputFile}")
-      // TODO: Write back the weights
+      // TODO
     }
 
-    def getCalibrationData(variable: String, buckets: List[Bucket]) : Map[Bucket, BucketData] = {
+    def getCalibrationData(variable: String, dataType: VariableDataType, buckets: List[Bucket]) : Map[Bucket, BucketData] = {
+      // TODO
+      return Map[Bucket, BucketData]()
       val Array(relation, column) = variable.split('.')
       val variablesWithValues = variables.values
         .filter(v => v.mappingRelation == relation && v.mappingColumn == column)

@@ -7,7 +7,9 @@ object InputQueryParser extends RegexParsers {
   def filenameExpr =  "'" ~> """[^']+""".r <~ "'"
   def CSVInputQueryExpr = "CSV" ~> "(" ~> filenameExpr <~ ")" ^^ { str => CSVInputQuery(str, ',') }
   def TSVInputQueryExpr = "TSV" ~> "("~> filenameExpr <~ ")" ^^ { str => CSVInputQuery(str, '\t') }
-  def DatastoreInputQueryExpr = not("CSV") ~> not("TSV") ~> "[\\w\\W]+".r ^^ { str => DatastoreInputQuery(str.replaceAll("\n", " ")) }
+  def DatastoreInputQueryExpr = not("CSV") ~> not("TSV") ~> "[\\w\\W]+".r ^^ { str => 
+    DatastoreInputQuery( """[\s\n]+""".r replaceAllIn (str, " ")) 
+  }
   def inputQueryExpr = (CSVInputQueryExpr | TSVInputQueryExpr | DatastoreInputQueryExpr)
 
 }

@@ -22,13 +22,13 @@ for row in fileinput.input():
   obj = json.loads(row)
 
   # Get useful data from the JSON
-  p1_id = obj["people_mentions.p1.id"]
-  p1_text = obj["people_mentions.p1.text"].strip()
+  p1_id = obj["p1.id"]
+  p1_text = obj["p1.text"].strip()
   p1_text_lower = p1_text.lower()
-  p2_id = obj["people_mentions.p2.id"]
-  p2_text = obj["people_mentions.p2.text"].strip()
+  p2_id = obj["p2.id"]
+  p2_text = obj["p2.text"].strip()
   p2_text_lower = p2_text.lower()
-  sentence_id = obj["sentences.id"]
+  sentence_id = obj["sentence_id"]
 
   # See if the combination of people is in our supervision dictionary
   # If so, set is_correct to true or false
