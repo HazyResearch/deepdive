@@ -1,0 +1,1 @@
+This examples requires a multinomial sampler.
