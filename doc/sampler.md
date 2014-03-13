@@ -2,35 +2,32 @@
 layout: default
 ---
 
-# Changing Sampler
+# Dimmwitted High-Speed Sampler
 
-This tutorial explains how to use DimmWitted, a faster sampler for DeepDive.
-
-### Downloading DimmWitted
-
-Download athe sampler from
-  
-  - [Linux Version]({{site.baseurl}}/assets/dw.tar.bz2)
-  - [Mac Version]({{site.baseurl}}/assets/dw_mac.tar.bz2)
-
-Unpack the file as follows:
-
-	>> tar xf dw.tar.bz2
-
-If you are on a Mac, run instead
-
-	>> tar xf dw_mac.tar.bz2
-
-You will get a binary file `dw`. You can check if the sampler works by running the test
-
-	>> sh test.sh
+This tutorial explains how to use DimmWitted, a high-speed sampler for DeepDive. DimmWitted binaries for both Mac OS X and Linux ship with DeepDive in the `util/` directory. These work out of the box on many modern systems, but setting up dependencies may be required on others (see below for more details)
 
 ### Using DimmWitted
 
-To use the sampler, you need to specify the sampler path to the binary in application.conf file set, like
+In your `application.conf`, you can change the sampler executable as follows:
+  
+    sampler.sampler_cmd: "util/sampler-dw-mac"
+    sampler.sampler_args: "-l 1000 -s 1 -i 1000 --alpha 0.01"
 
-	sampler.sampler_cmd: "[sampler path to binary]/dw gibbs"
+In the above, use `sampler-dw-mac` or `sampler-dw-linux` depending on which type of system your are on. Note that we have also changes the sampler parameters to use a larger number of iterations for learning and inference because each iteration takes much less time with the high-speed sampler.
 
-Also, you may want to change the sampler arguments to get better [performance tuning](performance.html)
 
-	sampler.sampler_args: "-l 1000 -s 1 -i 1000 --alpha 0.01"
+### Setting up dependencies
+
+We ship pre-built dependencies for Linux and Mac systems in the `lib/` folder. Extract them:
+
+    cd lib
+    unzip dw_mac.zip
+
+Now, tell the executable to load the shared libraries by setting the appropriate environment variables (for example in your run.sh file). On Mac:
+  
+    export LD_LIBRARY_PATH=[DEEPDIVE_HOME]/util/dw_mac/lib/protobuf/lib:[DEEPDIVE_HOME]/util/dw_mac/lib
+    export DYLD_LIBRARY_PATH=[DEEPDIVE_HOME]/util/dw_mac
+
+On Linux:
+  
+    export LD_LIBRARY_PATH=[DEEPDIVE_HOME]/util/dw_linux/lib/protobuf/lib:[DEEPDIVE_HOME]/util/dw_linux/lib64
