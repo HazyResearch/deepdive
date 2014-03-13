@@ -220,7 +220,7 @@ for row in fileinput.input():
   # Find phrases that are tagged with PERSON
   phrases_indicies = []
   start_index = 0
-  ner_list = list(enumerate(sentence_obj["sentences.ner_tags"]))
+  ner_list = list(enumerate(sentence_obj["ner_tags"]))
   while True:
     sublist = ner_list[start_index:]
     next_phrase = list(itertools.takewhile(lambda x: (x[1] in ["PERSON"]), sublist))
@@ -233,10 +233,10 @@ for row in fileinput.input():
   # Output a tuple for each PERSON phrase
   for phrase in phrases_indicies:
     print json.dumps({
-      "sentence_id": sentence_obj["sentences.id"],
+      "sentence_id": sentence_obj["id"],
       "start_index": phrase[0],
       "length": len(phrase),
-      "text": " ".join(sentence_obj["sentences.words"][phrase[0]:phrase[-1]+1])
+      "text": " ".join(sentence_obj["words"][phrase[0]:phrase[-1]+1])
     })
 {% endhighlight %}
 
@@ -280,7 +280,7 @@ Note the special `is_true` column in the above table. We need this column becaus
 Let's create an extractor that extracts all candidates relations and puts them into the above table. We call them *candidate relations* because we are not sure whether or not they are actually correct, that's for Deepdive to predict. We will be adding *features* to make predictions in the next step, for now we are just outputting all of the candidates.
 
     ext_has_spouse_candidates.input: """
-      SELECT sentences.*, p1.id AS "p1.id", p1.text AS "p1.text", p2.id AS "p2.id", p2.text AS "p2.text" 
+      SELECT sentences.id as "sentence_id", p1.id AS "p1.id", p1.text AS "p1.text", p2.id AS "p2.id", p2.text AS "p2.text" 
       FROM people_mentions p1, people_mentions p2, sentences 
       WHERE p1.sentence_id = p2.sentence_id AND p1.sentence_id = sentences.id AND p1.id != p2.id;"""
     ext_has_spouse_candidates.output_relation: "has_spouse"
@@ -319,13 +319,13 @@ for row in fileinput.input():
   obj = json.loads(row)
 
   # Get useful data from the JSON
-  p1_id = obj["people_mentions.p1.id"]
-  p1_text = obj["people_mentions.p1.text"].strip()
+  p1_id = obj["p1.id"]
+  p1_text = obj["p1.text"].strip()
   p1_text_lower = p1_text.lower()
-  p2_id = obj["people_mentions.p2.id"]
-  p2_text = obj["people_mentions.p2.text"].strip()
+  p2_id = obj["p2.id"]
+  p2_text = obj["p2.text"].strip()
   p2_text_lower = p2_text.lower()
-  sentence_id = obj["sentences.id"]
+  sentence_id = obj["sentence_id"]
 
   # See if the combination of people is in our supervision dictionary
   # If so, set is_correct to true or false
@@ -373,7 +373,7 @@ psql -d deepdive_spouse -c "CREATE TABLE has_spouse_features(
 And our extractor:
 
     ext_has_spouse_features.input: """
-      SELECT sentences.*, has_spouse.*, p1.start_position AS "p1.start_position", p1.length AS "p1.length", 
+      SELECT sentences.words, has_spouse.id, p1.start_position AS "p1.start_position", p1.length AS "p1.length", 
         p2.start_position AS "p2.start_position", p2.length AS "p2.length"
       FROM has_spouse, people_mentions p1, people_mentions p2, sentences
       WHERE has_spouse.person1_id = p1.id AND has_spouse.person2_id = p2.id 
@@ -396,15 +396,15 @@ for row in fileinput.input():
   obj = json.loads(row)
 
   # Get useful data from the JSON
-  p1_start = obj["people_mentions.p1.start_position"]
-  p1_length = obj["people_mentions.p1.length"]
+  p1_start = obj["p1.start_position"]
+  p1_length = obj["p1.length"]
   p1_end = p1_start + p1_length
-  p2_start = obj["people_mentions.p2.start_position"]
-  p2_length = obj["people_mentions.p2.length"]
+  p2_start = obj["p2.start_position"]
+  p2_length = obj["p2.length"]
   p2_end = p2_start + p2_length
 
-  p1_text = obj["sentences.words"][p1_start:p1_length]
-  p2_text = obj["sentences.words"][p2_start:p2_length]
+  p1_text = obj["words"][p1_start:p1_length]
+  p2_text = obj["words"][p2_start:p2_length]
 
   # Features for this pair come in here
   features = set()
@@ -412,7 +412,7 @@ for row in fileinput.input():
   # Feature 1: Words between the two phrases
   left_idx = min(p1_end, p2_end)
   right_idx = max(p1_start, p2_start)
-  words_between = obj["sentences.words"][left_idx:right_idx]
+  words_between = obj["words"][left_idx:right_idx]
   if words_between: 
     features.add("words_between=" + "-".join(words_between))
 
@@ -420,8 +420,8 @@ for row in fileinput.input():
   features.add("num_words_between=%s" % len(words_between))
 
   # Feature 3: Does the last word (last name) match assuming the words are not equal?
-  last_word_left = obj["sentences.words"][p1_end-1]
-  last_word_right = obj["sentences.words"][p2_end-1]
+  last_word_left = obj["words"][p1_end-1]
+  last_word_right = obj["words"][p2_end-1]
   if (last_word_left == last_word_right) and (p1_text != p2_text):
     features.add("last_word_matches")
 
@@ -429,7 +429,7 @@ for row in fileinput.input():
 
   for feature in features:  
     print json.dumps({
-      "relation_id": obj["has_spouse.id"],
+      "relation_id": obj["id"],
       "feature": feature
     })
 {% endhighlight %}
@@ -453,10 +453,12 @@ Don't forget to add the new extractor to your pipeline:
 Now we need to tell DeepDive how to perform [probabilistic inference](/doc/general/inference.html) on the data we have generated.  We want to predict the `is_true` column of the `has_spouse` table based on the features we have extracted. This is the simplest rule you can write, because it does not involve domain knowledge or  relationships among variales. Add the following to your `application.conf`
   
     inference.factors {
-      f_has_spouse_features.input_query: """SELECT * FROM has_spouse, has_spouse_features 
-      WHERE has_spouse_features.relation_id = has_spouse.id"""
+      f_has_spouse_features.input_query: """
+        SELECT has_spouse.id as "has_spouse.id", has_spouse.is_true AS "has_spouse.is_true", feature 
+        FROM has_spouse, has_spouse_features 
+        WHERE has_spouse_features.relation_id = has_spouse.id"""
       f_has_spouse_features.function: "IsTrue(has_spouse.is_true)"
-      f_has_spouse_features.weight: "?(has_spouse_features.feature)"
+      f_has_spouse_features.weight: "?(feature)"
     }
 
 This rule generates a model similar to a logistic regression classifier. We use a set of features to make a prediction about the variable we care about. For each row in the *input query* we are adding a [factor](/doc/general/probabilistic_inference.html) that connects to the `has_spouse.is_true` variable with a different weight for each feature name. 
@@ -464,7 +466,7 @@ This rule generates a model similar to a logistic regression classifier. We use 
 The next step is to incorporate domain knowledge into our model. For example, we know that has_spouse is symmetric. That means, if Barack Obama is married to Michelle Obama, then Michelle Obama is married to Barack Obama. We can encode this knowledge in a second inference rule:
 
     f_has_spouse_symmetry.input_query: """
-      SELECT r1.is_true AS "r1.is_true", r2.is_true AS "r2.is_true", r1.id AS "r1.id", r2.id AS "r2.id"
+      SELECT r1.is_true AS "has_spouse.r1.is_true", r2.is_true AS "has_spouse.r2.is_true", r1.id AS "has_spouse.r1.id", r2.id AS "has_spouse.r2.id"
       FROM has_spouse r1, has_spouse r2 
       WHERE r1.person1_id = r2.person2_id AND r1.person2_id = r2.person1_id"""
     f_has_spouse_symmetry.function: "Imply(has_spouse.r1.is_true, has_spouse.r2.is_true)"
