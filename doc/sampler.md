@@ -21,15 +21,15 @@ If you are on a Mac, run instead
 
 	>> tar xf dw_mac.tar.bz2
 
-You can check if the sampler works by running the test
+You will get a binary file `dw`. You can check if the sampler works by running the test
 
 	>> sh test.sh
 
 ### Using DimmWitted
 
-To use the sampler, you need to specify the sampler path in the application.conf file set, like
+To use the sampler, you need to specify the sampler path to the binary in application.conf file set, like
 
-	"sampler.sampler_cmd: "[sampler path]/dw gibbs"
+	sampler.sampler_cmd: "[sampler path to binary]/dw gibbs
 
 Also, you may want to change the sampler arguments to get better [performance tuning](performance.html)
 
