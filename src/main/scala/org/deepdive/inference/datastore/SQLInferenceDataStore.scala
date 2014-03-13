@@ -398,7 +398,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
       // Create a cardinality table for the variable
       val cardinalityValues = dataType match {
-        case BooleanType => "(0)"
+        case BooleanType => "(1)"
         case MultinomialType(x) => (0 to x-1).map (x => s"(${x})").mkString(", ")
       }
       val cardinalityTableName = s"${relation}_${column}_cardinality"
