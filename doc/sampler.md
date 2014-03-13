@@ -29,7 +29,7 @@ You will get a binary file `dw`. You can check if the sampler works by running t
 
 To use the sampler, you need to specify the sampler path to the binary in application.conf file set, like
 
-	sampler.sampler_cmd: "[sampler path to binary]/dw gibbs
+	sampler.sampler_cmd: "[sampler path to binary]/dw gibbs"
 
 Also, you may want to change the sampler arguments to get better [performance tuning](performance.html)
 
