@@ -60,6 +60,7 @@ API Documentation:
 - [Calibration](doc/calibration.html)
 - [Pipelines](doc/pipelines.html)
 - [Performance tuning](doc/performance.html)
+- [Changing sampler](doc/sampler.html)
 - [Internal database schema](doc/reserved_tables.html)
 - [FAQ](doc/faq.html)
 
