@@ -77,7 +77,10 @@ object SettingsParser extends Logging {
     }
     val factors = factorConfig.keySet().map { factorName =>
       val factorConfig = inferenceConfig.getConfig(s"factors.$factorName")
-      val factorInputQuery = factorConfig.getString("input_query")
+      val factorInputQuery = InputQueryParser.parse(InputQueryParser.DatastoreInputQueryExpr, 
+        factorConfig.getString("input_query")).getOrElse {
+        throw new RuntimeException(s"parsing ${factorConfig.getString("input_query")} failed")
+      }.query
       val factorFunction = FactorFunctionParser.parse(
         FactorFunctionParser.factorFunc, factorConfig.getString("function")).getOrElse {
         throw new RuntimeException(s"parsing ${factorConfig.getString("function")} failed")

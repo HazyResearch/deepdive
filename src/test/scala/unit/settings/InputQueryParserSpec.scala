@@ -48,6 +48,14 @@ class InputQueryParserSpec extends FunSpec {
       assert(result.successful)
       assert(result.get == DatastoreInputQuery("SELECT * FROM Customers"))
     }
+
+    it("should remove trailing semicolons") {
+      val expr = "SELECT * FROM Customers;  "
+      val result = InputQueryParser.parse(InputQueryParser.inputQueryExpr, expr)
+      assert(result.successful)
+      assert(result.get == DatastoreInputQuery("SELECT * FROM Customers"))
+    }
+
   }
 
 }
