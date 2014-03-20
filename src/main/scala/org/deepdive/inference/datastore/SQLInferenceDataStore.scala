@@ -481,8 +481,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
       writer.println(s"""
         INSERT INTO ${WeightsTable}(initial_value, is_fixed, description)
-        SELECT DISTINCT ${weightValue}, ${isFixed}, ${weightCmd}
-        FROM ${factorDesc.name}_query;""")
+        SELECT DISTINCT ${weightValue} AS wValue, ${isFixed} AS wIsFixed, ${weightCmd} AS wCmd
+        FROM ${factorDesc.name}_query GROUP BY wValue, wIsFixed, wCmd;""")
 
     }
     // Add index to the weights
