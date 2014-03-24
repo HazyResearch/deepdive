@@ -509,10 +509,10 @@ Let's try running the full pipeline using `./run.sh`. All extractors other than 
 Great, let's take a look at some of the predictions that DeepDive has made. Deepdive creates a view for each variable you have defined in the database:
 
 {% highlight bash %}
-psql -d deepdive_spouse -c "select sentence_id, description, probability from has_spouse_is_true_inference where probability > 0.9 limit 10;"
+psql -d deepdive_spouse -c "select sentence_id, description, expectation from has_spouse_is_true_inference where expectation > 0.9 limit 10;"
 {% endhighlight %}
 
-     sentence_id |               description               | probability 
+     sentence_id |               description               | expectation 
     -------------+-----------------------------------------+-------------
          3092294 | John Turturro-Lisa Pepper               |           1
          2524571 | Kris Marshall-Ewen Bremner              |           1
@@ -541,7 +541,7 @@ The calibration plot contains useful information that help you to improve the qu
 Often, it is also useful to look at the *weights* that were learned for features or rules. You can do this by looking at the `mapped_inference_results_weights` table in the database:
 
 {% highlight bash %}
-psql -d deepdive_spouse -c "select description, weight from inference_result_mapped_weights limit 5;" 
+psql -d deepdive_spouse -c "select description, weight from dd_inference_result_variables_mapped_weights limit 5;" 
 {% endhighlight %}
 
                                              description                                         |      weight       
