@@ -16,7 +16,7 @@ In the Amazon EC2 console you can launch the AMI as follows:
 - Follow the wizard to launch the instance.
 - SSH into the instance as `ec2-user` with the private key set you specified in the AWS wizard.
 - Execute `~/init.sh` to start postgresql and update DeepDive.
-- Navigate to `~/deepdive` and execute `~/test.sh` to make sure the installation was successful.
+- Navigate to `~/deepdive` and execute `./test.sh` to make sure the installation was successful.
 
 
 ### Notes
