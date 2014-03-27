@@ -146,9 +146,9 @@ psql -d deepdive_spouse -c "CREATE TABLE sentences(
 Next, let's tell DeepDive to use the extractor, by adding it to the `application.conf` file:
 
     extraction.extractors {
-      ext_sentences.input: "SELECT * FROM articles order by id asc limit 100"
+      ext_sentences.input: "SELECT id as "articles_id", text as "articles_text" FROM articles order by id asc"
       ext_sentences.output_relation: "sentences"
-      ext_sentences.udf: ${APP_HOME}"/udf/nlp_extractor/run.sh -k articles.id -v articles.text -l 20"
+      ext_sentences.udf: ${APP_HOME}"/udf/nlp_extractor/run.sh -k articles_id -v articles_text -l 20"
       ext_sentences.before: ${APP_HOME}"/udf/before_sentences.sh"
     }
 
