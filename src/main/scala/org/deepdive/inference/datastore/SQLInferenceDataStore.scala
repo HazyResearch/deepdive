@@ -207,7 +207,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   """
 
   def selectVariablesForDumpSQL = s"""
-    SELECT id AS "id", is_evidence, data_type, initial_value, edge_count, cardinality
+    SELECT id AS "id", is_evidence, initial_value, data_type, edge_count, cardinality
     FROM selectVariablesForDumpSQL_RAW;
   """
 
@@ -333,8 +333,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // <----- java.sql.ResultSet
     log.info("Serializing weights...")
     selectForeach2(selectWeightsForDumpSQL) { rs => 
-      serializer.addWeight(rs.getLong("id"), rs.getBoolean("is_fixed"), 
-        rs.getDouble("initial_value"), rs.getString("description"))
+      serializer.addWeight(rs.getLong(1), rs.getBoolean(2), 
+        rs.getDouble(3), rs.getString(4))
     }
     log.info(s"""Serializing variables...""")
     selectForeach(selectVariablesForDumpSQL) { rs => 
@@ -361,9 +361,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         rs.longOpt("equal_predicate"))
     }
 
-    selectForeach(selectMetaDataForDumpSQL) { rs =>
+    selectForeach2(selectMetaDataForDumpSQL) { rs =>
       serializer.writeMetadata(
-        rs.long("num_weights"), rs.long("num_variables"), rs.long("num_factors"), rs.long("num_edges"),
+        rs.getLong(1), rs.getLong(2), rs.getLong(3), rs.getLong(4),
         weightsPath, variablesPath, factorsPath, edgesPath)
     }
 
