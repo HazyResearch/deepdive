@@ -46,7 +46,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     var conn = ds.borrowConnection()
     conn.setAutoCommit(false);
     var stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
-       java.sql.ResultSet.CONCUR_READ_ONLY);
+      java.sql.ResultSet.CONCUR_READ_ONLY);
     stmt.setFetchSize(10000);
     var rs = stmt.executeQuery(sql)
     while(rs.next()){
@@ -327,14 +327,14 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
 
     // TODO:
-    //    selectForeach2
-    //    rs.long("id") -> rs.getLong("id")
-    //    rs.getLong("id") -> rs.getLong(?)
-    //     <----- java.sql.ResultSet
+    // selectForeach2
+    // rs.long("id") -> rs.getLong("id")
+    // rs.getLong("id") -> rs.getLong(?)
+    // <----- java.sql.ResultSet
     log.info("Serializing weights...")
-    selectForeach(selectWeightsForDumpSQL) { rs => 
-      serializer.addWeight(rs.long("id"), rs.boolean("is_fixed"), 
-        rs.double("initial_value"), rs.string("description"))
+    selectForeach2(selectWeightsForDumpSQL) { rs => 
+      serializer.addWeight(rs.getLong("id"), rs.getBoolean("is_fixed"), 
+        rs.getDouble("initial_value"), rs.getString("description"))
     }
     log.info(s"""Serializing variables...""")
     selectForeach(selectVariablesForDumpSQL) { rs => 

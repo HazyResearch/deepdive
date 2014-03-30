@@ -71,11 +71,11 @@ class CSVSerializer(weightsOuput: OutputStream, variablesOutput: OutputStream,
     factorsOutput.flush()
     edgesOutput.flush()
     metaDataOutput.flush()
-    printStream_weight.close()
-	printStream_variable.close()
-    printStream_factor.close()
-    printStream_edge.close()
-    printStream_meta.close()
+    // printStream_weight.close()
+    // printStream_variable.close()
+    // printStream_factor.close()
+    // printStream_edge.close()
+    // printStream_meta.close()
   }
 
 }
