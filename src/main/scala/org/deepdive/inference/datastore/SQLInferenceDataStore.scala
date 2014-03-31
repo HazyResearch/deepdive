@@ -337,14 +337,14 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         rs.getDouble(3), rs.getString(4))
     }
     log.info(s"""Serializing variables...""")
-    selectForeach(selectVariablesForDumpSQL) { rs => 
+    selectForeach2(selectVariablesForDumpSQL) { rs => 
       serializer.addVariable(
-        rs.long("id"),
-        rs.boolean("is_evidence"),
-        rs.doubleOpt("initial_value"),
-        rs.string("data_type"), 
-        rs.longOpt("edge_count").getOrElse(0),
-        rs.longOpt("cardinality"))
+        rs.getLong(1),
+        rs.getBoolean(2),
+        rs.getDouble(3), // return 0 if the value is SQL null
+        rs.getString(4), 
+        rs.getLong(5),
+        rs.getLong(6)) // return 0 if ...
     }
     log.info("Serializing factors...")
     selectForeach(selectFactorsForDumpSQL) { rs => 
@@ -402,6 +402,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         FROM ${relation};""")
 
       // Create a cardinality table for the variable
+      // TODO: cardinality of boolean
       val cardinalityValues = dataType match {
         case BooleanType => "(1)"
         case MultinomialType(x) => (0 to x-1).map (x => s"(${x})").mkString(", ")

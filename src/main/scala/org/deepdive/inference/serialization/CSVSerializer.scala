@@ -23,19 +23,22 @@ class CSVSerializer(weightsOuput: OutputStream, variablesOutput: OutputStream,
     printStream_weight.print(out)
   }
 
-  def addVariable(variableId: Long, isEvidence: Boolean, initialValue: Option[Double], 
-    dataType: String, edgeCount: Long, cardinality: Option[Long]) : Unit = {
-    val trueInitialValue = initialValue match {
-      case Some(s) => s.toString
-      case None => "-"
-    }
-    val trueCardinality = cardinality match {
-      case Some(s) => s.toString
-      case None => "-" 
-    }
+  def addVariable(variableId: Long, isEvidence: Boolean, initialValue: Double, 
+    dataType: String, edgeCount: Long, cardinality: Long) : Unit = {
+    // val trueInitialValue = initialValue match {
+    //   case Some(s) => s.toString
+    //   case None => "-"
+    // }
+    // val trueCardinality = cardinality match {
+    //   case Some(s) => s.toString
+    //   case None => "-" 
+    // }
+    // val out = variableId.toString + "," + isEvidence.toString + "," +
+    //   trueInitialValue + "," + dataType + "," +
+    //   edgeCount.toString + "," + trueCardinality + "\n"
     val out = variableId.toString + "," + isEvidence.toString + "," +
-      trueInitialValue + "," + dataType + "," +
-      edgeCount.toString + "," + trueCardinality + "\n"
+      initialValue.toString + "," + dataType + "," +
+      edgeCount.toString + "," + cardinality.toString + "\n"
     printStream_variable.print(out)
   }
 
