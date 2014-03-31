@@ -352,13 +352,13 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         rs.string("factor_function"), rs.long("edge_count"))
     }
     log.info("Serializing edges...")
-    selectForeach(selectEdgesForDumpSQL) { rs => 
+    selectForeach2(selectEdgesForDumpSQL) { rs => 
       serializer.addEdge(
-        rs.long("variable_id"),
-        rs.long("factor_id"),
-        rs.long("position"), 
-        rs.boolean("is_positive"),
-        rs.longOpt("equal_predicate"))
+        rs.getLong(1),
+        rs.getLong(2),
+        rs.getLong(3), 
+        rs.getBoolean(4),
+        rs.getLong(5))
     }
 
     selectForeach2(selectMetaDataForDumpSQL) { rs =>

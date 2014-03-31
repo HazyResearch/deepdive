@@ -67,7 +67,8 @@ trait MemoryInferenceDataStoreComponent extends InferenceDataStoreComponent{
         v.initialValue, v.dataType.toString, 0, v.dataType.cardinality) }
       factors.values.foreach { f => serializer.addFactor(f.id, f.weightId, f.factorFunction, 0) }
       factors.values.flatMap(_.variables).foreach { edge =>
-        serializer.addEdge(edge.variableId, edge.factorId, edge.position, edge.positive, None)
+        // serializer.addEdge(edge.variableId, edge.factorId, edge.position, edge.positive, None)
+        serializer.addEdge(edge.variableId, edge.factorId, edge.position, edge.positive, 0)
       }
       serializer.close()
     }

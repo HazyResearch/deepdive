@@ -9,7 +9,7 @@ trait Serializer {
     dataType: String, edgeCount: Long, cardinality: Long) : Unit
   def addFactor(factorId: Long, weightId: Long, factorFunction: String, edgeCount: Long) : Unit
   def addEdge(variableId: Long, factorId: Long, position: Long, isPositive: Boolean, 
-    equalPredicate: Option[Long]) : Unit
+    equalPredicate: Long) : Unit
   def writeMetadata(numWeights: Long, numVariables: Long, numFactors: Long, numEdges: Long,
     weightsFile: String, variablesFile: String, factorsFile: String, edgesFile: String) : Unit  
   def close() : Unit
