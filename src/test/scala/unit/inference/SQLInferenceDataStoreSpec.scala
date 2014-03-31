@@ -78,6 +78,46 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         assert(numEdges === 100)
       }
 
+      it("should work with weight variables that are null") {
+        inferenceDataStore.init()
+         SQL(s"""CREATE TABLE r1(id ${inferenceDataStore.keyType}, weight ${inferenceDataStore.stringType},
+          is_correct boolean);""").execute.apply()        
+        val data = (1 to 100).map { i =>
+          Map("id" -> i, "is_correct" -> s"${i%2==0}".toBoolean)
+        }
+        dataStoreHelper.bulkInsert("r1", data.iterator)
+
+        val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
+
+        // Build the factor description
+        val factorDesc = FactorDesc("testFactor", 
+            """SELECT id AS "r1.id", weight AS "weight", is_correct AS "r1.is_correct" FROM r1""", 
+          IsTrueFactorFunction(Seq("r1.is_correct")), 
+          UnknownFactorWeight(List("weight")), "weight_prefix")
+        val holdoutFraction = 0.0
+
+        // Ground the graph
+        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction)
+
+        // Check the result
+        val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numWeights === 1)
+        val weightName = SQL(s"""SELECT description FROM ${inferenceDataStore.WeightsTable}""")
+          .map(rs => rs.string("description")).single.apply().get
+        assert(weightName === "weight_prefix-1")
+        val numVariables = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.VariablesTable}""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numVariables === 100)
+        val numFactors = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.FactorsTable}""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numFactors === 100)
+        val numEdges = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.EdgesTable}""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numEdges === 100)
+
+      }
+
       it("should work with multi-variable factor rules") {
         inferenceDataStore.init()
         SQL(s"""CREATE TABLE r1(id ${inferenceDataStore.keyType}, weight ${inferenceDataStore.stringType},
