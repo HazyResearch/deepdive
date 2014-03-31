@@ -76,17 +76,18 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
     case Event(SetTask(task), Uninitialized) =>
       log.info(s"Received task=${task.extractor.name}. Executing")
       
+      val taskSender = sender
       // Execute the before script. Fail if the script fails.
       task.extractor.beforeScript.foreach { beforeScript =>
         log.info("Executing before script.")
-        executeScriptOrFail(beforeScript, sender)
+        executeScriptOrFail(beforeScript, taskSender)
       }
       
       // Start the children workers
       val workers = startWorkers(task)
       // Schedule the input data to be sent to myself.
       // We will then forward the data to our workers
-      Future { sendData(task, workers) }
+      Future { sendData(task, workers, taskSender) }
       goto(Running) using Task(task, sender, workers)
   }
 
@@ -172,7 +173,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
   }
 
   /* Queries the data store and gets all the data */
-  private def sendData(task: ExtractionTask, workers: Router) {
+  private def sendData(task: ExtractionTask, workers: Router, taskSender: ActorRef) {
     log.info(s"Getting data from the data store and sending it to the workers. query='${task.extractor.inputQuery}'")
 
     // Figure out where to get the input from
@@ -185,18 +186,26 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
     }
 
     // Forward output to the workers
-    extractorInput { iterator =>
-      val batchSize = workers.routees.size * task.extractor.inputBatchSize
-      iterator map(_.toString) grouped(batchSize) foreach { chunk =>
-        val futures = chunk.grouped(task.extractor.inputBatchSize).map { batch =>
-          val msg = ProcessExecutor.Write(batch.mkString("\n"))
-          val destinationWorker = workers.logic.select(msg, workers.routees).asInstanceOf[ActorRefRoutee].ref
-          destinationWorker ? msg
+    try {
+      extractorInput { iterator =>
+        val batchSize = workers.routees.size * task.extractor.inputBatchSize
+        iterator map(_.toString) grouped(batchSize) foreach { chunk =>
+          val futures = chunk.grouped(task.extractor.inputBatchSize).map { batch =>
+            val msg = ProcessExecutor.Write(batch.mkString("\n"))
+            val destinationWorker = workers.logic.select(msg, workers.routees).asInstanceOf[ActorRefRoutee].ref
+            destinationWorker ? msg
+          }
+          val allRouteeAcks = Future.sequence(futures)
+          // Wait for all workers to write the data to the output stream to avoid overloading them
+          Await.result(allRouteeAcks, 1337.hours)
         }
-        val allRouteeAcks = Future.sequence(futures)
-        // Wait for all workers to write the data to the output stream to avoid overloading them
-        Await.result(allRouteeAcks, 1337.hours)
       }
+    } catch {
+      case exception : Throwable => 
+        log.error(exception.toString)
+        taskSender ! Status.Failure(exception)
+        context.stop(self)
+        throw exception
     }
     
     // Notify all workers that they don't receive more data

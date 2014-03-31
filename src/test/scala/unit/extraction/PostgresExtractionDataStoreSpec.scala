@@ -59,6 +59,13 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
       assert(result == Nil)
     }
 
+    it("should throw an exception for invalid queries") {
+      intercept[org.postgresql.util.PSQLException] {
+        val result = dataStore.queryAsMap("SELECT *a from datatype_test;")(_.toList)
+        assert(result == Nil)
+      }
+    }
+
   }
 
   describe("Querying as JSON") {
