@@ -25,9 +25,9 @@ We ship pre-built dependencies for Linux and Mac systems in the `lib/` folder. E
 
 Now, tell the executable to load the shared libraries by setting the appropriate environment variables (for example in your run.sh file). On Mac:
   
-    export LD_LIBRARY_PATH=[DEEPDIVE_HOME]/util/dw_mac/lib/protobuf/lib:[DEEPDIVE_HOME]/util/dw_mac/lib
-    export DYLD_LIBRARY_PATH=[DEEPDIVE_HOME]/util/dw_mac
+    export LD_LIBRARY_PATH=[DEEPDIVE_HOME]/lib/dw_mac/lib/protobuf/lib:[DEEPDIVE_HOME]/lib/dw_mac/lib
+    export DYLD_LIBRARY_PATH=[DEEPDIVE_HOME]/lib/dw_mac
 
 On Linux:
   
-    export LD_LIBRARY_PATH=[DEEPDIVE_HOME]/util/dw_linux/lib/protobuf/lib:[DEEPDIVE_HOME]/util/dw_linux/lib64
+    export LD_LIBRARY_PATH=[DEEPDIVE_HOME]/lib/dw_linux/lib:[DEEPDIVE_HOME]/lib/dw_linux/lib64
