@@ -326,11 +326,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       SQL(selectVariablesForDumpSQL_RAW).execute.apply()
     }
 
-    // TODO:
-    // selectForeach2
-    // rs.long("id") -> rs.getLong("id")
-    // rs.getLong("id") -> rs.getLong(?)
-    // <----- java.sql.ResultSet
     log.info("Serializing weights...")
     selectForeach2(selectWeightsForDumpSQL) { rs => 
       serializer.addWeight(rs.getLong(1), rs.getBoolean(2), 

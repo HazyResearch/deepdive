@@ -25,17 +25,7 @@ class CSVSerializer(weightsOuput: OutputStream, variablesOutput: OutputStream,
 
   def addVariable(variableId: Long, isEvidence: Boolean, initialValue: Double, 
     dataType: String, edgeCount: Long, cardinality: Long) : Unit = {
-    // val trueInitialValue = initialValue match {
-    //   case Some(s) => s.toString
-    //   case None => "-"
-    // }
-    // val trueCardinality = cardinality match {
-    //   case Some(s) => s.toString
-    //   case None => "-" 
-    // }
-    // val out = variableId.toString + "," + isEvidence.toString + "," +
-    //   trueInitialValue + "," + dataType + "," +
-    //   edgeCount.toString + "," + trueCardinality + "\n"
+
     val variableDataType = dataType match {
       case "Boolean" => 'B'
       case "Multinomial" => 'M'
@@ -62,10 +52,7 @@ class CSVSerializer(weightsOuput: OutputStream, variablesOutput: OutputStream,
 
   def addEdge(variableId: Long, factorId: Long, position: Long, isPositive: Boolean, 
     equalPredicate: Long) : Unit = {
-    // val trueEqualPredicate = equalPredicate match {
-    //   case Some(s) => s.toString
-    //   case None => "-"
-    // }
+
     val out = variableId.toString + "," + factorId.toString + "," + position.toString + 
       "," + isPositive.toString + "," + equalPredicate.toString + "\n"
     printStream_edge.print(out)
@@ -85,11 +72,7 @@ class CSVSerializer(weightsOuput: OutputStream, variablesOutput: OutputStream,
     factorsOutput.flush()
     edgesOutput.flush()
     metaDataOutput.flush()
-    // printStream_weight.close()
-    // printStream_variable.close()
-    // printStream_factor.close()
-    // printStream_edge.close()
-    // printStream_meta.close()
+
   }
 
 }
