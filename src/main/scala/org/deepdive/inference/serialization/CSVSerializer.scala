@@ -36,15 +36,26 @@ class CSVSerializer(weightsOuput: OutputStream, variablesOutput: OutputStream,
     // val out = variableId.toString + "," + isEvidence.toString + "," +
     //   trueInitialValue + "," + dataType + "," +
     //   edgeCount.toString + "," + trueCardinality + "\n"
+    val variableDataType = dataType match {
+      case "Boolean" => 'B'
+      case "Multinomial" => 'M'
+    } 
     val out = variableId.toString + "," + isEvidence.toString + "," +
-      initialValue.toString + "," + dataType + "," +
-      edgeCount.toString + "," + cardinality.toString + "\n"
+      initialValue.toString + "," + variableDataType + "," + edgeCount.toString + 
+      "," + cardinality.toString + "\n"
     printStream_variable.print(out)
   }
 
   def addFactor(factorId: Long, weightId: Long, factorFunction: String, edgeCount: Long) : Unit = {
+    val factorFunctionType = factorFunction match {
+      case "ImplyFactorFunction" => 'I'
+      case "OrFactorFunction" => 'O'
+      case "AndFactorFunction" => 'A'
+      case "EqualFactorFunction" => 'E'
+      case "IsTrueFactorFunction" =>  'I'
+    }
     val out = factorId.toString + "," + weightId.toString + "," +
-      factorFunction + "," + edgeCount.toString + "\n"
+      factorFunctionType + "," + edgeCount.toString + "\n"
     printStream_factor.print(out)
   }
 

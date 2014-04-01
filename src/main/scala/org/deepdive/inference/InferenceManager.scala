@@ -31,10 +31,10 @@ trait InferenceManager extends Actor with ActorLogging {
   // Describes how to start the calibration data writer
   def calibrationDataWriterProps = CalibrationDataWriter.props
 
-  lazy val factorGraphDumpFileWeights = new File(s"${Context.outputDir}/graph.weights.csv")
-  lazy val factorGraphDumpFileVariables = new File(s"${Context.outputDir}/graph.variables.csv")
-  lazy val factorGraphDumpFileFactors = new File(s"${Context.outputDir}/graph.factors.csv")
-  lazy val factorGraphDumpFileEdges = new File(s"${Context.outputDir}/graph.edges.csv")
+  lazy val factorGraphDumpFileWeights = new File(s"${Context.outputDir}/graph.weights")
+  lazy val factorGraphDumpFileVariables = new File(s"${Context.outputDir}/graph.variables")
+  lazy val factorGraphDumpFileFactors = new File(s"${Context.outputDir}/graph.factors")
+  lazy val factorGraphDumpFileEdges = new File(s"${Context.outputDir}/graph.edges")
   lazy val factorGraphDumpFileMeta = new File(s"${Context.outputDir}/graph.meta.csv")
   lazy val SamplingOutputDir = new File(s"${Context.outputDir}")
   lazy val SamplingOutputFile = new File(s"${SamplingOutputDir}/inference_result.out")
@@ -85,7 +85,7 @@ trait InferenceManager extends Actor with ActorLogging {
     val factorsOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileFactors, false))
     val edgesOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileEdges, false))
     val metaOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileMeta, false))
-    val serializier = new CSVSerializer(weightsOutput, variablesOutput, factorsOutput, edgesOutput, metaOutput)
+    val serializier = new BinarySerializer(weightsOutput, variablesOutput, factorsOutput, edgesOutput, metaOutput)
     inferenceDataStore.dumpFactorGraph(serializier, variableSchema, factorGraphDumpFileWeights.getCanonicalPath,
       factorGraphDumpFileVariables.getCanonicalPath, factorGraphDumpFileFactors.getCanonicalPath,
       factorGraphDumpFileEdges.getCanonicalPath)
