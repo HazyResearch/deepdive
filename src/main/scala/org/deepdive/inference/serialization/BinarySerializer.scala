@@ -19,6 +19,7 @@ class BinarySerializer(weightsOuput: OutputStream, variablesOutput: OutputStream
     weightStream.writeLong(weightId)
     weightStream.writeBoolean(isFixed)
     weightStream.writeDouble(initialValue)
+    // nodescription
   }
 
   def addVariable(variableId: Long, isEvidence: Boolean, initialValue: Double, 
