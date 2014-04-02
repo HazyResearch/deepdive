@@ -14,13 +14,41 @@ To get the most out of calibration, you should specify a holdout fraction for yo
       holdout_fraction: 0.25
     }
 
-The system assigns holdout variables at random. That is, for each evidence variable, it flips a coin to decide whether to put the variable into the holdout or not.
+By default the system assigns holdout variables at random. You can also specify a custom holdout query (see below)
+
+
+### Custom Holdout
+
+DeepDive allows you to specify a SQL query that defines which variables should be in the holdout. In case you define a custom holdout, the `holdout_fraction` setting is ignored. You may define a custom holdout query as follows:
+
+    deepdive.calibration: {
+      holdout_query: "INSERT INTO dd_graph_variables_holdout(variable_id) SELECT id FROM mytable WHERE id < 10"
+    }
+
+A custom holdout query should insert all variable IDs that are to be held out into the `dd_graph_variables_holdout` table through arbitrary SQL. Such query may look as follows (but could be more complex):
+
+{% highlight sql %}
+INSERT INTO dd_graph_variables_holdout(variable_id)
+[A SELECT statement that selects the IDs of all variables to be in the holdout]
+{% endhighlight %}
+
+The system default holdout query for a random holdout looks as follows:
+
+{% highlight sql %}
+INSERT INTO dd_graph_variables_holdout(variable_id)
+SELECT id FROM dd_graph_variables
+WHERE RANDOM() < [holdoutFraction] AND is_evidence = true;
+{% endhighlight %}
+
+Note that because all extractors assign unique variable IDs to extracted tuples you can query your extractor output tables directly to find the appropriate variable IDs. 
+
 
 ### Inspecting Probabilities and Weights
 
 To improve prediction accuracy it is useful to inspect the probabilities for each variable, and the learned weights. DeepDive creates a view called `inference_result_mapped_weights` in the database, which contains the weight names and the learned values sorted by absolute value.
 
 For each variable, DeepDive generates a view called `[variable_name]_inference`, which contains your original data, augmented with a `probability` column, the result of our inference algorithm.
+
 
 
 ### Calibration Plots
