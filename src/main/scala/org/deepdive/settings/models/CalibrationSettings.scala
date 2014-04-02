@@ -1,4 +1,4 @@
 package org.deepdive.settings
 
 /* Calibration Settings */
-case class CalibrationSettings(holdoutFraction: Double)
+case class CalibrationSettings(holdoutFraction: Double, holdoutQuery: Option[String])

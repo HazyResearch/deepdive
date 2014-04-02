@@ -92,16 +92,19 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester {
 
   describe("Parsing Calibration Settings") {
     it ("should work when specified") {
-      val config = ConfigFactory.parseString("""calibration.holdout_fraction: 0.25""")
+      val config = ConfigFactory.parseString("""
+        calibration.holdout_fraction: 0.25
+        calibration.holdout_query: "SELECT 0;"
+      """)
       val loadCalibrationSettings = PrivateMethod[CalibrationSettings]('loadCalibrationSettings)
       val result = SettingsParser invokePrivate loadCalibrationSettings(config)
-      assert(result == CalibrationSettings(0.25))
+      assert(result == CalibrationSettings(0.25, Option("SELECT 0;")))
     }
 
     it ("should work when not specified") {
       val loadCalibrationSettings = PrivateMethod[CalibrationSettings]('loadCalibrationSettings)
       val result = SettingsParser invokePrivate loadCalibrationSettings(ConfigFactory.parseString(""))
-      assert(result == CalibrationSettings(0))
+      assert(result == CalibrationSettings(0, None))
     }
   }
 

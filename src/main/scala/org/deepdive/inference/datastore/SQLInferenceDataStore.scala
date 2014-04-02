@@ -368,7 +368,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   }
 
   def groundFactorGraph(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
-    holdoutFraction: Double) {
+    holdoutFraction: Double, holdoutQuery: Option[String]) {
 
     // We write the grounding queries to this SQL file
     val sqlFile = File.createTempFile(s"grounding", ".sql")
@@ -414,10 +414,15 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       s"""INSERT INTO ${VariablesMapTable}(variable_id)
       SELECT id FROM ${VariablesTable};""")
 
-    // Assign the holdout
-    writer.println(s"""INSERT INTO ${VariablesHoldoutTable}(variable_id)
-      SELECT id FROM ${VariablesTable}
-      WHERE ${randomFunc} < ${holdoutFraction} AND is_evidence = true;""")
+    // Assign the holdout - Random (default) or user-defined query
+    holdoutQuery match {
+      case None => writer.println(
+        s"""INSERT INTO ${VariablesHoldoutTable}(variable_id)
+        SELECT id FROM ${VariablesTable}
+        WHERE ${randomFunc} < ${holdoutFraction} AND is_evidence = true;""")
+      case Some(userQuery) => writer.println(userQuery)
+    }
+   
     writer.println(s"""UPDATE ${VariablesTable} SET is_evidence=false
       WHERE ${VariablesTable}.id IN (SELECT variable_id FROM ${VariablesHoldoutTable});""")
 

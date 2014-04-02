@@ -53,10 +53,10 @@ trait InferenceManager extends Actor with ActorLogging {
   }
 
   def receive = {
-    case InferenceManager.GroundFactorGraph(factorDescs, holdoutFraction) =>
+    case InferenceManager.GroundFactorGraph(factorDescs, holdoutFraction, holdoutQuery) =>
       val _sender = sender
       inferenceDataStore.asInstanceOf[SQLInferenceDataStore]
-        .groundFactorGraph(variableSchema, factorDescs, holdoutFraction)
+        .groundFactorGraph(variableSchema, factorDescs, holdoutFraction, holdoutQuery)
       sender ! "OK"
       // factorGraphBuilder ? FactorGraphBuilder.AddFactorsAndVariables(
       //   factorDesc, holdoutFraction, batchSize) pipeTo _sender
@@ -139,7 +139,7 @@ object InferenceManager {
   // ==================================================
 
   // Executes a task to build part of the factor graph
-  case class GroundFactorGraph(factorDescs: Seq[FactorDesc], holdoutFraction: Double)
+  case class GroundFactorGraph(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String])
   // Runs the sampler with the given arguments
   case class RunInference(samplerJavaArgs: String, samplerOptions: String)
   // Writes calibration data to predefined files

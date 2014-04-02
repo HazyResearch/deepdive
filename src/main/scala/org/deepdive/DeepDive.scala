@@ -68,7 +68,7 @@ object DeepDive extends Logging {
       case None => settings.inferenceSettings.factors
     }
     val groundFactorGraphMsg = InferenceManager.GroundFactorGraph(
-      activeFactors, settings.calibrationSettings.holdoutFraction
+      activeFactors, settings.calibrationSettings.holdoutFraction, settings.calibrationSettings.holdoutQuery
     )
     val groundFactorGraphTask = Task("inference_grounding", extractionTasks.map(_.id), 
       groundFactorGraphMsg, inferenceManager)
