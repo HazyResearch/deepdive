@@ -41,7 +41,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   }
 
   /* Issues a query */
-  def selectForeach2(sql: String)(op: (java.sql.ResultSet) => Unit) = {
+  def issueQuery(sql: String)(op: (java.sql.ResultSet) => Unit) = {
 
     var conn = ds.borrowConnection()
     conn.setAutoCommit(false);
@@ -327,12 +327,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
 
     log.info("Serializing weights...")
-    selectForeach2(selectWeightsForDumpSQL) { rs => 
+    issueQuery(selectWeightsForDumpSQL) { rs => 
       serializer.addWeight(rs.getLong(1), rs.getBoolean(2), 
         rs.getDouble(3), rs.getString(4))
     }
     log.info(s"""Serializing variables...""")
-    selectForeach2(selectVariablesForDumpSQL) { rs => 
+    issueQuery(selectVariablesForDumpSQL) { rs => 
       serializer.addVariable(
         rs.getLong(1),
         rs.getBoolean(2),
@@ -347,7 +347,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         rs.string("factor_function"), rs.long("edge_count"))
     }
     log.info("Serializing edges...")
-    selectForeach2(selectEdgesForDumpSQL) { rs => 
+    issueQuery(selectEdgesForDumpSQL) { rs => 
       serializer.addEdge(
         rs.getLong(1),
         rs.getLong(2),
@@ -356,7 +356,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         rs.getLong(5))
     }
 
-    selectForeach2(selectMetaDataForDumpSQL) { rs =>
+    issueQuery(selectMetaDataForDumpSQL) { rs =>
       serializer.writeMetadata(
         rs.getLong(1), rs.getLong(2), rs.getLong(3), rs.getLong(4),
         weightsPath, variablesPath, factorsPath, edgesPath)

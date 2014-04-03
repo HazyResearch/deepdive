@@ -42,7 +42,7 @@ class BinarySerializer(weightsOuput: OutputStream, variablesOutput: OutputStream
       case "OrFactorFunction" => 'O'
       case "AndFactorFunction" => 'A'
       case "EqualFactorFunction" => 'E'
-      case "IsTrueFactorFunction" =>  'I'
+      case "IsTrueFactorFunction" =>  'T'
     }
     factorStream.writeLong(factorId)
     factorStream.writeLong(weightId)
@@ -62,9 +62,8 @@ class BinarySerializer(weightsOuput: OutputStream, variablesOutput: OutputStream
 
   def writeMetadata(numWeights: Long, numVariables: Long, numFactors: Long, numEdges: Long,
     weightsFile: String, variablesFile: String, factorsFile: String, edgesFile: String) : Unit = {
-    val out = numWeights.toString + "," + numVariables + "," + numFactors + 
-      "," + numEdges + "," + weightsFile + "," + variablesFile + "," + 
-      factorsFile + "," + edgesFile + "\n"
+    val out = List(numWeights, numVariables, numFactors, numEdges, weightsFile, variablesFile, 
+      factorsFile, edgesFile).mkString(",")
     metaStream.print(out)
   }
 
