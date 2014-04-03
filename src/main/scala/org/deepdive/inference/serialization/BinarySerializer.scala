@@ -5,7 +5,8 @@ import org.deepdive.settings._
 import java.io._
 
 class BinarySerializer(weightsOuput: OutputStream, variablesOutput: OutputStream, 
-  factorsOutput: OutputStream, edgesOutput: OutputStream, metaDataOutput: OutputStream) extends Serializer with Logging {
+  factorsOutput: OutputStream, edgesOutput: OutputStream, metaDataOutput: OutputStream) 
+  extends Serializer with Logging {
 
   val weightStream = new DataOutputStream(weightsOuput)
   val variableStream = new DataOutputStream(variablesOutput)
@@ -38,15 +39,15 @@ class BinarySerializer(weightsOuput: OutputStream, variablesOutput: OutputStream
 
   def addFactor(factorId: Long, weightId: Long, factorFunction: String, edgeCount: Long) : Unit = {
     val factorFunctionType = factorFunction match {
-      case "ImplyFactorFunction" => 'I'
-      case "OrFactorFunction" => 'O'
-      case "AndFactorFunction" => 'A'
-      case "EqualFactorFunction" => 'E'
-      case "IsTrueFactorFunction" =>  'T'
+      case "ImplyFactorFunction" => 0
+      case "OrFactorFunction" => 1
+      case "AndFactorFunction" => 2
+      case "EqualFactorFunction" => 3
+      case "IsTrueFactorFunction" =>  4
     }
     factorStream.writeLong(factorId)
     factorStream.writeLong(weightId)
-    factorStream.writeChar(factorFunctionType)
+    factorStream.writeShort(factorFunctionType)
     factorStream.writeLong(edgeCount)
   }
 
