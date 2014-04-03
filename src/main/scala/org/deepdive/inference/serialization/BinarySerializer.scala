@@ -4,11 +4,11 @@ import org.deepdive.Logging
 import org.deepdive.settings._
 import java.io._
 
-class BinarySerializer(weightsOuput: OutputStream, variablesOutput: OutputStream, 
+class BinarySerializer(weightsOutput: OutputStream, variablesOutput: OutputStream, 
   factorsOutput: OutputStream, edgesOutput: OutputStream, metaDataOutput: OutputStream) 
   extends Serializer with Logging {
 
-  val weightStream = new DataOutputStream(weightsOuput)
+  val weightStream = new DataOutputStream(weightsOutput)
   val variableStream = new DataOutputStream(variablesOutput)
   val factorStream = new DataOutputStream(factorsOutput)
   val edgeStream = new DataOutputStream(edgesOutput)
@@ -28,7 +28,7 @@ class BinarySerializer(weightsOuput: OutputStream, variablesOutput: OutputStream
     val variableDataType = dataType match {
       case "Boolean" => 0
       case "Multinomial" => 1
-    } 
+    }
     variableStream.writeLong(variableId)
     variableStream.writeBoolean(isEvidence)
     variableStream.writeDouble(initialValue)
@@ -69,7 +69,7 @@ class BinarySerializer(weightsOuput: OutputStream, variablesOutput: OutputStream
   }
 
   def close() : Unit = {
-    weightsOuput.flush()
+    weightsOutput.flush()
     variablesOutput.flush()
     factorsOutput.flush()
     edgesOutput.flush()
