@@ -26,13 +26,13 @@ class BinarySerializer(weightsOuput: OutputStream, variablesOutput: OutputStream
   def addVariable(variableId: Long, isEvidence: Boolean, initialValue: Double, 
     dataType: String, edgeCount: Long, cardinality: Long) : Unit = {
     val variableDataType = dataType match {
-      case "Boolean" => 'B'
-      case "Multinomial" => 'M'
+      case "Boolean" => 0
+      case "Multinomial" => 1
     } 
     variableStream.writeLong(variableId)
     variableStream.writeBoolean(isEvidence)
     variableStream.writeDouble(initialValue)
-    variableStream.writeChar(variableDataType)
+    variableStream.writeShort(variableDataType)
     variableStream.writeLong(edgeCount)  
     variableStream.writeLong(cardinality)  
   }
