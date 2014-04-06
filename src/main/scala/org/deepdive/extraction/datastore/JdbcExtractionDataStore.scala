@@ -15,9 +15,20 @@ trait JdbcExtractionDataStore extends ExtractionDataStore[JsObject] with Logging
 
   def queryAsMap[A](query: String, batchSize: Option[Int] = None)
       (block: Iterator[Map[String, Any]] => A) : A = {
+
       ds.DB.readOnly { implicit session =>
-        val result = SQL(query).map(_.toMap).list.apply().map(_.mapValues(unwrapSQLType))
-        block(result.iterator)
+        session.connection.setAutoCommit(false)
+        val stmt = session.connection.createStatement(
+          java.sql.ResultSet.TYPE_FORWARD_ONLY, java.sql.ResultSet.CONCUR_READ_ONLY)
+        stmt.setFetchSize(10000)
+        val rs = stmt.executeQuery(query)
+        val cursor = new ResultSetCursor(0)
+        val wrappedRs = new WrappedResultSet(rs, cursor, cursor.position)
+        val resultIter = new Iterator[Map[String, Any]] {
+          def hasNext = rs.next()
+          def next() = wrappedRs.toMap.mapValues(unwrapSQLType)
+        }
+        block(resultIter)
       }
     }
 
