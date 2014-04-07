@@ -465,6 +465,13 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
      
     }
 
+    def generateWeightCmd(weightPrefix: String, weightVariables: Seq[String], cardinalityValues: Seq[String]) : String = 
+      weightVariables.map ( v => s"""(CASE WHEN "${v}" IS NULL THEN '' ELSE "${v}"::text END)""" )
+        .mkString(" || ") match {
+        case "" => s"""'${weightPrefix}-' || ${cardinalityValues.mkString(" || ")} """
+        case x => s"""'${weightPrefix}-' || ${x} || ${cardinalityValues.mkString(" || ")}"""
+      }
+
     // Ground weights for each inference rule
     factorDescs.foreach { factorDesc =>
       val weightValue = factorDesc.weight match { 
@@ -477,12 +484,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       }
 
       val isFixed = factorDesc.weight.isInstanceOf[KnownFactorWeight]
-      val weightPrefix = factorDesc.weightPrefix
-      val weightCmd = factorDesc.weight.variables.map ( v => s"""(CASE WHEN "${v}" IS NULL THEN '' ELSE "${v}" END)""" ).mkString(" || ") match {
-
-        case "" => s"""'${weightPrefix}-' || ${cardinalityValues.mkString(" || ")} """
-        case x => s"""'${weightPrefix}-' || ${x} || ${cardinalityValues.mkString(" || ")}"""
-      }
+      val weightCmd = generateWeightCmd(factorDesc.weightPrefix, factorDesc.weight.variables,
+        cardinalityValues)
 
       writer.println(s"""
         INSERT INTO ${WeightsTable}(initial_value, is_fixed, description)
@@ -502,11 +505,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         s""" "${v.relation}_${v.field}_cardinality" """
       }
 
-      val weightPrefix = factorDesc.weightPrefix
-      val weightCmd = factorDesc.weight.variables.map ( v => s"""(CASE WHEN "${v}" IS NULL THEN '' ELSE "${v}" END)""").mkString(" || ") match { 
-        case "" => s"""'${weightPrefix}-' || ${cardinalityValues.mkString(" || ")} """
-        case x => s"""'${weightPrefix}-' || ${x} || ${cardinalityValues.mkString(" || ")}"""
-      }
+      val weightCmd = generateWeightCmd(factorDesc.weightPrefix, factorDesc.weight.variables,
+        cardinalityValues)
       
       val functionName = factorDesc.func.getClass.getSimpleName
       writer.println(s"""
