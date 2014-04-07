@@ -286,17 +286,17 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
           VALUES (0, 0, 0, true, null), (1, 1, 0, true, null), (1, 2, 1, true, null)""").execute.apply()
 
         // Dump the factor graph
-        val weightsFile = File.createTempFile("weights", "pb")
-        val variablesFile = File.createTempFile("variables", "pb")
-        val factorsFile = File.createTempFile("factors", "pb")
-        val edgesFile = File.createTempFile("edges", "pb")
-        val metaFile = File.createTempFile("meta", "pb")
+        val weightsFile = File.createTempFile("weights", "")
+        val variablesFile = File.createTempFile("variables", "")
+        val factorsFile = File.createTempFile("factors", "")
+        val edgesFile = File.createTempFile("edges", "")
+        val metaFile = File.createTempFile("meta", "csv")
         val weightsOut = new FileOutputStream(weightsFile)
         val variablesOut = new FileOutputStream(variablesFile)
         val factorsOut = new FileOutputStream(factorsFile)
         val edgesOut = new FileOutputStream(edgesFile)
         val metaOut = new FileOutputStream(metaFile)
-        val serializer = new ProtobufSerializer(weightsOut, variablesOut, factorsOut, edgesOut, metaOut)
+        val serializer = new BinarySerializer(weightsOut, variablesOut, factorsOut, edgesOut, metaOut)
 
         inferenceDataStore.dumpFactorGraph(serializer, Map("r1.c1" -> BooleanType, "r2.c2" -> MultinomialType(5)),
           weightsFile.getCanonicalPath, variablesFile.getCanonicalPath, factorsFile.getCanonicalPath,
