@@ -35,13 +35,11 @@ trait JdbcExtractionDataStore extends ExtractionDataStore[JsObject] with Logging
             def next() = {
               rs.next()
               val metadata = rs.getMetaData()
-              val result = (1 to metadata.getColumnCount()).map { i => 
+              (1 to metadata.getColumnCount()).map { i => 
                 val label = metadata.getColumnLabel(i)
                 val data = unwrapSQLType(rs.getObject(i))
                 (label, data)
               }.filter(_._2 != null).toMap
-              log.debug(result.toString)
-              result
             }
           }
           block(resultIter)
