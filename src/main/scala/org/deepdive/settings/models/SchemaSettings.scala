@@ -3,15 +3,27 @@ package org.deepdive.settings
 /* Schema Settings */
 case class SchemaSettings(variables: Map[String, _ <: VariableDataType], setupFile: Option[String])
 
+// sealed trait VariableDataType {
+//   def cardinality: Option[Long]
+// }
+// case object BooleanType extends VariableDataType {
+//   def cardinality = None
+//   override def toString() = "Boolean"
+// }
+// case class MultinomialType(numCategories: Int) extends VariableDataType {
+//   def cardinality = Some(numCategories)
+//   override def toString() = "Multinomial"
+// }
+
+
 sealed trait VariableDataType {
-  def cardinality: Option[Long]
+  def cardinality: Long
 }
 case object BooleanType extends VariableDataType {
-  def cardinality = None
+  def cardinality = 2
   override def toString() = "Boolean"
 }
 case class MultinomialType(numCategories: Int) extends VariableDataType {
-  def cardinality = Some(numCategories)
+  def cardinality = numCategories
   override def toString() = "Multinomial"
 }
-
