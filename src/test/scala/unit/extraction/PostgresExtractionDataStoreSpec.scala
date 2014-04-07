@@ -39,6 +39,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
       insertSampleData()
       val result = dataStore.queryAsMap("SELECT key from datatype_test order by key asc;")(_.toList)
       assert(result.head === Map("key" -> 1))
+      assert(result.size === 4)
     }
 
     it("should work for aliased attributes") {

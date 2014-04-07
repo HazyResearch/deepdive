@@ -22,13 +22,30 @@ trait JdbcExtractionDataStore extends ExtractionDataStore[JsObject] with Logging
           java.sql.ResultSet.TYPE_FORWARD_ONLY, java.sql.ResultSet.CONCUR_READ_ONLY)
         stmt.setFetchSize(10000)
         val rs = stmt.executeQuery(query)
-        val cursor = new ResultSetCursor(0)
-        val wrappedRs = new WrappedResultSet(rs, cursor, cursor.position)
-        val resultIter = new Iterator[Map[String, Any]] {
-          def hasNext = rs.next()
-          def next() = wrappedRs.toMap.mapValues(unwrapSQLType)
+        // No result return
+        if (!rs.isBeforeFirst) {
+          log.warning(s"query returned no results: ${query}")
+          block(Iterator.empty)
+        } else {
+          val resultIter = new Iterator[Map[String, Any]] {
+            def hasNext = {
+              // TODO: This is expensive
+              !(rs.isLast)
+            }              
+            def next() = {
+              rs.next()
+              val metadata = rs.getMetaData()
+              val result = (1 to metadata.getColumnCount()).map { i => 
+                val label = metadata.getColumnLabel(i)
+                val data = unwrapSQLType(rs.getObject(i))
+                (label, data)
+              }.filter(_._2 != null).toMap
+              log.debug(result.toString)
+              result
+            }
+          }
+          block(resultIter)
         }
-        block(resultIter)
       }
     }
 
