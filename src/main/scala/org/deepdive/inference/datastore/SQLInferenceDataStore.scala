@@ -41,17 +41,18 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   }
 
   /* Issues a query */
-  def selectForeach2(sql: String)(op: (java.sql.ResultSet) => Unit) = {
+  def issueQuery(sql: String)(op: (java.sql.ResultSet) => Unit) = {
 
-    var conn = ds.borrowConnection()
+    val conn = ds.borrowConnection()
     conn.setAutoCommit(false);
-    var stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
-       java.sql.ResultSet.CONCUR_READ_ONLY);
+    val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
+      java.sql.ResultSet.CONCUR_READ_ONLY);
     stmt.setFetchSize(10000);
-    var rs = stmt.executeQuery(sql)
+    val rs = stmt.executeQuery(sql)
     while(rs.next()){
       op(rs)
     }
+    conn.close()
   }
 
   /* Issues a query */
@@ -207,7 +208,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   """
 
   def selectVariablesForDumpSQL = s"""
-    SELECT id AS "id", is_evidence, data_type, initial_value, edge_count, cardinality
+    SELECT id AS "id", is_evidence, initial_value, data_type, edge_count, cardinality
     FROM selectVariablesForDumpSQL_RAW;
   """
 
@@ -316,7 +317,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     ds.DB.autoCommit { implicit session =>
       SQL(selectEdgesForDumpSQL_RAW).execute.apply()
-    }
+    } 
 
     ds.DB.autoCommit { implicit session =>
       SQL(selectWeightsForDumpSQL_RAW).execute.apply()
@@ -327,19 +328,19 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
 
     log.info("Serializing weights...")
-    selectForeach(selectWeightsForDumpSQL) { rs => 
-      serializer.addWeight(rs.long("id"), rs.boolean("is_fixed"), 
-        rs.double("initial_value"), rs.string("description"))
+    issueQuery(selectWeightsForDumpSQL) { rs => 
+      serializer.addWeight(rs.getLong(1), rs.getBoolean(2), 
+        rs.getDouble(3), rs.getString(4))
     }
     log.info(s"""Serializing variables...""")
-    selectForeach(selectVariablesForDumpSQL) { rs => 
+    issueQuery(selectVariablesForDumpSQL) { rs => 
       serializer.addVariable(
-        rs.long("id"),
-        rs.boolean("is_evidence"),
-        rs.doubleOpt("initial_value"),
-        rs.string("data_type"), 
-        rs.longOpt("edge_count").getOrElse(0),
-        rs.longOpt("cardinality"))
+        rs.getLong(1),
+        rs.getBoolean(2),
+        rs.getDouble(3), // return 0 if the value is SQL null
+        rs.getString(4), 
+        rs.getLong(5),
+        rs.getLong(6)) // return 0 if ...
     }
     log.info("Serializing factors...")
     selectForeach(selectFactorsForDumpSQL) { rs => 
@@ -347,18 +348,18 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         rs.string("factor_function"), rs.long("edge_count"))
     }
     log.info("Serializing edges...")
-    selectForeach(selectEdgesForDumpSQL) { rs => 
+    issueQuery(selectEdgesForDumpSQL) { rs => 
       serializer.addEdge(
-        rs.long("variable_id"),
-        rs.long("factor_id"),
-        rs.long("position"), 
-        rs.boolean("is_positive"),
-        rs.longOpt("equal_predicate"))
+        rs.getLong(1),
+        rs.getLong(2),
+        rs.getLong(3), 
+        rs.getBoolean(4),
+        rs.getLong(5))
     }
 
-    selectForeach(selectMetaDataForDumpSQL) { rs =>
+    issueQuery(selectMetaDataForDumpSQL) { rs =>
       serializer.writeMetadata(
-        rs.long("num_weights"), rs.long("num_variables"), rs.long("num_factors"), rs.long("num_edges"),
+        rs.getLong(1), rs.getLong(2), rs.getLong(3), rs.getLong(4),
         weightsPath, variablesPath, factorsPath, edgesPath)
     }
 
@@ -397,6 +398,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         FROM ${relation};""")
 
       // Create a cardinality table for the variable
+      // TODO: cardinality of boolean
       val cardinalityValues = dataType match {
         case BooleanType => "(1)"
         case MultinomialType(x) => (0 to x-1).map (x => s"(${x})").mkString(", ")

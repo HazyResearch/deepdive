@@ -61,11 +61,14 @@ trait MemoryInferenceDataStoreComponent extends InferenceDataStoreComponent{
       weightsPath: String, variablesPath: String, factorsPath: String, edgesPath: String) = {
       // Weights
       weights.values.foreach { w => serializer.addWeight(w.id, w.isFixed, w.value, w.description) }
-      variables.values.foreach { v =>  serializer.addVariable(v.id, v.initialValue.isDefined, 
+      // variables.values.foreach { v =>  serializer.addVariable(v.id, v.initialValue.isDefined, 
+      //   v.initialValue, v.dataType.toString, 0, v.dataType.cardinality) }
+      variables.values.foreach { v =>  serializer.addVariable(v.id, v.isEvidence, 
         v.initialValue, v.dataType.toString, 0, v.dataType.cardinality) }
       factors.values.foreach { f => serializer.addFactor(f.id, f.weightId, f.factorFunction, 0) }
       factors.values.flatMap(_.variables).foreach { edge =>
-        serializer.addEdge(edge.variableId, edge.factorId, edge.position, edge.positive, None)
+        // serializer.addEdge(edge.variableId, edge.factorId, edge.position, edge.positive, None)
+        serializer.addEdge(edge.variableId, edge.factorId, edge.position, edge.positive, 0)
       }
       serializer.close()
     }
@@ -87,8 +90,11 @@ trait MemoryInferenceDataStoreComponent extends InferenceDataStoreComponent{
           variableValue >= bucket.from && variableValue <= bucket.to
         }
         val numVariables = relevantVars.size
-        val numTrue = relevantVars.map(_._1).count(v => v.initialValue == Option(1.0) && v.isEvidence == true)
-        val numFalse = relevantVars.map(_._1).count(v => v.initialValue == Option(0.0) && v.isEvidence == true)
+        // val numTrue = relevantVars.map(_._1).count(v => v.initialValue == Option(1.0) && v.isEvidence == true)
+        // val numFalse = relevantVars.map(_._1).count(v => v.initialValue == Option(0.0) && v.isEvidence == true)
+        val numTrue = relevantVars.map(_._1).count(v => v.initialValue == 1.0 && v.isEvidence == true)
+        val numFalse = relevantVars.map(_._1).count(v => v.initialValue == 0.0 && v.isEvidence == true)
+        
         (bucket, BucketData(numVariables, numTrue, numFalse))
       }.toMap
     }

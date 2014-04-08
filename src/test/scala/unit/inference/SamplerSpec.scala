@@ -11,11 +11,11 @@ class SamplerSpec(_system: ActorSystem) extends TestKit(_system) with ImplicitSe
 
   def this() = this(ActorSystem("SamplerSpec"))
 
-  val weightsFile = getClass.getResource("/inference/trivial_factor_graph/graph.weights.pb").getFile()
-  val variablesFile = getClass.getResource("/inference/trivial_factor_graph/graph.variables.pb").getFile()
-  val factorsFile = getClass.getResource("/inference/trivial_factor_graph/graph.factors.pb").getFile()
-  val edgesFile = getClass.getResource("/inference/trivial_factor_graph/graph.edges.pb").getFile()
-  val metaFile = getClass.getResource("/inference/trivial_factor_graph/graph.edges.pb").getFile()
+  val weightsFile = getClass.getResource("/inference/binary_factor_graph/weights").getFile()
+  val variablesFile = getClass.getResource("/inference/binary_factor_graph/variables").getFile()
+  val factorsFile = getClass.getResource("/inference/binary_factor_graph/factors").getFile()
+  val edgesFile = getClass.getResource("/inference/binary_factor_graph/edges").getFile()
+  val metaFile = getClass.getResource("/inference/binary_factor_graph/meta.csv").getFile()
 
   describe("The Sampler") {
     
