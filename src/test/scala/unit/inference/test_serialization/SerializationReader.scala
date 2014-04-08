@@ -1,4 +1,4 @@
-package org.deepdive.inference.test
+package org.deepdive.test.unit
 
 import java.io._
 
@@ -11,16 +11,16 @@ class SerializationReader(weightsInput: InputStream, variablesInput: InputStream
   val edgeStream = new DataInputStream(edgesInput)
   val metaStream = new BufferedReader(metaDataInput)
 
-  def readWeights : org.deepdive.inference.test.Weight = {
-    val weight = new org.deepdive.inference.test.Weight(
+  def readWeights : WeightTest = {
+    val weight = new WeightTest(
       weightStream.readLong(),
       weightStream.readBoolean(),
       weightStream.readDouble())
     return weight
   }
 
-  def readVariables : org.deepdive.inference.test.Variable = {
-    val variable = new org.deepdive.inference.test.Variable(
+  def readVariables : VariableTest = {
+    val variable = new VariableTest(
       variableStream.readLong(),
       variableStream.readBoolean(),
       variableStream.readDouble(),
@@ -30,23 +30,23 @@ class SerializationReader(weightsInput: InputStream, variablesInput: InputStream
     return variable
   }
 
-  def readFactors : org.deepdive.inference.test.Factor = {
-    val Factor = new org.deepdive.inference.test.Factor(
+  def readFactors : FactorTest = {
+    val factor = new FactorTest(
       factorStream.readLong(),
       factorStream.readLong(),
       factorStream.readShort(),
       factorStream.readLong())
-    return Factor
+    return factor
   }
 
-  def readEdges : org.deepdive.inference.test.Edge = {
-    val Edge = new org.deepdive.inference.test.Edge(
+  def readEdges : EdgeTest = {
+    val edge = new EdgeTest(
       edgeStream.readLong(),
       edgeStream.readLong(),
       edgeStream.readLong(),
       edgeStream.readBoolean(),
       edgeStream.readLong())
-    return Edge
+    return edge
   }
 
 }
