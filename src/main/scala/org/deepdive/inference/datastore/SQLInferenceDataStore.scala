@@ -43,15 +43,16 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   /* Issues a query */
   def issueQuery(sql: String)(op: (java.sql.ResultSet) => Unit) = {
 
-    var conn = ds.borrowConnection()
+    val conn = ds.borrowConnection()
     conn.setAutoCommit(false);
-    var stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
+    val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
       java.sql.ResultSet.CONCUR_READ_ONLY);
     stmt.setFetchSize(10000);
-    var rs = stmt.executeQuery(sql)
+    val rs = stmt.executeQuery(sql)
     while(rs.next()){
       op(rs)
     }
+    conn.close()
   }
 
   /* Issues a query */
@@ -316,7 +317,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     ds.DB.autoCommit { implicit session =>
       SQL(selectEdgesForDumpSQL_RAW).execute.apply()
-    }
+    } 
 
     ds.DB.autoCommit { implicit session =>
       SQL(selectWeightsForDumpSQL_RAW).execute.apply()
