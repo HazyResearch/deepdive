@@ -4,7 +4,6 @@ import java.io._
 import org.deepdive.inference.BinarySerializer
 import org.scalatest._
 import org.deepdive.settings._
-import org.deepdive.inference.test._
 
 class BinarySerializerSpec extends FunSpec with BeforeAndAfter {
 
