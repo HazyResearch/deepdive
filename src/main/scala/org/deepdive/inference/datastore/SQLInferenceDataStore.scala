@@ -407,7 +407,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         DROP TABLE IF EXISTS ${cardinalityTableName};""")
       writer.println(
         s"""CREATE TABLE ${cardinalityTableName}(${cardinalityTableName}) AS VALUES ${cardinalityValues} WITH DATA;""")
-
     }
 
     // Map variables to sequential IDs
