@@ -6,6 +6,7 @@ import scala.util.parsing.combinator.RegexParsers
 object FactorFunctionParser extends RegexParsers with Logging {
   def relationOrField = """[\w]+""".r
   def arrayDefinition = """\[\]""".r
+  def equalPredicate = """[0-9]+""".r
   // def factorFunctionName = "Imply" | "Or" | "And" | "Equal" | "IsTrue"
 
   def implyFactorFunction = ("Imply" | "IMPLY") ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
@@ -34,10 +35,18 @@ object FactorFunctionParser extends RegexParsers with Logging {
   }
 
   
-  def factorVariable = ("!"?) ~ rep1sep(relationOrField, ".") ~ (arrayDefinition?) ^^ { 
-    case (isNegated ~ varList ~ isArray)  => 
+  def factorVariable = ("!"?) ~ rep1sep(relationOrField, ".") ~ (arrayDefinition?) ~ 
+    (("=" ~> equalPredicate)?) ^^ { 
+    case (isNegated ~ varList ~ isArray ~ predicate)  => 
       FactorFunctionVariable(varList.take(varList.size - 1).mkString("."), varList.last, 
-        isArray.isDefined, isNegated.isDefined)
+        isArray.isDefined, isNegated.isDefined, readLong(predicate))
+  }
+
+  def readLong(predicate: Option[String]) : Option[Long] = {
+    predicate match {
+      case Some(number) => Some(number.toLong)
+      case None => None
+    }
   }
 
   def factorFunc = implyFactorFunction | orFactorFunction | andFactorFunction | 

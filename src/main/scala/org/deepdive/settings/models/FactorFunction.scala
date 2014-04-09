@@ -46,7 +46,7 @@ case class DummyFactorFunction(val variables: Seq[FactorFunctionVariable]) exten
 
 /* A variable used in a Factor function */
 case class FactorFunctionVariable(relation: String, field: String, isArray: Boolean = false, 
-  isNegated: Boolean = false) {
+  isNegated: Boolean = false, predicate: Option[Long] = None) {
   override def toString = s"${relation}.${field}"
   def headRelation = relation.split('.').headOption.getOrElse(relation)
   def key = s"${headRelation}.${field}"
