@@ -209,12 +209,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   def selectVariablesForDumpSQL = s"""
     SELECT id AS "id", is_evidence, initial_value, data_type, edge_count, cardinality
-    FROM selectVariablesForDumpSQL_RAW;
+    FROM selectVariablesForDumpSQL_RAW ORDER BY id asc;
   """
 
   def selectFactorsForDumpSQL = s"""
     SELECT id AS "id", weight_id AS "weight_id", factor_function AS "factor_function", "edge_count"
-    FROM selectFactorsForDumpSQL_RAW;
+    FROM selectFactorsForDumpSQL_RAW ORDER BY id asc;
   """
 
   def selectEdgesForDumpSQL = s"""
