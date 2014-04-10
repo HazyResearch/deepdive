@@ -404,7 +404,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       }
       val cardinalityTableName = s"${relation}_${column}_cardinality"
       writer.println(s"""
-        DROP TABLE IF EXISTS ${cardinalityTableName};""")
+        DROP TABLE IF EXISTS ${cardinalityTableName} CASCADE;""")
       writer.println(
         s"""CREATE TABLE ${cardinalityTableName}(${cardinalityTableName}) AS VALUES ${cardinalityValues} WITH DATA;""")
     }
@@ -427,7 +427,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       WHERE ${VariablesTable}.id IN (SELECT variable_id FROM ${VariablesHoldoutTable});""")
 
     writer.println(s"""
-       DROP TABLE IF EXISTS factornum;""")
+       DROP TABLE IF EXISTS factornum CASCADE;""")
     writer.println(s"""
        CREATE TABLE factornum(nfactor bigint);""")
     writer.println(s"""
