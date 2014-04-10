@@ -398,7 +398,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         FROM ${relation};""")
 
       // Create a cardinality table for the variable
-      // TODO: cardinality of boolean
       val cardinalityValues = dataType match {
         case BooleanType => "(1)"
         case MultinomialType(x) => (0 to x-1).map (x => s"(${x})").mkString(", ")
@@ -408,7 +407,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         DROP TABLE IF EXISTS ${cardinalityTableName};""")
       writer.println(
         s"""CREATE TABLE ${cardinalityTableName}(${cardinalityTableName}) AS VALUES ${cardinalityValues} WITH DATA;""")
-
     }
 
     // Map variables to sequential IDs
@@ -440,11 +438,29 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
       val factorOffsetCmd = s"""(SELECT sum(nfactor) FROM factornum)"""
 
-      val cardinalityTables = factorDesc.func.variables.zipWithIndex.map { case(v,idx) => 
-        s"${v.headRelation}_${v.field}_cardinality c${idx}"
+      // create cardinality table for each predicate
+      factorDesc.func.variables.zipWithIndex.foreach { case(v,idx) => {
+        val cardinalityTableName = s"${v.headRelation}_${v.field}_cardinality_${idx}"
+        v.predicate match {
+          case Some(s) => 
+            writer.println(s"""
+              DROP TABLE IF EXISTS ${cardinalityTableName} CASCADE;
+              CREATE TABLE ${cardinalityTableName}(${v.headRelation}_${v.field}_cardinality) AS VALUES (${s}) WITH DATA;""")
+          case None =>
+            writer.println(s"""
+              DROP VIEW IF EXISTS ${cardinalityTableName} CASCADE;
+              CREATE VIEW ${cardinalityTableName} AS SELECT * FROM ${v.headRelation}_${v.field}_cardinality;""")
+          }
+        }
       }
+
+
+      val cardinalityTables = factorDesc.func.variables.zipWithIndex.map { case(v,idx) =>
+          s"${v.headRelation}_${v.field}_cardinality_${idx} c${idx}"
+      }
+
       val cardinalityValues = factorDesc.func.variables.zipWithIndex.map { case(v,idx) => 
-        s"""c${idx}.${v.headRelation}_${v.field}_cardinality AS "${v.relation}_${v.field}_cardinality" """
+        s"""c${idx}.${v.headRelation}_${v.field}_cardinality AS "${v.relation}_${v.field}_cardinality_${idx}" """
       }
 
       writer.println(s"""
@@ -482,7 +498,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       }
 
       val cardinalityValues = factorDesc.func.variables.zipWithIndex.map { case(v,idx) => 
-        s""" "${v.relation}_${v.field}_cardinality" """
+        s""" "${v.relation}_${v.field}_cardinality_${idx}" """
       }
 
       val isFixed = factorDesc.weight.isInstanceOf[KnownFactorWeight]
@@ -504,7 +520,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     factorDescs.foreach { factorDesc =>
 
       val cardinalityValues = factorDesc.func.variables.zipWithIndex.map { case(v,idx) => 
-        s""" "${v.relation}_${v.field}_cardinality" """
+        s""" "${v.relation}_${v.field}_cardinality_${idx}" """
       }
 
       val weightCmd = generateWeightCmd(factorDesc.weightPrefix, factorDesc.weight.variables,
@@ -527,7 +543,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         val isPositive = !variable.isNegated
         writer.println(s"""
           INSERT INTO ${EdgesTable}(factor_id, variable_id, position, is_positive, equal_predicate)
-          SELECT factor_id, "${vidColumn}", ${position}, ${isPositive}, "${variable.relation}_${vColumn}_cardinality"
+          SELECT factor_id, "${vidColumn}", ${position}, ${isPositive}, "${variable.relation}_${vColumn}_cardinality_${position}"
           FROM ${factorDesc.name}_query;""")
       }
     }
