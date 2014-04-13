@@ -7,8 +7,6 @@ import scalikejdbc._
 import java.io.BufferedReader
 import scala.io.Source
 
-import org.deepdive.Context
-
 trait JdbcExtractionDataStore extends ExtractionDataStore[JsObject] with Logging {
 
   def ds : JdbcDataStore

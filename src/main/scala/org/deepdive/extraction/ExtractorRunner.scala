@@ -216,8 +216,6 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
 
   // Executes a given command. If it fails, shutdown and respond to the sender with failure.
   private def executeScriptOrFail(script: String, failureReceiver: ActorRef) : Unit = {
-    println ("*************")
-    println (script)
     executeCmd(script) match {
       case Success(_) => // All good. We're done
       case Failure(exception) => // Throw exception of script
