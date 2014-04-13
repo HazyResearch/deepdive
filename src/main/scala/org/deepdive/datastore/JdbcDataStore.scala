@@ -48,8 +48,8 @@ object JdbcDataStore extends Logging {
   /* Initializes the data stores */
   def init(config: Config) : Unit = {
     val initializer = new JdbcDBsWithEnv("deepdive", config)
-    log.info("Intializing all JDBC data stores")
-    initializer.setupAll()
+      log.info("Intializing all JDBC data stores")
+      initializer.setupAll()
   }
 
   def init() : Unit = init(ConfigFactory.load)
@@ -59,5 +59,5 @@ object JdbcDataStore extends Logging {
     log.info("Closing all JDBC data stores")
     DBsWithEnv("deepdive").closeAll()
   }
-
+  
 }

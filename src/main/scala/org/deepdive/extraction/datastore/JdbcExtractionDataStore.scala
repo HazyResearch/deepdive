@@ -7,6 +7,8 @@ import scalikejdbc._
 import java.io.BufferedReader
 import scala.io.Source
 
+import org.deepdive.Context
+
 trait JdbcExtractionDataStore extends ExtractionDataStore[JsObject] with Logging {
 
   def ds : JdbcDataStore
@@ -15,34 +17,42 @@ trait JdbcExtractionDataStore extends ExtractionDataStore[JsObject] with Logging
 
   def queryAsMap[A](query: String, batchSize: Option[Int] = None)
       (block: Iterator[Map[String, Any]] => A) : A = {
-
+      
       ds.DB.readOnly { implicit session =>
         session.connection.setAutoCommit(false)
         val stmt = session.connection.createStatement(
           java.sql.ResultSet.TYPE_FORWARD_ONLY, java.sql.ResultSet.CONCUR_READ_ONLY)
         stmt.setFetchSize(10000)
-        val rs = stmt.executeQuery(query)
-        // No result return
-        if (!rs.isBeforeFirst) {
-          log.warning(s"query returned no results: ${query}")
-          block(Iterator.empty)
-        } else {
-          val resultIter = new Iterator[Map[String, Any]] {
-            def hasNext = {
-              // TODO: This is expensive
-              !(rs.isLast)
-            }              
-            def next() = {
-              rs.next()
-              val metadata = rs.getMetaData()
-              (1 to metadata.getColumnCount()).map { i => 
-                val label = metadata.getColumnLabel(i)
-                val data = unwrapSQLType(rs.getObject(i))
-                (label, data)
-              }.filter(_._2 != null).toMap
+        try {
+          val rs = stmt.executeQuery(query)
+          // No result return
+          if (!rs.isBeforeFirst) {
+            log.warning(s"query returned no results: ${query}")
+            block(Iterator.empty)
+          } else {
+            val resultIter = new Iterator[Map[String, Any]] {
+              def hasNext = {
+                // TODO: This is expensive
+                !(rs.isLast)
+              }              
+              def next() = {
+                rs.next()
+                val metadata = rs.getMetaData()
+                (1 to metadata.getColumnCount()).map { i => 
+                  val label = metadata.getColumnLabel(i)
+                  val data = unwrapSQLType(rs.getObject(i))
+                  (label, data)
+                }.filter(_._2 != null).toMap
+              }
             }
+            block(resultIter)
           }
-          block(resultIter)
+        } catch {
+          // SQL cmd exception
+          case exception : Throwable => 
+            log.error(exception.toString)
+            println ("Please check the SQL cmd!")
+            throw exception
         }
       }
     }

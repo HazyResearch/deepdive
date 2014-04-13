@@ -43,7 +43,7 @@ class TaskManager extends Actor with ActorLogging {
   def receive = {
     case AddTask(task) =>
       taskQueue += task
-      // We watch the worker, so we can fail the task if it crashes
+      // Watch the worker, fail the task if it crashes
       if (task.worker != self) {
         context.watch(task.worker)
       }
