@@ -85,6 +85,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
       
       // Start the children workers
       val workers = startWorkers(task)
+      
       // Schedule the input data to be sent to myself.
       // We will then forward the data to our workers
       Future { sendData(task, workers, taskSender) }
@@ -217,7 +218,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
   private def executeScriptOrFail(script: String, failureReceiver: ActorRef) : Unit = {
     executeCmd(script) match {
       case Success(_) => // All good. We're done
-      case Failure(exception) =>
+      case Failure(exception) => // Throw exception of script
         log.error(exception.toString) 
         failureReceiver ! Status.Failure(exception)
         context.stop(self)

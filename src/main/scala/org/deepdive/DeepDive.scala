@@ -41,7 +41,7 @@ object DeepDive extends Logging {
       val cmd = Source.fromFile(file).getLines.mkString("\n")
       JdbcDataStore.executeCmd(cmd)
     }
-
+    
     implicit val timeout = Timeout(1337 hours)
     implicit val ec = system.dispatcher
 
@@ -104,7 +104,7 @@ object DeepDive extends Logging {
     }
 
     log.info(s"Running pipeline=${activePipeline.id} with tasks=${filteredTasks.map(_.id)}")
-
+    
     // Schedule all Tasks. 
     for (task <- filteredTasks) {
       taskManager ! TaskManager.AddTask(task)

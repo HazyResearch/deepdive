@@ -35,7 +35,20 @@ trait JdbcDataStore extends Logging {
 
 object JdbcDataStore extends Logging {
 
-  def executeCmd(cmd: String) : Unit = {
+  def executeCmd(cmd: String) {
+    try {
+      executeWithCmd(cmd)
+    } catch {
+      // SQL cmd exception
+      case exception : Throwable =>
+        log.error(exception.toString)
+        log.info("[Error] Please check the SQL cmd!")
+        throw exception
+      // TODO: Call TaskManager to kill all tasks
+    }
+  }
+
+  def executeWithCmd(cmd: String) : Unit = {
     DB.autoCommit { implicit session =>
       """;\s+""".r.split(cmd.trim()).filterNot(_.isEmpty).foreach(q => SQL(q.trim()).execute.apply())
     }
@@ -48,8 +61,8 @@ object JdbcDataStore extends Logging {
   /* Initializes the data stores */
   def init(config: Config) : Unit = {
     val initializer = new JdbcDBsWithEnv("deepdive", config)
-    log.info("Intializing all JDBC data stores")
-    initializer.setupAll()
+      log.info("Intializing all JDBC data stores")
+      initializer.setupAll()
   }
 
   def init() : Unit = init(ConfigFactory.load)
@@ -59,5 +72,5 @@ object JdbcDataStore extends Logging {
     log.info("Closing all JDBC data stores")
     DBsWithEnv("deepdive").closeAll()
   }
-
+  
 }
