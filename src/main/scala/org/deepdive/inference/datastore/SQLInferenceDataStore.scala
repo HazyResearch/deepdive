@@ -421,7 +421,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         s"""INSERT INTO ${VariablesHoldoutTable}(variable_id)
         SELECT id FROM ${VariablesTable}
         WHERE ${randomFunc} < ${holdoutFraction} AND is_evidence = true;""")
-      case Some(userQuery) => writer.println(userQuery)
+      case Some(userQuery) => writer.println(userQuery + ";")
     }
    
     writer.println(s"""UPDATE ${VariablesTable} SET is_evidence=false
