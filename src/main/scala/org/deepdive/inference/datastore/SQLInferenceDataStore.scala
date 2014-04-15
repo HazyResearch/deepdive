@@ -8,6 +8,10 @@ import org.deepdive.settings._
 import scalikejdbc._
 import scala.util.matching._
 import scala.io.Source
+import org.deepdive.Context
+import org.deepdive.TaskManager
+import org.deepdive.TaskManager._
+
 
 /* Stores the factor graph and inference results. */
 trait SQLInferenceDataStoreComponent extends InferenceDataStoreComponent {
@@ -34,9 +38,22 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def MappedInferenceResultView = "dd_mapped_inference_result"
 
   /* Executes an arbitary SQL statement */
-  def execute(sql: String) = ds.DB.autoCommit { implicit session =>
-    """;\s+""".r.split(sql.trim()).filterNot(_.isEmpty).map(_.trim).foreach { query => 
-      SQL(query).execute.apply()
+  def executeSql(sql: String) = ds.DB.autoCommit { implicit session =>
+    """;\s+""".r.split(sql.trim()).filterNot(_.isEmpty).map(_.trim).foreach { 
+        query => SQL(query).execute.apply()
+    }
+  }
+
+  def execute(sql: String) {
+    try {
+      executeSql(sql)
+    } catch {
+      // SQL cmd exception
+      case exception : Throwable =>
+        log.error(exception.toString)
+        log.info("[Error] Please check the SQL cmd!")
+        throw exception
+        // TODO: Call TaskManager to kill all tasks
     }
   }
 
@@ -312,6 +329,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     weightsPath: String, variablesPath: String, factorsPath: String, edgesPath: String) : Unit = {
     log.info(s"Dumping factor graph...")
 
+    /*
     ds.DB.autoCommit { implicit session =>
       SQL(selectFactorsForDumpSQL_RAW).execute.apply()
     }
@@ -327,6 +345,13 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     ds.DB.autoCommit { implicit session =>
       SQL(selectVariablesForDumpSQL_RAW).execute.apply()
     }
+    */
+
+    execute(selectFactorsForDumpSQL_RAW)
+    execute(selectEdgesForDumpSQL_RAW)
+    execute(selectWeightsForDumpSQL_RAW)
+    execute(selectVariablesForDumpSQL_RAW)
+
 
     log.info("Serializing weights...")
     issueQuery(selectWeightsForDumpSQL) { rs => 
@@ -553,7 +578,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     log.info("Executing grounding query...")
     execute(Source.fromFile(sqlFile).getLines.mkString)
-    
   }
 
   def bulkCopyWeights(weightsFile: String) : Unit
@@ -574,14 +598,14 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     execute(createInferenceResultIndiciesSQL)
 
     // Each (relation, column) tuple is a variable in the plate model.
-    // Find all (relation, column) combinations
+     // Find all (relation, column) combinations
     val relationsColumns = variableSchema.keys map (_.split('.')) map {
       case Array(relation, column) => (relation, column)
-    } 
+    }
 
     execute(createMappedWeightsViewSQL)
 
-    relationsColumns.foreach { case(relationName, columnName) => 
+    relationsColumns.foreach { case(relationName, columnName) =>
       execute(createInferenceViewSQL(relationName, columnName))
       // TODO
       // execute(createVariableWeightsViewSQL(relationName, columnName))
