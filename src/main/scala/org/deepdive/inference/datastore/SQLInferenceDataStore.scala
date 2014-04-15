@@ -8,9 +8,6 @@ import org.deepdive.settings._
 import scalikejdbc._
 import scala.util.matching._
 import scala.io.Source
-import org.deepdive.Context
-import org.deepdive.TaskManager
-import org.deepdive.TaskManager._
 
 
 /* Stores the factor graph and inference results. */
