@@ -41,25 +41,49 @@ You can use `sbt ~test` to keep running tests in the backgroud while you are mod
 
 ### Reference: Factor Graph Output Schema
 
-The systems outputs three **space-separated** files for weights, factors and variables in the following format.
+DeepDive uses a custom binary format to encode the factor graph. It generates four files: One for weights, variables, factors, and edges. All of the files can be found in the out/ directory of the latest run. The format of these files is as follows:
 
-Weights file:
+Weights: 
 
-    [weight_id] [initial_value] [is_fixed] [description]
-    1013 0.0 false words(words.word=Some(Kelly))
-    585 0.0 false words(words.word=Some(James))
+    weightId        long    8
+    isFixed         bool    1
+    initialValue    double  8
 
-Factors file:
 
-    [factor_id] [weight_id] [factor_function]
-    251 187 ImplyFactorFunction
-    2026 382 ImplyFactorFunction
+Variables:
 
-Variables file:
+    variableId      long    8
+    isEvidence      bool    1
+    initialValue    double  8
+    dataType        short   2
+    edgeCount       long    8
+    cardinality     long    8
 
-    [variable_id] [factor_id] [position]  [is_positive] [data_type] [initial_value] [is_evidence] [is_query]
-    0 0 1 true Discrete 0.0 true false
-    1 1 1 true Discrete 0.0 true false
-    2 2 1 true Discrete 0.0 true false
+Factors
 
-Note the the last file is effectively a map between variables and factors. This means that a variable id can appear multiple times. `data_type` `initial_value` `is_evidence` `is_query` are properties of a variable as opposed to properties the variable mapping, thus these are equal for a variable id and may be redundant.
+    factorId        long    8
+    weightId        long    8
+    factorFunction  short   2
+    edgeCount       long    8
+
+Edges
+
+    variableId      long    8
+    factorId        long    8
+    position        long    8
+    isPositive      bool    1
+    equalPredicate  long    8
+
+
+
+The systems also generates a metadata file of the following. The metadata file contains one comma-separated line with the following fields:
+
+    Number of weights
+    Number of variables,
+    Number of factors
+    Number of edges
+    Path to weights file
+    Path to variables file
+    Path to factors file
+    Path to edges file
+
