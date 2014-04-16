@@ -32,7 +32,7 @@ set xrange [0:1]
 set auto y
 set title "(b) # Predictions (Testing Set)"
 set xlabel "Probability"
-set ylabel "Accuracy"
+set ylabel "# Predictions"
 set style fill solid border -1
 unset key
 plot input_file using (hist(($1+$2)/2,width)):($4+$5) smooth freq w boxes lc rgb 'blue'
@@ -43,7 +43,7 @@ set xrange [0:1]
 set auto y
 set title "(c) # Predictions (Whole Set)"
 set xlabel "Probability"
-set ylabel "Accuracy"
+set ylabel "# Predictions"
 set style fill solid border -1
 unset key
 plot input_file using (hist(($1+$2)/2,width)):($3) smooth freq w boxes lc rgb 'blue'
