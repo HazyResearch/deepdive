@@ -25,6 +25,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   /* Internal Table names */
   def WeightsTable = "dd_graph_weights"
+  def lastWeightsTable = "dd_graph_last_weights"
   def FactorsTable = "dd_graph_factors"
   def VariablesTable = "dd_graph_variables"
   def VariablesHoldoutTable = "dd_graph_variables_holdout"
@@ -86,6 +87,14 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def stringType = "text"
 
   def randomFunc = "RANDOM()"
+
+
+  def copyLastWeightsSQL = s"""
+    DROP TABLE IF EXISTS ${lastWeightsTable} CASCADE;
+    SELECT X.*, Y.weight INTO ${lastWeightsTable}
+      FROM ${WeightsTable} AS X INNER JOIN ${WeightResultTable} AS Y ON X.id = Y.id
+      ORDER BY id ASC;
+  """
 
   def createWeightsSQL = s"""
     DROP TABLE IF EXISTS ${WeightsTable} CASCADE;
@@ -392,13 +401,14 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   }
 
   def groundFactorGraph(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
-    holdoutFraction: Double, holdoutQuery: Option[String]) {
+    holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean) {
 
     // We write the grounding queries to this SQL file
     val sqlFile = File.createTempFile(s"grounding", ".sql")
     val writer = new PrintWriter(sqlFile)
     log.info(s"""Writing grounding queries to file="${sqlFile}" """)
 
+    writer.println(copyLastWeightsSQL)
     writer.println(createWeightsSQL)
     writer.println(createFactorsSQL)
     writer.println(createVariablesSQL)
@@ -534,6 +544,18 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         FROM ${factorDesc.name}_query GROUP BY wValue, wIsFixed, wCmd;""")
 
     }
+    
+    // Zifei's change: Skip the learning, use last weights
+    // If use ID to match: (we do not do this to prevent ID changing)
+    // We assume that description does not change and is distinct
+    // UPDATE dd_graph_weights SET initial_value = weight FROM dd_inference_result_weights WHERE dd_graph_weights.id = dd_inference_result_weights.id;
+    if (skipLearning == true) {
+      writer.println(s"""
+        UPDATE dd_graph_weights SET is_fixed = TRUE;
+        UPDATE dd_graph_weights SET initial_value = weight FROM dd_graph_last_weights WHERE dd_graph_weights.description = dd_graph_last_weights.description;
+        """)
+    }
+
     // Add index to the weights
     writer.println(s"""CREATE INDEX ${WeightsTable}_desc_idx ON ${WeightsTable}(description);""")
     writer.println(s"""ANALYZE ${WeightsTable};""")

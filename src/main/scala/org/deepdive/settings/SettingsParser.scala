@@ -69,11 +69,14 @@ object SettingsParser extends Logging {
 
   private def loadInferenceSettings(config: Config): InferenceSettings = {
     val inferenceConfig = Try(config.getConfig("inference")).getOrElse {
-      return InferenceSettings(Nil, None)
+      return InferenceSettings(Nil, None, false)
     }
+    // Zifei's changes: Add capability to skip learning
+    val skipLearning = Try(inferenceConfig.getBoolean("skip_learning")).getOrElse(false)
+
     val batchSize = Try(inferenceConfig.getInt("batch_size")).toOption
     val factorConfig = Try(inferenceConfig.getObject("factors")).getOrElse {
-      return InferenceSettings(Nil, batchSize)
+      return InferenceSettings(Nil, batchSize, skipLearning)
     }
     val factors = factorConfig.keySet().map { factorName =>
       val factorConfig = inferenceConfig.getConfig(s"factors.$factorName")
@@ -93,7 +96,7 @@ object SettingsParser extends Logging {
       FactorDesc(factorName, factorInputQuery, factorFunction, 
           factorWeight, factorWeightPrefix)
     }.toList
-    InferenceSettings(factors, batchSize)
+    InferenceSettings(factors, batchSize, skipLearning)
   }
 
   private def loadCalibrationSettings(config: Config) : CalibrationSettings = {
@@ -109,8 +112,20 @@ object SettingsParser extends Logging {
   private def loadSamplerSettings(config: Config) : SamplerSettings = {
     val samplingConfig = config.getConfig("sampler")
     val samplerCmd = samplingConfig.getString("sampler_cmd")
-    val samplerArgs = samplingConfig.getString("sampler_args")
+    
+    // Zifei's changes: Add capability to skip learning
+    // If skip learning, set "-l 0" in sampler
+    val skipLearning = Try(config.getConfig("inference").getBoolean("skip_learning")).getOrElse(false)
+    val samplerArgs = skipLearning match {
+      case false => 
+        samplingConfig.getString("sampler_args")
+      case true =>
+        samplingConfig.getString("sampler_args").replaceAll("""-l +[0-9]+ *""", """-l 0 """)
+    }
+    log.debug(s"samplerArgs: ${samplerArgs}")
+    
     SamplerSettings(samplerCmd, samplerArgs)
+    
   }
 
   private def loadPipelineSettings(config: Config) : PipelineSettings = {

@@ -1,0 +1,21 @@
+<configuration>
+
+  <timestamp key="bySecond" datePattern="yyyyMMdd'T'HHmmss"/>
+  <!-- <property name="defaultPattern" value="%d{HH:mm:ss.SSS} [%replace(%X{sourceThread}){'deepdive-akka.actor.', ''}][%replace(%X{akkaSource}){'akka://deepdive/user/(?:[a-zA-Z_-]+/)*',''}][%c{0}] %-5level %msg%n"/> -->
+  <property name="defaultPattern" value="%d{HH:mm:ss} [%replace(%X{akkaSource}){'akka://deepdive/user/(?:[a-zA-Z_-]+/)*',''}] %-5level %msg%n"/>
+
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder><pattern>${defaultPattern}</pattern></encoder>
+  </appender>
+
+  <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+    <file>log/${bySecond}.txt</file>
+    <encoder><pattern>${defaultPattern}</pattern></encoder>
+  </appender>
+
+  <root level="debug">
+    <appender-ref ref="STDOUT" />
+    <appender-ref ref="FILE" />
+  </root>
+
+</configuration>
