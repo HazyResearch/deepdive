@@ -92,6 +92,10 @@ class TaskManager extends Actor with ActorLogging {
         taskQueue -=task
         completedTasks += Done(task, Failure(new RuntimeException("Task cancelled")))
       }
+      import scala.sys.process
+      import scala.sys.process._
+      val output = ("ps aux" #> "grep deepdive" #> Seq("awk", "{print $2}") #> "xargs -L 1 kill -9").!!
+      self ! Shutdown
       scheduleTasks()
 
     case Shutdown =>

@@ -68,6 +68,7 @@ trait ExtractionManager extends Actor with ActorLogging {
       self ! ScheduleTasks
     case ScheduleTasks =>
       scheduleTasks()
+
     case Terminated(worker) =>
       self ! ScheduleTasks
   }

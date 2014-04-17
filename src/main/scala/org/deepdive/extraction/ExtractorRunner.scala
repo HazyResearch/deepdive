@@ -100,7 +100,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
       log.debug(s"worker=${actor.path.name} has terminated. Waiting for ${newWorkers.routees.size} others.")
       // If we have no workers left, move to the next state
       newWorkers.routees.size match {
-        case 0 => 
+        case 0 =>
           log.info(s"All workers are done. Finishing up.")
           self ! ExecuteAfterScript
           self ! Shutdown
