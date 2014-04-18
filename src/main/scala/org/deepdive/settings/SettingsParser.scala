@@ -69,14 +69,20 @@ object SettingsParser extends Logging {
 
   private def loadInferenceSettings(config: Config): InferenceSettings = {
     val inferenceConfig = Try(config.getConfig("inference")).getOrElse {
-      return InferenceSettings(Nil, None, false)
+      return InferenceSettings(Nil, None, false, "")
     }
     // Zifei's changes: Add capability to skip learning
     val skipLearning = Try(inferenceConfig.getBoolean("skip_learning")).getOrElse(false)
+    val weightTable = Try(inferenceConfig.getString("weight_table")).getOrElse("")
+
+    if (!weightTable.isEmpty() && skipLearning == false) {
+      log.error("inference.skip_learning must be true when inference.weight_table is assigned!")
+      throw new RuntimeException(s"skip_learning assertion failed")
+    }
 
     val batchSize = Try(inferenceConfig.getInt("batch_size")).toOption
     val factorConfig = Try(inferenceConfig.getObject("factors")).getOrElse {
-      return InferenceSettings(Nil, batchSize, skipLearning)
+      return InferenceSettings(Nil, batchSize, skipLearning, weightTable)
     }
     val factors = factorConfig.keySet().map { factorName =>
       val factorConfig = inferenceConfig.getConfig(s"factors.$factorName")
@@ -96,7 +102,7 @@ object SettingsParser extends Logging {
       FactorDesc(factorName, factorInputQuery, factorFunction, 
           factorWeight, factorWeightPrefix)
     }.toList
-    InferenceSettings(factors, batchSize, skipLearning)
+    InferenceSettings(factors, batchSize, skipLearning, weightTable)
   }
 
   private def loadCalibrationSettings(config: Config) : CalibrationSettings = {

@@ -401,14 +401,16 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   }
 
   def groundFactorGraph(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
-    holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean) {
+    holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean, weightTable: String) {
 
     // We write the grounding queries to this SQL file
     val sqlFile = File.createTempFile(s"grounding", ".sql")
     val writer = new PrintWriter(sqlFile)
     log.info(s"""Writing grounding queries to file="${sqlFile}" """)
 
-    writer.println(copyLastWeightsSQL)
+    if (skipLearning == true && weightTable.isEmpty()) {
+      writer.println(copyLastWeightsSQL)
+    }
     writer.println(createWeightsSQL)
     writer.println(createFactorsSQL)
     writer.println(createVariablesSQL)
@@ -550,9 +552,15 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // We assume that description does not change and is distinct
     // UPDATE dd_graph_weights SET initial_value = weight FROM dd_inference_result_weights WHERE dd_graph_weights.id = dd_inference_result_weights.id;
     if (skipLearning == true) {
+      val fromWeightTable = weightTable.isEmpty() match {
+        case true => "dd_graph_last_weights"
+        case false => weightTable
+      }
+      log.info(s"""Using weights in TABLE ${fromWeightTable} by matching COLUMN description""")
+        
       writer.println(s"""
         UPDATE dd_graph_weights SET is_fixed = TRUE;
-        UPDATE dd_graph_weights SET initial_value = weight FROM dd_graph_last_weights WHERE dd_graph_weights.description = dd_graph_last_weights.description;
+        UPDATE dd_graph_weights SET initial_value = weight FROM ${fromWeightTable} WHERE dd_graph_weights.description = ${fromWeightTable}.description;
         """)
     }
 
