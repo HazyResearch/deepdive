@@ -1,0 +1,18 @@
+language: scala
+scala:
+  - "2.10.3"
+jdk:
+  - openjdk7
+  - oraclejdk7
+  - openjdk6
+sbt_args: -Xmx4g
+services:
+  - postgresql
+before_script:
+  - psql -c 'create database deepdive_test;' -U postgres
+  # - psql -c 'create database deepdive_test;' -U postgres
+env: 
+  - PGUSER=postgres
+  - PGPASSWORD=""
+  - PGPORT=5432
+  - PGHOST=localhost
