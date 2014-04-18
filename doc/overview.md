@@ -63,6 +63,7 @@ DeepDive exposes a language to easily build factor graphs by writing *rules* tha
 
 For example, the rule above states that if a person smokes, he or she is likely to have cancer, and that the weight of the rule should be learned automatically based on training data. You can use DeepDive's language to express complex relationships that use features which you have previously extracted.
 
+The inference results are stored in the database, in the table named `[variable name]_inference`. DeepDive gives expectation for each variable, which is the most probable value that the varible may take. Also, the learned weights are store in table `dd_inference_result_weights`.
 
 ### 4. Calibration
 
