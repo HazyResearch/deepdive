@@ -41,7 +41,7 @@ You can use `sbt ~test` to keep running tests in the backgroud while you are mod
 
 ### Reference: Factor Graph Output Schema
 
-DeepDive uses a custom binary format to encode the factor graph. It generates four files: One for weights, variables, factors, and edges. All of the files can be found in the out/ directory of the latest run. The format of these files is as follows:
+DeepDive uses a custom binary format to encode the factor graph. It generates four files: One for weights, variables, factors, and edges. All of the files can be found in the out/ directory of the latest run. The format of these files is as follows (numbers are in bytes):
 
 Weights: 
 
@@ -79,7 +79,7 @@ Edges
 The systems also generates a metadata file of the following. The metadata file contains one comma-separated line with the following fields:
 
     Number of weights
-    Number of variables,
+    Number of variables
     Number of factors
     Number of edges
     Path to weights file
@@ -87,3 +87,32 @@ The systems also generates a metadata file of the following. The metadata file c
     Path to factors file
     Path to edges file
 
+
+### Sampler arguments
+
+The sampler is an executable file (DimmWitted) or a jar file (scala sampler), and can be invoked using the following arguments:
+
+    -w <weightsFile> | --weights <weightsFile>
+        weights file (required)
+    -v <variablesFile> | --variables <variablesFile>
+        variables file (required)
+    -f <factorsFile> | --factors <factorsFile>
+        factors file (required)
+    -e <edgesFile> | --edges <edgesFile>
+        edges file (required)
+    -m <metaFile> | --fg_meta <metaFile>
+        factor graph meta data file file (required)
+    -o <outputFile> | --outputFile <outputFile>
+        output file path (required)
+    -i <numSamplesInference> | --n_inference_epoch <numSamplesInference>
+        number of samples during inference (required)
+    -l <learningNumIterations> | --n_learning_epoch <learningNumIterations>
+        number of iterations during weight learning (required)
+    -s <learningNumSamples> | --n_samples_per_learning_epoch <learningNumSamples>
+        number of samples per iteration during weight learning (required)
+    -a <learningRate> | --alpha <learningRate>
+        the learning rate for gradient descent (default: 0.01)
+    -d <diminishRate> | --diminish <diminishRate>
+        the diminish rate for learning (default: 0.95)
+
+    
