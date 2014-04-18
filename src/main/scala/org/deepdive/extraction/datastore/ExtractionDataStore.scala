@@ -31,6 +31,9 @@ trait ExtractionDataStore[A <: JsValue] {
   /* Returns the result of the query as a stream of JSON objects */
   def queryAsJson[B](query: String, batchSize: Option[Int] = None)(block: Iterator[A] => B) : B
 
+  /* Updates the query */
+  def queryUpdate(query: String)
+
   /* 
    * Writes a list of tuples back to the datastore.
    * IMPORTANT: This method must assign a globally unique variable id to each record 

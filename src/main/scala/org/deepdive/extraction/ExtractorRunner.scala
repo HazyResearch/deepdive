@@ -24,6 +24,7 @@ object ExtractorRunner {
   
   def props(dataStore: JsonExtractionDataStore) = Props(classOf[ExtractorRunner], dataStore)
 
+
   // Messages
   sealed trait Message
   case class SetTask(task: ExtractionTask) extends Message
@@ -77,19 +78,38 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
       log.info(s"Received task=${task.extractor.name}. Executing")
       
       val taskSender = sender
-      // Execute the before script. Fail if the script fails.
-      task.extractor.beforeScript.foreach { beforeScript =>
-        log.info("Executing before script.")
-        executeScriptOrFail(beforeScript, taskSender)
+      task.extractor.style match {
+        // Execute the before script. Fail if the script fails.
+        case "udf_extractor" =>
+          task.extractor.beforeScript.foreach {
+            beforeScript =>
+              log.info("Executing before script.")
+              executeScriptOrFail(beforeScript, taskSender)
+          }
+          // Start the children workers
+          val workers = startWorkers(task)
+
+          // Schedule the input data to be sent to myself.
+          // We will then forward the data to our workers
+          Future { sendData(task, workers, taskSender) }
+          goto(Running) using Task(task, sender, workers)
+        // Execute the sql query from sql extractor
+        case "sql_extractor" =>
+          log.info("Executing sql query.")
+          executeSql(task)
+          taskSender ! "Done!"
+          stop
+        // Execute the cmd query from cmd extractor
+        case "cmd_extractor" =>
+          task.extractor.cmd.foreach {
+            cmd =>
+              log.info("Executing cmd script.")
+              executeScriptOrFail(cmd, taskSender)
+          }
+            taskSender ! "Done!"
+            stop
       }
-      
-      // Start the children workers
-      val workers = startWorkers(task)
-      
-      // Schedule the input data to be sent to myself.
-      // We will then forward the data to our workers
-      Future { sendData(task, workers, taskSender) }
-      goto(Running) using Task(task, sender, workers)
+
   }
 
   when(Running) {
@@ -116,10 +136,10 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
       Future {
         log.debug(s"adding chunk of size=${chunk.size} data store.")
         val jsonData = chunk.map(Json.parse).map(_.asInstanceOf[JsObject])
-        dataStore.addBatch(jsonData.iterator, task.extractor.outputRelation) 
+        dataStore.addBatch(jsonData.iterator, task.extractor.outputRelation)
       }.onComplete {
         case Success(_) => _sender ! "OK!"
-        case Failure(exception) => 
+        case Failure(exception) =>
           taskSender ! Status.Failure(exception)
           context.stop(self)
           throw exception
@@ -144,22 +164,25 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
   when(Finishing) {
     case(Event(ExecuteAfterScript, Task(task, taskSender, workers))) =>
       // Execute the after script. Fail if the script fails.
-      task.extractor.afterScript.foreach { afterScript =>
-        log.info("Executing after script.")
-        executeScriptOrFail(afterScript, taskSender)
+      task.extractor.afterScript.foreach {
+        afterScript =>
+          log.info("Executing after script.")
+          executeScriptOrFail(afterScript, taskSender)
       }
       stay
+
     case(Event(Shutdown, Task(task, taskSender, workers))) =>
       // All done, shutting down
       log.info(s"Shutting down")
       taskSender ! "Done!"
       stop
+
   }
 
   /* Starts all workers, watches them, and returns a round-robin fashion router */
   private def startWorkers(task: ExtractionTask) : Router = {
     log.info(s"Starting ${task.extractor.parallelism} children process workers")
-    // Start workers accoridng tot he specified parallelism
+    // Start workers according to the specified parallelism
     val workers = (1 to task.extractor.parallelism).map { i =>
       val worker = context.actorOf(workerProps, s"processExecutor${i}")
       // Deathwatch
@@ -167,10 +190,12 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
       ActorRefRoutee(worker)
     }
     val router = Router(RoundRobinRoutingLogic(), workers)
+
     // Send start broadcast to all workers
     val startMessage = ProcessExecutor.Start(task.extractor.udf, task.extractor.outputBatchSize)
     router.route(Broadcast(startMessage), self)
     router
+
   }
 
   /* Queries the data store and gets all the data */
@@ -180,35 +205,38 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
     // Figure out where to get the input from
     val extractorInput = task.extractor.inputQuery match {
       case CSVInputQuery(filename, seperator) =>
-        FileDataUtils.queryAsJson[Unit](filename, seperator)_
+        FileDataUtils.queryAsJson[Unit](filename, seperator) _
       case DatastoreInputQuery(query) =>
         val totalBatchSize = workers.routees.size * task.extractor.inputBatchSize
-        dataStore.queryAsJson[Unit](query, Option(totalBatchSize))_
+        dataStore.queryAsJson[Unit](query, Option(totalBatchSize)) _
     }
 
     // Forward output to the workers
     try {
-      extractorInput { iterator =>
-        val batchSize = workers.routees.size * task.extractor.inputBatchSize
-        iterator map(_.toString) grouped(batchSize) foreach { chunk =>
-          val futures = chunk.grouped(task.extractor.inputBatchSize).map { batch =>
-            val msg = ProcessExecutor.Write(batch.mkString("\n"))
-            val destinationWorker = workers.logic.select(msg, workers.routees).asInstanceOf[ActorRefRoutee].ref
-            destinationWorker ? msg
+      extractorInput {
+        iterator =>
+          val batchSize = workers.routees.size * task.extractor.inputBatchSize
+          iterator map (_.toString) grouped (batchSize) foreach {
+            chunk =>
+              val futures = chunk.grouped(task.extractor.inputBatchSize).map {
+                batch =>
+                  val msg = ProcessExecutor.Write(batch.mkString("\n"))
+                  val destinationWorker = workers.logic.select(msg, workers.routees).asInstanceOf[ActorRefRoutee].ref
+                  destinationWorker ? msg
+              }
+              val allRouteeAcks = Future.sequence(futures)
+              // Wait for all workers to write the data to the output stream to avoid overloading them
+              Await.result(allRouteeAcks, 1337.hours)
           }
-          val allRouteeAcks = Future.sequence(futures)
-          // Wait for all workers to write the data to the output stream to avoid overloading them
-          Await.result(allRouteeAcks, 1337.hours)
-        }
       }
     } catch {
-      case exception : Throwable => 
+      case exception: Throwable =>
         log.error(exception.toString)
         taskSender ! Status.Failure(exception)
         context.stop(self)
         throw exception
     }
-    
+
     // Notify all workers that they don't receive more data
     workers.route(Broadcast(ProcessExecutor.CloseInputStream), self)
     log.debug("all data was sent to workers.")
@@ -243,9 +271,10 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
         Failure(new RuntimeException(s"Script exited with exit_value=$errorExitValue"))
       case Failure(ex) => Failure(ex)
     }
-  } 
+  }
 
-
-
+  def executeSql(task: ExtractionTask) {
+    dataStore.queryUpdate(task.extractor.sqlQuery)
+  }
 
 }

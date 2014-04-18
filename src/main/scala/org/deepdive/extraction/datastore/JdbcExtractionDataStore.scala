@@ -66,6 +66,26 @@ trait JdbcExtractionDataStore extends ExtractionDataStore[JsObject] with Logging
       }
     }
 
+    def queryUpdate(query: String) {
+      val conn = ds.borrowConnection()
+      //conn.setAutoCommit(false);
+      val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY, java.sql.ResultSet.CONCUR_UPDATABLE)
+      try {
+        val prep = conn.prepareStatement(query)
+        prep.executeUpdate
+        //stmt.executeQuery(query)
+      } catch {
+        // SQL cmd exception
+        case exception : Throwable =>
+          log.error(exception.toString)
+          log.info("[Error] Please check the SQL cmd!")
+          throw exception
+        // TODO: Call TaskManager to kill all tasks
+      } finally {
+        conn.close()
+      }
+    }
+
     def unwrapSQLType(x: Any) : Any = {
       x match {
         case x : org.hsqldb.jdbc.JDBCArray => x.getArray().asInstanceOf[Array[_]].toList

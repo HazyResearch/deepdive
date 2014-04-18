@@ -44,25 +44,41 @@ object SettingsParser extends Logging {
 
   private def loadExtractionSettings(config: Config) : ExtractionSettings = {
     val extractionConfig = Try(config.getConfig("extraction")).getOrElse {
-      return ExtractionSettings(Nil, 1) 
+      return ExtractionSettings(Nil, 1)
     }
     val extractorParallelism = Try(extractionConfig.getInt("parallelism")).getOrElse(1)
     val extractors = extractionConfig.getObject("extractors").keySet().map { extractorName =>
       val extractorConfig = extractionConfig.getConfig(s"extractors.$extractorName")
-      val outputRelation = extractorConfig.getString("output_relation")
-      val inputQuery = InputQueryParser.parse(InputQueryParser.inputQueryExpr, 
-        extractorConfig.getString(s"input")).getOrElse {
-        throw new RuntimeException(s"parsing ${extractorConfig.getString(s"input")} failed")
+      val style = Try(extractorConfig.getString(s"style")).getOrElse("udf_extractor")
+      style match {
+        case "udf_extractor" =>
+          val outputRelation = extractorConfig.getString ("output_relation")
+          val inputQuery = InputQueryParser.parse (InputQueryParser.inputQueryExpr,
+            extractorConfig.getString (s"input") ).getOrElse {
+            throw new RuntimeException (s"parsing ${
+              extractorConfig.getString (s"input")
+            } failed")
+          }
+          val udf = extractorConfig.getString (s"udf")
+          val sqlQuery = Try (extractorConfig.getString (s"sql") ).getOrElse ("")
+          val cmd = Try (extractorConfig.getString ("cmd") ).toOption
+          val parallelism = Try (extractorConfig.getInt (s"parallelism") ).getOrElse (1)
+          val inputBatchSize = Try (extractorConfig.getInt (s"input_batch_size") ).getOrElse (10000)
+          val outputBatchSize = Try (extractorConfig.getInt (s"output_batch_size") ).getOrElse (50000)
+          val dependencies = Try (extractorConfig.getStringList ("dependencies").toSet).getOrElse (Set () )
+          val beforeScript = Try (extractorConfig.getString ("before") ).toOption
+          val afterScript = Try (extractorConfig.getString ("after") ).toOption
+          Extractor(extractorName, style, outputRelation, inputQuery, udf, parallelism,
+            inputBatchSize, outputBatchSize, dependencies, beforeScript, afterScript, sqlQuery, cmd)
+        case "sql_extractor" | "cmd_extractor" =>
+          val sqlQuery = Try (extractorConfig.getString (s"sql") ).getOrElse ("")
+          val cmd = Try (extractorConfig.getString ("cmd") ).toOption
+          val dependencies = Try (extractorConfig.getStringList ("dependencies").toSet).getOrElse (Set () )
+          val beforeScript = Try (extractorConfig.getString ("before") ).toOption
+          val afterScript = Try (extractorConfig.getString ("after") ).toOption
+          Extractor(extractorName, style, "", null, "", 1,
+            10000, 50000, dependencies, beforeScript, afterScript, sqlQuery, cmd)
       }
-      val udf = extractorConfig.getString(s"udf")
-      val parallelism = Try(extractorConfig.getInt(s"parallelism")).getOrElse(1)
-      val inputBatchSize = Try(extractorConfig.getInt(s"input_batch_size")).getOrElse(10000)
-      val outputBatchSize = Try(extractorConfig.getInt(s"output_batch_size")).getOrElse(50000)
-      val dependencies = Try(extractorConfig.getStringList("dependencies").toSet).getOrElse(Set())
-      val beforeScript = Try(extractorConfig.getString("before")).toOption
-      val afterScript = Try(extractorConfig.getString("after")).toOption
-      Extractor(extractorName, outputRelation, inputQuery, udf, parallelism, 
-        inputBatchSize, outputBatchSize, dependencies, beforeScript, afterScript)
     }.toList
     ExtractionSettings(extractors, extractorParallelism)
   }
