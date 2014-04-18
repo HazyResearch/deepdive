@@ -44,8 +44,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         assert(numRecords === 1)
       }
 
-      val task = new ExtractionTask(Extractor("testExtractor", "relation1", 
-        "SELECT * FROM relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet))
+      val task = new ExtractionTask(Extractor("testExtractor", "udf_extractor", "relation1", 
+        "SELECT * FROM relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet, None, None, "SELECT * FROM relation1", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       expectMsg("Done!")
