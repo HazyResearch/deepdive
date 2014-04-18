@@ -110,7 +110,7 @@ The sampler is an executable file (DimmWitted) or a jar file (scala sampler), an
         number of iterations during weight learning (required)
     -s <learningNumSamples> | --n_samples_per_learning_epoch <learningNumSamples>
         number of samples per iteration during weight learning (required)
-    -a <learningRate> | --alpha <learningRate> | --stepsize <learningRate>
+    -a <learningRate> | --alpha <learningRate> | --stepsize <learningRate> (DimmWitted)
         the learning rate for gradient descent (default: 0.01)
     -d <diminishRate> | --diminish <diminishRate>
         the diminish rate for learning (default: 0.95)
