@@ -18,6 +18,8 @@ import scala.sys.process._
 import rx.lang.scala.subjects._
 import play.api.libs.json._
 import scala.util.Random
+import java.io.{File, PrintWriter}
+import scala.io.Source
 
 /* Companion object to the ExtractorRunner */
 object ExtractorRunner {
@@ -108,6 +110,64 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
           }
             taskSender ! "Done!"
             stop
+
+        case "plpy_extractor" =>
+
+          // Run before script
+          task.extractor.beforeScript.foreach {
+            beforeScript =>
+              log.info("Executing before script.")
+              executeScriptOrFail(beforeScript, taskSender)
+          }
+
+          // Try to create language; if exists do nothing; if other errors report
+          executeSqlQueryOrFail("drop language if exists plpythonu cascade; CREATE LANGUAGE plpythonu;", taskSender)
+          
+          // Create Function in GP
+          val udfFile = task.extractor.udf
+          val deepDiveDir = System.getProperty("user.dir")
+          val compilerFile = s"${deepDiveDir}/util/ddext.py"
+          val funcName = s"func_${task.extractor.name}"
+          val sqlFunctionFile = File.createTempFile(funcName, ".sql")
+          
+          executeScriptOrFail(s"python ${compilerFile} ${udfFile} ${sqlFunctionFile} ${funcName}", taskSender)
+          log.info(s"Compiled ${udfFile} into ${sqlFunctionFile}")
+
+          // Source.fromFile(sqlFunctionFile).getLines.mkString
+          executeSqlFileOrFail(sqlFunctionFile.getAbsolutePath(), taskSender)
+          // log.info(s"${sqlFunctionFile.getAbsolutePath()}")
+          log.info(s"Created function ${funcName} in database.")
+
+          // Translate SQL input and output_relation to SQL
+          val inputQuery = task.extractor.inputQuery match {
+            case DatastoreInputQuery(query) => query
+            case _ => 
+          }
+          val inputQueryFile = File.createTempFile(s"query_${funcName}", ".sql")
+          val writer = new PrintWriter(inputQueryFile)
+          writer.println(inputQuery)
+          writer.close()
+
+          val outputRel = task.extractor.outputRelation
+          val SQLTranslatorFile = s"${deepDiveDir}/util/ddext_input_sql_translator.py"
+          val sqlInsertFile = File.createTempFile(s"${funcName}_exec", ".sql")
+          executeScriptOrFail(s"python ${SQLTranslatorFile} ${udfFile} ${inputQueryFile} ${outputRel} ${funcName} ${sqlInsertFile}", taskSender)
+
+          log.info(s"Executing compiled query into: ${sqlInsertFile}")
+
+          // Execute query in parallel in GP
+          executeSqlFileOrFail(sqlInsertFile.getAbsolutePath(), taskSender)
+          log.info(s"Finish executing UDF in database!")
+
+          task.extractor.afterScript.foreach {
+            afterScript =>
+              log.info("Executing after script.")
+              executeScriptOrFail(afterScript, taskSender)
+          }
+
+          taskSender ! "Done!"
+          stop
+
       }
 
   }
@@ -275,6 +335,39 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
 
   def executeSql(task: ExtractionTask) {
     dataStore.queryUpdate(task.extractor.sqlQuery)
+  }
+
+  def executeSqlQueryOrFail(query: String, failureReceiver: ActorRef) { 
+    // dataStore.executeCmd(query)
+    val file = File.createTempFile(s"exec_sql", ".sh")
+    val writer = new PrintWriter(file)
+    val dbname = System.getenv("DBNAME")
+    val pguser = System.getenv("PGUSER")
+    // val pgpw = System.getenv("PGPASSWORD")
+    val pgport = System.getenv("PGPORT")
+    val pghost = System.getenv("PGHOST")
+    val cmd = s"psql -d ${dbname} -U ${pguser} -p ${pgport} -h ${pghost} -c " + "\"\"\"" + query + "\"\"\""
+    writer.println(s"${cmd}")
+    writer.close()
+    log.debug(s"Temporary bash file saved to ${file.getAbsolutePath()}")
+    executeScriptOrFail(file.getAbsolutePath(), failureReceiver)
+    
+    // executeCmd(s"psql -d ${dbname} -c " + "\"\"\"" + query + "\"\"\"")
+  }
+  def executeSqlFileOrFail(filename: String, failureReceiver: ActorRef) { 
+    val file = File.createTempFile(s"exec_sql", ".sh")
+    val writer = new PrintWriter(file)
+    val dbname = System.getenv("DBNAME")
+    val pguser = System.getenv("PGUSER")
+    // val pgpw = System.getenv("PGPASSWORD")
+    val pgport = System.getenv("PGPORT")
+    val pghost = System.getenv("PGHOST")
+    val cmd = s"psql -d ${dbname} -U ${pguser} -p ${pgport} -h ${pghost} < " + filename
+    writer.println(s"${cmd}")
+    writer.close()
+    log.debug(s"Temporary bash file saved to ${file.getAbsolutePath()}")
+    executeScriptOrFail(file.getAbsolutePath(), failureReceiver)
+    // executeCmd(s"psql -d ${dbname} < " + filename)
   }
 
 }
