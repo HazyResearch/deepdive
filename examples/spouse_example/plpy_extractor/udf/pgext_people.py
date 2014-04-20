@@ -20,6 +20,7 @@ def init():
   # Returns commands MUST HAVE CORRECT ORDER
   ddext.returns('sentence_id', 'bigint')
   ddext.returns('start_position', 'int')
+  # ddext.returns('start_index', 'int')
   ddext.returns('length', 'int')
   ddext.returns('text', 'text')
   
