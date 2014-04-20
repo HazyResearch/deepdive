@@ -22,15 +22,24 @@ object DeepDive extends Logging {
 
     // Get the actor system
     val system = Context.system
-    Context.outputDir = outputDir
+
+    // Load Settings
+    val settings = Settings.loadFromConfig(config)
+
+    // If relearn_from specified, set output dir to that dir and skip everything
+    val relearnFrom = settings.pipelineSettings.relearnFrom
+
+    log.debug(s"relearnFrom=${relearnFrom}")
+
+    Context.outputDir = relearnFrom match {
+      case null => outputDir
+      case _ => relearnFrom
+    }
 
     // Create the output directory
     val outputDirFile = new File(outputDir)
     outputDirFile.mkdirs()
-    log.info(s"outputDir=${outputDir}")
-
-    // Load Settings
-    val settings = Settings.loadFromConfig(config)
+    log.debug(s"outputDir=${Context.outputDir}")
 
     val dbDriver = config.getString("deepdive.db.default.driver")
     
@@ -75,9 +84,10 @@ object DeepDive extends Logging {
     val groundFactorGraphTask = Task("inference_grounding", extractionTasks.map(_.id), 
       groundFactorGraphMsg, inferenceManager)
 
+    val skipSerializing = (relearnFrom != null)
     val inferenceTask = Task("inference", extractionTasks.map(_.id) ++ Seq("inference_grounding"),
       InferenceManager.RunInference(settings.samplerSettings.samplerCmd, 
-        settings.samplerSettings.samplerArgs), inferenceManager, true)
+        settings.samplerSettings.samplerArgs, skipSerializing), inferenceManager, true)
 
     val calibrationTask = Task("calibration", List("inference"), 
       InferenceManager.WriteCalibrationData, inferenceManager)
@@ -92,11 +102,18 @@ object DeepDive extends Logging {
     // Create a default pipeline that executes all tasks
     val defaultPipeline = Pipeline("_default", allTasks.map(_.id).toSet)
 
+    // Create a pipeline that runs only from learning
+    val relearnPipeline = Pipeline("_relearn", Set("inference", "calibration", "report", "shutdown"))
+
     // Figure out which pipeline to run
-    val activePipeline = settings.pipelineSettings.activePipeline match {
-      case Some(pipeline) => pipeline.copy(tasks = pipeline.tasks ++ 
-        Set("inference_grounding", "inference", "calibration", "report", "shutdown"))
-      case None => defaultPipeline
+    val activePipeline = relearnFrom match {
+      case null => 
+          settings.pipelineSettings.activePipeline match {
+            case Some(pipeline) => pipeline.copy(tasks = pipeline.tasks ++ 
+              Set("inference_grounding", "inference", "calibration", "report", "shutdown"))
+            case None => defaultPipeline
+          }
+      case _ => relearnPipeline
     }
 
     // We remove all tasks dependencies that are not in the pipeline
