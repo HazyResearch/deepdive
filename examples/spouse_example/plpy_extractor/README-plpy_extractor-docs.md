@@ -5,6 +5,10 @@ This directory is an example of using plpy_extractors.
 
 These extractors only works on postgresql.
 
+NOTE: Please do learn from the application.conf and udf/pgext_* to learn more about the requirements!
+
+
+
 Extractor Config Format (in application.conf )
 ----
 - style: "plpy_extractor"
@@ -21,17 +25,30 @@ UDF Code Format
 
 - Anything out of functions "init", "run" will not be accepted.
 - In "init", import libraries, specify input variables and return types
-- In "run", write your extractor. Return a list containing your results, each item in the list should be a list/tuple of your return types.
+- In "run", write your extractor. Return **a list** containing your results, each item in the list should be a list/tuple of your return types.
+	- e.g. [[ret1, ret2], [ret1, ret2], ...]
+
 - Do not print. "print" command is not supported in plpy.
+- Do not reassign input variables in "run" function! 
+	- e.g. "input_var = x" is invalid and will cause error!
 
-- ddext.input: MUST have order
-- ddext.returns: MUST have order
-- run(argument_list): useless
+The following must be in the same order:
+- SQL input query
+- order to call "ddext.input" function 
+- order of run() argument list
+
+The following must be in the same order:
+- order to call "ddext.returns" function
+- In actually returned list, order of each tuple
+- Order of output_relation (and the column NAMES should match names specified in "ddext.returns")
 
 
-BUGS / TODOS
+Caveats / TODOS
 ----
-- Cannot include "." in variable name. (TO BE FIXED)
-  - a way to fix: enable "." naming in input, but match input with run arguments..
-- Cannot inclide 'AS' in select query (TO BE FIXED)
+- Cannot inclide 'AS' in select query, between SELECT and FROM.
+    - e.g. you cannot "select p1.id as p1_id"!
+    - but you can express most queries without renaming it, and you are able to write "as" after FROM.
+    - All you need to do is: to make sure COLUMN ORDER matches EXTRACTOR INPUT ORDER.
+
+- Cannot reassign input variables in "run" function.
 

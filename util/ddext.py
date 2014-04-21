@@ -2,9 +2,7 @@
 
 import sys, re
 
-_init_called = False
-
-_libraries = []
+_libraries = [] # (X,Y,Z): from Y import X as Z
 _input_names = []
 _input_types = []
 
@@ -16,10 +14,15 @@ _init_func_content = ''
 _ext_name = ''
 
 # Add a library (should be installed on machines within GP)
-def import_lib(libname):
+# Sample Usage:
+#   import_lib(X, Y, Z): from Z import X as Y
+#   import_lib(X, Y): from Y import X
+#   import_lib(X, as_name=Z): import X as Z
+#   import_lib(X): import X
+def import_lib(libname, from_package=None, as_name=None):
   global _libraries
-  _libraries.append(libname)
-
+  # (X,Y,Z): from Z import X as Y
+  _libraries.append((libname, from_package, as_name))
 
 # Add an input variable and its data type
 def input(name, datatype):
@@ -73,6 +76,16 @@ def parse(ext_code, ext_name):
   end_index = re.search(r'\ndef|$', func_full).start()
   func_content = func_full[start_index : end_index]
 
+  # This code seems not working....
+  # # Do not allow 'x = 5' for input argument x's
+  # for var in _input_names:
+  #   badmatch = re.search(r'\b' + var + r'\b\s*=\s*\b', _run_func_content)
+  #   if badmatch != None:
+  #     print >>sys.stderr, 'WARNING: PlPy do not allow assignments to input arguments.'
+  #     print >>sys.stderr, 'CONTEXT:', _run_func_content[badmatch.start():badmatch.start() + 30] + '...'
+
+
+
 def _make_SD():
   init_func_exec = re.sub(r'[ \t]*ddext\.', '', _init_func_content)
   exec(init_func_exec)
@@ -106,12 +119,23 @@ def make_pg_func():
 
   # Import Libraries
   for lib in _libraries:
+    libname, from_package, as_name = lib
+    as_str = ''
+    from_str = ''
+    varname = libname
+    if as_name != None:
+      as_str = ' as ' + as_name
+      varname = as_name
+    if from_package != None:
+      from_str = 'from ' + from_package + ' '
+
+
     ret += """
-  if '"""+ lib +"""' in SD: 
-    """+ lib +""" = SD['"""+ lib +"""']
+  if '"""+ varname +"""' in SD: 
+    """+ varname +""" = SD['"""+ varname +"""']
   else: 
-    import """+ lib +"""
-    SD['"""+ lib +"""'] = """+ lib + '\n'
+    """+ from_str + """import """+ libname + as_str +"""
+    SD['"""+ varname +"""'] = """+ varname + '\n'
 
   # TODO now we do not need library name...
   # _run_func_content = re.sub(r'ddext\.', '', _run_func_content)
