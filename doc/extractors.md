@@ -6,9 +6,16 @@ layout: default
 
 ### Defining extractors in the configuration file
 
-A feature extractor takes data defined by an `input` (for example, a SQL statement), and produces new tuples as ouput. These tuples are written to the `output_relation`. The function for this transformation is defined by the `udf` key, which can be an arbitary executable (more on that below).
+Deepdive system support three kinds of extractors: `udf_extractor`, `sql_extractor`, and `cmd_extractor`. To use different extractor, we define a keyword `style` in the extractor definition to recognize the extractor. For example, if we want to use `udf_extractor`:
+
+	wordsExtractor.style: "udf_extractor"
+
+
+### Udf_extractor
+`udf_extractor` feature extractor takes data defined by an `input` (for example, a SQL statement), and produces new tuples as ouput. These tuples are written to the `output_relation`. The function for this transformation is defined by the `udf` key, which can be an arbitary executable (more on that below).
 
     deepdive.extractions: {
+      wordsExtractor.style: "udf_extractor"
       wordsExtractor.output_relation: "words"
       wordsExtractor.input: "SELECT * FROM titles"
       wordsExtractor.udf: "words.py"
@@ -16,7 +23,7 @@ A feature extractor takes data defined by an `input` (for example, a SQL stateme
     }
 
 
-### Extractor inputs
+#### Extractor inputs
 
 Currently DeepDive supports two types of extractor inputs:
 
@@ -34,7 +41,7 @@ For example, a SQL statement for Postgres:
     wordsExtractor.input: "SELECT * FROM customers"
 
 
-### Extractor Dependencies
+#### Extractor Dependencies
 
 You can also specify dependencies for an extractor. Extractors will be executed in order of their dependencies. If the dependencies of several extractors are satisfied at the same time, these may be executed in parallel, or in any order.
 
@@ -42,7 +49,7 @@ You can also specify dependencies for an extractor. Extractors will be executed 
 
 
 
-### Before and After scripts
+#### Before and After scripts
 
 Sometimes it is useful to execute a command, or call a script, before an extractor starts or after an extractor finishes. You can specify arbitary commands to be executed as follows:
 
@@ -51,7 +58,7 @@ Sometimes it is useful to execute a command, or call a script, before an extract
     wordsExtractor.after: "/path/to/my/script.sh"
 
 
-### Extractor parallelism and input batch size
+#### Extractor parallelism and input batch size
 
 To improve performance, you can specify the number of processes and the input batch size for each extractor. Your executable script will be run on N threads in parallel and data will be streamed to this processes in a round-robin fashion. By default each extractor uses 1 process and a batch size of 1000.
     
@@ -75,7 +82,7 @@ You can also execute independent extractors in parallel:
     }
 
 
-### Writing extractor UDFs
+#### Writing extractor UDFs
 
 When your extractor is executed, DeepDive will stream JSON tuples from the database to its *stdin*, one tuple per line. Such a tuple may look as follows:
 
@@ -117,5 +124,50 @@ for line in fileinput.input():
       })
 {% endhighlight %}
 
+### Sql_extractor
 
+To simplify users' workload, we have `sql_extractor` feature extractor which only updates the data in database(without any return results). The function framework for this extractor is defined as below.
+
+    deepdive.extractions: {
+      wordsExtractor.style: "sql_extractor"
+      wordsExtractor.sql: "INSERT INTO titles VALUES (1, 'Harry Potter')"
+      # More Extractors...
+    }
+
+#### Extractor Sql query
+
+For example, a SQL statement for Postgres:
+
+      wordsExtractor.sql: "INSERT INTO titles VALUES (1, 'Harry Potter')"
+
+
+#### Extractor Dependencies
+
+You can also specify dependencies for an extractor. Extractors will be executed in order of their dependencies. If the dependencies of several extractors are satisfied at the same time, these may be executed in parallel, or in any order.
+
+    wordsExtractor.dependencies: ["anotherExtractorName"]
+
+
+### Cmd_extractor
+
+The same as `sql_extractor` feature extractor, we have another extractor `cmd_extractor` which only executes a shell command. The function framework for this extractor is defined as below.
+
+    deepdive.extractions: {
+      wordsExtractor.style: "cmd_extractor"
+      wordsExtractor.cmd: "words.py"
+      # More Extractors...
+    }
+
+#### Execute shell command
+
+For example, a shell command:
+
+      wordsExtractor.cmd: "words.py"
+
+
+#### Extractor Dependencies
+
+The setting of specify dependencies for `cmd_extractor` extractor is the same with other extractors.
+
+    wordsExtractor.dependencies: ["anotherExtractorName"]
 
