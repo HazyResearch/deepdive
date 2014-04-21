@@ -17,3 +17,6 @@ env:
     - PGPASSWORD=""
     - PGPORT=5432
     - PGHOST=localhost
+notifications:
+  email:
+    - dbritz@stanford.edu
