@@ -67,10 +67,11 @@ API Documentation:
 - [Internal database schema](doc/reserved_tables.html)
 - [FAQ](doc/faq.html)
 
-Learn about using various databases with DeepDive:
+Learn about using various databases and distributions with DeepDive:
 
 - [Using PostgreSQL with DeepDive](doc/postgresql.html)
 - [Using GreenPlum with DeepDive](doc/greenplum.html)
+- [Using DeepDive on Ubuntu](doc/ubuntu.html)
 
 Contribute to DeepDive:
 
