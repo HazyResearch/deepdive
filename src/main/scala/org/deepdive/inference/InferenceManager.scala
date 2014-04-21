@@ -82,12 +82,12 @@ trait InferenceManager extends Actor with ActorLogging {
     // TODO: Make serializier configurable
     skipSerializing match {
       case false =>
-        factorGraphDumpFileMeta.mkdirs()
-        factorGraphDumpFileWeights.createNewFile()
-        factorGraphDumpFileVariables.createNewFile()
-        factorGraphDumpFileFactors.createNewFile()
-        factorGraphDumpFileEdges.createNewFile()
-        factorGraphDumpFileMeta.createNewFile()
+        factorGraphDumpFileMeta.getParentFile().mkdirs()
+        // factorGraphDumpFileWeights.createNewFile()
+        // factorGraphDumpFileVariables.createNewFile()
+        // factorGraphDumpFileFactors.createNewFile()
+        // factorGraphDumpFileEdges.createNewFile()
+        // factorGraphDumpFileMeta.createNewFile()
         val weightsOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileWeights, false))
         val variablesOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileVariables, false))
         val factorsOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileFactors, false))
