@@ -225,6 +225,11 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   """
 
   def createInferenceResultIndiciesSQL = s"""
+    DROP INDEX IF EXISTS ${WeightResultTable}_idx CASCADE;
+    DROP INDEX IF EXISTS ${VariableResultTable}_idx CASCADE;
+    DROP INDEX IF EXISTS ${FactorsTable}_weight_id_idx CASCADE;
+    DROP INDEX IF EXISTS ${EdgesTable}_factor_id_idx CASCADE;
+    DROP INDEX IF EXISTS ${EdgesTable}_variable_id_idx CASCADE;
     CREATE INDEX ${WeightResultTable}_idx ON ${WeightResultTable} (weight);
     CREATE INDEX ${VariableResultTable}_idx ON ${VariableResultTable} (expectation);
     CREATE INDEX ${FactorsTable}_weight_id_idx ON ${FactorsTable} (weight_id);
