@@ -178,24 +178,20 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     FROM ${VariablesTable} INNER JOIN ${VariablesMapTable}
       ON ${VariablesTable}.id = ${VariablesMapTable}.variable_id
     LEFT JOIN
-    (SELECT variable_id AS "edges.vid", 
-      COUNT(*) as "edge_count" 
-      FROM ${EdgesTable} GROUP BY variable_id) tmp 
-    ON ${VariablesTable}.id = "edges.vid"
-    ORDER BY ${VariablesMapTable}.id ASC;
+    (SELECT vid as "vid", COUNT(*) AS "edge_count"
+      FROM (SELECT UNNEST(variable_ids) AS "vid" FROM ${FactorsTable}) tmp
+      GROUP BY vid) tmp2
+    ON ${VariablesMapTable}.id = "vid";
   """
 
-  def selectFactorsForDumpSQL_RAW = s"""
-    DROP TABLE IF EXISTS selectFactorsForDumpSQL_RAW;
-    CREATE TABLE selectFactorsForDumpSQL_RAW AS
-    SELECT id AS "id", weight_id AS "weight_id", factor_function AS "factor_function", "edge_count"
-    FROM ${FactorsTable},
-    (SELECT factor_id AS "edges.fid", 
-      COUNT(*) as edge_count 
-      FROM ${EdgesTable} GROUP BY factor_id) tmp
-    WHERE id = "edges.fid"
-    ORDER BY ID ASC;
-  """
+  // def selectFactorsForDumpSQL_RAW = s"""
+  //   DROP TABLE IF EXISTS selectFactorsForDumpSQL_RAW;
+  //   CREATE TABLE selectFactorsForDumpSQL_RAW AS
+  //   SELECT weight_id AS "weight_id", variable_ids AS "variable_ids", 
+  //     variable_negated as "variable_negated", factor_function AS "factor_function", 
+  //     equal_predicate as "equal_predicate"
+  //   FROM ${FactorsTable}
+  // """
 
   def selectWeightsForDumpSQL = s"""
     SELECT id AS "id", is_fixed AS "is_fixed", initial_value AS "initial_value"
@@ -204,12 +200,14 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   def selectVariablesForDumpSQL = s"""
     SELECT id AS "id", is_evidence, initial_value, data_type, edge_count, cardinality
-    FROM selectVariablesForDumpSQL_RAW ORDER BY id ASC;
+    FROM selectVariablesForDumpSQL_RAW;
   """
 
   def selectFactorsForDumpSQL = s"""
-    SELECT id AS "id", weight_id AS "weight_id", factor_function AS "factor_function", "edge_count"
-    FROM selectFactorsForDumpSQL_RAW ORDER BY id ASC;
+    SELECT weight_id AS "weight_id", variable_ids AS "variable_ids", 
+      variable_negated as "variable_negated", factor_function AS "factor_function", 
+      equal_predicate as "equal_predicate"
+    FROM ${FactorsTable}
   """
 
   def selectMetaDataForDumpSQL = s"""
@@ -224,8 +222,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     CREATE INDEX ${WeightResultTable}_idx ON ${WeightResultTable} (weight);
     CREATE INDEX ${VariableResultTable}_idx ON ${VariableResultTable} (expectation);
     CREATE INDEX ${FactorsTable}_weight_id_idx ON ${FactorsTable} (weight_id);
-    CREATE INDEX ${EdgesTable}_factor_id_idx ON ${EdgesTable} (factor_id);
-    CREATE INDEX ${EdgesTable}_variable_id_idx ON ${EdgesTable} (variable_id);
   """
 
   def createInferenceViewSQL(relationName: String, columnName: String) = s"""
@@ -290,7 +286,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     // execute(selectFactorsForDumpSQL_RAW)
     // execute(selectWeightsForDumpSQL_RAW)
-    // execute(selectVariablesForDumpSQL_RAW)
+    execute(selectVariablesForDumpSQL_RAW)
 
 
     log.info("Serializing weights...")
@@ -298,30 +294,49 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
        serializer.addWeight(rs.getLong(1), rs.getBoolean(2), 
          rs.getDouble(3))
     }
-    // log.info(s"""Serializing variables...""")
-    // issueQuery(selectVariablesForDumpSQL) { rs => 
-    //   serializer.addVariable(
-    //     rs.getLong(1),
-    //     rs.getBoolean(2),
-    //     rs.getDouble(3), // return 0 if the value is SQL null
-    //     rs.getString(4), 
-    //     rs.getLong(5),
-    //     rs.getLong(6)) // return 0 if ...
-    // }
-    // log.info("Serializing factors...")
-    // selectForeach(selectFactorsForDumpSQL) { rs => 
-    //   serializer.addFactor(rs.long("id"), rs.long("weight_id"),
-    //     rs.string("factor_function"), rs.long("edge_count"))
-    // }
-    // log.info("Serializing edges...")
-    // issueQuery(selectEdgesForDumpSQL) { rs => 
-    //   serializer.addEdge(
-    //     rs.getLong(1),
-    //     rs.getLong(2),
-    //     rs.getLong(3), 
-    //     rs.getBoolean(4),
-    //     rs.getLong(5))
-    // }
+    log.info(s"""Serializing variables...""")
+    issueQuery(selectVariablesForDumpSQL) { rs => 
+      serializer.addVariable(
+        rs.getLong(1),          // id
+        rs.getBoolean(2),       // is evidence
+        rs.getDouble(3),        // initial value, return 0 if the value is SQL null
+        rs.getString(4),        // data type
+        rs.getLong(5),          // edge count
+        rs.getLong(6))          // cadinality, return 0 if ...
+    }
+    log.info("Serializing factors...")
+    var idx = 0
+    issueQuery(selectFactorsForDumpSQL) { rs =>
+      val weight_id = rs.getLong(1) 
+      val variable_ids = rs.getArray(2).getArray().asInstanceOf[Array[Object]];
+      val variable_negated = rs.getArray(3).getArray().asInstanceOf[Array[Object]];
+      val edge_count = variable_ids.length
+      val equal_predicate = rs.getLong(5)
+
+      serializer.addFactor(
+        idx,                    // factor id
+        weight_id,
+        rs.getString(4),          // factor function
+        edge_count)
+
+      if (idx < 36000) {
+      for (i <- 0 to edge_count-1) {
+        serializer.addEdge(
+          variable_ids(i).asInstanceOf[Long],      // variable id
+          idx,
+          i,                    // position
+          !variable_negated(i).asInstanceOf[Boolean], //is positive 
+          equal_predicate)
+        // log.info(variable_ids(i).asInstanceOf[Long].toString)
+        // log.info(idx.toString)
+        // log.info(i.toString)
+        // log.info((!variable_negated(i).asInstanceOf[Boolean]).toString)
+        // log.info(equal_predicate.toString)
+      }
+    }
+
+      idx += 1
+    }
 
     issueQuery(selectMetaDataForDumpSQL) { rs =>
       serializer.writeMetadata(
@@ -341,6 +356,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     val sqlFile = File.createTempFile(s"grounding", ".sql")
     val writer = new PrintWriter(sqlFile)
     log.info(s"""Writing grounding queries to file="${sqlFile}" """)
+    // val edgeFile = File.createTempFile(s"edge", ".txt")
+    // val writer2 = new PrintWriter(sqlFile)
 
     if (skipLearning == true && weightTable.isEmpty()) {
       writer.println(copyLastWeightsSQL)
