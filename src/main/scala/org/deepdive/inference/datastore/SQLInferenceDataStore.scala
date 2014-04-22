@@ -8,6 +8,7 @@ import org.deepdive.settings._
 import scalikejdbc._
 import scala.util.matching._
 import scala.io.Source
+// import scala.collection.mutable.Map
 
 
 /* Stores the factor graph and inference results. */
@@ -193,6 +194,11 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   //   FROM ${FactorsTable}
   // """
 
+  def selectVariablesMapForDumpSQL = s"""
+    SELECT id AS "id", variable_id
+    FROM ${VariablesMapTable};
+  """
+
   def selectWeightsForDumpSQL = s"""
     SELECT id AS "id", is_fixed AS "is_fixed", initial_value AS "initial_value"
     FROM ${WeightsTable};
@@ -287,14 +293,20 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // execute(selectFactorsForDumpSQL_RAW)
     // execute(selectWeightsForDumpSQL_RAW)
     execute(selectVariablesForDumpSQL_RAW)
-
+    /* variable id map */
+    val variableMap = scala.collection.mutable.Map[Long, Long]()
 
     log.info("Serializing weights...")
     issueQuery(selectWeightsForDumpSQL) { rs => 
        serializer.addWeight(rs.getLong(1), rs.getBoolean(2), 
          rs.getDouble(3))
     }
-    log.info(s"""Serializing variables...""")
+    log.info("Mapping variable ids...")
+    issueQuery(selectVariablesMapForDumpSQL) { rs =>
+      variableMap(rs.getLong(2)) = rs.getLong(1)
+    }
+
+    log.info("Serializing variables...")
     issueQuery(selectVariablesForDumpSQL) { rs => 
       serializer.addVariable(
         rs.getLong(1),          // id
@@ -319,21 +331,22 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         rs.getString(4),          // factor function
         edge_count)
 
-      if (idx < 36000) {
       for (i <- 0 to edge_count-1) {
         serializer.addEdge(
-          variable_ids(i).asInstanceOf[Long],      // variable id
+          variableMap(variable_ids(i).asInstanceOf[Long]),      // variable id
+          //variable_ids(i).asInstanceOf[Long],
           idx,
           i,                    // position
           !variable_negated(i).asInstanceOf[Boolean], //is positive 
           equal_predicate)
-        // log.info(variable_ids(i).asInstanceOf[Long].toString)
-        // log.info(idx.toString)
-        // log.info(i.toString)
-        // log.info((!variable_negated(i).asInstanceOf[Boolean]).toString)
-        // log.info(equal_predicate.toString)
+      //   if (idx > 36080){
+      //   log.info(variable_ids(i).asInstanceOf[Long].toString)
+      //   log.info(idx.toString)
+      //   log.info(i.toString)
+      //   log.info((!variable_negated(i).asInstanceOf[Boolean]).toString)
+      //   log.info(equal_predicate.toString)
+      // }
       }
-    }
 
       idx += 1
     }
@@ -356,8 +369,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     val sqlFile = File.createTempFile(s"grounding", ".sql")
     val writer = new PrintWriter(sqlFile)
     log.info(s"""Writing grounding queries to file="${sqlFile}" """)
-    // val edgeFile = File.createTempFile(s"edge", ".txt")
-    // val writer2 = new PrintWriter(sqlFile)
 
     if (skipLearning == true && weightTable.isEmpty()) {
       writer.println(copyLastWeightsSQL)
@@ -378,11 +389,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         case MultinomialType(x) => x.toString
       }
 
-      // FIXME: must guarantee all vairable relations have unique ids
+      // FIXME: must guarantee all variable relations have unique ids
       writer.println(
         s"""INSERT INTO ${VariablesTable}(id, data_type, initial_value, is_evidence, cardinality)
         SELECT ${relation}.id, '${dataType}', ${variable}::int, (${variable} IS NOT NULL), ${cardinalityStr}
         FROM ${relation};""")
+
     }
 
     // Map variables to sequential IDs

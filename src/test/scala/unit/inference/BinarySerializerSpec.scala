@@ -23,8 +23,8 @@ class BinarySerializerSpec extends FunSpec with BeforeAndAfter {
       val oMeta = new FileOutputStream(metaFile)
 
       val serializier = new BinarySerializer(oWeights, oVariables, oFactors, oEdges, oMeta)
-      serializier.addWeight(0, false, 0.0, "someFeature1")
-      serializier.addWeight(1, true, 10.0, "someFeature2")
+      serializier.addWeight(0, false, 0.0)
+      serializier.addWeight(1, true, 10.0)
       serializier.addVariable(0, false, 0.0, "Boolean", 2, 0)
       serializier.addVariable(1, true, 1.0, "Boolean", 1, 0)
       serializier.addVariable(2, false, 0.0, "Multinomial", 0, 3)
