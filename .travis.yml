@@ -4,15 +4,18 @@ scala:
 jdk:
   - openjdk7
   - oraclejdk7
-  - openjdk6
-sbt_args: -Xmx4g
+sbt_args:
 services:
   - postgresql
 before_script:
   - psql -c 'create database deepdive_test;' -U postgres
   # - psql -c 'create database deepdive_test;' -U postgres
 env: 
-  - PGUSER=postgres
-  - PGPASSWORD=""
-  - PGPORT=5432
-  - PGHOST=localhost
+  global:
+    - PGUSER=postgres
+    - PGPASSWORD=""
+    - PGPORT=5432
+    - PGHOST=localhost
+notifications:
+  email:
+    - deepdive-dev@lists.stanford.edu

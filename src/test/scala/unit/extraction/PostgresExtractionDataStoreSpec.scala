@@ -21,7 +21,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
     SQL("drop schema if exists public cascade; create schema public;").execute()
     SQL("""create table datatype_test(id bigserial primary key, key integer, some_text text, 
       some_boolean boolean, some_double double precision, some_null boolean, 
-      some_array text[], some_json json);""").execute()
+      some_array text[]);""").execute()
   }
 
   after {
@@ -86,10 +86,10 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
   describe("Serializing to JSON") {  
 
     def insertSampleRow() : Unit = {
-      SQL("""insert into datatype_test(key, some_text, some_boolean, some_double, some_array, some_json) 
+      SQL("""insert into datatype_test(key, some_text, some_boolean, some_double, some_array) 
         VALUES 
-          (1, 'Hello', true, 1.0, '{"A","B"}', '{"hello":"world"}'), 
-          (1, 'Ce', false, 2.3, '{"C","D"}', null)""").execute()
+          (1, 'Hello', true, 1.0, '{"A","B"}'), 
+          (1, 'Ce', false, 2.3, '{"C","D"}')""").execute()
     }
 
     it("should work with aggregate data types") {
@@ -113,9 +113,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
         "some_text" -> JsString("Hello"),
         "some_boolean" -> JsBoolean(true),
         "some_double" -> JsNumber(1.0),
-        "some_array" -> JsArray(List(JsString("A"), JsString("B"))),
-        "some_json" -> JsObject(Map("hello" -> JsString("world")).toSeq)
-      ))
+        "some_array" -> JsArray(List(JsString("A"), JsString("B")))))
     }
   }
 
@@ -151,8 +149,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
         "some_boolean" -> JsBoolean(false),
         "some_double" -> JsNumber(13.37),
         "some_null" -> JsNull,
-        "some_array" -> JsArray(List(JsString("13"), JsString("37"))),
-        "some_json" -> JsObject(Map("Hello" -> JsString("World")).toSeq)
+        "some_array" -> JsArray(List(JsString("13"), JsString("37")))
       ).toSeq)
       dataStore.addBatch(List(testRow).iterator, "datatype_test")
       val result = dataStore.queryAsJson("SELECT * from datatype_test")(_.toList)
@@ -170,8 +167,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
         "some_boolean" -> JsNull,
         "some_double" -> JsNull,
         "some_null" -> JsNull,
-        "some_array" -> jsonArr,
-        "some_json" -> JsNull
+        "some_array" -> jsonArr
       ).toSeq)
     dataStore.addBatch(List(testRow).iterator, "datatype_test")
     val result = dataStore.queryAsJson("SELECT * from datatype_test")(_.toList)
