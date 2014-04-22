@@ -99,29 +99,30 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def createWeightsSQL = s"""
     DROP TABLE IF EXISTS ${WeightsTable} CASCADE;
     CREATE TABLE ${WeightsTable}(
-      id ${keyType} primary key,
-      initial_value double precision,
+      id bigserial primary key,
       is_fixed boolean,
-      description ${stringType});
+      initial_value double precision,
+      factor_group int,
+      description text);
   """
 
   def createFactorsSQL = s"""
     DROP TABLE IF EXISTS ${FactorsTable} CASCADE; 
-    CREATE TABLE ${FactorsTable}(
-      id ${keyType} primary key, 
+    CREATE TABLE ${FactorsTable}( 
+      id bigint,
       weight_id bigint, 
+      variable_ids bigint[],
+      variable_negated boolean[],
       factor_function ${stringType}, 
-      factor_group ${stringType}, 
-      qid bigint);
+      factor_group int, 
+      equal_predicate int);
   """
-  // CREATE INDEX ${FactorsTable}_id_idx ON ${FactorsTable}(id);
-  // CREATE INDEX ${FactorsTable}_qid_idx ON ${FactorsTable}(qid);
 
   def createVariablesSQL = s"""
     DROP TABLE IF EXISTS ${VariablesTable} CASCADE; 
     CREATE TABLE ${VariablesTable}(
-      id ${keyType} primary key, 
-      data_type ${stringType},
+      id bigserial primary key, 
+      data_type text,
       initial_value double precision, 
       cardinality bigint, 
       is_evidence boolean);
@@ -143,19 +144,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   def alterSequencesSQL = s"""
     ALTER SEQUENCE ${WeightsTable}_id_seq MINVALUE -1 RESTART WITH 0;
-    ALTER SEQUENCE ${FactorsTable}_id_seq MINVALUE -1 RESTART WITH 0;
     ALTER SEQUENCE ${VariablesTable}_id_seq MINVALUE -1 RESTART WITH 0;
     ALTER SEQUENCE ${VariablesMapTable}_id_seq MINVALUE -1 RESTART WITH 0;
-  """
-
-  def createEdgesSQL = s"""
-    DROP TABLE IF EXISTS ${EdgesTable}; 
-    CREATE TABLE ${EdgesTable}(
-      factor_id bigint, 
-      variable_id bigint, 
-      position int, 
-      is_positive boolean,
-      equal_predicate bigint);
   """
 
   def createInferenceResultSQL = s"""
@@ -179,14 +169,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     FROM ${VariablesTable}, ${VariablesMapTable}, ${VariableResultTable}
     WHERE ${VariablesTable}.id = ${VariablesMapTable}.variable_id
       AND ${VariablesMapTable}.id = ${VariableResultTable}.id;
-  """
-
-  def selectWeightsForDumpSQL_RAW = s"""
-    DROP TABLE IF EXISTS selectWeightsForDumpSQL_RAW;
-    CREATE TABLE selectWeightsForDumpSQL_RAW AS
-    SELECT id AS "id", is_fixed AS "is_fixed", initial_value AS "initial_value", 
-      description AS "description"
-    FROM ${WeightsTable} ORDER BY ID ASC;
   """
 
   def selectVariablesForDumpSQL_RAW = s"""
@@ -215,20 +197,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     ORDER BY ID ASC;
   """
 
-  def selectEdgesForDumpSQL_RAW = s"""
-    DROP TABLE IF EXISTS selectEdgesForDumpSQL_RAW;
-    CREATE TABLE selectEdgesForDumpSQL_RAW AS
-    SELECT ${VariablesMapTable}.id AS "variable_id", factor_id, position, is_positive, equal_predicate
-    FROM ${EdgesTable}, ${VariablesMapTable}
-    WHERE ${VariablesMapTable}.variable_id = ${EdgesTable}.variable_id
-    ORDER BY ${VariablesMapTable}.id ASC;
-  """
-
   def selectWeightsForDumpSQL = s"""
-    SELECT id AS "id", is_fixed AS "is_fixed", initial_value AS "initial_value", 
-      description AS "description"
-    FROM selectWeightsForDumpSQL_RAW
-    ORDER BY id ASC;
+    SELECT id AS "id", is_fixed AS "is_fixed", initial_value AS "initial_value"
+    FROM ${WeightsTable};
   """
 
   def selectVariablesForDumpSQL = s"""
@@ -241,17 +212,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     FROM selectFactorsForDumpSQL_RAW ORDER BY id ASC;
   """
 
-  def selectEdgesForDumpSQL = s"""
-    SELECT variable_id AS "variable_id", factor_id AS "factor_id", position AS "position", is_positive AS "is_positive", equal_predicate AS "equal_predicate"
-    FROM selectEdgesForDumpSQL_RAW;
-  """
-
   def selectMetaDataForDumpSQL = s"""
     SELECT 
       (SELECT COUNT(*) from ${WeightsTable}) num_weights,
       (SELECT COUNT(*) from ${VariablesTable}) num_variables,
       (SELECT COUNT(*) from ${FactorsTable}) num_factors,
-      (SELECT COUNT(*) from ${EdgesTable}) num_edges;
+      (SELECT COUNT(*) from (SELECT UNNEST(variable_ids) FROM ${FactorsTable}) as n) num_edges;
   """
 
   def createInferenceResultIndiciesSQL = s"""
@@ -276,9 +242,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     ${WeightsTable} JOIN ${WeightResultTable} ON ${WeightsTable}.id = ${WeightResultTable}.id
     ORDER BY abs(weight) DESC;
   """
-
-  // TODO
-  def createVariableWeightsViewSQL(relationName: String, columnName: String) = ""
 
   def createBucketedCalibrationViewSQL(name: String, inferenceViewName: String, buckets: List[Bucket]) = {
     val bucketCaseStatement = buckets.zipWithIndex.map { case(bucket, index) =>
@@ -319,75 +282,46 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
 
   def init() : Unit = {
-    // execute(createWeightsSQL)
-    // execute(createFactorsSQL)
-    // execute(createVariablesSQL)
-    // execute(createVariablesHoldoutSQL)
-    // execute(createVariablesMapSQL)
-    // execute(createEdgesSQL)
-    // execute(createInferenceResultSQL)
-    // execute(createInferenceResultWeightsSQL)
-    // execute(createMappedInferenceResultView)
-    // execute(alterSequencesSQL)
   }
 
   def dumpFactorGraph(serializer: Serializer, schema: Map[String, _ <: VariableDataType],
     weightsPath: String, variablesPath: String, factorsPath: String, edgesPath: String) : Unit = {
     log.info(s"Dumping factor graph...")
 
-    /*
-    ds.DB.autoCommit { implicit session =>
-      SQL(selectFactorsForDumpSQL_RAW).execute.apply()
-    }
-
-    ds.DB.autoCommit { implicit session =>
-      SQL(selectEdgesForDumpSQL_RAW).execute.apply()
-    } 
-
-    ds.DB.autoCommit { implicit session =>
-      SQL(selectWeightsForDumpSQL_RAW).execute.apply()
-    }
-
-    ds.DB.autoCommit { implicit session =>
-      SQL(selectVariablesForDumpSQL_RAW).execute.apply()
-    }
-    */
-
-    execute(selectFactorsForDumpSQL_RAW)
-    execute(selectEdgesForDumpSQL_RAW)
-    execute(selectWeightsForDumpSQL_RAW)
-    execute(selectVariablesForDumpSQL_RAW)
+    // execute(selectFactorsForDumpSQL_RAW)
+    // execute(selectWeightsForDumpSQL_RAW)
+    // execute(selectVariablesForDumpSQL_RAW)
 
 
     log.info("Serializing weights...")
     issueQuery(selectWeightsForDumpSQL) { rs => 
-      serializer.addWeight(rs.getLong(1), rs.getBoolean(2), 
-        rs.getDouble(3), rs.getString(4))
+       serializer.addWeight(rs.getLong(1), rs.getBoolean(2), 
+         rs.getDouble(3))
     }
-    log.info(s"""Serializing variables...""")
-    issueQuery(selectVariablesForDumpSQL) { rs => 
-      serializer.addVariable(
-        rs.getLong(1),
-        rs.getBoolean(2),
-        rs.getDouble(3), // return 0 if the value is SQL null
-        rs.getString(4), 
-        rs.getLong(5),
-        rs.getLong(6)) // return 0 if ...
-    }
-    log.info("Serializing factors...")
-    selectForeach(selectFactorsForDumpSQL) { rs => 
-      serializer.addFactor(rs.long("id"), rs.long("weight_id"),
-        rs.string("factor_function"), rs.long("edge_count"))
-    }
-    log.info("Serializing edges...")
-    issueQuery(selectEdgesForDumpSQL) { rs => 
-      serializer.addEdge(
-        rs.getLong(1),
-        rs.getLong(2),
-        rs.getLong(3), 
-        rs.getBoolean(4),
-        rs.getLong(5))
-    }
+    // log.info(s"""Serializing variables...""")
+    // issueQuery(selectVariablesForDumpSQL) { rs => 
+    //   serializer.addVariable(
+    //     rs.getLong(1),
+    //     rs.getBoolean(2),
+    //     rs.getDouble(3), // return 0 if the value is SQL null
+    //     rs.getString(4), 
+    //     rs.getLong(5),
+    //     rs.getLong(6)) // return 0 if ...
+    // }
+    // log.info("Serializing factors...")
+    // selectForeach(selectFactorsForDumpSQL) { rs => 
+    //   serializer.addFactor(rs.long("id"), rs.long("weight_id"),
+    //     rs.string("factor_function"), rs.long("edge_count"))
+    // }
+    // log.info("Serializing edges...")
+    // issueQuery(selectEdgesForDumpSQL) { rs => 
+    //   serializer.addEdge(
+    //     rs.getLong(1),
+    //     rs.getLong(2),
+    //     rs.getLong(3), 
+    //     rs.getBoolean(4),
+    //     rs.getLong(5))
+    // }
 
     issueQuery(selectMetaDataForDumpSQL) { rs =>
       serializer.writeMetadata(
@@ -396,7 +330,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
 
 
-    log.info("Writing serialization result...")
+    // log.info("Writing serialization result...")
     serializer.close()
   }
 
@@ -416,7 +350,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     writer.println(createVariablesSQL)
     writer.println(createVariablesHoldoutSQL)
     writer.println(createVariablesMapSQL)
-    writer.println(createEdgesSQL)
+    // writer.println(createEdgesSQL)
     writer.println(alterSequencesSQL)
 
     // Ground all variables in the schema
@@ -427,21 +361,11 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         case MultinomialType(x) => x.toString
       }
 
+      // FIXME: must guarantee all vairable relations have unique ids
       writer.println(
         s"""INSERT INTO ${VariablesTable}(id, data_type, initial_value, is_evidence, cardinality)
         SELECT ${relation}.id, '${dataType}', ${variable}::int, (${variable} IS NOT NULL), ${cardinalityStr}
         FROM ${relation};""")
-
-      // Create a cardinality table for the variable
-      val cardinalityValues = dataType match {
-        case BooleanType => "(1)"
-        case MultinomialType(x) => (0 to x-1).map (x => s"(${x})").mkString(", ")
-      }
-      val cardinalityTableName = s"${relation}_${column}_cardinality"
-      writer.println(s"""
-        DROP TABLE IF EXISTS ${cardinalityTableName} CASCADE;""")
-      writer.println(
-        s"""CREATE TABLE ${cardinalityTableName}(${cardinalityTableName}) AS VALUES ${cardinalityValues} WITH DATA;""")
     }
 
     // Map variables to sequential IDs
@@ -461,89 +385,42 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     writer.println(s"""UPDATE ${VariablesTable} SET is_evidence=false
       WHERE ${VariablesTable}.id IN (SELECT variable_id FROM ${VariablesHoldoutTable});""")
 
-    writer.println(s"""
-       DROP TABLE IF EXISTS factornum CASCADE;""")
-    writer.println(s"""
-       CREATE TABLE factornum(nfactor bigint);""")
-    writer.println(s"""
-       INSERT INTO factornum VALUES (0);""")
+    // Create table for each inference rule
+    factorDescs.zipWithIndex.foreach { case(factorDesc, idx) =>
 
-    // Create views for each inference rule
-    factorDescs.zipWithIndex.foreach { case(factorDesc, i) =>
-
-      val factorOffsetCmd = s"""(SELECT sum(nfactor) FROM factornum)"""
-
-      // create cardinality table for each predicate
-      factorDesc.func.variables.zipWithIndex.foreach { case(v,idx) => {
-        val cardinalityTableName = s"${v.headRelation}_${v.field}_cardinality_${idx}"
-        v.predicate match {
-          case Some(s) => 
-            writer.println(s"""
-              DROP TABLE IF EXISTS ${cardinalityTableName} CASCADE;
-              CREATE TABLE ${cardinalityTableName}(${v.headRelation}_${v.field}_cardinality) AS VALUES (${s}) WITH DATA;""")
-          case None =>
-            writer.println(s"""
-              DROP VIEW IF EXISTS ${cardinalityTableName} CASCADE;
-              CREATE VIEW ${cardinalityTableName} AS SELECT * FROM ${v.headRelation}_${v.field}_cardinality;""")
-          }
-        }
-      }
-
-
-      val cardinalityTables = factorDesc.func.variables.zipWithIndex.map { case(v,idx) =>
-          s"${v.headRelation}_${v.field}_cardinality_${idx} c${idx}"
-      }
-
-      val cardinalityValues = factorDesc.func.variables.zipWithIndex.map { case(v,idx) => 
-        s"""c${idx}.${v.headRelation}_${v.field}_cardinality AS "${v.relation}_${v.field}_cardinality_${idx}" """
-      }
-
-      writer.println(s"""
-        DROP VIEW IF EXISTS ${factorDesc.name}_query_user CASCADE;
-        CREATE VIEW ${factorDesc.name}_query_user AS ${factorDesc.inputQuery};""")
+      // input query
       writer.println(s"""
         DROP TABLE IF EXISTS ${factorDesc.name}_query CASCADE;
-        SELECT
-          row_number() OVER() - 1 + ${factorOffsetCmd} as factor_id,
-          ${factorDesc.name}_query_user.*,
-          ${cardinalityValues.mkString(", ")}
-        INTO ${factorDesc.name}_query 
-        FROM ${factorDesc.name}_query_user, ${cardinalityTables.mkString(", ")};""")
-
-
-      writer.println(s"""
-        INSERT INTO factornum SELECT count(*) FROM ${factorDesc.name}_query ;""")
+        SELECT * INTO ${factorDesc.name}_query
+        FROM (${factorDesc.inputQuery}) AS inputQuery;""")
+      
       writer.println(s"""
         COMMIT;""")
      
     }
 
-    def generateWeightCmd(weightPrefix: String, weightVariables: Seq[String], cardinalityValues: Seq[String]) : String = 
-      weightVariables.map ( v => s"""(CASE WHEN "${v}" IS NULL THEN '' ELSE "${v}"::text END)""" )
+    def generateWeightCmd(weightVariables: Seq[String]) : String = {
+      weightVariables.map(v => s"""(CASE WHEN "${v}" IS NULL THEN '' ELSE "${v}"::text END)""")
         .mkString(" || ") match {
-        case "" => s"""'${weightPrefix}-' || ${cardinalityValues.mkString(" || ")} """
-        case x => s"""'${weightPrefix}-' || ${x} || ${cardinalityValues.mkString(" || ")}"""
+        case "" => "'-'"
+        case x  => x
       }
+    }
 
     // Ground weights for each inference rule
-    factorDescs.foreach { factorDesc =>
+    factorDescs.zipWithIndex.foreach { case(factorDesc, idx) =>
       val weightValue = factorDesc.weight match { 
         case x : KnownFactorWeight => x.value
         case _ => 0.0
       }
 
-      val cardinalityValues = factorDesc.func.variables.zipWithIndex.map { case(v,idx) => 
-        s""" "${v.relation}_${v.field}_cardinality_${idx}" """
-      }
-
       val isFixed = factorDesc.weight.isInstanceOf[KnownFactorWeight]
-      val weightCmd = generateWeightCmd(factorDesc.weightPrefix, factorDesc.weight.variables,
-        cardinalityValues)
+      val weightCmd = generateWeightCmd(factorDesc.weight.variables)
 
       writer.println(s"""
-        INSERT INTO ${WeightsTable}(initial_value, is_fixed, description)
-        SELECT DISTINCT ${weightValue} AS wValue, ${isFixed} AS wIsFixed, ${weightCmd} AS wCmd
-        FROM ${factorDesc.name}_query GROUP BY wValue, wIsFixed, wCmd;""")
+        INSERT INTO ${WeightsTable}(initial_value, is_fixed, factor_group, description)
+        SELECT DISTINCT ${weightValue} AS wValue, ${isFixed} AS wIsFixed, ${idx} AS iId, ${weightCmd} AS wCmd
+        FROM ${factorDesc.name}_query GROUP BY wValue, wIsFixed, iId, wCmd;""")
 
     }
     
@@ -551,18 +428,19 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // If use ID to match: (we do not do this to prevent ID changing)
     // We assume that description does not change and is distinct
     // UPDATE dd_graph_weights SET initial_value = weight FROM dd_inference_result_weights WHERE dd_graph_weights.id = dd_inference_result_weights.id;
-    if (skipLearning == true) {
-      val fromWeightTable = weightTable.isEmpty() match {
-        case true => "dd_graph_last_weights"
-        case false => weightTable
-      }
-      log.info(s"""Using weights in TABLE ${fromWeightTable} by matching COLUMN description""")
+    // if (skipLearning == true) {
+    //   val fromWeightTable = weightTable.isEmpty() match {
+    //     case true => "dd_graph_last_weights"
+    //     case false => weightTable
+    //   }
+    //   log.info(s"""Using weights in TABLE ${fromWeightTable} by matching COLUMN description""")
         
-      writer.println(s"""
-        UPDATE dd_graph_weights SET is_fixed = TRUE;
-        UPDATE dd_graph_weights SET initial_value = weight FROM ${fromWeightTable} WHERE dd_graph_weights.description = ${fromWeightTable}.description;
-        """)
-    }
+    //   writer.println(s"""
+    //     UPDATE dd_graph_weights SET is_fixed = TRUE;
+    //     UPDATE dd_graph_weights SET initial_value = weight FROM ${fromWeightTable} 
+    //     WHERE dd_graph_weights.description = ${fromWeightTable}.description;
+    //     """)
+    // }
 
     // Add index to the weights
     writer.println(s"""CREATE INDEX ${WeightsTable}_desc_idx ON ${WeightsTable}(description);""")
@@ -570,35 +448,19 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
 
     // Ground all factors
-    factorDescs.foreach { factorDesc =>
+    factorDescs.zipWithIndex.foreach { case(factorDesc, idx) =>
 
-      val cardinalityValues = factorDesc.func.variables.zipWithIndex.map { case(v,idx) => 
-        s""" "${v.relation}_${v.field}_cardinality_${idx}" """
-      }
-
-      val weightCmd = generateWeightCmd(factorDesc.weightPrefix, factorDesc.weight.variables,
-        cardinalityValues)
-      
+      val weightCmd = generateWeightCmd(factorDesc.weight.variables)
       val functionName = factorDesc.func.getClass.getSimpleName
-      writer.println(s"""
-        INSERT INTO ${FactorsTable}(id, weight_id, factor_function, factor_group)
-        SELECT factor_id, ${WeightsTable}.id, '${functionName}', '${factorDesc.name}'
-        FROM ${factorDesc.name}_query, ${WeightsTable}
-        WHERE ${weightCmd} = ${WeightsTable}.description;""")
-    }
 
-    // Ground all edges
-    factorDescs.foreach { factorDesc =>
-      factorDesc.func.variables.zipWithIndex.foreach { case(variable, position) =>
-        val vRelation = variable.headRelation
-        val vColumn = variable.field
-        val vidColumn = s"${variable.relation}.id"
-        val isPositive = !variable.isNegated
-        writer.println(s"""
-          INSERT INTO ${EdgesTable}(factor_id, variable_id, position, is_positive, equal_predicate)
-          SELECT factor_id, "${vidColumn}", ${position}, ${isPositive}, "${variable.relation}_${vColumn}_cardinality_${position}"
-          FROM ${factorDesc.name}_query;""")
-      }
+      val vid = factorDesc.func.variables.map(v => s""" "${v.relation}.id" """).mkString(",")
+      val negated = factorDesc.func.variables.map(v => s"${v.isNegated}").mkString(",")
+
+      writer.println(s"""
+        INSERT INTO ${FactorsTable}(weight_id, variable_ids, variable_negated, factor_function, factor_group, equal_predicate)
+        SELECT ${WeightsTable}.id, ARRAY[${vid}], ARRAY[${negated}], '${functionName}', ${idx}, 1
+        FROM ${factorDesc.name}_query, ${WeightsTable}
+        WHERE ${idx} = ${WeightsTable}.factor_group AND ${weightCmd} = ${WeightsTable}.description;""")
     }
 
     writer.close()

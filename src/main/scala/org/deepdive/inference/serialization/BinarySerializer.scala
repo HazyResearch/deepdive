@@ -16,7 +16,7 @@ class BinarySerializer(weightsOutput: OutputStream, variablesOutput: OutputStrea
 
 
 
-  def addWeight(weightId: Long, isFixed: Boolean, initialValue: Double, desc: String) : Unit = {
+  def addWeight(weightId: Long, isFixed: Boolean, initialValue: Double) : Unit = {
     weightStream.writeLong(weightId)
     weightStream.writeBoolean(isFixed)
     weightStream.writeDouble(initialValue)
