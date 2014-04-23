@@ -136,12 +136,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       variable_id bigint primary key);
   """
 
-  def createEdgesSQL = s"""
-    DROP TABLE IF EXISTS ${EdgesTable} CASCADE;
-    CREATE TABLE ${EdgesTable}(
-      variable_id bigint
-    );
-  """
+  // def createEdgesSQL = s"""
+  //   DROP TABLE IF EXISTS ${EdgesTable} CASCADE;
+  //   CREATE TABLE ${EdgesTable}(
+  //     variable_id bigint
+  //   );
+  // """
 
   def createSequencesSQL = s"""
     DROP SEQUENCE IF EXISTS ${IdSequence};
@@ -181,12 +181,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     FROM ${WeightsTable};
   """
 
-  def createEdgeCountSQL = s"""
-    DROP TABLE IF EXISTS ${EdgesCountTable} CASCADE;
-    SELECT variable_id, COUNT(*) AS edge_count
-    INTO ${EdgesCountTable}
-    FROM ${EdgesTable} GROUP BY variable_id;
-  """
+  // def createEdgeCountSQL = s"""
+  //   DROP TABLE IF EXISTS ${EdgesCountTable} CASCADE;
+  //   SELECT variable_id, COUNT(*) AS edge_count
+  //   INTO ${EdgesCountTable}
+  //   FROM ${EdgesTable} GROUP BY variable_id;
+  // """
 
   // def createInferenceResultIndiciesSQL = s"""
   //   DROP INDEX IF EXISTS ${WeightResultTable}_idx CASCADE;
@@ -264,17 +264,21 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     var numWeights    : Long = 0
     var numEdges      : Long = 0
 
-    execute(createEdgeCountSQL)
+    // execute(createEdgeCountSQL)
     
     log.info(s"Dumping factor graph...")
 
     log.info("Dumping variables...")
     schema.foreach { case(variable, dataType) =>
       val Array(relation, column) = variable.split('.')
+      // val selectVariablesForDumpSQL = s"""
+      //   SELECT id, (${variable} IS NOT NULL), ${variable}::int, edge_count
+      //   FROM ${relation}, ${EdgesCountTable}
+      //   WHERE ${relation}.id = ${EdgesCountTable}.variable_id"""
+      
       val selectVariablesForDumpSQL = s"""
-        SELECT id, (${variable} IS NOT NULL), ${variable}::int, edge_count
-        FROM ${relation}, ${EdgesCountTable}
-        WHERE ${relation}.id = ${EdgesCountTable}.variable_id"""
+        SELECT id, (${variable} IS NOT NULL), ${variable}::int
+        FROM ${relation}"""
 
       val cardinality = dataType match {
         case BooleanType => 1
@@ -287,7 +291,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           rs.getBoolean(2),         // is evidence
           rs.getLong(3),            // initial value
           dataType.toString,        // data type
-          rs.getLong(4),            // edge count
+          -1,            // edge count
           cardinality)              // cardinality
         numVariables += 1
         // log.info(rs.getLong(1).toString)
@@ -333,7 +337,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           weightMap(weightCmd) = numWeights
           numWeights += 1
           serializer.addWeight(weightId, isFixed, weightValue) 
-          log.info(weightId.toString + isFixed.toString + weightValue.toString)
         }
 
         //log.info(weightId.toString + isFixed.toString + weightValue.toString)
@@ -372,7 +375,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // writer.println(createVariablesSQL)
     writer.println(createVariablesHoldoutSQL)
     // writer.println(createVariablesMapSQL)
-    writer.println(createEdgesSQL)
+    // writer.println(createEdgesSQL)
     writer.println(createSequencesSQL)
 
     // Ground all variables in the schema
@@ -390,8 +393,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
       // input query
       writer.println(s"""
-        DROP TABLE IF EXISTS ${factorDesc.name}_query CASCADE;
-        CREATE TABLE ${factorDesc.name}_query AS
+        DROP VIEW IF EXISTS ${factorDesc.name}_query CASCADE;
+        CREATE VIEW ${factorDesc.name}_query AS
           SELECT * FROM (${factorDesc.inputQuery}) AS inputQuery;
         """)
       
@@ -399,14 +402,14 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         COMMIT;
         """)
 
-      factorDesc.func.variables.foreach { case variable =>
-        val vidColumn = s"${variable.relation}.id"
-        writer.println(s"""
-          INSERT INTO ${EdgesTable}(variable_id)
-          SELECT "${vidColumn}"
-          FROM ${factorDesc.name}_query;
-        """) 
-      }
+      // factorDesc.func.variables.foreach { case variable =>
+      //   val vidColumn = s"${variable.relation}.id"
+      //   writer.println(s"""
+      //     INSERT INTO ${EdgesTable}(variable_id)
+      //     SELECT "${vidColumn}"
+      //     FROM ${factorDesc.name}_query;
+      //   """) 
+      // }
     }
 
     writer.close()
