@@ -60,9 +60,9 @@ trait InferenceManager extends Actor with ActorLogging {
       sender ! "OK"
       // factorGraphBuilder ? FactorGraphBuilder.AddFactorsAndVariables(
       //   factorDesc, holdoutFraction, batchSize) pipeTo _sender
-    case InferenceManager.RunInference(samplerJavaArgs, samplerOptions, skipSerializing) =>
+    case InferenceManager.RunInference(factorDescs, samplerJavaArgs, samplerOptions, skipSerializing) =>
       val _sender = sender
-      val result = runInference(samplerJavaArgs, samplerOptions, skipSerializing)
+      val result = runInference(factorDescs, samplerJavaArgs, samplerOptions, skipSerializing)
       result pipeTo _sender
     case InferenceManager.WriteCalibrationData =>
       val _sender = sender
@@ -78,7 +78,7 @@ trait InferenceManager extends Actor with ActorLogging {
       calibrationWriter ! PoisonPill
   }
 
-  def runInference(samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false) = {
+  def runInference(factorDescs: Seq[FactorDesc], samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false) = {
     // TODO: Make serializier configurable
     skipSerializing match {
       case false =>
@@ -94,7 +94,7 @@ trait InferenceManager extends Actor with ActorLogging {
         val edgesOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileEdges, false))
         val metaOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileMeta, false))
         val serializier = new BinarySerializer(weightsOutput, variablesOutput, factorsOutput, edgesOutput, metaOutput)
-        inferenceDataStore.dumpFactorGraph(serializier, variableSchema, factorGraphDumpFileWeights.getCanonicalPath,
+        inferenceDataStore.dumpFactorGraph(serializier, variableSchema, factorDescs, factorGraphDumpFileWeights.getCanonicalPath,
           factorGraphDumpFileVariables.getCanonicalPath, factorGraphDumpFileFactors.getCanonicalPath,
           factorGraphDumpFileEdges.getCanonicalPath)
         serializier.close()
@@ -129,18 +129,18 @@ object InferenceManager {
       Props(classOf[FactorGraphBuilder.PostgresFactorGraphBuilder], variableSchema)
   }
 
-  class HSQLInferenceManager(val taskManager: ActorRef, val variableSchema: Map[String, _ <: VariableDataType]) 
-    extends InferenceManager with HSQLInferenceDataStoreComponent {
-    def factorGraphBuilderProps = 
-      Props(classOf[FactorGraphBuilder.HSQLFactorGraphBuilder], variableSchema)
-  }
+  // class HSQLInferenceManager(val taskManager: ActorRef, val variableSchema: Map[String, _ <: VariableDataType]) 
+  //   extends InferenceManager with HSQLInferenceDataStoreComponent {
+  //   def factorGraphBuilderProps = 
+  //     Props(classOf[FactorGraphBuilder.HSQLFactorGraphBuilder], variableSchema)
+  // }
 
   // TODO: Refactor this to take the data store type as an argument
   def props(taskManager: ActorRef, variableSchema: Map[String, _ <: VariableDataType],
     databaseDriver: String) = {
     databaseDriver match {
        case "org.postgresql.Driver" => Props(classOf[PostgresInferenceManager], taskManager, variableSchema)
-       case "org.hsqldb.jdbc.JDBCDriver" => Props(classOf[HSQLInferenceManager], taskManager, variableSchema)
+       // case "org.hsqldb.jdbc.JDBCDriver" => Props(classOf[HSQLInferenceManager], taskManager, variableSchema)
     }
   }
     
@@ -151,7 +151,7 @@ object InferenceManager {
   // Executes a task to build part of the factor graph
   case class GroundFactorGraph(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean, weightTable: String)
   // Runs the sampler with the given arguments
-  case class RunInference(samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false)
+  case class RunInference(factorDescs: Seq[FactorDesc], samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false)
   // Writes calibration data to predefined files
   case object WriteCalibrationData
 
