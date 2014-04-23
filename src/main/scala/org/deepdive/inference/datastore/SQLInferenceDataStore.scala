@@ -110,9 +110,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def createFactorsSQL = s"""
     DROP TABLE IF EXISTS ${FactorsTable} CASCADE; 
     CREATE TABLE ${FactorsTable}( 
-      id bigint,
-      weight_id bigint, 
       variable_ids bigint[],
+      weight_id bigint, 
       variable_negated boolean[],
       factor_function ${stringType}, 
       factor_group int, 
@@ -184,15 +183,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       GROUP BY vid) tmp2
     ON ${VariablesMapTable}.id = "vid";
   """
-
-  // def selectFactorsForDumpSQL_RAW = s"""
-  //   DROP TABLE IF EXISTS selectFactorsForDumpSQL_RAW;
-  //   CREATE TABLE selectFactorsForDumpSQL_RAW AS
-  //   SELECT weight_id AS "weight_id", variable_ids AS "variable_ids", 
-  //     variable_negated as "variable_negated", factor_function AS "factor_function", 
-  //     equal_predicate as "equal_predicate"
-  //   FROM ${FactorsTable}
-  // """
 
   def selectVariablesMapForDumpSQL = s"""
     SELECT id AS "id", variable_id
