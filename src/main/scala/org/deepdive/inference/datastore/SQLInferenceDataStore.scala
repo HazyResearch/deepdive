@@ -96,7 +96,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def createVariablesSQL = s"""
     DROP TABLE IF EXISTS ${VariablesTable} CASCADE; 
     CREATE TABLE ${VariablesTable}(
-      id bigserial primary key, 
+      id bigint,
       data_type text,
       initial_value double precision, 
       cardinality bigint, 
