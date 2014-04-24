@@ -131,12 +131,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   """
 
 
-  def createMappedInferenceResultView = s"""
-    CREATE VIEW ${MappedInferenceResultView} 
-    AS SELECT ${VariablesTable}.*, ${VariableResultTable}.category, ${VariableResultTable}.expectation 
-    FROM ${VariablesTable}, ${VariableResultTable}
-    WHERE ${VariablesTable}.id = ${VariableResultTable}.id;
-  """
+  // def createMappedInferenceResultView = s"""
+  //   CREATE VIEW ${MappedInferenceResultView} 
+  //   AS SELECT ${VariablesTable}.*, ${VariableResultTable}.category, ${VariableResultTable}.expectation 
+  //   FROM ${VariablesTable}, ${VariableResultTable}
+  //   WHERE ${VariablesTable}.id = ${VariableResultTable}.id;
+  // """
 
   def selectVariablesForDumpSQL_RAW = s"""
     DROP TABLE IF EXISTS selectVariablesForDumpSQL_RAW;
@@ -182,7 +182,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def createInferenceViewSQL(relationName: String, columnName: String) = s"""
     CREATE VIEW ${relationName}_${columnName}_inference AS
     (SELECT ${relationName}.*, mir.category, mir.expectation FROM
-    ${relationName}, ${MappedInferenceResultView} mir
+    ${relationName}, ${VariableResultTable} mir
     WHERE ${relationName}.id = mir.id
     ORDER BY mir.expectation DESC);
   """
@@ -306,55 +306,55 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     log.info(s"Dumping factor graph...")
 
     log.info("Dumping variables...")
-    issueQuery(selectVariablesForDumpSQL) { rs => 
-      serializer.addVariable(
-        rs.getLong(1),
-        rs.getBoolean(2),
-        rs.getDouble(3), // return 0 if the value is SQL null
-        rs.getString(4), 
-        rs.getLong(5),
-        rs.getLong(6)) // return 0 if ...
-      numVariables += 1
-    }
-
-    // val randomGen = new Random()
-    // schema.foreach { case(variable, dataType) =>
-    //   val Array(relation, column) = variable.split('.')
-    //   val selectVariablesForDumpSQL = s"""
-    //     SELECT id, (${variable} IS NOT NULL), ${variable}::int, edge_count
-    //     FROM ${relation}, ${EdgesCountTable}
-    //     WHERE ${relation}.id = ${EdgesCountTable}.variable_id"""
-      
-    //   // val selectVariablesForDumpSQL = s"""
-    //   //   SELECT id, (${variable} IS NOT NULL), ${variable}::int
-    //   //   FROM ${relation}"""
-
-    //   val cardinality = dataType match {
-    //     case BooleanType => 1
-    //     case MultinomialType(x) => x.toLong
-    //   }
-
-    //   issueQuery(selectVariablesForDumpSQL) { rs =>
-    //     var isEvidence = rs.getBoolean(2)
-    //     if (isEvidence && randomGen.nextFloat < holdoutFraction) {
-    //       isEvidence = false
-    //     }
-    //     serializer.addVariable(
-    //       rs.getLong(1),            // id
-    //       rs.getBoolean(2),         // is evidence
-    //       rs.getLong(3),            // initial value
-    //       dataType.toString,        // data type
-    //       rs.getLong(4),            // edge count
-    //       cardinality)              // cardinality
-    //     numVariables += 1
-    //     // log.info(rs.getLong(1).toString)
-    //     // log.info(rs.getBoolean(3).toString)
-    //     // log.info(rs.getLong(2).toString)
-    //     // log.info(dataType.toString)
-    //     // log.info(cardinality.toString)
-    //   }
-
+    // issueQuery(selectVariablesForDumpSQL) { rs => 
+    //   serializer.addVariable(
+    //     rs.getLong(1),
+    //     rs.getBoolean(2),
+    //     rs.getDouble(3), // return 0 if the value is SQL null
+    //     rs.getString(4), 
+    //     rs.getLong(5),
+    //     rs.getLong(6)) // return 0 if ...
+    //   numVariables += 1
     // }
+
+    val randomGen = new Random()
+    schema.foreach { case(variable, dataType) =>
+      val Array(relation, column) = variable.split('.')
+      val selectVariablesForDumpSQL = s"""
+        SELECT id, (${variable} IS NOT NULL), ${variable}::int, edge_count
+        FROM ${relation} LEFT JOIN ${EdgesCountTable}
+        ON ${relation}.id = ${EdgesCountTable}.variable_id"""
+      
+      // val selectVariablesForDumpSQL = s"""
+      //   SELECT id, (${variable} IS NOT NULL), ${variable}::int
+      //   FROM ${relation}"""
+
+      val cardinality = dataType match {
+        case BooleanType => 0
+        case MultinomialType(x) => x.toLong
+      }
+
+      issueQuery(selectVariablesForDumpSQL) { rs =>
+        var isEvidence = rs.getBoolean(2)
+        if (isEvidence && randomGen.nextFloat < holdoutFraction) {
+          isEvidence = false
+        }
+        serializer.addVariable(
+          rs.getLong(1),            // id
+          rs.getBoolean(2),         // is evidence
+          rs.getLong(3),            // initial value
+          dataType.toString,        // data type
+          rs.getLong(4),            // edge count
+          cardinality)              // cardinality
+        numVariables += 1
+        // log.info(rs.getLong(1).toString)
+        // log.info(rs.getBoolean(3).toString)
+        // log.info(rs.getLong(2).toString)
+        // log.info(dataType.toString)
+        // log.info(cardinality.toString)
+      }
+
+    }
 
     log.info("Dumping factors...")
 
@@ -424,27 +424,27 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // }
     // writer.println(createWeightsSQL)
     // writer.println(createFactorsSQL)
-    writer.println(createVariablesSQL)
+    // writer.println(createVariablesSQL)
     writer.println(createEdgesSQL)
     writer.println(createSequencesSQL)
 
     // Ground all variables in the schema
-    schema.foreach { case(variable, dataType) =>
-      val Array(relation, column) = variable.split('.')
+    // schema.foreach { case(variable, dataType) =>
+    //   val Array(relation, column) = variable.split('.')
 
-      writer.println(s"""
-        UPDATE ${relation} SET id = nextval('${IdSequence}');
-        """)
+      // writer.println(s"""
+      //   UPDATE ${relation} SET id = nextval('${IdSequence}');
+      //   """)
 
-      writer.println(
-        s"""INSERT INTO ${VariablesTable}(id, data_type, initial_value, is_evidence, cardinality)
-        SELECT ${relation}.id, '${dataType}', ${variable}::int, (${variable} IS NOT NULL), 1
-        FROM ${relation};""")
-    }
+      // writer.println(
+      //   s"""INSERT INTO ${VariablesTable}(id, data_type, initial_value, is_evidence, cardinality)
+      //   SELECT ${relation}.id, '${dataType}', ${variable}::int, (${variable} IS NOT NULL), 1
+      //   FROM ${relation};""")
+    // }
 
-    // Assign the holdout - Random (default) or user-defined query
-    writer.println(s"""UPDATE ${VariablesTable} SET is_evidence=false
-      WHERE ${randomFunc} < ${holdoutFraction} AND is_evidence = true;""")
+    // // Assign the holdout - Random (default) or user-defined query
+    // writer.println(s"""UPDATE ${VariablesTable} SET is_evidence=false
+    //   WHERE ${randomFunc} < ${holdoutFraction} AND is_evidence = true;""")
 
 
     // writer.println(s"""UPDATE ${VariablesTable} SET is_evidence=false
@@ -508,13 +508,13 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     execute(createInferenceResultSQL)
     execute(createInferenceResultWeightsSQL)
-    execute(createMappedInferenceResultView)
+    // execute(createMappedInferenceResultView)
 
     log.info("Copying inference result weights...")
     bulkCopyWeights(weightsOutputFile)
     log.info("Copying inference result variables...")
     bulkCopyVariables(variableOutputFile)
-    // log.info("Creating indicies on the inference result...")
+    log.info("Creating indicies on the inference result...")
     execute(createInferenceResultIndiciesSQL)
 
     // Each (relation, column) tuple is a variable in the plate model.
