@@ -17,7 +17,6 @@ class BinarySerializer(weightsOutput: OutputStream, variablesOutput: OutputStrea
 
 
   def addWeight(weightId: Long, isFixed: Boolean, initialValue: Double) : Unit = {
-    return
     weightStream.writeLong(weightId)
     weightStream.writeBoolean(isFixed)
     weightStream.writeDouble(initialValue)
@@ -26,7 +25,6 @@ class BinarySerializer(weightsOutput: OutputStream, variablesOutput: OutputStrea
 
   def addVariable(variableId: Long, isEvidence: Boolean, initialValue: Double, 
     dataType: String, edgeCount: Long, cardinality: Long) : Unit = {
-    return
     val variableDataType = dataType match {
       case "Boolean" => 0
       case "Multinomial" => 1
@@ -40,7 +38,6 @@ class BinarySerializer(weightsOutput: OutputStream, variablesOutput: OutputStrea
   }
 
   def addFactor(factorId: Long, weightId: Long, factorFunction: String, edgeCount: Long) : Unit = {
-    return
     val factorFunctionType = factorFunction match {
       case "ImplyFactorFunction" => 0
       case "OrFactorFunction" => 1
@@ -57,7 +54,6 @@ class BinarySerializer(weightsOutput: OutputStream, variablesOutput: OutputStrea
 
   def addEdge(variableId: Long, factorId: Long, position: Long, isPositive: Boolean, 
     equalPredicate: Long) : Unit = {
-    return
     edgeStream.writeLong(variableId)
     edgeStream.writeLong(factorId)
     edgeStream.writeLong(position)
@@ -67,7 +63,6 @@ class BinarySerializer(weightsOutput: OutputStream, variablesOutput: OutputStrea
 
   def writeMetadata(numWeights: Long, numVariables: Long, numFactors: Long, numEdges: Long,
     weightsFile: String, variablesFile: String, factorsFile: String, edgesFile: String) : Unit = {
-    return
     val out = List(numWeights, numVariables, numFactors, numEdges, weightsFile, variablesFile, 
       factorsFile, edgesFile).mkString(",")
     metaStream.print(out)

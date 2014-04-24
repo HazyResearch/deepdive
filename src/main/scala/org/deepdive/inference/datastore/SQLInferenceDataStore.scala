@@ -8,6 +8,7 @@ import org.deepdive.settings._
 import scalikejdbc._
 import scala.util.matching._
 import scala.io.Source
+import scala.util.Random
 // import scala.collection.mutable.Map
 
 
@@ -26,10 +27,10 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   /* Internal Table names */
   def WeightsTable = "dd_graph_weights"
-  def lastWeightsTable = "dd_graph_last_weights"
+  // def lastWeightsTable = "dd_graph_last_weights"
   def FactorsTable = "dd_graph_factors"
   def VariablesTable = "dd_graph_variables"
-  def VariablesHoldoutTable = "dd_graph_variables_holdout"
+  // def VariablesHoldoutTable = "dd_graph_variables_holdout"
   def VariablesMapTable = "dd_graph_variables_map"
   def EdgesTable = "dd_graph_edges"
   def WeightResultTable = "dd_inference_result_weights"
@@ -71,13 +72,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       op(rs)
     }
     conn.close()
-  }
-
-  /* Issues a query */
-  def selectForeach(sql: String)(op: (WrappedResultSet) => Unit) = {
-    ds.DB.readOnly { implicit session =>
-      SQL(sql).foreach(op)
-    }
   }
 
   def selectAsMap(sql: String) : List[Map[String, Any]] = {
@@ -130,18 +124,18 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   //     is_evidence boolean);
   // """
 
-  def createVariablesHoldoutSQL = s"""
-    DROP TABLE IF EXISTS ${VariablesHoldoutTable} CASCADE; 
-    CREATE TABLE ${VariablesHoldoutTable}(
-      variable_id bigint primary key);
-  """
-
-  // def createEdgesSQL = s"""
-  //   DROP TABLE IF EXISTS ${EdgesTable} CASCADE;
-  //   CREATE TABLE ${EdgesTable}(
-  //     variable_id bigint
-  //   );
+  // def createVariablesHoldoutSQL = s"""
+  //   DROP TABLE IF EXISTS ${VariablesHoldoutTable} CASCADE; 
+  //   CREATE TABLE ${VariablesHoldoutTable}(
+  //     variable_id bigint primary key);
   // """
+
+  def createEdgesSQL = s"""
+    DROP TABLE IF EXISTS ${EdgesTable} CASCADE;
+    CREATE TABLE ${EdgesTable}(
+      variable_id bigint
+    );
+  """
 
   def createSequencesSQL = s"""
     DROP SEQUENCE IF EXISTS ${IdSequence};
@@ -171,22 +165,17 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   //     AND ${VariablesMapTable}.id = ${VariableResultTable}.id;
   // """
 
-  def selectVariablesMapForDumpSQL = s"""
-    SELECT id AS "id", variable_id
-    FROM ${VariablesMapTable};
-  """
-
   def selectWeightsForDumpSQL = s"""
     SELECT id AS "id", is_fixed AS "is_fixed", initial_value AS "initial_value"
     FROM ${WeightsTable};
   """
 
-  // def createEdgeCountSQL = s"""
-  //   DROP TABLE IF EXISTS ${EdgesCountTable} CASCADE;
-  //   SELECT variable_id, COUNT(*) AS edge_count
-  //   INTO ${EdgesCountTable}
-  //   FROM ${EdgesTable} GROUP BY variable_id;
-  // """
+  def createEdgeCountSQL = s"""
+    DROP TABLE IF EXISTS ${EdgesCountTable} CASCADE;
+    SELECT variable_id, COUNT(*) AS edge_count
+    INTO ${EdgesCountTable}
+    FROM ${EdgesTable} GROUP BY variable_id;
+  """
 
   // def createInferenceResultIndiciesSQL = s"""
   //   DROP INDEX IF EXISTS ${WeightResultTable}_idx CASCADE;
@@ -249,6 +238,60 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     FROM ${name};
   """
 
+  def assignIDSQL = s"""
+    CREATE OR REPLACE FUNCTION clear_count_1(sid int) RETURNS int AS 
+    $$
+    if '__count_1' in SD:
+      SD['__count_1'] = -1
+      return 1
+    return 0
+    $$ LANGUAGE plpythonu;
+
+    CREATE OR REPLACE FUNCTION updateid(sid int, sids int[], base_ids bigint[]) RETURNS bigint AS 
+    $$
+    if '__count_1' in SD and not SD['__count_1'] < 0:
+      SD['__count_1'] -= 1
+      return SD['__count_1']
+    else:
+      plpy.info("        SEGMENT %d" % sid + " " + sids.__repr__());
+      for i in range(0, len(sids)):
+        if sids[i] == sid:
+          plpy.info(("SEGMENT %d" % sid) + (" ID ENDS AT %i" % base_ids[i]));
+          SD['__count_1'] = base_ids[i]
+      return SD['__count_1']
+    $$ LANGUAGE plpythonu;
+
+    CREATE OR REPLACE FUNCTION fast_seqassign(tname character varying, startid bigint) RETURNS TEXT AS $$
+    BEGIN
+      RAISE NOTICE 'DROPING tmp_gpsid_count...';
+      EXECUTE 'drop table if exists tmp_gpsid_count cascade;';
+      RAISE NOTICE 'CREATING tmp_gpsid_count...';
+      EXECUTE 'create table tmp_gpsid_count as select gp_segment_id as sid, count(clear_count_1(gp_segment_id)) as base_id from ' || quote_ident(tname) || ' group by gp_segment_id order by sid distributed by (sid);';
+      EXECUTE 'update tmp_gpsid_count as t set base_id = ' || startid || ' - 1 + (SELECT SUM(base_id) FROM tmp_gpsid_count as t2 WHERE t2.sid <= t.sid);';
+      RAISE NOTICE 'EXECUTING _fast_seqassign()...';
+      EXECUTE 'select * from _fast_seqassign(''' || quote_ident(tname) || ''');';
+      RETURN ':-)';
+    END;
+    $$LANGUAGE 'plpgsql';
+
+    CREATE OR REPLACE FUNCTION _fast_seqassign(tname character varying)
+    RETURNS TEXT
+    AS
+    $$
+    DECLARE
+      sids int[] :=  ARRAY(SELECT sid FROM tmp_gpsid_count ORDER BY sid);
+      base_ids bigint[] :=  ARRAY(SELECT base_id FROM tmp_gpsid_count ORDER BY sid);
+      tsids text;
+      tbase_ids text;
+    BEGIN
+      SELECT INTO tsids array_to_string(sids, ',');
+      SELECT INTO tbase_ids array_to_string(base_ids, ',');
+      EXECUTE 'update ' || tname || ' set id = updateid(gp_segment_id, ARRAY[' || tsids || '], ARRAY[' || tbase_ids || ']);';
+      RETURN ':-)';
+    END;
+    $$
+    LANGUAGE 'plpgsql';
+  """
 
   def init() : Unit = {
   }
@@ -256,7 +299,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   val weightMap = scala.collection.mutable.Map[String, Long]()
 
   def dumpFactorGraph(serializer: Serializer, schema: Map[String, _ <: VariableDataType],
-    factorDescs: Seq[FactorDesc],
+    factorDescs: Seq[FactorDesc], holdoutFraction: Double,
     weightsPath: String, variablesPath: String, factorsPath: String, edgesPath: String) : Unit = {
 
     var numVariables  : Long = 0
@@ -264,21 +307,22 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     var numWeights    : Long = 0
     var numEdges      : Long = 0
 
-    // execute(createEdgeCountSQL)
+    execute(createEdgeCountSQL)
     
     log.info(s"Dumping factor graph...")
 
     log.info("Dumping variables...")
+    val randomGen = new Random()
     schema.foreach { case(variable, dataType) =>
       val Array(relation, column) = variable.split('.')
-      // val selectVariablesForDumpSQL = s"""
-      //   SELECT id, (${variable} IS NOT NULL), ${variable}::int, edge_count
-      //   FROM ${relation}, ${EdgesCountTable}
-      //   WHERE ${relation}.id = ${EdgesCountTable}.variable_id"""
-      
       val selectVariablesForDumpSQL = s"""
-        SELECT id, (${variable} IS NOT NULL), ${variable}::int
-        FROM ${relation}"""
+        SELECT id, (${variable} IS NOT NULL), ${variable}::int, edge_count
+        FROM ${relation}, ${EdgesCountTable}
+        WHERE ${relation}.id = ${EdgesCountTable}.variable_id"""
+      
+      // val selectVariablesForDumpSQL = s"""
+      //   SELECT id, (${variable} IS NOT NULL), ${variable}::int
+      //   FROM ${relation}"""
 
       val cardinality = dataType match {
         case BooleanType => 1
@@ -286,12 +330,16 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       }
 
       issueQuery(selectVariablesForDumpSQL) { rs =>
+        var isEvidence = rs.getBoolean(2)
+        if (isEvidence && randomGen.nextFloat < holdoutFraction) {
+          isEvidence = false
+        }
         serializer.addVariable(
           rs.getLong(1),            // id
           rs.getBoolean(2),         // is evidence
           rs.getLong(3),            // initial value
           dataType.toString,        // data type
-          -1,            // edge count
+          rs.getLong(4),            // edge count
           cardinality)              // cardinality
         numVariables += 1
         // log.info(rs.getLong(1).toString)
@@ -373,9 +421,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // writer.println(createWeightsSQL)
     // writer.println(createFactorsSQL)
     // writer.println(createVariablesSQL)
-    writer.println(createVariablesHoldoutSQL)
-    // writer.println(createVariablesMapSQL)
-    // writer.println(createEdgesSQL)
+    // writer.println(createVariablesHoldoutSQL)
     writer.println(createSequencesSQL)
 
     // Ground all variables in the schema
@@ -393,8 +439,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
       // input query
       writer.println(s"""
-        DROP VIEW IF EXISTS ${factorDesc.name}_query CASCADE;
-        CREATE VIEW ${factorDesc.name}_query AS
+        DROP TABLE IF EXISTS ${factorDesc.name}_query CASCADE;
+        CREATE TABLE ${factorDesc.name}_query AS
           SELECT * FROM (${factorDesc.inputQuery}) AS inputQuery;
         """)
       
@@ -402,14 +448,14 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         COMMIT;
         """)
 
-      // factorDesc.func.variables.foreach { case variable =>
-      //   val vidColumn = s"${variable.relation}.id"
-      //   writer.println(s"""
-      //     INSERT INTO ${EdgesTable}(variable_id)
-      //     SELECT "${vidColumn}"
-      //     FROM ${factorDesc.name}_query;
-      //   """) 
-      // }
+      factorDesc.func.variables.foreach { case variable =>
+        val vidColumn = s"${variable.relation}.id"
+        writer.println(s"""
+          INSERT INTO ${EdgesTable}(variable_id)
+          SELECT "${vidColumn}"
+          FROM ${factorDesc.name}_query;
+        """) 
+      }
     }
 
     writer.close()
