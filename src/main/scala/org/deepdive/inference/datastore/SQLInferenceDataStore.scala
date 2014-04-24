@@ -114,15 +114,15 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   //     equal_predicate int);
   // """
 
-  // def createVariablesSQL = s"""
-  //   DROP TABLE IF EXISTS ${VariablesTable} CASCADE; 
-  //   CREATE TABLE ${VariablesTable}(
-  //     id bigserial primary key, 
-  //     data_type text,
-  //     initial_value double precision, 
-  //     cardinality bigint, 
-  //     is_evidence boolean);
-  // """
+  def createVariablesSQL = s"""
+    DROP TABLE IF EXISTS ${VariablesTable} CASCADE; 
+    CREATE TABLE ${VariablesTable}(
+      id bigserial primary key, 
+      data_type text,
+      initial_value double precision, 
+      cardinality bigint, 
+      is_evidence boolean);
+  """
 
   // def createVariablesHoldoutSQL = s"""
   //   DROP TABLE IF EXISTS ${VariablesHoldoutTable} CASCADE; 
@@ -164,6 +164,13 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   //   WHERE ${VariablesTable}.id = ${VariablesMapTable}.variable_id
   //     AND ${VariablesMapTable}.id = ${VariableResultTable}.id;
   // """
+
+  def createMappedInferenceResultView = s"""
+    CREATE VIEW ${MappedInferenceResultView} 
+    AS SELECT ${VariablesTable}.*, ${VariableResultTable}.category, ${VariableResultTable}.expectation 
+    FROM ${VariablesTable}, ${VariableResultTable}
+    WHERE ${VariablesTable}.id = ${VariableResultTable}.id;
+  """
 
   def selectWeightsForDumpSQL = s"""
     SELECT id AS "id", is_fixed AS "is_fixed", initial_value AS "initial_value"
@@ -420,8 +427,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // }
     // writer.println(createWeightsSQL)
     // writer.println(createFactorsSQL)
-    // writer.println(createVariablesSQL)
+    writer.println(createVariablesSQL)
     // writer.println(createVariablesHoldoutSQL)
+    writer.println(createEdgesSQL)
     writer.println(createSequencesSQL)
 
     // Ground all variables in the schema
@@ -431,6 +439,16 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       writer.println(s"""
         UPDATE ${relation} SET id = nextval('${IdSequence}');
         """)
+
+      val cardinalityStr = dataType match {
+        case BooleanType => "null"
+        case MultinomialType(x) => x.toString
+      }
+
+      writer.println(
+        s"""INSERT INTO ${VariablesTable}(id, data_type, initial_value, is_evidence, cardinality)
+        SELECT ${relation}.id, '${dataType}', ${variable}::int, (${variable} IS NOT NULL), ${cardinalityStr}
+        FROM ${relation};""")
 
     }
 
@@ -472,7 +490,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     execute(createInferenceResultSQL)
     execute(createInferenceResultWeightsSQL)
-    // execute(createMappedInferenceResultView)
+    execute(createMappedInferenceResultView)
 
     log.info("Copying inference result weights...")
     bulkCopyWeights(weightsOutputFile)
@@ -489,11 +507,11 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     // execute(createMappedWeightsViewSQL)
 
-    // relationsColumns.foreach { case(relationName, columnName) =>
-    //   execute(createInferenceViewSQL(relationName, columnName))
+    relationsColumns.foreach { case(relationName, columnName) =>
+      execute(createInferenceViewSQL(relationName, columnName))
     //   // TODO
     //   execute(createVariableWeightsViewSQL(relationName, columnName))
-    // }
+    }
   }
 
   def getCalibrationData(variable: String, dataType: VariableDataType, 
