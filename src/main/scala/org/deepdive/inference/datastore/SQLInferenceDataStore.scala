@@ -138,13 +138,13 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   //   WHERE ${VariablesTable}.id = ${VariableResultTable}.id;
   // """
 
-  def selectVariablesForDumpSQL_RAW = s"""
-    DROP TABLE IF EXISTS selectVariablesForDumpSQL_RAW;
-    CREATE TABLE selectVariablesForDumpSQL_RAW AS
-    SELECT id, is_evidence, data_type, initial_value, edge_count, cardinality
-    FROM ${VariablesTable} LEFT JOIN ${EdgesCountTable}
-      ON ${VariablesTable}.id = ${EdgesCountTable}.variable_id;
-  """
+  // def selectVariablesForDumpSQL_RAW = s"""
+  //   DROP TABLE IF EXISTS selectVariablesForDumpSQL_RAW;
+  //   CREATE TABLE selectVariablesForDumpSQL_RAW AS
+  //   SELECT id, is_evidence, data_type, initial_value, edge_count, cardinality
+  //   FROM ${VariablesTable} LEFT JOIN ${EdgesCountTable}
+  //     ON ${VariablesTable}.id = ${EdgesCountTable}.variable_id;
+  // """
 
   def selectVariablesForDumpSQL = s"""
     SELECT id AS "id", is_evidence, initial_value, data_type, edge_count, cardinality
