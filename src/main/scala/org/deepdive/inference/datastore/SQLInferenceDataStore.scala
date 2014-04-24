@@ -31,12 +31,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def FactorsTable = "dd_graph_factors"
   def VariablesTable = "dd_graph_variables"
   def VariablesMapTable = "dd_graph_variables_map"
-  def EdgesTable = "dd_graph_edges"
+  // def EdgesTable = "dd_graph_edges"
   def WeightResultTable = "dd_inference_result_weights"
   def VariableResultTable = "dd_inference_result_variables"
   def MappedInferenceResultView = "dd_mapped_inference_result"
   def IdSequence = "id_sequence"
-  def EdgesCountTable = "dd_graph_edges_count"
+  // def EdgesCountTable = "dd_graph_edges_count"
 
   /* Executes an arbitary SQL statement */
   def executeSql(sql: String) = ds.DB.autoCommit { implicit session =>
@@ -103,12 +103,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       is_evidence boolean);
   """
 
-  def createEdgesSQL = s"""
-    DROP TABLE IF EXISTS ${EdgesTable} CASCADE;
-    CREATE TABLE ${EdgesTable}(
-      variable_id bigint
-    );
-  """
+  // def createEdgesSQL = s"""
+  //   DROP TABLE IF EXISTS ${EdgesTable} CASCADE;
+  //   CREATE TABLE ${EdgesTable}(
+  //     variable_id bigint
+  //   );
+  // """
 
   def createSequencesSQL = s"""
     DROP SEQUENCE IF EXISTS ${IdSequence};
@@ -156,12 +156,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     FROM ${WeightsTable};
   """
 
-  def createEdgeCountSQL = s"""
-    DROP TABLE IF EXISTS ${EdgesCountTable} CASCADE;
-    SELECT variable_id, COUNT(*) AS edge_count
-    INTO ${EdgesCountTable}
-    FROM ${EdgesTable} GROUP BY variable_id;
-  """
+  // def createEdgeCountSQL = s"""
+  //   DROP TABLE IF EXISTS ${EdgesCountTable} CASCADE;
+  //   SELECT variable_id, COUNT(*) AS edge_count
+  //   INTO ${EdgesCountTable}
+  //   FROM ${EdgesTable} GROUP BY variable_id;
+  // """
 
   // def createInferenceResultIndiciesSQL = s"""
   //   DROP INDEX IF EXISTS ${WeightResultTable}_idx CASCADE;
@@ -300,7 +300,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     var numWeights    : Long = 0
     var numEdges      : Long = 0
 
-    execute(createEdgeCountSQL)
+    // execute(createEdgeCountSQL)
     // execute(selectVariablesForDumpSQL_RAW)
     
     log.info(s"Dumping factor graph...")
@@ -426,7 +426,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // writer.println(createWeightsSQL)
     // writer.println(createFactorsSQL)
     // writer.println(createVariablesSQL)
-    writer.println(createEdgesSQL)
+    // writer.println(createEdgesSQL)
     writer.println(createSequencesSQL)
 
     // Ground all variables in the schema
