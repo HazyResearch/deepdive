@@ -30,7 +30,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   // def lastWeightsTable = "dd_graph_last_weights"
   def FactorsTable = "dd_graph_factors"
   def VariablesTable = "dd_graph_variables"
-  // def VariablesHoldoutTable = "dd_graph_variables_holdout"
   def VariablesMapTable = "dd_graph_variables_map"
   def EdgesTable = "dd_graph_edges"
   def WeightResultTable = "dd_inference_result_weights"
@@ -82,16 +81,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   def keyType = "bigserial"
   def stringType = "text"
-
   def randomFunc = "RANDOM()"
-
-
-  // def copyLastWeightsSQL = s"""
-  //   DROP TABLE IF EXISTS ${lastWeightsTable} CASCADE;
-  //   SELECT X.*, Y.weight INTO ${lastWeightsTable}
-  //     FROM ${WeightsTable} AS X INNER JOIN ${WeightResultTable} AS Y ON X.id = Y.id
-  //     ORDER BY id ASC;
-  // """
 
   // def createWeightsSQL = s"""
   //   DROP TABLE IF EXISTS ${WeightsTable} CASCADE;
@@ -103,17 +93,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   //     description text);
   // """
 
-  // def createFactorsSQL = s"""
-  //   DROP TABLE IF EXISTS ${FactorsTable} CASCADE; 
-  //   CREATE TABLE ${FactorsTable}( 
-  //     variable_ids bigint[],
-  //     weight_id bigint, 
-  //     variable_negated boolean[],
-  //     factor_function ${stringType}, 
-  //     factor_group int, 
-  //     equal_predicate int);
-  // """
-
   def createVariablesSQL = s"""
     DROP TABLE IF EXISTS ${VariablesTable} CASCADE; 
     CREATE TABLE ${VariablesTable}(
@@ -123,12 +102,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       cardinality bigint, 
       is_evidence boolean);
   """
-
-  // def createVariablesHoldoutSQL = s"""
-  //   DROP TABLE IF EXISTS ${VariablesHoldoutTable} CASCADE; 
-  //   CREATE TABLE ${VariablesHoldoutTable}(
-  //     variable_id bigint primary key);
-  // """
 
   def createEdgesSQL = s"""
     DROP TABLE IF EXISTS ${EdgesTable} CASCADE;
@@ -157,19 +130,25 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       weight double precision);
   """
 
-  // def createMappedInferenceResultView = s"""
-  //   CREATE VIEW ${MappedInferenceResultView} 
-  //   AS SELECT ${VariablesTable}.*, ${VariableResultTable}.category, ${VariableResultTable}.expectation 
-  //   FROM ${VariablesTable}, ${VariablesMapTable}, ${VariableResultTable}
-  //   WHERE ${VariablesTable}.id = ${VariablesMapTable}.variable_id
-  //     AND ${VariablesMapTable}.id = ${VariableResultTable}.id;
-  // """
 
   def createMappedInferenceResultView = s"""
     CREATE VIEW ${MappedInferenceResultView} 
     AS SELECT ${VariablesTable}.*, ${VariableResultTable}.category, ${VariableResultTable}.expectation 
     FROM ${VariablesTable}, ${VariableResultTable}
     WHERE ${VariablesTable}.id = ${VariableResultTable}.id;
+  """
+
+  def selectVariablesForDumpSQL_RAW = s"""
+    DROP TABLE IF EXISTS selectVariablesForDumpSQL_RAW;
+    CREATE TABLE selectVariablesForDumpSQL_RAW AS
+    SELECT id, is_evidence, data_type, initial_value, edge_count, cardinality
+    FROM ${VariablesTable} LEFT JOIN ${EdgesCountTable}
+      ON ${VariablesTable}.id = ${EdgesCountTable}.variable_id;
+  """
+
+  def selectVariablesForDumpSQL = s"""
+    SELECT id AS "id", is_evidence, initial_value, data_type, edge_count, cardinality
+    FROM selectVariablesForDumpSQL_RAW ORDER BY id;
   """
 
   def selectWeightsForDumpSQL = s"""
@@ -192,6 +171,13 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   //   CREATE INDEX ${VariableResultTable}_idx ON ${VariableResultTable} (expectation);
   //   CREATE INDEX ${FactorsTable}_weight_id_idx ON ${FactorsTable} (weight_id);
   // """
+
+  def createInferenceResultIndiciesSQL = s"""
+    DROP INDEX IF EXISTS ${WeightResultTable}_idx CASCADE;
+    DROP INDEX IF EXISTS ${VariableResultTable}_idx CASCADE;
+    CREATE INDEX ${WeightResultTable}_idx ON ${WeightResultTable} (weight);
+    CREATE INDEX ${VariableResultTable}_idx ON ${VariableResultTable} (expectation);
+  """
 
   def createInferenceViewSQL(relationName: String, columnName: String) = s"""
     CREATE VIEW ${relationName}_${columnName}_inference AS
@@ -315,49 +301,60 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     var numEdges      : Long = 0
 
     execute(createEdgeCountSQL)
+    execute(selectVariablesForDumpSQL_RAW)
     
     log.info(s"Dumping factor graph...")
 
     log.info("Dumping variables...")
-    val randomGen = new Random()
-    schema.foreach { case(variable, dataType) =>
-      val Array(relation, column) = variable.split('.')
-      val selectVariablesForDumpSQL = s"""
-        SELECT id, (${variable} IS NOT NULL), ${variable}::int, edge_count
-        FROM ${relation}, ${EdgesCountTable}
-        WHERE ${relation}.id = ${EdgesCountTable}.variable_id"""
-      
-      // val selectVariablesForDumpSQL = s"""
-      //   SELECT id, (${variable} IS NOT NULL), ${variable}::int
-      //   FROM ${relation}"""
-
-      val cardinality = dataType match {
-        case BooleanType => 1
-        case MultinomialType(x) => x.toLong
-      }
-
-      issueQuery(selectVariablesForDumpSQL) { rs =>
-        var isEvidence = rs.getBoolean(2)
-        if (isEvidence && randomGen.nextFloat < holdoutFraction) {
-          isEvidence = false
-        }
-        serializer.addVariable(
-          rs.getLong(1),            // id
-          rs.getBoolean(2),         // is evidence
-          rs.getLong(3),            // initial value
-          dataType.toString,        // data type
-          rs.getLong(4),            // edge count
-          cardinality)              // cardinality
-        numVariables += 1
-        // log.info(rs.getLong(1).toString)
-        // log.info(rs.getBoolean(3).toString)
-        // log.info(rs.getLong(2).toString)
-        // log.info(dataType.toString)
-        // log.info(cardinality.toString)
-      }
-
-      // TODO: hold out
+    issueQuery(selectVariablesForDumpSQL) { rs => 
+      serializer.addVariable(
+        rs.getLong(1),
+        rs.getBoolean(2),
+        rs.getDouble(3), // return 0 if the value is SQL null
+        rs.getString(4), 
+        rs.getLong(5),
+        rs.getLong(6)) // return 0 if ...
+      numVariables += 1
     }
+
+    // val randomGen = new Random()
+    // schema.foreach { case(variable, dataType) =>
+    //   val Array(relation, column) = variable.split('.')
+    //   val selectVariablesForDumpSQL = s"""
+    //     SELECT id, (${variable} IS NOT NULL), ${variable}::int, edge_count
+    //     FROM ${relation}, ${EdgesCountTable}
+    //     WHERE ${relation}.id = ${EdgesCountTable}.variable_id"""
+      
+    //   // val selectVariablesForDumpSQL = s"""
+    //   //   SELECT id, (${variable} IS NOT NULL), ${variable}::int
+    //   //   FROM ${relation}"""
+
+    //   val cardinality = dataType match {
+    //     case BooleanType => 1
+    //     case MultinomialType(x) => x.toLong
+    //   }
+
+    //   issueQuery(selectVariablesForDumpSQL) { rs =>
+    //     var isEvidence = rs.getBoolean(2)
+    //     if (isEvidence && randomGen.nextFloat < holdoutFraction) {
+    //       isEvidence = false
+    //     }
+    //     serializer.addVariable(
+    //       rs.getLong(1),            // id
+    //       rs.getBoolean(2),         // is evidence
+    //       rs.getLong(3),            // initial value
+    //       dataType.toString,        // data type
+    //       rs.getLong(4),            // edge count
+    //       cardinality)              // cardinality
+    //     numVariables += 1
+    //     // log.info(rs.getLong(1).toString)
+    //     // log.info(rs.getBoolean(3).toString)
+    //     // log.info(rs.getLong(2).toString)
+    //     // log.info(dataType.toString)
+    //     // log.info(cardinality.toString)
+    //   }
+
+    // }
 
     log.info("Dumping factors...")
 
@@ -428,7 +425,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // writer.println(createWeightsSQL)
     // writer.println(createFactorsSQL)
     writer.println(createVariablesSQL)
-    // writer.println(createVariablesHoldoutSQL)
     writer.println(createEdgesSQL)
     writer.println(createSequencesSQL)
 
@@ -440,17 +436,39 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         UPDATE ${relation} SET id = nextval('${IdSequence}');
         """)
 
-      val cardinalityStr = dataType match {
-        case BooleanType => "null"
-        case MultinomialType(x) => x.toString
-      }
-
       writer.println(
         s"""INSERT INTO ${VariablesTable}(id, data_type, initial_value, is_evidence, cardinality)
-        SELECT ${relation}.id, '${dataType}', ${variable}::int, (${variable} IS NOT NULL), ${cardinalityStr}
+        SELECT ${relation}.id, '${dataType}', ${variable}::int, (${variable} IS NOT NULL), 1
         FROM ${relation};""")
-
     }
+
+    // Assign the holdout - Random (default) or user-defined query
+    writer.println(s"""UPDATE ${VariablesTable} SET is_evidence=false
+      WHERE ${randomFunc} < ${holdoutFraction} AND is_evidence = true;""")
+
+
+    // writer.println(s"""UPDATE ${VariablesTable} SET is_evidence=false
+    //   WHERE ${VariablesTable}.id IN (SELECT variable_id FROM ${VariablesHoldoutTable});""")
+
+    // // Ground all variables in the schema
+    // schema.foreach { case(variable, dataType) =>
+    //   val Array(relation, column) = variable.split('.')
+
+    //   writer.println(s"""
+    //     UPDATE ${relation} SET id = nextval('${IdSequence}');
+    //     """)
+
+    //   val cardinalityStr = dataType match {
+    //     case BooleanType => "null"
+    //     case MultinomialType(x) => x.toString
+    //   }
+
+    //   writer.println(
+    //     s"""INSERT INTO ${VariablesTable}(id, data_type, initial_value, is_evidence, cardinality)
+    //     SELECT ${relation}.id, '${dataType}', ${variable}::int, (${variable} IS NOT NULL), ${cardinalityStr}
+    //     FROM ${relation};""")
+
+    // }
 
     // Create table for each inference rule
     factorDescs.zipWithIndex.foreach { case(factorDesc, idx) =>
@@ -497,7 +515,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     log.info("Copying inference result variables...")
     bulkCopyVariables(variableOutputFile)
     // log.info("Creating indicies on the inference result...")
-    // execute(createInferenceResultIndiciesSQL)
+    execute(createInferenceResultIndiciesSQL)
 
     // Each (relation, column) tuple is a variable in the plate model.
      // Find all (relation, column) combinations
