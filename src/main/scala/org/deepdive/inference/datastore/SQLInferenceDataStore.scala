@@ -301,7 +301,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     var numEdges      : Long = 0
 
     execute(createEdgeCountSQL)
-    execute(selectVariablesForDumpSQL_RAW)
+    // execute(selectVariablesForDumpSQL_RAW)
     
     log.info(s"Dumping factor graph...")
 
@@ -320,14 +320,14 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     val randomGen = new Random()
     schema.foreach { case(variable, dataType) =>
       val Array(relation, column) = variable.split('.')
-      val selectVariablesForDumpSQL = s"""
-        SELECT id, (${variable} IS NOT NULL), ${variable}::int, edge_count
-        FROM ${relation} LEFT JOIN ${EdgesCountTable}
-        ON ${relation}.id = ${EdgesCountTable}.variable_id"""
-      
       // val selectVariablesForDumpSQL = s"""
-      //   SELECT id, (${variable} IS NOT NULL), ${variable}::int
-      //   FROM ${relation}"""
+      //   SELECT id, (${variable} IS NOT NULL), ${variable}::int, edge_count
+      //   FROM ${relation} LEFT JOIN ${EdgesCountTable}
+      //   ON ${relation}.id = ${EdgesCountTable}.variable_id"""
+      
+      val selectVariablesForDumpSQL = s"""
+        SELECT id, (${variable} IS NOT NULL), ${variable}::int
+        FROM ${relation}"""
 
       val cardinality = dataType match {
         case BooleanType => 0
@@ -341,10 +341,11 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         }
         serializer.addVariable(
           rs.getLong(1),            // id
-          rs.getBoolean(2),         // is evidence
+          isEvidence,               // is evidence
           rs.getLong(3),            // initial value
           dataType.toString,        // data type
-          rs.getLong(4),            // edge count
+          //rs.getLong(4),            // edge count
+          -1,
           cardinality)              // cardinality
         numVariables += 1
         // log.info(rs.getLong(1).toString)
@@ -429,18 +430,18 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     writer.println(createSequencesSQL)
 
     // Ground all variables in the schema
-    // schema.foreach { case(variable, dataType) =>
-    //   val Array(relation, column) = variable.split('.')
+    schema.foreach { case(variable, dataType) =>
+      val Array(relation, column) = variable.split('.')
 
-      // writer.println(s"""
-      //   UPDATE ${relation} SET id = nextval('${IdSequence}');
-      //   """)
+      writer.println(s"""
+        UPDATE ${relation} SET id = nextval('${IdSequence}');
+        """)
 
       // writer.println(
       //   s"""INSERT INTO ${VariablesTable}(id, data_type, initial_value, is_evidence, cardinality)
       //   SELECT ${relation}.id, '${dataType}', ${variable}::int, (${variable} IS NOT NULL), 1
       //   FROM ${relation};""")
-    // }
+    }
 
     // // Assign the holdout - Random (default) or user-defined query
     // writer.println(s"""UPDATE ${VariablesTable} SET is_evidence=false
@@ -473,25 +474,31 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // Create table for each inference rule
     factorDescs.zipWithIndex.foreach { case(factorDesc, idx) =>
 
+      // // input query
+      // writer.println(s"""
+      //   DROP TABLE IF EXISTS ${factorDesc.name}_query CASCADE;
+      //   SELECT * INTO ${factorDesc.name}_query
+      //   FROM (${factorDesc.inputQuery}) AS inputQuery;
+      //   """)
+      
       // input query
       writer.println(s"""
-        DROP TABLE IF EXISTS ${factorDesc.name}_query CASCADE;
-        SELECT * INTO ${factorDesc.name}_query
-        FROM (${factorDesc.inputQuery}) AS inputQuery;
+        DROP VIEW IF EXISTS ${factorDesc.name}_query CASCADE;
+        CREATE VIEW ${factorDesc.name}_query AS (${factorDesc.inputQuery});
         """)
-      
+
       writer.println(s"""
         COMMIT;
         """)
 
-      factorDesc.func.variables.foreach { case variable =>
-        val vidColumn = s"${variable.relation}.id"
-        writer.println(s"""
-          INSERT INTO ${EdgesTable}(variable_id)
-          SELECT "${vidColumn}"
-          FROM ${factorDesc.name}_query;
-        """) 
-      }
+      // factorDesc.func.variables.foreach { case variable =>
+      //   val vidColumn = s"${variable.relation}.id"
+      //   writer.println(s"""
+      //     INSERT INTO ${EdgesTable}(variable_id)
+      //     SELECT "${vidColumn}"
+      //     FROM ${factorDesc.name}_query;
+      //   """) 
+      // }
     }
 
     writer.close()
