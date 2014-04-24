@@ -440,8 +440,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       // input query
       writer.println(s"""
         DROP TABLE IF EXISTS ${factorDesc.name}_query CASCADE;
-        CREATE TABLE ${factorDesc.name}_query AS
-          SELECT * FROM (${factorDesc.inputQuery}) AS inputQuery;
+        SELECT * INTO ${factorDesc.name}_query
+        FROM (${factorDesc.inputQuery}) AS inputQuery;
         """)
       
       writer.println(s"""
@@ -489,11 +489,11 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     // execute(createMappedWeightsViewSQL)
 
-    relationsColumns.foreach { case(relationName, columnName) =>
-      execute(createInferenceViewSQL(relationName, columnName))
-      // TODO
-      // execute(createVariableWeightsViewSQL(relationName, columnName))
-    }
+    // relationsColumns.foreach { case(relationName, columnName) =>
+    //   execute(createInferenceViewSQL(relationName, columnName))
+    //   // TODO
+    //   execute(createVariableWeightsViewSQL(relationName, columnName))
+    // }
   }
 
   def getCalibrationData(variable: String, dataType: VariableDataType, 
