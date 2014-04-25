@@ -89,7 +89,9 @@ def make_insert_func(query, funcname, outputrel):
     raise RuntimeError('Cannot have empty return_names!')
   ret += "INSERT INTO " + outputrel + "(" + \
     ', '.join(_return_names) + """)\nSELECT """
-  ret += ', '.join(["""(__X.__COLUMN).""" + name for name in _return_names])
+  ret += ', '.join([
+    'unnest(' + 
+    """(__X.__COLUMN).""" + name + ')' for name in _return_names])
   
   # HEURISTIC: First select--Last from is the select content we need
   query = query.lstrip().rstrip(' \t\n;').lower()
