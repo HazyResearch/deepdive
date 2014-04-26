@@ -367,7 +367,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       val isFixed = factorDesc.weight.isInstanceOf[KnownFactorWeight]
       val functionName = factorDesc.func.getClass.getSimpleName
 
-      val selectInputQueryForDumpSQL = s"SELECT * FROM ${factorDesc.name}_query"
+      val selectInputQueryForDumpSQL = s"SELECT * FROM ${factorDesc.name}_query_user"
       // val variableCols = factorDesc.func.variables.map(v => s"${v.relation}.id")
       val weightVariableCols = factorDesc.weight.variables
       val variables = factorDesc.func.variables
@@ -433,9 +433,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     schema.foreach { case(variable, dataType) =>
       val Array(relation, column) = variable.split('.')
 
-      writer.println(s"""
-        UPDATE ${relation} SET id = nextval('${IdSequence}');
-        """)
+      // writer.println(s"""
+      //   UPDATE ${relation} SET id = nextval('${IdSequence}');
+      //   """)
 
       // writer.println(
       //   s"""INSERT INTO ${VariablesTable}(id, data_type, initial_value, is_evidence, cardinality)
@@ -483,8 +483,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       
       // input query
       writer.println(s"""
-        DROP VIEW IF EXISTS ${factorDesc.name}_query CASCADE;
-        CREATE VIEW ${factorDesc.name}_query AS (${factorDesc.inputQuery});
+        DROP VIEW IF EXISTS ${factorDesc.name}_query_user CASCADE;
+        CREATE VIEW ${factorDesc.name}_query_user AS (${factorDesc.inputQuery});
         """)
 
       writer.println(s"""
