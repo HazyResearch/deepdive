@@ -427,7 +427,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // writer.println(createFactorsSQL)
     // writer.println(createVariablesSQL)
     // writer.println(createEdgesSQL)
-    writer.println(createSequencesSQL)
+    // writer.println(createSequencesSQL)
 
     // Ground all variables in the schema
     schema.foreach { case(variable, dataType) =>
