@@ -65,7 +65,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     conn.setAutoCommit(false);
     val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
       java.sql.ResultSet.CONCUR_READ_ONLY);
-    stmt.setFetchSize(10000);
+    stmt.setFetchSize(1000);
     val rs = stmt.executeQuery(sql)
     while(rs.next()){
       op(rs)
@@ -485,10 +485,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       writer.println(s"""
         DROP VIEW IF EXISTS ${factorDesc.name}_query_user CASCADE;
         CREATE VIEW ${factorDesc.name}_query_user AS (${factorDesc.inputQuery});
-        """)
-
-      writer.println(s"""
-        COMMIT;
         """)
 
       // factorDesc.func.variables.foreach { case variable =>
