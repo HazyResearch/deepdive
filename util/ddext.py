@@ -88,9 +88,15 @@ def parse(ext_code, ext_name):
 
 def _make_SD():
   init_func_exec = re.sub(r'[ \t]*ddext\.', '', _init_func_content)
-  exec(init_func_exec)
+  init_func_exec = re.sub(r'\n[ \t]*', '\n', init_func_exec)
 
-  # TODO make RUN function ddext.LIBNAME -> SD['LIBNAME']!!
+  # print >>sys.stderr, init_func_exec
+  try:
+    exec(init_func_exec)
+  except:
+    print >>sys.stderr, "ERROR: cannot parse init function. Try to remove comments and extra lines in function init()."
+    print >>sys.stderr, init_func_exec
+    sys.exit(1)
 
 def make_pg_func():
 
@@ -107,7 +113,7 @@ def make_pg_func():
   ret += 'DROP TYPE IF EXISTS ' + ret_type_name + ' CASCADE;\n'
   ret += 'CREATE TYPE ' + ret_type_name + ' AS (' \
     + ', '.join([ _return_names[i] + ' ' \
-    + _return_types[i] for i in range(len(_return_names))]) \
+    + _return_types[i] + ' []' for i in range(len(_return_names))]) \
     + ');\n'
 
   
@@ -115,7 +121,7 @@ def make_pg_func():
   ret += 'CREATE OR REPLACE FUNCTION ' + func_name + '''(
     ''' + ', '.join([ _input_names[i] + ' ' \
     + _input_types[i] for i in range(len(_input_names))]) \
-    + ''') RETURNS SETOF ''' + ret_type_name + ' AS\n$$\n';
+    + ''') RETURNS ''' + ret_type_name + ' AS\n$$\n';
 
   # Import Libraries
   for lib in _libraries:

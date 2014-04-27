@@ -76,8 +76,5 @@ def run(sentence_id, p1_id, p1_text, p2_id, p2_text):
   elif (p1_t == p2_t) or (p1_t in p2_t) or (p2_t in p1_t):
     is_true = False
 
-  # RETURN: cannot return a single tuple; must return a set of Tuples!
-  # # This is wrong:
-  # return [p1_id, p2_id, sentence_id, "%s-%s" % (p1_t, p2_t), is_true]
-  # This is correct:
-  return [[p1_id, p2_id, sentence_id, "%s-%s" % (p1_t, p2_t), is_true]]
+  # SEMANTICS UPDATE: Must return tuples of arrays.
+  return [[p1_id], [p2_id], [sentence_id], ["%s-%s" % (p1_t, p2_t)], [is_true]]

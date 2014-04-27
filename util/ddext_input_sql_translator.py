@@ -78,7 +78,16 @@ def parse(ext_code, ext_name):
 
 def _make_SD():
   init_func_exec = re.sub(r'[ \t]*ddext\.', '', _init_func_content)
-  exec(init_func_exec)
+  init_func_exec = re.sub(r'\n[ \t]*', '\n', init_func_exec)
+
+  # print >>sys.stderr, init_func_exec
+  try:
+    exec(init_func_exec)
+  except:
+    print >>sys.stderr, "ERROR: cannot parse init function. Try to remove comments and extra lines in function init()."
+    print >>sys.stderr, init_func_exec
+    sys.exit(1)
+
 
   # TODO make RUN function ddext.LIBNAME -> SD['LIBNAME']!!
 
@@ -89,19 +98,31 @@ def make_insert_func(query, funcname, outputrel):
     raise RuntimeError('Cannot have empty return_names!')
   ret += "INSERT INTO " + outputrel + "(" + \
     ', '.join(_return_names) + """)\nSELECT """
-  ret += ', '.join(["""(__X.__COLUMN).""" + name for name in _return_names])
+  ret += ', '.join([
+    'unnest(' + 
+    """(__X.__COLUMN).""" + name + ')' for name in _return_names])
   
-  # HEURISTIC: First select--Last from is the select content we need
+  # HEURISTIC: First select--FIRST from is the select content we need
+  # MIGHT BE WRONG!!!
   query = query.lstrip().rstrip(' \t\n;').lower()
-  parts = query.rsplit('from', 2)
-  if len(parts) != 2: # Only select part
+  # # LAST from
+  # parts = query.rsplit('from', 2)
+  # FIRST from
+  # Python bug: canot accept maxsplit
+  parts = query.split('from', 2) 
+  if len(parts) < 2: # Only select part
+    print 'WARNING: No FROM clause. Parts:',len(parts)
+    print parts
     rest_part = ''
   else: 
-    rest_part = 'from ' + parts[1]
+    rest_part = 'from'.join([''] + parts[1:])
+    # print rest_part
   subparts = parts[0].split('select', 2)
-  if len(subparts) != 2:
+
+  if len(subparts) < 2:
+    print 'ERROR: SUBPARTS:', '\n\n'.join(subparts), len(subparts)
     raise RuntimeError('NO SELECT IN INPUT SQL!')
-  select_content = subparts[1]
+  select_content = 'select'.join( subparts[1:] )
   
   if '"' in select_content:
     print >>sys.stderr, 'WARNING: quotation marks "" in input query might cause errors.'
