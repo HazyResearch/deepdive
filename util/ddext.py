@@ -88,9 +88,15 @@ def parse(ext_code, ext_name):
 
 def _make_SD():
   init_func_exec = re.sub(r'[ \t]*ddext\.', '', _init_func_content)
-  exec(init_func_exec)
+  init_func_exec = re.sub(r'\n[ \t]*', '\n', init_func_exec)
 
-  # TODO make RUN function ddext.LIBNAME -> SD['LIBNAME']!!
+  # print >>sys.stderr, init_func_exec
+  try:
+    exec(init_func_exec)
+  except:
+    print >>sys.stderr, "ERROR: cannot parse init function. Try to remove comments and extra lines in function init()."
+    print >>sys.stderr, init_func_exec
+    sys.exit(1)
 
 def make_pg_func():
 
