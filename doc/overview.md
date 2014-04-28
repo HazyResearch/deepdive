@@ -17,11 +17,18 @@ DeepDive assumes that you have initial data stored in a relational datastore, su
 
 ### 2. Feature Extraction
 
+<!-- TODO -->
+
 [Feature Extraction](http://en.wikipedia.org/wiki/Feature_extraction) is the process of transforming raw data into a set of *features* that capture important information about the data. The goal of the feature extraction step is to extract useful features that can be used during [probabilistic inference](/doc/probabilistic_inference.html). For example, in Information Extraction applications, you may extract *features* that describe a word's part of speech, what type of entity it is (person, organization, etc), or its relationship to other words in the sentence.
 
-DeepDive provides an abstraction called *extractors* to streamline feature extraction. The input of an extractor is defined by a query against the database. DeepDive converts this data to JSON, and sends it to the extractor. Each extractor takes JSON tuples as input, and produces JSON tuples as output. One may think of an extractor as a function which maps one input tuple to one or more output tuples, similar to a `map` or `flatMap` function in functional programming languages. The output of an extractor is written back to the data store by DeepDive, and can be used in other extractors and/or during the inference step.
+DeepDive provides an abstraction called *extractors* to streamline feature extraction. 
+DeepDive support [multiple types of extractors](doc/extractors.html) to facilitate this process.
+In most cases, an extractor performs a user-defined function (UDF) on an input query against database. One may think of this kind of extractors as a function which maps one input tuple to one or more output tuples, similar to a `map` or `flatMap` function in functional programming languages. The output of an extractor is written back to the data store by DeepDive, and can be used in other extractors and/or during the inference step.
+Users can also specify extractors that simply executes a SQL query or an arbitrary shell command.
 
-Because extractors operate on *stdin* and *stdout* they can be arbitrary executable files, written in any programming language. If you are familiar with Hadoop, this is quite similar to how Hadoop streaming functions are written. For example, one could write an extractor that extracts words form a sentence in Python as follows:
+<!-- Because extractors operate on *stdin* and *stdout* they can be arbitrary executable files, written in any programming language. If you are familiar with Hadoop, this is quite similar to how Hadoop streaming functions are written.  -->
+
+For example, one could write an extractor that extracts words form a sentence in Python as follows:
 
 {% highlight python %}
 #! /usr/bin/env python
