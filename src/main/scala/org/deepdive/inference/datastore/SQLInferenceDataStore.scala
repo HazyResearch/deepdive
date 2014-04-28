@@ -65,7 +65,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     conn.setAutoCommit(false);
     val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
       java.sql.ResultSet.CONCUR_READ_ONLY);
-    stmt.setFetchSize(10000);
+    stmt.setFetchSize(1000);
     val rs = stmt.executeQuery(sql)
     while(rs.next()){
       op(rs)
@@ -371,6 +371,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       // val variableCols = factorDesc.func.variables.map(v => s"${v.relation}.id")
       val weightVariableCols = factorDesc.weight.variables
       val variables = factorDesc.func.variables
+      weightMap.clear()
 
       // variables.foreach { v => 
       //   log.info(i.toString) 
@@ -378,8 +379,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       // i += 1
 
       issueQuery(selectInputQueryForDumpSQL) { rs =>
-        val weightCmd = factorDesc.weightPrefix.concat("-").concat(
-          weightVariableCols.map(v => rs.getString(v)).mkString(","))
+        val weightCmd = weightVariableCols.map(v => rs.getString(v)).mkString(",")
         var weightId : Long = -1
 
         // log.info(weightCmd)
@@ -485,10 +485,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       writer.println(s"""
         DROP VIEW IF EXISTS ${factorDesc.name}_query_user CASCADE;
         CREATE VIEW ${factorDesc.name}_query_user AS (${factorDesc.inputQuery});
-        """)
-
-      writer.println(s"""
-        COMMIT;
         """)
 
       // factorDesc.func.variables.foreach { case variable =>
