@@ -19,6 +19,7 @@ import rx.lang.scala.subjects._
 import play.api.libs.json._
 import scala.util.Random
 import java.io.{File, PrintWriter}
+import java.nio.file.Files
 import scala.io.Source
 
 /* Companion object to the ExtractorRunner */
@@ -80,6 +81,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
       log.info(s"Received task=${task.extractor.name}. Executing")
       
       val taskSender = sender
+      
       task.extractor.style match {
         // Execute the before script. Fail if the script fails.
         case "udf_extractor" =>
@@ -95,6 +97,74 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
           // We will then forward the data to our workers
           Future { sendData(task, workers, taskSender) }
           goto(Running) using Task(task, sender, workers)
+
+        // Zifei: New code path for faster extraction
+        //   Get rid of scala file operations
+        //   COPY to a file, split files, and send to extractors
+        case "tsv_extractor" =>
+
+          // Execute the before script. Fail if the script fails.
+          task.extractor.beforeScript.foreach {
+            beforeScript =>
+              log.info("Executing before script.")
+              executeScriptOrFail(beforeScript, taskSender)
+          }
+
+          val udfCmd = task.extractor.udf
+          val funcName = s"func_${task.extractor.name}"
+          
+          val inputQuery = task.extractor.inputQuery match {
+            case DatastoreInputQuery(query) => query
+            case _ => 
+          }
+          val queryOutputFile = File.createTempFile(s"copy_query_${funcName}", ".tsv")
+          // executeSqlQueryOrFail
+
+          // Single-thread copy to a file
+          val copyQuery = "COPY (" + s"${inputQuery}".replaceAll("""(?m)[;\s\n]+$""", "") + ") TO STDOUT;"
+          log.info(s"Copying file into ${queryOutputFile}")
+          executeSqlQueryOrFail(copyQuery, taskSender, queryOutputFile.getAbsolutePath())
+
+          val splitPrefix = queryOutputFile.getAbsolutePath() + "-"
+          val linesPerSplit = task.extractor.inputBatchSize
+          val splitCmd = s"split -l ${linesPerSplit} " + queryOutputFile.getAbsolutePath() + s" ${splitPrefix}"
+
+          log.info(s"Executing split command: ${splitCmd}")
+          executeScriptOrFail(splitCmd, taskSender)
+
+          val maxParallel = "0"  // As many as possible
+          val runCmd = s"find ${splitPrefix}* -print0 | xargs -0 -P ${maxParallel} -L 1 bash -c '${udfCmd} " + "<" + " \"$0\" > \"$0.out\"'"
+
+          log.info(s"Executing parallel UDF command: ${runCmd}")
+          // executeScriptOrFail(runCmd, taskSender)
+
+          val udfTmpFile = File.createTempFile(s"exec_parallel_udf", ".sh")
+          val writer = new PrintWriter(udfTmpFile)
+          writer.println(s"${runCmd}")
+          writer.close()
+          log.debug(s"Temporary UDF file saved to ${udfTmpFile.getAbsolutePath()}")
+          executeScriptOrFail(udfTmpFile.getAbsolutePath(), taskSender)
+
+          val outputRel = task.extractor.outputRelation
+          val dbname = System.getenv("DBNAME")
+          val pguser = System.getenv("PGUSER")
+          val pgport = System.getenv("PGPORT")
+          val pghost = System.getenv("PGHOST")
+          val writebackCmd = s"find ${splitPrefix}*.out -print0 | xargs -0 -P ${maxParallel} -L 1 bash -c 'psql -d ${dbname} -U ${pguser} -p ${pgport} -h ${pghost} -c " + "\"COPY " + s"${outputRel} FROM STDIN;" + " \" < \"$0\"'"
+
+          val writebackTmpFile = File.createTempFile(s"exec_parallel_writeback", ".sh")
+          val writer2 = new PrintWriter(writebackTmpFile)
+          writer2.println(s"${writebackCmd}")
+          writer2.close()
+          log.debug(s"Temporary writeback file saved to ${writebackTmpFile.getAbsolutePath()}")
+          executeScriptOrFail(writebackTmpFile.getAbsolutePath(), taskSender)
+
+          taskSender ! "Done!"
+          stop
+
+
+
+
         // Execute the sql query from sql extractor
         case "sql_extractor" =>
           log.info("Executing sql query.")
@@ -108,8 +178,8 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
               log.info("Executing cmd script.")
               executeScriptOrFail(cmd, taskSender)
           }
-            taskSender ! "Done!"
-            stop
+          taskSender ! "Done!"
+          stop
 
         case "plpy_extractor" =>
 
@@ -337,7 +407,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
     dataStore.queryUpdate(task.extractor.sqlQuery)
   }
 
-  def executeSqlQueryOrFail(query: String, failureReceiver: ActorRef) { 
+  def executeSqlQueryOrFail(query: String, failureReceiver: ActorRef, pipeOutFilePath: String = null) { 
     // dataStore.executeCmd(query)
     val file = File.createTempFile(s"exec_sql", ".sh")
     val writer = new PrintWriter(file)
@@ -346,11 +416,17 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
     // val pgpw = System.getenv("PGPASSWORD")
     val pgport = System.getenv("PGPORT")
     val pghost = System.getenv("PGHOST")
-    val cmd = s"psql -d ${dbname} -U ${pguser} -p ${pgport} -h ${pghost} -c " + "\"\"\"" + query + "\"\"\""
+    val pipeOutStr = pipeOutFilePath match {
+      case null => ""
+      case _ => " > " + pipeOutFilePath
+    }
+    val cmd = s"psql -d ${dbname} -U ${pguser} -p ${pgport} -h ${pghost} -c " + "\"\"\"" + query + "\"\"\"" + pipeOutStr
+
     writer.println(s"${cmd}")
     writer.close()
     log.debug(s"Temporary bash file saved to ${file.getAbsolutePath()}")
     executeScriptOrFail(file.getAbsolutePath(), failureReceiver)
+    // executeScriptOrFail(cmd, failureReceiver)
     
     // executeCmd(s"psql -d ${dbname} -c " + "\"\"\"" + query + "\"\"\"")
   }

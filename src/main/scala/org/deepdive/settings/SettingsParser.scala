@@ -51,7 +51,7 @@ object SettingsParser extends Logging {
       val extractorConfig = extractionConfig.getConfig(s"extractors.$extractorName")
       val style = Try(extractorConfig.getString(s"style")).getOrElse("udf_extractor")
       style match {
-        case "udf_extractor" | "plpy_extractor"=>
+        case "udf_extractor" | "plpy_extractor" | "tsv_extractor" =>
           val outputRelation = extractorConfig.getString ("output_relation")
           val inputQuery = InputQueryParser.parse (InputQueryParser.inputQueryExpr,
             extractorConfig.getString (s"input") ).getOrElse {
