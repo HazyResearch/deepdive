@@ -120,6 +120,20 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
           val queryOutputFile = File.createTempFile(s"copy_query_${funcName}", ".tsv")
           // executeSqlQueryOrFail
 
+          // TODO (msushkov): detect if the user is using Greenplum or not, and if they are,
+          // run gpunload
+          
+          val conn = dataStore.borrowConnection()
+          conn.setAutoCommit(false);
+          val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
+            java.sql.ResultSet.CONCUR_READ_ONLY);
+          stmt.setFetchSize(100);
+          val rs = stmt.executeQuery(sql)
+          while(rs.next()){
+            op(rs)
+          }
+          conn.close()
+
           // Single-thread copy to a file
           val copyQuery = "COPY (" + s"${inputQuery}".replaceAll("""(?m)[;\s\n]+$""", "") + ") TO STDOUT;"
           log.info(s"Copying file into ${queryOutputFile}")
@@ -133,6 +147,8 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
           executeScriptOrFail(splitCmd, taskSender)
 
           val maxParallel = "0"  // As many as possible
+
+          // Note (msushkov): the extractor must take TSV as input and produce TSV as output
           val runCmd = s"find ${splitPrefix}* -print0 | xargs -0 -P ${maxParallel} -L 1 bash -c '${udfCmd} " + "<" + " \"$0\" > \"$0.out\"'"
 
           log.info(s"Executing parallel UDF command: ${runCmd}")
@@ -144,6 +160,29 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
           writer.close()
           log.debug(s"Temporary UDF file saved to ${udfTmpFile.getAbsolutePath()}")
           executeScriptOrFail(udfTmpFile.getAbsolutePath(), taskSender)
+
+          // Copy each of the files into the DB. If user is using Greenplum, use gpload
+
+          // TODO (msushkov): if the user is using Greenplum, execute a bash script of the following
+          // form: gpload -f <yml file> where <yml file> has the following contents:
+          /**
+
+          ---
+          VERSION: 1.0.0.1
+          DATABASE: $DBNAME
+          USER: $PGUSER
+          HOST: $PGHOST
+          PORT: $PGPORT
+          GPLOAD:
+             INPUT:
+              - SOURCE:
+                   FILE: 
+                     - /dfs/ilfs2/0/msushkov/zifei_new_ext_pipeline/ext_tables_manual/smalL_data_run/entity_mentions/post_extractor/*
+              - FORMAT: text
+              - DELIMITER: E'\t'
+             OUTPUT:
+              - TABLE: $outputRel
+          */
 
           val outputRel = task.extractor.outputRelation
           val dbname = System.getenv("DBNAME")
