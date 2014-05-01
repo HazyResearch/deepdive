@@ -76,6 +76,7 @@ object DeepDive extends Logging {
         settings.inferenceSettings.factors.filter(f => pipeline.tasks.contains(f.name))
       case None => settings.inferenceSettings.factors
     }
+    
     val groundFactorGraphMsg = InferenceManager.GroundFactorGraph(
       activeFactors, settings.calibrationSettings.holdoutFraction, settings.calibrationSettings.holdoutQuery,
         settings.inferenceSettings.skipLearning,
@@ -105,12 +106,20 @@ object DeepDive extends Logging {
     // Create a pipeline that runs only from learning
     val relearnPipeline = Pipeline("_relearn", Set("inference", "calibration", "report", "shutdown"))
 
+    log.info(s"Number of active factors: ${activeFactors.size}")
+    // If no factors are active, do not do grounding, inference and calibration
+    val postExtraction = activeFactors.size match {
+      case 0 => 
+        log.info("No active factors. Skip inference.")
+        Set("report", "shutdown")
+      case _ => Set("inference_grounding", "inference", "calibration", "report", "shutdown")
+    }
     // Figure out which pipeline to run
     val activePipeline = relearnFrom match {
       case null => 
           settings.pipelineSettings.activePipeline match {
             case Some(pipeline) => pipeline.copy(tasks = pipeline.tasks ++ 
-              Set("inference_grounding", "inference", "calibration", "report", "shutdown"))
+              postExtraction)
             case None => defaultPipeline
           }
       case _ => relearnPipeline
