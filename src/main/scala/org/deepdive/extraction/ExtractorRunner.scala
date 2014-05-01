@@ -132,7 +132,8 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
           log.info(s"Executing split command: ${splitCmd}")
           executeScriptOrFail(splitCmd, taskSender)
 
-          val maxParallel = "0"  // As many as possible
+          // val maxParallel = "0"  // As many as possible, which is dangerous
+          val maxParallel = task.extractor.parallelism
 
           // Note (msushkov): the extractor must take TSV as input and produce TSV as output
           val runCmd = s"find ${splitPrefix}* -print0 | xargs -0 -P ${maxParallel} -L 1 bash -c '${udfCmd} " + "<" + " \"$0\" > \"$0.out\"'"
