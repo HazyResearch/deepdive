@@ -50,7 +50,7 @@ trait ExtractionManager extends Actor with ActorLogging {
   // Number of executors we can run in parallel
   def parallelism : Int
 
-  implicit val ExtractorTimeout = Timeout(24 hours)
+  implicit val ExtractorTimeout = Timeout(200 hours)
   import context.dispatcher
   
   // Keeps track of the tasks

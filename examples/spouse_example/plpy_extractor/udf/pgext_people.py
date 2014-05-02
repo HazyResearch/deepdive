@@ -40,12 +40,18 @@ def run(id, words, ner_tags):
     elif start_index == len(ner_list)+1: break
     else: start_index = start_index + 1
 
-  return [ (
-      id,
-      phrase[0],
-      len(phrase),
-      " ".join(words[phrase[0]:phrase[-1]+1])
-        ) for phrase in phrases_indicies]
+  # plpy New format: return a tuple of arrays.
+  ids = []
+  starts = []
+  lengths = []
+  texts = []
+  for phrase in phrases_indicies:
+    ids.append(id)
+    starts.append(phrase[0])
+    lengths.append(len(phrase))
+    texts.append(" ".join(words[phrase[0]:phrase[-1]+1]))
+  
+  return (ids, starts, lengths, texts)
 
   # # Output a tuple for each PERSON phrase
   # for phrase in phrases_indicies:

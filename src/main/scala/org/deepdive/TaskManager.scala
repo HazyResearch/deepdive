@@ -25,7 +25,7 @@ class TaskManager extends Actor with ActorLogging {
 
   import TaskManager._
 
-  implicit val taskTimeout = Timeout(24 hours)
+  implicit val taskTimeout = Timeout(200 hours)
   import context.dispatcher
 
   val taskQueue = Set[Task]()

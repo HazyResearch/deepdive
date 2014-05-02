@@ -17,7 +17,7 @@ import scala.util.Try
 trait InferenceManager extends Actor with ActorLogging {
   self: InferenceDataStoreComponent =>
   
-  implicit val taskTimeout = Timeout(24 hours)
+  implicit val taskTimeout = Timeout(200 hours)
   import context.dispatcher
 
   // All variables used in the system with their types
