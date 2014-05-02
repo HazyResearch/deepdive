@@ -81,15 +81,17 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
       log.info(s"Received task=${task.extractor.name}. Executing")
       
       val taskSender = sender
-      
+
+      // Execute the before script. Fail if the script fails.
+      task.extractor.beforeScript.foreach {
+        beforeScript =>
+          log.info("Executing before script.")
+          executeScriptOrFail(beforeScript, taskSender)
+      }
+
       task.extractor.style match {
-        // Execute the before script. Fail if the script fails.
+
         case "udf_extractor" =>
-          task.extractor.beforeScript.foreach {
-            beforeScript =>
-              log.info("Executing before script.")
-              executeScriptOrFail(beforeScript, taskSender)
-          }
           // Start the children workers
           val workers = startWorkers(task)
 
@@ -102,13 +104,6 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
         //   Get rid of scala file operations
         //   COPY to a file, split files, and send to extractors
         case "tsv_extractor" =>
-
-          // Execute the before script. Fail if the script fails.
-          task.extractor.beforeScript.foreach {
-            beforeScript =>
-              log.info("Executing before script.")
-              executeScriptOrFail(beforeScript, taskSender)
-          }
 
           val udfCmd = task.extractor.udf
           val funcName = s"func_${task.extractor.name}"
@@ -164,6 +159,13 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
           log.debug(s"Temporary writeback file saved to ${writebackTmpFile.getAbsolutePath()}")
           executeScriptOrFail(writebackTmpFile.getAbsolutePath(), taskSender)
 
+          // Execute the after script. Fail if the script fails.
+          task.extractor.afterScript.foreach {
+            afterScript =>
+              log.info("Executing after script.")
+              executeScriptOrFail(afterScript, taskSender)
+          }
+
           taskSender ! "Done!"
           stop
 
@@ -173,27 +175,32 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
         // Execute the sql query from sql extractor
         case "sql_extractor" =>
           log.info("Executing sql query.")
-          executeSql(task)
+          executeSqlUpdate(task)
+          // Execute the after script. Fail if the script fails.
+          task.extractor.afterScript.foreach {
+            afterScript =>
+              log.info("Executing after script.")
+              executeScriptOrFail(afterScript, taskSender)
+          }
           taskSender ! "Done!"
           stop
-        // Execute the cmd query from cmd extractor
+
         case "cmd_extractor" =>
           task.extractor.cmd.foreach {
             cmd =>
               log.info("Executing cmd script.")
               executeScriptOrFail(cmd, taskSender)
           }
+          // Execute the after script. Fail if the script fails.
+          task.extractor.afterScript.foreach {
+            afterScript =>
+              log.info("Executing after script.")
+              executeScriptOrFail(afterScript, taskSender)
+          }
           taskSender ! "Done!"
           stop
 
         case "plpy_extractor" =>
-
-          // Run before script
-          task.extractor.beforeScript.foreach {
-            beforeScript =>
-              log.info("Executing before script.")
-              executeScriptOrFail(beforeScript, taskSender)
-          }
 
           // Try to create language; if exists do nothing; if other errors report
           executeSqlQueryOrFail("drop language if exists plpythonu cascade; CREATE LANGUAGE plpythonu;", taskSender)
@@ -234,6 +241,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
           executeSqlFileOrFail(sqlInsertFile.getAbsolutePath(), taskSender)
           log.info(s"Finish executing UDF in database!")
 
+          // Execute the after script. Fail if the script fails.
           task.extractor.afterScript.foreach {
             afterScript =>
               log.info("Executing after script.")
@@ -408,7 +416,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
     }
   }
 
-  def executeSql(task: ExtractionTask) {
+  def executeSqlUpdate(task: ExtractionTask) {
     dataStore.queryUpdate(task.extractor.sqlQuery)
   }
 
