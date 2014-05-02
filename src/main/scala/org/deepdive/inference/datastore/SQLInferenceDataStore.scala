@@ -95,7 +95,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   def createSequencesSQL = s"""
     DROP SEQUENCE IF EXISTS ${IdSequence};
-    CREATE SEQUENCE ${IdSequence} MINVALUE -1 START 0;
+    CREATE SEQUENCE ${IdSequence} MINVALUE -1 START 0 CACHE 10000;
   """
 
   def createInferenceResultSQL = s"""
