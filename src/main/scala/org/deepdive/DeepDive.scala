@@ -93,7 +93,7 @@ object DeepDive extends Logging {
     val calibrationTask = Task("calibration", List("inference"), 
       InferenceManager.WriteCalibrationData, inferenceManager)
     
-    val reportingTask = Task("report", List("calibration"), Profiler.PrintReports, profiler, false)
+    val reportingTask = Task("report", List("calibration") ++ extractionTasks.map(_.id), Profiler.PrintReports, profiler, false)
 
     val terminationTask = Task("shutdown", List("report"), TaskManager.Shutdown, taskManager, false)
 
@@ -110,9 +110,11 @@ object DeepDive extends Logging {
     // If no factors are active, do not do grounding, inference and calibration
     val postExtraction = activeFactors.size match {
       case 0 => 
-        log.info("No active factors. Skip inference.")
         Set("report", "shutdown")
       case _ => Set("inference_grounding", "inference", "calibration", "report", "shutdown")
+    }
+    if (activeFactors.size == 0) {
+      log.info("No active factors. Skip inference.")
     }
     // Figure out which pipeline to run
     val activePipeline = relearnFrom match {

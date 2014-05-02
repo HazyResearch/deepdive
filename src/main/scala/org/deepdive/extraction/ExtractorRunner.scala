@@ -19,7 +19,7 @@ import rx.lang.scala.subjects._
 import play.api.libs.json._
 import scala.util.Random
 import java.io.{File, PrintWriter}
-import java.nio.file.Files
+// import java.nio.file.Files
 import scala.io.Source
 
 /* Companion object to the ExtractorRunner */
