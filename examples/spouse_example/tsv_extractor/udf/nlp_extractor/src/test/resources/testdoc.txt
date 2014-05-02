@@ -1,0 +1,3 @@
+In a decision that could have far-reaching consequences, the D.C. Circuit Court of Appeals today struck down the FCC’s Open Internet Order. That Order, put into force in 2010 by then-chairman Julius Genachowski, was designed to make it so that broadband service providers couldn’t meddle with traffic on the web based on its type – in other words, they couldn’t block certain kinds of online data transmission just because it didn’t align with their own goals and financial strategy.
+
+Media watchdog and advocacy agency Free Press released the following statement about the decision via President and CEO Craig Aaron, condemning it while also acknowledging that the Open Internet Order probably wasn’t the best possible solution for enforcing net neutrality:

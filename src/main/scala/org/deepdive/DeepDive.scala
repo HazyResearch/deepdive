@@ -76,6 +76,7 @@ object DeepDive extends Logging {
         settings.inferenceSettings.factors.filter(f => pipeline.tasks.contains(f.name))
       case None => settings.inferenceSettings.factors
     }
+    
     val groundFactorGraphMsg = InferenceManager.GroundFactorGraph(
       activeFactors, settings.calibrationSettings.holdoutFraction, settings.calibrationSettings.holdoutQuery,
         settings.inferenceSettings.skipLearning,
@@ -93,7 +94,7 @@ object DeepDive extends Logging {
     val calibrationTask = Task("calibration", List("inference"), 
       InferenceManager.WriteCalibrationData, inferenceManager)
     
-    val reportingTask = Task("report", List("calibration"), Profiler.PrintReports, profiler, false)
+    val reportingTask = Task("report", List("calibration") ++ extractionTasks.map(_.id), Profiler.PrintReports, profiler, false)
 
     val terminationTask = Task("shutdown", List("report"), TaskManager.Shutdown, taskManager, false)
 
@@ -106,12 +107,22 @@ object DeepDive extends Logging {
     // Create a pipeline that runs only from learning
     val relearnPipeline = Pipeline("_relearn", Set("inference", "calibration", "report", "shutdown"))
 
+    log.info(s"Number of active factors: ${activeFactors.size}")
+    // If no factors are active, do not do grounding, inference and calibration
+    val postExtraction = activeFactors.size match {
+      case 0 => 
+        Set("report", "shutdown")
+      case _ => Set("inference_grounding", "inference", "calibration", "report", "shutdown")
+    }
+    if (activeFactors.size == 0) {
+      log.info("No active factors. Skip inference.")
+    }
     // Figure out which pipeline to run
     val activePipeline = relearnFrom match {
       case null => 
           settings.pipelineSettings.activePipeline match {
             case Some(pipeline) => pipeline.copy(tasks = pipeline.tasks ++ 
-              Set("inference_grounding", "inference", "calibration", "report", "shutdown"))
+              postExtraction)
             case None => defaultPipeline
           }
       case _ => relearnPipeline

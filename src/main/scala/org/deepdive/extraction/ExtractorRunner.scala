@@ -19,6 +19,7 @@ import rx.lang.scala.subjects._
 import play.api.libs.json._
 import scala.util.Random
 import java.io.{File, PrintWriter}
+// import java.nio.file.Files
 import scala.io.Source
 
 /* Companion object to the ExtractorRunner */
@@ -80,14 +81,17 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
       log.info(s"Received task=${task.extractor.name}. Executing")
       
       val taskSender = sender
+
+      // Execute the before script. Fail if the script fails.
+      task.extractor.beforeScript.foreach {
+        beforeScript =>
+          log.info("Executing before script.")
+          executeScriptOrFail(beforeScript, taskSender)
+      }
+
       task.extractor.style match {
-        // Execute the before script. Fail if the script fails.
+
         case "udf_extractor" =>
-          task.extractor.beforeScript.foreach {
-            beforeScript =>
-              log.info("Executing before script.")
-              executeScriptOrFail(beforeScript, taskSender)
-          }
           // Start the children workers
           val workers = startWorkers(task)
 
@@ -95,30 +99,108 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
           // We will then forward the data to our workers
           Future { sendData(task, workers, taskSender) }
           goto(Running) using Task(task, sender, workers)
+
+        // Zifei: New code path for faster extraction
+        //   Get rid of scala file operations
+        //   COPY to a file, split files, and send to extractors
+        case "tsv_extractor" =>
+
+          val udfCmd = task.extractor.udf
+          val funcName = s"func_${task.extractor.name}"
+          
+          val inputQuery = task.extractor.inputQuery match {
+            case DatastoreInputQuery(query) => query
+            case _ => 
+          }
+          val queryOutputFile = File.createTempFile(s"copy_query_${funcName}", ".tsv")
+          // executeSqlQueryOrFail
+
+          // Single-thread copy to a file
+          val copyQuery = "COPY (" + s"${inputQuery}".replaceAll("""(?m)[;\s\n]+$""", "") + ") TO STDOUT;"
+          log.info(s"Copying file into ${queryOutputFile}")
+          executeSqlQueryOrFail(copyQuery, taskSender, queryOutputFile.getAbsolutePath())
+
+          val splitPrefix = queryOutputFile.getAbsolutePath() + "-"
+          val linesPerSplit = task.extractor.inputBatchSize
+          val splitCmd = s"split -l ${linesPerSplit} " + queryOutputFile.getAbsolutePath() + s" ${splitPrefix}"
+
+          log.info(s"Executing split command: ${splitCmd}")
+          executeScriptOrFail(splitCmd, taskSender)
+
+          // val maxParallel = "0"  // As many as possible, which is dangerous
+          val maxParallel = task.extractor.parallelism
+
+          // Note (msushkov): the extractor must take TSV as input and produce TSV as output
+          val runCmd = s"find ${splitPrefix}* -print0 | xargs -0 -P ${maxParallel} -L 1 bash -c '${udfCmd} " + "<" + " \"$0\" > \"$0.out\"'"
+
+          log.info(s"Executing parallel UDF command: ${runCmd}")
+          // executeScriptOrFail(runCmd, taskSender)
+
+          val udfTmpFile = File.createTempFile(s"exec_parallel_udf", ".sh")
+          val writer = new PrintWriter(udfTmpFile)
+          writer.println(s"${runCmd}")
+          writer.close()
+          log.debug(s"Temporary UDF file saved to ${udfTmpFile.getAbsolutePath()}")
+          executeScriptOrFail(udfTmpFile.getAbsolutePath(), taskSender)
+
+          // Copy each of the files into the DB. If user is using Greenplum, use gpload
+
+          val outputRel = task.extractor.outputRelation
+          val dbname = System.getenv("DBNAME")
+          val pguser = System.getenv("PGUSER")
+          val pgport = System.getenv("PGPORT")
+          val pghost = System.getenv("PGHOST")
+          val writebackCmd = s"find ${splitPrefix}*.out -print0 | xargs -0 -P ${maxParallel} -L 1 bash -c 'psql -d ${dbname} -U ${pguser} -p ${pgport} -h ${pghost} -c " + "\"COPY " + s"${outputRel} FROM STDIN;" + " \" < \"$0\"'"
+
+          val writebackTmpFile = File.createTempFile(s"exec_parallel_writeback", ".sh")
+          val writer2 = new PrintWriter(writebackTmpFile)
+          writer2.println(s"${writebackCmd}")
+          writer2.close()
+          log.debug(s"Temporary writeback file saved to ${writebackTmpFile.getAbsolutePath()}")
+          executeScriptOrFail(writebackTmpFile.getAbsolutePath(), taskSender)
+
+          // Execute the after script. Fail if the script fails.
+          task.extractor.afterScript.foreach {
+            afterScript =>
+              log.info("Executing after script.")
+              executeScriptOrFail(afterScript, taskSender)
+          }
+
+          taskSender ! "Done!"
+          stop
+
+
+
+
         // Execute the sql query from sql extractor
         case "sql_extractor" =>
           log.info("Executing sql query.")
-          executeSql(task)
+          executeSqlUpdate(task)
+          // Execute the after script. Fail if the script fails.
+          task.extractor.afterScript.foreach {
+            afterScript =>
+              log.info("Executing after script.")
+              executeScriptOrFail(afterScript, taskSender)
+          }
           taskSender ! "Done!"
           stop
-        // Execute the cmd query from cmd extractor
+
         case "cmd_extractor" =>
           task.extractor.cmd.foreach {
             cmd =>
               log.info("Executing cmd script.")
               executeScriptOrFail(cmd, taskSender)
           }
-            taskSender ! "Done!"
-            stop
+          // Execute the after script. Fail if the script fails.
+          task.extractor.afterScript.foreach {
+            afterScript =>
+              log.info("Executing after script.")
+              executeScriptOrFail(afterScript, taskSender)
+          }
+          taskSender ! "Done!"
+          stop
 
         case "plpy_extractor" =>
-
-          // Run before script
-          task.extractor.beforeScript.foreach {
-            beforeScript =>
-              log.info("Executing before script.")
-              executeScriptOrFail(beforeScript, taskSender)
-          }
 
           // Try to create language; if exists do nothing; if other errors report
           executeSqlQueryOrFail("drop language if exists plpythonu cascade; CREATE LANGUAGE plpythonu;", taskSender)
@@ -159,6 +241,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
           executeSqlFileOrFail(sqlInsertFile.getAbsolutePath(), taskSender)
           log.info(s"Finish executing UDF in database!")
 
+          // Execute the after script. Fail if the script fails.
           task.extractor.afterScript.foreach {
             afterScript =>
               log.info("Executing after script.")
@@ -333,11 +416,11 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
     }
   }
 
-  def executeSql(task: ExtractionTask) {
+  def executeSqlUpdate(task: ExtractionTask) {
     dataStore.queryUpdate(task.extractor.sqlQuery)
   }
 
-  def executeSqlQueryOrFail(query: String, failureReceiver: ActorRef) { 
+  def executeSqlQueryOrFail(query: String, failureReceiver: ActorRef, pipeOutFilePath: String = null) { 
     // dataStore.executeCmd(query)
     val file = File.createTempFile(s"exec_sql", ".sh")
     val writer = new PrintWriter(file)
@@ -346,11 +429,17 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
     // val pgpw = System.getenv("PGPASSWORD")
     val pgport = System.getenv("PGPORT")
     val pghost = System.getenv("PGHOST")
-    val cmd = s"psql -d ${dbname} -U ${pguser} -p ${pgport} -h ${pghost} -c " + "\"\"\"" + query + "\"\"\""
+    val pipeOutStr = pipeOutFilePath match {
+      case null => ""
+      case _ => " > " + pipeOutFilePath
+    }
+    val cmd = s"psql -d ${dbname} -U ${pguser} -p ${pgport} -h ${pghost} -c " + "\"\"\"" + query + "\"\"\"" + pipeOutStr
+
     writer.println(s"${cmd}")
     writer.close()
     log.debug(s"Temporary bash file saved to ${file.getAbsolutePath()}")
     executeScriptOrFail(file.getAbsolutePath(), failureReceiver)
+    // executeScriptOrFail(cmd, failureReceiver)
     
     // executeCmd(s"psql -d ${dbname} -c " + "\"\"\"" + query + "\"\"\"")
   }
