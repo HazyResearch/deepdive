@@ -87,14 +87,17 @@ object SettingsParser extends Logging {
     val inferenceConfig = Try(config.getConfig("inference")).getOrElse {
       return InferenceSettings(Nil, None, false, "")
     }
-    // Zifei's changes: Add capability to skip learning
-    val skipLearning = Try(inferenceConfig.getBoolean("skip_learning")).getOrElse(false)
-    val weightTable = Try(inferenceConfig.getString("weight_table")).getOrElse("")
+    // These configs are currently disabled in grounding
+    // // Zifei's changes: Add capability to skip learning
+    // val skipLearning = Try(inferenceConfig.getBoolean("skip_learning")).getOrElse(false)
+    // val weightTable = Try(inferenceConfig.getString("weight_table")).getOrElse("")
+    val skipLearning = false
+    val weightTable = ""
 
-    if (!weightTable.isEmpty() && skipLearning == false) {
-      log.error("inference.skip_learning must be true when inference.weight_table is assigned!")
-      throw new RuntimeException(s"skip_learning assertion failed")
-    }
+    // if (!weightTable.isEmpty() && skipLearning == false) {
+    //   log.error("inference.skip_learning must be true when inference.weight_table is assigned!")
+    //   throw new RuntimeException(s"skip_learning assertion failed")
+    // }
 
     val batchSize = Try(inferenceConfig.getInt("batch_size")).toOption
     val factorConfig = Try(inferenceConfig.getObject("factors")).getOrElse {
