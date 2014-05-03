@@ -55,7 +55,7 @@ class ProcessExecutor extends Actor with FSM[State, Data] with ActorLogging {
 
   /* We use the current dispatcher for Futures */
   import context.dispatcher
-  implicit val taskTimeout = Timeout(24 hours)
+  implicit val taskTimeout = Timeout(200 hours)
 
   override def preStart() { log.info("started") }
 
