@@ -29,13 +29,13 @@ psql -c """
     """ $DB_NAME
 psql -c """
     CREATE TABLE label1(
-    id    BIGSERIAL PRIMARY KEY, 
-    wid   INT, val BOOLEAN);
+    wid   INT, val BOOLEAN,
+    id    BIGINT);
     """ $DB_NAME
 psql -c """
     CREATE TABLE label2(
-    id    BIGSERIAL PRIMARY KEY, 
-    wid   INT, val BOOLEAN);
+    wid   INT, val BOOLEAN,
+    id    BIGINT);
     """ $DB_NAME
 
 psql -c """
