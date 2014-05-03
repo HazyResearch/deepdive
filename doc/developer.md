@@ -28,7 +28,7 @@ During development we recommend running `sbt ~compile` instead. The tilde will a
 
 ### Running Tests
 
-DeepDive comes with a number of unit- and integration test. For tests that require connection to a database (such as postgres), you must modify the `src/test/recources/application.conf` file with your connection parameters. You can run all tests with:
+DeepDive comes with a number of unit- and integration test. For tests that require connection to a database (such as PostgreSQL), you must modify the `src/test/recources/application.conf` file with your connection parameters. You can run all tests with:
 
     sbt test
 
@@ -36,7 +36,7 @@ To run a specific test, you can use:
 
     sbt "test-only org.deepdive.test.unit.[TestClassName]"
 
-You can use `sbt ~test` to keep running tests in the backgroud while you are modifying files.
+You can use `sbt ~test` to keep running tests in the background while you are modifying files.
 
 
 ### Reference: Factor Graph Output Schema
@@ -90,7 +90,7 @@ The systems also generates a metadata file of the following. The metadata file c
 
 ### Sampler arguments
 
-The sampler is an executable file (DimmWitted) or a jar file (scala sampler), and can be invoked using the following arguments:
+The sampler is an executable file (DimmWitted) or a jar file (Scala sampler), and can be invoked using the following arguments:
 
     -w <weightsFile> | --weights <weightsFile>
         weights file (required)
