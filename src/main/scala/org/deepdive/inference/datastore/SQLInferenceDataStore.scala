@@ -177,8 +177,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def init() : Unit = {
   }
 
-  val weightMap = scala.collection.mutable.Map[String, Long]()
-
   def generateWeightCmd(weightPrefix: String, weightVariables: Seq[String]) : String = 
     weightVariables.map ( v => s"""(CASE WHEN "${v}" IS NULL THEN '' ELSE "${v}"::text END)""" )
       .mkString(" || ") match {
@@ -247,25 +245,10 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         FROM ${factorDesc.name}_query_user, ${WeightsTable}
         WHERE ${weightCmd} = ${WeightsTable}.description"""
 
-      // val weightVariableCols = factorDesc.weight.variables
       val variables = factorDesc.func.variables
-      // weightMap.clear()
 
       issueQuery(selectInputQueryForDumpSQL) { rs =>
-        // val weightCmd = weightVariableCols.map(v => rs.getString(v)).mkString(",")
-        // var weightId : Long = -1
 
-        // // log.info(weightCmd)
-        // if (weightMap.contains(weightCmd)) {
-        //   weightId = weightMap(weightCmd)
-        // } else {
-        //   weightId = numWeights
-        //   weightMap(weightCmd) = numWeights
-        //   numWeights += 1
-        //   // serializer.addWeight(weightId, isFixed, weightValue) 
-        // }
-
-        //log.info(weightId.toString + isFixed.toString + weightValue.toString)
         serializer.addFactor(numFactors, rs.getLong("wid"), functionName, variables.length)
 
         variables.zipWithIndex.foreach { case(v, pos) =>
