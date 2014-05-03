@@ -70,12 +70,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     conn.close()
   }
 
-  /* get database product name */
-  def getDBname = {
-    val conn = ds.borrowConnection()
-    val metadata = conn.getMetaData()
-    metadata.getDatabaseProductName()
-  }
 
   def selectAsMap(sql: String) : List[Map[String, Any]] = {
     ds.DB.readOnly { implicit session =>
@@ -86,6 +80,11 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def keyType = "bigserial"
   def stringType = "text"
   def randomFunc = "RANDOM()"
+
+
+  def checkGreenplumSQL = s"""
+    SELECT version() LIKE '%Greeplum%';
+  """
 
   def createWeightsSQL = s"""
     DROP TABLE IF EXISTS ${WeightsTable} CASCADE;
@@ -286,6 +285,13 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // if (skipLearning == true && weightTable.isEmpty()) {
     //   writer.println(copyLastWeightsSQL)
     // }
+
+    var usingGreenplum = false
+    issueQuery(checkGreenplumSQL) { rs => 
+      usingGreenplum = rs.getBoolean(1) 
+    }
+
+    log.info("usingGreenplum = " + usingGreenplum.toString)
 
     writer.println(createSequencesSQL)
     writer.println(createWeightsSQL)
