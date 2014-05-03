@@ -16,10 +16,10 @@ You define the connection string to your postgresql instance in your application
     
     deepdive: {
       db.default {
-        driver: "org.postgresql.Driver"
-        url: "jdbc:postgresql://[host]:[port]/[database_name]"
-        user: "deepdive"
-        password: ""
+        driver   : "org.postgresql.Driver"
+        url      : "jdbc:postgresql://[host]:[port]/[database_name]"
+        user     : "deepdive"
+        password : ""
       }
     }
 
@@ -28,7 +28,7 @@ For advanced connection pool options refer to the [Scalikejdbc configuration](ht
 ### Attribute naming conventions in extractors
 
 - Attributes are always prefixed with the name of the relation. For example, if your query includes a `name` column from the `people` table, then the correspdning JSON key would be called `people.name`. This also applies to aliases. For example, `SELECT people.name AS text` would result in a JSON key called `people.text`.
-- Aggregates are prepended with a dot and don't have include the relation name. For example `SELECT COUNT(*) AS num FROM people GORUP BY people.name` would result in a JSON key called `.num`.
+- Aggregates are prepended with a dot and don't have include the relation name. For example `SELECT COUNT(*) AS num FROM people GROUP BY people.name` would result in a JSON key called `.num`.
 - When outputting tuples in your extractor, only use the column name of the target relation, without the relation name. In other words, don't have a JSON key called `people.name`, but a key called `name`.
 
 
@@ -40,11 +40,11 @@ For advanced connection pool options refer to the [Scalikejdbc configuration](ht
 
 When using self-joins, you must avoid naming collisions by defining an alias in your query. For example, the following will **NOT WORK**:
 
-    SELECT p1.name, p1.id, p2.name, p2.id FROM people p1 LEFT JOIN people p2 on p1.manager_id = p2.id
+    SELECT p1.name, p1.id, p2.name, p2.id FROM people p1 LEFT JOIN people p2 ON p1.manager_id = p2.id
 
 Instead, you must write:
 
-    SELECT p1.name AS "p1.name", p1.id AS "p1.id", p2.name AS "p2.name", p2.id AS "p2.id" FROM people p1 LEFT JOIN people p2 on p1.manager_id = p2.id
+    SELECT p1.name AS "p1.name", p1.id AS "p1.id", p2.name AS "p2.name", p2.id AS "p2.id" FROM people p1 LEFT JOIN people p2 ON p1.manager_id = p2.id
 
 And your factor function variables would be called `people.p1.name` and `people.p2.name`.
 

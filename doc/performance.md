@@ -20,7 +20,9 @@ You can execute one extractor in parallel on multiple threads using the `paralle
 
 By default, DeepDive inserts variables, factors and weights in batches defined by the underlying data store. The default for PostgreSQL is 50,000. If you have a large amount of memory you may overwrite the batch size using the following configuration setting.
 
-    deepdive.inference.batch_size = 100000
+    deepdive {
+      inference.batch_size = 100000
+    }
 
 
 ### Gibbs sampler options
@@ -36,5 +38,7 @@ You can optionally parse java options (such as -Xmx) and command line options to
 
 You an specify options in DeepDive as follows:
 
-    deepdive.sampler.java_args: "-Xms1g -Xmx8g"
-    deepdive.sampler.sampler_args: "-l 1000 -s 10 -i 1000"
+    deepdive {
+      sampler.java_args: "-Xms1g -Xmx8g"
+      sampler.sampler_args: "-l 1000 -s 10 -i 1000"
+    }
