@@ -43,7 +43,7 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester {
       val loadExtractionSettings = PrivateMethod[ExtractionSettings]('loadExtractionSettings)
       val result = SettingsParser invokePrivate loadExtractionSettings(config)
       assert(result == ExtractionSettings(List(
-        Extractor("extractor1", "udf_extractor", "entities", "SELECT * FROM documents", "udf/entities.py", 
+        Extractor("extractor1", "json_extractor", "entities", "SELECT * FROM documents", "udf/entities.py", 
           4, 100, 1000, Set("extractor2"), Option("/bin/cat"), Option("/bin/dog"), "", None)), 5))
     }
 

@@ -91,7 +91,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
 
       task.extractor.style match {
 
-        case "udf_extractor" =>
+        case "json_extractor" =>
           // Start the children workers
           val workers = startWorkers(task)
 
