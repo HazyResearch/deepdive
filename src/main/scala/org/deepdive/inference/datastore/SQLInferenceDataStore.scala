@@ -99,7 +99,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   def createSequencesSQL = s"""
     DROP SEQUENCE IF EXISTS ${IdSequence};
-    CREATE SEQUENCE ${IdSequence} MINVALUE -1 START 0 CACHE 10000;
+    CREATE SEQUENCE ${IdSequence} MINVALUE -1 START 0;
   """
 
   def createInferenceResultSQL = s"""
@@ -293,8 +293,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // Ground all variables in the schema
     schema.foreach { case(variable, dataType) =>
       val Array(relation, column) = variable.split('.')
-
-      log.info(getDBname)
 
       // TODO: this is expensive
       writer.println(s"""
