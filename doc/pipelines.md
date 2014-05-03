@@ -11,15 +11,13 @@ While testing extractors and inference rules it can be useful to execute only a 
 You can define custom pipelines by adding an optional configuration setting:
 
     deepdive {
-      pipeline {
-        run: myPipeline
-        pipelines {
-          myPipeline: [
+      pipeline.run: myPipeline
+      pipeline.pipelines {
+        myPipeline: [
             extractor1
             extractor2
             inferenceRule1
-            ]
-        }
+          ]
       }
     }
 
