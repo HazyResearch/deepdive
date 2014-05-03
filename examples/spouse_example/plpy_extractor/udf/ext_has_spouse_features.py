@@ -47,12 +47,15 @@ def run(words, id, p1_start, p1_length, p2_start, p2_length):
   if (last_word_left == last_word_right) and (p1_text != p2_text):
     features.add("last_word_matches")
 
-  # TODO: Add more features, look at dependency paths, etc
   # plpy_extractor return format: tuple of arrays.
-  ret_ids = []
-  ret_features = []
-  for feature in features:
-    ret_ids.append(id)
-    ret_features.append(feature)
+  # "id"s but different features:
+  #   (id, f1), (id, f2), ..
+  return [[id], [f for f in features]]
 
-  return [ret_ids, ret_features]
+  # This is equivalent to:
+  # ret_ids = []
+  # ret_features = []
+  # for feature in features:
+  #   ret_ids.append(id)
+  #   ret_features.append(feature)
+  # return [ret_ids, ret_features]

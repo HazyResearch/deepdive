@@ -63,8 +63,8 @@ def run(sentence_id, p1_id, p1_text, p2_id, p2_text):
         spouses[line[0].strip().lower()] = line[1].strip().lower()
 
 
-  # NOTICE: PLPY DOES NOT ALLOW overwritting input arguments!!! TODO
-  # UnboundLocalError
+  # NOTICE: PLPY DOES NOT ALLOW overwritting input arguments!!!
+  # will return "UnboundLocalError".
   p1_t = p1_text.strip()
   p2_t = p2_text.strip()
   p1_text_lower = p1_t.lower()
@@ -76,5 +76,5 @@ def run(sentence_id, p1_id, p1_text, p2_id, p2_text):
   elif (p1_t == p2_t) or (p1_t in p2_t) or (p2_t in p1_t):
     is_true = False
 
-  # SEMANTICS UPDATE: Must return tuples of arrays.
+  # Must return a tuple of arrays.
   return [[p1_id], [p2_id], [sentence_id], ["%s-%s" % (p1_t, p2_t)], [is_true]]
