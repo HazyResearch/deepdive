@@ -17,4 +17,7 @@ JSON tuple of the form:
       post_tags: [array_of_pos_tags],
       ner_tags: [array_of_ner_tags],
       dependencies: [array of collapsed dependencies]
+      sentence_id: [only a null value]
     }
+
+You are recommended to use `util/fill_sequence.sh [TABLE_NAME] [COLUMN_NAME]` to fill the column sentence_id after using this NLP extractor.
