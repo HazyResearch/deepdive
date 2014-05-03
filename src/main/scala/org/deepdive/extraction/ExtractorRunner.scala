@@ -159,6 +159,11 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
           log.debug(s"Temporary writeback file saved to ${writebackTmpFile.getAbsolutePath()}")
           executeScriptOrFail(writebackTmpFile.getAbsolutePath(), taskSender)
 
+          log.info("Removing temporary files...")
+          queryOutputFile.delete()
+          val delCmd = s"rm -f ${splitPrefix}*"
+          executeScriptOrFail(delCmd, taskSender)
+
           // Execute the after script. Fail if the script fails.
           task.extractor.afterScript.foreach {
             afterScript =>
