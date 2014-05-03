@@ -12,27 +12,37 @@ Inference rules describe how [factor graph](/doc/general/inference.html) is cons
 
 For example:
 
-    deepdive.inference.factors: {
-      smokesFactor.input_query: """
-        SELECT people.id as "people.id", people.smokes as "people.smokes", 
-        people.has_cancer as "people.has_cancer" FROM people"""
-      smokesFactor.function: "Imply(people.smokes, people.has_cancer)"
-      smokesFactor.weight: "?(people.gender)"
+    deepdive {
+      inference.factors: {
+        smokesFactor {
+          input_query : """
+            SELECT people.id         AS "people.id",
+                   people.smokes     AS "people.smokes",
+                   people.has_cancer AS "people.has_cancer"
+            FROM people
+            """
+          function    : "Imply(people.smokes, people.has_cancer)"
+          weight      : "?(people.gender)"
+        }
 
-      # More factors...
+        # More factors...
+      }
     }
 
 ### Factor Input Query
 
 The input query of a factor combines all variables that a factor is using. It usually takes the form of a join query using feature relations produced extractors.
 
-    someFactor.input_query: """SELECT p1.id AS "people.p1.id", p2.id AS "people.p2.id", 
-      p1.smokes AS "people.p1.smokes", p2.smokes AS "people.p2.smokes", 
-      friends.person_id AS "friends.person_id" 
-      FROM friends 
-        INNER JOIN people as p1 ON (friends.person_id = p1.id) 
-        INNER JOIN people as p2 ON (friends.friend_id = p2.id)
-    """
+    someFactor {
+      input_query: """
+        SELECT p1.id     AS "people.p1.id",     p2.id     AS "people.p2.id",
+               p1.smokes AS "people.p1.smokes", p2.smokes AS "people.p2.smokes",
+               friends.person_id AS "friends.person_id"
+        FROM friends
+          INNER JOIN people AS p1 ON (friends.person_id = p1.id)
+          INNER JOIN people AS p2 ON (friends.friend_id = p2.id)
+        """
+    }
 
 There are a couple of caveats when writing input queries for factors:
 
@@ -51,15 +61,21 @@ The factor function defines the variables that will be connected to the factor, 
 DeepDive supports [several types of factor functions](/doc/inference_rule_functions.html). One example of a factor function is the `Imply` function, which expresses a first-order logic statement. For example, `Imply(B, C, A)` means "if B and C, then A".
 
     # If people.smokes, then people.has_cancer
-    someFactor.function: "Imply(people.smokes, people.has_cancer)"
+    someFactor {
+      function: "Imply(people.smokes, people.has_cancer)"
+    }
     
     # Evaluates to true, when people.has_cancer is true
-    someFactor.function: "Imply(people.has_cancer)"
+    someFactor {
+      function: "Imply(people.has_cancer)"
+    }
 
 
 ### Factor Weights
 
 Each factor is assigned a *weight*, which expresses how confident you are in its rule. During probabilistic inference, factors with large weights will have a greater impact on variables than factors with small weights. Factor weights can be any real number, and are relative to each other. You can assign factor weights manually, or you can let DeepDive learn weights automatically. In order to learn weights automatically, you must have enough [training data](/doc/general/relation_extraction.html) available. A weight can also be a function of variables, in which case each factor instance will get a different weight depending on the variable value.
+
+<!-- TODO Are these examples up-to-date? Why do we assign factor weights to extractor? -->
 
     # Known weight
     wordsExtractor.factor.weight: 100
