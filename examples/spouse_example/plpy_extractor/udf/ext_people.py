@@ -1,17 +1,36 @@
 #! /usr/bin/env python
 
-import fileinput
-import json
+import ddext
 import itertools
+# Format of plpy_extractor: 
+# Anything Write functions "init", "run" will not be accepted.
+# In "init", import libraries, specify input variables and return types
+# In "run", write your extractor. Return a list containing your results, each item in the list should be a list/tuple of your return types.
+# Do not print.
 
-# For each sentence
-for row in fileinput.input():
-  sentence_obj = json.loads(row)
+def init():
+  # SD['json'] = __import__('json')
+  ddext.import_lib('itertools')
+  
+  # Input commands MUST HAVE CORRECT ORDER
+  ddext.input('id', 'bigint')
+  ddext.input('words', 'text[]')
+  ddext.input('ner_tags', 'text[]')
 
+  # Returns commands MUST HAVE CORRECT ORDER
+  ddext.returns('sentence_id', 'bigint')
+  ddext.returns('start_position', 'int')
+  # ddext.returns('start_index', 'int')
+  ddext.returns('length', 'int')
+  ddext.returns('text', 'text')
+  
+
+def run(id, words, ner_tags):
+  
   # Find phrases that are tagged with PERSON
   phrases_indicies = []
   start_index = 0
-  ner_list = list(enumerate(sentence_obj["ner_tags"]))
+  ner_list = list(enumerate(ner_tags))
   while True:
     sublist = ner_list[start_index:]
     next_phrase = list(itertools.takewhile(lambda x: (x[1] in ["PERSON"]), sublist))
@@ -21,11 +40,25 @@ for row in fileinput.input():
     elif start_index == len(ner_list)+1: break
     else: start_index = start_index + 1
 
-  # Output a tuple for each PERSON phrase
+  # plpy New format: return a tuple of arrays.
+  ids = []
+  starts = []
+  lengths = []
+  texts = []
   for phrase in phrases_indicies:
-    print json.dumps({
-      "sentence_id": sentence_obj["id"],
-      "start_position": phrase[0],
-      "length": len(phrase),
-      "text": " ".join(sentence_obj["words"][phrase[0]:phrase[-1]+1])
-    })
+    ids.append(id)
+    starts.append(phrase[0])
+    lengths.append(len(phrase))
+    texts.append(" ".join(words[phrase[0]:phrase[-1]+1]))
+  
+  return (ids, starts, lengths, texts)
+
+  # # Output a tuple for each PERSON phrase
+  # for phrase in phrases_indicies:
+  #   print json.dumps({
+  #     "sentence_id": sentence_obj["id"],
+  #     "start_position": phrase[0],
+  #     "length": len(phrase),
+  #     "text": " ".join(sentence_obj["words"][phrase[0]:phrase[-1]+1])
+  #   })
+
