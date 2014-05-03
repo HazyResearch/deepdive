@@ -70,6 +70,13 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     conn.close()
   }
 
+  /* get database product name */
+  def getDBname = {
+    val conn = ds.borrowConnection()
+    val metadata = conn.getMetaData()
+    metadata.getDatabaseProductName()
+  }
+
   def selectAsMap(sql: String) : List[Map[String, Any]] = {
     ds.DB.readOnly { implicit session =>
       SQL(sql).map(_.toMap).list.apply()
@@ -286,6 +293,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // Ground all variables in the schema
     schema.foreach { case(variable, dataType) =>
       val Array(relation, column) = variable.split('.')
+
+      log.info(getDBname)
 
       // TODO: this is expensive
       writer.println(s"""
