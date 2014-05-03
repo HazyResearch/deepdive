@@ -51,7 +51,9 @@ class PostgresExtractionDataStore extends ExtractionDataStore[JsObject] with Jdb
 
     /* Builds a COPY statement for a given relation and column names */
     def buildCopySql(relationName: String, keys: Set[String]) = {
-      val fields = List("id") ++ keys.filterNot(_ == "id").toList.sorted
+      // Zifei: do not fill ID any more
+      // val fields = List("id") ++ keys.filterNot(_ == "id").toList.sorted
+      val fields = keys.filterNot(_ == "id").toList.sorted
       s"""COPY ${relationName}(${fields.mkString(", ")}) FROM STDIN CSV"""
     }
 
@@ -61,9 +63,10 @@ class PostgresExtractionDataStore extends ExtractionDataStore[JsObject] with Jdb
       for (obj <- data) { 
         val dataList = obj.value.filterKeys(_ != "id").toList.sortBy(_._1)
         val strList = dataList.map (x => jsValueToString(x._2))
-        // We get a unique id for the record
-        val id = variableIdCounter.getAndIncrement().toString
-        writer.writeNext((Seq(id) ++ strList)toArray)
+        // // We get a unique id for the record
+        // val id = variableIdCounter.getAndIncrement().toString
+        // writer.writeNext((Seq(id) ++ strList)toArray)
+        writer.writeNext((strList)toArray)
       }
     }
 
