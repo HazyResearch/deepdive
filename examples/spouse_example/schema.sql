@@ -1,41 +1,44 @@
 DROP TABLE IF EXISTS articles CASCADE;
 CREATE TABLE articles(
-  id bigserial primary key,
+  article_id bigint,
   text text
 );
 
 DROP TABLE IF EXISTS sentences CASCADE;
 CREATE TABLE sentences(
-  id bigserial primary key, 
   document_id bigint,
   sentence text, 
   words text[],
   lemma text[],
   pos_tags text[],
   dependencies text[],
-  ner_tags text[]);
+  ner_tags text[],
+  sentence_id bigint -- unique identifier for sentences
+  );
 
 
 DROP TABLE IF EXISTS people_mentions CASCADE;
 CREATE TABLE people_mentions(
-  id bigserial primary key, 
-  sentence_id bigint references sentences(id),
+  sentence_id bigint,
   start_position int,
   length int,
-  text text);
+  text text,
+  mention_id bigint  -- unique identifier for people_mentions
+  );
 
 
 DROP TABLE IF EXISTS has_spouse CASCADE;
 CREATE TABLE has_spouse(
-  id bigserial primary key, 
-  person1_id bigint references people_mentions(id),
-  person2_id bigint references people_mentions(id),
-  sentence_id bigint references sentences(id),
+  person1_id bigint,
+  person2_id bigint,
+  sentence_id bigint,
   description text,
-  is_true boolean);
+  is_true boolean,
+  relation_id bigint, -- unique identifier for has_spouse
+  id bigint   -- reserved for DeepDive
+  );
 
 DROP TABLE IF EXISTS has_spouse_features CASCADE;
 CREATE TABLE has_spouse_features(
-  id bigserial primary key, 
-  relation_id bigint references has_spouse(id),
+  relation_id bigint,
   feature text);

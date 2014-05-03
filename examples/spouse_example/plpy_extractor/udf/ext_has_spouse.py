@@ -16,14 +16,13 @@ def init():
   # SD['json'] = __import__('json')
   ddext.import_lib('csv')
   ddext.import_lib('os')
-
   # from collections import defaultdict
   ddext.import_lib('defaultdict', 'collections')
 
   # Other examples of import_lib:
-  # # from collections import defaultdict as defdict:
+  # # "from collections import defaultdict as defdict":
   # ddext.import_lib('defaultdict', 'collections', 'defdict')
-  # # import defaultdict as defdict:
+  # # "import defaultdict as defdict":
   # ddext.import_lib('defaultdict', as_name='defdict')
   
   # Input commands MUST HAVE CORRECT ORDER: 

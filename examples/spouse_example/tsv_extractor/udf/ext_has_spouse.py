@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 
 import fileinput
-import json
 import csv
 import os
 import sys
@@ -19,7 +18,6 @@ with open (BASE_DIR + "/../../data/spouses.csv") as csvfile:
 
 # For each input tuple
 for row in fileinput.input():
-  # obj = json.loads(row)
   parts = row.strip().split('\t')
   if len(parts) != 5: 
     print >>sys.stderr, 'Failed to parse row:', row
@@ -27,7 +25,6 @@ for row in fileinput.input():
   
   sentence_id, p1_id, p1_text, p2_id, p2_text = parts
 
-  # Get useful data from the JSON
   p1_text_lower = p1_text.lower()
   p2_text_lower = p2_text.lower()
 
@@ -39,19 +36,20 @@ for row in fileinput.input():
   elif (p1_text == p2_text) or (p1_text in p2_text) or (p2_text in p1_text):
     is_true = 'false'
 
-  # print json.dumps({
-  #   "person1_id": p1_id,
-  #   "person2_id": p2_id,
-  #   "sentence_id": sentence_id,
-  #   "description": "%s-%s" %(p1_text, p2_text),
-  #   "is_true": is_true
-  # })
-
-  has_spouse_id = '\N' # Should leave ID as blank
-
   print '\t'.join([
-    has_spouse_id,
     p1_id, p2_id, sentence_id, 
     "%s-%s" %(p1_text, p2_text),
-    str(is_true)
+    is_true,
+    '\N',  # leave relation_id blank and fill later
+    '\N'   # leave "id" blank for system!
     ])
+
+  # TABLE FORMAT: CREATE TABLE has_spouse(
+  # person1_id bigint,
+  # person2_id bigint,
+  # sentence_id bigint,
+  # description text,
+  # is_true boolean,
+  # relation_id bigint, -- unique identifier for has_spouse
+  # id bigint   -- reserved for DeepDive
+  # );

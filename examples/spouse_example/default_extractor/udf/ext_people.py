@@ -24,8 +24,9 @@ for row in fileinput.input():
   # Output a tuple for each PERSON phrase
   for phrase in phrases_indicies:
     print json.dumps({
-      "sentence_id": sentence_obj["id"],
-      "start_index": phrase[0],
+      "sentence_id": sentence_obj["sentence_id"],
+      "start_position": phrase[0],
       "length": len(phrase),
-      "text": " ".join(sentence_obj["words"][phrase[0]:phrase[-1]+1])
+      "text": " ".join(sentence_obj["words"][phrase[0]:phrase[-1]+1]),
+      "mention_id": None
     })

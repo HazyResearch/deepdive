@@ -41,6 +41,6 @@ for row in fileinput.input():
 
   for feature in features:  
     print json.dumps({
-      "relation_id": obj["id"],
+      "relation_id": obj["relation_id"],
       "feature": feature
     })

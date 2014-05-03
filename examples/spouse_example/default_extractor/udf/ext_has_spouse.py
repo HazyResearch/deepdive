@@ -22,10 +22,10 @@ for row in fileinput.input():
   obj = json.loads(row)
 
   # Get useful data from the JSON
-  p1_id = obj["p1.id"]
+  p1_id = obj["p1.mention_id"]
   p1_text = obj["p1.text"].strip()
   p1_text_lower = p1_text.lower()
-  p2_id = obj["p2.id"]
+  p2_id = obj["p2.mention_id"]
   p2_text = obj["p2.text"].strip()
   p2_text_lower = p2_text.lower()
   sentence_id = obj["sentence_id"]
@@ -43,5 +43,7 @@ for row in fileinput.input():
     "person2_id": p2_id,
     "sentence_id": sentence_id,
     "description": "%s-%s" %(p1_text, p2_text),
-    "is_true": is_true
+    "is_true": is_true,
+    "relation_id": None,
+    "id": None
   })

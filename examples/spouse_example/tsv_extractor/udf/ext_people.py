@@ -1,17 +1,21 @@
 #! /usr/bin/env python
 
 import fileinput
-import json
 import itertools
+
+ARR_DELIM = '~^~'
 
 # For each sentence
 for row in fileinput.input():
-  sentence_obj = json.loads(row)
+  
+  sentence_id, words_str, ner_tags_str = row.split('\t')
+  words = words_str.split(ARR_DELIM)
+  ner_tags = ner_tags_str.split(ARR_DELIM)
 
   # Find phrases that are tagged with PERSON
   phrases_indicies = []
   start_index = 0
-  ner_list = list(enumerate(sentence_obj["ner_tags"]))
+  ner_list = list(enumerate(ner_tags))
   while True:
     sublist = ner_list[start_index:]
     next_phrase = list(itertools.takewhile(lambda x: (x[1] in ["PERSON"]), sublist))
@@ -23,9 +27,11 @@ for row in fileinput.input():
 
   # Output a tuple for each PERSON phrase
   for phrase in phrases_indicies:
-    print json.dumps({
-      "sentence_id": sentence_obj["id"],
-      "start_index": phrase[0],
-      "length": len(phrase),
-      "text": " ".join(sentence_obj["words"][phrase[0]:phrase[-1]+1])
-    })
+    print '\t'.join(
+      [ str(x) for x in [
+        sentence_id, 
+        phrase[0],
+        len(phrase), 
+        " ".join(words[phrase[0]:phrase[-1]+1]),
+        '\N',   # here's how to return a NULL
+      ]])
