@@ -8,7 +8,7 @@ When writing applications on top of DeepDive, you often go through several phase
 
 1. **Data Preparation** - Set up the database and load initial data
 2. **Feature Extraction** - Write *extractors* to extract features from your data
-3. **Probabilistic Inference** - Write *inference rules* to help [make predictions](/doc/general/probabilistic_inference.html) on unknown variables
+3. **Probabilistic Inference** - Write *inference rules* to help [make predictions](/doc/general/inference.html) on unknown variables
 4. **Calibration** - Evaluate results and iterate on your feature extractors and inference rules
 
 ### 1. Data Preparation
@@ -19,10 +19,10 @@ DeepDive assumes that you have initial data stored in a relational datastore, su
 
 <!-- TODO -->
 
-[Feature Extraction](http://en.wikipedia.org/wiki/Feature_extraction) is the process of transforming raw data into a set of *features* that capture important information about the data. The goal of the feature extraction step is to extract useful features that can be used during [probabilistic inference](/doc/probabilistic_inference.html). For example, in Information Extraction applications, you may extract *features* that describe a word's part of speech, what type of entity it is (person, organization, etc), or its relationship to other words in the sentence.
+[Feature Extraction](http://en.wikipedia.org/wiki/Feature_extraction) is the process of transforming raw data into a set of *features* that capture important information about the data. The goal of the feature extraction step is to extract useful features that can be used during [probabilistic inference](/doc/general/inference.html). For example, in Information Extraction applications, you may extract *features* that describe a word's part of speech, what type of entity it is (person, organization, etc), or its relationship to other words in the sentence.
 
 DeepDive provides an abstraction called *extractors* to streamline feature extraction. 
-DeepDive support [multiple types of extractors](doc/extractors.html) to facilitate this process.
+DeepDive support [multiple types of extractors](/doc/extractors.html) to facilitate this process.
 In most cases, an extractor performs a user-defined function (UDF) on an input query against database. One may think of this kind of extractors as a function which maps one input tuple to one or more output tuples, similar to a `map` or `flatMap` function in functional programming languages. The output of an extractor is written back to the data store by DeepDive, and can be used in other extractors and/or during the inference step.
 Users can also specify extractors that simply executes a SQL query or an arbitrary shell command.
 
@@ -53,7 +53,7 @@ for line in fileinput.input():
 
 ### 3. Probabilistic Inference
 
-The goal of inference is to make predictions on a set of *variables*. For example, you may want to predict whether or not a person has cancer based on a number of symptoms (features). [For a high-level overview of probabilistic inference, refer to the corresponding guide](/doc/general/probabilistic_inference.html).
+The goal of inference is to make predictions on a set of *variables*. For example, you may want to predict whether or not a person has cancer based on a number of symptoms (features). [For a high-level overview of probabilistic inference, refer to the corresponding guide](/doc/general/inference.html).
 
 DeepDive uses [factor graphs](http://en.wikipedia.org/wiki/Factor_graph), a type of graphical model, to perform probabilistic inference. On a high-level, a factor graph has two types of nodes:
 

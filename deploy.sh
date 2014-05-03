@@ -1,11 +1,11 @@
 #! /usr/bin/env bash
 
-HOST=whale.stanford.edu
+HOST=zifei@whale.stanford.edu
 WWW_DIR=/afs/cs/group/infolab/deepdive/www
 HTML_DIR="$(dirname $0)/_site";
 
 echo "Building site..."
-jekyll build
+jekyll
 
 echo "Deplying site..."
 scp -r $(dirname $0)/_site/* $HOST:$WWW_DIR/
