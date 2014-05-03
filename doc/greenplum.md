@@ -6,7 +6,14 @@ layout: default
 
 This documentation provides a simple installation guide for [GreenPlum](http://www.gopivotal.com/products/pivotal-greenplum-database) to work with DeepDive. We will use the single-node mode of GreenPlum for demonstration purposes. It should work identically with the multi-node configuration.
 
-**After installing GreenPlum, DeepDive should work well with it. The rest steps are identical with the documentation for [PostgreSQL](postgresql.html)**.
+**After installing GreenPlum, DeepDive should work well with it. The rest steps are identical with the documentation for [PostgreSQL](postgresql.html)**. There are a few caveats though, in the following section:
+
+## Important notes for GreenPlum users
+
+- Be sure to refer to [GreenPlum manuals](http://media.gpadmin.me/wp-content/uploads/2012/11/GPDBAGuide.pdf).
+
+- Users should add `DISTRIBUTED BY` clause in all `CREATE TABLE` commands. **Do not use variable id** as distribution key. **Do not use** distribution key that is **not initially assigned**.
+
 
 ## Note
 
@@ -218,3 +225,6 @@ Tune `MaxPermSize` in Java. e.g. `-XX:MaxPermSize=128m`.
 **How to enable fuzzy string match / install "contrib" module in GreenPlum?**
 
 To enable *fuzzystringmatch* / the *contrib* module available for PostgreSQL for GreenPlum, please check out [this link](http://blog.2ndquadrant.com/fuzzystrmatch_greenplum/).
+
+
+****
