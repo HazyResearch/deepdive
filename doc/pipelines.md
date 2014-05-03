@@ -4,7 +4,7 @@ layout: default
 
 # Pipelines
 
-While testing extractors and inference rules it can be useful to execute only a subset of them. Deepdive allows you define *pipelines* that define which extractors and inference rules are "active". 
+While testing extractors and inference rules it can be useful to execute only a subset of them. DeepDive allows you define *pipelines* that define which extractors and inference rules are "active". 
 
 ### Adding Pipelines
 

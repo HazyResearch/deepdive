@@ -8,11 +8,11 @@ When using [PostgreSQL](postgresql.org) with DeepDive there are several things t
 
 ### Preparing the data
 
-DeepDive assumes that you have created the schema for your application in the database. This means, all relations used by any of your extractors and inference rules must exist before running DeepDive. We recommend doing this in a data prepation script, as shown in the [example walkthrough](example.html). When designing your schema, **all relation must have a unique primary key callled `id`**. 
+DeepDive assumes that you have created the schema for your application in the database. This means, all relations used by any of your extractors and inference rules must exist before running DeepDive. We recommend doing this in a data preparation script, as shown in the [example walkthrough](example.html). When designing your schema, **all relation must have a unique primary key callled `id`**. 
 
 ### Connection Information
 
-You define the connection string to your postgresql instance in your application configuration in [JDBC format](http://jdbc.postgresql.org/documentation/80/connect.html). You can optionally specify a username and password for your connection.
+You define the connection string to your PostgreSQL instance in your application configuration in [JDBC format](http://jdbc.postgresql.org/documentation/80/connect.html). You can optionally specify a username and password for your connection.
     
     deepdive: {
       db.default {
@@ -27,7 +27,7 @@ For advanced connection pool options refer to the [Scalikejdbc configuration](ht
 
 ### Attribute naming conventions in extractors
 
-- Attributes are always prefixed with the name of the relation. For example, if your query includes a `name` column from the `people` table, then the correspdning JSON key would be called `people.name`. This also applies to aliases. For example, `SELECT people.name AS text` would result in a JSON key called `people.text`.
+- Attributes are always prefixed with the name of the relation. For example, if your query includes a `name` column from the `people` table, then the corresponding JSON key would be called `people.name`. This also applies to aliases. For example, `SELECT people.name AS text` would result in a JSON key called `people.text`.
 - Aggregates are prepended with a dot and don't have include the relation name. For example `SELECT COUNT(*) AS num FROM people GROUP BY people.name` would result in a JSON key called `.num`.
 - When outputting tuples in your extractor, only use the column name of the target relation, without the relation name. In other words, don't have a JSON key called `people.name`, but a key called `name`.
 
