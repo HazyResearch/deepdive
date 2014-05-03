@@ -27,16 +27,13 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   /* Internal Table names */
   def WeightsTable = "dd_graph_weights"
-  // def lastWeightsTable = "dd_graph_last_weights"
   def FactorsTable = "dd_graph_factors"
   def VariablesTable = "dd_graph_variables"
   def VariablesMapTable = "dd_graph_variables_map"
-  // def EdgesTable = "dd_graph_edges"
   def WeightResultTable = "dd_inference_result_weights"
   def VariableResultTable = "dd_inference_result_variables"
   def MappedInferenceResultView = "dd_mapped_inference_result"
   def IdSequence = "id_sequence"
-  // def EdgesCountTable = "dd_graph_edges_count"
 
   /* Executes an arbitary SQL statement */
   def executeSql(sql: String) = ds.DB.autoCommit { implicit session =>
@@ -83,14 +80,14 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def stringType = "text"
   def randomFunc = "RANDOM()"
 
-  def createVariablesSQL = s"""
-    DROP TABLE IF EXISTS ${VariablesTable} CASCADE; 
-    CREATE TABLE ${VariablesTable}(
-      id bigint,
-      data_type text,
-      initial_value double precision, 
-      cardinality bigint, 
-      is_evidence boolean);
+  def createWeightsSQL = s"""
+    DROP TABLE IF EXISTS ${WeightsTable} CASCADE;
+    CREATE TABLE ${WeightsTable}(
+      id bigserial primary key,
+      initial_value double precision,
+      is_fixed boolean,
+      description ${stringType});
+    ALTER SEQUENCE ${WeightsTable}_id_seq MINVALUE -1 RESTART WITH 0;
   """
 
   def createSequencesSQL = s"""
@@ -111,11 +108,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     CREATE TABLE ${WeightResultTable}(
       id bigint primary key, 
       weight double precision);
-  """
-
-  def selectVariablesForDumpSQL = s"""
-    SELECT id AS "id", is_evidence, initial_value, data_type, edge_count, cardinality
-    FROM selectVariablesForDumpSQL_RAW ORDER BY id;
   """
 
   def selectWeightsForDumpSQL = s"""
@@ -175,10 +167,24 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     FROM ${name};
   """
 
+  def createMappedWeightsViewSQL = s"""
+    CREATE VIEW ${VariableResultTable}_mapped_weights AS
+    SELECT ${WeightsTable}.*, ${WeightResultTable}.weight FROM
+    ${WeightsTable} JOIN ${WeightResultTable} ON ${WeightsTable}.id = ${WeightResultTable}.id
+    ORDER BY abs(weight) DESC;
+  """
+
   def init() : Unit = {
   }
 
   val weightMap = scala.collection.mutable.Map[String, Long]()
+
+  def generateWeightCmd(weightPrefix: String, weightVariables: Seq[String]) : String = 
+    weightVariables.map ( v => s"""(CASE WHEN "${v}" IS NULL THEN '' ELSE "${v}"::text END)""" )
+      .mkString(" || ") match {
+      case "" => s"""'${weightPrefix}-' """
+      case x => s"""'${weightPrefix}-' || ${x}"""
+  }
 
   def dumpFactorGraph(serializer: Serializer, schema: Map[String, _ <: VariableDataType],
     factorDescs: Seq[FactorDesc], holdoutFraction: Double,
@@ -189,13 +195,11 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     var numWeights    : Long = 0
     var numEdges      : Long = 0
 
-    
-    log.info(s"Dumping factor graph...")
-
-    log.info("Dumping variables...")
-
     val randomGen = new Random()
 
+    
+    log.info(s"Dumping factor graph...")
+    log.info("Dumping variables...")
     schema.foreach { case(variable, dataType) =>
       val Array(relation, column) = variable.split('.')
       
@@ -225,38 +229,44 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     }
 
+    log.info("Dumping weights...")
+    issueQuery(selectWeightsForDumpSQL) { rs => 
+      serializer.addWeight(rs.getLong(1), rs.getBoolean(2), 
+        rs.getDouble(3))
+      numWeights += 1
+    }
+
+
     log.info("Dumping factors...")
-
     factorDescs.foreach { factorDesc =>
-      val weightValue : Double = factorDesc.weight match { 
-        case x : KnownFactorWeight => x.value
-        case _ => 0.0
-      }
-      val isFixed = factorDesc.weight.isInstanceOf[KnownFactorWeight]
       val functionName = factorDesc.func.getClass.getSimpleName
+      val weightCmd = generateWeightCmd(factorDesc.weightPrefix, factorDesc.weight.variables)
 
-      val selectInputQueryForDumpSQL = s"SELECT * FROM ${factorDesc.name}_query_user"
-      // val variableCols = factorDesc.func.variables.map(v => s"${v.relation}.id")
-      val weightVariableCols = factorDesc.weight.variables
+      val selectInputQueryForDumpSQL = s"""
+        SELECT ${factorDesc.name}_query_user.*, ${WeightsTable}.id AS "wid"
+        FROM ${factorDesc.name}_query_user, ${WeightsTable}
+        WHERE ${weightCmd} = ${WeightsTable}.description"""
+
+      // val weightVariableCols = factorDesc.weight.variables
       val variables = factorDesc.func.variables
-      weightMap.clear()
+      // weightMap.clear()
 
       issueQuery(selectInputQueryForDumpSQL) { rs =>
-        val weightCmd = weightVariableCols.map(v => rs.getString(v)).mkString(",")
-        var weightId : Long = -1
+        // val weightCmd = weightVariableCols.map(v => rs.getString(v)).mkString(",")
+        // var weightId : Long = -1
 
-        // log.info(weightCmd)
-        if (weightMap.contains(weightCmd)) {
-          weightId = weightMap(weightCmd)
-        } else {
-          weightId = numWeights
-          weightMap(weightCmd) = numWeights
-          numWeights += 1
-          serializer.addWeight(weightId, isFixed, weightValue) 
-        }
+        // // log.info(weightCmd)
+        // if (weightMap.contains(weightCmd)) {
+        //   weightId = weightMap(weightCmd)
+        // } else {
+        //   weightId = numWeights
+        //   weightMap(weightCmd) = numWeights
+        //   numWeights += 1
+        //   // serializer.addWeight(weightId, isFixed, weightValue) 
+        // }
 
         //log.info(weightId.toString + isFixed.toString + weightValue.toString)
-        serializer.addFactor(numFactors, weightId, functionName, variables.length)
+        serializer.addFactor(numFactors, rs.getLong("wid"), functionName, variables.length)
 
         variables.zipWithIndex.foreach { case(v, pos) =>
           serializer.addEdge(rs.getLong(s"${v.relation}.id"),
@@ -288,6 +298,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // }
 
     writer.println(createSequencesSQL)
+    writer.println(createWeightsSQL)
 
     // Ground all variables in the schema
     schema.foreach { case(variable, dataType) =>
@@ -301,14 +312,32 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
 
     // Create table for each inference rule
-    factorDescs.zipWithIndex.foreach { case(factorDesc, idx) =>
+    factorDescs.foreach { factorDesc =>
       
       // input query
       writer.println(s"""
         DROP VIEW IF EXISTS ${factorDesc.name}_query_user CASCADE;
         CREATE VIEW ${factorDesc.name}_query_user AS (${factorDesc.inputQuery});
         """)
+
+
+      // Ground weights for each inference rule
+      val weightValue = factorDesc.weight match { 
+        case x : KnownFactorWeight => x.value
+        case _ => 0.0
+      }
+
+      val isFixed = factorDesc.weight.isInstanceOf[KnownFactorWeight]
+      val weightCmd = generateWeightCmd(factorDesc.weightPrefix, factorDesc.weight.variables)
+
+      writer.println(s"""
+        INSERT INTO ${WeightsTable}(initial_value, is_fixed, description)
+        SELECT ${weightValue} AS wValue, ${isFixed} AS wIsFixed, ${weightCmd} AS wCmd
+        FROM ${factorDesc.name}_query_user GROUP BY wValue, wIsFixed, wCmd;""")
     }
+
+    writer.println(s"""CREATE INDEX ${WeightsTable}_desc_idx ON ${WeightsTable}(description);""")
+    writer.println(s"""ANALYZE ${WeightsTable};""")
 
     writer.close()
 
@@ -339,7 +368,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       case Array(relation, column) => (relation, column)
     }
 
-    // execute(createMappedWeightsViewSQL)
+    execute(createMappedWeightsViewSQL)
 
     relationsColumns.foreach { case(relationName, columnName) =>
       execute(createInferenceViewSQL(relationName, columnName))
