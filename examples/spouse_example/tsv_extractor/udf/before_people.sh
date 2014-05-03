@@ -1,3 +1,3 @@
 #! /usr/bin/env bash
 
-psql -c "TRUNCATE people_mentions CASCADE;" deepdive_spouse
+psql -c "TRUNCATE people_mentions CASCADE;" $DBNAME

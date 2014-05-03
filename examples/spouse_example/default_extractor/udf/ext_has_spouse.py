@@ -11,7 +11,7 @@ BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 
 # Load the spouse dictionary for distant supervision
 spouses = defaultdict(lambda: None)
-with open (BASE_DIR + "/../data/spouses.csv") as csvfile:
+with open (BASE_DIR + "/../../data/spouses.csv") as csvfile:
   reader = csv.reader(csvfile)
   for line in reader:
     spouses[line[0].strip().lower()] = line[1].strip().lower()

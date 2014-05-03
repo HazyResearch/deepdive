@@ -8,4 +8,4 @@ CREATE TABLE has_spouse(
   sentence_id bigint references sentences(id),
   description text,
   is_true boolean);
-""" deepdive_spouse
+""" $DBNAME
