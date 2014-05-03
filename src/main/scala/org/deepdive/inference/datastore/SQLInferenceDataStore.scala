@@ -83,7 +83,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
 
   def checkGreenplumSQL = s"""
-    SELECT version() LIKE '%Greeplum%';
+    SELECT version() LIKE '%Greenplum%';
   """
 
   def createWeightsSQL = s"""
@@ -291,7 +291,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       usingGreenplum = rs.getBoolean(1) 
     }
 
-    log.info("usingGreenplum = " + usingGreenplum.toString)
+    log.info("Using Greenplum = " + usingGreenplum.toString)
 
     writer.println(createSequencesSQL)
     writer.println(createWeightsSQL)
