@@ -9,34 +9,55 @@ BASE_DIR=`pwd`
 dropdb deepdive_smoke
 createdb deepdive_smoke
 
-psql -c "drop schema if exists public cascade; create schema public;" $DB_NAME
+psql -p $PGPORT -h $PGHOST $DBNAME -c "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;"
 
-psql -c "create table people1(id bigserial primary key, person_id bigint, name text, has_cancer boolean);" $DB_NAME
-psql -c "create table people2(id bigserial primary key, person_id bigint, name text, smokes boolean);" $DB_NAME
-psql -c "create table friends(id bigserial primary key, person_id bigint, friend_id bigserial);" $DB_NAME
+psql -p $PGPORT -h $PGHOST $DBNAME -c """
+	DROP TABLE IF EXISTS people1 CASCADE;
+	DROP TABLE IF EXISTS people2 CASCADE;
+	DROP TABLE IF EXISTS friends CASCADE;
 
-psql -c "insert into people1(id, person_id, name) values (1, 1, 'Anna');" $DB_NAME
-psql -c "insert into people1(id, person_id, name) values (2, 2, 'Bob');" $DB_NAME
-psql -c "insert into people1(id, person_id, name) values(3, 3, 'Edward');" $DB_NAME
-psql -c "insert into people1(id, person_id, name) values(4, 4, 'Frank');" $DB_NAME
-psql -c "insert into people1(id, person_id, name) values(5, 5, 'Gary');" $DB_NAME
-psql -c "insert into people1(id, person_id, name) values(6, 6, 'Helen');" $DB_NAME
+	CREATE TABLE people1 (
+		id bigserial primary key,
+		person_id bigint,
+		name text,
+		has_cancer boolean
+	)
 
-psql -c "insert into people2(id, person_id, name, smokes) values (7, 1, 'Anna', TRUE);" $DB_NAME
-psql -c "insert into people2(id, person_id, name) values (8, 2, 'Bob');" $DB_NAME
-psql -c "insert into people2(id, person_id, name, smokes) values(9, 3, 'Edward', TRUE);" $DB_NAME
-psql -c "insert into people2(id, person_id, name) values(10, 4, 'Frank');" $DB_NAME
-psql -c "insert into people2(id, person_id, name) values(11, 5, 'Gary');" $DB_NAME
-psql -c "insert into people2(id, person_id, name) values(12, 6, 'Helen');" $DB_NAME
+	CREATE TABLE people2 (
+		id bigserial primary key,
+		person_id bigint,
+		name text,
+		smokes boolean
+	)
 
-psql -c "insert into friends(person_id, friend_id) values(1, 2);" $DB_NAME
-psql -c "insert into friends(person_id, friend_id) values(1, 3);" $DB_NAME
-psql -c "insert into friends(person_id, friend_id) values(1, 4);" $DB_NAME
-psql -c "insert into friends(person_id, friend_id) values(3, 4);" $DB_NAME
-psql -c "insert into friends(person_id, friend_id) values(5, 6);" $DB_NAME
+	CREATE TABLE friends (
+		id bigserial primary key,
+		person_id bigint,
+		friend_id bigint
+	)
+;"""
 
-psql -c "insert into friends(person_id, friend_id) values(2, 1);" $DB_NAME
-psql -c "insert into friends(person_id, friend_id) values(3, 1);" $DB_NAME
-psql -c "insert into friends(person_id, friend_id) values(4, 1);" $DB_NAME
-psql -c "insert into friends(person_id, friend_id) values(4, 3);" $DB_NAME
-psql -c "insert into friends(person_id, friend_id) values(6, 5);" $DB_NAME
+psql -p $PGPORT -h $PGHOST $DBNAME -c """
+	INSERT INTO people1(id, person_id, name) VALUES
+		(1, 1, 'Anna'),
+		(2, 2, 'Bob'),
+		(3, 3, 'Edward'),
+		(4, 4, 'Frank'),
+		(5, 5, 'Gary'),
+		(6, 6, 'Helen')
+;"""
+
+psql -p $PGPORT -h $PGHOST $DBNAME -c """
+	INSERT INTO people2(id, person_id, name, smokes) VALUES
+		(7, 1, 'Anna', TRUE),
+		(8, 2, 'Bob', NULL),
+		(9, 3, 'Edward', TRUE),
+		(10, 4, 'Frank', NULL),
+		(11, 5, 'Gary', NULL),
+		(12, 6, 'Helen', NULL)
+;"""
+
+psql -p $PGPORT -h $PGHOST $DBNAME -c """
+	INSERT INTO friends(person_id, friend_id) VALUES 
+		(1, 2), (1, 3), (1, 4), (3, 4), (5, 6), (2, 1), (3, 1), (4, 1), (4, 3), (6, 5)
+;"""
