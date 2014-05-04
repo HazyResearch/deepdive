@@ -98,7 +98,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       id bigserial primary key,
       initial_value double precision,
       is_fixed boolean,
-      description ${stringType});
+      description text);
     ALTER SEQUENCE ${WeightsTable}_id_seq MINVALUE -1 RESTART WITH 0;
   """
 
@@ -123,7 +123,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   """
 
   def selectWeightsForDumpSQL = s"""
-    SELECT id AS "id", is_fixed AS "is_fixed", initial_value AS "initial_value"
+    SELECT id AS "id", is_fixed AS "is_fixed", initial_value AS "initial_value", description AS "description"
     FROM ${WeightsTable};
   """
 
@@ -279,6 +279,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     val randomGen = new Random()
 
+    val weightMap = scala.collection.mutable.Map[String, Long]()
+
     
     log.info(s"Dumping factor graph...")
     log.info("Dumping variables...")
@@ -313,27 +315,33 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     log.info("Dumping weights...")
     issueQuery(selectWeightsForDumpSQL) { rs => 
-      serializer.addWeight(rs.getLong(1), rs.getBoolean(2), 
-        rs.getDouble(3))
+      val id = rs.getLong(1)
+      serializer.addWeight(id, rs.getBoolean(2), rs.getDouble(3))
       numWeights += 1
+      weightMap(rs.getString(4)) = id
     }
 
 
     log.info("Dumping factors...")
     factorDescs.foreach { factorDesc =>
       val functionName = factorDesc.func.getClass.getSimpleName
-      val weightCmd = generateWeightCmd(factorDesc.weightPrefix, factorDesc.weight.variables)
+      
 
       val selectInputQueryForDumpSQL = s"""
-        SELECT ${factorDesc.name}_query_user.*, ${WeightsTable}.id AS "wid"
-        FROM ${factorDesc.name}_query_user, ${WeightsTable}
-        WHERE ${weightCmd} = ${WeightsTable}.description"""
+        SELECT ${factorDesc.name}_query_user.*
+        FROM ${factorDesc.name}_query_user
+        """
 
       val variables = factorDesc.func.variables
 
       issueQuery(selectInputQueryForDumpSQL) { rs =>
 
-        serializer.addFactor(numFactors, rs.getLong("wid"), functionName, variables.length)
+        val weightCmd = factorDesc.weightPrefix + "-" + factorDesc.weight.variables.map(
+        v => rs.getString(v)).mkString("")
+        // log.info(weightCmd)
+        // log.info(weightMap(weightCmd).toString)
+
+        serializer.addFactor(numFactors, weightMap(weightCmd), functionName, variables.length)
 
         variables.zipWithIndex.foreach { case(v, pos) =>
           serializer.addEdge(rs.getLong(s"${v.relation}.id"),
