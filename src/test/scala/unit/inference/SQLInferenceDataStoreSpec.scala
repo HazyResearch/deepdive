@@ -102,7 +102,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         // Ground the graph with custom holdout
         val customHoldoutQuery = """
           INSERT INTO dd_graph_variables_holdout(variable_id)
-          SELECT id FROM dd_graph_variables WHERE id <= 10 AND is_evidence=true;"""
+          SELECT id FROM r1 WHERE id <= 10;"""
         inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction, 
           Option(customHoldoutQuery), false, "")
 
