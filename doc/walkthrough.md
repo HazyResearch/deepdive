@@ -162,10 +162,10 @@ Next, let's tell DeepDive to use the extractor, by adding the following lines be
 
 Let's go through each line:
 
-  1. The input to the `ext_sentences` extractor are all articles, selected using a SQL statement.
-  2. The output of the extractor will be written to the `sentences` table.
-  3. The extractor script is `udf/nlp_extractor/run.sh`. DeepDive will execute this command and stream input to the *stdin* of the process, and read output from *stdout* of the process. We give two command line arguments to the extractor which specify the key and the value of the input JSON and the maximum sentence length. These are used by the NLP extractor and are not a function of DeepDive.
-  4. We execute a script before the extractor runs.
+1. The input to the `ext_sentences` extractor are all articles, selected using a SQL statement.
+2. The output of the extractor will be written to the `sentences` table.
+3. The extractor script is `udf/nlp_extractor/run.sh`. DeepDive will execute this command and stream input to the *stdin* of the process, and read output from *stdout* of the process. We give two command line arguments to the extractor which specify the key and the value of the input JSON and the maximum sentence length. These are used by the NLP extractor and are not a function of DeepDive.
+4. We execute a script before the extractor runs.
 
 There are other options you can give to extractor, refer to the [extractor guide](/doc/extractors.html) for a more comprehensive list. At this point you may be wondering about the `before` script. Why do we need that? Each time before the extractor runs we want to clear out the `sentences` table and remove old data, so let's create a `udf/before_sentences.sh`  script that does that:
 
@@ -174,7 +174,7 @@ There are other options you can give to extractor, refer to the [extractor guide
 psql -c "TRUNCATE sentences CASCADE;" deepdive_spouse
 {% endhighlight %}
 
-Great, our first extractor is ready! When you execute `run.sh` DeepDive should run the new extractor and populate the `sentences` table with the result. Note that natural language processing is quite CPU intensive and may take a while to run. On a 2013 MacBook Pro the NLP extractor needed 1 hour to process all of the raw text documents. You can speed up this process by working with a smaller subset of the documents and using `"""SELECT * FROM articles ORDER BY id ASC LIMIT 100"""` as the input query to the extractor. Alternatively, you can also load the finished NLP result into the database directly. We provide a dump of the full `sentences` table in `data/sentences.dump`.
+Great, our first extractor is ready! When you execute `run.sh` DeepDive should run the new extractor and populate the `sentences` table with the result. Note that natural language processing is quite CPU intensive and may take a while to run. On a 2013 MacBook Pro the NLP extractor needed 1 hour to process all of the raw text documents. You can speed up this process by working with a smaller subset of the documents and using `"""SELECT article_id, text FROM articles ORDER BY article_id ASC LIMIT 100"""` as the input query to the extractor. Alternatively, you can also load the finished NLP result into the database directly. We provide a dump of the full `sentences` table in `data/sentences.dump`.
 
 {% highlight bash %}
 psql -d deepdive_spouse -c "copy sentences from STDIN CSV;" < ../../examples/spouse_example/data/sentences_dump.csv
@@ -290,13 +290,17 @@ psql -d deepdive_spouse -c """CREATE TABLE has_spouse(
 """
 {% endhighlight %}
 
-Note the special `is_true` column in the above table. We need this column because we want DeepDive to predict how likely it is that a given entry in the table is correct. In other words, DeepDive will create a [random variable](/doc/general/inference.html) for each instance of it. More concretely, each unique id in the `has_spouse` table will be assigned random variable for its `is_true` column. Let's tell DeepDive to use the `is_true` column for probabilistic inference in the `application.conf`
+Note the special `is_true` column in the above table. We need this column because we want DeepDive to predict how likely it is that a given entry in the table is correct. In other words, DeepDive will create a [random variable](/doc/general/inference.html) for each instance of it. More concretely, each row in the `has_spouse` table will be assigned random variable for its `is_true` column. 
+
+Also note that we must reserve another special column, `id bigint`, in any table containing variables like this one. For system to use, this column should be **left blank, and not be used anywhere**. We will further see syntax requirements in *inference rules* related to this `id` column.
+
+Let's tell DeepDive to use the `is_true` column for probabilistic inference in the `application.conf`:
 
     schema.variables {
       has_spouse.is_true: Boolean
     }
 
-Let's create an extractor that extracts all candidates relations and puts them into the above table. We call them *candidate relations* because we are not sure whether or not they are actually correct, that's for DeepDive to predict. We will be adding *features* to make predictions in the next step, for now we are just outputting all of the candidates.
+Let's create an extractor that extracts all candidate relations and puts them into the above table. We call them *candidate relations* because we are not sure whether or not they are actually correct, that's for DeepDive to predict. We will be adding *features* to make predictions in the next step, for now we are just outputting all of the candidates.
 
     ext_has_spouse_candidates {
       input: """
@@ -373,7 +377,7 @@ for row in fileinput.input():
     "description": "%s-%s" %(p1_text, p2_text),
     "is_true": is_true,
     "relation_id": None,
-    "id": None
+    "id": None      # Leave this id column blank for system to use
   })
 {% endhighlight %}
 
@@ -494,7 +498,7 @@ Don't forget to add the new extractor to your pipeline:
 
 ### Adding domain-specific inference rules
 
-Now we need to tell DeepDive how to perform [probabilistic inference](/doc/general/inference.html) on the data we have generated.  We want to predict the `is_true` column of the `has_spouse` table based on the features we have extracted. This is the simplest rule you can write, because it does not involve domain knowledge or  relationships among variables. Add the following to your `application.conf`
+Now we need to tell DeepDive how to perform [probabilistic inference](/doc/general/inference.html) on the data we have generated.  We want to predict the `is_true` column of the `has_spouse` table based on the features we have extracted. This is the simplest rule you can write, because it does not involve domain knowledge or  relationships among variables. Add the following to your `application.conf`:
 
     inference.factors {
       f_has_spouse_features {
@@ -512,6 +516,13 @@ Now we need to tell DeepDive how to perform [probabilistic inference](/doc/gener
     }
 
 This rule generates a model similar to a logistic regression classifier. We use a set of features to make a prediction about the variable we care about. For each row in the *input query* we are adding a [factor](/doc/general/probabilistic_inference.html) that connects to the `has_spouse.is_true` variable with a different weight for each feature name. 
+
+Note that the syntax requires users to explicitly select:
+1. `id` column for each variable
+2. The variable column, which is `is_true` in this case
+3. The column weight is dependent on, which is `feature` in this case
+
+And when selecting them, users must explicitly alias `id` to `[relation_name].id` and `[variable]` to `[relation_name].[variable]` for system to use. See more in [inference rule guide](/doc/inference_rules.html).
 
 The next step is to incorporate domain knowledge into our model. For example, we know that has_spouse is symmetric. That means, if Barack Obama is married to Michelle Obama, then Michelle Obama is married to Barack Obama. We can encode this knowledge in a second inference rule:
 

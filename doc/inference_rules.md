@@ -8,7 +8,7 @@ Inference rules describe how [factor graph](/doc/general/inference.html) is cons
 
 - The **input query** usually combines relations created by your extractors. One factor will be created for each row in the query result.
 - The **factor function** defines the variables that will be connected to each factor, and how they are related to each other.
-- The **factor weight** describes how confident you are that your rule is correct, in other words, how much weight you want to put on it during probabilistic inference. Weights can be constants, or automatically learned based on training data.
+- The **factor weight** describes how confident you are that your rule is correct, in other words, how much weight you want to put on it during probabilistic inference. Weights can be constants, or automatically learned based on training data. 
 
 For example:
 
@@ -18,7 +18,8 @@ For example:
           input_query : """
             SELECT people.id         AS "people.id",
                    people.smokes     AS "people.smokes",
-                   people.has_cancer AS "people.has_cancer"
+                   people.has_cancer AS "people.has_cancer",
+                   people.gender     AS "people.gender"
             FROM people
             """
           function    : "Imply(people.smokes, people.has_cancer)"
@@ -47,7 +48,12 @@ The input query of a factor combines all variables that a factor is using. It us
 There are a couple of caveats when writing input queries for factors:
 
 - The query result must contain all variable attributes that are used in your factor function. For example, if you are using `people.has_cancer` in your factor function, then an attribute called `people.has_cancer` must be part of the query result.
-- The query result must contain a *unique identifier* for each relation. DeepDive uses this identifier to assign unique variable ids. For example, if you are using an RDBMS like PostgreSQL and you have a `people.has_cancer` variable in your factor function, then `people.id` must also be part of the query result. 
+- The query result must contain the reserved column `id` for each variable. DeepDive uses `id` column to assign unique variable ids. For example, if you have `people.has_cancer` variable in your factor function, then `people.id` must also be part of the query result. **Several requirements for `id` column**:
+  - When creating a table containing variables, the column `id` must be explicitly created, with the type of big integer, i.e. `id bigint`.
+  - The value of `id` should be `NULL` in all phases before inference. System will fill this column with variable IDs during inference, and values in this column will be lost.
+  - If using Greenplum, `id` must not be the distribution key for a table.
+  - If developers want an unique identifier of this table to refer to, they should use other columns rather than `id`.
+  - Generally, for any table in a DeepDive application, name `id` is NOT recommended to use for any column other than this reserved field. Meaningful column names such as `sentence_id`, `people_id` are recommended.
 
 Refer to the database-specific guides to learn about more caveats:
 

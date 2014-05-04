@@ -4,7 +4,7 @@ layout: default
 
 # Interpreting results
 
-One of the most important aspects of DeepDive is its iterative workflow. After running a DeepDive application and performing [probabilistic infernece](/doc/general/probabilistic_inference.html) it is crucial to evaluate the results and act on feedback that the system provides. DeepDive produces *calibration plots* to help you with this task.
+One of the most important aspects of DeepDive is its iterative workflow. After running a DeepDive application and performing [probabilistic inference](/doc/general/probabilistic_inference.html) it is crucial to evaluate the results and act on feedback that the system provides. DeepDive produces *calibration plots* to help you with this task.
 
 ### Generating calibration plots
 
@@ -30,7 +30,7 @@ There are many reasons why results could be suboptimal. Common ones are:
 
 - **Not enough positive evidence:** If you do not provide enough positive evidence the system will be unable to learn weights that push variables towards a high probability (or low probability if your variables are negated). Having little probability mass on the right side of the graph is often an indicator for not having enough positive evidence, or not using features that uses the positive evidence effectively.
 
-- **Not enough negative evidence:** When you do not have enough negative evidence, or negative evidence that is biased, then the system will not be able to distinguish true events from false events. That is, you will obtain many *false positives*. In the graph this is often indicated by having little probability mass on the left (no U-shape) in plots b) and c), or/and by having a low accuracy for high probabilities in plot a). [Generating negative evidence the can be somewhat of an art](/doc/general/generating_negative_examples.html)
+- **Not enough negative evidence:** When you do not have enough negative evidence, or negative evidence that is biased, then the system will not be able to distinguish true events from false events. That is, you will obtain many *false positives*. In the graph this is often indicated by having little probability mass on the left (no U-shape) in plots b) and c), or/and by having a low accuracy for high probabilities in plot a). [Generating negative evidence can be somewhat of an art](/doc/general/generating_negative_examples.html)
 
 - **Weight learning does not converge:** When DeepDive is unable to learn weights for the inference rules the predicated data will be invalid. Check the DeepDive log file for the gradient value at the end of the learning phrase. If the value is very large (1000 or more), then it is possible that weight learning was not successful. In this case, you can try to [decrease the learning rate or increase the number of learning iterations](/doc/performance.html) for the sampler. 
 

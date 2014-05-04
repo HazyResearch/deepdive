@@ -19,7 +19,7 @@ By default the system assigns holdout variables at random. You can also specify 
 
 ### Custom Holdout
 
-DeepDive allows you to specify a SQL query that defines which variables should be in the holdout. In case you define a custom holdout, the `holdout_fraction` setting is ignored. You may define a custom holdout query as follows:
+DeepDive allows you to specify a SQL query that defines which variables should be in the holdout. In case you define a custom query to hold out in `holdout_query`, and the `holdout_fraction` setting is ignored. You may define a custom holdout query as follows:
 
     deepdive.calibration: {
       holdout_query: "INSERT INTO dd_graph_variables_holdout(variable_id) SELECT id FROM mytable WHERE id < 10"
