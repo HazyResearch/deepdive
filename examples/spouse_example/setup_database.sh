@@ -9,9 +9,6 @@ fi
 echo "Set DB_NAME to ${DBNAME}."
 echo "HOST is ${PGHOST}, PORT is ${PGPORT}."
 
-export PGUSER=${PGUSER:-`whoami`}
-export PGPASSWORD=${PGPASSWORD:-}
-
 dropdb $DBNAME
 createdb $DBNAME
 
