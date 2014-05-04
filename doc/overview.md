@@ -64,9 +64,11 @@ While you don't need to be intimately familiar with factor graphs to be able to 
 
 DeepDive exposes a language to easily build factor graphs by writing *rules* that define the relationships between variables. 
 
-    smokesFactor.input_query: "SELECT * from people"
-    smokesFactor.function: "Imply(people.smokes, people.has_cancer)"
-    smokesFactor.weight: ?
+    smokesFactor {
+      input_query : """SELECT * from people"""
+      function    : "Imply(people.smokes, people.has_cancer)"
+      weight      : ?
+    }
 
 For example, the rule above states that if a person smokes, he or she is likely to have cancer, and that the weight of the rule should be learned automatically based on training data. You can use DeepDive's language to express complex relationships that use features which you have previously extracted.
 
