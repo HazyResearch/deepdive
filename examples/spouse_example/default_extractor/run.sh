@@ -6,13 +6,13 @@ export DEEPDIVE_HOME=`cd $(dirname $0)/../../../; pwd`
 # Database Configuration
 export DBNAME=deepdive_spouse_default
 
-# Initialize database
-bash $APP_HOME/../setup_database.sh $DBNAME
-
 export PGUSER=${PGUSER:-`whoami`}
 export PGPASSWORD=${PGPASSWORD:-}
 export PGPORT=${PGPORT:-5432}
 export PGHOST=${PGHOST:-localhost}
+
+# Initialize database
+bash $APP_HOME/../setup_database.sh $DBNAME
 
 cd $DEEPDIVE_HOME
 
