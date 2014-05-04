@@ -159,6 +159,9 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
           log.debug(s"Temporary writeback file saved to ${writebackTmpFile.getAbsolutePath()}")
           executeScriptOrFail(writebackTmpFile.getAbsolutePath(), taskSender)
 
+          log.info("Analyzing output relation.")
+          executeSqlUpdate(s"ANALYZE ${outputRel};")
+
           log.info("Removing temporary files...")
           queryOutputFile.delete()
           val delCmd = s"rm -f ${splitPrefix}*"
@@ -180,7 +183,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
         // Execute the sql query from sql extractor
         case "sql_extractor" =>
           log.info("Executing sql query.")
-          executeSqlUpdate(task)
+          executeSqlUpdate(task.extractor.sqlQuery)
           // Execute the after script. Fail if the script fails.
           task.extractor.afterScript.foreach {
             afterScript =>
@@ -245,6 +248,9 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
           // Execute query in parallel in GP
           executeSqlFileOrFail(sqlInsertFile.getAbsolutePath(), taskSender)
           log.info(s"Finish executing UDF in database!")
+
+          log.info("Analyzing output relation.")
+          executeSqlUpdate(s"ANALYZE ${outputRel};")
 
           // Execute the after script. Fail if the script fails.
           task.extractor.afterScript.foreach {
@@ -314,6 +320,8 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
       // Execute the after script. Fail if the script fails.
       task.extractor.afterScript.foreach {
         afterScript =>
+          log.info("Analyzing output relation.")
+          executeSqlUpdate(s"ANALYZE ${task.extractor.outputRelation};")
           log.info("Executing after script.")
           executeScriptOrFail(afterScript, taskSender)
       }
@@ -421,8 +429,8 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
     }
   }
 
-  def executeSqlUpdate(task: ExtractionTask) {
-    dataStore.queryUpdate(task.extractor.sqlQuery)
+  def executeSqlUpdate(sqlQuery: String) {
+    dataStore.queryUpdate(sqlQuery)
   }
 
   def executeSqlQueryOrFail(query: String, failureReceiver: ActorRef, pipeOutFilePath: String = null) { 
