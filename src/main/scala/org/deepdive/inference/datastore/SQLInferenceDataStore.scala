@@ -410,7 +410,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       // input query
       writer.println(s"""
         DROP VIEW IF EXISTS ${factorDesc.name}_query_user CASCADE;
-        CREATE VIEW ${factorDesc.name}_query_user AS (${factorDesc.inputQuery});
+        CREATE VIEW ${factorDesc.name}_query_user AS (${factorDesc.inputQuery})
         """)
 
 
