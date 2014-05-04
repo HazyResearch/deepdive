@@ -19,16 +19,16 @@ if [ "$(uname)" == "Darwin" ]; then
     	unzip dw_mac.zip
     fi
 
-    export LD_LIBRARY_PATH=[DEEPDIVE_HOME]/lib/dw_mac/lib/protobuf/lib:[DEEPDIVE_HOME]/lib/dw_mac/lib
-	export DYLD_LIBRARY_PATH=[DEEPDIVE_HOME]/lib/dw_mac
-	
+    export LD_LIBRARY_PATH=$ROOT_PATH/lib/dw_mac/lib/protobuf/lib:$ROOT_PATH/lib/dw_mac/lib
+	export DYLD_LIBRARY_PATH=$ROOT_PATH/lib/dw_mac
+
 elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
     # if haven't unzipped dw_linux.zip
 	if [ ! -d $ROOT_PATH/lib/dw_linux ]; then
     	unzip dw_linux.zip
     fi
 
-    export LD_LIBRARY_PATH=[DEEPDIVE_HOME]/lib/dw_linux/lib:[DEEPDIVE_HOME]/lib/dw_linux/lib64
+    export LD_LIBRARY_PATH=$ROOT_PATH/lib/dw_linux/lib:$ROOT_PATH/lib/dw_linux/lib64
 fi
 
 cd $ROOT_PATH
