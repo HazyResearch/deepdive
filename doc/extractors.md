@@ -23,7 +23,17 @@ The first three types of extractors perform a user-defined function (UDF) on an 
 
 To use different extractors, users specify `style` in each extractor definition in the configuration file. For example, if we want to use `tsv_extractor` for `wordsExtractor`:
 
-    wordsExtractor.style: "tsv_extractor"
+    deepdive {
+      extraction.extractors {
+
+        wordsExtractor {
+          style: "tsv_extractor"
+          # ...
+        }
+
+        # More Extractors...
+      }
+    }
 
 For each extractor, if `style` is not specified, the system will use `json_extractor` by default.
 
@@ -33,14 +43,11 @@ For each extractor, if `style` is not specified, the system will use `json_extra
 
 `json_extractor` takes data defined by an `input` query (for example, a SQL statement), and produces new tuples as output. These tuples are written to the `output_relation`. The function for this transformation is defined by the `udf` key, which can be an arbitrary executable (more on that below).
 
-    deepdive.extraction.extractors: {
-      wordsExtractor {
-        style: "json_extractor"
-        output_relation: "words"
-        input: "SELECT * FROM titles"
-        udf: "words.py"
-      }
-      # More Extractors...
+    wordsExtractor {
+      style           : "json_extractor"
+      output_relation : "words"
+      input           : """SELECT * FROM titles"""
+      udf             : "words.py"
     }
 
 #### Writing extractor UDFs for json_extractor
@@ -93,7 +100,7 @@ Currently DeepDive supports two types of extractor inputs for `json_extractor`:
 
 For example, a SQL statement for Postgres:
 
-    wordsExtractor.input: "SELECT * FROM customers"
+    wordsExtractor.input: """SELECT * FROM customers"""
 
 
 **2. Reading from a CSV or TSV File**
@@ -117,14 +124,11 @@ Note that `sql_extractor` and `cmd_extractor` do not take inputs; `plpy_extracto
 
 Same to `json_extractor`, it takes data defined by an `input` query and produces new tuples as output. These tuples are written to the `output_relation`. The function for this transformation can be any executable defined in `udf`.
 
-    deepdive.extraction.extractors: {
-      wordsExtractor {
-        style: "tsv_extractor"
-        output_relation: "words"
-        input: "SELECT * FROM titles"
-        udf: "words.py"
-      }
-      # More Extractors...
+    wordsExtractor {
+      style           : "tsv_extractor"
+      output_relation : "words"
+      input           : """SELECT * FROM titles"""
+      udf             : "words.py"
     }
 
 #### Writing extractor UDFs for tsv_extractor
@@ -165,7 +169,7 @@ for line in fileinput.input():
 
 Extractor inputs for `json_extractor` must be a database query. For example, a SQL statement for Postgres:
 
-    wordsExtractor.input: "SELECT title_id, title FROM title"
+    wordsExtractor.input: """SELECT title_id, title FROM title"""
 
 The order of columns in the query will be the same as order in the `.tsv` file extractors get, i.e. after a line is split by `\t`, the fields are first `title_id` then `title` in this case.
 
@@ -192,17 +196,12 @@ Note that if your **returned value contains arrays**, it will be harder for data
 
 Similar as `json_extractor`, the UDF is executed on data defined by an `input` SQL statement, and produces new tuples as output. These tuples are written to the `output_relation`. The function for this transformation is defined by the `udf` key, which is defined in a python script with specific format (more on that below). An example extractor is as follows:
 
-    deepdive.extraction.extractors: {
-      # An extractor to get trigrams of words from sentences to word_3gram table
-      ngramExtractor {
-        style: "plpy_extractor"
-        input: """
-          select sentence_id, words, 3
-          from sentences
-        """
-        output_relation: "word_3gram"
-        udf: "ext_word_ngram.py"
-      }
+    # An extractor to get trigrams of words from sentences to word_3gram table
+    ngramExtractor {
+      style           : "plpy_extractor"
+      input           : """SELECT sentence_id, words, 3 FROM sentences"""
+      output_relation : "word_3gram"
+      udf             : "ext_word_ngram.py"
     }
 
 Specifically, the arguments it takes include:
@@ -334,10 +333,9 @@ You can debug extractors by printing output using *plpy.info* or *plpy.debug* in
 
 To simplify users' workload, we have `sql_extractor` feature extractor which only updates the data in database(without any return results). The function framework for this extractor is defined as below.
 
-    deepdive.extraction.extractors: {
-      wordsExtractor.style: "sql_extractor"
-      wordsExtractor.sql: "INSERT INTO titles VALUES (1, 'Harry Potter')"
-      # More Extractors...
+    wordsExtractor {
+      style : "sql_extractor"
+      sql   : """INSERT INTO titles VALUES (1, 'Harry Potter')"""
     }
 
 #### Extractor SQL query
@@ -346,7 +344,7 @@ For `sql_extractor`, A field `sql` is required to specify the SQL query to be ex
 
 For example, a SQL statement for Postgres:
 
-    wordsExtractor.sql: "INSERT INTO titles VALUES (1, 'Harry Potter')"
+    wordsExtractor.sql: """INSERT INTO titles VALUES (1, 'Harry Potter')"""
 
 Note that it is developers' responsibility to run `ANALYZE table_name` after updating the table for SQL optimization.
 
@@ -354,10 +352,9 @@ Note that it is developers' responsibility to run `ANALYZE table_name` after upd
 
 The same as `sql_extractor` feature extractor, we have another extractor `cmd_extractor` which only executes a shell command. The function framework for this extractor is defined as below.
 
-    deepdive.extraction.extractors: {
-      wordsExtractor.style: "cmd_extractor"
-      wordsExtractor.cmd: "python words.py"
-      # More Extractors...
+    wordsExtractor {
+      style : "cmd_extractor"
+      cmd   : """python words.py"""
     }
 
 #### Execute shell command
@@ -366,7 +363,7 @@ For `cmd_extractor`, A field `cmd` is required to specify the SQL query to be ex
 
 For example, a shell command:
 
-    wordsExtractor.cmd: "python words.py"
+    wordsExtractor.cmd: """python words.py"""
 
 
 
@@ -379,7 +376,9 @@ For example, a shell command:
 
 You can also specify dependencies for an extractor. Extractors will be executed in order of their dependencies. If the dependencies of several extractors are satisfied at the same time, these may be executed in parallel, or in any order.
 
-    wordsExtractor.dependencies: ["anotherExtractorName"]
+    wordsExtractor {
+      dependencies: ["anotherExtractorName"]
+    }
 
 If any extractor specified in dependencies does not exist or is not in the [pipeline](doc/pipelines.html), it will be ignored. 
 
@@ -389,30 +388,42 @@ If any extractor specified in dependencies does not exist or is not in the [pipe
 Sometimes it is useful to execute a command, or call a script, before an extractor starts or after an extractor finishes. You can specify arbitary commands to be executed as follows:
 
   
-    wordsExtractor.before: "echo Hello World"
-    wordsExtractor.after: "/path/to/my/script.sh"
+    wordsExtractor {
+      before : """echo Hello World"""
+      after  : """/path/to/my/script.sh"""
+    }
 
 
 ### Extractor parallelism and input batch size (for json_extractor only)
 
 To improve performance, you can specify the number of processes and the input batch size for each extractor. Your executable script will be run on N threads in parallel and data will be streamed to this processes in a round-robin fashion. By default each extractor uses 1 process and a batch size of 1000.
     
-    # Start 5 processes for this extractor
-    wordsExtractor.parallelism: 5
-    # Stream 1000 tuples to each process in a round-robin fashion
-    wordsExtractor.input_batch_size: 1000
+    wordsExtractor {
+      # Start 5 processes for this extractor
+      parallelism: 5
+      # Stream 1000 tuples to each process in a round-robin fashion
+      input_batch_size: 1000
+    }
 
 
 To improve performance when writing extracted data back to the database you can optionally specify an `output_batch_size` for each extractor. The output batch size specifies how many extracted tuples we insert into the database at once. For example, if your tuples are very large, a smaller batch size may help avoid out-of-memory errors. The default value is 10,000.
 
-    # Insert each 5000 tuples into the data store
-    wordsExtractor.output_batch_size: 5000
+    wordsExtractor {
+      # Insert each 5000 tuples into the data store
+      output_batch_size: 5000
+    }
 
 
 You can also execute independent extractors in parallel:
 
-    deepdive.extraction.extractors: {
-      parallelism: 5
-      # Extractors...
+<!-- TODO Shouldn't common configs be at deepdive.extraction level, e.g., deepdive.extraction.parallelism?  Otherwise, config keys may collide with user-defined extractor names. -->
+
+    deepdive {
+      extraction.extractors {
+        parallelism: 5
+
+        # Extractors...
+      }
     }
+
 

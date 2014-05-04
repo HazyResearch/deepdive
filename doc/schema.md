@@ -9,9 +9,11 @@ layout: default
 You must tell DeepDive which variables you want to use in your inference rules. Each variable has a data type associated with it. Currently, DeepDive only supports *Boolean* variables.
 
 {% highlight bash %}
-deepdive.schema.variables {
-  people.smokes: Boolean
-  people.has_cancer: Boolean
+deepdive {
+  schema.variables {
+    people.smokes: Boolean
+    people.has_cancer: Boolean
+  }
 }
 {% endhighlight %}
 

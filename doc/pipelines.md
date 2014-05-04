@@ -10,9 +10,15 @@ While testing extractors and inference rules it can be useful to execute only a 
 
 You can define custom pipelines by adding an optional configuration setting:
 
-    deepdive.pipeline {
-      run: myPipeline
-      pipelines.myPipeline: ["extractor1", "extractor2", "inferenceRule1"]
+    deepdive {
+      pipeline.run: myPipeline
+      pipeline.pipelines {
+        myPipeline: [
+            extractor1
+            extractor2
+            inferenceRule1
+          ]
+      }
     }
 
 Each pipeline is defined as an array of tasks, where the names of the tasks are the names of your extractor or inference rules. **When no pipelines are specified, DeepDive executes all extractors and inference rules.**
