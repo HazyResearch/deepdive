@@ -6,8 +6,8 @@ DB_NAME=deepdive_smoke
 cd `dirname $0`
 BASE_DIR=`pwd`
 
-dropdb deepdive_smoke
-createdb deepdive_smoke
+dropdb -p $PGPORT -h $PGHOST deepdive_smoke
+createdb -p $PGPORT -h $PGHOST deepdive_smoke
 
 psql -p $PGPORT -h $PGHOST $DBNAME -c "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;"
 
