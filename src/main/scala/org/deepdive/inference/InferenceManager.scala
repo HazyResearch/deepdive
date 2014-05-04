@@ -60,9 +60,9 @@ trait InferenceManager extends Actor with ActorLogging {
       sender ! "OK"
       // factorGraphBuilder ? FactorGraphBuilder.AddFactorsAndVariables(
       //   factorDesc, holdoutFraction, batchSize) pipeTo _sender
-    case InferenceManager.RunInference(factorDescs, holdoutFraction, samplerJavaArgs, samplerOptions, skipSerializing) =>
+    case InferenceManager.RunInference(factorDescs, holdoutFraction, holdoutQuery, samplerJavaArgs, samplerOptions, skipSerializing) =>
       val _sender = sender
-      val result = runInference(factorDescs, holdoutFraction, samplerJavaArgs, samplerOptions, skipSerializing)
+      val result = runInference(factorDescs, holdoutFraction, holdoutQuery, samplerJavaArgs, samplerOptions, skipSerializing)
       result pipeTo _sender
     case InferenceManager.WriteCalibrationData =>
       val _sender = sender
@@ -78,7 +78,8 @@ trait InferenceManager extends Actor with ActorLogging {
       calibrationWriter ! PoisonPill
   }
 
-  def runInference(factorDescs: Seq[FactorDesc], holdoutFraction: Double, samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false) = {
+  def runInference(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], 
+    samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false) = {
     // TODO: Make serializier configurable
     skipSerializing match {
       case false =>
@@ -95,7 +96,7 @@ trait InferenceManager extends Actor with ActorLogging {
         val metaOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileMeta, false))
         val serializier = new BinarySerializer(weightsOutput, variablesOutput, factorsOutput, edgesOutput, metaOutput)
         inferenceDataStore.dumpFactorGraph(serializier, variableSchema, factorDescs, holdoutFraction,
-          factorGraphDumpFileWeights.getCanonicalPath,
+          holdoutQuery, factorGraphDumpFileWeights.getCanonicalPath,
           factorGraphDumpFileVariables.getCanonicalPath, factorGraphDumpFileFactors.getCanonicalPath,
           factorGraphDumpFileEdges.getCanonicalPath)
         serializier.close()
@@ -152,7 +153,7 @@ object InferenceManager {
   // Executes a task to build part of the factor graph
   case class GroundFactorGraph(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean, weightTable: String)
   // Runs the sampler with the given arguments
-  case class RunInference(factorDescs: Seq[FactorDesc], holdoutFraction: Double, samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false)
+  case class RunInference(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false)
   // Writes calibration data to predefined files
   case object WriteCalibrationData
 

@@ -84,7 +84,7 @@ trait JdbcExtractionDataStore extends ExtractionDataStore[JsObject] with Logging
         // SQL cmd exception
         case exception : Throwable =>
           log.error(exception.toString)
-          log.info("[Error] Please check the SQL cmd!")
+          // log.info("[Error] Please check the SQL cmd!")
           throw exception
         // TODO: Call TaskManager to kill all tasks
       } finally {
