@@ -9,6 +9,8 @@ import scalikejdbc._
 import scala.util.matching._
 import scala.io.Source
 import scala.util.Random
+import scala.sys.process._
+import scala.util.{Try, Success, Failure}
 // import scala.collection.mutable.Map
 
 
@@ -24,6 +26,10 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def ds : JdbcDataStore
 
   val factorOffset = new java.util.concurrent.atomic.AtomicLong(0)
+  val dbname = System.getenv("DBNAME")
+  val pguser = System.getenv("PGUSER")
+  val pgport = System.getenv("PGPORT")
+  val pghost = System.getenv("PGHOST")
 
   /* Internal Table names */
   def WeightsTable = "dd_graph_weights"
@@ -97,7 +103,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   """
 
   def createSequencesSQL = s"""
-    DROP SEQUENCE IF EXISTS ${IdSequence};
+    DROP SEQUENCE IF EXISTS ${IdSequence} CASCADE;
     CREATE SEQUENCE ${IdSequence} MINVALUE -1 START 0;
   """
 
@@ -179,6 +185,78 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     ${WeightsTable} JOIN ${WeightResultTable} ON ${WeightsTable}.id = ${WeightResultTable}.id
     ORDER BY abs(weight) DESC;
   """
+
+  def createAssignIdFunctionSQL = s"""psql -U ${pguser} -p ${pgport} -h ${pghost} ${dbname} -c """ + "\"\"\"" +
+    """
+    DROP LANGUAGE IF EXISTS plpgsql CASCADE;
+    DROP LANGUAGE IF EXISTS plpythonu CASCADE;
+    CREATE LANGUAGE plpgsql;
+    CREATE LANGUAGE plpythonu;
+
+    CREATE OR REPLACE FUNCTION clear_count_1(sid int) RETURNS int AS 
+    \$\$
+    if '__count_1' in SD:
+      SD['__count_1'] = -1
+      return 1
+    return 0
+    \$\$ LANGUAGE plpythonu;
+
+
+    CREATE OR REPLACE FUNCTION updateid(sid int, sids int[], base_ids bigint[]) RETURNS bigint AS 
+    \$\$
+    if '__count_1' in SD and not SD['__count_1'] < 0:
+      SD['__count_1'] -= 1
+      return SD['__count_1']
+    else:
+      for i in range(0, len(sids)):
+        if sids[i] == sid:
+          SD['__count_1'] = base_ids[i]
+      return SD['__count_1']
+    \$\$ LANGUAGE plpythonu;
+
+    CREATE OR REPLACE FUNCTION fast_seqassign(tname character varying, startid bigint) RETURNS TEXT AS 
+    \$\$
+    BEGIN
+      EXECUTE 'drop table if exists tmp_gpsid_count cascade;'; 
+      EXECUTE 'create table tmp_gpsid_count as select gp_segment_id as sid, count(clear_count_1(gp_segment_id)) as base_id from ' || quote_ident(tname) || ' group by gp_segment_id order by sid distributed by (sid);'; 
+      EXECUTE 'update tmp_gpsid_count as t set base_id = ' || startid || ' - 1 + (SELECT SUM(base_id) FROM tmp_gpsid_count as t2 WHERE t2.sid <= t.sid);';
+      RAISE NOTICE 'EXECUTING _fast_seqassign()...';
+      EXECUTE 'select * from _fast_seqassign(''' || quote_ident(tname) || ''');';
+      RETURN '';
+    END;
+    \$\$ LANGUAGE 'plpgsql';
+
+    CREATE OR REPLACE FUNCTION _fast_seqassign(tname character varying) RETURNS TEXT AS
+    \$\$
+    DECLARE
+      sids int[] :=  ARRAY(SELECT sid FROM tmp_gpsid_count ORDER BY sid);
+      base_ids bigint[] :=  ARRAY(SELECT base_id FROM tmp_gpsid_count ORDER BY sid);
+      tsids text;
+      tbase_ids text;
+    BEGIN
+      SELECT INTO tsids array_to_string(sids, ',');
+      SELECT INTO tbase_ids array_to_string(base_ids, ',');
+      EXECUTE 'update ' || tname || ' set id = updateid(gp_segment_id, ARRAY[' || tsids || '], ARRAY[' || tbase_ids || ']);';
+      RETURN '';
+    END;
+    \$\$ LANGUAGE 'plpgsql';
+    """ + "\"\"\""
+
+
+  def executeCmd(cmd: String) : Try[Int] = {
+    // Make the file executable, if necessary
+    val file = new java.io.File(cmd)
+    if (file.isFile) file.setExecutable(true, false)
+    log.info(s"""Executing: "$cmd" """)
+    val processLogger = ProcessLogger(line => log.info(line))
+    Try(cmd!(processLogger)) match {
+      case Success(0) => Success(0)
+      case Success(errorExitValue) => 
+        Failure(new RuntimeException(s"Script exited with exit_value=$errorExitValue"))
+      case Failure(ex) => Failure(ex)
+    }
+  }
+
 
   def init() : Unit = {
   }
@@ -280,6 +358,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // We write the grounding queries to this SQL file
     val sqlFile = File.createTempFile(s"grounding", ".sql")
     val writer = new PrintWriter(sqlFile)
+    val assignIdFile = File.createTempFile(s"assignId", ".sh")
+    val assignidWriter = new PrintWriter(assignIdFile)
     log.info(s"""Writing grounding queries to file="${sqlFile}" """)
 
     // if (skipLearning == true && weightTable.isEmpty()) {
@@ -293,18 +373,35 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     log.info("Using Greenplum = " + usingGreenplum.toString)
 
-    writer.println(createSequencesSQL)
+    if (usingGreenplum) {
+      assignidWriter.println(createAssignIdFunctionSQL)
+      // log.info(createAssignIdFunctionSQL)
+      // createAssignIdFunctionSQL.!
+    } else {
+      writer.println(createSequencesSQL)
+    }
+    var idoffset : Long = 0
+
     writer.println(createWeightsSQL)
 
     // Ground all variables in the schema
     schema.foreach { case(variable, dataType) =>
       val Array(relation, column) = variable.split('.')
 
-      // TODO: this is expensive
-      writer.println(s"""
-        UPDATE ${relation} SET id = nextval('${IdSequence}');
-        """)
-
+      if (usingGreenplum) {
+        val assignIdSQL = s"""psql -U ${pguser} -p ${pgport} -h ${pghost} ${dbname} -c """ + "\"\"\"" +
+          s""" SELECT fast_seqassign('${relation}', ${idoffset});""" + "\"\"\""
+        assignidWriter.println(assignIdSQL)
+        val getOffset = s"SELECT count(*) FROM ${relation};"
+        issueQuery(getOffset) { rs =>
+          idoffset = idoffset + rs.getLong(1);
+        }
+      } else {
+        writer.println(s"""
+          UPDATE ${relation} SET id = nextval('${IdSequence}');
+          """)
+      }
+       
     }
 
     // Create table for each inference rule
@@ -336,8 +433,10 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     writer.println(s"""ANALYZE ${WeightsTable};""")
 
     writer.close()
+    assignidWriter.close()
 
     log.info("Executing grounding query...")
+    executeCmd(assignIdFile.getAbsolutePath())
     execute(Source.fromFile(sqlFile).getLines.mkString)
   }
 
