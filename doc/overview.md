@@ -19,7 +19,7 @@ DeepDive assumes that you have initial data stored in a relational datastore, su
 
 <!-- TODO -->
 
-[Feature Extraction](http://en.wikipedia.org/wiki/Feature_extraction) is the process of transforming raw data into a set of *features* that capture important information about the data. The goal of the feature extraction step is to extract useful features that can be used during [probabilistic inference](/doc/general/inference.html). For example, in Information Extraction applications, you may extract *features* that describe a word's part of speech, what type of entity it is (person, organization, etc), or its relationship to other words in the sentence.
+[Feature Extraction](http://en.wikipedia.org/wiki/Feature_extraction) is the process of transforming raw data into a set of *features* that capture important information about the data. The goal of the feature extraction step is to extract useful features that can be used during [probabilistic inference](/doc/general/inference.html). For example, in Information Extraction applications, you may extract *features* that describe a word's part of speech, what type of entity it is (person, organization, etc.), or its relationship to other words in the sentence.
 
 DeepDive provides an abstraction called *extractors* to streamline feature extraction. 
 DeepDive support [multiple types of extractors](/doc/extractors.html) to facilitate this process.
@@ -72,7 +72,7 @@ DeepDive exposes a language to easily build factor graphs by writing *rules* tha
 
 For example, the rule above states that if a person smokes, he or she is likely to have cancer, and that the weight of the rule should be learned automatically based on training data. You can use DeepDive's language to express complex relationships that use features which you have previously extracted.
 
-The inference results are stored in the database, in the table named `[variable name]_inference`. DeepDive gives expectation for each variable, which is the most probable value that the varible may take. Also, the learned weights are store in table `dd_inference_result_weights`.
+The inference results are stored in the database, in the table named `[variable name]_inference`. DeepDive gives expectation for each variable, which is the most probable value that the variable may take. Also, the learned weights are store in table `dd_inference_result_weights`.
 
 ### 4. Calibration
 

@@ -21,4 +21,4 @@ In the Amazon EC2 console you can launch the AMI as follows:
 
 ### Notes
 
-- For improved I/O performance the postgresql data directory is created on the Amazon isntance store in `/media/ephemeral0`. This means that if you shut down your instance, all postgresql data will be lost. Make sure to backup your data or store in on the EBS volume if you want to keep it.
+- For improved I/O performance the postgresql data directory is created on the Amazon instance store in `/media/ephemeral0`. This means that if you shut down your instance, all postgresql data will be lost. Make sure to backup your data or store in on the EBS volume if you want to keep it.
