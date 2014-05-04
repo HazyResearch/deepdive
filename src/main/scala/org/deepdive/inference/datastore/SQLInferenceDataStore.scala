@@ -68,7 +68,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     conn.setAutoCommit(false);
     val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
       java.sql.ResultSet.CONCUR_READ_ONLY);
-    stmt.setFetchSize(1000);
+    stmt.setFetchSize(5000);
     val rs = stmt.executeQuery(sql)
     while(rs.next()){
       op(rs)
@@ -326,6 +326,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     factorDescs.foreach { factorDesc =>
       val functionName = factorDesc.func.getClass.getSimpleName
       
+      log.info(s"Dumping ${functionName}...")
 
       val selectInputQueryForDumpSQL = s"""
         SELECT ${factorDesc.name}_query_user.*
@@ -338,8 +339,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
         val weightCmd = factorDesc.weightPrefix + "-" + factorDesc.weight.variables.map(
         v => rs.getString(v)).mkString("")
-        // log.info(weightCmd)
-        // log.info(weightMap(weightCmd).toString)
 
         serializer.addFactor(numFactors, weightMap(weightCmd), functionName, variables.length)
 
