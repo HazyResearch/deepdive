@@ -348,7 +348,7 @@ For example, a SQL statement for Postgres:
 
     wordsExtractor.sql: "INSERT INTO titles VALUES (1, 'Harry Potter')"
 
-
+Note that it is developers' responsibility to run `ANALYZE table_name` after updating the table for SQL optimization.
 
 ### Cmd_extractor
 

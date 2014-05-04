@@ -61,11 +61,11 @@ DeepDive supports [several types of factor functions](/doc/inference_rule_functi
 
 Each factor is assigned a *weight*, which expresses how confident you are in its rule. During probabilistic inference, factors with large weights will have a greater impact on variables than factors with small weights. Factor weights can be any real number, and are relative to each other. You can assign factor weights manually, or you can let DeepDive learn weights automatically. In order to learn weights automatically, you must have enough [training data](/doc/general/relation_extraction.html) available. A weight can also be a function of variables, in which case each factor instance will get a different weight depending on the variable value.
 
-    # Known weight
-    wordsExtractor.factor.weight: 100
+    # Known weight (10 can be treated as positive infinite)
+    someFactor.weight: 10
     
     # Learn the weight, not depending on any variales. All factors created by this rule will have the same weight.
-    wordsExtractor.factor.weight: ?
+    someFactor.weight: ?
     
     # Learn the weight. Each factor will get a different weight depending on the value of people.gender
-    wordsExtractor.factor.weight: ?(people.gender)
+    someFactor.weight: ?(people.gender)
