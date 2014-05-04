@@ -171,7 +171,7 @@ Extractor inputs for `json_extractor` must be a database query. For example, a S
 
     wordsExtractor.input: """SELECT title_id, title FROM title"""
 
-The order of columns in the query will be the same as order in the `.tsv` file extractors get, i.e. after a line is split by `\t`, the fields are first `title_id` then `title` in this case.
+The order of columns in the query will be the same as order in the `.tsv` file extractors get, i.e., after a line is split by `\t`, the fields are first `title_id` then `title` in this case.
 
 #### Caveats
 
@@ -192,7 +192,7 @@ Note that if your **returned value contains arrays**, it will be harder for data
 
 ### plpy_extractor
 
-`plpy_extractor` is a high-performance type of extractors for Postgresql / Greenplum databases. It avoids additional I/O by executing the extractor inside the database systems in parallel. It **translates** user's Python UDF into [PL/python](http://www.postgresql.org/docs/8.2/static/plpython.html) programs accepted by PostgreSQL databases.
+`plpy_extractor` is a high-performance type of extractors for PostgreSQL / Greenplum databases. It avoids additional I/O by executing the extractor inside the database systems in parallel. It **translates** user's Python UDF into [PL/python](http://www.postgresql.org/docs/8.2/static/plpython.html) programs accepted by PostgreSQL databases.
 
 Similar as `json_extractor`, the UDF is executed on data defined by an `input` SQL statement, and produces new tuples as output. These tuples are written to the `output_relation`. The function for this transformation is defined by the `udf` key, which is defined in a python script with specific format (more on that below). An example extractor is as follows:
 
@@ -268,7 +268,7 @@ def run(sentence_id, words, gram_len):
 
           - Names should be coherent to argument list of `run` function.
 
-          - Types are Postgres types, e.g. `int`, `bigint`, `text`, `float`, `int[]`, `bigint[]`, `text[]`, `float[]`, etc.
+          - Types are Postgres types, e.g., `int`, `bigint`, `text`, `float`, `int[]`, `bigint[]`, `text[]`, `float[]`, etc.
 
           - **Orders of input matters.** `ddext.input` must be called in the same order of SQL input query. 
 
@@ -281,7 +281,7 @@ def run(sentence_id, words, gram_len):
 
       - Caveats:
           - Types are Postgres types as above.
-          - **Names and types** of return variables should **EXACTLY MATCH** some columns in output_relation. e.g. The above example program `ext_word_ngram.py` will return tuples and call a SQL function `INSERT INTO word_3gram(sentence_id, ngram, count)`. If output relation contains more columns, those unspecified columns will be NULL in the inserted tuples.
+          - **Names and types** of return variables should **EXACTLY MATCH** some columns in output_relation. e.g., The above example program `ext_word_ngram.py` will return tuples and call a SQL function `INSERT INTO word_3gram(sentence_id, ngram, count)`. If output relation contains more columns, those unspecified columns will be NULL in the inserted tuples.
 
 - In `run` function, write your extractor function that will be run on all rows in your input SQL. Return **a list/tuple**.
 
@@ -290,11 +290,11 @@ def run(sentence_id, words, gram_len):
     - `print` is NOT supported. If you want to print to log, use `plpy.info('SOME TEXT')` or `plpy.debug('SOME TEXT')`.
     - Do not **reassign input variables** in `run` function! 
 
-      - e.g. "input_var = x" is invalid and will cause error!
+      - e.g., "input_var = x" is invalid and will cause error!
 
     - Libraries imported in `init` are recognizable in `run`. 
 
-      - e.g. `ddext.import_lib('re')` will enable you to call function `re.sub` in `run`.
+      - e.g., `ddext.import_lib('re')` will enable you to call function `re.sub` in `run`.
       - Libraries must be already installed where your database server runs.
     
   - **Return Type:**
@@ -385,7 +385,7 @@ If any extractor specified in dependencies does not exist or is not in the [pipe
 
 ### Before and After scripts
 
-Sometimes it is useful to execute a command, or call a script, before an extractor starts or after an extractor finishes. You can specify arbitary commands to be executed as follows:
+Sometimes it is useful to execute a command, or call a script, before an extractor starts or after an extractor finishes. You can specify arbitrary commands to be executed as follows:
 
   
     wordsExtractor {

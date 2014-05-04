@@ -2,9 +2,9 @@
 layout: default
 ---
 
-# Using GreenPlum with DeepDive
+# Using Greenplum with DeepDive
 
-This documentation provides a simple installation guide for [GreenPlum](http://www.gopivotal.com/products/pivotal-greenplum-database) to work with DeepDive. We will use the single-node mode of GreenPlum for demonstration purposes. It should work identically with the multi-node configuration.
+This documentation provides a simple installation guide for [Greenplum](http://www.gopivotal.com/products/pivotal-greenplum-database) to work with DeepDive. We will use the single-node mode of Greenplum for demonstration purposes. It should work identically with the multi-node configuration.
 
 **After installing GreenPlum, DeepDive should work well with it. The rest steps are identical with the documentation for [PostgreSQL](postgresql.html)**. There are a few caveats though, in the following section:
 
@@ -32,7 +32,7 @@ and edit your terminal settings so that this script gets executed every time the
 
 ## Installation with Linux
 
-The following guide sets up GreenPlum on Centos 5.6 x64 with a single-node mode.
+The following guide sets up Greenplum on CentOS 5.6 x64 with a single-node mode.
 
 ### Setting the Greenplum Recommended OS Parameters
 
@@ -95,11 +95,11 @@ Be sure to **reboot** after changing kernel parameters.
 
     $ sudo reboot
 
-### Running the GreenPlum Installer
+### Running the Greenplum Installer
 
-Download GreenPlum for your operating system. For a free Community Edition, find a download link as well as an official guide at [http://www.gopivotal.com/products/pivotal-greenplum-database](http://www.gopivotal.com/products/pivotal-greenplum-database), or directly download [here](http://downloads.cfapps.io/gpdb_db_el5_64). 
+Download Greenplum for your operating system. For a free Community Edition, find a download link as well as an official guide at [http://www.gopivotal.com/products/pivotal-greenplum-database](http://www.gopivotal.com/products/pivotal-greenplum-database), or directly download [here](http://downloads.cfapps.io/gpdb_db_el5_64). 
 
-Install GreenPlum using the downloaded package: 
+Install Greenplum using the downloaded package: 
 
     $ unzip greenplum-db-4.2.x.x-PLATFORM.zip
     $ /bin/bash greenplum-db-4.2.x.x-PLATFORM.bin
@@ -220,11 +220,8 @@ Tune `gp_max_csv_line_length` in Greenplum.
 
 **Could not reserve enough space for object heap. Error: Could not create the Java Virtual Machine.**
 
-Tune `MaxPermSize` in Java. e.g. `-XX:MaxPermSize=128m`.
+Tune `MaxPermSize` in Java, e.g., `-XX:MaxPermSize=128m`.
 
 **How to enable fuzzy string match / install "contrib" module in GreenPlum?**
 
-To enable *fuzzystringmatch* / the *contrib* module available for PostgreSQL for GreenPlum, please check out [this link](http://blog.2ndquadrant.com/fuzzystrmatch_greenplum/).
-
-
-****
+To enable *fuzzystringmatch* / the *contrib* module available for PostgreSQL for Greenplum, please check out [this link](http://blog.2ndquadrant.com/fuzzystrmatch_greenplum/).

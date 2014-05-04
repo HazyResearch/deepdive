@@ -33,7 +33,7 @@ We suggest that you separate them into two features or inference rules. That way
 
 #### If I have two inference rules with the same weight formula, will they share the same weights?
 ---
-No, weights are unique within each inference rule. You can force the sharing of weights by speciyfing a weight prefix, for example:
+No, weights are unique within each inference rule. You can force the sharing of weights by specifying a weight prefix, for example:
 
     rule1 {
       weight       : ?(relation.someField)
@@ -56,7 +56,7 @@ This can happen with "fixed" rules that are always true. When you add such a rul
       sampler.sampler_args: "-l 120 -s 1 -i 200 --alpha 0.001"
     }
 
-The default value of alpha is set to `0.1`, and during testing it makes sense to increase or decrease it one order of magnitude at a time. We are actively workign on implementing an adaptive learning rate computation into our sampler which will help avoid this problem.
+The default value of alpha is set to `0.1`, and during testing it makes sense to increase or decrease it one order of magnitude at a time. We are actively working on implementing an adaptive learning rate computation into our sampler which will help avoid this problem.
 
 
 <br/>
@@ -74,7 +74,7 @@ This happens when you are using an older JRE version than DeepDive supports. Mak
 
 #### I am getting an "ERROR: duplicate key value violates unique constraint "dd_graph_variables_pkey"" error.
 ---
-DeepDive automatically assigns unqiue record IDs through extractor. The above error happens when record IDs in the database are not unique. This could happen when you are manually loading data into a table, without using DeepDive's extractors. If you need to load records manually, make sure their IDs are globally unique, or define manual sequence to use for your pimary keys.
+DeepDive automatically assigns unique record IDs through extractor. The above error happens when record IDs in the database are not unique. This could happen when you are manually loading data into a table, without using DeepDive's extractors. If you need to load records manually, make sure their IDs are globally unique, or define manual sequence to use for your primary keys.
 
 
 
