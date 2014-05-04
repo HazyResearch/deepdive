@@ -49,9 +49,9 @@ object SettingsParser extends Logging {
     val extractorParallelism = Try(extractionConfig.getInt("parallelism")).getOrElse(1)
     val extractors = extractionConfig.getObject("extractors").keySet().map { extractorName =>
       val extractorConfig = extractionConfig.getConfig(s"extractors.$extractorName")
-      val style = Try(extractorConfig.getString(s"style")).getOrElse("udf_extractor")
+      val style = Try(extractorConfig.getString(s"style")).getOrElse("json_extractor")
       style match {
-        case "udf_extractor" | "plpy_extractor" | "tsv_extractor" =>
+        case "json_extractor" | "plpy_extractor" | "tsv_extractor" =>
           val outputRelation = extractorConfig.getString ("output_relation")
           val inputQuery = InputQueryParser.parse (InputQueryParser.inputQueryExpr,
             extractorConfig.getString (s"input") ).getOrElse {
@@ -136,7 +136,21 @@ object SettingsParser extends Logging {
 
   private def loadSamplerSettings(config: Config) : SamplerSettings = {
     val samplingConfig = config.getConfig("sampler")
-    val samplerCmd = samplingConfig.getString("sampler_cmd")
+
+    // Parse Default sampler command based on mac / linux
+    val samplerCmd = samplingConfig.getString("sampler_cmd") match {
+      case "__DEFAULT__" =>
+        val osname = System.getProperty("os.name")
+        log.info(s"Detected OS: ${osname}")
+        if (osname.startsWith("Linux")) {
+          "util/sampler-dw-linux gibbs"
+        }
+        else {
+          "util/sampler-dw-mac gibbs"
+        }
+      case _ => samplingConfig.getString("sampler_cmd")
+    }
+
     
     // Zifei's changes: Add capability to skip learning
     // If skip learning, set "-l 0" in sampler

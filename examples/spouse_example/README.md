@@ -1,15 +1,17 @@
 Spouse Example
 ====
 
-This directory contains 3 different implementation of spouse example listed online:
-...
+This directory contains 3 different implementation of spouse example listed online.
+
+Use these examples to learn about different extractor types.
+
 
 Performance Comparison
 ----
 
-### udf_extractor (default)
+Environment: Macbook Retina Pro, PostgreSQL database.
 
-Environment: TODO
+### json_extractor (default)
 
     --------------------------------------------------
     ext_people SUCCESS [8559 ms]
