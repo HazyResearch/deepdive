@@ -413,10 +413,10 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     val assignidWriter = new PrintWriter(assignIdFile)
     log.info(s"""Writing grounding queries to file="${sqlFile}" """)
 
-
-    // if (skipLearning && weightTable.isEmpty()) {
-    //   writer.println(copyLastWeightsSQL)
-    // }
+    // If skip_learning and use the last weight table, copy it before removing it
+    if (skipLearning && weightTable.isEmpty()) {
+      writer.println(copyLastWeightsSQL)
+    }
 
     writer.println(createWeightsSQL)
     writer.println(createVariablesHoldoutSQL)
@@ -490,21 +490,21 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         FROM ${factorDesc.name}_query_user GROUP BY wValue, wIsFixed, wCmd;""")
     }
 
-    // // skip learning
-    // if (skipLearning) {
-    //   val fromWeightTable = weightTable.isEmpty() match {
-    //     case true => "dd_graph_last_weights"
-    //     case false => weightTable
-    //   }
-    //   log.info(s"""Using weights in TABLE ${fromWeightTable} by matching description""")
-        
-    //   writer.println(s"""
-    //     UPDATE ${WeightsTable} SET is_fixed = TRUE;
-    //     UPDATE ${WeightsTable} SET initial_value = weight 
-    //     FROM ${fromWeightTable} 
-    //     WHERE dd_graph_weights.description = ${fromWeightTable}.description;
-    //     """)
-    // }
+    // skip learning: choose a table to copy weights from
+    if (skipLearning) {
+      val fromWeightTable = weightTable.isEmpty() match {
+        case true => lastWeightsTable
+        case false => weightTable
+      }
+      log.info(s"""Using weights in TABLE ${fromWeightTable} by matching description""")
+
+      // Already set -l 0 for sampler
+      writer.println(s"""
+        UPDATE ${WeightsTable} SET initial_value = weight 
+        FROM ${fromWeightTable} 
+        WHERE dd_graph_weights.description = ${fromWeightTable}.description;
+        """)
+    }
 
     writer.println(s"""CREATE INDEX ${WeightsTable}_desc_idx ON ${WeightsTable}(description);""")
     writer.println(s"""ANALYZE ${WeightsTable};""")
