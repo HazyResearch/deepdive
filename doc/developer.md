@@ -56,7 +56,7 @@ Variables:
     isEvidence      bool    1
     initialValue    double  8
     dataType        short   2
-    edgeCount       long    8
+    edgeCount*      long    8
     cardinality     long    8
 
 Factors
@@ -75,6 +75,7 @@ Edges
     equalPredicate  long    8
 
 
+*Note: from version 0.3, the edgeCount field in Variables is always -1.
 
 The systems also generates a metadata file of the following. The metadata file contains one comma-separated line with the following fields:
 
