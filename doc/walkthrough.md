@@ -508,7 +508,7 @@ Now we need to tell DeepDive how to perform [probabilistic inference](/doc/gener
                  feature
           FROM has_spouse,
                has_spouse_features
-          WHERE has_spouse_features.relation_id = has_spouse.id
+          WHERE has_spouse_features.relation_id = has_spouse.relation_id
           """
         function : "IsTrue(has_spouse.is_true)"
         weight   : "?(feature)"

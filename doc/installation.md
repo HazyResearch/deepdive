@@ -10,6 +10,7 @@ This tutorial explains how to install DeepDive on your own machine.
 
 DeepDive uses PostgreSQL, Scala, and Python (version 2.X), so before downloading the system, please make sure to install the following:
 
+- [Our DimmWitted Sampler](/doc/sampler.html)
 - [Java](http://www.oracle.com/technetwork/java/javase/downloads/jre7-downloads-1880261.html) (If you already have Java installed, **make sure it is version 1.7.0_45 or higher**)
 - [Python](http://www.python.org/getit/) 2.X (not Python 3.X)
 - [PostgreSQL](http://wiki.postgresql.org/wiki/Detailed_installation_guides)
