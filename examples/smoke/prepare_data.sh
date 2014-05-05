@@ -76,5 +76,5 @@ psql -p $PGPORT -h $PGHOST $DBNAME -c """
         (1, 4, TRUE), (4, 1, TRUE),
         (3, 4, TRUE), (4, 3, TRUE),
         (5, 6, TRUE), (6, 5, TRUE),
-        (5, 4, FALSE), (4, 5, FALSE),
+        (5, 4, FALSE), (4, 5, FALSE)
 ;"""
