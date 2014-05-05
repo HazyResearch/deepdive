@@ -89,3 +89,25 @@ Each factor is assigned a *weight*, which expresses how confident you are in its
     
     # Learn the weight. Each factor will get a different weight depending on the value of people.gender
     someFactor.weight: ?(people.gender)
+
+
+#### Use Learned Weights
+
+To rerun the pipeline but use weights learned in the last execution instead of learning again, set `inference.skip_learning` to `true`. This will generate a table `dd_graph_last_weights` containing all the weights. Weights will be matched by description, and no learning will be performed:
+
+    deepdive {
+      # Use weights learned from last execution
+      inference.skip_learning: true
+    }
+
+
+#### Custom Weight Table
+
+Set `inference.weight_table` along with `inference.skip_learning` to fix factor weights in a table and skip learning. The table is specified by factor description and weights. This table can be results from one execution of DeepDive (an example would be the view `dd_inference_result_variable_mapped_weights`, or `dd_graph_last_weights` mentioned above), or manually assigned, or a combination of them. It is useful for learning once and using learned model for later inference tasks:
+
+    deepdive {
+      # Use weights in [weight table name]
+      inference.skip_learning: true
+      inference.weight_table: [weight table name]
+    }
+
