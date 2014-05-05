@@ -17,6 +17,13 @@ class SamplerSpec(_system: ActorSystem) extends TestKit(_system) with ImplicitSe
   val edgesFile = getClass.getResource("/inference/binary_factor_graph/edges").getFile()
   val metaFile = getClass.getResource("/inference/binary_factor_graph/meta.csv").getFile()
 
+  var samplerCmd = "util/sampler-dw-mac gibbs"
+  val osname = System.getProperty("os.name")
+  if (osname.startsWith("Linux")) {
+    samplerCmd = "util/sampler-dw-linux gibbs"
+  }
+
+  // Still using old sampler command
   describe("The Sampler") {
     
     it("should work with a trivial factor graph") {

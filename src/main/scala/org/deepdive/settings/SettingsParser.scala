@@ -89,10 +89,10 @@ object SettingsParser extends Logging {
     }
     // These configs are currently disabled in grounding
     // // Zifei's changes: Add capability to skip learning
-    // val skipLearning = Try(inferenceConfig.getBoolean("skip_learning")).getOrElse(false)
-    // val weightTable = Try(inferenceConfig.getString("weight_table")).getOrElse("")
-    val skipLearning = false
-    val weightTable = ""
+    val skipLearning = Try(inferenceConfig.getBoolean("skip_learning")).getOrElse(false)
+    val weightTable = Try(inferenceConfig.getString("weight_table")).getOrElse("")
+    // val skipLearning = false
+    // val weightTable = ""
 
     // if (!weightTable.isEmpty() && skipLearning == false) {
     //   log.error("inference.skip_learning must be true when inference.weight_table is assigned!")

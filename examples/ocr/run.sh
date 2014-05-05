@@ -16,6 +16,6 @@ ROOT_PATH=`pwd`
 $ROOT_PATH/examples/ocr/prepare_data.sh
 env SBT_OPTS="-Xmx4g" sbt "run -c examples/ocr/application.conf"
 
-cd $ROOT_PATH/examples/ocr/
-ROOT_PATH=`pwd`
-python feature-analysis.py
+# cd $ROOT_PATH/examples/ocr/
+# ROOT_PATH=`pwd`
+# python feature-analysis.py

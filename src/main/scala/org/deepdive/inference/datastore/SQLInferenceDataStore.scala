@@ -33,6 +33,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   /* Internal Table names */
   def WeightsTable = "dd_graph_weights"
+  def lastWeightsTable = "dd_graph_last_weights"
   def FactorsTable = "dd_graph_factors"
   def VariablesTable = "dd_graph_variables"
   def VariablesMapTable = "dd_graph_variables_map"
@@ -101,6 +102,13 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       is_fixed boolean,
       description text);
     ALTER SEQUENCE ${WeightsTable}_id_seq MINVALUE -1 RESTART WITH 0;
+  """
+
+  def copyLastWeightsSQL = s"""
+    DROP TABLE IF EXISTS ${lastWeightsTable} CASCADE;
+    SELECT X.*, Y.weight INTO ${lastWeightsTable}
+      FROM ${WeightsTable} AS X INNER JOIN ${WeightResultTable} AS Y ON X.id = Y.id
+      ORDER BY id ASC;
   """
 
   def createVariablesHoldoutSQL = s"""
@@ -216,14 +224,11 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       b = SD['__count_1']
       SD['__count_2'] = SD['__count_2'] - 1
       if SD['__count_2'] < 0:
-        plpy.info(("~~~~~~~~ POP SEGMENT %d" % sid));
         SD.pop('__count_1')
       return startid+b-a
     else:
-      plpy.info("        SEGMENT %d" % sid + " " + sids.__repr__());
       for i in range(0, len(sids)):
         if sids[i] == sid:
-          plpy.info(("SEGMENT %d" % sid) + (" ID ENDS AT %i" % base_ids[i]));
           SD['__count_1'] = base_ids[i] - 1
           SD['__count_2'] = base_ids_noagg[i] - 1
       a = SD['__count_2']
@@ -408,12 +413,13 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     val assignidWriter = new PrintWriter(assignIdFile)
     log.info(s"""Writing grounding queries to file="${sqlFile}" """)
 
-    writer.println(createWeightsSQL)
-    writer.println(createVariablesHoldoutSQL)
 
-    // if (skipLearning == true && weightTable.isEmpty()) {
+    // if (skipLearning && weightTable.isEmpty()) {
     //   writer.println(copyLastWeightsSQL)
     // }
+
+    writer.println(createWeightsSQL)
+    writer.println(createVariablesHoldoutSQL)
 
     // check whether Greenplum is used
     var usingGreenplum = false
@@ -483,6 +489,22 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         SELECT ${weightValue} AS wValue, ${isFixed} AS wIsFixed, ${weightCmd} AS wCmd
         FROM ${factorDesc.name}_query_user GROUP BY wValue, wIsFixed, wCmd;""")
     }
+
+    // // skip learning
+    // if (skipLearning) {
+    //   val fromWeightTable = weightTable.isEmpty() match {
+    //     case true => "dd_graph_last_weights"
+    //     case false => weightTable
+    //   }
+    //   log.info(s"""Using weights in TABLE ${fromWeightTable} by matching description""")
+        
+    //   writer.println(s"""
+    //     UPDATE ${WeightsTable} SET is_fixed = TRUE;
+    //     UPDATE ${WeightsTable} SET initial_value = weight 
+    //     FROM ${fromWeightTable} 
+    //     WHERE dd_graph_weights.description = ${fromWeightTable}.description;
+    //     """)
+    // }
 
     writer.println(s"""CREATE INDEX ${WeightsTable}_desc_idx ON ${WeightsTable}(description);""")
     writer.println(s"""ANALYZE ${WeightsTable};""")

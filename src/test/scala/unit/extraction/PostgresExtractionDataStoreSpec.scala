@@ -119,7 +119,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
 
   describe ("Building the COPY SQL Statement") {
 
-    it ("should not assign id any more") {
+    it ("should work") {
       val result = dataStore.buildCopySql("someRelation", Set("key1", "key2", "id", "anotherKey"))
       assert(result == "COPY someRelation(anotherKey, key1, key2) FROM STDIN CSV")
     }
@@ -136,7 +136,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
       val strWriter = new StringWriter()
       val resultFile = dataStore.writeCopyData(data.iterator, strWriter)
       val result = strWriter.toString
-      assert(result == "\"0\",\"hi\",\"hello\"\n\"1\",\"hi2\",\n")
+      assert(result == "\"hi\",\"hello\"\n\"hi2\",\n")
     }
   }
 
