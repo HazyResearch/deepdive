@@ -17,11 +17,17 @@ class SamplerSpec(_system: ActorSystem) extends TestKit(_system) with ImplicitSe
   val edgesFile = getClass.getResource("/inference/binary_factor_graph/edges").getFile()
   val metaFile = getClass.getResource("/inference/binary_factor_graph/meta.csv").getFile()
 
+  var samplerCmd = "util/sampler-dw-mac gibbs"
+  val osname = System.getProperty("os.name")
+  if (osname.startsWith("Linux")) {
+    samplerCmd = "util/sampler-dw-linux gibbs"
+  }
+
   describe("The Sampler") {
     
     it("should work with a trivial factor graph") {
       val sampler = TestActorRef[Sampler]
-      val samplerCmd = "java -Xmx4g -jar util/sampler-assembly-0.1.jar"
+      // val samplerCmd = "java -Xmx4g -jar util/sampler-assembly-0.1.jar"
       val samplerOptions = "-l 10 -s 10 -i 10"
       // val variablesOutputFile = File.createTempFile("sampler_output", "")
       sampler ! Sampler.Run(samplerCmd, samplerOptions, weightsFile, variablesFile, factorsFile, edgesFile,
@@ -32,7 +38,7 @@ class SamplerSpec(_system: ActorSystem) extends TestKit(_system) with ImplicitSe
     it("should throw an exception when sampling fails") {
       val sampler = TestActorRef[Sampler]
       watch(sampler)
-      val samplerCmd = "java -Xmx4g -jar util/sampler-assembly-0.1.jar"
+      // val samplerCmd = "java -Xmx4g -jar util/sampler-assembly-0.1.jar"
       val samplerOptions = "-l 10 -s 10 -i 10"
       val variablesOutputFile = File.createTempFile("sampler_output", "")
       intercept[RuntimeException] {
