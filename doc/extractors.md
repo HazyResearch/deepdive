@@ -199,7 +199,7 @@ Similar as `json_extractor`, the UDF is executed on data defined by an `input` S
     # An extractor to get trigrams of words from sentences to word_3gram table
     ngramExtractor {
       style           : "plpy_extractor"
-      input           : """SELECT sentence_id, words, 3 FROM sentences"""
+      input           : """SELECT sentence_id, words, 3 as gram_len FROM sentences"""
       output_relation : "word_3gram"
       udf             : "ext_word_ngram.py"
     }
@@ -240,8 +240,20 @@ def run(sentence_id, words, gram_len):
       ngram[gram] = 0
     ngram[gram] += 1
     
-  # All tuples have the same sentence_id, while ngram and count vary.
-  return ([sentence_id], ngram.keys(), ngram.values())
+  for gram in ngram:
+    # Yield an ordered tuple/list:
+    yield (sentence_id, gram, ngram[gram])
+
+    # Or yield a (unordered) dict:
+    # yield {
+    #     'sentence_id': sentence_id, 
+    #     'ngram': ngram, 
+    #     'count':ngram[gram]
+    #   }
+
+  # # Or return a list at once:
+  # return [[sentence_id, gram, ngram[ngram]] for gram in ngram] 
+
 {% endhighlight %}
 
 **UDF format.** Since it will be translated into PL/Python by translator in DeepDive,  UDF of plpy_extractor must be written in a specific format:
@@ -266,13 +278,12 @@ def run(sentence_id, words, gram_len):
 
       - Caveats:
 
+          - **Input variable names need to be same as SQL input query (aliased), and types need to match.**
+
           - Names should be coherent to argument list of `run` function.
 
           - Types are Postgres types, e.g., `int`, `bigint`, `text`, `float`, `int[]`, `bigint[]`, `text[]`, `float[]`, etc.
 
-          - **Orders of input matters.** `ddext.input` must be called in the same order of SQL input query. 
-
-          - Names DO NOT need to be same as SQL input query, but types need to match.
         
   3. **Return types** should be explicitly specified by `ddext.returns`, also both variable **names** and **types**. The function is defined as: `def returns(name, datatype)`. 
 
@@ -297,12 +308,21 @@ def run(sentence_id, words, gram_len):
       - e.g., `ddext.import_lib('re')` will enable you to call function `re.sub` in `run`.
       - Libraries must be already installed where your database server runs.
     
-  - **Return Type:**
+  - **Return:**
 
-    - The function `run` should return a list or tuple `(list_1, list_2, ..., list_N)`, which further contains `N` lists, where `N` is the number of return variables. Each list `list_i` contains `M` rows, `list_i[j]` is the value of column `i` in `j`th row.
+    - The function `run` can either return a list of tuples, or **yield** a tuple multiple times. Each tuple it yields will be inserted into the database, just like each printed JSON object in json_extractor.
+    - Each tuple can be an ordered list / tuple according to the order of `ddext.return` specification: 
 
-      - The database will try to `unnest` each column of the returned list. If the number of rows in each list matches (say all `M` rows), `M` tuples will be inserted into the database; if the numbers do not match, a cross product of these columns will be inserted. 
-      - Therefore, an alternative (and faster) way to return results is to only return one element in `list_i` if the element is fixed for all results, just as the example above: `return ([sentence_id], ngram.keys(), ngram.values())`. This will make all returned tuples have the first column `sentence_id`, while other columns varies.
+            yield (sentence_id, gram, ngram[gram])
+
+    - Each tuple can also be a python dict:
+
+            yield {
+                'sentence_id': sentence_id, 
+                'ngram': ngram, 
+                'count':ngram[gram]
+              }
+
 
   - **Functions:** If you want to use functions other than `init` and `run`, you should NOT define it outside these functions. What you should do is to **define the functions inside `run`** as nested functions. An example goes follows, which nest the function `get_ngram` inside `run`:
 
