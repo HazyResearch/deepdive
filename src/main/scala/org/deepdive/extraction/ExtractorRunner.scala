@@ -150,7 +150,16 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
           val pguser = System.getenv("PGUSER")
           val pgport = System.getenv("PGPORT")
           val pghost = System.getenv("PGHOST")
-          val writebackCmd = s"find ${splitPrefix}*.out -print0 | xargs -0 -P ${maxParallel} -L 1 bash -c 'psql -d ${dbname} -U ${pguser} -p ${pgport} -h ${pghost} -c " + "\"COPY " + s"${outputRel} FROM STDIN;" + " \" < \"$0\"'"
+
+          val checkGreenplumSQL = s"""
+              SELECT version() LIKE '%Greenplum%';
+            """
+
+
+          // Only allow single-threaded copy
+          val writebackCmd = s"find ${splitPrefix}*.out -print0 | xargs -0 -P 1 -L 1 bash -c 'psql -d ${dbname} -U ${pguser} -p ${pgport} -h ${pghost} -c " + "\"COPY " + s"${outputRel} FROM STDIN;" + " \" < \"$0\"'"
+
+
 
           val writebackTmpFile = File.createTempFile(s"exec_parallel_writeback", ".sh")
           val writer2 = new PrintWriter(writebackTmpFile)
