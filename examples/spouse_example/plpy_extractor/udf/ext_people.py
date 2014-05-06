@@ -13,7 +13,7 @@ def init():
   ddext.import_lib('itertools')
   
   # Input commands MUST HAVE CORRECT ORDER
-  ddext.input('id', 'bigint')
+  ddext.input('sentence_id', 'bigint')
   ddext.input('words', 'text[]')
   ddext.input('ner_tags', 'text[]')
 
@@ -25,7 +25,7 @@ def init():
   ddext.returns('text', 'text')
   
 
-def run(id, words, ner_tags):
+def run(sentence_id, words, ner_tags):
   
   # Find phrases that are tagged with PERSON
   phrases_indicies = []
@@ -40,25 +40,13 @@ def run(id, words, ner_tags):
     elif start_index == len(ner_list)+1: break
     else: start_index = start_index + 1
 
-  # plpy New format: return a tuple of arrays.
-  ids = []
-  starts = []
-  lengths = []
-  texts = []
+  # You can yield a tuple to database
   for phrase in phrases_indicies:
-    ids.append(id)
-    starts.append(phrase[0])
-    lengths.append(len(phrase))
-    texts.append(" ".join(words[phrase[0]:phrase[-1]+1]))
-  
-  return (ids, starts, lengths, texts)
+    yield (sentence_id, 
+        phrase[0], 
+        len(phrase), 
+        " ".join(words[phrase[0]:phrase[-1]+1]))
 
-  # # Output a tuple for each PERSON phrase
-  # for phrase in phrases_indicies:
-  #   print json.dumps({
-  #     "sentence_id": sentence_obj["id"],
-  #     "start_position": phrase[0],
-  #     "length": len(phrase),
-  #     "text": " ".join(sentence_obj["words"][phrase[0]:phrase[-1]+1])
-  #   })
-
+  # # Or you can return a list of tuples
+  # return [(sentence_id, phrase[0], len(phrase),
+  #         " ".join(words[phrase[0]:phrase[-1]+1])) for phrase in phrases_indicies]

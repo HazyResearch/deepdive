@@ -11,7 +11,7 @@ import ddext
 def init():
   # SD['json'] = __import__('json')
   ddext.input('words', 'text[]')
-  ddext.input('id', 'bigint') # Orders of input MATTERS now
+  ddext.input('relation_id', 'bigint') # Orders of input MATTERS now
   ddext.input('p1_start', 'int')
   ddext.input('p1_length', 'int')
   ddext.input('p2_start', 'int')
@@ -20,7 +20,7 @@ def init():
   ddext.returns('relation_id', 'bigint')
   ddext.returns('feature', 'text')
 
-def run(words, id, p1_start, p1_length, p2_start, p2_length):
+def run(words, relation_id, p1_start, p1_length, p2_start, p2_length):
   # This function will be run for each input tuple
   p1_end = p1_start + p1_length
   p2_end = p2_start + p2_length
@@ -47,15 +47,6 @@ def run(words, id, p1_start, p1_length, p2_start, p2_length):
   if (last_word_left == last_word_right) and (p1_text != p2_text):
     features.add("last_word_matches")
 
-  # plpy_extractor return format: tuple of arrays.
-  # "id"s but different features:
-  #   (id, f1), (id, f2), ..
-  return [[id], [f for f in features]]
-
-  # This is equivalent to:
-  # ret_ids = []
-  # ret_features = []
-  # for feature in features:
-  #   ret_ids.append(id)
-  #   ret_features.append(feature)
-  # return [ret_ids, ret_features]
+  for feature in features:
+    yield relation_id, feature
+  # return [(relation_id, feature) for feature in features]
