@@ -40,12 +40,18 @@ def run(sentence_id, words, ner_tags):
     elif start_index == len(ner_list)+1: break
     else: start_index = start_index + 1
 
-  # You can yield a tuple to database
+  # You can yield a tuple or a dict to database
   for phrase in phrases_indicies:
-    yield (sentence_id, 
-        phrase[0], 
-        len(phrase), 
-        " ".join(words[phrase[0]:phrase[-1]+1]))
+    # yield (sentence_id, 
+    #     phrase[0], 
+    #     len(phrase), 
+    #     " ".join(words[phrase[0]:phrase[-1]+1]))
+    yield {
+        'sentence_id': sentence_id, 
+        'start_position': phrase[0], 
+        'text': " ".join(words[phrase[0]:phrase[-1]+1]),
+        'length': len(phrase)
+        }
 
   # # Or you can return a list of tuples
   # return [(sentence_id, phrase[0], len(phrase),
