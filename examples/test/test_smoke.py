@@ -31,31 +31,46 @@ conn = psycopg2.connect(database = DBNAME, user = PGUSER, password = PGPASSWORD,
 cur = conn.cursor()
 
 # Check table status
-cur.execute("SELECT COUNT(*) FROM people1")
-for row in cur.fetchall(): num = row[0]
-if (std["people1"] != str(num)):
-    print "Error in Table people1"
-    exit(0)
-
-cur.execute("SELECT COUNT(*) FROM people2")
-for row in cur.fetchall(): num = row[0]
-if (std["people2"] != str(num)):
-    print "Error in Table people2"
-    exit(0)
-
 cur.execute("SELECT COUNT(*) FROM friends")
 for row in cur.fetchall(): num = row[0]
 if (std["friends"] != str(num)):
     print "Error in Table friends"
     exit(0)
 
+cur.execute("SELECT COUNT(*) FROM person")
+for row in cur.fetchall(): num = row[0]
+if (std["person"] != str(num)):
+    print "Error in Table person"
+    exit(0)
+
+cur.execute("SELECT COUNT(*) FROM person_has_cancer")
+for row in cur.fetchall(): num = row[0]
+if (std["person_has_cancer"] != str(num)):
+    print "Error in Table person_has_cancer"
+    exit(0)
+
+cur.execute("SELECT COUNT(*) FROM person_smokes")
+for row in cur.fetchall(): num = row[0]
+if (std["person_smokes"] != str(num)):
+    print "Error in Table person_smokes"
+    exit(0)
+
 # Check result
-cur.execute("SELECT id, expectation FROM people1_has_cancer_inference")
+cur.execute("SELECT person_id, expectation FROM person_has_cancer_has_cancer_inference")
 
 rows = cur.fetchall()
 for row in rows:
-    if (float(std[str(row[0])]) - float(row[1]) > eps):
+    if (float(std["person_has_cancer_" + str(row[0])]) - float(row[1]) > eps):
         print "Error result!"
         exit(0)
+
+cur.execute("SELECT person_id, expectation FROM person_smokes_smokes_inference")
+
+rows = cur.fetchall()
+for row in rows:
+    if (float(std["person_smokes_" + str(row[0])]) - float(row[1]) > eps):
+        print "Error result!"
+        exit(0)
+
 
 print "Test passed!"

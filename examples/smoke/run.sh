@@ -1,13 +1,9 @@
 #! /bin/bash
 
+. "$(dirname $0)/env.sh"
+
 cd "$(dirname $0)/../..";
 ROOT_PATH=`pwd`
-
-export DBNAME=deepdive_smoke
-export PGUSER=${PGUSER:-`whoami`}
-export PGPASSWORD=${PGPASSWORD:-}
-export PGPORT=${PGPORT:-5432}
-export PGHOST=${PGHOST:-localhost}
 
 source $ROOT_PATH/examples/smoke/prepare_data.sh
 
