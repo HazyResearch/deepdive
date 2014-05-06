@@ -76,4 +76,6 @@ def run(sentence_id, p1_id, p1_text, p2_id, p2_text):
     is_true = False
 
   # Must return a tuple of arrays.
-  return [[p1_id], [p2_id], [sentence_id], ["%s-%s" % (p1_t, p2_t)], [is_true]]
+
+  yield [p1_id, p2_id, sentence_id, "%s-%s" % (p1_t, p2_t), is_true]
+  # return [[p1_id, p2_id, sentence_id, "%s-%s" % (p1_t, p2_t), is_true]]
