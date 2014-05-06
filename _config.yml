@@ -1,4 +1,4 @@
 source:      .
 safe:        true
 baseurl: http://deepdive.stanford.edu
-# markdown: kramdown
+markdown: kramdown

@@ -46,7 +46,7 @@ We will be using PostgreSQL as our primary database in this example. If you foll
 createdb deepdive_spouse
 {% endhighlight %}
 
-<div id="#newapp" href="#"> </div>
+<div id="newapp" href="#"> </div>
 
 ### Creating a new DeepDive application
 
@@ -174,10 +174,12 @@ There are other options you can give to extractor, refer to the [extractor guide
 psql -c "TRUNCATE sentences CASCADE;" deepdive_spouse
 {% endhighlight %}
 
-Great, our first extractor is ready! When you execute `run.sh` DeepDive should run the new extractor and populate the `sentences` table with the result. Note that natural language processing is quite CPU intensive and may take a while to run. On a 2013 MacBook Pro the NLP extractor needed 1 hour to process all of the raw text documents. You can speed up this process by working with a smaller subset of the documents and using `"""SELECT article_id, text FROM articles ORDER BY article_id ASC LIMIT 100"""` as the input query to the extractor. Alternatively, you can also load the finished NLP result into the database directly. We provide a dump of the full `sentences` table in `data/sentences.dump`.
+Great, our first extractor is ready! When you execute `run.sh` DeepDive should run the new extractor and populate the `sentences` table with the result. Note that natural language processing is quite CPU intensive and may take a while to run. On a 2013 MacBook Pro the NLP extractor needed 1 hour to process all of the raw text documents. You can speed up this process by working with a smaller subset of the documents and using `"""SELECT article_id, text FROM articles ORDER BY article_id ASC LIMIT 100"""` as the input query to the extractor. Alternatively, you can also load the finished NLP result into the database directly. We provide a dump of the full `sentences` table in `data/sentences_dump.csv`.
 
 {% highlight bash %}
-psql -d deepdive_spouse -c "copy sentences from STDIN CSV;" < ../../examples/spouse_example/data/sentences_dump.csv
+psql -d deepdive_spouse -c """
+    COPY sentences(sentence_id, document_id, sentence, words, lemma, pos_tags, dependencies, ner_tags) 
+    FROM STDIN CSV;""" < ../../examples/spouse_example/data/sentences_dump.csv
 {% endhighlight %}
 
 

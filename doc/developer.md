@@ -75,7 +75,7 @@ Edges
     equalPredicate  long    8
 
 
-*Note: from version 0.3, the edgeCount field in Variables is always -1.
+\*Note: from version 0.3, the edgeCount field in Variables is always -1.
 
 The systems also generates a metadata file of the following. The metadata file contains one comma-separated line with the following fields:
 
