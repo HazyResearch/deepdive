@@ -6,9 +6,11 @@ export PGPASSWORD=${PGPASSWORD:-}
 export PGPORT=${PGPORT:-5432}
 export PGHOST=${PGHOST:-localhost}
 export DBNAME=deepdive_test
+export PGDATABASE=$DBNAME  # for testing to work with null settings
+
 # Create test database
-dropdb $DBNAME
-createdb $DBNAME
+# dropdb $DBNAME
+# createdb $DBNAME
 
 export DEEPDIVE_HOME=`cd $(dirname $0); pwd`
 

@@ -5,7 +5,7 @@ import akka.testkit._
 import org.deepdive.calibration._
 import org.deepdive.inference._
 import org.scalatest._
-import org.deepdive.settings.{BooleanType, VariableDataType}
+import org.deepdive.settings.{BooleanType, VariableDataType, DbSettings}
 import scala.util.Success
 
 class Forwarder(target: ActorRef) extends Actor {
@@ -13,11 +13,14 @@ class Forwarder(target: ActorRef) extends Actor {
 }
 
 class TestInferenceManager(
+
   val taskManager: ActorRef, 
   val samplerProbe: ActorRef,
   val factorGraphBuilderProbe: ActorRef,
   val cdwProbe: ActorRef,
-  val variableSchema: Map[String, _ <: VariableDataType]) 
+  val variableSchema: Map[String, _ <: VariableDataType],
+  val dbSettings: DbSettings
+  )  
   extends InferenceManager with MemoryInferenceDataStoreComponent {
     def factorGraphBuilderProps = Props(classOf[Forwarder], factorGraphBuilderProbe)
     override def samplerProps  = Props(classOf[Forwarder], samplerProbe)
@@ -27,6 +30,7 @@ class TestInferenceManager(
 class InferenceManagerSpec(_system: ActorSystem) extends TestKit(_system) with FunSpecLike with ImplicitSender {
 
   def this() = this(ActorSystem("InferenceManagerSpec"))
+  val dbSettings = DbSettings(null, null, null, null, null, null, null)
 
   val taskManager = TestProbe()
   val sampler = TestProbe()
@@ -34,7 +38,7 @@ class InferenceManagerSpec(_system: ActorSystem) extends TestKit(_system) with F
   val cdw = TestProbe()
   val schema = Map("r1.c1" -> BooleanType, "r2.c1" -> BooleanType, "r2.c2" -> BooleanType)
   def actorProps = Props(classOf[TestInferenceManager], taskManager.ref, sampler.ref, 
-    factorGraphBuilder.ref, cdw.ref, schema)
+    factorGraphBuilder.ref, cdw.ref, schema, dbSettings)
 
   describe("Grounding the factor graph") {
     // TODO

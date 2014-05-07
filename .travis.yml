@@ -16,6 +16,9 @@ env:
     - PGPASSWORD=""
     - PGPORT=5432
     - PGHOST=localhost
+    - DBNAME=deepdive_test
+    - PGDATABASE=deepdive_test
 notifications:
   email:
     - deepdive-dev@lists.stanford.edu
+script: "./test.sh"
