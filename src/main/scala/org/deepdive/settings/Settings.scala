@@ -16,6 +16,7 @@ trait SettingsImpl {
   def inferenceSettings : InferenceSettings
   def calibrationSettings: CalibrationSettings
   def pipelineSettings : PipelineSettings
+  def dbSettings : DbSettings
 
 }
 
@@ -24,6 +25,7 @@ case class Settings(schemaSettings : SchemaSettings,
   inferenceSettings: InferenceSettings, 
   calibrationSettings: CalibrationSettings, 
   samplerSettings: SamplerSettings,
-  pipelineSettings: PipelineSettings) extends SettingsImpl
+  pipelineSettings: PipelineSettings,
+  dbSettings: DbSettings) extends SettingsImpl
 
 

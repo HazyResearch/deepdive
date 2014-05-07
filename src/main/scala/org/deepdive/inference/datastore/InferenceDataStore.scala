@@ -2,6 +2,7 @@ package org.deepdive.inference
 
 import org.deepdive.settings.FactorFunctionVariable
 import org.deepdive.calibration._
+import org.deepdive.settings.DbSettings
 import org.deepdive.settings.{FactorDesc, VariableDataType}
 import java.io.File
 
@@ -19,12 +20,13 @@ trait InferenceDataStore {
 
     /* Generate a grounded graph based on the factor description */
     def groundFactorGraph(schema: Map[String, _ <: VariableDataType],
-        factorDescs: Seq[FactorDesc], holdoutFraction: Double) : Unit 
+        factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean, weightTable: String, dbSettings: DbSettings = null) : Unit 
 
     /* 
      * Dumps the factor graphs with the given serializier
      */
     def dumpFactorGraph(serializer: Serializer, schema: Map[String, _ <: VariableDataType],
+        factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String],
         weightsPath: String, variablesPath: String, factorsPath: String, edgesPath: String) : Unit
 
     /* 

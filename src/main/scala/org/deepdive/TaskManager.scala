@@ -25,7 +25,7 @@ class TaskManager extends Actor with ActorLogging {
 
   import TaskManager._
 
-  implicit val taskTimeout = Timeout(24 hours)
+  implicit val taskTimeout = Timeout(200 hours)
   import context.dispatcher
 
   val taskQueue = Set[Task]()
@@ -37,13 +37,13 @@ class TaskManager extends Actor with ActorLogging {
   override def preStart() {
     log.info(s"starting at ${self.path}")
     // Periodically print the status
-    context.system.scheduler.schedule(30.seconds, 30.seconds, self, PrintStatus)
+    context.system.scheduler.schedule(60.seconds, 60.seconds, self, PrintStatus)
   }
 
   def receive = {
     case AddTask(task) =>
       taskQueue += task
-      // We watch the worker, so we can fail the task if it crashes
+      // Watch the worker, fail the task if it crashes
       if (task.worker != self) {
         context.watch(task.worker)
       }
@@ -92,6 +92,9 @@ class TaskManager extends Actor with ActorLogging {
         taskQueue -=task
         completedTasks += Done(task, Failure(new RuntimeException("Task cancelled")))
       }
+      import scala.sys.process
+      import scala.sys.process._
+      self ! Shutdown
       scheduleTasks()
 
     case Shutdown =>

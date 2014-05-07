@@ -43,8 +43,8 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester {
       val loadExtractionSettings = PrivateMethod[ExtractionSettings]('loadExtractionSettings)
       val result = SettingsParser invokePrivate loadExtractionSettings(config)
       assert(result == ExtractionSettings(List(
-        Extractor("extractor1", "entities", "SELECT * FROM documents", "udf/entities.py", 
-          4, 100, 1000, Set("extractor2"), Option("/bin/cat"), Option("/bin/dog"))), 5))
+        Extractor("extractor1", "json_extractor", "entities", "SELECT * FROM documents", "udf/entities.py", 
+          4, 100, 1000, Set("extractor2"), Option("/bin/cat"), Option("/bin/dog"), "", None)), 5))
     }
 
     it("should fail when the input query is not defined") {
@@ -73,7 +73,7 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester {
       assert(result == InferenceSettings(List(FactorDesc("factor1", 
         "SELECT a.*, b.* FROM a INNER JOIN b ON a.document_id = b.id",
         ImplyFactorFunction(Seq(FactorFunctionVariable("a", "is_present", false))), 
-        UnknownFactorWeight(Nil), "factor1")), Option(100000)))
+        UnknownFactorWeight(Nil), "factor1")), Option(100000), false, ""))
     }
 
     it("should throw an exception when there's a syntax error") {
@@ -92,16 +92,19 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester {
 
   describe("Parsing Calibration Settings") {
     it ("should work when specified") {
-      val config = ConfigFactory.parseString("""calibration.holdout_fraction: 0.25""")
+      val config = ConfigFactory.parseString("""
+        calibration.holdout_fraction: 0.25
+        calibration.holdout_query: "SELECT 0;"
+      """)
       val loadCalibrationSettings = PrivateMethod[CalibrationSettings]('loadCalibrationSettings)
       val result = SettingsParser invokePrivate loadCalibrationSettings(config)
-      assert(result == CalibrationSettings(0.25))
+      assert(result == CalibrationSettings(0.25, Option("SELECT 0;")))
     }
 
     it ("should work when not specified") {
       val loadCalibrationSettings = PrivateMethod[CalibrationSettings]('loadCalibrationSettings)
       val result = SettingsParser invokePrivate loadCalibrationSettings(ConfigFactory.parseString(""))
-      assert(result == CalibrationSettings(0))
+      assert(result == CalibrationSettings(0, None))
     }
   }
 

@@ -1,0 +1,14 @@
+friends 10
+person 6
+person_has_cancer 6
+person_smokes 6
+person_has_cancer_5 0.584
+person_has_cancer_2 0.576
+person_has_cancer_6 0.546
+person_has_cancer_4 0.524
+person_has_cancer_1 0.514
+person_has_cancer_3 0.502
+person_smokes_4 0.774
+person_smokes_2 0.638
+person_smokes_6 0.41
+person_smokes_5 0.4

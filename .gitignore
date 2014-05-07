@@ -8,3 +8,5 @@ out/
 *.sublime-workspace
 out/
 hsql:*
+*.pyc
+examples/

@@ -30,7 +30,7 @@ class TaskManagerSpec(_system: ActorSystem) extends TestKit(_system)
       assert(actor.runningTasks.size == 0)
     }
 
-    it("should not schedule tasks that have their depenencies satisfied") {
+    it("should schedule tasks that have their depenencies satisfied") {
       val actor = TestActorRef[TaskManager].underlyingActor
       actor.completedTasks += TaskManager.Done(
         Task("task1", List(), "someTask", TestProbe().ref), Success())
@@ -65,28 +65,32 @@ class TaskManagerSpec(_system: ActorSystem) extends TestKit(_system)
       expectMsg(EndReport("task1", Option("SUCCESS")))
     }
 
-    it("should work for failed tasks") {
-      _system.eventStream.subscribe(self, classOf[ReportingEvent])
-      val actor = TestActorRef[TaskManager]
-      val worker = TestProbe()
-      actor ! TaskManager.AddTask(Task("task1", Nil, "someTask", worker.ref))
-      expectMsg(StartReport("task1", "task1"))
-      worker.expectMsg("someTask")
-      worker.reply(akka.actor.Status.Failure(new RuntimeException("!")))
-      expectMsg(EndReport("task1", Option("FAILURE")))
-    }
+    it("should not work for failed tasks")(pending)
+    it("should not work for actors that are being terminated")(pending)
+    // SHOULD FAIL IF TASK FAILS
+    // it("should work for failed tasks") {
+    //   _system.eventStream.subscribe(self, classOf[ReportingEvent])
+    //   val actor = TestActorRef[TaskManager]
+    //   val worker = TestProbe()
+    //   actor ! TaskManager.AddTask(Task("task1", Nil, "someTask", worker.ref))
+    //   expectMsg(StartReport("task1", "task1"))
+    //   worker.expectMsg("someTask")
+    //   worker.reply(akka.actor.Status.Failure(new RuntimeException("!")))
+    //   expectMsg(EndReport("task1", Option("FAILURE")))
+    // }
 
-    it("should work for actors that are being terminated") {
-      _system.eventStream.subscribe(self, classOf[ReportingEvent])
-      val actor = TestActorRef[TaskManager]
-      val worker = TestProbe()
-      actor ! TaskManager.AddTask(Task("task1", Nil, "someTask", worker.ref))
-      expectMsg(StartReport("task1", "task1"))
-      worker.expectMsg("someTask")
-      worker.ref ! PoisonPill
-      worker.reply(akka.actor.Status.Failure(new RuntimeException("!")))
-      expectMsg(EndReport("task1", Option("FAILURE")))
-    }
+    // SHOULD NOT WORK FOR ACTORS THAT ARE BEING TERMINATED
+    // it("should work for actors that are being terminated") {
+    //   _system.eventStream.subscribe(self, classOf[ReportingEvent])
+    //   val actor = TestActorRef[TaskManager]
+    //   val worker = TestProbe()
+    //   actor ! TaskManager.AddTask(Task("task1", Nil, "someTask", worker.ref))
+    //   expectMsg(StartReport("task1", "task1"))
+    //   worker.expectMsg("someTask")
+    //   worker.ref ! PoisonPill
+    //   worker.reply(akka.actor.Status.Failure(new RuntimeException("!")))
+    //   expectMsg(EndReport("task1", Option("FAILURE")))
+    // }
   }
 
   describe("Subscribing to tasks") {

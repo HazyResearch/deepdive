@@ -21,7 +21,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
     SQL("drop schema if exists public cascade; create schema public;").execute()
     SQL("""create table datatype_test(id bigserial primary key, key integer, some_text text, 
       some_boolean boolean, some_double double precision, some_null boolean, 
-      some_array text[], some_json json);""").execute()
+      some_array text[]);""").execute()
   }
 
   after {
@@ -39,6 +39,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
       insertSampleData()
       val result = dataStore.queryAsMap("SELECT key from datatype_test order by key asc;")(_.toList)
       assert(result.head === Map("key" -> 1))
+      assert(result.size === 4)
     }
 
     it("should work for aliased attributes") {
@@ -57,6 +58,13 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
     it("should work with empty tables") {
       val result = dataStore.queryAsMap("SELECT * from datatype_test;")(_.toList)
       assert(result == Nil)
+    }
+
+    it("should throw an exception for invalid queries") {
+      intercept[org.postgresql.util.PSQLException] {
+        val result = dataStore.queryAsMap("SELECT *a from datatype_test;")(_.toList)
+        assert(result == Nil)
+      }
     }
 
   }
@@ -78,10 +86,10 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
   describe("Serializing to JSON") {  
 
     def insertSampleRow() : Unit = {
-      SQL("""insert into datatype_test(key, some_text, some_boolean, some_double, some_array, some_json) 
+      SQL("""insert into datatype_test(key, some_text, some_boolean, some_double, some_array) 
         VALUES 
-          (1, 'Hello', true, 1.0, '{"A","B"}', '{"hello":"world"}'), 
-          (1, 'Ce', false, 2.3, '{"C","D"}', null)""").execute()
+          (1, 'Hello', true, 1.0, '{"A","B"}'), 
+          (1, 'Ce', false, 2.3, '{"C","D"}')""").execute()
     }
 
     it("should work with aggregate data types") {
@@ -105,9 +113,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
         "some_text" -> JsString("Hello"),
         "some_boolean" -> JsBoolean(true),
         "some_double" -> JsNumber(1.0),
-        "some_array" -> JsArray(List(JsString("A"), JsString("B"))),
-        "some_json" -> JsObject(Map("hello" -> JsString("world")).toSeq)
-      ))
+        "some_array" -> JsArray(List(JsString("A"), JsString("B")))))
     }
   }
 
@@ -115,7 +121,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
 
     it ("should work") {
       val result = dataStore.buildCopySql("someRelation", Set("key1", "key2", "id", "anotherKey"))
-      assert(result == "COPY someRelation(id, anotherKey, key1, key2) FROM STDIN CSV")
+      assert(result == "COPY someRelation(anotherKey, key1, key2) FROM STDIN CSV")
     }
 
   }
@@ -130,7 +136,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
       val strWriter = new StringWriter()
       val resultFile = dataStore.writeCopyData(data.iterator, strWriter)
       val result = strWriter.toString
-      assert(result == "\"0\",\"hi\",\"hello\"\n\"1\",\"hi2\",\n")
+      assert(result == "\"hi\",\"hello\"\n\"hi2\",\n")
     }
   }
 
@@ -143,8 +149,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
         "some_boolean" -> JsBoolean(false),
         "some_double" -> JsNumber(13.37),
         "some_null" -> JsNull,
-        "some_array" -> JsArray(List(JsString("13"), JsString("37"))),
-        "some_json" -> JsObject(Map("Hello" -> JsString("World")).toSeq)
+        "some_array" -> JsArray(List(JsString("13"), JsString("37")))
       ).toSeq)
       dataStore.addBatch(List(testRow).iterator, "datatype_test")
       val result = dataStore.queryAsJson("SELECT * from datatype_test")(_.toList)
@@ -162,8 +167,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
         "some_boolean" -> JsNull,
         "some_double" -> JsNull,
         "some_null" -> JsNull,
-        "some_array" -> jsonArr,
-        "some_json" -> JsNull
+        "some_array" -> jsonArr
       ).toSeq)
     dataStore.addBatch(List(testRow).iterator, "datatype_test")
     val result = dataStore.queryAsJson("SELECT * from datatype_test")(_.toList)

@@ -36,6 +36,8 @@ trait MemoryExtractionDataStoreComponent extends ExtractionDataStoreComponent{
         }))
       }
     }
+
+    def queryUpdate(query: String) {}
     
     def addBatch(result: Iterator[JsObject], outputRelation: String) : Unit = {
       //TODO: Use parallel collection

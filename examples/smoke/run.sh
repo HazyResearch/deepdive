@@ -1,13 +1,10 @@
 #! /bin/bash
 
+. "$(dirname $0)/env.sh"
+
 cd "$(dirname $0)/../..";
 ROOT_PATH=`pwd`
 
-export DBNAME=deepdive_smoke
-export PGUSER=${PGUSER:-`whoami`}
-export PGPASSWORD=${PGPASSWORD:-}
-export PGPORT=${PGPORT:-5432}
-export PGHOST=${PGHOST:-localhost}
+source $ROOT_PATH/examples/smoke/prepare_data.sh
 
-$ROOT_PATH/examples/smoke/prepare_data.sh
-env SBT_OPTS="-Xmx4g" sbt "run -c examples/smoke/application.conf"
+env SBT_OPTS="-Xmx4g" $ROOT_PATH/sbt/sbt "run -c examples/smoke/application.conf"

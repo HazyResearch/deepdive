@@ -60,7 +60,8 @@ object Main extends App {
         "pos_tags" -> JsArray(sentenceResult.wordsWithPos.map(JsString.apply)),
         "lemma" -> JsArray(sentenceResult.lemma.map(JsString.apply)),
         "dependencies" -> JsArray(sentenceResult.deps.map(JsString.apply)),
-        "ner_tags" -> JsArray(sentenceResult.nerTags.map(JsString.apply))
+        "ner_tags" -> JsArray(sentenceResult.nerTags.map(JsString.apply)),
+        "sentence_id" -> JsNull
       ).toSeq)
       Console.println(Json.stringify(json))
     }  
