@@ -20,7 +20,7 @@ smokes_cancer {
 }
 ```
 
-The other is saying that if a person's friends smoke, he/she might have a cancer:
+The other is saying that if a person's friends smoke, he/she might have cancer:
 
 ```
 friends_smoke {
