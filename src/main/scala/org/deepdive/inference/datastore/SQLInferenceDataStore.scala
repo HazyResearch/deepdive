@@ -456,12 +456,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
     var idoffset : Long = 0
 
-    // Assign the holdout - Random (default) or user-defined query
-    holdoutQuery match {   
-      case Some(userQuery) => writer.println(userQuery + ";")
-      case None =>
-    }
-
     // Ground all variables in the schema
     schema.foreach { case(variable, dataType) =>
       val Array(relation, column) = variable.split('.')
@@ -480,6 +474,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           """)
       }
        
+    }
+
+    // Assign the holdout - Random (default) or user-defined query
+    holdoutQuery match {   
+      case Some(userQuery) => writer.println(userQuery + ";")
+      case None =>
     }
 
     // Create table for each inference rule
