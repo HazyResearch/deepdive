@@ -10,7 +10,7 @@ Writing factors and inference rules using DeepDive is an iterative process. Afte
 
 To get the most out of calibration, you should specify a holdout fraction for your training data. The holdout will be used to evaluate the predictions DeepDive makes. By default, no holdout is used.
 
-    deepdive.calibration: {
+    calibration: {
       holdout_fraction: 0.25
     }
 
