@@ -46,4 +46,8 @@ You an specify options in DeepDive as follows:
       sampler.sampler_args: "-l 1000 -s 10 -i 1000"
     }
 
+If your learning does not converge (e.g. very large absolute values of weights), you can try to increase the number of learning iterations `-l`, decrease learning rate `-a`, or using faster decay (smaller `-d`). 
+
+On the other hand, if results converge to a local optimum (e.g. calibration plot looks not ideal), you can try increasing learning rate, or using a slower decay.
+
 Also check out the documentation of our [high-speed sampler](/doc/sampler.html).

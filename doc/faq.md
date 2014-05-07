@@ -83,13 +83,22 @@ DeepDive automatically assigns unique record IDs through extractor. The above er
  -->
 
 #### I am using GreenPlum, and getting an "ERROR: Cannot parallelize an UPDATE statement that updates the distribution columns"
-
+---
 Users should add `DISTRIBUTED BY` clause in all `CREATE TABLE` commands. Make sure you distribute your tables in a correct way: do not use variable id as distribution key. Do not use distribution key that is not initially assigned.
 
-#### I am using plpy_extractor and getting an "ERROR: could not access file "$libdir/plpython2": No such file or directory"
+<br/>
+<br/>
 
+
+#### I am using plpy_extractor and getting an "ERROR: could not access file "$libdir/plpython2": No such file or directory"
+---
 Make sure your database server support PL/python language.
 
-#### In sampling, I get an "error while loading shared libraries: libnuma.so.1"
+<br/>
+<br/>
 
+
+#### In sampling, I get an "error while loading shared libraries: libnuma.so.1"
+---
 Make sure you have set dependencies of DimmWitted Sampler. Properly set environmental variables according to [Sampler Guide](/doc/sampler.html).
+

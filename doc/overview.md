@@ -76,7 +76,7 @@ The inference results are stored in the database, in the table named `[variable 
 
 ### 4. Calibration
 
-Writing factors and rules is an iterative process. You may find that a certain rule does not work as well as expected, or that you need to extract more features. DeepDive wants to make this process as easy as possible, so it writes *calibration data*, which helps you to figure out where the bottlenecks in your system are. [Take a look at the calibration overview for more details](/doc/calibration.html).
+Writing factors and rules is an iterative process. You may find that a certain rule does not work as well as expected, or that you need to extract more features. DeepDive wants to make this process as easy as possible, so it writes *calibration data*, which helps you to figure out where the bottlenecks in your system are. [Take a look at the calibration overview for more details](/doc/general/calibration.html).
 
 ![]({{site.baseurl}}/images/calibration_example.png)
 
