@@ -147,7 +147,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
 
           val splitPrefix = queryOutputFile.getAbsolutePath() + "-"
           val linesPerSplit = task.extractor.inputBatchSize
-          val splitCmd = s"split -a 20 -l ${linesPerSplit} " + queryOutputFile.getAbsolutePath() + s" ${splitPrefix}"
+          val splitCmd = s"split -a 10 -l ${linesPerSplit} " + queryOutputFile.getAbsolutePath() + s" ${splitPrefix}"
 
           log.info(s"Executing split command: ${splitCmd}")
           executeScriptOrFail(splitCmd, taskSender)
