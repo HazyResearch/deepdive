@@ -160,8 +160,8 @@ if __name__ == '__main__':
 
   code = open(udfcodepath).read()
   query = open(querypath).read().strip().rstrip(';')
-  print '-----------QUERY:----------'
-  print query
+  # print '-----------QUERY:----------'
+  # print query
 
   parse(code, funcname)
   _make_SD()

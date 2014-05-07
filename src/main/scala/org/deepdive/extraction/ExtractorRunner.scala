@@ -257,12 +257,10 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
           val sqlFunctionFile = File.createTempFile(funcName, ".sql")
           
           executeScriptOrFail(s"python ${compilerFile} ${udfFile} ${sqlFunctionFile} ${funcName}", taskSender)
-          log.info(s"Compiled ${udfFile} into ${sqlFunctionFile}")
+          log.debug(s"Compiled ${udfFile} into ${sqlFunctionFile}")
 
           // Source.fromFile(sqlFunctionFile).getLines.mkString
           executeSqlFileOrFail(sqlFunctionFile.getAbsolutePath(), taskSender)
-          // log.info(s"${sqlFunctionFile.getAbsolutePath()}")
-          log.info(s"Created function ${funcName} in database.")
 
           // Translate SQL input and output_relation to SQL
           val inputQuery = task.extractor.inputQuery match {
@@ -279,13 +277,13 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
           val sqlInsertFile = File.createTempFile(s"${funcName}_exec", ".sql")
           executeScriptOrFail(s"python ${SQLTranslatorFile} ${udfFile} ${inputQueryFile} ${outputRel} ${funcName} ${sqlInsertFile}", taskSender)
 
-          log.info(s"Executing compiled query into: ${sqlInsertFile}")
+          log.debug(s"Compiled query into: ${sqlInsertFile}")
 
           // Execute query in parallel in GP
           executeSqlFileOrFail(sqlInsertFile.getAbsolutePath(), taskSender)
           log.info(s"Finish executing UDF in database!")
 
-          log.info("Analyzing output relation.")
+          log.debug("Analyzing output relation.")
           executeSqlUpdateOrFail(s"ANALYZE ${outputRel};", taskSender)
 
           // Execute the after script. Fail if the script fails.
