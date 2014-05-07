@@ -39,6 +39,7 @@
 //         titlesLoader.output_relation: "titles"
 //         titlesLoader.input: "CSV('${getClass.getResource("/logistic_regression/titles.csv").getFile}')"
 //         titlesLoader.udf: "${getClass.getResource("/logistic_regression/title_loader.py").getFile}"
+//         titlesLoader.after: "util/fill_sequence.sh titles id"
         
 //         wordsExtractor.output_relation: "word_presences"
 //         wordsExtractor.input: "SELECT * FROM titles"

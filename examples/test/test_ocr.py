@@ -54,7 +54,7 @@ cur.execute("SELECT wid, expectation FROM label1_val_inference")
 
 rows = cur.fetchall()
 for row in rows:
-    if (float(std["label1_" + str(row[0])]) - float(row[1]) > eps):
+    if (abs(float(std["label1_" + str(row[0])]) - float(row[1])) > eps):
         print "Error result in label1_val_inference!"
         exit(0)
 
@@ -62,7 +62,7 @@ cur.execute("SELECT wid, expectation FROM label2_val_inference")
 
 rows = cur.fetchall()
 for row in rows:
-    if (float(std["label2_" + str(row[0])]) - float(row[1]) > eps):
+    if (abs(float(std["label2_" + str(row[0])]) - float(row[1])) > eps):
         print "Error result in label1_val_inference!"
         exit(0)
 

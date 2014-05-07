@@ -33,9 +33,7 @@ psql -p $PGPORT -h $PGHOST $DBNAME -c """
 
     CREATE TABLE friends (
         person_id bigint,
-        friend_id bigint,
-        are_friends boolean,
-        id bigint
+        friend_id bigint
     );
 """
 
@@ -70,11 +68,10 @@ psql -p $PGPORT -h $PGHOST $DBNAME -c """
 ;"""
 
 psql -p $PGPORT -h $PGHOST $DBNAME -c """
-    INSERT INTO friends(person_id, friend_id, are_friends) VALUES 
-        (1, 2, TRUE), (2, 1, TRUE),
-        (1, 3, TRUE), (3, 1, TRUE),
-        (1, 4, TRUE), (4, 1, TRUE),
-        (3, 4, TRUE), (4, 3, TRUE),
-        (5, 6, TRUE), (6, 5, TRUE),
-        (5, 4, FALSE), (4, 5, FALSE)
+    INSERT INTO friends(person_id, friend_id) VALUES 
+        (1, 2), (2, 1),
+        (1, 3), (3, 1),
+        (1, 4), (4, 1),
+        (3, 4), (4, 3),
+        (5, 6), (6, 5)
 ;"""

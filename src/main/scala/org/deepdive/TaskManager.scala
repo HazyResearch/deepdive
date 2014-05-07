@@ -37,7 +37,7 @@ class TaskManager extends Actor with ActorLogging {
   override def preStart() {
     log.info(s"starting at ${self.path}")
     // Periodically print the status
-    context.system.scheduler.schedule(30.seconds, 30.seconds, self, PrintStatus)
+    context.system.scheduler.schedule(60.seconds, 60.seconds, self, PrintStatus)
   }
 
   def receive = {
@@ -94,7 +94,6 @@ class TaskManager extends Actor with ActorLogging {
       }
       import scala.sys.process
       import scala.sys.process._
-      val output = ("ps aux" #> "grep deepdive" #> Seq("awk", "{print $2}") #> "xargs -L 1 kill -9").!!
       self ! Shutdown
       scheduleTasks()
 
