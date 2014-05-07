@@ -22,13 +22,6 @@ trait JdbcExtractionDataStore extends ExtractionDataStore[JsObject] with Logging
           java.sql.ResultSet.TYPE_FORWARD_ONLY, java.sql.ResultSet.CONCUR_READ_ONLY)
         stmt.setFetchSize(10000)
         try {
-          log.info(query)
-          val expQuery = "EXPLAIN " + query
-          val ex = stmt.executeQuery(expQuery)
-          log.info(ex.getMetaData().getColumnLabel(1))
-          while (ex.next()) {
-            println (ex getString 1)
-          }
           val rs = stmt.executeQuery(query)
           // No result return
           if (!rs.isBeforeFirst) {
