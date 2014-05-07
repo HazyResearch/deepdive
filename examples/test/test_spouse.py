@@ -61,14 +61,5 @@ if (std["has_spouse_features"] != str(num)):
     print "Error in Table has_spouse_features"
     exit(0)
 
-# Check result
-cur.execute("SELECT relation_id, expectation FROM has_spouse_is_true_inference")
-
-rows = cur.fetchall()
-
-for row in rows:
-    if (float(std["has_spouse_" + str(row[0])]) - float(row[1]) > eps):
-        #print "Error result!"
-        #exit(0)
 
 print "Test passed!"
