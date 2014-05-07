@@ -37,6 +37,8 @@ elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
     export LD_LIBRARY_PATH=$DEEPDIVE_HOME/lib/dw_linux/lib:$DEEPDIVE_HOME/lib/dw_linux/lib64:$LD_LIBRARY_PATH
 fi
 
+echo $LD_LIBRARY_PATH
+
 cd $DEEPDIVE_HOME
 
 # Run the test
