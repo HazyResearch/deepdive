@@ -7,9 +7,6 @@ jdk:
 sbt_args:
 services:
   - postgresql
-before_script:
-  - psql -c 'create database deepdive_test;' -U postgres
-  # - psql -c 'create database deepdive_test;' -U postgres
 env: 
   global:
     - PGUSER=postgres
@@ -18,7 +15,7 @@ env:
     - PGHOST=localhost
     - DBNAME=deepdive_test
     - PGDATABASE=deepdive_test
-notifications:
-  email:
-    - deepdive-dev@lists.stanford.edu
+# notifications:
+#   email:
+#     - deepdive-dev@lists.stanford.edu
 script: "./test.sh"
