@@ -20,6 +20,10 @@ You define the connection string to your PostgreSQL instance in your application
         url      : "jdbc:postgresql://[host]:[port]/[database_name]"
         user     : "deepdive"
         password : ""
+        dbname   : [database_name]
+        host     : [host]
+        port     : [port]
+
       }
     }
 

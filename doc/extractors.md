@@ -11,13 +11,13 @@ Extractors are powerful platforms provided by DeepDive for streamline feature ex
 DeepDive support five kinds of extractors: 
 
 - Parallel extractors:
-  - `json_extractor`: for flexibility and compatibility to previous systems
-  - `tsv_extractor`: moderate flexibility and performance
-  - `plpy_extractor`: parallel database-built-in extractors with restricted flexibility
+  - [`json_extractor`](#json_extractor): for flexibility and compatibility to previous systems
+  - [`tsv_extractor`](#tsv_extractor): moderate flexibility and performance
+  - [`plpy_extractor`](#plpy_extractor): parallel database-built-in extractors with restricted flexibility
 
 - Single-threaded extractors:
-  - `sql_extractor`: a SQL command
-  - `cmd_extractor`: an arbitrary shell command
+  - [`sql_extractor`](#sql_extractor): a SQL command
+  - [`cmd_extractor`](#cmd_extractor): an arbitrary shell command
 
 The first three types of extractors perform a user-defined function (UDF) on an input query against database. One may think of these extractors as functions which map one input tuple to one or more output tuples, similar to a `map` or `flatMap` function in functional programming languages. The latter two are simply SQL / shell commands.
 
@@ -36,6 +36,8 @@ To use different extractors, users specify `style` in each extractor definition 
     }
 
 For each extractor, if `style` is not specified, the system will use `json_extractor` by default.
+
+<a id="json_extractor" href="#"> </a>
 
 ### json_extractor (default)
 
@@ -113,6 +115,7 @@ Reading a file is useful for loading initial data.
 Note that `sql_extractor` and `cmd_extractor` do not take inputs; `plpy_extractor` and `tsv_extractor` only takes input as a SQL query.
 
 
+<a id="tsv_extractor" href="#"> </a>
 
 ### tsv_extractor
 
@@ -190,9 +193,13 @@ You can parse each line with following:
 
 Note that if your **returned value contains arrays**, it will be harder for database to parse. You should either make sure the value can be parsed by psql-COPY command, or try other types of extractors.
 
+<a id="plpy_extractor" href="#"> </a>
+
 ### plpy_extractor
 
 `plpy_extractor` is a high-performance type of extractors for PostgreSQL / Greenplum databases. It avoids additional I/O by executing the extractor inside the database systems in parallel. It **translates** user's Python UDF into [PL/python](http://www.postgresql.org/docs/8.2/static/plpython.html) programs accepted by PostgreSQL databases.
+
+To use plpy_extractor, make sure [PL/Python](http://www.postgresql.org/docs/8.2/static/plpython.html) is enabled on your database server.
 
 Similar as `json_extractor`, the UDF is executed on data defined by an `input` SQL statement, and produces new tuples as output. These tuples are written to the `output_relation`. The function for this transformation is defined by the `udf` key, which is defined in a python script with specific format (more on that below). An example extractor is as follows:
 
@@ -214,7 +221,7 @@ Specifically, the arguments it takes include:
 
 #### Writing extractor UDFs for plpy_extractor
 
-UDF in `plpy_extractor` is a python program written in a restricted framework. An example, `ext_word_ngram.py` used by above extractor `ngramExtractor` is as follows:
+UDF in `plpy_extractor` is a python program written in a restricted framework defined by `init` and `run` functions. An example, `ext_word_ngram.py` used by above extractor `ngramExtractor` is as follows:
 
 
 {% highlight python %}
@@ -294,7 +301,7 @@ def run(sentence_id, words, gram_len):
           - Types are Postgres types as above.
           - **Names and types** of return variables should **EXACTLY MATCH** some columns in output_relation. e.g., The above example program `ext_word_ngram.py` will return tuples and call a SQL function `INSERT INTO word_3gram(sentence_id, ngram, count)`. If output relation contains more columns, those unspecified columns will be NULL in the inserted tuples.
 
-- In `run` function, write your extractor function that will be run on all rows in your input SQL. Return **a list/tuple**.
+- In `run` function, write your extractor function that **accepts one row in your SQL query as input**, and returns a list of tuples:
 
   - **Caveats:** Use Python as you normally would, except:
 
@@ -310,7 +317,11 @@ def run(sentence_id, words, gram_len):
     
   - **Return:**
 
-    - The function `run` can either return a list of tuples, or **yield** a tuple multiple times. Each tuple it yields will be inserted into the database, just like each printed JSON object in json_extractor.
+    - The function `run` can either return a list of tuples:
+
+            return [(sentence_id, gram, ngram[gram]) for gram in ngram]
+
+    - or **yield** a tuple multiple times. Each tuple it yields will be inserted into the database, just like each printed JSON object in json_extractor.
     - Each tuple can be an ordered list / tuple according to the order of `ddext.return` specification: 
 
             yield (sentence_id, gram, ngram[gram])
@@ -342,12 +353,14 @@ def run(sentence_id, words, gram_len):
 
           for n in range(1, 5):
             get_ngram(n)
-              
-          return ([sentence_id], ngram.keys(), ngram.values())
+
+          return [(sentence_id, key, ngram[key]) for key in ngram]
 
 
 You can debug extractors by printing output using *plpy.info* or *plpy.debug* instead of *print*. The output will appear in the DeepDive log file.
 
+
+<a id="sql_extractor" href="#"> </a>
 
 ### sql_extractor
 
@@ -367,6 +380,8 @@ For example, a SQL statement for Postgres:
     wordsExtractor.sql: """INSERT INTO titles VALUES (1, 'Harry Potter')"""
 
 Note that it is developers' responsibility to run `ANALYZE table_name` after updating the table for SQL optimization.
+
+<a id="cmd_extractor" href="#"> </a>
 
 ### Cmd_extractor
 

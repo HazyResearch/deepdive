@@ -6,101 +6,49 @@ layout: default
 
 The following tables are used internally by DeepDive. You cannot create tables with the same name in the database:
 
-### variables
 
-                                    Table "public.variables"
-          Column      |       Type       | Modifiers | Storage  | Stats target | Description 
-    ------------------+------------------+-----------+----------+--------------+-------------
-     id               | bigint           | not null  | plain    |              | 
-     data_type        | text             |           | extended |              | 
-     initial_value    | double precision |           | plain    |              | 
-     is_evidence      | boolean          |           | plain    |              | 
-     is_query         | boolean          |           | plain    |              | 
-     mapping_relation | text             |           | extended |              | 
-     mapping_column   | text             |           | extended |              | 
-     mapping_id       | bigint           |           | plain    |              | 
+                                List of relations
+     Schema |                     Name                     |   Type   
+    --------+----------------------------------------------+----------
+     public | dd_graph_variables_holdout                   | table    
+     public | dd_graph_weights                             | table    
+     public | dd_graph_weights_id_seq                      | sequence 
+     public | dd_inference_result_variables                | table    
+     public | dd_inference_result_variables_mapped_weights | view     
+     public | dd_inference_result_weights                  | table    
+     public | f_[YOUR_RULE_NAME]_query_user                | view     
+     
+Among these reserved tables, we introduce the most useful two:
 
+## Useful relations
 
-### Weights
+### Examine Factor Weights
 
-                                        Table "public.weights"
-        Column     |       Type       | Modifiers | Storage  | Stats target | Description 
-    ---------------+------------------+-----------+----------+--------------+-------------
-     id            | bigint           | not null  | plain    |              | 
-     initial_value | double precision |           | plain    |              | 
-     is_fixed      | boolean          |           | plain    |              | 
-     description   | text             |           | extended |              | 
+View `dd_inference_result_variables_mapped_weights` shows all the learned weights mapped to its descriptions.
 
-
-### factor_variables
-
-                         Table "public.factor_variables"
-       Column    |  Type   | Modifiers | Storage | Stats target | Description 
-    -------------+---------+-----------+---------+--------------+-------------
-     factor_id   | bigint  |           | plain   |              | 
-     variable_id | bigint  |           | plain   |              | 
-     position    | integer |           | plain   |              | 
-     is_positive | boolean |           | plain   |              | 
-
-
-### factors
-                                Table "public.factors"
-         Column      |  Type  | Modifiers | Storage  | Stats target | Description 
-    -----------------+--------+-----------+----------+--------------+-------------
-     id              | bigint | not null  | plain    |              | 
-     weight_id       | bigint |           | plain    |              | 
-     factor_function | text   |           | extended |              | 
-
-
-
-### inference_result
-
-                                  Table "public.inference_result"
-       Column    |       Type       | Modifiers | Storage | Stats target | Description 
-    -------------+------------------+-----------+---------+--------------+-------------
-     id          | bigint           | not null  | plain   |              | 
-     last_sample | boolean          |           | plain   |              | 
-     probability | double precision |           | plain   |              | 
-
-
-
-### inference_result_mapped_weights
-
-                     View "public.inference_result_mapped_weights"
-        Column     |       Type       | Modifiers | Storage  | Description 
+          View "public.dd_inference_result_variables_mapped_weights"
+        Column     |       Type       | Modifiers | Storage  | Description
     ---------------+------------------+-----------+----------+-------------
-     id            | bigint           |           | plain    | 
-     initial_value | double precision |           | plain    | 
-     is_fixed      | boolean          |           | plain    | 
-     description   | text             |           | extended | 
-     weight        | double precision |           | plain    | 
+     id            | bigint           |           | plain    |
+     initial_value | double precision |           | plain    |
+     is_fixed      | boolean          |           | plain    |
+     description   | text             |           | extended |
+     weight        | double precision |           | plain    |
 
 
+### Examine Variables
 
+Views with name `[TABLE]_[VARIABLE]_inference` (e.g. has_spouse_is_true_inference) contain all variables mapped with their learned expectations. This is useful for examining results for error analysis.
 
-### inference_result_weights
-
-                             Table "public.inference_result_weights"
-     Column |       Type       | Modifiers | Storage | Stats target | Description 
-    --------+------------------+-----------+---------+--------------+-------------
-     id     | bigint           | not null  | plain   |              | 
-     weight | double precision |           | plain   |              | 
-
-
-
-
-### mapped_inference_result
-
-                           View "public.mapped_inference_result"
-          Column      |       Type       | Modifiers | Storage  | Description 
-    ------------------+------------------+-----------+----------+-------------
-     id               | bigint           |           | plain    | 
-     data_type        | text             |           | extended | 
-     initial_value    | double precision |           | plain    | 
-     is_evidence      | boolean          |           | plain    | 
-     is_query         | boolean          |           | plain    | 
-     mapping_relation | text             |           | extended | 
-     mapping_column   | text             |           | extended | 
-     mapping_id       | bigint           |           | plain    | 
-     last_sample      | boolean          |           | plain    | 
-     probability      | double precision |           | plain    | 
+     View "public.has_spouse_is_true_inference"
+       Column    |       Type       | Modifiers
+    -------------+------------------+-----------
+     person1_id  | bigint           |
+     person2_id  | bigint           |
+     sentence_id | bigint           |
+     description | text             |
+     is_true     | boolean          |
+     relation_id | bigint           |
+     id          | bigint           |
+     category    | bigint           |
+     expectation | double precision |

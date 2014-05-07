@@ -345,7 +345,7 @@ BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 
 # Load the spouse dictionary for distant supervision
 spouses = defaultdict(lambda: None)
-with open (BASE_DIR + "/../../data/spouses.csv") as csvfile:
+with open (BASE_DIR + "/../data/spouses.csv") as csvfile:
   reader = csv.reader(csvfile)
   for line in reader:
     spouses[line[0].strip().lower()] = line[1].strip().lower()
@@ -583,7 +583,7 @@ Let's try running the full pipeline using `./run.sh`. All extractors other than 
 Great, let's take a look at some of the predictions that DeepDive has made. DeepDive creates a view for each variable you have defined in the database:
 
 {% highlight bash %}
-psql -d deepdive_spouse -c "select sentence_id, description, expectation from has_spouse_is_true_inference where expectation > 0.9 limit 10;"
+psql -d deepdive_spouse -c "select sentence_id, description, expectation from has_spouse_is_true_inference order by expectation desc limit 10;"
 {% endhighlight %}
 
      sentence_id |               description               | expectation 

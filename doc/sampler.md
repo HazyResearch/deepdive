@@ -15,7 +15,9 @@ In your `application.conf`, you can change the sampler executable as follows:
       sampler.sampler_args: "-l 1000 -s 1 -i 1000 --alpha 0.01"
     }
 
-In the above, use `sampler-dw-mac` or `sampler-dw-linux` depending on which type of system your are on. Note that we have also changes the sampler parameters to use a larger number of iterations for learning and inference because each iteration takes much less time with the high-speed sampler.
+In the above, use `sampler-dw-mac` or `sampler-dw-linux` depending on which type of system your are on. Note that we have also changed the sampler parameters to use a larger number of iterations for learning and inference because each iteration takes much less time with the high-speed sampler.
+
+In the current system since version 0.3, DeepDive will automatically choose mac / linux sampler based on your environment, so sampler_cmd is recommended to be omitted.
 
 
 ### Setting up dependencies

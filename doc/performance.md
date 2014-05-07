@@ -27,7 +27,7 @@ By default, DeepDive inserts variables, factors and weights in batches defined b
 
 ### Gibbs sampler options
 
-You can optionally parse java options (such as -Xmx) and command line options to the Gibbs sampler executable. The default Java options are `-Xmx4g` and the default sampler options are `-l 1000 -s 10 -i 1000 -t 4`. Allowed options are:
+You can optionally parse command line options to the Gibbs sampler executable. The default sampler options are `-l 300 -s 1 -i 500 -a 0.1`. Allowed options are:
 
     -l <value> | --learning_epochs <value>
           number of epochs for learning (required)
@@ -35,10 +35,15 @@ You can optionally parse java options (such as -Xmx) and command line options to
           number of epochs for inference (required)
     -s <value> | --learning_samples_per_epoch <value>
           number of samples for learning per epoch
+    -a <value> | --alpha <value>
+          Initial stepsize (learning rate)
+    -d <value> | --diminish <value>
+          Decay of stepsize per epoch
 
 You an specify options in DeepDive as follows:
 
     deepdive {
-      sampler.java_args: "-Xms1g -Xmx8g"
       sampler.sampler_args: "-l 1000 -s 10 -i 1000"
     }
+
+Also check out the documentation of our [high-speed sampler](/doc/sampler.html).

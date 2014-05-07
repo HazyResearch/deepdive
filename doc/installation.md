@@ -18,7 +18,7 @@ DeepDive uses PostgreSQL, Scala, and Python (version 2.X), so before downloading
 
 ### Downloading and Compiling DeepDive
 
-Now you are ready to setup DeepDive. You will need git, so [install](http://git-scm.com/book/en/Getting-Started-Installing-Git) it if you do not have it. Then, run these commands:
+Now you are ready to setup DeepDive. You will need Git, so [install Git](http://git-scm.com/book/en/Getting-Started-Installing-Git) if you do not have it. Then, run these commands:
     
     >> cd [desired directory for deepdive]
     >> git clone git@github.com:HazyResearch/deepdive.git
@@ -45,4 +45,4 @@ You should see the following output:
     [info] All tests passed.
     [success] Total time: 35 s, completed Jan 29, 2014 9:59:57 AM
 
-Congratulations! DeepDive is now running, and you can proceed to the [example application walkthrough](/doc/example.html).
+Congratulations! DeepDive is now running, and you can proceed to the [example application walkthrough](/doc/walkthrough.html).
