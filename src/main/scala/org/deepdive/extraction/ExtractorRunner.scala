@@ -195,7 +195,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
           executeScriptOrFail(writebackTmpFile.getAbsolutePath(), taskSender)
 
           log.info("Analyzing output relation.")
-          executeSqlUpdate(s"ANALYZE ${outputRel};")
+          executeSqlUpdateOrFail(s"ANALYZE ${outputRel};", taskSender)
 
           log.info("Removing temporary files...")
           queryOutputFile.delete()
@@ -219,7 +219,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
         // Execute the sql query from sql extractor
         case "sql_extractor" =>
           log.info("Executing sql query.")
-          executeSqlUpdate(task.extractor.sqlQuery)
+          executeSqlUpdateOrFail(task.extractor.sqlQuery, taskSender)
           // Execute the after script. Fail if the script fails.
           task.extractor.afterScript.foreach {
             afterScript =>
@@ -286,7 +286,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
           log.info(s"Finish executing UDF in database!")
 
           log.info("Analyzing output relation.")
-          executeSqlUpdate(s"ANALYZE ${outputRel};")
+          executeSqlUpdateOrFail(s"ANALYZE ${outputRel};", taskSender)
 
           // Execute the after script. Fail if the script fails.
           task.extractor.afterScript.foreach {
@@ -357,7 +357,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
       task.extractor.afterScript.foreach {
         afterScript =>
           log.info("Analyzing output relation.")
-          executeSqlUpdate(s"ANALYZE ${task.extractor.outputRelation};")
+          executeSqlUpdateOrFail(s"ANALYZE ${task.extractor.outputRelation};", taskSender)
           log.info("Executing after script.")
           executeScriptOrFail(afterScript, taskSender)
       }
@@ -462,6 +462,17 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
       case Success(errorExitValue) => 
         Failure(new RuntimeException(s"Script exited with exit_value=$errorExitValue"))
       case Failure(ex) => Failure(ex)
+    }
+  }
+
+  
+  def executeSqlUpdateOrFail(sqlQuery: String, failureReceiver: ActorRef) {
+    Try(dataStore.queryUpdate(sqlQuery)) match {
+      case Success(_) =>
+      case Failure(ex) =>
+        failureReceiver ! Status.Failure(ex)
+        context.stop(self)
+        throw new RuntimeException(ex.toString)
     }
   }
 
