@@ -365,7 +365,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     factorDescs.foreach { factorDesc =>
       val functionName = factorDesc.func.getClass.getSimpleName
       
-      log.info(s"Dumping ${factorDesc.weightPrefix}...")
+      log.info(s"Dumping inference ${factorDesc.weightPrefix}...")
 
       val selectInputQueryForDumpSQL = s"""
         SELECT ${factorDesc.name}_query_user.*
@@ -451,8 +451,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     if (usingGreenplum) {
       val createAssignIdPrefix = "psql " + dbnameStr + pguserStr + pgportStr + pghostStr + " -c " + "\"\"\""
       assignidWriter.println(createAssignIdPrefix + createAssignIdFunctionSQL + "\"\"\"")
-      // log.info(createAssignIdFunctionSQL)
-      // createAssignIdFunctionSQL.!
     } else {
       writer.println(createSequencesSQL)
     }
