@@ -4,7 +4,7 @@ import psycopg2
 from sets import Set
 
 # Error threshold
-eps = 0.2
+eps = 0.3
 
 # Get the environment variables
 DBNAME = os.environ['DBNAME']
