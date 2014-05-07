@@ -4,7 +4,7 @@ import psycopg2
 from sets import Set
 
 # Error threshold
-eps = 0.2
+eps = 0.5
 
 # Get the environment variables
 DBNAME = os.environ['DBNAME']
@@ -60,7 +60,7 @@ cur.execute("SELECT person_id, expectation FROM person_has_cancer_has_cancer_inf
 
 rows = cur.fetchall()
 for row in rows:
-    if (float(std["person_has_cancer_" + str(row[0])]) - float(row[1]) > eps):
+    if (abs(float(std["person_has_cancer_" + str(row[0])]) - float(row[1])) > eps):
         print "Error result!"
         exit(0)
 
@@ -68,7 +68,7 @@ cur.execute("SELECT person_id, expectation FROM person_smokes_smokes_inference")
 
 rows = cur.fetchall()
 for row in rows:
-    if (float(std["person_smokes_" + str(row[0])]) - float(row[1]) > eps):
+    if (abs(float(std["person_smokes_" + str(row[0])]) - float(row[1])) > eps):
         print "Error result!"
         exit(0)
 
