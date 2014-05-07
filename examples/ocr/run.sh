@@ -1,10 +1,6 @@
 #! /bin/bash
 
-export DBNAME=deepdive_ocr
-export PGUSER=${PGUSER:-`whoami`}
-export PGPASSWORD=${PGPASSWORD:-}
-export PGPORT=${PGPORT:-5432}
-export PGHOST=${PGHOST:-localhost}
+. "$(dirname $0)/env.sh"
 
 cd data/raw/
 ROOT_PATH=`pwd`
