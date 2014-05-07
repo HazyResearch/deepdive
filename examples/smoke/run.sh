@@ -7,4 +7,4 @@ ROOT_PATH=`pwd`
 
 source $ROOT_PATH/examples/smoke/prepare_data.sh
 
-env SBT_OPTS="-Xmx4g" sbt/sbt "run -c examples/smoke/application.conf"
+env SBT_OPTS="-Xmx4g" $ROOT_PATH/sbt/sbt "run -c examples/smoke/application.conf"
