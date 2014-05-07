@@ -26,10 +26,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def ds : JdbcDataStore
 
   val factorOffset = new java.util.concurrent.atomic.AtomicLong(0)
-  val dbname = System.getenv("DBNAME")
-  val pguser = System.getenv("PGUSER")
-  val pgport = System.getenv("PGPORT")
-  val pghost = System.getenv("PGHOST")
 
   /* Internal Table names */
   def WeightsTable = "dd_graph_weights"
@@ -200,7 +196,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     ORDER BY abs(weight) DESC;
   """
 
-  def createAssignIdFunctionSQL = s"""psql -U ${pguser} -p ${pgport} -h ${pghost} ${dbname} -c """ + "\"\"\"" +
+  def createAssignIdFunctionSQL = 
     """
     DROP LANGUAGE IF EXISTS plpgsql CASCADE;
     DROP LANGUAGE IF EXISTS plpythonu CASCADE;
@@ -272,7 +268,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     END;
     \$\$
     LANGUAGE 'plpgsql';
-    """ + "\"\"\""
+    """
 
 
   def executeCmd(cmd: String) : Try[Int] = {
@@ -403,7 +399,30 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   }
 
   def groundFactorGraph(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
-    holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean, weightTable: String) {
+    holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean, weightTable: String, dbSettings: DbSettings) {
+
+    // Get Database-related settings
+    val dbname = dbSettings.dbname
+    val pguser = dbSettings.user
+    val pgport = dbSettings.port
+    val pghost = dbSettings.host
+    // TODO do not use password for now
+    val dbnameStr = dbname match {
+      case null => ""
+      case _ => s" -d ${dbname} "
+    }
+    val pguserStr = pguser match {
+      case null => ""
+      case _ => s" -U ${pguser} "
+    }
+    val pgportStr = pgport match {
+      case null => ""
+      case _ => s" -p ${pgport} "
+    }
+    val pghostStr = pghost match {
+      case null => ""
+      case _ => s" -h ${pghost} "
+    }
 
     // We write the grounding queries to this SQL file
     val sqlFile = File.createTempFile(s"grounding", ".sql")
@@ -430,7 +449,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     // assign id
     if (usingGreenplum) {
-      assignidWriter.println(createAssignIdFunctionSQL)
+      val createAssignIdPrefix = "psql " + dbnameStr + pguserStr + pgportStr + pghostStr + " -c " + "\"\"\""
+      assignidWriter.println(createAssignIdPrefix + createAssignIdFunctionSQL + "\"\"\"")
       // log.info(createAssignIdFunctionSQL)
       // createAssignIdFunctionSQL.!
     } else {
@@ -449,7 +469,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       val Array(relation, column) = variable.split('.')
 
       if (usingGreenplum) {
-        val assignIdSQL = s"""psql -U ${pguser} -p ${pgport} -h ${pghost} ${dbname} -c """ + "\"\"\"" +
+        val assignIdSQL = "psql " + dbnameStr + pguserStr + pgportStr + pghostStr + " -c " + "\"\"\"" +
           s""" SELECT fast_seqassign('${relation}', ${idoffset});""" + "\"\"\""
         assignidWriter.println(assignIdSQL)
         val getOffset = s"SELECT count(*) FROM ${relation};"

@@ -10,6 +10,7 @@ object SettingsParser extends Logging {
    def loadFromConfig(rootConfig: Config) : Settings = {
     val config = rootConfig.getConfig("deepdive")
 
+    val dbSettings = loadDbSettings(config)
     val schemaSettings = loadSchemaSettings(config)
     val extractors = loadExtractionSettings(config)
     val inferenceSettings = loadInferenceSettings(config)
@@ -18,8 +19,26 @@ object SettingsParser extends Logging {
     val pipelineSettings = loadPipelineSettings(config)
 
     Settings(schemaSettings, extractors, inferenceSettings, 
-      calibrationSettings, samplerSettings, pipelineSettings)
+      calibrationSettings, samplerSettings, pipelineSettings, dbSettings)
   }
+
+  // Returns: case class DbSetting(driver: String, url: String, user: String, password: String, dbname: String, host: String, port: String)
+  private def loadDbSettings(config: Config) : DbSettings = {
+    val dbConfig = Try(config.getConfig("db.default")).getOrElse {
+      log.warning("No schema defined.")
+      return DbSettings(null, null, null, null, null, null, null)
+    }
+    val driver = Try(dbConfig.getString("driver")).getOrElse(null)
+    val url = Try(dbConfig.getString("url")).getOrElse(null)
+    val user = Try(dbConfig.getString("user")).getOrElse(null)
+    val password = Try(dbConfig.getString("password")).getOrElse(null)
+    val dbname = Try(dbConfig.getString("dbname")).getOrElse(null)
+    val host = Try(dbConfig.getString("host")).getOrElse(null)
+    val port = Try(dbConfig.getString("port")).getOrElse(null)
+    log.info(s"Got database Settings: user ${user}, dbname ${dbname}, host ${host}, port ${port}.")
+    return DbSettings(driver, url, user, password, dbname, host, port)
+  }
+
 
   private def loadSchemaSettings(config: Config) : SchemaSettings = {
     val schemaConfig = Try(config.getConfig("schema")).getOrElse {

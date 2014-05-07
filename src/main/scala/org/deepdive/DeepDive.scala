@@ -41,7 +41,8 @@ object DeepDive extends Logging {
     outputDirFile.mkdirs()
     log.debug(s"outputDir=${Context.outputDir}")
 
-    val dbDriver = config.getString("deepdive.db.default.driver")
+    // val dbDriver = config.getString("deepdive.db.default.driver")
+    val dbSettings = settings.dbSettings
     
     // Setup the data store
     JdbcDataStore.init(config)
@@ -58,9 +59,9 @@ object DeepDive extends Logging {
     val profiler = system.actorOf(Profiler.props, "profiler")
     val taskManager = system.actorOf(TaskManager.props, "taskManager")
     val inferenceManager = system.actorOf(InferenceManager.props(
-      taskManager, settings.schemaSettings.variables, dbDriver), "inferenceManager")
+      taskManager, settings.schemaSettings.variables, dbSettings), "inferenceManager")
     val extractionManager = system.actorOf(
-      ExtractionManager.props(settings.extractionSettings.parallelism, dbDriver), 
+      ExtractionManager.props(settings.extractionSettings.parallelism, dbSettings), 
       "extractionManager")
     
     // Build tasks for extractors

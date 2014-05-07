@@ -25,7 +25,7 @@ import scala.io.Source
 /* Companion object to the ExtractorRunner */
 object ExtractorRunner {
   
-  def props(dataStore: JsonExtractionDataStore) = Props(classOf[ExtractorRunner], dataStore)
+  def props(dataStore: JsonExtractionDataStore, dbSettings: DbSettings) = Props(classOf[ExtractorRunner], dataStore, dbSettings)
 
 
   // Messages
@@ -51,13 +51,38 @@ object ExtractorRunner {
 }
 
 /* Runs a single extrator by executing its before script, UDF, and after sript */
-class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor 
+class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings) extends Actor 
   with ActorLogging with FSM[State, Data] {
 
   import ExtractorRunner._
   // Execute futures using the current Akka dispatcher
   import context.dispatcher
   implicit val timeout = Timeout(1337.hours)
+
+  // Generate SQL query prefixes
+  val dbname = dbSettings.dbname
+  val pguser = dbSettings.user
+  val pgport = dbSettings.port
+  val pghost = dbSettings.host
+  // TODO do not use password for now
+  val dbnameStr = dbname match {
+    case null => ""
+    case _ => s" -d ${dbname} "
+  }
+  val pguserStr = pguser match {
+    case null => ""
+    case _ => s" -U ${pguser} "
+  }
+  val pgportStr = pgport match {
+    case null => ""
+    case _ => s" -p ${pgport} "
+  }
+  val pghostStr = pghost match {
+    case null => ""
+    case _ => s" -h ${pghost} "
+  }
+  val sqlQueryPrefix = "psql " + dbnameStr + pguserStr + pgportStr + pghostStr
+
   
   // Properties to start workers
   def workerProps = ProcessExecutor.props
@@ -122,7 +147,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
 
           val splitPrefix = queryOutputFile.getAbsolutePath() + "-"
           val linesPerSplit = task.extractor.inputBatchSize
-          val splitCmd = s"split -l ${linesPerSplit} " + queryOutputFile.getAbsolutePath() + s" ${splitPrefix}"
+          val splitCmd = s"split -a 20 -l ${linesPerSplit} " + queryOutputFile.getAbsolutePath() + s" ${splitPrefix}"
 
           log.info(s"Executing split command: ${splitCmd}")
           executeScriptOrFail(splitCmd, taskSender)
@@ -146,10 +171,11 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
           // Copy each of the files into the DB. If user is using Greenplum, use gpload
 
           val outputRel = task.extractor.outputRelation
-          val dbname = System.getenv("DBNAME")
-          val pguser = System.getenv("PGUSER")
-          val pgport = System.getenv("PGPORT")
-          val pghost = System.getenv("PGHOST")
+          val dbname = dbSettings.dbname
+          val pguser = dbSettings.user
+          val pgport = dbSettings.port
+          val pghost = dbSettings.host
+          // TODO do not use password for now
 
           val checkGreenplumSQL = s"""
               SELECT version() LIKE '%Greenplum%';
@@ -174,6 +200,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
           log.info("Removing temporary files...")
           queryOutputFile.delete()
           val delCmd = s"rm -f ${splitPrefix}*"
+          log.info(s"${delCmd}")
           executeScriptOrFail(delCmd, taskSender)
 
           // Execute the after script. Fail if the script fails.
@@ -446,16 +473,12 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
     // dataStore.executeCmd(query)
     val file = File.createTempFile(s"exec_sql", ".sh")
     val writer = new PrintWriter(file)
-    val dbname = System.getenv("DBNAME")
-    val pguser = System.getenv("PGUSER")
-    // val pgpw = System.getenv("PGPASSWORD")
-    val pgport = System.getenv("PGPORT")
-    val pghost = System.getenv("PGHOST")
+
     val pipeOutStr = pipeOutFilePath match {
       case null => ""
       case _ => " > " + pipeOutFilePath
     }
-    val cmd = s"psql -d ${dbname} -U ${pguser} -p ${pgport} -h ${pghost} -c " + "\"\"\"" + query + "\"\"\"" + pipeOutStr
+    val cmd =  sqlQueryPrefix + " -c " + "\"\"\"" + query + "\"\"\"" + pipeOutStr
 
     writer.println(s"${cmd}")
     writer.close()
@@ -468,12 +491,12 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore) extends Actor
   def executeSqlFileOrFail(filename: String, failureReceiver: ActorRef) { 
     val file = File.createTempFile(s"exec_sql", ".sh")
     val writer = new PrintWriter(file)
-    val dbname = System.getenv("DBNAME")
-    val pguser = System.getenv("PGUSER")
-    // val pgpw = System.getenv("PGPASSWORD")
-    val pgport = System.getenv("PGPORT")
-    val pghost = System.getenv("PGHOST")
-    val cmd = s"psql -d ${dbname} -U ${pguser} -p ${pgport} -h ${pghost} < " + filename
+    val dbname = dbSettings.dbname
+    val pguser = dbSettings.user
+    val pgport = dbSettings.port
+    val pghost = dbSettings.host
+    // TODO do not use password for now
+    val cmd = sqlQueryPrefix + " < " + filename
     writer.println(s"${cmd}")
     writer.close()
     log.debug(s"Temporary bash file saved to ${file.getAbsolutePath()}")

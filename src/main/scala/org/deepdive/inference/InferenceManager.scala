@@ -9,6 +9,7 @@ import org.deepdive.TaskManager
 import org.deepdive.calibration._
 import org.deepdive.settings.{FactorDesc, VariableDataType}
 import org.deepdive.Context
+import org.deepdive.settings._
 import scala.concurrent.duration._
 import scala.concurrent.{Future, Await}
 import scala.util.Try
@@ -20,6 +21,7 @@ trait InferenceManager extends Actor with ActorLogging {
   implicit val taskTimeout = Timeout(200 hours)
   import context.dispatcher
 
+  def dbSettings: DbSettings
   // All variables used in the system with their types
   def variableSchema: Map[String, _ <: VariableDataType]
   // Reference to the task manager
@@ -56,7 +58,7 @@ trait InferenceManager extends Actor with ActorLogging {
     case InferenceManager.GroundFactorGraph(factorDescs, holdoutFraction, holdoutQuery, skipLearning, weightTable) =>
       val _sender = sender
       inferenceDataStore.asInstanceOf[SQLInferenceDataStore]
-        .groundFactorGraph(variableSchema, factorDescs, holdoutFraction, holdoutQuery, skipLearning, weightTable)
+        .groundFactorGraph(variableSchema, factorDescs, holdoutFraction, holdoutQuery, skipLearning, weightTable, dbSettings)
       sender ! "OK"
       // factorGraphBuilder ? FactorGraphBuilder.AddFactorsAndVariables(
       //   factorDesc, holdoutFraction, batchSize) pipeTo _sender
@@ -125,7 +127,7 @@ trait InferenceManager extends Actor with ActorLogging {
 object InferenceManager {
 
   /* An inference manager that uses postgres as its datastore */
-  class PostgresInferenceManager(val taskManager: ActorRef, val variableSchema: Map[String, _ <: VariableDataType]) 
+  class PostgresInferenceManager(val taskManager: ActorRef, val variableSchema: Map[String, _ <: VariableDataType], val dbSettings: DbSettings) 
     extends InferenceManager with PostgresInferenceDataStoreComponent {
     def factorGraphBuilderProps = 
       Props(classOf[FactorGraphBuilder.PostgresFactorGraphBuilder], variableSchema)
@@ -139,9 +141,9 @@ object InferenceManager {
 
   // TODO: Refactor this to take the data store type as an argument
   def props(taskManager: ActorRef, variableSchema: Map[String, _ <: VariableDataType],
-    databaseDriver: String) = {
-    databaseDriver match {
-       case "org.postgresql.Driver" => Props(classOf[PostgresInferenceManager], taskManager, variableSchema)
+    dbSettings: DbSettings) = {
+    dbSettings.driver match {
+       case "org.postgresql.Driver" => Props(classOf[PostgresInferenceManager], taskManager, variableSchema, dbSettings)
        // case "org.hsqldb.jdbc.JDBCDriver" => Props(classOf[HSQLInferenceManager], taskManager, variableSchema)
     }
   }
