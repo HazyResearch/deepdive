@@ -8,10 +8,6 @@ export PGHOST=${PGHOST:-localhost}
 export DBNAME=deepdive_test
 export PGDATABASE=$DBNAME  # for testing to work with null settings
 
-# Create test database
-dropdb $DBNAME
-createdb $DBNAME
-
 export DEEPDIVE_HOME=`cd $(dirname $0); pwd`
 
 cd $DEEPDIVE_HOME/lib
@@ -39,7 +35,13 @@ fi
 
 echo $LD_LIBRARY_PATH
 
+
+
 cd $DEEPDIVE_HOME
+
+# Create test database
+dropdb $DBNAME
+createdb $DBNAME
 
 # Run the test
 SBT_OPTS="-Xmx2g" sbt "test"
