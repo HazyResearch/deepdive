@@ -11,7 +11,7 @@ We provide pre-configured [Amazon EC2](http://aws.amazon.com/ec2/) AMI that come
 In the Amazon EC2 console you can launch the AMI as follows:
 
 - Choose the "US-East" region (top right menu)
-- Click on "Launch Instance", choose "Community AMIs" and search for "deepdive". Choose the AMI image.
+- Click on "Launch Instance", choose "Community AMIs" and search for "DeepDive" (AMI id: ami-8a5fbce2). Choose the AMI image.
 - In the next step, pick the instance type. The `m1.large` instance type is fine for testing-purposes. We recommend using the compute- or memory-optimized instances (depending on your use case) for production purposes.
 - Follow the wizard to launch the instance.
 - SSH into the instance as `ec2-user` with the private key set you specified in the AWS wizard.
