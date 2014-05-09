@@ -26,7 +26,7 @@ Now you are ready to setup DeepDive. You will need Git, so [install Git](http://
 This will create a directory named deepdive. Now go into the directory and compile the system:
 
     >> cd deepdive
-    >> sbt compile
+    >> make
 
 This step downloads all the necessary frameworks and libraries the system uses internally, and may take a minute or two. If all goes well the last line of the output should look something like this:
 
@@ -38,7 +38,7 @@ If you do not see this, check the log for detailed error information.
 
 Now let's run some sanity check tests. By default, DeepDive uses the currently logged in user and no password to connect to the database. You can change these by setting the `PGUSER` and `PGPASSWORD` environment variables, respectively. Then, run this command from the deepdive directory:
 
-    >> ./test.sh
+    >> make test
 
 You should see the following output:
   
