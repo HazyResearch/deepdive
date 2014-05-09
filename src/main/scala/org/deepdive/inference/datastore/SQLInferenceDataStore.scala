@@ -320,7 +320,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       val Array(relation, column) = variable.split('.')
       
       val selectVariablesForDumpSQL = s"""
-        SELECT id, (${variable} IS NOT NULL), ${variable}::int, (variable_id IS NOT NULL)
+        SELECT ${relation}.id, (${variable} IS NOT NULL), ${variable}::int, (${VariablesHoldoutTable}.variable_id IS NOT NULL)
         FROM ${relation} LEFT JOIN ${VariablesHoldoutTable}
         ON ${relation}.id = ${VariablesHoldoutTable}.variable_id"""
 
