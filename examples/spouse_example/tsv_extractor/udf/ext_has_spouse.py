@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 
-import fileinput
 import csv
 import os
 import sys
@@ -15,9 +14,15 @@ with open (BASE_DIR + "/../../data/spouses.csv") as csvfile:
   for line in reader:
     spouses[line[0].strip().lower()] = line[1].strip().lower()
 
+# Load relations of people that are not spouse
+non_spouses = set()
+lines = open(BASE_DIR + '/../../data/non-spouses.tsv').readlines()
+for line in lines:
+  name1, name2, relation = line.strip().split('\t')
+  non_spouses.add((name1, name2))  # Add a non-spouse relation pair
 
 # For each input tuple
-for row in fileinput.input():
+for row in sys.stdin:
   parts = row.strip().split('\t')
   if len(parts) != 5: 
     print >>sys.stderr, 'Failed to parse row:', row
@@ -25,6 +30,8 @@ for row in fileinput.input():
   
   sentence_id, p1_id, p1_text, p2_id, p2_text = parts
 
+  p1_text = p1_text.strip()
+  p2_text = p2_text.strip()
   p1_text_lower = p1_text.lower()
   p2_text_lower = p2_text.lower()
 
@@ -33,7 +40,13 @@ for row in fileinput.input():
   is_true = '\N'
   if spouses[p1_text_lower] == p2_text_lower:
     is_true = 'true'
+  if spouses[p2_text_lower] == p1_text_lower:
+    is_true = 'true'
   elif (p1_text == p2_text) or (p1_text in p2_text) or (p2_text in p1_text):
+    is_true = 'false'
+  elif (p1_text_lower, p2_text_lower) in non_spouses:
+    is_true = 'false'
+  elif (p2_text_lower, p1_text_lower) in non_spouses:
     is_true = 'false'
 
   print '\t'.join([

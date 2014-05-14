@@ -50,6 +50,8 @@ object Main extends App {
 
     System.err.println(s"Parsing document ${documentId.getOrElse("")}...")
 
+    // var sentence_offset = 0
+
     // Output a JSON tuple for each sentence
     documentStr.map(dp.parseDocumentString).map(_.sentences).getOrElse(Nil).foreach { sentenceResult =>
       //Console.println(sentenceResult.sentence)
@@ -61,9 +63,11 @@ object Main extends App {
         "lemma" -> JsArray(sentenceResult.lemma.map(JsString.apply)),
         "dependencies" -> JsArray(sentenceResult.deps.map(JsString.apply)),
         "ner_tags" -> JsArray(sentenceResult.nerTags.map(JsString.apply)),
+        // "sentence_offset" -> JsNumber(sentence_offset), // sometimes useful
         "sentence_id" -> JsNull
       ).toSeq)
       Console.println(Json.stringify(json))
+      // sentence_offset += 1
     }  
   }
 
