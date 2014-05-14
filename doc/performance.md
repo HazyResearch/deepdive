@@ -50,4 +50,4 @@ If your learning does not converge (e.g. very large absolute values of weights),
 
 On the other hand, if results converge to a local optimum (e.g. calibration plot looks not ideal), you can try increasing learning rate, or using a slower decay.
 
-Also check out the documentation of our [high-speed sampler](/doc/sampler.html).
+Also check out the documentation of our [high-speed sampler](sampler.html).

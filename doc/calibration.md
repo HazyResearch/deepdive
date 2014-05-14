@@ -4,7 +4,7 @@ layout: default
 
 # Inference Results and Calibration
 
-Writing factors and inference rules using DeepDive is an iterative process. After the DeepDive pipeline is finished, you should inspect the results, improve your extractors, and modify inference rules. The inference results are stored in the database, in the table named `[variable name]_inference`. DeepDive gives expectation for each variable, which is the most probable value that the variable may take. Also, the learned weights are store in table `dd_inference_result_weights`. To make this process easier, DeepDive writes calibration data for each variable. [Refer to the calibration guide for more information](/doc/general/calibration.html).
+Writing factors and inference rules using DeepDive is an iterative process. After the DeepDive pipeline is finished, you should inspect the results, improve your extractors, and modify inference rules. The inference results are stored in the database, in the table named `[variable name]_inference`. DeepDive gives expectation for each variable, which is the most probable value that the variable may take. Also, the learned weights are store in table `dd_inference_result_weights`. To make this process easier, DeepDive writes calibration data for each variable. [Refer to the calibration guide for more information](general/calibration.html).
 
 ### Defining holdout
 

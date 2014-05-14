@@ -4,7 +4,7 @@ layout: default
 
 # Writing Inference Rules
 
-Inference rules describe how [factor graph](/doc/general/inference.html) is constructed. Each rule, or *factor*, consists of three components:
+Inference rules describe how [factor graph](general/inference.html) is constructed. Each rule, or *factor*, consists of three components:
 
 - The **input query** usually combines relations created by your extractors. One factor will be created for each row in the query result.
 - The **factor function** defines the variables that will be connected to each factor, and how they are related to each other.
@@ -64,7 +64,7 @@ Refer to the database-specific guides to learn about more caveats:
 
 The factor function defines the variables that will be connected to the factor, and how they are related to each other. All variables used in a factor function must have been previously [defined in the schema](schema.html).
 
-DeepDive supports [several types of factor functions](/doc/inference_rule_functions.html). One example of a factor function is the `Imply` function, which expresses a first-order logic statement. For example, `Imply(B, C, A)` means "if B and C, then A".
+DeepDive supports [several types of factor functions](inference_rule_functions.html). One example of a factor function is the `Imply` function, which expresses a first-order logic statement. For example, `Imply(B, C, A)` means "if B and C, then A".
 
     # If people.smokes, then people.has_cancer
     someFactor {
@@ -79,7 +79,7 @@ DeepDive supports [several types of factor functions](/doc/inference_rule_functi
 
 ### Factor Weights
 
-Each factor is assigned a *weight*, which expresses how confident you are in its rule. During probabilistic inference, factors with large weights will have a greater impact on variables than factors with small weights. Factor weights can be any real number, and are relative to each other. You can assign factor weights manually, or you can let DeepDive learn weights automatically. In order to learn weights automatically, you must have enough [training data](/doc/general/relation_extraction.html) available. A weight can also be a function of variables, in which case each factor instance will get a different weight depending on the variable value.
+Each factor is assigned a *weight*, which expresses how confident you are in its rule. During probabilistic inference, factors with large weights will have a greater impact on variables than factors with small weights. Factor weights can be any real number, and are relative to each other. You can assign factor weights manually, or you can let DeepDive learn weights automatically. In order to learn weights automatically, you must have enough [training data](general/relation_extraction.html) available. A weight can also be a function of variables, in which case each factor instance will get a different weight depending on the variable value.
 
     # Known weight (10 can be treated as positive infinite)
     someFactor.weight: 10

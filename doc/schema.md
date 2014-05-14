@@ -17,7 +17,7 @@ deepdive {
 }
 {% endhighlight %}
 
-In the above example *smokes* and *has_cancer* are boolean attributes in the *people* table. DeepDive will assign a unique variable `id` to each entry in the *smokes* and *has_cancer* column. This variable `id` is used during probabilistic inference. Developers should create the variable table such as *people* with the column `id`; if [extractors](/doc/extractors.html) output to the variable table, fill `id` column with `NULL` values as extractor output. [See more in the inference guide](/doc/inference_rules.html).
+In the above example *smokes* and *has_cancer* are boolean attributes in the *people* table. DeepDive will assign a unique variable `id` to each entry in the *smokes* and *has_cancer* column. This variable `id` is used during probabilistic inference. Developers should create the variable table such as *people* with the column `id`; if [extractors](extractors.html) output to the variable table, fill `id` column with `NULL` values as extractor output. [See more in the inference guide](inference_rules.html).
 
 ### Evidence and Query variables
 

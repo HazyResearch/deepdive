@@ -8,7 +8,7 @@ layout: default
 
 #### I get a Java out of memory error, what should I do?
 ---
-Refer to the [Performance Tuning guide](/doc/performance.html) and try the following:
+Refer to the [Performance Tuning guide](performance.html) and try the following:
 
 - Set the JVM heap size using the `-Xmx` option flag
 - If the errors happens while executing an extractor, try decreasing the input or output batch size for your extractors
@@ -100,5 +100,5 @@ Make sure your database server support PL/python language.
 
 #### In sampling, I get an "error while loading shared libraries: libnuma.so.1"
 ---
-Make sure you have set dependencies of DimmWitted Sampler. Properly set environmental variables according to [Sampler Guide](/doc/sampler.html).
+Make sure you have set dependencies of DimmWitted Sampler. Properly set environmental variables according to [Sampler Guide](sampler.html).
 

@@ -10,7 +10,7 @@ DeepDive is a new type of system that enables developers to analyze data on a de
 - DeepDive is aware that useful **data is often noisy and imprecise**: Names are misspelled, natural language is ambiguous, and humans make errors. To help deal with such imprecision, DeepDive produces a [calibrated](doc/general/calibration.html) probabilities for every assertion it makes. For example, if DeepDive produces a fact with probability 0.9 it means the fact is 90% likely to be correct. 
 - DeepDive is able to use large amounts of data from a **variety of sources**. Applications built using DeepDive have extracted data from millions of documents, web pages, PDFs, tables, and figures.
 - DeepDive allows developers to **use their knowledge of a given domain** to improve the quality by [writing simple rules](doc/inference_rules.html) and giving feedback on whether predictions are correct or not.
-- DeepDive is able to use your data to ["distantly" learn](/doc/general/relation_extraction.html). In contrast, most machine learning systems require one to tediously train each prediction. In fact, first versions of DeepDive-based systems often do not have any traditional training data at all!
+- DeepDive is able to use your data to ["distantly" learn](doc/general/relation_extraction.html). In contrast, most machine learning systems require one to tediously train each prediction. In fact, first versions of DeepDive-based systems often do not have any traditional training data at all!
 - DeepDive’s secret is a **scalable, high-performance inference and learning engine**. For the past few years, we have been working to make the underlying algorithms run as fast as possible. The underlying techniques pioneered in this project are part of commercial and open source tools including [MADlib](http://madlib.net/), [Impala](http://www.cloudera.com/content/cloudera/en/products-and-services/cdh/impala.html), a product from Oracle, and low-level techniques, such as [Hogwild!](http://www.eecs.berkeley.edu/~brecht/papers/hogwildTR.pdf), have been adopted in [Google Brain](http://static.googleusercontent.com/media/research.google.com/en/us/archive/unsupervised_icml2012.pdf).
 
 
@@ -26,7 +26,7 @@ A few demonstrations of DeepDive applications:
 - [GeoDeepDive - Extracting dark data from geology journal articles](https://www.youtube.com/watch?v=X8uhs28O3eA)
 - [Wisci - Enriching Wikipedia with structured data](https://www.youtube.com/watch?v=Q1IpE9_pBu4)
 
-We are posting the complete code for our examples on this site. We are working on other more domains with even more collaborators in this year. Stay tuned, and get in [touch with us](mailto:dbritz@stanford.edu) to talk about interesting projects.
+We are posting the complete code for our examples on this site. We are working on other more domains with even more collaborators in this year. Stay tuned, and [get in touch with us](mailto:contact.hazy@gmail.com) to talk about interesting projects.
 
 ### Who are we?
 
@@ -55,7 +55,7 @@ Getting started:
 - [Amazon EC2 AMI guide](doc/ec2.html)
 - [Example application walkthrough](doc/walkthrough.html)
 
-API Documentation:
+Advanced tutorials:
 
 - [Defining schema](doc/schema.html)
 - [Writing extractors](doc/extractors.html)
