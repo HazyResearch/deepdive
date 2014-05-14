@@ -186,7 +186,7 @@ psql -d deepdive_spouse -c "
     sentence_id    bigint, -- refers to sentences table
     start_position int,    -- word offset in the sentence
     length         int,    -- how many words in this mention
-    text           text,   -- 
+    text           text,   -- name of the person
     mention_id     bigint  -- unique identifier for people_mentions
   );
 "
@@ -526,8 +526,8 @@ for row in sys.stdin:
   features.add("num_words_between=%s" % len(words_between))
 
   # Feature 3: Does the last word (last name) match assuming the words are not equal?
-  last_word_left = obj["words"][p1_end-1]
-  last_word_right = obj["words"][p2_end-1]
+  last_word_left = obj["words"][p1_end - 1]
+  last_word_right = obj["words"][p2_end - 1]
   if (last_word_left == last_word_right) and (p1_text != p2_text):
     features.add("last_word_matches")
 
@@ -582,7 +582,7 @@ Note that the syntax requires users to explicitly select:
 
 And when selecting them, users must explicitly alias `id` to `[relation_name].id` and `[variable]` to `[relation_name].[variable]` for system to use. See more in [inference rule guide](inference_rules.html).
 
-Before getting results, let's try to incorporate a bit of domain knowledge into our model. For example, we know that has_spouse is symmetric. That means, if Barack Obama is married to Michelle Obama, then Michelle Obama is married to Barack Obama, and vice versa. (`Marry(A,B) <=> Marry(B,A)`) We can encode this knowledge in a second inference rule:
+Before getting results, let's try to incorporate a bit of domain knowledge into our model. For example, we know that has_spouse is symmetric. That means, if Barack Obama is married to Michelle Obama, then Michelle Obama is married to Barack Obama, and vice versa. (`Marry(A,B) <-> Marry(B,A)`) We can encode this knowledge in a second inference rule:
 
     inference.factors {
 
@@ -715,9 +715,9 @@ psql -d deepdive_spouse -c "
      f_has_spouse_features-words_between=;-written-by                                            | -1.95299763087218
     (5 rows)
 
-We can see that most weights make sense while some don't, which is OK for our first application. 
+Note that each execution may learn different weights, and these lists can look different. Generally, we might see that most weights make sense while some don't, which is OK for our first application. 
 
-Now we have already finished our first step towards a relation extraction application. **Congratulations!!** 
+**Congratulations!!** Now we have already finished our first working relation extractor!
 
 You can further improve the prediction by different ways. There are many possible strategies including:
 
