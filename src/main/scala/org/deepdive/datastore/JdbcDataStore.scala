@@ -21,7 +21,7 @@ trait JdbcDataStore extends Logging {
   def close() = ConnectionPool.closeAll()
 
   def bulkInsert(outputRelation: String, data: Iterator[Map[String, Any]])(implicit session: DBSession) = {
-    val columnNames = HSQLDataStore.DB.getColumnNames(outputRelation).sorted
+    val columnNames = PostgresDataStore.DB.getColumnNames(outputRelation).sorted
     val columnValues = columnNames.map (x => "?")
     val copySQL = s"""INSERT INTO ${outputRelation}(${columnNames.mkString(", ")}) 
       VALUES (${columnValues.mkString(", ")})"""

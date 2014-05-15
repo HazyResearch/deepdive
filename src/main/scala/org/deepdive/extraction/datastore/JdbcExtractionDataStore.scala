@@ -91,13 +91,6 @@ trait JdbcExtractionDataStore extends ExtractionDataStore[JsObject] with Logging
 
     def unwrapSQLType(x: Any) : Any = {
       x match {
-        case x : org.hsqldb.jdbc.JDBCArray => x.getArray().asInstanceOf[Array[_]].toList
-        case x : org.hsqldb.jdbc.JDBCClobClient => 
-          val reader = new BufferedReader(x.getCharacterStream)
-          Stream.continually(reader.readLine()).takeWhile(_ != null).mkString("\n")
-        case x : org.hsqldb.jdbc.JDBCBlobClient =>
-          val src = Source.fromInputStream(x.getBinaryStream)
-          new String(src.getLines.mkString("\n").getBytes, "utf-8")
         case x : org.postgresql.jdbc4.Jdbc4Array => x.getArray().asInstanceOf[Array[_]].toList
         case x : org.postgresql.util.PGobject =>
           x.getType match {
