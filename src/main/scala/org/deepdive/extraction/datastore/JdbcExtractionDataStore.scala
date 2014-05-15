@@ -16,9 +16,15 @@ trait JdbcExtractionDataStore extends ExtractionDataStore[JsObject] with Logging
   def queryAsMap[A](query: String, batchSize: Option[Int] = None)
       (block: Iterator[Map[String, Any]] => A) : A = {
       
-      ds.DB.readOnly { implicit session =>
-        session.connection.setAutoCommit(false)
-        val stmt = session.connection.createStatement(
+      {
+        
+      //ds.DB.readOnly { implicit session =>
+      //  session.connection.setAutoCommit(false)
+      //  val stmt = session.connection.createStatement(
+
+        val conn = ds.borrowConnection()
+        conn.setAutoCommit(false)
+        val stmt = conn.createStatement(
           java.sql.ResultSet.TYPE_FORWARD_ONLY, java.sql.ResultSet.CONCUR_READ_ONLY)
         stmt.setFetchSize(10000)
         try {
@@ -29,7 +35,10 @@ trait JdbcExtractionDataStore extends ExtractionDataStore[JsObject] with Logging
           while (ex.next()) {
             log.debug(ex getString 1)
           }
-          val rs = stmt.executeQuery(query)
+          val stmt2 = conn.createStatement(
+            java.sql.ResultSet.TYPE_FORWARD_ONLY, java.sql.ResultSet.CONCUR_READ_ONLY)
+          stmt2.setFetchSize(10000)
+          val rs = stmt2.executeQuery(query)
           // No result return
           if (!rs.isBeforeFirst) {
             log.warning(s"query returned no results: ${query}")
