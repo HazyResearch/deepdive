@@ -1,10 +1,10 @@
 #! /usr/bin/env python
+# File: udf/ext_has_spouse_features.py
 
-import fileinput
-import json
+import sys, json
 
 # For each input tuple
-for row in fileinput.input():
+for row in sys.stdin:
   obj = json.loads(row)
 
   # Get useful data from the JSON

@@ -61,6 +61,15 @@ def run(sentence_id, p1_id, p1_text, p2_id, p2_text):
       for line in reader:
         spouses[line[0].strip().lower()] = line[1].strip().lower()
 
+  if 'non_spouses' in SD:
+    non_spouses = SD['non_spouses']
+  else:
+    non_spouses = set()
+    SD['non_spouses'] = non_spouses
+    lines = open('/dfs/rulk/0/deepdive/shared/non-spouses.tsv').readlines()
+    for line in lines:
+      name1, name2, relation = line.strip().split('\t')
+      non_spouses.add((name1, name2))  # Add a non-spouse relation pair
 
   # NOTICE: PLPY DOES NOT ALLOW overwritting input arguments!!!
   # will return "UnboundLocalError".
@@ -72,7 +81,14 @@ def run(sentence_id, p1_id, p1_text, p2_id, p2_text):
   is_true = None
   if spouses[p1_text_lower] == p2_text_lower:
     is_true = True
+  elif spouses[p2_text_lower] == p1_text_lower:
+    is_true = True
+  # same person
   elif (p1_t == p2_t) or (p1_t in p2_t) or (p2_t in p1_t):
+    is_true = False
+  elif (p1_text_lower, p2_text_lower) in non_spouses:
+    is_true = False
+  elif (p2_text_lower, p1_text_lower) in non_spouses:
     is_true = False
 
   # Must return a tuple of arrays.
