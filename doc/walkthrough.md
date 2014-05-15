@@ -53,7 +53,7 @@ On a high level, the application we want to build will perform following steps o
 
 Our goal in this tutorial is get an initial application up and running. There are a couple of problems with the approach above which are worth drawing attention to: If two separate sentences mention the fact that Barack Obama and Michelle Obama are in a `has_spouse` relationship, then our approach does not know that they refer to the same fact. In other words, we ignore the fact that "Barack Obama" and "Michelle Obama" in both of these sentence refer to the same entity in the real world. We also don't recognize *coreference* of two mentions. That is, we don't know that "Barack Obama" and "Obama" probably refer to the same person. We will address these issues in the [advanced part of the tutorial](walkthrough2.html).
 
-For simplicity, we will start from **annotated sentence data**. If our input is raw text articles, we also need to run natural language processing in order to extract candidate pairs and features. If you want to learn how NLP extraction can be done in DeepDive, you can refer to the last section: [using NLP extractor in DeepDive](#nlp_extractor). 
+For simplicity, we will start from **annotated sentence data**. If our input is raw text articles, we also need to run natural language processing in order to extract candidate pairs and features. If you want to learn how NLP extraction can be done in DeepDive, you can refer to the last section later: [using NLP extractor in DeepDive](#nlp_extractor). 
 
 
 <a id="installing" href="#"> </a>
@@ -88,6 +88,7 @@ cd app/spouse
 
 DeepDive's main entry point is a file called `application.conf` which contains database connection information as well as your feature extraction and inference rule pipelines. It is often useful to have a small `run.sh` script that loads environment variables and executes the DeepDive pipeline. We provide simple templates for both of these to copy and modify. Copy these templates to our directory by the following commands: 
 
+<!-- TODO what is env.sh doing? -->
 
 {% highlight bash %}
 cp ../../examples/template/application.conf application.conf
@@ -172,13 +173,22 @@ Here we go! We have all sentences prepared in our database. (feel free to check 
 
 ### Adding a people extractor
 
-Our next task is to extract people mentions from the sentences. 
+Our next task is to write several [extractors](extractors.html) in
+DeepDive to transform initial data into the format we need. On a high
+level, each extractor performs a user-defined function (UDF) on an input
+query against database, **in a row-wise manner**. One may think of an
+extractor as a function which *maps one input tuple (one row in input
+SQL query)* to one or more output tuples, similar to a `map` or
+`flatMap` function in functional programming languages (or `map` in
+MapReduce).
+
+Our first extractor will extract people mentions from the sentences, and put them into a new table. 
 Note that we have named entity tags in column `ner_tags` of our `sentences` table. We will use this column to identify people mentions: we assume that *a word phrase is a people mention if all its words are tagged as `PERSON` in its `ner_tags` field.*
 
 <!-- Ideally you would want to add your own domain-specific features to extract mentions. For example, people names are usually capitalized, tagged with a noun phrase part of speech tag, and have certain dependency paths to other words in the sentence. However, because the Stanford NLP Parser is relatively good at identifying people and tags them with a `PERSON` named-entity tag we trust its output and don't make the predictions ourselves. We simply assume that all people identified by the NLP Parser are correct. Note that this assumption is not ideal and usually does not work for other types of entities, but it is good enough to build a first version of our application.
  -->
 
-Let's write a simple extractor that puts all people mentions into their own table. This time we will write our extractor in Python. Again, we first create a new table in the database by typing:
+Again, we first create a new table in the database by typing:
   
 {% highlight bash %}
 psql -d deepdive_spouse -c "
@@ -192,27 +202,31 @@ psql -d deepdive_spouse -c "
 "
 {% endhighlight %}
 
-Let's create our first extractor in DeepDive, by adding the following lines between the `deepdive {` and `}` lines in the `application.conf` file:
+Let's tell DeepDive to use our first extractor, by adding the following lines into `deepdive.extraction.extractors` block in `application.conf`, which should be present in the template:
 
-    extraction.extractors {
-      # ...
-      ext_people {
-        input: """
-            SELECT  sentence_id, words, ner_tags
-            FROM    sentences
-            """
-        output_relation : "people_mentions"
-        udf             : ${APP_HOME}"/udf/ext_people.py"
-        before          : ${APP_HOME}"/udf/clear_table.sh people_mentions"
-        after           : ${APP_HOME}"/udf/fill_sequence.sh people_mentions mention_id"
-      }
-      # ... (more extractors to add here)
-
+    deepdive {
+      ...
+      # Put your extractors here
+      extraction.extractors {
+        
+        ext_people {
+          input: """
+              SELECT  sentence_id, words, ner_tags
+              FROM    sentences
+              """
+          output_relation : "people_mentions"
+          udf             : ${APP_HOME}"/udf/ext_people.py"
+          before          : ${APP_HOME}"/udf/clear_table.sh people_mentions"
+          after           : ${APP_HOME}"/udf/fill_sequence.sh people_mentions mention_id"
+        }
+        # ... (more extractors to add here)
+      } 
+      ...   
     }
 
 Let's go through each line:
 
-1. The input to the `ext_people` extractor are all sentences, selected using a SQL statement.
+1. The input to the `ext_people` extractor are all sentences (identifiers, words and named entity tags), selected using a SQL statement.
 2. The output of the extractor will be written to the `people_mentions` table.
 3. The extractor script is `udf/ext_people.py`. DeepDive will execute this command and stream input to the *stdin* of the process, and read output from *stdout* of the process.
 4. We execute a script *before* the extractor runs, and another script *after* the extractor runs.
@@ -388,7 +402,7 @@ BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 
 # Load the spouse dictionary for distant supervision
 spouses = {}
-with open (BASE_DIR + "/../../data/spouses.csv") as csvfile:
+with open (BASE_DIR + "/../data/spouses.csv") as csvfile:
   reader = csv.reader(csvfile)
   for line in reader:
     name1 = line[0].strip().lower()
@@ -397,7 +411,7 @@ with open (BASE_DIR + "/../../data/spouses.csv") as csvfile:
 
 # Load relations of people that are not spouse
 non_spouses = set()
-lines = open(BASE_DIR + '/../../data/non-spouses.tsv').readlines()
+lines = open(BASE_DIR + '/../data/non-spouses.tsv').readlines()
 for line in lines:
   name1, name2, relation = line.strip().split('\t')
   non_spouses.add((name1, name2))  # Add a non-spouse relation pair
@@ -635,7 +649,7 @@ After running, you should see a summary report similar to:
     04:07:48 [profiler] INFO  ext_has_spouse_features SUCCESS [84158 ms]
     04:07:48 [profiler] INFO  inference_grounding SUCCESS [6175 ms]
     04:07:48 [profiler] INFO  inference SUCCESS [10293 ms]
-    04:07:48 [profiler] INFO  calibration plot written to /YOUR/PATH/TO/deepdive/target/calibration/has_spouse.is_true.png [0 ms]
+    04:07:48 [profiler] INFO  calibration plot written to /YOUR/PATH/TO/deepdive/out/TIME/calibration/has_spouse.is_true.png [0 ms]
     04:07:48 [profiler] INFO  calibration SUCCESS [538 ms]
     04:07:48 [profiler] INFO  --------------------------------------------------
 
