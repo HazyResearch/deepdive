@@ -19,15 +19,15 @@ object ExtractionManager {
   def props(parallelism: Int, dbSettings: DbSettings) : Props = {
     dbSettings.driver match {
       case "org.postgresql.Driver" => Props(classOf[PostgresExtractionManager], parallelism, dbSettings)
-      case "org.hsqldb.jdbc.JDBCDriver" => Props(classOf[HSQLExtractionManager], parallelism, dbSettings)
+//      case "org.hsqldb.jdbc.JDBCDriver" => Props(classOf[HSQLExtractionManager], parallelism, dbSettings)
     }
   }
 
   class PostgresExtractionManager(val parallelism: Int, val dbSettings: DbSettings) extends ExtractionManager
     with PostgresExtractionDataStoreComponent
 
-  class HSQLExtractionManager(val parallelism: Int, val dbSettings: DbSettings) extends ExtractionManager
-    with HSQLExtractionDataStoreComponent
+//  class HSQLExtractionManager(val parallelism: Int, val dbSettings: DbSettings) extends ExtractionManager
+//    with HSQLExtractionDataStoreComponent
 
 
   case object ScheduleTasks

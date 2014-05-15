@@ -1,3 +1,4 @@
+/*
 package org.deepdive.datastore
 
 import org.deepdive.Logging
@@ -31,3 +32,4 @@ object HSQLDataStore extends JdbcDataStore with Logging {
   }
 
 }
+*/

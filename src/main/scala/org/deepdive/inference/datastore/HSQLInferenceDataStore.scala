@@ -1,3 +1,4 @@
+/*
 package org.deepdive.inference
 
 import org.deepdive.calibration._
@@ -30,3 +31,4 @@ trait HSQLInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
   
   // }
 }
+*/

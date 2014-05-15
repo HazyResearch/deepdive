@@ -1,3 +1,4 @@
+/*
 package org.deepdive.extraction.datastore
 
 import scalikejdbc._
@@ -26,3 +27,4 @@ class HSQLExtractionDataStore extends JdbcExtractionDataStore with Logging {
   }
 
 }
+*/
