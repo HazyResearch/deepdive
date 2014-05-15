@@ -1,6 +1,7 @@
 package org.deepdive.datastore
 
 import java.sql.Connection
+import java.sql.{Connection, DriverManager, ResultSet};
 import scalikejdbc._
 import scalikejdbc.config._
 import org.deepdive.Logging
@@ -36,19 +37,18 @@ trait JdbcDataStore extends Logging {
 object JdbcDataStore extends Logging {
 
   def executeCmd(cmd: String) {
+    val conn = ConnectionPool.borrow()
+    val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY, java.sql.ResultSet.CONCUR_UPDATABLE)
     try {
-      executeWithCmd(cmd)
+      var prep = null
+      """;\s+""".r.split(cmd.trim()).filterNot(_.isEmpty).foreach(q => conn.prepareStatement(q.trim()).executeUpdate)
     } catch {
       // SQL cmd exception
       case exception : Throwable =>
-        log.error(exception.toString)
-        throw exception
-    }
-  }
-
-  def executeWithCmd(cmd: String) : Unit = {
-    DB.autoCommit { implicit session =>
-      """;\s+""".r.split(cmd.trim()).filterNot(_.isEmpty).foreach(q => SQL(q.trim()).execute.apply())
+      log.error(exception.toString)
+      throw exception
+    } finally {
+      conn.close()
     }
   }
 

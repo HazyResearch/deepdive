@@ -39,28 +39,24 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def MappedInferenceResultView = "dd_mapped_inference_result"
   def IdSequence = "id_sequence"
 
-  /* Executes an arbitary SQL statement */
-  def executeSql(sql: String) = ds.DB.autoCommit { implicit session =>
-    """;\s+""".r.split(sql.trim()).filterNot(_.isEmpty).map(_.trim).foreach { 
-        query => SQL(query).execute.apply()
-    }
-  }
-
   def execute(sql: String) {
+    val conn = ds.borrowConnection()
+    val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY, java.sql.ResultSet.CONCUR_UPDATABLE)
     try {
-      executeSql(sql)
+      """;\s+""".r.split(sql.trim()).filterNot(_.isEmpty).foreach(q => conn.prepareStatement(q.trim()).executeUpdate)
     } catch {
       // SQL cmd exception
       case exception : Throwable =>
-        log.error(exception.toString)
-        log.info("[Error] Please check the SQL cmd!")
-        throw exception
+      log.error(exception.toString)
+      log.info("[Error] Please check the SQL cmd!")
+      throw exception
+    } finally {
+      conn.close()
     }
   }
 
   /* Issues a query */
   def issueQuery(sql: String)(op: (java.sql.ResultSet) => Unit) = {
-
     val conn = ds.borrowConnection()
     conn.setAutoCommit(false);
     val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
