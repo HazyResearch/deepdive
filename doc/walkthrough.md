@@ -51,9 +51,7 @@ On a high level, the application we want to build will perform following steps o
 4. Extract features for `has_spouse` candidates to help prediction
 5. Write inference rules to incorporate domain knowledge that improves our predictions
 
-Our goal in this tutorial is get an initial application up and running. There are a couple of problems with the approach above which are worth drawing attention to: If two separate sentences mention the fact that Barack Obama and Michelle Obama are in a `has_spouse` relationship, then our approach does not know that they refer to the same fact. In other words, we ignore the fact that "Barack Obama" and "Michelle Obama" in both of these sentence refer to the same entity in the real world. We also don't recognize *coreference* of two mentions. That is, we don't know that "Barack Obama" and "Obama" probably refer to the same person. We will address these issues in the [advanced part of the tutorial](walkthrough2.html).
-
-For simplicity, we will start from **annotated sentence data**. If our input is raw text articles, we also need to run natural language processing in order to extract candidate pairs and features. If you want to learn how NLP extraction can be done in DeepDive, you can refer to the last section later: [using NLP extractor in DeepDive](#nlp_extractor). 
+For simplicity, we will start from some preprocessed sentence data. If our input is raw text articles, we also need to run natural language processing in order to extract candidate pairs and features. If you want to learn how NLP extraction can be done in DeepDive, you can refer to the last section later: [using NLP extractor in DeepDive](#nlp_extractor). 
 
 
 <a id="installing" href="#"> </a>
@@ -96,9 +94,10 @@ cp ../../examples/template/run.sh run.sh
 cp ../../examples/template/env.sh env.sh
 {% endhighlight %}
 
-Start modifying the `env.sh` file with your database name:
+The `env.sh` file configures environment variables that will be used in this application. Start modifying the `env.sh` file with your database name:
   
 {% highlight bash %}
+# File: env.sh
 export DBNAME=deepdive_spouse
 {% endhighlight %}
 
@@ -653,7 +652,7 @@ After running, you should see a summary report similar to:
     04:07:48 [profiler] INFO  calibration SUCCESS [538 ms]
     04:07:48 [profiler] INFO  --------------------------------------------------
 
-Great, let's take a look at some of the predictions that DeepDive has made. DeepDive creates a view `has_spouse_is_true_inference` for each variable you have defined in the database. Type in following query in command line:
+Great, let's take a look at some of the predictions that DeepDive has made. DeepDive creates a view `has_spouse_is_true_inference` for each variable you have defined in the database. Type in following query in command line to sample some predictions with high confidence:
 
 {% highlight bash %}
 psql -d deepdive_spouse -c "
@@ -741,6 +740,19 @@ You can further improve the prediction by different ways. There are many possibl
 - Adding more (or better) positive or negative training examples
 - Adding more (or better) features
 
+For the second point: our goal in this tutorial is get an initial
+application up and running. There are a couple of problems with the
+approach above which are worth drawing attention to: If two separate
+sentences mention the fact that Barack Obama and Michelle Obama are in a
+`has_spouse` relationship, then our approach does not know that they
+refer to the same fact. In other words, we ignore the fact that "Barack
+Obama" and "Michelle Obama" in both of these sentence refer to the same
+entity in the real world. We also don't recognize *coreference* of two
+mentions. That is, we don't know that "Barack Obama" and "Obama"
+probably refer to the same person. We will address these issues in the
+[advanced part of the tutorial](walkthrough2.html).
+
+
 <!-- Here we can see that the word phrase "and-former-President" in between the two person names has a rather high weight. This seems strange, since this phrase is not an indicator of a marriage relationship. One way to improve our predictions would be to add more negative evidence that would lower the weight of that feature.
  -->
 
@@ -811,7 +823,6 @@ By default, DeepDive runs all extractors that are defined in the configuration f
       "f_has_spouse_features", "f_has_spouse_symmetry"
     ]
 
-    pipeline.run: "nonlp"
     pipeline.pipelines.nonlp: [
       "ext_people", "ext_has_spouse_candidates", "ext_has_spouse_features",
       "f_has_spouse_features", "f_has_spouse_symmetry"
