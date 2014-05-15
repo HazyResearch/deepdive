@@ -785,7 +785,7 @@ The NLP extractor we provide lies in `examples/nlp_extractor` folder. Refer to i
   
     cd ../../examples/nlp_extractor
     sbt stage
-    cd -
+    cd ../../app/spouse
 
 The `sbt stage` command compiles the extractor (written in Scala) and generates a handy start script. The extractor itself takes JSON tuples of raw document text as input, and outputs JSON tuples of sentences with information such as part-of-speech tags and dependency parses. Let's now create a new table for the output of the extractor in our database. Because the output format of the NLP extractor is fixed by us, you must create a compatible table, like `sentences` defined [above](#loading_data).
 
