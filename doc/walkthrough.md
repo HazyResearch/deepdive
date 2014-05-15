@@ -585,7 +585,7 @@ Now we need to tell DeepDive how to perform [probabilistic inference](general/in
 
     }
 
-This rule generates a model similar to a logistic regression classifier. We use a set of features to make a prediction about the variable we care about. For each row in the *input query* we are adding a [factor](general/probabilistic_inference.html) that connects to the `has_spouse.is_true` variable with a different weight for each feature name. 
+This rule generates a model similar to a logistic regression classifier. We use a set of features to make a prediction about the variable we care about. For each row in the *input query* we are adding a [factor](general/inference.html) that connects to the `has_spouse.is_true` variable with a different weight for each feature name. 
 
 Note that the syntax requires users to explicitly select:
 
