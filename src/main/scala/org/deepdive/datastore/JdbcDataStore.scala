@@ -20,7 +20,7 @@ trait JdbcDataStore extends Logging {
   def close() = ConnectionPool.closeAll()
 
   def bulkInsert(outputRelation: String, data: Iterator[Map[String, Any]])(implicit session: DBSession) = {
-    val columnNames = DB.getColumnNames(outputRelation).sorted
+    val columnNames = PostgresDataStore.DB.getColumnNames(outputRelation).sorted
     val columnValues = columnNames.map (x => "?")
     val tuples = data.map { tuple =>
       columnNames.map(c => tuple.get(c).orElse(tuple.get(c.toLowerCase)).getOrElse(null))
