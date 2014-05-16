@@ -73,6 +73,7 @@ object JdbcDataStore extends Logging {
       // SQL cmd exception
       case exception : Throwable =>
       log.error(exception.toString)
+      log.info("[Error] Please check the SQL cmd!")
       throw exception
     } finally {
       conn.close()

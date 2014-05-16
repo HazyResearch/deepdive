@@ -74,15 +74,24 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   /* Issues a query */
   def issueQuery(sql: String)(op: (java.sql.ResultSet) => Unit) = {
     val conn = ds.borrowConnection()
-    conn.setAutoCommit(false);
-    val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
-      java.sql.ResultSet.CONCUR_READ_ONLY);
-    stmt.setFetchSize(5000);
-    val rs = stmt.executeQuery(sql)
-    while(rs.next()){
-      op(rs)
+    try {
+      conn.setAutoCommit(false);
+      val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
+        java.sql.ResultSet.CONCUR_READ_ONLY);
+      stmt.setFetchSize(5000);
+      val rs = stmt.executeQuery(sql)
+      while(rs.next()){
+        op(rs)
+      }
+    } catch {
+      // SQL cmd exception
+      case exception : Throwable =>
+      log.error(exception.toString)
+      log.info("[Error] Please check the SQL cmd!")
+      throw exception
+    } finally {
+      conn.close() 
     }
-    conn.close()
   }
 
 
