@@ -99,8 +99,18 @@ object DeepDive extends Logging {
 
     val terminationTask = Task("shutdown", List("report"), TaskManager.Shutdown, taskManager, false)
 
-    val allTasks = extractionTasks ++ Seq(groundFactorGraphTask) ++
-      List(inferenceTask, calibrationTask, reportingTask, terminationTask) 
+    log.debug(s"Total number of extractors: ${settings.extractionSettings.extractors.size}")
+    log.debug(s"Total number of factors: ${settings.inferenceSettings.factors.size}")
+
+    // If no extractors and factors, no tasks should be run
+    val allTasks = settings.extractionSettings.extractors.size + settings.inferenceSettings.factors.size match {
+      case 0 =>
+        List(reportingTask, terminationTask) 
+      case _ =>
+        extractionTasks ++ Seq(groundFactorGraphTask) ++
+        List(inferenceTask, calibrationTask, reportingTask, terminationTask) 
+    }
+      
 
     // Create a default pipeline that executes all tasks
     val defaultPipeline = Pipeline("_default", allTasks.map(_.id).toSet)
@@ -108,7 +118,8 @@ object DeepDive extends Logging {
     // Create a pipeline that runs only from learning
     val relearnPipeline = Pipeline("_relearn", Set("inference", "calibration", "report", "shutdown"))
 
-    log.info(s"Number of active factors: ${activeFactors.size}")
+
+    log.debug(s"Number of active factors: ${activeFactors.size}")
     // If no factors are active, do not do grounding, inference and calibration
     val postExtraction = activeFactors.size match {
       case 0 => 
