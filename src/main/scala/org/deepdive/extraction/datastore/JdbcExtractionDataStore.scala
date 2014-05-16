@@ -15,7 +15,6 @@ trait JdbcExtractionDataStore extends ExtractionDataStore[JsObject] with Logging
 
   def queryAsMap[A](query: String, batchSize: Option[Int] = None)
       (block: Iterator[Map[String, Any]] => A) : A = {
-      
       ds.DB.readOnly { implicit session =>
         session.connection.setAutoCommit(false)
         val stmt = session.connection.createStatement(

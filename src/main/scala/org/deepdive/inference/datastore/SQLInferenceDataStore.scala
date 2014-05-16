@@ -122,6 +122,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         log.error(exception.toString)
         log.info("[Error] Please check the SQL cmd!")
         throw exception
+    } finally {
+      conn.close()
     }
 
 
