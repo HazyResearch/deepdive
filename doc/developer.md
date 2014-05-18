@@ -89,30 +89,3 @@ The systems also generates a metadata file of the following. The metadata file c
     Path to edges file
 
 
-### Sampler arguments
-
-The sampler is an executable file (DimmWitted) or a jar file (Scala sampler), and can be invoked using the following arguments:
-
-    -w <weightsFile> | --weights <weightsFile>
-        weights file (required)
-    -v <variablesFile> | --variables <variablesFile>
-        variables file (required)
-    -f <factorsFile> | --factors <factorsFile>
-        factors file (required)
-    -e <edgesFile> | --edges <edgesFile>
-        edges file (required)
-    -m <metaFile> | --fg_meta <metaFile>
-        factor graph meta data file file (required)
-    -o <outputFile> | --outputFile <outputFile>
-        output file path (required)
-    -i <numSamplesInference> | --n_inference_epoch <numSamplesInference>
-        number of samples during inference (required)
-    -l <learningNumIterations> | --n_learning_epoch <learningNumIterations>
-        number of iterations during weight learning (required)
-    -s <learningNumSamples> | --n_samples_per_learning_epoch <learningNumSamples>
-        number of samples per iteration during weight learning (required)
-    -a <learningRate> | --alpha <learningRate>
-        the learning rate for gradient descent (default: 0.01)
-    -d <diminishRate> | --diminish <diminishRate>
-        the diminish rate for learning (default: 0.95)
-
