@@ -15,6 +15,7 @@ DeepDive uses PostgreSQL, Scala, and Python (version 2.X), so before downloading
 - [Python](http://www.python.org/getit/) 2.X (not Python 3.X)
 - [PostgreSQL](http://wiki.postgresql.org/wiki/Detailed_installation_guides)
 - [SBT](http://www.scala-sbt.org/release/docs/Getting-Started/Setup.html)
+- [Gnuplot](http://www.gnuplot.info/)
 
 ### Downloading and Compiling DeepDive
 
@@ -46,3 +47,5 @@ You should see the following output:
     [success] Total time: 35 s, completed Jan 29, 2014 9:59:57 AM
 
 Congratulations! DeepDive is now running, and you can proceed to the [example application walkthrough](walkthrough.html).
+
+Note that for system to work properly, you cannot rename `deepdive` folder with other names currently.

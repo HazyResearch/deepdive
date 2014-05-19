@@ -6,6 +6,7 @@ body {
 }
 
 body ul, body ol {
+  margin-top: 5px;
   color: #373723; 
 }
 
@@ -58,6 +59,19 @@ h1, h2, h3, h4, h5, h6 {
   /*letter-spacing: -1px;*/
 }
 
+#main h2 { 
+  margin-top: 1.5em; 
+  margin-bottom: 1em; 
+  font-weight: 300;
+  color: #333;
+  padding: 10px 0px;
+  background-color: #538EAA;
+  padding: 10px 15px;
+  color: white;
+  border-radius: 0.2em;
+
+}
+
 #main h3 { 
   margin-top: 1.5em; 
   font-weight: 300; 
@@ -67,6 +81,21 @@ h1, h2, h3, h4, h5, h6 {
   padding: 10px 0px;
   /* border-bottom: 5px dotted #08608A; */
   background-color: #5FA3C4;
+  padding: 10px 15px;
+  color: white;
+  border-radius: 0.2em;
+
+}
+
+#main h4 { 
+  margin-top: 1.5em; 
+  font-weight: 300; 
+  margin-bottom: 1em; 
+  font-weight: 300;
+  color: #333;
+  padding: 10px 0px;
+  /* border-bottom: 5px dotted #08608A; */
+  background-color: #74B7D1;
   padding: 10px 15px;
   color: white;
   border-radius: 0.2em;
@@ -89,7 +118,8 @@ code {
 
 p img {
   width: 100%;
-  padding: 20px 10px;
+  /*padding: 20px 10px;*/
+  padding: 5px 5px;
   margin: 10px 0px;
   border: 1px solid #eee;
 }
