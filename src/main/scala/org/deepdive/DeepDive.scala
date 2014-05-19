@@ -46,6 +46,7 @@ object DeepDive extends Logging {
       case "" =>
         log.error(s"parsing dbname failed")
         Context.shutdown()
+      case _ =>
     }
 
     // Setup the data store
