@@ -15,7 +15,7 @@ def log(obj):
 	"""
 	sys.stderr.write(obj.__str__() + "\n")
 
-def fe_materialize_span(words, span, func=lambda x:x):
+def materialize_span(words, span, func=lambda x:x):
 	"""Given a sequence of objects and a span, return the subsequence that corresponds to the span.
 
 	Args:
@@ -32,7 +32,7 @@ def _fe_seq_between_words(words, begin_idx, end_idx, func=lambda x:x):
 		return Sequence(elements=map(func, words[end_idx+1:begin_idx]), is_inversed=True)
 
 
-def fe_seq_between_spans(words, span1, span2, func=lambda x:x):
+def tokens_between_spans(words, span1, span2, func=lambda x:x):
 	"""Given a sequence of objects and two spans, return the subsequence that is between these spans.
 
 	Args:
@@ -61,7 +61,7 @@ def _path_to_root(words, word_idx):
 		c_word_idx = words[c_word_idx].dep_par
 	return rs
 
-def fe_dep_path_between_words(words, begin_idx, end_idx):
+def dep_path_between_words(words, begin_idx, end_idx):
 	"""Given a sequence of Word objects and two indices, return the sequence of Edges 
 	corresponding to the dependency path between these two words.
 

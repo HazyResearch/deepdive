@@ -21,7 +21,7 @@ for row in sys.stdin:
   # Feature 1: Find out if a lemma of marry occurs.
   # A better feature would ensure this is on the dependency path between the two.
   #
-  lemma_between = lib.dd.fe_seq_between_spans(lemmas, span1, span2)
+  lemma_between = lib.dd.tokens_between_spans(lemmas, span1, span2)
   married_words = ('marry', 'widow')
   for lemma in lemma_between.elements:
     if lemma in married_words:
@@ -30,14 +30,14 @@ for row in sys.stdin:
   # Feature 2: The number of words between the two phrases.
   # Intuition: if they are close by, the link may be stronger.
   #
-  words_between = lib.dd.fe_seq_between_spans(words, span1, span2)
+  words_between = lib.dd.tokens_between_spans(words, span1, span2)
   l = len(words_between.elements)
   features.add("num_words_between=%s" % l if l<5 else "many_words_between")
 
   # Feature 3: Check if the last name matches heuristically.
   # 
-  last_word_left = lib.dd.fe_materialize_span(words, span1)[-1]
-  last_word_right = lib.dd.fe_materialize_span(words, span2)[-1]
+  last_word_left = lib.dd.materialize_span(words, span1)[-1]
+  last_word_right = lib.dd.materialize_span(words, span2)[-1]
   if (last_word_left == last_word_right): 
     features.add("potential_last_name_match")
 
