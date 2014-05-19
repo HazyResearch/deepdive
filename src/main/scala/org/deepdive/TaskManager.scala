@@ -100,8 +100,6 @@ class TaskManager extends Actor with ActorLogging {
       import java.lang.management.RuntimeMXBean;
       import java.lang.reflect.Field;
       import java.lang.reflect.Method;
-      log.info("============================================")
-      log.info(ManagementFactory.getRuntimeMXBean().getName())
       var pid = ManagementFactory.getRuntimeMXBean().getName().toString
       val pattern = """\d+""".r
       pattern.findAllIn(pid).foreach(id => (s"kill -9 ${id}").!!)
