@@ -4,7 +4,7 @@ layout: default
 
 # DimmWitted High-Speed Sampler
 
-This tutorial explains how to use DimmWitted, a high-speed sampler for DeepDive. DimmWitted binaries for both Mac OS X and Linux ship with DeepDive in the `util/` directory. These work out of the box on many modern systems, but setting up dependencies may be required on others (see below for more details)
+This tutorial explains how to use DimmWitted, a high-speed sampler for DeepDive. Note DimmWitted only supports 64-bit systems. DimmWitted binaries for both Mac OS X and Linux ship with DeepDive in the `util/` directory. These work out of the box on many modern systems, but setting up dependencies may be required on others (see below for more details).
 
 
 ### Setting up dependencies
