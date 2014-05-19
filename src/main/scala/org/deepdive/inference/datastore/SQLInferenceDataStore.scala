@@ -5,6 +5,7 @@ import org.deepdive.calibration._
 import org.deepdive.datastore.JdbcDataStore
 import org.deepdive.Logging
 import org.deepdive.settings._
+import play.api.libs.json._
 import scalikejdbc._
 import scala.util.matching._
 import scala.io.Source
@@ -39,11 +40,26 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def MappedInferenceResultView = "dd_mapped_inference_result"
   def IdSequence = "id_sequence"
 
+
+  def unwrapSQLType(x: Any) : Any = {
+    x match {
+      case x : org.postgresql.jdbc4.Jdbc4Array => x.getArray().asInstanceOf[Array[_]].toList
+      case x : org.postgresql.util.PGobject =>
+        x.getType match {
+          case "json" => Json.parse(x.getValue)
+          case _ => JsNull
+        }
+      case x => x
+    }
+  }
+
   def execute(sql: String) {
     val conn = ds.borrowConnection()
-    val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY, java.sql.ResultSet.CONCUR_UPDATABLE)
+    val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
+      java.sql.ResultSet.CONCUR_UPDATABLE)
     try {
-      """;\s+""".r.split(sql.trim()).filterNot(_.isEmpty).foreach(q => conn.prepareStatement(q.trim()).executeUpdate)
+      """;\s+""".r.split(sql.trim()).filterNot(_.isEmpty).foreach(q => 
+        conn.prepareStatement(q.trim()).executeUpdate)
     } catch {
       // SQL cmd exception
       case exception : Throwable =>
@@ -58,19 +74,68 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   /* Issues a query */
   def issueQuery(sql: String)(op: (java.sql.ResultSet) => Unit) = {
     val conn = ds.borrowConnection()
-    conn.setAutoCommit(false);
-    val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
-      java.sql.ResultSet.CONCUR_READ_ONLY);
-    stmt.setFetchSize(5000);
-    val rs = stmt.executeQuery(sql)
-    while(rs.next()){
-      op(rs)
+    try {
+      conn.setAutoCommit(false);
+      val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
+        java.sql.ResultSet.CONCUR_READ_ONLY);
+      stmt.setFetchSize(5000);
+      val rs = stmt.executeQuery(sql)
+      while(rs.next()){
+        op(rs)
+      }
+    } catch {
+      // SQL cmd exception
+      case exception : Throwable =>
+      log.error(exception.toString)
+      log.info("[Error] Please check the SQL cmd!")
+      throw exception
+    } finally {
+      conn.close() 
     }
-    conn.close()
   }
 
 
   def selectAsMap(sql: String) : List[Map[String, Any]] = {
+    val conn = ds.borrowConnection()
+    conn.setAutoCommit(false)
+    try {
+      val stmt = conn.createStatement(
+        java.sql.ResultSet.TYPE_FORWARD_ONLY, java.sql.ResultSet.CONCUR_READ_ONLY)
+      stmt.setFetchSize(10000)
+      val rs = stmt.executeQuery(sql)
+      // No result return
+      if (!rs.isBeforeFirst) {
+        log.warning(s"query returned no results: ${sql}")
+        Iterator.empty.toSeq
+      } else {
+        val resultIter = new Iterator[Map[String, Any]] {
+          def hasNext = {
+            // TODO: This is expensive
+            !(rs.isLast)
+          }              
+          def next() = {
+            rs.next()
+            val metadata = rs.getMetaData()
+            (1 to metadata.getColumnCount()).map { i => 
+              val label = metadata.getColumnLabel(i)
+              val data = unwrapSQLType(rs.getObject(i))
+              (label, data)
+            }.filter(_._2 != null).toMap
+          }
+        }
+        resultIter.toSeq
+      }
+    } catch {
+      // SQL cmd exception
+      case exception : Throwable =>
+        log.error(exception.toString)
+        log.info("[Error] Please check the SQL cmd!")
+        throw exception
+    } finally {
+      conn.close()
+    }
+
+
     ds.DB.readOnly { implicit session =>
       SQL(sql).map(_.toMap).list.apply()
     }
