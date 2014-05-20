@@ -1,11 +1,41 @@
 
 import sys
 import collections
+import itertools
 
-Word = collections.namedtuple('Word', ['begin_char_offset', 'end_char_offset', 'word', 'lemma', 'dep_par', 'dep_label'])
+Word = collections.namedtuple('Word', ['begin_char_offset', 'end_char_offset', 'word', 'lemma', 'pos', 'ner', 'dep_par', 'dep_label'])
 Span = collections.namedtuple('Span', ['begin_word_id', 'length'])
 Sequence = collections.namedtuple('Sequence', ['is_inversed', 'elements'])
 DepEdge = collections.namedtuple('DepEdge', ['word1', 'word2', 'label', 'is_bottom_up'])
+
+def unpack_words(input_dict, character_offset_begin=None, character_offset_end=None, lemma=None, 
+	pos=None, ner = None, words = None, dep_graph = None, dep_graph_parser = lambda x: x.split('\t')):
+
+	array_character_offset_begin = input_dict[character_offset_begin] if character_offset_begin != None else ()
+	array_character_offset_end = input_dict[character_offset_end] if character_offset_end != None else ()
+	array_lemma = input_dict[lemma] if lemma != None else () 
+	array_pos = input_dict[pos] if pos != None else ()	
+	array_ner = input_dict[ner] if ner != None else ()
+	array_words = input_dict[words] if words != None else ()
+	dep_graph = input_dict[dep_graph] if dep_graph != None else ()
+
+	dep_tree = {}
+	for path in dep_graph:
+		(parent, label, child) = dep_graph_parser(path)
+		parent, child = int(parent), int(child)
+		dep_tree[child] = {"parent":parent, "label":label}
+		if parent not in dep_tree: dep_tree[parent] = {"parent":-1, "label":"ROOT"}
+
+	ziped_tags = map(None, array_character_offset_begin, array_character_offset_end, array_lemma, 
+		array_pos, array_ner, array_words)
+	wordobjs = []
+	for i in range(0,len(ziped_tags)):
+		if i not in dep_tree : dep_tree[i] = {"parent":-1, "label":"ROOT"}
+		wordobjs.append(Word(begin_char_offset=ziped_tags[i][0], 
+			end_char_offset=ziped_tags[i][1], lemma=ziped_tags[i][2], word=ziped_tags[i][3], pos=ziped_tags[i][4], 
+			ner=ziped_tags[i][5], dep_par=dep_tree[i]["parent"], dep_label=dep_tree[i]["label"]))
+	return wordobjs
+
 
 def log(obj):
 	"""Print the string form of an object to STDERR.
@@ -76,8 +106,8 @@ def dep_path_between_words(words, begin_idx, end_idx):
 	path_to_root1 = _path_to_root(words, begin_idx)
 	path_to_root2 = _path_to_root(words, end_idx)
 	common = set(path_to_root1) & set(path_to_root2)
-	if len(common) == 0:
-		raise Exception('Dep Path Must be Wrong: No Common Element Between Word %d & %d.' % (begin_idx, end_idx))
+	#if len(common) == 0:
+	#	raise Exception('Dep Path Must be Wrong: No Common Element Between Word %d & %d.' % (begin_idx, end_idx))
 	path = []
 	for word in path_to_root1:
 		if word in common: break
