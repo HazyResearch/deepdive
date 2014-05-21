@@ -10,12 +10,12 @@ Extractors are powerful platforms provided by DeepDive for streamline feature ex
 
 DeepDive support five kinds of extractors: 
 
-- Parallel extractors:
+- Row-wise extractors:
   - [`json_extractor`](#json_extractor): for flexibility and compatibility to previous systems
   - [`tsv_extractor`](#tsv_extractor): moderate flexibility and performance
   - [`plpy_extractor`](#plpy_extractor): parallel database-built-in extractors with restricted flexibility
 
-- Single-threaded extractors:
+- Procedural extractors:
   - [`sql_extractor`](#sql_extractor): a SQL command
   - [`cmd_extractor`](#cmd_extractor): an arbitrary shell command
 

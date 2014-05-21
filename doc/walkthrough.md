@@ -16,7 +16,7 @@ a Paleobiology knowledge base to understand when and where did dinosaurs live,
 or a knowledge base of people's relationships such as spouse, parents or sibling.
 
 As a concrete example, one may build an application to extract `has_spouse` relations from sentences in the Web. 
-Figure 1 below shows such an application, where input is sentences like "U.S President Barack Obama's wife Michelle Obama ...", and DeepDive would generate a tuple in `has_spouse` table between "Barack Obama" and "Michelle Obama" with a high probability, based on learning and inference.
+Figure 1 below shows such an application, where input is sentences like "U.S President Barack Obama's wife Michelle Obama ...", and DeepDive would generate a tuple in `has_spouse` table between "Barack Obama" and "Michelle Obama" with a high probability, based on [probabilistic inference](general/inference.html).
 
 <!-- ![Data flow]({{site.baseurl}}/images/walkthrough/example_hasspouse.png) -->
 <p style="text-align: center;"><img src="{{site.baseurl}}/images/walkthrough/example_hasspouse.png" alt="Data flow" style="width: 50%; text-align: center;"/>
@@ -36,11 +36,11 @@ To understand the KBC data model we use in DeepDive, we first define some terms:
 
 - An **entity** is an object in the real world, such as a person, an animal, a time period, a location, etc. For example, the person "Barack Obama" is an entity.
 
-- **Entity-level data** are relational data over the domain of conceptual entities (as opposed to language-dependent mentions), such as relations in a knowledge base.
+- **Entity-level data** are relational data over the domain of conceptual entities (as opposed to language-dependent mentions), such as relations in a knowledge base, e.g. ["Barack Obama" in Freebase](http://www.freebase.com/m/02mjmr).
 
 - A **mention** is a reference to an entity, such as the word "Barack" in the sentence "Barack and Michelle are married". 
 
-- **Mention-level data** are textual data with mentions of entities, such as sentences in web articles.
+- **Mention-level data** are textual data with mentions of entities, such as sentences in web articles, e.g. sentences in New York Times articles.
 
 - **Entity linking** is the process to find out which entity is a mention referring to. For example, "Barack", "Obama" or "the president" may refer to the same entity "Barack Obama", and entity linking is the process to figure this out.
 
@@ -59,6 +59,12 @@ Above data model is demonstrated in Figure 2 below.
   <strong>Figure 2: Data Model for KBC</strong>
 </p>
 
+<!-- Note that this data model is what we
+use in this example walkthrough, but it isn't the only data model that
+that can be used for KBC. For example, traditional distant supervision
+doesn't necessarily model mention-level relations in that way (which I
+think is called at-least-once semantics).
+ -->
 
 ### Data Flow
 
@@ -74,8 +80,8 @@ Data will go through the following steps:
 
 1. data preprocessing
 2. feature extraction
-3. grounding (factor graph generation by declarative language)
-4. machine learning and statistical inference
+3. factor graph generation by declarative language
+4. statistical inference and learning
 5. get and check results
 
 Specifically:
@@ -84,9 +90,11 @@ Specifically:
 
 2. In **feature extraction** step, DeepDive converts input data into relation signals called **evidence**, by running [extractors](extractors.html) written by developers. Evidence includes: (1) candidates for (mention-level or entity-level) relations; (2) (linguistic) features for these candidates.
 
-3. **Grounding** is a process that DeepDive feeds evidence to generate a [factor graph](general/inference.html). To tell DeepDive how to generate this factor graph, developers use a SQL-like declarative language to specify *inference rules*, similar to [Markov logic](http://en.wikipedia.org/wiki/Markov_logic_network). In inference rules, one can write first-order logic rules with weights (that intuitively model our confidence in a rule).
+3. In the next step, DeepDive feeds evidence to **generate a [factor graph](general/inference.html)**. To tell DeepDive how to generate this factor graph, developers use a SQL-like declarative language to specify *inference rules*, similar to [Markov logic](http://en.wikipedia.org/wiki/Markov_logic_network). In inference rules, one can write first-order logic rules with **weights** (that intuitively model our confidence in a rule).
 
-4. In the next step, DeepDive automatically performs **machine learning and statistical inference** on the grounded factor graph. In learning, the values of weights specified in inference rules are calculated. In [inference](general/inference.html), marginal probabilities of variables are computed.
+4. In the next step, DeepDive automatically performs **statistical inference and learning** on the generated factor graph. In learning, the values of weights specified in inference rules are calculated. In [inference](general/inference.html), marginal probabilities of variables are computed.
+
+<!-- TODO explain marginal probability, etc -->
 
 5. After inference, the results are stored in a set of database tables. Developer can **get results** via a SQL query, **check results** with a [calibration plot](general/calibration.html), and perform **error analysis** to improve results.
 
@@ -97,18 +105,22 @@ As an example of this data flow, Figure 3 demonstrates how a sentence "U.S Presi
   <strong>Figure 3: Data Model for KBC</strong>
 </p>
 
-1. During data preprocessing, the sentence is parsed into words, POS tags and named entity tags; 
-2. during feature extraction, mentions of person and location, candidate relations of `has_spouse`, and features of candidate relations (including words between mentions) are extracted. 
-3. in grounding, DeepDive use rules written by developers (in a SQL-like language) to build a factor graph, and 
-4. DeepDive will perform learning and inference, finally developers can 
-5. check results in a database table via SQL queries.
+In the example above:
+
+1. During data preprocessing, the sentence is processed into words, POS tags and named entity tags; 
+2. During feature extraction, DeepDive extracts (1) mentions of person and location, (2) candidate relations of `has_spouse`, and (3) `feature` of candidate relations (such as words between mentions).
+3. In factor graph generation, DeepDive use rules written by developers (like `inference_rule_1` above) to build a factor graph. 
+4. DeepDive will perform learning and inference.
+5. Check results in a database table via SQL queries.
 
 ## A Simple Mention-Level Extraction System
 
 To get started, let's build a system to extract **mention-level relations** first. 
 
-See [how to build a simple mention-level extraction system](walkthrough-mention.html).
+**See [how to build a simple mention-level extraction system](walkthrough-mention.html).**
+
+<a id="entity_level" href="#"></a>
 
 ## Simple Entity Level Extensions
 
-We haven't finished this part yet. Stay tuned!
+Sorry, but we haven't finished this part yet. Stay tuned!
