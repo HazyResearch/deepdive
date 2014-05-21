@@ -7,7 +7,7 @@ export APP_HOME=`cd $(dirname $0)/; pwd`
 export DEEPDIVE_HOME=`cd $(dirname $0)/../../../; pwd`
 
 # Initialize database
-bash $APP_HOME/../setup_database.sh $DBNAME
+# bash $APP_HOME/../setup_database.sh $DBNAME
 
 cd $DEEPDIVE_HOME
 
