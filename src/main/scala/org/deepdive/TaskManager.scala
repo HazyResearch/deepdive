@@ -94,6 +94,16 @@ class TaskManager extends Actor with ActorLogging {
       }
       import scala.sys.process
       import scala.sys.process._
+      import java.lang.management
+      import sun.management.VMManagement;
+      import java.lang.management.ManagementFactory;
+      import java.lang.management.RuntimeMXBean;
+      import java.lang.reflect.Field;
+      import java.lang.reflect.Method;
+      var pid = ManagementFactory.getRuntimeMXBean().getName().toString
+      val pattern = """\d+""".r
+      pattern.findAllIn(pid).foreach(id => (s"kill -9 ${id}").!!)
+
       self ! Shutdown
       scheduleTasks()
 

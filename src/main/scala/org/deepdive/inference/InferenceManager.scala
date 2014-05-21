@@ -133,18 +133,11 @@ object InferenceManager {
       Props(classOf[FactorGraphBuilder.PostgresFactorGraphBuilder], variableSchema)
   }
 
-  // class HSQLInferenceManager(val taskManager: ActorRef, val variableSchema: Map[String, _ <: VariableDataType]) 
-  //   extends InferenceManager with HSQLInferenceDataStoreComponent {
-  //   def factorGraphBuilderProps = 
-  //     Props(classOf[FactorGraphBuilder.HSQLFactorGraphBuilder], variableSchema)
-  // }
-
   // TODO: Refactor this to take the data store type as an argument
   def props(taskManager: ActorRef, variableSchema: Map[String, _ <: VariableDataType],
     dbSettings: DbSettings) = {
     dbSettings.driver match {
        case "org.postgresql.Driver" => Props(classOf[PostgresInferenceManager], taskManager, variableSchema, dbSettings)
-       // case "org.hsqldb.jdbc.JDBCDriver" => Props(classOf[HSQLInferenceManager], taskManager, variableSchema)
     }
   }
     

@@ -6,4 +6,3 @@ Tested with Travis CI.
 [![Build Status](https://travis-ci.org/HazyResearch/deepdive.svg?branch=master)](https://travis-ci.org/HazyResearch/deepdive)
 
 ### [Visit The DeepDive Website](http://deepdive.stanford.edu)
-
