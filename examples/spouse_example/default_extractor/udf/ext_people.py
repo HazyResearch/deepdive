@@ -1,4 +1,12 @@
 #! /usr/bin/env python
+# File: udf/ext_people.py
+
+# Sample input data (piped into STDIN):
+'''
+{"sentence_id":46494,"words":["Other","than","the","president",",","who","gets","this","honor","?"],"ner_tags":["O","O","O","O","O","O","O","O","O","O"]}
+{"sentence_id":46495,"words":["When","and","how","did","it","start","?"],"ner_tags":["O","O","O","O","O","O","O"]}
+{"sentence_id":45953,"words":[",","''","an","uncredited","Burton","turned","up","in","a","crowded","bar","scene","."],"ner_tags":["O","O","O","O","PERSON","O","O","O","O","O","O","O","O"]}
+'''
 
 import json, sys
 

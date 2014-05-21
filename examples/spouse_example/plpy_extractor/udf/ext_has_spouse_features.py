@@ -33,6 +33,10 @@ def run(words, ner_tags, lemma, relation_id, p1_start, p1_length, p2_start, p2_l
 
   # Features for this pair come in here
   features = set()
+
+  ######################## 
+  # Improved Feature Set #
+  ########################
   
   # Feature 1: Find out if a lemma of marry occurs.
   # A better feature would ensure this is on the dependency path between the two.
@@ -48,24 +52,13 @@ def run(words, ner_tags, lemma, relation_id, p1_start, p1_length, p2_start, p2_l
         features.add("important_word=%s" % mw)
 
 
-  # # Feature 1: Words between the two phrases
+  # # Feature 1: Bag of words between the two phrases
   # left_idx = min(p1_end, p2_end)
   # right_idx = max(p1_start, p2_start)
   # words_between = words[left_idx:right_idx]
   # if words_between:
   #   for word in words_between:
   #     features.add("word_between=" + word)
-
-
-  # # Feature 4 the verb between them
-  # left_idx  = min(p1_end, p2_end)
-  # right_idx = max(p1_start, p2_start)
-  # verbs_between = filter(lambda v : v[0] == "V", pos_tags[left_idx:right_idx])
-  # if verbs_between: 
-  #   features.add("verbs_between=" + "-".join(words_between))
-  #   # for verb in verbs_between:
-  #   #   features.add("verb_between=" + verb)
-
 
   # Feature 2: Number of words between the two phrases
   # Intuition: if they are close by, the link may be stronger.
