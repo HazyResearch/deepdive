@@ -25,7 +25,6 @@ object DeepDive extends Logging {
 
     // Load Settings
     val settings = Settings.loadFromConfig(config)
-
     // If relearn_from specified, set output dir to that dir and skip everything
     val relearnFrom = settings.pipelineSettings.relearnFrom
 
@@ -43,7 +42,13 @@ object DeepDive extends Logging {
 
     // val dbDriver = config.getString("deepdive.db.default.driver")
     val dbSettings = settings.dbSettings
-    
+    dbSettings.dbname match {
+      case "" =>
+        log.error(s"parsing dbname failed")
+        Context.shutdown()
+      case _ =>
+    }
+
     // Setup the data store
     JdbcDataStore.init(config)
     settings.schemaSettings.setupFile.foreach { file =>

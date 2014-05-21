@@ -21,10 +21,6 @@ object FactorGraphBuilder {
     extends FactorGraphBuilder with PostgresExtractionDataStoreComponent 
     with PostgresInferenceDataStoreComponent
 
-  // class HSQLFactorGraphBuilder(val variableSchema: Map[String, String]) 
-  //   extends FactorGraphBuilder with HSQLExtractionDataStoreComponent 
-  //   with HSQLInferenceDataStoreComponent
-
   // Messages
   sealed trait Message
   case class AddFactorsAndVariables(factorDesc: FactorDesc, holdoutFraction: Double, 
