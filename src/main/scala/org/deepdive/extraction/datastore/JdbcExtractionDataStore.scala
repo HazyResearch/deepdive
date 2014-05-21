@@ -21,7 +21,7 @@ trait JdbcExtractionDataStore extends ExtractionDataStore[JsObject] with Logging
           java.sql.ResultSet.TYPE_FORWARD_ONLY, java.sql.ResultSet.CONCUR_READ_ONLY)
         stmt.setFetchSize(10000)
         try {
-          stmt.executeUpdate("ANALYZE");
+          // stmt.executeUpdate("ANALYZE");
           log.debug(query)
           val expQuery = "EXPLAIN " + query
           val ex = stmt.executeQuery(expQuery)
@@ -57,7 +57,6 @@ trait JdbcExtractionDataStore extends ExtractionDataStore[JsObject] with Logging
           // SQL cmd exception
           case exception : Throwable =>
             log.error(exception.toString)
-            log.info("[Error] Please check the SQL cmd!")
             throw exception
         }
       }
