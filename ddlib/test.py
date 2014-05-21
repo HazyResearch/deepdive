@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 import unittest
-import lib.dd as dd
+import ddlib as dd
 
 class TestDDLib(unittest.TestCase):
   

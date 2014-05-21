@@ -1,4 +1,3 @@
-
 import sys
 import collections
 import itertools
@@ -119,21 +118,4 @@ def dep_path_between_words(words, begin_idx, end_idx):
 	for e in reversed(path_right):
 		path.append(e)
 	return path
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
