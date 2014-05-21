@@ -1,6 +1,5 @@
 import sys
 import collections
-import itertools
 
 Word = collections.namedtuple('Word', ['begin_char_offset', 'end_char_offset', 'word', 'lemma', 'pos', 'ner', 'dep_par', 'dep_label'])
 Span = collections.namedtuple('Span', ['begin_word_id', 'length'])
