@@ -2,7 +2,7 @@
 layout: default
 ---
 
-# Extras for Example Application
+# Example Application: Extras
 
 This page is the extra section for [Example Application: A Mention-Level Extraction System](walkthrough-mention.html). It includes following contents:
 

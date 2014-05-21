@@ -2,7 +2,7 @@
 layout: default
 ---
 
-# Improving the Results
+# Example Application: Improving the Results
 
 This page is the next section after [Example Application: A Mention-Level Extraction System](walkthrough-mention.html).
 
@@ -15,7 +15,6 @@ This page is the next section after [Example Application: A Mention-Level Extrac
 - [Use strong indicators rather than bag of words](#strong_words)
 - [Add a domain-specific (symmetry) rule](#symmetry)
 - [Tune sampler parameter](#tune_sampler)
-- [Using dependency path](#dependency)
 - [Getting improved results](#improved_results)
 
 Other sections:
@@ -116,7 +115,7 @@ We notice that feature `num_words_between` suffers from sparsity issues and woul
 {% highlight python %}
 # Feature 2: Number of words between the two phrases
 # Intuition: if they are close by, the link may be stronger.
-l = len(words_between)
+l = len(words_between.elements)
 if l < 5: features.add("few_words_between")
 else: features.add("many_words_between")
 {% endhighlight %}
@@ -146,14 +145,14 @@ Then modify `ext_has_spouse_features.py` by changing *Feature 1* (bag of words) 
 {% highlight python %}
 # Feature 1: Find out if a lemma of marry occurs.
 # A better feature would ensure this is on the dependency path between the two.
+words_between = ddlib.tokens_between_spans(words, span1, span2)
 lemma_between = ddlib.tokens_between_spans(obj["lemma"], span1, span2)
-words_between = words[left_idx:right_idx]
 married_words = ['marry', 'widow', 'wife', 'fiancee', 'spouse']
 non_married_words = ['father', 'mother', 'brother', 'sister', 'son']
 # Make sure the distance between mention pairs is not too long
-if len(words_between) <= 10:        
+if len(words_between) <= 10:         
   for mw in married_words + non_married_words:
-    if mw in lemma_between: 
+    if mw in lemma_between.elements: 
       features.add("important_word=%s" % mw)
 {% endhighlight %}
 
@@ -230,48 +229,79 @@ After adding above modifications to extractors and inference rules, let's rerun 
 psql -d deepdive_spouse -c "
   SELECT s.sentence_id, description, is_true, expectation, s.sentence
   FROM has_spouse_is_true_inference hsi, sentences s
-  WHERE s.sentence_id = hsi.sentence_id and expectation > 0.9
+  WHERE s.sentence_id = hsi.sentence_id and expectation > 0.95
   ORDER BY random() LIMIT 10;
 "
 {% endhighlight %}
 
 Results looks like:
 
-     sentence_id |           description            | is_true | expectation |  sentence
-    -------------+----------------------------------+---------+-------------+---------------------------
-           79231 | Biden-Jill                       |         |       0.995 | Biden 's wife , Jill , had come on stage to hug her husband and tell him about a `` very special surprise guest . ''
-           68539 | Su Hua-Newton                    |         |       0.994 | In 1977 , Newton and his wife , Su Hua , founded Newton Vineyard in St. Helena .
-           67114 | John McCain-Cindy McCain         | t       |       0.998 | GOP front-runner John McCain 's wife , Cindy McCain -- who has been the focus of fashionistas ' public commentary for her carefully coifed hair and perfect makeup -- made news by noting that she is , indeed , `` proud of my country . ''
-           61883 | Apatow-Paul Rudd                 |         |       0.982 | She lives with her sister -LRB- Apatow 's real-life wife , Leslie Mann -RRB- and brother-in-law -LRB- Paul Rudd -RRB- and kids -LRB- Apatow 's real-life kids -RRB- , in a bickering but basically happy fog of suburbia .
-           62721 | Samantha Morton-Deborah          |         |       0.996 | The domestic scenes are less impressive , with Samantha Morton typically bedraggled as wife Deborah , and Alexandra Maria Lara unable to flesh out the underwritten part of girlfriend Annik .
-           72676 | Cindy-McCain                     |         |       0.992 | McCain 's wife , Cindy , an heiress to a beer distributorship fortune , is believed to be worth tens of millions of dollars , but the exact amount is unclear .
-           46783 | Rostropovich-Galina Vishnevskaya |         |       0.993 | Rostropovich and his wife , Galina Vishnevskaya , provided shelter at their country home to Solzhenitsyn and his family shortly before the writer was expelled from the Soviet Union in 1974 .
-           75847 | CINDY MCCAIN-Cindy               |         |       0.983 | The New York Times said in editorials for Monday , May 19 : CINDY MCCAIN 'S MONEY Sen. John McCain 's wife , Cindy , has decided not to release her tax returns -- not now and not in the future .
-           72416 | Yasser Arafat-Suha Arafat        | t       |       0.943 | She attended an event in Ramallah on the West Bank at which the wife of Yasser Arafat , Suha Arafat , accused Israel of poisoning Palestinian women and children with toxic gases .
-           66817 | John Edwards-Elizabeth           |         |       0.993 | John Edwards 's wife , Elizabeth , and Barack Obama 's wife , Michelle , have been stalwarts on the trail .
+     sentence_id |        description        | is_true | expectation | sentence
+    -------------+---------------------------+---------+-------------+------------------------------------
+           40575 | St. Vincent-Carole Rome   |         |       0.985 | Gov. Charlie Crist made an appearance at St. Vincent with his fiancee , Carole Rome , and handed out plates stacked with turkey , potatoes and stuffing .
+           21353 | Judd Apatow-Leslie Mann   | t       |       0.958 | TRUE LOVE , FAMILY VALUES ALIVE IN ` KNOCKED UP ' IN -LCB- LSQUO -RCB- KNOCKED UP , ' FAMILY VALUES GET A TWIST MISMATCHPRODUCESLAUGHS AND LOVE SURPRISEFAMILY LOVE Knocked Up Written and directed by : Judd Apatow Starring : Seth Rogen , Katherine He
+    igl , Paul Rudd , Leslie Mann Running time : 129 minutes Rated : R -LRB- Sexual content , drug use , language -RRB- `` The 40-Year-Old Virgin '' and his new `` Knocked Up '' make writer - director Judd Apatow today 's preeminent creator of low-concept sex comedies .
+           18008 | Diane Lane-Josh Brolin    | t       |       0.968 | And does anyone know why Josh Brolin and Diane Lane went separate ways as soon as they entered the Chateau foyer ?
+           23391 | Sally-Salino              |         |       0.995 | The breakup left both parents unable to properly care for the boys , ages 2 1/2 and 1 , and the specter of having the children placed in foster care prompted the Salino and his wife , Sally , to move the boys into their house .
+            4416 | Codey-Corzine             |         |       0.991 | Codey said he and his wife hoped to visit Corzine by Thursday , depending on his progress .
+           28418 | Tommy Lee-Pamela Anderson | t       |       0.957 | Rock solid Kid says he 's still standing tall despite all the drama in his life By Adam Graham Detroit News Pop Music Writer Fistfights with Tommy Lee , multiple marriages to -LRB- and a subsequent divorce from -RRB- Pamela Anderson : They say no pr
+    ess is bad press , and Kid Rock is hoping the exposure pays off when his new album , `` Rock N Roll Jesus , '' is released Tuesday .
+           25097 | Ben-Anne Meara            |         |       0.994 | In addition to son Ben , Jerry Stiller has had his real-life wife Anne Meara on the show frequently .
+           23196 | Ashton Kutcher-Demi Moore | t       |       0.974 | `` It 's not quite Demi Moore and Bruce Willis going on vacation with Ashton Kutcher , '' she said , `` but that 's an ideal , is n't it ? ''
+           21447 | Michelle-Wright           |         |       0.996 | And so , with those remarks , a tightly knit relationship finally unraveled -- Wright had married Obama and his wife , Michelle , and baptized their children .
+           20401 | Goold-Lady Macbeth        |         |       0.978 | He even had notes for Macbeth , played by Patrick Stewart , and for Lady Macbeth , Kate Fleetwood , who happens to be married to Goold .
     (10 rows)
 
-And the feature weights look like:
+Let's look at the calibration plot:
 
-                     description                  |       weight
-    ----------------------------------------------+--------------------
-     f_has_spouse_features-important_word=marry   |    2.7278060779874
-     f_has_spouse_features-important_word=wife    |   2.30546918096395
-     f_has_spouse_features-important_word=fiancee |   1.93391840800263
-     f_has_spouse_features-important_word=widow   |   1.58736658337015
-     f_has_spouse_symmetry-                       |   1.10917376733438
-     f_has_spouse_features-important_word=spouse  |  0.663277095834514
-     f_has_spouse_features-few_words_between      |  0.440539900127551
-     f_has_spouse_features-many_words_between     | -0.154142245562194
-     f_has_spouse_features-last_word_matches      | -0.202544977430098
-     f_has_spouse_features-important_word=mother  | -0.371781328596943
-     f_has_spouse_features-other_person_between   | -0.496146339718239
-     f_has_spouse_features-important_word=sister  | -0.642663000298456
-     f_has_spouse_features-important_word=brother | -0.735863925859598
-     f_has_spouse_features-important_word=father  |  -2.22903288408165
-    (14 rows)
+![Calibration]({{site.baseurl}}/assets/walkthrough_has_spouse_is_true_improved.png)
 
-We can see that the results have been improved quite a bit, though there might still be some errors. To make further improvements, we can conduct more error analysis, and make use of better features such as dependency paths. Moreover, performing entity linking and [looking for entity-level relations](walkthrough.html#entity_level) is necessary for a better KBC application.
+Let's examine the learned weights again. Type in following command to select features with highest weight:
+
+
+{% highlight bash %}
+psql -d deepdive_spouse -c "
+  SELECT description, weight
+  FROM dd_inference_result_variables_mapped_weights
+  ORDER BY weight DESC
+  LIMIT 5;
+"
+{% endhighlight %}
+
+                    description                 |      weight
+    --------------------------------------------+------------------
+     f_has_spouse_features-important_word=widow | 2.07552405288369
+     f_has_spouse_features-important_word=wife  | 2.02799834116762
+     f_has_spouse_features-important_word=marry |  1.4300430882985
+     f_has_spouse_features-few_words_between    | 1.20873177437353
+     f_has_spouse_symmetry-                     | 1.08043386981184
+    (5 rows)
+
+Type in following command to select top negative features:
+
+{% highlight bash %}
+psql -d deepdive_spouse -c "
+  SELECT description, weight
+  FROM dd_inference_result_variables_mapped_weights
+  ORDER BY weight ASC
+  LIMIT 5;
+"
+{% endhighlight %}
+
+                       description                   |       weight
+    -------------------------------------------------+--------------------
+     f_has_spouse_features-important_word=son        |  -2.59031900689398
+     f_has_spouse_features-important_word=father     |  -2.14158159298961
+     f_has_spouse_features-potential_last_name_match |  -1.71109060211146
+     f_has_spouse_features-important_word=brother    | -0.552613937997688
+     f_has_spouse_features-important_word=mother     | -0.364695428177156
+    (5 rows)
+
+We can see that the results have been improved quite a bit, but there are still some errors. 
+
+From the calibration plot we can tell that there are not enough features, especially negative features. We can continue "snowball sampling" on bag of words to obtain more negative features, or use better features such as dependency paths. We can also add more negative examples by distant supervision, or adding other domain-specific rules. To make further improvements, it is important to conduct error analysis.
+
+Moreover, performing entity linking and [looking for entity-level relations](walkthrough.html#entity_level) is necessary for a better KBC application.
 
 Now if you want, you can look at the [Extras page](walkthrough-extras.html) which explained how to prepare data tables, use pipelines, use NLP extractors, or get example extractor inputs.
 
