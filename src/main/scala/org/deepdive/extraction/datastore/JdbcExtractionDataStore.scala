@@ -110,6 +110,7 @@ trait JdbcExtractionDataStore extends ExtractionDataStore[JsObject] with Logging
       case x : Int => JsNumber(x)
       case x : Long => JsNumber(x)
       case x : Double => JsNumber(x)
+      case x : Float => JsNumber(x)
       case x : java.sql.Date => JsString(x.toString)
       case x : Array[_] => JsArray(x.toList.map(x => anyValToJson(x)))
       case x : List[_] => JsArray(x.toList.map(x => anyValToJson(x)))
