@@ -8,7 +8,7 @@ This page is the next section after [Example Application: A Mention-Level Extrac
 
 <a id="improve" href="#"> </a>
 
-## Contents
+### Contents
 
 - [Reduce sparsity](#sparsity)
 - [Use strong indicators rather than bag of words](#strong_words)

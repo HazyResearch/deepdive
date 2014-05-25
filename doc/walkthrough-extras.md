@@ -4,7 +4,9 @@ layout: default
 
 # Example Application: Extras
 
-This page is the extra section for [Example Application: A Mention-Level Extraction System](walkthrough-mention.html). It includes following contents:
+This page is the extra section for [Example Application: A Mention-Level Extraction System](walkthrough-mention.html). 
+
+### Contents
 
 - [Preparing data tables for the example appliaction](#data_tables)
   - [Step-by-step preparation](#data_tables_steps)
@@ -17,7 +19,7 @@ Other sections:
 
 - [Walkthrough](walkthrough.html)
 - [A Mention-Level Extraction System](walkthrough-mention.html)
-- [How to examine / improve results](walkthrough-improve.html)
+- [Improving the results](walkthrough-improve.html)
 
 
 <a id="data_tables" href="#"> </a>

@@ -41,20 +41,17 @@ DeepDive (starting from step 1), you can refer to the appendix: [Data preprocess
 The full application is also available in the folder `DEEPDIVE_HOME/examples/spouse_example`, which contains all possible implementations in [different types of extractors](extractors.html). In this document, we only introduce the default extractor type (`json_extractor`), which correspond to `DEEPDIVE_HOME/examples/spouse_example/default_extractor` in your DeepDive directory.
 
 
-## Contents
+### Contents
 
 * [Preparation](#preparation):
-
   - [Installing DeepDive](#installing)  
   - [Creating a new DeepDive application](#newapp)
-
 * [Implement the data flow](#implement_dataflow):
-
   1. [Data preprocessing](#loading_data)
   2. [Feature extraction](#feature_extraction)
-    - [Adding a people extractor](#people_extractor)
-    - [Extracting candidate relations](#candidate_relations)
-    - [Adding features for candidate relations](#candidate_relation_features)
+      - [Adding a people extractor](#people_extractor)
+      - [Extracting candidate relations](#candidate_relations)
+      - [Adding features for candidate relations](#candidate_relation_features)
   3. [Writing inference rules for factor graph generation](#inference_rules)
   4. [Statistical inference and learning](#learning_inference)
   5. [Get and check results](#get_result)

@@ -62,7 +62,7 @@ h1, h2, h3, h4, h5, h6 {
 #main h2 { 
   margin-top: 1.5em; 
   margin-bottom: 1em; 
-  font-weight: 300;
+  font-weight: 500;
   color: #333;
   padding: 10px 0px;
   background-color: #538EAA;
@@ -74,12 +74,11 @@ h1, h2, h3, h4, h5, h6 {
 
 #main h3 { 
   margin-top: 1.5em; 
-  font-weight: 300; 
   margin-bottom: 1em; 
   font-weight: 300;
-  color: #333;
+  /*color: #08608A;*/
   padding: 10px 0px;
-  /* border-bottom: 5px dotted #08608A; */
+  /*border-bottom: 3px dotted #08608A; */
   background-color: #5FA3C4;
   padding: 10px 15px;
   color: white;
@@ -88,17 +87,29 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 #main h4 { 
+  /*margin-top: 1.5em; 
+  margin-bottom: 1em; 
+  font-weight: 300;
+  color: #08608A;
+  padding: 10px 0px;
+  border-bottom: 2px dotted #08608A; 
+  background-color: #5FA3C4;
+  padding: 10px 15px;
+  color: white;
+  border-radius: 0.2em;*/
+
   margin-top: 1.5em; 
   font-weight: 300; 
   margin-bottom: 1em; 
-  font-weight: 300;
-  color: #333;
+  font-weight: 500;
+  color: #08608A;
   padding: 10px 0px;
-  /* border-bottom: 5px dotted #08608A; */
-  background-color: #74B7D1;
-  padding: 10px 15px;
-  color: white;
+  /*background-color: #8BB6CE;*/
+  /*padding: 10px 15px;*/
+  border-bottom: 1px dotted #08608A; 
+  /*color: white;*/
   border-radius: 0.2em;
+
 
 }
 
