@@ -16,7 +16,7 @@
   <root level="info">
     <appender-ref ref="STDOUT" />
   </root>
-  <root level="debug">
+  <root level="info">
     <appender-ref ref="FILE" />
   </root>
   <logger name="scalikejdbc" level="INFO" />
