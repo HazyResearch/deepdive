@@ -27,18 +27,19 @@ def init():
   
   # Input commands MUST HAVE CORRECT ORDER: 
   # SAME AS SELECT ORDER, and SAME AS "run" ARGUMENT ORDER
-  ddext.input('sentence_id', 'bigint')
-  ddext.input('p1_id', 'bigint')
+  ddext.input('sentence_id', 'text')
+  ddext.input('p1_id', 'text')
   ddext.input('p1_text', 'text')
-  ddext.input('p2_id', 'bigint')
+  ddext.input('p2_id', 'text')
   ddext.input('p2_text', 'text')
 
   # Returns commands MUST HAVE CORRECT ORDER
-  ddext.returns('person1_id', 'bigint')
-  ddext.returns('person2_id', 'bigint')
-  ddext.returns('sentence_id', 'bigint')
+  ddext.returns('person1_id', 'text')
+  ddext.returns('person2_id', 'text')
+  ddext.returns('sentence_id', 'text')
   ddext.returns('description', 'text')
   ddext.returns('is_true', 'boolean')
+  ddext.returns('relation_id', 'text')
 
 
 def run(sentence_id, p1_id, p1_text, p2_id, p2_text):
@@ -93,5 +94,5 @@ def run(sentence_id, p1_id, p1_text, p2_id, p2_text):
 
   # Must return a tuple of arrays.
 
-  yield [p1_id, p2_id, sentence_id, "%s-%s" % (p1_t, p2_t), is_true]
+  yield [p1_id, p2_id, sentence_id, "%s-%s" % (p1_t, p2_t), is_true, "%s_%s" % (p1_id, p2_id)]
   # return [[p1_id, p2_id, sentence_id, "%s-%s" % (p1_t, p2_t), is_true]]

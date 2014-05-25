@@ -30,8 +30,8 @@ for row in fileinput.input():
     print '\t'.join(
       [ str(x) for x in [
         sentence_id, 
-        phrase[0],
-        len(phrase), 
-        " ".join(words[phrase[0]:phrase[-1]+1]),
-        '\N',   # here's how to return a NULL
+        phrase[0],   # start_position
+        len(phrase), # length
+        " ".join(words[phrase[0]:phrase[-1]+1]),  # text
+        '%s_%d' % (sentence_id, phrase[0])        # mention_id
       ]])

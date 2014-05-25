@@ -3,8 +3,7 @@
 
 # Sample input data (piped into STDIN):
 '''
-{"p2.length":2,"p1.length":2,"words":["The","strange","case","of","the","death","of","'50s","TV","Superman","George","Reeves","is","deconstructed","in","``","Hollywoodland",",","''","starring","Adrien","Brody",",","Diane","Lane",",","Ben","Affleck","and","Bob","Hoskins","."],"relation_id":12190,"p1.start_position":20,"p2.start_position":10}
-{"p2.length":2,"p1.length":2,"words":["Political","coverage","has","not","been","the","same","since","The","National","Enquirer","published","photographs","of","Donna","Rice","in","the","former","Sen.","Gary","Hart","'s","lap","20","years","ago","."],"relation_id":34885,"p1.start_position":14,"p2.start_position":20}
+{"p2_length":2,"p1_length":2,"lemma":["Sen.","Barack","Obama","and","he","wife",",","Michelle","Obama",",","have","release","eight","year","of","joint","return","."],"words":["Sen.","Barack","Obama","and","his","wife",",","Michelle","Obama",",","have","released","eight","years","of","joint","returns","."],"relation_id":"118238@10_7_118238@10_1","p1_start_position":7,"p2_start_position":1}
 '''
 
 import sys, json
@@ -15,8 +14,8 @@ for row in sys.stdin:
   obj = json.loads(row)
   words = obj["words"]
   # Unpack input into tuples.
-  span1 = ddlib.Span(begin_word_id=obj['p1.start_position'], length=obj['p1.length'])
-  span2 = ddlib.Span(begin_word_id=obj['p2.start_position'], length=obj['p2.length'])
+  span1 = ddlib.Span(begin_word_id=obj['p1_start'], length=obj['p1_length'])
+  span2 = ddlib.Span(begin_word_id=obj['p2_start'], length=obj['p2_length'])
 
   # Features for this pair come in here
   features = set()
