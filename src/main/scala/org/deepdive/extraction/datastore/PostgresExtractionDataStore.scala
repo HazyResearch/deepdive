@@ -27,19 +27,19 @@ class PostgresExtractionDataStore extends ExtractionDataStore[JsObject] with Jdb
 
     def addBatch(result: Iterator[JsObject], outputRelation: String) : Unit = {
       val file = File.createTempFile(s"deepdive_$outputRelation", ".csv")
-      log.info(s"Writing data of to file=${file.getCanonicalPath}")
+      log.debug(s"Writing data of to file=${file.getCanonicalPath}")
       val writer = new PrintWriter(new BufferedWriter(new FileWriter(file, true)))
       // Write the dataset to the file for the relation
       writeCopyData(result, writer)
       writer.close()
       val columnNames = scalikejdbc.DB.getColumnNames(outputRelation).toSet
       val copySQL = buildCopySql(outputRelation, columnNames)
-      log.info(s"Copying batch data to postgres. sql='${copySQL}'" +
+      log.debug(s"Copying batch data to postgres. sql='${copySQL}'" +
         s"file='${file.getCanonicalPath}'")
       PostgresDataStore.withConnection { implicit connection =>
         Try(PostgresDataStore.copyBatchData(copySQL, file)) match {
           case Success(_) => 
-            log.info("Successfully copied batch data to postgres.") 
+            log.debug("Successfully copied batch data to postgres.") 
             file.delete()
           case Failure(ex) => 
             log.error(s"Error during copy: ${ex}")
