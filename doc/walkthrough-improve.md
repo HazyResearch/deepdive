@@ -52,10 +52,10 @@ ext_has_spouse_features {
     SELECT  sentences.words,
             lemma,                   # Add this line
             has_spouse.relation_id,
-            p1.start_position  AS  "p1.start_position",
-            p1.length          AS  "p1.length",
-            p2.start_position  AS  "p2.start_position",
-            p2.length          AS  "p2.length"
+            p1.start_position  AS  p1_start,
+            p1.length          AS  p1_length,
+            p2.start_position  AS  p2_start,
+            p2.length          AS  p2_length
             """
     # ...
   }
@@ -202,11 +202,11 @@ psql -d deepdive_spouse -c "
 
                      description                  |      weight
     ----------------------------------------------+------------------
-     f_has_spouse_features-important_word=wife    | 3.15606795129873
-     f_has_spouse_features-important_word=widow   |  2.5437455991906
-     f_has_spouse_features-important_word=marry   | 1.94056303781197
-     f_has_spouse_features-few_words_between      | 1.62204261123308
-     f_has_spouse_features-important_word=fiancee | 1.53406825466027
+     f_has_spouse_features-important_word=wife    | 3.12437525600187
+     f_has_spouse_features-important_word=widow   | 2.45652823047255
+     f_has_spouse_features-important_word=marry   | 1.85742049055667
+     f_has_spouse_features-few_words_between      |  1.6015835203787
+     f_has_spouse_features-important_word=fiancee |  1.0439453467637
     (5 rows)
 
 Type in following command to select top negative features:
@@ -222,11 +222,11 @@ psql -d deepdive_spouse -c "
 
                        description                   |       weight
     -------------------------------------------------+--------------------
-     f_has_spouse_features-important_word=son        |  -3.59259198110491
-     f_has_spouse_features-important_word=father     |  -3.48791602624587
-     f_has_spouse_features-important_word=brother    |  -2.35151767597167
-     f_has_spouse_features-potential_last_name_match |  -2.31560107817806
-     f_has_spouse_features-important_word=sister     | -0.845486090679023
+     f_has_spouse_features-important_word=son        |  -2.83397621968201
+     f_has_spouse_features-important_word=father     |  -2.76048309192415
+     f_has_spouse_features-potential_last_name_match |  -2.34700944702606
+     f_has_spouse_features-important_word=brother    |  -2.23063906981248
+     f_has_spouse_features-important_word=sister     | -0.523695847147546
     (5 rows)
 
 We can see that the results have been improved quite a bit, but there are still some errors. 
