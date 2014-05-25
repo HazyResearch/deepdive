@@ -2,7 +2,7 @@ source:      .
 safe:        true
 baseurl:     http://deepdive.stanford.edu
 # TODO let's consider using redcarpet, as it seems to be the most similar to GitHub-flavored Markdown
-#markdown:    redcarpet
+markdown:    redcarpet
 exclude:
   - deploy.sh
   - host.sh
