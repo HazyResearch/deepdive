@@ -10,7 +10,6 @@ This page is the next section after [Example Application: A Mention-Level Extrac
 
 ## Contents
 
-- [How to examine Results](#examine)
 - [Reduce sparsity](#sparsity)
 - [Use strong indicators rather than bag of words](#strong_words)
 - [Add a domain-specific (symmetry) rule](#symmetry)
@@ -24,93 +23,11 @@ Other sections:
 - [Extras: preprocessing, NLP, pipelines, debugging extractor](walkthrough-extras.html)
 
 
-<a id="examine" href="#"> </a>
-
-### How to Examine Results
-
-We first talk about several common methods in DeepDive to examine results. DeepDive generates [calibration plots](general/calibration.html) for all variables defined in the schema to help with debugging. Let's take a look at the generated calibration plot, written to the file outputted in the summary report above. It should look something like this:
-
-![Calibration]({{site.baseurl}}/assets/walkthrough_has_spouse_is_true.png)
-
-The calibration plot contains useful information that help you to improve the quality of your predictions. For actionable advice about interpreting calibration plots, refer to the [calibration guide](general/calibration.html). 
-
-Often, it is also useful to look at the *weights* that were learned for features or rules. You can do this by looking at the `mapped_inference_results_weights` table in the database. Type in following command to select features with highest weight (positive features):
-
-{% highlight bash %}
-psql -d deepdive_spouse -c "
-  SELECT description, weight
-  FROM dd_inference_result_variables_mapped_weights
-  ORDER BY weight DESC
-  LIMIT 5;
-"
-{% endhighlight %}
-
-                    description                 |      weight
-    --------------------------------------------+------------------
-     f_has_spouse_features-word_between=widower | 4.67905738706231
-     f_has_spouse_features-word_between=D-N.Y.  | 3.83342838871529
-     f_has_spouse_features-word_between=wife    | 3.16971392862251
-     f_has_spouse_features-word_between=going   | 2.93433356931802
-     f_has_spouse_features-word_between=spouse  | 2.89820086224187
-    (5 rows)
-
-Type in following command to select top negative features:
-
-{% highlight bash %}
-psql -d deepdive_spouse -c "
-  SELECT description, weight
-  FROM dd_inference_result_variables_mapped_weights
-  ORDER BY weight ASC
-  LIMIT 5;
-"
-{% endhighlight %}
-
-                      description                  |      weight
-    -----------------------------------------------+-------------------
-     f_has_spouse_features-word_between=son        | -3.71654440726897
-     f_has_spouse_features-word_between=Mann       | -3.29400179392337
-     f_has_spouse_features-word_between=addressing | -3.16472057957028
-     f_has_spouse_features-word_between=campaigned | -2.84878387581674
-     f_has_spouse_features-word_between=were       | -2.59003087248654
-    (5 rows)
-
-
-Note that each execution may learn different weights, and these lists can look different. Generally, we might see that most weights make sense while some don't.
-
-<!-- You can further improve the prediction by different ways. There are many possible strategies including:
-
-- Making use of co-reference information
-- Performing entity linking instead of extraction relations among mentions in the text
-- Adding more inference rules that encode your domain knowledge
-- Adding more (or better) positive or negative training examples
-- Adding more (or better) features
-
-For the second point: our goal in this tutorial is get an initial
-application up and running. There are a couple of problems with the
-approach above which are worth drawing attention to: If two separate
-sentences mention the fact that Barack Obama and Michelle Obama are in a
-`has_spouse` relationship, then our approach does not know that they
-refer to the same fact. In other words, we ignore the fact that "Barack
-Obama" and "Michelle Obama" in both of these sentence refer to the same
-entity in the real world. We also don't recognize *coreference* of two
-mentions. That is, we don't know that "Barack Obama" and "Obama"
-probably refer to the same person. 
- -->
-
-<!-- We will address these issues in the [advanced part of the tutorial](walkthrough2.html). -->
-
-
-<!-- Here we can see that the word phrase "and-former-President" in between the two person names has a rather high weight. This seems strange, since this phrase is not an indicator of a marriage relationship. One way to improve our predictions would be to add more negative evidence that would lower the weight of that feature.
- -->
-
-
-<!-- TODO!!!! -->
-
 <a id="sparsity" href="#"> </a>
 
 ### Reduce Sparsity
 
-We notice that feature `num_words_between` suffers from sparsity issues and would cause overfitting. For example, there should be roughly no difference between having 20 and 21 words between two entity mentions. Change *"Feature 2"* for `ext_has_spouse_features.py`:
+After [examining the results](walkthrough-mention.html#get_result), we notice that feature `num_words_between` suffers from sparsity issues and would cause overfitting. For example, there should be roughly no difference between having 20 and 21 words between two entity mentions. Change *"Feature 2"* for `ext_has_spouse_features.py`:
 
 {% highlight python %}
 # Feature 2: Number of words between the two phrases
@@ -129,16 +46,20 @@ The "bag of words" is a pretty weak feature. Our next improvement is using stron
 
 Start by modifying `application.conf` to select `lemma` as input query to `ext_has_spouse_features`:
 
-      ext_has_spouse_features {
-        input: """
-          SELECT  sentences.words,
-                  lemma,                   # Add this line
-                  has_spouse.relation_id,
-                  p1.start_position  AS  "p1.start_position",
-                  p1.length          AS  "p1.length",
-                  p2.start_position  AS  "p2.start_position",
-                  p2.length          AS  "p2.length"
-          ...
+```bash
+ext_has_spouse_features {
+  input: """
+    SELECT  sentences.words,
+            lemma,                   # Add this line
+            has_spouse.relation_id,
+            p1.start_position  AS  "p1.start_position",
+            p1.length          AS  "p1.length",
+            p2.start_position  AS  "p2.start_position",
+            p2.length          AS  "p2.length"
+            """
+    # ...
+  }
+```
 
 Then modify `ext_has_spouse_features.py` by changing *Feature 1* (bag of words) into this feature. We still make use of `ddlib`:
 
@@ -181,6 +102,7 @@ The `married_words` and `non_married_words` list can be obtained through a "snow
 
 let's try to incorporate a bit of domain knowledge into our model. For example, we know that has_spouse is symmetric. That means, if Barack Obama is married to Michelle Obama, then Michelle Obama is married to Barack Obama, and vice versa. (`Marry(A,B) <-> Marry(B,A)`) We can encode this knowledge in a second inference rule:
 
+```bash
     inference.factors {
 
       # ...(other inference rules)
@@ -201,6 +123,7 @@ let's try to incorporate a bit of domain knowledge into our model. For example, 
       }
 
     }
+```
 
 There are many [other kinds of factor functions](inference_rule_functions.html) you could use to encode domain knowledge. 
 
@@ -213,7 +136,9 @@ We can further tune sampler parameters to obtain better results. Refer to [perfo
 
 Add into `deepdive` block of `application.conf`:
 
-    sampler.sampler_args: "-l 5000 -d 0.99 -s 1 -i 1000 --alpha 0.01"
+```bash
+sampler.sampler_args: "-l 5000 -d 0.99 -s 1 -i 1000 --alpha 0.01"
+```
 
 This would force sampler to learn and sample with more iterations and a slower decay of stepsize.
 
@@ -236,21 +161,28 @@ psql -d deepdive_spouse -c "
 
 Results looks like:
 
-     sentence_id |        description        | is_true | expectation | sentence
-    -------------+---------------------------+---------+-------------+------------------------------------
-           40575 | St. Vincent-Carole Rome   |         |       0.985 | Gov. Charlie Crist made an appearance at St. Vincent with his fiancee , Carole Rome , and handed out plates stacked with turkey , potatoes and stuffing .
-           21353 | Judd Apatow-Leslie Mann   | t       |       0.958 | TRUE LOVE , FAMILY VALUES ALIVE IN ` KNOCKED UP ' IN -LCB- LSQUO -RCB- KNOCKED UP , ' FAMILY VALUES GET A TWIST MISMATCHPRODUCESLAUGHS AND LOVE SURPRISEFAMILY LOVE Knocked Up Written and directed by : Judd Apatow Starring : Seth Rogen , Katherine He
-    igl , Paul Rudd , Leslie Mann Running time : 129 minutes Rated : R -LRB- Sexual content , drug use , language -RRB- `` The 40-Year-Old Virgin '' and his new `` Knocked Up '' make writer - director Judd Apatow today 's preeminent creator of low-concept sex comedies .
-           18008 | Diane Lane-Josh Brolin    | t       |       0.968 | And does anyone know why Josh Brolin and Diane Lane went separate ways as soon as they entered the Chateau foyer ?
-           23391 | Sally-Salino              |         |       0.995 | The breakup left both parents unable to properly care for the boys , ages 2 1/2 and 1 , and the specter of having the children placed in foster care prompted the Salino and his wife , Sally , to move the boys into their house .
-            4416 | Codey-Corzine             |         |       0.991 | Codey said he and his wife hoped to visit Corzine by Thursday , depending on his progress .
-           28418 | Tommy Lee-Pamela Anderson | t       |       0.957 | Rock solid Kid says he 's still standing tall despite all the drama in his life By Adam Graham Detroit News Pop Music Writer Fistfights with Tommy Lee , multiple marriages to -LRB- and a subsequent divorce from -RRB- Pamela Anderson : They say no pr
-    ess is bad press , and Kid Rock is hoping the exposure pays off when his new album , `` Rock N Roll Jesus , '' is released Tuesday .
-           25097 | Ben-Anne Meara            |         |       0.994 | In addition to son Ben , Jerry Stiller has had his real-life wife Anne Meara on the show frequently .
-           23196 | Ashton Kutcher-Demi Moore | t       |       0.974 | `` It 's not quite Demi Moore and Bruce Willis going on vacation with Ashton Kutcher , '' she said , `` but that 's an ideal , is n't it ? ''
-           21447 | Michelle-Wright           |         |       0.996 | And so , with those remarks , a tightly knit relationship finally unraveled -- Wright had married Obama and his wife , Michelle , and baptized their children .
-           20401 | Goold-Lady Macbeth        |         |       0.978 | He even had notes for Macbeth , played by Patrick Stewart , and for Lady Macbeth , Kate Fleetwood , who happens to be married to Goold .
+     sentence_id |       description       | is_true | expectation | sentence 
+    -------------+-------------------------+---------+-------------+-------
+     95331@69    | Julia Gardiner-B. Tyler |         |           1 | B. Tyler married his second wife , Julia Gardiner , in 1844 in New York City .
+     114481@10   | Obama-Michelle          |         |       0.982 | And so , with those remarks , a tightly knit relationship finally came apart -- Wright had married Obama and his wife
+     , Michelle , and baptized their children .
+     103874@0    | Abigail-John Adams      |         |       0.982 | When John Adams begins acting like a pompous windbag , his wife , Abigail , reproaches him with a single word .
+     44768@4     | Wendi-Murdoch           |         |       0.992 | Murdoch 's third wife , Wendi , is a mainland Chinese who once worked for his Hong Kong-based satellite broadcaster ,
+     Star TV .
+     111325@10   | Julius Rosenberg-Ethel  |         |       0.992 | Sophie Rosenberg thought Mamie Eisenhower could be a `` sympathetic ally '' in saving her son , Julius Rosenberg , an
+    d his wife Ethel from execution in 1953 for espionage .
+     111325@10   | Ethel-Julius Rosenberg  |         |       0.994 | Sophie Rosenberg thought Mamie Eisenhower could be a `` sympathetic ally '' in saving her son , Julius Rosenberg , an
+    d his wife Ethel from execution in 1953 for espionage .
+     114424@8    | Obama-Michelle          |         |       0.992 | And so , with those remarks , a tightly knit relationship finally unraveled -- Wright had married Obama and his wife
+    , Michelle , and baptized their children .
+     1387@16     | Rosalynn-Barbara        |         |       0.978 | Across the nave from the Ford family sat Bush and Laura Bush , and Vice President Dick Cheney , who served Ford as ch
+    ief of staff , with his wife , Lynne , several current Cabinet members and three former presidents -- the elder George Bush with his wife , Barbara ; Jimmy Carter and his wife , Rosa
+    lynn ; and Bill Clinton and his wife , Sen. Hillary Rodham Clinton , and their daughter Chelsea .
+     119377@0    | John McCain-Cindy       |         |       0.992 | Sen. John McCain 's wife , Cindy , abruptly reversed course on Friday and released a summary of her 2006 income tax r
+    eturn after weeks of vowing not to do so .
+     84632@13    | Cecilia-Sarkozy         |         |       0.998 | Less than two months ago , Sarkozy and his wife , Cecilia , announced their divorce after 11 years of marriage .
     (10 rows)
+
 
 Let's look at the calibration plot:
 
@@ -268,13 +200,13 @@ psql -d deepdive_spouse -c "
 "
 {% endhighlight %}
 
-                    description                 |      weight
-    --------------------------------------------+------------------
-     f_has_spouse_features-important_word=widow | 2.07552405288369
-     f_has_spouse_features-important_word=wife  | 2.02799834116762
-     f_has_spouse_features-important_word=marry |  1.4300430882985
-     f_has_spouse_features-few_words_between    | 1.20873177437353
-     f_has_spouse_symmetry-                     | 1.08043386981184
+                     description                  |      weight
+    ----------------------------------------------+------------------
+     f_has_spouse_features-important_word=wife    | 3.15606795129873
+     f_has_spouse_features-important_word=widow   |  2.5437455991906
+     f_has_spouse_features-important_word=marry   | 1.94056303781197
+     f_has_spouse_features-few_words_between      | 1.62204261123308
+     f_has_spouse_features-important_word=fiancee | 1.53406825466027
     (5 rows)
 
 Type in following command to select top negative features:
@@ -290,11 +222,11 @@ psql -d deepdive_spouse -c "
 
                        description                   |       weight
     -------------------------------------------------+--------------------
-     f_has_spouse_features-important_word=son        |  -2.59031900689398
-     f_has_spouse_features-important_word=father     |  -2.14158159298961
-     f_has_spouse_features-potential_last_name_match |  -1.71109060211146
-     f_has_spouse_features-important_word=brother    | -0.552613937997688
-     f_has_spouse_features-important_word=mother     | -0.364695428177156
+     f_has_spouse_features-important_word=son        |  -3.59259198110491
+     f_has_spouse_features-important_word=father     |  -3.48791602624587
+     f_has_spouse_features-important_word=brother    |  -2.35151767597167
+     f_has_spouse_features-potential_last_name_match |  -2.31560107817806
+     f_has_spouse_features-important_word=sister     | -0.845486090679023
     (5 rows)
 
 We can see that the results have been improved quite a bit, but there are still some errors. 

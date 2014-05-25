@@ -81,9 +81,9 @@ We will be using PostgreSQL as our primary database in this example. If you foll
 
 We will be using PostgreSQL as our primary database in this example. If you followed the DeepDive installation guide and passed all tests then your PostgreSQL server should be running already. Let's start by creating a new database called `deepdive_spouse` by typing in command line:
 
-{% highlight bash %}
+```bash
 createdb deepdive_spouse
-{% endhighlight %}
+```
 
  -->
 
@@ -91,40 +91,39 @@ createdb deepdive_spouse
 
 ### Creating a new DeepDive application
 
-Start by creating a new folder `app/spouse` in the DeepDive directory for your application. *Assume your DeepDive directory is `$DEEPDIVE_HOME`*.
+Start by creating a new folder `app/spouse` in the DeepDive directory for your application. Assume your DeepDive directory is `$DEEPDIVE_HOME`.
 
-{% highlight bash %}
+```bash
 cd $DEEPDIVE_HOME
 mkdir -p app/spouse   # make folders recursively
 cd app/spouse
-{% endhighlight %}
+```
 
 DeepDive's main entry point is a file called `application.conf` which contains database connection information as well as your feature extraction and inference rule pipelines. It is often useful to have a small `run.sh` script that loads environment variables and executes the DeepDive pipeline. We provide simple templates for both of these to copy and modify. Copy these templates to our directory by the following commands: 
 
-<!-- TODO what is env.sh doing? -->
 
-{% highlight bash %}
+```bash
 cp ../../examples/template/application.conf .
 cp ../../examples/template/run.sh .
 cp ../../examples/template/env.sh .
-{% endhighlight %}
+```
 
 The `env.sh` file configures environment variables that will be used in this application. There is a placeholder line `DBNAME=` in that file, modify `env.sh` and fill it with your database name:
   
-{% highlight bash %}
+```bash
 # File: env.sh
 ...
 export DBNAME=deepdive_spouse   # modify this line
 ...
-{% endhighlight %}
+```
 
 Note that in the `run.sh` file it defines environment variables `APP_HOME` which is our current directory `app/spouse`, and `DEEPDIVE_HOME` which is the home directory of DeepDive. We will use these variables later.
 
 You can now try executing the `run.sh` file:
 
-{% highlight bash %}
+```bash
 ./run.sh
-{% endhighlight %}
+```
 
 Because you have not defined any extractors or inference rules you will not see meaningful results, but DeepDive should run successfully from end to end and you should be able to see a summary report such as:
 
@@ -146,17 +145,17 @@ In this example we will be using raw text from a couple of New York Times articl
 
 We have prepared everything to free developers from data preprocessing. Copy prepared data and scripts from DeepDive `DEEPDIVE_HOME/example/spouse_example/` folder into `DEEPDIVE_HOME/app/spouse/`, by typing:
 
-{% highlight bash %}
+```bash
 cp -r ../../examples/spouse_example/data .
 cp ../../examples/spouse_example/schema.sql .
 cp ../../examples/spouse_example/setup_database.sh .
-{% endhighlight %}
+```
 
 Then, execute the script `setup_database.sh`, which will get all the preprocessed data ready:
 
-{% highlight bash %}
+```bash
 sh setup_database.sh deepdive_spouse
-{% endhighlight %}
+```
 
 Now following relations are provided in the database dump:
 
@@ -170,7 +169,11 @@ Now following relations are provided in the database dump:
      public | sentences           | table | deepdive | heap
     (5 rows)
 
-Among these relations, `articles` contains article data and `sentences` contains parsed sentence data. Other tables are currently empty, and during feature extraction step they will be filled up.
+Among these relations: 
+
+- `articles` contains article data
+- `sentences` contains processed sentence data by an [NLP extractor](walkthrough-extras.html#nlp_extractor). This table contains tokenized words, lemmatized words, POS tags, NER tags, dependency paths for each sentence.
+- Other tables are currently empty, and during feature extraction step they will be filled up.
 
 For a detailed reference of how these tables are created and loaded, refer to [Preparing Data Tables](walkthrough-extras.html#data_tables) in the extra section.
 
@@ -178,10 +181,6 @@ For a detailed reference of how these tables are created and loaded, refer to [P
 <a id="feature_extraction" href="#"> </a>
 
 ### Feature Extraction
-
-<a id="people_extractor" href="#"> </a>
-
-#### Adding a people extractor
 
 Our next task is to write several [extractors](extractors.html) in
 DeepDive for feature extraction. On a high
@@ -192,86 +191,99 @@ SQL query)* to one or more output tuples, similar to a `map` or
 `flatMap` function in functional programming languages (or "Map" in
 MapReduce).
 
-Our first extractor will extract people mentions from the sentences, and put them into a new table. 
+
+<a id="people_extractor" href="#"> </a>
+
+#### Adding a people extractor
+
+We first need to recognize the person mentions in the article. Given a
+set of sentences as described above, the person mention extractor will
+populate a relation people_mention that contains an encoding of the
+mentions. In this example, we will build a simple person recognizer that
+just uses the [NER tags](#loading_data) from the
+underlying NLP toolkit. We could do something more sophisticated, but we
+just want to illustrate the basic concepts.
+
+**Input:** sentences along with NER tags. Specically, each line in the input to this extractor UDF is a row in `sentence` table in JSON format, e.g.:
+
+    {"sentence_id":"118238@10","words":["Sen.","Barack","Obama","and","his","wife",",","Michelle","Obama",",","have","released","eight","years","of","joint","returns","."],"ner_tags":["O","PERSON","PERSON","O","O","O","O","PERSON","PERSON","O","O","O","DURATION","DURATION","O","O","O","O"]}
+
+**Output:** rows in `people_mentions` table, e.g.:
+
+    {"mention_id": "118238@10_1", "text": "Barack Obama", "sentence_id": "118238@10", "start_position": 1, "length": 2}
+    {"mention_id": "118238@10_7", "text": "Michelle Obama", "sentence_id": "118238@10", "start_position": 7, "length": 2}
+
+
+This first extractor will extract people mentions (In the sample data, "Barack Obama" and "Michelle Obama") from the sentences, and put them into a new table. 
 Note that we have named entity tags in column `ner_tags` of our `sentences` table. We will use this column to identify people mentions: we assume that *a word phrase is a people mention if all its words are tagged as `PERSON` in its `ner_tags` field.*
 
 <!-- Ideally you would want to add your own domain-specific features to extract mentions. For example, people names are usually capitalized, tagged with a noun phrase part of speech tag, and have certain dependency paths to other words in the sentence. However, because the Stanford NLP Parser is relatively good at identifying people and tags them with a `PERSON` named-entity tag we trust its output and don't make the predictions ourselves. We simply assume that all people identified by the NLP Parser are correct. Note that this assumption is not ideal and usually does not work for other types of entities, but it is good enough to build a first version of our application.
  -->
 
-<!-- Again, we first create a new table in the database by typing:
-  
-{% highlight bash %}
-psql -d deepdive_spouse -c "
-  CREATE TABLE people_mentions(
-    sentence_id    bigint, -- refers to sentences table
-    start_position int,    -- word offset in the sentence
-    length         int,    -- how many words in this mention
-    text           text,   -- name of the person
-    mention_id     bigint  -- unique identifier for people_mentions
-  );
-"
-{% endhighlight %} -->
+Let's create our first extractors in DeepDive, by adding several lines into `deepdive.extraction.extractors` block in `application.conf`, which should be present in the template:
 
-Let's create our first extractor in DeepDive, by adding several lines into `deepdive.extraction.extractors` block in `application.conf`, which should be present in the template:
+```bash
+deepdive {
+  ...
+  # Put your extractors here
+  extraction.extractors {
 
-    deepdive {
-      ...
-      # Put your extractors here
-      extraction.extractors {
-        
-        # Extractor to extract people mentions:
-        ext_people {
-
-          # An input to the extractor is a row (tuple) of the following query:
-          input           : """
-                            SELECT  sentence_id, words, ner_tags
-                            FROM    sentences
-                            """
-
-          # output of extractor will be written to this table:
-          output_relation : "people_mentions"
-
-          # This user-defined function will be performed on each row (tuple) of input query:
-          udf             : ${APP_HOME}"/udf/ext_people.py"
-
-          # This script will be executed once, before the extractor runs:
-          before          : ${APP_HOME}"/udf/clear_table.sh people_mentions"
-
-          # This script will be executed once, after the extractor runs:
-          after           : ${APP_HOME}"/udf/fill_sequence.sh people_mentions mention_id"
-        }
-        # ... (more extractors to add here)
-      } 
-      ...   
+    # Extractor 1: Clean output tables of all extractors
+    ext_clear_table {
+      style: "sql_extractor"
+      sql: """
+        DELETE FROM people_mentions;
+        DELETE FROM has_spouse;
+        DELETE FROM has_spouse_features;
+        """
     }
+    
+    # Extractor 2: extract people mentions:
+    ext_people {
+      # An input to the extractor is a row (tuple) of the following query:
+      input: """
+        SELECT  sentence_id, words, ner_tags
+          FROM  sentences"""
 
-Let's go through each line:
+      # output of extractor will be written to this table:
+      output_relation: "people_mentions"
+
+      # This user-defined function will be performed on each row (tuple) of input query:
+      udf: ${APP_HOME}"/udf/ext_people.py"
+
+      dependencies: ["ext_clear_table"]
+    }
+    # ... (more extractors to add here)
+  } 
+  ...   
+}
+```
+
+Note that we first create an extractor `ext_clear_table` to be executed
+before any other extractor, to clear output tables of all other
+extractors. This is a `sql_extractor`, which is just a set of SQL
+commands specified in `sql` field.
+
+For our person mention extractor `ext_people`, let's go through each line:
 
 1. The input to the `ext_people` extractor are all sentences (identifiers, words and named entity tags), selected using a SQL statement.
 2. The output of the extractor will be written to the `people_mentions` table. (for the table format, refer to the [cheat-sheet](#table_cheatsheet) in appendix.)
 3. The extractor script is `udf/ext_people.py`. DeepDive will execute this command and stream input to the *stdin* of the process, and read output from *stdout* of the process.
-4. We execute a script *before* the extractor runs, and another script *after* the extractor runs.
+4. The `dependencies` field specifies that this extractor can be executed only after `ext_clear_table` extractor finishes.
 
 There are other ways you can use an extractor, refer to the [extractor guide](extractors.html) for a more comprehensive list. 
 
 We create a folder named `udf` to put our scripts:
 
-{% highlight bash %}
+```bash
 mkdir udf
-{% endhighlight %}
+```
 
 Then create a `udf/ext_people.py` script as the UDF for this extractor, which scan through input sentences and output phrases. The script can be written as follows:
 
-{% highlight python %}
+```python
 #! /usr/bin/env python
 # File: udf/ext_people.py
-
-# Sample input data:
-'''
-{"sentence_id":46494,"words":["Other","than","the","president",",","who","gets","this","honor","?"],"ner_tags":["O","O","O","O","O","O","O","O","O","O"]}
-{"sentence_id":46495,"words":["When","and","how","did","it","start","?"],"ner_tags":["O","O","O","O","O","O","O"]}
-{"sentence_id":45953,"words":[",","''","an","uncredited","Burton","turned","up","in","a","crowded","bar","scene","."],"ner_tags":["O","O","O","O","PERSON","O","O","O","O","O","O","O","O"]}
-'''
 
 import json, sys
 
@@ -280,7 +292,7 @@ for row in sys.stdin:
   # load JSON format of the current tuple
   sentence_obj = json.loads(row)
   # Find phrases that are continuous words tagged with PERSON.
-  phrases = []                          # Store (start_position, length, text)
+  phrases = []   # Store (start_position, length, text)
   words = sentence_obj["words"]         # a list of all words
   ner_tags = sentence_obj["ner_tags"]   # ner_tags for each word
   start_index = 0
@@ -303,10 +315,10 @@ for row in sys.stdin:
       "start_position": start_position,
       "length": length,
       "text": text,
-      "mention_id": None
+      # Create an unique mention_id by sentence_id + offset:
+      "mention_id": '%s_%d' % (sentence_obj["sentence_id"], start_position)
     })
-
-{% endhighlight %}
+```
 
 If you want to get a sample of the inputs to th extractor, refer to [getting example inputs](walkthrough-extras.html#debug_extractors) section in the Extras.
 
@@ -314,61 +326,58 @@ This `udf/ext_people.py` Python script takes sentences records as an input, and 
 
 Note that if you wanted to add debug output, you can print to *stderr* instead of stdout, and the messages would appear on the terminal, as well as in the log file (`$DEEPDIVE_HOME/log/DATE_TIME.txt`).
 
-At this point you may be wondering about the `before` and `after` script. Why do we need them? Each time before the extractor runs we want to clear out the `people_mentions` table and remove old data; after the extractor runs we want to fill the column `mention_id` with unique values for future tables to refer. These actions are pretty common in this application, so we make two general scripts, which are also used for future extractors:
+You can now run your extractor by executing `./run.sh`, and you will be able to see extracted results in `people_mentions` table. We select the results of the sample input data to see what happens in the extractor.
 
-Create `udf/clear_table.sh` as follows. This script truncates (clears) any input table:
-
-{% highlight bash %}
-# File: udf/clear_table.sh
-# Usage: fill_sequence.sh  TABLE_NAME
-psql -d deepdive_spouse -c "
-  TRUNCATE $1 CASCADE;
-"
-{% endhighlight %}
-
-Create `udf/fill_sequence.sh` as follows. This script fills a row in an input table with incremental, unique integers starting from 1:
-
-{% highlight bash %}
-# File: udf/fill_sequence.sh
-# Usage: fill_sequence.sh  TABLE_NAME  COLUMN_NAME
-# Postgres will use a random continuous sequence to fill your column starting from 1. The order is not guaranteed.
-psql -d deepdive_spouse -c "
-        DROP SEQUENCE IF EXISTS tmp_sequence_$1;
-        CREATE SEQUENCE tmp_sequence_$1;
-        UPDATE $1 SET $2 = nextval('tmp_sequence_$1');
-        DROP SEQUENCE tmp_sequence_$1;
-"
-{% endhighlight %}
-
-Don't forget to change permission to the new scripts you created by typing following commands:
-
-{% highlight bash %}
-chmod +x udf/clear_table.sh udf/fill_sequence.sh
-{% endhighlight %}
-
-If you want, you can now run your extractor by executing `./run.sh`, and you will be able to see extracted results in `people_mentions` table.
-
-{% highlight bash %}
+```bash
 ./run.sh    # Run extractors now
-psql -d deepdive_spouse -c "select * from people_mentions limit 5;"
-{% endhighlight %}
+psql -d deepdive_spouse -c "select * from people_mentions where sentence_id='118238@10'"
+```
 
-Results may look like:
+Results are:
 
-     sentence_id | start_position | length |      text       | mention_id
-    -------------+----------------+--------+-----------------+------------
-           44348 |              5 |      1 | Bush            |          5
-           44348 |             15 |      1 | Balyan          |         16
-           43849 |              3 |      1 | Gilbert         |         22
-           44220 |              0 |      2 | Tony Rodham     |         29
-           44220 |             19 |      2 | Hillary Clinton |         37
+     sentence_id | start_position | length |      text      | mention_id
+    -------------+----------------+--------+----------------+-------------
+     118238@10   |              1 |      2 | Barack Obama   | 118238@10_1
+     118238@10   |              7 |      2 | Michelle Obama | 118238@10_7
+    (2 rows)
+
+To double-check your results are correct, count number of tuples in your table:
+
+```bash
+psql -d deepdive_spouse -c "select count(*) from sentences;"
+psql -d deepdive_spouse -c "select count(*) from people_mentions;"
+```
+
+Results are:
+
+     count
+    -------
+     43789
+
+     count
+    -------
+     39266
+
+
 
 
 <a id="candidate_relations" href="#"> </a>
 
 #### Extracting candidate relations between mention pairs
 
-Now comes the interesting part! We have laid all the groundwork to extract the `has_spouse` relation we care about. The empty table `has_spouse` is for this relation. 
+Now we need to identify candidates for the `has_spouse` relation. For simplicity, we only extract each **pair of person mentions in the same sentence** as a relation candidate. 
+
+To train our system to decide whether these candidates are correct relations, we also need to generate training data. However, it is hard to find ground truth on whether two mentions participate in `has_spouse` relation. We use [distant supervision](general/relation_extraction.html) that generate mention-level training data by heuristically mapping them to known entity-level relations in an existing knowledge base.
+
+This extractor will take all mentions of people from a same sentence, and put each pair of them into the table `has_spouse`, while generating true / false labels on some of the mention pairs.
+
+**Input:** two mentions from `people_mentions` table that comes from a same sentence. e.g.:
+
+    {"p1_text":"Michelle Obama","p1_mention_id":"118238@10_7","p2_text":"Barack Obama","p2_mention_id":"118238@10_1","sentence_id":"118238@10"}
+
+**Output:** one row in `has_spouse` table:
+
+    {"person1_id": "118238@10_7", "person2_id": "118238@10_1", "sentence_id": "118238@10", "relation_id": "118238@10_7_118238@10_1", "description": "Michelle Obama-Barack Obama", "is_true": true, "id": null}
 
 To understand how DeepDive works, we should notice that the `has_spouse` table has following format:
 
@@ -384,85 +393,80 @@ To understand how DeepDive works, we should notice that the `has_spouse` table h
      id          | bigint  |            # reserved for DeepDive
 
 
-Note that in table `has_spouse`, special `is_true` column in the above table. We need this column because we want DeepDive to predict how likely it is that a given entry in the table is correct. In other words, DeepDive will create a [random variable](general/inference.html) for each instance of it. More concretely, each row in the `has_spouse` table will be assigned random variable for its `is_true` column. 
+Note that in table `has_spouse`, there is a special `is_true` column. We need this column because we want DeepDive to predict how likely it is that a given entry in the table is correct. In other words, DeepDive will create a [random variable](general/inference.html) for each instance of it. More concretely, each row in the `has_spouse` table will be assigned a random variable for its `is_true` column. 
 
 Also note that we must reserve another special column, `id bigint`, in any table containing variables like this one. For system to use, this column should be **left blank, and not be used anywhere**. We will further see syntax requirements in *inference rules* related to this `id` column.
 
 
-Let's tell DeepDive to use the `is_true` column of table `has_spouse` for probabilistic inference in the `application.conf`:
+Let's tell DeepDive to use the `is_true` column of table `has_spouse` for probabilistic inference, by adding it into `schema.variables` Block in `application.conf`:
 
     schema.variables {
       has_spouse.is_true: Boolean
     }
 
-Let's create an extractor that extracts all candidate relations and puts them into the above table. We call them *candidate relations* because we are not sure whether or not they are actually correct, that's for DeepDive to predict. We will be adding *features* to make predictions in the next step, for now we are just outputting all of the candidates.
+Let's create an extractor that extracts all candidate relations and puts them into the above table. We call them *candidate relations* because we are not sure whether or not they are actually correct, that's for DeepDive to predict.
 
-    extraction.extractors {
+```bash
+extraction.extractors {
 
-      # ... (other extractors)
+  # ... (other extractors)
 
-      ext_has_spouse_candidates {
-        input: """
-          SELECT  sentences.sentence_id,
-                  p1.mention_id AS "p1.mention_id",
-                  p1.text       AS "p1.text",
-                  p2.mention_id AS "p2.mention_id",
-                  p2.text       AS "p2.text"
-           FROM   people_mentions p1,
-                  people_mentions p2,
-                  sentences
-          WHERE   p1.sentence_id = p2.sentence_id
-            AND   p1.sentence_id = sentences.sentence_id
-            AND   p1.mention_id != p2.mention_id;
-            """
-        output_relation : "has_spouse"
-        udf             : ${APP_HOME}"/udf/ext_has_spouse.py"
-        before          : ${APP_HOME}"/udf/clear_table.sh has_spouse"
-        after           : ${APP_HOME}"/udf/fill_sequence.sh has_spouse relation_id"
+  # Extractor 3: extract mention relation candidates
+  ext_has_spouse_candidates {
+    # Each input (p1, p2) is a pair of mentions
+    input: """
+      SELECT  sentences.sentence_id,
+              p1.mention_id AS p1_mention_id,
+              p1.text       AS p1_text,
+              p2.mention_id AS p2_mention_id,
+              p2.text       AS p2_text
+       FROM   people_mentions p1,
+              people_mentions p2,
+              sentences
+      WHERE   p1.sentence_id = p2.sentence_id
+        AND   p1.sentence_id = sentences.sentence_id
+        AND   p1.mention_id != p2.mention_id;
+        """
+    output_relation : "has_spouse"
+    udf             : ${APP_HOME}"/udf/ext_has_spouse.py"
 
-        # Run this extractor after "ext_people"
-        dependencies    : ["ext_people"]
-      }
+    # Run this extractor after "ext_people"
+    dependencies    : ["ext_people"]
+  }
 
-    }
+}
+```
 
 Note that this extractor must be executed after our last extractor `ext_people`, which is specified in "dependencies" field.
 
-In this extractor, we select all pairs of people mentions that occur in the same sentence. When generating relation candidates, we also generate training data using [distant supervision](general/relation_extraction.html). There are some pairs of people that we know for sure are married, and we can use them as training data for DeepDive. Similarly, if we know that two people are not married, we can use them as negative training examples. In our case we will be using data from [Freebase](http://www.freebase.com/) for distant supervision. 
+When generating relation candidates, we also generate training data using [distant supervision](general/relation_extraction.html). There are some pairs of people that we know for sure are married, and we can use them as training data for DeepDive. Similarly, if we know that two people are not married, we can use them as negative training examples. In our case we will be using data from [Freebase](http://www.freebase.com/) for distant supervision, and use direct string match to map mentions to entities.
 
-To generate positive examples, we have exported all pairs of people with a `has_spouse` relationship from the [Freebase data dump](https://developers.google.com/freebase/data) and included the CSV file in `data/spouses.csv`.
+To generate positive examples, we have exported all pairs of people with a `has_spouse` relationship from the [Freebase data dump](https://developers.google.com/freebase/data) and included them in a CSV file `data/spouses.csv`.
 
-To generate negative examples, we include a TSV file in `data/non-spouses.tsv` containing these relations sampled from Freebase. Specifically, they contain:
+To generate negative examples, we use two heuristics:
 
-1. Pairs of the same person, e.g., "Barack Obama" cannot be married to "Barack Obama". 
-2. Pairs of other relations, e.g. if A is B's parent / children / sibling, A is not likely to be married to B. 
+1. A pair of the same person is a negative example of `has_spouse` relations, e.g., "Barack Obama" cannot be married to "Barack Obama". 
 
+2. A pairs of some relations incompatible with `has_spouse` can be treated as a negative example, e.g. if A is B's parent / children / sibling, A is not likely to be married to B.  We include a TSV file in `data/non-spouses.tsv` containing such relations sampled from Freebase.
 
 Let's create a script `udf/ext_has_spouse.py` as below, to generate and label the relation candidates:
 
-{% highlight python %}
+```python
 #! /usr/bin/env python
 # File: udf/ext_has_spouse.py
-
-# Sample input data (piped into STDIN):
-'''
-{"p1.text":"Kaplan","p1.mention_id":84,"p2.text":"Charles Foster Kane","p2.mention_id":62,"sentence_id":44314}
-{"p1.text":"Charles Foster Kane","p1.mention_id":62,"p2.text":"Kaplan","p2.mention_id":84,"sentence_id":44314}
-{"p1.text":"Robinson","p1.mention_id":575,"p2.text":"Barack Obama","p2.mention_id":549,"sentence_id":45498}
-'''
 
 import json, csv, os, sys
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 
 # Load the spouse dictionary for distant supervision
-spouses = {}
+spouses = set()  # One person may have multiple spouses, so use set
 with open (BASE_DIR + "/../../data/spouses.csv") as csvfile:
   reader = csv.reader(csvfile)
   for line in reader:
     name1 = line[0].strip().lower()
     name2 = line[1].strip().lower()
-    spouses[name1] = name2
-    spouses[name2] = name1
+    spouses.add((name1, name2))
+    spouses.add((name2, name1))
 
 # Load relations of people that are not spouse
 non_spouses = set()
@@ -475,119 +479,122 @@ for line in lines:
 # For each input tuple
 for row in sys.stdin:
   obj = json.loads(row)
-  p1_text = obj["p1.text"].strip()
-  p2_text = obj["p2.text"].strip()
+  p1_text = obj["p1_text"].strip()
+  p2_text = obj["p2_text"].strip()
   p1_lower = p1_text.lower()
   p2_lower = p2_text.lower()
 
   is_true = None
-  if p1_lower in spouses and spouses[p1_lower] == p2_lower: 
+  if (p1_lower, p2_lower) in spouses:
     is_true = True    # the mention pair is in our supervision dictionary
   elif (p1_lower, p2_lower) in non_spouses: 
     is_true = False   # they appear in other relations
   elif (p1_text == p2_text) or (p1_text in p2_text) or (p2_text in p1_text):
     is_true = False   # they are the same person
 
-  print json.dumps({"person1_id": obj["p1.mention_id"],  "person2_id": obj["p2.mention_id"],
+  # Create an unique relation_id by a combination of two mention's IDs
+  relation_id = obj["p1_mention_id"] + '_' + obj["p2_mention_id"]
+
+  print json.dumps({"person1_id": obj["p1_mention_id"],  "person2_id": obj["p2_mention_id"],
     "sentence_id": obj["sentence_id"],  "description": "%s-%s" %(p1_text, p2_text),
-    "is_true": is_true,  "relation_id": None,  "id": None
+    "is_true": is_true,  "relation_id": relation_id,  "id": None
   })
-{% endhighlight %}
+```
 
 
 Now if you like, you can run the system by executing `run.sh` and check the output relation `has_spouse`. `run.sh` will run the full pipeline with both extractors `ext_people` and `ext_has_spouse`. If you only want to run your new extractor, refer to the [Pipeline section in Extras](walkthrough-extras.html#pipelines).
 
-{% highlight bash %}
+```bash
 ./run.sh
-psql -d deepdive_spouse -c "select * from has_spouse limit 5;"
-{% endhighlight %}
+psql -d deepdive_spouse -c "select * from has_spouse where person1_id='118238@10_7'"
+```
 
 Results look like:
 
-     person1_id | person2_id | sentence_id |         description         | is_true | relation_id |  id
-    ------------+------------+-------------+-----------------------------+---------+-------------+-------
-            717 |        745 |       45057 | Arthur-Carrie               |         |           3 | 
-            717 |        731 |       45057 | Arthur-Jerry Stiller        |         |          10 | 
-            773 |        759 |       45062 | Doug-Victor Williams        |         |          18 | 
-           3635 |       3649 |       48432 | Charles Eskew-James Gardner |         |          24 | 
-           3635 |       3621 |       48432 | Charles Eskew-Jewell Eskew  |         |          31 | 
+     person1_id  | person2_id  | sentence_id |         description         | is_true |       relation_id       | id
+    -------------+-------------+-------------+-----------------------------+---------+-------------------------+----
+     118238@10_1 | 118238@10_7 | 118238@10   | Barack Obama-Michelle Obama | t       | 118238@10_1_118238@10_7 |
+
+
+To check your results are correct, count number of tuples in your table:
+
+```bash
+psql -d deepdive_spouse -c "select is_true, count(*) from has_spouse group by is_true;"
+```
+
+Results are:
+
+     is_true | count
+    ---------+-------
+     f       |  3770
+     t       |  2234
+             | 69418
+
+
 
 <a id="candidate_relation_features" href="#"> </a>
 
 #### Adding Features for candidate relations
 
-For DeepDive to make predictions, we need to add *features* to our candidate relations. Features are properties that help decide whether or not the given relation is correct. 
+For DeepDive to make predictions, we need to add *features* to our candidate relations. Features are properties that help decide whether or not the given relation is correct. We use standard machine learning features, but this will result in low quality which we will improve later. We will write an extractor that extracts features from mention pairs and the sentences they come from.
 
 Currently we use features include: (1) a bag of words between the two mentions; (2) the number of words between two phases; (3) whether the last word of two person's names (last name) are the same.
 We will refine these features later in the section of [improve the results](#improve).
 
-<!-- Create a table by typing:
 
-{% highlight bash %}
-psql -d deepdive_spouse -c "
-  CREATE TABLE has_spouse_features(
-    relation_id bigint,
-    feature     text
-  );
-"
-{% endhighlight %}
- -->
+**Input:** a mention pair as well as all words in the sentence it appears. e.g.:
+
+    {"p2_length":2,"p1_length":2,"words":["Sen.","Barack","Obama","and","his","wife",",","Michelle","Obama",",","have","released","eight","years","of","joint","returns","."],"relation_id":"118238@10_1_118238@10_7","p1_start":1,"p2_start":7}
+
+**Output:** all features for this mention pair described above:
+
+    {"relation_id": "118238@10_1_118238@10_7", "feature": "word_between=,"}
+    {"relation_id": "118238@10_1_118238@10_7", "feature": "word_between=his"}
+    {"relation_id": "118238@10_1_118238@10_7", "feature": "potential_last_name_match"}
+    {"relation_id": "118238@10_1_118238@10_7", "feature": "word_between=wife"}
+    {"relation_id": "118238@10_1_118238@10_7", "feature": "num_words_between=4"}
+    {"relation_id": "118238@10_1_118238@10_7", "feature": "word_between=and"}
 
 Create a new extractor for features, which will execute after our last `ext_has_spouse_candidates` extractor:
 
-    extraction.extractors {
+```bash
+extraction.extractors {
 
-      # ... (other extractors)
+  # ... (other extractors)
 
-      ext_has_spouse_features {
-        input: """
-          SELECT  sentences.words,
-                  has_spouse.relation_id,
-                  p1.start_position  AS  "p1.start_position",
-                  p1.length          AS  "p1.length",
-                  p2.start_position  AS  "p2.start_position",
-                  p2.length          AS  "p2.length"
-            FROM  has_spouse,
-                  people_mentions p1,
-                  people_mentions p2,
-                  sentences
-           WHERE  has_spouse.person1_id = p1.mention_id
-             AND  has_spouse.person2_id = p2.mention_id
-             AND  has_spouse.sentence_id = sentences.sentence_id;
-             """
-        output_relation : "has_spouse_features"
-        udf             : ${APP_HOME}"/udf/ext_has_spouse_features.py"
-        before          : ${APP_HOME}"/udf/clear_table.sh has_spouse_features"
-        dependencies    : ["ext_has_spouse_candidates"]
-      }
+  # Extractor 4: extract features for relation candidates
+  ext_has_spouse_features {
+    input: """
+      SELECT  sentences.words,
+              has_spouse.relation_id,
+              p1.start_position  AS  p1_start,
+              p1.length          AS  p1_length,
+              p2.start_position  AS  p2_start,
+              p2.length          AS  p2_length
+        FROM  has_spouse,
+              people_mentions p1,
+              people_mentions p2,
+              sentences
+       WHERE  has_spouse.person1_id = p1.mention_id
+         AND  has_spouse.person2_id = p2.mention_id
+         AND  has_spouse.sentence_id = sentences.sentence_id;
+         """
+    output_relation : "has_spouse_features"
+    udf             : ${APP_HOME}"/udf/ext_has_spouse_features.py"
+    dependencies    : ["ext_has_spouse_candidates"]
+  }
 
-    }
+}
+```
 
-
-To create our extractor UDF, we will make use of `ddlib`, our python library that provides useful utilities such as `Span` to manipulate elements in sentences. 
-
-To use `ddlib`, you should have `$DEEPDIVE_HOME/ddlib` added to your PATH or PYTHONPATH. Add following lines into `env.sh`, if it's not already there:
-
-{% highlight bash %}
-# File: env.sh
-...
-export PYTHONPATH=$DEEPDIVE_HOME/ddlib:$PYTHONPATH
-...
-{% endhighlight %}
-
+To create our extractor UDF, we will make use of `ddlib`, our python library that provides useful utilities such as `Span` to manipulate elements in sentences. Make sure you followed the [installation guide](installation.html#ddlib) to properly use `ddlib`.
 
 Create script `udf/ext_has_spouse_features.py` as follows:
 
 
-{% highlight python %}
+```python
 #! /usr/bin/env python
 # File: udf/ext_has_spouse_features.py
-
-# Sample input data (piped into STDIN):
-'''
-{"p2.length":2,"p1.length":2,"words":["The","strange","case","of","the","death","of","'50s","TV","Superman","George","Reeves","is","deconstructed","in","``","Hollywoodland",",","''","starring","Adrien","Brody",",","Diane","Lane",",","Ben","Affleck","and","Bob","Hoskins","."],"relation_id":12190,"p1.start_position":20,"p2.start_position":10}
-{"p2.length":2,"p1.length":2,"words":["Political","coverage","has","not","been","the","same","since","The","National","Enquirer","published","photographs","of","Donna","Rice","in","the","former","Sen.","Gary","Hart","'s","lap","20","years","ago","."],"relation_id":34885,"p1.start_position":14,"p2.start_position":20}
-'''
 
 import sys, json
 import ddlib     # DeepDive python utility
@@ -597,8 +604,8 @@ for row in sys.stdin:
   obj = json.loads(row)
   words = obj["words"]
   # Unpack input into tuples.
-  span1 = ddlib.Span(begin_word_id=obj['p1.start_position'], length=obj['p1.length'])
-  span2 = ddlib.Span(begin_word_id=obj['p2.start_position'], length=obj['p2.length'])
+  span1 = ddlib.Span(begin_word_id=obj['p1_start'], length=obj['p1_length'])
+  span2 = ddlib.Span(begin_word_id=obj['p2_start'], length=obj['p2_length'])
 
   # Features for this pair come in here
   features = set()
@@ -625,62 +632,82 @@ for row in sys.stdin:
       "relation_id": obj["relation_id"],
       "feature": feature
     })
-{% endhighlight %}
+```
 
 
 Same as before, you can run the system by executing `run.sh` and check the output relation `has_spouse_features`. (If you only want to run your new extractor, refer to the [Pipeline section in Extras](walkthrough-extras.html#pipelines).)
 
 
-{% highlight bash %}
+```bash
 ./run.sh
-psql -d deepdive_spouse -c "select * from has_spouse_features limit 5;"
-{% endhighlight %}
+psql -d deepdive_spouse -c "select * from has_spouse_features where relation_id = '118238@10_1_118238@10_7'"
+```
 
 Results look like:
 
-     relation_id |         feature
-    -------------+-------------------------
-           32523 | word_between=Republican
-           32523 | word_between=attend
-           32523 | word_between=a
-           32523 | word_between=check
-           32523 | word_between=him
-    (5 rows)
+```
+       relation_id       |          feature
+-------------------------+---------------------------
+ 118238@10_1_118238@10_7 | word_between=,
+ 118238@10_1_118238@10_7 | word_between=his
+ 118238@10_1_118238@10_7 | potential_last_name_match
+ 118238@10_1_118238@10_7 | word_between=wife
+ 118238@10_1_118238@10_7 | num_words_between=4
+ 118238@10_1_118238@10_7 | word_between=and
+(6 rows)
+```
+
+Again, count number of tuples in your table:
+
+```bash
+psql -d deepdive_spouse -c "select count(*) from has_spouse_features;"
+```
+
+Results are:
+
+      count
+    ---------
+     1160450
+
+
+
 
 <a id="inference_rules" href="#"> </a>
 
 ### Writing inference rules
 
-Now we need to tell DeepDive how to generate [factor graphs](general/inference.html) to perform  perform probabilistic inference.  We want to predict the `is_true` column of the `has_spouse` table based on the features we have extracted. This is the simplest rule you can write, because it does not involve domain knowledge or relationships among variables. 
+Now we need to tell DeepDive how to generate [factor graphs](general/inference.html) to perform probabilistic inference.  We want to predict the `is_true` column of the `has_spouse` table based on the features we have extracted, by assigning each feature a weight that DeepDive will learn. This is the simplest rule you can write, because it does not involve domain knowledge or relationships among variables. 
 
 Add the following lines to your `application.conf`, into `inference.factors` block:
 
-    # Put your inference rules here
-    inference.factors {
+```bash
+# Put your inference rules here
+inference.factors {
 
-      # A simple logistic regression rule
-      f_has_spouse_features {
+  # A simple logistic regression rule
+  f_has_spouse_features {
 
-        # input to the inference rule is all the has_spouse candidate relations,
-        #   as well as the features connected to them:
-        input_query: """
-          SELECT has_spouse.id      AS "has_spouse.id",
-                 has_spouse.is_true AS "has_spouse.is_true",
-                 feature
-          FROM has_spouse,
-               has_spouse_features
-          WHERE has_spouse_features.relation_id = has_spouse.relation_id
-          """
+    # input to the inference rule is all the has_spouse candidate relations,
+    #   as well as the features connected to them:
+    input_query: """
+      SELECT has_spouse.id      AS "has_spouse.id",
+             has_spouse.is_true AS "has_spouse.is_true",
+             feature
+      FROM has_spouse,
+           has_spouse_features
+      WHERE has_spouse_features.relation_id = has_spouse.relation_id
+      """
 
-        # Factor function:
-        function : "IsTrue(has_spouse.is_true)"
+    # Factor function:
+    function : "IsTrue(has_spouse.is_true)"
 
-        # Weight of the factor is decided by the value of "feature" column in input query
-        weight   : "?(feature)"
-      }
+    # Weight of the factor is decided by the value of "feature" column in input query
+    weight   : "?(feature)"
+  }
 
-      # ... (other inference rules)
-    }
+  # ... (other inference rules)
+}
+```
 
 This rule generates a model similar to a logistic regression classifier. We use a set of features to make a prediction about the variable we care about. For each row in the *input query* we are adding a [factor](general/inference.html) that connects to the `has_spouse.is_true` variable with a different weight for each feature name. 
 
@@ -692,12 +719,6 @@ Note that the syntax requires users to **explicitly select** in `input_query`:
 
 And when selecting them, users must explicitly alias `id` to `[relation_name].id` and `[variable]` to `[relation_name].[variable]` for system to use. See more in [inference rule guide](inference_rules.html).
 
-
-
-<!-- Finally, there is one last technical details we need to pay attention to. Our first rule is very sparse, in other words, the same features usually only applies to a few candidates that we extract. Our second rule on the other hand applies to every candidate, which means that DeepDive will learn a very high weight for it. This discrepancy can lead to longer convergence times during the inference step if we don't select a correct "learning rate". For such a case, let's change the learning rate from the default of "0.1" to the "0.001" by adding the following sampler options to the configuration file:
-
-    sampler.sampler_args: "-l 125 -s 1 -i 200 --alpha 0.001"
- -->
 
 
 <a id="learning_inference" href="#"> </a>
@@ -718,53 +739,58 @@ We are almost ready to run! In order to evaluate our results, we also want to de
 
 Let's try running the full pipeline using `./run.sh`. (If you want to run part of the pipeline, refer to [pipeline section](walkthrough-extras.html#pipelines))
 
-{% highlight bash %}
+```bash
 ./run.sh
-{% endhighlight %}
+```
 
 
 After running, you should see a summary report similar to:
 
-    04:07:48 [profiler] INFO  --------------------------------------------------
-    04:07:48 [profiler] INFO  Summary Report
-    04:07:48 [profiler] INFO  --------------------------------------------------
-    04:07:48 [profiler] INFO  ext_people SUCCESS [43958 ms]
-    04:07:48 [profiler] INFO  ext_has_spouse_candidates SUCCESS [22376 ms]
-    04:07:48 [profiler] INFO  ext_has_spouse_features SUCCESS [84158 ms]
-    04:07:48 [profiler] INFO  inference_grounding SUCCESS [6175 ms]
-    04:07:48 [profiler] INFO  inference SUCCESS [10293 ms]
-    04:07:48 [profiler] INFO  calibration plot written to /YOUR/PATH/TO/deepdive/out/TIME/calibration/has_spouse.is_true.png [0 ms]
-    04:07:48 [profiler] INFO  calibration SUCCESS [538 ms]
-    04:07:48 [profiler] INFO  --------------------------------------------------
-
+    16:51:37 [profiler] INFO  --------------------------------------------------
+    16:51:37 [profiler] INFO  Summary Report
+    16:51:37 [profiler] INFO  --------------------------------------------------
+    16:51:37 [profiler] INFO  ext_clear_table SUCCESS [330 ms]
+    16:51:37 [profiler] INFO  ext_people SUCCESS [40792 ms]
+    16:51:37 [profiler] INFO  ext_has_spouse_candidates SUCCESS [17194 ms]
+    16:51:37 [profiler] INFO  ext_has_spouse_features SUCCESS [189242 ms]
+    16:51:37 [profiler] INFO  inference_grounding SUCCESS [3881 ms]
+    16:51:37 [profiler] INFO  inference SUCCESS [13366 ms]
+    16:51:37 [profiler] INFO  calibration plot written to /YOUR/PATH/TO/deepdive/out/TIME/calibration/has_spouse.is_true.png [0 ms]
+    16:51:37 [profiler] INFO  calibration SUCCESS [920 ms]
+    16:51:37 [profiler] INFO  --------------------------------------------------
 
 Great, let's take a look at some of the predictions that DeepDive has made. DeepDive creates a view `has_spouse_is_true_inference` for each variable you have defined in the database. Type in following query in command line to sample some high-confidence mention-level relations and the sentences they come from:
 
-{% highlight bash %}
+```bash
 psql -d deepdive_spouse -c "
   SELECT s.sentence_id, description, is_true, expectation, s.sentence
   FROM has_spouse_is_true_inference hsi, sentences s
   WHERE s.sentence_id = hsi.sentence_id and expectation > 0.9
   ORDER BY random() LIMIT 5;
 "
-{% endhighlight %}
+```
 
 
 The result should be something like (might not be the same):
 
-     sentence_id |               description                | is_true | expectation | sentence
-
-    -------------+------------------------------------------+---------+-------------+--------------------
-           26134 | Morton-Vlad                              |         |           1 | WITH THE VOICES OF : Jim Carrey -LRB- Horton -RRB- , Steve Carell -LRB- Mayor -RRB- , Carol Burnett -LRB- Kangaroo -RRB- , Will Arnett -LRB- Vlad -RRB- , Isla Fisher -LRB- Dr. Mary Lou LaRue -RRB- , Amy Poehler -LRB- Sally O'Malley -R
-    RB- , Seth Rogen -LRB- Morton -RRB- , Jonah Hill -LRB- Tommy -RRB- and Dan Fogler -LRB- Councilman -RRB- .
-           17871 | Ashley-Chloe                             |         |        0.95 | Developing MOVIES-OVER-DEAD-BODY-REV -- Devastated when his fianc?e Kate -LRB- Eva Longoria Parker -RRB- is killed on their wedding day , Henry -LRB- Paul Rudd -RRB- reluctantly agrees to consult a psychic named Ashley -LRB- Lake Bell
-     -RRB- at the urging of his sister Chloe -LRB- Lindsay Sloane -RRB- .
-           39543 | Hillary Rodham Clinton-Bill Clinton      | t       |       0.982 | Yet the Democratic establishment here is still oriented around former President Bill Clinton and his wife , Sen. Hillary Rodham Clinton .
-           30399 | Thom Browne-Ashley Olsen-Lance Armstrong |         |       0.966 | HIT Thom Browne for Brooks Brothers A pairing as unlikely as the short-lived Ashley Olsen-Lance Armstrong romance , the collaboration between Thom Browne and navy-blazer supplier Brooks Brothers had the potential to be as appealing as
-     a double feature of `` License to Wed '' and `` Alvin and the Chipmunks . ''
-           21575 | Lauren-Conrad                            |         |       0.934 | `` I was actually with Lauren -LRB- Conrad -RRB- last Valentine 's Day and night , '' admitted the ringless Montag .
-    (5 rows)
-
+```
+ sentence_id |       description        | is_true | expectation | sentence
+-------------+--------------------------+---------+-------------+----------
+ 154431@0    | Al Austin-Akshay Desai   |         |       0.972 | Guest list Jeff Atwater , Senate president Al Austin , Republican fundraiser from Tampa St. Petersburg Mayor Rick Ba
+ker and wife , Joyce , St. Petersburg Brian Ballard , former chief of staff for Gov. Bob Martinez and a campaign adviser to Crist Rodney Barreto , a Crist fundraiser Ron Book , South
+ Florida lobbyist Charlie Bronson , agriculture commissioner Dean Colson , a Miami lawyer and adviser to the governor on higher education issues Dr. Akshay Desai , head of Universal
+Health Care Insurance in St. Petersburg Eric Eikenberg , Crist 's chief of staff Fazal Fazlin , entrepreneur -LRB- held fundraisers for Crist during the gubernatorial campaign -RRB-
+, St. Petersburg .
+ 148797@53   | Michael-Carole Shelley   |         |       0.954 | WITH : Haydn Gwynne -LRB- Mrs. Wilkinson -RRB- , Gregory Jbara -LRB- Dad -RRB- , Carole Shelley -LRB- Grandma -RRB-
+and Santino Fontana -LRB- Tony -RRB- , David Bologna and Frank Dolce -LRB- Michael -RRB- , and David Alvarez , Trent Kowalik and Kiril Kulish -LRB- Billy -RRB- .
+ 58364@10    | John-Jack Edwards        |         |       0.944 | This year , John and Jack Edwards are far from the only parent and child negotiating the awkward intersection of fam
+ily and campaign life .
+ 40427@30    | James Taylor-Carly Simon |         |       0.962 | Look at James Taylor and Carly Simon , Whitney Houston and Bobby Brown or Britney Spears and Kevin Federline -LRB- y
+es , calling him a musician is a stretch -RRB- .
+ 23278@18    | Chazz-Josh Gordon        |         |       0.944 | Directors Josh Gordon and Will Speck even discover an original way of hitting Chazz and Jimmy below the belt simulta
+neously .
+(5 rows)
+```
 
 <!-- The result should be something like (might not be the same):
 
@@ -783,11 +809,88 @@ The result should be something like (might not be the same):
     (10 rows)
  -->
 
-We might see that the results are actually pretty bad: most predictions are wrongly using the word "and" as the feature to indicate spouse relationship.
+We might see that the results are actually pretty bad. Let's discuss how to examine the results.
 
 <!-- can see that some of these tuples are actually correct instances of married people. (Among above results, row 1, 2, 7, 8, 10 are correct) -->
 
-In the next section, we will discuss several ways to examine and improve the results.
+There are several common methods in DeepDive to examine results. DeepDive generates [calibration plots](general/calibration.html) for all variables defined in the schema to help with debugging. Let's take a look at the generated calibration plot, written to the file outputted in the summary report above (has_spouse.is_true.png). It should look something like this:
+
+![Calibration]({{site.baseurl}}/assets/walkthrough_has_spouse_is_true.png)
+
+The calibration plot contains useful information that help you to improve the quality of your predictions. For actionable advice about interpreting calibration plots, refer to the [calibration guide](general/calibration.html). 
+
+Often, it is also useful to look at the *weights* that were learned for features or rules. You can do this by looking at the `mapped_inference_results_weights` table in the database. Type in following command to select features with highest weight (positive features):
+
+```bash
+psql -d deepdive_spouse -c "
+  SELECT description, weight
+  FROM dd_inference_result_variables_mapped_weights
+  ORDER BY weight DESC
+  LIMIT 5;
+"
+```
+
+Results:
+
+                    description                 |      weight
+    --------------------------------------------+------------------
+     f_has_spouse_features-word_between=D-N.Y.  |  4.7886491287239
+     f_has_spouse_features-word_between=married | 3.89640480091833
+     f_has_spouse_features-word_between=wife    | 3.20275846390644
+     f_has_spouse_features-word_between=widower | 3.18555507726798
+     f_has_spouse_features-word_between=Sen.    | 2.91372149485723
+    (5 rows)
+
+Type in following command to select top negative features:
+
+```bash
+psql -d deepdive_spouse -c "
+  SELECT description, weight
+  FROM dd_inference_result_variables_mapped_weights
+  ORDER BY weight ASC
+  LIMIT 5;
+"
+```
+
+Results:
+
+                       description                   |      weight
+    -------------------------------------------------+-------------------
+     f_has_spouse_features-word_between=son          | -3.47510397136532
+     f_has_spouse_features-word_between=grandson     | -3.30906093958107
+     f_has_spouse_features-potential_last_name_match | -3.15563684816935
+     f_has_spouse_features-word_between=Rodham       | -3.07171299387011
+     f_has_spouse_features-word_between=addressing   | -2.89060819613259
+
+Note that each execution may learn different weights, and these lists can look different. Generally, we might see that most weights make sense while some don't.
+
+<!-- You can further improve the prediction by different ways. There are many possible strategies including:
+
+- Making use of co-reference information
+- Performing entity linking instead of extraction relations among mentions in the text
+- Adding more inference rules that encode your domain knowledge
+- Adding more (or better) positive or negative training examples
+- Adding more (or better) features
+
+For the second point: our goal in this tutorial is get an initial
+application up and running. There are a couple of problems with the
+approach above which are worth drawing attention to: If two separate
+sentences mention the fact that Barack Obama and Michelle Obama are in a
+`has_spouse` relationship, then our approach does not know that they
+refer to the same fact. In other words, we ignore the fact that "Barack
+Obama" and "Michelle Obama" in both of these sentence refer to the same
+entity in the real world. We also don't recognize *coreference* of two
+mentions. That is, we don't know that "Barack Obama" and "Obama"
+probably refer to the same person. 
+ -->
+
+<!-- We will address these issues in the [advanced part of the tutorial](walkthrough2.html). -->
 
 
-[Improving the results](walkthrough-improve.html)
+<!-- Here we can see that the word phrase "and-former-President" in between the two person names has a rather high weight. This seems strange, since this phrase is not an indicator of a marriage relationship. One way to improve our predictions would be to add more negative evidence that would lower the weight of that feature.
+ -->
+
+In the next section, we will discuss several ways to improve the results.
+
+
+**[Improving the results](walkthrough-improve.html)**

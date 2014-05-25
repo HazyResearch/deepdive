@@ -54,7 +54,7 @@ Above data model is demonstrated in Figure 2 below.
 
 <!-- *TODO concrete example for all above* -->
 
-<p style="text-align: center;"><img src="{{site.baseurl}}/images/walkthrough/datamodel.png" alt="Data Model" style="width: 50%; text-align: center;"/>
+<p style="text-align: center;"><img src="{{site.baseurl}}/images/walkthrough/datamodel.png" alt="Data Model" style="width: 60%; text-align: center;"/>
   <br />
   <strong>Figure 2: Data Model for KBC</strong>
 </p>
@@ -92,9 +92,7 @@ Specifically:
 
 3. In the next step, DeepDive feeds evidence to **generate a [factor graph](general/inference.html)**. To tell DeepDive how to generate this factor graph, developers use a SQL-like declarative language to specify *inference rules*, similar to [Markov logic](http://en.wikipedia.org/wiki/Markov_logic_network). In inference rules, one can write first-order logic rules with **weights** (that intuitively model our confidence in a rule).
 
-4. In the next step, DeepDive automatically performs **statistical inference and learning** on the generated factor graph. In learning, the values of weights specified in inference rules are calculated. In [inference](general/inference.html), marginal probabilities of variables are computed.
-
-<!-- TODO explain marginal probability, etc -->
+4. In the next step, DeepDive automatically performs **statistical inference and learning** on the generated factor graph. In learning, the values of weights specified in inference rules are calculated. In [inference](general/inference.html), marginal probabilities of variables are computed.  <!-- TODO explain marginal probability, etc -->
 
 5. After inference, the results are stored in a set of database tables. Developer can **get results** via a SQL query, **check results** with a [calibration plot](general/calibration.html), and perform **error analysis** to improve results.
 

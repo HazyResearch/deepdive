@@ -23,17 +23,18 @@ The first three types of extractors perform a user-defined function (UDF) on an 
 
 To use different extractors, users specify `style` in each extractor definition in the configuration file. For example, if we want to use `tsv_extractor` for `wordsExtractor`:
 
-    deepdive {
-      extraction.extractors {
+```bash
+deepdive {
+  extraction.extractors {
 
-        wordsExtractor {
-          style: "tsv_extractor"
-          # ...
-        }
-
-        # More Extractors...
-      }
+    wordsExtractor {
+      style: "tsv_extractor"
+      # ...
     }
+    # More Extractors...
+  }
+}
+```
 
 For each extractor, if `style` is not specified, the system will use `json_extractor` by default.
 
@@ -41,16 +42,16 @@ For each extractor, if `style` is not specified, the system will use `json_extra
 
 ### json_extractor (default)
 
-<!-- *This extractor is deprecated. Use tsv_extractor for flexibility, or plpy_extractor for performance.* -->
-
 `json_extractor` takes data defined by an `input` query (for example, a SQL statement), and produces new tuples as output. These tuples are written to the `output_relation`. The function for this transformation is defined by the `udf` key, which can be an arbitrary executable (more on that below).
 
-    wordsExtractor {
-      style           : "json_extractor"
-      output_relation : "words"
-      input           : """SELECT * FROM titles"""
-      udf             : "words.py"
-    }
+```bash
+wordsExtractor {
+  style           : "json_extractor"
+  output_relation : "words"
+  input           : """SELECT * FROM titles"""
+  udf             : "words.py"
+}
+```
 
 #### Writing extractor UDFs for json_extractor
 
@@ -74,7 +75,7 @@ You can debug extractors by printing output to *stderr* instead of stdin. The ou
 
 An extractor UDF could be written in Python as follows:
 
-{% highlight python %}
+```python
 #! /usr/bin/env python
 
 import fileinput
@@ -92,7 +93,7 @@ for line in fileinput.input():
         "title_id": int(row["title_id"]), 
         "word": word
       })
-{% endhighlight %}
+```
 
 #### Extractor inputs
 
@@ -102,15 +103,18 @@ Currently DeepDive supports two types of extractor inputs for `json_extractor`:
 
 For example, a SQL statement for Postgres:
 
-    wordsExtractor.input: """SELECT * FROM customers"""
-
+```bash
+wordsExtractor.input: """SELECT * FROM customers"""
+```
 
 **2. Reading from a CSV or TSV File**
 
 Reading a file is useful for loading initial data.
 
-    wordsExtractor.input: CSV('path/to/file.csv')
-    wordsExtractor.input: TSV('path/to/file.tsv')
+```bash
+wordsExtractor.input: CSV('path/to/file.csv')
+wordsExtractor.input: TSV('path/to/file.tsv')
+```
 
 Note that `sql_extractor` and `cmd_extractor` do not take inputs; `plpy_extractor` and `tsv_extractor` only takes input as a SQL query.
 
@@ -172,7 +176,9 @@ for line in fileinput.input():
 
 Extractor inputs for `json_extractor` must be a database query. For example, a SQL statement for Postgres:
 
-    wordsExtractor.input: """SELECT title_id, title FROM title"""
+```bash
+wordsExtractor.input: """SELECT title_id, title FROM title"""
+```
 
 The order of columns in the query will be the same as order in the `.tsv` file extractors get, i.e., after a line is split by `\t`, the fields are first `title_id` then `title` in this case.
 
@@ -182,14 +188,18 @@ If your input query contains arrays,  `.tsv` files will be hard to parse.  In th
 
 For example, for an input query like this:
 
-    SELECT words_id, array_to_string(words, '$$$') FROM words_table;
+```sql
+SELECT words_id, array_to_string(words, '$$$') FROM words_table;
+```
 
 You can parse each line with following:
 
-    words_id, words_str = line.split('\t')
-    words = words_str.split('$$$')
-    for word in words:
-      ...
+```python
+words_id, words_str = line.split('\t')
+words = words_str.split('$$$')
+for word in words:
+  # process each word...
+```
 
 Note that if your **returned value contains arrays**, it will be harder for database to parse. You should either make sure the value can be parsed by psql-COPY command, or try other types of extractors.
 
@@ -203,13 +213,15 @@ To use plpy_extractor, make sure [PL/Python](http://www.postgresql.org/docs/8.2/
 
 Similar as `json_extractor`, the UDF is executed on data defined by an `input` SQL statement, and produces new tuples as output. These tuples are written to the `output_relation`. The function for this transformation is defined by the `udf` key, which is defined in a python script with specific format (more on that below). An example extractor is as follows:
 
-    # An extractor to get trigrams of words from sentences to word_3gram table
-    ngramExtractor {
-      style           : "plpy_extractor"
-      input           : """SELECT sentence_id, words, 3 as gram_len FROM sentences"""
-      output_relation : "word_3gram"
-      udf             : "ext_word_ngram.py"
-    }
+```bash
+# An extractor to get trigrams of words from sentences to word_3gram table
+ngramExtractor {
+  style           : "plpy_extractor"
+  input           : """SELECT sentence_id, words, 3 as gram_len FROM sentences"""
+  output_relation : "word_3gram"
+  udf             : "ext_word_ngram.py"
+}
+```
 
 Specifically, the arguments it takes include:
 
@@ -269,75 +281,62 @@ def run(sentence_id, words, gram_len):
   - Anything out of functions "init" and "run" will be ignored in the translator.
 
 - In `init` function, import libraries, specify input variables and return types.
-
   1. **import libraries** by calling function `ddext.import_lib`. The function is defined as: `def import_lib(libname, from_package=None, as_name=None)`, corresponding to `from from_package import libname as as_name` in Python syntax. Sample usage:
-
       - `ddext.import_lib(X, Y, Z)`: from Z import X as Y
       - `ddext.import_lib(X, Y)`: from Y import X
       - `ddext.import_lib(X, as_name=Z)`: import X as Z
       - `ddext.import_lib(X)`: import X
 
   2. **Input variables** to UDF should be explicitly specified by `ddext.input`, both variable **names** and **types**. The function is defined as: `def input(name, datatype)`. 
-
       - Sample usage:
-
           - `ddext.input('sentence_id', 'bigint')` specifies an input to UDF with name "sentence_id" and type "bigint".
-
       - Caveats:
-
           - **Input variable names need to be same as SQL input query (aliased), and types need to match.**
-
           - Names should be coherent to argument list of `run` function.
-
           - Types are Postgres types, e.g., `int`, `bigint`, `text`, `float`, `int[]`, `bigint[]`, `text[]`, `float[]`, etc.
 
         
   3. **Return types** should be explicitly specified by `ddext.returns`, also both variable **names** and **types**. The function is defined as: `def returns(name, datatype)`. 
-
       - Sample usage:
           - `ddext.returns('sentence_id', 'bigint')` specifies an output from UDF with name "sentence_id" and type "bigint".
-
       - Caveats:
           - Types are Postgres types as above.
           - **Names and types** of return variables should **EXACTLY MATCH** some columns in output_relation. e.g., The above example program `ext_word_ngram.py` will return tuples and call a SQL function `INSERT INTO word_3gram(sentence_id, ngram, count)`. If output relation contains more columns, those unspecified columns will be NULL in the inserted tuples.
 
-- In `run` function, write your extractor function that **accepts one row in your SQL query as input**, and returns a list of tuples:
+- In `run` function, write your extractor function that **accepts one row in your SQL query as input**, and returns a list of tuples.
+    - **Caveats:** Use Python as you normally would, except:
+        - `print` is NOT supported. If you want to print to log, use `plpy.info('SOME TEXT')` or `plpy.debug('SOME TEXT')`.
+        - Do not **reassign input variables** in `run` function! 
+            - e.g., "input_var = x" is invalid and will cause error!
+        - Libraries imported in `init` are recognizable in `run`. 
+            - e.g., `ddext.import_lib('re')` will enable you to call function `re.sub` in `run`.
+            - Libraries must be already installed where your database server runs.
+    - **Return:**
+        - The function `run` can either return a list of tuples:
 
-  - **Caveats:** Use Python as you normally would, except:
-
-    - `print` is NOT supported. If you want to print to log, use `plpy.info('SOME TEXT')` or `plpy.debug('SOME TEXT')`.
-    - Do not **reassign input variables** in `run` function! 
-
-      - e.g., "input_var = x" is invalid and will cause error!
-
-    - Libraries imported in `init` are recognizable in `run`. 
-
-      - e.g., `ddext.import_lib('re')` will enable you to call function `re.sub` in `run`.
-      - Libraries must be already installed where your database server runs.
-    
-  - **Return:**
-
-    - The function `run` can either return a list of tuples:
-
+            ```python
             return [(sentence_id, gram, ngram[gram]) for gram in ngram]
+            ```
 
-    - or **yield** a tuple multiple times. Each tuple it yields will be inserted into the database, just like each printed JSON object in json_extractor.
-    - Each tuple can be an ordered list / tuple according to the order of `ddext.return` specification: 
+        - or **yield** a tuple multiple times. Each tuple it yields will be inserted into the database, just like each printed JSON object in json_extractor. Each tuple can be an ordered list / tuple according to the order of `ddext.return` specification: 
 
-            yield (sentence_id, gram, ngram[gram])
+            ```python
+            yield sentence_id, gram, ngram[gram]
+            ```
 
-    - Each tuple can also be a python dict:
+        - Each tuple can also be a python dict:
 
+            ```python
             yield {
                 'sentence_id': sentence_id, 
                 'ngram': ngram, 
                 'count':ngram[gram]
-              }
+              }```
 
 
   - **Functions:** If you want to use functions other than `init` and `run`, you should NOT define it outside these functions. What you should do is to **define the functions inside `run`** as nested functions. An example goes follows, which nest the function `get_ngram` inside `run`:
 
-
+        ```python
         def run(sentence_id, words):
           ngram = {}
 
@@ -355,7 +354,7 @@ def run(sentence_id, words, gram_len):
             get_ngram(n)
 
           return [(sentence_id, key, ngram[key]) for key in ngram]
-
+        ```
 
 You can debug extractors by printing output using *plpy.info* or *plpy.debug* instead of *print*. The output will appear in the DeepDive log file.
 
@@ -366,18 +365,21 @@ You can debug extractors by printing output using *plpy.info* or *plpy.debug* in
 
 To simplify users' workload, we have `sql_extractor` feature extractor which only updates the data in database(without any return results). The function framework for this extractor is defined as below.
 
-    wordsExtractor {
-      style : "sql_extractor"
-      sql   : """INSERT INTO titles VALUES (1, 'Harry Potter')"""
-    }
-
+```bash
+wordsExtractor {
+  style : "sql_extractor"
+  sql   : """INSERT INTO titles VALUES (1, 'Harry Potter')"""
+}
+```
 #### Extractor SQL query
 
 For `sql_extractor`, A field `sql` is required to specify the SQL query to be executed in DeepDive.
 
 For example, a SQL statement for Postgres:
 
-    wordsExtractor.sql: """INSERT INTO titles VALUES (1, 'Harry Potter')"""
+```bash
+wordsExtractor.sql: """INSERT INTO titles VALUES (1, 'Harry Potter')"""
+```
 
 Note that it is developers' responsibility to run `ANALYZE table_name` after updating the table for SQL optimization.
 
@@ -387,10 +389,12 @@ Note that it is developers' responsibility to run `ANALYZE table_name` after upd
 
 The same as `sql_extractor` feature extractor, we have another extractor `cmd_extractor` which only executes a shell command. The function framework for this extractor is defined as below.
 
-    wordsExtractor {
-      style : "cmd_extractor"
-      cmd   : """python words.py"""
-    }
+```bash
+wordsExtractor {
+  style : "cmd_extractor"
+  cmd   : """python words.py"""
+}
+```
 
 #### Execute shell command
 
@@ -398,8 +402,9 @@ For `cmd_extractor`, A field `cmd` is required to specify the SQL query to be ex
 
 For example, a shell command:
 
-    wordsExtractor.cmd: """python words.py"""
-
+```bash
+wordsExtractor.cmd: """python words.py"""
+```
 
 
 
@@ -411,9 +416,11 @@ For example, a shell command:
 
 You can also specify dependencies for an extractor. Extractors will be executed in order of their dependencies. If the dependencies of several extractors are satisfied at the same time, these may be executed in parallel, or in any order.
 
-    wordsExtractor {
-      dependencies: ["anotherExtractorName"]
-    }
+```bash
+wordsExtractor {
+  dependencies: ["anotherExtractorName"]
+}
+```
 
 If any extractor specified in dependencies does not exist or is not in the [pipeline](doc/pipelines.html), it will be ignored. 
 
@@ -422,43 +429,46 @@ If any extractor specified in dependencies does not exist or is not in the [pipe
 
 Sometimes it is useful to execute a command, or call a script, before an extractor starts or after an extractor finishes. You can specify arbitrary commands to be executed as follows:
 
-  
-    wordsExtractor {
-      before : """echo Hello World"""
-      after  : """/path/to/my/script.sh"""
-    }
-
+```bash  
+wordsExtractor {
+  before : """echo Hello World"""
+  after  : """/path/to/my/script.sh"""
+}
+```
 
 ### Extractor parallelism and input batch size (for json_extractor only)
 
 To improve performance, you can specify the number of processes and the input batch size for each extractor. Your executable script will be run on N threads in parallel and data will be streamed to this processes in a round-robin fashion. By default each extractor uses 1 process and a batch size of 1000.
-    
-    wordsExtractor {
-      # Start 5 processes for this extractor
-      parallelism: 5
-      # Stream 1000 tuples to each process in a round-robin fashion
-      input_batch_size: 1000
-    }
 
+```bash
+wordsExtractor {
+  # Start 5 processes for this extractor
+  parallelism: 5
+  # Stream 1000 tuples to each process in a round-robin fashion
+  input_batch_size: 1000
+}
+```
 
 To improve performance when writing extracted data back to the database you can optionally specify an `output_batch_size` for each extractor. The output batch size specifies how many extracted tuples we insert into the database at once. For example, if your tuples are very large, a smaller batch size may help avoid out-of-memory errors. The default value is 10,000.
 
-    wordsExtractor {
-      # Insert each 5000 tuples into the data store
-      output_batch_size: 5000
-    }
-
+```bash
+wordsExtractor {
+  # Insert each 5000 tuples into the data store
+  output_batch_size: 5000
+}
+```
 
 You can also execute independent extractors in parallel:
 
 <!-- TODO Shouldn't common configs be at deepdive.extraction level, e.g., deepdive.extraction.parallelism?  Otherwise, config keys may collide with user-defined extractor names. -->
 
-    deepdive {
-      extraction.extractors {
-        parallelism: 5
+```bash
+deepdive {
+  extraction.extractors {
+    parallelism: 5
 
-        # Extractors...
-      }
-    }
-
+    # Extractors...
+  }
+}
+```
 
