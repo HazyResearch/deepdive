@@ -10,12 +10,11 @@ Example Application Walkthrough
 ## Introduction
 
 Knowledge base construction (KBC) is the process of populating a knowledge base (KB) with facts (or assertions) extracted from text. 
-<!-- One may want to find interactions between drugs to build a medical database, or extract relationships among people to build an easily searchable knowledge base. -->
 For example,  One may want to build a medical knowledge base of interactions between drugs and disease, 
 a Paleobiology knowledge base to understand when and where did dinosaurs live,
 or a knowledge base of people's relationships such as spouse, parents or sibling.
 
-As a concrete example, one may build an application to extract `has_spouse` relations from sentences in the Web. 
+As a concrete example, one may build an application to extract spouse relations from sentences in the Web. 
 Figure 1 below shows such an application, where input is sentences like "U.S President Barack Obama's wife Michelle Obama ...", and DeepDive would generate a tuple in `has_spouse` table between "Barack Obama" and "Michelle Obama" with a high probability, based on [probabilistic inference](general/inference.html).
 
 <!-- ![Data flow]({{site.baseurl}}/images/walkthrough/example_hasspouse.png) -->
@@ -51,8 +50,6 @@ To understand the KBC data model we use in DeepDive, we first define some terms:
 Above data model is demonstrated in Figure 2 below.
 
 <!-- **TODO candidate, feature, prediction?** -->
-
-<!-- *TODO concrete example for all above* -->
 
 <p style="text-align: center;"><img src="{{site.baseurl}}/images/walkthrough/datamodel.png" alt="Data Model" style="width: 60%; text-align: center;"/>
   <br />
@@ -92,7 +89,7 @@ Specifically:
 
 3. In the next step, DeepDive feeds evidence to **generate a [factor graph](general/inference.html)**. To tell DeepDive how to generate this factor graph, developers use a SQL-like declarative language to specify *inference rules*, similar to [Markov logic](http://en.wikipedia.org/wiki/Markov_logic_network). In inference rules, one can write first-order logic rules with **weights** (that intuitively model our confidence in a rule).
 
-4. In the next step, DeepDive automatically performs **statistical inference and learning** on the generated factor graph. In learning, the values of weights specified in inference rules are calculated. In [inference](general/inference.html), marginal probabilities of variables are computed.  <!-- TODO explain marginal probability, etc -->
+4. In the next step, DeepDive automatically performs **statistical inference and learning** on the generated factor graph. In learning, the values of weights specified in inference rules are calculated. In [inference](general/inference.html), marginal probabilities of variables are computed.
 
 5. After inference, the results are stored in a set of database tables. Developer can **get results** via a SQL query, **check results** with a [calibration plot](general/calibration.html), and perform **error analysis** to improve results.
 

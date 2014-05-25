@@ -38,7 +38,7 @@ natural language processing in order to extract candidate pairs and
 features. If you want to learn how NLP extraction can be done in
 DeepDive (starting from step 1), you can refer to the appendix: [Data preprocessing using NLP extractor in DeepDive](walkthrough-extras.html#nlp_extractor).
 
-The full application is also available in the folder `DEEPDIVE_HOME/examples/spouse_example`, which contains all possible implementations in [different types of extractors](extractors.html). In this document, we only introduce the default extractor type (json_extractor), which correspond to `DEEPDIVE_HOME/examples/spouse_example/default_extractor` in your DeepDive directory.
+The full application is also available in the folder `DEEPDIVE_HOME/examples/spouse_example`, which contains all possible implementations in [different types of extractors](extractors.html). In this document, we only introduce the default extractor type (`json_extractor`), which correspond to `DEEPDIVE_HOME/examples/spouse_example/default_extractor` in your DeepDive directory.
 
 
 ## Contents
@@ -460,7 +460,7 @@ BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 
 # Load the spouse dictionary for distant supervision
 spouses = set()  # One person may have multiple spouses, so use set
-with open (BASE_DIR + "/../../data/spouses.csv") as csvfile:
+with open (BASE_DIR + "/../data/spouses.csv") as csvfile:
   reader = csv.reader(csvfile)
   for line in reader:
     name1 = line[0].strip().lower()
@@ -470,7 +470,7 @@ with open (BASE_DIR + "/../../data/spouses.csv") as csvfile:
 
 # Load relations of people that are not spouse
 non_spouses = set()
-lines = open(BASE_DIR + '/../../data/non-spouses.tsv').readlines()
+lines = open(BASE_DIR + '/../data/non-spouses.tsv').readlines()
 for line in lines:
   name1, name2, relation = line.strip().split('\t')
   non_spouses.add((name1, name2))  # Add a non-spouse relation pair
