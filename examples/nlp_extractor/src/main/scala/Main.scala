@@ -50,11 +50,18 @@ object Main extends App {
 
     System.err.println(s"Parsing document ${documentId.getOrElse("")}...")
 
-    // var sentence_offset = 0
+    var sentence_offset = 0
 
     // Output a JSON tuple for each sentence
     documentStr.map(dp.parseDocumentString).map(_.sentences).getOrElse(Nil).foreach { sentenceResult =>
       //Console.println(sentenceResult.sentence)
+
+      // Assign sentence_id as "docid@offset"
+      val sentence_id = documentId.getOrElse(null) match {
+          case null => JsNull
+          case _ => JsString(s"${documentId.getOrElse("")}@${sentence_offset}")
+        }
+
       val json = JsObject(Map(
         "document_id" -> documentId.getOrElse(JsNull),
         "sentence" -> JsString(sentenceResult.sentence),
@@ -63,11 +70,11 @@ object Main extends App {
         "lemma" -> JsArray(sentenceResult.lemma.map(JsString.apply)),
         "dependencies" -> JsArray(sentenceResult.deps.map(JsString.apply)),
         "ner_tags" -> JsArray(sentenceResult.nerTags.map(JsString.apply)),
-        // "sentence_offset" -> JsNumber(sentence_offset), // sometimes useful
-        "sentence_id" -> JsNull
+        "sentence_offset" -> JsNumber(sentence_offset),
+        "sentence_id" -> sentence_id
       ).toSeq)
       Console.println(Json.stringify(json))
-      // sentence_offset += 1
+      sentence_offset += 1
     }  
   }
 
