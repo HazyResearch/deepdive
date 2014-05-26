@@ -2,9 +2,11 @@
 
 . "$(dirname $0)/env.sh"
 
-cd "$(dirname $0)/../..";
-ROOT_PATH=`pwd`
+export APP_HOME=`cd $(dirname $0); pwd`
+export DEEPDIVE_HOME=`cd $(dirname $0)/../..; pwd`
 
-source $ROOT_PATH/examples/smoke/prepare_data.sh
+bash $APP_HOME/prepare_data.sh
+cd $DEEPDIVE_HOME
 
-env SBT_OPTS="-Xmx4g" $ROOT_PATH/sbt/sbt "run -c examples/smoke/application.conf"
+# env SBT_OPTS="-Xmx4g" $ROOT_PATH/sbt/sbt "run -c examples/smoke/application.conf"
+deepdive -c $APP_HOME/application.conf

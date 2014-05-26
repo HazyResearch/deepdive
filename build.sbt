@@ -1,6 +1,6 @@
 name := "deepdive"
 
-version := "0.1"
+version := "0.0.3"
 
 scalaVersion := "2.10.3"
 
@@ -32,3 +32,8 @@ libraryDependencies ++= List(
 )
 
 parallelExecution in Test := false
+
+packSettings
+
+// [Optional: Mappings from a program name to the corresponding Main class ]
+packMain := Map("deepdive" -> "org.deepdive.Main")

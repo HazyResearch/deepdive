@@ -11,5 +11,4 @@ python gen_feature_table.py
 cd $DEEPDIVE_HOME
 
 bash $APP_HOME/prepare_data.sh
-env SBT_OPTS="-Xmx4g" sbt "run -c examples/ocr/application.conf"
-
+deepdive -c $APP_HOME/application.conf
