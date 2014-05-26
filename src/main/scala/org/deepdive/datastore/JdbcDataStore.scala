@@ -1,7 +1,6 @@
 package org.deepdive.datastore
 
-import java.sql.Connection
-import java.sql.{Connection, DriverManager, ResultSet};
+import java.sql.{Connection, DriverManager, ResultSet, PreparedStatement}
 import scalikejdbc._
 import scalikejdbc.config._
 import org.deepdive.Logging
@@ -23,16 +22,43 @@ trait JdbcDataStore extends Logging {
   def bulkInsert(outputRelation: String, data: Iterator[Map[String, Any]])(implicit session: DBSession) = {
     val columnNames = PostgresDataStore.DB.getColumnNames(outputRelation).sorted
     val columnValues = columnNames.map (x => "?")
-    val copySQL = s"""INSERT INTO ${outputRelation}(${columnNames.mkString(", ")}) 
-      VALUES (${columnValues.mkString(", ")})"""
     val tuples = data.map { tuple =>
       columnNames.map(c => tuple.get(c).orElse(tuple.get(c.toLowerCase)).getOrElse(null))
     }.toSeq
-    log.debug(s"copying num_records=${tuples.size} into relation=${outputRelation}")
-    SQL(copySQL).batch(tuples: _*).apply()
+    val conn = ConnectionPool.borrow()
+    val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
+      java.sql.ResultSet.CONCUR_UPDATABLE)
+    val ps = conn.prepareStatement(s"""INSERT INTO ${outputRelation} (${columnNames.mkString(", ")}) 
+      VALUES (${columnValues.mkString(", ")})""")
+    try {
+      for (tuple <- tuples) {
+        for((value, index) <- tuple.view.zipWithIndex) {
+          value match {
+            case z:Boolean => ps.setBoolean(index + 1, z) 
+            case z:Byte => ps.setByte(index + 1, z)
+            case z:Int => ps.setInt(index + 1, z)
+            case z:Long => ps.setLong(index + 1, z)
+            case z:Float => ps.setFloat(index + 1, z)
+            case z:Double => ps.setDouble(index + 1, z)
+            case z:String => ps.setString(index + 1, z)
+            //case z:Date => ps.setDate(index + 1, z)
+            case z => ps.setObject(index + 1, z)
+          }
+        }
+        ps.addBatch()
+      }
+      ps.executeBatch()
+    } catch {
+      // SQL cmd exception
+      case exception : Throwable =>
+      log.error(exception.toString)
+      throw exception
+    } finally {
+      conn.close()
+    }
   }
-
 }
+
 
 object JdbcDataStore extends Logging {
 

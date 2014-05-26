@@ -16,3 +16,6 @@ export PGHOST=${PGHOST:-localhost}
 
 # SBT Options
 export SBT_OPTS="-Xmx$MEMORY"
+
+# Using ddlib
+export PYTHONPATH=$DEEPDIVE_HOME/ddlib:$PYTHONPATH

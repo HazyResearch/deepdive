@@ -53,7 +53,7 @@ for row in sys.stdin:
     p1_id, p2_id, sentence_id, 
     "%s-%s" %(p1_text, p2_text),
     is_true,
-    '\N',  # leave relation_id blank and fill later
+    "%s-%s" %(p1_id, p2_id),
     '\N'   # leave "id" blank for system!
     ])
 

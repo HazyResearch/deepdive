@@ -13,16 +13,17 @@ def init():
   ddext.import_lib('itertools')
   
   # Input commands MUST HAVE CORRECT ORDER
-  ddext.input('sentence_id', 'bigint')
+  ddext.input('sentence_id', 'text')
   ddext.input('words', 'text[]')
   ddext.input('ner_tags', 'text[]')
 
   # Returns commands MUST HAVE CORRECT ORDER
-  ddext.returns('sentence_id', 'bigint')
+  ddext.returns('sentence_id', 'text')
   ddext.returns('start_position', 'int')
   # ddext.returns('start_index', 'int')
   ddext.returns('length', 'int')
   ddext.returns('text', 'text')
+  ddext.returns('mention_id', 'text')
   
 
 def run(sentence_id, words, ner_tags):
@@ -50,7 +51,8 @@ def run(sentence_id, words, ner_tags):
         'sentence_id': sentence_id, 
         'start_position': phrase[0], 
         'text': " ".join(words[phrase[0]:phrase[-1]+1]),
-        'length': len(phrase)
+        'length': len(phrase),
+        "mention_id": '%s_%d' % (sentence_id, phrase[0])
         }
 
   # # Or you can return a list of tuples
