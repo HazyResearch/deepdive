@@ -11,13 +11,13 @@ Extractors are powerful platforms provided by DeepDive for streamline feature ex
 DeepDive support five kinds of extractors: 
 
 - Row-wise extractors:
-  - [`json_extractor`](#json_extractor): for flexibility and compatibility to previous systems
-  - [`tsv_extractor`](#tsv_extractor): moderate flexibility and performance
-  - [`plpy_extractor`](#plpy_extractor): parallel database-built-in extractors with restricted flexibility
+  - [json_extractor](#json_extractor): for flexibility and compatibility to previous systems
+  - [tsv_extractor](#tsv_extractor): moderate flexibility and performance
+  - [plpy_extractor](#plpy_extractor): parallel database-built-in extractors with restricted flexibility
 
 - Procedural extractors:
-  - [`sql_extractor`](#sql_extractor): a SQL command
-  - [`cmd_extractor`](#cmd_extractor): an arbitrary shell command
+  - [sql_extractor](#sql_extractor): a SQL command
+  - [cmd_extractor](#cmd_extractor): an arbitrary shell command
 
 The first three types of extractors perform a user-defined function (UDF) on an input query against database. One may think of these extractors as functions which map one input tuple to one or more output tuples, similar to a `map` or `flatMap` function in functional programming languages. The latter two are simply SQL / shell commands.
 

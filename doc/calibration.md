@@ -56,7 +56,7 @@ DeepDive buckets the inference results into ten buckets from 0.0 to 1.0. Thus, e
 DeepDive also generates a calibration plot for each of the variables you defined in your schema:
 
 <br/>
-<!-- ![]({{site.baseurl}}/images/calibration_example.png) -->
+
 ![]({{site.baseurl}}/assets/walkthrough_has_spouse_is_true.png)
 
 
