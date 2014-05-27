@@ -1,0 +1,10 @@
+---
+---
+
+{% include css/bootstrap.min.css %}
+{% include css/font-awesome.min.css %}
+{% include css/pygment_trac.css %}
+{% include css/landing.css %}
+{% include css/site.css %}
+
+@import url(http://fonts.googleapis.com/css?family=Lato:300,400,700);
