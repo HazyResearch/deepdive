@@ -1,0 +1,14 @@
+section#landing {
+  margin-top: 200px;
+  font-family: Lato;
+}
+
+section#landing h1, section#landing h2, section#landing h3, section#landing p {
+  font-family: Lato;
+  letter-spacing: 0px;
+  font-weight: 300;
+}
+
+section#landing h1 {
+  font-size: 4em;
+}
