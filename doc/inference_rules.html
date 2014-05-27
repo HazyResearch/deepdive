@@ -1,0 +1,183 @@
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="DeepDive" />
+    <link href='http://fonts.googleapis.com/css?family=Lato:300,400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="http://deepdive.stanford.edu/stylesheets/application.css" />
+    <link rel="canonical" href="http://deepdive.stanford.edu">
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="http://deepdive.stanford.edu/javascripts/application.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepDive</title>
+  </head>
+
+  <body>
+      <script type="text/javascript">
+window.analytics||(window.analytics=[]),window.analytics.methods=["identify","track","trackLink","trackForm","trackClick","trackSubmit","page","pageview","ab","alias","ready","group","on","once","off"],window.analytics.factory=function(t){return function(){var a=Array.prototype.slice.call(arguments);return a.unshift(t),window.analytics.push(a),window.analytics}};for(var i=0;i<window.analytics.methods.length;i++){var method=window.analytics.methods[i];window.analytics[method]=window.analytics.factory(method)}window.analytics.load=function(t){var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src=("https:"===document.location.protocol?"https://":"http://")+"d2dq2ahtl5zl1z.cloudfront.net/analytics.js/v1/"+t+"/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(a,n)},window.analytics.SNIPPET_VERSION="2.0.8",
+window.analytics.load("h6uwk48gwg");
+window.analytics.page();
+</script>
+      <a href="https://github.com/hazyresearch/deepdive" target="_blank"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>
+
+      <div id="header">
+        <div class="container">
+          <row>
+            <div class="col-md-4 col-md-offset-1">
+              <a href="http://deepdive.stanford.edu/" class="deepdive-logo">
+              <img src="http://deepdive.stanford.edu/images/header_logo.png" style="width: 250px;"/>
+              </a> 
+            </div>
+            <div class="col-md-6 col-md-offset-1">
+              <ul class="list-unstyled list-inline" id="header-nav">
+                <li><a href="http://deepdive.stanford.edu/index.html">Home</a></li>
+                <li><a href="http://deepdive.stanford.edu/doc/installation.html">Download</a></li>
+                <li><a href="http://deepdive.stanford.edu/index.html#documentation">Documentation</a></li>
+                <li><a href="https://mailman.stanford.edu/mailman/listinfo/deepdive-list" target="_blank">Mailing List</a></li>
+              </ul>
+              
+            </div>
+          </row>
+        </div>
+      </div>
+
+      <section id="main">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <h1>Writing Inference Rules</h1>
+
+<p>Inference rules describe how <a href="general/inference.html">factor graph</a> is constructed. Each rule, or <em>factor</em>, consists of three components:</p>
+
+<ul>
+<li>The <strong>input query</strong> usually combines relations created by your extractors. One factor will be created for each row in the query result.</li>
+<li>The <strong>factor function</strong> defines the variables that will be connected to each factor, and how they are related to each other.</li>
+<li>The <strong>factor weight</strong> describes how confident you are that your rule is correct, in other words, how much weight you want to put on it during probabilistic inference. Weights can be constants, or automatically learned based on training data. </li>
+</ul>
+
+<p>For example:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">deepdive {
+  inference.factors: {
+    smokesFactor {
+      input_query : &quot;&quot;&quot;
+        SELECT people.id         AS &quot;people.id&quot;,
+               people.smokes     AS &quot;people.smokes&quot;,
+               people.has_cancer AS &quot;people.has_cancer&quot;,
+               people.gender     AS &quot;people.gender&quot;
+        FROM people
+        &quot;&quot;&quot;
+      function    : &quot;Imply(people.smokes, people.has_cancer)&quot;
+      weight      : &quot;?(people.gender)&quot;
+    }
+
+    # More factors...
+  }
+}
+</code></pre></div>
+<h3>Factor Input Query</h3>
+
+<p>The input query of a factor combines all variables that a factor is using. It usually takes the form of a join query using feature relations produced extractors.</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">someFactor {
+  input_query: &quot;&quot;&quot;
+    SELECT p1.id     AS &quot;people.p1.id&quot;,     p2.id     AS &quot;people.p2.id&quot;,
+           p1.smokes AS &quot;people.p1.smokes&quot;, p2.smokes AS &quot;people.p2.smokes&quot;,
+           friends.person_id AS &quot;friends.person_id&quot;
+    FROM friends
+      INNER JOIN people AS p1 ON (friends.person_id = p1.id)
+      INNER JOIN people AS p2 ON (friends.friend_id = p2.id)
+    &quot;&quot;&quot;
+}
+</code></pre></div>
+<p>There are a couple of caveats when writing input queries for factors:</p>
+
+<ul>
+<li>The query result must contain all variable attributes that are used in your factor function. For example, if you are using <code>people.has_cancer</code> in your factor function, then an attribute called <code>people.has_cancer</code> must be part of the query result.</li>
+<li>The query result must contain the reserved column <code>id</code> for each variable. DeepDive uses <code>id</code> column to assign unique variable ids. For example, if you have <code>people.has_cancer</code> variable in your factor function, then <code>people.id</code> must also be part of the query result. <strong>Several requirements for <code>id</code> column</strong>:
+
+<ul>
+<li>When creating a table containing variables, the column <code>id</code> must be explicitly created, with the type of big integer, i.e. <code>id bigint</code>.</li>
+<li>The value of <code>id</code> should be <code>NULL</code> in all phases before inference. System will fill this column with variable IDs during inference, and values in this column will be lost.</li>
+<li>If using Greenplum, <code>id</code> must not be the distribution key for a table.</li>
+<li>If developers want an unique identifier of this table to refer to, they should use other columns rather than <code>id</code>.</li>
+<li>Generally, for any table in a DeepDive application, name <code>id</code> is NOT recommended to use for any column other than this reserved field. Meaningful column names such as <code>sentence_id</code>, <code>people_id</code> are recommended.</li>
+</ul></li>
+</ul>
+
+<p>Refer to the database-specific guides to learn about more caveats:</p>
+
+<ul>
+<li><a href="postgresql.html">Using DeepDive with PostgreSQL</a> </li>
+<li><a href="greenplum.html">Using DeepDive with Greenplum</a> </li>
+</ul>
+
+<h3>Factor Function</h3>
+
+<p>The factor function defines the variables that will be connected to the factor, and how they are related to each other. All variables used in a factor function must have been previously <a href="schema.html">defined in the schema</a>.</p>
+
+<p>DeepDive supports <a href="inference_rule_functions.html">several types of factor functions</a>. One example of a factor function is the <code>Imply</code> function, which expresses a first-order logic statement. For example, <code>Imply(B, C, A)</code> means &quot;if B and C, then A&quot;.</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text"># If people.smokes, then people.has_cancer
+someFactor {
+  function: &quot;Imply(people.smokes, people.has_cancer)&quot;
+}
+
+# Evaluates to true, when people.has_cancer is true
+someFactor {
+  function: &quot;Imply(people.has_cancer)&quot;
+}
+</code></pre></div>
+<h3>Factor Weights</h3>
+
+<p>Each factor is assigned a <em>weight</em>, which expresses how confident you are in its rule. During probabilistic inference, factors with large weights will have a greater impact on variables than factors with small weights. Factor weights can be any real number, and are relative to each other. You can assign factor weights manually, or you can let DeepDive learn weights automatically. In order to learn weights automatically, you must have enough <a href="general/relation_extraction.html">training data</a> available. A weight can also be a function of variables, in which case each factor instance will get a different weight depending on the variable value.</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text"># Known weight (10 can be treated as positive infinite)
+someFactor.weight: 10
+
+# Learn the weight, not depending on any variales. All factors created by this rule will have the same weight.
+someFactor.weight: ?
+
+# Learn the weight. Each factor will get a different weight depending on the value of people.gender
+someFactor.weight: ?(people.gender)
+</code></pre></div>
+<h4>Use Learned Weights</h4>
+
+<p>To rerun the pipeline but use weights learned in the last execution instead of learning again, set <code>inference.skip_learning</code> to <code>true</code>. This will generate a table <code>dd_graph_last_weights</code> containing all the weights. Weights will be matched by description, and no learning will be performed:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">deepdive {
+  # Use weights learned from last execution
+  inference.skip_learning: true
+}
+</code></pre></div>
+<h4>Custom Weight Table</h4>
+
+<p>Set <code>inference.weight_table</code> along with <code>inference.skip_learning</code> to fix factor weights in a table and skip learning. The table is specified by factor description and weights. This table can be results from one execution of DeepDive (an example would be the view <code>dd_inference_result_variable_mapped_weights</code>, or <code>dd_graph_last_weights</code> mentioned above), or manually assigned, or a combination of them. It is useful for learning once and using learned model for later inference tasks:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">deepdive {
+  # Use weights in [weight table name]
+  inference.skip_learning: true
+  inference.weight_table: [weight table name]
+}
+</code></pre></div>
+            </div>
+          </row>
+        </div>
+      </section>
+    
+      <footer id="footer">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <p class="pull-left"> 
+                Copyright, 2014 deepdive.stanford.edu
+                ⋅
+                <a href="mailto:contact.hazy@gmail.com">Questions? Email us</a>
+              </p>
+              <p class="pull-right"> 
+                Visit DeepDive on <a href="https://github.com/hazyresearch/deepdive" target="_blank">Github</a> 
+              </p>
+            </div>
+          </row>
+        </div>
+      </footer>
+
+    
+  
+  </body>
+</html>

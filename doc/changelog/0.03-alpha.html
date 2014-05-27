@@ -1,0 +1,116 @@
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="DeepDive" />
+    <link href='http://fonts.googleapis.com/css?family=Lato:300,400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="http://deepdive.stanford.edu/stylesheets/application.css" />
+    <link rel="canonical" href="http://deepdive.stanford.edu">
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="http://deepdive.stanford.edu/javascripts/application.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepDive</title>
+  </head>
+
+  <body>
+      <script type="text/javascript">
+window.analytics||(window.analytics=[]),window.analytics.methods=["identify","track","trackLink","trackForm","trackClick","trackSubmit","page","pageview","ab","alias","ready","group","on","once","off"],window.analytics.factory=function(t){return function(){var a=Array.prototype.slice.call(arguments);return a.unshift(t),window.analytics.push(a),window.analytics}};for(var i=0;i<window.analytics.methods.length;i++){var method=window.analytics.methods[i];window.analytics[method]=window.analytics.factory(method)}window.analytics.load=function(t){var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src=("https:"===document.location.protocol?"https://":"http://")+"d2dq2ahtl5zl1z.cloudfront.net/analytics.js/v1/"+t+"/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(a,n)},window.analytics.SNIPPET_VERSION="2.0.8",
+window.analytics.load("h6uwk48gwg");
+window.analytics.page();
+</script>
+      <a href="https://github.com/hazyresearch/deepdive" target="_blank"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>
+
+      <div id="header">
+        <div class="container">
+          <row>
+            <div class="col-md-4 col-md-offset-1">
+              <a href="http://deepdive.stanford.edu/" class="deepdive-logo">
+              <img src="http://deepdive.stanford.edu/images/header_logo.png" style="width: 250px;"/>
+              </a> 
+            </div>
+            <div class="col-md-6 col-md-offset-1">
+              <ul class="list-unstyled list-inline" id="header-nav">
+                <li><a href="http://deepdive.stanford.edu/index.html">Home</a></li>
+                <li><a href="http://deepdive.stanford.edu/doc/installation.html">Download</a></li>
+                <li><a href="http://deepdive.stanford.edu/index.html#documentation">Documentation</a></li>
+                <li><a href="https://mailman.stanford.edu/mailman/listinfo/deepdive-list" target="_blank">Mailing List</a></li>
+              </ul>
+              
+            </div>
+          </row>
+        </div>
+      </div>
+
+      <section id="main">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <h1>Changelog for version 0.0.3-alpha.1 (05/25/2014)</h1>
+
+<ul>
+<li>Updated example walkthrough and <code>spouse_example</code></li>
+<li>Added python utility <code>ddlib</code> for text manipulation (need exporting PYTHONPATH, usage see its pydoc)</li>
+<li>Added utility script <code>util/extractor_input_writer.py</code> to sample extractor inputs</li>
+<li>Updated <code>nlp_extractor</code> format (use <code>sentence_offset</code>, textual sentence_id)</li>
+<li>Cleaned up unused datastore code</li>
+<li>Update templates</li>
+<li>Bug fixes</li>
+</ul>
+
+<h1>Changelog for version 0.0.3-alpha (05/07/2014)</h1>
+
+<ul>
+<li><p><strong>Non-backward-compatible syntax change</strong>: Developers must include <code>id</code> column with type <code>bigint</code> in any table containing <em>variables</em>, but they <strong>MUST NOT use this column</strong> anywhere. This column is preserved for learning and inference, and all values will be erased and reassigned in grounding phase.</p></li>
+<li><p><strong>Non-backward-compatible functionality change</strong>: DeepDive is no longer responsible for any automatic assignment of sequential variable IDs. You may use <code>examples/spouse_example/scripts/fill_sequence.sh</code> for this task.</p></li>
+<li><p><strong>Updated dependency requirement</strong>: requires JDK 7 or higher. </p></li>
+<li><p>Supported four new types of extractors. See documentation for details:</p>
+
+<ul>
+<li><a href="http://deepdive.stanford.edu/doc/extractors.html#tsv_extractor">tsv_extractor</a></li>
+<li><a href="http://deepdive.stanford.edu/doc/extractors.html#plpy_extractor">plpy_extractor</a></li>
+<li><a href="http://deepdive.stanford.edu/doc/extractors.html#sql_extractor">sql_extractor</a></li>
+<li><a href="http://deepdive.stanford.edu/doc/extractors.html#cmd_extractor">cmd_extractor</a></li>
+</ul></li>
+<li><p>Even faster factor graph grounding and serialization using better optimized SQL.</p></li>
+<li><p>The previous default Java sampler is no longer supported. Made C++ sampler as the default sampler. </p></li>
+<li><p>New configuration supported: <code>pipeline.relearn_from</code> to skip extraction and grounding, only perform learning and inference with a previous version. Useful for tuning sampler arguments.</p></li>
+<li><p>New configuration supported: <code>inference.skip_learning</code> to use weights learned in the last execution.</p></li>
+<li><p>New configuration supported: <code>inference.weight_table</code> to fix factor weights in a table and skip learning. The table is specified by factor description and weights. This table can be results from one execution of DeepDive, or manually assigned, or a combination of them. It is useful for learning once and using learned model for later inference tasks.</p></li>
+<li><p>Supported manual holdout by a <a href="http://deepdive.stanford.edu/doc/calibration.html#custom_holdout">holdout query</a>.</p></li>
+<li><p>Updated <code>spouse_example</code> with implementations in different styles of extractors.</p></li>
+<li><p>The nlp_extractor example has changed table requirements and usage. See <a href="http://deepdive.stanford.edu/doc/walkthrough.html#nlp_extractor">HERE</a>.</p></li>
+<li><p>In <code>db.default</code> configuration, users should define <code>dbname</code>, <code>host</code>, <code>port</code> and <code>user</code>. If not defined, by default system will use environmental variables <code>DBNAME</code>,<code>PGHOST</code>, <code>PGPORT</code> and <code>PGUSER</code> accordingly.</p></li>
+<li><p>Fixed all examples.</p></li>
+<li><p>Updated documentation.</p></li>
+<li><p>Print SQL query execution plans for extractor inputs.</p></li>
+<li><p>Skip grounding, learning and inference if no factors are active.</p></li>
+<li><p>If using GreenPlum, users should add <code>DISTRIBUTED BY</code> clause in all <code>CREATE TABLE</code> commands. Do not use variable id as distribution key. Do not use distribution key that is not initially assigned.</p></li>
+</ul>
+
+            </div>
+          </row>
+        </div>
+      </section>
+    
+      <footer id="footer">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <p class="pull-left"> 
+                Copyright, 2014 deepdive.stanford.edu
+                ⋅
+                <a href="mailto:contact.hazy@gmail.com">Questions? Email us</a>
+              </p>
+              <p class="pull-right"> 
+                Visit DeepDive on <a href="https://github.com/hazyresearch/deepdive" target="_blank">Github</a> 
+              </p>
+            </div>
+          </row>
+        </div>
+      </footer>
+
+    
+  
+  </body>
+</html>

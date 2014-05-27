@@ -1,0 +1,124 @@
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="DeepDive" />
+    <link href='http://fonts.googleapis.com/css?family=Lato:300,400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="http://deepdive.stanford.edu/stylesheets/application.css" />
+    <link rel="canonical" href="http://deepdive.stanford.edu">
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="http://deepdive.stanford.edu/javascripts/application.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepDive</title>
+  </head>
+
+  <body>
+      <script type="text/javascript">
+window.analytics||(window.analytics=[]),window.analytics.methods=["identify","track","trackLink","trackForm","trackClick","trackSubmit","page","pageview","ab","alias","ready","group","on","once","off"],window.analytics.factory=function(t){return function(){var a=Array.prototype.slice.call(arguments);return a.unshift(t),window.analytics.push(a),window.analytics}};for(var i=0;i<window.analytics.methods.length;i++){var method=window.analytics.methods[i];window.analytics[method]=window.analytics.factory(method)}window.analytics.load=function(t){var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src=("https:"===document.location.protocol?"https://":"http://")+"d2dq2ahtl5zl1z.cloudfront.net/analytics.js/v1/"+t+"/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(a,n)},window.analytics.SNIPPET_VERSION="2.0.8",
+window.analytics.load("h6uwk48gwg");
+window.analytics.page();
+</script>
+      <a href="https://github.com/hazyresearch/deepdive" target="_blank"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>
+
+      <div id="header">
+        <div class="container">
+          <row>
+            <div class="col-md-4 col-md-offset-1">
+              <a href="http://deepdive.stanford.edu/" class="deepdive-logo">
+              <img src="http://deepdive.stanford.edu/images/header_logo.png" style="width: 250px;"/>
+              </a> 
+            </div>
+            <div class="col-md-6 col-md-offset-1">
+              <ul class="list-unstyled list-inline" id="header-nav">
+                <li><a href="http://deepdive.stanford.edu/index.html">Home</a></li>
+                <li><a href="http://deepdive.stanford.edu/doc/installation.html">Download</a></li>
+                <li><a href="http://deepdive.stanford.edu/index.html#documentation">Documentation</a></li>
+                <li><a href="https://mailman.stanford.edu/mailman/listinfo/deepdive-list" target="_blank">Mailing List</a></li>
+              </ul>
+              
+            </div>
+          </row>
+        </div>
+      </div>
+
+      <section id="main">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <h1>Inference Results and Calibration</h1>
+
+<p>Writing factors and inference rules using DeepDive is an iterative process. After the DeepDive pipeline is finished, you should inspect the results, improve your extractors, and modify inference rules. The inference results are stored in the database, in the table named <code>[variable name]_inference</code>. DeepDive gives expectation for each variable, which is the most probable value that the variable may take. Also, the learned weights are store in table <code>dd_inference_result_weights</code>. To make this process easier, DeepDive writes calibration data for each variable. <a href="general/calibration.html">Refer to the calibration guide for more information</a>.</p>
+
+<h3>Defining holdout</h3>
+
+<p>To get the most out of calibration, you should specify a holdout fraction for your training data. The holdout will be used to evaluate the predictions DeepDive makes. By default, no holdout is used.</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">calibration: {
+  holdout_fraction: 0.25
+}
+</code></pre></div>
+<p>By default the system assigns holdout variables at random. You can also specify a custom holdout query (see below)</p>
+
+<h3>Custom Holdout</h3>
+
+<p>DeepDive allows you to specify a SQL query that defines which variables should be in the holdout. In case you define a custom query to hold out in <code>holdout_query</code>, and the <code>holdout_fraction</code> setting is ignored. You may define a custom holdout query as follows:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">calibration: {
+  holdout_query: &quot;INSERT INTO dd_graph_variables_holdout(variable_id) SELECT id FROM mytable WHERE predicate&quot;
+}
+</code></pre></div>
+<p>A custom holdout query should insert all variable IDs that are to be held out into the <code>dd_graph_variables_holdout</code> table through arbitrary SQL. Such query may look as follows (but could be more complex):</p>
+
+<div class="highlight"><pre><code class="sql"><span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">dd_graph_variables_holdout</span><span class="p">(</span><span class="n">variable_id</span><span class="p">)</span>
+<span class="p">[</span><span class="n">A</span> <span class="k">SELECT</span> <span class="k">statement</span> <span class="n">that</span> <span class="n">selects</span> <span class="n">the</span> <span class="n">IDs</span> <span class="k">of</span> <span class="k">all</span> <span class="n">variables</span> <span class="k">to</span> <span class="n">be</span> <span class="k">in</span> <span class="n">the</span> <span class="n">holdout</span><span class="p">]</span></code></pre></div>
+
+<h3>Inspecting Probabilities and Weights</h3>
+
+<p>To improve prediction accuracy it is useful to inspect the probabilities for each variable, and the learned weights. DeepDive creates a view called <code>inference_result_mapped_weights</code> in the database, which contains the weight names and the learned values sorted by absolute value.</p>
+
+<p>For each variable, DeepDive generates a view called <code>[variable_name]_inference</code>, which contains your original data, augmented with a <code>probability</code> column, the result of our inference algorithm.</p>
+
+<h3>Calibration Plots</h3>
+
+<p>The system generates a calibration data file for each variable defined in the <a href="schema.html">schema</a>. Refer to the log output for the path of these files. By default, they are placed in <code>target/calibration/[variable_name].tsv</code>. Each files contains five columns:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">[bucket_from] [bucket_to] [num_predictions] [num_true] [num_false]
+</code></pre></div>
+<p>DeepDive buckets the inference results into ten buckets from 0.0 to 1.0. Thus, each file will contain ten lines.</p>
+
+<ul>
+<li><code>num_predictions</code> is the number of variables in the probability bucket, including both holdout and query variables.</li>
+<li><code>num_true</code> is the number of variables in the probability bucket for which the holdout value is true. The number should be high for buckets with large probabilities and small for buckets with small probabilities. Only the holdout data is used.</li>
+<li><code>num_false</code> is the number of variables in the probability bucket for which the holdout value is false. The number should be small for buckets with large probabilities and large for buckets with small probabilities. Only the holdout data is used.</li>
+</ul>
+
+<p>DeepDive also generates a calibration plot for each of the variables you defined in your schema:</p>
+
+<p><br/></p>
+
+<p><img src="http://deepdive.stanford.edu/assets/walkthrough_has_spouse_is_true.png" alt=""></p>
+
+            </div>
+          </row>
+        </div>
+      </section>
+    
+      <footer id="footer">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <p class="pull-left"> 
+                Copyright, 2014 deepdive.stanford.edu
+                ⋅
+                <a href="mailto:contact.hazy@gmail.com">Questions? Email us</a>
+              </p>
+              <p class="pull-right"> 
+                Visit DeepDive on <a href="https://github.com/hazyresearch/deepdive" target="_blank">Github</a> 
+              </p>
+            </div>
+          </row>
+        </div>
+      </footer>
+
+    
+  
+  </body>
+</html>

@@ -1,0 +1,287 @@
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="DeepDive" />
+    <link href='http://fonts.googleapis.com/css?family=Lato:300,400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="http://deepdive.stanford.edu/stylesheets/application.css" />
+    <link rel="canonical" href="http://deepdive.stanford.edu">
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="http://deepdive.stanford.edu/javascripts/application.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepDive</title>
+  </head>
+
+  <body>
+      <script type="text/javascript">
+window.analytics||(window.analytics=[]),window.analytics.methods=["identify","track","trackLink","trackForm","trackClick","trackSubmit","page","pageview","ab","alias","ready","group","on","once","off"],window.analytics.factory=function(t){return function(){var a=Array.prototype.slice.call(arguments);return a.unshift(t),window.analytics.push(a),window.analytics}};for(var i=0;i<window.analytics.methods.length;i++){var method=window.analytics.methods[i];window.analytics[method]=window.analytics.factory(method)}window.analytics.load=function(t){var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src=("https:"===document.location.protocol?"https://":"http://")+"d2dq2ahtl5zl1z.cloudfront.net/analytics.js/v1/"+t+"/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(a,n)},window.analytics.SNIPPET_VERSION="2.0.8",
+window.analytics.load("h6uwk48gwg");
+window.analytics.page();
+</script>
+      <a href="https://github.com/hazyresearch/deepdive" target="_blank"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>
+
+      <div id="header">
+        <div class="container">
+          <row>
+            <div class="col-md-4 col-md-offset-1">
+              <a href="http://deepdive.stanford.edu/" class="deepdive-logo">
+              <img src="http://deepdive.stanford.edu/images/header_logo.png" style="width: 250px;"/>
+              </a> 
+            </div>
+            <div class="col-md-6 col-md-offset-1">
+              <ul class="list-unstyled list-inline" id="header-nav">
+                <li><a href="http://deepdive.stanford.edu/index.html">Home</a></li>
+                <li><a href="http://deepdive.stanford.edu/doc/installation.html">Download</a></li>
+                <li><a href="http://deepdive.stanford.edu/index.html#documentation">Documentation</a></li>
+                <li><a href="https://mailman.stanford.edu/mailman/listinfo/deepdive-list" target="_blank">Mailing List</a></li>
+              </ul>
+              
+            </div>
+          </row>
+        </div>
+      </div>
+
+      <section id="main">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <h1>Example Application: Improving the Results</h1>
+
+<p>This page is the next section after <a href="walkthrough-mention.html">Example Application: A Mention-Level Extraction System</a>.</p>
+
+<p><a id="improve" href="#"> </a></p>
+
+<h3>Contents</h3>
+
+<ul>
+<li><a href="#sparsity">Reduce sparsity</a></li>
+<li><a href="#strong_words">Use strong indicators rather than bag of words</a></li>
+<li><a href="#symmetry">Add a domain-specific (symmetry) rule</a></li>
+<li><a href="#tune_sampler">Tune sampler parameter</a></li>
+<li><a href="#improved_results">Getting improved results</a></li>
+</ul>
+
+<p>Other sections:</p>
+
+<ul>
+<li><a href="walkthrough.html">Walkthrough</a></li>
+<li><a href="walkthrough-mention.html">A Mention-Level Extraction System</a></li>
+<li><a href="walkthrough-extras.html">Extras: preprocessing, NLP, pipelines, debugging extractor</a></li>
+</ul>
+
+<p><a id="sparsity" href="#"> </a></p>
+
+<h3>Reduce Sparsity</h3>
+
+<p>After <a href="walkthrough-mention.html#get_result">examining the results</a>, we notice that feature <code>num_words_between</code> suffers from sparsity issues and would cause overfitting. For example, there should be roughly no difference between having 20 and 21 words between two entity mentions. Change <em>&quot;Feature 2&quot;</em> for <code>ext_has_spouse_features.py</code>:</p>
+
+<div class="highlight"><pre><code class="python"><span class="c"># Feature 2: Number of words between the two phrases</span>
+<span class="c"># Intuition: if they are close by, the link may be stronger.</span>
+<span class="n">l</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">words_between</span><span class="o">.</span><span class="n">elements</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">l</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">:</span> <span class="n">features</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s">&quot;few_words_between&quot;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span> <span class="n">features</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s">&quot;many_words_between&quot;</span><span class="p">)</span></code></pre></div>
+
+<p><a id="strong_words" href="#"> </a></p>
+
+<h3>Use strong indicators rather than bag of words</h3>
+
+<p>The &quot;bag of words&quot; is a pretty weak feature. Our next improvement is using strong indicators rather than bag of words. We check the lemma of words between two mentions if they are strong indicators of spouse or non-spouse relationships, such as &quot;marry&quot; or &quot;widow&quot;, or &quot;father&quot; &quot;mother&quot;.</p>
+
+<p>Start by modifying <code>application.conf</code> to select <code>lemma</code> as input query to <code>ext_has_spouse_features</code>:</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">ext_has_spouse_features <span class="o">{</span>
+  input: <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    SELECT  sentences.words,</span>
+<span class="s2">            lemma,                   # Add this line</span>
+<span class="s2">            has_spouse.relation_id,</span>
+<span class="s2">            p1.start_position  AS  p1_start,</span>
+<span class="s2">            p1.length          AS  p1_length,</span>
+<span class="s2">            p2.start_position  AS  p2_start,</span>
+<span class="s2">            p2.length          AS  p2_length</span>
+<span class="s2">            &quot;&quot;&quot;</span>
+    <span class="c"># ...</span>
+  <span class="o">}</span>
+</code></pre></div>
+<p>Then modify <code>ext_has_spouse_features.py</code> by changing <em>Feature 1</em> (bag of words) into this feature. We still make use of <code>ddlib</code>:</p>
+
+<div class="highlight"><pre><code class="python"><span class="c"># Feature 1: Find out if a lemma of marry occurs.</span>
+<span class="c"># A better feature would ensure this is on the dependency path between the two.</span>
+<span class="n">words_between</span> <span class="o">=</span> <span class="n">ddlib</span><span class="o">.</span><span class="n">tokens_between_spans</span><span class="p">(</span><span class="n">words</span><span class="p">,</span> <span class="n">span1</span><span class="p">,</span> <span class="n">span2</span><span class="p">)</span>
+<span class="n">lemma_between</span> <span class="o">=</span> <span class="n">ddlib</span><span class="o">.</span><span class="n">tokens_between_spans</span><span class="p">(</span><span class="n">obj</span><span class="p">[</span><span class="s">&quot;lemma&quot;</span><span class="p">],</span> <span class="n">span1</span><span class="p">,</span> <span class="n">span2</span><span class="p">)</span>
+<span class="n">married_words</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;marry&#39;</span><span class="p">,</span> <span class="s">&#39;widow&#39;</span><span class="p">,</span> <span class="s">&#39;wife&#39;</span><span class="p">,</span> <span class="s">&#39;fiancee&#39;</span><span class="p">,</span> <span class="s">&#39;spouse&#39;</span><span class="p">]</span>
+<span class="n">non_married_words</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;father&#39;</span><span class="p">,</span> <span class="s">&#39;mother&#39;</span><span class="p">,</span> <span class="s">&#39;brother&#39;</span><span class="p">,</span> <span class="s">&#39;sister&#39;</span><span class="p">,</span> <span class="s">&#39;son&#39;</span><span class="p">]</span>
+<span class="c"># Make sure the distance between mention pairs is not too long</span>
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">words_between</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">10</span><span class="p">:</span>         
+  <span class="k">for</span> <span class="n">mw</span> <span class="ow">in</span> <span class="n">married_words</span> <span class="o">+</span> <span class="n">non_married_words</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">mw</span> <span class="ow">in</span> <span class="n">lemma_between</span><span class="o">.</span><span class="n">elements</span><span class="p">:</span> 
+      <span class="n">features</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s">&quot;important_word=</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">mw</span><span class="p">)</span></code></pre></div>
+
+<!-- 
+<div class="highlight"><pre><code class="python"><span class="c"># Feature 1: Find out if a lemma of marry occurs.</span>
+<span class="c"># A better feature would ensure this is on the dependency path between the two.</span>
+<span class="n">left_idx</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">p1_end</span><span class="p">,</span> <span class="n">p2_end</span><span class="p">)</span>
+<span class="n">right_idx</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">p1_start</span><span class="p">,</span> <span class="n">p2_start</span><span class="p">)</span>
+
+<span class="n">lemma_between</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="s">&quot;lemma&quot;</span><span class="p">][</span><span class="n">left_idx</span><span class="p">:</span><span class="n">right_idx</span><span class="p">]</span>
+<span class="n">words_between</span> <span class="o">=</span> <span class="n">words</span><span class="p">[</span><span class="n">left_idx</span><span class="p">:</span><span class="n">right_idx</span><span class="p">]</span>
+<span class="n">married_words</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;marry&#39;</span><span class="p">,</span> <span class="s">&#39;widow&#39;</span><span class="p">,</span> <span class="s">&#39;wife&#39;</span><span class="p">,</span> <span class="s">&#39;fiancee&#39;</span><span class="p">,</span> <span class="s">&#39;spouse&#39;</span><span class="p">]</span>
+<span class="n">non_married_words</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;father&#39;</span><span class="p">,</span> <span class="s">&#39;mother&#39;</span><span class="p">,</span> <span class="s">&#39;brother&#39;</span><span class="p">,</span> <span class="s">&#39;sister&#39;</span><span class="p">]</span>
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">words_between</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">10</span><span class="p">:</span>
+  <span class="k">for</span> <span class="n">mw</span> <span class="ow">in</span> <span class="n">married_words</span> <span class="o">+</span> <span class="n">non_married_words</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">mw</span> <span class="ow">in</span> <span class="n">lemma_between</span><span class="p">:</span> 
+      <span class="n">features</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s">&quot;important_word=</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">mw</span><span class="p">)</span></code></pre></div>
+ -->
+
+<p>The <code>married_words</code> and <code>non_married_words</code> list can be obtained through a &quot;snowball-style&quot; feature engineering: if you do not know which words to add, you could run bag of words and check high-weight / low-weight features (via the SQL query), and pick reasonable words to add. </p>
+
+<p><a id="symmetry" href="#"> </a></p>
+
+<h3>Add a domain-specific rule</h3>
+
+<p>let&#39;s try to incorporate a bit of domain knowledge into our model. For example, we know that has_spouse is symmetric. That means, if Barack Obama is married to Michelle Obama, then Michelle Obama is married to Barack Obama, and vice versa. (<code>Marry(A,B) &lt;-&gt; Marry(B,A)</code>) We can encode this knowledge in a second inference rule:</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">    inference.factors <span class="o">{</span>
+
+      <span class="c"># ...(other inference rules)</span>
+
+      f_has_spouse_symmetry <span class="o">{</span>
+        input_query: <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">          SELECT r1.is_true AS &quot;</span>has_spouse.r1.is_true<span class="s2">&quot;,</span>
+<span class="s2">                 r2.is_true AS &quot;</span>has_spouse.r2.is_true<span class="s2">&quot;,</span>
+<span class="s2">                 r1.id      AS &quot;</span>has_spouse.r1.id<span class="s2">&quot;,</span>
+<span class="s2">                 r2.id      AS &quot;</span>has_spouse.r2.id<span class="s2">&quot;</span>
+<span class="s2">          FROM has_spouse r1,</span>
+<span class="s2">               has_spouse r2</span>
+<span class="s2">          WHERE r1.person1_id = r2.person2_id</span>
+<span class="s2">            AND r1.person2_id = r2.person1_id</span>
+<span class="s2">          &quot;&quot;&quot;</span>
+        <span class="k">function</span>: <span class="s2">&quot;Equal(has_spouse.r1.is_true, has_spouse.r2.is_true)&quot;</span>
+        weight: <span class="s2">&quot;?&quot;</span>
+      <span class="o">}</span>
+
+    <span class="o">}</span>
+</code></pre></div>
+<p>There are many <a href="inference_rule_functions.html">other kinds of factor functions</a> you could use to encode domain knowledge. </p>
+
+<p><a id="tune_sampler" href="#"> </a></p>
+
+<h3>Tune sampler parameter</h3>
+
+<p>We can further tune sampler parameters to obtain better results. Refer to <a href="performance.html">performance tuning guide</a> and <a href="sampler.html">sampler guide</a> for tuning sampler parameters.</p>
+
+<p>Add into <code>deepdive</code> block of <code>application.conf</code>:</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">sampler.sampler_args: <span class="s2">&quot;-l 5000 -d 0.99 -s 1 -i 1000 --alpha 0.01&quot;</span>
+</code></pre></div>
+<p>This would force sampler to learn and sample with more iterations and a slower decay of stepsize.</p>
+
+<p><a id="improved_results" href="#"> </a></p>
+
+<h3>Getting improved results</h3>
+
+<p>After adding above modifications to extractors and inference rules, let&#39;s rerun the system:</p>
+
+<div class="highlight"><pre><code class="bash">./run.sh
+
+psql -d deepdive_spouse -c <span class="s2">&quot;</span>
+<span class="s2">  SELECT s.sentence_id, description, is_true, expectation, s.sentence</span>
+<span class="s2">  FROM has_spouse_is_true_inference hsi, sentences s</span>
+<span class="s2">  WHERE s.sentence_id = hsi.sentence_id and expectation &gt; 0.95</span>
+<span class="s2">  ORDER BY random() LIMIT 10;</span>
+<span class="s2">&quot;</span></code></pre></div>
+
+<p>Results looks like:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text"> sentence_id |       description       | is_true | expectation | sentence 
+-------------+-------------------------+---------+-------------+-------
+ 95331@69    | Julia Gardiner-B. Tyler |         |           1 | B. Tyler married his second wife , Julia Gardiner , in 1844 in New York City .
+ 114481@10   | Obama-Michelle          |         |       0.982 | And so , with those remarks , a tightly knit relationship finally came apart -- Wright had married Obama and his wife
+ , Michelle , and baptized their children .
+ 103874@0    | Abigail-John Adams      |         |       0.982 | When John Adams begins acting like a pompous windbag , his wife , Abigail , reproaches him with a single word .
+ 44768@4     | Wendi-Murdoch           |         |       0.992 | Murdoch &#39;s third wife , Wendi , is a mainland Chinese who once worked for his Hong Kong-based satellite broadcaster ,
+ Star TV .
+ 111325@10   | Julius Rosenberg-Ethel  |         |       0.992 | Sophie Rosenberg thought Mamie Eisenhower could be a `` sympathetic ally &#39;&#39; in saving her son , Julius Rosenberg , an
+d his wife Ethel from execution in 1953 for espionage .
+ 111325@10   | Ethel-Julius Rosenberg  |         |       0.994 | Sophie Rosenberg thought Mamie Eisenhower could be a `` sympathetic ally &#39;&#39; in saving her son , Julius Rosenberg , an
+d his wife Ethel from execution in 1953 for espionage .
+ 114424@8    | Obama-Michelle          |         |       0.992 | And so , with those remarks , a tightly knit relationship finally unraveled -- Wright had married Obama and his wife
+, Michelle , and baptized their children .
+ 1387@16     | Rosalynn-Barbara        |         |       0.978 | Across the nave from the Ford family sat Bush and Laura Bush , and Vice President Dick Cheney , who served Ford as ch
+ief of staff , with his wife , Lynne , several current Cabinet members and three former presidents -- the elder George Bush with his wife , Barbara ; Jimmy Carter and his wife , Rosa
+lynn ; and Bill Clinton and his wife , Sen. Hillary Rodham Clinton , and their daughter Chelsea .
+ 119377@0    | John McCain-Cindy       |         |       0.992 | Sen. John McCain &#39;s wife , Cindy , abruptly reversed course on Friday and released a summary of her 2006 income tax r
+eturn after weeks of vowing not to do so .
+ 84632@13    | Cecilia-Sarkozy         |         |       0.998 | Less than two months ago , Sarkozy and his wife , Cecilia , announced their divorce after 11 years of marriage .
+(10 rows)
+</code></pre></div>
+<p>Let&#39;s look at the calibration plot:</p>
+
+<p><img src="http://deepdive.stanford.edu/assets/walkthrough_has_spouse_is_true_improved.png" alt="Calibration"></p>
+
+<p>Let&#39;s examine the learned weights again. Type in following command to select features with highest weight:</p>
+
+<div class="highlight"><pre><code class="bash">psql -d deepdive_spouse -c <span class="s2">&quot;</span>
+<span class="s2">  SELECT description, weight</span>
+<span class="s2">  FROM dd_inference_result_variables_mapped_weights</span>
+<span class="s2">  ORDER BY weight DESC</span>
+<span class="s2">  LIMIT 5;</span>
+<span class="s2">&quot;</span></code></pre></div>
+<div class="highlight"><pre><code class="language-text" data-lang="text">                 description                  |      weight
+----------------------------------------------+------------------
+ f_has_spouse_features-important_word=wife    | 3.12437525600187
+ f_has_spouse_features-important_word=widow   | 2.45652823047255
+ f_has_spouse_features-important_word=marry   | 1.85742049055667
+ f_has_spouse_features-few_words_between      |  1.6015835203787
+ f_has_spouse_features-important_word=fiancee |  1.0439453467637
+(5 rows)
+</code></pre></div>
+<p>Type in following command to select top negative features:</p>
+
+<div class="highlight"><pre><code class="bash">psql -d deepdive_spouse -c <span class="s2">&quot;</span>
+<span class="s2">  SELECT description, weight</span>
+<span class="s2">  FROM dd_inference_result_variables_mapped_weights</span>
+<span class="s2">  ORDER BY weight ASC</span>
+<span class="s2">  LIMIT 5;</span>
+<span class="s2">&quot;</span></code></pre></div>
+<div class="highlight"><pre><code class="language-text" data-lang="text">                   description                   |       weight
+-------------------------------------------------+--------------------
+ f_has_spouse_features-important_word=son        |  -2.83397621968201
+ f_has_spouse_features-important_word=father     |  -2.76048309192415
+ f_has_spouse_features-potential_last_name_match |  -2.34700944702606
+ f_has_spouse_features-important_word=brother    |  -2.23063906981248
+ f_has_spouse_features-important_word=sister     | -0.523695847147546
+(5 rows)
+</code></pre></div>
+<p>We can see that the results have been improved quite a bit, but there are still some errors. </p>
+
+<p>From the calibration plot we can tell that there are not enough features, especially negative features. We can continue &quot;snowball sampling&quot; on bag of words to obtain more negative features, or use better features such as dependency paths. We can also add more negative examples by distant supervision, or adding other domain-specific rules. To make further improvements, it is important to conduct error analysis.</p>
+
+<p>Moreover, performing entity linking and <a href="walkthrough.html#entity_level">looking for entity-level relations</a> is necessary for a better KBC application.</p>
+
+<p>Now if you want, you can look at the <a href="walkthrough-extras.html">Extras page</a> which explained how to prepare data tables, use pipelines, use NLP extractors, or get example extractor inputs.</p>
+
+<p>You can also <a href="walkthrough.html#entity_level">go back to the tutorial</a>.</p>
+
+            </div>
+          </row>
+        </div>
+      </section>
+    
+      <footer id="footer">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <p class="pull-left"> 
+                Copyright, 2014 deepdive.stanford.edu
+                ⋅
+                <a href="mailto:contact.hazy@gmail.com">Questions? Email us</a>
+              </p>
+              <p class="pull-right"> 
+                Visit DeepDive on <a href="https://github.com/hazyresearch/deepdive" target="_blank">Github</a> 
+              </p>
+            </div>
+          </row>
+        </div>
+      </footer>
+
+    
+  
+  </body>
+</html>

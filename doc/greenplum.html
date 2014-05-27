@@ -1,0 +1,274 @@
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="DeepDive" />
+    <link href='http://fonts.googleapis.com/css?family=Lato:300,400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="http://deepdive.stanford.edu/stylesheets/application.css" />
+    <link rel="canonical" href="http://deepdive.stanford.edu">
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="http://deepdive.stanford.edu/javascripts/application.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepDive</title>
+  </head>
+
+  <body>
+      <script type="text/javascript">
+window.analytics||(window.analytics=[]),window.analytics.methods=["identify","track","trackLink","trackForm","trackClick","trackSubmit","page","pageview","ab","alias","ready","group","on","once","off"],window.analytics.factory=function(t){return function(){var a=Array.prototype.slice.call(arguments);return a.unshift(t),window.analytics.push(a),window.analytics}};for(var i=0;i<window.analytics.methods.length;i++){var method=window.analytics.methods[i];window.analytics[method]=window.analytics.factory(method)}window.analytics.load=function(t){var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src=("https:"===document.location.protocol?"https://":"http://")+"d2dq2ahtl5zl1z.cloudfront.net/analytics.js/v1/"+t+"/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(a,n)},window.analytics.SNIPPET_VERSION="2.0.8",
+window.analytics.load("h6uwk48gwg");
+window.analytics.page();
+</script>
+      <a href="https://github.com/hazyresearch/deepdive" target="_blank"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>
+
+      <div id="header">
+        <div class="container">
+          <row>
+            <div class="col-md-4 col-md-offset-1">
+              <a href="http://deepdive.stanford.edu/" class="deepdive-logo">
+              <img src="http://deepdive.stanford.edu/images/header_logo.png" style="width: 250px;"/>
+              </a> 
+            </div>
+            <div class="col-md-6 col-md-offset-1">
+              <ul class="list-unstyled list-inline" id="header-nav">
+                <li><a href="http://deepdive.stanford.edu/index.html">Home</a></li>
+                <li><a href="http://deepdive.stanford.edu/doc/installation.html">Download</a></li>
+                <li><a href="http://deepdive.stanford.edu/index.html#documentation">Documentation</a></li>
+                <li><a href="https://mailman.stanford.edu/mailman/listinfo/deepdive-list" target="_blank">Mailing List</a></li>
+              </ul>
+              
+            </div>
+          </row>
+        </div>
+      </div>
+
+      <section id="main">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <h1>Using Greenplum with DeepDive</h1>
+
+<p>This documentation provides a simple installation guide for <a href="http://www.gopivotal.com/products/pivotal-greenplum-database">Greenplum</a> to work with DeepDive. We will use the single-node mode of Greenplum for demonstration purposes. It should work identically with the multi-node configuration.</p>
+
+<p><strong>After installing GreenPlum, DeepDive should work well with it. The rest steps are identical with the documentation for <a href="postgresql.html">PostgreSQL</a></strong>. There are a few caveats though, in the following section:</p>
+
+<h2>Important notes for GreenPlum users</h2>
+
+<ul>
+<li><p>Be sure to refer to <a href="http://media.gpadmin.me/wp-content/uploads/2012/11/GPDBAGuide.pdf">GreenPlum manuals</a>.</p></li>
+<li><p>Users should add <code>DISTRIBUTED BY</code> clause in all <code>CREATE TABLE</code> commands. <strong>Do not use variable id</strong> as distribution key. <strong>Do not use</strong> distribution key that is <strong>not initially assigned</strong>.</p></li>
+</ul>
+
+<h2>Note</h2>
+
+<p>If you are installing Greenplum on a machine without root access, skip the step <strong>Setting the Greenplum Recommended OS Parameters</strong>, and if you cannot change your settings to login to localhost without a password, skip the step <strong>Configure ssh with localhost</strong>.</p>
+
+<p>Note that you will be prompted to enter your password to <code>localhost</code> several times throughout the installation process.</p>
+
+<p>If you do not have write permissions to the /usr/local/ directory: let GREENPLUM<em>DIR be the directory where you wish to install Greenplum. In the steps below, replace /usr/local/ with GREENPLUM</em>DIR.</p>
+
+<p>In the steps <strong>Set Greenplum related session variables</strong> and <strong>Configure PATH to add master data directory</strong>, if you do not have write permissions to the ~/.bashrc file, simply run the commands <code>source GREENPLUM_DIR/greenplum-db/greenplum_path.sh</code> and <code>export MASTER_DATA_DIRECTORY=GREENPLUM_DIR/greenplumdb/master/gpsne-1</code>. In order to have these commands run every time you log in to the system, save a new script called greenplum_startup.sh with the following contents:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">source GREENPLUM_DIR/greenplum-db/greenplum_path.sh
+export MASTER_DATA_DIRECTORY=GREENPLUM_DIR/greenplumdb/master/gpsne-1
+</code></pre></div>
+<p>and edit your terminal settings so that this script gets executed every time the shell opens.</p>
+
+<h2>Installation with Linux</h2>
+
+<p>The following guide sets up Greenplum on CentOS 5.6 x64 with a single-node mode.</p>
+
+<h3>Setting the Greenplum Recommended OS Parameters</h3>
+
+<p>Set the following parameters in the <code>/etc/sysctl.conf</code> file and reboot: </p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ sudo vi /etc/sysctl.conf
+
+xfs_mount_options = rw,noatime,inode64,allocsize=16m
+sysctl.kernel.shmmax = 500000000
+sysctl.kernel.shmmni = 4096
+sysctl.kernel.shmall = 4000000000
+sysctl.kernel.sem = 250 512000 100 2048
+sysctl.kernel.sysrq = 1
+sysctl.kernel.core_uses_pid = 1
+sysctl.kernel.msgmnb = 65536
+sysctl.kernel.msgmax = 65536
+sysctl.kernel.msgmni = 2048
+sysctl.net.ipv4.tcp_syncookies = 1
+sysctl.net.ipv4.ip_forward = 0
+sysctl.net.ipv4.conf.default.accept_source_route = 0
+sysctl.net.ipv4.tcp_tw_recycle = 1
+sysctl.net.ipv4.tcp_max_syn_backlog = 4096
+sysctl.net.ipv4.conf.all.arp_filter = 1
+sysctl.net.ipv4.ip_local_port_range = 1025 65535
+sysctl.net.core.netdev_max_backlog = 10000
+sysctl.vm.overcommit_memory = 2
+</code></pre></div>
+<p><em>NOTE:</em> For RHEL version 6.x platforms, the above parameters do not include the <code>sysctl.</code> prefix, as follows:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">xfs_mount_options = rw,noatime,inode64,allocsize=16m
+kernel.shmmax = 500000000
+kernel.shmmni = 4096
+kernel.shmall = 4000000000
+kernel.sem = 250 512000 100 2048
+kernel.sysrq = 1
+kernel.core_uses_pid = 1
+kernel.msgmnb = 65536
+kernel.msgmax = 65536
+kernel.msgmni = 2048
+net.ipv4.tcp_syncookies = 1
+net.ipv4.ip_forward = 0
+net.ipv4.conf.default.accept_source_route = 0
+net.ipv4.tcp_tw_recycle = 1
+net.ipv4.tcp_max_syn_backlog = 4096
+net.ipv4.conf.all.arp_filter = 1
+net.ipv4.ip_local_port_range = 1025 65535
+net.core.netdev_max_backlog = 10000
+vm.overcommit_memory = 2
+</code></pre></div>
+<p>Set the following parameters in the <code>/etc/security/limits.conf</code> file: </p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ sudo vi /etc/security/limits.conf
+
+* soft nofile 65536
+* hard nofile 65536
+* soft nproc 131072
+* hard nproc 131072
+</code></pre></div>
+<p>Be sure to <strong>reboot</strong> after changing kernel parameters.</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ sudo reboot
+</code></pre></div>
+<h3>Running the Greenplum Installer</h3>
+
+<p>Download Greenplum for your operating system. For a free Community Edition, find a download link as well as an official guide at <a href="http://www.gopivotal.com/products/pivotal-greenplum-database">http://www.gopivotal.com/products/pivotal-greenplum-database</a>, or directly download <a href="http://downloads.cfapps.io/gpdb_db_el5_64">here</a>. </p>
+
+<p>Install Greenplum using the downloaded package: </p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ unzip greenplum-db-4.2.x.x-PLATFORM.zip
+$ /bin/bash greenplum-db-4.2.x.x-PLATFORM.bin
+</code></pre></div>
+<p>From now on, we assume your Greenplum are installed into <code>/usr/local/greenplum-db-4.2.x.x</code>. If not, be aware of changes in the following guide.</p>
+
+<h3>Set Greenplum related session variables</h3>
+
+<p>To set Greenplum related session variables: add into your bash source <code>/usr/local/greenplum-db/greenplum_path.sh</code>. Specifically, modify your <code>~/.bashrc</code> and add a line:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ vi ~/.bashrc
+
+source /usr/local/greenplum-db/greenplum_path.sh
+</code></pre></div>
+<h3>Configure ssh with localhost</h3>
+
+<p>Now you need to generate ssh keys for localhost. Run: </p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ gpssh-exkeys -h localhost
+</code></pre></div>
+<p>Then you should be able to <code>ssh</code> into <code>localhost</code> without password, and you can move on.</p>
+
+<h3>Create folders for database</h3>
+
+<p>Create master and segment folders. This is where the database files will
+be stored. <strong>Be sure that you have write permission to these folders</strong>.</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ mkdir ~/greenplumdb
+$ mkdir ~/greenplumdb/master
+$ mkdir ~/greenplumdb/data1
+</code></pre></div>
+<h3>Configure Greenplum database on single-node mode</h3>
+
+<p>Copy sample configuration files <code>$ gpinitsystem_singlenode</code> and <code>$ hostlist_singlenode</code> to your working directory.</p>
+
+<p>Assume your working directory is <code>~</code>.</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ cd ~
+$ cp /usr/local/greenplum-db/docs/cli_help/gpconfigs/gpinitsystem_singlenode .
+$ cp /usr/local/greenplum-db/docs/cli_help/gpconfigs/hostlist_singlenode .
+$ chmod 755 hostlist_singlenode gpinitsystem_singlenode
+</code></pre></div>
+<p>Open <code>hostlist_singlenode</code> and replace the existing line with <code>localhost</code>:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ vi hostlist_singlenode
+
+localhost
+</code></pre></div>
+<p>Open <code>gpinitsystem_singlenode</code> and make the following changes:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ vi gpinitsystem_singlenode
+
+# MACHINE_LIST_FILE=./hostlist_singlenode
+declare -a DATA_DIRECTORY=(~/greenplumdb/data1)
+MASTER_HOSTNAME=localhost
+MASTER_DIRECTORY=~/greenplumdb/master
+</code></pre></div>
+<p>Save and exit. Then run the following command to create the database:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ gpinitsystem -c gpinitsystem_singlenode -h hostlist_singlenode
+</code></pre></div>
+<p>After a while, your database server is created.</p>
+
+<h3>Configure PATH to add master data directory</h3>
+
+<p>Configure the <code>MASTER_DATA_DIRECTORY</code> path into your bash source:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ echo &quot;export MASTER_DATA_DIRECTORY=/greenplumdb/master/gpsne-1&quot; &gt;&gt; ~/.bashrc
+
+$ source ~/.bashrc
+</code></pre></div>
+<h3>Start the database:</h3>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ gpstart
+</code></pre></div>
+<h3>Verify the installation</h3>
+
+<p>Follow the links and you should get similar output.</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ psql postgres
+
+psql (8.2.15)
+Type “help” for help.
+
+postgres=#
+
+postgres=# \l
+
+                List of databases
+   Name    | Owner | Encoding | Access privileges
+-----------+-------+----------+-------------------
+ postgres  | Xxx   | UTF8     |
+ template0 | Xxx   | UTF8     | =c/Xxx  
+                              : Xxx=CTc/Xxx  
+ template1 | Xxx   | UTF8     | =c/Xxx  
+                              : Xxx=CTc/Xxx  
+(3 rows)
+
+postgres=# \q
+</code></pre></div>
+<h3>Stop and Start the database server</h3>
+
+<p>You may use <code>gpstop</code> and <code>gpstart</code> to stop / start the Greenplum server at any time.</p>
+
+<h2>Greenplum FAQ</h2>
+
+<p><strong>When I use Greeplum, I see the error &quot;ERROR: data line too long. likely due to invalid csv data&quot;. But my program runs fine using PostgreSQL.</strong></p>
+
+<p>Tune <code>gp_max_csv_line_length</code> in Greenplum.</p>
+
+<p><strong>Could not reserve enough space for object heap. Error: Could not create the Java Virtual Machine.</strong></p>
+
+<p>Tune <code>MaxPermSize</code> in Java, e.g., <code>-XX:MaxPermSize=128m</code>.</p>
+
+<p><strong>How to enable fuzzy string match / install &quot;contrib&quot; module in GreenPlum?</strong></p>
+
+<p>To enable <em>fuzzystringmatch</em> / the <em>contrib</em> module available for PostgreSQL for Greenplum, please check out <a href="http://blog.2ndquadrant.com/fuzzystrmatch_greenplum/">this link</a>.</p>
+
+            </div>
+          </row>
+        </div>
+      </section>
+    
+      <footer id="footer">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <p class="pull-left"> 
+                Copyright, 2014 deepdive.stanford.edu
+                ⋅
+                <a href="mailto:contact.hazy@gmail.com">Questions? Email us</a>
+              </p>
+              <p class="pull-right"> 
+                Visit DeepDive on <a href="https://github.com/hazyresearch/deepdive" target="_blank">Github</a> 
+              </p>
+            </div>
+          </row>
+        </div>
+      </footer>
+
+    
+  
+  </body>
+</html>

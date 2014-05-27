@@ -1,0 +1,124 @@
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="DeepDive" />
+    <link href='http://fonts.googleapis.com/css?family=Lato:300,400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="http://deepdive.stanford.edu/stylesheets/application.css" />
+    <link rel="canonical" href="http://deepdive.stanford.edu">
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="http://deepdive.stanford.edu/javascripts/application.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepDive</title>
+  </head>
+
+  <body>
+      <script type="text/javascript">
+window.analytics||(window.analytics=[]),window.analytics.methods=["identify","track","trackLink","trackForm","trackClick","trackSubmit","page","pageview","ab","alias","ready","group","on","once","off"],window.analytics.factory=function(t){return function(){var a=Array.prototype.slice.call(arguments);return a.unshift(t),window.analytics.push(a),window.analytics}};for(var i=0;i<window.analytics.methods.length;i++){var method=window.analytics.methods[i];window.analytics[method]=window.analytics.factory(method)}window.analytics.load=function(t){var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src=("https:"===document.location.protocol?"https://":"http://")+"d2dq2ahtl5zl1z.cloudfront.net/analytics.js/v1/"+t+"/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(a,n)},window.analytics.SNIPPET_VERSION="2.0.8",
+window.analytics.load("h6uwk48gwg");
+window.analytics.page();
+</script>
+      <a href="https://github.com/hazyresearch/deepdive" target="_blank"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>
+
+      <div id="header">
+        <div class="container">
+          <row>
+            <div class="col-md-4 col-md-offset-1">
+              <a href="http://deepdive.stanford.edu/" class="deepdive-logo">
+              <img src="http://deepdive.stanford.edu/images/header_logo.png" style="width: 250px;"/>
+              </a> 
+            </div>
+            <div class="col-md-6 col-md-offset-1">
+              <ul class="list-unstyled list-inline" id="header-nav">
+                <li><a href="http://deepdive.stanford.edu/index.html">Home</a></li>
+                <li><a href="http://deepdive.stanford.edu/doc/installation.html">Download</a></li>
+                <li><a href="http://deepdive.stanford.edu/index.html#documentation">Documentation</a></li>
+                <li><a href="https://mailman.stanford.edu/mailman/listinfo/deepdive-list" target="_blank">Mailing List</a></li>
+              </ul>
+              
+            </div>
+          </row>
+        </div>
+      </div>
+
+      <section id="main">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <h1>Using PostgreSQL with DeepDive</h1>
+
+<p>When using <a href="postgresql.org">PostgreSQL</a> with DeepDive there are several things to pay attention to.</p>
+
+<h3>Preparing the data</h3>
+
+<p>DeepDive assumes that you have created the schema for your application in the database. This means, all relations used by any of your extractors and inference rules must exist before running DeepDive. We recommend doing this in a data preparation script, as shown in the <a href="example.html">example walkthrough</a>. When designing your schema, <strong>all relation must have a unique primary key callled <code>id</code></strong>. </p>
+
+<h3>Connection Information</h3>
+
+<p>You define the connection string to your PostgreSQL instance in your application configuration in <a href="http://jdbc.postgresql.org/documentation/80/connect.html">JDBC format</a>. You can optionally specify a username and password for your connection.</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">deepdive: {
+  db.default {
+    driver   : &quot;org.postgresql.Driver&quot;
+    url      : &quot;jdbc:postgresql://[host]:[port]/[database_name]&quot;
+    user     : &quot;deepdive&quot;
+    password : &quot;&quot;
+    dbname   : [database_name]
+    host     : [host]
+    port     : [port]
+
+  }
+}
+</code></pre></div>
+<p>For advanced connection pool options refer to the <a href="http://scalikejdbc.org/documentation/configuration.html">Scalikejdbc configuration</a>.</p>
+
+<h3>Attribute naming conventions in extractors</h3>
+
+<ul>
+<li>Attributes are always prefixed with the name of the relation. For example, if your query includes a <code>name</code> column from the <code>people</code> table, then the corresponding JSON key would be called <code>people.name</code>. This also applies to aliases. For example, <code>SELECT people.name AS text</code> would result in a JSON key called <code>people.text</code>.</li>
+<li>Aggregates are prepended with a dot and don&#39;t have include the relation name. For example <code>SELECT COUNT(*) AS num FROM people GROUP BY people.name</code> would result in a JSON key called <code>.num</code>.</li>
+<li>When outputting tuples in your extractor, only use the column name of the target relation, without the relation name. In other words, don&#39;t have a JSON key called <code>people.name</code>, but a key called <code>name</code>.</li>
+</ul>
+
+<h3>Attribute naming conventions in inference rules and input queries</h3>
+
+<ul>
+<li>In factor rules, always use <code>[relation_name].[attribute]</code> for your variables, regardless whether or not you are using an alias in your input query. For example, even if you write <code>SELECT p1.is_male from people p1</code> your variable would be called <code>people.is_male</code>.</li>
+</ul>
+
+<h3>Using self-joins in inference rule input queries</h3>
+
+<p>When using self-joins, you must avoid naming collisions by defining an alias in your query. For example, the following will <strong>NOT WORK</strong>:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">SELECT p1.name, p1.id, p2.name, p2.id FROM people p1 LEFT JOIN people p2 ON p1.manager_id = p2.id
+</code></pre></div>
+<p>Instead, you must write:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">SELECT p1.name AS &quot;p1.name&quot;, p1.id AS &quot;p1.id&quot;, p2.name AS &quot;p2.name&quot;, p2.id AS &quot;p2.id&quot; FROM people p1 LEFT JOIN people p2 ON p1.manager_id = p2.id
+</code></pre></div>
+<p>And your factor function variables would be called <code>people.p1.name</code> and <code>people.p2.name</code>.</p>
+
+            </div>
+          </row>
+        </div>
+      </section>
+    
+      <footer id="footer">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <p class="pull-left"> 
+                Copyright, 2014 deepdive.stanford.edu
+                ⋅
+                <a href="mailto:contact.hazy@gmail.com">Questions? Email us</a>
+              </p>
+              <p class="pull-right"> 
+                Visit DeepDive on <a href="https://github.com/hazyresearch/deepdive" target="_blank">Github</a> 
+              </p>
+            </div>
+          </row>
+        </div>
+      </footer>
+
+    
+  
+  </body>
+</html>

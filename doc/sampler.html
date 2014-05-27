@@ -1,0 +1,129 @@
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="DeepDive" />
+    <link href='http://fonts.googleapis.com/css?family=Lato:300,400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="http://deepdive.stanford.edu/stylesheets/application.css" />
+    <link rel="canonical" href="http://deepdive.stanford.edu">
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="http://deepdive.stanford.edu/javascripts/application.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepDive</title>
+  </head>
+
+  <body>
+      <script type="text/javascript">
+window.analytics||(window.analytics=[]),window.analytics.methods=["identify","track","trackLink","trackForm","trackClick","trackSubmit","page","pageview","ab","alias","ready","group","on","once","off"],window.analytics.factory=function(t){return function(){var a=Array.prototype.slice.call(arguments);return a.unshift(t),window.analytics.push(a),window.analytics}};for(var i=0;i<window.analytics.methods.length;i++){var method=window.analytics.methods[i];window.analytics[method]=window.analytics.factory(method)}window.analytics.load=function(t){var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src=("https:"===document.location.protocol?"https://":"http://")+"d2dq2ahtl5zl1z.cloudfront.net/analytics.js/v1/"+t+"/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(a,n)},window.analytics.SNIPPET_VERSION="2.0.8",
+window.analytics.load("h6uwk48gwg");
+window.analytics.page();
+</script>
+      <a href="https://github.com/hazyresearch/deepdive" target="_blank"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>
+
+      <div id="header">
+        <div class="container">
+          <row>
+            <div class="col-md-4 col-md-offset-1">
+              <a href="http://deepdive.stanford.edu/" class="deepdive-logo">
+              <img src="http://deepdive.stanford.edu/images/header_logo.png" style="width: 250px;"/>
+              </a> 
+            </div>
+            <div class="col-md-6 col-md-offset-1">
+              <ul class="list-unstyled list-inline" id="header-nav">
+                <li><a href="http://deepdive.stanford.edu/index.html">Home</a></li>
+                <li><a href="http://deepdive.stanford.edu/doc/installation.html">Download</a></li>
+                <li><a href="http://deepdive.stanford.edu/index.html#documentation">Documentation</a></li>
+                <li><a href="https://mailman.stanford.edu/mailman/listinfo/deepdive-list" target="_blank">Mailing List</a></li>
+              </ul>
+              
+            </div>
+          </row>
+        </div>
+      </div>
+
+      <section id="main">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <h1>DimmWitted High-Speed Sampler</h1>
+
+<p>This tutorial explains how to use DimmWitted, a high-speed sampler for DeepDive. Note DimmWitted only supports 64-bit systems. DimmWitted binaries for both Mac OS X and Linux ship with DeepDive in the <code>util/</code> directory. These work out of the box on many modern systems, but setting up dependencies may be required on others (see below for more details).</p>
+
+<h3>Setting up dependencies</h3>
+
+<p>We ship pre-built dependencies for Linux and Mac systems in the <code>lib/</code> folder. Extract them:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">cd lib
+unzip dw_mac.zip
+</code></pre></div>
+<p>Now, tell the executable to load the shared libraries by setting the appropriate environment variables (for example in your run.sh file). On Mac:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">export LD_LIBRARY_PATH=[DEEPDIVE_HOME]/lib/dw_mac/lib/protobuf/lib:[DEEPDIVE_HOME]/lib/dw_mac/lib
+export DYLD_LIBRARY_PATH=[DEEPDIVE_HOME]/lib/dw_mac
+</code></pre></div>
+<p>On Linux:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">export LD_LIBRARY_PATH=[DEEPDIVE_HOME]/lib/dw_linux/lib:[DEEPDIVE_HOME]/lib/dw_linux/lib64
+</code></pre></div>
+<h3>Using DimmWitted</h3>
+
+<p>In your <code>application.conf</code>, you can change the sampler executable as follows:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">deepdive {
+  sampler.sampler_cmd: &quot;util/sampler-dw-mac gibbs&quot;
+  sampler.sampler_args: &quot;-l 1000 -s 1 -i 1000 --alpha 0.01&quot;
+}
+</code></pre></div>
+<p>In the above, use <code>sampler-dw-mac</code> or <code>sampler-dw-linux</code> depending on which type of system your are on. Note that we have also changed the sampler parameters to use a larger number of iterations for learning and inference because each iteration takes much less time with the high-speed sampler.</p>
+
+<p>In the current system since <a href="changelog/0.03-alpha.html">version 0.03</a>, DeepDive will automatically choose mac / linux sampler based on your environment, so sampler_cmd is recommended to be omitted.</p>
+
+<h3>Sampler arguments</h3>
+
+<p>The sampler executable file can be invoked independently of DeepDive. The following arguments to the sampler executable are used to specify input files, output file, and learning and inference parameters:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">-w &lt;weightsFile&gt; | --weights &lt;weightsFile&gt;
+    weights file (required)
+-v &lt;variablesFile&gt; | --variables &lt;variablesFile&gt;
+    variables file (required)
+-f &lt;factorsFile&gt; | --factors &lt;factorsFile&gt;
+    factors file (required)
+-e &lt;edgesFile&gt; | --edges &lt;edgesFile&gt;
+    edges file (required)
+-m &lt;metaFile&gt; | --fg_meta &lt;metaFile&gt;
+    factor graph meta data file file (required)
+-o &lt;outputFile&gt; | --outputFile &lt;outputFile&gt;
+    output file path (required)
+-i &lt;numSamplesInference&gt; | --n_inference_epoch &lt;numSamplesInference&gt;
+    number of samples during inference (required)
+-l &lt;learningNumIterations&gt; | --n_learning_epoch &lt;learningNumIterations&gt;
+    number of iterations during weight learning (required)
+-s &lt;learningNumSamples&gt; | --n_samples_per_learning_epoch &lt;learningNumSamples&gt;
+    number of samples per iteration during weight learning (required)
+-a &lt;learningRate&gt; | --alpha &lt;learningRate&gt; | --stepsize &lt;learningRate&gt;
+    the learning rate for gradient descent (default: 0.01)
+-d &lt;diminishRate&gt; | --diminish &lt;diminishRate&gt;
+    the diminish rate for learning (default: 0.95)
+</code></pre></div>
+            </div>
+          </row>
+        </div>
+      </section>
+    
+      <footer id="footer">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <p class="pull-left"> 
+                Copyright, 2014 deepdive.stanford.edu
+                ⋅
+                <a href="mailto:contact.hazy@gmail.com">Questions? Email us</a>
+              </p>
+              <p class="pull-right"> 
+                Visit DeepDive on <a href="https://github.com/hazyresearch/deepdive" target="_blank">Github</a> 
+              </p>
+            </div>
+          </row>
+        </div>
+      </footer>
+
+    
+  
+  </body>
+</html>

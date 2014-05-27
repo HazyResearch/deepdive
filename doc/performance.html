@@ -1,0 +1,119 @@
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="DeepDive" />
+    <link href='http://fonts.googleapis.com/css?family=Lato:300,400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="http://deepdive.stanford.edu/stylesheets/application.css" />
+    <link rel="canonical" href="http://deepdive.stanford.edu">
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="http://deepdive.stanford.edu/javascripts/application.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepDive</title>
+  </head>
+
+  <body>
+      <script type="text/javascript">
+window.analytics||(window.analytics=[]),window.analytics.methods=["identify","track","trackLink","trackForm","trackClick","trackSubmit","page","pageview","ab","alias","ready","group","on","once","off"],window.analytics.factory=function(t){return function(){var a=Array.prototype.slice.call(arguments);return a.unshift(t),window.analytics.push(a),window.analytics}};for(var i=0;i<window.analytics.methods.length;i++){var method=window.analytics.methods[i];window.analytics[method]=window.analytics.factory(method)}window.analytics.load=function(t){var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src=("https:"===document.location.protocol?"https://":"http://")+"d2dq2ahtl5zl1z.cloudfront.net/analytics.js/v1/"+t+"/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(a,n)},window.analytics.SNIPPET_VERSION="2.0.8",
+window.analytics.load("h6uwk48gwg");
+window.analytics.page();
+</script>
+      <a href="https://github.com/hazyresearch/deepdive" target="_blank"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>
+
+      <div id="header">
+        <div class="container">
+          <row>
+            <div class="col-md-4 col-md-offset-1">
+              <a href="http://deepdive.stanford.edu/" class="deepdive-logo">
+              <img src="http://deepdive.stanford.edu/images/header_logo.png" style="width: 250px;"/>
+              </a> 
+            </div>
+            <div class="col-md-6 col-md-offset-1">
+              <ul class="list-unstyled list-inline" id="header-nav">
+                <li><a href="http://deepdive.stanford.edu/index.html">Home</a></li>
+                <li><a href="http://deepdive.stanford.edu/doc/installation.html">Download</a></li>
+                <li><a href="http://deepdive.stanford.edu/index.html#documentation">Documentation</a></li>
+                <li><a href="https://mailman.stanford.edu/mailman/listinfo/deepdive-list" target="_blank">Mailing List</a></li>
+              </ul>
+              
+            </div>
+          </row>
+        </div>
+      </div>
+
+      <section id="main">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <h1>Performance Tuning</h1>
+
+<p>If you are dealing with large amounts of data then you may find bottlenecks in various parts of the system. The following describes parameters you can use to improve performance.</p>
+
+<h3>Setting the JVM heap size</h3>
+
+<p>When running DeepDive you should set the maximum heap size for the Java virtual machine using the &quot;-Xmx&quot; flag. The default heap size is the smaller of 1/4th of the physical memory or 1GB. When using <a href="http://www.scala-sbt.org/">SBT</a> to run DeepDive, you can set the option as follows:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">SBT_OPTS=&quot;-Xmx8g&quot; sbt &quot;run -c path_to_application.conf&quot;
+</code></pre></div>
+<h3>Setting extractor parallelism and batch sizes</h3>
+
+<p>You can execute one extractor in parallel on multiple threads using the <code>paralleism</code> option. You can use the <code>input_batch_size</code> option to define how many tuples each extractor should receive at once, and the <code>output_batch_size</code> option to define how many extracted tuples should be inserted into the data store at once. The <a href="extractors.html">extractor documentation</a> contains more details about these options. </p>
+
+<h3>Setting the batch size for factor graph construction</h3>
+
+<p>By default, DeepDive inserts variables, factors and weights in batches defined by the underlying data store. The default for PostgreSQL is 50,000. If you have a large amount of memory you may overwrite the batch size using the following configuration setting.</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">deepdive {
+  inference.batch_size = 100000
+}
+</code></pre></div>
+<h3>Gibbs sampler options</h3>
+
+<p>You can optionally parse command line options to the Gibbs sampler executable. The default sampler options are <code>-l 300 -s 1 -i 500 -a 0.1</code>. Allowed options are:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">-l &lt;value&gt; | --learning_epochs &lt;value&gt;
+      number of epochs for learning (required)
+-i &lt;value&gt; | --inference_epochs &lt;value&gt;
+      number of epochs for inference (required)
+-s &lt;value&gt; | --learning_samples_per_epoch &lt;value&gt;
+      number of samples for learning per epoch
+-a &lt;value&gt; | --alpha &lt;value&gt;
+      Initial stepsize (learning rate)
+-d &lt;value&gt; | --diminish &lt;value&gt;
+      Decay of stepsize per epoch
+</code></pre></div>
+<p>You an specify options in DeepDive as follows:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">deepdive {
+  sampler.sampler_args: &quot;-l 1000 -s 10 -i 1000&quot;
+}
+</code></pre></div>
+<p>If your learning does not converge (e.g. very large absolute values of weights), you can try to increase the number of learning iterations <code>-l</code>, decrease learning rate <code>-a</code>, or using faster decay (smaller <code>-d</code>). </p>
+
+<p>On the other hand, if results converge to a local optimum (e.g. calibration plot looks not ideal), you can try increasing learning rate, or using a slower decay.</p>
+
+<p>Also check out the documentation of our <a href="sampler.html">high-speed sampler</a>.</p>
+
+            </div>
+          </row>
+        </div>
+      </section>
+    
+      <footer id="footer">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <p class="pull-left"> 
+                Copyright, 2014 deepdive.stanford.edu
+                ⋅
+                <a href="mailto:contact.hazy@gmail.com">Questions? Email us</a>
+              </p>
+              <p class="pull-right"> 
+                Visit DeepDive on <a href="https://github.com/hazyresearch/deepdive" target="_blank">Github</a> 
+              </p>
+            </div>
+          </row>
+        </div>
+      </footer>
+
+    
+  
+  </body>
+</html>

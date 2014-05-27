@@ -1,0 +1,366 @@
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="DeepDive" />
+    <link href='http://fonts.googleapis.com/css?family=Lato:300,400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="http://deepdive.stanford.edu/stylesheets/application.css" />
+    <link rel="canonical" href="http://deepdive.stanford.edu">
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="http://deepdive.stanford.edu/javascripts/application.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepDive</title>
+  </head>
+
+  <body>
+      <script type="text/javascript">
+window.analytics||(window.analytics=[]),window.analytics.methods=["identify","track","trackLink","trackForm","trackClick","trackSubmit","page","pageview","ab","alias","ready","group","on","once","off"],window.analytics.factory=function(t){return function(){var a=Array.prototype.slice.call(arguments);return a.unshift(t),window.analytics.push(a),window.analytics}};for(var i=0;i<window.analytics.methods.length;i++){var method=window.analytics.methods[i];window.analytics[method]=window.analytics.factory(method)}window.analytics.load=function(t){var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src=("https:"===document.location.protocol?"https://":"http://")+"d2dq2ahtl5zl1z.cloudfront.net/analytics.js/v1/"+t+"/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(a,n)},window.analytics.SNIPPET_VERSION="2.0.8",
+window.analytics.load("h6uwk48gwg");
+window.analytics.page();
+</script>
+      <a href="https://github.com/hazyresearch/deepdive" target="_blank"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>
+
+      <div id="header">
+        <div class="container">
+          <row>
+            <div class="col-md-4 col-md-offset-1">
+              <a href="http://deepdive.stanford.edu/" class="deepdive-logo">
+              <img src="http://deepdive.stanford.edu/images/header_logo.png" style="width: 250px;"/>
+              </a> 
+            </div>
+            <div class="col-md-6 col-md-offset-1">
+              <ul class="list-unstyled list-inline" id="header-nav">
+                <li><a href="http://deepdive.stanford.edu/index.html">Home</a></li>
+                <li><a href="http://deepdive.stanford.edu/doc/installation.html">Download</a></li>
+                <li><a href="http://deepdive.stanford.edu/index.html#documentation">Documentation</a></li>
+                <li><a href="https://mailman.stanford.edu/mailman/listinfo/deepdive-list" target="_blank">Mailing List</a></li>
+              </ul>
+              
+            </div>
+          </row>
+        </div>
+      </div>
+
+      <section id="main">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <h1>Example Application: Extras</h1>
+
+<p>This page is the extra section for <a href="walkthrough-mention.html">Example Application: A Mention-Level Extraction System</a>. </p>
+
+<h3>Contents</h3>
+
+<ul>
+<li><a href="#data_tables">Preparing data tables for the example appliaction</a>
+
+<ul>
+<li><a href="#data_tables_steps">Step-by-step preparation</a></li>
+<li><a href="#table_cheatsheet">Data table format cheat-sheet</a></li>
+</ul></li>
+<li><a href="#nlp_extractor">Data preprocessing using NLP extractor</a></li>
+<li><a href="#pipelines">Using pipelines</a></li>
+<li><a href="#debug_extractors">Debugging extractors by getting example inputs</a></li>
+</ul>
+
+<p>Other sections:</p>
+
+<ul>
+<li><a href="walkthrough.html">Walkthrough</a></li>
+<li><a href="walkthrough-mention.html">A Mention-Level Extraction System</a></li>
+<li><a href="walkthrough-improve.html">Improving the results</a></li>
+</ul>
+
+<p><a id="data_tables" href="#"> </a></p>
+
+<h3>Preparing Data Tables</h3>
+
+<p>If you want to know how <code>setup_database.sh</code> prepares the data, here is the detailed guide.</p>
+
+<p><a id="data_tables_steps" href="#"> </a></p>
+
+<h4>Step-by-step data preparation</h4>
+
+<p>Let&#39;s start by creating a new database called <code>deepdive_spouse</code> by typing in command line:</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">createdb deepdive_spouse
+</code></pre></div>
+<p>Make sure you are currently under <code>$DEEPDIVE_HOME/app/spouse</code> folder. Make sure to copy <code>data</code> folder from <code>$DEEPDIVE_HOME/examples/spouse_example</code>, if you haven&#39;t done so:</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">cp -r ../../examples/spouse_example/data .
+</code></pre></div>
+<p>The <code>data</code> folder contains several starter dumps:</p>
+
+<ul>
+<li><code>articles_dump.csv</code> contains initial data: articles we extract relation from. We will just start from the parsed sentences dataset:</li>
+<li><code>sentences_dump.csv</code> contains all parsed sentences from these articles. If you want to know how to get this dataset from articles, refer to <a href="#nlp_extractor">NLP extractor</a> section.</li>
+<li><code>spouses.csv</code> and <code>non-spouses.tsv</code> Freebase relations we will use for distant supervision. We will come to them later.</li>
+</ul>
+
+<p>First we create a <code>sentences</code> table in our database by typing: </p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">psql -d deepdive_spouse -c <span class="s2">&quot;</span>
+<span class="s2">  CREATE TABLE sentences(</span>
+<span class="s2">    document_id  bigint,    -- which document it comes from</span>
+<span class="s2">    sentence     text,      -- sentence content</span>
+<span class="s2">    words        text[],    -- array of words in this sentence</span>
+<span class="s2">    lemma        text[],    -- array of lemmatized words</span>
+<span class="s2">    pos_tags     text[],    -- array of part-of-speech tags</span>
+<span class="s2">    dependencies text[],    -- array of dependency paths</span>
+<span class="s2">    ner_tags     text[],    -- array of named entity tags (PERSON, LOCATION, etc)</span>
+<span class="s2">    sentence_offset bigint, -- which sentence (0, 1, 2...) is it in document</span>
+<span class="s2">    sentence_id text        -- unique identifier for sentences</span>
+<span class="s2">    );</span>
+<span class="s2">&quot;</span>
+</code></pre></div>
+<p>Then we load prepared sentences into our database:</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">psql -d deepdive_spouse -c <span class="s2">&quot;</span>
+<span class="s2">  COPY sentences FROM STDIN CSV;</span>
+<span class="s2">&quot;</span> &lt; ./data/sentences_dump.csv
+</code></pre></div>
+<p>Here we go! We have all sentences prepared in our database.</p>
+
+<p>Then we create several empty tables for feature extraction output. </p>
+
+<p>First create <code>people_mentions</code> table for people mention pairs, by typing:</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">psql -d deepdive_spouse -c <span class="s2">&quot;</span>
+<span class="s2">  CREATE TABLE people_mentions(</span>
+<span class="s2">    sentence_id    text,   -- refers to sentences table</span>
+<span class="s2">    start_position int,    -- word offset in the sentence</span>
+<span class="s2">    length         int,    -- how many words in this mention</span>
+<span class="s2">    text           text,   -- name of the person</span>
+<span class="s2">    mention_id     text    -- unique identifier for people_mentions</span>
+<span class="s2">  );</span>
+<span class="s2">&quot;</span>
+</code></pre></div>
+<p>Then create a table <code>has_spouse</code> for our relations by typing:</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">psql -d deepdive_spouse -c <span class="s2">&quot;</span>
+<span class="s2">  CREATE TABLE has_spouse(</span>
+<span class="s2">    person1_id  text,    -- first person&#39;s mention_id in people_mentions</span>
+<span class="s2">    person2_id  text,    -- second person&#39;s mention_id</span>
+<span class="s2">    sentence_id text,    -- which senence it appears</span>
+<span class="s2">    description text,    -- a description of this relation pair</span>
+<span class="s2">    is_true     boolean, -- whether this relation is correct</span>
+<span class="s2">    relation_id text,    -- unique identifier for has_spouse</span>
+<span class="s2">    id          bigint   -- reserved for DeepDive</span>
+<span class="s2">  );</span>
+<span class="s2">&quot;</span>
+</code></pre></div>
+<p>Then create the feature table for all relations:</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">psql -d deepdive_spouse -c <span class="s2">&quot;</span>
+<span class="s2">  CREATE TABLE has_spouse_features(</span>
+<span class="s2">    relation_id text,    -- refers to has_spouse.relation_id</span>
+<span class="s2">    feature     text     -- feature content (e.g. words_between=wife of)</span>
+<span class="s2">  );</span>
+<span class="s2">&quot;</span>
+</code></pre></div>
+<p><a id="table_cheatsheet" href="#"> </a></p>
+
+<h4>Data table format Cheat-sheet</h4>
+
+<p>Following relations are provided in the database dump:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">                     List of relations
+ Schema |        Name         | Type  |  Owner   | Storage
+--------+---------------------+-------+----------+---------
+ public | articles            | table | deepdive | heap
+ public | has_spouse          | table | deepdive | heap
+ public | has_spouse_features | table | deepdive | heap
+ public | people_mentions     | table | deepdive | heap
+ public | sentences           | table | deepdive | heap
+(5 rows)
+</code></pre></div>
+<p>Here&#39;s how they are created:</p>
+<div class="highlight"><pre><code class="language-sql" data-lang="sql"><span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">articles</span><span class="p">(</span>
+  <span class="n">article_id</span> <span class="nb">bigint</span><span class="p">,</span>      <span class="c1">-- identifier of article</span>
+  <span class="nb">text</span>       <span class="nb">text</span>         <span class="c1">-- all text in the article</span>
+<span class="p">);</span>
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">sentences</span><span class="p">(</span>
+  <span class="n">document_id</span>  <span class="nb">bigint</span><span class="p">,</span>    <span class="c1">-- which document it comes from</span>
+  <span class="n">sentence</span>     <span class="nb">text</span><span class="p">,</span>      <span class="c1">-- sentence content</span>
+  <span class="n">words</span>        <span class="nb">text</span><span class="p">[],</span>    <span class="c1">-- array of words in this sentence</span>
+  <span class="n">lemma</span>        <span class="nb">text</span><span class="p">[],</span>    <span class="c1">-- array of lemmatized words</span>
+  <span class="n">pos_tags</span>     <span class="nb">text</span><span class="p">[],</span>    <span class="c1">-- array of part-of-speech tags</span>
+  <span class="n">dependencies</span> <span class="nb">text</span><span class="p">[],</span>    <span class="c1">-- array of dependency paths</span>
+  <span class="n">ner_tags</span>     <span class="nb">text</span><span class="p">[],</span>    <span class="c1">-- array of named entity tags (PERSON, LOCATION, etc)</span>
+  <span class="n">sentence_offset</span> <span class="nb">bigint</span><span class="p">,</span> <span class="c1">-- which sentence (0, 1, 2...) is it in document</span>
+  <span class="n">sentence_id</span>  <span class="nb">text</span>       <span class="c1">-- unique identifier for sentences</span>
+  <span class="p">);</span>
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">people_mentions</span><span class="p">(</span>
+  <span class="n">sentence_id</span>    <span class="nb">text</span><span class="p">,</span>    <span class="c1">-- refers to sentences table</span>
+  <span class="n">start_position</span> <span class="nb">int</span><span class="p">,</span>     <span class="c1">-- word offset in the sentence</span>
+  <span class="k">length</span>         <span class="nb">int</span><span class="p">,</span>     <span class="c1">-- how many words in this mention</span>
+  <span class="nb">text</span>           <span class="nb">text</span><span class="p">,</span>    <span class="c1">-- name of the person</span>
+  <span class="n">mention_id</span>     <span class="nb">text</span>     <span class="c1">-- unique identifier for people_mentions</span>
+<span class="p">);</span>
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">has_spouse</span><span class="p">(</span>
+  <span class="n">person1_id</span>  <span class="nb">text</span><span class="p">,</span>       <span class="c1">-- first person&#39;s mention_id in people_mentions</span>
+  <span class="n">person2_id</span>  <span class="nb">text</span><span class="p">,</span>       <span class="c1">-- second person&#39;s mention_id</span>
+  <span class="n">sentence_id</span> <span class="nb">text</span><span class="p">,</span>       <span class="c1">-- which senence it appears</span>
+  <span class="n">description</span> <span class="nb">text</span><span class="p">,</span>       <span class="c1">-- a description of this relation pair</span>
+  <span class="n">is_true</span>     <span class="nb">boolean</span><span class="p">,</span>    <span class="c1">-- whether this relation is correct</span>
+  <span class="n">relation_id</span> <span class="nb">text</span><span class="p">,</span>       <span class="c1">-- unique identifier for has_spouse</span>
+  <span class="n">id</span>          <span class="nb">bigint</span>      <span class="c1">-- reserved for DeepDive</span>
+<span class="p">);</span>
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">has_spouse_features</span><span class="p">(</span>
+  <span class="n">relation_id</span> <span class="nb">text</span><span class="p">,</span>       <span class="c1">-- refers to has_spouse.relation_id</span>
+  <span class="n">feature</span>     <span class="nb">text</span>        <span class="c1">-- feature content (e.g. &quot;words_between=&#39;s wife&quot;)</span>
+<span class="p">);</span>
+</code></pre></div>
+<p><a id="nlp_extractor" href="#"> </a></p>
+
+<h3>Data preprocessing using NLP extractor</h3>
+
+<p>If you want, you can try extracting the <code>sentences</code> table yourself. This should be useful if you want to extract your own dataset.</p>
+
+<p>To start from an NLP extractor, we first load all the articles into our database. First, let&#39;s load <code>articles</code> table into our database.</p>
+
+<p>Type in following commands to create a table:</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">psql -d deepdive_spouse -c <span class="s2">&quot;</span>
+<span class="s2">  CREATE TABLE articles(</span>
+<span class="s2">    article_id bigint,    -- identifier of article</span>
+<span class="s2">    text       text       -- all text in the article</span>
+<span class="s2">  );</span>
+<span class="s2">&quot;</span>
+</code></pre></div>
+<p>Then copy all the articles from the dump:</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">psql -d deepdive_spouse -c <span class="s2">&quot;</span>
+<span class="s2">  COPY articles FROM STDIN CSV;</span>
+<span class="s2">&quot;</span> &lt; data/articles_dump.csv
+</code></pre></div>
+<p>The first step towards performing Entity and Relation Extraction is to extract natural language features from the raw text. This is usually done using an NLP library such as <a href="http://nlp.stanford.edu/software/lex-parser.shtml">the Stanford Parser</a> or <a href="http://nltk.org/">NLTK</a>. Because natural language processing is such a common first step we provide a pre-built extractor which uses the <a href="http://nlp.stanford.edu/software/corenlp.shtml">Stanford CoreNLP Kit</a> to split documents into sentences and tag them. Let&#39;s copy it into our project. </p>
+
+<p>The NLP extractor we provide lies in <code>examples/nlp_extractor</code> folder. Refer to its <code>README.md</code> for details. Now we go into it and compile it:</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">cd</span> ../../examples/nlp_extractor
+sbt stage
+<span class="nb">cd</span> ../../app/spouse
+</code></pre></div>
+<p>The <code>sbt stage</code> command compiles the extractor (written in Scala) and generates a handy start script. The extractor itself takes JSON tuples of raw document text as input, and outputs JSON tuples of sentences with information such as part-of-speech tags and dependency parses. Let&#39;s now create a new table for the output of the extractor in our database. Because the output format of the NLP extractor is fixed by us, you must create a compatible table, like <code>sentences</code> defined <a href="#loading_data">above</a>.</p>
+
+<p>Next, add the extractor: </p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">extraction.extractors <span class="o">{</span>
+
+  ext_sentences: <span class="o">{</span>
+    input: <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      SELECT  article_id, text</span>
+<span class="s2">      FROM    articles</span>
+<span class="s2">      ORDER BY article_id ASC</span>
+<span class="s2">      &quot;&quot;&quot;</span>
+    output_relation : <span class="s2">&quot;sentences&quot;</span>
+    udf             : <span class="s2">&quot;examples/nlp_extractor/run.sh -k article_id -v text -l 100 -t 4&quot;</span>
+    before          : <span class="k">${</span><span class="nv">APP_HOME</span><span class="k">}</span><span class="s2">&quot;/udf/before_sentences.sh&quot;</span>
+    after           : <span class="k">${</span><span class="nv">APP_HOME</span><span class="k">}</span><span class="s2">&quot;/util/fill_sequence.sh sentences sentence_id&quot;</span>
+    parallelism     : 4
+  <span class="o">}</span>
+  <span class="c"># ... More extractors to add dere</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>(Make sure this extractor is executed before <code>ext_people</code> by adding dependencies to the latter.)</p>
+
+<p><a id="pipelines" href="#"> </a></p>
+
+<h3>Using pipelines</h3>
+
+<p>By default, DeepDive runs all extractors that are defined in the configuration file. Sometimes you only want to run some of your extractors to test them, or to save time when the output of an early extractor hasn&#39;t changed. The NLP extractor is a good example of this. It takes a long time to run, and its output will be the same every time, so we don&#39;t want to run it more than once. DeepDive allows you to define different <a href="pipelines.html">pipelines</a> for this purpose, by adding the following to your <code>application.conf</code>:</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">pipeline.pipelines.withnlp: <span class="o">[</span>
+  <span class="s2">&quot;ext_sentences&quot;</span>,    <span class="c"># NLP extractor, takes very long</span>
+  <span class="s2">&quot;ext_people&quot;</span>, <span class="s2">&quot;ext_has_spouse_candidates&quot;</span>, <span class="s2">&quot;ext_has_spouse_features&quot;</span>,
+  <span class="s2">&quot;f_has_spouse_features&quot;</span>, <span class="s2">&quot;f_has_spouse_symmetry&quot;</span>
+<span class="o">]</span>
+
+pipeline.pipelines.nonlp: <span class="o">[</span>
+  <span class="s2">&quot;ext_people&quot;</span>, <span class="s2">&quot;ext_has_spouse_candidates&quot;</span>, <span class="s2">&quot;ext_has_spouse_features&quot;</span>,
+  <span class="s2">&quot;f_has_spouse_features&quot;</span>, <span class="s2">&quot;f_has_spouse_symmetry&quot;</span>
+<span class="o">]</span>
+</code></pre></div>
+<p>The code above created two pipelines, one with NLP extraction and the other without NLP. We further add a line:</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">pipeline.run: <span class="s2">&quot;nonlp&quot;</span>
+</code></pre></div>
+<p>This will tell DeepDive to execute the &quot;nonlp&quot; pipeline, which only contains the &quot;ext_people&quot; extractor.</p>
+
+<p><a id="debug_extractors" href="#"> </a></p>
+
+<h3>Debugging Extractors by getting example inputs</h3>
+
+<p>&quot;What do my extractor inputs look like?&quot; Developers might find it helpful to print input to extractors to some temporary files. DeepDive provides a simple utility script for this task, in <code>$DEEPDIVE_HOME/util/extractor_input_writer.py</code>. The script is very simple:</p>
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="c">#! /usr/bin/env python</span>
+<span class="c"># File: deepdive/util/extractor_input_writer.py</span>
+
+<span class="c"># Simply printing input lines to a file, specified by a command line argument.</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+  <span class="k">print</span> <span class="o">&gt;&gt;</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;Usage:&quot;</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s">&quot;SAMPLE_FILE_PATH&quot;</span>
+  <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">fout</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+<span class="k">print</span> <span class="o">&gt;&gt;</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;Writing extractor input to file:&quot;</span><span class="p">,</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="p">:</span>
+  <span class="k">print</span> <span class="o">&gt;&gt;</span><span class="n">fout</span><span class="p">,</span> <span class="n">line</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+
+<span class="n">fout</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</code></pre></div>
+<p>This script takes one command line argument: file output path. It will simply output whatever it receives as input from STDIN to the file.</p>
+
+<p>Developers can change extractor UDF to <code>util/extractor_input_writer.py SAMLPE_FILE_PATH</code> to obtain example extractor inputs in file <code>SAMLPE_FILE_PATH</code>.</p>
+
+<p>For example, to debug the extractor <code>ext_has_spouse_features</code>, just change <code>application.conf</code> to:</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">ext_has_spouse_features <span class="o">{</span>
+  <span class="c"># Added &quot;ORDER BY&quot; and &quot;LIMIT&quot; to randomly sample a small amount of data</span>
+  input: <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    SELECT  sentences.words,</span>
+<span class="s2">            has_spouse.relation_id, </span>
+<span class="s2">            p1.start_position AS p1_start,</span>
+<span class="s2">            p1.length AS p1_length,</span>
+<span class="s2">            p2.start_position AS p2_start,</span>
+<span class="s2">            p2.length AS p2_length</span>
+<span class="s2">      FROM  has_spouse, </span>
+<span class="s2">            people_mentions p1, </span>
+<span class="s2">            people_mentions p2, </span>
+<span class="s2">            sentences</span>
+<span class="s2">     WHERE  has_spouse.person1_id = p1.mention_id </span>
+<span class="s2">       AND  has_spouse.person2_id = p2.mention_id </span>
+<span class="s2">       AND  has_spouse.sentence_id = sentences.sentence_id</span>
+<span class="s2">       ORDER BY RANDOM() LIMIT 100</span>
+<span class="s2">       &quot;&quot;&quot;</span>
+  output_relation : <span class="s2">&quot;has_spouse_features&quot;</span>
+  <span class="c"># udf: ${APP_HOME}&quot;/udf/ext_has_spouse_features.py&quot;     # Comment it out</span>
+
+  <span class="c"># Change UDF to the utility file; save outputs to &quot;/tmp/dd-sample-features.txt&quot;.</span>
+  <span class="c"># &quot;util&quot; folder is under DEEPDIVE_HOME.</span>
+  udf: util/extractor_input_writer.py /tmp/dd-sample-features.txt
+
+  before          : <span class="k">${</span><span class="nv">APP_HOME</span><span class="k">}</span><span class="s2">&quot;/udf/clear_table.sh has_spouse_features&quot;</span>
+  dependencies    : <span class="o">[</span><span class="s2">&quot;ext_has_spouse_candidates&quot;</span><span class="o">]</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>After running the system with <code>run.sh</code>, the file <code>/tmp/dd-sample-features.txt</code> look like:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">{&quot;p2_length&quot;:2,&quot;p1_length&quot;:2,&quot;words&quot;:[&quot;The&quot;,&quot;strange&quot;,&quot;case&quot;,&quot;of&quot;,&quot;the&quot;,&quot;death&quot;,&quot;of&quot;,&quot;&#39;50s&quot;,&quot;TV&quot;,&quot;Superman&quot;,&quot;George&quot;,&quot;Reeves&quot;,&quot;is&quot;,&quot;deconstructed&quot;,&quot;in&quot;,&quot;``&quot;,&quot;Hollywoodland&quot;,&quot;,&quot;,&quot;&#39;&#39;&quot;,&quot;starring&quot;,&quot;Adrien&quot;,&quot;Brody&quot;,&quot;,&quot;,&quot;Diane&quot;,&quot;Lane&quot;,&quot;,&quot;,&quot;Ben&quot;,&quot;Affleck&quot;,&quot;and&quot;,&quot;Bob&quot;,&quot;Hoskins&quot;,&quot;.&quot;],&quot;relation_id&quot;:12190,&quot;p1_start&quot;:20,&quot;p2_start&quot;:10}
+{&quot;p2_length&quot;:2,&quot;p1_length&quot;:2,&quot;words&quot;:[&quot;Political&quot;,&quot;coverage&quot;,&quot;has&quot;,&quot;not&quot;,&quot;been&quot;,&quot;the&quot;,&quot;same&quot;,&quot;since&quot;,&quot;The&quot;,&quot;National&quot;,&quot;Enquirer&quot;,&quot;published&quot;,&quot;photographs&quot;,&quot;of&quot;,&quot;Donna&quot;,&quot;Rice&quot;,&quot;in&quot;,&quot;the&quot;,&quot;former&quot;,&quot;Sen.&quot;,&quot;Gary&quot;,&quot;Hart&quot;,&quot;&#39;s&quot;,&quot;lap&quot;,&quot;20&quot;,&quot;years&quot;,&quot;ago&quot;,&quot;.&quot;],&quot;relation_id&quot;:34885,&quot;p1_start&quot;:14,&quot;p2_start&quot;:20}
+...
+</code></pre></div>
+<p>We see that each line contains a JSON object. And you can even use this file to test your extractor UDF by typing commands like this:</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">python udf/ext_has_spouse_features.py &lt; /tmp/dd-sample-features.txt
+</code></pre></div>
+            </div>
+          </row>
+        </div>
+      </section>
+    
+      <footer id="footer">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <p class="pull-left"> 
+                Copyright, 2014 deepdive.stanford.edu
+                ⋅
+                <a href="mailto:contact.hazy@gmail.com">Questions? Email us</a>
+              </p>
+              <p class="pull-right"> 
+                Visit DeepDive on <a href="https://github.com/hazyresearch/deepdive" target="_blank">Github</a> 
+              </p>
+            </div>
+          </row>
+        </div>
+      </footer>
+
+    
+  
+  </body>
+</html>

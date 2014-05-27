@@ -1,0 +1,112 @@
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="DeepDive" />
+    <link href='http://fonts.googleapis.com/css?family=Lato:300,400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="http://deepdive.stanford.edu/stylesheets/application.css" />
+    <link rel="canonical" href="http://deepdive.stanford.edu">
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="http://deepdive.stanford.edu/javascripts/application.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepDive</title>
+  </head>
+
+  <body>
+      <script type="text/javascript">
+window.analytics||(window.analytics=[]),window.analytics.methods=["identify","track","trackLink","trackForm","trackClick","trackSubmit","page","pageview","ab","alias","ready","group","on","once","off"],window.analytics.factory=function(t){return function(){var a=Array.prototype.slice.call(arguments);return a.unshift(t),window.analytics.push(a),window.analytics}};for(var i=0;i<window.analytics.methods.length;i++){var method=window.analytics.methods[i];window.analytics[method]=window.analytics.factory(method)}window.analytics.load=function(t){var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src=("https:"===document.location.protocol?"https://":"http://")+"d2dq2ahtl5zl1z.cloudfront.net/analytics.js/v1/"+t+"/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(a,n)},window.analytics.SNIPPET_VERSION="2.0.8",
+window.analytics.load("h6uwk48gwg");
+window.analytics.page();
+</script>
+      <a href="https://github.com/hazyresearch/deepdive" target="_blank"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>
+
+      <div id="header">
+        <div class="container">
+          <row>
+            <div class="col-md-4 col-md-offset-1">
+              <a href="http://deepdive.stanford.edu/" class="deepdive-logo">
+              <img src="http://deepdive.stanford.edu/images/header_logo.png" style="width: 250px;"/>
+              </a> 
+            </div>
+            <div class="col-md-6 col-md-offset-1">
+              <ul class="list-unstyled list-inline" id="header-nav">
+                <li><a href="http://deepdive.stanford.edu/index.html">Home</a></li>
+                <li><a href="http://deepdive.stanford.edu/doc/installation.html">Download</a></li>
+                <li><a href="http://deepdive.stanford.edu/index.html#documentation">Documentation</a></li>
+                <li><a href="https://mailman.stanford.edu/mailman/listinfo/deepdive-list" target="_blank">Mailing List</a></li>
+              </ul>
+              
+            </div>
+          </row>
+        </div>
+      </div>
+
+      <section id="main">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <h1>Probabilistic Inference</h1>
+
+<p>The goal of this article is to give a high-level overview of Probabilistic inference. If you are interested in more details, there are several good resources:</p>
+
+<ul>
+<li><a href="http://deepdive.stanford.edu/assets/factor_graph.pdf">Factor Graph tutorial by Feiran Wang</a></li>
+<li><a href="http://people.cs.umass.edu/%7Emccallum/papers/crf-tutorial.pdf">An Introduction to Conditional Random Fields for Relational Learning</a></li>
+<li><a href="https://www.coursera.org/course/pgm">PGM class on Coursera</a></li>
+<li><a href="http://alex.smola.org/teaching/cmu2013-10-701x/pgm.html">Graphical Models Lecture at CMU</a></li>
+<li><a href="http://cs.stanford.edu/people/chrismre/papers/elementary_sigmod.pdf">Towards High-Throughput Gibbs Sampling at Scale: A Study across Storage Managers</a></li>
+<li><a href="http://www.comm.utoronto.ca/%7Efrank/papers/KFL01.pdf">Factor Graphs and the Sum-Product Algorithm</a></li>
+<li><a href="http://arxiv.org/pdf/1005.1934v1.pdf">Scalable Probabilistic Databases with Factor Graphs and MCMC</a></li>
+</ul>
+
+<h3>Random Variables and Joint Inference</h3>
+
+<p>Probabilistic inference is the task of assigning values to unobserved <a href="http://en.wikipedia.org/wiki/Random_variable">random variables</a>. For example, a random variable may describe the event that John has cancer. Such a variable could take a value of 1 (John has cancer) or 0 (John does not have cancer). DeepDive uses <em>probabilistic inference</em> to estimate the expected value of a random variable. In the case of Boolean variables, a value of 0.78 would mean that John is 78% likely to have cancer.</p>
+
+<p>To perform probabilistic inference DeepDive allows developers to write various kinds of <a href="http://deepdive.stanford.edu/doc/inference.html">inference rules</a>. We may have a rule that says something like &quot;If John smokes than he is likely to have cancer.&quot; Each rule has a <em>weight</em> associated with it; the weight describes how confident we are about the correctness of the rule. If a rule has a high positive <em>weight</em>, then the variables used in the rule are likely to take on values that would make the rule evaluate to true. In case of the above example, if the rule &quot;If John smokes than he is likely to have cancer&quot; has a high weight and we are sure that John smokes, then we are also reasonably sure that John has cancer. However, if we are not sure whether or not John smokes, then we cannot be sure about him having cancer either. In the latter case, both &quot;John does not have cancer,&quot; and &quot;John has cancer&quot; would make the rule evaluate to true.</p>
+
+<p>This is a subtle but very important point. Contrary to many traditional Machine Learning algorithms, which often assume prior knowledge to be exact and make predictions in isolation, DeepDive performs <em>joint inference</em>, which means that DeepDive determines the most likely values of all events jointly, or at the same time. This allows many kinds of events to influence each other if they are (directly or indirectly) connected through inference rules. Thus, the uncertainty of one event (John smoking) may influence the uncertainty of another event (John having cancer). As the relationships among events become more complex this model becomes very powerful. For example, you could imagine the event &quot;John smokes&quot; being influenced by whether or not John is friends with other people who smoke, and so on. This is particularly useful if you are dealing with inherently noisy signals, such as human language.</p>
+
+<h3>How does DeepDive create random variables?</h3>
+
+<p>DeepDive creates random variables based on entries in the <a href="http://deepdive.stanford.edu/doc/schema.html">schema definition</a>. For example, if your schema definition contains an entry such as <code>people.has_cancer: Boolean</code>, then DeepDive will create a Boolean random variable for each unique ID in the people table for the event <code>has_cancer</code>. Thus, if there are 100 entries in the <code>people</code> table, then DeepDive will create 100 Boolean random variables, each describing the event of one person having cancer. More formally, a random variable is created for each <code>(relation_name, column_name, ID)</code> triple, where <code>relation_name</code> and <code>column_name</code> are defined in the schema definition. You should create random variables for each event you are interested in predicting.</p>
+
+<h3>How does DeepDive determine the weights for inference rules?</h3>
+
+<p>While it is possible to manually assign weights to inference rules, we recommend automatically learning the weights by using training data. In order to <em>learn</em> weights for the inference rules, DeepDive uses existing knowledge about the world. It is your task to give this knowledge to DeepDive in the form of <em>evidence</em>. If you have a lot of positive evidence that smoking leads to cancer, then such a rule would get a large positive weight. This may sound simple, but the fact that many rules compete with one another, and that the weight values must make sense relative to each other, makes this a challenging problem. Luckily, DeepDive does the hard work of learning the weights for you.</p>
+
+<p>Evidence is often obtained through <a href="relation_extraction.html">Distant Supervision</a>. For example by using an already existing database. In order to determine the correct weights for the inference rules and to avoid bias, it is important to have both positive and negative evidence. Positive evidence is often easy to obtain, but <a href="generating_negative_examples.html">generating negative evidence can be somewhat of an art</a>.</p>
+
+<p>In DeepDive, you specify evidence by simply setting a field to its desired value. For example, if you know that Sarah has cancer you would set her <code>has_cancer</code> field value to <code>true</code>. All fields that map to random variables and have an contain an existing value are treated as evidence. Fields that do not have a value (they are NULL) are predicted by DeepDive.</p>
+
+<h3>What algorithms does DeepDive use?</h3>
+
+<p>DeepDive uses <a href="http://en.wikipedia.org/wiki/Factor_graph">factor graphs</a>, a type of probabilistic graphical model to perform learning and inference. In the learning step, DeepDive uses a type of <a href="http://en.wikipedia.org/wiki/Maximum_likelihood_estimation">Maximum Likelihood Estimation</a>. To perform inference, DeepDive uses <a href="http://cs.stanford.edu/people/chrismre/papers/elementary_sigmod.pdf">high-throughput Gibbs Sampling</a>.</p>
+
+            </div>
+          </row>
+        </div>
+      </section>
+    
+      <footer id="footer">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <p class="pull-left"> 
+                Copyright, 2014 deepdive.stanford.edu
+                ⋅
+                <a href="mailto:contact.hazy@gmail.com">Questions? Email us</a>
+              </p>
+              <p class="pull-right"> 
+                Visit DeepDive on <a href="https://github.com/hazyresearch/deepdive" target="_blank">Github</a> 
+              </p>
+            </div>
+          </row>
+        </div>
+      </footer>
+
+    
+  
+  </body>
+</html>

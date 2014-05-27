@@ -1,0 +1,152 @@
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="DeepDive" />
+    <link href='http://fonts.googleapis.com/css?family=Lato:300,400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="http://deepdive.stanford.edu/stylesheets/application.css" />
+    <link rel="canonical" href="http://deepdive.stanford.edu">
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="http://deepdive.stanford.edu/javascripts/application.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepDive</title>
+  </head>
+
+  <body>
+      <script type="text/javascript">
+window.analytics||(window.analytics=[]),window.analytics.methods=["identify","track","trackLink","trackForm","trackClick","trackSubmit","page","pageview","ab","alias","ready","group","on","once","off"],window.analytics.factory=function(t){return function(){var a=Array.prototype.slice.call(arguments);return a.unshift(t),window.analytics.push(a),window.analytics}};for(var i=0;i<window.analytics.methods.length;i++){var method=window.analytics.methods[i];window.analytics[method]=window.analytics.factory(method)}window.analytics.load=function(t){var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src=("https:"===document.location.protocol?"https://":"http://")+"d2dq2ahtl5zl1z.cloudfront.net/analytics.js/v1/"+t+"/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(a,n)},window.analytics.SNIPPET_VERSION="2.0.8",
+window.analytics.load("h6uwk48gwg");
+window.analytics.page();
+</script>
+      <a href="https://github.com/hazyresearch/deepdive" target="_blank"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>
+
+      <div id="header">
+        <div class="container">
+          <row>
+            <div class="col-md-4 col-md-offset-1">
+              <a href="http://deepdive.stanford.edu/" class="deepdive-logo">
+              <img src="http://deepdive.stanford.edu/images/header_logo.png" style="width: 250px;"/>
+              </a> 
+            </div>
+            <div class="col-md-6 col-md-offset-1">
+              <ul class="list-unstyled list-inline" id="header-nav">
+                <li><a href="http://deepdive.stanford.edu/index.html">Home</a></li>
+                <li><a href="http://deepdive.stanford.edu/doc/installation.html">Download</a></li>
+                <li><a href="http://deepdive.stanford.edu/index.html#documentation">Documentation</a></li>
+                <li><a href="https://mailman.stanford.edu/mailman/listinfo/deepdive-list" target="_blank">Mailing List</a></li>
+              </ul>
+              
+            </div>
+          </row>
+        </div>
+      </div>
+
+      <section id="main">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <h1>DeepDive Overview</h1>
+
+<p>When writing applications on top of DeepDive, you often go through several phases:</p>
+
+<ol>
+<li><strong>Data Preparation</strong> - Set up the database and load initial data</li>
+<li><strong>Feature Extraction</strong> - Write <em>extractors</em> to extract features from your data</li>
+<li><strong>Probabilistic Inference</strong> - Write <em>inference rules</em> to help <a href="general/inference.html">make predictions</a> on unknown variables</li>
+<li><strong>Calibration</strong> - Evaluate results and iterate on your feature extractors and inference rules</li>
+</ol>
+
+<h3>1. Data Preparation</h3>
+
+<p>DeepDive assumes that you have initial data stored in a relational datastore, such as <a href="http://postgresql.org/">PostgreSQL</a> or <a href="http://gopivotal.com/products/pivotal-greenplum-database">Greenplum</a>. We hope to also support different types of SQL- and NoSQL datastores in the future. Loading initial data is not part of the DeepDive pipeline and is often done in a data preparation script. Such a script is useful to automate the workflow as much as possible. For an example of what such a script may look like, take a look at the examples that ship with DeepDive.</p>
+
+<h3>2. Feature Extraction</h3>
+
+<!-- TODO -->
+
+<p><a href="http://en.wikipedia.org/wiki/Feature_extraction">Feature Extraction</a> is the process of transforming raw data into a set of <em>features</em> that capture important information about the data. The goal of the feature extraction step is to extract useful features that can be used during <a href="general/inference.html">probabilistic inference</a>. For example, in Information Extraction applications, you may extract <em>features</em> that describe a word&#39;s part of speech, what type of entity it is (person, organization, etc.), or its relationship to other words in the sentence.</p>
+
+<p>DeepDive provides an abstraction called <em>extractors</em> to streamline feature extraction. 
+DeepDive support <a href="extractors.html">multiple types of extractors</a> to facilitate this process.
+In most cases, an extractor performs a user-defined function (UDF) on an input query against database. One may think of this kind of extractors as a function which maps one input tuple to one or more output tuples, similar to a <code>map</code> or <code>flatMap</code> function in functional programming languages. The output of an extractor is written back to the data store by DeepDive, and can be used in other extractors and/or during the inference step.
+Users can also specify extractors that simply executes a SQL query or an arbitrary shell command.</p>
+
+<!-- Because extractors operate on *stdin* and *stdout* they can be arbitrary executable files, written in any programming language. If you are familiar with Hadoop, this is quite similar to how Hadoop streaming functions are written.  -->
+
+<p>For example, one could write an extractor that extracts words form a sentence in Python as follows:</p>
+
+<div class="highlight"><pre><code class="python"><span class="c">#! /usr/bin/env python</span>
+
+<span class="kn">import</span> <span class="nn">fileinput</span>
+<span class="kn">import</span> <span class="nn">json</span>
+
+<span class="c"># For each input row</span>
+<span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">fileinput</span><span class="o">.</span><span class="n">input</span><span class="p">():</span>
+  <span class="c"># Load the JSON object</span>
+  <span class="n">row</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+  <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="s">&quot;titles.title&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="c"># Split the sentence by space</span>
+    <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s">&quot;titles.title&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot; &quot;</span><span class="p">)):</span>
+      <span class="c"># Output the word</span>
+      <span class="k">print</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>
+        <span class="s">&quot;title_id&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s">&quot;titles.id&quot;</span><span class="p">]),</span> 
+        <span class="s">&quot;word&quot;</span><span class="p">:</span> <span class="n">word</span>
+      <span class="p">})</span></code></pre></div>
+
+<h3>3. Probabilistic Inference</h3>
+
+<p>The goal of inference is to make predictions on a set of <em>variables</em>. For example, you may want to predict whether or not a person has cancer based on a number of symptoms (features). <a href="general/inference.html">For a high-level overview of probabilistic inference, refer to the corresponding guide</a>.</p>
+
+<p>DeepDive uses <a href="http://en.wikipedia.org/wiki/Factor_graph">factor graphs</a>, a type of graphical model, to perform probabilistic inference. On a high-level, a factor graph has two types of nodes:</p>
+
+<ul>
+<li><em>Variables</em>, which are called <em>evidence variables</em> when their value is known, or <em>query variables</em> when their value should be predicted. <em>Evidence variables</em> can be used as training data to learn weights for factors.</li>
+<li><em>Factors</em> define how variables in the graph are related to each other. Each factor can be connected to many variables, and uses a <em>factor function</em> to define the relationship between these variables. Each <em>factor function</em> has a <em>weight</em> associated with it, which describes how much influence the factor has on its variables in relative terms. If the weight is high and positive, we are very confident in the function that the factor encodes, if the weight is high and negative, we are confident that the function is incorrect. The weight can be learned from training data, or assigned manually.</li>
+</ul>
+
+<p>While you don&#39;t need to be intimately familiar with factor graphs to be able to use DeepDive, it is a good idea to have a basic understanding of how they work. Refer to <a href="general/inference.html">the overview of probabilistic inference</a> for more details.</p>
+
+<p>DeepDive exposes a language to easily build factor graphs by writing <em>rules</em> that define the relationships between variables. </p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">smokesFactor {
+  input_query : &quot;&quot;&quot;SELECT * from people&quot;&quot;&quot;
+  function    : &quot;Imply(people.smokes, people.has_cancer)&quot;
+  weight      : ?
+}
+</code></pre></div>
+<p>For example, the rule above states that if a person smokes, he or she is likely to have cancer, and that the weight of the rule should be learned automatically based on training data. You can use DeepDive&#39;s language to express complex relationships that use features which you have previously extracted.</p>
+
+<p>The inference results are stored in the database, in the table named <code>[variable name]_inference</code>. DeepDive gives expectation for each variable, which is the most probable value that the variable may take. Also, the learned weights are store in table <code>dd_inference_result_weights</code>.</p>
+
+<h3>4. Calibration</h3>
+
+<p>Writing factors and rules is an iterative process. You may find that a certain rule does not work as well as expected, or that you need to extract more features. DeepDive wants to make this process as easy as possible, so it writes <em>calibration data</em>, which helps you to figure out where the bottlenecks in your system are. <a href="general/calibration.html">Take a look at the calibration overview for more details</a>.</p>
+
+<p><img src="http://deepdive.stanford.edu/images/calibration_example.png" alt=""></p>
+
+            </div>
+          </row>
+        </div>
+      </section>
+    
+      <footer id="footer">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <p class="pull-left"> 
+                Copyright, 2014 deepdive.stanford.edu
+                ⋅
+                <a href="mailto:contact.hazy@gmail.com">Questions? Email us</a>
+              </p>
+              <p class="pull-right"> 
+                Visit DeepDive on <a href="https://github.com/hazyresearch/deepdive" target="_blank">Github</a> 
+              </p>
+            </div>
+          </row>
+        </div>
+      </footer>
+
+    
+  
+  </body>
+</html>

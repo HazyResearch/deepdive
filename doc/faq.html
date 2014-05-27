@@ -1,0 +1,185 @@
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="DeepDive" />
+    <link href='http://fonts.googleapis.com/css?family=Lato:300,400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="http://deepdive.stanford.edu/stylesheets/application.css" />
+    <link rel="canonical" href="http://deepdive.stanford.edu">
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="http://deepdive.stanford.edu/javascripts/application.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepDive</title>
+  </head>
+
+  <body>
+      <script type="text/javascript">
+window.analytics||(window.analytics=[]),window.analytics.methods=["identify","track","trackLink","trackForm","trackClick","trackSubmit","page","pageview","ab","alias","ready","group","on","once","off"],window.analytics.factory=function(t){return function(){var a=Array.prototype.slice.call(arguments);return a.unshift(t),window.analytics.push(a),window.analytics}};for(var i=0;i<window.analytics.methods.length;i++){var method=window.analytics.methods[i];window.analytics[method]=window.analytics.factory(method)}window.analytics.load=function(t){var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src=("https:"===document.location.protocol?"https://":"http://")+"d2dq2ahtl5zl1z.cloudfront.net/analytics.js/v1/"+t+"/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(a,n)},window.analytics.SNIPPET_VERSION="2.0.8",
+window.analytics.load("h6uwk48gwg");
+window.analytics.page();
+</script>
+      <a href="https://github.com/hazyresearch/deepdive" target="_blank"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>
+
+      <div id="header">
+        <div class="container">
+          <row>
+            <div class="col-md-4 col-md-offset-1">
+              <a href="http://deepdive.stanford.edu/" class="deepdive-logo">
+              <img src="http://deepdive.stanford.edu/images/header_logo.png" style="width: 250px;"/>
+              </a> 
+            </div>
+            <div class="col-md-6 col-md-offset-1">
+              <ul class="list-unstyled list-inline" id="header-nav">
+                <li><a href="http://deepdive.stanford.edu/index.html">Home</a></li>
+                <li><a href="http://deepdive.stanford.edu/doc/installation.html">Download</a></li>
+                <li><a href="http://deepdive.stanford.edu/index.html#documentation">Documentation</a></li>
+                <li><a href="https://mailman.stanford.edu/mailman/listinfo/deepdive-list" target="_blank">Mailing List</a></li>
+              </ul>
+              
+            </div>
+          </row>
+        </div>
+      </div>
+
+      <section id="main">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <h1>DeepDive FAQ</h1>
+
+<p><br/></p>
+
+<h4>I get a Java out of memory error, what should I do?</h4>
+
+<hr>
+
+<p>Refer to the <a href="performance.html">Performance Tuning guide</a> and try the following:</p>
+
+<ul>
+<li>Set the JVM heap size using the <code>-Xmx</code> option flag</li>
+<li>If the errors happens while executing an extractor, try decreasing the input or output batch size for your extractors</li>
+<li>If the errors happens during sampling, try setting the JVM heap size for the sampler using the <code>-Xmx</code> option flag</li>
+</ul>
+
+<p><br/>
+<br/></p>
+
+<h4>How can I debug extractors?</h4>
+
+<hr>
+
+<p>In <code>json_extractor</code> (default) and <code>tsv_extractor</code>, if you print to <em>stderr</em> instead of <em>stdout</em>, the messages will appear in the log file.</p>
+
+<p>In <code>plpy_extractor</code>, you should use <em>plpy.debug</em> or <em>plpy.info</em> to print to console and log file.</p>
+
+<p><br/>
+<br/></p>
+
+<h4>Can I have features for dictionary entries with precise terms (e.g., Cretaceous), and less-precise terms (e.g., Recent, Word)?</h4>
+
+<hr>
+
+<p>We suggest that you separate them into two features or inference rules. That way DeepDive will learn the weight for each dictionary and choose the one to trust.</p>
+
+<p><br/>
+<br/></p>
+
+<h4>If I have two inference rules with the same weight formula, will they share the same weights?</h4>
+
+<hr>
+
+<p>No, weights are unique within each inference rule. You can force the sharing of weights by specifying a weight prefix, for example:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">rule1 {
+  weight       : ?(relation.someField)
+  weightPrefix : &quot;myPrefix&quot;
+}
+rule2 {
+  weight       : ?(relation.someField)
+  weightPrefix : &quot;myPrefix&quot;
+}
+</code></pre></div>
+<p><br/>
+<br/></p>
+
+<!-- #### I added an inference rule that I am very confident about, but now my results are no longer calibrated. What happened?
+- - -
+This can happen with "fixed" rules that are always true. When you add such a rule, DeepDive will learn a very large weight for it, which may result in the inference engine "getting stuck". In such a case, try to lower the learning rate parameter `-a` (or `--alpha`) for the sampler, for example:
+
+    deepdive {
+      sampler.sampler_args: "-l 120 -s 1 -i 200 -a 0.001"
+    }
+
+The default value of alpha is set to `0.1`, and during testing it makes sense to increase or decrease it one order of magnitude at a time. We are actively working on implementing an adaptive learning rate computation into our sampler which will help avoid this problem.
+
+
+<br/>
+<br/>
+
+ -->
+
+<h4>I am getting a &quot;java.lang.UnsupportedClassVersionError&quot; error. What can I do?</h4>
+
+<hr>
+
+<p>This happens when you are using an older JRE version than DeepDive supports. Make sure you are using JRE version 1.7.0_45 or greater.</p>
+
+<p><br/>
+<br/></p>
+
+<!-- 
+#### I am getting an "ERROR: duplicate key value violates unique constraint "dd_graph_variables_pkey"" error.
+- - -
+DeepDive automatically assigns unique record IDs through extractor. The above error happens when record IDs in the database are not unique. This could happen when you are manually loading data into a table, without using DeepDive's extractors. If you need to load records manually, make sure their IDs are globally unique, or define manual sequence to use for your primary keys.
+ -->
+
+<h4>I am using GreenPlum, and getting an &quot;ERROR: Cannot parallelize an UPDATE statement that updates the distribution columns&quot;</h4>
+
+<hr>
+
+<p>Users should add <code>DISTRIBUTED BY</code> clause in all <code>CREATE TABLE</code> commands. Make sure you distribute your tables in a correct way: do not use variable id as distribution key. Do not use distribution key that is not initially assigned.</p>
+
+<p><br/>
+<br/></p>
+
+<h4>I am using plpy_extractor and getting an &quot;ERROR: could not access file &quot;$libdir/plpython2&quot;: No such file or directory&quot;</h4>
+
+<hr>
+
+<p>Make sure your database server support PL/python language.</p>
+
+<p><br/>
+<br/></p>
+
+<h4>In sampling, I get an &quot;error while loading shared libraries: libnuma.so.1&quot;</h4>
+
+<hr>
+
+<p>Make sure you have set dependencies of DimmWitted Sampler. Properly set environmental variables according to <a href="sampler.html">Sampler Guide</a>.</p>
+
+            </div>
+          </row>
+        </div>
+      </section>
+    
+      <footer id="footer">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <p class="pull-left"> 
+                Copyright, 2014 deepdive.stanford.edu
+                ⋅
+                <a href="mailto:contact.hazy@gmail.com">Questions? Email us</a>
+              </p>
+              <p class="pull-right"> 
+                Visit DeepDive on <a href="https://github.com/hazyresearch/deepdive" target="_blank">Github</a> 
+              </p>
+            </div>
+          </row>
+        </div>
+      </footer>
+
+    
+  
+  </body>
+</html>

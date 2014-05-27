@@ -1,0 +1,164 @@
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="DeepDive" />
+    <link href='http://fonts.googleapis.com/css?family=Lato:300,400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="http://deepdive.stanford.edu/stylesheets/application.css" />
+    <link rel="canonical" href="http://deepdive.stanford.edu">
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="http://deepdive.stanford.edu/javascripts/application.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepDive</title>
+  </head>
+
+  <body>
+      <script type="text/javascript">
+window.analytics||(window.analytics=[]),window.analytics.methods=["identify","track","trackLink","trackForm","trackClick","trackSubmit","page","pageview","ab","alias","ready","group","on","once","off"],window.analytics.factory=function(t){return function(){var a=Array.prototype.slice.call(arguments);return a.unshift(t),window.analytics.push(a),window.analytics}};for(var i=0;i<window.analytics.methods.length;i++){var method=window.analytics.methods[i];window.analytics[method]=window.analytics.factory(method)}window.analytics.load=function(t){var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src=("https:"===document.location.protocol?"https://":"http://")+"d2dq2ahtl5zl1z.cloudfront.net/analytics.js/v1/"+t+"/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(a,n)},window.analytics.SNIPPET_VERSION="2.0.8",
+window.analytics.load("h6uwk48gwg");
+window.analytics.page();
+</script>
+      <a href="https://github.com/hazyresearch/deepdive" target="_blank"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>
+
+      <div id="header">
+        <div class="container">
+          <row>
+            <div class="col-md-4 col-md-offset-1">
+              <a href="http://deepdive.stanford.edu/" class="deepdive-logo">
+              <img src="http://deepdive.stanford.edu/images/header_logo.png" style="width: 250px;"/>
+              </a> 
+            </div>
+            <div class="col-md-6 col-md-offset-1">
+              <ul class="list-unstyled list-inline" id="header-nav">
+                <li><a href="http://deepdive.stanford.edu/index.html">Home</a></li>
+                <li><a href="http://deepdive.stanford.edu/doc/installation.html">Download</a></li>
+                <li><a href="http://deepdive.stanford.edu/index.html#documentation">Documentation</a></li>
+                <li><a href="https://mailman.stanford.edu/mailman/listinfo/deepdive-list" target="_blank">Mailing List</a></li>
+              </ul>
+              
+            </div>
+          </row>
+        </div>
+      </div>
+
+      <section id="main">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <h1>Installing DeepDive</h1>
+
+<p>This tutorial explains how to install DeepDive on your own machine.</p>
+
+<h3>Dependencies</h3>
+
+<p>DeepDive uses PostgreSQL, Scala, and Python (version 2.X), so before downloading the system, please make sure to install the following:</p>
+
+<ul>
+<li><a href="sampler.html">Our DimmWitted Sampler</a></li>
+<li><a href="http://www.oracle.com/technetwork/java/javase/downloads/jre7-downloads-1880261.html">Java</a> (If you already have Java installed, <strong>make sure it is version 1.7.0_45 or higher</strong>)</li>
+<li><a href="http://www.python.org/getit/">Python</a> 2.X (not Python 3.X)</li>
+<li><a href="http://wiki.postgresql.org/wiki/Detailed_installation_guides">PostgreSQL</a></li>
+<li><a href="http://www.scala-sbt.org/release/docs/Getting-Started/Setup.html">SBT</a></li>
+<li><a href="http://www.gnuplot.info/">Gnuplot</a></li>
+</ul>
+
+<h3>Downloading and Compiling DeepDive</h3>
+
+<p>Now you are ready to setup DeepDive. You will need Git, so <a href="http://git-scm.com/book/en/Getting-Started-Installing-Git">install Git</a> if you do not have it. Then, run these commands:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">&gt;&gt; cd [desired directory for deepdive]
+&gt;&gt; git clone https://github.com/HazyResearch/deepdive.git
+</code></pre></div>
+<p>This will create a directory named deepdive. Now go into the directory and compile the system:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">&gt;&gt; cd deepdive
+&gt;&gt; make
+</code></pre></div>
+<p>This step downloads all the necessary frameworks and libraries the system uses internally, and may take a minute or two. If all goes well the last line of the output should look something like this:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">[success] Total time: 110 s, completed Jan 28, 2014 6:31:09 PM
+</code></pre></div>
+<p>If you do not see this, check the log for detailed error information.</p>
+
+<p><a id="ddlib" href="#"></a></p>
+
+<h3>Setting up environment variable for DDLib</h3>
+
+<p>DDLib is our python library that provides useful utilities such as &quot;Span&quot; to manipulate elements in sentences.</p>
+
+<p>To use <code>ddlib</code>, you should have <code>$DEEPDIVE_HOME/ddlib</code> added to your <code>PATH</code> or <code>PYTHONPATH</code>. Add following lines into <code>env.sh</code>, if it&#39;s not already there:</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c"># File: env.sh</span>
+...
+<span class="nb">export </span><span class="nv">PYTHONPATH</span><span class="o">=</span><span class="nv">$DEEPDIVE_HOME</span>/ddlib:<span class="nv">$PYTHONPATH</span>
+...
+</code></pre></div>
+<p>For more documentation of <code>ddlib</code>, please refer to its pydoc.</p>
+
+<h3>Running Tests</h3>
+
+<p>Now let&#39;s run some sanity check tests. By default, DeepDive uses the currently logged in user and no password to connect to the database. You can change these by setting the <code>PGUSER</code> and <code>PGPASSWORD</code> environment variables, respectively. Then, run this command from the deepdive directory:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">&gt;&gt; make test
+</code></pre></div>
+<p>You should see the following output:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">[info] All tests passed.
+[success] Total time: 35 s, completed Jan 29, 2014 9:59:57 AM
+</code></pre></div>
+<p>Congratulations! DeepDive is now running, and you can proceed to the <a href="walkthrough.html">example application walkthrough</a>.</p>
+
+<p>Note that for system to work properly, you cannot rename <code>deepdive</code> folder with other names currently.</p>
+
+<h3>Creating a new DeepDive application</h3>
+
+<p>Start by creating a new folder <code>app/testapp</code> in the <code>deepdive</code> directory for your application.</p>
+
+<div class="highlight"><pre><code class="bash">mkdir -p app/testapp   <span class="c"># make folders recursively</span>
+<span class="nb">cd </span>app/testapp</code></pre></div>
+
+<p>DeepDive&#39;s main entry point is a file called <code>application.conf</code> which contains database connection information as well as your feature extraction and inference rule pipelines. It is often useful to have a small <code>run.sh</code> script that loads environment variables and executes the DeepDive pipeline. We provide simple templates for both of these to copy and modify. Copy these templates to our directory by the following commands: </p>
+
+<!-- TODO what is env.sh doing? -->
+
+<div class="highlight"><pre><code class="bash">cp ../../examples/template/application.conf .
+cp ../../examples/template/run.sh .
+cp ../../examples/template/env.sh .</code></pre></div>
+
+<p>The <code>env.sh</code> file configures environment variables that will be used in this application. There is a placeholder line <code>DBNAME=</code> in that file, modify <code>env.sh</code> and fill it with your database name:</p>
+
+<div class="highlight"><pre><code class="bash"><span class="c"># File: env.sh</span>
+...
+<span class="nb">export </span><span class="nv">DBNAME</span><span class="o">=</span>deepdive_testapp   <span class="c"># modify this line</span>
+...</code></pre></div>
+
+<p>You can now try executing the <code>run.sh</code> file:</p>
+
+<div class="highlight"><pre><code class="bash">./run.sh</code></pre></div>
+
+<p>Because you have not defined any extractors or inference rules you will not see meaningful results, but DeepDive should run successfully from end to end and you should be able to see a summary report such as:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">15:57:55 [profiler] INFO  --------------------------------------------------
+15:57:55 [profiler] INFO  Summary Report
+15:57:55 [profiler] INFO  --------------------------------------------------
+</code></pre></div>
+            </div>
+          </row>
+        </div>
+      </section>
+    
+      <footer id="footer">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <p class="pull-left"> 
+                Copyright, 2014 deepdive.stanford.edu
+                ⋅
+                <a href="mailto:contact.hazy@gmail.com">Questions? Email us</a>
+              </p>
+              <p class="pull-right"> 
+                Visit DeepDive on <a href="https://github.com/hazyresearch/deepdive" target="_blank">Github</a> 
+              </p>
+            </div>
+          </row>
+        </div>
+      </footer>
+
+    
+  
+  </body>
+</html>

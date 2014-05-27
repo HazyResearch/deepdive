@@ -1,0 +1,164 @@
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="DeepDive" />
+    <link href='http://fonts.googleapis.com/css?family=Lato:300,400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="http://deepdive.stanford.edu/stylesheets/application.css" />
+    <link rel="canonical" href="http://deepdive.stanford.edu">
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="http://deepdive.stanford.edu/javascripts/application.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepDive</title>
+  </head>
+
+  <body>
+      <script type="text/javascript">
+window.analytics||(window.analytics=[]),window.analytics.methods=["identify","track","trackLink","trackForm","trackClick","trackSubmit","page","pageview","ab","alias","ready","group","on","once","off"],window.analytics.factory=function(t){return function(){var a=Array.prototype.slice.call(arguments);return a.unshift(t),window.analytics.push(a),window.analytics}};for(var i=0;i<window.analytics.methods.length;i++){var method=window.analytics.methods[i];window.analytics[method]=window.analytics.factory(method)}window.analytics.load=function(t){var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src=("https:"===document.location.protocol?"https://":"http://")+"d2dq2ahtl5zl1z.cloudfront.net/analytics.js/v1/"+t+"/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(a,n)},window.analytics.SNIPPET_VERSION="2.0.8",
+window.analytics.load("h6uwk48gwg");
+window.analytics.page();
+</script>
+      <a href="https://github.com/hazyresearch/deepdive" target="_blank"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>
+
+      <div id="header">
+        <div class="container">
+          <row>
+            <div class="col-md-4 col-md-offset-1">
+              <a href="http://deepdive.stanford.edu/" class="deepdive-logo">
+              <img src="http://deepdive.stanford.edu/images/header_logo.png" style="width: 250px;"/>
+              </a> 
+            </div>
+            <div class="col-md-6 col-md-offset-1">
+              <ul class="list-unstyled list-inline" id="header-nav">
+                <li><a href="http://deepdive.stanford.edu/index.html">Home</a></li>
+                <li><a href="http://deepdive.stanford.edu/doc/installation.html">Download</a></li>
+                <li><a href="http://deepdive.stanford.edu/index.html#documentation">Documentation</a></li>
+                <li><a href="https://mailman.stanford.edu/mailman/listinfo/deepdive-list" target="_blank">Mailing List</a></li>
+              </ul>
+              
+            </div>
+          </row>
+        </div>
+      </div>
+
+      <section id="main">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <h3>What is DeepDive all about?</h3>
+
+<p>DeepDive is a new type of system that enables developers to analyze data on a deeper level than ever before. DeepDive is a <strong>trained system</strong>, which means that it uses machine learning techniques to incorporate domain-specific knowledge and user feedback to improve the quality of its analysis. DeepDive is different from traditional systems in several ways:</p>
+
+<ul>
+<li>DeepDive is aware that useful <strong>data is often noisy and imprecise</strong>: Names are misspelled, natural language is ambiguous, and humans make errors. To help deal with such imprecision, DeepDive produces <a href="doc/general/calibration.html">calibrated</a> probabilities for every assertion it makes. For example, if DeepDive produces a fact with probability 0.9 it means the fact is 90% likely to be correct. </li>
+<li>DeepDive is able to use large amounts of data from a <strong>variety of sources</strong>. Applications built using DeepDive have extracted data from millions of documents, web pages, PDFs, tables, and figures.</li>
+<li>DeepDive allows developers to <strong>use their knowledge of a given domain</strong> to improve the quality by <a href="doc/inference_rules.html">writing simple rules</a> and giving feedback on whether predictions are correct or not.</li>
+<li>DeepDive is able to use your data to <a href="doc/general/relation_extraction.html">&quot;distantly&quot; learn</a>. In contrast, most machine learning systems require one to tediously train each prediction. In fact, first versions of DeepDive-based systems often do not have any traditional training data at all!</li>
+<li>DeepDive’s secret is a <strong>scalable, high-performance inference and learning engine</strong>. For the past few years, we have been working to make the underlying algorithms run as fast as possible. The underlying techniques pioneered in this project are part of commercial and open source tools including <a href="http://madlib.net/">MADlib</a>, <a href="http://www.cloudera.com/content/cloudera/en/products-and-services/cdh/impala.html">Impala</a>, a product from Oracle, and low-level techniques, such as <a href="http://www.eecs.berkeley.edu/%7Ebrecht/papers/hogwildTR.pdf">Hogwild!</a>, have been adopted in <a href="http://static.googleusercontent.com/media/research.google.com/en/us/archive/unsupervised_icml2012.pdf">Google Brain</a>.</li>
+</ul>
+
+<h3>What is DeepDive used for?</h3>
+
+<p>Over the last few years, we have built applications for both broad domains that <a href="https://www.youtube.com/watch?v=Q1IpE9_pBu4">read the Web</a>, and for specific domains, like Paleobiology. In collaboration with Shanan Peters (<a href="http://paleobiodb.org/">http://paleobiodb.org/</a>), we <a href="https://www.youtube.com/watch?v=Cj2-dQ2nwoY">built a system</a> that reads documents with higher accuracy and from larger corpora than expert human volunteers. This is exciting as it demonstrates that trained systems may have the ability to change the way science is conducted. </p>
+
+<p>In research papers, we have demonstrated DeepDive on financial, oil and gas documents, and NMR data. For example, we <a href="http://cs.stanford.edu/people/chrismre/papers/jointable-acl.pdf">have shown</a> that DeepDive is able to understand tabular data by reading the text of the reports. We are using DeepDive to support our own research into how knowledge can be used to build the next generation of data processing systems.</p>
+
+<p>A few demonstrations of DeepDive applications:</p>
+
+<ul>
+<li><a href="https://www.youtube.com/watch?v=Cj2-dQ2nwoY">PaleoDeepDive - A knowledge base for Paleobiologists</a></li>
+<li><a href="https://www.youtube.com/watch?v=X8uhs28O3eA">GeoDeepDive - Extracting dark data from geology journal articles</a></li>
+<li><a href="https://www.youtube.com/watch?v=Q1IpE9_pBu4">Wisci - Enriching Wikipedia with structured data</a></li>
+</ul>
+
+<p>We are posting the complete code for our examples on this site. We are working on other more domains with even more collaborators in this year. Stay tuned, and <a href="mailto:contact.hazy@gmail.com">get in touch with us</a> to talk about interesting projects.</p>
+
+<h3>Who are we?</h3>
+
+<p>DeepDive is project led by <a href="http://cs.stanford.edu/people/chrismre/">Chris Re</a> at Stanford university and the University of Wisconsin-Madison. Current group members include <a href="http://pages.cs.wisc.edu/%7Eczhang/">Ce Zhang</a>, <a href="http://www.linkedin.com/in/dennybritz">Denny Britz</a>, <a href="http://pages.cs.wisc.edu/%7Ebittorf/">Victor Bittorf</a>, <a href="http://www.zifeishan.org/">Zifei Shan</a>, Feiran Wang, and <a href="https://www.linkedin.com/pub/mikhail-sushkov/26/638/537">Mikhail Sushkov</a>.</p>
+
+<h3>Updates &amp; Changelog</h3>
+
+<ul>
+<li><a href="doc/changelog/0.03-alpha.html">Changelog for version 0.03-alpha (05/07/2014)</a></li>
+<li><a href="doc/changelog/0.02-alpha.html">Changelog for version 0.02-alpha (03/12/2014)</a></li>
+</ul>
+
+<p><a id="documentation" href="#"> </a></p>
+
+<h3>Documentation</h3>
+
+<p>General &amp; Background knowledge:</p>
+
+<ul>
+<li><a href="doc/general/inference.html">Probabilistc Inference</a></li>
+<li><a href="doc/general/relation_extraction.html">Relation Extraction &amp; Distant Supervision</a></li>
+<li><a href="doc/general/generating_negative_examples.html">Generating negative examples (Coming soon)</a></li>
+<li><a href="doc/general/calibration.html">Using calibration data</a></li>
+</ul>
+
+<p>Getting started:</p>
+
+<ul>
+<li><a href="doc/overview.html">DeepDive overview</a></li>
+<li><a href="doc/installation.html">Installation guide</a></li>
+<li><a href="doc/ec2.html">Amazon EC2 AMI guide</a></li>
+<li><a href="doc/walkthrough.html">Example application walkthrough</a></li>
+</ul>
+
+<p>Advanced tutorials:</p>
+
+<ul>
+<li><a href="doc/schema.html">Defining schema</a></li>
+<li><a href="doc/extractors.html">Writing extractors</a></li>
+<li><a href="doc/inference_rules.html">Writing inference rules</a></li>
+<li><a href="doc/inference_rule_functions.html">Inference rule function reference</a></li>
+<li><a href="doc/calibration.html">Calibration</a></li>
+<li><a href="doc/pipelines.html">Pipelines</a></li>
+<li><a href="doc/performance.html">Performance tuning</a></li>
+<li><a href="doc/sampler.html">High-speed sampler</a></li>
+<li><a href="doc/reserved_tables.html">Internal database schema</a></li>
+<li><a href="doc/faq.html">FAQ</a></li>
+</ul>
+
+<p>Learn about using various databases and distributions with DeepDive:</p>
+
+<ul>
+<li><a href="doc/postgresql.html">Using PostgreSQL with DeepDive</a></li>
+<li><a href="doc/greenplum.html">Using GreenPlum with DeepDive</a></li>
+<li><a href="doc/ubuntu.html">Using DeepDive on Ubuntu</a></li>
+</ul>
+
+<p>Contribute to DeepDive:</p>
+
+<ul>
+<li><a href="doc/developer.html">Developer guide</a></li>
+</ul>
+
+            </div>
+          </row>
+        </div>
+      </section>
+    
+      <footer id="footer">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <p class="pull-left"> 
+                Copyright, 2014 deepdive.stanford.edu
+                ⋅
+                <a href="mailto:contact.hazy@gmail.com">Questions? Email us</a>
+              </p>
+              <p class="pull-right"> 
+                Visit DeepDive on <a href="https://github.com/hazyresearch/deepdive" target="_blank">Github</a> 
+              </p>
+            </div>
+          </row>
+        </div>
+      </footer>
+
+    
+  
+  </body>
+</html>

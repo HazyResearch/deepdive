@@ -1,0 +1,839 @@
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="DeepDive" />
+    <link href='http://fonts.googleapis.com/css?family=Lato:300,400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="http://deepdive.stanford.edu/stylesheets/application.css" />
+    <link rel="canonical" href="http://deepdive.stanford.edu">
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="http://deepdive.stanford.edu/javascripts/application.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepDive</title>
+  </head>
+
+  <body>
+      <script type="text/javascript">
+window.analytics||(window.analytics=[]),window.analytics.methods=["identify","track","trackLink","trackForm","trackClick","trackSubmit","page","pageview","ab","alias","ready","group","on","once","off"],window.analytics.factory=function(t){return function(){var a=Array.prototype.slice.call(arguments);return a.unshift(t),window.analytics.push(a),window.analytics}};for(var i=0;i<window.analytics.methods.length;i++){var method=window.analytics.methods[i];window.analytics[method]=window.analytics.factory(method)}window.analytics.load=function(t){var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src=("https:"===document.location.protocol?"https://":"http://")+"d2dq2ahtl5zl1z.cloudfront.net/analytics.js/v1/"+t+"/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(a,n)},window.analytics.SNIPPET_VERSION="2.0.8",
+window.analytics.load("h6uwk48gwg");
+window.analytics.page();
+</script>
+      <a href="https://github.com/hazyresearch/deepdive" target="_blank"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>
+
+      <div id="header">
+        <div class="container">
+          <row>
+            <div class="col-md-4 col-md-offset-1">
+              <a href="http://deepdive.stanford.edu/" class="deepdive-logo">
+              <img src="http://deepdive.stanford.edu/images/header_logo.png" style="width: 250px;"/>
+              </a> 
+            </div>
+            <div class="col-md-6 col-md-offset-1">
+              <ul class="list-unstyled list-inline" id="header-nav">
+                <li><a href="http://deepdive.stanford.edu/index.html">Home</a></li>
+                <li><a href="http://deepdive.stanford.edu/doc/installation.html">Download</a></li>
+                <li><a href="http://deepdive.stanford.edu/index.html#documentation">Documentation</a></li>
+                <li><a href="https://mailman.stanford.edu/mailman/listinfo/deepdive-list" target="_blank">Mailing List</a></li>
+              </ul>
+              
+            </div>
+          </row>
+        </div>
+      </div>
+
+      <section id="main">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <h1>Example Application: A Mention-Level Extraction System</h1>
+
+<p>In this document, we will walk through how to <strong>build an application to extract &quot;spouse&quot; relation from text</strong> in DeepDive. By following this document you can learn about basic DeepDive functionality.</p>
+
+<p>If you are not familiar with basic concepts in DeepDive (such as feature extraction and inference rules), please read our <a href="http://deepdive.stanford.edu/index.html">homepage</a> and this <a href="overview.html">overview</a> first.</p>
+
+<h3>Introduction</h3>
+
+<p>A typical use case for DeepDive is <a href="general/relation_extraction.html">Relation Extraction</a>. This tutorial will walk you through building a full DeepDive application that extracts <code>has_spouse</code> relationships from raw text. We use news articles as our input data and want to extract all pairs of people that participate in a <code>has_spouse</code> relation, for example <em>Barack Obama</em> and <em>Michelle Obama</em>. This example should can be easily translated into relation extraction in other domains, such as extracting interactions between drugs, or relationships among companies.</p>
+
+<p>In the rest of this documentation, we will first install DeepDive on your machine, set up a database, and create a folder <code>app/spouse</code> in your DeepDive directory. Then we load prepared data from <code>examples/spouse_example/data</code> into our database, write <a href="extractors.html">extractors</a> in our application to extract features, add <a href="inference_rules.html">inference rule</a> into it. Finally we discuss how to interpret the results and improve the extraction quality.</p>
+
+<p>The full application is also available in the folder <code>/examples/spouse_example</code>, which contains all possible implementations in <a href="extractors.html">different types of extractors</a>. In this document, we only introduce the default extractor type (json<em>extractor), which correspond to `/examples/spouse</em>example/default_extractor` in your DeepDive directory.</p>
+
+<h3>Contents</h3>
+
+<ol>
+<li><a href="#high_level_picture">High-level picture of the application</a></li>
+<li><a href="#installing">Installing DeepDive</a></li>
+<li><a href="#setup">Setting up the database</a></li>
+<li><a href="#newapp">Creating a new DeepDive application</a></li>
+<li><a href="#loading_data">Loading initial data</a></li>
+<li><a href="#people_extractor">Adding a people extractor</a></li>
+<li><a href="#candidate_relations">Extracting candidate relations</a></li>
+<li><a href="#candidate_relation_features">Adding Features for candidate relations</a></li>
+<li><a href="#inference_rules">Writing inference rules</a></li>
+<li><a href="#evaluation">Evaluating the result</a></li>
+</ol>
+
+<p>Appendix:</p>
+
+<ol>
+<li><a href="#nlp_extractor">Using NLP extractor</a></li>
+<li><a href="#pipelines">Using pipelines</a></li>
+</ol>
+
+<p><a id="high_level_picture" href="#"> </a></p>
+
+<h3>High-level picture of the application</h3>
+
+<p>We will be building an application that extract spouse relation of people from raw text.</p>
+
+<p>On a high level, the application we want to build will perform following steps on the data:</p>
+
+<ol>
+<li>Extract mentions of people in the text</li>
+<li>Extract all candidate pairs of people that possibly participate in a <code>has_spouse</code> relation</li>
+<li>Label some of the <code>has_spouse</code> candidate pairs as correct or incorrect, based on a knowledge base. (i.e. <a href="general/relation_extraction.html">distant supervision</a>)</li>
+<li>Extract features for <code>has_spouse</code> candidates to help prediction</li>
+<li>Write inference rules to incorporate domain knowledge that improves our predictions</li>
+</ol>
+
+<p>For simplicity, we will start from some preprocessed sentence data. If our input is raw text articles, we also need to run natural language processing in order to extract candidate pairs and features. If you want to learn how NLP extraction can be done in DeepDive, you can refer to the last section later: <a href="#nlp_extractor">using NLP extractor in DeepDive</a>. </p>
+
+<p><a id="installing" href="#"> </a></p>
+
+<h3>Installing DeepDive</h3>
+
+<p>Start by <a href="installation.html">downloading and installing DeepDive on your machine</a>. In the rest of this tutorial we will assume that you have a <code>deepdive</code> directory as your working directory.</p>
+
+<p><a id="setup" href="#"> </a></p>
+
+<h3>Setting up the database</h3>
+
+<p>We will be using PostgreSQL as our primary database in this example. If you followed the DeepDive installation guide and passed all tests then your PostgreSQL server should be running already. Let&#39;s start by creating a new database called <code>deepdive_spouse</code> by typing in command line:</p>
+
+<div class="highlight"><pre><code class="bash">createdb deepdive_spouse</code></pre></div>
+
+<div id="newapp" href="#"> </div>
+
+<h3>Creating a new DeepDive application</h3>
+
+<p>Start by creating a new folder <code>app/spouse</code> in the DeepDive directory for your application.</p>
+
+<div class="highlight"><pre><code class="bash"><span class="nb">cd </span>deepdive
+mkdir app
+mkdir app/spouse
+<span class="nb">cd </span>app/spouse</code></pre></div>
+
+<p>DeepDive&#39;s main entry point is a file called <code>application.conf</code> which contains database connection information as well as your feature extraction and inference rule pipelines. It is often useful to have a small <code>run.sh</code> script that loads environment variables and executes the DeepDive pipeline. We provide simple templates for both of these to copy and modify. Copy these templates to our directory by the following commands: </p>
+
+<!-- TODO what is env.sh doing? -->
+
+<div class="highlight"><pre><code class="bash">cp ../../examples/template/application.conf application.conf
+cp ../../examples/template/run.sh run.sh
+cp ../../examples/template/env.sh env.sh</code></pre></div>
+
+<p>The <code>env.sh</code> file configures environment variables that will be used in this application. Start modifying the <code>env.sh</code> file with your database name:</p>
+
+<div class="highlight"><pre><code class="bash"><span class="c"># File: env.sh</span>
+<span class="nb">export </span><span class="nv">DBNAME</span><span class="o">=</span>deepdive_spouse</code></pre></div>
+
+<p>Note that in the <code>run.sh</code> file it defines environment variables <code>APP_HOME</code> which is our current directory <code>app/spouse</code>, and <code>DEEPDIVE_HOME</code> which is the home directory of DeepDive. We will use these variables later.</p>
+
+<p>You can now try executing the <code>run.sh</code> file. Because you have not defined any extractors or inference rules you will not see meaningful results, but DeepDive should run successfully from end to end and you should be able to see a summary report such as:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">15:57:55 [profiler] INFO  --------------------------------------------------
+15:57:55 [profiler] INFO  Summary Report
+15:57:55 [profiler] INFO  --------------------------------------------------
+</code></pre></div>
+<p><a id="loading_data" href="#"> </a></p>
+
+<h3>Loading initial data</h3>
+
+<p>In this example we will be using raw text from a couple of New York Times articles. Note that there is nothing special about our data set, and you are free to use whatever raw text data you want. Let&#39;s copy the data into our directory, and load it into the database. </p>
+
+<p>Type in following commands to create a table:</p>
+
+<div class="highlight"><pre><code class="bash">psql -d deepdive_spouse -c <span class="s2">&quot;</span>
+<span class="s2">  CREATE TABLE articles(</span>
+<span class="s2">    article_id bigint,</span>
+<span class="s2">    text       text</span>
+<span class="s2">  );</span>
+<span class="s2">&quot;</span></code></pre></div>
+
+<p>Copy prepared data from DeepDive <code>example/spouse_example/data</code> folder into <code>app/spouse/data</code>:</p>
+
+<div class="highlight"><pre><code class="bash">cp -r ../../examples/spouse_example/data ./data</code></pre></div>
+
+<p>The <code>data</code> folder contains several starter dumps:</p>
+
+<ul>
+<li><code>articles_dump.csv</code> contains initial data: articles we extract relation from. We will just start from the parsed sentences dataset:</li>
+<li><code>sentences_dump.csv</code> contains all parsed sentences from these articles. If you want to know how to get this dataset from articles, refer to <a href="#nlp_extractor">NLP extractor</a> section.</li>
+<li><code>spouses.csv</code> and <code>non-spouses.tsv</code> Freebase relations we will use for distant supervision. We will come to them later.</li>
+</ul>
+
+<p>First we create a <code>sentences</code> table in our database by typing: </p>
+
+<div class="highlight"><pre><code class="bash">psql -d deepdive_spouse -c <span class="s2">&quot;</span>
+<span class="s2">  CREATE TABLE sentences(</span>
+<span class="s2">    document_id  bigint,  -- which document it comes from</span>
+<span class="s2">    sentence     text,    -- sentence content</span>
+<span class="s2">    words        text[],  -- array of words in this sentence</span>
+<span class="s2">    lemma        text[],  -- array of lemmatized words</span>
+<span class="s2">    pos_tags     text[],  -- array of part-of-speech tags</span>
+<span class="s2">    dependencies text[],  -- array of dependency paths</span>
+<span class="s2">    ner_tags     text[],  -- array of named entity tags (PERSON, LOCATION, etc)</span>
+<span class="s2">    sentence_id  bigint   -- unique identifier for sentences</span>
+<span class="s2">    );</span>
+<span class="s2">&quot;</span></code></pre></div>
+
+<p>Then we load prepared sentences into our database:</p>
+
+<div class="highlight"><pre><code class="bash">psql -d deepdive_spouse -c <span class="s2">&quot;</span>
+<span class="s2">  COPY sentences(sentence_id, document_id, sentence, words, lemma, pos_tags, dependencies, ner_tags)</span>
+<span class="s2">  FROM STDIN CSV;</span>
+<span class="s2">&quot;</span> &lt; ./data/sentences_dump.csv</code></pre></div>
+
+<p>Here we go! We have all sentences prepared in our database. (feel free to check how they look like)  Now we are ready to go!</p>
+
+<p><a id="people_extractor" href="#"> </a></p>
+
+<h3>Adding a people extractor</h3>
+
+<p>Our next task is to write several <a href="extractors.html">extractors</a> in
+DeepDive to transform initial data into the format we need. On a high
+level, each extractor performs a user-defined function (UDF) on an input
+query against database, <strong>in a row-wise manner</strong>. One may think of an
+extractor as a function which <em>maps one input tuple (one row in input
+SQL query)</em> to one or more output tuples, similar to a <code>map</code> or
+<code>flatMap</code> function in functional programming languages (or <code>map</code> in
+MapReduce).</p>
+
+<p>Our first extractor will extract people mentions from the sentences, and put them into a new table. 
+Note that we have named entity tags in column <code>ner_tags</code> of our <code>sentences</code> table. We will use this column to identify people mentions: we assume that <em>a word phrase is a people mention if all its words are tagged as <code>PERSON</code> in its <code>ner_tags</code> field.</em></p>
+
+<!-- Ideally you would want to add your own domain-specific features to extract mentions. For example, people names are usually capitalized, tagged with a noun phrase part of speech tag, and have certain dependency paths to other words in the sentence. However, because the Stanford NLP Parser is relatively good at identifying people and tags them with a `PERSON` named-entity tag we trust its output and don't make the predictions ourselves. We simply assume that all people identified by the NLP Parser are correct. Note that this assumption is not ideal and usually does not work for other types of entities, but it is good enough to build a first version of our application.
+ -->
+
+<p>Again, we first create a new table in the database by typing:</p>
+
+<div class="highlight"><pre><code class="bash">psql -d deepdive_spouse -c <span class="s2">&quot;</span>
+<span class="s2">  CREATE TABLE people_mentions(</span>
+<span class="s2">    sentence_id    bigint, -- refers to sentences table</span>
+<span class="s2">    start_position int,    -- word offset in the sentence</span>
+<span class="s2">    length         int,    -- how many words in this mention</span>
+<span class="s2">    text           text,   -- name of the person</span>
+<span class="s2">    mention_id     bigint  -- unique identifier for people_mentions</span>
+<span class="s2">  );</span>
+<span class="s2">&quot;</span></code></pre></div>
+
+<p>Let&#39;s tell DeepDive to use our first extractor, by adding the following lines into <code>deepdive.extraction.extractors</code> block in <code>application.conf</code>, which should be present in the template:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">deepdive {
+  ...
+  # Put your extractors here
+  extraction.extractors {
+
+    ext_people {
+      input: &quot;&quot;&quot;
+          SELECT  sentence_id, words, ner_tags
+          FROM    sentences
+          &quot;&quot;&quot;
+      output_relation : &quot;people_mentions&quot;
+      udf             : ${APP_HOME}&quot;/udf/ext_people.py&quot;
+      before          : ${APP_HOME}&quot;/udf/clear_table.sh people_mentions&quot;
+      after           : ${APP_HOME}&quot;/udf/fill_sequence.sh people_mentions mention_id&quot;
+    }
+    # ... (more extractors to add here)
+  } 
+  ...   
+}
+</code></pre></div>
+<p>Let&#39;s go through each line:</p>
+
+<ol>
+<li>The input to the <code>ext_people</code> extractor are all sentences (identifiers, words and named entity tags), selected using a SQL statement.</li>
+<li>The output of the extractor will be written to the <code>people_mentions</code> table.</li>
+<li>The extractor script is <code>udf/ext_people.py</code>. DeepDive will execute this command and stream input to the <em>stdin</em> of the process, and read output from <em>stdout</em> of the process.</li>
+<li>We execute a script <em>before</em> the extractor runs, and another script <em>after</em> the extractor runs.</li>
+</ol>
+
+<p>There are other ways you can use an extractor, refer to the <a href="extractors.html">extractor guide</a> for a more comprehensive list. </p>
+
+<p>We create a folder named <code>udf</code> to put our scripts:</p>
+
+<div class="highlight"><pre><code class="bash">mkdir udf</code></pre></div>
+
+<p>Then create a <code>udf/ext_people.py</code> script as the UDF for this extractor, which scan through input sentences and output phrases. The script can be written as follows:</p>
+
+<div class="highlight"><pre><code class="python"><span class="c">#! /usr/bin/env python</span>
+<span class="c"># File: udf/ext_people.py</span>
+
+<span class="kn">import</span> <span class="nn">json</span><span class="o">,</span> <span class="nn">sys</span>
+
+<span class="c"># For each sentence</span>
+<span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="p">:</span>
+  <span class="n">sentence_obj</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+  <span class="c"># Find phrases that are continuous words tagged with PERSON.</span>
+  <span class="n">phrases</span> <span class="o">=</span> <span class="p">[]</span>   <span class="c"># Store (start_position, length, text)</span>
+  <span class="n">words</span> <span class="o">=</span> <span class="n">sentence_obj</span><span class="p">[</span><span class="s">&quot;words&quot;</span><span class="p">]</span>         <span class="c"># a list of all words</span>
+  <span class="n">ner_tags</span> <span class="o">=</span> <span class="n">sentence_obj</span><span class="p">[</span><span class="s">&quot;ner_tags&quot;</span><span class="p">]</span>   <span class="c"># ner_tags for each word</span>
+  <span class="n">start_index</span> <span class="o">=</span> <span class="mi">0</span>
+  
+  <span class="k">while</span> <span class="n">start_index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">words</span><span class="p">):</span>
+    <span class="c"># Checking if there is a PERSON phrase starting from start_index</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="n">start_index</span>
+    <span class="k">while</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">words</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ner_tags</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;PERSON&quot;</span><span class="p">:</span> 
+      <span class="n">index</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">index</span> <span class="o">!=</span> <span class="n">start_index</span><span class="p">:</span>   <span class="c"># a person from &quot;start_index&quot; to &quot;index&quot;</span>
+      <span class="n">text</span> <span class="o">=</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">words</span><span class="p">[</span><span class="n">start_index</span><span class="p">:</span><span class="n">index</span><span class="p">])</span>
+      <span class="n">length</span> <span class="o">=</span> <span class="n">index</span> <span class="o">-</span> <span class="n">start_index</span>
+      <span class="n">phrases</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">start_index</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">text</span><span class="p">))</span>
+    <span class="n">start_index</span> <span class="o">=</span> <span class="n">index</span> <span class="o">+</span> <span class="mi">1</span>
+  
+  <span class="c"># Output a tuple for each PERSON phrase</span>
+  <span class="k">for</span> <span class="n">start_position</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">text</span> <span class="ow">in</span> <span class="n">phrases</span><span class="p">:</span>
+    <span class="k">print</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>
+      <span class="s">&quot;sentence_id&quot;</span><span class="p">:</span> <span class="n">sentence_obj</span><span class="p">[</span><span class="s">&quot;sentence_id&quot;</span><span class="p">],</span>
+      <span class="s">&quot;start_position&quot;</span><span class="p">:</span> <span class="n">start_position</span><span class="p">,</span>
+      <span class="s">&quot;length&quot;</span><span class="p">:</span> <span class="n">length</span><span class="p">,</span>
+      <span class="s">&quot;text&quot;</span><span class="p">:</span> <span class="n">text</span><span class="p">,</span>
+      <span class="s">&quot;mention_id&quot;</span><span class="p">:</span> <span class="bp">None</span>
+    <span class="p">})</span></code></pre></div>
+
+<p>This <code>udf/ext_people.py</code> Python script takes sentences records as an input, and outputs a people record for each (potentially multi-word) person phrase found in the sentence, which are one or multiple continuous words tagged with <code>PERSON</code>. </p>
+
+<p>Note that if you wanted to add debug output, you can print to <em>stderr</em> instead of stdout, and the messages would appear in the log file.</p>
+
+<p>At this point you may be wondering about the <code>before</code> and <code>after</code> script. Why do we need them? Each time before the extractor runs we want to clear out the <code>sentences</code> table and remove old data; after the extractor runs we want to fill the column <code>mention_id</code> with unique values for future tables to refer. These actions are pretty common in this application, so we make two general scripts, which are also used for future extractors:</p>
+
+<p>Create <code>udf/clear_table.sh</code> as follows. This script truncates (clears) any input table:</p>
+
+<div class="highlight"><pre><code class="bash"><span class="c"># File: udf/clear_table.sh</span>
+<span class="c"># Usage: fill_sequence.sh  TABLE_NAME</span>
+psql -d deepdive_spouse -c <span class="s2">&quot;</span>
+<span class="s2">  TRUNCATE $1 CASCADE;</span>
+<span class="s2">&quot;</span></code></pre></div>
+
+<p>Create <code>udf/fill_sequence.sh</code> as follows. This script fills a row in an input table with incremental, unique integers starting from 1:</p>
+
+<div class="highlight"><pre><code class="bash"><span class="c"># File: udf/fill_sequence.sh</span>
+<span class="c"># Usage: fill_sequence.sh  TABLE_NAME  COLUMN_NAME</span>
+<span class="c"># Postgres will use a random continuous sequence to fill your column starting from 1. The order is not guaranteed.</span>
+psql -d deepdive_spouse -c <span class="s2">&quot;</span>
+<span class="s2">        DROP SEQUENCE IF EXISTS tmp_sequence_$1;</span>
+<span class="s2">        CREATE SEQUENCE tmp_sequence_$1;</span>
+<span class="s2">        UPDATE $1 SET $2 = nextval(&#39;tmp_sequence_$1&#39;);</span>
+<span class="s2">        DROP SEQUENCE tmp_sequence_$1;</span>
+<span class="s2">&quot;</span></code></pre></div>
+
+<p>Don&#39;t forget to change permission to the new scripts you created by typing following commands:</p>
+
+<div class="highlight"><pre><code class="bash">chmod +x udf/clear_table.sh
+chmod +x udf/fill_sequence.sh</code></pre></div>
+
+<p>If you want, you can now run your extractor by executing <code>./run.sh</code>, and you will be able to see extracted results in <code>people_mentions</code>.</p>
+
+<p><a id="candidate_relations" href="#"> </a></p>
+
+<h3>Extracting candidate relations between mention pairs</h3>
+
+<p>Now comes the interesting part! We have laid all the groundwork to extract the <code>has_spouse</code> relation we care about. Let&#39;s create a table for it by typing:</p>
+
+<div class="highlight"><pre><code class="bash">psql -d deepdive_spouse -c <span class="s2">&quot;</span>
+<span class="s2">  CREATE TABLE has_spouse(</span>
+<span class="s2">    person1_id  bigint,  -- first person&#39;s mention_id in people_mentions</span>
+<span class="s2">    person2_id  bigint,  -- second person&#39;s mention_id</span>
+<span class="s2">    sentence_id bigint,  -- which senence it appears</span>
+<span class="s2">    description text,    -- a description of this relation pair</span>
+<span class="s2">    is_true     boolean, -- whether this relation is correct</span>
+<span class="s2">    relation_id bigint,  -- unique identifier for has_spouse</span>
+<span class="s2">    id          bigint   -- reserved for DeepDive</span>
+<span class="s2">  );</span>
+<span class="s2">&quot;</span></code></pre></div>
+
+<p>Note the special <code>is_true</code> column in the above table. We need this column because we want DeepDive to predict how likely it is that a given entry in the table is correct. In other words, DeepDive will create a <a href="general/inference.html">random variable</a> for each instance of it. More concretely, each row in the <code>has_spouse</code> table will be assigned random variable for its <code>is_true</code> column. </p>
+
+<p>Also note that we must reserve another special column, <code>id bigint</code>, in any table containing variables like this one. For system to use, this column should be <strong>left blank, and not be used anywhere</strong>. We will further see syntax requirements in <em>inference rules</em> related to this <code>id</code> column.</p>
+
+<p>Let&#39;s tell DeepDive to use the <code>is_true</code> column for probabilistic inference in the <code>application.conf</code>:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">schema.variables {
+  has_spouse.is_true: Boolean
+}
+</code></pre></div>
+<p>Let&#39;s create an extractor that extracts all candidate relations and puts them into the above table. We call them <em>candidate relations</em> because we are not sure whether or not they are actually correct, that&#39;s for DeepDive to predict. We will be adding <em>features</em> to make predictions in the next step, for now we are just outputting all of the candidates.</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">extraction.extractors {
+
+  # ... (other extractors)
+
+  ext_has_spouse_candidates {
+    input: &quot;&quot;&quot;
+      SELECT  sentences.sentence_id,
+              p1.mention_id AS &quot;p1.mention_id&quot;,
+              p1.text       AS &quot;p1.text&quot;,
+              p2.mention_id AS &quot;p2.mention_id&quot;,
+              p2.text       AS &quot;p2.text&quot;
+       FROM   people_mentions p1,
+              people_mentions p2,
+              sentences
+      WHERE   p1.sentence_id = p2.sentence_id
+        AND   p1.sentence_id = sentences.sentence_id
+        AND   p1.mention_id != p2.mention_id;
+        &quot;&quot;&quot;
+    output_relation : &quot;has_spouse&quot;
+    udf             : ${APP_HOME}&quot;/udf/ext_has_spouse.py&quot;
+    before          : ${APP_HOME}&quot;/udf/clear_table.sh has_spouse&quot;
+    after           : ${APP_HOME}&quot;/udf/fill_sequence.sh has_spouse relation_id&quot;
+    dependencies    : [&quot;ext_people&quot;]
+  }
+
+}
+</code></pre></div>
+<p>Note that this extractor must be executed after our last extractor <code>ext_people</code>, which is specified in &quot;dependencies&quot; field.</p>
+
+<p>In this extractor, we select all pairs of people mentions that occur in the same sentence. When generating relation candidates, we also generate training data using <a href="general/relation_extraction.html">distant supervision</a>. There are some pairs of people that we know for sure are married, and we can use them as training data for DeepDive. Similarly, if we know that two people are not married, we can use them as negative training examples. In our case we will be using data from <a href="http://www.freebase.com/">Freebase</a> for distant supervision. </p>
+
+<p>To generate positive examples, we have exported all pairs of people with a <code>has_spouse</code> relationship from the <a href="https://developers.google.com/freebase/data">Freebase data dump</a> and included the CSV file in <code>data/spouses.csv</code>.</p>
+
+<p>To generate negative examples, we include a TSV file in <code>data/non-spouses.tsv</code> containing these relations sampled from Freebase. Specifically, they contain:</p>
+
+<ol>
+<li>Pairs of the same person, e.g., &quot;Barack Obama&quot; cannot be married to &quot;Barack Obama&quot;. </li>
+<li>Pairs of other relations, e.g. if A is B&#39;s parent / children / sibling, A is not likely to be married to B. </li>
+</ol>
+
+<p>Let&#39;s create a script <code>udf/ext_has_spouse.py</code> as below, to generate and label the relation candidates:</p>
+
+<div class="highlight"><pre><code class="python"><span class="c">#! /usr/bin/env python</span>
+<span class="c"># File: udf/ext_has_spouse.py</span>
+
+<span class="kn">import</span> <span class="nn">json</span><span class="o">,</span> <span class="nn">csv</span><span class="o">,</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+
+<span class="n">BASE_DIR</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">__file__</span><span class="p">))</span>
+
+<span class="c"># Load the spouse dictionary for distant supervision</span>
+<span class="n">spouses</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">with</span> <span class="nb">open</span> <span class="p">(</span><span class="n">BASE_DIR</span> <span class="o">+</span> <span class="s">&quot;/../data/spouses.csv&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">csvfile</span><span class="p">:</span>
+  <span class="n">reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">csvfile</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">reader</span><span class="p">:</span>
+    <span class="n">name1</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="n">name2</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="n">spouses</span><span class="p">[</span><span class="n">name1</span><span class="p">]</span> <span class="o">=</span> <span class="n">name2</span>
+
+<span class="c"># Load relations of people that are not spouse</span>
+<span class="n">non_spouses</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+<span class="n">lines</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">BASE_DIR</span> <span class="o">+</span> <span class="s">&#39;/../data/non-spouses.tsv&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+  <span class="n">name1</span><span class="p">,</span> <span class="n">name2</span><span class="p">,</span> <span class="n">relation</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="p">)</span>
+  <span class="n">non_spouses</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">name1</span><span class="p">,</span> <span class="n">name2</span><span class="p">))</span>  <span class="c"># Add a non-spouse relation pair</span>
+
+<span class="c"># For each input tuple</span>
+<span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="p">:</span>
+  <span class="n">obj</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+
+  <span class="c"># Get useful data from the JSON</span>
+  <span class="n">p1_id</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="s">&quot;p1.mention_id&quot;</span><span class="p">]</span>
+  <span class="n">p1_text</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="s">&quot;p1.text&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+  <span class="n">p1_lower</span> <span class="o">=</span> <span class="n">p1_text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+  <span class="n">p2_id</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="s">&quot;p2.mention_id&quot;</span><span class="p">]</span>
+  <span class="n">p2_text</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="s">&quot;p2.text&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+  <span class="n">p2_lower</span> <span class="o">=</span> <span class="n">p2_text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+  <span class="n">sentence_id</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="s">&quot;sentence_id&quot;</span><span class="p">]</span>
+
+  <span class="c"># See if the combination of people is in our supervision dictionary</span>
+  <span class="c"># If so, set is_correct to true or false</span>
+  <span class="n">is_true</span> <span class="o">=</span> <span class="bp">None</span>
+  <span class="k">if</span> <span class="n">p1_lower</span> <span class="ow">in</span> <span class="n">spouses</span> <span class="ow">and</span> <span class="n">spouses</span><span class="p">[</span><span class="n">p1_lower</span><span class="p">]</span> <span class="o">==</span> <span class="n">p2_lower</span><span class="p">:</span>
+    <span class="n">is_true</span> <span class="o">=</span> <span class="bp">True</span>
+  <span class="k">if</span> <span class="n">p2_lower</span> <span class="ow">in</span> <span class="n">spouses</span> <span class="ow">and</span> <span class="n">spouses</span><span class="p">[</span><span class="n">p2_lower</span><span class="p">]</span> <span class="o">==</span> <span class="n">p1_lower</span><span class="p">:</span>
+    <span class="n">is_true</span> <span class="o">=</span> <span class="bp">True</span>
+  <span class="c"># appear in other relations</span>
+  <span class="k">elif</span> <span class="p">(</span><span class="n">p1_lower</span><span class="p">,</span> <span class="n">p2_lower</span><span class="p">)</span> <span class="ow">in</span> <span class="n">non_spouses</span><span class="p">:</span> 
+    <span class="n">is_true</span> <span class="o">=</span> <span class="bp">False</span>
+  <span class="k">elif</span> <span class="p">(</span><span class="n">p2_lower</span><span class="p">,</span> <span class="n">p1_lower</span><span class="p">)</span> <span class="ow">in</span> <span class="n">non_spouses</span><span class="p">:</span>
+    <span class="n">is_true</span> <span class="o">=</span> <span class="bp">False</span>
+  <span class="c"># same person</span>
+  <span class="k">elif</span> <span class="p">(</span><span class="n">p1_text</span> <span class="o">==</span> <span class="n">p2_text</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">p1_text</span> <span class="ow">in</span> <span class="n">p2_text</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">p2_text</span> <span class="ow">in</span> <span class="n">p1_text</span><span class="p">):</span>
+    <span class="n">is_true</span> <span class="o">=</span> <span class="bp">False</span>
+
+  <span class="k">print</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>
+    <span class="s">&quot;person1_id&quot;</span><span class="p">:</span> <span class="n">p1_id</span><span class="p">,</span>
+    <span class="s">&quot;person2_id&quot;</span><span class="p">:</span> <span class="n">p2_id</span><span class="p">,</span>
+    <span class="s">&quot;sentence_id&quot;</span><span class="p">:</span> <span class="n">sentence_id</span><span class="p">,</span>
+    <span class="s">&quot;description&quot;</span><span class="p">:</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">p1_text</span><span class="p">,</span> <span class="n">p2_text</span><span class="p">),</span>
+    <span class="s">&quot;is_true&quot;</span><span class="p">:</span> <span class="n">is_true</span><span class="p">,</span>
+    <span class="s">&quot;relation_id&quot;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="s">&quot;id&quot;</span><span class="p">:</span> <span class="bp">None</span>
+  <span class="p">})</span></code></pre></div>
+
+<p><a id="candidate_relation_features" href="#"> </a></p>
+
+<h3>Adding Features for candidate relations</h3>
+
+<p>For DeepDive to make predictions, we need to add <em>features</em> to our candidate relations. Features are properties that help decide whether or not the given relation is correct. For example, one feature may be the sequence of words between the two mentions. We could have saved the features in the <code>has_spouse</code> table that we created above, but it is often cleaner to have a separate table for them.</p>
+
+<p>Create a table by typing:</p>
+
+<div class="highlight"><pre><code class="bash">psql -d deepdive_spouse -c <span class="s2">&quot;</span>
+<span class="s2">  CREATE TABLE has_spouse_features(</span>
+<span class="s2">    relation_id bigint,</span>
+<span class="s2">    feature     text</span>
+<span class="s2">  );</span>
+<span class="s2">&quot;</span></code></pre></div>
+
+<p>And create a new extractor for features, which will execute after our last <code>ext_has_spouse_candidates</code> extractor:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">extraction.extractors {
+
+  # ... (other extractors)
+
+  ext_has_spouse_features {
+    input: &quot;&quot;&quot;
+      SELECT  sentences.words,
+              has_spouse.relation_id,
+              p1.start_position  AS  &quot;p1.start_position&quot;,
+              p1.length          AS  &quot;p1.length&quot;,
+              p2.start_position  AS  &quot;p2.start_position&quot;,
+              p2.length          AS  &quot;p2.length&quot;
+        FROM  has_spouse,
+              people_mentions p1,
+              people_mentions p2,
+              sentences
+       WHERE  has_spouse.person1_id = p1.mention_id
+         AND  has_spouse.person2_id = p2.mention_id
+         AND  has_spouse.sentence_id = sentences.sentence_id;
+         &quot;&quot;&quot;
+    output_relation : &quot;has_spouse_features&quot;
+    udf             : ${APP_HOME}&quot;/udf/ext_has_spouse_features.py&quot;
+    before          : ${APP_HOME}&quot;/udf/before_has_spouse_features.sh&quot;
+    dependencies    : [&quot;ext_has_spouse_candidates&quot;]
+  }
+
+}
+</code></pre></div>
+<p>Create script <code>udf/ext_has_spouse_features.py</code> as follows:</p>
+
+<div class="highlight"><pre><code class="python"><span class="c">#! /usr/bin/env python</span>
+<span class="c"># File: udf/ext_has_spouse_features.py</span>
+
+<span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">json</span>
+
+<span class="c"># For each input tuple</span>
+<span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="p">:</span>
+  <span class="n">obj</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+
+  <span class="n">p1_start</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="s">&quot;p1.start_position&quot;</span><span class="p">]</span>
+  <span class="n">p1_length</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="s">&quot;p1.length&quot;</span><span class="p">]</span>
+  <span class="n">p1_end</span> <span class="o">=</span> <span class="n">p1_start</span> <span class="o">+</span> <span class="n">p1_length</span>
+  <span class="n">p2_start</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="s">&quot;p2.start_position&quot;</span><span class="p">]</span>
+  <span class="n">p2_length</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="s">&quot;p2.length&quot;</span><span class="p">]</span>
+  <span class="n">p2_end</span> <span class="o">=</span> <span class="n">p2_start</span> <span class="o">+</span> <span class="n">p2_length</span>
+
+  <span class="n">p1_text</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="s">&quot;words&quot;</span><span class="p">][</span><span class="n">p1_start</span><span class="p">:</span><span class="n">p1_length</span><span class="p">]</span>
+  <span class="n">p2_text</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="s">&quot;words&quot;</span><span class="p">][</span><span class="n">p2_start</span><span class="p">:</span><span class="n">p2_length</span><span class="p">]</span>
+
+  <span class="c"># Features for this pair come in here</span>
+  <span class="n">features</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+  
+  <span class="c"># Feature 1: Words between the two phrases</span>
+  <span class="n">left_idx</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">p1_end</span><span class="p">,</span> <span class="n">p2_end</span><span class="p">)</span>
+  <span class="n">right_idx</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">p1_start</span><span class="p">,</span> <span class="n">p2_start</span><span class="p">)</span>
+  <span class="n">words_between</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="s">&quot;words&quot;</span><span class="p">][</span><span class="n">left_idx</span><span class="p">:</span><span class="n">right_idx</span><span class="p">]</span>
+  <span class="k">if</span> <span class="n">words_between</span><span class="p">:</span> 
+    <span class="n">features</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s">&quot;words_between=&quot;</span> <span class="o">+</span> <span class="s">&quot;-&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">words_between</span><span class="p">))</span>
+
+  <span class="c"># Feature 2: Number of words between the two phrases</span>
+  <span class="n">features</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s">&quot;num_words_between=</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">words_between</span><span class="p">))</span>
+
+  <span class="c"># Feature 3: Does the last word (last name) match assuming the words are not equal?</span>
+  <span class="n">last_word_left</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="s">&quot;words&quot;</span><span class="p">][</span><span class="n">p1_end</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+  <span class="n">last_word_right</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="s">&quot;words&quot;</span><span class="p">][</span><span class="n">p2_end</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">last_word_left</span> <span class="o">==</span> <span class="n">last_word_right</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">p1_text</span> <span class="o">!=</span> <span class="n">p2_text</span><span class="p">):</span>
+    <span class="n">features</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s">&quot;last_word_matches&quot;</span><span class="p">)</span>
+
+  <span class="c"># TODO: Add more features, look at dependency paths, etc</span>
+
+  <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">features</span><span class="p">:</span>  
+    <span class="k">print</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>
+      <span class="s">&quot;relation_id&quot;</span><span class="p">:</span> <span class="n">obj</span><span class="p">[</span><span class="s">&quot;relation_id&quot;</span><span class="p">],</span>
+      <span class="s">&quot;feature&quot;</span><span class="p">:</span> <span class="n">feature</span>
+    <span class="p">})</span></code></pre></div>
+
+<p>Create script <code>udf/before_has_spouse_features.sh</code> as follows:</p>
+
+<div class="highlight"><pre><code class="bash"><span class="c">#! /usr/bin/env bash</span>
+psql -c <span class="s2">&quot;TRUNCATE has_spouse_features CASCADE;&quot;</span> deepdive_spouse</code></pre></div>
+
+<p><a id="inference_rules" href="#"> </a></p>
+
+<h3>Writing inference rules</h3>
+
+<p>Now we need to tell DeepDive how to perform <a href="general/inference.html">probabilistic inference</a> on the data we have generated.  We want to predict the <code>is_true</code> column of the <code>has_spouse</code> table based on the features we have extracted. This is the simplest rule you can write, because it does not involve domain knowledge or relationships among variables. Add the following to your <code>application.conf</code>:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">inference.factors {
+
+  f_has_spouse_features {
+    input_query: &quot;&quot;&quot;
+      SELECT has_spouse.id      AS &quot;has_spouse.id&quot;,
+             has_spouse.is_true AS &quot;has_spouse.is_true&quot;,
+             feature
+      FROM has_spouse,
+           has_spouse_features
+      WHERE has_spouse_features.relation_id = has_spouse.relation_id
+      &quot;&quot;&quot;
+    function : &quot;IsTrue(has_spouse.is_true)&quot;
+    weight   : &quot;?(feature)&quot;
+  }
+
+}
+</code></pre></div>
+<p>This rule generates a model similar to a logistic regression classifier. We use a set of features to make a prediction about the variable we care about. For each row in the <em>input query</em> we are adding a <a href="general/inference.html">factor</a> that connects to the <code>has_spouse.is_true</code> variable with a different weight for each feature name. </p>
+
+<p>Note that the syntax requires users to explicitly select:</p>
+
+<ol>
+<li><code>id</code> column for each variable</li>
+<li>The variable column, which is <code>is_true</code> in this case</li>
+<li>The column weight is dependent on, which is <code>feature</code> in this case</li>
+</ol>
+
+<p>And when selecting them, users must explicitly alias <code>id</code> to <code>[relation_name].id</code> and <code>[variable]</code> to <code>[relation_name].[variable]</code> for system to use. See more in <a href="inference_rules.html">inference rule guide</a>.</p>
+
+<p>Before getting results, let&#39;s try to incorporate a bit of domain knowledge into our model. For example, we know that has_spouse is symmetric. That means, if Barack Obama is married to Michelle Obama, then Michelle Obama is married to Barack Obama, and vice versa. (<code>Marry(A,B) &lt;-&gt; Marry(B,A)</code>) We can encode this knowledge in a second inference rule:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">inference.factors {
+
+  # ...(other inference rules)
+
+  f_has_spouse_symmetry {
+    input_query: &quot;&quot;&quot;
+      SELECT r1.is_true AS &quot;has_spouse.r1.is_true&quot;,
+             r2.is_true AS &quot;has_spouse.r2.is_true&quot;,
+             r1.id      AS &quot;has_spouse.r1.id&quot;,
+             r2.id      AS &quot;has_spouse.r2.id&quot;
+      FROM has_spouse r1,
+           has_spouse r2
+      WHERE r1.person1_id = r2.person2_id
+        AND r1.person2_id = r2.person1_id
+      &quot;&quot;&quot;
+    function: &quot;Equal(has_spouse.r1.is_true, has_spouse.r2.is_true)&quot;
+    weight: &quot;?&quot;
+  }
+
+}
+</code></pre></div>
+<p>There are many <a href="inference_rule_functions.html">other kinds of factor functions</a> you could use to encode domain knowledge. </p>
+
+<p>We are almost ready to run! In order to evaluate our results, we also want to define a <em>holdout fraction</em> for our predictions. The holdout fraction defines how much of our training data we want to treat as testing data used to compare our predictions against. By default the holdout fraction is <code>0</code>, which means that we cannot evaluate the precision of our results. Add the following line to holdout 1/4 of the training data:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">calibration.holdout_fraction: 0.25
+</code></pre></div>
+<!-- Finally, there is one last technical details we need to pay attention to. Our first rule is very sparse, in other words, the same features usually only applies to a few candidates that we extract. Our second rule on the other hand applies to every candidate, which means that DeepDive will learn a very high weight for it. This discrepancy can lead to longer convergence times during the inference step if we don't select a correct "learning rate". For such a case, let's change the learning rate from the default of "0.1" to the "0.001" by adding the following sampler options to the configuration file:
+
+    sampler.sampler_args: "-l 125 -s 1 -i 200 --alpha 0.001"
+ -->
+
+<p><a id="evaluation" href="#"> </a></p>
+
+<h3>Evaluating the result</h3>
+
+<p>Let&#39;s try running the full pipeline using <code>./run.sh</code>. (If you want to run part of the pipeline, refer to <a href="#pipelines">this section</a>)</p>
+
+<p>After running, you should see a summary report similar to:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">04:07:48 [profiler] INFO  --------------------------------------------------
+04:07:48 [profiler] INFO  Summary Report
+04:07:48 [profiler] INFO  --------------------------------------------------
+04:07:48 [profiler] INFO  ext_people SUCCESS [43958 ms]
+04:07:48 [profiler] INFO  ext_has_spouse_candidates SUCCESS [22376 ms]
+04:07:48 [profiler] INFO  ext_has_spouse_features SUCCESS [84158 ms]
+04:07:48 [profiler] INFO  inference_grounding SUCCESS [6175 ms]
+04:07:48 [profiler] INFO  inference SUCCESS [10293 ms]
+04:07:48 [profiler] INFO  calibration plot written to /YOUR/PATH/TO/deepdive/out/TIME/calibration/has_spouse.is_true.png [0 ms]
+04:07:48 [profiler] INFO  calibration SUCCESS [538 ms]
+04:07:48 [profiler] INFO  --------------------------------------------------
+</code></pre></div>
+<p>Great, let&#39;s take a look at some of the predictions that DeepDive has made. DeepDive creates a view <code>has_spouse_is_true_inference</code> for each variable you have defined in the database. Type in following query in command line to sample some predictions with high confidence:</p>
+
+<div class="highlight"><pre><code class="bash">psql -d deepdive_spouse -c <span class="s2">&quot;</span>
+<span class="s2">  SELECT sentence_id, description, expectation</span>
+<span class="s2">  FROM has_spouse_is_true_inference</span>
+<span class="s2">  WHERE expectation &gt; 0.9</span>
+<span class="s2">  LIMIT 10;</span>
+<span class="s2">&quot;</span></code></pre></div>
+
+<p>The result should be something like (might not be the same):</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text"> sentence_id |             description             | expectation
+-------------+-------------------------------------+-------------
+       77558 | Calvin Coolidge-Grace Coolidge      |           1
+       84350 | Cherie Blair-Tony Blair             |           1
+       64209 | Cecilia-Sarkozy                     |           1
+       84337 | Tony Blair-Cherie Blair             |           1
+       70974 | Dustin Hoffman-Natalie Portman      |       0.998
+       67407 | Dustin Hoffman-Dennis Quaid         |       0.998
+       52334 | Mary Matalin-James Carville         |       0.998
+       78704 | Bill Clinton-Hillary Rodham Clinton |       0.998
+       48282 | Clinton-Obama                       |       0.998
+       47994 | Lauren Bacall-Jason Robards         |       0.998
+(10 rows)
+</code></pre></div>
+<p>We can see that some of these tuples are actually correct instances of married people. (Among above results, row 1, 2, 7, 8, 10 are correct)</p>
+
+<p>How can we improve these predictions? DeepDive generates <a href="general/calibration.html">calibration plots</a> for all variables defined in the schema to help with debugging. Let&#39;s take a look at the generated calibration plot, written to the file outputted in the summary report above. It should look something like this:</p>
+
+<p><img src="http://deepdive.stanford.edu/assets/walkthrough_has_spouse_is_true.png" alt="Calibration"></p>
+
+<p>The calibration plot contains useful information that help you to improve the quality of your predictions. For actionable advice about interpreting calibration plots, refer to the <a href="general/calibration.html">calibration guide</a>. </p>
+
+<p>Often, it is also useful to look at the <em>weights</em> that were learned for features or rules. You can do this by looking at the <code>mapped_inference_results_weights</code> table in the database. Type in following command to select features with highest weight (positive features):</p>
+
+<div class="highlight"><pre><code class="bash">psql -d deepdive_spouse -c <span class="s2">&quot;</span>
+<span class="s2">  SELECT description, weight</span>
+<span class="s2">  FROM dd_inference_result_variables_mapped_weights</span>
+<span class="s2">  ORDER BY weight DESC</span>
+<span class="s2">  LIMIT 5;</span>
+<span class="s2">&quot;</span></code></pre></div>
+<div class="highlight"><pre><code class="language-text" data-lang="text">                                  description                                   |      weight
+--------------------------------------------------------------------------------+------------------
+ f_has_spouse_features-words_between=and-his-wife-,                             | 4.57022662570932
+ f_has_spouse_features-words_between=and-former-President                       | 3.71843537330123
+ f_has_spouse_features-words_between=,-the-wife-of-Sen.                         | 3.33624750158969
+ f_has_spouse_features-words_between=,-the-widower-of                           | 3.19681498554069
+ f_has_spouse_features-words_between=faced-as-president-,-few-stand-out-to-Sen. | 2.94090009406733
+(5 rows)
+</code></pre></div>
+<p>Type in following command to select top negative features:</p>
+
+<div class="highlight"><pre><code class="bash">psql -d deepdive_spouse -c <span class="s2">&quot;</span>
+<span class="s2">  SELECT description, weight</span>
+<span class="s2">  FROM dd_inference_result_variables_mapped_weights</span>
+<span class="s2">  ORDER BY weight ASC</span>
+<span class="s2">  LIMIT 5;</span>
+<span class="s2">&quot;</span></code></pre></div>
+<div class="highlight"><pre><code class="language-text" data-lang="text">                                         description                                         |      weight
+---------------------------------------------------------------------------------------------+-------------------
+ f_has_spouse_features-words_between=&#39;s-father-,                                             | -2.08542859712276
+ f_has_spouse_features-words_between=;-director-of-photography-,                             | -2.05141101637116
+ f_has_spouse_features-words_between=&#39;s-second-wife-,-Cecilia--RRB--,-were-the-witnesses-for | -2.01128332145738
+ f_has_spouse_features-words_between=and-Obama-shook-hands-,-and                             | -1.97077846059915
+ f_has_spouse_features-words_between=;-written-by                                            | -1.95299763087218
+(5 rows)
+</code></pre></div>
+<p>Note that each execution may learn different weights, and these lists can look different. Generally, we might see that most weights make sense while some don&#39;t, which is OK for our first application. </p>
+
+<p><strong>Congratulations!!</strong> Now we have already finished our first working relation extractor!</p>
+
+<p>You can further improve the prediction by different ways. There are many possible strategies including:</p>
+
+<ul>
+<li>Making use of co-reference information</li>
+<li>Performing entity linking instead of extraction relations among mentions in the text</li>
+<li>Adding more inference rules that encode your domain knowledge</li>
+<li>Adding more (or better) positive or negative training examples</li>
+<li>Adding more (or better) features</li>
+</ul>
+
+<p>For the second point: our goal in this tutorial is get an initial
+application up and running. There are a couple of problems with the
+approach above which are worth drawing attention to: If two separate
+sentences mention the fact that Barack Obama and Michelle Obama are in a
+<code>has_spouse</code> relationship, then our approach does not know that they
+refer to the same fact. In other words, we ignore the fact that &quot;Barack
+Obama&quot; and &quot;Michelle Obama&quot; in both of these sentence refer to the same
+entity in the real world. We also don&#39;t recognize <em>coreference</em> of two
+mentions. That is, we don&#39;t know that &quot;Barack Obama&quot; and &quot;Obama&quot;
+probably refer to the same person. We will address these issues in the
+<a href="walkthrough2.html">advanced part of the tutorial</a>.</p>
+
+<!-- Here we can see that the word phrase "and-former-President" in between the two person names has a rather high weight. This seems strange, since this phrase is not an indicator of a marriage relationship. One way to improve our predictions would be to add more negative evidence that would lower the weight of that feature.
+ -->
+
+<!-- TODO!!!! -->
+
+<p><a id="nlp_extractor" href="#"> </a></p>
+
+<hr>
+
+<h2>Appendix</h2>
+
+<h3>Adding an NLP extractor</h3>
+
+<p>If you want, you can try extracting the <code>sentences</code> table yourself. This should be useful if you want to extract your own dataset.</p>
+
+<p>To start from an NLP extractor, we first load all the articles into our database:</p>
+
+<div class="highlight"><pre><code class="bash">psql -d deepdive_spouse -c <span class="s2">&quot;</span>
+<span class="s2">  COPY articles FROM STDIN CSV;</span>
+<span class="s2">&quot;</span> &lt; data/articles_dump.csv</code></pre></div>
+
+<p>The first step towards performing Entity and Relation Extraction is to extract natural language features from the raw text. This is usually done using an NLP library such as <a href="http://nlp.stanford.edu/software/lex-parser.shtml">the Stanford Parser</a> or <a href="http://nltk.org/">NLTK</a>. Because natural language processing is such a common first step we provide a pre-built extractor which uses the <a href="http://nlp.stanford.edu/software/corenlp.shtml">Stanford CoreNLP Kit</a> to split documents into sentences and tag them. Let&#39;s copy it into our project. </p>
+
+<p>The NLP extractor we provide lies in <code>examples/nlp_extractor</code> folder. Refer to its <code>README.md</code> for details. Now we go into it and compile it:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">cd ../../examples/nlp_extractor
+sbt stage
+cd ../../app/spouse
+</code></pre></div>
+<p>The <code>sbt stage</code> command compiles the extractor (written in Scala) and generates a handy start script. The extractor itself takes JSON tuples of raw document text as input, and outputs JSON tuples of sentences with information such as part-of-speech tags and dependency parses. Let&#39;s now create a new table for the output of the extractor in our database. Because the output format of the NLP extractor is fixed by us, you must create a compatible table, like <code>sentences</code> defined <a href="#loading_data">above</a>.</p>
+
+<p>Next, add the extractor: </p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">extraction.extractors {
+
+  ext_sentences: {
+    input: &quot;&quot;&quot;
+      SELECT  article_id, text
+      FROM    articles
+      ORDER BY article_id ASC
+      &quot;&quot;&quot;
+    output_relation : &quot;sentences&quot;
+    udf             : &quot;examples/nlp_extractor/run.sh -k article_id -v text -l 20 -t 4&quot;
+    before          : ${APP_HOME}&quot;/udf/before_sentences.sh&quot;
+    after           : ${APP_HOME}&quot;/util/fill_sequence.sh sentences sentence_id&quot;
+  }
+
+  # ... More extractors to add dere
+}
+</code></pre></div>
+<p>(Make sure this extractor is executed before <code>ext_people</code> by adding dependencies to the latter.)</p>
+
+<p><a id="pipelines" href="#"> </a></p>
+
+<h3>Using pipelines</h3>
+
+<p>By default, DeepDive runs all extractors that are defined in the configuration file. Sometimes you only want to run some of your extractors to test them, or to save time when the output of an early extractor hasn&#39;t changed. The NLP extractor is a good example of this. It takes a long time to run, and its output will be the same every time, so we don&#39;t want to run it more than once. DeepDive allows you to define different <a href="pipelines.html">pipelines</a> for this purpose, by adding the following to your <code>application.conf</code>:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">pipeline.pipelines.withnlp: [
+  &quot;ext_sentences&quot;,    # NLP extractor, takes very long
+  &quot;ext_people&quot;, &quot;ext_has_spouse_candidates&quot;, &quot;ext_has_spouse_features&quot;,
+  &quot;f_has_spouse_features&quot;, &quot;f_has_spouse_symmetry&quot;
+]
+
+pipeline.pipelines.nonlp: [
+  &quot;ext_people&quot;, &quot;ext_has_spouse_candidates&quot;, &quot;ext_has_spouse_features&quot;,
+  &quot;f_has_spouse_features&quot;, &quot;f_has_spouse_symmetry&quot;
+]
+</code></pre></div>
+<p>The code above created two pipelines, one with NLP extraction and the other without NLP. We further add a line:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">pipeline.run: &quot;nonlp&quot;
+</code></pre></div>
+<p>This will tell DeepDive to execute the &quot;nonlp&quot; pipeline, which only contains the &quot;ext_people&quot; extractor.</p>
+
+            </div>
+          </row>
+        </div>
+      </section>
+    
+      <footer id="footer">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1">
+              <p class="pull-left"> 
+                Copyright, 2014 deepdive.stanford.edu
+                ⋅
+                <a href="mailto:contact.hazy@gmail.com">Questions? Email us</a>
+              </p>
+              <p class="pull-right"> 
+                Visit DeepDive on <a href="https://github.com/hazyresearch/deepdive" target="_blank">Github</a> 
+              </p>
+            </div>
+          </row>
+        </div>
+      </footer>
+
+    
+  
+  </body>
+</html>
