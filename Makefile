@@ -6,7 +6,7 @@ build:
 	lib/dw_extract.sh
 
 	@echo -e "\n=== Compiling DeepDive... ==="
-	sbt pack
+	sbt/sbt pack
 
 	@echo -e "\n=== Installing DeepDive... ==="
 	make -C target/pack/ install ; 
