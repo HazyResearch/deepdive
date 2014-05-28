@@ -153,7 +153,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       id bigserial primary key,
       initial_value double precision,
       is_fixed boolean,
-      description text);
+      description text,
+      count bigint);
     ALTER SEQUENCE ${WeightsTable}_id_seq MINVALUE -1 RESTART WITH 0;
   """
 
@@ -560,8 +561,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       val weightCmd = generateWeightCmd(factorDesc.weightPrefix, factorDesc.weight.variables)
 
       writer.println(s"""
-        INSERT INTO ${WeightsTable}(initial_value, is_fixed, description)
-        SELECT ${weightValue} AS wValue, ${isFixed} AS wIsFixed, ${weightCmd} AS wCmd
+        INSERT INTO ${WeightsTable}(initial_value, is_fixed, description, count)
+        SELECT ${weightValue} AS wValue, ${isFixed} AS wIsFixed, ${weightCmd} AS wCmd, COUNT(${weightValue})
         FROM ${factorDesc.name}_query_user GROUP BY wValue, wIsFixed, wCmd;""")
     }
 
