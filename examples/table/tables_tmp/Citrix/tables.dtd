@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!ELEMENT tables(table+,fontspec*)>
+<!ELEMENT fontspec EMPTY>
+<!ATTLIST fontspec
+id CDATA #REQUIRED
+size CDATA #REQUIRED
+family CDATA #REQUIRED
+color CDATA #REQUIRED
+>
+<!ELEMENT table (header,tbody)>
+<!ELEMENT header (header_element)*>
+<!ELEMENT header_element (#PCDATA)>
+<!ATTLIST header_element
+id CDATA #REQUIRED
+sh CDATA #REQUIRED
+font CDATA #REQUIRED
+colspan CDATA #REQUIRED
+>
+<!ELEMENT tbody (data_row)*>
+<!ELEMENT data_row (cell)*>
+<!ELEMENT cell (#PCDATA)>
+<!ATTLIST cell
+sh CDATA #REQUIRED
+font CDATA #REQUIRED
+colspan CDATA #REQUIRED
+format CDATA #REQUIRED
+>

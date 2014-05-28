@@ -113,7 +113,9 @@ def make_pg_func():
   ret += 'DROP TYPE IF EXISTS ' + ret_type_name + ' CASCADE;\n'
   ret += 'CREATE TYPE ' + ret_type_name + ' AS (' \
     + ', '.join([ _return_names[i] + ' ' \
-    + _return_types[i] + ' []' for i in range(len(_return_names))]) \
+    + _return_types[i] 
+    # + ' []'   # previous version
+    for i in range(len(_return_names))]) \
     + ');\n'
 
   
@@ -121,7 +123,7 @@ def make_pg_func():
   ret += 'CREATE OR REPLACE FUNCTION ' + func_name + '''(
     ''' + ', '.join([ _input_names[i] + ' ' \
     + _input_types[i] for i in range(len(_input_names))]) \
-    + ''') RETURNS ''' + ret_type_name + ' AS\n$$\n';
+    + ''') RETURNS SETOF ''' + ret_type_name + ' AS\n$$\n';
 
   # Import Libraries
   for lib in _libraries:

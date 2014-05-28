@@ -13,7 +13,8 @@ for row in fileinput.input():
   
   # Get all fields from a row
   words = parts[0].split(ARR_DELIM)
-  relation_id, p1_start, p1_length, p2_start, p2_length = [int(x) for x in parts[1:]]
+  relation_id = parts[1]
+  p1_start, p1_length, p2_start, p2_length = [int(x) for x in parts[2:]]
   p1_end = p1_start + p1_length
   p2_end = p2_start + p2_length
 

@@ -15,20 +15,21 @@ trait JdbcExtractionDataStore extends ExtractionDataStore[JsObject] with Logging
 
   def queryAsMap[A](query: String, batchSize: Option[Int] = None)
       (block: Iterator[Map[String, Any]] => A) : A = {
-      
       ds.DB.readOnly { implicit session =>
         session.connection.setAutoCommit(false)
         val stmt = session.connection.createStatement(
           java.sql.ResultSet.TYPE_FORWARD_ONLY, java.sql.ResultSet.CONCUR_READ_ONLY)
         stmt.setFetchSize(10000)
         try {
-          log.info(query)
+          // stmt.executeUpdate("ANALYZE");
+          log.debug(query)
           val expQuery = "EXPLAIN " + query
           val ex = stmt.executeQuery(expQuery)
-          log.info(ex.getMetaData().getColumnLabel(1))
+          log.debug(ex.getMetaData().getColumnLabel(1))
           while (ex.next()) {
-            println (ex getString 1)
+            log.debug(ex getString 1)
           }
+
           val rs = stmt.executeQuery(query)
           // No result return
           if (!rs.isBeforeFirst) {
@@ -56,9 +57,7 @@ trait JdbcExtractionDataStore extends ExtractionDataStore[JsObject] with Logging
           // SQL cmd exception
           case exception : Throwable =>
             log.error(exception.toString)
-            log.info("[Error] Please check the SQL cmd!")
             throw exception
-          // TODO: Call TaskManager to kill all tasks
         }
       }
     }
@@ -84,9 +83,7 @@ trait JdbcExtractionDataStore extends ExtractionDataStore[JsObject] with Logging
         // SQL cmd exception
         case exception : Throwable =>
           log.error(exception.toString)
-          log.info("[Error] Please check the SQL cmd!")
           throw exception
-        // TODO: Call TaskManager to kill all tasks
       } finally {
         conn.close()
       }
@@ -94,13 +91,6 @@ trait JdbcExtractionDataStore extends ExtractionDataStore[JsObject] with Logging
 
     def unwrapSQLType(x: Any) : Any = {
       x match {
-        case x : org.hsqldb.jdbc.JDBCArray => x.getArray().asInstanceOf[Array[_]].toList
-        case x : org.hsqldb.jdbc.JDBCClobClient => 
-          val reader = new BufferedReader(x.getCharacterStream)
-          Stream.continually(reader.readLine()).takeWhile(_ != null).mkString("\n")
-        case x : org.hsqldb.jdbc.JDBCBlobClient =>
-          val src = Source.fromInputStream(x.getBinaryStream)
-          new String(src.getLines.mkString("\n").getBytes, "utf-8")
         case x : org.postgresql.jdbc4.Jdbc4Array => x.getArray().asInstanceOf[Array[_]].toList
         case x : org.postgresql.util.PGobject =>
           x.getType match {

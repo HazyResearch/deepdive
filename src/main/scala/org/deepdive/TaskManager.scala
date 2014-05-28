@@ -37,7 +37,7 @@ class TaskManager extends Actor with ActorLogging {
   override def preStart() {
     log.info(s"starting at ${self.path}")
     // Periodically print the status
-    context.system.scheduler.schedule(30.seconds, 30.seconds, self, PrintStatus)
+    context.system.scheduler.schedule(60.seconds, 60.seconds, self, PrintStatus)
   }
 
   def receive = {
@@ -50,7 +50,9 @@ class TaskManager extends Actor with ActorLogging {
       log.info(s"Added task_id=${task.id}")
       // Subscribe the sender
       // self.tell(Subscribe(task.id), sender)
-      scheduleTasks()
+
+      // Don't print task pool status at initialization
+      scheduleTasks(false)
     
     case msg @ Done(task, result) =>
       val reportDesc = result match {
@@ -94,7 +96,16 @@ class TaskManager extends Actor with ActorLogging {
       }
       import scala.sys.process
       import scala.sys.process._
-      val output = ("ps aux" #> "grep deepdive" #> Seq("awk", "{print $2}") #> "xargs -L 1 kill -9").!!
+      import java.lang.management
+      import sun.management.VMManagement;
+      import java.lang.management.ManagementFactory;
+      import java.lang.management.RuntimeMXBean;
+      import java.lang.reflect.Field;
+      import java.lang.reflect.Method;
+      var pid = ManagementFactory.getRuntimeMXBean().getName().toString
+      val pattern = """\d+""".r
+      pattern.findAllIn(pid).foreach(id => (s"kill -9 ${id}").!!)
+
       self ! Shutdown
       scheduleTasks()
 
@@ -116,14 +127,16 @@ class TaskManager extends Actor with ActorLogging {
   }
 
   // Forwards eligible task to the responsible actor
-  def scheduleTasks() = {
+  def scheduleTasks(printing: Boolean = true) = {
     // Find task that have all dependencies satisfied
     val (eligibileTasks, notEligibleTasks) = taskQueue.partition { task =>
       task.dependencies.toSet.subsetOf(completedTasks.map(_.task.id))
     }
 
-    log.info(s"${eligibileTasks.size}/${taskQueue.size} tasks eligible.")
-    log.info(s"Tasks not_eligible: ${notEligibleTasks.map(_.id).toSet}")
+    printing match {
+      case true => log.debug(s"${eligibileTasks.size}/${taskQueue.size} tasks eligible. Waiting tasks: ${notEligibleTasks.map(_.id).toSet}")
+      case _ =>
+    }
     
     // Forward eligible tasks
     eligibileTasks.foreach { task =>

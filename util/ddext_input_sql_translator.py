@@ -96,42 +96,53 @@ def make_insert_func(query, funcname, outputrel):
   ret = ''
   if len(_return_names) == 0:
     raise RuntimeError('Cannot have empty return_names!')
+
+  viewname = 'dd_tmp_view_' + funcname
+  # remember to drop view
+  ret += 'DROP VIEW IF EXISTS '+ viewname + ' CASCADE;\n'
+  ret += 'CREATE VIEW ' + viewname + ' AS ' + query + ';\n'
+
   ret += "INSERT INTO " + outputrel + "(" + \
     ', '.join(_return_names) + """)\nSELECT """
   ret += ', '.join([
-    'unnest(' + 
-    """(__X.__COLUMN).""" + name + ')' for name in _return_names])
+    # 'unnest(' + 
+    """(__X.__COLUMN).""" + name
+     # + ')' 
+    for name in _return_names])
   
-  # HEURISTIC: First select--FIRST from is the select content we need
-  # MIGHT BE WRONG!!!
-  query = query.lstrip().rstrip(' \t\n;').lower()
-  # # LAST from
-  # parts = query.rsplit('from', 2)
-  # FIRST from
-  # Python bug: canot accept maxsplit
-  parts = query.split('from', 2) 
-  if len(parts) < 2: # Only select part
-    print 'WARNING: No FROM clause. Parts:',len(parts)
-    print parts
-    rest_part = ''
-  else: 
-    rest_part = 'from'.join([''] + parts[1:])
-    # print rest_part
-  subparts = parts[0].split('select', 2)
+  # # HEURISTIC: First select--FIRST from is the select content we need
+  # # MIGHT BE WRONG!!!
+  # query = query.lstrip().rstrip(' \t\n;').lower()
+  # # # LAST from
+  # # parts = query.rsplit('from', 2)
+  # # FIRST from
+  # # Python bug: canot accept maxsplit
+  # parts = query.split('from', 2) 
+  # if len(parts) < 2: # Only select part
+  #   print 'WARNING: No FROM clause. Parts:',len(parts)
+  #   print parts
+  #   rest_part = ''
+  # else: 
+  #   rest_part = 'from'.join([''] + parts[1:])
+  #   # print rest_part
+  # subparts = parts[0].split('select', 2)
 
-  if len(subparts) < 2:
-    print 'ERROR: SUBPARTS:', '\n\n'.join(subparts), len(subparts)
-    raise RuntimeError('NO SELECT IN INPUT SQL!')
-  select_content = 'select'.join( subparts[1:] )
+  # if len(subparts) < 2:
+  #   print 'ERROR: SUBPARTS:', '\n\n'.join(subparts), len(subparts)
+  #   raise RuntimeError('NO SELECT IN INPUT SQL!')
+  # select_content = 'select'.join( subparts[1:] )
   
-  if '"' in select_content:
-    print >>sys.stderr, 'WARNING: quotation marks "" in input query might cause errors.'
+  # if '"' in select_content:
+  #   print >>sys.stderr, 'WARNING: quotation marks "" in input query might cause errors.'
 
-  if ' as ' in select_content:
-    print >>sys.stderr, 'WARNING: "AS" in input query might cause errors.'
+  # if ' as ' in select_content:
+  #   print >>sys.stderr, 'WARNING: "AS" in input query might cause errors.'
 
-  ret += "\nFROM (SELECT "+funcname + "(" + select_content + ") AS __COLUMN \n" + rest_part + ") as __X;"
+  # ret += "\nFROM (SELECT "+funcname + "(" + select_content + ") AS __COLUMN \n" + rest_part + ") as __X;"
 
+  # NEW REQUIREMENT: Must alias names as the same to ddext.input of extrctors!!!
+  ret += "\nFROM (SELECT "+funcname + "(" + ', '.join(_input_names) + ") AS __COLUMN \n FROM " + viewname + ") as __X;\n"
+  ret += 'DROP VIEW IF EXISTS '+ viewname + ' CASCADE;\n'
 
   return ret
 
@@ -149,8 +160,8 @@ if __name__ == '__main__':
 
   code = open(udfcodepath).read()
   query = open(querypath).read().strip().rstrip(';')
-  print '-----------QUERY:----------'
-  print query
+  # print '-----------QUERY:----------'
+  # print query
 
   parse(code, funcname)
   _make_SD()

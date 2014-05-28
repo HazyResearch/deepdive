@@ -27,7 +27,7 @@ trait MemoryInferenceDataStoreComponent extends InferenceDataStoreComponent{
     }
 
     def groundFactorGraph(schema: Map[String, _ <: VariableDataType],
-      factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean, weightTable: String) : Unit = {
+      factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean, weightTable: String, dbSettings: DbSettings) : Unit = {
 
     }
 
@@ -58,7 +58,7 @@ trait MemoryInferenceDataStoreComponent extends InferenceDataStoreComponent{
     }
 
     def dumpFactorGraph(serializer: Serializer, schema: Map[String, _ <: VariableDataType],
-      factorDescs: Seq[FactorDesc], holdoutFraction: Double, 
+      factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String],
       weightsPath: String, variablesPath: String, factorsPath: String, edgesPath: String) = {
       // Weights
       weights.values.foreach { w => serializer.addWeight(w.id, w.isFixed, w.value) }

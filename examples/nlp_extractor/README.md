@@ -17,7 +17,20 @@ JSON tuple of the form:
       post_tags: [array_of_pos_tags],
       ner_tags: [array_of_ner_tags],
       dependencies: [array of collapsed dependencies]
-      sentence_id: [only a null value]
+      sentence_offset: [0,1,2... which sentence is it in document]
+      sentence_id: [document_id@sentence_offset]
     }
 
-You are recommended to use `util/fill_sequence.sh [TABLE_NAME] [COLUMN_NAME]` to fill the column sentence_id after using this NLP extractor.
+You can create a table like this, to be the `output_relation`:
+
+    CREATE TABLE sentences(
+      document_id bigint,
+      sentence text, 
+      words text[],
+      lemma text[],
+      pos_tags text[],
+      dependencies text[],
+      ner_tags text[],
+      sentence_offset bigint,
+      sentence_id text
+      );

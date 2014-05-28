@@ -9,9 +9,6 @@ fi
 echo "Set DB_NAME to ${DBNAME}."
 echo "HOST is ${PGHOST}, PORT is ${PGPORT}."
 
-export PGUSER=${PGUSER:-`whoami`}
-export PGPASSWORD=${PGPASSWORD:-}
-
 dropdb $DBNAME
 createdb $DBNAME
 
@@ -19,4 +16,4 @@ export APP_HOME=`cd $(dirname $0)/; pwd`
 
 psql -d $DBNAME < $APP_HOME/schema.sql
 psql -d $DBNAME -c "copy articles from STDIN CSV;" < $APP_HOME/data/articles_dump.csv
-psql -d $DBNAME -c "copy sentences(sentence_id, document_id, sentence, words, lemma, pos_tags, dependencies, ner_tags) from STDIN CSV;" < $APP_HOME/data/sentences_dump.csv
+psql -d $DBNAME -c "copy sentences from STDIN CSV;" < $APP_HOME/data/sentences_dump.csv

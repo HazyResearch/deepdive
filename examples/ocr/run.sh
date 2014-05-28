@@ -1,21 +1,14 @@
 #! /bin/bash
 
-export DBNAME=deepdive_ocr
-export PGUSER=${PGUSER:-`whoami`}
-export PGPASSWORD=${PGPASSWORD:-}
-export PGPORT=${PGPORT:-5432}
-export PGHOST=${PGHOST:-localhost}
+. "$(dirname $0)/env.sh"
 
-cd data/raw/
-ROOT_PATH=`pwd`
+export APP_HOME=`cd $(dirname $0); pwd`
+export DEEPDIVE_HOME=`cd $(dirname $0)/../..; pwd`
+
+cd $APP_HOME/data/raw/
 python gen_feature_table.py
 
-cd "$(dirname $0)/../../../../";
-ROOT_PATH=`pwd`
+cd $DEEPDIVE_HOME
 
-$ROOT_PATH/examples/ocr/prepare_data.sh
-env SBT_OPTS="-Xmx4g" sbt "run -c examples/ocr/application.conf"
-
-cd $ROOT_PATH/examples/ocr/
-ROOT_PATH=`pwd`
-python feature-analysis.py
+bash $APP_HOME/prepare_data.sh
+deepdive -c $APP_HOME/application.conf

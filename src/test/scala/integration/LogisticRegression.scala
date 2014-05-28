@@ -15,9 +15,9 @@
 //     JdbcDataStore.init(ConfigFactory.load)
 //     PostgresDataStore.withConnection { implicit conn =>
 //        SQL("drop schema if exists public cascade; create schema public;").execute()
-//        SQL("create table titles(id bigserial primary key, title text, has_extractions boolean);").execute()
-//        SQL("""create table word_presences(id bigserial primary key, 
-//         title_id bigint references titles(id), word text, is_present boolean);""").execute()
+//        SQL("create table titles(id bigint, title text, has_extractions boolean);").execute()
+//        SQL("""create table word_presences(id bigint, 
+//         title_id bigint, word text, is_present boolean);""").execute()
 //     }
 //     JdbcDataStore.close()
 //   }
@@ -39,6 +39,7 @@
 //         titlesLoader.output_relation: "titles"
 //         titlesLoader.input: "CSV('${getClass.getResource("/logistic_regression/titles.csv").getFile}')"
 //         titlesLoader.udf: "${getClass.getResource("/logistic_regression/title_loader.py").getFile}"
+//         titlesLoader.after: "util/fill_sequence.sh titles id"
         
 //         wordsExtractor.output_relation: "word_presences"
 //         wordsExtractor.input: "SELECT * FROM titles"
@@ -68,30 +69,11 @@
 //       }.toList
 //       assert(extractionResult.size == 12)
       
-//       val numFactors = SQL("select count(*) as c from dd_graph_factors;")().head[Long]("c")
-//       val numVariables = SQL("select count(*) as c from dd_graph_variables;")().head[Long]("c")
-//       val numFactorVariables = SQL("select count(*) as c from dd_graph_edges;")().head[Long]("c")
 //       val numWeights = SQL("select count(*) as c from dd_graph_weights;")().head[Long]("c")
 
-//       // One variable for each word, and one variable for each title
-//       assert(numVariables == 15)
-//       // One factor for each word
-//       assert(numFactors == 12)
-//       // Each factor connects one word and one title (12*2)
-//       assert(numFactorVariables == 24)
 //       // Different weight for each unique word
 //       assert(numWeights == 7)
 
-//       // Make sure the variables types are correct
-//       val numEvidence = SQL("""
-//         select count(*) as c from dd_graph_variables 
-//         WHERE is_evidence = true""")().head[Long]("c")
-//       val numQuery = SQL("""
-//         select count(*) as c from dd_graph_variables 
-//         WHERE is_evidence = false""")().head[Long]("c")
-//       // 1 title and 12 words are evidence
-//       assert(numEvidence == 13)
-//       assert(numQuery == 2)
 
 //     }
 //     JdbcDataStore.close()

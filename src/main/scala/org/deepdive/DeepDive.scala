@@ -25,7 +25,6 @@ object DeepDive extends Logging {
 
     // Load Settings
     val settings = Settings.loadFromConfig(config)
-
     // If relearn_from specified, set output dir to that dir and skip everything
     val relearnFrom = settings.pipelineSettings.relearnFrom
 
@@ -41,8 +40,15 @@ object DeepDive extends Logging {
     outputDirFile.mkdirs()
     log.debug(s"outputDir=${Context.outputDir}")
 
-    val dbDriver = config.getString("deepdive.db.default.driver")
-    
+    // val dbDriver = config.getString("deepdive.db.default.driver")
+    val dbSettings = settings.dbSettings
+    dbSettings.dbname match {
+      case "" =>
+        log.error(s"parsing dbname failed")
+        Context.shutdown()
+      case _ =>
+    }
+
     // Setup the data store
     JdbcDataStore.init(config)
     settings.schemaSettings.setupFile.foreach { file =>
@@ -58,9 +64,9 @@ object DeepDive extends Logging {
     val profiler = system.actorOf(Profiler.props, "profiler")
     val taskManager = system.actorOf(TaskManager.props, "taskManager")
     val inferenceManager = system.actorOf(InferenceManager.props(
-      taskManager, settings.schemaSettings.variables, dbDriver), "inferenceManager")
+      taskManager, settings.schemaSettings.variables, dbSettings), "inferenceManager")
     val extractionManager = system.actorOf(
-      ExtractionManager.props(settings.extractionSettings.parallelism, dbDriver), 
+      ExtractionManager.props(settings.extractionSettings.parallelism, dbSettings), 
       "extractionManager")
     
     // Build tasks for extractors
@@ -88,7 +94,7 @@ object DeepDive extends Logging {
     val skipSerializing = (relearnFrom != null)
     val inferenceTask = Task("inference", extractionTasks.map(_.id) ++ Seq("inference_grounding"),
       InferenceManager.RunInference(activeFactors, settings.calibrationSettings.holdoutFraction, 
-        settings.samplerSettings.samplerCmd, 
+        settings.calibrationSettings.holdoutQuery, settings.samplerSettings.samplerCmd, 
         settings.samplerSettings.samplerArgs, skipSerializing), inferenceManager, true)
 
     val calibrationTask = Task("calibration", List("inference"), 
@@ -98,8 +104,18 @@ object DeepDive extends Logging {
 
     val terminationTask = Task("shutdown", List("report"), TaskManager.Shutdown, taskManager, false)
 
-    val allTasks = extractionTasks ++ Seq(groundFactorGraphTask) ++
-      List(inferenceTask, calibrationTask, reportingTask, terminationTask) 
+    log.debug(s"Total number of extractors: ${settings.extractionSettings.extractors.size}")
+    log.debug(s"Total number of factors: ${settings.inferenceSettings.factors.size}")
+
+    // If no extractors and factors, no tasks should be run
+    val allTasks = settings.extractionSettings.extractors.size + settings.inferenceSettings.factors.size match {
+      case 0 =>
+        List(reportingTask, terminationTask) 
+      case _ =>
+        extractionTasks ++ Seq(groundFactorGraphTask) ++
+        List(inferenceTask, calibrationTask, reportingTask, terminationTask) 
+    }
+      
 
     // Create a default pipeline that executes all tasks
     val defaultPipeline = Pipeline("_default", allTasks.map(_.id).toSet)
@@ -107,7 +123,8 @@ object DeepDive extends Logging {
     // Create a pipeline that runs only from learning
     val relearnPipeline = Pipeline("_relearn", Set("inference", "calibration", "report", "shutdown"))
 
-    log.info(s"Number of active factors: ${activeFactors.size}")
+
+    log.debug(s"Number of active factors: ${activeFactors.size}")
     // If no factors are active, do not do grounding, inference and calibration
     val postExtraction = activeFactors.size match {
       case 0 => 

@@ -5,6 +5,7 @@ import org.deepdive.calibration._
 import org.deepdive.datastore.JdbcDataStore
 import org.deepdive.Logging
 import org.deepdive.settings._
+import play.api.libs.json._
 import scalikejdbc._
 import scala.util.matching._
 import scala.io.Source
@@ -26,58 +27,112 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def ds : JdbcDataStore
 
   val factorOffset = new java.util.concurrent.atomic.AtomicLong(0)
-  val dbname = System.getenv("DBNAME")
-  val pguser = System.getenv("PGUSER")
-  val pgport = System.getenv("PGPORT")
-  val pghost = System.getenv("PGHOST")
 
   /* Internal Table names */
   def WeightsTable = "dd_graph_weights"
+  def lastWeightsTable = "dd_graph_last_weights"
   def FactorsTable = "dd_graph_factors"
   def VariablesTable = "dd_graph_variables"
   def VariablesMapTable = "dd_graph_variables_map"
   def WeightResultTable = "dd_inference_result_weights"
+  def VariablesHoldoutTable = "dd_graph_variables_holdout"
   def VariableResultTable = "dd_inference_result_variables"
   def MappedInferenceResultView = "dd_mapped_inference_result"
   def IdSequence = "id_sequence"
 
-  /* Executes an arbitary SQL statement */
-  def executeSql(sql: String) = ds.DB.autoCommit { implicit session =>
-    """;\s+""".r.split(sql.trim()).filterNot(_.isEmpty).map(_.trim).foreach { 
-        query => SQL(query).execute.apply()
+
+  def unwrapSQLType(x: Any) : Any = {
+    x match {
+      case x : org.postgresql.jdbc4.Jdbc4Array => x.getArray().asInstanceOf[Array[_]].toList
+      case x : org.postgresql.util.PGobject =>
+        x.getType match {
+          case "json" => Json.parse(x.getValue)
+          case _ => JsNull
+        }
+      case x => x
     }
   }
 
   def execute(sql: String) {
+    val conn = ds.borrowConnection()
+    val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
+      java.sql.ResultSet.CONCUR_UPDATABLE)
     try {
-      executeSql(sql)
+      """;\s+""".r.split(sql.trim()).filterNot(_.isEmpty).foreach(q => 
+        conn.prepareStatement(q.trim()).executeUpdate)
     } catch {
       // SQL cmd exception
       case exception : Throwable =>
-        log.error(exception.toString)
-        log.info("[Error] Please check the SQL cmd!")
-        throw exception
-        // TODO: Call TaskManager to kill all tasks
+      log.error(exception.toString)
+      throw exception
+    } finally {
+      conn.close()
     }
   }
 
   /* Issues a query */
   def issueQuery(sql: String)(op: (java.sql.ResultSet) => Unit) = {
-
     val conn = ds.borrowConnection()
-    conn.setAutoCommit(false);
-    val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
-      java.sql.ResultSet.CONCUR_READ_ONLY);
-    stmt.setFetchSize(5000);
-    val rs = stmt.executeQuery(sql)
-    while(rs.next()){
-      op(rs)
+    try {
+      conn.setAutoCommit(false);
+      val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
+        java.sql.ResultSet.CONCUR_READ_ONLY);
+      stmt.setFetchSize(5000);
+      val rs = stmt.executeQuery(sql)
+      while(rs.next()){
+        op(rs)
+      }
+    } catch {
+      // SQL cmd exception
+      case exception : Throwable =>
+      log.error(exception.toString)
+      throw exception
+    } finally {
+      conn.close() 
     }
-    conn.close()
   }
 
 
   def selectAsMap(sql: String) : List[Map[String, Any]] = {
+    val conn = ds.borrowConnection()
+    conn.setAutoCommit(false)
+    try {
+      val stmt = conn.createStatement(
+        java.sql.ResultSet.TYPE_FORWARD_ONLY, java.sql.ResultSet.CONCUR_READ_ONLY)
+      stmt.setFetchSize(10000)
+      val rs = stmt.executeQuery(sql)
+      // No result return
+      if (!rs.isBeforeFirst) {
+        log.warning(s"query returned no results: ${sql}")
+        Iterator.empty.toSeq
+      } else {
+        val resultIter = new Iterator[Map[String, Any]] {
+          def hasNext = {
+            // TODO: This is expensive
+            !(rs.isLast)
+          }              
+          def next() = {
+            rs.next()
+            val metadata = rs.getMetaData()
+            (1 to metadata.getColumnCount()).map { i => 
+              val label = metadata.getColumnLabel(i)
+              val data = unwrapSQLType(rs.getObject(i))
+              (label, data)
+            }.filter(_._2 != null).toMap
+          }
+        }
+        resultIter.toSeq
+      }
+    } catch {
+      // SQL cmd exception
+      case exception : Throwable =>
+        log.error(exception.toString)
+        throw exception
+    } finally {
+      conn.close()
+    }
+
+
     ds.DB.readOnly { implicit session =>
       SQL(sql).map(_.toMap).list.apply()
     }
@@ -100,6 +155,19 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       is_fixed boolean,
       description text);
     ALTER SEQUENCE ${WeightsTable}_id_seq MINVALUE -1 RESTART WITH 0;
+  """
+
+  def copyLastWeightsSQL = s"""
+    DROP TABLE IF EXISTS ${lastWeightsTable} CASCADE;
+    SELECT X.*, Y.weight INTO ${lastWeightsTable}
+      FROM ${WeightsTable} AS X INNER JOIN ${WeightResultTable} AS Y ON X.id = Y.id
+      ORDER BY id ASC;
+  """
+
+  def createVariablesHoldoutSQL = s"""
+    DROP TABLE IF EXISTS ${VariablesHoldoutTable} CASCADE; 
+    CREATE TABLE ${VariablesHoldoutTable}(
+      variable_id bigint primary key);
   """
 
   def createSequencesSQL = s"""
@@ -186,7 +254,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     ORDER BY abs(weight) DESC;
   """
 
-  def createAssignIdFunctionSQL = s"""psql -U ${pguser} -p ${pgport} -h ${pghost} ${dbname} -c """ + "\"\"\"" +
+  def createAssignIdFunctionSQL = 
     """
     DROP LANGUAGE IF EXISTS plpgsql CASCADE;
     DROP LANGUAGE IF EXISTS plpythonu CASCADE;
@@ -200,47 +268,65 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       return 1
     return 0
     \$\$ LANGUAGE plpythonu;
-
-
-    CREATE OR REPLACE FUNCTION updateid(sid int, sids int[], base_ids bigint[]) RETURNS bigint AS 
+     
+     
+    CREATE OR REPLACE FUNCTION updateid(startid bigint, sid int, sids int[], base_ids bigint[], base_ids_noagg bigint[]) RETURNS bigint AS 
     \$\$
-    if '__count_1' in SD and not SD['__count_1'] < 0:
-      SD['__count_1'] -= 1
-      return SD['__count_1']
+    if '__count_1' in SD:
+      a = SD['__count_2']
+      b = SD['__count_1']
+      SD['__count_2'] = SD['__count_2'] - 1
+      if SD['__count_2'] < 0:
+        SD.pop('__count_1')
+      return startid+b-a
     else:
       for i in range(0, len(sids)):
         if sids[i] == sid:
-          SD['__count_1'] = base_ids[i]
-      return SD['__count_1']
+          SD['__count_1'] = base_ids[i] - 1
+          SD['__count_2'] = base_ids_noagg[i] - 1
+      a = SD['__count_2']
+      b = SD['__count_1']
+      SD['__count_2'] = SD['__count_2'] - 1
+      if SD['__count_2'] < 0:
+        SD.pop('__count_1')
+      return startid+b-a
+      
     \$\$ LANGUAGE plpythonu;
-
+     
     CREATE OR REPLACE FUNCTION fast_seqassign(tname character varying, startid bigint) RETURNS TEXT AS 
     \$\$
     BEGIN
-      EXECUTE 'drop table if exists tmp_gpsid_count cascade;'; 
-      EXECUTE 'create table tmp_gpsid_count as select gp_segment_id as sid, count(clear_count_1(gp_segment_id)) as base_id from ' || quote_ident(tname) || ' group by gp_segment_id order by sid distributed by (sid);'; 
-      EXECUTE 'update tmp_gpsid_count as t set base_id = ' || startid || ' - 1 + (SELECT SUM(base_id) FROM tmp_gpsid_count as t2 WHERE t2.sid <= t.sid);';
+      EXECUTE 'drop table if exists tmp_gpsid_count cascade;';
+      EXECUTE 'drop table if exists tmp_gpsid_count_noagg cascade;';
+      EXECUTE 'create table tmp_gpsid_count as select gp_segment_id as sid, count(clear_count_1(gp_segment_id)) as base_id from ' || quote_ident(tname) || ' group by gp_segment_id order by sid distributed by (sid);';
+      EXECUTE 'create table tmp_gpsid_count_noagg as select * from tmp_gpsid_count distributed by (sid);';
+      EXECUTE 'update tmp_gpsid_count as t set base_id = (SELECT SUM(base_id) FROM tmp_gpsid_count as t2 WHERE t2.sid <= t.sid);';
       RAISE NOTICE 'EXECUTING _fast_seqassign()...';
-      EXECUTE 'select * from _fast_seqassign(''' || quote_ident(tname) || ''');';
+      EXECUTE 'select * from _fast_seqassign(''' || quote_ident(tname) || ''', ' || startid || ');';
       RETURN '';
     END;
     \$\$ LANGUAGE 'plpgsql';
-
-    CREATE OR REPLACE FUNCTION _fast_seqassign(tname character varying) RETURNS TEXT AS
+     
+    CREATE OR REPLACE FUNCTION _fast_seqassign(tname character varying, startid bigint)
+    RETURNS TEXT AS
     \$\$
     DECLARE
       sids int[] :=  ARRAY(SELECT sid FROM tmp_gpsid_count ORDER BY sid);
       base_ids bigint[] :=  ARRAY(SELECT base_id FROM tmp_gpsid_count ORDER BY sid);
+      base_ids_noagg bigint[] :=  ARRAY(SELECT base_id FROM tmp_gpsid_count_noagg ORDER BY sid);
       tsids text;
       tbase_ids text;
+      tbase_ids_noagg text;
     BEGIN
       SELECT INTO tsids array_to_string(sids, ',');
       SELECT INTO tbase_ids array_to_string(base_ids, ',');
-      EXECUTE 'update ' || tname || ' set id = updateid(gp_segment_id, ARRAY[' || tsids || '], ARRAY[' || tbase_ids || ']);';
+      SELECT INTO tbase_ids_noagg array_to_string(base_ids_noagg, ',');
+      EXECUTE 'update ' || tname || ' set id = updateid(' || startid || ', gp_segment_id, ARRAY[' || tsids || '], ARRAY[' || tbase_ids || '], ARRAY[' || tbase_ids_noagg || ']);';
       RETURN '';
     END;
-    \$\$ LANGUAGE 'plpgsql';
-    """ + "\"\"\""
+    \$\$
+    LANGUAGE 'plpgsql';
+    """
 
 
   def executeCmd(cmd: String) : Try[Int] = {
@@ -269,7 +355,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   }
 
   def dumpFactorGraph(serializer: Serializer, schema: Map[String, _ <: VariableDataType],
-    factorDescs: Seq[FactorDesc], holdoutFraction: Double,
+    factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String],
     weightsPath: String, variablesPath: String, factorsPath: String, edgesPath: String) : Unit = {
 
     var numVariables  : Long = 0
@@ -278,18 +364,23 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     var numEdges      : Long = 0
 
     val randomGen = new Random()
-
     val weightMap = scala.collection.mutable.Map[String, Long]()
 
+    val customHoldout = holdoutQuery match {
+      case Some(query) => true
+      case None => false
+    }
     
     log.info(s"Dumping factor graph...")
     log.info("Dumping variables...")
+
     schema.foreach { case(variable, dataType) =>
       val Array(relation, column) = variable.split('.')
       
       val selectVariablesForDumpSQL = s"""
-        SELECT id, (${variable} IS NOT NULL), ${variable}::int
-        FROM ${relation}"""
+        SELECT ${relation}.id, (${variable} IS NOT NULL), ${variable}::int, (${VariablesHoldoutTable}.variable_id IS NOT NULL)
+        FROM ${relation} LEFT JOIN ${VariablesHoldoutTable}
+        ON ${relation}.id = ${VariablesHoldoutTable}.variable_id"""
 
       val cardinality = dataType match {
         case BooleanType => 0
@@ -298,9 +389,15 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
       issueQuery(selectVariablesForDumpSQL) { rs =>
         var isEvidence = rs.getBoolean(2)
-        if (isEvidence && randomGen.nextFloat < holdoutFraction) {
+        var holdout = rs.getBoolean(4)
+
+        // assign holdout
+        if (customHoldout && isEvidence && holdout) {
+          isEvidence = false
+        } else if (!customHoldout && isEvidence && randomGen.nextFloat < holdoutFraction) {
           isEvidence = false
         }
+
         serializer.addVariable(
           rs.getLong(1),            // id
           isEvidence,               // is evidence
@@ -326,7 +423,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     factorDescs.foreach { factorDesc =>
       val functionName = factorDesc.func.getClass.getSimpleName
       
-      log.info(s"Dumping ${functionName}...")
+      log.info(s"Dumping inference ${factorDesc.weightPrefix}...")
 
       val selectInputQueryForDumpSQL = s"""
         SELECT ${factorDesc.name}_query_user.*
@@ -360,7 +457,30 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   }
 
   def groundFactorGraph(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
-    holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean, weightTable: String) {
+    holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean, weightTable: String, dbSettings: DbSettings) {
+
+    // Get Database-related settings
+    val dbname = dbSettings.dbname
+    val pguser = dbSettings.user
+    val pgport = dbSettings.port
+    val pghost = dbSettings.host
+    // TODO do not use password for now
+    val dbnameStr = dbname match {
+      case null => ""
+      case _ => s" -d ${dbname} "
+    }
+    val pguserStr = pguser match {
+      case null => ""
+      case _ => s" -U ${pguser} "
+    }
+    val pgportStr = pgport match {
+      case null => ""
+      case _ => s" -p ${pgport} "
+    }
+    val pghostStr = pghost match {
+      case null => ""
+      case _ => s" -h ${pghost} "
+    }
 
     // We write the grounding queries to this SQL file
     val sqlFile = File.createTempFile(s"grounding", ".sql")
@@ -369,10 +489,15 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     val assignidWriter = new PrintWriter(assignIdFile)
     log.info(s"""Writing grounding queries to file="${sqlFile}" """)
 
-    // if (skipLearning == true && weightTable.isEmpty()) {
-    //   writer.println(copyLastWeightsSQL)
-    // }
+    // If skip_learning and use the last weight table, copy it before removing it
+    if (skipLearning && weightTable.isEmpty()) {
+      writer.println(copyLastWeightsSQL)
+    }
 
+    writer.println(createWeightsSQL)
+    writer.println(createVariablesHoldoutSQL)
+
+    // check whether Greenplum is used
     var usingGreenplum = false
     issueQuery(checkGreenplumSQL) { rs => 
       usingGreenplum = rs.getBoolean(1) 
@@ -380,23 +505,21 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     log.info("Using Greenplum = " + usingGreenplum.toString)
 
+    // assign id
     if (usingGreenplum) {
-      assignidWriter.println(createAssignIdFunctionSQL)
-      // log.info(createAssignIdFunctionSQL)
-      // createAssignIdFunctionSQL.!
+      val createAssignIdPrefix = "psql " + dbnameStr + pguserStr + pgportStr + pghostStr + " -c " + "\"\"\""
+      assignidWriter.println(createAssignIdPrefix + createAssignIdFunctionSQL + "\"\"\"")
     } else {
       writer.println(createSequencesSQL)
     }
     var idoffset : Long = 0
-
-    writer.println(createWeightsSQL)
 
     // Ground all variables in the schema
     schema.foreach { case(variable, dataType) =>
       val Array(relation, column) = variable.split('.')
 
       if (usingGreenplum) {
-        val assignIdSQL = s"""psql -U ${pguser} -p ${pgport} -h ${pghost} ${dbname} -c """ + "\"\"\"" +
+        val assignIdSQL = "psql " + dbnameStr + pguserStr + pgportStr + pghostStr + " -c " + "\"\"\"" +
           s""" SELECT fast_seqassign('${relation}', ${idoffset});""" + "\"\"\""
         assignidWriter.println(assignIdSQL)
         val getOffset = s"SELECT count(*) FROM ${relation};"
@@ -409,6 +532,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           """)
       }
        
+    }
+
+    // Assign the holdout - Random (default) or user-defined query
+    holdoutQuery match {   
+      case Some(userQuery) => writer.println(userQuery + ";")
+      case None =>
     }
 
     // Create table for each inference rule
@@ -434,6 +563,22 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         INSERT INTO ${WeightsTable}(initial_value, is_fixed, description)
         SELECT ${weightValue} AS wValue, ${isFixed} AS wIsFixed, ${weightCmd} AS wCmd
         FROM ${factorDesc.name}_query_user GROUP BY wValue, wIsFixed, wCmd;""")
+    }
+
+    // skip learning: choose a table to copy weights from
+    if (skipLearning) {
+      val fromWeightTable = weightTable.isEmpty() match {
+        case true => lastWeightsTable
+        case false => weightTable
+      }
+      log.info(s"""Using weights in TABLE ${fromWeightTable} by matching description""")
+
+      // Already set -l 0 for sampler
+      writer.println(s"""
+        UPDATE ${WeightsTable} SET initial_value = weight 
+        FROM ${fromWeightTable} 
+        WHERE dd_graph_weights.description = ${fromWeightTable}.description;
+        """)
     }
 
     writer.println(s"""CREATE INDEX ${WeightsTable}_desc_idx ON ${WeightsTable}(description);""")

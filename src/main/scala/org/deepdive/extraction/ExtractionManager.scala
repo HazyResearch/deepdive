@@ -16,19 +16,14 @@ import scala.util.{Try, Success, Failure}
 object ExtractionManager {
 
   // TODO: Refactor this to take an argument for the dataStore type
-  def props(parallelism: Int, dbDriver: String) : Props = {
-    dbDriver match {
-      case "org.postgresql.Driver" => Props(classOf[PostgresExtractionManager], parallelism)
-      case "org.hsqldb.jdbc.JDBCDriver" => Props(classOf[HSQLExtractionManager], parallelism)
+  def props(parallelism: Int, dbSettings: DbSettings) : Props = {
+    dbSettings.driver match {
+      case "org.postgresql.Driver" => Props(classOf[PostgresExtractionManager], parallelism, dbSettings)
     }
   }
 
-  class PostgresExtractionManager(val parallelism: Int) extends ExtractionManager
+  class PostgresExtractionManager(val parallelism: Int, val dbSettings: DbSettings) extends ExtractionManager
     with PostgresExtractionDataStoreComponent
-
-  class HSQLExtractionManager(val parallelism: Int) extends ExtractionManager
-    with HSQLExtractionDataStoreComponent
-
 
   case object ScheduleTasks
 
@@ -44,11 +39,13 @@ trait ExtractionManager extends Actor with ActorLogging {
   this: ExtractionDataStoreComponent =>
 
   import ExtractionManager._
-  
-  def extractorRunnerProps = ExtractorRunner.props(dataStore)
 
   // Number of executors we can run in parallel
   def parallelism : Int
+  def dbSettings: DbSettings
+
+  def extractorRunnerProps = ExtractorRunner.props(dataStore, dbSettings)
+
 
   implicit val ExtractorTimeout = Timeout(200 hours)
   import context.dispatcher
