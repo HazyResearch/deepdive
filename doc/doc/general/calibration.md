@@ -4,7 +4,7 @@ layout: default
 
 # Interpreting results
 
-One of the most important aspects of DeepDive is its iterative workflow. After running a DeepDive application and performing [probabilistic inference](probabilistic_inference.html) it is crucial to evaluate the results and act on feedback that the system provides. DeepDive produces *calibration plots* to help you with this task.
+One of the most important aspects of DeepDive is its iterative workflow. After running a DeepDive application and performing [probabilistic inference](inference.html) it is crucial to evaluate the results and act on feedback that the system provides. DeepDive produces *calibration plots* to help you with this task.
 
 ### Generating calibration plots
 

@@ -45,8 +45,9 @@ General & Background knowledge:
 
 - [Probabilistc Inference](doc/general/inference.html)
 - [Relation Extraction & Distant Supervision](doc/general/relation_extraction.html)
-- [Generating negative examples (Coming soon)](doc/general/generating_negative_examples.html)
 - [Using calibration data](doc/general/calibration.html)
+
+<!-- - [Generating negative examples (Coming soon)](doc/general/generating_negative_examples.html) -->
 
 Getting started:
 
