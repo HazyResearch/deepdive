@@ -422,7 +422,7 @@ wordsExtractor {
 }
 ```
 
-If any extractor specified in dependencies does not exist or is not in the [pipeline](doc/pipelines.html), it will be ignored. 
+If any extractor specified in dependencies does not exist or is not in the [pipeline](pipelines.html), it will be ignored. 
 
 
 ### Before and After scripts
