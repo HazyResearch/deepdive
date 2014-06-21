@@ -30,7 +30,7 @@ We are posting the complete code for our examples on this site. We are working o
 
 ### Who are we?
 
-DeepDive is project led by [Chris Re](http://cs.stanford.edu/people/chrismre/) at Stanford university. Current group members include [Victor Bittorf](http://pages.cs.wisc.edu/~bittorf/),  [Zifei Shan](http://www.zifeishan.org/), [Mikhail Sushkov](https://www.linkedin.com/pub/mikhail-sushkov/26/638/537), Feiran Wang, Sen Wu, and [Ce Zhang](http://pages.cs.wisc.edu/~czhang/).
+DeepDive is project led by [Christopher Ré](http://cs.stanford.edu/people/chrismre/) at Stanford university. Current group members include [Victor Bittorf](http://pages.cs.wisc.edu/~bittorf/),  [Zifei Shan](http://www.zifeishan.org/), [Mikhail Sushkov](https://www.linkedin.com/pub/mikhail-sushkov/26/638/537), Feiran Wang, Sen Wu, and [Ce Zhang](http://pages.cs.wisc.edu/~czhang/).
 
 ### Updates & Changelog 
 
