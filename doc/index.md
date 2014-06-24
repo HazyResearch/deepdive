@@ -53,6 +53,7 @@ Getting started:
 
 - [DeepDive overview](doc/overview.html)
 - [Installation guide](doc/installation.html)
+- [Quick Start](doc/quick_start.html)
 - [Amazon EC2 AMI guide](doc/ec2.html)
 - [Example application walkthrough](doc/walkthrough.html)
 
