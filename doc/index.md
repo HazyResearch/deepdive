@@ -13,6 +13,11 @@ DeepDive is a new type of system that enables developers to analyze data on a de
 - DeepDive is able to use your data to ["distantly" learn](doc/general/relation_extraction.html). In contrast, most machine learning systems require one to tediously train each prediction. In fact, first versions of DeepDive-based systems often do not have any traditional training data at all!
 - DeepDive’s secret is a **scalable, high-performance inference and learning engine**. For the past few years, we have been working to make the underlying algorithms run as fast as possible. The underlying techniques pioneered in this project are part of commercial and open source tools including [MADlib](http://madlib.net/), [Impala](http://www.cloudera.com/content/cloudera/en/products-and-services/cdh/impala.html), a product from Oracle, and low-level techniques, such as [Hogwild!](http://www.eecs.berkeley.edu/~brecht/papers/hogwildTR.pdf), have been adopted in [Google Brain](http://static.googleusercontent.com/media/research.google.com/en/us/archive/unsupervised_icml2012.pdf).
 
+### Who should want DeepDive?
+
+DeepDive is targeted to help user extract relations between entities from the data and make inference. DeepDive can process different kinds input data, structured or unstructured, clean or noisy, and outputs result into database.
+
+User should know SQL and Python in order to build application on DeepDive or to integrate DeepDive with other tools. To modify and improve DeepDive, developer must have some basic background knowledge listed in the documentation below. 
 
 ### What is DeepDive used for?
 
@@ -53,6 +58,7 @@ Getting started:
 
 - [DeepDive overview](doc/overview.html)
 - [Installation guide](doc/installation.html)
+- [Quick Start](doc/quick_start.html)
 - [Amazon EC2 AMI guide](doc/ec2.html)
 - [Example application walkthrough](doc/walkthrough.html)
 
