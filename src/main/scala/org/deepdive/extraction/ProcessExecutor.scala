@@ -121,7 +121,9 @@ class ProcessExecutor extends Actor with FSM[State, Data] with ActorLogging {
       },
       err => { 
         errorStreamFuture.success(err)
-        Source.fromInputStream(err).getLines foreach (log.debug)
+        // Log STDERR to info-level logging
+        Source.fromInputStream(err).getLines foreach (log.info)
+
       }
     )
 
