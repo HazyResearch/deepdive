@@ -12,6 +12,26 @@ object FactorFunctionParser extends RegexParsers with Logging {
   def implyFactorFunction = ("Imply" | "IMPLY") ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
     ImplyFactorFunction(varList)
   }
+// TODO : "Convolution" doesn't work
+  def convolutionFactorFunction = ("Conv" | "CONV" | "Convolution" | "CONVOLUTION") ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
+    ConvolutionFactorFunction(varList)
+  }
+
+  def samplingFactorFunction = ("Sampling" | "SAMPLING" | "SubSampling" | "MaxPooling" | "Pooling") ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
+    SamplingFactorFunction(varList)
+  }
+
+  def likelihoodFactorFunction = ("likelihood" | "Likelihood") ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
+    LikelihoodFactorFunction(varList)
+  }
+
+  def leastSquaresFactorFunction = ("leastSquares" | "LeastSquares" | "Squares" | "squares") ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
+    LeastSquaresFactorFunction(varList)
+  }
+
+ def softmaxFactorFunction = ("softmax" | "Softmax") ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
+    SoftmaxFactorFunction(varList)
+  }
 
   def orFactorFunction = ("Or" | "OR") ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
     OrFactorFunction(varList)
@@ -50,6 +70,8 @@ object FactorFunctionParser extends RegexParsers with Logging {
   }
 
   def factorFunc = implyFactorFunction | orFactorFunction | andFactorFunction | 
-    equalFactorFunction | isTrueFactorFunction | xorFactorFunction
-
+    equalFactorFunction | isTrueFactorFunction | xorFactorFunction | 
+    convolutionFactorFunction | samplingFactorFunction | 
+    likelihoodFactorFunction | leastSquaresFactorFunction | 
+    softmaxFactorFunction
 }

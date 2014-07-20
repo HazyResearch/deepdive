@@ -28,6 +28,7 @@ class BinarySerializer(weightsOutput: OutputStream, variablesOutput: OutputStrea
     val variableDataType = dataType match {
       case "Boolean" => 0
       case "Multinomial" => 1
+      case "Real" => 2
     }
     variableStream.writeLong(variableId)
     variableStream.writeBoolean(isEvidence)
@@ -44,6 +45,11 @@ class BinarySerializer(weightsOutput: OutputStream, variablesOutput: OutputStrea
       case "AndFactorFunction" => 2
       case "EqualFactorFunction" => 3
       case "IsTrueFactorFunction" =>  4
+      case "ConvolutionFactorFunction" => 1000
+      case "SamplingFactorFunction" => 1001
+      case "LikelihoodFactorFunction" => 1010
+      case "LeastSquaresFactorFunction" => 1011
+      case "SoftmaxFactorFunction" => 1020
     }
     factorStream.writeLong(factorId)
     factorStream.writeLong(weightId)
@@ -53,12 +59,13 @@ class BinarySerializer(weightsOutput: OutputStream, variablesOutput: OutputStrea
 
 
   def addEdge(variableId: Long, factorId: Long, position: Long, isPositive: Boolean, 
-    equalPredicate: Long) : Unit = {
+    equalPredicate: Long, weightLenght: Long) : Unit = {
     edgeStream.writeLong(variableId)
     edgeStream.writeLong(factorId)
     edgeStream.writeLong(position)
     edgeStream.writeBoolean(isPositive)
     edgeStream.writeLong(equalPredicate)
+    edgeStream.writeLong(weightLenght)
   }
 
   def writeMetadata(numWeights: Long, numVariables: Long, numFactors: Long, numEdges: Long,

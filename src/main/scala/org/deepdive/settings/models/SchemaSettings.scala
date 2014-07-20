@@ -27,3 +27,13 @@ case class MultinomialType(numCategories: Int) extends VariableDataType {
   def cardinality = numCategories
   override def toString() = "Multinomial"
 }
+case object RealType extends VariableDataType {
+  def cardinality = 0
+  override def toString() = "Real"
+}
+
+case object ArrayRealType extends VariableDataType {
+  def cardinality = 0
+  override def toString() = "ArrayReal"
+}
+

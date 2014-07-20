@@ -14,6 +14,27 @@ case class ImplyFactorFunction(variables: Seq[FactorFunctionVariable]) extends F
   override def variableDataType = "Boolean"
 }
 
+/* A factor function of from A and B and C ... -> Z */
+case class ConvolutionFactorFunction(variables: Seq[FactorFunctionVariable]) extends FactorFunction {
+  override def variableDataType = "Real"
+}
+
+case class SamplingFactorFunction(variables: Seq[FactorFunctionVariable]) extends FactorFunction {
+  override def variableDataType = "Real"
+}
+
+case class LikelihoodFactorFunction(variables: Seq[FactorFunctionVariable]) extends FactorFunction {
+  override def variableDataType = "Real"
+}
+
+case class LeastSquaresFactorFunction(variables: Seq[FactorFunctionVariable]) extends FactorFunction {
+  override def variableDataType = "Real"
+}
+
+case class SoftmaxFactorFunction(variables: Seq[FactorFunctionVariable]) extends FactorFunction {
+  override def variableDataType = "Real"
+}
+
 /* A factor function describing A or B or C ... */
 case class OrFactorFunction(variables: Seq[FactorFunctionVariable]) extends FactorFunction {
   override def variableDataType = "Boolean"
