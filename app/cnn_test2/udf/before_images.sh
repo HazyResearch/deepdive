@@ -1,0 +1,3 @@
+#! /usr/bin/env bash
+psql -c "TRUNCATE images CASCADE;" deepdive_images
+
