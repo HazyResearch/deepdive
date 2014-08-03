@@ -10,17 +10,15 @@ N_CLASS=1
 for row in fileinput.input():
 	obj = json.loads(row)
 	image_id = obj["image_id"]
-	x= obj["x"]
-	y= obj["y"]
+	fid= obj["fid"]
 	label = obj["label"]
-	f = obj["fid"]
+	values=[]
 	for c in range(0,N_CLASS):
-		print json.dumps({
-			"vector_id": [image_id,x,y,f],
-			"image_id":image_id,
-			"x":x,
-			"y":y,
-			"class":c,
-			"value":label,
-			"fid":f
-			})
+		values.append(label)
+	print json.dumps({
+		"image_id":image_id,
+		"fid":fid,
+		"width":1,
+		"length":1,
+		"value":values,
+		})

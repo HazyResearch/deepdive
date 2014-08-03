@@ -9,6 +9,7 @@ from PIL import Image
 import cPickle as pickle
 
 BASE_FOLDER = "/Users/Amir/Desktop/Spring2014/DeepDive/app/cnn"
+#BASE_FOLDER = "/lfs/local/0/amir/deepdive/app/cnn"
 
 image_id=0
 for bigimage in os.listdir(BASE_FOLDER + '/data'):
@@ -35,7 +36,7 @@ for bigimage in os.listdir(BASE_FOLDER + '/data'):
 	input_img = Image.open(IMGPATH)
 	for i in range(0, width, CELL):
 		for j in range(0, height, CELL):
-			if(image_limit>0):
+			if(image_limit>1):
 				break
 			roi = mat[i:i+CELL,j:j+CELL]
 
