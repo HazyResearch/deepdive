@@ -16,21 +16,29 @@ class BinarySerializer(weightsOutput: OutputStream, variablesOutput: OutputStrea
 
 
 
-  def addWeight(weightId: Long, isFixed: Boolean, initialValue: Double, weightLength: Long) : Unit = {
+  def addWeight(weightId: Long, isFixed: Boolean, initialValue: Double) : Unit = {
     weightStream.writeLong(weightId)
     weightStream.writeBoolean(isFixed)
     weightStream.writeDouble(initialValue)
-    weightStream.writeLong(weightLength)
     // nodescription
   }
 
-  def addVariable(variableId: Long, isEvidence: Boolean, initialValue: Double) : Unit = {
+  def addVariable(variableId: Long, isEvidence: Boolean, initialValue: Double, 
+    dataType: String, edgeCount: Long, cardinality: Long) : Unit = {
+    val variableDataType = dataType match {
+      case "Boolean" => 0
+      case "Multinomial" => 1
+      case "Real" => 2
+    }
     variableStream.writeLong(variableId)
     variableStream.writeBoolean(isEvidence)
     variableStream.writeDouble(initialValue)
+    variableStream.writeShort(variableDataType)
+    variableStream.writeLong(edgeCount)  
+    variableStream.writeLong(cardinality)  
   }
 
-  def addFactor(factorId: Long, factorFunction: String) : Unit = {
+  def addFactor(factorId: Long, weightId: Long, factorFunction: String, edgeCount: Long) : Unit = {
     val factorFunctionType = factorFunction match {
       case "ImplyFactorFunction" => 0
       case "OrFactorFunction" => 1
@@ -44,15 +52,20 @@ class BinarySerializer(weightsOutput: OutputStream, variablesOutput: OutputStrea
       case "SoftmaxFactorFunction" => 1020
     }
     factorStream.writeLong(factorId)
+    factorStream.writeLong(weightId)
     factorStream.writeShort(factorFunctionType)
+    factorStream.writeLong(edgeCount)
   }
 
 
-  def addEdge(variableId: Long, factorId: Long, weightId: Long, position: Long) : Unit = {
+  def addEdge(variableId: Long, factorId: Long, position: Long, isPositive: Boolean, 
+    equalPredicate: Long, weightLenght: Long) : Unit = {
     edgeStream.writeLong(variableId)
     edgeStream.writeLong(factorId)
-    edgeStream.writeLong(weightId)
     edgeStream.writeLong(position)
+    edgeStream.writeBoolean(isPositive)
+    edgeStream.writeLong(equalPredicate)
+    edgeStream.writeLong(weightLenght)
   }
 
   def writeMetadata(numWeights: Long, numVariables: Long, numFactors: Long, numEdges: Long,
