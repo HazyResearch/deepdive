@@ -9,8 +9,7 @@ import scalikejdbc._
 import scala.util.matching._
 import scala.io.Source
 import scala.util.Random
-import scala.sys.process._
-import scala.util.{Try, Success, Failure}
+import org.deepdive.Context
 // import scala.collection.mutable.Map
 
 
@@ -23,22 +22,26 @@ trait SQLInferenceDataStoreComponent extends InferenceDataStoreComponent {
 
 trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
+  val hostname = "madmax6"
+
+  val port = 8083
+
   def ds : JdbcDataStore
 
   val factorOffset = new java.util.concurrent.atomic.AtomicLong(0)
 
   /* Internal Table names */
-  def TempWeightsTable = "dd_temp_graph_weights"
   def WeightsTable = "dd_graph_weights"
-  def lastWeightsTable = "dd_graph_last_weights"
+  // def lastWeightsTable = "dd_graph_last_weights"
   def FactorsTable = "dd_graph_factors"
   def VariablesTable = "dd_graph_variables"
   def VariablesMapTable = "dd_graph_variables_map"
+  // def EdgesTable = "dd_graph_edges"
   def WeightResultTable = "dd_inference_result_weights"
-  def VariablesHoldoutTable = "dd_graph_variables_holdout"
   def VariableResultTable = "dd_inference_result_variables"
   def MappedInferenceResultView = "dd_mapped_inference_result"
   def IdSequence = "id_sequence"
+  // def EdgesCountTable = "dd_graph_edges_count"
 
   /* Executes an arbitary SQL statement */
   def executeSql(sql: String) = ds.DB.autoCommit { implicit session =>
@@ -56,7 +59,57 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         log.error(exception.toString)
         log.info("[Error] Please check the SQL cmd!")
         throw exception
+        // TODO: Call TaskManager to kill all tasks
     }
+  }
+
+
+  /* Issues a query */
+  def executeQuery(sql: String) = {
+
+    log.info("EXECUTING.... " + sql)
+    val conn = ds.borrowConnection()
+    conn.setAutoCommit(false)
+    val stmt = conn.createStatement();
+
+    /*
+    try {
+      val rsa = stmt.executeQuery("explain " + sql);
+      while (rsa.next())
+      {
+        log.info("USING " + rsa.getString(1));
+      }
+      rsa.close();
+    } catch {
+      case exception : Throwable =>
+        log.error(exception.toString)
+    }
+    */
+
+    stmt.execute(sql)
+    conn.commit()
+    conn.close()
+    log.info("      DONE :-)! ")
+  }
+
+    /* Issues a query */
+  def queryCount(sql: String) : Long = {
+
+    log.info("EXECUTING.... " + sql)
+    val conn = ds.borrowConnection()
+    val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
+      java.sql.ResultSet.CONCUR_READ_ONLY);
+    stmt.setFetchSize(10000);
+    val rs = stmt.executeQuery(sql)
+    while(rs.next()){
+      val a = rs.getLong(1)
+      conn.close()
+      log.info("      DONE :-)! COUNT = " + a)
+      return a
+    }
+    conn.close()
+    log.info("      FAILED :-(! ")
+    return -1
   }
 
   /* Issues a query */
@@ -66,14 +119,13 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     conn.setAutoCommit(false);
     val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
       java.sql.ResultSet.CONCUR_READ_ONLY);
-    stmt.setFetchSize(5000);
+    stmt.setFetchSize(10000);
     val rs = stmt.executeQuery(sql)
     while(rs.next()){
       op(rs)
     }
     conn.close()
   }
-
 
   def selectAsMap(sql: String) : List[Map[String, Any]] = {
     ds.DB.readOnly { implicit session =>
@@ -84,51 +136,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def keyType = "bigserial"
   def stringType = "text"
   def randomFunc = "RANDOM()"
-
-
-  def checkGreenplumSQL = s"""
-    SELECT version() LIKE '%Greenplum%';
-  """
-
-  def createTempWeightsSQL = s"""
-    DROP TABLE IF EXISTS ${TempWeightsTable} CASCADE;
-    CREATE TABLE ${TempWeightsTable}(
-      id bigserial primary key,
-      initial_value double precision,
-      is_fixed boolean,
-      description text,
-      weight_lenght int);
-    ALTER SEQUENCE ${TempWeightsTable}_id_seq MINVALUE -1 RESTART WITH 0;
-  """
-
-  def createWeightsSQL = s"""
-    DROP TABLE IF EXISTS ${WeightsTable} CASCADE;
-    CREATE TABLE ${WeightsTable}(
-      id bigserial primary key,
-      initial_value double precision,
-      is_fixed boolean,
-      description text,
-      weight_lenght int);
-    ALTER SEQUENCE ${WeightsTable}_id_seq MINVALUE -1 RESTART WITH 0;
-  """
-
-  def copyLastWeightsSQL = s"""
-    DROP TABLE IF EXISTS ${lastWeightsTable} CASCADE;
-    SELECT X.*, Y.weight INTO ${lastWeightsTable}
-      FROM ${WeightsTable} AS X INNER JOIN ${WeightResultTable} AS Y ON X.id = Y.id
-      ORDER BY id ASC;
-  """
-
-  def createVariablesHoldoutSQL = s"""
-    DROP TABLE IF EXISTS ${VariablesHoldoutTable} CASCADE; 
-    CREATE TABLE ${VariablesHoldoutTable}(
-      variable_id bigint primary key);
-  """
-
-  def createSequencesSQL = s"""
-    DROP SEQUENCE IF EXISTS ${IdSequence} CASCADE;
-    CREATE SEQUENCE ${IdSequence} MINVALUE -1 START 0;
-  """
 
   def createInferenceResultSQL = s"""
     DROP TABLE IF EXISTS ${VariableResultTable} CASCADE; 
@@ -141,13 +148,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def createInferenceResultWeightsSQL = s"""
     DROP TABLE IF EXISTS ${WeightResultTable} CASCADE; 
     CREATE TABLE ${WeightResultTable}(
-      id bigint primary key, 
+      id bigint, 
       weight double precision);
-  """
-
-  def selectWeightsForDumpSQL = s"""
-    SELECT id AS "id", is_fixed AS "is_fixed", initial_value AS "initial_value", description AS "description", weight_lenght AS "weight_lenght"
-    FROM ${WeightsTable};
   """
 
   def createInferenceResultIndiciesSQL = s"""
@@ -158,12 +160,22 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   """
 
   def createInferenceViewSQL(relationName: String, columnName: String) = s"""
+    DROP VIEW IF EXISTS ${relationName}_${columnName}_inference CASCADE;
+    CREATE VIEW ${relationName}_${columnName}_inference AS
+    (SELECT ${relationName}.*, mir.category, mir.expectation FROM
+    ${relationName}, ${VariableResultTable} mir
+    WHERE ${relationName}.id = mir.id);
+  """
+
+  /*
+  def createInferenceViewSQL(relationName: String, columnName: String) = s"""
     CREATE VIEW ${relationName}_${columnName}_inference AS
     (SELECT ${relationName}.*, mir.category, mir.expectation FROM
     ${relationName}, ${VariableResultTable} mir
     WHERE ${relationName}.id = mir.id
     ORDER BY mir.expectation DESC);
   """
+  */
 
   def createBucketedCalibrationViewSQL(name: String, inferenceViewName: String, buckets: List[Bucket]) = {
     val bucketCaseStatement = buckets.zipWithIndex.map { case(bucket, index) =>
@@ -174,7 +186,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       FROM ${inferenceViewName} ORDER BY bucket ASC;"""
   }
 
-  // TODO: Add for Real numbers!?!
   def createCalibrationViewBooleanSQL(name: String, bucketedView: String, columnName: String) =  s"""
     CREATE VIEW ${name} AS
     SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
@@ -203,462 +214,147 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     FROM ${name};
   """
 
-  def createMappedWeightsViewSQL = s"""
-    CREATE VIEW ${VariableResultTable}_mapped_weights AS
-    SELECT ${WeightsTable}.*, ${WeightResultTable}.weight FROM
-    ${WeightsTable} JOIN ${WeightResultTable} ON ${WeightsTable}.id = ${WeightResultTable}.id
-    ORDER BY abs(weight) DESC;
-  """
-
-  def createAssignIdFunctionSQL = 
-    """
-    DROP LANGUAGE IF EXISTS plpgsql CASCADE;
-    DROP LANGUAGE IF EXISTS plpythonu CASCADE;
-    CREATE LANGUAGE plpgsql;
-    CREATE LANGUAGE plpythonu;
-
-    CREATE OR REPLACE FUNCTION clear_count_1(sid int) RETURNS int AS 
-    \$\$
-    if '__count_1' in SD:
-      SD['__count_1'] = -1
-      return 1
-    return 0
-    \$\$ LANGUAGE plpythonu;
-     
-     
-    CREATE OR REPLACE FUNCTION updateid(startid bigint, sid int, sids int[], base_ids bigint[], base_ids_noagg bigint[]) RETURNS bigint AS 
-    \$\$
-    if '__count_1' in SD:
-      a = SD['__count_2']
-      b = SD['__count_1']
-      SD['__count_2'] = SD['__count_2'] - 1
-      if SD['__count_2'] < 0:
-        SD.pop('__count_1')
-      return startid+b-a
-    else:
-      for i in range(0, len(sids)):
-        if sids[i] == sid:
-          SD['__count_1'] = base_ids[i] - 1
-          SD['__count_2'] = base_ids_noagg[i] - 1
-      a = SD['__count_2']
-      b = SD['__count_1']
-      SD['__count_2'] = SD['__count_2'] - 1
-      if SD['__count_2'] < 0:
-        SD.pop('__count_1')
-      return startid+b-a
-      
-    \$\$ LANGUAGE plpythonu;
-     
-    CREATE OR REPLACE FUNCTION fast_seqassign(tname character varying, startid bigint) RETURNS TEXT AS 
-    \$\$
-    BEGIN
-      EXECUTE 'drop table if exists tmp_gpsid_count cascade;';
-      EXECUTE 'drop table if exists tmp_gpsid_count_noagg cascade;';
-      EXECUTE 'create table tmp_gpsid_count as select gp_segment_id as sid, count(clear_count_1(gp_segment_id)) as base_id from ' || quote_ident(tname) || ' group by gp_segment_id order by sid distributed by (sid);';
-      EXECUTE 'create table tmp_gpsid_count_noagg as select * from tmp_gpsid_count distributed by (sid);';
-      EXECUTE 'update tmp_gpsid_count as t set base_id = (SELECT SUM(base_id) FROM tmp_gpsid_count as t2 WHERE t2.sid <= t.sid);';
-      RAISE NOTICE 'EXECUTING _fast_seqassign()...';
-      EXECUTE 'select * from _fast_seqassign(''' || quote_ident(tname) || ''', ' || startid || ');';
-      RETURN '';
-    END;
-    \$\$ LANGUAGE 'plpgsql';
-     
-    CREATE OR REPLACE FUNCTION _fast_seqassign(tname character varying, startid bigint)
-    RETURNS TEXT AS
-    \$\$
-    DECLARE
-      sids int[] :=  ARRAY(SELECT sid FROM tmp_gpsid_count ORDER BY sid);
-      base_ids bigint[] :=  ARRAY(SELECT base_id FROM tmp_gpsid_count ORDER BY sid);
-      base_ids_noagg bigint[] :=  ARRAY(SELECT base_id FROM tmp_gpsid_count_noagg ORDER BY sid);
-      tsids text;
-      tbase_ids text;
-      tbase_ids_noagg text;
-    BEGIN
-      SELECT INTO tsids array_to_string(sids, ',');
-      SELECT INTO tbase_ids array_to_string(base_ids, ',');
-      SELECT INTO tbase_ids_noagg array_to_string(base_ids_noagg, ',');
-      EXECUTE 'update ' || tname || ' set id = updateid(' || startid || ', gp_segment_id, ARRAY[' || tsids || '], ARRAY[' || tbase_ids || '], ARRAY[' || tbase_ids_noagg || ']);';
-      RETURN '';
-    END;
-    \$\$
-    LANGUAGE 'plpgsql';
-    """
-
-
-  def executeCmd(cmd: String) : Try[Int] = {
-    // Make the file executable, if necessary
-    val file = new java.io.File(cmd)
-    if (file.isFile) file.setExecutable(true, false)
-    log.info(s"""Executing: "$cmd" """)
-    val processLogger = ProcessLogger(line => log.info(line))
-    Try(cmd!(processLogger)) match {
-      case Success(0) => Success(0)
-      case Success(errorExitValue) => 
-        Failure(new RuntimeException(s"Script exited with exit_value=$errorExitValue"))
-      case Failure(ex) => Failure(ex)
-    }
-  }
-
-
   def init() : Unit = {
   }
 
-  //TODO:change weightVariables 
-  // CASE WHEN conv_layer0-"feature" IS NULL THEN '' ELSE "feature"::text END || ... 
-  def generateWeightCmd(weightPrefix: String, weightVariables: Seq[String]) : String = 
-    weightVariables.map ( v => s"""(CASE WHEN "${v}" IS NULL THEN '' ELSE "${v}"::text END)""" )
-      .mkString(" || ") match {
-      case "" => s"""'${weightPrefix}-' """
-      case x => s"""'${weightPrefix}-' || ${x}"""
-  }
+  val weightMap = scala.collection.mutable.Map[String, Long]()
 
-// . Generate grounding files for sampler
-//    . Variable, weight, factor, edge, and meta data files
   def dumpFactorGraph(serializer: Serializer, schema: Map[String, _ <: VariableDataType],
-    factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String],
+    factorDescs: Seq[FactorDesc], holdoutFraction: Double,
     weightsPath: String, variablesPath: String, factorsPath: String, edgesPath: String) : Unit = {
 
-// COUNTERS for meta data files
-    var numVariables  : Long = 0
-    var numFactors    : Long = 0
-    var numWeights    : Long = 0
-    var numEdges      : Long = 0
-
-    val randomGen = new Random()
-
-    // its mapping from weight discreption to weight ID
-    val weightMap = scala.collection.mutable.Map[String, Long]()
-    val variableMap = scala.collection.mutable.Map[String, Long]()
-
-
-    val customHoldout = holdoutQuery match {
-      case Some(query) => true
-      case None => false
-    }
-    
-    log.info(s"Dumping factor graph...")
-    
-
-    log.info("Dumping variables...")
-    schema.foreach { case(variable, dataType) => //(variables0_layer1.value,Real) or (variables1_layer0.prev_id,ArrayReal)
-      val Array(relation, column) = variable.split('.') //(variables0_layer1,value) or (variables1_layer0,prev_id)
-      // The selection is based on the serializer function used bellow (serializer.addVariable())
-      val selectVariablesForDumpSQL = s"""
-        SELECT ${relation}.id, (${variable} IS NOT NULL), ${variable}::real, (${VariablesHoldoutTable}.variable_id IS NOT NULL)
-        FROM ${relation} LEFT JOIN ${VariablesHoldoutTable}
-        ON ${relation}.id = ${VariablesHoldoutTable}.variable_id"""
-
-      val cardinality = dataType match {
-        case BooleanType => 0
-        case MultinomialType(x) => x.toLong
-        case RealType => 0
-        case ArrayRealType  => 0
-        // TODO
-      }
-
-      issueQuery(selectVariablesForDumpSQL) { rs =>
-        var isEvidence = rs.getBoolean(2)
-        // log.info(isEvidence.toString)
-
-        var holdout = rs.getBoolean(4)
-
-        // assign holdout
-        if (customHoldout && isEvidence && holdout) {
-          isEvidence = false
-        } else if (!customHoldout && isEvidence && randomGen.nextFloat < holdoutFraction) {
-          isEvidence = false
-        }
-        val id = rs.getLong(1)
-        // log.info("Variable : " +(id).toString+","+isEvidence.toString+","+
-        //   rs.getDouble(3).toString+","+dataType.toString())
-
-        serializer.addVariable(
-          id,                      // id
-          isEvidence,               // is evidence
-          rs.getDouble(3),          // initial value
-          dataType.toString(),        // data type            
-          -1,                       // edge count
-          cardinality)              // cardinality
-
-        numVariables += 1
-        //}
-      }
-
-    }
-
-    log.info("Dumping weights...")
-    // initializing wightMap 
-    issueQuery(selectWeightsForDumpSQL) { rs => 
-      val id = rs.getLong(1)
-      // Write to the weights file
-      // log.info("Weight : " +(id).toString+","+rs.getBoolean(2).toString+","+rs.getDouble(3).toString)
-      serializer.addWeight(id, rs.getBoolean(2), rs.getDouble(3))
-      numWeights += 1
-      weightMap(rs.getString(4)) = id
-      // log.info(rs.getString(4))
-    }
-
-
-    log.info("Dumping factors...")
-    factorDescs.foreach { factorDesc =>
-
-      
-      log.info(s"Dumping inference ${factorDesc.weightPrefix}...")
-
-      val functionName = factorDesc.func.getClass.getSimpleName
-      log.info("functionName = " + functionName.toString)
-      val isFixed = factorDesc.weight.isInstanceOf[KnownFactorWeight] | factorDesc.weight.isInstanceOf[KnownFactorWeightVector]
-      val selectInputQueryForDumpSQL = s"""
-        SELECT ${factorDesc.name}_query_user.*
-        FROM ${factorDesc.name}_query_user
-        """
-      val variables = factorDesc.func.variables
-
-
-      log.info("****************************************************************")
-      issueQuery(selectInputQueryForDumpSQL) { rs =>
-
-        var weightCmd = factorDesc.weightPrefix + "-" + factorDesc.weight.variables.map(
-        v => rs.getString(v)).mkString("")
-        var weightLenght = factorDesc.weight.vectorLength
-
-        if(weightLenght==0){          // log.info("factorDesc.weight.vectorLength==0")
-          serializer.addFactor(numFactors, weightMap(weightCmd), functionName, variables.length)
-        }
-        else{
-          if(isFixed){
-            serializer.addFactor(numFactors, weightMap(weightCmd), functionName, variables.length)
-          }else{
-            serializer.addFactor(numFactors, -1, functionName, variables.length)
-          }
-        }
-
-        if(weightLenght==0){          // log.info("factorDesc.weight.vectorLength==0")
-          variables.zipWithIndex.foreach { case(v, pos) =>
-            serializer.addEdge(rs.getLong(s"${v.relation}.id"),
-              numFactors, pos, !v.isNegated, weightMap(weightCmd), weightLenght.toLong)
-            numEdges += 1
-          }
-        }else{
-          // log.info("factorDesc.weight.vectorLength>0")
-          // log.info("factorDesc.weight.vectorLength = " + factorDesc.weight.vectorLength.toString)
-
-
-          variables.zipWithIndex.foreach { case(v, pos) =>
-            if(pos==0){ //Vector variables
-              // log.info("---------------------------------------------------- " + (rs.getArray(s"${v.relation}.ids")).toString)
-              var ind=1 
-              for( var_id <- (rs.getArray(s"${v.relation}.ids")).toString.split(",|\\}|\\{")){
-                // log.info("var_id = " + var_id.toString)
-                // log.info("ind = " + ind.toString)
-
-                if(var_id!=""){
-                  if(isFixed){
-                    serializer.addEdge(var_id.toLong, numFactors, pos, !v.isNegated, weightMap(weightCmd), weightLenght.toLong)
-                    numEdges += 1
-                  }else{
-                    weightCmd = factorDesc.weightPrefix + "-" + factorDesc.weight.variables.map(
-                       v => rs.getString(v)).mkString("") + "-" + ind.toString
-                    serializer.addEdge(var_id.toLong, numFactors, pos, !v.isNegated, weightMap(weightCmd), weightLenght.toLong)
-                //    log.info(var_id+","+numFactors.toString+","+pos.toString+","+weightMap(weightCmd))
-                    numEdges += 1
-                    ind+=1
-                  }
-                }
-              }  
-            }else{ // Output of the factor
-             // log.info((rs.getLong(s"${v.relation}.id")).toString+","+numFactors.toString+","+pos.toString)
-              serializer.addEdge(rs.getLong(s"${v.relation}.id"), numFactors, pos, !v.isNegated, -1, weightLenght.toLong)
-              numEdges += 1
-            }
-          }
-        }
-        numFactors += 1
-      }
-                                log.info("----------------------------------------------------")
-      // log.info("("+numVariables.toString  +","+ numFactors.toString +","+  numWeights.toString +"," + numEdges.toString +")" )
-    }
-
-
-    serializer.writeMetadata(numWeights, numVariables, numFactors, numEdges,
-      weightsPath, variablesPath, factorsPath, edgesPath)
-
-    serializer.close()
   }
 
-// Only deals with weight table 
-//  . Assign ID to the table contains variables
-//  . Assign Holdout ( marking the evidences for cross validation)
-//  . Create view for input query
-//  . Create weight table 
-
   def groundFactorGraph(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
-    holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean, weightTable: String, dbSettings: DbSettings) {
+    holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean, weightTable: String) {
 
-    // Get Database-related settings
-    val dbname = dbSettings.dbname
-    val pguser = dbSettings.user
-    val pgport = dbSettings.port
-    val pghost = dbSettings.host
-    // TODO do not use password for now
-    val dbnameStr = dbname match {
-      case null => ""
-      case _ => s" -d ${dbname} "
-    }
-    val pguserStr = pguser match {
-      case null => ""
-      case _ => s" -U ${pguser} "
-    }
-    val pgportStr = pgport match {
-      case null => ""
-      case _ => s" -p ${pgport} "
-    }
-    val pghostStr = pghost match {
-      case null => ""
-      case _ => s" -h ${pghost} "
-    }
-
-    // We write the grounding queries to this SQL file
-    val sqlFile = File.createTempFile(s"grounding", ".sql")
-    val writer = new PrintWriter(sqlFile)
-    val assignIdFile = File.createTempFile(s"assignId", ".sh")
-    val assignidWriter = new PrintWriter(assignIdFile)
-    log.info(s"""Writing grounding queries to file="${sqlFile}" """)
-
-    // If skip_learning and use the last weight table, copy it before removing it
-    if (skipLearning && weightTable.isEmpty()) {
-      writer.println(copyLastWeightsSQL)
-    }
-
-    writer.println(createWeightsSQL)
-    writer.println(createTempWeightsSQL)
-
-    writer.println(createVariablesHoldoutSQL)
-
-    // check whether Greenplum is used
-    var usingGreenplum = false
-    issueQuery(checkGreenplumSQL) { rs => 
-      usingGreenplum = rs.getBoolean(1) 
-    }
-
-    log.info("Using Greenplum = " + usingGreenplum.toString)
-
-    // assign id
-    if (usingGreenplum) {
-      val createAssignIdPrefix = "psql " + dbnameStr + pguserStr + pgportStr + pghostStr + " -c " + "\"\"\""
-      assignidWriter.println(createAssignIdPrefix + createAssignIdFunctionSQL + "\"\"\"")
-    } else {
-      writer.println(createSequencesSQL)
-    }
-    var idoffset : Long = 0
-
-    // Ground all variables in the schema
+    var id : Long = 0
     schema.foreach { case(variable, dataType) =>
       val Array(relation, column) = variable.split('.')
 
-      if (usingGreenplum) {
-        val assignIdSQL = "psql " + dbnameStr + pguserStr + pgportStr + pghostStr + " -c " + "\"\"\"" +
-          s""" SELECT fast_seqassign('${relation}', ${idoffset});""" + "\"\"\""
-        assignidWriter.println(assignIdSQL)
-        val getOffset = s"SELECT count(*) FROM ${relation};"
-        issueQuery(getOffset) { rs =>
-          idoffset = idoffset + rs.getLong(1);
-        }
-      } else {
-        writer.println(s"""
-          UPDATE ${relation} SET id = nextval('${IdSequence}');
-          """)
+      executeQuery(s"""SELECT fast_seqassign('${relation}', ${id});""")
+      id = 1+ queryCount(s"""SELECT max(id) FROM ${relation}""")
+
+    }
+
+    schema.foreach { case(variable, dataType) =>
+      val Array(relation, column) = variable.split('.')
+
+      val variableDataType = dataType.toString match {
+        case "Boolean" => 0
+        case "Multinomial" => 1
       }
-    }
-
-    // Assign the holdout - Random (default) or user-defined query
-    holdoutQuery match {   
-      case Some(userQuery) => writer.println(userQuery + ";")
-      case None =>
-    }
-
-    // Create table for each inference rule
-    factorDescs.foreach { factorDesc =>
       
-      // Create a view for the inference input query
-      writer.println(s"""
-        DROP VIEW IF EXISTS ${factorDesc.name}_query_user CASCADE;
-        CREATE VIEW ${factorDesc.name}_query_user AS ${factorDesc.inputQuery};
+      executeQuery(s"""
+        DROP EXTERNAL TABLE IF EXISTS variables_${relation} CASCADE;
+        CREATE WRITABLE EXTERNAL TABLE variables_${relation} (
+          id bigint,
+          num_rows bigint,
+          num_cols bigint,
+          is_evidence int[],
+          initial_value double precision) 
+        LOCATION ('gpfdist://${hostname}:${port}/variables_${relation}')
+        FORMAT 'TEXT';
         """)
 
+      executeQuery(s"""
+        INSERT INTO variables_${relation}(id, num_rows, num_cols, is_evidence, initial_value)
+        (SELECT id, width, length, (${column} IS NOT NULL)::int, COALESCE(${column}::int,0) 
+          FROM ${relation})
+        """)
 
-      // Ground weights for each inference rule
-      val weightValue = factorDesc.weight match { 
+    }
+    
+
+    executeQuery(s"""DROP EXTERNAL TABLE IF EXISTS factormeta CASCADE;""")
+    executeQuery(s"""CREATE WRITABLE EXTERNAL TABLE factormeta (name text, funcid text, sign text)
+    	             LOCATION ('gpfdist://${hostname}:${port}/factormeta')
+                     FORMAT 'TEXT';
+		  """)
+
+    factorDescs.foreach { factorDesc =>
+        var s = ""
+    	  val negs = factorDesc.func.variables.zipWithIndex.foreach{ case(variable, position) =>
+		    val isPositive = !variable.isNegated
+		    s = s + " " + isPositive
+	     }
+
+	     val functionName = factorDesc.func.getClass.getSimpleName
+    	 executeQuery(s"""INSERT INTO factormeta VALUES ('${factorDesc.name}', '${functionName}', '${s}');""")
+    }
+    
+    executeQuery(s"""DROP EXTERNAL TABLE IF EXISTS weights CASCADE;""")
+    executeQuery(s"""CREATE WRITABLE EXTERNAL TABLE weights (id bigint, num_rows int, num_cols int, isfixed int[], initvalue float[]) 
+                        LOCATION ('gpfdist://${hostname}:${port}/weights')
+                        FORMAT 'TEXT';
+                  """)
+
+    var cweightid = 0L
+    factorDescs.zipWithIndex.foreach { case(factorDesc, idx) =>
+
+      val selectcols = factorDesc.func.variables.zipWithIndex.map { case(variable, position) =>
+        val vRelation = variable.headRelation
+        val vColumn = variable.field
+        val vidColumn = s""" "${variable.relation}.id" """
+        vidColumn
+      }
+
+      val selectcol = selectcols.mkString(" , ")
+
+      executeQuery(s"""DROP TABLE IF EXISTS queryview_${factorDesc.name} CASCADE;""")
+      executeQuery(s"""DROP TABLE IF EXISTS weighttable_${factorDesc.name} CASCADE;""")
+      executeQuery(s"""DROP TABLE IF EXISTS edges CASCADE;""")
+
+      executeQuery(s"""CREATE TABLE queryview_${factorDesc.name} AS ${factorDesc.inputQuery};""")
+
+      val weightlist = factorDesc.weight.variables.map ( v => s"""${v}""" ).mkString(" , ")
+      var isfixed = 0
+      if(factorDesc.weight.isInstanceOf[KnownFactorWeight]){
+        isfixed = 1
+      }
+      val initvalue = factorDesc.weight match { 
         case x : KnownFactorWeight => x.value
         case x : KnownFactorWeightVector => x.value
         case _ => 0.0
       }
-      // log.info(" x.value = " + weightValue.toString)
+      var weightLength = Math.sqrt(factorDesc.weight.vectorLength.toDouble)
+      val functionName = factorDesc.func.getClass.getSimpleName
 
-      val isFixed = factorDesc.weight.isInstanceOf[KnownFactorWeight] | factorDesc.weight.isInstanceOf[KnownFactorWeightVector]
+      if(factorDesc.weight.isInstanceOf[KnownFactorWeight] == true || weightlist == ""){
+        executeQuery(s"""INSERT INTO weights VALUES (${cweightid}, ${weightLength}, ${weightLength}, ${isfixed}, ${initvalue});""")
+        executeQuery(s"""CREATE TABLE edges AS
+                    SELECT SELECT t0.ids AS in_ids, t0.locations AS in_locations, t0.id AS out_id, t0.location AS out_location,
+                      t0.num_ids AS num_ids, ${functionName}, ${cweightid}::bigint
+                    FROM queryview_${factorDesc.name};
+                """)
+        cweightid = cweightid + 1
+      }else{
+        var isfixed = 0
+        val initvalue = 0
+        val weightjoinlist = factorDesc.weight.variables.map ( v => s"""t0.${v}=t1.${v}""" ).mkString(" AND ")
+        executeQuery(s"""CREATE TABLE weighttable_${factorDesc.name} AS
+                    SELECT ${weightlist}, 0::bigint id, ${weightLength}:int num_rows, ${weightLength}:int num_cols, ${isfixed}::int isfixed, ${initvalue}::float initvalue 
+                    FROM queryview_${factorDesc.name} 
+                    GROUP BY ${weightlist}
+                    DISTRIBUTED BY (${weightlist});""")
+        executeQuery(s"""SELECT fast_seqassign('weighttable_${factorDesc.name}', ${cweightid});""")
+        executeQuery(s"""CREATE TABLE edges AS
+                    SELECT t0.ids AS in_ids, t0.locations AS in_locations, t0.id AS out_id, t0.location AS out_location,
+                      t0.num_ids AS num_ids, ${functionName}, t1.id
+                    FROM queryview_${factorDesc.name} t0, weighttable_${factorDesc.name} t1
+                    WHERE ${weightjoinlist};
+                """)
 
+        executeQuery(s"""INSERT INTO weights (SELECT id, num_rows, num_cols, isfixed, initvalue FROM weighttable_${factorDesc.name});""")
 
-      // log.info(" isFixed = " + isFixed.toString)
-
-      //TODO : Should change variables for weight 
-      // generateWeightCmd(inference rule name(conv_layer0),variables)
-      val weightCmd = generateWeightCmd(factorDesc.weightPrefix, factorDesc.weight.variables)
-
-      if(isFixed || factorDesc.weight.vectorLength==0){
-        writer.println(s"""
-            INSERT INTO ${WeightsTable}(initial_value, is_fixed, description, weight_lenght)
-            SELECT ${weightValue} AS wValue, ${isFixed} AS wIsFixed, ${weightCmd} AS wCmd, 
-            ${factorDesc.weight.vectorLength} AS wLenght
-            FROM ${factorDesc.name}_query_user GROUP BY wValue, wIsFixed, wCmd, wLenght;""")
-      }
-      else{
-        log.info("factorDesc.weight.vectorLength = " + factorDesc.weight.vectorLength.toString)
-        writer.println(s"""
-          DROP TABLE IF EXISTS tempNum CASCADE;
-          create table tempNum (num INT);""")
-        var numArray="["+(-factorDesc.weight.vectorLength to -1).toList.mkString(",")+"]"
-        writer.println(s"""insert into tempNum (num) select unnest(array${numArray});""")
-
-        writer.println(createTempWeightsSQL)
-        writer.println(s"""
-          INSERT INTO ${TempWeightsTable}(initial_value, is_fixed, description, weight_lenght)
-          SELECT ${weightValue} AS wValue, ${isFixed} AS wIsFixed, ${weightCmd} AS wCmd,
-          ${factorDesc.weight.vectorLength} AS wLenght
-          FROM ${factorDesc.name}_query_user GROUP BY wValue, wIsFixed, wCmd, wLenght;""")
-       
-        writer.println(s"""
-          INSERT INTO ${WeightsTable}(initial_value, is_fixed, description, weight_lenght)
-          SELECT initial_value, is_fixed, description::text || num::text, weight_lenght from tempNum,${TempWeightsTable};""")
+        cweightid = cweightid + queryCount(s"""SELECT COUNT(*) FROM weighttable_${factorDesc.name};""")
       }
     }
-    // we will have dd-graph-weights
+    
 
+    execute(createInferenceResultSQL)
+    execute(createInferenceResultWeightsSQL)
 
-    // skip learning: choose a table to copy weights from
-    if (skipLearning) {
-      val fromWeightTable = weightTable.isEmpty() match {
-        case true => lastWeightsTable
-        case false => weightTable
-      }
-      log.info(s"""Using weights in TABLE ${fromWeightTable} by matching description""")
-
-      // Already set -l 0 for sampler
-      writer.println(s"""
-        UPDATE ${WeightsTable} SET initial_value = weight 
-        FROM ${fromWeightTable} 
-        WHERE dd_graph_weights.description = ${fromWeightTable}.description;
-        """)
-    }
-    writer.println(s"""CREATE INDEX ${WeightsTable}_desc_idx ON ${WeightsTable}(description);""")
-    writer.println(s"""ANALYZE ${WeightsTable};""")
-
-
-    writer.close()
-    assignidWriter.close()
-
-    log.info("Executing grounding query...")
-    executeCmd(assignIdFile.getAbsolutePath())
-    execute(Source.fromFile(sqlFile).getLines.mkString)
   }
 
   def bulkCopyWeights(weightsFile: String) : Unit
@@ -667,16 +363,16 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def writebackInferenceResult(variableSchema: Map[String, _ <: VariableDataType],
     variableOutputFile: String, weightsOutputFile: String) = {
 
-    execute(createInferenceResultSQL)
-    execute(createInferenceResultWeightsSQL)
+    //execute(createInferenceResultSQL)
+    //execute(createInferenceResultWeightsSQL)
     // execute(createMappedInferenceResultView)
 
     log.info("Copying inference result weights...")
     bulkCopyWeights(weightsOutputFile)
     log.info("Copying inference result variables...")
-    bulkCopyVariables(variableOutputFile)
+    //bulkCopyVariables(variableOutputFile)
     log.info("Creating indicies on the inference result...")
-    execute(createInferenceResultIndiciesSQL)
+    //execute(createInferenceResultIndiciesSQL)
 
     // Each (relation, column) tuple is a variable in the plate model.
      // Find all (relation, column) combinations
@@ -684,7 +380,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       case Array(relation, column) => (relation, column)
     }
 
-    execute(createMappedWeightsViewSQL)
+    // execute(createMappedWeightsViewSQL)
 
     relationsColumns.foreach { case(relationName, columnName) =>
       execute(createInferenceViewSQL(relationName, columnName))
@@ -707,9 +403,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       case BooleanType => 
         execute(createCalibrationViewBooleanSQL(calibrationViewName, bucketedViewName, columnName))
       case MultinomialType(_) =>
-        execute(createCalibrationViewMultinomialSQL(calibrationViewName, bucketedViewName, columnName))
-      // TODO
-      case _ =>
         execute(createCalibrationViewMultinomialSQL(calibrationViewName, bucketedViewName, columnName))
     }
     
