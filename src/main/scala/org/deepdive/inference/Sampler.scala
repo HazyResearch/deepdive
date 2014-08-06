@@ -10,7 +10,7 @@ object Sampler {
 
   // Tells the Sampler to run inference
   case class Run(samplerCmd: String, samplerOptions: String, weightsFile: String, variablesFile: String,
-    factorsFile: String, edgesFile: String, metaFile: String, outputDir: String)
+    factorsFile: String, edgesFile: String, metaFile: String, outputDir: String, parallelGrounding: Boolean)
 }
 
 /* Runs inferece on a dumped factor graph. */
@@ -20,10 +20,10 @@ class Sampler extends Actor with ActorLogging {
 
   def receive = {
     case Sampler.Run(samplerCmd, samplerOptions, weightsFile, variablesFile,
-      factorsFile, edgesFile, metaFile, outputDir) =>
+      factorsFile, edgesFile, metaFile, outputDir, parallelGrounding) =>
       // Build the command
       val cmd = buildSamplerCmd(samplerCmd, samplerOptions, weightsFile, variablesFile,
-      factorsFile, edgesFile, metaFile, outputDir)
+      factorsFile, edgesFile, metaFile, outputDir, parallelGrounding)
       log.info(s"Executing: ${cmd.mkString(" ")}")
       // We run the process, get its exit value, and print its output to the log file
       val exitValue = cmd!(ProcessLogger(
@@ -40,15 +40,19 @@ class Sampler extends Actor with ActorLogging {
   // Build the command to run the sampler
   def buildSamplerCmd(samplerCmd: String, samplerOptions: String, weightsFile: String, 
     variablesFile: String, factorsFile: String, edgesFile: String, metaFile: String, 
-    outputDir: String) = {
+    outputDir: String, parallelGrounding: Boolean) = {
     log.info(samplerCmd)
-    samplerCmd.split(" ").toSeq ++ Seq(
+    var cmd = samplerCmd.split(" ").toSeq ++ Seq(
       "-w", weightsFile,
       "-v", variablesFile,
       "-f", factorsFile,
       "-e", edgesFile,
       "-m", metaFile,
-      "-o", outputDir) ++ samplerOptions.split(" ")
+      "-o", outputDir) ++ samplerOptions.split(" ") 
+    if (parallelGrounding) {
+      cmd = cmd ++ Seq("-g", "1")
+    }
+    cmd
   }
 
 }

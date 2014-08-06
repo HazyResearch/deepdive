@@ -37,7 +37,7 @@ trait InferenceDataStore {
      * VariableID, LastSampleValue, ExpectedValue
      */
     def writebackInferenceResult(variableSchema: Map[String, _ <: VariableDataType],
-        variableOutputFile: String, weightsOutputFile: String) : Unit
+        variableOutputFile: String, weightsOutputFile: String, parallelGrounding: Boolean) : Unit
 
 
     /* 

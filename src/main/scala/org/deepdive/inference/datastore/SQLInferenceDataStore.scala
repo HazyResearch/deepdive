@@ -22,6 +22,7 @@ trait SQLInferenceDataStoreComponent extends InferenceDataStoreComponent {
 
 }
 
+
 trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   def ds : JdbcDataStore
@@ -150,6 +151,11 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       SQL(sql).map(_.toMap).list.apply()
     }
   }
+
+  // used in unit test
+  def keyType = "bigserial"
+  def stringType = "text"
+  def randomFunc = "RANDOM()"
 
   def checkGreenplumSQL = s"""
     SELECT version() LIKE '%Greenplum%';
@@ -788,7 +794,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def bulkCopyVariables(variablesFile: String) : Unit
 
   def writebackInferenceResult(variableSchema: Map[String, _ <: VariableDataType],
-    variableOutputFile: String, weightsOutputFile: String) = {
+    variableOutputFile: String, weightsOutputFile: String, parallelGrounding: Boolean) = {
 
     execute(createInferenceResultSQL)
     execute(createInferenceResultWeightsSQL)
@@ -806,7 +812,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       case Array(relation, column) => (relation, column)
     }
 
-    execute(createMappedWeightsViewSQL)
+    if (!parallelGrounding) {
+      execute(createMappedWeightsViewSQL)
+    }
 
     relationsColumns.foreach { case(relationName, columnName) =>
       execute(createInferenceViewSQL(relationName, columnName))
