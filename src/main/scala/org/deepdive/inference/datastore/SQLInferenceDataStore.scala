@@ -54,6 +54,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   }
 
   def execute(sql: String) {
+    log.debug("EXECUTING.... " + sql)
     val conn = ds.borrowConnection()
     val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
       java.sql.ResultSet.CONCUR_UPDATABLE)
@@ -68,6 +69,18 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     } finally {
       conn.close()
     }
+    log.debug("DONE!")
+  }
+
+  def executeQuery(sql: String) = {
+    log.debug("EXECUTING.... " + sql)
+    val conn = ds.borrowConnection()
+    conn.setAutoCommit(false)
+    val stmt = conn.createStatement();
+    stmt.execute(sql)
+    conn.commit()
+    conn.close()
+    log.debug("DONE!")
   }
 
   /* Issues a query */
@@ -137,11 +150,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       SQL(sql).map(_.toMap).list.apply()
     }
   }
-
-  def keyType = "bigserial"
-  def stringType = "text"
-  def randomFunc = "RANDOM()"
-
 
   def checkGreenplumSQL = s"""
     SELECT version() LIKE '%Greenplum%';
@@ -263,16 +271,16 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     CREATE LANGUAGE plpythonu;
 
     CREATE OR REPLACE FUNCTION clear_count_1(sid int) RETURNS int AS 
-    \$\$
+    $$
     if '__count_1' in SD:
       SD['__count_1'] = -1
       return 1
     return 0
-    \$\$ LANGUAGE plpythonu;
+    $$ LANGUAGE plpythonu;
      
      
     CREATE OR REPLACE FUNCTION updateid(startid bigint, sid int, sids int[], base_ids bigint[], base_ids_noagg bigint[]) RETURNS bigint AS 
-    \$\$
+    $$
     if '__count_1' in SD:
       a = SD['__count_2']
       b = SD['__count_1']
@@ -292,10 +300,10 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         SD.pop('__count_1')
       return startid+b-a
       
-    \$\$ LANGUAGE plpythonu;
+    $$ LANGUAGE plpythonu;
      
     CREATE OR REPLACE FUNCTION fast_seqassign(tname character varying, startid bigint) RETURNS TEXT AS 
-    \$\$
+    $$
     BEGIN
       EXECUTE 'drop table if exists tmp_gpsid_count cascade;';
       EXECUTE 'drop table if exists tmp_gpsid_count_noagg cascade;';
@@ -306,11 +314,11 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       EXECUTE 'select * from _fast_seqassign(''' || quote_ident(tname) || ''', ' || startid || ');';
       RETURN '';
     END;
-    \$\$ LANGUAGE 'plpgsql';
+    $$ LANGUAGE 'plpgsql';
      
     CREATE OR REPLACE FUNCTION _fast_seqassign(tname character varying, startid bigint)
     RETURNS TEXT AS
-    \$\$
+    $$
     DECLARE
       sids int[] :=  ARRAY(SELECT sid FROM tmp_gpsid_count ORDER BY sid);
       base_ids bigint[] :=  ARRAY(SELECT base_id FROM tmp_gpsid_count ORDER BY sid);
@@ -325,7 +333,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       EXECUTE 'update ' || tname || ' set id = updateid(' || startid || ', gp_segment_id, ARRAY[' || tsids || '], ARRAY[' || tbase_ids || '], ARRAY[' || tbase_ids_noagg || ']);';
       RETURN '';
     END;
-    \$\$
+    $$
     LANGUAGE 'plpgsql';
     """
 
@@ -462,34 +470,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean, weightTable: String, 
     dbSettings: DbSettings, parallelGrounding: Boolean) {
 
-    // Get Database-related settings
-    val dbname = dbSettings.dbname
-    val pguser = dbSettings.user
-    val pgport = dbSettings.port
-    val pghost = dbSettings.host
-    // TODO do not use password for now
-    val dbnameStr = dbname match {
-      case null => ""
-      case _ => s" -d ${dbname} "
-    }
-    val pguserStr = pguser match {
-      case null => ""
-      case _ => s" -U ${pguser} "
-    }
-    val pgportStr = pgport match {
-      case null => ""
-      case _ => s" -p ${pgport} "
-    }
-    val pghostStr = pghost match {
-      case null => ""
-      case _ => s" -h ${pghost} "
-    }
-
     // We write the grounding queries to this SQL file
     val sqlFile = File.createTempFile(s"grounding", ".sql")
     val writer = new PrintWriter(sqlFile)
-    val assignIdFile = File.createTempFile(s"assignId", ".sh")
-    val assignidWriter = new PrintWriter(assignIdFile)
     log.info(s"""Writing grounding queries to file="${sqlFile}" """)
 
     // If skip_learning and use the last weight table, copy it before removing it
@@ -510,8 +493,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     // assign id
     if (usingGreenplum) {
-      val createAssignIdPrefix = "psql " + dbnameStr + pguserStr + pgportStr + pghostStr + " -c " + "\"\"\""
-      assignidWriter.println(createAssignIdPrefix + createAssignIdFunctionSQL + "\"\"\"")
+      executeQuery(createAssignIdFunctionSQL)
     } else {
       writer.println(createSequencesSQL)
     }
@@ -522,12 +504,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       val Array(relation, column) = variable.split('.')
 
       if (usingGreenplum) {
-        val assignIdSQL = "psql " + dbnameStr + pguserStr + pgportStr + pghostStr + " -c " + "\"\"\"" +
-          s""" SELECT fast_seqassign('${relation}', ${idoffset});""" + "\"\"\""
-        assignidWriter.println(assignIdSQL)
-        val getOffset = s"SELECT count(*) FROM ${relation};"
-        issueQuery(getOffset) { rs =>
-          idoffset = idoffset + rs.getLong(1);
+        executeQuery(s"""SELECT fast_seqassign('${relation}', ${idoffset});""")
+        issueQuery(s"""SELECT max(id) FROM ${relation}""") { rs =>
+          idoffset = 1 + rs.getLong(1)
         }
       } else {
         writer.println(s"""
@@ -588,10 +567,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     writer.println(s"""ANALYZE ${WeightsTable};""")
 
     writer.close()
-    assignidWriter.close()
 
     log.info("Executing grounding query...")
-    executeCmd(assignIdFile.getAbsolutePath())
     execute(Source.fromFile(sqlFile).getLines.mkString)
   }
 
