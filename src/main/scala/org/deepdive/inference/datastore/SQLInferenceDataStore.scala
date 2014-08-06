@@ -486,9 +486,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       throw new RuntimeException("Missing GPFDIST Settings.")
     }
 
-    
+    val cleanFile = File.createTempFile(s"clean", ".sh")
+    val writer = new PrintWriter(cleanFile)
     log.info(s"EXECUTING: rm -rf ${gppath}/*")
-    s"rm -rf ${gppath}/*".!
+    writer.println(s"rm -rf ${gppath}/*")
+    writer.close()
+    executeCmd(cleanFile.getAbsolutePath())
 
     // assign variable ids
     executeQuery(createAssignIdFunctionSQL)
