@@ -357,7 +357,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   def dumpFactorGraph(serializer: Serializer, schema: Map[String, _ <: VariableDataType],
     factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String],
-    weightsPath: String, variablesPath: String, factorsPath: String, edgesPath: String) : Unit = {
+    weightsPath: String, variablesPath: String, factorsPath: String, edgesPath: String, 
+    parallelGrounding: Boolean) : Unit = {
 
     var numVariables  : Long = 0
     var numFactors    : Long = 0
@@ -458,7 +459,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   }
 
   def groundFactorGraph(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
-    holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean, weightTable: String, dbSettings: DbSettings) {
+    holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean, weightTable: String, 
+    dbSettings: DbSettings, parallelGrounding: Boolean) {
 
     // Get Database-related settings
     val dbname = dbSettings.dbname

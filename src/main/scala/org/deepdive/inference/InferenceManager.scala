@@ -55,16 +55,20 @@ trait InferenceManager extends Actor with ActorLogging {
   }
 
   def receive = {
-    case InferenceManager.GroundFactorGraph(factorDescs, holdoutFraction, holdoutQuery, skipLearning, weightTable) =>
+    case InferenceManager.GroundFactorGraph(factorDescs, holdoutFraction, holdoutQuery, 
+      skipLearning, weightTable, parallelGrounding) =>
       val _sender = sender
       inferenceDataStore.asInstanceOf[SQLInferenceDataStore]
-        .groundFactorGraph(variableSchema, factorDescs, holdoutFraction, holdoutQuery, skipLearning, weightTable, dbSettings)
+        .groundFactorGraph(variableSchema, factorDescs, holdoutFraction, holdoutQuery, 
+          skipLearning, weightTable, dbSettings, parallelGrounding)
       sender ! "OK"
       // factorGraphBuilder ? FactorGraphBuilder.AddFactorsAndVariables(
       //   factorDesc, holdoutFraction, batchSize) pipeTo _sender
-    case InferenceManager.RunInference(factorDescs, holdoutFraction, holdoutQuery, samplerJavaArgs, samplerOptions, skipSerializing) =>
+    case InferenceManager.RunInference(factorDescs, holdoutFraction, holdoutQuery, 
+      samplerJavaArgs, samplerOptions, skipSerializing, parallelGrounding) =>
       val _sender = sender
-      val result = runInference(factorDescs, holdoutFraction, holdoutQuery, samplerJavaArgs, samplerOptions, skipSerializing)
+      val result = runInference(factorDescs, holdoutFraction, holdoutQuery, 
+        samplerJavaArgs, samplerOptions, skipSerializing, parallelGrounding)
       result pipeTo _sender
     case InferenceManager.WriteCalibrationData =>
       val _sender = sender
@@ -81,7 +85,7 @@ trait InferenceManager extends Actor with ActorLogging {
   }
 
   def runInference(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], 
-    samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false) = {
+    samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false, parallelGrounding: Boolean) = {
     // TODO: Make serializier configurable
     skipSerializing match {
       case false =>
@@ -100,7 +104,7 @@ trait InferenceManager extends Actor with ActorLogging {
         inferenceDataStore.dumpFactorGraph(serializier, variableSchema, factorDescs, holdoutFraction,
           holdoutQuery, factorGraphDumpFileWeights.getCanonicalPath,
           factorGraphDumpFileVariables.getCanonicalPath, factorGraphDumpFileFactors.getCanonicalPath,
-          factorGraphDumpFileEdges.getCanonicalPath)
+          factorGraphDumpFileEdges.getCanonicalPath, parallelGrounding)
         serializier.close()
         weightsOutput.close()
         variablesOutput.close()
@@ -146,9 +150,11 @@ object InferenceManager {
   // ==================================================
 
   // Executes a task to build part of the factor graph
-  case class GroundFactorGraph(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean, weightTable: String)
+  case class GroundFactorGraph(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], 
+    skipLearning: Boolean, weightTable: String, parallelGrounding: Boolean)
   // Runs the sampler with the given arguments
-  case class RunInference(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false)
+  case class RunInference(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], 
+    samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false, parallelGrounding: Boolean)
   // Writes calibration data to predefined files
   case object WriteCalibrationData
 
