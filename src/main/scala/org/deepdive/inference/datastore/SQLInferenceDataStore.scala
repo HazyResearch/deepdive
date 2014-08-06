@@ -369,7 +369,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     // parallel grounding
     if (parallelGrounding) {
-      log.info("===============================PARALLEL==================================")
+      groundFactorGraphParallel(schema, factorDescs, holdoutFraction, holdoutQuery, skipLearning, weightTable, dbSettings)
+      return
     }
 
     // We write the grounding queries to this SQL file
@@ -474,13 +475,16 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     execute(Source.fromFile(sqlFile).getLines.mkString)
   }
 
-  def parallelGrounding(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
+  def groundFactorGraphParallel(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
     holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean, weightTable: String, dbSettings: DbSettings) {
 
     // clean up grounding folder
     val hostname = dbSettings.gphost
     val port = dbSettings.gpport
     val gppath = dbSettings.gppath
+    if (hostname == "" || port == "" || gppath == "") {
+      throw new RuntimeException("Missing GPFDIST Settings.")
+    }
 
     if (hostname != "") {
       if (gppath.takeRight(1) == "/") {
@@ -643,7 +647,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         }
 
         val selectcol = selectcols.mkString(" , ")
-
         val definition = "_weight_id bigint, " + selectcol
 
         //TODO: NEED TO REMOVE
@@ -661,6 +664,19 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // create inference result table
     execute(createInferenceResultSQL)
     execute(createInferenceResultWeightsSQL)
+
+    // split grounding files and transform to binary format
+    log.info("Converting grounding file format...")
+    val cmd = s"python util/tobinary.py ${gppath} util/convert_format"
+    val exitValue = cmd!(ProcessLogger(
+      out => log.info(out),
+      err => log.info(err)
+    ))
+
+    exitValue match {
+      case 0 => 
+      case _ => throw new RuntimeException("Converting format failed.")
+    }
   }
 
 
