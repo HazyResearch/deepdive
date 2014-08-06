@@ -37,7 +37,8 @@ object SettingsParser extends Logging {
     val port = Try(dbConfig.getString("port")).getOrElse(null)
     val gphost = Try(dbConfig.getString("gphost")).getOrElse("")
     val gpport = Try(dbConfig.getString("gpport")).getOrElse("")
-    val gppath = Try(dbConfig.getString("gppath")).getOrElse("")
+    var gppath = Try(dbConfig.getString("gppath")).getOrElse("")
+    if (gppath.takeRight(1) == "/") gppath = gppath.take(gppath.length - 1)
     log.info(s"Database settings: user ${user}, dbname ${dbname}, host ${host}, port ${port}.")
     if (gphost != "") {
       log.info(s"GPFDIST settings: host ${gphost} port ${gpport} path ${gppath}")

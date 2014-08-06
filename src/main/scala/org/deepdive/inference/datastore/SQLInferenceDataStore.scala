@@ -486,15 +486,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       throw new RuntimeException("Missing GPFDIST Settings.")
     }
 
-    if (hostname != "") {
-      if (gppath.takeRight(1) == "/") {
-        log.info(s"EXECUTING: rm -rf ${gppath}*")
-        s"rm -rf ${gppath}*".!
-      } else {
-        log.info(s"EXECUTING: rm -rf ${gppath}/*")
-        s"rm -rf ${gppath}/*".!
-      }
-    }
+    
+    log.info(s"EXECUTING: rm -rf ${gppath}/*")
+    s"rm -rf ${gppath}/*".!
 
     // assign variable ids
     executeQuery(createAssignIdFunctionSQL)
