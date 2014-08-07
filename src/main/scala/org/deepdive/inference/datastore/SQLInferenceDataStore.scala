@@ -3,6 +3,7 @@ package org.deepdive.inference
 import java.io.{File, PrintWriter}
 import org.deepdive.calibration._
 import org.deepdive.datastore.JdbcDataStore
+import org.deepdive.datastore.DataUnloader
 import org.deepdive.Logging
 import org.deepdive.settings._
 import play.api.libs.json._
@@ -484,6 +485,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def groundFactorGraphParallel(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
     holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean, weightTable: String, dbSettings: DbSettings) {
 
+    val du = new DataUnloader
+
     // clean up grounding folder
     val hostname = dbSettings.gphost
     val port = dbSettings.gpport
@@ -529,31 +532,36 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         SELECT id FROM ${relation}
         WHERE RANDOM() > ${holdoutFraction} AND ${column} IS NOT NULL;
         """)
-      
-      execute(s"""
-        DROP EXTERNAL TABLE IF EXISTS variables_${relation} CASCADE;
-        CREATE WRITABLE EXTERNAL TABLE variables_${relation} (
-          id bigint,
-          is_evidence int,
-          initial_value double precision,
-          type int,
-          cardinality int) 
-        LOCATION ('gpfdist://${hostname}:${port}/variables_${relation}')
-        FORMAT 'TEXT';
-        """)
 
-      execute(s"""
-        INSERT INTO variables_${relation}(id, is_evidence, initial_value, type, cardinality)
-        (SELECT id, (${VariablesHoldoutTable}.variable_id IS NOT NULL)::int, 
-          COALESCE(${column}::int,0), ${variableDataType}, 1 
-        FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable} ON ${relation}.id = ${VariablesHoldoutTable}.variable_id)
-        """)
+      du.gpunload(s"variables_${relation}", s"""SELECT id, (${VariablesHoldoutTable}.variable_id IS NOT NULL)::int AS is_evidence, 
+          COALESCE(${column}::int,0) AS initvalue, ${variableDataType} AS type, 1 AS cardinality  
+        FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable} ON ${relation}.id = ${VariablesHoldoutTable}.variable_id""", 
+        dbSettings)
+      
+      // execute(s"""
+      //   DROP EXTERNAL TABLE IF EXISTS variables_${relation} CASCADE;
+      //   CREATE WRITABLE EXTERNAL TABLE variables_${relation} (
+      //     id bigint,
+      //     is_evidence int,
+      //     initial_value double precision,
+      //     type int,
+      //     cardinality int) 
+      //   LOCATION ('gpfdist://${hostname}:${port}/variables_${relation}')
+      //   FORMAT 'TEXT';
+      //   """)
+
+      // execute(s"""
+      //   INSERT INTO variables_${relation}(id, is_evidence, initial_value, type, cardinality)
+      //   (SELECT id, (${VariablesHoldoutTable}.variable_id IS NOT NULL)::int, 
+      //     COALESCE(${column}::int,0), ${variableDataType}, 1 
+      //   FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable} ON ${relation}.id = ${VariablesHoldoutTable}.variable_id)
+      //   """)
     }
     
 
     // generate factor meta data
-    execute(s"""DROP EXTERNAL TABLE IF EXISTS factormeta CASCADE;""")
-    execute(s"""CREATE WRITABLE EXTERNAL TABLE factormeta (name text, funcid text, sign text)
+    execute(s"""DROP EXTERNAL TABLE IF EXISTS factormeta CASCADE;
+      CREATE WRITABLE EXTERNAL TABLE factormeta (name text, funcid text, sign text)
       LOCATION ('gpfdist://${hostname}:${port}/factormeta')
       FORMAT 'TEXT';
       """)
@@ -565,7 +573,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         s = s + " " + isPositive
        }
     
-
        val functionName = factorDesc.func.getClass.getSimpleName
        execute(s"""INSERT INTO factormeta VALUES ('${factorDesc.name}', '${functionName}', '${s}');""")
     }
@@ -642,26 +649,28 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // ground factors
     factorDescs.zipWithIndex.foreach { case (factorDesc, idx) =>
 
-        val selectcols = factorDesc.func.variables.zipWithIndex.map { case (variable, position) =>
-          val vRelation = variable.headRelation
-          val vColumn = variable.field
-          val vidColumn = s""" v${position} bigint """
-          vidColumn
-        }
+      du.gpunload(s"factors_${factorDesc.name}_out", s"SELECT * FROM query_readytogo_${factorDesc.name}", dbSettings)
 
-        val selectcol = selectcols.mkString(" , ")
-        val definition = "_weight_id bigint, " + selectcol
+        // val selectcols = factorDesc.func.variables.zipWithIndex.map { case (variable, position) =>
+        //   val vRelation = variable.headRelation
+        //   val vColumn = variable.field
+        //   val vidColumn = s""" v${position} bigint """
+        //   vidColumn
+        // }
+
+        // val selectcol = selectcols.mkString(" , ")
+        // val definition = "_weight_id bigint, " + selectcol
 
         //TODO: NEED TO REMOVE
-        execute(s"""DROP EXTERNAL TABLE IF EXISTS factors_${factorDesc.name}_out CASCADE;""")
-        execute(s"""CREATE WRITABLE EXTERNAL TABLE factors_${factorDesc.name}_out (${definition}) 
-          LOCATION ('gpfdist://${hostname}:${port}/factors_${factorDesc.name}_out')
-          FORMAT 'TEXT';
-          """)
+        // execute(s"""DROP EXTERNAL TABLE IF EXISTS factors_${factorDesc.name}_out CASCADE;""")
+        // execute(s"""CREATE WRITABLE EXTERNAL TABLE factors_${factorDesc.name}_out (${definition}) 
+        //   LOCATION ('gpfdist://${hostname}:${port}/factors_${factorDesc.name}_out')
+        //   FORMAT 'TEXT';
+        //   """)
 
-        execute(s"""INSERT INTO factors_${factorDesc.name}_out
-          (SELECT * FROM query_readytogo_${factorDesc.name});
-          """)
+        // execute(s"""INSERT INTO factors_${factorDesc.name}_out
+        //   (SELECT * FROM query_readytogo_${factorDesc.name});
+        //   """)
     }
     
     // create inference result table
