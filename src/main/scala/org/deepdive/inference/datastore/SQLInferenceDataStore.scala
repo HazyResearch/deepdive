@@ -537,25 +537,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           COALESCE(${column}::int,0) AS initvalue, ${variableDataType} AS type, 1 AS cardinality  
         FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable} ON ${relation}.id = ${VariablesHoldoutTable}.variable_id""", 
         dbSettings)
-      
-      // execute(s"""
-      //   DROP EXTERNAL TABLE IF EXISTS variables_${relation} CASCADE;
-      //   CREATE WRITABLE EXTERNAL TABLE variables_${relation} (
-      //     id bigint,
-      //     is_evidence int,
-      //     initial_value double precision,
-      //     type int,
-      //     cardinality int) 
-      //   LOCATION ('gpfdist://${hostname}:${port}/variables_${relation}')
-      //   FORMAT 'TEXT';
-      //   """)
-
-      // execute(s"""
-      //   INSERT INTO variables_${relation}(id, is_evidence, initial_value, type, cardinality)
-      //   (SELECT id, (${VariablesHoldoutTable}.variable_id IS NOT NULL)::int, 
-      //     COALESCE(${column}::int,0), ${variableDataType}, 1 
-      //   FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable} ON ${relation}.id = ${VariablesHoldoutTable}.variable_id)
-      //   """)
     }
     
 
@@ -650,27 +631,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     factorDescs.zipWithIndex.foreach { case (factorDesc, idx) =>
 
       du.gpunload(s"factors_${factorDesc.name}_out", s"SELECT * FROM query_readytogo_${factorDesc.name}", dbSettings)
-
-        // val selectcols = factorDesc.func.variables.zipWithIndex.map { case (variable, position) =>
-        //   val vRelation = variable.headRelation
-        //   val vColumn = variable.field
-        //   val vidColumn = s""" v${position} bigint """
-        //   vidColumn
-        // }
-
-        // val selectcol = selectcols.mkString(" , ")
-        // val definition = "_weight_id bigint, " + selectcol
-
-        //TODO: NEED TO REMOVE
-        // execute(s"""DROP EXTERNAL TABLE IF EXISTS factors_${factorDesc.name}_out CASCADE;""")
-        // execute(s"""CREATE WRITABLE EXTERNAL TABLE factors_${factorDesc.name}_out (${definition}) 
-        //   LOCATION ('gpfdist://${hostname}:${port}/factors_${factorDesc.name}_out')
-        //   FORMAT 'TEXT';
-        //   """)
-
-        // execute(s"""INSERT INTO factors_${factorDesc.name}_out
-        //   (SELECT * FROM query_readytogo_${factorDesc.name});
-        //   """)
     }
     
     // create inference result table
