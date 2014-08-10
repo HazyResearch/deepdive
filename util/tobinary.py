@@ -65,5 +65,5 @@ os.system('wc -l ' + INPUTFOLDER + "/weights | awk '{print $1}' | tail -n 1 > " 
 
 # transform these binary files to our old format...
 print "Converting format..."
-print '{} {}'.format(transform_script2, INPUTFOLDER)
-os.system('{} {}'.format(transform_script2, INPUTFOLDER))
+print '{0} {1}'.format(transform_script2, INPUTFOLDER)
+os.system('{0} {1}'.format(transform_script2, INPUTFOLDER))
