@@ -5,6 +5,7 @@ import org.deepdive.calibration._
 import org.deepdive.datastore.JdbcDataStore
 import org.deepdive.datastore.DataUnloader
 import org.deepdive.Logging
+import org.deepdive.Context
 import org.deepdive.settings._
 import play.api.libs.json._
 import scalikejdbc._
@@ -41,6 +42,17 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def VariableResultTable = "dd_inference_result_variables"
   def MappedInferenceResultView = "dd_mapped_inference_result"
   def IdSequence = "id_sequence"
+  def FactorMetaTable = "dd_graph_factormeta"
+
+  def getFactorFunctionTypeid(functionName: String) = {
+    functionName match {
+      case "ImplyFactorFunction" => 0
+      case "OrFactorFunction" => 1
+      case "AndFactorFunction" => 2
+      case "EqualFactorFunction" => 3
+      case "IsTrueFactorFunction" =>  4
+    }
+  }
 
 
   def unwrapSQLType(x: Any) : Any = {
@@ -55,7 +67,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
   }
 
-  def execute(sql: String) {
+  def execute(sql: String) = {
     log.debug("EXECUTING.... " + sql)
     val conn = ds.borrowConnection()
     val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
@@ -162,28 +174,11 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     SELECT version() LIKE '%Greenplum%';
   """
 
-  def createWeightsSQL = s"""
-    DROP TABLE IF EXISTS ${WeightsTable} CASCADE;
-    CREATE TABLE ${WeightsTable}(
-      id bigserial primary key,
-      initial_value double precision,
-      is_fixed boolean,
-      description text,
-      count bigint);
-    ALTER SEQUENCE ${WeightsTable}_id_seq MINVALUE -1 RESTART WITH 0;
-  """
-
   def copyLastWeightsSQL = s"""
     DROP TABLE IF EXISTS ${lastWeightsTable} CASCADE;
     SELECT X.*, Y.weight INTO ${lastWeightsTable}
       FROM ${WeightsTable} AS X INNER JOIN ${WeightResultTable} AS Y ON X.id = Y.id
       ORDER BY id ASC;
-  """
-
-  def createVariablesHoldoutSQL = s"""
-    DROP TABLE IF EXISTS ${VariablesHoldoutTable} CASCADE; 
-    CREATE TABLE ${VariablesHoldoutTable}(
-      variable_id bigint primary key);
   """
 
   def createSequencesSQL = s"""
@@ -204,11 +199,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     CREATE TABLE ${WeightResultTable}(
       id bigint primary key, 
       weight double precision);
-  """
-
-  def selectWeightsForDumpSQL = s"""
-    SELECT id AS "id", is_fixed AS "is_fixed", initial_value AS "initial_value", description AS "description"
-    FROM ${WeightsTable};
   """
 
   def createInferenceResultIndiciesSQL = s"""
@@ -363,155 +353,64 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def init() : Unit = {
   }
 
-  def generateWeightCmd(weightPrefix: String, weightVariables: Seq[String]) : String = 
-    weightVariables.map ( v => s"""(CASE WHEN "${v}" IS NULL THEN '' ELSE "${v}"::text END)""" )
-      .mkString(" || ") match {
-      case "" => s"""'${weightPrefix}-' """
-      case x => s"""'${weightPrefix}-' || ${x}"""
-  }
-
+  /** Ground the factor graph to file
+   *
+   * Using the schema and inference rules defined in application.conf, construct factor
+   * graph files: variables, factors and weights.
+   */
   def groundFactorGraph(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
     holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean, weightTable: String, 
     dbSettings: DbSettings, parallelGrounding: Boolean) {
 
-    // parallel grounding
-    if (parallelGrounding) {
-      groundFactorGraphParallel(schema, factorDescs, holdoutFraction, holdoutQuery, skipLearning, weightTable, dbSettings)
-      return
-    }
-
-    // We write the grounding queries to this SQL file
-    val sqlFile = File.createTempFile(s"grounding", ".sql")
-    val writer = new PrintWriter(sqlFile)
-    log.info(s"""Writing grounding queries to file="${sqlFile}" """)
-
-    // If skip_learning and use the last weight table, copy it before removing it
-    if (skipLearning && weightTable.isEmpty()) {
-      writer.println(copyLastWeightsSQL)
-    }
-
-    writer.println(createWeightsSQL)
-    writer.println(createVariablesHoldoutSQL)
+    val du = new DataUnloader
+    val groundingPath = if (!parallelGrounding) Context.outputDir else dbSettings.gppath
 
     // check whether Greenplum is used
     var usingGreenplum = false
     issueQuery(checkGreenplumSQL) { rs => 
       usingGreenplum = rs.getBoolean(1) 
     }
+    log.info(s"Using Greenplum = ${usingGreenplum}")
+    log.info(s"Parallel grounding = ${parallelGrounding}")
+    log.debug(s"Grounding Path = ${groundingPath}")
 
-    log.info("Using Greenplum = " + usingGreenplum.toString)
+    // clean up grounding folder (for parallel grounding)
+    if (parallelGrounding) {
+      val cleanFile = File.createTempFile(s"clean", ".sh")
+      val writer = new PrintWriter(cleanFile)
+      writer.println(s"rm -rf ${groundingPath}/*")
+      writer.close()
+      log.info("Cleaning up grounding folder...")
+      executeCmd(cleanFile.getAbsolutePath())
+    }
 
     // assign id
-    if (usingGreenplum) {
-      executeQuery(createAssignIdFunctionSQL)
-    } else {
-      writer.println(createSequencesSQL)
-    }
     var idoffset : Long = 0
-
-    // Ground all variables in the schema
-    schema.foreach { case(variable, dataType) =>
-      val Array(relation, column) = variable.split('.')
-
-      if (usingGreenplum) {
+    if(usingGreenplum) {
+      executeQuery(createAssignIdFunctionSQL)
+      schema.foreach { case(variable, dataType) =>
+        val Array(relation, column) = variable.split('.')
         executeQuery(s"""SELECT fast_seqassign('${relation}', ${idoffset});""")
         issueQuery(s"""SELECT max(id) FROM ${relation}""") { rs =>
           idoffset = 1 + rs.getLong(1)
         }
-      } else {
-        writer.println(s"""
-          UPDATE ${relation} SET id = nextval('${IdSequence}');
-          """)
       }
-       
+    } else {
+      execute(s"""DROP SEQUENCE IF EXISTS ${IdSequence} CASCADE;
+        CREATE SEQUENCE ${IdSequence} MINVALUE -1 START 0;""")
+      schema.foreach { case(variable, dataType) =>
+        val Array(relation, column) = variable.split('.')
+        execute(s"UPDATE ${relation} SET id = nextval('${IdSequence}');")
+      }
     }
 
-    // Assign the holdout - Random (default) or user-defined query
-    holdoutQuery match {   
-      case Some(userQuery) => writer.println(userQuery + ";")
+    // variable holdout table
+    execute(s"""DROP TABLE IF EXISTS ${VariablesHoldoutTable} CASCADE;
+      CREATE TABLE ${VariablesHoldoutTable}(variable_id bigint primary key);
+      """)
+    holdoutQuery match {
+      case Some(query) => execute(query)
       case None =>
-    }
-
-    // Create table for each inference rule
-    factorDescs.foreach { factorDesc =>
-      
-      // input query
-      writer.println(s"""
-        DROP VIEW IF EXISTS ${factorDesc.name}_query_user CASCADE;
-        CREATE VIEW ${factorDesc.name}_query_user AS ${factorDesc.inputQuery};
-        """)
-
-
-      // Ground weights for each inference rule
-      val weightValue = factorDesc.weight match { 
-        case x : KnownFactorWeight => x.value
-        case _ => 0.0
-      }
-
-      val isFixed = factorDesc.weight.isInstanceOf[KnownFactorWeight]
-      val weightCmd = generateWeightCmd(factorDesc.weightPrefix, factorDesc.weight.variables)
-
-      writer.println(s"""
-        INSERT INTO ${WeightsTable}(initial_value, is_fixed, description, count)
-        SELECT ${weightValue} AS wValue, ${isFixed} AS wIsFixed, ${weightCmd} AS wCmd, COUNT(${weightValue})
-        FROM ${factorDesc.name}_query_user GROUP BY wValue, wIsFixed, wCmd;""")
-    }
-
-    // skip learning: choose a table to copy weights from
-    if (skipLearning) {
-      val fromWeightTable = weightTable.isEmpty() match {
-        case true => lastWeightsTable
-        case false => weightTable
-      }
-      log.info(s"""Using weights in TABLE ${fromWeightTable} by matching description""")
-
-      // Already set -l 0 for sampler
-      writer.println(s"""
-        UPDATE ${WeightsTable} SET initial_value = weight 
-        FROM ${fromWeightTable} 
-        WHERE dd_graph_weights.description = ${fromWeightTable}.description;
-        """)
-    }
-
-    writer.println(s"""CREATE INDEX ${WeightsTable}_desc_idx ON ${WeightsTable}(description);""")
-    writer.println(s"""ANALYZE ${WeightsTable};""")
-
-    writer.close()
-
-    log.info("Executing grounding query...")
-    execute(Source.fromFile(sqlFile).getLines.mkString)
-  }
-
-  def groundFactorGraphParallel(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
-    holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean, weightTable: String, dbSettings: DbSettings) {
-
-    val du = new DataUnloader
-
-    // clean up grounding folder
-    val hostname = dbSettings.gphost
-    val port = dbSettings.gpport
-    val gppath = dbSettings.gppath
-    if (hostname == "" || port == "" || gppath == "") {
-      throw new RuntimeException("Missing GPFDIST Settings.")
-    }
-
-    val cleanFile = File.createTempFile(s"clean", ".sh")
-    val writer = new PrintWriter(cleanFile)
-    log.info(s"EXECUTING: rm -rf ${gppath}/*")
-    writer.println(s"rm -rf ${gppath}/*")
-    writer.close()
-    executeCmd(cleanFile.getAbsolutePath())
-
-    // assign variable ids
-    executeQuery(createAssignIdFunctionSQL)
-    var id : Long = 0
-    schema.foreach { case(variable, dataType) =>
-      val Array(relation, column) = variable.split('.')
-
-      executeQuery(s"""SELECT fast_seqassign('${relation}', ${id});""")
-      issueQuery(s"""SELECT max(id) FROM ${relation}""") { rs =>
-        id = 1 + rs.getLong(1)
-      }
     }
 
     // ground variables
@@ -523,123 +422,132 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         case "Multinomial" => 1
       }
 
-      execute(s"""
-        DROP TABLE IF EXISTS ${VariablesHoldoutTable} CASCADE; 
-        CREATE TABLE ${VariablesHoldoutTable}(variable_id bigint primary key);
-        """)
-      execute(s"""
-        INSERT INTO ${VariablesHoldoutTable}
-        SELECT id FROM ${relation}
-        WHERE RANDOM() > ${holdoutFraction} AND ${column} IS NOT NULL;
-        """)
+      val cardinality = dataType match {
+        case BooleanType => 2
+        case MultinomialType(x) => x.toInt
+      }
 
-      du.gpunload(s"variables_${relation}", s"""SELECT id, (${VariablesHoldoutTable}.variable_id IS NOT NULL)::int AS is_evidence, 
-          COALESCE(${column}::int,0) AS initvalue, ${variableDataType} AS type, 1 AS cardinality  
-        FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable} ON ${relation}.id = ${VariablesHoldoutTable}.variable_id""", 
-        dbSettings)
+      // assign holdout - random or user-defined query
+      // a variable is an evidence if it has value and it is not holdout
+      holdoutQuery match {
+        case Some(s) =>
+        case None => execute(s"""
+          INSERT INTO ${VariablesHoldoutTable}
+          SELECT id FROM ${relation}
+          WHERE RANDOM() < ${holdoutFraction} AND ${column} IS NOT NULL;
+          """)
+      }
+
+      du.unload(s"variables_${relation}", s"${groundingPath}/variables_${relation}", dbSettings, parallelGrounding,
+        s"""SELECT id, 1::int AS is_evidence, ${column}::int AS initvalue, ${variableDataType} AS type, 
+          ${cardinality} AS cardinality  
+        FROM ${relation}
+        WHERE ${column} IS NOT NULL AND id NOT IN (SELECT variable_id FROM ${VariablesHoldoutTable})
+        UNION ALL
+        SELECT id, 0::int AS is_evidence, 0::int AS initvalue, ${variableDataType} AS type, 
+          ${cardinality} AS cardinality  
+        FROM ${relation} 
+        WHERE ${column} IS NULL OR id in (SELECT variable_id FROM ${VariablesHoldoutTable});
+        """)
     }
-    
 
     // generate factor meta data
-    execute(s"""DROP EXTERNAL TABLE IF EXISTS factormeta CASCADE;
-      CREATE WRITABLE EXTERNAL TABLE factormeta (name text, funcid text, sign text)
-      LOCATION ('gpfdist://${hostname}:${port}/factormeta')
-      FORMAT 'TEXT';
+    execute(s"""DROP TABLE IF EXISTS ${FactorMetaTable} CASCADE;
+      CREATE TABLE ${FactorMetaTable} (name text, funcid int, sign text);
       """)
 
+    // generate a string containing the signs (isPositive) of variables for each factor
     factorDescs.foreach { factorDesc =>
-        var s = ""
-        val negs = factorDesc.func.variables.zipWithIndex.foreach{ case(variable, position) =>
-        val isPositive = !variable.isNegated
-        s = s + " " + isPositive
-       }
-    
-       val functionName = factorDesc.func.getClass.getSimpleName
-       execute(s"""INSERT INTO factormeta VALUES ('${factorDesc.name}', '${functionName}', '${s}');""")
+      val signString = factorDesc.func.variables.map(v => !v.isNegated).mkString(" ")
+      val funcid = getFactorFunctionTypeid(factorDesc.func.getClass.getSimpleName)
+      execute(s"INSERT INTO ${FactorMetaTable} VALUES ('${factorDesc.name}', ${funcid}, '${signString}')")
     }
-    
-    // weights
-    execute(s"""DROP EXTERNAL TABLE IF EXISTS weights CASCADE;""")
-    execute(s"""CREATE WRITABLE EXTERNAL TABLE weights (id bigint, isfixed int, initvalue float) 
-      LOCATION ('gpfdist://${hostname}:${port}/weights')
-      FORMAT 'TEXT';
-      """)
 
-    var cweightid = 0L
+    du.unload(s"factormeta", s"${groundingPath}/factormeta", dbSettings, parallelGrounding,
+      s"SELECT * FROM ${FactorMetaTable}")
+
+    // weights table
+    execute(s"""DROP TABLE IF EXISTS ${WeightsTable} CASCADE;""")
+    execute(s"""CREATE TABLE ${WeightsTable} (id bigint, isfixed int, initvalue real);""")
+
+    var cweightid : Long = 0
+    val weightSequence = "dd_weight_sequence"
+    if (!usingGreenplum) {
+      execute(s"""DROP SEQUENCE IF EXISTS ${weightSequence} CASCADE;
+        CREATE SEQUENCE ${weightSequence} MINVALUE -1 START 0;""") 
+    }
+
+    // ground weights and factors
     factorDescs.zipWithIndex.foreach { case (factorDesc, idx) =>
       // id columns
-      val selectcols = factorDesc.func.variables.zipWithIndex.map { case (variable, position) =>
-        val vRelation = variable.headRelation
-        val vColumn = variable.field
-        val vidColumn = s""" "${variable.relation}.id" """
-        vidColumn
-      }
+      val idcols = factorDesc.func.variables.map(v => s""" "${v.relation}.id" """).mkString(", ")
+      val querytable = s"dd_query_${factorDesc.name}"
+      val weighttableForThisFactor = s"dd_weights_${factorDesc.name}"
+      // val outtable = s"dd_query_readytogo_${factorDesc.name}"
+      val outfile = s"factors_${factorDesc.name}_out"
 
-      val selectcol = selectcols.mkString(" , ")
-
-      execute(s"""DROP TABLE IF EXISTS queryview_${factorDesc.name} CASCADE;""")
-      execute(s"""DROP TABLE IF EXISTS weighttable_${factorDesc.name} CASCADE;""")
-      execute(s"""DROP TABLE IF EXISTS query_readytogo_${factorDesc.name} CASCADE;""")
+      execute(s"""DROP TABLE IF EXISTS ${querytable} CASCADE;""")
+      execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactor} CASCADE;""")
+      // execute(s"""DROP TABLE IF EXISTS ${outtable} CASCADE;""")
 
       // table of input query
-      execute(s"""CREATE TABLE queryview_${factorDesc.name} AS ${factorDesc.inputQuery};""")
+      execute(s"""CREATE TABLE ${querytable} AS ${factorDesc.inputQuery};""")
 
       // weight variable list
-      val weightlist = factorDesc.weight.variables.map ( v => s"""${v}""" ).mkString(" , ")
-      var isfixed = 0
-      if(factorDesc.weight.isInstanceOf[KnownFactorWeight]){
-        isfixed = 1
-      }
+      val weightlist = factorDesc.weight.variables.map(v => s""" "${v}" """).mkString(",")
+      val isFixed = factorDesc.weight.isInstanceOf[KnownFactorWeight]
       val initvalue = factorDesc.weight match { 
         case x : KnownFactorWeight => x.value
         case _ => 0.0
       }
 
-      // ground weights
-      if (factorDesc.weight.isInstanceOf[KnownFactorWeight] == true || weightlist == ""){
-        execute(s"""INSERT INTO weights VALUES (${cweightid}, ${isfixed}, ${initvalue});""")
-        execute(s"""CREATE TABLE query_readytogo_${factorDesc.name} AS
-          SELECT ${cweightid}::bigint as _weight_id, ${selectcol}
-          FROM queryview_${factorDesc.name};
-          """)
+      // ground weights and factors
+      if (isFixed || weightlist == ""){
+        execute(s"""INSERT INTO ${WeightsTable} VALUES (${cweightid}, ${isFixed}::int, ${initvalue});""")
+        du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
+          s"SELECT ${cweightid} AS _weight_id, ${idcols} FROM ${querytable}")
         cweightid = cweightid + 1
+        if (!usingGreenplum) {
+          executeQuery(s"SELECT nextval('${weightSequence}');")
+        }
       } else {
-        var isfixed = 0
         val initvalue = 0
-        val weightjoinlist = factorDesc.weight.variables.map ( v => s""" t0."${v}" = t1."${v}" """ ).mkString(" AND ")
-        execute(s"""CREATE TABLE weighttable_${factorDesc.name} AS
-          SELECT "${weightlist}", 0::bigint id, ${isfixed}::int isfixed, ${initvalue}::float initvalue 
-          FROM queryview_${factorDesc.name} 
-          GROUP BY "${weightlist}"
-          DISTRIBUTED BY ("${weightlist}");""")
-        executeQuery(s"""SELECT fast_seqassign('weighttable_${factorDesc.name}', ${cweightid});""")
-        execute(s"""CREATE TABLE query_readytogo_${factorDesc.name} AS
-          SELECT t1.id as _weight_id, ${selectcol}
-          FROM queryview_${factorDesc.name} t0, weighttable_${factorDesc.name} t1
-          WHERE ${weightjoinlist};
-          """)
+        execute(s"""CREATE TABLE ${weighttableForThisFactor} AS
+          SELECT ${weightlist}, 0::bigint AS id, ${isFixed}::int AS isfixed, ${initvalue}::real AS initvalue 
+          FROM ${querytable}
+          GROUP BY ${weightlist};""")
 
-        execute(s"""INSERT INTO weights (SELECT id, isfixed, initvalue FROM weighttable_${factorDesc.name});""")
-
-        issueQuery(s"""SELECT COUNT(*) FROM weighttable_${factorDesc.name};""") { rs =>
+        if (usingGreenplum) {      
+          execute(s"""SELECT fast_seqassign('${weighttableForThisFactor}', ${cweightid});""")
+        } else {
+          execute(s"UPDATE ${weighttableForThisFactor} SET id = nextval('${weightSequence}');")
+        }
+        issueQuery(s"""SELECT COUNT(*) FROM ${weighttableForThisFactor};""") { rs =>
           cweightid += rs.getLong(1)
         }
+
+        execute(s"""INSERT INTO ${WeightsTable} (SELECT id, isfixed, initvalue FROM ${weighttableForThisFactor});""")
+
+        val weightjoinlist = factorDesc.weight.variables.map(v => s""" t0."${v}" = t1."${v}" """).mkString("AND")
+        du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
+          s"""SELECT t1.id AS _weight_id, ${idcols}
+           FROM ${querytable} t0, ${weighttableForThisFactor} t1
+           WHERE ${weightjoinlist};""")
       }
     }
 
-    // ground factors
-    factorDescs.zipWithIndex.foreach { case (factorDesc, idx) =>
+    // dump weights
+    du.unload("weights", s"${groundingPath}/weights",dbSettings, parallelGrounding,
+      s"SELECT * FROM ${WeightsTable}")
 
-      du.gpunload(s"factors_${factorDesc.name}_out", s"SELECT * FROM query_readytogo_${factorDesc.name}", dbSettings)
-    }
-    
     // create inference result table
     execute(createInferenceResultSQL)
     execute(createInferenceResultWeightsSQL)
 
     // split grounding files and transform to binary format
     log.info("Converting grounding file format...")
-    val cmd = s"python util/tobinary.py ${gppath} util/convert_format"
+    val ossuffix = if (System.getProperty("os.name").startsWith("Linux")) "linux" else "mac"
+    val cmd = s"python util/tobinary.py ${groundingPath} util/format_converter1_${ossuffix} util/format_converter2_${ossuffix}"
     val exitValue = cmd!(ProcessLogger(
       out => log.info(out),
       err => log.info(err)
@@ -649,6 +557,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       case 0 => 
       case _ => throw new RuntimeException("Converting format failed.")
     }
+
   }
 
 
@@ -657,106 +566,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     weightsPath: String, variablesPath: String, factorsPath: String, edgesPath: String, 
     parallelGrounding: Boolean) : Unit = {
 
-    if (parallelGrounding) {
-      return
-    }
-
-    var numVariables  : Long = 0
-    var numFactors    : Long = 0
-    var numWeights    : Long = 0
-    var numEdges      : Long = 0
-
-    val randomGen = new Random()
-    val weightMap = scala.collection.mutable.Map[String, Long]()
-
-    val customHoldout = holdoutQuery match {
-      case Some(query) => true
-      case None => false
-    }
-    
-    log.info(s"Dumping factor graph...")
-    log.info("Dumping variables...")
-
-    schema.foreach { case(variable, dataType) =>
-      val Array(relation, column) = variable.split('.')
-      
-      val selectVariablesForDumpSQL = s"""
-        SELECT ${relation}.id, (${variable} IS NOT NULL), ${variable}::int, (${VariablesHoldoutTable}.variable_id IS NOT NULL)
-        FROM ${relation} LEFT JOIN ${VariablesHoldoutTable}
-        ON ${relation}.id = ${VariablesHoldoutTable}.variable_id"""
-
-      val cardinality = dataType match {
-        case BooleanType => 0
-        case MultinomialType(x) => x.toLong
-      }
-
-      issueQuery(selectVariablesForDumpSQL) { rs =>
-        var isEvidence = rs.getBoolean(2)
-        var holdout = rs.getBoolean(4)
-
-        // assign holdout
-        if (customHoldout && isEvidence && holdout) {
-          isEvidence = false
-        } else if (!customHoldout && isEvidence && randomGen.nextFloat < holdoutFraction) {
-          isEvidence = false
-        }
-
-        serializer.addVariable(
-          rs.getLong(1),            // id
-          isEvidence,               // is evidence
-          rs.getLong(3),            // initial value
-          dataType.toString,        // data type            
-          -1,                       // edge count
-          cardinality)              // cardinality
-        numVariables += 1
-      }
-
-    }
-
-    log.info("Dumping weights...")
-    issueQuery(selectWeightsForDumpSQL) { rs => 
-      val id = rs.getLong(1)
-      serializer.addWeight(id, rs.getBoolean(2), rs.getDouble(3))
-      numWeights += 1
-      weightMap(rs.getString(4)) = id
-    }
-
-
-    log.info("Dumping factors...")
-    factorDescs.foreach { factorDesc =>
-      val functionName = factorDesc.func.getClass.getSimpleName
-      
-      log.info(s"Dumping inference ${factorDesc.weightPrefix}...")
-
-      val selectInputQueryForDumpSQL = s"""
-        SELECT ${factorDesc.name}_query_user.*
-        FROM ${factorDesc.name}_query_user
-        """
-
-      val variables = factorDesc.func.variables
-
-      issueQuery(selectInputQueryForDumpSQL) { rs =>
-
-        val weightCmd = factorDesc.weightPrefix + "-" + factorDesc.weight.variables.map(
-        v => rs.getString(v)).mkString("")
-
-        serializer.addFactor(numFactors, weightMap(weightCmd), functionName, variables.length)
-
-        variables.zipWithIndex.foreach { case(v, pos) =>
-          serializer.addEdge(rs.getLong(s"${v.relation}.id"),
-            numFactors, pos, !v.isNegated, v.predicate.getOrElse(1))
-          numEdges += 1
-        }
-
-        numFactors += 1
-      }
-
-    }
-
-    serializer.writeMetadata(numWeights, numVariables, numFactors, numEdges,
-      weightsPath, variablesPath, factorsPath, edgesPath)
-
-    serializer.close()
   }
 
   def bulkCopyWeights(weightsFile: String) : Unit

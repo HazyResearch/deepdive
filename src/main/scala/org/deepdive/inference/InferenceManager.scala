@@ -37,7 +37,7 @@ trait InferenceManager extends Actor with ActorLogging {
   lazy val factorGraphDumpFileVariables = new File(s"${Context.outputDir}/graph.variables")
   lazy val factorGraphDumpFileFactors = new File(s"${Context.outputDir}/graph.factors")
   lazy val factorGraphDumpFileEdges = new File(s"${Context.outputDir}/graph.edges")
-  lazy val factorGraphDumpFileMeta = new File(s"${Context.outputDir}/graph.meta.csv")
+  lazy val factorGraphDumpFileMeta = new File(s"${Context.outputDir}/graph.meta")
   lazy val SamplingOutputDir = new File(s"${Context.outputDir}")
   lazy val SamplingOutputFile = new File(s"${SamplingOutputDir}/inference_result.out")
   lazy val SamplingOutputFileWeights = new File(s"${SamplingOutputDir}/inference_result.out.weights")
@@ -88,27 +88,27 @@ trait InferenceManager extends Actor with ActorLogging {
   def runInference(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], 
     samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false, dbSettings: DbSettings, parallelGrounding: Boolean) = {
     // TODO: Make serializier configurable
-    if (!skipSerializing) {
-      if (!parallelGrounding) {
-        factorGraphDumpFileMeta.getParentFile().mkdirs()
-        // factorGraphDumpFileWeights.createNewFile()
-        val weightsOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileWeights, false))
-        val variablesOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileVariables, false))
-        val factorsOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileFactors, false))
-        val edgesOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileEdges, false))
-        val metaOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileMeta, false))
-        val serializier = new BinarySerializer(weightsOutput, variablesOutput, factorsOutput, edgesOutput, metaOutput)
-        inferenceDataStore.dumpFactorGraph(serializier, variableSchema, factorDescs, holdoutFraction,
-          holdoutQuery, factorGraphDumpFileWeights.getCanonicalPath,
-          factorGraphDumpFileVariables.getCanonicalPath, factorGraphDumpFileFactors.getCanonicalPath,
-          factorGraphDumpFileEdges.getCanonicalPath, parallelGrounding)
-        serializier.close()
-        weightsOutput.close()
-        variablesOutput.close()
-        factorsOutput.close()
-        metaOutput.close()
-      }
-    }
+    // if (!skipSerializing) {
+    //   if (!parallelGrounding) {
+    //     factorGraphDumpFileMeta.getParentFile().mkdirs()
+    //     // factorGraphDumpFileWeights.createNewFile()
+    //     val weightsOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileWeights, false))
+    //     val variablesOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileVariables, false))
+    //     val factorsOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileFactors, false))
+    //     val edgesOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileEdges, false))
+    //     val metaOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileMeta, false))
+    //     val serializier = new BinarySerializer(weightsOutput, variablesOutput, factorsOutput, edgesOutput, metaOutput)
+    //     inferenceDataStore.dumpFactorGraph(serializier, variableSchema, factorDescs, holdoutFraction,
+    //       holdoutQuery, factorGraphDumpFileWeights.getCanonicalPath,
+    //       factorGraphDumpFileVariables.getCanonicalPath, factorGraphDumpFileFactors.getCanonicalPath,
+    //       factorGraphDumpFileEdges.getCanonicalPath, parallelGrounding)
+    //     serializier.close()
+    //     weightsOutput.close()
+    //     variablesOutput.close()
+    //     factorsOutput.close()
+    //     metaOutput.close()
+    //   }
+    // }
     val sampler = context.actorOf(samplerProps, "sampler")
 
     if (parallelGrounding) {
