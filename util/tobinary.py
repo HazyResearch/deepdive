@@ -7,37 +7,29 @@ import os
 CHUNKSIZE = '10000000'
 INPUTFOLDER = sys.argv[1]
 transform_script = sys.argv[2]
-
-funcs = {
-	"ImplyFactorFunction": '0',
-	"OrFactorFunction": '1',
-	"AndFactorFunction": '2',
-	"EqualFactorFunction": '3',
-	"IsTrueFactorFunction": '4'
-}
-
+transform_script2 = sys.argv[3]
 
 os.system('rm -rf ' + INPUTFOLDER + "/tmp")
 os.system('mkdir -p ' + INPUTFOLDER + "/tmp")
 os.system('rm -rf ' + INPUTFOLDER + "/nedges")
 for l in open(INPUTFOLDER + "/factormeta"):
-	(factor_name, function_name, positives) = l.split('\t')
+	(factor_name, function_id, positives) = l.split('\t')
 	positives = positives.strip().replace('true', '1').replace('false', '0').split(' ')
 	nvars = '%d' % len(positives)
 	#print factor_name, function_name, positives, nvars
 	#os.system('rm -rf ' + INPUTFOLDER + "/tmp/*")
 
 	print "SPLITTING", factor_name, "..."
-	os.system('split -a 20 -l ' + CHUNKSIZE + ' ' + INPUTFOLDER + '/factors_' + factor_name + '_out ' + INPUTFOLDER + '/tmp/factors_' + factor_name + '_out')
+	os.system('split -a 10 -l ' + CHUNKSIZE + ' ' + INPUTFOLDER + '/factors_' + factor_name + '_out ' + INPUTFOLDER + '/tmp/factors_' + factor_name + '_out')
 
 	print "BINARIZE ", factor_name, "..."
-	os.system('ls ' + INPUTFOLDER + '/tmp | egrep "^factors_' + factor_name + '_out"  | xargs -P 40 -I {} -n 1 sh -c \'' + transform_script + ' factor ' + INPUTFOLDER + '/tmp/{} ' + funcs[function_name] + ' ' + nvars + ' ' + (' '.join(positives)) + ' \' | awk \'{s+=$1} END {print s}\' >>' + INPUTFOLDER + "/nedges")
+	os.system('ls ' + INPUTFOLDER + '/tmp | egrep "^factors_' + factor_name + '_out"  | xargs -P 40 -I {} -n 1 sh -c \'' + transform_script + ' factor ' + INPUTFOLDER + '/tmp/{} ' + function_id + ' ' + nvars + ' ' + (' '.join(positives)) + ' \' | awk \'{s+=$1} END {print s}\' >>' + INPUTFOLDER + "/nedges")
 	#break
 
 for f in os.listdir(INPUTFOLDER):
 	if f.startswith('variables_'):
 		print "SPLITTING", f, "..."
-		os.system('split -a 20 -l ' + CHUNKSIZE + ' ' + INPUTFOLDER + '/' + f + ' ' + INPUTFOLDER + '/tmp/' + f)
+		os.system('split -a 10 -l ' + CHUNKSIZE + ' ' + INPUTFOLDER + '/' + f + ' ' + INPUTFOLDER + '/tmp/' + f)
 
 		print "BINARIZE ", f, "..."
 		os.system('ls ' + INPUTFOLDER + '/tmp | egrep "^' + f + '"  | xargs -P 40 -I {} -n 1 sh -c \'' + transform_script + ' variable ' + INPUTFOLDER + '/tmp/{} \'')
@@ -71,4 +63,7 @@ os.system('wc -l ' + INPUTFOLDER + "/tmp/factors_* | awk '{print $1+%d}' | tail 
 print "COUNTING", "weights", "..."
 os.system('wc -l ' + INPUTFOLDER + "/weights | awk '{print $1}' | tail -n 1 > " + INPUTFOLDER + '/nweights')
 
-
+# transform these binary files to our old format...
+print "Converting format..."
+print '{} {}'.format(transform_script2, INPUTFOLDER)
+os.system('{} {}'.format(transform_script2, INPUTFOLDER))
