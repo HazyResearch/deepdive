@@ -42,17 +42,13 @@ class Sampler extends Actor with ActorLogging {
     variablesFile: String, factorsFile: String, edgesFile: String, metaFile: String, 
     outputDir: String, parallelGrounding: Boolean) = {
     log.info(samplerCmd)
-    var cmd = samplerCmd.split(" ").toSeq ++ Seq(
+    samplerCmd.split(" ").toSeq ++ Seq(
       "-w", weightsFile,
       "-v", variablesFile,
       "-f", factorsFile,
       "-e", edgesFile,
       "-m", metaFile,
-      "-o", outputDir) ++ samplerOptions.split(" ") 
-    if (parallelGrounding) {
-      cmd = cmd ++ Seq("-g", "1")
-    }
-    cmd
+      "-o", outputDir) ++ samplerOptions.split(" ")
   }
 
 }
