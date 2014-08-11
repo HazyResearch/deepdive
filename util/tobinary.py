@@ -7,6 +7,7 @@ import os
 CHUNKSIZE = '10000000'
 INPUTFOLDER = sys.argv[1]
 transform_script = sys.argv[2]
+OUTPUTFOLDER = sys.argv[3]
 
 os.system('rm -rf ' + INPUTFOLDER + "/tmp")
 os.system('mkdir -p ' + INPUTFOLDER + "/tmp")
@@ -60,10 +61,11 @@ print "CATENATING FILES..."
 os.system("cat {0}/nweights {0}/nvariables {0}/nfactors {0}/nedges | tr '\n' ',' > {0}/graph.meta".format(INPUTFOLDER))
 os.system("echo {0}/graph.weights,{0}/graph.variables,{0}/graph.factors,{0}/graph.edges >> {0}/graph.meta".format(INPUTFOLDER))
 
-os.system("mv {0}/weights.bin {0}/graph.weights".format(INPUTFOLDER))
-os.system("cat {0}/variables/* > {0}/graph.variables".format(INPUTFOLDER))
-os.system("cat {0}/factors/factors*factors.bin > {0}/graph.factors".format(INPUTFOLDER))
-os.system("cat {0}/factors/factors*edges.bin > {0}/graph.edges".format(INPUTFOLDER))
+os.system("mv {0}/graph.meta {1}/graph.meta".format(INPUTFOLDER, OUTPUTFOLDER))
+os.system("mv {0}/weights.bin {1}/graph.weights".format(INPUTFOLDER, OUTPUTFOLDER))
+os.system("cat {0}/variables/* > {1}/graph.variables".format(INPUTFOLDER, OUTPUTFOLDER))
+os.system("cat {0}/factors/factors*factors.bin > {1}/graph.factors".format(INPUTFOLDER, OUTPUTFOLDER))
+os.system("cat {0}/factors/factors*edges.bin > {1}/graph.edges".format(INPUTFOLDER, OUTPUTFOLDER))
 
 os.system('rm -rf {0}/nedges_'.format(INPUTFOLDER))
 os.system('rm -rf {0}/tmp'.format(INPUTFOLDER))

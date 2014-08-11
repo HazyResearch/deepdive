@@ -475,7 +475,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     // weights table
     execute(s"""DROP TABLE IF EXISTS ${WeightsTable} CASCADE;""")
-    execute(s"""CREATE TABLE ${WeightsTable} (id bigint, isfixed int, initvalue real);""")
+    execute(s"""CREATE TABLE ${WeightsTable} (id bigint, isfixed int, initvalue real, cardinality int);""")
 
     // weight and factor id
     // greemplum: use fast_seqassign postgres: use sequence
@@ -526,7 +526,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       // handle weights table
       // weight is fixed, or doesn't have weight variables
       if (isFixed || weightlist == ""){
-        execute(s"""INSERT INTO ${WeightsTable} VALUES (${cweightid}, ${isFixed}::int, ${initvalue});""")
+        execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue) VALUES (${cweightid}, ${isFixed}::int, ${initvalue});""")
         du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
           s"SELECT id AS factor_id, ${cweightid} AS weight_id, ${idcols} FROM ${querytable}")
 
@@ -552,7 +552,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           cweightid += rs.getLong(1)
         }
 
-        execute(s"""INSERT INTO ${WeightsTable} (SELECT id, isfixed, initvalue FROM ${weighttableForThisFactor});""")
+        execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue) SELECT id, isfixed, initvalue FROM ${weighttableForThisFactor};""")
 
         // dump factors
         val weightjoinlist = factorDesc.weight.variables.map(v => s""" t0."${v}" = t1."${v}" """).mkString("AND")
@@ -565,7 +565,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     // dump weights
     du.unload("weights", s"${groundingPath}/weights",dbSettings, parallelGrounding,
-      s"SELECT * FROM ${WeightsTable}")
+      s"SELECT id, isfixed, initvalue FROM ${WeightsTable}")
 
     // create inference result table
     execute(createInferenceResultSQL)
@@ -574,7 +574,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // split grounding files and transform to binary format
     log.info("Converting grounding file format...")
     val ossuffix = if (System.getProperty("os.name").startsWith("Linux")) "linux" else "mac"
-    val cmd = s"python util/tobinary.py ${groundingPath} util/format_converter_${ossuffix}"
+    val cmd = s"python util/tobinary.py ${groundingPath} util/format_converter_${ossuffix} ${Context.outputDir}"
     log.debug("Executing: " + cmd)
     val exitValue = cmd!(ProcessLogger(
       out => log.info(out),
