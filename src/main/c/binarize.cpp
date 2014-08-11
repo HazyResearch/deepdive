@@ -28,8 +28,6 @@ void load_var(std::string filename){
   std::ifstream fin(filename.c_str());
   std::ofstream fout((filename + ".bin").c_str(), std::ios::binary | std::ios::out);
 
-  cerr << filename + ".bin" << endl;
-
   long vid;
   int is_evidence;
   double initial_value;
@@ -95,7 +93,6 @@ void load_factor(std::string filename, short funcid, long nvar, char** positives
   long nedge = 0;
   long nvars_big = bswap_64(nvar);
   long predicate = 1;
-  long position;
   vector<int> positives_vec(nvar);
 
   for (int i = 0; i < nvar; i++) {
@@ -105,6 +102,7 @@ void load_factor(std::string filename, short funcid, long nvar, char** positives
   predicate = bswap_64(predicate); 
 
   const char field_delim = '\t'; // tsv file delimiter
+  const char array_delim = ','; // array delimiter
   string line;
   while (getline(fin, line)) {
     string field;
@@ -125,20 +123,44 @@ void load_factor(std::string filename, short funcid, long nvar, char** positives
     fout.write((char *)&funcid, 2);
     fout.write((char *)&nvars_big, 8);
 
-
+    uint64_t position = 0;
+    uint64_t position_big;
     for (long i = 0; i < nvar; i++) {
       getline(ss, field, field_delim);
-      variableid = atol(field.c_str());
-      variableid = bswap_64(variableid);
-      position = bswap_64(i);
 
-      fedgeout.write((char *)&variableid, 8);
-      fedgeout.write((char *)&factorid, 8);
-      fedgeout.write((char *)&position, 8);
-      fedgeout.write((char *)&positives_vec[i], 1);
-      fedgeout.write((char *)&predicate, 8);
+      // array type
+      if (field.at(0) == '{') {
+        string subfield;
+        istringstream ss1(field);
+        while (getline(ss1, subfield, array_delim)) {
+          if (subfield.at(0) == '}') break;
+          variableid = atol(subfield.c_str());
+          variableid = bswap_64(variableid);
+          position_big = bswap_64(position);
 
-      nedge++;
+          fedgeout.write((char *)&variableid, 8);
+          fedgeout.write((char *)&factorid, 8);
+          fedgeout.write((char *)&position_big, 8);
+          fedgeout.write((char *)&positives_vec[i], 1);
+          fedgeout.write((char *)&predicate, 8);
+
+          nedge++;
+          position++;
+        }
+      } else {
+        variableid = atol(field.c_str());
+        variableid = bswap_64(variableid);
+        position_big = bswap_64(position);
+
+        fedgeout.write((char *)&variableid, 8);
+        fedgeout.write((char *)&factorid, 8);
+        fedgeout.write((char *)&position_big, 8);
+        fedgeout.write((char *)&positives_vec[i], 1);
+        fedgeout.write((char *)&predicate, 8);
+
+        nedge++;
+        position++;
+      }
     }
 
   }
@@ -163,9 +185,6 @@ int main(int argc, char** argv){
   }
   return 0;
 }
-
-
-
 
 
 
