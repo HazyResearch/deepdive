@@ -422,9 +422,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     schema.foreach { case(variable, dataType) =>
       val Array(relation, column) = variable.split('.')
 
-      val variableDataType = dataType.toString match {
-        case "Boolean" => 0
-        case "Multinomial" => 1
+      val variableDataType = dataType match {
+        case BooleanType => 0
+        case MultinomialType(x) => 1
       }
 
       val cardinality = dataType match {
@@ -443,7 +443,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       }
 
       // dump variables, 
-      // variable table join with holdout table - a variable is an evidence if it has value and it is not holdout
+      // variable table join with holdout table - a variable is an evidence if it has initial value and it is not holdout
       du.unload(s"variables_${relation}", s"${groundingPath}/variables_${relation}", dbSettings, parallelGrounding,
         s"""SELECT id, 1::int AS is_evidence, ${column}::int AS initvalue, ${variableDataType} AS type, 
           ${cardinality} AS cardinality  
@@ -507,7 +507,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
       // handle factor id
       if (usingGreenplum) {
-        execute("SELECT fast_seqassign('${querytable}', ${factorid});");
+        execute(s"SELECT fast_seqassign('${querytable}', ${factorid});");
       } else {
         execute(s"UPDATE ${querytable} SET id = nextval('${factoridSequence}');")
       }
