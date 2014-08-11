@@ -507,7 +507,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
       // handle factor id
       if (usingGreenplum) {
-        execute(s"SELECT fast_seqassign('${querytable}', ${factorid});");
+        executeQuery(s"SELECT fast_seqassign('${querytable}', ${factorid});");
       } else {
         execute(s"UPDATE ${querytable} SET id = nextval('${factoridSequence}');")
       }
@@ -544,7 +544,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
         // handle weight id
         if (usingGreenplum) {      
-          execute(s"""SELECT fast_seqassign('${weighttableForThisFactor}', ${cweightid});""")
+          executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor}', ${cweightid});""")
         } else {
           execute(s"UPDATE ${weighttableForThisFactor} SET id = nextval('${weightidSequence}');")
         }
