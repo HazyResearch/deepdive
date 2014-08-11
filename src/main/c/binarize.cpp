@@ -1,27 +1,58 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <stdlib.h> 
+#include <stdint.h>
+#include <vector>
 
+using namespace std;
 
+// 64-bit endian conversion
+# define bswap_64(x) \
+     ((((x) & 0xff00000000000000ull) >> 56)                                   \
+      | (((x) & 0x00ff000000000000ull) >> 40)                                 \
+      | (((x) & 0x0000ff0000000000ull) >> 24)                                 \
+      | (((x) & 0x000000ff00000000ull) >> 8)                                  \
+      | (((x) & 0x00000000ff000000ull) << 8)                                  \
+      | (((x) & 0x0000000000ff0000ull) << 24)                                 \
+      | (((x) & 0x000000000000ff00ull) << 40)                                 \
+      | (((x) & 0x00000000000000ffull) << 56))
+
+// 16-bit endian conversion
+#define bswap_16(x) \
+     ((unsigned short int) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8)))
+
+// read variables and convert to binary format
 void load_var(std::string filename){
   std::ifstream fin(filename.c_str());
   std::ofstream fout((filename + ".bin").c_str(), std::ios::binary | std::ios::out);
+
+  cerr << filename + ".bin" << endl;
 
   long vid;
   int is_evidence;
   double initial_value;
   short type;
+  long edge_count = -1;
   long cardinality;
-  int n1 = -1;
+
+  edge_count = bswap_64(edge_count);
 
   while(fin >> vid >> is_evidence >> initial_value >> type >> cardinality){
+    // endianess
+    vid = bswap_64(vid);
+    uint64_t initval = bswap_64(*(uint64_t *)&initial_value);
+    type = bswap_16(type);
+    cardinality = bswap_64(cardinality);
+
+
     fout.write((char*)&vid, 8);
     fout.write((char*)&is_evidence, 1);
-    fout.write((char*)&initial_value, 8);
+    fout.write((char*)&initval, 8);
     fout.write((char*)&type, 2);
+    fout.write((char *)&edge_count, 8);
     fout.write((char*)&cardinality, 8);
-    //fout << vid << is_evidence << initial_value << type << n1 << equal_predicate;
   }
 
   fin.close();
@@ -34,46 +65,89 @@ void load_weight(std::string filename){
 
   long wid;
   int isfixed;
-  double initvalue;
+  double initial_value;
 
-  while(fin >> wid >> isfixed >> initvalue){
-    //fout << wid << isfixed << initvalue;
+  while(fin >> wid >> isfixed >> initial_value){
+    wid = bswap_64(wid);
+    uint64_t initval = bswap_64(*(uint64_t *)&initial_value);
+
     fout.write((char*)&wid, 8);
     fout.write((char*)&isfixed, 1);
-    fout.write((char*)&initvalue, 8);
+    fout.write((char*)&initval, 8);
   }
 
   fin.close();
   fout.close();
 }
 
+// load factors
+// fid, wid, vids
 void load_factor(std::string filename, short funcid, long nvar, char** positives){
   std::ifstream fin(filename.c_str());
-  std::ofstream fout((filename + ".bin").c_str(), std::ios::binary | std::ios::out);
-  std::cout << "starting" << std::endl;
+  std::ofstream fout((filename + "_factors.bin").c_str(), std::ios::binary | std::ios::out);
+  std::ofstream fedgeout((filename + "_edges.bin").c_str(), std::ios::binary | std::ios::out);
 
-  fout.write((char*)&funcid, 2);
-  fout.write((char*)&nvar, 8);
+  funcid = bswap_16(funcid);
 
-  //fout << funcid << std::endl;
-  //fout << nvar << std::endl;
+  long factorid = 0;
+  long weightid = 0;
+  long variableid = 0;
   long nedge = 0;
-  for(int i=0;i<nvar;i++){
-    int tmp = atoi(positives[i]);
-    fout.write((char*)&tmp, sizeof(int));
+  long nvars_big = bswap_64(nvar);
+  long predicate = 1;
+  long position;
+  vector<int> positives_vec(nvar);
+
+  for (int i = 0; i < nvar; i++) {
+    positives_vec.push_back(atoi(positives[i]));
   }
 
-  long a;
-  while(fin >> a){ 
-    nedge ++; 
-    fout.write((char*)&a, sizeof(long));
+  predicate = bswap_64(predicate); 
+
+  const char field_delim = '\t'; // tsv file delimiter
+  string line;
+  while (getline(fin, line)) {
+    string field;
+    istringstream ss(line);
+
+    // factor id
+    getline(ss, field, field_delim);
+    factorid = atol(field.c_str());
+    factorid = bswap_64(factorid);
+    
+    // weightid
+    getline(ss, field, field_delim);
+    weightid = atol(field.c_str());
+    weightid = bswap_64(weightid);
+
+    fout.write((char *)&factorid, 8);
+    fout.write((char *)&weightid, 8);
+    fout.write((char *)&funcid, 2);
+    fout.write((char *)&nvars_big, 8);
+
+
+    for (long i = 0; i < nvar; i++) {
+      getline(ss, field, field_delim);
+      variableid = atol(field.c_str());
+      variableid = bswap_64(variableid);
+      position = bswap_64(i);
+
+      fedgeout.write((char *)&variableid, 8);
+      fedgeout.write((char *)&factorid, 8);
+      fedgeout.write((char *)&position, 8);
+      fedgeout.write((char *)&positives_vec[i], 1);
+      fedgeout.write((char *)&predicate, 8);
+
+      nedge++;
+    }
+
   }
 
-  nedge = nedge/(nvar + 1)*nvar;
   std::cout << nedge << std::endl;
 
   fin.close();
   fout.close();
+  fedgeout.close();
 }
 
 int main(int argc, char** argv){

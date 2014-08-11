@@ -41,7 +41,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def VariablesHoldoutTable = "dd_graph_variables_holdout"
   def VariableResultTable = "dd_inference_result_variables"
   def MappedInferenceResultView = "dd_mapped_inference_result"
-  def IdSequence = "id_sequence"
+  def IdSequence = "dd_variable_sequence"
   def FactorMetaTable = "dd_graph_factormeta"
 
   def getFactorFunctionTypeid(functionName: String) = {
@@ -67,6 +67,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
   }
 
+  // execute a query
   def execute(sql: String) = {
     log.debug("EXECUTING.... " + sql)
     val conn = ds.borrowConnection()
@@ -86,6 +87,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     log.debug("DONE!")
   }
 
+  // execute a query (can have return results)
   def executeQuery(sql: String) = {
     log.debug("EXECUTING.... " + sql)
     val conn = ds.borrowConnection()
@@ -97,7 +99,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     log.debug("DONE!")
   }
 
-  /* Issues a query */
+  // issues a query, and perform op
   def issueQuery(sql: String)(op: (java.sql.ResultSet) => Unit) = {
     val conn = ds.borrowConnection()
     try {
@@ -119,7 +121,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
   }
 
-
+  // execute sql, store results in a map
   def selectAsMap(sql: String) : List[Map[String, Any]] = {
     val conn = ds.borrowConnection()
     conn.setAutoCommit(false)
@@ -356,7 +358,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   /** Ground the factor graph to file
    *
    * Using the schema and inference rules defined in application.conf, construct factor
-   * graph files: variables, factors and weights.
+   * graph files.
+   * Input: variable schema, factor descriptions, holdout configuration, database settings
+   * Output: factor graph files: variables, factors, edges, weights, meta
    */
   def groundFactorGraph(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
     holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean, weightTable: String, 
@@ -384,7 +388,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       executeCmd(cleanFile.getAbsolutePath())
     }
 
-    // assign id
+    // assign variable id - sequential and unique
+    // for greenplum, we use a special fast assign sequential id function
     var idoffset : Long = 0
     if(usingGreenplum) {
       executeQuery(createAssignIdFunctionSQL)
@@ -404,7 +409,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       }
     }
 
-    // variable holdout table
+    // variable holdout table - if user defined, execute once
     execute(s"""DROP TABLE IF EXISTS ${VariablesHoldoutTable} CASCADE;
       CREATE TABLE ${VariablesHoldoutTable}(variable_id bigint primary key);
       """)
@@ -427,8 +432,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         case MultinomialType(x) => x.toInt
       }
 
-      // assign holdout - random or user-defined query
-      // a variable is an evidence if it has value and it is not holdout
+      // assign holdout - if not user-defined, randomly select from evidence variables of each variable table
       holdoutQuery match {
         case Some(s) =>
         case None => execute(s"""
@@ -438,6 +442,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           """)
       }
 
+      // dump variables, 
+      // variable table join with holdout table - a variable is an evidence if it has value and it is not holdout
       du.unload(s"variables_${relation}", s"${groundingPath}/variables_${relation}", dbSettings, parallelGrounding,
         s"""SELECT id, 1::int AS is_evidence, ${column}::int AS initvalue, ${variableDataType} AS type, 
           ${cardinality} AS cardinality  
@@ -456,13 +462,14 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       CREATE TABLE ${FactorMetaTable} (name text, funcid int, sign text);
       """)
 
-    // generate a string containing the signs (isPositive) of variables for each factor
+    // generate a string containing the signs (whether negated) of variables for each factor
     factorDescs.foreach { factorDesc =>
       val signString = factorDesc.func.variables.map(v => !v.isNegated).mkString(" ")
       val funcid = getFactorFunctionTypeid(factorDesc.func.getClass.getSimpleName)
       execute(s"INSERT INTO ${FactorMetaTable} VALUES ('${factorDesc.name}', ${funcid}, '${signString}')")
     }
 
+    // dump factor meta data
     du.unload(s"factormeta", s"${groundingPath}/factormeta", dbSettings, parallelGrounding,
       s"SELECT * FROM ${FactorMetaTable}")
 
@@ -470,11 +477,17 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     execute(s"""DROP TABLE IF EXISTS ${WeightsTable} CASCADE;""")
     execute(s"""CREATE TABLE ${WeightsTable} (id bigint, isfixed int, initvalue real);""")
 
+    // weight and factor id
+    // greemplum: use fast_seqassign postgres: use sequence
     var cweightid : Long = 0
-    val weightSequence = "dd_weight_sequence"
+    var factorid : Long = 0
+    val weightidSequence = "dd_weight_sequence"
+    val factoridSequence = "dd_factor_sequence"
     if (!usingGreenplum) {
-      execute(s"""DROP SEQUENCE IF EXISTS ${weightSequence} CASCADE;
-        CREATE SEQUENCE ${weightSequence} MINVALUE -1 START 0;""") 
+      execute(s"""DROP SEQUENCE IF EXISTS ${weightidSequence} CASCADE;
+        CREATE SEQUENCE ${weightidSequence} MINVALUE -1 START 0;""") 
+      execute(s"""DROP SEQUENCE IF EXISTS ${factoridSequence} CASCADE;
+        CREATE SEQUENCE ${factoridSequence} MINVALUE -1 START 0;""") 
     }
 
     // ground weights and factors
@@ -483,15 +496,24 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       val idcols = factorDesc.func.variables.map(v => s""" "${v.relation}.id" """).mkString(", ")
       val querytable = s"dd_query_${factorDesc.name}"
       val weighttableForThisFactor = s"dd_weights_${factorDesc.name}"
-      // val outtable = s"dd_query_readytogo_${factorDesc.name}"
       val outfile = s"factors_${factorDesc.name}_out"
 
       execute(s"""DROP TABLE IF EXISTS ${querytable} CASCADE;""")
       execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactor} CASCADE;""")
-      // execute(s"""DROP TABLE IF EXISTS ${outtable} CASCADE;""")
 
       // table of input query
       execute(s"""CREATE TABLE ${querytable} AS ${factorDesc.inputQuery};""")
+      execute(s"""ALTER TABLE ${querytable} ADD COLUMN id bigint;""")
+
+      // handle factor id
+      if (usingGreenplum) {
+        execute("SELECT fast_seqassign('${querytable}', ${factorid});");
+      } else {
+        execute(s"UPDATE ${querytable} SET id = nextval('${factoridSequence}');")
+      }
+      issueQuery(s"""SELECT COUNT(*) FROM ${querytable};""") { rs =>
+        factorid += rs.getLong(1)
+      }
 
       // weight variable list
       val weightlist = factorDesc.weight.variables.map(v => s""" "${v}" """).mkString(",")
@@ -501,26 +523,30 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         case _ => 0.0
       }
 
-      // ground weights and factors
+      // handle weights table
+      // weight is fixed, or doesn't have weight variables
       if (isFixed || weightlist == ""){
         execute(s"""INSERT INTO ${WeightsTable} VALUES (${cweightid}, ${isFixed}::int, ${initvalue});""")
         du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
-          s"SELECT ${cweightid} AS _weight_id, ${idcols} FROM ${querytable}")
-        cweightid = cweightid + 1
+          s"SELECT id AS factor_id, ${cweightid} AS weight_id, ${idcols} FROM ${querytable}")
+
+        // handle weight id and factor id
+        cweightid += 1
         if (!usingGreenplum) {
-          executeQuery(s"SELECT nextval('${weightSequence}');")
+          executeQuery(s"SELECT nextval('${weightidSequence}');")
         }
-      } else {
+      } else { // not fixed and has weight variables
         val initvalue = 0
         execute(s"""CREATE TABLE ${weighttableForThisFactor} AS
           SELECT ${weightlist}, 0::bigint AS id, ${isFixed}::int AS isfixed, ${initvalue}::real AS initvalue 
           FROM ${querytable}
           GROUP BY ${weightlist};""")
 
+        // handle weight id
         if (usingGreenplum) {      
           execute(s"""SELECT fast_seqassign('${weighttableForThisFactor}', ${cweightid});""")
         } else {
-          execute(s"UPDATE ${weighttableForThisFactor} SET id = nextval('${weightSequence}');")
+          execute(s"UPDATE ${weighttableForThisFactor} SET id = nextval('${weightidSequence}');")
         }
         issueQuery(s"""SELECT COUNT(*) FROM ${weighttableForThisFactor};""") { rs =>
           cweightid += rs.getLong(1)
@@ -528,9 +554,10 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
         execute(s"""INSERT INTO ${WeightsTable} (SELECT id, isfixed, initvalue FROM ${weighttableForThisFactor});""")
 
+        // dump factors
         val weightjoinlist = factorDesc.weight.variables.map(v => s""" t0."${v}" = t1."${v}" """).mkString("AND")
         du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
-          s"""SELECT t1.id AS _weight_id, ${idcols}
+          s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
            FROM ${querytable} t0, ${weighttableForThisFactor} t1
            WHERE ${weightjoinlist};""")
       }
@@ -547,7 +574,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // split grounding files and transform to binary format
     log.info("Converting grounding file format...")
     val ossuffix = if (System.getProperty("os.name").startsWith("Linux")) "linux" else "mac"
-    val cmd = s"python util/tobinary.py ${groundingPath} util/format_converter1_${ossuffix} util/format_converter2_${ossuffix}"
+    // val cmd = s"python util/tobinary.py ${groundingPath} util/format_converter1_${ossuffix} util/format_converter2_${ossuffix}"
+    val cmd = s"python tobinary.py ${groundingPath} util/format_converter_${ossuffix}"
     val exitValue = cmd!(ProcessLogger(
       out => log.info(out),
       err => log.info(err)
