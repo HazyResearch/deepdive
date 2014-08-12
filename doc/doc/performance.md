@@ -6,6 +6,24 @@ layout: default
 
 If you are dealing with large amounts of data then you may find bottlenecks in various parts of the system. The following describes parameters you can use to improve performance.
 
+### Parallel grounding
+Grounding is the process of building factor graph. It happens after the extractors and generates input to the sampler. If you are using Greenplum, you can enable parallel grounding to speed up the grounding phase, which makes use of Greenplum's parallel file system (gpfdist). To use parallel grounding, first make sure Greenplum's file system server `gpfdist` is running locally. Here, local means where you will run DeepDive applications. If not, run the following command to start gpfdist
+
+    gpfdist -d [directory] -p [port] &
+
+where you specify the directory for storing files and the HTTP port to run on. Then, in `application.conf`, specify the gpfdist settings in `db.default` as follows
+
+    db.default {
+      gphost   : [host of gpfdist]
+      gpport   : [port of gpfdist]
+      gppath   : [path to gpfdist directory]
+    }
+
+Finally, add to `application.conf` the flag of using parallel grounding
+
+    inference.parallel_grounding: true
+
+
 ### Setting the JVM heap size
 
 When running DeepDive you should set the maximum heap size for the Java virtual machine using the "-Xmx" flag. The default heap size is the smaller of 1/4th of the physical memory or 1GB. When using [SBT](http://www.scala-sbt.org/) to run DeepDive, you can set the option as follows:
