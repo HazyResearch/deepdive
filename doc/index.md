@@ -68,6 +68,7 @@ Advanced tutorials:
 - [Writing extractors](doc/extractors.html)
 - [Writing inference rules](doc/inference_rules.html)
 - [Inference rule function reference](doc/inference_rule_functions.html)
+- [Multinomial Variables and Factors](doc/multinomial.html)]
 - [Calibration](doc/calibration.html)
 - [Pipelines](doc/pipelines.html)
 - [Performance tuning](doc/performance.html)
