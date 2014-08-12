@@ -85,8 +85,8 @@ object DeepDive extends Logging {
     
     val groundFactorGraphMsg = InferenceManager.GroundFactorGraph(
       activeFactors, settings.calibrationSettings.holdoutFraction, settings.calibrationSettings.holdoutQuery,
-        settings.inferenceSettings.skipLearning,
-        settings.inferenceSettings.weightTable
+        settings.inferenceSettings.skipLearning, settings.inferenceSettings.weightTable,
+        settings.inferenceSettings.parallelGrounding
     )
     val groundFactorGraphTask = Task("inference_grounding", extractionTasks.map(_.id), 
       groundFactorGraphMsg, inferenceManager)
@@ -95,7 +95,8 @@ object DeepDive extends Logging {
     val inferenceTask = Task("inference", extractionTasks.map(_.id) ++ Seq("inference_grounding"),
       InferenceManager.RunInference(activeFactors, settings.calibrationSettings.holdoutFraction, 
         settings.calibrationSettings.holdoutQuery, settings.samplerSettings.samplerCmd, 
-        settings.samplerSettings.samplerArgs, skipSerializing), inferenceManager, true)
+        settings.samplerSettings.samplerArgs, skipSerializing, settings.dbSettings, settings.inferenceSettings.parallelGrounding), 
+        inferenceManager, true)
 
     val calibrationTask = Task("calibration", List("inference"), 
       InferenceManager.WriteCalibrationData, inferenceManager)

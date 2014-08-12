@@ -39,6 +39,11 @@ case class XorFactorFunction(variables: Seq[FactorFunctionVariable]) extends Fac
   override def variableDataType = "Boolean"
 }
 
+/* A factor function describing and between all combinations of values for multinomial variables */
+case class MultinomialFactorFunction(variables: Seq[FactorFunctionVariable]) extends FactorFunction {
+  override def variableDataType = "Discrete"
+}
+
 /* Dummy factor function */
 case class DummyFactorFunction(val variables: Seq[FactorFunctionVariable]) extends FactorFunction {
   override def variableDataType = "Discrete"
