@@ -100,17 +100,20 @@ class DataUnloader extends JdbcDataStore with Logging {
         CREATE VIEW _${filename}_view AS ${query};
         """)
 
-      val file = File.createTempFile(s"copy", ".sh")
-      val writer = new PrintWriter(file)
+      val outfile = new File(filepath)
+      outfile.getParentFile().mkdirs()
+
+      val cmdfile = File.createTempFile(s"copy", ".sh")
+      val writer = new PrintWriter(cmdfile)
       val copyStr = List("psql ", dbnameStr, pguserStr, pgportStr, pghostStr, " -c ", "\"\"\"", 
         """\COPY """, s"(SELECT * FROM _${filename}_view) TO '${filepath}';", "\"\"\"").mkString("")
       log.info(copyStr)
       writer.println(copyStr)
       writer.close()
-      executeCmd(file.getAbsolutePath())
+      executeCmd(cmdfile.getAbsolutePath())
       // executeQuery(s"""COPY (SELECT * FROM _${filename}_view) TO '${filepath}';""")
       executeQuery(s"DROP VIEW _${filename}_view;")
-      s"rm ${file.getAbsolutePath()}".!
+      s"rm ${cmdfile.getAbsolutePath()}".!
     }
   }
 
