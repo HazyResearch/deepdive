@@ -192,55 +192,77 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
 
     describe("grounding the factor graph with Multinomial variables") {
 
-      it("should work")(pending) 
-      // {
-    //     inferenceDataStore.init()
+      it("should work with weight variables that are null")
+      {
+        inferenceDataStore.init()
         
-    //     // Create table with multinomial data
-    //     SQL(s"""CREATE TABLE r1(id ${inferenceDataStore.keyType}, weight ${inferenceDataStore.stringType},
-    //       value bigint);""").execute.apply() 
-    //     val data = (1 to 100).map { i =>
-    //       Map("id" -> i, "weight" -> s"weight_${i}", "value" -> (i%4))
-    //     }
-    //     dataStoreHelper.bulkInsert("r1", data.iterator)
+        // Create table with multinomial data
+        SQL(s"""CREATE TABLE r1(id bigint, weight text,
+          value bigint);""").execute.apply() 
+        val data = (1 to 100).map { i =>
+          Map("id" -> i, "weight" -> s"weight_${i}", "value" -> (i%4))
+        }
+        dataStoreHelper.bulkInsert("r1", data.iterator)
 
-    //     // Define the schema
-    //     val schema = Map[String, VariableDataType]("r1.value" -> MultinomialType(4))
+        // Define the schema
+        val schema = Map[String, VariableDataType]("r1.value" -> MultinomialType(4))
 
-    //     // Build the factor description
-    //     val factorDesc = FactorDesc("testFactor", 
-    //       """SELECT id AS "r1.id", weight AS "weight", value AS "r1.value" FROM r1""", 
-    //       IsTrueFactorFunction(Seq("r1.value")), 
-    //       UnknownFactorWeight(List("weight")), "weight_prefix")
-    //     val holdoutFraction = 0.0
+        // Build the factor description
+        val factorDesc = FactorDesc("testFactor", 
+          """SELECT id AS "r1.id", weight AS "weight", value AS "r1.value" FROM r1""", 
+          MultinomialFactorFunction(Seq("r1.value")), 
+          UnknownFactorWeight(List()), "weight_prefix")
+        val holdoutFraction = 0.0
 
-    //     // Ground the graph
-    //     inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction, None, false, "", dbSettings)
+        // Ground the graph
+        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction, None, false, "", dbSettings, false)
 
-    //     val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")
-    //       .map(rs => rs.long("count")).single.apply().get
-    //     assert(numWeights === 400)
-        
-        // val numVariables = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.VariablesTable}
-        //   WHERE data_type = 'Multinomial' AND cardinality=4""")
-        //   .map(rs => rs.long("count")).single.apply().get
-        // assert(numVariables === 100)
+        val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numWeights === 4)
 
         // One factor for each possible predicate assignment
-        // val numFactors = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.FactorsTable}""")
-        //   .map(rs => rs.long("count")).single.apply().get
-        // assert(numFactors === 400)
+        val numFactors = SQL(s"""SELECT COUNT(*) AS "count" FROM dd_query_testFactor""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numFactors === 100)
 
-        // One edge for each possible predicate assignment
-        // val numEdges = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.EdgesTable}""")
-        //   .map(rs => rs.long("count")).single.apply().get
-        // assert(numEdges === 400)
-        // val numEdgesPred0 = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.EdgesTable} WHERE equal_predicate=0""")
-        //   .map(rs => rs.long("count")).single.apply().get
-        // assert(numEdgesPred0 === 100)
+      }
 
+      it("should work with weight variables")
+      {
+        inferenceDataStore.init()
+        
+        // Create table with multinomial data
+        SQL(s"""CREATE TABLE r1(id bigint, weight text,
+          value bigint);""").execute.apply() 
+        val data = (1 to 100).map { i =>
+          Map("id" -> i, "weight" -> s"weight_${i%4}", "value" -> (i%4))
+        }
+        dataStoreHelper.bulkInsert("r1", data.iterator)
 
-      // }
+        // Define the schema
+        val schema = Map[String, VariableDataType]("r1.value" -> MultinomialType(4))
+
+        // Build the factor description
+        val factorDesc = FactorDesc("testFactor", 
+          """SELECT id AS "r1.id", weight AS "weight", value AS "r1.value" FROM r1""", 
+          MultinomialFactorFunction(Seq("r1.value")), 
+          UnknownFactorWeight(List("weight")), "weight_prefix")
+        val holdoutFraction = 0.0
+
+        // Ground the graph
+        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction, None, false, "", dbSettings, false)
+
+        val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numWeights === 16)
+
+        // One factor for each possible predicate assignment
+        val numFactors = SQL(s"""SELECT COUNT(*) AS "count" FROM dd_query_testFactor""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numFactors === 100)
+
+      }
 
     }
 

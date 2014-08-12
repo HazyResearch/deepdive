@@ -51,6 +51,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       case "AndFactorFunction" => 2
       case "EqualFactorFunction" => 3
       case "IsTrueFactorFunction" =>  4
+      case "MultinomialFactorFunction" => 5
     }
   }
 
@@ -442,18 +443,33 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           """)
       }
 
+      // Create a cardinality table for the variable
+      // note we use two-digit fixed-length representation here (may be fixed)
+      val cardinalityValues = dataType match {
+        case BooleanType => "('01')"
+        case MultinomialType(x) => (0 to x-1).map (n => s"""('${"%02d".format(n)}')""").mkString(", ")
+      }
+      val cardinalityTableName = s"${relation}_${column}_cardinality"
+      execute(s"""
+        DROP TABLE IF EXISTS ${cardinalityTableName} CASCADE;
+        CREATE TABLE ${cardinalityTableName}(cardinality text);
+        INSERT INTO ${cardinalityTableName} VALUES ${cardinalityValues};
+        """)
+
       // dump variables, 
       // variable table join with holdout table - a variable is an evidence if it has initial value and it is not holdout
       du.unload(s"variables_${relation}", s"${groundingPath}/variables_${relation}", dbSettings, parallelGrounding,
         s"""SELECT id, 1::int AS is_evidence, ${column}::int AS initvalue, ${variableDataType} AS type, 
           ${cardinality} AS cardinality  
-        FROM ${relation}
-        WHERE ${column} IS NOT NULL AND id NOT IN (SELECT variable_id FROM ${VariablesHoldoutTable})
+        FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable}
+        ON ${relation}.id = ${VariablesHoldoutTable}.variable_id
+        WHERE ${column} IS NOT NULL AND ${VariablesHoldoutTable}.variable_id IS NULL
         UNION ALL
         SELECT id, 0::int AS is_evidence, 0::int AS initvalue, ${variableDataType} AS type, 
           ${cardinality} AS cardinality  
-        FROM ${relation} 
-        WHERE ${column} IS NULL OR id in (SELECT variable_id FROM ${VariablesHoldoutTable});
+        FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable}
+        ON ${relation}.id = ${VariablesHoldoutTable}.variable_id
+        WHERE ${column} IS NULL OR ${VariablesHoldoutTable}.variable_id IS NOT NULL;
         """)
     }
 
@@ -475,7 +491,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     // weights table
     execute(s"""DROP TABLE IF EXISTS ${WeightsTable} CASCADE;""")
-    execute(s"""CREATE TABLE ${WeightsTable} (id bigint, isfixed int, initvalue real, cardinality int);""")
+    execute(s"""CREATE TABLE ${WeightsTable} (id bigint, isfixed int, initvalue real, cardinality text);""")
 
     // weight and factor id
     // greemplum: use fast_seqassign postgres: use sequence
@@ -498,11 +514,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       val weighttableForThisFactor = s"dd_weights_${factorDesc.name}"
       val outfile = s"factors_${factorDesc.name}_out"
 
-      execute(s"""DROP TABLE IF EXISTS ${querytable} CASCADE;""")
-      execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactor} CASCADE;""")
-
       // table of input query
-      execute(s"""CREATE TABLE ${querytable} AS ${factorDesc.inputQuery};""")
+      execute(s"""DROP TABLE IF EXISTS ${querytable} CASCADE;
+        CREATE TABLE ${querytable} AS ${factorDesc.inputQuery};""")
       execute(s"""ALTER TABLE ${querytable} ADD COLUMN id bigint;""")
 
       // handle factor id
@@ -523,43 +537,131 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         case _ => 0.0
       }
 
-      // handle weights table
-      // weight is fixed, or doesn't have weight variables
-      if (isFixed || weightlist == ""){
-        execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue) VALUES (${cweightid}, ${isFixed}::int, ${initvalue});""")
-        du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
-          s"SELECT id AS factor_id, ${cweightid} AS weight_id, ${idcols} FROM ${querytable}")
+      if (factorDesc.func.getClass.getSimpleName != "MultinomialFactorFunction") {
+        // handle weights table
+        // weight is fixed, or doesn't have weight variables
+        if (isFixed || weightlist == ""){
+          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue) 
+            VALUES (${cweightid}, ${isFixed}::int, ${initvalue});""")
+          du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
+            s"SELECT id AS factor_id, ${cweightid} AS weight_id, ${idcols} FROM ${querytable}")
 
-        // handle weight id and factor id
-        cweightid += 1
-        if (!usingGreenplum) {
-          executeQuery(s"SELECT nextval('${weightidSequence}');")
+          // handle weight id and factor id
+          cweightid += 1
+          if (!usingGreenplum) {
+            executeQuery(s"SELECT nextval('${weightidSequence}');")
+          }
+        } else { // not fixed and has weight variables
+          execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactor} CASCADE;
+            CREATE TABLE ${weighttableForThisFactor} AS
+            SELECT ${weightlist}, 0::bigint AS id, ${isFixed}::int AS isfixed, ${initvalue}::real AS initvalue 
+            FROM ${querytable}
+            GROUP BY ${weightlist};""")
+
+          // handle weight id
+          if (usingGreenplum) {      
+            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor}', ${cweightid});""")
+          } else {
+            execute(s"UPDATE ${weighttableForThisFactor} SET id = nextval('${weightidSequence}');")
+          }
+          issueQuery(s"""SELECT COUNT(*) FROM ${weighttableForThisFactor};""") { rs =>
+            cweightid += rs.getLong(1)
+          }
+
+          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue) SELECT id, isfixed, initvalue FROM ${weighttableForThisFactor};""")
+
+          // dump factors
+          val weightjoinlist = factorDesc.weight.variables.map(v => s""" t0."${v}" = t1."${v}" """).mkString("AND")
+          du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
+            s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
+             FROM ${querytable} t0, ${weighttableForThisFactor} t1
+             WHERE ${weightjoinlist};""")
         }
-      } else { // not fixed and has weight variables
-        val initvalue = 0
-        execute(s"""CREATE TABLE ${weighttableForThisFactor} AS
-          SELECT ${weightlist}, 0::bigint AS id, ${isFixed}::int AS isfixed, ${initvalue}::real AS initvalue 
-          FROM ${querytable}
-          GROUP BY ${weightlist};""")
+      }
 
-        // handle weight id
-        if (usingGreenplum) {      
-          executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor}', ${cweightid});""")
-        } else {
-          execute(s"UPDATE ${weighttableForThisFactor} SET id = nextval('${weightidSequence}');")
-        }
-        issueQuery(s"""SELECT COUNT(*) FROM ${weighttableForThisFactor};""") { rs =>
-          cweightid += rs.getLong(1)
+      // handle multinomial
+      if (factorDesc.func.getClass.getSimpleName == "MultinomialFactorFunction") {
+        // generate cardinality table for each variable
+        factorDesc.func.variables.zipWithIndex.foreach { case(v,idx) =>
+          val cardinalityTableName = s"${factorDesc.weightPrefix}_cardinality_${idx}"
+          execute(s"""
+            DROP TABLE IF EXISTS ${cardinalityTableName} CASCADE;
+            SELECT * INTO ${cardinalityTableName} FROM ${v.headRelation}_${v.field}_cardinality;
+            """)
         }
 
-        execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue) SELECT id, isfixed, initvalue FROM ${weighttableForThisFactor};""")
+        // cardinality values used in weight
+        val cardinalityValues = factorDesc.func.variables.zipWithIndex.map { case(v,idx) => 
+          s"""_c${idx}.cardinality"""
+        }
+        val cardinalityTables = factorDesc.func.variables.zipWithIndex.map { case(v,idx) =>
+          s"${factorDesc.weightPrefix}_cardinality_${idx} AS _c${idx}"
+        }
+        val cardinalityCmd = s"""${cardinalityValues.mkString(" || ',' || ")}"""
 
-        // dump factors
-        val weightjoinlist = factorDesc.weight.variables.map(v => s""" t0."${v}" = t1."${v}" """).mkString("AND")
-        du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
-          s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
-           FROM ${querytable} t0, ${weighttableForThisFactor} t1
-           WHERE ${weightjoinlist};""")
+        // handle weights table
+        // weight is fixed, or doesn't have weight variables
+        if (isFixed || weightlist == ""){
+          execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactor} CASCADE;
+            CREATE TABLE ${weighttableForThisFactor} AS
+            SELECT ${cweightid} AS id, ${isFixed}::int AS isfixed, ${initvalue} AS initvalue, ${cardinalityCmd} AS cardinality
+            FROM ${cardinalityTables.mkString(", ")}
+            ORDER BY cardinality;""")
+
+          // handle weight id
+          if (usingGreenplum) {      
+            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor}', ${cweightid});""")
+          } else {
+            execute(s"UPDATE ${weighttableForThisFactor} SET id = nextval('${weightidSequence}');")
+          }
+
+          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, cardinality) 
+            SELECT * FROM ${weighttableForThisFactor};""")
+
+          du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
+            s"SELECT id AS factor_id, ${cweightid} AS weight_id, ${idcols} FROM ${querytable}")
+
+          // increment weight id
+          issueQuery(s"""SELECT COUNT(*) FROM ${weighttableForThisFactor};""") { rs =>
+            cweightid += rs.getLong(1)
+          }
+        } else { // not fixed and has weight variables
+          // temporary weight table for weights without a cross product with cardinality
+          val weighttableForThisFactorTemp = s"dd_weight_${factorDesc.name}_temp"
+          execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactorTemp} CASCADE;
+            CREATE TABLE ${weighttableForThisFactorTemp} AS 
+            SELECT ${weightlist}, 0::bigint AS id, ${isFixed}::int AS isfixed, ${initvalue}::real AS initvalue 
+            FROM ${querytable}
+            GROUP BY ${weightlist};""")
+          execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactor} CASCADE;
+            CREATE TABLE ${weighttableForThisFactor} AS 
+            SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} AS cardinality
+            FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")}
+            ORDER BY ${weightlist}, cardinality;""")
+
+          // handle weight id
+          if (usingGreenplum) {      
+            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor}', ${cweightid});""")
+          } else {
+            execute(s"UPDATE ${weighttableForThisFactor} SET id = nextval('${weightidSequence}');")
+          }
+          issueQuery(s"""SELECT COUNT(*) FROM ${weighttableForThisFactor};""") { rs =>
+            cweightid += rs.getLong(1)
+          }
+
+          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, cardinality) 
+            SELECT id, isfixed, initvalue, cardinality FROM ${weighttableForThisFactor};""")
+
+          // use weight id corresponding to cardinality 0 (like C array...)
+          val cardinalityKey = factorDesc.func.variables.map(v => "00").mkString(",")
+
+          // dump factors
+          val weightjoinlist = factorDesc.weight.variables.map(v => s""" t0."${v}" = t1."${v}" """).mkString("AND")
+          du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
+            s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
+             FROM ${querytable} t0, ${weighttableForThisFactor} t1
+             WHERE ${weightjoinlist} AND t1.cardinality = '${cardinalityKey}';""")
+        }
       }
     }
 
