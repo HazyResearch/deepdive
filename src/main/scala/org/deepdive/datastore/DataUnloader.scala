@@ -61,7 +61,7 @@ class DataUnloader extends JdbcDataStore with Logging {
         DROP VIEW IF EXISTS _${filename}_view CASCADE;
         CREATE VIEW _${filename}_view AS ${query};
         """)
-      executeQuery(s"""\COPY (SELECT * FROM _${filename}_view) TO '${filepath}';""")
+      executeQuery(s"""COPY (SELECT * FROM _${filename}_view) TO '${filepath}';""")
       executeQuery(s"DROP VIEW _${filename}_view;")
     }
   }
