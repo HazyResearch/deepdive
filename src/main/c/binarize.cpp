@@ -85,15 +85,15 @@ void load_factor(std::string filename, short funcid, long nvar, char** positives
   std::ofstream fout((filename + "_factors.bin").c_str(), std::ios::binary | std::ios::out);
   std::ofstream fedgeout((filename + "_edges.bin").c_str(), std::ios::binary | std::ios::out);
 
-  funcid = bswap_16(funcid);
-
   long factorid = 0;
   long weightid = 0;
   long variableid = 0;
   long nedge = 0;
   long nvars_big = bswap_64(nvar);
-  long predicate = 1;
+  long predicate = funcid == 5 ? -1 : 1;
   vector<int> positives_vec(nvar);
+
+  funcid = bswap_16(funcid);
 
   for (int i = 0; i < nvar; i++) {
     positives_vec.push_back(atoi(positives[i]));
