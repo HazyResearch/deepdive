@@ -4,6 +4,8 @@ import org.deepdive.settings._
 // import org.deepdive.datastore.JdbcDataStore
 import org.deepdive.Logging
 import scala.sys.process._
+import scala.util.{Try, Success, Failure}
+import java.io._
 
 class DataUnloader extends JdbcDataStore with Logging {
 
@@ -18,6 +20,20 @@ class DataUnloader extends JdbcDataStore with Logging {
     conn.commit()
     conn.close()  
     log.debug("DONE!")
+  }
+
+  def executeCmd(cmd: String) : Try[Int] = {
+    // Make the file executable, if necessary
+    val file = new java.io.File(cmd)
+    if (file.isFile) file.setExecutable(true, false)
+    log.info(s"""Executing: "$cmd" """)
+    val processLogger = ProcessLogger(line => log.info(line))
+    Try(cmd!(processLogger)) match {
+      case Success(0) => Success(0)
+      case Success(errorExitValue) => 
+        Failure(new RuntimeException(s"Script exited with exit_value=$errorExitValue"))
+      case Failure(ex) => Failure(ex)
+    }
   }
 
   /** Unload data from database to a file 
@@ -57,12 +73,44 @@ class DataUnloader extends JdbcDataStore with Logging {
         INSERT INTO _${filename} ${query};
         """)
     } else {
+      // Get Database-related settings
+      val dbname = dbSettings.dbname
+      val pguser = dbSettings.user
+      val pgport = dbSettings.port
+      val pghost = dbSettings.host
+      // TODO do not use password for now
+      val dbnameStr = dbname match {
+        case null => ""
+        case _ => s" -d ${dbname} "
+      }
+      val pguserStr = pguser match {
+        case null => ""
+        case _ => s" -U ${pguser} "
+      }
+      val pgportStr = pgport match {
+        case null => ""
+        case _ => s" -p ${pgport} "
+      }
+      val pghostStr = pghost match {
+        case null => ""
+        case _ => s" -h ${pghost} "
+      }
       executeQuery(s"""
         DROP VIEW IF EXISTS _${filename}_view CASCADE;
         CREATE VIEW _${filename}_view AS ${query};
         """)
-      executeQuery(s"""COPY (SELECT * FROM _${filename}_view) TO '${filepath}';""")
+
+      val file = File.createTempFile(s"copy", ".sh")
+      val writer = new PrintWriter(file)
+      val copyStr = List("psql ", dbnameStr, pguserStr, pgportStr, pghostStr, " -c ", "\"\"\"", 
+        """\COPY """, s"(SELECT * FROM _${filename}_view) TO '${filepath}';", "\"\"\"").mkString("")
+      log.info(copyStr)
+      writer.println(copyStr)
+      writer.close()
+      executeCmd(file.getAbsolutePath())
+      // executeQuery(s"""COPY (SELECT * FROM _${filename}_view) TO '${filepath}';""")
       executeQuery(s"DROP VIEW _${filename}_view;")
+      s"rm ${file.getAbsolutePath()}".!
     }
   }
 

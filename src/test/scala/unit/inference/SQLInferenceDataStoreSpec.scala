@@ -17,7 +17,8 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
 
   lazy implicit val session = dataStoreHelper.DB.autoCommitSession()
 
-  val dbSettings = DbSettings(null, null, null, null, null, null, null, null, null, null)
+  val dbSettings = DbSettings(null, null, System.getenv("PGUSER"), null, System.getenv("DBNAME"), 
+    System.getenv("PGHOST"), System.getenv("PGPORT"), null, null, null)
 
   def init() : Unit = {
     JdbcDataStore.init()

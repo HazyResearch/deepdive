@@ -20,10 +20,12 @@ class DataUnloader extends FunSpec with BeforeAndAfter with JdbcDataStore {
     JdbcDataStore.close()
   }
 
+  val dbSettings = DbSettings(null, null, System.getenv("PGUSER"), null, System.getenv("DBNAME"), 
+    System.getenv("PGHOST"), System.getenv("PGPORT"), null, null, null)
+
   describe("Unloading data using DataUnloader") {
     it("should work with COPY basic types") {
       val du = new org.deepdive.datastore.DataUnloader
-      val dbSettings = DbSettings(null, null, null, null, null, null, null, null, null, null)
       val outputFile = File.createTempFile("test_unloader", "")
       SQL(s"""DROP TABLE IF EXISTS unloader CASCADE;""").execute.apply()
       SQL(s"""CREATE TABLE unloader(feature text, is_correct boolean, id bigint);""").execute.apply()
@@ -39,7 +41,6 @@ class DataUnloader extends FunSpec with BeforeAndAfter with JdbcDataStore {
 
     it("should work with COPY array types") {
       val du = new org.deepdive.datastore.DataUnloader
-      val dbSettings = DbSettings(null, null, null, null, null, null, null, null, null, null)
       val outputFile = File.createTempFile("test_unloader", "")
       SQL(s"""DROP TABLE IF EXISTS unloader CASCADE;""").execute.apply()
       SQL(s"""CREATE TABLE unloader(feature text, id int[]);""").execute.apply()
