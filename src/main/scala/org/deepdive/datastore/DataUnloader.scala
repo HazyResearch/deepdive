@@ -26,6 +26,7 @@ class DataUnloader extends JdbcDataStore with Logging {
    * For Postgresql, filepath is an abosulute path. No need for dbSettings or filename.
    */
   def unload(filename: String, filepath: String, dbSettings: DbSettings, usingGreenplum: Boolean, query: String) : Unit = {
+    
     if (usingGreenplum) {
       val hostname = dbSettings.gphost
       val port = dbSettings.gpport
@@ -60,7 +61,7 @@ class DataUnloader extends JdbcDataStore with Logging {
         DROP VIEW IF EXISTS _${filename}_view CASCADE;
         CREATE VIEW _${filename}_view AS ${query};
         """)
-      executeQuery(s"COPY (SELECT * FROM _${filename}_view) TO '${filepath}';")
+      executeQuery(s"""\COPY (SELECT * FROM _${filename}_view) TO '${filepath}';""")
       executeQuery(s"DROP VIEW _${filename}_view;")
     }
   }
