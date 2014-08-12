@@ -34,6 +34,10 @@ object FactorFunctionParser extends RegexParsers with Logging {
     IsTrueFactorFunction(List(variable))
   }
 
+  def multinomialFactorFunction = ("Multinomial" | "MULTINOMIAL") ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
+    MultinomialFactorFunction(varList)
+  }
+
   
   def factorVariable = ("!"?) ~ rep1sep(relationOrField, ".") ~ (arrayDefinition?) ~ 
     (("=" ~> equalPredicate)?) ^^ { 
@@ -50,6 +54,6 @@ object FactorFunctionParser extends RegexParsers with Logging {
   }
 
   def factorFunc = implyFactorFunction | orFactorFunction | andFactorFunction | 
-    equalFactorFunction | isTrueFactorFunction | xorFactorFunction
+    equalFactorFunction | isTrueFactorFunction | xorFactorFunction | multinomialFactorFunction
 
 }
