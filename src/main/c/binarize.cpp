@@ -1,4 +1,8 @@
 
+/*
+ * Transform a TSV format factor graph file and output corresponding binary format used in DeepDive
+ */
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -8,7 +12,8 @@
 
 using namespace std;
 
-// 64-bit endian conversion
+// 64-bit endian conversion, note input must be unsigned long
+// for double, cast its underlying bytes to unsigned long, see examples in load_var
 # define bswap_64(x) \
      ((((x) & 0xff00000000000000ull) >> 56)                                   \
       | (((x) & 0x00ff000000000000ull) >> 40)                                 \
@@ -57,6 +62,8 @@ void load_var(std::string filename){
   fout.close();
 }
 
+
+// convert weights
 void load_weight(std::string filename){
   std::ifstream fin(filename.c_str());
   std::ofstream fout((filename + ".bin").c_str(), std::ios::binary | std::ios::out);
