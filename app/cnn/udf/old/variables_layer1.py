@@ -4,10 +4,11 @@
 from helper.easierlife import *
 import json
 import fileinput
+import numpy
 
-BlockSize=1
-FID_IN=20
-FID_OUT=1
+BlockSize=5
+FID_IN=1
+FID_OUT=4
 for row in fileinput.input():
 	obj = json.loads(row)
 	image_id = obj["image_id"]

@@ -32,10 +32,11 @@ export APP_HOME=`pwd`
 
 # Machine Configuration
 export MEMORY="512g"
-export PARALLELISM=80
+export PARALLELISM=96
+
 
 # Database Configuration
-export DBNAME=deepdive_images_local
+export DBNAME=deepdive_images_10
 export PGUSER=amirabs
 export PGPASSWORD=${PGPASSWORD:-}
 export PGPORT=5432

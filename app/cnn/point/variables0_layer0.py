@@ -13,8 +13,8 @@ for row in fileinput.input():
 	image_id = obj["image_id"]
 	pixels= deserialize(obj["pixels"])
 
-	width, height, depth = pixels.shape
-	for i in range(0, width):
+	num_rows, height, depth = pixels.shape
+	for i in range(0, num_rows):
 		for j in range(0, height):
 			for k in range(0,depth):
 				color = float(pixels[i][j][k])

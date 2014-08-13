@@ -4,7 +4,6 @@
 from helper.easierlife import *
 import json
 import fileinput
-import numpy
 
 BlockSize=2
 FID_IN=6
@@ -28,8 +27,8 @@ for row in fileinput.input():
 		print json.dumps({
 			"image_id":image_id,
 			"fid":f,
-			"width":n_row/BlockSize,
-			"length":n_col/BlockSize,
+			"num_rows":n_row/BlockSize,
+			"num_cols":n_col/BlockSize,
 			"values":values
 			})
 				

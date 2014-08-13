@@ -22,9 +22,9 @@ for bigimage in os.listdir(BASE_FOLDER + '/data'):
 
 	IMGPATH = BASE_FOLDER + "/data/" + bigimage
 	mat = cv2.imread(IMGPATH)
-	width, height, depth = mat.shape
+	num_rows, height, depth = mat.shape
 	'''
-	print "width: " , width
+	print "num_rows: " , num_rows
 	print "height: " , height
 	print "depth: " , depth
 	'''
@@ -32,7 +32,7 @@ for bigimage in os.listdir(BASE_FOLDER + '/data'):
 	CELL = 28
 	image_limit=0
 	input_img = Image.open(IMGPATH)
-	for i in range(0, width, CELL):
+	for i in range(0, num_rows, CELL):
 		for j in range(0, height, CELL):
 			if(image_limit>60):
 				break

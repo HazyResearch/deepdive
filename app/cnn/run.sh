@@ -4,6 +4,7 @@
 # export JAVA_OPTS="-Xmx256g"
 # export JVM_ARGS="-Xms1024m -Xmx256g"
 
+rm -f /lfs/local/0/amir/gpdata/*
 
 . "$(dirname $0)/env.sh"
 

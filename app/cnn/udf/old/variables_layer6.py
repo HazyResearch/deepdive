@@ -4,6 +4,7 @@
 from helper.easierlife import *
 import json
 import fileinput
+import numpy
 
 BlockSize=1
 FID_IN=20

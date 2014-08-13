@@ -4,6 +4,7 @@
 from helper.easierlife import *
 import json
 import fileinput
+import numpy
 
 N_CLASS=1
 for row in fileinput.input():

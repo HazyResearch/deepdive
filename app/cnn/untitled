@@ -1,0 +1,10 @@
+  logisticRegression {
+      input_query: """
+        SELECT  array_accum(vlr.id) AS "variables_layer_lr.ids",
+                array_agg_mult(vlr.values) AS "variables_layer_lr.values"
+          FROM  variables_layer_lr vlr
+      GROUP BY  vlr.image_id
+        """
+      function : "likelihood(variables_layer_lr.values)"
+      weight   : "0[1]"
+    }
