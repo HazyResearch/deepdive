@@ -4,13 +4,13 @@ layout: default
 
 # Using Multinomial
 
-DeepDive supports multinomial variables, which take integer values ranging from 0 to an upper bound. To use a multinomial type variable, you can declare the variable `schema.variables` in `application.conf` using type `Categorical(N)`, where the variable domain will be 0, 1, ..., N. The schema definition would be like this 
+DeepDive supports multinomial variables, which take integer values ranging from 0 to an upper bound. To use a multinomial type variable, you can declare the variable `schema.variables` in `application.conf` using type `Categorical(N)`, where the variable domain will be 0, 1, ..., N-1. The schema definition would be like this 
   
     schema.variables {
       [table].[column]: Categorical(10)
     }
 
-The factor function for multinomial is `Multinomial`. It is equivalent to having indicator functions for each combination of variable assignments. For examples, if `a` is a variable taking values 0, 1, 2, and `b` is a variable taking values 0, 1. Then, `Multinomial(a, b)` is equivalent to the following factors between a and b
+The factor function for multinomial is `Multinomial`. It takes multinomial variables as arguments, and is equivalent to having indicator functions for each combination of variable assignments. For examples, if `a` is a variable taking values 0, 1, 2, and `b` is a variable taking values 0, 1. Then, `Multinomial(a, b)` is equivalent to the following factors between a and b
   
     I{a = 0, b = 0}
     I{a = 0, b = 1}
@@ -18,6 +18,8 @@ The factor function for multinomial is `Multinomial`. It is equivalent to having
     I{a = 1, b = 1}
     I{a = 2, b = 0}
     I{a = 2, b = 1}
+
+Note each of the factor above has a corresponding weight, i.e., we have the one weight for each possible assignments of variables in multinomial factor.
 
 # Chunking Example
 

@@ -6,13 +6,13 @@ layout: default
 
 ## Introduction
 
-In this document, we will describe an example application of [text chunking](http://www.cnts.ua.ac.be/conll2000/chunking/) using DeepDive. This example assumes a working installation of DeepDive, and basic knowledge of how to build an application in DeepDive. Please go through the [example application walkthrough](doc/walkthrough.md) before preceding.
+In this document, we will describe an example application of text chunking using DeepDive. This example assumes a working installation of DeepDive, and basic knowledge of how to build an application in DeepDive. Please go through the [example application walkthrough](doc/walkthrough.md) before preceding.
 
 Text chunking consists of dividing a text in syntactically correlated parts of words. For example, the sentence He reckons the current account deficit will narrow to only # 1.8 billion in September . can be divided as follows:
 
   [NP He ] [VP reckons ] [NP the current account deficit ] [VP will narrow ] [PP to ] [NP only # 1.8 billion ] [PP in ] [NP September ] .
 
-Text chunking is an intermediate step towards full parsing. It was the shared task for CoNLL-2000. Training and test data for this task is derived from the Wall Street Journal corpus (WSJ), which includes words, part-of-speech tags, and chunking tags.
+Text chunking is an intermediate step towards full parsing. It is the [shared task for CoNLL-2000](http://www.cnts.ua.ac.be/conll2000/chunking/). Training and test data for this task is derived from the Wall Street Journal corpus (WSJ), which includes words, part-of-speech tags, and chunking tags.
 
 In the example, we will predicate chunk label for each word. We include three inference rules, corresponding to logistic regression, linear-chain conditional random field (CRF), and skip-chain conditional random field. The features and rules we use are very simple, just to illustrate how to use multinomial variables and factors in DeepDive to build applications.
 
@@ -43,7 +43,7 @@ The application performs the following high-level steps:
 
 ### Data Preprocessing
 
-The train and test data consist of words, their part-of-speech tag as derived by the Brill tagger and the chunk tags as derived from the WSJ corpus. The raw data is first copied into into table `words_raw`, and then is processed to convert the chunk labels to integer indexes. This extractor is defined in `application.conf` using the following code:
+The train and test data consist of words, their part-of-speech tag and the chunk tags as derived from the WSJ corpus. The raw data is first copied into into table `words_raw`, and then is processed to convert the chunk labels to integer indexes. This extractor is defined in `application.conf` using the following code:
 
     ext_training {
       input: "select * from words_raw"
@@ -200,7 +200,7 @@ Here, we have 13 types of chunk tags `NP, VP, PP, ADJP, ADVP, SBAR, O, PRT, CONJ
       weight: "?(feature)"
     }
 
-To express conditional random field, just write `Multinomial` factor for variables to link. The following rule links neiboring words
+To express conditional random field, just use `Multinomial` factor to link variables that could interact with each other (For more information about CRF, see [this tutorial on CRF](http://people.cs.umass.edu/~mccallum/papers/crf-tutorial.pdf). The following rule links labels of neiboring words
 
     factor_linear_chain_crf {
       input_query: """select w1.id as "words.w1.id", w2.id as "words.w2.id", w1.tag as "words.w1.tag", w2.tag as "words.w2.tag"
@@ -210,7 +210,7 @@ To express conditional random field, just write `Multinomial` factor for variabl
       weight: "?"
     }
 
-It is similar with skip-chain CRF, where we have skip edges that link identical words.
+It is similar with skip-chain CRF, where we have skip edges that link labels of identical words.
 
     factor_skip_chain_crf {
       input_query: """select *
