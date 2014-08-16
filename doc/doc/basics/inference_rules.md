@@ -194,7 +194,6 @@ inference tasks. Refer to the [Configuration
 reference](configuration.html#weight_table) for more details about this option
 and the schema of the weight table.
 
-
 <!-- TODO (MR) All that follows must go somewhere else
 
 ### Evidence and Query variables
