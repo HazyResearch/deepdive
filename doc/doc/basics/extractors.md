@@ -78,9 +78,8 @@ If `style` is not specified, the system assumes the extractor has style `json_ex
 A `json_extractor` takes each tuple in the output of an `input` query (for
 example, a SQL statement), and produces new tuples as output. These tuples are
 written to an `output_relation`. The transformation function is defined by the
-value of the `udf` keyword, which can be an arbitrary executable. 
-
-<!-- TODO (MR) can it be a shell command ? -->
+value of the `udf` keyword, which can be an arbitrary executable or shell
+command. 
 
 The following is an example of an extractor definition:
 
@@ -107,7 +106,9 @@ Reading a file is useful for loading initial data. To specify which file to read
 and its format, the `input` directive of the extractor definition should look
 like the following:
 
-<!-- TODO (MR) Check that these are correct -->
+<!-- TODO (Ce) You told me the following are not supported. Remove them and
+mentions to them (also in other files) if that's the case. -->
+
 ```bash
 input: CSV('path/to/file.csv')
 input: TSV('path/to/file.tsv')
@@ -198,7 +199,9 @@ file).
 When DeepDive executes an extractor with this style, the following happens:
 
 1. The results of the input query are unloaded into multiple TSV files.
-<!-- TODO (MR) is there a way to specify how many TSV files ? -->
+
+<!-- TODO (Zifei) is there a way to specify how many TSV files ? Is it relevant? -->
+
 2. Multiple instances of the extractor UDF are executed in parallel, with the
 TSV files piped into the standard input of these instances.
 3. The outputs (to standard output) of the extractor UDF instances (also in
@@ -513,7 +516,8 @@ You can execute independent extractors in parallel:
 deepdive.extraction.parallelism?  Otherwise, config keys may collide with
 user-defined extractor names. -->
 
-<!-- TODO (MR) -->
+<!-- TODO (All) I don't know who asked the above, but if it is not
+relevant or there's nothing we can do at this point, just remove it.-->
 
 ```bash
 deepdive {
@@ -570,4 +574,7 @@ wordsExtractor {
   output_batch_size: 5000
 }
 ```
+
+<!-- TODO (Zifei) There's a paragraph in the walkthrough appendix that explains
+how to debug extractors. Move it here (remove it from there) -->
 
