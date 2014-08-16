@@ -21,8 +21,9 @@ John is 78% likely to have cancer.
 A **factor graph** is a type of probabilistic graphical model. A factor graph
 has two types of nodes:
 
-- **Variables**, which can be either *evidence variables* when their value is
-  known, or *query variables* when their value should be predicted. 
+- <a name="variables" href="#"></a> **Variables**, which can be either *evidence
+  variables* when their value is known, or *query variables* when their value
+  should be predicted. 
 
 - **Factors** define the relationships between variables in the graph. Each factor
   can be connected to many variables and comes with a **factor function** to
