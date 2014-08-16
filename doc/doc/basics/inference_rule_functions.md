@@ -53,3 +53,5 @@ The *IsTrue* function evaluates to true if and only if its variable evaluates to
 true. It is restricted to one variable. One may implement a *Not* function using
 `IsTrue(!A)`.
 
+<!-- TODO (Feiran) Add docs for the multinomial function -->
+
