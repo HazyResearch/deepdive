@@ -141,15 +141,9 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         val holdoutFraction = 0.0
 
         // Ground the graph
-        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction, None, false, "", dbSettings, false)
-
-        // Check the result
-        val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")
-          .map(rs => rs.long("count")).single.apply().get
-        assert(numWeights === 1)
-        val weightdesc = SQL(s"""SELECT weight FROM dd_weights_testFactor""")
-          .map(rs => rs.string("weight")).single.apply()
-        assert(weightdesc === None)
+        intercept[RuntimeException] {
+          inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction, None, false, "", dbSettings, false)
+        }
 
       }
 

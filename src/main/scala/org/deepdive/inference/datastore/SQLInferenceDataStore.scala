@@ -102,6 +102,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   // issues a query, and perform op
   def issueQuery(sql: String)(op: (java.sql.ResultSet) => Unit) = {
+    log.debug("EXECUTING... " + sql)
     val conn = ds.borrowConnection()
     try {
       conn.setAutoCommit(false);
@@ -120,6 +121,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     } finally {
       conn.close() 
     }
+    log.debug("DONE!")
   }
 
   // execute sql, store results in a map
@@ -569,6 +571,14 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           }
 
           execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue) SELECT id, isfixed, initvalue FROM ${weighttableForThisFactor};""")
+
+          // check null weight
+          val weightChecklist = factorDesc.weight.variables.map(v => s""" "${v}" IS NULL """).mkString("AND")
+          issueQuery(s"SELECT COUNT(*) FROM ${querytable} WHERE ${weightChecklist}") { rs =>
+            if (rs.getLong(1) > 0) {
+              throw new RuntimeException("Weight variable has null values")
+            }
+          }
 
           // dump factors
           val weightjoinlist = factorDesc.weight.variables.map(v => s""" t0."${v}" = t1."${v}" """).mkString("AND")
