@@ -121,8 +121,9 @@ Basics:
 - [Example application walk-through](doc/basics/walkthrough.html)
 - [Generating negative examples](doc/basics/generating_negative_examples.html)
 - [High-speed sampler](doc/basics/sampler.html)
-- [FAQ](doc/basics/faq.html)
 - [`application.conf` Reference](doc/basics/configuration.html)
+- [Multinomial/Categorical variables](doc/basics/multinomial.html)
+- [FAQ](doc/basics/faq.html)
 
 Advanced topics:
 
