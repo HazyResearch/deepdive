@@ -54,6 +54,7 @@ There are a couple of caveats when writing input queries for factors:
   - If using Greenplum, `id` must not be the distribution key for a table.
   - If developers want an unique identifier of this table to refer to, they should use other columns rather than `id`.
   - Generally, for any table in a DeepDive application, name `id` is NOT recommended to use for any column other than this reserved field. Meaningful column names such as `sentence_id`, `people_id` are recommended.
+- The weight variables should not be `null`.
 
 Refer to the database-specific guides to learn about more caveats:
 
@@ -76,9 +77,9 @@ DeepDive supports [several types of factor functions](inference_rule_functions.h
       function: "Imply(people.has_cancer)"
     }
 
-<!-- ### Using Array in Factor Function
+### Using Array in Factor Function
 
-To use array of variables in factor function, in the input query, generate corresponding variable ids in array form, and rename it as `relation.id`, where `relation` is the table containing these variables.  -->
+To use array of variables in factor function, in the input query, generate corresponding variable ids in array form, and rename it as `relation.id`, where `relation` is the table containing these variables, i.e., the naming convention for array variables is same as single variables, whereas the only difference is variable ids are in array form.
 
 
 ### Factor Weights
