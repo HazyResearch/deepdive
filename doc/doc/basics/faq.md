@@ -98,7 +98,8 @@ extractors. If you need to load records manually, make sure their IDs are
 globally unique, or define manual sequence to use for your primary keys.
  -->
 
- <!-- TODO (MR) Why is the above FAQ commented? -->
+<!-- TODO (Ce) Why is the above FAQ commented? Remove it if it's no longer
+ valid.-->
 
 ### I am using Greenplum, and getting an "ERROR: Cannot parallelize an UPDATE
 statement that updates the distribution columns"
