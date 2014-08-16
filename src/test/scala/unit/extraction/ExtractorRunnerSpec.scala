@@ -30,7 +30,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
   def this() = this(ActorSystem("ExtractorRunnerSpec"))
 
-  val dbSettings = DbSettings(null, null, null, null, null, null, null)
+  val dbSettings = DbSettings(null, null, null, null, null, null, null, null, null, null)
 
   // lazy implicit val session = ds.DB.autoCommitSession()
 

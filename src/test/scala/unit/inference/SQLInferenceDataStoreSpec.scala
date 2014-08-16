@@ -7,6 +7,7 @@ import org.deepdive.test._
 import org.scalatest._
 import org.deepdive.datastore._
 import org.deepdive.settings._
+import org.deepdive.Context
 import scala.io.Source
 import scalikejdbc._
 
@@ -16,7 +17,8 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
 
   lazy implicit val session = dataStoreHelper.DB.autoCommitSession()
 
-  val dbSettings = DbSettings(null, null, null, null, null, null, null)
+  val dbSettings = DbSettings(null, null, System.getenv("PGUSER"), null, System.getenv("DBNAME"), 
+    System.getenv("PGHOST"), System.getenv("PGPORT"), null, null, null)
 
   def init() : Unit = {
     JdbcDataStore.init()
@@ -26,6 +28,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
   /* Initialize and clear the data store before each test */
   before {
     init()
+    Context.outputDir = new File(".").getCanonicalPath() + "/out"
   }
 
   after {
@@ -47,8 +50,8 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         inferenceDataStore.init()
         
         // Insert sample data
-        SQL(s"""CREATE TABLE r1(id ${inferenceDataStore.keyType}, weight ${inferenceDataStore.stringType},
-          is_correct boolean);""").execute.apply()        
+        SQL(s"""CREATE TABLE r1(weight ${inferenceDataStore.stringType},
+          is_correct boolean, id bigint);""").execute.apply()        
         val data = (1 to 100).map { i =>
           Map("id" -> i, "weight" -> s"weight_${i}", "is_correct" -> s"${i%2==0}".toBoolean)
         }
@@ -64,29 +67,32 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         val holdoutFraction = 0.0
 
         // Ground the graph
-        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction, None, false, "", dbSettings)
+        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction, None, false, "", dbSettings, false)
 
         // Check the result
         val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numWeights === 100)
-        // val numVariables = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.VariablesTable}""")
-        //   .map(rs => rs.long("count")).single.apply().get
-        // assert(numVariables === 100)
-        // val numFactors = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.FactorsTable}""")
-        //   .map(rs => rs.long("count")).single.apply().get
-        // assert(numFactors === 100)
-        // val numEdges = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.EdgesTable}""")
-        //   .map(rs => rs.long("count")).single.apply().get
-        // assert(numEdges === 100)
+        val factorName = SQL(s"""SELECT * FROM ${inferenceDataStore.FactorMetaTable}""")
+          .map(rs => rs.string("name")).single.apply().get
+        assert(factorName === "testFactor")
+        val funcid = SQL(s"""SELECT * FROM ${inferenceDataStore.FactorMetaTable}""")
+          .map(rs => rs.int("funcid")).single.apply().get
+        assert(funcid === 4)
+        val signs = SQL(s"""SELECT * FROM ${inferenceDataStore.FactorMetaTable}""")
+          .map(rs => rs.string("sign")).single.apply().get
+        assert(signs === "true")
+        val numFactors = SQL(s"""SELECT COUNT(*) AS "count" FROM dd_query_testFactor""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numFactors === 100)
       }
 
       it("should work with custom a holdout query") {
         inferenceDataStore.init()
         
         // Insert sample data
-        SQL(s"""CREATE TABLE r1(id ${inferenceDataStore.keyType}, weight ${inferenceDataStore.stringType},
-          is_correct boolean);""").execute.apply()        
+        SQL(s"""CREATE TABLE r1(weight ${inferenceDataStore.stringType},
+          is_correct boolean, id bigint);""").execute.apply()        
         val data = (1 to 100).map { i =>
           Map("id" -> i, "weight" -> s"weight_${i}", "is_correct" -> s"${i%2==0}".toBoolean)
         }
@@ -105,32 +111,21 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         val customHoldoutQuery = """
           INSERT INTO dd_graph_variables_holdout(variable_id)
           SELECT id FROM r1 WHERE id <= 10;"""
-        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction, Option(customHoldoutQuery), false, "", dbSettings)
+        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction, Option(customHoldoutQuery), false, "", dbSettings, false)
 
 
-        val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")
+        val numHoldout = SQL(s"""SELECT COUNT(*) AS "count" FROM r1
+          WHERE id IN (SELECT variable_id FROM ${inferenceDataStore.VariablesHoldoutTable}) 
+          AND is_correct = true;""")
           .map(rs => rs.long("count")).single.apply().get
-        assert(numWeights === 100)
-        // val numVariables = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.VariablesTable}""")
-        //   .map(rs => rs.long("count")).single.apply().get
-        // assert(numVariables === 100)
-        // val numHoldout = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.VariablesTable}
-        //   WHERE is_evidence=false AND initial_value=1.0;""")
-        //   .map(rs => rs.long("count")).single.apply().get
-        // assert(numHoldout === 5)
-        // val numFactors = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.FactorsTable}""")
-        //   .map(rs => rs.long("count")).single.apply().get
-        // assert(numFactors === 100)
-        // val numEdges = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.EdgesTable}""")
-        //   .map(rs => rs.long("count")).single.apply().get
-        // assert(numEdges === 100)
+        assert(numHoldout === 5)
 
       }
 
       it("should work with weight variables that are null") {
         inferenceDataStore.init()
-         SQL(s"""CREATE TABLE r1(id ${inferenceDataStore.keyType}, weight ${inferenceDataStore.stringType},
-          is_correct boolean);""").execute.apply()        
+         SQL(s"""CREATE TABLE r1(weight ${inferenceDataStore.stringType},
+          is_correct boolean, id bigint);""").execute.apply()        
         val data = (1 to 100).map { i =>
           Map("id" -> i, "is_correct" -> s"${i%2==0}".toBoolean)
         }
@@ -146,33 +141,18 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         val holdoutFraction = 0.0
 
         // Ground the graph
-        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction, None, false, "", dbSettings)
-
-        // Check the result
-        val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")
-          .map(rs => rs.long("count")).single.apply().get
-        assert(numWeights === 1)
-        // val weightName = SQL(s"""SELECT description FROM ${inferenceDataStore.WeightsTable}""")
-        //   .map(rs => rs.string("description")).single.apply().get
-        // assert(weightName === "weight_prefix-1")
-        // val numVariables = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.VariablesTable}""")
-        //   .map(rs => rs.long("count")).single.apply().get
-        // assert(numVariables === 100)
-        // val numFactors = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.FactorsTable}""")
-        //   .map(rs => rs.long("count")).single.apply().get
-        // assert(numFactors === 100)
-        // val numEdges = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.EdgesTable}""")
-        //   .map(rs => rs.long("count")).single.apply().get
-        // assert(numEdges === 100)
+        intercept[RuntimeException] {
+          inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction, None, false, "", dbSettings, false)
+        }
 
       }
 
       it("should work with multi-variable factor rules") {
         inferenceDataStore.init()
-        SQL(s"""CREATE TABLE r1(id ${inferenceDataStore.keyType}, weight ${inferenceDataStore.stringType},
-          is_correct boolean);""").execute.apply()
-        SQL(s"""CREATE TABLE r2(id ${inferenceDataStore.keyType}, weight ${inferenceDataStore.stringType},
-          is_correct boolean);""").execute.apply()
+        SQL(s"""CREATE TABLE r1(weight ${inferenceDataStore.stringType},
+          is_correct boolean, id bigint);""").execute.apply()
+        SQL(s"""CREATE TABLE r2(weight ${inferenceDataStore.stringType},
+          is_correct boolean, id bigint);""").execute.apply()
         val data1 = (1 to 100).map { i =>
           Map("id" -> i, "weight" -> s"weight_${i}", "is_correct" -> s"${i%2==0}".toBoolean)
         }
@@ -191,84 +171,102 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
           AndFactorFunction(Seq("r1.is_correct", "r2.is_correct")), 
           UnknownFactorWeight(List("weight")), "weight_prefix")
 
-        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), 0.0, None, false, "", dbSettings)
+        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), 0.0, None, false, "", dbSettings, false)
 
         val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numWeights === 100)
-        // val numVariables = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.VariablesTable}""")
-        //   .map(rs => rs.long("count")).single.apply().get
-        // assert(numVariables === 200)
-        // val numFactors = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.FactorsTable}""")
-        //   .map(rs => rs.long("count")).single.apply().get
-        // assert(numFactors === 100)
-        // val numEdges = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.EdgesTable}""")
-        //   .map(rs => rs.long("count")).single.apply().get
-        // assert(numEdges === 200)
+        val numFactors = SQL(s"""SELECT COUNT(*) AS "count" FROM dd_query_testFactor""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numFactors === 100)
 
 
       }
 
     }
 
-    // describe("grounding the factor graph with Multinomial variables") {
+    describe("grounding the factor graph with Multinomial variables") {
 
-    //   it("should work") {
-    //     inferenceDataStore.init()
+      it("should work with weight variables that are null")
+      {
+        inferenceDataStore.init()
         
-    //     // Create table with multinomial data
-    //     SQL(s"""CREATE TABLE r1(id ${inferenceDataStore.keyType}, weight ${inferenceDataStore.stringType},
-    //       value bigint);""").execute.apply() 
-    //     val data = (1 to 100).map { i =>
-    //       Map("id" -> i, "weight" -> s"weight_${i}", "value" -> (i%4))
-    //     }
-    //     dataStoreHelper.bulkInsert("r1", data.iterator)
+        // Create table with multinomial data
+        SQL(s"""CREATE TABLE r1(id bigint, weight text,
+          value bigint);""").execute.apply() 
+        val data = (1 to 100).map { i =>
+          Map("id" -> i, "weight" -> s"weight_${i}", "value" -> (i%4))
+        }
+        dataStoreHelper.bulkInsert("r1", data.iterator)
 
-    //     // Define the schema
-    //     val schema = Map[String, VariableDataType]("r1.value" -> MultinomialType(4))
+        // Define the schema
+        val schema = Map[String, VariableDataType]("r1.value" -> MultinomialType(4))
 
-    //     // Build the factor description
-    //     val factorDesc = FactorDesc("testFactor", 
-    //       """SELECT id AS "r1.id", weight AS "weight", value AS "r1.value" FROM r1""", 
-    //       IsTrueFactorFunction(Seq("r1.value")), 
-    //       UnknownFactorWeight(List("weight")), "weight_prefix")
-    //     val holdoutFraction = 0.0
+        // Build the factor description
+        val factorDesc = FactorDesc("testFactor", 
+          """SELECT id AS "r1.id", weight AS "weight", value AS "r1.value" FROM r1""", 
+          MultinomialFactorFunction(Seq("r1.value")), 
+          UnknownFactorWeight(List()), "weight_prefix")
+        val holdoutFraction = 0.0
 
-    //     // Ground the graph
-    //     inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction, None, false, "", dbSettings)
+        // Ground the graph
+        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction, None, false, "", dbSettings, false)
 
-    //     val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")
-    //       .map(rs => rs.long("count")).single.apply().get
-    //     assert(numWeights === 400)
-        
-        // val numVariables = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.VariablesTable}
-        //   WHERE data_type = 'Multinomial' AND cardinality=4""")
-        //   .map(rs => rs.long("count")).single.apply().get
-        // assert(numVariables === 100)
+        val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numWeights === 4)
 
         // One factor for each possible predicate assignment
-        // val numFactors = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.FactorsTable}""")
-        //   .map(rs => rs.long("count")).single.apply().get
-        // assert(numFactors === 400)
+        val numFactors = SQL(s"""SELECT COUNT(*) AS "count" FROM dd_query_testFactor""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numFactors === 100)
 
-        // One edge for each possible predicate assignment
-        // val numEdges = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.EdgesTable}""")
-        //   .map(rs => rs.long("count")).single.apply().get
-        // assert(numEdges === 400)
-        // val numEdgesPred0 = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.EdgesTable} WHERE equal_predicate=0""")
-        //   .map(rs => rs.long("count")).single.apply().get
-        // assert(numEdgesPred0 === 100)
+      }
 
-
-      // }
-
-    // }
-
-    describe("dumping the factor graph") {
-
-      it("should work") {
+      it("should work with weight variables")
+      {
         inferenceDataStore.init()
-        inferenceDataStore.groundFactorGraph(Map(), Seq(), 0.0, None, false, "", dbSettings)
+        
+        // Create table with multinomial data
+        SQL(s"""CREATE TABLE r1(id bigint, weight text,
+          value bigint);""").execute.apply() 
+        val data = (1 to 100).map { i =>
+          Map("id" -> i, "weight" -> s"weight_${i%4}", "value" -> (i%4))
+        }
+        dataStoreHelper.bulkInsert("r1", data.iterator)
+
+        // Define the schema
+        val schema = Map[String, VariableDataType]("r1.value" -> MultinomialType(4))
+
+        // Build the factor description
+        val factorDesc = FactorDesc("testFactor", 
+          """SELECT id AS "r1.id", weight AS "weight", value AS "r1.value" FROM r1""", 
+          MultinomialFactorFunction(Seq("r1.value")), 
+          UnknownFactorWeight(List("weight")), "weight_prefix")
+        val holdoutFraction = 0.0
+
+        // Ground the graph
+        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction, None, false, "", dbSettings, false)
+
+        val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numWeights === 16)
+
+        // One factor for each possible predicate assignment
+        val numFactors = SQL(s"""SELECT COUNT(*) AS "count" FROM dd_query_testFactor""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numFactors === 100)
+
+      }
+
+    }
+
+    // describe("dumping the factor graph") {
+
+    //   it("should work")(pending)
+      // {
+      //   inferenceDataStore.init()
+      //   inferenceDataStore.groundFactorGraph(Map(), Seq(), 0.0, None, false, "", dbSettings, false)
 
         // // Insert weights
         // SQL("""INSERT INTO dd_graph_weights(id, initial_value, is_fixed, description)
@@ -312,9 +310,9 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         // assert(variablesFile.exists() === true)
         // assert(factorsFile.exists() === true)
         // assert(edgesFile.exists() === true)
-      }
+      // }
 
-    }
+    // }
 
     describe ("writing back the inference Result") {
 
@@ -324,9 +322,9 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
 
       it("should work") {
         inferenceDataStore.init()
-        inferenceDataStore.groundFactorGraph(Map(), Seq(), 0.0, None, false, "", dbSettings)
+        inferenceDataStore.groundFactorGraph(Map(), Seq(), 0.0, None, false, "", dbSettings, false)
         SQL(s"""create table has_spouse(id ${inferenceDataStore.keyType} primary key, is_true boolean)""").execute.apply()
-        inferenceDataStore.writebackInferenceResult(schema, variablesFile, weightsFile)
+        inferenceDataStore.writebackInferenceResult(schema, variablesFile, weightsFile, false)
       }
 
     }
@@ -356,20 +354,20 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         )).toMap)
       }
 
-      // it("should work for categorical variables") {
-      //    SQL(s"""create table t1_c1_inference(id ${inferenceDataStore.keyType} primary key, c1 bigint, 
-      //     category bigint, expectation double precision)""").execute.apply()
-      //    SQL("""insert into t1_c1_inference(c1, category, expectation) VALUES
-      //     (null, 0, 0.55), (null, 1, 0.55), (null, 2, 0.55), 
-      //     (0, 0, 0.65), (0, 1, 0.95), (0, 2, 0.95), 
-      //     (1, 0, 0.85), (1, 1, 0.95), (1, 2, 0.95)""").execute.apply()
-      //   val buckets = Bucket.ten
-      //   val result = inferenceDataStore.getCalibrationData("t1.c1", MultinomialType(3), buckets)
-      //   assert(result(buckets(5)) == BucketData(3, 0, 0))
-      //   assert(result(buckets(6)) == BucketData(1, 1, 0))
-      //   assert(result(buckets(8)) == BucketData(1, 0, 1))
-      //   assert(result(buckets(9)) == BucketData(4, 1, 3))
-      // }
+      it("should work for categorical variables") {
+         SQL(s"""create table t1_c1_inference(id ${inferenceDataStore.keyType} primary key, c1 bigint, 
+          category bigint, expectation double precision)""").execute.apply()
+         SQL("""insert into t1_c1_inference(c1, category, expectation) VALUES
+          (null, 0, 0.55), (null, 1, 0.55), (null, 2, 0.55), 
+          (0, 0, 0.65), (0, 1, 0.95), (0, 2, 0.95), 
+          (1, 0, 0.85), (1, 1, 0.95), (1, 2, 0.95)""").execute.apply()
+        val buckets = Bucket.ten
+        val result = inferenceDataStore.getCalibrationData("t1.c1", MultinomialType(3), buckets)
+        assert(result(buckets(5)) == BucketData(3, 0, 0))
+        assert(result(buckets(6)) == BucketData(1, 1, 0))
+        assert(result(buckets(8)) == BucketData(1, 0, 1))
+        assert(result(buckets(9)) == BucketData(4, 1, 3))
+      }
 
     }
     

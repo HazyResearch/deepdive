@@ -54,6 +54,7 @@ There are a couple of caveats when writing input queries for factors:
   - If using Greenplum, `id` must not be the distribution key for a table.
   - If developers want an unique identifier of this table to refer to, they should use other columns rather than `id`.
   - Generally, for any table in a DeepDive application, name `id` is NOT recommended to use for any column other than this reserved field. Meaningful column names such as `sentence_id`, `people_id` are recommended.
+- The weight variables should not be `null`.
 
 Refer to the database-specific guides to learn about more caveats:
 
@@ -76,6 +77,10 @@ DeepDive supports [several types of factor functions](inference_rule_functions.h
       function: "Imply(people.has_cancer)"
     }
 
+### Using Array in Factor Function
+
+To use array of variables in factor function, in the input query, generate corresponding variable ids in array form, and rename it as `relation.id`, where `relation` is the table containing these variables, i.e., the naming convention for array variables is same as single variables, whereas the only difference is variable ids are in array form.
+
 
 ### Factor Weights
 
@@ -91,7 +96,7 @@ Each factor is assigned a *weight*, which expresses how confident you are in its
     someFactor.weight: ?(people.gender)
 
 
-#### Use Learned Weights
+<!-- #### Use Learned Weights
 
 To rerun the pipeline but use weights learned in the last execution instead of learning again, set `inference.skip_learning` to `true`. This will generate a table `dd_graph_last_weights` containing all the weights. Weights will be matched by description, and no learning will be performed:
 
@@ -109,5 +114,5 @@ Set `inference.weight_table` along with `inference.skip_learning` to fix factor 
       # Use weights in [weight table name]
       inference.skip_learning: true
       inference.weight_table: [weight table name]
-    }
+    } -->
 
