@@ -37,11 +37,9 @@ DeepDive differs from traditional systems in several ways:
   are part of commercial and open source tools including
   [MADlib](http://madlib.net/),
   [Impala](http://www.cloudera.com/content/cloudera/en/products-and-services/cdh/impala.html),
-  a product from Oracle, and low-level techniques, such as
+  a product from [Oracle](https://blogs.oracle.com/R/entry/low_rank_matrix_factorization_in), and low-level techniques, such as
   [Hogwild!](http://www.eecs.berkeley.edu/~brecht/papers/hogwildTR.pdf). They
-  have also been adopted in [Google
-  Brain](http://static.googleusercontent.com/media/research.google.com/en/us/archive/unsupervised_icml2012.pdf)
-  and in [Microsoft's Adam](http://www.wired.com/2014/07/microsoft-adam/).
+  have also been in [Microsoft's Adam](http://www.wired.com/2014/07/microsoft-adam/).
 
 ### Who should use DeepDive?
 
