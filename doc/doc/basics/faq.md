@@ -15,12 +15,17 @@ Refer to the [Performance Tuning guide](../advanced/performance.html) and try th
   or output batch size for your extractors. See the [Configuration
   reference](configuration.html#json) for details.
 
-  <!-- TODO (MR) Isn't this only for json_extractors? -->
+<!-- TODO (Ce) Isn't this only for json_extractors? -->
 
 - If the errors happens during sampling, try setting the JVM heap size for the sampler using the `-Xmx` option flag
-<!-- TODO (MR) Where? Is this still applicable? -->
+
+<!-- TODO (Ce) Where? Is this still applicable? -->
 
 ### How can I debug my extractors?
+
+<!-- TODO (Zifei) Move this to the 'writing extractors' document, together with
+the other thing from the walkhtrough (see in the writing extractors document),
+add an anchor and just reference it from here. -->
 
 In `json_extractor` (default) and `tsv_extractor`, if you print to *stderr*
 instead of *stdout*, the messages will appear in the log file.
@@ -39,16 +44,18 @@ the same weights?
 No, weights are unique within each inference rule. You can force the sharing of
 weights by specifying a weight prefix, for example:
 
-    rule1 {
-      weight       : ?(relation.someField)
-      weightPrefix : "myPrefix"
-    }
-    rule2 {
-      weight       : ?(relation.someField)
-      weightPrefix : "myPrefix"
-    }
+```bash
+rule1 {
+  weight       : ?(relation.someField)
+  weightPrefix : "myPrefix"
+}
+rule2 {
+  weight       : ?(relation.someField)
+  weightPrefix : "myPrefix"
+}
+```
 
-<!-- TODO (MR) What is a weightPrefix and how does it work ? Never documented. -->
+<!-- TODO (Ce) What is a weightPrefix and how does it work ? It is not documented. -->
 
 
 <!-- #### I added an inference rule that I am very confident about, but now my
@@ -73,7 +80,7 @@ which will help avoid this problem.
 
  -->
 
- <!-- TODO (MR) Why is the above FAQ commented? -->
+<!-- TODO (Ce) Why is the above FAQ commented? -->
 
 ### I am getting a "java.lang.UnsupportedClassVersionError" error. What can I do?
 
