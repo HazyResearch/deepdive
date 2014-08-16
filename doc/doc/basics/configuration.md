@@ -2,6 +2,9 @@
 layout: default
 ---
 
+<!-- TODO (Feiran) document here the directives about the parallel
+grounding. -->
+
 # Application configuration file reference
 
 This document contains the description of each configuration directive that can
@@ -9,13 +12,14 @@ be specified in an application configuration file.
 
 ## Structure
 
-<!-- TODO (MR) Describe blocks/section, format of variables, type of variables,
-when to use "xxx", when """xxx xxx" when nothing ? -->
+<!-- TODO (Zifei) Describe blocks/section, format of variables, type of variables,
+when to use "xxx", when """xxx xxx" when nothing, what are lists and how to
+specify them... -->
 
 ## Comments
 
 Any text appearing after a `#` character is considered a comment.
-<!-- TODO (MR) is this true ? -->
+<!-- TODO (Zifei) is this true ? -->
 
 ## Global section
 
@@ -44,7 +48,7 @@ The configuration directives for the database connection are the following:
 
 - `driver`: specify the JDBC driver to use. Currently only PostgreSQL is
   supported, so it must be "org.postgresql.Driver":
-<!-- TODO (MR): must? -->
+<!-- TODO (Ce): must? -->
 
   ```bash
 	driver   : "org.postgresql.Driver"
@@ -57,7 +61,7 @@ The configuration directives for the database connection are the following:
 	url      : "jdbc:postgresql://[host]:[port]/[database_name]" 
   ```
 
-<!-- TODO (MR) Is the following correct or do we need both ? -->
+<!-- TODO (Ce) Is the following correct or do we need both ? -->
   Alternatively, the instance can be specified through the `host`, `port`, and
   `dbname` directives:
 
@@ -79,7 +83,7 @@ The configuration directives for the database connection are the following:
 	password : "dbpassword"
   ```
 
-<!-- TODO (MR) Anything else for the DB connection ? -->
+<!-- TODO (Ce) Anything else for the DB connection ? -->
 
 ## <a name="extraction" href="#"></a> Extraction and extractors
 
@@ -99,7 +103,9 @@ deepdive {
 There is currently only one available extraction configuration directive:
 
 - `parallelism`: specifies the maximum number of extractors to execute in
-  parallel <!-- TODO (MR) what is the default value ? -->
+  parallel 
+  
+<!-- TODO (Ce) what is the default value ? -->
 
 ### <a name="extractor" href="#"></a> Extractors definition
 
@@ -177,12 +183,10 @@ to all styles:
 	  # ...
 	  style: "cmd_extractor"
 	  # ...
-	  dependencies: [ "extractor1", "extractor2" ]
+	  dependencies: [ extractor1, extractor2 ]
 	  # ...
 	}
   ```
-  <!-- TODO (MR) Is this the correct way of specifying multiple dependencies ?
-  Why do we need the "" here but not in the pipeline specification ? -->
 
   If an extractor specified in dependencies does not exist or is not in the
   active [pipeline](pipelines.html), that extractor will be ignored.  
@@ -214,13 +218,13 @@ The following directives are only for the `json_extractor`, `tsv_extractor`, and
 	  input: CSV(pathtofile.csv) # or TSV(pathtofile.tsv)
 	  # ...
 	}
-	<!-- TODO (MR) Is the above correct ? -->
   ```
+
+<!-- TODO (Ce) If the following is not supported, remove it. -->
 
 - `output_relation`: specifies the name of the relation the extractor output
   should be written to. Must be an existing relation in the database. E.g.:
 
-  ```bash
   ```bash
     myExtractor {
 	  # ...
@@ -276,8 +280,11 @@ extractor style, if any.
 - `output_batch_size`: specifies how many tuples in the output of the extractor
   are inserted into the `output_relation` at once. If the tuples are large, a
   smaller value may avoid incurring in out of memory errors. The default value
-  is <!-- TODO (MR) what is the default value? -->. This is an optional
-  directive. Example usage:
+  is ...
+  
+  <!-- TODO (Ce) what is the default value? -->. 
+  
+  This is an optional directive. Example usage:
 
   ```bash
     myExtractor {
@@ -324,7 +331,9 @@ Configuration directives to control the inference steps go in the global
 
 - <a name="batch_size" href="#"></a> `inference.batch_size`: batch size to
   insert variables, factors, and weights in the database during the factor graph
-  creation: <!-- TODO (MR) When and where ? -->
+  creation: 
+
+<!-- TODO (Feiran) When and where ? -->
 
   ```bash
     inference.batch_size = 1000000 
@@ -336,8 +345,9 @@ Configuration directives to control the inference steps go in the global
   DeepDive will skip the learning step for the factor weights and reuse the
   weights learned in the last execution. It will generate a table
   `dd_graph_last_weights` containing all the weights.  Weights will be matched
-  by description, and no learning will be performed.  <!-- TODO (MR) What is
-  `description`? -->
+  by description, and no learning will be performed.  
+  
+<!-- TODO (Ce) What is `description`? -->
 
   ```bash
       inference.skip_learning: true
@@ -348,22 +358,25 @@ Configuration directives to control the inference steps go in the global
   combination with `inference.skip_learning`, it allows to skip the weight
   learning step and use the weights specified in a custom table. The table
   tuples must contain the factor description and weights
-  <!-- TODO (MR) what does the above mean? What is the schema of this table ?
-  -->
+
+<!-- TODO (Is the following supported or not?) what does the above mean? What is
+the schema of this table ?  -->
+
   This table can be the result from one execution of DeepDive (an example would
   be the view `dd_inference_result_variable_mapped_weights`, or
   `dd_graph_last_weights` used when `inference.skip_learning` is `true`) or
   manually assigned, or a combination of the two.
 
-  If `inference_skip_learning` is `false` (default) this directive is ignored
-  <!-- TODO (MR) is that true? -->
+  If `inference_skip_learning` is `false` (default) this directive is ignored.
+
+  <!-- TODO (Feiran) is that true? -->
 
   ```bash
       inference.skip_learning: true
       inference.weight_table: [weight table name]
   ```
 
-<!-- TODO (MR) Are there other inference directives? -->
+<!-- TODO (Ce) Are there other inference directives? -->
 
 ## <a name="schema" href="#"></a> Inference schema
 
@@ -438,8 +451,6 @@ The **mandatory** definition directives for each rule are:
   - "?(column_name)": DeepDive learns multiple weights, one for each different
 	value in the column `column_name` in the result of `input_query`. 
 
-  <!-- TODO (MR) what is the "type" of this variable ? -->
-
 An example inference rule is the following:
 
 	```bash
@@ -456,18 +467,17 @@ An example inference rule is the following:
       }
 	  ```
 
-<!-- TODO (MR) Anything else in the inference rule definition ? -->
+<!-- TODO (All) Anything else in the inference rule definition ? -->
 
 ## <a name="pipelines" href="#"></a> Pipelines
 
 [Pipelines](running.html#pipelines) specification directives go in the global `deepdive`
 section. Available directives are:
 
-- `pipeline.pipelines`: This is a section containing a list <!-- TODO (MR) how
-  is it specified ? separated by commas ? -->
-  of one or more pipelines. Each pipeline is defined as an array of tasks, where
-  the names of the tasks are the names of the extractors or inference rules to
-  be executed, as in the following example:
+- `pipeline.pipelines`: This is a section containing a list of one or more
+  pipelines. Each pipeline is defined as an array of tasks, where the names of
+  the tasks are the names of the extractors or inference rules to be executed,
+  as in the following example:
 
   ```bash
     pipeline_name: [ extractor1 extractor2 inferenceRule1 ... ]
@@ -479,7 +489,8 @@ section. Available directives are:
     pipeline.pipelines { myPipeline: [ extractor1 extractor2 inferenceRule1 ] } 
   ```
 
-  <!-- TODO (MR) Is the above syntax correct? The walkthrough uses an example
+
+<!-- TODO (All) Is the above syntax correct? The walkthrough uses an example
   like:
 pipeline.pipelines.withnlp: [
   "ext_sentences",    # NLP extractor, takes very long
@@ -524,7 +535,7 @@ Is it the same?
   ```bash
     pipeline.relearn_from: "/PATH/TO/DEEPDIVE/HOME/out/2014-05-02T131658/"
   ```
-<!-- TODO (MR) Other pipeline directives ? -->
+<!-- TODO (All) Other pipeline directives ? -->
 
 ## <a name="sampler" href="#"></a> Sampler 
 Configuration directives for the sampler go in the global `deepdive` section.
@@ -535,14 +546,15 @@ The available directive are:
   ```bash
       sampler.sampler_cmd: "util/sampler-dw-mac gibbs"
   ```
-  <!-- TODO (MR) The above seems to also include a parameter `gibbs`. Why is
+<!-- TODO (Ce) The above seems to also include a parameter `gibbs`. Why is
   `gibbs` not in `sampler.sampler_args` ? -->
 
   Since [version 0.03](../changelog/0.03-alpha.html), DeepDive automatically
   chooses the correct executable based on your environment, so we recommend to
   omit the `sampler_cmd` directive.
-  <!-- TODO (MR) Does the above mean that we always use DimmWitted? Are there
-  other samplers? What is s the interface of this command? What arguments _must_
+
+<!-- TODO (Ce) Does the above mean that we always use DimmWitted? Are there
+other samplers? What is  the interface of this command? What arguments _must_
   accept ? -->
 
 - `sampler.sampler_args`: the arguments to the sampler executable:
@@ -553,12 +565,12 @@ The available directive are:
     }
   ```
 
-  <!-- TODO (MR) What are the default values ? -->
+  <!-- TODO (Ce) What are the default values ? -->
 
   For a list and the meaning of the arguments, please refer to the [documentation of our
   DimmWitted sampler](sampler.html).
 
-  <!-- TODO (MR) Are there other sampler directives ? -->
+  <!-- TODO (All) Are there other sampler directives ? -->
 
 ## Calibration / Holdout
 
@@ -586,5 +598,5 @@ The available directives are:
   When a custom holdout query is defined in `holdout_query`, the
   `holdout_fraction` setting is ignored. 
 
-<!-- TODO (MR) Are there other directives ? -->
+<!-- TODO (All) Are there other directives ? -->
 
