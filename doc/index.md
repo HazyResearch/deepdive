@@ -122,6 +122,7 @@ Basics:
 - [Generating negative examples](doc/basics/generating_negative_examples.html)
 - [High-speed sampler](doc/basics/sampler.html)
 - [FAQ](doc/basics/faq.html)
+- [`application.conf` Reference](doc/basics/configuration.html)
 
 Advanced topics:
 
