@@ -2,6 +2,8 @@
 layout: default
 ---
 
+<!-- TODO (Zifei) is everything here up to date ? -->
+
 # Developer Guide & System Architecture 
 
 DeepDive is written using the following frameworks and libraries:
@@ -23,7 +25,7 @@ X, you can install SBT using [Homebrew](http://brew.sh/. To compile DeepDive,
 run the following command from the `deepdive/` directory: 
 
 ```bash
-    sbt compile
+sbt compile
 ```
 
 SBT should download all required dependencies (including Scala) for you.
@@ -39,13 +41,13 @@ require connecting to a database (such as PostgreSQL), you must modify the
 can run all tests with:
 
 ```bash
-    sbt test
+sbt test
 ```
 
 To run a specific test, you can use:
 
 ```bash
-    sbt "test-only org.deepdive.test.unit.[TestClassName]"
+sbt "test-only org.deepdive.test.unit.[TestClassName]"
 ```
 
 You can use `sbt ~test` to keep running tests in the background while modifying
