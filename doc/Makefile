@@ -4,8 +4,8 @@
 # You can install jekyll with "gem install jekyll".
 #
 
-DEPLOY_USER_HOST = rionda@whale.stanford.edu
-DEPLOY_DIR = /afs/cs/group/infolab/deepdive/www/
+DEPLOY_USER_HOST = ssh.cs.brown.edu
+DEPLOY_DIR = public_html/deepdive/
 GITHUB_REPO_URL = https://github.com/HazyResearch/deepdive
 
 TEST_PORT = 4000
@@ -17,7 +17,7 @@ deploy:
 	# Building site...
 	jekyll build
 	# Deploying site...
-	scp -r _site/* $(DEPLOY_HOST):$(DEPLOY_DIR)
+	scp -r _site/* $(DEPLOY_USER_HOST):$(DEPLOY_DIR)
 
 deploy-github:
 	# Building site...
