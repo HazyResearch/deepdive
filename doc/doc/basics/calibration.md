@@ -17,9 +17,9 @@ the training data. DeepDive uses the holdout to evaluate its predictions. By
 default, no holdout is used.
 
 ```bash
-    calibration: {
-      holdout_fraction: 0.25
-    }
+calibration: {
+  holdout_fraction: 0.25
+}
 ```
 
 By default the system randomly selects which variables belong to the holdout
@@ -33,9 +33,9 @@ are to be held out into the `dd_graph_variables_holdout` table through arbitrary
 SQL. A custom holdout query can be specified as follows:
 
 ```bash
-    calibration: {
-      holdout_query: "INSERT INTO dd_graph_variables_holdout(variable_id) SELECT id FROM mytable WHERE predicate"
-    }
+calibration: {
+  holdout_query: "INSERT INTO dd_graph_variables_holdout(variable_id) SELECT id FROM mytable WHERE predicate"
+}
 ```
 
 When a custom holdout query is defined in `holdout_query`, the
@@ -58,7 +58,7 @@ learned values sorted by absolute value. The
      description   | text             |           | extended |
      weight        | double precision |           | plain    |
 
-<!-- TODO (MR) write description of each of these fields -->
+<!-- TODO (Zifei) write description of each of these fields -->
 
 ### Calibration data and plots
 
@@ -67,31 +67,31 @@ The system generates a calibration data file for each variable defined in the
 default, they are placed in `target/calibration/[variable_name].tsv`. Each file
 contains ten lines with five columns each:
 
-    [bucket_from] [bucket_to] [num_predictions] [num_true] [num_false]
+[bucket_from] [bucket_to] [num_predictions] [num_true] [num_false]
 
 DeepDive places the inference results into ten buckets. Each bucket is
 associated to a probability interval from 0.0 to 1.0. The meaning of the last
 three columns is the:
 
-<!-- TODO (MR) The following descriptions are not clear -->
+<!-- TODO (Amir) The following descriptions are not clear -->
 
-  - `num_predictions` is the number of variables in the probability bucket,
-	including both holdout and query variables.
+- `num_predictions` is the number of variables in the probability bucket,
+  including both holdout and query variables.
 
-  - `num_true` is the number of variables in the probability bucket for which
-	the holdout value is true. The number should be high for buckets with large
-	probabilities and small for buckets with small probabilities. Only the
-	holdout data is used.
+- `num_true` is the number of variables in the probability bucket for which the
+  holdout value is true. The number should be high for buckets with large
+  probabilities and small for buckets with small probabilities. Only the holdout
+  data is used.
 
-  - `num_false` is the number of variables in the probability bucket for which
-	the holdout value is false. The number should be small for buckets with
-	large probabilities and large for buckets with small probabilities. Only the
-	holdout data is used.
+- `num_false` is the number of variables in the probability bucket for which the
+  holdout value is false. The number should be small for buckets with large
+  probabilities and large for buckets with small probabilities. Only the holdout
+  data is used.
 
 DeepDive also generates a calibration plot for each of the variables defined
 in schema. The location of the plot is given in the DeepDive output of each run:
 
-    13:05:28 [profiler] INFO  calibration plot written to $DEEPDIVE_HOME/out/2014-06-23T130346/calibration/has_spouse.is_true.png [0 ms]
+13:05:28 [profiler] INFO  calibration plot written to $DEEPDIVE_HOME/out/2014-06-23T130346/calibration/has_spouse.is_true.png [0 ms]
 	
 DeepDive also prints in its output the commands to generate the calibration
 plots, so the user can create the plots manually.
@@ -102,7 +102,7 @@ A typical calibration plot looks as follows:
 
 ![]({{site.baseurl}}/images/calibration_example.png)
 
-<!-- TODO (MR) The following descriptions are not clear -->
+<!-- TODO (Amir) The following descriptions are not clear -->
 
 **The accuracy plot (a)** shows the ratio of correct positive predictions
 for each probability bucket. Ideally, the red line should follow the blue line,
