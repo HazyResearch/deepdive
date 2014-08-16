@@ -4,9 +4,9 @@ layout: default
 
 # Relation Extraction
 
-*Relation extraction* helps to extract structured information from unstructured
-sources such as raw text. One may want to find interactions between drugs to
-build a medical database, understand the scenes in images, or extract
+**Relation extraction** helps extracting **structured information** from
+unstructured sources such as raw text. One may want to find interactions between
+drugs to build a medical database, understand the scenes in images, or extract
 relationships among people to build an easily searchable knowledge base. 
 
 For example, let's assume we are interested in marriage relationships. We want
@@ -31,16 +31,16 @@ challenges:
 ### <a name="entity" href="#"></a> Entity Linking
 
 Before starting to extract relations it is a good idea to determine which words
-refer to the same "object" in the real world. These objects are called entities.
-For example, "Barack", "Obama" or "the president" may refer to the entity
-"Barack Obama". Let's say we extract relations about one of the words above. It
-would be helpful to combine them as being information about the same person.
-Figuring out which words, or *mentions*, refer to the same *entity* is called
-*Entity Linking*. There are various techniques to perform entity linking,
-ranging from simple string matching to more sophisticated machine learning
-approaches. In some domains we have a database of all known entities to link
-against, such as dictionary of all countries. In other domains, we need to be
-open to discovering new entities.
+refer to the same "object" in the real world. These objects are called
+**entities**. For example, "Barack", "Obama" or "the president" may refer to the
+entity "Barack Obama". Let's say we extract relations about one of the words
+above. It would be helpful to combine them as being information about the same
+person.  Figuring out which words, or **mentions**, refer to the same **entity**
+is a process called **entity linking**. There are various techniques to perform
+entity linking, ranging from simple string matching to more sophisticated
+machine learning approaches. In some domains we have a database of all known
+entities to link against, such as dictionary of all countries. In other domains,
+we need to be open to discovering new entities.
 
 ### Dealing with uncertainty
 
@@ -48,10 +48,9 @@ Given enough training data we can use machine learning algorithms to extract
 entities and relations we care about. There is one problem left: human language
 is inherently noisy. Words and phrases can be ambiguous, sentences are
 ungrammatical, and there are spelling mistakes. Our training data may have
-errors in it as well, and maybe we have made mistakes in the *entity linking*
-step, when figuring out which mentions refer to the same entity. This is where
-many machine learning approaches break down. They treat training or input data
-as "correct" and make predictions using this assumption.
+errors in it as well, and we may have made mistakes in the entity linking
+step. This is where many machine learning approaches break down: they treat
+training or input data as "correct" and make predictions using this assumption.
 
 DeepDive makes good use of uncertainty to improve predictions during the
 [probabilistic inference](inference.html) step. For example, DeepDive may figure
