@@ -139,7 +139,7 @@ The learned weights for the factors are stored in the table
 `dd_inference_result_mapped_weights` which contains the factor names and the
 learned values sorted by absolute value.
 
-<!-- TODO (MR) What is it of the above? -->
+<!-- TODO (Ce) What is it of the above? -->
 
 Calibration plots allow to evaluate the quality of the results. For more details
 about inspecting the learned weights and using calibration plots, see the
