@@ -5,72 +5,77 @@ layout: default
 # Writing inference rules
 
 Inference rules describe how to build the [factor
-graph](../general/factor_graph.html), and more precisely how to build the *factor*
-nodes that express the relationships between the *variable* nodes. Each rule
+graph](../general/factor_graph.html). Each rule
 consists of three components:
 
 - The **input query** specifies the variables to create. It is a SQL query that
-  usually combines relations created by the extractors. For each row in the
+  usually combines relations created by the extractors. **For each row** in the
   query result, the factor graph will have variables for a subset of the columns
   in that row (those specified in the factor function, see below), all
   connected by a factor. The result of the query **must** contain the reserved `id`
   column for each of the variable involved in the factor function.
 
 - The **factor function** defines which variables (i.e., columns in the input
-  query) to connected to each factor, and how they are related to each other.
+  query result) to connect to each factor, and how they are related to each other.
 
 - The **factor weight** describes the confidence in the relationship expressed
   by the factor. This is used during probabilistic inference. Weights can be
   constants, or automatically learned based on training data. 
 
-For example, the following query 
+The following is an example of an inference rule:
 
 ```bash
-    deepdive {
-      inference.factors: {
-        smokesFactor {
-          input_query : """
-            SELECT people.id         AS "people.id",
-                   people.smokes     AS "people.smokes",
-                   people.has_cancer AS "people.has_cancer",
-                   people.gender     AS "people.gender"
-            FROM people
-            """
-          function    : "Imply(people.smokes, people.has_cancer)"
-          weight      : "?(people.gender)"
-        }
-
-        # More factors...
-      }
+deepdive {
+  inference.factors: {
+    smokesFactor {
+      input_query : """
+        SELECT people.id         AS "people.id",
+               people.smokes     AS "people.smokes",
+               people.has_cancer AS "people.has_cancer",
+               people.gender     AS "people.gender"
+        FROM people
+        """
+      function    : "Imply(people.smokes, people.has_cancer)"
+      weight      : "?(people.gender)"
     }
+
+    # More rules...
+  }
+}
 ```
 
 ### Factor input query
 
-The input query of a factor returns a set of tuples. Each tuple contains all
-variables that a factor is using. It usually takes the form of a join query
+The input query of a factor returns a set of tuples. Each tuple must contain all
+the variables that a factor is using, plus additional columns that are used to
+learn the weight of the factor. It usually takes the form of a join query
 using feature relations produced by extractors, as in the following example:
 
 ```bash
-    someFactor {
-      input_query: """
-        SELECT p1.id     AS "people.p1.id",     p2.id     AS "people.p2.id",
-               p1.smokes AS "people.p1.smokes", p2.smokes AS "people.p2.smokes",
-               friends.person_id AS "friends.person_id"
-        FROM friends
-          INNER JOIN people AS p1 ON (friends.person_id = p1.id)
-          INNER JOIN people AS p2 ON (friends.friend_id = p2.id)
-        """
-		# ...
-    }
+someFactor {
+  input_query: """
+    SELECT p1.id     AS "people.p1.id",     p2.id     AS "people.p2.id",
+           p1.smokes AS "people.p1.smokes", p2.smokes AS "people.p2.smokes",
+           friends.person_id AS "friends.person_id"
+    FROM friends
+      INNER JOIN people AS p1 ON (friends.person_id = p1.id)
+      INNER JOIN people AS p2 ON (friends.friend_id = p2.id)
+    """
+	# ...
+}
 ```
 
-There are a couple of caveats when writing input queries for factors:
+There are a number of caveats when writing input queries for factors:
 
 - The query result **must** contain all variable attributes that are used in your
-  factor function. For example, if you are using `people.has_cancer` in your
-  factor function, then an attribute called `people.has_cancer` must be part of
-  the query result.
+  factor function. For example, if you are using the `people.has_cancer`
+  variable in the factor function, then an attribute called `people.has_cancer`
+  must be part of the query result. 
+
+- Always use `[relation_name].[attribute]` to refer to the variables in the
+factor function, regardless whether or not you are using an alias in your input
+query. For example, even if you write `SELECT p1.is_male from people p1`, the
+variable would be called `people.is_male`.
 
 - The query result **must** contain the reserved column `id` for each variable.
   DeepDive uses `id` column to assign unique variable ids. For example, if you
@@ -96,27 +101,23 @@ There are a couple of caveats when writing input queries for factors:
 	  field. Meaningful column names such as `sentence_id`, `people_id` are
 	  recommended.
 
-- In factor rules, always use `[relation_name].[attribute]` to refer to the variables,
-  regardless whether or not you are using an alias in your input query. For
-  example, even if you write `SELECT p1.is_male from people p1` your variable
-  would be called `people.is_male`.
+	- The values in the columns used to learn the factor weight should not be `null`.
 
 - When using self-joins, you must avoid naming collisions by defining an alias in
 your query. For example, the following will **not** work:
 
-```sql
-    SELECT p1.name, p1.id, p2.name, p2.id FROM people p1 LEFT JOIN people p2 ON p1.manager_id = p2.id
-```
+    ```sql
+SELECT p1.name, p1.id, p2.name, p2.id FROM people p1 LEFT JOIN people p2 ON p1.manager_id = p2.id
+    ```
 
-Instead, you must write somethng like the following:
+    Instead, you must write something like the following:
 
-```sql
-	SELECT p1.name AS "p1.name", p1.id AS "p1.id", p2.name AS "p2.name", p2.id
-	AS "p2.id" FROM people p1 LEFT JOIN people p2 ON p1.manager_id = p2.id;
-```
-
-Your factor function variables would be called `people.p1.name` and
-`people.p2.name`.
+    ```sql
+SELECT p1.name AS "p1.name", p1.id AS "p1.id", p2.name AS "p2.name", p2.id
+AS "p2.id" FROM people p1 LEFT JOIN people p2 ON p1.manager_id = p2.id;
+    ```
+	Your factor function variables would be called `people.p1.name` and
+	`people.p2.name`.
 
 ### Factor function
 
@@ -141,6 +142,16 @@ example, `Imply(B, C, A)` means "if B and C, then A".
     }
 ```
 
+#### Using arrays in factor functions
+
+<!-- TODO (Feiran) The following is confusing. Add an example -->
+
+To use array of variables in factor function, in the input query, generate
+corresponding variable ids in array form, and rename it as `relation.id`, where
+`relation` is the table containing these variables, i.e., the naming convention
+for array variables is same as single variables, whereas the only difference is
+variable ids are in array form.
+
 ### Factor Weights
 
 Each factor is assigned a *weight*, which expresses the confidence in the
@@ -154,24 +165,26 @@ also be a function of variables, in which case each factor will get a different
 weight depending on the variable value.
 
 ```bash
-
-    # Known weight (10 can be treated as positive infinite)
-    someFactor.weight: 10
+# Known weight (10 can be treated as positive infinite)
+someFactor.weight: 10
     
-    # Learn the weight, not depending on any variables. All factors created by this rule will have the same weight.
-    someFactor.weight: ?
+# Learn the weight, not depending on any variables. All factors created by this rule will have the same weight.
+someFactor.weight: ?
     
-    # Learn the weight. Each factor will get a different weight depending on the value of people.gender
-    someFactor.weight: ?(people.gender)
+# Learn the weight. Each factor will get a different weight depending on the value of people.gender
+someFactor.weight: ?(people.gender)
 ```
 
 #### Re-use learned weights
+<!-- TODO (Feiran) I didn't understand whether this works or not. If it does,
+keep it, otherwise remove it-->
 
 If the system already learned the weights for your factor graphs, you can tell
 DeepDive to skip learning them again by setting `inference.skip_learning` in the
 application configuration file. Refer to the [Configuration
 reference](configuration.html#skip_learning) for more details about this option.
 
+<!-- TODO (Feiran) Same as before but for the following section -->
 #### Custom weight table
 
 You can specify a table for the factor weights by setting
