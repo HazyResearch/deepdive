@@ -4,7 +4,8 @@ layout: default
 
 # Example Application: Extras
 
-This page is the extra section for [Example Application: A Mention-Level Extraction System](walkthrough-mention.html). 
+This document contains the extra section for the [Example Application: A Mention-Level
+Extraction System](walkthrough-mention.html) document. 
 
 ### Contents
 
@@ -22,36 +23,37 @@ Other sections:
 - [Improving the results](walkthrough-improve.html)
 
 
-<a id="data_tables" href="#"> </a>
+### <a id="data_tables" href="#"></a> Preparing Data Tables
 
-### Preparing Data Tables
+This section explains how the `setup_database.sh` script prepares the data.
 
-If you want to know how `setup_database.sh` prepares the data, here is the detailed guide.
+#### <a id="data_tables_steps" href="#"></a> Step-by-step data preparation
 
-<a id="data_tables_steps" href="#"> </a>
-
-#### Step-by-step data preparation
-
-Let's start by creating a new database called `deepdive_spouse` by typing in command line:
+Let's start by creating a new database called `deepdive_spouse`:
 
 ```bash
 createdb deepdive_spouse
 ```
 
 
-Make sure you are currently under `$DEEPDIVE_HOME/app/spouse` folder. Make sure to copy `data` folder from `$DEEPDIVE_HOME/examples/spouse_example`, if you haven't done so:
+While in the `$DEEPDIVE_HOME/app/spouse` directory, copy the `data` directory
+from `$DEEPDIVE_HOME/examples/spouse_example`, if you have not done so yet:
 
 ```bash
 cp -r ../../examples/spouse_example/data .
 ```
 
-The `data` folder contains several starter dumps:
+The `data` folder contains several text dumps:
 
-- `articles_dump.csv` contains initial data: articles we extract relation from. We will just start from the parsed sentences dataset:
-- `sentences_dump.csv` contains all parsed sentences from these articles. If you want to know how to get this dataset from articles, refer to [NLP extractor](#nlp_extractor) section.
-- `spouses.csv` and `non-spouses.tsv` Freebase relations we will use for distant supervision. We will come to them later.
+- `articles_dump.csv` contains initial data: articles we extract relation from.
+  We will just start from the parsed sentences dataset:
+- `sentences_dump.csv` contains all parsed sentences from these articles. If you
+  want to know how to get this dataset from articles, refer to [NLP
+  extractor](#nlp_extractor) section.
+- `spouses.csv` and `non-spouses.tsv` Freebase relations we will use for distant
+  supervision. We will come to them later.
 
-First we create a `sentences` table in our database by typing: 
+First we create a `sentences` table in our database: 
 
 ```bash
 psql -d deepdive_spouse -c "
@@ -69,7 +71,7 @@ psql -d deepdive_spouse -c "
 "
 ```
 
-Then we load prepared sentences into our database:
+Then we load the prepared sentences into our database:
 
 ```bash
 psql -d deepdive_spouse -c "
@@ -79,9 +81,9 @@ psql -d deepdive_spouse -c "
 
 Here we go! We have all sentences prepared in our database.
 
-Then we create several empty tables for feature extraction output. 
+Then we create several empty tables for the feature extraction output. 
 
-First create `people_mentions` table for people mention pairs, by typing:
+First we create `people_mentions` table for people mention pairs:
   
 ```bash
 psql -d deepdive_spouse -c "
@@ -95,8 +97,7 @@ psql -d deepdive_spouse -c "
 "
 ```
 
-
-Then create a table `has_spouse` for our relations by typing:
+Then we create a table `has_spouse` for our relations:
 
 ```bash
 psql -d deepdive_spouse -c "
@@ -112,7 +113,7 @@ psql -d deepdive_spouse -c "
 "
 ```
 
-Then create the feature table for all relations:
+Then we create the feature table for all relations:
 
 ```bash
 psql -d deepdive_spouse -c "
@@ -123,12 +124,12 @@ psql -d deepdive_spouse -c "
 "
 ```
 
+We are done, all the tables have been created.
 
-<a id="table_cheatsheet" href="#"> </a>
 
-#### Data table format Cheat-sheet
+#### <a id="table_cheatsheet" href="#"></a> Data table format Cheat-sheet
 
-Following relations are provided in the database dump:
+The following relations are present in the database:
 
                          List of relations
      Schema |        Name         | Type  |  Owner   | Storage
@@ -140,7 +141,8 @@ Following relations are provided in the database dump:
      public | sentences           | table | deepdive | heap
     (5 rows)
 
-Here's how they are created:
+<a name="tables" href="#"></a>
+This is how they are created:
 
 ```sql
 CREATE TABLE articles(
@@ -180,15 +182,13 @@ CREATE TABLE has_spouse_features(
 );
 ```
 
-<a id="nlp_extractor" href="#"> </a>
+### <a id="nlp_extractor" href="#"> </a> Data preprocessing using NLP extractor
 
-### Data preprocessing using NLP extractor
+If you want, you can try extracting the `sentences` table yourself. This should
+be useful if you want to extract your own dataset.
 
-If you want, you can try extracting the `sentences` table yourself. This should be useful if you want to extract your own dataset.
-
-To start from an NLP extractor, we first load all the articles into our database. First, let's load `articles` table into our database.
-
-Type in following commands to create a table:
+To start from an NLP extractor, we first load all the articles into our
+database. We start by creating a table:
 
 ```bash
 psql -d deepdive_spouse -c "
@@ -199,7 +199,7 @@ psql -d deepdive_spouse -c "
 "
 ```
 
-Then copy all the articles from the dump:
+Then we copy all the articles from the dump:
 
 ```bash
 psql -d deepdive_spouse -c "
@@ -208,9 +208,17 @@ psql -d deepdive_spouse -c "
 ```
 
 
-The first step towards performing Entity and Relation Extraction is to extract natural language features from the raw text. This is usually done using an NLP library such as [the Stanford Parser](http://nlp.stanford.edu/software/lex-parser.shtml) or [NLTK](http://nltk.org/). Because natural language processing is such a common first step we provide a pre-built extractor which uses the [Stanford CoreNLP Kit](http://nlp.stanford.edu/software/corenlp.shtml) to split documents into sentences and tag them. Let's copy it into our project. 
+The first step towards performing entity and relation extraction is to extract
+natural language features from the raw text. This is usually done using an NLP
+library such as [the Stanford
+Parser](http://nlp.stanford.edu/software/lex-parser.shtml) or
+[NLTK](http://nltk.org/). Because natural language processing is such a common
+first step we provide a pre-built extractor which uses the [Stanford CoreNLP
+Kit](http://nlp.stanford.edu/software/corenlp.shtml) to split documents into
+sentences and tag them. Let's copy it into our project. 
 
-The NLP extractor we provide lies in `examples/nlp_extractor` folder. Refer to its `README.md` for details. Now we go into it and compile it:
+The NLP extractor we provide lies in `examples/nlp_extractor` folder. Refer to
+its `README.md` for details. Now we go into it and compile it:
 
 ```bash  
 cd ../../examples/nlp_extractor
@@ -218,9 +226,15 @@ sbt stage
 cd ../../app/spouse
 ```
 
-The `sbt stage` command compiles the extractor (written in Scala) and generates a handy start script. The extractor itself takes JSON tuples of raw document text as input, and outputs JSON tuples of sentences with information such as part-of-speech tags and dependency parses. Let's now create a new table for the output of the extractor in our database. Because the output format of the NLP extractor is fixed by us, you must create a compatible table, like `sentences` defined [above](#loading_data).
+The `sbt stage` command compiles the extractor (written in Scala) and generates
+a handy start script. The extractor itself takes JSON tuples of raw document
+text as input, and outputs JSON tuples of sentences with information such as
+part-of-speech tags and dependency parses. We now create a new table for the
+output of the extractor in the database. Since the output format of the NLP
+extractor is fixed, we must create a compatible table, like the `sentences`
+table defined [above](#tables).
 
-Next, add the extractor: 
+Next, we add the extractor: 
 
 ```bash
 extraction.extractors {
@@ -237,18 +251,23 @@ extraction.extractors {
     after           : ${APP_HOME}"/util/fill_sequence.sh sentences sentence_id"
     parallelism     : 4
   }
-  # ... More extractors to add dere
+  # ... More extractors to add here
 }
 ```
 
 (Make sure this extractor is executed before `ext_people` by adding dependencies to the latter.)
 
-
 <a id="pipelines" href="#"> </a>
 
 ### Using pipelines
 
-By default, DeepDive runs all extractors that are defined in the configuration file. Sometimes you only want to run some of your extractors to test them, or to save time when the output of an early extractor hasn't changed. The NLP extractor is a good example of this. It takes a long time to run, and its output will be the same every time, so we don't want to run it more than once. DeepDive allows you to define different [pipelines](pipelines.html) for this purpose, by adding the following to your `application.conf`:
+By default, DeepDive runs all extractors that are defined in the configuration
+file. Sometimes you only want to run some of your extractors to test them, or to
+save time when the output of an early extractor hasn't changed. The NLP
+extractor is a good example of this. It takes a long time to run, and its output
+will be the same every time, so we don't want to run it more than once. DeepDive
+allows you to define different [pipelines](pipelines.html) for this purpose, by
+adding the following to your `application.conf`:
 
 ```bash
 pipeline.pipelines.withnlp: [
@@ -263,19 +282,24 @@ pipeline.pipelines.nonlp: [
 ]
 ```
 
-The code above created two pipelines, one with NLP extraction and the other without NLP. We further add a line:
+The code above created two pipelines, one with NLP extraction and the other
+without NLP. We further add a line:
 
 ```bash
 pipeline.run: "nonlp"
 ```
 
-This will tell DeepDive to execute the "nonlp" pipeline, which only contains the "ext_people" extractor.
+This directive instructs DeepDive to execute the "nonlp" pipeline, which only
+contains the "ext_people" extractor.
 
 <a id="debug_extractors" href="#"> </a>
 
 ### Debugging Extractors by getting example inputs
 
-"What do my extractor inputs look like?" Developers might find it helpful to print input to extractors to some temporary files. DeepDive provides a simple utility script for this task, in `$DEEPDIVE_HOME/util/extractor_input_writer.py`. The script is very simple:
+"What do my extractor inputs look like?" Developers might find it helpful to
+print input to extractors to some temporary files. DeepDive provides a simple
+utility script for this task, in
+`$DEEPDIVE_HOME/util/extractor_input_writer.py`. The script is very simple:
 
 ```python
 #! /usr/bin/env python
@@ -295,11 +319,14 @@ for line in sys.stdin:
 fout.close()
 ```
 
-This script takes one command line argument: file output path. It will simply output whatever it receives as input from STDIN to the file.
+This script takes one command line argument, the file output path. It will simply
+output whatever it receives as input from STDIN to the file.
 
-Developers can change extractor UDF to `util/extractor_input_writer.py SAMLPE_FILE_PATH` to obtain example extractor inputs in file `SAMLPE_FILE_PATH`.
+Developers can change the extractor UDF to `util/extractor_input_writer.py
+SAMPLE_FILE_PATH` to obtain sample extractor inputs in the file `SAMPLE_FILE_PATH`.
 
-For example, to debug the extractor `ext_has_spouse_features`, just change `application.conf` to:
+For example, to debug the extractor `ext_has_spouse_features`, just change
+`application.conf` to:
  
  ```bash
 ext_has_spouse_features {
@@ -332,15 +359,17 @@ ext_has_spouse_features {
 }
 ```
 
-After running the system with `run.sh`, the file `/tmp/dd-sample-features.txt` look like:
-
+After running the system with `run.sh`, the file `/tmp/dd-sample-features.txt`
+look like:
 
     {"p2_length":2,"p1_length":2,"words":["The","strange","case","of","the","death","of","'50s","TV","Superman","George","Reeves","is","deconstructed","in","``","Hollywoodland",",","''","starring","Adrien","Brody",",","Diane","Lane",",","Ben","Affleck","and","Bob","Hoskins","."],"relation_id":12190,"p1_start":20,"p2_start":10}
     {"p2_length":2,"p1_length":2,"words":["Political","coverage","has","not","been","the","same","since","The","National","Enquirer","published","photographs","of","Donna","Rice","in","the","former","Sen.","Gary","Hart","'s","lap","20","years","ago","."],"relation_id":34885,"p1_start":14,"p2_start":20}
     ...
 
-We see that each line contains a JSON object. And you can even use this file to test your extractor UDF by typing commands like this:
+We see that each line contains a JSON object. You can even also use this file to
+test your extractor UDF by running commands like :
 
 ```bash
 python udf/ext_has_spouse_features.py < /tmp/dd-sample-features.txt
 ```
+
