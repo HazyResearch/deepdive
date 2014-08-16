@@ -86,10 +86,9 @@ projects.
 
 DeepDive is project led by [Christopher
 Ré](http://cs.stanford.edu/people/chrismre/) at Stanford University. Current
-group members include [Victor Bittorf](http://pages.cs.wisc.edu/~bittorf/),
-[Zifei Shan](http://www.zifeishan.org/), [Mikhail
-Sushkov](https://www.linkedin.com/pub/mikhail-sushkov/26/638/537), Feiran Wang,
-Sen Wu, [Ce Zhang](http://pages.cs.wisc.edu/~czhang/), and [Matteo
+group members include: [Zifei Shan](http://www.zifeishan.org/), Feiran Wang,
+Sen Wu, Jaeo Shin, Amir Abbas Sadeghian, [Ce
+Zhang](http://pages.cs.wisc.edu/~czhang/), and [Matteo
 Riondato](http://cs.brown.edu/~matteo/).
 
 ### Updates &amp; Changelog 
