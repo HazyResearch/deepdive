@@ -131,5 +131,5 @@ Advanced topics:
 - [Using DeepDive on Ubuntu](doc/advanced/ubuntu.html)
 - [Amazon EC2 AMI guide](doc/advanced/ec2.html)
 - [Internal database schema](doc/advanced/reserved_tables.html)
-- [Factor graph output reference](doc/advanced/factor_graph_schema.html)
+- [Factor graph grounding output reference](doc/advanced/factor_graph_schema.html)
 

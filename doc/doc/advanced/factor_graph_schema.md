@@ -2,21 +2,24 @@
 layout: default
 ---
 
-# Factor Graph Output Schema Reference
+# Factor Graph Grounding Output Schema Reference
 
-DeepDive uses a custom binary format to encode the factor graph. It generates
-four files, one each for weights, variables, factors, and edges. All files
-resides in the `out/` directory of the latest run. The format of these files is
-as follows (numbers are in bytes):
+[Grounding](../basics/overview.html#grounding) is the process of building the
+factor graph and dumping it to files that the [sampler](../basics/sampler.html)
+can take as input. DeepDive uses a custom binary format to encode the factor
+graph. It generates four files, one each for weights, variables, factors, and
+edges. All files resides in the `out/` directory of the latest run. The format
+of these files is as follows, where numbers are in bytes and **network byte
+order** is used.
 
-Weights: 
+Weights 
 
     weightId        long    8
     isFixed         bool    1
     initialValue    double  8
 
 
-Variables:
+Variables
 
     variableId      long    8
     isEvidence      bool    1
