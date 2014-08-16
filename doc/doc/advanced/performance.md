@@ -46,7 +46,7 @@ a DeepDive application , you can set the heap size as follows:
 
 ### Setting extractor parallelism and batch sizes
 
-<!-- TODO (MR) Isn't this only for json_extractor ? -->
+<!-- TODO (Ce) Isn't this only for json_extractor ? -->
 
 You can execute multiple copies of an extractor in parallel using the
 `paralleism` option. You can use the `input_batch_size` option to define how
