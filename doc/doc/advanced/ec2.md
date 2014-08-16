@@ -2,6 +2,8 @@
 layout: default
 ---
 
+<!-- TODO (All) Is the following up to date? -->
+
 # Using DeepDive on EC2
 
 We distribute a pre-configured [Amazon EC2 Machine
