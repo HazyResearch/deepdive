@@ -27,7 +27,8 @@ trait MemoryInferenceDataStoreComponent extends InferenceDataStoreComponent{
     }
 
     def groundFactorGraph(schema: Map[String, _ <: VariableDataType],
-      factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean, weightTable: String, dbSettings: DbSettings) : Unit = {
+      factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], 
+      skipLearning: Boolean, weightTable: String, dbSettings: DbSettings, parallelGrounding: Boolean) : Unit = {
 
     }
 
@@ -59,7 +60,8 @@ trait MemoryInferenceDataStoreComponent extends InferenceDataStoreComponent{
 
     def dumpFactorGraph(serializer: Serializer, schema: Map[String, _ <: VariableDataType],
       factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String],
-      weightsPath: String, variablesPath: String, factorsPath: String, edgesPath: String) = {
+      weightsPath: String, variablesPath: String, factorsPath: String, edgesPath: String,
+      parallelGrounding: Boolean) = {
       // Weights
       weights.values.foreach { w => serializer.addWeight(w.id, w.isFixed, w.value) }
       // variables.values.foreach { v =>  serializer.addVariable(v.id, v.initialValue.isDefined, 
@@ -75,7 +77,7 @@ trait MemoryInferenceDataStoreComponent extends InferenceDataStoreComponent{
     }
 
     def writebackInferenceResult(variableSchema: Map[String, _ <: VariableDataType], 
-      variableOutputFile: String, weightsOutputFile: String) : Unit = {
+      variableOutputFile: String, weightsOutputFile: String, parallelGrounding: Boolean) : Unit = {
       // TODO
     }
 

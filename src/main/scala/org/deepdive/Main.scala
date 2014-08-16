@@ -12,7 +12,7 @@ object Main extends App with Logging {
   // Parsing command-line options
   case class CliOptions(configFile: File, outputDir: File)
   val parser = new scopt.OptionParser[CliOptions]("scopt") {
-    head("deepdive", "0.1")
+    head("deepdive", "0.0.3")
     opt[File]('c', "config") required() valueName("<config>") action { (x,c) =>
       c.copy(configFile = x)
     } text("configuration file path (required)")
@@ -25,13 +25,18 @@ object Main extends App with Logging {
   val dateStr = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HHmmss").format(new java.util.Date())
   val defaultOutputDir = new java.io.File(s"./out/${dateStr}")
 
-  val options = parser.parse(args, CliOptions(null, defaultOutputDir)).get
+  val options = parser.parse(args, CliOptions(null, defaultOutputDir)).getOrElse(null)
 
-  // Starting the pipeline
-  log.info(s"Running pipeline with configuration from ${options.configFile.getAbsolutePath}")
-  val userConfig = ConfigFactory.parseFile(options.configFile)
-  val defaultConfig = ConfigFactory.load
-  val resolvedConfig = userConfig.withFallback(defaultConfig).resolve()
-  DeepDive.run(resolvedConfig, options.outputDir.getCanonicalPath)
+  options match {
+    case null =>
+    case _ =>
+      // Starting the pipeline
+      log.info(s"Running pipeline with configuration from ${options.configFile.getAbsolutePath}")
+      val userConfig = ConfigFactory.parseFile(options.configFile)
+      val defaultConfig = ConfigFactory.load
+      val resolvedConfig = userConfig.withFallback(defaultConfig).resolve()
+      DeepDive.run(resolvedConfig, options.outputDir.getCanonicalPath)
+
+  }
 
 }

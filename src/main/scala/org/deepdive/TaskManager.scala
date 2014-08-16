@@ -50,7 +50,9 @@ class TaskManager extends Actor with ActorLogging {
       log.info(s"Added task_id=${task.id}")
       // Subscribe the sender
       // self.tell(Subscribe(task.id), sender)
-      scheduleTasks()
+
+      // Don't print task pool status at initialization
+      scheduleTasks(false)
     
     case msg @ Done(task, result) =>
       val reportDesc = result match {
@@ -125,14 +127,16 @@ class TaskManager extends Actor with ActorLogging {
   }
 
   // Forwards eligible task to the responsible actor
-  def scheduleTasks() = {
+  def scheduleTasks(printing: Boolean = true) = {
     // Find task that have all dependencies satisfied
     val (eligibileTasks, notEligibleTasks) = taskQueue.partition { task =>
       task.dependencies.toSet.subsetOf(completedTasks.map(_.task.id))
     }
 
-    log.info(s"${eligibileTasks.size}/${taskQueue.size} tasks eligible.")
-    log.info(s"Tasks not_eligible: ${notEligibleTasks.map(_.id).toSet}")
+    printing match {
+      case true => log.debug(s"${eligibileTasks.size}/${taskQueue.size} tasks eligible. Waiting tasks: ${notEligibleTasks.map(_.id).toSet}")
+      case _ =>
+    }
     
     // Forward eligible tasks
     eligibileTasks.foreach { task =>

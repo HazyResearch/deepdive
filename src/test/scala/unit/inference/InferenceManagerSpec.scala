@@ -30,7 +30,7 @@ class TestInferenceManager(
 class InferenceManagerSpec(_system: ActorSystem) extends TestKit(_system) with FunSpecLike with ImplicitSender {
 
   def this() = this(ActorSystem("InferenceManagerSpec"))
-  val dbSettings = DbSettings(null, null, null, null, null, null, null)
+  val dbSettings = DbSettings(null, null, null, null, null, null, null, null, null, null)
 
   val taskManager = TestProbe()
   val sampler = TestProbe()
@@ -48,7 +48,7 @@ class InferenceManagerSpec(_system: ActorSystem) extends TestKit(_system) with F
   describe("Running inference") {
     it("should work") {
       val actor = TestActorRef(actorProps)
-      actor ! InferenceManager.RunInference(Seq(), 0.0, None, "javaArgs", "samplerOptions")
+      actor ! InferenceManager.RunInference(Seq(), 0.0, None, "javaArgs", "samplerOptions", false, dbSettings, false)
       sampler.expectMsgClass(classOf[Sampler.Run])
       sampler.reply("Done")
       expectMsg(())

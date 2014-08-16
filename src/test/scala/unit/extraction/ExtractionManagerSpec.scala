@@ -29,7 +29,7 @@ class ExtractionManagerSpec(_system: ActorSystem) extends TestKit(_system)
   import ExtractionManagerSpec._
 
   def this() = this(ActorSystem("ExtractionManagerSpec"))
-  val dbSettings = DbSettings(null, null, null, null, null, null, null)
+  val dbSettings = DbSettings(null, null, null, null, null, null, null, null, null, null)
 
   describe("Extraction Manager") {
     

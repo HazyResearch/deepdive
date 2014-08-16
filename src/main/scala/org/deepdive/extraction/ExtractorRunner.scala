@@ -145,6 +145,9 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
           log.info(s"Copying file into ${queryOutputFile}")
           executeSqlQueryOrFail(copyQuery, taskSender, queryOutputFile.getAbsolutePath())
 
+          val fname = queryOutputFile.getName()
+          val fpath = queryOutputFile.getParent()
+
           val splitPrefix = queryOutputFile.getAbsolutePath() + "-"
           val linesPerSplit = task.extractor.inputBatchSize
           val splitCmd = s"split -a 10 -l ${linesPerSplit} " + queryOutputFile.getAbsolutePath() + s" ${splitPrefix}"
@@ -156,7 +159,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
           val maxParallel = task.extractor.parallelism
 
           // Note (msushkov): the extractor must take TSV as input and produce TSV as output
-          val runCmd = s"find ${splitPrefix}* -print0 | xargs -0 -P ${maxParallel} -L 1 bash -c '${udfCmd} " + "<" + " \"$0\" > \"$0.out\"'"
+          val runCmd = s"find ${fpath} -name '${fname}-*' 2>/dev/null -print0 | xargs -0 -P ${maxParallel} -L 1 bash -c '${udfCmd} " + "<" + " \"$0\" > \"$0.out\"'"
 
           log.info(s"Executing parallel UDF command: ${runCmd}")
           // executeScriptOrFail(runCmd, taskSender)
@@ -199,9 +202,20 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
 
           log.info("Removing temporary files...")
           queryOutputFile.delete()
-          val delCmd = s"rm -f ${splitPrefix}*"
-          log.info(s"${delCmd}")
-          executeScriptOrFail(delCmd, taskSender)
+          // val delCmd = s"rm -f ${splitPrefix}*"
+          // prevent "argument list too long"
+          
+          val delCmd = s"find ${fpath} -name '${fname}*' 2>/dev/null -print0 | xargs -0 rm -f"
+          log.info(s"Executing: ${delCmd}")
+          val delTmpFile = File.createTempFile(s"exec_delete", ".sh")
+          val delWriter = new PrintWriter(delTmpFile)
+          delWriter.println(s"${delCmd}")
+          delWriter.close()
+          executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
+          executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
+          delTmpFile.delete()
+
+
 
           // Execute the after script. Fail if the script fails.
           task.extractor.afterScript.foreach {
@@ -218,7 +232,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
 
         // Execute the sql query from sql extractor
         case "sql_extractor" =>
-          log.info("Executing sql query.")
+          log.debug("Executing SQL query: ${task.extractor.sqlQuery}")
           executeSqlUpdateOrFail(task.extractor.sqlQuery, taskSender)
           // Execute the after script. Fail if the script fails.
           task.extractor.afterScript.foreach {
