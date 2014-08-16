@@ -34,4 +34,4 @@ dropdb $DBNAME
 createdb $DBNAME
 
 # Run the test
-sbt "test"
+SBT_OPTS="-Xmx256m" sbt "test"
