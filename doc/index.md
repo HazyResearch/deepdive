@@ -104,7 +104,7 @@ Riondato](http://cs.brown.edu/~matteo/).
 
 Background:
 
-- [Probabilistic inference](doc/general/inference.html)
+- [Probabilistic inference and factor graphs](doc/general/inference.html)
 - [Relation extraction](doc/general/relation_extraction.html)
 - [Distant supervision](doc/general/distant_supervision.html)
 

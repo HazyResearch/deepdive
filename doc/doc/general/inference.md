@@ -4,71 +4,74 @@ layout: default
 
 # Probabilistic Inference and Factor Graphs
 
-This documents presents a high-level overview of *probabilistic inference* and
-an introduction to *factor graphs*, a model used by DeepDive to perform
+This documents presents a high-level overview of **probabilistic inference** and
+an introduction to **factor graphs**, a model used by DeepDive to perform
 probabilistic inference.
 
-Probabilistic inference is the task of deriving the probability for one or more
-random variable to take a specific value or set of values. For example, a
-Bernoulli random variable may describe the event that John has cancer. Such a
-variable could take a value of 1 (John has cancer) or 0 (John does not have
-cancer). DeepDive uses probabilistic inference to estimate the probability that
-the random variable takes value 1: a probability of 0.78 would mean that John is
-78% likely to have cancer.
+**Probabilistic inference** is the task of deriving the probability for one or
+more random variables to take a specific value or set of values. For example, a
+Bernoulli (Boolean) random variable may describe the event that John has cancer.
+Such a variable could take a value of 1 (John has cancer) or 0 (John does not
+have cancer). DeepDive uses probabilistic inference to estimate the probability
+that the random variable takes value 1: a probability of 0.78 would mean that
+John is 78% likely to have cancer.
 
 ## Factor graphs
 
-A factor graph is a type of probabilistic graphical model. There are two types
-of nodes in a factor graph, (random) variables and factors. A factor graph has
-two types of nodes:
+A **factor graph** is a type of probabilistic graphical model. A factor graph
+has two types of nodes:
 
-- *Variables*, which can be either *evidence variables* when their value is
+- **Variables**, which can be either *evidence variables* when their value is
   known, or *query variables* when their value should be predicted. 
 
-- *Factors* define the relationships between variables in the graph. Each factor
-  can be connected to many variables, and comes with a *factor function* to
+- **Factors** define the relationships between variables in the graph. Each factor
+  can be connected to many variables and comes with a **factor function** to
   define the relationship between these variables. For example, if a factor
   node is connected to two variables nodes `A` and `B`, a possible factor
-  function could be `imply(A,B)`, meaning that if the event represented by the
-  random variable `A` is true, then so must be the event represented by the
-  random variable `B`. Each *factor function* has a *weight* associated with it,
-  which describes how much influence the factor has on its variables in relative
-  terms. In other words, the weight encodes the confidence we have in the
-  relationship expressed by the factor function. If the weight is high and
-  positive, we are very confident in the function that the factor encodes, if
-  the weight is high and negative, we are confident that the function is
-  incorrect. The weight can be learned from training data, or assigned manually.
+  function could be `imply(A,B)`, meaning that if the random variable `A` takes
+  value `1`, then so must the random variable `B`. Each *factor function* has a
+  *weight* associated with it, which describes how much influence the factor has
+  on its variables in relative terms. In other words, the weight encodes the
+  confidence we have in the relationship expressed by the factor function. If
+  the weight is high and positive, we are very confident in the function that
+  the factor encodes, if the weight is high and negative, we are confident that
+  the function is incorrect. The weight can be learned from training data, or
+  assigned manually.
 
 <a name="possibleworlds" href="#"></a>
-A *possible world* is an assignment to every variable in a factor graph. The
+A **possible world** is an assignment to every variable in a factor graph. The
 possible worlds are not usually equiprobable, but rather each possible world has
-a probability. 
+a different probability. The probability of a possible world is proportional to
+a weighted combination of all factor functions in the graph, evaluated at the
+assignments specified by the possible world. The weights can be assigned
+statically or learned automatically.  In the latter case, some *training data*
+is needed. Training data define a set of possible worlds and, intuitively, the
+learning process chooses the weights by maximizing the probabilities of these
+possible worlds.
 
-The probability of a possible world is proportional to a weighted combination of
-all factor functions in the graph, evaluated at the assignments specified by the
-possible world. The weights can be assigned statically or learned automatically.
-In the latter case, *training data* is needed. Training data define a set of
-possible worlds and, intuitively, the learning process chooses the weights by
-maximizing the probabilities of these possible worlds.
-<!-- TODO (MR) What algorithm do we use ? -->
+<!-- TODO (Amir) What algorithm do we use for weight learning? -->
 
 <a name="marginal" href="#"></a>
-*Marginal inference* is the task of inferring the probability of one variable
-taking a particular value. Using the law of total probability, it is
+**Marginal inference** is the task of inferring the probability of one variable
+taking a particular value. Using the [law of total
+probability](http://en.wikipedia.org/wiki/Law_of_total_probability), it is
 straightforward to express this probability as the sum of the probabilities of
 possible worlds that contain the requested value for that variable. 
 
 <a name="gibbs" href="#"></a>
-Exact inference is an intractable problem, but a commonly used method for
-inference is *Gibbs sampling*: the process starts from a random possible world
-and iterates over each variable `v`, computing a new value for it according to a
-probability computed by taking into account the factor functions of the factors
-that `v` is connected to and the values of the variables connected to such
-factors (this is known as the *Markov blanket* of `v`), then the process moves
-to a different variable and iterates. After enough iterations over the random
-variables, we can compute the number of iterations during which each variable
-had a specific value and use the ratio between this quantity and the number of
-iterations as an estimate of the probability of the variable taking that value.
+Exact inference is an intractable problem on factor graphs, but a commonly used
+method for inference is **Gibbs sampling**: the process starts from a random
+possible world and iterates over each variable `v`, computing a new value for it
+according to a probability computed by taking into account the factor functions
+of the factors that `v` is connected to and the values of the variables
+connected to such factors (this is known as the *Markov blanket* of `v`), then
+the process moves to a different variable and iterates. After enough iterations
+over the random variables, we can compute the number of iterations during which
+each variable had a specific value and use the ratio between this quantity and
+the total number of iterations as an estimate of the probability of the variable
+taking that value.
+
+<!-- TODO (MR) I'm not sure about the following section -->
 
 ## Inference in DeepDive
 
@@ -99,6 +102,8 @@ more complex this model becomes very powerful. For example,
 one could imagine the event "John smokes" being influenced by whether or not
 John has friends who smoke. This is particularly useful when dealing with
 inherently noisy signals, such as human language.
+
+## Additional resources
 
 We refer the reader interested in additional details to other good resources:
 
