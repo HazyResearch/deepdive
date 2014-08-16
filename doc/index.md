@@ -15,7 +15,7 @@ DeepDive differs from traditional systems in several ways:
 - DeepDive is aware that **data is often noisy and imprecise**: names are
   misspelled, natural language is ambiguous, and humans make mistakes. Taking
   such imprecisions into account, DeepDive computes
-  [calibrated](doc/calibration.html) probabilities for every assertion
+  [calibrated](doc/basics/calibration.html) probabilities for every assertion
   it makes. For example, if DeepDive produces a fact with probability 0.9 it
   means the fact is 90% likely to be true. 
 - DeepDive is able to use large amounts of data from a **variety of sources**.
@@ -23,11 +23,11 @@ DeepDive differs from traditional systems in several ways:
   documents, web pages, PDFs, tables, and figures.
 - DeepDive allows developers to **use their knowledge of a given domain** to
   improve the quality of the results by [writing simple
-  rules](doc/inference_rules.html) that inform the inference (learning) process.
+  rules](doc/basics/inference_rules.html) that inform the inference (learning) process.
   DeepDive can also take into account user feedback on the correctness of the
   predictions, with the goal of improving the predictions.
 - DeepDive is able to use the data to [learn
-  "distantly"](doc/relation_extraction.html). In contrast, most machine
+  "distantly"](doc/general/distant_supervision.html). In contrast, most machine
   learning systems require tedious training for each prediction. In fact,
   many DeepDive applications, especially at early stages, need no traditional
   training data at all!
