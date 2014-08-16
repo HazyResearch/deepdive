@@ -3,85 +3,132 @@ layout: default
 root: "."
 ---
 
-### What is DeepDive all about?
+### What is DeepDive?
 
-DeepDive is a new type of system that enables developers to analyze data on a deeper level than ever before. DeepDive is a **trained system**, which means that it uses machine learning techniques to incorporate domain-specific knowledge and user feedback to improve the quality of its analysis. DeepDive is different from traditional systems in several ways:
+DeepDive is a new type of system that enables developers to analyze data on a
+deeper level than ever before. DeepDive is a **trained system**: it uses machine
+learning techniques to leverage on domain-specific knowledge and incorporates
+user feedback to improve the quality of its analysis.
 
-- DeepDive is aware that useful **data is often noisy and imprecise**: Names are misspelled, natural language is ambiguous, and humans make errors. To help deal with such imprecision, DeepDive produces [calibrated](doc/general/calibration.html) probabilities for every assertion it makes. For example, if DeepDive produces a fact with probability 0.9 it means the fact is 90% likely to be correct. 
-- DeepDive is able to use large amounts of data from a **variety of sources**. Applications built using DeepDive have extracted data from millions of documents, web pages, PDFs, tables, and figures.
-- DeepDive allows developers to **use their knowledge of a given domain** to improve the quality by [writing simple rules](doc/inference_rules.html) and giving feedback on whether predictions are correct or not.
-- DeepDive is able to use your data to ["distantly" learn](doc/general/relation_extraction.html). In contrast, most machine learning systems require one to tediously train each prediction. In fact, first versions of DeepDive-based systems often do not have any traditional training data at all!
-- DeepDive’s secret is a **scalable, high-performance inference and learning engine**. For the past few years, we have been working to make the underlying algorithms run as fast as possible. The underlying techniques pioneered in this project are part of commercial and open source tools including [MADlib](http://madlib.net/), [Impala](http://www.cloudera.com/content/cloudera/en/products-and-services/cdh/impala.html), a product from Oracle, and low-level techniques, such as [Hogwild!](http://www.eecs.berkeley.edu/~brecht/papers/hogwildTR.pdf), have been adopted in [Google Brain](http://static.googleusercontent.com/media/research.google.com/en/us/archive/unsupervised_icml2012.pdf) and in [Microsoft's Adam](http://www.wired.com/2014/07/microsoft-adam/).
+DeepDive differs from traditional systems in several ways:
 
-### Who should want DeepDive?
+- DeepDive is aware that **data is often noisy and imprecise**: names are
+  misspelled, natural language is ambiguous, and humans make mistakes. Taking
+  such imprecisions into account, DeepDive computes
+  [calibrated](doc/calibration.html) probabilities for every assertion
+  it makes. For example, if DeepDive produces a fact with probability 0.9 it
+  means the fact is 90% likely to be true. 
+- DeepDive is able to use large amounts of data from a **variety of sources**.
+  Applications built using DeepDive have extracted data from millions of
+  documents, web pages, PDFs, tables, and figures.
+- DeepDive allows developers to **use their knowledge of a given domain** to
+  improve the quality of the results by [writing simple
+  rules](doc/inference_rules.html) that inform the inference (learning) process.
+  DeepDive can also take into account user feedback on the correctness of the
+  predictions, with the goal of improving the predictions.
+- DeepDive is able to use the data to [learn
+  "distantly"](doc/relation_extraction.html). In contrast, most machine
+  learning systems require tedious training for each prediction. In fact,
+  many DeepDive applications, especially at early stages, need no traditional
+  training data at all!
+- DeepDive’s secret is a **scalable, high-performance inference and learning
+  engine**. For the past few years, we have been working to make the underlying
+  algorithms run as fast as possible. The techniques pioneered in this project
+  are part of commercial and open source tools including
+  [MADlib](http://madlib.net/),
+  [Impala](http://www.cloudera.com/content/cloudera/en/products-and-services/cdh/impala.html),
+  a product from Oracle, and low-level techniques, such as
+  [Hogwild!](http://www.eecs.berkeley.edu/~brecht/papers/hogwildTR.pdf). They
+  have also been adopted in [Google
+  Brain](http://static.googleusercontent.com/media/research.google.com/en/us/archive/unsupervised_icml2012.pdf)
+  and in [Microsoft's Adam](http://www.wired.com/2014/07/microsoft-adam/).
 
-DeepDive is targeted to help user extract relations between entities from the data and make inference. DeepDive can process different kinds input data, structured or unstructured, clean or noisy, and outputs result into database.
+### Who should use DeepDive?
 
-User should know SQL and Python in order to build application on DeepDive or to integrate DeepDive with other tools. To modify and improve DeepDive, developer must have some basic background knowledge listed in the documentation below. 
+DeepDive is targeted to help user extract relations between entities from data
+and make inference about facts involving the entities. DeepDive can process
+structured, unstructured, clean, or noisy data and outputs the results into a
+database.
+
+Users should be familiar with SQL and Python in order to build applications on
+top of DeepDive or to integrate DeepDive with other tools. A developer who
+would like to modify and improve DeepDive must have some basic background
+knowledge listed in the documentation below. 
 
 ### What is DeepDive used for?
 
-Over the last few years, we have built applications for both broad domains that [read the Web](https://www.youtube.com/watch?v=Q1IpE9_pBu4), and for specific domains, like Paleobiology. In collaboration with Shanan Peters ([http://paleobiodb.org/](http://paleobiodb.org/)), we [built a system](https://www.youtube.com/watch?v=Cj2-dQ2nwoY) that reads documents with higher accuracy and from larger corpora than expert human volunteers. This is exciting as it demonstrates that trained systems may have the ability to change the way science is conducted. 
+Over the last few years, we have built applications for both broad domains that
+[read the Web](https://www.youtube.com/watch?v=Q1IpE9_pBu4) and for specific
+domains like paleobiology. In collaboration with Shanan Peters
+([PaleobioDB](http://paleobiodb.org/)), we built a
+[system](https://www.youtube.com/watch?v=Cj2-dQ2nwoY) that reads documents with
+higher accuracy and from larger corpora than expert human volunteers. We find
+this very exciting as it demonstrates that trained systems may have the ability
+to change the way science is conducted. 
 
-In research papers, we have demonstrated DeepDive on financial, oil and gas documents, and NMR data. For example, we [have shown](http://cs.stanford.edu/people/chrismre/papers/jointable-acl.pdf) that DeepDive is able to understand tabular data by reading the text of the reports. We are using DeepDive to support our own research into how knowledge can be used to build the next generation of data processing systems.
+In a number of research papers we demonstrated the power of DeepDive on NMR data
+and financial, oil, and gas documents. For example, we
+[showed](http://cs.stanford.edu/people/chrismre/papers/jointable-acl.pdf) that
+DeepDive can understand tabular data. We are using DeepDive to support our own
+research, exploring how knowledge can be used to build the next generation of data
+processing systems.
 
-A few demonstrations of DeepDive applications:
+Examples of DeepDive applications include:
 
-- [PaleoDeepDive - A knowledge base for Paleobiologists](https://www.youtube.com/watch?v=Cj2-dQ2nwoY)
-- [GeoDeepDive - Extracting dark data from geology journal articles](https://www.youtube.com/watch?v=X8uhs28O3eA)
-- [Wisci - Enriching Wikipedia with structured data](https://www.youtube.com/watch?v=Q1IpE9_pBu4)
+- [PaleoDeepDive](https://www.youtube.com/watch?v=Cj2-dQ2nwoY) - A knowledge base for Paleobiologists
+- [GeoDeepDive](https://www.youtube.com/watch?v=X8uhs28O3eA) - Extracting dark data from geology journal articles
+- [Wisci](https://www.youtube.com/watch?v=Q1IpE9_pBu4) - Enriching Wikipedia with structured data
 
-We are posting the complete code for our examples on this site. We are working on other more domains with even more collaborators in this year. Stay tuned, and [get in touch with us](mailto:contact.hazy@gmail.com) to talk about interesting projects.
+The complete code for these examples is available with DeepDive. We are
+currently working on other domains with even more collaborators. Stay tuned, and
+[get in touch with us](mailto:contact.hazy@gmail.com) to talk about interesting
+projects.
 
-### Who are we?
+### Who develops DeepDive?
 
-DeepDive is project led by [Christopher Ré](http://cs.stanford.edu/people/chrismre/) at Stanford university. Current group members include [Victor Bittorf](http://pages.cs.wisc.edu/~bittorf/),  [Zifei Shan](http://www.zifeishan.org/), [Mikhail Sushkov](https://www.linkedin.com/pub/mikhail-sushkov/26/638/537), Feiran Wang, Sen Wu, and [Ce Zhang](http://pages.cs.wisc.edu/~czhang/).
+DeepDive is project led by [Christopher
+Ré](http://cs.stanford.edu/people/chrismre/) at Stanford University. Current
+group members include [Victor Bittorf](http://pages.cs.wisc.edu/~bittorf/),
+[Zifei Shan](http://www.zifeishan.org/), [Mikhail
+Sushkov](https://www.linkedin.com/pub/mikhail-sushkov/26/638/537), Feiran Wang,
+Sen Wu, [Ce Zhang](http://pages.cs.wisc.edu/~czhang/), and [Matteo
+Riondato](http://cs.brown.edu/~matteo/).
 
-### Updates & Changelog 
+### Updates &amp; Changelog 
 
-- [Changelog for version 0.03-alpha (05/07/2014)](doc/changelog/0.03-alpha.html)
-- [Changelog for version 0.02-alpha (03/12/2014)](doc/changelog/0.02-alpha.html)
+- [Changelog for version 0.03.1-alpha](doc/changelog/0.03.1-alpha.html) (08/15/2014)
+- [Changelog for version 0.03-alpha](doc/changelog/0.03-alpha.html) (05/07/2014)
+- [Changelog for version 0.02-alpha](doc/changelog/0.02-alpha.html) (03/12/2014)
 
-<a id="documentation" href="#"> </a>
+### <a name="documentation" href="#"></a> Documentation
 
-### Documentation
+Background:
 
-General & Background knowledge:
+- [Probabilistic inference](doc/inference.html)
+- [Relation extraction &amp; distant supervision](doc/relation_extraction.html)
 
-- [Probabilistc Inference](doc/general/inference.html)
-- [Relation Extraction & Distant Supervision](doc/general/relation_extraction.html)
-- [Using calibration data](doc/general/calibration.html)
+Basics:
 
-<!-- - [Generating negative examples (Coming soon)](doc/general/generating_negative_examples.html) -->
-
-Getting started:
-
-- [DeepDive overview](doc/overview.html)
+- [System overview and fundamental terminology](doc/overview.html)
 - [Installation guide](doc/installation.html)
-- [Quick Start](doc/quick_start.html)
-- [Amazon EC2 AMI guide](doc/ec2.html)
-- [Example application walkthrough](doc/walkthrough.html)
-
-Advanced tutorials:
-
-- [Defining schema](doc/schema.html)
+- [Creating a new application](doc/writing.html)
 - [Writing extractors](doc/extractors.html)
 - [Writing inference rules](doc/inference_rules.html)
 - [Inference rule function reference](doc/inference_rule_functions.html)
-- [Multinomial Variables and Factors](doc/multinomial.html)]
 - [Calibration](doc/calibration.html)
-- [Pipelines](doc/pipelines.html)
-- [Performance tuning](doc/performance.html)
-- [High-speed sampler](doc/sampler.html)
-- [Internal database schema](doc/reserved_tables.html)
+- [Running an application](doc/running.html)
+- [Example application walk-through](doc/walkthrough.html)
+- [Generating negative examples](doc/basics/generating_negative_examples.html)
+- [High-speed sampler](doc/basics/sampler.html)
 - [FAQ](doc/faq.html)
 
-Learn about using various databases and distributions with DeepDive:
+Advanced topics:
 
-- [Using PostgreSQL with DeepDive](doc/postgresql.html)
-- [Using GreenPlum with DeepDive](doc/greenplum.html)
-- [Using DeepDive on Ubuntu](doc/ubuntu.html)
+- [Performance tuning](doc/advanced/performance.html)
+- [Developer guide](doc/advanced/developer.html)
+- [Using DeepDive with GreenPlum](doc/advanced/greenplum.html)
+- [Using DeepDive on Ubuntu](doc/advanced/ubuntu.html)
+- [Amazon EC2 AMI guide](doc/advanced/ec2.html)
+- [Internal database schema](doc/advanced/reserved_tables.html)
+- [Factor graph output reference](doc/advanced/factor_graph_schema.html)
 
-Contribute to DeepDive:
-
-- [Developer guide](doc/developer.html)
