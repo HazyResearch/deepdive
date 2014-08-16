@@ -71,7 +71,8 @@ each variable had a specific value and use the ratio between this quantity and
 the total number of iterations as an estimate of the probability of the variable
 taking that value.
 
-<!-- TODO (MR) I'm not sure about the following section -->
+<!-- TODO (All) The following section doesn't seem to fit here. What shall we do
+with it? -->
 
 ## Inference in DeepDive
 
