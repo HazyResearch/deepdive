@@ -21,7 +21,7 @@ with the same name in the database:
 	
 where `RULE_NAME` is the name of an inference rule.
 
-<!-- TODO (MR) we need a one line description for each of the above tables. -->
+<!-- TODO (Zifei) we need a one line description for each of the above tables. -->
 
-<!-- TODO (MR) we should probably add the [TABLE]_[VARIABLE]_inference table) -->
+<!-- TODO (Zifei) Mention the [TABLE]_[VARIABLE]_inference table) -->
 
