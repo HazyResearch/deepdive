@@ -120,8 +120,7 @@ Congratulations, DeepDive is now running on your system!
 Note that for the system to work properly, the `deepdive` folder must *not* be
 renamed.
 
-### <a id="ddlib" href="#"></a> Additional step: setting up environment
-variables for DDLib
+### <a id="ddlib" href="#"></a> Additional step: setting up environment variables for DDLib
 
 DDLib is our Python library that provides useful utilities such as "Span" to
 manipulate elements in sentences. It can be useful to write your UDFs during the
