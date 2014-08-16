@@ -37,7 +37,7 @@ trait InferenceManager extends Actor with ActorLogging {
   lazy val factorGraphDumpFileVariables = new File(s"${Context.outputDir}/graph.variables")
   lazy val factorGraphDumpFileFactors = new File(s"${Context.outputDir}/graph.factors")
   lazy val factorGraphDumpFileEdges = new File(s"${Context.outputDir}/graph.edges")
-  lazy val factorGraphDumpFileMeta = new File(s"${Context.outputDir}/graph.meta.csv")
+  lazy val factorGraphDumpFileMeta = new File(s"${Context.outputDir}/graph.meta")
   lazy val SamplingOutputDir = new File(s"${Context.outputDir}")
   lazy val SamplingOutputFile = new File(s"${SamplingOutputDir}/inference_result.out")
   lazy val SamplingOutputFileWeights = new File(s"${SamplingOutputDir}/inference_result.out.weights")
@@ -55,17 +55,22 @@ trait InferenceManager extends Actor with ActorLogging {
   }
 
   def receive = {
-    case InferenceManager.GroundFactorGraph(factorDescs, holdoutFraction, holdoutQuery, skipLearning, weightTable) =>
+    case InferenceManager.GroundFactorGraph(factorDescs, holdoutFraction, holdoutQuery, 
+      skipLearning, weightTable, parallelGrounding) =>
       val _sender = sender
       inferenceDataStore.asInstanceOf[SQLInferenceDataStore]
-        .groundFactorGraph(variableSchema, factorDescs, holdoutFraction, holdoutQuery, skipLearning, weightTable, dbSettings)
+        .groundFactorGraph(variableSchema, factorDescs, holdoutFraction, holdoutQuery, 
+          skipLearning, weightTable, dbSettings, parallelGrounding)
       sender ! "OK"
       // factorGraphBuilder ? FactorGraphBuilder.AddFactorsAndVariables(
       //   factorDesc, holdoutFraction, batchSize) pipeTo _sender
-    case InferenceManager.RunInference(factorDescs, holdoutFraction, holdoutQuery, samplerJavaArgs, samplerOptions, skipSerializing) =>
+    case InferenceManager.RunInference(factorDescs, holdoutFraction, holdoutQuery, 
+      samplerJavaArgs, samplerOptions, skipSerializing, dbSettings, parallelGrounding) =>
       val _sender = sender
-      val result = runInference(factorDescs, holdoutFraction, holdoutQuery, samplerJavaArgs, samplerOptions, skipSerializing)
+      val result = runInference(factorDescs, holdoutFraction, holdoutQuery, 
+        samplerJavaArgs, samplerOptions, skipSerializing, dbSettings, parallelGrounding)
       result pipeTo _sender
+
     case InferenceManager.WriteCalibrationData =>
       val _sender = sender
       log.info("writing calibration data")
@@ -81,45 +86,56 @@ trait InferenceManager extends Actor with ActorLogging {
   }
 
   def runInference(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], 
-    samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false) = {
+    samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false, dbSettings: DbSettings, parallelGrounding: Boolean) = {
     // TODO: Make serializier configurable
-    skipSerializing match {
-      case false =>
-        factorGraphDumpFileMeta.getParentFile().mkdirs()
-        // factorGraphDumpFileWeights.createNewFile()
-        // factorGraphDumpFileVariables.createNewFile()
-        // factorGraphDumpFileFactors.createNewFile()
-        // factorGraphDumpFileEdges.createNewFile()
-        // factorGraphDumpFileMeta.createNewFile()
-        val weightsOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileWeights, false))
-        val variablesOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileVariables, false))
-        val factorsOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileFactors, false))
-        val edgesOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileEdges, false))
-        val metaOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileMeta, false))
-        val serializier = new BinarySerializer(weightsOutput, variablesOutput, factorsOutput, edgesOutput, metaOutput)
-        inferenceDataStore.dumpFactorGraph(serializier, variableSchema, factorDescs, holdoutFraction,
-          holdoutQuery, factorGraphDumpFileWeights.getCanonicalPath,
-          factorGraphDumpFileVariables.getCanonicalPath, factorGraphDumpFileFactors.getCanonicalPath,
-          factorGraphDumpFileEdges.getCanonicalPath)
-        serializier.close()
-        weightsOutput.close()
-        variablesOutput.close()
-        factorsOutput.close()
-        metaOutput.close()
-      case true =>
-    }
+    // if (!skipSerializing) {
+    //   if (!parallelGrounding) {
+    //     factorGraphDumpFileMeta.getParentFile().mkdirs()
+    //     // factorGraphDumpFileWeights.createNewFile()
+    //     val weightsOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileWeights, false))
+    //     val variablesOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileVariables, false))
+    //     val factorsOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileFactors, false))
+    //     val edgesOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileEdges, false))
+    //     val metaOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileMeta, false))
+    //     val serializier = new BinarySerializer(weightsOutput, variablesOutput, factorsOutput, edgesOutput, metaOutput)
+    //     inferenceDataStore.dumpFactorGraph(serializier, variableSchema, factorDescs, holdoutFraction,
+    //       holdoutQuery, factorGraphDumpFileWeights.getCanonicalPath,
+    //       factorGraphDumpFileVariables.getCanonicalPath, factorGraphDumpFileFactors.getCanonicalPath,
+    //       factorGraphDumpFileEdges.getCanonicalPath, parallelGrounding)
+    //     serializier.close()
+    //     weightsOutput.close()
+    //     variablesOutput.close()
+    //     factorsOutput.close()
+    //     metaOutput.close()
+    //   }
+    // }
     val sampler = context.actorOf(samplerProps, "sampler")
-    val samplingResult = sampler ? Sampler.Run(samplerJavaArgs, samplerOptions,
-      factorGraphDumpFileWeights.getCanonicalPath, factorGraphDumpFileVariables.getCanonicalPath,
-      factorGraphDumpFileFactors.getCanonicalPath, factorGraphDumpFileEdges.getCanonicalPath,
-      factorGraphDumpFileMeta.getCanonicalPath, SamplingOutputDir.getCanonicalPath)
-    // Kill the sampler after it's done :)
-    sampler ! PoisonPill
-    samplingResult.map { x =>
-      inferenceDataStore.writebackInferenceResult(
+
+    if (parallelGrounding) {
+      // val samplingResult = sampler ? Sampler.Run(samplerJavaArgs, samplerOptions,
+      val samplingResult = sampler ? Sampler.Run(samplerJavaArgs, samplerOptions,
+        dbSettings.gppath, s"${dbSettings.gppath}/variables", s"${dbSettings.gppath}/factors",
+        dbSettings.gppath, dbSettings.gppath, SamplingOutputDir.getCanonicalPath, parallelGrounding)
+      // Kill the sampler after it's done :)
+      sampler ! PoisonPill
+      samplingResult.map { x =>
+        inferenceDataStore.writebackInferenceResult(
         variableSchema, SamplingOutputFile.getCanonicalPath, 
-        SamplingOutputFileWeights.getCanonicalPath)
-    }
+        SamplingOutputFileWeights.getCanonicalPath, parallelGrounding)
+      }  
+    } else {
+      val samplingResult = sampler ? Sampler.Run(samplerJavaArgs, samplerOptions,
+        factorGraphDumpFileWeights.getCanonicalPath, factorGraphDumpFileVariables.getCanonicalPath,
+        factorGraphDumpFileFactors.getCanonicalPath, factorGraphDumpFileEdges.getCanonicalPath,
+        factorGraphDumpFileMeta.getCanonicalPath, SamplingOutputDir.getCanonicalPath, parallelGrounding)
+      // Kill the sampler after it's done :)
+      sampler ! PoisonPill
+      samplingResult.map { x =>
+        inferenceDataStore.writebackInferenceResult(
+        variableSchema, SamplingOutputFile.getCanonicalPath, 
+        SamplingOutputFileWeights.getCanonicalPath, parallelGrounding)
+      }  
+    }  
   }
 
 }
@@ -146,9 +162,11 @@ object InferenceManager {
   // ==================================================
 
   // Executes a task to build part of the factor graph
-  case class GroundFactorGraph(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean, weightTable: String)
+  case class GroundFactorGraph(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], 
+    skipLearning: Boolean, weightTable: String, parallelGrounding: Boolean)
   // Runs the sampler with the given arguments
-  case class RunInference(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false)
+  case class RunInference(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], 
+    samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false, dbSettings: DbSettings, parallelGrounding: Boolean)
   // Writes calibration data to predefined files
   case object WriteCalibrationData
 
