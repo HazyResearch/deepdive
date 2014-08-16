@@ -104,23 +104,24 @@ Riondato](http://cs.brown.edu/~matteo/).
 
 Background:
 
-- [Probabilistic inference](doc/inference.html)
-- [Relation extraction &amp; distant supervision](doc/relation_extraction.html)
+- [Probabilistic inference](doc/general/inference.html)
+- [Relation extraction](doc/general/relation_extraction.html)
+- [Distant supervision](doc/general/distant_supervision.html)
 
 Basics:
 
-- [System overview and fundamental terminology](doc/overview.html)
-- [Installation guide](doc/installation.html)
-- [Creating a new application](doc/writing.html)
-- [Writing extractors](doc/extractors.html)
-- [Writing inference rules](doc/inference_rules.html)
-- [Inference rule function reference](doc/inference_rule_functions.html)
-- [Calibration](doc/calibration.html)
-- [Running an application](doc/running.html)
-- [Example application walk-through](doc/walkthrough.html)
+- [System overview and fundamental terminology](doc/basics/overview.html)
+- [Installation guide](doc/basics/installation.html)
+- [Creating a new application](doc/basics/writing.html)
+- [Writing extractors](doc/basics/extractors.html)
+- [Writing inference rules](doc/basics/inference_rules.html)
+- [Inference rule function reference](doc/basics/inference_rule_functions.html)
+- [Calibration](doc/basics/calibration.html)
+- [Running an application](doc/basics/running.html)
+- [Example application walk-through](doc/basics/walkthrough.html)
 - [Generating negative examples](doc/basics/generating_negative_examples.html)
 - [High-speed sampler](doc/basics/sampler.html)
-- [FAQ](doc/faq.html)
+- [FAQ](doc/basics/faq.html)
 
 Advanced topics:
 
