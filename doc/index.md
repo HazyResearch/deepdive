@@ -121,14 +121,14 @@ Basics:
 - [Example application walk-through](doc/basics/walkthrough.html)
 - [Generating negative examples](doc/basics/generating_negative_examples.html)
 - [High-speed sampler](doc/basics/sampler.html)
-- [`application.conf` Reference](doc/basics/configuration.html)
+- [**application.conf** Reference](doc/basics/configuration.html)
 - [Multinomial/Categorical variables](doc/basics/multinomial.html)
 - [FAQ](doc/basics/faq.html)
 
 Advanced topics:
 
 - [Performance tuning](doc/advanced/performance.html)
-- [Developer guide](doc/advanced/developer.html)
+- [Scala developer guide for DeepDive](doc/advanced/developer.html)
 - [Using DeepDive with GreenPlum](doc/advanced/greenplum.html)
 - [Using DeepDive on Ubuntu](doc/advanced/ubuntu.html)
 - [Amazon EC2 AMI guide](doc/advanced/ec2.html)

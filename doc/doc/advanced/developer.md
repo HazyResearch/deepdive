@@ -2,9 +2,7 @@
 layout: default
 ---
 
-<!-- TODO (Zifei) is everything here up to date ? -->
-
-# Developer Guide & System Architecture 
+# Scala Developer Guide for DeepDive
 
 DeepDive is written using the following frameworks and libraries:
 

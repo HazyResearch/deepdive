@@ -67,7 +67,7 @@ your environment is more complex than usual.
 
 Set the following parameters in the `/etc/sysctl.conf` file and reboot: 
 
-```bash
+```
 xfs_mount_options = rw,noatime,inode64,allocsize=16m
 sysctl.kernel.shmmax = 500000000
 sysctl.kernel.shmmni = 4096
@@ -92,7 +92,7 @@ sysctl.vm.overcommit_memory = 2
 *Note:* For RHEL version 6.x platforms, the above parameters do not include the
 `sysctl.` prefix, as follows:
 
-```bash
+```
 xfs_mount_options = rw,noatime,inode64,allocsize=16m
 kernel.shmmax = 500000000
 kernel.shmmni = 4096
@@ -116,7 +116,7 @@ vm.overcommit_memory = 2
 
 Set the following parameters in the `/etc/security/limits.conf` file: 
 
-```bash
+```
 soft nofile 65536
 hard nofile 65536
 soft nproc 131072
@@ -149,7 +149,7 @@ To set Greenplum related session variables, modify your
 `~/.bashrc` script and add the line:
 
 ```bash
-# ~/.bashrc
+# File: ~/.bashrc
 source /usr/local/greenplum-db/greenplum_path.sh
 ```
 
@@ -223,31 +223,29 @@ $ gpstart
 
 ### Verify the installation
 
-Follow the links and you should get similar output.
+Follow these commands and you should get similar output.
 
-<!-- TODO (All) What links? A volunteer to fix this! =) -->
+```
+$ psql postgres
 
-```bash
-    $ psql postgres
+psql (8.2.15)
+Type “help” for help.
 
-    psql (8.2.15)
-    Type “help” for help.
+postgres=#
 
-    postgres=#
+postgres=# \l
 
-    postgres=# \l
+                List of databases
+   Name    | Owner | Encoding | Access privileges
+-----------+-------+----------+-------------------
+ postgres  | Xxx   | UTF8     |
+ template0 | Xxx   | UTF8     | =c/Xxx  
+                              : Xxx=CTc/Xxx  
+ template1 | Xxx   | UTF8     | =c/Xxx  
+                              : Xxx=CTc/Xxx  
+(3 rows)
 
-                    List of databases
-       Name    | Owner | Encoding | Access privileges
-    -----------+-------+----------+-------------------
-     postgres  | Xxx   | UTF8     |
-     template0 | Xxx   | UTF8     | =c/Xxx  
-                                  : Xxx=CTc/Xxx  
-     template1 | Xxx   | UTF8     | =c/Xxx  
-                                  : Xxx=CTc/Xxx  
-    (3 rows)
-
-    postgres=# \q
+postgres=# \q
 ```
 
 ### Stop and Start the database server

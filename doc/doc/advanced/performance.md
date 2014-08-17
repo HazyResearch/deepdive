@@ -46,10 +46,10 @@ a DeepDive application , you can set the heap size as follows:
 
 ### Setting extractor parallelism and batch sizes
 
-<!-- TODO (Ce) Isn't this only for json_extractor ? -->
+For `json_extracor` and `tsv_extractor`, you can execute multiple copies of an extractor in parallel using the
+`paralleism` option. In `plpy_extractor` the parallelism is managed by database.
 
-You can execute multiple copies of an extractor in parallel using the
-`paralleism` option. You can use the `input_batch_size` option to define how
+For `json_extracor` and `tsv_extractor`, you can use the `input_batch_size` option to define how
 many tuples each extractor should receive at once, and the `output_batch_size`
 option to define how many extracted tuples should be inserted into the data
 store at once. The [extractor

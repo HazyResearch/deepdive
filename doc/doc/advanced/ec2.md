@@ -2,7 +2,7 @@
 layout: default
 ---
 
-<!-- TODO (All) Is the following up to date? -->
+<!-- TODO (Feiran) Is the following up to date? -->
 
 # Using DeepDive on EC2
 
