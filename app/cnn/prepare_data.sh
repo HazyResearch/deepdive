@@ -4,7 +4,7 @@
 
 ######### GREENPLUM CONFIG ###########
 export GREENPLUM_FLAGS="-h raiders3.stanford.edu -p 5432 -U amirabs"
-export DBNAME=deepdive_images_10
+export DBNAME=deepdive_images_1
 GREENPLUM_FLAGS="-h raiders3.stanford.edu -p 5432 -U amirabs"
 
 #pg_ctl -D /usr/local/var/postgres -l /usr/local/var/postgres/server.log start
@@ -36,56 +36,64 @@ psql $GREENPLUM_FLAGS -d $DBNAME -c "CREATE TABLE variables_layer0(id bigint,\
 										fid int,\
 										num_rows int,\
 										num_cols int,\
-										values real[]) DISTRIBUTED BY (image_id)"
+										values real[],
+										layer int) DISTRIBUTED BY (image_id)"
 
 psql $GREENPLUM_FLAGS -d $DBNAME -c "CREATE TABLE variables_layer1(id bigint,\
 										image_id bigint,\
 										fid int,\
 										num_rows int,\
 										num_cols int,\
-										values real[]) DISTRIBUTED BY (image_id)"
+										values real[],
+										layer int) DISTRIBUTED BY (image_id)"
 
 psql $GREENPLUM_FLAGS -d $DBNAME -c "CREATE TABLE variables_layer2(id bigint,\
 										image_id bigint,\
 										fid int,\
 										num_rows int,\
 										num_cols int,\
-										values real[]) DISTRIBUTED BY (image_id)"
+										values real[],
+										layer int) DISTRIBUTED BY (image_id)"
 
 psql $GREENPLUM_FLAGS -d $DBNAME -c "CREATE TABLE variables_layer3(id bigint,\
 										image_id bigint,\
 										fid int,\
 										num_rows int,\
 										num_cols int,\
-										values real[]) DISTRIBUTED BY (image_id)"
+										values real[],
+										layer int) DISTRIBUTED BY (image_id)"
 
 psql $GREENPLUM_FLAGS -d $DBNAME -c "CREATE TABLE variables_layer4(id bigint,\
 										image_id bigint,\
 										fid int,\
 										num_rows int,\
 										num_cols int,\
-										values real[]) DISTRIBUTED BY (image_id)"
+										values real[],
+										layer int) DISTRIBUTED BY (image_id)"
 
 psql $GREENPLUM_FLAGS -d $DBNAME -c "CREATE TABLE variables_layer5(id bigint,\
 										image_id bigint,\
 										fid int,\
 										num_rows int,\
 										num_cols int,\
-										values real[]) DISTRIBUTED BY (image_id)"
+										values real[],
+										layer int) DISTRIBUTED BY (image_id)"
 
 psql $GREENPLUM_FLAGS -d $DBNAME -c "CREATE TABLE variables_layer6(id bigint,\
 										image_id bigint,\
 										fid int,\
 										num_rows int,\
 										num_cols int,\
-										values real[]) DISTRIBUTED BY (image_id)"
+										values real[],
+										layer int) DISTRIBUTED BY (image_id)"
 
 psql $GREENPLUM_FLAGS -d $DBNAME -c "CREATE TABLE variables_layer_lr(id bigint,\
 										image_id bigint,\
 										fid int,\
 										num_rows int,\
 										num_cols int,\
-										values real[]) DISTRIBUTED BY (image_id)"
+										values real[],
+										layer int) DISTRIBUTED BY (image_id)"
 #Fid in logistic regression layer means the class of the variable
 
 

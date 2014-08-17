@@ -36,7 +36,7 @@ export PARALLELISM=96
 
 
 # Database Configuration
-export DBNAME=deepdive_images_10
+export DBNAME=deepdive_images_1
 export PGUSER=amirabs
 export PGPASSWORD=${PGPASSWORD:-}
 export PGPORT=5432

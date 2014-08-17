@@ -59,6 +59,11 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
   import context.dispatcher
   implicit val timeout = Timeout(1337.hours)
 
+
+  val gpfdist_hostname = "raiders3.stanford.edu"
+  val gpfdist_port = 8083
+  val gpfdist_basepath = "/lfs/local/0/amir/gpdata"
+
   // Generate SQL query prefixes
   val dbname = dbSettings.dbname
   val pguser = dbSettings.user
@@ -137,17 +142,44 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
             case DatastoreInputQuery(query) => query
             case _ => 
           }
-          val queryOutputFile = File.createTempFile(s"copy_query_${funcName}", ".tsv")
+          //val queryOutputFile = File.createTempFile(s"copy_query_${funcName}", ".tsv")
           // executeSqlQueryOrFail
 
-          // Single-thread copy to a file
-          val copyQuery = "COPY (" + s"${inputQuery}".replaceAll("""(?m)[;\s\n]+$""", "") + ") TO STDOUT;"
-          log.info(s"Copying file into ${queryOutputFile}")
-          executeSqlQueryOrFail(copyQuery, taskSender, queryOutputFile.getAbsolutePath())
+          val filepath = gpfdist_basepath + s"/extinput_${task.extractor.name}"
+          //val queryOutputFile = File.createNewFile(filepath)
 
-          val splitPrefix = queryOutputFile.getAbsolutePath() + "-"
+          val dropTmpView = s"""DROP   VIEW IF EXISTS dd_view_extractor_input_${task.extractor.name};"""
+          val crtTmpView  = s"""CREATE VIEW dd_view_extractor_input_${task.extractor.name} AS ${inputQuery};"""
+          val dropTmpTbl  = s"""DROP   TABLE IF EXISTS dd_table_extractor_input_${task.extractor.name};"""
+          val crtTmpTbl   = s"""CREATE TABLE dd_table_extractor_input_${task.extractor.name} AS SELECT * FROM dd_view_extractor_input_${task.extractor.name} LIMIT 0;"""
+
+          val dropExtTbl  = s"""DROP EXTERNAL TABLE IF EXISTS dd_etbl_extractor_input_${task.extractor.name};"""
+          val crtExtTable = s"""CREATE WRITABLE EXTERNAL TABLE dd_etbl_extractor_input_${task.extractor.name} 
+                                (LIKE dd_table_extractor_input_${task.extractor.name})
+                                LOCATION ('gpfdist://${gpfdist_hostname}:${gpfdist_port}/extinput_${task.extractor.name}')
+                                FORMAT 'TEXT';
+                            """
+          val copyIntoExt = s"""INSERT INTO dd_etbl_extractor_input_${task.extractor.name} SELECT
+                                * FROM dd_view_extractor_input_${task.extractor.name}"""
+
+          // Single-thread copy to a file
+          //val copyQuery = "COPY (" + s"${inputQuery}".replaceAll("""(?m)[;\s\n]+$""", "") + ") TO STDOUT;"
+          //log.info(s"Copying file into ${queryOutputFile}")
+          //executeSqlQueryOrFail(copyQuery, taskSender, queryOutputFile.getAbsolutePath())
+
+          executeSqlQueryOrFail(dropTmpView.replaceAll("""(?m)[;\s\n]+$""", ""), taskSender, null)
+          executeSqlQueryOrFail(crtTmpView.replaceAll("""(?m)[;\s\n]+$""", ""), taskSender, null)
+
+          executeSqlQueryOrFail(dropTmpTbl.replaceAll("""(?m)[;\s\n]+$""", ""), taskSender, null)
+          executeSqlQueryOrFail(crtTmpTbl.replaceAll("""(?m)[;\s\n]+$""", ""), taskSender, null)
+
+          executeSqlQueryOrFail(dropExtTbl.replaceAll("""(?m)[;\s\n]+$""", ""), taskSender, null)
+          executeSqlQueryOrFail(crtExtTable.replaceAll("""(?m)[;\s\n]+$""", ""), taskSender, null)
+          executeSqlQueryOrFail(copyIntoExt.replaceAll("""(?m)[;\s\n]+$""", ""), taskSender, null)
+
+          val splitPrefix = filepath + "-"
           val linesPerSplit = task.extractor.inputBatchSize
-          val splitCmd = s"split -a 10 -l ${linesPerSplit} " + queryOutputFile.getAbsolutePath() + s" ${splitPrefix}"
+          val splitCmd = s"split -a 10 -l ${linesPerSplit} " + filepath + s" ${splitPrefix}"
 
           log.info(s"Executing split command: ${splitCmd}")
           executeScriptOrFail(splitCmd, taskSender)
@@ -181,11 +213,35 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
               SELECT version() LIKE '%Greenplum%';
             """
 
+          // TODO: check whether you have gpload installed -- With Feiran
+          val gpload_content = s"""
+            |VERSION: 1.0.0.1
+            |DATABASE: ${dbname}
+            |USER: ${pguser}
+            |HOST: ${pghost}
+            |PORT: ${pgport}
+            |GPLOAD:
+            |   INPUT:
+            |      - MAX_LINE_LENGTH: 3276800
+            |      - SOURCE:
+            |         FILE:
+            |            - ${splitPrefix}*.out
+            |      - FORMAT: text
+            |      - DELIMITER: E'\\t'
+            |      - ERROR_LIMIT: 10000000
+            |   OUTPUT:
+            |      - TABLE: ${outputRel}
+          """.stripMargin
 
-          // Only allow single-threaded copy
-          val writebackCmd = s"find ${splitPrefix}*.out -print0 | xargs -0 -P 1 -L 1 bash -c 'psql -d ${dbname} -U ${pguser} -p ${pgport} -h ${pghost} -c " + "\"COPY " + s"${outputRel} FROM STDIN;" + " \" < \"$0\"'"
+          val gploadTmpFile = File.createTempFile(s"gpload", ".yaml")
+          val writerGpload = new PrintWriter(gploadTmpFile)
+          writerGpload.println(gpload_content)
+          writerGpload.close()
+          log.debug(s"GPLoad file written to ${gploadTmpFile.getAbsolutePath()}")
 
-
+          // // Only allow single-threaded copy
+          // val writebackCmd = s"find ${splitPrefix}*.out -print0 | xargs -0 -P 1 -L 1 bash -c 'psql -d ${dbname} -U ${pguser} -p ${pgport} -h ${pghost} -c " + "\"COPY " + s"${outputRel} FROM STDIN;" + " \" < \"$0\"'"
+          val writebackCmd = s"gpload -f ${gploadTmpFile.getAbsolutePath()} -v"
 
           val writebackTmpFile = File.createTempFile(s"exec_parallel_writeback", ".sh")
           val writer2 = new PrintWriter(writebackTmpFile)
@@ -198,10 +254,18 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
           executeSqlUpdateOrFail(s"ANALYZE ${outputRel};", taskSender)
 
           log.info("Removing temporary files...")
-          queryOutputFile.delete()
+
+
+          //queryOutputFile.delete()
           val delCmd = s"rm -f ${splitPrefix}*"
+          val deleteTmpFile = File.createTempFile(s"delete_files", ".sh")
+          val writer3 = new PrintWriter(deleteTmpFile)
+          writer3.println(s"${delCmd}")
+          writer3.close()
+          log.debug(s"deleting temporary split files")
+
           log.info(s"${delCmd}")
-          executeScriptOrFail(delCmd, taskSender)
+          executeScriptOrFail(deleteTmpFile.getAbsolutePath(), taskSender)
 
           // Execute the after script. Fail if the script fails.
           task.extractor.afterScript.foreach {

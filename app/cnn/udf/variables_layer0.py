@@ -12,11 +12,13 @@ for row in fileinput.input():
 	values=[]
 	num_rows=obj["num_rows"]
 	num_cols=obj["num_cols"]
+	layer=obj["layer"]
 	f=0
 	print json.dumps({
 		"image_id":image_id,
 		"fid":f,
 		"num_rows":num_rows,
 		"num_cols":num_cols,
-		"values":pixels
+		"values":pixels,
+		"layer":layer
 		})

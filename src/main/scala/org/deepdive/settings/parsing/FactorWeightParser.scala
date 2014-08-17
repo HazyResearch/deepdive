@@ -17,6 +17,10 @@ object FactorWeightParser extends RegexParsers {
 		case _ => UnknownFactorWeight(List())
 	}
 
-	def factorWeight = constantWeight | unknownWeight
+	def factorWeightObj = constantWeight | unknownWeight
+
+	def factorWeight = rep1sep(factorWeightObj, ",").? ^^ {
+		case Some(weightList) => FactorWeightInit(weightList.toList)
+	}
 
 }

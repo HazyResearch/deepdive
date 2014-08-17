@@ -5,7 +5,7 @@
 #include <stdlib.h> 
 #include <stdint.h>
 #include <vector>
-
+#include <boost/algorithm/string.hpp>
 using namespace std;
 
 // 64-bit endian conversion
@@ -23,54 +23,103 @@ using namespace std;
 #define bswap_16(x) \
      ((unsigned short int) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8)))
 
+double StrToDbl(string s) {
+     double d;
+     stringstream ss(s); //turn the string into a stream
+     ss >> d; //convert
+     return d;
+}
+
+long StrToLng(string s) {
+     long d;
+     stringstream ss(s); //turn the string into a stream
+     ss >> d; //convert
+     return d;
+}
+
 // read variables and convert to binary format
 void load_var(std::string filename){
   std::ifstream fin(filename.c_str());
   std::ofstream fout((filename + ".bin").c_str(), std::ios::binary | std::ios::out);
 
-  long vid;
-  int is_evidence;
-  double initial_value;
-  short type;
-  long edge_count = -1;
-  long cardinality;
+  long mid;
+  long num_rows;
+  long num_cols;
+  vector<string> is_evidences;
+  vector<string> initial_values;
+  long layer;
 
-  edge_count = bswap_64(edge_count);
+  string line;
+  while (getline(fin, line)) {
+    istringstream ss(line);
+    ss >> mid;
+    ss >> num_rows >> num_cols;
 
-  while(fin >> vid >> is_evidence >> initial_value >> type >> cardinality){
-    // endianess
-    vid = bswap_64(vid);
-    uint64_t initval = bswap_64(*(uint64_t *)&initial_value);
-    type = bswap_16(type);
-    cardinality = bswap_64(cardinality);
+    mid = bswap_64(mid);
+    num_rows = bswap_64(num_rows);
+    num_cols = bswap_64(num_cols);
+
+    fout.write((char*)&mid, 8);
+    fout.write((char*)&num_rows, 8);
+    fout.write((char*)&num_cols, 8);
 
 
-    fout.write((char*)&vid, 8);
-    fout.write((char*)&is_evidence, 1);
-    fout.write((char*)&initval, 8);
-    fout.write((char*)&type, 2);
-    fout.write((char *)&edge_count, 8);
-    fout.write((char*)&cardinality, 8);
+    /// Outputing is_evidence array
+    string is_evidence_str;
+    ss >> is_evidence_str;
+    bool is_evidence;
+    boost::algorithm::split( is_evidences, is_evidence_str, boost::algorithm::is_any_of( "{ , }" ) );
+    for(int i=0; i<is_evidences.size(); i++)
+      if(is_evidences[i]!=""){
+        is_evidence=0;
+        if(is_evidences[i]!="NULL")
+          is_evidence=1;
+        fout.write((char*)&is_evidence, 1);
+      }
+    is_evidences.clear();
+
+    /// Outputing is_evidence array
+    string initial_value_str;
+    ss >> initial_value_str;
+    double initial_value;
+    boost::algorithm::split( initial_values, initial_value_str, boost::algorithm::is_any_of( "{ , }" ) );
+    for(int i=0; i<initial_values.size(); i++)
+      if(initial_values[i]!=""){
+        initial_value=0;
+        if(initial_values[i]!="NULL")
+          initial_value=StrToDbl(initial_values[i]);
+        uint64_t initval = bswap_64(*(uint64_t *)&initial_value);
+        fout.write((char*)&initval, 8);
+      }
+    initial_values.clear();
+
+    ss >> layer;
+    layer = bswap_64(layer);
+    fout.write((char*)&layer, 8);
   }
-
-  fin.close();
-  fout.close();
-}
+}                               
 
 void load_weight(std::string filename){
+
   std::ifstream fin(filename.c_str());
   std::ofstream fout((filename + ".bin").c_str(), std::ios::binary | std::ios::out);
 
   long wid;
-  int isfixed;
+  long num_rows;
+  long num_cols;
+  bool is_fixed;
   double initial_value;
 
-  while(fin >> wid >> isfixed >> initial_value){
-    wid = bswap_64(wid);
-    uint64_t initval = bswap_64(*(uint64_t *)&initial_value);
+  while(fin >> wid >> num_rows >> num_cols >> is_fixed >> initial_value){
 
+    wid = bswap_64(wid);
+    num_rows = bswap_64(num_rows);
+    num_cols = bswap_64(num_cols);
+    uint64_t initval = bswap_64(*(uint64_t *)&initial_value);
     fout.write((char*)&wid, 8);
-    fout.write((char*)&isfixed, 1);
+    fout.write((char*)&num_rows, 8);
+    fout.write((char*)&num_cols, 8);
+    fout.write((char*)&is_fixed, 1);
     fout.write((char*)&initval, 8);
   }
 
@@ -78,98 +127,97 @@ void load_weight(std::string filename){
   fout.close();
 }
 
-// load factors
-// fid, wid, vids
-void load_factor(std::string filename, short funcid, long nvar, char** positives){
+void load_edges(std::string filename){
   std::ifstream fin(filename.c_str());
-  std::ofstream fout((filename + "_factors.bin").c_str(), std::ios::binary | std::ios::out);
-  std::ofstream fedgeout((filename + "_edges.bin").c_str(), std::ios::binary | std::ios::out);
+  std::ofstream fout((filename + ".bin").c_str(), std::ios::binary | std::ios::out);
 
-  long factorid = 0;
-  long weightid = 0;
-  long variableid = 0;
-  long nedge = 0;
-  long nvars_big = bswap_64(nvar);
-  long predicate = funcid == 5 ? -1 : 1;
-  vector<int> positives_vec(nvar);
+  vector<string> in_mat_ids;
+  vector<string> in_center_xs;
+  vector<string> in_center_ys;
+  long out_mat_id;
+  long out_center_x;
+  long out_center_y;
+  long num_inputs;
+  long factor_function;
+  vector<string> weight_ids;
 
-  funcid = bswap_16(funcid);
 
-  for (int i = 0; i < nvar; i++) {
-    positives_vec.push_back(atoi(positives[i]));
-  }
 
-  predicate = bswap_64(predicate); 
-
-  const char field_delim = '\t'; // tsv file delimiter
-  const char array_delim = ','; // array delimiter
   string line;
   while (getline(fin, line)) {
-    string field;
     istringstream ss(line);
 
-    // factor id
-    getline(ss, field, field_delim);
-    factorid = atol(field.c_str());
-    factorid = bswap_64(factorid);
-    
-    // weightid
-    getline(ss, field, field_delim);
-    weightid = atol(field.c_str());
-    weightid = bswap_64(weightid);
+    /// Outputing in_mat_ids array
+    string in_mat_ids_str;
+    string in_center_xs_str;
+    string in_center_ys_str;
+    string weight_ids_str;
 
-    fout.write((char *)&factorid, 8);
-    fout.write((char *)&weightid, 8);
-    fout.write((char *)&funcid, 2);
-    fout.write((char *)&nvars_big, 8);
 
-    uint64_t position = 0;
-    uint64_t position_big;
-    for (long i = 0; i < nvar; i++) {
-      getline(ss, field, field_delim);
+    ss >> in_mat_ids_str;
+    ss >> in_center_xs_str;
+    ss >> in_center_ys_str;
+    ss >> out_mat_id >> out_center_x >> out_center_y >> num_inputs >> factor_function;
+    ss >> weight_ids_str;
 
-      // array type
-      if (field.at(0) == '{') {
-        string subfield;
-        istringstream ss1(field);
-        while (getline(ss1, subfield, array_delim)) {
-          if (subfield.at(0) == '}') break;
-          variableid = atol(subfield.c_str());
-          variableid = bswap_64(variableid);
-          position_big = bswap_64(position);
+    num_inputs = bswap_64(num_inputs);
+    fout.write((char*)&num_inputs, 8);
 
-          fedgeout.write((char *)&variableid, 8);
-          fedgeout.write((char *)&factorid, 8);
-          fedgeout.write((char *)&position_big, 8);
-          fedgeout.write((char *)&positives_vec[i], 1);
-          fedgeout.write((char *)&predicate, 8);
 
-          nedge++;
-          position++;
-        }
-      } else {
-        variableid = atol(field.c_str());
-        variableid = bswap_64(variableid);
-        position_big = bswap_64(position);
-
-        fedgeout.write((char *)&variableid, 8);
-        fedgeout.write((char *)&factorid, 8);
-        fedgeout.write((char *)&position_big, 8);
-        fedgeout.write((char *)&positives_vec[i], 1);
-        fedgeout.write((char *)&predicate, 8);
-
-        nedge++;
-        position++;
+    long in_mat_id;
+    boost::algorithm::split( in_mat_ids, in_mat_ids_str, boost::algorithm::is_any_of( "{ , }" ) );
+    for(int i=0; i<in_mat_ids.size(); i++)
+      if(in_mat_ids[i]!=""){
+        in_mat_id=StrToDbl(in_mat_ids[i]);
+        in_mat_id = bswap_64(in_mat_id);
+        fout.write((char*)&in_mat_id, 8);
       }
-    }
+    in_mat_ids.clear();
 
+    /// Outputing in_center_xs_str array
+    long in_center_x;
+    boost::algorithm::split( in_center_xs, in_center_xs_str, boost::algorithm::is_any_of( "{ , }" ) );
+    for(int i=0; i<in_center_xs.size(); i++)
+      if(in_center_xs[i]!=""){
+        in_center_x=StrToDbl(in_center_xs[i]);
+        in_center_x = bswap_64(in_center_x);
+        fout.write((char*)&in_center_x, 8);
+      }
+    in_center_xs.clear() ;
+
+    /// Outputing in_center_ys_str array
+    long in_center_y;
+    boost::algorithm::split( in_center_ys, in_center_ys_str, boost::algorithm::is_any_of( "{ , }" ) );
+    for(int i=0; i<in_center_ys.size(); i++)
+      if(in_center_ys[i]!=""){
+        in_center_y=StrToDbl(in_center_ys[i]);
+        in_center_y=bswap_64(in_center_y);
+        fout.write((char*)&in_center_y, 8);
+      }
+    in_center_ys.clear();
+
+    out_mat_id = bswap_64(out_mat_id);
+    out_center_x = bswap_64(out_center_x);
+    out_center_y = bswap_64(out_center_y);
+    factor_function = bswap_64(factor_function);
+    fout.write((char*)&out_mat_id, 8);
+    fout.write((char*)&out_center_x, 8);
+    fout.write((char*)&out_center_y, 8);
+    fout.write((char*)&factor_function, 8);
+
+    /// Outputing weight_id array
+    long weight_id;
+    boost::algorithm::split( weight_ids, weight_ids_str, boost::algorithm::is_any_of( "{ , }" ) );
+    for(int i=0; i<weight_ids.size(); i++)
+      if(weight_ids[i]!=""){
+        weight_id=StrToDbl(weight_ids[i]);
+        weight_id=bswap_64(weight_id);
+        fout.write((char*)&weight_id, 8);
+      }
+    weight_ids.clear();
   }
-
-  std::cout << nedge << std::endl;
-
   fin.close();
   fout.close();
-  fedgeout.close();
 }
 
 int main(int argc, char** argv){
@@ -180,8 +228,8 @@ int main(int argc, char** argv){
   if(app.compare("weight")==0){
     load_weight(argv[2]);
   }
-  if(app.compare("factor")==0){
-    load_factor(argv[2], atoi(argv[3]), atoi(argv[4]), &argv[5]);
+  if(app.compare("edges")==0){
+    load_edges(argv[2]);
   }
   return 0;
 }

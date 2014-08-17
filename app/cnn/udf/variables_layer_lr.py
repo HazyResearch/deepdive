@@ -11,6 +11,7 @@ for row in fileinput.input():
 	image_id = obj["image_id"]
 	fid= obj["fid"]
 	label = obj["label"]
+	layer=obj["layer"]
 	values=[]
 	for c in range(0,N_CLASS):
 		values.append(label)
@@ -20,4 +21,5 @@ for row in fileinput.input():
 		"num_rows":1,
 		"num_cols":1,
 		"value":values,
+		"layer":layer
 		})

@@ -14,6 +14,7 @@ for row in fileinput.input():
 	image_id = obj["image_id"]
 	ws = obj ["ws"]
 	ls = obj ["ls"]
+	layer=obj["layer"]
 	n_row=ws[0]
 	n_col=ls[0]
 	values=[]
@@ -29,7 +30,8 @@ for row in fileinput.input():
 			"fid":f,
 			"num_rows":n_row/BlockSize,
 			"num_cols":n_col/BlockSize,
-			"values":values
+			"values":values,
+			"layer":layer
 			})
 				
 					
