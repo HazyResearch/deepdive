@@ -15,7 +15,7 @@ DeepDive differs from traditional systems in several ways:
 - DeepDive is aware that **data is often noisy and imprecise**: names are
   misspelled, natural language is ambiguous, and humans make mistakes. Taking
   such imprecisions into account, DeepDive computes
-  [calibrated](doc/calibration.html) probabilities for every assertion
+  [calibrated](doc/basics/calibration.html) probabilities for every assertion
   it makes. For example, if DeepDive produces a fact with probability 0.9 it
   means the fact is 90% likely to be true. 
 - DeepDive is able to use large amounts of data from a **variety of sources**.
@@ -23,11 +23,11 @@ DeepDive differs from traditional systems in several ways:
   documents, web pages, PDFs, tables, and figures.
 - DeepDive allows developers to **use their knowledge of a given domain** to
   improve the quality of the results by [writing simple
-  rules](doc/inference_rules.html) that inform the inference (learning) process.
+  rules](doc/basics/inference_rules.html) that inform the inference (learning) process.
   DeepDive can also take into account user feedback on the correctness of the
   predictions, with the goal of improving the predictions.
 - DeepDive is able to use the data to [learn
-  "distantly"](doc/relation_extraction.html). In contrast, most machine
+  "distantly"](doc/general/distant_supervision.html). In contrast, most machine
   learning systems require tedious training for each prediction. In fact,
   many DeepDive applications, especially at early stages, need no traditional
   training data at all!
@@ -37,11 +37,9 @@ DeepDive differs from traditional systems in several ways:
   are part of commercial and open source tools including
   [MADlib](http://madlib.net/),
   [Impala](http://www.cloudera.com/content/cloudera/en/products-and-services/cdh/impala.html),
-  a product from Oracle, and low-level techniques, such as
+  a product from [Oracle](https://blogs.oracle.com/R/entry/low_rank_matrix_factorization_in), and low-level techniques, such as
   [Hogwild!](http://www.eecs.berkeley.edu/~brecht/papers/hogwildTR.pdf). They
-  have also been adopted in [Google
-  Brain](http://static.googleusercontent.com/media/research.google.com/en/us/archive/unsupervised_icml2012.pdf)
-  and in [Microsoft's Adam](http://www.wired.com/2014/07/microsoft-adam/).
+  have also been in [Microsoft's Adam](http://www.wired.com/2014/07/microsoft-adam/).
 
 ### Who should use DeepDive?
 
@@ -88,10 +86,9 @@ projects.
 
 DeepDive is project led by [Christopher
 Ré](http://cs.stanford.edu/people/chrismre/) at Stanford University. Current
-group members include [Victor Bittorf](http://pages.cs.wisc.edu/~bittorf/),
-[Zifei Shan](http://www.zifeishan.org/), [Mikhail
-Sushkov](https://www.linkedin.com/pub/mikhail-sushkov/26/638/537), Feiran Wang,
-Sen Wu, [Ce Zhang](http://pages.cs.wisc.edu/~czhang/), and [Matteo
+group members include: [Zifei Shan](http://www.zifeishan.org/), Feiran Wang,
+Sen Wu, Jaeo Shin, Amir Abbas Sadeghian, [Ce
+Zhang](http://pages.cs.wisc.edu/~czhang/), and [Matteo
 Riondato](http://cs.brown.edu/~matteo/).
 
 ### Updates &amp; Changelog 
