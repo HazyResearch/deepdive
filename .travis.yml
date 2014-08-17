@@ -22,4 +22,4 @@ before_script:
   - unzip lib/dw_linux.zip -d /tmp/
   - psql -c 'create database deepdive_test;' -U postgres
   # - psql -c 'create database deepdive_test;' -U postgres
-# script: "./test.sh"
+script: "./test.sh"
