@@ -52,6 +52,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       case "EqualFactorFunction" => 3
       case "IsTrueFactorFunction" =>  4
       case "MultinomialFactorFunction" => 5
+      case "ContinuousLRFactorFunction" => 20
     }
   }
 
@@ -238,6 +239,18 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       WHERE ${columnName}=true GROUP BY bucket) b2 ON b1.bucket = b2.bucket
     LEFT JOIN (SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView} 
       WHERE ${columnName}=false GROUP BY bucket) b3 ON b1.bucket = b3.bucket 
+    ORDER BY b1.bucket ASC;
+  """
+
+  // TODO
+  def WRONGcreateCalibrationViewRealNumberSQL(name: String, bucketedView: String, columnName: String) =  s"""
+    CREATE VIEW ${name} AS
+    SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
+    (SELECT bucket, COUNT(*) AS num_variables from ${bucketedView} GROUP BY bucket) b1
+    LEFT JOIN (SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
+      WHERE ${columnName}=0.0 GROUP BY bucket) b2 ON b1.bucket = b2.bucket
+    LEFT JOIN (SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView} 
+      WHERE ${columnName}=0.0 GROUP BY bucket) b3 ON b1.bucket = b3.bucket 
     ORDER BY b1.bucket ASC;
   """
 
@@ -428,28 +441,37 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       val variableDataType = dataType match {
         case BooleanType => 0
         case MultinomialType(x) => 1
+        case RealNumberType => 2
       }
 
       val cardinality = dataType match {
         case BooleanType => 2
         case MultinomialType(x) => x.toInt
+        case RealNumberType => 2
       }
 
-      // assign holdout - if not user-defined, randomly select from evidence variables of each variable table
-      holdoutQuery match {
-        case Some(s) =>
-        case None => execute(s"""
-          INSERT INTO ${VariablesHoldoutTable}
-          SELECT id FROM ${relation}
-          WHERE RANDOM() < ${holdoutFraction} AND ${column} IS NOT NULL;
-          """)
+      if(variableDataType == 2){
+
+      }else{
+        // assign holdout - if not user-defined, randomly select from evidence variables of each variable table
+        holdoutQuery match {
+          case Some(s) =>
+          case None => execute(s"""
+            INSERT INTO ${VariablesHoldoutTable}
+            SELECT id FROM ${relation}
+            WHERE RANDOM() < ${holdoutFraction} AND ${column} IS NOT NULL;
+            """)
+        }
       }
+
+
 
       // Create a cardinality table for the variable
       // note we use two-digit fixed-length representation here (may be fixed)
       val cardinalityValues = dataType match {
         case BooleanType => "('01')"
         case MultinomialType(x) => (0 to x-1).map (n => s"""('${"%02d".format(n)}')""").mkString(", ")
+        case RealNumberType => "('01')"
       }
       val cardinalityTableName = s"${relation}_${column}_cardinality"
       execute(s"""
@@ -461,13 +483,13 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       // dump variables, 
       // variable table join with holdout table - a variable is an evidence if it has initial value and it is not holdout
       du.unload(s"variables_${relation}", s"${groundingPath}/variables_${relation}", dbSettings, parallelGrounding,
-        s"""SELECT id, 1::int AS is_evidence, ${column}::int AS initvalue, ${variableDataType} AS type, 
+        s"""SELECT id, 1::int AS is_evidence, (${column}::int)::float AS initvalue, ${variableDataType} AS type, 
           ${cardinality} AS cardinality  
         FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable}
         ON ${relation}.id = ${VariablesHoldoutTable}.variable_id
         WHERE ${column} IS NOT NULL AND ${VariablesHoldoutTable}.variable_id IS NULL
         UNION ALL
-        SELECT id, 0::int AS is_evidence, 0::int AS initvalue, ${variableDataType} AS type, 
+        SELECT id, 0::int AS is_evidence, 0::float AS initvalue, ${variableDataType} AS type, 
           ${cardinality} AS cardinality  
         FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable}
         ON ${relation}.id = ${VariablesHoldoutTable}.variable_id
@@ -756,6 +778,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         execute(createCalibrationViewBooleanSQL(calibrationViewName, bucketedViewName, columnName))
       case MultinomialType(_) =>
         execute(createCalibrationViewMultinomialSQL(calibrationViewName, bucketedViewName, columnName))
+      case RealNumberType =>
+        execute(WRONGcreateCalibrationViewRealNumberSQL(calibrationViewName, bucketedViewName, columnName))
     }
     
     val bucketData = selectAsMap(selectCalibrationDataSQL(calibrationViewName)).map { row =>
