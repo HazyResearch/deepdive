@@ -290,7 +290,7 @@ A `plpy_extractor` is a high-performance type of extractors for PostgreSQL /
 Greenplum databases. It avoids additional I/O by executing the extractor
 **inside** the database system in parallel. It translates an UDF written by the
 user in Python into a
-[PL/python](http://www.postgresql.org/docs/9.3/static/plpython.html) program
+[PL/python](http://www.postgresql.org/docs/current/static/plpython.html) program
 accepted by PostgreSQL.
 
 To use a `plpy_extractor`, make sure PL/Python is enabled on your database
