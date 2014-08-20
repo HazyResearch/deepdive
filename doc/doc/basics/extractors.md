@@ -510,22 +510,12 @@ If an extractor specified in dependencies does not exist or is not in the
 active [pipeline](running.html#pipelines), that extractor will be ignored. 
 
 ### <a name="parallelism" href="#"></a> Parallelism
-You can execute independent extractors in parallel:
-
-<!-- TODO Shouldn't common configs be at deepdive.extraction level, e.g.,
-deepdive.extraction.parallelism?  Otherwise, config keys may collide with
-user-defined extractor names. -->
-
-<!-- TODO (All) I don't know who asked the above, but if it is not
-relevant or there's nothing we can do at this point, just remove it.-->
+You can execute multiple independent extractors in parallel by setting
+`extractor.parallelism` to the desired level of parallelism:
 
 ```bash
 deepdive {
-  extraction.extractors {
-    parallelism: 5
-
-    # Extractors...
-  }
+  extraction.parallelism: 5 
 }
 ```
 

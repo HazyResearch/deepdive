@@ -170,14 +170,16 @@ The configuration directives for the database connection are the following:
 
 ## <a name="extraction" href="#"></a> Extraction and extractors
 
-Configuration directives for executing [extractors](extractors.html) and
-extractor definitions go in the `extraction.extractors` section:
+Configuration directives for executing [extractors](extractors.html) go in the
+`extraction` section, while extractor definitions go in the `extraction.extractors` section:
 
 ```bash
 deepdive {
-  # ...
+  extraction {
+	# extraction directives 
+  }
   extraction.extractors {
-    # extraction directives and extractor definitions
+	# extractor definitions
   }
   # ...
 }
@@ -189,16 +191,10 @@ There is currently only one available extraction configuration directive:
   parallel. The default value of `parallelism` is 1. E.g.:
   
     ```bash
-    extraction.extractors {
+	# 3 extractors can run in parallel if all their dependencies are met
+    extraction.parallelism: 3
 
-      # 3 extractors can run in parallel if all dependencies has met
-      parallelism: 3
-
-      extractor1 {
-        ...
-      }
-      ...
-    }
+    #...
     ```
 
 ### <a name="extractor" href="#"></a> Extractors definition
