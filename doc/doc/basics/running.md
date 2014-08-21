@@ -136,10 +136,8 @@ This means that 'Obama' is married to 'Michelle' with probability of 0.982.
 
 The learned weights for the factors are stored in the table
 `dd_inference_results_weights`. DeepDive creates a view called
-`dd_inference_result_mapped_weights` which contains the factor names and the
+`dd_inference_result_mapped_weights` which contains the feature and the
 learned values sorted by absolute value.
-
-<!-- TODO (Ce) What is it of the above? -->
 
 Calibration plots allow to evaluate the quality of the results. For more details
 about inspecting the learned weights and using calibration plots, see the
