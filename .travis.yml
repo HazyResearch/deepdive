@@ -6,7 +6,7 @@ scala:
 python:
   - "2.7"
 install: 
-  - pip install linkchecker --use-mirrors
+  - sudo pip install linkchecker --use-mirrors
 jdk:
   - openjdk7
   - oraclejdk7
