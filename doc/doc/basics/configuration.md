@@ -132,12 +132,6 @@ The configuration directives for the database connection are the following:
     url      : "jdbc:postgresql://[host]:[port]/[database_name]" 
     ```
 
-<!-- TODO (Ce) Is the following correct or do we need both ? 
-
-  We need host and port, at least for tsv_extractor and plpy_extractor to work. 
-  Not sure if driver and url is a necessity. 
-  -- Zifei -->
-
 - To support full deepdive functionality, the `host`, `port`, and
   `dbname` directives must also be specified:
 
@@ -454,8 +448,6 @@ Configuration directives to control the inference steps go in the global
     inference.weight_table: [weight table name]
     ```
 
-<!-- TODO (Ce) Are there other inference directives? -->
-
 ## <a name="inference_schema" href="#"></a> Inference schema
 
 Inference schema directives define the variables used in the factor graph and
@@ -648,25 +640,17 @@ Is it the same?
 Configuration directives for the sampler go in the global `deepdive` section.
 The available directive are:
 
-- `sampler.sampler_cmd`: the path to the sampler executable:
+- (Optional) `sampler.sampler_cmd`: the path to the sampler executable:
 
     ```bash
     sampler.sampler_cmd: "util/sampler-dw-mac gibbs"
     ```
-    <!-- TODO (Ce) The above seems to also include a parameter `gibbs`. Why is
-    `gibbs` not in `sampler.sampler_args` ? -->
 
     Since [version 0.03](../changelog/0.03-alpha.html), DeepDive automatically
     chooses the correct executable based on your operating system (between 
     `"util/sampler-dw-linux gibbs"` and `"util/sampler-dw-mac gibbs"`), so 
     we recommend to
     omit the `sampler_cmd` directive.
-
-
-
-    <!-- TODO (Ce) Does the above mean that we always use DimmWitted? Are there
-    other samplers? What is  the interface of this command? What arguments _must_
-      accept ? -->
 
 - `sampler.sampler_args`: the arguments to the sampler executable:
 
@@ -679,7 +663,6 @@ The available directive are:
 
     For a list and the meaning of the arguments, please refer to the
     [documentation of our DimmWitted sampler](sampler.html).
-
 
     <!-- TODO (All) Are there other sampler directives ? -->
 
