@@ -13,6 +13,10 @@ test:
 	# Launching a server for testing...
 	jekyll serve --host localhost --port $(TEST_PORT) --baseurl "" --watch
 
+serve:
+	# Launching a server and detach it to background
+	jekyll serve --host localhost --port $(TEST_PORT) --baseurl "" --detach
+
 deploy:
 	# Building site...
 	jekyll build

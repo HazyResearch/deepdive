@@ -31,8 +31,9 @@ before_script:
   - unzip lib/dw_linux.zip -d /tmp/
   - psql -c 'create database deepdive_test;' -U postgres
   - cd doc/
-  - make test >/dev/null &
+  - make serve  # serve to localhost
   - cd ..
+  - sleep 3 # give Web server some time to bind to sockets, etc
 script: 
   - bash ./src/test/bash/linkcheck.sh http://localhost:4000/
   # in the future we can check both localhost and website
