@@ -86,7 +86,8 @@ trait InferenceManager extends Actor with ActorLogging {
   }
 
   def runInference(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], 
-    samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false, dbSettings: DbSettings, parallelGrounding: Boolean) = {
+    samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false, dbSettings: DbSettings, 
+    parallelGrounding: Boolean) = {
 
     val sampler = context.actorOf(samplerProps, "sampler")
 
