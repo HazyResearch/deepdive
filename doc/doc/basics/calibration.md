@@ -65,7 +65,7 @@ Specification for these fields:
 - **initial_value**: the initial value for the weight
 - **is_fixed**: whether the weight is fixed (cannot be changed during learning)
 - **description**: description of the weight, composed by [the name of inference rule]-[the specified value of "weight" in inference rule]
-- **weight**: the leared weight value
+- **weight**: the learned weight value
 
 ### Calibration data and plots
 
