@@ -1,6 +1,12 @@
-language: scala
+language: 
+  - scala
+  - python
 scala:
   - "2.10.3"
+python:
+  - "2.7"
+install: 
+  - pip install linkchecker --use-mirrors
 jdk:
   - openjdk7
   - oraclejdk7
@@ -15,11 +21,13 @@ env:
     - PGHOST=localhost
     - DBNAME=deepdive_test
     - LD_LIBRARY_PATH=/tmp/dw_linux/lib/dw_linux/lib:/tmp/dw_linux/lib/dw_linux/lib64
-notifications:
-  email:
-    - deepdive-dev@lists.stanford.edu
+# notifications:
+#   email:
+#     - deepdive-dev@lists.stanford.edu
 before_script:
   - unzip lib/dw_linux.zip -d /tmp/
   - psql -c 'create database deepdive_test;' -U postgres
   # - psql -c 'create database deepdive_test;' -U postgres
-script: "./test.sh"
+script: 
+  - bash src/bash/linkcheck.sh
+  - ./test.sh
