@@ -1,8 +1,10 @@
 #! /usr/bin/env bash
 
 DEEPDIVE_HOME=`cd $(dirname $0)/../../../; pwd`
-# URL_TO_CHECK=http://localhost:4000/
-URL_TO_CHECK=http://deepdive.stanford.edu/
+
+URL_TO_CHECK=$1
+# Check locally hosted website:  http://localhost:4000/
+# Check main website:  http://deepdive.stanford.edu/
 
 # Run linkchecker and send output to the log file
 linkchecker --check-extern $URL_TO_CHECK >$DEEPDIVE_HOME/linkchecker_errorlog.txt
