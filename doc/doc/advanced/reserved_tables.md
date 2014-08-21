@@ -24,23 +24,20 @@ with the same name in the database:
      public | [TABLE]_[VARIABLE]_cardinality               | table
 	
 where `[RULE_NAME]` is the name of an inference rule, `[TABLE]` is the
-name of a table that contain variables, and `[VARIABLE]` is the name
-of variable in the corresponding table.
+name of a table that contains variables, and `[VARIABLE]` is the name
+of a variable in the corresponding table.
 
 Description of each schema:
 
-- `dd_graph_variables_holdout`: table that contains all variable ids that are used for holdout. Can be used for custom holdout by a [holdout query](../basics/calibration.html#custom_holdout).
+- `dd_graph_variables_holdout`: a table that contains all variable ids that are used for holdout. Can be used for custom holdout by a [holdout query](../basics/calibration.html#custom_holdout).
 
-
-
-
-- `dd_graph_weights`: table that contains all the materialized weights.
+- `dd_graph_weights`: a table that contains all the materialized weights.
 
 <!-- TODO (Feiran): how to describe dd_graph_weights? -->
 
 - `dd_graph_weights_id_seq`: a sequence used in creating weights.
 
-- `dd_inference_result_variables`: table that contains inference result (expectation) for all query variables.
+- `dd_inference_result_variables`: a table that contains the inference results (expectation) for all query variables.
 
 - `dd_inference_result_weights`: a table that shows factor weight ids and learned weight values.
 
