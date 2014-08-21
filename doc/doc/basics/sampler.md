@@ -7,11 +7,7 @@ layout: default
 This document briefly presents DimmWitted, a high-speed [Gibbs
 sampler](../general/inference.html#gibbs) for DeepDive.
 
-Refer to the [Installation guide](installation.html#sampler) for details about
-installing DimmWitted.
 
-<!-- TODO (Ce) Is the above still needed? If not, remove -->
-   
 In `application.conf`, you can change the sampler executable as follows:
   
 ```bash
@@ -20,11 +16,6 @@ deepdive {
   sampler.sampler_args: "-l 1000 -s 1 -i 1000 --alpha 0.01"
 }
 ```
-
-<!-- TODO (Ce) The above seems to also include a parameter `gibbs`. Why isn't
-  this in sampler.sampler_args ? -->
-
-<!-- TODO (Ce) Are the parameters correct? -->
 
 Use `sampler-dw-mac` or `sampler-dw-linux` depending on which type
 of system your are on. Note that we have also changed the sampler parameters to
