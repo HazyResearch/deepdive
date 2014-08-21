@@ -4,7 +4,7 @@ layout: default
 
 # <a name="calibration" href="#"></a> Calibration
 
-One of the most important aspects of DeepDive is its iterative workflow. After
+Oneee of the most important aspects of DeepDive is its iterative workflow. After
 having performed [probabilistic inference](../general/inference.html) using
 DeepDive, it is crucial to evaluate the results and act on the feedback that the
 system provides to improve the accuracy. DeepDive produces *calibration plots*
