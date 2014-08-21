@@ -94,9 +94,11 @@ wordsExtractor {
 
 #### Input to a json_extractor
 
+<!--
 Currently DeepDive supports two types of extractor inputs for `json_extractor`:
 
 **1. Executing a database query**
+-->
 
 A SQL statement for PostgresSQL, as in the example above.
 
