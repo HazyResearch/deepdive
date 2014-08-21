@@ -1,0 +1,28 @@
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Deepdive" />
+    <link href='http://fonts.googleapis.com/css?family=Lato:300,400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="{{ site.baseurl }}/stylesheets/application.css" />
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deepdive</title>
+  </head>
+
+  <body>
+    {% include js/segmentio.js %}
+
+      <section id="landing">
+        <div class="container">
+          <row>
+            <div class="col-md-10 col-md-offset-1 text-center">
+              {{ content }}
+            </div>
+          </row>
+        </div>
+      </section>
+  
+  </body>
+</html>
