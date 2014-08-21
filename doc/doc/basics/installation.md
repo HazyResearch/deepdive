@@ -40,7 +40,6 @@ directory as `DEEPDIVE_HOME`.
 
 ### <a name="sampler" href="#"></a> Install the DimmWitted Sampler
 
-<!-- TODO (Ce) What of the following is needed? -->
 DimmWitted is our fast sampler that DeepDive use in the sampling step.
 DimmWitted binaries for both Mac OS X and Linux ship with DeepDive in the
 `util/` directory. These work out of the box on many modern systems, but setting
@@ -90,9 +89,6 @@ do about this. -->
 If the setup fails, check the log for detailed error information.
 
 <!-- TODO (Zifei) Where is this error log ? -->
-
-<!-- TODO (Ce) Nobu said he got [warn] messages during the setup. What shall we
-tell the users? to ignore them? -->
 
 ### Running Tests
 
