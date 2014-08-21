@@ -18,7 +18,7 @@ software packages must be installed to run DeepDive:
 - [Java](http://www.oracle.com/technetwork/java/javase/downloads/jre7-downloads-1880261.html)
   (version **1.7.0_45 or higher**)
 
-- [Python](http://www.python.org/getit/) *2.X* (not Python 3.X)
+- [Python](https://www.python.org/) *2.X* (not Python 3.X)
 - [PostgreSQL](http://wiki.postgresql.org/wiki/Detailed_installation_guides)
 - [SBT](http://www.scala-sbt.org/release/tutorial/Setup.html)
 - [Gnuplot](http://www.gnuplot.info/)

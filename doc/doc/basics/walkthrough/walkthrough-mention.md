@@ -9,7 +9,7 @@ This document presents how to **build an application to extract mention-level
 
 This document assumes you are familiar with basic concepts in DeepDive and in
 Knowledge Base Construction. Please refer to other
-[documents](../../index.html#documentation) to learn more.
+[documents](../../../index.html#documentation) to learn more.
 
 ## <a name="high_level_picture" href="#"> </a> High-level picture of the application
 
@@ -32,19 +32,19 @@ On a high level, the application will perform following steps on the data:
   - Extract mentions of people in the text
   - Extract all candidate pairs of people that possibly participate in a `has_spouse` relation
   - Extract features for `has_spouse` candidates
-  - Prepare training data by [distant supervision](relation_extraction.html) using a knowledge base
+  - Prepare training data by [distant supervision](../../general/relation_extraction.html) using a knowledge base
 3. Generate factor graphs by inference rules
 4. statistical inference and learning
 5. Generate results
 
 The full application is also available in the folder
 `DEEPDIVE_HOME/examples/spouse_example`, which contains all possible
-implementations in [different types of extractors](extractors.html). In this
+implementations in [different types of extractors](../extractors.html). In this
 document, we only introduce the default extractor type (`json_extractor`), which
 correspond to `DEEPDIVE_HOME/examples/spouse_example/default_extractor` in your
 DeepDive directory.
 
-This tutorial assumes you [installed DeepDive](installation.html) and denotes
+This tutorial assumes you [installed DeepDive](../installation.html) and denotes
 the `deepdive` installation directory as `$DEEPDIVE_HOME`. We will be using
 PostgreSQL as our primary database in this example. If you followed the DeepDive
 installation guide and passed all tests then your PostgreSQL server should
@@ -114,8 +114,8 @@ You can now try running the `run.sh` script:
 ./run.sh
 ```
 
-Since no [extractors](extractors.html) or [inference
-rules](inference_rules.html) have been specified, the results are not
+Since no [extractors](../extractors.html) or [inference
+rules](../inference_rules.html) have been specified, the results are not
 meaningful, but DeepDive should run successfully from end to end and you should
 be able to see a summary report such as:
 
@@ -180,7 +180,7 @@ section.
 
 ### <a name="feature_extraction" href="#"></a> Feature Extraction
 
-Our next task is to write several [extractors](extractors.html) for feature extraction. 
+Our next task is to write several [extractors](../extractors.html) for feature extraction. 
 
 #### <a name="people_extractor" href="#"></a> Adding a people extractor
 
@@ -284,7 +284,7 @@ command and stream database tuples to the *stdin* of the process, and read outpu
 after `ext_clear_table` extractor finishes.
 
 For additional information about extractors, refer to the ['Writing extractors'
-guide](extractors.html).
+guide](../extractors.html).
 
 Create now a `udf` directory to store the scripts:
 
@@ -480,7 +480,7 @@ Note that this extractor must be executed after our previously added extractor `
 which is specified in "dependencies" field.
 
 When generating relation candidates, we also generate training data using
-[distant supervision](../../distant_supervision.html). There are some pairs of
+[distant supervision](../../general/distant_supervision.html). There are some pairs of
 people that we know for sure are married, and we can use them as training data
 for DeepDive. Similarly, if we know that two people are not married, we can use
 them as negative training examples. In our case we will be using data from
@@ -600,7 +600,7 @@ from.
 The features we use are: (1) the bag of words between the two mentions;
 (2) the number of words between two phases; (3) whether the last word of two
 person's names (last name) is the same.
-We will refine these features [later](#improve).
+We will refine these features [later](walkthrough-improve.html).
 
 For this new extractor:
 
@@ -653,7 +653,7 @@ extraction.extractors {
 To create our extractor UDF, we will make use of `ddlib`, our Python library
 that provides useful utilities such as `Span` to manipulate elements in
 sentences. Make sure you followed the [installation
-guide](installation.html#ddlib) to properly use `ddlib`.
+guide](../installation.html#ddlib) to properly use `ddlib`.
 
 Create the script `udf/ext_has_spouse_features.py` as follows:
 
@@ -737,7 +737,7 @@ The results should be:
 ### <a name="inference_rules" href="#"></a> Writing inference rules
 
 Now we need to tell DeepDive how to generate [factor
-graphs](../../general/inferences.html) to perform probabilistic inference.
+graphs](../../general/inference.html) to perform probabilistic inference.
 We want to predict the `is_true` column of the `has_spouse` table based on the
 features we have extracted, by assigning to each feature a weight that DeepDive
 will learn. This is the simplest rule you can write, because it does not involve
@@ -881,7 +881,7 @@ plot, written to the file outputted in the summary report above
 
 The calibration plot contains useful information that help you to improve the
 quality of your predictions. For actionable advice about interpreting
-calibration plots, refer to the [calibration guide](calibration.html). 
+calibration plots, refer to the [calibration guide](../calibration.html). 
 
 Often, it is also useful to look at the *weights* that were learned for features
 or rules. You can do this by looking at the `mapped_inference_results_weights`

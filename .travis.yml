@@ -6,7 +6,10 @@ scala:
 python:
   - "2.7"
 install: 
-  - pip install linkchecker --use-mirrors
+  # Install linkchecker
+  - sudo pip install linkchecker --use-mirrors
+  # Install jekyll for "make test" local hosting
+  - gem install jekyll
 jdk:
   - openjdk7
   - oraclejdk7
@@ -21,13 +24,18 @@ env:
     - PGHOST=localhost
     - DBNAME=deepdive_test
     - LD_LIBRARY_PATH=/tmp/dw_linux/lib/dw_linux/lib:/tmp/dw_linux/lib/dw_linux/lib64
-# notifications:
-#   email:
-#     - deepdive-dev@lists.stanford.edu
+notifications:
+  email:
+    - deepdive-dev@lists.stanford.edu
 before_script:
   - unzip lib/dw_linux.zip -d /tmp/
   - psql -c 'create database deepdive_test;' -U postgres
-  # - psql -c 'create database deepdive_test;' -U postgres
+  - cd doc/
+  - make serve  # serve to localhost
+  - cd ..
+  - sleep 3 # give Web server some time to bind to sockets, etc
 script: 
-  - bash src/bash/linkcheck.sh
+  - bash ./src/test/bash/linkcheck.sh http://localhost:4000/
+  # in the future we can check both localhost and website
+  # - bash ./src/test/bash/linkcheck.sh http://deepdive.stanford.edu/
   - ./test.sh

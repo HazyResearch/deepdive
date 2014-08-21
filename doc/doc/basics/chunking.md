@@ -6,7 +6,7 @@ layout: default
 
 ## Introduction
 
-In this document, we will describe an example application of text chunking using DeepDive. This example assumes a working installation of DeepDive, and basic knowledge of how to build an application in DeepDive. Please go through the [example application walkthrough](doc/walkthrough.md) before preceding.
+In this document, we will describe an example application of text chunking using DeepDive. This example assumes a working installation of DeepDive, and basic knowledge of how to build an application in DeepDive. Please go through the [example application walkthrough](walkthrough/walkthrough.html) before preceding.
 
 Text chunking consists of dividing a text in syntactically correlated parts of words. For example, the sentence He reckons the current account deficit will narrow to only # 1.8 billion in September . can be divided as follows:
 
