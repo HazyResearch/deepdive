@@ -3,24 +3,30 @@
 
 from helper.easierlife import *
 import json
-import cv2
 import os
 from PIL import Image
 import cPickle as pickle
 
-BASE_FOLDER = "/Users/Amir/Desktop/Spring2014/DeepDive/app/cnn"
+image_id=0
+for row in fileinput.input():
+	starting_id= 0
 
-width=4;height=4;depth = 1
-CELL = 4
+	CELL = 3
+	for k in range(1,10,6):
+		roi=list([k,k+1,k+2,k,k+1,k+2,k,k+1,k+2])
+		# roi=list([k,k,k,k,k,k,k,k,k])
 
-for image_id in range(0,10):
-	roi = [[image_id,image_id,image_id,image_id],[image_id,image_id,image_id,image_id],
-			[image_id,image_id,image_id,image_id],[image_id,image_id,image_id,image_id]]
-	label=0
-	if(image_id > 7):
-		label=1
-	print json.dumps({
-		"image_id":image_id,
-		"pixels":serialize(roi),
-	 	"label":label
-	})
+		if(k<2):
+			label=0
+		else:
+			label =1
+		print json.dumps({
+			"image_id":image_id,
+			"pixels":roi,
+			"num_rows":CELL,
+			"num_cols":CELL,
+		 	"label":label
+		})
+		image_id=image_id+1
+
+

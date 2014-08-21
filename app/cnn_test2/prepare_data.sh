@@ -1,88 +1,75 @@
 #! /bin/bash
 
 # Configuration
-export DBNAME=deepdive_images
-DBNAME=deepdive_images
 
-pg_ctl -D /usr/local/var/postgres -l /usr/local/var/postgres/server.log start
+######### GREENPLUM CONFIG ###########
+export GREENPLUM_FLAGS="-h raiders3.stanford.edu -p 5432 -U amirabs"
+export DBNAME=deepdive_images_test2
+GREENPLUM_FLAGS="-h raiders3.stanford.edu -p 5432 -U amirabs"
 
-dropdb $DBNAME
-createdb $DBNAME
-psql -d $DBNAME -c "drop schema if exists public cascade; create schema public;"
+#pg_ctl -D /usr/local/var/postgres -l /usr/local/var/postgres/server.log start
 
-psql -d $DBNAME -c "CREATE TABLE images(id bigint,\
+dropdb $GREENPLUM_FLAGS $DBNAME
+createdb $GREENPLUM_FLAGS $DBNAME
+
+
+psql $GREENPLUM_FLAGS -d $DBNAME -c "drop schema if exists public cascade; create schema public;"
+
+psql $GREENPLUM_FLAGS -d $DBNAME -c "CREATE ORDERED AGGREGATE array_accum (anyelement) (sfunc = array_append, stype = anyarray, initcond = '{}');" 
+
+psql $GREENPLUM_FLAGS -d $DBNAME -c "CREATE ORDERED AGGREGATE array_agg_mult (anyarray)  (SFUNC     = array_cat, STYPE     = anyarray, INITCOND  = '{}');" 
+
+
+psql $GREENPLUM_FLAGS -d $DBNAME -c "CREATE TABLE images(id bigint,\
 										image_id bigint,\
-										pixels text,\
-										label int)"
+										pixels int[],\
+										num_rows int,\
+										num_cols int,\
+										label int) DISTRIBUTED BY (image_id)"
 
-psql -d $DBNAME -c "CREATE TABLE variables0_layer0(id bigint,\
-										vector_id text,\
+psql $GREENPLUM_FLAGS -d $DBNAME -c "CREATE TABLE variables_layer0(id bigint,\
 										image_id bigint,\
-										x int,\
-										y int,\
-										value real,\
-										fid int)"
+										fid int,\
+										num_rows int,\
+										num_cols int,\
+										values real[],
+										layer int) DISTRIBUTED BY (image_id)"
 
-psql -d $DBNAME -c "CREATE TABLE variables1_layer0(id bigint,\
+psql $GREENPLUM_FLAGS -d $DBNAME -c "CREATE TABLE variables_layer1(id bigint,\
 										image_id bigint,\
-										Bx int,\
-										By int,\
-										prev_ids text[],\
-										fid int)"
+										fid int,\
+										num_rows int,\
+										num_cols int,\
+										values real[],
+										layer int) DISTRIBUTED BY (image_id)"
 
-psql -d $DBNAME -c "CREATE TABLE variables0_layer1(id bigint,\
-										vector_id text,\
+psql $GREENPLUM_FLAGS -d $DBNAME -c "CREATE TABLE variables_layer2(id bigint,\
 										image_id bigint,\
-										x int,\
-										y int,\
-										value real,\
-										fid int)"
+										fid int,\
+										num_rows int,\
+										num_cols int,\
+										values real[],
+										layer int) DISTRIBUTED BY (image_id)"
 
-psql -d $DBNAME -c "CREATE TABLE variables1_layer1(id bigint,\
+
+
+psql $GREENPLUM_FLAGS -d $DBNAME -c "CREATE TABLE conv_layer0_1(id bigint,\
 										image_id bigint,\
-										Bx int,\
-										By int,\
-										prev_ids text[],\
-										fid int)"
+										fid int,\
+										location_x int,\
+										location_y int,\
+										size int,\
+										center_fids int[],\
+										center_locations_x int[],\
+										center_locations_y int[]) DISTRIBUTED BY (image_id)"
 
-psql -d $DBNAME -c "CREATE TABLE variables0_layer2(id bigint,\
-										vector_id text,\
+
+psql $GREENPLUM_FLAGS -d $DBNAME -c "CREATE TABLE conv_layer1_2(id bigint,\
 										image_id bigint,\
-										x int,\
-										y int,\
-										value real,\
-										fid int)"
-
-# psql -U $DB_USER -c "CREATE TABLE variables_layer1(id bigserial primary key, \
-# 													image_id bigserial,      \
-# 													x int,                   \
-# 													y int,                   \
-# 													variables integer[],     \
-# 													value int)"           $DBNAME
-
-# psql -U $DB_USER -c "CREATE TABLE variables_layer2(id bigserial primary key, \
-# 													image_id bigserial,      \
-# 													x int,                   \
-# 													y int,                   \
-# 													variables integer[],          \
-# 													value int)"           $DBNAME
-
-# psql -U $DB_USER -c "CREATE TABLE variables_layer3(id bigserial primary key, \
-# 													image_id bigserial,      \
-# 													x int,                   \
-# 													y int,                   \
-# 													variables integer[],          \
-# 													value int)"           $DBNAME
-
-# psql -U $DB_USER -c "CREATE TABLE variables_layer4(id bigserial primary key, \
-# 													image_id bigserial,      \
-# 													x int,                   \
-# 													y int,                   \
-# 													variables integer[],          \
-# 													value int)"           $DBNAME
-
-# psql -U $DB_USER -c "CREATE TABLE variables_layer5(id bigserial primary key, \
-# 													image_id bigserial,      \
-# 													label int,               \
-# 													variables integer[],          \
-# 													value bool)"           $DBNAME
+										fid int,\
+										location_x int,\
+										location_y int,\
+										size int,\
+										center_fids int[],\
+										center_locations_x int[],\
+										center_locations_y int[]) DISTRIBUTED BY (image_id)"

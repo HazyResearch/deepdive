@@ -4,7 +4,7 @@
 
 ######### GREENPLUM CONFIG ###########
 export GREENPLUM_FLAGS="-h raiders3.stanford.edu -p 5432 -U amirabs"
-export DBNAME=deepdive_images_1
+export DBNAME=deepdive_images_100
 GREENPLUM_FLAGS="-h raiders3.stanford.edu -p 5432 -U amirabs"
 
 #pg_ctl -D /usr/local/var/postgres -l /usr/local/var/postgres/server.log start
@@ -26,7 +26,7 @@ psql $GREENPLUM_FLAGS -d $DBNAME -c "CREATE TABLE image_paths(id bigint,\
 
 psql $GREENPLUM_FLAGS -d $DBNAME -c "CREATE TABLE images(id bigint,\
 										image_id bigint,\
-										pixels int[],\
+										pixels real[],\
 										num_rows int,\
 										num_cols int,\
 										label int) DISTRIBUTED BY (image_id)"
@@ -87,13 +87,13 @@ psql $GREENPLUM_FLAGS -d $DBNAME -c "CREATE TABLE variables_layer6(id bigint,\
 										values real[],
 										layer int) DISTRIBUTED BY (image_id)"
 
-psql $GREENPLUM_FLAGS -d $DBNAME -c "CREATE TABLE variables_layer_lr(id bigint,\
-										image_id bigint,\
-										fid int,\
-										num_rows int,\
-										num_cols int,\
-										values real[],
-										layer int) DISTRIBUTED BY (image_id)"
+# psql $GREENPLUM_FLAGS -d $DBNAME -c "CREATE TABLE variables_layer_lr(id bigint,\
+# 										image_id bigint,\
+# 										fid int,\
+# 										num_rows int,\
+# 										num_cols int,\
+# 										values real[],
+# 										layer int) DISTRIBUTED BY (image_id)"
 #Fid in logistic regression layer means the class of the variable
 
 
@@ -157,14 +157,14 @@ psql $GREENPLUM_FLAGS -d $DBNAME -c "CREATE TABLE conv_layer5_6(id bigint,\
 										center_locations_x int[],\
 										center_locations_y int[]) DISTRIBUTED BY (image_id)"
 
-psql $GREENPLUM_FLAGS -d $DBNAME -c "CREATE TABLE conv_layer6_lr(id bigint,\
-										image_id bigint,\
-										fid int,\
-										location_x int,\
-										location_y int,\
-										size int,\
-										center_fids int[],\
-										center_locations_x int[],\
-										center_locations_y int[]) DISTRIBUTED BY (image_id)"
+# psql $GREENPLUM_FLAGS -d $DBNAME -c "CREATE TABLE conv_layer6_lr(id bigint,\
+# 										image_id bigint,\
+# 										fid int,\
+# 										location_x int,\
+# 										location_y int,\
+# 										size int,\
+# 										center_fids int[],\
+# 										center_locations_x int[],\
+# 										center_locations_y int[]) DISTRIBUTED BY (image_id)"
 
 
