@@ -53,7 +53,7 @@ For `json_extracor` and `tsv_extractor`, you can use the `input_batch_size` opti
 many tuples each extractor should receive at once, and the `output_batch_size`
 option to define how many extracted tuples should be inserted into the data
 store at once. The [extractor
-documentation](../basic/extractors.html#jsonparallelism) contains more details about
+documentation](../basics/extractors.html#jsonparallelism) contains more details about
 these options. 
 
 ### Setting the batch size for factor graph construction

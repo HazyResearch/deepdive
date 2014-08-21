@@ -13,7 +13,7 @@ running. See the [Installation guide](installation.html) for details.
 
 We refer the interested reader to the ["Writing a new
 application"](writing.html) document or to the
-[Walktrough](walktrough/walktrough.html) for details about writing DeepDive
+[Walktrough](walkthrough/walkthrough.html) for details about writing DeepDive
 applications.
 
 

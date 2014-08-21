@@ -5,7 +5,7 @@ layout: default
 # Writing inference rules
 
 Inference rules describe how to build the [factor
-graph](../general/factor_graph.html). Each rule
+graph](../general/inference.html). Each rule
 consists of three components:
 
 - The **input query** specifies the variables to create. It is a SQL query that

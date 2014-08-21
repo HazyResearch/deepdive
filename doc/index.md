@@ -118,7 +118,7 @@ Basics:
 - [Inference rule function reference](doc/basics/inference_rule_functions.html)
 - [Running an application](doc/basics/running.html)
 - [Calibration](doc/basics/calibration.html)
-- [Example application walk-through](doc/basics/walkthrough.html)
+- [Example application walk-through](doc/basics/walkthrough/walkthrough.html)
 - [Generating negative examples](doc/basics/generating_negative_examples.html)
 - [High-speed sampler](doc/basics/sampler.html)
 - [**application.conf** Reference](doc/basics/configuration.html)

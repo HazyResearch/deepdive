@@ -61,18 +61,11 @@ Links to these sections:
 - [db](#database): database connections
 - [schema](#schema): variable schema
 - [extraction](#extraction): extraction tasks
-- [inference](#inference): inference rules
+- [inference](#inference-opt): inference rules
 - [calibration](#calibration): calibration parameters
 - [sampler](#sampler): sampler arguments
 - [pipeline](#pipelines): pipeline specifications
 
-
-
-<!-- TODO (Zifei) Describe blocks/section, format of variables, type of variables,
-when to use "xxx", when """xxx xxx" when nothing, what are lists and how to
-specify them... 
-
-Matteo: Are the following enough? --Zifei -->
 
 ## Notation format
 
@@ -280,7 +273,7 @@ to all styles:
     ```
 
   If an extractor specified in dependencies does not exist or is not in the
-  active [pipeline](pipelines.html), that extractor will be ignored.  
+  active [pipeline](running.html#pipelines), that extractor will be ignored.  
 
 The following directives are only for the `json_extractor`, `tsv_extractor`, and
 `plpy_extractor` styles. They are **mandatory** for these styles.

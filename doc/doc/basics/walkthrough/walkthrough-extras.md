@@ -266,7 +266,7 @@ file. Sometimes you only want to run some of your extractors to test them, or to
 save time when the output of an early extractor hasn't changed. The NLP
 extractor is a good example of this. It takes a long time to run, and its output
 will be the same every time, so we don't want to run it more than once. DeepDive
-allows you to define different [pipelines](pipelines.html) for this purpose, by
+allows you to define different [pipelines](../running.html#pipelines) for this purpose, by
 adding the following to your `application.conf`:
 
 ```bash

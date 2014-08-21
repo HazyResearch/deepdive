@@ -23,7 +23,7 @@ Note each of the factor above has a corresponding weight, i.e., we have the one 
 
 # Chunking Example
 
-We include a chunking example under `examples/chunking` to illustrate how to use multinomial. The documentation can be found [here](chunking.md). In the example, we include typical usage of multinomial, which is also described below. 
+We include a chunking example under `examples/chunking` to illustrate how to use multinomial. The documentation can be found [here](chunking.html). In the example, we include typical usage of multinomial, which is also described below. 
 
 ## Multi-class Logistic Regression
 

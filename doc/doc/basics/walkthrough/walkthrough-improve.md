@@ -242,5 +242,5 @@ Now if you want, you can look at the [Extras page](walkthrough-extras.html)
 which explained how to prepare data tables, use pipelines, use NLP extractors,
 or get example extractor inputs.
 
-You can also [go back to the tutorial](walkthrough.html#entity_level).
+You can also [go back to the tutorial](walkthrough.html).
 
