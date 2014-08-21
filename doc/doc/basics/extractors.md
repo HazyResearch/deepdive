@@ -100,19 +100,19 @@ Currently DeepDive supports two types of extractor inputs for `json_extractor`:
 
 A SQL statement for PostgresSQL, as in the example above.
 
+<!--
 **2. Reading from a CSV or TSV File**
 
 Reading a file is useful for loading initial data. To specify which file to read
 and its format, the `input` directive of the extractor definition should look
 like the following:
 
-<!-- TODO (Ce) You told me the following are not supported. Remove them and
-mentions to them (also in other files) if that's the case. -->
-
 ```bash
 input: CSV('path/to/file.csv')
 input: TSV('path/to/file.tsv')
 ```
+-->
+
 #### Writing the UDF for a json_extractor
 
 When a `json_extractor` is executed and if the `input` directive is a SQL query,
