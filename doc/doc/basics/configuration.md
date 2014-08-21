@@ -153,8 +153,6 @@ The configuration directives for the database connection are the following:
     password : "dbpassword"
     ```
 
-<!-- TODO (Ce) Anything else for the DB connection ? -->
-
 ## <a name="extraction" href="#"></a> Extraction and extractors
 
 Configuration directives for executing [extractors](extractors.html) go in the
@@ -298,8 +296,6 @@ The following directives are only for the `json_extractor`, `tsv_extractor`, and
     }
     ```
 
-<!-- TODO (Ce) If the following is not supported, remove it. -->
-
 - `output_relation`: specifies the name of the relation the extractor output
   should be written to. Must be an existing relation in the database. E.g.:
 
@@ -417,9 +413,8 @@ Configuration directives to control the inference steps go in the global
   DeepDive will skip the learning step for the factor weights and reuse the
   weights learned in the last execution. It will generate a table
   `dd_graph_last_weights` containing all the weights.  Weights will be matched
-  by description (which is composed by `[name of inference rule]-[specified value of "weight" in inference rule]`, e.g. `myRule-male`), and no learning will be performed.  
+  by their ''text form'' (which is composed by `[name of inference rule]-[specified value of "weight" in inference rule]`, e.g. `myRule-male`), and no learning will be performed.  
   
-    <!-- TODO (Ce) What is `description`? -->
 
     ```bash
     inference.skip_learning: true
