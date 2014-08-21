@@ -7,10 +7,12 @@ URL_TO_CHECK=$1
 # Check main website:  http://deepdive.stanford.edu/
 
 # Run linkchecker and send output to the log file
-linkchecker --check-extern $URL_TO_CHECK >$DEEPDIVE_HOME/linkchecker_errorlog.txt
+# Some links will give timeout but we do not want to count this as error
+# Set timeout as 10s and ignoring these specific errors when greping them
+linkchecker --check-extern $URL_TO_CHECK --timeout 10 >$DEEPDIVE_HOME/linkchecker_errorlog.txt
 
-# Look for string "Error" in the output log
-line=$(grep Error $DEEPDIVE_HOME/linkchecker_errorlog.txt)
+# Look for string "Error" in the output log, but ignoring timeouts
+line=$(grep Error $DEEPDIVE_HOME/linkchecker_errorlog.txt | grep -v Timeout)
 
 if [ $? -eq 0 ]; then
   echo "[`date`] Errors found:"
