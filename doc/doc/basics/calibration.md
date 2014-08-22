@@ -83,7 +83,8 @@ three columns is the:
 <!-- TODO (Amir) The following descriptions are not clear -->
 
 - `num_predictions` is the number of variables in the probability bucket,
-  including both holdout and query variables.
+  including both holdout and query variables (unknown variables). 
+  For example num_predictions = num_holdout + num_unknown_var
 
 - `num_true` is the number of variables in the probability bucket for which the
   holdout value is true. The number should be high for buckets with large
