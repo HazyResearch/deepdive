@@ -83,7 +83,8 @@ three columns is the:
 <!-- TODO (Amir) The following descriptions are not clear -->
 
 - `num_predictions` is the number of variables in the probability bucket,
-  including both holdout and query variables (unknown variables). For example num_predictions = num_holdout + num_unknown_var.
+  including both holdout and query variables (unknown variables).
+  It can be shown as num_predictions = num_holdout + num_unknown_var.
 
 - `num_true` is the number of holdout variables in the probability bucket with the 
   value of true. The number should be high for buckets with large
@@ -116,7 +117,7 @@ A typical calibration plot looks as follows:
 
 **The accuracy plot (a)** shows the ratio of correct positive predictions
 for each probability bucket. Ideally, the red line should follow the blue line,
-representing that the system finds high number of evidence positive predictions for higher probability buckets and for lower probability buckets the system finds less number of evidence positive predictions linearly. Which means for probability bucket of 0 there should be no positive prediction, and for 100% bucket all the predictions should be positive.
+representing that the system finds high number of evidence positive predictions for higher probability buckets and for lower probability buckets the system finds less number of evidence positive predictions linearly. Which means for probability bucket of 0 there should be no positive prediction, and for 100% bucket all the predictions should be positive. We can see the accuracy as num_holdout_true / num_holdout_total.
 
 **Plots (b) and (c)** shows the number of total prediction on the test and the
 training set, respectively. Ideally these plots should follow a U-curve. That
