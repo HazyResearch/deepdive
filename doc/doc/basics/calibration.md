@@ -94,7 +94,7 @@ three columns is the:
 - `num_false` is the number of holdout variables in the probability bucket with the 
   value of false. The number should be small for buckets with large
   probabilities and large for buckets with small probabilities since the actual value
-  of these variables are false and with low probability they should be predicted as true.   
+  of these variables are false and with low probability they should be predicted as true.
   Not that in this case only the holdout data is used.
 
 
