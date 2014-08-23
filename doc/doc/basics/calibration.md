@@ -117,7 +117,7 @@ A typical calibration plot looks as follows:
 
 **The accuracy plot (a)** shows the ratio of correct positive predictions
 for each probability bucket. Ideally, the red line should follow the blue line,
-representing that the system finds high number of evidence positive predictions for higher probability buckets and for lower probability buckets the system finds less number of evidence positive predictions linearly. Which means for probability bucket of 0 there should be no positive prediction, and for 100% bucket all the predictions should be positive. We can see the accuracy as num_holdout_true / num_holdout_total.
+representing that the system finds high number of evidence positive predictions for higher probability buckets and for lower probability buckets the system finds less number of evidence positive predictions linearly. Which means for probability bucket of 0 there should be no positive prediction, and for 100% bucket all the predictions should be positive. The accuracy is defined as num_holdout_true / num_holdout_total.
 
 **Plots (b) and (c)** shows the number of total prediction on the test and the
 training set, respectively. Ideally these plots should follow a U-curve. That
