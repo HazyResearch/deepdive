@@ -85,15 +85,18 @@ three columns is the:
 - `num_predictions` is the number of variables in the probability bucket,
   including both holdout and query variables (unknown variables). For example num_predictions = num_holdout + num_unknown_var.
 
-- `num_true` is the number of variables in the probability bucket for which the
-  holdout value is true. The number should be high for buckets with large
-  probabilities and small for buckets with small probabilities. Only the holdout
-  data is used.
+- `num_true` is the number of holdout variables in the probability bucket with the 
+  value of true. The number should be high for buckets with large
+  probabilities and small for buckets with small probabilities since the actual value
+  of these variables are true and with high probability they should be predicted as true. 
+  Not that in this case only the holdout data is used.
 
-- `num_false` is the number of variables in the probability bucket for which the
-  holdout value is false. The number should be small for buckets with large
-  probabilities and large for buckets with small probabilities. Only the holdout
-  data is used.
+- `num_false` is the number of holdout variables in the probability bucket with the 
+  value of false. The number should be small for buckets with large
+  probabilities and large for buckets with small probabilities since the actual value
+  of these variables are false and with low probability they should be predicted as true.   
+  Not that in this case only the holdout data is used.
+
 
 DeepDive also generates a calibration plot for each of the variables defined
 in schema. The location of the plot is given in the DeepDive output of each run:
@@ -109,7 +112,7 @@ A typical calibration plot looks as follows:
 
 ![]({{site.baseurl}}/images/calibration_example.png)
 
-<!-- TODO (Amir) The following descriptions are not clear -->
+<!--  (Amir) The following descriptions are not clear -->
 
 **The accuracy plot (a)** shows the ratio of correct positive predictions
 for each probability bucket. Ideally, the red line should follow the blue line,
