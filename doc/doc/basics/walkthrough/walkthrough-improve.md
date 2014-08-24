@@ -234,7 +234,7 @@ or adding other domain-specific rules. To make further improvements, it is
 important to conduct error analysis.
 
 Moreover, performing entity linking and [looking for entity-level
-relations](../general/kbc.html#entity_level) is necessary for a better KBC
+relations](../../general/kbc.html#entity_level) is necessary for a better KBC
 application.
 
 Now if you want, you can look at the [Extras page](walkthrough-extras.html)
