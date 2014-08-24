@@ -114,6 +114,7 @@ Basics:
 - [Installation guide](doc/basics/installation.html)
 - [Creating a new application](doc/basics/writing.html)
 - [Writing extractors](doc/basics/extractors.html)
+- [Declaring inference variables in the schema](doc/basics/schema.html)
 - [Writing inference rules](doc/basics/inference_rules.html)
 - [Inference rule function reference](doc/basics/inference_rule_functions.html)
 - [Generating negative examples](doc/basics/generating_negative_examples.html)
