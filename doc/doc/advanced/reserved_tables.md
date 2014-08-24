@@ -17,7 +17,7 @@ with the same name in the database:
      public | dd_inference_result_variables                | table    
      public | dd_inference_result_weights                  | table    
      public | dd_inference_result_variables_mapped_weights | view     
-     public | f_[RULE_NAME]_query_user                     | view     
+     public | dd_query_[RULE_NAME]                         | table
      public | [TABLE]_[VARIABLE]_inference                 | view
      public | [TABLE]_[VARIABLE]_inference_bucketed        | view
      public | [TABLE]_[VARIABLE]_calibration               | view
@@ -33,8 +33,6 @@ Description of each schema:
 
 - `dd_graph_weights`: a table that contains all the materialized weights.
 
-<!-- TODO (Feiran): how to describe dd_graph_weights? -->
-
 - `dd_graph_weights_id_seq`: a sequence used in creating weights.
 
 - `dd_inference_result_variables`: a table that contains the inference results (expectation) for all query variables.
@@ -43,7 +41,7 @@ Description of each schema:
 
 - `dd_inference_result_variables_mapped_weights`: a view that maps all distinct factor weights to their description and  their learned values. It is a commonly used view that shows the learned weight value of a factor as well as the number of occurences of a factor. (The schema name is probably misleading)
 
-- `f_[RULE_NAME]_query_user`: a view that is defined by the input query of an [inference rule](../basics/inference_rules.html).
+- `dd_query_[RULE_NAME]`: a view that is defined by the input query of an [inference rule](../basics/inference_rules.html).
 
 - `[TABLE]_[VARIABLE]_inference`: a view that maps variables with their inference results. It is commonly used for error analysis.
 
@@ -52,8 +50,6 @@ Description of each schema:
 - `[TABLE]_[VARIABLE]_calibration`: a view that has calibration statistics of a variable. Used in generating calibration plots.
 
 - `[TABLE]_[VARIABLE]_cardinality`: a table that records the cardinality of given variable. Used by grounding.
-
-
 
 <!-- TODO (Feiran) check if the tables are correct; check the above one line description for all tables written by Zifei. -->
 
