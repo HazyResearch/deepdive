@@ -70,7 +70,7 @@ Specification for these fields:
 ### Calibration data and plots
 
 The system generates a calibration data file for each variable defined in the
-[schema](writing.html#schema). The output log contains the path of these files. By
+[schema](schema.html). The output log contains the path of these files. By
 default, they are placed in `target/calibration/[variable_name].tsv`. Each file
 contains ten lines with five columns each:
 

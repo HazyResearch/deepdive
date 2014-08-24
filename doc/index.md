@@ -116,13 +116,13 @@ Basics:
 - [Writing extractors](doc/basics/extractors.html)
 - [Writing inference rules](doc/basics/inference_rules.html)
 - [Inference rule function reference](doc/basics/inference_rule_functions.html)
+- [Generating negative examples](doc/basics/generating_negative_examples.html)
 - [Running an application](doc/basics/running.html)
 - [Calibration](doc/basics/calibration.html)
 - [Example application walk-through](doc/basics/walkthrough/walkthrough.html)
-- [Generating negative examples](doc/basics/generating_negative_examples.html)
+- [Text chunking application example](doc/basics/chunking.html)
 - [High-speed sampler](doc/basics/sampler.html)
 - [**application.conf** Reference](doc/basics/configuration.html)
-- [Multinomial/Categorical variables](doc/basics/multinomial.html)
 - [FAQ](doc/basics/faq.html)
 
 Advanced topics:

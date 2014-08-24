@@ -123,20 +123,9 @@ available types of extractors complete with examples.
 The schema is used to define the [query variable nodes of the factor
 graph](../general/inference.html#variables). Each variable has a data type
 associated with it. Currently, DeepDive supports Boolean variables and
-[Multinomial/Categorical variables](multinomial.html). The following is an
-example of defining the schema with two Boolean variables:
-
-```bash
-deepdive {
-  schema.variables {
-    people.smokes: Boolean
-    people.has_cancer: Boolean
-  }
-}
-```
-
-In the above example `smokes` and `has_cancer` are Boolean attributes in the
-`people` table. 
+[Multinomial/Categorical variables](schema.html#multinomial). See the ['Defining
+inference variables in the schema'][schema.html] for more information and
+examples.
 
 ### <a name="inference" href="#"></a> 6 - Writing inference rules
 

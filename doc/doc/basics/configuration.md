@@ -17,11 +17,12 @@ must appear inside a global `deepdive` section:
 
 ```bash
 deepdive {
- # All configurations directive go here
+ # All configuration directives go here
 }
 ```
 
-A starter template of `application.conf` is below. You can found it in `examples/template/` in your installed `DEEPDIVE_HOME` directory:
+A starter template of `application.conf` is below. You can found it in
+`examples/template/` in your `DEEPDIVE_HOME` installation directory:
 
 ```bash
 deepdive {
@@ -445,8 +446,9 @@ Configuration directives to control the inference steps go in the global
 
 ## <a name="inference_schema" href="#"></a> Inference schema
 
-Inference schema directives define the variables used in the factor graph and
-their type. Inference schema directives go in the `schema.variables` section:
+Inference [schema](schema.html) directives define the variables used in the
+factor graph and their type. Inference schema directives go in the
+`schema.variables` section:
 
 ```bash
 deepdive {
