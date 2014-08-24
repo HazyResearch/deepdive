@@ -52,6 +52,11 @@ export DBNAME=deepdive_testapp
 ...
 ```
 
+Make sure the database is created. Execute:
+```bash
+createdb deepdive_testapp
+```
+
 We can try executing the `run.sh` script now to verify that everything is
 working correctly:
 
@@ -65,8 +70,7 @@ this is the case, the summary report should look like this:
     15:57:55 [profiler] INFO  --------------------------------------------------
     15:57:55 [profiler] INFO  Summary Report
     15:57:55 [profiler] INFO  --------------------------------------------------
-
-<!-- TODO (Zifei) Check that this is indeed the case -->
+    15:57:55 [profiler] INFO  --------------------------------------------------
 
 ### 2 - Configuring the database connection
 

@@ -17,10 +17,10 @@ class contains different extractor *styles*:
 
 - Row-wise extractors:
   - [`json_extractor`](#json_extractor): highly flexible and compatible with
-	previous systems, but with limited performance 
+  previous systems, but with limited performance 
   - [`tsv_extractor`](#tsv_extractor): moderate flexibility and performance
   - [`plpy_extractor`](#plpy_extractor): parallel database-built-in extractors
-	with restricted flexibility
+  with restricted flexibility
 
 - Procedural extractors:
   - [`sql_extractor`](#sql_extractor): a SQL command
@@ -40,16 +40,16 @@ instructor.
 ```bash
 deepdive {
   extraction.extractors {
-	  
+    
     anExtractor {
       # ...
     }
 
     anotherExtractor {
       # ...
-	}
+  }
 
-	# More Extractors ...
+  # More Extractors ...
   }
 }
 ```
@@ -147,7 +147,7 @@ The following is an example of extractor output:
     { title_id: 5, word: "am" } 
     { title_id: 5, word: "a" } 
     { title_id: 5, word: "title" } 
-	{ title_id: 6, word: null }
+  { title_id: 6, word: null }
 
 When emitting tuples from the extractor, only use the column name of the
 `output` relation, without the relation name. In other words, do not use JSON
@@ -202,7 +202,9 @@ When DeepDive executes an extractor with this style, the following happens:
 
 1. The results of the input query are unloaded into multiple TSV files.
 
-<!-- TODO (Zifei) is there a way to specify how many TSV files ? Is it relevant? -->
+    Developers can set `input_batch_size` to specify the number of lines in
+    each TSV file, and the input query will be split into multiple files
+    based on this number. The default value of `input_batch_size` is 10000.
 
 2. Multiple instances of the extractor UDF are executed in parallel, with the
 TSV files piped into the standard input of these instances.
@@ -314,107 +316,123 @@ ngramExtractor {
 }
 ```
 
-#### Writing the UDF for a `plpy_extractor`
+Next we explain how to write the UDF for a `plpy_extractor`. 
 
 Since it will be translated into PL/Python by translator in
 DeepDive, the UDF script of a `plpy_extractor` **must** follow a specific
 structure:
 
-- It must contain only two functions: `init` and `run`. Anything outside the
-  `init` and `run` functions will be ignored by the translator.
+- It must contain only two functions: `init` and `run`. Anything outside the `init` and `run` functions will be ignored by the translator.
 
-- In the `init` function, you should import libraries, and specify the input
-  variables and return types.
-
-  1. You can **import libraries** used by the UDF by calling the function
-  `ddext.import_lib`. The signature of the function is: `def import_lib(libname,
-  from_package=None, as_name=None)` and corresponds, in standard Python syntax,
-  to `from from_package import libname as as_name`. A sample usage is the
-  following:
-      - `ddext.import_lib(X, Y, Z)`: from Z import X as Y
-      - `ddext.import_lib(X, Y)`: from Y import X
-      - `ddext.import_lib(X, as_name=Z)`: import X as Z
-      - `ddext.import_lib(X)`: import X
-
-  2. The **input variables** to the UDF must be explicitly specified with
-  `ddext.input`. You must specify both variable **names** and **types**. The
-  function is defined as: `def input(name, datatype)`. A sample usage is:
-	  - `ddext.input('sentence_id', 'bigint')` specifies an input to UDF with
-		name "sentence_id" and type "bigint".
-  Caveats:
-	  - **Input variable names must be the same as in the SQL input query
-		(aliased), and the types must match.**
-	  - Names should be coherent to the argument list of `run` function (see
-		below).
-	  - Types are PostgreSQL types, e.g., `int`, `bigint`, `text`, `float`,
-		`int[]`, `bigint[]`, `text[]`, `float[]`, etc.
-        
-  3. The **return types and names** must be explicitly specified with
-  `ddext.returns`. This function is defined as: `def returns(name, datatype)`. A
-  sample usage is:
-		  - `ddext.returns('sentence_id', 'bigint')` specifies an output from
-			UDF with name "sentence_id" and type "bigint".
-  Caveats:
-          - Types are PostgreSQL types as above.
-		  - **Names and types** of return variables must **exactly match**
-			some columns of the extractors `output_relation`. If the output
-			relation contains more columns, the values of the tuples in the
-			unspecified columns will be NULL.
+- In the `init` function, you should import libraries, and specify the input variables and return types. We will see detailed specifications later.
 
 - The `run` function is your extractor function that takes one row in
-  the `input` SQL query`, and returns a list of tuples. Use Python as you
-  normally would, except for the following caveats:
-		- `print` is NOT supported. If you want to print to the DeepDive log
-		  file, use `plpy.info('SOME TEXT')` or `plpy.debug('SOME TEXT')`.
-        - You can not **reassign input variables** in the `run` function! 
-            - e.g., "input_var = x" is invalid and will cause error!
-        - Libraries imported in the `init` function can be used in `run`. 
-			- e.g., if you have `ddext.import_lib('re')` in `init`, you can call
-			  the function `re.sub` in `run`.
-  The function `run` can either return a list of tuples:
-            ```python
-            return [(sentence_id, gram, ngram[gram]) for gram in ngram]
-            ```
-  or `yield` a tuple multiple times. Each tuple it yields will be inserted into
-  the database, just like each printed JSON object in a json_extractor. Each
-  yielded/returned tuple can be either:
-        - an ordered list / tuple according to the order of `ddext.return` specification: 
+  the `input` SQL query, and returns a list of tuples.
 
-            ```python
-            yield sentence_id, gram, ngram[gram]
-            ```
 
-        - a Python `dict`:
+#### plpy UDF: *init* function specification
 
-            ```python
-            yield {
-                'sentence_id': sentence_id, 
-                'ngram': ngram, 
-                'count':ngram[gram]
-              }```
-  If you want to use functions other than `init` and `run`, you **must**
-	define the functions inside `run`as nested functions. In the following
-	example, the `get_ngram` function is nested inside `run`:
+<!-- We need to make sure it works when changing indentation structures! -->
 
-        ```python
-        def run(sentence_id, words):
-          ngram = {}
+1. You can **import libraries** used by the UDF by calling the function
+`ddext.import_lib`. The signature of the function is: `def import_lib(libname,
+from_package=None, as_name=None)` and corresponds, in standard Python syntax,
+to `from from_package import libname as as_name`. A sample usage is the
+following:
+    - `ddext.import_lib(X, Y, Z)`: from Z import X as Y
+    - `ddext.import_lib(X, Y)`: from Y import X
+    - `ddext.import_lib(X, as_name=Z)`: import X as Z
+    - `ddext.import_lib(X)`: import X
 
-          # Count Ngrams of words; N as input
-          # words / ngram is accessible in the function
-          def get_ngram(N):
-            for i in range(len(words) - N):
-              gram = ' '.join(words[i : i + N])
-              
-              if gram not in ngram: 
-                ngram[gram] = 0
-              ngram[gram] += 1
+2. The **input variables** to the UDF must be explicitly specified with
+`ddext.input`. You must specify both variable **names** and **types**. The
+function is defined as: `def input(name, datatype)`. A sample usage is:
+    - `ddext.input('sentence_id', 'bigint')` specifies an input to UDF with
+    name "sentence_id" and type "bigint".
+    - Caveats:
+        - **Input variable names must be the same as in the SQL input query
+        (aliased), and the types must match.**
+        - Names should be coherent to the argument list of `run` function (see
+        below).
+        - Types are PostgreSQL types, e.g., `int`, `bigint`, `text`, `float`,
+        `int[]`, `bigint[]`, `text[]`, `float[]`, etc.
+      
+3. The **return types and names** must be explicitly specified with
+`ddext.returns`. This function is defined as: `def returns(name, datatype)`. A
+sample usage is:
+    - `ddext.returns('sentence_id', 'bigint')` specifies an output from
+    UDF with name "sentence_id" and type "bigint".
+    - Caveats:
+        - Types are PostgreSQL types as above.
+        - **Names and types** of return variables must **exactly match**
+          some columns of the extractors `output_relation`. If the output
+          relation contains more columns, the values of the tuples in the
+          unspecified columns will be NULL.
 
-          for n in range(1, 5):
-            get_ngram(n)
+#### plpy UDF: *run* function specification
 
-          return [(sentence_id, key, ngram[key]) for key in ngram]
-        ```
+The `run` function is your extractor function that takes one row in
+the `input` SQL query, and returns a list of tuples. Use Python as you
+normally would, except for the following caveats:
+
+- `print` is NOT supported. If you want to print to the DeepDive log
+  file, use `plpy.info('SOME TEXT')` or `plpy.debug('SOME TEXT')`.
+
+- You can not **reassign input variables** in the `run` function! 
+    - e.g., "input_var = x" is invalid and will cause error!
+
+- Libraries imported in the `init` function can be used in `run`. e.g., if you have `ddext.import_lib('re')` in `init`, you can call
+the function `re.sub` in `run`.
+  
+
+The function `run` can either return a list of tuples:
+
+```python
+return [(sentence_id, gram, ngram[gram]) for gram in ngram]
+```
+
+or `yield` a tuple multiple times. Each tuple it yields will be inserted into
+the database, just like each printed JSON object in a json_extractor. Each
+yielded/returned tuple can be either:
+
+- an ordered list / tuple according to the order of `ddext.return` specification: 
+
+    ```python
+    yield sentence_id, gram, ngram[gram]
+    ```
+
+- a Python `dict`:
+
+    ```python
+    yield {
+        'sentence_id': sentence_id, 
+        'ngram': ngram, 
+        'count':ngram[gram]
+      }```
+
+If you want to use functions other than `init` and `run`, you **must**
+define the functions inside `run`as nested functions. In the following
+example, the `get_ngram` function is nested inside `run`:
+
+```python
+def run(sentence_id, words):
+  ngram = {}
+
+  # Count Ngrams of words; N as input
+  # words / ngram is accessible in the function
+  def get_ngram(N):
+    for i in range(len(words) - N):
+      gram = ' '.join(words[i : i + N])
+      
+      if gram not in ngram: 
+        ngram[gram] = 0
+      ngram[gram] += 1
+
+  for n in range(1, 5):
+    get_ngram(n)
+
+  return [(sentence_id, key, ngram[key]) for key in ngram]
+```
 
 You can debug `plpy_extractors`using *plpy.info* or *plpy.debug*
 instead of *print*. The output will appear in the DeepDive log file.
@@ -567,6 +585,98 @@ wordsExtractor {
 }
 ```
 
-<!-- TODO (Zifei) There's a paragraph in the walkthrough appendix that explains
-how to debug extractors. Move it here (remove it from there) -->
+
+<a id="debug_extractors" href="#"> </a>
+
+### Debugging Extractors 
+
+This section describes several ways to debug different extractors.
+
+#### Print to logs
+
+In `json_extractor` (default) and `tsv_extractor`, if you print to *stderr*
+instead of *stdout*, the messages will appear in the log file as well as in the console.
+
+In `plpy_extractor`, you should use *plpy.debug* or *plpy.info* to print to console and log file.
+
+#### Getting example inputs
+
+"What do my extractor inputs look like?" Developers might find it helpful to
+print input to extractors to some temporary files. DeepDive provides a simple
+utility script for this task, in
+`$DEEPDIVE_HOME/util/extractor_input_writer.py`, to debug `json_extractor` and `tsv_extractor` (not applicable to `plpy_extractor`). 
+
+The script is very simple:
+
+```python
+#! /usr/bin/env python
+# File: deepdive/util/extractor_input_writer.py
+
+# Simply printing input lines to a file, specified by a command line argument.
+import sys
+if len(sys.argv) != 2:
+  print >>sys.stderr, "Usage:", sys.argv[0], "SAMPLE_FILE_PATH"
+  sys.exit(1)
+
+fout = open(sys.argv[1], 'w')
+print >>sys.stderr, "Writing extractor input to file:",sys.argv[1]
+for line in sys.stdin:
+  print >>fout, line.rstrip('\n')
+
+fout.close()
+```
+
+This script takes one command line argument, the file output path. It will simply
+output whatever it receives as input from STDIN to the file.
+
+Developers can change the extractor UDF to `util/extractor_input_writer.py
+SAMPLE_FILE_PATH` to obtain sample extractor inputs in the file `SAMPLE_FILE_PATH`.
+
+For example, in our [walkthrough](walkthrough/walkthrough-mention.html), to debug the extractor `ext_has_spouse_features`, just change
+`application.conf` to:
+ 
+ ```bash
+ext_has_spouse_features {
+  # Added "ORDER BY" and "LIMIT" to randomly sample a small amount of data
+  input: """
+    SELECT  sentences.words,
+            has_spouse.relation_id, 
+            p1.start_position AS p1_start,
+            p1.length AS p1_length,
+            p2.start_position AS p2_start,
+            p2.length AS p2_length
+      FROM  has_spouse, 
+            people_mentions p1, 
+            people_mentions p2, 
+            sentences
+     WHERE  has_spouse.person1_id = p1.mention_id 
+       AND  has_spouse.person2_id = p2.mention_id 
+       AND  has_spouse.sentence_id = sentences.sentence_id
+       ORDER BY RANDOM() LIMIT 100
+       """
+  output_relation : "has_spouse_features"
+  # udf: ${APP_HOME}"/udf/ext_has_spouse_features.py"     # Comment it out
+
+  # Change UDF to the utility file; save outputs to "/tmp/dd-sample-features.txt".
+  # "util" folder is under DEEPDIVE_HOME.
+  udf: util/extractor_input_writer.py /tmp/dd-sample-features.txt
+
+  before          : ${APP_HOME}"/udf/clear_table.sh has_spouse_features"
+  dependencies    : ["ext_has_spouse_candidates"]
+}
+```
+
+After running the system with `run.sh`, the file `/tmp/dd-sample-features.txt`
+look like:
+
+    {"p2_length":2,"p1_length":2,"words":["The","strange","case","of","the","death","of","'50s","TV","Superman","George","Reeves","is","deconstructed","in","``","Hollywoodland",",","''","starring","Adrien","Brody",",","Diane","Lane",",","Ben","Affleck","and","Bob","Hoskins","."],"relation_id":12190,"p1_start":20,"p2_start":10}
+    {"p2_length":2,"p1_length":2,"words":["Political","coverage","has","not","been","the","same","since","The","National","Enquirer","published","photographs","of","Donna","Rice","in","the","former","Sen.","Gary","Hart","'s","lap","20","years","ago","."],"relation_id":34885,"p1_start":14,"p2_start":20}
+    ...
+
+We see that each line contains a JSON object. You can even also use this file to
+test your extractor UDF by running commands like :
+
+```bash
+python udf/ext_has_spouse_features.py < /tmp/dd-sample-features.txt
+```
 

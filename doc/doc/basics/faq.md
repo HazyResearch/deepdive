@@ -17,14 +17,7 @@ Refer to the [Performance Tuning guide](../advanced/performance.html) and try th
 
 ### How can I debug my extractors?
 
-<!-- TODO (Zifei) Move this to the 'writing extractors' document, together with
-the other thing from the walkhtrough (see in the writing extractors document),
-add an anchor and just reference it from here. -->
-
-In `json_extractor` (default) and `tsv_extractor`, if you print to *stderr*
-instead of *stdout*, the messages will appear in the log file.
-
-In `plpy_extractor`, you should use *plpy.debug* or *plpy.info* to print to console and log file.
+See [debugging extractors](extractors.html#debug_extractors) section in extractor documentation.
 
 ### Can I have features for dictionary entries with precise terms (e.g.,
 Cretaceous), and less-precise terms (e.g., Recent, Word)?

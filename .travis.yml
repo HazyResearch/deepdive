@@ -8,7 +8,7 @@ python:
 install: 
   # Install linkchecker
   - sudo pip install linkchecker --use-mirrors
-  # Install jekyll for "make test" local hosting
+  # Install jekyll for "make serve" local hosting
   - gem install jekyll
 jdk:
   - openjdk7

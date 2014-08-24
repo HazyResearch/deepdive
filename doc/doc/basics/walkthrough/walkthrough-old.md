@@ -86,8 +86,6 @@ cd app/spouse
 
 DeepDive's main entry point is a file called `application.conf` which contains database connection information as well as your feature extraction and inference rule pipelines. It is often useful to have a small `run.sh` script that loads environment variables and executes the DeepDive pipeline. We provide simple templates for both of these to copy and modify. Copy these templates to our directory by the following commands: 
 
-<!-- TODO what is env.sh doing? -->
-
 {% highlight bash %}
 cp ../../examples/template/application.conf application.conf
 cp ../../examples/template/run.sh run.sh

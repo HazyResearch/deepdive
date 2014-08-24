@@ -28,34 +28,52 @@ omit the `sampler_cmd` directive.
 
 ### Sampler arguments
 
-
 The sampler executable can be invoked independently of DeepDive. The following
 arguments to the sampler executable are used to specify input files, output
 file, and learning and inference parameters:
 
-<!-- TODO (Zifei) We need a better description of each option. Also make sure
-that these are still valid. -->
 
     -w <weightsFile> | --weights <weightsFile>
         weights file (required)
+        It is a binary format file output by DeepDive.
+
     -v <variablesFile> | --variables <variablesFile>
         variables file (required)
+        It is a binary format file output by DeepDive.
+
     -f <factorsFile> | --factors <factorsFile>
         factors file (required)
+        It is a binary format file output by DeepDive.
+
     -e <edgesFile> | --edges <edgesFile>
         edges file (required)
+        It is a binary format file output by DeepDive.
+
     -m <metaFile> | --fg_meta <metaFile>
         factor graph meta data file file (required)
+        It is a text file containing factor graph meta information
+            as well as paths to weight/variable/factor/edge files.
+
     -o <outputFile> | --outputFile <outputFile>
         output file path (required)
+
     -i <numSamplesInference> | --n_inference_epoch <numSamplesInference>
-        number of samples during inference (required)
+        number of iterations (epochs) during inference (required)
+
     -l <learningNumIterations> | --n_learning_epoch <learningNumIterations>
-        number of iterations during weight learning (required)
+        number of iterations (epochs) during weight learning (required)
+
     -s <learningNumSamples> | --n_samples_per_learning_epoch <learningNumSamples>
         number of samples per iteration during weight learning (required)
+
     -a <learningRate> | --alpha <learningRate> | --stepsize <learningRate>
         the learning rate for gradient descent (default: 0.01)
+
     -d <diminishRate> | --diminish <diminishRate>
-        the diminish rate for learning (default: 0.95)
+        the diminish rate for learning (default: 0.95).
+        Learning rate will shrink by this parameter after each iteration.
+
+<!-- TODO Feiran: proofreading these -->
+
+You can see a detailed list by running `util/sampler-dw-mac gibbs --help` or `util/sampler-dw-linux gibbs --help`.
 

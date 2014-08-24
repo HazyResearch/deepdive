@@ -2,8 +2,6 @@
 layout: default
 ---
 
-<!-- TODO (Feiran) Is the following up to date? -->
-
 # Using DeepDive on EC2
 
 We distribute a pre-configured [Amazon EC2 Machine
@@ -16,7 +14,7 @@ The following are the steps needed to run the AMI from the Amazon EC2 console:
 
 - Choose the "US-East" region (top right menu)
 - Click on "Launch Instance", choose "Community AMIs" and search for "DeepDive"
-  (AMI id: ami-8a5fbce2). Choose the AMI image.
+  (AMI id: `ami-8a5fbce2`). Choose the AMI image.
 - In the next step, pick the instance type. The `m1.large` instance type is fine
   for testing-purposes. We recommend using the compute- or memory-optimized
   instances (depending on your use case) for production purposes.
