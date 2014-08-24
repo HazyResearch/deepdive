@@ -5,7 +5,7 @@ layout: default
 # Example Application: Extras
 
 This document contains the extra section for the [Example Application: A Mention-Level
-Extraction System](walkthrough-mention.html) document. 
+Extraction System](walkthrough.html) document. 
 
 ### Contents
 
@@ -18,8 +18,7 @@ Extraction System](walkthrough-mention.html) document.
 
 Other sections:
 
-- [Walkthrough](walkthrough.html)
-- [A Mention-Level Extraction System](walkthrough-mention.html)
+- [A Mention-Level Extraction System](walkthrough.html)
 - [Improving the results](walkthrough-improve.html)
 
 

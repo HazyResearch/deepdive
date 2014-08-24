@@ -104,9 +104,10 @@ Riondato](http://cs.brown.edu/~matteo/).
 
 Background:
 
-- [Probabilistic inference and factor graphs](doc/general/inference.html)
+- [Knowledge base construction](doc/general/kbc.html)
 - [Relation extraction](doc/general/relation_extraction.html)
 - [Distant supervision](doc/general/distant_supervision.html)
+- [Probabilistic inference and factor graphs](doc/general/inference.html)
 
 Basics:
 

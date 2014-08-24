@@ -4,8 +4,8 @@ layout: default
 
 # Example Application: Improving the Results
 
-This document comes after [Example Application: A Mention-Level
-Extraction System](walkthrough-mention.html).
+This document describes how to improve the mention extractor built in [Example
+Application: A Mention-Level Extraction System](walkthrough.html).
 
 <a name="improve" href="#"> </a>
 
@@ -19,8 +19,7 @@ Extraction System](walkthrough-mention.html).
 
 Other sections in the tutorial:
 
-- [Walkthrough](walkthrough.html)
-- [A Mention-Level Extraction System](walkthrough-mention.html)
+- [A Mention-Level Extraction System](walkthrough.html)
 - [Extras: preprocessing, NLP, pipelines, debugging extractor](walkthrough-extras.html)
 
 ### <a name="sparsity" href="#"> </a> Reduce Sparsity
@@ -235,12 +234,10 @@ or adding other domain-specific rules. To make further improvements, it is
 important to conduct error analysis.
 
 Moreover, performing entity linking and [looking for entity-level
-relations](walkthrough.html#entity_level) is necessary for a better KBC
+relations](../general/kbc.html#entity_level) is necessary for a better KBC
 application.
 
 Now if you want, you can look at the [Extras page](walkthrough-extras.html)
 which explained how to prepare data tables, use pipelines, use NLP extractors,
 or get example extractor inputs.
-
-You can also [go back to the tutorial](walkthrough.html).
 
