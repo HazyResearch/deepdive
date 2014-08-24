@@ -24,7 +24,7 @@ Other sections in the tutorial:
 
 ### <a name="sparsity" href="#"> </a> Reduce Sparsity
 
-After [examining the results](walkthrough-mention.html#get_result), we noticed
+After [examining the results](walkthrough.html#get_result), we noticed
 that the feature `num_words_between` suffers from sparsity issues and would cause
 overfitting. For example, there should be roughly no difference between having
 20 and 21 words between two entity mentions. Let's change *"Feature 2"* in
