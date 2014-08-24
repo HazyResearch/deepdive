@@ -632,7 +632,7 @@ output whatever it receives as input from STDIN to the file.
 Developers can change the extractor UDF to `util/extractor_input_writer.py
 SAMPLE_FILE_PATH` to obtain sample extractor inputs in the file `SAMPLE_FILE_PATH`.
 
-For example, in our [walkthrough](walkthrough/walkthrough-mention.html), to debug the extractor `ext_has_spouse_features`, just change
+For example, in our [walkthrough](walkthrough/walkthrough.html), to debug the extractor `ext_has_spouse_features`, just change
 `application.conf` to:
  
  ```bash
