@@ -19,7 +19,7 @@ Obama's wife Michelle Obama ...", and DeepDive's output consists of tuples in an
 `has_spouse` table representing the fact that, for example, "Barack Obama" is
 married to "Michelle Obama". DeepDive also produces a probability associated to
 the fact, representing the system's confidence that the fact is true (refer to
-the ['Probabilistic inference' document](../../general/inference.html) for more details
+the ['Probabilistic inference' document](inference.html) for more details
 about this concept).
 
 <!-- ![Data flow]({{site.baseurl}}/images/walkthrough/example_hasspouse.png) -->
@@ -82,7 +82,7 @@ In an typical KBC application, the **input** of the system is a collection of
 raw articles in text format, while  the **output** of the system is a database
 (the KB) containing the desired (entity-level or mention-level) relations.
 
-As explained in the [System overview](../overview.html), the steps to
+As explained in the [System overview](../basics/overview.html), the steps to
 obtained the output are the following:
 
 1. data preprocessing
@@ -98,25 +98,25 @@ sentence-level information including words in each sentence, POS tags, named
 entity tags, etc.
 
 2. In the **feature extraction** step, DeepDive converts input data into
-relation signals called **evidence**, by running [extractors](../extractors.html)
+relation signals called **evidence**, by running [extractors](../basics/extractors.html)
 written by developers. Evidence includes: (1) candidates for (mention-level or
 entity-level) relations; (2) (linguistic) features for these candidates.
 
 3. In the next step, DeepDive uses evidence to **generate a [factor
-graph](../../general/inference.html)**. To instruct DeepDive about how to generate this
+graph](inference.html)**. To instruct DeepDive about how to generate this
 factor graph, developers use a SQL-like declarative language to specify
-[inference rules](../inference_rules.html).
+[inference rules](../basics/inference_rules.html).
 
 4. In the next step, DeepDive automatically performs **learning and statistical
 inference** on the generated factor graph.  learning, the values of [factor
-weights](../../general/inference.html) specified in inference rules are calculated.
+weights](inference.html) specified in inference rules are calculated.
 These weights represent, intuitively, the confidence in the rule. During the
 inference step, the marginal probabilities of the variables are computed, which,
 in some cases, can represent the probability that a specific fact is true.
 
 After inference, the results are stored in a set of database tables.  The
 developer can **get results** via a SQL query, **check results** with a
-[calibration plot](../calibration.html), and perform **error analysis**
+[calibration plot](../basics/calibration.html), and perform **error analysis**
 to improve results.
 
 As an example of this data flow, Figure 3 demonstrates how a sentence "U.S
