@@ -144,7 +144,7 @@ example, `Imply(B, C, A)` means "if B and C, then A".
 
 #### Using arrays in factor functions
 
-<!-- TODO (Feiran) The following is confusing. Add an example -->
+<!-- TODO (Amir) The following is confusing. Add an example -->
 
 To use array of variables in factor function, in the input query, generate
 corresponding variable ids in array form, and rename it as `relation.id`, where
@@ -176,7 +176,7 @@ someFactor.weight: ?(people.gender)
 ```
 
 #### Re-use learned weights
-<!-- TODO (Feiran) I didn't understand whether this works or not. If it does,
+<!-- TODO (Amir) I didn't understand whether this works or not. If it does,
 keep it, otherwise remove it-->
 
 If the system already learned the weights for your factor graphs, you can tell
@@ -184,7 +184,7 @@ DeepDive to skip learning them again by setting `inference.skip_learning` in the
 application configuration file. Refer to the [Configuration
 reference](configuration.html#skip_learning) for more details about this option.
 
-<!-- TODO (Feiran) Same as before but for the following section -->
+<!-- TODO (Amir) Same as before but for the following section -->
 #### Custom weight table
 
 You can specify a table for the factor weights by setting
