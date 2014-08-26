@@ -50,7 +50,7 @@ is needed. Training data define a set of possible worlds and, intuitively, the
 learning process chooses the weights by maximizing the probabilities of these
 possible worlds.
 
-<!-- TODO (Amir) What algorithm do we use for weight learning? -->
+<!-- TODO (Later) What algorithm do we use for weight learning? -->
 
 <a name="marginal" href="#"></a>
 **Marginal inference** is the task of inferring the probability of one variable
