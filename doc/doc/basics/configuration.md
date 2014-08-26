@@ -399,8 +399,6 @@ Configuration directives to control the inference steps go in the global
   insert variables, factors, and weights in the database during the factor graph
   creation: 
 
-    <!-- TODO (Amir) When and where ? Is this still in use? -->
-
     ```bash
     inference.batch_size = 1000000 
     ```
@@ -424,8 +422,6 @@ Configuration directives to control the inference steps go in the global
   learning step and use the weights specified in a custom table. The table
   tuples must contain the factor description and weights
 
-    <!-- TODO (Is the following supported or not?) what does the above mean? What is
-    the schema of this table ?  -->
 
     This table can be the result from one execution of DeepDive (an example would
     be the view `dd_inference_result_variable_mapped_weights`, or
@@ -433,8 +429,6 @@ Configuration directives to control the inference steps go in the global
     manually assigned, or a combination of the two.
 
     If `inference_skip_learning` is `false` (default) this directive is ignored.
-
-    <!-- TODO (Amir) is that true? -->
 
     ```bash
     inference.skip_learning: true
