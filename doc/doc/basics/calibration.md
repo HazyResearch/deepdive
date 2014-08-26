@@ -80,7 +80,6 @@ DeepDive places the inference results into ten buckets. Each bucket is
 associated to a probability interval from 0.0 to 1.0. The meaning of the last
 three columns is the:
 
-<!-- TODO (Amir) The following descriptions are not clear -->
 
 - `num_predictions` is the number of variables in the probability bucket,
   including both holdout and query variables (unknown variables).
@@ -113,7 +112,6 @@ A typical calibration plot looks as follows:
 
 ![]({{site.baseurl}}/images/calibration_example.png)
 
-<!--  (Amir) The following descriptions are not clear -->
 
 **The accuracy plot (a)** shows the ratio of correct positive predictions
 for each probability bucket. Ideally, the red line should follow the blue line,
