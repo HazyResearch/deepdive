@@ -4,7 +4,7 @@
 
 ######### GREENPLUM CONFIG ###########
 export GREENPLUM_FLAGS="-h raiders3.stanford.edu -p 5432 -U amirabs"
-export DBNAME=deepdive_images_100
+export DBNAME=deepdive_images_10
 GREENPLUM_FLAGS="-h raiders3.stanford.edu -p 5432 -U amirabs"
 
 #pg_ctl -D /usr/local/var/postgres -l /usr/local/var/postgres/server.log start

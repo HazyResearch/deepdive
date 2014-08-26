@@ -6,8 +6,9 @@ import json
 import fileinput
 
 BlockSize=1
-FID_IN=20
-FID_OUT=2 #NCLASS
+FID_IN=2
+FID_OUT=2
+Overlap=1
 for row in fileinput.input():
 	obj = json.loads(row)
 	image_id = obj["image_id"]
@@ -31,3 +32,9 @@ for row in fileinput.input():
 			"values":values,
 			"layer":layer
 			})
+
+
+
+
+					
+
