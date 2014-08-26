@@ -45,8 +45,6 @@ The factor function for multinomial is `Multinomial`. It takes multinomial
 variables as arguments, and is equivalent to having indicator functions for each
 combination of variable assignments. 
 
-<!-- TODO (Feiran) Why can't it take a multinomial and a boolean? This is what
-you have in the example, so it seems possible. Clarify this -->
 
 For examples, if `a` is a variable taking values 0, 1, 2, and `b` is a variable
 taking values 0, 1. Then, `Multinomial(a, b)` is equivalent to the following
