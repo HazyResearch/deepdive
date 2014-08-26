@@ -56,9 +56,9 @@ accepted as input by our [sampler](sampler.html).
 DeepDive can learn the weights of the factor graph from training data that can
 be either obtained through [distant
 supervision](../general/distant_supervision.html) or specified by the user while
-populating the database during the extraction phase.
+populating the database during the extraction phase. The main general way for 
+learning the weights is maximum likelihood.
 
-<!-- TODO (Amir) What algorithm do we use to learn the weights?  -->
 
 The learned weights are then written to a specific database table so that the
 user can inspect them during the [calibration](calibration.html) of the process.
