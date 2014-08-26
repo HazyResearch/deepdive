@@ -2,9 +2,6 @@
 layout: default
 ---
 
-<!-- TODO (Amir) document here the directives about the parallel
-grounding. -->
-
 # Application configuration file reference
 
 This document contains the description of each configuration directive that can
