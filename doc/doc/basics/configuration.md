@@ -2,7 +2,7 @@
 layout: default
 ---
 
-<!-- TODO (Feiran) document here the directives about the parallel
+<!-- TODO (Amir) document here the directives about the parallel
 grounding. -->
 
 # Application configuration file reference
@@ -402,7 +402,7 @@ Configuration directives to control the inference steps go in the global
   insert variables, factors, and weights in the database during the factor graph
   creation: 
 
-    <!-- TODO (Feiran) When and where ? Is this still in use? -->
+    <!-- TODO (Amir) When and where ? Is this still in use? -->
 
     ```bash
     inference.batch_size = 1000000 
@@ -437,7 +437,7 @@ Configuration directives to control the inference steps go in the global
 
     If `inference_skip_learning` is `false` (default) this directive is ignored.
 
-    <!-- TODO (Feiran) is that true? -->
+    <!-- TODO (Amir) is that true? -->
 
     ```bash
     inference.skip_learning: true
