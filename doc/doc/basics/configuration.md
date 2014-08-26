@@ -420,7 +420,8 @@ Configuration directives to control the inference steps go in the global
 - <a name="weight_table" href="#"></a> `inference.weight_table`: to be used in
   combination with `inference.skip_learning`, it allows to skip the weight
   learning step and use the weights specified in a custom table. The table
-  tuples must contain the factor description and weights
+  tuples must contain the factor description and weights. Note that it is 
+  important that this table is constracted with the same syntax as described above.
 
 
     This table can be the result from one execution of DeepDive (an example would
