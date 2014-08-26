@@ -49,7 +49,5 @@ Description of each schema:
 
 - `[TABLE]_[VARIABLE]_calibration`: a view that has calibration statistics of a variable. Used in generating calibration plots.
 
-- `[TABLE]_[VARIABLE]_cardinality`: a table that records the cardinality of given variable. Used by grounding.
-
-<!-- TODO (Feiran) check if the tables are correct; check the above one line description for all tables written by Zifei. -->
+- `[TABLE]_[VARIABLE]_cardinality`: a table that records the cardinality of given variable. For example if the domain of a variable is {1,2,3} the cardinality is 3. Note, this is used by grounding.
 
