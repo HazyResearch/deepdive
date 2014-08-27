@@ -13,14 +13,11 @@ In `application.conf`, you can change the sampler executable as follows:
 ```bash
 deepdive {
   sampler.sampler_cmd: "util/sampler-dw-mac gibbs"
-  sampler.sampler_args: "-l 1000 -s 1 -i 1000 --alpha 0.01"
 }
 ```
 
 Use `sampler-dw-mac` or `sampler-dw-linux` depending on which type
-of system your are on. Note that we have also changed the sampler parameters to
-use a larger number of iterations for learning and inference because each
-iteration takes much less time with the high-speed sampler.
+of system your are on. 
 
 Since [version 0.03](../changelog/0.03-alpha.html), DeepDive automatically
 chooses the correct executable based on the system environment, so we recommend to
@@ -67,13 +64,11 @@ file, and learning and inference parameters:
         number of samples per iteration during weight learning (required)
 
     -a <learningRate> | --alpha <learningRate> | --stepsize <learningRate>
-        the learning rate for gradient descent (default: 0.01)
+        the learning rate for gradient descent (default: 0.1)
 
     -d <diminishRate> | --diminish <diminishRate>
         the diminish rate for learning (default: 0.95).
         Learning rate will shrink by this parameter after each iteration.
-
-<!-- TODO Feiran: proofreading these -->
 
 You can see a detailed list by running `util/sampler-dw-mac gibbs --help` or `util/sampler-dw-linux gibbs --help`.
 
