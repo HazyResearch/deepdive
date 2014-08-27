@@ -554,45 +554,26 @@ The available directives are:
   When a custom holdout query is defined in `holdout_query`, the
   `holdout_fraction` setting is ignored. 
 
-<!-- TODO (All) Are there other directives ? -->
-
 
 ## <a name="pipelines" href="#"></a> Pipelines
 
 [Pipelines](running.html#pipelines) specification directives go in the global `deepdive`
 section. Available directives are:
 
-- `pipeline.pipelines`: This is a section containing a list of one or more
+- `pipeline.pipelines` and `pipeline.run`: `pipeline.pipelines` is a section containing a list of one or more
   pipelines. Each pipeline is defined as an array of tasks, where the names of
   the tasks are the names of the extractors or inference rules to be executed,
   as in the following example:
 
     ```bash
-    pipeline_name: [ extractor1 extractor2 inferenceRule1 ... ]
+    pipeline.pipelines.myPipeline: [ "extractor1", "extractor2", "inferenceRule1" ]
     ```
 
-    For example:
-
+  and `pipeline.run` specifies which pipeline to run, e.g.:
+  
     ```bash
-    pipeline.pipelines { myPipeline: [ extractor1 extractor2 inferenceRule1 ] } 
+    pipeline.run : myPipeline
     ```
-
-
-<!-- TODO (All) Is the above syntax correct? The walkthrough uses an example
-  like:
-pipeline.pipelines.withnlp: [
-  "ext_sentences",    # NLP extractor, takes very long
-  "ext_people", "ext_has_spouse_candidates", "ext_has_spouse_features",
-  "f_has_spouse_features", "f_has_spouse_symmetry"
-]
-
-pipeline.pipelines.nonlp: [
-  "ext_people", "ext_has_spouse_candidates", "ext_has_spouse_features",
-  "f_has_spouse_features", "f_has_spouse_symmetry"
-]
-
-Is it the same? 
--->
 
   Notice that:
 
@@ -605,15 +586,9 @@ Is it the same?
 
   - When no inference rules are active in the pipeline, DeepDive only execute
     the extractors, skipping the weight learning and inference steps.
-
-- `pipeline.run`: specify which pipeline to run, e.g.:
   
-    ```bash
-    pipeline.run : myPipeline
-    ```
-  
-  Only a single pipeline can be specified. When the `pipeline.run` directive is
-  not specified, DeepDive executes all extractors and inference rules. 
+  － Only a single pipeline can be specified. When the `pipeline.run` directive is
+    not specified, DeepDive executes all extractors and inference rules. 
 
 - `pipeline.relearn_from`: this directive takes as value a path to a previous
   execution of the application. It instructs DeepDives to **skip all
@@ -621,9 +596,9 @@ Is it the same?
   the learning and inference steps. Usage example:
 
     ```bash
-    pipeline.relearn_from: "/PATH/TO/DEEPDIVE/HOME/out/2014-05-02T131658/"
+    pipeline.relearn_from: "/PATH_TO_DEEPDIVE_HOME/out/2014-05-02T131658/"
     ```
-<!-- TODO (All) Other pipeline directives ? -->
+
 
 ## <a name="sampler" href="#"></a> Sampler 
 Configuration directives for the sampler go in the global `deepdive` section.
@@ -652,6 +627,4 @@ The available directive are:
 
     For a list and the meaning of the arguments, please refer to the
     [documentation of our DimmWitted sampler](sampler.html).
-
-    <!-- TODO (All) Are there other sampler directives ? -->
 
