@@ -109,8 +109,7 @@ inherently noisy signals, such as human language.
 
 We refer the reader interested in additional details to other good resources:
 
-- [Factor Graph tutorial by Feiran
-  Wang]({{site.baseurl}}/assets/factor_graph.pdf)
+- [A Simple Factor Graph Tutorial]({{site.baseurl}}/assets/factor_graph.pdf)
 - [An Introduction to Conditional Random Fields for Relational
   Learning](http://people.cs.umass.edu/~mccallum/papers/crf-tutorial.pdf)
 - [PGM class on Coursera](https://www.coursera.org/course/pgm)
