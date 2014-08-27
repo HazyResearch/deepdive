@@ -571,7 +571,7 @@ section. Available directives are:
   and `pipeline.run` specifies which pipeline to run, e.g.:
   
     ```bash
-    pipeline.run : myPipeline
+    pipeline.run : "myPipeline"
     ```
 
   Notice that:
