@@ -526,7 +526,6 @@ myRule {
 }
 ```
 
-<!-- TODO (All) Anything else in the inference rule definition ? -->
 
 ## <a name="calibration" href="#"></a> Calibration / Holdout
 
@@ -587,7 +586,7 @@ section. Available directives are:
   - When no inference rules are active in the pipeline, DeepDive only execute
     the extractors, skipping the weight learning and inference steps.
   
-  － Only a single pipeline can be specified. When the `pipeline.run` directive is
+  - Only a single pipeline can be specified. When the `pipeline.run` directive is
     not specified, DeepDive executes all extractors and inference rules. 
 
 - `pipeline.relearn_from`: this directive takes as value a path to a previous
