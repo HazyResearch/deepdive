@@ -3,6 +3,11 @@
 DEEPDIVE_HOME=`cd $(dirname $0)/../../../; pwd`
 
 URL_TO_CHECK=$1
+
+# Accept additional parameters and pass it to linkchecker. 
+# e.g. --check-extern
+LINKCHECKER_PARAMETERS=$2
+
 # Check locally hosted website:  http://localhost:4000/
 # Check main website:  http://deepdive.stanford.edu/
 
@@ -12,7 +17,7 @@ URL_TO_CHECK=$1
 # linkchecker --check-extern $URL_TO_CHECK --timeout 10 >$DEEPDIVE_HOME/linkchecker_errorlog.txt
 
 # The timeout does not work, do not check external links for now to pass tests
-linkchecker $URL_TO_CHECK --timeout 10 >$DEEPDIVE_HOME/linkchecker_errorlog.txt
+linkchecker $URL_TO_CHECK --timeout 10 $LINKCHECKER_PARAMETERS >$DEEPDIVE_HOME/linkchecker_errorlog.txt
 
 
 # Look for string "Error" in the output log, but ignoring timeouts

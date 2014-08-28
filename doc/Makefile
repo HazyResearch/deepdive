@@ -4,10 +4,12 @@
 # You can install jekyll with "gem install jekyll".
 #
 
-DEPLOY_USER_HOST = ssh.cs.brown.edu
-DEPLOY_DIR = public_html/deepdive/
+# DEPLOY_USER_HOST = ssh.cs.brown.edu
+# DEPLOY_DIR = public_html/deepdive/
+DEPLOY_USER_HOST = zifei@whale.stanford.edu
+DEPLOY_DIR = /afs/cs/group/infolab/deepdive/www
 GITHUB_REPO_URL = https://github.com/HazyResearch/deepdive
-
+WEBSITE_CNAME ="deepdive.stanford.edu"
 TEST_PORT = 4000
 test:
 	# Launching a server for testing...
@@ -18,9 +20,14 @@ serve:
 	jekyll serve --host localhost --port $(TEST_PORT) --baseurl "" --detach
 
 deploy:
+	@echo "Note that deploying will clean up previous files on site."
 	# Building site...
 	jekyll build
 	# Deploying site...
+	@echo "[DANGEROUS!] Will delete all files in $(DEPLOY_USER_HOST):$(DEPLOY_DIR)"
+	ssh $(DEPLOY_USER_HOST) rm -rf $(DEPLOY_DIR)/*
+	# create a CNAME file to put on server
+	echo $(WEBSITE_CNAME) > _site/CNAME
 	scp -r _site/* $(DEPLOY_USER_HOST):$(DEPLOY_DIR)
 
 deploy-github:

@@ -47,7 +47,7 @@ sudo apt-get update
 sudo apt-get install pgdg-keyring postgresql-9.3
 ```
 
-Now we’ll install DeepDive. First, I need to install git, since I’m on a fresh version of the OS. Then, the instructions come from the <a href="http://deepdive.stanford.edu/doc/installation.html">DeepDive page</a>. I’m going to install DeepDive in my home directory, but if you want it somewhere else, modify the `cd` line.
+Now we’ll install DeepDive. First, I need to install git, since I’m on a fresh version of the OS. Then, the instructions come from the <a href="http://deepdive.stanford.edu/doc/basics/installation.html">DeepDive page</a>. I’m going to install DeepDive in my home directory, but if you want it somewhere else, modify the `cd` line.
 
 ```bash
 sudo apt-get install git
