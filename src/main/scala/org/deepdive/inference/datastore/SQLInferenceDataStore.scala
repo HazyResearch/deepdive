@@ -43,6 +43,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def MappedInferenceResultView = "dd_mapped_inference_result"
   def IdSequence = "dd_variable_sequence"
   def FactorMetaTable = "dd_graph_factormeta"
+  def VariablesObservationTable = "dd_graph_variables_observation"
 
   def getFactorFunctionTypeid(functionName: String) = {
     functionName match {
@@ -421,6 +422,15 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       case None =>
     }
 
+    // variable observation table
+    execute(s"""DROP TABLE IF EXISTS ${VariablesObservationTable} CASCADE;
+      CREATE TABLE ${VariablesObservationTable}(variable_id bigint primary key);
+      """)
+    calibrationSettings.observationQuery match {
+      case Some(query) => execute(query)
+      case None =>
+    }
+
     // ground variables
     schema.foreach { case(variable, dataType) =>
       val Array(relation, column) = variable.split('.')
@@ -471,6 +481,17 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         UPDATE ${relation} SET ${variableTypeColumn} = 0 
         WHERE ${relation}.id IN (SELECT variable_id FROM ${VariablesHoldoutTable});
         """)
+
+      // assign observation
+      calibrationSettings.observationQuery match {
+      case Some(query) => execute(s"""
+        UPDATE ${relation} SET ${variableTypeColumn} = 2
+        WHERE ${relation}.id IN (SELECT variable_id FROM ${VariablesObservationTable})
+          AND ${relation}.${column} IS NOT NULL;
+        """)
+      case None =>
+      }
+      
 
       // dump variables
       du.unload(s"variables_${relation}", s"${groundingPath}/variables_${relation}", 
