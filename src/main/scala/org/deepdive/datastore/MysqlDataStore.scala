@@ -6,7 +6,7 @@ import org.deepdive.Logging
 import scalikejdbc._
 
 /* Helper object for working with Postgres */
-object PostgresDataStore extends JdbcDataStore with Logging {
+object MysqlDataStore extends JdbcDataStore with Logging {
 
   def copyBatchData(sqlStatement: String, file: File)(implicit connection: Connection) : Unit = {
     copyBatchData(sqlStatement, new BufferedReader(new FileReader(file))) 

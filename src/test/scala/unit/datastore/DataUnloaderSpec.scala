@@ -20,8 +20,8 @@ class DataUnloader extends FunSpec with BeforeAndAfter with JdbcDataStore {
     JdbcDataStore.close()
   }
 
-  val dbSettings = DbSettings(null, null, System.getenv("PGUSER"), null, System.getenv("DBNAME"), 
-    System.getenv("PGHOST"), System.getenv("PGPORT"), null, null, null)
+  val dbSettings = DbSettings(null, null, System.getenv("DBUSER"), null, System.getenv("DBNAME"),
+    System.getenv("DBHOST"), System.getenv("DBPORT"), null, null, null)
 
   describe("Unloading data using DataUnloader") {
     it("should work with COPY basic types") {

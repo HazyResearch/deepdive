@@ -19,11 +19,16 @@ object ExtractionManager {
   def props(parallelism: Int, dbSettings: DbSettings) : Props = {
     dbSettings.driver match {
       case "org.postgresql.Driver" => Props(classOf[PostgresExtractionManager], parallelism, dbSettings)
+
+      case "com.mysql.jdbc.Driver" => Props(classOf[MysqlExtractionManager], parallelism, dbSettings)
     }
   }
 
   class PostgresExtractionManager(val parallelism: Int, val dbSettings: DbSettings) extends ExtractionManager
     with PostgresExtractionDataStoreComponent
+
+  class MysqlExtractionManager(val parallelism: Int, val dbSettings: DbSettings) extends ExtractionManager
+    with MysqlExtractionDataStoreComponent
 
   case object ScheduleTasks
 

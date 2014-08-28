@@ -1,12 +1,17 @@
 #! /usr/bin/env bash
 
+# export DBUSER=${DBUSER:-`whoami`}
+export DBUSER="root"
+export DBPASSWORD=
+export DBHOST=localhost
+
 # Set username and password
-export PGUSER=${PGUSER:-`whoami`}
-export PGPASSWORD=${PGPASSWORD:-}
-export PGPORT=${PGPORT:-5432}
-export PGHOST=${PGHOST:-localhost}
+# export PGUSER=${PGUSER:-`whoami`}
+# export PGPASSWORD=${PGPASSWORD:-}
+# export PGPORT=${PGPORT:-5432}
+# export PGHOST=${PGHOST:-localhost}
 export DBNAME=deepdive_test
-export PGDATABASE=$DBNAME  # for testing to work with null settings
+# export PGDATABASE=$DBNAME  # for testing to work with null settings
 
 export DEEPDIVE_HOME=`cd $(dirname $0); pwd`
 
@@ -29,9 +34,12 @@ esac
 
 cd $DEEPDIVE_HOME
 
-# Create test database
-dropdb $DBNAME
-createdb $DBNAME
+# # Create test database
+# dropdb $DBNAME
+# createdb $DBNAME
+echo "drop database if exists $DBNAME; 
+create database $DBNAME" | mysql -u $DBUSER
 
 # Run the test
-SBT_OPTS="-Xmx128m" sbt "test"
+# SBT_OPTS="-Xmx128m" sbt "test"
+SBT_OPTS="-Xmx128m" sbt "test-only org.deepdive.test.unit.PostgresInferenceDataStoreSpec"
