@@ -151,6 +151,18 @@ The configuration directives for the database connection are the following:
     password : "dbpassword"
     ```
 
+If you want to use <a
+href="../advanced/performance.html#parallelgrounding">parallel grounding</a>,
+you should also specify the following:
+
+```bash
+gphost : [host of gpfdist]
+gpport : [port of gpfdist] 
+gppath : [path to gpfdist directory]
+```
+
+You must also set `inference.parallel_grounding` to `true`.
+
 ## <a name="extraction" href="#"></a> Extraction and extractors
 
 Configuration directives for executing [extractors](extractors.html) go in the
@@ -435,6 +447,15 @@ Configuration directives to control the inference steps go in the global
     inference.skip_learning: true
     inference.weight_table: [weight table name]
     ```
+- <a href="parallelgrounding" href="#"></a> `inference.parallel_grounding`. If
+  set to `true` and you are using <a href="../advanced/greenplum.html">GreenPlum
+  on DeepDive</a>, use <a
+  href="../advanced/performance.html#parallelgrounding">parallelism when
+  grounding the graph</a>. Default is `false`.
+
+	```bash
+	inference.parallel_grounding: true
+	```
 
 ## <a name="inference_schema" href="#"></a> Inference schema
 

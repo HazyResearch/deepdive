@@ -8,7 +8,7 @@ Processing large amounts of data may expose bottlenecks in various parts of the
 system. The following sections show how to tune different parameters to obtain
 better performances.
 
-### Parallel grounding
+### <a name="parallelgrounding" href="#"></a> Parallel grounding
 [Grounding](../basics/overview.html#grounding) is the process of building the
 factor graph. If you are using Greenplum, you can enable parallel grounding to
 speed up the grounding phase, which makes use of Greenplum's parallel file
