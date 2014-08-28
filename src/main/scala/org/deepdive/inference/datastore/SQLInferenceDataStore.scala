@@ -458,21 +458,46 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         INSERT INTO ${cardinalityTableName} VALUES ${cardinalityValues};
         """)
 
-      // dump variables, 
-      // variable table join with holdout table - a variable is an evidence if it has initial value and it is not holdout
-      du.unload(s"variables_${relation}", s"${groundingPath}/variables_${relation}", dbSettings, parallelGrounding,
-        s"""SELECT id, 1::int AS is_evidence, ${column}::int AS initvalue, ${variableDataType} AS type, 
-          ${cardinality} AS cardinality  
-        FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable}
-        ON ${relation}.id = ${VariablesHoldoutTable}.variable_id
-        WHERE ${column} IS NOT NULL AND ${VariablesHoldoutTable}.variable_id IS NULL
-        UNION ALL
-        SELECT id, 0::int AS is_evidence, 0::int AS initvalue, ${variableDataType} AS type, 
-          ${cardinality} AS cardinality  
-        FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable}
-        ON ${relation}.id = ${VariablesHoldoutTable}.variable_id
-        WHERE ${column} IS NULL OR ${VariablesHoldoutTable}.variable_id IS NOT NULL;
+      // add a column to variable table to denote variable type - query, evidence, observation
+      // variable table join with holdout table 
+      // - a variable is an evidence if it has initial value and it is not holdout
+      val variableTypeColumn = "__dd_variable_type__"
+      execute(s"""
+        ALTER TABLE ${relation} DROP COLUMN IF EXISTS ${variableTypeColumn} CASCADE;
+        ALTER TABLE ${relation} ADD COLUMN ${variableTypeColumn} int;
         """)
+      execute(s"""
+        UPDATE ${relation} SET ${variableTypeColumn} = (${column} IS NOT NULL)::int;
+        UPDATE ${relation} SET ${variableTypeColumn} = 0 
+        WHERE ${relation}.id IN (SELECT variable_id FROM ${VariablesHoldoutTable});
+        """)
+
+      // dump variables
+      du.unload(s"variables_${relation}", s"${groundingPath}/variables_${relation}", 
+        dbSettings, parallelGrounding,
+        s"""SELECT id, ${variableTypeColumn}, 
+        CASE WHEN ${variableTypeColumn} = 0 THEN 0 ELSE ${column}::int END, 
+        ${variableDataType} AS type, ${cardinality} AS cardinality
+        FROM ${relation}
+        """)
+
+      // execute(s"""ALTER TABLE ${relation} DROP COLUMN IF EXISTS ${variableTypeColumn} CASCADE;""")
+
+      // // dump variables, 
+      // // variable table join with holdout table - a variable is an evidence if it has initial value and it is not holdout
+      // du.unload(s"variables_${relation}", s"${groundingPath}/variables_${relation}", dbSettings, parallelGrounding,
+      //   s"""SELECT id, 1::int AS is_evidence, ${column}::int AS initvalue, ${variableDataType} AS type, 
+      //     ${cardinality} AS cardinality  
+      //   FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable}
+      //   ON ${relation}.id = ${VariablesHoldoutTable}.variable_id
+      //   WHERE ${column} IS NOT NULL AND ${VariablesHoldoutTable}.variable_id IS NULL
+      //   UNION ALL
+      //   SELECT id, 0::int AS is_evidence, 0::int AS initvalue, ${variableDataType} AS type, 
+      //     ${cardinality} AS cardinality  
+      //   FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable}
+      //   ON ${relation}.id = ${VariablesHoldoutTable}.variable_id
+      //   WHERE ${column} IS NULL OR ${VariablesHoldoutTable}.variable_id IS NOT NULL;
+      //   """)
     }
 
     // generate factor meta data
