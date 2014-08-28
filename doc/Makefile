@@ -6,11 +6,17 @@
 
 # DEPLOY_USER_HOST = ssh.cs.brown.edu
 # DEPLOY_DIR = public_html/deepdive/
-DEPLOY_USER_HOST = zifei@whale.stanford.edu
+
+# Get the deploying user in env var $DEPLOY_USER, default is `whoami`
+ifeq ($(origin DEPLOY_USER), undefined)
+  DEPLOY_USER = `whoami`
+endif
+DEPLOY_USER_HOST = $(DEPLOY_USER)@whale.stanford.edu
 DEPLOY_DIR = /afs/cs/group/infolab/deepdive/www
 GITHUB_REPO_URL = https://github.com/HazyResearch/deepdive
 WEBSITE_CNAME ="deepdive.stanford.edu"
 TEST_PORT = 4000
+
 test:
 	# Launching a server for testing...
 	jekyll serve --host localhost --port $(TEST_PORT) --baseurl "" --watch
