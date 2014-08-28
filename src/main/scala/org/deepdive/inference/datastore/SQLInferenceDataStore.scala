@@ -366,7 +366,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
    * Output: factor graph files: variables, factors, edges, weights, meta
    */
   def groundFactorGraph(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
-    holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean, weightTable: String, 
+    calibrationSettings: CalibrationSettings, skipLearning: Boolean, weightTable: String, 
     dbSettings: DbSettings, parallelGrounding: Boolean) {
 
     val du = new DataUnloader
@@ -416,7 +416,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     execute(s"""DROP TABLE IF EXISTS ${VariablesHoldoutTable} CASCADE;
       CREATE TABLE ${VariablesHoldoutTable}(variable_id bigint primary key);
       """)
-    holdoutQuery match {
+    calibrationSettings.holdoutQuery match {
       case Some(query) => execute(query)
       case None =>
     }
@@ -436,12 +436,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       }
 
       // assign holdout - if not user-defined, randomly select from evidence variables of each variable table
-      holdoutQuery match {
+      calibrationSettings.holdoutQuery match {
         case Some(s) =>
         case None => execute(s"""
           INSERT INTO ${VariablesHoldoutTable}
           SELECT id FROM ${relation}
-          WHERE RANDOM() < ${holdoutFraction} AND ${column} IS NOT NULL;
+          WHERE RANDOM() < ${calibrationSettings.holdoutFraction} AND ${column} IS NOT NULL;
           """)
       }
 
@@ -481,7 +481,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         FROM ${relation}
         """)
 
-      // execute(s"""ALTER TABLE ${relation} DROP COLUMN IF EXISTS ${variableTypeColumn} CASCADE;""")
+      execute(s"""ALTER TABLE ${relation} DROP COLUMN IF EXISTS ${variableTypeColumn} CASCADE;""")
 
       // // dump variables, 
       // // variable table join with holdout table - a variable is an evidence if it has initial value and it is not holdout
