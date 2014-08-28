@@ -578,9 +578,9 @@ The available directives are:
 ## <a name="pipelines" href="#"></a> Pipelines
 
 [Pipelines](running.html#pipelines) specification directives go in the global `deepdive`
-section. Available directives are:
+section. Available directives are `pipeline.pipelines` and `pipeline.run`.
 
-- `pipeline.pipelines` and `pipeline.run`: `pipeline.pipelines` is a section containing a list of one or more
+- `pipeline.pipelines` is a section containing a list of one or more
   pipelines. Each pipeline is defined as an array of tasks, where the names of
   the tasks are the names of the extractors or inference rules to be executed,
   as in the following example:
@@ -589,7 +589,7 @@ section. Available directives are:
     pipeline.pipelines.myPipeline: [ "extractor1", "extractor2", "inferenceRule1" ]
     ```
 
-  and `pipeline.run` specifies which pipeline to run, e.g.:
+- `pipeline.run` specifies which pipeline to run, e.g.:
   
     ```bash
     pipeline.run : "myPipeline"
