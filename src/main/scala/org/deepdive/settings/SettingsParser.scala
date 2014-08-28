@@ -153,12 +153,13 @@ object SettingsParser extends Logging {
 
   private def loadCalibrationSettings(config: Config) : CalibrationSettings = {
     val calibrationConfig = Try(config.getConfig("calibration")).getOrElse { 
-      return CalibrationSettings(0.0, None)
+      return CalibrationSettings(0.0, None, None)
     }
     val holdoutFraction = Try(calibrationConfig.getDouble("holdout_fraction")).getOrElse(0.0)
     val holdoutQuery = Try(calibrationConfig.getString("holdout_query")).toOption
+    val observationQuery = Try(calibrationConfig.getString("observation_query")).toOption
 
-    CalibrationSettings(holdoutFraction, holdoutQuery)
+    CalibrationSettings(holdoutFraction, holdoutQuery, observationQuery)
   }
 
   private def loadSamplerSettings(config: Config) : SamplerSettings = {
