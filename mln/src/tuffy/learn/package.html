@@ -1,0 +1,24 @@
+<html>
+<head>
+<title>package</title>
+</head>
+<body>
+Provides weight learning in Tuffy.
+
+<p>
+This package provide frameworks for weight learning. You can write
+your own learner by materializing several functions of the abstract class
+Learner. An example in this package is DNLearner, which implements 
+a Diagonal Newton optimizer. This materialized class only need to tell
+the learner how to update the weight according to the gradient and Hessian.
+</p>
+
+<p>
+This package deals with in memory MRF directly, and has nothing
+to do with DBMS. The flow of learning involves repetitive invocations of MCSAT (see
+package infer), which will update the expectation of clause violation/satisfaction
+under current weight settings. 
+</p>
+
+</body>
+</html>

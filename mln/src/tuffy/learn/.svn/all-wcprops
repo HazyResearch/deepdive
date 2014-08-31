@@ -1,0 +1,53 @@
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/tuffy/!svn/ver/1920/tuffy/trunk/src/tuffy/learn
+END
+NaiveGDLearner.java
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/tuffy/!svn/ver/1567/tuffy/trunk/src/tuffy/learn/NaiveGDLearner.java
+END
+package.html
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/tuffy/!svn/ver/1567/tuffy/trunk/src/tuffy/learn/package.html
+END
+Main.java
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/tuffy/!svn/ver/1567/tuffy/trunk/src/tuffy/learn/Main.java
+END
+MultiCoreSGDLearner.java
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/tuffy/!svn/ver/1920/tuffy/trunk/src/tuffy/learn/MultiCoreSGDLearner.java
+END
+DNLearner.java
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/tuffy/!svn/ver/1920/tuffy/trunk/src/tuffy/learn/DNLearner.java
+END
+NaiveDNLearner.java
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/tuffy/!svn/ver/1567/tuffy/trunk/src/tuffy/learn/NaiveDNLearner.java
+END
+Learner.java
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/tuffy/!svn/ver/1920/tuffy/trunk/src/tuffy/learn/Learner.java
+END
+SGDLearner.java
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/tuffy/!svn/ver/1835/tuffy/trunk/src/tuffy/learn/SGDLearner.java
+END

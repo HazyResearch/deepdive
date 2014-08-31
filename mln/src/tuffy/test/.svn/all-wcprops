@@ -1,0 +1,95 @@
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/tuffy/!svn/ver/1920/tuffy/trunk/src/tuffy/test
+END
+GroundingTest.java
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/svn/tuffy/!svn/ver/1567/tuffy/trunk/src/tuffy/test/GroundingTest.java
+END
+TypeTest.java
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/tuffy/!svn/ver/1567/tuffy/trunk/src/tuffy/test/TypeTest.java
+END
+InferenceTest.java
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/svn/tuffy/!svn/ver/1567/tuffy/trunk/src/tuffy/test/InferenceTest.java
+END
+GAtomTest.java
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/tuffy/!svn/ver/1567/tuffy/trunk/src/tuffy/test/GAtomTest.java
+END
+PredicateTest.java
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/svn/tuffy/!svn/ver/1567/tuffy/trunk/src/tuffy/test/PredicateTest.java
+END
+GClauseTest.java
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/tuffy/!svn/ver/1567/tuffy/trunk/src/tuffy/test/GClauseTest.java
+END
+AtomTest.java
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/tuffy/!svn/ver/1567/tuffy/trunk/src/tuffy/test/AtomTest.java
+END
+LearnerTest.java
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/tuffy/!svn/ver/1920/tuffy/trunk/src/tuffy/test/LearnerTest.java
+END
+ClauseTest.java
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/tuffy/!svn/ver/1567/tuffy/trunk/src/tuffy/test/ClauseTest.java
+END
+LiteralTest.java
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/tuffy/!svn/ver/1600/tuffy/trunk/src/tuffy/test/LiteralTest.java
+END
+ParsingLoadingTest.java
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/tuffy/!svn/ver/1567/tuffy/trunk/src/tuffy/test/ParsingLoadingTest.java
+END
+TermTest.java
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/tuffy/!svn/ver/1567/tuffy/trunk/src/tuffy/test/TermTest.java
+END
+package.html
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/svn/tuffy/!svn/ver/1567/tuffy/trunk/src/tuffy/test/package.html
+END
+TupleTest.java
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/tuffy/!svn/ver/1567/tuffy/trunk/src/tuffy/test/TupleTest.java
+END
+ConfigTest.java
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/tuffy/!svn/ver/1567/tuffy/trunk/src/tuffy/test/ConfigTest.java
+END

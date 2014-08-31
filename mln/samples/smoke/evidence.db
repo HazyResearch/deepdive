@@ -1,0 +1,9 @@
+Friends(Anna, Bob)
+Friends(Anna, Edward)
+Friends(Anna, Frank)
+Friends(Edward, Frank)
+Friends(Gary, Helen)
+!Friends(Gary, Frank)
+
+Smokes(Anna)
+Smokes(Edward)

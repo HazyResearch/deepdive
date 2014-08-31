@@ -1,0 +1,41 @@
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/tuffy/!svn/ver/1956/tuffy/trunk/src/tuffy/ground/partition
+END
+PartitionScheme.java
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/tuffy/!svn/ver/1567/tuffy/trunk/src/tuffy/ground/partition/PartitionScheme.java
+END
+Component.java
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/tuffy/!svn/ver/1823/tuffy/trunk/src/tuffy/ground/partition/Component.java
+END
+package.html
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/tuffy/!svn/ver/1567/tuffy/trunk/src/tuffy/ground/partition/package.html
+END
+Partition.java
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/tuffy/!svn/ver/1833/tuffy/trunk/src/tuffy/ground/partition/Partition.java
+END
+Bucket.java
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/tuffy/!svn/ver/1956/tuffy/trunk/src/tuffy/ground/partition/Bucket.java
+END
+Partitioning.java
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/tuffy/!svn/ver/1846/tuffy/trunk/src/tuffy/ground/partition/Partitioning.java
+END

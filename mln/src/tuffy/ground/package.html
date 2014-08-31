@@ -1,0 +1,28 @@
+<html>
+<head>
+<title>package</title>
+</head>
+<body>
+Provides facilities for grounding MLNs, including KBMC, SQL-based grounding, and MRF partitioning.
+
+<p>
+Grounding will be conducted in three phases:
+<ul>
+<li> Ground relevant atoms: This phase is done by class KBMC. In this phase, a rough sift
+of atoms results from a partially grounded predicate tables. In these tables (one
+for each predicate), those definitely not useful atoms are not grounded.
+<li> Pick active atoms: This phase is done by class Grounding. In this phase, all
+atoms that will not violate any clauses by default are further eliminated
+on the basis of the first phase. These eliminated atoms will not play any role
+in following inference or learning, therefore grounding them out will make no sense.
+<li> Ground active clauses: This phase is done by class Grounding. In this phase, clauses
+are grounded according to picked active atoms in the second phase. Clauses relying on
+exactly the same atoms will be merged together to form GClause for efficiency 
+consideration.
+</ul>
+</p>
+
+
+
+</body>
+</html>

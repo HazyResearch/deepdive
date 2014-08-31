@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+
+<project basedir="." default="build" name="tuffy">
+    <property environment="env"/>
+    <property name="junit.output.dir" value="junit"/>
+    <property name="debuglevel" value="source,lines,vars"/>
+    <property name="target" value="1.6"/>
+    <property name="source" value="1.6"/>
+
+    <path id="tuffy.classpath">
+        <pathelement location="bin"/>
+		<pathelement location="lib/postgresql-8.4-701.jdbc4.jar"/>
+        <pathelement location="lib/antlr-3.2.jar"/>
+        <pathelement location="lib/args4j-2.0.12.jar"/>
+        <pathelement location="lib/commons-lang3-3.0-beta.jar"/>
+        <pathelement location="lib/jgrapht-jdk1.6.jar"/>
+		<pathelement location="lib/commons-math-2.2.jar"/>
+		<pathelement location="lib/junit-4.9.jar"/>
+    </path>
+
+    <target name="init">
+        <mkdir dir="bin"/>
+        <copy includeemptydirs="false" todir="bin">
+            <fileset dir="src">
+                <exclude name="**/*.launch"/>
+                <exclude name="**/*.java"/>
+            </fileset>
+        </copy>
+    </target>
+    <target name="clean">
+        <delete dir="bin"/>
+    </target>
+
+    <target depends="clean" name="cleanall"/>
+
+    <target depends="build-subprojects,build-project" name="build"/>
+
+    <target name="build-subprojects"/>
+
+    <target depends="init" name="build-project">
+        <echo message="${ant.project.name}: ${ant.file}"/>
+        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}">
+            <src path="src"/>
+            <classpath refid="tuffy.classpath"/>
+        </javac>
+    </target>
+    
+    <target name="Main">
+        <java classname="tuffy.main.Main" failonerror="true" fork="yes">
+            <classpath refid="tuffy.classpath"/>
+        </java>
+    </target>
+	
+	
+	<target name="dist" depends="Main"
+        description="generate the distribution" >
+		
+		<manifestclasspath property="jar.classpath" jarfile="tuffy.jar">
+		<classpath refid="tuffy.classpath"/>
+		</manifestclasspath>
+		
+		<jar jarfile="tuffy.jar" basedir="bin">
+		<manifest>
+			<attribute name="Main-Class" value="tuffy.main.Main"/>
+			<attribute name="Class-Path" value="${jar.classpath}" />
+		</manifest>
+		
+		</jar>
+	</target>
+	
+</project>

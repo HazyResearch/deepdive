@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/tuffy/!svn/ver/1920/tuffy/trunk/src/tuffy/worker
+END
+Worker.java
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/tuffy/!svn/ver/1920/tuffy/trunk/src/tuffy/worker/Worker.java
+END
+MLEWorkerInstance.java
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/tuffy/!svn/ver/1920/tuffy/trunk/src/tuffy/worker/MLEWorkerInstance.java
+END
+MLEWorker.java
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/tuffy/!svn/ver/1920/tuffy/trunk/src/tuffy/worker/MLEWorker.java
+END
+MLEWorker_sgdWorker.java
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/tuffy/!svn/ver/1920/tuffy/trunk/src/tuffy/worker/MLEWorker_sgdWorker.java
+END
+MLEWorker_gibbsSampler.java
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/tuffy/!svn/ver/1920/tuffy/trunk/src/tuffy/worker/MLEWorker_gibbsSampler.java
+END

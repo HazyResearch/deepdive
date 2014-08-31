@@ -1,0 +1,388 @@
+package test;
+
+import static org.junit.Assert.assertTrue;
+import grounding.KBMC;
+import grounding.Grounding;
+import java.io.File;
+
+import mln.MarkovLogicNetwork;
+
+import org.junit.Test;
+
+import util.Config;
+import util.FileMan;
+import util.UIMan;
+import db.RDB;
+
+public class InferenceTest {
+	private void loadProg(MarkovLogicNetwork mln, String prog){
+		FileMan.ensureExistence(Config.dir_tests);
+		String fprog = Config.dir_tests + "/prog.mln";
+		FileMan.writeToFile(fprog, prog);
+		mln.loadPrograms(new String[]{fprog});
+		FileMan.removeFile(fprog);
+	}
+
+	private void loadEvid(MarkovLogicNetwork mln, String evid, RDB db){
+		mln.prepareDB(db);
+		FileMan.ensureExistence(Config.dir_tests);
+		String fin = Config.dir_tests + "/evid.db";
+		FileMan.writeToFile(fin, evid);
+		mln.loadEvidences(new String[]{fin});
+		FileMan.removeFile(fin);
+	}
+
+	private void loadQuery(MarkovLogicNetwork mln, String queryAtoms){
+		mln.parseQueryCommaList(queryAtoms);
+	}
+	
+	private void cleanUp(BDBStore map, RDB db){
+		map.close();
+		UIMan.display(">>> Cleaning up temporary data");
+		UIMan.displayInLine("removing database schema '" + Config.db_schema + "'...");
+		UIMan.display(db.dropSchema(Config.db_schema)?"OK" : "FAILED");
+		UIMan.displayInLine("removing temporary dir '" + Config.getWorkingDir() + "'...");
+		UIMan.display(FileMan.removeDirectory(new File(Config.getWorkingDir()))?"OK" : "FAILED");
+	}
+	
+	@Test
+	public void testInferenceWalk() throws Exception{
+		System.out.println("testing walkSAT");
+		MarkovLogicNetwork mln = new MarkovLogicNetwork();
+		String prog = "Friends(person, person)\r\n" + 
+				"Smokes(person)\r\n" + 
+				"Cancer(person)\r\n" + 
+				"0.5  !Smokes(a1) v Cancer(a1)\r\n" + 
+				"0.5  !Smokes(a1) v !Cancer(a1)\r\n" + 
+				"0.4  !Friends(a1,a2) v !Smokes(a1) v Smokes(a2)\r\n" + 
+				"0.4  !Friends(a1,a2) v !Smokes(a2) v Smokes(a1)\r\n" + 
+				"";
+		loadProg(mln, prog);
+
+		String query = "Cancer(x),Smokes(Tom)";
+		loadQuery(mln, query);
+		
+		String evid = "Friends(Anna, Bob)\r\n" + 
+				"Friends(Anna, Edward)\r\n" + 
+				"Friends(Anna, Frank)\r\n" + 
+				"Friends(Edward, Frank)\r\n" + 
+				"Friends(Gary, Helen)\r\n" + 
+				"!Friends(Gary, Frank)\r\n" + 
+				"Smokes(Anna)\r\n" + 
+				"Smokes(Edward)\r\n" + 
+				"";
+		RDB db = RDB.getRDBbyConfig();
+		db.resetSchema(Config.db_schema);
+		loadEvid(mln, evid, db);
+		
+		mln.materializeTables();
+
+		KBMC kbmc = new KBMC(mln);
+		kbmc.run();
+		Grounding grounding = new Grounding(mln);
+		grounding.constructMRF(true);
+		
+		BDBWalkSAT map = new BDBWalkSAT(grounding);
+		map.infer(200, 3);
+
+		map.flushTruthValues();
+		String fout = Config.dir_tests + "/out.db";
+		mln.dumpAnswer(fout);
+		String out = FileMan.getTextContent(fout);
+		assertTrue(!out.contains("Smokes(Anna)"));
+		assertTrue(!out.contains("Smokes(Edward)"));
+		
+		cleanUp(map, db);
+	}
+
+
+	@Test
+	public void testInferenceSweep() throws Exception{
+		System.out.println("testing sweepSAT");
+		MarkovLogicNetwork mln = new MarkovLogicNetwork();
+		String prog = "*Friends(person, person)\r\n" + 
+				"Smokes(person)\r\n" + 
+				"Cancer(person)\r\n" + 
+				"0.5  !Smokes(a1) v Cancer(a1)\r\n" + 
+				"0.4  !Friends(a1,a2) v !Smokes(a1) v Smokes(a2)\r\n" + 
+				"0.4  !Friends(a1,a2) v !Smokes(a2) v Smokes(a1)\r\n" + 
+				"";
+		loadProg(mln, prog);
+
+		String query = "Cancer(x)";
+		loadQuery(mln, query);
+		
+		String evid = "Friends(Anna, Bob)\r\n" + 
+				"Friends(Anna, Edward)\r\n" + 
+				"Friends(Anna, Frank)\r\n" + 
+				"Friends(Edward, Frank)\r\n" + 
+				"Friends(Gary, Helen)\r\n" + 
+				"!Friends(Gary, Frank)\r\n" + 
+				"Smokes(Anna)\r\n" + 
+				"Smokes(Edward)\r\n" + 
+				"";
+		RDB db = RDB.getRDBbyConfig();
+		db.resetSchema(Config.db_schema);
+		loadEvid(mln, evid, db);
+		
+		mln.materializeTables();
+
+		KBMC kbmc = new KBMC(mln);
+		kbmc.run();
+		Grounding grounding = new Grounding(mln);
+		grounding.constructMRF(false);
+		
+		BDBSweepSAT map = new BDBSweepSAT(grounding);
+		map.infer(50, 3);
+		
+		map.flushTruthValues();
+		String fout = Config.dir_tests + "/out.db";
+		mln.dumpAnswer(fout);
+		String out = FileMan.getTextContent(fout);
+		assertTrue(!out.contains("Smokes(Anna)"));
+		assertTrue(!out.contains("Smokes(Edward)"));
+		
+		cleanUp(map, db);
+	}
+
+
+	@Test
+	public void testInferenceWalkEvidInQuery() throws Exception{
+		System.out.println("testing walkSAT");
+		MarkovLogicNetwork mln = new MarkovLogicNetwork();
+		String prog = "*Friends(person, person)\r\n" + 
+				"Smokes(person)\r\n" + 
+				"Cancer(person)\r\n" + 
+				"0.5  !Smokes(a1) v Cancer(a1)\r\n" + 
+				"0.4  !Friends(a1,a2) v !Smokes(a1) v Smokes(a2)\r\n" + 
+				"0.4  !Friends(a1,a2) v !Smokes(a2) v Smokes(a1)\r\n" + 
+				"";
+		loadProg(mln, prog);
+
+		String query = "Cancer(x),Smokes(x)";
+		loadQuery(mln, query);
+		
+		String evid = "Friends(Anna, Bob)\r\n" + 
+				"Friends(Anna, Edward)\r\n" + 
+				"Friends(Anna, Frank)\r\n" + 
+				"Friends(Edward, Frank)\r\n" + 
+				"Friends(Gary, Helen)\r\n" + 
+				"!Friends(Gary, Frank)\r\n" + 
+				"Smokes(Anna)\r\n" + 
+				"Smokes(Edward)\r\n" + 
+				"";
+		RDB db = RDB.getRDBbyConfig();
+		db.resetSchema(Config.db_schema);
+		loadEvid(mln, evid, db);
+		
+		mln.materializeTables();
+
+		KBMC kbmc = new KBMC(mln);
+		kbmc.run();
+		Grounding grounding = new Grounding(mln);
+		grounding.constructMRF(true);
+		
+		BDBWalkSAT map = new BDBWalkSAT(grounding);
+		map.infer(200, 3);
+		
+		map.flushTruthValues();
+		String fout = Config.dir_tests + "/out.db";
+		mln.dumpAnswer(fout);
+		String out = FileMan.getTextContent(fout);
+		assertTrue(out.contains("Smokes(Anna)"));
+		assertTrue(out.contains("Smokes(Edward)"));
+		
+		cleanUp(map, db);
+	}
+
+
+	@Test
+	public void testExistentialQuan() throws Exception{
+		System.out.println("testing existential quantifiers");
+		MarkovLogicNetwork mln = new MarkovLogicNetwork();
+		String prog = "*Friends(person, person)\r\n" + 
+				"Smokes(person)\r\n" + 
+				"Cancer(person)\r\n" + 
+				"0.5  EXIST a1 !Smokes(a1)\r\n" + 
+				"";
+		loadProg(mln, prog);
+		
+		String query = "Smokes(x)";
+		loadQuery(mln, query);
+		
+		String evid = "Friends(Anna, Bob)\r\n" + 
+				"Cancer(Bob)\r\n" + 
+				"Cancer(Gary)\r\n" + 
+				"Smokes(Anna)\r\n" + 
+				"";
+		RDB db = RDB.getRDBbyConfig();
+		db.resetSchema(Config.db_schema);
+		loadEvid(mln, evid, db);
+
+		mln.materializeTables();
+
+		KBMC kbmc = new KBMC(mln);
+		kbmc.run();
+		Grounding grounding = new Grounding(mln);
+		grounding.constructMRF(false);
+		
+		BDBSweepSAT map = new BDBSweepSAT(grounding);
+		map.infer(50, 3);
+		
+		map.flushTruthValues();
+		String fout = Config.dir_tests + "/out.db";
+		mln.dumpAnswer(fout);
+		String out = FileMan.getTextContent(fout);
+		assertTrue(out.contains("Smokes(Anna)"));
+		assertTrue(!out.contains("Smokes(Gary)") || !out.contains("Smokes(Bob)"));
+
+		cleanUp(map, db);
+	}
+	
+	
+	@Test
+	public void testTrivialProg() throws Exception{
+		System.out.println("testing trivial prog");
+		MarkovLogicNetwork mln = new MarkovLogicNetwork();
+		String prog = "*Friends(person, person)\r\n" + 
+				"Smokes(person)\r\n" + 
+				"Cancer(person)\r\n" + 
+				"0.5  !Smokes(a1)\r\n" + 
+				"";
+		loadProg(mln, prog);
+		
+		String query = "Smokes(x)";
+		loadQuery(mln, query);
+		
+		String evid = "Friends(Anna, Bob)\r\n" + 
+				"Cancer(Anna)\r\n" + 
+				"Cancer(Gary)\r\n" + 
+				"Smokes(Anna)\r\n" + 
+				"Smokes(Edward)\r\n" + 
+				"";
+		RDB db = RDB.getRDBbyConfig();
+		db.resetSchema(Config.db_schema);
+		loadEvid(mln, evid, db);
+
+		mln.materializeTables();
+
+		KBMC kbmc = new KBMC(mln);
+		kbmc.run();
+		Grounding grounding = new Grounding(mln);
+		grounding.constructMRF(false);
+		
+		BDBSweepSAT map = new BDBSweepSAT(grounding);
+		map.infer(50, 3);
+		
+		map.flushTruthValues();
+		String fout = Config.dir_tests + "/out.db";
+		mln.dumpAnswer(fout);
+		String out = FileMan.getTextContent(fout);
+		assertTrue(out.contains("Smokes(Anna)"));
+		assertTrue(out.contains("Smokes(Edward)"));
+		assertTrue(!out.contains("Smokes(Gary)"));
+		assertTrue(!out.contains("Smokes(Bob)"));
+		
+		cleanUp(map, db);
+	}
+	
+
+	@Test
+	public void testNegWeights() throws Exception{
+		System.out.println("testing neg weights");
+		MarkovLogicNetwork mln = new MarkovLogicNetwork();
+		String prog = "*Friends(person, person)\r\n" + 
+				"Smokes(person)\r\n" + 
+				"Cancer(person)\r\n" + 
+				"-0.5  !Smokes(a1)\r\n" + 
+				"";
+		loadProg(mln, prog);
+		
+		String query = "Smokes(x)";
+		loadQuery(mln, query);
+		
+		String evid = "Friends(Anna, Bob)\r\n" + 
+				"Cancer(Anna)\r\n" + 
+				"Cancer(Gary)\r\n" + 
+				"Smokes(Anna)\r\n" + 
+				"Smokes(Edward)\r\n" + 
+				"";
+		RDB db = RDB.getRDBbyConfig();
+		db.resetSchema(Config.db_schema);
+		loadEvid(mln, evid, db);
+
+		mln.materializeTables();
+
+		KBMC kbmc = new KBMC(mln);
+		kbmc.run();
+		Grounding grounding = new Grounding(mln);
+		grounding.constructMRF(false);
+		
+		BDBSweepSAT map = new BDBSweepSAT(grounding);
+		map.infer(50, 3);
+		
+		map.flushTruthValues();
+		String fout = Config.dir_tests + "/out.db";
+		mln.dumpAnswer(fout);
+		String out = FileMan.getTextContent(fout);
+		assertTrue(out.contains("Smokes(Anna)"));
+		assertTrue(out.contains("Smokes(Edward)"));
+		assertTrue(out.contains("Smokes(Gary)"));
+		assertTrue(out.contains("Smokes(Bob)"));
+		
+		cleanUp(map, db);
+	}
+	
+
+	@Test
+	public void testInferenceSweepEvidInQuery() throws Exception{
+		System.out.println("testing sweepSAT");
+		MarkovLogicNetwork mln = new MarkovLogicNetwork();
+		String prog = "*Friends(person, person)\r\n" + 
+				"Smokes(person)\r\n" + 
+				"Cancer(person)\r\n" + 
+				"0.5  !Smokes(a1) v Cancer(a1)\r\n" + 
+				"0.4  !Friends(a1,a2) v !Smokes(a1) v Smokes(a2)\r\n" + 
+				"0.4  !Friends(a1,a2) v !Smokes(a2) v Smokes(a1)\r\n" + 
+				"";
+		loadProg(mln, prog);
+
+		String query = "Cancer(x),Smokes(x)";
+		loadQuery(mln, query);
+		
+		String evid = "Friends(Anna, Bob)\r\n" + 
+				"Friends(Anna, Edward)\r\n" + 
+				"Friends(Anna, Frank)\r\n" + 
+				"Friends(Edward, Frank)\r\n" + 
+				"Friends(Gary, Helen)\r\n" + 
+				"!Friends(Gary, Frank)\r\n" + 
+				"Smokes(Anna)\r\n" + 
+				"Smokes(Edward)\r\n" + 
+				"";
+		RDB db = RDB.getRDBbyConfig();
+		db.resetSchema(Config.db_schema);
+		loadEvid(mln, evid, db);
+		
+		mln.materializeTables();
+
+		KBMC kbmc = new KBMC(mln);
+		kbmc.run();
+		Grounding grounding = new Grounding(mln);
+		grounding.constructMRF(false);
+		
+		BDBSweepSAT map = new BDBSweepSAT(grounding);
+		map.infer(50, 3);
+		
+		map.flushTruthValues();
+		String fout = Config.dir_tests + "/out.db";
+		mln.dumpAnswer(fout);
+		String out = FileMan.getTextContent(fout);
+		assertTrue(out.contains("Smokes(Anna)"));
+		assertTrue(out.contains("Smokes(Edward)"));
+		assertTrue(out.contains("Cancer(Anna)"));
+		assertTrue(out.contains("Cancer(Edward)"));
+		
+		cleanUp(map, db);
+	}
+
+}

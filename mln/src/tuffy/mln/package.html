@@ -1,0 +1,36 @@
+<html>
+<head>
+<title>package</title>
+</head>
+<body>
+
+This package builds the data structure of MLN.
+
+<p>
+This package defines the data structure representing logics, e.g., 
+Atom, Predicate, Term, etc. Also, it bridges these objects to
+relational tables in DBMS.
+</p>
+
+<p>
+Following figure illustrates the relationship between classes in this
+package, and the relationship between class and database table. For example,
+from this figure, we can see that, an Atom object is formed by a Tuple object
+and a Predicate object. And a Predicate object is associated with two
+database tables.
+</p>
+
+<p>
+There are four kinds of database tables. type_TypeName table saves the constant
+ID of type TypeName. pred_PredicateName table saves grounded instances of predicate 
+PredicateName.
+act_pred_PredicateName table saves the active atoms of predicate PredicateName.
+ClauseName_instances table saves instances of clause ClauseName. Here by instance,
+it means the possible binding from meta-variable to constant. By such bindings, you
+can get clauses as the same as your input program.
+</p>
+
+
+
+</body>
+</html>

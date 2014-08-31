@@ -1,0 +1,1176 @@
+package tuffy.mln;
+
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import tuffy.db.RDB;
+import tuffy.db.SQLMan;
+import tuffy.infer.ds.GClause;
+import tuffy.main.Infer;
+import tuffy.parse.CommandOptions;
+import tuffy.ra.Expression;
+import tuffy.util.Config;
+import tuffy.util.ExceptionMan;
+import tuffy.util.StringMan;
+import tuffy.util.UIMan;
+/**
+ * A first-order logic clause, namely a disjunct of literals.
+ */
+public class Clause implements Cloneable{
+	
+	@SuppressWarnings("unchecked")
+	public Clause clone(){
+		Clause ret = new Clause();
+		
+		ret.bilits = (ArrayList<Literal>) this.bilits.clone();
+		
+		ret.constraints = new ArrayList<Expression>();
+		for(Expression sub : this.constraints){
+			ret.constraints.add(sub.clone());
+		}
+		
+		ret.cost = this.cost;
+		ret.existentialVars = (ArrayList<String>) this.existentialVars.clone();
+		ret.exprWeight = this.exprWeight;
+		ret.id = this.id;
+		ret.instances = (ArrayList<ClauseInstance>) this.instances.clone();
+		ret.isTemplate = this.isTemplate;
+		ret.lits = (ArrayList<Literal>) this.lits.clone();
+		ret.metaTypes = (ArrayList<Type>) this.metaTypes.clone();
+		ret.metaVars = (ArrayList<String>) this.metaVars.clone();
+		ret.name = this.name;
+		ret.predIndex = (HashMap<Predicate, ArrayList<Literal>>) this.predIndex.clone();
+		ret.reglits = (ArrayList<Literal>) this.reglits.clone();
+		ret.relIntanceClauses = this.relIntanceClauses;
+		ret.signature = this.signature;
+		ret.specText = (ArrayList<String>) this.specText.clone();
+		ret.sqlFromList = this.sqlFromList;
+		ret.sqlPivotAttrsList = this.sqlPivotAttrsList;
+		ret.sqlWhereBindings = this.sqlWhereBindings;
+		ret.uNames = (ArrayList<String>) this.uNames.clone();
+		ret.varWeight = this.varWeight;
+		ret.violatedGClauses = (ArrayList<GClause>) this.violatedGClauses.clone();
+		ret.weight = this.weight;
+		
+		
+		return ret;
+	}
+	
+	
+	public Literal variableWeights = null;
+	
+	public boolean isFixedWeight = true;
+	
+	
+	/**
+	 * Map from clause ID to its description. This is used in
+	 * learning part to dump out the answers. Here by id it means
+	 * a string like <Clause ID>.<Instance ID or 0 if not a template>.
+	 * This variable is materialized in {@link Infer#setUp(CommandOptions)}.
+	 */
+	public static HashMap<String, String> mappingFromID2Desc = null;
+	//	new HashMap<String, String>();
+	
+	/**
+	 * Map from Constant ID to Constant Name. This map is filled
+	 * in {@link MarkovLogicNetwork#getSymbolID(String, Type)}.
+	 * This variable is materialized in {@link Infer#setUp(CommandOptions)}.
+	 */
+	public static HashMap<Integer, String> mappingFromID2Const = null;
+	//	new HashMap<Integer, String>();
+
+	/**
+	 * The set of boolean expressions that must all be TRUE;
+	 * otherwise the corresponding grounding is always true, and
+	 * is useless for inference -- and will be discarded.
+	 * 
+	 * In other words, this is the set of constraints that must be
+	 * satisfied by the grounding process.
+	 */
+	protected ArrayList<Expression> constraints = new ArrayList<Expression>();
+	
+	/**
+	 * Add a constraint that must hold.
+	 * @param e A bool expression that must be TRUE.
+	 */
+	public void addConstraint(Expression e){
+		constraints.add(e);
+	}
+	
+	public ArrayList<Expression> getConstraints(){
+		return constraints;
+	}
+
+
+	protected String getConstaintStringAsLits(){
+		if(constraints.isEmpty()) return "";
+		StringBuilder sb = new StringBuilder();
+		ArrayList<String> clines = new ArrayList<String>();
+		for(Expression e : constraints){
+			clines.add(" v [" + Expression.not(e).toString() + "]");
+		}
+		sb.append(StringMan.join("\n", clines));
+		return sb.toString();
+	}
+	
+	
+	/**
+	 * List of literals in this clause.
+	 */
+	protected ArrayList<Literal> lits = new ArrayList<Literal>();
+	
+	
+	
+	/**
+	 * List of regular literals in this clause.
+	 */
+	protected ArrayList<Literal> reglits = new ArrayList<Literal>(); //regular
+	
+	/**
+	 * List of built-in literals in this clause.
+	 */
+	protected ArrayList<Literal> bilits = new ArrayList<Literal>(); //built in
+	
+	/**
+	 * The index of predicate to set of literals referencing that predicate.
+	 */
+	protected HashMap<Predicate, ArrayList<Literal>> predIndex =
+		new HashMap<Predicate, ArrayList<Literal>>();
+	
+	/**
+	 * List of variables that are existentially quantified.
+	 */
+	protected ArrayList<String> existentialVars = new ArrayList<String>();
+	
+	
+	/**
+	 * Variables corresponding to constants in this clause.
+	 */
+	protected ArrayList<String> metaVars = new ArrayList<String>();
+	
+	/**
+	 * Types of meta variables.
+	 */
+	protected ArrayList<Type> metaTypes = new ArrayList<Type>();
+	
+	/**
+	 * List of instances of this clause. Here by instance, we mean
+	 * the possible bindings of meta-variables to constants.
+	 */
+	public ArrayList<ClauseInstance> instances = new ArrayList<ClauseInstance>();
+
+	/**
+	 * weight of this clause.
+	 */
+	protected double weight = 0;
+	
+	/**
+	 * name of this clause.
+	 */
+	protected String name = null;
+	
+	/**
+	 * id of this cluase.
+	 */
+	protected int id = 0;
+	
+	/** 
+	 * user provided names
+	 */
+	protected ArrayList<String> uNames = new ArrayList<String>();
+	
+	/**
+	 * Lines in the MLN rule file specifying this clause.
+	 */
+	protected ArrayList<String> specText = new ArrayList<String>();
+	
+	protected String getSpecTextFlat(){
+		return StringMan.join("\n", specText);
+	}
+	
+	
+	/**
+	 * The database table storing the clause instances.
+	 */
+	protected String relIntanceClauses = null;
+
+
+	/**
+	 * Indicates whether this clause contains constants.
+	 */
+	protected boolean isTemplate = false;
+	
+	/**
+	 * The signature of this clause. Clauses with the same
+	 * signature have the same pattern, and thus can be consolidated.
+	 * See {@link Clause#normalize()}.
+	 */
+	protected String signature = null;
+
+	/**
+	 * The From sub-clause of SQL for grounding.
+	 */
+	public String sqlFromList = null;
+	
+	public String sqlFromList_noModel = null;
+	
+	/**
+	 * The Where sub-clause of SQL for grounding.
+	 */
+	public String sqlWhereBindings = null;
+	
+	/**
+	 * The list of attributes that are NOT existential variables.
+	 */
+	public String sqlPivotAttrsList = null; 
+	
+	/**
+	 * The cost ascribed to this clause.
+	 * For auditing purposes.
+	 * 
+	 * @see tuffy.infer.MRF#auditClauseViolations()
+	 */
+	public double cost = 0;
+	
+	/**
+	 * The number of violations on this clause.
+	 * For auditing purposes.
+	 * 
+	 * @see tuffy.infer.MRF#auditClauseViolations()
+	 */
+	public double violations = 0;
+	
+	/**
+	 * Violated ground clauses.
+	 * 
+	 * @see tuffy.infer.MRF#auditClauseViolations()
+	 */
+	public ArrayList<GClause> violatedGClauses = new ArrayList<GClause>();
+	
+	/**
+	 * FO variable that is used as clause weights
+	 */
+	protected String varWeight = null;
+	
+	public void setVarWeight(String vw){
+		varWeight = vw;
+	}
+	
+	/**
+	 * Get the variable in this clause that is used as clause weights
+	 */
+	public String getVarWeight(){
+		return varWeight;
+	}
+	
+	/**
+	 * Check if the weight of this clause comes from a variable in the clause
+	 */
+	public boolean hasEmbeddedWeight(){
+		return (varWeight != null);
+	}
+	
+	
+	/**
+	 * Return the weight of this clause.
+	 * If this clause contains multiple instances, the returned
+	 * value only indicates the signum.
+	 */
+	public double getWeight(){
+		return weight;
+	}
+	
+	/**
+	 * Return true iff this clause contains constant. Note that
+	 * the result of this function is meaningful iff this
+	 * clause is a normalized clause.
+	 */
+	public boolean isTemplate(){
+		return isTemplate;
+	}
+	
+	
+	/**
+	 * Add user provided names to this clause.
+	 * @param nm user provided name
+	 */
+	public void addUserProvidedName(String nm){
+		if(nm != null){
+			uNames.add(nm);
+		}
+	}
+	
+
+	/**
+	 * Class of an instance of a clause.
+	 */
+	public class ClauseInstance{
+		/**
+		 * list of constant ID in this clause instance.
+		 */
+		public ArrayList<Term> conList;
+		
+		public boolean isFixedWeight = true;
+		
+		/**
+		 * weight of this clause instance.
+		 */
+		public double weight;
+		
+		/**
+		 * Constructor of ClauseInstance.
+		 * @param conList list of constant in this clause instance.
+		 * @param weight weight of this clause instance.
+		 */
+		public ClauseInstance(ArrayList<Term> conList, double weight, boolean isFixedWeight){
+			this.conList = conList;
+			this.weight = weight;
+			this.isFixedWeight = isFixedWeight;
+		}
+
+	}
+
+	/**
+	 * Return the assigned name of this clause.
+	 */
+	public String getName(){
+		return name;
+	}
+	
+	/**
+	 * Assign a name for this clause.
+	 */
+	public void setName(String aname)	{
+		name = aname;
+		relIntanceClauses = name + "_instances";
+	}
+	
+	/**
+	 * Return the "signature" of this clause.
+	 * 
+	 * @see Clause#normalize()
+	 */
+	public String getSignature(){
+		return signature;
+	}
+
+	/**
+	 * Return a normalized version of this clause.
+	 * 
+	 * The variables and constants are replaced standardized 
+	 * variable names, yielding a signature that can be used to 
+	 * identify clauses of the same pattern. 
+	 * If there are constants in the original clause,
+	 * the resulting clause is called a template. 
+	 * Clauses of the same pattern will be consolidated under
+	 * the same template. 
+	 * 
+	 * For example, clauses
+	 * "!likes(x, Candy) v has(x, Diabetes)" and
+	 * "!likes(x, WeightLifting) v has(x, Muscles)"
+	 * would be consolidated into the template
+	 * "!likes(v1, c1) v has(v1, c2)".
+	 * 
+	 * Zero-weight clauses will be ignored.
+	 * 
+	 * @see MarkovLogicNetwork#registerClause(Clause)
+	 */
+	public Clause normalize() {
+		HashMap<String, Integer> varIndex = new HashMap<String, Integer>();
+		HashMap<String, Integer> conIndex = new HashMap<String, Integer>();
+		ArrayList<Term> conList = new ArrayList<Term>();
+		ArrayList<Type> conTypeList = new ArrayList<Type>();
+		
+		if(this.weight == 0) return null;
+		
+		// normalization
+		// order into {enlits, eplits, unlits, uplits}.
+		if(Config.reorder_literals){
+			ArrayList<Literal> enlits = new ArrayList<Literal>();	//closed, neg
+			ArrayList<Literal> eplits = new ArrayList<Literal>();	//closed, pos
+			ArrayList<Literal> unlits = new ArrayList<Literal>(); 	//open, neg
+			ArrayList<Literal> uplits = new ArrayList<Literal>();	//open, pos
+			for(Literal lit : lits){
+				Predicate p = lit.getPred();
+				if(p.isClosedWorld()){
+					if(lit.getSense()){
+						eplits.add(lit);
+					}else{
+						enlits.add(lit);
+					}
+				}else{
+					if(lit.getSense()){
+						uplits.add(lit);
+					}else{
+						unlits.add(lit);
+					}
+				}
+			}
+			enlits.addAll(eplits);
+			enlits.addAll(unlits);
+			enlits.addAll(uplits);
+			lits = enlits;
+		}
+		
+		// TODO: cleaner object cloning
+		ArrayList<String> litlist = new ArrayList<String>();
+		for(Literal lit : lits){
+			StringBuilder sb = new StringBuilder();
+			if(!lit.getSense()){
+				sb.append("!");
+			}else{
+				sb.append(" ");
+			}
+			sb.append(lit.getPred().getName());
+			sb.append("(");
+			ArrayList<String> tlist = new ArrayList<String>();
+			for(int i=0; i<lit.getTerms().size(); i++){
+				Term t = lit.getTerms().get(i);
+				if(t.isVariable()){
+					Integer vi = varIndex.get(t.var());
+					if(vi == null){
+						vi = varIndex.size();
+						varIndex.put(t.var(), vi);
+					}
+					tlist.add("v" + vi);
+				}else{
+					Integer ci = conIndex.get(t.constantString());
+					if(ci == null){
+						ci = conIndex.size();
+						conIndex.put(t.constantString(), ci);
+						conList.add(t);
+						conTypeList.add(lit.getPred().getTypeAt(i));
+					}
+					tlist.add("c" + ci);
+				}
+			}
+			sb.append(StringMan.commaList(tlist));
+			sb.append(")");
+			litlist.add(sb.toString());
+		}
+
+		StringBuilder sigb = new StringBuilder();
+		sigb.append(this.weight>0 ? "sign='+' " : "sign='-' ");
+		if(!existentialVars.isEmpty()){
+			ArrayList<String> evlist = new ArrayList<String>();
+			for(String ev : existentialVars){
+				evlist.add("v" + varIndex.get(ev));
+			}
+			if(Config.clause_display_multiline){
+				sigb.append("\n  ");
+			}
+			sigb.append("EXIST " + StringMan.join(",", evlist) + " ");
+		}
+		if(Config.clause_display_multiline){
+			sigb.append("\n   ");
+		}
+		sigb.append(StringMan.join((Config.clause_display_multiline ? "\n" : "") + " v ", litlist));
+		
+		HashMap<String, String> mapVarVar = new HashMap<String, String>();
+		for(String v : varIndex.keySet()){
+			mapVarVar.put(v, "v" + varIndex.get(v));
+		}
+		for(Expression e : constraints){
+		//	if(e.changeName == true){
+			String es = e.renameVariables(mapVarVar);
+			if(es != null){
+				ExceptionMan.die("Encountered a dangling variable '" + es +
+						"' in clause\n" + this.getSpecTextFlat());
+			}
+		//	}
+		}
+		sigb.append("\n");
+		sigb.append(getConstaintStringAsLits());
+		String sig = sigb.toString();
+
+		// generate normalized clause
+		Clause c = new Clause();
+		c.signature = sig;
+		c.uNames = uNames;
+		c.specText = specText;
+		c.constraints = constraints;
+		this.signature = sig;
+		for(Literal lit : this.lits){
+			Literal nlit = new Literal(lit.getPred(), lit.getSense());
+			for(Term term : lit.getTerms()){
+				Term nterm;
+				if(term.isVariable()){
+					nterm = new Term("v" + varIndex.get(term.var()));
+				}else{
+					nterm = new Term("c" + conIndex.get(term.constantString()));
+				}
+				nlit.appendTerm(nterm);
+			}
+			c.addLiteral(nlit);
+		}
+		for(String ev : this.existentialVars){
+			c.addExistentialVariable("v" + varIndex.get(ev));
+		}
+		if(conTypeList.isEmpty()){
+			c.isTemplate = false;
+			c.weight = this.weight;
+			
+			if(this.isFixedWeight == false){
+				c.isFixedWeight = false;
+			}
+			
+		}else{
+			c.isTemplate = true;
+			c.weight = (this.weight > 0 ? 1 : -1);
+			for(int i=0; i<conTypeList.size(); i++){
+				c.addMetaVariable("c"+i, conTypeList.get(i));
+			}
+			c.instances.add(new ClauseInstance(conList, this.weight, this.isFixedWeight));
+			if(this.isFixedWeight == false){
+				c.isFixedWeight = false;
+			}
+		}
+		return c;
+	}
+
+	/**
+	 * "Absorb" another clause of the same pattern into this clause.
+	 * If this clause is a template, then adding instances into
+	 * the instance list. Otherwise, add its weight to current clause.
+	 * 
+	 * @param c the clause to be absorbed
+	 * @see Clause#normalize()
+	 */
+	public void absorb(Clause c) {
+		if(!this.signature.equals(c.signature)){
+			ExceptionMan.die("clauses of different patterns cannot be consolidated!");
+		}
+		if(isTemplate){
+			this.instances.addAll(c.instances);
+		}else{
+			this.weight += c.weight;
+			this.specText.addAll(c.specText);
+		}
+		this.uNames.addAll(c.uNames);
+	}
+
+	/**
+	 * Flush the instance of this clause into database.
+	 * Here "instance" means all the constant ID in instance with
+	 * its weight as a row in DB.
+	 * @param db the database object used to store clause instances.
+	 */
+	protected void sealClauseInstances(RDB db) {
+		if(!isTemplate){
+			Clause.mappingFromID2Desc.put(this.id+ ".0", this.toString(-1));
+			return;
+		}
+		// cosntruct SQL of adding instances
+		ArrayList<String> atts = new ArrayList<String>();
+		ArrayList<String> pholders = new ArrayList<String>();
+		atts.add("weight FLOAT8");
+		pholders.add("?");
+		for(String v : metaVars) {
+			if (Config.constants_as_raw_string) {
+				atts.add(v + " TEXT");
+			} else {
+				atts.add(v + " INT");
+			}
+			pholders.add("?");
+		}
+		
+		
+		db.dropTable(relIntanceClauses);
+		String sql = "CREATE TABLE " + relIntanceClauses +
+		StringMan.commaListParen(atts);
+		db.update(sql);
+		
+		//TODO:
+		db.dropSequence(relIntanceClauses+"_seq");
+		sql = "CREATE SEQUENCE " + relIntanceClauses + "_seq;";
+		db.update(sql);
+		sql = "ALTER TABLE " + relIntanceClauses + " ADD myid INT;";
+		db.update(sql);
+		sql = "ALTER TABLE " + relIntanceClauses + " ALTER COLUMN myid SET " +
+				"DEFAULT NEXTVAL('" + relIntanceClauses + "_seq');";
+		db.update(sql);
+		
+		int instanceCount = 0;
+		
+		sql = "INSERT INTO " + relIntanceClauses + " VALUES" + 
+		StringMan.commaListParen(pholders);
+		PreparedStatement psAddMeta = db.getPrepareStatement(sql);
+		
+		int ni = 0;
+		try {
+			for(ClauseInstance ins : instances){
+				double weight = ins.weight;
+				ArrayList<Term> meta = ins.conList;
+				psAddMeta.setDouble(1, weight);
+				for(int k=0; k<meta.size(); k++) {
+					if (Config.constants_as_raw_string) {
+						psAddMeta.setString(k+2, meta.get(k).constantString());
+					} else {
+						psAddMeta.setInt(k+2, meta.get(k).constant());
+					}
+				}
+				instanceCount ++;
+				Clause.mappingFromID2Desc.put(this.id+ "." + instanceCount, this.toString(ni++));
+				psAddMeta.addBatch();
+			}
+			psAddMeta.executeBatch();
+			psAddMeta.close();
+		} catch (SQLException e) {
+			ExceptionMan.handle(e);
+		}
+		psAddMeta = null;
+	}
+	
+	/**
+	 * Add a meta variable into this clause.
+	 * @param v name this this meta variable
+	 * @param t type of this meta variable
+	 * @see Clause#normalize()
+	 * @return whether this inserting succeeded.
+	 */
+	protected boolean addMetaVariable(String v, Type t) {
+		if(metaVars.contains(v)) return false;
+		metaVars.add(v);
+		metaTypes.add(t);
+		return true;
+	}
+	
+	/**
+	 * Existentially quantify a variable.
+	 * 
+	 * @param v the variable to be existentially quantified
+	 */
+	public boolean addExistentialVariable(String v) {
+		if(existentialVars.contains(v)) return false;
+		existentialVars.add(v);
+		return true;
+	}
+	
+	/**
+	 * Construct an empty clause. Initial weight = 0.
+	 * 
+	 */
+	public Clause(){
+		weight = 0;
+	}
+	
+	/**
+	 * Specify this clause as a hard rule.
+	 * Currently hard rules are treated as soft rules with
+	 * a very large weight.
+	 * 
+	 * @see Config#hard_weight
+	 */
+	public void setHardWeight() {
+		weight = Config.hard_weight;
+	}
+	
+	/**
+	 * Return whether this clause is a hard rule.
+	 */
+	public boolean isHardClause(){
+		return weight >= Config.hard_weight;
+	}
+	
+	/**
+	 * Set the weight of this clause.
+	 */
+	public void setWeight(double wt) {
+		weight = wt;
+	}
+	
+	/**
+	 * Return the expression of clause weights to be used in SQL.
+	 * For template clauses, it's the name of a table attribute;
+	 * for non-template clauses, it's a floating number.
+	 */
+	public String getWeightExp() {
+		return exprWeight;
+	}
+	
+	/**
+	 * Check if the weight is positive.
+	 */
+	public boolean isPositiveClause(){
+		return weight > 0;
+	}
+	
+	/**
+	 * Initialize database objects for this clause.
+	 */
+	public void prepareForDB(RDB db) {
+		sealClauseInstances(db);
+		generateSQL();
+	}
+	
+	/**
+	 * Check for unsafe variables in the clause, and mark the corresponding
+	 * Predicates.
+	 * A variable is unsafe if it appears only in a positive literal;
+	 * i.e., if it does not appear in the body in the Datalog form.
+	 */
+	public void checkVariableSafety(){
+		HashSet<String> vars = new HashSet<String>();
+		HashSet<String> safeVars = new HashSet<String>();
+		ArrayList<Literal> posLits = new ArrayList<Literal>();
+		for(Literal lit : reglits){
+			vars.addAll(lit.getVars());
+			if(!lit.getSense()){
+				safeVars.addAll(lit.getVars());
+			}else{
+				posLits.add(lit);
+			}
+		}
+		for(Literal lit : posLits){
+			for(Term t : lit.getTerms()){
+				if(t.isVariable()){
+					if(!safeVars.contains(t.var())){
+						lit.getPred().setSafeRefOnly(false);
+						// TODO: note that order of positive lits is important
+						safeVars.add(t.var());
+					}
+				}
+			}
+		}
+	}
+	
+	protected String exprWeight = null;
+	
+	/**
+	 * Generate the SQL command for grounding this clause.
+	 * For each meta-variable, bind them to the clause instance (in FROM and WHERE clause)
+	 * For each regular-predicate's variable that is not meta-variable, use
+	 * their grounded atom table to bind the clause (in FROM CLAUSE), 
+	 * with inter-predicate constraints
+	 * introduced in the clause (in WHERE CLAUSE / JOIN CONDITION IN FROM CLAUSE).
+	 * For each built-in predicate, write its semantic into SQL conditions
+	 * directly.
+	 * 
+	 * The sqlPivotAttrsList contains a list of variables that are not
+	 * existential variables in the form of $table_name.$column_name. Here
+	 * $table_name is consistent to other SQL sub-clauses generated by this
+	 * function.
+	 */
+	public void generateSQL() {
+		
+		HashMap<String, String> mapVarAttr = new HashMap<String, String>();
+		ArrayList<String> groundAttrs = new ArrayList<String>();
+		ArrayList<String> whereList = new ArrayList<String>();
+		whereList.add("1=1");
+		
+		StringBuilder from = new StringBuilder();
+		StringBuilder from_noModel = new StringBuilder();
+		int nJoinedTables = 0;
+		int nJoinedTables_noModel = 0;
+		if(isTemplate) {
+			from.append(relIntanceClauses + " metaTable ");
+			from_noModel.append(relIntanceClauses + " metaTable ");
+			nJoinedTables ++;
+			nJoinedTables_noModel ++;
+			groundAttrs.add("metaTable.weight");
+			for(String var : metaVars) {
+				mapVarAttr.put(var, "metaTable." + var);
+			}
+			exprWeight = "metaTable.weight";
+		}else if(!hasEmbeddedWeight()){
+			exprWeight = "CAST("+Double.toString(weight)+" AS FLOAT8)";
+		}
+
+		// reorder the literals to put antecendents first
+		ArrayList<Literal> ordlits = new ArrayList<Literal>();
+		ArrayList<Literal> poslits = new ArrayList<Literal>();
+		
+		ArrayList<Literal> skiplits = new ArrayList<Literal>();
+		
+		for(Literal lit : reglits){
+		
+			boolean skip = false;
+			if(this.hasEmbeddedWeight()){
+				for(int k=0;k<lit.getTerms().size();k++){
+					if(lit.getTerms().get(k).var().equals(this.getVarWeight())){
+						skip = true;
+					}
+				}
+			}
+			if(skip == true) {
+				skiplits.add(lit);
+				continue;
+			}
+			
+			
+			if(lit.getSense()) poslits.add(lit);
+			else ordlits.add(lit);
+		}
+		ordlits.addAll(poslits);
+		ordlits.addAll(skiplits);
+		
+		// build variable bindings; distinguish pos lits that rely on partial materialization
+
+		HashMap<String, Type> var2type = new HashMap<String, Type>();
+		
+		ArrayList<String> attachConds = new ArrayList<String>();
+		
+		for(Literal lit : ordlits){
+			int idx = lit.getIdx();
+			String relP = lit.getPred().getRelName();
+
+			ArrayList<Term> terms = lit.getTerms();
+			
+			boolean hasNewVars = false;
+			for(int j=0; j<terms.size(); j++) {
+				Term t = terms.get(j);
+				String var = t.var();
+				
+				var2type.put(var, lit.getPred().getTypeAt(j));
+				
+				String attr = "t" + idx + "."+lit.getPred().getArgs().get(j);
+				if(t.isConstant()) {
+					attachConds.add(attr + "=" + SQLMan.escapeString(t.constantString()));
+				}else {
+					String cattr = mapVarAttr.get(var);
+					if(cattr == null) {
+						hasNewVars = true;
+						mapVarAttr.put(var, attr);
+						if(!existentialVars.contains(var)) {
+							groundAttrs.add(attr);
+						}
+						if(var.equals(varWeight)){
+							exprWeight = attr;
+						}
+					}else {
+						attachConds.add(attr + "=" + cattr);
+					}
+				}
+			}
+			boolean clearAttachConds = false;
+			if(nJoinedTables >= 1){
+				// if hasNewVars, the pred should've been fully materialized
+				from.append(lit.getSense() && !hasNewVars ? 
+						" LEFT OUTER JOIN " : " JOIN ");
+				from.append(relP + " t" +idx + " ON ");
+				if(attachConds.isEmpty()){
+					from.append("1=1");
+				}else{
+					String ac = SQLMan.andSelCond(attachConds);
+					from.append(ac);
+					clearAttachConds = true;
+				}
+			}else{
+				from.append(relP + " t" +idx);
+			}
+			
+			boolean skip = false;
+			if(this.hasEmbeddedWeight()){
+				for(int k=0;k<lit.getTerms().size();k++){
+					if(lit.getTerms().get(k).var().equals(this.getVarWeight())){
+						skip = true;
+					}
+				}
+			}
+			
+			if(skip == false){
+				if(nJoinedTables_noModel++ >= 1){
+					// if hasNewVars, the pred should've been fully materialized
+					from_noModel.append(lit.getSense() && !hasNewVars ? 
+							" LEFT OUTER JOIN " : " JOIN ");
+					from_noModel.append(relP + " t" +idx + " ON ");
+					if(attachConds.isEmpty()){
+						from_noModel.append("1=1");
+					}else{
+						String ac = SQLMan.andSelCond(attachConds);
+						from_noModel.append(ac);
+						attachConds.clear();
+					}
+				}else{
+					from_noModel.append(relP + " t" +idx);
+				}
+			}
+			
+			if(clearAttachConds){
+				attachConds.clear();
+			}
+			
+			nJoinedTables++;
+			nJoinedTables_noModel++;
+		}
+
+		if(hasEmbeddedWeight() && exprWeight == null){
+			UIMan.warn("The following clause is specified to have embedded weights, but the variable '" + 
+					varWeight + "' doesn't appear in the formula: " + this.toString());
+		}
+		
+		// this could happen only for unit clauses
+		if(!attachConds.isEmpty()){
+			whereList.addAll(attachConds);
+			attachConds.clear();
+		}
+		
+		
+		// express constraints in SQL
+		HashSet<String> cvars = new HashSet<String>();
+		int nChangeName = 0;
+		for(Expression e : constraints){
+			if(e.changeName == true){
+				nChangeName ++;
+			}
+			cvars.addAll(e.getVars());
+		}
+		HashMap<String, String> mapVarVal = new HashMap<String, String>();
+		HashMap<String, String> mapVarValNotChangeName = new HashMap<String, String>();
+		int idx = 0;
+		for(String v : cvars){
+			++ idx;
+			String attr = mapVarAttr.get(v);
+			if(attr == null){
+				ExceptionMan.die("unsafe constraints in clause\n" + getSpecTextFlat());
+			}
+			
+			if(nChangeName > 0){
+				if(!var2type.get(v).isNonSymbolicType() && !Config.constants_as_raw_string){
+				
+					from.append(" JOIN " + var2type.get(v).getRelName() + 
+						" s" + idx + " ON s" + idx + ".constantid = " + attr);
+					//from.append(" JOIN " + Config.relConstants + 
+					//		" s" + idx + " ON s" + idx + ".id = " + attr);
+					nJoinedTables++;
+				}
+			}
+			if(!var2type.get(v).isNonSymbolicType() && !Config.constants_as_raw_string){
+				mapVarVal.put(v, "s" + idx + ".constantvalue");
+			}else{
+				mapVarVal.put(v, attr);
+			}
+			mapVarValNotChangeName.put(v, attr);
+		}
+		for(Expression e : constraints){
+			
+			if(e.changeName == true){
+				e.bindVariables(mapVarVal);
+				whereList.add(e.toSQL());
+			}else{
+				Expression tmpE = e.clone();
+				tmpE.renameVariables(mapVarValNotChangeName);
+				whereList.add(tmpE.toString());
+			}
+		}
+		
+		sqlFromList = from.toString();
+		sqlFromList_noModel = from_noModel.toString();
+		
+		sqlWhereBindings = SQLMan.andSelCond(whereList);
+		sqlPivotAttrsList = StringMan.commaList(groundAttrs);
+		/*
+		boolean print = false;
+		if(print){
+			System.out.println("=====\n" + this.getSpecText());
+			System.out.println(sqlFromList);
+			System.out.println(sqlWhereBindings);
+		}
+		*/
+	}
+
+	/**
+	 * Return the definition of this clause.
+	 */
+	public String toString() {
+		String s = (name == null ? "" : name);
+		if(Config.clause_display_multiline){
+			s += "\n";
+		}
+		if(!uNames.isEmpty()){
+			s += "// " + StringMan.commaList(uNames) + "\n";
+		}
+		String w = (weight >= Config.hard_weight ? "infty" : "" + weight);
+		s += (isTemplate ? "[#instances="+instances.size()+"]" : "[weight="+w+"]");
+		return s + " " + (signature == null? getSpecTextFlat() : signature);
+	}
+	
+	/**
+	 * Return the definition of clause instance.
+	 * @param ni The ID of instance.
+	 */
+	public String toString(int ni) {
+		String s = ""; //= (name == null ? "" : name);
+		
+		String tmps = (signature == null? getSpecTextFlat() : signature);
+		if(ni >= 0 && !mappingFromID2Const.isEmpty()){
+			for(int i=0;i<this.instances.get(ni).conList.size();i++){
+				tmps = tmps.replaceAll("c"+(i), 
+						"\"" + mappingFromID2Const.get(instances.get(ni).conList.get(i).constant()).replace("$", "\\$") + "\"");
+			}
+		}
+		
+		tmps = tmps.replaceAll("[\n|\r]", " ");
+		tmps = tmps.replaceAll("sign=\'.\'", "");
+		
+		return s + " " + tmps;
+	}
+		
+	public String toStringForFunctionClause(String signature, Double weight){
+		
+		String[] clauses = signature.split("\\.");
+		int clauseID = Integer.parseInt(clauses[0]);
+		String[] vars = clauses[1].split(",");
+		
+		
+		String s = "";
+		
+		
+		if(this.hasEmbeddedWeight() == false){
+			return null;
+		}
+		
+		ArrayList<String> tojoin = new ArrayList<String>();
+		HashMap<String, String> var2const = new HashMap<String, String>();
+		
+		for(Literal l : this.reglits){
+			
+			boolean isEmbeded = false;
+			for(int k=0;k<l.getTerms().size();k++){
+				if(l.getTerms().get(k).var().equals(this.getVarWeight())){
+					isEmbeded = true;
+				}
+			}
+			
+			if(isEmbeded == false){
+				
+			}else{
+				
+				for(int k=0;k<l.getTerms().size();k++){
+					if(vars[k].equals("%f")){
+						
+					}else{
+						String tmp = mappingFromID2Const.get(Integer.parseInt(vars[k]));
+						tmp = tmp.replaceAll("\\$","\\\\\\$");
+						var2const.put(l.getTerms().get(k).var(), 
+								tmp);
+					}
+				}
+			}
+		}
+		
+		
+		for(Literal l : this.reglits){
+			
+			boolean isEmbeded = false;
+			for(int k=0;k<l.getTerms().size();k++){
+				if(l.getTerms().get(k).var().equals(this.getVarWeight())){
+					isEmbeded = true;
+				}
+			}
+			
+			String str  = (l.getSense()?"": "!") + l.getPred().getName();
+			ArrayList<String> args = new ArrayList<String>();
+			for(int k=0;k<l.getTerms().size();k++){
+				if(var2const.containsKey(l.getTerms().get(k).var())){
+					args.add("\"" + 
+							StringMan.escapeJavaString(var2const.get(
+									l.getTerms().get(k).var())) + "\"");
+				}else{
+					args.add(l.getTerms().get(k).var());
+				}
+			}
+			
+			if(isEmbeded == false){
+				tojoin.add(str + "(" + StringMan.join(", ", args) + ")");
+			}else{
+				continue;
+			}
+			
+		}
+		
+		s = StringMan.join(" v ", tojoin);
+		
+		s = weight + " " + s;
+		
+		return s;
+	}
+	
+	
+	/**
+	 * Return the member literals of a particular predicate.
+	 */
+	public ArrayList<Literal> getLiteralsOfPredicate(Predicate pred){
+		return predIndex.get(pred);
+	}
+	
+	/**
+	 * Return the set of predicates referenced by this clause.
+	 */
+	public Set<Predicate> getReferencedPredicates(){
+		return predIndex.keySet();
+	}
+	
+	/**
+	 * Return the list of non-built-in literals (i.e., regular literals).
+	 */
+	public ArrayList<Literal> getRegLiterals(){
+		return reglits;
+	}
+	
+	/**
+	 * Check if any variable in this clause is existentially quantified.
+	 */
+	public boolean hasExistentialQuantifiers(){
+		return !existentialVars.isEmpty();
+	}
+	
+	/**
+	 * Add a literal to this clause.
+	 */
+	public void addLiteral(Literal lit){
+		if(lit == null) return;
+		// update the predicate-literal index
+		ArrayList<Literal> plits = predIndex.get(lit.getPred());
+		if(plits == null) {
+			plits = new ArrayList<Literal>();
+			predIndex.put(lit.getPred(), plits);
+		}else{
+			for(Literal elit : plits){
+				// duplicate lit, ignore
+				if(elit.isSameAs(lit)) return;
+			}
+		}
+		if(lit.isBuiltIn()){
+			bilits.add(lit);
+			lit.setIdx(1000000 + bilits.size());
+		}else{
+			reglits.add(lit);
+			lit.setIdx(reglits.size());
+		}
+		lits.add(lit);
+		plits.add(lit);
+		
+	}
+
+	/**
+	 * Set clause ID.
+	 * @param id
+	 */
+	public void setId(int id) {
+		this.id = id;
+	}
+
+	/**
+	 * Get clause ID.
+	 */
+	public int getId() {
+		return id;
+	}
+	
+	public void addSpecText(String s){
+		specText.add(s);
+	}
+
+	public ArrayList<String> getSpecText() {
+		return specText;
+	}
+
+}

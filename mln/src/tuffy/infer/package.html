@@ -1,0 +1,26 @@
+<html>
+<head>
+<title>package</title>
+</head>
+<body>
+Provides MLN inference algorithms. Currently supports MAP inference and 
+Marginal inference.
+
+<p>
+By default this package deals with inference in memory. It first loads from
+database about information of MLN groundings. Then, it forms a MRF by taking
+GAtom and GClause as elements. Once this MRF is formed, this package will not
+interact with DBMS.
+</p>
+
+<p>
+Marginal and MAP inference on this in-memory structure follow classic scheme.
+There are indices from GClause to GAtom, vice versa. Therefore, the change
+of GAtom's truth assignment will influence GClause's truth value. Together with the
+sign of GClause's weight, whether a GClause is violated in current truth assignment
+setting can be tracked. The WalkSAT or MCSAT subroutines are then invoked. 
+</p>
+
+
+</body>
+</html>

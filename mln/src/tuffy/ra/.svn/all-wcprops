@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/tuffy/!svn/ver/1977/tuffy/trunk/src/tuffy/ra
+END
+package.html
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/tuffy/!svn/ver/1567/tuffy/trunk/src/tuffy/ra/package.html
+END
+Expression.java
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/tuffy/!svn/ver/1599/tuffy/trunk/src/tuffy/ra/Expression.java
+END
+Function.java
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/tuffy/!svn/ver/1567/tuffy/trunk/src/tuffy/ra/Function.java
+END
+AtomEx.java
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/tuffy/!svn/ver/1567/tuffy/trunk/src/tuffy/ra/AtomEx.java
+END
+ConjunctiveQuery.java
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/svn/tuffy/!svn/ver/1977/tuffy/trunk/src/tuffy/ra/ConjunctiveQuery.java
+END

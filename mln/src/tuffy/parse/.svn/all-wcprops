@@ -1,0 +1,71 @@
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/tuffy/!svn/ver/1966/tuffy/trunk/src/tuffy/parse
+END
+MLNParser.java
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/tuffy/!svn/ver/1862/tuffy/trunk/src/tuffy/parse/MLNParser.java
+END
+MLNLexer.java
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/tuffy/!svn/ver/1862/tuffy/trunk/src/tuffy/parse/MLNLexer.java
+END
+package.html
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/tuffy/!svn/ver/1567/tuffy/trunk/src/tuffy/parse/package.html
+END
+ConfigLexer.java
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/tuffy/!svn/ver/1862/tuffy/trunk/src/tuffy/parse/ConfigLexer.java
+END
+Config.tokens
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/tuffy/!svn/ver/1804/tuffy/trunk/src/tuffy/parse/Config.tokens
+END
+InputParser.java
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/tuffy/!svn/ver/1567/tuffy/trunk/src/tuffy/parse/InputParser.java
+END
+MLN.g
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/tuffy/!svn/ver/1629/tuffy/trunk/src/tuffy/parse/MLN.g
+END
+MLN.tokens
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/tuffy/!svn/ver/1804/tuffy/trunk/src/tuffy/parse/MLN.tokens
+END
+Config.g
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/tuffy/!svn/ver/1567/tuffy/trunk/src/tuffy/parse/Config.g
+END
+CommandOptions.java
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/tuffy/!svn/ver/1966/tuffy/trunk/src/tuffy/parse/CommandOptions.java
+END
+ConfigParser.java
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/svn/tuffy/!svn/ver/1862/tuffy/trunk/src/tuffy/parse/ConfigParser.java
+END
