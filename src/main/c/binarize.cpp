@@ -104,7 +104,6 @@ void load_factor(std::string filename, short funcid, long nvar, char** positives
 
   for (int i = 0; i < nvar; i++) {
     positives_vec.push_back(atoi(positives[i]));
-    cerr << positives_vec[i] << endl;
   }
 
   predicate = bswap_64(predicate); 
