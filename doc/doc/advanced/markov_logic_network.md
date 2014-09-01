@@ -44,4 +44,3 @@ The results, the marginals or weights, will remain in the database and deepdive/
 - As in Tuffy, soft evidence is supported. A soft evidence will be treated as a factor linked to the atom corresponding to the evidence. The weight of the factor is ln(prior/(1-prior)) where prior is the possibility that the evidence holds true.
 - Same as Tuffy, a closed world assumption is made during learning. This means all atoms not specified in evidence.db will be treated as false.
 - During learning the system learns weights for all soft rules specified in prog.mln. Non-zero weights are needed to be specified in prog.mln for all soft rules for learning.
-- The system puts the results in the database instead of an output file, which is the standard behavior of Deepdive.
