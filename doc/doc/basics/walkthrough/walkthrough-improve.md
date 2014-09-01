@@ -4,9 +4,10 @@ layout: default
 
 # Example Application: Improving the Results
 
-This page is the next section after [Example Application: A Mention-Level Extraction System](walkthrough-mention.html).
+This document describes how to improve the mention extractor built in [Example
+Application: A Mention-Level Extraction System](walkthrough.html).
 
-<a id="improve" href="#"> </a>
+<a name="improve" href="#"> </a>
 
 ### Contents
 
@@ -16,35 +17,36 @@ This page is the next section after [Example Application: A Mention-Level Extrac
 - [Tune sampler parameter](#tune_sampler)
 - [Getting improved results](#improved_results)
 
-Other sections:
+Other sections in the tutorial:
 
-- [Walkthrough](walkthrough.html)
-- [A Mention-Level Extraction System](walkthrough-mention.html)
+- [A Mention-Level Extraction System](walkthrough.html)
 - [Extras: preprocessing, NLP, pipelines, debugging extractor](walkthrough-extras.html)
 
+### <a name="sparsity" href="#"> </a> Reduce Sparsity
 
-<a id="sparsity" href="#"> </a>
+After [examining the results](walkthrough.html#get_result), we noticed
+that the feature `num_words_between` suffers from sparsity issues and would cause
+overfitting. For example, there should be roughly no difference between having
+20 and 21 words between two entity mentions. Let's change *"Feature 2"* in
+`ext_has_spouse_features.py`:
 
-### Reduce Sparsity
-
-After [examining the results](walkthrough-mention.html#get_result), we notice that feature `num_words_between` suffers from sparsity issues and would cause overfitting. For example, there should be roughly no difference between having 20 and 21 words between two entity mentions. Change *"Feature 2"* for `ext_has_spouse_features.py`:
-
-{% highlight python %}
+```python
 # Feature 2: Number of words between the two phrases
 # Intuition: if they are close by, the link may be stronger.
 l = len(words_between.elements)
 if l < 5: features.add("few_words_between")
 else: features.add("many_words_between")
-{% endhighlight %}
+```
 
+### <a name="strong_words" href="#"></a> Use strong indicators rather than bag of words
 
-<a id="strong_words" href="#"> </a>
+The "bag of words" is a pretty weak feature. Our next improvement is using
+strong indicators rather than a bag of words. We check the words between
+two mentions to see if they are strong indicators of spouse or non-spouse
+relationships, such as "marry" or "widow", or "father" "mother".
 
-### Use strong indicators rather than bag of words
-
-The "bag of words" is a pretty weak feature. Our next improvement is using strong indicators rather than bag of words. We check the lemma of words between two mentions if they are strong indicators of spouse or non-spouse relationships, such as "marry" or "widow", or "father" "mother".
-
-Start by modifying `application.conf` to select `lemma` as input query to `ext_has_spouse_features`:
+Start by modifying `application.conf` to select `lemma` as input query to
+`ext_has_spouse_features`:
 
 ```bash
 ext_has_spouse_features {
@@ -61,9 +63,10 @@ ext_has_spouse_features {
   }
 ```
 
-Then modify `ext_has_spouse_features.py` by changing *Feature 1* (bag of words) into this feature. We still make use of `ddlib`:
+Then modify `ext_has_spouse_features.py` by changing *Feature 1* (bag of words)
+into this feature. We still make use of `ddlib`:
 
-{% highlight python %}
+```python
 # Feature 1: Find out if a lemma of marry occurs.
 # A better feature would ensure this is on the dependency path between the two.
 words_between = ddlib.tokens_between_spans(words, span1, span2)
@@ -75,32 +78,21 @@ if len(words_between) <= 10:
   for mw in married_words + non_married_words:
     if mw in lemma_between.elements: 
       features.add("important_word=%s" % mw)
-{% endhighlight %}
-
-<!-- {% highlight python %}
-# Feature 1: Find out if a lemma of marry occurs.
-# A better feature would ensure this is on the dependency path between the two.
-left_idx = min(p1_end, p2_end)
-right_idx = max(p1_start, p2_start)
-
-lemma_between = obj["lemma"][left_idx:right_idx]
-words_between = words[left_idx:right_idx]
-married_words = ['marry', 'widow', 'wife', 'fiancee', 'spouse']
-non_married_words = ['father', 'mother', 'brother', 'sister']
-if len(words_between) <= 10:
-  for mw in married_words + non_married_words:
-    if mw in lemma_between: 
-      features.add("important_word=%s" % mw)
-{% endhighlight %} -->
-
-The `married_words` and `non_married_words` list can be obtained through a "snowball-style" feature engineering: if you do not know which words to add, you could run bag of words and check high-weight / low-weight features (via the SQL query), and pick reasonable words to add. 
+```
 
 
-<a id="symmetry" href="#"> </a>
+The `married_words` and `non_married_words` list can be obtained through a
+"snowball-style" feature engineering: if you do not know which words to add, you
+could run bag of words and check high-weight / low-weight features (via the SQL
+query), and pick reasonable words to add. 
 
-### Add a domain-specific rule
+### <a name="symmetry" href="#"> </a> Add a domain-specific rule
 
-let's try to incorporate a bit of domain knowledge into our model. For example, we know that has_spouse is symmetric. That means, if Barack Obama is married to Michelle Obama, then Michelle Obama is married to Barack Obama, and vice versa. (`Marry(A,B) <-> Marry(B,A)`) We can encode this knowledge in a second inference rule:
+We want to incorporate a bit of domain knowledge into our model. For example, we
+know that `has_spouse` is symmetric. That means, if Barack Obama is married to
+Michelle Obama, then Michelle Obama is married to Barack Obama, and vice versa.
+(`Marry(A,B) <-> Marry(B,A)`) We can encode this knowledge in a second inference
+rule:
 
 ```bash
     inference.factors {
@@ -125,30 +117,29 @@ let's try to incorporate a bit of domain knowledge into our model. For example, 
     }
 ```
 
-There are many [other kinds of factor functions](inference_rule_functions.html) you could use to encode domain knowledge. 
+There are many [other kinds of factor functions](../inference_rule_functions.html)
+you could use to encode domain knowledge. 
 
+### <a name="tune_sampler" href="#"></a> Tune sampler parameter
 
-<a id="tune_sampler" href="#"> </a>
+We can further tune sampler parameters to obtain better results. Refer to the
+[sampler guide](../sampler.html) for tuning sampler parameters.
 
-### Tune sampler parameter
-
-We can further tune sampler parameters to obtain better results. Refer to [performance tuning guide](performance.html) and [sampler guide](sampler.html) for tuning sampler parameters.
-
-Add into `deepdive` block of `application.conf`:
+Add the following in the `deepdive` block of `application.conf`:
 
 ```bash
 sampler.sampler_args: "-l 5000 -d 0.99 -s 1 -i 1000 --alpha 0.01"
 ```
 
-This would force sampler to learn and sample with more iterations and a slower decay of stepsize.
+This tells the sampler perform more sampling iterations and use a slower
+step size decay. 
 
-<a id="improved_results" href="#"> </a>
+### <a name="improved_results" href="#"></a> Getting improved results
 
-### Getting improved results
+After performing the above modifications to extractors and inference rules, we
+can run the application again and query the results:
 
-After adding above modifications to extractors and inference rules, let's rerun the system:
-
-{% highlight bash %}
+```bash
 ./run.sh
 
 psql -d deepdive_spouse -c "
@@ -157,9 +148,9 @@ psql -d deepdive_spouse -c "
   WHERE s.sentence_id = hsi.sentence_id and expectation > 0.95
   ORDER BY random() LIMIT 10;
 "
-{% endhighlight %}
+```
 
-Results looks like:
+The results should look like the following:
 
      sentence_id |       description       | is_true | expectation | sentence 
     -------------+-------------------------+---------+-------------+-------
@@ -188,17 +179,19 @@ Let's look at the calibration plot:
 
 ![Calibration]({{site.baseurl}}/assets/walkthrough_has_spouse_is_true_improved.png)
 
-Let's examine the learned weights again. Type in following command to select features with highest weight:
+We should examine the learned weights again. Run the following query to select
+the features with highest weights:
 
-
-{% highlight bash %}
+```bash
 psql -d deepdive_spouse -c "
   SELECT description, weight
   FROM dd_inference_result_variables_mapped_weights
   ORDER BY weight DESC
   LIMIT 5;
 "
-{% endhighlight %}
+```
+
+The results should be similar to the following:
 
                      description                  |      weight
     ----------------------------------------------+------------------
@@ -209,16 +202,18 @@ psql -d deepdive_spouse -c "
      f_has_spouse_features-important_word=fiancee |  1.0439453467637
     (5 rows)
 
-Type in following command to select top negative features:
+Run the following query to select the top negative features:
 
-{% highlight bash %}
+```bash
 psql -d deepdive_spouse -c "
   SELECT description, weight
   FROM dd_inference_result_variables_mapped_weights
   ORDER BY weight ASC
   LIMIT 5;
 "
-{% endhighlight %}
+```
+
+The results should be similar to the following:
 
                        description                   |       weight
     -------------------------------------------------+--------------------
@@ -231,12 +226,18 @@ psql -d deepdive_spouse -c "
 
 We can see that the results have been improved quite a bit, but there are still some errors. 
 
-From the calibration plot we can tell that there are not enough features, especially negative features. We can continue "snowball sampling" on bag of words to obtain more negative features, or use better features such as dependency paths. We can also add more negative examples by distant supervision, or adding other domain-specific rules. To make further improvements, it is important to conduct error analysis.
+From the calibration plot we can tell that there are not enough features,
+especially negative features. We can continue performing "snowball sampling" on
+bag of words to obtain more negative features, or use better features such as
+dependency paths. We can also add more negative examples by distant supervision,
+or adding other domain-specific rules. To make further improvements, it is
+important to conduct error analysis.
 
-Moreover, performing entity linking and [looking for entity-level relations](walkthrough.html#entity_level) is necessary for a better KBC application.
+Moreover, performing entity linking and [looking for entity-level
+relations](../../general/kbc.html#entity_level) is necessary for a better KBC
+application.
 
-Now if you want, you can look at the [Extras page](walkthrough-extras.html) which explained how to prepare data tables, use pipelines, use NLP extractors, or get example extractor inputs.
-
-You can also [go back to the tutorial](walkthrough.html#entity_level).
-
+Now if you want, you can look at the [Extras page](walkthrough-extras.html)
+which explained how to prepare data tables, use pipelines, use NLP extractors,
+or get example extractor inputs.
 
