@@ -23,7 +23,7 @@ An MLN example is under folder deepdive/examples/smoke_mln. The files in this fo
 - application.conf is the Deepdive program template. Only the Deepdive sampler parameters in this file can be changed.
 - prog.mln defines the predicates and formulas of the MLN.
 - evidence.db contains the evidence of the MLN.
-- query.db contains the queries of the MLN. Check out [Tuffy Documentation](http://i.stanford.edu/hazy/tuffy/doc/) for the format of prog.mln, evidence.db and query.db.
+- query.db contains the queries of the MLN. Check out [Tuffy Documentation](http://i.stanford.edu/hazy/tuffy/doc/) for the format of prog.mln, evidence.db and query.db. You can find more examples in deepdive/mln/examples/.
 - run.sh controls the workflow of the Deepdive MLN support.
 
 To solve an MLN with Deepdive, the user should 1) configure the database with env_conf.sh and the Deepdive sampler with application.conf, 2) specify the MLN in prog.mln, evidence.db and query.db and 3) start run.sh to solve the MLN.
