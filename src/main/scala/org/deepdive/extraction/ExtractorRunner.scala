@@ -137,7 +137,14 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
             case DatastoreInputQuery(query) => query
             case _ => 
           }
-          val queryOutputFile = File.createTempFile(s"copy_query_${funcName}", ".tsv")
+          val queryOutputPath = Context.outputDir + s"/tmp/"
+          log.info(queryOutputPath)
+          val success = (new File(queryOutputPath)).mkdirs()
+          if (!success)
+            log.error("TSV extractor directory creation failed!")
+
+          val queryOutputFile = new File(queryOutputPath + s"copy_query_${funcName}.tsv")
+          // val queryOutputFile = File.createTempFile(s"copy_query_${funcName}", ".tsv")
           // executeSqlQueryOrFail
 
           // Single-thread copy to a file
@@ -164,7 +171,8 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
           log.info(s"Executing parallel UDF command: ${runCmd}")
           // executeScriptOrFail(runCmd, taskSender)
 
-          val udfTmpFile = File.createTempFile(s"exec_parallel_udf", ".sh")
+          val udfTmpFile = new File(queryOutputPath + s"exec_parallel_udf.sh")
+          // val udfTmpFile = File.createTempFile(s"exec_parallel_udf", ".sh")
           val writer = new PrintWriter(udfTmpFile)
           writer.println(s"${runCmd}")
           writer.close()
@@ -189,8 +197,8 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
           val writebackCmd = s"find ${splitPrefix}*.out -print0 | xargs -0 -P 1 -L 1 bash -c 'psql -d ${dbname} -U ${pguser} -p ${pgport} -h ${pghost} -c " + "\"COPY " + s"${outputRel} FROM STDIN;" + " \" < \"$0\"'"
 
 
-
-          val writebackTmpFile = File.createTempFile(s"exec_parallel_writeback", ".sh")
+          val writebackTmpFile = new File(queryOutputPath + s"exec_parallel_writeback.sh")
+          // val writebackTmpFile = File.createTempFile(s"exec_parallel_writeback", ".sh")
           val writer2 = new PrintWriter(writebackTmpFile)
           writer2.println(s"${writebackCmd}")
           writer2.close()
@@ -207,7 +215,8 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
           
           val delCmd = s"find ${fpath} -name '${fname}*' 2>/dev/null -print0 | xargs -0 rm -f"
           log.info(s"Executing: ${delCmd}")
-          val delTmpFile = File.createTempFile(s"exec_delete", ".sh")
+          val delTmpFile = new File(queryOutputPath + s"exec_delete.sh")
+          // val delTmpFile = File.createTempFile(s"exec_delete", ".sh")
           val delWriter = new PrintWriter(delTmpFile)
           delWriter.println(s"${delCmd}")
           delWriter.close()
@@ -494,6 +503,8 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
 
   def executeSqlQueryOrFail(query: String, failureReceiver: ActorRef, pipeOutFilePath: String = null) { 
     // dataStore.executeCmd(query)
+    // val queryOutputPath = Context.outputDir + s"/tmp/"
+    // val file = new File(queryOutputPath + s"exec_sql.sh")
     val file = File.createTempFile(s"exec_sql", ".sh")
     val writer = new PrintWriter(file)
 
@@ -512,6 +523,8 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
     // executeCmd(s"psql -d ${dbname} -c " + "\"\"\"" + query + "\"\"\"")
   }
   def executeSqlFileOrFail(filename: String, failureReceiver: ActorRef) { 
+    // val queryOutputPath = Context.outputDir + s"/tmp/"
+    // val file = new File(queryOutputPath + s"exec_sql.sh")
     val file = File.createTempFile(s"exec_sql", ".sh")
     val writer = new PrintWriter(file)
     val dbname = dbSettings.dbname
