@@ -1,0 +1,53 @@
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/tuffy/!svn/ver/1936/tuffy/trunk/src/tuffy/infer
+END
+package_infer.jpeg
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/svn/tuffy/!svn/ver/1567/tuffy/trunk/src/tuffy/infer/package_infer.jpeg
+END
+InferComponent.java
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/tuffy/!svn/ver/1920/tuffy/trunk/src/tuffy/infer/InferComponent.java
+END
+package.html
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/tuffy/!svn/ver/1567/tuffy/trunk/src/tuffy/infer/package.html
+END
+InferPartitioned.java
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/tuffy/!svn/ver/1894/tuffy/trunk/src/tuffy/infer/InferPartitioned.java
+END
+InferBucket.java
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/tuffy/!svn/ver/1899/tuffy/trunk/src/tuffy/infer/InferBucket.java
+END
+DataMover.java
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/tuffy/!svn/ver/1926/tuffy/trunk/src/tuffy/infer/DataMover.java
+END
+PGInfer.java
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/tuffy/!svn/ver/1567/tuffy/trunk/src/tuffy/infer/PGInfer.java
+END
+MRF.java
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/tuffy/!svn/ver/1936/tuffy/trunk/src/tuffy/infer/MRF.java
+END

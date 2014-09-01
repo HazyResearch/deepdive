@@ -1,0 +1,1 @@
+This folder contains several sample MLNs. We are thankful to Andrew McCallum and U. Washington for sharing these data. These data are the same as examples of Tuffy’s.

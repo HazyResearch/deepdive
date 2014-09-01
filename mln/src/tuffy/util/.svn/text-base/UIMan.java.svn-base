@@ -1,0 +1,354 @@
+package tuffy.util;
+
+import java.io.BufferedWriter;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.lang.management.ManagementFactory;
+import java.util.Hashtable;
+
+import org.antlr.runtime.ANTLRInputStream;
+import org.antlr.runtime.CommonTokenStream;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
+
+import tuffy.parse.CommandOptions;
+import tuffy.parse.ConfigLexer;
+import tuffy.parse.ConfigParser;
+
+/**
+ * Container of user-interface utilities.
+ */
+public class UIMan {
+	
+	protected static boolean silent = false;
+	protected static boolean silentErr = false;
+	
+	public static boolean isSilent() {
+		return silent;
+	}
+
+	public static boolean isSilentErr() {
+		return silentErr;
+	}
+	
+	public synchronized static void setSilentErr(boolean v){
+		silentErr = v;
+	}
+	
+	public synchronized static void setSilent(boolean v){
+		silent = v;
+	}
+	
+	public synchronized static void println(String... strings){
+		if(silent) return;
+		if(Config.console_line_header != null){
+			System.out.print("@" + Config.console_line_header + " ");
+		}
+		for(String s : strings){
+			System.out.print(s);
+			writeToDribbleFile(s);
+		}
+		System.out.println();
+		writeToDribbleFile("\n");
+	}
+	
+	public synchronized static void print(String... strings){
+		if(silent) return;
+		for(String s : strings){
+			System.out.print(s);
+			writeToDribbleFile(s);
+		}
+	}
+	
+	public synchronized static void warn(String... strings){
+		if(silentErr) return;
+		System.err.print("WARNING: ");
+		writeToDribbleFile("WARNING: ");
+		for(String s : strings){
+			System.err.print(s);
+		}
+		System.err.println();
+		writeToDribbleFile("\n");
+	}
+
+	public synchronized static void error(String... strings){
+		if(silentErr) return;
+		System.err.print("ERROR: ");
+		writeToDribbleFile("ERROR: ");
+		for(String s : strings){
+			System.err.print(s);
+		}
+		System.err.println();
+		writeToDribbleFile("\n");
+	}
+
+
+    private static PrintStream dribbleStream = null;
+    public static String dribbleFileName = null; 
+
+    public synchronized static void writeToDribbleFile(String str) {
+        if (dribbleStream != null) { 
+        	dribbleStream.print(str);
+        }
+    }
+
+    public synchronized static void closeDribbleFile() {
+        dribbleFileName = null;
+        if (dribbleStream == null) { return; }
+        dribbleStream.close();
+        dribbleStream = null;
+    }
+    
+    public synchronized static void createDribbleFile(String fileName) {
+        closeDribbleFile();
+        try {
+            FileOutputStream outStream = new FileOutputStream(fileName);
+            dribbleStream = new PrintStream(outStream, false); // No auto-flush (can slow down code).
+            dribbleFileName = fileName;
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            System.err.println("Unable to open file for logging:\n " + fileName + ".\nError message: " + e.getMessage());
+        }
+    }
+
+    public static String comma(int value) { // Always use separators (e.g., "100,000").
+        return String.format("%,d", value);        
+    }    
+    public static String comma(long value) {
+        return String.format("%,d", value);        
+    }   
+    public static String comma(double value) {
+        return String.format("%,.3f", value);        
+    }
+    
+    
+	public static String decimalRound(int digits, double num){
+		return String.format("%." + digits + "f", num);
+	}
+	
+	public static CommandOptions processOptions(CommandOptions opt){
+
+		if(opt.pathConf != null){
+			Config.path_conf = opt.pathConf;
+		}
+		
+		UIMan.parseConfigFile(Config.path_conf);
+		
+		Config.using_greenplum = opt.gp;
+		Config.innerPara = opt.innerPara;
+		
+		Config.constants_as_raw_string = opt.constantAsRawString;
+		
+		Config.soft_evidence_activation_threshold = opt.softT;
+		
+		Config.snapshot_mode = opt.snapshot;
+		
+		Config.mcsat_sample_para = opt.mcsatPara;
+		Config.avoid_breaking_hard_clauses = opt.avoidBreakingHardClauses;
+		Config.output_prolog_format = opt.outputProlog;
+		
+		Config.max_threads = opt.maxThreads;
+		//Config.use_atom_blocking = opt.block;
+		
+		Config.evidDBSchema = opt.evidDBSchema;
+		Config.dbNeedTranslate = opt.dbNeedTranslate;
+		
+		Config.disable_partition = opt.disablePartition;
+		Config.output_files_in_gzip = opt.outputGz;
+		if(Config.output_files_in_gzip && !opt.fout.toLowerCase().endsWith(".gz")){
+			opt.fout += ".gz";
+		}
+		Config.mcsat_cumulative = opt.mcsatCumulative;
+		Config.mcsatDumpPeriodSeconds = opt.mcsatDumpPeriodSec;
+		Config.timeout = opt.timeout;
+		Config.mcsat_dump_interval = opt.mcsatDumpInt;
+		Config.marginal_output_min_prob = opt.minProb;
+		/*
+		if(opt.timeout > 0){
+			Config.timeout = opt.timeout;
+		}
+		*/
+		Config.dir_out = FileMan.getParentDir(opt.fout);
+		Config.file_stats = opt.fout + ".stats";
+		//Config.file_stats = Config.dir_out + "/tuffy_stats.txt";
+		
+		/*
+		if(opt.reportingFreq > 0 && opt.marginal == false){
+			Config.num_tries_per_periodic_flush = opt.reportingFreq;
+		}
+		
+		*/
+		Config.mark_all_atoms_active = opt.activateAllAtoms;
+		Config.keep_db_data = opt.keepData;
+		
+		Config.console_line_header = opt.consoleLineHeader;
+		
+		Config.no_pushdown = opt.noPushDown;
+		
+		if(opt.fDribble != null){
+			createDribbleFile(opt.fDribble);
+		}
+
+		if(opt.fquery == null && opt.queryAtoms == null && opt.getClass().equals(CommandOptions.class)){
+			System.err.println("Please specify queries with -q or -queryFiles");
+			return null;
+		}
+
+		Config.verbose_level = opt.verboseLevel;
+		
+		///////SGD & MLE
+		Config.mle_gibbs_mcmc_steps = opt.mle_gibbs_thinning;
+		Config.mle_use_gibbs_sampling = opt.mle_use_gibbs;
+		Config.mle_use_key_constraint = opt.mle_use_key_constraint;
+		Config.debug_mode = opt.debug;
+		Config.mle_partition_components = opt.mle_part_component;
+		Config.mle_use_mcsat_sampling = opt.mle_use_mcsat;
+		Config.mle_optimize_small_components = opt.mle_optimize_small_component;
+		
+		Config.samplesat_sa_coef = opt.samplesat_sa_coef;
+		
+		if(opt.mle_serialmix != -1){
+			Config.mle_use_serialmix_sampling = true;
+			Config.mle_serialmix_constant = opt.mle_serialmix;
+		}
+		
+		Config.mle_use_junction_tree = opt.mle_use_junction_tree;
+		
+		if(opt.sampleLog){
+			try {
+				Config.sampleLog = new PrintWriter(
+						new FileWriter( opt.fout + "_sampleLog.txt"));
+				Config.samplerWriterPath = opt.fout + "_sampleLog.txt";
+				System.out.println( opt.fout + "_sampleLog.txt");
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		return opt;
+	}
+	
+	public static CommandOptions parseCommand(String[] args){
+		CommandOptions opt = new CommandOptions();
+		CmdLineParser parser = new CmdLineParser(opt);
+		try{
+			parser.parseArgument(args);
+			if(opt.showHelp){
+				UIMan.println("USAGE:");
+	            parser.printUsage(System.out);
+	            return null;
+			}
+		}catch(CmdLineException e){
+			System.err.println(e.getMessage());
+			UIMan.println("USAGE:");
+            parser.printUsage(System.out);
+            return null;
+		}
+
+		return processOptions(opt);
+	}
+
+	public static boolean parseConfigFile(String fconf){
+		try {
+			FileInputStream fis = null;
+			try{
+				fis = new FileInputStream(fconf);
+			}catch(Exception e){
+				System.out.println("Failed to open config file.");
+				System.err.println(e.getMessage());
+				return false;
+			}
+			ANTLRInputStream input = new ANTLRInputStream(fis);
+			ConfigLexer lexer = new ConfigLexer(input);
+			CommonTokenStream tokens = new CommonTokenStream(lexer);
+			ConfigParser parser = new ConfigParser(tokens);
+			try{
+				parser.config();
+			}catch(Exception e){
+				System.out.println("Ill-formed config file: " + fconf);
+				System.err.println(e.getMessage());
+				return false;
+			}
+			Hashtable<String, String> map = parser.map;
+			String value;
+			
+			value = map.get("db_url");
+			if(value == null){
+				ExceptionMan.die("missing db_url in config file " + fconf);
+			}else{
+				Config.db_url = value.trim();
+			}
+	
+			value = map.get("db_username");
+			if(value == null){
+				//Config.db_username = "tuffer";
+				ExceptionMan.die("missing db_username in config file " + fconf);
+			}else{
+				Config.db_username = value.trim();
+			}
+	
+			value = map.get("db_password");
+			if(value == null){
+				//Config.db_password = "tuffer";
+				ExceptionMan.die("missing db_password in config file " + fconf);
+			}else{
+				Config.db_password = value.trim();
+			}
+
+			value = map.get("dir_working");
+			if(value != null){
+				Config.dir_working = value.trim().replace('\\', '/');
+			}
+			
+			String pid = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
+			String user = System.getProperty("user.name").toLowerCase().replaceAll("\\W", "_");
+			String machine = java.net.InetAddress.getLocalHost().getHostName().toLowerCase().replaceAll("\\W", "_");
+			
+			String prod = Config.product_line;
+			Config.dir_working += "/" + prod + "_" + machine + "_" + user + "_" + pid;
+			
+			if(Config.evidDBSchema == null){
+				Config.db_schema = prod + "_" + machine + "_" + user + "_" + pid;
+			}else{
+				Config.db_schema = Config.evidDBSchema;
+			}
+			
+			String curDir = System.getProperty("user.dir");
+			
+			println("Database schema     = " + Config.db_schema);
+			println("Current directory   = " + curDir);
+			println("Temporary directory = " + Config.dir_working);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+		return true;
+
+	}
+
+	public synchronized static void verbose(int level, String s){
+		if(Config.verbose_level >= level){
+			println(s);
+		}
+	}
+	
+
+	public synchronized static void verboseInline(int level, String s){
+		if(Config.verbose_level >= level){
+			print(s);
+		}
+	}
+	
+	
+	
+	
+	
+	
+	
+}

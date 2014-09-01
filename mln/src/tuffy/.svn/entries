@@ -1,0 +1,67 @@
+10
+
+dir
+1978
+http://tuffguy.cs.wisc.edu/svn/tuffy/tuffy/trunk/src/tuffy
+http://tuffguy.cs.wisc.edu/svn/tuffy
+
+
+
+2012-03-05T08:13:18.252558Z
+1977
+ce
+
+
+svn:special svn:externals svn:needs-lock
+
+
+
+
+
+
+
+
+
+
+
+17877f16-29e0-4ea0-abd8-3d9d22d090ce
+
+db
+dir
+
+ground
+dir
+
+helper
+dir
+
+infer
+dir
+
+learn
+dir
+
+main
+dir
+
+mln
+dir
+
+parse
+dir
+
+ra
+dir
+
+sample
+dir
+
+test
+dir
+
+util
+dir
+
+worker
+dir
+
