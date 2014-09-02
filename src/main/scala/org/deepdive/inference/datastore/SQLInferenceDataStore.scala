@@ -398,10 +398,10 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     if (parallelGrounding) {
       val cleanFile = File.createTempFile(s"clean", ".sh")
       val writer = new PrintWriter(cleanFile)
-      writer.println(s"rm -rf ${groundingPath}/*")
-      writer.close()
-      log.info("Cleaning up grounding folder...")
-      executeCmd(cleanFile.getAbsolutePath())
+      //writer.println(s"rm -rf ${groundingPath}/*")  // Line 52 of DataUnloader.scala already did this, right?
+      //writer.close()
+      //log.info("Cleaning up grounding folder...")
+      //executeCmd(cleanFile.getAbsolutePath())
     }
 
     // assign variable id - sequential and unique

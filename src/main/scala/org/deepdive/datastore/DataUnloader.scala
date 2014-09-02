@@ -49,7 +49,12 @@ class DataUnloader extends JdbcDataStore with Logging {
       val port = dbSettings.gpport
       val path = dbSettings.gppath
 
-      s"rm -f ${path}/${filename}".!
+      if(path != "" and filename != ""){
+        s"rm -f ${path}/${filename}".!
+      }else{
+        // TODO: We need a way to throw an ERROR, but
+        // for now I have no idea how to do that...
+      }
 
       // hacky way to get schema from a query...
       executeQuery(s"""
