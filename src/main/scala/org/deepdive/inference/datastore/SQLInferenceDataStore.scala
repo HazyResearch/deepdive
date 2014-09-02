@@ -627,11 +627,11 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
               CREATE TABLE ${weighttableForThisFactor}_other (addid int);
             """)
 
-          for(i <- 1 to (4096-1) ){
-            execute(s""" 
-              INSERT INTO ${weighttableForThisFactor}_other VALUES (${i});
-              """)
-          }
+          var one_2_4096 = (1 to (4096-1)).map(v => s""" (${v}) """).mkString(", ")
+
+          execute(s""" 
+              INSERT INTO ${weighttableForThisFactor}_other VALUES ${one_2_4096};
+          """)
 
           execute(s"""
             INSERT INTO ${weighttableForThisFactor}
