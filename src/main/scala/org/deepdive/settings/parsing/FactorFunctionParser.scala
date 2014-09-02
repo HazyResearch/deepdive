@@ -30,6 +30,11 @@ object FactorFunctionParser extends RegexParsers with Logging {
     EqualFactorFunction(List(v1, v2))
   }
 
+  def continuousLRFactorFunction = ("ContinuousLR" | "CONTINUOUSLR") ~> "(" ~> factorVariable ~ ("," ~> factorVariable) <~ ")" ^^ { 
+    case v1 ~ v2 =>
+    ContinuousLRFactorFunction(List(v1, v2))
+  }
+
   def isTrueFactorFunction = ("IsTrue" | "ISTRUE") ~> "(" ~> factorVariable <~ ")" ^^ { variable =>
     IsTrueFactorFunction(List(variable))
   }
@@ -54,6 +59,6 @@ object FactorFunctionParser extends RegexParsers with Logging {
   }
 
   def factorFunc = implyFactorFunction | orFactorFunction | andFactorFunction | 
-    equalFactorFunction | isTrueFactorFunction | xorFactorFunction | multinomialFactorFunction
+    equalFactorFunction | isTrueFactorFunction | xorFactorFunction | multinomialFactorFunction | continuousLRFactorFunction
 
 }

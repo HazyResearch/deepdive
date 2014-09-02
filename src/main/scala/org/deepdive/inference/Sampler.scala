@@ -35,6 +35,7 @@ class Sampler extends Actor with ActorLogging {
         case 0 => sender ! Success()
         case _ => throw new RuntimeException("sampling failed (see error log for more details)")
       }
+
   }
 
   // Build the command to run the sampler
@@ -52,4 +53,3 @@ class Sampler extends Actor with ActorLogging {
   }
 
 }
-

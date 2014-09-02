@@ -82,10 +82,10 @@ os.system("cat {0}/factors/factors*edges.bin > {1}/graph.edges".format(INPUTFOLD
 
 
 # clean up folder
-os.system('rm -rf {0}/nedges_'.format(INPUTFOLDER))
-os.system('rm -rf {0}/tmp'.format(INPUTFOLDER))
-os.system('rm -rf {0}/variables'.format(INPUTFOLDER))
-os.system('rm -rf {0}/factors'.format(INPUTFOLDER))
-os.system('rm -rf {0}/factors*'.format(INPUTFOLDER))
-os.system('rm -rf {0}/variables*'.format(INPUTFOLDER))
-os.system('rm -rf {0}/weights'.format(INPUTFOLDER))
+#os.system('rm -rf {0}/nedges_'.format(INPUTFOLDER))
+#os.system('rm -rf {0}/tmp'.format(INPUTFOLDER))
+#os.system('rm -rf {0}/variables'.format(INPUTFOLDER))
+#os.system('rm -rf {0}/factors'.format(INPUTFOLDER))
+#os.system('rm -rf {0}/factors*'.format(INPUTFOLDER))
+#os.system('rm -rf {0}/variables*'.format(INPUTFOLDER))
+#os.system('rm -rf {0}/weights'.format(INPUTFOLDER))
