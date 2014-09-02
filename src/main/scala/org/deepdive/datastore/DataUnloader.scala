@@ -30,9 +30,10 @@ class DataUnloader extends JdbcDataStore with Logging {
     val processLogger = ProcessLogger(line => log.info(line))
     Try(cmd!(processLogger)) match {
       case Success(0) => Success(0)
-      case Success(errorExitValue) => 
+      case Success(errorExitValue) =>
         Failure(new RuntimeException(s"Script exited with exit_value=$errorExitValue"))
-      case Failure(ex) => Failure(ex)
+      case Failure(ex) =>
+        Failure(ex)
     }
   }
 

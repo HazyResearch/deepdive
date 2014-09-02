@@ -442,15 +442,17 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         case BooleanType => 0
         case MultinomialType(x) => 1
         case RealNumberType => 2
+        case RealArrayType(x) => 3
       }
 
       val cardinality = dataType match {
         case BooleanType => 2
         case MultinomialType(x) => x.toInt
         case RealNumberType => 2
+        case RealArrayType(x) => x.toInt
       }
 
-      if(variableDataType == 2){
+      if(variableDataType == 2 || variableDataType == 3){
 
       }else{
         // assign holdout - if not user-defined, randomly select from evidence variables of each variable table
@@ -472,6 +474,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         case BooleanType => "('01')"
         case MultinomialType(x) => (0 to x-1).map (n => s"""('${"%02d".format(n)}')""").mkString(", ")
         case RealNumberType => "('01')"
+        case RealArrayType(x) => "('01')"
       }
       val cardinalityTableName = s"${relation}_${column}_cardinality"
       execute(s"""
@@ -480,21 +483,40 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         INSERT INTO ${cardinalityTableName} VALUES ${cardinalityValues};
         """)
 
-      // dump variables, 
-      // variable table join with holdout table - a variable is an evidence if it has initial value and it is not holdout
-      du.unload(s"variables_${relation}", s"${groundingPath}/variables_${relation}", dbSettings, parallelGrounding,
-        s"""SELECT id, 1::int AS is_evidence, (${column}::int)::float AS initvalue, ${variableDataType} AS type, 
-          ${cardinality} AS cardinality  
-        FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable}
-        ON ${relation}.id = ${VariablesHoldoutTable}.variable_id
-        WHERE ${column} IS NOT NULL AND ${VariablesHoldoutTable}.variable_id IS NULL
-        UNION ALL
-        SELECT id, 0::int AS is_evidence, 0::float AS initvalue, ${variableDataType} AS type, 
-          ${cardinality} AS cardinality  
-        FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable}
-        ON ${relation}.id = ${VariablesHoldoutTable}.variable_id
-        WHERE ${column} IS NULL OR ${VariablesHoldoutTable}.variable_id IS NOT NULL;
-        """)
+      if(variableDataType == 2 || variableDataType == 3){
+        // dump variables, 
+        // variable table join with holdout table - a variable is an evidence if it has initial value and it is not holdout
+        du.unload(s"variables_${relation}", s"${groundingPath}/variables_${relation}", dbSettings, parallelGrounding,
+          s"""SELECT id, 1::int AS is_evidence, (${column})::float AS initvalue, ${variableDataType} AS type, 
+            ${cardinality} AS cardinality  
+          FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable}
+          ON ${relation}.id = ${VariablesHoldoutTable}.variable_id
+          WHERE ${column} IS NOT NULL AND ${VariablesHoldoutTable}.variable_id IS NULL
+          UNION ALL
+          SELECT id, 0::int AS is_evidence, 0::float AS initvalue, ${variableDataType} AS type, 
+            ${cardinality} AS cardinality  
+          FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable}
+          ON ${relation}.id = ${VariablesHoldoutTable}.variable_id
+          WHERE ${column} IS NULL OR ${VariablesHoldoutTable}.variable_id IS NOT NULL;
+          """)
+      }else{
+        // dump variables, 
+        // variable table join with holdout table - a variable is an evidence if it has initial value and it is not holdout
+        du.unload(s"variables_${relation}", s"${groundingPath}/variables_${relation}", dbSettings, parallelGrounding,
+          s"""SELECT id, 1::int AS is_evidence, (${column}::int)::float AS initvalue, ${variableDataType} AS type, 
+            ${cardinality} AS cardinality  
+          FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable}
+          ON ${relation}.id = ${VariablesHoldoutTable}.variable_id
+          WHERE ${column} IS NOT NULL AND ${VariablesHoldoutTable}.variable_id IS NULL
+          UNION ALL
+          SELECT id, 0::int AS is_evidence, 0::float AS initvalue, ${variableDataType} AS type, 
+            ${cardinality} AS cardinality  
+          FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable}
+          ON ${relation}.id = ${VariablesHoldoutTable}.variable_id
+          WHERE ${column} IS NULL OR ${VariablesHoldoutTable}.variable_id IS NOT NULL;
+          """)
+      }
+
     }
 
     // generate factor meta data
@@ -561,7 +583,81 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         case _ => 0.0
       }
 
-      if (factorDesc.func.getClass.getSimpleName != "MultinomialFactorFunction") {
+      if (factorDesc.func.getClass.getSimpleName == "ContinuousLRFactorFunction"){
+
+        log.info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        if (isFixed || weightlist == ""){
+          log.error("#########################################")
+          log.error("DO NOT SUPPORT FIXED ARRAY WEIGHT FOR NOW")
+        } else { // not fixed and has weight variables
+          execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactor} CASCADE;
+            CREATE TABLE ${weighttableForThisFactor} AS
+            SELECT ${weightlist}, 0::bigint AS id, ${isFixed}::int AS isfixed, ${initvalue}::real AS initvalue 
+            FROM ${querytable}
+            GROUP BY ${weightlist};""")
+
+          // handle weight id
+          if (usingGreenplum) {      
+            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor}', ${cweightid});""")
+          } else {
+            execute(s"UPDATE ${weighttableForThisFactor} SET id = nextval('${weightidSequence}');")
+          }
+
+          var min_weight_id = 0L
+          var max_weight_id = 0L
+
+          issueQuery(s"""SELECT MIN(id) FROM ${weighttableForThisFactor};""") { rs =>
+            min_weight_id = rs.getLong(1)
+          }
+
+          issueQuery(s"""SELECT MAX(id) FROM ${weighttableForThisFactor};""") { rs =>
+            max_weight_id = rs.getLong(1)
+          }
+
+          execute(s"""UPDATE ${weighttableForThisFactor} SET
+                    id = ${min_weight_id} + (id - ${min_weight_id})*4096 
+            ;""")
+
+          issueQuery(s"""SELECT COUNT(*) FROM ${weighttableForThisFactor};""") { rs =>
+            cweightid += rs.getLong(1) * 4096
+          }
+
+          execute(s""" 
+              DROP TABLE IF EXISTS ${weighttableForThisFactor}_other CASCADE;
+              CREATE TABLE ${weighttableForThisFactor}_other (addid int);
+            """)
+
+          for(i <- 1 to (4096-1) ){
+            execute(s""" 
+              INSERT INTO ${weighttableForThisFactor}_other VALUES (${i});
+              """)
+          }
+
+          execute(s"""
+            INSERT INTO ${weighttableForThisFactor}
+            SELECT t0.feature, t0.id+t1.addid, t0.isfixed, NULL 
+            FROM ${weighttableForThisFactor} t0, ${weighttableForThisFactor}_other t1;
+          """)
+
+          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue) SELECT id, isfixed, initvalue FROM ${weighttableForThisFactor};""")
+
+          // check null weight
+          val weightChecklist = factorDesc.weight.variables.map(v => s""" "${v}" IS NULL """).mkString("AND")
+          issueQuery(s"SELECT COUNT(*) FROM ${querytable} WHERE ${weightChecklist}") { rs =>
+            if (rs.getLong(1) > 0) {
+              throw new RuntimeException("Weight variable has null values")
+            }
+          }
+
+          // dump factors
+          val weightjoinlist = factorDesc.weight.variables.map(v => s""" t0."${v}" = t1."${v}" """).mkString("AND")
+          du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
+            s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
+             FROM ${querytable} t0, ${weighttableForThisFactor} t1
+             WHERE ${weightjoinlist} AND t1.initvalue IS NOT NULL;""")
+        }
+
+      }else if (factorDesc.func.getClass.getSimpleName != "MultinomialFactorFunction") {
         // handle weights table
         // weight is fixed, or doesn't have weight variables
         if (isFixed || weightlist == ""){
@@ -609,10 +705,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
              FROM ${querytable} t0, ${weighttableForThisFactor} t1
              WHERE ${weightjoinlist};""")
         }
-      }
-
-      // handle multinomial
-      if (factorDesc.func.getClass.getSimpleName == "MultinomialFactorFunction") {
+      }else if (factorDesc.func.getClass.getSimpleName == "MultinomialFactorFunction") {
+        // handle multinomial
         // generate cardinality table for each variable
         factorDesc.func.variables.zipWithIndex.foreach { case(v,idx) =>
           val cardinalityTableName = s"${factorDesc.weightPrefix}_cardinality_${idx}"
@@ -699,7 +793,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     // dump weights
     du.unload("weights", s"${groundingPath}/weights",dbSettings, parallelGrounding,
-      s"SELECT id, isfixed, initvalue FROM ${WeightsTable}")
+      s"SELECT id, isfixed, COALESCE(initvalue, 0) FROM ${WeightsTable}")
 
     // create inference result table
     execute(createInferenceResultSQL)
@@ -779,6 +873,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       case MultinomialType(_) =>
         execute(createCalibrationViewMultinomialSQL(calibrationViewName, bucketedViewName, columnName))
       case RealNumberType =>
+        execute(WRONGcreateCalibrationViewRealNumberSQL(calibrationViewName, bucketedViewName, columnName))
+      case RealArrayType(x) => 
         execute(WRONGcreateCalibrationViewRealNumberSQL(calibrationViewName, bucketedViewName, columnName))
     }
     

@@ -31,3 +31,8 @@ case object RealNumberType extends VariableDataType {
   override def toString() = "RealNumber"
 }
 
+case class RealArrayType(nNumber: Int) extends VariableDataType {
+  def cardinality = nNumber
+  def nele = nNumber
+  override def toString() = "RealNumberArray"
+}
