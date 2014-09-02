@@ -34,4 +34,4 @@ dropdb $DBNAME
 createdb $DBNAME
 
 # Run the test
-SBT_OPTS="-Xmx128m" sbt "test"
+SBT_OPTS="-XX:MaxHeapSize=256m -Xmx512m -XX:MaxPermSize=256m" sbt "test"

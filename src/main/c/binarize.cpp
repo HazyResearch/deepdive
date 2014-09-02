@@ -98,7 +98,7 @@ void load_factor(std::string filename, short funcid, long nvar, char** positives
   long nedge = 0;
   long nvars_big = bswap_64(nvar);
   long predicate = funcid == 5 ? -1 : 1;
-  vector<int> positives_vec(nvar);
+  vector<int> positives_vec;
 
   funcid = bswap_16(funcid);
 
