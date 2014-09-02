@@ -383,12 +383,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     // clean up grounding folder (for parallel grounding)
     if (parallelGrounding) {
-      val cleanFile = File.createTempFile(s"clean", ".sh")
-      val writer = new PrintWriter(cleanFile)
-      writer.println(s"rm -rf ${groundingPath}/*")
-      writer.close()
-      log.info("Cleaning up grounding folder...")
-      executeCmd(cleanFile.getAbsolutePath())
+      //val cleanFile = File.createTempFile(s"clean", ".sh")
+      //val writer = new PrintWriter(cleanFile)
+      //writer.println(s"rm -rf ${groundingPath}/*")
+      //writer.close()
+      //log.info("Cleaning up grounding folder...")
+      //executeCmd(cleanFile.getAbsolutePath())
     }
 
     // assign variable id - sequential and unique
