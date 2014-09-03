@@ -25,7 +25,7 @@ for row in fileinput.input():
 	image_limit=0
 	for i in range(0, input_img.size[0], CELL):
 		for j in range(0, input_img.size[1], CELL):
-			if(image_limit>600):
+			if(image_limit>599):
 				break
 
 			box = (i, j, i + CELL, j + CELL)
@@ -34,6 +34,10 @@ for row in fileinput.input():
 			for roi_i in range(0,CELL*CELL):
 				roi[roi_i]/=255.0
 
+			# for ro in roi :
+			# 	print ro,
+			# print ""
+			# print label
 			print json.dumps({
 				"image_id":image_id,
 				"pixels":roi,

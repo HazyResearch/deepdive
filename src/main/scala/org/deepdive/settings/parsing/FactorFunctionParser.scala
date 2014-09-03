@@ -17,8 +17,12 @@ object FactorFunctionParser extends RegexParsers with Logging {
     ConvolutionFactorFunction(varList)
   }
 
-  def samplingFactorFunction = ("Sampling" | "SAMPLING" | "SubSampling" | "MaxPooling" | "Pooling") ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
+  def samplingFactorFunction = ( "Average" | "Sampling" | "SAMPLING" | "SubSampling" ) ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
     SamplingFactorFunction(varList)
+  }
+
+  def hiddenFactorFunction = ( "Hidden" ) ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
+    HiddenFactorFunction(varList)
   }
 
   def likelihoodFactorFunction = ("likelihood" | "Likelihood") ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
@@ -71,7 +75,7 @@ object FactorFunctionParser extends RegexParsers with Logging {
 
   def factorFunc = implyFactorFunction | orFactorFunction | andFactorFunction | 
     equalFactorFunction | isTrueFactorFunction | xorFactorFunction | 
-    convolutionFactorFunction | samplingFactorFunction | 
+    convolutionFactorFunction | samplingFactorFunction | hiddenFactorFunction |
     likelihoodFactorFunction | leastSquaresFactorFunction | 
     softmaxFactorFunction
 }

@@ -47,6 +47,7 @@ class BinarySerializer(weightsOutput: OutputStream, variablesOutput: OutputStrea
       case "IsTrueFactorFunction" =>  4
       case "ConvolutionFactorFunction" => 1000
       case "SamplingFactorFunction" => 1001
+      case "HiddenFactorFunction" => 1005
       case "LikelihoodFactorFunction" => 1010
       case "LeastSquaresFactorFunction" => 1011
       case "SoftmaxFactorFunction" => 1020
