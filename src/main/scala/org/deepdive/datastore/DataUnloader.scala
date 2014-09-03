@@ -49,7 +49,7 @@ class DataUnloader extends JdbcDataStore with Logging {
       val port = dbSettings.gpport
       val path = dbSettings.gppath
 
-      if(path != "" and filename != ""){
+      if(path != "" && filename != ""){
         s"rm -f ${path}/${filename}".!
       }else{
         // TODO: We need a way to throw an ERROR, but
