@@ -20,7 +20,7 @@ object SettingsParser extends Logging {
 
     if (inferenceSettings.parallelGrounding) {
       if (dbSettings.gphost == "" || dbSettings.gpport == "" || dbSettings.gppath == "") {
-        throw new RuntimeException(s"inference.parallelGrounding is set to true, but one of db.default.gphost, db.default.gpport, db.default.gppath isnot specified")
+        throw new RuntimeException(s"inference.parallelGrounding is set to true, but one of db.default.gphost, db.default.gpport, or db.default.gppath is not specified")
       }
     }
 
