@@ -21,6 +21,13 @@ object FactorGraphBuilder {
     extends FactorGraphBuilder with PostgresExtractionDataStoreComponent 
     with PostgresInferenceDataStoreComponent
 
+  // Implementation of FactorGraphBuilder using mysql components
+  // TODO: Refactor this
+  class MysqlFactorGraphBuilder(val variableSchema: Map[String, String]) 
+    extends FactorGraphBuilder with MysqlExtractionDataStoreComponent 
+    with MysqlInferenceDataStoreComponent
+
+    
   // Messages
   sealed trait Message
   case class AddFactorsAndVariables(factorDesc: FactorDesc, holdoutFraction: Double, 

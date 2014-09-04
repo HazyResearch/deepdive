@@ -58,31 +58,56 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
   // Execute futures using the current Akka dispatcher
   import context.dispatcher
   implicit val timeout = Timeout(1337.hours)
+  
+  // Branch by database driver type (temporary solution)
+  val dbtype = dbSettings.driver match {
+    case "org.postgresql.Driver" => "postgres"
+    case "com.mysql.jdbc.Driver" => "mysql"
+  }
 
   // Generate SQL query prefixes
   val dbname = dbSettings.dbname
-  val pguser = dbSettings.user
-  val pgport = dbSettings.port
-  val pghost = dbSettings.host
+  val dbuser = dbSettings.user
+  val dbport = dbSettings.port
+  val dbhost = dbSettings.host
+  val dbpassword = dbSettings.password
   // TODO do not use password for now
   val dbnameStr = dbname match {
     case null => ""
-    case _ => s" -d ${dbname} "
+    case _ => dbtype match {
+      case "postgres" => s" -d ${dbname} "
+      case "mysql" => s" ${dbname} " // can also use -D but mysqlimport does not support -D
+    }
   }
-  val pguserStr = pguser match {
+  
+  val dbuserStr = dbuser match {
     case null => ""
-    case _ => s" -U ${pguser} "
+    case _ => dbtype match {
+      case "postgres" => s" -U ${dbuser} "
+      case "mysql" => dbpassword match { // see if password is empty
+        case null => s" -u ${dbuser} "
+        case "" => s" -u ${dbuser} "
+        case _ => s" -u ${dbuser} -p=${dbpassword}"
+      }
+    }
   }
-  val pgportStr = pgport match {
+  val dbportStr = dbport match {
     case null => ""
-    case _ => s" -p ${pgport} "
+    case _ => dbtype match {
+      case "postgres" => s" -p ${dbport} "
+      case "mysql" => s" -P ${dbport} "
+    }
   }
-  val pghostStr = pghost match {
+  val dbhostStr = dbhost match {
     case null => ""
-    case _ => s" -h ${pghost} "
+    case _ => s" -h ${dbhost} "
   }
-  val sqlQueryPrefix = "psql " + dbnameStr + pguserStr + pgportStr + pghostStr
+  val sqlQueryPrefix = dbtype match {
+    case "postgresql" => "psql " + dbnameStr + dbuserStr + dbportStr + dbhostStr
+    case "mysql" => "mysql " + dbnameStr + dbuserStr + dbportStr + dbhostStr
+  }
 
+  // DONE mysql pw: -p=password. psql: cannot?  
   
   // Properties to start workers
   def workerProps = ProcessExecutor.props
@@ -117,6 +142,10 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
       task.extractor.style match {
 
         case "json_extractor" =>
+          if (dbtype != "postgres") {
+            failTask(s"do not support ${task.extractor.style} on ${dbtype}.", taskSender)
+          }
+          
           // Start the children workers
           val workers = startWorkers(task)
 
@@ -137,13 +166,30 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
             case DatastoreInputQuery(query) => query
             case _ => 
           }
-          val queryOutputFile = File.createTempFile(s"copy_query_${funcName}", ".tsv")
+          
+          val outputRel = task.extractor.outputRelation
+          // TODO do not use password for now
+
+          // NEW: for mysqlimport compatibility, the file basename must be same as table name. 
+          val queryOutputFile = File.createTempFile(s"${outputRel}.copy_query_${funcName}", ".tsv")
           // executeSqlQueryOrFail
 
           // Single-thread copy to a file
-          val copyQuery = "COPY (" + s"${inputQuery}".replaceAll("""(?m)[;\s\n]+$""", "") + ") TO STDOUT;"
+          val copyQuery = dbtype match {
+            case "postgres" => "COPY (" + s"${inputQuery}".replaceAll("""(?m)[;\s\n]+$""", "") + ") TO STDOUT;"
+
+            //TODO: cannot overwrite existing file
+            // mysql -u root -D test -e "select * from name into outfile '/tmp/tmpa.tsv'"
+            // ERROR 1086 (HY000) at line 1: File '/tmp/tmpa.tsv' already exists
+            
+            // trimming ending ";"s
+            case "mysql" => s"${inputQuery}".replaceAll("""(?m)[;\s\n]+$""", "")
+            // after adding "--silence" it will just print as a TSV to STDOUT!
+          }
           log.info(s"Copying file into ${queryOutputFile}")
           executeSqlQueryOrFail(copyQuery, taskSender, queryOutputFile.getAbsolutePath())
+          
+          
 
           val fname = queryOutputFile.getName()
           val fpath = queryOutputFile.getParent()
@@ -173,22 +219,30 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
 
           // Copy each of the files into the DB. If user is using Greenplum, use gpload
 
-          val outputRel = task.extractor.outputRelation
-          val dbname = dbSettings.dbname
-          val pguser = dbSettings.user
-          val pgport = dbSettings.port
-          val pghost = dbSettings.host
-          // TODO do not use password for now
-
           val checkGreenplumSQL = s"""
               SELECT version() LIKE '%Greenplum%';
             """
 
 
+          val writebackPrefix = s"find ${splitPrefix}*.out -print0 | xargs -0" + 
+            			s" -P 1 -L 1 bash -c ";
           // Only allow single-threaded copy
-          val writebackCmd = s"find ${splitPrefix}*.out -print0 | xargs -0 -P 1 -L 1 bash -c 'psql -d ${dbname} -U ${pguser} -p ${pgport} -h ${pghost} -c " + "\"COPY " + s"${outputRel} FROM STDIN;" + " \" < \"$0\"'"
+          val writebackCmd = dbtype match {
+            case "postgres" => writebackPrefix + s"'psql -d ${dbname} -U ${dbuser} " + 
+            			s"-p ${dbport} -h ${dbhost} -c " + 
+            			"\"COPY " + 
+            			s"${outputRel} FROM STDIN;" + // weak matching 
+            			" \" < \"$0\"'" // strong matching
+            case "mysql" => writebackPrefix +
+//            			s"ln -s /tmp/${outputRel}.mysql_writeback_tsv" // don't need it since file path has correct base name (table name )!
+            			s"'mysqlimport " + dbnameStr + dbuserStr + 
+            			dbportStr + dbhostStr + " $0'" // strong matching
+          }
+          // TODO: not sure if mysqlimport can work on distributed server... it should. 
 
 
+          // MYSQL writeback: use mysqlimport.
+          // See: https://mariadb.com/kb/en/mariadb/documentation/clients-and-utilities/backup-restore-and-import/mysqlimport/
 
           val writebackTmpFile = File.createTempFile(s"exec_parallel_writeback", ".sh")
           val writer2 = new PrintWriter(writebackTmpFile)
@@ -259,6 +313,10 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
           stop
 
         case "plpy_extractor" =>
+          
+          if (dbtype != "postgres") {
+            failTask(s"do not support ${task.extractor.style} on ${dbtype}.", taskSender)
+          }
 
           // Try to create language; if exists do nothing; if other errors report
           executeSqlQueryOrFail("drop language if exists plpythonu cascade; CREATE LANGUAGE plpythonu;", taskSender)
@@ -492,6 +550,9 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
     dataStore.queryUpdate(sqlQuery)
   }
 
+  /**
+   * Branches between psql / mysql (needs refactoring later)
+   */
   def executeSqlQueryOrFail(query: String, failureReceiver: ActorRef, pipeOutFilePath: String = null) { 
     // dataStore.executeCmd(query)
     val file = File.createTempFile(s"exec_sql", ".sh")
@@ -501,7 +562,15 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
       case null => ""
       case _ => " > " + pipeOutFilePath
     }
-    val cmd =  sqlQueryPrefix + " -c " + "\"\"\"" + query + "\"\"\"" + pipeOutStr
+    
+    // TODO this seems a issue to use 3 """ in bash...
+//    val cmd =  sqlQueryPrefix + " -c " + "\"\"\"" + query + "\"\"\"" + pipeOutStr
+    
+    val cmd = dbtype match {
+      case "postgres" => sqlQueryPrefix + " -c " + "\"\"\"" + query + "\"\"\"" + pipeOutStr
+      case "mysql" => sqlQueryPrefix + " --silent -e " + "\"" + query + "\"" + pipeOutStr
+      // TODO what happens if " is in query?
+    } 
 
     writer.println(s"${cmd}")
     writer.close()
@@ -511,6 +580,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
     
     // executeCmd(s"psql -d ${dbname} -c " + "\"\"\"" + query + "\"\"\"")
   }
+
   def executeSqlFileOrFail(filename: String, failureReceiver: ActorRef) { 
     val file = File.createTempFile(s"exec_sql", ".sh")
     val writer = new PrintWriter(file)
@@ -525,6 +595,18 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
     log.debug(s"Temporary bash file saved to ${file.getAbsolutePath()}")
     executeScriptOrFail(file.getAbsolutePath(), failureReceiver)
     // executeCmd(s"psql -d ${dbname} < " + filename)
+  }
+  
+  /**
+   * Fail the current task, log the error message, and throw new RuntimeException
+   * @throws RuntimeException
+   */
+  def failTask(message: String, failureReceiver: ActorRef) {
+    log.error(message)
+    val exception = new RuntimeException(message)
+    failureReceiver ! Status.Failure(exception)
+    context.stop(self)
+    throw new RuntimeException(message)
   }
 
 }

@@ -4,6 +4,7 @@ import java.io.{File, Reader, FileReader, BufferedReader, InputStream, InputStre
 import java.sql.Connection
 import org.deepdive.Logging
 import scalikejdbc._
+import com.mysql.jdbc._
 
 /* Helper object for working with Postgres */
 object MysqlDataStore extends JdbcDataStore with Logging {
@@ -18,13 +19,16 @@ object MysqlDataStore extends JdbcDataStore with Logging {
   }
 
   // Executes a "COPY FROM STDIN" statement using raw data */
+  // TODO zifei: not implemented now
   def copyBatchData(sqlStatement: String, dataReader: Reader)
     (implicit connection: Connection) : Unit = {
-      val del = new org.apache.commons.dbcp.DelegatingConnection(connection)
-      // TODO zifei
-      val pg_conn = del.getInnermostDelegate().asInstanceOf[org.postgresql.core.BaseConnection]
-      val cm = new org.postgresql.copy.CopyManager(pg_conn)
-      cm.copyIn(sqlStatement, dataReader)
+	  val statement = connection.createStatement()
+	  val resultSet = statement.executeQuery(sqlStatement)
+	  
+	 
+//	  val pg_conn = del.getInnermostDelegate().asInstanceOf[com.mysql.jdbc.Connection]
+//      val cm = new org.postgresql.copy.CopyManager(pg_conn)
+//      cm.copyIn(sqlStatement, dataReader)
       dataReader.close()
     }
 

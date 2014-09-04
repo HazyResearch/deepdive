@@ -128,11 +128,20 @@ object InferenceManager {
       Props(classOf[FactorGraphBuilder.PostgresFactorGraphBuilder], variableSchema)
   }
 
+  /* An inference manager that uses postgres as its datastore */
+  class MysqlInferenceManager(val taskManager: ActorRef, val variableSchema: Map[String, _ <: VariableDataType], val dbSettings: DbSettings) 
+    extends InferenceManager with PostgresInferenceDataStoreComponent {
+    def factorGraphBuilderProps = 
+      Props(classOf[FactorGraphBuilder.MysqlFactorGraphBuilder], variableSchema)
+  }
+
   // TODO: Refactor this to take the data store type as an argument
   def props(taskManager: ActorRef, variableSchema: Map[String, _ <: VariableDataType],
     dbSettings: DbSettings) = {
     dbSettings.driver match {
        case "org.postgresql.Driver" => Props(classOf[PostgresInferenceManager], taskManager, variableSchema, dbSettings)
+
+       case "com.mysql.jdbc.Driver" => Props(classOf[MysqlInferenceManager], taskManager, variableSchema, dbSettings)
     }
   }
     
