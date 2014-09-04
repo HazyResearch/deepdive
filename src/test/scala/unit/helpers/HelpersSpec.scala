@@ -4,6 +4,7 @@ import org.deepdive.Logging
 import org.scalatest._
 import org.deepdive.helpers.Helpers
 import org.deepdive.Context
+import org.deepdive.settings._
 import java.io._
 
 class HelpersSpec extends FunSpec with BeforeAndAfter {
@@ -35,6 +36,18 @@ class HelpersSpec extends FunSpec with BeforeAndAfter {
       bashFile.delete()
     }
 
+  }
+
+  describe("Building psql command helper function") {
+    it("should work") {
+      val dbSettings = DbSettings(null, null, "user", null, "dbname", 
+        "host", "port", null, null, null)
+      val query = "select * from test;"
+      val cmd = Helpers.buildPsqlCmd(dbSettings, query)
+      val trueCmd = "psql -d dbname -U user -p port -h host -c \"\"\"" + query + "\"\"\""
+      assert(cmd === trueCmd)
+
+    }
   }
 
 }
