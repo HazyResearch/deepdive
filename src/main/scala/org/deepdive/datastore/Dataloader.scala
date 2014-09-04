@@ -35,10 +35,10 @@ class DataLoader extends JdbcDataStore with Logging {
       val port = dbSettings.gpport
       val path = dbSettings.gppath
 
-      if(path != "" && filename != ""){
+      if (path != "" && filename != "" && hostname != "") {
         s"rm -f ${path}/${filename}".!
-      }else{
-        // TODO: die
+      } else {
+        throw new RuntimeException("greenplum parameters gphost, gpport, gppath are not set!")
       }
 
       // hacky way to get schema from a query...
@@ -64,28 +64,7 @@ class DataLoader extends JdbcDataStore with Logging {
         INSERT INTO _${filename} ${query};
         """)
     } else {
-      // Get Database-related settings
-      val dbname = dbSettings.dbname
-      val pguser = dbSettings.user
-      val pgport = dbSettings.port
-      val pghost = dbSettings.host
-      // TODO do not use password for now
-      val dbnameStr = dbname match {
-        case null => ""
-        case _ => s" -d ${dbname} "
-      }
-      val pguserStr = pguser match {
-        case null => ""
-        case _ => s" -U ${pguser} "
-      }
-      val pgportStr = pgport match {
-        case null => ""
-        case _ => s" -p ${pgport} "
-      }
-      val pghostStr = pghost match {
-        case null => ""
-        case _ => s" -h ${pghost} "
-      }
+
       executeQuery(s"""
         DROP VIEW IF EXISTS _${filename}_view CASCADE;
         CREATE VIEW _${filename}_view AS ${query};
@@ -96,13 +75,12 @@ class DataLoader extends JdbcDataStore with Logging {
 
       val cmdfile = File.createTempFile(s"copy", ".sh")
       val writer = new PrintWriter(cmdfile)
-      val copyStr = List("psql ", dbnameStr, pguserStr, pgportStr, pghostStr, " -c ", "\"\"\"", 
-        """\COPY """, s"(SELECT * FROM _${filename}_view) TO '${filepath}';", "\"\"\"").mkString("")
+      val sql = """\COPY """ + s"(SELECT * FROM _${filename}_view) TO '${filepath}';"
+      val copyStr = Helpers.buildPsqlCmd(dbSettings, sql)
       log.info(copyStr)
       writer.println(copyStr)
       writer.close()
       Helpers.executeCmd(cmdfile.getAbsolutePath())
-      // executeQuery(s"""COPY (SELECT * FROM _${filename}_view) TO '${filepath}';""")
       executeQuery(s"DROP VIEW _${filename}_view;")
       s"rm ${cmdfile.getAbsolutePath()}".!
     }
@@ -110,9 +88,13 @@ class DataLoader extends JdbcDataStore with Logging {
 
   /** Load data from a file to database
    *
+   * For greenplum, use gpload; for postgres, use \copy
    */ 
   def load(filepath: String, dbSettings: DbSettings, format: String, usingGreenplum: Boolean) : Unit = {
-    
+    if (usingGreenplum) {
+    } else {
+
+    }
   }
 
 
