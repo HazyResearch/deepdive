@@ -111,30 +111,16 @@ trait InferenceManager extends Actor with ActorLogging {
     // }
     val sampler = context.actorOf(samplerProps, "sampler")
 
-    if (parallelGrounding) {
-      // val samplingResult = sampler ? Sampler.Run(samplerJavaArgs, samplerOptions,
-      val samplingResult = sampler ? Sampler.Run(samplerJavaArgs, samplerOptions,
-        dbSettings.gppath, s"${dbSettings.gppath}/variables", s"${dbSettings.gppath}/factors",
-        dbSettings.gppath, dbSettings.gppath, SamplingOutputDir.getCanonicalPath, parallelGrounding)
-      // Kill the sampler after it's done :)
-      sampler ! PoisonPill
-      samplingResult.map { x =>
-        inferenceDataStore.writebackInferenceResult(
-        variableSchema, SamplingOutputFile.getCanonicalPath, 
-        SamplingOutputFileWeights.getCanonicalPath, parallelGrounding)
-      }  
-    } else {
-      val samplingResult = sampler ? Sampler.Run(samplerJavaArgs, samplerOptions,
-        factorGraphDumpFileWeights.getCanonicalPath, factorGraphDumpFileVariables.getCanonicalPath,
-        factorGraphDumpFileFactors.getCanonicalPath, factorGraphDumpFileEdges.getCanonicalPath,
-        factorGraphDumpFileMeta.getCanonicalPath, SamplingOutputDir.getCanonicalPath, parallelGrounding)
-      // Kill the sampler after it's done :)
-      sampler ! PoisonPill
-      samplingResult.map { x =>
-        inferenceDataStore.writebackInferenceResult(
-        variableSchema, SamplingOutputFile.getCanonicalPath, 
-        SamplingOutputFileWeights.getCanonicalPath, parallelGrounding)
-      }  
+    val samplingResult = sampler ? Sampler.Run(samplerJavaArgs, samplerOptions,
+      factorGraphDumpFileWeights.getCanonicalPath, factorGraphDumpFileVariables.getCanonicalPath,
+      factorGraphDumpFileFactors.getCanonicalPath, factorGraphDumpFileEdges.getCanonicalPath,
+      factorGraphDumpFileMeta.getCanonicalPath, SamplingOutputDir.getCanonicalPath, parallelGrounding)
+    // Kill the sampler after it's done :)
+    sampler ! PoisonPill
+    samplingResult.map { x =>
+      inferenceDataStore.writebackInferenceResult(
+      variableSchema, SamplingOutputFile.getCanonicalPath, 
+      SamplingOutputFileWeights.getCanonicalPath, parallelGrounding)
     }  
   }
 
