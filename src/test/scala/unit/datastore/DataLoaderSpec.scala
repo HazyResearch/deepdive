@@ -23,9 +23,10 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with JdbcDataStore {
   val dbSettings = DbSettings(null, null, System.getenv("PGUSER"), null, System.getenv("DBNAME"), 
     System.getenv("PGHOST"), System.getenv("PGPORT"), null, null, null)
 
+  val du = new org.deepdive.datastore.DataLoader
+
   describe("Unloading data using DataLoader") {
     it("should work with COPY basic types") {
-      val du = new org.deepdive.datastore.DataLoader
       val outputFile = File.createTempFile("test_unloader", "")
       SQL(s"""DROP TABLE IF EXISTS unloader CASCADE;""").execute.apply()
       SQL(s"""CREATE TABLE unloader(feature text, is_correct boolean, id bigint);""").execute.apply()
@@ -40,7 +41,6 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with JdbcDataStore {
     }
 
     it("should work with COPY array types") {
-      val du = new org.deepdive.datastore.DataLoader
       val outputFile = File.createTempFile("test_unloader", "")
       SQL(s"""DROP TABLE IF EXISTS unloader CASCADE;""").execute.apply()
       SQL(s"""CREATE TABLE unloader(feature text, id int[]);""").execute.apply()
@@ -67,5 +67,23 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with JdbcDataStore {
     //   line = rd.readLine()
     //   assert(line === "\\N\tf\t100")
     // }
+  }
+
+  describe("Loading data using DataLoader") {
+    it("""should work with \COPY basic types""") {
+      SQL(s"""DROP TABLE IF EXISTS loader CASCADE;""").execute.apply()
+      SQL(s"""CREATE TABLE loader(feature text, is_correct boolean, id bigint);""").execute.apply()
+      val tsvFile = getClass.getResource("/dataloader1.tsv").getFile
+      du.load(new File(tsvFile).getAbsolutePath(), "loader", dbSettings, false)
+      val result1 = SQL(s"""SELECT * FROM loader WHERE id = 0""").map(rs => rs.string("feature")).single.apply().get 
+      val result2 = SQL(s"""SELECT * FROM loader WHERE id = 0""").map(rs => rs.boolean("is_correct")).single.apply().get 
+      val result3 = SQL(s"""SELECT * FROM loader WHERE is_correct = false""").map(rs => rs.string("feature")).single.apply().get 
+      val result4 = SQL(s"""SELECT * FROM loader WHERE is_correct = true""").map(rs => rs.int("id")).single.apply().get 
+
+      assert(result1 === "hi")
+      assert(result2 === true)
+      assert(result3 === null)
+      assert(result4 === 100)
+    }
   }
 }
