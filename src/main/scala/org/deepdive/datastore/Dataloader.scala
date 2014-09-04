@@ -36,7 +36,7 @@ class DataLoader extends JdbcDataStore with Logging {
       val path = dbSettings.gppath
 
       if (path != "" && filename != "" && hostname != "") {
-        s"rm -f ${path}/${filename}".!
+        new File(s"${path}/${filename}").delete()
       } else {
         throw new RuntimeException("greenplum parameters gphost, gpport, gppath are not set!")
       }
@@ -82,18 +82,28 @@ class DataLoader extends JdbcDataStore with Logging {
       writer.close()
       Helpers.executeCmd(cmdfile.getAbsolutePath())
       executeQuery(s"DROP VIEW _${filename}_view;")
-      s"rm ${cmdfile.getAbsolutePath()}".!
+      cmdfile.delete()
     }
   }
 
   /** Load data from a file to database
    *
    * For greenplum, use gpload; for postgres, use \copy
+   * @delimter: the single character that separates columns within each row (line) of the file.
+   * @filepath: the absolute path of the input file
    */ 
-  def load(filepath: String, dbSettings: DbSettings, format: String, usingGreenplum: Boolean) : Unit = {
+  def load(filepath: String, tablename: String, dbSettings: DbSettings, delimiter: String, usingGreenplum: Boolean) : Unit = {
     if (usingGreenplum) {
     } else {
-
+      val cmdfile = File.createTempFile(s"copy", ".sh")
+      val writer = new PrintWriter(cmdfile)
+      val sql = """\COPY """ + s"${tablename} FROM ${filepath} DELIMITER ${delimiter}"
+      val copyStr = Helpers.buildPsqlCmd(dbSettings, sql)
+      log.info(copyStr)
+      writer.println(copyStr)
+      writer.close()
+      Helpers.executeCmd(cmdfile.getAbsolutePath())
+      cmdfile.delete()
     }
   }
 
