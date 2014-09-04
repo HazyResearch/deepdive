@@ -23,10 +23,17 @@ class DataLoader extends JdbcDataStore with Logging {
     log.debug("DONE!")
   }
 
-  /** Unload data from database to a file 
+  /** Unload data of a SQL query from database to a TSV file 
    * 
    * For Greenplum, use gpfdist. Must specify gpport, gppath, gphost in dbSettings. No need for filepath
    * For Postgresql, filepath is an abosulute path. No need for dbSettings or filename.
+   * For greenplum, use gpload; for postgres, use \copy
+   * 
+   * @filename: the name of the output file
+   * @filepath: the absolute path of the output file
+   * @dbSettings: database settings (DD's class)
+   * @usingGreenplum: whether to use greenplum's gpunload
+   * @query: the query to be dumped
    */
   def unload(filename: String, filepath: String, dbSettings: DbSettings, usingGreenplum: Boolean, query: String) : Unit = {
     
@@ -86,18 +93,50 @@ class DataLoader extends JdbcDataStore with Logging {
     }
   }
 
-  /** Load data from a file to database
+  /** Load data from a TSV file to database
    *
    * For greenplum, use gpload; for postgres, use \copy
-   * @delimter: the single character that separates columns within each row (line) of the file.
+   *
    * @filepath: the absolute path of the input file
+   * @tablename: the table to be copied to
+   * @dbSettings: database settings (DD's class)
+   * @usingGreenplum: whether to use greenplum's gpload
    */ 
-  def load(filepath: String, tablename: String, dbSettings: DbSettings, delimiter: String, usingGreenplum: Boolean) : Unit = {
+  def load(filepath: String, tablename: String, dbSettings: DbSettings, usingGreenplum: Boolean) : Unit = {
     if (usingGreenplum) {
+      val loadyaml = File.createTempFile(s"gpload", ".yml")
+      val gploadwriter = new PrintWriter(loadyaml)
+      gploadwriter.println(s"""
+        VERSION: 1.0.0.1
+        DATABASE: ${dbSettings.dbname}
+        USER: ${dbSettings.user}
+        HOST: ${dbSettings.host}
+        PORT: ${dbSettings.port}
+        GPLOAD:
+          INPUT:
+            - SOURCE:
+              FILE:
+                - ${filepath}
+            - FORMAT: text
+            - DELIMITER: '\\t'
+        OUTPUT:
+          - TABLE: ${tablename}""")
+      gploadwriter.close()
+
+      val cmdfile = File.createTempFile(s"gpload", ".sh")
+      val cmdwriter = new PrintWriter(cmdfile)
+      val cmd = s"gpload -f ${loadyaml.getAbsolutePath()}"
+      cmdwriter.println(cmd)
+      cmdwriter.close()
+
+      log.info(cmd)
+      Helpers.executeCmd(cmdfile.getAbsolutePath())
+      cmdfile.delete()
+      loadyaml.delete()
     } else {
       val cmdfile = File.createTempFile(s"copy", ".sh")
       val writer = new PrintWriter(cmdfile)
-      val sql = """\COPY """ + s"${tablename} FROM ${filepath} DELIMITER ${delimiter}"
+      val sql = """\COPY """ + s"${tablename} FROM '${filepath}'"
       val copyStr = Helpers.buildPsqlCmd(dbSettings, sql)
       log.info(copyStr)
       writer.println(copyStr)
