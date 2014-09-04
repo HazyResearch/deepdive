@@ -53,21 +53,17 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with JdbcDataStore {
     }
 
 
-    it("should work with gpunload") {
-      val usingGreenplum = SQL(s"SELECT version() LIKE '%Greenplum%' AS version;").map(rs => 
-        rs.boolean("version")).single.apply().get
-      if (usingGreenplum) {
-        val outputFile = File.createTempFile("test_unloader", "")
-        SQL(s"""CREATE TABLE unloader(feature text, is_correct boolean, id bigint);""").execute.apply()
-        SQL(s"""INSERT INTO unloader values ('hi', true, 0), (null, false, 100);""").execute.apply()
-        du.unload("test_tmp", s"${outputFile.getAbsolutePath}", dbSettings, true, "select * from unloader;")
-        val rd = new BufferedReader(new FileReader(s"${outputFile.getAbsolutePath}"))
-        var line = rd.readLine()
-        assert(line === "hi\tt\t0")
-        line = rd.readLine()
-        assert(line === "\\N\tf\t100")
-      }
-    }
+    // it("should work with gpunload") {
+    //   val outputFile = File.createTempFile("test_unloader", "")
+    //   SQL(s"""CREATE TABLE unloader(feature text, is_correct boolean, id bigint);""").execute.apply()
+    //   SQL(s"""INSERT INTO unloader values ('hi', true, 0), (null, false, 100);""").execute.apply()
+    //   du.unload("test_tmp", s"${outputFile.getAbsolutePath}", dbSettings, true, "select * from unloader;")
+    //   val rd = new BufferedReader(new FileReader(s"${outputFile.getAbsolutePath}"))
+    //   var line = rd.readLine()
+    //   assert(line === "hi\tt\t0")
+    //   line = rd.readLine()
+    //   assert(line === "\\N\tf\t100")
+    // }
   }
 
   describe("Loading data using DataLoader") {
@@ -87,24 +83,20 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with JdbcDataStore {
       assert(result4 === 100)
     }
 
-    it("""should work with gpload""") {
-      val usingGreenplum = SQL(s"SELECT version() LIKE '%Greenplum%' AS version;").map(rs => 
-        rs.boolean("version")).single.apply().get
-      if (usingGreenplum) {
-        SQL(s"""DROP TABLE IF EXISTS loader CASCADE;""").execute.apply()
-        SQL(s"""CREATE TABLE loader(feature text, is_correct boolean, id bigint);""").execute.apply()
-        val tsvFile = getClass.getResource("/dataloader1.tsv").getFile
-        du.load(new File(tsvFile).getAbsolutePath(), "loader", dbSettings, true)
-        val result1 = SQL(s"""SELECT * FROM loader WHERE id = 0""").map(rs => rs.string("feature")).single.apply().get 
-        val result2 = SQL(s"""SELECT * FROM loader WHERE id = 0""").map(rs => rs.boolean("is_correct")).single.apply().get 
-        val result3 = SQL(s"""SELECT * FROM loader WHERE is_correct = false""").map(rs => rs.string("feature")).single.apply() 
-        val result4 = SQL(s"""SELECT * FROM loader WHERE is_correct = false""").map(rs => rs.int("id")).single.apply().get 
+    // it("""should work with gpload""") {
+    //   SQL(s"""DROP TABLE IF EXISTS loader CASCADE;""").execute.apply()
+    //   SQL(s"""CREATE TABLE loader(feature text, is_correct boolean, id bigint);""").execute.apply()
+    //   val tsvFile = getClass.getResource("/dataloader1.tsv").getFile
+    //   du.load(new File(tsvFile).getAbsolutePath(), "loader", dbSettings, true)
+    //   val result1 = SQL(s"""SELECT * FROM loader WHERE id = 0""").map(rs => rs.string("feature")).single.apply().get 
+    //   val result2 = SQL(s"""SELECT * FROM loader WHERE id = 0""").map(rs => rs.boolean("is_correct")).single.apply().get 
+    //   val result3 = SQL(s"""SELECT * FROM loader WHERE is_correct = false""").map(rs => rs.string("feature")).single.apply() 
+    //   val result4 = SQL(s"""SELECT * FROM loader WHERE is_correct = false""").map(rs => rs.int("id")).single.apply().get 
 
-        assert(result1 === "hi")
-        assert(result2 === true)
-        assert(result3 === None)
-        assert(result4 === 100)
-      }
-    }
+    //   assert(result1 === "hi")
+    //   assert(result2 === true)
+    //   assert(result3 === None)
+    //   assert(result4 === 100)
+    // }
   }
 }
