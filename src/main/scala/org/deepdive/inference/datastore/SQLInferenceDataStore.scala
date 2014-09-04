@@ -3,7 +3,7 @@ package org.deepdive.inference
 import java.io.{File, PrintWriter}
 import org.deepdive.calibration._
 import org.deepdive.datastore.JdbcDataStore
-import org.deepdive.datastore.DataUnloader
+import org.deepdive.datastore.DataLoader
 import org.deepdive.Logging
 import org.deepdive.Context
 import org.deepdive.settings._
@@ -369,7 +369,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean, weightTable: String, 
     dbSettings: DbSettings, parallelGrounding: Boolean) {
 
-    val du = new DataUnloader
+    val du = new DataLoader
     val groundingPath = if (!parallelGrounding) Context.outputDir else dbSettings.gppath
 
     // check whether Greenplum is used

@@ -3,11 +3,12 @@ package org.deepdive.datastore
 import org.deepdive.settings._
 // import org.deepdive.datastore.JdbcDataStore
 import org.deepdive.Logging
+import org.deepdive.helpers.Helpers
 import scala.sys.process._
 import scala.util.{Try, Success, Failure}
 import java.io._
 
-class DataUnloader extends JdbcDataStore with Logging {
+class DataLoader extends JdbcDataStore with Logging {
 
   // def ds : JdbcDataStore
 
@@ -20,20 +21,6 @@ class DataUnloader extends JdbcDataStore with Logging {
     conn.commit()
     conn.close()  
     log.debug("DONE!")
-  }
-
-  def executeCmd(cmd: String) : Try[Int] = {
-    // Make the file executable, if necessary
-    val file = new java.io.File(cmd)
-    if (file.isFile) file.setExecutable(true, false)
-    log.info(s"""Executing: "$cmd" """)
-    val processLogger = ProcessLogger(line => log.info(line))
-    Try(cmd!(processLogger)) match {
-      case Success(0) => Success(0)
-      case Success(errorExitValue) => 
-        Failure(new RuntimeException(s"Script exited with exit_value=$errorExitValue"))
-      case Failure(ex) => Failure(ex)
-    }
   }
 
   /** Unload data from database to a file 
@@ -114,11 +101,18 @@ class DataUnloader extends JdbcDataStore with Logging {
       log.info(copyStr)
       writer.println(copyStr)
       writer.close()
-      executeCmd(cmdfile.getAbsolutePath())
+      Helpers.executeCmd(cmdfile.getAbsolutePath())
       // executeQuery(s"""COPY (SELECT * FROM _${filename}_view) TO '${filepath}';""")
       executeQuery(s"DROP VIEW _${filename}_view;")
       s"rm ${cmdfile.getAbsolutePath()}".!
     }
+  }
+
+  /** Load data from a file to database
+   *
+   */ 
+  def load(filepath: String, dbSettings: DbSettings, format: String, usingGreenplum: Boolean) : Unit = {
+    
   }
 
 

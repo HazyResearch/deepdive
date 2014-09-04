@@ -8,7 +8,7 @@ import scala.sys.process._
 import scalikejdbc._
 import java.io._
 
-class DataUnloader extends FunSpec with BeforeAndAfter with JdbcDataStore {
+class DataLoaderSpec extends FunSpec with BeforeAndAfter with JdbcDataStore {
 
   lazy implicit val session = DB.autoCommitSession()
 
@@ -23,9 +23,9 @@ class DataUnloader extends FunSpec with BeforeAndAfter with JdbcDataStore {
   val dbSettings = DbSettings(null, null, System.getenv("PGUSER"), null, System.getenv("DBNAME"), 
     System.getenv("PGHOST"), System.getenv("PGPORT"), null, null, null)
 
-  describe("Unloading data using DataUnloader") {
+  describe("Unloading data using DataLoader") {
     it("should work with COPY basic types") {
-      val du = new org.deepdive.datastore.DataUnloader
+      val du = new org.deepdive.datastore.DataLoader
       val outputFile = File.createTempFile("test_unloader", "")
       SQL(s"""DROP TABLE IF EXISTS unloader CASCADE;""").execute.apply()
       SQL(s"""CREATE TABLE unloader(feature text, is_correct boolean, id bigint);""").execute.apply()
@@ -40,7 +40,7 @@ class DataUnloader extends FunSpec with BeforeAndAfter with JdbcDataStore {
     }
 
     it("should work with COPY array types") {
-      val du = new org.deepdive.datastore.DataUnloader
+      val du = new org.deepdive.datastore.DataLoader
       val outputFile = File.createTempFile("test_unloader", "")
       SQL(s"""DROP TABLE IF EXISTS unloader CASCADE;""").execute.apply()
       SQL(s"""CREATE TABLE unloader(feature text, id int[]);""").execute.apply()
@@ -55,7 +55,7 @@ class DataUnloader extends FunSpec with BeforeAndAfter with JdbcDataStore {
 
     it("should work with gpunload")(pending)
     // {
-    //   val du = new org.deepdive.datastore.DataUnloader
+    //   val du = new org.deepdive.datastore.DataLoader
     //   val dbSettings = DbSettings(null, null, null, null, null, null, null, null, null, null)
     //   val outputFile = File.createTempFile("test_unloader", "")
     //   SQL(s"""CREATE TABLE unloader(feature text, is_correct boolean, id bigint);""").execute.apply()
