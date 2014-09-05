@@ -82,7 +82,7 @@ class DataLoader extends JdbcDataStore with Logging {
 
       val cmdfile = File.createTempFile(s"copy", ".sh")
       val writer = new PrintWriter(cmdfile)
-      val sql = """\COPY """ + s"(SELECT * FROM _${filename}_view) TO '${filepath}';"
+      val sql = """\COPY """ + s"(SELECT * FROM _${filename}_view) TO '${filepath}'"
       val copyStr = Helpers.buildPsqlCmd(dbSettings, sql)
       log.info(copyStr)
       writer.println(copyStr)
