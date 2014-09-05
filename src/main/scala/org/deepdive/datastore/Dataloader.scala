@@ -97,7 +97,7 @@ class DataLoader extends JdbcDataStore with Logging {
    *
    * For greenplum, use gpload; for postgres, use \copy
    *
-   * @filepath: the absolute path of the input file
+   * @filepath: the absolute path of the input file, it can contain wildchar characters
    * @tablename: the table to be copied to
    * @dbSettings: database settings (DD's class)
    * @usingGreenplum: whether to use greenplum's gpload
@@ -136,10 +136,11 @@ class DataLoader extends JdbcDataStore with Logging {
     } else {
       val cmdfile = File.createTempFile(s"copy", ".sh")
       val writer = new PrintWriter(cmdfile)
-      val sql = """\COPY """ + s"${tablename} FROM '${filepath}'"
+      val sql = """COPY """ + s"${tablename} FROM STDIN"
       val copyStr = Helpers.buildPsqlCmd(dbSettings, sql)
-      log.info(copyStr)
-      writer.println(copyStr)
+      val cmd = s"find ${filepath} -print0 | xargs -0 -P 1 -L 1 bash -c '${copyStr}" + " < \"$0\"'"
+      log.info(cmd)
+      writer.println(cmd)
       writer.close()
       Helpers.executeCmd(cmdfile.getAbsolutePath())
       cmdfile.delete()

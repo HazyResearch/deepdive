@@ -67,7 +67,7 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with JdbcDataStore {
   }
 
   describe("Loading data using DataLoader") {
-    it("""should work with \COPY""") {
+    it("""should work with COPY""") {
       SQL(s"""DROP TABLE IF EXISTS loader CASCADE;""").execute.apply()
       SQL(s"""CREATE TABLE loader(feature text, is_correct boolean, id bigint);""").execute.apply()
       val tsvFile = getClass.getResource("/dataloader1.tsv").getFile
