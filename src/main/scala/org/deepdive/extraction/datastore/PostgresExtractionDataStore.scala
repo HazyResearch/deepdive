@@ -25,6 +25,12 @@ class PostgresExtractionDataStore extends ExtractionDataStore[JsObject] with Jdb
 
     def ds = PostgresDataStore
 
+    /**
+     * input: iterator (of what?)  
+     * 
+     * - Create a temp CSV file
+     * - run writeCopyData to write   
+     */
     def addBatch(result: Iterator[JsObject], outputRelation: String) : Unit = {
       val file = File.createTempFile(s"deepdive_$outputRelation", ".csv")
       log.debug(s"Writing data of to file=${file.getCanonicalPath}")

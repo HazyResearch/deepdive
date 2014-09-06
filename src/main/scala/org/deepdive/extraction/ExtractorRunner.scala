@@ -103,9 +103,14 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
     case _ => s" -h ${dbhost} "
   }
   val sqlQueryPrefix = dbtype match {
-    case "postgresql" => "psql " + dbnameStr + dbuserStr + dbportStr + dbhostStr
+    case "postgres" => "psql " + dbnameStr + dbuserStr + dbportStr + dbhostStr
     case "mysql" => "mysql " + dbnameStr + dbuserStr + dbportStr + dbhostStr
   }
+  
+  val sqlAnalyzeCommand = dbtype match {
+    case "postgres" => "ANALYZE "
+    case "mysql" => "ANALYZE TABLE "
+  } 
 
   // DONE mysql pw: -p=password. psql: cannot?  
   
@@ -225,18 +230,18 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
 
 
           val writebackPrefix = s"find ${splitPrefix}*.out -print0 | xargs -0" + 
-            			s" -P 1 -L 1 bash -c ";
+                  s" -P 1 -L 1 bash -c ";
           // Only allow single-threaded copy
           val writebackCmd = dbtype match {
             case "postgres" => writebackPrefix + s"'psql -d ${dbname} -U ${dbuser} " + 
-            			s"-p ${dbport} -h ${dbhost} -c " + 
-            			"\"COPY " + 
-            			s"${outputRel} FROM STDIN;" + // weak matching 
-            			" \" < \"$0\"'" // strong matching
+                        s"-p ${dbport} -h ${dbhost} -c " + 
+                        "\"COPY " + 
+                        s"${outputRel} FROM STDIN;" + // weak matching 
+                        " \" < \"$0\"'" // strong matching
             case "mysql" => writebackPrefix +
-//            			s"ln -s /tmp/${outputRel}.mysql_writeback_tsv" // don't need it since file path has correct base name (table name )!
-            			s"'mysqlimport " + dbnameStr + dbuserStr + 
-            			dbportStr + dbhostStr + " $0'" // strong matching
+//                        s"ln -s /tmp/${outputRel}.mysql_writeback_tsv" // don't need it since file path has correct base name (table name )!
+                        s"'mysqlimport " + dbnameStr + dbuserStr + 
+                        dbportStr + dbhostStr + " $0'" // strong matching
           }
           // TODO: not sure if mysqlimport can work on distributed server... it should. 
 
@@ -252,22 +257,23 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
           executeScriptOrFail(writebackTmpFile.getAbsolutePath(), taskSender)
 
           log.info("Analyzing output relation.")
-          executeSqlUpdateOrFail(s"ANALYZE ${outputRel};", taskSender)
+          executeSqlUpdateOrFail(s"${sqlAnalyzeCommand} ${outputRel};", taskSender)
 
-          log.info("Removing temporary files...")
-          queryOutputFile.delete()
-          // val delCmd = s"rm -f ${splitPrefix}*"
-          // prevent "argument list too long"
-          
-          val delCmd = s"find ${fpath} -name '${fname}*' 2>/dev/null -print0 | xargs -0 rm -f"
-          log.info(s"Executing: ${delCmd}")
-          val delTmpFile = File.createTempFile(s"exec_delete", ".sh")
-          val delWriter = new PrintWriter(delTmpFile)
-          delWriter.println(s"${delCmd}")
-          delWriter.close()
-          executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
-          executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
-          delTmpFile.delete()
+//          log.info("Removing temporary files...")
+//          queryOutputFile.delete()
+//          TODO DEBUG
+
+//          TODO DEBUG
+//          val delCmd = s"find ${fpath} -name '${fname}*' 2>/dev/null -print0 | xargs -0 rm -f"
+//          log.info(s"Executing: ${delCmd}")
+//          val delTmpFile = File.createTempFile(s"exec_delete", ".sh")
+//          val delWriter = new PrintWriter(delTmpFile)
+//          delWriter.println(s"${delCmd}")
+//          delWriter.close()
+
+//          executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
+//          executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
+//          delTmpFile.delete()
 
 
 
@@ -356,7 +362,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
           log.info(s"Finish executing UDF in database!")
 
           log.debug("Analyzing output relation.")
-          executeSqlUpdateOrFail(s"ANALYZE ${outputRel};", taskSender)
+          executeSqlUpdateOrFail(s"${sqlAnalyzeCommand} ${outputRel};", taskSender)
 
           // Execute the after script. Fail if the script fails.
           task.extractor.afterScript.foreach {
@@ -427,7 +433,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
       task.extractor.afterScript.foreach {
         afterScript =>
           log.info("Analyzing output relation.")
-          executeSqlUpdateOrFail(s"ANALYZE ${task.extractor.outputRelation};", taskSender)
+          executeSqlUpdateOrFail(s"${sqlAnalyzeCommand} ${task.extractor.outputRelation};", taskSender)
           log.info("Executing after script.")
           executeScriptOrFail(afterScript, taskSender)
       }
@@ -535,15 +541,23 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
     }
   }
 
-  
+  /**
+   * Now do not allow mysql to talk to datastore component. Use executeSqlQueryOrFail instead.
+   */
   def executeSqlUpdateOrFail(sqlQuery: String, failureReceiver: ActorRef) {
-    Try(dataStore.queryUpdate(sqlQuery)) match {
-      case Success(_) =>
-      case Failure(ex) =>
-        failureReceiver ! Status.Failure(ex)
-        context.stop(self)
-        throw new RuntimeException(ex.toString)
+    dbtype match {
+      case "postgres" =>
+        Try(dataStore.queryUpdate(sqlQuery)) match {
+          case Success(_) =>
+          case Failure(ex) =>
+            failureReceiver ! Status.Failure(ex)
+            context.stop(self)
+            throw new RuntimeException(ex.toString)
+        }
+      case "mysql" => 
+        executeSqlQueryOrFail(sqlQuery, failureReceiver)
     }
+    
   }
 
   def executeSqlUpdate(sqlQuery: String) {

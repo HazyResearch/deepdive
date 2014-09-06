@@ -34,7 +34,7 @@ trait ExtractionDataStore[A <: JsValue] {
   /* Updates the query */
   def queryUpdate(query: String)
 
-  /* 
+  /** 
    * Writes a list of tuples back to the datastore.
    * IMPORTANT: This method must assign a globally unique variable id to each record 
    */

@@ -4,6 +4,7 @@
 export DBUSER="root"
 export DBPASSWORD=
 export DBHOST=localhost
+export DBPORT=0
 
 # Set username and password
 # export PGUSER=${PGUSER:-`whoami`}
@@ -38,8 +39,8 @@ cd $DEEPDIVE_HOME
 # dropdb $DBNAME
 # createdb $DBNAME
 echo "drop database if exists $DBNAME; 
-create database $DBNAME" | mysql -u $DBUSER
+create database $DBNAME" | mysql -u $DBUSER -h $DBHOST
 
 # Run the test
-# SBT_OPTS="-Xmx128m" sbt "test"
-SBT_OPTS="-Xmx128m" sbt "test-only org.deepdive.test.unit.PostgresInferenceDataStoreSpec"
+# SBT_OPTS="-Xmx128m" sbt/sbt "test"
+SBT_OPTS="-Xmx128m" sbt/sbt "test-only org.deepdive.test.unit.PostgresInferenceDataStoreSpec"
