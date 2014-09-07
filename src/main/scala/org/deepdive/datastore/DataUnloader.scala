@@ -22,17 +22,17 @@ class DataUnloader extends JdbcDataStore with Logging {
     log.debug("DONE!")
   }
 
-  def executeCmd(cmd: String) : Try[Int] = {
+  /** Execute a file as a bash script */
+  def executeCmd(cmd: String) : Unit = {
     // Make the file executable, if necessary
     val file = new java.io.File(cmd)
     if (file.isFile) file.setExecutable(true, false)
     log.info(s"""Executing: "$cmd" """)
-    val processLogger = ProcessLogger(line => log.info(line))
-    Try(cmd!(processLogger)) match {
-      case Success(0) => Success(0)
-      case Success(errorExitValue) => 
-        Failure(new RuntimeException(s"Script exited with exit_value=$errorExitValue"))
-      case Failure(ex) => Failure(ex)
+    val exitValue = cmd!(ProcessLogger(out => log.info(out)))
+    // Depending on the exit value we return success or throw an exception
+    exitValue match {
+      case 0 => 
+      case _ => throw new RuntimeException("Script failed")
     }
   }
 
@@ -48,7 +48,11 @@ class DataUnloader extends JdbcDataStore with Logging {
       val port = dbSettings.gpport
       val path = dbSettings.gppath
 
-      s"rm -f ${path}/${filename}".!
+      if(path != "" && filename != ""){
+        s"rm -f ${path}/${filename}".!
+      }else{
+        // TODO: die
+      }
 
       // hacky way to get schema from a query...
       executeQuery(s"""
@@ -106,7 +110,7 @@ class DataUnloader extends JdbcDataStore with Logging {
       val cmdfile = File.createTempFile(s"copy", ".sh")
       val writer = new PrintWriter(cmdfile)
       val copyStr = List("psql ", dbnameStr, pguserStr, pgportStr, pghostStr, " -c ", "\"\"\"", 
-        """\COPY """, s"(SELECT * FROM _${filename}_view) TO '${filepath}';", "\"\"\"").mkString("")
+        """\COPY """, s"(SELECT * FROM _${filename}_view) TO '${filepath}'", "\"\"\"").mkString("")
       log.info(copyStr)
       writer.println(copyStr)
       writer.close()

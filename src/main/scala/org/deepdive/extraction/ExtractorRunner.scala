@@ -171,12 +171,20 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
             case DatastoreInputQuery(query) => query
             case _ => 
           }
-          
+
           val outputRel = task.extractor.outputRelation
           // TODO do not use password for now
 
+          val queryOutputPath = Context.outputDir + s"/tmp/"
+          log.info(queryOutputPath)
+          val success = (new File(queryOutputPath)).mkdirs()
+          if (!success)
+            log.error("TSV extractor directory creation failed!")
+
           // NEW: for mysqlimport compatibility, the file basename must be same as table name. 
-          val queryOutputFile = File.createTempFile(s"${outputRel}.copy_query_${funcName}", ".tsv")
+          val queryOutputFile = new File(queryOutputPath + s"${outputRel}.copy_query_${funcName}.tsv")
+          // val queryOutputFile = File.createTempFile(s"copy_query_${funcName}", ".tsv")
+
           // executeSqlQueryOrFail
 
           // Single-thread copy to a file
@@ -215,7 +223,8 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
           log.info(s"Executing parallel UDF command: ${runCmd}")
           // executeScriptOrFail(runCmd, taskSender)
 
-          val udfTmpFile = File.createTempFile(s"exec_parallel_udf", ".sh")
+          val udfTmpFile = new File(queryOutputPath + s"exec_parallel_udf.sh")
+          // val udfTmpFile = File.createTempFile(s"exec_parallel_udf", ".sh")
           val writer = new PrintWriter(udfTmpFile)
           writer.println(s"${runCmd}")
           writer.close()
@@ -249,7 +258,9 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
           // MYSQL writeback: use mysqlimport.
           // See: https://mariadb.com/kb/en/mariadb/documentation/clients-and-utilities/backup-restore-and-import/mysqlimport/
 
-          val writebackTmpFile = File.createTempFile(s"exec_parallel_writeback", ".sh")
+          val writebackTmpFile = new File(queryOutputPath + s"exec_parallel_writeback.sh")
+          // val writebackTmpFile = File.createTempFile(s"exec_parallel_writeback", ".sh")
+
           val writer2 = new PrintWriter(writebackTmpFile)
           writer2.println(s"${writebackCmd}")
           writer2.close()
@@ -259,22 +270,21 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
           log.info("Analyzing output relation.")
           executeSqlUpdateOrFail(s"${sqlAnalyzeCommand} ${outputRel};", taskSender)
 
-//          log.info("Removing temporary files...")
-//          queryOutputFile.delete()
-//          TODO DEBUG
 
-//          TODO DEBUG
-//          val delCmd = s"find ${fpath} -name '${fname}*' 2>/dev/null -print0 | xargs -0 rm -f"
-//          log.info(s"Executing: ${delCmd}")
-//          val delTmpFile = File.createTempFile(s"exec_delete", ".sh")
-//          val delWriter = new PrintWriter(delTmpFile)
-//          delWriter.println(s"${delCmd}")
-//          delWriter.close()
-
-//          executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
-//          executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
-//          delTmpFile.delete()
-
+          // TODO DEBUG
+          // log.info("Removing temporary files...")
+          // queryOutputFile.delete()
+          
+          // val delCmd = s"find ${fpath} -name '${fname}*' 2>/dev/null -print0 | xargs -0 rm -f"
+          // log.info(s"Executing: ${delCmd}")
+          // val delTmpFile = new File(queryOutputPath + s"exec_delete.sh")
+          // // val delTmpFile = File.createTempFile(s"exec_delete", ".sh")
+          // val delWriter = new PrintWriter(delTmpFile)
+          // delWriter.println(s"${delCmd}")
+          // delWriter.close()
+          // executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
+          // executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
+          // delTmpFile.delete()
 
 
           // Execute the after script. Fail if the script fails.
@@ -569,6 +579,8 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
    */
   def executeSqlQueryOrFail(query: String, failureReceiver: ActorRef, pipeOutFilePath: String = null) { 
     // dataStore.executeCmd(query)
+    // val queryOutputPath = Context.outputDir + s"/tmp/"
+    // val file = new File(queryOutputPath + s"exec_sql.sh")
     val file = File.createTempFile(s"exec_sql", ".sh")
     val writer = new PrintWriter(file)
 
@@ -596,6 +608,8 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
   }
 
   def executeSqlFileOrFail(filename: String, failureReceiver: ActorRef) { 
+    // val queryOutputPath = Context.outputDir + s"/tmp/"
+    // val file = new File(queryOutputPath + s"exec_sql.sh")
     val file = File.createTempFile(s"exec_sql", ".sh")
     val writer = new PrintWriter(file)
     val dbname = dbSettings.dbname

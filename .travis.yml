@@ -1,6 +1,15 @@
-language: scala
+language: 
+  - scala
+  - python
 scala:
   - "2.10.3"
+python:
+  - "2.7"
+install: 
+  # Install linkchecker
+  - sudo pip install linkchecker --use-mirrors
+  # Install jekyll for "make serve" local hosting
+  - gem install jekyll
 jdk:
   - openjdk7
   - oraclejdk7
