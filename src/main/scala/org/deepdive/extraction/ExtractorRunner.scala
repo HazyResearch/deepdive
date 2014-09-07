@@ -243,7 +243,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
 
         // Execute the sql query from sql extractor
         case "sql_extractor" =>
-          log.debug("Executing SQL query: ${task.extractor.sqlQuery}")
+          log.debug("Executing SQL query: " + task.extractor.sqlQuery)
           executeSqlUpdateOrFail(task.extractor.sqlQuery, taskSender)
           // Execute the after script. Fail if the script fails.
           task.extractor.afterScript.foreach {
