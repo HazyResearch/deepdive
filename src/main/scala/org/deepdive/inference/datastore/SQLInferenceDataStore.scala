@@ -406,7 +406,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       executeQuery(createAssignIdFunctionSQL)
       schema.foreach { case(variable, dataType) =>
         val Array(relation, column) = variable.split('.')
-        executeQuery(s"""SELECT fast_seqassign('${relation}', ${idoffset});""")
+        executeQuery(s"""SELECT fast_seqassign('${relation.toLowerCase()}', ${idoffset});""")
         issueQuery(s"""SELECT max(id) FROM ${relation}""") { rs =>
           idoffset = 1 + rs.getLong(1)
         }
@@ -531,7 +531,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
       // handle factor id
       if (usingGreenplum) {
-        executeQuery(s"SELECT fast_seqassign('${querytable}', ${factorid});");
+        executeQuery(s"SELECT fast_seqassign('${querytable.toLowerCase()}', ${factorid});");
       } else {
         execute(s"UPDATE ${querytable} SET id = nextval('${factoridSequence}');")
       }
@@ -570,7 +570,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
           // handle weight id
           if (usingGreenplum) {      
-            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor}', ${cweightid});""")
+            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor.toLowerCase()}', ${cweightid});""")
           } else {
             execute(s"UPDATE ${weighttableForThisFactor} SET id = nextval('${weightidSequence}');")
           }
@@ -628,7 +628,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
           // handle weight id
           if (usingGreenplum) {      
-            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor}', ${cweightid});""")
+            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor.toLowerCase()}', ${cweightid});""")
           } else {
             execute(s"UPDATE ${weighttableForThisFactor} SET id = nextval('${weightidSequence}');")
           }
@@ -659,7 +659,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
           // handle weight id
           if (usingGreenplum) {      
-            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor}', ${cweightid});""")
+            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor.toLowerCase()}', ${cweightid});""")
           } else {
             execute(s"UPDATE ${weighttableForThisFactor} SET id = nextval('${weightidSequence}');")
           }
