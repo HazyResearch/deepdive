@@ -192,8 +192,8 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         inferenceDataStore.init()
         
         // Create table with multinomial data
-        SQL(s"""CREATE TABLE r1(id bigint, weight text,
-          value bigint);""").execute.apply() 
+        SQL(s"""CREATE TABLE r1(weight text,
+          value bigint, id bigint);""").execute.apply() 
         val data = (1 to 100).map { i =>
           Map("id" -> i, "weight" -> s"weight_${i}", "value" -> (i%4))
         }
@@ -228,8 +228,8 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         inferenceDataStore.init()
         
         // Create table with multinomial data
-        SQL(s"""CREATE TABLE r1(id bigint, weight text,
-          value bigint);""").execute.apply() 
+        SQL(s"""CREATE TABLE r1(weight text,
+          value bigint, id bigint);""").execute.apply() 
         val data = (1 to 100).map { i =>
           Map("id" -> i, "weight" -> s"weight_${i%4}", "value" -> (i%4))
         }
