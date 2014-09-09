@@ -83,6 +83,23 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with JdbcDataStore {
       assert(result4 === 100)
     }
 
+    it("""should work with COPY with wildcard in filename""") {
+      SQL(s"""DROP TABLE IF EXISTS loader CASCADE;""").execute.apply()
+      SQL(s"""CREATE TABLE loader(feature text, is_correct boolean, id bigint);""").execute.apply()
+      val tsvFile = getClass.getResource("/dataloader1.tsv").getFile
+      val filePath = new File(tsvFile).getParent() + "/dataloader*.tsv"
+      du.load(filePath, "loader", dbSettings, false)
+      val result1 = SQL(s"""SELECT * FROM loader WHERE id = 0""").map(rs => rs.string("feature")).single.apply().get 
+      val result2 = SQL(s"""SELECT * FROM loader WHERE id = 0""").map(rs => rs.boolean("is_correct")).single.apply().get 
+      val result3 = SQL(s"""SELECT * FROM loader WHERE is_correct = false""").map(rs => rs.string("feature")).single.apply() 
+      val result4 = SQL(s"""SELECT * FROM loader WHERE is_correct = false""").map(rs => rs.int("id")).single.apply().get 
+
+      assert(result1 === "hi")
+      assert(result2 === true)
+      assert(result3 === None)
+      assert(result4 === 100)
+    }
+
     // it("""should work with gpload""") {
     //   SQL(s"""DROP TABLE IF EXISTS loader CASCADE;""").execute.apply()
     //   SQL(s"""CREATE TABLE loader(feature text, is_correct boolean, id bigint);""").execute.apply()
