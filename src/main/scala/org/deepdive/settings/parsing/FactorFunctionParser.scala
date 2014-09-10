@@ -30,9 +30,11 @@ object FactorFunctionParser extends RegexParsers with Logging {
     EqualFactorFunction(List(v1, v2))
   }
 
-  def continuousLRFactorFunction = ("ContinuousLR" | "CONTINUOUSLR") ~> "(" ~> factorVariable ~ ("," ~> factorVariable) <~ ")" ^^ { 
-    case v1 ~ v2 =>
-    ContinuousLRFactorFunction(List(v1, v2))
+  def continuousLRFactorFunction = ("ContinuousLR" | "CONTINUOUSLR") ~ 
+                                   "(" ~ factorVariable ~ "," ~ factorVariable ~ ")[" ~ 
+                                   cardinality ~ "," ~ cardinality ~ "]" ^^ { 
+    case (a ~ b ~ v1 ~ c ~ v2 ~ d ~ v3 ~ e ~ v4 ~f) =>
+    ContinuousLRFactorFunction(List(v1, v2), v3.toInt, v4.toInt)
   }
 
   def isTrueFactorFunction = ("IsTrue" | "ISTRUE") ~> "(" ~> factorVariable <~ ")" ^^ { variable =>
@@ -49,6 +51,10 @@ object FactorFunctionParser extends RegexParsers with Logging {
     case (isNegated ~ varList ~ isArray ~ predicate)  => 
       FactorFunctionVariable(varList.take(varList.size - 1).mkString("."), varList.last, 
         isArray.isDefined, isNegated.isDefined, readLong(predicate))
+  }
+
+  def cardinality = (equalPredicate) ^^ {
+    case (a) => a.toInt
   }
 
   def readLong(predicate: Option[String]) : Option[Long] = {

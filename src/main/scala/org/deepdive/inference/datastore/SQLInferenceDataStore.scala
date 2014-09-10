@@ -396,12 +396,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     // clean up grounding folder (for parallel grounding)
     if (parallelGrounding) {
-      val cleanFile = File.createTempFile(s"clean", ".sh")
-      val writer = new PrintWriter(cleanFile)
-      writer.println(s"rm -rf ${groundingPath}/*")
-      writer.close()
-      log.info("Cleaning up grounding folder...")
-      executeCmd(cleanFile.getAbsolutePath())
+      //val cleanFile = File.createTempFile(s"clean", ".sh")
+      //val writer = new PrintWriter(cleanFile)
+      //writer.println(s"rm -rf ${groundingPath}/*")  // Line 52 of DataUnloader.scala already did this, right?
+      //writer.close()
+      //log.info("Cleaning up grounding folder...")
+      //executeCmd(cleanFile.getAbsolutePath())
     }
 
     // assign variable id - sequential and unique
@@ -586,6 +586,20 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       if (factorDesc.func.getClass.getSimpleName == "ContinuousLRFactorFunction"){
 
         log.info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+
+        var card1 = 0
+        var card2 = 0
+        factorDesc.func match {
+          case ContinuousLRFactorFunction(a,_card1,_card2) => { 
+            card1 = _card1
+            card2 = _card2
+          }
+          case _ => {
+          }
+        }
+        log.info("" + card1)
+        log.info("" + card2)
+
         if (isFixed || weightlist == ""){
           log.error("#########################################")
           log.error("DO NOT SUPPORT FIXED ARRAY WEIGHT FOR NOW")
@@ -615,11 +629,11 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           }
 
           execute(s"""UPDATE ${weighttableForThisFactor} SET
-                    id = ${min_weight_id} + (id - ${min_weight_id})*4096 
+                    id = ${min_weight_id} + (id - ${min_weight_id})*${card1}*${card2} 
             ;""")
 
           issueQuery(s"""SELECT COUNT(*) FROM ${weighttableForThisFactor};""") { rs =>
-            cweightid += rs.getLong(1) * 4096
+            cweightid += rs.getLong(1) * card1 * card2
           }
 
           execute(s""" 
@@ -627,7 +641,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
               CREATE TABLE ${weighttableForThisFactor}_other (addid int);
             """)
 
-          var one_2_4096 = (1 to (4096-1)).map(v => s""" (${v}) """).mkString(", ")
+          var one_2_4096 = (1 to (card1 * card2-1)).map(v => s""" (${v}) """).mkString(", ")
 
           execute(s""" 
               INSERT INTO ${weighttableForThisFactor}_other VALUES ${one_2_4096};
