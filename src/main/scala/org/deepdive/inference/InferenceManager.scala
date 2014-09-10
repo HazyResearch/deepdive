@@ -128,7 +128,7 @@ trait InferenceManager extends Actor with ActorLogging {
     //   }  
     // }  
 
-
+      }
   }
 
 }
