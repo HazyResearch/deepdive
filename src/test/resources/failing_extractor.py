@@ -2,5 +2,5 @@
 
 import sys
 import time
-time.sleep(10)
+time.sleep(6)
 sys.exit(1)
