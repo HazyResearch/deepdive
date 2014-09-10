@@ -95,18 +95,18 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
     it("should work with aggregate data types") {
       insertSampleRow()
       val result = dataStore.queryAsJson(
-        """SELECT key, array_agg(some_text) AS "datatype_test.texts"
+        """SELECT key, array_agg(some_text ORDER BY some_text) AS "datatype_test.texts"
         FROM datatype_test GROUP BY key"""
       )(_.toList)
       assert(result.head.asInstanceOf[JsObject].value == Map[String, JsValue](
         "key" -> JsNumber(1),
-        "datatype_test.texts" -> JsArray(Seq(JsString("Hello"), JsString("Ce")))
+        "datatype_test.texts" -> JsArray(Seq(JsString("Ce"), JsString("Hello")))
       ))
     }
 
     it("should work with simple data types") {
       insertSampleRow()
-      val result = dataStore.queryAsJson("SELECT * from datatype_test")(_.toList)
+      val result = dataStore.queryAsJson("SELECT * from datatype_test WHERE some_text='Hello'")(_.toList)
       assert(result.head.asInstanceOf[JsObject].value == Map[String, JsValue](
         "id" -> JsNumber(1),
         "key" -> JsNumber(1),
