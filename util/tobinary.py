@@ -82,10 +82,5 @@ os.system("cat {0}/dd_factors/dd_factors*edges.bin > {1}/graph.edges".format(INP
 
 
 # clean up folder
-os.system('rm -rf {0}/dd_nedges_'.format(INPUTFOLDER))
-os.system('rm -rf {0}/dd_tmp'.format(INPUTFOLDER))
-os.system('rm -rf {0}/dd_variables'.format(INPUTFOLDER))
-os.system('rm -rf {0}/dd_factors'.format(INPUTFOLDER))
-os.system('rm -rf {0}/dd_factors*'.format(INPUTFOLDER))
-os.system('rm -rf {0}/dd_variables*'.format(INPUTFOLDER))
-os.system('rm -rf {0}/dd_weights'.format(INPUTFOLDER))
+print "Cleaning up files"
+os.system('rm -rf {0}/dd_*'.format(INPUTFOLDER))
