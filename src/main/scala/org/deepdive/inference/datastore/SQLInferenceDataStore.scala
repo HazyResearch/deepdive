@@ -448,8 +448,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       // Create a cardinality table for the variable
       // note we use two-digit fixed-length representation here (may be fixed)
       val cardinalityValues = dataType match {
-        case BooleanType => "('01')"
-        case MultinomialType(x) => (0 to x-1).map (n => s"""('${"%02d".format(n)}')""").mkString(", ")
+        case BooleanType => "('00001')"
+        case MultinomialType(x) => (0 to x-1).map (n => s"""('${"%05d".format(n)}')""").mkString(", ")
       }
       val cardinalityTableName = s"${relation}_${column}_cardinality"
       execute(s"""
@@ -663,7 +663,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
             SELECT id, isfixed, initvalue, cardinality FROM ${weighttableForThisFactor};""")
 
           // use weight id corresponding to cardinality 0 (like C array...)
-          val cardinalityKey = factorDesc.func.variables.map(v => "00").mkString(",")
+          val cardinalityKey = factorDesc.func.variables.map(v => "00000").mkString(",")
 
           // dump factors
           val weightjoinlist = factorDesc.weight.variables.map(v => s""" t0."${v}" = t1."${v}" """).mkString("AND")
