@@ -3,7 +3,7 @@
 # Set username and password
 export PGUSER=${PGUSER:-`whoami`}
 export PGPASSWORD=${PGPASSWORD:-}
-export PGPORT=6432 #${PGPORT:-5432}
+export PGPORT=${PGPORT:-5432}
 export PGHOST=${PGHOST:-localhost}
 export DBNAME=deepdive_test
 export PGDATABASE=$DBNAME  # for testing to work with null settings
