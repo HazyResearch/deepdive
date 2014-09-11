@@ -58,7 +58,7 @@ class BiasedCoin extends FunSpec {
     val weight = SQL("select weight from dd_inference_result_weights;")().head[Double]("weight")
 
     // weight = log(#positive) / log(#negative)
-    assert(weight > 1.98 && weight < 2.18)
+    assert(weight > 1.9 && weight < 2.3)
 
     val inference = SQL("""select count(*) as c from (select expectation from dd_inference_result_variables 
       where expectation > 0.94 or expectation < 0.84) tmp;""")().head[Long]("c")
