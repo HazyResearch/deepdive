@@ -24,7 +24,7 @@ class BiasedCoin extends FunSpec {
         (NULL), (NULL), (NULL), (NULL),
         (NULL);""").execute()
     }
-    // JdbcDataStore.close()
+    JdbcDataStore.close()
   }
 
   def getConfig = {
