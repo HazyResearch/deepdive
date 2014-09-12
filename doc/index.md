@@ -119,6 +119,7 @@ Basics:
 - [Writing inference rules](doc/basics/inference_rules.html)
 - [Inference rule function reference](doc/basics/inference_rule_functions.html)
 - [Generating negative examples](doc/basics/generating_negative_examples.html)
+- [Snowball sampling tutorial](doc/basics/snowball.html)
 - [Running an application](doc/basics/running.html)
 - [Calibration](doc/basics/calibration.html)
 - [Example application walk-through](doc/basics/walkthrough/walkthrough.html)
