@@ -5,19 +5,28 @@ layout: default
 # "Snowball sampling" Tutorial
 
 In this document we describe how to perform *snowball sampling*, a
-**systematic** technique to the quality of the results computed by DeepDive by
-creating more evidence. Indeed, most of the time the information available in
-existing knowledge bases is not sufficient for learning accurately, especially
-as these KBs usually do not contain negative examples.
+**systematic** technique to improve the quality of the results computed by
+DeepDive by creating more evidence. Indeed, most of the time the information
+available in existing knowledge bases is not sufficient for learning accurately,
+especially as these KBs usually do not contain negative examples.
 
-The process involves looking at the edge *weights* of the factor graph and using
-this information for [distant
+The process involves looking at the factor *weights* of the factor graph and
+using this information for [distant
 supervision](../general/distant_supervision.html): by analyzing the most extreme
 weights, we can define new rules to label examples either positively or
-negatively, increasing therefore the amount of evidence available to DeepDive to
-learn the weights. Snowball sampling is therefore a *feedback* component, in
-that it examines the current output of the system to act on the application in
-order to improve the future outputs.
+negatively, increasing therefore the amount of training data available to
+DeepDive to learn the weights. Snowball sampling is therefore a *feedback*
+component, in that it examines the current output of the system to act on the
+application in order to improve the future outputs, as shown in the following
+figure.
+
+<p style="text-align: center;"><img
+src="{{site.baseurl}}/assets/snowball_schema.png" alt="Snowball Data flow"
+style="width: 75%; text-align: center;"/>
+  <br />
+  <strong>Figure 1: Snowball sampling as feedback component</strong>
+</p>
+
 
 In this document we assume to have a table `gene_mentions` that contains
 candidate mentions of gene and was populated by an extractor. The schema of the
@@ -84,12 +93,11 @@ lowest weights, using the following queries:
 ```sql
 SELECT t1.gene_feature, t0.weight
 FROM dd_inference_result_weights t0, dd_weights_classify_gene_mentions t1
-WHERE t0.id = t1.id AND weight < 50 AND weight > 0 ORDER BY weight DESC LIMIT 1000;
+WHERE t0.id = t1.id AND weight > 0 ORDER BY weight DESC LIMIT 1000;
 ```
 
 This query returns a list of the 1000 features with the highest computed weight
-sorted in descending ("< 50" is effectively infinite in DeepDive terms),
-similar to the following:
+sorted in descending, similar to the following:
 
 ```
          gene_feature              |      weight
@@ -103,12 +111,13 @@ similar to the following:
  ...
 ```
 
-Similarly, the following query returns the 1000 features with lowest weight:
+Similarly, the following query returns the 1000 features with lowest negative
+weight:
 
 ```sql
 SELECT t1.gene_feature, t0.weight
 FROM dd_inference_result_weights t0, dd_weights_classify_gene_mentions t1
-WHERE t0.id = t1.id AND weight > -50 AND weight < 0 ORDER BY weight ASC LIMIT 1000;
+WHERE t0.id = t1.id AND weight < 0 ORDER BY weight ASC LIMIT 1000;
 ```
 
 ```
