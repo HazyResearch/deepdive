@@ -26,7 +26,7 @@ env:
     - LD_LIBRARY_PATH=/tmp/dw_linux/lib/dw_linux/lib:/tmp/dw_linux/lib/dw_linux/lib64
 notifications:
   email:
-    - deepdive-dev@lists.stanford.edu
+    - czhang@cs.wisc.edu
 before_script:
   - unzip lib/dw_linux.zip -d /tmp/
   - psql -c 'create database deepdive_test;' -U postgres
