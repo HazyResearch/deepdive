@@ -42,8 +42,13 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
     try pw.write(s) finally pw.close()
   }
 
+  var inited = false
+
   before {
-    JdbcDataStore.init()
+    if(!inited){
+      JdbcDataStore.init()
+      inited = true
+    }
     dataStore.init()
     dataStore.ds.DB.autoCommit { implicit session =>
       SQL("drop schema if exists public cascade; create schema public;").execute.apply()
@@ -52,7 +57,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
   } 
 
   after {
-    JdbcDataStore.close()
+    //JdbcDataStore.close()
   }
 
   def this() = this(ActorSystem("ExtractorRunnerSpec"))
