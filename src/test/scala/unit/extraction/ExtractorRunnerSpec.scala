@@ -219,6 +219,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
     
     it("should fail if after script is not executable"){
 
+      execute(dataStore.ds, "create table testtable ( a text );")
+
       val t = java.io.File.createTempFile("test", ".sh")
       val t2 = java.io.File.createTempFile("test", ".tsv")
       val t3 = java.io.File.createTempFile("test", ".py")
