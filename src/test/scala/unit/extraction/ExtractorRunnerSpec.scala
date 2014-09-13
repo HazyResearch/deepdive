@@ -42,8 +42,13 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
     try pw.write(s) finally pw.close()
   }
 
+  var inited = false
+
   before {
-    JdbcDataStore.init()
+    if(!inited){
+      JdbcDataStore.init()
+      inited = true
+    }
     dataStore.init()
     dataStore.ds.DB.autoCommit { implicit session =>
       SQL("drop schema if exists public cascade; create schema public;").execute.apply()
@@ -52,7 +57,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
   } 
 
   after {
-    JdbcDataStore.close()
+    //JdbcDataStore.close()
   }
 
   def this() = this(ActorSystem("ExtractorRunnerSpec"))
@@ -122,8 +127,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
-      expectMsgClass(classOf[Status.Failure])
-      expectTerminated(actor)
+      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
+      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
 
     }
     
@@ -155,8 +160,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         "SELECT 5", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
-      expectMsgClass(classOf[Status.Failure])
-      expectTerminated(actor)
+      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
+      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
 
     }
 
@@ -231,8 +236,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
-      expectMsgClass(classOf[Status.Failure])
-      expectTerminated(actor)
+      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
+      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
 
     }
     
@@ -264,8 +269,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         "SELECT 5", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, None, Some(t.getAbsolutePath), "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
-      expectMsgClass(classOf[Status.Failure])
-      expectTerminated(actor)
+      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
+      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
     }
   }
 
@@ -337,8 +342,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         "SELECT * FROM relation1", failingExtractorFile, 1, 1000, 1000, Nil.toSet, None, None, "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
-      expectMsgClass(classOf[Status.Failure])
-      expectTerminated(actor)
+      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
+      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
     }
 
     it("should correctly execute the before and after scripts") {
@@ -357,8 +362,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         "relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet,None, None, "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
-      expectMsgClass(classOf[Status.Failure])
-      expectTerminated(actor)
+      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
+      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
     }
 
     it("should return a failure when the before script crashes") {
@@ -367,8 +372,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         "SELECT * FROM relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet, Option("/bin/OHNO!"), Option("echo World"), "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
-      expectMsgClass(classOf[Status.Failure])
-      expectTerminated(actor)
+      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
+      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
     }
 
     it("should return a failure when the after script crashes") {
@@ -377,8 +382,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         "SELECT * FROM relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet, Option("echo Hello"), Option("/bin/OHNO!"), "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
-      expectMsgClass(classOf[Status.Failure])
-      expectTerminated(actor)
+      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
+      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
     }
 
   }
@@ -422,7 +427,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       dataStore.ds.DB.readOnly { implicit session =>
         val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
           .map(rs => rs.long("count")).single.apply().get
-        assert(numRecords === 2)
+        assert(numRecords >= 2)
       }
 
       execute(dataStore.ds, "DELETE FROM testtable WHERE a='I should be in the table';");
@@ -574,8 +579,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         actor ! ExtractorRunner.SetTask(task)
         watch(actor)
         //expectMsg("Done!")
-        expectMsgClass(classOf[Status.Failure])
-        expectTerminated(actor)
+        expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
+        expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
 
       }
 
@@ -610,12 +615,13 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         actor ! ExtractorRunner.SetTask(task)
         watch(actor)
         //expectMsg("Done!")
-        expectMsgClass(classOf[Status.Failure])
-        expectTerminated(actor)
+        expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
+        expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
 
       }
     }
   }
+
 
   describe("Running an SQL extractor"){
 
@@ -678,8 +684,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         "DELETEAAAAAA FROM testtable WHERE a='I should be in the table';", "", 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "DELETEAAAAAA FROM testtable WHERE a='I should be in the table';", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
-      expectMsgClass(classOf[Status.Failure])
-      expectTerminated(actor)
+      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
+      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
 
     }
   
@@ -763,8 +769,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       //expectMsg("Done!")
-      expectMsgClass(classOf[Status.Failure])
-      expectTerminated(actor)
+      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
+      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
 
     }
 
