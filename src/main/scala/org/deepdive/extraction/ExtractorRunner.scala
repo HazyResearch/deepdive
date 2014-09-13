@@ -461,7 +461,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
         log.error(exception.toString) 
         failureReceiver ! Status.Failure(exception)
         context.stop(self)
-        throw new RuntimeException(exception.toString)
+        //throw new RuntimeException(exception.toString)
     }
   }
 
