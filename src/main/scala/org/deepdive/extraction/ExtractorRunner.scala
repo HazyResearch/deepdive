@@ -211,7 +211,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
           val linesPerSplit = task.extractor.inputBatchSize
           val splitCmd = s"split -a 10 -l ${linesPerSplit} " + queryOutputFile.getAbsolutePath() + s" ${splitPrefix}"
 
-          log.info(s"Executing split command: ${splitCmd}")
+          log.info(s"Executing split command...")
           executeScriptOrFail(splitCmd, taskSender)
 
           // val maxParallel = "0"  // As many as possible, which is dangerous
@@ -237,8 +237,8 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
               SELECT version() LIKE '%Greenplum%';
             """
 
-
-          val writebackPrefix = s"find ${splitPrefix}*.out -print0 | xargs -0" + 
+          // TODO merge this -name change to the master code
+          val writebackPrefix = s"find ${fpath} -name '${fname}-*.out' -print0 | xargs -0" + 
                   s" -P 1 -L 1 bash -c ";
           // Only allow single-threaded copy
           val writebackCmd = dbtype match {
@@ -271,20 +271,19 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
           executeSqlUpdateOrFail(s"${sqlAnalyzeCommand} ${outputRel};", taskSender)
 
 
-          // TODO DEBUG
-          // log.info("Removing temporary files...")
-          // queryOutputFile.delete()
+           log.info("Removing temporary files...")
+           queryOutputFile.delete()
           
-          // val delCmd = s"find ${fpath} -name '${fname}*' 2>/dev/null -print0 | xargs -0 rm -f"
-          // log.info(s"Executing: ${delCmd}")
-          // val delTmpFile = new File(queryOutputPath + s"exec_delete.sh")
-          // // val delTmpFile = File.createTempFile(s"exec_delete", ".sh")
-          // val delWriter = new PrintWriter(delTmpFile)
-          // delWriter.println(s"${delCmd}")
-          // delWriter.close()
-          // executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
-          // executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
-          // delTmpFile.delete()
+           val delCmd = s"find ${fpath} -name '${fname}*' 2>/dev/null -print0 | xargs -0 rm -f"
+           log.info(s"Executing: ${delCmd}")
+           val delTmpFile = new File(queryOutputPath + s"exec_delete.sh")
+           // val delTmpFile = File.createTempFile(s"exec_delete", ".sh")
+           val delWriter = new PrintWriter(delTmpFile)
+           delWriter.println(s"${delCmd}")
+           delWriter.close()
+           executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
+           executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
+           delTmpFile.delete()
 
 
           // Execute the after script. Fail if the script fails.
