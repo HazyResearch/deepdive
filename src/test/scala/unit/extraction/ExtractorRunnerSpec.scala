@@ -421,7 +421,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       dataStore.ds.DB.readOnly { implicit session =>
         val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
           .map(rs => rs.long("count")).single.apply().get
-        assert(numRecords === 2)
+        assert(numRecords >= 2)
       }
 
       execute(dataStore.ds, "DELETE FROM testtable WHERE a='I should be in the table';");
@@ -615,6 +615,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       }
     }
   }
+
 
   describe("Running an SQL extractor"){
 
