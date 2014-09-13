@@ -14,7 +14,8 @@ import scala.concurrent.duration._
 object Context extends Logging {
 
   lazy val system = ActorSystem("deepdive")
-  var outputDir = "out"
+  var outputDir = "out"  
+  // This needs to be variable since we might reassign it in relearnFrom feature
 
   def shutdown(exitValue: Int = 0) {
     JdbcDataStore.close()

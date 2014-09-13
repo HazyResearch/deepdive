@@ -36,7 +36,8 @@ CREATE TABLE has_spouse(
   description text,
   is_true boolean,
   relation_id text, -- unique identifier for has_spouse
-  id bigint   -- reserved for DeepDive
+  id bigint NOT NULL AUTO_INCREMENT,   -- reserved for DeepDive
+  PRIMARY KEY (id)
   );
 
 DROP TABLE IF EXISTS has_spouse_features CASCADE;
