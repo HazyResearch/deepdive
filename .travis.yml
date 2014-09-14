@@ -23,7 +23,7 @@ env:
     - PGPORT=5432
     - PGHOST=localhost
     - DBNAME=deepdive_test
-    - LD_LIBRARY_PATH=/tmp/dw_linux/lib/dw_linux/lib:/tmp/dw_linux/lib/dw_linux/lib64
+    - LD_LIBRARY_PATH=/tmp/dw_linux/lib:/tmp/dw_linux/lib64
 notifications:
   email:
     - deepdive-dev@lists.stanford.edu
