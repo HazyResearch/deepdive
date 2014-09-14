@@ -105,22 +105,27 @@ class DataLoader extends JdbcDataStore with Logging {
   def load(filepath: String, tablename: String, dbSettings: DbSettings, usingGreenplum: Boolean) : Unit = {
     if (usingGreenplum) {
       val loadyaml = File.createTempFile(s"gpload", ".yml")
+      val gpload_setting = s"""
+        |VERSION: 1.0.0.1
+        |DATABASE: ${dbSettings.dbname}
+        |USER: ${dbSettings.user}
+        |HOST: ${dbSettings.host}
+        |PORT: ${dbSettings.port}
+        |GPLOAD:
+        |   INPUT:
+        |      - MAX_LINE_LENGTH: 3276800
+        |      - SOURCE:
+        |         FILE:
+        |            - ${filepath}
+        |      - FORMAT: text
+        |      - DELIMITER: E'\\t'
+        |      - ERROR_LIMIT: 10000000
+        |   OUTPUT:
+        |      - TABLE: ${tablename}
+      """.stripMargin
+
       val gploadwriter = new PrintWriter(loadyaml)
-      gploadwriter.println(s"""
-        VERSION: 1.0.0.1
-        DATABASE: ${dbSettings.dbname}
-        USER: ${dbSettings.user}
-        HOST: ${dbSettings.host}
-        PORT: ${dbSettings.port}
-        GPLOAD:
-          INPUT:
-            - SOURCE:
-              FILE:
-                - ${filepath}
-            - FORMAT: text
-            - DELIMITER: '\\t'
-        OUTPUT:
-          - TABLE: ${tablename}""")
+      gploadwriter.println(gpload_setting)
       gploadwriter.close()
 
       val cmdfile = File.createTempFile(s"gpload", ".sh")
