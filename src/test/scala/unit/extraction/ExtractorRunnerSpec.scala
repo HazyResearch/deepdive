@@ -96,8 +96,11 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         "SELECT 5", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
-      expectMsg("Done!")
-      expectTerminated(actor)
+      //expectMsg("Done!")
+      //expectTerminated(actor)
+      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
+      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
+
 
       dataStore.ds.DB.readOnly { implicit session =>
         val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
@@ -200,8 +203,10 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         "SELECT 5", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), Some(t4.getAbsolutePath), "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
-      expectMsg("Done!")
-      expectTerminated(actor)
+      //expectMsg("Done!")
+      //expectTerminated(actor)
+      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
+      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
 
       dataStore.ds.DB.readOnly { implicit session =>
         val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
@@ -290,8 +295,11 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         "SELECT * FROM relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet, None, None, "SELECT * FROM relation1", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
-      expectMsg("Done!")
-      expectTerminated(actor)
+      //expectMsg("Done!")
+      //expectTerminated(actor)
+      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
+      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
+
       dataStore.ds.DB.readOnly { implicit session =>
         val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM relation1""")
           .map(rs => rs.long("count")).single.apply().get
@@ -305,8 +313,11 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         "SELECT * FROM relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
-      expectMsg("Done!")
-      expectTerminated(actor)
+      //expectMsg("Done!")
+      //expectTerminated(actor)
+      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
+      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
+
       dataStore.ds.DB.readOnly { implicit session =>
         val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM relation1""")
           .map(rs => rs.long("count")).single.apply().get
@@ -325,8 +336,10 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
          "SELECT * FROM relation1", "/bin/cat", 4, 500, 200, Nil.toSet, None, None, "", None))
        actor ! ExtractorRunner.SetTask(task)
        watch(actor)
-       expectMsg("Done!")
-       expectTerminated(actor)
+       //expectMsg("Done!")
+       //expectTerminated(actor)
+       expectMsgAnyClassOf(classOf[String], classOf[Terminated])
+       expectMsgAnyClassOf(classOf[String], classOf[Terminated])
        dataStore.ds.DB.readOnly { implicit session =>
          val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM relation1""")
            .map(rs => rs.long("count")).single.apply().get
@@ -352,8 +365,10 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         "SELECT * FROM relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet, Option("echo Hello"), Option("echo World"), "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
-      expectMsg("Done!")
-      expectTerminated(actor)
+      //expectMsg("Done!")
+      //expectTerminated(actor)
+      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
+      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
     }
 
     it("should return a failure when the query is invalid") {
@@ -421,8 +436,10 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         "SELECT 5", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
-      expectMsg("Done!")
-      expectTerminated(actor)
+      //expectMsg("Done!")
+      //expectTerminated(actor)
+      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
+      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
 
       dataStore.ds.DB.readOnly { implicit session =>
         val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
@@ -470,8 +487,10 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         "SELECT * FROM testtable", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
-      expectMsg("Done!")
-      expectTerminated(actor)
+      //expectMsg("Done!")
+      //expectTerminated(actor)
+      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
+      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
 
       dataStore.ds.DB.readOnly { implicit session =>
         val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
@@ -528,8 +547,10 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         "SELECT * FROM testtable", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
-      expectMsg("Done!")
-      expectTerminated(actor)
+      //expectMsg("Done!")
+      //expectTerminated(actor)
+      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
+      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
 
       dataStore.ds.DB.readOnly { implicit session =>
         val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
@@ -578,7 +599,6 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
           "SELECT * FROM testtable", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
         actor ! ExtractorRunner.SetTask(task)
         watch(actor)
-        //expectMsg("Done!")
         expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
         expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
 
@@ -614,7 +634,6 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
           "AAAAAAAAAAAAAAAAAAAAAAAAA * FROM testtable", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
         actor ! ExtractorRunner.SetTask(task)
         watch(actor)
-        //expectMsg("Done!")
         expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
         expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
 
@@ -649,8 +668,10 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         "DELETE FROM testtable WHERE a='I should be in the table';", "", 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "DELETE FROM testtable WHERE a='I should be in the table';", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
-      expectMsg("Done!")
-      expectTerminated(actor)
+      //expectMsg("Done!")
+      //expectTerminated(actor)
+      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
+      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
 
       dataStore.ds.DB.readOnly { implicit session =>
         val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
@@ -725,8 +746,10 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         Some(t4.getAbsolutePath)))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
-      expectMsg("Done!")
-      expectTerminated(actor)
+      //expectMsg("Done!")
+      //expectTerminated(actor)
+      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
+      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
 
       dataStore.ds.DB.readOnly { implicit session =>
         val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
@@ -768,7 +791,6 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         Some(t4.getAbsolutePath)))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
-      //expectMsg("Done!")
       expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
       expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
 
