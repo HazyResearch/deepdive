@@ -10,6 +10,8 @@ install:
   - sudo pip install linkchecker --use-mirrors
   # Install jekyll for "make serve" local hosting
   - gem install jekyll
+  # install gnuplot
+  - sudo apt-get install gnuplot
 jdk:
   - openjdk7
   - oraclejdk7
