@@ -196,7 +196,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     DROP TABLE IF EXISTS ${VariableResultTable} CASCADE; 
     CREATE TABLE ${VariableResultTable}(
       id bigint, 
-      category bigint, 
+      _dd_category bigint, 
       expectation double precision);
   """
 
@@ -216,7 +216,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   def createInferenceViewSQL(relationName: String, columnName: String) = s"""
     CREATE VIEW ${relationName}_${columnName}_inference AS
-    (SELECT ${relationName}.*, mir.category, mir.expectation FROM
+    (SELECT ${relationName}.*, mir._dd_category, mir.expectation FROM
     ${relationName}, ${VariableResultTable} mir
     WHERE ${relationName}.id = mir.id
     ORDER BY mir.expectation DESC);
@@ -259,9 +259,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
     (SELECT bucket, COUNT(*) AS num_variables from ${bucketedView} GROUP BY bucket) b1
     LEFT JOIN (SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
-      WHERE ${columnName} = category GROUP BY bucket) b2 ON b1.bucket = b2.bucket
+      WHERE ${columnName} = _dd_category GROUP BY bucket) b2 ON b1.bucket = b2.bucket
     LEFT JOIN (SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView} 
-      WHERE ${columnName} != category GROUP BY bucket) b3 ON b1.bucket = b3.bucket 
+      WHERE ${columnName} != _dd_category GROUP BY bucket) b3 ON b1.bucket = b3.bucket 
     ORDER BY b1.bucket ASC;
   """
 
@@ -634,6 +634,10 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
           issueQuery(s"""SELECT COUNT(*) FROM ${weighttableForThisFactor};""") { rs =>
             cweightid += rs.getLong(1) * card1 * card2
+          }
+
+          if (!usingGreenplum) {  
+            execute(s"""ALTER SEQUENCE ${weightidSequence} RESTART WITH ${cweightid};""")
           }
 
           execute(s""" 

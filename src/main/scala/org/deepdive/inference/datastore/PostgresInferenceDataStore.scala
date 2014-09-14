@@ -39,7 +39,7 @@ trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent
       val variableResultStr = deserializier.getVariables(variablesFile).map { v =>
         s"${v.variableId}\t${v.category}\t${v.expectation}"
       }.mkString("\n")
-      PostgresDataStore.copyBatchData(s"COPY ${VariableResultTable}(id, category, expectation) FROM STDIN",
+      PostgresDataStore.copyBatchData(s"COPY ${VariableResultTable}(id, _dd_category, expectation) FROM STDIN",
         new java.io.StringReader(variableResultStr))
     }
   }
