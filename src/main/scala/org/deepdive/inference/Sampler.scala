@@ -33,7 +33,19 @@ class Sampler extends Actor with ActorLogging {
       // Depending on the exit value we return success or throw an exception
       exitValue match {
         case 0 => sender ! Success()
-        case _ => throw new RuntimeException("sampling failed (see error log for more details)")
+        case _ => {
+          import scala.sys.process._
+          import java.lang.management
+          import sun.management.VMManagement;
+          import java.lang.management.ManagementFactory;
+          import java.lang.management.RuntimeMXBean;
+          import java.lang.reflect.Field;
+          import java.lang.reflect.Method;
+          var pid = ManagementFactory.getRuntimeMXBean().getName().toString
+          val pattern = """\d+""".r
+          pattern.findAllIn(pid).foreach(id => s"kill -9 ${id}".!)
+          // throw new RuntimeException("sampling failed (see error log for more details)")
+        }
       }
   }
 
