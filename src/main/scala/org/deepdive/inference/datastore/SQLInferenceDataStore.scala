@@ -708,19 +708,23 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   }
 
-  def bulkCopyWeights(weightsFile: String) : Unit
-  def bulkCopyVariables(variablesFile: String) : Unit
+  //def bulkCopyWeights(weightsFile: String) : Unit
+  //def bulkCopyVariables(variablesFile: String) : Unit
+
+  def bulkCopyWeights(weightsFile: String, dbSettings: DbSettings) : Unit
+  def bulkCopyVariables(variablesFile: String, dbSettings: DbSettings) : Unit
 
   def writebackInferenceResult(variableSchema: Map[String, _ <: VariableDataType],
-    variableOutputFile: String, weightsOutputFile: String, parallelGrounding: Boolean) = {
+    //variableOutputFile: String, weightsOutputFile: String, parallelGrounding: Boolean) = {
+    variableOutputFile: String, weightsOutputFile: String, parallelGrounding: Boolean, dbSettings: DbSettings) = {
 
     execute(createInferenceResultSQL)
     execute(createInferenceResultWeightsSQL)
 
     log.info("Copying inference result weights...")
-    bulkCopyWeights(weightsOutputFile)
+    bulkCopyWeights(weightsOutputFile, dbSettings)
     log.info("Copying inference result variables...")
-    bulkCopyVariables(variableOutputFile)
+    bulkCopyVariables(variableOutputFile, dbSettings)
     log.info("Creating indicies on the inference result...")
     execute(createInferenceResultIndiciesSQL)
 

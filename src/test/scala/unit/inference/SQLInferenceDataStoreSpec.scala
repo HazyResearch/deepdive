@@ -324,7 +324,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         inferenceDataStore.init()
         inferenceDataStore.groundFactorGraph(Map(), Seq(), 0.0, None, false, "", dbSettings, false)
         SQL(s"""create table has_spouse(id ${inferenceDataStore.keyType} primary key, is_true boolean)""").execute.apply()
-        inferenceDataStore.writebackInferenceResult(schema, variablesFile, weightsFile, false)
+        inferenceDataStore.writebackInferenceResult(schema, variablesFile, weightsFile, false, dbSettings)
       }
 
     }

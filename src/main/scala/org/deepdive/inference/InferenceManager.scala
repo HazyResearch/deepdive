@@ -120,7 +120,7 @@ trait InferenceManager extends Actor with ActorLogging {
     samplingResult.map { x =>
       inferenceDataStore.writebackInferenceResult(
       variableSchema, SamplingOutputFile.getCanonicalPath, 
-      SamplingOutputFileWeights.getCanonicalPath, parallelGrounding)
+      SamplingOutputFileWeights.getCanonicalPath, parallelGrounding, dbSettings)
     }  
   }
 
