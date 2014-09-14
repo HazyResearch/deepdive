@@ -61,7 +61,8 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
   
   // Branch by database driver type (temporary solution)
   val dbtype = dbSettings.driver match {
-    case "org.postgresql.Driver" => "postgres"
+    // TODO create a global enum
+    case "org.postgresql.Driver" => "psql"
     case "com.mysql.jdbc.Driver" => "mysql"
   }
 
@@ -75,7 +76,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
   val dbnameStr = dbname match {
     case null => ""
     case _ => dbtype match {
-      case "postgres" => s" -d ${dbname} "
+      case "psql" => s" -d ${dbname} "
       case "mysql" => s" ${dbname} " // can also use -D but mysqlimport does not support -D
     }
   }
@@ -83,7 +84,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
   val dbuserStr = dbuser match {
     case null => ""
     case _ => dbtype match {
-      case "postgres" => s" -U ${dbuser} "
+      case "psql" => s" -U ${dbuser} "
       case "mysql" => dbpassword match { // see if password is empty
         case null => s" -u ${dbuser} "
         case "" => s" -u ${dbuser} "
@@ -94,7 +95,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
   val dbportStr = dbport match {
     case null => ""
     case _ => dbtype match {
-      case "postgres" => s" -p ${dbport} "
+      case "psql" => s" -p ${dbport} "
       case "mysql" => s" -P ${dbport} "
     }
   }
@@ -103,12 +104,12 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
     case _ => s" -h ${dbhost} "
   }
   val sqlQueryPrefix = dbtype match {
-    case "postgres" => "psql " + dbnameStr + dbuserStr + dbportStr + dbhostStr
+    case "psql" => "psql " + dbnameStr + dbuserStr + dbportStr + dbhostStr
     case "mysql" => "mysql " + dbnameStr + dbuserStr + dbportStr + dbhostStr
   }
   
   val sqlAnalyzeCommand = dbtype match {
-    case "postgres" => "ANALYZE "
+    case "psql" => "ANALYZE "
     case "mysql" => "ANALYZE TABLE "
   } 
 
@@ -147,7 +148,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
       task.extractor.style match {
 
         case "json_extractor" =>
-          if (dbtype != "postgres") {
+          if (dbtype != "psql") {
             failTask(s"do not support ${task.extractor.style} on ${dbtype}.", taskSender)
           }
           
@@ -178,8 +179,9 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
           val queryOutputPath = Context.outputDir + s"/tmp/"
           log.info(queryOutputPath)
           val success = (new File(queryOutputPath)).mkdirs()
-          if (!success)
-            log.error("TSV extractor directory creation failed!")
+          // This is common, since you try to create the directory at every extractor. TODO refactor this.
+          // if (!success)
+          //   log.error("TSV extractor directory already exists!")
 
           // NEW: for mysqlimport compatibility, the file basename must be same as table name. 
           val queryOutputFile = new File(queryOutputPath + s"${outputRel}.copy_query_${funcName}.tsv")
@@ -189,7 +191,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
 
           // Single-thread copy to a file
           val copyQuery = dbtype match {
-            case "postgres" => "COPY (" + s"${inputQuery}".replaceAll("""(?m)[;\s\n]+$""", "") + ") TO STDOUT;"
+            case "psql" => "COPY (" + s"${inputQuery}".replaceAll("""(?m)[;\s\n]+$""", "") + ") TO STDOUT;"
 
             //TODO: cannot overwrite existing file
             // mysql -u root -D test -e "select * from name into outfile '/tmp/tmpa.tsv'"
@@ -242,7 +244,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
                   s" -P 1 -L 1 bash -c ";
           // Only allow single-threaded copy
           val writebackCmd = dbtype match {
-            case "postgres" => writebackPrefix + s"'psql -d ${dbname} -U ${dbuser} " + 
+            case "psql" => writebackPrefix + s"'psql -d ${dbname} -U ${dbuser} " + 
                         s"-p ${dbport} -h ${dbhost} -c " + 
                         "\"COPY " + 
                         s"${outputRel} FROM STDIN;" + // weak matching 
@@ -329,7 +331,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
 
         case "plpy_extractor" =>
           
-          if (dbtype != "postgres") {
+          if (dbtype != "psql") {
             failTask(s"do not support ${task.extractor.style} on ${dbtype}.", taskSender)
           }
 
@@ -555,7 +557,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
    */
   def executeSqlUpdateOrFail(sqlQuery: String, failureReceiver: ActorRef) {
     dbtype match {
-      case "postgres" =>
+      case "psql" =>
         Try(dataStore.queryUpdate(sqlQuery)) match {
           case Success(_) =>
           case Failure(ex) =>
@@ -588,11 +590,8 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
       case _ => " > " + pipeOutFilePath
     }
     
-    // TODO this seems a issue to use 3 """ in bash...
-//    val cmd =  sqlQueryPrefix + " -c " + "\"\"\"" + query + "\"\"\"" + pipeOutStr
-    
     val cmd = dbtype match {
-      case "postgres" => sqlQueryPrefix + " -c " + "\"\"\"" + query + "\"\"\"" + pipeOutStr
+      case "psql" => sqlQueryPrefix + " -c " + "\"" + query + "\"" + pipeOutStr
       case "mysql" => sqlQueryPrefix + " --silent -e " + "\"" + query + "\"" + pipeOutStr
       // TODO what happens if " is in query?
     } 
@@ -603,7 +602,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
     executeScriptOrFail(file.getAbsolutePath(), failureReceiver)
     // executeScriptOrFail(cmd, failureReceiver)
     
-    // executeCmd(s"psql -d ${dbname} -c " + "\"\"\"" + query + "\"\"\"")
+    // executeCmd(s"psql -d ${dbname} -c " + "\"" + query + "\"")
   }
 
   def executeSqlFileOrFail(filename: String, failureReceiver: ActorRef) { 

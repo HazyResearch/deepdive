@@ -28,6 +28,13 @@ trait SQLInferenceDataStoreComponent extends InferenceDataStoreComponent {
 trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   def ds : JdbcDataStore
+  def dbSettings : DbSettings
+  val usingMysql = dbSettings.driver.equals("com.mysql.jdbc.Driver")
+
+  val dbType = usingMysql match {
+    case true => "mysql"
+    case false => "psql"
+  }
 
   val factorOffset = new java.util.concurrent.atomic.AtomicLong(0)
 
@@ -58,7 +65,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         
       case "psql" =>
         s"""DROP SEQUENCE IF EXISTS ${seqName} CASCADE;
-        	CREATE SEQUENCE ${seqName} MINVALUE -1 START 0;"""
+          CREATE SEQUENCE ${seqName} MINVALUE -1 START 0;"""
     }
   }
   def nextVal(seqName: String, dbType: String) = {
@@ -85,6 +92,22 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         s"""${expr.toString()}::${toType}"""
     }
   }
+  
+  /**
+   * Given a string column name, Get a quoted version dependent on DB.
+   * @param dbType:
+   *          if psql, return "column" 
+   *          if mysql, return `column`
+   */
+  def quoteColumn(column: String, dbType: String) = {
+    dbType match {
+      case "mysql" =>
+        '`' + column + '`'
+      case "psql" =>
+        '"' + column + '"'
+    }
+  }
+  
 
   def getFactorFunctionTypeid(functionName: String) = {
     functionName match {
@@ -118,7 +141,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
       java.sql.ResultSet.CONCUR_UPDATABLE)
     try {
-      """;\s+""".r.split(sql.trim()).filterNot(_.isEmpty).foreach(q => 
+      // changed \s+ to \s* here.
+      """;\s*""".r.split(sql.trim()).filterNot(_.isEmpty).foreach(q => 
         conn.prepareStatement(q.trim()).executeUpdate)
     } catch {
       // SQL cmd exception
@@ -246,15 +270,22 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       weight double precision);
   """
 
-  def createInferenceResultIndiciesSQL = s"""
+  def createInferenceResultIndiciesPsql = s"""
     DROP INDEX IF EXISTS ${WeightResultTable}_idx CASCADE;
     DROP INDEX IF EXISTS ${VariableResultTable}_idx CASCADE;
     CREATE INDEX ${WeightResultTable}_idx ON ${WeightResultTable} (weight);
     CREATE INDEX ${VariableResultTable}_idx ON ${VariableResultTable} (expectation);
   """
+    
+  def createInferenceResultIndiciesMysql = s"""
+    DROP INDEX IF EXISTS ${WeightResultTable}_idx ON ${WeightResultTable};
+    DROP INDEX IF EXISTS ${VariableResultTable}_idx ON ${VariableResultTable};
+    CREATE INDEX ${WeightResultTable}_idx ON ${WeightResultTable} (weight);
+    CREATE INDEX ${VariableResultTable}_idx ON ${VariableResultTable} (expectation);
+  """
 
   def createInferenceViewSQL(relationName: String, columnName: String) = s"""
-    CREATE VIEW ${relationName}_${columnName}_inference AS
+    CREATE OR REPLACE VIEW ${relationName}_${columnName}_inference AS
     (SELECT ${relationName}.*, mir.category, mir.expectation FROM
     ${relationName}, ${VariableResultTable} mir
     WHERE ${relationName}.id = mir.id
@@ -265,44 +296,109 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     val bucketCaseStatement = buckets.zipWithIndex.map { case(bucket, index) =>
       s"WHEN expectation >= ${bucket.from} AND expectation <= ${bucket.to} THEN ${index}"
     }.mkString("\n")
-    s"""CREATE VIEW ${name} AS
+    s"""CREATE OR REPLACE VIEW ${name} AS
       SELECT ${inferenceViewName}.*, CASE ${bucketCaseStatement} END bucket
       FROM ${inferenceViewName} ORDER BY bucket ASC;"""
   }
 
-  def createCalibrationViewBooleanSQL(name: String, bucketedView: String, columnName: String) =  s"""
-    CREATE VIEW ${name} AS
-    SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
-    (SELECT bucket, COUNT(*) AS num_variables from ${bucketedView} GROUP BY bucket) b1
-    LEFT JOIN (SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
-      WHERE ${columnName}=true GROUP BY bucket) b2 ON b1.bucket = b2.bucket
-    LEFT JOIN (SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView} 
-      WHERE ${columnName}=false GROUP BY bucket) b3 ON b1.bucket = b3.bucket 
-    ORDER BY b1.bucket ASC;
-  """
+  /**
+   * Note that mysql cannot have nested views. 
+   * This utility creates a subquery for nesting views for mysql.
+   * The view will be named to "NAME_sub".
+   */
+  def createSubQueryForCalibrationViewMysql(name: String, bucketedView: String) =
+    s"""CREATE OR REPLACE VIEW ${name}_sub1 AS 
+        SELECT bucket, COUNT(*) AS num_variables from ${bucketedView} GROUP BY bucket;
+      """
+        
+  def createCalibrationViewBooleanSQL(name: String, bucketedView: String, columnName: String) = dbType match {
+    case "psql" => s"""
+      CREATE OR REPLACE VIEW ${name} AS
+      SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
+      (SELECT bucket, COUNT(*) AS num_variables from ${bucketedView} GROUP BY bucket) b1
+      LEFT JOIN (SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
+        WHERE ${columnName}=true GROUP BY bucket) b2 ON b1.bucket = b2.bucket
+      LEFT JOIN (SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView} 
+        WHERE ${columnName}=false GROUP BY bucket) b3 ON b1.bucket = b3.bucket 
+      ORDER BY b1.bucket ASC;
+      """
+    case "mysql" => s"""
+      ${createSubQueryForCalibrationViewMysql(name, bucketedView)}
+      CREATE OR REPLACE VIEW ${name}_sub2 AS SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
+          WHERE ${columnName}=true GROUP BY bucket;
+          
+      CREATE OR REPLACE VIEW ${name}_sub3 AS SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView} 
+          WHERE ${columnName}=false GROUP BY bucket;
+          
+      CREATE OR REPLACE VIEW ${name} AS
+        SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
+        ${name}_sub1 b1
+        LEFT JOIN ${name}_sub2 b2 ON b1.bucket = b2.bucket
+        LEFT JOIN ${name}_sub3 b3 ON b1.bucket = b3.bucket 
+        ORDER BY b1.bucket ASC;
+      """
 
+  } 
+  
   // TODO
-  def WRONGcreateCalibrationViewRealNumberSQL(name: String, bucketedView: String, columnName: String) =  s"""
-    CREATE VIEW ${name} AS
-    SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
-    (SELECT bucket, COUNT(*) AS num_variables from ${bucketedView} GROUP BY bucket) b1
-    LEFT JOIN (SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
-      WHERE ${columnName}=0.0 GROUP BY bucket) b2 ON b1.bucket = b2.bucket
-    LEFT JOIN (SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView} 
-      WHERE ${columnName}=0.0 GROUP BY bucket) b3 ON b1.bucket = b3.bucket 
-    ORDER BY b1.bucket ASC;
-  """
+  def WRONGcreateCalibrationViewRealNumberSQL(name: String, bucketedView: String, columnName: String) = dbType match {
+    case "psql" => s"""
+      CREATE OR REPLACE VIEW ${name} AS
+      SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
+      (SELECT bucket, COUNT(*) AS num_variables from ${bucketedView} GROUP BY bucket) b1
+      LEFT JOIN (SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
+        WHERE ${columnName}=0.0 GROUP BY bucket) b2 ON b1.bucket = b2.bucket
+      LEFT JOIN (SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView} 
+        WHERE ${columnName}=0.0 GROUP BY bucket) b3 ON b1.bucket = b3.bucket 
+      ORDER BY b1.bucket ASC;
+      """
+    case "mysql" => s"""
+      ${createSubQueryForCalibrationViewMysql(name, bucketedView)}
+    
+      CREATE OR REPLACE VIEW ${name}_sub2 AS SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
+        WHERE ${columnName}=0.0 GROUP BY bucket;
+        
+      CREATE OR REPLACE VIEW ${name}_sub3 AS SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView} 
+        WHERE ${columnName}=0.0 GROUP BY bucket;
+    
+      CREATE OR REPLACE VIEW ${name} AS
+      SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
+      ${name}_sub1 b1
+      LEFT JOIN ${name}_sub2 b2 ON b1.bucket = b2.bucket
+      LEFT JOIN ${name}_sub3 b3 ON b1.bucket = b3.bucket 
+      ORDER BY b1.bucket ASC;
+      """
 
-  def createCalibrationViewMultinomialSQL(name: String, bucketedView: String, columnName: String) =  s"""
-    CREATE VIEW ${name} AS
-    SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
-    (SELECT bucket, COUNT(*) AS num_variables from ${bucketedView} GROUP BY bucket) b1
-    LEFT JOIN (SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
-      WHERE ${columnName} = category GROUP BY bucket) b2 ON b1.bucket = b2.bucket
-    LEFT JOIN (SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView} 
-      WHERE ${columnName} != category GROUP BY bucket) b3 ON b1.bucket = b3.bucket 
-    ORDER BY b1.bucket ASC;
-  """
+  }
+
+  def createCalibrationViewMultinomialSQL(name: String, bucketedView: String, columnName: String) = dbType match {
+    case "psql" => s"""
+      CREATE OR REPLACE VIEW ${name} AS
+      SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
+      (SELECT bucket, COUNT(*) AS num_variables from ${bucketedView} GROUP BY bucket) b1
+      LEFT JOIN (SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
+        WHERE ${columnName} = category GROUP BY bucket) b2 ON b1.bucket = b2.bucket
+      LEFT JOIN (SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView} 
+        WHERE ${columnName} != category GROUP BY bucket) b3 ON b1.bucket = b3.bucket 
+      ORDER BY b1.bucket ASC;
+      """
+    case "mysql" => s"""
+      ${createSubQueryForCalibrationViewMysql(name, bucketedView)}
+
+      CREATE OR REPLACE VIEW ${name}_sub2 AS SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
+        WHERE ${columnName} = category GROUP BY bucket;
+        
+      CREATE OR REPLACE VIEW ${name}_sub3 AS SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView} 
+        WHERE ${columnName} != category GROUP BY bucket;
+      
+      CREATE OR REPLACE VIEW ${name} AS
+      SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
+      ${name}_sub1 b1
+      LEFT JOIN ${name}_sub2 b2 ON b1.bucket = b2.bucket
+      LEFT JOIN ${name}_sub3 b3 ON b1.bucket = b3.bucket 
+      ORDER BY b1.bucket ASC;
+      """
+  }
 
   def selectCalibrationDataSQL(name: String) = s"""
     SELECT bucket as "bucket", num_variables AS "num_variables", 
@@ -310,8 +406,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     FROM ${name};
   """
 
+  // TODO when is this dropped? added "or replace" for now.
   def createMappedWeightsViewSQL = s"""
-    CREATE VIEW ${VariableResultTable}_mapped_weights AS
+    CREATE OR REPLACE VIEW ${VariableResultTable}_mapped_weights AS
     SELECT ${WeightsTable}.*, ${WeightResultTable}.weight FROM
     ${WeightsTable} JOIN ${WeightResultTable} ON ${WeightsTable}.id = ${WeightResultTable}.id
     ORDER BY abs(weight) DESC;
@@ -415,6 +512,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
    * graph files.
    * Input: variable schema, factor descriptions, holdout configuration, database settings
    * Output: factor graph files: variables, factors, edges, weights, meta
+   * 
+   * TODO: This method is way too long and needs to be split.
    */
   def groundFactorGraph(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
     holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean, weightTable: String, 
@@ -463,21 +562,14 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           idoffset = 1 + rs.getLong(1)
         }
       }
-    } else if (usingMysql) {
-      // Use user-defined variables for ID assign
-      execute(createSequenceFunction(IdSequence, "mysql"));
-      schema.foreach { case(variable, dataType) =>
-        val Array(relation, column) = variable.split('.')
-        execute(s"UPDATE ${relation} SET id = ${nextVal(IdSequence, "mysql")}")
-      }
-      
     } else {
-      execute(createSequenceFunction(IdSequence, "psql"))
+      // Mysql: use user-defined variables for ID assign; psql: use sequence
+      execute(createSequenceFunction(IdSequence, dbType))
       schema.foreach { case(variable, dataType) =>
         val Array(relation, column) = variable.split('.')
-        execute(s"UPDATE ${relation} SET id = ${nextVal(IdSequence, "psql")};")
+        execute(s"UPDATE ${relation} SET id = ${nextVal(IdSequence, dbType)};")
       }
-    }
+    } 
 
     // variable holdout table - if user defined, execute once
     execute(s"""DROP TABLE IF EXISTS ${VariablesHoldoutTable} CASCADE;
@@ -583,16 +675,15 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     val weightidSequence = "dd_weight_sequence"
     val factoridSequence = "dd_factor_sequence"
     if (!usingGreenplum) {
-      execute(s"""DROP SEQUENCE IF EXISTS ${weightidSequence} CASCADE;
-        CREATE SEQUENCE ${weightidSequence} MINVALUE -1 START 0;""") 
-      execute(s"""DROP SEQUENCE IF EXISTS ${factoridSequence} CASCADE;
-        CREATE SEQUENCE ${factoridSequence} MINVALUE -1 START 0;""") 
+      execute(createSequenceFunction(weightidSequence, dbType));
+      execute(createSequenceFunction(factoridSequence, dbType));
     }
 
     // ground weights and factors
     factorDescs.zipWithIndex.foreach { case (factorDesc, idx) =>
       // id columns
-      val idcols = factorDesc.func.variables.map(v => s""" "${v.relation}.id" """).mkString(", ")
+      val idcols = factorDesc.func.variables.map(v => 
+        s""" ${quoteColumn(s"${v.relation}.id", dbType)} """).mkString(", ")
       val querytable = s"dd_query_${factorDesc.name}"
       val weighttableForThisFactor = s"dd_weights_${factorDesc.name}"
       val outfile = s"factors_${factorDesc.name}_out"
@@ -606,14 +697,15 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       if (usingGreenplum) {
         executeQuery(s"SELECT fast_seqassign('${querytable}', ${factorid});");
       } else {
-        execute(s"UPDATE ${querytable} SET id = nextval('${factoridSequence}');")
+        execute(s"UPDATE ${querytable} SET id = ${nextVal(factoridSequence, dbType)};")
       }
       issueQuery(s"""SELECT COUNT(*) FROM ${querytable};""") { rs =>
         factorid += rs.getLong(1)
       }
 
       // weight variable list
-      val weightlist = factorDesc.weight.variables.map(v => s""" "${v}" """).mkString(",")
+      val weightlist = factorDesc.weight.variables.map(v => 
+        s""" ${quoteColumn(v, dbType)} """).mkString(",")
       val isFixed = factorDesc.weight.isInstanceOf[KnownFactorWeight]
       val initvalue = factorDesc.weight match { 
         case x : KnownFactorWeight => x.value
@@ -632,7 +724,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           // handle weight id and factor id
           cweightid += 1
           if (!usingGreenplum) {
-            executeQuery(s"SELECT nextval('${weightidSequence}');")
+            executeQuery(s"SELECT ${nextVal(weightidSequence, dbType)};")
           }
         } else { // not fixed and has weight variables
           execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactor} CASCADE;
@@ -647,7 +739,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           if (usingGreenplum) {      
             executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor}', ${cweightid});""")
           } else {
-            execute(s"UPDATE ${weighttableForThisFactor} SET id = nextval('${weightidSequence}');")
+            execute(s"UPDATE ${weighttableForThisFactor} SET id = ${nextVal(weightidSequence, dbType)};")
           }
           issueQuery(s"""SELECT COUNT(*) FROM ${weighttableForThisFactor};""") { rs =>
             cweightid += rs.getLong(1)
@@ -656,7 +748,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue) SELECT id, isfixed, initvalue FROM ${weighttableForThisFactor};""")
 
           // check null weight
-          val weightChecklist = factorDesc.weight.variables.map(v => s""" "${v}" IS NULL """).mkString("AND")
+          val weightChecklist = factorDesc.weight.variables.map(v => 
+            s""" ${quoteColumn(v, dbType)} IS NULL """).mkString("AND")
           issueQuery(s"SELECT COUNT(*) FROM ${querytable} WHERE ${weightChecklist}") { rs =>
             if (rs.getLong(1) > 0) {
               throw new RuntimeException("Weight variable has null values")
@@ -664,7 +757,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           }
 
           // dump factors
-          val weightjoinlist = factorDesc.weight.variables.map(v => s""" t0."${v}" = t1."${v}" """).mkString("AND")
+          val weightjoinlist = factorDesc.weight.variables.map(v => 
+            s""" t0.${quoteColumn(v, dbType)} = t1.${quoteColumn(v, dbType)} """).mkString("AND")
+
           du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
             s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
              FROM ${querytable} t0, ${weighttableForThisFactor} t1
@@ -672,6 +767,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         }
       }
 
+      // TODO NEED TO REUSE CODE!!
       // handle multinomial
       if (factorDesc.func.getClass.getSimpleName == "MultinomialFactorFunction") {
         // generate cardinality table for each variable
@@ -705,7 +801,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           if (usingGreenplum) {      
             executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor}', ${cweightid});""")
           } else {
-            execute(s"UPDATE ${weighttableForThisFactor} SET id = nextval('${weightidSequence}');")
+            execute(s"UPDATE ${weighttableForThisFactor} SET id = ${nextVal(weightidSequence, dbType)};")
           }
 
           execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, cardinality) 
@@ -738,7 +834,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           if (usingGreenplum) {      
             executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor}', ${cweightid});""")
           } else {
-            execute(s"UPDATE ${weighttableForThisFactor} SET id = nextval('${weightidSequence}');")
+            execute(s"UPDATE ${weighttableForThisFactor} SET id = ${nextVal(weightidSequence, dbType)};")
           }
           issueQuery(s"""SELECT COUNT(*) FROM ${weighttableForThisFactor};""") { rs =>
             cweightid += rs.getLong(1)
@@ -751,7 +847,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           val cardinalityKey = factorDesc.func.variables.map(v => "00").mkString(",")
 
           // dump factors
-          val weightjoinlist = factorDesc.weight.variables.map(v => s""" t0."${v}" = t1."${v}" """).mkString("AND")
+          // TODO we don't have enough code reuse here.
+          val weightjoinlist = factorDesc.weight.variables.map(v => 
+            s""" t0.${quoteColumn(v, dbType)} = t1.${quoteColumn(v, dbType)} """).mkString("AND")
           du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
             s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
              FROM ${querytable} t0, ${weighttableForThisFactor} t1
@@ -796,6 +894,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def bulkCopyWeights(weightsFile: String) : Unit
   def bulkCopyVariables(variablesFile: String) : Unit
 
+  /**
+   * This function is executed when sampler finished.
+   */
   def writebackInferenceResult(variableSchema: Map[String, _ <: VariableDataType],
     variableOutputFile: String, weightsOutputFile: String, parallelGrounding: Boolean) = {
 
@@ -807,7 +908,10 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     log.info("Copying inference result variables...")
     bulkCopyVariables(variableOutputFile)
     log.info("Creating indicies on the inference result...")
-    execute(createInferenceResultIndiciesSQL)
+    execute(dbType match {
+      case "psql" => createInferenceResultIndiciesPsql
+      case "mysql" => createInferenceResultIndiciesMysql
+    })
 
     // Each (relation, column) tuple is a variable in the plate model.
      // Find all (relation, column) combinations

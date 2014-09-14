@@ -11,16 +11,39 @@ class DataUnloader extends JdbcDataStore with Logging {
 
   // def ds : JdbcDataStore
 
+  /**
+   * Can execute multiple queries
+   */
   def executeQuery(sql: String) = {
     log.debug("EXECUTING.... " + sql)
     val conn = borrowConnection()
     conn.setAutoCommit(false)
     val stmt = conn.createStatement();
-    stmt.execute(sql)
-    conn.commit()
-    conn.close()  
-    log.debug("DONE!")
+    try {
+      """;\s*""".r.split(sql.trim()).filterNot(_.isEmpty).foreach(q =>
+        stmt.execute(q.trim()))
+      conn.commit()
+      log.debug("DONE!")
+      
+    } finally {
+      conn.close()
+    }
+
   }
+  
+//  def executeQuery(sql: String) = {
+//    log.debug("EXECUTING.... " + sql)
+//    val conn = borrowConnection()
+//    conn.setAutoCommit(false)
+//    val stmt = conn.createStatement();
+//    try {
+//      stmt.execute(sql)
+//      conn.commit()
+//      log.debug("DONE!")
+//    } finally {
+//      conn.close()
+//    }
+//  }
 
   /** Execute a file as a bash script */
   def executeCmd(cmd: String) : Unit = {
@@ -76,29 +99,55 @@ class DataUnloader extends JdbcDataStore with Logging {
       executeQuery(s"""
         INSERT INTO _${filename} ${query};
         """)
-    } else {
-      // Get Database-related settings
+    } else { // postgresql / mariadb
+      
+      // Branch by database driver type (temporary solution)
+      val dbtype = dbSettings.driver match {
+        case "org.postgresql.Driver" => "psql"
+        case "com.mysql.jdbc.Driver" => "mysql"
+      }
+      // Generate SQL query prefixes
       val dbname = dbSettings.dbname
-      val pguser = dbSettings.user
-      val pgport = dbSettings.port
-      val pghost = dbSettings.host
+      val dbuser = dbSettings.user
+      val dbport = dbSettings.port
+      val dbhost = dbSettings.host
+      val dbpassword = dbSettings.password
       // TODO do not use password for now
       val dbnameStr = dbname match {
         case null => ""
-        case _ => s" -d ${dbname} "
+        case _ => dbtype match {
+          case "psql" => s" -d ${dbname} "
+          case "mysql" => s" ${dbname} " // can also use -D but mysqlimport does not support -D
+        }
       }
-      val pguserStr = pguser match {
+
+      val dbuserStr = dbuser match {
         case null => ""
-        case _ => s" -U ${pguser} "
+        case _ => dbtype match {
+          case "psql" => s" -U ${dbuser} "
+          case "mysql" => dbpassword match { // see if password is empty
+            case null => s" -u ${dbuser} "
+            case "" => s" -u ${dbuser} "
+            case _ => s" -u ${dbuser} -p=${dbpassword}"
+          }
+        }
       }
-      val pgportStr = pgport match {
+      val dbportStr = dbport match {
         case null => ""
-        case _ => s" -p ${pgport} "
+        case _ => dbtype match {
+          case "psql" => s" -p ${dbport} "
+          case "mysql" => s" -P ${dbport} "
+        }
       }
-      val pghostStr = pghost match {
+      val dbhostStr = dbhost match {
         case null => ""
-        case _ => s" -h ${pghost} "
+        case _ => s" -h ${dbhost} "
       }
+      val sqlQueryPrefixRun = dbtype match {
+        case "psql" => "psql " + dbnameStr + dbuserStr + dbportStr + dbhostStr + " -c "
+        case "mysql" => "mysql " + dbnameStr + dbuserStr + dbportStr + dbhostStr + " --silent -e "
+      }
+  
       executeQuery(s"""
         DROP VIEW IF EXISTS _${filename}_view CASCADE;
         CREATE VIEW _${filename}_view AS ${query};
@@ -109,8 +158,15 @@ class DataUnloader extends JdbcDataStore with Logging {
 
       val cmdfile = File.createTempFile(s"copy", ".sh")
       val writer = new PrintWriter(cmdfile)
-      val copyStr = List("psql ", dbnameStr, pguserStr, pgportStr, pghostStr, " -c ", "\"\"\"", 
-        """\COPY """, s"(SELECT * FROM _${filename}_view) TO '${filepath}'", "\"\"\"").mkString("")
+      
+      val copyStr = dbtype match {
+        case "psql" => List(sqlQueryPrefixRun + "\"", 
+            """\COPY """, s"(SELECT * FROM _${filename}_view) TO '${filepath}'", "\"").mkString("")
+            
+        case "mysql" => List(sqlQueryPrefixRun + "\"", 
+            s"SELECT * FROM _${filename}_view", "\"", s"> ${filepath}").mkString("")
+      }
+        
       log.info(copyStr)
       writer.println(copyStr)
       writer.close()

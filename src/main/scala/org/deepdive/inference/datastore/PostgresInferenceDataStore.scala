@@ -14,9 +14,7 @@ import scala.io.Source
 /* Stores the factor graph and inference results in a postges database. */
 trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
 
-  lazy val inferenceDataStore = new PostgresInferenceDataStore
-
-  class PostgresInferenceDataStore extends SQLInferenceDataStore with Logging {
+  class PostgresInferenceDataStore(val dbSettings : DbSettings) extends SQLInferenceDataStore with Logging {
 
     implicit lazy val connection = PostgresDataStore.borrowConnection()
 

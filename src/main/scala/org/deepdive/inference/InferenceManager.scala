@@ -110,15 +110,17 @@ object InferenceManager {
   /* An inference manager that uses postgres as its datastore */
   class PostgresInferenceManager(val taskManager: ActorRef, val variableSchema: Map[String, _ <: VariableDataType], val dbSettings: DbSettings) 
     extends InferenceManager with PostgresInferenceDataStoreComponent {
+    lazy val inferenceDataStore = new PostgresInferenceDataStore(dbSettings)
     def factorGraphBuilderProps = 
-      Props(classOf[FactorGraphBuilder.PostgresFactorGraphBuilder], variableSchema)
+      Props(classOf[FactorGraphBuilder.PostgresFactorGraphBuilder], variableSchema, dbSettings)
   }
 
   /* An inference manager that uses postgres as its datastore */
   class MysqlInferenceManager(val taskManager: ActorRef, val variableSchema: Map[String, _ <: VariableDataType], val dbSettings: DbSettings) 
     extends InferenceManager with MysqlInferenceDataStoreComponent {
+    lazy val inferenceDataStore = new MysqlInferenceDataStore(dbSettings)
     def factorGraphBuilderProps = 
-      Props(classOf[FactorGraphBuilder.MysqlFactorGraphBuilder], variableSchema)
+      Props(classOf[FactorGraphBuilder.MysqlFactorGraphBuilder], variableSchema, dbSettings)
   }
 
   def props(taskManager: ActorRef, variableSchema: Map[String, _ <: VariableDataType],

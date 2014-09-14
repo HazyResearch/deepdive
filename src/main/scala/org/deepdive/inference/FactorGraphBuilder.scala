@@ -16,16 +16,19 @@ import scala.util.{Random, Try, Success, Failure}
 object FactorGraphBuilder {
 
   // Implementation of FactorGraphBuilder using postgres components
-  // TODO: Refactor this
-  class PostgresFactorGraphBuilder(val variableSchema: Map[String, String]) 
-    extends FactorGraphBuilder with PostgresExtractionDataStoreComponent 
-    with PostgresInferenceDataStoreComponent
+  class PostgresFactorGraphBuilder(val variableSchema: Map[String, String], 
+      val dbSettings : DbSettings) 
+      extends FactorGraphBuilder with PostgresExtractionDataStoreComponent 
+      with PostgresInferenceDataStoreComponent {
+    lazy val inferenceDataStore = new PostgresInferenceDataStore(dbSettings)
+  }
 
   // Implementation of FactorGraphBuilder using mysql components
-  // TODO: Refactor this
-  class MysqlFactorGraphBuilder(val variableSchema: Map[String, String]) 
+  class MysqlFactorGraphBuilder(val variableSchema: Map[String, String], val dbSettings: DbSettings) 
     extends FactorGraphBuilder with MysqlExtractionDataStoreComponent 
-    with MysqlInferenceDataStoreComponent
+    with MysqlInferenceDataStoreComponent {
+    lazy val inferenceDataStore = new MysqlInferenceDataStore(dbSettings)
+  }
 
     
   // Messages
