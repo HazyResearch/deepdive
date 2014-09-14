@@ -357,7 +357,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
       it("should work for categorical variables") {
          SQL(s"""create table t1_c1_inference(id ${inferenceDataStore.keyType} primary key, c1 bigint, 
           _dd_category bigint, expectation double precision)""").execute.apply()
-         SQL("""insert into t1_c1_inference(c1, category, expectation) VALUES
+         SQL("""insert into t1_c1_inference(c1, _dd_category, expectation) VALUES
           (null, 0, 0.55), (null, 1, 0.55), (null, 2, 0.55), 
           (0, 0, 0.65), (0, 1, 0.95), (0, 2, 0.95), 
           (1, 0, 0.85), (1, 1, 0.95), (1, 2, 0.95)""").execute.apply()
