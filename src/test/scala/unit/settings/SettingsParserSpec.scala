@@ -149,6 +149,16 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester {
       val result = SettingsParser invokePrivate loadPipelineSettings(ConfigFactory.parseString(""))
       assert(result == PipelineSettings(None, Nil))
     }
+
+    it ("should work when relearn_from") {
+      val config = ConfigFactory.parseString("""
+        pipeline.relearn_from: "/PATH_TO_DEEPDIVE_HOME/out/2014-05-02T131658/"
+      """)
+      val loadPipelineSettings = PrivateMethod[PipelineSettings]('loadPipelineSettings)
+      val result = SettingsParser invokePrivate loadPipelineSettings(config)
+      assert(result == PipelineSettings(None, List(), "/PATH_TO_DEEPDIVE_HOME/out/2014-05-02T131658/"
+      ))
+    }
   }
 
 
