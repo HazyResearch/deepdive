@@ -1,3 +1,11 @@
+/******************************
+ * 
+ * This test is commented out becase the DeepDive.run cannot
+ * be called more than once in the tests
+ * 
+ * TODO: fix this.
+ * 
+ ******************************/
 // package org.deepdive.test.integration
 
 // import anorm._ 
@@ -12,8 +20,13 @@
 // import scala.sys.process._
 // import scalikejdbc.ConnectionPool
 
+/** Text chunking with linear chain CRF. Test whether we get a reasonable F1 score.
+ * 
+ * Please refer to examples/chunking for more details.
+ */
 // class ChunkingApp extends FunSpec {
 
+//   /** prepare data */
 //   def prepareData() {
 //     JdbcDataStore.init(ConfigFactory.load)
 //     PostgresDataStore.withConnection { implicit conn =>
@@ -59,7 +72,8 @@
 //     select w1.id as "words.w1.id", w2.id as "words.w2.id", w1.tag as "words.w1.tag", w2.tag as "words.w2.tag"
 //     from words w1, words w2
 //     where w2.word_id = w1.word_id + 1 ${"\"\"\""}"""
-
+//
+//   /** application.conf configuration */
 //   def getConfig = s"""
 
 //     deepdive {
@@ -106,6 +120,7 @@
 //     }
 //     """
 
+//   /** Process DeepDive's results */
 //   def processResults() : Double = {
 //     JdbcDataStore.init(ConfigFactory.load)
 //     val resultFile = File.createTempFile("result", "")
