@@ -46,6 +46,7 @@ class Sampler extends Actor with ActorLogging {
           pattern.findAllIn(pid).foreach(id => s"kill -9 ${id}".!)
         }
       }
+
   }
 
   // Build the command to run the sampler
@@ -63,4 +64,3 @@ class Sampler extends Actor with ActorLogging {
   }
 
 }
-

@@ -86,29 +86,9 @@ trait InferenceManager extends Actor with ActorLogging {
   }
 
   def runInference(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], 
-    samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false, dbSettings: DbSettings, parallelGrounding: Boolean) = {
-    // TODO: Make serializier configurable
-    // if (!skipSerializing) {
-    //   if (!parallelGrounding) {
-    //     factorGraphDumpFileMeta.getParentFile().mkdirs()
-    //     // factorGraphDumpFileWeights.createNewFile()
-    //     val weightsOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileWeights, false))
-    //     val variablesOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileVariables, false))
-    //     val factorsOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileFactors, false))
-    //     val edgesOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileEdges, false))
-    //     val metaOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileMeta, false))
-    //     val serializier = new BinarySerializer(weightsOutput, variablesOutput, factorsOutput, edgesOutput, metaOutput)
-    //     inferenceDataStore.dumpFactorGraph(serializier, variableSchema, factorDescs, holdoutFraction,
-    //       holdoutQuery, factorGraphDumpFileWeights.getCanonicalPath,
-    //       factorGraphDumpFileVariables.getCanonicalPath, factorGraphDumpFileFactors.getCanonicalPath,
-    //       factorGraphDumpFileEdges.getCanonicalPath, parallelGrounding)
-    //     serializier.close()
-    //     weightsOutput.close()
-    //     variablesOutput.close()
-    //     factorsOutput.close()
-    //     metaOutput.close()
-    //   }
-    // }
+    samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false, dbSettings: DbSettings, 
+    parallelGrounding: Boolean) = {
+
     val sampler = context.actorOf(samplerProps, "sampler")
 
     val samplingResult = sampler ? Sampler.Run(samplerJavaArgs, samplerOptions,

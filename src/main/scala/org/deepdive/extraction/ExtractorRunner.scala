@@ -139,9 +139,12 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
           }
           val queryOutputPath = Context.outputDir + s"/tmp/"
           log.info(queryOutputPath)
-          val success = (new File(queryOutputPath)).mkdirs()
-          if (!success)
-            log.error("TSV extractor directory creation failed!")
+          // Try to create the extractor output directory if not already present 
+          val queryOutputPathDir = new File(queryOutputPath)
+          if ((! queryOutputPathDir.exists()) && (!
+            queryOutputPathDir.mkdirs())) {
+              Status.Failure(new RuntimeException(s"TSV extractor directory creation failed"))
+            }
 
           val queryOutputFile = new File(queryOutputPath + s"copy_query_${funcName}.tsv")
           // val queryOutputFile = File.createTempFile(s"copy_query_${funcName}", ".tsv")
@@ -221,8 +224,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
           executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
           executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
           delTmpFile.delete()
-
-
+          queryOutputPathDir.delete()
 
           // Execute the after script. Fail if the script fails.
           task.extractor.afterScript.foreach {
@@ -239,7 +241,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
 
         // Execute the sql query from sql extractor
         case "sql_extractor" =>
-          log.debug("Executing SQL query: ${task.extractor.sqlQuery}")
+          log.debug("Executing SQL query: " + task.extractor.sqlQuery)
           executeSqlUpdateOrFail(task.extractor.sqlQuery, taskSender)
           // Execute the after script. Fail if the script fails.
           task.extractor.afterScript.foreach {

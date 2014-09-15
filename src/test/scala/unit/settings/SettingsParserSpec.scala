@@ -4,8 +4,10 @@ import com.typesafe.config._
 import org.deepdive.settings._
 import org.deepdive.Context
 import org.scalatest._
+import org.deepdive.Logging
 
-class SettingsParserSpec extends FunSpec with PrivateMethodTester {
+
+class SettingsParserSpec extends FunSpec with PrivateMethodTester with Logging {
   
   val defaultConfig = ConfigFactory.load().getConfig("deepdive")
   
@@ -22,6 +24,40 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester {
         Map("relation1.var1" -> BooleanType,
           "relation1.var2" -> BooleanType,
           "relation2.var3" -> MultinomialType(2)), None))
+    }
+
+    it ("1)should work if a variable is passed in format of table.column"){
+      val config = ConfigFactory.parseString("""
+      schema.variables.relation1 : Boolean
+      """).withFallback(defaultConfig)
+
+      val loadSchemaSettings = PrivateMethod[SchemaSettings]('loadSchemaSettings)
+      var excep=0
+      try { 
+         val result = SettingsParser invokePrivate loadSchemaSettings(config)
+      }catch {
+        case e : RuntimeException => excep=0
+        case _ => excep=1
+      }
+      if(excep==1)
+        assert(false)
+    }
+
+    it ("2)should work if a variable is passed in format of table.column"){
+      val config = ConfigFactory.parseString("""
+      schema.variables.relation1_4145/24 : Boolean
+      """).withFallback(defaultConfig)
+
+      val loadSchemaSettings = PrivateMethod[SchemaSettings]('loadSchemaSettings)
+      var excep=0
+      try { 
+         val result = SettingsParser invokePrivate loadSchemaSettings(config)
+      }catch {
+        case e : RuntimeException => excep=0
+        case _ => excep=1
+      }
+      if(excep==1)
+        assert(false)
     }
   }
 

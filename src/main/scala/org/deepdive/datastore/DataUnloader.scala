@@ -51,7 +51,8 @@ class DataUnloader extends JdbcDataStore with Logging {
       if(path != "" && filename != ""){
         s"rm -f ${path}/${filename}".!
       }else{
-        // TODO: die
+        // TODO: We need a way to throw an ERROR, but
+        // for now I have no idea how to do that...
       }
 
       // hacky way to get schema from a query...
