@@ -96,12 +96,12 @@ trait InferenceManager extends Actor with ActorLogging {
       factorGraphDumpFileFactors.getCanonicalPath, factorGraphDumpFileEdges.getCanonicalPath,
       factorGraphDumpFileMeta.getCanonicalPath, SamplingOutputDir.getCanonicalPath, parallelGrounding)
     // Kill the sampler after it's done :)
-    //sampler ! PoisonPill
+    sampler ! PoisonPill
     samplingResult.map { x =>
       inferenceDataStore.writebackInferenceResult(
       variableSchema, SamplingOutputFile.getCanonicalPath, 
-      SamplingOutputFileWeights.getCanonicalPath, parallelGrounding)
-    }   
+      SamplingOutputFileWeights.getCanonicalPath, parallelGrounding, dbSettings)
+    }  
   }
 
 }
