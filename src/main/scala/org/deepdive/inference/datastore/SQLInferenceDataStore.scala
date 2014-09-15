@@ -383,12 +383,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     // clean up grounding folder (for parallel grounding)
     if (parallelGrounding) {
-      //val cleanFile = File.createTempFile(s"clean", ".sh")
-      //val writer = new PrintWriter(cleanFile)
-      //writer.println(s"rm -rf ${groundingPath}/*")
-      //writer.close()
-      //log.info("Cleaning up grounding folder...")
-      //executeCmd(cleanFile.getAbsolutePath())
+      val cleanFile = File.createTempFile(s"clean", ".sh")
+      val writer = new PrintWriter(cleanFile)
+      writer.println(s"rm -f ${groundingPath}/dd_*")
+      writer.close()
+      log.info("Cleaning up grounding folder...")
+      executeCmd(cleanFile.getAbsolutePath())
     }
 
     // assign variable id - sequential and unique
@@ -398,7 +398,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       executeQuery(createAssignIdFunctionSQL)
       schema.foreach { case(variable, dataType) =>
         val Array(relation, column) = variable.split('.')
-        executeQuery(s"""SELECT fast_seqassign('${relation}', ${idoffset});""")
+        executeQuery(s"""SELECT fast_seqassign('${relation.toLowerCase()}', ${idoffset});""")
         issueQuery(s"""SELECT max(id) FROM ${relation}""") { rs =>
           idoffset = 1 + rs.getLong(1)
         }
@@ -460,7 +460,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
       // dump variables, 
       // variable table join with holdout table - a variable is an evidence if it has initial value and it is not holdout
-      du.unload(s"variables_${relation}", s"${groundingPath}/variables_${relation}", dbSettings, parallelGrounding,
+      du.unload(s"dd_variables_${relation}", s"${groundingPath}/dd_variables_${relation}", dbSettings, parallelGrounding,
         s"""SELECT id, 1::int AS is_evidence, ${column}::int AS initvalue, ${variableDataType} AS type, 
           ${cardinality} AS cardinality  
         FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable}
@@ -488,7 +488,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
 
     // dump factor meta data
-    du.unload(s"factormeta", s"${groundingPath}/factormeta", dbSettings, parallelGrounding,
+    du.unload(s"dd_factormeta", s"${groundingPath}/dd_factormeta", dbSettings, parallelGrounding,
       s"SELECT * FROM ${FactorMetaTable}")
 
     // weights table
@@ -514,7 +514,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       val idcols = factorDesc.func.variables.map(v => s""" "${v.relation}.id" """).mkString(", ")
       val querytable = s"dd_query_${factorDesc.name}"
       val weighttableForThisFactor = s"dd_weights_${factorDesc.name}"
-      val outfile = s"factors_${factorDesc.name}_out"
+      val outfile = s"dd_factors_${factorDesc.name}_out"
 
       // table of input query
       execute(s"""DROP TABLE IF EXISTS ${querytable} CASCADE;
@@ -523,7 +523,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
       // handle factor id
       if (usingGreenplum) {
-        executeQuery(s"SELECT fast_seqassign('${querytable}', ${factorid});");
+        executeQuery(s"SELECT fast_seqassign('${querytable.toLowerCase()}', ${factorid});");
       } else {
         execute(s"UPDATE ${querytable} SET id = nextval('${factoridSequence}');")
       }
@@ -562,7 +562,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
           // handle weight id
           if (usingGreenplum) {      
-            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor}', ${cweightid});""")
+            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor.toLowerCase()}', ${cweightid});""")
           } else {
             execute(s"UPDATE ${weighttableForThisFactor} SET id = nextval('${weightidSequence}');")
           }
@@ -620,7 +620,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
           // handle weight id
           if (usingGreenplum) {      
-            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor}', ${cweightid});""")
+            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor.toLowerCase()}', ${cweightid});""")
           } else {
             execute(s"UPDATE ${weighttableForThisFactor} SET id = nextval('${weightidSequence}');")
           }
@@ -651,7 +651,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
           // handle weight id
           if (usingGreenplum) {      
-            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor}', ${cweightid});""")
+            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor.toLowerCase()}', ${cweightid});""")
           } else {
             execute(s"UPDATE ${weighttableForThisFactor} SET id = nextval('${weightidSequence}');")
           }
@@ -676,7 +676,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
 
     // dump weights
-    du.unload("weights", s"${groundingPath}/weights",dbSettings, parallelGrounding,
+    du.unload("dd_weights", s"${groundingPath}/dd_weights",dbSettings, parallelGrounding,
       s"SELECT id, isfixed, initvalue FROM ${WeightsTable}")
 
     // create inference result table
