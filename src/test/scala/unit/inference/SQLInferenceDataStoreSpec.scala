@@ -34,7 +34,13 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
   after {
     JdbcDataStore.close()
   }
-
+  
+  /**********************
+   * Note id must not be the first column,
+   * since the first column is the distribution key in greenplum,
+   * and DeepDive will try to do update id, which is not allowed 
+   * on distribution key.
+   **********************/
   describe("Postgres inference data store") {
     
     describe("intializing") {
