@@ -30,7 +30,7 @@ class Sampler extends Actor with ActorLogging {
         out => log.info(out),
         err => System.err.println(err)
       ))
-      // Depending on the exit value we return success or throw an exception
+      // Depending on the exit value we return success or kill the program
       exitValue match {
         case 0 => sender ! Success()
         case _ => {
@@ -44,7 +44,6 @@ class Sampler extends Actor with ActorLogging {
           var pid = ManagementFactory.getRuntimeMXBean().getName().toString
           val pattern = """\d+""".r
           pattern.findAllIn(pid).foreach(id => s"kill -9 ${id}".!)
-          // throw new RuntimeException("sampling failed (see error log for more details)")
         }
       }
   }
