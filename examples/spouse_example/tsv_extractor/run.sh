@@ -11,8 +11,8 @@ export PGPASSWORD=${PGPASSWORD:-}
 export PGPORT=${PGPORT:-5432}
 export PGHOST=${PGHOST:-localhost}
 
-# # Initialize database
-# bash $APP_HOME/../setup_database.sh $DBNAME
+# Initialize database
+bash $APP_HOME/../setup_database.sh $DBNAME
 
 cd $DEEPDIVE_HOME
 

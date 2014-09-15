@@ -1,18 +1,18 @@
 #! /usr/bin/env bash
 
-# export DBUSER=${DBUSER:-`whoami`}
-export DBUSER="root"
-export DBPASSWORD=
-export DBHOST=localhost
-export DBPORT=0
+# # export DBUSER=${DBUSER:-`whoami`}
+# export DBUSER="root"
+# export DBPASSWORD=
+# export DBHOST=localhost
+# export DBPORT=0
 
 # Set username and password
-# export PGUSER=${PGUSER:-`whoami`}
-# export PGPASSWORD=${PGPASSWORD:-}
-# export PGPORT=${PGPORT:-5432}
-# export PGHOST=${PGHOST:-localhost}
+export PGUSER=${PGUSER:-`whoami`}
+export PGPASSWORD=${PGPASSWORD:-}
+export PGPORT=${PGPORT:-5432}
+export PGHOST=${PGHOST:-localhost}
 export DBNAME=deepdive_test
-# export PGDATABASE=$DBNAME  # for testing to work with null settings
+export PGDATABASE=$DBNAME  # for testing to work with null settings
 
 export DEEPDIVE_HOME=`cd $(dirname $0); pwd`
 
@@ -35,11 +35,11 @@ esac
 
 cd $DEEPDIVE_HOME
 
-# # Create test database
-# dropdb $DBNAME
-# createdb $DBNAME
-echo "drop database if exists $DBNAME; 
-create database $DBNAME" | mysql -u $DBUSER -h $DBHOST
+# Create test database
+dropdb $DBNAME
+createdb $DBNAME
+# echo "drop database if exists $DBNAME; 
+# create database $DBNAME" | mysql -u $DBUSER -h $DBHOST
 
 # Run the test
 # SBT_OPTS="-XX:MaxHeapSize=256m -Xmx512m -XX:MaxPermSize=256m" sbt/sbt "test"
