@@ -33,10 +33,9 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with JdbcDataStore {
       SQL(s"""INSERT INTO unloader values ('hi', true, 0), (null, false, 100);""").execute.apply()
       du.unload("test_tmp", s"${outputFile.getAbsolutePath}", dbSettings, false, "select * from unloader;")
       val rd = new BufferedReader(new FileReader(s"${outputFile.getAbsolutePath}"))
-      var line = rd.readLine()
-      assert(line === "hi\tt\t0")
-      line = rd.readLine()
-      assert(line === "\\N\tf\t100")
+      val line1 = rd.readLine()
+      val line2 = rd.readLine()
+      assert((line1 === "hi\tt\t0" && line2 === "\\N\tf\t100") || (line2 === "hi\tt\t0" && line1 === "\\N\tf\t100"))
       rd.close()
     }
 
@@ -60,10 +59,10 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with JdbcDataStore {
     //   SQL(s"""INSERT INTO unloader values ('hi', true, 0), (null, false, 100);""").execute.apply()
     //   du.unload("test_tmp", s"${outputFile.getAbsolutePath}", dbSettings, true, "select * from unloader order by id;")
     //   val rd = new BufferedReader(new FileReader(s"${dbSettings.gppath}/test_tmp"))
-    //   var line = rd.readLine()
-    //   assert(line === "hi\tt\t0")
-    //   line = rd.readLine()
-    //   assert(line === "\\N\tf\t100")
+    //   val line1 = rd.readLine()
+    //   val line2 = rd.readLine()
+    //   assert((line1 === "hi\tt\t0" && line2 === "\\N\tf\t100") || (line2 === "hi\tt\t0" && line1 === "\\N\tf\t100"))
+    //   rd.close()
     // }
   }
 
