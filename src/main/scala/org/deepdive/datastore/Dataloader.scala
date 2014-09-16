@@ -105,12 +105,19 @@ class DataLoader extends JdbcDataStore with Logging {
   def load(filepath: String, tablename: String, dbSettings: DbSettings, usingGreenplum: Boolean) : Unit = {
     if (usingGreenplum) {
       val loadyaml = File.createTempFile(s"gpload", ".yml")
+      val dbname = dbSettings.dbname
+      val pguser = dbSettings.user
+      val pgport = dbSettings.port
+      val pghost = dbSettings.host
+      if (dbname == null || pguser == null || pgport == null || pghost == null) {
+        throw new RuntimeException("database settings (user, port, host, dbname) missing!")
+      }
       val gpload_setting = s"""
         |VERSION: 1.0.0.1
-        |DATABASE: ${dbSettings.dbname}
-        |USER: ${dbSettings.user}
-        |HOST: ${dbSettings.host}
-        |PORT: ${dbSettings.port}
+        |DATABASE: ${dbname}
+        |USER: ${pguser}
+        |HOST: ${pghost}
+        |PORT: ${pgport}
         |GPLOAD:
         |   INPUT:
         |      - MAX_LINE_LENGTH: 3276800
@@ -119,7 +126,6 @@ class DataLoader extends JdbcDataStore with Logging {
         |            - ${filepath}
         |      - FORMAT: text
         |      - DELIMITER: E'\\t'
-        |      - ERROR_LIMIT: 10000000
         |   OUTPUT:
         |      - TABLE: ${tablename}
       """.stripMargin

@@ -55,10 +55,11 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with JdbcDataStore {
 
     // it("should work with gpunload") {
     //   val outputFile = File.createTempFile("test_unloader", "")
+    //   SQL(s"""DROP TABLE IF EXISTS unloader CASCADE;""").execute.apply()
     //   SQL(s"""CREATE TABLE unloader(feature text, is_correct boolean, id bigint);""").execute.apply()
     //   SQL(s"""INSERT INTO unloader values ('hi', true, 0), (null, false, 100);""").execute.apply()
-    //   du.unload("test_tmp", s"${outputFile.getAbsolutePath}", dbSettings, true, "select * from unloader;")
-    //   val rd = new BufferedReader(new FileReader(s"${outputFile.getAbsolutePath}"))
+    //   du.unload("test_tmp", s"${outputFile.getAbsolutePath}", dbSettings, true, "select * from unloader order by id;")
+    //   val rd = new BufferedReader(new FileReader(s"${dbSettings.gppath}/test_tmp"))
     //   var line = rd.readLine()
     //   assert(line === "hi\tt\t0")
     //   line = rd.readLine()
