@@ -26,38 +26,28 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester with Logging {
           "relation2.var3" -> MultinomialType(2)), None))
     }
 
-    it ("1)should work if a variable is passed in format of table.column"){
+    it ("should fail if variable column is missing"){
       val config = ConfigFactory.parseString("""
       schema.variables.relation1 : Boolean
       """).withFallback(defaultConfig)
 
       val loadSchemaSettings = PrivateMethod[SchemaSettings]('loadSchemaSettings)
       var excep=0
-      try { 
-         val result = SettingsParser invokePrivate loadSchemaSettings(config)
-      }catch {
-        case e : RuntimeException => excep=0
-        case _ => excep=1
+      intercept[RuntimeException] {
+        val result = SettingsParser invokePrivate loadSchemaSettings(config)
       }
-      if(excep==1)
-        assert(false)
     }
 
-    it ("2)should work if a variable is passed in format of table.column"){
+    it ("should fail if variable table is malformed"){
       val config = ConfigFactory.parseString("""
       schema.variables.relation1_4145/24 : Boolean
       """).withFallback(defaultConfig)
 
       val loadSchemaSettings = PrivateMethod[SchemaSettings]('loadSchemaSettings)
       var excep=0
-      try { 
-         val result = SettingsParser invokePrivate loadSchemaSettings(config)
-      }catch {
-        case e : RuntimeException => excep=0
-        case _ => excep=1
+      intercept[RuntimeException] {
+        val result = SettingsParser invokePrivate loadSchemaSettings(config)
       }
-      if(excep==1)
-        assert(false)
     }
   }
 
