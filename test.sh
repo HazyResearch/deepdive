@@ -7,6 +7,9 @@ export PGPORT=${PGPORT:-5432}
 export PGHOST=${PGHOST:-localhost}
 export DBNAME=deepdive_test
 export PGDATABASE=$DBNAME  # for testing to work with null settings
+export GPHOST=${GPHOST:-localhost}
+export GPPORT=${GPPORT:-8082}
+export GPPATH=${GPPATH:-/tmp}
 
 export DEEPDIVE_HOME=`cd $(dirname $0); pwd`
 
