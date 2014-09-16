@@ -22,7 +22,7 @@ object SettingsParser extends Logging {
     // filesystem are set if the user wants to use parallel grounding
     if (inferenceSettings.parallelGrounding) {
       if (dbSettings.gphost == "" || dbSettings.gpport == "" || dbSettings.gppath == "") {
-        throw new RuntimeException(s"inference.parallelGrounding is set to true, but one of db.default.gphost, db.default.gpport, db.default.gppath isnot specified")
+        throw new RuntimeException(s"inference.parallelGrounding is set to true, but one of db.default.gphost, db.default.gpport, or db.default.gppath is not specified")
       }
     }
 
@@ -208,14 +208,16 @@ object SettingsParser extends Logging {
     }
     val relearnFrom = Try(pipelineConfig.getString("relearn_from")).getOrElse(null)
     val activePipeline = Try(pipelineConfig.getString("run")).toOption
-    val pipelinesObj = Try(pipelineConfig.getObject("pipelines")).getOrElse {
-      return PipelineSettings(None, Nil, null)
+    if (relearnFrom == null) {
+      val pipelinesObj = Try(pipelineConfig.getObject("pipelines")).getOrElse {
+        return PipelineSettings(None, Nil, null)
+      }
+      val pipelines = pipelinesObj.keySet().map { pipelineName =>
+        val tasks = pipelineConfig.getStringList(s"pipelines.$pipelineName").toSet
+        Pipeline(pipelineName, tasks)
+      }.toList
+      return PipelineSettings(activePipeline, pipelines, relearnFrom)
     }
-    val pipelines = pipelinesObj.keySet().map { pipelineName =>
-      val tasks = pipelineConfig.getStringList(s"pipelines.$pipelineName").toSet
-      Pipeline(pipelineName, tasks)
-    }.toList
-    PipelineSettings(activePipeline, pipelines, relearnFrom)
+    PipelineSettings(activePipeline, Nil, relearnFrom)
   }
-
 }

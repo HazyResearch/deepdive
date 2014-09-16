@@ -29,6 +29,10 @@ case class EqualFactorFunction(variables: Seq[FactorFunctionVariable]) extends F
   override def variableDataType = "Boolean"
 }
 
+case class ContinuousLRFactorFunction(variables: Seq[FactorFunctionVariable]) extends FactorFunction {
+  override def variableDataType = "Boolean"
+}
+
 /* A factor function describing A == True. Restricted to one variable. */
 case class IsTrueFactorFunction(variables: Seq[FactorFunctionVariable]) extends FactorFunction {
   override def variableDataType = "Boolean"
