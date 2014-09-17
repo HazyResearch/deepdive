@@ -20,14 +20,19 @@ command to start gpfdist
     gpfdist -d [directory] -p [port] &
 
 where you specify the directory for storing the files and the HTTP port to run on.
+The directory should be an **empty directory** since DeepDive will clean up
+this directory or overwrite files.
 Then, in `application.conf`, specify the gpfdist settings in the `db.default` as
 follows
 
     db.default {
       gphost   : [host of gpfdist]
       gpport   : [port of gpfdist]
-      gppath   : [path to gpfdist directory]
+      gppath   : [**absolute path** of gpfdist directory]
     }
+
+where gphost, gpport, gppath are the host, port, and absolute path 
+gpfdist is running on (specified when starting gpfdist server).
 
 Finally, tell DeepDive to use parallel grounding by adding the following to
 `application.conf`: 

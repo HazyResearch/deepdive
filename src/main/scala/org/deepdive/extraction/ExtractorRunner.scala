@@ -195,10 +195,8 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
               SELECT version() LIKE '%Greenplum%';
             """
 
-
           // Only allow single-threaded copy
-          val writebackCmd = s"find ${splitPrefix}*.out -print0 | xargs -0 -P 1 -L 1 bash -c 'psql -d ${dbname} -U ${pguser} -p ${pgport} -h ${pghost} -c " + "\"COPY " + s"${outputRel} FROM STDIN;" + " \" < \"$0\"'"
-
+          val writebackCmd = s"find ${splitPrefix}*.out -print0 | xargs -0 -P 1 -L 1 bash -c '${sqlQueryPrefix} -c " + "\"COPY " + s"${outputRel} FROM STDIN;" + " \" < \"$0\"'"
 
           val writebackTmpFile = new File(queryOutputPath + s"exec_parallel_writeback.sh")
           // val writebackTmpFile = File.createTempFile(s"exec_parallel_writeback", ".sh")

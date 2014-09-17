@@ -208,14 +208,16 @@ object SettingsParser extends Logging {
     }
     val relearnFrom = Try(pipelineConfig.getString("relearn_from")).getOrElse(null)
     val activePipeline = Try(pipelineConfig.getString("run")).toOption
-    val pipelinesObj = Try(pipelineConfig.getObject("pipelines")).getOrElse {
-      return PipelineSettings(None, Nil, null)
+    if (relearnFrom == null) {
+      val pipelinesObj = Try(pipelineConfig.getObject("pipelines")).getOrElse {
+        return PipelineSettings(None, Nil, null)
+      }
+      val pipelines = pipelinesObj.keySet().map { pipelineName =>
+        val tasks = pipelineConfig.getStringList(s"pipelines.$pipelineName").toSet
+        Pipeline(pipelineName, tasks)
+      }.toList
+      return PipelineSettings(activePipeline, pipelines, relearnFrom)
     }
-    val pipelines = pipelinesObj.keySet().map { pipelineName =>
-      val tasks = pipelineConfig.getStringList(s"pipelines.$pipelineName").toSet
-      Pipeline(pipelineName, tasks)
-    }.toList
-    PipelineSettings(activePipeline, pipelines, relearnFrom)
+    PipelineSettings(activePipeline, Nil, relearnFrom)
   }
-
 }
