@@ -70,6 +70,33 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   }
 
   // execute a query
+  def execute(sql: String, noprint: Boolean) = {
+    if(sql.length > 1000){
+      log.debug("EXECUTING.... " + sql)
+    }else{
+      log.debug("EXECUTING.... " + (sql take 1000) + "...")
+    }
+    
+    val conn = ds.borrowConnection()
+    val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
+      java.sql.ResultSet.CONCUR_UPDATABLE)
+    try {
+      """;\s+""".r.split(sql.trim()).filterNot(_.isEmpty).foreach(q => 
+        conn.prepareStatement(q.trim()).executeUpdate)
+    } catch {
+      // SQL cmd exception
+      case exception : Throwable =>
+      log.error(exception.toString)
+      throw exception
+    } finally {
+      conn.close()
+    }
+    log.debug("DONE!")
+  }
+
+
+
+  // execute a query
   def execute(sql: String) = {
     log.debug("EXECUTING.... " + sql)
     val conn = ds.borrowConnection()
@@ -471,10 +498,10 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       // Create a cardinality table for the variable
       // note we use two-digit fixed-length representation here (may be fixed)
       val cardinalityValues = dataType match {
-        case BooleanType => "('01')"
-        case MultinomialType(x) => (0 to x-1).map (n => s"""('${"%02d".format(n)}')""").mkString(", ")
-        case RealNumberType => "('01')"
-        case RealArrayType(x) => "('01')"
+        case BooleanType => "('00001')"
+        case MultinomialType(x) => (0 to x-1).map (n => s"""('${"%05d".format(n)}')""").mkString(", ")
+        case RealNumberType => "('00001')"
+        case RealArrayType(x) => "('00001')"
       }
       val cardinalityTableName = s"${relation}_${column}_cardinality"
       execute(s"""
@@ -649,7 +676,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
           execute(s""" 
               INSERT INTO ${weighttableForThisFactor}_other VALUES ${one_2_4096};
-          """)
+          """, true)
 
           execute(s"""
             INSERT INTO ${weighttableForThisFactor}
@@ -797,7 +824,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
             SELECT id, isfixed, initvalue, cardinality FROM ${weighttableForThisFactor};""")
 
           // use weight id corresponding to cardinality 0 (like C array...)
-          val cardinalityKey = factorDesc.func.variables.map(v => "00").mkString(",")
+          val cardinalityKey = factorDesc.func.variables.map(v => "00000").mkString(",")
 
           // dump factors
           val weightjoinlist = factorDesc.weight.variables.map(v => s""" t0."${v}" = t1."${v}" """).mkString("AND")
