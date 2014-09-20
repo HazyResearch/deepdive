@@ -40,12 +40,12 @@ class HelpersSpec extends FunSpec with BeforeAndAfter {
 
   describe("Building psql command helper function") {
     it("should work") {
-      val dbSettings = DbSettings(null, null, "user", null, "dbname", 
+      val dbSettings = DbSettings(Helpers.PsqlDriver, null, "user", null, "dbname", 
         "host", "port", null, null, null)
       val query = "select * from test;"
       val cmd = Helpers.buildSqlCmd(dbSettings, query)
       val trueCmd = "psql -d dbname -U user -p port -h host -c \"" + query + "\""
-      assert(cmd === trueCmd)
+      assert(cmd.replaceAll(" +", " ").trim() === trueCmd)
 
     }
   }

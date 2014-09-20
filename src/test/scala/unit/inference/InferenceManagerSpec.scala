@@ -4,6 +4,7 @@ import akka.actor._
 import akka.testkit._
 import org.deepdive.calibration._
 import org.deepdive.inference._
+import org.deepdive.helpers.Helpers
 import org.scalatest._
 import org.deepdive.settings.{BooleanType, VariableDataType, DbSettings}
 import scala.util.Success
@@ -30,7 +31,7 @@ class TestInferenceManager(
 class InferenceManagerSpec(_system: ActorSystem) extends TestKit(_system) with FunSpecLike with ImplicitSender {
 
   def this() = this(ActorSystem("InferenceManagerSpec"))
-  val dbSettings = DbSettings(null, null, null, null, null, null, null, null, null, null)
+  val dbSettings = DbSettings(Helpers.PsqlDriver, null, null, null, null, null, null, null, null, null)
 
   val taskManager = TestProbe()
   val sampler = TestProbe()

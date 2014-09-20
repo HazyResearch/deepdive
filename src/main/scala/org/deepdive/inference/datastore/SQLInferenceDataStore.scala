@@ -56,7 +56,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
    * @see http://dev.mysql.com/doc/refman/5.0/en/user-variables.html
    * @see http://www.it-iss.com/mysql/mysql-renumber-field-values/
    */
-  def createSequenceFunction(seqName: String, dbType: String) = {
+  private def createSequenceFunction(seqName: String, dbType: String) = {
     dbType match {
       case Mysql =>
          
@@ -67,7 +67,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           CREATE SEQUENCE ${seqName} MINVALUE -1 START 0;"""
     }
   }
-  def nextVal(seqName: String, dbType: String) = {
+  private def nextVal(seqName: String, dbType: String) = {
     dbType match {
       case Mysql =>
         s" @${seqName} := @${seqName} + 1 "
@@ -76,7 +76,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         s""" nextval('${seqName}') """
     }
   }
-  def cast(expr: Any, toType: String, dbType: String) = {
+  private def cast(expr: Any, toType: String, dbType: String) = {
     dbType match {
       case Mysql =>
         s"convert(${expr.toString()}, ${toType match {
@@ -99,7 +99,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
    *          if psql, return "column" 
    *          if mysql, return `column`
    */
-  def quoteColumn(column: String, dbType: String) = {
+  private def quoteColumn(column: String, dbType: String) = {
     dbType match {
       case Mysql =>
         '`' + column + '`'
@@ -871,11 +871,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
              FROM ${querytable} t0, ${weighttableForThisFactor} t1
              WHERE ${weightjoinlist};""")
         }
-      }
-      // TODO NEED TO REUSE CODE!!
-      // handle multinomial
-      if (factorDesc.func.getClass.getSimpleName == "MultinomialFactorFunction") {
       } else if (factorDesc.func.getClass.getSimpleName == "MultinomialFactorFunction") {
+        // TODO needs better code reuse
         // handle multinomial
         // generate cardinality table for each variable
         factorDesc.func.variables.zipWithIndex.foreach { case(v,idx) =>

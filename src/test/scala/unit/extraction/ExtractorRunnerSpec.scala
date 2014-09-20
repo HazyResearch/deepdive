@@ -9,6 +9,7 @@ import org.deepdive.extraction._
 import org.deepdive.extraction.datastore._
 import org.deepdive.extraction.ProcessExecutor._
 import org.deepdive.settings._
+import org.deepdive.helpers.Helpers
 import org.scalatest._
 import scala.concurrent.duration._
 import play.api.libs.json._
@@ -38,6 +39,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
   }
 
   def writeToFile(p: File, s: String): Unit = {
+    log.debug(s"Writing to file ${p.getAbsolutePath()}:\n${s}")
     val pw = new java.io.PrintWriter(p)
     try pw.write(s) finally pw.close()
   }
@@ -62,7 +64,10 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
   def this() = this(ActorSystem("ExtractorRunnerSpec"))
 
-  val dbSettings = DbSettings(null, null, null, null, null, null, null, null, null, null)
+  val dbSettings = DbSettings(Helpers.PsqlDriver, null, System.getenv("PGUSER"),
+    null, System.getenv("DBNAME"), System.getenv("PGHOST"), 
+    System.getenv("PGPORT"), System.getenv("GPHOST"), 
+    System.getenv("GPPATH"), System.getenv("GPPORT"))
 
   // lazy implicit val session = ds.DB.autoCommitSession()
 

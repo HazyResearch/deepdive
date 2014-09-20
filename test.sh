@@ -45,5 +45,4 @@ createdb $DBNAME
 # create database $DBNAME" | mysql -u $DBUSER -h $DBHOST
 
 # Run the test
-# SBT_OPTS="-XX:MaxHeapSize=256m -Xmx512m -XX:MaxPermSize=256m" sbt/sbt "test"
-SBT_OPTS="-XX:MaxHeapSize=256m -Xmx512m -XX:MaxPermSize=256m" sbt/sbt "test-only org.deepdive.test.unit.PostgresInferenceDataStoreSpec"
+SBT_OPTS="-XX:MaxHeapSize=256m -Xmx512m -XX:MaxPermSize=256m" sbt/sbt "test"

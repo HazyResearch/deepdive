@@ -179,13 +179,11 @@ class DataLoader extends JdbcDataStore with Logging {
       // tablename!
       val cmdfile = File.createTempFile(s"${tablename}.copy", ".sh")
       val writer = new PrintWriter(cmdfile)
-      val sql = """COPY """ + s"${tablename} FROM STDIN"
-      val copyStr = Helpers.buildSqlCmd(dbSettings, sql)
       val writebackPrefix = s"find ${filepath} -print0 | xargs -0 -P 1 -L 1 bash -c ";
       val writebackCmd = dbtype match {
         case Psql => writebackPrefix + s"'psql " + Helpers.getOptionString(dbSettings) + 
-          "\"COPY " + s"${tablename} FROM STDIN;" + 
-          " \" < \"$0\"'"
+          "-c \"COPY " + s"${tablename} FROM STDIN;" + 
+          " \" < $0'"
         case Mysql => writebackPrefix +
           s"'mysqlimport " + Helpers.getOptionString(dbSettings) + " $0'"
       }

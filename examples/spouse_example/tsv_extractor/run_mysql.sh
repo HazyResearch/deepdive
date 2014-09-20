@@ -9,7 +9,7 @@ export DEEPDIVE_HOME=`cd $(dirname $0)/../../../; pwd`
 export DBNAME=deepdive_spouse_tsv
 
 # Initialize database
-# bash $APP_HOME/../setup_database_mysql.sh $DBNAME
+bash $APP_HOME/../setup_database_mysql.sh $DBNAME
 
 cd $DEEPDIVE_HOME
 

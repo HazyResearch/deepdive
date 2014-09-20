@@ -12,6 +12,9 @@ object Helpers extends Logging {
   // Constants
   val Psql = "psql"
   val Mysql = "mysql"
+    
+  val PsqlDriver = "org.postgresql.Driver"
+  val MysqlDriver = "com.mysql.jdbc.Driver"
 
   /**
    * Get the dbtype from DbSettings
@@ -24,9 +27,8 @@ object Helpers extends Logging {
   def getDbType(dbSettings: DbSettings) : String = {
     // Branch by database driver type
     dbSettings.driver match {
-      // TODO create a global enum
-      case "org.postgresql.Driver" => Psql
-      case "com.mysql.jdbc.Driver" => Mysql
+      case PsqlDriver => Psql
+      case MysqlDriver => Mysql
     }    
   }
   
@@ -92,47 +94,9 @@ object Helpers extends Logging {
     // Branch by database driver type
     val dbtype = getDbType(dbSettings)
     
-    // Get Database-related settings
-    val dbname = dbSettings.dbname
-    val dbuser = dbSettings.user
-    val dbport = dbSettings.port
-    val dbhost = dbSettings.host
-    val dbpassword = dbSettings.password
-    // TODO do not use password for psql
-    // TODO do not use password for now
-    val dbnameStr = dbname match {
-      case null => ""
-      case _ => dbtype match {
-        case Psql => s" -d ${dbname} "
-        case Mysql => s" ${dbname} " // can also use -D but mysqlimport does not support -D
-      }
-    }
-
-    val dbuserStr = dbuser match {
-      case null => ""
-      case _ => dbtype match {
-        case Psql => s" -U ${dbuser} "
-        case Mysql => dbpassword match { // see if password is empty
-          case null => s" -u ${dbuser} "
-          case "" => s" -u ${dbuser} "
-          case _ => s" -u ${dbuser} -p=${dbpassword}"
-        }
-      }
-    }
-    val dbportStr = dbport match {
-      case null => ""
-      case _ => dbtype match {
-        case Psql => s" -p ${dbport} "
-        case Mysql => s" -P ${dbport} "
-      }
-    }
-    val dbhostStr = dbhost match {
-      case null => ""
-      case _ => s" -h ${dbhost} "
-    }
     val sqlQueryPrefix = dbtype match {
-      case Psql => "psql " + dbnameStr + dbuserStr + dbportStr + dbhostStr
-      case Mysql => "mysql " + dbnameStr + dbuserStr + dbportStr + dbhostStr
+      case Psql => "psql " + getOptionString(dbSettings)
+      case Mysql => "mysql " + getOptionString(dbSettings)
     }
 
     // Return the command below
