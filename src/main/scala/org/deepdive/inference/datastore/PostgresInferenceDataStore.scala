@@ -11,6 +11,7 @@ import org.deepdive.settings._
 import scala.collection.mutable.{ArrayBuffer, Set, SynchronizedBuffer}
 import scala.io.Source
 import java.io._
+import org.deepdive.helpers.Helpers
 
 /* Stores the factor graph and inference results in a postges database. */
 trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
@@ -59,31 +60,10 @@ trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent
     }
     
     def bulkCopyVariables(variablesFile: String, dbSettings: DbSettings) : Unit = {
-     val dbname = dbSettings.dbname
-     val pguser = dbSettings.user
-     val pgport = dbSettings.port
-     val pghost = dbSettings.host
-     // TODO do not use password for now
-     val dbnameStr = dbname match {
-       case null => ""
-       case _ => s" -d ${dbname} "
-     }
-     val pguserStr = pguser match {
-       case null => ""
-       case _ => s" -U ${pguser} "
-     }
-     val pgportStr = pgport match {
-       case null => ""
-       case _ => s" -p ${pgport} "
-     }
-     val pghostStr = pghost match {
-       case null => ""
-       case _ => s" -h ${pghost} "
-     }
-    
+     
      val cmdfile = File.createTempFile(s"copy", ".sh")
      val writer = new PrintWriter(cmdfile)
-     val copyStr = List("psql ", dbnameStr, pguserStr, pgportStr, pghostStr, " -c ", "\"\"\"", 
+     val copyStr = List("psql ", Helpers.getOptionString(dbSettings), " -c ", "\"\"\"", 
        """\COPY """, s"${VariableResultTable}(id, category, expectation) FROM \'${variablesFile}.text\' DELIMITER ' ';", "\"\"\"").mkString("")
      log.info(copyStr)
      writer.println(copyStr)
@@ -91,26 +71,34 @@ trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent
      executeCmd(cmdfile.getAbsolutePath())
    }
 
+    /**
+     * Drop and create a sequence, based on database type.
+     */
+    def createSequenceFunction(seqName: String): String =
+      s"""DROP SEQUENCE IF EXISTS ${seqName} CASCADE;
+          CREATE SEQUENCE ${seqName} MINVALUE -1 START 0;"""
 
+    /**
+     * Get the next value of a sequence
+     */
+    def nextVal(seqName: String): String =
+      s""" nextval('${seqName}') """
 
-    /*
-     def bulkCopyWeights(weightsFile: String) : Unit = {
-      val deserializier = new ProtobufInferenceResultDeserializier()
-      val weightResultStr = deserializier.getWeights(weightsFile).map { w =>
-        s"${w.weightId}\t${w.value}"
-      }.mkString("\n")
-      PostgresDataStore.copyBatchData(s"COPY ${WeightResultTable}(id, weight) FROM STDIN",
-        new java.io.StringReader(weightResultStr))
-     }
+    /**
+     * Cast an expression to a type
+     */
+    def cast(expr: Any, toType: String): String =
+      s"""${expr.toString()}::${toType}"""
 
-    def bulkCopyVariables(variablesFile: String) : Unit = {
-      val deserializier = new ProtobufInferenceResultDeserializier()
-      val variableResultStr = deserializier.getVariables(variablesFile).map { v =>
-        s"${v.variableId}\t${v.category}\t${v.expectation}"
-      }.mkString("\n")
-      PostgresDataStore.copyBatchData(s"COPY ${VariableResultTable}(id, category, expectation) FROM STDIN",
-        new java.io.StringReader(variableResultStr))
-    }
-    */
+    /**
+     * Given a string column name, Get a quoted version dependent on DB.
+     *          if psql, return "column"
+     *          if mysql, return `column`
+     */
+    def quoteColumn(column: String): String =
+      '"' + column + '"'
+      
+    def randomFunction: String = "RANDOM()"
+
   }
 }

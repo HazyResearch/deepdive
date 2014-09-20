@@ -1,11 +1,5 @@
 #! /usr/bin/env bash
 
-# # export DBUSER=${DBUSER:-`whoami`}
-# export DBUSER="root"
-# export DBPASSWORD=
-# export DBHOST=localhost
-# export DBPORT=0
-
 # Set username and password
 export PGUSER=${PGUSER:-`whoami`}
 export PGPASSWORD=${PGPASSWORD:-}
@@ -16,6 +10,12 @@ export PGDATABASE=$DBNAME  # for testing to work with null settings
 export GPHOST=${GPHOST:-localhost}
 export GPPORT=${GPPORT:-8082}
 export GPPATH=${GPPATH:-/tmp}
+
+# Mysql specific
+export MYUSER="root"
+export MYPASSWORD=
+export MYHOST=127.0.0.1
+export MYPORT=3306
 
 export DEEPDIVE_HOME=`cd $(dirname $0); pwd`
 
@@ -41,8 +41,11 @@ cd $DEEPDIVE_HOME
 # Create test database
 dropdb $DBNAME
 createdb $DBNAME
-# echo "drop database if exists $DBNAME; 
-# create database $DBNAME" | mysql -u $DBUSER -h $DBHOST
+# mysql -u $MYUSER -h $MYHOST -P $MYPORT -e "drop database if exists $DBNAME; 
+#   create database $DBNAME"
 
 # Run the test
-SBT_OPTS="-XX:MaxHeapSize=256m -Xmx512m -XX:MaxPermSize=256m" sbt/sbt "test"
+SBT_OPTS="-XX:MaxHeapSize=256m -Xmx512m -XX:MaxPermSize=256m" sbt "test"
+
+# Running a specific test with Eclipse debugger
+# SBT_OPTS="-agentlib:jdwp=transport=dt_socket,address=localhost:8000,server=y,suspend=y -Xmx4g" sbt/sbt "test-only org.deepdive.test.unit.DataLoaderSpec"

@@ -39,11 +39,11 @@ class DataLoader extends JdbcDataStore with Logging {
    * For Postgresql, filepath is an abosulute path. No need for dbSettings or filename.
    * For greenplum, use gpload; for postgres, use \copy
    * 
-   * @filename: the name of the output file
-   * @filepath: the absolute path of the output file
-   * @dbSettings: database settings (DD's class)
-   * @usingGreenplum: whether to use greenplum's gpunload
-   * @query: the query to be dumped
+   * @param filename: the name of the output file
+   * @param filepath: the absolute path of the output file
+   * @param dbSettings: database settings (DD's class)
+   * @param usingGreenplum: whether to use greenplum's gpunload
+   * @param query: the query to be dumped
    */
   def unload(filename: String, filepath: String, dbSettings: DbSettings, usingGreenplum: Boolean, query: String) : Unit = {
     
@@ -123,10 +123,10 @@ class DataLoader extends JdbcDataStore with Logging {
    *
    * For greenplum, use gpload; for postgres, use \copy
    *
-   * @filepath: the absolute path of the input file, it can contain wildchar characters
-   * @tablename: the table to be copied to
-   * @dbSettings: database settings (DD's class)
-   * @usingGreenplum: whether to use greenplum's gpload
+   * @param filepath: the absolute path of the input file, it can contain wildchar characters
+   * @param tablename: the table to be copied to
+   * @param dbSettings: database settings (DD's class)
+   * @param usingGreenplum: whether to use greenplum's gpload
    */ 
   def load(filepath: String, tablename: String, dbSettings: DbSettings, usingGreenplum: Boolean) : Unit = {
     

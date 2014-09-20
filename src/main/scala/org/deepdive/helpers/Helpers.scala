@@ -32,6 +32,15 @@ object Helpers extends Logging {
     }    
   }
   
+  /**
+   * Return a string of psql / mysql options, including user / password / host 
+   * / port / database.
+   * Do not support password for psql for now.
+   * 
+   * TODO: using passwords via command line is poor practice. postgres support 
+   * specifying password through a PGPASSFILE:
+   *   http://www.postgresql.org/docs/current/static/libpq-pgpass.html
+   */
   def getOptionString(dbSettings: DbSettings) : String = {
     val dbtype = getDbType(dbSettings)
     val dbname = dbSettings.dbname

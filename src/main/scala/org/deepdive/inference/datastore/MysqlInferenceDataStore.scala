@@ -30,8 +30,11 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
     // Default batch size, if not overwritten by user
     val BatchSize = Some(250000)
     
-    
-    def copyFileToTable(filePath: String, tableName: String) : Unit = {
+    /**
+     * Internal utility to copy a file to a table. uses LOAD DATA LOCAL INFILE 
+     * to retrieve the file in client-side rather than server-side. 
+     */
+    private def copyFileToTable(filePath: String, tableName: String) : Unit = {
 
       val srcFile = new File(filePath + ".text")
 
@@ -47,43 +50,144 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
       writer.println(s"${writebackCmd}")
       writer.close()
       executeCmd(tmpFile.getAbsolutePath())
-
-//      executeCmd(writebackCmd)
     }
+    
     /**
-     * This function is called after sampler terminates. 
+     * This function is called after sampler terminates.
      * It just copies weights from the sampler outputs into database.
      */
-    def bulkCopyWeights(weightsFile: String, dbSettings: DbSettings) : Unit = {
+    def bulkCopyWeights(weightsFile: String, dbSettings: DbSettings): Unit = {
       copyFileToTable(weightsFile, WeightResultTable)
-//      val deserializier = new ProtobufInferenceResultDeserializier()
-//      val weightResultStr = deserializier.getWeights(weightsFile).map { w =>
-//        s"${w.weightId}\t${w.value}"
-//      }.mkString("\n")
-//      
-//      copyStringToTable(weightResultStr, WeightResultTable)
-      
-//      MysqlDataStore.copyBatchData(s"COPY ${WeightResultTable}(id, weight) FROM STDIN",
-//        new java.io.StringReader(weightResultStr))
     }
 
     /**
      * This function is called after sampler terminates.
      * It just copies variables from the sampler outputs into database.
      */
-    def bulkCopyVariables(variablesFile: String, dbSettings: DbSettings) : Unit = {
+    def bulkCopyVariables(variablesFile: String, dbSettings: DbSettings): Unit = {
       copyFileToTable(variablesFile, VariableResultTable)
-
-      //      val deserializier = new ProtobufInferenceResultDeserializier()
-//      val variableResultStr = deserializier.getVariables(variablesFile).map { v =>
-//        s"${v.variableId}\t${v.category}\t${v.expectation}"
-//      }.mkString("\n")
-//      
-//      copyStringToTable(variableResultStr, VariableResultTable)
-      
-//      MysqlDataStore.copyBatchData(s"COPY ${VariableResultTable}(id, category, expectation) FROM STDIN",
-//        new java.io.StringReader(variableResultStr))
     }
+
+    /**
+     * Drop and create a sequence, based on database type.
+     *
+     * @see http://dev.mysql.com/doc/refman/5.0/en/user-variables.html
+     * @see http://www.it-iss.com/mysql/mysql-renumber-field-values/
+     */
+    def createSequenceFunction(seqName: String): String = s"SET @${seqName} = -1;"
+
+    /**
+     * Get the next value of a sequence
+     */
+    def nextVal(seqName: String): String = s" @${seqName} := @${seqName} + 1 "
+
+    /**
+     * Cast an expression to a type
+     */
+    def cast(expr: Any, toType: String): String = s"convert(${expr.toString()}, ${
+      toType match {
+        // in mysql, convert to unsigned guarantees bigint.
+        // @see http://stackoverflow.com/questions/4660383/how-do-i-cast-a-type-to-a-bigint-in-mysql
+        // TODO not sure if it works
+        case "bigint" => "unsigned"
+        case "int" => "unsigned"
+        case _ => toType
+      }
+    })"
+
+    /**
+     * Given a string column name, Get a quoted version dependent on DB.
+     *
+     *          if psql, return "column"
+     *          if mysql, return `column`
+     */
+    def quoteColumn(column: String): String = '`' + column + '`'
+    
+    def randomFunction: String = "RAND()"
+
+    // ============== Datastore-specific queries to override ==============
+
+    /**
+     * Note that mysql cannot have nested views.
+     * This utility creates a subquery for nesting views for mysql.
+     * The view will be named to "NAME_sub".
+     */
+    private def createSubQueryForCalibrationViewMysql(name: String, bucketedView: String) =
+      s"""CREATE OR REPLACE VIEW ${name}_sub1 AS 
+        SELECT bucket, COUNT(*) AS num_variables from ${bucketedView} GROUP BY bucket;
+      """
+
+    override def createCalibrationViewBooleanSQL(name: String, bucketedView: String, columnName: String) = s"""
+      ${createSubQueryForCalibrationViewMysql(name, bucketedView)}
+      CREATE OR REPLACE VIEW ${name}_sub2 AS SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
+          WHERE ${columnName}=true GROUP BY bucket;
+          
+      CREATE OR REPLACE VIEW ${name}_sub3 AS SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView} 
+          WHERE ${columnName}=false GROUP BY bucket;
+          
+      CREATE OR REPLACE VIEW ${name} AS
+        SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
+        ${name}_sub1 b1
+        LEFT JOIN ${name}_sub2 b2 ON b1.bucket = b2.bucket
+        LEFT JOIN ${name}_sub3 b3 ON b1.bucket = b3.bucket 
+        ORDER BY b1.bucket ASC;
+      """
+
+    override def WRONGcreateCalibrationViewRealNumberSQL(name: String, bucketedView: String, columnName: String) = s"""
+      ${createSubQueryForCalibrationViewMysql(name, bucketedView)}
+    
+      CREATE OR REPLACE VIEW ${name}_sub2 AS SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
+        WHERE ${columnName}=0.0 GROUP BY bucket;
+        
+      CREATE OR REPLACE VIEW ${name}_sub3 AS SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView} 
+        WHERE ${columnName}=0.0 GROUP BY bucket;
+    
+      CREATE OR REPLACE VIEW ${name} AS
+      SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
+      ${name}_sub1 b1
+      LEFT JOIN ${name}_sub2 b2 ON b1.bucket = b2.bucket
+      LEFT JOIN ${name}_sub3 b3 ON b1.bucket = b3.bucket 
+      ORDER BY b1.bucket ASC;
+      """
+
+    override def createCalibrationViewMultinomialSQL(name: String, bucketedView: String, columnName: String) = s"""
+      ${createSubQueryForCalibrationViewMysql(name, bucketedView)}
+
+      CREATE OR REPLACE VIEW ${name}_sub2 AS SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
+        WHERE ${columnName} = category GROUP BY bucket;
+        
+      CREATE OR REPLACE VIEW ${name}_sub3 AS SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView} 
+        WHERE ${columnName} != category GROUP BY bucket;
+      
+      CREATE OR REPLACE VIEW ${name} AS
+      SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
+      ${name}_sub1 b1
+      LEFT JOIN ${name}_sub2 b2 ON b1.bucket = b2.bucket
+      LEFT JOIN ${name}_sub3 b3 ON b1.bucket = b3.bucket 
+      ORDER BY b1.bucket ASC;
+      """
+
+    /**
+     * Dumb: mysql cannot drop index "if exists"...
+     * We use 4 statements to implement that.
+     */
+    private def dropIndexIfExistsMysql(indexName: String, tableName: String): String = {
+      s"""
+      set @exist := (select count(*) from information_schema.statistics 
+        where table_name = '${tableName}' and index_name = '${indexName}');
+      set @sqlstmt := if( @exist > 0, 'drop index ${indexName} on ${tableName}', 
+        'select ''"index ${indexName}" do not exist, skipping''');
+      PREPARE stmt FROM @sqlstmt;
+      EXECUTE stmt;
+    """
+    }
+
+    override def createInferenceResultIndiciesSQL = s"""
+      ${dropIndexIfExistsMysql(s"${WeightResultTable}_idx", WeightResultTable)}
+      ${dropIndexIfExistsMysql(s"${VariableResultTable}_idx", VariableResultTable)}
+      CREATE INDEX ${WeightResultTable}_idx ON ${WeightResultTable} (weight);
+      CREATE INDEX ${VariableResultTable}_idx ON ${VariableResultTable} (expectation);
+      """
 
   }
 }

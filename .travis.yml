@@ -16,6 +16,7 @@ jdk:
 sbt_args:
 services:
   - postgresql
+  - mysql
 env: 
   global:
     - PGUSER=postgres
