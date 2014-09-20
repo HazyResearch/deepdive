@@ -4,7 +4,7 @@ layout: default
 
 # Markov Logic Network
 
-This page introduces Deepdive's support for [Markov Logic Network](http://en.wikipedia.org/wiki/Markov_logic_network)(MLN). This piece of work takes the program parser of [Tuffy](http://i.stanford.edu/hazy/hazy/tuffy/) to generate a database containing all atoms in the MLN and a Deepdive program containing the formulas in the MLN as Deepdive inference rules. Then the generated Deepdive program will be fed into Deepdive for marginal inference or weight learning. Under the Deepdive framework, higher precision will be achieved, larger MLNs will be able to be computed and computation will be faster.
+This page introduces Deepdive's support for [Markov Logic Network](http://en.wikipedia.org/wiki/Markov_logic_network)(MLN). This piece of work takes the program parser of [Tuffy](http://i.stanford.edu/hazy/hazy/tuffy/) to generate a database containing all atoms in the MLN and a Deepdive program containing the formulas in the MLN as Deepdive [inference rules](http://deepdive.stanford.edu/doc/basics/inference_rules.html). Then the generated Deepdive program will be fed into Deepdive for [marginal inference or weight learning](http://deepdive.stanford.edu/doc/general/inference.html). Under the Deepdive framework, higher precision will be achieved, larger MLNs will be able to be computed and computation will be faster.
 
 ### Installation Guide
 
@@ -20,7 +20,7 @@ ant dist
 An MLN example is under folder deepdive/examples/smoke_mln. The files in this folder are listed below:
 
 - env_conf.sh is the database configuration file.
-- application.conf is the Deepdive program template. Only the Deepdive sampler parameters in this file can be changed.
+- [application.conf](http://deepdive.stanford.edu/doc/basics/configuration.html) is the Deepdive program template. Only the Deepdive sampler parameters and the global parameters except the database settings in this file can be changed.
 - prog.mln defines the predicates and formulas of the MLN.
 - evidence.db contains the evidence of the MLN.
 - query.db contains the queries of the MLN. Check out [Tuffy Documentation](http://i.stanford.edu/hazy/tuffy/doc/) for the format of prog.mln, evidence.db and query.db. You can find more examples in deepdive/mln/examples/.
@@ -36,7 +36,7 @@ run.sh will do the following work:
 - Run Tuffy port to populate the database and generate application_auto.conf which is the input for Deepdive.
 - Call Deepdive to solved the problem specified in application_auto.conf.
 
-The results, the marginals or weights, will remain in the database and deepdive/out/ after Deepdive finishes.
+The results, the marginals or weights, will remain in the [database](http://deepdive.stanford.edu/doc/advanced/reserved_tables.html) and deepdive/out/ after Deepdive finishes.
 
 ### Behavior Specification
 
@@ -44,3 +44,4 @@ The results, the marginals or weights, will remain in the database and deepdive/
 - As in Tuffy, soft evidence is supported. A soft evidence will be treated as a factor linked to the atom corresponding to the evidence. The weight of the factor is ln(prior/(1-prior)) where prior is the possibility that the evidence holds true.
 - Same as Tuffy, a closed world assumption is made during learning. This means all atoms not specified in evidence.db will be treated as false.
 - During learning the system learns weights for all soft rules specified in prog.mln. Non-zero weights are needed to be specified in prog.mln for all soft rules for learning.
+- For now the Tuffy Port is only tested on Postgres. Its support for other DBMSs will be developed and tested in the future.

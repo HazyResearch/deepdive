@@ -18,6 +18,6 @@ public class Main {
 			return;
 		}
 
-		new TuffyPort().run(options);
+		new DeepDiveTuffy().run(options);
 	}
 }

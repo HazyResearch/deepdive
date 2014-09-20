@@ -1176,22 +1176,36 @@ public class Clause implements Cloneable{
 		return specText;
 	}
 
+	/**
+	 * Generate Deepdive inference rules for this clause.
+	 */
 	public ArrayList<String> generateDeepdiveInferenceRules() {
 		UIMan.println(">>> Generating Inference Rules for " + name);
 		ArrayList<String> rules = new ArrayList<String>();
+
+		// Single inference rule if this clause is not a template.
 		if (!isTemplate) {
+
+			// generate input_query of the inference rule
+
+			// select the variables associated with this inference rule
 			String input_query = "SELECT ";
 			ArrayList<String> attrs = new ArrayList<String>();
 			ArrayList<String> groupBy = new ArrayList<String>();
+			// for all the literals in the clause
 			for (int i=0; i<lits.size(); i++) {
 				boolean containsExsitentiaVars = false;
 				HashSet<String> vars = lits.get(i).getVars();
+
+				// check if there are existential variables in the literal
 				for (String var : existentialVars) {
 					if (vars.contains(var)) {
 						containsExsitentiaVars = true;
 						break;
 					}
 				}
+
+				// add variables
 				if (!containsExsitentiaVars) {
 					attrs.add("t" + Integer.toString(i) + ".id AS \"t" + Integer.toString(i) + ".id\"");
 					groupBy.add("t" + Integer.toString(i) + ".id");
@@ -1201,6 +1215,8 @@ public class Clause implements Cloneable{
 				//attrs.add("t" + Integer.toString(i) + ".truth AS \"t" +Integer.toString(i) + ".truth\"");
 			}
 			input_query += StringMan.commaList(attrs) + "\n";
+
+			// the "FROM" part of the input_query
 			input_query += "FROM ";
 			attrs.clear();
 			for (int i=0; i<lits.size(); i++) {
@@ -1208,6 +1224,7 @@ public class Clause implements Cloneable{
 			}
 			input_query += StringMan.commaList(attrs) + "\n";
 
+			// the "WHERE" part of the input_query.
 			attrs.clear();
 			HashSet<String> vars = new HashSet<String>();
 			for (int i=0; i<lits.size(); i++) {
@@ -1238,14 +1255,15 @@ public class Clause implements Cloneable{
 				input_query += "WHERE ";
 				input_query += StringMan.join(" AND ", attrs);
 			}
-			//UIMan.println(input_query);
 
+			// deal with existential variables
 			if (existentialVars.isEmpty()) {
 				input_query += ";";
 			} else {
 				input_query += "\nGROUP BY " + StringMan.commaList(groupBy) + ";";
 			}
 
+			// generate the function of the inference rule
 			String function;
 			attrs.clear();
 			for (int i=0; i<lits.size(); i++) {
@@ -1264,18 +1282,22 @@ public class Clause implements Cloneable{
 				}
 			}
 			function = "Or" + StringMan.commaListParen(attrs);
-			//UIMan.println(function);
 
 			String rule = name + " {\n";
 			rule += "input_query: \"\"\"\n";
 			rule += input_query + "\n\"\"\"\n";
 			rule += "function: \"" + function + "\"\n";
+			// the weight of the inference rule
 			rule += "weight: " + (!isHardClause() && Config.learning_mode ? "\"?\"" : String.format("%f", weight)) + "\n}";
-			//UIMan.println(rule + "\n");
 			rules.add(StringMan.comment(toString()) + "\n" + rule + "\n");
-		} else {
+		}
+		// generate one inference rule for each instance of the template clause
+		else {
 			int count = 0;
 			for (ClauseInstance instance : instances) {
+				// generate input_query of the inference rule
+
+				// select the variables associated with this inference rule
 				String input_query = "SELECT ";
 				ArrayList<String> attrs = new ArrayList<String>();
 				ArrayList<String> groupBy = new ArrayList<String>();
@@ -1294,10 +1316,10 @@ public class Clause implements Cloneable{
 					} else {
 						attrs.add("array_agg(DISTINCT t" + Integer.toString(i) + ".id) AS \"t" + Integer.toString(i) + ".id\"");
 					}
-					//attrs.add("t" + Integer.toString(i) + ".truth AS \"t" + Integer.toString(i) + ".truth\"");
 				}
 				input_query += StringMan.commaList(attrs) + "\n";
 				
+				// the "FROM" part of the input_query
 				input_query += "FROM ";
 				attrs.clear();
 				for (int i=0; i<lits.size(); i++) {
@@ -1305,6 +1327,7 @@ public class Clause implements Cloneable{
 				}
 				input_query += StringMan.commaList(attrs) + "\n";
 
+				// the "WHERE" part of the input_query
 				attrs.clear();
 				HashSet<String> vars = new HashSet<String>();
 				for (int i=0; i<lits.size(); i++) {
@@ -1344,13 +1367,14 @@ public class Clause implements Cloneable{
 					input_query += StringMan.join(" AND ", attrs);
 				}
 
-				//UIMan.println(input_query);
+				// deal with existential variables
 				if (existentialVars.isEmpty()) {
 					input_query += ";";
 				} else {
 					input_query += "\nGROUP BY " + StringMan.commaList(groupBy) + ";";
 				}
 
+				// generate the function of the inference rule
 				String function;
 				attrs.clear();
 				for (int i=0; i<lits.size(); i++) {
@@ -1368,16 +1392,15 @@ public class Clause implements Cloneable{
 						attrs.add((lit.getSense()?"":"!") + "t" + Integer.toString(i) + ".truth[]");
 					}
 				}
-				function = "Or" + StringMan.commaListParen(attrs);
-				//UIMan.println(function);	
+				function = "Or" + StringMan.commaListParen(attrs);	
 
 				count++;
 				String rule = name + "_" + Integer.toString(count) + " {\n";
 				rule += "input_query: \"\"\"\n";
 				rule += input_query + "\n\"\"\"\n";
 				rule += "function: \"" + function + "\"\n";
+				// the weight of the inference rule
 				rule += "weight: " + (!isHardClause() && Config.learning_mode ? "\"?\"" : String.format("%f", weight)) + "\n}";
-				//UIMan.println(rule + "\n");
 				rules.add(StringMan.comment(toString(count - 1)) + "\n" + rule + "\n");
 			}
 		}

@@ -1067,17 +1067,30 @@ public class Predicate {
 		return ret;
 	}
 
+	/**
+	 * Generate Deepdive inference rules for soft evidence in the MLN.
+	 * The result is a single factor associated with the soft evidence atom
+	 * with weight ln(prior/(1-prior)) where prior is the probability that the
+	 * evidence holds true.
+	 * 
+	 */
 	public ArrayList<String> generateDeepdiveSoftEvidenceInferenceRules() {
 		
 		if (!hasEvid)
 			return new ArrayList<String>();
 
+		// Select out soft evidence.
 		String sql = "SELECT * FROM " + getRelName() + "_evidence WHERE club=0;";
 		ResultSet rs = db.query(sql);
 		try {
 			ArrayList<String> rules = new ArrayList<String>();
 			int count = 0;
+
+			// Generate a Deepdive inference rule for each soft evidence.
 			while(rs.next()) {
+
+				// input_query of the inference rule
+
 				String input_query = "SELECT t.id AS \"t.id\", t.truth as \"t.truth\"\n";
 				input_query += "FROM " + getRelName() + " t\n";
 				input_query += "WHERE ";
@@ -1093,7 +1106,11 @@ public class Predicate {
 				String rule = name + "_SoftEvidence_" + Integer.toString(count) + " {\n";
 				rule += "input_query: \"\"\"\n";
 				rule += input_query + "\n\"\"\"\n";
+
+				// function of the inference rule
 				rule += "function: \"" + function + "\"\n";
+
+				// weight of the inference rule
 				double prior = rs.getDouble("prior");
 				rule += "weight: " + Double.toString(Math.log(prior/(1-prior))) + "\n}";
 				UIMan.println(rule);
@@ -1107,6 +1124,11 @@ public class Predicate {
 		}
 	}
 
+	/**
+	 * Tell Deepdive which evidence is observation only. Only evidence not
+	 * specified here will be fitted in learning.
+	 * 
+	 */
 	public String generateDeepdiveObservationOnlyEvidence() {
 		return "\"INSERT INTO dd_graph_variables_observation SELECT id FROM "
 			+ getRelName() + " WHERE inQuery=FALSE AND truth IS NOT NULL;\"";
