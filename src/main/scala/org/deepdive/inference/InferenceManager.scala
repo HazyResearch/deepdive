@@ -85,8 +85,10 @@ trait InferenceManager extends Actor with ActorLogging {
       calibrationWriter ! PoisonPill
   }
 
+  // TODO zifei: not sure about merge here
   def runInference(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], 
-    samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false, dbSettings: DbSettings, parallelGrounding: Boolean) = {
+    samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false, dbSettings: DbSettings, 
+    parallelGrounding: Boolean) = {
 
     val sampler = context.actorOf(samplerProps, "sampler")
 
@@ -99,7 +101,7 @@ trait InferenceManager extends Actor with ActorLogging {
     samplingResult.map { x =>
       inferenceDataStore.writebackInferenceResult(
       variableSchema, SamplingOutputFile.getCanonicalPath, 
-      SamplingOutputFileWeights.getCanonicalPath, parallelGrounding)
+      SamplingOutputFileWeights.getCanonicalPath, parallelGrounding, dbSettings)
     }  
   }
 

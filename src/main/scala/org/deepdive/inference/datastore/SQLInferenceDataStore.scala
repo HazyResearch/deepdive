@@ -3,9 +3,11 @@ package org.deepdive.inference
 import java.io.{File, PrintWriter}
 import org.deepdive.calibration._
 import org.deepdive.datastore.JdbcDataStore
-import org.deepdive.datastore.DataUnloader
+import org.deepdive.datastore.DataLoader
 import org.deepdive.Logging
 import org.deepdive.Context
+import org.deepdive.helpers.Helpers
+import org.deepdive.helpers.Helpers.{Psql, Mysql}
 import org.deepdive.settings._
 import play.api.libs.json._
 import scalikejdbc._
@@ -29,12 +31,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   def ds : JdbcDataStore
   def dbSettings : DbSettings
-  val usingMysql = dbSettings.driver.equals("com.mysql.jdbc.Driver")
 
-  val dbType = usingMysql match {
-    case true => "mysql"
-    case false => "psql"
-  }
+  val dbType = Helpers.getDbType(dbSettings)
+  val usingMysql = dbType == Helpers.Mysql
 
   val factorOffset = new java.util.concurrent.atomic.AtomicLong(0)
 
@@ -59,36 +58,37 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
    */
   def createSequenceFunction(seqName: String, dbType: String) = {
     dbType match {
-      case "mysql" =>
+      case Mysql =>
          
         s"SET @${seqName} = -1;"
         
-      case "psql" =>
+      case Psql =>
         s"""DROP SEQUENCE IF EXISTS ${seqName} CASCADE;
           CREATE SEQUENCE ${seqName} MINVALUE -1 START 0;"""
     }
   }
   def nextVal(seqName: String, dbType: String) = {
     dbType match {
-      case "mysql" =>
+      case Mysql =>
         s" @${seqName} := @${seqName} + 1 "
         
-      case "psql" =>
+      case Psql =>
         s""" nextval('${seqName}') """
     }
   }
   def cast(expr: Any, toType: String, dbType: String) = {
     dbType match {
-      case "mysql" =>
+      case Mysql =>
         s"convert(${expr.toString()}, ${toType match {
           // in mysql, convert to unsigned guarantees bigint.
           // @see http://stackoverflow.com/questions/4660383/how-do-i-cast-a-type-to-a-bigint-in-mysql
           // TODO not sure if it works
           case "bigint" => "unsigned"
+          case "int" => "unsigned"
           case _ => toType
         }})"
         
-      case "psql" =>
+      case Psql =>
         s"""${expr.toString()}::${toType}"""
     }
   }
@@ -101,9 +101,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
    */
   def quoteColumn(column: String, dbType: String) = {
     dbType match {
-      case "mysql" =>
+      case Mysql =>
         '`' + column + '`'
-      case "psql" =>
+      case Psql =>
         '"' + column + '"'
     }
   }
@@ -277,9 +277,23 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     CREATE INDEX ${VariableResultTable}_idx ON ${VariableResultTable} (expectation);
   """
     
+  /**
+   * Dumb: mysql cannot drop index "if exists"...
+   * We use 4 statements to implement that.
+   */ 
+  def dropIndexIfExistsMysql(indexName: String, tableName: String) : String = {
+    s"""
+      set @exist := (select count(*) from information_schema.statistics 
+        where table_name = '${tableName}' and index_name = '${indexName}');
+      set @sqlstmt := if( @exist > 0, 'drop index ${indexName} on ${tableName}', 
+        'select ''"index ${indexName}" do not exist, skipping''');
+      PREPARE stmt FROM @sqlstmt;
+      EXECUTE stmt;
+    """
+  }
   def createInferenceResultIndiciesMysql = s"""
-    DROP INDEX IF EXISTS ${WeightResultTable}_idx ON ${WeightResultTable};
-    DROP INDEX IF EXISTS ${VariableResultTable}_idx ON ${VariableResultTable};
+    ${dropIndexIfExistsMysql(s"${WeightResultTable}_idx", WeightResultTable)}
+    ${dropIndexIfExistsMysql(s"${VariableResultTable}_idx", VariableResultTable)}
     CREATE INDEX ${WeightResultTable}_idx ON ${WeightResultTable} (weight);
     CREATE INDEX ${VariableResultTable}_idx ON ${VariableResultTable} (expectation);
   """
@@ -312,7 +326,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       """
         
   def createCalibrationViewBooleanSQL(name: String, bucketedView: String, columnName: String) = dbType match {
-    case "psql" => s"""
+    case Psql => s"""
       CREATE OR REPLACE VIEW ${name} AS
       SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
       (SELECT bucket, COUNT(*) AS num_variables from ${bucketedView} GROUP BY bucket) b1
@@ -322,7 +336,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         WHERE ${columnName}=false GROUP BY bucket) b3 ON b1.bucket = b3.bucket 
       ORDER BY b1.bucket ASC;
       """
-    case "mysql" => s"""
+    case Mysql => s"""
       ${createSubQueryForCalibrationViewMysql(name, bucketedView)}
       CREATE OR REPLACE VIEW ${name}_sub2 AS SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
           WHERE ${columnName}=true GROUP BY bucket;
@@ -342,7 +356,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   
   // TODO
   def WRONGcreateCalibrationViewRealNumberSQL(name: String, bucketedView: String, columnName: String) = dbType match {
-    case "psql" => s"""
+    case Psql => s"""
       CREATE OR REPLACE VIEW ${name} AS
       SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
       (SELECT bucket, COUNT(*) AS num_variables from ${bucketedView} GROUP BY bucket) b1
@@ -352,7 +366,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         WHERE ${columnName}=0.0 GROUP BY bucket) b3 ON b1.bucket = b3.bucket 
       ORDER BY b1.bucket ASC;
       """
-    case "mysql" => s"""
+    case Mysql => s"""
       ${createSubQueryForCalibrationViewMysql(name, bucketedView)}
     
       CREATE OR REPLACE VIEW ${name}_sub2 AS SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
@@ -372,7 +386,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   }
 
   def createCalibrationViewMultinomialSQL(name: String, bucketedView: String, columnName: String) = dbType match {
-    case "psql" => s"""
+    case Psql => s"""
       CREATE OR REPLACE VIEW ${name} AS
       SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
       (SELECT bucket, COUNT(*) AS num_variables from ${bucketedView} GROUP BY bucket) b1
@@ -382,7 +396,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         WHERE ${columnName} != category GROUP BY bucket) b3 ON b1.bucket = b3.bucket 
       ORDER BY b1.bucket ASC;
       """
-    case "mysql" => s"""
+    case Mysql => s"""
       ${createSubQueryForCalibrationViewMysql(name, bucketedView)}
 
       CREATE OR REPLACE VIEW ${name}_sub2 AS SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
@@ -519,19 +533,13 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean, weightTable: String, 
     dbSettings: DbSettings, parallelGrounding: Boolean) {
 
-    val du = new DataUnloader
+    val du = new DataLoader
     val groundingPath = if (!parallelGrounding) Context.outputDir else dbSettings.gppath
 
     // check whether Greenplum is used
     var usingGreenplum = false
     issueQuery(checkGreenplumSQL) { rs => 
       usingGreenplum = rs.getBoolean(1) 
-    }
-    val usingMysql = dbSettings.driver.equals("com.mysql.jdbc.Driver")
-    
-    val dbType = usingMysql match {
-      case true => "mysql"
-      case false => "psql"
     }
     
     log.info(s"Using Greenplum = ${usingGreenplum}")
@@ -542,12 +550,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     // clean up grounding folder (for parallel grounding)
     if (parallelGrounding) {
-      //val cleanFile = File.createTempFile(s"clean", ".sh")
-      //val writer = new PrintWriter(cleanFile)
-      //writer.println(s"rm -rf ${groundingPath}/*")
-      //writer.close()
-      //log.info("Cleaning up grounding folder...")
-      //executeCmd(cleanFile.getAbsolutePath())
+      val cleanFile = File.createTempFile(s"clean", ".sh")
+      val writer = new PrintWriter(cleanFile)
+      writer.println(s"rm -f ${groundingPath}/dd_*")
+      writer.close()
+      log.info("Cleaning up grounding folder...")
+      executeCmd(cleanFile.getAbsolutePath())
     }
 
     // assign variable id - sequential and unique
@@ -557,7 +565,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       executeQuery(createAssignIdFunctionPsql)
       schema.foreach { case(variable, dataType) =>
         val Array(relation, column) = variable.split('.')
-        executeQuery(s"""SELECT fast_seqassign('${relation}', ${idoffset});""")
+        executeQuery(s"""SELECT fast_seqassign('${relation.toLowerCase()}', ${idoffset});""")
         issueQuery(s"""SELECT max(id) FROM ${relation}""") { rs =>
           idoffset = 1 + rs.getLong(1)
         }
@@ -569,7 +577,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         val Array(relation, column) = variable.split('.')
         execute(s"UPDATE ${relation} SET id = ${nextVal(IdSequence, dbType)};")
       }
-    } 
+    }
 
     // variable holdout table - if user defined, execute once
     execute(s"""DROP TABLE IF EXISTS ${VariablesHoldoutTable} CASCADE;
@@ -588,15 +596,17 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         case BooleanType => 0
         case MultinomialType(x) => 1
         case RealNumberType => 2
+        case RealArrayType(x) => 3
       }
 
       val cardinality = dataType match {
         case BooleanType => 2
         case MultinomialType(x) => x.toInt
         case RealNumberType => 2
+        case RealArrayType(x) => x.toInt
       }
 
-      if(variableDataType == 2){
+      if(variableDataType == 2 || variableDataType == 3){
 
       } else {
         // This cannot be parsed in def randFunc for now.
@@ -617,11 +627,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
 
       // Create a cardinality table for the variable
-      // note we use two-digit fixed-length representation here (may be fixed)
+      // note we use five-digit fixed-length representation here
       val cardinalityValues = dataType match {
-        case BooleanType => "('01')"
-        case MultinomialType(x) => (0 to x-1).map (n => s"""('${"%02d".format(n)}')""").mkString(", ")
-        case RealNumberType => "('01')"
+        case BooleanType => "('00001')"
+        case MultinomialType(x) => (0 to x-1).map (n => s"""('${"%05d".format(n)}')""").mkString(", ")
+        case RealNumberType => "('00001')"
+        case RealArrayType(x) => "('00001')"
       }
       val cardinalityTableName = s"${relation}_${column}_cardinality"
       execute(s"""
@@ -630,22 +641,41 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         INSERT INTO ${cardinalityTableName} VALUES ${cardinalityValues};
         """)
 
-      // dump variables, 
-      // variable table join with holdout table - a variable is an evidence if it has initial value and it is not holdout
-      du.unload(s"variables_${relation}", s"${groundingPath}/variables_${relation}", dbSettings, parallelGrounding,
-        s"""SELECT id, ${cast(1, "int", dbType)} AS is_evidence, 
+      if(variableDataType == 2 || variableDataType == 3){
+        // dump variables, 
+        // variable table join with holdout table - a variable is an evidence if it has initial value and it is not holdout
+        du.unload(s"dd_variables_${relation}", s"${groundingPath}/dd_variables_${relation}", dbSettings, parallelGrounding,
+          s"""SELECT id,  ${cast(1, "int", dbType)} AS is_evidence, ${cast(column, "int", dbType)} + 0.0 AS initvalue, ${variableDataType} AS type, 
+            ${cardinality} AS cardinality  
+          FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable}
+          ON ${relation}.id = ${VariablesHoldoutTable}.variable_id
+          WHERE ${column} IS NOT NULL AND ${VariablesHoldoutTable}.variable_id IS NULL
+          UNION ALL
+          SELECT id,  ${cast(0, "int", dbType)} AS is_evidence, 0.0 AS initvalue, ${variableDataType} AS type, 
+            ${cardinality} AS cardinality  
+          FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable}
+          ON ${relation}.id = ${VariablesHoldoutTable}.variable_id
+          WHERE ${column} IS NULL OR ${VariablesHoldoutTable}.variable_id IS NOT NULL;
+          """)
+      }else{
+        // dump variables, 
+        // variable table join with holdout table - a variable is an evidence if it has initial value and it is not holdout
+        du.unload(s"dd_variables_${relation}", s"${groundingPath}/dd_variables_${relation}", dbSettings, parallelGrounding,
+          s"""SELECT id, ${cast(1, "int", dbType)} AS is_evidence, 
           ${cast(column, "int", dbType)} + 0.0 AS initvalue, ${variableDataType} AS type, 
           ${cardinality} AS cardinality  
-        FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable}
-        ON ${relation}.id = ${VariablesHoldoutTable}.variable_id
-        WHERE ${column} IS NOT NULL AND ${VariablesHoldoutTable}.variable_id IS NULL
-        UNION ALL
-        SELECT id, ${cast(0, "int", dbType)} AS is_evidence, 0.0 AS initvalue, ${variableDataType} AS type, 
-          ${cardinality} AS cardinality  
-        FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable}
-        ON ${relation}.id = ${VariablesHoldoutTable}.variable_id
-        WHERE ${column} IS NULL OR ${VariablesHoldoutTable}.variable_id IS NOT NULL;
-        """)
+          FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable}
+          ON ${relation}.id = ${VariablesHoldoutTable}.variable_id
+          WHERE ${column} IS NOT NULL AND ${VariablesHoldoutTable}.variable_id IS NULL
+          UNION ALL
+          SELECT id, ${cast(0, "int", dbType)} AS is_evidence, 0.0 AS initvalue, ${variableDataType} AS type, 
+            ${cardinality} AS cardinality  
+          FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable}
+          ON ${relation}.id = ${VariablesHoldoutTable}.variable_id
+          WHERE ${column} IS NULL OR ${VariablesHoldoutTable}.variable_id IS NOT NULL;
+          """)
+      }
+
     }
 
     // generate factor meta data
@@ -661,7 +691,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
 
     // dump factor meta data
-    du.unload(s"factormeta", s"${groundingPath}/factormeta", dbSettings, parallelGrounding,
+    du.unload(s"dd_factormeta", s"${groundingPath}/dd_factormeta", dbSettings, parallelGrounding,
       s"SELECT * FROM ${FactorMetaTable}")
 
     // weights table
@@ -686,7 +716,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         s""" ${quoteColumn(s"${v.relation}.id", dbType)} """).mkString(", ")
       val querytable = s"dd_query_${factorDesc.name}"
       val weighttableForThisFactor = s"dd_weights_${factorDesc.name}"
-      val outfile = s"factors_${factorDesc.name}_out"
+      val outfile = s"dd_factors_${factorDesc.name}_out"
 
       // table of input query
       execute(s"""DROP TABLE IF EXISTS ${querytable} CASCADE;
@@ -695,7 +725,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
       // handle factor id
       if (usingGreenplum) {
-        executeQuery(s"SELECT fast_seqassign('${querytable}', ${factorid});");
+        executeQuery(s"SELECT fast_seqassign('${querytable.toLowerCase()}', ${factorid});");
       } else {
         execute(s"UPDATE ${querytable} SET id = ${nextVal(factoridSequence, dbType)};")
       }
@@ -712,7 +742,83 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         case _ => 0.0
       }
 
-      if (factorDesc.func.getClass.getSimpleName != "MultinomialFactorFunction") {
+      // TODO zifei: make sure this new part is ported!
+      if (factorDesc.func.getClass.getSimpleName == "ContinuousLRFactorFunction"){
+
+        log.info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        if (isFixed || weightlist == ""){
+          log.error("#########################################")
+          log.error("DO NOT SUPPORT FIXED ARRAY WEIGHT FOR NOW")
+        } else { // not fixed and has weight variables
+          execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactor} CASCADE;
+            CREATE TABLE ${weighttableForThisFactor} AS
+            SELECT ${weightlist}, ${cast(0, "bigint", dbType)} AS id, ${cast(isFixed, "int", dbType)} AS isfixed, ${initvalue} + 0.0 AS initvalue 
+            FROM ${querytable}
+            GROUP BY ${weightlist};""")
+
+          // handle weight id
+          if (usingGreenplum) {      
+            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor}', ${cweightid});""")
+          } else {
+            execute(s"UPDATE ${weighttableForThisFactor} SET id = ${nextVal(weightidSequence, dbType)};")
+          }
+
+          var min_weight_id = 0L
+          var max_weight_id = 0L
+
+          issueQuery(s"""SELECT MIN(id) FROM ${weighttableForThisFactor};""") { rs =>
+            min_weight_id = rs.getLong(1)
+          }
+
+          issueQuery(s"""SELECT MAX(id) FROM ${weighttableForThisFactor};""") { rs =>
+            max_weight_id = rs.getLong(1)
+          }
+
+          execute(s"""UPDATE ${weighttableForThisFactor} SET
+                    id = ${min_weight_id} + (id - ${min_weight_id})*4096 
+            ;""")
+
+          issueQuery(s"""SELECT COUNT(*) FROM ${weighttableForThisFactor};""") { rs =>
+            cweightid += rs.getLong(1) * 4096
+          }
+
+          execute(s""" 
+              DROP TABLE IF EXISTS ${weighttableForThisFactor}_other CASCADE;
+              CREATE TABLE ${weighttableForThisFactor}_other (addid int);
+            """)
+
+          var one_2_4096 = (1 to (4096-1)).map(v => s""" (${v}) """).mkString(", ")
+
+          execute(s""" 
+              INSERT INTO ${weighttableForThisFactor}_other VALUES ${one_2_4096};
+          """)
+
+          execute(s"""
+            INSERT INTO ${weighttableForThisFactor}
+            SELECT t0.feature, t0.id+t1.addid, t0.isfixed, NULL 
+            FROM ${weighttableForThisFactor} t0, ${weighttableForThisFactor}_other t1;
+          """)
+
+          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue) SELECT id, isfixed, initvalue FROM ${weighttableForThisFactor};""")
+
+          // check null weight
+          val weightChecklist = factorDesc.weight.variables.map(v => s""" "${v}" IS NULL """).mkString("AND")
+          issueQuery(s"SELECT COUNT(*) FROM ${querytable} WHERE ${weightChecklist}") { rs =>
+            if (rs.getLong(1) > 0) {
+              throw new RuntimeException("Weight variable has null values")
+            }
+          }
+
+          // dump factors
+          val weightjoinlist = factorDesc.weight.variables.map(v => s""" t0."${v}" = t1."${v}" """).mkString("AND")
+          du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
+            s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
+             FROM ${querytable} t0, ${weighttableForThisFactor} t1
+             WHERE ${weightjoinlist} AND t1.initvalue IS NOT NULL;""")
+        }
+      // TODO zifei end
+
+      } else if (factorDesc.func.getClass.getSimpleName != "MultinomialFactorFunction") {
         // handle weights table
         // weight is fixed, or doesn't have weight variables
         if (isFixed || weightlist == ""){
@@ -737,7 +843,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
           // handle weight id
           if (usingGreenplum) {      
-            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor}', ${cweightid});""")
+            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor.toLowerCase()}', ${cweightid});""")
           } else {
             execute(s"UPDATE ${weighttableForThisFactor} SET id = ${nextVal(weightidSequence, dbType)};")
           }
@@ -766,10 +872,11 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
              WHERE ${weightjoinlist};""")
         }
       }
-
       // TODO NEED TO REUSE CODE!!
       // handle multinomial
       if (factorDesc.func.getClass.getSimpleName == "MultinomialFactorFunction") {
+      } else if (factorDesc.func.getClass.getSimpleName == "MultinomialFactorFunction") {
+        // handle multinomial
         // generate cardinality table for each variable
         factorDesc.func.variables.zipWithIndex.foreach { case(v,idx) =>
           val cardinalityTableName = s"${factorDesc.weightPrefix}_cardinality_${idx}"
@@ -799,7 +906,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
           // handle weight id
           if (usingGreenplum) {      
-            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor}', ${cweightid});""")
+            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor.toLowerCase()}', ${cweightid});""")
           } else {
             execute(s"UPDATE ${weighttableForThisFactor} SET id = ${nextVal(weightidSequence, dbType)};")
           }
@@ -832,7 +939,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
           // handle weight id
           if (usingGreenplum) {      
-            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor}', ${cweightid});""")
+            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor.toLowerCase()}', ${cweightid});""")
           } else {
             execute(s"UPDATE ${weighttableForThisFactor} SET id = ${nextVal(weightidSequence, dbType)};")
           }
@@ -844,7 +951,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
             SELECT id, isfixed, initvalue, cardinality FROM ${weighttableForThisFactor};""")
 
           // use weight id corresponding to cardinality 0 (like C array...)
-          val cardinalityKey = factorDesc.func.variables.map(v => "00").mkString(",")
+          val cardinalityKey = factorDesc.func.variables.map(v => "00000").mkString(",")
 
           // dump factors
           // TODO we don't have enough code reuse here.
@@ -859,8 +966,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
 
     // dump weights
-    du.unload("weights", s"${groundingPath}/weights",dbSettings, parallelGrounding,
-      s"SELECT id, isfixed, initvalue FROM ${WeightsTable}")
+    du.unload("dd_weights", s"${groundingPath}/dd_weights",dbSettings, parallelGrounding,
+      s"SELECT id, isfixed, COALESCE(initvalue, 0) FROM ${WeightsTable}")
 
     // create inference result table
     execute(createInferenceResultSQL)
@@ -891,26 +998,27 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   }
 
-  def bulkCopyWeights(weightsFile: String) : Unit
-  def bulkCopyVariables(variablesFile: String) : Unit
+  def bulkCopyWeights(weightsFile: String, dbSettings: DbSettings) : Unit
+  def bulkCopyVariables(variablesFile: String, dbSettings: DbSettings) : Unit
 
   /**
    * This function is executed when sampler finished.
    */
   def writebackInferenceResult(variableSchema: Map[String, _ <: VariableDataType],
-    variableOutputFile: String, weightsOutputFile: String, parallelGrounding: Boolean) = {
+    //variableOutputFile: String, weightsOutputFile: String, parallelGrounding: Boolean) = {
+    variableOutputFile: String, weightsOutputFile: String, parallelGrounding: Boolean, dbSettings: DbSettings) = {
 
     execute(createInferenceResultSQL)
     execute(createInferenceResultWeightsSQL)
 
     log.info("Copying inference result weights...")
-    bulkCopyWeights(weightsOutputFile)
+    bulkCopyWeights(weightsOutputFile, dbSettings)
     log.info("Copying inference result variables...")
-    bulkCopyVariables(variableOutputFile)
+    bulkCopyVariables(variableOutputFile, dbSettings)
     log.info("Creating indicies on the inference result...")
     execute(dbType match {
-      case "psql" => createInferenceResultIndiciesPsql
-      case "mysql" => createInferenceResultIndiciesMysql
+      case Psql => createInferenceResultIndiciesPsql
+      case Mysql => createInferenceResultIndiciesMysql
     })
 
     // Each (relation, column) tuple is a variable in the plate model.
@@ -946,6 +1054,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       case MultinomialType(_) =>
         execute(createCalibrationViewMultinomialSQL(calibrationViewName, bucketedViewName, columnName))
       case RealNumberType =>
+        execute(WRONGcreateCalibrationViewRealNumberSQL(calibrationViewName, bucketedViewName, columnName))
+      case RealArrayType(x) => 
         execute(WRONGcreateCalibrationViewRealNumberSQL(calibrationViewName, bucketedViewName, columnName))
     }
     

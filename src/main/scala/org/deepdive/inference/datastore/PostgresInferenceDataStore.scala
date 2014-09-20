@@ -10,6 +10,7 @@ import org.deepdive.Logging
 import org.deepdive.settings._
 import scala.collection.mutable.{ArrayBuffer, Set, SynchronizedBuffer}
 import scala.io.Source
+import java.io._
 
 /* Stores the factor graph and inference results in a postges database. */
 trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
@@ -22,7 +23,77 @@ trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent
 
     // Default batch size, if not overwritten by user
     val BatchSize = Some(250000)
+      
+
+    def bulkCopyWeights(weightsFile: String, dbSettings: DbSettings) : Unit = {
+     val dbname = dbSettings.dbname
+     val pguser = dbSettings.user
+     val pgport = dbSettings.port
+     val pghost = dbSettings.host
+     // TODO do not use password for now
+     val dbnameStr = dbname match {
+       case null => ""
+       case _ => s" -d ${dbname} "
+     }
+     val pguserStr = pguser match {
+       case null => ""
+       case _ => s" -U ${pguser} "
+     }
+     val pgportStr = pgport match {
+       case null => ""
+       case _ => s" -p ${pgport} "
+     }
+     val pghostStr = pghost match {
+       case null => ""
+       case _ => s" -h ${pghost} "
+     }
     
+     val cmdfile = File.createTempFile(s"copy", ".sh")
+     val writer = new PrintWriter(cmdfile)
+     val copyStr = List("psql ", dbnameStr, pguserStr, pgportStr, pghostStr, " -c ", "\"\"\"", 
+       """\COPY """, s"${WeightResultTable}(id, weight) FROM \'${weightsFile}.text\' DELIMITER ' ';", "\"\"\"").mkString("")
+     log.info(copyStr)
+     writer.println(copyStr)
+     writer.close()
+     executeCmd(cmdfile.getAbsolutePath())
+    }
+    
+    def bulkCopyVariables(variablesFile: String, dbSettings: DbSettings) : Unit = {
+     val dbname = dbSettings.dbname
+     val pguser = dbSettings.user
+     val pgport = dbSettings.port
+     val pghost = dbSettings.host
+     // TODO do not use password for now
+     val dbnameStr = dbname match {
+       case null => ""
+       case _ => s" -d ${dbname} "
+     }
+     val pguserStr = pguser match {
+       case null => ""
+       case _ => s" -U ${pguser} "
+     }
+     val pgportStr = pgport match {
+       case null => ""
+       case _ => s" -p ${pgport} "
+     }
+     val pghostStr = pghost match {
+       case null => ""
+       case _ => s" -h ${pghost} "
+     }
+    
+     val cmdfile = File.createTempFile(s"copy", ".sh")
+     val writer = new PrintWriter(cmdfile)
+     val copyStr = List("psql ", dbnameStr, pguserStr, pgportStr, pghostStr, " -c ", "\"\"\"", 
+       """\COPY """, s"${VariableResultTable}(id, category, expectation) FROM \'${variablesFile}.text\' DELIMITER ' ';", "\"\"\"").mkString("")
+     log.info(copyStr)
+     writer.println(copyStr)
+     writer.close()
+     executeCmd(cmdfile.getAbsolutePath())
+   }
+
+
+
+    /*
      def bulkCopyWeights(weightsFile: String) : Unit = {
       val deserializier = new ProtobufInferenceResultDeserializier()
       val weightResultStr = deserializier.getWeights(weightsFile).map { w =>
@@ -40,5 +111,6 @@ trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent
       PostgresDataStore.copyBatchData(s"COPY ${VariableResultTable}(id, category, expectation) FROM STDIN",
         new java.io.StringReader(variableResultStr))
     }
+    */
   }
 }

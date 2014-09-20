@@ -9,13 +9,13 @@ export DEEPDIVE_HOME=`cd $(dirname $0)/../../../; pwd`
 export DBNAME=deepdive_spouse_tsv
 
 # Initialize database
-bash $APP_HOME/../setup_database_mysql.sh $DBNAME
+# bash $APP_HOME/../setup_database_mysql.sh $DBNAME
 
 cd $DEEPDIVE_HOME
 
-deepdive -c $APP_HOME/application_mysql.conf
+# deepdive -c $APP_HOME/application_mysql.conf
 
-# SBT_OPTS="-Xmx4g" sbt "run -c $APP_HOME/application_mysql.conf"
+SBT_OPTS="-Xmx4g" sbt "run -c $APP_HOME/application_mysql.conf"
 
 # DEBUG MODE
 # SBT_OPTS="-agentlib:jdwp=transport=dt_socket,address=localhost:8000,server=y,suspend=y -Xmx4g" sbt "run -c $APP_HOME/application_mysql.conf"

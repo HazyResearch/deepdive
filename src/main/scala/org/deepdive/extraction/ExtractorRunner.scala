@@ -178,10 +178,12 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
 
           val queryOutputPath = Context.outputDir + s"/tmp/"
           log.info(queryOutputPath)
-          val success = (new File(queryOutputPath)).mkdirs()
-          // This is common, since you try to create the directory at every extractor. TODO refactor this.
-          // if (!success)
-          //   log.error("TSV extractor directory already exists!")
+          // Try to create the extractor output directory if not already present 
+          val queryOutputPathDir = new File(queryOutputPath)
+          if ((! queryOutputPathDir.exists()) && (!
+            queryOutputPathDir.mkdirs())) {
+              Status.Failure(new RuntimeException(s"TSV extractor directory creation failed"))
+            }
 
           // NEW: for mysqlimport compatibility, the file basename must be same as table name. 
           val queryOutputFile = new File(queryOutputPath + s"${outputRel}.copy_query_${funcName}.tsv")
@@ -256,10 +258,8 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
           }
           // TODO: not sure if mysqlimport can work on distributed server... it should. 
 
-
           // MYSQL writeback: use mysqlimport.
           // See: https://mariadb.com/kb/en/mariadb/documentation/clients-and-utilities/backup-restore-and-import/mysqlimport/
-
           val writebackTmpFile = new File(queryOutputPath + s"exec_parallel_writeback.sh")
           // val writebackTmpFile = File.createTempFile(s"exec_parallel_writeback", ".sh")
 
@@ -273,20 +273,20 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
           executeSqlUpdateOrFail(s"${sqlAnalyzeCommand} ${outputRel};", taskSender)
 
 
-           log.info("Removing temporary files...")
-           queryOutputFile.delete()
-          
-           val delCmd = s"find ${fpath} -name '${fname}*' 2>/dev/null -print0 | xargs -0 rm -f"
-           log.info(s"Executing: ${delCmd}")
-           val delTmpFile = new File(queryOutputPath + s"exec_delete.sh")
-           // val delTmpFile = File.createTempFile(s"exec_delete", ".sh")
-           val delWriter = new PrintWriter(delTmpFile)
-           delWriter.println(s"${delCmd}")
-           delWriter.close()
-           executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
-           executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
-           delTmpFile.delete()
-
+          log.info("Removing temporary files...")
+          queryOutputFile.delete()
+    
+          val delCmd = s"find ${fpath} -name '${fname}*' 2>/dev/null -print0 | xargs -0 rm -f"
+          log.info(s"Executing: ${delCmd}")
+          val delTmpFile = new File(queryOutputPath + s"exec_delete.sh")
+          // val delTmpFile = File.createTempFile(s"exec_delete", ".sh")
+          val delWriter = new PrintWriter(delTmpFile)
+          delWriter.println(s"${delCmd}")
+          delWriter.close()
+          executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
+          executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
+          delTmpFile.delete()
+          queryOutputPathDir.delete()
 
           // Execute the after script. Fail if the script fails.
           task.extractor.afterScript.foreach {
@@ -303,7 +303,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
 
         // Execute the sql query from sql extractor
         case "sql_extractor" =>
-          log.debug("Executing SQL query: ${task.extractor.sqlQuery}")
+          log.debug("Executing SQL query: " + task.extractor.sqlQuery)
           executeSqlUpdateOrFail(task.extractor.sqlQuery, taskSender)
           // Execute the after script. Fail if the script fails.
           task.extractor.afterScript.foreach {

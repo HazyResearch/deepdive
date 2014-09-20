@@ -38,3 +38,8 @@ packSettings
 
 // [Optional: Mappings from a program name to the corresponding Main class ]
 packMain := Map("deepdive" -> "org.deepdive.Main")
+
+jacoco.settings
+
+parallelExecution in jacoco.Config := false
+

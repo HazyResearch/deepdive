@@ -26,9 +26,16 @@ env:
     - LD_LIBRARY_PATH=/tmp/dw_linux/lib/dw_linux/lib:/tmp/dw_linux/lib/dw_linux/lib64
 notifications:
   email:
-    - zifeishan@gmail.com
+    - deepdive-dev@lists.stanford.edu
 before_script:
   - unzip lib/dw_linux.zip -d /tmp/
   - psql -c 'create database deepdive_test;' -U postgres
-  # - psql -c 'create database deepdive_test;' -U postgres
-# script: "./test.sh"
+  - cd doc/
+  - make serve  # serve to localhost
+  - cd ..
+  - sleep 3 # give Web server some time to bind to sockets, etc
+script: 
+  # Check both localhost and website
+  - bash ./src/test/bash/linkcheck.sh http://localhost:4000/
+  - bash ./src/test/bash/linkcheck.sh http://deepdive.stanford.edu/
+  - ./test.sh

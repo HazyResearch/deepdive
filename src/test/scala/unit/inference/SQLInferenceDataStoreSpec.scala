@@ -35,7 +35,13 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
   after {
     JdbcDataStore.close()
   }
-
+  
+  /**********************
+   * Note id must not be the first column,
+   * since the first column is the distribution key in greenplum,
+   * and DeepDive will try to do update id, which is not allowed 
+   * on distribution key.
+   **********************/
   describe("Postgres inference data store") {
     
     describe("intializing") {
@@ -92,10 +98,10 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         inferenceDataStore.init()
         
         // Insert sample data
-        SQL(s"""CREATE TABLE r1(weight ${inferenceDataStore.stringType},
+        SQL(s"""CREATE TABLE r1(weight int,
           is_correct boolean, id bigint);""").execute.apply()        
         val data = (1 to 100).map { i =>
-          Map("id" -> i, "weight" -> s"weight_${i}", "is_correct" -> s"${i%2==0}".toBoolean)
+          Map("id" -> i, "weight" -> i, "is_correct" -> s"${i%2==0}".toBoolean)
         }
         dataStoreHelper.bulkInsert("r1", data.iterator)
 
@@ -111,7 +117,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         // Ground the graph with custom holdout
         val customHoldoutQuery = """
           INSERT INTO dd_graph_variables_holdout(variable_id)
-          SELECT id FROM r1 WHERE id <= 10;"""
+          SELECT id FROM r1 WHERE weight <= 10;"""
         inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction, Option(customHoldoutQuery), false, "", dbSettings, false)
 
 
@@ -193,8 +199,8 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         inferenceDataStore.init()
         
         // Create table with multinomial data
-        SQL(s"""CREATE TABLE r1(id bigint, weight text,
-          value bigint);""").execute.apply() 
+        SQL(s"""CREATE TABLE r1(weight text,
+          value bigint, id bigint);""").execute.apply() 
         val data = (1 to 100).map { i =>
           Map("id" -> i, "weight" -> s"weight_${i}", "value" -> (i%4))
         }
@@ -229,8 +235,8 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         inferenceDataStore.init()
         
         // Create table with multinomial data
-        SQL(s"""CREATE TABLE r1(id bigint, weight text,
-          value bigint);""").execute.apply() 
+        SQL(s"""CREATE TABLE r1(weight text,
+          value bigint, id bigint);""").execute.apply() 
         val data = (1 to 100).map { i =>
           Map("id" -> i, "weight" -> s"weight_${i%4}", "value" -> (i%4))
         }
@@ -325,7 +331,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         inferenceDataStore.init()
         inferenceDataStore.groundFactorGraph(Map(), Seq(), 0.0, None, false, "", dbSettings, false)
         SQL(s"""create table has_spouse(id ${inferenceDataStore.keyType} primary key, is_true boolean)""").execute.apply()
-        inferenceDataStore.writebackInferenceResult(schema, variablesFile, weightsFile, false)
+        inferenceDataStore.writebackInferenceResult(schema, variablesFile, weightsFile, false, dbSettings)
       }
 
     }
