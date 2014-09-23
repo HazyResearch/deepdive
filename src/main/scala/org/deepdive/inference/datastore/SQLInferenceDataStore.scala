@@ -44,6 +44,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def IdSequence = "dd_variable_sequence"
   def FactorMetaTable = "dd_graph_factormeta"
 
+  // TODO change integers to global constants / enums
   def getFactorFunctionTypeid(functionName: String) = {
     functionName match {
       case "ImplyFactorFunction" => 0
@@ -658,25 +659,23 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         }
 
       }else if (factorDesc.func.getClass.getSimpleName != "MultinomialFactorFunction") {
-        // handle weights table
-        // weight is fixed, or doesn't have weight variables
-        if (isFixed || weightlist == ""){
-          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue) 
-            VALUES (${cweightid}, ${isFixed}::int, ${initvalue});""")
-          du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
-            s"SELECT id AS factor_id, ${cweightid} AS weight_id, ${idcols} FROM ${querytable}")
 
-          // handle weight id and factor id
-          cweightid += 1
-          if (!usingGreenplum) {
-            executeQuery(s"SELECT nextval('${weightidSequence}');")
+        // branch if weight variables present
+        val hasWeightVariables = !(isFixed || weightlist == "")
+        
+        val createWeightTableForThisFactorSQL = hasWeightVariables match {
+            // create a table that only contains one row (one weight) 
+            case false => s"""DROP TABLE IF EXISTS ${weighttableForThisFactor} CASCADE;
+              CREATE TABLE ${weighttableForThisFactor} AS
+              SELECT 0::bigint AS id, ${isFixed}::int AS isfixed, ${initvalue}::real AS initvalue;"""
+            // create one weight for each different element in weightlist.
+            case true => s"""DROP TABLE IF EXISTS ${weighttableForThisFactor} CASCADE;
+              CREATE TABLE ${weighttableForThisFactor} AS
+              SELECT ${weightlist}, 0::bigint AS id, ${isFixed}::int AS isfixed, ${initvalue}::real AS initvalue 
+              FROM ${querytable}
+              GROUP BY ${weightlist};"""
           }
-        } else { // not fixed and has weight variables
-          execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactor} CASCADE;
-            CREATE TABLE ${weighttableForThisFactor} AS
-            SELECT ${weightlist}, 0::bigint AS id, ${isFixed}::int AS isfixed, ${initvalue}::real AS initvalue 
-            FROM ${querytable}
-            GROUP BY ${weightlist};""")
+          execute(createWeightTableForThisFactorSQL)
 
           // handle weight id
           if (usingGreenplum) {      
@@ -690,21 +689,28 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
           execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue) SELECT id, isfixed, initvalue FROM ${weighttableForThisFactor};""")
 
-          // check null weight
-          val weightChecklist = factorDesc.weight.variables.map(v => s""" "${v}" IS NULL """).mkString("AND")
-          issueQuery(s"SELECT COUNT(*) FROM ${querytable} WHERE ${weightChecklist}") { rs =>
-            if (rs.getLong(1) > 0) {
-              throw new RuntimeException("Weight variable has null values")
+          // check null weight (only if there are weight variables)
+          if (hasWeightVariables) {
+            val weightChecklist = factorDesc.weight.variables.map(v => s""" "${v}" IS NULL """).mkString("AND")
+            issueQuery(s"SELECT COUNT(*) FROM ${querytable} WHERE ${weightChecklist}") { rs =>
+              if (rs.getLong(1) > 0) {
+                throw new RuntimeException("Weight variable has null values")
+              }
             }
           }
-
+          
           // dump factors
-          val weightjoinlist = factorDesc.weight.variables.map(v => s""" t0."${v}" = t1."${v}" """).mkString("AND")
+          // do not have join conditions if there are no weight variables, and t1 will only have 1 row
+          val weightjoinlist = hasWeightVariables match {
+            case true => "WHERE " + factorDesc.weight.variables.map(
+                v => s""" t0."${v}" = t1."${v}" """).mkString("AND")
+            case false => ""
+          }
           du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
             s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
              FROM ${querytable} t0, ${weighttableForThisFactor} t1
-             WHERE ${weightjoinlist};""")
-        }
+             ${weightjoinlist};""")
+//        }
       }else if (factorDesc.func.getClass.getSimpleName == "MultinomialFactorFunction") {
         // handle multinomial
         // generate cardinality table for each variable

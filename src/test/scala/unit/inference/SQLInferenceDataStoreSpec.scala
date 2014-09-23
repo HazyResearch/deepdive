@@ -51,7 +51,100 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
 
     describe("grounding the factor graph with Boolean variables") {
       
+      it("should work with fixed weight") {
+        inferenceDataStore.init()
+        
+        // Insert sample data
+        SQL(s"""CREATE TABLE r1(weight ${inferenceDataStore.stringType},
+          is_correct boolean, id bigint);""").execute.apply()        
+        val data = (1 to 100).map { i =>
+          Map("id" -> i, "is_correct" -> s"${i%2==0}".toBoolean)
+        }
+        dataStoreHelper.bulkInsert("r1", data.iterator)
 
+        val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
+
+        // Build the factor description
+        val factorDesc = FactorDesc("testFactor", 
+            """SELECT id AS "r1.id", is_correct AS "r1.is_correct" FROM r1""", 
+          IsTrueFactorFunction(Seq("r1.is_correct")), 
+          KnownFactorWeight(0.37), "weight_prefix")
+        val holdoutFraction = 0.0
+
+        // Ground the graph
+        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction, None, false, "", dbSettings, false)
+
+        // Check the result
+        val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numWeights === 1)
+        val initValue = SQL(s"""SELECT initvalue FROM ${inferenceDataStore.WeightsTable} limit 1""")
+          .map(rs => rs.double("initvalue")).single.apply().get
+        assert(initValue === 0.37)
+        val isFixed = SQL(s"""SELECT isfixed FROM ${inferenceDataStore.WeightsTable} limit 1""")
+          .map(rs => rs.int("isfixed")).single.apply().get
+        assert(isFixed === 1)
+        val factorName = SQL(s"""SELECT * FROM ${inferenceDataStore.FactorMetaTable}""")
+          .map(rs => rs.string("name")).single.apply().get
+        assert(factorName === "testFactor")
+        val funcid = SQL(s"""SELECT * FROM ${inferenceDataStore.FactorMetaTable}""")
+          .map(rs => rs.int("funcid")).single.apply().get
+        assert(funcid === 4)
+        val signs = SQL(s"""SELECT * FROM ${inferenceDataStore.FactorMetaTable}""")
+          .map(rs => rs.string("sign")).single.apply().get
+        assert(signs === "true")
+        val numFactors = SQL(s"""SELECT COUNT(*) AS "count" FROM dd_query_testFactor""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numFactors === 100)
+      }
+      
+      it("should work with weight to learn without weight variables") {
+        inferenceDataStore.init()
+        
+        // Insert sample data
+        SQL(s"""CREATE TABLE r1(weight ${inferenceDataStore.stringType},
+          is_correct boolean, id bigint);""").execute.apply()        
+        val data = (1 to 100).map { i =>
+          Map("id" -> i, "is_correct" -> s"${i%2==0}".toBoolean)
+        }
+        dataStoreHelper.bulkInsert("r1", data.iterator)
+
+        val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
+
+        // Build the factor description
+        val factorDesc = FactorDesc("testFactor", 
+            """SELECT id AS "r1.id", is_correct AS "r1.is_correct" FROM r1""", 
+          IsTrueFactorFunction(Seq("r1.is_correct")), 
+          UnknownFactorWeight(List()), "weight_prefix")
+        val holdoutFraction = 0.0
+
+        // Ground the graph
+        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction, None, false, "", dbSettings, false)
+
+        // Check the result
+        val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numWeights === 1)
+        val initValue = SQL(s"""SELECT initvalue FROM ${inferenceDataStore.WeightsTable} limit 1""")
+          .map(rs => rs.double("initvalue")).single.apply().get
+        assert(initValue === 0)
+        val isFixed = SQL(s"""SELECT isfixed FROM ${inferenceDataStore.WeightsTable} limit 1""")
+          .map(rs => rs.int("isfixed")).single.apply().get
+        assert(isFixed === 0)
+        val factorName = SQL(s"""SELECT * FROM ${inferenceDataStore.FactorMetaTable}""")
+          .map(rs => rs.string("name")).single.apply().get
+        assert(factorName === "testFactor")
+        val funcid = SQL(s"""SELECT * FROM ${inferenceDataStore.FactorMetaTable}""")
+          .map(rs => rs.int("funcid")).single.apply().get
+        assert(funcid === 4)
+        val signs = SQL(s"""SELECT * FROM ${inferenceDataStore.FactorMetaTable}""")
+          .map(rs => rs.string("sign")).single.apply().get
+        assert(signs === "true")
+        val numFactors = SQL(s"""SELECT COUNT(*) AS "count" FROM dd_query_testFactor""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numFactors === 100)
+      }
+      
       it("should work with a one-variable factor rule") {
         inferenceDataStore.init()
         
@@ -257,6 +350,89 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numWeights === 16)
+
+        // One factor for each possible predicate assignment
+        val numFactors = SQL(s"""SELECT COUNT(*) AS "count" FROM dd_query_testFactor""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numFactors === 100)
+
+      }
+
+      it("should work with fixed weight")
+      {
+        inferenceDataStore.init()
+        
+        // Create table with multinomial data
+        SQL(s"""CREATE TABLE r1(weight text,
+          value bigint, id bigint);""").execute.apply() 
+        val data = (1 to 100).map { i =>
+          Map("id" -> i, "value" -> (i%4))
+        }
+        dataStoreHelper.bulkInsert("r1", data.iterator)
+
+        // Define the schema
+        val schema = Map[String, VariableDataType]("r1.value" -> MultinomialType(4))
+
+        // Build the factor description
+        val factorDesc = FactorDesc("testFactor", 
+          """SELECT id AS "r1.id", value AS "r1.value" FROM r1""", 
+          MultinomialFactorFunction(Seq("r1.value")), 
+          KnownFactorWeight(0.37), "weight_prefix")
+        val holdoutFraction = 0.0
+
+        // Ground the graph
+        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction, None, false, "", dbSettings, false)
+
+        val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numWeights === 4)
+
+        // TODO: what does cardinality mean in this table?
+
+        // For fixed weights, all rows should have same initvalue          
+        assert(SQL(s"""SELECT initvalue FROM ${inferenceDataStore.WeightsTable} limit 1""")
+          .map(rs => rs.double("initvalue")).single.apply().get === 0.37)
+        assert(SQL(s"""SELECT isfixed FROM ${inferenceDataStore.WeightsTable} limit 1""")
+          .map(rs => rs.int("isfixed")).single.apply().get === 1)
+
+        // One factor for each possible predicate assignment
+        val numFactors = SQL(s"""SELECT COUNT(*) AS "count" FROM dd_query_testFactor""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numFactors === 100)
+
+      }
+
+      it("should work with weight to learn without weight variables")
+      {
+        inferenceDataStore.init()
+        
+        // Create table with multinomial data
+        SQL(s"""CREATE TABLE r1(weight text,
+          value bigint, id bigint);""").execute.apply() 
+        val data = (1 to 100).map { i =>
+          Map("id" -> i, "value" -> (i%4))
+        }
+        dataStoreHelper.bulkInsert("r1", data.iterator)
+
+        // Define the schema
+        val schema = Map[String, VariableDataType]("r1.value" -> MultinomialType(4))
+
+        // Build the factor description
+        val factorDesc = FactorDesc("testFactor", 
+          """SELECT id AS "r1.id", value AS "r1.value" FROM r1""", 
+          MultinomialFactorFunction(Seq("r1.value")), 
+          UnknownFactorWeight(List()), "weight_prefix")
+        val holdoutFraction = 0.0
+
+        // Ground the graph
+        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction, None, false, "", dbSettings, false)
+
+        val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numWeights === 4)
+
+        assert(SQL(s"""SELECT isfixed FROM ${inferenceDataStore.WeightsTable} limit 1""")
+          .map(rs => rs.int("isfixed")).single.apply().get === 0)
 
         // One factor for each possible predicate assignment
         val numFactors = SQL(s"""SELECT COUNT(*) AS "count" FROM dd_query_testFactor""")
