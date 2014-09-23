@@ -510,8 +510,8 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
 
     describe ("writing back the inference Result") {
 
-      val variablesFile = getClass.getResource("/inference/sample_result.variables.pb").getFile
-      val weightsFile = getClass.getResource("/inference/sample_result.weights.pb").getFile
+      val variablesFile = getClass.getResource("/inference/sample_result.variables.text").getFile
+      val weightsFile = getClass.getResource("/inference/sample_result.weights.text").getFile
       val schema = Map[String, VariableDataType]("has_spouse.is_true" -> BooleanType)
 
       it("should work") {

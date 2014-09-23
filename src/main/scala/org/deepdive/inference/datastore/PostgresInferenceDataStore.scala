@@ -54,7 +54,7 @@ trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent
      val cmdfile = File.createTempFile(s"copy", ".sh")
      val writer = new PrintWriter(cmdfile)
      val copyStr = List("psql ", dbnameStr, pguserStr, pgportStr, pghostStr, " -c ", "\"\"\"", 
-       """\COPY """, s"${WeightResultTable}(id, weight) FROM \'${weightsFile}.text\' DELIMITER ' ';", "\"\"\"").mkString("")
+       """\COPY """, s"${WeightResultTable}(id, weight) FROM \'${weightsFile}\' DELIMITER ' ';", "\"\"\"").mkString("")
      log.info(copyStr)
      writer.println(copyStr)
      writer.close()
@@ -87,7 +87,7 @@ trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent
      val cmdfile = File.createTempFile(s"copy", ".sh")
      val writer = new PrintWriter(cmdfile)
      val copyStr = List("psql ", dbnameStr, pguserStr, pgportStr, pghostStr, " -c ", "\"\"\"", 
-       """\COPY """, s"${VariableResultTable}(id, category, expectation) FROM \'${variablesFile}.text\' DELIMITER ' ';", "\"\"\"").mkString("")
+       """\COPY """, s"${VariableResultTable}(id, category, expectation) FROM \'${variablesFile}\' DELIMITER ' ';", "\"\"\"").mkString("")
      log.info(copyStr)
      writer.println(copyStr)
      writer.close()
