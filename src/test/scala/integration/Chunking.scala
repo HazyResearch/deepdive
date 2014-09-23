@@ -124,7 +124,8 @@ class ChunkingApp extends FunSpec {
   def processResults() : Double = {
     JdbcDataStore.init(ConfigFactory.load)
     val resultFile = File.createTempFile("result", "")
-    // val resultFile = s"""${getClass.getResource("/chunking").getFile}/chunking_result"""
+    resultFile.setWritable(true, false);
+    
     PostgresDataStore.withConnection { implicit conn =>
       SQL("""drop table if exists result cascade;""").execute()
       SQL("""create table result
