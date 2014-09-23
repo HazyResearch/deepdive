@@ -8,6 +8,7 @@ import org.deepdive.calibration._
 import org.deepdive.datastore.PostgresDataStore
 import org.deepdive.Logging
 import org.deepdive.settings._
+import org.deepdive.helpers.Helpers
 import scala.collection.mutable.{ArrayBuffer, Set, SynchronizedBuffer}
 import scala.io.Source
 import java.io._
@@ -57,7 +58,7 @@ trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent
      log.info(copyStr)
      writer.println(copyStr)
      writer.close()
-     executeCmd(cmdfile.getAbsolutePath())
+     Helpers.executeCmd(cmdfile.getAbsolutePath())
     }
     
     def bulkCopyVariables(variablesFile: String, dbSettings: DbSettings) : Unit = {
@@ -90,7 +91,7 @@ trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent
      log.info(copyStr)
      writer.println(copyStr)
      writer.close()
-     executeCmd(cmdfile.getAbsolutePath())
+     Helpers.executeCmd(cmdfile.getAbsolutePath())
    }
 
 
