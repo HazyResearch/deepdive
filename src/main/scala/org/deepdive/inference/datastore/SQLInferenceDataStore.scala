@@ -7,6 +7,7 @@ import org.deepdive.datastore.DataLoader
 import org.deepdive.Logging
 import org.deepdive.Context
 import org.deepdive.settings._
+import org.deepdive.helpers.Helpers
 import play.api.libs.json._
 import scalikejdbc._
 import scala.util.matching._
@@ -354,21 +355,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     """
 
 
-  def executeCmd(cmd: String) : Try[Int] = {
-    // Make the file executable, if necessary
-    val file = new java.io.File(cmd)
-    if (file.isFile) file.setExecutable(true, false)
-    log.info(s"""Executing: "$cmd" """)
-    val processLogger = ProcessLogger(line => log.info(line))
-    Try(cmd!(processLogger)) match {
-      case Success(0) => Success(0)
-      case Success(errorExitValue) => 
-        Failure(new RuntimeException(s"Script exited with exit_value=$errorExitValue"))
-      case Failure(ex) => Failure(ex)
-    }
-  }
-
-
   def init() : Unit = {
   }
 
@@ -402,7 +388,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       writer.println(s"rm -f ${groundingPath}/dd_*")
       writer.close()
       log.info("Cleaning up grounding folder...")
-      executeCmd(cleanFile.getAbsolutePath())
+      Helpers.executeCmd(cleanFile.getAbsolutePath())
     }
 
     // assign variable id - sequential and unique
