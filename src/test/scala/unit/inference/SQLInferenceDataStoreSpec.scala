@@ -84,6 +84,10 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         val isFixed = SQL(s"""SELECT isfixed FROM ${inferenceDataStore.WeightsTable} limit 1""")
           .map(rs => rs.int("isfixed")).single.apply().get
         assert(isFixed === 1)
+        val weightDesc = SQL(s"""SELECT description FROM ${inferenceDataStore.WeightsTable} limit 1""")
+          .map(rs => rs.string("description")).single.apply().get
+        assert(weightDesc === "weight_prefix-")
+
         val factorName = SQL(s"""SELECT * FROM ${inferenceDataStore.FactorMetaTable}""")
           .map(rs => rs.string("name")).single.apply().get
         assert(factorName === "testFactor")
@@ -131,6 +135,10 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         val isFixed = SQL(s"""SELECT isfixed FROM ${inferenceDataStore.WeightsTable} limit 1""")
           .map(rs => rs.int("isfixed")).single.apply().get
         assert(isFixed === 0)
+        val weightDesc = SQL(s"""SELECT description FROM ${inferenceDataStore.WeightsTable} limit 1""")
+          .map(rs => rs.string("description")).single.apply().get
+        assert(weightDesc === "weight_prefix-")
+
         val factorName = SQL(s"""SELECT * FROM ${inferenceDataStore.FactorMetaTable}""")
           .map(rs => rs.string("name")).single.apply().get
         assert(factorName === "testFactor")
@@ -172,6 +180,10 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numWeights === 100)
+        val weightDesc = SQL(s"""SELECT description FROM ${inferenceDataStore.WeightsTable} WHERE description LIKE '%71'""")
+          .map(rs => rs.string("description")).single.apply().get
+        assert(weightDesc === "weight_prefix-weight_71")
+
         val factorName = SQL(s"""SELECT * FROM ${inferenceDataStore.FactorMetaTable}""")
           .map(rs => rs.string("name")).single.apply().get
         assert(factorName === "testFactor")
@@ -279,8 +291,8 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
           .map(rs => rs.long("count")).single.apply().get
         assert(numFactors === 100)
 
-
       }
+
 
     }
 

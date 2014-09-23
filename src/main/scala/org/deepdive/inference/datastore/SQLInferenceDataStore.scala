@@ -538,7 +538,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     // weights table
     execute(s"""DROP TABLE IF EXISTS ${WeightsTable} CASCADE;""")
-    execute(s"""CREATE TABLE ${WeightsTable} (id bigint, isfixed int, initvalue real, cardinality text);""")
+    execute(s"""CREATE TABLE ${WeightsTable} (id bigint, isfixed int, initvalue real, 
+      cardinality text, description text);""")
 
     // weight and factor id
     // greemplum: use fast_seqassign postgres: use sequence
@@ -583,6 +584,15 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         case x : KnownFactorWeight => x.value
         case _ => 0.0
       }
+
+      // generate weight description
+      def generateWeightDesc(weightPrefix: String, weightVariables: Seq[String]) : String = 
+        weightVariables.map ( v => s"""(CASE WHEN "${v}" IS NULL THEN '' ELSE "${v}"::text END)""" )
+          .mkString(" || '-' || ") match {
+          case "" => s"""'${weightPrefix}-' """
+          case x => s"""'${weightPrefix}-' || ${x}"""
+      }
+      val weightDesc = generateWeightDesc(factorDesc.weightPrefix, factorDesc.weight.variables)
 
       if (factorDesc.func.getClass.getSimpleName == "ContinuousLRFactorFunction"){
 
@@ -687,7 +697,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
             cweightid += rs.getLong(1)
           }
 
-          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue) SELECT id, isfixed, initvalue FROM ${weighttableForThisFactor};""")
+          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, description) 
+            SELECT id, isfixed, initvalue, ${weightDesc} FROM ${weighttableForThisFactor};""")
 
           // check null weight (only if there are weight variables)
           if (hasWeightVariables) {
@@ -747,8 +758,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
             execute(s"UPDATE ${weighttableForThisFactor} SET id = nextval('${weightidSequence}');")
           }
 
-          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, cardinality) 
-            SELECT * FROM ${weighttableForThisFactor};""")
+          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, cardinality, description) 
+            SELECT id, isfixed, initvalue, cardinality, ${weightDesc} FROM ${weighttableForThisFactor};""")
 
           du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
             s"SELECT id AS factor_id, ${cweightid} AS weight_id, ${idcols} FROM ${querytable}")
@@ -781,8 +792,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
             cweightid += rs.getLong(1)
           }
 
-          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, cardinality) 
-            SELECT id, isfixed, initvalue, cardinality FROM ${weighttableForThisFactor};""")
+          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, cardinality, description) 
+            SELECT id, isfixed, initvalue, cardinality, ${weightDesc} FROM ${weighttableForThisFactor};""")
 
           // use weight id corresponding to cardinality 0 (like C array...)
           val cardinalityKey = factorDesc.func.variables.map(v => "00000").mkString(",")
@@ -856,9 +867,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       case Array(relation, column) => (relation, column)
     }
 
-    if (!parallelGrounding) {
-      execute(createMappedWeightsViewSQL)
-    }
+    execute(createMappedWeightsViewSQL)
 
     relationsColumns.foreach { case(relationName, columnName) =>
       execute(createInferenceViewSQL(relationName, columnName))
