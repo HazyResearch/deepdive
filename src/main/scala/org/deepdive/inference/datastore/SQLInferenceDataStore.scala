@@ -695,10 +695,10 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
               }
             }
           }
-          
+
           // dump factors
           // do not have join conditions if there are no weight variables, and t1 will only have 1 row
-          val weightjoinlist = hasWeightVariables match {
+          val weightJoinCondition = hasWeightVariables match {
             case true => "WHERE " + factorDesc.weight.variables.map(
                 v => s""" t0."${v}" = t1."${v}" """).mkString("AND")
             case false => ""
@@ -706,8 +706,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
             s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
              FROM ${querytable} t0, ${weighttableForThisFactor} t1
-             ${weightjoinlist};""")
-//        }
+             ${weightJoinCondition};""")
+
       }else if (factorDesc.func.getClass.getSimpleName == "MultinomialFactorFunction") {
         // handle multinomial
         // generate cardinality table for each variable
