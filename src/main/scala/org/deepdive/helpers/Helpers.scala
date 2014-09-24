@@ -2,8 +2,10 @@ package org.deepdive.helpers
 
 import org.deepdive.Logging
 import org.deepdive.settings._
+import org.deepdive.datastore.JdbcDataStore
 import java.io._
 import scala.sys.process._
+import scala.util.{Try, Success, Failure}
 
 /** Some helper functions that are used in many places 
  */
@@ -15,7 +17,7 @@ object Helpers extends Logging {
     
   val PsqlDriver = "org.postgresql.Driver"
   val MysqlDriver = "com.mysql.jdbc.Driver"
-
+  
   /**
    * Get the dbtype from DbSettings
    * 
@@ -83,7 +85,11 @@ object Helpers extends Logging {
     dbnameStr + dbuserStr + dbportStr + dbhostStr
   }
   
-  /** Execute a file as a bash script */
+  /** 
+   *  Execute a file as a bash script.
+   *  
+   *  @throws RuntimeException if failed
+   */
   def executeCmd(cmd: String) : Unit = {
     // Make the file executable, if necessary
     val file = new java.io.File(cmd)
@@ -93,7 +99,48 @@ object Helpers extends Logging {
     // Depending on the exit value we return success or throw an exception
     exitValue match {
       case 0 => 
-      case _ => throw new RuntimeException("Script failed")
+      case _ => throw new RuntimeException("Failure when executing script: ${cmd}")
+    }
+  }
+
+
+  /**
+   * Execute any sql query
+   * (sql must be only ONE query for mysql, but can be multiple queries for psql.)
+   * 
+   * @return SQL result set
+   */
+  def executeSqlQuery(sql: String, ds: JdbcDataStore) = {
+    log.debug("EXECUTING.... " + sql)
+    val conn = ds.borrowConnection()
+    conn.setAutoCommit(false)
+    val stmt = conn.createStatement();
+    stmt.execute(sql)
+    conn.commit()
+    conn.close()
+    log.debug("DONE!")
+  }
+
+  
+ /** 
+  *  Execute one or multiple SQL update commands with connection to JDBC datastore
+   *  
+   */
+  def executeSqlUpdates(sql: String, ds: JdbcDataStore) : Unit = {
+    val conn = ds.borrowConnection()
+    val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
+      java.sql.ResultSet.CONCUR_UPDATABLE)
+    try {
+      // changed \s+ to \s* here.
+      """;\s*""".r.split(sql.trim()).filterNot(_.isEmpty).foreach(q => 
+        conn.prepareStatement(q.trim()).executeUpdate)
+    } catch {
+      // SQL cmd exception
+      case exception : Throwable =>
+      log.error(exception.toString)
+      throw exception
+    } finally {
+      conn.close()
     }
   }
 

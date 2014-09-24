@@ -19,6 +19,26 @@ trait JdbcDataStore extends Logging {
   /* Closes the connection pool and all of its connections */
   def close() = ConnectionPool.closeAll()
 
+  /**
+   * Split the query so that it can execute multiple queries in both 
+   * psql and mysql settings
+   */
+  def executeSqlQuery(sql: String) = {
+    log.debug("Executing Query via JDBC: " + sql)
+    val conn = borrowConnection()
+    conn.setAutoCommit(false)
+    val stmt = conn.createStatement();
+    try {
+      """;\s*""".r.split(sql.trim()).filterNot(_.isEmpty).foreach(q =>
+        stmt.execute(q.trim()))
+      conn.commit()
+      log.debug("DONE!")
+      
+    } finally {
+      conn.close()
+    }
+  }
+
   def bulkInsert(outputRelation: String, data: Iterator[Map[String, Any]])(implicit session: DBSession) = {
     val columnNames = PostgresDataStore.DB.getColumnNames(outputRelation).sorted
     val columnValues = columnNames.map (x => "?")

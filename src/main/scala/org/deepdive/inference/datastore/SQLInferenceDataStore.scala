@@ -110,35 +110,37 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
    * execute one or multiple SQL queries
    */
   private def execute(sql: String) = {
-    log.debug("EXECUTING.... " + sql)
-    val conn = ds.borrowConnection()
-    val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
-      java.sql.ResultSet.CONCUR_UPDATABLE)
-    try {
-      // changed \s+ to \s* here.
-      """;\s*""".r.split(sql.trim()).filterNot(_.isEmpty).foreach(q => 
-        conn.prepareStatement(q.trim()).executeUpdate)
-    } catch {
-      // SQL cmd exception
-      case exception : Throwable =>
-      log.error(exception.toString)
-      throw exception
-    } finally {
-      conn.close()
-    }
-    log.debug("DONE!")
+    Helpers.executeSqlUpdates(sql, ds)
+//    log.debug("EXECUTING.... " + sql)
+//    val conn = ds.borrowConnection()
+//    val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
+//      java.sql.ResultSet.CONCUR_UPDATABLE)
+//    try {
+//      // changed \s+ to \s* here.
+//      """;\s*""".r.split(sql.trim()).filterNot(_.isEmpty).foreach(q => 
+//        conn.prepareStatement(q.trim()).executeUpdate)
+//    } catch {
+//      // SQL cmd exception
+//      case exception : Throwable =>
+//      log.error(exception.toString)
+//      throw exception
+//    } finally {
+//      conn.close()
+//    }
+//    log.debug("DONE!")
   }
 
   // execute a query (can have return results)
   private def executeQuery(sql: String) = {
-    log.debug("EXECUTING.... " + sql)
-    val conn = ds.borrowConnection()
-    conn.setAutoCommit(false)
-    val stmt = conn.createStatement();
-    stmt.execute(sql)
-    conn.commit()
-    conn.close()
-    log.debug("DONE!")
+    Helpers.executeSqlQuery(sql, ds)
+//    log.debug("EXECUTING.... " + sql)
+//    val conn = ds.borrowConnection()
+//    conn.setAutoCommit(false)
+//    val stmt = conn.createStatement();
+//    stmt.execute(sql)
+//    conn.commit()
+//    conn.close()
+//    log.debug("DONE!")
   }
 
   /**
@@ -409,21 +411,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     LANGUAGE 'plpgsql';
     """
 
-  def executeCmd(cmd: String) : Try[Int] = {
-    // Make the file executable, if necessary
-    val file = new java.io.File(cmd)
-    if (file.isFile) file.setExecutable(true, false)
-    log.info(s"""Executing: "$cmd" """)
-    val processLogger = ProcessLogger(line => log.info(line))
-    Try(cmd!(processLogger)) match {
-      case Success(0) => Success(0)
-      case Success(errorExitValue) => 
-        Failure(new RuntimeException(s"Script exited with exit_value=$errorExitValue"))
-      case Failure(ex) => Failure(ex)
-    }
-  }
-
-
   def init() : Unit = {
   }
 
@@ -462,7 +449,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       writer.println(s"rm -f ${groundingPath}/dd_*")
       writer.close()
       log.info("Cleaning up grounding folder...")
-      executeCmd(cleanFile.getAbsolutePath())
+      Helpers.executeCmd(cleanFile.getAbsolutePath())
     }
 
     // assign variable id - sequential and unique
@@ -645,7 +632,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         case _ => 0.0
       }
 
-      // TODO zifei: make sure this new part is ported!
       if (factorDesc.func.getClass.getSimpleName == "ContinuousLRFactorFunction"){
 
         log.info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
@@ -719,7 +705,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
              FROM ${querytable} t0, ${weighttableForThisFactor} t1
              WHERE ${weightjoinlist} AND t1.initvalue IS NOT NULL;""")
         }
-      // TODO zifei end
 
       } else if (factorDesc.func.getClass.getSimpleName != "MultinomialFactorFunction") {
         // handle weights table
@@ -876,6 +861,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // split grounding files and transform to binary format
     log.info("Converting grounding file format...")
     val ossuffix = if (System.getProperty("os.name").startsWith("Linux")) "linux" else "mac"
+      
+    // TODO: this python script is dangerous and ugly. It changes too many states!
     val cmd = s"python util/tobinary.py ${groundingPath} util/format_converter_${ossuffix} ${Context.outputDir}"
     log.debug("Executing: " + cmd)
     val exitValue = cmd!(ProcessLogger(
@@ -898,7 +885,15 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   }
 
+  /**
+   * weightsFile: binary format. Assume "weightsFile.text" file exists.
+   * 
+   * TODO: refactor this design
+   */
   def bulkCopyWeights(weightsFile: String, dbSettings: DbSettings) : Unit
+  /**
+   * variablesFile: binary format. Assume "variablesFile.text" file exists.
+   */
   def bulkCopyVariables(variablesFile: String, dbSettings: DbSettings) : Unit
 
   /**

@@ -49,7 +49,7 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
       val writer = new PrintWriter(tmpFile)
       writer.println(s"${writebackCmd}")
       writer.close()
-      executeCmd(tmpFile.getAbsolutePath())
+      Helpers.executeCmd(tmpFile.getAbsolutePath())
     }
     
     /**

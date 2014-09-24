@@ -13,26 +13,6 @@ class DataLoader extends JdbcDataStore with Logging {
 
   // def ds : JdbcDataStore
 
-  /**
-   * Split the query so that it can execute multiple queries in both 
-   * psql and mysql settings
-   */
-  def executeQuery(sql: String) = {
-    log.debug("EXECUTING.... " + sql)
-    val conn = borrowConnection()
-    conn.setAutoCommit(false)
-    val stmt = conn.createStatement();
-    try {
-      """;\s*""".r.split(sql.trim()).filterNot(_.isEmpty).foreach(q =>
-        stmt.execute(q.trim()))
-      conn.commit()
-      log.debug("DONE!")
-      
-    } finally {
-      conn.close()
-    }
-  }
-
   /** Unload data of a SQL query from database to a TSV file 
    * 
    * For Greenplum, use gpfdist. Must specify gpport, gppath, gphost in dbSettings. No need for filepath
@@ -59,25 +39,25 @@ class DataLoader extends JdbcDataStore with Logging {
       }
 
       // hacky way to get schema from a query...
-      executeQuery(s"""
+      executeSqlQuery(s"""
         DROP VIEW IF EXISTS _${filename}_view CASCADE;
         DROP TABLE IF EXISTS _${filename}_tmp CASCADE;
         CREATE VIEW _${filename}_view AS ${query};
         CREATE TABLE _${filename}_tmp AS SELECT * FROM _${filename}_view LIMIT 0;
         """)
 
-      executeQuery(s"""
+      executeSqlQuery(s"""
         DROP EXTERNAL TABLE IF EXISTS _${filename} CASCADE;
         CREATE WRITABLE EXTERNAL TABLE _${filename} (LIKE _${filename}_tmp)
         LOCATION ('gpfdist://${hostname}:${port}/${filename}')
         FORMAT 'TEXT';
         """)
 
-      executeQuery(s"""
+      executeSqlQuery(s"""
         DROP VIEW _${filename}_view CASCADE;
         DROP TABLE _${filename}_tmp CASCADE;""")
 
-      executeQuery(s"""
+      executeSqlQuery(s"""
         INSERT INTO _${filename} ${query};
         """)
     } else { // psql / mysql
@@ -90,7 +70,7 @@ class DataLoader extends JdbcDataStore with Logging {
         case Mysql => "mysql " + Helpers.getOptionString(dbSettings) + " --silent -e "
       }
   
-      executeQuery(s"""
+      executeSqlQuery(s"""
         DROP VIEW IF EXISTS _${filename}_view CASCADE;
         CREATE VIEW _${filename}_view AS ${query};
         """)
@@ -101,20 +81,21 @@ class DataLoader extends JdbcDataStore with Logging {
       val cmdfile = File.createTempFile(s"unload", ".sh")
       val writer = new PrintWriter(cmdfile)
       
+      // This query CANNOT contain double-quotes (").
       val copyStr = dbtype match {
         case Psql => List(sqlQueryPrefixRun + "\"", 
             """\COPY """, s"(SELECT * FROM _${filename}_view) TO '${filepath}'", "\"").mkString("")
             
         case Mysql => List(sqlQueryPrefixRun + "\"", 
-            s"SELECT * FROM _${filename}_view", "\"", s"> ${filepath}").mkString("")
+            s"SELECT * FROM _${filename}_view", "\"", s" > ${filepath}").mkString("")
       }
         
       log.info(copyStr)
       writer.println(copyStr)
       writer.close()
       Helpers.executeCmd(cmdfile.getAbsolutePath())
-      // executeQuery(s"""COPY (SELECT * FROM _${filename}_view) TO '${filepath}';""")
-      executeQuery(s"DROP VIEW _${filename}_view;")
+      // executeSqlQuery(s"""COPY (SELECT * FROM _${filename}_view) TO '${filepath}';""")
+      executeSqlQuery(s"DROP VIEW _${filename}_view;")
       s"rm ${cmdfile.getAbsolutePath()}".!
     }
   }

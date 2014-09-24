@@ -26,49 +26,31 @@ trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent
     val BatchSize = Some(250000)
       
 
+    /**
+     * weightsFile: location to the binary format. Assume "weightsFile.text" file exists.
+     */
     def bulkCopyWeights(weightsFile: String, dbSettings: DbSettings) : Unit = {
-     val dbname = dbSettings.dbname
-     val pguser = dbSettings.user
-     val pgport = dbSettings.port
-     val pghost = dbSettings.host
-     // TODO do not use password for now
-     val dbnameStr = dbname match {
-       case null => ""
-       case _ => s" -d ${dbname} "
-     }
-     val pguserStr = pguser match {
-       case null => ""
-       case _ => s" -U ${pguser} "
-     }
-     val pgportStr = pgport match {
-       case null => ""
-       case _ => s" -p ${pgport} "
-     }
-     val pghostStr = pghost match {
-       case null => ""
-       case _ => s" -h ${pghost} "
-     }
     
      val cmdfile = File.createTempFile(s"copy", ".sh")
      val writer = new PrintWriter(cmdfile)
-     val copyStr = List("psql ", dbnameStr, pguserStr, pgportStr, pghostStr, " -c ", "\"\"\"", 
-       """\COPY """, s"${WeightResultTable}(id, weight) FROM \'${weightsFile}.text\' DELIMITER ' ';", "\"\"\"").mkString("")
+     val copyStr = List("psql ", Helpers.getOptionString(dbSettings), " -c ", "\"", 
+       """\COPY """, s"${WeightResultTable}(id, weight) FROM \'${weightsFile}.text\' DELIMITER ' ';", "\"").mkString("")
      log.info(copyStr)
      writer.println(copyStr)
      writer.close()
-     executeCmd(cmdfile.getAbsolutePath())
+     Helpers.executeCmd(cmdfile.getAbsolutePath())
     }
     
     def bulkCopyVariables(variablesFile: String, dbSettings: DbSettings) : Unit = {
      
      val cmdfile = File.createTempFile(s"copy", ".sh")
      val writer = new PrintWriter(cmdfile)
-     val copyStr = List("psql ", Helpers.getOptionString(dbSettings), " -c ", "\"\"\"", 
-       """\COPY """, s"${VariableResultTable}(id, category, expectation) FROM \'${variablesFile}.text\' DELIMITER ' ';", "\"\"\"").mkString("")
+     val copyStr = List("psql ", Helpers.getOptionString(dbSettings), " -c ", "\"", 
+       """\COPY """, s"${VariableResultTable}(id, category, expectation) FROM \'${variablesFile}.text\' DELIMITER ' ';", "\"").mkString("")
      log.info(copyStr)
      writer.println(copyStr)
      writer.close()
-     executeCmd(cmdfile.getAbsolutePath())
+     Helpers.executeCmd(cmdfile.getAbsolutePath())
    }
 
     /**
