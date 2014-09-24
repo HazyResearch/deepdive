@@ -364,6 +364,10 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
    * graph files.
    * Input: variable schema, factor descriptions, holdout configuration, database settings
    * Output: factor graph files: variables, factors, edges, weights, meta
+   *
+   * NOTE: for this to work in greenplum, do not put id as the first column!
+   * The first column in greenplum is distribution key by default. 
+   * We need to update this column, but update is not allowed on distribution key. 
    */
   def groundFactorGraph(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
     holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean, weightTable: String, 
