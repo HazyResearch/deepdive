@@ -663,11 +663,11 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
             // create a table that only contains one row (one weight) 
             case false => s"""DROP TABLE IF EXISTS ${weighttableForThisFactor} CASCADE;
               CREATE TABLE ${weighttableForThisFactor} AS
-              SELECT 0::bigint AS id, ${isFixed}::int AS isfixed, ${initvalue}::real AS initvalue;"""
+              SELECT ${isFixed}::int AS isfixed, ${initvalue}::real AS initvalue, 0::bigint AS id;"""
             // create one weight for each different element in weightlist.
             case true => s"""DROP TABLE IF EXISTS ${weighttableForThisFactor} CASCADE;
               CREATE TABLE ${weighttableForThisFactor} AS
-              SELECT ${weightlist}, 0::bigint AS id, ${isFixed}::int AS isfixed, ${initvalue}::real AS initvalue 
+              SELECT ${weightlist}, ${isFixed}::int AS isfixed, ${initvalue}::real AS initvalue, 0::bigint AS id
               FROM ${querytable}
               GROUP BY ${weightlist};"""
           }
@@ -733,7 +733,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         if (isFixed || weightlist == ""){
           execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactor} CASCADE;
             CREATE TABLE ${weighttableForThisFactor} AS
-            SELECT ${cweightid} AS id, ${isFixed}::int AS isfixed, ${initvalue} AS initvalue, ${cardinalityCmd} AS cardinality
+            SELECT ${isFixed}::int AS isfixed, ${initvalue} AS initvalue, ${cardinalityCmd} AS cardinality, ${cweightid} AS id
             FROM ${cardinalityTables.mkString(", ")}
             ORDER BY cardinality;""")
 
@@ -759,7 +759,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           val weighttableForThisFactorTemp = s"dd_weight_${factorDesc.name}_temp"
           execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactorTemp} CASCADE;
             CREATE TABLE ${weighttableForThisFactorTemp} AS 
-            SELECT ${weightlist}, 0::bigint AS id, ${isFixed}::int AS isfixed, ${initvalue}::real AS initvalue 
+            SELECT ${weightlist}, ${isFixed}::int AS isfixed, ${initvalue}::real AS initvalue, 0::bigint AS id
             FROM ${querytable}
             GROUP BY ${weightlist};""")
           execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactor} CASCADE;
