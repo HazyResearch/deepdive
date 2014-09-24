@@ -293,7 +293,6 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
 
       }
 
-
     }
 
     describe("grounding the factor graph with Multinomial variables") {
