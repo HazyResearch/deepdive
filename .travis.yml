@@ -38,6 +38,6 @@ before_script:
   - sleep 3 # give Web server some time to bind to sockets, etc
 script: 
   # Check both localhost and website
+  - ./test.sh
   - bash ./src/test/bash/linkcheck.sh http://localhost:4000/
   - bash ./src/test/bash/linkcheck.sh http://deepdive.stanford.edu/
-  - ./test.sh

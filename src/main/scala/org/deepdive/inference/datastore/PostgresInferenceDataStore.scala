@@ -8,6 +8,7 @@ import org.deepdive.calibration._
 import org.deepdive.datastore.PostgresDataStore
 import org.deepdive.Logging
 import org.deepdive.settings._
+import org.deepdive.helpers.Helpers
 import scala.collection.mutable.{ArrayBuffer, Set, SynchronizedBuffer}
 import scala.io.Source
 import java.io._
@@ -53,11 +54,11 @@ trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent
      val cmdfile = File.createTempFile(s"copy", ".sh")
      val writer = new PrintWriter(cmdfile)
      val copyStr = List("psql ", dbnameStr, pguserStr, pgportStr, pghostStr, " -c ", "\"\"\"", 
-       """\COPY """, s"${WeightResultTable}(id, weight) FROM \'${weightsFile}.text\' DELIMITER ' ';", "\"\"\"").mkString("")
+       """\COPY """, s"${WeightResultTable}(id, weight) FROM \'${weightsFile}\' DELIMITER ' ';", "\"\"\"").mkString("")
      log.info(copyStr)
      writer.println(copyStr)
      writer.close()
-     executeCmd(cmdfile.getAbsolutePath())
+     Helpers.executeCmd(cmdfile.getAbsolutePath())
     }
     
     def bulkCopyVariables(variablesFile: String, dbSettings: DbSettings) : Unit = {
@@ -86,11 +87,11 @@ trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent
      val cmdfile = File.createTempFile(s"copy", ".sh")
      val writer = new PrintWriter(cmdfile)
      val copyStr = List("psql ", dbnameStr, pguserStr, pgportStr, pghostStr, " -c ", "\"\"\"", 
-       """\COPY """, s"${VariableResultTable}(id, category, expectation) FROM \'${variablesFile}.text\' DELIMITER ' ';", "\"\"\"").mkString("")
+       """\COPY """, s"${VariableResultTable}(id, category, expectation) FROM \'${variablesFile}\' DELIMITER ' ';", "\"\"\"").mkString("")
      log.info(copyStr)
      writer.println(copyStr)
      writer.close()
-     executeCmd(cmdfile.getAbsolutePath())
+     Helpers.executeCmd(cmdfile.getAbsolutePath())
    }
 
 

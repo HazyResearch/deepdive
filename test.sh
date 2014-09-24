@@ -37,4 +37,8 @@ dropdb $DBNAME
 createdb $DBNAME
 
 # Run the test
-SBT_OPTS="-XX:MaxHeapSize=256m -Xmx512m -XX:MaxPermSize=256m" sbt "test"
+
+# Separate different tests to fix the issue of unable to run multiple integration tests. If any of the tests return non-0 value, exit with the error code.
+export SBT_OPTS="-XX:MaxHeapSize=256m -Xmx512m -XX:MaxPermSize=256m" 
+sbt "test-only org.deepdive.test.unit.*" && sbt "test-only org.deepdive.test.integration.BiasedCoin" && sbt "test-only org.deepdive.test.integration.ChunkingApp"
+
