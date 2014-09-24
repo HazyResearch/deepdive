@@ -454,59 +454,6 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
 
     }
 
-    // describe("dumping the factor graph") {
-
-    //   it("should work")(pending)
-      // {
-      //   inferenceDataStore.init()
-      //   inferenceDataStore.groundFactorGraph(Map(), Seq(), 0.0, None, false, "", dbSettings, false)
-
-        // // Insert weights
-        // SQL("""INSERT INTO dd_graph_weights(id, initial_value, is_fixed, description)
-        //   VALUES (0, 0.0, false, 'w1'), (1, 0.0, false, 'w2')""").execute.apply()
-        // // Insert variables
-        // SQL("""INSERT INTO dd_graph_variables(id, data_type, initial_value, is_evidence, cardinality)
-        //   VALUES (0, 'Boolean', 0.0, false, null), (1, 'Boolean', 1.0, true, null), 
-        //   (2, 'Multinomial', 3.0, false, 3)""").execute.apply()
-        // SQL("""INSERT INTO dd_graph_variables_map(id, variable_id)
-        //   VALUES (0, 0), (1, 1), (2,2)""").execute.apply()
-        // // Insert factors
-        // SQL("""INSERT INTO dd_graph_factors(id, weight_id, factor_function)
-        //   VALUES (0, 0, 'ImplyFactorFunction'), (1, 1, 'ImplyFactorFunction')""").execute.apply()
-        // // Insert edges
-        // SQL("""INSERT INTO dd_graph_edges(factor_id, variable_id, position, is_positive, equal_predicate)
-        //   VALUES (0, 0, 0, true, null), (1, 1, 0, true, null), (1, 2, 1, true, null)""").execute.apply()
-
-        // // Dump the factor graph
-        // val weightsFile = File.createTempFile("weights", "")
-        // val variablesFile = File.createTempFile("variables", "")
-        // val factorsFile = File.createTempFile("factors", "")
-        // val edgesFile = File.createTempFile("edges", "")
-        // val metaFile = File.createTempFile("meta", "csv")
-        // val weightsOut = new FileOutputStream(weightsFile)
-        // val variablesOut = new FileOutputStream(variablesFile)
-        // val factorsOut = new FileOutputStream(factorsFile)
-        // val edgesOut = new FileOutputStream(edgesFile)
-        // val metaOut = new FileOutputStream(metaFile)
-        // val serializer = new BinarySerializer(weightsOut, variablesOut, factorsOut, edgesOut, metaOut)
-
-        // inferenceDataStore.dumpFactorGraph(serializer, Map("r1.c1" -> BooleanType, "r2.c2" -> MultinomialType(5)),
-        //   weightsFile.getCanonicalPath, variablesFile.getCanonicalPath, factorsFile.getCanonicalPath,
-        //   edgesFile.getCanonicalPath)
-        // weightsOut.close()
-        // variablesOut.close()
-        // factorsOut.close()
-        // edgesOut.close()
-        // metaOut.close()
-
-        // assert(weightsFile.exists() === true)
-        // assert(variablesFile.exists() === true)
-        // assert(factorsFile.exists() === true)
-        // assert(edgesFile.exists() === true)
-      // }
-
-    // }
-
     describe ("writing back the inference Result") {
 
       val variablesFile = getClass.getResource("/inference/sample_result.variables.text").getFile
