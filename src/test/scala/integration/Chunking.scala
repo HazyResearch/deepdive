@@ -115,7 +115,7 @@ class ChunkingApp extends FunSpec {
       } 
 
       calibration: {
-        holdout_query: "INSERT INTO dd_graph_variables_holdout(variable_id) SELECT id FROM words WHERE word_id > 99972"
+        holdout_query: "INSERT INTO dd_graph_variables_holdout(variable_id) SELECT id FROM words WHERE word_id > 50078"
       }
     }
     """
