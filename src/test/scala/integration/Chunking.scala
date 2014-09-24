@@ -1,9 +1,7 @@
 /******************************
  * 
- * This test is commented out becase the DeepDive.run cannot
- * be called more than once in the tests
- * 
- * TODO: fix this.
+ * DeepDive.run cannot be called more than once in integration
+ * tests, so we run tests one by one to cover them.
  * 
  ******************************/
 package org.deepdive.test.integration
