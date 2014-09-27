@@ -39,15 +39,33 @@ class HelpersSpec extends FunSpec with BeforeAndAfter {
   }
 
   describe("Building psql command helper function") {
-    it("should work") {
+    it("should work for queries without quotes") {
       val dbSettings = DbSettings(Helpers.PsqlDriver, null, "user", null, "dbname", 
         "host", "port", null, null, null)
       val query = "select * from test;"
       val cmd = Helpers.buildSqlCmd(dbSettings, query)
-      val trueCmd = "psql -d dbname -U user -p port -h host -c \"" + query + "\""
+      val trueCmd = "psql -d dbname -U user -p port -h host -c '" + query + "'"
       assert(cmd.replaceAll(" +", " ").trim() === trueCmd)
-
     }
+
+    it("should work for queries with single-quotes") {
+      val dbSettings = DbSettings(Helpers.PsqlDriver, null, "user", null, "dbname", 
+        "host", "port", null, null, null)
+      val query = "select '123';"
+      val cmd = Helpers.buildSqlCmd(dbSettings, query)
+      val trueCmd = "psql -d dbname -U user -p port -h host -c 'select '\\''123'\\'';'"
+      assert(cmd.replaceAll(" +", " ").trim() === trueCmd)
+    }
+
+    it("should work for queries with double-quotes") {
+      val dbSettings = DbSettings(Helpers.PsqlDriver, null, "user", null, "dbname", 
+        "host", "port", null, null, null)
+      val query = "select \"123\";"
+      val cmd = Helpers.buildSqlCmd(dbSettings, query)
+      val trueCmd = "psql -d dbname -U user -p port -h host -c 'select \"123\";'"
+      assert(cmd.replaceAll(" +", " ").trim() === trueCmd)
+    }
+
   }
 
 }
