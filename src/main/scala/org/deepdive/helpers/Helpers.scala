@@ -94,7 +94,7 @@ object Helpers extends Logging {
     // Make the file executable, if necessary
     val file = new java.io.File(cmd)
     if (file.isFile) file.setExecutable(true, false)
-    log.info(s"""Executing: "$cmd" """)
+    log.info(s"""Executing command: "$cmd" """)
     val exitValue = cmd!(ProcessLogger(out => log.info(out)))
     // Depending on the exit value we return success or throw an exception
     exitValue match {
@@ -103,57 +103,38 @@ object Helpers extends Logging {
     }
   }
 
-
   /**
-   * Execute any sql query
-   * (sql must be only ONE query for mysql, but can be multiple queries for psql.)
+   * Executes a SQL query by piping it into a file without talking to JDBC.
    * 
-   * @return SQL result set
+   * @param pipeOutFilePath   set if you need to pipe the query output to somewhere.
+   * 
+   * @throws IOException when bad I/O
+   * @throws RuntimeException when script fails
    */
-  def executeSqlQuery(sql: String, ds: JdbcDataStore) = {
-    log.debug("EXECUTING single Query: " + sql)
-    val conn = ds.borrowConnection()
-    conn.setAutoCommit(false)
-    val stmt = conn.createStatement();
-    // Using prepareStatement should be better: faster, prevents SQL injection
-    conn.prepareStatement(sql).execute
-    // stmt.execute(sql)
+  def executeSqlQueriesByFile(dbSettings: DbSettings, query: String, 
+      pipeOutFilePath: String = null) {
+    val file = File.createTempFile(s"exec_sql", ".sh")
+    val writer = new PrintWriter(file)
+
+    val pipeOutStr = pipeOutFilePath match {
+      case null => ""
+      case _ => " > " + pipeOutFilePath
+    }
+    // Use single-quote in bash for reliability. Escape all ' into '\'' inside query.
+    val cmd = Helpers.buildSqlCmd(dbSettings, query) + " " + pipeOutStr
+    log.debug("Executing queries by file: ${cmd}")
+    writer.println(s"${cmd}")
+    writer.close()
+    try {
+      executeCmd(file.getAbsolutePath())
+    } finally {
+      // Delete the tmp file when finished
+      file.delete();
+    }
     
-    conn.commit()
-    conn.close()
-    log.debug("DONE!")
   }
 
   
- /** 
-  *  Execute one or multiple SQL update commands with connection to JDBC datastore
-   *  
-   */
-  def executeSqlQueries(sql: String, ds: JdbcDataStore) : Unit = {
-    val conn = ds.borrowConnection()
-//    // This commented code can only execute SQL updates that do not return results
-//    val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
-//      java.sql.ResultSet.CONCUR_UPDATABLE)
-
-    // Supporting more general SQL queries (e.g. SELECT)
-    val stmt = conn.createStatement()
-    try {
-      // changed \s+ to \s* here.
-      """;\s*""".r.split(sql.trim()).filterNot(_.isEmpty).foreach(q => {
-        log.debug("Executing Query via JDBC: " + q.trim())
-        // Using prepareStatement should be better: faster, prevents SQL injection
-        conn.prepareStatement(q.trim()).execute
-      })
-    } catch {
-      // SQL cmd exception
-      case exception : Throwable =>
-      log.error(exception.toString)
-      throw exception
-    } finally {
-      conn.close()
-    }
-  }
-
   /** 
    *  Build a SQL command like 
    *    psql -c 'QUERY'

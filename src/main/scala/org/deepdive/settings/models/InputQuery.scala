@@ -1,5 +1,7 @@
 package org.deepdive.settings
 
+import scala.language.implicitConversions
+
 sealed trait InputQuery
 
 case class CSVInputQuery(filename: String, seperator: Char) extends InputQuery

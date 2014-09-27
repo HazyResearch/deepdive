@@ -10,6 +10,7 @@ import org.deepdive.extraction._
 import org.deepdive.extraction.datastore._
 import scala.collection.mutable.{PriorityQueue, ArrayBuffer, Map}
 import scala.concurrent.duration._
+import scala.language.postfixOps
 import scala.util.{Try, Success, Failure}
 
 /* Companion Object for the Extraction Mangager */

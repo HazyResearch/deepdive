@@ -282,42 +282,19 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
     log.debug("all data was sent to workers.")
   }
 
-    
-  /** 
-   * Executes a bash command wrapped in Try class.
-   * 
-   * @param cmd: can be either a file or command. If it is a file, 
-   *   set it to executable before executing.
-   *  
-   * @returns
-   *   Returns Success if the process exists with exit value 0.
-   *   Returns Failure of the process fails, or returns exit value != 0.
-   * 
-   */
-  private def executeCmdWithTry(cmd: String) : Try[Int] = {
-    // Make the file executable, if necessary
-    val file = new java.io.File(cmd)
-    if (file.isFile) file.setExecutable(true, false)
-    log.info(s"""Executing: "$cmd" """)
-    val processLogger = ProcessLogger(line => log.info(line))
-    Try(cmd!(processLogger)) match {
-      case Success(0) => Success(0)
-      case Success(errorExitValue) => 
-        Failure(new RuntimeException(s"Script exited with exit_value=$errorExitValue"))
-      case Failure(ex) => Failure(ex)
-    }
-  }
-
   
-  // Executes a given command. If it fails, shutdown and respond to the sender with failure.
+  /**
+   *  Executes a given command. If it fails, shutdown and respond to the sender with failure.
+   */
   private def executeScriptOrFail(script: String, failureReceiver: ActorRef) : Unit = {
-    executeCmdWithTry(script) match {
-      case Success(_) => // All good. We're done
-      case Failure(exception) => // Throw exception of script
-        log.error(exception.toString) 
-        failureReceiver ! Status.Failure(exception)
+    try {
+      Helpers.executeCmd(script);
+    } catch {
+      case e: Throwable =>
+        log.error(e.toString) 
+        failureReceiver ! Status.Failure(e)
         context.stop(self)
-        throw new RuntimeException(exception.toString)
+        throw new RuntimeException(e.toString)
     }
   }
 
@@ -340,32 +317,25 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
     
   }
 
-  private def executeSqlUpdate(sqlQuery: String) {
-    dataStore.queryUpdate(sqlQuery)
+  /**
+   * Executes a SQL query by piping it into a file without talking to JDBC.
+   */
+  def executeSqlQueryOrFail(query: String, failureReceiver: ActorRef, pipeOutFilePath: String = null) {
+    try {
+      Helpers.executeSqlQueriesByFile(dbSettings, query, pipeOutFilePath)
+    } catch {
+      case e: Throwable =>
+        log.error(e.toString) 
+        failureReceiver ! Status.Failure(e)
+        context.stop(self)
+        throw new RuntimeException(e.toString)
+    }
   }
 
   /**
-   * Branches between psql / mysql (needs refactoring later)
+   * This function is only used by plpy extractor when the function to execute is compiled.
    */
-  def executeSqlQueryOrFail(query: String, failureReceiver: ActorRef, pipeOutFilePath: String = null) { 
-    val file = File.createTempFile(s"exec_sql", ".sh")
-    val writer = new PrintWriter(file)
-
-    val pipeOutStr = pipeOutFilePath match {
-      case null => ""
-      case _ => " > " + pipeOutFilePath
-    }
-    // Use single-quote in bash for reliability. Escape all ' into '\'' inside query.
-    val cmd = Helpers.buildSqlCmd(dbSettings, query) + " " + pipeOutStr
-    
-    writer.println(s"${cmd}")
-    writer.close()
-    log.debug(s"Temporary bash file saved to ${file.getAbsolutePath()}")
-    executeScriptOrFail(file.getAbsolutePath(), failureReceiver)
-    
-  }
-
-  def executeSqlFileOrFail(filename: String, failureReceiver: ActorRef) { 
+  private def executeSqlFileOrFail(filename: String, failureReceiver: ActorRef) { 
     // val queryOutputPath = Context.outputDir + s"/tmp/"
     // val file = new File(queryOutputPath + s"exec_sql.sh")
     val file = File.createTempFile(s"exec_sql", ".sh")

@@ -4,6 +4,8 @@ version := "0.0.3"
 
 scalaVersion := "2.10.3"
 
+scalacOptions += "-feature"
+
 resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
 
 resolvers += "spray" at "http://repo.spray.io/"

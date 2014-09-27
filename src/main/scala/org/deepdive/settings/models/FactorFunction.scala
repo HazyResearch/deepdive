@@ -1,5 +1,7 @@
 package org.deepdive.settings
 
+import scala.language.implicitConversions
+
 /* A generic Factor Functions */
 sealed trait FactorFunction {
   def variables : Seq[FactorFunctionVariable]

@@ -12,6 +12,7 @@ import org.deepdive.Context
 import org.deepdive.settings._
 import scala.concurrent.duration._
 import scala.concurrent.{Future, Await}
+import scala.language.postfixOps
 import scala.util.Try
 
 /* Manages the Factor and Variable relations in the database */

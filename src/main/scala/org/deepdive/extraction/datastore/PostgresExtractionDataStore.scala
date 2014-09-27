@@ -10,6 +10,7 @@ import org.deepdive.datastore.{PostgresDataStore, DataStoreUtils}
 import org.deepdive.Logging
 import org.deepdive.settings._
 import scala.collection.JavaConversions._
+import scala.language.postfixOps
 import play.api.libs.json._
 import scala.util.{Try, Success, Failure}
 import scalikejdbc._

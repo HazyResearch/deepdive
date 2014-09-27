@@ -1,6 +1,7 @@
 package org.deepdive.datastore
 
 import anorm._
+import scala.language.implicitConversions
 import org.deepdive.Logging
 import org.deepdive.settings._
 import play.api.libs.json._

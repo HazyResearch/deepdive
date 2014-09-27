@@ -122,12 +122,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
    * execute one or multiple SQL queries
    */
   private def execute(sql: String) = {
-    Helpers.executeSqlQueries(sql, ds)
+    ds.executeSqlQueries(sql)
   }
 
   // execute a query (can have return results)
   private def executeQuery(sql: String) = {
-    Helpers.executeSqlQuery(sql, ds)
+    ds.executeSqlQuery(sql)
   }
 
   /**
@@ -135,26 +135,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
    * as callback function
    */
   private def issueQuery(sql: String)(op: (java.sql.ResultSet) => Unit) = {
-    log.debug("EXECUTING... " + sql)
-    val conn = ds.borrowConnection()
-    try {
-      conn.setAutoCommit(false);
-      val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
-        java.sql.ResultSet.CONCUR_READ_ONLY);
-      stmt.setFetchSize(5000);
-      val rs = stmt.executeQuery(sql)
-      while(rs.next()){
-        op(rs)
-      }
-    } catch {
-      // SQL cmd exception
-      case exception : Throwable =>
-      log.error(exception.toString)
-      throw exception
-    } finally {
-      conn.close() 
-    }
-    log.debug("DONE!")
+    ds.executeSqlQueryWithCallback(sql)(op)
   }
 
   // execute sql, store results in a map
