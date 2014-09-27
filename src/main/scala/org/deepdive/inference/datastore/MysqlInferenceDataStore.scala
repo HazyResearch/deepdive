@@ -84,16 +84,30 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
     /**
      * Cast an expression to a type
      */
-    def cast(expr: Any, toType: String): String = s"convert(${expr.toString()}, ${
+    def cast(expr: Any, toType: String): String = 
       toType match {
+        // convert text/varchar to char(N) where N is max length of given
+        case "text" => s"convert(${expr.toString()}, char)"
+        case "varchar" => s"convert(${expr.toString()}, char)"
         // in mysql, convert to unsigned guarantees bigint.
         // @see http://stackoverflow.com/questions/4660383/how-do-i-cast-a-type-to-a-bigint-in-mysql
-        // TODO not sure if it works
-        case "bigint" => "unsigned"
-        case "int" => "unsigned"
-        case _ => toType
+        case "bigint" => s"convert(${expr.toString()}, unsigned)"
+        case "int" => s"convert(${expr.toString()}, unsigned)"
+        case "real" => s"${expr.toString()} + 0.0"
+        // for others, try to convert as it is expressed.
+        case _ => s"convert(${expr.toString()}, ${toType})"
       }
-    })"
+    
+    /**
+     * Concatinate multiple strings use "concat" function in mysql
+     */
+    def concat(list: Seq[String], delimiter: String): String = {
+      delimiter match {
+        case null => s"concat(${list.mkString(", ")})"
+        case "" => s"concat(${list.mkString(", ")})"
+        case _ => s"concat(${list.mkString(s",'${delimiter}',")})"
+      }
+    }
 
     /**
      * Given a string column name, Get a quoted version dependent on DB.

@@ -5,6 +5,7 @@ import scalikejdbc._
 import scalikejdbc.config._
 import org.deepdive.Logging
 import com.typesafe.config._
+import org.deepdive.helpers.Helpers
 
 trait JdbcDataStore extends Logging {
 
@@ -21,22 +22,10 @@ trait JdbcDataStore extends Logging {
 
   /**
    * Split the query so that it can execute multiple queries in both 
-   * psql and mysql settings
+   * psql and mysql settings. Uses Helper function for code reuse.
    */
   def executeSqlQuery(sql: String) = {
-    log.debug("Executing Query via JDBC: " + sql)
-    val conn = borrowConnection()
-    conn.setAutoCommit(false)
-    val stmt = conn.createStatement();
-    try {
-      """;\s*""".r.split(sql.trim()).filterNot(_.isEmpty).foreach(q =>
-        stmt.execute(q.trim()))
-      conn.commit()
-      log.debug("DONE!")
-      
-    } finally {
-      conn.close()
-    }
+    Helpers.executeSqlQuery(sql, this)
   }
 
   def bulkInsert(outputRelation: String, data: Iterator[Map[String, Any]])(implicit session: DBSession) = {

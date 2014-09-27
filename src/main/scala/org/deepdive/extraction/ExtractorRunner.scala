@@ -356,13 +356,8 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
       case _ => " > " + pipeOutFilePath
     }
     // Use single-quote in bash for reliability. Escape all ' into '\'' inside query.
-    val cmd = dbtype match {
-      case Psql => sqlQueryPrefix +
-        s""" -c '${query.replaceAll("'", "'\\\\''")}' ${pipeOutStr}"""
-      case Mysql => sqlQueryPrefix +
-        s""" --silent -e '${query.replaceAll("'", "'\\\\''")}' ${pipeOutStr}"""
-    } 
-
+    val cmd = Helpers.buildSqlCmd(dbSettings, query) + " " + pipeOutStr
+    
     writer.println(s"${cmd}")
     writer.close()
     log.debug(s"Temporary bash file saved to ${file.getAbsolutePath()}")
@@ -513,7 +508,6 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
     val delWriter = new PrintWriter(delTmpFile)
     delWriter.println(s"${delCmd}")
     delWriter.close()
-    executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
     executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
     delTmpFile.delete()
     queryOutputPathDir.delete()

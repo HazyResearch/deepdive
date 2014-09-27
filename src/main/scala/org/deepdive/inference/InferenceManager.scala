@@ -39,8 +39,8 @@ trait InferenceManager extends Actor with ActorLogging {
   lazy val factorGraphDumpFileEdges = new File(s"${Context.outputDir}/graph.edges")
   lazy val factorGraphDumpFileMeta = new File(s"${Context.outputDir}/graph.meta")
   lazy val SamplingOutputDir = new File(s"${Context.outputDir}")
-  lazy val SamplingOutputFile = new File(s"${SamplingOutputDir}/inference_result.out")
-  lazy val SamplingOutputFileWeights = new File(s"${SamplingOutputDir}/inference_result.out.weights")
+  lazy val SamplingOutputFile = new File(s"${SamplingOutputDir}/inference_result.out.text")
+  lazy val SamplingOutputFileWeights = new File(s"${SamplingOutputDir}/inference_result.out.weights.text")
 
   val factorGraphBuilder = context.actorOf(factorGraphBuilderProps, "factorGraphBuilder")
 

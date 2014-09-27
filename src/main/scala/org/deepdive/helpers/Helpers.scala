@@ -111,11 +111,14 @@ object Helpers extends Logging {
    * @return SQL result set
    */
   def executeSqlQuery(sql: String, ds: JdbcDataStore) = {
-    log.debug("EXECUTING.... " + sql)
+    log.debug("EXECUTING single Query: " + sql)
     val conn = ds.borrowConnection()
     conn.setAutoCommit(false)
     val stmt = conn.createStatement();
-    stmt.execute(sql)
+    // Using prepareStatement should be better: faster, prevents SQL injection
+    conn.prepareStatement(sql).execute
+    // stmt.execute(sql)
+    
     conn.commit()
     conn.close()
     log.debug("DONE!")
@@ -126,14 +129,21 @@ object Helpers extends Logging {
   *  Execute one or multiple SQL update commands with connection to JDBC datastore
    *  
    */
-  def executeSqlUpdates(sql: String, ds: JdbcDataStore) : Unit = {
+  def executeSqlQueries(sql: String, ds: JdbcDataStore) : Unit = {
     val conn = ds.borrowConnection()
-    val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
-      java.sql.ResultSet.CONCUR_UPDATABLE)
+//    // This commented code can only execute SQL updates that do not return results
+//    val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
+//      java.sql.ResultSet.CONCUR_UPDATABLE)
+
+    // Supporting more general SQL queries (e.g. SELECT)
+    val stmt = conn.createStatement()
     try {
       // changed \s+ to \s* here.
-      """;\s*""".r.split(sql.trim()).filterNot(_.isEmpty).foreach(q => 
-        conn.prepareStatement(q.trim()).executeUpdate)
+      """;\s*""".r.split(sql.trim()).filterNot(_.isEmpty).foreach(q => {
+        log.debug("Executing Query via JDBC: " + q.trim())
+        // Using prepareStatement should be better: faster, prevents SQL injection
+        conn.prepareStatement(q.trim()).execute
+      })
     } catch {
       // SQL cmd exception
       case exception : Throwable =>
@@ -144,7 +154,16 @@ object Helpers extends Logging {
     }
   }
 
-  /** Build a psql command */
+  /** 
+   *  Build a SQL command like 
+   *    psql -c 'QUERY'
+   *  or
+   *    mysql --silent -e 'QUERY'
+   *    
+   *  Use single-quote in bash for reliability. Escape all ' into '\'' inside query.
+   *  
+   *  NOTE: Cannot be used with xargs where there are more quotes outside
+   */
   def buildSqlCmd(dbSettings: DbSettings, query: String) : String = {
 
     // Branch by database driver type
@@ -155,11 +174,12 @@ object Helpers extends Logging {
       case Mysql => "mysql " + getOptionString(dbSettings)
     }
 
-    // Return the command below
+    // Return the command below to handle " in queries
     dbtype match {
-      case Psql => sqlQueryPrefix + " -c " + "\"" + query + "\""
-      case Mysql => sqlQueryPrefix + " --silent -e " + "\"" + query + "\""
-      // TODO what happens if " is in query?
+      case Psql => sqlQueryPrefix + 
+        s""" -c '${query.replaceAll("'", "'\\\\''")}' """
+      case Mysql => sqlQueryPrefix +
+        s""" --silent -e '${query.replaceAll("'", "'\\\\''")}' """
     }
   }
 }

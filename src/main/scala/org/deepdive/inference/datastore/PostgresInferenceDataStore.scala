@@ -8,10 +8,10 @@ import org.deepdive.calibration._
 import org.deepdive.datastore.PostgresDataStore
 import org.deepdive.Logging
 import org.deepdive.settings._
+import org.deepdive.helpers.Helpers
 import scala.collection.mutable.{ArrayBuffer, Set, SynchronizedBuffer}
 import scala.io.Source
 import java.io._
-import org.deepdive.helpers.Helpers
 
 /* Stores the factor graph and inference results in a postges database. */
 trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
@@ -34,7 +34,7 @@ trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent
      val cmdfile = File.createTempFile(s"copy", ".sh")
      val writer = new PrintWriter(cmdfile)
      val copyStr = List("psql ", Helpers.getOptionString(dbSettings), " -c ", "\"", 
-       """\COPY """, s"${WeightResultTable}(id, weight) FROM \'${weightsFile}.text\' DELIMITER ' ';", "\"").mkString("")
+       """\COPY """, s"${WeightResultTable}(id, weight) FROM \'${weightsFile}\' DELIMITER ' ';", "\"").mkString("")
      log.info(copyStr)
      writer.println(copyStr)
      writer.close()
@@ -46,7 +46,7 @@ trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent
      val cmdfile = File.createTempFile(s"copy", ".sh")
      val writer = new PrintWriter(cmdfile)
      val copyStr = List("psql ", Helpers.getOptionString(dbSettings), " -c ", "\"", 
-       """\COPY """, s"${VariableResultTable}(id, category, expectation) FROM \'${variablesFile}.text\' DELIMITER ' ';", "\"").mkString("")
+       """\COPY """, s"${VariableResultTable}(id, category, expectation) FROM \'${variablesFile}\' DELIMITER ' ';", "\"").mkString("")
      log.info(copyStr)
      writer.println(copyStr)
      writer.close()
@@ -80,7 +80,23 @@ trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent
     def quoteColumn(column: String): String =
       '"' + column + '"'
       
+    /**
+     * Generate random number in [0,1] in psql
+     */
     def randomFunction: String = "RANDOM()"
+
+    /**
+     * Concatinate strings using "||" in psql/GP, adding user-specified
+     * delimiter in between
+     */
+    def concat(list: Seq[String], delimiter: String): String = {
+      delimiter match {
+        case null => list.mkString(s" || ")
+        case "" => list.mkString(s" || ")
+        case _ => list.mkString(s" || '${delimiter}' || ")
+      }
+    }
+      
 
   }
 }
