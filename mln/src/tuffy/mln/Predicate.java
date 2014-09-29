@@ -1113,7 +1113,6 @@ public class Predicate {
 				// weight of the inference rule
 				double prior = rs.getDouble("prior");
 				rule += "weight: " + Double.toString(Math.log(prior/(1-prior))) + "\n}";
-				UIMan.println(rule);
 				rules.add(rule);
 			}
 			rs.close();
