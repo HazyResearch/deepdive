@@ -1,0 +1,125 @@
+// types: string, event, entity
+
+// predicate declarations (other than existentials)
+// NOTE: for closed-world predicates, the groundings that are true
+//   (or "soft" true) must be listed in evidence.db, not here
+Agent(event,entity)
+Object(event,entity)
+IsaEn(entity,string)
+IsaEv(event,string)
+*Entails(string,string)
+//*Example(string,string)
+Cause(event,entity)
+Toward(event,entity)
+By(event,entity)
+On(event,entity)
+
+Arg(event,entity)
+Effect(event,event)
+Requirement(event,event)
+Enable(event,event)
+Example(entity,entity)
+To(event,entity)
+When(event,event)
+In(event,entity)
+Purpose(event,event)
+For(event,entity)
+As(event,entity)
+From(event,entity)
+Into(event,entity)
+At(event,entity)
+Of(event,entity)
+After(event,entity)
+Across(event,entity)
+Upon(event,entity)
+
+Entity(entity)
+Event(event)
+
+Result(answer)
+// Existential Predicates for Some(When some animals prepare for the long winters by storing food and going dormant it is called hibernation)
+
+E_barrons_1(event)
+
+E_barrons_2(entity)
+
+// Existential Predicates for LHS(Question) => LHS(Some(When some animals prepare for the long winters by storing food and going dormant it is called hibernation))
+
+E_barrons_3(entity)
+
+// Existential Predicates for RHS(Some(When some animals prepare for the long winters by storing food and going dormant it is called hibernation)) => RHS(Question)
+
+E_barrons_4(entity)
+
+E_barrons_6(event)
+
+E_barrons_5(entity)
+
+// Some(When some animals prepare for the long winters by storing food and going dormant it is called hibernation)
+
+EXIST e10s1193_store !Agent(e4s1193_prepare, a3s1193_animal) v !IsaEv(e4s1193_prepare, "prepare") v !IsaEn(a3s1193_animal, "some animals") v !IsaEn(a8s1193_winter, "the long winters") v !For(e4s1193_prepare, a8s1193_winter) v E_barrons_1(e10s1193_store).
+
+EXIST a11s1193_food !Agent(e4s1193_prepare, a3s1193_animal) v !IsaEv(e4s1193_prepare, "prepare") v !IsaEn(a3s1193_animal, "some animals") v !IsaEn(a8s1193_winter, "the long winters") v !For(e4s1193_prepare, a8s1193_winter) v E_barrons_2(a11s1193_food).
+
+ !Agent(e4s1193_prepare, a3s1193_animal) v !IsaEv(e4s1193_prepare, "prepare") v !IsaEn(a3s1193_animal, "some animals") v !IsaEn(a8s1193_winter, "the long winters") v !For(e4s1193_prepare, a8s1193_winter) v !E_barrons_1(e10s1193_store) v !E_barrons_2(a11s1193_food) v Enable(e10s1193_store, e4s1193_prepare).
+
+ !E_barrons_1(e10s1193_store) v IsaEv(e10s1193_store, "store").
+
+ !Agent(e4s1193_prepare, a3s1193_animal) v !IsaEv(e4s1193_prepare, "prepare") v !IsaEn(a3s1193_animal, "some animals") v !IsaEn(a8s1193_winter, "the long winters") v !For(e4s1193_prepare, a8s1193_winter) v !E_barrons_1(e10s1193_store) v !E_barrons_2(a11s1193_food) v Agent(e10s1193_store, a3s1193_animal).
+
+ !Agent(e4s1193_prepare, a3s1193_animal) v !IsaEv(e4s1193_prepare, "prepare") v !IsaEn(a3s1193_animal, "some animals") v !IsaEn(a8s1193_winter, "the long winters") v !For(e4s1193_prepare, a8s1193_winter) v !E_barrons_1(e10s1193_store) v !E_barrons_2(a11s1193_food) v Object(e10s1193_store, a11s1193_food).
+
+ !E_barrons_2(a11s1193_food) v IsaEn(a11s1193_food, "food").
+
+// LHS(Question) => LHS(Some(When some animals prepare for the long winters by storing food and going dormant it is called hibernation))
+
+0.8169 EXIST a8s1193_winter !For(e6s1_prepare, a10s1_change) v !IsaEv(e6s1_prepare, "prepare") v !IsaEn(a10s1_change, "a seasonal change in the environment") v !Agent(e6s1_prepare, a2s1_squirrel) v !IsaEn(a2s1_squirrel, "a squirrel") v E_barrons_3(a8s1193_winter)
+
+0.8169  !For(e6s1_prepare, a10s1_change) v !IsaEv(e6s1_prepare, "prepare") v !IsaEn(a10s1_change, "a seasonal change in the environment") v !Agent(e6s1_prepare, a2s1_squirrel) v !IsaEn(a2s1_squirrel, "a squirrel") v !E_barrons_3(a8s1193_winter) v IsaEv(e6s1_prepare, "prepare")
+
+0.8169  !For(e6s1_prepare, a10s1_change) v !IsaEv(e6s1_prepare, "prepare") v !IsaEn(a10s1_change, "a seasonal change in the environment") v !Agent(e6s1_prepare, a2s1_squirrel) v !IsaEn(a2s1_squirrel, "a squirrel") v !E_barrons_3(a8s1193_winter) v Agent(e6s1_prepare, a2s1_squirrel)
+
+0.8169  !For(e6s1_prepare, a10s1_change) v !IsaEv(e6s1_prepare, "prepare") v !IsaEn(a10s1_change, "a seasonal change in the environment") v !Agent(e6s1_prepare, a2s1_squirrel) v !IsaEn(a2s1_squirrel, "a squirrel") v !E_barrons_3(a8s1193_winter) v IsaEn(a2s1_squirrel, "some animals")
+
+0.8169  !For(e6s1_prepare, a10s1_change) v !IsaEv(e6s1_prepare, "prepare") v !IsaEn(a10s1_change, "a seasonal change in the environment") v !Agent(e6s1_prepare, a2s1_squirrel) v !IsaEn(a2s1_squirrel, "a squirrel") v !E_barrons_3(a8s1193_winter) v For(e6s1_prepare, a8s1193_winter)
+
+0.8169  !E_barrons_3(a8s1193_winter) v IsaEn(a8s1193_winter, "the long winters")
+
+// RHS(Some(When some animals prepare for the long winters by storing food and going dormant it is called hibernation)) => RHS(Question)
+
+0.4419 EXIST e6s1_prepare !IsaEn(a11s1193_food, "food") v !Agent(e10s1193_store, a3s1193_animal) v !IsaEv(e10s1193_store, "store") v !Enable(e10s1193_store, e4s1193_prepare) v !Object(e10s1193_store, a11s1193_food) v E_barrons_6(e6s1_prepare)
+
+0.4419 EXIST a4s1_nut !IsaEn(a11s1193_food, "food") v !Agent(e10s1193_store, a3s1193_animal) v !IsaEv(e10s1193_store, "store") v !Enable(e10s1193_store, e4s1193_prepare) v !Object(e10s1193_store, a11s1193_food) v E_barrons_4(a4s1_nut)
+
+0.4419 EXIST a2s1_squirrel !IsaEn(a11s1193_food, "food") v !Agent(e10s1193_store, a3s1193_animal) v !IsaEv(e10s1193_store, "store") v !Enable(e10s1193_store, e4s1193_prepare) v !Object(e10s1193_store, a11s1193_food) v E_barrons_5(a2s1_squirrel)
+
+0.4419  !IsaEn(a11s1193_food, "food") v !Agent(e10s1193_store, a3s1193_animal) v !IsaEv(e10s1193_store, "store") v !Enable(e10s1193_store, e4s1193_prepare) v !Object(e10s1193_store, a11s1193_food) v !E_barrons_5(a2s1_squirrel) v !E_barrons_4(a4s1_nut) v !E_barrons_6(e6s1_prepare) v Effect(e10s1193_store, e6s1_prepare)
+
+0.4419  !IsaEn(a11s1193_food, "food") v !Agent(e10s1193_store, a3s1193_animal) v !IsaEv(e10s1193_store, "store") v !Enable(e10s1193_store, e4s1193_prepare) v !Object(e10s1193_store, a11s1193_food) v !E_barrons_5(a2s1_squirrel) v !E_barrons_4(a4s1_nut) v !E_barrons_6(e6s1_prepare) v IsaEv(e10s1193_store, "store")
+
+0.4419  !IsaEn(a11s1193_food, "food") v !Agent(e10s1193_store, a3s1193_animal) v !IsaEv(e10s1193_store, "store") v !Enable(e10s1193_store, e4s1193_prepare) v !Object(e10s1193_store, a11s1193_food) v !E_barrons_5(a2s1_squirrel) v !E_barrons_4(a4s1_nut) v !E_barrons_6(e6s1_prepare) v Agent(e10s1193_store, a2s1_squirrel)
+
+0.4419  !IsaEn(a11s1193_food, "food") v !Agent(e10s1193_store, a3s1193_animal) v !IsaEv(e10s1193_store, "store") v !Enable(e10s1193_store, e4s1193_prepare) v !Object(e10s1193_store, a11s1193_food) v !E_barrons_5(a2s1_squirrel) v !E_barrons_4(a4s1_nut) v !E_barrons_6(e6s1_prepare) v Object(e10s1193_store, a4s1_nut)
+
+0.4419  !E_barrons_4(a4s1_nut) v IsaEn(a4s1_nut, "nuts")
+
+// Query -> Result()
+ !Effect(e3s1_store, e6s1_prepare) v !IsaEn(a4s1_nut, "nuts") v !Agent(e3s1_store, a2s1_squirrel) v !Object(e3s1_store, a4s1_nut) v !IsaEv(e3s1_store, "store") v Result("T").
+
+// Question: 	rule462_a_squirrel_storing_nuts
+
+
+// general constraints to ensure meaningful groundings of various
+// predicates
+EXIST y Agent(x,y).                      // every event has an agent
+Agent(x,y) => !Agent(x,z) v [y=z].       // no event has more than one agent
+Object(x,y)=> !Object(x,z) v [y=z].       // no event has more than one object
+IsaEn(x,z) => !IsaEv(y,z).               // no string represents both an entity and an event
+IsaEn(x,y), Entails(y,z) => IsaEn(x,z).  // string entailment implies IsaEn relationship
+IsaEv(x,y), Entails(y,z) => IsaEv(x,z).  // string entailment implies IsaEv relationship
+//IsaEn(x,y), Example(y,z) => IsaEn(x,z).  // being an example implies IsaEn relationship
+//IsaEv(x,y), Example(y,z) => IsaEv(x,z).  // being an example implies IsaEv relationship
+IsaEn(x,y), IsaEn(x,z) => 
+  Entails(y,z) v Entails(z,y). // v Example(y,z) v Example(z,y).  // closed-world behavior of IsaEn
+IsaEv(x,y), IsaEv(x,z) => 
+  Entails(y,z) v Entails(z,y). // v Example(y,z) v Example(z,y).  // closed-world behavior of IsaEv
