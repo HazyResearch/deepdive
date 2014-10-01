@@ -39,25 +39,25 @@ class DataLoader extends JdbcDataStore with Logging {
       }
 
       // hacky way to get schema from a query...
-      executeSqlQuery(s"""
+      executeSqlQueries(s"""
         DROP VIEW IF EXISTS _${filename}_view CASCADE;
         DROP TABLE IF EXISTS _${filename}_tmp CASCADE;
         CREATE VIEW _${filename}_view AS ${query};
         CREATE TABLE _${filename}_tmp AS SELECT * FROM _${filename}_view LIMIT 0;
         """)
 
-      executeSqlQuery(s"""
+      executeSqlQueries(s"""
         DROP EXTERNAL TABLE IF EXISTS _${filename} CASCADE;
         CREATE WRITABLE EXTERNAL TABLE _${filename} (LIKE _${filename}_tmp)
         LOCATION ('gpfdist://${hostname}:${port}/${filename}')
         FORMAT 'TEXT';
         """)
 
-      executeSqlQuery(s"""
+      executeSqlQueries(s"""
         DROP VIEW _${filename}_view CASCADE;
         DROP TABLE _${filename}_tmp CASCADE;""")
 
-      executeSqlQuery(s"""
+      executeSqlQueries(s"""
         INSERT INTO _${filename} ${query};
         """)
     } else { // psql / mysql
@@ -70,7 +70,7 @@ class DataLoader extends JdbcDataStore with Logging {
         case Mysql => "mysql " + Helpers.getOptionString(dbSettings) + " --silent -e "
       }
   
-      executeSqlQuery(s"""
+      executeSqlQueries(s"""
         DROP VIEW IF EXISTS _${filename}_view CASCADE;
         CREATE VIEW _${filename}_view AS ${query};
         """)
@@ -95,7 +95,7 @@ class DataLoader extends JdbcDataStore with Logging {
       writer.close()
       Helpers.executeCmd(cmdfile.getAbsolutePath())
       // executeSqlQuery(s"""COPY (SELECT * FROM _${filename}_view) TO '${filepath}';""")
-      executeSqlQuery(s"DROP VIEW _${filename}_view;")
+      executeSqlQueries(s"DROP VIEW _${filename}_view;")
       s"rm ${cmdfile.getAbsolutePath()}".!
     }
   }

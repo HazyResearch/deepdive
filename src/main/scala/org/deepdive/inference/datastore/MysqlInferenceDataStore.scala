@@ -36,12 +36,12 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
      */
     private def copyFileToTable(filePath: String, tableName: String) : Unit = {
 
-      val srcFile = new File(filePath + ".text")
+      val srcFile = new File(filePath)
 
       val writebackCmd = "mysql " +
         Helpers.getOptionString(dbSettings) +
         " --silent -e " + "\"" +
-        s"LOAD DATA LOCAL INFILE '${filePath}.text' " +
+        s"LOAD DATA LOCAL INFILE '${filePath}' " +
         s"INTO TABLE ${tableName} " +
         "FIELDS TERMINATED BY ' '" + "\""
 
@@ -102,10 +102,15 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
      * Concatinate multiple strings use "concat" function in mysql
      */
     def concat(list: Seq[String], delimiter: String): String = {
-      delimiter match {
-        case null => s"concat(${list.mkString(", ")})"
-        case "" => s"concat(${list.mkString(", ")})"
-        case _ => s"concat(${list.mkString(s",'${delimiter}',")})"
+      list.length match {
+        // return a SQL empty string if list is empty
+        case 0 => "''" 
+        case _ =>
+        delimiter match {
+          case null => s"concat(${list.mkString(", ")})"
+          case "" => s"concat(${list.mkString(", ")})"
+          case _ => s"concat(${list.mkString(s",'${delimiter}',")})"
+        }
       }
     }
 

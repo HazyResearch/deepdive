@@ -122,7 +122,7 @@ object Helpers extends Logging {
     }
     // Use single-quote in bash for reliability. Escape all ' into '\'' inside query.
     val cmd = Helpers.buildSqlCmd(dbSettings, query) + " " + pipeOutStr
-    log.debug("Executing queries by file: ${cmd}")
+    log.debug(s"Executing queries by file: ${cmd}")
     writer.println(s"${cmd}")
     writer.close()
     try {
