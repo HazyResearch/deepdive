@@ -22,7 +22,7 @@ os.system('rm -rf ' + INPUTFOLDER + "/nedges_")
 
 # handle factors
 for l in open(INPUTFOLDER + "/factormeta"):
-  (factor_name, function_id, positives) = l.split('\t')
+  (factor_name, function_id, positives, predicates) = l.split('\t')
   positives = positives.strip().replace('true', '1').replace('false', '0').split(' ')
   nvars = '%d' % len(positives)
 
@@ -30,7 +30,10 @@ for l in open(INPUTFOLDER + "/factormeta"):
   os.system('split -a 10 -l ' + CHUNKSIZE + ' ' + INPUTFOLDER + '/factors_' + factor_name + '_out ' + INPUTFOLDER + '/tmp/factors_' + factor_name + '_out')
 
   print "BINARIZE ", factor_name, "..."
-  os.system('ls ' + INPUTFOLDER + '/tmp | egrep "^factors_' + factor_name + '_out"  | xargs -P 40 -I {} -n 1 sh -c \'' + transform_script + ' factor ' + INPUTFOLDER + '/tmp/{} ' + function_id + ' ' + nvars + ' ' + (' '.join(positives)) + ' \' | awk \'{s+=$1} END {print s}\' >>' + INPUTFOLDER + "/nedges_")
+  os.system('ls ' + INPUTFOLDER + '/tmp | egrep "^factors_' + factor_name + \
+    '_out"  | xargs -P 40 -I {} -n 1 sh -c \'' + transform_script + ' factor ' + INPUTFOLDER + \
+    '/tmp/{} ' + function_id + ' ' + nvars + ' ' + (' '.join(positives)) + ' ' + ' '.join(predicates) + \
+    ' \' | awk \'{s+=$1} END {print s}\' >>' + INPUTFOLDER + "/nedges_")
 
 # handle variables
 for f in os.listdir(INPUTFOLDER):

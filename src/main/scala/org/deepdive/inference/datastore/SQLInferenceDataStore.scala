@@ -559,14 +559,16 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     // generate factor meta data
     execute(s"""DROP TABLE IF EXISTS ${FactorMetaTable} CASCADE;
-      CREATE TABLE ${FactorMetaTable} (name text, funcid int, sign text);
+      CREATE TABLE ${FactorMetaTable} (name text, funcid int, sign text, predicate text);
       """)
 
     // generate a string containing the signs (whether negated) of variables for each factor
     factorDescs.foreach { factorDesc =>
       val signString = factorDesc.func.variables.map(v => !v.isNegated).mkString(" ")
       val funcid = getFactorFunctionTypeid(factorDesc.func.getClass.getSimpleName)
-      execute(s"INSERT INTO ${FactorMetaTable} VALUES ('${factorDesc.name}', ${funcid}, '${signString}')")
+      val predicateString = factorDesc.func.variables.map(v => v.predicate.getOrElse(1)).mkString(" ")
+      execute(s"""INSERT INTO ${FactorMetaTable} VALUES ('${factorDesc.name}', ${funcid}, '${signString}',
+        '${predicateString}')""")
     }
 
     // dump factor meta data
