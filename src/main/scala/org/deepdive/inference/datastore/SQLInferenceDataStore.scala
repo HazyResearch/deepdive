@@ -784,18 +784,24 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         // handle weights table
         // weight is fixed, or doesn't have weight variables
         if (isFixed || weightlist == ""){
-          execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactor} CASCADE;
-            CREATE TABLE ${weighttableForThisFactor} AS
-            SELECT ${cweightid} AS id, ${isFixed}::int AS isfixed, ${initvalue} AS initvalue, ${cardinalityCmd} AS cardinality
+          execute(s"""
+            DROP TABLE IF EXISTS ${weighttableForThisFactor} CASCADE;
+            CREATE TABLE ${weighttableForThisFactor}(isfixed int, initvalue real, cardinality text, id bigserial);""")
+          // weight id
+          execute(s"""
+            ALTER SEQUENCE ${weighttableForThisFactor}_id_seq RESTART ${cweightid} MINVALUE 0""")
+          execute(s"""
+            INSERT INTO ${weighttableForThisFactor}(isfixed, initvalue, cardinality)
+            SELECT ${isFixed}::int AS isfixed, ${initvalue} AS initvalue, ${cardinalityCmd} AS cardinality
             FROM ${cardinalityTables.mkString(", ")}
             ORDER BY cardinality;""")
 
-          // handle weight id
-          if (usingGreenplum) {      
-            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor}', ${cweightid});""")
-          } else {
-            execute(s"UPDATE ${weighttableForThisFactor} SET id = nextval('${weightidSequence}');")
-          }
+          // // handle weight id
+          // if (usingGreenplum) {      
+          //   executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor}', ${cweightid});""")
+          // } else {
+          //   execute(s"UPDATE ${weighttableForThisFactor} SET id = nextval('${weightidSequence}');")
+          // }
 
           execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, cardinality) 
             SELECT * FROM ${weighttableForThisFactor};""")
@@ -812,21 +818,29 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           val weighttableForThisFactorTemp = s"dd_weight_${factorDesc.name}_temp"
           execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactorTemp} CASCADE;
             CREATE TABLE ${weighttableForThisFactorTemp} AS 
-            SELECT ${weightlist}, 0::bigint AS id, ${isFixed}::int AS isfixed, ${initvalue}::real AS initvalue 
+            SELECT ${weightlist}, ${isFixed}::int AS isfixed, ${initvalue}::real AS initvalue
             FROM ${querytable}
             GROUP BY ${weightlist};""")
+          // to get the schema for the given query
           execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactor} CASCADE;
             CREATE TABLE ${weighttableForThisFactor} AS 
+            SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} AS cardinality
+            FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")} LIMIT 0;""")
+          // weight id
+          execute(s"""ALTER TABLE ${weighttableForThisFactor} ADD COLUMN id bigserial;
+            ALTER SEQUENCE ${weighttableForThisFactor}_id_seq RESTART ${cweightid} MINVALUE 0""")
+          execute(s"""
+            INSERT INTO ${weighttableForThisFactor}
             SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} AS cardinality
             FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")}
             ORDER BY ${weightlist}, cardinality;""")
 
-          // handle weight id
-          if (usingGreenplum) {      
-            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor}', ${cweightid});""")
-          } else {
-            execute(s"UPDATE ${weighttableForThisFactor} SET id = nextval('${weightidSequence}');")
-          }
+          // // handle weight id
+          // if (usingGreenplum) {      
+          //   executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor}', ${cweightid});""")
+          // } else {
+          //   execute(s"UPDATE ${weighttableForThisFactor} SET id = nextval('${weightidSequence}');")
+          // }
           issueQuery(s"""SELECT COUNT(*) FROM ${weighttableForThisFactor};""") { rs =>
             cweightid += rs.getLong(1)
           }
