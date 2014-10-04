@@ -98,12 +98,23 @@ void load_factor(std::string filename, short funcid, long nvar, char** positives
   long nedge = 0;
   long nvars_big = bswap_64(nvar);
   long predicate = funcid == 5 ? -1 : 1;
-  vector<int> positives_vec();
+  vector<int> positives_vec;
+  vector<long> predicates_vec;
 
   funcid = bswap_16(funcid);
 
   for (int i = 0; i < nvar; i++) {
     positives_vec.push_back(atoi(positives[i]));
+  }
+
+  for (int i = nvar; i < 2*nvar; i++) {
+    if (funcid == 5) {
+      predicates_vec.push_back(-1);
+    } else {
+      predicate = atol(positives[i]);
+      predicate = bswap_64(predicate); 
+      predicates_vec.push_back(predicate);
+    }
   }
 
   predicate = bswap_64(predicate); 
@@ -144,6 +155,7 @@ void load_factor(std::string filename, short funcid, long nvar, char** positives
           variableid = atol(subfield.c_str());
           variableid = bswap_64(variableid);
           position_big = bswap_64(position);
+          predicate = predicates_vec[i];
 
           fedgeout.write((char *)&variableid, 8);
           fedgeout.write((char *)&factorid, 8);
@@ -158,6 +170,7 @@ void load_factor(std::string filename, short funcid, long nvar, char** positives
         variableid = atol(field.c_str());
         variableid = bswap_64(variableid);
         position_big = bswap_64(position);
+        predicate = predicates_vec[i];
 
         fedgeout.write((char *)&variableid, 8);
         fedgeout.write((char *)&factorid, 8);

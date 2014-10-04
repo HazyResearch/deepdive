@@ -559,14 +559,16 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     // generate factor meta data
     execute(s"""DROP TABLE IF EXISTS ${FactorMetaTable} CASCADE;
-      CREATE TABLE ${FactorMetaTable} (name text, funcid int, sign text);
+      CREATE TABLE ${FactorMetaTable} (name text, funcid int, sign text, predicate text);
       """)
 
     // generate a string containing the signs (whether negated) of variables for each factor
     factorDescs.foreach { factorDesc =>
       val signString = factorDesc.func.variables.map(v => !v.isNegated).mkString(" ")
       val funcid = getFactorFunctionTypeid(factorDesc.func.getClass.getSimpleName)
-      execute(s"INSERT INTO ${FactorMetaTable} VALUES ('${factorDesc.name}', ${funcid}, '${signString}')")
+      val predicateString = factorDesc.func.variables.map(v => v.predicate.getOrElse(1)).mkString(" ")
+      execute(s"""INSERT INTO ${FactorMetaTable} VALUES ('${factorDesc.name}', ${funcid}, '${signString}',
+        '${predicateString}')""")
     }
 
     // dump factor meta data
@@ -803,8 +805,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           //   execute(s"UPDATE ${weighttableForThisFactor} SET id = nextval('${weightidSequence}');")
           // }
 
-          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, cardinality) 
-            SELECT * FROM ${weighttableForThisFactor};""")
+          execute(s"""INSERT INTO ${WeightsTable}(isfixed, initvalue, cardinality, id) 
+            SELECT isfixed, initvalue, cardinality, id FROM ${weighttableForThisFactor};""")
 
           du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
             s"SELECT id AS factor_id, ${cweightid} AS weight_id, ${idcols} FROM ${querytable}")
