@@ -139,7 +139,7 @@ object Helpers extends Logging {
    *  Build a SQL command like 
    *    psql -c 'QUERY'
    *  or
-   *    mysql --silent -e 'QUERY'
+   *    mysql --silent -N -e 'QUERY'
    *    
    *  Use single-quote in bash for reliability. Escape all ' into '\'' inside query.
    *  
@@ -160,7 +160,7 @@ object Helpers extends Logging {
       case Psql => sqlQueryPrefix + 
         s""" -c '${query.replaceAll("'", "'\\\\''")}' """
       case Mysql => sqlQueryPrefix +
-        s""" --silent -e '${query.replaceAll("'", "'\\\\''")}' """
+        s""" --silent -N -e '${query.replaceAll("'", "'\\\\''")}' """
     }
   }
 }

@@ -40,7 +40,7 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
 
       val writebackCmd = "mysql " +
         Helpers.getOptionString(dbSettings) +
-        " --silent -e " + "\"" +
+        " --silent -N -e " + "\"" +
         s"LOAD DATA LOCAL INFILE '${filePath}' " +
         s"INTO TABLE ${tableName} " +
         "FIELDS TERMINATED BY ' '" + "\""

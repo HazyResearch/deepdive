@@ -67,7 +67,8 @@ class DataLoader extends JdbcDataStore with Logging {
 
       val sqlQueryPrefixRun = dbtype match {
         case Psql => "psql " + Helpers.getOptionString(dbSettings) + " -c "
-        case Mysql => "mysql " + Helpers.getOptionString(dbSettings) + " --silent -e "
+        // -N: skip column names
+        case Mysql => "mysql " + Helpers.getOptionString(dbSettings) + " --silent -N -e "
       }
   
       executeSqlQueries(s"""
