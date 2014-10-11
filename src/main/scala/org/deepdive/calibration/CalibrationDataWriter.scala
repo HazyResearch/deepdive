@@ -5,6 +5,7 @@ import scala.util.{Success, Failure}
 import org.apache.commons.io.FilenameUtils
 import scala.sys.process._
 import org.deepdive.profiling.QuickReport
+import org.deepdive.Context
 
 /* Compansion object for the CalibrationDataWriter */
 object CalibrationDataWriter {
@@ -33,7 +34,7 @@ class CalibrationDataWriter extends Actor with ActorLogging {
       log.info(s"Wrote calibration_file=${file.getCanonicalPath}")
       
       // Generate the calibration plot
-      val deepDiveDir = System.getProperty("user.dir")
+      val deepDiveDir = Context.deepdiveHome
       val plotOutputFile = FilenameUtils.removeExtension(file.getCanonicalPath) + ".png"
       val calibrationCmd = Seq("gnuplot", 
         "-e", s"""input_file='${file.getCanonicalPath}';output_file='${plotOutputFile}'""", 
