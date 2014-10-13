@@ -1,7 +1,7 @@
 #! /bin/bash
 
 # Database Configuration
-export DBNAME=deepdive_smoke
+export DBNAME=deepdive_affordances
 export PGUSER=${PGUSER:-`whoami`}
 export PGPASSWORD=${PGPASSWORD:-}
 export PGPORT=${PGPORT:-5432}

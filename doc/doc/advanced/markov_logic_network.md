@@ -17,7 +17,7 @@ ant dist
 
 ### Usage example
 
-An MLN example is under folder deepdive/examples/smoke_mln. The files in this folder are listed below:
+MLN examples can be found under folders deepdive/examples/*_mln. The files in each of these folders are listed below:
 
 - env_conf.sh is the database configuration file.
 - [application.conf](http://deepdive.stanford.edu/doc/basics/configuration.html) is the Deepdive program template. Only the Deepdive sampler parameters and the global parameters except the database settings in this file can be changed.
@@ -44,4 +44,4 @@ The results, the marginals or weights, will remain in the [database](http://deep
 - As in Tuffy, soft evidence is supported. A soft evidence will be treated as a factor linked to the atom corresponding to the evidence. The weight of the factor is ln(prior/(1-prior)) where prior is the possibility that the evidence holds true.
 - Same as Tuffy, a closed world assumption is made during learning. This means all atoms not specified in evidence.db will be treated as false.
 - During learning the system learns weights for all soft rules specified in prog.mln. Non-zero weights are needed to be specified in prog.mln for all soft rules for learning.
-- For now the Tuffy Port is only tested on Postgres. Its support for other DBMSs will be developed and tested in the future.
+- For now the Tuffy Port is only tested on Postgres. Its support for other DBMSs will be developed and tested in the future. The users should configure the DBMS settings only in env_conf.sh.
