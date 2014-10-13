@@ -1100,14 +1100,13 @@ public class Predicate {
 				}
 				input_query += StringMan.join(" AND ", attrs) + ";";
 
-				String function = "IsTrue(t.truth)";
-
 				count++;
 				String rule = name + "_SoftEvidence_" + Integer.toString(count) + " {\n";
 				rule += "input_query: \"\"\"\n";
 				rule += input_query + "\n\"\"\"\n";
 
 				// function of the inference rule
+				String function = "IsTrue(t.truth)";
 				rule += "function: \"" + function + "\"\n";
 
 				// weight of the inference rule
