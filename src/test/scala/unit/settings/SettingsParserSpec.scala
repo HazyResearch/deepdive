@@ -73,7 +73,7 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester {
       assert(result == InferenceSettings(List(FactorDesc("factor1", 
         "SELECT a.*, b.* FROM a INNER JOIN b ON a.document_id = b.id",
         ImplyFactorFunction(Seq(FactorFunctionVariable("a", "is_present", false))), 
-        UnknownFactorWeight(Nil), "factor1")), Option(100000), false, ""))
+        UnknownFactorWeight(Nil), "factor1", 0.0)), Option(100000), false, ""))
     }
 
     it("should throw an exception when there's a syntax error") {

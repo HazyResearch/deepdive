@@ -63,7 +63,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         val factorDesc = FactorDesc("testFactor", 
             """SELECT id AS "r1.id", weight AS "weight", is_correct AS "r1.is_correct" FROM r1""", 
           IsTrueFactorFunction(Seq("r1.is_correct")), 
-          UnknownFactorWeight(List("weight")), "weight_prefix")
+          UnknownFactorWeight(List("weight")), "weight_prefix", 0.0)
         val holdoutFraction = 0.0
 
         // Ground the graph
@@ -104,7 +104,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         val factorDesc = FactorDesc("testFactor", 
             """SELECT id AS "r1.id", weight AS "weight", is_correct AS "r1.is_correct" FROM r1""", 
           IsTrueFactorFunction(Seq("r1.is_correct")), 
-          UnknownFactorWeight(List("weight")), "weight_prefix")
+          UnknownFactorWeight(List("weight")), "weight_prefix", 0.0)
         val holdoutFraction = 0.0
 
         // Ground the graph with custom holdout
@@ -137,7 +137,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         val factorDesc = FactorDesc("testFactor", 
             """SELECT id AS "r1.id", weight AS "weight", is_correct AS "r1.is_correct" FROM r1""", 
           IsTrueFactorFunction(Seq("r1.is_correct")), 
-          UnknownFactorWeight(List("weight")), "weight_prefix")
+          UnknownFactorWeight(List("weight")), "weight_prefix", 0.0)
         val holdoutFraction = 0.0
 
         // Ground the graph
@@ -169,7 +169,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
           r2.id AS "r2.id", r2.is_correct AS "r2.is_correct" FROM r1, r2
           WHERE r1.id = (r2.id-100)""",
           AndFactorFunction(Seq("r1.is_correct", "r2.is_correct")), 
-          UnknownFactorWeight(List("weight")), "weight_prefix")
+          UnknownFactorWeight(List("weight")), "weight_prefix", 0.0)
 
         inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), 0.0, None, false, "", dbSettings, false)
 
@@ -206,7 +206,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         val factorDesc = FactorDesc("testFactor", 
           """SELECT id AS "r1.id", weight AS "weight", value AS "r1.value" FROM r1""", 
           MultinomialFactorFunction(Seq("r1.value")), 
-          UnknownFactorWeight(List()), "weight_prefix")
+          UnknownFactorWeight(List()), "weight_prefix", 0.0)
         val holdoutFraction = 0.0
 
         // Ground the graph
@@ -242,7 +242,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         val factorDesc = FactorDesc("testFactor", 
           """SELECT id AS "r1.id", weight AS "weight", value AS "r1.value" FROM r1""", 
           MultinomialFactorFunction(Seq("r1.value")), 
-          UnknownFactorWeight(List("weight")), "weight_prefix")
+          UnknownFactorWeight(List("weight")), "weight_prefix", 0.0)
         val holdoutFraction = 0.0
 
         // Ground the graph
