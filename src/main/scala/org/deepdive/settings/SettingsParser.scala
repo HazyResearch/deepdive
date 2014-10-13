@@ -145,8 +145,10 @@ object SettingsParser extends Logging {
         throw new RuntimeException(s"parsing ${factorConfig.getString("weight")} failed")
       }
       val factorWeightPrefix = Try(factorConfig.getString("weightPrefix")).getOrElse(factorName)
+      val factorReg = Try(factorConfig.getDouble("regularization")).getOrElse(0.0)
+
       FactorDesc(factorName, factorInputQuery, factorFunction, 
-          factorWeight, factorWeightPrefix)
+          factorWeight, factorWeightPrefix, factorReg)
     }.toList
     InferenceSettings(factors, batchSize, skipLearning, weightTable, parallelGrounding)
   }

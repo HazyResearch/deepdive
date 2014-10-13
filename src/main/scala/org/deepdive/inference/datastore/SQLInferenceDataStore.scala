@@ -577,7 +577,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     // weights table
     execute(s"""DROP TABLE IF EXISTS ${WeightsTable} CASCADE;""")
-    execute(s"""CREATE TABLE ${WeightsTable} (id bigint, isfixed int, initvalue real, cardinality text);""")
+    execute(s"""CREATE TABLE ${WeightsTable} (id bigint, isfixed int, initvalue real, cardinality text, regularization float);""")
 
     // weight and factor id
     // greemplum: use fast_seqassign postgres: use sequence
@@ -697,7 +697,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
             FROM ${weighttableForThisFactor} t0, ${weighttableForThisFactor}_other t1;
           """)
 
-          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue) SELECT id, isfixed, initvalue FROM ${weighttableForThisFactor};""")
+          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, regularization) SELECT id, isfixed, initvalue, ${factorDesc.regularization} FROM ${weighttableForThisFactor};""")
 
           // check null weight
           val weightChecklist = factorDesc.weight.variables.map(v => s""" "${v}" IS NULL """).mkString("AND")
@@ -719,8 +719,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         // handle weights table
         // weight is fixed, or doesn't have weight variables
         if (isFixed || weightlist == ""){
-          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue) 
-            VALUES (${cweightid}, ${isFixed}::int, ${initvalue});""")
+          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, regularization) 
+            VALUES (${cweightid}, ${isFixed}::int, ${initvalue}, ${factorDesc.regularization});""")
           du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
             s"SELECT id AS factor_id, ${cweightid} AS weight_id, ${idcols} FROM ${querytable}")
 
@@ -746,7 +746,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
             cweightid += rs.getLong(1)
           }
 
-          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue) SELECT id, isfixed, initvalue FROM ${weighttableForThisFactor};""")
+          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, regularization) SELECT id, isfixed, initvalue, ${factorDesc.regularization} FROM ${weighttableForThisFactor};""")
 
           // check null weight
           val weightChecklist = factorDesc.weight.variables.map(v => s""" "${v}" IS NULL """).mkString("AND")
@@ -805,8 +805,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           //   execute(s"UPDATE ${weighttableForThisFactor} SET id = nextval('${weightidSequence}');")
           // }
 
-          execute(s"""INSERT INTO ${WeightsTable}(isfixed, initvalue, cardinality, id) 
-            SELECT isfixed, initvalue, cardinality, id FROM ${weighttableForThisFactor};""")
+          execute(s"""INSERT INTO ${WeightsTable}(isfixed, initvalue, cardinality, id, regularization) 
+            SELECT isfixed, initvalue, cardinality, id, ${factorDesc.regularization} FROM ${weighttableForThisFactor};""")
 
           du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
             s"SELECT id AS factor_id, ${cweightid} AS weight_id, ${idcols} FROM ${querytable}")
@@ -847,8 +847,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
             cweightid += rs.getLong(1)
           }
 
-          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, cardinality) 
-            SELECT id, isfixed, initvalue, cardinality FROM ${weighttableForThisFactor};""")
+          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, cardinality, regularization) 
+            SELECT id, isfixed, initvalue, cardinality, ${factorDesc.regularization} FROM ${weighttableForThisFactor};""")
 
           // use weight id corresponding to cardinality 0 (like C array...)
           val cardinalityKey = factorDesc.func.variables.map(v => "00000").mkString(",")
@@ -866,6 +866,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // dump weights
     du.unload("weights", s"${groundingPath}/weights",dbSettings, parallelGrounding,
       s"SELECT id, isfixed, COALESCE(initvalue, 0) FROM ${WeightsTable}")
+
+    du.unload("weights", s"${groundingPath}/graph.weights.regs",dbSettings, parallelGrounding,
+      s"SELECT id, regularization FROM ${WeightsTable}")
 
     // create inference result table
     execute(createInferenceResultSQL)

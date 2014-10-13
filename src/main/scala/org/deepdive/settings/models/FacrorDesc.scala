@@ -2,7 +2,7 @@ package org.deepdive.settings
 
 /* A Factor specified in the settings */
 case class FactorDesc(name: String, inputQuery: String, func: FactorFunction, 
-  weight: FactorWeight, weightPrefix: String)
+  weight: FactorWeight, weightPrefix: String, regularization: Double)
 
 /* Factor Weight for a factor specified in the settings*/
 sealed trait FactorWeight {
