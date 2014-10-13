@@ -1194,19 +1194,19 @@ public class Clause implements Cloneable{
 			ArrayList<String> groupBy = new ArrayList<String>();
 			// for all the literals in the clause
 			for (int i=0; i<lits.size(); i++) {
-				boolean containsExsitentiaVars = false;
+				boolean containsExistentialVars = false;
 				HashSet<String> vars = lits.get(i).getVars();
 
 				// check if there are existential variables in the literal
 				for (String var : existentialVars) {
 					if (vars.contains(var)) {
-						containsExsitentiaVars = true;
+						containsExistentialVars = true;
 						break;
 					}
 				}
 
 				// add variables
-				if (!containsExsitentiaVars) {
+				if (!containsExistentialVars) {
 					attrs.add("t" + Integer.toString(i) + ".id AS \"t" + Integer.toString(i) + ".id\"");
 					groupBy.add("t" + Integer.toString(i) + ".id");
 				} else {
@@ -1268,14 +1268,14 @@ public class Clause implements Cloneable{
 			attrs.clear();
 			for (int i=0; i<lits.size(); i++) {
 				Literal lit = lits.get(i);
-				boolean containsExsitentiaVars = false;
+				boolean containsExistentialVars = false;
 				for (String var : existentialVars) {
 					if (lit.getVars().contains(var)) {
-						containsExsitentiaVars = true;
+						containsExistentialVars = true;
 						break;
 					}
 				}
-				if (!containsExsitentiaVars) {
+				if (!containsExistentialVars) {
 					attrs.add((lit.getSense()?"":"!") + "t" + Integer.toString(i) + ".truth");
 				} else {
 					attrs.add((lit.getSense()?"":"!") + "t" + Integer.toString(i) + ".truth[]");
@@ -1302,15 +1302,15 @@ public class Clause implements Cloneable{
 				ArrayList<String> attrs = new ArrayList<String>();
 				ArrayList<String> groupBy = new ArrayList<String>();
 				for (int i=0; i<lits.size(); i++) {
-					boolean containsExsitentiaVars = false;
+					boolean containsExistentialVars = false;
 					HashSet<String> vars = lits.get(i).getVars();
 					for (String var : existentialVars) {
 						if (vars.contains(var)) {
-							containsExsitentiaVars = true;
+							containsExistentialVars = true;
 							break;
 						}
 					}
-					if (!containsExsitentiaVars) {
+					if (!containsExistentialVars) {
 						attrs.add("t" + Integer.toString(i) + ".id AS \"t" + Integer.toString(i) + ".id\"");
 						groupBy.add("t" + Integer.toString(i) + ".id");
 					} else {
@@ -1379,14 +1379,14 @@ public class Clause implements Cloneable{
 				attrs.clear();
 				for (int i=0; i<lits.size(); i++) {
 					Literal lit = lits.get(i);
-					boolean containsExsitentiaVars = false;
+					boolean containsExistentialVars = false;
 					for (String var : existentialVars) {
 						if (lit.getVars().contains(var)) {
-							containsExsitentiaVars = true;
+							containsExistentialVars = true;
 							break;
 						}
 					}
-					if (!containsExsitentiaVars) {
+					if (!containsExistentialVars) {
 						attrs.add((lit.getSense()?"":"!") + "t" + Integer.toString(i) + ".truth");
 					} else {
 						attrs.add((lit.getSense()?"":"!") + "t" + Integer.toString(i) + ".truth[]");
