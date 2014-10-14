@@ -7,6 +7,9 @@ export PGPORT=${PGPORT:-5432}
 export PGHOST=${PGHOST:-localhost}
 export DBNAME=deepdive_test
 export PGDATABASE=$DBNAME  # for testing to work with null settings
+export GPHOST=${GPHOST:-localhost}
+export GPPORT=${GPPORT:-8082}
+export GPPATH=${GPPATH:-/tmp}
 
 export DEEPDIVE_HOME=`cd $(dirname $0); pwd`
 
@@ -34,4 +37,8 @@ dropdb $DBNAME
 createdb $DBNAME
 
 # Run the test
-SBT_OPTS="-XX:MaxHeapSize=256m -Xmx512m -XX:MaxPermSize=256m" sbt "test"
+
+# Separate different tests to fix the issue of unable to run multiple integration tests. If any of the tests return non-0 value, exit with the error code.
+export SBT_OPTS="-XX:MaxHeapSize=256m -Xmx512m -XX:MaxPermSize=256m" 
+sbt "test-only org.deepdive.test.unit.*" && sbt "test-only org.deepdive.test.integration.BiasedCoin" && sbt "test-only org.deepdive.test.integration.ChunkingApp"
+

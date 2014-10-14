@@ -1,6 +1,7 @@
 package org.deepdive.settings
 
 import org.deepdive.Logging
+import org.deepdive.Context
 import com.typesafe.config._
 import scala.collection.JavaConversions._
 import scala.util.Try
@@ -17,6 +18,14 @@ object SettingsParser extends Logging {
     val calibrationSettings = loadCalibrationSettings(config)
     val samplerSettings = loadSamplerSettings(config)
     val pipelineSettings = loadPipelineSettings(config)
+
+    // Make sure that the variables related to the Greenplum distributed
+    // filesystem are set if the user wants to use parallel grounding
+    if (inferenceSettings.parallelGrounding) {
+      if (dbSettings.gphost == "" || dbSettings.gpport == "" || dbSettings.gppath == "") {
+        throw new RuntimeException(s"inference.parallelGrounding is set to true, but one of db.default.gphost, db.default.gpport, or db.default.gppath is not specified")
+      }
+    }
 
     Settings(schemaSettings, extractors, inferenceSettings, 
       calibrationSettings, samplerSettings, pipelineSettings, dbSettings)
@@ -171,10 +180,10 @@ object SettingsParser extends Logging {
         val osname = System.getProperty("os.name")
         log.info(s"Detected OS: ${osname}")
         if (osname.startsWith("Linux")) {
-          "util/sampler-dw-linux gibbs"
+          s"${Context.deepdiveHome}/util/sampler-dw-linux gibbs"
         }
         else {
-          "util/sampler-dw-mac gibbs"
+          s"${Context.deepdiveHome}/util/sampler-dw-mac gibbs"
         }
       case _ => samplingConfig.getString("sampler_cmd")
     }
@@ -201,14 +210,16 @@ object SettingsParser extends Logging {
     }
     val relearnFrom = Try(pipelineConfig.getString("relearn_from")).getOrElse(null)
     val activePipeline = Try(pipelineConfig.getString("run")).toOption
-    val pipelinesObj = Try(pipelineConfig.getObject("pipelines")).getOrElse {
-      return PipelineSettings(None, Nil, null)
+    if (relearnFrom == null) {
+      val pipelinesObj = Try(pipelineConfig.getObject("pipelines")).getOrElse {
+        return PipelineSettings(None, Nil, null)
+      }
+      val pipelines = pipelinesObj.keySet().map { pipelineName =>
+        val tasks = pipelineConfig.getStringList(s"pipelines.$pipelineName").toSet
+        Pipeline(pipelineName, tasks)
+      }.toList
+      return PipelineSettings(activePipeline, pipelines, relearnFrom)
     }
-    val pipelines = pipelinesObj.keySet().map { pipelineName =>
-      val tasks = pipelineConfig.getStringList(s"pipelines.$pipelineName").toSet
-      Pipeline(pipelineName, tasks)
-    }.toList
-    PipelineSettings(activePipeline, pipelines, relearnFrom)
+    PipelineSettings(activePipeline, Nil, relearnFrom)
   }
-
 }

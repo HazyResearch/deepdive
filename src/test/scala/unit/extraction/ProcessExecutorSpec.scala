@@ -50,6 +50,9 @@ class ProcessExecutorSpec(_system: ActorSystem) extends TestKit(_system) with Im
       probe. expectTerminated(actor)
     }
 
+    // This is not a very robust test. In failing_extractor.py we sleep for 6
+    // seconds, in the hope that it is enough to write the three messages below
+    // and get the reply.
     it("should work when the process crashes") {
       val failingExtractorFile = getClass.getResource("/failing_extractor.py").getFile
       val actor = system.actorOf(ProcessExecutor.props)
