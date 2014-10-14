@@ -233,6 +233,41 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
 
       }
 
+      it("should work with custom a observation query") {
+        inferenceDataStore.init()
+        
+        // Insert sample data
+        SQL(s"""CREATE TABLE r1(weight int,
+          is_correct boolean, id bigint);""").execute.apply()        
+        val data = (1 to 100).map { i =>
+          Map("id" -> i, "weight" -> i, "is_correct" -> s"${i%2==0}".toBoolean)
+        }
+        dataStoreHelper.bulkInsert("r1", data.iterator)
+
+        val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
+
+        // Build the factor description
+        val factorDesc = FactorDesc("testFactor", 
+            """SELECT id AS "r1.id", weight AS "weight", is_correct AS "r1.is_correct" FROM r1""", 
+          IsTrueFactorFunction(Seq("r1.is_correct")), 
+          UnknownFactorWeight(List("weight")), "weight_prefix")
+        val holdoutFraction = 0.0
+
+        // Ground the graph with custom observation
+        val observationQuery = """
+          INSERT INTO dd_graph_variables_observation(variable_id)
+          SELECT id FROM r1 WHERE id <= 10;"""
+        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), CalibrationSettings(holdoutFraction, None, Option(observationQuery)), false, "", dbSettings, false)
+
+
+        val numHoldout = SQL(s"""SELECT COUNT(*) AS "count" FROM r1
+          WHERE id IN (SELECT variable_id FROM ${inferenceDataStore.VariablesObservationTable}) 
+          AND is_correct = true;""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numHoldout === 5)
+
+      }
+
       it("should work with an observation query") {
         inferenceDataStore.init()
         
