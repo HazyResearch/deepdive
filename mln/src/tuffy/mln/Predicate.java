@@ -1128,8 +1128,8 @@ public class Predicate {
 	 * 
 	 */
 	public String generateDeepdiveObservationOnlyEvidence() {
-		return "\"INSERT INTO dd_graph_variables_observation SELECT id FROM "
-			+ getRelName() + " WHERE inQuery=FALSE AND truth IS NOT NULL;\"";
+		return "INSERT INTO dd_graph_variables_observation SELECT id FROM "
+			+ getRelName() + " WHERE inQuery=FALSE AND truth IS NOT NULL;";
 	}
 
 }

@@ -85,7 +85,7 @@ public class DeepDiveTuffy {
 				for (Predicate p : mln.getAllPred()) {
 					attrs.add(p.generateDeepdiveObservationOnlyEvidence());
 				}
-				applicationConf.add("observation_query: " + StringMan.join("; ", attrs));
+				applicationConf.add("observation_query: \"" + StringMan.join(" ", attrs) + "\"");
 			}
 		}
 		FileMan.writeLines(opt.fout, applicationConf);
