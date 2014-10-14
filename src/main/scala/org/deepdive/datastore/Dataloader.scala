@@ -23,7 +23,7 @@ class DataLoader extends JdbcDataStore with Logging {
       conn.commit()
     } catch {
       case psqlexc : PSQLException => 
-        // Catch known bug in JDBC which trows an error error when inserting more
+        // Catch known bug in JDBC which throws an error when inserting more
         // than 2^31 rows. The data is there, it's just that JDBC can't parse
         // the return error message. 
         val msg = psqlexc.getMessage()
