@@ -18,7 +18,6 @@ object TaskManager {
   case object ForceShutdown
   case object Shutdown
   case object PrintStatus
-
 }
 
 class TaskManager extends Actor with ActorLogging {

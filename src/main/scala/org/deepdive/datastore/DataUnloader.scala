@@ -6,6 +6,7 @@ import org.deepdive.Logging
 import scala.sys.process._
 import scala.util.{Try, Success, Failure}
 import java.io._
+import org.postgresql.util.PSQLException
 
 class DataUnloader extends JdbcDataStore with Logging {
 
@@ -16,9 +17,28 @@ class DataUnloader extends JdbcDataStore with Logging {
     val conn = borrowConnection()
     conn.setAutoCommit(false)
     val stmt = conn.createStatement();
-    stmt.execute(sql)
-    conn.commit()
-    conn.close()  
+
+    try {
+      stmt.execute(sql)
+      conn.commit()
+    } catch {
+      case psqlexc : PSQLException => 
+        // Catch known bug in JDBC which trows an error error when inserting more
+        // than 2^31 rows. The data is there, it's just that JDBC can't parse
+        // the return error message. 
+        val msg = psqlexc.getMessage()
+        if (! msg.contains("Unable to interpret the update count in command completion tag: INSERT")) {
+          log.error(psqlexc.toString)
+          throw psqlexc
+        } else {
+          log.info("Ignoring JDBC overflow bug")
+        }
+      case e: Throwable =>
+        log.error(e.toString)
+        throw e
+    } finally {
+      conn.close()
+    }
     log.debug("DONE!")
   }
 
