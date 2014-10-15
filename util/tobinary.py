@@ -59,17 +59,14 @@ nvariable_files = 0
 
 # counting 
 print "COUNTING", "variables", "..."
-#os.system('wc -l ' + INPUTFOLDER + "/dd_tmp/dd_variables_* | awk '{print $1+%d}' | tail -n 1 > " % nvariable_files + INPUTFOLDER + '/dd_nvariables')
 os.system('wc -l ' + INPUTFOLDER + "/dd_tmp/dd_variables_* | tail -n 1 | sed -e 's/^[ \t]*//g' | cut -d ' ' -f 1 > " + INPUTFOLDER + '/dd_nvariables_wc')
 os.system('export dd_nvar=`cat ' + INPUTFOLDER + '/dd_nvariables_wc`; echo $dd_nvar + %d | bc > ' % nvariable_files + INPUTFOLDER + '/dd_nvariables; unset dd_nvar')
 
 print "COUNTING", "factors", "..."
-#os.system('wc -l ' + INPUTFOLDER + "/dd_tmp/dd_factors_* | awk '{print $1+%d}' | tail -n 1 > " % nfactor_files + INPUTFOLDER + '/dd_nfactors')
 os.system('wc -l ' + INPUTFOLDER + "/dd_tmp/dd_factors_* | tail -n 1 | sed -e 's/^[ \t]*//g' | cut -d ' ' -f 1 > " + INPUTFOLDER + '/dd_nfactors_wc')
 os.system('export dd_nfact=`cat ' + INPUTFOLDER + '/dd_nfactors_wc`; echo $dd_nfact + %d | bc > ' % nfactor_files + INPUTFOLDER + '/dd_nfactors; unset dd_nfact')
 
 print "COUNTING", "weights", "..."
-#os.system('wc -l ' + INPUTFOLDER + "/dd_weights | awk '{print $1}' | tail -n 1 > " + INPUTFOLDER + '/dd_nweights')
 os.system('wc -l ' + INPUTFOLDER + "/dd_weights | tail -n 1 | sed -e 's/^[ \t]*//g' | cut -d ' ' -f 1 > " + INPUTFOLDER + '/dd_nweights')
 
 os.system("awk '{{ sum += $1 }} END {{ printf \"%d\\n\", sum }}' {0}/dd_nedges_ > {0}/dd_nedges".format(INPUTFOLDER))
