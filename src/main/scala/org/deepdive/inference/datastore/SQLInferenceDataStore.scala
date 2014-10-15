@@ -521,7 +521,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         FROM ${relation}
         """)
 
-      execute(s"""ALTER TABLE ${relation} DROP COLUMN IF EXISTS ${variableTypeColumn} CASCADE;""")
+      execute(s"""ALTER TABLE ${relation} DROP COLUMN ${variableTypeColumn} CASCADE;""")
 
     }
 
