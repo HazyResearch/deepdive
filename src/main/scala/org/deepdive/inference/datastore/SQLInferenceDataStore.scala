@@ -867,7 +867,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     du.unload("weights", s"${groundingPath}/weights",dbSettings, parallelGrounding,
       s"SELECT id, isfixed, COALESCE(initvalue, 0) FROM ${WeightsTable}")
 
-    du.unload("weights", s"${groundingPath}/graph.weights.regs",dbSettings, parallelGrounding,
+    du.unload("graph.weights.regs", s"${groundingPath}/graph.weights.regs",dbSettings, parallelGrounding,
       s"SELECT id, regularization FROM ${WeightsTable}")
 
     // create inference result table
