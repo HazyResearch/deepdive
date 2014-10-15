@@ -758,8 +758,7 @@ public class Predicate {
 		db.dropTable(relName);
 		db.dropView(relName);
 		db.dropSequence(relName + "_id_seq");
-		String sql = "CREATE TABLE " + getRelName() + "(\n";
-		sql += "id bigserial,\n";
+		String sql = "id bigserial,\n";
 		sql += "truth BOOL DEFAULT " + ((isClosedWorld() || Config.learning_mode) ? "FALSE" : "NULL") + ",\n"; // evidence truth
 		sql += "prior FLOAT DEFAULT NULL,\n"; // evidence prior
 		sql += "inQuery BOOL DEFAULT FALSE,\n";
@@ -786,7 +785,7 @@ public class Predicate {
 			}
 			argDefs.add(attr + ts);
 		}
-		sql += StringMan.commaList(argDefs) + ")";
+		sql = "CREATE TABLE " + getRelName() + "(\n" + sql + StringMan.commaList(argDefs) + ")";
 		
 		if(Config.using_greenplum){
 			sql = sql + " DISTRIBUTED BY (" + args.get(0) + ")";
