@@ -765,7 +765,7 @@ public class Predicate {
 		sql += "atomID INT DEFAULT NULL,\n";
 		sql += "itruth BOOL DEFAULT NULL,\n"; // inferred truth
 		sql += "prob FLOAT DEFAULT NULL,\n"; // infererred probability
-		sql += "useful BOOL DEFAULT FALSE,\n";
+		sql += "useful BOOL DEFAULT FALSE";
 		ArrayList<String> argDefs = new ArrayList<String>();
 		for (int i = 0; i < args.size(); i++) {
 			String attr = args.get(i);
@@ -785,7 +785,7 @@ public class Predicate {
 			}
 			argDefs.add(attr + ts);
 		}
-		sql = "CREATE TABLE " + getRelName() + "(\n" + sql + StringMan.commaList(argDefs) + ")";
+		sql = "CREATE TABLE " + getRelName() + "(\n" + StringMan.commaList(argDefs) + ", " + sql + ")";
 		
 		if(Config.using_greenplum){
 			sql = sql + " DISTRIBUTED BY (" + args.get(0) + ")";
