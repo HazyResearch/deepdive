@@ -11,4 +11,4 @@ python gen_feature_table.py
 cd $DEEPDIVE_HOME
 
 bash $APP_HOME/prepare_data.sh
-deepdive -c $APP_HOME/application.conf
+sbt "run -c $APP_HOME/application.conf"
