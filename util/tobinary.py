@@ -30,7 +30,7 @@ for l in open(INPUTFOLDER + "/dd_factormeta"):
   os.system('split -a 10 -l ' + CHUNKSIZE + ' ' + INPUTFOLDER + '/dd_factors_' + factor_name + '_out ' + INPUTFOLDER + '/dd_tmp/dd_factors_' + factor_name + '_out')
 
   print "BINARIZE ", factor_name, "..."
-  os.system('ls ' + INPUTFOLDER + '/dd_tmp | egrep "^dd_factors_' + factor_name + '_out"  | xargs -P 40 -I {} -n 1 sh -c \'' + transform_script + ' factor ' + INPUTFOLDER + '/dd_tmp/{} ' + function_id + ' ' + nvars + ' ' + (' '.join(positives)) + ' \' | awk \'{s+=$1} END {print s}\' >>' + INPUTFOLDER + "/dd_nedges_")
+  os.system('ls ' + INPUTFOLDER + '/dd_tmp | egrep "^dd_factors_' + factor_name + '_out"  | xargs -P 40 -I {} -n 1 sh -c \'' + transform_script + ' factor ' + INPUTFOLDER + '/dd_tmp/{} ' + function_id + ' ' + nvars + ' ' + (' '.join(positives)) + ' \' | awk \'{s+=$1} END {printf \"%d\n\", s}\' >>' + INPUTFOLDER + "/dd_nedges_")
 
 # handle variables
 for f in os.listdir(INPUTFOLDER):
@@ -59,15 +59,20 @@ nvariable_files = 0
 
 # counting 
 print "COUNTING", "variables", "..."
-os.system('wc -l ' + INPUTFOLDER + "/dd_tmp/dd_variables_* | awk '{print $1+%d}' | tail -n 1 > " % nvariable_files + INPUTFOLDER + '/dd_nvariables')
+#os.system('wc -l ' + INPUTFOLDER + "/dd_tmp/dd_variables_* | awk '{print $1+%d}' | tail -n 1 > " % nvariable_files + INPUTFOLDER + '/dd_nvariables')
+os.system('wc -l ' + INPUTFOLDER + "/dd_tmp/dd_variables_* | tail -n 1 | sed -e 's/^[ \t]*//g | cut -d ' ' -f 1' > " + INPUTFOLDER + '/dd_nvariables_wc')
+os.system('export dd_nvar=`cat ' + INPUT_FOLDER + '/dd_nvariables_wc`; echo $dd_nvar + %d | bc > ' % nvariable_files + INPUTFOLDER + '/dd_nvariables; unset dd_nvar'
 
 print "COUNTING", "factors", "..."
-os.system('wc -l ' + INPUTFOLDER + "/dd_tmp/dd_factors_* | awk '{print $1+%d}' | tail -n 1 > " % nfactor_files + INPUTFOLDER + '/dd_nfactors')
+#os.system('wc -l ' + INPUTFOLDER + "/dd_tmp/dd_factors_* | awk '{print $1+%d}' | tail -n 1 > " % nfactor_files + INPUTFOLDER + '/dd_nfactors')
+os.system('wc -l ' + INPUTFOLDER + "/dd_tmp/dd_factors_* | tail -n 1 | sed -e 's/^[ \t]*//g | cut -d ' ' -f 1' > " + INPUTFOLDER + '/dd_nfactors_wc')
+os.system('export dd_nfact=`cat ' + INPUT_FOLDER + '/dd_nfactors_wc`; echo $dd_nfact + %d | bc > ' % nfactor_files + INPUTFOLDER + '/dd_nfactors; unset dd_nfact'
 
 print "COUNTING", "weights", "..."
-os.system('wc -l ' + INPUTFOLDER + "/dd_weights | awk '{print $1}' | tail -n 1 > " + INPUTFOLDER + '/dd_nweights')
+#os.system('wc -l ' + INPUTFOLDER + "/dd_weights | awk '{print $1}' | tail -n 1 > " + INPUTFOLDER + '/dd_nweights')
+os.system('wc -l ' + INPUTFOLDER + "/dd_weights | tail -n 1 | sed -e 's/^[ \t]*//g' | cut -d ' ' -f 1 > " + INPUTFOLDER + '/dd_nweights')
 
-os.system("awk '{{ sum += $1 }} END {{ print sum }}' {0}/dd_nedges_ > {0}/dd_nedges".format(INPUTFOLDER))
+os.system("awk '{{ sum += $1 }} END {{ printf \"%d\n\", sum }}' {0}/dd_nedges_ > {0}/dd_nedges".format(INPUTFOLDER))
 
 # concatenate files
 print "CONCATENATING FILES..."
