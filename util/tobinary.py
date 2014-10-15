@@ -79,7 +79,7 @@ os.system("echo {0}/graph.weights,{0}/graph.variables,{0}/graph.factors,{0}/grap
 
 os.system("mv {0}/graph.meta {1}/graph.meta".format(INPUTFOLDER, OUTPUTFOLDER))
 os.system("mv {0}/weights.bin {1}/graph.weights".format(INPUTFOLDER, OUTPUTFOLDER))
-os.system("mv {0}/graph.weights.regs {1}/graph.weights.regs".format(INPUTFOLDER, OUTPUTFOLDER))
+os.system("mv {0}/graph_weights_regs {1}/graph.weights.regs".format(INPUTFOLDER, OUTPUTFOLDER))
 os.system("cat {0}/variables/* > {1}/graph.variables".format(INPUTFOLDER, OUTPUTFOLDER))
 os.system("cat {0}/factors/factors*factors.bin > {1}/graph.factors".format(INPUTFOLDER, OUTPUTFOLDER))
 os.system("cat {0}/factors/factors*edges.bin > {1}/graph.edges".format(INPUTFOLDER, OUTPUTFOLDER))
