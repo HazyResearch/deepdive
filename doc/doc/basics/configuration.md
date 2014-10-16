@@ -550,11 +550,11 @@ myRule {
 
 ## <a name="calibration" href="#"></a> Calibration / Holdout
 
-Directive for [calibration](calibration.md) go to the `calibration` section.
+Directive for [calibration](calibration.html) go to the `calibration` section.
 The available directives are:
 
 - `holdout_fraction`: specifies the fraction of training data to use for
-  [holdout](calibration.md#holdout). E.g.:
+  [holdout](calibration.html#holdout). E.g.:
 
     ```bash
     calibration: {
