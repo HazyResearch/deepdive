@@ -308,6 +308,7 @@ public class UIMan {
 			if(value != null){
 				Config.dir_working = value.trim().replace('\\', '/');
 			}
+			System.out.println(value);
 			
 			String pid = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
 			String user = System.getProperty("user.name").toLowerCase().replaceAll("\\W", "_");

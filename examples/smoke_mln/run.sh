@@ -27,7 +27,7 @@ rm -f $BASE_DIR/mln_auto.conf
 echo 'db_url = jdbc:postgresql://'$PGHOST':'$PGPORT'/'$DBNAME >> $BASE_DIR/mln_auto.conf
 echo 'db_username = '$PGUSER >> $BASE_DIR/mln_auto.conf
 echo 'db_password = '$PGPASSWORD >> $BASE_DIR/mln_auto.conf
-echo 'dir_working = /tmp/deepdive_mln_workspace' >> $BASE_DIR/mln_auto.conf
+echo 'dir_working = '$BASE_DIR'/tmp' >> $BASE_DIR/mln_auto.conf
 
 # build up database and generate application_auto.conf
 rm -f application_auto.conf
