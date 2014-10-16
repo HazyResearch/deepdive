@@ -574,9 +574,7 @@ The available directives are:
   When a custom holdout query is defined in `holdout_query`, the
   `holdout_fraction` setting is ignored. 
 
-  - `observation_query`: specifies a custom query to be used to define observation only evidence. Observation only evidence will not be fitted during weight learning.
-  This must insert all variable IDs that are observation only evidence into the
-  `dd_graph_variables_observation` table through arbitrary SQL. E.g.:
+- `observation_query`: specifies a custom query to be used to define observation only evidence. Observation only evidence will not be fitted during weight learning. This must insert all variable IDs that are observation only evidence into the `dd_graph_variables_observation` table through arbitrary SQL. E.g.:
  
     ```bash
     calibration: {
