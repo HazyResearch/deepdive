@@ -32,7 +32,7 @@ Description of each schema:
 
 - `dd_graph_variables_holdout`: a table that contains all variable ids that are used for holdout. Can be used for custom holdout by a [holdout query](../basics/calibration.md#custom_holdout).
 
-- `dd_graph_variables_observation`: a table that contains all variable ids that are evidence that will not be fitted during learning. An usage example of this table can be found [here](../basics/configur).
+- `dd_graph_variables_observation`: a table that contains all variable ids that are evidence that will not be fitted during learning. An usage example of this table can be found [here](../basics/configuration.md#calibration).
 
 - `dd_graph_weights`: a table that contains all the materialized weights.
 
