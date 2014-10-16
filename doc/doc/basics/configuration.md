@@ -561,8 +561,8 @@ The available directives are:
       holdout_fraction: 0.25
     }
     ```
-- `holdout_query`: specifies a custom query to be use to define the holdout set.
-  The must insert all variable IDs that are to be held out into the
+- `holdout_query`: specifies a custom query to be used to define the holdout set.
+  This must insert all variable IDs that are to be held out into the
   `dd_graph_variables_holdout` table through arbitrary SQL. E.g.:
  
     ```bash
@@ -573,6 +573,16 @@ The available directives are:
 
   When a custom holdout query is defined in `holdout_query`, the
   `holdout_fraction` setting is ignored. 
+
+  - `observation_query`: specifies a custom query to be used to define observation only evidence. Observation only evidence will not be fitted during weight learning.
+  This must insert all variable IDs that are observation only evidence into the
+  `dd_graph_variables_observation` table through arbitrary SQL. E.g.:
+ 
+    ```bash
+    calibration: {
+      observation_query: "INSERT INTO dd_graph_variables_observation SELECT id FROM mytable WHERE predicate"
+    }
+    ```
 
 
 ## <a name="pipelines" href="#"></a> Pipelines
