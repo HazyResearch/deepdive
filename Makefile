@@ -10,6 +10,8 @@ build:
 
 	@echo "\n=== Installing DeepDive... ==="
 	make -C target/pack/ install ; 
+	# copy utils scripts, to solve path issue
+	cp -r util/* ${HOME}/local/deepdive/current
 
 	@echo "\n=== Verifying installation... ==="
 	@if [ -f ${HOME}/local/bin/deepdive ]; then \
