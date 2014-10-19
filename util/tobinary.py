@@ -69,7 +69,7 @@ os.system('export dd_nfact=`cat ' + INPUTFOLDER + '/dd_nfactors_wc`; echo $dd_nf
 print "COUNTING", "weights", "..."
 os.system('wc -l ' + INPUTFOLDER + "/dd_weights | tail -n 1 | sed -e 's/^[ \t]*//g' | cut -d ' ' -f 1 > " + INPUTFOLDER + '/dd_nweights')
 
-os.system("awk '{{ sum += $1 }} END {{ printf \"%d\\n\", sum }}' {0}/dd_nedges_ > {0}/dd_nedges".format(INPUTFOLDER))
+os.system("awk '{{ sum += $1 }} END {{ printf \"%.0f\\n\", sum }}' {0}/dd_nedges_ > {0}/dd_nedges".format(INPUTFOLDER))
 
 # concatenate files
 print "CONCATENATING FILES..."
