@@ -29,7 +29,7 @@ INTO TABLE articles
 "
 
 # TODO currently all arrays are stored as strings
-mysql -u ${DBUSER} -P ${DBPORT} -h ${DBHOST} $DBNAME -e "LOAD DATA INFILE '"$APP_HOME/data/sentences_dump_mysql.tsv"' 
-INTO TABLE sentences(sentence_id, words, ner_tags)
+mysql -u ${DBUSER} -P ${DBPORT} -h ${DBHOST} $DBNAME -e "LOAD DATA INFILE '"$APP_HOME/data/sentences_dump_mysql_noid.tsv"' 
+INTO TABLE sentences(words, ner_tags)
   ;
 "

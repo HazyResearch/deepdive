@@ -848,9 +848,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // split grounding files and transform to binary format
     log.info("Converting grounding file format...")
     val ossuffix = if (System.getProperty("os.name").startsWith("Linux")) "linux" else "mac"
-      
     // TODO: this python script is dangerous and ugly. It changes too many states!
-    val cmd = s"python util/tobinary.py ${groundingPath} util/format_converter_${ossuffix} ${Context.outputDir}"
+    val cmd = s"python ${Context.deepdiveHome}/util/tobinary.py ${groundingPath} " + 
+        s"${Context.deepdiveHome}/util/format_converter_${ossuffix} ${Context.outputDir}"
     log.debug("Executing: " + cmd)
     val exitValue = cmd!(ProcessLogger(
       out => log.info(out),

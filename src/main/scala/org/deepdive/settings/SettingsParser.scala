@@ -1,6 +1,7 @@
 package org.deepdive.settings
 
 import org.deepdive.Logging
+import org.deepdive.Context
 import org.deepdive.helpers.Helpers
 import com.typesafe.config._
 import scala.collection.JavaConversions._
@@ -179,10 +180,10 @@ object SettingsParser extends Logging {
         val osname = System.getProperty("os.name")
         log.info(s"Detected OS: ${osname}")
         if (osname.startsWith("Linux")) {
-          "util/sampler-dw-linux gibbs"
+          s"${Context.deepdiveHome}/util/sampler-dw-linux gibbs"
         }
         else {
-          "util/sampler-dw-mac gibbs"
+          s"${Context.deepdiveHome}/util/sampler-dw-mac gibbs"
         }
       case _ => samplingConfig.getString("sampler_cmd")
     }
