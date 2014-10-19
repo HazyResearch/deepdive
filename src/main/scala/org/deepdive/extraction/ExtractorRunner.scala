@@ -458,7 +458,13 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
   // Executes a given command. If it fails, shutdown and respond to the sender with failure.
   private def executeScriptOrFail(script: String, failureReceiver: ActorRef) : Unit = {
     executeCmd(script) match {
-      case Success(_) => // All good. We're done
+      case Success(0) => Success(0)
+      case Success(errorExitValue) =>  // catch script bad exit value
+        val exception = new RuntimeException(s"Script exited with exit_value=$errorExitValue")
+        log.error(exception.toString)
+        failureReceiver ! Status.Failure(exception)
+        context.stop(self)
+        throw exception
       case Failure(exception) => // Throw exception of script
         log.error(exception.toString) 
         failureReceiver ! Status.Failure(exception)
