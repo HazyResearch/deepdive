@@ -99,7 +99,7 @@ object Helpers extends Logging {
     // Depending on the exit value we return success or throw an exception
     exitValue match {
       case 0 => 
-      case _ => throw new RuntimeException("Failure when executing script: ${cmd}")
+      case _ => throw new RuntimeException(s"Failure when executing script: ${cmd}")
     }
   }
 
