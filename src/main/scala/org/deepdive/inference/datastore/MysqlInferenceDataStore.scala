@@ -208,5 +208,60 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
       CREATE INDEX ${VariableResultTable}_idx ON ${VariableResultTable} (expectation);
       """
 
+    /**
+     * Calibration is very slow in MySQL so we materialize it and create indexes
+     */
+    override def createBucketedCalibrationViewSQL(name: String, 
+        inferenceViewName: String, buckets: List[Bucket]) = {
+      val bucketCaseStatement = buckets.zipWithIndex.map {
+        case (bucket, index) =>
+          s"WHEN expectation >= ${bucket.from} AND expectation <= ${bucket.to} THEN ${index}"
+      }.mkString("\n")
+      s"""
+      DROP TABLE IF EXISTS ${name} CASCADE;
+      
+      CREATE TABLE ${name} AS
+      SELECT ${inferenceViewName}.*, CASE ${bucketCaseStatement} END bucket
+      FROM ${inferenceViewName} ORDER BY bucket ASC;
+      
+      CREATE INDEX ${name}_bucket_idx ON ${name}(bucket);
+      
+      """
+    }
+
+    /**
+     * Inference view is very slow in MySQL so we create indexes on id, 
+     * and materialize this table for future queries (e.g. calibration)
+     * 
+     * Note: "CREATE INDEX ${indexName}" clause can only handle non-text/blob type columns.
+     */
+    override def createInferenceViewSQL(relationName: String, columnName: String) = {
+      val indexName = s"${relationName}_id_idx"
+      s"""
+      DROP TABLE IF EXISTS ${relationName}_${columnName}_inference CASCADE;
+      
+      ${dropIndexIfExistsMysql(indexName, relationName)}
+      
+      CREATE INDEX ${indexName} ON ${relationName}(id);
+      
+      CREATE TABLE ${relationName}_${columnName}_inference AS
+      (SELECT ${relationName}.*, mir.category, mir.expectation FROM
+      ${relationName}, ${VariableResultTable} mir
+      WHERE ${relationName}.id = mir.id
+      ORDER BY mir.expectation DESC);
+      
+    """
+    }
+    
+    /** 
+     *  In mysql, indexes can be created for id columns. 
+     *  To update id, first drop indexes on id.
+     *  
+     */
+    override def incrementId(table: String, IdSequence: String) {
+      dropIndexIfExistsMysql(s"${table}_id_idx", table)
+      execute(s"UPDATE ${table} SET id = ${nextVal(IdSequence)};")
+    }
+
   }
 }

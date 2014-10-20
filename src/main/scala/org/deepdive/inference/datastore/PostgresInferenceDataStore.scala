@@ -96,7 +96,13 @@ trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent
         case _ => list.mkString(s" || '${delimiter}' || ")
       }
     }
-      
+
+    /**
+     * For postgres, do not create indexes for query table
+     */
+    override def createIndexesForQueryTable(queryTable: String, weightVariables: Seq[String]) = {
+      // do nothing
+    }
 
   }
 }

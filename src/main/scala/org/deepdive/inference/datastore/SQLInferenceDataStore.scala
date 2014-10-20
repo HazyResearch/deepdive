@@ -121,7 +121,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   /** 
    * execute one or multiple SQL queries
    */
-  private def execute(sql: String) = {
+  def execute(sql: String) = {
     ds.executeSqlQueries(sql)
   }
 
@@ -382,6 +382,41 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def init() : Unit = {
   }
 
+  /**
+   * Returns a column type. Applicable for all DBMSs.
+   */
+  def checkColumnType(table: String, column: String): String = {
+    var colType = ""
+    issueQuery(s"select data_type from information_schema.columns " + 
+        s"where table_name='${table}' and column_name='${column}';") { rs => 
+        colType = rs.getString(1)
+      }
+    log.debug(s"Column type for ${table}: ${colType}")
+    return colType
+  }
+  /** 
+   *  Create indexes for query table to speed up grounding. (this is useful for MySQL) 
+   *  Behavior may varies depending on different DBMS.
+   */
+  def createIndexesForQueryTable(queryTable: String, weightVariables: Seq[String]) = {
+    log.debug("weight variables: ${factorDesc.weight.variables}")
+    weightVariables.foreach( v => {
+      val colType = checkColumnType(queryTable, v)
+      if (colType.equals("text") || colType.equals("blob")) {
+        // create a partial index
+        executeQuery(s"CREATE INDEX ${queryTable}_${v}_idx ON ${queryTable}(${v}(255))") 
+      } else {
+        executeQuery(s"CREATE INDEX ${queryTable}_${v}_idx ON ${queryTable}(${v})")
+      }
+    })
+  }
+  
+  def incrementId(table: String, IdSequence: String) {
+    execute(s"UPDATE ${table} SET id = ${nextVal(IdSequence)};")
+  }
+        
+
+  
   /** Ground the factor graph to file
    *
    * Using the schema and inference rules defined in application.conf, construct factor
@@ -441,7 +476,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       execute(createSequenceFunction(IdSequence))
       schema.foreach { case(variable, dataType) =>
         val Array(relation, column) = variable.split('.')
-        execute(s"UPDATE ${relation} SET id = ${nextVal(IdSequence)};")
+        incrementId(relation, IdSequence)
       }
     }
 
@@ -605,9 +640,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         case _ => 0.0
       }
 
+      // for mysql, create indexes on weight variables of query tables.
+      // for psql, this function is overwritten to do nothing.
+      createIndexesForQueryTable(querytable, factorDesc.weight.variables)
+
       // generate weight description
       def generateWeightDesc(weightPrefix: String, weightVariables: Seq[String]) : String =
-        // TODO port concat function
         concat(weightVariables.map ( v => 
           s"""(CASE WHEN ${quoteColumn(v)} IS NULL THEN '' ELSE ${cast(quoteColumn(v), "text")} END)""" ), 
           "-") // Delimiter '-' for concat
