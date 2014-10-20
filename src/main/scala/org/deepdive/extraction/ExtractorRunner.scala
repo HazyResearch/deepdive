@@ -19,10 +19,14 @@ import rx.lang.scala.subjects._
 import play.api.libs.json._
 import scala.util.Random
 import java.io.{File, PrintWriter}
-// import java.nio.file.Files
 import scala.io.Source
+import org.deepdive.helpers.Helpers
+import org.deepdive.helpers.Helpers.{Mysql, Psql}
 
-/* Companion object to the ExtractorRunner */
+/** 
+ *  Companion object to the ExtractorRunner, using a state machine model.
+ *  Only change states for JSON extractor. For other extractors, do all the work in "Idle" state. 
+ */
 object ExtractorRunner {
   
   def props(dataStore: JsonExtractionDataStore, dbSettings: DbSettings) = Props(classOf[ExtractorRunner], dataStore, dbSettings)
@@ -58,37 +62,28 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
   // Execute futures using the current Akka dispatcher
   import context.dispatcher
   implicit val timeout = Timeout(1337.hours)
-
-  // Generate SQL query prefixes
-  val dbname = dbSettings.dbname
-  val pguser = dbSettings.user
-  val pgport = dbSettings.port
-  val pghost = dbSettings.host
-  // TODO do not use password for now
-  val dbnameStr = dbname match {
-    case null => ""
-    case _ => s" -d ${dbname} "
-  }
-  val pguserStr = pguser match {
-    case null => ""
-    case _ => s" -U ${pguser} "
-  }
-  val pgportStr = pgport match {
-    case null => ""
-    case _ => s" -p ${pgport} "
-  }
-  val pghostStr = pghost match {
-    case null => ""
-    case _ => s" -h ${pghost} "
-  }
-  val sqlQueryPrefix = "psql " + dbnameStr + pguserStr + pgportStr + pghostStr
-
   
+  private val PRINT_PERIOD = 30.seconds
+
+  // Branch by database driver type (temporary solution)
+  val dbtype = Helpers.getDbType(dbSettings)
+  val sqlQueryPrefix = dbtype match {
+    case Psql => "psql " + Helpers.getOptionString(dbSettings)
+    case Mysql => "mysql " + Helpers.getOptionString(dbSettings)
+  }
+
+  val sqlAnalyzeCommand = dbtype match {
+    case Psql => "ANALYZE "
+    case Mysql => "ANALYZE TABLE "
+  } 
+
+    // DONE mysql pw: -p=password. psql: cannot?  
+
   // Properties to start workers
   def workerProps = ProcessExecutor.props
 
   // Periodically print the status
-  val scheduledStatus = context.system.scheduler.schedule(30.seconds, 30.seconds, self, PrintStatus)
+  val scheduledStatus = context.system.scheduler.schedule(PRINT_PERIOD, PRINT_PERIOD, self, PrintStatus)
 
   override def preStart() { 
     log.info("waiting for tasks")
@@ -117,6 +112,10 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
       task.extractor.style match {
 
         case "json_extractor" =>
+          if (dbtype != Psql) {
+            failTask(s"do not support ${task.extractor.style} on ${dbtype}.", taskSender)
+          }
+          
           // Start the children workers
           val workers = startWorkers(task)
 
@@ -125,204 +124,32 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
           Future { sendData(task, workers, taskSender) }
           goto(Running) using Task(task, sender, workers)
 
-        // Zifei: New code path for faster extraction
-        //   Get rid of scala file operations
-        //   COPY to a file, split files, and send to extractors
+        // TSV extractor: Get rid of scala file operations
+        // COPY to a file, split files, and send to extractors
         case "tsv_extractor" =>
-
-          val udfCmd = task.extractor.udf
-          val funcName = s"func_${task.extractor.name}"
-          
-          val inputQuery = task.extractor.inputQuery match {
-            case DatastoreInputQuery(query) => query
-            case _ => 
-          }
-          val queryOutputPath = Context.outputDir + s"/tmp/"
-          log.info(queryOutputPath)
-          // Try to create the extractor output directory if not already present 
-          val queryOutputPathDir = new File(queryOutputPath)
-          if ((! queryOutputPathDir.exists()) && (!
-            queryOutputPathDir.mkdirs())) {
-              Status.Failure(new RuntimeException(s"TSV extractor directory creation failed"))
-            }
-
-          val queryOutputFile = new File(queryOutputPath + s"copy_query_${funcName}.tsv")
-          // val queryOutputFile = File.createTempFile(s"copy_query_${funcName}", ".tsv")
-          // executeSqlQueryOrFail
-
-          // Single-thread copy to a file
-          val copyQuery = "COPY (" + s"${inputQuery}".replaceAll("""(?m)[;\s\n]+$""", "") + ") TO STDOUT;"
-          log.info(s"Copying file into ${queryOutputFile}")
-          executeSqlQueryOrFail(copyQuery, taskSender, queryOutputFile.getAbsolutePath())
-
-          val fname = queryOutputFile.getName()
-          val fpath = queryOutputFile.getParent()
-
-          val splitPrefix = queryOutputFile.getAbsolutePath() + "-"
-          val linesPerSplit = task.extractor.inputBatchSize
-          val splitCmd = s"split -a 10 -l ${linesPerSplit} " + queryOutputFile.getAbsolutePath() + s" ${splitPrefix}"
-
-          log.info(s"Executing split command: ${splitCmd}")
-          executeScriptOrFail(splitCmd, taskSender)
-
-          // val maxParallel = "0"  // As many as possible, which is dangerous
-          val maxParallel = task.extractor.parallelism
-
-          // Note (msushkov): the extractor must take TSV as input and produce TSV as output
-          val runCmd = s"find ${fpath} -name '${fname}-*' 2>/dev/null -print0 | xargs -0 -P ${maxParallel} -L 1 bash -c '${udfCmd} " + "<" + " \"$0\" > \"$0.out\"'"
-
-          log.info(s"Executing parallel UDF command: ${runCmd}")
-          // executeScriptOrFail(runCmd, taskSender)
-
-          val udfTmpFile = new File(queryOutputPath + s"exec_parallel_udf.sh")
-          // val udfTmpFile = File.createTempFile(s"exec_parallel_udf", ".sh")
-          val writer = new PrintWriter(udfTmpFile)
-          writer.println(s"${runCmd}")
-          writer.close()
-          log.debug(s"Temporary UDF file saved to ${udfTmpFile.getAbsolutePath()}")
-          executeScriptOrFail(udfTmpFile.getAbsolutePath(), taskSender)
-
-          // Copy each of the files into the DB. If user is using Greenplum, use gpload
-
-          val outputRel = task.extractor.outputRelation
-          val dbname = dbSettings.dbname
-          val pguser = dbSettings.user
-          val pgport = dbSettings.port
-          val pghost = dbSettings.host
-          // TODO do not use password for now
-
-          val checkGreenplumSQL = s"""
-              SELECT version() LIKE '%Greenplum%';
-            """
-
-          // Only allow single-threaded copy
-          val writebackCmd = s"find ${splitPrefix}*.out -print0 | xargs -0 -P 1 -L 1 bash -c '${sqlQueryPrefix} -c " + "\"COPY " + s"${outputRel} FROM STDIN;" + " \" < \"$0\"'"
-
-          val writebackTmpFile = new File(queryOutputPath + s"exec_parallel_writeback.sh")
-          // val writebackTmpFile = File.createTempFile(s"exec_parallel_writeback", ".sh")
-          val writer2 = new PrintWriter(writebackTmpFile)
-          writer2.println(s"${writebackCmd}")
-          writer2.close()
-          log.debug(s"Temporary writeback file saved to ${writebackTmpFile.getAbsolutePath()}")
-          executeScriptOrFail(writebackTmpFile.getAbsolutePath(), taskSender)
-
-          log.info("Analyzing output relation.")
-          executeSqlUpdateOrFail(s"ANALYZE ${outputRel};", taskSender)
-
-          log.info("Removing temporary files...")
-          queryOutputFile.delete()
-          // val delCmd = s"rm -f ${splitPrefix}*"
-          // prevent "argument list too long"
-          
-          val delCmd = s"find ${fpath} -name '${fname}*' 2>/dev/null -print0 | xargs -0 rm -f"
-          log.info(s"Executing: ${delCmd}")
-          val delTmpFile = new File(queryOutputPath + s"exec_delete.sh")
-          // val delTmpFile = File.createTempFile(s"exec_delete", ".sh")
-          val delWriter = new PrintWriter(delTmpFile)
-          delWriter.println(s"${delCmd}")
-          delWriter.close()
-          executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
-          executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
-          delTmpFile.delete()
-          queryOutputPathDir.delete()
-
-          // Execute the after script. Fail if the script fails.
-          task.extractor.afterScript.foreach {
-            afterScript =>
-              log.info("Executing after script.")
-              executeScriptOrFail(afterScript, taskSender)
-          }
-
-          taskSender ! "Done!"
-          stop
-
-
-
+          runTsvExtractor(task, dbSettings, taskSender)
+          runAfterScript(task, taskSender)
 
         // Execute the sql query from sql extractor
         case "sql_extractor" =>
           log.debug("Executing SQL query: " + task.extractor.sqlQuery)
           executeSqlUpdateOrFail(task.extractor.sqlQuery, taskSender)
-          // Execute the after script. Fail if the script fails.
-          task.extractor.afterScript.foreach {
-            afterScript =>
-              log.info("Executing after script.")
-              executeScriptOrFail(afterScript, taskSender)
-          }
-          taskSender ! "Done!"
-          stop
+          runAfterScript(task, taskSender)
 
         case "cmd_extractor" =>
           task.extractor.cmd.foreach {
-            cmd =>
-              log.info("Executing cmd script.")
-              executeScriptOrFail(cmd, taskSender)
+            cmd => executeScriptOrFail(cmd, taskSender)
           }
-          // Execute the after script. Fail if the script fails.
-          task.extractor.afterScript.foreach {
-            afterScript =>
-              log.info("Executing after script.")
-              executeScriptOrFail(afterScript, taskSender)
-          }
-          taskSender ! "Done!"
-          stop
+          runAfterScript(task, taskSender)
 
         case "plpy_extractor" =>
-
-          // Try to create language; if exists do nothing; if other errors report
-          executeSqlQueryOrFail("drop language if exists plpythonu cascade; CREATE LANGUAGE plpythonu;", taskSender)
-          
-          // Create Function in GP
-          val udfFile = task.extractor.udf
-          val deepDiveDir = Context.deepdiveHome
-          val compilerFile = s"${deepDiveDir}/util/ddext.py"
-          val funcName = s"func_${task.extractor.name}"
-          val sqlFunctionFile = File.createTempFile(funcName, ".sql")
-          
-          executeScriptOrFail(s"python ${compilerFile} ${udfFile} ${sqlFunctionFile} ${funcName}", taskSender)
-          log.debug(s"Compiled ${udfFile} into ${sqlFunctionFile}")
-
-          // Source.fromFile(sqlFunctionFile).getLines.mkString
-          executeSqlFileOrFail(sqlFunctionFile.getAbsolutePath(), taskSender)
-
-          // Translate SQL input and output_relation to SQL
-          val inputQuery = task.extractor.inputQuery match {
-            case DatastoreInputQuery(query) => query
-            case _ => 
-          }
-          val inputQueryFile = File.createTempFile(s"query_${funcName}", ".sql")
-          val writer = new PrintWriter(inputQueryFile)
-          writer.println(inputQuery)
-          writer.close()
-
-          val outputRel = task.extractor.outputRelation
-          val SQLTranslatorFile = s"${deepDiveDir}/util/ddext_input_sql_translator.py"
-          val sqlInsertFile = File.createTempFile(s"${funcName}_exec", ".sql")
-          executeScriptOrFail(s"python ${SQLTranslatorFile} ${udfFile} ${inputQueryFile} ${outputRel} ${funcName} ${sqlInsertFile}", taskSender)
-
-          log.debug(s"Compiled query into: ${sqlInsertFile}")
-
-          // Execute query in parallel in GP
-          executeSqlFileOrFail(sqlInsertFile.getAbsolutePath(), taskSender)
-          log.info(s"Finish executing UDF in database!")
-
-          log.debug("Analyzing output relation.")
-          executeSqlUpdateOrFail(s"ANALYZE ${outputRel};", taskSender)
-
-          // Execute the after script. Fail if the script fails.
-          task.extractor.afterScript.foreach {
-            afterScript =>
-              log.info("Executing after script.")
-              executeScriptOrFail(afterScript, taskSender)
-          }
-
-          taskSender ! "Done!"
-          stop
-
+          runPlpyExtractor(task, dbSettings, taskSender)
+          runAfterScript(task, taskSender)
       }
 
   }
 
+  // This state can only happen for JSON extractors.
   when(Running) {
     
     case Event(Terminated(actor), Task(task, taskSender, workers)) =>
@@ -378,7 +205,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
       task.extractor.afterScript.foreach {
         afterScript =>
           log.info("Analyzing output relation.")
-          executeSqlUpdateOrFail(s"ANALYZE ${task.extractor.outputRelation};", taskSender)
+          executeSqlUpdateOrFail(s"${sqlAnalyzeCommand} ${task.extractor.outputRelation};", taskSender)
           log.info("Executing after script.")
           executeScriptOrFail(afterScript, taskSender)
       }
@@ -455,95 +282,270 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
     log.debug("all data was sent to workers.")
   }
 
-  // Executes a given command. If it fails, shutdown and respond to the sender with failure.
-  private def executeScriptOrFail(script: String, failureReceiver: ActorRef) : Unit = {
-    executeCmd(script) match {
-      case Success(0) => Success(0)
-      case Success(errorExitValue) =>  // catch script bad exit value
-        val exception = new RuntimeException(s"Script exited with exit_value=$errorExitValue")
-        log.error(exception.toString)
-        failureReceiver ! Status.Failure(exception)
-        context.stop(self)
-        throw exception
-      case Failure(exception) => // Throw exception of script
-        log.error(exception.toString) 
-        failureReceiver ! Status.Failure(exception)
-        context.stop(self)
-        throw new RuntimeException(exception.toString)
-    }
-  }
-
-  /* 
-   * Executes a command.
-   * Returns Success if the process exists with exit value 0.
-   * Returns failure of the process fails, or returns exit value != 0.
-   */
-  def executeCmd(cmd: String) : Try[Int] = {
-    // Make the file executable, if necessary
-    val file = new java.io.File(cmd)
-    if (file.isFile) file.setExecutable(true, false)
-    log.info(s"""Executing: "$cmd" """)
-    val processLogger = ProcessLogger(line => log.info(line))
-    Try(cmd!(processLogger)) match {
-      case Success(0) => Success(0)
-      case Success(errorExitValue) => 
-        Failure(new RuntimeException(s"Script exited with exit_value=$errorExitValue"))
-      case Failure(ex) => Failure(ex)
-    }
-  }
-
   
-  def executeSqlUpdateOrFail(sqlQuery: String, failureReceiver: ActorRef) {
-    Try(dataStore.queryUpdate(sqlQuery)) match {
-      case Success(_) =>
-      case Failure(ex) =>
-        failureReceiver ! Status.Failure(ex)
+  /**
+   *  Executes a given command. If it fails, shutdown and respond to the sender with failure.
+   */
+  private def executeScriptOrFail(script: String, failureReceiver: ActorRef) : Unit = {
+    try {
+      Helpers.executeCmd(script);
+    } catch {
+      case e: Throwable =>
+        log.error(e.toString) 
+        failureReceiver ! Status.Failure(e)
         context.stop(self)
-        throw new RuntimeException(ex.toString)
+        throw new RuntimeException(e.toString)
     }
   }
 
-  def executeSqlUpdate(sqlQuery: String) {
-    dataStore.queryUpdate(sqlQuery)
-  }
-
-  def executeSqlQueryOrFail(query: String, failureReceiver: ActorRef, pipeOutFilePath: String = null) { 
-    // dataStore.executeCmd(query)
-    // val queryOutputPath = Context.outputDir + s"/tmp/"
-    // val file = new File(queryOutputPath + s"exec_sql.sh")
-    val file = File.createTempFile(s"exec_sql", ".sh")
-    val writer = new PrintWriter(file)
-
-    val pipeOutStr = pipeOutFilePath match {
-      case null => ""
-      case _ => " > " + pipeOutFilePath
+  /**
+   * Now do not allow mysql to talk to datastore component. Use executeSqlQueryOrFail instead.
+   */
+  def executeSqlUpdateOrFail(sqlQuery: String, failureReceiver: ActorRef) {
+    dbtype match {
+      case Psql =>
+        Try(dataStore.queryUpdate(sqlQuery)) match {
+          case Success(_) =>
+          case Failure(ex) =>
+            failureReceiver ! Status.Failure(ex)
+            context.stop(self)
+            throw new RuntimeException(ex.toString)
+        }
+      case Mysql => 
+        executeSqlQueryOrFail(sqlQuery, failureReceiver)
     }
-    val cmd =  sqlQueryPrefix + " -c " + "\"\"\"" + query + "\"\"\"" + pipeOutStr
-
-    writer.println(s"${cmd}")
-    writer.close()
-    log.debug(s"Temporary bash file saved to ${file.getAbsolutePath()}")
-    executeScriptOrFail(file.getAbsolutePath(), failureReceiver)
-    // executeScriptOrFail(cmd, failureReceiver)
     
-    // executeCmd(s"psql -d ${dbname} -c " + "\"\"\"" + query + "\"\"\"")
   }
-  def executeSqlFileOrFail(filename: String, failureReceiver: ActorRef) { 
+
+  /**
+   * Executes a SQL query by piping it into a file without talking to JDBC.
+   */
+  def executeSqlQueryOrFail(query: String, failureReceiver: ActorRef, pipeOutFilePath: String = null) {
+    try {
+      Helpers.executeSqlQueriesByFile(dbSettings, query, pipeOutFilePath)
+    } catch {
+      case e: Throwable =>
+        log.error(e.toString) 
+        failureReceiver ! Status.Failure(e)
+        context.stop(self)
+        throw new RuntimeException(e.toString)
+    }
+  }
+
+  /**
+   * This function is only used by plpy extractor when the function to execute is compiled.
+   */
+  private def executeSqlFileOrFail(filename: String, failureReceiver: ActorRef) { 
     // val queryOutputPath = Context.outputDir + s"/tmp/"
     // val file = new File(queryOutputPath + s"exec_sql.sh")
     val file = File.createTempFile(s"exec_sql", ".sh")
     val writer = new PrintWriter(file)
-    val dbname = dbSettings.dbname
-    val pguser = dbSettings.user
-    val pgport = dbSettings.port
-    val pghost = dbSettings.host
+    
     // TODO do not use password for now
     val cmd = sqlQueryPrefix + " < " + filename
     writer.println(s"${cmd}")
     writer.close()
     log.debug(s"Temporary bash file saved to ${file.getAbsolutePath()}")
     executeScriptOrFail(file.getAbsolutePath(), failureReceiver)
-    // executeCmd(s"psql -d ${dbname} < " + filename)
+  }
+  
+  /**
+   * Fail the current task, log the error message, and throw new RuntimeException.
+   * This will terminate DeepDive.
+   * @throws RuntimeException
+   */
+  private def failTask(message: String, failureReceiver: ActorRef) {
+    log.error(message)
+    val exception = new RuntimeException(message)
+    failureReceiver ! Status.Failure(exception)
+    context.stop(self)
+    throw new RuntimeException(message)
   }
 
+  /**
+   * Run UDF of TSV extractor. Do not include before and after script
+   */
+  private def runTsvExtractor(task: ExtractionTask, dbSettings: DbSettings, taskSender: ActorRef) = {
+  
+    val udfCmd = task.extractor.udf
+    val funcName = s"func_${task.extractor.name}"
+
+    val inputQuery = task.extractor.inputQuery match {
+      case DatastoreInputQuery(query) => query
+      case _ =>
+    }
+
+    val outputRel = task.extractor.outputRelation
+    // TODO do not use password for now
+
+    val queryOutputPath = Context.outputDir + s"/tmp/"
+    log.info(queryOutputPath)
+    // Try to create the extractor output directory if not already present 
+    val queryOutputPathDir = new File(queryOutputPath)
+    if ((!queryOutputPathDir.exists()) && (!queryOutputPathDir.mkdirs())) {
+      Status.Failure(new RuntimeException(s"TSV extractor directory creation failed"))
+    }
+
+    // NEW: for mysqlimport compatibility, the file basename must be same as table name. 
+    val queryOutputFile = new File(queryOutputPath + s"${outputRel}.copy_query_${funcName}.tsv")
+    // val queryOutputFile = File.createTempFile(s"copy_query_${funcName}", ".tsv")
+
+    // Single-thread copy to a file
+    val copyQuery = dbtype match {
+      case Psql => "COPY (" + s"${inputQuery}".replaceAll("""(?m)[;\s\n]+$""", "") + ") TO STDOUT;"
+
+      //TODO: cannot overwrite existing file
+      // mysql -u root -D test -e "select * from name into outfile '/tmp/tmpa.tsv'"
+      // ERROR 1086 (HY000) at line 1: File '/tmp/tmpa.tsv' already exists
+
+      // trimming ending ";"s
+      case Mysql => s"${inputQuery}".replaceAll("""(?m)[;\s\n]+$""", "")
+      // after adding "--silence" it will just print as a TSV to STDOUT!
+    }
+    log.info(s"Copying file into ${queryOutputFile}")
+    executeSqlQueryOrFail(copyQuery, taskSender, queryOutputFile.getAbsolutePath())
+
+    val fname = queryOutputFile.getName()
+    val fpath = queryOutputFile.getParent()
+
+    val splitPrefix = queryOutputFile.getAbsolutePath() + "-"
+    val linesPerSplit = task.extractor.inputBatchSize
+    val splitCmd = s"split -a 10 -l ${linesPerSplit} " + queryOutputFile.getAbsolutePath() + s" ${splitPrefix}"
+
+    log.info(s"Executing split command...")
+    executeScriptOrFail(splitCmd, taskSender)
+
+    // val maxParallel = "0"  // As many as possible, which is dangerous
+    val maxParallel = task.extractor.parallelism
+
+    // Note (msushkov): the extractor must take TSV as input and produce TSV as output
+    val runCmd = s"find ${fpath} -name '${fname}-*' 2>/dev/null -print0 | xargs -0 -P ${maxParallel} -L 1 bash -c '${udfCmd} " + "<" + " \"$0\" > \"$0.out\"'"
+
+    log.info(s"Executing parallel UDF command: ${runCmd}")
+    // executeScriptOrFail(runCmd, taskSender)
+
+    val udfTmpFile = new File(queryOutputPath + s"exec_parallel_udf.sh")
+    // val udfTmpFile = File.createTempFile(s"exec_parallel_udf", ".sh")
+    val writer = new PrintWriter(udfTmpFile)
+    writer.println(s"${runCmd}")
+    writer.close()
+    log.debug(s"Temporary UDF file saved to ${udfTmpFile.getAbsolutePath()}")
+    executeScriptOrFail(udfTmpFile.getAbsolutePath(), taskSender)
+
+    // Copy each of the files into the DB. If user is using Greenplum, use gpload
+
+    val checkGreenplumSQL = s"""
+              SELECT version() LIKE '%Greenplum%';
+            """
+
+    // TODO merge this -name change to the master code
+    val writebackPrefix = s"find ${fpath} -name '${fname}-*.out' -print0 | xargs -0" +
+      s" -P 1 -L 1 bash -c ";
+    // Only allow single-threaded copy
+    val writebackCmd = dbtype match {
+      case Psql => writebackPrefix + s"'psql " +
+        Helpers.getOptionString(dbSettings) +
+        "-c \"COPY " +
+        s"${outputRel} FROM STDIN;" + // weak matching 
+        " \" < \"$0\"'" // strong matching
+      case Mysql => writebackPrefix +
+        s"'mysqlimport " + Helpers.getOptionString(dbSettings) +
+        " $0'"
+    }
+    // TODO: not sure if mysqlimport can work on distributed server... it should. 
+
+    // MYSQL writeback: use mysqlimport.
+    // See: https://mariadb.com/kb/en/mariadb/documentation/clients-and-utilities/backup-restore-and-import/mysqlimport/
+    val writebackTmpFile = new File(queryOutputPath + s"exec_parallel_writeback.sh")
+    // val writebackTmpFile = File.createTempFile(s"exec_parallel_writeback", ".sh")
+
+    val writer2 = new PrintWriter(writebackTmpFile)
+    writer2.println(s"${writebackCmd}")
+    writer2.close()
+    log.debug(s"Temporary writeback file saved to ${writebackTmpFile.getAbsolutePath()}")
+    executeScriptOrFail(writebackTmpFile.getAbsolutePath(), taskSender)
+
+    log.info("Analyzing output relation.")
+    executeSqlUpdateOrFail(s"${sqlAnalyzeCommand} ${outputRel};", taskSender)
+
+    log.info("Removing temporary files...")
+    queryOutputFile.delete()
+
+    val delCmd = s"find ${fpath} -name '${fname}*' 2>/dev/null -print0 | xargs -0 rm -f"
+    log.info(s"Executing: ${delCmd}")
+    val delTmpFile = new File(queryOutputPath + s"exec_delete.sh")
+    // val delTmpFile = File.createTempFile(s"exec_delete", ".sh")
+    val delWriter = new PrintWriter(delTmpFile)
+    delWriter.println(s"${delCmd}")
+    delWriter.close()
+    executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
+    delTmpFile.delete()
+    queryOutputPathDir.delete()
+
+  }
+  
+  /**
+   * Run PLPY extractor
+   */
+  private def runPlpyExtractor(task: ExtractionTask, dbSettings: DbSettings, taskSender: ActorRef) = {
+    if (dbtype != Psql) {
+      failTask(s"do not support ${task.extractor.style} on ${dbtype}.", taskSender)
+    }
+
+    // Try to create language; if exists do nothing; if other errors report
+    executeSqlQueryOrFail("drop language if exists plpythonu cascade; CREATE LANGUAGE plpythonu;", taskSender)
+
+    // Create Function in GP
+    val udfFile = task.extractor.udf
+    val deepDiveDir = System.getProperty("user.dir")
+    val compilerFile = s"${deepDiveDir}/util/ddext.py"
+    val funcName = s"func_${task.extractor.name}"
+    val sqlFunctionFile = File.createTempFile(funcName, ".sql")
+
+    executeScriptOrFail(s"python ${compilerFile} ${udfFile} ${sqlFunctionFile} ${funcName}", taskSender)
+    log.debug(s"Compiled ${udfFile} into ${sqlFunctionFile}")
+
+    // Source.fromFile(sqlFunctionFile).getLines.mkString
+    executeSqlFileOrFail(sqlFunctionFile.getAbsolutePath(), taskSender)
+
+    // Translate SQL input and output_relation to SQL
+    val inputQuery = task.extractor.inputQuery match {
+      case DatastoreInputQuery(query) => query
+      case _ =>
+    }
+    val inputQueryFile = File.createTempFile(s"query_${funcName}", ".sql")
+    val writer = new PrintWriter(inputQueryFile)
+    writer.println(inputQuery)
+    writer.close()
+
+    val outputRel = task.extractor.outputRelation
+    val SQLTranslatorFile = s"${deepDiveDir}/util/ddext_input_sql_translator.py"
+    val sqlInsertFile = File.createTempFile(s"${funcName}_exec", ".sql")
+    executeScriptOrFail(s"python ${SQLTranslatorFile} ${udfFile} ${inputQueryFile} ${outputRel} ${funcName} ${sqlInsertFile}", taskSender)
+
+    log.debug(s"Compiled query into: ${sqlInsertFile}")
+
+    // Execute query in parallel in GP
+    executeSqlFileOrFail(sqlInsertFile.getAbsolutePath(), taskSender)
+    log.info(s"Finish executing UDF in database!")
+
+    log.debug("Analyzing output relation.")
+    executeSqlUpdateOrFail(s"${sqlAnalyzeCommand} ${outputRel};", taskSender)
+  }
+
+  /**
+   * Run after script and finalize the extractor. Fail if the after script fails.
+   */
+  private def runAfterScript(task: ExtractionTask, taskSender: ActorRef) = {
+    // Execute the after script. Fail if the script fails.
+    task.extractor.afterScript.foreach {
+      afterScript =>
+        log.info("Executing after script.")
+        executeScriptOrFail(afterScript, taskSender)
+    }
+
+    taskSender ! "Done!"
+    stop
+  }
+  
 }

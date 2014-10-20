@@ -2,6 +2,7 @@ package org.deepdive.settings
 
 import org.deepdive.Logging
 import scala.util.parsing.combinator.RegexParsers
+import scala.language.postfixOps
 
 object FactorFunctionParser extends RegexParsers with Logging {
   def relationOrField = """[\w]+""".r

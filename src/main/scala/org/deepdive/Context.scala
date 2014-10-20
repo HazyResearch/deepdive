@@ -16,6 +16,7 @@ object Context extends Logging {
 
   lazy val system = ActorSystem("deepdive")
   var outputDir = "out"
+  // This needs to be variable since we might reassign it in relearnFrom feature
   
   // Set deepdive home according to environment variable. If not specified, 
   // use user's current directory

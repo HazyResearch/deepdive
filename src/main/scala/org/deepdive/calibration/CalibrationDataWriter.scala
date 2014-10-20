@@ -2,8 +2,9 @@ package org.deepdive.calibration
 
 import akka.actor._
 import scala.util.{Success, Failure}
-import org.apache.commons.io.FilenameUtils
+import scala.language.postfixOps
 import scala.sys.process._
+import org.apache.commons.io.FilenameUtils
 import org.deepdive.profiling.QuickReport
 import org.deepdive.Context
 

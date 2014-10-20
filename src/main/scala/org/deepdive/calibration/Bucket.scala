@@ -1,5 +1,7 @@
 package org.deepdive.calibration
 
+import scala.language.implicitConversions
+
 /* Helper class for a probability bucket used for histogram plotting. */
 case class Bucket(from: Double, to: Double)
 

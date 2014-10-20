@@ -16,9 +16,10 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
   def dataStoreHelper : JdbcDataStore
 
   lazy implicit val session = dataStoreHelper.DB.autoCommitSession()
-
-  val dbSettings = DbSettings(null, null, System.getenv("PGUSER"), null, System.getenv("DBNAME"), 
-    System.getenv("PGHOST"), System.getenv("PGPORT"), null, null, null)
+  // Generate a dbSettings for testing
+  val dbSettings = DbSettings("org.postgresql.Driver", null, System.getenv("PGUSER"), 
+      null, System.getenv("DBNAME"), System.getenv("PGHOST"), 
+      System.getenv("PGPORT"), null, null, null)
 
   def init() : Unit = {
     JdbcDataStore.init()
@@ -198,7 +199,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         assert(numFactors === 100)
       }
 
-      it("should work with custom a holdout query") {
+      it("should work with a custom holdout query") {
         inferenceDataStore.init()
         
         // Insert sample data

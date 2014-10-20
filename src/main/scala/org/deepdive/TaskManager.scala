@@ -7,6 +7,7 @@ import org.deepdive.profiling._
 import scala.collection.mutable.{Set, Map}
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.language.postfixOps
 import scala.util.{Try, Failure, Success}
 
 object TaskManager {

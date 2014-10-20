@@ -10,6 +10,7 @@ import org.deepdive.datastore.{PostgresDataStore, DataStoreUtils}
 import org.deepdive.Logging
 import org.deepdive.settings._
 import scala.collection.JavaConversions._
+import scala.language.postfixOps
 import play.api.libs.json._
 import scala.util.{Try, Success, Failure}
 import scalikejdbc._
@@ -25,6 +26,12 @@ class PostgresExtractionDataStore extends ExtractionDataStore[JsObject] with Jdb
 
     def ds = PostgresDataStore
 
+    /**
+     * input: iterator (of what?)  
+     * 
+     * - Create a temp CSV file
+     * - run writeCopyData to write   
+     */
     def addBatch(result: Iterator[JsObject], outputRelation: String) : Unit = {
       val file = File.createTempFile(s"deepdive_$outputRelation", ".csv")
       log.debug(s"Writing data of to file=${file.getCanonicalPath}")

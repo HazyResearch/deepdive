@@ -3,6 +3,7 @@ package org.deepdive.test.unit
 import org.deepdive.datastore._
 import org.deepdive.settings._
 import org.deepdive.Logging
+import org.deepdive.helpers.Helpers
 import org.scalatest._
 import scala.sys.process._
 import scalikejdbc._
@@ -20,7 +21,7 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with JdbcDataStore {
     JdbcDataStore.close()
   }
 
-  val dbSettings = DbSettings(null, null, System.getenv("PGUSER"), null, System.getenv("DBNAME"), 
+  val dbSettings = DbSettings(Helpers.PsqlDriver, null, System.getenv("PGUSER"), null, System.getenv("DBNAME"), 
     System.getenv("PGHOST"), System.getenv("PGPORT"), System.getenv("GPHOST"), System.getenv("GPPATH"), System.getenv("GPPORT"))
 
   val du = new org.deepdive.datastore.DataLoader
@@ -68,6 +69,7 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with JdbcDataStore {
 
   describe("Loading data using DataLoader") {
     it("""should work with COPY""") {
+      log.debug("DEBUG start testing!!")
       SQL(s"""DROP TABLE IF EXISTS loader CASCADE;""").execute.apply()
       SQL(s"""CREATE TABLE loader(feature text, is_correct boolean, id bigint);""").execute.apply()
       val tsvFile = getClass.getResource("/dataloader1.tsv").getFile
