@@ -3,7 +3,6 @@
  * Transform a TSV format factor graph file and output corresponding binary format used in DeepDive
  */
 
-#include <iomanip>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -173,7 +172,7 @@ void load_factor(std::string filename, short funcid, long nvar, char** positives
 
   }
 
-  std::cout << std::fixed << std::setprecision(20) << nedge << std::endl;
+  std::cout << nedge << std::endl;
 
   fin.close();
   fout.close();
