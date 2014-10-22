@@ -12,6 +12,8 @@ install:
   - gem install jekyll
   # install gnuplot
   - sudo apt-get install gnuplot
+  # install bc
+  - sudo apt-get install bc
 jdk:
   - openjdk7
   - oraclejdk7
