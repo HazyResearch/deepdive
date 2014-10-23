@@ -16,9 +16,7 @@ import java.io._
 /* Stores the factor graph and inference results in a postges database. */
 trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
 
-  lazy val inferenceDataStore = new PostgresInferenceDataStore
-
-  class PostgresInferenceDataStore extends SQLInferenceDataStore with Logging {
+  class PostgresInferenceDataStore(val dbSettings : DbSettings) extends SQLInferenceDataStore with Logging {
 
     implicit lazy val connection = PostgresDataStore.borrowConnection()
 
@@ -28,33 +26,15 @@ trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent
     val BatchSize = Some(250000)
       
 
+    /**
+     * weightsFile: location to the binary format. Assume "weightsFile.text" file exists.
+     */
     def bulkCopyWeights(weightsFile: String, dbSettings: DbSettings) : Unit = {
-     val dbname = dbSettings.dbname
-     val pguser = dbSettings.user
-     val pgport = dbSettings.port
-     val pghost = dbSettings.host
-     // TODO do not use password for now
-     val dbnameStr = dbname match {
-       case null => ""
-       case _ => s" -d ${dbname} "
-     }
-     val pguserStr = pguser match {
-       case null => ""
-       case _ => s" -U ${pguser} "
-     }
-     val pgportStr = pgport match {
-       case null => ""
-       case _ => s" -p ${pgport} "
-     }
-     val pghostStr = pghost match {
-       case null => ""
-       case _ => s" -h ${pghost} "
-     }
     
      val cmdfile = File.createTempFile(s"copy", ".sh")
      val writer = new PrintWriter(cmdfile)
-     val copyStr = List("psql ", dbnameStr, pguserStr, pgportStr, pghostStr, " -c ", "\"\"\"", 
-       """\COPY """, s"${WeightResultTable}(id, weight) FROM \'${weightsFile}\' DELIMITER ' ';", "\"\"\"").mkString("")
+     val copyStr = List("psql ", Helpers.getOptionString(dbSettings), " -c ", "\"", 
+       """\COPY """, s"${WeightResultTable}(id, weight) FROM \'${weightsFile}\' DELIMITER ' ';", "\"").mkString("")
      log.info(copyStr)
      writer.println(copyStr)
      writer.close()
@@ -62,58 +42,67 @@ trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent
     }
     
     def bulkCopyVariables(variablesFile: String, dbSettings: DbSettings) : Unit = {
-     val dbname = dbSettings.dbname
-     val pguser = dbSettings.user
-     val pgport = dbSettings.port
-     val pghost = dbSettings.host
-     // TODO do not use password for now
-     val dbnameStr = dbname match {
-       case null => ""
-       case _ => s" -d ${dbname} "
-     }
-     val pguserStr = pguser match {
-       case null => ""
-       case _ => s" -U ${pguser} "
-     }
-     val pgportStr = pgport match {
-       case null => ""
-       case _ => s" -p ${pgport} "
-     }
-     val pghostStr = pghost match {
-       case null => ""
-       case _ => s" -h ${pghost} "
-     }
-    
+     
      val cmdfile = File.createTempFile(s"copy", ".sh")
      val writer = new PrintWriter(cmdfile)
-     val copyStr = List("psql ", dbnameStr, pguserStr, pgportStr, pghostStr, " -c ", "\"\"\"", 
-       """\COPY """, s"${VariableResultTable}(id, category, expectation) FROM \'${variablesFile}\' DELIMITER ' ';", "\"\"\"").mkString("")
+     val copyStr = List("psql ", Helpers.getOptionString(dbSettings), " -c ", "\"", 
+       """\COPY """, s"${VariableResultTable}(id, category, expectation) FROM \'${variablesFile}\' DELIMITER ' ';", "\"").mkString("")
      log.info(copyStr)
      writer.println(copyStr)
      writer.close()
      Helpers.executeCmd(cmdfile.getAbsolutePath())
    }
 
+    /**
+     * Drop and create a sequence, based on database type.
+     */
+    def createSequenceFunction(seqName: String): String =
+      s"""DROP SEQUENCE IF EXISTS ${seqName} CASCADE;
+          CREATE SEQUENCE ${seqName} MINVALUE -1 START 0;"""
 
+    /**
+     * Get the next value of a sequence
+     */
+    def nextVal(seqName: String): String =
+      s""" nextval('${seqName}') """
 
-    /*
-     def bulkCopyWeights(weightsFile: String) : Unit = {
-      val deserializier = new ProtobufInferenceResultDeserializier()
-      val weightResultStr = deserializier.getWeights(weightsFile).map { w =>
-        s"${w.weightId}\t${w.value}"
-      }.mkString("\n")
-      PostgresDataStore.copyBatchData(s"COPY ${WeightResultTable}(id, weight) FROM STDIN",
-        new java.io.StringReader(weightResultStr))
-     }
+    /**
+     * Cast an expression to a type
+     */
+    def cast(expr: Any, toType: String): String =
+      s"""${expr.toString()}::${toType}"""
 
-    def bulkCopyVariables(variablesFile: String) : Unit = {
-      val deserializier = new ProtobufInferenceResultDeserializier()
-      val variableResultStr = deserializier.getVariables(variablesFile).map { v =>
-        s"${v.variableId}\t${v.category}\t${v.expectation}"
-      }.mkString("\n")
-      PostgresDataStore.copyBatchData(s"COPY ${VariableResultTable}(id, category, expectation) FROM STDIN",
-        new java.io.StringReader(variableResultStr))
+    /**
+     * Given a string column name, Get a quoted version dependent on DB.
+     *          if psql, return "column"
+     *          if mysql, return `column`
+     */
+    def quoteColumn(column: String): String =
+      '"' + column + '"'
+      
+    /**
+     * Generate random number in [0,1] in psql
+     */
+    def randomFunction: String = "RANDOM()"
+
+    /**
+     * Concatinate strings using "||" in psql/GP, adding user-specified
+     * delimiter in between
+     */
+    def concat(list: Seq[String], delimiter: String): String = {
+      delimiter match {
+        case null => list.mkString(s" || ")
+        case "" => list.mkString(s" || ")
+        case _ => list.mkString(s" || '${delimiter}' || ")
+      }
     }
-    */
+
+    /**
+     * For postgres, do not create indexes for query table
+     */
+    override def createIndexesForQueryTable(queryTable: String, weightVariables: Seq[String]) = {
+      // do nothing
+    }
+
   }
 }

@@ -39,15 +39,15 @@ for row in sys.stdin:
   # If so, set is_correct to true or false
   is_true = '\N'
   if spouses[p1_text_lower] == p2_text_lower:
-    is_true = 'true'
+    is_true = '1'
   if spouses[p2_text_lower] == p1_text_lower:
-    is_true = 'true'
+    is_true = '1'
   elif (p1_text == p2_text) or (p1_text in p2_text) or (p2_text in p1_text):
-    is_true = 'false'
+    is_true = '0'
   elif (p1_text_lower, p2_text_lower) in non_spouses:
-    is_true = 'false'
+    is_true = '0'
   elif (p2_text_lower, p1_text_lower) in non_spouses:
-    is_true = 'false'
+    is_true = '0'
 
   print '\t'.join([
     p1_id, p2_id, sentence_id, 

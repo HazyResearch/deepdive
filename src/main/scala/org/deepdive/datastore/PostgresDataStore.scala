@@ -21,6 +21,7 @@ object PostgresDataStore extends JdbcDataStore with Logging {
   def copyBatchData(sqlStatement: String, dataReader: Reader)
     (implicit connection: Connection) : Unit = {
       val del = new org.apache.commons.dbcp.DelegatingConnection(connection)
+      // TODO zifei
       val pg_conn = del.getInnermostDelegate().asInstanceOf[org.postgresql.core.BaseConnection]
       val cm = new org.postgresql.copy.CopyManager(pg_conn)
       cm.copyIn(sqlStatement, dataReader)

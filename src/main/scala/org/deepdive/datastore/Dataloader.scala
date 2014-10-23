@@ -4,6 +4,7 @@ import org.deepdive.settings._
 // import org.deepdive.datastore.JdbcDataStore
 import org.deepdive.Logging
 import org.deepdive.helpers.Helpers
+import org.deepdive.helpers.Helpers.{Psql, Mysql}
 import scala.sys.process._
 import scala.util.{Try, Success, Failure}
 import java.io._
@@ -13,6 +14,7 @@ class DataLoader extends JdbcDataStore with Logging {
 
   // def ds : JdbcDataStore
 
+  /** TODO move this to helper
   def executeQuery(sql: String) = {
     log.debug("EXECUTING.... " + sql)
     val conn = borrowConnection()
@@ -41,7 +43,7 @@ class DataLoader extends JdbcDataStore with Logging {
     }
     conn.close()  
     log.debug("DONE!")
-  }
+  }*/
 
   /** Unload data of a SQL query from database to a TSV file 
    * 
@@ -49,11 +51,11 @@ class DataLoader extends JdbcDataStore with Logging {
    * For Postgresql, filepath is an abosulute path. No need for dbSettings or filename.
    * For greenplum, use gpload; for postgres, use \copy
    * 
-   * @filename: the name of the output file
-   * @filepath: the absolute path of the output file
-   * @dbSettings: database settings (DD's class)
-   * @usingGreenplum: whether to use greenplum's gpunload
-   * @query: the query to be dumped
+   * @param filename: the name of the output file
+   * @param filepath: the absolute path of the output file
+   * @param dbSettings: database settings (DD's class)
+   * @param usingGreenplum: whether to use greenplum's gpunload
+   * @param query: the query to be dumped
    */
   def unload(filename: String, filepath: String, dbSettings: DbSettings, usingGreenplum: Boolean, query: String) : Unit = {
     
@@ -69,30 +71,39 @@ class DataLoader extends JdbcDataStore with Logging {
       }
 
       // hacky way to get schema from a query...
-      executeQuery(s"""
+      executeSqlQueries(s"""
         DROP VIEW IF EXISTS _${filename}_view CASCADE;
         DROP TABLE IF EXISTS _${filename}_tmp CASCADE;
         CREATE VIEW _${filename}_view AS ${query};
         CREATE TABLE _${filename}_tmp AS SELECT * FROM _${filename}_view LIMIT 0;
         """)
 
-      executeQuery(s"""
+      executeSqlQueries(s"""
         DROP EXTERNAL TABLE IF EXISTS _${filename} CASCADE;
         CREATE WRITABLE EXTERNAL TABLE _${filename} (LIKE _${filename}_tmp)
         LOCATION ('gpfdist://${hostname}:${port}/${filename}')
         FORMAT 'TEXT';
         """)
 
-      executeQuery(s"""
+      executeSqlQueries(s"""
         DROP VIEW _${filename}_view CASCADE;
         DROP TABLE _${filename}_tmp CASCADE;""")
 
-      executeQuery(s"""
+      executeSqlQueries(s"""
         INSERT INTO _${filename} ${query};
         """)
-    } else {
+    } else { // psql / mysql
+  
+      // Branch by database driver type (temporary solution)
+      val dbtype = Helpers.getDbType(dbSettings)
 
-      executeQuery(s"""
+      val sqlQueryPrefixRun = dbtype match {
+        case Psql => "psql " + Helpers.getOptionString(dbSettings) + " -c "
+        // -N: skip column names
+        case Mysql => "mysql " + Helpers.getOptionString(dbSettings) + " --silent -N -e "
+      }
+  
+      executeSqlQueries(s"""
         DROP VIEW IF EXISTS _${filename}_view CASCADE;
         CREATE VIEW _${filename}_view AS ${query};
         """)
@@ -100,29 +111,39 @@ class DataLoader extends JdbcDataStore with Logging {
       val outfile = new File(filepath)
       outfile.getParentFile().mkdirs()
 
-      val cmdfile = File.createTempFile(s"copy", ".sh")
+      val cmdfile = File.createTempFile(s"unload", ".sh")
       val writer = new PrintWriter(cmdfile)
-      val sql = """\COPY """ + s"(SELECT * FROM _${filename}_view) TO '${filepath}'"
-      val copyStr = Helpers.buildPsqlCmd(dbSettings, sql)
+      
+      // This query CANNOT contain double-quotes (").
+      val copyStr = dbtype match {
+        case Psql => List(sqlQueryPrefixRun + "\"", 
+            """\COPY """, s"(SELECT * FROM _${filename}_view) TO '${filepath}'", "\"").mkString("")
+            
+        case Mysql => List(sqlQueryPrefixRun + "\"", 
+            s"SELECT * FROM _${filename}_view", "\"", s" > ${filepath}").mkString("")
+      }
+        
       log.info(copyStr)
       writer.println(copyStr)
       writer.close()
       Helpers.executeCmd(cmdfile.getAbsolutePath())
-      executeQuery(s"DROP VIEW _${filename}_view;")
-      cmdfile.delete()
+      // executeSqlQuery(s"""COPY (SELECT * FROM _${filename}_view) TO '${filepath}';""")
+      executeSqlQueries(s"DROP VIEW _${filename}_view;")
+      s"rm ${cmdfile.getAbsolutePath()}".!
     }
   }
-
+  
   /** Load data from a TSV file to database
    *
    * For greenplum, use gpload; for postgres, use \copy
    *
-   * @filepath: the absolute path of the input file, it can contain wildchar characters
-   * @tablename: the table to be copied to
-   * @dbSettings: database settings (DD's class)
-   * @usingGreenplum: whether to use greenplum's gpload
+   * @param filepath: the absolute path of the input file, it can contain wildchar characters
+   * @param tablename: the table to be copied to
+   * @param dbSettings: database settings (DD's class)
+   * @param usingGreenplum: whether to use greenplum's gpload
    */ 
   def load(filepath: String, tablename: String, dbSettings: DbSettings, usingGreenplum: Boolean) : Unit = {
+    
     if (usingGreenplum) {
       val loadyaml = File.createTempFile(s"gpload", ".yml")
       val dbname = dbSettings.dbname
@@ -165,18 +186,28 @@ class DataLoader extends JdbcDataStore with Logging {
       cmdfile.delete()
       loadyaml.delete()
     } else {
-      val cmdfile = File.createTempFile(s"copy", ".sh")
+      // Generate SQL query prefixes
+      val dbtype = Helpers.getDbType(dbSettings)
+  
+      // NOTE: mysqlimport requires input file to have basename that is same as 
+      // tablename!
+      val cmdfile = File.createTempFile(s"${tablename}.copy", ".sh")
       val writer = new PrintWriter(cmdfile)
-      val sql = """COPY """ + s"${tablename} FROM STDIN"
-      val copyStr = Helpers.buildPsqlCmd(dbSettings, sql)
-      val cmd = s"find ${filepath} -print0 | xargs -0 -P 1 -L 1 bash -c '${copyStr}" + " < \"$0\"'"
-      log.info(cmd)
-      writer.println(cmd)
+      val writebackPrefix = s"find ${filepath} -print0 | xargs -0 -P 1 -L 1 bash -c ";
+      val writebackCmd = dbtype match {
+        case Psql => writebackPrefix + s"'psql " + Helpers.getOptionString(dbSettings) + 
+          "-c \"COPY " + s"${tablename} FROM STDIN;" + 
+          " \" < $0'"
+        case Mysql => writebackPrefix +
+          s"'mysqlimport " + Helpers.getOptionString(dbSettings) + " $0'"
+      }
+      
+      log.info(writebackCmd)
+      writer.println(writebackCmd)
       writer.close()
       Helpers.executeCmd(cmdfile.getAbsolutePath())
       cmdfile.delete()
     }
   }
-
 
 }

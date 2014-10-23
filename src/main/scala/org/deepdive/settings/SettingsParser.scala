@@ -2,6 +2,7 @@ package org.deepdive.settings
 
 import org.deepdive.Logging
 import org.deepdive.Context
+import org.deepdive.helpers.Helpers
 import com.typesafe.config._
 import scala.collection.JavaConversions._
 import scala.util.Try
@@ -35,7 +36,7 @@ object SettingsParser extends Logging {
   private def loadDbSettings(config: Config) : DbSettings = {
     val dbConfig = Try(config.getConfig("db.default")).getOrElse {
       log.warning("No schema defined.")
-      return DbSettings(null, null, null, null, null, null, null, null, null, null)
+      return DbSettings(Helpers.PsqlDriver, null, null, null, null, null, null, null, null, null)
     }
     val driver = Try(dbConfig.getString("driver")).getOrElse(null)
     val url = Try(dbConfig.getString("url")).getOrElse(null)
