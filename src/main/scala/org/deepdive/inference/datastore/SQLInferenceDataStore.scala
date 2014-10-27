@@ -831,12 +831,11 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
             FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")} LIMIT 0;""")
 
           // weight id
-          //execute(s"""ALTER TABLE ${weighttableForThisFactor} ADD COLUMN id bigserial;
-          //  ALTER SEQUENCE ${weighttableForThisFactor}_id_seq RESTART ${cweightid} MINVALUE 0""")
+          execute(s"""ALTER TABLE ${weighttableForThisFactor} ADD COLUMN id bigserial;""")
 	
           execute(s"""
             INSERT INTO ${weighttableForThisFactor}
-            SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} AS cardinality
+            SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd}, 0 AS cardinality
             FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")}
             ORDER BY ${weightlist}, cardinality;""")
 
