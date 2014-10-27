@@ -839,7 +839,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
             FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")}
             ORDER BY ${weightlist}, cardinality;""")
 
-	  execute(s"""select fast_seqassign('${weighttableForThisFactor}', ${cweightid});
+	  executeQuery(s"""select fast_seqassign('${weighttableForThisFactor}', ${cweightid});
 	  """)
 
           // // handle weight id
