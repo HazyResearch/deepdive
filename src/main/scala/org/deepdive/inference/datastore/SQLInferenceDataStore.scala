@@ -835,7 +835,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 	
           execute(s"""
             INSERT INTO ${weighttableForThisFactor}
-            SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd}, 0 AS cardinality
+            SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd}, 0 AS id
             FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")}
             ORDER BY ${weightlist}, cardinality;""")
 
