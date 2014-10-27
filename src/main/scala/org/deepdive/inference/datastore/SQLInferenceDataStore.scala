@@ -822,20 +822,26 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
             CREATE TABLE ${weighttableForThisFactorTemp} AS 
             SELECT ${weightlist}, ${isFixed}::int AS isfixed, ${initvalue}::real AS initvalue
             FROM ${querytable}
-            GROUP BY ${weightlist};""")
+            GROUP BY ${weightlist} DISTRIBUTED BY (${weightlist});""")
+
           // to get the schema for the given query
           execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactor} CASCADE;
             CREATE TABLE ${weighttableForThisFactor} AS 
             SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} AS cardinality
             FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")} LIMIT 0;""")
+
           // weight id
-          execute(s"""ALTER TABLE ${weighttableForThisFactor} ADD COLUMN id bigserial;
-            ALTER SEQUENCE ${weighttableForThisFactor}_id_seq RESTART ${cweightid} MINVALUE 0""")
+          //execute(s"""ALTER TABLE ${weighttableForThisFactor} ADD COLUMN id bigserial;
+          //  ALTER SEQUENCE ${weighttableForThisFactor}_id_seq RESTART ${cweightid} MINVALUE 0""")
+	
           execute(s"""
             INSERT INTO ${weighttableForThisFactor}
             SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} AS cardinality
             FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")}
             ORDER BY ${weightlist}, cardinality;""")
+
+	  execute(s"""select fast_seqassign('${weighttableForThisFactor}', ${cweightid});
+	  """)
 
           // // handle weight id
           // if (usingGreenplum) {      
@@ -843,6 +849,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           // } else {
           //   execute(s"UPDATE ${weighttableForThisFactor} SET id = nextval('${weightidSequence}');")
           // }
+
           issueQuery(s"""SELECT COUNT(*) FROM ${weighttableForThisFactor};""") { rs =>
             cweightid += rs.getLong(1)
           }
