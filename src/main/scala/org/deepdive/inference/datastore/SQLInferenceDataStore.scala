@@ -840,7 +840,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
             FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")} LIMIT 0;""")
 
           // weight id
-          execute(s"""ALTER TABLE ${weighttableForThisFactor} ADD COLUMN id bigserial;""")
+          execute(s"""ALTER TABLE ${weighttableForThisFactor} ADD COLUMN id bigint;""")
 	
           execute(s"""
             INSERT INTO ${weighttableForThisFactor}
@@ -848,15 +848,16 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
             FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")}
             ORDER BY ${weightlist}, cardinality;""")
 
-	  executeQuery(s"""select fast_seqassign('${weighttableForThisFactor}', ${cweightid});
-	  """)
+	  
+	  //executeQuery(s"""select fast_seqassign('${weighttableForThisFactor}', ${cweightid});
+	  //""")
 
-          // // handle weight id
-          // if (usingGreenplum) {      
-          //   executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor}', ${cweightid});""")
-          // } else {
-          //   execute(s"UPDATE ${weighttableForThisFactor} SET id = nextval('${weightidSequence}');")
-          // }
+          // handle weight id
+          if (usingGreenplum) {      
+            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor}', ${cweightid});""")
+          } else {
+            execute(s"UPDATE ${weighttableForThisFactor} SET id = nextval('${weightidSequence}');")
+          }
 
           issueQuery(s"""SELECT COUNT(*) FROM ${weighttableForThisFactor};""") { rs =>
             cweightid += rs.getLong(1)
