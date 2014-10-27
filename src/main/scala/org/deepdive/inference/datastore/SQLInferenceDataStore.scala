@@ -818,12 +818,21 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         } else { // not fixed and has weight variables
           // temporary weight table for weights without a cross product with cardinality
           val weighttableForThisFactorTemp = s"dd_weight_${factorDesc.name}_temp"
-          execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactorTemp} CASCADE;
-            CREATE TABLE ${weighttableForThisFactorTemp} AS 
-            SELECT ${weightlist}, ${isFixed}::int AS isfixed, ${initvalue}::real AS initvalue
-            FROM ${querytable}
-            GROUP BY ${weightlist} DISTRIBUTED BY (${weightlist});""")
-
+          
+	  if (usingGreenplum) {
+	  	  execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactorTemp} CASCADE;
+          	    CREATE TABLE ${weighttableForThisFactorTemp} AS 
+            	    SELECT ${weightlist}, ${isFixed}::int AS isfixed, ${initvalue}::real AS initvalue
+            	    FROM ${querytable}
+            	    GROUP BY ${weightlist} DISTRIBUTED BY (${weightlist});""")	
+          }else{
+                  execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactorTemp} CASCADE;
+                    CREATE TABLE ${weighttableForThisFactorTemp} AS
+                    SELECT ${weightlist}, ${isFixed}::int AS isfixed, ${initvalue}::real AS initvalue
+                    FROM ${querytable}
+                    GROUP BY ${weightlist} """)
+          }		    
+	
           // to get the schema for the given query
           execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactor} CASCADE;
             CREATE TABLE ${weighttableForThisFactor} AS 
