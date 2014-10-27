@@ -822,15 +822,15 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 	  if (usingGreenplum) {
 	  	  execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactorTemp} CASCADE;
           	    CREATE TABLE ${weighttableForThisFactorTemp} AS 
-            	    SELECT ${weightlist}, ${isFixed}::int AS isfixed, ${initvalue}::real AS initvalue
+            	    (SELECT ${weightlist}, ${isFixed}::int AS isfixed, ${initvalue}::real AS initvalue
             	    FROM ${querytable}
-            	    GROUP BY ${weightlist} DISTRIBUTED BY (${weightlist});""")	
+            	    GROUP BY ${weightlist}) DISTRIBUTED BY (${weightlist});""")	
           }else{
                   execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactorTemp} CASCADE;
                     CREATE TABLE ${weighttableForThisFactorTemp} AS
                     SELECT ${weightlist}, ${isFixed}::int AS isfixed, ${initvalue}::real AS initvalue
                     FROM ${querytable}
-                    GROUP BY ${weightlist} """)
+                    GROUP BY ${weightlist}; """)
           }		    
 	
           // to get the schema for the given query
