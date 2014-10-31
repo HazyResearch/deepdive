@@ -9,6 +9,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.concurrent._
 import scala.concurrent.duration._
 import scala.io.Source
+import scala.language.postfixOps
 import scala.sys.process._
 
 /* Companion object to process executor */
