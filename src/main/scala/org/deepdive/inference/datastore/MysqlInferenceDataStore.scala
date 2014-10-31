@@ -31,17 +31,18 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
     val BatchSize = Some(250000)
     
     /**
-     * Internal utility to copy a file to a table. uses LOAD DATA LOCAL INFILE 
+     * Internal utility to copy a file to a table. uses LOAD DATA INFILE 
      * to retrieve the file in client-side rather than server-side. 
      */
     private def copyFileToTable(filePath: String, tableName: String) : Unit = {
 
       val srcFile = new File(filePath)
 
+      // TODO test against different locations of client and server
       val writebackCmd = "mysql " +
         Helpers.getOptionString(dbSettings) +
         " --silent -N -e " + "\"" +
-        s"LOAD DATA LOCAL INFILE '${filePath}' " +
+        s"LOAD DATA INFILE '${filePath}' " +
         s"INTO TABLE ${tableName} " +
         "FIELDS TERMINATED BY ' '" + "\""
 
