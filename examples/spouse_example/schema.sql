@@ -5,16 +5,18 @@ CREATE TABLE articles(
 );
 
 DROP TABLE IF EXISTS sentences CASCADE;
-CREATE TABLE sentences(
-  document_id bigint,
-  sentence text, 
-  words text[],
-  lemma text[],
-  pos_tags text[],
-  dependencies text[],
-  ner_tags text[],
-  sentence_offset bigint,
-  sentence_id text -- unique identifier for sentences
+CREATE TABLE sentences (
+  document_id bigint,      -- document id
+  sentence text,           -- sentence id
+  wordidxs int[],          -- word indexes
+  words text[],            -- words
+  lemma text[],            -- lemmified version of words
+  pos_tags text[],         -- parts of speech
+  dep_paths text[],        -- dependency path labels. "_" for no dependency
+  dep_parents text[],      -- dependency path parents, range from 1--N. 0 for no dependency.
+  ner_tags text[],         -- named entity recognition tags
+  sentence_offset bigint,  -- sentence offset in article (0...N-1)
+  sentence_id text         -- sentence id, unique identifier for sentences
   );
 
 

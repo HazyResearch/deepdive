@@ -35,7 +35,8 @@ object Main extends App {
 
   // Configuration has been parsed, execute the Document parser
   val props = new Properties()
-  props.put("annotators", "tokenize, cleanxml, ssplit, pos, lemma, ner, parse, dcoref")
+  // props.put("annotators", "tokenize, cleanxml, ssplit, pos, lemma, ner, parse, dcoref")
+  props.put("annotators", "tokenize, cleanxml, ssplit, pos, lemma, ner, parse")
   props.put("parse.maxlen", conf.maxSentenceLength)
   props.put("threads", conf.numThreads)
   val dp = new DocumentParser(props)
@@ -65,12 +66,12 @@ object Main extends App {
       val json = JsObject(Map(
         "document_id" -> documentId.getOrElse(JsNull),
         "sentence" -> JsString(sentenceResult.sentence),
-        "wordidxs" -> JsArray(List.range(0,sentenceResult.words.length).map(i => i.toString).map(JsString.apply)),
+        "wordidxs" -> JsArray(List.range(0,sentenceResult.words.length).map( i => JsNumber.apply(i))),
         "words" -> JsArray(sentenceResult.words.map(JsString.apply)),
         "pos_tags" -> JsArray(sentenceResult.wordsWithPos.map(JsString.apply)),
         "lemma" -> JsArray(sentenceResult.lemma.map(JsString.apply)),
         "dep_paths" -> JsArray(sentenceResult.depLabels.map(JsString.apply)),
-        "dep_parents" -> JsArray(sentenceResult.depParents.map(JsString.apply)),
+        "dep_parents" -> JsArray(sentenceResult.depParents.map(  i => JsNumber.apply(i))),
         "ner_tags" -> JsArray(sentenceResult.nerTags.map(JsString.apply)),
         "sentence_offset" -> JsNumber(sentence_offset),
         "sentence_id" -> sentence_id

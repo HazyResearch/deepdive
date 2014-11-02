@@ -38,14 +38,14 @@ class DocumentParser(props: Properties) {
       // Example depList: 
       // ["root(ROOT-0, sentence-4)","nsubj(sentence-4, I-1)","cop(sentence-4, am-2)","det(sentence-4, another-3)","vmod(sentence-4, called-6)","dobj(called-6, sentence-7)","num(sentence-7, three-8)"]
       val dep_labels = Array.fill(wordList.length){"_"}
-      val dep_parents = Array.fill(wordList.length){"0"}
+      val dep_parents = Array.fill(wordList.length){0}
       val regex = """(.*)\(.*-(\d+), .*-(\d+)\)""".r
       depList.foreach {
         case s =>
           s match {
             case regex(tag, parent, index) =>
               dep_labels(Integer.parseInt(index) - 1) = tag;
-              dep_parents(Integer.parseInt(index) - 1) = parent;
+              dep_parents(Integer.parseInt(index) - 1) = Integer.parseInt(parent);
             case _ =>
           }
       }
