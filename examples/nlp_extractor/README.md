@@ -23,14 +23,15 @@ JSON tuple of the form:
 
 You can create a table like this, to be the `output_relation`:
 
-    CREATE TABLE sentences(
-      document_id bigint,
-      sentence text, 
-      words text[],
-      lemma text[],
-      pos_tags text[],
-      dependencies text[],
-      ner_tags text[],
-      sentence_offset bigint,
-      sentence_id text
-      );
+    CREATE TABLE sentences (
+      doc_id text,           -- document id
+      sent_id int,           -- sentence id
+      wordidxs int[],        -- word indexes
+      words text[],          -- words
+      poses text[],          -- parts of speech
+      ners text[],           -- named entity recognition tags
+      lemmas text[],         -- lemmified version of words
+      dep_paths text[],      -- dependency path labels. "_" for no dependency
+      dep_parents int[],     -- dependency path parents, range from 1--N. 0 for no dependency.
+      bounding_boxes text[]  -- bounding boxes
+    );

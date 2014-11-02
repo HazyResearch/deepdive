@@ -65,10 +65,12 @@ object Main extends App {
       val json = JsObject(Map(
         "document_id" -> documentId.getOrElse(JsNull),
         "sentence" -> JsString(sentenceResult.sentence),
+        "wordidxs" -> JsArray(List.range(0,sentenceResult.words.length).map(i => i.toString).map(JsString.apply)),
         "words" -> JsArray(sentenceResult.words.map(JsString.apply)),
         "pos_tags" -> JsArray(sentenceResult.wordsWithPos.map(JsString.apply)),
         "lemma" -> JsArray(sentenceResult.lemma.map(JsString.apply)),
-        "dependencies" -> JsArray(sentenceResult.deps.map(JsString.apply)),
+        "dep_paths" -> JsArray(sentenceResult.depLabels.map(JsString.apply)),
+        "dep_parents" -> JsArray(sentenceResult.depParents.map(JsString.apply)),
         "ner_tags" -> JsArray(sentenceResult.nerTags.map(JsString.apply)),
         "sentence_offset" -> JsNumber(sentence_offset),
         "sentence_id" -> sentence_id
