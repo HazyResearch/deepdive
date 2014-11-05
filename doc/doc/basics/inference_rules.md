@@ -175,7 +175,7 @@ someFactor.weight: ?
 someFactor.weight: ?(people.gender)
 ```
 
-#### Re-use learned weights
+<!-- #### Re-use learned weights
 If the system already learned the weights for your factor graphs, you can tell
 DeepDive to skip learning them again by setting `inference.skip_learning` in the
 application configuration file. Refer to the [Configuration
@@ -188,7 +188,7 @@ You can specify a table for the factor weights by setting
 skeep). This is useful to learn the weights once and use the model for later
 inference tasks. Refer to the [Configuration
 reference](configuration.html#weight_table) for more details about this option
-and the schema of the weight table.
+and the schema of the weight table. -->
 
 <!-- TODO (MR) All that follows must go somewhere else
 

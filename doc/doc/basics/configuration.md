@@ -417,7 +417,7 @@ Configuration directives to control the inference steps go in the global
 
   The default value depends on the used datastore (50000 for PostgreSQL).
 
-- <a name="skip_learning" href="#"></a> `inference.skip_learning`: if `true`,
+<!-- - <a name="skip_learning" href="#"></a> `inference.skip_learning`: if `true`,
   DeepDive will skip the learning step for the factor weights and reuse the
   weights learned in the last execution. It will generate a table
   `dd_graph_last_weights` containing all the weights.  Weights will be matched
@@ -446,7 +446,7 @@ Configuration directives to control the inference steps go in the global
     ```bash
     inference.skip_learning: true
     inference.weight_table: [weight table name]
-    ```
+    ``` -->
 - <a href="parallelgrounding" href="#"></a> `inference.parallel_grounding`. If
   set to `true` and you are using <a href="../advanced/greenplum.html">GreenPlum
   on DeepDive</a>, use <a
