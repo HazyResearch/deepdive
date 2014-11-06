@@ -1,6 +1,6 @@
 package org.deepdive.test.integration
 
-import anorm._ 
+import anorm._
 import com.typesafe.config._
 import org.deepdive.test._
 import org.deepdive.Context
@@ -8,7 +8,6 @@ import org.deepdive._
 import org.deepdive.datastore.{PostgresDataStore, JdbcDataStore}
 import org.scalatest._
 import scalikejdbc.ConnectionPool
-
 
 class BiasedCoin extends FunSpec {
   
@@ -53,6 +52,10 @@ class BiasedCoin extends FunSpec {
   }
 
   it("should work") {
+    // Only test for PSQL for now
+    import org.deepdive.test.helpers.TestHelper
+    assume (TestHelper.getTestEnv() == TestHelper.Psql)
+      
     prepareData()
     val config = ConfigFactory.parseString(getConfig).withFallback(ConfigFactory.load)
     DeepDive.run(config, "out/test_coin")

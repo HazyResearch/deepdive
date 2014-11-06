@@ -19,6 +19,9 @@ export DBPORT=3306
 
 export DEEPDIVE_HOME=`cd $(dirname $0)/../; pwd`
 
+# This env var specifies system under test
+export DEEPDIVE_TEST_ENV="mysql"
+
 cd $DEEPDIVE_HOME/lib
 
 case $(uname) in
@@ -50,10 +53,10 @@ export SBT_OPTS="-XX:MaxHeapSize=256m -Xmx512m -XX:MaxPermSize=256m"
 # # Test argument "-- -oF" shows full stack trace when error occurs
 # sbt "test-only org.deepdive.test.unit.* -- -oF" && sbt "test-only org.deepdive.test.integration.BiasedCoin -- -oF" && sbt "test-only org.deepdive.test.integration.ChunkingApp -- -oF"
 
-# sbt "test-only org.deepdive.test.integration.MysqlSpouseExample -- -oF"
+sbt "test-only org.deepdive.test.integration.MysqlSpouseExample -- -oF"
 
 # Running a specific test with Eclipse debugger
-# SBT_OPTS="-agentlib:jdwp=transport=dt_socket,address=localhost:8000,server=y,suspend=y -Xmx4g" sbt/sbt "test-only org.deepdive.test.unit.PostgresInferenceDataStoreSpec"
+# SBT_OPTS="-agentlib:jdwp=transport=dt_socket,address=localhost:8000,server=y,suspend=y -Xmx4g" sbt/sbt "test-only org.deepdive.test.integration.MysqlSpouseExample"
 
-cd $DEEPDIVE_HOME/examples/spouse_example/tsv_extractor/
-./run_mysql.sh
+# cd $DEEPDIVE_HOME/examples/spouse_example/tsv_extractor/
+# ./run_mysql.sh

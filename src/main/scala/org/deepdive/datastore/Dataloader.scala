@@ -169,7 +169,7 @@ class DataLoader extends JdbcDataStore with Logging {
           "-c \"COPY " + s"${tablename} FROM STDIN;" + 
           " \" < $0'"
         case Mysql => writebackPrefix +
-          s"'mysqlimport " + Helpers.getOptionString(dbSettings) + " $0'"
+          s"'mysqlimport --local " + Helpers.getOptionString(dbSettings) + " $0'"
       }
       
       log.info(writebackCmd)

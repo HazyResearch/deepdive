@@ -368,6 +368,10 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
   private def runTsvExtractor(task: ExtractionTask, dbSettings: DbSettings, taskSender: ActorRef) = {
   
     val udfCmd = task.extractor.udf
+    // make udfCmd executable if file
+    val udfFile = new java.io.File(udfCmd)
+    if (udfFile.isFile) 
+      udfFile.setExecutable(true, false)
     val funcName = s"func_${task.extractor.name}"
 
     val inputQuery = task.extractor.inputQuery match {
@@ -386,7 +390,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
       Status.Failure(new RuntimeException(s"TSV extractor directory creation failed"))
     }
 
-    // NEW: for mysqlimport compatibility, the file basename must be same as table name. 
+    // NEW: for mysqlimport compatibility, the file basename must be same as table name.
     val queryOutputFile = new File(queryOutputPath + s"${outputRel}.copy_query_${funcName}.tsv")
     // val queryOutputFile = File.createTempFile(s"copy_query_${funcName}", ".tsv")
 
@@ -451,7 +455,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
         s"${outputRel} FROM STDIN;" + // weak matching 
         " \" < \"$0\"'" // strong matching
       case Mysql => writebackPrefix +
-        s"'mysqlimport " + Helpers.getOptionString(dbSettings) +
+        s"'mysqlimport --local " + Helpers.getOptionString(dbSettings) +
         " $0'"
     }
     // TODO: not sure if mysqlimport can work on distributed server... it should. 

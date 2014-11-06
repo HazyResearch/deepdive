@@ -190,11 +190,15 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
     /**
      * Dumb: mysql cannot drop index "if exists"...
      * We use 4 statements to implement that.
+     * 
+     * Note: @exist will be NULL if the table do not exist, and "if" still branches into second.
+     * Note: dbname must be providen to locate the index correctly
      */
     private def dropIndexIfExistsMysql(indexName: String, tableName: String): String = {
       s"""
       set @exist := (select count(*) from information_schema.statistics 
-        where table_name = '${tableName}' and index_name = '${indexName}');
+        where table_name = '${tableName}' and index_name = '${indexName}' 
+        and TABLE_SCHEMA = '${dbSettings.dbname}');
       set @sqlstmt := if( @exist > 0, 'drop index ${indexName} on ${tableName}', 
         'select ''"index ${indexName}" do not exist, skipping''');
       PREPARE stmt FROM @sqlstmt;
@@ -260,7 +264,7 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
      *  
      */
     override def incrementId(table: String, IdSequence: String) {
-      dropIndexIfExistsMysql(s"${table}_id_idx", table)
+      execute(dropIndexIfExistsMysql(s"${table}_id_idx", table))
       execute(s"UPDATE ${table} SET id = ${nextVal(IdSequence)};")
     }
 

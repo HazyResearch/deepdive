@@ -146,7 +146,12 @@ class ChunkingApp extends FunSpec {
     f1.toDouble
   }
   describe("Chunking with linear chain CRF") {
+
     it("should get F1 score > 0.8") {
+      // Only test for PSQL for now
+      import org.deepdive.test.helpers.TestHelper
+      assume(TestHelper.getTestEnv() == TestHelper.Psql)
+
       prepareData()
       val config = ConfigFactory.parseString(getConfig).withFallback(ConfigFactory.load)
       DeepDive.run(config, "out/test_chunking")
@@ -155,6 +160,5 @@ class ChunkingApp extends FunSpec {
       assert(f1 > 80)
     }
   }
-
 
 }

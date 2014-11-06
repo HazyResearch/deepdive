@@ -13,6 +13,8 @@ export GPPATH=${GPPATH:-/tmp}
 
 export DEEPDIVE_HOME=`cd $(dirname $0)/../; pwd`
 
+export DEEPDIVE_TEST_ENV="psql"
+
 cd $DEEPDIVE_HOME/lib
 
 case $(uname) in

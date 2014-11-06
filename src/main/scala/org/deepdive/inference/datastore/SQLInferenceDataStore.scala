@@ -946,8 +946,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     relationsColumns.foreach { case(relationName, columnName) =>
       execute(createInferenceViewSQL(relationName, columnName))
-    //   // TODO
-    //   execute(createVariableWeightsViewSQL(relationName, columnName))
     }
   }
 
