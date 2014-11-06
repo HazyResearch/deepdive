@@ -13,4 +13,12 @@ object TestHelper {
     // Do not have tests for GP right now.
     case "greenplum" => Greenplum 
   }
+
+  def getDriverFromEnv() = System.getenv("DEEPDIVE_TEST_ENV") match {
+    case null => "org.postgresql.Driver"
+    case "psql" => "org.postgresql.Driver"
+    case "mysql" => "com.mysql.jdbc.Driver"
+    case "greenplum" => "org.postgresql.Driver"
+  }
+
 }

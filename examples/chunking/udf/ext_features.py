@@ -6,24 +6,27 @@ import itertools
 import sys
 
 def tostr(s):
-	return '' if s is None else str(s)
+	# In TSV extractor, '\N' is NULL in psql, 'NULL' is NULL in mysql
+	return '' if s is None or s in ['\N', 'NULL'] else str(s)
 
 # for each word
-for row in fileinput.input():
-	obj = json.loads(row)
+for row in sys.stdin:
+	# obj = json.loads(row)
+	word_id, word1, pos1, word2, pos2 = row.rstrip().split('\t')
 
 	features = set()
 	# sys.stderr.write(str(obj))
 
 	# features
-	w1_word = 'word=' + tostr(obj["w1.word"])
-	w1_pos = 'pos=' + tostr(obj["w1.pos"])
+	w1_word = 'word=' + tostr(word1)
+	w1_pos = 'pos=' + tostr(pos1)
 
-	if 'w2.word' in obj.keys():
-		w2_word = 'prev_word=' + tostr(obj["w2.word"])
-		w2_pos = 'prev_pos=' + tostr(obj["w2.pos"])
+	# if 'w2.word' in obj.keys():
+	if word2 != 'NULL' and word2 != '\N':
+		# w2_word = 'prev_word=' + tostr(word2)
+		w2_pos = 'prev_pos=' + tostr(pos2)
 	else:
-		w2_word = 'prev_word='
+		# w2_word = 'prev_word='
 		w2_pos = 'prev_pos='
 	#w3_word = 'next_word=' + tostr(obj["words_raw.w3.word"])
 	#w3_pos = 'next_pos=' + tostr(obj["words_raw.w3.pos"])
@@ -33,7 +36,4 @@ for row in fileinput.input():
 	features.add(w2_pos)
 
 	for f in features:
-		print json.dumps({
-			"word_id": obj["w1.word_id"],
-			'feature': f
-		})
+		print '\t'.join([word_id, f, '\N'])

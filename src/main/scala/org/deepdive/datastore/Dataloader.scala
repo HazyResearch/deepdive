@@ -22,7 +22,7 @@ class DataLoader extends JdbcDataStore with Logging {
    * For greenplum, use gpload; for postgres, use \copy
    * 
    * @param filename: the name of the output file
-   * @param filepath: the absolute path of the output file
+   * @param filepath: the absolute path of the output file (including file name)
    * @param dbSettings: database settings (DD's class)
    * @param usingGreenplum: whether to use greenplum's gpunload
    * @param query: the query to be dumped

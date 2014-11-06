@@ -195,7 +195,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   def copyLastWeightsSQL = s"""
     DROP TABLE IF EXISTS ${lastWeightsTable} CASCADE;
-    SELECT X.*, Y.weight INTO ${lastWeightsTable}
+    CREATE TABLE ${lastWeightsTable} AS
+      SELECT X.*, Y.weight
       FROM ${WeightsTable} AS X INNER JOIN ${WeightResultTable} AS Y ON X.id = Y.id
       ORDER BY id ASC;
   """
@@ -794,7 +795,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           val cardinalityTableName = s"${factorDesc.weightPrefix}_cardinality_${idx}"
           execute(s"""
             DROP TABLE IF EXISTS ${cardinalityTableName} CASCADE;
-            SELECT * INTO ${cardinalityTableName} FROM ${v.headRelation}_${v.field}_cardinality;
+            CREATE TABLE  ${cardinalityTableName} AS
+            SELECT * FROM ${v.headRelation}_${v.field}_cardinality;
             """)
         }
 

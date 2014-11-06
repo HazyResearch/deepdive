@@ -19,6 +19,11 @@ Extractor types: only [tsv_extractor](../basics/extractors.html#tsv_extractor),
 [sql_extractor](../basics/extractors.html#sql_extractor) 
 and [cmd_extractor](../basics/extractors.html#cmd_extractor) are supported.
 
+When using TSV extractor, note that `NULL` columns in extractor input
+are string `NULL`, which has different behavior with Postgres (input
+to extractor is `\N`). If you want to output NULL values in extractors
+in MySQL, you still need to output `\N`.
+
 If you are porting your applications from PostgreSQL to MySQL, be sure
 your SQL queries are optimal, since some queries optimized for
 PostgreSQL may be not optimal in MySQL.

@@ -16,7 +16,8 @@ export DBUSER=root
 export DBPASSWORD=
 export DBHOST=127.0.0.1
 export DBPORT=3306
-
+export DBCONNSTRING=jdbc:mysql://$DBHOST:$DBPORT/$DBNAME
+echo "CONN STRING: $DBCONNSTRING"
 export DEEPDIVE_HOME=`cd $(dirname $0)/../; pwd`
 
 # This env var specifies system under test
@@ -53,10 +54,8 @@ export SBT_OPTS="-XX:MaxHeapSize=256m -Xmx512m -XX:MaxPermSize=256m"
 # # Test argument "-- -oF" shows full stack trace when error occurs
 # sbt "test-only org.deepdive.test.unit.* -- -oF" && sbt "test-only org.deepdive.test.integration.BiasedCoin -- -oF" && sbt "test-only org.deepdive.test.integration.ChunkingApp -- -oF"
 
-sbt "test-only org.deepdive.test.integration.MysqlSpouseExample -- -oF"
+sbt "test-only org.deepdive.test.integration.MysqlSpouseExample -- -oF" && \
+sbt "test-only org.deepdive.test.integration.ChunkingApp -- -oF"
 
 # Running a specific test with Eclipse debugger
 # SBT_OPTS="-agentlib:jdwp=transport=dt_socket,address=localhost:8000,server=y,suspend=y -Xmx4g" sbt/sbt "test-only org.deepdive.test.integration.MysqlSpouseExample"
-
-# cd $DEEPDIVE_HOME/examples/spouse_example/tsv_extractor/
-# ./run_mysql.sh

@@ -11,7 +11,8 @@ for line in fin:
   tokens = line.split(' ')
   
   # empty line
-  if (tokens[0] == '\N'):
+  if (tokens[0] in ['\N', 'NULL']): # for compatibility with MySQL
+  # if (tokens[0] == '\N'):
     fout.write('\n')
     lastTag = ''
     continue
