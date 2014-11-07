@@ -7,6 +7,7 @@ import org.deepdive.test._
 import org.scalatest._
 import org.deepdive.datastore._
 import org.deepdive.settings._
+import org.deepdive.test.helpers._
 import org.deepdive.Context
 import scala.io.Source
 import scalikejdbc._
@@ -17,9 +18,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
 
   lazy implicit val session = dataStoreHelper.DB.autoCommitSession()
   // Generate a dbSettings for testing
-  val dbSettings = DbSettings("org.postgresql.Driver", null, System.getenv("PGUSER"), 
-      null, System.getenv("DBNAME"), System.getenv("PGHOST"), 
-      System.getenv("PGPORT"), null, null, null)
+  val dbSettings = TestHelper.getDbSettings
 
   def init() : Unit = {
     JdbcDataStore.init()

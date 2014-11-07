@@ -19,26 +19,36 @@ Extractor types: only [tsv_extractor](../basics/extractors.html#tsv_extractor),
 [sql_extractor](../basics/extractors.html#sql_extractor) 
 and [cmd_extractor](../basics/extractors.html#cmd_extractor) are supported.
 
-When using TSV extractor, note that `NULL` columns in extractor input
-are string `NULL`, which has different behavior with Postgres (input
-to extractor is `\N`). If you want to output NULL values in extractors
-in MySQL, you still need to output `\N`.
+When using TSV extractor, make sure you are aware of the following caveats:
+
+- `NULL` columns in extractor input
+  are string `NULL`, which has different behavior with Postgres (input
+  to extractor is `\N`). If you want to output NULL values in extractors
+  in MySQL, you still need to output `\N`.
+
+- Boolean fields in extractor input are `0` or `1`, which has different 
+  behavior with Postgres (input
+  to extractor is `true` / `false`). If you want to output boolean values in extractors
+  in MySQL, you also need to output `0` / `1`.
 
 If you are porting your applications from PostgreSQL to MySQL, be sure
 your SQL queries are optimal, since some queries optimized for
-PostgreSQL may be not optimal in MySQL.
+PostgreSQL may be not optimal in MySQL. For example, you may need to
+create more indexes to speed up queries with joins, depending on your
+MySQL version.
 
 ### Caveats for MySQL Cluster
 
-If you are using MySQL cluster, you may want to use the 
+<!-- If you are using MySQL cluster, you may want to use the 
 [parallel data loader](#ndbloader) discussed below, to speed up the data 
 loading process.
+ -->
 
 For MySQL cluster, tables need to be partitioned since "Partitioning by KEY (including LINEAR KEY) is the only type of partitioning supported for the NDB storage engine". (http://dev.mysql.com/doc/refman/5.6/en/partitioning-limitations-storage-engines.html)
 
 You need to distribute tables by a key which are not text/blob.
 
-### Parallel data loader for MySQL Cluster
+<!-- ### Parallel data loader for MySQL Cluster
 
 Data loading for MySQL Cluster can be slow using SQL interfaces. MySQL Cluster has provided [NDB API](http://dev.mysql.com/doc/ndbapi/en/) for faster access to cluster data. We provide a data loader in `DEEPDIVE_HOME/util/ndbloader` that can be used to load data files in TSV format into MySQL cluster.
 
@@ -55,7 +65,7 @@ Currently our `ndbloader` can only load data in TSV format, without line breaks 
 
 TODO schema file format
 
-TODO writing in application.conf
+TODO writing in application.conf -->
 
 
 ### Best practices

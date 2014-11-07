@@ -158,9 +158,6 @@ class DataLoader extends JdbcDataStore with Logging {
     } else {
       // Generate SQL query prefixes
       val dbtype = Helpers.getDbType(dbSettings)
-  
-      // NOTE: mysqlimport requires input file to have basename that is same as 
-      // tablename!
       val cmdfile = File.createTempFile(s"${tablename}.copy", ".sh")
       val writer = new PrintWriter(cmdfile)
       val writebackPrefix = s"find ${filepath} -print0 | xargs -0 -P 1 -L 1 bash -c ";
@@ -169,7 +166,13 @@ class DataLoader extends JdbcDataStore with Logging {
           "-c \"COPY " + s"${tablename} FROM STDIN;" + 
           " \" < $0'"
         case Mysql => writebackPrefix +
-          s"'mysqlimport --local " + Helpers.getOptionString(dbSettings) + " $0'"
+          s"'mysql " + Helpers.getOptionString(dbSettings) + 
+            "-e \"LOAD DATA LOCAL INFILE " + 
+            """ '"'"'$0'"'"' """ + s" INTO TABLE ${tablename};" +
+            """ "' """ 
+          // mysqlimport requires input file to have basename that is same as 
+          // tablename. Do not use it now.
+          // s"'mysqlimport --local " + Helpers.getOptionString(dbSettings) + " $0'"
       }
       
       log.info(writebackCmd)

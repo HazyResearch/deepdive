@@ -2,6 +2,7 @@ package org.deepdive.test.unit
 
 import java.io._
 import org.deepdive.Logging
+import com.typesafe.config._
 import akka.actor._
 import akka.testkit._
 import org.deepdive.datastore._
@@ -10,14 +11,20 @@ import org.deepdive.extraction.datastore._
 import org.deepdive.extraction.ProcessExecutor._
 import org.deepdive.settings._
 import org.deepdive.helpers.Helpers
+import org.deepdive.test.helpers._
 import org.scalatest._
 import scala.concurrent.duration._
 import play.api.libs.json._
 import scalikejdbc._
 
 class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with ImplicitSender
-  with FunSpecLike with BeforeAndAfter with PostgresExtractionDataStoreComponent with Logging{
+  with FunSpecLike with BeforeAndAfter with Logging {
 
+  val dataStore = TestHelper.getTestEnv match {
+    case TestHelper.Psql => new PostgresExtractionDataStore
+    case TestHelper.Mysql=> new MysqlExtractionDataStore
+  }
+  
   // execute a query
   def execute(ds : JdbcDataStore, sql: String) = {
     log.debug("EXECUTING.... " + sql)
@@ -46,15 +53,31 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
   var inited = false
 
+  val config = ConfigFactory.parseString(TestHelper.getConfig).withFallback(ConfigFactory.load)
+
   before {
     if(!inited){
-      JdbcDataStore.init()
+      JdbcDataStore.init(config)
       inited = true
     }
     dataStore.init()
-    dataStore.ds.DB.autoCommit { implicit session =>
-      SQL("drop schema if exists public cascade; create schema public;").execute.apply()
-      SQL("""CREATE TABLE relation1(id bigint, key int);""").execute.apply()     
+
+    TestHelper.getTestEnv match {
+      case TestHelper.Psql =>
+        dataStore.ds.DB.autoCommit { implicit session =>
+          // TODO side effect?
+          SQL("drop schema if exists public cascade; create schema public;").execute.apply()
+          SQL("""DROP TABLE IF EXISTS relation1 CASCADE;""").execute.apply()
+          SQL("""CREATE TABLE relation1(id bigint, key int);""").execute.apply()
+          SQL("""DROP TABLE IF EXISTS testtable CASCADE;""").execute.apply()
+        }
+
+      case TestHelper.Mysql =>
+        dataStore.ds.withConnection { implicit conn =>
+          SQL("""DROP TABLE IF EXISTS relation1 CASCADE;""").execute()
+          SQL("""CREATE TABLE relation1(id bigint, key int);""").execute()
+          SQL("""DROP TABLE IF EXISTS testtable CASCADE;""").execute()
+        }
     }
   } 
 
@@ -64,17 +87,18 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
   def this() = this(ActorSystem("ExtractorRunnerSpec"))
 
-  val dbSettings = DbSettings(Helpers.PsqlDriver, null, System.getenv("PGUSER"),
-    null, System.getenv("DBNAME"), System.getenv("PGHOST"), 
-    System.getenv("PGPORT"), System.getenv("GPHOST"), 
-    System.getenv("GPPATH"), System.getenv("GPPORT"))
+  val dbSettings = TestHelper.getDbSettings
 
+  val sqlScriptPrefix = TestHelper.getTestEnv match {
+    case TestHelper.Psql => s"psql ${Helpers.getOptionString(dbSettings)} -c "
+    case TestHelper.Mysql=> s"mysql ${Helpers.getOptionString(dbSettings)} -e "
+  }
   // lazy implicit val session = ds.DB.autoCommitSession()
 
   describe("Running extractor-type-independent task (e.g., before/after script)"){
     
     it("should work for before script"){
-
+      execute(dataStore.ds, "drop table if exists testtable;")
       execute(dataStore.ds, "create table testtable ( a text );")
       val t = java.io.File.createTempFile("test", ".sh")
       val t2 = java.io.File.createTempFile("test", ".tsv")
@@ -96,6 +120,10 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       |""".stripMargin)
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
+
+      // TODO do not run json_extractor for MySQL
+      assume(TestHelper.getTestEnv != TestHelper.Mysql)
+
 
       val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "testtable", 
         "SELECT 5", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
@@ -129,6 +157,10 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       val t2 = java.io.File.createTempFile("test", ".tsv")
       val t3 = java.io.File.createTempFile("test", ".py")
 
+      // TODO do not run json_extractor for MySQL
+      assume(TestHelper.getTestEnv != TestHelper.Mysql)
+
+
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
       val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "testtable", 
         "SELECT 5", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some("/bin/i_am_not_exist"), None, "", None))
@@ -142,6 +174,9 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
     
     it("should fail if before script is executable but contains errors"){
 
+      // TODO do not run json_extractor for MySQL
+      assume(TestHelper.getTestEnv != TestHelper.Mysql)
+      execute(dataStore.ds, "drop table if exists testtable;")
       execute(dataStore.ds, "create table testtable ( a text );")
       val t = java.io.File.createTempFile("test", ".py")
       val t2 = java.io.File.createTempFile("test", ".tsv")
@@ -175,6 +210,9 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
     it("should work for after script"){
 
+      // TODO do not run json_extractor for MySQL
+      assume(TestHelper.getTestEnv != TestHelper.Mysql)
+      execute(dataStore.ds, "drop table if exists testtable;")
       execute(dataStore.ds, "create table testtable ( a text );")
       val t = java.io.File.createTempFile("test", ".sh")
       val t2 = java.io.File.createTempFile("test", ".tsv")
@@ -198,8 +236,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
 
       writeToFile(t4, s"""
-        | psql -c "INSERT INTO testtable VALUES ('Hello!');"
-        | psql -c "INSERT INTO testtable VALUES('Aloha!');"
+        | ${sqlScriptPrefix} "INSERT INTO testtable VALUES ('Hello!');"
+        | ${sqlScriptPrefix} "INSERT INTO testtable VALUES('Aloha!');"
       """.stripMargin)
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
@@ -234,6 +272,9 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
     
     it("should fail if after script is not executable"){
 
+      // TODO do not run json_extractor for MySQL
+      assume(TestHelper.getTestEnv != TestHelper.Mysql)
+      execute(dataStore.ds, "drop table if exists testtable;")
       execute(dataStore.ds, "create table testtable ( a text );")
 
       val t = java.io.File.createTempFile("test", ".sh")
@@ -253,6 +294,9 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
     
     it("should fail if after script is executable but contains errors"){
 
+      // TODO do not run json_extractor for MySQL
+      assume(TestHelper.getTestEnv != TestHelper.Mysql)
+      execute(dataStore.ds, "drop table if exists testtable;")
       execute(dataStore.ds, "create table testtable ( a text );")
       val t = java.io.File.createTempFile("test", ".py")
       val t2 = java.io.File.createTempFile("test", ".tsv")
@@ -287,6 +331,9 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
   describe("Running an json_extractor extraction task") {
 
     it("should work without parallelism") {
+      // TODO do not run json_extractor for MySQL
+      assume(TestHelper.getTestEnv != TestHelper.Mysql)
+
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
       dataStore.addBatch(List(Json.parse("""{"key": 5}""").asInstanceOf[JsObject]).iterator, "relation1")
 
@@ -313,6 +360,9 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
     }
 
     it("should work when the input is empty") {
+      // TODO do not run json_extractor for MySQL
+      assume(TestHelper.getTestEnv != TestHelper.Mysql)
+
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
       val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1", 
         "SELECT * FROM relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet))
@@ -331,28 +381,38 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
     }
 
     it("should work with parallelism") {
-       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
+      // TODO do not run json_extractor for MySQL
+      assume(TestHelper.getTestEnv != TestHelper.Mysql)
 
-       val batchData = (1 to 1000).map { i =>
-         Json.parse(s"""{"key": ${i}}""").asInstanceOf[JsObject]
-       }.toList
-       dataStore.addBatch(batchData.iterator, "relation1")
-       val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1", 
-         "SELECT * FROM relation1", "/bin/cat", 4, 500, 200, Nil.toSet, None, None, "", None))
-       actor ! ExtractorRunner.SetTask(task)
-       watch(actor)
-       //expectMsg("Done!")
-       //expectTerminated(actor)
-       expectMsgAnyClassOf(classOf[String], classOf[Terminated])
-       expectMsgAnyClassOf(classOf[String], classOf[Terminated])
-       dataStore.ds.DB.readOnly { implicit session =>
-         val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM relation1""")
-           .map(rs => rs.long("count")).single.apply().get
-         assert(numRecords === 2000)
-       }
+
+      // TODO do not run json_extractor for MySQL
+      assume(TestHelper.getTestEnv != TestHelper.Mysql)
+
+
+      val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
+      val batchData = (1 to 1000).map { i =>
+        Json.parse(s"""{"key": ${i}}""").asInstanceOf[JsObject]
+      }.toList
+      dataStore.addBatch(batchData.iterator, "relation1")
+      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1", 
+        "SELECT * FROM relation1", "/bin/cat", 4, 500, 200, Nil.toSet, None, None, "", None))
+      actor ! ExtractorRunner.SetTask(task)
+      watch(actor)
+      //expectMsg("Done!")
+      //expectTerminated(actor)
+      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
+      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
+      dataStore.ds.DB.readOnly { implicit session =>
+        val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM relation1""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numRecords === 2000)
+      }
     }
 
     it("should return failure when the task failes") {
+      // TODO do not run json_extractor for MySQL
+      assume(TestHelper.getTestEnv != TestHelper.Mysql)
+
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
       val failingExtractorFile = getClass.getResource("/failing_extractor.py").getFile
       dataStore.addBatch(List(Json.parse("""{"key": 5}""").asInstanceOf[JsObject]).iterator, "relation1")
@@ -365,6 +425,9 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
     }
 
     it("should correctly execute the before and after scripts") {
+      // TODO do not run json_extractor for MySQL
+      assume(TestHelper.getTestEnv != TestHelper.Mysql)
+
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
       val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1", 
         "SELECT * FROM relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet, Option("echo Hello"), Option("echo World"), "", None))
@@ -377,6 +440,9 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
     }
 
     it("should return a failure when the query is invalid") {
+      // TODO do not run json_extractor for MySQL
+      assume(TestHelper.getTestEnv != TestHelper.Mysql)
+
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
       val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation5", 
         "relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet,None, None, "", None))
@@ -387,6 +453,9 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
     }
 
     it("should return a failure when the before script crashes") {
+      // TODO do not run json_extractor for MySQL
+      assume(TestHelper.getTestEnv != TestHelper.Mysql)
+
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
       val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1", 
         "SELECT * FROM relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet, Option("/bin/OHNO!"), Option("echo World"), "", None))
@@ -397,6 +466,9 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
     }
 
     it("should return a failure when the after script crashes") {
+      // TODO do not run json_extractor for MySQL
+      assume(TestHelper.getTestEnv != TestHelper.Mysql)
+
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
       val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1", 
         "SELECT * FROM relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet, Option("echo Hello"), Option("/bin/OHNO!"), "", None))
@@ -474,8 +546,9 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       log.info(t.getAbsolutePath)
 
+      // Build the before script
       writeToFile(t, s"""
-        | psql -c "INSERT INTO testtable VALUES ('Mesasge_1'), ('Mesasge_2'), ('Mesasge_3'), ('Mesasge_4'), ('Mesasge_5'), ('Mesasge_6'), ('Mesasge_7'), ('Mesasge_8'), ('Mesasge_9'), ('Mesasge_10');"
+      | ${sqlScriptPrefix} "INSERT INTO testtable VALUES ('Mesasge_1'), ('Mesasge_2'), ('Mesasge_3'), ('Mesasge_4'), ('Mesasge_5'), ('Mesasge_6'), ('Mesasge_7'), ('Mesasge_8'), ('Mesasge_9'), ('Mesasge_10');"
       """.stripMargin)
 
       writeToFile(t3, 
@@ -521,6 +594,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       }
     }
 
+    it("should work for NULL escaping")(pending)
+
     it("should work for TSV extractor when input query contains multiple columns"){
 
       execute(dataStore.ds, "drop table if exists testtable ;")
@@ -533,8 +608,9 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       log.info(t.getAbsolutePath)
 
+      // Build the before script
       writeToFile(t, s"""
-        | psql -c "INSERT INTO testtable VALUES ('Mesasge_1', '1'), ('Mesasge_2', '1'), ('Mesasge_3', '1'), ('Mesasge_4', '1'), ('Mesasge_5', '1'), ('Mesasge_6', '1'), ('Mesasge_7', '1'), ('Mesasge_8', '1'), ('Mesasge_9', '1'), ('Mesasge_10', '1');"
+      | ${sqlScriptPrefix} "INSERT INTO testtable VALUES ('Mesasge_1', '1'), ('Mesasge_2', '1'), ('Mesasge_3', '1'), ('Mesasge_4', '1'), ('Mesasge_5', '1'), ('Mesasge_6', '1'), ('Mesasge_7', '1'), ('Mesasge_8', '1'), ('Mesasge_9', '1'), ('Mesasge_10', '1');"
       """.stripMargin)
 
       writeToFile(t3, 
@@ -584,9 +660,9 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
         log.info(t.getAbsolutePath)
 
-        writeToFile(t, s"""
-          | psql -c "INSERT INTO testtable VALUES ('Mesasge_1', '1'), ('Mesasge_2', '1'), ('Mesasge_3', '1'), ('Mesasge_4', '1'), ('Mesasge_5', '1'), ('Mesasge_6', '1'), ('Mesasge_7', '1'), ('Mesasge_8', '1'), ('Mesasge_9', '1'), ('Mesasge_10', '1');"
-        """.stripMargin)
+      writeToFile(t, s"""
+      | ${sqlScriptPrefix} "INSERT INTO testtable VALUES ('Mesasge_1', '1'), ('Mesasge_2', '1'), ('Mesasge_3', '1'), ('Mesasge_4', '1'), ('Mesasge_5', '1'), ('Mesasge_6', '1'), ('Mesasge_7', '1'), ('Mesasge_8', '1'), ('Mesasge_9', '1'), ('Mesasge_10', '1');"
+      """.stripMargin)
 
         writeToFile(t3, 
        s"""|#! /usr/bin/python
@@ -620,17 +696,18 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
         log.info(t.getAbsolutePath)
 
+        // Build the before script
         writeToFile(t, s"""
-          | psql -c "INSERT INTO testtable VALUES ('Mesasge_1', '1'), ('Mesasge_2', '1'), ('Mesasge_3', '1'), ('Mesasge_4', '1'), ('Mesasge_5', '1'), ('Mesasge_6', '1'), ('Mesasge_7', '1'), ('Mesasge_8', '1'), ('Mesasge_9', '1'), ('Mesasge_10', '1');"
+        | ${sqlScriptPrefix} "INSERT INTO testtable VALUES ('Mesasge_1', '1'), ('Mesasge_2', '1'), ('Mesasge_3', '1'), ('Mesasge_4', '1'), ('Mesasge_5', '1'), ('Mesasge_6', '1'), ('Mesasge_7', '1'), ('Mesasge_8', '1'), ('Mesasge_9', '1'), ('Mesasge_10', '1');"
         """.stripMargin)
 
         writeToFile(t3, 
-       s"""|#! /usr/bin/python
-           |import json, sys
-           |for l in sys.stdin:
-           |  print "\t".join(['abcdefg', "2"])
-           |
-        |""".stripMargin)
+            s"""|#! /usr/bin/python
+                |import json, sys
+                |for l in sys.stdin:
+                |  print "\t".join(['abcdefg', "2"])
+                |
+                |""".stripMargin)
 
 
         val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
@@ -663,8 +740,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       log.info(t.getAbsolutePath)
 
       writeToFile(t, s"""
-        |psql -c "INSERT INTO testtable VALUES ('I should be in the table');"
-        |psql -c "INSERT INTO testtable VALUES ('I should also be in the table');"
+        | ${sqlScriptPrefix} "INSERT INTO testtable VALUES ('I should be in the table');"
+        | ${sqlScriptPrefix} "INSERT INTO testtable VALUES ('I should also be in the table');"
       """.stripMargin)
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
@@ -700,8 +777,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       log.info(t.getAbsolutePath)
 
       writeToFile(t, s"""
-        |psql -c "INSERT INTO testtable VALUES ('I should be in the table');"
-        |psql -c "INSERT INTO testtable VALUES ('I should also be in the table');"
+        |${sqlScriptPrefix} "INSERT INTO testtable VALUES ('I should be in the table');"
+        |${sqlScriptPrefix} "INSERT INTO testtable VALUES ('I should also be in the table');"
       """.stripMargin)
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
@@ -736,12 +813,12 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       log.info(t.getAbsolutePath)
 
       writeToFile(t, s"""
-        |psql -c "INSERT INTO testtable VALUES ('I should be in the table');"
-        |psql -c "INSERT INTO testtable VALUES ('I should also be in the table');"
+        |${sqlScriptPrefix} "INSERT INTO testtable VALUES ('I should be in the table');"
+        |${sqlScriptPrefix} "INSERT INTO testtable VALUES ('I should also be in the table');"
       """.stripMargin)
 
       writeToFile(t4, s"""
-        |psql -c "DELETE FROM testtable WHERE a='I should be in the table';"
+        |${sqlScriptPrefix} "DELETE FROM testtable WHERE a='I should be in the table';"
       """.stripMargin)
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
@@ -781,12 +858,12 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       log.info(t.getAbsolutePath)
 
       writeToFile(t, s"""
-        |psql -c "INSERT INTO testtable VALUES ('I should be in the table');"
-        |psql -c "INSERT INTO testtable VALUES ('I should also be in the table');"
+        |${sqlScriptPrefix} "INSERT INTO testtable VALUES ('I should be in the table');"
+        |${sqlScriptPrefix} "INSERT INTO testtable VALUES ('I should also be in the table');"
       """.stripMargin)
 
       writeToFile(t4, s"""
-        |psql -c "DELETEAAAAAAA FROM testtable WHERE a='I should be in the table';"
+        |${sqlScriptPrefix} "DELETEAAAAAAA FROM testtable WHERE a='I should be in the table';"
       """.stripMargin)
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
