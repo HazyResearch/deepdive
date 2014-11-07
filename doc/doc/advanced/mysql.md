@@ -19,6 +19,10 @@ Extractor types: only [tsv_extractor](../basics/extractors.html#tsv_extractor),
 [sql_extractor](../basics/extractors.html#sql_extractor) 
 and [cmd_extractor](../basics/extractors.html#cmd_extractor) are supported.
 
+When loading data into MySQL server, DeepDive by default uses `LOAD DATA INFILE`.
+If you want loading data from the client (`LOAD DATA LOCAL INFILE`), 
+specify an environment variable `MYSQL_LOCAL_INFILE=1`.
+
 When using TSV extractor, make sure you are aware of the following caveats:
 
 - `NULL` columns in extractor input

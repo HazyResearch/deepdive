@@ -165,9 +165,15 @@ class DataLoader extends JdbcDataStore with Logging {
         case Psql => writebackPrefix + s"'psql " + Helpers.getOptionString(dbSettings) + 
           "-c \"COPY " + s"${tablename} FROM STDIN;" + 
           " \" < $0'"
-        case Mysql => writebackPrefix +
+        case Mysql => 
+          s"find ${filepath} -print0 | xargs -0 -P ${parallelism} -L 1 bash -c " +
           s"'mysql " + Helpers.getOptionString(dbSettings) + 
-            "-e \"LOAD DATA LOCAL INFILE " + 
+            "-e \"LOAD DATA " + 
+            // branch if user want to load data from client or server
+            s"${System.getenv("MYSQL_LOCAL_INFILE") match {
+              case "1" => "LOCAL"
+              case _ => ""
+            }}" + " INFILE " + 
             """ '"'"'$0'"'"' """ + s" INTO TABLE ${tablename};" +
             """ "' """ 
           // mysqlimport requires input file to have basename that is same as 
