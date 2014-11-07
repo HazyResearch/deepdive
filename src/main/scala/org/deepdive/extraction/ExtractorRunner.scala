@@ -438,11 +438,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
     log.debug(s"Temporary UDF file saved to ${udfTmpFile.getAbsolutePath()}")
     executeScriptOrFail(udfTmpFile.getAbsolutePath(), taskSender)
 
-    // Copy each of the files into the DB. If user is using Greenplum, use gpload
-
-    val checkGreenplumSQL = s"""
-              SELECT version() LIKE '%Greenplum%';
-            """
+    // Copy each of the files into the DB. If user is using Greenplum, use gpload (TODO)
 
     // TODO merge this -name change to the master code
     val writebackPrefix = s"find ${fpath} -name '${fname}-*.out' -print0 | xargs -0" +

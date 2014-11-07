@@ -29,7 +29,6 @@ env:
 notifications:
   email:
     - deepdive-dev@lists.stanford.edu
-    # - zifeishan@gmail.com
 before_script:
   - unzip lib/dw_linux.zip -d /tmp/
   - psql -c 'create database deepdive_test;' -U postgres

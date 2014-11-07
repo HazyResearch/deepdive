@@ -79,21 +79,21 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with JdbcDataStore {
   describe("Loading data using DataLoader") {
     it("""should work with COPY""") {
       log.debug("DEBUG start testing!!")
-      SQL(s"""DROP TABLE IF EXISTS loader CASCADE;""").execute.apply()
-      SQL(s"""CREATE TABLE loader(feature text, is_correct boolean, id bigint);""").execute.apply()
+      SQL(s"""DROP TABLE IF EXISTS dataloader1 CASCADE;""").execute.apply()
+      SQL(s"""CREATE TABLE dataloader1(feature text, is_correct boolean, id bigint);""").execute.apply()
       val tsvFile = getClass.getResource("/dataloader1.tsv").getFile
-      du.load(new File(tsvFile).getAbsolutePath(), "loader", dbSettings, false)
+      du.load(new File(tsvFile).getAbsolutePath(), "dataloader1", dbSettings, false)
 
       // JdbcDataStore.executeSqlQueryWithCallback(sql)(op)
       var result1 = ""
       var result2 = false
       var result3 = ""
       var result4 = 0
-      JdbcDataStore.executeSqlQueryWithCallback(s"""SELECT * FROM loader WHERE id = 0""") { rs =>
+      JdbcDataStore.executeSqlQueryWithCallback(s"""SELECT * FROM dataloader1 WHERE id = 0""") { rs =>
         result1 = rs.getString("feature")
         result2 = rs.getBoolean("is_correct")
       }
-      JdbcDataStore.executeSqlQueryWithCallback(s"""SELECT * FROM loader WHERE is_correct = false""") { rs =>
+      JdbcDataStore.executeSqlQueryWithCallback(s"""SELECT * FROM dataloader1 WHERE is_correct = false""") { rs =>
         result3 = rs.getString("feature")
         result4 = rs.getInt("id")
       }
@@ -115,11 +115,11 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with JdbcDataStore {
     }
 
     it("""should work with COPY with wildcard in filename""") {
-      SQL(s"""DROP TABLE IF EXISTS loader CASCADE;""").execute.apply()
-      SQL(s"""CREATE TABLE loader(feature text, is_correct boolean, id bigint);""").execute.apply()
+      SQL(s"""DROP TABLE IF EXISTS dataloader1 CASCADE;""").execute.apply()
+      SQL(s"""CREATE TABLE dataloader1(feature text, is_correct boolean, id bigint);""").execute.apply()
       val tsvFile = getClass.getResource("/dataloader1.tsv").getFile
       val filePath = new File(tsvFile).getParent() + "/dataloader*.tsv"
-      du.load(filePath, "loader", dbSettings, false)
+      du.load(filePath, "dataloader1", dbSettings, false)
       // val result1 = SQL(s"""SELECT * FROM loader WHERE id = 0""").map(rs => rs.string("feature")).single.apply().get 
       // val result2 = SQL(s"""SELECT * FROM loader WHERE id = 0""").map(rs => rs.boolean("is_correct")).single.apply().get 
       // val result3 = SQL(s"""SELECT * FROM loader WHERE is_correct = false""").map(rs => rs.string("feature")).single.apply() 
@@ -128,11 +128,11 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with JdbcDataStore {
       var result2 = false
       var result3 = ""
       var result4 = 0
-      JdbcDataStore.executeSqlQueryWithCallback(s"""SELECT * FROM loader WHERE id = 0""") { rs =>
+      JdbcDataStore.executeSqlQueryWithCallback(s"""SELECT * FROM dataloader1 WHERE id = 0""") { rs =>
         result1 = rs.getString("feature")
         result2 = rs.getBoolean("is_correct")
       }
-      JdbcDataStore.executeSqlQueryWithCallback(s"""SELECT * FROM loader WHERE is_correct = false""") { rs =>
+      JdbcDataStore.executeSqlQueryWithCallback(s"""SELECT * FROM dataloader1 WHERE is_correct = false""") { rs =>
         result3 = rs.getString("feature")
         result4 = rs.getInt("id")
       }

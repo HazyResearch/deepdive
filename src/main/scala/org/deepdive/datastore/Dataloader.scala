@@ -107,6 +107,8 @@ class DataLoader extends JdbcDataStore with Logging {
    *
    * For greenplum, use gpload; for postgres, use \copy
    *
+   * For MySQL, make sure file basenames are the same as table name.
+   *
    * @param filepath: the absolute path of the input file, it can contain wildchar characters
    * @param tablename: the table to be copied to
    * @param dbSettings: database settings (DD's class)
@@ -166,19 +168,23 @@ class DataLoader extends JdbcDataStore with Logging {
           "-c \"COPY " + s"${tablename} FROM STDIN;" + 
           " \" < $0'"
         case Mysql => 
-          s"find ${filepath} -print0 | xargs -0 -P ${parallelism} -L 1 bash -c " +
-          s"'mysql " + Helpers.getOptionString(dbSettings) + 
-            "-e \"LOAD DATA " + 
-            // branch if user want to load data from client or server
-            s"${System.getenv("MYSQL_LOCAL_INFILE") match {
-              case "1" => "LOCAL"
-              case _ => ""
-            }}" + " INFILE " + 
-            """ '"'"'$0'"'"' """ + s" INTO TABLE ${tablename};" +
-            """ "' """ 
-          // mysqlimport requires input file to have basename that is same as 
-          // tablename. Do not use it now.
-          // s"'mysqlimport --local " + Helpers.getOptionString(dbSettings) + " $0'"
+          writebackPrefix + s"'mysqlimport --local " + Helpers.getOptionString(dbSettings) +
+          " $0'"
+          // // for MySQL (cluster), it is faster to load data with many threads
+          // // (use as much as number of extractor) than single-threaded load.
+          // s"find ${filepath} -print0 | xargs -0 -P ${parallelism} -L 1 bash -c " +
+          // s"'mysql " + Helpers.getOptionString(dbSettings) + 
+          //   "-e \"LOAD DATA " + 
+          //   // branch if user want to load data from client or server
+          //   s"${System.getenv("MYSQL_LOCAL_INFILE") match {
+          //     case "1" => "LOCAL"
+          //     case _ => ""
+          //   }}" + " INFILE " + 
+          //   """ '"'"'$0'"'"' """ + s" INTO TABLE ${tablename};" +
+          //   """ "' """ 
+          // // mysqlimport requires input file to have basename that is same as 
+          // // tablename. Do not use it now.
+          // // s"'mysqlimport --local " + Helpers.getOptionString(dbSettings) + " $0'"
       }
       
       log.info(writebackCmd)
