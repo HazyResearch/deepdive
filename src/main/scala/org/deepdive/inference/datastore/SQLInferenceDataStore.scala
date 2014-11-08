@@ -10,7 +10,7 @@ import org.deepdive.settings._
 import play.api.libs.json._
 import scalikejdbc._
 import scala.util.matching._
-import scala.io.Source
+import scala.io.Sourceb
 import scala.util.Random
 import scala.sys.process._
 import scala.util.{Try, Success, Failure}
@@ -839,15 +839,26 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
             SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} AS cardinality
             FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")} LIMIT 0;""")
 
+          execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactor}_2 CASCADE;
+            CREATE TABLE ${weighttableForThisFactor}_2 AS 
+            SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} AS cardinality
+            FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")} LIMIT 0;""")
+
+
           // weight id
           execute(s"""ALTER TABLE ${weighttableForThisFactor} ADD COLUMN id bigint;""")
-	
+	  execute(s"""ALTER TABLE ${weighttableForThisFactor}_2 ADD COLUMN id bigint;""")
+
           execute(s"""
-            INSERT INTO ${weighttableForThisFactor}
+            INSERT INTO ${weighttableForThisFactor}_2
             SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} as cardinality, 0 AS id
             FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")}
             ORDER BY ${weightlist}, cardinality;""")
 
+          execute(s"""
+            INSERT INTO ${weighttableForThisFactor}
+            SELECT * FROM ${weighttableForThisFactor}_2
+            ORDER BY ${weightlist}, cardinality;""")
 	  
 	  //executeQuery(s"""select fast_seqassign('${weighttableForThisFactor}', ${cweightid});
 	  //""")
