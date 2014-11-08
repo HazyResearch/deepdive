@@ -12,6 +12,7 @@ with the same name in the database:
      Schema |                     Name                     |   Type   
     --------+----------------------------------------------+----------
      public | dd_graph_variables_holdout                   | table    
+     public | dd_graph_variables_observation               | table    
      public | dd_graph_weights                             | table    
      public | dd_graph_weights_id_seq                      | sequence 
      public | dd_inference_result_variables                | table    
@@ -30,6 +31,8 @@ of a variable in the corresponding table.
 Description of each schema:
 
 - `dd_graph_variables_holdout`: a table that contains all variable ids that are used for holdout. Can be used for custom holdout by a [holdout query](../basics/calibration.html#custom_holdout).
+
+- `dd_graph_variables_observation`: a table that contains all variable ids that are evidence that will not be fitted during learning. An usage example of this table can be found [here](../basics/configuration.html#calibration).
 
 - `dd_graph_weights`: a table that contains all the materialized weights.
 

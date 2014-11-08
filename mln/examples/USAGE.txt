@@ -1,0 +1,13 @@
+This folder contains several sample MLNs. We are thankful to Andrew McCallum and U. Washington for sharing these data.
+
+1. SMOKE.
+The famous SMOKING toy problem. Note that according to this program, the friendship closure of any smoker will all smoke and get cancer!
+
+2. CSE. 
+This is the UW-CSE dataset/program available at http://alchemy.cs.washington.edu/mlns/uw-cse/. The weights are learned using Alchemy.
+
+3. IE.
+This is the Information Extraction dataset/program available at http://alchemy.cs.washington.edu/mlns/ie/. The weights are learned using Alchemy.
+
+4. CLASS.
+This is a Relational Classification task. The program is crafted by us, and the dataset is based on the "Cora Research Paper Classification" data available at http://www.cs.umass.edu/~mccallum/code-data.html.

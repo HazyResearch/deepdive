@@ -1,0 +1,28 @@
+1.0000 Entails("store","store")
+0.4608 Entails("a squirrel","some animals")
+1.0000 Entails("food","food")
+1.0000 Entails("prepare","prepare")
+1.0000 Entails("nuts","nuts")
+1.0000 Entails("a squirrel","a squirrel")
+1.0000 Entails("the long winters","the long winters")
+0.1588 Entails("prepare","a seasonal change in the environment")
+1.0000 Entails("a seasonal change in the environment","a seasonal change in the environment")
+1.0000 Entails("some animals","some animals")
+// Evidence for Some(When some animals prepare for the long winters by storing food and going dormant it is called hibernation)
+
+Event(Var1)
+Entity(Var2)
+// Evidence for LHS(Question) => LHS(Some(When some animals prepare for the long winters by storing food and going dormant it is called hibernation))
+
+Entity(Var3)
+// Evidence for RHS(Some(When some animals prepare for the long winters by storing food and going dormant it is called hibernation)) => RHS(Question)
+
+Entity(Var4)
+// Question Setup 
+
+For(Var7, Var6)
+IsaEv(Var7, "prepare")
+IsaEn(Var6, "a seasonal change in the environment")
+Agent(Var7, Var5)
+IsaEn(Var5, "a squirrel")
+

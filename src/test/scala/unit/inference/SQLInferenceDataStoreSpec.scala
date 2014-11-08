@@ -72,7 +72,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         val holdoutFraction = 0.0
 
         // Ground the graph
-        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction, None, false, "", dbSettings, false)
+        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), CalibrationSettings(holdoutFraction, None, None), false, "", dbSettings, false)
 
         // Check the result
         val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")
@@ -123,7 +123,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         val holdoutFraction = 0.0
 
         // Ground the graph
-        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction, None, false, "", dbSettings, false)
+        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), CalibrationSettings(holdoutFraction, None, None), false, "", dbSettings, false)
 
         // Check the result
         val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")
@@ -174,7 +174,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         val holdoutFraction = 0.0
 
         // Ground the graph
-        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction, None, false, "", dbSettings, false)
+        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), CalibrationSettings(holdoutFraction, None, None), false, "", dbSettings, false)
 
         // Check the result
         val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")
@@ -222,7 +222,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         val customHoldoutQuery = """
           INSERT INTO dd_graph_variables_holdout(variable_id)
           SELECT id FROM r1 WHERE weight <= 10;"""
-        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction, Option(customHoldoutQuery), false, "", dbSettings, false)
+        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), CalibrationSettings(holdoutFraction, Option(customHoldoutQuery), None), false, "", dbSettings, false)
 
 
         val numHoldout = SQL(s"""SELECT COUNT(*) AS "count" FROM r1
@@ -230,6 +230,75 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
           AND is_correct = true;""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numHoldout === 5)
+
+      }
+
+      it("should work with custom a observation query") {
+        inferenceDataStore.init()
+        
+        // Insert sample data
+        SQL(s"""CREATE TABLE r1(weight int,
+          is_correct boolean, id bigint);""").execute.apply()        
+        val data = (1 to 100).map { i =>
+          Map("id" -> i, "weight" -> i, "is_correct" -> s"${i%2==0}".toBoolean)
+        }
+        dataStoreHelper.bulkInsert("r1", data.iterator)
+
+        val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
+
+        // Build the factor description
+        val factorDesc = FactorDesc("testFactor", 
+            """SELECT id AS "r1.id", weight AS "weight", is_correct AS "r1.is_correct" FROM r1""", 
+          IsTrueFactorFunction(Seq("r1.is_correct")), 
+          UnknownFactorWeight(List("weight")), "weight_prefix")
+        val holdoutFraction = 0.0
+
+        // Ground the graph with custom observation
+        val observationQuery = """
+          INSERT INTO dd_graph_variables_observation(variable_id)
+          SELECT id FROM r1 WHERE weight <= 10;"""
+        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), CalibrationSettings(holdoutFraction, None, Option(observationQuery)), false, "", dbSettings, false)
+
+
+        val numHoldout = SQL(s"""SELECT COUNT(*) AS "count" FROM r1
+          WHERE id IN (SELECT variable_id FROM ${inferenceDataStore.VariablesObservationTable}) 
+          AND is_correct = true;""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numHoldout === 5)
+
+      }
+
+      it("should work with an observation query") {
+        inferenceDataStore.init()
+        
+        // Insert sample data
+        SQL(s"""CREATE TABLE r1(weight ${inferenceDataStore.stringType},
+          is_correct boolean, id bigint);""").execute.apply()        
+        val data = (1 to 100).map { i =>
+          Map("id" -> i, "weight" -> s"weight_${i}", "is_correct" -> s"${i%2==0}".toBoolean)
+        }
+        dataStoreHelper.bulkInsert("r1", data.iterator)
+
+        val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
+
+        // Build the factor description
+        val factorDesc = FactorDesc("testFactor", 
+            """SELECT id AS "r1.id", weight AS "weight", is_correct AS "r1.is_correct" FROM r1""", 
+          IsTrueFactorFunction(Seq("r1.is_correct")), 
+          UnknownFactorWeight(List("weight")), "weight_prefix")
+        val holdoutFraction = 0.0
+
+        // Ground the graph with an observation query
+        val observationQuery = """
+          INSERT INTO dd_graph_variables_observation(variable_id)
+          SELECT id FROM r1 WHERE id < 10;"""
+        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), CalibrationSettings(holdoutFraction, None, Option(observationQuery)), false, "", dbSettings, false)
+
+
+        val numObservation = SQL(s"""SELECT COUNT(*) AS "count" FROM r1
+          WHERE id IN (SELECT variable_id FROM ${inferenceDataStore.VariablesObservationTable});""")
+          .map(rs => rs.long("count")).single.apply().get
+        assert(numObservation === 10)
 
       }
 
@@ -253,7 +322,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
 
         // Ground the graph
         intercept[RuntimeException] {
-          inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction, None, false, "", dbSettings, false)
+          inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), CalibrationSettings(holdoutFraction, None, None), false, "", dbSettings, false)
         }
 
       }
@@ -281,8 +350,9 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
           WHERE r1.id = (r2.id-100)""",
           AndFactorFunction(Seq("r1.is_correct", "r2.is_correct")), 
           UnknownFactorWeight(List("weight")), "weight_prefix")
-
-        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), 0.0, None, false, "", dbSettings, false)
+        
+        val holdoutFraction = 0.0
+        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), CalibrationSettings(holdoutFraction, None, None), false, "", dbSettings, false)
 
         val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")
           .map(rs => rs.long("count")).single.apply().get
@@ -320,7 +390,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         val holdoutFraction = 0.0
 
         // Ground the graph
-        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction, None, false, "", dbSettings, false)
+        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), CalibrationSettings(holdoutFraction, None, None), false, "", dbSettings, false)
 
         val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")
           .map(rs => rs.long("count")).single.apply().get
@@ -356,7 +426,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         val holdoutFraction = 0.0
 
         // Ground the graph
-        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction, None, false, "", dbSettings, false)
+        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), CalibrationSettings(holdoutFraction, None, None), false, "", dbSettings, false)
 
         val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")
           .map(rs => rs.long("count")).single.apply().get
@@ -392,7 +462,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         val holdoutFraction = 0.0
 
         // Ground the graph
-        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction, None, false, "", dbSettings, false)
+        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), CalibrationSettings(holdoutFraction, None, None), false, "", dbSettings, false)
 
         val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")
           .map(rs => rs.long("count")).single.apply().get
@@ -436,7 +506,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         val holdoutFraction = 0.0
 
         // Ground the graph
-        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), holdoutFraction, None, false, "", dbSettings, false)
+        inferenceDataStore.groundFactorGraph(schema, Seq(factorDesc), CalibrationSettings(holdoutFraction, None, None), false, "", dbSettings, false)
 
         val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceDataStore.WeightsTable}""")
           .map(rs => rs.long("count")).single.apply().get
@@ -462,7 +532,8 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
 
       it("should work") {
         inferenceDataStore.init()
-        inferenceDataStore.groundFactorGraph(Map(), Seq(), 0.0, None, false, "", dbSettings, false)
+        val holdoutFraction = 0.0
+        inferenceDataStore.groundFactorGraph(Map(), Seq(), CalibrationSettings(holdoutFraction, None, None), false, "", dbSettings, false)
         SQL(s"""create table has_spouse(id ${inferenceDataStore.keyType} primary key, is_true boolean)""").execute.apply()
         inferenceDataStore.writebackInferenceResult(schema, variablesFile, weightsFile, false, dbSettings)
       }

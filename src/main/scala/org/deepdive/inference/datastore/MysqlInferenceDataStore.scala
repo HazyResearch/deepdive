@@ -88,13 +88,11 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
     def cast(expr: Any, toType: String): String = 
       toType match {
         // convert text/varchar to char(N) where N is max length of given
-        case "text" => s"convert(${expr.toString()}, char)"
-        case "varchar" => s"convert(${expr.toString()}, char)"
+        case "text" | "varchar" => s"convert(${expr.toString()}, char)"
         // in mysql, convert to unsigned guarantees bigint.
         // @see http://stackoverflow.com/questions/4660383/how-do-i-cast-a-type-to-a-bigint-in-mysql
-        case "bigint" => s"convert(${expr.toString()}, unsigned)"
-        case "int" => s"convert(${expr.toString()}, unsigned)"
-        case "real" => s"${expr.toString()} + 0.0"
+        case "bigint" | "int" => s"convert(${expr.toString()}, unsigned)"
+        case "real" | "float" | "double" => s"${expr.toString()} + 0.0"
         // for others, try to convert as it is expressed.
         case _ => s"convert(${expr.toString()}, ${toType})"
       }

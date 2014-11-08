@@ -417,7 +417,7 @@ Configuration directives to control the inference steps go in the global
 
   The default value depends on the used datastore (50000 for PostgreSQL).
 
-- <a name="skip_learning" href="#"></a> `inference.skip_learning`: if `true`,
+<!-- - <a name="skip_learning" href="#"></a> `inference.skip_learning`: if `true`,
   DeepDive will skip the learning step for the factor weights and reuse the
   weights learned in the last execution. It will generate a table
   `dd_graph_last_weights` containing all the weights.  Weights will be matched
@@ -446,7 +446,7 @@ Configuration directives to control the inference steps go in the global
     ```bash
     inference.skip_learning: true
     inference.weight_table: [weight table name]
-    ```
+    ``` -->
 - <a href="parallelgrounding" href="#"></a> `inference.parallel_grounding`. If
   set to `true` and you are using <a href="../advanced/greenplum.html">GreenPlum
   on DeepDive</a>, use <a
@@ -561,8 +561,8 @@ The available directives are:
       holdout_fraction: 0.25
     }
     ```
-- `holdout_query`: specifies a custom query to be use to define the holdout set.
-  The must insert all variable IDs that are to be held out into the
+- `holdout_query`: specifies a custom query to be used to define the holdout set.
+  This must insert all variable IDs that are to be held out into the
   `dd_graph_variables_holdout` table through arbitrary SQL. E.g.:
  
     ```bash
@@ -573,6 +573,14 @@ The available directives are:
 
   When a custom holdout query is defined in `holdout_query`, the
   `holdout_fraction` setting is ignored. 
+
+- `observation_query`: specifies a custom query to be used to define observation only evidence. Observation only evidence will not be fitted during weight learning. So there will be 3 kinds of variables during learning -- evidence that will be fitted, evidence that will not be fitted and non-evidence variables. This query must insert all variable IDs that are observation only evidence into the `dd_graph_variables_observation` table through arbitrary SQL. E.g.:
+ 
+    ```bash
+    calibration: {
+      observation_query: "INSERT INTO dd_graph_variables_observation SELECT id FROM mytable WHERE predicate"
+    }
+    ```
 
 
 ## <a name="pipelines" href="#"></a> Pipelines

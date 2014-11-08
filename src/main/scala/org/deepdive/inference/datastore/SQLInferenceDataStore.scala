@@ -46,6 +46,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def MappedInferenceResultView = "dd_mapped_inference_result"
   def IdSequence = "dd_variable_sequence"
   def FactorMetaTable = "dd_graph_factormeta"
+  def VariablesObservationTable = "dd_graph_variables_observation"
+
+
     
   // Datastore-specific methods:
   // Below are methods to implement in any type of datastore.
@@ -432,7 +435,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
    * TODO: This method is way too long and needs to be split.
    */
   def groundFactorGraph(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
-    holdoutFraction: Double, holdoutQuery: Option[String], skipLearning: Boolean, weightTable: String, 
+    calibrationSettings: CalibrationSettings, skipLearning: Boolean, weightTable: String, 
     dbSettings: DbSettings, parallelGrounding: Boolean) {
 
     val du = new DataLoader
@@ -485,7 +488,16 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     execute(s"""DROP TABLE IF EXISTS ${VariablesHoldoutTable} CASCADE;
       CREATE TABLE ${VariablesHoldoutTable}(variable_id bigint primary key);
       """)
-    holdoutQuery match {
+    calibrationSettings.holdoutQuery match {
+      case Some(query) => execute(query)
+      case None =>
+    }
+
+    // variable observation table
+    execute(s"""DROP TABLE IF EXISTS ${VariablesObservationTable} CASCADE;
+      CREATE TABLE ${VariablesObservationTable}(variable_id bigint primary key);
+      """)
+    calibrationSettings.observationQuery match {
       case Some(query) => execute(query)
       case None =>
     }
@@ -513,12 +525,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       } else {
         // This cannot be parsed in def randFunc for now.
         // assign holdout - if not user-defined, randomly select from evidence variables of each variable table
-        holdoutQuery match {
+        calibrationSettings.holdoutQuery match {
           case Some(s) =>
           case None => execute(s"""
             INSERT INTO ${VariablesHoldoutTable}
             SELECT id FROM ${relation}
-            WHERE ${randomFunction} < ${holdoutFraction} AND ${column} IS NOT NULL;
+            WHERE ${randomFunction} < ${calibrationSettings.holdoutFraction} AND ${column} IS NOT NULL;
             """)
         }
       }
@@ -539,40 +551,43 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         INSERT INTO ${cardinalityTableName} VALUES ${cardinalityValues};
         """)
 
-      if(variableDataType == 2 || variableDataType == 3){
-        // dump variables, 
-        // variable table join with holdout table - a variable is an evidence if it has initial value and it is not holdout
-        du.unload(s"dd_variables_${relation}", s"${groundingPath}/dd_variables_${relation}", dbSettings, parallelGrounding,
-          s"""SELECT id,  ${cast(1, "int")} AS is_evidence, ${cast(column, "int")} + 0.0 AS initvalue, ${variableDataType} AS type, 
-            ${cardinality} AS cardinality  
-          FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable}
-          ON ${relation}.id = ${VariablesHoldoutTable}.variable_id
-          WHERE ${column} IS NOT NULL AND ${VariablesHoldoutTable}.variable_id IS NULL
-          UNION ALL
-          SELECT id,  ${cast(0, "int")} AS is_evidence, 0.0 AS initvalue, ${variableDataType} AS type, 
-            ${cardinality} AS cardinality  
-          FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable}
-          ON ${relation}.id = ${VariablesHoldoutTable}.variable_id
-          WHERE ${column} IS NULL OR ${VariablesHoldoutTable}.variable_id IS NOT NULL;
-          """)
-      }else{
-        // dump variables, 
-        // variable table join with holdout table - a variable is an evidence if it has initial value and it is not holdout
-        du.unload(s"dd_variables_${relation}", s"${groundingPath}/dd_variables_${relation}", dbSettings, parallelGrounding,
-          s"""SELECT id, ${cast(1, "int")} AS is_evidence, 
-          ${cast(column, "int")} + 0.0 AS initvalue, ${variableDataType} AS type, 
-          ${cardinality} AS cardinality  
-          FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable}
-          ON ${relation}.id = ${VariablesHoldoutTable}.variable_id
-          WHERE ${column} IS NOT NULL AND ${VariablesHoldoutTable}.variable_id IS NULL
-          UNION ALL
-          SELECT id, ${cast(0, "int")} AS is_evidence, 0.0 AS initvalue, ${variableDataType} AS type, 
-            ${cardinality} AS cardinality  
-          FROM ${relation} LEFT OUTER JOIN ${VariablesHoldoutTable}
-          ON ${relation}.id = ${VariablesHoldoutTable}.variable_id
-          WHERE ${column} IS NULL OR ${VariablesHoldoutTable}.variable_id IS NOT NULL;
-          """)
+      // add a column to variable table to denote variable type - query, evidence, observation
+      // variable table join with holdout table 
+      // - a variable is an evidence if it has initial value and it is not holdout
+      val variableTypeColumn = "__dd_variable_type__"
+      execute(s"""
+        ALTER TABLE ${relation} ADD COLUMN ${variableTypeColumn} int;
+        """)
+      execute(s"""
+        UPDATE ${relation} SET ${variableTypeColumn} = ${cast( s"${column} IS NOT NULL", "int" )};
+        UPDATE ${relation} SET ${variableTypeColumn} = 0 
+        WHERE ${relation}.id IN (SELECT variable_id FROM ${VariablesHoldoutTable});
+        """)
+
+      // assign observation
+      calibrationSettings.observationQuery match {
+      case Some(query) => execute(s"""
+        UPDATE ${relation} SET ${variableTypeColumn} = 2
+        WHERE ${relation}.id IN (SELECT variable_id FROM ${VariablesObservationTable})
+          AND ${relation}.${column} IS NOT NULL;
+        """)
+      case None =>
       }
+
+      // dump variables
+      val initvalueCast = variableDataType match {
+        case 2 | 3 => cast(column, "float")
+        case _ => cast(cast(column, "int"), "float")
+      }
+      du.unload(s"variables_${relation}", s"${groundingPath}/dd_variables_${relation}", 
+        dbSettings, parallelGrounding,
+        s"""SELECT id, ${variableTypeColumn}, 
+        CASE WHEN ${variableTypeColumn} = 0 THEN 0 ELSE ${initvalueCast} END AS initvalue, 
+        ${variableDataType} AS type, ${cardinality} AS cardinality
+        FROM ${relation}
+        """)
+
+      execute(s"""ALTER TABLE ${relation} DROP COLUMN ${variableTypeColumn} CASCADE;""")
 
     }
 
