@@ -1,0 +1,31 @@
+NDB Loader for MySQL cluster
+====
+
+This loader is used to load TSV data into MySQL cluster.
+
+
+Prerequisite
+----
+An installed MySQL cluster. Make sure PATH are configured.
+
+
+Build
+----
+Run `./build.sh` to build a binary in ./ndbloader
+
+
+Run
+----
+
+On Mac:
+
+    DYLD_LIBRARY_PATH=/Users/zifei/package/mysql/lib ./ndbloader conn_string database data_file table_format_file [nParallelTransactions=10000] [milliSleep=0]
+
+On Linux:
+
+    LD_LIBRARY_PATH=/Users/zifei/package/mysql/lib ./ndbloader conn_string database data_file table_format_file [nParallelTransactions=10000] [milliSleep=0]
+
+Caveats
+----
+
+See ndbloader documentation in DeepDive.

@@ -18,11 +18,11 @@ rm ndbloader.o
 
 case $(uname) in
   Darwin)
-    echo "RUN: DYLD_LIBRARY_PATH="`mysql_config --variable=pkglibdir`" ./ndbloader conn_string database data_file table_format_file [nParallelTransactions=10000] [milliSleep=0]"
+    echo "RUN: DYLD_LIBRARY_PATH="`mysql_config --variable=pkglibdir`" ./ndbloader conn_string database data_file table_format_file [nParallelTransactions=60] [milliSleep=0]"
     ;;
 
   Linux*)
-    echo "RUN: LD_LIBRARY_PATH="`mysql_config --variable=pkglibdir`" ./ndbloader conn_string database data_file table_format_file [nParallelTransactions=10000] [milliSleep=0]"
+    echo "RUN: LD_LIBRARY_PATH="`mysql_config --variable=pkglibdir`" ./ndbloader conn_string database data_file table_format_file [nParallelTransactions=60] [milliSleep=0]"
     ;;
 
   *)
