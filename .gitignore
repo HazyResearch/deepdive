@@ -11,3 +11,7 @@ hsql:*
 *.pyc
 /lib/dw_mac
 /lib/dw_linux
+.cache
+.classpath
+.idea/
+.project

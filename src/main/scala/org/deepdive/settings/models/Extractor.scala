@@ -14,4 +14,7 @@ case class Extractor(
   beforeScript: Option[String] = None, 
   afterScript: Option[String] = None, 
   sqlQuery: String = "",
-  cmd: Option[String] = None)
+  cmd: Option[String] = None,
+  loader: String = "",
+  loaderConfig: LoaderConfig = null
+  )

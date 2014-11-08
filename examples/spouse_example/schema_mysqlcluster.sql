@@ -41,7 +41,7 @@ CREATE TABLE has_spouse(
   is_true boolean,
   relation_id varchar(255), -- unique identifier for has_spouse
   id bigint -- NOT NULL AUTO_INCREMENT,   -- reserved for DeepDive
-  , PRIMARY KEY (person1_id, relation_id) -- this works for ndb
+  , PRIMARY KEY (person1_id, person2_id) -- this works for ndb
   ) engine=ndb PARTITION BY KEY (person1_id)
   ;
 

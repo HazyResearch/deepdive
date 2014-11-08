@@ -104,8 +104,21 @@ object SettingsParser extends Logging {
           val dependencies = Try (extractorConfig.getStringList ("dependencies").toSet).getOrElse (Set () )
           val beforeScript = Try (extractorConfig.getString ("before") ).toOption
           val afterScript = Try (extractorConfig.getString ("after") ).toOption
+          val loader = Try (extractorConfig.getString ("loader") ).getOrElse("")
+          val loaderConfigObj = Try (extractorConfig.getConfig ("loader_config") ).getOrElse(null)
+          val loaderConfig = loaderConfigObj match {
+            case null => null
+            case _ => LoaderConfig (
+                loaderConfigObj.getString("connection"),
+                loaderConfigObj.getString("schema"),
+                Try(loaderConfigObj.getInt("threads")).getOrElse(parallelism),
+                Try(loaderConfigObj.getInt("parallel_transactions")).getOrElse(60)
+            )
+          }
           Extractor(extractorName, style, outputRelation, inputQuery, udf, parallelism,
-            inputBatchSize, outputBatchSize, dependencies, beforeScript, afterScript, sqlQuery, cmd)
+            inputBatchSize, outputBatchSize, dependencies, beforeScript, afterScript, sqlQuery, cmd,
+            loader, loaderConfig)
+
         case "sql_extractor" | "cmd_extractor" =>
           val sqlQuery = Try (extractorConfig.getString (s"sql") ).getOrElse ("")
           val cmd = Try (extractorConfig.getString ("cmd") ).toOption

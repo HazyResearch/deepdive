@@ -7,7 +7,7 @@ export DEEPDIVE_HOME=`cd $(dirname $0)/../../../; pwd`
 
 # Database Configuration
 export DBNAME=deepdive_spouse_tsv
-
+export DYLD_LIBRARY_PATH=`mysql_config --variable=pkglibdir`:$DYLD_LIBRARY_PATH
 # Initialize database (using NDB engine)
 bash $APP_HOME/../setup_database_mysqlcluster.sh $DBNAME
 

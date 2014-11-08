@@ -207,7 +207,7 @@ class DataLoader extends JdbcDataStore with Logging {
    * @param parallelTransactionNum: number of parallel transactions sent to database for each thread
    */
   def ndbLoad(fileDirPath: String, fileNamePattern: String,
-    tablename: String, dbSettings: DbSettings, schemaFilePath: String,
+    dbSettings: DbSettings, schemaFilePath: String,
     ndbConnectionString: String,
     threadNum: Integer, parallelTransactionNum: Integer): Unit = {
     // Generate SQL query prefixes
@@ -218,12 +218,21 @@ class DataLoader extends JdbcDataStore with Logging {
 
     val writebackPrefix = s"find ${fileDirPath} -name '${fileNamePattern}' -print0 | xargs -0" +
       s" -P ${threadNum} -L 1 bash -c "
-    val ndbLoader = s"${Context.deepdiveHome}/util/ndbloader"
+    
+    val ndbLoader = {
+      val osname = System.getProperty("os.name")
+      if (osname.startsWith("Linux")) {
+        s"${Context.deepdiveHome}/util/ndbloader/ndbloader-linux"
+      }
+      else {
+        s"${Context.deepdiveHome}/util/ndbloader/ndbloader-mac"
+      }
+    }
 
     val writebackCmd = writebackPrefix + s"'${ndbLoader} ${ndbConnectionString} ${dbSettings.dbname}" +
-        " $0 " + s"${schemaFilePath} ${parallelTransactionNum}"
+        " $0 " + s"${schemaFilePath} ${parallelTransactionNum}'"
     
-    val cmdfile = File.createTempFile(s"${tablename}.copy", ".sh")
+    val cmdfile = File.createTempFile(s"ndbloader", ".sh")
     val writer = new PrintWriter(cmdfile)
 
     log.info(writebackCmd)

@@ -1,0 +1,6 @@
+people_mentions
+sentence_id varchar
+start_position int
+length int
+text varchar
+mention_id varchar
