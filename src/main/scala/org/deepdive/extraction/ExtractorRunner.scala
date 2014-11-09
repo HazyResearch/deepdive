@@ -420,10 +420,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
     log.info(s"Executing split command...")
     executeScriptOrFail(splitCmd, taskSender)
 
-    // val maxParallel = "0"  // As many as possible, which is dangerous
     val maxParallel = task.extractor.parallelism
-    
-//    val loader = task.extractor.loader
 
     // Note (msushkov): the extractor must take TSV as input and produce TSV as output
     val runCmd = s"find ${fpath} -name '${fname}-*' 2>/dev/null -print0 | xargs -0 -P ${maxParallel} -L 1 bash -c '${udfCmd} " + "<" + " \"$0\" > \"$0.out\"'"
@@ -443,11 +440,6 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
 
     // If loader specified, use the chosen loader
     
-    // TODO merge this -name change to the master code
-    val writebackPrefix = s"find ${fpath} -name '${fname}-*.out' -print0 | xargs -0" +
-      s" -P 1 -L 1 bash -c ";
-    // Only allow single-threaded copy
-
     task.extractor.loader match {
       case "ndbloader" =>
         if (dbtype != Mysql) {
@@ -474,6 +466,10 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
         }
 
       case _ =>
+        val writebackPrefix = s"find ${fpath} -name '${fname}-*.out' -print0 | xargs -0" +
+          s" -P 1 -L 1 bash -c ";
+        // Only allow single-threaded copy
+
         val writebackCmd = dbtype match {
           case Psql => writebackPrefix + s"'psql " +
             Helpers.getOptionString(dbSettings) +

@@ -38,19 +38,20 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
 
       val srcFile = new File(filePath)
 
-      // TODO test against different locations of client and server
-      val writebackCmd = "mysql " +
+      val writebackCmd = "mysql --local-infile" +
         Helpers.getOptionString(dbSettings) +
         " --silent -N -e " + "\"" +
-        s"LOAD DATA INFILE '${filePath}' " +
+        s"LOAD DATA LOCAL INFILE '${filePath}' " +
         s"INTO TABLE ${tableName} " +
         "FIELDS TERMINATED BY ' '" + "\""
 
+      log.debug(s"Executing via file: ${writebackCmd}")
       val tmpFile = File.createTempFile("copy_weight", ".sh")
       val writer = new PrintWriter(tmpFile)
       writer.println(s"${writebackCmd}")
       writer.close()
       Helpers.executeCmd(tmpFile.getAbsolutePath())
+      tmpFile.delete()
     }
     
     /**
@@ -190,7 +191,7 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
      * We use 4 statements to implement that.
      * 
      * Note: @exist will be NULL if the table do not exist, and "if" still branches into second.
-     * Note: dbname must be providen to locate the index correctly
+     * Note: dbname must be provided to locate the index correctly
      */
     private def dropIndexIfExistsMysql(indexName: String, tableName: String): String = {
       s"""
