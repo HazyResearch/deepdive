@@ -1,23 +1,30 @@
 package org.deepdive.test.integration
 
-import anorm._ 
+import anorm._
 import com.typesafe.config._
 import org.deepdive.test._
 import org.deepdive.Context
 import org.deepdive._
 import org.deepdive.datastore.{PostgresDataStore, JdbcDataStore}
+import org.deepdive.test.helpers.TestHelper
 import org.scalatest._
 import scalikejdbc.ConnectionPool
 
-
 class BiasedCoin extends FunSpec {
+
+  val config = ConfigFactory.parseString(getConfig).withFallback(ConfigFactory.load)
   
   /** insert data into db
    */
   def prepareData() {
-    JdbcDataStore.init(ConfigFactory.load)
-    PostgresDataStore.withConnection { implicit conn =>
-      SQL("drop schema if exists public cascade; create schema public;").execute()
+    JdbcDataStore.init(config)
+    JdbcDataStore.withConnection { implicit conn =>
+      TestHelper.getTestEnv() match {
+        case TestHelper.Psql =>
+          SQL("drop schema if exists public cascade; create schema public;").execute()
+        case _ =>
+      }
+      
       SQL("""create table coin(is_correct boolean, id bigint);""").execute()
       SQL("""insert into coin(is_correct) values 
         (true), (true), (true), (true),
@@ -34,6 +41,16 @@ class BiasedCoin extends FunSpec {
    */
   def getConfig = {
     s"""
+      deepdive.db.default {
+        driver: ${TestHelper.getDriverFromEnv()}
+        url: "${System.getenv("DBCONNSTRING")}"
+        user: "${System.getenv("DBUSER")}"
+        password: "${System.getenv("DBPASSWORD")}"
+        dbname: "${System.getenv("DBNAME")}"
+        host: "${System.getenv("DBHOST")}"
+        port: "${System.getenv("DBPORT")}"
+      }
+
       deepdive.schema.variables {
         coin.is_correct: Boolean
       }
@@ -53,11 +70,12 @@ class BiasedCoin extends FunSpec {
   }
 
   it("should work") {
+      
     prepareData()
-    val config = ConfigFactory.parseString(getConfig).withFallback(ConfigFactory.load)
+    
     DeepDive.run(config, "out/test_coin")
-    JdbcDataStore.init(ConfigFactory.load)
-    PostgresDataStore.withConnection { implicit conn =>
+    JdbcDataStore.init(config)
+    JdbcDataStore.withConnection { implicit conn =>
       
       // get learned weight
       val weight = SQL("select weight from dd_inference_result_weights;")().head[Double]("weight")

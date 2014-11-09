@@ -3,6 +3,7 @@ package org.deepdive.datastore
 import org.deepdive.settings._
 // import org.deepdive.datastore.JdbcDataStore
 import org.deepdive.Logging
+import org.deepdive.Context
 import org.deepdive.helpers.Helpers
 import org.deepdive.helpers.Helpers.{Psql, Mysql}
 import scala.sys.process._
@@ -14,37 +15,6 @@ class DataLoader extends JdbcDataStore with Logging {
 
   // def ds : JdbcDataStore
 
-  /** TODO move this to helper
-  def executeQuery(sql: String) = {
-    log.debug("EXECUTING.... " + sql)
-    val conn = borrowConnection()
-    conn.setAutoCommit(false)
-    val stmt = conn.createStatement();
-    try {
-      stmt.execute(sql)
-      conn.commit()
-    } catch {
-      case psqlexc : PSQLException => 
-        // Catch known bug in JDBC which throws an error when inserting more
-        // than 2^31 rows. The data is there, it's just that JDBC can't parse
-        // the return error message. 
-        val msg = psqlexc.getMessage()
-        if (! msg.contains("Unable to interpret the update count in command completion tag: INSERT")) {
-          log.error(psqlexc.toString)
-          throw psqlexc
-        } else {
-          log.info("Ignoring JDBC overflow bug")
-        }
-      case e: Throwable =>
-        log.error(e.toString)
-        throw e
-    } finally {
-      conn.close()
-    }
-    conn.close()  
-    log.debug("DONE!")
-  }*/
-
   /** Unload data of a SQL query from database to a TSV file 
    * 
    * For Greenplum, use gpfdist. Must specify gpport, gppath, gphost in dbSettings. No need for filepath
@@ -52,7 +22,7 @@ class DataLoader extends JdbcDataStore with Logging {
    * For greenplum, use gpload; for postgres, use \copy
    * 
    * @param filename: the name of the output file
-   * @param filepath: the absolute path of the output file
+   * @param filepath: the absolute path of the output file (including file name)
    * @param dbSettings: database settings (DD's class)
    * @param usingGreenplum: whether to use greenplum's gpunload
    * @param query: the query to be dumped
@@ -137,6 +107,8 @@ class DataLoader extends JdbcDataStore with Logging {
    *
    * For greenplum, use gpload; for postgres, use \copy
    *
+   * For MySQL, make sure file basenames are the same as table name.
+   *
    * @param filepath: the absolute path of the input file, it can contain wildchar characters
    * @param tablename: the table to be copied to
    * @param dbSettings: database settings (DD's class)
@@ -188,9 +160,6 @@ class DataLoader extends JdbcDataStore with Logging {
     } else {
       // Generate SQL query prefixes
       val dbtype = Helpers.getDbType(dbSettings)
-  
-      // NOTE: mysqlimport requires input file to have basename that is same as 
-      // tablename!
       val cmdfile = File.createTempFile(s"${tablename}.copy", ".sh")
       val writer = new PrintWriter(cmdfile)
       val writebackPrefix = s"find ${filepath} -print0 | xargs -0 -P 1 -L 1 bash -c ";
@@ -198,8 +167,11 @@ class DataLoader extends JdbcDataStore with Logging {
         case Psql => writebackPrefix + s"'psql " + Helpers.getOptionString(dbSettings) + 
           "-c \"COPY " + s"${tablename} FROM STDIN;" + 
           " \" < $0'"
-        case Mysql => writebackPrefix +
-          s"'mysqlimport " + Helpers.getOptionString(dbSettings) + " $0'"
+        case Mysql => 
+          writebackPrefix + s"'mysqlimport --local " + Helpers.getOptionString(dbSettings) +
+          " $0'"
+          // mysqlimport requires input file to have basename that is same as 
+          // tablename.
       }
       
       log.info(writebackCmd)
@@ -208,6 +180,53 @@ class DataLoader extends JdbcDataStore with Logging {
       Helpers.executeCmd(cmdfile.getAbsolutePath())
       cmdfile.delete()
     }
+  }
+
+  /**
+   * Load data from a TSV file to database using NDB Loader for MySQL Cluster.
+   *
+   * @param fileDirPath: the path of directory for the input files. e.g. /tmp/
+   * @param fileNamePattern: the relative filenames. Can contain wildchars. e.g. split-files.*
+   * @param tablename: the table to be copied to
+   * @param dbSettings: database settings (DD's class)
+   * @param schemaFilePath: schema file that defines the format of table to be copied to
+   * @param threadNum: number of threads that calls the ndbloader in parallel
+   * @param parallelTransactionNum: number of parallel transactions sent to database for each thread
+   */
+  def ndbLoad(fileDirPath: String, fileNamePattern: String,
+    dbSettings: DbSettings, schemaFilePath: String,
+    ndbConnectionString: String,
+    threadNum: Integer, parallelTransactionNum: Integer): Unit = {
+    // Generate SQL query prefixes
+    val dbtype = Helpers.getDbType(dbSettings)
+    assert(dbtype == Mysql)
+    log.info(s"Running ndbloader with ${threadNum} threads and allowing ${
+      parallelTransactionNum} parallel transactions for each thread")
+
+    val writebackPrefix = s"find ${fileDirPath} -name '${fileNamePattern}' -print0 | xargs -0" +
+      s" -P ${threadNum} -L 1 bash -c "
+    
+    val ndbLoader = {
+      val osname = System.getProperty("os.name")
+      if (osname.startsWith("Linux")) {
+        s"${Context.deepdiveHome}/util/ndbloader/ndbloader-linux"
+      }
+      else {
+        s"${Context.deepdiveHome}/util/ndbloader/ndbloader-mac"
+      }
+    }
+
+    val writebackCmd = writebackPrefix + s"'${ndbLoader} ${ndbConnectionString} ${dbSettings.dbname}" +
+        " $0 " + s"${schemaFilePath} ${parallelTransactionNum}'"
+    
+    val cmdfile = File.createTempFile(s"ndbloader", ".sh")
+    val writer = new PrintWriter(cmdfile)
+
+    log.info(writebackCmd)
+    writer.println(writebackCmd)
+    writer.close()
+    Helpers.executeCmd(cmdfile.getAbsolutePath())
+    cmdfile.delete()
   }
 
 }

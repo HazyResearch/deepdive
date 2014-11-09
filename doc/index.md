@@ -133,6 +133,7 @@ Advanced topics:
 - [Performance tuning](doc/advanced/performance.html)
 - [Scala developer guide for DeepDive](doc/advanced/developer.html)
 - [Using DeepDive with GreenPlum](doc/advanced/greenplum.html)
+- [Using DeepDive with MySQL / MySQL Cluster](doc/advanced/mysql.html)
 - [Using DeepDive on Ubuntu](doc/advanced/ubuntu.html)
 - [Tuffy and Markov Logic Networks (MLN)](doc/advanced/markov_logic_network.html)
 - [Amazon EC2 AMI guide](doc/advanced/ec2.html)

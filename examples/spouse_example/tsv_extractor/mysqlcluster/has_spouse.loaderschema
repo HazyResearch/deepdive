@@ -1,0 +1,8 @@
+has_spouse
+person1_id varchar
+person2_id varchar
+sentence_id varchar
+description text
+is_true boolean
+relation_id varchar
+id bigint

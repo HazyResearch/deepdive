@@ -9,10 +9,10 @@ fin = open(sys.argv[1], 'r')
 lastTag = ''
 
 for line in fin:
-  tokens = line.split(' ')
+  tokens = line.rstrip().split('\t')
   
   # empty line
-  if (tokens[0] == '\N'):
+  if (tokens[0] in ['\N', 'NULL']): # for compatibility with MySQL
     print
     lastTag = ''
     continue

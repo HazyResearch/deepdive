@@ -6,6 +6,7 @@ import org.deepdive.settings.{Extractor, DbSettings}
 import org.deepdive.extraction._
 import org.deepdive.extraction.datastore._
 import org.deepdive.helpers.Helpers
+import org.deepdive.test.helpers._
 import org.scalatest._
 import scala.util.{Try, Success, Failure}
 
@@ -30,7 +31,7 @@ class ExtractionManagerSpec(_system: ActorSystem) extends TestKit(_system)
   import ExtractionManagerSpec._
 
   def this() = this(ActorSystem("ExtractionManagerSpec"))
-  val dbSettings = DbSettings(Helpers.PsqlDriver, null, null, null, null, null, null, null, null, null)
+  val dbSettings = TestHelper.getDbSettings
 
   describe("Extraction Manager") {
     

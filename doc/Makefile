@@ -57,7 +57,7 @@ help:
 	@echo '======== DeepDive website maintenance Makefile documentation ========'
 	@echo 'If you want to make changes, BE SURE TO TEST LOCALLY, and do a "git push" first and wait for the travis test to pass before you run "make deploy".'
 	@echo ''
-	@echo 'To test the docs locally, under DEEPDIVE_HOME/doc/:'
+	@echo 'To test the docs locally, be sure to have dependency `jekyll` installed via `gem install jekyll`. Then under DEEPDIVE_HOME/doc/:'
 	@echo ''
 	@echo '    make test'
 	@echo ''

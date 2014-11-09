@@ -11,6 +11,7 @@ import org.deepdive.extraction.ExtractorRunner._
 import org.deepdive.extraction.datastore._
 import org.deepdive.extraction.datastore.ExtractionDataStore._
 import org.deepdive.Logging
+import org.deepdive.datastore.DataLoader
 import scala.util.{Try, Success, Failure}
 import scala.concurrent._
 import scala.concurrent.duration._
@@ -368,6 +369,10 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
   private def runTsvExtractor(task: ExtractionTask, dbSettings: DbSettings, taskSender: ActorRef) = {
   
     val udfCmd = task.extractor.udf
+    // make udfCmd executable if file
+    val udfFile = new java.io.File(udfCmd)
+    if (udfFile.isFile) 
+      udfFile.setExecutable(true, false)
     val funcName = s"func_${task.extractor.name}"
 
     val inputQuery = task.extractor.inputQuery match {
@@ -386,7 +391,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
       Status.Failure(new RuntimeException(s"TSV extractor directory creation failed"))
     }
 
-    // NEW: for mysqlimport compatibility, the file basename must be same as table name. 
+    // NEW: for mysqlimport compatibility, the file basename must be same as table name.
     val queryOutputFile = new File(queryOutputPath + s"${outputRel}.copy_query_${funcName}.tsv")
     // val queryOutputFile = File.createTempFile(s"copy_query_${funcName}", ".tsv")
 
@@ -415,7 +420,6 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
     log.info(s"Executing split command...")
     executeScriptOrFail(splitCmd, taskSender)
 
-    // val maxParallel = "0"  // As many as possible, which is dangerous
     val maxParallel = task.extractor.parallelism
 
     // Note (msushkov): the extractor must take TSV as input and produce TSV as output
@@ -432,38 +436,64 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
     log.debug(s"Temporary UDF file saved to ${udfTmpFile.getAbsolutePath()}")
     executeScriptOrFail(udfTmpFile.getAbsolutePath(), taskSender)
 
-    // Copy each of the files into the DB. If user is using Greenplum, use gpload
+    // Copy each of the files into the DB. If user is using Greenplum, use gpload (TODO)
 
-    val checkGreenplumSQL = s"""
-              SELECT version() LIKE '%Greenplum%';
-            """
+    // If loader specified, use the chosen loader
+    
+    task.extractor.loader match {
+      case "ndbloader" =>
+        if (dbtype != Mysql) {
+          throw new RuntimeException("ERROR: ndbloader can only be used on MySQL cluster.")
+        }
+        val loader = new DataLoader
+        val loaderConfig = task.extractor.loaderConfig
+        try {
+          loader.ndbLoad(
+            fpath,                  // fileDirPath: String,
+            s"${fname}-*.out",      // fileNamePattern: String,
+            dbSettings,             // dbSettings: DbSettings,
+            loaderConfig.schemaFile,// schemaFilePath: String,
+            loaderConfig.connection,// ndbConnectionString: String,
+            loaderConfig.threads,   // threadNum: Integer,
+            loaderConfig.parallelTransactions // parallelTransactionNum: Integer
+            )
+        } catch {
+          case exception: Throwable =>
+            log.error(exception.toString)
+            taskSender ! Status.Failure(exception)
+            context.stop(self)
+            throw exception
+        }
 
-    // TODO merge this -name change to the master code
-    val writebackPrefix = s"find ${fpath} -name '${fname}-*.out' -print0 | xargs -0" +
-      s" -P 1 -L 1 bash -c ";
-    // Only allow single-threaded copy
-    val writebackCmd = dbtype match {
-      case Psql => writebackPrefix + s"'psql " +
-        Helpers.getOptionString(dbSettings) +
-        "-c \"COPY " +
-        s"${outputRel} FROM STDIN;" + // weak matching 
-        " \" < \"$0\"'" // strong matching
-      case Mysql => writebackPrefix +
-        s"'mysqlimport " + Helpers.getOptionString(dbSettings) +
-        " $0'"
+      case _ =>
+        val writebackPrefix = s"find ${fpath} -name '${fname}-*.out' -print0 | xargs -0" +
+          s" -P 1 -L 1 bash -c ";
+        // Only allow single-threaded copy
+
+        val writebackCmd = dbtype match {
+          case Psql => writebackPrefix + s"'psql " +
+            Helpers.getOptionString(dbSettings) +
+            "-c \"COPY " +
+            s"${outputRel} FROM STDIN;" + // weak matching 
+            " \" < \"$0\"'" // strong matching
+          case Mysql => 
+            writebackPrefix +
+              s"'mysqlimport --local " + Helpers.getOptionString(dbSettings) +
+              " $0'"    
+        }
+
+        // MYSQL writeback: use mysqlimport.
+        // See: https://mariadb.com/kb/en/mariadb/documentation/clients-and-utilities/backup-restore-and-import/mysqlimport/
+        val writebackTmpFile = new File(queryOutputPath + s"exec_parallel_writeback.sh")
+        // val writebackTmpFile = File.createTempFile(s"exec_parallel_writeback", ".sh")
+
+        val writer2 = new PrintWriter(writebackTmpFile)
+        writer2.println(s"${writebackCmd}")
+        writer2.close()
+        log.debug(s"Temporary writeback file saved to ${writebackTmpFile.getAbsolutePath()}")
+        executeScriptOrFail(writebackTmpFile.getAbsolutePath(), taskSender)
+
     }
-    // TODO: not sure if mysqlimport can work on distributed server... it should. 
-
-    // MYSQL writeback: use mysqlimport.
-    // See: https://mariadb.com/kb/en/mariadb/documentation/clients-and-utilities/backup-restore-and-import/mysqlimport/
-    val writebackTmpFile = new File(queryOutputPath + s"exec_parallel_writeback.sh")
-    // val writebackTmpFile = File.createTempFile(s"exec_parallel_writeback", ".sh")
-
-    val writer2 = new PrintWriter(writebackTmpFile)
-    writer2.println(s"${writebackCmd}")
-    writer2.close()
-    log.debug(s"Temporary writeback file saved to ${writebackTmpFile.getAbsolutePath()}")
-    executeScriptOrFail(writebackTmpFile.getAbsolutePath(), taskSender)
 
     log.info("Analyzing output relation.")
     executeSqlUpdateOrFail(s"${sqlAnalyzeCommand} ${outputRel};", taskSender)
