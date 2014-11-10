@@ -45,11 +45,11 @@ When a custom holdout query is defined in `holdout_query`, the
 
 To improve the prediction accuracy it is useful to inspect the probabilities for
 each variable, and the learned factor weights. DeepDive creates a view called
-`dd_inference_result_mapped_weights` which contains the factor names and the
+`dd_inference_result_weights_mapping` which contains the factor names and the
 learned values sorted by absolute value. The
-`dd_inference_result_variables_mapped_weights` view has the following schema:
+`dd_inference_result_weights_mapping` view has the following schema:
 
-          View "public.dd_inference_result_variables_mapped_weights"
+          View "public.dd_inference_result_weights_mapping"
         Column     |       Type       | Modifiers | Storage  | Description
     ---------------+------------------+-----------+----------+-------------
      id            | bigint           |           | plain    |

@@ -47,6 +47,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def IdSequence = "dd_variable_sequence"
   def FactorMetaTable = "dd_graph_factormeta"
   def VariablesObservationTable = "dd_graph_variables_observation"
+  def LearnedWeightsTable = "dd_inference_result_weights_mapping"
 
 
     
@@ -298,11 +299,14 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     FROM ${name};
   """
 
-  // TODO they are never dropped sometimes?! added "or replace" for now.
   def createMappedWeightsViewSQL = s"""
-    CREATE OR REPLACE VIEW ${VariableResultTable}_mapped_weights AS
+    CREATE OR REPLACE VIEW ${LearnedWeightsTable} AS
     SELECT ${WeightsTable}.*, ${WeightResultTable}.weight FROM
     ${WeightsTable} JOIN ${WeightResultTable} ON ${WeightsTable}.id = ${WeightResultTable}.id
+    ORDER BY abs(weight) DESC;
+
+    CREATE OR REPLACE VIEW ${VariableResultTable}_mapped_weights AS
+    SELECT * FROM ${LearnedWeightsTable}
     ORDER BY abs(weight) DESC;
   """
 
