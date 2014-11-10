@@ -120,7 +120,12 @@ object DeepDive extends Logging {
       
 
     // Create a default pipeline that executes all tasks
-    val defaultPipeline = Pipeline("_default", allTasks.map(_.id).toSet)
+    val defaultPipeline = Pipeline("_default", 
+      activeFactors.size match {
+        // If no factors are active, do not run inference tasks
+        case 0 => allTasks.map(_.id).toSet -- Set("inference_grounding", "inference", "calibration")
+        case _ => allTasks.map(_.id).toSet
+      })
 
     // Create a pipeline that runs only from learning
     val relearnPipeline = Pipeline("_relearn", Set("inference", "calibration", "report", "shutdown"))
