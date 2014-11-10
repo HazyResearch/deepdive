@@ -14,7 +14,7 @@ build:
 	@echo "\n=== Verifying installation... ==="
 	@if [ -f ${HOME}/local/bin/deepdive ]; then \
 		echo "SUCCESS! DeepDive binary has been put into ${HOME}/local/bin."; \
-		echo "Make sure you set environment variables for sampler before running deepdive. See: http://deepdive.stanford.edu/doc/sampler.html"; \
+		echo "Make sure you set environment variables for sampler before running deepdive. See: http://deepdive.stanford.edu/doc/basics/installation.html"; \
 	else \
 		echo "FAILED."; \
 		exit 1; \
