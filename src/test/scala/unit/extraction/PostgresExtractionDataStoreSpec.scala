@@ -110,6 +110,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
       assert(result.head.asInstanceOf[JsObject].value == Map[String, JsValue](
         "id" -> JsNumber(1),
         "key" -> JsNumber(1),
+        "some_null" -> JsNull,
         "some_text" -> JsString("Hello"),
         "some_boolean" -> JsBoolean(true),
         "some_double" -> JsNumber(1.0),
@@ -142,7 +143,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
 
   describe ("Writing to the data store") {
 
-    it("should work") {
+    it("should work with null values") {
       val testRow = JsObject(Map[String, JsValue](
         "key" -> JsNumber(100),
         "some_text" -> JsString("I am sample text."),
@@ -154,12 +155,12 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
       dataStore.addBatch(List(testRow).iterator, "datatype_test")
       val result = dataStore.queryAsJson("SELECT * from datatype_test")(_.toList)
       val resultFields = result.head.fields
-      val expectedResult = testRow.value.filterKeys(_ != "some_null")
+      val expectedResult = testRow.value
       assert(resultFields.toMap.filterKeys(_ != "id").values.toSet == expectedResult.values.toSet) 
     }
   }
 
-  it("should correctly insert arrays with escape characters") {
+  it("should correctly handle null values, and insert arrays with escape characters") {
     val jsonArr = Json.parse("""["dobj@","@prep_}as","dobj\"@nsubj","dobj@prep_\\","dobj@prep_to"]""")
     val testRow = JsObject(Map[String, JsValue](
         "key" -> JsNull,
@@ -173,7 +174,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
     val result = dataStore.queryAsJson("SELECT * from datatype_test")(_.toList)
     val resultFields = result.head.fields
     val expectedResult = testRow.value
-    assert(resultFields.toMap.filterKeys(_ != "id") == Map("some_array" -> jsonArr)) 
+    assert(resultFields.toMap.filterKeys(_ != "id").values.toSet == expectedResult.values.toSet)
   }
 }
   
