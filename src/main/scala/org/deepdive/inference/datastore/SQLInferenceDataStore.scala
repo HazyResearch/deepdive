@@ -583,7 +583,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         case 2 | 3 => cast(column, "float")
         case _ => cast(cast(column, "int"), "float")
       }
-      du.unload(s"variables_${relation}", s"${groundingPath}/dd_variables_${relation}", 
+      du.unload(s"dd_variables_${relation}", s"${groundingPath}/dd_variables_${relation}", 
         dbSettings, parallelGrounding,
         s"""SELECT id, ${variableTypeColumn}, 
         CASE WHEN ${variableTypeColumn} = 0 THEN 0 ELSE ${initvalueCast} END AS initvalue, 
