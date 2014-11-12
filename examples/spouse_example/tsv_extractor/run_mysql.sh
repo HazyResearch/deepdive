@@ -11,6 +11,9 @@ export DBNAME=deepdive_spouse_tsv
 # Initialize database
 bash $APP_HOME/../setup_database_mysql.sh $DBNAME
 
+# Using ddlib
+export PYTHONPATH=$DEEPDIVE_HOME/ddlib:$PYTHONPATH
+
 cd $DEEPDIVE_HOME
 
 # deepdive -c $APP_HOME/application_mysql.conf
