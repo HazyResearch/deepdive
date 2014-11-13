@@ -20,10 +20,6 @@ export DBCONNSTRING=jdbc:mysql://$DBHOST:$DBPORT/$DBNAME
 echo "CONN STRING: $DBCONNSTRING"
 export DEEPDIVE_HOME=`cd $(dirname $0)/../; pwd`
 
-# Set to "1" to use "LOCAL" in data loader, which reads data from client. 
-# Should have MySQL server and client both configured to allow this.
-# export MYSQL_LOCAL_INFILE=0
-
 # This env var specifies system under test
 export DEEPDIVE_TEST_ENV="mysql"
 

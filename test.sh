@@ -12,3 +12,9 @@ if hash mysql 2>/dev/null; then
   bash test/test_mysql.sh
 fi
 
+# if greenplum supported (gpfdist exist), then test GP
+if hash gpfdist 2>/dev/null; then
+  echo "Testing Greenplum..."
+  bash test/test_gp.sh
+fi
+
