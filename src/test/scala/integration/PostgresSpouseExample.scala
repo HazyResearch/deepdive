@@ -39,9 +39,9 @@ class PostgresSpouseExample extends FunSpec with Logging{
 
       JdbcDataStore.executeSqlQueries(schema);
 
-      JdbcDataStore.executeSqlQueries(s"""
-        COPY sentences FROM '${getClass.getResource("/spouse/data/sentences_dump.csv").getFile}' CSV;
-          """)
+      Helpers.executeSqlQueriesByFile(TestHelper.getDbSettings,
+              s"""\\COPY sentences FROM '${getClass.getResource(
+              "/spouse/data/sentences_dump.csv").getFile}' CSV;""" )
     }
     JdbcDataStore.close()
   }
