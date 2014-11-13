@@ -21,6 +21,11 @@ export DBPORT=$PGPORT
 export DBPASSWORD=$PGPASSWORD
 export DBUSER=$PGUSER
 
+export PARALLEL_GROUNDING=true
+
+# Launch gpfdist if not launched.
+gpfdist -d $GPPATH -p $GPPORT &
+
 cd $DEEPDIVE_HOME/lib
 
 case $(uname) in

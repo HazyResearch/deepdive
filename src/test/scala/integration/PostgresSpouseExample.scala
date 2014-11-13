@@ -11,11 +11,12 @@ import com.typesafe.config._
 import org.deepdive.test._
 import org.deepdive.Context
 import org.deepdive._
-import org.deepdive.datastore.{MysqlDataStore, JdbcDataStore}
+import org.deepdive.datastore.{PostgresDataStore, JdbcDataStore}
 import org.scalatest._
 import org.deepdive.Logging
 import org.deepdive.settings._
 import org.deepdive.helpers.Helpers
+import org.deepdive.test.helpers.TestHelper
 import java.io._
 import scala.sys.process._
 import scalikejdbc.ConnectionPool
@@ -23,10 +24,10 @@ import scalikejdbc.ConnectionPool
 /** Text running spouse example.
  * 
  */
-class MysqlSpouseExample extends FunSpec with Logging{
+class PostgresSpouseExample extends FunSpec with Logging{
 
   // Read the schema from test file
-  val schema = scala.io.Source.fromFile(getClass.getResource("/spouse/schema_mysql.sql").getFile).mkString
+  val schema = scala.io.Source.fromFile(getClass.getResource("/spouse/schema_psql.sql").getFile).mkString
   val config = ConfigFactory.parseString(getConfig).withFallback(ConfigFactory.load).resolve()
      
   
@@ -34,13 +35,12 @@ class MysqlSpouseExample extends FunSpec with Logging{
   def prepareData() {
 
     JdbcDataStore.init(config)
-    MysqlDataStore.withConnection { implicit conn =>
+    PostgresDataStore.withConnection { implicit conn =>
 
       JdbcDataStore.executeSqlQueries(schema);
 
       JdbcDataStore.executeSqlQueries(s"""
-        LOAD DATA LOCAL INFILE '${getClass.getResource("/spouse/data/sentences_dump_mysql.tsv").getFile}' 
-        INTO TABLE sentences(sentence_id, words, ner_tags);
+        COPY sentences FROM '${getClass.getResource("/spouse/data/sentences_dump.csv").getFile}' CSV;
           """)
     }
     JdbcDataStore.close()
@@ -48,21 +48,11 @@ class MysqlSpouseExample extends FunSpec with Logging{
 
 
   /** application.conf configuration */
-//  def configFile = getClass.getResource("/spouse/data/application_mysql.conf").getFile
   
-  def getConfig = s"""
+  def getConfig = TestHelper.getConfig() + 
+  s"""
 deepdive {
   
-  db.default {
-    driver: "com.mysql.jdbc.Driver"
-    url: "jdbc:mysql://${System.getenv("DBHOST")}:${System.getenv("DBPORT")}/${System.getenv("DBNAME")}" 
-    user: "${System.getenv("DBUSER")}"
-    password: "${System.getenv("DBPASSWORD")}"
-    dbname: "${System.getenv("DBNAME")}"
-    host: "${System.getenv("DBHOST")}"
-    port: "${System.getenv("DBPORT")}"
-  }
-
   # Put your variables here
   schema.variables {
     has_spouse.is_true: Boolean
@@ -70,6 +60,12 @@ deepdive {
 
   # Put your extractors here
   extraction.extractors {
+
+    # Clean sentence table
+    ext_clear_sentence {
+      style: "sql_extractor"
+      sql: \"\"\"DELETE FROM sentences;\"\"\"
+    }
 
     # Clean output tables of all extractors
     ext_clear_table {
@@ -81,75 +77,42 @@ deepdive {
         \"\"\"
     }
 
-    # Create indexes to speed up mysql join queries
-    ext_create_index_sentences {
-      style: "sql_extractor"
-      sql: \"\"\"
-        CREATE INDEX sentences_sentence_id_idx ON sentences(sentence_id);
-      \"\"\"
-      dependencies: ["ext_clear_table"]
-    }
-
     # With a tsv_extractor, developers have to make sure arrays 
       # are parsable in the UDF. One easy way is to 
       # use "array_to_string(array, delimiter)" function by psql.
     ext_people {
       input: \"\"\"
           SELECT  sentence_id, 
-                  words,
-                  ner_tags
+                  array_to_string(words, '~^~'), 
+                  array_to_string(ner_tags, '~^~') 
           FROM    sentences
           \"\"\"
       output_relation: "people_mentions"
       udf: ${getClass.getResource("/spouse/udf/ext_people.py").getFile}
-      dependencies: ["ext_create_index_sentences"]
+      dependencies: ["ext_sentences", "ext_clear_table"]
       input_batch_size: 4000
       style: "tsv_extractor"
     }
 
-    # Speedup mysql query performance by indexing
-    ext_create_index_people {
-      style: "sql_extractor"
-      sql: \"\"\"
-        CREATE INDEX people_mentions_sentence_id_idx ON people_mentions(sentence_id);
-        CREATE INDEX people_mentions_mention_id_idx ON people_mentions(mention_id);
-      \"\"\"
-      dependencies: ["ext_people"]
-    }
-
     ext_has_spouse_candidates {
-      # This query is dramatically slow...
       input: \"\"\"
-       SELECT p1.sentence_id, 
+       SELECT p1.sentence_id,
               p1.mention_id, p1.text, 
               p2.mention_id, p2.text
         FROM  people_mentions p1, 
               people_mentions p2
-        WHERE p1.sentence_id = p2.sentence_id 
-          AND p1.mention_id != p2.mention_id 
-
+        WHERE p1.sentence_id = p2.sentence_id
+          AND p1.mention_id != p2.mention_id;
           \"\"\"
       output_relation: "has_spouse"
       udf: ${getClass.getResource("/spouse/udf/ext_has_spouse.py").getFile}
-      dependencies: ["ext_create_index_people"]
-      # dependencies: ["ext_people"]
+      dependencies: ["ext_people"]
       style: "tsv_extractor"
     }
 
-    # Create indexes to speed up mysql join queries
-    ext_create_index_has_spouse {
-      style: "sql_extractor"
-      sql: \"\"\"
-        CREATE INDEX has_spouse_sentence_id_idx ON has_spouse(sentence_id);
-        CREATE INDEX has_spouse_person1_id_idx ON has_spouse(person1_id);
-        CREATE INDEX has_spouse_person2_id_idx ON has_spouse(person2_id);
-      \"\"\"
-
-      dependencies: ["ext_has_spouse_candidates"]
-    }
     ext_has_spouse_features {
       input: \"\"\"
-        SELECT  words,
+        SELECT  array_to_string(words, '~^~'), 
                 has_spouse.relation_id, 
                 p1.start_position, 
                 p1.length, 
@@ -157,27 +120,18 @@ deepdive {
                 p2.length
         FROM    has_spouse, 
                 people_mentions p1, 
-                people_mentions p2,
+                people_mentions p2, 
                 sentences
         WHERE   has_spouse.person1_id = p1.mention_id 
           AND   has_spouse.person2_id = p2.mention_id 
-          AND   has_spouse.sentence_id = sentences.sentence_id
-
+          AND   has_spouse.sentence_id = sentences.sentence_id;
         \"\"\"
       output_relation: "has_spouse_features"
       udf: ${getClass.getResource("/spouse/udf/ext_has_spouse_features.py").getFile}
-      dependencies: ["ext_create_index_has_spouse"]
+      dependencies: ["ext_has_spouse_candidates"]
       style: "tsv_extractor"
     }
 
-    # Create indexes to speed up mysql join queries
-    ext_create_index_features {
-      style: "sql_extractor"
-      sql: \"\"\"
-        CREATE INDEX has_spouse_features_relation_id_idx ON has_spouse_features(relation_id);
-      \"\"\"
-      dependencies: ["ext_has_spouse_features"]
-    }
   }
 
   inference.factors: { 
@@ -220,16 +174,19 @@ deepdive {
 
   pipeline.run: "nonlp"
   pipeline.pipelines.nonlp: [
-    "ext_people",
-    "ext_create_index_people",
-    "ext_has_spouse_candidates",
-    "ext_create_index_has_spouse",
+    "ext_people", 
+    "ext_has_spouse_candidates", 
     "ext_has_spouse_features",
-    "ext_create_index_features",
     "f_has_spouse_features", "f_has_spouse_symmetry"
     ]
 
+  # Specify a holdout fraction
   calibration.holdout_fraction: 0.25
+
+  inference.parallel_grounding: ${System.getenv("PARALLEL_GROUNDING") match {
+    case "true" | "1" | "True" | "TRUE" => "true"
+    case _ => "false"
+  }}
 
 }
 
@@ -238,10 +195,10 @@ deepdive {
   def processResults(): Double = {
     JdbcDataStore.init(config)
     var score = 0.0;
-    val checkQuery = """select num_correct / (num_correct + num_incorrect)
+    val checkQuery = """select num_correct::real / (num_correct + num_incorrect) 
       from has_spouse_is_true_calibration where bucket = 9"""
 
-    MysqlDataStore.withConnection { implicit conn =>
+    PostgresDataStore.withConnection { implicit conn =>
       JdbcDataStore.executeSqlQueryWithCallback(checkQuery) { rs =>
         score = rs.getDouble(1)
       }
@@ -256,9 +213,8 @@ deepdive {
   describe("Spouse example") {
 
     it("should get accuracy >0.9 for high-confidence predictions") {
-      // Only test for Mysql for now
-      import org.deepdive.test.helpers.TestHelper
-      assume(TestHelper.getTestEnv() == TestHelper.Mysql)
+      // Only test for Postgres for now
+      assume(TestHelper.getTestEnv() == TestHelper.Psql)
 
       prepareData()
       Helpers.executeCmd("rm -f out/test_spouse/tmp/*")
