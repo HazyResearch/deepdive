@@ -11,6 +11,9 @@ export DYLD_LIBRARY_PATH=`mysql_config --variable=pkglibdir`:$DYLD_LIBRARY_PATH
 # Initialize database (using NDB engine)
 bash $APP_HOME/../setup_database_mysqlcluster.sh $DBNAME
 
+# Using ddlib
+export PYTHONPATH=$DEEPDIVE_HOME/ddlib:$PYTHONPATH
+
 cd $DEEPDIVE_HOME
 
 # deepdive -c $APP_HOME/application_mysql.conf

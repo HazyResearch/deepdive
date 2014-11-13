@@ -43,6 +43,9 @@ object TestHelper {
         dbname: "${System.getenv("DBNAME")}"
         host: "${System.getenv("DBHOST")}"
         port: "${System.getenv("DBPORT")}"
+        gphost: "${System.getenv("GPHOST")}"
+        gppath: "${System.getenv("GPPATH")}"
+        gpport: "${System.getenv("GPPORT")}"
       }
     """
   

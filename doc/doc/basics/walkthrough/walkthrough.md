@@ -891,7 +891,7 @@ weight (positive features):
 ```bash
 psql -d deepdive_spouse -c "
   SELECT description, weight
-  FROM dd_inference_result_variables_mapped_weights
+  FROM dd_inference_result_weights_mapping
   ORDER BY weight DESC
   LIMIT 5;
 "
@@ -913,7 +913,7 @@ Run the following query to select top negative features:
 ```bash
 psql -d deepdive_spouse -c "
   SELECT description, weight
-  FROM dd_inference_result_variables_mapped_weights
+  FROM dd_inference_result_weights_mapping
   ORDER BY weight ASC
   LIMIT 5;
 "

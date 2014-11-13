@@ -238,7 +238,7 @@ deepdive {
   def processResults(): Double = {
     JdbcDataStore.init(config)
     var score = 0.0;
-    val checkQuery = """select num_correct / (num_correct + num_incorrect) 
+    val checkQuery = """select num_correct / (num_correct + num_incorrect)
       from has_spouse_is_true_calibration where bucket = 9"""
 
     MysqlDataStore.withConnection { implicit conn =>

@@ -51,6 +51,7 @@ export SBT_OPTS="-XX:MaxHeapSize=256m -Xmx512m -XX:MaxPermSize=256m"
 # # Test argument "-- -oF" shows full stack trace when error occurs
 sbt "test-only org.deepdive.test.unit.* -- -oF" && \
 sbt "test-only org.deepdive.test.integration.BiasedCoin -- -oF" && \
+sbt "test-only org.deepdive.test.integration.PostgresSpouseExample -- -oF" && \
 sbt "test-only org.deepdive.test.integration.ChunkingApp -- -oF"
 
 # Running a specific test with Eclipse debugger

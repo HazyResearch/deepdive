@@ -17,7 +17,7 @@ with the same name in the database:
      public | dd_graph_weights_id_seq                      | sequence 
      public | dd_inference_result_variables                | table    
      public | dd_inference_result_weights                  | table    
-     public | dd_inference_result_variables_mapped_weights | view     
+     public | dd_inference_result_weights_mapping          | view     
      public | dd_query_[RULE_NAME]                         | table
      public | [TABLE]_[VARIABLE]_inference                 | view
      public | [TABLE]_[VARIABLE]_inference_bucketed        | view
@@ -42,7 +42,7 @@ Description of each schema:
 
 - `dd_inference_result_weights`: a table that shows factor weight ids and learned weight values.
 
-- `dd_inference_result_variables_mapped_weights`: a view that maps all distinct factor weights to their description and  their learned values. It is a commonly used view that shows the learned weight value of a factor as well as the number of occurences of a factor. (The schema name is probably misleading)
+- `dd_inference_result_weights_mapping`: a view that maps all distinct factor weights to their description and  their learned values. It is a commonly used view that shows the learned weight value of a factor as well as the number of occurences of a factor.
 
 - `dd_query_[RULE_NAME]`: a view that is defined by the input query of an [inference rule](../basics/inference_rules.html).
 

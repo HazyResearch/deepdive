@@ -47,6 +47,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def IdSequence = "dd_variable_sequence"
   def FactorMetaTable = "dd_graph_factormeta"
   def VariablesObservationTable = "dd_graph_variables_observation"
+  def LearnedWeightsTable = "dd_inference_result_weights_mapping"
 
 
     
@@ -298,11 +299,14 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     FROM ${name};
   """
 
-  // TODO they are never dropped sometimes?! added "or replace" for now.
   def createMappedWeightsViewSQL = s"""
-    CREATE OR REPLACE VIEW ${VariableResultTable}_mapped_weights AS
+    CREATE OR REPLACE VIEW ${LearnedWeightsTable} AS
     SELECT ${WeightsTable}.*, ${WeightResultTable}.weight FROM
     ${WeightsTable} JOIN ${WeightResultTable} ON ${WeightsTable}.id = ${WeightResultTable}.id
+    ORDER BY abs(weight) DESC;
+
+    CREATE OR REPLACE VIEW ${VariableResultTable}_mapped_weights AS
+    SELECT * FROM ${LearnedWeightsTable}
     ORDER BY abs(weight) DESC;
   """
 
@@ -457,6 +461,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     if (parallelGrounding) {
       val cleanFile = File.createTempFile(s"clean", ".sh")
       val writer = new PrintWriter(cleanFile)
+      // cleaning up remaining tmp folder for tobinary
+      writer.println(s"rm -rf ${groundingPath}/dd_tmp")
       writer.println(s"rm -f ${groundingPath}/dd_*")
       writer.close()
       log.info("Cleaning up grounding folder...")
@@ -579,7 +585,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         case 2 | 3 => cast(column, "float")
         case _ => cast(cast(column, "int"), "float")
       }
-      du.unload(s"variables_${relation}", s"${groundingPath}/dd_variables_${relation}", 
+      du.unload(s"dd_variables_${relation}", s"${groundingPath}/dd_variables_${relation}", 
         dbSettings, parallelGrounding,
         s"""SELECT id, ${variableTypeColumn}, 
         CASE WHEN ${variableTypeColumn} = 0 THEN 0 ELSE ${initvalueCast} END AS initvalue, 

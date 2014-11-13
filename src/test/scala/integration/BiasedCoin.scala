@@ -39,18 +39,8 @@ class BiasedCoin extends FunSpec {
   
   /** application.conf configuration
    */
-  def getConfig = {
+  def getConfig = TestHelper.getConfig +
     s"""
-      deepdive.db.default {
-        driver: ${TestHelper.getDriverFromEnv()}
-        url: "${System.getenv("DBCONNSTRING")}"
-        user: "${System.getenv("DBUSER")}"
-        password: "${System.getenv("DBPASSWORD")}"
-        dbname: "${System.getenv("DBNAME")}"
-        host: "${System.getenv("DBHOST")}"
-        port: "${System.getenv("DBPORT")}"
-      }
-
       deepdive.schema.variables {
         coin.is_correct: Boolean
       }
@@ -66,8 +56,12 @@ class BiasedCoin extends FunSpec {
         }
       }
 
+      deepdive.inference.parallel_grounding: ${System.getenv("PARALLEL_GROUNDING") match {
+        case "true" | "1" | "True" | "TRUE" => "true"
+        case _ => "false"
+      }}
     """
-  }
+  
 
   it("should work") {
       

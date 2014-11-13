@@ -124,6 +124,7 @@ Basics:
 - [Running an application](doc/basics/running.html)
 - [Calibration](doc/basics/calibration.html)
 - [Example application walk-through](doc/basics/walkthrough/walkthrough.html)
+- [Labeling data products](doc/basics/labeling.html)
 - [Text chunking application example](doc/basics/chunking.html)
 - [High-speed sampler](doc/basics/sampler.html)
 - [**application.conf** Reference](doc/basics/configuration.html)

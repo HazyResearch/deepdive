@@ -176,6 +176,11 @@ class ChunkingApp extends FunSpec with Logging{
       calibration: {
         holdout_query: "INSERT INTO dd_graph_variables_holdout(variable_id) SELECT id FROM words WHERE word_id > 50078"
       }
+
+      inference.parallel_grounding: ${System.getenv("PARALLEL_GROUNDING") match {
+        case "true" | "1" | "True" | "TRUE" => "true"
+        case _ => "false"
+      }}
     }
     """
 
