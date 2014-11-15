@@ -13,8 +13,8 @@ class HelpersSpec extends FunSpec with BeforeAndAfter {
     it("should work") {
       val bashFile = File.createTempFile("test", ".sh")
       val writer = new PrintWriter(bashFile)
-      val testPath = s"${Context.outputDir}/test_tmp}"
-      writer.println(s"touch ${testPath}")
+      val testPath = s"${Context.outputDir}/test_tmp"
+      writer.println(s"mkdir -p ${Context.outputDir} && touch ${testPath}")
       writer.close()
 
       Helpers.executeCmd(bashFile.getAbsolutePath())
