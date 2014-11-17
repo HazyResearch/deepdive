@@ -32,4 +32,4 @@ COPY (
     AND f.relation_id  = hsi.relation_id
     AND expectation    > 0.9
   ORDER BY random() LIMIT 100
-) TO STDOUT HEADER;
+) TO STDOUT WITH CSV HEADER;
