@@ -67,23 +67,23 @@ COPY (
        AND p2.mention_id = hsi.person2_id
        AND expectation   > 0.9
   ORDER BY random() LIMIT 100
-) TO STDOUT HEADER;
+) TO STDOUT WITH CSV HEADER;
 ```
 
-Let's keep the result of the SQL query in a file named `input.tsv`.
+Let's keep the result of the SQL query in a file named `input.csv`.
 
 ```bash
-psql -d deepdive_spouse -f "generate-input.sql" >"input.tsv"
+psql -d deepdive_spouse -f "generate-input.sql" >"input.csv"
 ```
 
-The lines in the generated `input.tsv` should look similar to the following:
+The lines in the generated `input.csv` should look similar to the following:
 
 ```
-relation_id	sentence_id	description	is_true	expectation	words	p1_start	p1_length	p2_start	p2_length
+relation_id,sentence_id,description,is_true,expectation,words,p1_start,p1_length,p2_start,p2_length
 [...]
-124351@50_29-124351@50_64	124351@50	David S. Goyer-Hans Zimmer	\N	0.998	{PRODUCTION,NOTES,:,`,THE,DARK,KNIGHT,',Directed,by,Christopher,Nolan,;,written,by,Jonathan,Nolan,and,Christopher,Nolan,",",based,on,a,story,by,Christopher,Nolan,and,David,S.,Goyer,;,Batman,character,created,by,Bob,Kane,;,Batman,and,other,characters,from,the,DC,comic,books,;,director,of,photography,",",Wally,Pfister,;,edited,by,Lee,Smith,;,music,by,Hans,Zimmer,and,James,Newton,Howard,;,production,designer,",",Nathan,Crowley,;,produced,by,Charles,Roven,",",Emma,Thomas,and,Christopher,Nolan,;,released,by,Warner,Brothers,Pictures,.}	29	3	64	2
-68728@1_15-68728@1_3	68728@1	Robert B. Barnett-Rita Braver	\N	1	{The,correspondent,",",Rita,Braver,",",told,viewers,that,her,husband,",",the,Washington,lawyer,Robert,B.,Barnett,",",had,represented,Cheney,in,the,publishing,deal,for,her,new,memoir,",",``,Blue,Skies,",",No,Fences,",",'',which,served,as,the,main,peg,for,the,story,.}	15	3	3	2
-147788@36_39-147788@36_50	147788@36	Will Smith-Willie Brown	\N	1	{In,the,1990s,",",the,Clintons,",",unique,among,modern,first,families,",",widened,the,circle,of,guests,and,political,contributors,who,were,invited,to,stay,over,",",including,a,range,of,celebrities,and,politicians,like,Quincy,Jones,;,Will,Smith,and,his,wife,",",Jada,Pinkett,Smith,;,and,Willie,Brown,.}	39	2	50	2
+124351@50_29-124351@50_64,124351@50,David S. Goyer-Hans Zimmer,,0.998,"{PRODUCTION,NOTES,:,`,THE,DARK,KNIGHT,',Directed,by,Christopher,Nolan,;,written,by,Jonathan,Nolan,and,Christopher,Nolan,"","",based,on,a,story,by,Christopher,Nolan,and,David,S.,Goyer,;,Batman,character,created,by,Bob,Kane,;,Batman,and,other,characters,from,the,DC,comic,books,;,director,of,photography,"","",Wally,Pfister,;,edited,by,Lee,Smith,;,music,by,Hans,Zimmer,and,James,Newton,Howard,;,production,designer,"","",Nathan,Crowley,;,produced,by,Charles,Roven,"","",Emma,Thomas,and,Christopher,Nolan,;,released,by,Warner,Brothers,Pictures,.}",29,3,64,2
+68728@1_15-68728@1_3,68728@1,Robert B. Barnett-Rita Braver,1,,"{The,correspondent,"","",Rita,Braver,"","",told,viewers,that,her,husband,"","",the,Washington,lawyer,Robert,B.,Barnett,"","",had,represented,Cheney,in,the,publishing,deal,for,her,new,memoir,"","",``,Blue,Skies,"","",No,Fences,"","",'',which,served,as,the,main,peg,for,the,story,.}",15,3,3,2,\N
+147788@36_39-147788@36_50,147788@36,Will Smith-Willie Brown,1,"{In,the,1990s,"","",the,Clintons,"","",unique,among,modern,first,families,"","",widened,the,circle,of,guests,and,political,contributors,who,were,invited,to,stay,over,"","",including,a,range,of,celebrities,and,politicians,like,Quincy,Jones,;,Will,Smith,and,his,wife,"","",Jada,Pinkett,Smith,;,and,Willie,Brown,.}",39,2,50,2
 [...]
 ```
 
@@ -96,7 +96,7 @@ You can specify the path to the file holding the data items as well as the colum
 ```
 title: Example Mindtagger task for labeling false positives for calculating precision error
 items: {
-    file: input.tsv
+    file: input.csv
     key_columns: [relation_id]
 }
 template: template.html
@@ -251,15 +251,15 @@ COPY (
     AND f.relation_id  = hsi.relation_id
     AND expectation    > 0.9
   ORDER BY random() LIMIT 100
-) TO STDOUT HEADER;
+) TO STDOUT WITH CSV HEADER;
 ```
 
-Running the SQL above will give you an `input.tsv` that looks like:
+Running the SQL above will give you an `input.csv` that looks like:
 
 ```
-relation_id	sentence_id	description	is_true	expectation	words	p1_start	p1_length	p2_start	p2_length	p2_length	features	weights
+relation_id,sentence_id,description,is_true,expectation,words,p1_start,p1_length,p2_start,p2_length,features,weights
 [...]
-82383@26_20-82383@26_44	82383@26	Hank Azaria-Randy Travis	\N	0.994	{Former,Sen.,John,Edwards,of,North,Carolina,-,Don,Henley,",",Larry,David,",",Seth,Green,",",Gary,Cole,",",Hank,Azaria,",",James,Denton,",",Jean,Smart,",",Richard,Gilliland,",",Tony,Shalhoub,Gov.,Bill,Richardson,of,New,Mexico,-,Rob,Reiner,",",Randy,Travis,",",Al,Unser,",",Barry,Switzer,",",Val,Kilmer,",",Jimmy,Smits,Sen.,Chris,Dodd,of,Connecticut,-,Steve,Martin,",",Paul,Newman,",",Lorne,Michaels,",",Paul,Simon,",",Elisabeth,Shue,",",Michael,Douglas,.}	20	2	44	2	2	{word_between=Bill,word_between=Tony,word_between=Richardson,word_between=Richard,word_between=New,num_words_between=22,"word_between=,",word_between=James,word_between=Reiner,word_between=Rob,word_between=-,word_between=Mexico,word_between=of,word_between=Jean,word_between=Gov.,word_between=Gilliland,word_between=Denton,word_between=Shalhoub,word_between=Smart}	{-1.58548,1.45956,1.26088,1.04475,0.630963,0.45178,-0.438738,-0.347285,-0.333577,0.324225,0.30644,0.233578,0.223005,-0.139167,-0.0108343,0,0,0,0}
+82383@26_20-82383@26_44,82383@26,Hank Azaria-Randy Travis,,0.994,"{Former,Sen.,John,Edwards,of,North,Carolina,-,Don,Henley,"","",Larry,David,"","",Seth,Green,"","",Gary,Cole,"","",Hank,Azaria,"","",James,Denton,"","",Jean,Smart,"","",Richard,Gilliland,"","",Tony,Shalhoub,Gov.,Bill,Richardson,of,New,Mexico,-,Rob,Reiner,"","",Randy,Travis,"","",Al,Unser,"","",Barry,Switzer,"","",Val,Kilmer,"","",Jimmy,Smits,Sen.,Chris,Dodd,of,Connecticut,-,Steve,Martin,"","",Paul,Newman,"","",Lorne,Michaels,"","",Paul,Simon,"","",Elisabeth,Shue,"","",Michael,Douglas,.}",20,2,44,2,"{word_between=Bill,word_between=Tony,word_between=Richardson,word_between=Richard,word_between=New,num_words_between=22,""word_between=,"",word_between=James,word_between=Reiner,word_between=Rob,word_between=-,word_between=Mexico,word_between=of,word_between=Jean,word_between=Gov.,word_between=Gilliland,word_between=Denton,word_between=Shalhoub,word_between=Smart}","{-1.58548,1.45956,1.26088,1.04475,0.630963,0.45178,-0.438738,-0.347285,-0.333577,0.324225,0.30644,0.233578,0.223005,-0.139167,-0.0108343,0,0,0,0}"
 [...]
 ```
 
