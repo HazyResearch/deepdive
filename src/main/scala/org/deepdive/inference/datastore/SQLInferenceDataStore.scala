@@ -785,23 +785,23 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
             SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} AS cardinality
             FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")} LIMIT 0;""")
 
-          execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactor}_2 CASCADE;
-            CREATE TABLE ${weighttableForThisFactor}_2 AS 
+          execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactor}_unsorted CASCADE;
+            CREATE TABLE ${weighttableForThisFactor}_unsorted AS 
             SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} AS cardinality
             FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")} LIMIT 0;""")
 
           execute(s"""ALTER TABLE ${weighttableForThisFactor} ADD COLUMN id bigint;""")
-          execute(s"""ALTER TABLE ${weighttableForThisFactor}_2 ADD COLUMN id bigint;""")
+          execute(s"""ALTER TABLE ${weighttableForThisFactor}_unsorted ADD COLUMN id bigint;""")
 
           execute(s"""
-            INSERT INTO ${weighttableForThisFactor}_2
+            INSERT INTO ${weighttableForThisFactor}_unsorted
             SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} as cardinality, 0 AS id
             FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")}
             ORDER BY ${weightlist}, cardinality;""")
 
           execute(s"""
             INSERT INTO ${weighttableForThisFactor}
-            SELECT * FROM ${weighttableForThisFactor}_2
+            SELECT * FROM ${weighttableForThisFactor}_unsorted
             ORDER BY ${weightlist}, cardinality;""")
 
 
