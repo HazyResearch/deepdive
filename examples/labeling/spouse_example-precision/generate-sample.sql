@@ -19,4 +19,4 @@ COPY (
        AND p2.mention_id = hsi.person2_id
        AND expectation   > 0.9
   ORDER BY random() LIMIT 100
-) TO STDOUT HEADER;
+) TO STDOUT WITH CSV HEADER;
