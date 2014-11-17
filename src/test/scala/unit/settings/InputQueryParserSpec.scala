@@ -30,6 +30,11 @@ class InputQueryParserSpec extends FunSpec {
       assert(result.successful)
       assert(result.get == CSVInputQuery("someFile.txt", ','))
     }
+    it("should not work on wrong CSV filename") {
+      val expr = "CSV()"
+      val result = InputQueryParser.parse(InputQueryParser.inputQueryExpr, expr)
+      assert(!result.successful)
+    }
   }
 
   describe("Parsing TSV input query expressions") {
@@ -38,6 +43,11 @@ class InputQueryParserSpec extends FunSpec {
       val result = InputQueryParser.parse(InputQueryParser.inputQueryExpr, expr)
       assert(result.successful)
       assert(result.get == CSVInputQuery("someFile.txt", '\t'))
+    }
+    it("should not work on wrong TSV filename") {
+      val expr = "TSV()"
+      val result = InputQueryParser.parse(InputQueryParser.inputQueryExpr, expr)
+      assert(!result.successful)
     }
   }
 
@@ -55,7 +65,6 @@ class InputQueryParserSpec extends FunSpec {
       assert(result.successful)
       assert(result.get == DatastoreInputQuery("SELECT * FROM Customers"))
     }
-
   }
 
 }

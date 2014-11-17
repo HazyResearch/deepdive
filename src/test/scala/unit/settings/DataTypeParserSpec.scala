@@ -21,6 +21,10 @@ class DataTypeParserSpec extends FunSpec {
       assert(result.get == MultinomialType(5))
     }
 
+    it("should fail if not Boolean or categorical variables"){
+      val expr = "NotBooleanNorCategorical"
+      val result = DataTypeParser.parse(DataTypeParser.dataType, expr)
+      assert(!result.successful)
+    }
   }
-
 }

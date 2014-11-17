@@ -77,7 +77,8 @@ trait MemoryInferenceDataStoreComponent extends InferenceDataStoreComponent{
     }
 
     def writebackInferenceResult(variableSchema: Map[String, _ <: VariableDataType], 
-      variableOutputFile: String, weightsOutputFile: String, parallelGrounding: Boolean) : Unit = {
+      //variableOutputFile: String, weightsOutputFile: String, parallelGrounding: Boolean) : Unit = {
+      variableOutputFile: String, weightsOutputFile: String, parallelGrounding: Boolean, dbSettings: DbSettings) : Unit = {
       // TODO
     }
 

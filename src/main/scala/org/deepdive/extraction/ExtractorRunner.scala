@@ -139,9 +139,12 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
           }
           val queryOutputPath = Context.outputDir + s"/tmp/"
           log.info(queryOutputPath)
-          val success = (new File(queryOutputPath)).mkdirs()
-          if (!success)
-            log.error("TSV extractor directory creation failed!")
+          // Try to create the extractor output directory if not already present 
+          val queryOutputPathDir = new File(queryOutputPath)
+          if ((! queryOutputPathDir.exists()) && (!
+            queryOutputPathDir.mkdirs())) {
+              Status.Failure(new RuntimeException(s"TSV extractor directory creation failed"))
+            }
 
           val queryOutputFile = new File(queryOutputPath + s"copy_query_${funcName}.tsv")
           // val queryOutputFile = File.createTempFile(s"copy_query_${funcName}", ".tsv")
@@ -192,10 +195,8 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
               SELECT version() LIKE '%Greenplum%';
             """
 
-
           // Only allow single-threaded copy
-          val writebackCmd = s"find ${splitPrefix}*.out -print0 | xargs -0 -P 1 -L 1 bash -c 'psql -d ${dbname} -U ${pguser} -p ${pgport} -h ${pghost} -c " + "\"COPY " + s"${outputRel} FROM STDIN;" + " \" < \"$0\"'"
-
+          val writebackCmd = s"find ${splitPrefix}*.out -print0 | xargs -0 -P 1 -L 1 bash -c '${sqlQueryPrefix} -c " + "\"COPY " + s"${outputRel} FROM STDIN;" + " \" < \"$0\"'"
 
           val writebackTmpFile = new File(queryOutputPath + s"exec_parallel_writeback.sh")
           // val writebackTmpFile = File.createTempFile(s"exec_parallel_writeback", ".sh")
@@ -223,8 +224,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
           executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
           executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
           delTmpFile.delete()
-
-
+          queryOutputPathDir.delete()
 
           // Execute the after script. Fail if the script fails.
           task.extractor.afterScript.foreach {
@@ -241,7 +241,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
 
         // Execute the sql query from sql extractor
         case "sql_extractor" =>
-          log.debug("Executing SQL query: ${task.extractor.sqlQuery}")
+          log.debug("Executing SQL query: " + task.extractor.sqlQuery)
           executeSqlUpdateOrFail(task.extractor.sqlQuery, taskSender)
           // Execute the after script. Fail if the script fails.
           task.extractor.afterScript.foreach {

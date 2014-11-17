@@ -39,8 +39,8 @@ trait InferenceManager extends Actor with ActorLogging {
   lazy val factorGraphDumpFileEdges = new File(s"${Context.outputDir}/graph.edges")
   lazy val factorGraphDumpFileMeta = new File(s"${Context.outputDir}/graph.meta")
   lazy val SamplingOutputDir = new File(s"${Context.outputDir}")
-  lazy val SamplingOutputFile = new File(s"${SamplingOutputDir}/inference_result.out")
-  lazy val SamplingOutputFileWeights = new File(s"${SamplingOutputDir}/inference_result.out.weights")
+  lazy val SamplingOutputFile = new File(s"${SamplingOutputDir}/inference_result.out.text")
+  lazy val SamplingOutputFileWeights = new File(s"${SamplingOutputDir}/inference_result.out.weights.text")
 
   val factorGraphBuilder = context.actorOf(factorGraphBuilderProps, "factorGraphBuilder")
 
@@ -86,55 +86,21 @@ trait InferenceManager extends Actor with ActorLogging {
   }
 
   def runInference(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], 
-    samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false, dbSettings: DbSettings, parallelGrounding: Boolean) = {
-    // TODO: Make serializier configurable
-    // if (!skipSerializing) {
-    //   if (!parallelGrounding) {
-    //     factorGraphDumpFileMeta.getParentFile().mkdirs()
-    //     // factorGraphDumpFileWeights.createNewFile()
-    //     val weightsOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileWeights, false))
-    //     val variablesOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileVariables, false))
-    //     val factorsOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileFactors, false))
-    //     val edgesOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileEdges, false))
-    //     val metaOutput = new java.io.BufferedOutputStream(new java.io.FileOutputStream(factorGraphDumpFileMeta, false))
-    //     val serializier = new BinarySerializer(weightsOutput, variablesOutput, factorsOutput, edgesOutput, metaOutput)
-    //     inferenceDataStore.dumpFactorGraph(serializier, variableSchema, factorDescs, holdoutFraction,
-    //       holdoutQuery, factorGraphDumpFileWeights.getCanonicalPath,
-    //       factorGraphDumpFileVariables.getCanonicalPath, factorGraphDumpFileFactors.getCanonicalPath,
-    //       factorGraphDumpFileEdges.getCanonicalPath, parallelGrounding)
-    //     serializier.close()
-    //     weightsOutput.close()
-    //     variablesOutput.close()
-    //     factorsOutput.close()
-    //     metaOutput.close()
-    //   }
-    // }
+    samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false, dbSettings: DbSettings, 
+    parallelGrounding: Boolean) = {
+
     val sampler = context.actorOf(samplerProps, "sampler")
 
-    if (parallelGrounding) {
-      // val samplingResult = sampler ? Sampler.Run(samplerJavaArgs, samplerOptions,
-      val samplingResult = sampler ? Sampler.Run(samplerJavaArgs, samplerOptions,
-        dbSettings.gppath, s"${dbSettings.gppath}/variables", s"${dbSettings.gppath}/factors",
-        dbSettings.gppath, dbSettings.gppath, SamplingOutputDir.getCanonicalPath, parallelGrounding)
-      // Kill the sampler after it's done :)
-      sampler ! PoisonPill
-      samplingResult.map { x =>
-        inferenceDataStore.writebackInferenceResult(
-        variableSchema, SamplingOutputFile.getCanonicalPath, 
-        SamplingOutputFileWeights.getCanonicalPath, parallelGrounding)
-      }  
-    } else {
-      val samplingResult = sampler ? Sampler.Run(samplerJavaArgs, samplerOptions,
-        factorGraphDumpFileWeights.getCanonicalPath, factorGraphDumpFileVariables.getCanonicalPath,
-        factorGraphDumpFileFactors.getCanonicalPath, factorGraphDumpFileEdges.getCanonicalPath,
-        factorGraphDumpFileMeta.getCanonicalPath, SamplingOutputDir.getCanonicalPath, parallelGrounding)
-      // Kill the sampler after it's done :)
-      sampler ! PoisonPill
-      samplingResult.map { x =>
-        inferenceDataStore.writebackInferenceResult(
-        variableSchema, SamplingOutputFile.getCanonicalPath, 
-        SamplingOutputFileWeights.getCanonicalPath, parallelGrounding)
-      }  
+    val samplingResult = sampler ? Sampler.Run(samplerJavaArgs, samplerOptions,
+      factorGraphDumpFileWeights.getCanonicalPath, factorGraphDumpFileVariables.getCanonicalPath,
+      factorGraphDumpFileFactors.getCanonicalPath, factorGraphDumpFileEdges.getCanonicalPath,
+      factorGraphDumpFileMeta.getCanonicalPath, SamplingOutputDir.getCanonicalPath, parallelGrounding)
+    // Kill the sampler after it's done :)
+    sampler ! PoisonPill
+    samplingResult.map { x =>
+      inferenceDataStore.writebackInferenceResult(
+      variableSchema, SamplingOutputFile.getCanonicalPath, 
+      SamplingOutputFileWeights.getCanonicalPath, parallelGrounding, dbSettings)
     }  
   }
 
