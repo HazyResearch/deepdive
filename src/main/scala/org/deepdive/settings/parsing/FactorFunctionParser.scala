@@ -21,6 +21,10 @@ object FactorFunctionParser extends RegexParsers with Logging {
     SamplingFactorFunction(varList)
   }
 
+  def maxpoolingFactorFunction = ( "Maximum" | "maximum" | "max" | "maxpooling" | "Max" ) ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
+    MaxpoolingFactorFunction(varList)
+  }
+
   def hiddenFactorFunction = ( "Hidden" ) ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
     HiddenFactorFunction(varList)
   }
@@ -75,7 +79,7 @@ object FactorFunctionParser extends RegexParsers with Logging {
 
   def factorFunc = implyFactorFunction | orFactorFunction | andFactorFunction | 
     equalFactorFunction | isTrueFactorFunction | xorFactorFunction | 
-    convolutionFactorFunction | samplingFactorFunction | hiddenFactorFunction |
+    convolutionFactorFunction | samplingFactorFunction | maxpoolingFactorFunction | hiddenFactorFunction |
     likelihoodFactorFunction | leastSquaresFactorFunction | 
     softmaxFactorFunction
 }

@@ -23,6 +23,10 @@ case class SamplingFactorFunction(variables: Seq[FactorFunctionVariable]) extend
   override def variableDataType = "Real"
 }
 
+case class MaxpoolingFactorFunction(variables: Seq[FactorFunctionVariable]) extends FactorFunction {
+  override def variableDataType = "Real"
+}
+
 case class HiddenFactorFunction(variables: Seq[FactorFunctionVariable]) extends FactorFunction {
   override def variableDataType = "Real"
 }

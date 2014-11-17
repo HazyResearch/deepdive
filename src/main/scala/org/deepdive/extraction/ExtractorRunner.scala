@@ -21,6 +21,7 @@ import scala.util.Random
 import java.io.{File, PrintWriter}
 // import java.nio.file.Files
 import scala.io.Source
+import org.deepdive.datastore.DataUnloader
 
 /* Companion object to the ExtractorRunner */
 object ExtractorRunner {
@@ -145,27 +146,32 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
           //val queryOutputFile = File.createTempFile(s"copy_query_${funcName}", ".tsv")
           // executeSqlQueryOrFail
 
-          val filepath = gpfdist_basepath + s"/extinput_${task.extractor.name}"
+          val filepath = gpfdist_basepath + s"/dd_etbl_extractor_input_${task.extractor.name}"
           //val queryOutputFile = File.createNewFile(filepath)
 
+
+          // val du = new org.deepdive.datastore.DataUnloader
+          // du.unload(s"dd_etbl_extractor_input_${task.extractor.name}", s"${filepath}", dbSettings, true,
+          //   s"""${inputQuery}""")
           val dropTmpView = s"""DROP   VIEW IF EXISTS dd_view_extractor_input_${task.extractor.name};"""
           val crtTmpView  = s"""CREATE VIEW dd_view_extractor_input_${task.extractor.name} AS ${inputQuery};"""
+
           val dropTmpTbl  = s"""DROP   TABLE IF EXISTS dd_table_extractor_input_${task.extractor.name};"""
           val crtTmpTbl   = s"""CREATE TABLE dd_table_extractor_input_${task.extractor.name} AS SELECT * FROM dd_view_extractor_input_${task.extractor.name} LIMIT 0;"""
 
           val dropExtTbl  = s"""DROP EXTERNAL TABLE IF EXISTS dd_etbl_extractor_input_${task.extractor.name};"""
           val crtExtTable = s"""CREATE WRITABLE EXTERNAL TABLE dd_etbl_extractor_input_${task.extractor.name} 
                                 (LIKE dd_table_extractor_input_${task.extractor.name})
-                                LOCATION ('gpfdist://${gpfdist_hostname}:${gpfdist_port}/extinput_${task.extractor.name}')
+                                LOCATION ('gpfdist://${gpfdist_hostname}:${gpfdist_port}/dd_etbl_extractor_input_${task.extractor.name}')
                                 FORMAT 'TEXT';
                             """
           val copyIntoExt = s"""INSERT INTO dd_etbl_extractor_input_${task.extractor.name} SELECT
                                 * FROM dd_view_extractor_input_${task.extractor.name}"""
 
           // Single-thread copy to a file
-          //val copyQuery = "COPY (" + s"${inputQuery}".replaceAll("""(?m)[;\s\n]+$""", "") + ") TO STDOUT;"
-          //log.info(s"Copying file into ${queryOutputFile}")
-          //executeSqlQueryOrFail(copyQuery, taskSender, queryOutputFile.getAbsolutePath())
+          // val copyQuery = "COPY (" + s"${inputQuery}".replaceAll("""(?m)[;\s\n]+$""", "") + ") TO STDOUT;"
+          // log.info(s"Copying file into ${queryOutputFile}")
+          // executeSqlQueryOrFail(copyQuery, taskSender, queryOutputFile.getAbsolutePath())
 
           executeSqlQueryOrFail(dropTmpView.replaceAll("""(?m)[;\s\n]+$""", ""), taskSender, null)
           executeSqlQueryOrFail(crtTmpView.replaceAll("""(?m)[;\s\n]+$""", ""), taskSender, null)

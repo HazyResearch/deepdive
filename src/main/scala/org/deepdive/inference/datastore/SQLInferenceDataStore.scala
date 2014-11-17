@@ -54,6 +54,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       case "IsTrueFactorFunction" =>  4
       case "ConvolutionFactorFunction" => 1000
       case "SamplingFactorFunction" => 1001
+      case "MaxpoolingFactorFunction" => 1002
       case "HiddenFactorFunction" => 1005
       case "LikelihoodFactorFunction" => 1010
       case "LeastSquaresFactorFunction" => 1011
@@ -418,10 +419,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       executeQuery(s"""
         DROP EXTERNAL TABLE IF EXISTS variables_${relation} CASCADE;
         CREATE WRITABLE EXTERNAL TABLE variables_${relation} (
+          image_id bigint,
+          fid bigint,
           id bigint,
           num_rows bigint,
           num_cols bigint,
-          is_evidence int[],
+          is_evidence double precision[],
           initial_value double precision[],
           layer bigint) 
         LOCATION ('gpfdist://${hostname}:${port}/variables_${relation}')
@@ -429,8 +432,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         """)
 
       executeQuery(s"""
-        INSERT INTO variables_${relation}(id, num_rows, num_cols, is_evidence, initial_value, layer)
-        (SELECT id, num_rows, num_cols, ${column}, ${column}, layer
+        INSERT INTO variables_${relation}(image_id, fid, id, num_rows, num_cols, is_evidence, initial_value, layer)
+        (SELECT image_id, fid, id, num_rows, num_cols, ${column}, ${column}, layer
           FROM ${relation})
         """)
 
@@ -464,10 +467,10 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
       executeQuery(s"""DROP TABLE IF EXISTS queryview_${factorDesc.name} CASCADE;""")
       executeQuery(s"""DROP TABLE IF EXISTS weighttable_${factorDesc.name} CASCADE;""")
+      executeQuery(s"""DROP TABLE IF EXISTS temp_weighttable_${factorDesc.name} CASCADE;""")
 
       executeQuery(s"""CREATE TABLE queryview_${factorDesc.name} AS ${factorDesc.inputQuery};""")
 
-      var pos=0;
       var is_known=0;
       val functionName = getFactorFunctionTypeid(factorDesc.func.getClass.getSimpleName)
       var cweightids=new ListBuffer[Long]()
@@ -482,53 +485,73 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           weightlist = weightobj.variables.map ( v => s"""${v}""" ).mkString(" , ")
           // log.info("~~~~~~~~~" + weightLength.toString);
           // log.info("~~~~~~~~~" + weightlist);
-          if(weightlist!="")
+          if(weightlist!=""){
             executeQuery(s"""CREATE TABLE  weighttable_${factorDesc.name} AS 
-                            (SELECT ${weightlist}, 0::bigint id, ${weightLength}::int num_rows, ${weightLength}::int num_cols, ${isfixed}::int isfixed, ${initvalue}::float initvalue, 0::int pos
+                            (SELECT ${weightlist}, 0::bigint id, ${weightLength}::int num_rows, ${weightLength}::int num_cols, ${isfixed}::int isfixed, ${initvalue}::float initvalue
                             FROM queryview_${factorDesc.name} 
                             GROUP BY ${weightlist} limit 0)
                             DISTRIBUTED BY (${weightlist});
                           """)
+            executeQuery(s"""CREATE TABLE  temp_weighttable_${factorDesc.name} AS 
+                      (SELECT ${weightlist}, 0::bigint id, ${weightLength}::int num_rows, ${weightLength}::int num_cols, ${isfixed}::int isfixed, ${initvalue}::float initvalue
+                      FROM queryview_${factorDesc.name} 
+                      GROUP BY ${weightlist});
+              """)
+            var insert_cmd_string=s"""INSERT INTO weighttable_${factorDesc.name}\n"""
+            for( a <- 1 to factorDesc.weight.weightList.size-1){
+              insert_cmd_string+= s"""(SELECT * from temp_weighttable_${factorDesc.name}) UNION ALL """
+            }
+            insert_cmd_string+= s"""(SELECT * from temp_weighttable_${factorDesc.name});"""
+            executeQuery(insert_cmd_string) 
+          }
           break=0;
         }
       }
 
+      break=1;
       factorDesc.weight.weightList.foreach { case(weightobj) =>
         // log.info("+++++ weightobj: " + weightobj.toString)
-        var isfixed = 0
-        if(weightobj.isInstanceOf[KnownFactorWeight] || weightobj.isInstanceOf[KnownFactorWeightVector]){
-          isfixed = 1
-        }
-        val initvalue = weightobj match { 
-          case x : KnownFactorWeight => x.value
-          case x : KnownFactorWeightVector => x.value
-          case _ => 0.0
-        }
-        var weightLength = Math.sqrt(weightobj.vectorLength.toDouble)
-        // log.info("+++++ weightlist: " + weightlist.toString)
-        if(weightobj.isInstanceOf[KnownFactorWeight] == true || weightlist == ""){
-          // log.info("~~~~~~~~~" + "KNOWN FACTOR WEIGHT");
-          is_known=1
-          executeQuery(s"""INSERT INTO weights VALUES (${cweightid}, ${weightLength}, ${weightLength}, ${isfixed}, ${initvalue});""")   
-          cweightids+=cweightid
-          cweightid = cweightid + 1
-          // log.info("~~~~~~cweightid: "+ cweightid.toString)
-        }else{
-          if(is_known==1){
-            Failure(new RuntimeException(s"Script exited because of Bad Weights FORMAT!!!!!!"))
-          }
-          // log.info("~~~~~~~~~" + "UNKNOWN FACTOR WEIGHT");
+        if(break==1){
+          break=0;
           var isfixed = 0
-          val initvalue = 0
-          weightjoinlist = weightobj.variables.map ( v => s"""t0.${v}=t1.${v}""" ).mkString(" AND ")
-          executeQuery(s"""INSERT INTO weighttable_${factorDesc.name} 
-                      (SELECT ${weightlist}, 0::bigint id, ${weightLength}::int num_rows, ${weightLength}::int num_cols, ${isfixed}::int isfixed, ${initvalue}::float initvalue, ${pos}::int pos
-                      FROM queryview_${factorDesc.name} 
-                      GROUP BY ${weightlist});""") 
-          executeQuery(s"""SELECT fast_seqassign('weighttable_${factorDesc.name}', ${cweightid});""")      
+          if(weightobj.isInstanceOf[KnownFactorWeight] || weightobj.isInstanceOf[KnownFactorWeightVector]){
+            isfixed = 1
+          }
+          val initvalue = weightobj match { 
+            case x : KnownFactorWeight => x.value
+            case x : KnownFactorWeightVector => x.value
+            case _ => 0.0
+          }
+          var weightLength = Math.sqrt(weightobj.vectorLength.toDouble)
+          // log.info("+++++ weightlist: " + weightlist.toString)
+          if(weightobj.isInstanceOf[KnownFactorWeight] == true || weightlist == ""){
+            // log.info("~~~~~~~~~" + "KNOWN FACTOR WEIGHT");
+            is_known=1
+            var insert_cmd_string=s"""INSERT INTO weights VALUES \n"""
+            for( a <- 1 to factorDesc.weight.weightList.size-1){          
+              insert_cmd_string+= s""" (${cweightid}, ${weightLength}, ${weightLength}, ${isfixed}, ${initvalue}),"""
+              cweightids+=cweightid
+              cweightid = cweightid + 1
+            }
+            insert_cmd_string+= s""" (${cweightid}, ${weightLength}, ${weightLength}, ${isfixed}, ${initvalue});"""
+            cweightids+=cweightid
+            cweightid = cweightid + 1
+            executeQuery(insert_cmd_string) 
+          
+            // log.info("~~~~~~cweightid: "+ cweightid.toString)
+          }else{
+            if(is_known==1){
+              Failure(new RuntimeException(s"Script exited because of Bad Weights FORMAT!!!!!!"))
+            }
+            // log.info("~~~~~~~~~" + "UNKNOWN FACTOR WEIGHT");
+            var isfixed = 0
+            val initvalue = 0
+
+            weightjoinlist = weightobj.variables.map ( v => s"""t0.${v}=t1.${v}""" ).mkString(" AND ")
+          }
         }
-        pos+=1;
       }
+
       if(is_known==1){
         val cweightids_str="{"+cweightids.toString.split('(')(1).split(')')(0)+"}"
         // val cweightids_str="{"+cweightid.toString+"}"
@@ -540,10 +563,11 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
                   """)
       }
       else{
+        executeQuery(s"""SELECT fast_seqassign('weighttable_${factorDesc.name}', ${cweightid});""")      
         executeQuery(s"""INSERT INTO edges 
                 (SELECT t0.ids AS in_ids, t0.locations_x AS in_locations_x, t0.locations_y AS in_locations_y,  
                      t0.id AS out_id, t0.location_x AS out_location_x, t0.location_y AS out_location_y, t0.num_ids AS num_ids,
-                     '${functionName}' AS function_name, array_agg(t1.id ORDER BY t1.pos) AS weight_ids
+                     '${functionName}' AS function_name, array_accum(t1.id ORDER BY t1.id) AS weight_ids
                 FROM queryview_${factorDesc.name} t0, weighttable_${factorDesc.name} t1
                 WHERE ${weightjoinlist}
                 GROUP BY t0.ids,t0.locations_x,t0.locations_y,t0.id,t0.location_x,t0.location_y, t0.num_ids);""")

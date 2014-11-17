@@ -20,7 +20,7 @@ object FactorWeightParser extends RegexParsers with Logging  {
 				KnownFactorWeight(number1.toDouble)
 			}
 		}
-		log.info("+++++"+temp.toString)
+		// log.info("+++++"+temp.toString)
 		temp
 	} 
 	def unknownWeight = 

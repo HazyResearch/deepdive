@@ -18,6 +18,14 @@ object SettingsParser extends Logging {
     val samplerSettings = loadSamplerSettings(config)
     val pipelineSettings = loadPipelineSettings(config)
 
+    // Make sure that the variables related to the Greenplum distributed
+    // filesystem are set if the user wants to use parallel grounding
+    if (inferenceSettings.parallelGrounding) {
+      if (dbSettings.gphost == "" || dbSettings.gpport == "" || dbSettings.gppath == "") {
+        throw new RuntimeException(s"inference.parallelGrounding is set to true, but one of db.default.gphost, db.default.gpport, db.default.gppath isnot specified")
+      }
+    }
+
     Settings(schemaSettings, extractors, inferenceSettings, 
       calibrationSettings, samplerSettings, pipelineSettings, dbSettings)
   }
@@ -26,7 +34,7 @@ object SettingsParser extends Logging {
   private def loadDbSettings(config: Config) : DbSettings = {
     val dbConfig = Try(config.getConfig("db.default")).getOrElse {
       log.warning("No schema defined.")
-      return DbSettings(null, null, null, null, null, null, null)
+      return DbSettings(null, null, null, null, null, null, null, null, null, null)
     }
     val driver = Try(dbConfig.getString("driver")).getOrElse(null)
     val url = Try(dbConfig.getString("url")).getOrElse(null)
@@ -35,8 +43,15 @@ object SettingsParser extends Logging {
     val dbname = Try(dbConfig.getString("dbname")).getOrElse(null)
     val host = Try(dbConfig.getString("host")).getOrElse(null)
     val port = Try(dbConfig.getString("port")).getOrElse(null)
-    log.info(s"Got database Settings: user ${user}, dbname ${dbname}, host ${host}, port ${port}.")
-    return DbSettings(driver, url, user, password, dbname, host, port)
+    val gphost = Try(dbConfig.getString("gphost")).getOrElse("")
+    val gpport = Try(dbConfig.getString("gpport")).getOrElse("")
+    var gppath = Try(dbConfig.getString("gppath")).getOrElse("")
+    if (gppath.takeRight(1) == "/") gppath = gppath.take(gppath.length -1)
+    log.info(s"Database settings: user ${user}, dbname ${dbname}, host ${host}, port ${port}.")
+    if (gphost != "") {
+      log.info(s"GPFDIST settings: host ${gphost} port ${gpport} path ${gppath}")
+    }
+    return DbSettings(driver, url, user, password, dbname, host, port, gphost, gppath, gpport)
   }
 
 
@@ -104,12 +119,13 @@ object SettingsParser extends Logging {
 
   private def loadInferenceSettings(config: Config): InferenceSettings = {
     val inferenceConfig = Try(config.getConfig("inference")).getOrElse {
-      return InferenceSettings(Nil, None, false, "")
+      return InferenceSettings(Nil, None, false, "", false)
     }
     // These configs are currently disabled in grounding
     // // Zifei's changes: Add capability to skip learning
     val skipLearning = Try(inferenceConfig.getBoolean("skip_learning")).getOrElse(false)
     val weightTable = Try(inferenceConfig.getString("weight_table")).getOrElse("")
+    val parallelGrounding = Try(inferenceConfig.getBoolean("parallel_grounding")).getOrElse(false)
     // val skipLearning = false
     // val weightTable = ""
 
@@ -120,7 +136,7 @@ object SettingsParser extends Logging {
 
     val batchSize = Try(inferenceConfig.getInt("batch_size")).toOption
     val factorConfig = Try(inferenceConfig.getObject("factors")).getOrElse {
-      return InferenceSettings(Nil, batchSize, skipLearning, weightTable)
+      return InferenceSettings(Nil, batchSize, skipLearning, weightTable, parallelGrounding)
     }
     val factors = factorConfig.keySet().map { factorName =>
       val factorConfig = inferenceConfig.getConfig(s"factors.$factorName")
@@ -140,7 +156,7 @@ object SettingsParser extends Logging {
       FactorDesc(factorName, factorInputQuery, factorFunction, 
           factorWeight, factorWeightPrefix)
     }.toList
-    InferenceSettings(factors, batchSize, skipLearning, weightTable)
+    InferenceSettings(factors, batchSize, skipLearning, weightTable, parallelGrounding)
   }
 
   private def loadCalibrationSettings(config: Config) : CalibrationSettings = {

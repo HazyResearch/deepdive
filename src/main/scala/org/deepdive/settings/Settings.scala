@@ -28,4 +28,3 @@ case class Settings(schemaSettings : SchemaSettings,
   pipelineSettings: PipelineSettings,
   dbSettings: DbSettings) extends SettingsImpl
 
-

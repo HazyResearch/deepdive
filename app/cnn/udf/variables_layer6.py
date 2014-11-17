@@ -7,7 +7,7 @@ import fileinput
 
 BlockSize=1
 FID_IN=20
-FID_OUT=2 #NCLASS
+FID_OUT=10 #NCLASS
 for row in fileinput.input():
 	obj = json.loads(row)
 	image_id = obj["image_id"]

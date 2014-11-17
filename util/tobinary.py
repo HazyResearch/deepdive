@@ -3,8 +3,9 @@
 import sys
 import re
 import os
+import time
 
-CHUNKSIZE = '10000000'
+CHUNKSIZE = '1000000'
 INPUTFOLDER = sys.argv[1]
 transform_script = sys.argv[2]
 OUTPUTFOLDER = sys.argv[3]
@@ -13,20 +14,23 @@ os.system('rm -rf ' + INPUTFOLDER + "/tmp")
 os.system('mkdir -p ' + INPUTFOLDER + "/tmp")
 # print('rm -rf ' + INPUTFOLDER + "/nedges_")
 
-
 for f in os.listdir(INPUTFOLDER):
   if f.startswith('edges'):
+    print (time.strftime("%d/%m/%Y")+" "+time.strftime("%H:%M:%S"))
     print "SPLITTING", "edges", "..."
     os.system('split -a 10 -l ' + CHUNKSIZE + ' ' + INPUTFOLDER + '/' + f + ' ' + INPUTFOLDER + '/tmp/' + f)
-
+    
+    print (time.strftime("%d/%m/%Y")+" " +time.strftime("%H:%M:%S"))
     print "BINARIZE ", "edges", "..."
-    os.system('ls ' + INPUTFOLDER + '/tmp | egrep edges' + '  | xargs -P 1 -I {} -n 1 sh -c \'' + transform_script + ' edges ' + INPUTFOLDER + '/tmp/{} \'' )
+    os.system('ls ' + INPUTFOLDER + '/tmp | egrep edges' + '  | xargs -P 100 -I {} -n 1 sh -c \'' + transform_script + ' edges ' + INPUTFOLDER + '/tmp/{} \'' )
 
 for f in os.listdir(INPUTFOLDER):
   if f.startswith('variables_'):
+    print (time.strftime("%d/%m/%Y")+" " +time.strftime("%H:%M:%S"))
     print "SPLITTING", f, "..."
     os.system('split -a 10 -l ' + CHUNKSIZE + ' ' + INPUTFOLDER + '/' + f + ' ' + INPUTFOLDER + '/tmp/' + f)
 
+    print (time.strftime("%d/%m/%Y")+" " +time.strftime("%H:%M:%S"))
     print "BINARIZE ", f, "..."
     os.system('ls ' + INPUTFOLDER + '/tmp | egrep "^' + f + '"  | xargs -P 40 -I {} -n 1 sh -c \'' + transform_script + ' variable ' + INPUTFOLDER + '/tmp/{} \'')
 
@@ -51,7 +55,7 @@ nfactor_files = 0
 nvariable_files = 0
 nedge_files = 0
 
-
+print (time.strftime("%d/%m/%Y")+" " +time.strftime("%H:%M:%S"))
 print "COUNTING", "variables", "..."
 os.system('wc -l ' + INPUTFOLDER + "/tmp/variables_* | awk '{print $1+%d}' | tail -n 1 > " % nvariable_files + INPUTFOLDER + '/nvariables')
 
@@ -68,7 +72,7 @@ os.system('wc -l ' + INPUTFOLDER + "/tmp/edges* | awk '{print $1+%d}' | tail -n 
 
 # os.system("awk '{{ sum += $1 }} END {{ print sum }}' {0}/nedges_ > {0}/nedges".format(INPUTFOLDER))
 
-
+print (time.strftime("%d/%m/%Y")+ " " +time.strftime("%H:%M:%S"))
 print "CATENATING FILES..."
 os.system("cat {0}/nweights {0}/nvariables {0}/nedges| tr '\n' ',' > {0}/graph.meta".format(INPUTFOLDER))
 os.system("echo {0}/graph.weights,{0}/graph.variables,{0}/graph.edges >> {0}/graph.meta".format(INPUTFOLDER))
@@ -86,6 +90,7 @@ os.system("cat {0}/fedges/* > {1}/graph.edges".format(INPUTFOLDER, OUTPUTFOLDER)
 os.system('rm -rf {0}/tmp'.format(INPUTFOLDER))
 os.system('rm -rf {0}/variables'.format(INPUTFOLDER))
 os.system('rm -rf {0}/fedges'.format(INPUTFOLDER))
+print (time.strftime("%d/%m/%Y")+" " +time.strftime("%H:%M:%S")+" Done! :-)")
 
 # os.system('rm -rf {0}/factors'.format(INPUTFOLDER))
 # os.system('rm -rf {0}/factors*'.format(INPUTFOLDER))

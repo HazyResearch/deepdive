@@ -42,6 +42,8 @@ void load_var(std::string filename){
   std::ifstream fin(filename.c_str());
   std::ofstream fout((filename + ".bin").c_str(), std::ios::binary | std::ios::out);
 
+  long image_id;
+  long fid;
   long mid;
   long num_rows;
   long num_cols;
@@ -52,13 +54,19 @@ void load_var(std::string filename){
   string line;
   while (getline(fin, line)) {
     istringstream ss(line);
+    ss >> image_id;
+    ss >> fid;
     ss >> mid;
     ss >> num_rows >> num_cols;
 
+    image_id = bswap_64(image_id);
+    fid = bswap_64(fid);
     mid = bswap_64(mid);
     num_rows = bswap_64(num_rows);
     num_cols = bswap_64(num_cols);
 
+    fout.write((char*)&image_id, 8);
+    fout.write((char*)&fid, 8);
     fout.write((char*)&mid, 8);
     fout.write((char*)&num_rows, 8);
     fout.write((char*)&num_cols, 8);

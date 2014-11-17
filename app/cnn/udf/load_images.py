@@ -15,9 +15,9 @@ for row in fileinput.input():
 
 	label = int(IMGPATH.split('.')[0].split('train')[1])
 
-	if not (label == 0
-		 or label == 1
-		 ): continue
+	# if not (label == 0
+	# 	 or label == 1
+	# 	 ): continue
 
 	input_img = Image.open(IMGPATH)
 
@@ -25,19 +25,33 @@ for row in fileinput.input():
 	image_limit=0
 	for i in range(0, input_img.size[0], CELL):
 		for j in range(0, input_img.size[1], CELL):
-			if(image_limit>599):
+			if(image_limit>0):
 				break
 
 			box = (i, j, i + CELL, j + CELL)
 			output_img = input_img.crop(box)
 			roi=list(output_img.getdata())
+			ct=0
 			for roi_i in range(0,CELL*CELL):
 				roi[roi_i]/=255.0
-
+				# if(ct==0 ):
+				# 	roi[roi_i]=1
+				# else:
+				# 	roi[roi_i]=0
+				# ct+=1
+			r=0
+			c=0
 			# for ro in roi :
 			# 	print ro,
+			# 	# c=c+1
+			# 	# if c==28:
+			# 	# 	c=0
+			# 	# 	r=r+1
+			# 	# 	print ""
 			# print ""
 			# print label
+
+
 			print json.dumps({
 				"image_id":image_id,
 				"pixels":roi,

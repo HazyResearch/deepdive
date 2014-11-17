@@ -4,22 +4,23 @@
 from helper.easierlife import *
 import json
 import fileinput
+import numpy
 
 N_CLASS=1
 for row in fileinput.input():
 	obj = json.loads(row)
 	image_id = obj["image_id"]
-	fid= obj["fid"]
+	x= obj["x"]
+	y= obj["y"]
 	label = obj["label"]
-	layer=obj["layer"]
-	values=[]
+	f = obj["fid"]
 	for c in range(0,N_CLASS):
-		values.append(label)
-	print json.dumps({
-		"image_id":image_id,
-		"fid":fid,
-		"num_rows":1,
-		"num_cols":1,
-		"value":values,
-		"layer":layer
-		})
+		print json.dumps({
+			"vector_id": [image_id,x,y,f],
+			"image_id":image_id,
+			"x":x,
+			"y":y,
+			"class":c,
+			"value":label,
+			"fid":f
+			})

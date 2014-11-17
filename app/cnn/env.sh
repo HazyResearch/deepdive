@@ -36,11 +36,14 @@ export PARALLELISM=96
 
 
 # Database Configuration
-export DBNAME=deepdive_images_10
+export DBNAME=MNIST_images_1
 export PGUSER=amirabs
 export PGPASSWORD=${PGPASSWORD:-}
 export PGPORT=5432
 export PGHOST=raiders3.stanford.edu
+export GPHOST=raiders3.stanford.edu
+export GPPORT=8083
+export GPPATH=/lfs/local/0/amir/gpdata
 
 # SBT Options
 export SBT_OPTS="-Xmx$MEMORY"
