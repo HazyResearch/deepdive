@@ -759,12 +759,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
             // create a table that only contains one row (one weight) 
             case false => s"""DROP TABLE IF EXISTS ${weighttableForThisFactor} CASCADE;
               CREATE TABLE ${weighttableForThisFactor} AS
-              SELECT ${cast(isFixed, "int")} AS isfixed, ${cast(initvalue, "real")} AS initvalue, 
+              SELECT ${cast(isFixed, "int")} AS isfixed, ${cast(initvalue, "float")} AS initvalue, 
                 ${cast(0, "bigint")} AS id;"""
             // create one weight for each different element in weightlist.
             case true => s"""DROP TABLE IF EXISTS ${weighttableForThisFactor} CASCADE;
               CREATE TABLE ${weighttableForThisFactor} AS
-              SELECT ${weightlist}, ${cast(isFixed, "int")} AS isfixed, ${cast(initvalue, "real")} AS initvalue, 
+              SELECT ${weightlist}, ${cast(isFixed, "int")} AS isfixed, ${cast(initvalue, "float")} AS initvalue, 
                 ${cast(0, "bigint")} AS id
               FROM ${querytable}
               GROUP BY ${weightlist};"""
@@ -864,13 +864,13 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           if (usingGreenplum) {
              execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactorTemp} CASCADE;
                   CREATE TABLE ${weighttableForThisFactorTemp} AS 
-                    (SELECT ${weightlist}, ${isFixed}::int AS isfixed, ${initvalue}::real AS initvalue
+                    (SELECT ${weightlist}, ${cast(isFixed, "int")} AS isfixed, ${cast(initvalue, "real")} AS initvalue
                     FROM ${querytable}
                     GROUP BY ${weightlist}) DISTRIBUTED BY (${weightlist});""") 
             }else{
               execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactorTemp} CASCADE;
                       CREATE TABLE ${weighttableForThisFactorTemp} AS
-                      SELECT ${weightlist}, ${isFixed}::int AS isfixed, ${initvalue}::real AS initvalue
+                      SELECT ${weightlist}, ${cast(isFixed, "int")} AS isfixed, ${cast(initvalue, "real")} AS initvalue
                       FROM ${querytable}
                       GROUP BY ${weightlist}; """)
             }       
