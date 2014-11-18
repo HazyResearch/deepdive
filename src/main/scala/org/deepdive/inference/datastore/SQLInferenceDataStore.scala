@@ -864,13 +864,13 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           if (usingGreenplum) {
              execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactorTemp} CASCADE;
                   CREATE TABLE ${weighttableForThisFactorTemp} AS 
-                    (SELECT ${weightlist}, ${cast(isFixed, "int")} AS isfixed, ${cast(initvalue, "real")} AS initvalue
+                    (SELECT ${weightlist}, ${cast(isFixed, "int")} AS isfixed, ${cast(initvalue, "float")} AS initvalue
                     FROM ${querytable}
                     GROUP BY ${weightlist}) DISTRIBUTED BY (${weightlist});""") 
             }else{
               execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactorTemp} CASCADE;
                       CREATE TABLE ${weighttableForThisFactorTemp} AS
-                      SELECT ${weightlist}, ${cast(isFixed, "int")} AS isfixed, ${cast(initvalue, "real")} AS initvalue
+                      SELECT ${weightlist}, ${cast(isFixed, "int")} AS isfixed, ${cast(initvalue, "float")} AS initvalue
                       FROM ${querytable}
                       GROUP BY ${weightlist}; """)
             }       
