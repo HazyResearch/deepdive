@@ -759,12 +759,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
             // create a table that only contains one row (one weight) 
             case false => s"""DROP TABLE IF EXISTS ${weighttableForThisFactor} CASCADE;
               CREATE TABLE ${weighttableForThisFactor} AS
-              SELECT ${cast(isFixed, "int")} AS isfixed, ${cast(initvalue, "real")} AS initvalue, 
+              SELECT ${cast(isFixed, "int")} AS isfixed, ${cast(initvalue, "float")} AS initvalue, 
                 ${cast(0, "bigint")} AS id;"""
             // create one weight for each different element in weightlist.
             case true => s"""DROP TABLE IF EXISTS ${weighttableForThisFactor} CASCADE;
               CREATE TABLE ${weighttableForThisFactor} AS
-              SELECT ${weightlist}, ${cast(isFixed, "int")} AS isfixed, ${cast(initvalue, "real")} AS initvalue, 
+              SELECT ${weightlist}, ${cast(isFixed, "int")} AS isfixed, ${cast(initvalue, "float")} AS initvalue, 
                 ${cast(0, "bigint")} AS id
               FROM ${querytable}
               GROUP BY ${weightlist};"""
@@ -858,16 +858,49 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           }
         } else { // not fixed and has weight variables
           // temporary weight table for weights without a cross product with cardinality
+          // temporary weight table for weights without a cross product with cardinality
           val weighttableForThisFactorTemp = s"dd_weight_${factorDesc.name}_temp"
-          execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactorTemp} CASCADE;
-            CREATE TABLE ${weighttableForThisFactorTemp} AS 
-            SELECT ${weightlist}, ${cast(isFixed, "int")} AS isfixed, ${cast(initvalue, "real")} AS initvalue, ${cast(0, "bigint")} AS id
-            FROM ${querytable}
-            GROUP BY ${weightlist};""")
+
+          if (usingGreenplum) {
+             execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactorTemp} CASCADE;
+                  CREATE TABLE ${weighttableForThisFactorTemp} AS 
+                    (SELECT ${weightlist}, ${cast(isFixed, "int")} AS isfixed, ${cast(initvalue, "float")} AS initvalue
+                    FROM ${querytable}
+                    GROUP BY ${weightlist}) DISTRIBUTED BY (${weightlist});""") 
+            }else{
+              execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactorTemp} CASCADE;
+                      CREATE TABLE ${weighttableForThisFactorTemp} AS
+                      SELECT ${weightlist}, ${cast(isFixed, "int")} AS isfixed, ${cast(initvalue, "float")} AS initvalue
+                      FROM ${querytable}
+                      GROUP BY ${weightlist}; """)
+            }       
+  
+          // We need to create two tables -- one for a non-order'ed version
+          // another for an ordered version. The reason that we cannot
+          // do this with only one table is not fundemental -- it is just
+          // a specific property of Greenplum to make it right
           execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactor} CASCADE;
             CREATE TABLE ${weighttableForThisFactor} AS 
             SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} AS cardinality
+            FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")} LIMIT 0;""")
+
+          execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactor}_unsorted CASCADE;
+            CREATE TABLE ${weighttableForThisFactor}_unsorted AS 
+            SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} AS cardinality
+            FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")} LIMIT 0;""")
+
+          execute(s"""ALTER TABLE ${weighttableForThisFactor} ADD COLUMN id bigint;""")
+          execute(s"""ALTER TABLE ${weighttableForThisFactor}_unsorted ADD COLUMN id bigint;""")
+
+          execute(s"""
+            INSERT INTO ${weighttableForThisFactor}_unsorted
+            SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} as cardinality, 0 AS id
             FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")}
+            ORDER BY ${weightlist}, cardinality;""")
+
+          execute(s"""
+            INSERT INTO ${weighttableForThisFactor}
+            SELECT * FROM ${weighttableForThisFactor}_unsorted
             ORDER BY ${weightlist}, cardinality;""")
 
           // handle weight id
