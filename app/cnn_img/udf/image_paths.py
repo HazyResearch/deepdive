@@ -11,7 +11,7 @@ import cPickle as pickle
 BASE_FOLDER = "/lfs/local/0/amir/deepdive/app/cnn_img"
 
 image_id=0 #image_id!=-1 --> reserved
-folder_name="data"
+folder_name="data2"
 for image_folder in os.listdir(BASE_FOLDER + '/' +folder_name+ '/'):
 	if image_folder.startswith('n') == False: continue
 	for bigimage in os.listdir(BASE_FOLDER + '/' +folder_name+ '/' + image_folder +"/"):

@@ -27,11 +27,11 @@ psql $GREENPLUM_FLAGS -d $DBNAME -c "CREATE TABLE image_paths(id bigint,\
 psql $GREENPLUM_FLAGS -d $DBNAME -c "CREATE TABLE images(id bigint,\
 										image_id bigint,\
 										fid int,\
-										values real[],\
 										num_rows int,\
 										num_cols int,\
-										label int,\
-										layer int) DISTRIBUTED BY (image_id)"
+										values real[],\
+										layer int,\
+										label int) DISTRIBUTED BY (image_id)"
 
 psql $GREENPLUM_FLAGS -d $DBNAME -c "CREATE TABLE variables_layer0(id bigint,\
 										image_id bigint,\

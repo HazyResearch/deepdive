@@ -41,5 +41,5 @@ for row in fileinput.input():
 
 	for i in range(0,3):
 		pic_str=str(pic[i]).replace("[", "{").replace("]", "}")
-		print "\N" + '\t' + str(starting_id) + '\t' + str(i) + '\t' + pic_str +'\t' + str(size[0]) + '\t' + str(size[1]) + '\t' + str(label) + '\t' + str(layer)
+		print "\N" + '\t' + str(starting_id) + '\t' + str(i)  +'\t' + str(size[0]) + '\t' + str(size[1]) + '\t' + pic_str + '\t' + str(layer) + '\t' + str(label) 
 
