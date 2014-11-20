@@ -226,7 +226,8 @@ class ChunkingApp extends FunSpec with Logging{
   describe("Chunking with linear chain CRF") {
 
     it("should get F1 score > 0.8") {
-      
+      // Assume GP is not running on the system, or skip this test
+      assume("which gpfdist".! != 0)
       prepareData()
       DeepDive.run(config, "out/test_chunking")
       // Make sure the data is in the database
