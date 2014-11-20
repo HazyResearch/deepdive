@@ -14,6 +14,9 @@ import scala.util.Try
 /* Describes the context of the DeepDive application */
 object Context extends Logging {
 
+  // The akka actor is initialized when "Context.system" is first accessed.
+  // TODO: it might not be best to use a lazy val here, since we may want 
+  // to run "DeepDive.run" multiple times, e.g. in tests.
   lazy val system = ActorSystem("deepdive")
   var outputDir = "out"
   // This needs to be variable since we might reassign it in relearnFrom feature

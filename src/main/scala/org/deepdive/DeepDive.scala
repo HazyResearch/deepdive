@@ -21,8 +21,11 @@ object DeepDive extends Logging {
 
   def run(config: Config, outputDir: String) {
 
-    // Get the actor system
+    // Initialize and get the actor system
     val system = Context.system
+
+    // catching all exceptions and terminate Akka
+    try {
 
     // Load Settings
     val settings = Settings.loadFromConfig(config)
@@ -170,6 +173,14 @@ object DeepDive extends Logging {
 
     // Clean up resources
     Context.shutdown()
+
+    // end try
+    } catch {
+      case e: Exception =>
+        // In case of any exception
+        Context.shutdown()
+        throw e
+    }
   }
 
 }
