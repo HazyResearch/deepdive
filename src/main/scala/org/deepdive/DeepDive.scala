@@ -176,6 +176,16 @@ object DeepDive extends Logging {
 
     // end try
     } catch {
+      /* Notes @zifei:
+        This non-termination fix does not guarantee fixing all
+        non-termination errors, since we has multiple Akka actors
+        (InferenceManager, ExtractionManager, etc), and simply catching
+        errors in DeepDive class may not handle all cases.
+
+        But this try-catch do fix some errors, e.g. invalid configuration 
+        file (mandatory fields are not present) (in: Settings.loadFromConfig).
+        Tested in BrokenTest.scala
+      */
       case e: Exception =>
         // In case of any exception
         Context.shutdown()
