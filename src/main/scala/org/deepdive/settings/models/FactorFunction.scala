@@ -31,10 +31,6 @@ case class EqualFactorFunction(variables: Seq[FactorFunctionVariable]) extends F
   override def variableDataType = "Boolean"
 }
 
-case class ContinuousLRFactorFunction(variables: Seq[FactorFunctionVariable]) extends FactorFunction {
-  override def variableDataType = "Boolean"
-}
-
 /* A factor function describing A == True. Restricted to one variable. */
 case class IsTrueFactorFunction(variables: Seq[FactorFunctionVariable]) extends FactorFunction {
   override def variableDataType = "Boolean"
@@ -47,11 +43,6 @@ case class XorFactorFunction(variables: Seq[FactorFunctionVariable]) extends Fac
 
 /* A factor function describing and between all combinations of values for multinomial variables */
 case class MultinomialFactorFunction(variables: Seq[FactorFunctionVariable]) extends FactorFunction {
-  override def variableDataType = "Discrete"
-}
-
-/* Dummy factor function */
-case class DummyFactorFunction(val variables: Seq[FactorFunctionVariable]) extends FactorFunction {
   override def variableDataType = "Discrete"
 }
 
