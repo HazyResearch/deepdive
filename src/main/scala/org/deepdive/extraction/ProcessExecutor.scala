@@ -8,6 +8,7 @@ import ProcessExecutor._
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent._
 import scala.concurrent.duration._
+import scala.language.postfixOps
 import scala.io.Source
 import scala.sys.process._
 
