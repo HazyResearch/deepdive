@@ -197,7 +197,8 @@ deepdive {
   def processResults(): Double = {
     JdbcDataStore.init(config)
     var score = 0.0;
-    val checkQuery = """select num_correct::real / (num_correct + num_incorrect) 
+    val checkQuery = """select num_correct::real / (num_correct + 
+      CASE WHEN num_incorrect IS NULL THEN 0 ELSE num_incorrect END) 
       from has_spouse_is_true_calibration where bucket = 9"""
 
     PostgresDataStore.withConnection { implicit conn =>
