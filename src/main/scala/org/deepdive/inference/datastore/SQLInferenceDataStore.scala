@@ -106,7 +106,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       case "EqualFactorFunction" => 3
       case "IsTrueFactorFunction" =>  4
       case "MultinomialFactorFunction" => 5
-      case "ContinuousLRFactorFunction" => 20
     }
   }
 
@@ -678,80 +677,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       }
       val weightDesc = generateWeightDesc(factorDesc.weightPrefix, factorDesc.weight.variables)
 
-      if (factorDesc.func.getClass.getSimpleName == "ContinuousLRFactorFunction"){
-
-        log.info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        if (isFixed || weightlist == ""){
-          log.error("#########################################")
-          log.error("DO NOT SUPPORT FIXED ARRAY WEIGHT FOR NOW")
-        } else { // not fixed and has weight variables
-          execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactor} CASCADE;
-            CREATE TABLE ${weighttableForThisFactor} AS
-            SELECT ${weightlist}, ${cast(0, "bigint")} AS id, ${cast(isFixed, "int")} AS isfixed, ${initvalue} + 0.0 AS initvalue 
-            FROM ${querytable}
-            GROUP BY ${weightlist};""")
-
-          // handle weight id
-          if (usingGreenplum) {      
-            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor}', ${cweightid});""")
-          } else {
-            execute(s"UPDATE ${weighttableForThisFactor} SET id = ${nextVal(weightidSequence)};")
-          }
-
-          var min_weight_id = 0L
-          var max_weight_id = 0L
-
-          issueQuery(s"""SELECT MIN(id) FROM ${weighttableForThisFactor};""") { rs =>
-            min_weight_id = rs.getLong(1)
-          }
-
-          issueQuery(s"""SELECT MAX(id) FROM ${weighttableForThisFactor};""") { rs =>
-            max_weight_id = rs.getLong(1)
-          }
-
-          execute(s"""UPDATE ${weighttableForThisFactor} SET
-                    id = ${min_weight_id} + (id - ${min_weight_id})*4096 
-            ;""")
-
-          issueQuery(s"""SELECT COUNT(*) FROM ${weighttableForThisFactor};""") { rs =>
-            cweightid += rs.getLong(1) * 4096
-          }
-
-          execute(s""" 
-              DROP TABLE IF EXISTS ${weighttableForThisFactor}_other CASCADE;
-              CREATE TABLE ${weighttableForThisFactor}_other (addid int);
-            """)
-
-          var one_2_4096 = (1 to (4096-1)).map(v => s""" (${v}) """).mkString(", ")
-
-          execute(s""" 
-              INSERT INTO ${weighttableForThisFactor}_other VALUES ${one_2_4096};
-          """)
-
-          execute(s"""
-            INSERT INTO ${weighttableForThisFactor}
-            SELECT t0.feature, t0.id+t1.addid, t0.isfixed, NULL 
-            FROM ${weighttableForThisFactor} t0, ${weighttableForThisFactor}_other t1;
-          """)
-
-          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue) SELECT id, isfixed, initvalue FROM ${weighttableForThisFactor};""")
-
-          // check null weight
-          val weightChecklist = factorDesc.weight.variables.map(v => s""" ${quoteColumn(v)} IS NULL """).mkString("AND")
-          issueQuery(s"SELECT COUNT(*) FROM ${querytable} WHERE ${weightChecklist}") { rs =>
-            if (rs.getLong(1) > 0) {
-              throw new RuntimeException("Weight variable has null values")
-            }
-          }
-
-          // dump factors
-          val weightjoinlist = factorDesc.weight.variables.map(v => s""" t0.${quoteColumn(v)} = t1.${quoteColumn(v)} """).mkString("AND")
-          du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
-            s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
-             FROM ${querytable} t0, ${weighttableForThisFactor} t1
-             WHERE ${weightjoinlist} AND t1.initvalue IS NOT NULL;""")
-        }
-      } else if (factorDesc.func.getClass.getSimpleName != "MultinomialFactorFunction") {
+      if (factorDesc.func.getClass.getSimpleName != "MultinomialFactorFunction") {
 
         // branch if weight variables present
         val hasWeightVariables = !(isFixed || weightlist == "")
@@ -785,7 +711,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
             SELECT id, isfixed, initvalue, ${weightDesc} FROM ${weighttableForThisFactor};""")
 
           // check null weight (only if there are weight variables)
-          // TODO BUG here: 
           if (hasWeightVariables) {
             val weightChecklist = factorDesc.weight.variables.map(v => s""" ${quoteColumn(v)} IS NULL """).mkString("AND")
             issueQuery(s"SELECT COUNT(*) FROM ${querytable} WHERE ${weightChecklist}") { rs =>
