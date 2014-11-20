@@ -188,8 +188,6 @@ deepdive {
     case _ => "false"
   }}
 
-  sampler.sampler_args: "--quiet -l 300 -s 1 -i 500 --alpha 0.1"
-
 }
 
   """

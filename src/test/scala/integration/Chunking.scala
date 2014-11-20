@@ -181,8 +181,6 @@ class ChunkingApp extends FunSpec with Logging{
         case "true" | "1" | "True" | "TRUE" => "true"
         case _ => "false"
       }}
-
-      sampler.sampler_args: "--quiet -l 300 -s 1 -i 500 --alpha 0.1"
     }
     """
 
