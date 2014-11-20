@@ -267,7 +267,7 @@ deepdive {
       // DeepDive.run will finally call JdbcDataStore.close()...
 
       val score = processResults()
-      assert(score > 0.8)
+      assert(score > 0.9)
 
       JdbcDataStore.close()
     }
