@@ -238,7 +238,14 @@ deepdive {
   def processResults(): Double = {
     JdbcDataStore.init(config)
     var score = 0.0;
-    val checkQuery = """select num_correct / (num_correct + num_incorrect)
+
+    // There is a chance that num_incorrect is 0 in bucket=9, in this case
+    // num_incorrect will be NULL rather than 0 in the
+    // has_spouse_is_true_calibration table. Not sure if there is a design
+    // decision there or is this a bug. But this query will try to compute
+    // X / (X + NULL) and get NULL as result, which breaks the result.
+    val checkQuery = """select num_correct / (num_correct + 
+      CASE WHEN num_incorrect IS NULL THEN 0 ELSE num_incorrect END)
       from has_spouse_is_true_calibration where bucket = 9"""
 
     MysqlDataStore.withConnection { implicit conn =>

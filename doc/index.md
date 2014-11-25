@@ -96,6 +96,7 @@ Riondato](http://cs.brown.edu/~matteo/).
 
 ### Updates &amp; Changelog 
 
+- [Changelog for version 0.04.1-alpha](doc/changelog/0.04.1-alpha.html) (11/25/2014)
 - [Changelog for version 0.04-alpha](doc/changelog/0.04-alpha.html) (11/19/2014)
 - [Changelog for version 0.03.2-alpha](doc/changelog/0.03.2-alpha.html) (09/16/2014)
 - [Changelog for version 0.03.1-alpha](doc/changelog/0.03.1-alpha.html) (08/15/2014)
