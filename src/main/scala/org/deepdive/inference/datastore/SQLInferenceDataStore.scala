@@ -560,7 +560,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       // variable table join with holdout table 
       // - a variable is an evidence if it has initial value and it is not holdout
       val variableTypeColumn = "__dd_variable_type__"
+      // Dropping this column if it exists, in case the last grounding is not successful
       execute(s"""
+        ALTER TABLE ${relation} DROP COLUMN IF EXISTS ${variableTypeColumn} CASCADE;
         ALTER TABLE ${relation} ADD COLUMN ${variableTypeColumn} int;
         """)
       execute(s"""
