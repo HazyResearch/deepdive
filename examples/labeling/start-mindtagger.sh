@@ -9,7 +9,7 @@ cd "$(dirname "$0")"
 PATH="$PWD:$PATH"
 
 # install Mindbender locally if not available or broken
-release=${MINDBENDER_RELEASE:=v0.1.1}
+release=${MINDBENDER_RELEASE:=v0.1.2}
 if ! type mindbender &>/dev/null || [[ $(mindbender version | head -1) < "Mindbender $release" ]]; then
     tool=mindbender
     mkdir -p "$(dirname "$tool")"
