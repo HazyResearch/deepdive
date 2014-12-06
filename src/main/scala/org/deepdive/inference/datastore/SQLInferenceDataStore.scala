@@ -561,8 +561,15 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       // - a variable is an evidence if it has initial value and it is not holdout
       val variableTypeColumn = "__dd_variable_type__"
       // Dropping this column if it exists, in case the last grounding is not successful
+      try {
+        // GP (psql8.2) do not support DROP COLUMN IF EXISTS syntax.
+        execute(s"""ALTER TABLE ${relation} DROP COLUMN ${variableTypeColumn} CASCADE;""")
+      } catch {
+        case exception : Throwable =>
+          // allow any type of exception here
+      }
+        
       execute(s"""
-        ALTER TABLE ${relation} DROP COLUMN IF EXISTS ${variableTypeColumn} CASCADE;
         ALTER TABLE ${relation} ADD COLUMN ${variableTypeColumn} int;
         """)
       execute(s"""
