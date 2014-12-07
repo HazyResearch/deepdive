@@ -379,7 +379,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       SELECT INTO tsids array_to_string(sids, ',');
       SELECT INTO tbase_ids array_to_string(base_ids, ',');
       SELECT INTO tbase_ids_noagg array_to_string(base_ids_noagg, ',');
-      EXECUTE 'update ' || tname || ' set id = updateid(' || startid || ', gp_segment_id, ARRAY[' || tsids || '], ARRAY[' || tbase_ids || '], ARRAY[' || tbase_ids_noagg || ']);';
+      if ('update ' || tname || ' set id = updateid(' || startid || ', gp_segment_id, ARRAY[' || tsids || '], ARRAY[' || tbase_ids || '], ARRAY[' || tbase_ids_noagg || ']);')::text is not null then
+        EXECUTE 'update ' || tname || ' set id = updateid(' || startid || ', gp_segment_id, ARRAY[' || tsids || '], ARRAY[' || tbase_ids || '], ARRAY[' || tbase_ids_noagg || ']);';
+      end if;
       RETURN '';
     END;
     $$
