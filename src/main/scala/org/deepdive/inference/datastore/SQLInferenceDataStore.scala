@@ -571,8 +571,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
                            WHEN ${column} IS NOT NULL THEN 1
                            WHEN t2.variable_id IS NOT NULL THEN 2
                       END as ${variableTypeColumn}
-        FROM ${relation} t0 LEFT OUTER JOIN ${VariablesHoldoutTable} t1 LEFT OUTER JOIN ${VariablesObservationTable} t2
-        ON t0.id=t1.variable_id AND t0.id=t2.variable_id;
+        FROM ${relation} t0 LEFT OUTER JOIN ${VariablesHoldoutTable} t1 
+        ON t0.id=t1.variable_id LEFT OUTER JOIN ${VariablesObservationTable} t2 ON t0.id=t2.variable_id;
       """)
 
       val relationWithTypeView = s"${relation}_with_vtype"
