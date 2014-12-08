@@ -570,6 +570,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         SELECT t0.id, CASE WHEN t1.variable_id IS NOT NULL THEN 0
                            WHEN ${column} IS NOT NULL THEN 1
                            WHEN t2.variable_id IS NOT NULL THEN 2
+                           ELSE 0
                       END as ${variableTypeColumn}
         FROM ${relation} t0 LEFT OUTER JOIN ${VariablesHoldoutTable} t1 
         ON t0.id=t1.variable_id LEFT OUTER JOIN ${VariablesObservationTable} t2 ON t0.id=t2.variable_id;
