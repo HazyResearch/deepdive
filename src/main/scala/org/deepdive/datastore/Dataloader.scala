@@ -98,7 +98,7 @@ class DataLoader extends JdbcDataStore with Logging {
       writer.close()
       Helpers.executeCmd(cmdfile.getAbsolutePath())
       // executeSqlQuery(s"""COPY (SELECT * FROM _${filename}_view) TO '${filepath}';""")
-      executeSqlQueries(s"DROP VIEW _${filename}_view;")
+      executeSqlQueries(s"DROP VIEW IF EXISTS _${filename}_view;")
       s"rm ${cmdfile.getAbsolutePath()}".!
     }
   }
