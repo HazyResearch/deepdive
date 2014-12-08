@@ -558,13 +558,13 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         INSERT INTO ${cardinalityTableName} VALUES ${cardinalityValues};
         """)
 
-      // add a column to **a view** of variable table to denote variable type - query, evidence, observation
+      // Create a table to denote variable type - query, evidence, observation
       // variable table join with holdout table 
       // - a variable is an evidence if it has initial value and it is not holdout
       val variableTypeColumn = "__dd_variable_type__"
 
       // IF:
-      //  in obervation table, in evidence table => Observation 2
+      //  in observation table, in evidence table => Observation 2
       //  in holdout table => Query 1
       //  not in observation table, not in holdout table, in evidence table => Evidence 1
       //  else => Query 1
@@ -578,18 +578,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
                            ELSE 0
                       END as ${variableTypeColumn}
         FROM ${relation} t0 LEFT OUTER JOIN ${VariablesHoldoutTable} t1 
-        ON t0.id=t1.variable_id LEFT OUTER JOIN ${VariablesObservationTable} t2 ON t0.id=t2.variable_id;
+        ON t0.id=t1.variable_id LEFT OUTER JOIN ${VariablesObservationTable} t2 ON t0.id=t2.variable_id
       """)
-
-      val relationWithTypeView = s"${relation}_with_vtype"
-      execute(s"""
-          DROP VIEW IF EXISTS ${relationWithTypeView} CASCADE;
-          CREATE VIEW ${relationWithTypeView} AS
-          SELECT t0.*, t1.${variableTypeColumn}
-          FROM ${relation} t0, ${relation}_vtype t1
-          WHERE t0.id=t1.id;
-      """)
-
 
       // dump variables
       val initvalueCast = variableDataType match {
@@ -598,10 +588,11 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       }
       du.unload(s"dd_variables_${relation}", s"${groundingPath}/dd_variables_${relation}",
         dbSettings, parallelGrounding,
-        s"""SELECT id, ${variableTypeColumn},
-        CASE WHEN ${variableTypeColumn} = 0 THEN 0 ELSE ${initvalueCast} END AS initvalue,
+        s"""SELECT t0.id, t1.${variableTypeColumn},
+        CASE WHEN t1.${variableTypeColumn} = 0 THEN 0 ELSE ${initvalueCast} END AS initvalue,
         ${variableDataType} AS type, ${cardinality} AS cardinality
-        FROM ${relationWithTypeView}
+        FROM ${relation} t0, ${relation}_vtype t1
+        WHERE t0.id=t1.id
         """)
 
     }
