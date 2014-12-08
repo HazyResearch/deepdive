@@ -49,6 +49,65 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
       }
     }
 
+    describe("testing the variable id assignment") {
+      it("should work") {
+        inferenceDataStore.init()
+
+        // Size of t1. This is "1" to handle the corner case of having a table
+        // with a single row and making sure the next table gets the right
+        // variable id (i.e., "1")
+        val size_1 = 1
+        // Size of t3
+        val size_3 = 20
+
+        // Create sample data for table 1
+        val data_1 = (1 to size_1).map { i => 
+          Map("id" -> -1, "is_correct" -> s"${i%2==0}".toBoolean)
+        }
+
+        // Insert sample data in first table
+        SQL(s"""CREATE TABLE t1(is_correct boolean, id
+          bigint);""").execute.apply()
+        dataStoreHelper.bulkInsert("t1", data_1.iterator)
+
+        // Create empty second table
+        SQL(s"""CREATE TABLE t2(is_correct boolean, id
+          bigint);""").execute.apply()
+
+        // Create sample data for table 3
+        val data_3 = (1 to size_3).map { i => 
+          Map("id" -> -1, "is_correct" -> s"${i%2==0}".toBoolean)
+        }
+
+        // Insert sample data in third table
+        SQL(s"""CREATE TABLE t3(is_correct boolean, id
+          bigint);""").execute.apply()
+        dataStoreHelper.bulkInsert("t3", data_3.iterator)
+
+        // Define schema
+        val schema = Map[String, VariableDataType]("t1.is_correct" ->
+          BooleanType, "t2.is_correct" -> BooleanType, "t3.is_correct" ->
+          BooleanType)
+
+        // Assign variable id - sequential and unique
+        inferenceDataStore.assignVariablesIds(schema)
+
+        // Check the results
+        val minIdt1 = SQL(s"""SELECT min(id) FROM t1""" ).map(rs =>
+            rs.long("min")).single.apply().get
+        assert(minIdt1 === 0)
+        val maxIdt1 = SQL(s"""SELECT max(id) FROM t1""" ).map(rs =>
+            rs.long("max")).single.apply().get
+        assert(maxIdt1 === size_1 - 1)
+        val minIdt3 = SQL(s"""SELECT min(id) FROM t3""" ).map(rs =>
+            rs.long("min")).single.apply().get
+        assert(minIdt3 === size_1)
+        val maxIdt3 = SQL(s"""SELECT max(id) FROM t3""" ).map(rs =>
+            rs.long("max")).single.apply().get
+        assert(maxIdt3 === size_1 + size_3 - 1)
+      }
+    }
+
     describe("grounding the factor graph with Boolean variables") {
       
       it("should work with fixed weight") {
