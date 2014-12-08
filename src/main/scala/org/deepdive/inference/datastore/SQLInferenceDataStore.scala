@@ -219,7 +219,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       weight double precision);
   """
 
-  def createInferenceResultIndiciesSQL = s"""
+  def createInferenceResultIndicesSQL = s"""
     DROP INDEX IF EXISTS ${WeightResultTable}_idx CASCADE;
     DROP INDEX IF EXISTS ${VariableResultTable}_idx CASCADE;
     CREATE INDEX ${WeightResultTable}_idx ON ${WeightResultTable} (weight);
@@ -916,8 +916,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     bulkCopyWeights(weightsOutputFile, dbSettings)
     log.info("Copying inference result variables...")
     bulkCopyVariables(variableOutputFile, dbSettings)
-    log.info("Creating indicies on the inference result...")
-    execute(createInferenceResultIndiciesSQL)
+    log.info("Creating indices on the inference result...")
+    execute(createInferenceResultIndicesSQL)
 
     // Each (relation, column) tuple is a variable in the plate model.
      // Find all (relation, column) combinations
