@@ -599,8 +599,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         FROM ${relationWithTypeView}
         """)
 
-      execute(s"""ALTER TABLE ${relation} DROP COLUMN ${variableTypeColumn} CASCADE;""")
-
     }
 
     // generate factor meta data
