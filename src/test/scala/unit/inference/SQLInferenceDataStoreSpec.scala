@@ -49,6 +49,56 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
       }
     }
 
+    describe("testing the variable id assignment") {
+      it("should work") {
+        inferenceDataStore.init()
+
+        // Size of t1 and t3
+        val size = 20
+
+        // Create sample data
+        val data = (1 to size).map { i => 
+          Map("id" -> -1, "is_correct" -> s"${i%2==0}".toBoolean)
+        }
+
+        // Insert sample data in first table
+        SQL(s"""CREATE TABLE t1(is_correct boolean, id
+          bigint);""").execute.apply()
+        dataStoreHelper.bulkInsert("t1", data.iterator)
+
+        // Create empty second table
+        SQL(s"""CREATE TABLE t2(is_correct boolean, id
+          bigint);""").execute.apply()
+
+        // Insert sample data in third table
+        SQL(s"""CREATE TABLE t3(is_correct boolean, id
+          bigint);""").execute.apply()
+        dataStoreHelper.bulkInsert("t3", data.iterator)
+
+        // Define schema
+        val schema = Map[String, VariableDataType]("t1.is_correct" ->
+          BooleanType, "t2.is_correct" -> BooleanType, "t3.is_correct" ->
+          BooleanType)
+
+        // Assign variable id - sequential and unique
+        inferenceDataStore.assignVariablesIds(schema)
+
+        // Check the results
+        val minIdt1 = SQL(s"""SELECT min(id) FROM t1""" ).map(rs =>
+            rs.long("min")).single.apply().get
+        assert(minIdt1 === 0)
+        val maxIdt1 = SQL(s"""SELECT max(id) FROM t1""" ).map(rs =>
+            rs.long("max")).single.apply().get
+        assert(maxIdt1 === size - 1)
+        val minIdt3 = SQL(s"""SELECT min(id) FROM t3""" ).map(rs =>
+            rs.long("min")).single.apply().get
+        assert(minIdt3 === size)
+        val maxIdt3 = SQL(s"""SELECT max(id) FROM t3""" ).map(rs =>
+            rs.long("max")).single.apply().get
+        assert(maxIdt3 === (2 * size) - 1)
+      }
+    }
+
     describe("grounding the factor graph with Boolean variables") {
       
       it("should work with fixed weight") {
