@@ -23,7 +23,7 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
   
   class MysqlInferenceDataStore(val dbSettings : DbSettings) extends SQLInferenceDataStore with Logging {
 
-    implicit lazy val connection = MysqlDataStore.borrowConnection()
+    //implicit lazy val connection = MysqlDataStore.borrowConnection()
     
     def ds = MysqlDataStore
     

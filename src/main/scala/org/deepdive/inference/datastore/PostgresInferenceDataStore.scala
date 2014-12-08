@@ -18,7 +18,7 @@ trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent
 
   class PostgresInferenceDataStore(val dbSettings : DbSettings) extends SQLInferenceDataStore with Logging {
 
-    implicit lazy val connection = PostgresDataStore.borrowConnection()
+    //implicit lazy val connection = PostgresDataStore.borrowConnection()
 
     def ds = PostgresDataStore
 
