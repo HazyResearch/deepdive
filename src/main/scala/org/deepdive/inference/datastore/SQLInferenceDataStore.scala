@@ -564,7 +564,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       val variableTypeColumn = "__dd_variable_type__"
 
       // IF:
-      //  in obervation table, in evidence table, not hold out => Observation 2
+      //  in obervation table, in evidence table => Observation 2
       //  in holdout table => Query 1
       //  not in observation table, not in holdout table, in evidence table => Evidence 1
       //  else => Query 1
@@ -572,7 +572,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       execute(s"""
         DROP TABLE IF EXISTS ${variableTypeTable} CASCADE;
         CREATE TABLE ${variableTypeTable} AS
-        SELECT t0.id, CASE WHEN t2.variable_id IS NOT NULL AND ${column} IS NOT NULL AND t1.variable_id IS NULL THEN 2
+        SELECT t0.id, CASE WHEN t2.variable_id IS NOT NULL AND ${column} IS NOT NULL THEN 2
                            WHEN t1.variable_id IS NOT NULL THEN 0
                            WHEN ${column} IS NOT NULL THEN 1
                            ELSE 0
