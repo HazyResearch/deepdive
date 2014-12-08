@@ -558,40 +558,44 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         INSERT INTO ${cardinalityTableName} VALUES ${cardinalityValues};
         """)
 
-      // add a column to variable table to denote variable type - query, evidence, observation
+      // add a column to **a view** of variable table to denote variable type - query, evidence, observation
       // variable table join with holdout table 
       // - a variable is an evidence if it has initial value and it is not holdout
       val variableTypeColumn = "__dd_variable_type__"
-      execute(s"""
-        ALTER TABLE ${relation} ADD COLUMN ${variableTypeColumn} int;
-        """)
-      execute(s"""
-        UPDATE ${relation} SET ${variableTypeColumn} = ${cast( s"${column} IS NOT NULL", "int" )};
-        UPDATE ${relation} SET ${variableTypeColumn} = 0 
-        WHERE ${relation}.id IN (SELECT variable_id FROM ${VariablesHoldoutTable});
-        """)
 
-      // assign observation
-      calibrationSettings.observationQuery match {
-      case Some(query) => execute(s"""
-        UPDATE ${relation} SET ${variableTypeColumn} = 2
-        WHERE ${relation}.id IN (SELECT variable_id FROM ${VariablesObservationTable})
-          AND ${relation}.${column} IS NOT NULL;
-        """)
-      case None =>
-      }
+      val variableTypeTable = s"${relation}_vtype"
+      execute(s"""
+        DROP TABLE IF EXISTS ${variableTypeTable} CASCADE;
+        CREATE TABLE ${variableTypeTable} AS
+        SELECT t0.id, CASE WHEN t1.variable_id IS NOT NULL THEN 0
+                           WHEN ${column} IS NOT NULL THEN 1
+                           WHEN t2.variable_id IS NOT NULL THEN 2
+                      END as ${variableTypeColumn}
+        FROM ${relation} t0 LEFT OUTER JOIN ${VariablesHoldoutTable} t1 LEFT OUTER JOIN ${VariablesObservationTable} t2
+        ON t0.id=t1.variable_id AND t0.id=t2.variable_id;
+      """)
+
+      val relationWithTypeView = s"${relation}_with_vtype"
+      execute(s"""
+          DROP VIEW IF EXISTS ${relationWithTypeView} CASCADE;
+          CREATE VIEW ${relationWithTypeView} AS
+          SELECT t0.*, t1.${variableTypeColumn}
+          FROM ${relation} t0, ${relation}_vtype t1
+          WHERE t0.id=t1.id;
+      """)
+
 
       // dump variables
       val initvalueCast = variableDataType match {
         case 2 | 3 => cast(column, "float")
         case _ => cast(cast(column, "int"), "float")
       }
-      du.unload(s"dd_variables_${relation}", s"${groundingPath}/dd_variables_${relation}", 
+      du.unload(s"dd_variables_${relation}", s"${groundingPath}/dd_variables_${relation}",
         dbSettings, parallelGrounding,
-        s"""SELECT id, ${variableTypeColumn}, 
-        CASE WHEN ${variableTypeColumn} = 0 THEN 0 ELSE ${initvalueCast} END AS initvalue, 
+        s"""SELECT id, ${variableTypeColumn},
+        CASE WHEN ${variableTypeColumn} = 0 THEN 0 ELSE ${initvalueCast} END AS initvalue,
         ${variableDataType} AS type, ${cardinality} AS cardinality
-        FROM ${relation}
+        FROM ${relationWithTypeView}
         """)
 
       execute(s"""ALTER TABLE ${relation} DROP COLUMN ${variableTypeColumn} CASCADE;""")
