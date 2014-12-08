@@ -451,14 +451,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       schema.foreach { case(variable, dataType) =>
         val Array(relation, column) = variable.split('.')
         executeQuery(s"""SELECT fast_seqassign('${relation.toLowerCase()}', ${idoffset});""")
-        var maxid : Long = 0
-        issueQuery(s"""SELECT max(id) FROM ${relation}""") { rs =>
-          maxid = rs.getLong(1)
-        }
-        // We need this check to avoid resetting idoffset if the relation is
-        // empty
-        if (maxid > 0) {
-          idoffset = 1 + maxid
+        issueQuery(s"""SELECT count(*) FROM ${relation}""") { rs =>
+          idoffset = idoffset + rs.getLong(1)
         }
       }
     } else {
