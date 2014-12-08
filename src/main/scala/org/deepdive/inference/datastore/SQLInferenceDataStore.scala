@@ -436,8 +436,19 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
    * NOTE: for this to work in greenplum, do not put id as the first column!
    * The first column in greenplum is distribution key by default. 
    * We need to update this column, but update is not allowed on distribution key. 
+   *
+   * It is important to remember that we should not modify the user schema,
+   * e.g., by adding columns to user relations. The right way to do it is
+   * usually another. For example, an option could be creating a view of the
+   * user relation, to which we add the needed column.
+   *
+   * It is also important to think about corner cases. For example, we cannot
+   * assume any relation actually contains rows, or the rows are in some
+   * predefined special order, or anything like that so the code must take care of
+   * these cases, and there *must* be tests for the corner cases.
    * 
-   * TODO: This method is way too long and needs to be split.
+   * TODO: This method is way too long and needs to be split, also for testing
+   * purposes
    */
   def groundFactorGraph(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
     calibrationSettings: CalibrationSettings, skipLearning: Boolean, weightTable: String, 
