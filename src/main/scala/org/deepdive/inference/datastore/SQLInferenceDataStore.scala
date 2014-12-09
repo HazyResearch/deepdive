@@ -592,6 +592,13 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         ON t0.id=t1.variable_id LEFT OUTER JOIN ${VariablesObservationTable} t2 ON t0.id=t2.variable_id
       """)
 
+      // Create an index on the id column of type table to optimize MySQL join, since MySQL uses BNLJ.
+      // It's important to tailor join queries for MySQL as they don't have efficient join algorithms.
+      // Specifically, we should create indexes on join condition columns (at least in MySQL implementation).
+      execute(s"""
+        CREATE INDEX ${variableTypeTable}_id_idx ON ${variableTypeTable}(id);
+        """)
+
       // dump variables
       val initvalueCast = variableDataType match {
         case 2 | 3 => cast(column, "float")
