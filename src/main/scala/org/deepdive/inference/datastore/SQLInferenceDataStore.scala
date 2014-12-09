@@ -219,7 +219,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       weight double precision);
   """
 
-  def createInferenceResultIndiciesSQL = s"""
+  def createInferenceResultIndicesSQL = s"""
     DROP INDEX IF EXISTS ${WeightResultTable}_idx CASCADE;
     DROP INDEX IF EXISTS ${VariableResultTable}_idx CASCADE;
     CREATE INDEX ${WeightResultTable}_idx ON ${WeightResultTable} (weight);
@@ -483,8 +483,19 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
    * NOTE: for this to work in greenplum, do not put id as the first column!
    * The first column in greenplum is distribution key by default. 
    * We need to update this column, but update is not allowed on distribution key. 
+   *
+   * It is important to remember that we should not modify the user schema,
+   * e.g., by adding columns to user relations. The right way to do it is
+   * usually another. For example, an option could be creating a view of the
+   * user relation, to which we add the needed column.
+   *
+   * It is also important to think about corner cases. For example, we cannot
+   * assume any relation actually contains rows, or the rows are in some
+   * predefined special order, or anything like that so the code must take care of
+   * these cases, and there *must* be tests for the corner cases.
    * 
-   * TODO: This method is way too long and needs to be split.
+   * TODO: This method is way too long and needs to be split, also for testing
+   * purposes
    */
   def groundFactorGraph(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
     calibrationSettings: CalibrationSettings, skipLearning: Boolean, weightTable: String, 
@@ -580,43 +591,49 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         INSERT INTO ${cardinalityTableName} VALUES ${cardinalityValues};
         """)
 
-      // add a column to variable table to denote variable type - query, evidence, observation
+      // Create a table to denote variable type - query, evidence, observation
       // variable table join with holdout table 
       // - a variable is an evidence if it has initial value and it is not holdout
       val variableTypeColumn = "__dd_variable_type__"
-      execute(s"""
-        ALTER TABLE ${relation} ADD COLUMN ${variableTypeColumn} int;
-        """)
-      execute(s"""
-        UPDATE ${relation} SET ${variableTypeColumn} = ${cast( s"${column} IS NOT NULL", "int" )};
-        UPDATE ${relation} SET ${variableTypeColumn} = 0 
-        WHERE ${relation}.id IN (SELECT variable_id FROM ${VariablesHoldoutTable});
-        """)
 
-      // assign observation
-      calibrationSettings.observationQuery match {
-      case Some(query) => execute(s"""
-        UPDATE ${relation} SET ${variableTypeColumn} = 2
-        WHERE ${relation}.id IN (SELECT variable_id FROM ${VariablesObservationTable})
-          AND ${relation}.${column} IS NOT NULL;
+      // IF:
+      //  in observation table, in evidence table => Observation 2
+      //  in holdout table => Query 1
+      //  not in observation table, not in holdout table, in evidence table => Evidence 1
+      //  else => Query 1
+      val variableTypeTable = s"${relation}_vtype"
+      execute(s"""
+        DROP TABLE IF EXISTS ${variableTypeTable} CASCADE;
+        CREATE TABLE ${variableTypeTable} AS
+        SELECT t0.id, CASE WHEN t2.variable_id IS NOT NULL AND ${column} IS NOT NULL THEN 2
+                           WHEN t1.variable_id IS NOT NULL THEN 0
+                           WHEN ${column} IS NOT NULL THEN 1
+                           ELSE 0
+                      END as ${variableTypeColumn}
+        FROM ${relation} t0 LEFT OUTER JOIN ${VariablesHoldoutTable} t1 
+        ON t0.id=t1.variable_id LEFT OUTER JOIN ${VariablesObservationTable} t2 ON t0.id=t2.variable_id
+      """)
+
+      // Create an index on the id column of type table to optimize MySQL join, since MySQL uses BNLJ.
+      // It's important to tailor join queries for MySQL as they don't have efficient join algorithms.
+      // Specifically, we should create indexes on join condition columns (at least in MySQL implementation).
+      execute(s"""
+        CREATE INDEX ${variableTypeTable}_id_idx ON ${variableTypeTable}(id);
         """)
-      case None =>
-      }
 
       // dump variables
       val initvalueCast = variableDataType match {
         case 2 | 3 => cast(column, "float")
         case _ => cast(cast(column, "int"), "float")
       }
-      du.unload(s"dd_variables_${relation}", s"${groundingPath}/dd_variables_${relation}", 
+      du.unload(s"dd_variables_${relation}", s"${groundingPath}/dd_variables_${relation}",
         dbSettings, parallelGrounding,
-        s"""SELECT id, ${variableTypeColumn}, 
-        CASE WHEN ${variableTypeColumn} = 0 THEN 0 ELSE ${initvalueCast} END AS initvalue, 
+        s"""SELECT t0.id, t1.${variableTypeColumn},
+        CASE WHEN t1.${variableTypeColumn} = 0 THEN 0 ELSE ${initvalueCast} END AS initvalue,
         ${variableDataType} AS type, ${cardinality} AS cardinality
-        FROM ${relation}
+        FROM ${relation} t0, ${relation}_vtype t1
+        WHERE t0.id=t1.id
         """)
-
-      execute(s"""ALTER TABLE ${relation} DROP COLUMN ${variableTypeColumn} CASCADE;""")
 
     }
 
@@ -938,8 +955,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     bulkCopyWeights(weightsOutputFile, dbSettings)
     log.info("Copying inference result variables...")
     bulkCopyVariables(variableOutputFile, dbSettings)
-    log.info("Creating indicies on the inference result...")
-    execute(createInferenceResultIndiciesSQL)
+    log.info("Creating indices on the inference result...")
+    execute(createInferenceResultIndicesSQL)
 
     // Each (relation, column) tuple is a variable in the plate model.
      // Find all (relation, column) combinations

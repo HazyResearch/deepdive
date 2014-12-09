@@ -23,8 +23,6 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
   
   class MysqlInferenceDataStore(val dbSettings : DbSettings) extends SQLInferenceDataStore with Logging {
 
-    implicit lazy val connection = MysqlDataStore.borrowConnection()
-    
     def ds = MysqlDataStore
     
     // Default batch size, if not overwritten by user
@@ -205,7 +203,7 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
     """
     }
 
-    override def createInferenceResultIndiciesSQL = s"""
+    override def createInferenceResultIndicesSQL = s"""
       ${dropIndexIfExistsMysql(s"${WeightResultTable}_idx", WeightResultTable)}
       ${dropIndexIfExistsMysql(s"${VariableResultTable}_idx", VariableResultTable)}
       CREATE INDEX ${WeightResultTable}_idx ON ${WeightResultTable} (weight);
