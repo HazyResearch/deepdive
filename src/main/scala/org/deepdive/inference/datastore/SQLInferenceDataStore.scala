@@ -424,8 +424,55 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     execute(s"UPDATE ${table} SET id = ${nextVal(IdSequence)};")
   }
         
+  // clean up grounding folder (for parallel grounding)
+  // TODO: we may not need to actually create a script for this and execute it.
+  // We may want to directly execute the commands:
+  // Helpers.executeCmd(s"rm -rf ${groundingPath}/dd_tmp")
+  // Helpers.executeCmd(s"rm -f ${groundingPath}/dd_*")
+  // XXX: This function is a little risky because groundingPath may be the empty
+  // string. Shall we avoid letting the user shoot her own foot?
+  def cleanParallelGroundingPath(groundingPath: String) {
+    val cleanFile = File.createTempFile(s"clean", ".sh")
+    val writer = new PrintWriter(cleanFile)
+    // cleaning up remaining tmp folder for tobinary
+    writer.println(s"rm -rf ${groundingPath}/dd_tmp")
+    writer.println(s"rm -f ${groundingPath}/dd_*")
+    writer.close()
+    log.info("Cleaning up grounding folder...")
+    Helpers.executeCmd(cleanFile.getAbsolutePath())
+  }
 
-  
+  // assign variable id - sequential and unique
+  def assignVariablesIds(schema: Map[String, _ <: VariableDataType]) {
+    // check whether Greenplum is used
+    var usingGreenplum = false
+    issueQuery(checkGreenplumSQL) { rs => 
+      usingGreenplum = rs.getBoolean(1) 
+    }
+
+    var idoffset : Long = 0
+    if (usingGreenplum) {
+      // We use a special homemade function for Greenplum
+      executeQuery(createAssignIdFunctionGreenplum)
+      schema.foreach { case(variable, dataType) =>
+        val Array(relation, column) = variable.split('.')
+        executeQuery(s"""SELECT fast_seqassign('${relation.toLowerCase()}', ${idoffset});""")
+        issueQuery(s"""SELECT count(*) FROM ${relation}""") { rs =>
+          idoffset = idoffset + rs.getLong(1)
+        }
+      }
+    } else {
+      // Mysql: use user-defined variables for ID assign;
+      // Psql: use sequence
+      execute(createSequenceFunction(IdSequence))
+      schema.foreach { case(variable, dataType) =>
+        val Array(relation, column) = variable.split('.')
+        incrementId(relation, IdSequence)
+      }
+    }
+  }
+
+
   /** Ground the factor graph to file
    *
    * Using the schema and inference rules defined in application.conf, construct factor
@@ -460,36 +507,11 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     // clean up grounding folder (for parallel grounding)
     if (parallelGrounding) {
-      val cleanFile = File.createTempFile(s"clean", ".sh")
-      val writer = new PrintWriter(cleanFile)
-      // cleaning up remaining tmp folder for tobinary
-      writer.println(s"rm -rf ${groundingPath}/dd_tmp")
-      writer.println(s"rm -f ${groundingPath}/dd_*")
-      writer.close()
-      log.info("Cleaning up grounding folder...")
-      Helpers.executeCmd(cleanFile.getAbsolutePath())
+      cleanParallelGroundingPath(groundingPath)
     }
 
     // assign variable id - sequential and unique
-    // for greenplum, we use a special fast assign sequential id function
-    var idoffset : Long = 0
-    if(usingGreenplum) {
-      executeQuery(createAssignIdFunctionGreenplum)
-      schema.foreach { case(variable, dataType) =>
-        val Array(relation, column) = variable.split('.')
-        executeQuery(s"""SELECT fast_seqassign('${relation.toLowerCase()}', ${idoffset});""")
-        issueQuery(s"""SELECT max(id) FROM ${relation}""") { rs =>
-          idoffset = 1 + rs.getLong(1)
-        }
-      }
-    } else {
-      // Mysql: use user-defined variables for ID assign; psql: use sequence
-      execute(createSequenceFunction(IdSequence))
-      schema.foreach { case(variable, dataType) =>
-        val Array(relation, column) = variable.split('.')
-        incrementId(relation, IdSequence)
-      }
-    }
+    assignVariablesIds(schema)
 
     // variable holdout table - if user defined, execute once
     execute(s"""DROP TABLE IF EXISTS ${VariablesHoldoutTable} CASCADE;
@@ -620,7 +642,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       cardinality text, description text);""")
 
     // weight and factor id
-    // greemplum: use fast_seqassign postgres: use sequence
+    // greenplum: use fast_seqassign postgres: use sequence
     var cweightid : Long = 0
     var factorid : Long = 0
     val weightidSequence = "dd_weight_sequence"
