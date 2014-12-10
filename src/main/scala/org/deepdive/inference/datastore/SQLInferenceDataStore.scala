@@ -244,7 +244,15 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   }
 
   // ========= Datastore specific queries (override when diverge) ============
-          
+
+  /**
+   * This query optimizes slow joins on certain DBMS (MySQL) by creating indexes
+   * on the join condition column.
+   */
+  def createIndexForJoinOptimization(relation: String, column: String) = {
+    // Default: No-op
+  }
+
   /**
    * This query is datastore-specific since it creates a view whose 
    * SELECT contains a subquery in the FROM clause.
@@ -617,9 +625,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       // Create an index on the id column of type table to optimize MySQL join, since MySQL uses BNLJ.
       // It's important to tailor join queries for MySQL as they don't have efficient join algorithms.
       // Specifically, we should create indexes on join condition columns (at least in MySQL implementation).
-      execute(s"""
-        CREATE INDEX ${variableTypeTable}_id_idx ON ${variableTypeTable}(id);
-        """)
+      createIndexForJoinOptimization(variableTypeTable, "id")
 
       // dump variables
       val initvalueCast = variableDataType match {
