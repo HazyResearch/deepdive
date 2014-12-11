@@ -125,6 +125,20 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
     // ============== Datastore-specific queries to override ==============
 
     /**
+     * This query optimizes slow joins on certain DBMS (MySQL) by creating indexes
+     * on the join condition column.
+     */
+    override def createIndexForJoinOptimization(relation: String, column: String) = {
+      val indexName = s"${relation}_${column}_idx"
+      execute(s"""
+        ${dropIndexIfExistsMysql(indexName, relation)};
+
+        CREATE INDEX ${indexName} ON ${relation}(${column});
+        """)
+
+    }
+
+    /**
      * Note that mysql cannot have nested views.
      * This utility creates a subquery for nesting views for mysql.
      * The view will be named to "NAME_sub".
