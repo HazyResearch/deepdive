@@ -250,7 +250,7 @@ def _get_ngram_features(sentence, span, window=3):
         for j in range(1, window + 1):
             if i+j <= span.begin_word_id + span.length:
                 yield "NGRAM_" + str(j) + "_[" + " ".join(
-                    map(lambda x: x.lemma, sentence[i:i+j])) + "]"
+                    map(lambda x: str(x.lemma), sentence[i:i+j])) + "]"
 
 
 def _get_min_dep_path(sentence, span1, span2):
@@ -286,8 +286,8 @@ def _get_min_dep_path_features(sentence, span1, span2, prefix="BETW_"):
         min_path_lemmas = []
         min_path_labels = []
         for edge in min_path:
-            min_path_lemmas.append(edge.word2.lemma)
-            min_path_labels.append(edge.label)
+            min_path_lemmas.append(str(edge.word2.lemma))
+            min_path_labels.append(str(edge.label))
         both = []
         for j in range(len(min_path_labels)):
             both.append(min_path_labels[j])
