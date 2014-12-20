@@ -2,7 +2,7 @@
 
 from dd import dep_path_between_words, materialize_span, Span, Word
 
-import sys
+MAX_KW_LENGTH = 3
 
 dictionaries = dict()
 
@@ -81,17 +81,20 @@ def get_generic_features_mention(sentence, span):
         yield dict_indicator_feat
     # Dependency path(s) from mention to keyword(s). Various transformations of
     # the dependency path are done.
-    for i in range(len(sentence)):
+    for (i, j) in _get_substring_indices(len(sentence), MAX_KW_LENGTH):
         if i >= span.begin_word_id and i < span.begin_word_id + span.length:
+            continue
+        if j > span.begin_word_id and j < span.begin_word_id + span.length:
             continue
         is_in_dictionary = False
         for dict_id in dictionaries:
-            if sentence[i].word in dictionaries[dict_id]:
+            if " ".join(map(lambda x: x.lemma, sentence[i:j])) in \
+                    dictionaries[dict_id]:
                 is_in_dictionary = True
                 yield "KW_IND_[" + dict_id + "]"
                 break
         if is_in_dictionary:
-            kw_span = Span(begin_word_id=i, length=1)
+            kw_span = Span(begin_word_id=i, length=j-i)
             for dep_path_feature in _get_min_dep_path_features(
                     sentence, span, kw_span, "KW"):
                 yield dep_path_feature
@@ -160,17 +163,20 @@ def get_generic_features_relation(sentence, span1, span2):
             sentence, span1, span2, inverted + "BETW"):
         yield betw_dep_path_feature
     # Dependency paths (and transformations) between the mentions and keywords
-    for i in range(len(sentence)):
+    for (i, j) in _get_substring_indices(len(sentence), MAX_KW_LENGTH):
         if (i >= begin and i < betw_begin) or (i >= betw_end and i < end):
+            continue
+        if (j > begin and j <= betw_begin) or (j > betw_end and j <= end):
             continue
         is_in_dictionary = False
         for dict_id in dictionaries:
-            if sentence[i].word in dictionaries[dict_id]:
+            if " ".join(map(lambda x: x.lemma, sentence[i:j])) in \
+                    dictionaries[dict_id]:
                 is_in_dictionary = True
-                yield "KW_IND_[" + dict_id + "]"
+                yield inverted + "KW_IND_[" + dict_id + "]"
                 break
         if is_in_dictionary:
-            kw_span = Span(begin_word_id=i, length=1)
+            kw_span = Span(begin_word_id=i, length=j-i)
             path1 = _get_min_dep_path(sentence, span1, kw_span)
             lemmas1 = []
             labels1 = []
@@ -223,6 +229,13 @@ def get_generic_features_relation(sentence, span1, span2):
     length_feat = inverted + "LENGTHS_[" + first_length + "_" + \
         second_length + "]"
     yield length_feat
+
+
+def _get_substring_indices(_len, max_substring_len):
+    for start in range(_len):
+        for end in reversed(range(start + 1, min(
+                            _len, start + 1 + max_substring_len))):
+            yield (start, end)
 
 
 def _get_ngram_features(sentence, span, window=3):
