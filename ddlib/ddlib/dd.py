@@ -29,9 +29,8 @@ def unpack_words(input_dict, character_offset_begin=None, character_offset_end=N
 	wordobjs = []
 	for i in range(0,len(ziped_tags)):
 		if i not in dep_tree : dep_tree[i] = {"parent":-1, "label":"ROOT"}
-		wordobjs.append(Word(begin_char_offset=ziped_tags[i][0], 
-			end_char_offset=ziped_tags[i][1], lemma=ziped_tags[i][2], word=ziped_tags[i][3], pos=ziped_tags[i][4], 
-			ner=ziped_tags[i][5], dep_par=dep_tree[i]["parent"], dep_label=dep_tree[i]["label"]))
+		wordobjs.append(Word(begin_char_offset=ziped_tags[i][0], end_char_offset=ziped_tags[i][1], lemma=ziped_tags[i][2], pos=ziped_tags[i][3],
+			ner=ziped_tags[i][4], word=ziped_tags[i][5],dep_par=dep_tree[i]["parent"], dep_label=dep_tree[i]["label"]))
 	return wordobjs
 
 
