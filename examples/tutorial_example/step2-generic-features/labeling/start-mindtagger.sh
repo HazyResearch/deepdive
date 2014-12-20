@@ -1,0 +1,1 @@
+../../../labeling/start-mindtagger.sh

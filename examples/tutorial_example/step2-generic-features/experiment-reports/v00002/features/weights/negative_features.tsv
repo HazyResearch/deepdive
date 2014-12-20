@@ -1,0 +1,100 @@
+f_has_spouse_features-INV_LENGTHS_[7_7]	-2.90028
+f_has_spouse_features-LENGTHS_[7_7]	-2.78594
+f_has_spouse_features-INV_LENGTHS_[5_5]	-2.50781
+f_has_spouse_features-LENGTHS_[5_5]	-2.17688
+f_has_spouse_features-LENGTHS_[9_10]	-2.08032
+f_has_spouse_features-INV_LENGTHS_[5_12]	-1.97305
+f_has_spouse_features-INV_LENGTHS_[10_9]	-1.95831
+f_has_spouse_features-INV_LENGTHS_[7_12]	-1.8789
+f_has_spouse_features-LENGTHS_[12_7]	-1.82786
+f_has_spouse_features-LENGTHS_[4_10]	-1.82641
+f_has_spouse_features-INV_LENGTHS_[6_6]	-1.81866
+f_has_spouse_features-LENGTHS_[6_6]	-1.80473
+f_has_spouse_features-INV_LEMMA_L_1_R_1_[President]_[.]	-1.77454
+f_has_spouse_features-LENGTHS_[7_12]	-1.66358
+f_has_spouse_features-LEMMA_L_3_R_1_[also go by]_[.]	-1.66024
+f_has_spouse_features-LENGTHS_[15_22]	-1.66024
+f_has_spouse_features-LEMMA_L_2_R_1_[go by]_[.]	-1.66024
+f_has_spouse_features-INV_LENGTHS_[10_4]	-1.62172
+f_has_spouse_features-LENGTHS_[4_4]	-1.5874
+f_has_spouse_features-INV_LEMMA_L_2_R_1_[go by]_[.]	-1.58141
+f_has_spouse_features-INV_LEMMA_L_3_R_1_[also go by]_[.]	-1.58141
+f_has_spouse_features-INV_LENGTHS_[22_15]	-1.58141
+f_has_spouse_features-INV_LENGTHS_[12_5]	-1.57982
+f_has_spouse_features-LEMMA_L_2_R_1_[. President]_[.]	-1.48023
+f_has_spouse_features-LEMMA_L_3_R_1_[Bush . President]_[.]	-1.48023
+f_has_spouse_features-INV_LENGTHS_[12_7]	-1.47311
+f_has_spouse_features-LENGTHS_[12_5]	-1.42506
+f_has_spouse_features-INV_LEMMA_L_2_R_1_[. President]_[.]	-1.40711
+f_has_spouse_features-INV_LEMMA_L_3_R_1_[Bush . President]_[.]	-1.40711
+f_has_spouse_features-INV_LENGTHS_[6_11]	-1.39908
+f_has_spouse_features-LENGTHS_[5_12]	-1.38856
+f_has_spouse_features-INV_LENGTHS_[4_4]	-1.38394
+f_has_spouse_features-INV_NGRAM_1_[']	-1.38001
+f_has_spouse_features-INV_LEMMA_L_1_R_1_[.]_[,]	-1.33117
+f_has_spouse_features-NGRAM_1_[:]	-1.30538
+f_has_spouse_features-INV_LENGTHS_[5_10]	-1.29328
+f_has_spouse_features-LENGTHS_[5_14]	-1.27752
+f_has_spouse_features-LENGTHS_[11_6]	-1.21733
+f_has_spouse_features-INV_LENGTHS_[6_12]	-1.21519
+f_has_spouse_features-LENGTHS_[10_5]	-1.20297
+f_has_spouse_features-LENGTHS_[14_11]	-1.20014
+f_has_spouse_features-LENGTHS_[12_6]	-1.18545
+f_has_spouse_features-INV_NGRAM_1_[by]	-1.18016
+f_has_spouse_features-LENGTHS_[8_8]	-1.1694
+f_has_spouse_features-INV_LENGTHS_[8_8]	-1.14531
+f_has_spouse_features-KW_IND_[non_married]	-1.1356
+f_has_spouse_features-INV_NGRAM_1_[mother]	-1.12279
+f_has_spouse_features-INV_LENGTHS_[14_5]	-1.09679
+f_has_spouse_features-NGRAM_1_[that]	-1.07676
+f_has_spouse_features-LEMMA_L_1_R_1_[Mrs.]_[,]	-1.05911
+f_has_spouse_features-INV_LEMMA_L_1_R_1_[Mrs.]_[,]	-1.04265
+f_has_spouse_features-INV_LEMMA_L_1_R_1_[by]_[.]	-1.02084
+f_has_spouse_features-INV_NER_L_3_R_1_[NUMBER O O]_[O]	-0.999382
+f_has_spouse_features-INV_NGRAM_1_[or]	-0.996487
+f_has_spouse_features-INV_NER_L_3_R_2_[PERSON O O]_[O O]	-0.993617
+f_has_spouse_features-LEMMA_L_2_R_1_[Mulroney ,]_[.]	-0.985419
+f_has_spouse_features-LEMMA_L_3_R_1_[Dermot Mulroney ,]_[.]	-0.985419
+f_has_spouse_features-INV_LENGTHS_[17_10]	-0.980712
+f_has_spouse_features-INV_BETW_L_[poss appos]	-0.968133
+f_has_spouse_features-LEMMA_L_1_R_1_[by]_[,]	-0.951846
+f_has_spouse_features-INV_LEMMA_L_3_R_1_[Dermot Mulroney ,]_[.]	-0.947967
+f_has_spouse_features-INV_LEMMA_L_2_R_1_[Mulroney ,]_[.]	-0.947967
+f_has_spouse_features-LENGTHS_[3_3]	-0.945931
+f_has_spouse_features-LENGTHS_[22_7]	-0.934924
+f_has_spouse_features-LEMMA_L_1_R_1_[by]_[.]	-0.929623
+f_has_spouse_features-INV_NGRAM_1_[campaign]	-0.910162
+f_has_spouse_features-NGRAM_1_[son]	-0.909893
+f_has_spouse_features-LENGTHS_[9_9]	-0.895036
+f_has_spouse_features-INV_NGRAM_1_[in]	-0.886099
+f_has_spouse_features-NGRAM_1_[']	-0.869646
+f_has_spouse_features-NGRAM_1_[on]	-0.868241
+f_has_spouse_features-INV_LEMMA_L_1_R_3_[by]_[, base on]	-0.848641
+f_has_spouse_features-INV_LEMMA_L_2_R_1_[write by]_[,]	-0.848641
+f_has_spouse_features-INV_LEMMA_L_1_R_2_[by]_[, base]	-0.848641
+f_has_spouse_features-INV_LEMMA_L_3_R_1_[; write by]_[,]	-0.848641
+f_has_spouse_features-INV_LEMMA_L_3_R_2_[; write by]_[, base]	-0.848641
+f_has_spouse_features-INV_LEMMA_L_2_R_2_[write by]_[, base]	-0.848641
+f_has_spouse_features-INV_LEMMA_L_3_R_3_[; write by]_[, base on]	-0.848641
+f_has_spouse_features-INV_LEMMA_L_2_R_3_[write by]_[, base on]	-0.848641
+f_has_spouse_features-LEMMA_L_1_R_1_[,]_[.]	-0.846251
+f_has_spouse_features-LEMMA_L_3_R_1_[; write by]_[,]	-0.843833
+f_has_spouse_features-LEMMA_L_2_R_1_[write by]_[,]	-0.843833
+f_has_spouse_features-INV_IN_DICT_[married]_[_NONE]	-0.84062
+f_has_spouse_features-INV_NGRAM_1_[son]	-0.831036
+f_has_spouse_features-NGRAM_1_[John]	-0.819384
+f_has_spouse_features-INV_NGRAM_1_[,]	-0.814432
+f_has_spouse_features-LEMMA_L_1_R_1_[;]_[,]	-0.80736
+f_has_spouse_features-INV_NGRAM_3_[, and he]	-0.80501
+f_has_spouse_features-INV_LENGTHS_[3_3]	-0.800985
+f_has_spouse_features-INV_NER_L_3_R_3_[PERSON O O]_[O O O]	-0.796488
+f_has_spouse_features-INV_NER_L_3_R_1_[PERSON O O]_[O]	-0.796273
+f_has_spouse_features-INV_LEMMA_L_2_R_1_[. Mrs.]_[,]	-0.795181
+f_has_spouse_features-INV_NGRAM_1_[;]	-0.794396
+f_has_spouse_features-INV_LEMMA_L_1_R_1_[president]_[and]	-0.789479
+f_has_spouse_features-INV_LEMMA_L_1_R_3_[president]_[and they wife]	-0.789479
+f_has_spouse_features-INV_LEMMA_L_2_R_1_[former president]_[and]	-0.789479
+f_has_spouse_features-INV_LEMMA_L_1_R_2_[president]_[and they]	-0.789479
+f_has_spouse_features-INV_LEMMA_L_3_R_2_[for former president]_[and they]	-0.789479
+f_has_spouse_features-INV_LEMMA_L_3_R_1_[for former president]_[and]	-0.789479
+f_has_spouse_features-INV_LEMMA_L_3_R_3_[for former president]_[and they wife]	-0.789479
