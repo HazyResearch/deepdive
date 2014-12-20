@@ -17,3 +17,5 @@ hsql:*
 .project
 doc/_*local*
 mindbender
+.mindtagger.conf.json
+examples/tutorial_example/*/experiment-reports/latest
