@@ -8,6 +8,8 @@ DepEdge = collections.namedtuple('DepEdge', ['word1', 'word2', 'label', 'is_bott
 
 def unpack_words(input_dict, character_offset_begin=None, character_offset_end=None, lemma=None, 
 	pos=None, ner = None, words = None, dep_graph = None, dep_graph_parser = lambda x: x.split('\t')):
+	"""Return a list of Word objects representing a sentence
+	"""
 
 	array_character_offset_begin = input_dict[character_offset_begin] if character_offset_begin != None else ()
 	array_character_offset_end = input_dict[character_offset_end] if character_offset_end != None else ()

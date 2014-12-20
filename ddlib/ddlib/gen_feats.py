@@ -1,41 +1,84 @@
 #! /usr/bin/env python
 
-from dd import dep_path_between_words, materialize_span, Span, Word
+from dd import dep_path_between_words, materialize_span, Span, unpack_words
 
 MAX_KW_LENGTH = 3
 
 dictionaries = dict()
 
 
+def test_transform():
+    test = "a(b-1, c-2)"
+    transf = dep_transform_parenthesis_to_triplet(test)
+    assert transf == "1\ta\t2"
+    transf_back = dep_transform_triplet_to_parenthesis(transf, "b", "c")
+    assert transf_back == test
+    print("success")
+
+
+def dep_transform_parenthesis_to_triplet(edge_str):
+    parent, label, child = dep_graph_parser_parenthesis(edge_str)
+    return "\t".join((str(parent + 1), label, str(child + 1)))
+
+
+def dep_transform_triplet_to_parenthesis(edge_str, parent_word, child_word):
+    parent, label, child = dep_graph_parser_triplet(edge_str)
+    return label + "(" + parent_word + "-" + str(parent + 1) + ", " + \
+        child_word + "-" + str(child + 1) + ")"
+
+
+def dep_graph_parser_parenthesis(edge_str):
+    """Given a string representing a dependency edge in the 'parenthesis'
+    format, return a tuple of (parent_index, edge_label, child_index).
+
+    Args:
+        edge_str: a string representation of an edge in the dependency tree, in
+        the format edge_label(parent_word-parent_index, child_word-child_index)
+    Returns:
+        tuple of (parent_index, edge_label, child_index)
+    """
+    tokens = edge_str.split("(")
+    label = tokens[0]
+    tokens = tokens[1].split(", ")
+    parent = int(tokens[0].split("-")[-1]) - 1
+    child = int(",".join(tokens[1:]).split("-")[-1][:-1]) - 1
+    return (parent, label, child)
+
+
+def dep_graph_parser_triplet(edge_str):
+    """Given a string representing a dependency edge in the 'triplet' format,
+    return a tuple of (parent_index, edge_label, child_index).
+
+    Args:
+        edge_str: a string representation of an edge in the dependency tree
+        in the format "parent_index\tlabel\child_index"
+    Returns:
+        tuple of (parent_index, edge_label, child_index)
+    """
+    parent, label, child = edge_str.split()
+    # input edge used 1-based indexing
+    return (int(parent) - 1, label, int(child) - 1)
+
+
 def get_sentence(
         begin_char_offsets, end_char_offsets, words, lemmas, poses,
-        dependencies, ners):
-    sentence = []
-    dep_parents = [-1, ] * len(words)
-    dep_labels = ["ROOT", ] * len(words)
-    if dependencies != ["", ]:
-        for dep in dependencies:
-            tokens = dep.split("(")
-            label = tokens[0]
-            tokens = tokens[1].split(", ")
-            parent = int(tokens[0].split("-")[-1]) - 1
-            assert parent < len(words)
-            parent_word = "-".join(tokens[0].split("-")[:-1])
-            child = int(",".join(tokens[1:]).split("-")[-1][:-1]) - 1
-            child_word = "-".join(",".join(tokens[1:]).split("-")[:-1])
-            dep_parents[child] = parent
-            dep_labels[child] = label
-            if parent != -1:
-                assert words[parent] == parent_word
-            assert words[child] == child_word
-    for i in range(len(words)):
-        word = Word(
-            begin_char_offset=begin_char_offsets[i],
-            end_char_offset=end_char_offsets[i], lemma=lemmas[i],
-            word=words[i], pos=poses[i], ner=ners[i], dep_par=dep_parents[i],
-            dep_label=dep_labels[i])
-        sentence.append(word)
-    return sentence
+        dependencies, ners, dep_format_parser=dep_graph_parser_parenthesis):
+    """Return a list of Word objects representing a sentence"""
+    obj = dict()
+    obj['lemma'] = lemmas
+    obj['words'] = words
+    obj['ner'] = ners
+    obj['pos'] = poses
+    obj['dep_graph'] = dependencies
+    obj['ch_of_beg'] = begin_char_offsets
+    obj['ch_of_end'] = end_char_offsets
+    # list of Word objects
+    word_obj_list = unpack_words(
+        obj, character_offset_begin='ch_of_beg',
+        character_offset_end='ch_of_end', lemma='lemma', pos='pos',
+        ner='ner', words='words', dep_graph='dep_graph',
+        dep_graph_parser=dep_format_parser)
+    return word_obj_list
 
 
 def load_dictionary(filename, dict_id="", func=lambda x: x):
