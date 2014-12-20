@@ -51,7 +51,7 @@ def load_dictionary(filename, dict_id="", func=lambda x: x):
         func: (optional) A function to be applied to each row of the file
     """
     if dict_id == "":
-        dict_id = len(dictionaries)
+        dict_id = str(len(dictionaries))
     with open(filename, 'rt') as dict_file:
         dictionary = set()
         for line in dict_file:
@@ -91,7 +91,7 @@ def get_generic_features_mention(sentence, span):
             if " ".join(map(lambda x: x.lemma, sentence[i:j])) in \
                     dictionaries[dict_id]:
                 is_in_dictionary = True
-                yield "KW_IND_[" + dict_id + "]"
+                yield "KW_IND_[" + str(dict_id) + "]"
                 break
         if is_in_dictionary:
             kw_span = Span(begin_word_id=i, length=j-i)
@@ -173,7 +173,7 @@ def get_generic_features_relation(sentence, span1, span2):
             if " ".join(map(lambda x: x.lemma, sentence[i:j])) in \
                     dictionaries[dict_id]:
                 is_in_dictionary = True
-                yield inverted + "KW_IND_[" + dict_id + "]"
+                yield inverted + "KW_IND_[" + str(dict_id) + "]"
                 break
         if is_in_dictionary:
             kw_span = Span(begin_word_id=i, length=j-i)
