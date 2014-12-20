@@ -57,8 +57,8 @@ def load_dictionary(filename, dict_id="", func=lambda x: x):
         for line in dict_file:
             dictionary.add(func(line.strip()))
         dictionary = frozenset(dictionary)
-        dictionaries[dict_id] = dictionary
-    return dict_id
+        dictionaries[str(dict_id)] = dictionary
+    return str(dict_id)
 
 
 def get_generic_features_mention(sentence, span):
@@ -88,10 +88,10 @@ def get_generic_features_mention(sentence, span):
             continue
         is_in_dictionary = False
         for dict_id in dictionaries:
-            if " ".join(map(lambda x: x.lemma, sentence[i:j])) in \
+            if " ".join(map(lambda x: str(x.lemma), sentence[i:j])) in \
                     dictionaries[dict_id]:
                 is_in_dictionary = True
-                yield "KW_IND_[" + str(dict_id) + "]"
+                yield "KW_IND_[" + dict_id + "]"
                 break
         if is_in_dictionary:
             kw_span = Span(begin_word_id=i, length=j-i)
@@ -170,10 +170,10 @@ def get_generic_features_relation(sentence, span1, span2):
             continue
         is_in_dictionary = False
         for dict_id in dictionaries:
-            if " ".join(map(lambda x: x.lemma, sentence[i:j])) in \
+            if " ".join(map(lambda x: str(x.lemma), sentence[i:j])) in \
                     dictionaries[dict_id]:
                 is_in_dictionary = True
-                yield inverted + "KW_IND_[" + str(dict_id) + "]"
+                yield inverted + "KW_IND_[" + dict_id + "]"
                 break
         if is_in_dictionary:
             kw_span = Span(begin_word_id=i, length=j-i)
@@ -181,7 +181,7 @@ def get_generic_features_relation(sentence, span1, span2):
             lemmas1 = []
             labels1 = []
             for edge in path1:
-                lemmas1.append(edge.word2.lemma)
+                lemmas1.append(str(edge.word2.lemma))
                 labels1.append(edge.label)
             both1 = []
             for j in range(len(labels1)):
@@ -192,7 +192,7 @@ def get_generic_features_relation(sentence, span1, span2):
             lemmas2 = []
             labels2 = []
             for edge in path2:
-                lemmas2.append(edge.word2.lemma)
+                lemmas2.append(str(edge.word2.lemma))
                 labels2.append(edge.label)
             both2 = []
             for j in range(len(labels2)):
@@ -223,9 +223,9 @@ def get_generic_features_relation(sentence, span1, span2):
     yield capital_feat
     # The lengths of the mentions
     first_length = str(len(" ".join(materialize_span(
-        sentence, span1, lambda x: x.word))))
+        sentence, span1, lambda x: str(x.word)))))
     second_length = str(len(" ".join(materialize_span(
-        sentence, span2, lambda x: x.word))))
+        sentence, span2, lambda x: str(x.word)))))
     length_feat = inverted + "LENGTHS_[" + first_length + "_" + \
         second_length + "]"
     yield length_feat
@@ -314,13 +314,13 @@ def _get_seq_features(sentence, span):
         sentence, span, lambda x: x.word)) + "]"
     yield word_seq_feat
     lemma_seq_feat = "LEMMA_SEQ_[" + " ".join(materialize_span(
-        sentence, span, lambda x: x.lemma)) + "]"
+        sentence, span, lambda x: str(x.lemma))) + "]"
     yield lemma_seq_feat
     ner_seq_feat = "NER_SEQ_[" + " ".join(materialize_span(
-        sentence, span, lambda x: x.ner)) + "]"
+        sentence, span, lambda x: str(x.ner))) + "]"
     yield ner_seq_feat
     pos_seq_feat = "POS_SEQ_[" + " ".join(materialize_span(
-        sentence, span, lambda x: x.pos)) + "]"
+        sentence, span, lambda x: str(x.pos))) + "]"
     yield pos_seq_feat
 
 
@@ -344,28 +344,28 @@ def _get_window_features(
     right_ners = []
     try:
         for i in range(1, window + 1):
-            lemma = sentence[span.begin_word_id - i].lemma
+            lemma = str(sentence[span.begin_word_id - i].lemma)
             try:
                 float(lemma)
                 lemma = "_NUMBER"
             except ValueError:
                 pass
             left_lemmas.append(lemma)
-            left_ners.append(sentence[span.begin_word_id - i].ner)
+            left_ners.append(str(sentence[span.begin_word_id - i].ner))
     except IndexError:
         pass
     left_lemmas.reverse()
     left_ners.reverse()
     try:
         for i in range(1, window + 1):
-            lemma = sentence[span_end_idx + i].lemma
+            lemma = str(sentence[span_end_idx + i].lemma)
             try:
                 float(lemma)
                 lemma = "_NUMBER"
             except ValueError:
                 pass
             right_lemmas.append(lemma)
-            right_ners.append(sentence[span_end_idx + i].ner)
+            right_ners.append(str(sentence[span_end_idx + i].ner))
     except IndexError:
         pass
     if isolated:
@@ -424,7 +424,7 @@ the dictionaries
     in_dictionaries = set()
     for i in range(window + 1):
         for j in range(span.length - i):
-            phrase = " ".join(map(lambda x: x.lemma, sentence[j:j+i+1]))
+            phrase = " ".join(map(lambda x: str(x.lemma), sentence[j:j+i+1]))
             for dict_id in dictionaries:
                 if phrase in dictionaries[dict_id]:
                     in_dictionaries.add(dict_id)
