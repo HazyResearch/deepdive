@@ -96,6 +96,7 @@ Riondato](http://cs.brown.edu/~matteo/).
 
 ### Updates &amp; Changelog 
 
+- [Changelog for version 0.04.2-alpha](doc/changelog/0.04.2-alpha.html) (12/23/2014)
 - [Changelog for version 0.04.1-alpha](doc/changelog/0.04.1-alpha.html) (11/25/2014)
 - [Changelog for version 0.04-alpha](doc/changelog/0.04-alpha.html) (11/19/2014)
 - [Changelog for version 0.03.2-alpha](doc/changelog/0.03.2-alpha.html) (09/16/2014)
@@ -132,6 +133,7 @@ Riondato](http://cs.brown.edu/~matteo/).
 - [Calibration](doc/basics/calibration.html)
 - [Labeling data products](doc/basics/labeling.html)
 - [Text chunking application example](doc/basics/chunking.html)
+- [Generic features library](doc/basics/gen_feats.html)
 - [High-speed sampler](doc/basics/sampler.html)
 - [**application.conf** Reference](doc/basics/configuration.html)
 - [FAQ](doc/basics/faq.html)
