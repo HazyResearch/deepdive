@@ -1,22 +1,319 @@
-diff -ENwbur ../v00002/code/application.conf ./code/application.conf
---- ../v00002/code/application.conf	2014-12-19 18:11:26.000000000 -0800
-+++ ./code/application.conf	2014-12-19 19:54:45.000000000 -0800
-@@ -103,9 +103,10 @@
-           AND   has_spouse.sentence_id = sentences.sentence_id;
-         """
-       output_relation: "has_spouse_features"
--      udf: ${APP_HOME}"/udf/ext_has_spouse_features.py"
-+      udf: pypy ${APP_HOME}"/udf/ext_has_spouse_features.py"
+diff -ENwbur ../v00001/code/application.conf ./code/application.conf
+--- ../v00001/code/application.conf	2014-12-19 16:07:05.000000000 -0800
++++ ./code/application.conf	2014-12-20 19:02:46.000000000 -0800
+@@ -66,15 +66,30 @@
+       style: "tsv_extractor"
+     }
+ 
++    #     Table "public.people_mentions"
++    #      Column     |  Type   | Modifiers
++    # ----------------+---------+-----------
++    #  sentence_id    | text    |
++    #  start_position | integer |
++    #  length         | integer |
++    #  text           | text    |
++    #  mention_id     | text    |
+     ext_has_spouse_candidates {
+       input: """
+-       SELECT p1.sentence_id,
+-              p1.mention_id, p1.text, 
+-              p2.mention_id, p2.text
+-        FROM  people_mentions p1, 
+-              people_mentions p2
+-        WHERE p1.sentence_id = p2.sentence_id
+-          AND p1.mention_id != p2.mention_id;
++        SELECT  m.sentence_id,
++                array_to_string(ARRAY_AGG(mention_id 
++                  ORDER BY mention_id), '~^~') as mention_ids,
++                array_to_string(ARRAY_AGG(text 
++                  ORDER BY mention_id), '~^~') as texts,
++                array_to_string(lemma, '~^~') as lemmas,
++                array_to_string(ARRAY_AGG(start_position 
++                  ORDER BY mention_id), '~^~') as start_positions,
++                array_to_string(ARRAY_AGG(length 
++                  ORDER BY mention_id), '~^~') as lengths
++        FROM  people_mentions m, 
++              sentences s
++        WHERE m.sentence_id = s.sentence_id
++        GROUP BY m.sentence_id, s.lemma;
+           """
+       output_relation: "has_spouse"
+       udf: ${APP_HOME}"/udf/ext_has_spouse.py"
+@@ -85,6 +100,10 @@
+     ext_has_spouse_features {
+       input: """
+         SELECT  array_to_string(words, '~^~'), 
++                array_to_string(lemma, '~^~'),
++                array_to_string(pos_tags, '~^~'),
++                array_to_string(dependencies, '~^~'),
++                array_to_string(ner_tags, '~^~'),
+                 has_spouse.relation_id, 
+                 p1.start_position, 
+                 p1.length, 
+@@ -102,6 +121,7 @@
+       udf: ${APP_HOME}"/udf/ext_has_spouse_features.py"
        dependencies: ["ext_has_spouse_candidates"]
        style: "tsv_extractor"
 +      parallelism: 4
      }
  
    }
-diff -ENwbur ../v00002/code/udf/ext_has_spouse_features.py ./code/udf/ext_has_spouse_features.py
---- ../v00002/code/udf/ext_has_spouse_features.py	2014-12-19 18:11:26.000000000 -0800
-+++ ./code/udf/ext_has_spouse_features.py	2014-12-19 19:54:45.000000000 -0800
-@@ -1,10 +1,15 @@
+@@ -139,13 +159,30 @@
+           """
+       function: "Equal(has_spouse.r1.is_true, has_spouse.r2.is_true)"
+       # weight: "10" # We are pretty sure about this rule
+-      weight: "?" # We are pretty sure about this rule
++      weight: "?" # should learn a positive weight
++    }
++
++    # Multiple spouse relations involving same mention in a sentence cannot be true at the same time.
++    f_has_spouse_unique {
++      input_query: """
++        SELECT  r1.is_true AS "has_spouse.r1.is_true", 
++                r2.is_true AS "has_spouse.r2.is_true", 
++                r1.id AS "has_spouse.r1.id", 
++                r2.id AS "has_spouse.r2.id"
++        FROM    has_spouse r1, 
++                has_spouse r2 
++        WHERE   r1.person1_id = r2.person1_id 
++          AND   r1.person2_id != r2.person2_id
++          AND   r1.sentence_id = r2.sentence_id
++          """
++      function: "Equal(has_spouse.r1.is_true, has_spouse.r2.is_true)"
++      weight: "?" # should learn a negative weight
+     }
+ 
+   }
+ 
+   # # An example of how to use the last factor graph!
+-  # pipeline.relearn_from: ${DEEPDIVE_HOME}"/out/2014-04-19T190341/"
++  # pipeline.relearn_from: ${DEEPDIVE_HOME}"/out/2014-12-20T184153/"
+ 
+   # # If you want to re-extract all sentences:
+   # pipeline.run: "nlp"
+@@ -155,11 +192,13 @@
+     "ext_people", 
+     "ext_has_spouse_candidates", 
+     "ext_has_spouse_features",
+-    "f_has_spouse_features", "f_has_spouse_symmetry"
++    "f_has_spouse_features",
++    "f_has_spouse_symmetry",
++    # "f_has_spouse_unique"
+     ]
+ 
+   # Specify a holdout fraction
+   calibration.holdout_fraction: 0.25
+-  # sampler.sampler_args: "-l 1000 -s 1 -i 1000 --alpha 0.1 --diminish 0.99"
++  sampler.sampler_args: "-l 500 -s 1 -i 500 --alpha 0.1 --diminish 0.99"
+ 
+ }
+Binary files ../v00001/code/udf/.DS_Store and ./code/udf/.DS_Store differ
+diff -ENwbur ../v00001/code/udf/dicts/married.txt ./code/udf/dicts/married.txt
+--- ../v00001/code/udf/dicts/married.txt	1969-12-31 16:00:00.000000000 -0800
++++ ./code/udf/dicts/married.txt	2014-12-20 19:02:46.000000000 -0800
+@@ -0,0 +1,6 @@
++marry  
++widow
++wife
++fiancee
++spouse
++husband
+diff -ENwbur ../v00001/code/udf/dicts/non_married.txt ./code/udf/dicts/non_married.txt
+--- ../v00001/code/udf/dicts/non_married.txt	1969-12-31 16:00:00.000000000 -0800
++++ ./code/udf/dicts/non_married.txt	2014-12-20 19:02:46.000000000 -0800
+@@ -0,0 +1,6 @@
++father
++mother
++brother
++sister
++son
++daughter
+diff -ENwbur ../v00001/code/udf/ext_has_spouse.py ./code/udf/ext_has_spouse.py
+--- ../v00001/code/udf/ext_has_spouse.py	2014-12-19 16:07:05.000000000 -0800
++++ ./code/udf/ext_has_spouse.py	2014-12-20 19:02:46.000000000 -0800
+@@ -1,58 +1,159 @@
+ #! /usr/bin/env python
+ 
+-import csv
+-import os
+-import sys
++import csv, os, sys
++import ddlib
+ from collections import defaultdict
+ 
+ BASE_DIR = os.path.dirname(os.path.realpath(__file__))
+ 
+ # Load the spouse dictionary for distant supervision
+-spouses = defaultdict(lambda: None)
+-with open (BASE_DIR + "/../data/spouses.csv") as csvfile:
+-  reader = csv.reader(csvfile)
+-  for line in reader:
+-    spouses[line[0].strip().lower()] = line[1].strip().lower()
++# A person can have multiple spouses
++married_people = set()
++spouses = set()
++lines = open(BASE_DIR + '/../data/full/spouses-full.tsv').readlines()
++for line in lines:
++  name1, name2, relation = line.strip().split('\t')
++  spouses.add((name1, name2))  # Add a non-spouse relation pair
++  married_people.add(name1)
++  married_people.add(name2)
+ 
+ # Load relations of people that are not spouse
++# non_spouses = defaultdict(lambda: None)
+ non_spouses = set()
+-lines = open(BASE_DIR + '/../data/non-spouses.tsv').readlines()
++lines = open(BASE_DIR + '/../data/full/non-spouses-full.tsv').readlines()
+ for line in lines:
+   name1, name2, relation = line.strip().split('\t')
+   non_spouses.add((name1, name2))  # Add a non-spouse relation pair
+ 
++# Load relations of people that are not spouse from error analysis
++lines = open(BASE_DIR + '/non-spouses-from-errors.csv').readlines()
++for line in lines:
++  name1, name2 = line.strip().split(',')
++  non_spouses.add((name1, name2))  # Add a non-spouse relation pair
++
++# Load a dictionary of married words for supervision
++married_words = set([l.strip() for l in 
++    open(BASE_DIR + "/dicts/married.txt").readlines()])
++
++ARRAY_DELIM = '~^~'
++
+ # For each input tuple
+ for row in sys.stdin:
+   parts = row.strip().split('\t')
+-  if len(parts) != 5: 
+-    print >>sys.stderr, 'Failed to parse row:', row
+-    continue
+   
+-  sentence_id, p1_id, p1_text, p2_id, p2_text = parts
++  sentence_id, mention_ids, mention_texts, sent_lemmas, \
++      starts, lengths = parts
++  
++  # Unpack the inputs into arrays
++  mention_ids = mention_ids.split(ARRAY_DELIM)
++  mention_texts = mention_texts.split(ARRAY_DELIM)
++  # Sentence lemmas for supervision
++  sent_lemmas = sent_lemmas.split(ARRAY_DELIM)
++  starts = [int(x) for x in starts.split(ARRAY_DELIM)]
++  lengths = [int(x) for x in lengths.split(ARRAY_DELIM)]
++  assert len(mention_texts) == len(mention_ids) == \
++      len(starts) == len(lengths)
++
++  num_mentions = len(mention_ids)
++
++  # Test if there is a keyword in sentence
++  kw_in_sentence = len(married_words.intersection(sent_lemmas)) > 0
++
++  # If too many mentions occur, likely to be a list or a table, 
++  # do not generate candidates for it.
++  if num_mentions > 10:
++    continue
+ 
+-  p1_text = p1_text.strip()
+-  p2_text = p2_text.strip()
++  for i in range(num_mentions):
++    p1_id = mention_ids[i]
++    p1_text = mention_texts[i]
+   p1_text_lower = p1_text.lower()
++
++    spouse_indexes = []
++    spouse_names = []
++    # Scan and find if there is a known spouse in the sentence
++    for j in range(num_mentions):
++      if i == j: 
++        continue  # do not ever extract relations with same mentions
++      p2_id = mention_ids[j]
++      p2_text = mention_texts[j]
++      p2_text_lower = p2_text.lower()
++
++      # DS rule 1:
++      # See if the combination of people is in our supervision dictionary
++      # If so, set is_correct to true or false
++      if (p1_text_lower, p2_text_lower) in spouses \
++          or (p2_text_lower, p1_text_lower) in spouses:
++        spouse_indexes.append(j)
++        spouse_names.append(p2_text_lower)
++
++    # DS rule 2:
++    # if A is sposue with B, A cannot be spouse with C.
++    for j in range(num_mentions):
++      if i == j: 
++        continue  # do not ever extract relations with same mentions
++      p2_id = mention_ids[j]
++      p2_text = mention_texts[j]
+   p2_text_lower = p2_text.lower()
+ 
+   # See if the combination of people is in our supervision dictionary
+   # If so, set is_correct to true or false
+   is_true = '\N'
+-  if spouses[p1_text_lower] == p2_text_lower:
++      supv_type = '\N'
++      if j in spouse_indexes:
+     is_true = '1'
+-  if spouses[p2_text_lower] == p1_text_lower:
+-    is_true = '1'
+-  elif (p1_text == p2_text) or (p1_text in p2_text) or (p2_text in p1_text):
++        supv_type = 'SUP_KNOWN_SPOUSE'
++
++      # elif len(spouse_indexes) > 0:
++      #   # if A is sposue with B, A cannot be spouse with C.
++      #   # j is not a known spouse of i, 
++      #   # and j' in the sentence is a known spouse of i, 
++      #   # and j' and j do not contain each other in name
++      #   # so j cannot be a spouse of i
++      #   if not any(name in p2_text_lower or p2_text_lower in name
++      #       for name in spouse_names):
++      #     is_true = '0'
++      #     supv_type = 'SUP_CONFLICT'
++
++      # Matching partial names are incorrect. Don't use for now
++      # elif (p1_text == p2_text) or (p1_text in p2_text) or (p2_text in p1_text):
++      elif (p1_text == p2_text):
+     is_true = '0'
++        supv_type = 'SUP_SAME_PERSON'
+   elif (p1_text_lower, p2_text_lower) in non_spouses:
+     is_true = '0'
++        supv_type = 'SUP_KNOWN_NON_SPOUSE'
+   elif (p2_text_lower, p1_text_lower) in non_spouses:
+     is_true = '0'
++        supv_type = 'SUP_KNOWN_NON_SPOUSE'
++      # elif num_mentions > 5: 
++      #   # DS rule 3: Too many mentions, label all unknown as false
++      #   is_true = '0'
++      #   supv_type = 'SUP_TOO_MANY_MENTIONS'
++
++      # elif not kw_in_sentence:
++      #   # Create two spans of person mentions
++      #   span1 = ddlib.Span(begin_word_id=starts[i], length=lengths[i])
++      #   span2 = ddlib.Span(begin_word_id=starts[j], length=lengths[j])
++      #   lemmas_between = ddlib.tokens_between_spans(sent_lemmas, span1, span2)
++
++      #   # DS rule 4: if the words between two mentions are and / ,
++      #   #   and there is no marriage words in sentence,
++      #   #   use it as negative example.
++      #   if ' '.join(lemmas_between.elements) in ['and', ',']:
++      #     is_true = '0'
++      #     supv_type = 'SUP_AND_NO_KW'
++
++      # DS rule 5: if both people are married (from KB) but they are not married to each other, they are not spouse
++      elif p1_text_lower in married_people and p2_text_lower in married_people:
++          is_true = '0'
++          supv_type = 'SUP_MARRY_OTHERS'
+ 
+   print '\t'.join([
+     p1_id, p2_id, sentence_id, 
+     "%s-%s" %(p1_text, p2_text),
+     is_true,
++        supv_type,
+     "%s-%s" %(p1_id, p2_id),
+     '\N'   # leave "id" blank for system!
+     ])
+diff -ENwbur ../v00001/code/udf/ext_has_spouse_features.py ./code/udf/ext_has_spouse_features.py
+--- ../v00001/code/udf/ext_has_spouse_features.py	2014-12-19 16:07:05.000000000 -0800
++++ ./code/udf/ext_has_spouse_features.py	2014-12-20 19:02:46.000000000 -0800
+@@ -1,75 +1,49 @@
  #! /usr/bin/env python
  
 -import sys
@@ -33,9 +330,25 @@ diff -ENwbur ../v00002/code/udf/ext_has_spouse_features.py ./code/udf/ext_has_sp
  # For each input tuple
  for row in sys.stdin:
    parts = row.strip().split('\t')
-@@ -23,12 +28,14 @@
-     [0, ] * len(words),  [0, ] * len(words), words, lemmas, poses,
-     dependencies, ners)
+-  if len(parts) != 6: 
+-    print >>sys.stderr, 'Failed to parse row:', row
+-    continue
+   
+   # Get all fields from a row
+   words = parts[0].split(ARR_DELIM)
+-  relation_id = parts[1]
+-  p1_start, p1_length, p2_start, p2_length = [int(x) for x in parts[2:]]
++  lemmas = parts[1].split(ARR_DELIM)
++  poses = parts[2].split(ARR_DELIM)
++  dependencies = parts[3].split(ARR_DELIM)
++  ners = parts[4].split(ARR_DELIM)
++  relation_id = parts[5]
++  p1_start, p1_length, p2_start, p2_length = [int(x) for x in parts[6:]]
++
++  # Get a sentence from ddlib -- array of "Word" objects
++  sentence = ddlib.get_sentence(
++    [0, ] * len(words),  [0, ] * len(words), words, lemmas, poses,
++    dependencies, ners)
  
 -  # Unpack input into tuples.
 +  # Create two spans of person mentions
@@ -44,8 +357,76 @@ diff -ENwbur ../v00002/code/udf/ext_has_spouse_features.py ./code/udf/ext_has_sp
  
    # Features for this pair come in here
    features = set()
-+
+   
+-  # Feature 1: Bag of words between the two phrases
+-  words_between = ddlib.tokens_between_spans(words, span1, span2)
+-  for word in words_between.elements:
+-    features.add("word_between=" + word)
+-
+-  # Feature 2: Number of words between the two phrases
+-  features.add("num_words_between=%s" % len(words_between.elements))
+-
+-  # Feature 3: Does the last word (last name) match?
+-  last_word_left = ddlib.materialize_span(words, span1)[-1]
+-  last_word_right = ddlib.materialize_span(words, span2)[-1]
+-  if (last_word_left == last_word_right):
+-    features.add("potential_last_name_match")
+-
+-  ######################## 
+-  # Improved Feature Set #
+-  ########################
+-
+-  # # Feature 1: Find out if a lemma of marry occurs.
+-  # # A better feature would ensure this is on the dependency path between the two.
+-  # words_between = ddlib.tokens_between_spans(words, span1, span2)
+-  # lemma_between = ddlib.tokens_between_spans(obj["lemma"], span1, span2)
+-  # married_words = ['marry', 'widow', 'wife', 'fiancee', 'spouse']
+-  # non_married_words = ['father', 'mother', 'brother', 'sister', 'son']
+-  # # Make sure the distance between mention pairs is not too long
+-  # if len(words_between.elements) <= 10:
+-  #   for mw in married_words + non_married_words:
+-  #     if mw in lemma_between.elements: 
+-  #       features.add("important_word=%s" % mw)
+-
+-  # # Feature 2: Number of words between the two phrases
+-  # # Intuition: if they are close by, the link may be stronger.
+-  # l = len(words_between.elements)
+-  # if l < 5: features.add("few_words_between")
+-  # else: features.add("many_words_between")
+-
+-  # # Feature 3: Does the last word (last name) match?
+-  # last_word_left = ddlib.materialize_span(words, span1)[-1]
+-  # last_word_right = ddlib.materialize_span(words, span2)[-1]
+-  # if (last_word_left == last_word_right):
+-  #   features.add("potential_last_name_match")
+-
+-  #######################
+-
+-  # # Use this line if you want to print out all features extracted:
+-  # ddlib.log(features)
+-
 +  # Get generic features generated by ddlib
-   for feature in ddlib.get_generic_features_relation(sentence, span1, span2):
-     features.add(feature)
-   for feature in features:
++  for feature in ddlib.get_generic_features_relation(sentence, span1, span2):
++    # Only use dependency paths and keywords features in the library
++    if not 'LENGTH' in feature:
++      features.add(feature)
++
++    # # Only use dependency paths and keywords features in the library
++    # if any(pattern in feature for pattern in [
++    #    'KW_', 'BETW_', 'LEMMA_SEQ_']):
++    #   features.add(feature)
+   for feature in features:  
+     print str(relation_id) + '\t' + feature
+diff -ENwbur ../v00001/code/udf/ext_people.py ./code/udf/ext_people.py
+--- ../v00001/code/udf/ext_people.py	2014-12-19 16:07:05.000000000 -0800
++++ ./code/udf/ext_people.py	2014-12-20 19:02:46.000000000 -0800
+@@ -16,6 +16,9 @@
+   sentence_id, words_str, ner_tags_str = row.strip().split('\t')
+   words = words_str.split(ARR_DELIM)
+   ner_tags = ner_tags_str.split(ARR_DELIM)
++  if not len(words) == len(ner_tags): 
++    print >> sys.stderr, sentence_id, len(words), len(ner_tags)
++    continue
+   start_index = 0
+   phrases = []
+ 

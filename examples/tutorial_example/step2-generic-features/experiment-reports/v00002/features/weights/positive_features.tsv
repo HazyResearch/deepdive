@@ -1,100 +1,100 @@
-f_has_spouse_features-INV_LENGTHS_[12_22]	4.06506
-f_has_spouse_features-LENGTHS_[12_22]	3.83746
-f_has_spouse_features-LENGTHS_[22_12]	3.52289
-f_has_spouse_features-INV_LENGTHS_[12_14]	3.17235
-f_has_spouse_symmetry-	2.79254
-f_has_spouse_features-INV_LENGTHS_[22_12]	2.78798
-f_has_spouse_features-LENGTHS_[13_12]	2.54073
-f_has_spouse_features-INV_LENGTHS_[14_12]	2.49246
-f_has_spouse_features-LENGTHS_[14_12]	2.46302
-f_has_spouse_features-LENGTHS_[12_11]	2.35967
-f_has_spouse_features-LENGTHS_[10_12]	2.35053
-f_has_spouse_features-INV_LENGTHS_[14_16]	2.25866
-f_has_spouse_features-INV_LENGTHS_[12_10]	1.94606
-f_has_spouse_features-LENGTHS_[11_11]	1.89023
-f_has_spouse_features-LENGTHS_[16_14]	1.78215
-f_has_spouse_features-INV_LENGTHS_[11_13]	1.77734
-f_has_spouse_features-BETW_L_[conj_and conj_and]	1.69263
-f_has_spouse_features-INV_LENGTHS_[11_9]	1.68728
-f_has_spouse_features-LENGTHS_[12_10]	1.67338
-f_has_spouse_features-INV_NGRAM_1_[wife]	1.6311
-f_has_spouse_features-LENGTHS_[11_13]	1.58156
-f_has_spouse_features-INV_LENGTHS_[11_12]	1.56506
-f_has_spouse_features-INV_BETW_L_[conj_and conj_and]	1.5535
-f_has_spouse_features-BETW_L_[nsubj nsubj]	1.46875
-f_has_spouse_features-NGRAM_1_[wife]	1.46697
-f_has_spouse_features-LENGTHS_[10_14]	1.46404
-f_has_spouse_features-NGRAM_1_[actress]	1.44786
-f_has_spouse_features-KW_IND_[married]	1.42872
-f_has_spouse_features-INV_NGRAM_1_[marry]	1.39277
-f_has_spouse_features-NGRAM_1_[marry]	1.39178
-f_has_spouse_features-INV_LENGTHS_[11_10]	1.35752
-f_has_spouse_features-LENGTHS_[12_14]	1.35332
-f_has_spouse_features-POS_SEQ_[CC]	1.3506
-f_has_spouse_features-INV_BETW_L_[nsubj nsubj]	1.32998
-f_has_spouse_features-LENGTHS_[15_13]	1.30583
-f_has_spouse_features-INV_NGRAM_1_[actress]	1.30258
-f_has_spouse_features-INV_LENGTHS_[11_15]	1.27856
-f_has_spouse_features-LEMMA_L_3_R_1_[Sterling be Mrs.]_[.]	1.25226
-f_has_spouse_features-LEMMA_L_2_R_1_[be Mrs.]_[.]	1.25226
-f_has_spouse_features-LENGTHS_[11_15]	1.23407
-f_has_spouse_features-INV_LENGTHS_[12_13]	1.2177
-f_has_spouse_features-LEMMA_L_1_R_1_[Mrs.]_[.]	1.16717
-f_has_spouse_features-NER_SEQ_[O]	1.13958
-f_has_spouse_features-INV_LENGTHS_[15_11]	1.10416
-f_has_spouse_features-INV_LENGTHS_[14_13]	1.09604
-f_has_spouse_features-LENGTHS_[11_12]	1.06594
-f_has_spouse_features-NER_SEQ_[O O O O]	1.05338
-f_has_spouse_features-INV_LEMMA_L_2_R_1_[former President]_[,]	1.04077
-f_has_spouse_features-LEMMA_SEQ_[and]	1.03927
-f_has_spouse_features-WORD_SEQ_[and]	1.03927
-f_has_spouse_features-INV_NGRAM_2_[wife of]	1.03394
-f_has_spouse_features-INV_NGRAM_1_[-lrb-]	1.0215
-f_has_spouse_features-LENGTHS_[14_16]	1.01531
-f_has_spouse_features-LENGTHS_[9_11]	1.00123
-f_has_spouse_features-INV_LEMMA_L_1_R_1_[President]_[,]	0.985968
-f_has_spouse_features-INV_NGRAM_1_[widower]	0.981089
-f_has_spouse_features-INV_NGRAM_2_[widower of]	0.981089
-f_has_spouse_features-INV_LENGTHS_[16_14]	0.973635
-f_has_spouse_features-NGRAM_2_[wife of]	0.963635
-f_has_spouse_features-NGRAM_1_[she]	0.963111
-f_has_spouse_features-INV_NER_SEQ_[O O O O O O O O O O]	0.931187
-f_has_spouse_features-LENGTHS_[13_14]	0.91732
-f_has_spouse_features-NER_L_1_R_3_[O]_[O O PERSON]	0.912544
-f_has_spouse_features-INV_NER_SEQ_[O O O O O O]	0.902355
-f_has_spouse_features-INV_WORD_SEQ_[and]	0.897213
-f_has_spouse_features-INV_LEMMA_SEQ_[and]	0.897213
-f_has_spouse_features-BETW_L_[appos conj_and]	0.89167
-f_has_spouse_features-LENGTHS_[15_11]	0.87696
-f_has_spouse_features-LEMMA_L_1_R_1_[,]_[,]	0.870245
-f_has_spouse_features-LENGTHS_[15_16]	0.861275
-f_has_spouse_features-INV_NER_L_3_R_1_[MISC O O]_[O]	0.854618
-f_has_spouse_features-INV_NGRAM_2_[former President]	0.853048
-f_has_spouse_features-INV_LEMMA_L_1_R_1_[and]_[.]	0.852265
-f_has_spouse_features-NGRAM_2_[, marry]	0.840354
-f_has_spouse_features-NGRAM_3_[, marry to]	0.840354
-f_has_spouse_features-INV_LENGTHS_[13_21]	0.838023
-f_has_spouse_features-INV_NGRAM_1_[aka]	0.829454
-f_has_spouse_features-INV_LENGTHS_[10_12]	0.828161
-f_has_spouse_features-LEMMA_L_1_R_1_[by]_[-lrb-]	0.826353
-f_has_spouse_features-NGRAM_2_[, actress]	0.819979
-f_has_spouse_features-INV_LEMMA_L_1_R_1_[as]_[,]	0.816533
-f_has_spouse_features-INV_LENGTHS_[11_11]	0.808042
-f_has_spouse_features-INV_NGRAM_1_[she]	0.808005
-f_has_spouse_features-NGRAM_3_[the wife of]	0.806509
-f_has_spouse_features-NGRAM_2_[the wife]	0.806509
-f_has_spouse_features-INV_BETW_[appos Carrey appos]	0.804577
-f_has_spouse_features-INV_BETW_D_[appos Carrey appos]	0.804577
-f_has_spouse_features-INV_LEMMA_L_1_R_2_[,]_[and other]	0.804498
-f_has_spouse_features-INV_LEMMA_L_2_R_1_[with :]_[-lrb-]	0.802404
-f_has_spouse_features-INV_LEMMA_L_3_R_1_[. with :]_[-lrb-]	0.802404
-f_has_spouse_features-INV_POS_SEQ_[CC]	0.796522
-f_has_spouse_features-LENGTHS_[9_16]	0.795285
-f_has_spouse_features-INV_NGRAM_1_[-rrb-]	0.78981
-f_has_spouse_features-LENGTHS_[10_11]	0.781634
-f_has_spouse_features-BETW_D_[appos DICT_married prep_of]	0.778695
-f_has_spouse_features-INV_NER_SEQ_[O O O O O]	0.768553
-f_has_spouse_features-INV_LEMMA_L_3_R_1_[, former President]_[,]	0.768544
-f_has_spouse_features-INV_LENGTHS_[18_11]	0.764441
-f_has_spouse_features-LENGTHS_[13_11]	0.762926
-f_has_spouse_features-INV_BETW_[prep_of wife appos]	0.758688
+f_has_spouse_features-INV_NGRAM_1_[husband]	6.02373
+f_has_spouse_features-LEMMA_L_3_R_1_[Love '' star]_[.]	5.4515
+f_has_spouse_features-NGRAM_1_[wife]	5.01088
+f_has_spouse_features-NGRAM_1_[husband]	4.84841
+f_has_spouse_features-LEMMA_L_2_R_1_[Zorn ,]_[.]	4.28467
+f_has_spouse_features-LEMMA_L_3_R_1_[John Zorn ,]_[.]	4.28467
+f_has_spouse_features-INV_LEMMA_L_1_R_1_[:]_[:]	4.18237
+f_has_spouse_features-INV_NGRAM_1_[marry]	4.10193
+f_has_spouse_features-INV_NGRAM_1_[hubby]	4.09387
+f_has_spouse_features-LEMMA_L_1_R_1_[:]_[:]	4.05348
+f_has_spouse_features-INV_LEMMA_L_3_R_1_[Tucker Eskew ,]_[.]	3.89113
+f_has_spouse_features-INV_LEMMA_L_2_R_1_[Eskew ,]_[.]	3.89113
+f_has_spouse_features-INV_LEMMA_L_2_R_1_[Glover ,]_[.]	3.88335
+f_has_spouse_features-INV_LEMMA_L_3_R_1_[Danny Glover ,]_[.]	3.88335
+f_has_spouse_features-INV_NGRAM_1_[wife]	3.74889
+f_has_spouse_features-BETW_D_[appos DICT_married poss]	3.7205
+f_has_spouse_features-NGRAM_1_[widower]	3.69817
+f_has_spouse_features-NGRAM_1_[ex-wife]	3.69797
+f_has_spouse_features-NGRAM_1_[marry]	3.68226
+f_has_spouse_features-LEMMA_L_1_R_1_[:]_[be]	3.67279
+f_has_spouse_features-INV_NGRAM_1_[boyfriend]	3.66173
+f_has_spouse_features-BETW_D_[appos DICT_married prep_of]	3.63744
+f_has_spouse_features-INV_LEMMA_L_3_R_1_[Kelly Bensimon ,]_[.]	3.61192
+f_has_spouse_features-INV_LEMMA_L_2_R_1_[Bensimon ,]_[.]	3.61192
+f_has_spouse_features-BETW_[prep_by Directed conj_and]	3.59954
+f_has_spouse_features-BETW_D_[prep_by Directed conj_and]	3.59954
+f_has_spouse_features-LEMMA_L_3_R_1_[Amy Ryan ,]_[.]	3.48506
+f_has_spouse_features-LEMMA_L_2_R_1_[Ryan ,]_[.]	3.48506
+f_has_spouse_features-NGRAM_1_[girlfriend]	3.47314
+f_has_spouse_features-INV_LEMMA_L_1_R_1_[:]_[be]	3.44516
+f_has_spouse_features-INV_BETW_L_[prep_for prep_for]	3.4338
+f_has_spouse_features-NGRAM_1_[hubby]	3.42349
+f_has_spouse_features-BETW_L_[prep_by conj_and]	3.41947
+f_has_spouse_features-NGRAM_1_[ex-husband]	3.37056
+f_has_spouse_features-INV_BETW_D_[poss DICT_married appos]	3.33039
+f_has_spouse_features-INV_LEMMA_L_3_R_1_[Returns '' star]_[.]	3.24942
+f_has_spouse_features-INV_BETW_D_[conj_and Penn conj_and]	3.24288
+f_has_spouse_features-INV_BETW_[conj_and Penn conj_and]	3.24288
+f_has_spouse_features-LEMMA_L_1_R_1_[.]_[.]	3.2141
+f_has_spouse_features-LEMMA_L_3_R_1_[-rrb- '' by]_[.]	3.18425
+f_has_spouse_features-INV_NGRAM_1_[ex-husband]	3.14613
+f_has_spouse_features-INV_NGRAM_1_[partner]	3.13608
+f_has_spouse_features-LEMMA_L_2_R_1_[McDermott and]_[.]	3.07125
+f_has_spouse_features-LEMMA_L_3_R_1_[Dean McDermott and]_[.]	3.07125
+f_has_spouse_features-INV_NGRAM_1_[ex-wife]	3.07033
+f_has_spouse_features-INV_BETW_[prep_of daughter prep_of]	3.03149
+f_has_spouse_features-INV_BETW_D_[prep_of DICT_married appos]	3.01185
+f_has_spouse_features-INV_NGRAM_1_[girlfriend]	2.98961
+f_has_spouse_features-INV_LEMMA_L_2_R_1_[Depardieu ,]_[.]	2.98423
+f_has_spouse_features-INV_LEMMA_L_3_R_1_[Gerard Depardieu ,]_[.]	2.98423
+f_has_spouse_features-NGRAM_1_[partner]	2.97617
+f_has_spouse_features-INV_NGRAM_1_[companion]	2.97018
+f_has_spouse_features-INV_LEMMA_L_3_R_1_[-- people like]_[.]	2.96986
+f_has_spouse_features-INV_LEMMA_L_2_R_1_[people like]_[.]	2.96986
+f_has_spouse_features-LEMMA_L_3_R_1_[crime caper star]_[.]	2.93733
+f_has_spouse_features-LEMMA_L_2_R_1_[caper star]_[.]	2.93733
+f_has_spouse_features-INV_LEMMA_L_3_R_1_[Perot , and]_[.]	2.931
+f_has_spouse_features-INV_BETW_D_[conj_and Bloomberg conj_and]	2.931
+f_has_spouse_features-INV_BETW_[conj_and Bloomberg conj_and]	2.931
+f_has_spouse_features-LEMMA_L_3_R_1_[Matt Lauer ,]_[.]	2.84335
+f_has_spouse_features-LEMMA_L_2_R_1_[Lauer ,]_[.]	2.84335
+f_has_spouse_features-STARTS_WITH_CAPITAL_[False_False]	2.79451
+f_has_spouse_features-NGRAM_1_[boyfriend]	2.79418
+f_has_spouse_features-INV_LEMMA_L_3_R_1_[love child of]_[.]	2.74516
+f_has_spouse_features-INV_POS_SEQ_[CC NN]	2.73728
+f_has_spouse_features-INV_NGRAM_1_[fiancé]	2.73605
+f_has_spouse_features-BETW_D_[appos Clooney appos]	2.72076
+f_has_spouse_features-BETW_[appos Clooney appos]	2.72076
+f_has_spouse_features-INV_LEMMA_L_3_R_1_[affair between star]_[.]	2.72019
+f_has_spouse_features-INV_LEMMA_L_2_R_1_[between star]_[.]	2.72019
+f_has_spouse_features-INV_NGRAM_1_[widower]	2.70046
+f_has_spouse_features-NGRAM_1_[widow]	2.68171
+f_has_spouse_features-INV_BETW_D_[conj_and Loren conj_and]	2.67834
+f_has_spouse_features-INV_BETW_[conj_and Loren conj_and]	2.67834
+f_has_spouse_features-INV_LEMMA_L_3_R_1_[husband-and-wife tennis star]_[.]	2.66899
+f_has_spouse_features-INV_LEMMA_L_2_R_1_[tennis star]_[.]	2.66899
+f_has_spouse_features-LEMMA_L_2_R_1_[-rrb- of]_[.]	2.62064
+f_has_spouse_features-LEMMA_L_3_R_1_[s -rrb- of]_[.]	2.62064
+f_has_spouse_features-LEMMA_L_1_R_1_[couple]_[.]	2.60934
+f_has_spouse_symmetry-	2.57825
+f_has_spouse_features-LEMMA_L_3_R_1_[. it star]_[.]	2.57314
+f_has_spouse_features-BETW_L_[prep_between prep_between]	2.54425
+f_has_spouse_features-NGRAM_1_[divorce]	2.54123
+f_has_spouse_features-LEMMA_L_3_R_1_[George Clooney ,]_[.]	2.53057
+f_has_spouse_features-LEMMA_L_2_R_1_[Clooney ,]_[.]	2.53057
+f_has_spouse_features-INV_LEMMA_L_3_R_1_[Charlie Chaplin ,]_[.]	2.52472
+f_has_spouse_features-INV_LEMMA_L_2_R_1_[Chaplin ,]_[.]	2.52472
+f_has_spouse_features-LEMMA_L_1_R_1_[poet]_[.]	2.50321
+f_has_spouse_features-NGRAM_2_[divorce from]	2.49875
+f_has_spouse_features-INV_POS_SEQ_[, CD , CC]	2.49747
+f_has_spouse_features-LEMMA_L_2_R_1_[McKnight :]_[:]	2.47142
+f_has_spouse_features-LEMMA_L_3_R_1_[Melissa McKnight :]_[:]	2.47142
+f_has_spouse_features-BETW_L_[conj_and nn]	2.46561
+f_has_spouse_features-INV_LEMMA_L_1_R_1_[.]_[.]	2.46408
+f_has_spouse_features-LEMMA_L_2_R_1_[Madonna ,]_[.]	2.46068
+f_has_spouse_features-LEMMA_L_3_R_1_[, Madonna ,]_[.]	2.46068
+f_has_spouse_features-LEMMA_L_2_R_1_[duo of]_[.]	2.44717
+f_has_spouse_features-LEMMA_L_3_R_1_[british duo of]_[.]	2.44717
+f_has_spouse_features-INV_LEMMA_L_3_R_1_[husband-and-wife team of]_[.]	2.44356
+f_has_spouse_features-WORD_SEQ_[with]	2.44025

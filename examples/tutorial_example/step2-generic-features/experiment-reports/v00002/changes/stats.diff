@@ -1,125 +1,153 @@
-diff -ENwbur ../v00002/stats/has_spouse.txt ./stats/has_spouse.txt
---- ../v00002/stats/has_spouse.txt	2014-12-19 18:11:27.000000000 -0800
-+++ ./stats/has_spouse.txt	2014-12-19 19:54:46.000000000 -0800
-@@ -6,18 +6,18 @@
+diff -ENwbur ../v00001/stats/documents.txt ./stats/documents.txt
+--- ../v00001/stats/documents.txt	2014-12-19 16:07:05.000000000 -0800
++++ ./stats/documents.txt	2014-12-20 19:02:47.000000000 -0800
+@@ -1,10 +1,10 @@
+  number_of_documents 
+ ---------------------
+-                 958
++               14230
+ (1 row)
+ 
+  number_of_sentences 
+ ---------------------
+-               43789
++               55507
+ (1 row)
+ 
+diff -ENwbur ../v00001/stats/has_spouse.txt ./stats/has_spouse.txt
+--- ../v00001/stats/has_spouse.txt	2014-12-19 16:07:06.000000000 -0800
++++ ./stats/has_spouse.txt	2014-12-20 19:02:48.000000000 -0800
+@@ -1,23 +1,23 @@
+  mention_candidates 
+ --------------------
+-              75422
++             173208
+ (1 row)
+ 
  Supervision statistics:
   is_true | count 
  ---------+-------
-+ f       |  3772
-          | 69486
-  t       |  2164
+-         | 69486
+- t       |  2164
 - f       |  3772
++ t       | 23112
++ f       | 55038
++         | 95058
  (3 rows)
  
   extracted_mentions 
  --------------------
--              21862
-+              23794
+-              37244
++              15378
  (1 row)
  
   extracted_entities 
  --------------------
--              18628
-+              20372
+-              29465
++               9170
  (1 row)
  
-diff -ENwbur ../v00002/stats/has_spouse_top_entities.tsv ./stats/has_spouse_top_entities.tsv
---- ../v00002/stats/has_spouse_top_entities.tsv	2014-12-19 18:11:28.000000000 -0800
-+++ ./stats/has_spouse_top_entities.tsv	2014-12-19 19:54:47.000000000 -0800
+diff -ENwbur ../v00001/stats/has_spouse_top_entities.tsv ./stats/has_spouse_top_entities.tsv
+--- ../v00001/stats/has_spouse_top_entities.tsv	2014-12-19 16:07:07.000000000 -0800
++++ ./stats/has_spouse_top_entities.tsv	2014-12-20 19:02:48.000000000 -0800
 @@ -1,50 +1,50 @@
--Clinton-Obama	75
--Obama-Clinton	75
--Barack Obama-Hillary Rodham Clinton	68
--Hillary Rodham Clinton-Barack Obama	68
--Bill Clinton-Hillary Rodham Clinton	54
--Hillary Rodham Clinton-Bill Clinton	43
--Barack Obama-Bill Clinton	27
--Bill Clinton-Barack Obama	27
--McCain-Obama	24
--Obama-McCain	24
--Benazir Bhutto-Asif Ali Zardari	17
--Barack Obama-John Edwards	16
--Hillary Clinton-Obama	16
--John Edwards-Barack Obama	16
--Obama-Hillary Clinton	16
--Chazz-Jimmy	15
--Jimmy-Chazz	15
--Barack Obama-Michelle Obama	14
--Barack Obama-John McCain	12
--John McCain-Barack Obama	12
-+Clinton-Obama	90
-+Obama-Clinton	90
-+Barack Obama-Hillary Rodham Clinton	64
-+Hillary Rodham Clinton-Barack Obama	64
-+Hillary Rodham Clinton-Bill Clinton	39
-+Bill Clinton-Hillary Rodham Clinton	37
-+McCain-Obama	27
-+Obama-McCain	27
-+Barack Obama-Bill Clinton	22
-+Bill Clinton-Barack Obama	22
-+Hillary Clinton-Obama	17
-+Obama-Hillary Clinton	17
-+Barack Obama-John Edwards	15
-+John Edwards-Barack Obama	15
-+Michelle Obama-Barack Obama	15
-+Hillary Clinton-Bill Clinton	13
-+Bhutto-Zardari	12
-+Bill Clinton-Hillary Clinton	12
-+Edwards-Obama	12
- Malia-Sasha	12
-+Obama-Edwards	12
- Sasha-Malia	12
--Asif Ali Zardari-Benazir Bhutto	11
--Edwards-Obama	11
--McCain-Palin	11
--Michelle-Obama	11
--Obama-Edwards	11
--Palin-McCain	11
--Bhutto-Zardari	10
--Cindy McCain-John McCain	10
--Michelle Obama-Barack Obama	10
-+Zardari-Bhutto	12
-+Bush-Obama	11
-+Obama-Bush	11
-+Asif Ali Zardari-Benazir Bhutto	10
-+Barack Obama-John McCain	10
-+Barack Obama-Michelle Obama	10
-+John McCain-Barack Obama	10
-+Michelle-Obama	10
- Obama-Michelle	10
--Zardari-Bhutto	10
--Boyd-Clapton	9
--Bush-Obama	9
--Clapton-Boyd	9
--Leslie Mann-Paul Rudd	9
--Obama-Bush	9
--Paul Rudd-Leslie Mann	9
-+Tom Cruise-Katie Holmes	10
-+Barack Obama-Hillary Clinton	9
-+Cindy McCain-John McCain	9
-+Hillary Clinton-Barack Obama	9
-+Katie Holmes-Tom Cruise	9
-+Sarah Palin-John McCain	9
-+Sharif-Zardari	9
-+Zardari-Sharif	9
-+Bill Richardson-Obama	8
-+Chazz-Jimmy	8
-+Jimmy-Chazz	8
-+John McCain-Cindy McCain	8
- John McCain-Sarah Palin	8
--Katherine Heigl-Judd Apatow	8
--Miller-Savin	8
--Sarah Palin-John McCain	8
--Savin-Miller	8
--Sharif-Zardari	8
--Zardari-Sharif	8
--Bill Clinton-Hillary Clinton	7
--George-Martha	7
--Hillary Clinton-Bill Clinton	7
--Hillary Rodham Clinton-Obama	7
-+Leslie Mann-Paul Rudd	8
-+Margera-Rothstein	8
-+McCain-Palin	8
-+Obama-Bill Richardson	8
-+Palin-McCain	8
-+Paul Rudd-Leslie Mann	8
+-Clinton-Obama	226
+-Obama-Clinton	226
+-McCain-Obama	63
+-Barack Obama-Hillary Rodham Clinton	62
+-Hillary Rodham Clinton-Barack Obama	62
+-Obama-McCain	61
+-Bill Clinton-Hillary Rodham Clinton	48
+-Obama-Bill Clinton	43
+-Bill Clinton-Obama	42
+-Hillary Clinton-Obama	38
+-McCain-Palin	37
+-Palin-McCain	37
+-Barack Obama-Bill Clinton	36
+-Bill Clinton-Barack Obama	36
+-Hillary Rodham Clinton-Bill Clinton	36
+-Obama-Hillary Clinton	36
+-Hillary Rodham Clinton-Obama	32
+-Obama-Hillary Rodham Clinton	32
+-Barack Obama-Clinton	30
+-Clinton-Barack Obama	30
+-Obama-Wright	30
+-Wright-Obama	30
+-Bush-Obama	28
+-Obama-Bush	28
+-Malia-Sasha	22
+-Sasha-Malia	22
+-Boyd-Clapton	20
+-Clapton-Boyd	20
+-John McCain-Obama	19
+-Obama-John McCain	19
+-Barack Obama-John Edwards	18
+-Bhutto-Zardari	18
+-Bush-McCain	18
+-Chazz-Jimmy	18
+-Edwards-Obama	18
+-John Edwards-Barack Obama	18
+-McCain-Bush	18
+-Obama-Edwards	18
+-Sharif-Zardari	18
+-Zardari-Bhutto	18
+-Bush-Clinton	17
+-Clinton-Bush	17
+-Jimmy-Chazz	17
+-Zardari-Sharif	17
+-Barack Obama-Hillary Clinton	14
+-Clinton-John Edwards	14
+-Hillary Clinton-Barack Obama	14
+-John Edwards-Clinton	14
+-Zardari-Musharraf	14
+-Barack Obama-John McCain	13
++Hillary Rodham Clinton-Bill Clinton	125
++Bill Clinton-Hillary Rodham Clinton	116
++Katie Holmes-Tom Cruise	103
++Brad Pitt-Angelina Jolie	100
++Britney Spears-Kevin Federline	92
++Kevin Federline-Britney Spears	90
++Benazir Bhutto-Asif Ali Zardari	83
++Tom Cruise-Katie Holmes	80
++Angelina Jolie-Brad Pitt	79
++Asif Ali Zardari-Benazir Bhutto	71
++Madonna-Guy Ritchie	59
++Asif Ali Zardari-Nawaz Sharif	56
++Nawaz Sharif-Asif Ali Zardari	56
++Paul McCartney-Heather Mills	53
++Heidi Montag-Spencer Pratt	52
++Guy Ritchie-Madonna	51
++Nicolas Sarkozy-Carla Bruni	49
++Heather Mills-Paul McCartney	47
++Spencer Pratt-Heidi Montag	47
++Carla Bruni-Nicolas Sarkozy	46
++Michelle Obama-Barack Obama	41
++Tony Parker-Eva Longoria	39
++Jennifer Lopez-Marc Anthony	38
++Barack Obama-Michelle Obama	35
++John McCain-Cindy McCain	31
++Brad Pitt-Jennifer Aniston	30
++Marc Anthony-Jennifer Lopez	30
++Bill Clinton-Obama	27
++Jennifer Aniston-Brad Pitt	26
++John Edwards-Elizabeth Edwards	26
++Obama-Bill Clinton	26
++Asif Ali Zardari-Musharraf	25
++Eva Longoria-Tony Parker	25
++Laura Bush-George W. Bush	25
++Musharraf-Asif Ali Zardari	25
++Nick Lachey-Jessica Simpson	25
++Nicole Richie-Joel Madden	24
++George W. Bush-Laura Bush	23
++Hillary Rodham Clinton-Obama	23
++Joel Madden-Nicole Richie	23
++Keith Urban-Nicole Kidman	23
++Obama-Hillary Rodham Clinton	23
++Chris Brown-Rihanna	22
++Elizabeth Edwards-John Edwards	22
++Jessica Simpson-Nick Lachey	22
++Arnold Schwarzenegger-Maria Shriver	21
++Clinton-Bill Clinton	21
++Rihanna-Chris Brown	21
++Ben Affleck-Jennifer Garner	20
++Bill Clinton-Clinton	20

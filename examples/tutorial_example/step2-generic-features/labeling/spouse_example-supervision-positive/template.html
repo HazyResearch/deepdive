@@ -1,0 +1,40 @@
+<mindtagger mode="precision">
+
+  <template for="each-item">
+    <strong title="relation_id: {{item.relation_id}}">{{item.description}}</strong> with expectation <strong>{{item.expectation | number:3}}</strong> appeared in:
+    <blockquote>
+        <big mindtagger-word-array="item.words" array-format="postgres" title="sentence_id: {{item.sentence_id}}">
+            <mindtagger-highlight-words from="item.p1_start" to="item.p1_start + item.p1_length - 1" with-style="background-color: yellow;"/>
+            <mindtagger-highlight-words from="item.p2_start" to="item.p2_start + item.p2_length - 1" with-style="background-color: cyan;"/>
+        </big>
+    </blockquote>
+
+    <!-- Enumerate features with weights (leveraging AngularJS a bit more)-->
+    <div class="row">
+      <div class="col-sm-offset-1 col-sm-10">
+        <table class="table table-striped table-condensed table-hover">
+          <thead><tr>
+              <th class="col-sm-1">Weight</th>
+              <th>Feature</th>
+          </tr></thead>
+          <tbody>
+            <tr ng-repeat="feature in item.features | parsedArray:'postgres'">
+              <td class="text-right">{{(item.weights | parsedArray:'postgres')[$index] | number:6}}</td>
+              <th>{{feature}}</th>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div>
+      <div mindtagger-item-details></div>
+    </div>
+  </template>
+
+  <template for="tags">
+    <span mindtagger-adhoc-tags></span>
+    <span mindtagger-note-tags></span>
+  </template>
+
+</mindtagger>
