@@ -127,6 +127,7 @@ Basics:
 - [Example application walk-through](doc/basics/walkthrough/walkthrough.html)
 - [Labeling data products](doc/basics/labeling.html)
 - [Text chunking application example](doc/basics/chunking.html)
+- [Generic features library](doc/basics/gen_feats.html)
 - [High-speed sampler](doc/basics/sampler.html)
 - [**application.conf** Reference](doc/basics/configuration.html)
 - [FAQ](doc/basics/faq.html)
