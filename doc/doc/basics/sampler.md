@@ -74,6 +74,9 @@ file, and learning and inference parameters:
     -d <diminishRate> | --diminish <diminishRate>
         the diminish rate for learning (default: 0.95).
         Learning rate will shrink by this parameter after each iteration.
+        
+    --reg_param <regularizationParameter>
+        the l2 regularization parameter for learning (default: 0.01).
 
 You can see a detailed list by running `util/sampler-dw-mac gibbs --help` or `util/sampler-dw-linux gibbs --help`.
 
