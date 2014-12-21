@@ -371,14 +371,14 @@ def _get_window_features(
         pass
     if isolated:
         for i in range(len(left_lemmas)):
-            yield "LEFT_" + str(i+1) + "_[" + " ".join(left_lemmas[-i-1:]) + \
+            yield "W_LEFT_" + str(i+1) + "_[" + " ".join(left_lemmas[-i-1:]) + \
                 "]"
-            yield "LEFT_NER_" + str(i+1) + "_[" + " ".join(left_ners[-i-1:]) +\
+            yield "W_LEFT_NER_" + str(i+1) + "_[" + " ".join(left_ners[-i-1:]) +\
                 "]"
         for i in range(len(right_lemmas)):
-            yield "RIGHT_" + str(i+1) + "_[" + " ".join(right_lemmas[:i+1]) +\
+            yield "W_RIGHT_" + str(i+1) + "_[" + " ".join(right_lemmas[:i+1]) +\
                 "]"
-            yield "RIGHT_NER_" + str(i+1) + "_[" + \
+            yield "W_RIGHT_NER_" + str(i+1) + "_[" + \
                 " ".join(right_ners[:i+1]) + "]"
     if combinations:
         for i in range(len(left_lemmas)):
@@ -405,9 +405,9 @@ def _get_window_features(
                             to_add = "None"
                         new_ners.append(to_add)
                     curr_right_ners = " ".join(new_ners)
-                yield "LEMMA_L_" + str(i+1) + "_R_" + str(j+1) + "_[" + \
+                yield "W_LEMMA_L_" + str(i+1) + "_R_" + str(j+1) + "_[" + \
                     curr_left_lemmas + "]_[" + curr_right_lemmas + "]"
-                yield "NER_L_" + str(i+1) + "_R_" + str(j+1) + "_[" + \
+                yield "W_NER_L_" + str(i+1) + "_R_" + str(j+1) + "_[" + \
                     curr_left_ners + "]_[" + curr_right_ners + "]"
 
 

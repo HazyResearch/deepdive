@@ -34,40 +34,42 @@ are in the 'Using Dictionaries' section below.
 
 ## List of Generic Features
 
-The generic feature library uses two different sets of features for mentions and
-relations, due to the different nature of these objects, and to which features
-are more relevant for each type. 
+The generic feature library creates wo different sets of features for mentions
+and relations, due to the different nature of these objects, and to which
+features are more relevant for each type. 
 
 There are various "classes" of generic features, which can be distinguished by
 their prefix.
 
 The list of generic features for a *mention* is the following:
 
-- The set of Part of Speech tag(s) of the word(s) composing the mention;
+- The set of Part of Speech tag(s) of the word(s) composing the mention (prefix:
+	`POS_SEQ`);
 - The set of Named Entity Recognition tag(s) of the word(s) composing the
-	mention;
-- The set of lemmas of the word(s) composing the mention; 
-- The set of word(s) composing the mention;
-- The (sum of the) length(s) of the word(s) composing the mention;
+	mention (`NER_SEQ`);
+- The set of lemmas of the word(s) composing the mention (`LEMMA_SEQ`); 
+- The set of word(s) composing the mention (`WORD_SEQ`);
+- The (sum of the) length(s) of the word(s) composing the mention (`LENGTH`);
 - A feature denoting whether the first word of the mention starts with a capital
-	letter;
+	letter (`STARTS_WITH_CAPITAL`);
 - The lemmas and the NER tags in a window of size up to 3 around the mention,
 	both on the left and on the right of the mention. These are also combined
 	(i.e., a window on the left and a window on the right are merged into a
 	single feature), to give a total of (up to) 15 features (3 on left, 3 on
 	right, 3 times 3 combinations of left and right) with lemmas, and 15 for
-	NERs;
+	NERs (`W`);
 - Features denoting whether the mention (or a substring of it of length up to 3)
-	appears in a user-specified dictionary;
+	appears in a user-specified dictionary (`IN_DICT`);
 - Features indicating whether the sentence containing the mention also contains
-	some keyword that appears in a user-specified dictionary;
+	some keyword that appears in a user-specified dictionary (`KW_IND`);
 - The shortest dependency path(s) between the mention and the keyword(s) from
 	user-specified dictionaries that appear in the sentence. Multiple variants
 	of the dependency path are used as feature (edge labels and lemmas, edge
 	labels only, edge labels and lemmas replaced with dictionary identifier if
-	the lemma is in a dictionary);
+	the lemma is in a dictionary) (`KW`);
 
-The list of generic features for a relation is the following:
+The list of generic features for a relation is the following (the prefixes are
+the same as the ones for the mentions, except where otherwise specified):
 
 - The set of Part of Speech tags for the words *between* the mentions in the
 	relation;
@@ -78,7 +80,7 @@ The list of generic features for a relation is the following:
 - The sum of the lengths of the words in the mentions;
 - Indicator feature for whether the mentions start with a capital letter;
 - The n-grams of size up to 3 of the lemmas and the NER tags of the words
-	between the mentions in the relation;
+	between the mentions in the relation (prefix: `NGRAM`);
 - The lemmas and the NERs in a window of size up to 3 around the mentions
 	composing the relation. These are only combined (i.e., a left window and a
 	right window are merged into a single feature), giving a total of (up to) 9
