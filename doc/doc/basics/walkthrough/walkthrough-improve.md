@@ -9,19 +9,283 @@ Application: A Mention-Level Extraction System](walkthrough.html).
 
 <a name="improve" href="#"> </a>
 
-### Contents
+## Contents
 
-- [Reduce sparsity](#sparsity)
+- [Setup and First Error Analysis](#setup)
+  - [Using BrainDump to generate automatic reports](#braindump)
+  - [Using MindTagger to label results](#mindtagger)
+- [First Error Analysis](#error-analysis-1)
+  - [Fix: Use Generic Feature Library](#feature-library)
+- [Second Error Analysis](#error-analysis-2)
+- [Final Error Analysis](#error-analysis-3)
+
+TODO
+
+
+<!-- - [Reduce sparsity](#sparsity)
 - [Use strong indicators rather than bag of words](#strong_words)
 - [Add a domain-specific (symmetry) rule](#symmetry)
 - [Tune sampler parameter](#tune_sampler)
 - [Getting improved results](#improved_results)
+ -->
 
 Other sections in the tutorial:
 
 - [A Mention-Level Extraction System](walkthrough.html)
 - [Extras: preprocessing, NLP, pipelines, debugging extractor](walkthrough-extras.html)
 
+## <a name="setup" href="#">  </a> Setup and First Error Analysis
+
+### <a name="braindump" href="#"> </a> Using BrainDump to generate automatic reports
+
+We first set up [BrainDump](https://github.com/zifeishan/braindump), the automatic report generator for DeepDive.
+
+#### Configuration
+
+We provide a script `./get-braindump.sh` in folder `DEEPDIVE_HOME/example/tutorial_example/step1-basic/`. Use this file to download and install BrainDump.
+
+After installation, the first time you run `braindump`, it has an interactive command line interface to let you create a configuration file in `braindump.conf`.
+
+The created file should be like this:
+
+```bash
+
+########## Conventions. Do not recommend to change. ###########
+
+# Set the utility files dir
+export UTIL_DIR="$HOME/local/braindump"
+
+# Report folder: use current
+export REPORT_DIR="$WORKING_DIR/experiment-reports"
+
+
+########## User-specified configurations ###########
+
+# Directories
+
+# Use absolute path if possible.
+# Avoid using "pwd" or "dirname $0", they don't work properly.
+# $WORKING_DIR is set to be the directory where braindump is running. 
+# (the directory that contains braindump.conf)
+export APP_HOME=$WORKING_DIR
+
+# Specify deepdive out directory (DEEPDIVE_HOME/out)
+export DD_OUTPUT_DIR=$WORKING_DIR/../../../out
+
+# Database Configuration
+export DBNAME=deepdive_spouse
+export PGUSER=${PGUSER:-`whoami`}
+export PGPASSWORD=${PGPASSWORD:-}
+export PGPORT=${PGPORT:-5432}
+export PGHOST=${PGHOST:-localhost}
+
+# Specify all feature tables. 
+# e.g. FEATURE_TABLES=(f1 f2 f3)
+export FEATURE_TABLES=(has_spouse_features)
+export FEATURE_COLUMNS=(feature)
+
+# Specify all variable tables
+export VARIABLE_TABLES=(has_spouse)
+export VARIABLE_COLUMNS=(is_true)
+# Assume that in DeepDive, inference result tables will be named as [VARIABLE_TABLE]_[VARIABLE_COLUMN]_inference
+
+# If the variable is a mention, specify the words / description for the mention. 
+# This is used for a statistics with naive entity linking. If empty, do not count deduplicated mentions.
+# e.g. export VARIABLE_WORDS_COLUMNS=(w1 "" w3)
+# In the examples above, the second element is left empty
+export VARIABLE_WORDS_COLUMNS=(description)
+
+# Set variable docid columns to count distinct documents that have extractions
+# export VARIABLE_DOCID_COLUMNS=()
+
+# Code configs to save
+export CODE_CONFIG=
+
+# Number of samples
+export NUM_SAMPLED_FEATURES=100
+export NUM_SAMPLED_SUPERVISION=500
+export NUM_SAMPLED_RESULT=1000
+export NUM_TOP_ENTITIES=50
+
+# Specify some tables for statistics
+export SENTENCE_TABLE=sentences
+export SENTENCE_TABLE_DOC_ID_COLUMN=document_id
+
+# Define how to send result. use "true" to activate.
+export SEND_RESULT_WITH_GIT=false
+# If true, push after commiting the report
+export SEND_RESULT_WITH_GIT_PUSH=false
+export SEND_RESULT_WITH_EMAIL=false
+
+######## CUSTOM SCRIPTS ###########
+# Leave blank for default stats report.
+# Set to a location of a script (e.g. $APP_HOME/your_script) to use it instead of default 
+
+# Self-defined scripts for stats. 
+export STATS_SCRIPT=
+export SUPERVISION_SAMPLE_SCRIPT=
+export INFERENCE_SAMPLE_SCRIPT="$APP_HOME/bdconfigs/sample-inference.sh"
+
+########## Conventions. Do not recommend to change. ###########
+
+# Hack: use the last DD run as output dir
+# Suppose out/ is under $DEEPDIVE_HOME/
+# You may need to manually change it based on need
+export DD_TIMESTAMP=`ls -t $DD_OUTPUT_DIR/ | head -n 1`
+export DD_THIS_OUTPUT_DIR=$DD_OUTPUT_DIR/$DD_TIMESTAMP
+
+```
+
+#### Run BrainDump
+
+In `APP_HOME`, run following script to generate a automatic report for the recent DeepDive run:
+
+```bash
+braindump
+```
+
+#### Automating BrainDump with run.sh
+
+To Automate BrainDump in `run.sh`, add following:
+
+```bash
+#! /bin/bash
+
+. "$(dirname $0)/env.sh"
+
+###### YOUR OTHER CONFIGURATIONS IN run.sh... ######
+
+cd $DEEPDIVE_HOME
+
+# Be sure to set this so that you are able to QUIT if deepdive fails.
+set -e
+
+# Run with deepdive binary:
+deepdive -c $APP_HOME/application.conf
+
+# Note that you should go back to your APP_HOME directory to run braindump
+cd $APP_HOME  
+braindump
+```
+
+
+#### Examining the results
+
+The auto-generated report is a folder in `experiment-reports/v[xxxxx]`. Let's look into one report directory, say `experiment-reports/v[xxxxx]`:
+
+
+```
+# Statsitics
+     number_of_documents 
+    ---------------------
+                     958
+    (1 row)
+    
+     number_of_sentences 
+    ---------------------
+                   43789
+    (1 row)
+    
+## Variable has_spouse
+     mention_candidates 
+    --------------------
+                  75422
+    (1 row)
+    
+    Supervision statistics:
+     is_true | count 
+    ---------+-------
+             | 69486
+     t       |  2164
+     f       |  3772
+    (3 rows)
+    
+     extracted_mentions 
+    --------------------
+                  37244
+    (1 row)
+    
+     extracted_entities 
+    --------------------
+                  29465
+    (1 row)
+    
+### Top entities
+    Clinton-Obama 226
+    Obama-Clinton 226
+    McCain-Obama  63
+    Barack Obama-Hillary Rodham Clinton 62
+    Hillary Rodham Clinton-Barack Obama 62
+    Obama-McCain  61
+    Bill Clinton-Hillary Rodham Clinton 48
+    Obama-Bill Clinton  43
+    Bill Clinton-Obama  42
+    Hillary Clinton-Obama 38
+```
+
+We found in "top entities" section that most entities we extract do
+not make sense. To diagnose what's going on, we look at the features in 
+
+
+
+### <a name="mindtagger" href="#"> </a> Using MindTagger to label results
+
+We conduct error analysis based on our initial spouse relation extractor. 
+
+For more information, see [MindTagger](../labeling.html).
+
+Examine results TODO
+
+We label 100 extracted relations, and the precision is only 4%.
+
+Lessons:
+
+- words_between is a bad feature.
+  We notice that features seem to be too weak. Once there is a word
+  "husband" or "wife" in the middle of two mentions, the relation is
+  predicted a high probability. We may want to use stronger features.
+  Also some random words get a weight, such as "word_between=Kevin" gets weight of 0.6.
+
+- num_words_between is a feature that's too sparse. e.g. "num_words_between=17" gets a high weight.
+
+- Lots of parallel names in a list
+
+### Fix: Use Generic Feature Library (#feature-library)
+
+We decide to use generic feature library.
+
+## Second Error Analysis (#error-analysis-2)
+
+Even worse. 1% precision.
+
+
+### Fix: Add distant supervision rules (#feature-library)
+
+negative examples.
+- lots of parallel person names (>10, negative)
+- "and" + no keywords
+- too long
+
+19%
+
+## Final Error Analysis](#error-analysis-3)
+
+
+
+select words, t0.is_true, t1.feature from sentences s, has_spouse t0, has_spouse_features t1 where t0.relation_id=t1.relation_id and s.sentence_id = t0.sentence_id and t1.feature= 'INV_NGRAM_1_[piano]';
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 
 ### <a name="sparsity" href="#"> </a> Reduce Sparsity
 
 After [examining the results](walkthrough.html#get_result), we noticed
@@ -241,3 +505,4 @@ Now if you want, you can look at the [Extras page](walkthrough-extras.html)
 which explained how to prepare data tables, use pipelines, use NLP extractors,
 or get example extractor inputs.
 
+ -->

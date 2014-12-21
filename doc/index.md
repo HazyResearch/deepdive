@@ -105,14 +105,20 @@ Riondato](http://cs.brown.edu/~matteo/).
 
 ### <a name="documentation" href="#"></a> Documentation
 
-Background:
+#### Background
 
 - [Knowledge base construction](doc/general/kbc.html)
 - [Relation extraction](doc/general/relation_extraction.html)
 - [Distant supervision](doc/general/distant_supervision.html)
 - [Probabilistic inference and factor graphs](doc/general/inference.html)
 
-Basics:
+#### Tutorial
+
+- [Example application walk-through](doc/basics/walkthrough/walkthrough.html)
+- [Improving the results](doc/basics/walkthrough/walkthrough-improve.html)
+- [Extras](doc/basics/walkthrough/walkthrough-extras.html)
+
+#### Basics
 
 - [System overview and fundamental terminology](doc/basics/overview.html)
 - [Installation guide](doc/basics/installation.html)
@@ -124,14 +130,13 @@ Basics:
 - [Generating negative examples](doc/basics/generating_negative_examples.html)
 - [Running an application](doc/basics/running.html)
 - [Calibration](doc/basics/calibration.html)
-- [Example application walk-through](doc/basics/walkthrough/walkthrough.html)
 - [Labeling data products](doc/basics/labeling.html)
 - [Text chunking application example](doc/basics/chunking.html)
 - [High-speed sampler](doc/basics/sampler.html)
 - [**application.conf** Reference](doc/basics/configuration.html)
 - [FAQ](doc/basics/faq.html)
 
-Advanced topics:
+#### Advanced topics
 
 - [Performance tuning](doc/advanced/performance.html)
 - [Scala developer guide for DeepDive](doc/advanced/developer.html)
