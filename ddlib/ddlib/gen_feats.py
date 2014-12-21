@@ -7,80 +7,6 @@ MAX_KW_LENGTH = 3
 dictionaries = dict()
 
 
-def test_transform():
-    test = "a(b-1, c-2)"
-    transf = dep_transform_parenthesis_to_triplet(test)
-    assert transf == "1\ta\t2"
-    transf_back = dep_transform_triplet_to_parenthesis(transf, "b", "c")
-    assert transf_back == test
-    print("success")
-
-
-def dep_transform_parenthesis_to_triplet(edge_str):
-    parent, label, child = dep_graph_parser_parenthesis(edge_str)
-    return "\t".join((str(parent + 1), label, str(child + 1)))
-
-
-def dep_transform_triplet_to_parenthesis(edge_str, parent_word, child_word):
-    parent, label, child = dep_graph_parser_triplet(edge_str)
-    return label + "(" + parent_word + "-" + str(parent + 1) + ", " + \
-        child_word + "-" + str(child + 1) + ")"
-
-
-def dep_graph_parser_parenthesis(edge_str):
-    """Given a string representing a dependency edge in the 'parenthesis'
-    format, return a tuple of (parent_index, edge_label, child_index).
-
-    Args:
-        edge_str: a string representation of an edge in the dependency tree, in
-        the format edge_label(parent_word-parent_index, child_word-child_index)
-    Returns:
-        tuple of (parent_index, edge_label, child_index)
-    """
-    tokens = edge_str.split("(")
-    label = tokens[0]
-    tokens = tokens[1].split(", ")
-    parent = int(tokens[0].split("-")[-1]) - 1
-    child = int(",".join(tokens[1:]).split("-")[-1][:-1]) - 1
-    return (parent, label, child)
-
-
-def dep_graph_parser_triplet(edge_str):
-    """Given a string representing a dependency edge in the 'triplet' format,
-    return a tuple of (parent_index, edge_label, child_index).
-
-    Args:
-        edge_str: a string representation of an edge in the dependency tree
-        in the format "parent_index\tlabel\child_index"
-    Returns:
-        tuple of (parent_index, edge_label, child_index)
-    """
-    parent, label, child = edge_str.split()
-    # input edge used 1-based indexing
-    return (int(parent) - 1, label, int(child) - 1)
-
-
-def get_sentence(
-        begin_char_offsets, end_char_offsets, words, lemmas, poses,
-        dependencies, ners, dep_format_parser=dep_graph_parser_parenthesis):
-    """Return a list of Word objects representing a sentence"""
-    obj = dict()
-    obj['lemma'] = lemmas
-    obj['words'] = words
-    obj['ner'] = ners
-    obj['pos'] = poses
-    obj['dep_graph'] = dependencies
-    obj['ch_of_beg'] = begin_char_offsets
-    obj['ch_of_end'] = end_char_offsets
-    # list of Word objects
-    word_obj_list = unpack_words(
-        obj, character_offset_begin='ch_of_beg',
-        character_offset_end='ch_of_end', lemma='lemma', pos='pos',
-        ner='ner', words='words', dep_graph='dep_graph',
-        dep_graph_parser=dep_format_parser)
-    return word_obj_list
-
-
 def load_dictionary(filename, dict_id="", func=lambda x: x):
     """Load a dictionary to be used for generic features.
 
@@ -275,6 +201,8 @@ def get_generic_features_relation(sentence, span1, span2):
 
 
 def _get_substring_indices(_len, max_substring_len):
+    """Yield the start-end indices for all substrings of a sequence with length
+    _len, up to length max_substring_len"""
     for start in range(_len):
         for end in reversed(range(start + 1, min(
                             _len, start + 1 + max_substring_len))):
@@ -282,7 +210,12 @@ def _get_substring_indices(_len, max_substring_len):
 
 
 def _get_ngram_features(sentence, span, window=3):
-    """Yields ngram features
+    """Yields ngram features. These are all substrings of size up to window in
+    the part of the sentence covered by the span.
+
+    In a typical usage, the span covers the words between two mentions, so
+    this function returns all ngrams of size up to window between the two
+    mentions
 
     Args:
         sentence: a list of Word objects
@@ -297,12 +230,13 @@ def _get_ngram_features(sentence, span, window=3):
 
 
 def _get_min_dep_path(sentence, span1, span2):
-    """Get the shortest dependency paths between two Span objects
+    """Return the shortest dependency path between two Span objects
 
     Args:
         sentence: a list of Word objects
         span1: the first Span
         span2: the second Span
+    Returns: a list of DepEdge objects
     """
     min_path = None
     min_path_length = 200  # ridiculously high number?
@@ -316,7 +250,12 @@ def _get_min_dep_path(sentence, span1, span2):
 
 
 def _get_min_dep_path_features(sentence, span1, span2, prefix="BETW_"):
-    """Yield the minimum dependency path features between two Span objects
+    """Yield the minimum dependency path features between two Span objects.
+    Various variants of the dependency path are yielded:
+        - using both labels and lemmas,
+        - using only labels
+        - using labels and lemmas, but with lemmas replaced by dict_id if the
+          lemma is in a dictionary
 
     Args:
         sentence: a list of Word objects
@@ -349,9 +288,15 @@ def _get_min_dep_path_features(sentence, span1, span2, prefix="BETW_"):
 def _get_seq_features(sentence, span):
     """Yield the sequence features in a Span
 
+    These include:
+        - words sequence in the span
+        - lemmas sequence in the span
+        - NER tags sequence in the span
+        - POS tags sequence in the span
+
     Args:
         sentence: a list of Word objects
-        span: the span
+        span: the Span
     """
     word_seq_feat = "WORD_SEQ_[" + " ".join(materialize_span(
         sentence, span, lambda x: x.word)) + "]"
@@ -370,6 +315,9 @@ def _get_seq_features(sentence, span):
 def _get_window_features(
         sentence, span, window=3, combinations=True, isolated=True):
     """Yield the window features around a Span
+
+    These are basically the n-grams around the span, up to a window of size
+    'window'
 
     Args:
         sentence: a list of Word objects
@@ -475,3 +423,84 @@ the dictionaries
         yield prefix + "_[" + str(dict_id) + "]"
     # yield prefix + "_JOIN_[" + " ".join(
     #    map(lambda x: str(x), sorted(in_dictionaries))) + "]"
+
+
+def dep_graph_parser_parenthesis(edge_str):
+    """Given a string representing a dependency edge in the 'parenthesis'
+    format, return a tuple of (parent_index, edge_label, child_index).
+
+    Args:
+        edge_str: a string representation of an edge in the dependency tree, in
+        the format edge_label(parent_word-parent_index, child_word-child_index)
+    Returns:
+        tuple of (parent_index, edge_label, child_index)
+    """
+    tokens = edge_str.split("(")
+    label = tokens[0]
+    tokens = tokens[1].split(", ")
+    parent = int(tokens[0].split("-")[-1]) - 1
+    child = int(",".join(tokens[1:]).split("-")[-1][:-1]) - 1
+    return (parent, label, child)
+
+
+def dep_graph_parser_triplet(edge_str):
+    """Given a string representing a dependency edge in the 'triplet' format,
+    return a tuple of (parent_index, edge_label, child_index).
+
+    Args:
+        edge_str: a string representation of an edge in the dependency tree
+        in the format "parent_index\tlabel\child_index"
+    Returns:
+        tuple of (parent_index, edge_label, child_index)
+    """
+    parent, label, child = edge_str.split()
+    # input edge used 1-based indexing
+    return (int(parent) - 1, label, int(child) - 1)
+
+
+def dep_transform_parenthesis_to_triplet(edge_str):
+    """Transform an edge representation from the parenthesis format to the
+    triplet format"""
+    parent, label, child = dep_graph_parser_parenthesis(edge_str)
+    return "\t".join((str(parent + 1), label, str(child + 1)))
+
+
+def dep_transform_triplet_to_parenthesis(edge_str, parent_word, child_word):
+    """Transform an edge representation from the triplet format to the
+    parenthesis format"""
+    parent, label, child = dep_graph_parser_triplet(edge_str)
+    return label + "(" + parent_word + "-" + str(parent + 1) + ", " + \
+        child_word + "-" + str(child + 1) + ")"
+
+
+def dep_transform_test():
+    """Test the transformation functions for the various dependency paths
+    formats"""
+
+    test = "a(b-1, c-2)"
+    transf = dep_transform_parenthesis_to_triplet(test)
+    assert transf == "1\ta\t2"
+    transf_back = dep_transform_triplet_to_parenthesis(transf, "b", "c")
+    assert transf_back == test
+    print("success")
+
+
+def get_sentence(
+        begin_char_offsets, end_char_offsets, words, lemmas, poses,
+        dependencies, ners, dep_format_parser=dep_graph_parser_parenthesis):
+    """Return a list of Word objects representing a sentence"""
+    obj = dict()
+    obj['lemma'] = lemmas
+    obj['words'] = words
+    obj['ner'] = ners
+    obj['pos'] = poses
+    obj['dep_graph'] = dependencies
+    obj['ch_of_beg'] = begin_char_offsets
+    obj['ch_of_end'] = end_char_offsets
+    # list of Word objects
+    word_obj_list = unpack_words(
+        obj, character_offset_begin='ch_of_beg',
+        character_offset_end='ch_of_end', lemma='lemma', pos='pos',
+        ner='ner', words='words', dep_graph='dep_graph',
+        dep_graph_parser=dep_format_parser)
+    return word_obj_list
