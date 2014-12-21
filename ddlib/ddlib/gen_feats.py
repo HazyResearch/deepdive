@@ -1,4 +1,14 @@
 #! /usr/bin/env python
+#
+# This file contains the generic features library that is included with ddlib.
+#
+# The three functions that a user should want to use are load_dictionary,
+# get_generic_features_mention, and get_generic_features_relation.
+# All the rest should be considered more or less private, except perhaps the
+# get_sentence method, which is actually just a wrapper around unpack_words.
+#
+# Matteo, December 2014
+#
 
 from dd import dep_path_between_words, materialize_span, Span, unpack_words
 
@@ -485,10 +495,40 @@ def dep_transform_test():
     print("success")
 
 
+def get_span(span_begin, span_length):
+    """Return a Span object
+
+    Args:
+        span_begin: the index the Span begins at
+        span_length: the length of the span
+    """
+    return Span(begin_word_id=span_begin, length=span_length)
+
+
 def get_sentence(
         begin_char_offsets, end_char_offsets, words, lemmas, poses,
         dependencies, ners, dep_format_parser=dep_graph_parser_parenthesis):
-    """Return a list of Word objects representing a sentence"""
+    """Return a list of Word objects representing a sentence.
+
+    This is effectively a wrapper around unpack_words, but with a less
+    cumbersome interface.
+
+    Args:
+        begin_char_offsets: a list representing the beginning character offset
+            for each word in the sentence
+        end_char_offsets: a list representing the end character offset for each
+            word in the sentence
+        words: a list of the words in the sentence
+        lemmas: a list of the lemmas of the words in the sentence
+        poses: a list of the POS tags of the words in the sentence
+        dependencies: a list of the dependency path edges for the sentence
+        ners: a list of the NER tags of the words in the sentence
+        dep_format_parse: a function that takes as only argument an element of
+            dependencies (i.e., a dependency path edge) and returns a 3-tuple
+            (parent_index, label, child_index) representing the edge. Look at
+            the code for dep_graph_parser_parenthesis and
+            dep_graph_parser_triplet for examples.
+    """
     obj = dict()
     obj['lemma'] = lemmas
     obj['words'] = words
