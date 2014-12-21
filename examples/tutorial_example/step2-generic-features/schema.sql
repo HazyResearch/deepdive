@@ -6,7 +6,7 @@ CREATE TABLE articles(
 
 DROP TABLE IF EXISTS sentences CASCADE;
 CREATE TABLE sentences(
-  document_id bigint,
+  document_id text,
   sentence text, 
   words text[],
   lemma text[],
@@ -35,6 +35,7 @@ CREATE TABLE has_spouse(
   sentence_id text,
   description text,
   is_true boolean,
+  type text,  -- indicate supervision type, if any
   relation_id text, -- unique identifier for has_spouse
   id bigint   -- reserved for DeepDive
   );
