@@ -113,12 +113,6 @@ Riondato](http://cs.brown.edu/~matteo/).
 - [Distant supervision](doc/general/distant_supervision.html)
 - [Probabilistic inference and factor graphs](doc/general/inference.html)
 
-#### Tutorial
-
-- [Example application walk-through](doc/basics/walkthrough/walkthrough.html)
-- [Improving the results](doc/basics/walkthrough/walkthrough-improve.html)
-- [Extras](doc/basics/walkthrough/walkthrough-extras.html)
-
 #### Basics
 
 - [System overview and fundamental terminology](doc/basics/overview.html)
@@ -137,6 +131,12 @@ Riondato](http://cs.brown.edu/~matteo/).
 - [High-speed sampler](doc/basics/sampler.html)
 - [**application.conf** Reference](doc/basics/configuration.html)
 - [FAQ](doc/basics/faq.html)
+
+#### Tutorial
+
+- [Example application walk-through](doc/basics/walkthrough/walkthrough.html)
+- [Improving the results](doc/basics/walkthrough/walkthrough-improve.html)
+- [Extras](doc/basics/walkthrough/walkthrough-extras.html)
 
 #### Advanced topics
 
