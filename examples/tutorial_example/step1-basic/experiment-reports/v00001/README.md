@@ -18,29 +18,29 @@
     Supervision statistics:
      is_true | count  
     ---------+--------
-     f       |  21764
-             | 246642
      t       |  23580
+     f       |  84578
+             | 183828
     (3 rows)
     
      extracted_mentions 
     --------------------
-                  44301
+                   5442
     (1 row)
     
      extracted_entities 
     --------------------
-                  31825
+                   3669
     (1 row)
     
 ### Top entities
-    Barack Obama-Hillary Rodham Clinton	78
-    Hillary Rodham Clinton-Barack Obama	77
-    Bill Clinton-Barack Obama	76
-    Barack Obama-Bill Clinton	74
-    Obama-Clinton	73
-    Bill Clinton-Hillary Rodham Clinton	71
-    Clinton-Obama	70
-    Hillary Rodham Clinton-Bill Clinton	70
-    Benazir Bhutto-Asif Ali Zardari	69
-    Kevin Federline-Britney Spears	69
+    Asif Ali Zardari-Benazir Bhutto	67
+    Benazir Bhutto-Asif Ali Zardari	66
+    Bill Clinton-Hillary Rodham Clinton	37
+    Britney Spears-Kevin Federline	37
+    Kevin Federline-Britney Spears	37
+    Hillary Rodham Clinton-Bill Clinton	36
+    Madonna-Guy Ritchie	31
+    Guy Ritchie-Madonna	30
+    Nicolas Sarkozy-Carla Bruni	27
+    Carla Bruni-Nicolas Sarkozy	26

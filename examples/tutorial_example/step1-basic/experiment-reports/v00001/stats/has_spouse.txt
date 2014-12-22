@@ -6,18 +6,18 @@
 Supervision statistics:
  is_true | count  
 ---------+--------
- f       |  21764
-         | 246642
  t       |  23580
+ f       |  84578
+         | 183828
 (3 rows)
 
  extracted_mentions 
 --------------------
-              44301
+               5442
 (1 row)
 
  extracted_entities 
 --------------------
-              31825
+               3669
 (1 row)
 
