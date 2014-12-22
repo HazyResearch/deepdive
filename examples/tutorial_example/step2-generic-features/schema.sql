@@ -1,9 +1,3 @@
-DROP TABLE IF EXISTS articles CASCADE;
-CREATE TABLE articles(
-  article_id bigint,
-  text text
-);
-
 DROP TABLE IF EXISTS sentences CASCADE;
 CREATE TABLE sentences(
   document_id text,
@@ -35,7 +29,6 @@ CREATE TABLE has_spouse(
   sentence_id text,
   description text,
   is_true boolean,
-  type text,  -- indicate supervision type, if any
   relation_id text, -- unique identifier for has_spouse
   id bigint   -- reserved for DeepDive
   );

@@ -16,9 +16,6 @@ for row in sys.stdin:
   sentence_id, words_str, ner_tags_str = row.strip().split('\t')
   words = words_str.split(ARR_DELIM)
   ner_tags = ner_tags_str.split(ARR_DELIM)
-  if not len(words) == len(ner_tags): 
-    print >> sys.stderr, sentence_id, len(words), len(ner_tags)
-    continue
   start_index = 0
   phrases = []
 
