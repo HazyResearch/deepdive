@@ -206,8 +206,8 @@ def get_generic_features_relation(sentence, span1, span2, length_bin_size=5):
     # The lengths of the mentions
     first_length = len(" ".join(materialize_span(
         sentence, span1, lambda x: str(x.word))))
-    second_length = str(len(" ".join(materialize_span(
-        sentence, span2, lambda x: str(x.word)))))
+    second_length = len(" ".join(materialize_span(
+        sentence, span2, lambda x: str(x.word))))
     first_bin_id = first_length // length_bin_size
     second_bin_id = second_length // length_bin_size
     length_feat = inverted + "LENGTHS_[" + str(first_bin_id) + "_" + \
