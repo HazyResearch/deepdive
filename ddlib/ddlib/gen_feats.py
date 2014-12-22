@@ -40,12 +40,13 @@ def load_dictionary(filename, dict_id="", func=lambda x: x):
     return str(dict_id)
 
 
-def get_generic_features_mention(sentence, span):
+def get_generic_features_mention(sentence, span, length_bin_size=5):
     """Yield 'generic' features for a mention in a sentence.
 
     Args:
         sentence: a list of Word objects
         span: a Span namedtuple
+        length_bin_size: the size of the bins for the length feature
     """
     # Mention sequence features (words, lemmas, ners, and poses)
     for seq_feat in _get_seq_features(sentence, span):
@@ -81,18 +82,20 @@ def get_generic_features_mention(sentence, span):
     if sentence[span.begin_word_id].word[0].isupper():
         yield "STARTS_WITH_CAPITAL"
     # Length of the mention
-    length_feat = "LENGTH_" + str(
-        len(" ".join(materialize_span(sentence, span, lambda x: x.word))))
+    length = len(" ".join(materialize_span(sentence, span, lambda x: x.word)))
+    bin_id = length // length_bin_size
+    length_feat = "LENGTH_" + str(bin_id)
     yield length_feat
 
 
-def get_generic_features_relation(sentence, span1, span2):
+def get_generic_features_relation(sentence, span1, span2, length_bin_size=5):
     """Yield 'generic' features for a relation in a sentence.
 
     Args:
         sentence: a list of Word objects
         span1: the first Span of the relation
         span2: the second Span of the relation
+        length_bin_size: the size of the bins for the length feature
     """
     # Check whether the order of the spans is inverted. We use this information
     # to add a prefix to *all* the features.
@@ -201,12 +204,14 @@ def get_generic_features_relation(sentence, span1, span2):
         "_" + str(second_capital) + "]"
     yield capital_feat
     # The lengths of the mentions
-    first_length = str(len(" ".join(materialize_span(
-        sentence, span1, lambda x: str(x.word)))))
+    first_length = len(" ".join(materialize_span(
+        sentence, span1, lambda x: str(x.word))))
     second_length = str(len(" ".join(materialize_span(
         sentence, span2, lambda x: str(x.word)))))
-    length_feat = inverted + "LENGTHS_[" + first_length + "_" + \
-        second_length + "]"
+    first_bin_id = first_length // length_bin_size
+    second_bin_id = second_length // length_bin_size
+    length_feat = inverted + "LENGTHS_[" + str(first_bin_id) + "_" + \
+        str(second_bin_id) + "]"
     yield length_feat
 
 
