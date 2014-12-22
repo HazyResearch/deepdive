@@ -20,12 +20,9 @@ a `has_spouse` relation, for example *Barack Obama* and *Michelle Obama*. This
 example can be easily translated into relation extraction in other domains, such
 as extracting interactions between drugs, or relationships among companies.
 
-Note that in this section we are going to build an application that extract
-*plausible* mention-level relations, but *with rather low quality*.
-
 <a name="dataflow" href="#"> </a>
 
-On a high level, the application will perform following steps on the data:
+At high level, the application will perform the following steps on the data:
 
 1. Data preprocessing: prepare parsed sentences.
 2. Feature extraction: 
@@ -37,18 +34,18 @@ On a high level, the application will perform following steps on the data:
 4. statistical inference and learning
 5. Generate results
 
-The full application is also available in the folder
-`DEEPDIVE_HOME/examples/spouse_example`, which contains all possible
-implementations in [different types of extractors](../extractors.html). In this
+The full application is also available in the directory
+`DEEPDIVE_HOME/examples/spouse_example`, which contains different implementation
+for the [different types of extractors](../extractors.html). In this
 document, we only introduce the default extractor type (`json_extractor`), which
-correspond to `DEEPDIVE_HOME/examples/spouse_example/default_extractor` in your
-DeepDive directory.
+can be found in the `DEEPDIVE_HOME/examples/spouse_example/default_extractor`
+directory.
 
-This tutorial assumes you [installed DeepDive](../installation.html) and denotes
-the `deepdive` installation directory as `$DEEPDIVE_HOME`. We will be using
-PostgreSQL as our primary database in this example. If you followed the DeepDive
-installation guide and passed all tests then your PostgreSQL server should
-already be running.
+This tutorial assumes you [installed DeepDive](../installation.html). The
+installation directory of DeepDive is denoted as`$DEEPDIVE_HOME`. The database
+system used for this tutorial is PostgreSQL. If you followed the [DeepDive
+installation guide](../installation.html) and all tests completed successfully,
+then your PostgreSQL server should already be running.
 
 ### Contents
 
@@ -104,9 +101,10 @@ export DBNAME=deepdive_spouse   # modify this line
 ...
 ```
 
-Note that in the `run.sh` file it defines environment variables `APP_HOME` which
-is our current directory `app/spouse`, and `DEEPDIVE_HOME` which is the home
-directory of DeepDive. We will use these variables later.
+The `run.sh` file contains the definition of two environmental variables:
+`APP_HOME` which is our current directory `app/spouse`, and `DEEPDIVE_HOME`
+which is the installation directory of DeepDive. We will use these variables
+later.
 
 You can now try running the `run.sh` script:
 
@@ -117,7 +115,7 @@ You can now try running the `run.sh` script:
 Since no [extractors](../extractors.html) or [inference
 rules](../inference_rules.html) have been specified, the results are not
 meaningful, but DeepDive should run successfully from end to end and you should
-be able to see a summary report such as:
+get a summary report such as:
 
     15:57:55 [profiler] INFO  --------------------------------------------------
     15:57:55 [profiler] INFO  Summary Report
@@ -125,18 +123,19 @@ be able to see a summary report such as:
 
 ## <a name="implement_dataflow" href="#"></a> Implement the Data Flow
 
-Now let's start implementing the [data flow](#dataflow) for this KBC application.
+Let's now implement the [data flow](#dataflow) for this KBC application.
 
 ### <a name="loading_data" href="#"></a> Data preprocessing and loading
 
 For simplicity, we will start from preprocessed sentence data (starting
-from step 2). If the input was raw text articles, we also need to run
-natural language processing in order to extract candidate pairs and
-features. If you want to learn how NLP extraction can be done in
-DeepDive (starting from step 1), you can refer to the
+from step 2 from the above list). If the input corpus was instead composed by
+raw text articles, we would also need to perform some Natural Language
+Processing on the corpus before being able to extract candidate relation pairs
+and features. To learn how NLP extraction can be done in DeepDive (i.e., how to
+start from step 1), you can refer to the
 [appendix](walkthrough-extras.html#nlp_extractor).
 
-Copy the prepared data and scripts from the
+We start by copying the prepared data and scripts from the
 `DEEPDIVE_HOME/example/spouse_example/` folder into `DEEPDIVE_HOME/app/spouse/`:
 
 ```bash
@@ -145,8 +144,8 @@ cp ../../examples/spouse_example/schema.sql .
 cp ../../examples/spouse_example/setup_database.sh .
 ```
 
-Then, execute the script `setup_database.sh`, which create the database and the
-necessary table and load the preprocessed data.
+Then, run the script `setup_database.sh`, which creates the database and the
+necessary tables and load the preprocessed data.
 
 ```bash
 sh setup_database.sh deepdive_spouse
@@ -166,33 +165,34 @@ The following relations are created:
 
 Among these relations: 
 
-- `articles` contains article data
+- `articles` contains the raw article data
 - `sentences` contains processed sentence data by an [NLP
   extractor](walkthrough-extras.html#nlp_extractor). This table contains
-  tokenized words, lemmatized words, POS tags, NER tags, dependency paths for
-  each sentence.
-- the other tables are currently empty, and will be populated during the feature
-  extraction step.
+  tokenized words, lemmatized words, Part Of Speech tags, Named Entity
+  Recognition tags, and dependency paths for each sentence.
+- the other tables are currently empty, and will be populated during the
+	candidate generation and the feature extraction steps.
 
 For a detailed reference of how these tables are created and loaded, refer to
-[Preparing Data Tables](walkthrough-extras.html#data_tables) in the extra
-section.
+the [Preparing the Data Tables](walkthrough-extras.html#data_tables) section in
+the appendix.
 
 ### <a name="feature_extraction" href="#"></a> Feature Extraction
 
-Our next task is to write several [extractors](../extractors.html) for feature extraction. 
+Our next task is to write several [extractors](../extractors.html) for candidate
+generation and feature extraction. 
 
 #### <a name="people_extractor" href="#"></a> Adding a people extractor
 
 We first need to recognize the persons mentioned in the article. Given a
 set of sentences, the person mention extractor will populate a relation
 `people_mention` that contains an encoding of the mentions. In this example, we
-build a simple person recognizer that just uses the NER tags from the underlying
-NLP toolkit. We could do something more sophisticated, but we just want to
-illustrate the basic concepts.
+build a simple person recognizer that just uses the NER tags created by the NLP
+toolkit. We could do something more sophisticated, but in this tutorial we just
+want to illustrate the basic concepts of KBC building.
 
-**Input:** sentences along with NER tags. Specically, each line in the input to
-this extractor UDF is a row in `sentence` table in JSON format, e.g.:
+**Input:** sentences along with NER tags. Specifically, each line in the input to
+this extractor UDF is a row from the `sentence` table in JSON format, e.g.:
 
     {"sentence_id":"118238@10","words":["Sen.","Barack","Obama","and","his","wife",",","Michelle","Obama",",","have","released","eight","years","of","joint","returns","."],"ner_tags":["O","PERSON","PERSON","O","O","O","O","PERSON","PERSON","O","O","O","DURATION","DURATION","O","O","O","O"]}
 
@@ -205,13 +205,12 @@ this extractor UDF is a row in `sentence` table in JSON format, e.g.:
 This first extractor extracts people mentions (In the sample data, "Barack
 Obama" and "Michelle Obama") from the sentences, and put them into a new table. 
 Note that we have named entity tags in column `ner_tags` of our `sentences`
-table. We will use this column to identify people mentions: we assume that *a
-word phrase is a people mention if all its words are tagged as `PERSON` in its
-`ner_tags` field.*
+table. We use this column to identify people mentions: *a word phrase is a
+people mention if all its words are tagged as `PERSON` in its `ner_tags` field*.
 
 <!-- Ideally you would want to add your own domain-specific features to extract
 mentions. For example, people names are usually capitalized, tagged with a noun
-phrase part of speech tag, and have certain dependency paths to other words in
+phrase Part Of Speech tag, and have certain dependency paths to other words in
 the sentence. However, because the Stanford NLP Parser is relatively good at
 identifying people and tags them with a `PERSON` named-entity tag we trust its
 output and don't make the predictions ourselves. We simply assume that all
@@ -261,8 +260,8 @@ deepdive {
 }
 ```
 
-Note that we first create an extractor `ext_clear_table` to be executed
-before any other extractor, to clear output tables of all other
+Note that we first create an extractor `ext_clear_table`, which is executed
+before any other extractor and empties the output tables of all other
 extractors. This is a `sql_extractor`, which is just a set of SQL
 commands specified in the `sql` field.
 
@@ -273,7 +272,7 @@ following:
 and named entity tags), selected using a SQL statement.
 
 2. The output of the extractor will be written to the `people_mentions` table.
-(for the table format, refer to the [cheat-sheet](#table_cheatsheet) in
+(for the table format, refer to the [cheat-sheet](#table_cheatsheet) in the
 appendix.)
 
 3. The extractor script is `udf/ext_people.py`. DeepDive will execute this
