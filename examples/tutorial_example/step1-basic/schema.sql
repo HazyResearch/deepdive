@@ -1,12 +1,6 @@
-DROP TABLE IF EXISTS articles CASCADE;
-CREATE TABLE articles(
-  article_id bigint,
-  text text
-);
-
 DROP TABLE IF EXISTS sentences CASCADE;
 CREATE TABLE sentences(
-  document_id bigint,
+  document_id text,
   sentence text, 
   words text[],
   lemma text[],

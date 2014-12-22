@@ -19,9 +19,11 @@ export PYTHONPATH=$DEEPDIVE_HOME/ddlib:$PYTHONPATH
 
 cd $DEEPDIVE_HOME
 
+# Run DeepDive
 set -e
 # SBT_OPTS="-Xmx4g" sbt "run -c $APP_HOME/application.conf"
 deepdive -c $APP_HOME/application.conf
 
+# Generate automatic reports
 cd $APP_HOME
 braindump
