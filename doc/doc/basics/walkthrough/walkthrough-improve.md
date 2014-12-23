@@ -30,14 +30,16 @@ After the execution of an application, it is necessary to assess the quality of
 its results. We consider any relation candidate that gets assigned a
 probability at least 0.9 of expressing a marriage relation as "extracted" by the
 system (i.e., the system classifies it as expressing a marriage relation), and
-we refer to the set of these candidates as "*extractions*". 
+we refer to the set of these candidates as "*extractions*". Note that the choice
+of the threshold value (0.9 in our case) is application-dependent, but 0.9 is a
+reasonable choice in most cases.
 
 A common measure of quality is *precision*, i.e., the fraction of extractions
 that are indeed expressing a marriage relation. Another quality measure of
 interest is *recall*, which is the fraction of candidates expressing marriage
 relations that appear in the extractions. 
 
-For now, we focus on assessing and improving *precision*. Clearly this will have
+For now, we focus on assessing and improving *precision*. This may have
 an impact on recall (there is a somewhat natural tradeoff between the two), but
 we remark that it is important to first obtain high precision in the
 extractions and then one can focus on recall: a large of extractions with high
@@ -48,8 +50,8 @@ DeepDive comes with a set of tools that makes it easier for the user to assess
 the quality of the extractions, analyze the systematic errors made by DeepDive,
 and therefore improve the quality of an application. In this section, we
 describe how to set up and use these tools to evaluate the results obtained by
-running the application we developed in the previous section, and to improve the
-quality of the extractions.
+running the application we developed in the [previous
+section](walktrhough.html), and to improve the quality of the extractions.
 
 ### <a name="braindump" href="#"> </a> Using BrainDump to generate automatic reports
 
@@ -164,7 +166,7 @@ export DD_THIS_OUTPUT_DIR=$DD_OUTPUT_DIR/$DD_TIMESTAMP
 Once BrainDump has been configured, we can run `braindump` from the `$APP_HOME`
 directory to generate an automatic report for the last DeepDive run. Since we
 want to create and examine a report after each run of DeepDive, we can modify
-`run.sh` to execute `braindump` after running the application:
+the `run.sh` script to execute `braindump` after running the application:
 
 ```bash
 #! /bin/bash
@@ -189,12 +191,13 @@ braindump
 #### Examining the report
 
 The auto-generated report resides in a sub-folder of
-`$APP_HOME/experiment-reports/`. At this time, there should be only
-subdirectory `v00001`, containing some folders and a `README.md` file, the
-report.  The report contains a number of informative statistics about the corpus
-and about the extractions, including the number of generated mention candidates,
-information about the training set, the number of extractions, and counts for
-the most frequently extracted entity pairs. It should look similar to the
+`$APP_HOME/experiment-reports/`. At this time, there should be only one
+subdirectory `v00001` and a link `latest` to it. This directory contains some
+other folders and a `README.md` file, the report. The report contains a number
+of informative statistics about the corpus and about the extractions, including
+the number of generated mention candidates, information about the training set,
+the number of extractions, and counts for the most frequently extracted entity
+pairs. It should look similar to the
 following:
 
 ```
@@ -253,37 +256,44 @@ precisely assess the quality of the results and diagnose what errors the system
 makes, we should look at actual examples of extractions and verify how many of
 them are indeed representing marriage relations, how many are not, and why are
 non-correct candidates assigned a high probability. This task is called *error
-analysis*. Deepdive includes a tool named [MindTagger](../labeling.html) that
-simplifies the execution of error analysis.
+analysis*. 
+
+Deepdive includes a tool named [MindTagger](../labeling.html) that simplifies
+the execution of error analysis.
 
 ### <a name="mindtagger" href="#"> </a> Using MindTagger to label results
 
-We now conduct an error analysis based on our initial spouse relation mention
-extractor. We can use [MindTagger](../labeling.html) to inspect and label 100
-extractions. For more
+We now conduct the error analysis based on our initial spouse relation mention
+extractor developed in the [first part of the tutorial](walkthrough.html). 
+
+We use [MindTagger](../labeling.html) to inspect and label 100 extractions.
+A random sample of 100 extractions is usually sufficiently large to correctly
+asses precision and to identify the most common sources of error. For more
 information about the labeling process, please refer to the
 [MindTagger](../labeling.html) page, which describes in depth how to use the
 tool, with specific examples that use the spouse application. 
 
-The goal of this task is to identify categories of misclassified relation
-candidates, and to understand why the system does not classify them correctly.
-This requires inspecting the features associated to each extraction and their
-weight, assessing whether the features with high or low weight are meaningful
-and can indeed help the system classify the relation candidates (i.e., they
-should be associated with correct or incorrect relations). For example, assume
-that by analyzing the extractions we find that the system extracts many
-incorrect relation candidates whose mentions are separated by the word "and",
-e.g., "Barack Obama and Hillary Clinton". We look at the feature `NGRAM_1_[and]`
-which denotes the presence of the word "and" between the mentions, and find that
-it is associated with a high weight (say 1.2). This suggests that the training
-set does not contain a sufficient number negative examples of relation
-candidates whose mentions are separated by "and": the system learns, from the
-existing evidence, that having "and" between the mentions is frequently
-associated with correct relations, and therefore assigns a high weight to the
-corresponding feature. To fix this class of error, the solution would be to
-increase the number of negative examples with this feature, which may require
-additional supervision rules, a richer knowledge base for the existing
-supervision rules, or additional manual labelling.
+The goal of the labeling task with MindTagger is to identify categories of
+misclassified relation candidates, and to understand why the system does not
+classify them correctly. This requires inspecting the features associated to
+each extraction and their weight, assessing whether the features with high or
+low weight are meaningful and can indeed help the system classify the relation
+candidates (i.e., they should be associated with correct or incorrect
+relations). For example, assume that by analyzing the extractions we find that
+the system extracts many incorrect relation candidates whose mentions are
+separated by the word "and", e.g., "Barack Obama and Hillary Clinton". We look
+at the feature `NGRAM_1_[and]` which denotes the presence of the word "and"
+between the mentions, and find that it is associated with a high weight (say
+1.2). This suggests that the training set does not contain a sufficient number
+negative examples of relation candidates whose mentions are separated by "and":
+the system learns, from the existing evidence, that having "and" between the
+mentions is frequently associated with correct relations, and therefore assigns
+a high weight to the corresponding feature. To fix this class of error, the
+solution would be to increase the number of negative examples with this feature,
+which may require additional supervision rules, a richer knowledge base for the
+existing supervision rules, or additional manual labelling. This is just an
+example of the kind of reasoning that should be done while performing error
+analysis.
 
 The input to MindTagger can be automatically generated from the output of
 BrainDump as follows. Copy the directory
@@ -316,7 +326,7 @@ documentation.
 In the directory `DEEPDIVE_HOME/examples/tutorial_example/step1-basic/labeling`,
 we include an example of 100 extractions that we already labelled using
 MindTagger. To look at our labeling results, you can enter this directory, run
-`start-mindtagger.sh` and point your browser to `localhost:8000`. In our case,
+`./start-mindtagger.sh` and point your browser to `localhost:8000`. In our case,
 the precision is 40%: out of 100 extractions, 40 are actually expressing a
 marriage relation. By analyzing the misclassified relations we observe
 that the current set of features is not sufficiently rich and expressive to
@@ -324,23 +334,23 @@ allow the system to learn how to correctly classify relation candidates. For
 example, if there is a word like "husband" or "wife" between the sentences, then
 the relation candidate is assigned a high probability. At the same time,
 features that are not indicative of a marriage relation (e.g.,
-`word_between=posing`) gets assigned an extremely high weight (2.445), evidence
-of overfitting. 
+`word_between=posing`) gets assigned an extremely high weight (2.445), which is
+a sign of overfitting. 
 
 With the goal of improving the quality of the extractions, in the next two
 sections we first describe how to easily enrich the set of features using the
-generic features library included in Deepdive, and then describe how to mitigate
-overfitting by letting the system select a regularization parameter
-automatically.
+[generic features library](../gen_feats.html) included in Deepdive, and then
+describe how to mitigate overfitting by letting the system select a
+regularization parameter automatically.
 
 ### <a name="feature-library" href="#"> </a> Use the Generic Feature Library
 
 The set of features initially chosen for an application may often seem, before
-running the application, to be rich and expressive enough to allow the system to
-distinguish between correct and incorrect relation candidates. More often than
-not, this is not the case, as we saw in the previous section. Indeed *feature
-engineering*, the task of developing a set of features that lead to high
-precision, is known to be challenging.
+performing an error analysis, to be rich and expressive enough to allow the
+system to distinguish between correct and incorrect relation candidates. More
+often than not, this is not the case, as we saw in the previous section. Indeed
+*feature engineering*, the task of developing a set of features that lead to
+high precision, is known to be challenging.
 
 Based on our multi-year experience developing high-quality KBC systems, we
 developed a [generic feature library](../gen_feats.html) which is included in
@@ -360,27 +370,28 @@ knowledge in the set of features in the form of *dictionaries*, i.e., sets of
 additional features when a keyword appears in the same sentence as a relation
 candidate. We create two *dictionaries*, i.e., files containing keywords that
 can help distinguish between spouse relation and non-spouse relations, like
-"husband", "daughter", "fiancee", and so on.  These lists do not contain all
+"husband", "daughter", "fiancee", and so on. These lists do not contain all
 possible keywords (such a list would probably be impossible to even imagine),
 but they can still help the system learn how to distinguish between correct and
 incorrect relations. 
 
 We created one dictionary `married.txt` for keywords that are usually associated
 with correct marriage relations, and another dictionary `non-married.txt` for
-keywords that are usually associated with relations thatare not about marriage.
+keywords that are usually associated with relations that are not about marriage.
 These files can be found in
-`DEEPDIVE_HOME/examples/tutorial_example/step2-generic-features/udf/dicts/`.
-Copy this directory to your `APP_HOME/udf/` directory:
+`$DEEPDIVE_HOME/examples/tutorial_example/step2-generic-features/udf/dicts/`.
+Copy this directory to your `$APP_HOME/udf/` directory:
 
 ```
-cp -r `DEEPDIVE_HOME/examples/tutorial_example/step2-generic-features/udf/dicts/ APP_HOME/udf/dicts
+cp -r `$DEEPDIVE_HOME/examples/tutorial_example/step2-generic-features/udf/dicts/
+$APP_HOME/udf/dicts
 ```
 
 We now modify our feature extractor script `has_spouse_features.py` to use the
 generic feature library and the dictionaries. The new version of the script can
 be found in
-`DEEPDIVE_HOME/examples/tutorial_example/step2-generic-features/udf/` and can be
-copied over the old one in `APP_HOME/udf`. The content of the script are the
+`$DEEPDIVE_HOME/examples/tutorial_example/step2-generic-features/udf/` and can be
+copied over the old one in `$APP_HOME/udf`. The content of the script are the
 following:
 
 ```python
@@ -447,7 +458,9 @@ library can be found in its [documentation](../gen_feats.html).
 
 The generic feature library uses additional columns of the `sentences` table to
 generate the feature, therefore we need to modify the `input_query` of the
-`has_spouse_features` extractor definition in `application.conf`:
+`has_spouse_features` extractor definition in `application.conf` (a modified
+version of `application.conf` is available at
+`$DEEPDIVE_HOME/tutorial_example/step2-generic-features/application.conf`):
 
 ```
     ext_has_spouse_features {
@@ -483,16 +496,18 @@ generate the feature, therefore we need to modify the `input_query` of the
 
 In order to mitigate the effect of overfitting, we can use a functionality
 offered by the [DimmWitted! Sampler](../sampler.html) to automatically pick
-(from a user-specified set) a regularization parameter. Regularization is a
+(from a user-specified set) a good value for *regularization*. Regularization is a
 standard machine learning technique to mitigate the effect of overfitting. The
 Gibbs sampler in DeepDive accept one or more `--reg_param VALUE` options that
-can be used to specify a set of possible regularization parameters. The system
-will perform 2-fold cross validation on the training set to select the best
-parameter among those specified. A technical detail: the best parameter, as
-chosen by the system, is the one with the higher harmonic mean of the F1-score
-in the cross validation. To specify a set of regularization parameters among
-which to choose, and in general to pass arguments to the sampler, we can add the
-following line to `application.conf`, in the `deepdive` section:
+can be used to specify a set of possible regularization values. The system
+will use 2-fold cross validation on the training set to select the best
+parameter value among those specified. A technical detail: the best parameter,
+as chosen by the system, is the one with the higher harmonic mean of the
+F1-score in the cross validation. 
+
+To specify a set of regularization parameters among which to choose, and in
+general to pass arguments to the sampler, we can add the following line to
+`application.conf`, in the `deepdive` section:
 
 ```
 deepdive {
@@ -517,10 +532,36 @@ feature library.
 
 We already labelled 100 extractions using MindTagger. You can look at the
 results of our labeling by entering the directory
-`DEEPDIVE_HOME/examples/tutorial_example/step2-generic-features/labeling`,
+`$DEEPDIVE_HOME/examples/tutorial_example/step2-generic-features/labeling`,
 running `./start-mindtagger.sh` and opening your browser to the address
 `localhost:8000`. We obtained a significant increase in the precision, which is
 now 86%.
 
-We can further improve the precision by adding more data. In particular we 
+We can further improve the precision by using more data: having additional data
+allows the system to gather more evidence and learn better weights for the
+features. 
 
+We created an additional dataset with more sentences in
+`$DEEPDIVE_HOME/examples/tutorial_example/step3-more-data/data/sentences_dump_large.csv`.
+Copy this file, the file
+`$DEEPDIVE_HOME/examples/tutorial_example/step3-more-data/run.sh`, and the
+file
+`$DEEPDIVE_HOME/examples/tutorial_example/step3-more-data/setup_database.sh` to
+the `$APP_HOME` directory, and execute `./run.sh`: it will setup a new database
+`deepdive_spouse_large` and run the application using this database. 
+
+At the end, you can analyze the results using MindTagger as described before,
+but make sure to update the database name in `braindump.conf`.
+
+We labelled 100 extractions using MindTagger and found a precision of 94%, which
+is more than satisfactory. You can see our labelling results by entering the
+`$DEEPDIVE_HOME/examples/tutorial_example/step3-more-data/labeling` directory
+and running `./start-mindtagger.sh`.
+
+In this section we showed only some basic examples of the actions that can be
+taken to improve the quality of an application. Many more are possible, for
+example adding additional supervision rules or specifying additional
+correlations among the variables using inference rules. 
+
+## <a name="recall" href="#"> </a> Evaluating recall
+TODO
