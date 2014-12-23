@@ -296,6 +296,8 @@ get a copy of this script from
 `$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/udf/ext_people.py`):
 
 ```python
+#! /usr/bin/env python
+
 import sys
 
 ARR_DELIM = '~^~'  # Array element delimiter in strings
@@ -452,36 +454,36 @@ that's for DeepDive to predict later. Add the following to `application.conf` to
 define the extractor:
 
 ```bash
-extraction.extractors {
+  extraction.extractors {
 
-  # ... (other extractors)
+    # ... (other extractors)
 
-  # Extractor 3: extract mention relation candidates
-  ext_has_spouse_candidates {
-    # The style of the extractor
-    style: tsv_extractor
-    # Each input (p1, p2) is a pair of mentions
-    input: """
-      SELECT  sentences.sentence_id,
-              p1.mention_id AS p1_mention_id,
-              p1.text       AS p1_text,
-              p2.mention_id AS p2_mention_id,
-              p2.text       AS p2_text
-       FROM   people_mentions p1,
-              people_mentions p2,
-              sentences
-      WHERE   p1.sentence_id = p2.sentence_id
-        AND   p1.sentence_id = sentences.sentence_id
-        AND   p1.mention_id != p2.mention_id;
-        """
-    output_relation : "has_spouse"
-    udf             : ${APP_HOME}"/udf/ext_has_spouse.py"
+    # Extractor 3: extract mention relation candidates
+    ext_has_spouse_candidates {
+      # The style of the extractor
+      style: tsv_extractor
+      # Each input (p1, p2) is a pair of mentions
+      input: """
+        SELECT  sentences.sentence_id,
+                p1.mention_id AS p1_mention_id,
+                p1.text       AS p1_text,
+                p2.mention_id AS p2_mention_id,
+                p2.text       AS p2_text
+         FROM   people_mentions p1,
+                people_mentions p2,
+                sentences
+        WHERE   p1.sentence_id = p2.sentence_id
+          AND   p1.sentence_id = sentences.sentence_id
+          AND   p1.mention_id != p2.mention_id;
+          """
+      output_relation : "has_spouse"
+      udf             : ${APP_HOME}"/udf/ext_has_spouse.py"
 
-    # Run this extractor after "ext_people"
-    dependencies    : ["ext_people"]
+      # Run this extractor after "ext_people"
+      dependencies    : ["ext_people"]
+    }
+
   }
-
-}
 ```
 
 Note that this extractor must be executed after our previously added extractor
