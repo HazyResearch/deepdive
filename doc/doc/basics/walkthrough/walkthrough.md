@@ -29,8 +29,7 @@ At a high level, the application performs the following operations:
 2. Candidate generation and Feature extraction: 
   - Extract mentions of people in the text
   - Extract all candidate pairs of people that possibly participate in a `has_spouse` relation
-  - Prepare training data by [distant
-  	  supervision](../../general/relation_extraction.html) using an existing knowledge base
+  - Prepare training data by [distant supervision](../../general/relation_extraction.html) using an existing knowledge base
   - Add features to `has_spouse` candidates
 3. Generate the factor graph as specified by inference rules
 4. Perform statistical learning and inference
@@ -162,7 +161,7 @@ The following relations are created:
   tokenized words, lemmatized words, Part Of Speech tags, Named Entity
   Recognition tags, and dependency paths for each sentence.
 - the other tables are currently empty, and will be populated during the
-	candidate generation and the feature extraction steps.
+  candidate generation and the feature extraction steps.
 
 For a detailed reference of how these tables are created and loaded, refer to
 the [Preparing the Data Tables](walkthrough-extras.html#data_tables) section in
@@ -187,12 +186,12 @@ this extractor UDF is a row from the `sentences` table in a special TSV (Tab
 Separated Values) format, where the arrays have been transformed into strings
 with elements separated by `~^~`, e.g.:
 
-	118238@10       Sen.~^~Barack~^~Obama~^~and~^~his~^~wife~^~,~^~Michelle~^~Obama~^~,~^~have~^~released~^~eight~^~years~^~of~^~joint~^~returns~^~.        O~^~PERSON~^~PERSON~^~O~^~O~^~O~^~O~^~PERSON~^~PERSON~^~O~^~O~^~O~^~DURATION~^~DURATION~^~O~^~O~^~O~^~O
+    118238@10       Sen.~^~Barack~^~Obama~^~and~^~his~^~wife~^~,~^~Michelle~^~Obama~^~,~^~have~^~released~^~eight~^~years~^~of~^~joint~^~returns~^~.        O~^~PERSON~^~PERSON~^~O~^~O~^~O~^~O~^~PERSON~^~PERSON~^~O~^~O~^~O~^~DURATION~^~DURATION~^~O~^~O~^~O~^~O
 
 **Output:** TSV lines that can be loaded as rows of the `people_mentions` table, e.g.:
 
-	118238@10	1	2	Barack Obama	118238@10_1
-	118238@10	7	2	Michelle Obama	118238@10_7
+    118238@10	1	2	Barack Obama	118238@10_1
+    118238@10	7	2	Michelle Obama	118238@10_7
 
 This first extractor identifies people mentions (in the above sample ,
 "Barack Obama" and "Michelle Obama") in the sentences, and insert them into the table
@@ -222,13 +221,13 @@ deepdive {
     
     # Extractor 2: extract people mentions:
     ext_people {
-	  # The style of the extractor
-	  style: "tsv_extractor"
+      # The style of the extractor
+      style: "tsv_extractor"
       # An input to the extractor is a row (tuple) of the following query:
       input: """
         SELECT  sentence_id,
-				array_to_string(words, '~^~'),
-				array_to_string(ner_tags, '~^~')
+                array_to_string(words, '~^~'),
+                array_to_string(ner_tags, '~^~')
           FROM  sentences"""
 
       # output of extractor will be written to this table:
@@ -369,11 +368,11 @@ The results should be:
 
      count
     -------
-     55469
+     43789
 
      count
     -------
-     88266
+     39266
 
 #### <a name="candidate_relations" href="#"></a> Extracting candidate relations between mention pairs
 
@@ -397,11 +396,11 @@ supervision rules.
 **Input:** two mentions from the `people_mentions` table coming from the same
 sentence, e.g.:
 
-	118238@10	118238@10_7	Michelle Obama	118238@10_1	Barack Obama
+    118238@10	118238@10_7	Michelle Obama	118238@10_1	Barack Obama
 
 **Output:** one row in `has_spouse` table:
 
-	118238@10_7	118238@10_1	118238@10	Michelle Obama-Barack Obama	t	118238@10_7-118238@10_1	247956
+    118238@10_7	118238@10_1	118238@10	Michelle Obama-Barack Obama	t	118238@10_7-118238@10_1	247956
 
 
 To understand how DeepDive works, we should look at the schema of the
@@ -452,8 +451,8 @@ extraction.extractors {
 
   # Extractor 3: extract mention relation candidates
   ext_has_spouse_candidates {
-	# The style of the extractor
-	style: tsv_extractor
+    # The style of the extractor
+    style: tsv_extractor
     # Each input (p1, p2) is a pair of mentions
     input: """
       SELECT  sentences.sentence_id,
@@ -468,6 +467,7 @@ extraction.extractors {
         AND   p1.sentence_id = sentences.sentence_id
         AND   p1.mention_id != p2.mention_id;
         """
+    before: ${APP_HOME}"/udf/ext_truncate_table.sh has_spouse"
     output_relation : "has_spouse"
     udf             : ${APP_HOME}"/udf/ext_has_spouse.py"
 
@@ -562,7 +562,7 @@ for row in sys.stdin:
   if (p1_text_lower, p2_text_lower) in spouses or \
      (p2_text_lower, p1_text_lower) in spouses:
     is_true = '1'
-  # DS rule 2: false if they appear in non-spouse KB	
+  # DS rule 2: false if they appear in non-spouse KB    
   elif (p1_text_lower, p2_text_lower) in non_spouses or \
        (p2_text_lower, p1_text_lower) in non_spouses:
     is_true = '0'
@@ -594,14 +594,14 @@ extractor:
 ```bash
 ./run.sh
 [...]
-psql -d deepdive_spouse -c "select * from has_spouse where person1_name='118238@10_7'"
+psql -d deepdive_spouse -c "select * from has_spouse where person1_id='118238@10_7'"
 ```
 
 The results will look like the following:
 
-     person1_id  | person2_id  | sentence_id |         description         | is_true |       relation_id       | id
-    -------------+-------------+-------------+-----------------------------+---------+-------------------------+----
-     118238@10_1 | 118238@10_7 | 118238@10   | Barack Obama-Michelle Obama | t       | 118238@10_1_118238@10_7 |
+     person1_id  | person2_id  | sentence_id |         description         | is_true |       relation_id       |  id
+    -------------+-------------+-------------+-----------------------------+---------+-------------------------+-------
+     118238@10_7 | 118238@10_1 | 118238@10   | Michelle Obama-Barack Obama | t       | 118238@10_7-118238@10_1 | 
 
 To check that your results are correct, you can count the number of tuples in
 the table:
@@ -612,11 +612,13 @@ psql -d deepdive_spouse -c "select is_true, count(*) from has_spouse group by is
 
 The results should be:
 
-	is_true | count
-	---------+--------
-	f       |  83344
-	t       |  23570
-			| 178426
+```
+ is_true | count
+---------+-------
+ f       | 19230
+ t       |  2190
+         | 54002
+```
 
 #### <a name="candidate_relation_features" href="#"></a> Adding Features for candidate relations
 
@@ -640,8 +642,8 @@ We will refine these features [later](walkthrough-improve.html).
 For this new extractor:
 
 **Input:** a mention pair as well as all words in the sentence it appears. e.g.:
-	
-	Sen.~^~Barack~^~Obama~^~and~^~his~^~wife~^~,~^~Michelle~^~Obama~^~,~^~have~^~released~^~eight~^~years~^~of~^~joint~^~returns~^~.	118238@10_7-118238@10_1	7	2	1	2
+
+    Sen.~^~Barack~^~Obama~^~and~^~his~^~wife~^~,~^~Michelle~^~Obama~^~,~^~have~^~released~^~eight~^~years~^~of~^~joint~^~returns~^~.	118238@10_7-118238@10_1	7	2	1	2
 
 **Output:** all features for this mention pair described above:
 
@@ -662,7 +664,7 @@ extraction.extractors {
 
   # Extractor 4: extract features for relation candidates
   ext_has_spouse_features {
-	style: "tsv_extractor"
+    style: "tsv_extractor"
     input: """
       SELECT  sentences.words,
               has_spouse.relation_id,
@@ -679,6 +681,7 @@ extraction.extractors {
          AND  has_spouse.sentence_id = sentences.sentence_id;
          """
     output_relation : "has_spouse_features"
+    before          : ${APP_HOME}"/udf/ext_truncate_table.sh has_spouse_features"
     udf             : ${APP_HOME}"/udf/ext_has_spouse_features.py"
     dependencies    : ["ext_has_spouse_candidates"]
   }
@@ -862,7 +865,7 @@ query select some sentences at random and insert into the holdout table all
 relation candidates appearing in those mentions:
 
 
-	calibration.holdout_query:"""
+    calibration.holdout_query:"""
     DROP TABLE IF EXISTS holdout_sentence_ids CASCADE; 
 
     CREATE TABLE holdout_sentence_ids AS 
