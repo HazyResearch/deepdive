@@ -51,7 +51,7 @@ the quality of the extractions, analyze the systematic errors made by DeepDive,
 and therefore improve the quality of an application. In this section, we
 describe how to set up and use these tools to evaluate the results obtained by
 running the application we developed in the [previous
-section](walktrhough.html), and to improve the quality of the extractions.
+section](walkthrough.html), and to improve the quality of the extractions.
 
 ### <a name="braindump" href="#"> </a> Using BrainDump to generate automatic reports
 
