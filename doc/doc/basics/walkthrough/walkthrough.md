@@ -23,9 +23,9 @@ relationships among companies.
 
 <a name="dataflow" href="#"> </a>
 
-At a high level, the application performs the following operations:
+At a high level, we will go through the following steps:
 
-1. Data preprocessing: prepare parsed sentences.
+1. Data preprocessing and loading
 2. Candidate generation and Feature extraction: 
   - Extract mentions of people in the text
   - Extract all candidate pairs of people that possibly participate in a `has_spouse` relation
@@ -55,16 +55,15 @@ tutorial is also available in the directory
 
 ### Contents
 
-* [Preparation](#preparation):
-* [Implement the data flow](#implement_dataflow):
+* [Preparation](#preparation)
+* [Implement the data flow](#implement_dataflow)
   1. [Data preprocessing](#loading_data)
   2. [Candidate generation and Feature extraction](#feature_extraction)
       - [Adding a people extractor](#people_extractor)
       - [Extracting and supervising candidate relations](#candidate_relations)
       - [Adding features to candidate relations](#candidate_relation_features)
-  3. [Writing inference rules for factor graph generation](#inference_rules)
-  4. [Holdout, Statistical learning and inference](#learning_inference)
-  5. [Run and Get results](#get_result)
+  3. [Writing inference rules and defining holdout](#inference_rules)
+  4. [Run and Get results](#get_result)
 
 Other sections:
 
@@ -128,13 +127,13 @@ Let's now implement the [data flow](#dataflow) for this KBC application.
 
 ### <a name="loading_data" href="#"></a> Data preprocessing and loading
 
-For simplicity, we start from preprocessed sentence data (i.e., from step 2
-from the above list). If the input corpus was instead composed by
-raw text articles, we would also need to perform some Natural Language
-Processing on the corpus before being able to extract candidate relation pairs
-and features. To learn how NLP extraction can be done in DeepDive (i.e., how to
-start from step 1), you can refer to the
-[appendix](walkthrough-extras.html#nlp_extractor) of this tutorial.
+In this tutorial, we start from preprocessed sentence data, i.e., data that has
+already been parsed and tagged with a NLP toolkit. If the input corpus was
+instead composed by raw text articles, we would also need to perform some
+Natural Language Processing on the corpus before being able to extract candidate
+relation pairs and features. To learn how NLP extraction can be done in
+DeepDive, you can refer to the [appendix](walkthrough-extras.html#nlp_extractor)
+of this tutorial.
 
 We start by some scripts from the
 `$DEEPDIVE_HOME/example/tutorial_example/step1-basic` folder into `APP_HOME`
@@ -178,6 +177,16 @@ the appendix.
 
 Our next task is to write several [extractors](../extractors.html) for candidate
 generation and feature extraction. 
+
+In this step, we create three extractors whose UDFs are Python scripts. The
+scripts will will go through the sentences in the corpus and, respectively:
+
+1. create mentions of people;
+2. create candidate pairs of people mentions that may be in a marriage relation,
+	and supervise some of them using distant supervision rules;
+3. add features to the candidates, which will be used by DeepDive to learn how
+	to distinguish between correct marriage relation mentions and incorrect
+	ones;
 
 #### <a name="people_extractor" href="#"></a> Adding a people extractor
 
@@ -788,7 +797,7 @@ The results should be:
      1160450
 -->
 
-### <a name="inference_rules" href="#"></a> Writing inference rules
+### <a name="inference_rules" href="#"></a> Step 3: Writing inference rules and defining holdout
 
 Now we need to specify how DeepDive should generate the [factor
 graph](../../general/inference.html) to perform probabilistic learning and inference.
@@ -846,8 +855,6 @@ When selecting these column, users must explicitly alias `id` to
 `[relation_name].id` and `[variable]` to `[relation_name].[variable]` in order
 for the system to use them. For additional information, refer to the [inference
 rule guide](../inference_rules.html).
-
-### <a name="learning_inference" href="#"></a> Holdout, statistical learning, and inference
 
 Now that we have defined inference rules, DeepDive will automatically
 [ground](../overview.html#grounding) the factor graph using these rules, then
