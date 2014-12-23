@@ -61,9 +61,8 @@ tutorial is also available in the directory
       - [Adding a people extractor](#people_extractor)
       - [Extracting and supervising candidate relations](#candidate_relations)
       - [Adding features to candidate relations](#candidate_relation_features)
-  3. [Writing inference rules for factor graph generation](#inference_rules)
-  4. [Holdout, Statistical learning and inference](#learning_inference)
-  5. [Run and Get results](#get_result)
+  3. [Writing inference rules and defining holdout](#inference_rules)
+  4. [Run and Get results](#get_result)
 
 Other sections:
 
@@ -804,7 +803,7 @@ The results should be:
      1160450
 -->
 
-### <a name="inference_rules" href="#"></a> Writing inference rules
+### <a name="inference_rules" href="#"></a> Step 3: Writing inference rules and defining holdout
 
 Now we need to specify how DeepDive should generate the [factor
 graph](../../general/inference.html) to perform probabilistic learning and inference.
@@ -862,8 +861,6 @@ When selecting these column, users must explicitly alias `id` to
 `[relation_name].id` and `[variable]` to `[relation_name].[variable]` in order
 for the system to use them. For additional information, refer to the [inference
 rule guide](../inference_rules.html).
-
-### <a name="learning_inference" href="#"></a> Step 3: Holdout, statistical learning, and inference
 
 Now that we have defined inference rules, DeepDive will automatically
 [ground](../overview.html#grounding) the factor graph using these rules, then
