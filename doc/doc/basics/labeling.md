@@ -158,7 +158,7 @@ PORT=12345 ./examples/labeling/start-mindtagger.sh
 
 
 #### 4. Mark each prediction as correct or not
-Now, you can point your browser to the URL displayed in the output of Mindtagger (or <http://localhost:8000> if that doesn't work).
+Now, you can point your browser to the URL displayed in the output of Mindtagger (or `http://localhost:8000` if that doesn't work).
 The following screenshot shows the annotation task in progress.
 ![Screenshot of Mindtagger precision task in progress](../../images/mindtagger_screenshot.png)
 
