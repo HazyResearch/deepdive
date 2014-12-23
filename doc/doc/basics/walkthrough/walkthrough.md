@@ -108,6 +108,11 @@ later. It also contains the definitions of various database connection
 parameters that you should set according to your database settings. Finally, it
 contains the commands to actually run the application.
 
+In order to write the application, we need some data files, that you can
+download from
+[here](https://www.dropbox.com/s/iptnkwfeymlnpqc/deepdive-tutorial-data.zip).
+Expand the archive in the `$APP_HOME/data` directory.
+
 ## <a name="implement_dataflow" href="#"></a> Implement the Data Flow
 
 Let's now implement the [data flow](#dataflow) for this KBC application.

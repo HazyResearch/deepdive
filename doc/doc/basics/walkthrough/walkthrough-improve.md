@@ -383,8 +383,7 @@ These files can be found in
 Copy this directory to your `$APP_HOME/udf/` directory:
 
 ```
-cp -r `$DEEPDIVE_HOME/examples/tutorial_example/step2-generic-features/udf/dicts/
-$APP_HOME/udf/dicts
+cp -r `$DEEPDIVE_HOME/examples/tutorial_example/step2-generic-features/udf/dicts/ $APP_HOME/udf/dicts
 ```
 
 We now modify our feature extractor script `has_spouse_features.py` to use the
@@ -541,14 +540,14 @@ We can further improve the precision by using more data: having additional data
 allows the system to gather more evidence and learn better weights for the
 features. 
 
-We created an additional dataset with more sentences in
-`$DEEPDIVE_HOME/examples/tutorial_example/step3-more-data/data/sentences_dump_large.csv`.
-Copy this file, the file
-`$DEEPDIVE_HOME/examples/tutorial_example/step3-more-data/run.sh`, and the
-file
+The data archive that we downloaded at the beginning of the tutorial contains a
+additional dataset with more sentences
+(`$APP_HOME/data/sentences_dump_large.csv`).  Copy the file
+`$DEEPDIVE_HOME/examples/tutorial_example/step3-more-data/run.sh`, and the file
 `$DEEPDIVE_HOME/examples/tutorial_example/step3-more-data/setup_database.sh` to
 the `$APP_HOME` directory, and execute `./run.sh`: it will setup a new database
-`deepdive_spouse_large` and run the application using this database. 
+`deepdive_spouse_large` containing the enlarged dataset and run the application
+using this database. 
 
 At the end, you can analyze the results using MindTagger as described before,
 but make sure to update the database name in `braindump.conf`.
