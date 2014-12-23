@@ -98,7 +98,11 @@ cp $DEEPDIVE_HOME/examples/template/application.conf $APP_HOME
 
 The execution of the application is controlled by a script `run.sh`. We created
 this script `$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/run.sh`
-which can be copied to `$APP_HOME`.
+which can be copied to `$APP_HOME`:
+
+```
+cp $DEEPDIVE_HOME/examples/tutorial_example/step1-basic/run.sh $APP_HOME
+```
 
 The `run.sh` scripts contains the definitions of two environment variables:
 `$DEEPDIVE_HOME` which is the installation directory of DeepDive, and `APP_HOME`
@@ -110,7 +114,13 @@ contains the commands to actually run the application.
 In order to write the application, we need some data files, that you can
 download from
 [here](https://www.dropbox.com/s/iptnkwfeymlnpqc/deepdive-tutorial-data.zip).
-Expand the archive in the `$APP_HOME/data` directory.
+Expand the archive in the `$APP_HOME/data` directory. 
+
+Now your `$APP_HOME/data` directory should contain following files:
+
+```
+non-spouses.tsv  sentences_dump.csv  sentences_dump_large.csv  spouses.tsv
+```
 
 ## <a name="implement_dataflow" href="#"></a> Implement the Data Flow
 
@@ -130,7 +140,6 @@ We start by some scripts from the
 `$DEEPDIVE_HOME/example/tutorial_example/step1-basic` folder into `APP_HOME`
 
 ```bash
-cp -r $DEEPDIVE_HOME/examples/tutorial_example/step1-basic/data $APP_HOME
 cp $DEEPDIVE_HOME/examples/tutorial_example/step1-basic/schema.sql $APP_HOME
 cp $DEEPDIVE_HOME/examples/tutorial_example/step1-basic/setup_database.sh $APP_HOME
 ```
@@ -147,7 +156,6 @@ The following relations are created:
                          List of relations
      Schema |        Name         | Type  |  Owner   | Storage
     --------+---------------------+-------+----------+---------
-     public | articles            | table | deepdive | heap
      public | has_spouse          | table | deepdive | heap
      public | has_spouse_features | table | deepdive | heap
      public | people_mentions     | table | deepdive | heap
@@ -155,7 +163,6 @@ The following relations are created:
     (5 rows)
 
 
-- `articles` contains the raw article data
 - `sentences` contains processed sentence data by an [NLP
   extractor](walkthrough-extras.html#nlp_extractor). This table contains
   tokenized words, lemmatized words, Part Of Speech tags, Named Entity
@@ -208,18 +215,8 @@ deepdive {
   ...
   # Put your extractors here
   extraction.extractors {
-
-    # Extractor 1: Clean output tables of all extractors
-    ext_clear_table {
-      style: "sql_extractor"
-      sql: """
-        DELETE FROM people_mentions;
-        DELETE FROM has_spouse;
-        DELETE FROM has_spouse_features;
-        """
-    }
     
-    # Extractor 2: extract people mentions:
+    # Extractor 1: extract people mentions:
     ext_people {
       # The style of the extractor
       style: "tsv_extractor"
