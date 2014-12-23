@@ -126,16 +126,16 @@ and features. To learn how NLP extraction can be done in DeepDive (i.e., how to
 start from step 1), you can refer to the
 [appendix](walkthrough-extras.html#nlp_extractor) of this tutorial.
 
-We start by copying the prepared data and scripts from the
+We start by some scripts from the
 `$DEEPDIVE_HOME/example/tutorial_example/step1-basic` folder into `APP_HOME`
 
 ```bash
-cp -r ../../examples/tutorial_example/step-1/data $APP_HOME
-cp ../../examples/tutorial_example/step-1/schema.sql $APP_HOME
-cp ../../examples/tutorial_example/step-1/setup_database.sh $APP_HOME
+cp -r $DEEPDIVE_HOME/examples/tutorial_example/step1-basic/data $APP_HOME
+cp $DEEPDIVE_HOME/examples/tutorial_example/step1-basic/schema.sql $APP_HOME
+cp $DEEPDIVE_HOME/examples/tutorial_example/step1-basic/setup_database.sh $APP_HOME
 ```
 
-Then, we run the script `setup_database.sh`, which creates the database and the
+Then, we run the script `$APP_HOME/setup_database.sh`, which creates the database and the
 necessary tables and loads the data.
 
 ```bash
@@ -286,7 +286,7 @@ Then we create a `udf/ext_people.py` script which acts as UDF for the people
 mention extractor. The script scans input sentences and outputs phrases
 representing mentions of people. The script contains the following code (you can
 get a copy of this script from
-`$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/udf/ext_spouse.py`):
+`$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/udf/ext_people.py`):
 
 ```python
 import sys
@@ -344,7 +344,7 @@ what happens in the extractor:
 ```bash
 ./run.sh    # Run extractors now
 [...]
-psql -d deepdive_spouse -c "select * from people_mentions where sentence_name='118238@10'"
+psql -d deepdive_spouse -c "select * from people_mentions where sentence_id='118238@10'"
 ```
 
 The results are:
@@ -368,11 +368,11 @@ The results should be:
 
      count
     -------
-     43789
+     55469
 
      count
     -------
-     39266
+     88266
 
 #### <a name="candidate_relations" href="#"></a> Extracting candidate relations between mention pairs
 
@@ -467,7 +467,6 @@ extraction.extractors {
         AND   p1.sentence_id = sentences.sentence_id
         AND   p1.mention_id != p2.mention_id;
         """
-    before: ${APP_HOME}"/udf/ext_truncate_table.sh has_spouse"
     output_relation : "has_spouse"
     udf             : ${APP_HOME}"/udf/ext_has_spouse.py"
 
@@ -615,10 +614,10 @@ The results should be:
 
 ```
  is_true | count
----------+-------
- f       | 19230
- t       |  2190
-         | 54002
+---------+--------
+         | 178426
+ t       |  23570
+ f       |  83344
 ```
 
 #### <a name="candidate_relation_features" href="#"></a> Adding Features for candidate relations
@@ -682,7 +681,6 @@ extraction.extractors {
          AND  has_spouse.sentence_id = sentences.sentence_id;
          """
     output_relation : "has_spouse_features"
-    before          : ${APP_HOME}"/udf/ext_truncate_table.sh has_spouse_features"
     udf             : ${APP_HOME}"/udf/ext_has_spouse_features.py"
     dependencies    : ["ext_has_spouse_candidates"]
   }
@@ -840,8 +838,7 @@ When selecting these column, users must explicitly alias `id` to
 for the system to use them. For additional information, refer to the [inference
 rule guide](../inference_rules.html).
 
-### <a name="learning_inference" href="#"></a> Holdout, statistical learning,
-and inference
+### <a name="learning_inference" href="#"></a> Holdout, statistical learning, and inference
 
 Now that we have defined inference rules, DeepDive will automatically
 [ground](../overview.html#grounding) the factor graph using these rules, then
