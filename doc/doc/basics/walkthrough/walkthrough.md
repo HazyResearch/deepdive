@@ -98,7 +98,7 @@ cp $DEEPDIVE_HOME/examples/template/application.conf $APP_HOME
 
 The execution of the application is controlled by a script `run.sh`. We created
 this script `$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/run.sh`
-which can be copied to `$APP_HOME`:
+which should be copied to `$APP_HOME`:
 
 ```
 cp $DEEPDIVE_HOME/examples/tutorial_example/step1-basic/run.sh $APP_HOME
@@ -215,8 +215,18 @@ deepdive {
   ...
   # Put your extractors here
   extraction.extractors {
+
+    # Extractor 1: Clean output tables of all extractors
+    ext_clear_table {
+      style: "sql_extractor"
+      sql: """
+        DELETE FROM people_mentions;
+        DELETE FROM has_spouse;
+        DELETE FROM has_spouse_features;
+        """
+    }
     
-    # Extractor 1: extract people mentions:
+    # Extractor 2: extract people mentions:
     ext_people {
       # The style of the extractor
       style: "tsv_extractor"
