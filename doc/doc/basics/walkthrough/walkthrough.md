@@ -28,12 +28,13 @@ At a high level, we will go through the following steps:
 1. Data preprocessing and loading
 2. Candidate generation and Feature extraction: 
   - Extract mentions of people in the text
-  - Extract all candidate pairs of people that possibly participate in a `has_spouse` relation
-  - Prepare training data by [distant supervision](../../general/relation_extraction.html) using an existing knowledge base
+  - Extract all candidate pairs of people that possibly participate in a 
+    `has_spouse` relation and prepare training data by 
+    [distant supervision](../../general/relation_extraction.html) 
+    using an existing knowledge base
   - Add features to `has_spouse` candidates
 3. Generate the factor graph as specified by inference rules
-4. Perform statistical learning and inference
-5. Generate the results
+4. Perform statistical learning and inference and generate the results
 
 <!--
 We will use `tsv_extractors` for our
@@ -88,8 +89,9 @@ From now on we will denote the `$DEEPDIVE_HOME/app/spouse` directory as
 DeepDive's main entry point is the file `application.conf` which contains
 all information and configuration settings needed to run an application, e.g.,
 database connection information, extractor specification, inference rules,
-pipelines, and so on. A template `application.conf` can be obtained from
-`$DEEPDIVE_HOME/examples/template/application.conf` and copied into `$APP_HOME`:
+pipelines, and so on. A template `application.conf` is in
+`$DEEPDIVE_HOME/examples/template/application.conf` and must be copied 
+into `$APP_HOME`:
 
 ```
 cp $DEEPDIVE_HOME/examples/template/application.conf $APP_HOME
@@ -110,10 +112,11 @@ later. It also contains the definitions of various database connection
 parameters that you should set according to your database settings. Finally, it
 contains the commands to actually run the application.
 
-In order to write the application, we need some data files, that you can
-download from
+In order to write the application, we need some data files, namely the input corpus of
+text and some existing knowledge base of interpersonal relationship. You should
+get the archive containing these files from
 [here](https://www.dropbox.com/s/iptnkwfeymlnpqc/deepdive-tutorial-data.zip).
-Expand the archive in the `$APP_HOME/data` directory. 
+Expand the archive in the `$APP_HOME/data` directory.
 
 Now your `$APP_HOME/data` directory should contain following files:
 
@@ -125,7 +128,7 @@ non-spouses.tsv  sentences_dump.csv  sentences_dump_large.csv  spouses.tsv
 
 Let's now implement the [data flow](#dataflow) for this KBC application.
 
-### <a name="loading_data" href="#"></a> Data preprocessing and loading
+### <a name="loading_data" href="#"></a> Step 1: Data preprocessing and loading
 
 In this tutorial, we start from preprocessed sentence data, i.e., data that has
 already been parsed and tagged with a NLP toolkit. If the input corpus was
@@ -150,7 +153,10 @@ necessary tables and loads the data.
 sh setup_database.sh deepdive_spouse
 ```
 
-The following relations are created:
+This will create and populate some relations. You can check that the relations
+have been successfully created with the following command:
+
+The output should be the following:
 
                          List of relations
      Schema |        Name         | Type  |  Owner   | Storage
@@ -173,7 +179,7 @@ For a detailed reference of how these tables are created and loaded, refer to
 the [Preparing the Data Tables](walkthrough-extras.html#data_tables) section in
 the appendix.
 
-### <a name="feature_extraction" href="#"></a> Candidate Generation and Feature Extraction
+### <a name="feature_extraction" href="#"></a> Step 2: Candidate Generation and Feature Extraction
 
 Our next task is to write several [extractors](../extractors.html) for candidate
 generation and feature extraction. 
@@ -300,8 +306,9 @@ mkdir $APP_HOME/udf
 
 Then we create a `udf/ext_people.py` script which acts as UDF for the people
 mention extractor. The script scans input sentences and outputs phrases
-representing mentions of people. The script contains the following code (you can
-get a copy of this script from
+representing mentions of people. The script contains the following code:
+
+(a copy of this script is also available from
 `$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/udf/ext_people.py`):
 
 ```python
@@ -895,7 +902,7 @@ all extractors, scripts, and the complete `application.conf` file that we wrote
 until now in the `$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/`
 directory.
 
-### <a name="get_result" href="#"> </a> Running and getting results
+### <a name="get_result" href="#"> </a> Step 4: Running and getting results
 
 We can now run the application again
 
