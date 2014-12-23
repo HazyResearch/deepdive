@@ -23,9 +23,9 @@ relationships among companies.
 
 <a name="dataflow" href="#"> </a>
 
-At a high level, the application goes through the following steps:
+At a high level, we will go through the following steps:
 
-1. Data preprocessing: prepare parsed sentences.
+1. Data preprocessing and loading
 2. Candidate generation and Feature extraction: 
   - Extract mentions of people in the text
   - Extract all candidate pairs of people that possibly participate in a
@@ -126,9 +126,9 @@ In this tutorial, we start from preprocessed sentence data, i.e., data that has
 already been parsed and tagged with a NLP toolkit. If the input corpus was
 instead composed by raw text articles, we would also need to perform some
 Natural Language Processing on the corpus before being able to extract candidate
-relation pairs and features. To learn how NLP extraction can be done in DeepDive
-(i.e., how to start from step 1), you can refer to the
-[appendix](walkthrough-extras.html#nlp_extractor) of this tutorial.
+relation pairs and features. To learn how NLP extraction can be done in
+DeepDive, you can refer to the [appendix](walkthrough-extras.html#nlp_extractor)
+of this tutorial.
 
 We start by some scripts from the
 `$DEEPDIVE_HOME/example/tutorial_example/step1-basic` folder into `APP_HOME`
