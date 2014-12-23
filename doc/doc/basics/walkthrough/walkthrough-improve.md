@@ -64,15 +64,19 @@ which we describe next.
 #### Braindump setup and configuration
 
 We provide a script `./get-braindump.sh` in the folder
-`$DEEPDIVE_HOME/example/tutorial_example/step1-basic/` to download and install
+`$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/` to download and install
 BrainDump. After running the script, BrainDump will be installed in your user home
 directory (`$HOME`), as `$HOME/local/bin/braindump`. From now on, we refer to this
 executable as `braindump`.  
 
+`braindump` requires a configuration file. You can use the one in `$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/braindump.conf`:
+
+<!--
 The first time you run `braindump` from `$APP_HOME`, it presents an interactive
 command line interface to create the configuration file `braindump.conf`. The
 created file should look like the following. A copy of this file can be
 found in `$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/braindump.conf`.
+-->
 
 ```bash
 
@@ -163,13 +167,13 @@ export DD_THIS_OUTPUT_DIR=$DD_OUTPUT_DIR/$DD_TIMESTAMP
 
 Note that we customize the variable `INFERENCE_SAMPLE_SCRIPT` to our customized script 
 `$APP_HOME/bdconfigs/sample-inference.sh`, which can be found in 
-`$DEEPDIVE_HOME/example/tutorial_example/step1-basic/bdconfigs/sample-inference.sh`. 
+`$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/bdconfigs/sample-inference.sh`. 
 This script is used to get 100 random extractions with expectation > 0.9, 
 which we will use in later steps. Copy the `bdconfigs` folder into 
 your `$APP_HOME` to make it work:
 
 ```bash
-cp -r $DEEPDIVE_HOME/example/tutorial_example/step1-basic/bdconfigs ./
+cp -r $DEEPDIVE_HOME/examples/tutorial_example/step1-basic/bdconfigs ./
 ```
 
 #### Run BrainDump
@@ -395,7 +399,7 @@ These files can be found in
 Copy this directory to your `$APP_HOME/udf/` directory:
 
 ```
-cp -r `$DEEPDIVE_HOME/examples/tutorial_example/step2-generic-features/udf/dicts/ $APP_HOME/udf/dicts
+cp -r $DEEPDIVE_HOME/examples/tutorial_example/step2-generic-features/udf/dicts/ $APP_HOME/udf/dicts
 ```
 
 We now modify our feature extractor script `has_spouse_features.py` to use the
@@ -495,7 +499,6 @@ version of `application.conf` is available at
           AND   has_spouse.sentence_id = sentences.sentence_id;
         """
       output_relation: "has_spouse_features"
-      before: ${APP_HOME}"/udf/ext_truncate_table.sh has_spouse_features"
       udf: ${APP_HOME}"/udf/ext_has_spouse_features.py"
       dependencies: ["ext_has_spouse_candidates"]
       style: "tsv_extractor"
