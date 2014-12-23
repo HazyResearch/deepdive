@@ -1,0 +1,3 @@
+psql $DBNAME -c "
+  TRUNCATE TABLE $1 CASCADE;
+"
