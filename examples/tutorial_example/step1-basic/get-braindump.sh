@@ -9,7 +9,7 @@ cd "$(dirname "$0")"
 PATH="$PWD:$PATH"
 
 # install BrainDump locally if not available or broken
-VERSION=0.1.0
+VERSION=0.1.1
 if ! type braindump &>/dev/null; then
     tool=braindump
     mkdir -p "$(dirname "$tool")"
