@@ -616,6 +616,11 @@ extracted candidates that express a marriage relation ("green") over the sum
 between the total number of candidates that express a marriage relation ("green
 plus red").
 
+We performed the labelling and found a recall of 19%. While this is not very
+satisfactory, remember that all the steps we took earlier in this section were
+focused on improving precision, without even assessing or considering the impact
+on recall.
+
 A low recall can be due to excessive sparsity of the features, classes of
 correct candidates that are not "covered" by the current supervision rules,
 extremely low weights for features usually associated with correct candidates,
