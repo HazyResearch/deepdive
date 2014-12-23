@@ -440,7 +440,7 @@ for row in sys.stdin:
 The dictionaries are loaded by calling the `ddlib.load_dictionary` function,
 while the set of features is obtained through the
 `ddlib.get_generic_features_relation`. More details about the generic feature
-library can be found in its [documentation](../gen_feat.html).
+library can be found in its [documentation](../gen_feats.html).
 
 The generic feature library uses additional columns of the `sentences` table to
 generate the feature, therefore we need to modify the `input_query` of the
