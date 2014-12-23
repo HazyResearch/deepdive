@@ -75,8 +75,10 @@ file, and learning and inference parameters:
         the diminish rate for learning (default: 0.95).
         Learning rate will shrink by this parameter after each iteration.
         
-    --reg_param <regularizationParameter>
+    -b <regularizationParameter> | --reg_param <regularizationParameter>
         the l2 regularization parameter for learning (default: 0.01).
+        This argument can be used several times to activate a cross-validation
+        that chooses between specified parameters. e.g. "-b 0.01 -b 0.1 -b 1 -b 10"
 
 You can see a detailed list by running `util/sampler-dw-mac gibbs --help` or `util/sampler-dw-linux gibbs --help`.
 

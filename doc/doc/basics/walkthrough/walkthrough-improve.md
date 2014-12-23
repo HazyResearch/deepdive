@@ -66,7 +66,7 @@ which we describe next.
 We provide a script `./get-braindump.sh` in the folder
 `$DEEPDIVE_HOME/example/tutorial_example/step1-basic/` to download and install
 BrainDump. After running the script, BrainDump will be installed in your user home
-directory (`$HOME`), as `$HOME/local/braindump`. From now on, we refer to this
+directory (`$HOME`), as `$HOME/local/bin/braindump`. From now on, we refer to this
 executable as `braindump`.  
 
 The first time you run `braindump` from `$APP_HOME`, it presents an interactive
@@ -159,6 +159,17 @@ export INFERENCE_SAMPLE_SCRIPT="$APP_HOME/bdconfigs/sample-inference.sh"
 export DD_TIMESTAMP=`ls -t $DD_OUTPUT_DIR/ | head -n 1`
 export DD_THIS_OUTPUT_DIR=$DD_OUTPUT_DIR/$DD_TIMESTAMP
 
+```
+
+Note that we customize the variable `INFERENCE_SAMPLE_SCRIPT` to our customized script 
+`$APP_HOME/bdconfigs/sample-inference.sh`, which can be found in 
+`$DEEPDIVE_HOME/example/tutorial_example/step1-basic/bdconfigs/sample-inference.sh`. 
+This script is used to get 100 random extractions with expectation > 0.9, 
+which we will use in later steps. Copy the `bdconfigs` folder into 
+your `$APP_HOME` to make it work:
+
+```bash
+cp -r $DEEPDIVE_HOME/example/tutorial_example/step1-basic/bdconfigs ./
 ```
 
 #### Run BrainDump
@@ -457,7 +468,7 @@ while the set of features is obtained through the
 library can be found in its [documentation](../gen_feats.html).
 
 The generic feature library uses additional columns of the `sentences` table to
-generate the feature, therefore we need to modify the `input_query` of the
+generate the feature, therefore we need to modify the `input` of the
 `has_spouse_features` extractor definition in `application.conf` (a modified
 version of `application.conf` is available at
 `$DEEPDIVE_HOME/tutorial_example/step2-generic-features/application.conf`):
@@ -511,8 +522,8 @@ general to pass arguments to the sampler, we can add the following line to
 
 ```
 deepdive {
- [... other configuration directives ...]
-sampler.sampler_args: "-l 300 -s 1 -i 500 --alpha 0.1 --diminish 0.99 --reg_param 0.1 --reg_param 1 --reg_param 10"
+  [... other configuration directives ...]
+  sampler.sampler_args: "-l 300 -s 1 -i 500 --alpha 0.1 --diminish 0.99 --reg_param 0.1 --reg_param 1 --reg_param 10"
 }
 ```
 
