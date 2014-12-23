@@ -12,7 +12,7 @@ export PGPORT=${PGPORT:-5432}
 export PGHOST=${PGHOST:-localhost}
 
 # Initialize database
-bash $APP_HOME/setup_database.sh $DBNAME
+#bash $APP_HOME/setup_database.sh $DBNAME
 
 # Using ddlib
 export PYTHONPATH=$DEEPDIVE_HOME/ddlib:$PYTHONPATH
@@ -25,5 +25,5 @@ set -e
 deepdive -c $APP_HOME/application.conf
 
 # Generate automatic reports
-cd $APP_HOME
-braindump
+#cd $APP_HOME
+#braindump

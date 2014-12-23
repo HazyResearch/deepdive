@@ -30,11 +30,12 @@ After the execution of an application, it is necessary to assess the quality of
 its results. We consider any relation candidate that gets assigned a
 probability at least 0.9 of expressing a marriage relation as "extracted" by the
 system (i.e., the system classifies it as expressing a marriage relation), and
-we refer to the set of these candidates as "extractions". A common measure of
-quality is *precision*, i.e., the fraction of extractions that are indeed
-expressing a marriage relation. Another quality measure of interest is *recall*,
-which is the fraction of candidates expressing marriage relations that appear in
-the extractions. 
+we refer to the set of these candidates as "*extractions*". 
+
+A common measure of quality is *precision*, i.e., the fraction of extractions
+that are indeed expressing a marriage relation. Another quality measure of
+interest is *recall*, which is the fraction of candidates expressing marriage
+relations that appear in the extractions. 
 
 For now, we focus on assessing and improving *precision*. Clearly this will have
 an impact on recall (there is a somewhat natural tradeoff between the two), but
@@ -61,15 +62,15 @@ which we describe next.
 #### Braindump setup and configuration
 
 We provide a script `./get-braindump.sh` in the folder
-`DEEPDIVE_HOME/example/tutorial_example/step1-basic/` to download and install
+`$DEEPDIVE_HOME/example/tutorial_example/step1-basic/` to download and install
 BrainDump. After running the script, BrainDump will be installed in your user home
 directory (`$HOME`), as `$HOME/local/braindump`. From now on, we refer to this
 executable as `braindump`.  
 
-The first time you run `braindump` from `APP_HOME`, it presents an interactive
+The first time you run `braindump` from `$APP_HOME`, it presents an interactive
 command line interface to create the configuration file `braindump.conf`. The
 created file should look like the following. A copy of this file can be
-found in `DEEPDIVE_HOME/examples/tutorial_example/step1-basic/braindump.conf`.
+found in `$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/braindump.conf`.
 
 ```bash
 
@@ -160,7 +161,7 @@ export DD_THIS_OUTPUT_DIR=$DD_OUTPUT_DIR/$DD_TIMESTAMP
 
 #### Run BrainDump
 
-Once BrainDump has been configured, we can run `braindump` from the `APP_HOME`
+Once BrainDump has been configured, we can run `braindump` from the `$APP_HOME`
 directory to generate an automatic report for the last DeepDive run. Since we
 want to create and examine a report after each run of DeepDive, we can modify
 `run.sh` to execute `braindump` after running the application:
@@ -188,12 +189,13 @@ braindump
 #### Examining the report
 
 The auto-generated report resides in a sub-folder of
-`APP_HOME/experiment-reports/`. At this time, there should be only have one
+`$APP_HOME/experiment-reports/`. At this time, there should be only
 subdirectory `v00001`, containing some folders and a `README.md` file, the
 report.  The report contains a number of informative statistics about the corpus
 and about the extractions, including the number of generated mention candidates,
-information about the training set, and counts for the most frequently extracted
-entity pairs. It should look similar to the following:
+information about the training set, the number of extractions, and counts for
+the most frequently extracted entity pairs. It should look similar to the
+following:
 
 ```
 # Statistics
@@ -248,10 +250,11 @@ entity pairs. It should look similar to the following:
 From the Top Entities section, one may think that the system is actually doing a
 good job at extracting marriage relation mentions, but this may not be true.  To
 precisely assess the quality of the results and diagnose what errors the system
-makes, we should look at actual examples of extractions and determine i.e.,
-perform *error analysis*. This can be done with [MindTagger](../labeling.html),
-another tool included in the DeepDive distribution, that we describe in the next
-section.  
+makes, we should look at actual examples of extractions and verify how many of
+them are indeed representing marriage relations, how many are not, and why are
+non-correct candidates assigned a high probability. This task is called *error
+analysis*. Deepdive includes a tool named [MindTagger](../labeling.html) that
+simplifies the execution of error analysis.
 
 ### <a name="mindtagger" href="#"> </a> Using MindTagger to label results
 
