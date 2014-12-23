@@ -509,13 +509,14 @@ e.g., "Barack Obama" cannot be married to "Barack Obama".
 file) contains the fact that person A is married to person B and person C is
 married to person D, then it is unlikely that person A is married to person C.
 
-These supervision rules expose a typical property of distant supervision: it is
-not perfect, in the sense that we may mislabel some relation candidates. This is
-not an issue: as long as a sufficient majority of the supervised candidates are
-correctly supervised, the system will be able to extract the information even if
-the signal given by the distant supervision is, in some sense, "noisy". This is
-a desirable property, as it allows to use distant supervision rules that
-are at least reasonable even if they are not perfect.
+These supervision rules expose a typical property of distant supervision rules:
+they may be not perfect, in the sense that we may mislabel some relation
+candidates. This is not an issue: as long as a sufficient majority of the
+supervised candidates are correctly supervised, the system will be able to
+extract the information even if the signal given by the distant supervision is,
+in some sense, "noisy". This is a desirable property, as it allows to use
+distant supervision rules that are at least reasonable even if they are not
+perfect.
 
 We now create a script `udf/ext_has_spouse.py` to generate and label
 the relation candidates:
