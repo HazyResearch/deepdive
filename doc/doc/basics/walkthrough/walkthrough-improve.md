@@ -94,7 +94,7 @@ export REPORT_DIR="$WORKING_DIR/experiment-reports"
 # (the directory that contains braindump.conf)
 export APP_HOME=$WORKING_DIR
 
-# Specify deepdive out directory (DEEPDIVE_HOME/out)
+# Specify deepdive out directory ($DEEPDIVE_HOME/out)
 export DD_OUTPUT_DIR=$WORKING_DIR/../../../out
 
 # Database Configuration
@@ -297,25 +297,26 @@ analysis.
 
 The input to MindTagger can be automatically generated from the output of
 BrainDump as follows. Copy the directory
-`DEEPDIVE_HOME/examples/tutorial_example/step1-basic/labeling/` to your
-`APP_HOME` directory
+`$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/labeling/` to your
+`$APP_HOME` directory
 
 ```
-cp -r DEEPDIVE_HOME/examples/tutorial_example/step1-basic/labeling/ $APP_HOME/labeling
+cp -r $DEEPDIVE_HOME/examples/tutorial_example/step1-basic/labeling/ $APP_HOME/labeling
 ```
 
 Now, run the `prepare-data-from-braindump.sh` script located inside the
 `labeling` directory:
 
 ```
-cd APP_HOME/labeling
+cd $APP_HOME/labeling
 ./prepare-data-from-braindump.sh
 ```
 
 The script will output a success message, and we are now ready to start
 MindTagger:
+
 ```
-cd APP_HOME/labeling
+cd $APP_HOME/labeling
 ./start-mindtagger.sh
 ```
 
@@ -323,8 +324,8 @@ We can now open a browser, go to `localhost:8000` and perform the labeling of
 the extractions as described in the [MindTagger](../labeling.html)
 documentation. 
 
-In the directory `DEEPDIVE_HOME/examples/tutorial_example/step1-basic/labeling`,
-we include an example of 100 extractions that we already labelled using
+In the directory `$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/labeling`,
+we include a sample of 100 extractions that we already labelled using
 MindTagger. To look at our labeling results, you can enter this directory, run
 `./start-mindtagger.sh` and point your browser to `localhost:8000`. In our case,
 the precision is 40%: out of 100 extractions, 40 are actually expressing a
@@ -552,8 +553,8 @@ using this database.
 At the end, you can analyze the results using MindTagger as described before,
 but make sure to update the database name in `braindump.conf`.
 
-We labelled 100 extractions using MindTagger and found a precision of 94%, which
-is more than satisfactory. You can see our labelling results by entering the
+We labelled 100 extractions using MindTagger and found that the precision is now
+94%, which is satisfactory. You can see our labelling results by entering the
 `$DEEPDIVE_HOME/examples/tutorial_example/step3-more-data/labeling` directory
 and running `./start-mindtagger.sh`.
 
@@ -563,4 +564,52 @@ example adding additional supervision rules or specifying additional
 correlations among the variables using inference rules. 
 
 ## <a name="recall" href="#"> </a> Evaluating recall
-TODO
+
+We can use MindTagger also to evaluate recall, i.e., the fraction of candidates
+expressing a marriage relation that is actually extracted (i.e., assigned a
+probability at least 0.9).
+
+We start by preparing some data for MindTagger that allows for the evaluation of
+recall. Copy the script
+`$DEEPDIVE_HOME/examples/tutorial_example/step3-more-data/labeling/prepare-data-for-recall.sh`
+and the directory
+`$DEEPDIVE_HOME/examples/tutorial_example/step3-more-data/labeling/spouse_example-recall/`
+to `$APP_HOME/labeling` and execute the script (we assume that the last execution of the
+application was using the `deepdive_spouse_large` database created at the end of
+the previous section. If that is not the case, edit the script and set the
+`DBNAME` directory to the correct database). This script collects two thousands
+sentences containing at least one relation mention candidate, independently from
+the predicted probability. 
+
+Once the script has completed, start MindTagger with `./start-mindtagger.sh`.
+Point your browser to `localhost:8000` and make sure that on the left of the
+upper bar of the page, the `spouse_example-recall` task is selected (otherwise
+select it). 
+
+The labelling task to compute recall is only slightly more complex than the task
+for precision. You should look at each presented candidate and at the value of the
+expectation assigned to it. You should first evaluate if a candidate is
+expressing a marriage relation or not. If not, you can go on to the next
+candidate. Otherwise, if the candidate *is* expressing a marriage relation, you
+should look at the value of the expectation assigned to it. If it is greater
+than 0.9, you can mark the extraction as correct (green button), otherwise, the
+candidate was "missed", as it was not part of the extractions, and should be
+marked as such using the red button. As with the precision task, you can add
+tags to the candidates to help you in classifying the errors. Please remember
+that you should only mark as "missed" the candidates that are actually
+expressing a marriage relation but have a low expectation. You can completely
+ignore candidates not expressing a marriage relation, independently of the
+expectation that it is assigned to them. Once you have labelled (or ignored) all
+candidates, the recall can be computed as the fraction between the number of
+extracted candidates that express a marriage relation ("green") over the sum
+between the total number of candidates that express a marriage relation ("green
+plus red").
+
+A low recall can be due to excessive sparsity of the features, classes of
+correct candidates that are not "covered" by the current supervision rules,
+extremely low weights for features usually associated with correct candidates,
+and so on. We are currently developing tools and documentation to address some
+of these issue. STAY TUNED!
+
+
+
