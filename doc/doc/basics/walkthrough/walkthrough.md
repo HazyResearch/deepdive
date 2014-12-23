@@ -666,7 +666,7 @@ extraction.extractors {
   ext_has_spouse_features {
     style: "tsv_extractor"
     input: """
-      SELECT  sentences.words,
+		SELECT  array_to_string(words, '~^~'),
               has_spouse.relation_id,
               p1.start_position  AS  p1_start,
               p1.length          AS  p1_length,
