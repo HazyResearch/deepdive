@@ -90,12 +90,13 @@ projects.
 DeepDive is project led by [Christopher
 Ré](http://cs.stanford.edu/people/chrismre/) at Stanford University. Current
 group members include: [Zifei Shan](http://www.zifeishan.org/), Feiran Wang,
-Sen Wu, Jaeo Shin, Amir Abbas Sadeghian, [Ce
+[Sen Wu](http://stanford.edu/~senwu/), Jaeo Shin, Amir Abbas Sadeghian, [Ce
 Zhang](http://pages.cs.wisc.edu/~czhang/), and [Matteo
 Riondato](http://cs.brown.edu/~matteo/).
 
 ### Updates &amp; Changelog 
 
+- [Changelog for version 0.04.2-alpha](doc/changelog/0.04.2-alpha.html) (12/23/2014)
 - [Changelog for version 0.04.1-alpha](doc/changelog/0.04.1-alpha.html) (11/25/2014)
 - [Changelog for version 0.04-alpha](doc/changelog/0.04-alpha.html) (11/19/2014)
 - [Changelog for version 0.03.2-alpha](doc/changelog/0.03.2-alpha.html) (09/16/2014)
@@ -105,14 +106,14 @@ Riondato](http://cs.brown.edu/~matteo/).
 
 ### <a name="documentation" href="#"></a> Documentation
 
-Background:
+#### Background
 
 - [Knowledge base construction](doc/general/kbc.html)
 - [Relation extraction](doc/general/relation_extraction.html)
 - [Distant supervision](doc/general/distant_supervision.html)
 - [Probabilistic inference and factor graphs](doc/general/inference.html)
 
-Basics:
+#### Basics
 
 - [System overview and fundamental terminology](doc/basics/overview.html)
 - [Installation guide](doc/basics/installation.html)
@@ -124,14 +125,20 @@ Basics:
 - [Generating negative examples](doc/basics/generating_negative_examples.html)
 - [Running an application](doc/basics/running.html)
 - [Calibration](doc/basics/calibration.html)
-- [Example application walk-through](doc/basics/walkthrough/walkthrough.html)
 - [Labeling data products](doc/basics/labeling.html)
 - [Text chunking application example](doc/basics/chunking.html)
+- [Generic features library](doc/basics/gen_feats.html)
 - [High-speed sampler](doc/basics/sampler.html)
 - [**application.conf** Reference](doc/basics/configuration.html)
 - [FAQ](doc/basics/faq.html)
 
-Advanced topics:
+#### Tutorial
+
+- [Example application walk-through](doc/basics/walkthrough/walkthrough.html)
+- [Improving the results](doc/basics/walkthrough/walkthrough-improve.html)
+- [Extras](doc/basics/walkthrough/walkthrough-extras.html)
+
+#### Advanced topics
 
 - [Performance tuning](doc/advanced/performance.html)
 - [Scala developer guide for DeepDive](doc/advanced/developer.html)

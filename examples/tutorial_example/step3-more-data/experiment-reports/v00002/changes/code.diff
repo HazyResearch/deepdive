@@ -1,0 +1,156 @@
+diff -ENwbur ../v00001/code/application.conf ./code/application.conf
+--- ../v00001/code/application.conf	2014-12-22 11:40:09.000000000 -0800
++++ ./code/application.conf	2014-12-22 16:51:24.000000000 -0800
+@@ -52,9 +52,14 @@
+       style: "tsv_extractor"
+     }
+ 
++    # Pipe into the feature extractor UDF all relavent fields in the sentence
+     ext_has_spouse_features {
+       input: """
+         SELECT  array_to_string(words, '~^~'), 
++                array_to_string(lemma, '~^~'),
++                array_to_string(pos_tags, '~^~'),
++                array_to_string(dependencies, '~^~'),
++                array_to_string(ner_tags, '~^~'),
+                 has_spouse.relation_id, 
+                 p1.start_position, 
+                 p1.length, 
+@@ -73,6 +78,7 @@
+       udf: ${APP_HOME}"/udf/ext_has_spouse_features.py"
+       dependencies: ["ext_has_spouse_candidates"]
+       style: "tsv_extractor"
++      parallelism: 4
+     }
+ 
+   }
+@@ -99,16 +105,16 @@
+   }
+ 
+   # Default is to use the full pipeline, equivalent to:
+-  pipeline.run: "all"
+-  pipeline.pipelines.all: [
++  # pipeline.run: "all"
++  # pipeline.pipelines.all: [
+     # "ext_people",
+     # "ext_has_spouse_candidates",
+     # "ext_has_spouse_features",
+-    "f_has_spouse_features"
+-    ]
++  #   "f_has_spouse_features"
++  #   ]
+ 
+   # # Specify a holdout fraction to hold out randomly
+   # calibration.holdout_fraction: 0.25
+@@ -125,7 +131,9 @@
+     (SELECT * FROM holdout_sentence_ids);
+   """
+ 
+-  # You may also try tuning sampler arguments:
+-  # sampler.sampler_args: "-l 1000 -s 1 -i 1000 --alpha 0.1 --diminish 0.99"
++  # Feature library gives us lots of features so we need proper
++  # regularization. Use "--reg_param X" (or -b X) multiple times and 
++  # system will choose proper parameter with Cross Validation.
++  sampler.sampler_args: "-l 300 -s 1 -i 500 --alpha 0.1 --diminish 0.99 --reg_param 0.1 --reg_param 1 --reg_param 10"
+ 
+ }
+diff -ENwbur ../v00001/code/udf/dicts/married.txt ./code/udf/dicts/married.txt
+--- ../v00001/code/udf/dicts/married.txt	1969-12-31 16:00:00.000000000 -0800
++++ ./code/udf/dicts/married.txt	2014-12-22 16:51:24.000000000 -0800
+@@ -0,0 +1,6 @@
++marry  
++widow
++wife
++fiancee
++spouse
++husband
+diff -ENwbur ../v00001/code/udf/dicts/non_married.txt ./code/udf/dicts/non_married.txt
+--- ../v00001/code/udf/dicts/non_married.txt	1969-12-31 16:00:00.000000000 -0800
++++ ./code/udf/dicts/non_married.txt	2014-12-22 16:51:24.000000000 -0800
+@@ -0,0 +1,6 @@
++father
++mother
++brother
++sister
++son
++daughter
+diff -ENwbur ../v00001/code/udf/ext_has_spouse_features.py ./code/udf/ext_has_spouse_features.py
+--- ../v00001/code/udf/ext_has_spouse_features.py	2014-12-22 11:40:09.000000000 -0800
++++ ./code/udf/ext_has_spouse_features.py	2014-12-22 16:51:24.000000000 -0800
+@@ -1,42 +1,55 @@
+ #! /usr/bin/env python
+ 
+-import sys
++import sys, os
+ import ddlib     # DeepDive python utility
+ 
+ ARR_DELIM = '~^~'
+ 
++# Load keyword dictionaries using ddlib, for domain-specific features
++# Words in "married" dictionary are indicative of marriage
++# Words in "non_married" dictionary are indicative of non_marriage
++BASE_DIR = os.path.dirname(os.path.realpath(__file__))
++ddlib.load_dictionary(BASE_DIR + "/dicts/married.txt", dict_id="married")
++ddlib.load_dictionary(BASE_DIR + "/dicts/non_married.txt", dict_id="non_married")
++
+ # For each input tuple
+ for row in sys.stdin:
+   parts = row.strip().split('\t')
+-  if len(parts) != 6: 
+-    print >>sys.stderr, 'Failed to parse row:', row
+-    continue
+   
+   # Get all fields from a row
+   words = parts[0].split(ARR_DELIM)
+-  relation_id = parts[1]
+-  p1_start, p1_length, p2_start, p2_length = [int(x) for x in parts[2:]]
++  lemmas = parts[1].split(ARR_DELIM)
++  poses = parts[2].split(ARR_DELIM)
++  dependencies = parts[3].split(ARR_DELIM)
++  ners = parts[4].split(ARR_DELIM)
++  relation_id = parts[5]
++  p1_start, p1_length, p2_start, p2_length = [int(x) for x in parts[6:]]
++
++  # Get a sentence from ddlib -- array of "Word" objects
++  if len(dependencies) == 0:
++    print >>sys.stderr, str(relation_id) + '\t' + 'DEP_PATH_EMPTY'
++    continue
+ 
+-  # Unpack input into tuples.
++  try:
++    sentence = ddlib.get_sentence(
++        [0, ] * len(words),  [0, ] * len(words), words, lemmas, poses,
++        dependencies, ners)
++  except:
++    print >>sys.stderr, dependencies
++    continue
++  
++  # Create two spans of person mentions
+   span1 = ddlib.Span(begin_word_id=p1_start, length=p1_length)
+   span2 = ddlib.Span(begin_word_id=p2_start, length=p2_length)
+ 
+   # Features for this pair come in here
+   features = set()
+   
+-  # Feature 1: Bag of words between the two phrases
+-  words_between = ddlib.tokens_between_spans(words, span1, span2)
+-  for word in words_between.elements:
+-    features.add("word_between=" + word)
+-
+-  # Feature 2: Number of words between the two phrases
+-  features.add("num_words_between=%s" % len(words_between.elements))
+-
+-  # Feature 3: Does the last word (last name) match?
+-  last_word_left = ddlib.materialize_span(words, span1)[-1]
+-  last_word_right = ddlib.materialize_span(words, span2)[-1]
+-  if (last_word_left == last_word_right):
+-    features.add("potential_last_name_match")
+-
++  # Get generic features generated by ddlib
++  for feature in ddlib.get_generic_features_relation(sentence, span1, span2):
++    features.add(feature)
++    # TODO: clean LENGTH features?
++    # if not 'LENGTH' in feature:
++    #   features.add(feature)
+   for feature in features:  
+     print str(relation_id) + '\t' + feature

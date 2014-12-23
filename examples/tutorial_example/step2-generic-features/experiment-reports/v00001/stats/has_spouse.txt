@@ -1,0 +1,23 @@
+ mention_candidates 
+--------------------
+             291986
+(1 row)
+
+Supervision statistics:
+ is_true | count  
+---------+--------
+ t       |  23580
+ f       |  84578
+         | 183828
+(3 rows)
+
+ extracted_mentions 
+--------------------
+               5442
+(1 row)
+
+ extracted_entities 
+--------------------
+               3669
+(1 row)
+

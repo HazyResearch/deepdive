@@ -1,0 +1,6 @@
+father
+mother
+brother
+sister
+son
+daughter

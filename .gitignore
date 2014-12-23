@@ -16,3 +16,10 @@ hsql:*
 .idea/
 .project
 doc/_*local*
+mindbender
+.mindtagger.conf.json
+examples/tutorial_example/*/experiment-reports/latest
+*/dd-out
+examples/spouse_example/data/sentences_dump_large.csv
+examples/spouse_example/data/spouses.tsv
+
