@@ -36,27 +36,23 @@ At a high level, the application performs the following operations:
 4. Perform statistical learning and inference
 5. Generate the results
 
-XXX The following links may need to be updated
-
-The full application is also available in the directory
-`DEEPDIVE_HOME/examples/tutorial_example`. We will use `tsv_extractors` for our
+<!--
+We will use `tsv_extractors` for our
 extractors. A similar example application with implementations for the
 [different types of extractors](../extractors.html) is available under
-`DEEPDIVE_HOME/examples/spouse_example`. 
-
-<!--
-which contains different implementation
-for the [different types of extractors](../extractors.html). In this
-document, we only introduce the default extractor type (`json_extractor`), which
-can be found in the `DEEPDIVE_HOME/examples/spouse_example/default_extractor`
-directory.
+`$DEEPDIVE_HOME/examples/spouse_example`. 
 -->
 
-This tutorial assumes you [installed DeepDive](../installation.html). The
+This tutorial assumes that you [installed DeepDive](../installation.html). The
 installation directory of DeepDive is denoted as`$DEEPDIVE_HOME`. The database
 system used for this tutorial is PostgreSQL. If you followed the [DeepDive
 installation guide](../installation.html) and all tests completed successfully,
 then your PostgreSQL server should already be running.
+
+The full application we develop in this and in the following section of the
+tutorial is also available in the directory
+`$DEEPDIVE_HOME/examples/tutorial_example`. 
+
 
 ### Contents
 
@@ -94,50 +90,23 @@ From now on we will denote the `$DEEPDIVE_HOME/app/spouse` directory as
 DeepDive's main entry point is the file `application.conf` which contains
 all information and configuration settings needed to run an application, e.g.,
 database connection information, extractor specification, inference rules,
-pipelines, and so on. 
+pipelines, and so on. A template `application.conf` can be obtained from
+`$DEEPDIVE_HOME/examples/template/application.conf` and copied into `$APP_HOME`:
 
-It is often useful to have a `env.sh` script to configure environment
-variables and a `run.sh` script that loads `env.sh` and executes the DeepDive
-pipeline. We provide simple templates for these files to copy and
-modify. Copy these templates to the application directory: 
-
-```bash
-cp ../../examples/template/application.conf $APP_HOME
-cp ../../examples/template/run.sh $APP_HOME
-cp ../../examples/template/env.sh $APP_HOME
+```
+cp $DEEPDIVE_HOME/examples/template/application.conf $APP_HOME
 ```
 
-The `env.sh` file contains a placeholder line `DBNAME=`. Modify it with the name
-of the database for the application, e.g., `deepdive_spouse`:
+The execution of the application is controlled by a script `run.sh`. We created
+this script `$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/run.sh`
+which can be copied to `$APP_HOME`.
 
-```bash
-# File: env.sh
-...
-export DBNAME=deepdive_spouse   # modify this line
-...
-```
-
-Also set any other parameter you may need.
-
-The `run.sh` file contains the definitions of two environment variables:
-`DEEPDIVE_HOME` which is the installation directory of DeepDive, and `APP_HOME`
+The `run.sh` scripts contains the definitions of two environment variables:
+`$DEEPDIVE_HOME` which is the installation directory of DeepDive, and `APP_HOME`
 which is the directory `$DEEPDIVE_HOME/app/spouse`. We will use these variables
-later.
-
-You can now try running the `run.sh` script:
-
-```bash
-./run.sh
-```
-
-Since no [extractors](../extractors.html) or [inference
-rules](../inference_rules.html) have been specified in `application.conf`,
-no "real" work is actually performed, but DeepDive should run successfully from
-end to end, and the end of the output should look similar to the following:
-
-    15:57:55 [profiler] INFO  --------------------------------------------------
-    15:57:55 [profiler] INFO  Summary Report
-    15:57:55 [profiler] INFO  --------------------------------------------------
+later. It also contains the definitions of various database connection
+parameters that you should set according to your database settings. Finally, it
+contains the commands to actually run the application.
 
 ## <a name="implement_dataflow" href="#"></a> Implement the Data Flow
 
@@ -145,8 +114,8 @@ Let's now implement the [data flow](#dataflow) for this KBC application.
 
 ### <a name="loading_data" href="#"></a> Data preprocessing and loading
 
-For simplicity, we will start from preprocessed sentence data (starting
-from step 2 from the above list). If the input corpus was instead composed by
+For simplicity, we start from preprocessed sentence data (i.e., from step 2
+from the above list). If the input corpus was instead composed by
 raw text articles, we would also need to perform some Natural Language
 Processing on the corpus before being able to extract candidate relation pairs
 and features. To learn how NLP extraction can be done in DeepDive (i.e., how to
@@ -154,7 +123,7 @@ start from step 1), you can refer to the
 [appendix](walkthrough-extras.html#nlp_extractor) of this tutorial.
 
 We start by copying the prepared data and scripts from the
-`DEEPDIVE_HOME/example/tutorial_example/step1-basic` folder into `APP_HOME`
+`$DEEPDIVE_HOME/example/tutorial_example/step1-basic` folder into `APP_HOME`
 
 ```bash
 cp -r ../../examples/tutorial_example/step-1/data $APP_HOME
@@ -163,7 +132,7 @@ cp ../../examples/tutorial_example/step-1/setup_database.sh $APP_HOME
 ```
 
 Then, we run the script `setup_database.sh`, which creates the database and the
-necessary tables and load the data.
+necessary tables and loads the data.
 
 ```bash
 sh setup_database.sh deepdive_spouse
@@ -216,6 +185,7 @@ with elements separated by `~^~`, e.g.:
 	118238@10       Sen.~^~Barack~^~Obama~^~and~^~his~^~wife~^~,~^~Michelle~^~Obama~^~,~^~have~^~released~^~eight~^~years~^~of~^~joint~^~returns~^~.        O~^~PERSON~^~PERSON~^~O~^~O~^~O~^~O~^~PERSON~^~PERSON~^~O~^~O~^~O~^~DURATION~^~DURATION~^~O~^~O~^~O~^~O
 
 **Output:** TSV lines that can be loaded as rows of the `people_mentions` table, e.g.:
+
 	118238@10	1	2	Barack Obama	118238@10_1
 	118238@10	7	2	Michelle Obama	118238@10_7
 
@@ -224,17 +194,6 @@ This first extractor identifies people mentions (in the above sample ,
 `people_mentions`.  We use the named entity tags from the `ner_tags` column of
 the `sentences` table to identify word phrases that have all words tagged as
 `PERSON`.
-
-<!-- Ideally you would want to add your own domain-specific features to extract
-mentions. For example, people names are usually capitalized, tagged with a noun
-phrase Part Of Speech tag, and have certain dependency paths to other words in
-the sentence. However, because the Stanford NLP Parser is relatively good at
-identifying people and tags them with a `PERSON` named-entity tag we trust its
-output and don't make the predictions ourselves. We simply assume that all
-people identified by the NLP Parser are correct. Note that this assumption is
-not ideal and usually does not work for other types of entities, but it is good
-enough to build a first version of our application.
- -->
 
 To define our extractors in DeepDive, we start by adding several lines
 into the `deepdive.extraction.extractors` block in `application.conf`, which
@@ -323,7 +282,7 @@ Then we create a `udf/ext_people.py` script which acts as UDF for the people
 mention extractor. The script scans input sentences and outputs phrases
 representing mentions of people. The script contains the following code (you can
 get a copy of this script from
-`DEEPDIVE_HOME/examples/tutorial_example/step1-basic/udf/ext_spouse.py`):
+`$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/udf/ext_spouse.py`):
 
 ```python
 import sys
@@ -373,7 +332,7 @@ To add debug output, you can print to *stderr* instead of stdout, and the
 messages would appear on the terminal, as well as in the DeepDive log file
 (`$DEEPDIVE_HOME/log/DATE_TIME.txt`).
 
-You can now run your extractor by executing `./run.sh`. Once the run has
+You can now run the extractor by executing `./run.sh`. Once the run has
 completed, you should be able to see the extracted results in the
 `people_mentions` table. We select the results of the sample input data to see
 what happens in the extractor:
@@ -521,10 +480,9 @@ When generating relation candidates, we also generate training data using
 [distant supervision](../../general/distant_supervision.html). There are some
 pairs of people that we know for sure are married, and we can use them as
 training data for DeepDive. Similarly, if we know that two people are not
-married, we can use
-them as negative training examples. In our case we will be using data from
-[Freebase](http://www.freebase.com/) for distant supervision, and use exact
-string matching to map mentions to entities.
+married, we can use them as negative training examples. In our case we will be
+using data from [Freebase](http://www.freebase.com/) for distant supervision,
+and use exact string matching to map mentions to entities.
 
 To generate positive examples, we have exported all pairs of people with a
 `has_spouse` relationship from the [Freebase data
@@ -535,7 +493,7 @@ To generate negative examples, we use the following heuristics:
 
 1. A pair of persons who are in some kind of relation that is incompatible with
 a marriage relation can be treated as a negative example: if, for example, A is
-B's parent / children / sibling, then A is not likely to be married to B.  We
+B's parent / children / sibling, then A is not likely to be married to B. We
 include a TSV file in `data/non-spouses.tsv` containing such relations sampled
 from Freebase.
 
@@ -551,7 +509,7 @@ not perfect, in the sense that we may mislabel some relation candidates. This is
 not an issue: as long as a sufficient majority of the supervised candidates are
 correctly supervised, the system will be able to extract the information even if
 the signal given by the distant supervision is, in some sense, "noisy". This is
-a desirable characteristic, as it allows to use distant supervision rules that
+a desirable property, as it allows to use distant supervision rules that
 are at least reasonable even if they are not perfect.
 
 We now create a script `udf/ext_has_spouse.py` to generate and label
@@ -620,8 +578,8 @@ for row in sys.stdin:
     ])
 ```
 
-We can now an run the system by executing `run.sh` and check
-the output relation `has_spouse`. `run.sh` will run the full pipeline with all
+We can now an run the system by executing `./run.sh` and check
+the output relation `has_spouse`. `./run.sh` will run the full pipeline with all
 extractors. If you only want to run the new
 extractor, refer to the [Pipeline section in Extras](walkthrough-extras.html#pipelines).
 
@@ -798,6 +756,7 @@ The results would look like the following:
 (6 rows)
 ```
 
+<!--
 XXX Fix or remove
 
 Again, you can count the number of tuples in the table:
@@ -811,10 +770,11 @@ The results should be:
       count
     ---------
      1160450
+-->
 
 ### <a name="inference_rules" href="#"></a> Writing inference rules
 
-Now we need to specify how DeepDive should  generate the [factor
+Now we need to specify how DeepDive should generate the [factor
 graph](../../general/inference.html) to perform probabilistic learning and inference.
 We want to predict the `is_true` column of the `has_spouse` table based on the
 features we have extracted, by assigning to each feature a weight that DeepDive
@@ -884,12 +844,36 @@ results, we also want to define a *holdout fraction* for our predictions. The
 holdout fraction defines how much of our training data we want to treat as
 testing data used to compare our predictions against. By default the holdout
 fraction is `0`, which means that we cannot evaluate the precision of our
-results. Add the following line to holdout one quarter of the training data:
+results. Add the following line to `application.conf` to holdout one quarter of
+the training data:
 
     # Specify a holdout fraction
     calibration.holdout_fraction: 0.25
 
-### <a name="get_result" href="#"> </a> Run and getting results
+Alternatively, the user may specify a specific holdout SQL query which selects
+the column `id` of some desired rows from the `has_spouse_mention` table and add
+them into the table `dd_graph_variables_holdout`. For example, the following
+query select some sentences at random and insert into the holdout table all
+relation candidates appearing in those mentions:
+
+
+	calibration.holdout_query:"""
+    DROP TABLE IF EXISTS holdout_sentence_ids CASCADE; 
+
+    CREATE TABLE holdout_sentence_ids AS 
+    SELECT sentence_id FROM sentences WHERE RANDOM() < 0.25;
+
+    INSERT INTO dd_graph_variables_holdout(variable_id)
+    SELECT id FROM has_spouse WHERE sentence_id IN
+    (SELECT * FROM holdout_sentence_ids);
+    """
+
+At this point, the setup of the application is complete. Note that you can find
+all extractors, scripts, and the complete `application.conf` file that we wrote
+until now in the `$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/`
+directory.
+
+### <a name="get_result" href="#"> </a> Running and getting results
 
 We can now run the application again
 
@@ -964,59 +948,6 @@ look something like this:
 The calibration plots contain useful information that help you to improve the
 quality of your predictions. For actionable advice about interpreting
 calibration plots, refer to the [calibration guide](../calibration.html). 
-
-
-<!--
-Often, it is also useful to look at the *weights* that were learned for features
-or rules. You can do this by looking at the `mapped_inference_results_weights`
-table in the database. Run the following query to select the features with the highest
-weight (positive features):
-
-```bash
-psql -d deepdive_spouse -c "
-  SELECT description, weight
-  FROM dd_inference_result_weights_mapping
-  ORDER BY weight DESC
-  LIMIT 5;
-"
-```
-
-The results should look like the following:
-
-                    description                 |      weight
-    --------------------------------------------+------------------
-     f_has_spouse_features-word_between=D-N.Y.  |  4.7886491287239
-     f_has_spouse_features-word_between=married | 3.89640480091833
-     f_has_spouse_features-word_between=wife    | 3.20275846390644
-     f_has_spouse_features-word_between=widower | 3.18555507726798
-     f_has_spouse_features-word_between=Sen.    | 2.91372149485723
-    (5 rows)
-
-Run the following query to select top negative features:
-
-```bash
-psql -d deepdive_spouse -c "
-  SELECT description, weight
-  FROM dd_inference_result_weights_mapping
-  ORDER BY weight ASC
-  LIMIT 5;
-"
-```
-
-The results should be similar to:
-
-                       description                   |      weight
-    -------------------------------------------------+-------------------
-     f_has_spouse_features-word_between=son          | -3.47510397136532
-     f_has_spouse_features-word_between=grandson     | -3.30906093958107
-     f_has_spouse_features-potential_last_name_match | -3.15563684816935
-     f_has_spouse_features-word_between=Rodham       | -3.07171299387011
-     f_has_spouse_features-word_between=addressing   | -2.89060819613259
-
-Note that each execution may learn different weights, and these lists can look
-different. Generally, we might see that most weights make sense while some
-do not.
--->
 
 In the [next section](walkthrough-improve.html), we will discuss several ways to
 analyze and improve the quality of our application.
