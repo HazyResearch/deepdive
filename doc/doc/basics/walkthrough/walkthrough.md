@@ -23,17 +23,16 @@ relationships among companies.
 
 <a name="dataflow" href="#"> </a>
 
-At a high level, the application performs the following operations:
+At a high level, the application goes through the following steps:
 
 1. Data preprocessing: prepare parsed sentences.
 2. Candidate generation and Feature extraction: 
   - Extract mentions of people in the text
-  - Extract all candidate pairs of people that possibly participate in a `has_spouse` relation
-  - Prepare training data by [distant supervision](../../general/relation_extraction.html) using an existing knowledge base
+  - Extract all candidate pairs of people that possibly participate in a
+  	  `has_spouse` relation and prepare training data by [distant supervision](../../general/relation_extraction.html) using an existing knowledge base
   - Add features to `has_spouse` candidates
 3. Generate the factor graph as specified by inference rules
-4. Perform statistical learning and inference
-5. Generate the results
+4. Perform statistical learning and inference and generate the results
 
 <!--
 We will use `tsv_extractors` for our
@@ -89,16 +88,20 @@ From now on we will denote the `$DEEPDIVE_HOME/app/spouse` directory as
 DeepDive's main entry point is the file `application.conf` which contains
 all information and configuration settings needed to run an application, e.g.,
 database connection information, extractor specification, inference rules,
-pipelines, and so on. A template `application.conf` can be obtained from
-`$DEEPDIVE_HOME/examples/template/application.conf` and copied into `$APP_HOME`:
+pipelines, and so on. A template `application.conf` is in  
+`$DEEPDIVE_HOME/examples/template/application.conf` and must be copied into `$APP_HOME`:
 
-```
+```bash
 cp $DEEPDIVE_HOME/examples/template/application.conf $APP_HOME
 ```
 
 The execution of the application is controlled by a script `run.sh`. We created
 this script `$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/run.sh`
-which can be copied to `$APP_HOME`.
+which should be copied to `$APP_HOME`:
+
+```bash
+cp $DEEPDIVE_HOME/examples/tutorial_example/step1-basic/run.sh $APP_HOME
+```
 
 The `run.sh` scripts contains the definitions of two environment variables:
 `$DEEPDIVE_HOME` which is the installation directory of DeepDive, and `APP_HOME`
@@ -107,8 +110,9 @@ later. It also contains the definitions of various database connection
 parameters that you should set according to your database settings. Finally, it
 contains the commands to actually run the application.
 
-In order to write the application, we need some data files, that you can
-download from
+In order to write the application, we need some data files, namely the input corpus of
+text and some existing knowledge base of interpersonal relationship. You should
+get the archive containing these files from 
 [here](https://www.dropbox.com/s/iptnkwfeymlnpqc/deepdive-tutorial-data.zip).
 Expand the archive in the `$APP_HOME/data` directory.
 
@@ -116,14 +120,14 @@ Expand the archive in the `$APP_HOME/data` directory.
 
 Let's now implement the [data flow](#dataflow) for this KBC application.
 
-### <a name="loading_data" href="#"></a> Data preprocessing and loading
+### <a name="loading_data" href="#"></a> Step 1: Data preprocessing and loading
 
-For simplicity, we start from preprocessed sentence data (i.e., from step 2
-from the above list). If the input corpus was instead composed by
-raw text articles, we would also need to perform some Natural Language
-Processing on the corpus before being able to extract candidate relation pairs
-and features. To learn how NLP extraction can be done in DeepDive (i.e., how to
-start from step 1), you can refer to the
+In this tutorial, we start from preprocessed sentence data, i.e., data that has
+already been parsed and tagged with a NLP toolkit. If the input corpus was
+instead composed by raw text articles, we would also need to perform some
+Natural Language Processing on the corpus before being able to extract candidate
+relation pairs and features. To learn how NLP extraction can be done in DeepDive
+(i.e., how to start from step 1), you can refer to the
 [appendix](walkthrough-extras.html#nlp_extractor) of this tutorial.
 
 We start by some scripts from the
@@ -142,7 +146,14 @@ necessary tables and loads the data.
 sh setup_database.sh deepdive_spouse
 ```
 
-The following relations are created:
+This will create and populate some relations. You can check that the relations
+have been successfully created with the following command:
+
+```bash
+psql -d deepdive_spouse -c "\d"
+```
+
+The output should be the following:
 
                          List of relations
      Schema |        Name         | Type  |  Owner   | Storage
@@ -167,10 +178,21 @@ For a detailed reference of how these tables are created and loaded, refer to
 the [Preparing the Data Tables](walkthrough-extras.html#data_tables) section in
 the appendix.
 
-### <a name="feature_extraction" href="#"></a> Candidate Generation and Feature Extraction
+### <a name="feature_extraction" href="#"></a> Step 2: Candidate Generation and Feature Extraction
 
 Our next task is to write several [extractors](../extractors.html) for candidate
 generation and feature extraction. 
+
+In this step, we will create three extractors whose UDFs will be three Python
+scripts. The scripts will will go through the sentences in the corpus and,
+respectively
+
+1. create mentions of people;
+2. create candidate pairs of people that may be in a marriage relation, and
+	supervise some of them using distant supervision rules;
+3. add features to the candidates, which will be used by DeepDive to learn how
+	to distinguish between correct marriage relation mentions and incorrect
+	ones;
 
 #### <a name="people_extractor" href="#"></a> Adding a people extractor
 
@@ -284,9 +306,13 @@ mkdir $APP_HOME/udf
 
 Then we create a `udf/ext_people.py` script which acts as UDF for the people
 mention extractor. The script scans input sentences and outputs phrases
-representing mentions of people. The script contains the following code (you can
-get a copy of this script from
+representing mentions of people. The script contains the following code:
+
+<!--
+(a copy
+of this script is also available from  
 `$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/udf/ext_people.py`):
+-->
 
 ```python
 import sys
@@ -838,7 +864,7 @@ When selecting these column, users must explicitly alias `id` to
 for the system to use them. For additional information, refer to the [inference
 rule guide](../inference_rules.html).
 
-### <a name="learning_inference" href="#"></a> Holdout, statistical learning, and inference
+### <a name="learning_inference" href="#"></a> Step 3: Holdout, statistical learning, and inference
 
 Now that we have defined inference rules, DeepDive will automatically
 [ground](../overview.html#grounding) the factor graph using these rules, then
@@ -879,7 +905,7 @@ all extractors, scripts, and the complete `application.conf` file that we wrote
 until now in the `$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/`
 directory.
 
-### <a name="get_result" href="#"> </a> Running and getting results
+### <a name="get_result" href="#"> </a> Step 4: Running and getting results
 
 We can now run the application again
 
