@@ -1,100 +1,100 @@
-f_has_spouse_features-LEMMA_L_3_R_1_[, '' star]_[.]	-5.96406
-f_has_spouse_features-INV_LEMMA_L_2_R_1_[it star]_[.]	-5.18075
-f_has_spouse_features-INV_LEMMA_L_3_R_1_[. it star]_[.]	-3.61054
-f_has_spouse_features-INV_NGRAM_1_[;]	-3.37177
-f_has_spouse_features-INV_LEMMA_L_2_R_1_[such as]_[.]	-3.33817
-f_has_spouse_features-BETW_D_[appos DICT_non_married poss]	-3.30505
-f_has_spouse_features-LEMMA_L_2_R_1_[such as]_[.]	-3.19656
-f_has_spouse_features-LEMMA_L_3_R_1_[. Directed by]_[.]	-3.14508
-f_has_spouse_features-LEMMA_L_2_R_1_[Directed by]_[.]	-3.14508
-f_has_spouse_features-INV_BETW_D_[poss DICT_non_married appos]	-3.12303
-f_has_spouse_features-BETW_D_[appos DICT_non_married prep_of]	-3.08534
-f_has_spouse_features-INV_LEMMA_L_3_R_1_[star such as]_[.]	-3.07689
-f_has_spouse_features-NGRAM_1_[;]	-2.97312
-f_has_spouse_features-LEMMA_L_3_R_1_[star such as]_[.]	-2.92673
-f_has_spouse_features-LEMMA_L_3_R_1_[Philadelphia '' by]_[.]	-2.80491
-f_has_spouse_features-INV_BETW_D_[prep_of DICT_non_married appos]	-2.72515
-f_has_spouse_features-INV_LEMMA_L_1_R_1_[:]_[.]	-2.70944
-f_has_spouse_features-NGRAM_2_[; and]	-2.70902
-f_has_spouse_features-LEMMA_L_2_R_1_[along with]_[.]	-2.68517
-f_has_spouse_features-LEMMA_L_3_R_1_[, host by]_[.]	-2.62378
-f_has_spouse_features-LEMMA_L_3_R_1_[italian pair of]_[.]	-2.61908
-f_has_spouse_features-INV_LEMMA_L_2_R_1_[supporter of]_[.]	-2.59457
-f_has_spouse_features-INV_LEMMA_L_3_R_1_[between supporter of]_[.]	-2.59457
-f_has_spouse_features-LEMMA_L_3_R_1_[between supporter of]_[.]	-2.59305
-f_has_spouse_features-LEMMA_L_2_R_1_[supporter of]_[.]	-2.59305
-f_has_spouse_features-BETW_D_[conj_and Streisand conj_and]	-2.59116
-f_has_spouse_features-BETW_[conj_and Streisand conj_and]	-2.59116
-f_has_spouse_features-INV_KW_IND_[non_married]	-2.56873
-f_has_spouse_features-INV_BETW_[conj_and Streisand conj_and]	-2.55119
-f_has_spouse_features-INV_BETW_D_[conj_and Streisand conj_and]	-2.55119
-f_has_spouse_features-LEMMA_L_3_R_1_[SMiLE , and]_[.]	-2.54989
-f_has_spouse_features-INV_LEMMA_L_2_R_1_[along with]_[.]	-2.50118
-f_has_spouse_features-LEMMA_L_3_R_1_[hand over to]_[.]	-2.50099
-f_has_spouse_features-LEMMA_L_2_R_1_[over to]_[.]	-2.50099
-f_has_spouse_features-LEMMA_L_1_R_1_[like]_[.]	-2.49696
-f_has_spouse_features-INV_LEMMA_L_3_R_1_[italian pair of]_[.]	-2.49494
-f_has_spouse_features-BETW_L_[nn nn]	-2.47152
-f_has_spouse_features-INV_LEMMA_L_3_R_1_[SMiLE , and]_[.]	-2.44927
-f_has_spouse_features-INV_NGRAM_1_[brother]	-2.43541
-f_has_spouse_features-INV_LEMMA_L_1_R_1_[husband]_[.]	-2.40987
-f_has_spouse_features-INV_LEMMA_L_2_R_1_[over to]_[.]	-2.4035
-f_has_spouse_features-INV_LEMMA_L_3_R_1_[hand over to]_[.]	-2.4035
-f_has_spouse_features-INV_LEMMA_L_3_R_1_[Philadelphia '' by]_[.]	-2.37011
-f_has_spouse_features-INV_LEMMA_L_3_R_1_[fifth child of]_[.]	-2.35453
-f_has_spouse_features-LEMMA_L_3_R_1_[, it star]_[.]	-2.34031
-f_has_spouse_features-LEMMA_L_2_R_1_[pair of]_[.]	-2.324
-f_has_spouse_features-INV_LEMMA_L_2_R_1_[I see]_[.]	-2.32046
-f_has_spouse_features-INV_LEMMA_L_3_R_1_[`` I see]_[.]	-2.32046
-f_has_spouse_features-LEMMA_L_2_R_1_[I see]_[.]	-2.32045
-f_has_spouse_features-LEMMA_L_3_R_1_[`` I see]_[.]	-2.32045
-f_has_spouse_features-INV_LEMMA_L_3_R_1_[Matilda Ledger ?]_[?]	-2.27159
-f_has_spouse_features-INV_LEMMA_L_2_R_1_[Ledger ?]_[?]	-2.27159
-f_has_spouse_features-LEMMA_L_2_R_1_[Ledger ?]_[?]	-2.26825
-f_has_spouse_features-LEMMA_L_3_R_1_[Matilda Ledger ?]_[?]	-2.26825
-f_has_spouse_features-BETW_[prep_of story prep_of]	-2.26244
-f_has_spouse_features-BETW_D_[prep_of story prep_of]	-2.26244
-f_has_spouse_features-INV_LEMMA_L_1_R_2_[with]_[, and]	-2.2501
-f_has_spouse_features-INV_LEMMA_L_2_R_1_[than through]_[.]	-2.2459
-f_has_spouse_features-INV_LEMMA_L_3_R_1_[who have date]_[.]	-2.2459
-f_has_spouse_features-INV_LEMMA_L_3_R_1_[rather than through]_[.]	-2.2459
-f_has_spouse_features-LEMMA_L_3_R_1_[rather than through]_[.]	-2.2459
-f_has_spouse_features-INV_LEMMA_L_2_R_1_[have date]_[.]	-2.2459
-f_has_spouse_features-LEMMA_L_2_R_1_[than through]_[.]	-2.2459
-f_has_spouse_features-LEMMA_L_2_R_1_[have date]_[.]	-2.2459
-f_has_spouse_features-LEMMA_L_1_R_1_[through]_[.]	-2.2459
-f_has_spouse_features-LEMMA_L_3_R_1_[who have date]_[.]	-2.2459
-f_has_spouse_features-INV_LEMMA_L_1_R_1_[through]_[.]	-2.2459
-f_has_spouse_features-BETW_[prep_such_as celebrity prep_such_as]	-2.22485
-f_has_spouse_features-BETW_D_[prep_such_as celebrity prep_such_as]	-2.22485
-f_has_spouse_features-KW_IND_[non_married]	-2.20027
-f_has_spouse_features-INV_LEMMA_L_1_R_1_[and]_[and]	-2.18174
-f_has_spouse_features-INV_LEMMA_L_3_R_1_[. screenplay by]_[.]	-2.1717
-f_has_spouse_features-LEMMA_L_1_R_1_[see]_[.]	-2.15445
-f_has_spouse_features-INV_BETW_[prep_of story prep_of]	-2.15222
-f_has_spouse_features-INV_BETW_D_[prep_of story prep_of]	-2.15222
-f_has_spouse_features-STARTS_WITH_CAPITAL_[True_True]	-2.15061
-f_has_spouse_features-INV_LEMMA_L_2_R_1_[pair of]_[.]	-2.14904
-f_has_spouse_features-LEMMA_L_3_R_1_[fifth child of]_[.]	-2.12647
-f_has_spouse_features-LEMMA_L_1_R_1_[Sens.]_[,]	-2.12292
-f_has_spouse_features-NGRAM_2_[son of]	-2.12192
-f_has_spouse_features-LEMMA_L_1_R_1_[,]_[.]	-2.10794
-f_has_spouse_features-LEMMA_L_3_R_1_[. screenplay by]_[.]	-2.10464
-f_has_spouse_features-INV_NGRAM_1_[Brown]	-2.09312
-f_has_spouse_features-INV_LEMMA_L_2_R_1_['' by]_[.]	-2.07899
-f_has_spouse_features-INV_NGRAM_1_[Tom]	-2.06152
-f_has_spouse_features-LEMMA_L_1_R_1_[between]_[!]	-2.05939
-f_has_spouse_features-LEMMA_L_2_R_1_[difference between]_[!]	-2.05939
-f_has_spouse_features-LEMMA_L_3_R_1_[the difference between]_[!]	-2.05939
-f_has_spouse_features-INV_LEMMA_L_2_R_1_[Jenner ,]_[.]	-2.05419
-f_has_spouse_features-INV_LEMMA_L_3_R_1_[Burt Jenner ,]_[.]	-2.05419
-f_has_spouse_features-INV_LEMMA_L_1_R_1_[to]_[,]	-2.04096
-f_has_spouse_features-INV_NGRAM_1_[father]	-2.04065
-f_has_spouse_features-LEMMA_L_1_R_1_[Sen.]_[,]	-2.03648
-f_has_spouse_features-LEMMA_L_3_R_1_[Burt Jenner ,]_[.]	-2.03521
-f_has_spouse_features-LEMMA_L_2_R_1_[Jenner ,]_[.]	-2.03521
-f_has_spouse_features-LEMMA_L_3_R_1_[, '' co-star]_[.]	-2.032
-f_has_spouse_features-LEMMA_L_2_R_1_['' co-star]_[.]	-2.032
-f_has_spouse_features-INV_LEMMA_L_1_R_1_[Sens.]_[,]	-2.02988
-f_has_spouse_features-INV_LEMMA_L_2_R_1_[past nominee]_[.]	-2.01343
-f_has_spouse_features-INV_LEMMA_L_3_R_1_[with past nominee]_[.]	-2.01343
+f_has_spouse_features-NGRAM_1_[;]	-1.51784
+f_has_spouse_features-INV_NGRAM_1_[;]	-1.51507
+f_has_spouse_features-LENGTHS_[0_0]	-1.48533
+f_has_spouse_features-INV_LENGTHS_[0_0]	-1.4564
+f_has_spouse_features-LENGTHS_[1_1]	-1.2336
+f_has_spouse_features-INV_LENGTHS_[1_1]	-1.20976
+f_has_spouse_features-STARTS_WITH_CAPITAL_[True_True]	-1.15086
+f_has_spouse_features-KW_IND_[non_married]	-1.09802
+f_has_spouse_features-INV_LENGTHS_[0_2]	-1.07457
+f_has_spouse_features-INV_KW_IND_[non_married]	-1.05879
+f_has_spouse_features-LENGTHS_[2_0]	-1.02534
+f_has_spouse_features-LENGTHS_[0_2]	-1.00193
+f_has_spouse_features-INV_LENGTHS_[2_0]	-0.985751
+f_has_spouse_features-LENGTHS_[0_1]	-0.938615
+f_has_spouse_features-BETW_D_[appos DICT_non_married prep_of]	-0.822301
+f_has_spouse_features-INV_NGRAM_2_[son of]	-0.807955
+f_has_spouse_features-NGRAM_1_[,]	-0.801364
+f_has_spouse_features-INV_LENGTHS_[1_0]	-0.801094
+f_has_spouse_features-NGRAM_2_[son of]	-0.796907
+f_has_spouse_features-INV_BETW_D_[prep_of DICT_non_married appos]	-0.786664
+f_has_spouse_features-LENGTHS_[1_0]	-0.779394
+f_has_spouse_features-INV_NGRAM_1_[son]	-0.734209
+f_has_spouse_features-INV_NGRAM_1_[,]	-0.724749
+f_has_spouse_features-INV_LENGTHS_[0_1]	-0.712383
+f_has_spouse_features-INV_STARTS_WITH_CAPITAL_[True_True]	-0.711062
+f_has_spouse_features-INV_NGRAM_1_[brother]	-0.701739
+f_has_spouse_features-NGRAM_1_[brother]	-0.692126
+f_has_spouse_features-NGRAM_1_[son]	-0.670022
+f_has_spouse_features-INV_BETW_D_[poss DICT_non_married appos]	-0.649201
+f_has_spouse_features-INV_W_LEMMA_L_1_R_1_[,]_[.]	-0.641304
+f_has_spouse_features-BETW_D_[appos DICT_non_married poss]	-0.637702
+f_has_spouse_features-INV_NGRAM_1_[daughter]	-0.613968
+f_has_spouse_features-IS_INVERTED	-0.611938
+f_has_spouse_features-W_NER_L_1_R_3_[O]_[O PERSON PERSON]	-0.607555
+f_has_spouse_features-INV_LENGTHS_[3_0]	-0.60748
+f_has_spouse_features-INV_W_NER_L_1_R_3_[O]_[O PERSON PERSON]	-0.579111
+f_has_spouse_features-NGRAM_1_[daughter]	-0.565592
+f_has_spouse_features-INV_NGRAM_1_[Kevin]	-0.560286
+f_has_spouse_features-W_LEMMA_L_1_R_1_[,]_[.]	-0.556239
+f_has_spouse_features-LENGTHS_[0_3]	-0.547819
+f_has_spouse_features-NGRAM_1_[father]	-0.547716
+f_has_spouse_features-NGRAM_1_[Kevin]	-0.544845
+f_has_spouse_features-LENGTHS_[4_1]	-0.534012
+f_has_spouse_features-INV_LENGTHS_[1_4]	-0.532969
+f_has_spouse_features-INV_NER_SEQ_[O PERSON PERSON O PERSON PERSON O PERSON PERSON O]	-0.531
+f_has_spouse_features-INV_NGRAM_1_[they]	-0.528626
+f_has_spouse_features-INV_W_NER_L_1_R_2_[O]_[O PERSON]	-0.528213
+f_has_spouse_features-W_NER_L_1_R_2_[O]_[O PERSON]	-0.527257
+f_has_spouse_features-INV_NGRAM_1_[father]	-0.524367
+f_has_spouse_features-NER_SEQ_[O PERSON PERSON O PERSON PERSON O PERSON PERSON O]	-0.521842
+f_has_spouse_features-INV_NER_SEQ_[O PERSON PERSON O PERSON PERSON O]	-0.511873
+f_has_spouse_features-INV_NGRAM_1_[Jennifer]	-0.50267
+f_has_spouse_features-INV_NGRAM_2_[daughter of]	-0.502554
+f_has_spouse_features-NGRAM_2_[daughter of]	-0.501141
+f_has_spouse_features-INV_NGRAM_2_[; and]	-0.495754
+f_has_spouse_features-INV_NGRAM_1_[Michelle]	-0.493994
+f_has_spouse_features-NGRAM_1_[Tom]	-0.491973
+f_has_spouse_features-NGRAM_1_[Gov.]	-0.486989
+f_has_spouse_features-INV_W_LEMMA_L_1_R_1_[-lrb-]_[-rrb-]	-0.476897
+f_has_spouse_features-INV_NGRAM_1_[sister]	-0.47412
+f_has_spouse_features-INV_NGRAM_1_[Tom]	-0.472083
+f_has_spouse_features-NGRAM_1_[by]	-0.469896
+f_has_spouse_features-NGRAM_1_[John]	-0.468869
+f_has_spouse_features-INV_NGRAM_1_[by]	-0.467281
+f_has_spouse_features-NGRAM_1_[they]	-0.462545
+f_has_spouse_features-NGRAM_1_[sister]	-0.462196
+f_has_spouse_features-W_LEMMA_L_1_R_1_[-lrb-]_[-rrb-]	-0.462092
+f_has_spouse_features-INV_W_LEMMA_L_1_R_1_[by]_[;]	-0.461408
+f_has_spouse_features-NGRAM_1_[Michelle]	-0.457881
+f_has_spouse_features-NGRAM_2_[; and]	-0.452264
+f_has_spouse_features-W_NER_L_3_R_1_[PERSON PERSON O]_[O]	-0.451998
+f_has_spouse_features-W_LEMMA_L_1_R_1_[by]_[;]	-0.450537
+f_has_spouse_features-NER_SEQ_[O PERSON PERSON O PERSON PERSON O]	-0.449477
+f_has_spouse_features-W_LEMMA_L_1_R_2_[,]_[-rrb- ,]	-0.447865
+f_has_spouse_features-INV_NGRAM_1_[Gov.]	-0.431633
+f_has_spouse_features-INV_NGRAM_1_[Bill]	-0.424258
+f_has_spouse_features-INV_NGRAM_1_[parent]	-0.421676
+f_has_spouse_features-NGRAM_1_[Jennifer]	-0.419286
+f_has_spouse_features-INV_NGRAM_2_[-rrb- ,]	-0.418574
+f_has_spouse_features-INV_NGRAM_1_[John]	-0.416901
+f_has_spouse_features-LENGTHS_[3_0]	-0.415931
+f_has_spouse_features-W_NER_L_1_R_2_[O]_[O COUNTRY]	-0.41593
+f_has_spouse_features-INV_NGRAM_1_[would]	-0.41283
+f_has_spouse_features-BETW_L_[appos appos]	-0.41279
+f_has_spouse_features-INV_W_NER_L_3_R_1_[PERSON PERSON O]_[O]	-0.408495
+f_has_spouse_features-INV_BETW_D_[appos DICT_non_married poss]	-0.407194
+f_has_spouse_features-NGRAM_1_[Bill]	-0.404952
+f_has_spouse_features-NGRAM_1_[friend]	-0.403717
+f_has_spouse_features-INV_NGRAM_1_[Jane]	-0.401035
+f_has_spouse_features-INV_POS_SEQ_[, NNP NNP , NNP NNP , NNP NNP ,]	-0.400386
+f_has_spouse_features-INV_LENGTHS_[0_3]	-0.399905
+f_has_spouse_features-NGRAM_1_[parent]	-0.397853
+f_has_spouse_features-LENGTHS_[1_4]	-0.396793
+f_has_spouse_features-NGRAM_1_[Jane]	-0.393852
+f_has_spouse_features-POS_SEQ_[, NNP NNP , NNP NNP , NNP NNP ,]	-0.393201
+f_has_spouse_features-NGRAM_1_[Clinton]	-0.390144
+f_has_spouse_features-INV_NGRAM_1_[candidate]	-0.389537
+f_has_spouse_features-INV_POS_SEQ_[, NNP NNP , NNP NNP ,]	-0.388169
+f_has_spouse_features-BETW_L_[conj_and conj_and]	-0.387404
+f_has_spouse_features-INV_LENGTHS_[4_1]	-0.38456

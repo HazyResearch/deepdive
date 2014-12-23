@@ -1,20 +1,23 @@
 #! /usr/bin/env python
 
-import csv
-import os
-import sys
-from collections import defaultdict
+import csv, os, sys
 
+# The directory of this UDF file
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 
-# Load the spouse dictionary for distant supervision
-spouses = defaultdict(lambda: None)
-with open (BASE_DIR + "/../data/spouses.csv") as csvfile:
-  reader = csv.reader(csvfile)
-  for line in reader:
-    spouses[line[0].strip().lower()] = line[1].strip().lower()
+# Load the spouse dictionary for distant supervision.
+# A person can have multiple spouses
+spouses = set()
+married_people = set()
+lines = open(BASE_DIR + '/../data/spouses.tsv').readlines()
+for line in lines:
+  name1, name2, relation = line.strip().split('\t')
+  spouses.add((name1, name2))  # Add a spouse relation pair
+  married_people.add(name1)    # Record the person as married
+  married_people.add(name2)
 
 # Load relations of people that are not spouse
+# The non-spouse KB lists incompatible relations, e.g. childrens, siblings, parents.
 non_spouses = set()
 lines = open(BASE_DIR + '/../data/non-spouses.tsv').readlines()
 for line in lines:
@@ -24,10 +27,6 @@ for line in lines:
 # For each input tuple
 for row in sys.stdin:
   parts = row.strip().split('\t')
-  if len(parts) != 5: 
-    print >>sys.stderr, 'Failed to parse row:', row
-    continue
-  
   sentence_id, p1_id, p1_text, p2_id, p2_text = parts
 
   p1_text = p1_text.strip()
@@ -35,20 +34,22 @@ for row in sys.stdin:
   p1_text_lower = p1_text.lower()
   p2_text_lower = p2_text.lower()
 
-  # See if the combination of people is in our supervision dictionary
-  # If so, set is_correct to true or false
+  # DS rule 1: true if they appear in spouse KB, false if they appear in non-spouse KB
   is_true = '\N'
-  if spouses[p1_text_lower] == p2_text_lower:
+  if (p1_text_lower, p2_text_lower) in spouses or \
+     (p2_text_lower, p1_text_lower) in spouses:
     is_true = '1'
-  if spouses[p2_text_lower] == p1_text_lower:
-    is_true = '1'
+  elif (p1_text_lower, p2_text_lower) in non_spouses or \
+       (p2_text_lower, p1_text_lower) in non_spouses:
+    is_true = '0'
+  # DS rule 3: false if they appear to be in same person
   elif (p1_text == p2_text) or (p1_text in p2_text) or (p2_text in p1_text):
     is_true = '0'
-  elif (p1_text_lower, p2_text_lower) in non_spouses:
-    is_true = '0'
-  elif (p2_text_lower, p1_text_lower) in non_spouses:
+  # DS rule 4 false if they are both married, but not married to each other:
+  elif p1_text_lower in married_people and p2_text_lower in married_people:
     is_true = '0'
 
+  # Output relation candidates into output table
   print '\t'.join([
     p1_id, p2_id, sentence_id, 
     "%s-%s" %(p1_text, p2_text),
