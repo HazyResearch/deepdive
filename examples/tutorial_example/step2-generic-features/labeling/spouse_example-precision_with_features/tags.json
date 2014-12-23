@@ -4,185 +4,305 @@
   "relation_id"
  ],
  "by_key": {
-  "84632@33_25-84632@33_32": {
+  "APW_ENG_20071217.1007.LDC2009T13_333_39-APW_ENG_20071217.1007.LDC2009T13_333_31": {
    "is_correct": true
   },
-  "LTW_ENG_20071005.0057.LDC2009T13_817_11-LTW_ENG_20071005.0057.LDC2009T13_817_0": {
-   "is_correct": false,
-   "unrelevant-features": true
-  },
-  "AFP_ENG_20070330.0045.LDC2009T13_8_3-AFP_ENG_20070330.0045.LDC2009T13_8_11": {
+  "APW_ENG_20080301.0372.LDC2009T13_19_5-APW_ENG_20080301.0372.LDC2009T13_19_1": {
    "is_correct": true
   },
-  "NYT_ENG_20081110.0089.LDC2009T13_647_26-NYT_ENG_20081110.0089.LDC2009T13_647_0": {
-   "is_correct": false,
-   "unrelevant-features": true
-  },
-  "AFP_ENG_20070207.0710.LDC2009T13_141_9-AFP_ENG_20070207.0710.LDC2009T13_141_20": {
-   "is_correct": false,
-   "conflict-with-others-in-sentence": true
-  },
-  "eng-WL-11-174595-12967599_243_28-eng-WL-11-174595-12967599_243_17": {
-   "is_correct": false,
-   "conflict-with-others-in-sentence": true
-  },
-  "NYT_ENG_20081118.0149.LDC2009T13_639_31-NYT_ENG_20081118.0149.LDC2009T13_639_40": {
+  "APW_ENG_20080219.1279.LDC2009T13_17_10-APW_ENG_20080219.1279.LDC2009T13_17_29": {
    "is_correct": true
   },
-  "87581@39_4-87581@39_0": {
-   "is_correct": false,
-   "unrelevant-features": true
-  },
-  "APW_ENG_20081215.0823.LDC2009T13_15_5-APW_ENG_20081215.0823.LDC2009T13_15_8": {
+  "eng-NG-31-102460-11229977_15_27-eng-NG-31-102460-11229977_15_34": {
    "is_correct": true
   },
-  "NYT_ENG_20080307.0137.LDC2009T13_1646_50-NYT_ENG_20080307.0137.LDC2009T13_1646_15": {
+  "eng-NG-31-141957-9980359_31_8-eng-NG-31-141957-9980359_31_20": {
    "is_correct": true
   },
-  "LTW_ENG_20080119.0041.LDC2009T13_92_41-LTW_ENG_20080119.0041.LDC2009T13_92_16": {
-   "is_correct": false,
-   "unrelevant-features": true,
-   "too-low-regularization": null
+  "APW_ENG_20080528.0871.LDC2009T13_58_0-APW_ENG_20080528.0871.LDC2009T13_58_11": {
+   "is_correct": false
   },
-  "APW_ENG_20080825.0007.LDC2009T13_88_0-APW_ENG_20080825.0007.LDC2009T13_88_19": {
+  "eng-WL-11-174592-12942666_81_8-eng-WL-11-174592-12942666_81_0": {
    "is_correct": true
   },
-  "APW_ENG_20080725.1302.LDC2009T13_21_4-APW_ENG_20080725.1302.LDC2009T13_21_7": {
+  "APW_ENG_20080903.0884.LDC2009T13_36_11-APW_ENG_20080903.0884.LDC2009T13_36_29": {
    "is_correct": true
   },
-  "eng-WL-11-174595-12967360_54_3-eng-WL-11-174595-12967360_54_0": {
+  "APW_ENG_20080505.0845.LDC2009T13_16_6-APW_ENG_20080505.0845.LDC2009T13_16_0": {
    "is_correct": true
   },
-  "eng-WL-11-174611-12973545_17_9-eng-WL-11-174611-12973545_17_2": {
+  "APW_ENG_20081214.0223.LDC2009T13_165_31-APW_ENG_20081214.0223.LDC2009T13_165_25": {
    "is_correct": true
   },
-  "LTW_ENG_20081122.0048.LDC2009T13_474_4-LTW_ENG_20081122.0048.LDC2009T13_474_7": {
+  "eng-WL-107-174567-12933895_11_24-eng-WL-107-174567-12933895_11_0": {
+   "is_correct": false
+  },
+  "eng-WL-11-174588-12938603_3844_5-eng-WL-11-174588-12938603_3844_0": {
    "is_correct": true
   },
-  "NYT_ENG_20070417.0116.LDC2009T13_703_17-NYT_ENG_20070417.0116.LDC2009T13_703_11": {
-   "is_correct": false,
-   "unrelevant-features": true
+  "eng-NG-31-146450-10408799_406_16-eng-NG-31-146450-10408799_406_19": {
+   "is_correct": false
   },
-  "NYT_ENG_20070705.0137.LDC2009T13_682_0-NYT_ENG_20070705.0137.LDC2009T13_682_19": {
-   "is_correct": false,
-   "conflict-with-others-in-sentence": true
-  },
-  "eng-WL-11-174643-13000418_71_0-eng-WL-11-174643-13000418_71_6": {
-   "is_correct": false,
-   "conflict-with-others-in-sentence": true
-  },
-  "eng-WL-11-174594-12963531_11_16-eng-WL-11-174594-12963531_11_10": {
+  "eng-WL-11-174594-12963456_223_3-eng-WL-11-174594-12963456_223_6": {
    "is_correct": true
   },
-  "32766@21_0-32766@21_12": {
-   "is_correct": false,
-   "unrelevant-features": true
-  },
-  "92804@38_14-92804@38_28": {
+  "APW_ENG_20081215.0026.LDC2009T13_85_17-APW_ENG_20081215.0026.LDC2009T13_85_11": {
    "is_correct": true
   },
-  "96734@0_36-96734@0_17": {
-   "is_correct": false,
-   "conflict-with-others-in-sentence": true
-  },
-  "64833@1_48-64833@1_26": {
-   "is_correct": false,
-   "conflict-with-others-in-sentence": true
-  },
-  "AFP_ENG_20080730.0446.LDC2009T13_152_15-AFP_ENG_20080730.0446.LDC2009T13_152_30": {
+  "APW_ENG_20080203.0578.LDC2009T13_13_2-APW_ENG_20080203.0578.LDC2009T13_13_12": {
    "is_correct": true
   },
-  "AFP_ENG_20080415.0504.LDC2009T13_6_27-AFP_ENG_20080415.0504.LDC2009T13_6_4": {
-   "is_correct": false,
-   "conflict-with-others-in-sentence": true
-  },
-  "eng-WL-11-174588-12938642_7074_11-eng-WL-11-174588-12938642_7074_14": {
+  "APW_ENG_20080312.0246.LDC2009T13_661_25-APW_ENG_20080312.0246.LDC2009T13_661_17": {
    "is_correct": true
   },
-  "AFP_ENG_20080820.0568.LDC2009T13_108_5-AFP_ENG_20080820.0568.LDC2009T13_108_8": {
-   "is_correct": false,
-   "unrelevant-features": true
-  },
-  "AFP_ENG_20081204.0040.LDC2009T13_44_30-AFP_ENG_20081204.0040.LDC2009T13_44_0": {
-   "is_correct": false,
-   "conflict-with-others-in-sentence": true
-  },
-  "NYT_ENG_20080408.0138.LDC2009T13_754_14-NYT_ENG_20080408.0138.LDC2009T13_754_9": {
-   "is_correct": false,
-   "too-low-regularization": true
-  },
-  "APW_ENG_20080915.0935.LDC2009T13_15_3-APW_ENG_20080915.0935.LDC2009T13_15_0": {
+  "APW_ENG_20080101.0730.LDC2009T13_31_1-APW_ENG_20080101.0730.LDC2009T13_31_12": {
    "is_correct": true
   },
-  "APW_ENG_20070605.0233.LDC2009T13_411_31-APW_ENG_20070605.0233.LDC2009T13_411_35": {
-   "is_correct": false,
-   "conflict-with-others-in-sentence": true
-  },
-  "79423@0_36-79423@0_39": {
-   "is_correct": false,
-   "unrelevant-features": true
-  },
-  "APW_ENG_20080906.0220.LDC2009T13_214_8-APW_ENG_20080906.0220.LDC2009T13_214_0": {
+  "APW_ENG_20071002.0066.LDC2009T13_62_0-APW_ENG_20071002.0066.LDC2009T13_62_5": {
    "is_correct": true
   },
-  "AFP_ENG_20070422.0516.LDC2009T13_130_11-AFP_ENG_20070422.0516.LDC2009T13_130_8": {
-   "is_correct": false,
-   "unrelevant-features": true,
-   "too-low-regularization": null
-  },
-  "107031@16_0-107031@16_54": {
-   "is_correct": false,
-   "long-distance": true
-  },
-  "LTW_ENG_20070629.0010.LDC2009T13_318_33-LTW_ENG_20070629.0010.LDC2009T13_318_38": {
-   "is_correct": false,
-   "unrelevant-features": true
-  },
-  "APW_ENG_20080802.0037.LDC2009T13_215_21-APW_ENG_20080802.0037.LDC2009T13_215_14": {
-   "is_correct": false,
-   "conflict-with-others-in-sentence": true
-  },
-  "NYT_ENG_20071116.0057.LDC2009T13_110_28-NYT_ENG_20071116.0057.LDC2009T13_110_46": {
-   "is_correct": false,
-   "conflict-with-others-in-sentence": true
-  },
-  "NYT_ENG_20070603.0126.LDC2009T13_852_20-NYT_ENG_20070603.0126.LDC2009T13_852_49": {
-   "is_correct": false,
-   "conflict-with-others-in-sentence": true
-  },
-  "107031@16_45-107031@16_54": {
+  "APW_ENG_20070706.0246.LDC2009T13_403_17-APW_ENG_20070706.0246.LDC2009T13_403_10": {
    "is_correct": true
   },
-  "eng-WL-107-174567-12931899_10_7-eng-WL-107-174567-12931899_10_0": {
+  "APW_ENG_20080317.0885.LDC2009T13_363_2-APW_ENG_20080317.0885.LDC2009T13_363_22": {
    "is_correct": true
   },
-  "APW_ENG_20070321.0324.LDC2009T13_128_15-APW_ENG_20070321.0324.LDC2009T13_128_0": {
+  "APW_ENG_20080206.1223.LDC2009T13_455_28-APW_ENG_20080206.1223.LDC2009T13_455_2": {
+   "is_correct": false
+  },
+  "APW_ENG_20080105.0146.LDC2009T13_18_0-APW_ENG_20080105.0146.LDC2009T13_18_25": {
    "is_correct": true
   },
-  "APW_ENG_20080317.0831.LDC2009T13_255_13-APW_ENG_20080317.0831.LDC2009T13_255_16": {
-   "is_correct": false,
-   "unrelevant-features": true
-  },
-  "groups.google.com_humanities.lit.authors.shakespeare_d79e05dd6f37722d_ENG_20050924_085700.LDC2006E32_499_55-groups.google.com_humanities.lit.authors.shakespeare_d79e05dd6f37722d_ENG_20050924_085700.LDC2006E32_499_51": {
+  "APW_ENG_20080219.1279.LDC2009T13_17_29-APW_ENG_20080219.1279.LDC2009T13_17_10": {
    "is_correct": true
   },
-  "APW_ENG_20080702.0998.LDC2009T13_270_25-APW_ENG_20080702.0998.LDC2009T13_270_29": {
-   "is_correct": false,
-   "too-many-mentions": true
-  },
-  "143575@66_32-143575@66_15": {
-   "is_correct": false,
-   "conflict-with-others-in-sentence": true
-  },
-  "90491@33_9-90491@33_4": {
+  "APW_ENG_20070620.0962.LDC2009T13_21_2-APW_ENG_20070620.0962.LDC2009T13_21_9": {
    "is_correct": true
   },
-  "NYT_ENG_20081118.0149.LDC2009T13_639_19-NYT_ENG_20081118.0149.LDC2009T13_639_40": {
-   "is_correct": false,
-   "conflict-with-others-in-sentence": true
-  },
-  "eng-NG-31-133789-9580824_16_33-eng-NG-31-133789-9580824_16_1": {
+  "APW_ENG_20080203.0578.LDC2009T13_13_12-APW_ENG_20080203.0578.LDC2009T13_13_2": {
    "is_correct": true
+  },
+  "APW_ENG_20080508.1111.LDC2009T13_78_7-APW_ENG_20080508.1111.LDC2009T13_78_15": {
+   "is_correct": true
+  },
+  "APW_ENG_20080318.0070.LDC2009T13_64_1-APW_ENG_20080318.0070.LDC2009T13_64_4": {
+   "is_correct": false
+  },
+  "APW_ENG_20080829.0327.LDC2009T13_35_0-APW_ENG_20080829.0327.LDC2009T13_35_9": {
+   "is_correct": true
+  },
+  "142216@29_0-142216@29_9": {
+   "is_correct": true
+  },
+  "eng-NG-31-104877-11906318_105_5-eng-NG-31-104877-11906318_105_0": {
+   "is_correct": true
+  },
+  "eng-WL-107-174567-12933181_10_7-eng-WL-107-174567-12933181_10_16": {
+   "is_correct": true
+  },
+  "eng-NG-31-141957-9980225_18_5-eng-NG-31-141957-9980225_18_18": {
+   "is_correct": true
+  },
+  "APW_ENG_20080206.1223.LDC2009T13_455_28-APW_ENG_20080206.1223.LDC2009T13_455_15": {
+   "is_correct": true
+  },
+  "APW_ENG_20080317.0885.LDC2009T13_363_22-APW_ENG_20080317.0885.LDC2009T13_363_2": {
+   "is_correct": true
+  },
+  "eng-NG-31-104877-11906318_105_0-eng-NG-31-104877-11906318_105_5": {
+   "is_correct": true
+  },
+  "APW_ENG_20081226.0037.LDC2009T13_20_4-APW_ENG_20081226.0037.LDC2009T13_20_7": {
+   "is_correct": true
+  },
+  "APW_ENG_20080829.0069.LDC2009T13_65_3-APW_ENG_20080829.0069.LDC2009T13_65_7": {
+   "is_correct": true
+  },
+  "APW_ENG_20080530.0105.LDC2009T13_280_11-APW_ENG_20080530.0105.LDC2009T13_280_3": {
+   "is_correct": true
+  },
+  "APW_ENG_20081222.0540.LDC2009T13_383_19-APW_ENG_20081222.0540.LDC2009T13_383_12": {
+   "is_correct": true
+  },
+  "APW_ENG_20080725.0833.LDC2009T13_42_22-APW_ENG_20080725.0833.LDC2009T13_42_2": {
+   "is_correct": false
+  },
+  "APW_ENG_20080718.1211.LDC2009T13_17_3-APW_ENG_20080718.1211.LDC2009T13_17_0": {
+   "is_correct": false
+  },
+  "APW_ENG_20071221.0097.LDC2009T13_133_5-APW_ENG_20071221.0097.LDC2009T13_133_2": {
+   "is_correct": true
+  },
+  "APW_ENG_20080108.0511.LDC2009T13_4_10-APW_ENG_20080108.0511.LDC2009T13_4_2": {
+   "is_correct": true
+  },
+  "NYT_ENG_20081106.0201.LDC2009T13_745_35-NYT_ENG_20081106.0201.LDC2009T13_745_42": {
+   "is_correct": true
+  },
+  "XIN_ENG_20080202.0205.LDC2009T13_14_8-XIN_ENG_20080202.0205.LDC2009T13_14_2": {
+   "is_correct": true
+  },
+  "NYT_ENG_20070103.0193.LDC2009T13_784_12-NYT_ENG_20070103.0193.LDC2009T13_784_6": {
+   "is_correct": true
+  },
+  "LTW_ENG_20081220.0071.LDC2009T13_191_40-LTW_ENG_20081220.0071.LDC2009T13_191_10": {
+   "is_correct": false
+  },
+  "NYT_ENG_20080909.0001.LDC2009T13_45_14-NYT_ENG_20080909.0001.LDC2009T13_45_4": {
+   "is_correct": true
+  },
+  "NYT_ENG_20071231.0174.LDC2009T13_370_60-NYT_ENG_20071231.0174.LDC2009T13_370_42": {
+   "is_correct": true
+  },
+  "XIN_ENG_20070202.0118.LDC2009T13_18_0-XIN_ENG_20070202.0118.LDC2009T13_18_9": {
+   "is_correct": true
+  },
+  "LTW_ENG_20071121.0050.LDC2009T13_196_13-LTW_ENG_20071121.0050.LDC2009T13_196_20": {
+   "is_correct": true
+  },
+  "LTW_ENG_20080703.0114.LDC2009T13_11_7-LTW_ENG_20080703.0114.LDC2009T13_11_35": {
+   "is_correct": true
+  },
+  "NYT_ENG_20070202.0299.LDC2009T13_748_0-NYT_ENG_20070202.0299.LDC2009T13_748_9": {
+   "is_correct": true
+  },
+  "LTW_ENG_20080327.0042.LDC2009T13_619_21-LTW_ENG_20080327.0042.LDC2009T13_619_8": {
+   "is_correct": false
+  },
+  "NYT_ENG_20070527.0155.LDC2009T13_25_18-NYT_ENG_20070527.0155.LDC2009T13_25_27": {
+   "is_correct": true
+  },
+  "eng-WL-11-174595-12968470_2518_0-eng-WL-11-174595-12968470_2518_6": {
+   "is_correct": true
+  },
+  "eng-WL-11-174595-12968154_747_12-eng-WL-11-174595-12968154_747_5": {
+   "is_correct": true
+  },
+  "NYT_ENG_20071130.0108.LDC2009T13_944_23-NYT_ENG_20071130.0108.LDC2009T13_944_2": {
+   "is_correct": true
+  },
+  "NYT_ENG_20081217.0157.LDC2009T13_642_40-NYT_ENG_20081217.0157.LDC2009T13_642_34": {
+   "is_correct": true
+  },
+  "NYT_ENG_20070802.0095.LDC2009T13_19_34-NYT_ENG_20070802.0095.LDC2009T13_19_28": {
+   "is_correct": true
+  },
+  "LTW_ENG_20080924.0066.LDC2009T13_536_30-LTW_ENG_20080924.0066.LDC2009T13_536_21": {
+   "is_correct": true
+  },
+  "eng-WL-11-174598-12965174_4954_10-eng-WL-11-174598-12965174_4954_25": {
+   "is_correct": true
+  },
+  "NYT_ENG_20070508.0286.LDC2009T13_727_8-NYT_ENG_20070508.0286.LDC2009T13_727_3": {
+   "is_correct": true
+  },
+  "eng-WL-11-174595-12967875_322_9-eng-WL-11-174595-12967875_322_0": {
+   "is_correct": true
+  },
+  "APW_ENG_20071214.0145.LDC2009T13_102_9-APW_ENG_20071214.0145.LDC2009T13_102_5": {
+   "is_correct": true
+  },
+  "45710@6_3-45710@6_8": {
+   "is_correct": true
+  },
+  "72053@8_11-72053@8_1": {
+   "is_correct": true
+  },
+  "14949@6_10-14949@6_32": {
+   "is_correct": true
+  },
+  "66878@0_29-66878@0_18": {
+   "is_correct": true
+  },
+  "48456@5_21-48456@5_0": {
+   "is_correct": false
+  },
+  "73290@59_19-73290@59_10": {
+   "is_correct": true
+  },
+  "136858@17_2-136858@17_4": {
+   "is_correct": true
+  },
+  "133034@6_58-133034@6_4": {
+   "is_correct": false
+  },
+  "3704@53_4-3704@53_9": {
+   "is_correct": true
+  },
+  "3720@4_18-3720@4_24": {
+   "is_correct": true
+  },
+  "3720@4_24-3720@4_18": {
+   "is_correct": true
+  },
+  "97494@14_16-97494@14_10": {
+   "is_correct": true
+  },
+  "31219@14_9-31219@14_16": {
+   "is_correct": true
+  },
+  "33100@23_5-33100@23_0": {
+   "is_correct": true
+  },
+  "APW_ENG_20070706.0246.LDC2009T13_403_10-APW_ENG_20070706.0246.LDC2009T13_403_17": {
+   "is_correct": true
+  },
+  "APW_ENG_20070702.1247.LDC2009T13_36_26-APW_ENG_20070702.1247.LDC2009T13_36_1": {
+   "is_correct": false
+  },
+  "APW_ENG_20070831.0125.LDC2009T13_113_3-APW_ENG_20070831.0125.LDC2009T13_113_7": {
+   "is_correct": true
+  },
+  "APW_ENG_20070919.0119.LDC2009T13_16_26-APW_ENG_20070919.0119.LDC2009T13_16_0": {
+   "is_correct": true
+  },
+  "APW_ENG_20070302.0118.LDC2009T13_382_1-APW_ENG_20070302.0118.LDC2009T13_382_9": {
+   "is_correct": true
+  },
+  "APW_ENG_20070706.0865.LDC2009T13_32_12-APW_ENG_20070706.0865.LDC2009T13_32_3": {
+   "is_correct": true
+  },
+  "APW_ENG_20080108.0060.LDC2009T13_29_13-APW_ENG_20080108.0060.LDC2009T13_29_9": {
+   "is_correct": true
+  },
+  "APW_ENG_20070720.0108.LDC2009T13_285_2-APW_ENG_20070720.0108.LDC2009T13_285_12": {
+   "is_correct": true
+  },
+  "APW_ENG_20041024.0131.LDC2007T07_6_9-APW_ENG_20041024.0131.LDC2007T07_6_0": {
+   "is_correct": true
+  },
+  "APW_ENG_20070126.0839.LDC2009T13_24_0-APW_ENG_20070126.0839.LDC2009T13_24_8": {
+   "is_correct": true
+  },
+  "APW_ENG_20071024.0066.LDC2009T13_487_0-APW_ENG_20071024.0066.LDC2009T13_487_6": {
+   "is_correct": true
+  },
+  "APW_ENG_20070620.0962.LDC2009T13_21_9-APW_ENG_20070620.0962.LDC2009T13_21_2": {
+   "is_correct": true
+  },
+  "APW_ENG_20080105.0146.LDC2009T13_18_25-APW_ENG_20080105.0146.LDC2009T13_18_0": {
+   "is_correct": true
+  },
+  "APW_ENG_20070206.1719.LDC2009T13_21_17-APW_ENG_20070206.1719.LDC2009T13_21_0": {
+   "is_correct": true
+  },
+  "AFP_ENG_20070414.0183.LDC2009T13_435_10-AFP_ENG_20070414.0183.LDC2009T13_435_0": {
+   "is_correct": false
+  },
+  "95331@86_0-95331@86_4": {
+   "is_correct": true
+  },
+  "eng-WL-11-174595-12967828_100_47-eng-WL-11-174595-12967828_100_16": {
+   "is_correct": true
+  },
+  "LTW_ENG_20071025.0030.LDC2009T13_844_37-LTW_ENG_20071025.0030.LDC2009T13_844_23": {
+   "is_correct": true
+  },
+  "eng-WL-11-174592-12943229_11_1-eng-WL-11-174592-12943229_11_18": {
+   "is_correct": true
+  },
+  "NYT_ENG_20070323.0204.LDC2009T13_540_9-NYT_ENG_20070323.0204.LDC2009T13_540_30": {
+   "is_correct": false
   }
  }
 }
