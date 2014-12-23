@@ -54,8 +54,8 @@ tutorial is also available in the directory
 
 ### Contents
 
-* [Preparation](#preparation):
-* [Implement the data flow](#implement_dataflow):
+* [Preparation](#preparation)
+* [Implement the data flow](#implement_dataflow)
   1. [Data preprocessing](#loading_data)
   2. [Candidate generation and Feature extraction](#feature_extraction)
       - [Adding a people extractor](#people_extractor)
@@ -183,13 +183,12 @@ the appendix.
 Our next task is to write several [extractors](../extractors.html) for candidate
 generation and feature extraction. 
 
-In this step, we will create three extractors whose UDFs will be three Python
-scripts. The scripts will will go through the sentences in the corpus and,
-respectively
+In this step, we create three extractors whose UDFs are Python scripts. The
+scripts will will go through the sentences in the corpus and, respectively:
 
 1. create mentions of people;
-2. create candidate pairs of people that may be in a marriage relation, and
-	supervise some of them using distant supervision rules;
+2. create candidate pairs of people mentions that may be in a marriage relation,
+	and supervise some of them using distant supervision rules;
 3. add features to the candidates, which will be used by DeepDive to learn how
 	to distinguish between correct marriage relation mentions and incorrect
 	ones;
