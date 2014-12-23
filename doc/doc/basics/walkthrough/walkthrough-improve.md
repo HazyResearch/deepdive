@@ -4,49 +4,72 @@ layout: default
 
 # Example Application: Improving the Results
 
-This document describes how to improve the mention extractor built in [Example
-Application: A Mention-Level Extraction System](walkthrough.html).
+This document describes how to improve the marriage relation mention extractor
+built in [Example Application: A Mention-Level Extraction
+System](walkthrough.html).
 
 <a name="improve" href="#"> </a>
 
 ## Contents
 
-- [Setup and First Error Analysis](#setup)
+- [Error Analysis](#error-analysis)
   - [Using BrainDump to generate automatic reports](#braindump)
   - [Using MindTagger to label results](#mindtagger)
-- [First Error Analysis](#error-analysis-1)
-  - [Fix: Use Generic Feature Library](#feature-library)
-- [Second Error Analysis](#error-analysis-2)
-- [Final Error Analysis](#error-analysis-3)
+  - [Use Generic Feature Library](#feature-library)
+- [Further improvements: adding data](#error-analysis-2)
+- [Analyzing recall](#recall)
 
-TODO
-
-
-<!-- - [Reduce sparsity](#sparsity)
-- [Use strong indicators rather than bag of words](#strong_words)
-- [Add a domain-specific (symmetry) rule](#symmetry)
-- [Tune sampler parameter](#tune_sampler)
-- [Getting improved results](#improved_results)
- -->
 
 Other sections in the tutorial:
 
 - [A Mention-Level Extraction System](walkthrough.html)
 - [Extras: preprocessing, NLP, pipelines, debugging extractor](walkthrough-extras.html)
 
-## <a name="setup" href="#">  </a> Setup and First Error Analysis
+## <a name="error-analysis" href="#"> </a> Error Analysis
+After the execution of an application, it is necessary to assess the quality of
+its results. We consider any relation candidate that gets assigned a
+probability at least 0.9 of expressing a marriage relation as "extracted" by the
+system (i.e., the system classifies it as expressing a marriage relation), and
+we refer to the set of these candidates as "extractions". A common measure of
+quality is *precision*, i.e., the fraction of extractions that are indeed
+expressing a marriage relation. Another quality measure of interest is *recall*,
+which is the fraction of candidates expressing marriage relations that appear in
+the extractions. 
+
+For now, we focus on assessing and improving *precision*. Clearly this will have
+an impact on recall (there is a somewhat natural tradeoff between the two), but
+we remark that it is important to first obtain high precision in the
+extractions and then one can focus on recall: a large of extractions with high
+recall and low precision is not at all as useful in practice as a smaller set
+with higher precision and somewhat lower recall.
+
+DeepDive comes with a set of tools that makes it easier for the user to assess
+the quality of the extractions, analyze the systematic errors made by DeepDive,
+and therefore improve the quality of an application. In this section, we
+describe how to set up and use these tools to evaluate the results obtained by
+running the application we developed in the previous section, and to improve the
+quality of the extractions.
 
 ### <a name="braindump" href="#"> </a> Using BrainDump to generate automatic reports
 
-We first set up [BrainDump](https://github.com/zifeishan/braindump), the automatic report generator for DeepDive.
+We start by setting up [BrainDump](https://github.com/zifeishan/braindump), the
+automatic report generator for DeepDive. BrainDump creates a set of reports
+containing informative descriptive statistics about the last execution of
+DeepDive, and it also creates the input for our result labeling tool MindTagger,
+which we describe next.
 
-#### Configuration
+#### Braindump setup and configuration
 
-We provide a script `./get-braindump.sh` in folder `DEEPDIVE_HOME/example/tutorial_example/step1-basic/`. Use this file to download and install BrainDump.
+We provide a script `./get-braindump.sh` in the folder
+`DEEPDIVE_HOME/example/tutorial_example/step1-basic/` to download and install
+BrainDump. After running the script, BrainDump will be installed in your user home
+directory (`$HOME`), as `$HOME/local/braindump`. From now on, we refer to this
+executable as `braindump`.  
 
-After installation, the first time you run `braindump`, it has an interactive command line interface to let you create a configuration file in `braindump.conf`.
-
-The created file should be like this:
+The first time you run `braindump` from `APP_HOME`, it presents an interactive
+command line interface to create the configuration file `braindump.conf`. The
+created file should look like the following. A copy of this file can be
+found in `DEEPDIVE_HOME/examples/tutorial_example/step1-basic/braindump.conf`.
 
 ```bash
 
@@ -57,7 +80,6 @@ export UTIL_DIR="$HOME/local/braindump"
 
 # Report folder: use current
 export REPORT_DIR="$WORKING_DIR/experiment-reports"
-
 
 ########## User-specified configurations ###########
 
@@ -138,15 +160,10 @@ export DD_THIS_OUTPUT_DIR=$DD_OUTPUT_DIR/$DD_TIMESTAMP
 
 #### Run BrainDump
 
-In `APP_HOME`, run following script to generate a automatic report for the recent DeepDive run:
-
-```bash
-braindump
-```
-
-#### Automating BrainDump with run.sh
-
-To Automate BrainDump in `run.sh`, add following:
+Once BrainDump has been configured, we can run `braindump` from the `APP_HOME`
+directory to generate an automatic report for the last DeepDive run. Since we
+want to create and examine a report after each run of DeepDive, we can modify
+`run.sh` to execute `braindump` after running the application:
 
 ```bash
 #! /bin/bash
@@ -168,341 +185,339 @@ cd $APP_HOME
 braindump
 ```
 
+#### Examining the report
 
-#### Examining the results
-
-The auto-generated report is a folder in `experiment-reports/v[xxxxx]`. Let's look into one report directory, say `experiment-reports/v[xxxxx]`:
-
+The auto-generated report resides in a sub-folder of
+`APP_HOME/experiment-reports/`. At this time, there should be only have one
+subdirectory `v00001`, containing some folders and a `README.md` file, the
+report.  The report contains a number of informative statistics about the corpus
+and about the extractions, including the number of generated mention candidates,
+information about the training set, and counts for the most frequently extracted
+entity pairs. It should look similar to the following:
 
 ```
-# Statsitics
-     number_of_documents 
+# Statistics
+     number_of_documents
     ---------------------
-                     958
+                   14230
     (1 row)
-    
-     number_of_sentences 
+
+     number_of_sentences
     ---------------------
-                   43789
+                   55507
     (1 row)
-    
+
 ## Variable has_spouse
-     mention_candidates 
+     mention_candidates
     --------------------
-                  75422
+                 291986
     (1 row)
-    
+
     Supervision statistics:
-     is_true | count 
-    ---------+-------
-             | 69486
-     t       |  2164
-     f       |  3772
+     is_true | count
+    ---------+--------
+     t       |  23580
+     f       |  84578
+             | 183828
     (3 rows)
-    
-     extracted_mentions 
+
+     extracted_mentions
     --------------------
-                  37244
+                   5442
     (1 row)
-    
-     extracted_entities 
+
+     extracted_entities
     --------------------
-                  29465
+                   3669
     (1 row)
-    
+
 ### Top entities
-    Clinton-Obama 226
-    Obama-Clinton 226
-    McCain-Obama  63
-    Barack Obama-Hillary Rodham Clinton 62
-    Hillary Rodham Clinton-Barack Obama 62
-    Obama-McCain  61
-    Bill Clinton-Hillary Rodham Clinton 48
-    Obama-Bill Clinton  43
-    Bill Clinton-Obama  42
-    Hillary Clinton-Obama 38
+    Asif Ali Zardari-Benazir Bhutto     67
+    Benazir Bhutto-Asif Ali Zardari     66
+    Bill Clinton-Hillary Rodham Clinton 37
+    Britney Spears-Kevin Federline      37
+    Kevin Federline-Britney Spears      37
+    Hillary Rodham Clinton-Bill Clinton 36
+    Madonna-Guy Ritchie 31
+    Guy Ritchie-Madonna 30
+    Nicolas Sarkozy-Carla Bruni 27
+    Carla Bruni-Nicolas Sarkozy 26
+
 ```
 
-We found in "top entities" section that most entities we extract do
-not make sense. To diagnose what's going on, we look at the features in 
-
-
+From the Top Entities section, one may think that the system is actually doing a
+good job at extracting marriage relation mentions, but this may not be true.  To
+precisely assess the quality of the results and diagnose what errors the system
+makes, we should look at actual examples of extractions and determine i.e.,
+perform *error analysis*. This can be done with [MindTagger](../labeling.html),
+another tool included in the DeepDive distribution, that we describe in the next
+section.  
 
 ### <a name="mindtagger" href="#"> </a> Using MindTagger to label results
 
-We conduct error analysis based on our initial spouse relation extractor. 
+We now conduct an error analysis based on our initial spouse relation mention
+extractor. We can use [MindTagger](../labeling.html) to inspect and label 100
+extractions. For more
+information about the labeling process, please refer to the
+[MindTagger](../labeling.html) page, which describes in depth how to use the
+tool, with specific examples that use the spouse application. 
 
-For more information, see [MindTagger](../labeling.html).
+The goal of this task is to identify categories of misclassified relation
+candidates, and to understand why the system does not classify them correctly.
+This requires inspecting the features associated to each extraction and their
+weight, assessing whether the features with high or low weight are meaningful
+and can indeed help the system classify the relation candidates (i.e., they
+should be associated with correct or incorrect relations). For example, assume
+that by analyzing the extractions we find that the system extracts many
+incorrect relation candidates whose mentions are separated by the word "and",
+e.g., "Barack Obama and Hillary Clinton". We look at the feature `NGRAM_1_[and]`
+which denotes the presence of the word "and" between the mentions, and find that
+it is associated with a high weight (say 1.2). This suggests that the training
+set does not contain a sufficient number negative examples of relation
+candidates whose mentions are separated by "and": the system learns, from the
+existing evidence, that having "and" between the mentions is frequently
+associated with correct relations, and therefore assigns a high weight to the
+corresponding feature. To fix this class of error, the solution would be to
+increase the number of negative examples with this feature, which may require
+additional supervision rules, a richer knowledge base for the existing
+supervision rules, or additional manual labelling.
 
-Examine results TODO
+The input to MindTagger can be automatically generated from the output of
+BrainDump as follows. Copy the directory
+`DEEPDIVE_HOME/examples/tutorial_example/step1-basic/labeling/` to your
+`APP_HOME` directory
 
-We label 100 extracted relations, and the precision is only 4%.
+```
+cp -r DEEPDIVE_HOME/examples/tutorial_example/step1-basic/labeling/ $APP_HOME/labeling
+```
 
-Lessons:
+Now, run the `prepare-data-from-braindump.sh` script located inside the
+`labeling` directory:
 
-- words_between is a bad feature.
-  We notice that features seem to be too weak. Once there is a word
-  "husband" or "wife" in the middle of two mentions, the relation is
-  predicted a high probability. We may want to use stronger features.
-  Also some random words get a weight, such as "word_between=Kevin" gets weight of 0.6.
+```
+cd APP_HOME/labeling
+./prepare-data-from-braindump.sh
+```
 
-- num_words_between is a feature that's too sparse. e.g. "num_words_between=17" gets a high weight.
+The script will output a success message, and we are now ready to start
+MindTagger:
+```
+cd APP_HOME/labeling
+./start-mindtagger.sh
+```
 
-- Lots of parallel names in a list
+We can now open a browser, go to `localhost:8000` and perform the labeling of
+the extractions as described in the [MindTagger](../labeling.html)
+documentation. 
 
-### Fix: Use Generic Feature Library (#feature-library)
+In the directory `DEEPDIVE_HOME/examples/tutorial_example/step1-basic/labeling`,
+we include an example of 100 extractions that we already labelled using
+MindTagger. To look at our labeling results, you can enter this directory, run
+`start-mindtagger.sh` and point your browser to `localhost:8000`. In our case,
+the precision is 40%: out of 100 extractions, 40 are actually expressing a
+marriage relation. By analyzing the misclassified relations we observe
+that the current set of features is not sufficiently rich and expressive to
+allow the system to learn how to correctly classify relation candidates. For
+example, if there is a word like "husband" or "wife" between the sentences, then
+the relation candidate is assigned a high probability. At the same time,
+features that are not indicative of a marriage relation (e.g.,
+`word_between=posing`) gets assigned an extremely high weight (2.445), evidence
+of overfitting. 
 
-We decide to use generic feature library.
+With the goal of improving the quality of the extractions, in the next two
+sections we first describe how to easily enrich the set of features using the
+generic features library included in Deepdive, and then describe how to mitigate
+overfitting by letting the system select a regularization parameter
+automatically.
 
-## Second Error Analysis (#error-analysis-2)
+### <a name="feature-library" href="#"> </a> Use the Generic Feature Library
 
-Even worse. 1% precision.
+The set of features initially chosen for an application may often seem, before
+running the application, to be rich and expressive enough to allow the system to
+distinguish between correct and incorrect relation candidates. More often than
+not, this is not the case, as we saw in the previous section. Indeed *feature
+engineering*, the task of developing a set of features that lead to high
+precision, is known to be challenging.
 
+Based on our multi-year experience developing high-quality KBC systems, we
+developed a [generic feature library](../gen_feats.html) which is included in
+DeepDive as part of the `ddlib` utility library. The generic feature library
+automatically generates sets of features that are "generic" in the sense that they
+are not specifically designed for a particular application or domain, but they
+have been proven to be powerful and sufficient to obtain good quality results.
 
-### Fix: Add distant supervision rules (#feature-library)
+We now briefly introduce the use of the generic feature library in our example
+application. We refer the reader to the documentation of the [generic feature
+library](../gen_feats.html) for more information about which features are
+generated and details on how to use the library.
 
-negative examples.
-- lots of parallel person names (>10, negative)
-- "and" + no keywords
-- too long
+The generic features library allows to incorporate some application-specific
+knowledge in the set of features in the form of *dictionaries*, i.e., sets of
+*keywords*. The generic features library uses these keywords to generate
+additional features when a keyword appears in the same sentence as a relation
+candidate. We create two *dictionaries*, i.e., files containing keywords that
+can help distinguish between spouse relation and non-spouse relations, like
+"husband", "daughter", "fiancee", and so on.  These lists do not contain all
+possible keywords (such a list would probably be impossible to even imagine),
+but they can still help the system learn how to distinguish between correct and
+incorrect relations. 
 
-19%
+We created one dictionary `married.txt` for keywords that are usually associated
+with correct marriage relations, and another dictionary `non-married.txt` for
+keywords that are usually associated with relations thatare not about marriage.
+These files can be found in
+`DEEPDIVE_HOME/examples/tutorial_example/step2-generic-features/udf/dicts/`.
+Copy this directory to your `APP_HOME/udf/` directory:
 
-## Final Error Analysis](#error-analysis-3)
+```
+cp -r `DEEPDIVE_HOME/examples/tutorial_example/step2-generic-features/udf/dicts/ APP_HOME/udf/dicts
+```
 
-
-
-select words, t0.is_true, t1.feature from sentences s, has_spouse t0, has_spouse_features t1 where t0.relation_id=t1.relation_id and s.sentence_id = t0.sentence_id and t1.feature= 'INV_NGRAM_1_[piano]';
-
-
-
-
-
-
-
-
-
-
-
-
-<!-- 
-### <a name="sparsity" href="#"> </a> Reduce Sparsity
-
-After [examining the results](walkthrough.html#get_result), we noticed
-that the feature `num_words_between` suffers from sparsity issues and would cause
-overfitting. For example, there should be roughly no difference between having
-20 and 21 words between two entity mentions. Let's change *"Feature 2"* in
-`ext_has_spouse_features.py`:
+We now modify our feature extractor script `has_spouse_features.py` to use the
+generic feature library and the dictionaries. The new version of the script can
+be found in
+`DEEPDIVE_HOME/examples/tutorial_example/step2-generic-features/udf/` and can be
+copied over the old one in `APP_HOME/udf`. The content of the script are the
+following:
 
 ```python
-# Feature 2: Number of words between the two phrases
-# Intuition: if they are close by, the link may be stronger.
-l = len(words_between.elements)
-if l < 5: features.add("few_words_between")
-else: features.add("many_words_between")
+
+#! /usr/bin/env python
+
+import sys, os
+import ddlib     # DeepDive python utility
+
+ARR_DELIM = '~^~'
+
+# Load keyword dictionaries using ddlib, for domain-specific features
+# Words in "married" dictionary are indicative of marriage
+# Words in "non_married" dictionary are indicative of non_marriage
+BASE_DIR = os.path.dirname(os.path.realpath(__file__))
+ddlib.load_dictionary(BASE_DIR + "/dicts/married.txt", dict_id="married")
+ddlib.load_dictionary(BASE_DIR + "/dicts/non_married.txt", dict_id="non_married")
+
+# For each input tuple
+for row in sys.stdin:
+  parts = row.strip().split('\t')
+  
+  # Get all fields from a row
+  words = parts[0].split(ARR_DELIM)
+  lemmas = parts[1].split(ARR_DELIM)
+  poses = parts[2].split(ARR_DELIM)
+  dependencies = parts[3].split(ARR_DELIM)
+  ners = parts[4].split(ARR_DELIM)
+  relation_id = parts[5]
+  p1_start, p1_length, p2_start, p2_length = [int(x) for x in parts[6:]]
+
+  # Skip lines with empty dependency paths
+  if len(dependencies) == 0:
+    print >>sys.stderr, str(relation_id) + '\t' + 'DEP_PATH_EMPTY'
+    continue
+
+  # Get a sentence from ddlib -- array of "Word" objects
+  try:
+    sentence = ddlib.get_sentence(
+        [0, ] * len(words),  [0, ] * len(words), words, lemmas, poses,
+        dependencies, ners)
+  except:
+    print >>sys.stderr, dependencies
+    continue
+  
+  # Create two spans of person mentions
+  span1 = ddlib.Span(begin_word_id=p1_start, length=p1_length)
+  span2 = ddlib.Span(begin_word_id=p2_start, length=p2_length)
+
+  # Features for this pair come in here
+  features = set()
+
+  # Get generic features generated by ddlib
+  for feature in ddlib.get_generic_features_relation(sentence, span1, span2):
+    features.add(feature)
+  for feature in features:
+    print str(relation_id) + '\t' + feature
 ```
 
-### <a name="strong_words" href="#"></a> Use strong indicators rather than bag of words
+The dictionaries are loaded by calling the `ddlib.load_dictionary` function,
+while the set of features is obtained through the
+`ddlib.get_generic_features_relation`. More details about the generic feature
+library can be found in its [documentation](../gen_feat.html).
 
-The "bag of words" is a pretty weak feature. Our next improvement is using
-strong indicators rather than a bag of words. We check the words between
-two mentions to see if they are strong indicators of spouse or non-spouse
-relationships, such as "marry" or "widow", or "father" "mother".
+The generic feature library uses additional columns of the `sentences` table to
+generate the feature, therefore we need to modify the `input_query` of the
+`has_spouse_features` extractor definition in `application.conf`:
 
-Start by modifying `application.conf` to select `lemma` as input query to
-`ext_has_spouse_features`:
-
-```bash
-ext_has_spouse_features {
-  input: """
-    SELECT  sentences.words,
-            lemma,                   # Add this line
-            has_spouse.relation_id,
-            p1.start_position  AS  p1_start,
-            p1.length          AS  p1_length,
-            p2.start_position  AS  p2_start,
-            p2.length          AS  p2_length
-            """
-    # ...
-  }
 ```
-
-Then modify `ext_has_spouse_features.py` by changing *Feature 1* (bag of words)
-into this feature. We still make use of `ddlib`:
-
-```python
-# Feature 1: Find out if a lemma of marry occurs.
-# A better feature would ensure this is on the dependency path between the two.
-words_between = ddlib.tokens_between_spans(words, span1, span2)
-lemma_between = ddlib.tokens_between_spans(obj["lemma"], span1, span2)
-married_words = ['marry', 'widow', 'wife', 'fiancee', 'spouse']
-non_married_words = ['father', 'mother', 'brother', 'sister', 'son']
-# Make sure the distance between mention pairs is not too long
-if len(words_between) <= 10:         
-  for mw in married_words + non_married_words:
-    if mw in lemma_between.elements: 
-      features.add("important_word=%s" % mw)
-```
-
-
-The `married_words` and `non_married_words` list can be obtained through a
-"snowball-style" feature engineering: if you do not know which words to add, you
-could run bag of words and check high-weight / low-weight features (via the SQL
-query), and pick reasonable words to add. 
-
-### <a name="symmetry" href="#"> </a> Add a domain-specific rule
-
-We want to incorporate a bit of domain knowledge into our model. For example, we
-know that `has_spouse` is symmetric. That means, if Barack Obama is married to
-Michelle Obama, then Michelle Obama is married to Barack Obama, and vice versa.
-(`Marry(A,B) <-> Marry(B,A)`) We can encode this knowledge in a second inference
-rule:
-
-```bash
-    inference.factors {
-
-      # ...(other inference rules)
-
-      f_has_spouse_symmetry {
-        input_query: """
-          SELECT r1.is_true AS "has_spouse.r1.is_true",
-                 r2.is_true AS "has_spouse.r2.is_true",
-                 r1.id      AS "has_spouse.r1.id",
-                 r2.id      AS "has_spouse.r2.id"
-          FROM has_spouse r1,
-               has_spouse r2
-          WHERE r1.person1_id = r2.person2_id
-            AND r1.person2_id = r2.person1_id
-          """
-        function: "Equal(has_spouse.r1.is_true, has_spouse.r2.is_true)"
-        weight: "?"
-      }
-
+    ext_has_spouse_features {
+      input: """
+        SELECT  array_to_string(words, '~^~'),
+                array_to_string(lemma, '~^~'),
+                array_to_string(pos_tags, '~^~'),
+                array_to_string(dependencies, '~^~'),
+                array_to_string(ner_tags, '~^~'),
+                has_spouse.relation_id,
+                p1.start_position,
+                p1.length,
+                p2.start_position,
+                p2.length
+        FROM    has_spouse,
+                people_mentions p1,
+                people_mentions p2,
+                sentences
+        WHERE   has_spouse.person1_id = p1.mention_id
+          AND   has_spouse.person2_id = p2.mention_id
+          AND   has_spouse.sentence_id = sentences.sentence_id;
+        """
+      output_relation: "has_spouse_features"
+      before: ${APP_HOME}"/udf/ext_truncate_table.sh has_spouse_features"
+      udf: ${APP_HOME}"/udf/ext_has_spouse_features.py"
+      dependencies: ["ext_has_spouse_candidates"]
+      style: "tsv_extractor"
+      parallelism: 4
     }
 ```
 
-There are many [other kinds of factor functions](../inference_rule_functions.html)
-you could use to encode domain knowledge. 
+### Mitigate overfitting with automatic regularization
 
-### <a name="tune_sampler" href="#"></a> Tune sampler parameter
+In order to mitigate the effect of overfitting, we can use a functionality
+offered by the [DimmWitted! Sampler](../sampler.html) to automatically pick
+(from a user-specified set) a regularization parameter. Regularization is a
+standard machine learning technique to mitigate the effect of overfitting. The
+Gibbs sampler in DeepDive accept one or more `--reg_param VALUE` options that
+can be used to specify a set of possible regularization parameters. The system
+will perform 2-fold cross validation on the training set to select the best
+parameter among those specified. A technical detail: the best parameter, as
+chosen by the system, is the one with the higher harmonic mean of the F1-score
+in the cross validation. To specify a set of regularization parameters among
+which to choose, and in general to pass arguments to the sampler, we can add the
+following line to `application.conf`, in the `deepdive` section:
 
-We can further tune sampler parameters to obtain better results. Refer to the
-[sampler guide](../sampler.html) for tuning sampler parameters.
-
-Add the following in the `deepdive` block of `application.conf`:
-
-```bash
-sampler.sampler_args: "-l 5000 -d 0.99 -s 1 -i 1000 --alpha 0.01"
+```
+deepdive {
+ [... other configuration directives ...]
+sampler.sampler_args: "-l 300 -s 1 -i 500 --alpha 0.1 --diminish 0.99 --reg_param 0.1 --reg_param 1 --reg_param 10"
+}
 ```
 
-This tells the sampler perform more sampling iterations and use a slower
-step size decay. 
+For an explanation of all the parameters passed to the sampler, check the
+[sampler documentation](../sampler.html).
 
-### <a name="improved_results" href="#"></a> Getting improved results
+Now that we have performed some changes to the application (generic feature
+library, and automatic regularization) we can run the application again by
+executing `./run.sh`.
 
-After performing the above modifications to extractors and inference rules, we
-can run the application again and query the results:
+## <a name="error-analysis-2" href=#> </a> Further improvements: adding data
 
-```bash
-./run.sh
+Once the application has completed successfully, we can perform another round of
+error analysis by looking at another 100 extractions using MindTagger to assess
+the changes in the precision of the extractions due to the use of the generic
+feature library. 
 
-psql -d deepdive_spouse -c "
-  SELECT s.sentence_id, description, is_true, expectation, s.sentence
-  FROM has_spouse_is_true_inference hsi, sentences s
-  WHERE s.sentence_id = hsi.sentence_id and expectation > 0.95
-  ORDER BY random() LIMIT 10;
-"
-```
+We already labelled 100 extractions using MindTagger. You can look at the
+results of our labeling by entering the directory
+`DEEPDIVE_HOME/examples/tutorial_example/step2-generic-features/labeling`,
+running `./start-mindtagger.sh` and opening your browser to the address
+`localhost:8000`. We obtained a significant increase in the precision, which is
+now 86%.
 
-The results should look like the following:
+We can further improve the precision by adding more data. In particular we 
 
-     sentence_id |       description       | is_true | expectation | sentence 
-    -------------+-------------------------+---------+-------------+-------
-     95331@69    | Julia Gardiner-B. Tyler |         |           1 | B. Tyler married his second wife , Julia Gardiner , in 1844 in New York City .
-     114481@10   | Obama-Michelle          |         |       0.982 | And so , with those remarks , a tightly knit relationship finally came apart -- Wright had married Obama and his wife
-     , Michelle , and baptized their children .
-     103874@0    | Abigail-John Adams      |         |       0.982 | When John Adams begins acting like a pompous windbag , his wife , Abigail , reproaches him with a single word .
-     44768@4     | Wendi-Murdoch           |         |       0.992 | Murdoch 's third wife , Wendi , is a mainland Chinese who once worked for his Hong Kong-based satellite broadcaster ,
-     Star TV .
-     111325@10   | Julius Rosenberg-Ethel  |         |       0.992 | Sophie Rosenberg thought Mamie Eisenhower could be a `` sympathetic ally '' in saving her son , Julius Rosenberg , an
-    d his wife Ethel from execution in 1953 for espionage .
-     111325@10   | Ethel-Julius Rosenberg  |         |       0.994 | Sophie Rosenberg thought Mamie Eisenhower could be a `` sympathetic ally '' in saving her son , Julius Rosenberg , an
-    d his wife Ethel from execution in 1953 for espionage .
-     114424@8    | Obama-Michelle          |         |       0.992 | And so , with those remarks , a tightly knit relationship finally unraveled -- Wright had married Obama and his wife
-    , Michelle , and baptized their children .
-     1387@16     | Rosalynn-Barbara        |         |       0.978 | Across the nave from the Ford family sat Bush and Laura Bush , and Vice President Dick Cheney , who served Ford as ch
-    ief of staff , with his wife , Lynne , several current Cabinet members and three former presidents -- the elder George Bush with his wife , Barbara ; Jimmy Carter and his wife , Rosa
-    lynn ; and Bill Clinton and his wife , Sen. Hillary Rodham Clinton , and their daughter Chelsea .
-     119377@0    | John McCain-Cindy       |         |       0.992 | Sen. John McCain 's wife , Cindy , abruptly reversed course on Friday and released a summary of her 2006 income tax r
-    eturn after weeks of vowing not to do so .
-     84632@13    | Cecilia-Sarkozy         |         |       0.998 | Less than two months ago , Sarkozy and his wife , Cecilia , announced their divorce after 11 years of marriage .
-    (10 rows)
-
-
-Let's look at the calibration plot:
-
-![Calibration]({{site.baseurl}}/assets/walkthrough_has_spouse_is_true_improved.png)
-
-We should examine the learned weights again. Run the following query to select
-the features with highest weights:
-
-```bash
-psql -d deepdive_spouse -c "
-  SELECT description, weight
-  FROM dd_inference_result_weights_mapping
-  ORDER BY weight DESC
-  LIMIT 5;
-"
-```
-
-The results should be similar to the following:
-
-                     description                  |      weight
-    ----------------------------------------------+------------------
-     f_has_spouse_features-important_word=wife    | 3.12437525600187
-     f_has_spouse_features-important_word=widow   | 2.45652823047255
-     f_has_spouse_features-important_word=marry   | 1.85742049055667
-     f_has_spouse_features-few_words_between      |  1.6015835203787
-     f_has_spouse_features-important_word=fiancee |  1.0439453467637
-    (5 rows)
-
-Run the following query to select the top negative features:
-
-```bash
-psql -d deepdive_spouse -c "
-  SELECT description, weight
-  FROM dd_inference_result_weights_mapping
-  ORDER BY weight ASC
-  LIMIT 5;
-"
-```
-
-The results should be similar to the following:
-
-                       description                   |       weight
-    -------------------------------------------------+--------------------
-     f_has_spouse_features-important_word=son        |  -2.83397621968201
-     f_has_spouse_features-important_word=father     |  -2.76048309192415
-     f_has_spouse_features-potential_last_name_match |  -2.34700944702606
-     f_has_spouse_features-important_word=brother    |  -2.23063906981248
-     f_has_spouse_features-important_word=sister     | -0.523695847147546
-    (5 rows)
-
-We can see that the results have been improved quite a bit, but there are still some errors. 
-
-From the calibration plot we can tell that there are not enough features,
-especially negative features. We can continue performing "snowball sampling" on
-bag of words to obtain more negative features, or use better features such as
-dependency paths. We can also add more negative examples by distant supervision,
-or adding other domain-specific rules. To make further improvements, it is
-important to conduct error analysis.
-
-Moreover, performing entity linking and [looking for entity-level
-relations](../../general/kbc.html#entity_level) is necessary for a better KBC
-application.
-
-Now if you want, you can look at the [Extras page](walkthrough-extras.html)
-which explained how to prepare data tables, use pipelines, use NLP extractors,
-or get example extractor inputs.
-
- -->
