@@ -113,9 +113,8 @@ parameters that you should set according to your database settings. Finally, it
 contains the commands to actually run the application.
 
 In order to write the application, we need some data files, namely the input corpus of
-text and some existing knowledge base of interpersonal relationship. You should
-get the archive containing these files from
-[here](https://www.dropbox.com/s/iptnkwfeymlnpqc/deepdive-tutorial-data.zip).
+text and some existing knowledge base of interpersonal relationship. 
+**[Download the archive here](http://i.stanford.edu/hazy/deepdive-tutorial-data.zip)**.
 Expand the archive in the `$APP_HOME/data` directory.
 
 Now your `$APP_HOME/data` directory should contain following files:
@@ -459,9 +458,9 @@ We now tell DeepDive to create variables for the `is_true` column of the
 `has_spouse` table for probabilistic inference, by adding the following line
 to the `schema.variables` block in `application.conf`:
 
-    schema.variables {
-      has_spouse.is_true: Boolean
-    }
+      schema.variables {
+        has_spouse.is_true: Boolean
+      }
 
 We now define an extractor that creates all candidate relations and inserts them
 into the table `has_spouse`. We call them *candidate relations* because we do
@@ -683,34 +682,34 @@ Create a new extractor for features, which will execute after the
 `ext_has_spouse_candidates` extractor:
 
 ```bash
-extraction.extractors {
+  extraction.extractors {
 
-  # ... (other extractors)
+    # ... (other extractors)
 
-  # Extractor 4: extract features for relation candidates
-  ext_has_spouse_features {
-    style: "tsv_extractor"
-    input: """
-		SELECT  array_to_string(words, '~^~'),
-              has_spouse.relation_id,
-              p1.start_position  AS  p1_start,
-              p1.length          AS  p1_length,
-              p2.start_position  AS  p2_start,
-              p2.length          AS  p2_length
-        FROM  has_spouse,
-              people_mentions p1,
-              people_mentions p2,
-              sentences
-       WHERE  has_spouse.person1_id = p1.mention_id
-         AND  has_spouse.person2_id = p2.mention_id
-         AND  has_spouse.sentence_id = sentences.sentence_id;
-         """
-    output_relation : "has_spouse_features"
-    udf             : ${APP_HOME}"/udf/ext_has_spouse_features.py"
-    dependencies    : ["ext_has_spouse_candidates"]
+    # Extractor 4: extract features for relation candidates
+    ext_has_spouse_features {
+      style: "tsv_extractor"
+      input: """
+  		SELECT  array_to_string(words, '~^~'),
+                has_spouse.relation_id,
+                p1.start_position  AS  p1_start,
+                p1.length          AS  p1_length,
+                p2.start_position  AS  p2_start,
+                p2.length          AS  p2_length
+          FROM  has_spouse,
+                people_mentions p1,
+                people_mentions p2,
+                sentences
+         WHERE  has_spouse.person1_id = p1.mention_id
+           AND  has_spouse.person2_id = p2.mention_id
+           AND  has_spouse.sentence_id = sentences.sentence_id;
+           """
+      output_relation : "has_spouse_features"
+      udf             : ${APP_HOME}"/udf/ext_has_spouse_features.py"
+      dependencies    : ["ext_has_spouse_candidates"]
+    }
+
   }
-
-}
 ```
 
 To create our extractor UDF, we make use of `ddlib`, our Python library that
@@ -719,6 +718,10 @@ Make sure you followed the [installation guide](../installation.html#ddlib) to
 properly use `ddlib`.
 
 Create the script `udf/ext_has_spouse_features.py` with the following content:
+
+(a copy of this script is also available from 
+`$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/udf/ext_has_spouse_features.py`)
+
 
 ```python
 #! /usr/bin/env python
@@ -818,31 +821,31 @@ Add the following lines to your `application.conf`, in the `inference.factors` b
 
 ```bash
 # Put your inference rules here
-inference.factors {
+  inference.factors {
 
-  # A simple logistic regression rule
-  f_has_spouse_features {
+    # A simple logistic regression rule
+    f_has_spouse_features {
 
-    # input to the inference rule is all the has_spouse candidate relations,
-    #   as well as the features connected to them:
-    input_query: """
-      SELECT has_spouse.id      AS "has_spouse.id",
-             has_spouse.is_true AS "has_spouse.is_true",
-             feature
-      FROM has_spouse,
-           has_spouse_features
-      WHERE has_spouse_features.relation_id = has_spouse.relation_id
-      """
+      # input to the inference rule is all the has_spouse candidate relations,
+      #   as well as the features connected to them:
+      input_query: """
+        SELECT has_spouse.id      AS "has_spouse.id",
+               has_spouse.is_true AS "has_spouse.is_true",
+               feature
+        FROM has_spouse,
+             has_spouse_features
+        WHERE has_spouse_features.relation_id = has_spouse.relation_id
+        """
 
-    # Factor function:
-    function : "IsTrue(has_spouse.is_true)"
+      # Factor function:
+      function : "IsTrue(has_spouse.is_true)"
 
-    # Weight of the factor is decided by the value of "feature" column in input query
-    weight   : "?(feature)"
+      # Weight of the factor is decided by the value of "feature" column in input query
+      weight   : "?(feature)"
+    }
+
+    # ... (other inference rules)
   }
-
-  # ... (other inference rules)
-}
 ```
 
 This rule generates a model similar to a logistic regression classifier: it uses
@@ -873,20 +876,15 @@ results, we also want to define a *holdout fraction* for our predictions. The
 holdout fraction defines how much of our training data we want to treat as
 testing data used to compare our predictions against. By default the holdout
 fraction is `0`, which means that we cannot evaluate the precision of our
-results. Add the following line to `application.conf` to holdout one quarter of
-the training data:
+results. One may add a line `calibration.holdout_fraction: 0.25`
+to `application.conf` to holdout one quarter of the training data randomly, 
+but in our application, we instead specify a custom holdout SQL query which selects
+the column `id` of some random rows from the `has_spouse` mention table and 
+add them into the table `dd_graph_variables_holdout`.
+Let's add it to `application.conf`:
 
-    # Specify a holdout fraction
-    calibration.holdout_fraction: 0.25
-
-Alternatively, the user may specify a specific holdout SQL query which selects
-the column `id` of some desired rows from the `has_spouse_mention` table and add
-them into the table `dd_graph_variables_holdout`. For example, the following
-query select some sentences at random and insert into the holdout table all
-relation candidates appearing in those mentions:
-
-
-    calibration.holdout_query:"""
+```bash
+calibration.holdout_query:"""
     DROP TABLE IF EXISTS holdout_sentence_ids CASCADE; 
 
     CREATE TABLE holdout_sentence_ids AS 
@@ -895,7 +893,8 @@ relation candidates appearing in those mentions:
     INSERT INTO dd_graph_variables_holdout(variable_id)
     SELECT id FROM has_spouse WHERE sentence_id IN
     (SELECT * FROM holdout_sentence_ids);
-    """
+"""
+```
 
 At this point, the setup of the application is complete. Note that you can find
 all extractors, scripts, and the complete `application.conf` file that we wrote
