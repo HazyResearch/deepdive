@@ -69,12 +69,19 @@ BrainDump. After running the script, BrainDump will be installed in your user ho
 directory (`$HOME`), as `$HOME/local/bin/braindump`. From now on, we refer to this
 executable as `braindump`.  
 
-`braindump` requires a configuration file. You can use the one in `$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/braindump.conf`:
+`braindump` requires a configuration file `braindump.conf` to be put in
+`$APP_HOME`:
+
+<!--
+You can use the one in
+`$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/braindump.conf`:
+-->
 
 <!--
 The first time you run `braindump` from `$APP_HOME`, it presents an interactive
 command line interface to create the configuration file `braindump.conf`. The
-created file should look like the following. A copy of this file can be
+created file should look like the following. 
+A copy of this file can be
 found in `$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/braindump.conf`.
 -->
 
@@ -99,7 +106,7 @@ export REPORT_DIR="$WORKING_DIR/experiment-reports"
 export APP_HOME=$WORKING_DIR
 
 # Specify deepdive out directory ($DEEPDIVE_HOME/out)
-export DD_OUTPUT_DIR=$WORKING_DIR/../../../out
+export DD_OUTPUT_DIR=$WORKING_DIR/../../out
 
 # Database Configuration
 export DBNAME=deepdive_spouse
@@ -392,7 +399,7 @@ but they can still help the system learn how to distinguish between correct and
 incorrect relations. 
 
 We created one dictionary `married.txt` for keywords that are usually associated
-with correct marriage relations, and another dictionary `non-married.txt` for
+with correct marriage relations, and another dictionary `non_married.txt` for
 keywords that are usually associated with relations that are not about marriage.
 These files can be found in
 `$DEEPDIVE_HOME/examples/tutorial_example/step2-generic-features/udf/dicts/`.
