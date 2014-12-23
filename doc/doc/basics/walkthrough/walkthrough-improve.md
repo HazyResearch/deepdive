@@ -106,7 +106,7 @@ export REPORT_DIR="$WORKING_DIR/experiment-reports"
 export APP_HOME=$WORKING_DIR
 
 # Specify deepdive out directory ($DEEPDIVE_HOME/out)
-export DD_OUTPUT_DIR=$WORKING_DIR/../../out
+export DD_OUTPUT_DIR=$DEEPDIVE_HOME/out
 
 # Database Configuration
 export DBNAME=deepdive_spouse
