@@ -1,0 +1,10 @@
+ number_of_documents 
+---------------------
+               14230
+(1 row)
+
+ number_of_sentences 
+---------------------
+               55507
+(1 row)
+

@@ -1,0 +1,100 @@
+f_has_spouse_features-INV_NGRAM_1_[hubby]	1.76541
+f_has_spouse_features-NGRAM_1_[hubby]	1.69044
+f_has_spouse_features-INV_NGRAM_1_[girlfriend]	1.5276
+f_has_spouse_features-NGRAM_1_[ex-husband]	1.46291
+f_has_spouse_features-NGRAM_1_[girlfriend]	1.45319
+f_has_spouse_features-INV_NGRAM_1_[wife]	1.45089
+f_has_spouse_features-INV_NGRAM_1_[widower]	1.43559
+f_has_spouse_features-INV_NGRAM_1_[ex-husband]	1.42294
+f_has_spouse_features-NGRAM_1_[widower]	1.37889
+f_has_spouse_features-NGRAM_1_[wife]	1.36327
+f_has_spouse_features-INV_LENGTHS_[4_2]	1.31214
+f_has_spouse_features-NGRAM_1_[ex-wife]	1.28413
+f_has_spouse_features-NGRAM_1_[marry]	1.27492
+f_has_spouse_features-NGRAM_1_[husband]	1.26825
+f_has_spouse_features-INV_NGRAM_1_[ex-wife]	1.26683
+f_has_spouse_features-INV_NGRAM_1_[husband]	1.2435
+f_has_spouse_features-INV_NGRAM_1_[marry]	1.21759
+f_has_spouse_features-INV_NGRAM_1_[divorce]	1.19991
+f_has_spouse_features-NGRAM_1_[divorce]	1.16887
+f_has_spouse_features-NGRAM_1_[partner]	1.1572
+f_has_spouse_features-LENGTHS_[2_4]	1.13384
+f_has_spouse_features-INV_LENGTHS_[2_4]	1.11893
+f_has_spouse_features-INV_KW_IND_[married]	1.1142
+f_has_spouse_features-INV_NGRAM_1_[partner]	1.0978
+f_has_spouse_features-LENGTHS_[4_2]	1.08087
+f_has_spouse_features-INV_NGRAM_1_[boyfriend]	1.08059
+f_has_spouse_features-KW_IND_[married]	1.03371
+f_has_spouse_features-INV_LENGTHS_[2_3]	1.03189
+f_has_spouse_features-INV_LENGTHS_[3_2]	1.02046
+f_has_spouse_features-NGRAM_1_[boyfriend]	1.01811
+f_has_spouse_features-LENGTHS_[3_2]	0.977436
+f_has_spouse_features-INV_NGRAM_2_[widower of]	0.971288
+f_has_spouse_features-NGRAM_2_[former President]	0.93647
+f_has_spouse_features-NGRAM_2_[widower of]	0.929836
+f_has_spouse_features-NGRAM_1_[she]	0.921399
+f_has_spouse_features-INV_W_LEMMA_L_1_R_1_[.]_[.]	0.914383
+f_has_spouse_features-W_LEMMA_L_1_R_1_[.]_[.]	0.908862
+f_has_spouse_features-INV_NGRAM_2_[former President]	0.905551
+f_has_spouse_features-INV_NGRAM_1_[she]	0.904792
+f_has_spouse_features-INV_LENGTHS_[2_2]	0.903033
+f_has_spouse_features-NGRAM_1_[married]	0.894854
+f_has_spouse_features-POS_SEQ_[CC NN]	0.891615
+f_has_spouse_features-NGRAM_1_[wed]	0.886209
+f_has_spouse_features-INV_NGRAM_1_[married]	0.876152
+f_has_spouse_features-INV_NGRAM_1_[wed]	0.861983
+f_has_spouse_features-INV_NGRAM_1_[companion]	0.846482
+f_has_spouse_features-W_LEMMA_L_1_R_1_[:]_[be]	0.844587
+f_has_spouse_features-INV_W_LEMMA_L_1_R_1_[:]_[be]	0.839645
+f_has_spouse_features-LENGTHS_[2_3]	0.839476
+f_has_spouse_features-INV_NGRAM_1_[widow]	0.836963
+f_has_spouse_features-NGRAM_1_[companion]	0.828138
+f_has_spouse_features-NGRAM_1_[marriage]	0.824706
+f_has_spouse_features-INV_KW_L_[conj_and prep_of]_[prep_of]	0.816733
+f_has_spouse_features-INV_NGRAM_1_[marriage]	0.811311
+f_has_spouse_features-INV_POS_SEQ_[CC NN]	0.802923
+f_has_spouse_features-KW_L_[prep_of]_[conj_and prep_of]	0.79754
+f_has_spouse_features-NGRAM_1_[widow]	0.786356
+f_has_spouse_features-INV_NGRAM_2_[wife of]	0.781621
+f_has_spouse_features-INV_NGRAM_1_[fiance]	0.766159
+f_has_spouse_features-NGRAM_1_[fiance]	0.764689
+f_has_spouse_features-BETW_D_[appos DICT_married prep_of]	0.764251
+f_has_spouse_features-INV_BETW_D_[prep_of DICT_married appos]	0.762401
+f_has_spouse_features-NGRAM_1_[ex]	0.754788
+f_has_spouse_features-INV_LENGTHS_[3_3]	0.732062
+f_has_spouse_features-NGRAM_2_[wife of]	0.728822
+f_has_spouse_features-INV_NGRAM_1_[ex]	0.727184
+f_has_spouse_features-LENGTHS_[2_2]	0.718423
+f_has_spouse_features-NGRAM_1_[custody]	0.714168
+f_has_spouse_features-NGRAM_2_[first lady]	0.710757
+f_has_spouse_features-INV_NGRAM_1_[wedding]	0.707378
+f_has_spouse_features-INV_BETW_D_[poss DICT_married appos]	0.685241
+f_has_spouse_features-INV_NGRAM_2_[marriage to]	0.683525
+f_has_spouse_features-INV_LENGTHS_[4_3]	0.682094
+f_has_spouse_features-NGRAM_1_[actress]	0.681299
+f_has_spouse_features-INV_NGRAM_1_[custody]	0.679681
+f_has_spouse_features-BETW_D_[appos DICT_married poss]	0.675074
+f_has_spouse_features-INV_NER_SEQ_[O O O O O O O O O O O O]	0.674187
+f_has_spouse_features-NGRAM_1_[wedding]	0.672637
+f_has_spouse_features-INV_BETW_[prep_of wife appos]	0.672041
+f_has_spouse_features-INV_NGRAM_2_[first lady]	0.670762
+f_has_spouse_features-NGRAM_2_[marriage to]	0.668111
+f_has_spouse_features-NGRAM_1_[love]	0.667508
+f_has_spouse_features-NER_SEQ_[O ORDINAL O]	0.663379
+f_has_spouse_features-BETW_[appos wife prep_of]	0.662793
+f_has_spouse_features-INV_NGRAM_1_[actress]	0.653409
+f_has_spouse_features-INV_NGRAM_1_[love]	0.647341
+f_has_spouse_features-NGRAM_2_[divorce from]	0.636691
+f_has_spouse_features-INV_NGRAM_2_[divorce from]	0.629443
+f_has_spouse_features-NGRAM_1_[lady]	0.624375
+f_has_spouse_features-INV_NGRAM_2_[wedding to]	0.61725
+f_has_spouse_features-INV_NER_SEQ_[O ORDINAL O]	0.613597
+f_has_spouse_features-INV_LEMMA_SEQ_[and]	0.612714
+f_has_spouse_features-NGRAM_2_[wedding to]	0.612155
+f_has_spouse_features-INV_NER_SEQ_[O O]	0.611117
+f_has_spouse_features-INV_NGRAM_1_[bride]	0.608835
+f_has_spouse_features-NGRAM_1_[bride]	0.607369
+f_has_spouse_features-LENGTHS_[3_3]	0.606812
+f_has_spouse_features-INV_NGRAM_3_[and former President]	0.606351
+f_has_spouse_features-INV_NGRAM_1_[Mrs.]	0.603385
+f_has_spouse_features-INV_POS_SEQ_[, CD , CC]	0.601398
