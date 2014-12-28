@@ -40,7 +40,7 @@ DeepDive differs from traditional systems in several ways:
   a product from
   [Oracle](https://blogs.oracle.com/R/entry/low_rank_matrix_factorization_in),
   and low-level techniques, such as
-  [Hogwild!](http://www.eecs.berkeley.edu/~brecht/papers/hogwildTR.pdf). They
+  [Hogwild!](http://i.stanford.edu/hazy/papers/hogwild-nips.pdf). They
   have also been included in [Microsoft's
   Adam](http://www.wired.com/2014/07/microsoft-adam/).
 
