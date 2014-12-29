@@ -15,8 +15,9 @@ System](walkthrough.html).
 - [Error Analysis](#error-analysis)
   - [Using BrainDump to generate automatic reports](#braindump)
   - [Using MindTagger to label results](#mindtagger)
-  - [Use Generic Feature Library](#feature-library)
-- [Further improvements: adding data](#error-analysis-2)
+- [Improvements using Generic Feature Library](#feature-library)
+  - [Mitigate overfitting with automatic regularization](#regularization)
+- [Further improvement: adding data](#error-analysis-2)
 - [Analyzing recall](#recall)
 
 
@@ -372,13 +373,13 @@ features that are not indicative of a marriage relation (e.g.,
 `word_between=started` in the above screenshot) gets assigned a very high weight (1.567), which is
 a sign of overfitting. 
 
-With the goal of improving the quality of the extractions, in the next two
-sections we first describe how to easily enrich the set of features using the
+With the goal of improving the quality of the extractions, in the next
+section we first describe how to easily enrich the set of features using the
 [generic feature library](../gen_feats.html) included in Deepdive, and then
 describe how to mitigate overfitting by letting the system select a
 regularization parameter automatically.
 
-### <a name="feature-library" href="#"> </a> Use the Generic Feature Library
+## <a name="feature-library" href="#"> </a> Improvements using Generic Feature Library
 
 The set of features initially chosen for an application may often seem, before
 performing an error analysis, to be rich and expressive enough to allow the
@@ -525,18 +526,21 @@ version of `application.conf` is available at
     }
 ```
 
-### Mitigate overfitting with automatic regularization
+### <a name="regularization" href="#"> </a> Mitigate overfitting with automatic regularization
 
 In order to mitigate the effect of overfitting, we can use a functionality
 offered by the [DimmWitted! Sampler](../sampler.html) to automatically pick
 (from a user-specified set) a good value for *regularization*. Regularization is a
-standard machine learning technique to mitigate the effect of overfitting. The
-Gibbs sampler in DeepDive accept one or more `--reg_param VALUE` options that
+standard machine learning technique to mitigate the effect of overfitting. 
+It is critical when we use the generic feature library, since the library 
+yields a lot of features and many of them may be irrelevant.
+
+The Gibbs sampler in DeepDive accept one or more `--reg_param VALUE` options that
 can be used to specify a set of possible regularization values. The system
 will use 2-fold cross validation on the training set to select the best
 parameter value among those specified. A technical detail: the best parameter,
 as chosen by the system, is the one with the highest harmonic mean of the
-F1-score in the cross validation. 
+F1-score in the cross validation.
 
 To specify a set of regularization parameters among which to choose, and in
 general to pass arguments to the sampler, we can add the following line to
