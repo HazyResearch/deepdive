@@ -1,6 +1,12 @@
 #! /usr/bin/env python
 
-# Compute the recall based on labels
+'''
+This script is used to compute the recall based on labels, if you
+label all candidates that express marriage relation as "true", 
+and all others as "false". This is not the case for the tutorial 
+(where you should ignore candidates that do not express marriage), but 
+the case for ./spouse_example-recall/tags.json.
+'''
 
 import json, csv
 task_dir = 'spouse_example-recall/'

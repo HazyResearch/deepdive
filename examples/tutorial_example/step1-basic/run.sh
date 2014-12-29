@@ -1,5 +1,15 @@
 #! /bin/bash
 
+# Check the data files
+if ! [ -d data ] \
+  || ! [ -f data/spouses.tsv ] \
+  || ! [ -f data/non-spouses.tsv ] \
+  || ! [ -f data/sentences_dump.csv ] \
+  || ! [ -f data/sentences_dump_large.csv ]; then
+  echo "ERROR: Data files do not exist. You should download the data from http://i.stanford.edu/hazy/deepdive-tutorial-data.zip, and extract files to data/ directory."
+  exit 1;
+fi
+
 export APP_HOME=`cd $(dirname $0)/; pwd`
 export DEEPDIVE_HOME=`cd $(dirname $0)/../../../; pwd`
 
