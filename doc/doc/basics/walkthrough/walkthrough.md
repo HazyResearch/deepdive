@@ -149,7 +149,7 @@ Then, we run the script `$APP_HOME/setup_database.sh`, which creates the databas
 necessary tables and loads the data.
 
 ```bash
-sh setup_database.sh deepdive_spouse
+bash setup_database.sh deepdive_spouse
 ```
 
 This will create and populate some relations. You can check that the relations
@@ -514,8 +514,9 @@ and use exact string matching to map mentions to entities.
 
 To generate positive examples, we have exported all pairs of people with a
 `has_spouse` relationship from the [Freebase data
-dump](https://developers.google.com/freebase/data) and included them in a CSV
-file `data/spouses.csv`.
+dump](https://developers.google.com/freebase/data) and included them in a TSV
+file `data/spouses.tsv`, which should have been downloaded in
+[Preparation section](#preparation).
 
 To generate negative examples, we use the following heuristics:
 
@@ -523,12 +524,12 @@ To generate negative examples, we use the following heuristics:
 a marriage relation can be treated as a negative example: if, for example, A is
 B's parent / children / sibling, then A is not likely to be married to B. We
 include a TSV file in `data/non-spouses.tsv` containing such relations sampled
-from Freebase.
+from Freebase, which should have been downloaded in the archive.
 
 2. A pair of the same person is a negative example of `has_spouse` relations,
 e.g., "Barack Obama" cannot be married to "Barack Obama". 
 
-3. If the existing knowledge base of married couples (the `data/spouses.csv`
+3. If the existing knowledge base of married couples (the `data/spouses.tsv`
 file) contains the fact that person A is married to person B and person C is
 married to person D, then it is unlikely that person A is married to person C.
 
