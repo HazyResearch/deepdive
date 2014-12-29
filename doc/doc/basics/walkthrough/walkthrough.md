@@ -149,7 +149,7 @@ Then, we run the script `$APP_HOME/setup_database.sh`, which creates the databas
 necessary tables and loads the data.
 
 ```bash
-bash setup_database.sh deepdive_spouse
+./setup_database.sh deepdive_spouse
 ```
 
 This will create and populate some relations. You can check that the relations

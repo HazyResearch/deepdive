@@ -70,7 +70,7 @@ directory (`$HOME`), as `$HOME/local/bin/braindump`. From now on, we refer to th
 executable as `braindump`.  
 
 `braindump` requires a configuration file `braindump.conf` to be put in
-`$APP_HOME`:
+`$APP_HOME`, which should be created as below:
 
 <!--
 You can use the one in
@@ -193,9 +193,7 @@ the `run.sh` script to execute `braindump` after running the application:
 ```bash
 #! /bin/bash
 
-. "$(dirname $0)/env.sh"
-
-###### YOUR OTHER CONFIGURATIONS IN run.sh... ######
+... # YOUR OTHER CONFIGURATIONS IN run.sh...
 
 cd $DEEPDIVE_HOME
 
@@ -207,6 +205,12 @@ deepdive -c $APP_HOME/application.conf
 
 # Note that you should go back to your APP_HOME directory to run braindump
 cd $APP_HOME  
+braindump
+```
+
+If your last run of DeepDive was successful, now you can run `braindump` once, under `$APP_HOME`:
+
+```
 braindump
 ```
 
@@ -290,7 +294,7 @@ extractor developed in the [first part of the tutorial](walkthrough.html).
 
 We use [MindTagger](../labeling.html) to inspect and label 100 extractions.
 A random sample of 100 extractions is usually sufficiently large to correctly
-asses precision and to identify the most common sources of error. For more
+assess precision and to identify the most common sources of error. For more
 information about the labeling process, please refer to the
 [MindTagger](../labeling.html) page, which describes in depth how to use the
 tool, with specific examples that use the spouse application. 
@@ -344,25 +348,33 @@ cd $APP_HOME/labeling
 
 We can now open a browser, go to `localhost:8000` and perform the labeling of
 the extractions as described in the [MindTagger](../labeling.html)
-documentation. 
+documentation. You should be able to see an interface like the following 
+screenshot:
+
+![Screenshot of labeling interface in Mindtagger](../../../images/tutorial-labeling.png)
+
 
 In the directory `$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/labeling`,
 we include a sample of 100 extractions that we already labelled using
 MindTagger. To look at our labeling results, you can enter this directory, run
 `./start-mindtagger.sh` and point your browser to `localhost:8000`. In our case,
 the precision is 40%: out of 100 extractions, 40 are actually expressing a
-marriage relation. By analyzing the misclassified relations we observe
+marriage relation. 
+
+<blockquote>Precision of basic tutorial: 40%.</blockquote>
+
+By analyzing the misclassified relations we observe
 that the current set of features is not sufficiently rich and expressive to
 allow the system to learn how to correctly classify relation candidates. For
-example, if there is a word like "husband" or "wife" between the sentences, then
-the relation candidate is assigned a high probability. At the same time,
+example, if there is a word like "married", "husband" or "wife" between the sentences, then
+the relation candidate is likely to be assigned a high probability. At the same time,
 features that are not indicative of a marriage relation (e.g.,
-`word_between=posing`) gets assigned an extremely high weight (2.445), which is
+`word_between=started` in the above screenshot) gets assigned a very high weight (1.567), which is
 a sign of overfitting. 
 
 With the goal of improving the quality of the extractions, in the next two
 sections we first describe how to easily enrich the set of features using the
-[generic features library](../gen_feats.html) included in Deepdive, and then
+[generic feature library](../gen_feats.html) included in Deepdive, and then
 describe how to mitigate overfitting by letting the system select a
 regularization parameter automatically.
 
@@ -484,7 +496,7 @@ generate the feature, therefore we need to modify the `input` of the
 version of `application.conf` is available at
 `$DEEPDIVE_HOME/tutorial_example/step2-generic-features/application.conf`):
 
-```
+```bash
     ext_has_spouse_features {
       input: """
         SELECT  array_to_string(words, '~^~'),
@@ -523,14 +535,14 @@ Gibbs sampler in DeepDive accept one or more `--reg_param VALUE` options that
 can be used to specify a set of possible regularization values. The system
 will use 2-fold cross validation on the training set to select the best
 parameter value among those specified. A technical detail: the best parameter,
-as chosen by the system, is the one with the higher harmonic mean of the
+as chosen by the system, is the one with the highest harmonic mean of the
 F1-score in the cross validation. 
 
 To specify a set of regularization parameters among which to choose, and in
 general to pass arguments to the sampler, we can add the following line to
 `application.conf`, in the `deepdive` section:
 
-```
+```bash
 deepdive {
   [... other configuration directives ...]
   sampler.sampler_args: "-l 300 -s 1 -i 500 --alpha 0.1 --diminish 0.99 --reg_param 0.1 --reg_param 1 --reg_param 10"
@@ -544,8 +556,6 @@ Now that we have performed some changes to the application (generic feature
 library, and automatic regularization) we can run the application again by
 executing `./run.sh`.
 
-## <a name="error-analysis-2" href=#> </a> Further improvements: adding data
-
 Once the application has completed successfully, we can perform another round of
 error analysis by looking at another 100 extractions using MindTagger to assess
 the changes in the precision of the extractions due to the use of the generic
@@ -558,12 +568,16 @@ running `./start-mindtagger.sh` and opening your browser to the address
 `localhost:8000`. We obtained a significant increase in the precision, which is
 now 86%.
 
+<blockquote>Precision after adding feature library: 86%.</blockquote>
+
+## <a name="error-analysis-2" href=#> </a> Further improvements: adding data
+
 We can further improve the precision by using more data: having additional data
 allows the system to gather more evidence and learn better weights for the
 features. 
 
 The data archive that we downloaded at the beginning of the tutorial contains a
-additional dataset with more sentences
+additional dataset with more sentences that contains more negative examples
 (`$APP_HOME/data/sentences_dump_large.csv`).  Copy the file
 `$DEEPDIVE_HOME/examples/tutorial_example/step3-more-data/run.sh`, and the file
 `$DEEPDIVE_HOME/examples/tutorial_example/step3-more-data/setup_database.sh` to
@@ -572,23 +586,37 @@ the `$APP_HOME` directory, and execute `./run.sh`: it will setup a new database
 using this database. 
 
 At the end, you can analyze the results using MindTagger as described before,
-but make sure to update the database name in `braindump.conf`.
+but make sure to update the database name in `braindump.conf`:
+
+```bash
+# Other configurations in braindump.conf...
+export DBNAME=deepdive_spouse_large
+# ...
+
+```
 
 We labelled 100 extractions using MindTagger and found that the precision is now
 94%, which is satisfactory. You can see our labelling results by entering the
 `$DEEPDIVE_HOME/examples/tutorial_example/step3-more-data/labeling` directory
 and running `./start-mindtagger.sh`.
 
+<blockquote>Precision after adding more data: 94%.</blockquote>
+
 In this section we showed only some basic examples of the actions that can be
 taken to improve the quality of an application. Many more are possible, for
 example adding additional supervision rules or specifying additional
-correlations among the variables using inference rules. 
+correlations among the variables using inference rules. Actions should be taken
+according to the results of error analysis. For a detailed discussion, please 
+refer to this paper:
+[Feature Engineering for Knowledge Base Construction](http://arxiv.org/abs/1407.6439).
 
 ## <a name="recall" href="#"> </a> Evaluating recall
 
 We can use MindTagger also to evaluate recall, i.e., the fraction of candidates
 expressing a marriage relation that is actually extracted (i.e., assigned a
-probability at least 0.9).
+probability at least 0.9). Note that in this section, we are only 
+assessing the recall of extractions with regards to the candidates, 
+ignoring the imperfection of the candidate generation.
 
 We start by preparing some data for MindTagger that allows for the evaluation of
 recall. Copy the script
@@ -607,6 +635,10 @@ Point your browser to `localhost:8000` and make sure that on the left of the
 upper bar of the page, the `spouse_example-recall` task is selected (otherwise
 select it). 
 
+You should be able to see the interface similar as below:
+
+![Screenshot of recall-labeling interface](../../../images/tutorial-labeling-recall.png)
+
 The labelling task to compute recall is only slightly more complex than the task
 for precision. You should look at each presented candidate and at the value of the
 expectation assigned to it. You should first evaluate if a candidate is
@@ -620,16 +652,23 @@ tags to the candidates to help you in classifying the errors. Please remember
 that you should only mark as "missed" the candidates that are actually
 expressing a marriage relation but have a low expectation. You can completely
 ignore candidates not expressing a marriage relation, independently of the
-expectation that it is assigned to them. Once you have labelled (or ignored) all
+expectation that it is assigned to them. Once you have labeled (or ignored) all
 candidates, the recall can be computed as the fraction between the number of
 extracted candidates that express a marriage relation ("green") over the sum
 between the total number of candidates that express a marriage relation ("green
 plus red").
 
-We performed the labelling and found a recall of 19%. While this is not very
+The above screenshot shows an example of "correct" extraction, and below shows an example of "missed" candidates:
+
+![Screenshot of recall-labeling interface](../../../images/tutorial-labeling-recall-missed.png)
+
+We performed the labeling over 1,000 candidates, and found a recall of 19%. 
+While this is not very
 satisfactory, remember that all the steps we took earlier in this section were
 focused on improving precision, without even assessing or considering the impact
 on recall.
+
+<blockquote>Recall after adding more data: 19%.</blockquote>
 
 A low recall can be due to excessive sparsity of the features, classes of
 correct candidates that are not "covered" by the current supervision rules,
