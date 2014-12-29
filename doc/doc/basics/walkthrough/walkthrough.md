@@ -115,7 +115,17 @@ contains the commands to actually run the application.
 In order to write the application, we need some data files, namely the input corpus of
 text and some existing knowledge base of interpersonal relationship. 
 **[Download the archive here](http://i.stanford.edu/hazy/deepdive-tutorial-data.zip)**.
-Expand the archive in the `$APP_HOME/data` directory.
+Expand the archive in the `$APP_HOME/data` directory. Specific steps:
+
+```bash
+cd $APP_HOME
+mkdir data
+cd data
+
+# Download and expand the data archive
+wget http://i.stanford.edu/hazy/deepdive-tutorial-data.zip
+unzip deepdive-tutorial-data.zip
+```
 
 Now your `$APP_HOME/data` directory should contain following files:
 
@@ -146,7 +156,7 @@ cp $DEEPDIVE_HOME/examples/tutorial_example/step1-basic/setup_database.sh $APP_H
 ```
 
 Then, we run the script `$APP_HOME/setup_database.sh`, which creates the database and the
-necessary tables and loads the data.
+necessary tables and loads the data. If you are interested in what this script does, refer to the [appendix](walkthrough-extras.html#data_tables).
 
 ```bash
 ./setup_database.sh deepdive_spouse
