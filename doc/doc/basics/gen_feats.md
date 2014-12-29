@@ -2,7 +2,7 @@
 layout: default
 ---
 
-# Generic Features Library
+# Generic Feature Library
 
 This document describes the *generic features* library that is available as part
 of `ddlib`, the utility library included with DeepDive (under

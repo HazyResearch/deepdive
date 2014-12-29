@@ -115,7 +115,17 @@ contains the commands to actually run the application.
 In order to write the application, we need some data files, namely the input corpus of
 text and some existing knowledge base of interpersonal relationship. 
 **[Download the archive here](http://i.stanford.edu/hazy/deepdive-tutorial-data.zip)**.
-Expand the archive in the `$APP_HOME/data` directory.
+Expand the archive in the `$APP_HOME/data` directory. Specific steps:
+
+```bash
+cd $APP_HOME
+mkdir data
+cd data
+
+# Download and expand the data archive
+wget http://i.stanford.edu/hazy/deepdive-tutorial-data.zip
+unzip deepdive-tutorial-data.zip
+```
 
 Now your `$APP_HOME/data` directory should contain following files:
 
@@ -146,10 +156,10 @@ cp $DEEPDIVE_HOME/examples/tutorial_example/step1-basic/setup_database.sh $APP_H
 ```
 
 Then, we run the script `$APP_HOME/setup_database.sh`, which creates the database and the
-necessary tables and loads the data.
+necessary tables and loads the data. If you are interested in what this script does, refer to the [appendix](walkthrough-extras.html#data_tables).
 
 ```bash
-sh setup_database.sh deepdive_spouse
+./setup_database.sh deepdive_spouse
 ```
 
 This will create and populate some relations. You can check that the relations
@@ -514,8 +524,9 @@ and use exact string matching to map mentions to entities.
 
 To generate positive examples, we have exported all pairs of people with a
 `has_spouse` relationship from the [Freebase data
-dump](https://developers.google.com/freebase/data) and included them in a CSV
-file `data/spouses.csv`.
+dump](https://developers.google.com/freebase/data) and included them in a TSV
+file `data/spouses.tsv`, which should have been downloaded in
+[Preparation section](#preparation).
 
 To generate negative examples, we use the following heuristics:
 
@@ -523,12 +534,12 @@ To generate negative examples, we use the following heuristics:
 a marriage relation can be treated as a negative example: if, for example, A is
 B's parent / children / sibling, then A is not likely to be married to B. We
 include a TSV file in `data/non-spouses.tsv` containing such relations sampled
-from Freebase.
+from Freebase, which should have been downloaded in the archive.
 
 2. A pair of the same person is a negative example of `has_spouse` relations,
 e.g., "Barack Obama" cannot be married to "Barack Obama". 
 
-3. If the existing knowledge base of married couples (the `data/spouses.csv`
+3. If the existing knowledge base of married couples (the `data/spouses.tsv`
 file) contains the fact that person A is married to person B and person C is
 married to person D, then it is unlikely that person A is married to person C.
 
