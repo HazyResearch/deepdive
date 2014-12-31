@@ -3,6 +3,70 @@ layout: default
 root: "."
 ---
 
+<div id="deepdive-carousel" class="carousel slide" data-ride="carousel">
+  <!-- Indicators -->
+  <ol class="carousel-indicators">
+    <li data-target="#deepdive-carousel" data-slide-to="0" class="active"></li>
+    <li data-target="#deepdive-carousel" data-slide-to="1"></li>
+    <li data-target="#deepdive-carousel" data-slide-to="2"></li>
+    <li data-target="#deepdive-carousel" data-slide-to="3"></li>
+  </ol>
+  <!-- Wrapper for slides -->
+  <div class="carousel-inner">
+    <div class="item active">
+      <a href="https://github.com/hazyresearch/deepdive">
+      <img src="images/carousel/deepdive.png" alt="DeepDive Release">
+      </a>
+      <!-- <div class="carousel-caption">
+          DeepDive Release 0.4.2
+      </div> -->
+    </div>
+    <div class="item">
+      <a href="#papers">
+      <img src="images/carousel/paleo.png" alt="PaleoDeepDive">
+      </a>
+      <!-- <div class="carousel-caption">
+          DeepDive Applications
+      </div> -->
+    </div>
+    <div class="item">
+      <a href="http://www.wired.com/2014/07/microsoft-adam/">
+      <img src="images/carousel/dimmwitted.png" alt="DimmWitted">
+      </a>
+      <!-- <div class="carousel-caption">
+          DimmWitted
+      </div> -->
+    </div>
+    <div class="item">
+      <img src="images/carousel/support.png" alt="Support">
+      <!-- <div class="carousel-caption">
+          DeepDive supported by Awards from the Moore Foundation and DARPA
+      </div> -->
+    </div>
+  </div>
+  <!-- Controls -->
+  <a class="left carousel-control" href="#deepdive-carousel" role="button" data-slide="prev">
+    <span class="glyphicon glyphicon-chevron-left"></span>
+  </a>
+  <a class="right carousel-control" href="#deepdive-carousel" role="button" data-slide="next">
+    <span class="glyphicon glyphicon-chevron-right"></span>
+  </a>
+</div>
+
+
+<blockquote>
+<ul>
+<li>DeepDive asks the developer to think about features—not algorithms. In contrast, other machine learning systems require the developer think about which clustering algorithm classification algorithm, etc. In DeepDive’s joint inference based approach, the user only specifies the necessary signals or features.</li>
+<li>
+DeepDive has achieved winning performance in 
+<a href="http://i.stanford.edu/hazy/papers/2014kbp-systemdescription.pdf">text competitions</a> 
+and even beat human volunteers in extracting complex knowledge in 
+<a href="http://www.plosone.org/article/info:doi/10.1371/journal.pone.0113523">scientific domains</a>.
+</li>
+</ul>
+</blockquote>
+
+
 ### What is DeepDive?
 
 DeepDive is a new type of system that enables developers to analyze data on a
