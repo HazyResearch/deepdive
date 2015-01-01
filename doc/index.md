@@ -161,6 +161,6 @@ Riondato](http://cs.brown.edu/~matteo/).
 - [Internal database schema](doc/advanced/reserved_tables.html)
 - [Factor graph grounding output reference](doc/advanced/factor_graph_schema.html)
 
-### Supports
+### Support
 
 We gratefully acknowledge the support of [our sponsors](doc/support.html).
