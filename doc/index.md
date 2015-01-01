@@ -53,6 +53,8 @@ DeepDive differs from traditional systems in several ways:
   have also been included in [Microsoft's
   Adam](http://www.wired.com/2014/07/microsoft-adam/).
 
+For more details, check out [our papers](doc/papers.html).
+
 ### Who should use DeepDive?
 
 DeepDive is targeted to help user extract relations between entities from data
@@ -159,3 +161,6 @@ Riondato](http://cs.brown.edu/~matteo/).
 - [Internal database schema](doc/advanced/reserved_tables.html)
 - [Factor graph grounding output reference](doc/advanced/factor_graph_schema.html)
 
+### Supports
+
+We gratefully acknowledge the support of [our sponsors](doc/support.html).
