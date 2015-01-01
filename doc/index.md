@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: homepage
 root: "."
 ---
 
@@ -12,6 +12,15 @@ user feedback to improve the quality of its analysis.
 
 DeepDive differs from traditional systems in several ways:
 
+- DeepDive asks the developer to **think about features—not algorithms**.
+  In contrast, other machine learning systems require the developer
+  think about which clustering algorithm classification algorithm, etc.
+  In DeepDive’s joint inference based approach, the user only specifies
+  the necessary signals or features.
+- DeepDive has achieved **winning performance** in 
+  [text competitions](http://i.stanford.edu/hazy/papers/2014kbp-systemdescription.pdf) 
+  and even **beat human volunteers** in extracting complex knowledge in 
+  [scientific domains](http://www.plosone.org/article/info:doi/10.1371/journal.pone.0113523).
 - DeepDive is aware that **data is often noisy and imprecise**: names are
   misspelled, natural language is ambiguous, and humans make mistakes. Taking
   such imprecisions into account, DeepDive computes
@@ -43,6 +52,8 @@ DeepDive differs from traditional systems in several ways:
   [Hogwild!](http://i.stanford.edu/hazy/papers/hogwild-nips.pdf). They
   have also been included in [Microsoft's
   Adam](http://www.wired.com/2014/07/microsoft-adam/).
+
+For more details, check out [our papers](doc/papers.html).
 
 ### Who should use DeepDive?
 
@@ -150,3 +161,6 @@ Riondato](http://cs.brown.edu/~matteo/).
 - [Internal database schema](doc/advanced/reserved_tables.html)
 - [Factor graph grounding output reference](doc/advanced/factor_graph_schema.html)
 
+### Support
+
+We gratefully acknowledge the support of [our sponsors](doc/support.html).
