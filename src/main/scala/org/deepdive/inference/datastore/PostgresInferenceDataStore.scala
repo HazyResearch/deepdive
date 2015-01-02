@@ -94,6 +94,8 @@ trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent
         case _ => list.mkString(s" || '${delimiter}' || ")
       }
     }
+    
+    def analyzeTable(table: String) = s"ANALYZE ${table}"
 
     /**
      * For postgres, do not create indexes for query table
