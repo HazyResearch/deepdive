@@ -264,6 +264,11 @@ invalid csv data". But my program runs fine using PostgreSQL.**
 
 	Tune `MaxPermSize` in Java, e.g., `-XX:MaxPermSize=128m`.
 
+	Another option, especially if you are running in a Virtual Machine
+	rather than on "bare metal", is to add `vm.overcommit_memory = 1` to
+	`/etc/syctl.conf` and then run `sudo sysctl -p` (Thanks to Michael Goddard
+	for providing this aswer).
+
 - **How do I enable fuzzy string match / install "contrib" module in Greenplum?**
 
 	To enable *fuzzystringmatch* / the *contrib* module available for PostgreSQL
