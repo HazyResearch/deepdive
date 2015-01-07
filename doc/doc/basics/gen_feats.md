@@ -157,7 +157,7 @@ To obtain the generic features for a mention, the library provides the generator
 ```
 import ddlib
 ...
-for feature in ddlib.get_generic_feature_mention(sentence, span):
+for feature in ddlib.get_generic_features_mention(sentence, span):
 	# do something with the feature
 ```
 
@@ -175,15 +175,15 @@ For relations, the user can obtain the generic features using the
 ```
 import ddlib
 ...
-for feature in ddlib.get_generic_feature_relation(sentence, span1, span2):
+for feature in ddlib.get_generic_features_relation(sentence, span1, span2):
 	# do something with the feature
 ```
 
 The parameters are respectively a ordered list of `ddlib.Word` objects and the
 two `ddlib.Span` objects representing mentions composing the relation.
 
-We remark that `ddlib.get_generic_feature_mention` and
-`ddlib.get_generic_feature_relation` are [Python
+We remark that `ddlib.get_generic_featurse_mention` and
+`ddlib.get_generic_features_relation` are [Python
 generators](https://wiki.python.org/moin/Generators), so they should be used
 in a loop. 
 
