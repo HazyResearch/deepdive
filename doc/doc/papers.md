@@ -33,7 +33,7 @@ root: "."
 #### The Underlying Engine
 
 - *Best Reference for Sampler:* [DimmWitted: A Study of Main-Memory Statistical Analytics.](http://arxiv.org/abs/1403.7550) Ce Zhang and C. Ré. VLDB 2014.
-- *Best Reference for Grounding:* [Tuffy: Scaling up Statistical Inference in Markov Logic Networks using an RDBMS.](http://www.cs.stanford.edu/people/chrismre/papers/tuffy-vldb11.pdf) F. Niu, C. Ré, A.Doan, and J.W. Shavlik. PVLDB 11, 
+- *Best Reference for Grounding:* [Tuffy: Scaling up Statistical Inference in Markov Logic Networks using an RDBMS.](http://www.cs.stanford.edu/people/chrismre/papers/tuffy-vldb11.pdf) F. Niu, C. Ré, A.Doan, and J.W. Shavlik. PVLDB 11.
 
 - [Towards High-Throughput Gibbs Sampling at Scale: A Study across Storage Managers.](http://www.cs.stanford.edu/people/chrismre/papers/elementary_sigmod.pdf) Ce Zhang and C. Ré. SIGMOD 2013
 - [An Asynchronous Parallel Stochastic Coordinate Descent Algorithm.](http://arxiv.org/abs/1311.1873) J. Liu, S. Wright, C. Ré, V. Bittorf, S. Sridhar. ICML 2014. 
