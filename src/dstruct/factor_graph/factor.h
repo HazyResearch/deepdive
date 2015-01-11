@@ -5,7 +5,7 @@
 namespace dd{
 
   enum FACTOR_FUCNTION_TYPE{
-    FUNC_IMPLY_-1_1 = 0,
+    FUNC_IMPLY_neg1_1 = 0,
     FUNC_OR         = 1,
     FUNC_AND        = 2,
     FUNC_EQUAL      = 3,
@@ -74,7 +74,7 @@ namespace dd{
       const long & vid, const double & proposal) const{ 
       
       switch (func_id) {
-        case FUNC_IMPLY_-1_1   : return _potential_imply(vifs, var_values, vid, proposal);
+        case FUNC_IMPLY_neg1_1   : return _potential_imply(vifs, var_values, vid, proposal);
         case FUNC_ISTRUE      : return _potential_imply(vifs, var_values, vid, proposal);
         case FUNC_OR          : return _potential_or(vifs, var_values, vid, proposal);
         case FUNC_AND         : return _potential_and(vifs, var_values, vid, proposal);   
@@ -125,83 +125,65 @@ namespace dd{
     return 1.0;
   }
 
+
   inline double dd::CompactFactor::_potential_equal(
     const VariableInFactor * const vifs,
     const double * const var_values, 
     const long & vid, const double & proposal) const{
 
     const VariableInFactor & vif = vifs[n_start_i_vif];
-    double sum;
+    bool firstsat;
     if(vif.vid == vid){
-      sum = (vif.is_positive == true ? (proposal==vif.equal_to) : 1-(proposal==vif.equal_to));
+      firstsat = (vif.vid == vid) ? vif.satisfiedUsing(proposal) : vif.satisfiedUsing(var_values[vif.vid]) ;
     }else{
-      sum = (vif.is_positive == true ? (var_values[vif.vid]==vif.equal_to) : 1-(var_values[vif.vid]==vif.equal_to));
+      firstsat = (vif.vid == vid) ? vif.satisfiedUsing(proposal) : vif.satisfiedUsing(var_values[vif.vid]) ;
     }
 
-    for(long i_vif=n_start_i_vif+1;i_vif<n_start_i_vif+n_variables;i_vif++){
+    for(long i_vif=n_start_i_vif; (i_vif<n_start_i_vif+n_variables);i_vif++){
       const VariableInFactor & vif = vifs[i_vif];
-      if(vif.vid == vid){
-        if(sum != (vif.is_positive == true ? (proposal==vif.equal_to) : 1-(proposal==vif.equal_to))){
-          return 0.0;
-        }
-      }else{
-        if(sum != (vif.is_positive == true ? (var_values[vif.vid]==vif.equal_to) : 1-(var_values[vif.vid]==vif.equal_to))){
-          return 0.0;
-        }
-      }
+      bool satisfied = (vif.vid == vid) ? vif.satisfiedUsing(proposal) : vif.satisfiedUsing(var_values[vif.vid]) ;
+      if(satisfied != firstsat) return 0.0;
     }
     return 1.0;
   }
 
   inline double dd::CompactFactor::_potential_and(
     const VariableInFactor * const vifs,
-    const double * const var_values, 
-    const long & vid, const double & proposal) const{
+    const VariableValue * const var_values, 
+    const long & vid, 
+    const VariableValue & proposal) const{
 
-    double sum = 0.0;
-    for(long i_vif=n_start_i_vif;i_vif<n_start_i_vif+n_variables;i_vif++){
+    for(long i_vif=n_start_i_vif; (i_vif<n_start_i_vif+n_variables);i_vif++){
       const VariableInFactor & vif = vifs[i_vif];
-      if(vif.vid == vid){
-        sum += (vif.is_positive == false ? (proposal==vif.equal_to) : 1-(proposal==vif.equal_to));
-      }else{
-        sum += (vif.is_positive == false ? (var_values[vif.vid]==vif.equal_to)
-          : 1-(var_values[vif.vid]==vif.equal_to));
-      }
+      bool satisfied = (vif.vid == vid) ? vif.satisfiedUsing(proposal) : vif.satisfiedUsing(var_values[vif.vid]) ;
+      if(!satisfied) return 0.0;
     }
-    if(sum != 0){
-      return 1.0 - 1.0;
-    }else{
-      return 1.0 - 0.0;
-    }
+    return 1.0;
+
   }
+
 
   inline double dd::CompactFactor::_potential_or(
     const VariableInFactor * const vifs,
-    const double * const var_values, 
-    const long & vid, const double & proposal) const{
+    const VariableValue * const var_values, 
+    const long & vid, 
+    const VariableValue & proposal) const{
 
-    double sum = 0.0;
-    for(long i_vif=n_start_i_vif;i_vif<n_start_i_vif+n_variables;i_vif++){
+    for(long i_vif=n_start_i_vif; (i_vif<n_start_i_vif+n_variables);i_vif++){
       const VariableInFactor & vif = vifs[i_vif];
-      if(vif.vid == vid){
-        sum += (vif.is_positive == true ? (proposal==vif.equal_to) : 1-(proposal==vif.equal_to));
-      }else{
-        sum += (vif.is_positive == true ? (var_values[vif.vid]==vif.equal_to)
-          : 1-(var_values[vif.vid]==vif.equal_to));
-      }
+      bool satisfied = (vif.vid == vid) ? vif.satisfiedUsing(proposal) : vif.satisfiedUsing(var_values[vif.vid]) ;
+      if(satisfied) return 1.0;
     }
-    if(sum != 0){
-      return 1.0;
-    }else{
-      return 0.0;
-    }
+    return 0.0;
+
   }
 
+
   inline double dd::CompactFactor::_potential_imply(
-      const VariableInFactor * const vifs,
-      const VariableValue * const var_values, 
-      const long & vid, 
-      const VariableValue & proposal) const{
+    const VariableInFactor * const vifs,
+    const VariableValue * const var_values, 
+    const long & vid, 
+    const VariableValue & proposal) const{
 
     bool bBody = true; // 
     for(long i_vif=n_start_i_vif; 
