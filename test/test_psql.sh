@@ -56,7 +56,6 @@ if [ "x$1" != "xcoverage" ]; then
 	sbt "test-only org.deepdive.test.integration.BiasedCoin -- -oF" && \
 	sbt "test-only org.deepdive.test.integration.PostgresSpouseExample -- -oF" && \
 	sbt "test-only org.deepdive.test.integration.ChunkingApp -- -oF"
-	echo DONE
 	# Running a specific test with Eclipse debugger
 	# SBT_OPTS="-agentlib:jdwp=transport=dt_socket,address=localhost:8000,server=y,suspend=y -Xmx4g" sbt/sbt "test-only org.deepdive.test.unit.PostgresInferenceDataStoreSpec"
 else
