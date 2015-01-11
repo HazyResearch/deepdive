@@ -2,8 +2,18 @@
 #ifndef _FACTOR_H_
 #define _FACTOR_H_
 
-
 namespace dd{
+
+  enum FACTOR_FUCNTION_TYPE{
+    FUNC_IMPLY_-1_1 = 0,
+    FUNC_OR         = 1,
+    FUNC_AND        = 2,
+    FUNC_EQUAL      = 3,
+    FUNC_ISTRUE     = 4,
+    FUNC_MULTINOMIAL= 5,
+    FUNC_SQLSELECT  = 10,
+    FUNC_ContLR     = 20
+  };
 
   template<bool does_change_evid>
   inline const double & get_vassign(const Variable & v);
@@ -63,30 +73,19 @@ namespace dd{
       const double * const var_values,
       const long & vid, const double & proposal) const{ 
       
-      if(func_id == 0){
-        return _potential_imply(vifs, var_values, vid, proposal);
-      }else if(func_id == 4){
-        return _potential_imply(vifs, var_values, vid, proposal);
-      }else if(func_id == 1){ // OR
-        return _potential_or(vifs, var_values, vid, proposal);
-      }else if(func_id == 2){ // AND
-        return _potential_and(vifs, var_values, vid, proposal);   
-      }else if(func_id == 3){ // EQUAL
-        return _potential_equal(vifs, var_values, vid, proposal);     
-      } else if (func_id == 5) {
-        return _potential_multinomial(vifs, var_values, vid, proposal);
-      }else if(func_id == 10){ // SQLSELECT
-        assert(false);
-        return 0.0;
-        //return _potential_sqlselect(vifs, var_values, vid, proposal);   
-      }else if(func_id == 20){ // YUKE -- ContinuousLR
-        assert(false);
-        //return _potential_continuousLR(vifs, var_values, vid, proposal);  
-        return 0.0;
-      }else{
+      switch (func_id) {
+        case FUNC_IMPLY_-1_1   : return _potential_imply(vifs, var_values, vid, proposal);
+        case FUNC_ISTRUE      : return _potential_imply(vifs, var_values, vid, proposal);
+        case FUNC_OR          : return _potential_or(vifs, var_values, vid, proposal);
+        case FUNC_AND         : return _potential_and(vifs, var_values, vid, proposal);   
+        case FUNC_EQUAL       : return _potential_equal(vifs, var_values, vid, proposal);  
+        case FUNC_MULTINOMIAL : return _potential_multinomial(vifs, var_values, vid, proposal);
+        case FUNC_SQLSELECT   : std::cout << "SQLSELECT Not supported yet!" << std::endl; assert(false); return 0;  
+        case FUNC_ContLR   : std::cout << "ContinuousLR Not supported yet!" << std::endl; assert(false); return 0;  
         std::cout << "Unsupported Factor Function ID= " << func_id << std::endl;
         assert(false);
       }
+
       return 0.0;
     }
 
@@ -225,54 +224,6 @@ namespace dd{
 
   }
 
-
-  /*
-  inline double dd::CompactFactor::_potential_imply(
-      const VariableInFactor * const vifs,
-      const double * const var_values, 
-      const long & vid, const double & proposal) const{
-
-      double sum = 0.0;
-
-      for(long i_vif=n_start_i_vif;i_vif<n_start_i_vif+n_variables;i_vif++){
-        const VariableInFactor & vif = vifs[i_vif];
-        
-        if(vif.n_position == n_variables - 1){
-          if(vif.vid == vid){
-            //if(vid == 548590 || vid == 2531610) std::cout << "  head  " << vif.vid << " , " << proposal << " , " << vif.is_positive << " , " << (proposal==vif.equal_to) << std::endl;
-            sum += (vif.is_positive == true ? (proposal==vif.equal_to) : 1-(proposal==vif.equal_to));
-            //std::cout << proposal << " --> " << (proposal==vif.equal_to) << " " << vif.equal_to << std::endl; 
-          }else{
-            //if(vid == 548590 || vid == 2531610) std::cout << "  head  " << vif.vid << " , " << var_values[vif.vid] << " , " << vif.is_positive << " , " << (var_values[vif.vid]==vif.equal_to) << std::endl;
-            sum += (vif.is_positive == true ? (var_values[vif.vid]==vif.equal_to)
-              : 1-(var_values[vif.vid]==vif.equal_to));
-          }
-        }else{
-          if(vif.vid == vid){
-            //if(vid == 548590 || vid == 2531610) std::cout << "  body  " << vif.vid << " , " << proposal << " , " << vif.is_positive << " , " << (proposal==vif.equal_to) << std::endl;
-            sum += (vif.is_positive == false ? (proposal==vif.equal_to) : 1-(proposal==vif.equal_to));
-          }else{
-            //if(vid == 548590 || vid == 2531610) std::cout << "  body  " << vif.vid << " , " << var_values[vif.vid] << " , " << vif.is_positive << " , " << (var_values[vif.vid]==vif.equal_to) << std::endl;
-            sum += (vif.is_positive == false ? (var_values[vif.vid]==vif.equal_to)
-              : (var_values[vif.vid]==vif.equal_to));
-          }
-        }
-      }
-
-      //if(vid == 548590 || vid == 2531610){
-      //  std::cout << "@" << n_variables << "  v" << vid << "    " << proposal << "    " << sum << std::endl;  
-      //}
-
-
-      if(sum != 0){
-        //std::cout << "f" << id << " " << proposal << " -> 1.0" << "    " << vifs[0].equal_to <<std::endl;
-        return 1.0;
-      }else{
-        //std::cout << "f" << id << " " << proposal << " -> 0.0" << "    " << vifs[0].equal_to <<std::endl;
-        return 0.0;
-      }
-  }
-  */
 }
 
 #endif
