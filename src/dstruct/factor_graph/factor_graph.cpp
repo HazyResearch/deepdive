@@ -1,0 +1,122 @@
+
+#include <iostream>
+#include "io/binary_parser.h"
+#include "dstruct/factor_graph/factor_graph.h"
+
+
+template <class OBJTOSORT>
+class idsorter : public std::binary_function<OBJTOSORT, OBJTOSORT, bool>{
+public:
+  inline bool operator()(const OBJTOSORT & left, const OBJTOSORT & right){
+    return left.id < right.id;  
+  }
+};
+
+void dd::FactorGraph::load(const CmdParser & cmd){
+
+  std::string weight_file = cmd.weight_file->getValue();
+  std::string variable_file = cmd.variable_file->getValue();
+  std::string factor_file = cmd.factor_file->getValue();
+  std::string edge_file = cmd.edge_file->getValue();
+
+  std::string filename_edges = edge_file;
+  std::string filename_factors = factor_file;
+  std::string filename_variables = variable_file;
+  std::string filename_weights = weight_file;
+
+  // long long n_loaded = dd::stream_load_pb<deepdive::Variable, dd::FactorGraph, handle_variable>(filename_variables, *this);
+  long long n_loaded = read_variables(filename_variables, *this);
+  assert(n_loaded == n_var);
+  std::cout << "LOADED VARIABLES: #" << n_loaded << std::endl;
+  std::cout << "         N_QUERY: #" << n_query << std::endl;
+  std::cout << "         N_EVID : #" << n_evid << std::endl;  
+  // n_loaded = dd::stream_load_pb<deepdive::Factor, dd::FactorGraph, handle_factor>(filename_factors, *this);
+  n_loaded = read_factors(filename_factors, *this);
+  assert(n_loaded == n_factor);
+  std::cout << "LOADED FACTORS: #" << n_loaded << std::endl;
+
+  // n_loaded = dd::stream_load_pb<deepdive::Weight, dd::FactorGraph, handle_weight>(filename_weights, *this);
+  n_loaded = read_weights(filename_weights, *this);
+  assert(n_loaded == n_weight);
+  std::cout << "LOADED WEIGHTS: #" << n_loaded << std::endl;
+
+  this->finalize_loading();
+
+  //n_loaded = dd::stream_load_pb<deepdive::GraphEdge, dd::FactorGraph, handle_edge>(filename_edges, *this);
+  n_loaded = read_edges(edge_file, *this);
+  std::cout << "LOADED EDGES: #" << n_loaded << std::endl;
+
+  this->safety_check();
+
+  assert(this->is_usable() == true);
+
+}
+
+void dd::FactorGraph::finalize_loading(){
+  std::cout << "Start Sorting Variables... nvar=" << n_var << std::endl;
+  std::sort(&variables[0], &variables[n_var], idsorter<Variable>());
+  std::cout << "Start Sorting Factors... nfac=" << n_factor << std::endl;
+  std::sort(&factors[0], &factors[n_factor], idsorter<Factor>());
+  std::cout << "Start Sorting Weights... nvar=" << n_weight << std::endl;
+  std::sort(&weights[0], &weights[n_weight], idsorter<Weight>()); 
+  this->loading_finalized = true;
+  std::cout << "Start Init Results... " << std::endl;
+  infrs->init(variables, weights);
+}
+
+void dd::FactorGraph::safety_check(){
+
+  c_edge = 0;
+  for(long i=0;i<n_factor;i++){
+    Factor & factor = factors[i];
+    factor.n_start_i_vif = c_edge;
+    for(const VariableInFactor & vif : factor.tmp_variables){
+      vifs[c_edge] = vif;
+      c_edge ++;
+    }
+  }
+
+  c_edge = 0;
+  long ntallies = 0;
+  for(long i=0;i<n_var;i++){
+    Variable & variable = variables[i];
+    variable.n_factors = variable.tmp_factor_ids.size();  // no edge count any more
+    
+    variable.n_start_i_factors = c_edge;
+    if(variable.domain_type == DTYPE_MULTINOMIAL){
+      variable.n_start_i_tally = ntallies;
+      ntallies += variable.upper_bound - variable.lower_bound + 1;
+    }
+    for(const long & fid : variable.tmp_factor_ids){
+      factor_ids[c_edge] = fid;
+      factors_dups[c_edge].id = factors[fid].id;
+      factors_dups[c_edge].func_id = factors[fid].func_id;
+      factors_dups[c_edge].n_variables = factors[fid].n_variables;
+      factors_dups[c_edge].n_start_i_vif = factors[fid].n_start_i_vif;
+      factors_dups_weightids[c_edge] = factors[fid].weight_id;
+      c_edge ++;
+    }
+  }
+
+  long s = n_var;
+  for(long i=0;i<s;i++){
+    // std::cout << this->variables[i].id << "    " << i << std::endl;
+    assert(this->variables[i].id == i);
+  }
+  s = n_factor;
+  for(long i=0;i<s;i++){
+    assert(this->factors[i].id == i);
+  }
+  s = n_weight;
+  for(long i=0;i<s;i++){
+    assert(this->weights[i].id == i);
+  }
+  std::cout << "FACTOR GRAPH: Safety Checking Passed..." << std::endl;
+  this->safety_check_passed = true;
+}
+
+
+
+
+
+
