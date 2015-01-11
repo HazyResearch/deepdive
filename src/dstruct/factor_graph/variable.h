@@ -4,6 +4,8 @@
 
 namespace dd{
 
+  typedef double VariableValue;
+
   class Variable {
   public:
     long id;
@@ -57,6 +59,10 @@ namespace dd{
     double equal_to;
 
     int dimension;
+
+    bool satisfiedUsing(int value) const{
+      return is_positive ? equal_to == value : !(equal_to == value); // TODO: Fix equal_to to INT
+    }
 
     VariableInFactor(){
 
