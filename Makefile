@@ -8,7 +8,7 @@ CXX = g++
 endif
 OPT_FLAG = -Ofast
 GCC_INCLUDE = -I./lib/tclap/include/ -I./src -I./lib/numactl-2.0.9/
-GCC_LIB = -L./lib/numactl-2.0.9/
+GCC_LIB = -L./lib/numactl-2.0.9/ 
 CPP_FLAG = -std=c++0x -Wl,-Bstatic -Wl,-Bdynamic -lnuma -lrt
 endif
 
@@ -29,8 +29,8 @@ dw: factor_graph.o gibbs_sampling.o main.o binary_parser.o single_thread_sampler
 	$(COMPILE_CMD) -o dw gibbs_sampling.o main.o binary_parser.o \
 					    timer.o gibbs.o single_node_sampler.o \
 						factor_graph.o single_thread_sampler.o factor.o \
-						variable.o weight.o cmd_parser.o\
-			$(CPP_FLAG) 
+						variable.o weight.o cmd_parser.o \
+	$(CPP_FLAG) 
 
 gibbs.o: src/gibbs.cpp
 	$(COMPILE_CMD) -c src/gibbs.cpp
@@ -68,15 +68,26 @@ single_node_sampler.o: src/app/gibbs/single_node_sampler.cpp
 timer.o : src/timer.cpp 
 	$(COMPILE_CMD) -o timer.o -c src/timer.cpp 
 
+dw_test: factor_graph.o gibbs_sampling.o  binary_parser.o single_thread_sampler.o \
+	timer.o gibbs.o single_node_sampler.o factor.o variable.o weight.o cmd_parser.o
+	
+	$(COMPILE_CMD) -I./lib/gtest-1.7.0/include/ -L./lib/gtest/ \
+	-o dw_test test/test.cpp test/FactorTest.cpp test/LogisticRegressionTest.cpp \
+	gibbs_sampling.o binary_parser.o \
+    timer.o gibbs.o single_node_sampler.o \
+	factor_graph.o single_thread_sampler.o factor.o \
+	variable.o weight.o cmd_parser.o \
+	$(CPP_FLAG) -lgtest
 
 dep:
 ifeq ($(UNAME), Darwin)
+
 	cd lib;\
-	tar xf protobuf-2.5.0.tar.bz2;\
-	cd protobuf-2.5.0;\
-	./configure --prefix=`pwd`/../protobuf CC=clang CXX=clang++ CXXFLAGS='-std=c++11 -stdlib=libc++ -O3 -g' LDFLAGS='-stdlib=libc++' LIBS="-lc++ -lc++abi";\
-	make -j8;\
-	make install
+	unzip gtest-1.7.0.zip;\
+	mkdir gtest;\
+	cd gtest;\
+	cmake ../gtest-1.7.0;\
+	make
 
 	cd lib;\
 	tar xf tclap-1.2.1.tar.gz;\
@@ -87,12 +98,13 @@ ifeq ($(UNAME), Darwin)
 endif
 
 ifeq ($(UNAME), Linux)
+
 	cd lib;\
-	tar xf protobuf-2.5.0.tar.bz2;\
-	cd protobuf-2.5.0;\
-	./configure --prefix=`pwd`/../protobuf ;\
-	make -j8;\
-	make install
+	unzip gtest-1.7.0.zip;\
+	mkdir gtest;\
+	cd gtest;\
+	cmake ../gtest-1.7.0;\
+	make
 
 	cd lib;\
 	tar xf tclap-1.2.1.tar.gz;\
@@ -101,7 +113,6 @@ ifeq ($(UNAME), Linux)
 	make;\
 	make install
 endif
-
 
 clean:
 	rm -rf *.o
