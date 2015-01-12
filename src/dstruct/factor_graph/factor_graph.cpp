@@ -2,7 +2,7 @@
 #include <iostream>
 #include "io/binary_parser.h"
 #include "dstruct/factor_graph/factor_graph.h"
-
+#include "dstruct/factor_graph/factor.h"
 
 template <class OBJTOSORT>
 class idsorter : public std::binary_function<OBJTOSORT, OBJTOSORT, bool>{
@@ -11,6 +11,192 @@ public:
     return left.id < right.id;  
   }
 };
+
+
+dd::InferenceResult::InferenceResult(long _nvars, long _nweights):
+  assignments_free(new VariableValue[_nvars]),
+  assignments_evid(new VariableValue[_nvars]),
+  agg_means(new double[_nvars]),
+  agg_nsamples(new double[_nvars]),
+  weight_values(new double [_nweights]),
+  weights_isfixed(new bool [_nweights]),
+  nweights(_nweights),
+  nvars(_nvars){}
+
+void dd::InferenceResult::init(Variable * variables, Weight * const weights){
+
+  ntallies = 0;
+  for(long t=0;t<nvars;t++){
+    const Variable & variable = variables[t];
+    assignments_free[variable.id] = variable.assignment_free;
+    assignments_evid[variable.id] = variable.assignment_evid;
+    agg_means[variable.id] = 0.0;
+    agg_nsamples[variable.id] = 0.0;
+    if(variable.domain_type == DTYPE_MULTINOMIAL){
+      //variable.n_start_i_tally = ntallies;
+      ntallies += variable.upper_bound - variable.lower_bound + 1;
+    }
+  }
+
+  multinomial_tallies = new int[ntallies];
+  for(long i=0;i<ntallies;i++){
+    multinomial_tallies[i] = 0;
+  }
+
+  for(long t=0;t<nweights;t++){
+    const Weight & weight = weights[t];
+    weight_values[weight.id] = weight.weight;
+    weights_isfixed[weight.id] = weight.isfixed;
+  }
+}
+
+
+bool dd::FactorGraph::is_usable(){
+  return this->loading_finalized && this->safety_check_passed;
+}
+
+dd::FactorGraph::FactorGraph(long _n_var, long _n_factor, long _n_weight, long _n_edge) : 
+  variables(new Variable[_n_var]),
+  factors(new Factor[_n_factor]),
+  weights(new Weight[_n_weight]),
+  n_var(_n_var), n_factor(_n_factor), n_weight(_n_weight),
+  infrs(new InferenceResult(_n_var, _n_weight)),
+  n_edge(_n_edge),
+  factor_ids(new long[_n_edge]),
+  factors_dups(new CompactFactor[_n_edge]),
+  vifs(new VariableInFactor[_n_edge]),
+  factors_dups_weightids(new int[_n_edge])
+{
+  this->loading_finalized = false;
+  this->safety_check_passed = false;
+  c_nvar = 0;
+  c_nfactor = 0;
+  c_nweight = 0;
+  n_evid = 0;
+  n_query = 0;
+}
+
+void dd::FactorGraph::copy_from(const FactorGraph * const p_other_fg){
+
+  memcpy(variables, p_other_fg->variables, sizeof(Variable)*n_var);
+  memcpy(factors, p_other_fg->factors, sizeof(Factor)*n_factor);
+  memcpy(weights, p_other_fg->weights, sizeof(Weight)*n_weight);
+  memcpy(factor_ids, p_other_fg->factor_ids, sizeof(long)*n_edge);
+  memcpy(vifs, p_other_fg->vifs, sizeof(VariableInFactor)*n_edge);
+
+  memcpy(factors_dups, p_other_fg->factors_dups, sizeof(CompactFactor)*n_edge);
+  memcpy(factors_dups_weightids, p_other_fg->factors_dups_weightids, sizeof(int)*n_edge);
+
+  c_nvar = p_other_fg->c_nvar;
+  c_nfactor = p_other_fg->c_nfactor;
+  c_nweight = p_other_fg->c_nweight;
+  c_edge = p_other_fg->c_edge;
+  loading_finalized = p_other_fg->loading_finalized;
+  safety_check_passed = p_other_fg->safety_check_passed;
+
+  infrs->init(variables, weights);
+  infrs->ntallies = p_other_fg->infrs->ntallies;
+  infrs->multinomial_tallies = new int[p_other_fg->infrs->ntallies];
+  for(long i=0;i<infrs->ntallies;i++){
+    infrs->multinomial_tallies[i] = p_other_fg->infrs->multinomial_tallies[i];
+  }
+}
+
+long dd::FactorGraph::get_weightid(const VariableValue *assignments, const CompactFactor& fs, long vid, long proposal) {
+  long weight_offset = 0;
+  for (long i = fs.n_start_i_vif; i < fs.n_start_i_vif + fs.n_variables; i++) {
+    const VariableInFactor & vif = vifs[i];
+    if (vif.vid == vid) {
+      weight_offset = weight_offset * (variables[vif.vid].upper_bound+1) + proposal;
+    } else {
+      weight_offset = weight_offset * (variables[vif.vid].upper_bound+1) + assignments[vif.vid];
+    }
+  }
+  long base_offset = &fs - factors_dups; // note c++ will auto scale by sizeof(CompactFactor)
+  return *(factors_dups_weightids + base_offset) + weight_offset;
+}
+
+
+void dd::FactorGraph::update_weight(const Variable & variable){
+  CompactFactor * const fs = factors_dups + variable.n_start_i_factors;
+  const int * const ws = factors_dups_weightids + variable.n_start_i_factors;
+  for(long i=0;i<variable.n_factors;i++){
+    if (variable.domain_type == DTYPE_BOOLEAN) {
+      if(infrs->weights_isfixed[ws[i]] == false){
+        if(fs[i].func_id != 20){
+          infrs->weight_values[ws[i]] += 
+            stepsize * (this->template potential<false>(fs[i]) - this->template potential<true>(fs[i]));
+        }else{
+
+          const int & dimension = vifs[fs[i].n_start_i_vif].dimension;
+
+          const long & cvid = vifs[fs[i].n_start_i_vif].vid;
+          const long & wid = ws[i];
+          const long & bvid = vifs[fs[i].n_start_i_vif+1].vid;
+
+          const long assignments_evid_bvid = infrs->assignments_evid[bvid];
+          const long assignments_free_bvid = infrs->assignments_free[bvid];
+
+          if(assignments_evid_bvid != assignments_free_bvid){
+            for(int j=0;j<dimension;j++){
+              infrs->weight_values[wid + j] +=
+                  stepsize * (assignments_evid_bvid * infrs->assignments_evid[cvid+j]
+                    - assignments_free_bvid * infrs->assignments_free[cvid+j]);
+            }
+          }
+        }
+      }
+    } else if (variable.domain_type == DTYPE_MULTINOMIAL) {
+      // two weights need to be updated
+      // sample with evidence fixed, I0, with variable assignment d0
+      // sample without evidence unfixed, I1, with variable assigment d1 
+      // gradient of wd0 = f(I0) - I(d0==d1)f(I1)
+      // gradient of wd1 = I(d0==d1)f(I0) - f(I1)
+      if(fs[i].func_id != 20){
+        long wid1 = get_weightid(infrs->assignments_evid, fs[i], -1, -1);
+        long wid2 = get_weightid(infrs->assignments_free, fs[i], -1, -1);
+        int equal = infrs->assignments_evid[variable.id] == infrs->assignments_free[variable.id];
+
+        if(infrs->weights_isfixed[wid1] == false){
+          infrs->weight_values[wid1] += 
+            stepsize * (this->template potential<false>(fs[i]) - equal * this->template potential<true>(fs[i]));
+        }
+
+        if(infrs->weights_isfixed[wid2] == false){
+          infrs->weight_values[wid2] += 
+            stepsize * (equal * this->template potential<false>(fs[i]) - this->template potential<true>(fs[i]));
+        }
+      }else{
+
+        const int & dimension = vifs[fs[i].n_start_i_vif].dimension;
+        const long & cvid = vifs[fs[i].n_start_i_vif].vid;
+        const long & bvid = vifs[fs[i].n_start_i_vif+1].vid;
+
+        const long assignments_evid_bvid = infrs->assignments_evid[bvid];
+        const long assignments_free_bvid = infrs->assignments_free[bvid];
+
+        if(assignments_evid_bvid != assignments_free_bvid){
+
+          // udpate the weight for assignments_evid_bvid
+          long wid = ws[i] + dimension * assignments_evid_bvid;
+          for(int j=0;j<dimension;j++){
+            infrs->weight_values[wid + j] +=
+                stepsize * (infrs->assignments_evid[cvid+j]);
+          }
+
+          // update the wight for assignments_free_bvid
+          wid = ws[i] + dimension * assignments_free_bvid;
+          for(int j=0;j<dimension;j++){
+            infrs->weight_values[wid + j] +=
+                stepsize * (-infrs->assignments_evid[cvid+j]);
+          }
+
+        }
+
+      }
+    }
+  }
+}
 
 void dd::FactorGraph::load(const CmdParser & cmd){
 

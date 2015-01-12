@@ -4,6 +4,8 @@
 
 namespace dd{
 
+  typedef long WeightIndex;
+
   class Weight {
   public:
     long id;
@@ -12,15 +14,10 @@ namespace dd{
 
     Weight(const long & _id,
            const double & _weight,
-           const bool & _isfixed):
-      id(_id),
-      weight(_weight),
-      isfixed(_isfixed)
-    {}
+           const bool & _isfixed);
 
-    Weight(){
-      
-    }
+    Weight();
+
   }; 
 
 

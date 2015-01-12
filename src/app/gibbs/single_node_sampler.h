@@ -8,15 +8,9 @@
 #define _SINGLE_NODE_SAMPLER_H
 
 namespace dd{
-  void gibbs_single_thread_task(FactorGraph * const _p_fg, int i_worker, int n_worker){
-    SingleThreadSampler sampler = SingleThreadSampler(_p_fg);
-    sampler.sample(i_worker,n_worker);
-  }
+  void gibbs_single_thread_task(FactorGraph * const _p_fg, int i_worker, int n_worker);
 
-  void gibbs_single_thread_sgd_task(FactorGraph * const _p_fg, int i_worker, int n_worker){
-    SingleThreadSampler sampler = SingleThreadSampler(_p_fg);
-    sampler.sample_sgd(i_worker,n_worker);
-  }
+  void gibbs_single_thread_sgd_task(FactorGraph * const _p_fg, int i_worker, int n_worker);
 
   class SingleNodeSampler{
 
@@ -29,45 +23,17 @@ namespace dd{
     SingeNodeWorker<FactorGraph, gibbs_single_thread_task> * sample_worker;
     SingeNodeWorker<FactorGraph, gibbs_single_thread_sgd_task> * sgd_worker;
 
-    SingleNodeSampler(FactorGraph * _p_fg, int _nthread, int _nodeid) :
-      p_fg (_p_fg)    
-    {
-      this->nthread = _nthread;
-      this->nodeid = _nodeid;
-      this->sample_worker = new SingeNodeWorker<FactorGraph, gibbs_single_thread_task>(this->p_fg, 
-        this->nthread, this->nodeid);
-      this->sgd_worker = new SingeNodeWorker<FactorGraph, gibbs_single_thread_sgd_task>(this->p_fg, 
-        this->nthread, this->nodeid);
-    }
+    SingleNodeSampler(FactorGraph * _p_fg, int _nthread, int _nodeid);
 
-    void clear_variabletally(){
-      for(long i=0;i<p_fg->n_var;i++){
-        p_fg->infrs->agg_means[i] = 0.0;
-        p_fg->infrs->agg_nsamples[i] = 0.0;
-      }
-      for(long i=0;i<p_fg->infrs->ntallies;i++){
-        p_fg->infrs->multinomial_tallies[i] = 0;
-      }
-    }
+    void clear_variabletally();
 
-    void sample(){
-      this->sample_worker->execute();
-    }
+    void sample();
 
-    void wait(){
-      this->sample_worker->wait();
-    }
+    void wait();
 
-    void sample_sgd(){
-      this->sgd_worker->execute();
-    }
+    void sample_sgd();
 
-
-    void wait_sgd(){
-      this->sgd_worker->wait();
-    }
-
-
+    void wait_sgd();
 
   };
 }

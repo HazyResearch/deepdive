@@ -1,10 +1,14 @@
 
+#include <vector>
+
 #ifndef _VARIABLE_H_
 #define _VARIABLE_H_
 
 namespace dd{
 
   typedef int VariableValue;
+  typedef long VariableIndex;
+  typedef long FactorIndex;
 
   class Variable {
   public:
@@ -27,28 +31,12 @@ namespace dd{
     double agg_mean;
     long n_sample;
 
-    Variable(){
-
-    }
+    Variable();
 
     Variable(const long & _id, const int & _domain_type, 
              const bool & _is_evid, const VariableValue & _lower_bound,
              const VariableValue & _upper_bound, const VariableValue & _init_value, 
-             const VariableValue & _current_value, const int & _n_factors){
-
-      this->id = _id;
-      this->domain_type = _domain_type;
-      this->is_evid = _is_evid;
-      this->lower_bound = _lower_bound;
-      this->upper_bound = _upper_bound;
-      this->assignment_evid = _init_value;
-      this->assignment_free = _current_value;
-
-      this->n_factors = _n_factors;
-
-      this->n_sample = 0;
-      this->agg_mean = 0.0;
-    }
+             const VariableValue & _current_value, const int & _n_factors);
   };
 
   class VariableInFactor {
@@ -60,44 +48,22 @@ namespace dd{
 
     int dimension;
 
-    bool satisfiedUsing(int value) const{
-      return is_positive ? equal_to == value : !(equal_to == value); 
-    }
+    bool satisfiedUsing(int value) const;
 
-    VariableInFactor(){
-
-    }
+    VariableInFactor();
 
 
     VariableInFactor(int dummy,
                       const int & _dimension, 
                       const long & _vid, const int & _n_position, 
-                     const bool & _is_positive){
-      this->dimension = _dimension;
-      this->vid = _vid;
-      this->n_position = _n_position;
-      this->is_positive = _is_positive;
-      this->equal_to = 1.0;
-    }
+                     const bool & _is_positive);
 
 
     VariableInFactor(const long & _vid, const int & _n_position, 
-                     const bool & _is_positive){
-      this->dimension = -1;
-      this->vid = _vid;
-      this->n_position = _n_position;
-      this->is_positive = _is_positive;
-      this->equal_to = 1.0;
-    }
+                     const bool & _is_positive);
 
     VariableInFactor(const long & _vid, const int & _n_position, 
-                     const bool & _is_positive, const VariableValue & _equal_to){
-      this->dimension = -1;
-      this->vid = _vid;
-      this->n_position = _n_position;
-      this->is_positive = _is_positive;
-      this->equal_to = _equal_to;
-    }
+                     const bool & _is_positive, const VariableValue & _equal_to);
   };
 }
 
