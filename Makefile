@@ -25,17 +25,13 @@ endif
 
 COMPILE_CMD = $(CXX) $(OPT_FLAG) $(GCC_INCLUDE) $(GCC_LIB) $(CPP_FLAG)
 
-# LIBRARY_PATH=$LIBRARY_PATH:./lib/protobuf/lib/
+dw: factor_graph.o gibbs_sampling.o main.o binary_parser.o single_thread_sampler.o timer.o gibbs.o
+	$(COMPILE_CMD) -o dw factor_graph.o gibbs_sampling.o main.o binary_parser.o \
+						single_thread_sampler.o timer.o gibbs.o \
+			$(CPP_FLAG) 
 
-#dw2:
-#	$(COMPILE_CMD) \
-#	src/main.cpp   \
-#	src/dstruct/factor_graph/factor_graph.cpp \
-#	src/dstruct/factor_graph/factor_graph.pb.cc \
-#	src/app/gibbs/gibbs_sampling.cpp
-
-dw: factor_graph.o factor_graph.pb.o gibbs_sampling.o main.o binary_parser.o
-	$(COMPILE_CMD) -o dw factor_graph.o factor_graph.pb.o gibbs_sampling.o main.o binary_parser.o $(CPP_FLAG) 
+gibbs.o: src/gibbs.cpp
+	$(COMPILE_CMD) -c src/gibbs.cpp
 
 binary_parser.o: src/io/binary_parser.cpp
 	$(COMPILE_CMD) -c src/io/binary_parser.cpp
@@ -43,17 +39,18 @@ binary_parser.o: src/io/binary_parser.cpp
 main.o: src/main.cpp
 	$(COMPILE_CMD) -c src/main.cpp
 
-factor_graph.o: src/dstruct/factor_graph/factor_graph.cpp src/io/pb_parser.h
+factor_graph.o: src/dstruct/factor_graph/factor_graph.cpp
 	$(COMPILE_CMD) -c src/dstruct/factor_graph/factor_graph.cpp
 
-factor_graph.pb.o: src/dstruct/factor_graph/factor_graph.pb.cc
-	$(COMPILE_CMD) -c src/dstruct/factor_graph/factor_graph.pb.cc
+gibbs_sampling.o: src/app/gibbs/gibbs_sampling.cpp src/app/gibbs/single_thread_sampler.cpp
+	$(COMPILE_CMD) -o gibbs_sampling.o -c src/app/gibbs/gibbs_sampling.cpp
 
-gibbs_sampling.o: src/app/gibbs/gibbs_sampling.cpp
-	$(COMPILE_CMD) -c src/app/gibbs/gibbs_sampling.cpp
+single_thread_sampler.o: src/app/gibbs/single_thread_sampler.cpp
+	$(COMPILE_CMD) -o single_thread_sampler.o -c src/app/gibbs/single_thread_sampler.cpp
 
-assembly:
-	$(COMPILE_CMD) -S src/app/gibbs/gibbs_sampling.cpp
+timer.o : src/timer.cpp 
+	$(COMPILE_CMD) -o timer.o -c src/timer.cpp 
+
 
 dep:
 ifeq ($(UNAME), Darwin)
@@ -92,82 +89,4 @@ endif
 clean:
 	rm -rf factor_graph.o factor_graph.pb.o gibbs_sampling.o main.o
 	rm -rf dw
-
-#gibbs:
-#	./dw gibbs -m data2/graph.meta.pb		\
-			   -e data2/graph.edges.pb 		\
-			   -w data2/graph.weights.pb 	\
-			   -v data2/graph.variables.pb 	\
-			   -f data2/graph.factors.pb    \
-			   -o data2/					\
-			   -i 100 -l 100 -s 10 --alpha 0.01 --diminish 0.95
-
-gibbs2:
-	./dw gibbs 						       \
-			   -e data/graph.edges.pb 		\
-			   -w data/graph.weights.pb 	\
-			   -v data/graph.variables.pb 	\
-			   -f data/graph.factors.pb    \
-			   -o data/					\
-			   -i 100 -l 0 -s 10 --alpha 0.01 --diminish 0.95
-
-test:
-	./dw gibbs -e ./test/factor_graph/lr_inf/ 		\
-			   -o ./test/factor_graph/lr_inf/ 		\
-			   -i 100 -l 100 -s 10
-
-test_multi:
-	./dw gibbs -m test/generate/lr_multi/graph.meta.pb		\
-			   -e test/generate/lr_multi/graph.edges.pb 		\
-			   -w test/generate/lr_multi/graph.weights.pb 	\
-			   -v test/generate/lr_multi/graph.variables.pb 	\
-			   -f test/generate/lr_multi/graph.factors.pb    \
-			   -o test/generate/lr_multi/					\
-			   -i 100 -l 100 -s 10 --alpha 0.01 --diminish 0.95
-
-
-test_learn:
-	./dw gibbs -m test/generate/lr_learn/graph.meta.pb		\
-			   -e test/generate/lr_learn/graph.edges.pb 		\
-			   -w test/generate/lr_learn/graph.weights.pb 	\
-			   -v test/generate/lr_learn/graph.variables.pb 	\
-			   -f test/generate/lr_learn/graph.factors.pb    \
-			   -o test/generate/lr_learn/					\
-			   -i 100 -l 100 -s 10 --alpha 0.01 --diminish 0.95
-
-test_learn2:
-	./dw gibbs -m test/generate/lr_learn2/graph.meta.pb		\
-			   -e test/generate/lr_learn2/graph.edges.pb 		\
-			   -w test/generate/lr_learn2/graph.weights.pb 	\
-			   -v test/generate/lr_learn2/graph.variables.pb 	\
-			   -f test/generate/lr_learn2/graph.factors.pb    \
-			   -o test/generate/lr_learn2/					\
-			   -i 100 -l 100 -s 10 --alpha 0.001 --diminish 0.95
-
-
-
-test_learn_dep:
-	./dw gibbs -e ./test/factor_graph/lr_learn_dep/ 	\
-			   -o ./test/factor_graph/lr_learn_dep/ 	\
-			   -i 1000 -l 100 -s 10 --alpha 0.0001
-
-test_crf:
-	./dw gibbs -e ./test/factor_graph/crf_mix/ 		\
-			   -o ./test/factor_graph/crf_mix/ 		\
-			   -i 1000 -l 100 -s 10 --alpha 0.0001
-
-gibbs_pb:
-	./lib/protobuf/bin/protoc -I=./src/dstruct/factor_graph/ --cpp_out=./src/dstruct/factor_graph/ ./src/dstruct/factor_graph/factor_graph.proto
-
-gibbs_pb_py:
-	./lib/protobuf/bin/protoc -I=./src/dstruct/factor_graph/ --python_out=./test/generate/ ./src/dstruct/factor_graph/factor_graph.proto
-
-gibbs:
-	./dw gibbs -m data3/graph.meta.csv		\
-			   -e data3/graph.edges 		\
-			   -w data3/graph.weights 	\
-			   -v data3/graph.variables 	\
-			   -f data3/graph.factors    \
-			   -o data3/					\
-			   -i 100 -l 100 -s 10 --alpha 0.01 --diminish 0.95
 
