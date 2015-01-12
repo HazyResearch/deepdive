@@ -1,7 +1,6 @@
 
 #include "app/gibbs/gibbs_sampling.h"
 #include "app/gibbs/single_node_sampler.h"
-#include "io/pb_parser.h"
 #include "common.h"
 #include <unistd.h>
 #include <fstream>
@@ -17,14 +16,8 @@
  */
 void dd::GibbsSampling::prepare(){
 
-  //n_numa_nodes = numa_max_node();
   n_numa_nodes = 0;
   n_thread_per_numa = (sysconf(_SC_NPROCESSORS_CONF))/(n_numa_nodes+1);
-  //n_thread_per_numa /= 2;
-  //if(n_thread_per_numa == 0){
-  //  n_thread_per_numa = 1;
-  //}
-  //n_thread_per_numa = 1;
 
   this->factorgraphs.push_back(*p_fg);
   for(int i=1;i<=n_numa_nodes;i++){
@@ -36,7 +29,6 @@ void dd::GibbsSampling::prepare(){
     dd::FactorGraph fg(p_fg->n_var, p_fg->n_factor, p_fg->n_weight, p_fg->n_edge);
     
     fg.copy_from(p_fg);
-    //fg.load(*p_cmd_parser);
 
     this->factorgraphs.push_back(fg);
   }
@@ -190,36 +182,16 @@ void dd::GibbsSampling::dump_weights(){
   }
   std::cout << "   ..." << std::endl; 
 
-  std::string filename_protocol = p_cmd_parser->output_folder->getValue() 
-    + "/inference_result.out.weights";
   std::string filename_text = p_cmd_parser->output_folder->getValue() 
     + "/inference_result.out.weights.text";
 
-  std::cout << "DUMPING... PROTOCOL: " << filename_protocol << std::endl;
   std::cout << "DUMPING... TEXT    : " << filename_text << std::endl;
 
   std::ofstream fout_text(filename_text.c_str());
-  std::ofstream mFs(filename_protocol.c_str(),std::ios::out | std::ios::binary);
-  google::protobuf::io::OstreamOutputStream *_OstreamOutputStream = 
-    new google::protobuf::io::OstreamOutputStream(&mFs);
-  google::protobuf::io::CodedOutputStream *_CodedOutputStream = 
-    new google::protobuf::io::CodedOutputStream(_OstreamOutputStream);
-  deepdive::WeightInferenceResult msg;
   for(size_t i=0;i<cfg.infrs->nweights;i++){
     fout_text << i << " " << cfg.infrs->weight_values[i] << std::endl;
-    msg.set_id(i);
-    msg.set_value(cfg.infrs->weight_values[i]);
-    _CodedOutputStream->WriteVarint32(msg.ByteSize());
-    if ( !msg.SerializeToCodedStream(_CodedOutputStream) ){
-      std::cout << "SerializeToCodedStream error " << std::endl;
-      assert(false);
-    } 
   }
-  delete _CodedOutputStream;
-  delete _OstreamOutputStream;
-  mFs.close();
   fout_text.close();
-
 }
 
 
@@ -278,42 +250,22 @@ void dd::GibbsSampling::dump(){
   }
   std::cout << "   ..." << std::endl; 
 
-  std::string filename_protocol = p_cmd_parser->output_folder->getValue() + 
-    "/inference_result.out";
   std::string filename_text = p_cmd_parser->output_folder->getValue() + 
     "/inference_result.out.text";
-  std::cout << "DUMPING... PROTOCOL: " << filename_protocol << std::endl;
   std::cout << "DUMPING... TEXT    : " << filename_text << std::endl;
   std::ofstream fout_text(filename_text.c_str());
-  std::ofstream mFs(filename_protocol.c_str(),std::ios::out | std::ios::binary);
-  google::protobuf::io::OstreamOutputStream *_OstreamOutputStream = 
-    new google::protobuf::io::OstreamOutputStream(&mFs);
-  google::protobuf::io::CodedOutputStream *_CodedOutputStream = 
-    new google::protobuf::io::CodedOutputStream(_OstreamOutputStream);
-  deepdive::VariableInferenceResult msg;
   for(long i=0;i<factorgraphs[0].n_var;i++){
     const Variable & variable = factorgraphs[0].variables[i];
     if(variable.is_evid == true){
       continue;
     }
-
-    msg.set_id(variable.id);
-    msg.set_category(1.0);
-    msg.set_expectation(agg_means[variable.id]/agg_nsamples[variable.id]);
     
     if(variable.domain_type != DTYPE_BOOLEAN){
       if(variable.domain_type == DTYPE_MULTINOMIAL){
         for(int j=0;j<=variable.upper_bound;j++){
-          msg.set_category(j);
-          msg.set_expectation(1.0*multinomial_tallies[variable.n_start_i_tally + j]/agg_nsamples[variable.id]);
           
           fout_text << variable.id << " " << j << " " << (1.0*multinomial_tallies[variable.n_start_i_tally + j]/agg_nsamples[variable.id]) << std::endl;
 
-          _CodedOutputStream->WriteVarint32(msg.ByteSize());
-          if ( !msg.SerializeToCodedStream(_CodedOutputStream) ){
-            std::cout << "SerializeToCodedStream error " << std::endl;
-            assert(false);
-          }
         }
       }else{
         std::cout << "ERROR: Only support boolean variables for now!" << std::endl;
@@ -322,16 +274,8 @@ void dd::GibbsSampling::dump(){
     }else{
       fout_text << variable.id << " " << 1 << " " << (agg_means[variable.id]/agg_nsamples[variable.id]) << std::endl;
 
-      _CodedOutputStream->WriteVarint32(msg.ByteSize());
-      if ( !msg.SerializeToCodedStream(_CodedOutputStream) ){
-        std::cout << "SerializeToCodedStream error " << std::endl;
-        assert(false);
-      }
     }
   }
-  delete _CodedOutputStream;
-  delete _OstreamOutputStream;
-  mFs.close();
   fout_text.close();
 
   std::cout << "INFERENCE CALIBRATION (QUERY BINS):" << std::endl;
@@ -349,7 +293,6 @@ void dd::GibbsSampling::dump(){
     if(bin >= 0 && bin <=10){
       abc[bin] ++;
     }else{
-      //std::cout << variable.id << "   " << variable.agg_mean << "   " << variable.n_sample << std::endl;
       bad ++;
     }
   }

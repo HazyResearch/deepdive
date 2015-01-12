@@ -9,16 +9,11 @@
 
 namespace dd{
   void gibbs_single_thread_task(FactorGraph * const _p_fg, int i_worker, int n_worker){
-    //numa_set_localalloc();
-    //int cpu = sched_getcpu();
-    //int node = numa_node_of_cpu(cpu);
-    //std::cout << node << std::endl;
     SingleThreadSampler sampler = SingleThreadSampler(_p_fg);
     sampler.sample(i_worker,n_worker);
   }
 
   void gibbs_single_thread_sgd_task(FactorGraph * const _p_fg, int i_worker, int n_worker){
-    //numa_set_localalloc();
     SingleThreadSampler sampler = SingleThreadSampler(_p_fg);
     sampler.sample_sgd(i_worker,n_worker);
   }
@@ -47,8 +42,6 @@ namespace dd{
 
     void clear_variabletally(){
       for(long i=0;i<p_fg->n_var;i++){
-        //p_fg->variables[i].agg_mean = 0.0;
-        //p_fg->variables[i].n_sample = 0.0;
         p_fg->infrs->agg_means[i] = 0.0;
         p_fg->infrs->agg_nsamples[i] = 0.0;
       }

@@ -4,18 +4,18 @@
 
 namespace dd{
 
-  typedef double VariableValue;
+  typedef int VariableValue;
 
   class Variable {
   public:
     long id;
     int domain_type;
     bool is_evid;
-    double lower_bound;
-    double upper_bound;
+    VariableValue lower_bound;
+    VariableValue upper_bound;
     
-    double assignment_evid;
-    double assignment_free;
+    VariableValue assignment_evid;
+    VariableValue assignment_free;
 
     int n_factors;
     long n_start_i_factors;
@@ -32,9 +32,9 @@ namespace dd{
     }
 
     Variable(const long & _id, const int & _domain_type, 
-             const bool & _is_evid, const double & _lower_bound,
-             const double & _upper_bound, const double & _init_value, 
-             const double & _current_value, const int & _n_factors){
+             const bool & _is_evid, const VariableValue & _lower_bound,
+             const VariableValue & _upper_bound, const VariableValue & _init_value, 
+             const VariableValue & _current_value, const int & _n_factors){
 
       this->id = _id;
       this->domain_type = _domain_type;
@@ -56,12 +56,12 @@ namespace dd{
     long vid;
     int n_position;
     bool is_positive;
-    double equal_to;
+    VariableValue equal_to; 
 
     int dimension;
 
     bool satisfiedUsing(int value) const{
-      return is_positive ? equal_to == value : !(equal_to == value); // TODO: Fix equal_to to INT
+      return is_positive ? equal_to == value : !(equal_to == value); 
     }
 
     VariableInFactor(){
@@ -73,7 +73,6 @@ namespace dd{
                       const int & _dimension, 
                       const long & _vid, const int & _n_position, 
                      const bool & _is_positive){
-      //std::cout << "~~~~~" << _dimension << std::endl;
       this->dimension = _dimension;
       this->vid = _vid;
       this->n_position = _n_position;
@@ -92,7 +91,7 @@ namespace dd{
     }
 
     VariableInFactor(const long & _vid, const int & _n_position, 
-                     const bool & _is_positive, const double & _equal_to){
+                     const bool & _is_positive, const VariableValue & _equal_to){
       this->dimension = -1;
       this->vid = _vid;
       this->n_position = _n_position;

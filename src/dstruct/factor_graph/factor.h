@@ -42,40 +42,40 @@ namespace dd{
     }
 
     inline double _potential_continuousLR(const VariableInFactor * const vifs,
-                                   const double * const var_values, 
-                                   const long &, const double &) const;
+                                   const VariableValue * const var_values, 
+                                   const long &, const VariableValue &) const;
 
 
     inline double _potential_or(const VariableInFactor * const vifs,
-                                   const double * const var_values, 
-                                   const long &, const double &) const;
+                                   const VariableValue * const var_values, 
+                                   const long &, const VariableValue &) const;
 
 
     inline double _potential_and(const VariableInFactor * const vifs,
-                                   const double * const var_values, 
-                                   const long &, const double &) const;
+                                   const VariableValue * const var_values, 
+                                   const long &, const VariableValue &) const;
 
 
     inline double _potential_equal(const VariableInFactor * const vifs,
-                                   const double * const var_values, 
-                                   const long &, const double &) const;
+                                   const VariableValue * const var_values, 
+                                   const long &, const VariableValue &) const;
 
 
     inline double _potential_imply(const VariableInFactor * const vifs,
-                                   const double * const var_values, 
-                                   const long &, const double &) const;
+                                   const VariableValue * const var_values, 
+                                   const long &, const VariableValue &) const;
     
     inline double _potential_multinomial(const VariableInFactor * const vifs,
-                                   const double * const var_values, 
-                                   const long &, const double &) const;
+                                   const VariableValue * const var_values, 
+                                   const long &, const VariableValue &) const;
 
     inline double potential(const VariableInFactor * const vifs,
-      const double * const var_values,
-      const long & vid, const double & proposal) const{ 
+      const VariableValue * const var_values,
+      const long & vid, const VariableValue & proposal) const{ 
       
       switch (func_id) {
         case FUNC_IMPLY_neg1_1   : return _potential_imply(vifs, var_values, vid, proposal);
-        case FUNC_ISTRUE      : return _potential_imply(vifs, var_values, vid, proposal);
+        case FUNC_ISTRUE      : return _potential_and(vifs, var_values, vid, proposal);
         case FUNC_OR          : return _potential_or(vifs, var_values, vid, proposal);
         case FUNC_AND         : return _potential_and(vifs, var_values, vid, proposal);   
         case FUNC_EQUAL       : return _potential_equal(vifs, var_values, vid, proposal);  
@@ -120,7 +120,7 @@ namespace dd{
 
   // potential for multinomial variable
   inline double dd::CompactFactor::_potential_multinomial(const VariableInFactor * vifs, 
-    const double * var_values, const long & vid, const double & proposal) const {
+    const VariableValue * var_values, const long & vid, const VariableValue & proposal) const {
 
     return 1.0;
   }
@@ -128,8 +128,8 @@ namespace dd{
 
   inline double dd::CompactFactor::_potential_equal(
     const VariableInFactor * const vifs,
-    const double * const var_values, 
-    const long & vid, const double & proposal) const{
+    const VariableValue * const var_values, 
+    const long & vid, const VariableValue & proposal) const{
 
     const VariableInFactor & vif = vifs[n_start_i_vif];
     bool firstsat;

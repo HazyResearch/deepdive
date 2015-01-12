@@ -7,8 +7,104 @@
 
 using namespace dd;
 
-TEST(FactorTest, Imply) {
-	
+TEST(FactorTest, ONE_VAR_FACTORS) {
+
+	VariableInFactor vifs[1];
+	VariableValue values[1];
+	long vid;
+	VariableValue propose;
+
+	vifs[0].vid = 0;
+	vifs[0].is_positive = true;
+	vifs[0].equal_to = 1;
+
+	CompactFactor f;
+	f.n_variables = 1;
+	f.n_start_i_vif = 0;
+
+	values[0] = 0;
+	vid = 0;
+
+	// CASE 1: True
+	propose = 1;
+	EXPECT_NEAR(f._potential_and(vifs, values, vid, propose), 1.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_or(vifs, values, vid, propose), 1.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_equal(vifs, values, vid, propose), 1.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_imply(vifs, values, vid, propose), 1.0, EQ_TOL);
+
+	// CASE 2: False
+	propose = 0;
+	EXPECT_NEAR(f._potential_and(vifs, values, vid, propose), 0.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_or(vifs, values, vid, propose), 0.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_equal(vifs, values, vid, propose), 1.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_imply(vifs, values, vid, propose), -1.0, EQ_TOL);
+
+}
+
+
+TEST(FactorTest, TWO_VAR_FACTORS) {
+
+	VariableInFactor vifs[2];
+	VariableValue values[2];
+	long vid;
+	VariableValue propose;
+
+	vifs[0].vid = 0;
+	vifs[0].is_positive = true;
+	vifs[0].equal_to = 1;
+
+	vifs[1].vid = 1;
+	vifs[1].is_positive = true;
+	vifs[1].equal_to = 1;
+
+	CompactFactor f;
+	f.n_variables = 2;
+	f.n_start_i_vif = 0;
+
+	// CASE 1: True op True
+	values[0] = 1;
+	values[1] = 1;	
+	vid = 1;
+	propose = 1;
+	EXPECT_NEAR(f._potential_and(vifs, values, vid, propose), 1.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_or(vifs, values, vid, propose), 1.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_equal(vifs, values, vid, propose), 1.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_imply(vifs, values, vid, propose), 1.0, EQ_TOL);
+
+	// CASE 2: True op False
+	values[0] = 1;
+	values[1] = 1;	
+	vid = 1;
+	propose = 0;
+	EXPECT_NEAR(f._potential_and(vifs, values, vid, propose), 0.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_or(vifs, values, vid, propose), 1.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_equal(vifs, values, vid, propose), 0.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_imply(vifs, values, vid, propose), -1.0, EQ_TOL);
+
+	// CASE 3: False op True
+	values[0] = 0;
+	values[1] = 0;	
+	vid = 1;
+	propose = 1;
+	EXPECT_NEAR(f._potential_and(vifs, values, vid, propose), 0.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_or(vifs, values, vid, propose), 1.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_equal(vifs, values, vid, propose), 0.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_imply(vifs, values, vid, propose), 0.0, EQ_TOL);
+
+	// CASE 4: False op False
+	values[0] = 0;
+	values[1] = 0;	
+	vid = 1;
+	propose = 0;
+	EXPECT_NEAR(f._potential_and(vifs, values, vid, propose), 0.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_or(vifs, values, vid, propose), 0.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_equal(vifs, values, vid, propose), 1.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_imply(vifs, values, vid, propose), 0.0, EQ_TOL);
+
+}
+
+TEST(FactorTest, THREE_VAR_IMPLY) {
+
 	VariableInFactor vifs[3];
 	VariableValue values[3];
 	long vid;
@@ -37,7 +133,7 @@ TEST(FactorTest, Imply) {
 	CompactFactor f;
 	f.n_variables = 3;
 	f.n_start_i_vif = 0;
-	
+
 	EXPECT_NEAR(f._potential_imply(vifs, values, vid, propose), 0.0, EQ_TOL);
 
 	// second test case: True /\ x => True, x propose to True, Expect 1

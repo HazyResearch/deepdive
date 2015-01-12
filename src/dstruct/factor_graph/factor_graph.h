@@ -1,5 +1,4 @@
 
-#include "dstruct/factor_graph/factor_graph.pb.h"
 #include "io/cmd_parser.h"
 #include "common.h"
 
@@ -30,14 +29,14 @@ namespace dd{
 
     double * const agg_means;
     double * const agg_nsamples; 
-    double * const assignments_free;
-    double * const assignments_evid;
+    VariableValue * const assignments_free;
+    VariableValue * const assignments_evid;
     double * const weight_values;
     bool * const weights_isfixed;
 
     InferenceResult(long _nvars, long _nweights):
-      assignments_free(new double[_nvars]),
-      assignments_evid(new double[_nvars]),
+      assignments_free(new VariableValue[_nvars]),
+      assignments_evid(new VariableValue[_nvars]),
       agg_means(new double[_nvars]),
       agg_nsamples(new double[_nvars]),
       weight_values(new double [_nweights]),
@@ -160,7 +159,7 @@ namespace dd{
      * For multinomial weights, given a factor and variable assignment,
      * return corresponding weight id
      */
-    long get_weightid(const double *assignments, const CompactFactor& fs, long vid, long proposal) {
+    long get_weightid(const VariableValue *assignments, const CompactFactor& fs, long vid, long proposal) {
       long weight_offset = 0;
       for (long i = fs.n_start_i_vif; i < fs.n_start_i_vif + fs.n_variables; i++) {
         const VariableInFactor & vif = vifs[i];
