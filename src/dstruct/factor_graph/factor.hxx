@@ -6,12 +6,8 @@ namespace dd{
 	  const VariableIndex & vid, const VariableValue & proposal) const{
 
 	  const VariableInFactor & vif = vifs[n_start_i_vif];
-	  bool firstsat;
-	  if(vif.vid == vid){
-	    firstsat = (vif.vid == vid) ? vif.satisfiedUsing(proposal) : vif.satisfiedUsing(var_values[vif.vid]) ;
-	  }else{
-	    firstsat = (vif.vid == vid) ? vif.satisfiedUsing(proposal) : vif.satisfiedUsing(var_values[vif.vid]) ;
-	  }
+	  const bool firstsat = (vif.vid == vid) ? vif.satisfiedUsing(proposal) :
+	  	  vif.satisfiedUsing(var_values[vif.vid]);
 
 	  for(long i_vif=n_start_i_vif; (i_vif<n_start_i_vif+n_variables);i_vif++){
 	    const VariableInFactor & vif = vifs[i_vif];
