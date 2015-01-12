@@ -7,7 +7,7 @@ namespace dd{
 	 */
 	inline double dd::CompactFactor::_potential_equal(
 	  const VariableInFactor * const vifs,
-	  const VariableValue * const var_values, 
+	  const VariableValue * const var_values,
 	  const VariableIndex & vid, const VariableValue & proposal) const{
 
 	  const VariableInFactor & vif = vifs[n_start_i_vif];
@@ -32,8 +32,8 @@ namespace dd{
 	 */
 	inline double dd::CompactFactor::_potential_and(
 	  const VariableInFactor * const vifs,
-	  const VariableValue * const var_values, 
-	  const VariableIndex & vid, 
+	  const VariableValue * const var_values,
+	  const VariableIndex & vid,
 	  const VariableValue & proposal) const{
 
 	  /* Iterate over the factor variables */
@@ -47,15 +47,15 @@ namespace dd{
 
 	}
 
-	/** Return the value of the logical OR of the variables in the factor, with 
+	/** Return the value of the logical OR of the variables in the factor, with
 	 * the variable of index vid (wrt the factor) is set to the value of the
 	 * 'proposal' argument.
 	 *
 	 */
 	inline double dd::CompactFactor::_potential_or(
 	  const VariableInFactor * const vifs,
-	  const VariableValue * const var_values, 
-	  const VariableIndex & vid, 
+	  const VariableValue * const var_values,
+	  const VariableIndex & vid,
 	  const VariableValue & proposal) const{
 
 	  /* Iterate over the factor variables */
@@ -83,8 +83,8 @@ namespace dd{
 	 */
 	inline double dd::CompactFactor::_potential_imply_mln(
 	  const VariableInFactor * const vifs,
-	  const VariableValue * const var_values, 
-	  const VariableIndex & vid, 
+	  const VariableValue * const var_values,
+	  const VariableIndex & vid,
 	  const VariableValue & proposal) const{
 
 	  /* Compute the value of the body of the rule */
@@ -111,7 +111,7 @@ namespace dd{
 	 * 'proposal' argument.
 	 *
 	 * The head of the 'imply' rule is stored as the *last* variable in the
-	 * factor. 
+	 * factor.
 	 *
 	 * The truth table of the 'imply' function requires to return
 	 * -1.0 if the body of the rule is satisfied but the head is not, and to
@@ -120,8 +120,8 @@ namespace dd{
 	 */
 	inline double dd::CompactFactor::_potential_imply(
 	  const VariableInFactor * const vifs,
-	  const VariableValue * const var_values, 
-	  const VariableIndex & vid, 
+	  const VariableValue * const var_values,
+	  const VariableIndex & vid,
 	  const VariableValue & proposal) const{
 
 	  /* Compute the value of the body of the rule */
@@ -144,7 +144,7 @@ namespace dd{
 	}
 
 	// potential for multinomial variable
-	inline double dd::CompactFactor::_potential_multinomial(const VariableInFactor * vifs, 
+	inline double dd::CompactFactor::_potential_multinomial(const VariableInFactor * vifs,
 	  const VariableValue * var_values, const VariableIndex & vid, const VariableValue & proposal) const {
 
 	  return 1.0;
