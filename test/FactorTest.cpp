@@ -151,8 +151,3 @@ TEST(FactorTest, THREE_VAR_IMPLY) {
 	EXPECT_NEAR(f._potential_imply(vifs, values, vid, propose), 1.0, EQ_TOL);
 
 }
-
-int main(int argc, char **argv) {
-	testing::InitGoogleTest(&argc, argv);
-	return RUN_ALL_TESTS();
-}
