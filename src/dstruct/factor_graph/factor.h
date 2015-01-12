@@ -11,7 +11,8 @@
 namespace dd{
 
   enum FACTOR_FUCNTION_TYPE{
-    FUNC_IMPLY_neg1_1 = 0,
+    FUNC_IMPLY_MLN = 0,
+    FUNC_IMPLY_neg1_1 = 11,
     FUNC_OR         = 1,
     FUNC_AND        = 2,
     FUNC_EQUAL      = 3,
@@ -63,6 +64,9 @@ namespace dd{
                                    const VariableValue * const var_values, 
                                    const VariableIndex &, const VariableValue &) const;
 
+    inline double _potential_imply_mln(const VariableInFactor * const vifs,
+                                   const VariableValue * const var_values, 
+                                   const VariableIndex &, const VariableValue &) const;
 
     inline double _potential_imply(const VariableInFactor * const vifs,
                                    const VariableValue * const var_values, 
@@ -78,7 +82,8 @@ namespace dd{
       const VariableValue * const var_values,
       const VariableIndex & vid, const VariableValue & proposal) const{
       switch (func_id) {
-        case FUNC_IMPLY_neg1_1   : return _potential_imply(vifs, var_values, vid, proposal);
+        case FUNC_IMPLY_MLN   :return _potential_imply_mln(vifs, var_values, vid, proposal);
+        case FUNC_IMPLY_neg1_1: return _potential_imply(vifs, var_values, vid, proposal);
         case FUNC_ISTRUE      : return _potential_and(vifs, var_values, vid, proposal);
         case FUNC_OR          : return _potential_or(vifs, var_values, vid, proposal);
         case FUNC_AND         : return _potential_and(vifs, var_values, vid, proposal);   
@@ -171,6 +176,33 @@ inline double dd::CompactFactor::_potential_or(
 
 }
 
+
+inline double dd::CompactFactor::_potential_imply_mln(
+  const VariableInFactor * const vifs,
+  const VariableValue * const var_values, 
+  const VariableIndex & vid, 
+  const VariableValue & proposal) const{
+
+  bool bBody = true; // 
+  for(long i_vif=n_start_i_vif; 
+    (i_vif<n_start_i_vif+n_variables - 1) // shortcut && bBody
+      ;i_vif++){
+    const VariableInFactor & vif = vifs[i_vif];
+    // if it is the proposal variable, we use the truth value of the proposal
+    // This is a crazy abstraction here, why doesn't vif able to say that it is true or false
+    //bool bTrue = (vif.vid == vif) ? vif.value.equal(proposal) : vif.value.equal(var_values[vif.vid]) ;
+    bBody &= (vif.vid == vid) ? vif.satisfiedUsing(proposal) : vif.satisfiedUsing(var_values[vif.vid]) ;
+  }
+  if(bBody) {
+    const VariableInFactor & vif = vifs[n_variables - 1]; // encoding of the head, should be more structured.
+    // const VariableInFactor & vif = head(vifs); // encoding of the head, should be more structured.      
+    bool bHead = (vif.vid == vid) ? vif.satisfiedUsing(proposal) : vif.satisfiedUsing(var_values[vif.vid]) ;
+    return bHead ? 1.0 : 0.0;
+  } else {
+    return 1.0;
+  }
+
+}
 
 inline double dd::CompactFactor::_potential_imply(
   const VariableInFactor * const vifs,

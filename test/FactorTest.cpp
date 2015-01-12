@@ -135,19 +135,23 @@ TEST(FactorTest, THREE_VAR_IMPLY) {
 	f.n_start_i_vif = 0;
 
 	EXPECT_NEAR(f._potential_imply(vifs, values, vid, propose), 0.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_imply_mln(vifs, values, vid, propose), 1.0, EQ_TOL);
 
 	// second test case: True /\ x => True, x propose to True, Expect 1
 	propose = 1;
 	EXPECT_NEAR(f._potential_imply(vifs, values, vid, propose), 1.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_imply_mln(vifs, values, vid, propose), 1.0, EQ_TOL);
 
 	// third test case: True /\ True => x, x propose to False, Expect -1
 	vid = 2;
 	propose = 0;
 	EXPECT_NEAR(f._potential_imply(vifs, values, vid, propose), -1.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_imply_mln(vifs, values, vid, propose), 0.0, EQ_TOL);
 
 	// forth test case: True /\ True => x, x propose to True, Expect 1
 	vid = 2;
 	propose = 1;
 	EXPECT_NEAR(f._potential_imply(vifs, values, vid, propose), 1.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_imply_mln(vifs, values, vid, propose), 1.0, EQ_TOL);
 
 }
