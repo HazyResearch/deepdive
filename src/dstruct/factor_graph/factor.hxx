@@ -66,7 +66,7 @@ namespace dd{
 	    bBody &= (vif.vid == vid) ? vif.satisfiedUsing(proposal) : vif.satisfiedUsing(var_values[vif.vid]) ;
 	  }
 	  if(bBody) {
-	    const VariableInFactor & vif = vifs[n_variables - 1]; // encoding of the head, should be more structured.
+	    const VariableInFactor & vif = vifs[n_start_i_vif + n_variables - 1]; // encoding of the head, should be more structured.
 	    // const VariableInFactor & vif = head(vifs); // encoding of the head, should be more structured.      
 	    bool bHead = (vif.vid == vid) ? vif.satisfiedUsing(proposal) : vif.satisfiedUsing(var_values[vif.vid]) ;
 	    return bHead ? 1.0 : 0.0;
@@ -93,8 +93,7 @@ namespace dd{
 	    bBody &= (vif.vid == vid) ? vif.satisfiedUsing(proposal) : vif.satisfiedUsing(var_values[vif.vid]) ;
 	  }
 	  if(bBody) {
-	    const VariableInFactor & vif = vifs[n_variables - 1]; // encoding of the head, should be more structured.
-	    // const VariableInFactor & vif = head(vifs); // encoding of the head, should be more structured.      
+	    const VariableInFactor & vif = vifs[n_start_i_vif + n_variables - 1]; // encoding of the head, should be more structured.
 	    bool bHead = (vif.vid == vid) ? vif.satisfiedUsing(proposal) : vif.satisfiedUsing(var_values[vif.vid]) ;
 	    return bHead ? 1.0 : -1.0;
 	  } else {
