@@ -11,7 +11,7 @@ namespace dd{
 
 	  for(long i_vif=n_start_i_vif; (i_vif<n_start_i_vif+n_variables);i_vif++){
 	    const VariableInFactor & vif = vifs[i_vif];
-	    bool satisfied = (vif.vid == vid) ? vif.satisfiedUsing(proposal) : vif.satisfiedUsing(var_values[vif.vid]) ;
+	    const bool satisfied = (vif.vid == vid) ? vif.satisfiedUsing(proposal) : vif.satisfiedUsing(var_values[vif.vid]) ;
 	    if(satisfied != firstsat) return 0.0;
 	  }
 	  return 1.0;
@@ -25,7 +25,7 @@ namespace dd{
 
 	  for(long i_vif=n_start_i_vif; (i_vif<n_start_i_vif+n_variables);i_vif++){
 	    const VariableInFactor & vif = vifs[i_vif];
-	    bool satisfied = (vif.vid == vid) ? vif.satisfiedUsing(proposal) : vif.satisfiedUsing(var_values[vif.vid]) ;
+	    const bool satisfied = (vif.vid == vid) ? vif.satisfiedUsing(proposal) : vif.satisfiedUsing(var_values[vif.vid]) ;
 	    if(!satisfied) return 0.0;
 	  }
 	  return 1.0;
@@ -41,7 +41,7 @@ namespace dd{
 
 	  for(long i_vif=n_start_i_vif; (i_vif<n_start_i_vif+n_variables);i_vif++){
 	    const VariableInFactor & vif = vifs[i_vif];
-	    bool satisfied = (vif.vid == vid) ? vif.satisfiedUsing(proposal) : vif.satisfiedUsing(var_values[vif.vid]) ;
+	    const bool satisfied = (vif.vid == vid) ? vif.satisfiedUsing(proposal) : vif.satisfiedUsing(var_values[vif.vid]) ;
 	    if(satisfied) return 1.0;
 	  }
 	  return 0.0;
@@ -67,8 +67,7 @@ namespace dd{
 	  }
 	  if(bBody) {
 	    const VariableInFactor & vif = vifs[n_start_i_vif + n_variables - 1]; // encoding of the head, should be more structured.
-	    // const VariableInFactor & vif = head(vifs); // encoding of the head, should be more structured.      
-	    bool bHead = (vif.vid == vid) ? vif.satisfiedUsing(proposal) : vif.satisfiedUsing(var_values[vif.vid]) ;
+	    const bool bHead = (vif.vid == vid) ? vif.satisfiedUsing(proposal) : vif.satisfiedUsing(var_values[vif.vid]) ;
 	    return bHead ? 1.0 : 0.0;
 	  } else {
 	    return 1.0;
