@@ -45,6 +45,7 @@ namespace dd{
     CompactFactor();
 
     CompactFactor(const FactorIndex & _id);
+
     inline double _potential_continuousLR(const VariableInFactor * const vifs,
                                    const VariableValue * const var_values, 
                                    const VariableIndex &, const VariableValue &) const;
@@ -123,7 +124,7 @@ namespace dd{
 
 }
 
-
+// TODO: These functions should ideally be in a seperate file or at least an .hxx with #include here
 inline double dd::CompactFactor::_potential_equal(
   const VariableInFactor * const vifs,
   const VariableValue * const var_values, 
