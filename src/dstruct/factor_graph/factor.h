@@ -119,7 +119,7 @@ namespace dd{
      * The potential is calculated using the proposal value for variable with id vid, and 
      * var_values for other variables in the factor
      *
-     * vifs pointer to variables in factor (array)
+     * vifs pointer to variables in the factor graph
      * var_values pointer to variable values (array)
      * vid variable id to be calculated with proposal
      * proposal the proposed value

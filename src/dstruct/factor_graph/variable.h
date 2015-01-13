@@ -16,7 +16,8 @@ namespace dd{
   class Variable {
   public:
     long id;                        // variable id
-    int domain_type;                // variable domain type
+    int domain_type;                // variable domain type, can be DTYPE_BOOLEAN or 
+                                    // DTYPE_MULTINOMIAL
     bool is_evid;                   // whether the variable is evidence
     VariableValue lower_bound;      // lower bound
     VariableValue upper_bound;      // upper bound
@@ -54,7 +55,8 @@ namespace dd{
     long vid;               // variable id
     int n_position;         // position of the variable inside factor
     bool is_positive;       // whether the variable is positive or negated
-    VariableValue equal_to; // the variabl's predicate value
+    // the variable's predicate value. A variable is "satisfied" if its value equals equal_to
+    VariableValue equal_to; 
 
     int dimension;
 
