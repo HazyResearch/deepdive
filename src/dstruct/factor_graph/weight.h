@@ -6,11 +6,14 @@ namespace dd{
 
   typedef long WeightIndex;
 
+  /**
+   * Encapsulates a weight for factors. 
+   */
   class Weight {
   public:
-    long id;
-    double weight;
-    bool isfixed;
+    long id;        // weight id
+    double weight;  // weight value
+    bool isfixed;   // whether the weight is fixed
 
     Weight(const long & _id,
            const double & _weight,
