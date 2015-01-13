@@ -54,6 +54,7 @@ void gibbs(dd::CmdParser & cmd_parser){
   double decay = cmd_parser.decay->getValue();
 
   int n_datacopy = cmd_parser.n_datacopy->getValue();
+  double reg_param = cmd_parser.reg_param->getValue();
 
   std::cout << std::endl;
   std::cout << "#################MACHINE CONFIG#################" << std::endl;
@@ -73,6 +74,7 @@ void gibbs(dd::CmdParser & cmd_parser){
   std::cout << "# n_inference_epoch  : " << n_inference_epoch << std::endl;
   std::cout << "# stepsize           : " << stepsize << std::endl;
   std::cout << "# decay              : " << decay << std::endl;
+  std::cout << "# regularization     : " << reg_param << std::endl;
   std::cout << "################################################" << std::endl;
   std::cout << "# IGNORE -s (n_samples/l. epoch). ALWAYS -s 1. #" << std::endl;
   std::cout << "# IGNORE -t (threads). ALWAYS USE ALL THREADS. #" << std::endl;
@@ -103,7 +105,9 @@ void gibbs(dd::CmdParser & cmd_parser){
                             (n_learning_epoch%n_numa_node==0?0:1);
 
   // learning
-  gibbs.learn(numa_aware_n_learning_epoch, n_samples_per_learning_epoch, stepsize, decay);
+  gibbs.learn(numa_aware_n_learning_epoch, n_samples_per_learning_epoch, 
+    stepsize, decay, reg_param);
+
   // dump weights
   gibbs.dump_weights();
 

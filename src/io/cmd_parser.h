@@ -38,6 +38,7 @@ namespace dd{
     TCLAP::ValueArg<double> * decay;
 
     TCLAP::ValueArg<int> * n_datacopy;
+    TCLAP::ValueArg<double> * reg_param;
 
     TCLAP::CmdLine * cmd;
 
