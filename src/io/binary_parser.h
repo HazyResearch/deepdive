@@ -17,11 +17,31 @@ typedef struct {
 	string edges_file;
 } Meta;
 
-
+/**
+ * Reads meta data from the given file.
+ * For reference of factor graph file formats, refer to 
+ * deepdive.stanford.edu
+ */
 Meta read_meta(string meta_file);
+
+/**
+ * Loads weights from the given file into the given factor graph
+ */
 long long read_weights(string filename, dd::FactorGraph &);
+
+/**
+ * Loads variables from the given file into the given factor graph
+ */
 long long read_variables(string filename, dd::FactorGraph &);
+
+/**
+ * Loads factors from the given file into the given factor graph
+ */
 long long read_factors(string filename, dd::FactorGraph &);
+
+/**
+ * Loads edges from the given file into the given factor graph
+ */
 long long read_edges(string filename, dd::FactorGraph &);
 
 #endif
