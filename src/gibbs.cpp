@@ -55,6 +55,7 @@ void gibbs(dd::CmdParser & cmd_parser){
 
   int n_datacopy = cmd_parser.n_datacopy->getValue();
   double reg_param = cmd_parser.reg_param->getValue();
+  bool is_quiet = cmd_parser.quiet->getValue();
 
   std::cout << std::endl;
   std::cout << "#################MACHINE CONFIG#################" << std::endl;
@@ -106,17 +107,17 @@ void gibbs(dd::CmdParser & cmd_parser){
 
   // learning
   gibbs.learn(numa_aware_n_learning_epoch, n_samples_per_learning_epoch, 
-    stepsize, decay, reg_param);
+    stepsize, decay, reg_param, is_quiet);
 
   // dump weights
-  gibbs.dump_weights();
+  gibbs.dump_weights(is_quiet);
 
   // number of inference epochs
   int numa_aware_n_epoch = (int)(n_inference_epoch/n_numa_node) + 
                             (n_inference_epoch%n_numa_node==0?0:1);
 
   // inference
-  gibbs.inference(numa_aware_n_epoch);
-  gibbs.dump();
+  gibbs.inference(numa_aware_n_epoch, is_quiet);
+  gibbs.dump(is_quiet);
 
 }

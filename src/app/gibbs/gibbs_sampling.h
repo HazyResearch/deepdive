@@ -27,14 +27,15 @@ namespace dd{
 
     void prepare(int n_datacopy);
 
-    void inference(const int & n_epoch);
+    void inference(const int & n_epoch, const bool is_quiet);
 
-    void dump();
+    void dump(const bool is_quiet);
 
-    void dump_weights();
+    void dump_weights(const bool is_quiet);
 
     void learn(const int & n_epoch, const int & n_sample_per_epoch, 
-      const double & stepsize, const double & decay, const double reg_param);
+      const double & stepsize, const double & decay, const double reg_param,
+      const bool is_quiet);
 
   };
 }
