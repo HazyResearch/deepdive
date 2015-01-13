@@ -164,14 +164,14 @@ void dd::FactorGraph::update_weight(const Variable & variable){
       }
     } else if (variable.domain_type == DTYPE_MULTINOMIAL) {
       // two weights need to be updated
-      // sample with evidence fixed, I0, with variable assignment d0
-      // sample without evidence unfixed, I1, with variable assigment d1 
-      // gradient of wd0 = f(I0) - I(d0==d1)f(I1)
-      // gradient of wd1 = I(d0==d1)f(I0) - f(I1)
+      // sample with evidence fixed, I0, with corresponding weight w1
+      // sample without evidence unfixed, I1, with corresponding weight w2 
+      // gradient of wd0 = f(I0) - I(w1==w2)f(I1)
+      // gradient of wd1 = I(w1==w2)f(I0) - f(I1)
       if(fs[i].func_id != 20){
         long wid1 = get_weightid(infrs->assignments_evid, fs[i], -1, -1);
         long wid2 = get_weightid(infrs->assignments_free, fs[i], -1, -1);
-        int equal = infrs->assignments_evid[variable.id] == infrs->assignments_free[variable.id];
+        int equal = (wid1 == wid2);
 
         if(infrs->weights_isfixed[wid1] == false){
           infrs->weight_values[wid1] += 
