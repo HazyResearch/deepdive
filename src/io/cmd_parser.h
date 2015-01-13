@@ -37,6 +37,8 @@ namespace dd{
     TCLAP::ValueArg<double> * stepsize2;
     TCLAP::ValueArg<double> * decay;
 
+    TCLAP::ValueArg<int> * n_datacopy;
+
     TCLAP::CmdLine * cmd;
 
     CmdParser(std::string _app_name);

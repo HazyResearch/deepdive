@@ -53,6 +53,8 @@ void gibbs(dd::CmdParser & cmd_parser){
   if (stepsize == 0.01) stepsize = stepsize2;
   double decay = cmd_parser.decay->getValue();
 
+  int n_datacopy = cmd_parser.n_datacopy->getValue();
+
   std::cout << std::endl;
   std::cout << "#################MACHINE CONFIG#################" << std::endl;
   std::cout << "# # NUMA Node        : " << n_numa_node << std::endl;
@@ -92,7 +94,7 @@ void gibbs(dd::CmdParser & cmd_parser){
   // load factor graph
   dd::FactorGraph fg(meta.num_variables, meta.num_factors, meta.num_weights, meta.num_edges);
   fg.load(cmd_parser);
-  dd::GibbsSampling gibbs(&fg, &cmd_parser);
+  dd::GibbsSampling gibbs(&fg, &cmd_parser, n_datacopy);
 
   // number of learning epochs
   // the factor graph is copied on each NUMA node, so the total epochs =
