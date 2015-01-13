@@ -263,14 +263,10 @@ void dd::FactorGraph::load(const CmdParser & cmd){
 
 void dd::FactorGraph::finalize_loading(){
   // sort variables, factors, and weights by id
-  std::cout << "Start Sorting Variables... nvar=" << n_var << std::endl;
   std::sort(&variables[0], &variables[n_var], idsorter<Variable>());
-  std::cout << "Start Sorting Factors... nfac=" << n_factor << std::endl;
   std::sort(&factors[0], &factors[n_factor], idsorter<Factor>());
-  std::cout << "Start Sorting Weights... nvar=" << n_weight << std::endl;
   std::sort(&weights[0], &weights[n_weight], idsorter<Weight>()); 
   this->loading_finalized = true;
-  std::cout << "Start Init Results... " << std::endl;
   infrs->init(variables, weights);
 }
 
