@@ -18,12 +18,18 @@ void dd::GibbsSampling::prepare(int n_datacopy){
 
   // the highest node number available
   n_numa_nodes = numa_max_node(); 
+
+  // if n_datacopy is valid, use it, otherwise, use numa_max_node
   if (n_datacopy >= 1 && n_datacopy <= n_numa_nodes + 1) {
     n_numa_nodes = n_datacopy - 1;
   }
+
+  // max possible threads per NUMA node
   n_thread_per_numa = (sysconf(_SC_NPROCESSORS_CONF))/(n_numa_nodes+1);
 
   this->factorgraphs.push_back(*p_fg);
+
+  // copy factor graphs
   for(int i=1;i<=n_numa_nodes;i++){
 
     numa_run_on_node(i);
@@ -47,6 +53,7 @@ void dd::GibbsSampling::inference(const int & n_epoch, const bool is_quiet){
   int nvar = this->factorgraphs[0].n_var;
   int nnode = n_numa_nodes + 1;
 
+  // single node samplers
   std::vector<SingleNodeSampler> single_node_samplers;
   for(int i=0;i<=n_numa_nodes;i++){
     single_node_samplers.push_back(SingleNodeSampler(&this->factorgraphs[i], 
@@ -57,6 +64,7 @@ void dd::GibbsSampling::inference(const int & n_epoch, const bool is_quiet){
     single_node_samplers[i].clear_variabletally();
   }
 
+  // inference epochs
   for(int i_epoch=0;i_epoch<n_epoch;i_epoch++){
 
     if (!is_quiet) {
@@ -64,15 +72,19 @@ void dd::GibbsSampling::inference(const int & n_epoch, const bool is_quiet){
         << ((i_epoch+1) * nnode) << "...." << std::flush;
     }
 
+    // restart timer
     t.restart();
 
+    // sample
     for(int i=0;i<nnode;i++){
       single_node_samplers[i].sample();
     }
 
+    // wait for samplers to finish
     for(int i=0;i<nnode;i++){
       single_node_samplers[i].wait();
     }
+
     double elapsed = t.elapsed();
     if (!is_quiet) {
       std::cout << ""  << elapsed << " sec." ;
@@ -96,8 +108,9 @@ void dd::GibbsSampling::learn(const int & n_epoch, const int & n_sample_per_epoc
   Timer t;
   int nvar = this->factorgraphs[0].n_var;
   int nnode = n_numa_nodes + 1;
-  int nweight = this->factorgraphs[0].n_weight;
+  int nweight = this- >factorgraphs[0].n_weight;
 
+  // single node samplers
   std::vector<SingleNodeSampler> single_node_samplers;
   for(int i=0;i<=n_numa_nodes;i++){
     single_node_samplers.push_back(SingleNodeSampler(&this->factorgraphs[i], n_thread_per_numa, i));
@@ -106,7 +119,7 @@ void dd::GibbsSampling::learn(const int & n_epoch, const int & n_sample_per_epoc
   double * ori_weights = new double[nweight];
   memcpy(ori_weights, this->factorgraphs[0].infrs->weight_values, sizeof(double)*nweight);
 
-
+  // learning epochs
   for(int i_epoch=0;i_epoch<n_epoch;i_epoch++){
 
     if (!is_quiet) {
@@ -116,19 +129,26 @@ void dd::GibbsSampling::learn(const int & n_epoch, const int & n_sample_per_epoc
 
     t.restart();
     
+    // set stepsize
     for(int i=0;i<nnode;i++){
       single_node_samplers[i].p_fg->stepsize = current_stepsize;
     }
 
+    // performs stochastic gradient descent with sampling
     for(int i=0;i<nnode;i++){
       single_node_samplers[i].sample_sgd();
     }
 
+    // wait the samplers to finish
     for(int i=0;i<nnode;i++){
       single_node_samplers[i].wait_sgd();
     }
 
     FactorGraph & cfg = this->factorgraphs[0];
+
+    // sum the weights and store in the first factor graph
+    // note the weights across all factor graph will be the same and 
+    // assigned using these weights (see below) 
     for(int i=1;i<=n_numa_nodes;i++){
       FactorGraph & cfg_other = this->factorgraphs[i];
       for(int j=0;j<nweight;j++){
@@ -136,6 +156,7 @@ void dd::GibbsSampling::learn(const int & n_epoch, const int & n_sample_per_epoc
       }
     }
 
+    // regularize weights
     for(int j=0;j<nweight;j++){
       cfg.infrs->weight_values[j] /= nnode;
       if(cfg.infrs->weights_isfixed[j] == false){
@@ -143,6 +164,7 @@ void dd::GibbsSampling::learn(const int & n_epoch, const int & n_sample_per_epoc
       }
     }
 
+    // set weights for other factor graph to be the same as the first factor graph
     for(int i=1;i<=n_numa_nodes;i++){
       FactorGraph &cfg_other = this->factorgraphs[i];
       for(int j=0;j<nweight;j++){
@@ -152,7 +174,8 @@ void dd::GibbsSampling::learn(const int & n_epoch, const int & n_sample_per_epoc
       }
     }    
 
-
+    // calculate the norms of the difference of weights from the current epoch
+    // and last epoch
     double lmax = -1000000;
     double l2=0.0;
     for(int i=0;i<nweight;i++){
@@ -182,6 +205,7 @@ void dd::GibbsSampling::learn(const int & n_epoch, const int & n_sample_per_epoc
 
 void dd::GibbsSampling::dump_weights(const bool is_quiet){
 
+  // learning weights snippets
   FactorGraph const & cfg = this->factorgraphs[0];
   if (!is_quiet) {
     std::cout << "LEARNING SNIPPETS (QUERY WEIGHTS):" << std::endl;
@@ -195,6 +219,8 @@ void dd::GibbsSampling::dump_weights(const bool is_quiet){
     }
     std::cout << "   ..." << std::endl; 
   }
+
+  // dump learned weights
   std::string filename_text = p_cmd_parser->output_folder->getValue() 
     + "/inference_result.out.weights.text";
 
@@ -210,7 +236,9 @@ void dd::GibbsSampling::dump_weights(const bool is_quiet){
 
 void dd::GibbsSampling::dump(const bool is_quiet){
 
+  // sum of variable assignments
   double * agg_means = new double[factorgraphs[0].n_var];
+  // number of samples
   double * agg_nsamples = new double[factorgraphs[0].n_var];
   int * multinomial_tallies = new int[factorgraphs[0].infrs->ntallies];
 
@@ -223,6 +251,7 @@ void dd::GibbsSampling::dump(const bool is_quiet){
     multinomial_tallies[i] = 0;
   }
 
+  // sum variable assignments over all NUMA nodes
   for(int i=0;i<=n_numa_nodes;i++){
     const FactorGraph & cfg = factorgraphs[i];
     for(long i=0;i<factorgraphs[0].n_var;i++){
@@ -235,6 +264,7 @@ void dd::GibbsSampling::dump(const bool is_quiet){
     }
   }
 
+  // inference snippets
   if (!is_quiet) {
     std::cout << "INFERENCE SNIPPETS (QUERY VARIABLES):" << std::endl;
     int ct = 0;
@@ -265,6 +295,7 @@ void dd::GibbsSampling::dump(const bool is_quiet){
     std::cout << "   ..." << std::endl; 
   }
 
+  // dump inference results
   std::string filename_text = p_cmd_parser->output_folder->getValue() + 
     "/inference_result.out.text";
   std::cout << "DUMPING... TEXT    : " << filename_text << std::endl;
@@ -294,7 +325,8 @@ void dd::GibbsSampling::dump(const bool is_quiet){
   fout_text.close();
 
   if (is_quiet) return;
-
+  
+  // show a histogram of inference results
   std::cout << "INFERENCE CALIBRATION (QUERY BINS):" << std::endl;
   std::vector<int> abc;
   for(int i=0;i<=10;i++){
