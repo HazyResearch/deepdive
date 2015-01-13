@@ -62,7 +62,8 @@ namespace dd{
     // For each edge, we store the factor, weight id, factor id, and the variable, 
     // in the same index of seperate arrays. The edges are ordered so that the
     // edges for a variable is in a continuous region (sequentially). 
-    // This allows us to access factors given variables faster. 
+    // This allows us to access factors given variables, and access variables
+    // given factors faster. 
     CompactFactor * const factors_dups;
     int * const factors_dups_weightids;
     long * const factor_ids;
