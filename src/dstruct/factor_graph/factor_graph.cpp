@@ -254,7 +254,7 @@ void dd::FactorGraph::load(const CmdParser & cmd){
   n_loaded = read_edges(edge_file, *this);
   std::cout << "LOADED EDGES: #" << n_loaded << std::endl;
 
-  // c
+  // construct edge-based store
   this->safety_check();
 
   assert(this->is_usable() == true);
