@@ -77,7 +77,7 @@ dd::FactorGraph::FactorGraph(long _n_var, long _n_factor, long _n_weight, long _
 }
 
 void dd::FactorGraph::copy_from(const FactorGraph * const p_other_fg){
-
+  // copy each member from the given graph
   memcpy(variables, p_other_fg->variables, sizeof(Variable)*n_var);
   memcpy(factors, p_other_fg->factors, sizeof(Factor)*n_factor);
   memcpy(weights, p_other_fg->weights, sizeof(Weight)*n_weight);
@@ -103,7 +103,14 @@ void dd::FactorGraph::copy_from(const FactorGraph * const p_other_fg){
 }
 
 long dd::FactorGraph::get_weightid(const VariableValue *assignments, const CompactFactor& fs, long vid, long proposal) {
+  /**
+   * The weight ids are aligned in a continuous region according
+   * to the numerical order of variable values. 
+   * Say for two variables v1, v2, v3, with cardinality d. The numerical value is
+   * v1 * d^2 + v2 * d + v3.
+   */
   long weight_offset = 0;
+  // for each variable in the factor
   for (long i = fs.n_start_i_vif; i < fs.n_start_i_vif + fs.n_variables; i++) {
     const VariableInFactor & vif = vifs[i];
     if (vif.vid == vid) {
@@ -118,12 +125,21 @@ long dd::FactorGraph::get_weightid(const VariableValue *assignments, const Compa
 
 
 void dd::FactorGraph::update_weight(const Variable & variable){
+  // corresponding factors and weights in a continous region
   CompactFactor * const fs = factors_dups + variable.n_start_i_factors;
   const int * const ws = factors_dups_weightids + variable.n_start_i_factors;
+  // for each factor
   for(long i=0;i<variable.n_factors;i++){
+    // boolean variable
     if (variable.domain_type == DTYPE_BOOLEAN) {
+      // only update weight when it is not fixed
       if(infrs->weights_isfixed[ws[i]] == false){
         if(fs[i].func_id != 20){
+          // stochastic gradient ascent 
+          // increment weight with stepsize * gradient of weight
+          // gradient of weight = E[f|D] - E[f], where D is evidence variables, 
+          // f is the factor function, E[] is expectation. Expectation is calculated
+          // using a sample of the variable.
           infrs->weight_values[ws[i]] += 
             stepsize * (this->template potential<false>(fs[i]) - this->template potential<true>(fs[i]));
         }else{
@@ -200,6 +216,7 @@ void dd::FactorGraph::update_weight(const Variable & variable){
 
 void dd::FactorGraph::load(const CmdParser & cmd){
 
+  // get factor graph file names from command line arguments
   std::string weight_file = cmd.weight_file->getValue();
   std::string variable_file = cmd.variable_file->getValue();
   std::string factor_file = cmd.factor_file->getValue();
@@ -210,28 +227,34 @@ void dd::FactorGraph::load(const CmdParser & cmd){
   std::string filename_variables = variable_file;
   std::string filename_weights = weight_file;
 
-  // long long n_loaded = dd::stream_load_pb<deepdive::Variable, dd::FactorGraph, handle_variable>(filename_variables, *this);
+  // load variables
   long long n_loaded = read_variables(filename_variables, *this);
   assert(n_loaded == n_var);
   std::cout << "LOADED VARIABLES: #" << n_loaded << std::endl;
   std::cout << "         N_QUERY: #" << n_query << std::endl;
   std::cout << "         N_EVID : #" << n_evid << std::endl;  
-  // n_loaded = dd::stream_load_pb<deepdive::Factor, dd::FactorGraph, handle_factor>(filename_factors, *this);
+
+  // load factors
   n_loaded = read_factors(filename_factors, *this);
   assert(n_loaded == n_factor);
   std::cout << "LOADED FACTORS: #" << n_loaded << std::endl;
 
-  // n_loaded = dd::stream_load_pb<deepdive::Weight, dd::FactorGraph, handle_weight>(filename_weights, *this);
+  // load weights
   n_loaded = read_weights(filename_weights, *this);
   assert(n_loaded == n_weight);
   std::cout << "LOADED WEIGHTS: #" << n_loaded << std::endl;
 
+  // sort the above components
+  // NOTE This is very important, as read_edges assume variables,
+  // factors and weights are ordered so that their id is the index 
+  // where they are stored in the array
   this->finalize_loading();
 
-  //n_loaded = dd::stream_load_pb<deepdive::GraphEdge, dd::FactorGraph, handle_edge>(filename_edges, *this);
+  // load edges
   n_loaded = read_edges(edge_file, *this);
   std::cout << "LOADED EDGES: #" << n_loaded << std::endl;
 
+  // c
   this->safety_check();
 
   assert(this->is_usable() == true);
@@ -239,6 +262,7 @@ void dd::FactorGraph::load(const CmdParser & cmd){
 }
 
 void dd::FactorGraph::finalize_loading(){
+  // sort variables, factors, and weights by id
   std::cout << "Start Sorting Variables... nvar=" << n_var << std::endl;
   std::sort(&variables[0], &variables[n_var], idsorter<Variable>());
   std::cout << "Start Sorting Factors... nfac=" << n_factor << std::endl;
@@ -251,8 +275,9 @@ void dd::FactorGraph::finalize_loading(){
 }
 
 void dd::FactorGraph::safety_check(){
-
+  // number of edges
   c_edge = 0;
+  // put variables into the edge-based variable array vifs
   for(long i=0;i<n_factor;i++){
     Factor & factor = factors[i];
     factor.n_start_i_vif = c_edge;
@@ -264,6 +289,7 @@ void dd::FactorGraph::safety_check(){
 
   c_edge = 0;
   long ntallies = 0;
+  // for each variable, put the factors into factor_dups
   for(long i=0;i<n_var;i++){
     Variable & variable = variables[i];
     variable.n_factors = variable.tmp_factor_ids.size();  // no edge count any more
@@ -284,9 +310,10 @@ void dd::FactorGraph::safety_check(){
     }
   }
 
+  // check whether variables, factors, and weights are stored 
+  // in the order of their id
   long s = n_var;
   for(long i=0;i<s;i++){
-    // std::cout << this->variables[i].id << "    " << i << std::endl;
     assert(this->variables[i].id == i);
   }
   s = n_factor;
