@@ -22,7 +22,10 @@ int clock_gettime(int /*clk_id*/, struct timespec* t);
 #include <time.h>
 
 namespace dd{
-            
+    
+    /**
+     * Timer class that keeps track of time
+     */
     class Timer {
     public:
         
@@ -30,9 +33,15 @@ namespace dd{
         struct timespec _end;
         
         Timer();
-                
+
+        /** 
+         * Restart the timer
+         */
         void restart();
         
+        /**
+         * Returns time elapsed
+         */
         float elapsed();
         
     };

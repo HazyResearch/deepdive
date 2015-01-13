@@ -29,9 +29,12 @@ dd::CmdParser parse_input(int argc, char** argv){
 
 void gibbs(dd::CmdParser & cmd_parser){
 
+  // number of NUMA nodes
   int n_numa_node = numa_max_node() + 1;
+  // number of max threads per NUMA node
   int n_thread_per_numa = (sysconf(_SC_NPROCESSORS_CONF))/(n_numa_node);
 
+  // get command line arguments
   std::string fg_file = cmd_parser.fg_file->getValue();
 
   std::string weight_file = cmd_parser.weight_file->getValue();
@@ -74,7 +77,6 @@ void gibbs(dd::CmdParser & cmd_parser){
   std::cout << "################################################" << std::endl;
 
 
-  //deepdive::FactorGraph meta = dd::read_single_pb<deepdive::FactorGraph>(fg_file);
   Meta meta = read_meta(fg_file); 
   std::cout << "# nvar               : " << meta.num_variables << std::endl;
   std::cout << "# nfac               : " << meta.num_factors << std::endl;
@@ -82,29 +84,32 @@ void gibbs(dd::CmdParser & cmd_parser){
   std::cout << "# nedge              : " << meta.num_edges << std::endl;
   std::cout << "################################################" << std::endl;
 
-  // std::cout << "# nvar               : " << meta.numvariables() << std::endl;
-  // std::cout << "# nfac               : " << meta.numfactors() << std::endl;
-  // std::cout << "# nweight            : " << meta.numweights() << std::endl;
-  // std::cout << "# nedge              : " << meta.numedges() << std::endl;
-  // std::cout << "################################################" << std::endl;
 
-
+  // run on NUMA node 0
   numa_run_on_node(0);
   numa_set_localalloc();
-  // dd::FactorGraph fg(meta.numvariables(), meta.numfactors(), meta.numweights(), meta.numedges());
+
+  // load factor graph
   dd::FactorGraph fg(meta.num_variables, meta.num_factors, meta.num_weights, meta.num_edges);
   fg.load(cmd_parser);
   dd::GibbsSampling gibbs(&fg, &cmd_parser);
 
+  // number of learning epochs
+  // the factor graph is copied on each NUMA node, so the total epochs =
+  // epochs specified / number of NUMA nodes
   int numa_aware_n_learning_epoch = (int)(n_learning_epoch/n_numa_node) + 
                             (n_learning_epoch%n_numa_node==0?0:1);
 
+  // learning
   gibbs.learn(numa_aware_n_learning_epoch, n_samples_per_learning_epoch, stepsize, decay);
+  // dump weights
   gibbs.dump_weights();
 
+  // number of inference epochs
   int numa_aware_n_epoch = (int)(n_inference_epoch/n_numa_node) + 
                             (n_inference_epoch%n_numa_node==0?0:1);
 
+  // inference
   gibbs.inference(numa_aware_n_epoch);
   gibbs.dump();
 

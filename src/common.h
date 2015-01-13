@@ -36,6 +36,9 @@ inline bool fast_exact_is_equal(double a, double b){
     return (a <= b && b <= a);
 }
 
+/**
+ * Calculates log(exp(log_a) + exp(log_b)) 
+ */
 inline double logadd(double log_a, double log_b){
     
     if (log_a < log_b)
