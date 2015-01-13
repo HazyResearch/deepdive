@@ -147,8 +147,7 @@ void dd::GibbsSampling::learn(const int & n_epoch, const int & n_sample_per_epoc
     FactorGraph & cfg = this->factorgraphs[0];
 
     // sum the weights and store in the first factor graph
-    // note the weights across all factor graph will be the same and 
-    // assigned using these weights (see below) 
+    // the average weights will be calculated and assigned to all factor graphs 
     for(int i=1;i<=n_numa_nodes;i++){
       FactorGraph & cfg_other = this->factorgraphs[i];
       for(int j=0;j<nweight;j++){
@@ -156,7 +155,7 @@ void dd::GibbsSampling::learn(const int & n_epoch, const int & n_sample_per_epoc
       }
     }
 
-    // regularize weights
+    // calculate average weights and regularize weights
     for(int j=0;j<nweight;j++){
       cfg.infrs->weight_values[j] /= nnode;
       if(cfg.infrs->weights_isfixed[j] == false){
