@@ -24,7 +24,7 @@ namespace dd{
   };
 
   /**
-   * Gets the current assignment of the vairable. 
+   * Gets the current assignment of the variable. 
    * does_change_evid = true gives the free assignment, where evidence variable
    * can be sampled.
    * does_change_evid = false gives the evid assignment, where evidence variable
@@ -51,7 +51,8 @@ namespace dd{
     FactorIndex id;       // factor id
     int func_id;          // function type id
     int n_variables;      // number of variables in the factor
-    long n_start_i_vif;   // the id of the first variable 
+    long n_start_i_vif;   // the id of the first variable.  the variables of a factor
+                          // have sequential ids starting from n_start_i_vif to n_start_i_vif+num_variables-1
 
     /**
      * Default constructor
@@ -113,7 +114,15 @@ namespace dd{
                                    const VariableIndex &, const VariableValue &) const;
 
     /** 
-     * Returns potential of the factor 
+     * Returns potential of the factor. 
+     * (potential is the value of the factor) 
+     * The potential is calculated using the proposal value for variable with id vid, and 
+     * var_values for other variables in the factor
+     *
+     * vifs pointer to variables in factor (array)
+     * var_values pointer to variable values (array)
+     * vid variable id to be calculated with proposal
+     * proposal the proposed value
      *
      * This function is defined in the head to make sure
      * it gets inlined
@@ -153,7 +162,7 @@ namespace dd{
 
     long n_start_i_vif;     // start variable id
 
-    std::vector<VariableInFactor> tmp_variables; // varibles in the factor
+    std::vector<VariableInFactor> tmp_variables; // variables in the factor
 
     Factor();
 
