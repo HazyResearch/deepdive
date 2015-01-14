@@ -108,7 +108,7 @@ void dd::GibbsSampling::learn(const int & n_epoch, const int & n_sample_per_epoc
   Timer t;
   int nvar = this->factorgraphs[0].n_var;
   int nnode = n_numa_nodes + 1;
-  int nweight = this- >factorgraphs[0].n_weight;
+  int nweight = this->factorgraphs[0].n_weight;
 
   // single node samplers
   std::vector<SingleNodeSampler> single_node_samplers;
