@@ -32,9 +32,6 @@ namespace dd{
 
     std::vector<long> tmp_factor_ids; // factor ids the variable connects to
 
-    double agg_mean;                // unused
-    long n_sample;                  // unused
-
     Variable();
 
     /**
