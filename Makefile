@@ -9,7 +9,7 @@ endif
 OPT_FLAG = -Ofast
 GCC_INCLUDE = -I./lib/tclap/include/ -I./src -I./lib/numactl-2.0.9/
 GCC_LIB = -L./lib/numactl-2.0.9/ 
-CPP_FLAG = -std=c++0x -Wl,-Bstatic -Wl,-Bdynamic -lnuma -lrt
+CPP_FLAG = -std=c++0x -Wl,-Bstatic -Wl,-Bdynamic -lnuma -lrt -Wall
 endif
 
 ifeq ($(UNAME), Darwin)
@@ -19,7 +19,7 @@ endif
 OPT_FLAG =  -O3 -stdlib=libc++ -mmacosx-version-min=10.7
 GCC_INCLUDE = -I./lib/tclap/include/ -I./src
 GCC_LIB = 
-CPP_FLAG = -flto -std=c++0x 
+CPP_FLAG = -flto -std=c++0x -Wall
 endif
 
 COMPILE_CMD = $(CXX) $(OPT_FLAG) $(GCC_INCLUDE) $(GCC_LIB) $(CPP_FLAG)
