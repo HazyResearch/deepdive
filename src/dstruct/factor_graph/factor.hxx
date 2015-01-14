@@ -1,5 +1,16 @@
 namespace dd{
 
+	// whether a variable's value or proposal satisfies the is_equal condition
+	inline bool dd::CompactFactor::is_variable_satisfied(
+		const VariableInFactor& vif,
+		const VariableIndex& vid, 
+		const VariableValue * const var_values,
+		const VariableValue & proposal) const {
+
+		return (vif.vid == vid) ? vif.satisfiedUsing(proposal) : 
+			vif.satisfiedUsing(var_values[vif.vid]);
+	}
+
 	/** Return the value of the "equality test" of the variables in the factor,
 	 * with the variable of index vid (wrt the factor) is set to the value of
 	 * the 'proposal' argument.

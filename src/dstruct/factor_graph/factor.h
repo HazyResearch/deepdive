@@ -145,8 +145,12 @@ namespace dd{
       }
 
       return 0.0;
-
     }
+
+
+  private:
+    inline bool is_variable_satisfied(const VariableInFactor& vif, const VariableIndex& vid, 
+      const VariableValue * const var_values, const VariableValue & proposal) const;
 
   };
 
