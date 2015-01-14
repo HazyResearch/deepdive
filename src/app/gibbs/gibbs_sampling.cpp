@@ -6,44 +6,36 @@
 #include <fstream>
 #include "timer.h"
 
-/*!
- * \brief In this function, the factor graph is located to each NUMA node.
- * 
- * TODO: in the near future, this allocation should be abstracted
- * into a higher-level class to avoid writing similar things
- * for Gibbs, NN, SGD etc. However, this is the task of next pass
- * of refactoring.
- */
-void dd::GibbsSampling::prepare(int n_datacopy){
+dd::GibbsSampling::GibbsSampling(FactorGraph * const _p_fg, 
+  CmdParser * const _p_cmd_parser, int n_datacopy) 
+  : p_fg(_p_fg), p_cmd_parser(_p_cmd_parser) {
+    // the highest node number available
+    n_numa_nodes = numa_max_node(); 
 
-  // the highest node number available
-  n_numa_nodes = numa_max_node(); 
+    // if n_datacopy is valid, use it, otherwise, use numa_max_node
+    if (n_datacopy >= 1 && n_datacopy <= n_numa_nodes + 1) {
+      n_numa_nodes = n_datacopy - 1;
+    }
 
-  // if n_datacopy is valid, use it, otherwise, use numa_max_node
-  if (n_datacopy >= 1 && n_datacopy <= n_numa_nodes + 1) {
-    n_numa_nodes = n_datacopy - 1;
-  }
+    // max possible threads per NUMA node
+    n_thread_per_numa = (sysconf(_SC_NPROCESSORS_CONF))/(n_numa_nodes+1);
 
-  // max possible threads per NUMA node
-  n_thread_per_numa = (sysconf(_SC_NPROCESSORS_CONF))/(n_numa_nodes+1);
+    this->factorgraphs.push_back(*p_fg);
 
-  this->factorgraphs.push_back(*p_fg);
+    // copy factor graphs
+    for(int i=1;i<=n_numa_nodes;i++){
 
-  // copy factor graphs
-  for(int i=1;i<=n_numa_nodes;i++){
+      numa_run_on_node(i);
+      numa_set_localalloc();
 
-    numa_run_on_node(i);
-    numa_set_localalloc();
+      std::cout << "CREATE FG ON NODE ..." <<  i << std::endl;
+      dd::FactorGraph fg(p_fg->n_var, p_fg->n_factor, p_fg->n_weight, p_fg->n_edge);
+      
+      fg.copy_from(p_fg);
 
-    std::cout << "CREATE FG ON NODE ..." <<  i << std::endl;
-    dd::FactorGraph fg(p_fg->n_var, p_fg->n_factor, p_fg->n_weight, p_fg->n_edge);
-    
-    fg.copy_from(p_fg);
-
-    this->factorgraphs.push_back(fg);
-  }
-
-}
+      this->factorgraphs.push_back(fg);
+    }
+  };
 
 void dd::GibbsSampling::inference(const int & n_epoch, const bool is_quiet){
 
