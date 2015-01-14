@@ -54,21 +54,6 @@ namespace dd{
   class FactorGraph {
   public:
 
-    // variables, factors, weights
-    Variable * const variables;
-    Factor * const factors;
-    Weight * const weights;
-
-    // For each edge, we store the factor, weight id, factor id, and the variable, 
-    // in the same index of seperate arrays. The edges are ordered so that the
-    // edges for a variable is in a continuous region (sequentially). 
-    // This allows us to access factors given variables, and access variables
-    // given factors faster. 
-    CompactFactor * const factors_dups;
-    int * const factors_dups_weightids;
-    long * const factor_ids;
-    VariableInFactor * const vifs;
-
     // countings for components of factor graph
     long n_var;
     long n_factor;
@@ -85,20 +70,33 @@ namespace dd{
     long n_evid;
     long n_query;
 
+    // learning weight update stepsize (learning rate)
+    double stepsize;
+
+    // variables, factors, weights
+    Variable * const variables;
+    Factor * const factors;
+    Weight * const weights;
+
+    // For each edge, we store the factor, weight id, factor id, and the variable, 
+    // in the same index of seperate arrays. The edges are ordered so that the
+    // edges for a variable is in a continuous region (sequentially). 
+    // This allows us to access factors given variables, and access variables
+    // given factors faster. 
+    CompactFactor * const factors_dups;
+    int * const factors_dups_weightids;
+    long * const factor_ids;
+    VariableInFactor * const vifs;
+
+    // pointer to inference result
+    InferenceResult * const infrs ;
+
     // whether the factor graph loading has been finalized
     // see finalize_loading() below
     bool loading_finalized;
     // whether safety check has passed
     // see safety_check() below
     bool safety_check_passed;
-
-    // pointer to inference result
-    InferenceResult * const infrs ;
-
-    // learning weight update stepsize (learning rate)
-    double stepsize;
-
-    int tmp;
 
     /**
      * Constructs a new factor graph with given number number of variables,

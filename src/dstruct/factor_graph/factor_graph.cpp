@@ -14,14 +14,14 @@ public:
 
 
 dd::InferenceResult::InferenceResult(long _nvars, long _nweights):
-  assignments_free(new VariableValue[_nvars]),
-  assignments_evid(new VariableValue[_nvars]),
+  nvars(_nvars),
+  nweights(_nweights),
   agg_means(new double[_nvars]),
   agg_nsamples(new double[_nvars]),
+  assignments_free(new VariableValue[_nvars]),
+  assignments_evid(new VariableValue[_nvars]),
   weight_values(new double [_nweights]),
-  weights_isfixed(new bool [_nweights]),
-  nweights(_nweights),
-  nvars(_nvars){}
+  weights_isfixed(new bool [_nweights]) {}
 
 void dd::InferenceResult::init(Variable * variables, Weight * const weights){
 
@@ -56,25 +56,18 @@ bool dd::FactorGraph::is_usable(){
 }
 
 dd::FactorGraph::FactorGraph(long _n_var, long _n_factor, long _n_weight, long _n_edge) : 
+  n_var(_n_var), n_factor(_n_factor), n_weight(_n_weight), n_edge(_n_edge),
+  c_nvar(0), c_nfactor(0), c_nweight(0), n_evid(0), n_query(0),
   variables(new Variable[_n_var]),
   factors(new Factor[_n_factor]),
   weights(new Weight[_n_weight]),
-  n_var(_n_var), n_factor(_n_factor), n_weight(_n_weight),
-  infrs(new InferenceResult(_n_var, _n_weight)),
-  n_edge(_n_edge),
-  factor_ids(new long[_n_edge]),
   factors_dups(new CompactFactor[_n_edge]),
+  factors_dups_weightids(new int[_n_edge]),
+  factor_ids(new long[_n_edge]),
   vifs(new VariableInFactor[_n_edge]),
-  factors_dups_weightids(new int[_n_edge])
-{
-  this->loading_finalized = false;
-  this->safety_check_passed = false;
-  c_nvar = 0;
-  c_nfactor = 0;
-  c_nweight = 0;
-  n_evid = 0;
-  n_query = 0;
-}
+  infrs(new InferenceResult(_n_var, _n_weight)),
+  loading_finalized(false),
+  safety_check_passed(false) {}
 
 void dd::FactorGraph::copy_from(const FactorGraph * const p_other_fg){
   // copy each member from the given graph
