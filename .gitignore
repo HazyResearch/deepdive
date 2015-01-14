@@ -3,6 +3,7 @@
 *.lo
 *.o
 dw
+dw_test
 
 # Compiled Dynamic libraries
 *.so
@@ -18,3 +19,4 @@ lib/
 
 # others
 .DS_Store
+inference_result*
