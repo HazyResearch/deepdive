@@ -92,8 +92,8 @@ namespace dd{
     InferenceResult * const infrs ;
 
     // whether the factor graph loading has been finalized
-    // see finalize_loading() below
-    bool loading_finalized;
+    // see sort_by_id() below
+    bool sorted;
     // whether safety check has passed
     // see safety_check() below
     bool safety_check_passed;
@@ -242,12 +242,11 @@ namespace dd{
     void load(const CmdParser & cmd);
 
     /**
-     * Finalize loading of a factor graph. 
      * Sorts the variables, factors, and weights in ascending id order.
      * This is important as later these components are stored in array, and
      * sorting them will faciliate accessing them by id.
      */
-    void finalize_loading();
+    void sort_by_id();
 
     /**
      * Construct the edge-based store of factor graph in factors_dups, etc.
@@ -257,7 +256,7 @@ namespace dd{
 
     /**
      * Returns wether the factor graph is usable.
-     * A factor graph is usable when gone through safety_check and finalize_loading()
+     * A factor graph is usable when gone through safety_check and sort_by_id()
      */
     bool is_usable();
   };

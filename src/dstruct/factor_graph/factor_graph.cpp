@@ -52,7 +52,7 @@ void dd::InferenceResult::init(Variable * variables, Weight * const weights){
 
 
 bool dd::FactorGraph::is_usable(){
-  return this->loading_finalized && this->safety_check_passed;
+  return this->sorted && this->safety_check_passed;
 }
 
 dd::FactorGraph::FactorGraph(long _n_var, long _n_factor, long _n_weight, long _n_edge) : 
@@ -66,7 +66,7 @@ dd::FactorGraph::FactorGraph(long _n_var, long _n_factor, long _n_weight, long _
   factor_ids(new long[_n_edge]),
   vifs(new VariableInFactor[_n_edge]),
   infrs(new InferenceResult(_n_var, _n_weight)),
-  loading_finalized(false),
+  sorted(false),
   safety_check_passed(false) {}
 
 void dd::FactorGraph::copy_from(const FactorGraph * const p_other_fg){
@@ -84,7 +84,7 @@ void dd::FactorGraph::copy_from(const FactorGraph * const p_other_fg){
   c_nfactor = p_other_fg->c_nfactor;
   c_nweight = p_other_fg->c_nweight;
   c_edge = p_other_fg->c_edge;
-  loading_finalized = p_other_fg->loading_finalized;
+  sorted = p_other_fg->sorted;
   safety_check_passed = p_other_fg->safety_check_passed;
 
   infrs->init(variables, weights);
@@ -241,7 +241,7 @@ void dd::FactorGraph::load(const CmdParser & cmd){
   // NOTE This is very important, as read_edges assume variables,
   // factors and weights are ordered so that their id is the index 
   // where they are stored in the array
-  this->finalize_loading();
+  this->sort_by_id();
 
   // load edges
   n_loaded = read_edges(edge_file, *this);
@@ -254,12 +254,12 @@ void dd::FactorGraph::load(const CmdParser & cmd){
 
 }
 
-void dd::FactorGraph::finalize_loading(){
+void dd::FactorGraph::sort_by_id(){
   // sort variables, factors, and weights by id
   std::sort(&variables[0], &variables[n_var], idsorter<Variable>());
   std::sort(&factors[0], &factors[n_factor], idsorter<Factor>());
   std::sort(&weights[0], &weights[n_weight], idsorter<Weight>()); 
-  this->loading_finalized = true;
+  this->sorted = true;
   infrs->init(variables, weights);
 }
 
