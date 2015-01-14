@@ -252,6 +252,11 @@ namespace dd{
      * Construct the edge-based store of factor graph in factors_dups, etc.
      * Refer to the class member comments for more detail.
      */
+    void organize_graph_by_edge();
+
+    /**
+     * Checks whether the edge-based store is correct
+     */
     void safety_check();
 
     /**

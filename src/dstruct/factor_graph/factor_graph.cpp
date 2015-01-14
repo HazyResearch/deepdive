@@ -248,13 +248,14 @@ void dd::FactorGraph::load(const CmdParser & cmd){
   std::cout << "LOADED EDGES: #" << n_loaded << std::endl;
 
   // construct edge-based store
+  this->organize_graph_by_edge();
   this->safety_check();
 
   assert(this->is_usable() == true);
 
 }
 
-void dd::FactorGraph::sort_by_id(){
+void dd::FactorGraph::sort_by_id() {
   // sort variables, factors, and weights by id
   std::sort(&variables[0], &variables[n_var], idsorter<Variable>());
   std::sort(&factors[0], &factors[n_factor], idsorter<Factor>());
@@ -263,7 +264,7 @@ void dd::FactorGraph::sort_by_id(){
   infrs->init(variables, weights);
 }
 
-void dd::FactorGraph::safety_check(){
+void dd::FactorGraph::organize_graph_by_edge() {
   // number of edges
   c_edge = 0;
   // put variables into the edge-based variable array vifs
@@ -298,6 +299,9 @@ void dd::FactorGraph::safety_check(){
       c_edge ++;
     }
   }
+}
+
+void dd::FactorGraph::safety_check(){
 
   // check whether variables, factors, and weights are stored 
   // in the order of their id
