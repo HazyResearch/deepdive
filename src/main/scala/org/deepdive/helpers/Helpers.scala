@@ -66,7 +66,7 @@ object Helpers extends Logging {
         case Mysql => dbpassword match { // see if password is empty
           case null => s" -u ${dbuser} "
           case "" => s" -u ${dbuser} "
-          case _ => s" -u ${dbuser} -p=${dbpassword}"
+          case _ => s" -u ${dbuser} -p${dbpassword}"
         }
       }
     }
