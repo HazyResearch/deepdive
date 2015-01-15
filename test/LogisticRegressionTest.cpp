@@ -13,7 +13,7 @@ TEST(LogisticRegressionTest, INFERENCE) {
 		"-o", ".", "-l", "100", "-i", "100", "-s", "1", "--alpha", "0.1", ""
 	};
 
-	dd::CmdParser cmd_parser = parse_input(23, (char**)&argv[0]);
+	dd::CmdParser cmd_parser = parse_input(23, (char **)argv);
 	gibbs(cmd_parser);
 
 	std::ifstream fin("./inference_result.out.text");

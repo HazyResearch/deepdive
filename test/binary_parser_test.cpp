@@ -7,7 +7,7 @@
 
 using namespace dd;
 
-TEST(binary_parser_test, read_variable) {
+TEST(BinaryParserTest, read_variable) {
 	dd::FactorGraph fg(18, 1, 1, 1);
 	long nvars = read_variables("./test/coin/graph.variables", fg);
 	EXPECT_EQ(nvars, 18);
@@ -23,7 +23,7 @@ TEST(binary_parser_test, read_variable) {
 	EXPECT_EQ(fg.variables[1].assignment_free, 1);
 }
 
-TEST(binary_parser_test, read_factors) {
+TEST(BinaryParserTest, read_factors) {
 	dd::FactorGraph fg(1, 18, 1, 1);
 	int nfactors = read_factors("./test/coin/graph.factors", fg);
 	EXPECT_EQ(nfactors, 18);
@@ -34,7 +34,7 @@ TEST(binary_parser_test, read_factors) {
 	EXPECT_EQ(fg.factors[0].n_variables, 1);
 }
 
-TEST(binary_parser_test, read_weights) {
+TEST(BinaryParserTest, read_weights) {
 	dd::FactorGraph fg(1, 1, 1, 1);
 	int nweights = read_weights("./test/coin/graph.weights", fg);
 	EXPECT_EQ(nweights, 1);
@@ -44,7 +44,7 @@ TEST(binary_parser_test, read_weights) {
 	EXPECT_EQ(fg.weights[0].weight, 0.0);
 }
 
-TEST(binary_parser_test, read_edges) {
+TEST(BinaryParserTest, read_edges) {
 	dd::FactorGraph fg(18, 18, 1, 18);
 	int nedges = read_edges("./test/coin/graph.edges", fg);
 	EXPECT_EQ(nedges, 18);
