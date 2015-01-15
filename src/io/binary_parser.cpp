@@ -212,9 +212,9 @@ long long read_edges(string filename, dd::FactorGraph &fg)
         }
 
         // add variables to factors
-        if (fg.variables[variable_id].domain_type == DTYPE_BOOLEAN || fg.variables[variable_id].domain_type == DTYPE_REAL) {
+        if (fg.variables[variable_id].domain_type == DTYPE_BOOLEAN) {
             fg.factors[factor_id].tmp_variables.push_back(
-                dd::VariableInFactor(0, fg.variables[variable_id].upper_bound, variable_id, position, ispositive));
+                dd::VariableInFactor(variable_id, fg.variables[variable_id].upper_bound, variable_id, position, ispositive));
         } else {
             fg.factors[factor_id].tmp_variables.push_back(
                 dd::VariableInFactor(variable_id, position, ispositive, equal_predicate));
