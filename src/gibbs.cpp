@@ -57,38 +57,42 @@ void gibbs(dd::CmdParser & cmd_parser){
   double reg_param = cmd_parser.reg_param->getValue();
   bool is_quiet = cmd_parser.quiet->getValue();
 
-  std::cout << std::endl;
-  std::cout << "#################MACHINE CONFIG#################" << std::endl;
-  std::cout << "# # NUMA Node        : " << n_numa_node << std::endl;
-  std::cout << "# # Thread/NUMA Node : " << n_thread_per_numa << std::endl;
-  std::cout << "################################################" << std::endl;
-  std::cout << std::endl;
-  std::cout << "#################GIBBS SAMPLING#################" << std::endl;
-  std::cout << "# fg_file            : " << fg_file << std::endl;
-  std::cout << "# edge_file          : " << edge_file << std::endl;
-  std::cout << "# weight_file        : " << weight_file << std::endl;
-  std::cout << "# variable_file      : " << variable_file << std::endl;
-  std::cout << "# factor_file        : " << factor_file << std::endl;
-  std::cout << "# output_folder      : " << output_folder << std::endl;
-  std::cout << "# n_learning_epoch   : " << n_learning_epoch << std::endl;
-  std::cout << "# n_samples/l. epoch : " << n_samples_per_learning_epoch << std::endl;
-  std::cout << "# n_inference_epoch  : " << n_inference_epoch << std::endl;
-  std::cout << "# stepsize           : " << stepsize << std::endl;
-  std::cout << "# decay              : " << decay << std::endl;
-  std::cout << "# regularization     : " << reg_param << std::endl;
-  std::cout << "################################################" << std::endl;
-  std::cout << "# IGNORE -s (n_samples/l. epoch). ALWAYS -s 1. #" << std::endl;
-  std::cout << "# IGNORE -t (threads). ALWAYS USE ALL THREADS. #" << std::endl;
-  std::cout << "################################################" << std::endl;
-
-
   Meta meta = read_meta(fg_file); 
-  std::cout << "# nvar               : " << meta.num_variables << std::endl;
-  std::cout << "# nfac               : " << meta.num_factors << std::endl;
-  std::cout << "# nweight            : " << meta.num_weights << std::endl;
-  std::cout << "# nedge              : " << meta.num_edges << std::endl;
-  std::cout << "################################################" << std::endl;
 
+  if (is_quiet) {
+    std::cout << "Running in quiet mode..." << std::endl;
+  } else {
+    std::cout << std::endl;
+    std::cout << "#################MACHINE CONFIG#################" << std::endl;
+    std::cout << "# # NUMA Node        : " << n_numa_node << std::endl;
+    std::cout << "# # Thread/NUMA Node : " << n_thread_per_numa << std::endl;
+    std::cout << "################################################" << std::endl;
+    std::cout << std::endl;
+    std::cout << "#################GIBBS SAMPLING#################" << std::endl;
+    std::cout << "# fg_file            : " << fg_file << std::endl;
+    std::cout << "# edge_file          : " << edge_file << std::endl;
+    std::cout << "# weight_file        : " << weight_file << std::endl;
+    std::cout << "# variable_file      : " << variable_file << std::endl;
+    std::cout << "# factor_file        : " << factor_file << std::endl;
+    std::cout << "# output_folder      : " << output_folder << std::endl;
+    std::cout << "# n_learning_epoch   : " << n_learning_epoch << std::endl;
+    std::cout << "# n_samples/l. epoch : " << n_samples_per_learning_epoch << std::endl;
+    std::cout << "# n_inference_epoch  : " << n_inference_epoch << std::endl;
+    std::cout << "# stepsize           : " << stepsize << std::endl;
+    std::cout << "# decay              : " << decay << std::endl;
+    std::cout << "# regularization     : " << reg_param << std::endl;
+    std::cout << "################################################" << std::endl;
+    std::cout << "# IGNORE -s (n_samples/l. epoch). ALWAYS -s 1. #" << std::endl;
+    std::cout << "# IGNORE -t (threads). ALWAYS USE ALL THREADS. #" << std::endl;
+    std::cout << "################################################" << std::endl;
+
+
+    std::cout << "# nvar               : " << meta.num_variables << std::endl;
+    std::cout << "# nfac               : " << meta.num_factors << std::endl;
+    std::cout << "# nweight            : " << meta.num_weights << std::endl;
+    std::cout << "# nedge              : " << meta.num_edges << std::endl;
+    std::cout << "################################################" << std::endl;
+  }
 
   // run on NUMA node 0
   numa_run_on_node(0);
@@ -96,7 +100,7 @@ void gibbs(dd::CmdParser & cmd_parser){
 
   // load factor graph
   dd::FactorGraph fg(meta.num_variables, meta.num_factors, meta.num_weights, meta.num_edges);
-  fg.load(cmd_parser);
+  fg.load(cmd_parser, is_quiet);
   dd::GibbsSampling gibbs(&fg, &cmd_parser, n_datacopy);
 
   // number of learning epochs

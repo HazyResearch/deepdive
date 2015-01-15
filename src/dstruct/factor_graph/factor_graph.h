@@ -197,7 +197,7 @@ namespace dd{
     /**
      * Loads the factor graph using arguments specified from command line
      */
-    void load(const CmdParser & cmd);
+    void load(const CmdParser & cmd, const bool is_quiet);
 
     /**
      * Sorts the variables, factors, and weights in ascending id order.

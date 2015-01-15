@@ -158,7 +158,7 @@ void dd::FactorGraph::update_weight(const Variable & variable){
   }
 }
 
-void dd::FactorGraph::load(const CmdParser & cmd){
+void dd::FactorGraph::load(const CmdParser & cmd, const bool is_quiet){
 
   // get factor graph file names from command line arguments
   std::string weight_file = cmd.weight_file->getValue();
@@ -174,19 +174,25 @@ void dd::FactorGraph::load(const CmdParser & cmd){
   // load variables
   long long n_loaded = read_variables(filename_variables, *this);
   assert(n_loaded == n_var);
-  std::cout << "LOADED VARIABLES: #" << n_loaded << std::endl;
-  std::cout << "         N_QUERY: #" << n_query << std::endl;
-  std::cout << "         N_EVID : #" << n_evid << std::endl;  
+  if (!is_quiet) {
+    std::cout << "LOADED VARIABLES: #" << n_loaded << std::endl;
+    std::cout << "         N_QUERY: #" << n_query << std::endl;
+    std::cout << "         N_EVID : #" << n_evid << std::endl;  
+  }
 
   // load factors
   n_loaded = read_factors(filename_factors, *this);
   assert(n_loaded == n_factor);
-  std::cout << "LOADED FACTORS: #" << n_loaded << std::endl;
+  if (!is_quiet) {
+    std::cout << "LOADED FACTORS: #" << n_loaded << std::endl;
+  }
 
   // load weights
   n_loaded = read_weights(filename_weights, *this);
   assert(n_loaded == n_weight);
-  std::cout << "LOADED WEIGHTS: #" << n_loaded << std::endl;
+  if (!is_quiet) {
+    std::cout << "LOADED WEIGHTS: #" << n_loaded << std::endl;
+  }
 
   // sort the above components
   // NOTE This is very important, as read_edges assume variables,
@@ -196,7 +202,9 @@ void dd::FactorGraph::load(const CmdParser & cmd){
 
   // load edges
   n_loaded = read_edges(edge_file, *this);
-  std::cout << "LOADED EDGES: #" << n_loaded << std::endl;
+  if (!is_quiet) {
+    std::cout << "LOADED EDGES: #" << n_loaded << std::endl;
+  }
 
   // construct edge-based store
   this->organize_graph_by_edge();
@@ -268,7 +276,6 @@ void dd::FactorGraph::safety_check(){
   for(long i=0;i<s;i++){
     assert(this->weights[i].id == i);
   }
-  std::cout << "FACTOR GRAPH: Safety Checking Passed..." << std::endl;
   this->safety_check_passed = true;
 }
 
