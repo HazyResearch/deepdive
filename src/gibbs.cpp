@@ -17,7 +17,7 @@ dd::CmdParser parse_input(int argc, char** argv){
     }
   }
   char ** new_argv = new char*[new_args.size()];
-  for(int i=0;i<new_args.size();i++){
+  for(size_t i=0;i<new_args.size();i++){
     new_argv[i] = new char[new_args[i].length() + 1];
     std::copy(new_args[i].begin(), new_args[i].end(), new_argv[i]);
     new_argv[i][new_args[i].length()] = '\0';

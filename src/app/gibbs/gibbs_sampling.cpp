@@ -201,7 +201,7 @@ void dd::GibbsSampling::dump_weights(const bool is_quiet){
   if (!is_quiet) {
     std::cout << "LEARNING SNIPPETS (QUERY WEIGHTS):" << std::endl;
     int ct = 0;
-    for(size_t i=0;i<cfg.infrs->nweights;i++){
+    for(long i=0;i<cfg.infrs->nweights;i++){
       ct ++;
       std::cout << "   " << i << " " << cfg.infrs->weight_values[i] << std::endl;
       if(ct % 10 == 0){
@@ -218,7 +218,7 @@ void dd::GibbsSampling::dump_weights(const bool is_quiet){
   std::cout << "DUMPING... TEXT    : " << filename_text << std::endl;
 
   std::ofstream fout_text(filename_text.c_str());
-  for(size_t i=0;i<cfg.infrs->nweights;i++){
+  for(long i=0;i<cfg.infrs->nweights;i++){
     fout_text << i << " " << cfg.infrs->weight_values[i] << std::endl;
   }
   fout_text.close();
