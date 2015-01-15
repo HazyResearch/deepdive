@@ -68,8 +68,6 @@ namespace dd{
      */
     void sample_sgd(const int & i_sharding, const int & n_sharding);
 
-  private:
-
     /**
      * Performs SGD by sampling a single variable with id vid
      */
