@@ -127,33 +127,13 @@ void dd::FactorGraph::update_weight(const Variable & variable){
     if (variable.domain_type == DTYPE_BOOLEAN) {
       // only update weight when it is not fixed
       if(infrs->weights_isfixed[ws[i]] == false){
-        if(fs[i].func_id != 20){
-          // stochastic gradient ascent 
-          // increment weight with stepsize * gradient of weight
-          // gradient of weight = E[f|D] - E[f], where D is evidence variables, 
-          // f is the factor function, E[] is expectation. Expectation is calculated
-          // using a sample of the variable.
-          infrs->weight_values[ws[i]] += 
-            stepsize * (this->template potential<false>(fs[i]) - this->template potential<true>(fs[i]));
-        }else{
-
-          const int & dimension = vifs[fs[i].n_start_i_vif].dimension;
-
-          const long & cvid = vifs[fs[i].n_start_i_vif].vid;
-          const long & wid = ws[i];
-          const long & bvid = vifs[fs[i].n_start_i_vif+1].vid;
-
-          const long assignments_evid_bvid = infrs->assignments_evid[bvid];
-          const long assignments_free_bvid = infrs->assignments_free[bvid];
-
-          if(assignments_evid_bvid != assignments_free_bvid){
-            for(int j=0;j<dimension;j++){
-              infrs->weight_values[wid + j] +=
-                  stepsize * (assignments_evid_bvid * infrs->assignments_evid[cvid+j]
-                    - assignments_free_bvid * infrs->assignments_free[cvid+j]);
-            }
-          }
-        }
+        // stochastic gradient ascent 
+        // increment weight with stepsize * gradient of weight
+        // gradient of weight = E[f|D] - E[f], where D is evidence variables, 
+        // f is the factor function, E[] is expectation. Expectation is calculated
+        // using a sample of the variable.
+        infrs->weight_values[ws[i]] += 
+          stepsize * (this->template potential<false>(fs[i]) - this->template potential<true>(fs[i]));
       }
     } else if (variable.domain_type == DTYPE_MULTINOMIAL) {
       // two weights need to be updated
@@ -161,47 +141,18 @@ void dd::FactorGraph::update_weight(const Variable & variable){
       // sample without evidence unfixed, I1, with corresponding weight w2 
       // gradient of wd0 = f(I0) - I(w1==w2)f(I1)
       // gradient of wd1 = I(w1==w2)f(I0) - f(I1)
-      if(fs[i].func_id != 20){
-        long wid1 = get_weightid(infrs->assignments_evid, fs[i], -1, -1);
-        long wid2 = get_weightid(infrs->assignments_free, fs[i], -1, -1);
-        int equal = (wid1 == wid2);
+      long wid1 = get_weightid(infrs->assignments_evid, fs[i], -1, -1);
+      long wid2 = get_weightid(infrs->assignments_free, fs[i], -1, -1);
+      int equal = (wid1 == wid2);
 
-        if(infrs->weights_isfixed[wid1] == false){
-          infrs->weight_values[wid1] += 
-            stepsize * (this->template potential<false>(fs[i]) - equal * this->template potential<true>(fs[i]));
-        }
+      if(infrs->weights_isfixed[wid1] == false){
+        infrs->weight_values[wid1] += 
+          stepsize * (this->template potential<false>(fs[i]) - equal * this->template potential<true>(fs[i]));
+      }
 
-        if(infrs->weights_isfixed[wid2] == false){
-          infrs->weight_values[wid2] += 
-            stepsize * (equal * this->template potential<false>(fs[i]) - this->template potential<true>(fs[i]));
-        }
-      }else{
-
-        const int & dimension = vifs[fs[i].n_start_i_vif].dimension;
-        const long & cvid = vifs[fs[i].n_start_i_vif].vid;
-        const long & bvid = vifs[fs[i].n_start_i_vif+1].vid;
-
-        const long assignments_evid_bvid = infrs->assignments_evid[bvid];
-        const long assignments_free_bvid = infrs->assignments_free[bvid];
-
-        if(assignments_evid_bvid != assignments_free_bvid){
-
-          // udpate the weight for assignments_evid_bvid
-          long wid = ws[i] + dimension * assignments_evid_bvid;
-          for(int j=0;j<dimension;j++){
-            infrs->weight_values[wid + j] +=
-                stepsize * (infrs->assignments_evid[cvid+j]);
-          }
-
-          // update the wight for assignments_free_bvid
-          wid = ws[i] + dimension * assignments_free_bvid;
-          for(int j=0;j<dimension;j++){
-            infrs->weight_values[wid + j] +=
-                stepsize * (-infrs->assignments_evid[cvid+j]);
-          }
-
-        }
-
+      if(infrs->weights_isfixed[wid2] == false){
+        infrs->weight_values[wid2] += 
+          stepsize * (equal * this->template potential<false>(fs[i]) - this->template potential<true>(fs[i]));
       }
     }
   }

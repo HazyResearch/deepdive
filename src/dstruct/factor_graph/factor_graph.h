@@ -169,68 +169,26 @@ namespace dd{
         // for all factors that the variable connects to, calculate the 
         // weighted potential
         for(long i=0;i<variable.n_factors;i++){
-          if(fs[i].func_id != 20){
-            if(does_change_evid == true){
-              tmp = fs[i].potential(
-                  vifs, infrs->assignments_free, variable.id, proposal);
-            }else{
-              tmp = fs[i].potential(
-                  vifs, infrs->assignments_evid, variable.id, proposal);
-            }
-            pot += infrs->weight_values[ws[i]] * tmp;
-          }else{ // not yet supported according to factor.h
-            tmp = 0.0;
-            const int & dimension = vifs[fs[i].n_start_i_vif].dimension;
-            const long & cvid = vifs[fs[i].n_start_i_vif].vid;
-            const long & wid = ws[i];
-
-            if(proposal != 0){
-              for(int j=0;j<dimension;j++){
-                if(does_change_evid == true){
-                  tmp += infrs->weight_values[wid + j] * 
-                    proposal * infrs->assignments_free[cvid+j];
-                }else{
-                  tmp += infrs->weight_values[wid + j] * 
-                    proposal * infrs->assignments_evid[cvid+j];
-                }
-              }
-            }
-
-            pot += tmp;
-
+          if(does_change_evid == true){
+            tmp = fs[i].potential(
+                vifs, infrs->assignments_free, variable.id, proposal);
+          }else{
+            tmp = fs[i].potential(
+                vifs, infrs->assignments_evid, variable.id, proposal);
           }
+          pot += infrs->weight_values[ws[i]] * tmp;
         }
       } else if (variable.domain_type == DTYPE_MULTINOMIAL) { // multinomial
         for (long i = 0; i < variable.n_factors; i++) {
-          if(fs[i].func_id != 20){
-            if(does_change_evid == true) {
-              tmp = fs[i].potential(vifs, infrs->assignments_free, variable.id, proposal);
-              // get weight id associated with this factor and variable assignment
-              wid = get_weightid(infrs->assignments_free, fs[i], variable.id, proposal);
-            } else {
-              tmp = fs[i].potential(vifs, infrs->assignments_evid, variable.id, proposal);
-              wid = get_weightid(infrs->assignments_evid, fs[i], variable.id, proposal);
-            }
-            pot += infrs->weight_values[wid] * tmp;
-          }else{
-            tmp = 0.0;
-            const int & dimension = vifs[fs[i].n_start_i_vif].dimension;
-            const long & cvid = vifs[fs[i].n_start_i_vif].vid;
-            const long & wid = ws[i] + dimension * proposal;
-
-            for(int j=0;j<dimension;j++){
-              if(does_change_evid == true){
-                tmp += infrs->weight_values[wid + j] * 
-                  infrs->assignments_free[cvid+j];
-              }else{
-                tmp += infrs->weight_values[wid + j] * 
-                  infrs->assignments_evid[cvid+j];
-              }
-            }
-
-            pot += tmp;
-
+          if(does_change_evid == true) {
+            tmp = fs[i].potential(vifs, infrs->assignments_free, variable.id, proposal);
+            // get weight id associated with this factor and variable assignment
+            wid = get_weightid(infrs->assignments_free, fs[i], variable.id, proposal);
+          } else {
+            tmp = fs[i].potential(vifs, infrs->assignments_evid, variable.id, proposal);
+            wid = get_weightid(infrs->assignments_evid, fs[i], variable.id, proposal);
           }
+          pot += infrs->weight_values[wid] * tmp;
         }
       } // end if for variable type
       return pot;
