@@ -9,7 +9,7 @@ endif
 OPT_FLAG = -Ofast
 GCC_INCLUDE = -I./lib/tclap/include/ -I./src -I./lib/numactl-2.0.9/
 GCC_LIB = -L./lib/numactl-2.0.9/ 
-CPP_FLAG = -std=c++0x -Wl,-Bstatic -Wl,-Bdynamic -lnuma -lrt -Wall
+CPP_FLAG = -std=c++0x -Wl,-Bstatic -Wl,-Bdynamic -lnuma -lrt -Wall -fno-strict-aliasing
 endif
 
 ifeq ($(UNAME), Darwin)
@@ -19,7 +19,7 @@ endif
 OPT_FLAG =  -O3 -stdlib=libc++ -mmacosx-version-min=10.7
 GCC_INCLUDE = -I./lib/tclap/include/ -I./src
 GCC_LIB = 
-CPP_FLAG = -flto -std=c++0x -Wall
+CPP_FLAG = -flto -std=c++0x -Wall -fno-strict-aliasing
 endif
 
 COMPILE_CMD = $(CXX) $(OPT_FLAG) $(GCC_INCLUDE) $(GCC_LIB) $(CPP_FLAG)
@@ -73,6 +73,7 @@ dw_test: factor_graph.o gibbs_sampling.o  binary_parser.o single_thread_sampler.
 	
 	$(COMPILE_CMD) -I./lib/gtest-1.7.0/include/ -L./lib/gtest/ \
 	-o dw_test test/test.cpp test/FactorTest.cpp test/LogisticRegressionTest.cpp \
+	test/binary_parser_test.cpp test/loading_test.cpp \
 	gibbs_sampling.o binary_parser.o \
     timer.o gibbs.o single_node_sampler.o \
 	factor_graph.o single_thread_sampler.o factor.o \

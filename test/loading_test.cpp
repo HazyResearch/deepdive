@@ -54,3 +54,14 @@ TEST_F(LoadingTest, organize_graph_by_edge) {
 	fg.organize_graph_by_edge();
 	fg.safety_check();
 }
+
+TEST_F(LoadingTest, copy_from) {
+	fg.sort_by_id();
+	fg.organize_graph_by_edge();
+
+	dd::FactorGraph fg2(18, 18, 1, 18);
+	fg2.copy_from(&fg);
+
+	EXPECT_TRUE(memcmp(&fg, &fg2, sizeof(fg)));
+}
+
