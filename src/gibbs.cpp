@@ -118,6 +118,6 @@ void gibbs(dd::CmdParser & cmd_parser){
 
   // inference
   gibbs.inference(numa_aware_n_epoch, is_quiet);
-  gibbs.dump(is_quiet);
+  gibbs.aggregate_results_and_dump(is_quiet);
 
 }

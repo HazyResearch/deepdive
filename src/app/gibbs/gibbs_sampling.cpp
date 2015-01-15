@@ -224,8 +224,7 @@ void dd::GibbsSampling::dump_weights(const bool is_quiet){
   fout_text.close();
 }
 
-
-void dd::GibbsSampling::dump(const bool is_quiet){
+void dd::GibbsSampling::aggregate_results_and_dump(const bool is_quiet){
 
   // sum of variable assignments
   double * agg_means = new double[factorgraphs[0].n_var];

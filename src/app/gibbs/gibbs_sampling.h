@@ -62,10 +62,11 @@ namespace dd{
     void inference(const int & n_epoch, const bool is_quiet);
 
     /**
+     * Aggregates results from different NUMA nodes
      * Dumps the inference result for variables
      * is_quiet whether to compress information display
      */
-    void dump(const bool is_quiet);
+    void aggregate_results_and_dump(const bool is_quiet);
 
     /**
      * Dumps the learned weights
