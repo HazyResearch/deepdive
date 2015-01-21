@@ -71,7 +71,7 @@ single_node_sampler.o: src/app/gibbs/single_node_sampler.cpp
 timer.o : src/timer.cpp 
 	$(COMPILE_CMD) -o timer.o -c src/timer.cpp 
 
-dw_test: factor_graph.o gibbs_sampling.o  binary_parser.o single_thread_sampler.o \
+dw_test: factor_graph.o inference_result.o gibbs_sampling.o  binary_parser.o single_thread_sampler.o \
 	timer.o gibbs.o single_node_sampler.o factor.o variable.o weight.o cmd_parser.o
 	
 	$(COMPILE_CMD) -I./lib/gtest-1.7.0/include/ -L./lib/gtest/ \
