@@ -115,7 +115,7 @@ namespace dd{
      * For multinomial weights, for each possible assignment, there is a corresponding 
      * indicator function and weight. 
      */
-    long get_weightid(const VariableValue *assignments, const CompactFactor& fs, long vid, long proposal);
+    long get_multinomial_weight_id(const VariableValue *assignments, const CompactFactor& fs, long vid, long proposal);
 
     /**
      * Given a variable, updates the weights associated with the factors that 
@@ -183,10 +183,10 @@ namespace dd{
           if(does_change_evid == true) {
             tmp = fs[i].potential(vifs, infrs->assignments_free, variable.id, proposal);
             // get weight id associated with this factor and variable assignment
-            wid = get_weightid(infrs->assignments_free, fs[i], variable.id, proposal);
+            wid = get_multinomial_weight_id(infrs->assignments_free, fs[i], variable.id, proposal);
           } else {
             tmp = fs[i].potential(vifs, infrs->assignments_evid, variable.id, proposal);
-            wid = get_weightid(infrs->assignments_evid, fs[i], variable.id, proposal);
+            wid = get_multinomial_weight_id(infrs->assignments_evid, fs[i], variable.id, proposal);
           }
           pot += infrs->weight_values[wid] * tmp;
         }
