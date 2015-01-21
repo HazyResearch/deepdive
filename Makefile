@@ -74,7 +74,7 @@ dw_test: factor_graph.o gibbs_sampling.o  binary_parser.o single_thread_sampler.
 	$(COMPILE_CMD) -I./lib/gtest-1.7.0/include/ -L./lib/gtest/ \
 	-o dw_test test/test.cpp test/FactorTest.cpp test/LogisticRegressionTest.cpp \
 	test/binary_parser_test.cpp test/loading_test.cpp test/factor_graph_test.cpp \
-	test/sampler_test.cpp \
+	test/sampler_test.cpp test/multinomial.cpp \
 	gibbs_sampling.o binary_parser.o \
     timer.o gibbs.o single_node_sampler.o \
 	factor_graph.o single_thread_sampler.o factor.o \
@@ -120,3 +120,16 @@ clean:
 	rm -rf *.o
 	rm -rf dw
 
+gibbs:
+	./dw gibbs -m data3/graph.meta.csv      \
+		-e data3/graph.edges         \
+		-w data3/graph.weights   \
+		-v data3/graph.variables     \
+		-f data3/graph.factors    \
+		-o data3/                    \
+		-i 1000 -l 1000 -s 10 --alpha 0.01 --diminish 0.95
+
+test: clean dw_test
+	./dw_test
+
+.PHONY: test clean dw
