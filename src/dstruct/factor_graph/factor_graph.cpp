@@ -33,7 +33,6 @@ void dd::InferenceResult::init(Variable * variables, Weight * const weights){
     agg_means[variable.id] = 0.0;
     agg_nsamples[variable.id] = 0.0;
     if(variable.domain_type == DTYPE_MULTINOMIAL){
-      //variable.n_start_i_tally = ntallies;
       ntallies += variable.upper_bound - variable.lower_bound + 1;
     }
   }

@@ -94,14 +94,14 @@ namespace dd{
         multi_proposal = -1;
         
         // calculate potential for each proposal
-        for(int propose=0;propose <= variable.upper_bound; propose++){
+        for(int propose=variable.lower_bound;propose <= variable.upper_bound; propose++){
           varlen_potential_buffer[propose] = p_fg->template potential<false>(variable, propose);
           sum = logadd(sum, varlen_potential_buffer[propose]);
         }
 
         // flip a coin
         *this->p_rand_obj_buf = erand48(this->p_rand_seed);
-        for(int propose=0;propose <= variable.upper_bound; propose++){
+        for(int propose=variable.lower_bound;propose <= variable.upper_bound; propose++){
           acc += exp(varlen_potential_buffer[propose]-sum);
           if(*this->p_rand_obj_buf <= acc){
             multi_proposal = propose;
@@ -115,13 +115,13 @@ namespace dd{
       sum = -100000.0;
       acc = 0.0;
       multi_proposal = -1;
-      for(int propose=0;propose <= variable.upper_bound; propose++){
+      for(int propose=variable.lower_bound;propose <= variable.upper_bound; propose++){
         varlen_potential_buffer[propose] = p_fg->template potential<true>(variable, propose);
         sum = logadd(sum, varlen_potential_buffer[propose]);
       }
 
       *this->p_rand_obj_buf = erand48(this->p_rand_seed);
-      for(int propose=0;propose <= variable.upper_bound; propose++){
+      for(int propose=variable.lower_bound; propose <= variable.upper_bound; propose++){
         acc += exp(varlen_potential_buffer[propose]-sum);
         if(*this->p_rand_obj_buf <= acc){
           multi_proposal = propose;
@@ -134,8 +134,8 @@ namespace dd{
       this->p_fg->update_weight(variable);
 
     }else{
-      //std::cout << "[ERROR] Only Boolean and Multinomial variables are supported now!" << std::endl;
-      //assert(false);
+      std::cout << "[ERROR] Only Boolean and Multinomial variables are supported now!" << std::endl;
+      assert(false);
       return;
     } // end if for variable types
     
@@ -173,13 +173,13 @@ namespace dd{
         sum = -100000.0;
         acc = 0.0;
         multi_proposal = -1;
-        for(int propose=0;propose <= variable.upper_bound; propose++){
+        for(int propose=variable.lower_bound;propose <= variable.upper_bound; propose++){
           varlen_potential_buffer[propose] = p_fg->template potential<false>(variable, propose);
           sum = logadd(sum, varlen_potential_buffer[propose]);
         }
 
         *this->p_rand_obj_buf = erand48(this->p_rand_seed);
-        for(int propose=0;propose <= variable.upper_bound; propose++){
+        for(int propose=variable.lower_bound;propose <= variable.upper_bound; propose++){
           acc += exp(varlen_potential_buffer[propose]-sum);
           if(*this->p_rand_obj_buf <= acc){
             multi_proposal = propose;
@@ -191,8 +191,8 @@ namespace dd{
       }
 
     }else{
-      //std::cout << "[ERROR] Only Boolean and Multinomial variables are supported now!" << std::endl;
-      //assert(false);
+      std::cout << "[ERROR] Only Boolean and Multinomial variables are supported now!" << std::endl;
+      assert(false);
       return;
     }
 

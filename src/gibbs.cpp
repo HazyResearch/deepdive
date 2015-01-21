@@ -50,6 +50,7 @@ void gibbs(dd::CmdParser & cmd_parser){
 
   double stepsize = cmd_parser.stepsize->getValue();
   double stepsize2 = cmd_parser.stepsize2->getValue();
+  // hack to support two parameters to specify step size
   if (stepsize == 0.01) stepsize = stepsize2;
   double decay = cmd_parser.decay->getValue();
 
