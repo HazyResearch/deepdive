@@ -24,11 +24,11 @@ endif
 
 COMPILE_CMD = $(CXX) $(OPT_FLAG) $(GCC_INCLUDE) $(GCC_LIB) $(CPP_FLAG)
 
-dw: factor_graph.o gibbs_sampling.o main.o binary_parser.o single_thread_sampler.o \
+dw: factor_graph.o inference_result.o gibbs_sampling.o main.o binary_parser.o single_thread_sampler.o \
 	timer.o gibbs.o single_node_sampler.o factor.o variable.o weight.o cmd_parser.o
 	$(COMPILE_CMD) -o dw gibbs_sampling.o main.o binary_parser.o \
 					    timer.o gibbs.o single_node_sampler.o \
-						factor_graph.o single_thread_sampler.o factor.o \
+						factor_graph.o inference_result.o single_thread_sampler.o factor.o \
 						variable.o weight.o cmd_parser.o \
 	$(CPP_FLAG) 
 
@@ -56,6 +56,9 @@ factor.o: src/dstruct/factor_graph/factor.cpp
 factor_graph.o: src/dstruct/factor_graph/factor_graph.cpp
 	$(COMPILE_CMD) -c src/dstruct/factor_graph/factor_graph.cpp
 
+inference_result.o: src/dstruct/factor_graph/inference_result.cpp
+	$(COMPILE_CMD) -c src/dstruct/factor_graph/inference_result.cpp
+
 gibbs_sampling.o: src/app/gibbs/gibbs_sampling.cpp 
 	$(COMPILE_CMD)  -c src/app/gibbs/gibbs_sampling.cpp
 
@@ -77,7 +80,7 @@ dw_test: factor_graph.o gibbs_sampling.o  binary_parser.o single_thread_sampler.
 	test/sampler_test.cpp test/multinomial.cpp \
 	gibbs_sampling.o binary_parser.o \
     timer.o gibbs.o single_node_sampler.o \
-	factor_graph.o single_thread_sampler.o factor.o \
+	factor_graph.o inference_result.o single_thread_sampler.o factor.o \
 	variable.o weight.o cmd_parser.o \
 	$(CPP_FLAG) -lgtest
 

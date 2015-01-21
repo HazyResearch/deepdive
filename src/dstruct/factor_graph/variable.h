@@ -4,6 +4,10 @@
 #ifndef _VARIABLE_H_
 #define _VARIABLE_H_
 
+#define DTYPE_BOOLEAN     0x00
+#define DTYPE_REAL        0x01
+#define DTYPE_MULTINOMIAL 0x04
+
 namespace dd{
 
   typedef int VariableValue;
