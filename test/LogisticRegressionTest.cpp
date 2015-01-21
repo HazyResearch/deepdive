@@ -1,3 +1,9 @@
+/**
+ * Integration test for binary biased coin
+ *
+ * Author: Ce Zhang
+ */
+
 #include <limits.h>
 #include "gibbs.h"
 #include "gtest/gtest.h"
@@ -5,6 +11,9 @@
 
 using namespace dd;
 
+// the factor graph used for test is from biased coin, which contains 18 variables,
+// 1 weight, 18 factors, and 18 edges. Variables of id 0-8 are evidence: id 0-7 
+// positive and id 8 negative.
 TEST(LogisticRegressionTest, INFERENCE) {
 
 	const char* argv[23] = {

@@ -20,3 +20,4 @@ lib/
 # others
 .DS_Store
 inference_result*
+*.json

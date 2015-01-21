@@ -1,3 +1,9 @@
+/**
+ * Unit tests for factor graph functions
+ *
+ * Author: Feiran Wang
+ */
+
 #include "gtest/gtest.h"
 #include "dstruct/factor_graph/factor_graph.h"
 #include "gibbs.h"
@@ -6,6 +12,9 @@
 using namespace dd;
 
 // test fixture
+// the factor graph used for test is from biased coin, which contains 18 variables,
+// 1 weight, 18 factors, and 18 edges. Variables of id 0-8 are evidence: id 0-7 
+// positive and id 8 negative.
 class FactorGraphTest : public testing::Test {
 protected:
 
@@ -25,6 +34,7 @@ protected:
 
 };
 
+// test update function
 TEST_F(FactorGraphTest, update_variable) {
 
 	fg.update<true>(fg.variables[0], 1);
@@ -41,6 +51,7 @@ TEST_F(FactorGraphTest, update_variable) {
 
 }
 
+// test update_weight function
 TEST_F(FactorGraphTest, update_weight) {
 	fg.stepsize = 0.1;
 	fg.update<true>(fg.variables[0], 0);
