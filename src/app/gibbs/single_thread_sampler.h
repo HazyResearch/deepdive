@@ -47,7 +47,7 @@ namespace dd{
     // TODO: these shouldn't be class members
     double sum;
     double acc;
-    double multi_proposal;
+    int multi_proposal;
 
     /**
      * Constructs a SingleThreadSampler with given factor graph

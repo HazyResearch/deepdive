@@ -108,7 +108,7 @@ namespace dd{
             break;
           }
         }
-        assert(multi_proposal != -1.0);
+        assert(multi_proposal != -1);
         p_fg->template update<false>(variable, multi_proposal);
       }
 
@@ -128,7 +128,7 @@ namespace dd{
           break;
         }
       }
-      assert(multi_proposal != -1.0);
+      assert(multi_proposal != -1);
       p_fg->template update<true>(variable, multi_proposal);
 
       this->p_fg->update_weight(variable);
@@ -186,7 +186,7 @@ namespace dd{
             break;
           }
         }
-        assert(multi_proposal != -1.0);
+        assert(multi_proposal != -1);
         p_fg->template update<false>(variable, multi_proposal);
       }
 
