@@ -4,14 +4,6 @@
 #include "dstruct/factor_graph/factor_graph.h"
 #include "dstruct/factor_graph/factor.h"
 
-template <class OBJTOSORT>
-class idsorter : public std::binary_function<OBJTOSORT, OBJTOSORT, bool>{
-public:
-  inline bool operator()(const OBJTOSORT & left, const OBJTOSORT & right){
-    return left.id < right.id;  
-  }
-};
-
 
 dd::InferenceResult::InferenceResult(long _nvars, long _nweights):
   nvars(_nvars),
@@ -212,6 +204,15 @@ void dd::FactorGraph::load(const CmdParser & cmd, const bool is_quiet){
   assert(this->is_usable() == true);
 
 }
+
+// sort according to id
+template <class OBJTOSORT>
+class idsorter : public std::binary_function<OBJTOSORT, OBJTOSORT, bool>{
+public:
+  inline bool operator()(const OBJTOSORT & left, const OBJTOSORT & right){
+    return left.id < right.id;  
+  }
+};
 
 void dd::FactorGraph::sort_by_id() {
   // sort variables, factors, and weights by id

@@ -24,26 +24,6 @@ namespace dd{
   };
 
   /**
-   * Gets the current assignment of the variable. 
-   * does_change_evid = true gives the free assignment, where evidence variable
-   * can be sampled.
-   * does_change_evid = false gives the evid assignment, where evidence variable
-   * can not be sampled.
-   */
-  template<bool does_change_evid>
-  inline const VariableValue & get_vassign(const Variable & v);
-
-  template<>
-  inline const VariableValue & get_vassign<true>(const Variable & v){
-    return v.assignment_free;
-  }
-
-  template<>
-  inline const VariableValue & get_vassign<false>(const Variable & v){
-    return v.assignment_evid;
-  }
-
-  /**
    * Encapsulates a factor function in the factor graph
    */
   class CompactFactor{
