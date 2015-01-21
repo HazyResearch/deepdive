@@ -28,6 +28,10 @@ namespace dd{
     int n_factors;                  // number of factors the variable connects to
     long n_start_i_factors;         // id of the first factor
 
+    // the values of multinomial variables are stored in an array like this
+    // [v11 v12 ... v1m v21 ... v2n ...] 
+    // where v1, v2 are two multinomial variables, with domain 1-m, and 1-n respectively.
+    // n_start_i_tally is the start position for the variable values in the array
     long n_start_i_tally;
 
     std::vector<long> tmp_factor_ids; // factor ids the variable connects to
