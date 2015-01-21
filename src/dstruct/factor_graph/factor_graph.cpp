@@ -52,8 +52,8 @@ dd::FactorGraph::FactorGraph(long _n_var, long _n_factor, long _n_weight, long _
   variables(new Variable[_n_var]),
   factors(new Factor[_n_factor]),
   weights(new Weight[_n_weight]),
-  factors_dups(new CompactFactor[_n_edge]),
-  factors_dups_weightids(new int[_n_edge]),
+  compact_factors(new CompactFactor[_n_edge]),
+  compact_factors_weightids(new int[_n_edge]),
   factor_ids(new long[_n_edge]),
   vifs(new VariableInFactor[_n_edge]),
   infrs(new InferenceResult(_n_var, _n_weight)),
@@ -68,8 +68,8 @@ void dd::FactorGraph::copy_from(const FactorGraph * const p_other_fg){
   memcpy(factor_ids, p_other_fg->factor_ids, sizeof(long)*n_edge);
   memcpy(vifs, p_other_fg->vifs, sizeof(VariableInFactor)*n_edge);
 
-  memcpy(factors_dups, p_other_fg->factors_dups, sizeof(CompactFactor)*n_edge);
-  memcpy(factors_dups_weightids, p_other_fg->factors_dups_weightids, sizeof(int)*n_edge);
+  memcpy(compact_factors, p_other_fg->compact_factors, sizeof(CompactFactor)*n_edge);
+  memcpy(compact_factors_weightids, p_other_fg->compact_factors_weightids, sizeof(int)*n_edge);
 
   c_nvar = p_other_fg->c_nvar;
   c_nfactor = p_other_fg->c_nfactor;
@@ -103,15 +103,15 @@ long dd::FactorGraph::get_multinomial_weight_id(const VariableValue *assignments
       weight_offset = weight_offset * (variables[vif.vid].upper_bound+1) + assignments[vif.vid];
     }
   }
-  long base_offset = &fs - factors_dups; // note c++ will auto scale by sizeof(CompactFactor)
-  return *(factors_dups_weightids + base_offset) + weight_offset;
+  long base_offset = &fs - compact_factors; // note c++ will auto scale by sizeof(CompactFactor)
+  return *(compact_factors_weightids + base_offset) + weight_offset;
 }
 
 
 void dd::FactorGraph::update_weight(const Variable & variable){
   // corresponding factors and weights in a continous region
-  CompactFactor * const fs = factors_dups + variable.n_start_i_factors;
-  const int * const ws = factors_dups_weightids + variable.n_start_i_factors;
+  CompactFactor * const fs = compact_factors + variable.n_start_i_factors;
+  const int * const ws = compact_factors_weightids + variable.n_start_i_factors;
   // for each factor
   for(long i=0;i<variable.n_factors;i++){
     // boolean variable
@@ -250,11 +250,11 @@ void dd::FactorGraph::organize_graph_by_edge() {
     }
     for(const long & fid : variable.tmp_factor_ids){
       factor_ids[c_edge] = fid;
-      factors_dups[c_edge].id = factors[fid].id;
-      factors_dups[c_edge].func_id = factors[fid].func_id;
-      factors_dups[c_edge].n_variables = factors[fid].n_variables;
-      factors_dups[c_edge].n_start_i_vif = factors[fid].n_start_i_vif;
-      factors_dups_weightids[c_edge] = factors[fid].weight_id;
+      compact_factors[c_edge].id = factors[fid].id;
+      compact_factors[c_edge].func_id = factors[fid].func_id;
+      compact_factors[c_edge].n_variables = factors[fid].n_variables;
+      compact_factors[c_edge].n_start_i_vif = factors[fid].n_start_i_vif;
+      compact_factors_weightids[c_edge] = factors[fid].weight_id;
       c_edge ++;
     }
   }

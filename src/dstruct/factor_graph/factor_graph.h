@@ -83,8 +83,8 @@ namespace dd{
     // edges for a variable is in a continuous region (sequentially). 
     // This allows us to access factors given variables, and access variables
     // given factors faster. 
-    CompactFactor * const factors_dups;
-    int * const factors_dups_weightids;
+    CompactFactor * const compact_factors;
+    int * const compact_factors_weightids;
     long * const factor_ids;
     VariableInFactor * const vifs;
 
@@ -160,9 +160,9 @@ namespace dd{
       // pointer to the first factor the given variable connects to
       // the factors that the given variable connects to are stored in a continuous
       // region of the array
-      CompactFactor * const fs = &factors_dups[variable.n_start_i_factors];
+      CompactFactor * const fs = &compact_factors[variable.n_start_i_factors];
       // the weights, corresponding to the factor with the same index
-      const int * const ws = &factors_dups_weightids[variable.n_start_i_factors];   
+      const int * const ws = &compact_factors_weightids[variable.n_start_i_factors];   
       
       // boolean type
       if (variable.domain_type == DTYPE_BOOLEAN) {   
@@ -207,7 +207,7 @@ namespace dd{
     void sort_by_id();
 
     /**
-     * Construct the edge-based store of factor graph in factors_dups, etc.
+     * Construct the edge-based store of factor graph in compact_factors, etc.
      * Refer to the class member comments for more detail.
      */
     void organize_graph_by_edge();
