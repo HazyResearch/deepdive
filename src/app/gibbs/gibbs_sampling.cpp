@@ -272,7 +272,7 @@ void dd::GibbsSampling::aggregate_results_and_dump(const bool is_quiet){
               std::cout << "        @ " << j << " -> " << 1.0*multinomial_tallies[variable.n_start_i_tally + j]/agg_nsamples[variable.id] << std::endl;
             }
           }else{
-            std::cout << "ERROR: Only support boolean variables for now!" << std::endl;
+            std::cerr << "ERROR: Only support boolean and multinomial variables for now!" << std::endl;
             assert(false);
           }
         }
@@ -304,7 +304,7 @@ void dd::GibbsSampling::aggregate_results_and_dump(const bool is_quiet){
 
         }
       }else{
-        std::cout << "ERROR: Only support boolean variables for now!" << std::endl;
+        std::cerr << "ERROR: Only support boolean and mutlitnomial variables for now!" << std::endl;
         assert(false);
       }
     }else{

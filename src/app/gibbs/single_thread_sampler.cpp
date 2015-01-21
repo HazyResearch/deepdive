@@ -134,7 +134,7 @@ namespace dd{
       this->p_fg->update_weight(variable);
 
     }else{
-      std::cout << "[ERROR] Only Boolean and Multinomial variables are supported now!" << std::endl;
+      std::cerr << "[ERROR] Only Boolean and Multinomial variables are supported now!" << std::endl;
       assert(false);
       return;
     } // end if for variable types
@@ -191,7 +191,7 @@ namespace dd{
       }
 
     }else{
-      std::cout << "[ERROR] Only Boolean and Multinomial variables are supported now!" << std::endl;
+      std::cerr << "[ERROR] Only Boolean and Multinomial variables are supported now!" << std::endl;
       assert(false);
       return;
     }

@@ -210,7 +210,7 @@ template <class OBJTOSORT>
 class idsorter : public std::binary_function<OBJTOSORT, OBJTOSORT, bool>{
 public:
   inline bool operator()(const OBJTOSORT & left, const OBJTOSORT & right){
-    return left.id < right.id;  
+    return left.id < right.id;
   }
 };
 
