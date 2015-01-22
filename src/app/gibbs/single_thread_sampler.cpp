@@ -42,12 +42,6 @@ namespace dd{
     
     Variable & variable = p_fg->variables[vid];
 
-    // only sample evidence variables
-    // TODO is this correct?
-    if(variable.is_evid == false){
-        return;
-    }
-
     if(variable.domain_type == DTYPE_BOOLEAN){ // boolean
 
         // sample the variable with evidence unchanged
