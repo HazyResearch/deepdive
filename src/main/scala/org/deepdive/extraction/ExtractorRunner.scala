@@ -403,9 +403,6 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
     val gpFileName = s"${outputRel}_unload_${funcName}"
     val psqlFilePath = queryOutputFile.getAbsolutePath()
 
-    loader.unload(gpFileName, psqlFilePath, dbSettings, parallelLoading, 
-      s"${inputQuery}")
-
     // Get the actual dumped file 
     val fname = parallelLoading match {
       case true => gpFileName
@@ -416,6 +413,21 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
       case true => dbSettings.gppath
       case _ => queryOutputFile.getParent()
     } 
+
+    // Clean the output path first
+    val delCmd = s"find ${fpath} -name '${fname}*' 2>/dev/null -print0 | xargs -0 rm -f"
+    log.info(s"Executing: ${delCmd}")
+    val delTmpFile = new File(queryOutputPath + s"exec_delete.sh")
+    // val delTmpFile = File.createTempFile(s"exec_delete", ".sh")
+    val delWriter = new PrintWriter(delTmpFile)
+    delWriter.println(s"${delCmd}")
+    delWriter.close()
+    executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
+
+    // Helpers.executeCmd(delCmd) // This won't work because of escaping issues?
+
+    loader.unload(gpFileName, psqlFilePath, dbSettings, parallelLoading, 
+      s"${inputQuery}")
 
     // Get the actually dumped file path
     val actualDumpedPath = s"${fpath}/${fname}"
@@ -484,13 +496,6 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
     log.info("Removing temporary files...")
     queryOutputFile.delete()
 
-    val delCmd = s"find ${fpath} -name '${fname}*' 2>/dev/null -print0 | xargs -0 rm -f"
-    log.info(s"Executing: ${delCmd}")
-    val delTmpFile = new File(queryOutputPath + s"exec_delete.sh")
-    // val delTmpFile = File.createTempFile(s"exec_delete", ".sh")
-    val delWriter = new PrintWriter(delTmpFile)
-    delWriter.println(s"${delCmd}")
-    delWriter.close()
     executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
     delTmpFile.delete()
     queryOutputPathDir.delete()
