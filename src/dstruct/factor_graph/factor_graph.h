@@ -212,7 +212,7 @@ namespace dd{
   }
 
   // sort variable in factor by their position
-  bool compare_position(VariableInFactor& x, VariableInFactor& y);
+  bool compare_position(const VariableInFactor& x, const VariableInFactor& y);
 
 }
 
