@@ -304,7 +304,7 @@ void dd::GibbsSampling::aggregate_results_and_dump(const bool is_quiet){
 
         }
       }else{
-        std::cerr << "ERROR: Only support boolean and mutlitnomial variables for now!" << std::endl;
+        std::cerr << "ERROR: Only support boolean and multinomial variables for now!" << std::endl;
         assert(false);
       }
     }else{
