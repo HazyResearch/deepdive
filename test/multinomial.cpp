@@ -20,7 +20,7 @@ TEST(MultinomialTest, LearningAndInference) {
 	const char* argv[23] = {
 		"dw", "gibbs", "-w", "./test/multinomial/graph.weights", "-v", "./test/multinomial/graph.variables", 
 		"-f", "./test/multinomial/graph.factors", "-e", "./test/multinomial/graph.edges", "-m", "./test/multinomial/graph.meta",
-		"-o", "./test/multinomial/", "-l", "1000", "-i", "2000", "-s", "1", "--alpha", "0.01", "--diminish 0.999"
+		"-o", "./test/multinomial/", "-l", "2000", "-i", "2000", "-s", "1", "--alpha", "0.01", "--diminish 0.999"
 	};
 
 	dd::CmdParser cmd_parser = parse_input(23, (char **)argv);
@@ -52,9 +52,9 @@ TEST(MultinomialTest, LearningAndInference) {
 	for (int i = 0; i < 4; i++) {
 		partition += exp(weight[i]);
 	}
-	EXPECT_NEAR(exp(weight[0])/partition, 0.1, 0.03);
-	EXPECT_NEAR(exp(weight[1])/partition, 0.2, 0.03);
-	EXPECT_NEAR(exp(weight[2])/partition, 0.3, 0.03);
-	EXPECT_NEAR(exp(weight[3])/partition, 0.4, 0.03);
+	EXPECT_NEAR(exp(weight[0])/partition, 0.1, 0.04);
+	EXPECT_NEAR(exp(weight[1])/partition, 0.2, 0.04);
+	EXPECT_NEAR(exp(weight[2])/partition, 0.3, 0.04);
+	EXPECT_NEAR(exp(weight[3])/partition, 0.4, 0.04);
 }
 
