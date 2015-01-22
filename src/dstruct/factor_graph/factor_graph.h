@@ -187,6 +187,7 @@ namespace dd{
      * A factor graph is usable when gone through safety_check and sort_by_id()
      */
     bool is_usable();
+
   };
 
   /**
@@ -210,7 +211,8 @@ namespace dd{
     }
   }
 
-
+  // sort variable in factor by their position
+  bool compare_position(VariableInFactor& x, VariableInFactor& y);
 
 }
 

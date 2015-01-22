@@ -185,6 +185,10 @@ void dd::FactorGraph::sort_by_id() {
   infrs->init(variables, weights);
 }
 
+bool dd::compare_position(VariableInFactor& x, VariableInFactor& y) {
+  return x.n_position - y.n_position;
+}
+
 void dd::FactorGraph::organize_graph_by_edge() {
   // number of edges
   c_edge = 0;
@@ -192,6 +196,8 @@ void dd::FactorGraph::organize_graph_by_edge() {
   for(long i=0;i<n_factor;i++){
     Factor & factor = factors[i];
     factor.n_start_i_vif = c_edge;
+    // sort variables in factor by position in factor
+    std::sort(factor.tmp_variables.begin(), factor.tmp_variables.end(), dd::compare_position);
     for(const VariableInFactor & vif : factor.tmp_variables){
       vifs[c_edge] = vif;
       c_edge ++;
