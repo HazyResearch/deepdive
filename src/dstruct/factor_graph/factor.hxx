@@ -23,13 +23,12 @@ namespace dd{
 
 	  const VariableInFactor & vif = vifs[n_start_i_vif];
 	  /* We use the value of the first variable in the factor as the "gold" standard" */
-	  const bool firstsat = (vif.vid == vid) ? vif.satisfiedUsing(proposal) :
-	  	  vif.satisfiedUsing(var_values[vif.vid]);
+	  const bool firstsat = is_variable_satisfied(vif, vid, var_values, proposal);
 
 	  /* Iterate over the factor variables */
 	  for(long i_vif=n_start_i_vif; (i_vif<n_start_i_vif+n_variables);i_vif++){
 	    const VariableInFactor & vif = vifs[i_vif];
-	    const bool satisfied = (vif.vid == vid) ? vif.satisfiedUsing(proposal) : vif.satisfiedUsing(var_values[vif.vid]) ;
+	    const bool satisfied = is_variable_satisfied(vif, vid, var_values, proposal);
 	    /* Early return as soon as we find a mismatch */
 	    if(satisfied != firstsat) return 0.0;
 	  }
@@ -50,7 +49,7 @@ namespace dd{
 	  /* Iterate over the factor variables */
 	  for(long i_vif=n_start_i_vif; (i_vif<n_start_i_vif+n_variables);i_vif++){
 	    const VariableInFactor & vif = vifs[i_vif];
-	    const bool satisfied = (vif.vid == vid) ? vif.satisfiedUsing(proposal) : vif.satisfiedUsing(var_values[vif.vid]) ;
+	    const bool satisfied = is_variable_satisfied(vif, vid, var_values, proposal);
 	    /* Early return as soon as we find a variable that is not satisfied */
 	    if(!satisfied) return 0.0;
 	  }
@@ -72,7 +71,7 @@ namespace dd{
 	  /* Iterate over the factor variables */
 	  for(long i_vif=n_start_i_vif; (i_vif<n_start_i_vif+n_variables);i_vif++){
 	    const VariableInFactor & vif = vifs[i_vif];
-	    const bool satisfied = (vif.vid == vid) ? vif.satisfiedUsing(proposal) : vif.satisfiedUsing(var_values[vif.vid]) ;
+	    const bool satisfied = is_variable_satisfied(vif, vid, var_values, proposal);
 	    /* Early return as soon as we find a variable that is satisfied */
 	    if(satisfied) return 1.0;
 	  }
@@ -103,7 +102,7 @@ namespace dd{
 	  for(long i_vif=n_start_i_vif; (i_vif<n_start_i_vif+n_variables - 1); i_vif++){
 	    const VariableInFactor & vif = vifs[i_vif];
 	    // If it is the proposal variable, we use the truth value of the proposal
-	    bBody &= (vif.vid == vid) ? vif.satisfiedUsing(proposal) : vif.satisfiedUsing(var_values[vif.vid]) ;
+	    bBody &= is_variable_satisfied(vif, vid, var_values, proposal);
 	  }
 
 	  if(!bBody) {
@@ -112,7 +111,7 @@ namespace dd{
 	  } else {
 	  	// Compute the value of the head of the rule
 	    const VariableInFactor & vif = vifs[n_start_i_vif + n_variables - 1]; // encoding of the head, should be more structured.
-	    const bool bHead = (vif.vid == vid) ? vif.satisfiedUsing(proposal) : vif.satisfiedUsing(var_values[vif.vid]) ;
+	    const bool bHead = is_variable_satisfied(vif, vid, var_values, proposal);
 	    return bHead ? 1.0 : 0.0;
 	  }
 
@@ -141,7 +140,7 @@ namespace dd{
 	  for(long i_vif=n_start_i_vif; (i_vif<n_start_i_vif+n_variables - 1); i_vif++){
 	    const VariableInFactor & vif = vifs[i_vif];
 	    // If it is the proposal variable, we use the truth value of the proposal
-	    bBody &= (vif.vid == vid) ? vif.satisfiedUsing(proposal) : vif.satisfiedUsing(var_values[vif.vid]) ;
+	    bBody &= is_variable_satisfied(vif, vid, var_values, proposal);
 	  }
 
 	  if(!bBody) {
@@ -150,7 +149,7 @@ namespace dd{
 	  } else {
 	  	// Compute the value of the head of the rule */
 	    const VariableInFactor & vif = vifs[n_start_i_vif + n_variables - 1]; // encoding of the head, should be more structured.
-	    bool bHead = (vif.vid == vid) ? vif.satisfiedUsing(proposal) : vif.satisfiedUsing(var_values[vif.vid]) ;
+	    bool bHead = is_variable_satisfied(vif, vid, var_values, proposal);
 	    return bHead ? 1.0 : -1.0;
 	  }
 
