@@ -19,5 +19,5 @@ lib/
 
 # others
 .DS_Store
-inference_result*
+inference_result.out*
 *.json
