@@ -453,10 +453,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   // assign variable id - sequential and unique
   def assignVariablesIds(schema: Map[String, _ <: VariableDataType]) {
     // check whether Greenplum is used
-    var usingGreenplum = false
-    issueQuery(checkGreenplumSQL) { rs => 
-      usingGreenplum = rs.getBoolean(1) 
-    }
+    val usingGreenplum = isUsingGreenplum()
 
     var idoffset : Long = 0
     if (usingGreenplum) {
@@ -633,64 +630,30 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
   }
 
+  // convert format
+  def convertGroundingFormat(groundingPath: String) {
+    log.info("Converting grounding file format...")
+    val ossuffix = if (System.getProperty("os.name").startsWith("Linux")) "linux" else "mac"
+    // TODO: this python script is dangerous and ugly. It changes too many states!
+    val cmd = s"python ${Context.deepdiveHome}/util/tobinary.py ${groundingPath} " + 
+        s"${Context.deepdiveHome}/util/format_converter_${ossuffix} ${Context.outputDir}"
+    log.debug("Executing: " + cmd)
+    val exitValue = cmd!(ProcessLogger(
+      out => log.info(out),
+      err => log.info(err)
+    ))
 
-  /** Ground the factor graph to file
-   *
-   * Using the schema and inference rules defined in application.conf, construct factor
-   * graph files.
-   * Input: variable schema, factor descriptions, holdout configuration, database settings
-   * Output: factor graph files: variables, factors, edges, weights, meta
-   *
-   * NOTE: for this to work in greenplum, do not put id as the first column!
-   * The first column in greenplum is distribution key by default. 
-   * We need to update this column, but update is not allowed on distribution key. 
-   *
-   * It is important to remember that we should not modify the user schema,
-   * e.g., by adding columns to user relations. The right way to do it is
-   * usually another. For example, an option could be creating a view of the
-   * user relation, to which we add the needed column.
-   *
-   * It is also important to think about corner cases. For example, we cannot
-   * assume any relation actually contains rows, or the rows are in some
-   * predefined special order, or anything like that so the code must take care of
-   * these cases, and there *must* be tests for the corner cases.
-   * 
-   * TODO: This method is way too long and needs to be split, also for testing
-   * purposes
-   */
-  def groundFactorGraph(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
-    calibrationSettings: CalibrationSettings, skipLearning: Boolean, weightTable: String, 
-    dbSettings: DbSettings, parallelGrounding: Boolean) {
-
-    val du = new DataLoader
-    val groundingPath = if (!parallelGrounding) Context.outputDir else dbSettings.gppath
-
-    // check whether Greenplum is used
-    val usingGreenplum = isUsingGreenplum()
-    
-    log.info(s"Using Greenplum = ${usingGreenplum}")
-    log.info(s"Datastore type = ${Helpers.getDbType(dbSettings)}")
-    
-    log.info(s"Parallel grounding = ${parallelGrounding}")
-    log.debug(s"Grounding Path = ${groundingPath}")
-
-    // clean up grounding folder (for parallel grounding)
-    if (parallelGrounding) {
-      cleanParallelGroundingPath(groundingPath)
+    exitValue match {
+      case 0 => 
+      case _ => throw new RuntimeException("Converting format failed.")
     }
+  }
 
-    // assign variable id - sequential and unique
-    assignVariablesIds(schema)
-
-    // variable holdout
-    assignHoldout(calibrationSettings)
-
-    // ground variables
-    groundVariables(schema, calibrationSettings, du, dbSettings, parallelGrounding, groundingPath)
-
-    // generate factor meta data
-    groundFactorMeta(du, factorDescs, groundingPath, parallelGrounding)
-
+  // ground factors and weights
+  def groundFactorsAndWeights(factorDescs: Seq[FactorDesc],
+    calibrationSettings: CalibrationSettings, du: DataLoader,
+    dbSettings: DbSettings, groundingPath: String, parallelGrounding: Boolean,
+    usingGreenplum: Boolean) {
     // weights table
     execute(s"""DROP TABLE IF EXISTS ${WeightsTable} CASCADE;""")
     execute(s"""CREATE TABLE ${WeightsTable} (id bigint, isfixed int, initvalue real, 
@@ -923,27 +886,76 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // dump weights
     du.unload("dd_weights", s"${groundingPath}/dd_weights",dbSettings, parallelGrounding,
       s"SELECT id, isfixed, COALESCE(initvalue, 0) FROM ${WeightsTable}")
+  }
+
+  /** Ground the factor graph to file
+   *
+   * Using the schema and inference rules defined in application.conf, construct factor
+   * graph files.
+   * Input: variable schema, factor descriptions, holdout configuration, database settings
+   * Output: factor graph files: variables, factors, edges, weights, meta
+   *
+   * NOTE: for this to work in greenplum, do not put id as the first column!
+   * The first column in greenplum is distribution key by default. 
+   * We need to update this column, but update is not allowed on distribution key. 
+   *
+   * It is important to remember that we should not modify the user schema,
+   * e.g., by adding columns to user relations. The right way to do it is
+   * usually another. For example, an option could be creating a view of the
+   * user relation, to which we add the needed column.
+   *
+   * It is also important to think about corner cases. For example, we cannot
+   * assume any relation actually contains rows, or the rows are in some
+   * predefined special order, or anything like that so the code must take care of
+   * these cases, and there *must* be tests for the corner cases.
+   * 
+   * TODO: This method is way too long and needs to be split, also for testing
+   * purposes
+   */
+  def groundFactorGraph(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
+    calibrationSettings: CalibrationSettings, skipLearning: Boolean, weightTable: String, 
+    dbSettings: DbSettings, parallelGrounding: Boolean) {
+
+    val du = new DataLoader
+    val groundingPath = if (!parallelGrounding) Context.outputDir else dbSettings.gppath
+
+    // check whether Greenplum is used
+    val usingGreenplum = isUsingGreenplum()
+    
+    log.info(s"Using Greenplum = ${usingGreenplum}")
+    log.info(s"Datastore type = ${Helpers.getDbType(dbSettings)}")
+    
+    log.info(s"Parallel grounding = ${parallelGrounding}")
+    log.debug(s"Grounding Path = ${groundingPath}")
+
+    // clean up grounding folder (for parallel grounding)
+    if (parallelGrounding) {
+      cleanParallelGroundingPath(groundingPath)
+    }
+
+    // assign variable id - sequential and unique
+    assignVariablesIds(schema)
+
+    // variable holdout
+    assignHoldout(calibrationSettings)
+
+    // ground variables
+    groundVariables(schema, calibrationSettings, du, dbSettings, parallelGrounding, groundingPath)
+
+    // generate factor meta data
+    groundFactorMeta(du, factorDescs, groundingPath, parallelGrounding)
+
+    // ground factor and weights
+    groundFactorsAndWeights(factorDescs, calibrationSettings, du, dbSettings, 
+      groundingPath, parallelGrounding, usingGreenplum)
+
 
     // create inference result table
     execute(createInferenceResultSQL)
     execute(createInferenceResultWeightsSQL)
 
     // split grounding files and transform to binary format
-    log.info("Converting grounding file format...")
-    val ossuffix = if (System.getProperty("os.name").startsWith("Linux")) "linux" else "mac"
-    // TODO: this python script is dangerous and ugly. It changes too many states!
-    val cmd = s"python ${Context.deepdiveHome}/util/tobinary.py ${groundingPath} " + 
-        s"${Context.deepdiveHome}/util/format_converter_${ossuffix} ${Context.outputDir}"
-    log.debug("Executing: " + cmd)
-    val exitValue = cmd!(ProcessLogger(
-      out => log.info(out),
-      err => log.info(err)
-    ))
-
-    exitValue match {
-      case 0 => 
-      case _ => throw new RuntimeException("Converting format failed.")
-    }
+    convertGroundingFormat(groundingPath)
 
   }
 
