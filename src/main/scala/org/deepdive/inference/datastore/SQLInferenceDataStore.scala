@@ -605,6 +605,34 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     return usingGreenplum
   }
 
+  // ground factor meta data
+  def groundFactorMeta(du: DataLoader, factorDescs: Seq[FactorDesc], groundingPath: String, 
+    parallelGrounding: Boolean) {
+    execute(s"""DROP TABLE IF EXISTS ${FactorMetaTable} CASCADE;
+      CREATE TABLE ${FactorMetaTable} (name text, funcid int, sign text);
+      """)
+
+    // generate a string containing the signs (whether negated) of variables for each factor
+    factorDescs.foreach { factorDesc =>
+      val signString = factorDesc.func.variables.map(v => !v.isNegated).mkString(" ")
+      val funcid = getFactorFunctionTypeid(factorDesc.func.getClass.getSimpleName)
+      execute(s"INSERT INTO ${FactorMetaTable} VALUES ('${factorDesc.name}', ${funcid}, '${signString}')")
+    }
+
+    // dump factor meta data
+    du.unload(s"dd_factormeta", s"${groundingPath}/dd_factormeta", dbSettings, parallelGrounding,
+      s"SELECT * FROM ${FactorMetaTable}")
+  }
+
+  // assign id using the given start id (fast_seqassign) or using the sequence
+  def assignIdColumn(table: String, startId: Long, sequence: String, usingGreenplum: Boolean) {
+    if (usingGreenplum) {
+      executeQuery(s"SELECT fast_seqassign('${table.toLowerCase()}', ${startId});");
+    } else {
+      execute(s"UPDATE ${table} SET id = ${nextVal(sequence)};")
+    }
+  }
+
 
   /** Ground the factor graph to file
    *
@@ -661,20 +689,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     groundVariables(schema, calibrationSettings, du, dbSettings, parallelGrounding, groundingPath)
 
     // generate factor meta data
-    execute(s"""DROP TABLE IF EXISTS ${FactorMetaTable} CASCADE;
-      CREATE TABLE ${FactorMetaTable} (name text, funcid int, sign text);
-      """)
-
-    // generate a string containing the signs (whether negated) of variables for each factor
-    factorDescs.foreach { factorDesc =>
-      val signString = factorDesc.func.variables.map(v => !v.isNegated).mkString(" ")
-      val funcid = getFactorFunctionTypeid(factorDesc.func.getClass.getSimpleName)
-      execute(s"INSERT INTO ${FactorMetaTable} VALUES ('${factorDesc.name}', ${funcid}, '${signString}')")
-    }
-
-    // dump factor meta data
-    du.unload(s"dd_factormeta", s"${groundingPath}/dd_factormeta", dbSettings, parallelGrounding,
-      s"SELECT * FROM ${FactorMetaTable}")
+    groundFactorMeta(du, factorDescs, groundingPath, parallelGrounding)
 
     // weights table
     execute(s"""DROP TABLE IF EXISTS ${WeightsTable} CASCADE;""")
@@ -707,11 +722,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       execute(s"""ALTER TABLE ${querytable} ADD COLUMN id bigint;""")
 
       // handle factor id
-      if (usingGreenplum) {
-        executeQuery(s"SELECT fast_seqassign('${querytable.toLowerCase()}', ${factorid});");
-      } else {
-        execute(s"UPDATE ${querytable} SET id = ${nextVal(factoridSequence)};")
-      }
+      assignIdColumn(querytable, factorid, factoridSequence, usingGreenplum)
       issueQuery(s"""SELECT COUNT(*) FROM ${querytable};""") { rs =>
         factorid += rs.getLong(1)
       }
@@ -762,11 +773,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           execute(createWeightTableForThisFactorSQL)
 
           // handle weight id
-          if (usingGreenplum) {      
-            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor.toLowerCase()}', ${cweightid});""")
-          } else {
-            execute(s"UPDATE ${weighttableForThisFactor} SET id = ${nextVal(weightidSequence)};")
-          }
+          assignIdColumn(weighttableForThisFactor, cweightid, weightidSequence, usingGreenplum)
+          
           issueQuery(s"""SELECT COUNT(*) FROM ${weighttableForThisFactor};""") { rs =>
             cweightid += rs.getLong(1)
           }
@@ -829,11 +837,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
             ORDER BY cardinality;""")
 
           // handle weight id
-          if (usingGreenplum) {      
-            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor.toLowerCase()}', ${cweightid});""")
-          } else {
-            execute(s"UPDATE ${weighttableForThisFactor} SET id = ${nextVal(weightidSequence)};")
-          }
+          assignIdColumn(weighttableForThisFactor, cweightid, weightidSequence, usingGreenplum)
 
           execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, cardinality, description) 
             SELECT id, isfixed, initvalue, cardinality, ${weightDesc} FROM ${weighttableForThisFactor};""")
@@ -893,11 +897,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
             ORDER BY ${weightlist}, cardinality;""")
 
           // handle weight id
-          if (usingGreenplum) {      
-            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor.toLowerCase()}', ${cweightid});""")
-          } else {
-            execute(s"UPDATE ${weighttableForThisFactor} SET id = ${nextVal(weightidSequence)};")
-          }
+          assignIdColumn(weighttableForThisFactor, cweightid, weightidSequence, usingGreenplum)
           issueQuery(s"""SELECT COUNT(*) FROM ${weighttableForThisFactor};""") { rs =>
             cweightid += rs.getLong(1)
           }
