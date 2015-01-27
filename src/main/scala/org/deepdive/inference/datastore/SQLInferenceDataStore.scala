@@ -575,6 +575,27 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
   }
 
+  // assign holdout
+  def assignHoldout(calibrationSettings: CalibrationSettings) {
+    // variable holdout table - if user defined, execute once
+    execute(s"""DROP TABLE IF EXISTS ${VariablesHoldoutTable} CASCADE;
+      CREATE TABLE ${VariablesHoldoutTable}(variable_id bigint primary key);
+      """)
+    calibrationSettings.holdoutQuery match {
+      case Some(query) => execute(query)
+      case None =>
+    }
+
+    // variable observation table
+    execute(s"""DROP TABLE IF EXISTS ${VariablesObservationTable} CASCADE;
+      CREATE TABLE ${VariablesObservationTable}(variable_id bigint primary key);
+      """)
+    calibrationSettings.observationQuery match {
+      case Some(query) => execute(query)
+      case None =>
+    }
+  }
+
 
   /** Ground the factor graph to file
    *
@@ -627,23 +648,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // assign variable id - sequential and unique
     assignVariablesIds(schema)
 
-    // variable holdout table - if user defined, execute once
-    execute(s"""DROP TABLE IF EXISTS ${VariablesHoldoutTable} CASCADE;
-      CREATE TABLE ${VariablesHoldoutTable}(variable_id bigint primary key);
-      """)
-    calibrationSettings.holdoutQuery match {
-      case Some(query) => execute(query)
-      case None =>
-    }
-
-    // variable observation table
-    execute(s"""DROP TABLE IF EXISTS ${VariablesObservationTable} CASCADE;
-      CREATE TABLE ${VariablesObservationTable}(variable_id bigint primary key);
-      """)
-    calibrationSettings.observationQuery match {
-      case Some(query) => execute(query)
-      case None =>
-    }
+    // variable holdout
+    assignHoldout(calibrationSettings)
 
     // ground variables
     groundVariables(schema, calibrationSettings, du, dbSettings, parallelGrounding, groundingPath)
