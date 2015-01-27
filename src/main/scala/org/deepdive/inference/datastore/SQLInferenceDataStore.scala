@@ -480,77 +480,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
   }
 
-
-  /** Ground the factor graph to file
-   *
-   * Using the schema and inference rules defined in application.conf, construct factor
-   * graph files.
-   * Input: variable schema, factor descriptions, holdout configuration, database settings
-   * Output: factor graph files: variables, factors, edges, weights, meta
-   *
-   * NOTE: for this to work in greenplum, do not put id as the first column!
-   * The first column in greenplum is distribution key by default. 
-   * We need to update this column, but update is not allowed on distribution key. 
-   *
-   * It is important to remember that we should not modify the user schema,
-   * e.g., by adding columns to user relations. The right way to do it is
-   * usually another. For example, an option could be creating a view of the
-   * user relation, to which we add the needed column.
-   *
-   * It is also important to think about corner cases. For example, we cannot
-   * assume any relation actually contains rows, or the rows are in some
-   * predefined special order, or anything like that so the code must take care of
-   * these cases, and there *must* be tests for the corner cases.
-   * 
-   * TODO: This method is way too long and needs to be split, also for testing
-   * purposes
-   */
-  def groundFactorGraph(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
-    calibrationSettings: CalibrationSettings, skipLearning: Boolean, weightTable: String, 
-    dbSettings: DbSettings, parallelGrounding: Boolean) {
-
-    val du = new DataLoader
-    val groundingPath = if (!parallelGrounding) Context.outputDir else dbSettings.gppath
-
-    // check whether Greenplum is used
-    var usingGreenplum = false
-    issueQuery(checkGreenplumSQL) { rs => 
-      usingGreenplum = rs.getBoolean(1) 
-    }
-    
-    log.info(s"Using Greenplum = ${usingGreenplum}")
-    log.info(s"Datastore type = ${Helpers.getDbType(dbSettings)}")
-    
-    log.info(s"Parallel grounding = ${parallelGrounding}")
-    log.debug(s"Grounding Path = ${groundingPath}")
-
-    // clean up grounding folder (for parallel grounding)
-    if (parallelGrounding) {
-      cleanParallelGroundingPath(groundingPath)
-    }
-
-    // assign variable id - sequential and unique
-    assignVariablesIds(schema)
-
-    // variable holdout table - if user defined, execute once
-    execute(s"""DROP TABLE IF EXISTS ${VariablesHoldoutTable} CASCADE;
-      CREATE TABLE ${VariablesHoldoutTable}(variable_id bigint primary key);
-      """)
-    calibrationSettings.holdoutQuery match {
-      case Some(query) => execute(query)
-      case None =>
-    }
-
-    // variable observation table
-    execute(s"""DROP TABLE IF EXISTS ${VariablesObservationTable} CASCADE;
-      CREATE TABLE ${VariablesObservationTable}(variable_id bigint primary key);
-      """)
-    calibrationSettings.observationQuery match {
-      case Some(query) => execute(query)
-      case None =>
-    }
-
-    // ground variables
+  // ground variable in one relation
+  def groundVariables(schema: Map[String, _ <: VariableDataType], calibrationSettings: CalibrationSettings,
+    du: DataLoader, dbSettings: DbSettings, parallelGrounding: Boolean, groundingPath: String) {
     schema.foreach { case(variable, dataType) =>
       val Array(relation, column) = variable.split('.')
 
@@ -640,8 +572,81 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         FROM ${relation} t0, ${relation}_vtype t1
         WHERE t0.id=t1.id
         """)
-
     }
+  }
+
+
+  /** Ground the factor graph to file
+   *
+   * Using the schema and inference rules defined in application.conf, construct factor
+   * graph files.
+   * Input: variable schema, factor descriptions, holdout configuration, database settings
+   * Output: factor graph files: variables, factors, edges, weights, meta
+   *
+   * NOTE: for this to work in greenplum, do not put id as the first column!
+   * The first column in greenplum is distribution key by default. 
+   * We need to update this column, but update is not allowed on distribution key. 
+   *
+   * It is important to remember that we should not modify the user schema,
+   * e.g., by adding columns to user relations. The right way to do it is
+   * usually another. For example, an option could be creating a view of the
+   * user relation, to which we add the needed column.
+   *
+   * It is also important to think about corner cases. For example, we cannot
+   * assume any relation actually contains rows, or the rows are in some
+   * predefined special order, or anything like that so the code must take care of
+   * these cases, and there *must* be tests for the corner cases.
+   * 
+   * TODO: This method is way too long and needs to be split, also for testing
+   * purposes
+   */
+  def groundFactorGraph(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
+    calibrationSettings: CalibrationSettings, skipLearning: Boolean, weightTable: String, 
+    dbSettings: DbSettings, parallelGrounding: Boolean) {
+
+    val du = new DataLoader
+    val groundingPath = if (!parallelGrounding) Context.outputDir else dbSettings.gppath
+
+    // check whether Greenplum is used
+    var usingGreenplum = false
+    issueQuery(checkGreenplumSQL) { rs => 
+      usingGreenplum = rs.getBoolean(1) 
+    }
+    
+    log.info(s"Using Greenplum = ${usingGreenplum}")
+    log.info(s"Datastore type = ${Helpers.getDbType(dbSettings)}")
+    
+    log.info(s"Parallel grounding = ${parallelGrounding}")
+    log.debug(s"Grounding Path = ${groundingPath}")
+
+    // clean up grounding folder (for parallel grounding)
+    if (parallelGrounding) {
+      cleanParallelGroundingPath(groundingPath)
+    }
+
+    // assign variable id - sequential and unique
+    assignVariablesIds(schema)
+
+    // variable holdout table - if user defined, execute once
+    execute(s"""DROP TABLE IF EXISTS ${VariablesHoldoutTable} CASCADE;
+      CREATE TABLE ${VariablesHoldoutTable}(variable_id bigint primary key);
+      """)
+    calibrationSettings.holdoutQuery match {
+      case Some(query) => execute(query)
+      case None =>
+    }
+
+    // variable observation table
+    execute(s"""DROP TABLE IF EXISTS ${VariablesObservationTable} CASCADE;
+      CREATE TABLE ${VariablesObservationTable}(variable_id bigint primary key);
+      """)
+    calibrationSettings.observationQuery match {
+      case Some(query) => execute(query)
+      case None =>
+    }
+
+    // ground variables
+    groundVariables(schema, calibrationSettings, du, dbSettings, parallelGrounding, groundingPath)
 
     // generate factor meta data
     execute(s"""DROP TABLE IF EXISTS ${FactorMetaTable} CASCADE;
