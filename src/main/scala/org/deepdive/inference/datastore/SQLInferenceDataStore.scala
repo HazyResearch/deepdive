@@ -596,6 +596,15 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
   }
 
+  // check whether greenplum is used
+  def isUsingGreenplum() : Boolean = {
+    var usingGreenplum = false
+    issueQuery(checkGreenplumSQL) { rs => 
+      usingGreenplum = rs.getBoolean(1) 
+    }
+    return usingGreenplum
+  }
+
 
   /** Ground the factor graph to file
    *
@@ -629,10 +638,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     val groundingPath = if (!parallelGrounding) Context.outputDir else dbSettings.gppath
 
     // check whether Greenplum is used
-    var usingGreenplum = false
-    issueQuery(checkGreenplumSQL) { rs => 
-      usingGreenplum = rs.getBoolean(1) 
-    }
+    val usingGreenplum = isUsingGreenplum()
     
     log.info(s"Using Greenplum = ${usingGreenplum}")
     log.info(s"Datastore type = ${Helpers.getDbType(dbSettings)}")
