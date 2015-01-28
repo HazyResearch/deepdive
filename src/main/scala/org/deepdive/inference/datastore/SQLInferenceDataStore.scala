@@ -888,6 +888,43 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       s"SELECT id, isfixed, COALESCE(initvalue, 0) FROM ${WeightsTable}")
   }
 
+  // partition variable table
+  def partitionVariableTable(schema: Map[String, _ <: VariableDataType], 
+    partitionColumn: String, partitionSize: Int, partitionJoinKey: String) {
+    var partitionIndex = 1;
+    var idoffset : Long = 0
+    schema.foreach { case(variable, dataType) =>
+      val Array(relation, column) = variable.split('.')
+      var numDistinctValues : Long = 0
+      issueQuery(s"SELECT COUNT(DISTINCT ${partitionColumn}) FROM ${relation}") { rs =>
+        numDistinctValues = rs.getLong(1)
+      }
+      // round up
+      val numPartitions = (numDistinctValues - 1) / partitionSize + 1
+      var partitionStartVal = 0
+      execute(createSequenceFunction(IdSequence))
+      // create table for each partition
+      for (i <- 1L to numPartitions) {
+        executeQuery(s"""CREATE TABLE ${relation}_part${i} AS SELECT * FROM ${relation}
+          WHERE ${partitionColumn} >= ${partitionStartVal} 
+          AND ${partitionColumn} < ${partitionStartVal} + ${partitionSize}""")
+        partitionStartVal += partitionSize
+
+        // assign id
+        // executeQuery(s"""SELECT fast_seqassign('${relation.toLowerCase()}', ${idoffset});""")
+        // issueQuery(s"""SELECT count(*) FROM ${relation}""") { rs =>
+        //   idoffset = idoffset + rs.getLong(1)
+        // }
+        incrementId(s"${relation}_part${i}", IdSequence)
+        
+        // fill id back into the original variable table
+        executeQuery(s"""UPDATE ${relation} SET id = ${relation}_part${i}.id
+          FROM ${relation}_part${i}
+          WHERE ${relation}.${partitionJoinKey} = ${relation}_part${i}.${partitionJoinKey}""")
+      }
+    }
+  }
+
   /** Ground the factor graph to file
    *
    * Using the schema and inference rules defined in application.conf, construct factor
@@ -933,8 +970,21 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       cleanParallelGroundingPath(groundingPath)
     }
 
-    // assign variable id - sequential and unique
-    assignVariablesIds(schema)
+    val partitionColumn = calibrationSettings.partitionColumn
+    val partitionSize = calibrationSettings.partitionSize
+    val partitionJoinKey = calibrationSettings.partitionJoinKey
+
+    if (partitionColumn.isDefined && !usingGreenplum) {
+      // throw new RuntimeException("parition is only supported for greenplum")
+    }
+
+    if (partitionColumn.isDefined) {
+      // partition variable table
+      partitionVariableTable(schema, partitionColumn.get, partitionSize.get, partitionJoinKey.get)
+    } else {
+      // assign variable id - sequential and unique
+      assignVariablesIds(schema)
+    }
 
     // variable holdout
     assignHoldout(calibrationSettings)

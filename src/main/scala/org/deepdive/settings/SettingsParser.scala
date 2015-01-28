@@ -176,13 +176,22 @@ object SettingsParser extends Logging {
 
   private def loadCalibrationSettings(config: Config) : CalibrationSettings = {
     val calibrationConfig = Try(config.getConfig("calibration")).getOrElse { 
-      return CalibrationSettings(0.0, None, None)
+      return CalibrationSettings(0.0, None, None, None, None, None)
     }
     val holdoutFraction = Try(calibrationConfig.getDouble("holdout_fraction")).getOrElse(0.0)
     val holdoutQuery = Try(calibrationConfig.getString("holdout_query")).toOption
     val observationQuery = Try(calibrationConfig.getString("observation_query")).toOption
+    
+    // partition the factor graph
+    val partitionColumn = Try(calibrationConfig.getString("partition_column")).toOption
+    val partitionSize = Try(calibrationConfig.getInt("partition_size")).toOption
+    val partitionJoinKey = Try(calibrationConfig.getString("partition_join_key")).toOption
+    if (partitionColumn.isDefined && (!partitionSize.isDefined || !partitionJoinKey.isDefined)) {
+      throw new RuntimeException(s"Must specify partition size!")
+    }
 
-    CalibrationSettings(holdoutFraction, holdoutQuery, observationQuery)
+    CalibrationSettings(holdoutFraction, holdoutQuery, observationQuery, 
+      partitionColumn, partitionSize, partitionJoinKey)
   }
 
   private def loadSamplerSettings(config: Config) : SamplerSettings = {
