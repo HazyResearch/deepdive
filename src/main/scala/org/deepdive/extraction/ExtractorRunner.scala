@@ -426,8 +426,16 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
 
     // Helpers.executeCmd(delCmd) // This won't work because of escaping issues?
 
-    loader.unload(gpFileName, psqlFilePath, dbSettings, parallelLoading, 
-      s"${inputQuery}")
+    try {
+      loader.unload(gpFileName, psqlFilePath, dbSettings, parallelLoading, 
+        s"${inputQuery}")
+    } catch {
+      case exception: Throwable =>
+        log.error(exception.toString)
+        taskSender ! Status.Failure(exception)
+        context.stop(self)
+        throw exception
+    }
 
     // Get the actually dumped file path
     val actualDumpedPath = s"${fpath}/${fname}"
