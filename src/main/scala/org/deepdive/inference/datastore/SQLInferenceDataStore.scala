@@ -479,7 +479,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   // ground variable in one relation
   def groundVariables(schema: Map[String, _ <: VariableDataType], calibrationSettings: CalibrationSettings,
-    du: DataLoader, dbSettings: DbSettings, parallelGrounding: Boolean, groundingPath: String) {
+    du: DataLoader, dbSettings: DbSettings, parallelGrounding: Boolean, groundingPath: String,
+    partitionColumn: Option[String], numPartitions: Option[Int]) {
     schema.foreach { case(variable, dataType) =>
       val Array(relation, column) = variable.split('.')
 
@@ -561,6 +562,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         case 2 | 3 => cast(column, "float")
         case _ => cast(cast(column, "int"), "float")
       }
+
+      // val orderbyPid = partitionColumn match {
+      //   case Some(s) => s"ORDER BY ${s} / ${partitionSize}"
+      //   case None => ""
+      // }
+
       du.unload(s"dd_variables_${relation}", s"${groundingPath}/dd_variables_${relation}",
         dbSettings, parallelGrounding,
         s"""SELECT t0.id, t1.${variableTypeColumn},
@@ -569,6 +576,26 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         FROM ${relation} t0, ${relation}_vtype t1
         WHERE t0.id=t1.id
         """)
+
+      if (partitionColumn.isDefined) {
+        var maxPartitionValue = 0L
+        issueQuery(s"SELECT max(${partitionColumn.get}) FROM ${relation}") { rs =>
+          maxPartitionValue = rs.getLong(1)
+        }
+        val partitionSize = (maxPartitionValue - 1) / numPartitions.get + 1
+
+        du.unload(s"dd_partition_variables_${relation}", s"${groundingPath}/dd_partition_variables_${relation}",
+          dbSettings, parallelGrounding,
+          s"""SELECT t.id AS id, ${partitionColumn.get} / ${partitionSize} AS pid
+          FROM ${relation} t
+          """)
+      }
+    }
+    // partition
+    if (numPartitions.isDefined) {
+      du.unload(s"dd_partition_meta", s"${groundingPath}/dd_partition_meta",
+        dbSettings, parallelGrounding,
+        s"""SELECT ${numPartitions.get}""")
     }
   }
 
@@ -653,7 +680,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def groundFactorsAndWeights(factorDescs: Seq[FactorDesc],
     calibrationSettings: CalibrationSettings, du: DataLoader,
     dbSettings: DbSettings, groundingPath: String, parallelGrounding: Boolean,
-    usingGreenplum: Boolean) {
+    usingGreenplum: Boolean, partitionColumn: Option[String], numPartitions: Option[Int]) {
     // weights table
     execute(s"""DROP TABLE IF EXISTS ${WeightsTable} CASCADE;""")
     execute(s"""CREATE TABLE ${WeightsTable} (id bigint, isfixed int, initvalue real, 
@@ -715,6 +742,15 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       }
       val weightDesc = generateWeightDesc(factorDesc.weightPrefix, factorDesc.weight.variables)
 
+      // val pidColumn = partitionColumn match {
+      //   case Some(s) => s", ${s} / ${numPartitions.get} AS pid"
+      //   case None => ""
+      // }
+      // val orderbyPid = partitionColumn match {
+      //   case Some(s) => s"ORDER BY ${s} / ${numPartitions.get}"
+      //   case None => ""
+      // }
+
       if (factorDesc.func.getClass.getSimpleName != "MultinomialFactorFunction") {
 
         // branch if weight variables present
@@ -763,10 +799,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
                 v => s""" t0.${quoteColumn(v)} = t1.${quoteColumn(v)} """).mkString("AND")
             case false => ""
           }
+          
           du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
             s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
              FROM ${querytable} t0, ${weighttableForThisFactor} t1
              ${weightJoinCondition};""")
+
 
       } else if (factorDesc.func.getClass.getSimpleName == "MultinomialFactorFunction") {
         // TODO needs better code reuse
@@ -806,7 +844,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
             SELECT id, isfixed, initvalue, cardinality, ${weightDesc} FROM ${weighttableForThisFactor};""")
 
           du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
-            s"SELECT id AS factor_id, ${cweightid} AS weight_id, ${idcols} FROM ${querytable}")
+            s"""SELECT id AS factor_id, ${cweightid} AS weight_id, ${idcols}
+            FROM ${querytable}""")
 
           // increment weight id
           issueQuery(s"""SELECT COUNT(*) FROM ${weighttableForThisFactor};""") { rs =>
@@ -881,48 +920,27 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
              WHERE ${weightjoinlist} AND t1.cardinality = '${cardinalityKey}';""")
         }
       }
+
+      if (partitionColumn.isDefined) {
+        var maxPartitionValue = 0L
+        issueQuery(s"SELECT max(${partitionColumn.get}) FROM ${querytable}") { rs =>
+          maxPartitionValue = rs.getLong(1)
+        }
+        val partitionSize = (maxPartitionValue - 1) / numPartitions.get + 1
+
+        // partition id mapping
+        du.unload(s"dd_partition_factors_${factorDesc.name}", 
+          s"${groundingPath}/dd_partition_factors_${factorDesc.name}",
+          dbSettings, parallelGrounding,
+          s"""SELECT t.id AS id, ${partitionColumn.get} / ${partitionSize} AS pid
+          FROM ${querytable} t
+          """)
+      }
     }
 
     // dump weights
     du.unload("dd_weights", s"${groundingPath}/dd_weights",dbSettings, parallelGrounding,
       s"SELECT id, isfixed, COALESCE(initvalue, 0) FROM ${WeightsTable}")
-  }
-
-  // partition variable table
-  def partitionVariableTable(schema: Map[String, _ <: VariableDataType], 
-    partitionColumn: String, partitionSize: Int, partitionJoinKey: String) {
-    var partitionIndex = 1;
-    var idoffset : Long = 0
-    schema.foreach { case(variable, dataType) =>
-      val Array(relation, column) = variable.split('.')
-      var numDistinctValues : Long = 0
-      issueQuery(s"SELECT COUNT(DISTINCT ${partitionColumn}) FROM ${relation}") { rs =>
-        numDistinctValues = rs.getLong(1)
-      }
-      // round up
-      val numPartitions = (numDistinctValues - 1) / partitionSize + 1
-      var partitionStartVal = 0
-      execute(createSequenceFunction(IdSequence))
-      // create table for each partition
-      for (i <- 1L to numPartitions) {
-        executeQuery(s"""CREATE TABLE ${relation}_part${i} AS SELECT * FROM ${relation}
-          WHERE ${partitionColumn} >= ${partitionStartVal} 
-          AND ${partitionColumn} < ${partitionStartVal} + ${partitionSize}""")
-        partitionStartVal += partitionSize
-
-        // assign id
-        // executeQuery(s"""SELECT fast_seqassign('${relation.toLowerCase()}', ${idoffset});""")
-        // issueQuery(s"""SELECT count(*) FROM ${relation}""") { rs =>
-        //   idoffset = idoffset + rs.getLong(1)
-        // }
-        incrementId(s"${relation}_part${i}", IdSequence)
-        
-        // fill id back into the original variable table
-        executeQuery(s"""UPDATE ${relation} SET id = ${relation}_part${i}.id
-          FROM ${relation}_part${i}
-          WHERE ${relation}.${partitionJoinKey} = ${relation}_part${i}.${partitionJoinKey}""")
-      }
-    }
   }
 
   /** Ground the factor graph to file
@@ -971,33 +989,28 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
 
     val partitionColumn = calibrationSettings.partitionColumn
-    val partitionSize = calibrationSettings.partitionSize
-    val partitionJoinKey = calibrationSettings.partitionJoinKey
+    val numPartitions = calibrationSettings.numPartitions
 
-    if (partitionColumn.isDefined && !usingGreenplum) {
-      // throw new RuntimeException("parition is only supported for greenplum")
-    }
+    // if (partitionColumn.isDefined && !usingGreenplum) {
+    //   throw new RuntimeException("parition is only supported for greenplum")
+    // }
 
-    if (partitionColumn.isDefined) {
-      // partition variable table
-      partitionVariableTable(schema, partitionColumn.get, partitionSize.get, partitionJoinKey.get)
-    } else {
-      // assign variable id - sequential and unique
-      assignVariablesIds(schema)
-    }
+    // assign variable id - sequential and unique
+    assignVariablesIds(schema)
 
     // variable holdout
     assignHoldout(calibrationSettings)
 
     // ground variables
-    groundVariables(schema, calibrationSettings, du, dbSettings, parallelGrounding, groundingPath)
+    groundVariables(schema, calibrationSettings, du, dbSettings, parallelGrounding, 
+      groundingPath, partitionColumn, numPartitions)
 
     // generate factor meta data
     groundFactorMeta(du, factorDescs, groundingPath, parallelGrounding)
 
     // ground factor and weights
     groundFactorsAndWeights(factorDescs, calibrationSettings, du, dbSettings, 
-      groundingPath, parallelGrounding, usingGreenplum)
+      groundingPath, parallelGrounding, usingGreenplum, partitionColumn, numPartitions)
 
 
     // create inference result table
