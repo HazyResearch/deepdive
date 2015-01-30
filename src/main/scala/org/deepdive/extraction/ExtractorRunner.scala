@@ -30,7 +30,9 @@ import org.deepdive.helpers.Helpers.{Mysql, Psql}
  */
 object ExtractorRunner {
   
-  def props(dataStore: JsonExtractionDataStore, dbSettings: DbSettings) = Props(classOf[ExtractorRunner], dataStore, dbSettings)
+  def props(dataStore: JsonExtractionDataStore, dbSettings: DbSettings,
+      parallelLoading: Boolean = false) = Props(classOf[ExtractorRunner], 
+          dataStore, dbSettings, parallelLoading)
 
 
   // Messages
@@ -56,7 +58,8 @@ object ExtractorRunner {
 }
 
 /* Runs a single extrator by executing its before script, UDF, and after sript */
-class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings) extends Actor 
+class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings,
+    parallelLoading: Boolean = false) extends Actor 
   with ActorLogging with FSM[State, Data] {
 
   import ExtractorRunner._
@@ -368,11 +371,6 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
    */
   private def runTsvExtractor(task: ExtractionTask, dbSettings: DbSettings, taskSender: ActorRef) = {
   
-    // Determine if parallel loading and unloading is used by Env var
-    val parallelLoading = System.getenv("PARALLEL_LOADING") match {
-      case "true" => true
-      case _ => false
-    }
     log.debug(s"Parallel Loading: ${parallelLoading}")
     val loader = new DataLoader
     val udfCmd = task.extractor.udf

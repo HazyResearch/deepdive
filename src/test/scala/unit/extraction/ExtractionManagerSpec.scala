@@ -11,7 +11,8 @@ import org.scalatest._
 import scala.util.{Try, Success, Failure}
 
 object ExtractionManagerSpec {
-  class MemoryExtractionManager(val parallelism: Int, val dbSettings: DbSettings) extends ExtractionManager with
+  class MemoryExtractionManager(val parallelism: Int, val dbSettings: DbSettings,
+      val parallelLoading: Boolean = false) extends ExtractionManager with
     MemoryExtractionDataStoreComponent {
 
     override def extractorRunnerProps = Props(new Actor {

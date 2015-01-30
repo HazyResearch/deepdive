@@ -17,18 +17,23 @@ import scala.util.{Try, Success, Failure}
 object ExtractionManager {
 
   // TODO: Refactor this to take an argument for the dataStore type
-  def props(parallelism: Int, dbSettings: DbSettings) : Props = {
+  def props(parallelism: Int, dbSettings: DbSettings, 
+      parallelLoading: Boolean = false) : Props = {
     dbSettings.driver match {
-      case "org.postgresql.Driver" => Props(classOf[PostgresExtractionManager], parallelism, dbSettings)
+      case "org.postgresql.Driver" => Props(classOf[PostgresExtractionManager], 
+          parallelism, dbSettings, parallelLoading)
 
-      case "com.mysql.jdbc.Driver" => Props(classOf[MysqlExtractionManager], parallelism, dbSettings)
+      case "com.mysql.jdbc.Driver" => Props(classOf[MysqlExtractionManager], 
+          parallelism, dbSettings, parallelLoading)
     }
   }
 
-  class PostgresExtractionManager(val parallelism: Int, val dbSettings: DbSettings) extends ExtractionManager
+  class PostgresExtractionManager(val parallelism: Int, val dbSettings: DbSettings,
+      val parallelLoading: Boolean = false) extends ExtractionManager
     with PostgresExtractionDataStoreComponent
 
-  class MysqlExtractionManager(val parallelism: Int, val dbSettings: DbSettings) extends ExtractionManager
+  class MysqlExtractionManager(val parallelism: Int, val dbSettings: DbSettings,
+      val parallelLoading: Boolean = false) extends ExtractionManager
     with MysqlExtractionDataStoreComponent
 
   case object ScheduleTasks
@@ -49,8 +54,10 @@ trait ExtractionManager extends Actor with ActorLogging {
   // Number of executors we can run in parallel
   def parallelism : Int
   def dbSettings: DbSettings
+  def parallelLoading: Boolean
 
-  def extractorRunnerProps = ExtractorRunner.props(dataStore, dbSettings)
+  def extractorRunnerProps = ExtractorRunner.props(dataStore, dbSettings, 
+      parallelLoading)
 
 
   implicit val ExtractorTimeout = Timeout(200 hours)
