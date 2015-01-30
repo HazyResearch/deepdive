@@ -16,11 +16,11 @@ DeepDive supports two classes of extractors: *row-wise* and *procedural*. Each
 class contains different extractor *styles*:
 
 - Row-wise extractors:
-  - [`json_extractor`](#json_extractor): highly flexible and compatible with
-  previous systems, but with limited performance 
-  - [`tsv_extractor`](#tsv_extractor): moderate flexibility and performance
+  - [`json_extractor`](#json_extractor): compatible with
+  previous systems, but with limited performance.
+  - [`tsv_extractor`](#tsv_extractor): **recommended to use.** Fast and flexible.
   - [`plpy_extractor`](#plpy_extractor): parallel database-built-in extractors
-  with restricted flexibility
+  with restricted flexibility (deprecated).
 
 - Procedural extractors:
   - [`sql_extractor`](#sql_extractor): a SQL command
@@ -183,7 +183,8 @@ for line in fileinput.input():
 A `tsv_extractor` is very similar to the default `json_extractor`, but its
 performance is optimized:
 [TSV](https://en.wikipedia.org/wiki/Tab-separated_values) is used instead of
-JSON to achieve higher processing speed. A `tsv_extractor` takes data defined by an
+JSON. The performance bottleneck in `json_extractor`, a less optimized 
+scheduler, is avoided in this extractor type. A `tsv_extractor` takes data defined by an
 `input` query and produces new tuples as output. These tuples are written to the
 `output_relation`. The function for this transformation can be any executable
 defined in `udf`:
@@ -250,7 +251,7 @@ an hard time parsing it. You should either make sure that the value can
 be parsed by
 the psql-COPY command, or try other types of extractors.
 
-#### Writing UDF a `tsv_extractor`
+#### Writing UDF for `tsv_extractor`
 
 When an `tsv_extractor` is executed, DeepDive streams plaintext lines with
 fields separated by `\t` from the input query to the UDF standard input, one
@@ -289,6 +290,8 @@ for line in fileinput.input():
 ```
 
 ### <a name="plpy_extractor" href="#"></a> plpy_extractor
+
+Deprecated: this extractor type is error-prone, and is no longer actively maintained.
 
 A `plpy_extractor` is a high-performance type of extractors for PostgreSQL /
 Greenplum databases. It avoids additional I/O by executing the extractor
