@@ -520,6 +520,64 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         """)
     }
   }
+  
+  // ground variables
+  def groundVariables(schema: Map[String, _ <: VariableDataType], du: DataLoader, 
+      dbSettings: DbSettings, parallelGrounding: Boolean, groundingPath: String) {
+        schema.foreach { case(variable, dataType) =>
+      val Array(relation, column) = variable.split('.')
+      
+      // TODO make an enum class for this
+      val variableDataType = dataType match {
+        case BooleanType => 0
+        case MultinomialType(x) => 1
+      }
+
+      val cardinality = dataType match {
+        case BooleanType => 2
+        case MultinomialType(x) => x.toInt
+      }
+
+      // Create a table to denote variable type - query, evidence, observation
+      // variable table join with holdout table 
+      // - a variable is an evidence if it has initial value and it is not holdout
+      val variableTypeColumn = "__dd_variable_type__"
+
+      // IF:
+      //  in observation table, in evidence table => Observation 2
+      //  in holdout table => Query 1
+      //  not in observation table, not in holdout table, in evidence table => Evidence 1
+      //  else => Query 1
+      val variableTypeTable = s"${relation}_vtype"
+      execute(s"""
+        DROP TABLE IF EXISTS ${variableTypeTable} CASCADE;
+        CREATE TABLE ${variableTypeTable} AS
+        SELECT t0.id, CASE WHEN t2.variable_id IS NOT NULL AND ${column} IS NOT NULL THEN 2
+                           WHEN t1.variable_id IS NOT NULL THEN 0
+                           WHEN ${column} IS NOT NULL THEN 1
+                           ELSE 0
+                      END as ${variableTypeColumn}
+        FROM ${relation} t0 LEFT OUTER JOIN ${VariablesHoldoutTable} t1 
+        ON t0.id=t1.variable_id LEFT OUTER JOIN ${VariablesObservationTable} t2 ON t0.id=t2.variable_id
+      """)
+
+      // Create an index on the id column of type table to optimize MySQL join, since MySQL uses BNLJ.
+      // It's important to tailor join queries for MySQL as they don't have efficient join algorithms.
+      // Specifically, we should create indexes on join condition columns (at least in MySQL implementation).
+      createIndexForJoinOptimization(variableTypeTable, "id")
+
+      // dump variables
+      val initvalueCast = cast(cast(column, "int"), "float")
+      du.unload(s"dd_variables_${relation}", s"${groundingPath}/dd_variables_${relation}",
+        dbSettings, parallelGrounding,
+        s"""SELECT t0.id, t1.${variableTypeColumn},
+        CASE WHEN t1.${variableTypeColumn} = 0 THEN 0 ELSE ${initvalueCast} END AS initvalue,
+        ${variableDataType} AS type, ${cardinality} AS cardinality
+        FROM ${relation} t0, ${relation}_vtype t1
+        WHERE t0.id=t1.id
+        """)
+    }
+  }
 
 
   /** Ground the factor graph to file
@@ -632,7 +690,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         FROM ${relation} t0, ${relation}_vtype t1
         WHERE t0.id=t1.id
         """)
-
     }
 
     // generate factor meta data
