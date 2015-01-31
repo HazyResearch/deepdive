@@ -465,7 +465,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   }
   
   // assign variable holdout
-  def assignHoldout(calibrationSettings: CalibrationSettings) {
+  def assignHoldout(schema: Map[String, _ <: VariableDataType], calibrationSettings: CalibrationSettings) {
     // variable holdout table - if user defined, execute once
     ds.dropAndCreateTable(VariablesHoldoutTable, "variable_id bigint primary key")
     calibrationSettings.holdoutQuery match {
@@ -473,8 +473,20 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         log.info("Executing user supplied holdout query")
         execute(query)
       }
-      case None => 
-         log.info("There is no holdout query, will randomly generate holdout set")
+      case None => {
+        log.info("There is no holdout query, will randomly generate holdout set")
+         // randomly assign variable holdout
+        schema.foreach { case(variable, dataType) =>
+          val Array(relation, column) = variable.split('.')
+          // This cannot be parsed in def randFunc for now.
+          // assign holdout - randomly select from evidence variables of each variable table
+          execute(s"""
+            INSERT INTO ${VariablesHoldoutTable}
+            SELECT id FROM ${relation}
+            WHERE ${randomFunction} < ${calibrationSettings.holdoutFraction} AND ${column} IS NOT NULL;
+            """)
+        }
+      }
     }
 
     // variable observation table
@@ -488,6 +500,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         log.info("There is no o query")
       }
     }
+
   }
 
 
@@ -543,7 +556,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     assignVariablesIds(schema)
 
     // assign holdout
-    assignHoldout(calibrationSettings)
+    assignHoldout(schema, calibrationSettings)
 
     // ground variables
     schema.foreach { case(variable, dataType) =>
@@ -558,18 +571,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         case BooleanType => 2
         case MultinomialType(x) => x.toInt
       }
-
-      // This cannot be parsed in def randFunc for now.
-      // assign holdout - if not user-defined, randomly select from evidence variables of each variable table
-      calibrationSettings.holdoutQuery match {
-        case Some(s) =>
-        case None => execute(s"""
-          INSERT INTO ${VariablesHoldoutTable}
-          SELECT id FROM ${relation}
-          WHERE ${randomFunction} < ${calibrationSettings.holdoutFraction} AND ${column} IS NOT NULL;
-          """)
-      }
-
 
       // Create a cardinality table for the variable
       // note we use five-digit fixed-length representation here
