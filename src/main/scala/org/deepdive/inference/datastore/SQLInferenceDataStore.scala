@@ -273,22 +273,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
    * This query is datastore-specific since it creates a view whose 
    * SELECT contains a subquery in the FROM clause.
    */
-  // TODO
-  def WRONGcreateCalibrationViewRealNumberSQL(name: String, bucketedView: String, columnName: String) = s"""
-      CREATE OR REPLACE VIEW ${name} AS
-      SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
-      (SELECT bucket, COUNT(*) AS num_variables from ${bucketedView} GROUP BY bucket) b1
-      LEFT JOIN (SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
-        WHERE ${columnName}=0.0 GROUP BY bucket) b2 ON b1.bucket = b2.bucket
-      LEFT JOIN (SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView} 
-        WHERE ${columnName}=0.0 GROUP BY bucket) b3 ON b1.bucket = b3.bucket 
-      ORDER BY b1.bucket ASC;
-      """
-
-  /**
-   * This query is datastore-specific since it creates a view whose 
-   * SELECT contains a subquery in the FROM clause.
-   */
   def createCalibrationViewMultinomialSQL(name: String, bucketedView: String, columnName: String) = s"""
       CREATE OR REPLACE VIEW ${name} AS
       SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
@@ -567,31 +551,23 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
       val variableDataType = dataType match {
         case BooleanType => 0
-        case MultinomialType(x) => 1        
-        case RealNumberType => 2
-        case RealArrayType(x) => 3
+        case MultinomialType(x) => 1
       }
 
       val cardinality = dataType match {
         case BooleanType => 2
         case MultinomialType(x) => x.toInt
-        case RealNumberType => 2
-        case RealArrayType(x) => x.toInt
       }
 
-      if(variableDataType == 2 || variableDataType == 3){
-
-      } else {
-        // This cannot be parsed in def randFunc for now.
-        // assign holdout - if not user-defined, randomly select from evidence variables of each variable table
-        calibrationSettings.holdoutQuery match {
-          case Some(s) =>
-          case None => execute(s"""
-            INSERT INTO ${VariablesHoldoutTable}
-            SELECT id FROM ${relation}
-            WHERE ${randomFunction} < ${calibrationSettings.holdoutFraction} AND ${column} IS NOT NULL;
-            """)
-        }
+      // This cannot be parsed in def randFunc for now.
+      // assign holdout - if not user-defined, randomly select from evidence variables of each variable table
+      calibrationSettings.holdoutQuery match {
+        case Some(s) =>
+        case None => execute(s"""
+          INSERT INTO ${VariablesHoldoutTable}
+          SELECT id FROM ${relation}
+          WHERE ${randomFunction} < ${calibrationSettings.holdoutFraction} AND ${column} IS NOT NULL;
+          """)
       }
 
 
@@ -600,8 +576,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       val cardinalityValues = dataType match {
         case BooleanType => "('00001')"
         case MultinomialType(x) => (0 to x-1).map (n => s"""('${"%05d".format(n)}')""").mkString(", ")
-        case RealNumberType => "('00001')"
-        case RealArrayType(x) => "('00001')"
       }
       val cardinalityTableName = s"${relation}_${column}_cardinality"
       ds.dropAndCreateTable(cardinalityTableName, "cardinality text")
@@ -638,10 +612,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       createIndexForJoinOptimization(variableTypeTable, "id")
 
       // dump variables
-      val initvalueCast = variableDataType match {
-        case 2 | 3 => cast(column, "float")
-        case _ => cast(cast(column, "int"), "float")
-      }
+      val initvalueCast = cast(cast(column, "int"), "float")
       du.unload(s"dd_variables_${relation}", s"${groundingPath}/dd_variables_${relation}",
         dbSettings, parallelGrounding,
         s"""SELECT t0.id, t1.${variableTypeColumn},
@@ -999,10 +970,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         execute(createCalibrationViewBooleanSQL(calibrationViewName, bucketedViewName, columnName))
       case MultinomialType(_) =>
         execute(createCalibrationViewMultinomialSQL(calibrationViewName, bucketedViewName, columnName))
-      case RealNumberType =>
-        execute(WRONGcreateCalibrationViewRealNumberSQL(calibrationViewName, bucketedViewName, columnName))
-      case RealArrayType(x) => 
-        execute(WRONGcreateCalibrationViewRealNumberSQL(calibrationViewName, bucketedViewName, columnName))
     }
     
     val bucketData = selectAsMap(selectCalibrationDataSQL(calibrationViewName)).map { row =>
