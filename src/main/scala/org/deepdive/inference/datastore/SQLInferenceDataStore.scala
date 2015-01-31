@@ -502,6 +502,24 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
 
   }
+  
+  // generate cardinality tables for variables in the schema
+  // cardinality tables is used to indicate the domains of the variables
+  def generateCardinalityTables(schema: Map[String, _ <: VariableDataType]) {
+    schema.foreach { case(variable, dataType) =>
+      val Array(relation, column) = variable.split('.')
+      // note we use five-digit fixed-length representation here
+      val cardinalityValues = dataType match {
+        case BooleanType => "('00001')"
+        case MultinomialType(x) => (0 to x-1).map (n => s"""('${"%05d".format(n)}')""").mkString(", ")
+      }
+      val cardinalityTableName = s"${relation}_${column}_cardinality"
+      ds.dropAndCreateTable(cardinalityTableName, "cardinality text")
+      execute(s"""
+        INSERT INTO ${cardinalityTableName} VALUES ${cardinalityValues};
+        """)
+    }
+  }
 
 
   /** Ground the factor graph to file
@@ -557,11 +575,15 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     // assign holdout
     assignHoldout(schema, calibrationSettings)
+    
+    // generate cardinality tables
+    generateCardinalityTables(schema)
 
     // ground variables
     schema.foreach { case(variable, dataType) =>
       val Array(relation, column) = variable.split('.')
-
+      
+      // TODO make an enum class for this
       val variableDataType = dataType match {
         case BooleanType => 0
         case MultinomialType(x) => 1
@@ -571,18 +593,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         case BooleanType => 2
         case MultinomialType(x) => x.toInt
       }
-
-      // Create a cardinality table for the variable
-      // note we use five-digit fixed-length representation here
-      val cardinalityValues = dataType match {
-        case BooleanType => "('00001')"
-        case MultinomialType(x) => (0 to x-1).map (n => s"""('${"%05d".format(n)}')""").mkString(", ")
-      }
-      val cardinalityTableName = s"${relation}_${column}_cardinality"
-      ds.dropAndCreateTable(cardinalityTableName, "cardinality text")
-      execute(s"""
-        INSERT INTO ${cardinalityTableName} VALUES ${cardinalityValues};
-        """)
 
       // Create a table to denote variable type - query, evidence, observation
       // variable table join with holdout table 
