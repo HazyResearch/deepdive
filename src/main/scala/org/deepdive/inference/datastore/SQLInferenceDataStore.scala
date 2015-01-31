@@ -533,18 +533,14 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     assignVariablesIds(schema)
 
     // variable holdout table - if user defined, execute once
-    execute(s"""DROP TABLE IF EXISTS ${VariablesHoldoutTable} CASCADE;
-      CREATE TABLE ${VariablesHoldoutTable}(variable_id bigint primary key);
-      """)
+    ds.dropAndCreateTable(VariablesHoldoutTable, "variable_id bigint primary key")
     calibrationSettings.holdoutQuery match {
       case Some(query) => execute(query)
       case None =>
     }
 
     // variable observation table
-    execute(s"""DROP TABLE IF EXISTS ${VariablesObservationTable} CASCADE;
-      CREATE TABLE ${VariablesObservationTable}(variable_id bigint primary key);
-      """)
+    ds.dropAndCreateTable(VariablesObservationTable, "variable_id bigint primary key")
     calibrationSettings.observationQuery match {
       case Some(query) => execute(query)
       case None =>
@@ -593,9 +589,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         case RealArrayType(x) => "('00001')"
       }
       val cardinalityTableName = s"${relation}_${column}_cardinality"
+      ds.dropAndCreateTable(cardinalityTableName, "cardinality text")
       execute(s"""
-        DROP TABLE IF EXISTS ${cardinalityTableName} CASCADE;
-        CREATE TABLE ${cardinalityTableName}(cardinality text);
         INSERT INTO ${cardinalityTableName} VALUES ${cardinalityValues};
         """)
 
@@ -644,9 +639,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
 
     // generate factor meta data
-    execute(s"""DROP TABLE IF EXISTS ${FactorMetaTable} CASCADE;
-      CREATE TABLE ${FactorMetaTable} (name text, funcid int, sign text);
-      """)
+    ds.dropAndCreateTable(FactorMetaTable, "name text, funcid int, sign text")
 
     // generate a string containing the signs (whether negated) of variables for each factor
     factorDescs.foreach { factorDesc =>
@@ -660,9 +653,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       s"SELECT * FROM ${FactorMetaTable}")
 
     // weights table
-    execute(s"""DROP TABLE IF EXISTS ${WeightsTable} CASCADE;""")
-    execute(s"""CREATE TABLE ${WeightsTable} (id bigint, isfixed int, initvalue real, 
-      cardinality text, description text);""")
+    ds.dropAndCreateTable(WeightsTable, """id bigint, isfixed int, initvalue real, cardinality text, 
+      description text""")
 
     // weight and factor id
     // greenplum: use fast_seqassign postgres: use sequence

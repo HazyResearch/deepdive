@@ -133,6 +133,14 @@ trait JdbcDataStore extends Logging {
       conn.close()
     }
   }
+  
+  /**
+   * Drops a table if it exists, and then create it
+   */
+  def dropAndCreateTable(name: String, schema: String) = {
+    executeSqlQueries(s"""DROP TABLE IF EXISTS ${name} CASCADE;""")
+    executeSqlQueries(s"""CREATE TABLE ${name} (${schema});""")
+  }
 }
 
 
