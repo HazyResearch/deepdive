@@ -479,6 +479,32 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       }
     }
   }
+  
+  // assign variable holdout
+  def assignHoldout(calibrationSettings: CalibrationSettings) {
+    // variable holdout table - if user defined, execute once
+    ds.dropAndCreateTable(VariablesHoldoutTable, "variable_id bigint primary key")
+    calibrationSettings.holdoutQuery match {
+      case Some(query) => {
+        log.info("Executing user supplied holdout query")
+        execute(query)
+      }
+      case None => 
+         log.info("There is no holdout query, will randomly generate holdout set")
+    }
+
+    // variable observation table
+    ds.dropAndCreateTable(VariablesObservationTable, "variable_id bigint primary key")
+    calibrationSettings.observationQuery match {
+      case Some(query) => {
+        log.info("Executing user supplied observation query")  
+        execute(query)
+      }
+      case None => {
+        log.info("There is no o query")
+      }
+    }
+  }
 
 
   /** Ground the factor graph to file
@@ -532,19 +558,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // assign variable id - sequential and unique
     assignVariablesIds(schema)
 
-    // variable holdout table - if user defined, execute once
-    ds.dropAndCreateTable(VariablesHoldoutTable, "variable_id bigint primary key")
-    calibrationSettings.holdoutQuery match {
-      case Some(query) => execute(query)
-      case None =>
-    }
-
-    // variable observation table
-    ds.dropAndCreateTable(VariablesObservationTable, "variable_id bigint primary key")
-    calibrationSettings.observationQuery match {
-      case Some(query) => execute(query)
-      case None =>
-    }
+    // assign holdout
+    assignHoldout(calibrationSettings)
 
     // ground variables
     schema.foreach { case(variable, dataType) =>
@@ -552,7 +567,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
       val variableDataType = dataType match {
         case BooleanType => 0
-        case MultinomialType(x) => 1
+        case MultinomialType(x) => 1        
         case RealNumberType => 2
         case RealArrayType(x) => 3
       }
