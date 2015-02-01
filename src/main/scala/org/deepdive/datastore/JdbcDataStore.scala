@@ -95,6 +95,25 @@ trait JdbcDataStore extends Logging {
       conn.close()
     }
   }
+
+  // execute query and ignore exception
+  def executeQueryIgnoreException(sql: String) = {
+    log.debug("Executing single query: " + sql)
+    val conn = borrowConnection()
+    conn.setAutoCommit(false)
+    val stmt = conn.createStatement();
+    try {
+      // Using prepareStatement should be better: faster, prevents SQL injection
+      conn.prepareStatement(sql).execute
+      // stmt.execute(sql)
+    
+      conn.commit()
+    } catch {
+      case exception : Throwable => log.error("Ignored error while executing query")
+    } finally {
+      conn.close()
+    }
+  }
   
   def bulkInsert(outputRelation: String, data: Iterator[Map[String, Any]])(implicit session: DBSession) = {
     val columnNames = PostgresDataStore.DB.getColumnNames(outputRelation).sorted

@@ -130,12 +130,11 @@ trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent
     // create fast sequence assign function for greenplum
     def createAssignIdFunctionGreenplum() : Unit = {
       if (!isUsingGreenplum()) return
+      ds.executeQueryIgnoreException("""
+        CREATE LANGUAGE plpgsql;
+        CREATE LANGUAGE plpythonu;""")
+
       val sql = """
-      DROP LANGUAGE IF EXISTS plpgsql CASCADE;
-      DROP LANGUAGE IF EXISTS plpythonu CASCADE;
-      CREATE LANGUAGE plpgsql;
-      CREATE LANGUAGE plpythonu;
-  
       CREATE OR REPLACE FUNCTION clear_count_1(sid int) RETURNS int AS 
       $$
       if '__count_1' in SD:
