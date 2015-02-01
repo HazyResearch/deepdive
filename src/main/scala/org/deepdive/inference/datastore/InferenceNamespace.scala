@@ -29,7 +29,7 @@ object InferenceTableNameSpace {
   def getQueryTableName(tableName: String) = s"${queryTablePrefix}${tableName}"
   def getFactorTableName(tableName: String) = s"${factorTablePrefix}${tableName}"
   def getCardinalityTableName(relation: String, column: String) = s"${relation}_${column}_cardinality"
-  def getVariableFileName(fileName: String) = s"${variableFilePrefix}${relation}"
+  def getVariableFileName(relation: String) = s"${variableFilePrefix}${relation}"
 
   // variable data type id
   def getVariableDataTypeId(variable: VariableDataType) : Int = {
