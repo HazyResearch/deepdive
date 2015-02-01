@@ -459,6 +459,23 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
   }
 
+  // ground factor meta data
+  def groundFactorMeta(du: DataLoader, factorDescs: Seq[FactorDesc], groundingPath: String, 
+    parallelGrounding: Boolean) {
+    ds.dropAndCreateTable(FactorMetaTable, "name text, funcid int, sign text")
+
+    // generate a string containing the signs (whether negated) of variables for each factor
+    factorDescs.foreach { factorDesc =>
+      val signString = factorDesc.func.variables.map(v => !v.isNegated).mkString(" ")
+      val funcid = getFactorFunctionTypeid(factorDesc.func.getClass.getSimpleName)
+      execute(s"INSERT INTO ${FactorMetaTable} VALUES ('${factorDesc.name}', ${funcid}, '${signString}')")
+    }
+
+    // dump factor meta data
+    du.unload(s"dd_factormeta", s"${groundingPath}/dd_factormeta", dbSettings, parallelGrounding,
+      s"SELECT * FROM ${FactorMetaTable}")
+  }
+
   // create feature stats for boolean LR function
   def createFeatureStats(factorDesc: FactorDesc, querytable: String, weightlist: String,
     weightDesc: String) {
@@ -559,18 +576,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     groundVariables(schema, du, dbSettings, parallelGrounding, groundingPath)
 
     // generate factor meta data
-    ds.dropAndCreateTable(FactorMetaTable, "name text, funcid int, sign text")
-
-    // generate a string containing the signs (whether negated) of variables for each factor
-    factorDescs.foreach { factorDesc =>
-      val signString = factorDesc.func.variables.map(v => !v.isNegated).mkString(" ")
-      val funcid = getFactorFunctionTypeid(factorDesc.func.getClass.getSimpleName)
-      execute(s"INSERT INTO ${FactorMetaTable} VALUES ('${factorDesc.name}', ${funcid}, '${signString}')")
-    }
-
-    // dump factor meta data
-    du.unload(s"dd_factormeta", s"${groundingPath}/dd_factormeta", dbSettings, parallelGrounding,
-      s"SELECT * FROM ${FactorMetaTable}")
+    groundFactorMeta(du, factorDescs, groundingPath, parallelGrounding)
 
     // weights table
     ds.dropAndCreateTable(WeightsTable, """id bigint, isfixed int, initvalue real, cardinality text, 
