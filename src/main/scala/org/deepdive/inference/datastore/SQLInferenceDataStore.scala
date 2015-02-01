@@ -16,6 +16,7 @@ import scala.io.Source
 import scala.util.Random
 import scala.sys.process._
 import scala.util.{Try, Success, Failure}
+
 // import scala.collection.mutable.Map
 
 
@@ -32,6 +33,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def ds : JdbcDataStore
   def dbSettings : DbSettings
 
+  
   val factorOffset = new java.util.concurrent.atomic.AtomicLong(0)
 
   /* Internal Table names */
@@ -136,7 +138,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def execute(sql: String) = {
     ds.executeSqlQueries(sql)
   }
-
+  
   // execute a query (can have return results)
   private def executeQuery(sql: String) = {
     ds.executeSqlQuery(sql)
