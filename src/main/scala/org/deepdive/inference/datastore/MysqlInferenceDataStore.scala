@@ -272,5 +272,15 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
       // nothing
     }
 
+    // assign senquential ids to table's id column
+    def assignIds(table: String, startId: Long, sequence: String) : Long = {
+      incrementId(table, sequence)
+      var count : Long = 0
+      issueQuery(s"""SELECT COUNT(*) FROM ${table};""") { rs =>
+        count = rs.getLong(1)
+      }
+      return count
+    }
+
   }
 }
