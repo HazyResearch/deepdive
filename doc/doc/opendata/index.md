@@ -104,7 +104,7 @@ Each dataset is versioned with date, and with the MD5 checksum in the file name.
     <tr>
       <th> Downloads </th> <td colspan="3"> 
         <div class="btn-group" text-aligh="right">
-          <button type="button" class="btn btn-primary dropdown-toggle disabled" data-toggle="dropdown" aria-expanded="false"> Download Full Corpus <span class="caret"></span>
+          <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false"> Download Full Corpus <span class="caret"></span>
           </button>
           <ul class="dropdown-menu" role="menu">
             <!--<li><a href="http://i.stanford.edu/hazy/opendata/pmc/pmc_teaser_dddb_20150131_3eb5601f6acecd58527a0dc6e55d0de7.zip">DeepDive-ready DB Dump</a></li>-->
