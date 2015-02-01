@@ -107,8 +107,8 @@ Each dataset is versioned with date, and with the MD5 checksum in the file name.
           <button type="button" class="btn btn-primary dropdown-toggle disabled" data-toggle="dropdown" aria-expanded="false"> Download Full Corpus <span class="caret"></span>
           </button>
           <ul class="dropdown-menu" role="menu">
-            <li><a href="#">DeepDive-ready DB Dump</a></li>
-            <li><a href="#">CoNLL-format Markups</a></li>
+            <!--<li><a href="http://i.stanford.edu/hazy/opendata/pmc/pmc_teaser_dddb_20150131_3eb5601f6acecd58527a0dc6e55d0de7.zip">DeepDive-ready DB Dump</a></li>-->
+            <li><a href="http://i.stanford.edu/hazy/opendata/pmc/pmc_full_conll_20150201_bb718da04c9553592d9a11a7f20d6543.zip">CoNLL-format Markups</a></li>
           </ul>
         </div>
         <div class="btn-group" text-aligh="right">
