@@ -459,6 +459,52 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
   }
 
+  // create feature stats for boolean LR function
+  def createFeatureStats(factorDesc: FactorDesc, querytable: String, weightlist: String,
+    weightDesc: String) {
+    // Create feature statistics support tables for error analysis, 
+    // only if it's boolean LR feature (the most common one)
+    if (factorDesc.func.variables.length == 1 && factorDesc.func.variableDataType == "Boolean") {
+      // This should be a single variable, e.g. "is_true"
+      val variableName = factorDesc.func.variables.map(v => 
+          s""" ${quoteColumn(v.toString)} """).mkString(",")
+      val groupByClause = weightlist match {
+        case "" => ""
+        case _ => s"GROUP BY ${weightlist}"
+      }
+      execute(s"""
+      INSERT INTO ${FeatureStatsSupportTable}
+      SELECT ${weightDesc} as description,
+             count(CASE WHEN ${variableName}=TRUE THEN 1 ELSE NULL END) AS pos_examples,
+             count(CASE WHEN ${variableName}=FALSE THEN 1 ELSE NULL END) AS neg_examples,
+             count(CASE WHEN ${variableName} IS NULL THEN 1 ELSE NULL END) AS queries
+      FROM ${querytable}
+      ${groupByClause};
+      """)
+      execute(analyzeTable(FeatureStatsSupportTable))
+    }
+  }
+
+  // convert grounding file format to be compatible with sampler
+  // for more information about format, please refer to deepdive's website
+  def convertGroundingFormat(groundingPath: String) {
+    log.info("Converting grounding file format...")
+    val ossuffix = if (System.getProperty("os.name").startsWith("Linux")) "linux" else "mac"
+    // TODO: this python script is dangerous and ugly. It changes too many states!
+    val cmd = s"python ${Context.deepdiveHome}/util/tobinary.py ${groundingPath} " + 
+        s"${Context.deepdiveHome}/util/format_converter_${ossuffix} ${Context.outputDir}"
+    log.debug("Executing: " + cmd)
+    val exitValue = cmd!(ProcessLogger(
+      out => log.info(out),
+      err => log.info(err)
+    ))
+
+    exitValue match {
+      case 0 => 
+      case _ => throw new RuntimeException("Converting format failed.")
+    }
+  }
+
 
   /** Ground the factor graph to file
    *
@@ -731,28 +777,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
              WHERE ${weightjoinlist} AND t1.cardinality = '${cardinalityKey}';""")
         }
       }
-      
-      // Create feature statistics support tables for error analysis, 
-      // only if it's boolean LR feature (the most common one)
-      if (factorDesc.func.variables.length == 1 && factorDesc.func.variableDataType == "Boolean") {
-        // This should be a single variable, e.g. "is_true"
-        val variableName = factorDesc.func.variables.map(v => 
-            s""" ${quoteColumn(v.toString)} """).mkString(",")
-        val groupByClause = weightlist match {
-          case "" => ""
-          case _ => s"GROUP BY ${weightlist}"
-        }
-        execute(s"""
-        INSERT INTO ${FeatureStatsSupportTable}
-        SELECT ${weightDesc} as description,
-               count(CASE WHEN ${variableName}=TRUE THEN 1 ELSE NULL END) AS pos_examples,
-               count(CASE WHEN ${variableName}=FALSE THEN 1 ELSE NULL END) AS neg_examples,
-               count(CASE WHEN ${variableName} IS NULL THEN 1 ELSE NULL END) AS queries
-        FROM ${querytable}
-        ${groupByClause};
-        """)
-        execute(analyzeTable(FeatureStatsSupportTable))
-      }
+      // create feature stats for boolean LR
+      createFeatureStats(factorDesc, querytable, weightlist, weightDesc)
     }
 
     // dump weights
@@ -764,22 +790,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     execute(createInferenceResultWeightsSQL)
 
     // split grounding files and transform to binary format
-    log.info("Converting grounding file format...")
-    val ossuffix = if (System.getProperty("os.name").startsWith("Linux")) "linux" else "mac"
-    // TODO: this python script is dangerous and ugly. It changes too many states!
-    val cmd = s"python ${Context.deepdiveHome}/util/tobinary.py ${groundingPath} " + 
-        s"${Context.deepdiveHome}/util/format_converter_${ossuffix} ${Context.outputDir}"
-    log.debug("Executing: " + cmd)
-    val exitValue = cmd!(ProcessLogger(
-      out => log.info(out),
-      err => log.info(err)
-    ))
-
-    exitValue match {
-      case 0 => 
-      case _ => throw new RuntimeException("Converting format failed.")
-    }
-
+    convertGroundingFormat(groundingPath)
   }
 
 
@@ -862,8 +873,4 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       (bucket, bucketData.get(index).getOrElse(BucketData(0,0,0)))
     }.toMap
   }
-
-
-
-
 }
