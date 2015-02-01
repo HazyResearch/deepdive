@@ -1,7 +1,7 @@
 package org.deepdive.inference
 import org.deepdive.settings._
 
-object InferenceTableNameSpace {
+object InferenceNameSpace {
 
   def WeightsTable = "dd_graph_weights"
   def lastWeightsTable = "dd_graph_last_weights"

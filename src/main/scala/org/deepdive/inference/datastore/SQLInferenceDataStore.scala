@@ -31,6 +31,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   def ds : JdbcDataStore
   def dbSettings : DbSettings
+  // def inferenceTableNameSpace : InferenceNameSpace
 
   val factorOffset = new java.util.concurrent.atomic.AtomicLong(0)
 
@@ -448,7 +449,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
       // dump variables
       val initvalueCast = cast(cast(column, "int"), "float")
-      du.unload(s"dd_variables_${relation}", s"${groundingPath}/dd_variables_${relation}",
+      // Sen
+      // du.unload(s"dd_variables_${relation}", s"${groundingPath}/dd_variables_${relation}",
+      du.unload(InferenceNameSpace.getVariableFileName(relation), s"${groundingPath}/${InferenceNameSpace.getVariableFileName(relation)}",
         dbSettings, parallelGrounding,
         s"""SELECT t0.id, t1.${variableTypeColumn},
         CASE WHEN t1.${variableTypeColumn} = 0 THEN 0 ELSE ${initvalueCast} END AS initvalue,
@@ -543,8 +546,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       // id columns
       val idcols = factorDesc.func.variables.map(v => 
         s""" ${quoteColumn(s"${v.relation}.id")} """).mkString(", ")
-      val querytable = s"dd_query_${factorDesc.name}"
-      val weighttableForThisFactor = s"dd_weights_${factorDesc.name}"
+      // Sen
+      // val querytable = s"dd_query_${factorDesc.name}"
+      // val weighttableForThisFactor = s"dd_weights_${factorDesc.name}"
+      val querytable = InferenceNameSpace.getQueryTableName(factorDesc.name)
+      val weighttableForThisFactor = InferenceNameSpace.getWeightTableName(factorDesc.name)
+
       val outfile = s"dd_factors_${factorDesc.name}_out"
 
       // table of input query
