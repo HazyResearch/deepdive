@@ -102,11 +102,11 @@ Each dataset is versioned with date, and with the MD5 checksum in the file name.
     </tr>
     <tr>
       <th> # Documents </th>  <td> 359,324 </td>
-      <th> # Machine Hours </th> <td> 100K </td>
+      <th> # Machine Hours </th> <td> 0.1 Million </td>
     </tr>
     <tr>
-      <th> # Words </th>  <td> 2.7 Billions </td>
-      <th> # Sentences </th>  <td> 0.11 Millions </td>
+      <th> # Words </th>  <td> 2.7 Billion </td>
+      <th> # Sentences </th>  <td> 0.11 Million </td>
     </tr>
     <tr>
       <th> Downloads </th> <td colspan="3"> 
@@ -164,11 +164,11 @@ Information obtained at [Jan 27, 2015](http://www.ncbi.nlm.nih.gov/pmc/tools/ope
     </tr>
     <tr>
       <th> # Documents </th>  <td> 70,043 </td>
-      <th> # Machine Hours </th> <td> 0.02 Millions </td>
+      <th> # Machine Hours </th> <td> 0.02 Million </td>
     </tr>
     <tr>
-      <th> # Sentences </th>  <td> 15 Millions </td>
-      <th> # Words </th>  <td> 400 Millions </td>
+      <th> # Sentences </th>  <td> 15 Million </td>
+      <th> # Words </th>  <td> 400 Million </td>
     </tr>
     <tr>
       <th> Downloads </th> <td colspan="3"> 
@@ -241,7 +241,7 @@ Information obtained at [Jan 27, 2015](http://www.biomedcentral.com/about).
       <th> Pipeline </th> 
       <td colspan=3>
       <p>
-      <span class="label label-warning">1</span>
+      <!--<span class="label label-warning">1</span>-->
       <span class="label label-info">PDF</span> 
       <span class="label label-warning">&gt;</span>
       <span class="label label-info">OCR (Tesseract)</span>
@@ -312,11 +312,11 @@ Information obtained at [Jan 26, 2015](http://www.plosone.org/static/license).
     </tr>
     <tr>
       <th> # Documents </th>  <td> 98,099 </td>
-      <th> # Machine Hours </th> <td> 0.5 Millions </td>
+      <th> # Machine Hours </th> <td> 0.5 Million </td>
     </tr>
     <tr>
-      <th> # Sentences </th>  <td> 1 Billions </td>
-      <th> # Words </th>  <td> 8.7 Billions </td>
+      <th> # Sentences </th>  <td> 1 Billion </td>
+      <th> # Words </th>  <td> 8.7 Billion </td>
     </tr>
     <tr>
       <th> Downloads </th> <td colspan="3"> 
