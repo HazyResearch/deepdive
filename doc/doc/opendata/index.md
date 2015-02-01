@@ -16,15 +16,6 @@ datasets](http://creativecommons.org/) as we can find. Below, we describe the da
 **Acknowledgement.** We would like to thank the HTCondor research group and the Center for High Throughput Computing (CHTC) at the University of Wisconsin-Madison, who have provided millions of machine hours to our group. Thank you, Miron Livny. We would also like to thank the Stanford Natural Language Processing Group, whose tools we use in many of our applications. DeepDive is also generously supported by [our
 sponsors](http://deepdive.stanford.edu/doc/support.html).
 
-To cite DeepDive open datasets, you can use the following BibTeX citation:
-
-    @misc{DeepDive:2015:OpenData,
-      author       = { Christopher R\'{e} and Ce Zhang },
-      title        = { {DeepDive} open datasets },
-      howpublished = { \url{http://deepdive.stanford.edu/doc/opendata} },
-      year         = { 2015 }
-    }
-
 ### Data Format (NLP Markups)
 
 The datasets we provide are in two formats, and for
@@ -483,7 +474,14 @@ we'd love to hear about your applications or interesting
 datasets that you have in mind. [Just let us know!](mailto:contact.hazy@gmail.com)
 
 
+To cite DeepDive open datasets, you can use the following BibTeX citation:
 
+    @misc{DeepDive:2015:OpenData,
+      author       = { Christopher R\'{e} and Ce Zhang },
+      title        = { {DeepDive} open datasets },
+      howpublished = { \url{http://deepdive.stanford.edu/doc/opendata} },
+      year         = { 2015 }
+    }
 
 
 
