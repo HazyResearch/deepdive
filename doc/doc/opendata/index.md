@@ -6,7 +6,7 @@ layout: default
 
 
 Over the last few years, our collaborators have used DeepDive to build over [a dozen different
-applications](http://deepdive.stanford.edu). Often, these applications are interesting because of the sheer volume of documents that one can read--millions of documents or billions of Web pages. However, many researchers can't get started on these problems because NLP preprocessing is simply too expensive and painful. With the generous support of Condor CHTC, we have been fortunate to be have a ready supply of CPU hours for our own projects. The datasets below have taken over 2 million CPU hours to produce. It’s time that we gave back to the NLP community that has given us so many good ideas for our own systems.
+applications](http://deepdive.stanford.edu). Often, these applications are interesting because of the sheer volume of documents that one can read--millions of documents or billions of Web pages. However, many researchers can't get started on these problems because NLP preprocessing is simply too expensive and painful. With the generous support of Condor CHTC, we have been fortunate to be have a ready supply of CPU hours for our own projects. The datasets below have taken over 5+ million CPU hours to produce. It’s time that we gave back to the NLP community that has given us so many good ideas for our own systems.
 
 
 Our work would not be possible without open data. As a result, our group decided to enhance as many [Creative Commons
