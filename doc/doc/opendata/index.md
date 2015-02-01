@@ -466,6 +466,71 @@ indexed by Google Patents in Jan 2015.
 Information obtained at [Jan 27, 2015](http://en.wikipedia.org/wiki/Google_Patents).
 </i>
 
+
+## CCRAWL (CommonCrawl)
+
+<div class="panel panel-default" style="position:relative;">
+  <div style="position:absolute; left: -20px; top: -30px;">
+   <img src="/images/coming_soon.png" style="width:200px;">
+  </div>
+  <div class="panel-heading">Quick Statistics & Downloads</div>
+  <table class="table">
+    <tr>
+      <th> Pipeline </th> 
+      <td colspan=3>
+
+      <span class="label label-info">HTML</span> 
+      <span class="label label-warning">&gt;</span>
+      <span class="label label-info">STRIP (html2text)</span>
+      <span class="label label-warning">&gt;</span>
+      <span class="label label-info">NLP (Stanford CoreNLP)</span>
+
+      </td>
+    <tr>
+      <th> Size </th>  <td> - </td>
+      <th> Document Type </th> <td> Government Document </td>
+    </tr>
+    <tr>
+      <th> # Documents </th>  <td> - </td>
+      <th> # Machine Hours </th> <td> - </td>
+    </tr>
+    <tr>
+      <th> # Sentences </th>  <td> - </td>
+      <th> # Words </th>  <td> - </td>
+    </tr>
+    <tr>
+      <th> Downloads </th> <td colspan="3"> 
+        <div class="btn-group" text-aligh="right">
+          <button type="button" class="btn btn-primary dropdown-toggle disabled" data-toggle="dropdown" aria-expanded="false"> Download Full Corpus <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="#">DeepDive-ready DB Dump</a></li>
+            <li><a href="#">CoNLL-format Markups</a></li>
+          </ul>
+        </div>
+        <div class="btn-group" text-aligh="right">
+          <button type="button" class="btn btn-primary dropdown-toggle disabled" data-toggle="dropdown" aria-expanded="false"> Download Small Teaser <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="#">DeepDive-ready DB Dump</a></li>
+            <li><a href="#">CoNLL-format Markups</a></li>
+          </ul>
+        </div>
+      </td>
+    </tr>
+  </table>
+</div>
+
+We plan to have
+DeepDive's CCRAWL Corpus to process a full
+snapshot of the [Common Crawl Corpus](http://commoncrawl.org/), which is a corpus of web crawl data composed of over 5 billion web pages. 
+
+
+<i>
+<img src="https://commoncrawl.atlassian.net/wiki/download/attachments/655375/CRWL?version=1&modificationDate=1341953825985&api=v2" style="width:88px;"/> This data set is freely available on Amazon S3 and is released under the Common Crawl Terms of Use. 
+</i>
+
+
 ## More Datasets Are Coming -- Stay Tuned!
 
 We are currently working hard to bring more (10+!) datasets
