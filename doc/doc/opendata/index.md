@@ -5,17 +5,25 @@ layout: default
 # DeepDive Open Datasets
 
 
-Over the last few years, our collaborators have used DeepDive 
-to build over [a dozen different
-applications](http://deepdive.stanford.edu). Often, these 
-applications are interesting because of the sheer volume of documents that one can read--millions of documents or billions of Web pages. However, many researchers can't get started on these problems because NLP preprocessing is simply too expensive and painful. With the generous support of Condor CHTC, we have been fortunate to be have a ready supply of CPU hours for our own projects. It's time that we gave back to the NLP community that has given us so many good ideas for our own systems! 
+Over the last few years, our collaborators have used DeepDive to build over [a dozen different
+applications](http://deepdive.stanford.edu). Often, these applications are interesting because of the sheer volume of documents that one can read--millions of documents or billions of Web pages. However, many researchers can't get started on these problems because NLP preprocessing is simply too expensive and painful. With the generous support of Condor CHTC, we have been fortunate to be have a ready supply of CPU hours for our own projects. The datasets below have taken over 2 million CPU hours to produce. It’s time that we gave back to the NLP community that has given us so many good ideas for our own systems.
 
 
 Our work would not be possible without open data. As a result, our group decided to enhance as many [Creative Commons
-datasets](http://creativecommons.org/) datasets as we can find. Below, we describe the data format and provide a small list of data sets in this page. We plan to process more data sets and to provide richer data as well (extracted entities and relationships). Feel free to contact us to suggest more open data sets to process. 
+datasets](http://creativecommons.org/) as we can find. Below, we describe the data format and provide a small list of data sets in this page. We plan to process more data sets and to provide richer data as well (extracted entities and relationships). Feel free to contact us to suggest more open data sets to process. 
 
-**Acknowledgement.** We would like to thank the HTCondor research group and the Center for High Throughput Computing (CHTC) at the University of Wisconsin-Madison, who have provided millions of machine hours to our group. Thank you, Miron Livny! We would also like to thank the Stanford Natural Language Processing Group, whose tools we use in many of our applications. DeepDive is also generously supported by [our
+
+**Acknowledgement.** We would like to thank the HTCondor research group and the Center for High Throughput Computing (CHTC) at the University of Wisconsin-Madison, who have provided millions of machine hours to our group. Thank you, Miron Livny. We would also like to thank the Stanford Natural Language Processing Group, whose tools we use in many of our applications. DeepDive is also generously supported by [our
 sponsors](http://deepdive.stanford.edu/doc/support.html).
+
+To cite DeepDive open datasets, you can use the following BibTeX citation:
+
+    @misc{DeepDive:2015:OpenData,
+      author       = { Christopher R\'{e} and Ce Zhang },
+      title        = { {DeepDive} open datasets },
+      howpublished = { \url{http://deepdive.stanford.edu/doc/opendata} },
+      year         = { 2015 }
+    }
 
 ### Data Format (NLP Markups)
 
