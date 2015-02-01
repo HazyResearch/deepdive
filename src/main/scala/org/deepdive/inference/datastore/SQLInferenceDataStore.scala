@@ -106,6 +106,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
    */
   def analyzeTable(table: String) : String
 
+  // assign senquential ids to table's id column
+  def assignIds(table: String, startId: Long, sequence: String) : Long
+
   // end: Datastore-specific methods
   
   // TODO change integers to global constants / enums
@@ -120,18 +123,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
   }
 
-  private def unwrapSQLType(x: Any) : Any = {
-    x match {
-      case x : org.postgresql.jdbc4.Jdbc4Array => x.getArray().asInstanceOf[Array[_]].toList
-      case x : org.postgresql.util.PGobject =>
-        x.getType match {
-          case "json" => Json.parse(x.getValue)
-          case _ => JsNull
-        }
-      case x => x
-    }
-  }
-
   /** 
    * execute one or multiple SQL queries
    */
@@ -140,7 +131,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   }
   
   // execute a query (can have return results)
-  private def executeQuery(sql: String) = {
+  def executeQuery(sql: String) = {
     ds.executeSqlQuery(sql)
   }
 
@@ -148,54 +139,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
    * Issues a single SQL query that can return results, and perform {@code op} 
    * as callback function
    */
-  private def issueQuery(sql: String)(op: (java.sql.ResultSet) => Unit) = {
+  def issueQuery(sql: String)(op: (java.sql.ResultSet) => Unit) = {
     ds.executeSqlQueryWithCallback(sql)(op)
-  }
-
-  // execute sql, store results in a map
-  def selectAsMap(sql: String) : List[Map[String, Any]] = {
-    val conn = ds.borrowConnection()
-    conn.setAutoCommit(false)
-    try {
-      val stmt = conn.createStatement(
-        java.sql.ResultSet.TYPE_FORWARD_ONLY, java.sql.ResultSet.CONCUR_READ_ONLY)
-      stmt.setFetchSize(10000)
-      val rs = stmt.executeQuery(sql)
-      // No result return
-      if (!rs.isBeforeFirst) {
-        log.warning(s"query returned no results: ${sql}")
-        Iterator.empty.toSeq
-      } else {
-        val resultIter = new Iterator[Map[String, Any]] {
-          def hasNext = {
-            // TODO: This is expensive
-            !(rs.isLast)
-          }              
-          def next() = {
-            rs.next()
-            val metadata = rs.getMetaData()
-            (1 to metadata.getColumnCount()).map { i => 
-              val label = metadata.getColumnLabel(i)
-              val data = unwrapSQLType(rs.getObject(i))
-              (label, data)
-            }.filter(_._2 != null).toMap
-          }
-        }
-        resultIter.toSeq
-      }
-    } catch {
-      // SQL cmd exception
-      case exception : Throwable =>
-        log.error(exception.toString)
-        throw exception
-    } finally {
-      conn.close()
-    }
-
-
-    ds.DB.readOnly { implicit session =>
-      SQL(sql).map(_.toMap).list.apply()
-    }
   }
 
   // used in unit test
@@ -390,32 +335,14 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   // assign variable id - sequential and unique
   def assignVariablesIds(schema: Map[String, _ <: VariableDataType]) {
-    // check whether Greenplum is used
-    var usingGreenplum = false
-    issueQuery(checkGreenplumSQL) { rs => 
-      usingGreenplum = rs.getBoolean(1) 
-    }
-    
     // fast sequential id assign function
     createAssignIdFunctionGreenplum()
+    execute(createSequenceFunction(IdSequence))
 
     var idoffset : Long = 0
-    if (usingGreenplum) {
-      schema.foreach { case(variable, dataType) =>
-        val Array(relation, column) = variable.split('.')
-        executeQuery(s"""SELECT fast_seqassign('${relation.toLowerCase()}', ${idoffset});""")
-        issueQuery(s"""SELECT count(*) FROM ${relation}""") { rs =>
-          idoffset = idoffset + rs.getLong(1)
-        }
-      }
-    } else {
-      // Mysql: use user-defined variables for ID assign;
-      // Psql: use sequence
-      execute(createSequenceFunction(IdSequence))
-      schema.foreach { case(variable, dataType) =>
-        val Array(relation, column) = variable.split('.')
-        incrementId(relation, IdSequence)
-      }
+    schema.foreach { case(variable, dataType) =>
+      val Array(relation, column) = variable.split('.')
+      idoffset += assignIds(relation, idoffset, IdSequence)
     }
   }
   
@@ -619,10 +546,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     var factorid : Long = 0
     val weightidSequence = "dd_weight_sequence"
     val factoridSequence = "dd_factor_sequence"
-    if (!usingGreenplum) {
-      execute(createSequenceFunction(weightidSequence));
-      execute(createSequenceFunction(factoridSequence));
-    }
+    execute(createSequenceFunction(weightidSequence));
+    execute(createSequenceFunction(factoridSequence));
 
           
     // Create the feature stats table
@@ -643,14 +568,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       execute(s"""ALTER TABLE ${querytable} ADD COLUMN id bigint;""")
 
       // handle factor id
-      if (usingGreenplum) {
-        executeQuery(s"SELECT fast_seqassign('${querytable.toLowerCase()}', ${factorid});");
-      } else {
-        execute(s"UPDATE ${querytable} SET id = ${nextVal(factoridSequence)};")
-      }
-      issueQuery(s"""SELECT COUNT(*) FROM ${querytable};""") { rs =>
-        factorid += rs.getLong(1)
-      }
+      factorid += assignIds(querytable.toLowerCase(), factorid, factoridSequence)
 
       // weight variable list
       val weightlist = factorDesc.weight.variables.map(v => 
@@ -698,14 +616,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           execute(createWeightTableForThisFactorSQL)
 
           // handle weight id
-          if (usingGreenplum) {      
-            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor.toLowerCase()}', ${cweightid});""")
-          } else {
-            execute(s"UPDATE ${weighttableForThisFactor} SET id = ${nextVal(weightidSequence)};")
-          }
-          issueQuery(s"""SELECT COUNT(*) FROM ${weighttableForThisFactor};""") { rs =>
-            cweightid += rs.getLong(1)
-          }
+          cweightid += assignIds(weighttableForThisFactor.toLowerCase(), cweightid, weightidSequence)
 
           execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, description) 
             SELECT id, isfixed, initvalue, ${weightDesc} FROM ${weighttableForThisFactor};""")
@@ -765,11 +676,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
             ORDER BY cardinality;""")
 
           // handle weight id
-          if (usingGreenplum) {      
-            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor.toLowerCase()}', ${cweightid});""")
-          } else {
-            execute(s"UPDATE ${weighttableForThisFactor} SET id = ${nextVal(weightidSequence)};")
-          }
+          val count = assignIds(weighttableForThisFactor.toLowerCase(), cweightid, weightidSequence)
 
           execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, cardinality, description) 
             SELECT id, isfixed, initvalue, cardinality, ${weightDesc} FROM ${weighttableForThisFactor};""")
@@ -778,9 +685,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
             s"SELECT id AS factor_id, ${cweightid} AS weight_id, ${idcols} FROM ${querytable}")
 
           // increment weight id
-          issueQuery(s"""SELECT COUNT(*) FROM ${weighttableForThisFactor};""") { rs =>
-            cweightid += rs.getLong(1)
-          }
+          cweightid += count
+
         } else { // not fixed and has weight variables
           // temporary weight table for weights without a cross product with cardinality
           val weighttableForThisFactorTemp = s"dd_weight_${factorDesc.name}_temp"
@@ -825,14 +731,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
             ORDER BY ${weightlist}, cardinality;""")
 
           // handle weight id
-          if (usingGreenplum) {      
-            executeQuery(s"""SELECT fast_seqassign('${weighttableForThisFactor.toLowerCase()}', ${cweightid});""")
-          } else {
-            execute(s"UPDATE ${weighttableForThisFactor} SET id = ${nextVal(weightidSequence)};")
-          }
-          issueQuery(s"""SELECT COUNT(*) FROM ${weighttableForThisFactor};""") { rs =>
-            cweightid += rs.getLong(1)
-          }
+          cweightid += assignIds(weighttableForThisFactor.toLowerCase(), cweightid, weightidSequence)
 
           execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, cardinality, description) 
             SELECT id, isfixed, initvalue, cardinality, ${weightDesc} FROM ${weighttableForThisFactor};""")
@@ -969,7 +868,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         execute(createCalibrationViewMultinomialSQL(calibrationViewName, bucketedViewName, columnName))
     }
     
-    val bucketData = selectAsMap(selectCalibrationDataSQL(calibrationViewName)).map { row =>
+    val bucketData = ds.selectAsMap(selectCalibrationDataSQL(calibrationViewName)).map { row =>
       val bucket = row("bucket")
       val data = BucketData(
         row.get("num_variables").map(_.asInstanceOf[Long]).getOrElse(0), 
