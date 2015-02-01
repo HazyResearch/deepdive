@@ -48,7 +48,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def FactorMetaTable = "dd_graph_factormeta"
   def VariablesObservationTable = "dd_graph_variables_observation"
   def LearnedWeightsTable = "dd_inference_result_weights_mapping"
-
+  def FeatureStatsSupportTable = "dd_feature_statistics_support"
+  def FeatureStatsView = "dd_feature_statistics"
 
     
   // Datastore-specific methods:
@@ -98,6 +99,11 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   // fast sequential id assign function
   def createAssignIdFunctionGreenplum() : Unit
   
+  /**
+   * ANALYZE TABLE
+   */
+  def analyzeTable(table: String) : String
+
   // end: Datastore-specific methods
   
   // TODO change integers to global constants / enums
@@ -245,6 +251,28 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       SELECT ${inferenceViewName}.*, CASE ${bucketCaseStatement} END bucket
       FROM ${inferenceViewName} ORDER BY bucket ASC;"""
   }
+  
+  /**
+   * Create a table of how LR features are supported by supervision examples
+   */
+  def createFeatureStatsSupportTableSQL = 
+      s"""DROP TABLE IF EXISTS ${FeatureStatsSupportTable} CASCADE;
+
+          CREATE TABLE ${FeatureStatsSupportTable}(
+            description text, 
+            pos_examples bigint, 
+            neg_examples bigint, 
+            queries bigint);"""
+  /**
+   * Create a view that shows weights of features as well as their supports 
+   */
+  def createMappedFeatureStatsViewSQL = s"""
+        CREATE OR REPLACE VIEW ${FeatureStatsView} AS
+        SELECT w.*, f.pos_examples, f.neg_examples, f.queries
+        FROM ${LearnedWeightsTable} w LEFT OUTER JOIN ${FeatureStatsSupportTable} f
+        ON w.description = f.description
+        ORDER BY abs(weight) DESC;
+        """
 
   // ========= Datastore specific queries (override when diverge) ============
 
@@ -594,6 +622,10 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       execute(createSequenceFunction(factoridSequence));
     }
 
+          
+    // Create the feature stats table
+    execute(createFeatureStatsSupportTableSQL)
+
     // ground weights and factors
     factorDescs.zipWithIndex.foreach { case (factorDesc, idx) =>
       // id columns
@@ -749,7 +781,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           }
         } else { // not fixed and has weight variables
           // temporary weight table for weights without a cross product with cardinality
-          // temporary weight table for weights without a cross product with cardinality
           val weighttableForThisFactorTemp = s"dd_weight_${factorDesc.name}_temp"
 
           if (usingGreenplum) {
@@ -816,6 +847,28 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
              FROM ${querytable} t0, ${weighttableForThisFactor} t1
              WHERE ${weightjoinlist} AND t1.cardinality = '${cardinalityKey}';""")
         }
+      }
+      
+      // Create feature statistics support tables for error analysis, 
+      // only if it's boolean LR feature (the most common one)
+      if (factorDesc.func.variables.length == 1 && factorDesc.func.variableDataType == "Boolean") {
+        // This should be a single variable, e.g. "is_true"
+        val variableName = factorDesc.func.variables.map(v => 
+            s""" ${quoteColumn(v.toString)} """).mkString(",")
+        val groupByClause = weightlist match {
+          case "" => ""
+          case _ => s"GROUP BY ${weightlist}"
+        }
+        execute(s"""
+        INSERT INTO ${FeatureStatsSupportTable}
+        SELECT ${weightDesc} as description,
+               count(CASE WHEN ${variableName}=TRUE THEN 1 ELSE NULL END) AS pos_examples,
+               count(CASE WHEN ${variableName}=FALSE THEN 1 ELSE NULL END) AS neg_examples,
+               count(CASE WHEN ${variableName} IS NULL THEN 1 ELSE NULL END) AS queries
+        FROM ${querytable}
+        ${groupByClause};
+        """)
+        execute(analyzeTable(FeatureStatsSupportTable))
       }
     }
 
@@ -886,7 +939,11 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       case Array(relation, column) => (relation, column)
     }
 
+    // Create the view for mapped weights
     execute(createMappedWeightsViewSQL)
+    
+    // Create feature statistics tables for error analysis
+    execute(createMappedFeatureStatsViewSQL)
 
     relationsColumns.foreach { case(relationName, columnName) =>
       execute(createInferenceViewSQL(relationName, columnName))

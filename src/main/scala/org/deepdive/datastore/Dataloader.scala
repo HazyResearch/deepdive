@@ -73,33 +73,18 @@ class DataLoader extends JdbcDataStore with Logging {
         case Mysql => "mysql " + Helpers.getOptionString(dbSettings) + " --silent -N -e "
       }
   
-      executeSqlQueries(s"""
-        DROP VIEW IF EXISTS _${filename}_view CASCADE;
-        CREATE VIEW _${filename}_view AS ${query};
-        """)
-
       val outfile = new File(filepath)
       outfile.getParentFile().mkdirs()
 
-      val cmdfile = File.createTempFile(s"unload", ".sh")
-      val writer = new PrintWriter(cmdfile)
+      // Trimming ending semicolons
+      val trimmedQuery = query.replaceAll("""(?m)[;\s\n]+$""", "")
       
-      // This query CANNOT contain double-quotes (").
+      // This query can contain double-quotes (") now.
       val copyStr = dbtype match {
-        case Psql => List(sqlQueryPrefixRun + "\"", 
-            """\COPY """, s"(SELECT * FROM _${filename}_view) TO '${filepath}'", "\"").mkString("")
-            
-        case Mysql => List(sqlQueryPrefixRun + "\"", 
-            s"SELECT * FROM _${filename}_view", "\"", s" > ${filepath}").mkString("")
+        case Psql => s"COPY (${trimmedQuery}) TO STDOUT;"
+        case Mysql => trimmedQuery
       }
-        
-      log.info(copyStr)
-      writer.println(copyStr)
-      writer.close()
-      Helpers.executeCmd(cmdfile.getAbsolutePath())
-      // executeSqlQuery(s"""COPY (SELECT * FROM _${filename}_view) TO '${filepath}';""")
-      executeSqlQueries(s"DROP VIEW _${filename}_view;")
-      s"rm ${cmdfile.getAbsolutePath()}".!
+      Helpers.executeSqlQueriesByFile(dbSettings, copyStr, filepath)
     }
   }
   

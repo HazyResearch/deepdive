@@ -113,6 +113,11 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
     }
 
     /**
+     * ANALYZE TABLE
+     */
+    def analyzeTable(table: String) = s"ANALYZE TABLE ${table}"
+    
+    /**
      * Given a string column name, Get a quoted version dependent on DB.
      *
      *          if psql, return "column"

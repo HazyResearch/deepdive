@@ -35,7 +35,7 @@ object Main extends App {
 
   // Configuration has been parsed, execute the Document parser
   val props = new Properties()
-  props.put("annotators", "tokenize, cleanxml, ssplit, pos, lemma, ner, parse, dcoref")
+  props.put("annotators", "tokenize, cleanxml, ssplit, pos, lemma, ner, parse")
   props.put("parse.maxlen", conf.maxSentenceLength)
   props.put("threads", conf.numThreads)
   val dp = new DocumentParser(props)

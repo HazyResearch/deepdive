@@ -16,14 +16,25 @@ LINKCHECKER_PARAMETERS=$2
 # # Set timeout as 10s and ignoring these specific errors when greping them
 # linkchecker --check-extern $URL_TO_CHECK --timeout 10 >$DEEPDIVE_HOME/linkchecker_errorlog.txt
 
-# The timeout does not work, do not check external links for now to pass tests
-linkchecker $URL_TO_CHECK --timeout 10 $LINKCHECKER_PARAMETERS >$DEEPDIVE_HOME/linkchecker_errorlog.txt
+success=false
 
+# Add retries: linkcheck fails only if continuously fail 3 times
+for iter in 1 2 3; do
+  # The timeout does not work, do not check external links for now to pass tests
+  linkchecker $URL_TO_CHECK --timeout 10 $LINKCHECKER_PARAMETERS >$DEEPDIVE_HOME/linkchecker_errorlog.txt
 
-# Look for string "Error" in the output log, but ignoring timeouts
-line=$(grep Error $DEEPDIVE_HOME/linkchecker_errorlog.txt | grep -v Timeout)
+  # Look for string "Error" in the output log, but ignoring timeouts
+  line=$(grep Error $DEEPDIVE_HOME/linkchecker_errorlog.txt | grep -v Timeout)
 
-if [ $? -eq 0 ]; then
+  if ! [ $? -eq 0 ]; then
+    success=true
+    break
+  else
+    echo "Iteration $iter fails..."
+  fi
+done
+
+if [[ $success == false ]]; then
   echo "[`date`] Errors found:"
   cat $DEEPDIVE_HOME/linkchecker_errorlog.txt
   echo "[FAILED] website link checking test failed!"
