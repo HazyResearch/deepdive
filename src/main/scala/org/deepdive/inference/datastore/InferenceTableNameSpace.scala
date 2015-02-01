@@ -6,9 +6,9 @@ object InferenceTableNameSpace {
   val queryTablePrefix = "dd_query_"
   val factorTablePrefix = "dd_factors_"
   
-  def getWeightTableName(tableName: String) = "${weightTablePrefix}${tableName}"
-  def getQueryTableName(tableName: String) = "${queryTablePrefix}${tableName}"
-  def getFactorTableName(tableName: String) = "${factorTablePrefix}${tableName}"
+  def getWeightTableName(tableName: String) = s"${weightTablePrefix}${tableName}"
+  def getQueryTableName(tableName: String) = s"${queryTablePrefix}${tableName}"
+  def getFactorTableName(tableName: String) = s"${factorTablePrefix}${tableName}"
 
 }
 
