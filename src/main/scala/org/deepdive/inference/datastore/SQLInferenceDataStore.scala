@@ -121,18 +121,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
   }
 
-  private def unwrapSQLType(x: Any) : Any = {
-    x match {
-      case x : org.postgresql.jdbc4.Jdbc4Array => x.getArray().asInstanceOf[Array[_]].toList
-      case x : org.postgresql.util.PGobject =>
-        x.getType match {
-          case "json" => Json.parse(x.getValue)
-          case _ => JsNull
-        }
-      case x => x
-    }
-  }
-
   /** 
    * execute one or multiple SQL queries
    */
@@ -151,52 +139,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
    */
   def issueQuery(sql: String)(op: (java.sql.ResultSet) => Unit) = {
     ds.executeSqlQueryWithCallback(sql)(op)
-  }
-
-  // execute sql, store results in a map
-  def selectAsMap(sql: String) : List[Map[String, Any]] = {
-    val conn = ds.borrowConnection()
-    conn.setAutoCommit(false)
-    try {
-      val stmt = conn.createStatement(
-        java.sql.ResultSet.TYPE_FORWARD_ONLY, java.sql.ResultSet.CONCUR_READ_ONLY)
-      stmt.setFetchSize(10000)
-      val rs = stmt.executeQuery(sql)
-      // No result return
-      if (!rs.isBeforeFirst) {
-        log.warning(s"query returned no results: ${sql}")
-        Iterator.empty.toSeq
-      } else {
-        val resultIter = new Iterator[Map[String, Any]] {
-          def hasNext = {
-            // TODO: This is expensive
-            !(rs.isLast)
-          }              
-          def next() = {
-            rs.next()
-            val metadata = rs.getMetaData()
-            (1 to metadata.getColumnCount()).map { i => 
-              val label = metadata.getColumnLabel(i)
-              val data = unwrapSQLType(rs.getObject(i))
-              (label, data)
-            }.filter(_._2 != null).toMap
-          }
-        }
-        resultIter.toSeq
-      }
-    } catch {
-      // SQL cmd exception
-      case exception : Throwable =>
-        log.error(exception.toString)
-        throw exception
-    } finally {
-      conn.close()
-    }
-
-
-    ds.DB.readOnly { implicit session =>
-      SQL(sql).map(_.toMap).list.apply()
-    }
   }
 
   // used in unit test
@@ -391,12 +333,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   // assign variable id - sequential and unique
   def assignVariablesIds(schema: Map[String, _ <: VariableDataType]) {
-    // check whether Greenplum is used
-    var usingGreenplum = false
-    issueQuery(checkGreenplumSQL) { rs => 
-      usingGreenplum = rs.getBoolean(1) 
-    }
-    
     // fast sequential id assign function
     createAssignIdFunctionGreenplum()
     execute(createSequenceFunction(IdSequence))
@@ -930,7 +866,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         execute(createCalibrationViewMultinomialSQL(calibrationViewName, bucketedViewName, columnName))
     }
     
-    val bucketData = selectAsMap(selectCalibrationDataSQL(calibrationViewName)).map { row =>
+    val bucketData = ds.selectAsMap(selectCalibrationDataSQL(calibrationViewName)).map { row =>
       val bucket = row("bucket")
       val data = BucketData(
         row.get("num_variables").map(_.asInstanceOf[Long]).getOrElse(0), 
