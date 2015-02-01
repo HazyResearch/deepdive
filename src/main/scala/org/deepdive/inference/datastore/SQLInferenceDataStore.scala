@@ -491,15 +491,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     val du = new DataLoader
     val groundingPath = if (!parallelGrounding) Context.outputDir else dbSettings.gppath
 
-    // check whether Greenplum is used
-    var usingGreenplum = false
-    issueQuery(checkGreenplumSQL) { rs => 
-      usingGreenplum = rs.getBoolean(1) 
-    }
-    
-    log.info(s"Using Greenplum = ${usingGreenplum}")
-    log.info(s"Datastore type = ${Helpers.getDbType(dbSettings)}")
-    
+    log.info(s"Datastore type = ${Helpers.getDbType(dbSettings)}")    
     log.info(s"Parallel grounding = ${parallelGrounding}")
     log.debug(s"Grounding Path = ${groundingPath}")
 
@@ -689,19 +681,11 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           // temporary weight table for weights without a cross product with cardinality
           val weighttableForThisFactorTemp = s"dd_weight_${factorDesc.name}_temp"
 
-          if (usingGreenplum) {
-             execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactorTemp} CASCADE;
-                  CREATE TABLE ${weighttableForThisFactorTemp} AS 
-                    (SELECT ${weightlist}, ${cast(isFixed, "int")} AS isfixed, ${cast(initvalue, "float")} AS initvalue
-                    FROM ${querytable}
-                    GROUP BY ${weightlist}) DISTRIBUTED BY (${weightlist});""") 
-            }else{
-              execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactorTemp} CASCADE;
-                      CREATE TABLE ${weighttableForThisFactorTemp} AS
-                      SELECT ${weightlist}, ${cast(isFixed, "int")} AS isfixed, ${cast(initvalue, "float")} AS initvalue
-                      FROM ${querytable}
-                      GROUP BY ${weightlist}; """)
-            }       
+          execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactorTemp} CASCADE;
+                  CREATE TABLE ${weighttableForThisFactorTemp} AS
+                  SELECT ${weightlist}, ${cast(isFixed, "int")} AS isfixed, ${cast(initvalue, "float")} AS initvalue
+                  FROM ${querytable}
+                  GROUP BY ${weightlist}; """)
   
           // We need to create two tables -- one for a non-order'ed version
           // another for an ordered version. The reason that we cannot
