@@ -4,32 +4,17 @@ layout: default
 
 # DeepDive Open Datasets
 
-Over the last few years, our collaborators have used DeepDive to build
-over [a dozen different
-applications](http://deepdive.stanford.edu). Often, these applications
-are interesting because of the sheer volume of documents that one can
-read-- millions of documents or billions of Web pages. However, many
-people can't get started on their own research in this area because
-the necessary NLP preprocessing is simply too expensive and
-painful. Through generous support of Condor CHTC, we have been
-fortunate to get access to large amounts of low cost CPU hours for our
-own projects. It's time we gave back to the community at large who has
-sustained us with lots of great ideas! Our hope is that these datasets
-will let researchers focus on building awesome applications---instead
-of routine processing.
 
-Our work would not be possible without open data. As a result, we
-decided that we are going to enhance as many [Creative Commons
-datasets](http://creativecommons.org/) as we can find.  Below, we
-describe the data format and a small (but growing) list of data sets
-in this page. Feel free to contact us to suggest more datasets or processing!
+Over the last few years, our collaborators have used DeepDive 
+to build over [a dozen different
+applications](http://deepdive.stanford.edu). Often, these 
+applications are interesting because of the sheer volume of documents that one can read--millions of documents or billions of Web pages. However, many researchers can't get started on these problems because NLP preprocessing is simply too expensive and painful. With the generous support of Condor CHTC, we have been fortunate to be have a ready supply of CPU hours for our own projects. It's time that we gave back to the NLP community that has given us so many good ideas for our own systems! 
 
-**Acknowledgement.** We would like to thank the _HTCondor research
-group_ and the _Center for High Throughput Computing (CHTC)_ at the
-University of Wisconsin-Madison, who have provided millions of machine
-hours to our group. Thanks, Miron! We would also like to thank the
-_Stanford Natural Language Processing Group_, whose tools we use in
-many of our applications. DeepDive is also generously supported by [our
+
+Our work would not be possible without open data. As a result, our group decided to enhance as many [Creative Commons
+datasets](http://creativecommons.org/) datasets as we can find. Below, we describe the data format and provide a small list of data sets in this page. We plan to process more data sets and to provide richer data as well (extracted entities and relationships). Feel free to contact us to suggest more open data sets to process. 
+
+**Acknowledgement.** We would like to thank the HTCondor research group and the Center for High Throughput Computing (CHTC) at the University of Wisconsin-Madison, who have provided millions of machine hours to our group. Thank you, Miron Livny! We would also like to thank the Stanford Natural Language Processing Group, whose tools we use in many of our applications. DeepDive is also generously supported by [our
 sponsors](http://deepdive.stanford.edu/doc/support.html).
 
 ### Data Format (NLP Markups)
@@ -102,7 +87,7 @@ Each dataset is versioned with date, and with the MD5 checksum in the file name.
     </tr>
     <tr>
       <th> # Documents </th>  <td> 359,324 </td>
-      <th> # Machine Hours </th> <td> 0.1 Million </td>
+      <th> # Machine Hours </th> <td> 100 K </td>
     </tr>
     <tr>
       <th> # Words </th>  <td> 2.7 Billion </td>
@@ -164,7 +149,7 @@ Information obtained at [Jan 27, 2015](http://www.ncbi.nlm.nih.gov/pmc/tools/ope
     </tr>
     <tr>
       <th> # Documents </th>  <td> 70,043 </td>
-      <th> # Machine Hours </th> <td> 0.02 Million </td>
+      <th> # Machine Hours </th> <td> 20 K </td>
     </tr>
     <tr>
       <th> # Sentences </th>  <td> 15 Million </td>
@@ -173,11 +158,11 @@ Information obtained at [Jan 27, 2015](http://www.ncbi.nlm.nih.gov/pmc/tools/ope
     <tr>
       <th> Downloads </th> <td colspan="3"> 
         <div class="btn-group" text-aligh="right">
-          <button type="button" class="btn btn-primary dropdown-toggle disabled" data-toggle="dropdown" aria-expanded="false"> Download Full Corpus <span class="caret"></span>
+          <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false"> Download Full Corpus <span class="caret"></span>
           </button>
           <ul class="dropdown-menu" role="menu">
-            <li><a href="#">DeepDive-ready DB Dump</a></li>
-            <li><a href="#">CoNLL-format Markups</a></li>
+            <li><a href="http://i.stanford.edu/hazy/opendata/bmc/bmc_full_dddb_20150201_2abed5f1d8da6000216aa21d1b121ac6.zip">DeepDive-ready DB Dump</a></li>
+            <li><a href="http://i.stanford.edu/hazy/opendata/bmc/bmc_full_conll_20150201_f7536a38362cbc46460fb17a166a43c5.zip">CoNLL-format Markups</a></li>
           </ul>
         </div>
         <div class="btn-group" text-aligh="right">
@@ -256,7 +241,7 @@ Information obtained at [Jan 27, 2015](http://www.biomedcentral.com/about).
     </tr>
     <tr>
       <th> # Documents </th>  <td> 125,378 </td>
-      <th> # Machine Hours </th> <td> 0.37 Million </td>
+      <th> # Machine Hours </th> <td> 370 K </td>
     </tr>
     <tr>
       <th> # Words </th>  <td> 1.3 Billion </td>
@@ -265,11 +250,11 @@ Information obtained at [Jan 27, 2015](http://www.biomedcentral.com/about).
     <tr>
       <th> Downloads </th> <td colspan="3"> 
         <div class="btn-group" text-aligh="right">
-          <button type="button" class="btn btn-primary dropdown-toggle disabled" data-toggle="dropdown" aria-expanded="false"> Download Full Corpus <span class="caret"></span>
+          <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false"> Download Full Corpus <span class="caret"></span>
           </button>
           <ul class="dropdown-menu" role="menu">
-            <li><a href="#">DeepDive-ready DB Dump</a></li>
-            <li><a href="#">CoNLL-format Markups</a></li>
+            <li><a href="http://i.stanford.edu/hazy/opendata/plos/plos_full_dddb_20150201_6c738b31d4a7479ac0a7d864d5f84101.zip">DeepDive-ready DB Dump</a></li>
+            <li><a href="http://i.stanford.edu/hazy/opendata/plos/plos_full_conll_20150201_cafb0c11ae45095faba4fda25b1d2c9c.zip">CoNLL-format Markups</a></li>
           </ul>
         </div>
         <div class="btn-group" text-aligh="right">
@@ -312,7 +297,7 @@ Information obtained at [Jan 26, 2015](http://www.plosone.org/static/license).
     </tr>
     <tr>
       <th> # Documents </th>  <td> 98,099 </td>
-      <th> # Machine Hours </th> <td> 0.5 Million </td>
+      <th> # Machine Hours </th> <td> 500 K </td>
     </tr>
     <tr>
       <th> # Sentences </th>  <td> 1 Billion </td>
@@ -321,11 +306,11 @@ Information obtained at [Jan 26, 2015](http://www.plosone.org/static/license).
     <tr>
       <th> Downloads </th> <td colspan="3"> 
         <div class="btn-group" text-aligh="right">
-          <button type="button" class="btn btn-primary dropdown-toggle disabled" data-toggle="dropdown" aria-expanded="false"> Download Full Corpus <span class="caret"></span>
+          <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false"> Download Full Corpus <span class="caret"></span>
           </button>
           <ul class="dropdown-menu" role="menu">
-            <li><a href="#">DeepDive-ready DB Dump</a></li>
-            <li><a href="#">CoNLL-format Markups</a></li>
+            <!--<li><a href="http://i.stanford.edu/hazy/opendata/bhl/bhl_teaser_dddb_20150131_4a2021210453c3f9985484a24347b980.zip">DeepDive-ready DB Dump</a></li>-->
+            <li><a href="http://i.stanford.edu/hazy/opendata/bhl/bhl_full_conll_20150201_78378f9a611a5d6b28575b7d88d538f8.zip">CoNLL-format Markups</a></li>
           </ul>
         </div>
         <div class="btn-group" text-aligh="right">
