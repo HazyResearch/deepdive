@@ -262,5 +262,10 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
       execute(s"UPDATE ${table} SET id = ${nextVal(IdSequence)};")
     }
 
+    // this function is specific for greenplum
+    def createAssignIdFunctionGreenplum() = {
+      // nothing
+    }
+
   }
 }
