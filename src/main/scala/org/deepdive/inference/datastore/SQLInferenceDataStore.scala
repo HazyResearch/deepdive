@@ -31,7 +31,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   def ds : JdbcDataStore
   def dbSettings : DbSettings
-  // def inferenceTableNameSpace : InferenceNameSpace
+  // def inferenceTableNameSpace : InferenceNamespace
 
   val factorOffset = new java.util.concurrent.atomic.AtomicLong(0)
 
@@ -409,10 +409,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       val Array(relation, column) = variable.split('.')
       
       // TODO make an enum class for this
-      val variableDataType = dataType match {
-        case BooleanType => 0
-        case MultinomialType(x) => 1
-      }
+      val variableDataType = InferenceNamespace.getVariableDataTypeId(dataType)
 
       val cardinality = dataType match {
         case BooleanType => 2
@@ -451,7 +448,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       val initvalueCast = cast(cast(column, "int"), "float")
       // Sen
       // du.unload(s"dd_variables_${relation}", s"${groundingPath}/dd_variables_${relation}",
-      du.unload(InferenceNameSpace.getVariableFileName(relation), s"${groundingPath}/${InferenceNameSpace.getVariableFileName(relation)}",
+      du.unload(InferenceNamespace.getVariableFileName(relation), 
+        s"${groundingPath}/${InferenceNamespace.getVariableFileName(relation)}",
         dbSettings, parallelGrounding,
         s"""SELECT t0.id, t1.${variableTypeColumn},
         CASE WHEN t1.${variableTypeColumn} = 0 THEN 0 ELSE ${initvalueCast} END AS initvalue,
@@ -470,13 +468,14 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // generate a string containing the signs (whether negated) of variables for each factor
     factorDescs.foreach { factorDesc =>
       val signString = factorDesc.func.variables.map(v => !v.isNegated).mkString(" ")
-      val funcid = getFactorFunctionTypeid(factorDesc.func.getClass.getSimpleName)
+      val funcid = InferenceNamespace.getFactorFunctionTypeid(factorDesc.func.getClass.getSimpleName)
       execute(s"INSERT INTO ${FactorMetaTable} VALUES ('${factorDesc.name}', ${funcid}, '${signString}')")
     }
 
     // dump factor meta data
-    du.unload(s"dd_factormeta", s"${groundingPath}/dd_factormeta", dbSettings, parallelGrounding,
-      s"SELECT * FROM ${FactorMetaTable}")
+    du.unload(InferenceNamespace.getFactorMetaFileName, 
+      s"${groundingPath}/${InferenceNamespace.getFactorMetaFileName}", 
+      dbSettings, parallelGrounding, s"SELECT * FROM ${FactorMetaTable}")
   }
 
   // create feature stats for boolean LR function
@@ -549,10 +548,10 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       // Sen
       // val querytable = s"dd_query_${factorDesc.name}"
       // val weighttableForThisFactor = s"dd_weights_${factorDesc.name}"
-      val querytable = InferenceNameSpace.getQueryTableName(factorDesc.name)
-      val weighttableForThisFactor = InferenceNameSpace.getWeightTableName(factorDesc.name)
+      val querytable = InferenceNamespace.getQueryTableName(factorDesc.name)
+      val weighttableForThisFactor = InferenceNamespace.getWeightTableName(factorDesc.name)
 
-      val outfile = s"dd_factors_${factorDesc.name}_out"
+      val outfile = InferenceNamespace.getFactorFileName(factorDesc.name)
 
       // table of input query
       execute(s"""DROP TABLE IF EXISTS ${querytable} CASCADE;
@@ -624,7 +623,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           }
 
           // dump factors
-          val weightjoinlist = factorDesc.weight.variables.map(v => s""" t0.${quoteColumn(v)} = t1.${quoteColumn(v)} """).mkString("AND")
+          val weightjoinlist = factorDesc.weight.variables.map(
+            v => s""" t0.${quoteColumn(v)} = t1.${quoteColumn(v)} """).mkString("AND")
           // do not have join conditions if there are no weight variables, and t1 will only have 1 row
           val weightJoinCondition = hasWeightVariables match {
             case true => "WHERE " + factorDesc.weight.variables.map(
@@ -663,7 +663,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         if (isFixed || weightlist == ""){
           execute(s"""DROP TABLE IF EXISTS ${weighttableForThisFactor} CASCADE;
             CREATE TABLE ${weighttableForThisFactor} AS
-            SELECT ${cast(isFixed, "int")} AS isfixed, ${initvalue} AS initvalue, ${cardinalityCmd} AS cardinality, ${cweightid} AS id
+            SELECT ${cast(isFixed, "int")} AS isfixed, ${initvalue} AS initvalue, 
+            ${cardinalityCmd} AS cardinality, ${cweightid} AS id
             FROM ${cardinalityTables.mkString(", ")}
             ORDER BY cardinality;""")
 
@@ -738,7 +739,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
 
     // dump weights
-    du.unload("dd_weights", s"${groundingPath}/dd_weights",dbSettings, parallelGrounding,
+    du.unload(InferenceNamespace.getWeightFileName,
+      s"${groundingPath}/${InferenceNamespace.getWeightFileName}",dbSettings, parallelGrounding,
       s"SELECT id, isfixed, COALESCE(initvalue, 0) FROM ${WeightsTable}")
   }
 

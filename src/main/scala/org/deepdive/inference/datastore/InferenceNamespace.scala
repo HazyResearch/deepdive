@@ -1,7 +1,7 @@
 package org.deepdive.inference
 import org.deepdive.settings._
 
-object InferenceNameSpace {
+object InferenceNamespace {
 
   def WeightsTable = "dd_graph_weights"
   def lastWeightsTable = "dd_graph_last_weights"
@@ -18,18 +18,16 @@ object InferenceNameSpace {
   def LearnedWeightsTable = "dd_inference_result_weights_mapping"
   def FeatureStatsSupportTable = "dd_feature_statistics_support"
   def FeatureStatsView = "dd_feature_statistics"
-
-  val deepdivePrefix = "dd_"
-  val weightTablePrefix = s"${deepdivePrefix}weights_"
-  val queryTablePrefix = s"${deepdivePrefix}query_"
-  val factorTablePrefix = s"${deepdivePrefix}factors_"
-  val variableFilePrefix = s"${deepdivePrefix}variables_"
   
-  def getWeightTableName(tableName: String) = s"${weightTablePrefix}${tableName}"
-  def getQueryTableName(tableName: String) = s"${queryTablePrefix}${tableName}"
-  def getFactorTableName(tableName: String) = s"${factorTablePrefix}${tableName}"
+  def getWeightTableName(tableName: String) = s"dd_weights_${tableName}"
+  def getQueryTableName(tableName: String) = s"dd_query_${tableName}"
+  def getFactorTableName(tableName: String) = s"dd_factors_${tableName}"
   def getCardinalityTableName(relation: String, column: String) = s"${relation}_${column}_cardinality"
-  def getVariableFileName(relation: String) = s"${variableFilePrefix}${relation}"
+
+  def getVariableFileName(relation: String) = s"dd_variables_${relation}"
+  def getFactorFileName(name: String) = s"dd_factors_${name}_out"
+  def getWeightFileName = s"dd_weights"
+  def getFactorMetaFileName = s"dd_factormeta"
 
   // variable data type id
   def getVariableDataTypeId(variable: VariableDataType) : Int = {
