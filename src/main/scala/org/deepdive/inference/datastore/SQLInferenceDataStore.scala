@@ -522,61 +522,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
   }
 
-
-  /** Ground the factor graph to file
-   *
-   * Using the schema and inference rules defined in application.conf, construct factor
-   * graph files.
-   * Input: variable schema, factor descriptions, holdout configuration, database settings
-   * Output: factor graph files: variables, factors, edges, weights, meta
-   *
-   * NOTE: for this to work in greenplum, do not put id as the first column!
-   * The first column in greenplum is distribution key by default. 
-   * We need to update this column, but update is not allowed on distribution key. 
-   *
-   * It is important to remember that we should not modify the user schema,
-   * e.g., by adding columns to user relations. The right way to do it is
-   * usually another. For example, an option could be creating a view of the
-   * user relation, to which we add the needed column.
-   *
-   * It is also important to think about corner cases. For example, we cannot
-   * assume any relation actually contains rows, or the rows are in some
-   * predefined special order, or anything like that so the code must take care of
-   * these cases, and there *must* be tests for the corner cases.
-   * 
-   * TODO: This method is way too long and needs to be split, also for testing
-   * purposes
-   */
-  def groundFactorGraph(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
-    calibrationSettings: CalibrationSettings, skipLearning: Boolean, weightTable: String, 
-    dbSettings: DbSettings, parallelGrounding: Boolean) {
-
-    val du = new DataLoader
-    val groundingPath = if (!parallelGrounding) Context.outputDir else dbSettings.gppath
-
-    log.info(s"Datastore type = ${Helpers.getDbType(dbSettings)}")    
-    log.info(s"Parallel grounding = ${parallelGrounding}")
-    log.debug(s"Grounding Path = ${groundingPath}")
-
-    // clean up grounding folder (for parallel grounding)
-    if (parallelGrounding) {
-      cleanParallelGroundingPath(groundingPath)
-    }
-
-    // assign variable id - sequential and unique
-    assignVariablesIds(schema)
-
-    // assign holdout
-    assignHoldout(schema, calibrationSettings)
-    
-    // generate cardinality tables
-    generateCardinalityTables(schema)
-
-    // ground variables
-    groundVariables(schema, du, dbSettings, parallelGrounding, groundingPath)
-
-    // generate factor meta data
-    groundFactorMeta(du, factorDescs, groundingPath, parallelGrounding)
+  def groundFactorsAndWeights(factorDescs: Seq[FactorDesc],
+    calibrationSettings: CalibrationSettings, du: DataLoader,
+    dbSettings: DbSettings, groundingPath: String, parallelGrounding: Boolean) {
 
     // weights table
     ds.dropAndCreateTable(WeightsTable, """id bigint, isfixed int, initvalue real, cardinality text, 
@@ -591,11 +539,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     execute(createSequenceFunction(weightidSequence));
     execute(createSequenceFunction(factoridSequence));
 
-          
-    // Create the feature stats table
-    execute(createFeatureStatsSupportTableSQL)
-
-    // ground weights and factors
     factorDescs.zipWithIndex.foreach { case (factorDesc, idx) =>
       // id columns
       val idcols = factorDesc.func.variables.map(v => 
@@ -790,6 +733,70 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // dump weights
     du.unload("dd_weights", s"${groundingPath}/dd_weights",dbSettings, parallelGrounding,
       s"SELECT id, isfixed, COALESCE(initvalue, 0) FROM ${WeightsTable}")
+  }
+
+
+  /** Ground the factor graph to file
+   *
+   * Using the schema and inference rules defined in application.conf, construct factor
+   * graph files.
+   * Input: variable schema, factor descriptions, holdout configuration, database settings
+   * Output: factor graph files: variables, factors, edges, weights, meta
+   *
+   * NOTE: for this to work in greenplum, do not put id as the first column!
+   * The first column in greenplum is distribution key by default. 
+   * We need to update this column, but update is not allowed on distribution key. 
+   *
+   * It is important to remember that we should not modify the user schema,
+   * e.g., by adding columns to user relations. The right way to do it is
+   * usually another. For example, an option could be creating a view of the
+   * user relation, to which we add the needed column.
+   *
+   * It is also important to think about corner cases. For example, we cannot
+   * assume any relation actually contains rows, or the rows are in some
+   * predefined special order, or anything like that so the code must take care of
+   * these cases, and there *must* be tests for the corner cases.
+   * 
+   * TODO: This method is way too long and needs to be split, also for testing
+   * purposes
+   */
+  def groundFactorGraph(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
+    calibrationSettings: CalibrationSettings, skipLearning: Boolean, weightTable: String, 
+    dbSettings: DbSettings, parallelGrounding: Boolean) {
+
+    val du = new DataLoader
+    val groundingPath = if (!parallelGrounding) Context.outputDir else dbSettings.gppath
+
+    log.info(s"Datastore type = ${Helpers.getDbType(dbSettings)}")    
+    log.info(s"Parallel grounding = ${parallelGrounding}")
+    log.debug(s"Grounding Path = ${groundingPath}")
+
+    // clean up grounding folder (for parallel grounding)
+    if (parallelGrounding) {
+      cleanParallelGroundingPath(groundingPath)
+    }
+
+    // assign variable id - sequential and unique
+    assignVariablesIds(schema)
+
+    // assign holdout
+    assignHoldout(schema, calibrationSettings)
+    
+    // generate cardinality tables
+    generateCardinalityTables(schema)
+
+    // ground variables
+    groundVariables(schema, du, dbSettings, parallelGrounding, groundingPath)
+
+    // generate factor meta data
+    groundFactorMeta(du, factorDescs, groundingPath, parallelGrounding)
+          
+    // Create the feature stats table
+    execute(createFeatureStatsSupportTableSQL)
+
+    // ground weights and factors
+    groundFactorsAndWeights(factorDescs, calibrationSettings, du, dbSettings, 
+      groundingPath, parallelGrounding)
 
     // create inference result table
     execute(createInferenceResultSQL)
