@@ -333,6 +333,16 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
     }
   }
 
+  // Executes a SQL query by piping it into a file without talking to JDBC.
+  def executeSqlQueryIgnoreException(query: String, failureReceiver: ActorRef, pipeOutFilePath: String = null) {
+    try {
+      Helpers.executeSqlQueriesByFile(dbSettings, query, pipeOutFilePath)
+    } catch {
+      case e: Throwable =>
+        log.error(s"Error when executing ${query}, skipping...")
+    }
+  }
+
   /**
    * This function is only used by plpy extractor when the function to execute is compiled.
    */
@@ -519,7 +529,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
     }
 
     // Try to create language; if exists do nothing; if other errors report
-    executeSqlQueryOrFail("drop language if exists plpythonu cascade; CREATE LANGUAGE plpythonu;", taskSender)
+    executeSqlQueryIgnoreException("CREATE LANGUAGE plpythonu;", taskSender)
 
     // Create Function in GP
     val udfFile = task.extractor.udf
