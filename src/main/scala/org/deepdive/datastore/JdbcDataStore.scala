@@ -95,25 +95,6 @@ trait JdbcDataStore extends Logging {
       conn.close()
     }
   }
-
-  // execute query and ignore exception
-  def executeQueryIgnoreException(sql: String) = {
-    log.debug("Executing single query: " + sql)
-    val conn = borrowConnection()
-    conn.setAutoCommit(false)
-    val stmt = conn.createStatement();
-    try {
-      // Using prepareStatement should be better: faster, prevents SQL injection
-      conn.prepareStatement(sql).execute
-      // stmt.execute(sql)
-    
-      conn.commit()
-    } catch {
-      case exception : Throwable => log.error("Ignored error while executing query")
-    } finally {
-      conn.close()
-    }
-  }
   
   def bulkInsert(outputRelation: String, data: Iterator[Map[String, Any]])(implicit session: DBSession) = {
     val columnNames = PostgresDataStore.DB.getColumnNames(outputRelation).sorted
@@ -220,6 +201,29 @@ trait JdbcDataStore extends Logging {
     }
   }
 
+  // returns if a language exists in Postgresql or Greenplum
+  def existsLanguage(language: String) : Boolean = {
+    val sql = s"""SELECT EXISTS (
+      SELECT 1
+      FROM   pg_language
+      WHERE  lanname = '${language}');"""
+    var exists = false
+    executeSqlQueryWithCallback(sql) { rs =>
+      exists = rs.getBoolean(1)
+    }
+    return exists
+  }
+
+  // returns if postgres is used
+  def checkPostgresql() : Boolean = {
+    val sql = """SELECT version() LIKE '%PostgreSQL%';"""
+    var result = false
+    executeSqlQueryWithCallback(sql) { rs =>
+      result = rs.getBoolean(1)
+    }
+    return result
+  }
+
 }
 
 
@@ -232,8 +236,17 @@ object JdbcDataStore extends JdbcDataStore with Logging {
   /* Initializes the data stores */
   def init(config: Config) : Unit = {
     val initializer = new JdbcDBsWithEnv("deepdive", config)
-      log.info("Intializing all JDBC data stores")
-      initializer.setupAll()
+    log.info("Intializing all JDBC data stores")
+    initializer.setupAll()
+    // create language for postgresql and greenplum if not exist
+    if (checkPostgresql()) {
+      if (!existsLanguage("plpgsql")) {
+        executeSqlQueries("CREATE LANGUAGE plpgsql;")
+      }
+      if (!existsLanguage("plpythonu")) {
+        executeSqlQueries("CREATE LANGUAGE plpythonu;")
+      }
+    }
   }
 
   def init() : Unit = init(ConfigFactory.load)
