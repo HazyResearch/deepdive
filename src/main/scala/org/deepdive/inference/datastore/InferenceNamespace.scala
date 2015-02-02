@@ -30,6 +30,7 @@ object InferenceNamespace {
   def getFactorFileName(name: String) = s"dd_factors_${name}_out"
   def getWeightFileName = s"dd_weights"
   def getFactorMetaFileName = s"dd_factormeta"
+  def getBackupFolderName = s"_dd_backup"
 
   // variable data type id
   def getVariableDataTypeId(variable: VariableDataType) : Int = {

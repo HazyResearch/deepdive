@@ -338,8 +338,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     val cleanFile = File.createTempFile(s"clean", ".sh")
     val writer = new PrintWriter(cleanFile)
     // cleaning up remaining tmp folder for tobinary
-    writer.println(s"rm -rf ${groundingPath}/dd_tmp")
-    writer.println(s"rm -f ${groundingPath}/dd_*")
+    writer.println(s"mkdir -p ${InferenceNamespace.getBackupFolderName}")
+    writer.println(s"mv ${groundingPath}/dd_* ${InferenceNamespace.getBackupFolderName}")
     writer.close()
     log.info("Cleaning up grounding folder...")
     Helpers.executeCmd(cleanFile.getAbsolutePath())
