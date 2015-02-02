@@ -10,9 +10,13 @@
 
 namespace dd{
 
+    /**
+     * Command line argument parser
+     */
   class CmdParser{
   public:
 
+    // all the arguments are defined in cmd_parser.cpp
     std::string app_name;
 
     TCLAP::ValueArg<std::string> * fg_file;
@@ -33,10 +37,17 @@ namespace dd{
     TCLAP::ValueArg<double> * stepsize2;
     TCLAP::ValueArg<double> * decay;
 
+    TCLAP::ValueArg<int> * n_datacopy;
+    TCLAP::ValueArg<double> * reg_param;
+    TCLAP::SwitchArg * quiet; 
+
     TCLAP::CmdLine * cmd;
 
     CmdParser(std::string _app_name);
 
+    /**
+     * parses the given command line arguments
+     */
     void parse(int argc, char** argv);
 
   };

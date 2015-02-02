@@ -5,51 +5,21 @@
 #include "dstruct/factor_graph/variable.h"
 #include "dstruct/factor_graph/factor.h"
 #include "dstruct/factor_graph/weight.h"
+#include "dstruct/factor_graph/inference_result.h"
 
 #include <xmmintrin.h>
 
 #ifndef _FACTOR_GRAPH_H_
 #define _FACTOR_GRAPH_H_
 
-#define DTYPE_BOOLEAN     0x00
-#define DTYPE_REAL        0x01
-#define DTYPE_MULTINOMIAL 0x04
-
 namespace dd{
-
-  class InferenceResult{
-  public:
-
-    long nvars;
-    long nweights;
-    long ntallies;
-
-    int * multinomial_tallies; // this might be slow...
-
-    double * const agg_means;
-    double * const agg_nsamples; 
-    VariableValue * const assignments_free;
-    VariableValue * const assignments_evid;
-    double * const weight_values;
-    bool * const weights_isfixed;
-
-    InferenceResult(long _nvars, long _nweights);
-
-    void init(Variable * variables, Weight * const weights);
-  };
-
+  /**
+   * Class for a factor graph
+   */
   class FactorGraph {
   public:
 
-    Variable * const variables;
-    Factor * const factors;
-    Weight * const weights;
-
-    CompactFactor * const factors_dups;
-    int * const factors_dups_weightids;
-    long * const factor_ids;
-    VariableInFactor * const vifs;
-
+    // countings for components of factor graph
     long n_var;
     long n_factor;
     long n_weight;
@@ -61,30 +31,71 @@ namespace dd{
     long c_nweight;
     long c_edge;
 
+    // number of evidence variables, query variables
     long n_evid;
     long n_query;
 
-    bool loading_finalized;
-    bool safety_check_passed;
-
-    InferenceResult * const infrs ;
-
+    // learning weight update stepsize (learning rate)
     double stepsize;
 
-    int tmp;
+    // variables, factors, weights
+    Variable * const variables;
+    Factor * const factors;
+    Weight * const weights;
 
+    // For each edge, we store the factor, weight id, factor id, and the variable, 
+    // in the same index of seperate arrays. The edges are ordered so that the
+    // edges for a variable is in a continuous region (sequentially). 
+    // This allows us to access factors given variables, and access variables
+    // given factors faster. 
+    CompactFactor * const compact_factors;
+    int * const compact_factors_weightids;
+    long * const factor_ids;
+    VariableInFactor * const vifs;
+
+    // pointer to inference result
+    InferenceResult * const infrs ;
+
+    // whether the factor graph loading has been finalized
+    // see sort_by_id() below
+    bool sorted;
+    // whether safety check has passed
+    // see safety_check() below
+    bool safety_check_passed;
+
+    /**
+     * Constructs a new factor graph with given number number of variables,
+     * factors, weights, and edges
+     */
     FactorGraph(long _n_var, long _n_factor, long _n_weight, long _n_edge);
 
+    /**
+     * Copys a factor graph from the given one
+     */
     void copy_from(const FactorGraph * const p_other_fg);
 
     /*
-     * For multinomial weights, given a factor and variable assignment,
-     * return corresponding weight id
+     * Given a factor and variable assignment, returns corresponding multinomial 
+     * factor weight id, using proposal value for the variable with id vid.
+     * For multinomial weights, for each possible assignment, there is a corresponding 
+     * indicator function and weight. 
      */
-    long get_weightid(const VariableValue *assignments, const CompactFactor& fs, long vid, long proposal);
+    long get_multinomial_weight_id(const VariableValue *assignments, const CompactFactor& fs, long vid, long proposal);
 
+    /**
+     * Given a variable, updates the weights associated with the factors that 
+     * connect to the variable. 
+     * Used in learning phase, after sampling one variable, 
+     * update corresponding weights (stochastic gradient descent).
+     */
     void update_weight(const Variable & variable);
 
+    /**
+     * Returns potential of the given factor
+     *
+     * does_change_evid = true, use the free assignment. Otherwise, use the
+     * evid assignement. 
+     */
     template<bool does_change_evid>
     inline double potential(const CompactFactor & factor){
       if(does_change_evid == true){
@@ -93,127 +104,115 @@ namespace dd{
         return factor.potential(vifs, infrs->assignments_evid, -1, -1);
       }
     }
-  
+    
     template<bool does_change_evid>
     inline void update(Variable & variable, const double & new_value);
 
+    /**
+     * Returns log-linear weighted potential of the all factors for the given 
+     * variable using the propsal value.
+     *
+     * does_change_evid = true, use the free assignment. Otherwise, use the
+     * evid assignement. 
+     */
     template<bool does_change_evid>
     inline double potential(const Variable & variable, const double & proposal){
+      // potential
       double pot = 0.0;  
       double tmp;
+      // weight id
       long wid = 0;
-      CompactFactor * const fs = &factors_dups[variable.n_start_i_factors];
-      const int * const ws = &factors_dups_weightids[variable.n_start_i_factors];   
+      // pointer to the first factor the given variable connects to
+      // the factors that the given variable connects to are stored in a continuous
+      // region of the array
+      CompactFactor * const fs = &compact_factors[variable.n_start_i_factors];
+      // the weights, corresponding to the factor with the same index
+      const int * const ws = &compact_factors_weightids[variable.n_start_i_factors];   
+      
+      // boolean type
       if (variable.domain_type == DTYPE_BOOLEAN) {   
+        // for all factors that the variable connects to, calculate the 
+        // weighted potential
         for(long i=0;i<variable.n_factors;i++){
-          if(fs[i].func_id != 20){
-            if(does_change_evid == true){
-              tmp = fs[i].potential(
-                  vifs, infrs->assignments_free, variable.id, proposal);
-            }else{
-              tmp = fs[i].potential(
-                  vifs, infrs->assignments_evid, variable.id, proposal);
-            }
-            pot += infrs->weight_values[ws[i]] * tmp;
+          if(does_change_evid == true){
+            tmp = fs[i].potential(
+                vifs, infrs->assignments_free, variable.id, proposal);
           }else{
-            tmp = 0.0;
-            const int & dimension = vifs[fs[i].n_start_i_vif].dimension;
-            //std::cout << "~~~~~" << dimension << std::endl;
-            const long & cvid = vifs[fs[i].n_start_i_vif].vid;
-            const long & wid = ws[i];
-
-            if(proposal != 0){
-              for(int j=0;j<dimension;j++){
-                if(does_change_evid == true){
-                  tmp += infrs->weight_values[wid + j] * 
-                    proposal * infrs->assignments_free[cvid+j];
-                  //tmp += infrs->weight_values[ws[i] + j] * fs[i].potential(
-                  //    vifs, infrs->assignments_free, variable.id, proposal);
-                }else{
-                  tmp += infrs->weight_values[wid + j] * 
-                    proposal * infrs->assignments_evid[cvid+j];
-
-                  //tmp += infrs->weight_values[ws[i] + j] * fs[i].potential(
-                  //    vifs, infrs->assignments_evid, variable.id, proposal);
-                }
-              }
-            }
-
-            pot += tmp;
-
+            tmp = fs[i].potential(
+                vifs, infrs->assignments_evid, variable.id, proposal);
           }
+          pot += infrs->weight_values[ws[i]] * tmp;
         }
-      } else if (variable.domain_type == DTYPE_MULTINOMIAL) {
+      } else if (variable.domain_type == DTYPE_MULTINOMIAL) { // multinomial
         for (long i = 0; i < variable.n_factors; i++) {
-          if(fs[i].func_id != 20){
-            if(does_change_evid == true) {
-              tmp = fs[i].potential(vifs, infrs->assignments_free, variable.id, proposal);
-              wid = get_weightid(infrs->assignments_free, fs[i], variable.id, proposal);
-            } else {
-              tmp = fs[i].potential(vifs, infrs->assignments_evid, variable.id, proposal);
-              wid = get_weightid(infrs->assignments_evid, fs[i], variable.id, proposal);
-              // for (int j = 0; j < n_var; j++) {
-              //   printf("%f ", infrs->assignments_evid[j]);
-              // }
-              // printf("proposal = %d, weight id = %d\n", proposal, weight);
-            }
-            pot += infrs->weight_values[wid] * tmp;
-          }else{
-
-            tmp = 0.0;
-            const int & dimension = vifs[fs[i].n_start_i_vif].dimension;
-            //std::cout << "~~~~~" << dimension << std::endl;
-            const long & cvid = vifs[fs[i].n_start_i_vif].vid;
-            const long & wid = ws[i] + dimension * proposal;
-
-            for(int j=0;j<dimension;j++){
-              if(does_change_evid == true){
-                tmp += infrs->weight_values[wid + j] * 
-                  infrs->assignments_free[cvid+j];
-                //tmp += infrs->weight_values[ws[i] + j] * fs[i].potential(
-                //    vifs, infrs->assignments_free, variable.id, proposal);
-              }else{
-                tmp += infrs->weight_values[wid + j] * 
-                  infrs->assignments_evid[cvid+j];
-
-                //tmp += infrs->weight_values[ws[i] + j] * fs[i].potential(
-                //    vifs, infrs->assignments_evid, variable.id, proposal);
-              }
-            }
-
-            pot += tmp;
-
+          if(does_change_evid == true) {
+            tmp = fs[i].potential(vifs, infrs->assignments_free, variable.id, proposal);
+            // get weight id associated with this factor and variable assignment
+            wid = get_multinomial_weight_id(infrs->assignments_free, fs[i], variable.id, proposal);
+          } else {
+            tmp = fs[i].potential(vifs, infrs->assignments_evid, variable.id, proposal);
+            wid = get_multinomial_weight_id(infrs->assignments_evid, fs[i], variable.id, proposal);
           }
+          pot += infrs->weight_values[wid] * tmp;
         }
-      }
+      } // end if for variable type
       return pot;
     }
 
-    void load(const CmdParser & cmd);
+    /**
+     * Loads the factor graph using arguments specified from command line
+     */
+    void load(const CmdParser & cmd, const bool is_quiet);
 
-    void finalize_loading();
+    /**
+     * Sorts the variables, factors, and weights in ascending id order.
+     * This is important as later these components are stored in array, and
+     * sorting them will faciliate accessing them by id.
+     */
+    void sort_by_id();
 
+    /**
+     * Construct the edge-based store of factor graph in compact_factors, etc.
+     * Refer to the class member comments for more detail.
+     */
+    void organize_graph_by_edge();
+
+    /**
+     * Checks whether the edge-based store is correct
+     */
     void safety_check();
 
+    /**
+     * Returns wether the factor graph is usable.
+     * A factor graph is usable when gone through safety_check and sort_by_id()
+     */
     bool is_usable();
+
   };
 
+  /**
+   * Updates the free variable assignment for the given variable using new_value
+   */
   template<>
   inline void FactorGraph::update<true>(Variable & variable, const double & new_value){
     infrs->assignments_free[variable.id] = new_value;
   }
 
+  /**
+   * Updates the evid assignments for the given variable useing new_value
+   */
   template<>
   inline void FactorGraph::update<false>(Variable & variable, const double & new_value){
     infrs->assignments_evid[variable.id] = new_value;
     infrs->agg_means[variable.id] += new_value;
     infrs->agg_nsamples[variable.id]  ++ ;
     if(variable.domain_type == DTYPE_MULTINOMIAL){
-      infrs->multinomial_tallies[variable.n_start_i_tally + (int)(new_value)] ++;
+      infrs->multinomial_tallies[variable.n_start_i_tally + (int)(new_value) - variable.lower_bound] ++;
     }
   }
 
-
+  // sort variable in factor by their position
+  bool compare_position(const VariableInFactor& x, const VariableInFactor& y);
 
 }
 

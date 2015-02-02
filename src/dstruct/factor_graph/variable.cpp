@@ -18,9 +18,6 @@ namespace dd{
       this->assignment_free = _current_value;
 
       this->n_factors = _n_factors;
-
-      this->n_sample = 0;
-      this->agg_mean = 0.0;
     }
 
     bool VariableInFactor::satisfiedUsing(int value) const{
