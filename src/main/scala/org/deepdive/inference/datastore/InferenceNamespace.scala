@@ -19,11 +19,13 @@ object InferenceNamespace {
   def FeatureStatsSupportTable = "dd_feature_statistics_support"
   def FeatureStatsView = "dd_feature_statistics"
   
+  // internal tables
   def getWeightTableName(tableName: String) = s"dd_weights_${tableName}"
   def getQueryTableName(tableName: String) = s"dd_query_${tableName}"
   def getFactorTableName(tableName: String) = s"dd_factors_${tableName}"
   def getCardinalityTableName(relation: String, column: String) = s"${relation}_${column}_cardinality"
 
+  // files
   def getVariableFileName(relation: String) = s"dd_variables_${relation}"
   def getFactorFileName(name: String) = s"dd_factors_${name}_out"
   def getWeightFileName = s"dd_weights"

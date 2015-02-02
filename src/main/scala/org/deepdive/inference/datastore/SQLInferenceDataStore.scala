@@ -1,3 +1,16 @@
+/**
+ * Ground the factor graph to file
+ *
+ * Using the schema and inference rules defined in application.conf, construct factor
+ * graph files.
+ * Input: variable tables, factor descriptions, holdout configuration, (feature tables)
+ * Output: factor graph files: variables, factors, edges, weights, meta that the
+ * sampler can read. Refer to deepdive.stanford.edu for more details of the output format.
+ * 
+ * The workflow is defined in groundFactorGraph. Table and file names are defined in
+ * InferenceNamespace
+ *
+ */
 package org.deepdive.inference
 
 import java.io.{File, PrintWriter}
@@ -394,7 +407,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         case BooleanType => "('00001')"
         case MultinomialType(x) => (0 to x-1).map (n => s"""('${"%05d".format(n)}')""").mkString(", ")
       }
-      val cardinalityTableName = s"${relation}_${column}_cardinality"
+      val cardinalityTableName = InferenceNamespace.getCardinalityTableName(relation, column)
       ds.dropAndCreateTable(cardinalityTableName, "cardinality text")
       execute(s"""
         INSERT INTO ${cardinalityTableName} VALUES ${cardinalityValues};
@@ -408,7 +421,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         schema.foreach { case(variable, dataType) =>
       val Array(relation, column) = variable.split('.')
       
-      // TODO make an enum class for this
       val variableDataType = InferenceNamespace.getVariableDataTypeId(dataType)
 
       val cardinality = dataType match {
@@ -645,7 +657,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           execute(s"""
             DROP TABLE IF EXISTS ${cardinalityTableName} CASCADE;
             CREATE TABLE  ${cardinalityTableName} AS
-            SELECT * FROM ${v.headRelation}_${v.field}_cardinality;
+            SELECT * FROM ${InferenceNamespace.getCardinalityTableName(v.headRelation, v.field)};
             """)
         }
 
