@@ -332,8 +332,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   // We may want to directly execute the commands:
   // Helpers.executeCmd(s"rm -rf ${groundingPath}/dd_tmp")
   // Helpers.executeCmd(s"rm -f ${groundingPath}/dd_*")
-  // XXX: This function is a little risky because groundingPath may be the empty
-  // string. Shall we avoid letting the user shoot her own foot?
   def cleanParallelGroundingPath(groundingPath: String) {
     val cleanFile = File.createTempFile(s"clean", ".sh")
     val writer = new PrintWriter(cleanFile)

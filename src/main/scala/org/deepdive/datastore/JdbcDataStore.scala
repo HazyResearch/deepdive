@@ -214,14 +214,13 @@ trait JdbcDataStore extends Logging {
     return exists
   }
 
-  // returns if postgres is used
-  def checkPostgresql() : Boolean = {
-    val sql = """SELECT version() LIKE '%PostgreSQL%';"""
-    var result = false
-    executeSqlQueryWithCallback(sql) { rs =>
-      result = rs.getBoolean(1)
+  // check whether greenplum is used
+  def isUsingGreenplum() : Boolean = {
+    var usingGreenplum = false
+    executeSqlQueryWithCallback("""SELECT version() LIKE '%Greenplum%';""") { rs => 
+      usingGreenplum = rs.getBoolean(1) 
     }
-    return result
+    return usingGreenplum
   }
 
 }
@@ -238,8 +237,8 @@ object JdbcDataStore extends JdbcDataStore with Logging {
     val initializer = new JdbcDBsWithEnv("deepdive", config)
     log.info("Intializing all JDBC data stores")
     initializer.setupAll()
-    // create language for postgresql and greenplum if not exist
-    if (checkPostgresql()) {
+    // create language for and greenplum if not exist
+    if (isUsingGreenplum()) {
       if (!existsLanguage("plpgsql")) {
         executeSqlQueries("CREATE LANGUAGE plpgsql;")
       }

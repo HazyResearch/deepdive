@@ -104,18 +104,9 @@ trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent
       // do nothing
     }
 
-    // check whether greenplum is used
-    def isUsingGreenplum() : Boolean = {
-      var usingGreenplum = false
-      ds.executeSqlQueryWithCallback("""SELECT version() LIKE '%Greenplum%';""") { rs => 
-        usingGreenplum = rs.getBoolean(1) 
-      }
-      return usingGreenplum
-    }
-
     // assign senquential ids to table's id column
     def assignIds(table: String, startId: Long, sequence: String) : Long = {
-      if (isUsingGreenplum()) {
+      if (ds.isUsingGreenplum()) {
         executeQuery(s"SELECT fast_seqassign('${table.toLowerCase()}', ${startId});");
       } else {
         execute(s"UPDATE ${table} SET id = ${nextVal(sequence)};")
@@ -129,7 +120,7 @@ trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent
     
     // create fast sequence assign function for greenplum
     def createAssignIdFunctionGreenplum() : Unit = {
-      if (!isUsingGreenplum()) return
+      if (!ds.isUsingGreenplum()) return
 
       val sql = """
       CREATE OR REPLACE FUNCTION clear_count_1(sid int) RETURNS int AS 
