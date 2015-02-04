@@ -32,49 +32,7 @@ trait MemoryInferenceDataStoreComponent extends InferenceDataStoreComponent{
 
     }
 
-    def getLocalVariableIds(rowMap: Map[String, Any], factorVar: FactorFunctionVariable) : Array[Long] = {
-      rowMap(s"${factorVar.relation}.id") match {
-        case x : Array[Long] => x
-        case x : Long => Array(x)
-        case _ => Array()
-      }
-    }
-
-    def flush() = {
-      log.info("flushing data")
-    }
-
     def BatchSize = None
-
-    def addFactor(factor: Factor) = {
-      factors += Tuple2(factor.id, factor)
-    }
-    
-    def addVariable(variable: Variable) = {
-      variables += Tuple2(variable.id, variable)
-    }
-    
-    def addWeight(weight: Weight) = {
-      weights += Tuple2(weight.id, weight)
-    }
-
-    def dumpFactorGraph(serializer: Serializer, schema: Map[String, _ <: VariableDataType],
-      factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String],
-      weightsPath: String, variablesPath: String, factorsPath: String, edgesPath: String,
-      parallelGrounding: Boolean) = {
-      // Weights
-      weights.values.foreach { w => serializer.addWeight(w.id, w.isFixed, w.value) }
-      // variables.values.foreach { v =>  serializer.addVariable(v.id, v.initialValue.isDefined, 
-      //   v.initialValue, v.dataType.toString, 0, v.dataType.cardinality) }
-      variables.values.foreach { v =>  serializer.addVariable(v.id, v.isEvidence, 
-        v.initialValue, v.dataType.toString, 0, v.dataType.cardinality) }
-      factors.values.foreach { f => serializer.addFactor(f.id, f.weightId, f.factorFunction, 0) }
-      factors.values.flatMap(_.variables).foreach { edge =>
-        // serializer.addEdge(edge.variableId, edge.factorId, edge.position, edge.positive, None)
-        serializer.addEdge(edge.variableId, edge.factorId, edge.position, edge.positive, 0)
-      }
-      serializer.close()
-    }
 
     def writebackInferenceResult(variableSchema: Map[String, _ <: VariableDataType], 
       //variableOutputFile: String, weightsOutputFile: String, parallelGrounding: Boolean) : Unit = {
@@ -101,13 +59,6 @@ trait MemoryInferenceDataStoreComponent extends InferenceDataStoreComponent{
         
         (bucket, BucketData(numVariables, numTrue, numFalse))
       }.toMap
-    }
-
-    private def writeCSV(data: Iterator[CSVFormattable], file: File, sep : Char = '\t') {
-      val fw = new FileWriter(file)
-      val csv = new CSVWriter(fw, sep)
-      data.foreach (obj => csv.writeNext(obj.toCSVRow))
-      csv.close()
     }
 
   }

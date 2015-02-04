@@ -23,14 +23,6 @@ trait InferenceDataStore {
         skipLearning: Boolean, weightTable: String, dbSettings: DbSettings = null, parallelGrounding: Boolean) : Unit 
 
     /* 
-     * Dumps the factor graphs with the given serializier
-     */
-    def dumpFactorGraph(serializer: Serializer, schema: Map[String, _ <: VariableDataType],
-        factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String],
-        weightsPath: String, variablesPath: String, factorsPath: String, edgesPath: String,
-        parallelGrounding: Boolean) : Unit
-
-    /* 
      * Writes inference results produced by the sampler back to the data store.
      * The given file is a space-separated file with three columns:
      * VariableID, LastSampleValue, ExpectedValue

@@ -825,14 +825,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     convertGroundingFormat(groundingPath)
   }
 
-
-  def dumpFactorGraph(serializer: Serializer, schema: Map[String, _ <: VariableDataType],
-    factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String],
-    weightsPath: String, variablesPath: String, factorsPath: String, edgesPath: String, 
-    parallelGrounding: Boolean) : Unit = {
-
-  }
-
   /**
    * weightsFile: binary format. Assume "weightsFile" file exists.
    */
