@@ -26,6 +26,11 @@ test:
 	@echo "\n=== Testing DeepDive modules... ==="
 	./test.sh
 
+.PHONY: coverage
+coverage:
+	@echo "\n=== Computing Unit Test Coverage... ==="
+	./test.sh coverage
+
 .PHONY: all
 all: build test
 
