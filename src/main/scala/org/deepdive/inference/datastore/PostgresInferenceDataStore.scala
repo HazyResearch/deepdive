@@ -6,6 +6,7 @@ import java.io.{ByteArrayInputStream, File, FileOutputStream, FileWriter,
   StringWriter, Reader, FileReader, InputStream, InputStreamReader}
 import org.deepdive.calibration._
 import org.deepdive.datastore.PostgresDataStore
+import org.deepdive.inference._
 import org.deepdive.Logging
 import org.deepdive.settings._
 import org.deepdive.helpers.Helpers
