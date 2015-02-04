@@ -169,23 +169,6 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
         ORDER BY b1.bucket ASC;
       """
 
-    override def WRONGcreateCalibrationViewRealNumberSQL(name: String, bucketedView: String, columnName: String) = s"""
-      ${createSubQueryForCalibrationViewMysql(name, bucketedView)}
-    
-      CREATE OR REPLACE VIEW ${name}_sub2 AS SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
-        WHERE ${columnName}=0.0 GROUP BY bucket;
-        
-      CREATE OR REPLACE VIEW ${name}_sub3 AS SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView} 
-        WHERE ${columnName}=0.0 GROUP BY bucket;
-    
-      CREATE OR REPLACE VIEW ${name} AS
-      SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
-      ${name}_sub1 b1
-      LEFT JOIN ${name}_sub2 b2 ON b1.bucket = b2.bucket
-      LEFT JOIN ${name}_sub3 b3 ON b1.bucket = b3.bucket 
-      ORDER BY b1.bucket ASC;
-      """
-
     override def createCalibrationViewMultinomialSQL(name: String, bucketedView: String, columnName: String) = s"""
       ${createSubQueryForCalibrationViewMysql(name, bucketedView)}
 
@@ -282,6 +265,21 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
     override def incrementId(table: String, IdSequence: String) {
       execute(dropIndexIfExistsMysql(s"${table}_id_idx", table))
       execute(s"UPDATE ${table} SET id = ${nextVal(IdSequence)};")
+    }
+
+    // this function is specific for greenplum
+    def createAssignIdFunctionGreenplum() = {
+      // nothing
+    }
+
+    // assign senquential ids to table's id column
+    def assignIds(table: String, startId: Long, sequence: String) : Long = {
+      incrementId(table, sequence)
+      var count : Long = 0
+      issueQuery(s"""SELECT COUNT(*) FROM ${table};""") { rs =>
+        count = rs.getLong(1)
+      }
+      return count
     }
 
   }
