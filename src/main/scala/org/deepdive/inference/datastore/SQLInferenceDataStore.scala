@@ -329,14 +329,13 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         
   // clean up grounding folder (for parallel grounding)
   // TODO: we may not need to actually create a script for this and execute it.
-  // We may want to directly execute the commands:
-  // Helpers.executeCmd(s"rm -rf ${groundingPath}/dd_tmp")
-  // Helpers.executeCmd(s"rm -f ${groundingPath}/dd_*")
   def cleanParallelGroundingPath(groundingPath: String) {
     val cleanFile = File.createTempFile(s"clean", ".sh")
     val writer = new PrintWriter(cleanFile)
     // cleaning up remaining tmp folder for tobinary
     writer.println(s"mkdir -p ${InferenceNamespace.getBackupFolderName}")
+    // create a file with a bizzare name that can prevent mv error
+    writer.println(s"touch dd_dd_dd_")
     writer.println(s"mv ${groundingPath}/dd_* ${InferenceNamespace.getBackupFolderName}")
     writer.close()
     log.info("Cleaning up grounding folder...")
