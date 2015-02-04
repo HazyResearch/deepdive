@@ -1,6 +1,6 @@
 package org.deepdive.test.unit
 
-import org.deepdive.extraction.datastore._
+import org.deepdive.datastore._
 import org.scalatest._
 import play.api.libs.json._
 

@@ -6,7 +6,7 @@ import java.util.Collections
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.ConcurrentHashMap
 import org.deepdive.Context
-import org.deepdive.extraction.datastore._
+import org.deepdive.datastore._
 import org.deepdive.settings._
 import scala.collection.JavaConversions._
 import scala.concurrent.duration._

@@ -3,7 +3,6 @@ package org.deepdive.test.unit
 import anorm._
 import org.deepdive.datastore._
 import org.deepdive.extraction._
-import org.deepdive.extraction.datastore._
 import org.deepdive.test._
 import org.scalatest._
 import scala.io.Source

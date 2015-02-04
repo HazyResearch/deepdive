@@ -1,6 +1,6 @@
 package org.deepdive.datastore
 
-import org.deepdive.extraction.datastore._
+import org.deepdive.datastore._
 import org.deepdive.inference._
 import org.deepdive.calibration._
 

@@ -12,7 +12,6 @@ import akka.actor._
 import akka.testkit._
 import org.deepdive.datastore._
 import org.deepdive.extraction._
-import org.deepdive.extraction.datastore._
 import org.deepdive.extraction.ProcessExecutor._
 import org.deepdive.settings._
 import org.deepdive.helpers.Helpers

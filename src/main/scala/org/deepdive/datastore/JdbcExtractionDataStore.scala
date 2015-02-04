@@ -1,6 +1,5 @@
-package org.deepdive.extraction.datastore
+package org.deepdive.datastore
 
-import org.deepdive.datastore.JdbcDataStore
 import org.deepdive.Logging
 import play.api.libs.json._
 import scalikejdbc._

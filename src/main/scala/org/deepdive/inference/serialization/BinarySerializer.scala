@@ -14,8 +14,6 @@ class BinarySerializer(weightsOutput: OutputStream, variablesOutput: OutputStrea
   val edgeStream = new DataOutputStream(edgesOutput)
   val metaStream = new PrintStream(metaDataOutput)
 
-
-
   def addWeight(weightId: Long, isFixed: Boolean, initialValue: Double) : Unit = {
     weightStream.writeLong(weightId)
     weightStream.writeBoolean(isFixed)

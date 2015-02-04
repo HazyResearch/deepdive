@@ -7,7 +7,7 @@ import akka.util.Timeout
 import org.deepdive.{Context, TaskManager}
 import org.deepdive.settings._
 import org.deepdive.extraction._
-import org.deepdive.extraction.datastore._
+import org.deepdive.datastore._
 import scala.collection.mutable.{PriorityQueue, ArrayBuffer, Map}
 import scala.concurrent.duration._
 import scala.language.postfixOps

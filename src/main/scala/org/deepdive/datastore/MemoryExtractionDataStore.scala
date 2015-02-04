@@ -1,4 +1,4 @@
-package org.deepdive.extraction.datastore
+package org.deepdive.datastore
 
 import org.deepdive.Logging
 import scala.collection.mutable.{Map => MMap, ArrayBuffer}

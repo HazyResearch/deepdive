@@ -1,4 +1,4 @@
-package org.deepdive.extraction.datastore
+package org.deepdive.datastore
 
 import au.com.bytecode.opencsv.CSVWriter
 import java.io.{ File, StringWriter, FileWriter, PrintWriter, BufferedWriter, Writer }

@@ -4,7 +4,7 @@ import akka.actor._
 import akka.testkit._
 import org.deepdive.settings.{Extractor, DbSettings}
 import org.deepdive.extraction._
-import org.deepdive.extraction.datastore._
+import org.deepdive.datastore._
 import org.deepdive.helpers.Helpers
 import org.deepdive.test.helpers._
 import org.scalatest._

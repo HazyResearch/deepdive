@@ -1,6 +1,5 @@
-package org.deepdive.extraction.datastore
+package org.deepdive.datastore
 
-import org.deepdive.datastore.DataStoreUtils
 import play.api.libs.json._
 
 object ExtractionDataStore {

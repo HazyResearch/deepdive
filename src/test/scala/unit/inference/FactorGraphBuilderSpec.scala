@@ -4,7 +4,7 @@ import akka.actor._
 import org.scalatest._
 import org.deepdive.settings._
 import org.deepdive.inference._
-import org.deepdive.extraction.datastore._
+import org.deepdive.datastore._
 import akka.testkit._
 
 class MemoryFactorGraphBuilder(val variableSchema: Map[String, String]) 

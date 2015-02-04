@@ -8,8 +8,8 @@ import org.deepdive.settings._
 import org.deepdive.Context
 import org.deepdive.extraction._
 import org.deepdive.extraction.ExtractorRunner._
-import org.deepdive.extraction.datastore._
-import org.deepdive.extraction.datastore.ExtractionDataStore._
+import org.deepdive.datastore.ExtractionDataStore._
+import org.deepdive.datastore.FileDataUtils
 import org.deepdive.Logging
 import org.deepdive.datastore.DataLoader
 import scala.util.{Try, Success, Failure}
@@ -242,7 +242,6 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
   /* Queries the data store and gets all the data */
   private def sendData(task: ExtractionTask, workers: Router, taskSender: ActorRef) {
     log.info(s"Getting data from the data store and sending it to the workers. query='${task.extractor.inputQuery}'")
-
     // Figure out where to get the input from
     val extractorInput = task.extractor.inputQuery match {
       case CSVInputQuery(filename, seperator) =>
