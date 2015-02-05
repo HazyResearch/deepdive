@@ -1,0 +1,69 @@
+package deepdive;
+
+option java_package = "org.deepdive.serialization";
+option java_outer_classname = "FactorGraphProtos";
+
+message Weight {
+  required uint64 id = 1;
+  optional double initialValue = 2 [default = 0.0];
+  required bool isFixed = 3;
+  optional string description = 4;  
+}
+
+message Variable {
+    
+  enum VariableDataType {
+    BOOLEAN = 0;
+    MULTINOMIAL = 1;
+    REAL = 2;
+  }
+
+  required uint64 id = 1;
+  optional double initialValue = 2;
+  required VariableDataType dataType = 3;
+  optional bool isEvidence = 4;
+  optional uint64 cardinality = 5;
+  optional uint64 edgeCount = 6;
+
+}
+
+message Factor {
+  
+  enum FactorFunctionType {
+    IMPLY = 0;
+    OR = 1;
+    AND = 2;
+    EQUAL = 3;
+    ISTRUE = 4;
+  }
+
+  required uint64 id = 1;
+  required uint64 weightId = 2;
+  required FactorFunctionType factorFunction = 3;
+  optional uint64 edgeCount = 4;
+
+}
+
+message GraphEdge {
+  
+  required uint64 variableId = 1;
+  required uint64 factorId = 2;
+  required uint64 position = 3;
+  optional bool isPositive = 4 [default = true];
+  optional uint64 equalPredicate = 5;
+
+}
+
+message FactorGraph {
+  
+  required uint64 numWeights = 1;
+  required uint64 numVariables = 2;
+  required uint64 numFactors = 3;
+  required uint64 numEdges = 4;
+  
+  required string weightsFile = 5;
+  required string variablesFile = 6;
+  required string factorsFile = 7;
+  required string edgesFile = 8;
+
+}

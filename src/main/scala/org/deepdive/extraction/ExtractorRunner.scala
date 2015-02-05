@@ -518,6 +518,9 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
       failTask(s"do not support ${task.extractor.style} on ${dbtype}.", taskSender)
     }
 
+    // Try to create language; if exists do nothing; if other errors report
+    executeSqlQueryOrFail("drop language if exists plpythonu cascade; CREATE LANGUAGE plpythonu;", taskSender)
+
     // Create Function in GP
     val udfFile = task.extractor.udf
     val deepDiveDir = System.getProperty("user.dir")
