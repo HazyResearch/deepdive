@@ -90,7 +90,7 @@ Each dataset is versioned with date, and with the MD5 checksum in the file name.
     </tr>
     <tr>
       <th> # Words </th>  <td> 2.7 Billion </td>
-      <th> # Sentences </th>  <td> 0.11 Million </td>
+      <th> # Sentences </th>  <td> 110 Million </td>
     </tr>
     <tr>
       <th> Downloads </th> <td colspan="3"> 
