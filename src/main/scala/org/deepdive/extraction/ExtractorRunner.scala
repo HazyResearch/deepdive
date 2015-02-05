@@ -428,7 +428,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
 
     try {
       loader.unload(gpFileName, psqlFilePath, dbSettings, parallelLoading, 
-        s"${inputQuery}")
+        s"${inputQuery}", "")
     } catch {
       case exception: Throwable =>
         log.error(exception.toString)
