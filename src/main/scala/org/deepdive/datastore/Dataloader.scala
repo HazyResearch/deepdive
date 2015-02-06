@@ -26,8 +26,10 @@ class DataLoader extends JdbcDataStore with Logging {
    * @param dbSettings: database settings (DD's class)
    * @param usingGreenplum: whether to use greenplum's gpunload
    * @param query: the query to be dumped
+   * @param folder: for greenplum, the relative path to gpfdist
    */
-  def unload(filename: String, filepath: String, dbSettings: DbSettings, usingGreenplum: Boolean, query: String) : Unit = {
+  def unload(filename: String, filepath: String, dbSettings: DbSettings, 
+    usingGreenplum: Boolean, query: String, folder: String) : Unit = {
     
     if (usingGreenplum) {
       val hostname = dbSettings.gphost
@@ -51,7 +53,7 @@ class DataLoader extends JdbcDataStore with Logging {
       executeSqlQueries(s"""
         DROP EXTERNAL TABLE IF EXISTS _${filename} CASCADE;
         CREATE WRITABLE EXTERNAL TABLE _${filename} (LIKE _${filename}_tmp)
-        LOCATION ('gpfdist://${hostname}:${port}/${filename}')
+        LOCATION ('gpfdist://${hostname}:${port}/${folder}/${filename}')
         FORMAT 'TEXT';
         """)
 

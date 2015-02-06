@@ -208,7 +208,7 @@ class ChunkingApp extends FunSpec with Logging{
           dbSettings,  //  
           false,       // usingGreenPlum 
           """select word, pos, true_tag, max(tag) from result 
-         group by word_id, word, pos, true_tag order by word_id""")
+         group by word_id, word, pos, true_tag order by word_id""", "")
     } 
 
 

@@ -122,18 +122,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def assignIds(table: String, startId: Long, sequence: String) : Long
 
   // end: Datastore-specific methods
-  
-  // TODO change integers to global constants / enums
-  private def getFactorFunctionTypeid(functionName: String) = {
-    functionName match {
-      case "ImplyFactorFunction" => 0
-      case "OrFactorFunction" => 1
-      case "AndFactorFunction" => 2
-      case "EqualFactorFunction" => 3
-      case "IsTrueFactorFunction" =>  4
-      case "MultinomialFactorFunction" => 5
-    }
-  }
 
   /** 
    * execute one or multiple SQL queries
@@ -294,6 +282,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def init() : Unit = {
   }
 
+  // given a path, get file/folder name
+  // e.g., /some/path/to/folder -> folder
+  def getFileNameFromPath(path: String) : String = {
+    return new java.io.File(path).getName()
+  }
+
   /**
    * Returns a column type. Applicable for all DBMSs.
    */
@@ -325,22 +319,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   
   def incrementId(table: String, IdSequence: String) {
     execute(s"UPDATE ${table} SET id = ${nextVal(IdSequence)};")
-  }
-        
-  // clean up grounding folder (for parallel grounding)
-  // TODO: we may not need to actually create a script for this and execute it.
-  // We may want to directly execute the commands:
-  // Helpers.executeCmd(s"rm -rf ${groundingPath}/dd_tmp")
-  // Helpers.executeCmd(s"rm -f ${groundingPath}/dd_*")
-  def cleanParallelGroundingPath(groundingPath: String) {
-    val cleanFile = File.createTempFile(s"clean", ".sh")
-    val writer = new PrintWriter(cleanFile)
-    // cleaning up remaining tmp folder for tobinary
-    writer.println(s"mkdir -p ${InferenceNamespace.getBackupFolderName}")
-    writer.println(s"mv ${groundingPath}/dd_* ${InferenceNamespace.getBackupFolderName}")
-    writer.close()
-    log.info("Cleaning up grounding folder...")
-    Helpers.executeCmd(cleanFile.getAbsolutePath())
   }
 
   // assign variable id - sequential and unique
@@ -458,7 +436,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       val initvalueCast = cast(cast(column, "int"), "float")
       // Sen
       // du.unload(s"dd_variables_${relation}", s"${groundingPath}/dd_variables_${relation}",
-      du.unload(InferenceNamespace.getVariableFileName(relation), 
+      val groundingDir = getFileNameFromPath(groundingPath)
+      du.unload(InferenceNamespace.getVariableFileName(relation),
         s"${groundingPath}/${InferenceNamespace.getVariableFileName(relation)}",
         dbSettings, parallelGrounding,
         s"""SELECT t0.id, t1.${variableTypeColumn},
@@ -466,7 +445,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         ${variableDataType} AS type, ${cardinality} AS cardinality
         FROM ${relation} t0, ${relation}_vtype t1
         WHERE t0.id=t1.id
-        """)
+        """, groundingDir)
     }
   }
 
@@ -483,9 +462,11 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
 
     // dump factor meta data
+    val groundingDir = getFileNameFromPath(groundingPath)
     du.unload(InferenceNamespace.getFactorMetaFileName, 
       s"${groundingPath}/${InferenceNamespace.getFactorMetaFileName}", 
-      dbSettings, parallelGrounding, s"SELECT * FROM ${FactorMetaTable}")
+      dbSettings, parallelGrounding, s"SELECT * FROM ${FactorMetaTable}",
+      groundingDir)
   }
 
   // create feature stats for boolean LR function
@@ -537,6 +518,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def groundFactorsAndWeights(factorDescs: Seq[FactorDesc],
     calibrationSettings: CalibrationSettings, du: DataLoader,
     dbSettings: DbSettings, groundingPath: String, parallelGrounding: Boolean) {
+    val groundingDir = getFileNameFromPath(groundingPath)
 
     // weights table
     ds.dropAndCreateTable(WeightsTable, """id bigint, isfixed int, initvalue real, cardinality text, 
@@ -644,7 +626,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
             s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
              FROM ${querytable} t0, ${weighttableForThisFactor} t1
-             ${weightJoinCondition};""")
+             ${weightJoinCondition};""", groundingDir)
 
       } else if (factorDesc.func.getClass.getSimpleName == "MultinomialFactorFunction") {
         // TODO needs better code reuse
@@ -685,7 +667,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
             SELECT id, isfixed, initvalue, cardinality, ${weightDesc} FROM ${weighttableForThisFactor};""")
 
           du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
-            s"SELECT id AS factor_id, ${cweightid} AS weight_id, ${idcols} FROM ${querytable}")
+            s"SELECT id AS factor_id, ${cweightid} AS weight_id, ${idcols} FROM ${querytable}",
+            groundingDir)
 
           // increment weight id
           cweightid += count
@@ -741,7 +724,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
             s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
              FROM ${querytable} t0, ${weighttableForThisFactor} t1
-             WHERE ${weightjoinlist} AND t1.cardinality = '${cardinalityKey}';""")
+             WHERE ${weightjoinlist} AND t1.cardinality = '${cardinalityKey}';""",
+             groundingDir)
         }
       }
       // create feature stats for boolean LR
@@ -751,7 +735,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // dump weights
     du.unload(InferenceNamespace.getWeightFileName,
       s"${groundingPath}/${InferenceNamespace.getWeightFileName}",dbSettings, parallelGrounding,
-      s"SELECT id, isfixed, COALESCE(initvalue, 0) FROM ${WeightsTable}")
+      s"SELECT id, isfixed, COALESCE(initvalue, 0) FROM ${WeightsTable}",
+      groundingDir)
   }
 
 
@@ -784,16 +769,16 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     dbSettings: DbSettings, parallelGrounding: Boolean) {
 
     val du = new DataLoader
-    val groundingPath = if (!parallelGrounding) Context.outputDir else dbSettings.gppath
+    val groundingDir = getFileNameFromPath(Context.outputDir)
+    val groundingPath = parallelGrounding match {
+      case false => Context.outputDir 
+      case true => dbSettings.gppath + s"/${groundingDir}"
+    }
+    new java.io.File(groundingPath).mkdirs()
 
     log.info(s"Datastore type = ${Helpers.getDbType(dbSettings)}")    
     log.info(s"Parallel grounding = ${parallelGrounding}")
     log.debug(s"Grounding Path = ${groundingPath}")
-
-    // clean up grounding folder (for parallel grounding)
-    if (parallelGrounding) {
-      cleanParallelGroundingPath(groundingPath)
-    }
 
     // assign variable id - sequential and unique
     assignVariablesIds(schema)
