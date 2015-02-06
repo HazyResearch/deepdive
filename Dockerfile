@@ -46,7 +46,4 @@ RUN sed -i s/'sbt "test-only org.deepdive.test.integration.ChunkingApp -- -oF"'/
 
 RUN mkdir -p ~/deepdive/app
 
-# Edit permissions to fix chunking test
-RUN sudo chmod a+r /root/deepdive/target/scala-2.10/test-classes/chunking/data/*.txt
-
 VOLUME ["/root/deepdive/app"]
