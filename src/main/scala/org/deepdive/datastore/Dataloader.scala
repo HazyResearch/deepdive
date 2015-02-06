@@ -1,7 +1,6 @@
 package org.deepdive.datastore
 
 import org.deepdive.settings._
-import org.deepdive.datastore.JdbcDataStore
 import org.deepdive.Logging
 import org.deepdive.Context
 import org.deepdive.helpers.Helpers
