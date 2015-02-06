@@ -34,8 +34,6 @@ trait JdbcDataStore extends Logging {
     val stmt = conn.createStatement();
     // Using prepareStatement should be better: faster, prevents SQL injection
     conn.prepareStatement(sql).execute
-    // stmt.execute(sql)
-    
     conn.commit()
     conn.close()
   }
@@ -63,7 +61,7 @@ trait JdbcDataStore extends Logging {
       log.error(exception.toString)
       throw exception
     } finally {
-      conn.close() 
+      conn.close()
     }
   }
   
@@ -73,10 +71,6 @@ trait JdbcDataStore extends Logging {
    */
   def executeSqlQueries(sql: String) : Unit = {
     val conn = borrowConnection()
-//    // This commented code can only execute SQL updates that do not return results
-//    val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
-//      java.sql.ResultSet.CONCUR_UPDATABLE)
-
     // Supporting more general SQL queries (e.g. SELECT)
     val stmt = conn.createStatement()
     try {
@@ -224,7 +218,6 @@ trait JdbcDataStore extends Logging {
   }
 
 }
-
 
 object JdbcDataStore extends JdbcDataStore with Logging {
 

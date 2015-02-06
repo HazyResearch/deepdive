@@ -6,7 +6,6 @@ import java.lang.RuntimeException
 import java.sql.Connection
 import java.util.concurrent.atomic.AtomicLong
 import org.deepdive.Context
-import org.deepdive.datastore.{ MysqlDataStore, DataStoreUtils }
 import org.deepdive.Logging
 import org.deepdive.settings._
 import scala.collection.JavaConversions._

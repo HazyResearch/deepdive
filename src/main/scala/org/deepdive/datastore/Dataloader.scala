@@ -12,8 +12,6 @@ import org.postgresql.util.PSQLException
 
 class DataLoader extends JdbcDataStore with Logging {
 
-  // def ds : JdbcDataStore
-
   /** Unload data of a SQL query from database to a TSV file 
    * 
    * For Greenplum, use gpfdist. Must specify gpport, gppath, gphost in dbSettings. No need for filepath
