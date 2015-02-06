@@ -9,7 +9,7 @@ trait MemoryExtractionDataStoreComponent extends ExtractionDataStoreComponent{
   val dataStore = new MemoryExtractionDataStore
 }
 
-class MemoryExtractionDataStore extends ExtractionDataStore[JsObject] with Logging {
+class MemoryExtractionDataStore extends JdbcExtractionDataStore with Logging {
     
     def BatchSize = 100000
     
@@ -19,12 +19,14 @@ class MemoryExtractionDataStore extends ExtractionDataStore[JsObject] with Loggi
       data.clear()
     }
 
-    def queryAsJson[A](query: String, batchSize: Option[Int] = None)
+    def ds = JdbcDataStore
+
+    override def queryAsJson[A](query: String, batchSize: Option[Int] = None)
       (block: Iterator[JsObject] => A) : A = {
       block(data.get(query).map(_.toList).getOrElse(Nil).iterator)
     }
     
-    def queryAsMap[A](query: String, batchSize: Option[Int] = None)
+    override def queryAsMap[A](query: String, batchSize: Option[Int] = None)
       (block: Iterator[Map[String, Any]] => A) : A = {
       queryAsJson(query) { iter => 
         block(iter.map(_.value.toMap.mapValues {
@@ -37,9 +39,9 @@ class MemoryExtractionDataStore extends ExtractionDataStore[JsObject] with Loggi
       }
     }
 
-    def queryUpdate(query: String) {}
+    override def queryUpdate(query: String) {}
     
-    def addBatch(result: Iterator[JsObject], outputRelation: String) : Unit = {
+    override def addBatch(result: Iterator[JsObject], outputRelation: String) : Unit = {
       //TODO: Use parallel collection
       data.synchronized {
         data.get(outputRelation) match {
