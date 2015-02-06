@@ -10,7 +10,10 @@ import scala.util.{Try, Success, Failure}
 import java.io._
 import org.postgresql.util.PSQLException
 
-class DataLoader extends JdbcDataStore with Logging {
+
+class DataLoader extends Logging {
+
+  def ds = JdbcDataStore
 
   /** Unload data of a SQL query from database to a TSV file 
    * 
@@ -40,25 +43,25 @@ class DataLoader extends JdbcDataStore with Logging {
       }
 
       // hacky way to get schema from a query...
-      executeSqlQueries(s"""
+      ds.executeSqlQueries(s"""
         DROP VIEW IF EXISTS _${filename}_view CASCADE;
         DROP TABLE IF EXISTS _${filename}_tmp CASCADE;
         CREATE VIEW _${filename}_view AS ${query};
         CREATE TABLE _${filename}_tmp AS SELECT * FROM _${filename}_view LIMIT 0;
         """)
 
-      executeSqlQueries(s"""
+      ds.executeSqlQueries(s"""
         DROP EXTERNAL TABLE IF EXISTS _${filename} CASCADE;
         CREATE WRITABLE EXTERNAL TABLE _${filename} (LIKE _${filename}_tmp)
         LOCATION ('gpfdist://${hostname}:${port}/${folder}/${filename}')
         FORMAT 'TEXT';
         """)
 
-      executeSqlQueries(s"""
+      ds.executeSqlQueries(s"""
         DROP VIEW _${filename}_view CASCADE;
         DROP TABLE _${filename}_tmp CASCADE;""")
 
-      executeSqlQueries(s"""
+      ds.executeSqlQueries(s"""
         INSERT INTO _${filename} ${query};
         """)
     } else { // psql / mysql

@@ -8,7 +8,7 @@ import com.typesafe.config._
 import org.deepdive.helpers.Helpers
 import play.api.libs.json._
 
-trait JdbcDataStore extends Logging {
+class JdbcDataStore extends Logging {
 
   def DB = scalikejdbc.DB
 

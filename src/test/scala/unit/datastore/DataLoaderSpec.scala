@@ -11,7 +11,7 @@ import scala.sys.process._
 import scalikejdbc._
 import java.io._
 
-class DataLoaderSpec extends FunSpec with BeforeAndAfter with JdbcDataStore {
+class DataLoaderSpec extends FunSpec with BeforeAndAfter with Logging {
 
   lazy implicit val session = DB.autoCommitSession()
   val config = ConfigFactory.parseString(TestHelper.getConfig).withFallback(ConfigFactory.load)

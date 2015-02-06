@@ -6,10 +6,10 @@ import play.api.libs.json._
 
 /* Stores Extraction Results */
 trait MemoryExtractionDataStoreComponent extends ExtractionDataStoreComponent{
-
   val dataStore = new MemoryExtractionDataStore
+}
 
-  class MemoryExtractionDataStore extends ExtractionDataStore[JsObject] with Logging {
+class MemoryExtractionDataStore extends ExtractionDataStore[JsObject] with Logging {
     
     def BatchSize = 100000
     
@@ -49,6 +49,4 @@ trait MemoryExtractionDataStoreComponent extends ExtractionDataStoreComponent{
       }
     }
 
-  }
-  
 }

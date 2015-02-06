@@ -17,7 +17,7 @@ trait MysqlExtractionDataStoreComponent extends ExtractionDataStoreComponent {
   val dataStore = new MysqlExtractionDataStore
 }
 
-class MysqlExtractionDataStore extends ExtractionDataStore[JsObject] with JdbcExtractionDataStore with Logging {
+class MysqlExtractionDataStore extends JdbcExtractionDataStore with Logging {
 
   def init() = {
   }
