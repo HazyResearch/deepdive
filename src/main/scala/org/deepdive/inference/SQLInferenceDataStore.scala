@@ -65,7 +65,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   def FeatureStatsSupportTable = "dd_feature_statistics_support"
   def FeatureStatsView = "dd_feature_statistics"
 
-    
+  
   // Datastore-specific methods:
   // Below are methods to implement in any type of datastore.
     
