@@ -12,10 +12,10 @@ export GPPORT=${GPPORT:-8082}
 export GPPATH=${GPPATH:-/tmp}
 
 # Mysql specific
-export DBUSER=root
-export DBPASSWORD=
-export DBHOST=127.0.0.1
-export DBPORT=3306
+export DBUSER=${DBUSER:-root}
+export DBPASSWORD=${DBPASSWORD:-}
+export DBHOST=${DBHOST:-127.0.0.1}
+export DBPORT=${DBPORT:-3306}
 export DBCONNSTRING=jdbc:mysql://$DBHOST:$DBPORT/$DBNAME
 echo "CONN STRING: $DBCONNSTRING"
 export DEEPDIVE_HOME=`cd $(dirname $0)/../; pwd`
@@ -44,9 +44,13 @@ esac
 cd $DEEPDIVE_HOME
 
 # Create test database
-mysql -u $DBUSER -h $DBHOST -P $DBPORT -e "drop database if exists $DBNAME; 
+if [ -z $DBPASSWORD ]; then
+  mysql -u $DBUSER -h $DBHOST -P $DBPORT -e "drop database if exists $DBNAME; 
   create database $DBNAME"
-
+else
+  mysql -u $DBUSER -h $DBHOST -P $DBPORT -p$DBPASSWORD -e "drop database if exists $DBNAME; 
+  create database $DBNAME"
+fi
 # Run the test
 
 # Separate different tests to fix the issue of unable to run multiple integration tests. If any of the tests return non-0 value, exit with the error code.
