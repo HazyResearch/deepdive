@@ -5,21 +5,19 @@ import scala.collection.mutable.{Map => MMap, ArrayBuffer}
 import play.api.libs.json._
 
 /* Stores Extraction Results */
-trait MemoryExtractionDataStoreComponent extends ExtractionDataStoreComponent{
+trait MemoryExtractionDataStoreComponent extends JdbcDataStoreComponent{
   val dataStore = new MemoryExtractionDataStore
 }
 
-class MemoryExtractionDataStore extends JdbcExtractionDataStore with Logging {
+class MemoryExtractionDataStore extends JdbcDataStore with Logging {
     
     def BatchSize = 100000
     
     val data = MMap[String, ArrayBuffer[JsObject]]()
 
-    def init() = {
+    override def init() = {
       data.clear()
     }
-
-    def ds = JdbcDataStore
 
     override def queryAsJson[A](query: String, batchSize: Option[Int] = None)
       (block: Iterator[JsObject] => A) : A = {

@@ -13,13 +13,13 @@ import play.api.libs.json._
 import scala.util.{ Try, Success, Failure }
 import scalikejdbc._
 
-trait MysqlExtractionDataStoreComponent extends ExtractionDataStoreComponent {
+trait MysqlExtractionDataStoreComponent extends JdbcDataStoreComponent {
   val dataStore = new MysqlExtractionDataStore
 }
 
-class MysqlExtractionDataStore extends JdbcExtractionDataStore with Logging {
+class MysqlExtractionDataStore extends JdbcDataStore with Logging {
 
-  def init() = {
+  override def init() = {
   }
 
   def ds = MysqlDataStore
@@ -28,7 +28,7 @@ class MysqlExtractionDataStore extends JdbcExtractionDataStore with Logging {
    * Writes a list of tuples back to the datastore.
    * IMPORTANT: This method must assign a globally unique variable id to each record 
    */
-  def addBatch(result: Iterator[JsObject], outputRelation: String): Unit = {
+  override def addBatch(result: Iterator[JsObject], outputRelation: String): Unit = {
     throw new RuntimeException(s"method addBatch in ${this.getClass} is not implemented")
   }
 

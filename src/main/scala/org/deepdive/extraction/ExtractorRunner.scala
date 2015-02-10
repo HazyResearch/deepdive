@@ -8,7 +8,7 @@ import org.deepdive.settings._
 import org.deepdive.Context
 import org.deepdive.extraction._
 import org.deepdive.extraction.ExtractorRunner._
-import org.deepdive.datastore.ExtractionDataStore._
+import org.deepdive.datastore.JdbcDataStore._
 import org.deepdive.datastore.FileDataUtils
 import org.deepdive.Logging
 import org.deepdive.datastore.DataLoader

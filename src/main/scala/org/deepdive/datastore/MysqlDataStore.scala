@@ -26,12 +26,8 @@ object MysqlDataStore extends JdbcDataStore with Logging {
   // TODO zifei: not implemented now
   def copyBatchData(sqlStatement: String, dataReader: Reader)
     (implicit connection: Connection) : Unit = {
-	  val statement = connection.createStatement()
-	  val resultSet = statement.executeQuery(sqlStatement)
-	 
-//	  val pg_conn = del.getInnermostDelegate().asInstanceOf[com.mysql.jdbc.Connection]
-//      val cm = new org.postgresql.copy.CopyManager(pg_conn)
-//      cm.copyIn(sqlStatement, dataReader)
+      val statement = connection.createStatement()
+      val resultSet = statement.executeQuery(sqlStatement)
       dataReader.close()
     }
 

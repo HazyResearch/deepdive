@@ -8,7 +8,11 @@ import com.typesafe.config._
 import org.deepdive.helpers.Helpers
 import play.api.libs.json._
 
-class JdbcDataStore extends Logging {
+trait JdbcDataStoreComponent {
+  def dataStore : JdbcDataStore
+}
+
+trait JdbcDataStore extends Logging {
 
   def DB = scalikejdbc.DB
 
@@ -21,6 +25,7 @@ class JdbcDataStore extends Logging {
   /* Closes the connection pool and all of its connections */
   def close() = ConnectionPool.closeAll()
 
+  def init() : Unit = {}
   /**
    * Execute any sql query
    * (sql must be only ONE query for mysql, but can be multiple queries for psql.)
@@ -313,9 +318,13 @@ class JdbcDataStore extends Logging {
         JsNull
     }
 
+    def addBatch(result: Iterator[JsObject], outputRelation: String) : Unit = {}
+
 }
 
 object JdbcDataStore extends JdbcDataStore with Logging {
+
+  type JsonExtractionDataStore = JdbcDataStore
 
   class JdbcDBsWithEnv(envValue: String, configObj: Config) extends DBsWithEnv(envValue) {
     override lazy val config = configObj
@@ -337,7 +346,7 @@ object JdbcDataStore extends JdbcDataStore with Logging {
     }
   }
 
-  def init() : Unit = init(ConfigFactory.load)
+  override def init() : Unit = init(ConfigFactory.load)
 
   /* Closes the data store */
   override def close() = {

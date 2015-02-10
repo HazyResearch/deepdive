@@ -14,13 +14,13 @@ import play.api.libs.json._
 import scala.util.{Try, Success, Failure}
 import scalikejdbc._
 
-trait PostgresExtractionDataStoreComponent extends ExtractionDataStoreComponent {
+trait PostgresExtractionDataStoreComponent extends JdbcDataStoreComponent {
   val dataStore = new PostgresExtractionDataStore
 }
 
-class PostgresExtractionDataStore extends JdbcExtractionDataStore with Logging {
+class PostgresExtractionDataStore extends JdbcDataStore with Logging {
 
-    def init() = {
+    override def init() = {
     }
 
     def ds = PostgresDataStore
@@ -31,7 +31,7 @@ class PostgresExtractionDataStore extends JdbcExtractionDataStore with Logging {
      * - Create a temp CSV file
      * - run writeCopyData to write   
      */
-    def addBatch(result: Iterator[JsObject], outputRelation: String) : Unit = {
+    override def addBatch(result: Iterator[JsObject], outputRelation: String) : Unit = {
       val file = File.createTempFile(s"deepdive_$outputRelation", ".csv")
       log.debug(s"Writing data of to file=${file.getCanonicalPath}")
       val writer = new PrintWriter(new BufferedWriter(new FileWriter(file, true)))

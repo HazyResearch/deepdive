@@ -11,9 +11,7 @@ import java.io._
 import org.postgresql.util.PSQLException
 
 
-class DataLoader extends Logging {
-
-  def ds = JdbcDataStore
+class DataLoader extends JdbcDataStore with Logging {
 
   /** Unload data of a SQL query from database to a TSV file 
    * 
@@ -43,25 +41,25 @@ class DataLoader extends Logging {
       }
 
       // hacky way to get schema from a query...
-      ds.executeSqlQueries(s"""
+      executeSqlQueries(s"""
         DROP VIEW IF EXISTS _${filename}_view CASCADE;
         DROP TABLE IF EXISTS _${filename}_tmp CASCADE;
         CREATE VIEW _${filename}_view AS ${query};
         CREATE TABLE _${filename}_tmp AS SELECT * FROM _${filename}_view LIMIT 0;
         """)
 
-      ds.executeSqlQueries(s"""
+      executeSqlQueries(s"""
         DROP EXTERNAL TABLE IF EXISTS _${filename} CASCADE;
         CREATE WRITABLE EXTERNAL TABLE _${filename} (LIKE _${filename}_tmp)
         LOCATION ('gpfdist://${hostname}:${port}/${folder}/${filename}')
         FORMAT 'TEXT';
         """)
 
-      ds.executeSqlQueries(s"""
+      executeSqlQueries(s"""
         DROP VIEW _${filename}_view CASCADE;
         DROP TABLE _${filename}_tmp CASCADE;""")
 
-      ds.executeSqlQueries(s"""
+      executeSqlQueries(s"""
         INSERT INTO _${filename} ${query};
         """)
     } else { // psql / mysql

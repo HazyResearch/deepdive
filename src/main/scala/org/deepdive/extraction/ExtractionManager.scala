@@ -42,7 +42,7 @@ object ExtractionManager {
  * extractions tasks in the correct order. It parallelizes execution when possible.
  */ 
 trait ExtractionManager extends Actor with ActorLogging {
-  this: ExtractionDataStoreComponent =>
+  this: JdbcDataStoreComponent =>
 
   import ExtractionManager._
 
