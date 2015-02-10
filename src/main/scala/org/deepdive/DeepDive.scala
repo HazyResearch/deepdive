@@ -6,7 +6,7 @@ import com.typesafe.config._
 import java.io.File
 import org.deepdive.settings._
 import org.deepdive.datastore.{JdbcDataStore}
-import org.deepdive.extraction.{ExtractionManager, ExtractionTask, ExtractionTaskResult}
+import org.deepdive.extraction.{ExtractionManager, ExtractionTask}
 import org.deepdive.inference.{InferenceManager}
 import org.deepdive.profiling._
 import org.deepdive.calibration._
