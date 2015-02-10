@@ -156,8 +156,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     DROP TABLE IF EXISTS ${lastWeightsTable} CASCADE;
     CREATE TABLE ${lastWeightsTable} AS
       SELECT X.*, Y.weight
-      FROM ${WeightsTable} AS X INNER JOIN ${WeightResultTable} AS Y ON X.id = Y.id
-      ORDER BY id ASC;
+      FROM ${WeightsTable} AS X INNER JOIN ${WeightResultTable} AS Y ON X.id = Y.id;
   """
 
   def createInferenceResultSQL = s"""
@@ -517,8 +516,14 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   def groundFactorsAndWeights(factorDescs: Seq[FactorDesc],
     calibrationSettings: CalibrationSettings, du: DataLoader,
-    dbSettings: DbSettings, groundingPath: String, parallelGrounding: Boolean) {
+    dbSettings: DbSettings, groundingPath: String, parallelGrounding: Boolean,
+    skipLearning: Boolean, weightTable: String) {
     val groundingDir = getFileNameFromPath(groundingPath)
+
+    // save last weights
+    if (skipLearning && weightTable.isEmpty()) {
+      execute(copyLastWeightsSQL)
+    }
 
     // weights table
     ds.dropAndCreateTable(WeightsTable, """id bigint, isfixed int, initvalue real, cardinality text, 
@@ -732,11 +737,32 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       createFeatureStats(factorDesc, querytable, weightlist, weightDesc)
     }
 
+    if (skipLearning) {
+      reuseWeights(weightTable)
+    }
+
     // dump weights
     du.unload(InferenceNamespace.getWeightFileName,
       s"${groundingPath}/${InferenceNamespace.getWeightFileName}",dbSettings, parallelGrounding,
       s"SELECT id, isfixed, COALESCE(initvalue, 0) FROM ${WeightsTable}",
       groundingDir)
+  }
+
+  // handle reusing last weights
+  def reuseWeights(weightTable: String) {
+    // skip learning: choose a table to copy weights from
+    val fromWeightTable = weightTable.isEmpty() match {
+      case true => lastWeightsTable
+      case false => weightTable
+    }
+    log.info(s"""Using weights in TABLE ${fromWeightTable} by matching description""")
+
+    // Already set -l 0 for sampler
+    execute(s"""
+      UPDATE ${WeightsTable} SET initvalue = weight 
+      FROM ${fromWeightTable} 
+      WHERE ${WeightsTable}.description = ${fromWeightTable}.description;
+      """)
   }
 
 
@@ -800,7 +826,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
     // ground weights and factors
     groundFactorsAndWeights(factorDescs, calibrationSettings, du, dbSettings, 
-      groundingPath, parallelGrounding)
+      groundingPath, parallelGrounding, skipLearning, weightTable)
 
     // create inference result table
     execute(createInferenceResultSQL)
