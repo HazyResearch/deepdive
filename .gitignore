@@ -23,3 +23,5 @@ examples/tutorial_example/*/experiment-reports/latest
 examples/spouse_example/data/sentences_dump_large.csv
 examples/spouse_example/data/spouses.tsv
 .settings
+*~
+#*#

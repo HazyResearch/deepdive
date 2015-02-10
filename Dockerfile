@@ -42,3 +42,7 @@ RUN echo 'done' >> ~/.bashrc
 RUN echo 'echo -ne "\nGreenplum is up and running! You may now use deepdive.\n"' >> ~/.bashrc
 
 RUN sed -i s/'sbt "test-only org.deepdive.test.integration.ChunkingApp -- -oF"'/'echo "Skipping ChunkingApp" \#sbt "test-only org.deepdive.test.integration.ChunkingApp -- -oF"'/g /root/deepdive/test/test_psql.sh
+
+RUN mkdir -p ~/deepdive/app
+
+VOLUME ["/root/deepdive/app"]
