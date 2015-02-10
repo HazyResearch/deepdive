@@ -27,8 +27,6 @@ trait InferenceManager extends Actor with ActorLogging {
   def variableSchema: Map[String, _ <: VariableDataType]
   // Reference to the task manager
   def taskManager: ActorRef
-  // Described how to start the factor graph builder
-  def factorGraphBuilderProps : Props
   // Describes how to start the sampler
   def samplerProps : Props = Sampler.props
   // Describes how to start the calibration data writer
@@ -43,12 +41,9 @@ trait InferenceManager extends Actor with ActorLogging {
   lazy val SamplingOutputFile = new File(s"${SamplingOutputDir}/inference_result.out.text")
   lazy val SamplingOutputFileWeights = new File(s"${SamplingOutputDir}/inference_result.out.weights.text")
 
-  val factorGraphBuilder = context.actorOf(factorGraphBuilderProps, "factorGraphBuilder")
-
   override def preStart() {
     log.info("Starting")
     inferenceDataStore.init()
-    context.watch(factorGraphBuilder)
   }
 
   override val supervisorStrategy = OneForOneStrategy() {
@@ -70,8 +65,6 @@ trait InferenceManager extends Actor with ActorLogging {
         sender ! Status.Failure(e)
         context.stop(self)
       }
-      // factorGraphBuilder ? FactorGraphBuilder.AddFactorsAndVariables(
-      //   factorDesc, holdoutFraction, batchSize) pipeTo _sender
     case InferenceManager.RunInference(factorDescs, holdoutFraction, holdoutQuery, 
       samplerJavaArgs, samplerOptions, skipSerializing, dbSettings, parallelGrounding) =>
       val _sender = sender
@@ -120,16 +113,12 @@ object InferenceManager {
   class PostgresInferenceManager(val taskManager: ActorRef, val variableSchema: Map[String, _ <: VariableDataType], val dbSettings: DbSettings) 
     extends InferenceManager with PostgresInferenceDataStoreComponent {
     lazy val inferenceDataStore = new PostgresInferenceDataStore(dbSettings)
-    def factorGraphBuilderProps = 
-      Props(classOf[FactorGraphBuilder.PostgresFactorGraphBuilder], variableSchema, dbSettings)
   }
 
   /* An inference manager that uses postgres as its datastore */
   class MysqlInferenceManager(val taskManager: ActorRef, val variableSchema: Map[String, _ <: VariableDataType], val dbSettings: DbSettings) 
     extends InferenceManager with MysqlInferenceDataStoreComponent {
     lazy val inferenceDataStore = new MysqlInferenceDataStore(dbSettings)
-    def factorGraphBuilderProps = 
-      Props(classOf[FactorGraphBuilder.MysqlFactorGraphBuilder], variableSchema, dbSettings)
   }
 
   def props(taskManager: ActorRef, variableSchema: Map[String, _ <: VariableDataType],

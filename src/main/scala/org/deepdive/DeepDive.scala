@@ -7,7 +7,7 @@ import java.io.File
 import org.deepdive.settings._
 import org.deepdive.datastore.{JdbcDataStore}
 import org.deepdive.extraction.{ExtractionManager, ExtractionTask, ExtractionTaskResult}
-import org.deepdive.inference.{InferenceManager, FactorGraphBuilder}
+import org.deepdive.inference.{InferenceManager}
 import org.deepdive.profiling._
 import org.deepdive.calibration._
 import scala.concurrent.duration._
