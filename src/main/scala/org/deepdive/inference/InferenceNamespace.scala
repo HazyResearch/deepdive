@@ -1,8 +1,11 @@
 package org.deepdive.inference
 import org.deepdive.settings._
+import org.deepdive.Context
+import java.io.File
 
 object InferenceNamespace {
-
+  
+  val deepdivePrefix = "dd_"
   def WeightsTable = "dd_graph_weights"
   def lastWeightsTable = "dd_graph_last_weights"
   def FactorsTable = "dd_graph_factors"
@@ -23,16 +26,17 @@ object InferenceNamespace {
   def getWeightTableName(tableName: String) = s"dd_weights_${tableName}"
   def getQueryTableName(tableName: String) = s"dd_query_${tableName}"
   def getFactorTableName(tableName: String) = s"dd_factors_${tableName}"
-  def getCardinalityTableName(relation: String, column: String) = s"${relation}_${column}_cardinality"
+  def getCardinalityTableName(relation: String, column: String) = s"dd_${relation}_${column}_cardinality"
+  def getVariableTypeTableName(relation: String) = s"dd_${relation}_vtype"
+  def getCardinalityInFactorTableName(prefix: String, idx: Int) = s"dd_${prefix}_cardinality_${idx}"
 
   // files
   def getVariableFileName(relation: String) = s"dd_variables_${relation}"
   def getFactorFileName(name: String) = s"dd_factors_${name}_out"
   def getWeightFileName = s"dd_weights"
   def getFactorMetaFileName = s"dd_factormeta"
-  def getBackupFolderName = s"_dd_backup"
 
-  // variable data type id
+  // variable data type id, it's an enum type used to communicate with the sampler
   def getVariableDataTypeId(variable: VariableDataType) : Int = {
     variable match {
       case BooleanType => 0
@@ -40,7 +44,7 @@ object InferenceNamespace {
     }
   }
 
-  // factor funce type id
+  // factor funce type id, enum used to communicate with the sampler
   def getFactorFunctionTypeid(functionName: String) : Int = {
     functionName match {
       case "ImplyFactorFunction" => 0
@@ -51,4 +55,18 @@ object InferenceNamespace {
       case "MultinomialFactorFunction" => 5
     }
   }
+
+  // converting format scripts
+  val utilFolder = "util"
+  val formatConvertingScriptName = s"tobinary.py"
+  val formatConvertingWorkerName = s"""format_converter_${if (System.getProperty("os.name").startsWith("Linux")) 
+    "linux" else "mac"}"""
+
+  def getFormatConvertingScriptPath : String = {
+    new File(s"${Context.deepdiveHome}/${utilFolder}/${formatConvertingScriptName}").getCanonicalPath()
+  }
+  def getFormatConvertingWorkerPath : String = {
+    new File(s"${Context.deepdiveHome}/${utilFolder}/${formatConvertingWorkerName}").getCanonicalPath()
+  }
+  
 }

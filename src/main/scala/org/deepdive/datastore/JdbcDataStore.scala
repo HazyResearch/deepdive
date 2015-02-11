@@ -6,6 +6,7 @@ import scalikejdbc.config._
 import org.deepdive.Logging
 import com.typesafe.config._
 import play.api.libs.json._
+import org.deepdive.inference.InferenceNamespace
 
 trait JdbcDataStoreComponent {
   def dataStore : JdbcDataStore
@@ -132,13 +133,32 @@ trait JdbcDataStore extends Logging {
       conn.close()
     }
   }
+
+  // check if the given table name is deepdive's internal table, if not throw exception
+  def checkTableNamespace(name: String) = {
+    if (!name.startsWith(InferenceNamespace.deepdivePrefix)) {
+      throw new RuntimeException("Dropping a non-deepdive internal table!")
+    }
+  }
   
   /**
    * Drops a table if it exists, and then create it
+   * Ensures we are only dropping tables inside the DeepDive namespace.
    */
   def dropAndCreateTable(name: String, schema: String) = {
+    checkTableNamespace(name)
     executeSqlQueries(s"""DROP TABLE IF EXISTS ${name} CASCADE;""")
     executeSqlQueries(s"""CREATE TABLE ${name} (${schema});""")
+  }
+
+  /**
+   * Drops a table if it exists, and then create it using the given query
+   * Ensures we are only dropping tables inside the DeepDive namespace.
+   */
+  def dropAndCreateTableAs(name: String, query: String) = {
+    checkTableNamespace(name)
+    executeSqlQueries(s"""DROP TABLE IF EXISTS ${name} CASCADE;""")
+    executeSqlQueries(s"""CREATE TABLE ${name} AS ${query};""")
   }
 
   // execute sql, store results in a map
