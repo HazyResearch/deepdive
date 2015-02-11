@@ -15,7 +15,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
   lazy implicit val connection = dataStore.borrowConnection()
 
   before {
-    JdbcDataStore.init()
+    JdbcDataStoreObject.init()
     dataStore.init()
     SQL("drop schema if exists public cascade; create schema public;").execute()
     SQL("""create table datatype_test(id bigserial primary key, key integer, some_text text, 
@@ -24,7 +24,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
   }
 
   after {
-    JdbcDataStore.close()
+    JdbcDataStoreObject.close()
   }
 
   describe("Querying as a Map") {

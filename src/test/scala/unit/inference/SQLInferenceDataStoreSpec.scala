@@ -21,7 +21,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
   val dbSettings = TestHelper.getDbSettings
 
   def init() : Unit = {
-    JdbcDataStore.init()
+    JdbcDataStoreObject.init()
     SQL("drop schema if exists public cascade; create schema public;").execute.apply()
   }
 
@@ -32,7 +32,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
   }
 
   after {
-    JdbcDataStore.close()
+    JdbcDataStoreObject.close()
   }
   
   /**********************

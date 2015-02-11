@@ -33,17 +33,17 @@ class MysqlSpouseExample extends FunSpec with Logging with MysqlDataStoreCompone
     /** prepare data */
   def prepareData() {
 
-    JdbcDataStore.init(config)
+    JdbcDataStoreObject.init(config)
     dataStore.withConnection { implicit conn =>
 
-      JdbcDataStore.executeSqlQueries(schema);
+      JdbcDataStoreObject.executeSqlQueries(schema);
 
-      JdbcDataStore.executeSqlQueries(s"""
+      JdbcDataStoreObject.executeSqlQueries(s"""
         LOAD DATA LOCAL INFILE '${getClass.getResource("/spouse/data/sentences_dump_mysql.tsv").getFile}' 
         INTO TABLE sentences(sentence_id, words, ner_tags);
           """)
     }
-    JdbcDataStore.close()
+    JdbcDataStoreObject.close()
   }
 
 
@@ -236,7 +236,7 @@ deepdive {
   """
   /** Process DeepDive's results */
   def processResults(): Double = {
-    JdbcDataStore.init(config)
+    JdbcDataStoreObject.init(config)
     var score = 0.0;
 
     // There is a chance that num_incorrect is 0 in bucket=9, in this case
@@ -249,11 +249,11 @@ deepdive {
       from has_spouse_is_true_calibration where bucket = 9"""
 
     dataStore.withConnection { implicit conn =>
-      JdbcDataStore.executeSqlQueryWithCallback(checkQuery) { rs =>
+      JdbcDataStoreObject.executeSqlQueryWithCallback(checkQuery) { rs =>
         score = rs.getDouble(1)
       }
     }
-    JdbcDataStore.close()
+    JdbcDataStoreObject.close()
     score
   }
   
@@ -270,12 +270,12 @@ deepdive {
       prepareData()
       Helpers.executeCmd("rm -f out/test_spouse/tmp/*")
       DeepDive.run(config, "out/test_spouse")
-      // DeepDive.run will finally call JdbcDataStore.close()...
+      // DeepDive.run will finally call JdbcDataStoreObject.close()...
 
       val score = processResults()
       assert(score > 0.9)
 
-      JdbcDataStore.close()
+      JdbcDataStoreObject.close()
     }
   }
 

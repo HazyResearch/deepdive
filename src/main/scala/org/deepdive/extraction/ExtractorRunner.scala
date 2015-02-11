@@ -8,7 +8,7 @@ import org.deepdive.settings._
 import org.deepdive.Context
 import org.deepdive.extraction._
 import org.deepdive.extraction.ExtractorRunner._
-import org.deepdive.datastore.JdbcDataStore._
+import org.deepdive.datastore._
 import org.deepdive.datastore.FileDataUtils
 import org.deepdive.Logging
 import org.deepdive.datastore.DataLoader
@@ -30,7 +30,7 @@ import org.deepdive.helpers.Helpers.{Mysql, Psql}
  */
 object ExtractorRunner {
   
-  def props(dataStore: JsonExtractionDataStore, dbSettings: DbSettings) = Props(classOf[ExtractorRunner], dataStore, dbSettings)
+  def props(dataStore: JdbcDataStore, dbSettings: DbSettings) = Props(classOf[ExtractorRunner], dataStore, dbSettings)
 
 
   // Messages
@@ -56,7 +56,7 @@ object ExtractorRunner {
 }
 
 /* Runs a single extrator by executing its before script, UDF, and after sript */
-class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings) extends Actor 
+class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends Actor 
   with ActorLogging with FSM[State, Data] {
 
   import ExtractorRunner._

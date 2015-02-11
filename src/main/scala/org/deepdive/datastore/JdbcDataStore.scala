@@ -321,9 +321,7 @@ trait JdbcDataStore extends Logging {
 
 }
 
-object JdbcDataStore extends JdbcDataStore with Logging {
-
-  type JsonExtractionDataStore = JdbcDataStore
+object JdbcDataStoreObject extends JdbcDataStore with Logging {
 
   class JdbcDBsWithEnv(envValue: String, configObj: Config) extends DBsWithEnv(envValue) {
     override lazy val config = configObj

@@ -56,7 +56,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
   before {
     if(!inited){
-      JdbcDataStore.init(config)
+      JdbcDataStoreObject.init(config)
       inited = true
     }
     dataStore.init()
