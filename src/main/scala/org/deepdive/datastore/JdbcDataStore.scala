@@ -5,7 +5,6 @@ import scalikejdbc._
 import scalikejdbc.config._
 import org.deepdive.Logging
 import com.typesafe.config._
-import org.deepdive.helpers.Helpers
 import play.api.libs.json._
 
 trait JdbcDataStoreComponent {

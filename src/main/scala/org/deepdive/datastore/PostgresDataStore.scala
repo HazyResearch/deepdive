@@ -1,20 +1,14 @@
 package org.deepdive.datastore
 
-import java.io.{File, Reader, FileReader, BufferedReader, InputStream, InputStreamReader}
-import java.sql.Connection
-import org.deepdive.Logging
-import scalikejdbc._
-
-import au.com.bytecode.opencsv.CSVWriter
-import java.io.{File, StringWriter, FileWriter, PrintWriter, BufferedWriter, Writer}
-import java.lang.RuntimeException
+import java.io.{File, Reader, Writer, FileReader, FileWriter, BufferedReader, BufferedWriter, PrintWriter, InputStream, InputStreamReader}
 import java.util.concurrent.atomic.AtomicLong
-import org.deepdive.Context
-import org.deepdive.settings._
-import scala.collection.JavaConversions._
-import scala.language.postfixOps
-import play.api.libs.json._
 import scala.util.{Try, Success, Failure}
+import au.com.bytecode.opencsv.CSVWriter
+import scala.language.postfixOps
+import org.deepdive.Logging
+import java.sql.Connection
+import play.api.libs.json._
+import scalikejdbc._
 
 
 trait PostgresDataStoreComponent extends JdbcDataStoreComponent {

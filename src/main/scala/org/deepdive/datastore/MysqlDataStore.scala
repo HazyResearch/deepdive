@@ -1,20 +1,8 @@
 package org.deepdive.datastore
 
-import java.io.{File, Reader, FileReader, BufferedReader, InputStream, InputStreamReader}
+import java.io.{File, Reader, Writer, FileReader, FileWriter, BufferedReader, BufferedWriter, PrintWriter, InputStream, InputStreamReader}
 import java.sql.Connection
 import org.deepdive.Logging
-import scalikejdbc._
-import com.mysql.jdbc._
-
-import au.com.bytecode.opencsv.CSVWriter
-import java.io.{ File, StringWriter, FileWriter, PrintWriter, BufferedWriter, Writer }
-import java.lang.RuntimeException
-import java.sql.Connection
-import java.util.concurrent.atomic.AtomicLong
-import org.deepdive.Context
-import org.deepdive.Logging
-import org.deepdive.settings._
-import scala.collection.JavaConversions._
 import play.api.libs.json._
 
 

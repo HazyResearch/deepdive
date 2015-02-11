@@ -2,8 +2,7 @@ package org.deepdive.inference
 
 import anorm._
 import au.com.bytecode.opencsv.CSVWriter
-import java.io.{ByteArrayInputStream, File, FileOutputStream, FileWriter,
-  StringWriter, Reader, FileReader, InputStream, InputStreamReader}
+import java.io.{ByteArrayInputStream, File, FileOutputStream, FileWriter, StringWriter, Reader, FileReader, InputStream, InputStreamReader}
 import org.deepdive.calibration._
 import org.deepdive.datastore._
 import org.deepdive.inference._
