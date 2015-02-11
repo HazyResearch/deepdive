@@ -505,10 +505,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   // for more information about format, please refer to deepdive's website
   def convertGroundingFormat(groundingPath: String) {
     log.info("Converting grounding file format...")
-    val ossuffix = if (System.getProperty("os.name").startsWith("Linux")) "linux" else "mac"
     // TODO: this python script is dangerous and ugly. It changes too many states!
-    val cmd = s"python ${Context.deepdiveHome}/util/tobinary.py ${groundingPath} " + 
-        s"${Context.deepdiveHome}/util/format_converter_${ossuffix} ${Context.outputDir}"
+    val cmd = s"python ${InferenceNamespace.getFormatConvertingScriptPath} ${groundingPath} " + 
+        s"${InferenceNamespace.getFormatConvertingWorkerPath} ${Context.outputDir}"
     log.debug("Executing: " + cmd)
     val exitValue = cmd!(ProcessLogger(
       out => log.info(out),
@@ -805,7 +804,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     val groundingDir = getFileNameFromPath(Context.outputDir)
     val groundingPath = parallelGrounding match {
       case false => Context.outputDir 
-      case true => dbSettings.gppath + s"/${groundingDir}"
+      case true => new java.io.File(dbSettings.gppath + s"/${groundingDir}").getCanonicalPath()
     }
     new java.io.File(groundingPath).mkdirs()
 

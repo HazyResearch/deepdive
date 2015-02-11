@@ -1,8 +1,10 @@
 package org.deepdive.inference
 import org.deepdive.settings._
+import org.deepdive.Context
+import java.io.File
 
 object InferenceNamespace {
-
+  
   def WeightsTable = "dd_graph_weights"
   def lastWeightsTable = "dd_graph_last_weights"
   def FactorsTable = "dd_graph_factors"
@@ -30,7 +32,6 @@ object InferenceNamespace {
   def getFactorFileName(name: String) = s"dd_factors_${name}_out"
   def getWeightFileName = s"dd_weights"
   def getFactorMetaFileName = s"dd_factormeta"
-  def getBackupFolderName = s"_dd_backup"
 
   // variable data type id, it's an enum type used to communicate with the sampler
   def getVariableDataTypeId(variable: VariableDataType) : Int = {
@@ -51,5 +52,19 @@ object InferenceNamespace {
       case "MultinomialFactorFunction" => 5
     }
   }
+
+  // converting format scripts
+  val utilFolder = "util"
+  val formatConvertingScriptName = s"tobinary.py"
+  val formatConvertingWorkerName = s"""format_converter_${if (System.getProperty("os.name").startsWith("Linux")) 
+    "linux" else "mac"}"""
+
+  def getFormatConvertingScriptPath : String = {
+    new File(s"${Context.deepdiveHome}/${utilFolder}/${formatConvertingScriptName}").getCanonicalPath()
+  }
+  def getFormatConvertingWorkerPath : String = {
+    new File(s"${Context.deepdiveHome}/${utilFolder}/${formatConvertingWorkerName}").getCanonicalPath()
+  }
+  
 }
 
