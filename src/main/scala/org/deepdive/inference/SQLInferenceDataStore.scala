@@ -14,8 +14,8 @@
  * into which parameters are passed. The goal in doing that would be to enforce type checking by the compiler. 
  * As it stands, if there's a type clash you don't find out until you try to run the query. 
  *
- * DROP TABLE is such a toxic operation. One SHOULD call ds.dropAndCreateTable or
- * ds.dropAndCreateTableAs in order to drop and create a table. These method will
+ * DROP TABLE is such a toxic operation. One SHOULD call dataStore.dropAndCreateTable or
+ * dataStore.dropAndCreateTableAs in order to drop and create a table. These method will
  * ensure we are only dropping tables inside the DeepDive namespace.
  */
 package org.deepdive.inference
@@ -36,7 +36,6 @@ import scala.io.Source
 import scala.util.Random
 import scala.sys.process._
 import scala.util.{Try, Success, Failure}
-// import scala.collection.mutable.Map
 
 
 /* Stores the factor graph and inference results. */
@@ -49,8 +48,7 @@ trait SQLInferenceDataStoreComponent extends InferenceDataStoreComponent {
 
 trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
-  def ds : JdbcDataStore
-  def dbSettings : DbSettings
+  def dataStore : JdbcDataStore
 
   /* Internal Table names */
   def WeightsTable = "dd_graph_weights"
@@ -131,7 +129,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
    * execute one or multiple SQL queries
    */
   def execute(sql: String) = {
-    ds.executeSqlQueries(sql)
+    dataStore.executeSqlQueries(sql)
   }
 
   /**
@@ -139,7 +137,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
    * as callback function
    */
   def issueQuery(sql: String)(op: (java.sql.ResultSet) => Unit) = {
-    ds.executeSqlQueryWithCallback(sql)(op)
+    dataStore.executeSqlQueryWithCallback(sql)(op)
   }
 
   // used in unit test
@@ -335,7 +333,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   // assign variable holdout
   def assignHoldout(schema: Map[String, _ <: VariableDataType], calibrationSettings: CalibrationSettings) {
     // variable holdout table - if user defined, execute once
-    ds.dropAndCreateTable(VariablesHoldoutTable, "variable_id bigint primary key")
+    dataStore.dropAndCreateTable(VariablesHoldoutTable, "variable_id bigint primary key")
     calibrationSettings.holdoutQuery match {
       case Some(query) => {
         log.info("Executing user supplied holdout query")
@@ -358,7 +356,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
 
     // variable observation table
-    ds.dropAndCreateTable(VariablesObservationTable, "variable_id bigint primary key")
+    dataStore.dropAndCreateTable(VariablesObservationTable, "variable_id bigint primary key")
     calibrationSettings.observationQuery match {
       case Some(query) => {
         log.info("Executing user supplied observation query")  
@@ -382,7 +380,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         case MultinomialType(x) => (0 to x-1).map (n => s"""('${"%05d".format(n)}')""").mkString(", ")
       }
       val cardinalityTableName = InferenceNamespace.getCardinalityTableName(relation, column)
-      ds.dropAndCreateTable(cardinalityTableName, "cardinality text")
+      dataStore.dropAndCreateTable(cardinalityTableName, "cardinality text")
       execute(s"""
         INSERT INTO ${cardinalityTableName} VALUES ${cardinalityValues};
         """)
@@ -416,7 +414,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       //  not in observation table, not in holdout table, in evidence table => Evidence 1
       //  else => Query 1
       val variableTypeTable = InferenceNamespace.getVariableTypeTableName(relation)
-      ds.dropAndCreateTableAs(variableTypeTable,
+      dataStore.dropAndCreateTableAs(variableTypeTable,
         s"""SELECT t0.id, CASE WHEN t2.variable_id IS NOT NULL AND ${column} IS NOT NULL THEN 2
                            WHEN t1.variable_id IS NOT NULL THEN 0
                            WHEN ${column} IS NOT NULL THEN 1
@@ -450,7 +448,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   // ground factor meta data
   def groundFactorMeta(du: DataLoader, factorDescs: Seq[FactorDesc], dbSettings: DbSettings,
     groundingPath: String, parallelGrounding: Boolean) {
-    ds.dropAndCreateTable(FactorMetaTable, "name text, funcid int, sign text")
+    dataStore.dropAndCreateTable(FactorMetaTable, "name text, funcid int, sign text")
 
     // generate a string containing the signs (whether negated) of variables for each factor
     factorDescs.foreach { factorDesc =>
@@ -524,7 +522,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     }
 
     // weights table
-    ds.dropAndCreateTable(WeightsTable, """id bigint, isfixed int, initvalue real, cardinality text, 
+    dataStore.dropAndCreateTable(WeightsTable, """id bigint, isfixed int, initvalue real, cardinality text, 
       description text""")
     
     // Create the feature stats table
@@ -552,7 +550,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       val outfile = InferenceNamespace.getFactorFileName(factorDesc.name)
 
       // table of input query
-      ds.dropAndCreateTableAs(querytable, factorDesc.inputQuery)
+      dataStore.dropAndCreateTableAs(querytable, factorDesc.inputQuery)
       execute(s"""ALTER TABLE ${querytable} ADD COLUMN id bigint;""")
 
       // handle factor id
@@ -589,11 +587,11 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         val hasWeightVariables = !(isFixed || weightlist == "")
         hasWeightVariables match {
             // create a table that only contains one row (one weight) 
-            case false => ds.dropAndCreateTableAs(weighttableForThisFactor, 
+            case false => dataStore.dropAndCreateTableAs(weighttableForThisFactor, 
               s"""SELECT ${cast(isFixed, "int")} AS isfixed, ${cast(initvalue, "float")} AS initvalue, 
                 ${cast(0, "bigint")} AS id;""")
             // create one weight for each different element in weightlist.
-            case true => ds.dropAndCreateTableAs(weighttableForThisFactor,
+            case true => dataStore.dropAndCreateTableAs(weighttableForThisFactor,
               s"""SELECT ${weightlist}, ${cast(isFixed, "int")} AS isfixed, 
               ${cast(initvalue, "float")} AS initvalue, ${cast(0, "bigint")} AS id
               FROM ${querytable}
@@ -637,7 +635,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         factorDesc.func.variables.zipWithIndex.foreach { case(v,idx) =>
           val cardinalityTableName = InferenceNamespace.getCardinalityInFactorTableName(
             factorDesc.weightPrefix, idx)
-          ds.dropAndCreateTableAs(cardinalityTableName, s"""SELECT * FROM
+          dataStore.dropAndCreateTableAs(cardinalityTableName, s"""SELECT * FROM
             ${InferenceNamespace.getCardinalityTableName(v.headRelation, v.field)};""")
         }
 
@@ -653,7 +651,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         // handle weights table
         // weight is fixed, or doesn't have weight variables
         if (isFixed || weightlist == ""){
-          ds.dropAndCreateTableAs(weighttableForThisFactor, s"""
+          dataStore.dropAndCreateTableAs(weighttableForThisFactor, s"""
             SELECT ${cast(isFixed, "int")} AS isfixed, ${initvalue} AS initvalue,
             ${cardinalityCmd} AS cardinality, ${cweightid} AS id
             FROM ${cardinalityTables.mkString(", ")}
@@ -676,7 +674,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           // temporary weight table for weights without a cross product with cardinality
           val weighttableForThisFactorTemp = s"dd_weight_${factorDesc.name}_temp"
 
-          ds.dropAndCreateTableAs(weighttableForThisFactorTemp,
+          dataStore.dropAndCreateTableAs(weighttableForThisFactorTemp,
             s"""SELECT ${weightlist}, ${cast(isFixed, "int")} AS isfixed,
             ${cast(initvalue, "float")} AS initvalue
             FROM ${querytable}
@@ -686,7 +684,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           // another for an ordered version. The reason that we cannot
           // do this with only one table is not fundemental -- it is just
           // a specific property of Greenplum to make it right
-          ds.dropAndCreateTableAs(s"${weighttableForThisFactor}_unsorted",
+          dataStore.dropAndCreateTableAs(s"${weighttableForThisFactor}_unsorted",
             s"""SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} AS cardinality,
             ${cast(0, "bigint")} AS id
             FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")} LIMIT 0;""")
@@ -697,7 +695,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
             FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")}
             ORDER BY ${weightlist}, cardinality;""")
           
-          ds.dropAndCreateTableAs(weighttableForThisFactor,
+          dataStore.dropAndCreateTableAs(weighttableForThisFactor,
             s"""SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} AS cardinality,
             ${cast(0, "bigint")} AS id
             FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")} LIMIT 0""")
@@ -887,7 +885,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         execute(createCalibrationViewMultinomialSQL(calibrationViewName, bucketedViewName, columnName))
     }
     
-    val bucketData = ds.selectAsMap(selectCalibrationDataSQL(calibrationViewName)).map { row =>
+    val bucketData = dataStore.selectAsMap(selectCalibrationDataSQL(calibrationViewName)).map { row =>
       val bucket = row("bucket")
       val data = BucketData(
         row.get("num_variables").map(_.asInstanceOf[Long]).getOrElse(0), 

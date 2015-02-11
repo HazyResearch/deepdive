@@ -242,6 +242,7 @@ trait JdbcDataStore extends Logging {
   }
 
   // ========================================
+  // Extraction
 
   def queryAsMap[A](query: String, batchSize: Option[Int] = None)
       (block: Iterator[Map[String, Any]] => A) : A = {

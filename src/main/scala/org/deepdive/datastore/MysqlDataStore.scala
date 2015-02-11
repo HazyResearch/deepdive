@@ -8,7 +8,6 @@ import play.api.libs.json._
 
 trait MysqlDataStoreComponent extends JdbcDataStoreComponent {
   def dataStore = new MysqlDataStore
-  def ds = new MysqlDataStore
 }
 
 /* Helper object for working with Postgres */

@@ -13,7 +13,6 @@ import scalikejdbc._
 
 trait PostgresDataStoreComponent extends JdbcDataStoreComponent {
   def dataStore = new PostgresDataStore
-  def ds = new PostgresDataStore
 }
 
 /* Helper object for working with Postgres */
