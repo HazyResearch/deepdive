@@ -3,10 +3,10 @@
 set -x
 
 # Set username and password
-export PGUSER=senwu #${PGUSER:-`whoami`}
+export PGUSER=${PGUSER:-`whoami`}
 export PGPASSWORD=${PGPASSWORD:-}
-export PGPORT=6432 #${PGPORT:-5432}
-export PGHOST=raiders4.stanford.edu #${PGHOST:-localhost}
+export PGPORT=${PGPORT:-5432}
+export PGHOST=${PGHOST:-localhost}
 export DBNAME=deepdive_test
 export PGDATABASE=$DBNAME  # for testing to work with null settings
 export GPHOST=${GPHOST:-localhost}
