@@ -29,7 +29,7 @@ object ExtractionManager {
     with PostgresExtractionDataStoreComponent
 
   class MysqlExtractionManager(val parallelism: Int, val dbSettings: DbSettings) extends ExtractionManager
-    with MysqlExtractionDataStoreComponent
+    with MysqlDataStoreComponent
 
   case object ScheduleTasks
 

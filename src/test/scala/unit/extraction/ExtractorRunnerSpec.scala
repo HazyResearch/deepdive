@@ -21,7 +21,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
   val dataStore = TestHelper.getTestEnv match {
     case TestHelper.Psql => new PostgresExtractionDataStore
-    case TestHelper.Mysql=> new MysqlExtractionDataStore
+    case TestHelper.Mysql=> new MysqlDataStore
   }
   
   // execute a query

@@ -6,7 +6,7 @@ import java.io.{ByteArrayInputStream, File, FileOutputStream, FileWriter,
   StringWriter, Reader, FileReader, InputStream, InputStreamReader, FileInputStream}
 import java.io.PrintWriter
 import org.deepdive.calibration._
-import org.deepdive.datastore.MysqlDataStore
+import org.deepdive.datastore._
 import org.deepdive.Logging
 import org.deepdive.settings._
 import org.deepdive.helpers.Helpers
@@ -21,9 +21,9 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
   // Do not define inferenceDatastore here, define it in the class with this trait.
   // Since we have to pass parameters there. May need to refactor.
   
-  class MysqlInferenceDataStore(val dbSettings : DbSettings) extends SQLInferenceDataStore with Logging {
+  class MysqlInferenceDataStore(val dbSettings : DbSettings) extends SQLInferenceDataStore with Logging with MysqlDataStoreComponent {
 
-    def ds = MysqlDataStore
+    // def ds : MysqlDataStore
     
     // Default batch size, if not overwritten by user
     val BatchSize = Some(250000)

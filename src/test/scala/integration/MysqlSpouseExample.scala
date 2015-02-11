@@ -11,7 +11,7 @@ import com.typesafe.config._
 import org.deepdive.test._
 import org.deepdive.Context
 import org.deepdive._
-import org.deepdive.datastore.{MysqlDataStore, JdbcDataStore}
+import org.deepdive.datastore._
 import org.scalatest._
 import org.deepdive.Logging
 import org.deepdive.settings._
@@ -23,7 +23,7 @@ import scalikejdbc.ConnectionPool
 /** Text running spouse example.
  * 
  */
-class MysqlSpouseExample extends FunSpec with Logging{
+class MysqlSpouseExample extends FunSpec with Logging with MysqlDataStoreComponent {
 
   // Read the schema from test file
   val schema = scala.io.Source.fromFile(getClass.getResource("/spouse/schema_mysql.sql").getFile).mkString
@@ -34,7 +34,7 @@ class MysqlSpouseExample extends FunSpec with Logging{
   def prepareData() {
 
     JdbcDataStore.init(config)
-    MysqlDataStore.withConnection { implicit conn =>
+    dataStore.withConnection { implicit conn =>
 
       JdbcDataStore.executeSqlQueries(schema);
 
@@ -248,7 +248,7 @@ deepdive {
       CASE WHEN num_incorrect IS NULL THEN 0 ELSE num_incorrect END)
       from has_spouse_is_true_calibration where bucket = 9"""
 
-    MysqlDataStore.withConnection { implicit conn =>
+    dataStore.withConnection { implicit conn =>
       JdbcDataStore.executeSqlQueryWithCallback(checkQuery) { rs =>
         score = rs.getDouble(1)
       }
