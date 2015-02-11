@@ -520,10 +520,10 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     skipLearning: Boolean, weightTable: String) {
     val groundingDir = getFileNameFromPath(groundingPath)
 
-    // save last weights
-    if (skipLearning && weightTable.isEmpty()) {
-      execute(copyLastWeightsSQL)
-    }
+    // // save last weights
+    // if (skipLearning && weightTable.isEmpty()) {
+    //   execute(copyLastWeightsSQL)
+    // }
 
     // weights table
     ds.dropAndCreateTable(WeightsTable, """id bigint, isfixed int, initvalue real, cardinality text, 
@@ -737,9 +737,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       createFeatureStats(factorDesc, querytable, weightlist, weightDesc)
     }
 
-    if (skipLearning) {
-      reuseWeights(weightTable)
-    }
+    // if (skipLearning) {
+    //   reuseWeights(weightTable)
+    // }
 
     // dump weights
     du.unload(InferenceNamespace.getWeightFileName,
