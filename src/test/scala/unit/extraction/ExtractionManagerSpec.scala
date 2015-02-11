@@ -12,7 +12,7 @@ import scala.util.{Try, Success, Failure}
 
 object ExtractionManagerSpec {
   class MemoryExtractionManager(val parallelism: Int, val dbSettings: DbSettings) extends ExtractionManager with
-    MemoryExtractionDataStoreComponent {
+    MemoryDataStoreComponent {
 
     override def extractorRunnerProps = Props(new Actor {
       def receive = {
