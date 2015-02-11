@@ -24,19 +24,20 @@ RUN echo 'export LD_LIBRARY_PATH=$DEEPDIVE_HOME/lib/dw_linux/lib:$DEEPDIVE_HOME/
 RUN echo 'export PATH=~/deepdive/sbt:$PATH' >> ~/.bashrc
 
 # Initialize script to wait for greenplum
+RUN echo 'DeepDive needs a database connection to run and is waiting for the DB to finish initializing. After it finishes, the shell will return control to you.'
 RUN echo 'while true; do' >> ~/.bashrc
-RUN echo '  psql -q -h $DB_PORT_5432_TCP_ADDR -p $DB_PORT_5432_TCP_PORT -U gpadmin deepdive -c "SELECT 1;" > /dev/null 2 >& 1' >> ~/.bashrc
+RUN echo '  psql -q -h $DB_PORT_5432_TCP_ADDR -p $DB_PORT_5432_TCP_PORT -U gpadmin deepdive -c "SELECT 1;" > /dev/null' >> ~/.bashrc
 RUN echo '  RETVAL=$?' >> ~/.bashrc
 RUN echo '  [ $RETVAL -eq 0 ] && break' >> ~/.bashrc
-RUN echo '  echo -ne "Waiting for DB\r"' >> ~/.bashrc
+RUN echo '  echo -ne "DeepDive is waiting for DB to finish initializing\r"' >> ~/.bashrc
 RUN echo '  sleep 1' >> ~/.bashrc
-RUN echo '  echo -ne "Waiting for DB.\r"' >> ~/.bashrc
+RUN echo '  echo -ne "DeepDive is waiting for the DB to finish initializing.\r"' >> ~/.bashrc
 RUN echo '  sleep 1' >> ~/.bashrc
-RUN echo '  echo -ne "Waiting for DB..\r"' >> ~/.bashrc
+RUN echo '  echo -ne "DeepDive is waiting for the DB to finish initializing..\r"' >> ~/.bashrc
 RUN echo '  sleep 1' >> ~/.bashrc
-RUN echo '  echo -ne "Waiting for DB...\r"' >> ~/.bashrc
+RUN echo '  echo -ne "DeepDive is waiting for the DB to finish initializing...\r"' >> ~/.bashrc
 RUN echo '  sleep 1' >> ~/.bashrc
-RUN echo '  echo -ne "Waiting for DB....\r"' >> ~/.bashrc
+RUN echo '  echo -ne "DeepDive is waiting for the DB to finish initializing....\r"' >> ~/.bashrc
 RUN echo '  sleep 1' >> ~/.bashrc
 RUN echo 'done' >> ~/.bashrc
 RUN echo 'echo -ne "\nGreenplum is up and running! You may now use deepdive.\n"' >> ~/.bashrc
