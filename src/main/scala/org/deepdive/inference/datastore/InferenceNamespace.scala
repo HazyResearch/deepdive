@@ -32,7 +32,7 @@ object InferenceNamespace {
   def getFactorMetaFileName = s"dd_factormeta"
   def getBackupFolderName = s"_dd_backup"
 
-  // variable data type id
+  // variable data type id, it's an enum type used to communicate with the sampler
   def getVariableDataTypeId(variable: VariableDataType) : Int = {
     variable match {
       case BooleanType => 0
@@ -40,7 +40,7 @@ object InferenceNamespace {
     }
   }
 
-  // factor funce type id
+  // factor funce type id, enum used to communicate with the sampler
   def getFactorFunctionTypeid(functionName: String) : Int = {
     functionName match {
       case "ImplyFactorFunction" => 0
