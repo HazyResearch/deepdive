@@ -5,7 +5,7 @@ import au.com.bytecode.opencsv.CSVWriter
 import java.io.{ByteArrayInputStream, File, FileOutputStream, FileWriter,
   StringWriter, Reader, FileReader, InputStream, InputStreamReader}
 import org.deepdive.calibration._
-import org.deepdive.datastore.PostgresDataStore
+import org.deepdive.datastore._
 import org.deepdive.inference._
 import org.deepdive.Logging
 import org.deepdive.settings._
@@ -17,9 +17,9 @@ import java.io._
 /* Stores the factor graph and inference results in a postges database. */
 trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
 
-  class PostgresInferenceDataStore(val dbSettings : DbSettings) extends SQLInferenceDataStore with Logging {
+  class PostgresInferenceDataStore(val dbSettings : DbSettings) extends SQLInferenceDataStore with Logging with PostgresDataStoreComponent {
 
-    def ds = PostgresDataStore
+    // def ds = PostgresDataStore
 
     // Default batch size, if not overwritten by user
     val BatchSize = Some(250000)

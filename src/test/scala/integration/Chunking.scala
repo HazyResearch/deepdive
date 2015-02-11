@@ -31,7 +31,7 @@ class ChunkingApp extends FunSpec with Logging{
   val env = TestHelper.getTestEnv()
 
   val ds = env match {
-    case TestHelper.Psql => PostgresDataStore
+    case TestHelper.Psql => new PostgresDataStore
     case TestHelper.Mysql => new MysqlDataStore
   }
 

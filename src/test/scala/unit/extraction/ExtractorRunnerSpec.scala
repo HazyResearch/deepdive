@@ -20,7 +20,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
   with FunSpecLike with BeforeAndAfter with Logging {
 
   val dataStore = TestHelper.getTestEnv match {
-    case TestHelper.Psql => new PostgresExtractionDataStore
+    case TestHelper.Psql => new PostgresDataStore
     case TestHelper.Mysql=> new MysqlDataStore
   }
   

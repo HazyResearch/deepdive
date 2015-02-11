@@ -11,7 +11,7 @@ import com.typesafe.config._
 import org.deepdive.test._
 import org.deepdive.Context
 import org.deepdive._
-import org.deepdive.datastore.{PostgresDataStore, JdbcDataStore}
+import org.deepdive.datastore._
 import org.scalatest._
 import org.deepdive.Logging
 import org.deepdive.settings._
@@ -24,7 +24,7 @@ import scalikejdbc.ConnectionPool
 /** Text running spouse example.
  * 
  */
-class PostgresSpouseExample extends FunSpec with Logging{
+class PostgresSpouseExample extends FunSpec with Logging with PostgresDataStoreComponent {
 
   // Read the schema from test file
   val schema = scala.io.Source.fromFile(getClass.getResource("/spouse/schema_psql.sql").getFile).mkString
@@ -35,7 +35,7 @@ class PostgresSpouseExample extends FunSpec with Logging{
   def prepareData() {
 
     JdbcDataStore.init(config)
-    PostgresDataStore.withConnection { implicit conn =>
+    dataStore.withConnection { implicit conn =>
 
       JdbcDataStore.executeSqlQueries(schema);
 
@@ -205,7 +205,7 @@ deepdive {
       CASE WHEN num_incorrect IS NULL THEN 0 ELSE num_incorrect END) 
       from has_spouse_is_true_calibration where bucket = 9"""
 
-    PostgresDataStore.withConnection { implicit conn =>
+    dataStore.withConnection { implicit conn =>
       JdbcDataStore.executeSqlQueryWithCallback(checkQuery) { rs =>
         score = rs.getDouble(1)
       }

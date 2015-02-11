@@ -26,7 +26,7 @@ object ExtractionManager {
   }
 
   class PostgresExtractionManager(val parallelism: Int, val dbSettings: DbSettings) extends ExtractionManager
-    with PostgresExtractionDataStoreComponent
+    with PostgresDataStoreComponent
 
   class MysqlExtractionManager(val parallelism: Int, val dbSettings: DbSettings) extends ExtractionManager
     with MysqlDataStoreComponent

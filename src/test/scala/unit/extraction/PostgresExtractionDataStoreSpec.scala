@@ -10,9 +10,9 @@ import play.api.libs.json._
 import java.io.StringWriter
 
 class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
-  with PostgresExtractionDataStoreComponent {
+  with PostgresDataStoreComponent {
 
-  lazy implicit val connection = PostgresDataStore.borrowConnection()
+  lazy implicit val connection = dataStore.borrowConnection()
 
   before {
     JdbcDataStore.init()
