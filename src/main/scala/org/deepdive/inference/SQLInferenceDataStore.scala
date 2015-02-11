@@ -51,9 +51,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
 
   def ds : JdbcDataStore
   def dbSettings : DbSettings
-  // def inferenceTableNameSpace : InferenceNamespace
-
-  val factorOffset = new java.util.concurrent.atomic.AtomicLong(0)
 
   /* Internal Table names */
   def WeightsTable = "dd_graph_weights"
