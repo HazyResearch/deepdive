@@ -448,8 +448,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
   }
 
   // ground factor meta data
-  def groundFactorMeta(du: DataLoader, factorDescs: Seq[FactorDesc], groundingPath: String, 
-    parallelGrounding: Boolean) {
+  def groundFactorMeta(du: DataLoader, factorDescs: Seq[FactorDesc], dbSettings: DbSettings,
+    groundingPath: String, parallelGrounding: Boolean) {
     ds.dropAndCreateTable(FactorMetaTable, "name text, funcid int, sign text")
 
     // generate a string containing the signs (whether negated) of variables for each factor
@@ -526,6 +526,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     // weights table
     ds.dropAndCreateTable(WeightsTable, """id bigint, isfixed int, initvalue real, cardinality text, 
       description text""")
+    
+    // Create the feature stats table
+    execute(createFeatureStatsSupportTableSQL)
 
     // weight and factor id
     // greenplum: use fast_seqassign postgres: use sequence
@@ -810,10 +813,7 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     groundVariables(schema, du, dbSettings, parallelGrounding, groundingPath)
 
     // generate factor meta data
-    groundFactorMeta(du, factorDescs, groundingPath, parallelGrounding)
-          
-    // Create the feature stats table
-    execute(createFeatureStatsSupportTableSQL)
+    groundFactorMeta(du, factorDescs, dbSettings, groundingPath, parallelGrounding)
 
     // ground weights and factors
     groundFactorsAndWeights(factorDescs, calibrationSettings, du, dbSettings, 
