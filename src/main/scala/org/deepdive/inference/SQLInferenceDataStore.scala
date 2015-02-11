@@ -137,11 +137,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     ds.executeSqlQueries(sql)
   }
 
-  // execute a query (can have return results)
-  def executeQuery(sql: String) = {
-    ds.executeSqlQuery(sql)
-  }
-
   /**
    * Issues a single SQL query that can return results, and perform {@code op} 
    * as callback function
@@ -316,9 +311,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       val colType = checkColumnType(queryTable, v)
       if (colType.equals("text") || colType.equals("blob")) {
         // create a partial index
-        executeQuery(s"CREATE INDEX ${queryTable}_${v}_idx ON ${queryTable}(${v}(255))") 
+        execute(s"CREATE INDEX ${queryTable}_${v}_idx ON ${queryTable}(${v}(255))") 
       } else {
-        executeQuery(s"CREATE INDEX ${queryTable}_${v}_idx ON ${queryTable}(${v})")
+        execute(s"CREATE INDEX ${queryTable}_${v}_idx ON ${queryTable}(${v})")
       }
     })
   }
