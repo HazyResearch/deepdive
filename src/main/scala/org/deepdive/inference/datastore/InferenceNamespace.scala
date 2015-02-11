@@ -5,6 +5,7 @@ import java.io.File
 
 object InferenceNamespace {
   
+  val deepdivePrefix = "dd_"
   def WeightsTable = "dd_graph_weights"
   def lastWeightsTable = "dd_graph_last_weights"
   def FactorsTable = "dd_graph_factors"
@@ -25,7 +26,9 @@ object InferenceNamespace {
   def getWeightTableName(tableName: String) = s"dd_weights_${tableName}"
   def getQueryTableName(tableName: String) = s"dd_query_${tableName}"
   def getFactorTableName(tableName: String) = s"dd_factors_${tableName}"
-  def getCardinalityTableName(relation: String, column: String) = s"${relation}_${column}_cardinality"
+  def getCardinalityTableName(relation: String, column: String) = s"dd_${relation}_${column}_cardinality"
+  def getVariableTypeTableName(relation: String) = s"dd_${relation}_vtype"
+  def getCardinalityInFactorTableName(prefix: String, idx: Int) = s"dd_${prefix}_cardinality_${idx}"
 
   // files
   def getVariableFileName(relation: String) = s"dd_variables_${relation}"
