@@ -10,6 +10,10 @@
  * The workflow is defined in groundFactorGraph. Table and file names are defined in
  * InferenceNamespace
  *
+ * We might want to promulgate a new coding standard: no direct SQL queries without a function wrapper, 
+ * into which parameters are passed. The goal in doing that would be to enforce type checking by the compiler. 
+ * As it stands, if there's a type clash you don't find out until you try to run the query. 
+ *
  */
 package org.deepdive.inference
 
@@ -398,6 +402,9 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       
       val variableDataType = InferenceNamespace.getVariableDataTypeId(dataType)
 
+      // cardinality (domain size) of the variable
+      // boolean: 2
+      // multinomial: as user defined
       val cardinality = dataType match {
         case BooleanType => 2
         case MultinomialType(x) => x.toInt
