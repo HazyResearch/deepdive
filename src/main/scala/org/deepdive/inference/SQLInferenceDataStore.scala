@@ -82,15 +82,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
     dataStore.executeSqlQueryWithCallback(sql)(op)
   }
 
-  // used in unit test
-  def keyType = "bigserial"
-  def stringType = "text"
-  def randomFunc = "RANDOM()"
-
-  def checkGreenplumSQL = s"""
-    SELECT version() LIKE '%Greenplum%';
-  """
-
   def copyLastWeightsSQL = s"""
     DROP TABLE IF EXISTS ${lastWeightsTable} CASCADE;
     CREATE TABLE ${lastWeightsTable} AS

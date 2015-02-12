@@ -24,7 +24,6 @@ class TestInferenceManager(
   val dbSettings: DbSettings
   )  
   extends InferenceManager with MemoryInferenceDataStoreComponent {
-    def factorGraphBuilderProps = Props(classOf[Forwarder], factorGraphBuilderProbe)
     override def samplerProps  = Props(classOf[Forwarder], samplerProbe)
     override def calibrationDataWriterProps = Props(classOf[Forwarder], cdwProbe)
   }

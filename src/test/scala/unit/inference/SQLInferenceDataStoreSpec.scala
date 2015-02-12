@@ -114,7 +114,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         inferenceDataStore.init()
         
         // Insert sample data
-        SQL(s"""CREATE TABLE r1(weight ${inferenceDataStore.stringType},
+        SQL(s"""CREATE TABLE r1(weight text,
           is_correct boolean, id bigint);""").execute.apply()        
         val data = (1 to 100).map { i =>
           Map("id" -> i, "is_correct" -> s"${i%2==0}".toBoolean)
@@ -165,7 +165,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         inferenceDataStore.init()
         
         // Insert sample data
-        SQL(s"""CREATE TABLE r1(weight ${inferenceDataStore.stringType},
+        SQL(s"""CREATE TABLE r1(weight text,
           is_correct boolean, id bigint);""").execute.apply()        
         val data = (1 to 100).map { i =>
           Map("id" -> i, "is_correct" -> s"${i%2==0}".toBoolean)
@@ -216,7 +216,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         inferenceDataStore.init()
         
         // Insert sample data
-        SQL(s"""CREATE TABLE r1(weight ${inferenceDataStore.stringType},
+        SQL(s"""CREATE TABLE r1(weight text,
           is_correct boolean, id bigint);""").execute.apply()        
         val data = (1 to 100).map { i =>
           Map("id" -> i, "weight" -> s"weight_${i}", "is_correct" -> s"${i%2==0}".toBoolean)
@@ -331,7 +331,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         inferenceDataStore.init()
         
         // Insert sample data
-        SQL(s"""CREATE TABLE r1(weight ${inferenceDataStore.stringType},
+        SQL(s"""CREATE TABLE r1(weight text,
           is_correct boolean, id bigint);""").execute.apply()        
         val data = (1 to 100).map { i =>
           Map("id" -> i, "weight" -> s"weight_${i}", "is_correct" -> s"${i%2==0}".toBoolean)
@@ -363,7 +363,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
 
       it("should work with weight variables that are null") {
         inferenceDataStore.init()
-         SQL(s"""CREATE TABLE r1(weight ${inferenceDataStore.stringType},
+         SQL(s"""CREATE TABLE r1(weight text,
           is_correct boolean, id bigint);""").execute.apply()        
         val data = (1 to 100).map { i =>
           Map("id" -> i, "is_correct" -> s"${i%2==0}".toBoolean)
@@ -388,9 +388,9 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
 
       it("should work with multi-variable factor rules") {
         inferenceDataStore.init()
-        SQL(s"""CREATE TABLE r1(weight ${inferenceDataStore.stringType},
+        SQL(s"""CREATE TABLE r1(weight text,
           is_correct boolean, id bigint);""").execute.apply()
-        SQL(s"""CREATE TABLE r2(weight ${inferenceDataStore.stringType},
+        SQL(s"""CREATE TABLE r2(weight text,
           is_correct boolean, id bigint);""").execute.apply()
         val data1 = (1 to 100).map { i =>
           Map("id" -> i, "weight" -> s"weight_${i}", "is_correct" -> s"${i%2==0}".toBoolean)
@@ -593,7 +593,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
         inferenceDataStore.init()
         val holdoutFraction = 0.0
         inferenceDataStore.groundFactorGraph(Map(), Seq(), CalibrationSettings(holdoutFraction, None, None), false, "", dbSettings, false)
-        SQL(s"""create table has_spouse(id ${inferenceDataStore.keyType} primary key, is_true boolean)""").execute.apply()
+        SQL(s"""create table has_spouse(id bigint primary key, is_true boolean)""").execute.apply()
         inferenceDataStore.writebackInferenceResult(schema, variablesFile, weightsFile, false, dbSettings)
       }
 
@@ -603,7 +603,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
 
 
       it("should work for Boolean variables") {
-        SQL(s"""create table t1_c1_inference(id ${inferenceDataStore.keyType} primary key, c1 boolean, 
+        SQL(s"""create table t1_c1_inference(id bigint primary key, c1 boolean, 
           category bigint, expectation double precision)""").execute.apply()
         SQL("""insert into t1_c1_inference(c1, category, expectation) VALUES
           (null, null, 0.31), (null, null, 0.93), (null, null, 0.97), 
@@ -625,7 +625,7 @@ trait SQLInferenceDataStoreSpec extends FunSpec with BeforeAndAfter { this: SQLI
       }
 
       it("should work for categorical variables") {
-         SQL(s"""create table t1_c1_inference(id ${inferenceDataStore.keyType} primary key, c1 bigint, 
+         SQL(s"""create table t1_c1_inference(id bigint primary key, c1 bigint, 
           category bigint, expectation double precision)""").execute.apply()
          SQL("""insert into t1_c1_inference(c1, category, expectation) VALUES
           (null, 0, 0.55), (null, 1, 0.55), (null, 2, 0.55), 
