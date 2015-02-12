@@ -2,7 +2,6 @@ package org.deepdive.inference
 
 import anorm._
 import au.com.bytecode.opencsv.CSVWriter
-import java.io.{ByteArrayInputStream, File, FileOutputStream, FileWriter, StringWriter, Reader, FileReader, InputStream, InputStreamReader}
 import org.deepdive.calibration._
 import org.deepdive.datastore._
 import org.deepdive.inference._
@@ -26,28 +25,12 @@ trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent
      * weightsFile: location to the binary format. Assume "weightsFile.text" file exists.
      */
     def bulkCopyWeights(weightsFile: String, dbSettings: DbSettings) : Unit = {
-    
-     val cmdfile = File.createTempFile(s"copy", ".sh")
-     val writer = new PrintWriter(cmdfile)
-     val copyStr = List("psql ", Helpers.getOptionString(dbSettings), " -c ", "\"", 
-       """\COPY """, s"${WeightResultTable}(id, weight) FROM \'${weightsFile}\' DELIMITER ' ';", "\"").mkString("")
-     log.info(copyStr)
-     writer.println(copyStr)
-     writer.close()
-     Helpers.executeCmd(cmdfile.getAbsolutePath())
+      (new DataLoader).load(weightsFile, WeightResultTable, dbSettings, false, " ")
     }
     
     def bulkCopyVariables(variablesFile: String, dbSettings: DbSettings) : Unit = {
-     
-     val cmdfile = File.createTempFile(s"copy", ".sh")
-     val writer = new PrintWriter(cmdfile)
-     val copyStr = List("psql ", Helpers.getOptionString(dbSettings), " -c ", "\"", 
-       """\COPY """, s"${VariableResultTable}(id, category, expectation) FROM \'${variablesFile}\' DELIMITER ' ';", "\"").mkString("")
-     log.info(copyStr)
-     writer.println(copyStr)
-     writer.close()
-     Helpers.executeCmd(cmdfile.getAbsolutePath())
-   }
+      (new DataLoader).load(variablesFile, VariableResultTable, dbSettings, false, " ")
+    }
 
     /**
     * This query optimizes slow joins on certain DBMS (MySQL) by creating indexes
