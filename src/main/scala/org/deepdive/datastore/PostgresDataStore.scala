@@ -160,7 +160,7 @@ class PostgresDataStore extends JdbcDataStore with Logging {
   // create fast sequence assign function for greenplum
   override def createAssignIdFunctionGreenplum() : Unit = {
     if (!isUsingGreenplum()) return
-    executeSqlQuery(SQLFunctions.fastSequenceAssignForGreenplum)
+    executeSqlQueries(SQLFunctions.fastSequenceAssignForGreenplum, false)
   }
 
 }

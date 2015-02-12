@@ -26,22 +26,6 @@ trait JdbcDataStore extends Logging {
   def close() = ConnectionPool.closeAll()
 
   def init() : Unit = {}
-  /**
-   * Execute any sql query
-   * (sql must be only ONE query for mysql, but can be multiple queries for psql.)
-   * 
-   * @return SQL result set
-   */
-  def executeSqlQuery(sql: String) = {
-    log.debug("Executing single query: " + sql)
-    val conn = borrowConnection()
-    conn.setAutoCommit(false)
-    val stmt = conn.createStatement();
-    // Using prepareStatement should be better: faster, prevents SQL injection
-    conn.prepareStatement(sql).execute
-    conn.commit()
-    conn.close()
-  }
 
   /**
    * Issues a single SQL query that can return results, and perform {@code op} 
@@ -74,17 +58,23 @@ trait JdbcDataStore extends Logging {
   *  Execute one or multiple SQL update commands with connection to JDBC datastore
    *  
    */
-  def executeSqlQueries(sql: String) : Unit = {
+  def executeSqlQueries(sql: String, split: Boolean = true) : Unit = {
     val conn = borrowConnection()
     // Supporting more general SQL queries (e.g. SELECT)
     val stmt = conn.createStatement()
     try {
-      // changed \s+ to \s* here.
-      """;\s*""".r.split(sql.trim()).filterNot(_.isEmpty).foreach(q => {
-        log.debug("Executing query via JDBC: " + q.trim())
-        // Using prepareStatement should be better: faster, prevents SQL injection
-        conn.prepareStatement(q.trim()).execute
-      })
+      if (split) {
+        // changed \s+ to \s* here.
+        """;\s*""".r.split(sql.trim()).filterNot(_.isEmpty).foreach(q => {
+          log.debug("Executing query via JDBC: " + q.trim())
+          // Using prepareStatement should be better: faster, prevents SQL injection
+          conn.prepareStatement(q.trim()).execute
+        })
+        } else {
+          conn.setAutoCommit(false)
+          conn.prepareStatement(sql).execute
+          conn.commit()
+        }
     } catch {
       // SQL cmd exception
       case exception : Throwable =>
