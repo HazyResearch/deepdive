@@ -352,11 +352,6 @@ trait JdbcDataStore extends Logging {
   def createSequenceFunction(seqName: String) : String = null
   
   /**
-   * Get the next value of a sequence
-   */
-  def nextVal(seqName: String): String = null
-  
-  /**
    * Cast an expression to a type
    */
   def cast(expr: Any, toType: String): String = null

@@ -111,4 +111,65 @@ class PostgresDataStore extends JdbcDataStore with Logging {
       ""
   }
 
+
+  /**
+   * Drop and create a sequence, based on database type.
+   */
+  override def createSequenceFunction(seqName: String): String =
+    s"""DROP SEQUENCE IF EXISTS ${seqName} CASCADE;
+        CREATE SEQUENCE ${seqName} MINVALUE -1 START 0;"""
+
+  /**
+   * Cast an expression to a type
+   */
+  override def cast(expr: Any, toType: String): String =
+    s"""${expr.toString()}::${toType}"""
+
+  /**
+   * Given a string column name, Get a quoted version dependent on DB.
+   *          if psql, return "column"
+   *          if mysql, return `column`
+   */
+  override def quoteColumn(column: String): String =
+    '"' + column + '"'
+    
+  /**
+   * Generate random number in [0,1] in psql
+   */
+  override def randomFunction: String = "RANDOM()"
+
+  /**
+   * Concatinate strings using "||" in psql/GP, adding user-specified
+   * delimiter in between
+   */
+  override def concat(list: Seq[String], delimiter: String): String = {
+    delimiter match {
+      case null => list.mkString(s" || ")
+      case "" => list.mkString(s" || ")
+      case _ => list.mkString(s" || '${delimiter}' || ")
+    }
+  }
+  
+  override def analyzeTable(table: String) = s"ANALYZE ${table}"
+
+  // assign senquential ids to table's id column
+  override def assignIds(table: String, startId: Long, sequence: String) : Long = {
+    if (isUsingGreenplum()) {
+      executeSqlQueries(s"SELECT fast_seqassign('${table.toLowerCase()}', ${startId});");
+    } else {
+      executeSqlQueries(s"UPDATE ${table} SET id = nextval('${sequence}');")
+    }
+    var count : Long = 0
+    executeSqlQueryWithCallback(s"""SELECT COUNT(*) FROM ${table};""") { rs =>
+      count = rs.getLong(1)
+    }
+    return count
+  }
+  
+  // create fast sequence assign function for greenplum
+  override def createAssignIdFunctionGreenplum() : Unit = {
+    if (!isUsingGreenplum()) return
+    executeSqlQuery(SQLFunctions.fastSequenceAssignForGreenplum)
+  }
+
 }

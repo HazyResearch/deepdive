@@ -1,4 +1,4 @@
-package org.deepdive.inference
+package org.deepdive.datastore
 
 object SQLFunctions {
 	val fastSequenceAssignForGreenplum = """

@@ -83,11 +83,6 @@ class MysqlDataStore extends JdbcDataStore with Logging {
   override def createSequenceFunction(seqName: String): String = s"SET @${seqName} = -1;"
 
   /**
-   * Get the next value of a sequence
-   */
-  override def nextVal(seqName: String): String = s" @${seqName} := @${seqName} + 1 "
-
-  /**
    * Cast an expression to a type
    */
   override def cast(expr: Any, toType: String): String = 
@@ -137,6 +132,11 @@ class MysqlDataStore extends JdbcDataStore with Logging {
   override def createAssignIdFunctionGreenplum() = {
     // nothing
   }
+
+  /**
+   * Get the next value of a sequence
+   */
+  def nextVal(seqName: String): String = s" @${seqName} := @${seqName} + 1 "
 
   // assign senquential ids to table's id column
   override def assignIds(table: String, startId: Long, sequence: String) : Long = {
