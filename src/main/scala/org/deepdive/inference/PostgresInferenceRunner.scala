@@ -13,9 +13,9 @@ import scala.io.Source
 import java.io._
 
 /* Stores the factor graph and inference results in a postges database. */
-trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
+trait PostgresInferenceRunnerComponent extends SQLInferenceRunnerComponent {
 
-  class PostgresInferenceDataStore(val dbSettings : DbSettings) extends SQLInferenceDataStore with Logging with PostgresDataStoreComponent {
+  class PostgresInferenceRunner(val dbSettings : DbSettings) extends SQLInferenceRunner with Logging with PostgresDataStoreComponent {
 
     // Default batch size, if not overwritten by user
     val BatchSize = Some(250000)

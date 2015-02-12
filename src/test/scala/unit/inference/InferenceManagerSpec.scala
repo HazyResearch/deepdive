@@ -23,7 +23,7 @@ class TestInferenceManager(
   val variableSchema: Map[String, _ <: VariableDataType],
   val dbSettings: DbSettings
   )  
-  extends InferenceManager with MemoryInferenceDataStoreComponent {
+  extends InferenceManager with MemoryInferenceRunnerComponent {
     override def samplerProps  = Props(classOf[Forwarder], samplerProbe)
     override def calibrationDataWriterProps = Props(classOf[Forwarder], cdwProbe)
   }

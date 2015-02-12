@@ -14,12 +14,12 @@ import scala.io.Source
 import org.apache.commons.io.FileUtils
 
 /* Stores the factor graph and inference results in a postges database. */
-trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
+trait MysqlInferenceRunnerComponent extends SQLInferenceRunnerComponent {
 
   // Do not define inferenceDatastore here, define it in the class with this trait.
   // Since we have to pass parameters there. May need to refactor.
   
-  class MysqlInferenceDataStore(val dbSettings : DbSettings) extends SQLInferenceDataStore with Logging with MysqlDataStoreComponent {
+  class MysqlInferenceRunner(val dbSettings : DbSettings) extends SQLInferenceRunner with Logging with MysqlDataStoreComponent {
 
     // def ds : MysqlDataStore
     

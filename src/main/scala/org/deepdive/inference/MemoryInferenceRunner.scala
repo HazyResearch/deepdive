@@ -8,11 +8,11 @@ import org.deepdive.settings._
 import scala.collection.mutable.{Map => MMap}
 import scala.collection.JavaConversions._
 
-trait MemoryInferenceDataStoreComponent extends InferenceDataStoreComponent{
+trait MemoryInferenceRunnerComponent extends InferenceRunnerComponent{
 
-  lazy val inferenceDataStore = new MemoryInferenceDataStore
+  lazy val inferenceRunner = new MemoryInferenceRunner
 
-  class MemoryInferenceDataStore extends InferenceDataStore with Logging {
+  class MemoryInferenceRunner extends InferenceRunner with Logging {
     
     def init() = {
     }

@@ -6,7 +6,7 @@ import org.deepdive.settings._
 import java.io.File
 
 
-trait InferenceDataStore {
+trait InferenceRunner {
 
     /* Initializes the data store. This method must be called before any other methods in this class. */
     def init() : Unit
@@ -41,8 +41,8 @@ trait InferenceDataStore {
 }
 
 /* Stores the factor graph and inference results. */
-trait InferenceDataStoreComponent {
+trait InferenceRunnerComponent {
 
-  def inferenceDataStore : InferenceDataStore
+  def inferenceRunner : InferenceRunner
 
 }

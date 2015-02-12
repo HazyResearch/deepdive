@@ -39,14 +39,14 @@ import scala.util.{Try, Success, Failure}
 
 
 /* Stores the factor graph and inference results. */
-trait SQLInferenceDataStoreComponent extends InferenceDataStoreComponent {
+trait SQLInferenceRunnerComponent extends InferenceRunnerComponent {
 
-  def inferenceDataStore : SQLInferenceDataStore
+  def inferenceRunner : SQLInferenceRunner
 
 }
 
 
-trait SQLInferenceDataStore extends InferenceDataStore with Logging {
+trait SQLInferenceRunner extends InferenceRunner with Logging {
 
   def dataStore : JdbcDataStore
 
