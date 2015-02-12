@@ -104,5 +104,25 @@ trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent
       // do nothing
     }
 
+    // assign senquential ids to table's id column
+    def assignIds(table: String, startId: Long, sequence: String) : Long = {
+      if (ds.isUsingGreenplum()) {
+        executeQuery(s"SELECT fast_seqassign('${table.toLowerCase()}', ${startId});");
+      } else {
+        execute(s"UPDATE ${table} SET id = ${nextVal(sequence)};")
+      }
+      var count : Long = 0
+      issueQuery(s"""SELECT COUNT(*) FROM ${table};""") { rs =>
+        count = rs.getLong(1)
+      }
+      return count
+    }
+    
+    // create fast sequence assign function for greenplum
+    def createAssignIdFunctionGreenplum() : Unit = {
+      if (!ds.isUsingGreenplum()) return
+      ds.executeSqlQuery(SQLFunctions.fastSequenceAssignForGreenplum)
+    }
+
   }
 }

@@ -428,7 +428,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
 
     try {
       loader.unload(gpFileName, psqlFilePath, dbSettings, parallelLoading, 
-        s"${inputQuery}")
+        s"${inputQuery}", "")
     } catch {
       case exception: Throwable =>
         log.error(exception.toString)
@@ -517,9 +517,6 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
     if (dbtype != Psql) {
       failTask(s"do not support ${task.extractor.style} on ${dbtype}.", taskSender)
     }
-
-    // Try to create language; if exists do nothing; if other errors report
-    executeSqlQueryOrFail("drop language if exists plpythonu cascade; CREATE LANGUAGE plpythonu;", taskSender)
 
     // Create Function in GP
     val udfFile = task.extractor.udf

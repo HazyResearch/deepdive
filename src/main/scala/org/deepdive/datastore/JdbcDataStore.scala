@@ -6,6 +6,8 @@ import scalikejdbc.config._
 import org.deepdive.Logging
 import com.typesafe.config._
 import org.deepdive.helpers.Helpers
+import play.api.libs.json._
+import org.deepdive.inference.InferenceNamespace
 
 trait JdbcDataStore extends Logging {
 
@@ -133,6 +135,114 @@ trait JdbcDataStore extends Logging {
       conn.close()
     }
   }
+
+  // check if the given table name is deepdive's internal table, if not throw exception
+  def checkTableNamespace(name: String) = {
+    if (!name.startsWith(InferenceNamespace.deepdivePrefix)) {
+      throw new RuntimeException("Dropping a non-deepdive internal table!")
+    }
+  }
+  
+  /**
+   * Drops a table if it exists, and then create it
+   * Ensures we are only dropping tables inside the DeepDive namespace.
+   */
+  def dropAndCreateTable(name: String, schema: String) = {
+    checkTableNamespace(name)
+    executeSqlQueries(s"""DROP TABLE IF EXISTS ${name} CASCADE;""")
+    executeSqlQueries(s"""CREATE TABLE ${name} (${schema});""")
+  }
+
+  /**
+   * Drops a table if it exists, and then create it using the given query
+   * Ensures we are only dropping tables inside the DeepDive namespace.
+   */
+  def dropAndCreateTableAs(name: String, query: String) = {
+    checkTableNamespace(name)
+    executeSqlQueries(s"""DROP TABLE IF EXISTS ${name} CASCADE;""")
+    executeSqlQueries(s"""CREATE TABLE ${name} AS ${query};""")
+  }
+
+  // execute sql, store results in a map
+  def selectAsMap(sql: String) : List[Map[String, Any]] = {
+    val conn = borrowConnection()
+    conn.setAutoCommit(false)
+    try {
+      val stmt = conn.createStatement(
+        java.sql.ResultSet.TYPE_FORWARD_ONLY, java.sql.ResultSet.CONCUR_READ_ONLY)
+      stmt.setFetchSize(10000)
+      val rs = stmt.executeQuery(sql)
+      // No result return
+      if (!rs.isBeforeFirst) {
+        log.warning(s"query returned no results: ${sql}")
+        Iterator.empty.toSeq
+      } else {
+        val resultIter = new Iterator[Map[String, Any]] {
+          def hasNext = {
+            // TODO: This is expensive
+            !(rs.isLast)
+          }              
+          def next() = {
+            rs.next()
+            val metadata = rs.getMetaData()
+            (1 to metadata.getColumnCount()).map { i => 
+              val label = metadata.getColumnLabel(i)
+              val data = unwrapSQLType(rs.getObject(i))
+              (label, data)
+            }.filter(_._2 != null).toMap
+          }
+        }
+        resultIter.toSeq
+      }
+    } catch {
+      // SQL cmd exception
+      case exception : Throwable =>
+        log.error(exception.toString)
+        throw exception
+    } finally {
+      conn.close()
+    }
+
+
+    DB.readOnly { implicit session =>
+      SQL(sql).map(_.toMap).list.apply()
+    }
+  }
+
+  private def unwrapSQLType(x: Any) : Any = {
+    x match {
+      case x : org.postgresql.jdbc4.Jdbc4Array => x.getArray().asInstanceOf[Array[_]].toList
+      case x : org.postgresql.util.PGobject =>
+        x.getType match {
+          case "json" => Json.parse(x.getValue)
+          case _ => JsNull
+        }
+      case x => x
+    }
+  }
+
+  // returns if a language exists in Postgresql or Greenplum
+  def existsLanguage(language: String) : Boolean = {
+    val sql = s"""SELECT EXISTS (
+      SELECT 1
+      FROM   pg_language
+      WHERE  lanname = '${language}');"""
+    var exists = false
+    executeSqlQueryWithCallback(sql) { rs =>
+      exists = rs.getBoolean(1)
+    }
+    return exists
+  }
+
+  // check whether greenplum is used
+  def isUsingGreenplum() : Boolean = {
+    var usingGreenplum = false
+    executeSqlQueryWithCallback("""SELECT version() LIKE '%Greenplum%';""") { rs => 
+      usingGreenplum = rs.getBoolean(1) 
+    }
+    return usingGreenplum
+  }
+
 }
 
 
@@ -145,8 +255,17 @@ object JdbcDataStore extends JdbcDataStore with Logging {
   /* Initializes the data stores */
   def init(config: Config) : Unit = {
     val initializer = new JdbcDBsWithEnv("deepdive", config)
-      log.info("Intializing all JDBC data stores")
-      initializer.setupAll()
+    log.info("Intializing all JDBC data stores")
+    initializer.setupAll()
+    // create language for and greenplum if not exist
+    if (isUsingGreenplum()) {
+      if (!existsLanguage("plpgsql")) {
+        executeSqlQueries("CREATE LANGUAGE plpgsql;")
+      }
+      if (!existsLanguage("plpythonu")) {
+        executeSqlQueries("CREATE LANGUAGE plpythonu;")
+      }
+    }
   }
 
   def init() : Unit = init(ConfigFactory.load)
