@@ -340,6 +340,63 @@ trait JdbcDataStore extends Logging {
 
   def addBatch(result: Iterator[JsObject], outputRelation: String) : Unit = {}
 
+    // Datastore-specific methods:
+  // Below are methods to implement in any type of datastore.
+    
+  /**
+   * Drop and create a sequence, based on database type.
+   * 
+   * @see http://dev.mysql.com/doc/refman/5.0/en/user-variables.html
+   * @see http://www.it-iss.com/mysql/mysql-renumber-field-values/
+   */
+  def createSequenceFunction(seqName: String) : String = null
+  
+  /**
+   * Get the next value of a sequence
+   */
+  def nextVal(seqName: String): String = null
+  
+  /**
+   * Cast an expression to a type
+   */
+  def cast(expr: Any, toType: String): String = null
+  
+  /**
+   * Given a string column name, Get a quoted version dependent on DB.
+   *          if psql, return "column" 
+   *          if mysql, return `column`
+   */
+  def quoteColumn(column: String) : String = null
+  
+  /**
+   * Generate a random real number from 0 to 1.
+   */
+  def randomFunction : String = null
+  
+  /**
+   * Concatenate a list of strings in the database.
+   * @param list
+   *     the list to concat
+   * @param delimiter
+   *     the delimiter used to seperate elements
+   * @return
+   *   Use '||' in psql, use 'concat' function in mysql
+   */
+  def concat(list: Seq[String], delimiter: String) : String = null
+
+  // fast sequential id assign function
+  def createAssignIdFunctionGreenplum() : Unit = {}
+  
+  /**
+   * ANALYZE TABLE
+   */
+  def analyzeTable(table: String) : String = ""
+
+  // assign senquential ids to table's id column
+  def assignIds(table: String, startId: Long, sequence: String) : Long = 0
+
+  // end: Datastore-specific methods
+
 }
 
 object JdbcDataStoreObject extends JdbcDataStore with Logging {
