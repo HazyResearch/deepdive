@@ -18,15 +18,6 @@ trait PostgresDataStoreComponent extends JdbcDataStoreComponent {
 /* Helper object for working with Postgres */
 class PostgresDataStore extends JdbcDataStore with Logging {
 
-  def copyBatchData(sqlStatement: String, file: File)(implicit connection: Connection) : Unit = {
-    copyBatchData(sqlStatement, new BufferedReader(new FileReader(file))) 
-  }
-
-  def copyBatchData(sqlStatement: String, rawData: InputStream)
-    (implicit connection: Connection) : Unit = {
-    copyBatchData(sqlStatement, new BufferedReader(new InputStreamReader(rawData)))
-  }
-
   // Executes a "COPY FROM STDIN" statement using raw data */
   def copyBatchData(sqlStatement: String, dataReader: Reader)
     (implicit connection: Connection) : Unit = {
@@ -56,7 +47,7 @@ class PostgresDataStore extends JdbcDataStore with Logging {
     log.debug(s"Copying batch data to postgres. sql='${copySQL}'" +
       s"file='${file.getCanonicalPath}'")
     withConnection { implicit connection =>
-      Try(copyBatchData(copySQL, file)) match {
+      Try(copyBatchData(copySQL, new BufferedReader(new FileReader(file)))) match {
         case Success(_) => 
           log.debug("Successfully copied batch data to postgres.") 
           file.delete()
@@ -169,7 +160,7 @@ class PostgresDataStore extends JdbcDataStore with Logging {
   // create fast sequence assign function for greenplum
   override def createAssignIdFunctionGreenplum() : Unit = {
     if (!isUsingGreenplum()) return
-    executeSqlQuery(SQLFunctions.fastSequenceAssignForGreenplum)
+    executeSqlQueries(SQLFunctions.fastSequenceAssignForGreenplum, false)
   }
 
 }

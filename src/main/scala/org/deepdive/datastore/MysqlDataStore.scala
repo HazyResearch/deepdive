@@ -13,41 +13,6 @@ trait MysqlDataStoreComponent extends JdbcDataStoreComponent {
 /* Helper object for working with Postgres */
 class MysqlDataStore extends JdbcDataStore with Logging {
 
-  def copyBatchData(sqlStatement: String, file: File)(implicit connection: Connection) : Unit = {
-    copyBatchData(sqlStatement, new BufferedReader(new FileReader(file))) 
-  }
-
-  def copyBatchData(sqlStatement: String, rawData: InputStream)
-    (implicit connection: Connection) : Unit = {
-    copyBatchData(sqlStatement, new BufferedReader(new InputStreamReader(rawData)))
-  }
-
-  /**
-   * Do not support this function in mysql
-   * Only used for json_extractor?
-   */
-  // Executes a "COPY FROM STDIN" statement using raw data 
-  // TODO zifei: not implemented now
-  def copyBatchData(sqlStatement: String, dataReader: Reader)
-    (implicit connection: Connection) : Unit = {
-      val statement = connection.createStatement()
-      val resultSet = statement.executeQuery(sqlStatement)
-      dataReader.close()
-    }
-
-  /* 
-   * Writes a list of tuples back to the datastore.
-   * IMPORTANT: This method must assign a globally unique variable id to each record 
-   */
-  override def addBatch(result: Iterator[JsObject], outputRelation: String): Unit = {
-    throw new RuntimeException(s"method addBatch in ${this.getClass} is not implemented")
-  }
-
-  /* Builds a COPY statement for a given relation and column names */
-  def buildCopySql(relationName: String, keys: Set[String]) = {
-    throw new RuntimeException(s"method buildCopySql in ${this.getClass} is not implemented")
-  }
-
   /* Builds a CSV dat astring for given JSON data and column names */
   def writeCopyData(data: Iterator[JsObject], fileWriter: Writer): Unit = {
     throw new RuntimeException(s"method writeCopyData in ${this.getClass} is not implemented")
