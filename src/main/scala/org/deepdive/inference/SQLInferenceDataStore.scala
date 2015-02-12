@@ -143,6 +143,12 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         ORDER BY abs(weight) DESC;
         """
 
+  /** 
+   *  Create indexes for query table to speed up grounding. (this is useful for MySQL) 
+   *  Behavior may varies depending on different DBMS.
+   */
+  def createIndexesForQueryTable(queryTable: String, weightVariables: Seq[String]) : Unit
+
   // ========= Datastore specific queries  ============
 
   /**
@@ -203,22 +209,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       }
     log.debug(s"Column type for ${table}: ${colType}")
     return colType
-  }
-  /** 
-   *  Create indexes for query table to speed up grounding. (this is useful for MySQL) 
-   *  Behavior may varies depending on different DBMS.
-   */
-  def createIndexesForQueryTable(queryTable: String, weightVariables: Seq[String]) = {
-    log.debug("weight variables: ${factorDesc.weight.variables}")
-    weightVariables.foreach( v => {
-      val colType = checkColumnType(queryTable, v)
-      if (colType.equals("text") || colType.equals("blob")) {
-        // create a partial index
-        execute(s"CREATE INDEX ${queryTable}_${v}_idx ON ${queryTable}(${v}(255))") 
-      } else {
-        execute(s"CREATE INDEX ${queryTable}_${v}_idx ON ${queryTable}(${v})")
-      }
-    })
   }
 
   // assign variable id - sequential and unique

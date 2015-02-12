@@ -41,9 +41,7 @@ trait PostgresInferenceDataStoreComponent extends SQLInferenceDataStoreComponent
     /**
      * For postgres, do not create indexes for query table
      */
-    override def createIndexesForQueryTable(queryTable: String, weightVariables: Seq[String]) = {
-      // do nothing
-    }
+    def createIndexesForQueryTable(queryTable: String, weightVariables: Seq[String]) = {}
 
     /**
      * This query is datastore-specific since it creates a view whose 
