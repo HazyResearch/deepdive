@@ -398,7 +398,11 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
 
     // NEW: for mysqlimport compatibility, the file basename must be same as table name.
     val queryOutputFile = new File(queryOutputPath + s"${outputRel}.copy_query_${funcName}.tsv")
-    val gpFileName = s"${outputRel}_query_unload"
+    
+    // When table names are too long (more than 64 chars) with the previous naming convention
+    // s"${outputRel}_unload_${funcName}", the table will be incorrectly created with a wrong 
+    // name, and some procedures in DeepDive will crash. So we here use a shorter name.
+    val gpFileName = s"${funcName}_query_unload"
     val psqlFilePath = queryOutputFile.getAbsolutePath()
 
     // Get the actual dumped file 
