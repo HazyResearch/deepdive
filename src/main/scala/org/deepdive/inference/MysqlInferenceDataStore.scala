@@ -2,9 +2,7 @@ package org.deepdive.inference
 
 import anorm._
 import au.com.bytecode.opencsv.CSVWriter
-import java.io.{ByteArrayInputStream, File, FileOutputStream, FileWriter,
-  StringWriter, Reader, FileReader, InputStream, InputStreamReader, FileInputStream}
-import java.io.PrintWriter
+import java.io._
 import org.deepdive.calibration._
 import org.deepdive.datastore._
 import org.deepdive.Logging
@@ -74,14 +72,12 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
      * This query optimizes slow joins on certain DBMS (MySQL) by creating indexes
      * on the join condition column.
      */
-    override def createIndexForJoinOptimization(relation: String, column: String) = {
+    def createIndexForJoinOptimization(relation: String, column: String) = {
       val indexName = s"${relation}_${column}_idx"
       execute(s"""
         ${dropIndexIfExistsMysql(indexName, relation)};
-
         CREATE INDEX ${indexName} ON ${relation}(${column});
         """)
-
     }
 
     /**
@@ -94,7 +90,7 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
         SELECT bucket, COUNT(*) AS num_variables from ${bucketedView} GROUP BY bucket;
       """
 
-    override def createCalibrationViewBooleanSQL(name: String, bucketedView: String, columnName: String) = s"""
+    def createCalibrationViewBooleanSQL(name: String, bucketedView: String, columnName: String) = s"""
       ${createSubQueryForCalibrationViewMysql(name, bucketedView)}
       CREATE OR REPLACE VIEW ${name}_sub2 AS SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
           WHERE ${columnName}=true GROUP BY bucket;
@@ -110,7 +106,7 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
         ORDER BY b1.bucket ASC;
       """
 
-    override def createCalibrationViewMultinomialSQL(name: String, bucketedView: String, columnName: String) = s"""
+    def createCalibrationViewMultinomialSQL(name: String, bucketedView: String, columnName: String) = s"""
       ${createSubQueryForCalibrationViewMysql(name, bucketedView)}
 
       CREATE OR REPLACE VIEW ${name}_sub2 AS SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 

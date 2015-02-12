@@ -143,46 +143,28 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
         ORDER BY abs(weight) DESC;
         """
 
-  // ========= Datastore specific queries (override when diverge) ============
+  // ========= Datastore specific queries  ============
 
   /**
    * This query optimizes slow joins on certain DBMS (MySQL) by creating indexes
    * on the join condition column.
    */
-  def createIndexForJoinOptimization(relation: String, column: String) = {
-    // Default: No-op
-  }
+  def createIndexForJoinOptimization(relation: String, column: String) : Unit
 
   /**
    * This query is datastore-specific since it creates a view whose 
    * SELECT contains a subquery in the FROM clause.
    * In Mysql the subqueries have to be created as views first.
    */
-  def createCalibrationViewBooleanSQL(name: String, bucketedView: String, columnName: String) = s"""
-      CREATE OR REPLACE VIEW ${name} AS
-      SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
-      (SELECT bucket, COUNT(*) AS num_variables from ${bucketedView} GROUP BY bucket) b1
-      LEFT JOIN (SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
-        WHERE ${columnName}=true GROUP BY bucket) b2 ON b1.bucket = b2.bucket
-      LEFT JOIN (SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView} 
-        WHERE ${columnName}=false GROUP BY bucket) b3 ON b1.bucket = b3.bucket 
-      ORDER BY b1.bucket ASC;
-      """
+  def createCalibrationViewBooleanSQL(name: String, bucketedView: String, columnName: String) : String
 
   /**
    * This query is datastore-specific since it creates a view whose 
    * SELECT contains a subquery in the FROM clause.
    */
-  def createCalibrationViewMultinomialSQL(name: String, bucketedView: String, columnName: String) = s"""
-      CREATE OR REPLACE VIEW ${name} AS
-      SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
-      (SELECT bucket, COUNT(*) AS num_variables from ${bucketedView} GROUP BY bucket) b1
-      LEFT JOIN (SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
-        WHERE ${columnName} = category GROUP BY bucket) b2 ON b1.bucket = b2.bucket
-      LEFT JOIN (SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView} 
-        WHERE ${columnName} != category GROUP BY bucket) b3 ON b1.bucket = b3.bucket 
-      ORDER BY b1.bucket ASC;
-      """
+  def createCalibrationViewMultinomialSQL(name: String, bucketedView: String, columnName: String) : String
+
+  // end data store specific query
 
   def selectCalibrationDataSQL(name: String) = s"""
     SELECT bucket as "bucket", num_variables AS "num_variables", 
@@ -238,10 +220,6 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
       }
     })
   }
-  
-  // def incrementId(table: String, IdSequence: String) {
-  //   execute(s"UPDATE ${table} SET id = ${nextVal(IdSequence)};")
-  // }
 
   // assign variable id - sequential and unique
   def assignVariablesIds(schema: Map[String, _ <: VariableDataType]) {
