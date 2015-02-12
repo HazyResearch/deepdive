@@ -205,13 +205,6 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
     """
     }
 
-    override def createInferenceResultIndicesSQL = s"""
-      ${dropIndexIfExistsMysql(s"${WeightResultTable}_idx", WeightResultTable)}
-      ${dropIndexIfExistsMysql(s"${VariableResultTable}_idx", VariableResultTable)}
-      CREATE INDEX ${WeightResultTable}_idx ON ${WeightResultTable} (weight);
-      CREATE INDEX ${VariableResultTable}_idx ON ${VariableResultTable} (expectation);
-      """
-
     /**
      * Calibration is very slow in MySQL so we materialize it and create indexes
      */

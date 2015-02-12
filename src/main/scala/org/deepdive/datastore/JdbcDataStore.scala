@@ -340,7 +340,7 @@ trait JdbcDataStore extends Logging {
 
   def addBatch(result: Iterator[JsObject], outputRelation: String) : Unit = {}
 
-    // Datastore-specific methods:
+  // Datastore-specific methods:
   // Below are methods to implement in any type of datastore.
     
   /**
