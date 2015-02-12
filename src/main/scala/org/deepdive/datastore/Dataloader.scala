@@ -99,7 +99,8 @@ class DataLoader extends JdbcDataStore with Logging {
    * @param dbSettings: database settings (DD's class)
    * @param usingGreenplum: whether to use greenplum's gpload
    */ 
-  def load(filepath: String, tablename: String, dbSettings: DbSettings, usingGreenplum: Boolean) : Unit = {
+  def load(filepath: String, tablename: String, dbSettings: DbSettings, usingGreenplum: Boolean,
+    delimiter: String = "\\t") : Unit = {
     
     if (usingGreenplum) {
       val loadyaml = File.createTempFile(s"gpload", ".yml")
@@ -123,7 +124,7 @@ class DataLoader extends JdbcDataStore with Logging {
         |         FILE:
         |            - ${filepath}
         |      - FORMAT: text
-        |      - DELIMITER: E'\\t'
+        |      - DELIMITER: E'${delimiter}'
         |   OUTPUT:
         |      - TABLE: ${tablename}
       """.stripMargin
@@ -147,10 +148,11 @@ class DataLoader extends JdbcDataStore with Logging {
       val dbtype = Helpers.getDbType(dbSettings)
       val cmdfile = File.createTempFile(s"${tablename}.copy", ".sh")
       val writer = new PrintWriter(cmdfile)
-      val writebackPrefix = s"find ${filepath} -print0 | xargs -0 -P 1 -L 1 bash -c ";
+      val writebackPrefix = s"find ${filepath} -print0 | xargs -0 -P 1 -L 1 bash -c "
+      val delimiterStr = if (delimiter == "\\t") "" else "DELIMITER '\"'\"'" + delimiter + "'\"'\"'" 
       val writebackCmd = dbtype match {
         case Psql => writebackPrefix + s"'psql " + Helpers.getOptionString(dbSettings) + 
-          "-c \"COPY " + s"${tablename} FROM STDIN;" + 
+          "-c \"COPY " + s"${tablename} FROM STDIN " + delimiterStr + ";" + 
           " \" < $0'"
         case Mysql => 
           writebackPrefix + s"'mysqlimport --local " + Helpers.getOptionString(dbSettings) +
