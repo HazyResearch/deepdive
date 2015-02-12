@@ -7,8 +7,17 @@ import org.deepdive.extraction._
 import org.deepdive.datastore._
 import org.deepdive.helpers.Helpers
 import org.deepdive.test.helpers._
+import org.deepdive.Logging
 import org.scalatest._
 import scala.util.{Try, Success, Failure}
+
+/* Stores Extraction Results */
+trait MemoryDataStoreComponent extends JdbcDataStoreComponent{
+  val dataStore = new MemoryDataStore
+}
+
+class MemoryDataStore extends JdbcDataStore {
+}
 
 object ExtractionManagerSpec {
   class MemoryExtractionManager(val parallelism: Int, val dbSettings: DbSettings) extends ExtractionManager with
