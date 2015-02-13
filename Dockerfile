@@ -1,7 +1,7 @@
 FROM ubuntu
 MAINTAINER adamwgoldberg@gmail.com
 RUN sudo apt-get update
-RUN sudo apt-get install -y gem gnuplot python libpython2.7-dev default-jre default-jdk emacs libgemplugin-ruby rubygems
+RUN sudo apt-get install -y gem gnuplot python libpython2.7-dev default-jre default-jdk emacs libgemplugin-ruby
 RUN sudo apt-get -y install postgresql postgresql-contrib git build-essential libnuma-dev bc zip unzip
 RUN cd ~/ && git clone https://github.com/HazyResearch/deepdive.git
 RUN cd ~/deepdive && make
