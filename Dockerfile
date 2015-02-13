@@ -3,6 +3,7 @@ MAINTAINER adamwgoldberg@gmail.com
 RUN sudo apt-get update
 RUN sudo apt-get -y install emacs
 RUN sudo apt-get -y install default-jre default-jdk
+RUN sudo apt-get -y install libpython2.7-dev
 RUN sudo apt-get -y install python
 RUN sudo apt-get -y install gnuplot
 RUN sudo apt-get -y install postgresql postgresql-contrib
