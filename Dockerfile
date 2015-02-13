@@ -1,18 +1,9 @@
 FROM ubuntu
 MAINTAINER adamwgoldberg@gmail.com
 RUN sudo apt-get update
-RUN sudo apt-get -y install emacs
-RUN sudo apt-get -y install default-jre default-jdk
-RUN sudo apt-get -y install libpython2.7-dev
-RUN sudo apt-get -y install python
-RUN sudo apt-get -y install gnuplot
-RUN sudo apt-get -y install postgresql postgresql-contrib
-RUN sudo apt-get -y install git
-RUN sudo apt-get -y install build-essential
-RUN sudo apt-get -y install libnuma-dev
-RUN sudo apt-get -y install bc
+RUN sudo apt-get install -y gem gnuplot python libpython2.7-dev default-jre default-jdk emacs
+RUN sudo apt-get -y install postgresql postgresql-contrib git build-essential libnuma-dev bc zip unzip
 RUN cd ~/ && git clone https://github.com/HazyResearch/deepdive.git
-RUN sudo apt-get install zip unzip
 RUN cd ~/deepdive && make
 
 # Configure environment variables
