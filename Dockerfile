@@ -1,8 +1,7 @@
 FROM ubuntu
 MAINTAINER adamwgoldberg@gmail.com
 RUN sudo apt-get update && apt-get install -y gnuplot python libpython2.7-dev default-jre default-jdk emacs postgresql postgresql-contrib git build-essential libnuma-dev bc unzip locales
-RUN dpkg-reconfigure locales && \
-    locale-gen C.UTF-8 && \
+RUN locale-gen C.UTF-8 && \
     /usr/sbin/update-locale LANG=C.UTF-8
 ENV LC_ALL C.UTF-8
 RUN cd ~/ && git clone https://github.com/HazyResearch/deepdive.git
