@@ -20,7 +20,7 @@ docker pull adamwgoldberg/deepdive-github
 # All deepdive application code should be created in /root/deepdive/app
 # Make sure the deepdive-github tag matches the above one.
 # This assumes you have a db container named db. 
-docker run -t -d --link db:db --name deepdive adamwgoldberg/deepdive-github bash
+docker run -t -d --link db:db --name deepdive -v /home/ubuntu/deepdive/app:/root/deepdive/app adamwgoldberg/deepdive-github bash
 
 # Attach shell to Deepdive
 # You may need to wait several minutes for your database to initialize.
