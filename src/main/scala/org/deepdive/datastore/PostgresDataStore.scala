@@ -6,6 +6,7 @@ import scala.util.{Try, Success, Failure}
 import au.com.bytecode.opencsv.CSVWriter
 import scala.language.postfixOps
 import org.deepdive.Logging
+import org.deepdive.Context
 import java.sql.Connection
 import play.api.libs.json._
 import scalikejdbc._
@@ -36,7 +37,7 @@ class PostgresDataStore extends JdbcDataStore with Logging {
    * - run writeCopyData to write   
    */
   override def addBatch(result: Iterator[JsObject], outputRelation: String) : Unit = {
-    val file = File.createTempFile(s"deepdive_$outputRelation", ".csv")
+    val file = File.createTempFile(s"deepdive_$outputRelation", ".csv", new File(Context.outputDir))
     log.debug(s"Writing data of to file=${file.getCanonicalPath}")
     val writer = new PrintWriter(new BufferedWriter(new FileWriter(file, true)))
     // Write the dataset to the file for the relation
