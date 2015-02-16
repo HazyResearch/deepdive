@@ -20,7 +20,7 @@ class contains different extractor *styles*:
   previous systems, but with limited performance.
   - [`tsv_extractor`](#tsv_extractor): **recommended to use.** Fast and flexible.
   - [`plpy_extractor`](#plpy_extractor): parallel database-built-in extractors
-  with restricted flexibility (deprecated).
+  with restricted flexibility.
 
 - Procedural extractors:
   - [`sql_extractor`](#sql_extractor): a SQL command
@@ -290,8 +290,6 @@ for line in fileinput.input():
 ```
 
 ### <a name="plpy_extractor" href="#"></a> plpy_extractor
-
-Deprecated: this extractor type is error-prone, and is no longer actively maintained.
 
 A `plpy_extractor` is a high-performance type of extractors for PostgreSQL /
 Greenplum databases. It avoids additional I/O by executing the extractor

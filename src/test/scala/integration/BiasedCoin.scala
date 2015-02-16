@@ -60,8 +60,6 @@ class BiasedCoin extends FunSpec {
         case "true" | "1" | "True" | "TRUE" => "true"
         case _ => "false"
       }}
-
-      deepdive.sampler.sampler_args: "-l 5000 -i 5000 -s 1 --alpha 0.1 --diminish 0.99 --quiet"
     """
   
 
