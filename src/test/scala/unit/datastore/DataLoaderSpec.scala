@@ -27,14 +27,16 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with Logging {
   val dbSettings = TestHelper.getDbSettings
 
   val du = new org.deepdive.datastore.DataLoader
-
+  val dbSettingsWithoutGPLOAD = DbSettings(dbSettings.driver, dbSettings.url, dbSettings.user, 
+    dbSettings.password, dbSettings.dbname, dbSettings.host, dbSettings.port, dbSettings.gphost, 
+    dbSettings.gpport, dbSettings.gppath, false)
   describe("Unloading data using DataLoader") {
     it("should work with COPY basic types") {
       val outputFile = File.createTempFile("test_unloader", "")
       SQL(s"""DROP TABLE IF EXISTS unloader CASCADE;""").execute.apply()
       SQL(s"""CREATE TABLE unloader(feature text, is_correct boolean, id bigint);""").execute.apply()
       SQL(s"""INSERT INTO unloader values ('hi', true, 0), (null, false, 100);""").execute.apply()
-      du.unload("test_tmp", s"${outputFile.getAbsolutePath}", dbSettings, "select * from unloader;", "")
+      du.unload("test_tmp", s"${outputFile.getAbsolutePath}", dbSettingsWithoutGPLOAD, "select * from unloader;", "")
       val rd = new BufferedReader(new FileReader(s"${outputFile.getAbsolutePath}"))
       val line1 = rd.readLine()
       val line2 = rd.readLine()
@@ -46,6 +48,7 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with Logging {
       rd.close()
     }
 
+
     it("should work with COPY array types") {
       // MySQL do not have array type
       assume(TestHelper.getTestEnv != TestHelper.Mysql)
@@ -54,7 +57,7 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with Logging {
       SQL(s"""DROP TABLE IF EXISTS unloader CASCADE;""").execute.apply()
       SQL(s"""CREATE TABLE unloader(feature text, id int[]);""").execute.apply()
       SQL(s"""INSERT INTO unloader values ('hi', '{0,1,2}');""").execute.apply()
-      du.unload("test_tmp", s"${outputFile.getAbsolutePath}", dbSettings, "select * from unloader;", "")
+      du.unload("test_tmp", s"${outputFile.getAbsolutePath}", dbSettingsWithoutGPLOAD, "select * from unloader;", "")
       val rd = new BufferedReader(new FileReader(s"${outputFile.getAbsolutePath}"))
       var line = rd.readLine()
       assert(line === "hi\t{0,1,2}")

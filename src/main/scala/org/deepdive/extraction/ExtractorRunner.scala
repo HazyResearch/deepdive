@@ -370,7 +370,6 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
     log.debug(s"Parallel Loading: ${dbSettings.gpload}")
     val dl = new DataLoader
     val parallelLoading = dbSettings.gpload
-    // val groundingPath = if (!parallelLoading) Context.outputDir else dbSettings.gppath
     
     val udfCmd = task.extractor.udf
     // make udfCmd executable if file
@@ -397,15 +396,15 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
 
     // NEW: for mysqlimport compatibility, the file basename must be same as table name.
     val queryOutputFile = new File(queryOutputPath + s"${outputRel}.copy_query_${funcName}.tsv")
-    // val gpFileName = s"${outputRel}_unload_${funcName}"
+    val gpFileName = s"${outputRel}_unload_${funcName}"
     val psqlFilePath = queryOutputFile.getAbsolutePath()
 
     // Get the actual dumped file 
-    val fname = queryOutputFile.getName()
-    // val fname = parallelLoading match {
-    //   case true => gpFileName
-    //   case _ => queryOutputFile.getName()
-    // }
+    // val fname = queryOutputFile.getName()
+    val fname = parallelLoading match {
+      case true => gpFileName
+      case _ => queryOutputFile.getName()
+    }
 
     val fpath = parallelLoading match {
       case true => dbSettings.gppath
