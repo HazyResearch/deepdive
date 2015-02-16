@@ -177,10 +177,6 @@ class ChunkingApp extends FunSpec with Logging{
         holdout_query: "INSERT INTO dd_graph_variables_holdout(variable_id) SELECT id FROM words WHERE word_id > 50078"
       }
 
-      inference.parallel_grounding: ${System.getenv("PARALLEL_GROUNDING") match {
-        case "true" | "1" | "True" | "TRUE" => "true"
-        case _ => "false"
-      }}
     }
     """
 
@@ -205,8 +201,7 @@ class ChunkingApp extends FunSpec with Logging{
       val dbSettings = Settings.loadFromConfig(config).dbSettings
       val du = new DataLoader
       du.unload(resultFile.getName, resultFile.getAbsolutePath,
-          dbSettings,  //  
-          false,       // usingGreenPlum 
+          dbSettings,
           """select word, pos, true_tag, max(tag) from result 
          group by word_id, word, pos, true_tag order by word_id""", "")
     } 

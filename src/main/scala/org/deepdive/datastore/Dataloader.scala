@@ -22,14 +22,13 @@ class DataLoader extends JdbcDataStore with Logging {
    * @param filename: the name of the output file
    * @param filepath: the absolute path of the output file (including file name)
    * @param dbSettings: database settings (DD's class)
-   * @param usingGreenplum: whether to use greenplum's gpunload
    * @param query: the query to be dumped
    * @param folder: for greenplum, the relative path to gpfdist
    */
   def unload(filename: String, filepath: String, dbSettings: DbSettings, 
-    usingGreenplum: Boolean, query: String, folder: String) : Unit = {
+    query: String, folder: String) : Unit = {
     
-    if (usingGreenplum) {
+    if (dbSettings.gpload) {
       val hostname = dbSettings.gphost
       val port = dbSettings.gpport
       val path = dbSettings.gppath
@@ -97,12 +96,11 @@ class DataLoader extends JdbcDataStore with Logging {
    * @param filepath: the absolute path of the input file, it can contain wildchar characters
    * @param tablename: the table to be copied to
    * @param dbSettings: database settings (DD's class)
-   * @param usingGreenplum: whether to use greenplum's gpload
    */ 
-  def load(filepath: String, tablename: String, dbSettings: DbSettings, usingGreenplum: Boolean,
+  def load(filepath: String, tablename: String, dbSettings: DbSettings,
     delimiter: String = "\\t") : Unit = {
     
-    if (usingGreenplum) {
+    if (dbSettings.gpload) {
       val loadyaml = File.createTempFile(s"gpload", ".yml")
       val dbname = dbSettings.dbname
       val pguser = dbSettings.user

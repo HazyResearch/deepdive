@@ -183,11 +183,6 @@ deepdive {
   # Specify a holdout fraction
   calibration.holdout_fraction: 0.25
 
-  inference.parallel_grounding: ${System.getenv("PARALLEL_GROUNDING") match {
-    case "true" | "1" | "True" | "TRUE" => "true"
-    case _ => "false"
-  }}
-
 }
 
   """
