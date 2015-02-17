@@ -14,7 +14,7 @@ object SettingsParser extends Logging {
 
     val dbSettings = loadDbSettings(config)
     val schemaSettings = loadSchemaSettings(config)
-    val extractors = loadExtractionSettings(config)
+    val extractionSettings = loadExtractionSettings(config)
     val inferenceSettings = loadInferenceSettings(config)
     val calibrationSettings = loadCalibrationSettings(config)
     val samplerSettings = loadSamplerSettings(config)
@@ -22,13 +22,14 @@ object SettingsParser extends Logging {
 
     // Make sure that the variables related to the Greenplum distributed
     // filesystem are set if the user wants to use parallel grounding
-    if (inferenceSettings.parallelGrounding) {
-      if (dbSettings.gphost == "" || dbSettings.gpport == "" || dbSettings.gppath == "") {
-        throw new RuntimeException(s"inference.parallelGrounding is set to true, but one of db.default.gphost, db.default.gpport, or db.default.gppath is not specified")
-      }
+    if (dbSettings.gphost == "" || dbSettings.gpport == "" || dbSettings.gppath == "") {
+      if (inferenceSettings.parallelGrounding)
+        throw new RuntimeException(s"inference.parallel_grounding is set to true, but one of db.default.gphost, db.default.gpport, or db.default.gppath is not specified")
+      if (extractionSettings.parallelLoading)
+        throw new RuntimeException(s"extraction.parallel_loading is set to true, but one of db.default.gphost, db.default.gpport, or db.default.gppath is not specified")
     }
 
-    Settings(schemaSettings, extractors, inferenceSettings, 
+    Settings(schemaSettings, extractionSettings, inferenceSettings, 
       calibrationSettings, samplerSettings, pipelineSettings, dbSettings)
   }
 
@@ -83,6 +84,7 @@ object SettingsParser extends Logging {
       return ExtractionSettings(Nil, 1)
     }
     val extractorParallelism = Try(extractionConfig.getInt("parallelism")).getOrElse(1)
+    val parallelLoading = Try(extractionConfig.getBoolean("parallel_loading")).getOrElse(false)
     val extractors = extractionConfig.getObject("extractors").keySet().map { extractorName =>
       val extractorConfig = extractionConfig.getConfig(s"extractors.$extractorName")
       val style = Try(extractorConfig.getString(s"style")).getOrElse("json_extractor")
@@ -129,7 +131,7 @@ object SettingsParser extends Logging {
             10000, 50000, dependencies, beforeScript, afterScript, sqlQuery, cmd)
       }
     }.toList
-    ExtractionSettings(extractors, extractorParallelism)
+    ExtractionSettings(extractors, extractorParallelism, parallelLoading)
   }
 
   private def loadInferenceSettings(config: Config): InferenceSettings = {

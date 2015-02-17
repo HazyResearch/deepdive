@@ -38,6 +38,29 @@ Finally, tell DeepDive to use parallel grounding by adding the following to
 `application.conf`: 
 
     inference.parallel_grounding: true
+    
+### <a name="parallelloading" href="#"></a> Parallel loading / dumping in extractors
+
+When using [TSV extractors](../basics/extractors.html#tsv_extractor), 
+the system dumps the input SQL query to disk, run the UDF in parallel to process the data,
+and load the data back to database. The default dumping and loading is single-threaded,
+which often becomes the bottleneck for extractors in large-scale applications. 
+
+If you are using a Greenplum, you can enable parallel dumping and loading to
+speed up the extraction phase. Parallel dumping uses the same mechanism with 
+[Parallel grounding](#parallelgrounding) mentioned above, and loading uses 
+`gpload`, a parallel loading utility provided by Greenplum.
+
+You should set up `gpfdist` and `gphost`, `gpport`, `gppath` in `db.default` introduced in [Parallel grounding](#parallelgrounding) above. You should also make sure the command-line utility `gpload` is available on the client where DeepDive runs.
+
+Then, tell DeepDive to use parallel loading in extractors by adding the following to
+`application.conf`: 
+
+    extraction.parallel_loading: true
+
+If you have wide rows in extractor input queries, you may get 
+"line too long" errors, in this case please refer to the 
+[FAQ page](../basics/faq.html#gpfdistmaxlen).
 
 ### Setting the JVM heap size
 

@@ -85,3 +85,13 @@ Make sure you have configured the dependencies of the DimmWitted
 variables. Refer to the [Installation guide](installation.html#sampler) for
 details.
 
+### <a name="gpfdistmaxlen" href="#"></a> During parallel dumping in extractors, I got "line too long" errors
+
+Restart your `gpfdist` with following command:
+
+    gpfdist -d <directory> -p <port> -m <maxlen> &
+
+Where `maxlen` is the maximum allowed data row length in bytes,
+default is 32768. When your input query of extractors contain very
+wide rows, you should increase this parameter. Valid range is 32K to
+1MB. Run `gpfdist --help` for details.

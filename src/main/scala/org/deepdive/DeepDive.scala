@@ -70,7 +70,8 @@ object DeepDive extends Logging {
     val inferenceManager = system.actorOf(InferenceManager.props(
       taskManager, settings.schemaSettings.variables, dbSettings), "inferenceManager")
     val extractionManager = system.actorOf(
-      ExtractionManager.props(settings.extractionSettings.parallelism, dbSettings), 
+      ExtractionManager.props(settings.extractionSettings.parallelism, dbSettings, 
+          settings.extractionSettings.parallelLoading), 
       "extractionManager")
     
     // Build tasks for extractors

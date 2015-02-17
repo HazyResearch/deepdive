@@ -30,7 +30,9 @@ import org.deepdive.helpers.Helpers.{Mysql, Psql}
  */
 object ExtractorRunner {
   
-  def props(dataStore: JsonExtractionDataStore, dbSettings: DbSettings) = Props(classOf[ExtractorRunner], dataStore, dbSettings)
+  def props(dataStore: JsonExtractionDataStore, dbSettings: DbSettings,
+      parallelLoading: Boolean = false) = Props(classOf[ExtractorRunner], 
+          dataStore, dbSettings, parallelLoading)
 
 
   // Messages
@@ -56,7 +58,8 @@ object ExtractorRunner {
 }
 
 /* Runs a single extrator by executing its before script, UDF, and after sript */
-class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings) extends Actor 
+class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings,
+    parallelLoading: Boolean = false) extends Actor 
   with ActorLogging with FSM[State, Data] {
 
   import ExtractorRunner._
@@ -368,11 +371,6 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
    */
   private def runTsvExtractor(task: ExtractionTask, dbSettings: DbSettings, taskSender: ActorRef) = {
   
-    // Determine if parallel loading and unloading is used by Env var
-    val parallelLoading = System.getenv("PARALLEL_LOADING") match {
-      case "true" => true
-      case _ => false
-    }
     log.debug(s"Parallel Loading: ${parallelLoading}")
     val loader = new DataLoader
     val udfCmd = task.extractor.udf
@@ -400,7 +398,11 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
 
     // NEW: for mysqlimport compatibility, the file basename must be same as table name.
     val queryOutputFile = new File(queryOutputPath + s"${outputRel}.copy_query_${funcName}.tsv")
-    val gpFileName = s"${outputRel}_unload_${funcName}"
+    
+    // When table names are too long (more than 64 chars) with the previous naming convention
+    // s"${outputRel}_unload_${funcName}", the table will be incorrectly created with a wrong 
+    // name, and some procedures in DeepDive will crash. So we here use a shorter name.
+    val gpFileName = s"${funcName}_query_unload"
     val psqlFilePath = queryOutputFile.getAbsolutePath()
 
     // Get the actual dumped file 
