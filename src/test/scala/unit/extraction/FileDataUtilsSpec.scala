@@ -1,7 +1,7 @@
 package org.deepdive.test.unit
 
 import org.scalatest._
-import org.deepdive.extraction.datastore._
+import org.deepdive.datastore._
 import play.api.libs.json._
 
 class FileDataUtilsSpec extends FunSpec {

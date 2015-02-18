@@ -2,11 +2,9 @@ package org.deepdive.inference
 
 import anorm._
 import au.com.bytecode.opencsv.CSVWriter
-import java.io.{ByteArrayInputStream, File, FileOutputStream, FileWriter,
-  StringWriter, Reader, FileReader, InputStream, InputStreamReader, FileInputStream}
-import java.io.PrintWriter
+import java.io._
 import org.deepdive.calibration._
-import org.deepdive.datastore.MysqlDataStore
+import org.deepdive.datastore._
 import org.deepdive.Logging
 import org.deepdive.settings._
 import org.deepdive.helpers.Helpers
@@ -16,14 +14,14 @@ import scala.io.Source
 import org.apache.commons.io.FileUtils
 
 /* Stores the factor graph and inference results in a postges database. */
-trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
+trait MysqlInferenceRunnerComponent extends SQLInferenceRunnerComponent {
 
   // Do not define inferenceDatastore here, define it in the class with this trait.
   // Since we have to pass parameters there. May need to refactor.
   
-  class MysqlInferenceDataStore(val dbSettings : DbSettings) extends SQLInferenceDataStore with Logging {
+  class MysqlInferenceRunner(val dbSettings : DbSettings) extends SQLInferenceRunner with Logging with MysqlDataStoreComponent {
 
-    def ds = MysqlDataStore
+    // def ds : MysqlDataStore
     
     // Default batch size, if not overwritten by user
     val BatchSize = Some(250000)
@@ -68,79 +66,18 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
       copyFileToTable(variablesFile, VariableResultTable)
     }
 
-    /**
-     * Drop and create a sequence, based on database type.
-     *
-     * @see http://dev.mysql.com/doc/refman/5.0/en/user-variables.html
-     * @see http://www.it-iss.com/mysql/mysql-renumber-field-values/
-     */
-    def createSequenceFunction(seqName: String): String = s"SET @${seqName} = -1;"
-
-    /**
-     * Get the next value of a sequence
-     */
-    def nextVal(seqName: String): String = s" @${seqName} := @${seqName} + 1 "
-
-    /**
-     * Cast an expression to a type
-     */
-    def cast(expr: Any, toType: String): String = 
-      toType match {
-        // convert text/varchar to char(N) where N is max length of given
-        case "text" | "varchar" => s"convert(${expr.toString()}, char)"
-        // in mysql, convert to unsigned guarantees bigint.
-        // @see http://stackoverflow.com/questions/4660383/how-do-i-cast-a-type-to-a-bigint-in-mysql
-        case "bigint" | "int" => s"convert(${expr.toString()}, unsigned)"
-        case "real" | "float" | "double" => s"${expr.toString()} + 0.0"
-        // for others, try to convert as it is expressed.
-        case _ => s"convert(${expr.toString()}, ${toType})"
-      }
-    
-    /**
-     * Concatinate multiple strings use "concat" function in mysql
-     */
-    def concat(list: Seq[String], delimiter: String): String = {
-      list.length match {
-        // return a SQL empty string if list is empty
-        case 0 => "''" 
-        case _ =>
-        delimiter match {
-          case null => s"concat(${list.mkString(", ")})"
-          case "" => s"concat(${list.mkString(", ")})"
-          case _ => s"concat(${list.mkString(s",'${delimiter}',")})"
-        }
-      }
-    }
-
-    /**
-     * ANALYZE TABLE
-     */
-    def analyzeTable(table: String) = s"ANALYZE TABLE ${table}"
-    
-    /**
-     * Given a string column name, Get a quoted version dependent on DB.
-     *
-     *          if psql, return "column"
-     *          if mysql, return `column`
-     */
-    def quoteColumn(column: String): String = '`' + column + '`'
-    
-    def randomFunction: String = "RAND()"
-
     // ============== Datastore-specific queries to override ==============
 
     /**
      * This query optimizes slow joins on certain DBMS (MySQL) by creating indexes
      * on the join condition column.
      */
-    override def createIndexForJoinOptimization(relation: String, column: String) = {
+    def createIndexForJoinOptimization(relation: String, column: String) = {
       val indexName = s"${relation}_${column}_idx"
       execute(s"""
         ${dropIndexIfExistsMysql(indexName, relation)};
-
         CREATE INDEX ${indexName} ON ${relation}(${column});
         """)
-
     }
 
     /**
@@ -153,7 +90,7 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
         SELECT bucket, COUNT(*) AS num_variables from ${bucketedView} GROUP BY bucket;
       """
 
-    override def createCalibrationViewBooleanSQL(name: String, bucketedView: String, columnName: String) = s"""
+    def createCalibrationViewBooleanSQL(name: String, bucketedView: String, columnName: String) = s"""
       ${createSubQueryForCalibrationViewMysql(name, bucketedView)}
       CREATE OR REPLACE VIEW ${name}_sub2 AS SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
           WHERE ${columnName}=true GROUP BY bucket;
@@ -169,7 +106,7 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
         ORDER BY b1.bucket ASC;
       """
 
-    override def createCalibrationViewMultinomialSQL(name: String, bucketedView: String, columnName: String) = s"""
+    def createCalibrationViewMultinomialSQL(name: String, bucketedView: String, columnName: String) = s"""
       ${createSubQueryForCalibrationViewMysql(name, bucketedView)}
 
       CREATE OR REPLACE VIEW ${name}_sub2 AS SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
@@ -204,13 +141,6 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
       EXECUTE stmt;
     """
     }
-
-    override def createInferenceResultIndicesSQL = s"""
-      ${dropIndexIfExistsMysql(s"${WeightResultTable}_idx", WeightResultTable)}
-      ${dropIndexIfExistsMysql(s"${VariableResultTable}_idx", VariableResultTable)}
-      CREATE INDEX ${WeightResultTable}_idx ON ${WeightResultTable} (weight);
-      CREATE INDEX ${VariableResultTable}_idx ON ${VariableResultTable} (expectation);
-      """
 
     /**
      * Calibration is very slow in MySQL so we materialize it and create indexes
@@ -258,28 +188,20 @@ trait MysqlInferenceDataStoreComponent extends SQLInferenceDataStoreComponent {
     }
     
     /** 
-     *  In mysql, indexes can be created for id columns. 
-     *  To update id, first drop indexes on id.
-     *  
+     *  Create indexes for query table to speed up grounding. (this is useful for MySQL) 
+     *  Behavior may varies depending on different DBMS.
      */
-    override def incrementId(table: String, IdSequence: String) {
-      execute(dropIndexIfExistsMysql(s"${table}_id_idx", table))
-      execute(s"UPDATE ${table} SET id = ${nextVal(IdSequence)};")
-    }
-
-    // this function is specific for greenplum
-    def createAssignIdFunctionGreenplum() = {
-      // nothing
-    }
-
-    // assign senquential ids to table's id column
-    def assignIds(table: String, startId: Long, sequence: String) : Long = {
-      incrementId(table, sequence)
-      var count : Long = 0
-      issueQuery(s"""SELECT COUNT(*) FROM ${table};""") { rs =>
-        count = rs.getLong(1)
-      }
-      return count
+    def createIndexesForQueryTable(queryTable: String, weightVariables: Seq[String]) = {
+      log.debug("weight variables: ${factorDesc.weight.variables}")
+      weightVariables.foreach( v => {
+        val colType = checkColumnType(queryTable, v)
+        if (colType.equals("text") || colType.equals("blob")) {
+          // create a partial index
+          execute(s"CREATE INDEX ${queryTable}_${v}_idx ON ${queryTable}(${v}(255))") 
+        } else {
+          execute(s"CREATE INDEX ${queryTable}_${v}_idx ON ${queryTable}(${v})")
+        }
+      })
     }
 
   }

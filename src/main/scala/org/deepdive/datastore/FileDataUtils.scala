@@ -1,4 +1,4 @@
-package org.deepdive.extraction.datastore
+package org.deepdive.datastore
 
 import org.deepdive.Logging
 import au.com.bytecode.opencsv.CSVReader
@@ -7,7 +7,6 @@ import play.api.libs.json._
 import scala.collection.JavaConversions._
 
 object FileDataUtils extends Logging {
-
   def queryAsJson[A](filename: String, sep: Char)(block: Iterator[JsValue] => A) : A = {
     val reader = new CSVReader(Source.fromFile(filename).reader, sep)
     try {
@@ -18,6 +17,4 @@ object FileDataUtils extends Logging {
       reader.close()
     }
   }
-    
-
 }

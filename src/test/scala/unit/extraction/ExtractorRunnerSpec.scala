@@ -7,7 +7,6 @@ import akka.actor._
 import akka.testkit._
 import org.deepdive.datastore._
 import org.deepdive.extraction._
-import org.deepdive.extraction.datastore._
 import org.deepdive.extraction.ProcessExecutor._
 import org.deepdive.settings._
 import org.deepdive.helpers.Helpers
@@ -21,8 +20,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
   with FunSpecLike with BeforeAndAfter with Logging {
 
   val dataStore = TestHelper.getTestEnv match {
-    case TestHelper.Psql => new PostgresExtractionDataStore
-    case TestHelper.Mysql=> new MysqlExtractionDataStore
+    case TestHelper.Psql => new PostgresDataStore
+    case TestHelper.Mysql=> new MysqlDataStore
   }
   
   // execute a query
@@ -57,14 +56,14 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
   before {
     if(!inited){
-      JdbcDataStore.init(config)
+      JdbcDataStoreObject.init(config)
       inited = true
     }
     dataStore.init()
 
     TestHelper.getTestEnv match {
       case TestHelper.Psql =>
-        dataStore.ds.DB.autoCommit { implicit session =>
+        dataStore.DB.autoCommit { implicit session =>
           // TODO side effect?
           SQL("drop schema if exists public cascade; create schema public;").execute.apply()
           SQL("""DROP TABLE IF EXISTS relation1 CASCADE;""").execute.apply()
@@ -73,7 +72,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         }
 
       case TestHelper.Mysql =>
-        dataStore.ds.withConnection { implicit conn =>
+        dataStore.withConnection { implicit conn =>
           SQL("""DROP TABLE IF EXISTS relation1 CASCADE;""").execute()
           SQL("""CREATE TABLE relation1(id bigint, key int);""").execute()
           SQL("""DROP TABLE IF EXISTS testtable CASCADE;""").execute()
@@ -98,8 +97,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
   describe("Running extractor-type-independent task (e.g., before/after script)"){
     
     it("should work for before script"){
-      execute(dataStore.ds, "drop table if exists testtable;")
-      execute(dataStore.ds, "create table testtable ( a text );")
+      execute(dataStore, "drop table if exists testtable;")
+      execute(dataStore, "create table testtable ( a text );")
       val t = java.io.File.createTempFile("test", ".sh")
       val t2 = java.io.File.createTempFile("test", ".tsv")
       val t3 = java.io.File.createTempFile("test", ".py")
@@ -135,16 +134,16 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       expectMsgAnyClassOf(classOf[String], classOf[Terminated])
 
 
-      dataStore.ds.DB.readOnly { implicit session =>
+      dataStore.DB.readOnly { implicit session =>
         val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numRecords === 2)
       }
 
-      execute(dataStore.ds, "DELETE FROM testtable WHERE a='I should be in the table';");
-      execute(dataStore.ds, "DELETE FROM testtable WHERE a='I should also be in the table';");
+      execute(dataStore, "DELETE FROM testtable WHERE a='I should be in the table';");
+      execute(dataStore, "DELETE FROM testtable WHERE a='I should also be in the table';");
 
-      dataStore.ds.DB.readOnly { implicit session =>
+      dataStore.DB.readOnly { implicit session =>
         val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numRecords === 0)
@@ -176,8 +175,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       // TODO do not run json_extractor for MySQL
       assume(TestHelper.getTestEnv != TestHelper.Mysql)
-      execute(dataStore.ds, "drop table if exists testtable;")
-      execute(dataStore.ds, "create table testtable ( a text );")
+      execute(dataStore, "drop table if exists testtable;")
+      execute(dataStore, "create table testtable ( a text );")
       val t = java.io.File.createTempFile("test", ".py")
       val t2 = java.io.File.createTempFile("test", ".tsv")
       val t3 = java.io.File.createTempFile("test", ".py")
@@ -212,8 +211,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       // TODO do not run json_extractor for MySQL
       assume(TestHelper.getTestEnv != TestHelper.Mysql)
-      execute(dataStore.ds, "drop table if exists testtable;")
-      execute(dataStore.ds, "create table testtable ( a text );")
+      execute(dataStore, "drop table if exists testtable;")
+      execute(dataStore, "create table testtable ( a text );")
       val t = java.io.File.createTempFile("test", ".sh")
       val t2 = java.io.File.createTempFile("test", ".tsv")
       val t3 = java.io.File.createTempFile("test", ".py")
@@ -251,18 +250,18 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       expectMsgAnyClassOf(classOf[String], classOf[Terminated])
       expectMsgAnyClassOf(classOf[String], classOf[Terminated])
 
-      dataStore.ds.DB.readOnly { implicit session =>
+      dataStore.DB.readOnly { implicit session =>
         val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numRecords === 4)
       }
 
-      execute(dataStore.ds, "DELETE FROM testtable WHERE a='I should be in the table';");
-      execute(dataStore.ds, "DELETE FROM testtable WHERE a='I should also be in the table';");
-      execute(dataStore.ds, "DELETE FROM testtable WHERE a='Hello!';");
-      execute(dataStore.ds, "DELETE FROM testtable WHERE a='Aloha!';");
+      execute(dataStore, "DELETE FROM testtable WHERE a='I should be in the table';");
+      execute(dataStore, "DELETE FROM testtable WHERE a='I should also be in the table';");
+      execute(dataStore, "DELETE FROM testtable WHERE a='Hello!';");
+      execute(dataStore, "DELETE FROM testtable WHERE a='Aloha!';");
 
-      dataStore.ds.DB.readOnly { implicit session =>
+      dataStore.DB.readOnly { implicit session =>
         val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numRecords === 0)
@@ -274,8 +273,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       // TODO do not run json_extractor for MySQL
       assume(TestHelper.getTestEnv != TestHelper.Mysql)
-      execute(dataStore.ds, "drop table if exists testtable;")
-      execute(dataStore.ds, "create table testtable ( a text );")
+      execute(dataStore, "drop table if exists testtable;")
+      execute(dataStore, "create table testtable ( a text );")
 
       val t = java.io.File.createTempFile("test", ".sh")
       val t2 = java.io.File.createTempFile("test", ".tsv")
@@ -296,8 +295,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       // TODO do not run json_extractor for MySQL
       assume(TestHelper.getTestEnv != TestHelper.Mysql)
-      execute(dataStore.ds, "drop table if exists testtable;")
-      execute(dataStore.ds, "create table testtable ( a text );")
+      execute(dataStore, "drop table if exists testtable;")
+      execute(dataStore, "create table testtable ( a text );")
       val t = java.io.File.createTempFile("test", ".py")
       val t2 = java.io.File.createTempFile("test", ".tsv")
       val t3 = java.io.File.createTempFile("test", ".py")
@@ -337,7 +336,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
       dataStore.addBatch(List(Json.parse("""{"key": 5}""").asInstanceOf[JsObject]).iterator, "relation1")
 
-      dataStore.ds.DB.readOnly { implicit session =>
+      dataStore.DB.readOnly { implicit session =>
         val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM relation1""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numRecords === 1)
@@ -352,7 +351,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       expectMsgAnyClassOf(classOf[String], classOf[Terminated])
       expectMsgAnyClassOf(classOf[String], classOf[Terminated])
 
-      dataStore.ds.DB.readOnly { implicit session =>
+      dataStore.DB.readOnly { implicit session =>
         val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM relation1""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numRecords === 2)
@@ -373,7 +372,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       expectMsgAnyClassOf(classOf[String], classOf[Terminated])
       expectMsgAnyClassOf(classOf[String], classOf[Terminated])
 
-      dataStore.ds.DB.readOnly { implicit session =>
+      dataStore.DB.readOnly { implicit session =>
         val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM relation1""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numRecords === 0)
@@ -402,7 +401,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       //expectTerminated(actor)
       expectMsgAnyClassOf(classOf[String], classOf[Terminated])
       expectMsgAnyClassOf(classOf[String], classOf[Terminated])
-      dataStore.ds.DB.readOnly { implicit session =>
+      dataStore.DB.readOnly { implicit session =>
         val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM relation1""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numRecords === 2000)
@@ -484,8 +483,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
     it("should work for trivial TSV extractor with one single column output and trivial input (not from SQL)"){
 
-      execute(dataStore.ds, "drop table if exists testtable ;")
-      execute(dataStore.ds, "create table testtable ( a text );")
+      execute(dataStore, "drop table if exists testtable ;")
+      execute(dataStore, "create table testtable ( a text );")
       val t = java.io.File.createTempFile("test", ".sh")
       val t2 = java.io.File.createTempFile("test", ".tsv")
       val t3 = java.io.File.createTempFile("test", ".py")
@@ -518,16 +517,16 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       expectMsgAnyClassOf(classOf[String], classOf[Terminated])
       expectMsgAnyClassOf(classOf[String], classOf[Terminated])
 
-      dataStore.ds.DB.readOnly { implicit session =>
+      dataStore.DB.readOnly { implicit session =>
         val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numRecords >= 2)
       }
 
-      execute(dataStore.ds, "DELETE FROM testtable WHERE a='I should be in the table';");
-      execute(dataStore.ds, "DELETE FROM testtable WHERE a='I should also be in the table';");
+      execute(dataStore, "DELETE FROM testtable WHERE a='I should be in the table';");
+      execute(dataStore, "DELETE FROM testtable WHERE a='I should also be in the table';");
 
-      dataStore.ds.DB.readOnly { implicit session =>
+      dataStore.DB.readOnly { implicit session =>
         val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numRecords === 0)
@@ -536,8 +535,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
     
     it("should work for TSV extractor when output and input are from the same table"){
 
-      execute(dataStore.ds, "drop table if exists testtable ;")
-      execute(dataStore.ds, "create table testtable ( a text );") 
+      execute(dataStore, "drop table if exists testtable ;")
+      execute(dataStore, "create table testtable ( a text );") 
       val t = java.io.File.createTempFile("test", ".sh")
       val t2 = java.io.File.createTempFile("test", ".tsv")
       val t3 = java.io.File.createTempFile("test", ".py")
@@ -570,24 +569,24 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       expectMsgAnyClassOf(classOf[String], classOf[Terminated])
       expectMsgAnyClassOf(classOf[String], classOf[Terminated])
 
-      dataStore.ds.DB.readOnly { implicit session =>
+      dataStore.DB.readOnly { implicit session =>
         val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numRecords === 20)
       }
 
-      execute(dataStore.ds, "DELETE FROM testtable WHERE a='Mesasge_1';");
-      execute(dataStore.ds, "DELETE FROM testtable WHERE a='Mesasge_2';");
-      execute(dataStore.ds, "DELETE FROM testtable WHERE a='Mesasge_3';");
-      execute(dataStore.ds, "DELETE FROM testtable WHERE a='Mesasge_4';");
-      execute(dataStore.ds, "DELETE FROM testtable WHERE a='Mesasge_5';");
-      execute(dataStore.ds, "DELETE FROM testtable WHERE a='Mesasge_6';");
-      execute(dataStore.ds, "DELETE FROM testtable WHERE a='Mesasge_7';");
-      execute(dataStore.ds, "DELETE FROM testtable WHERE a='Mesasge_8';");
-      execute(dataStore.ds, "DELETE FROM testtable WHERE a='Mesasge_9';");
-      execute(dataStore.ds, "DELETE FROM testtable WHERE a='Mesasge_10';");
+      execute(dataStore, "DELETE FROM testtable WHERE a='Mesasge_1';");
+      execute(dataStore, "DELETE FROM testtable WHERE a='Mesasge_2';");
+      execute(dataStore, "DELETE FROM testtable WHERE a='Mesasge_3';");
+      execute(dataStore, "DELETE FROM testtable WHERE a='Mesasge_4';");
+      execute(dataStore, "DELETE FROM testtable WHERE a='Mesasge_5';");
+      execute(dataStore, "DELETE FROM testtable WHERE a='Mesasge_6';");
+      execute(dataStore, "DELETE FROM testtable WHERE a='Mesasge_7';");
+      execute(dataStore, "DELETE FROM testtable WHERE a='Mesasge_8';");
+      execute(dataStore, "DELETE FROM testtable WHERE a='Mesasge_9';");
+      execute(dataStore, "DELETE FROM testtable WHERE a='Mesasge_10';");
      
-      dataStore.ds.DB.readOnly { implicit session =>
+      dataStore.DB.readOnly { implicit session =>
         val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numRecords === 0)
@@ -598,8 +597,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
     it("should work for TSV extractor when input query contains multiple columns"){
 
-      execute(dataStore.ds, "drop table if exists testtable ;")
-      execute(dataStore.ds, "create table testtable ( a text, b text );") 
+      execute(dataStore, "drop table if exists testtable ;")
+      execute(dataStore, "create table testtable ( a text, b text );") 
       val t = java.io.File.createTempFile("test", ".sh")
       val t2 = java.io.File.createTempFile("test", ".tsv")
       val t3 = java.io.File.createTempFile("test", ".py")
@@ -633,14 +632,14 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       expectMsgAnyClassOf(classOf[String], classOf[Terminated])
       expectMsgAnyClassOf(classOf[String], classOf[Terminated])
 
-      dataStore.ds.DB.readOnly { implicit session =>
+      dataStore.DB.readOnly { implicit session =>
         val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numRecords === 20)
       }
 
-      execute(dataStore.ds, "DELETE FROM testtable WHERE b='2';");
-      dataStore.ds.DB.readOnly { implicit session =>
+      execute(dataStore, "DELETE FROM testtable WHERE b='2';");
+      dataStore.DB.readOnly { implicit session =>
         val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numRecords === 10)
@@ -650,8 +649,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
     var exttype = "json_extractor"
     for(exttype <- List("json_extractor", "tsv_extractor")){
       it(s"should fail if extractor contain errors (${exttype})"){
-        execute(dataStore.ds, "drop table if exists testtable ;")
-        execute(dataStore.ds, "create table testtable ( a text, b text );") 
+        execute(dataStore, "drop table if exists testtable ;")
+        execute(dataStore, "create table testtable ( a text, b text );") 
         val t = java.io.File.createTempFile("test", ".sh")
         val t2 = java.io.File.createTempFile("test", ".tsv")
         val t3 = java.io.File.createTempFile("test", ".py")
@@ -686,8 +685,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       }
 
       it(s"should fail if SQL queries contain errors (${exttype})"){
-        execute(dataStore.ds, "drop table if exists testtable ;")
-        execute(dataStore.ds, "create table testtable ( a text, b text );") 
+        execute(dataStore, "drop table if exists testtable ;")
+        execute(dataStore, "create table testtable ( a text, b text );") 
         val t = java.io.File.createTempFile("test", ".sh")
         val t2 = java.io.File.createTempFile("test", ".tsv")
         val t3 = java.io.File.createTempFile("test", ".py")
@@ -728,8 +727,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
     it("should work for SQL extractor"){
 
-      execute(dataStore.ds, "drop table if exists testtable ;")
-      execute(dataStore.ds, "create table testtable ( a text );")
+      execute(dataStore, "drop table if exists testtable ;")
+      execute(dataStore, "create table testtable ( a text );")
       val t = java.io.File.createTempFile("test", ".sh")
       val t2 = java.io.File.createTempFile("test", ".tsv")
       val t3 = java.io.File.createTempFile("test", ".py")
@@ -755,7 +754,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       expectMsgAnyClassOf(classOf[String], classOf[Terminated])
       expectMsgAnyClassOf(classOf[String], classOf[Terminated])
 
-      dataStore.ds.DB.readOnly { implicit session =>
+      dataStore.DB.readOnly { implicit session =>
         val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numRecords === 1)
@@ -765,8 +764,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
     it("should fail for SQL extractor if SQL query is wrong"){
 
-      execute(dataStore.ds, "drop table if exists testtable ;")
-      execute(dataStore.ds, "create table testtable ( a text );")
+      execute(dataStore, "drop table if exists testtable ;")
+      execute(dataStore, "create table testtable ( a text );")
       val t = java.io.File.createTempFile("test", ".sh")
       val t2 = java.io.File.createTempFile("test", ".tsv")
       val t3 = java.io.File.createTempFile("test", ".py")
@@ -799,8 +798,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
     it("should work for CMD extractor"){
 
-      execute(dataStore.ds, "drop table if exists testtable ;")
-      execute(dataStore.ds, "create table testtable ( a text );")
+      execute(dataStore, "drop table if exists testtable ;")
+      execute(dataStore, "create table testtable ( a text );")
       val t = java.io.File.createTempFile("test", ".sh")
       val t2 = java.io.File.createTempFile("test", ".tsv")
       val t3 = java.io.File.createTempFile("test", ".py")
@@ -833,7 +832,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       expectMsgAnyClassOf(classOf[String], classOf[Terminated])
       expectMsgAnyClassOf(classOf[String], classOf[Terminated])
 
-      dataStore.ds.DB.readOnly { implicit session =>
+      dataStore.DB.readOnly { implicit session =>
         val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numRecords === 1)
@@ -844,8 +843,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
     it("should fail for CMD extractor when the script contain errors"){
 
-      execute(dataStore.ds, "drop table if exists testtable ;")
-      execute(dataStore.ds, "create table testtable ( a text );")
+      execute(dataStore, "drop table if exists testtable ;")
+      execute(dataStore, "create table testtable ( a text );")
       val t = java.io.File.createTempFile("test", ".sh")
       val t2 = java.io.File.createTempFile("test", ".tsv")
       val t3 = java.io.File.createTempFile("test", ".py")

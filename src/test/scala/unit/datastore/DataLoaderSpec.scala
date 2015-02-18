@@ -11,17 +11,17 @@ import scala.sys.process._
 import scalikejdbc._
 import java.io._
 
-class DataLoaderSpec extends FunSpec with BeforeAndAfter with JdbcDataStore {
+class DataLoaderSpec extends FunSpec with BeforeAndAfter with Logging {
 
   lazy implicit val session = DB.autoCommitSession()
   val config = ConfigFactory.parseString(TestHelper.getConfig).withFallback(ConfigFactory.load)
 
   before {
-    JdbcDataStore.init(config)
+    JdbcDataStoreObject.init(config)
   }
 
   after {
-    JdbcDataStore.close()
+    JdbcDataStoreObject.close()
   }
 
   val dbSettings = TestHelper.getDbSettings
@@ -84,16 +84,16 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with JdbcDataStore {
       val tsvFile = getClass.getResource("/dataloader1.tsv").getFile
       du.load(new File(tsvFile).getAbsolutePath(), "dataloader1", dbSettings, false)
 
-      // JdbcDataStore.executeSqlQueryWithCallback(sql)(op)
+      // JdbcDataStoreObject.executeSqlQueryWithCallback(sql)(op)
       var result1 = ""
       var result2 = false
       var result3 = ""
       var result4 = 0
-      JdbcDataStore.executeSqlQueryWithCallback(s"""SELECT * FROM dataloader1 WHERE id = 0""") { rs =>
+      JdbcDataStoreObject.executeSqlQueryWithCallback(s"""SELECT * FROM dataloader1 WHERE id = 0""") { rs =>
         result1 = rs.getString("feature")
         result2 = rs.getBoolean("is_correct")
       }
-      JdbcDataStore.executeSqlQueryWithCallback(s"""SELECT * FROM dataloader1 WHERE is_correct = false""") { rs =>
+      JdbcDataStoreObject.executeSqlQueryWithCallback(s"""SELECT * FROM dataloader1 WHERE is_correct = false""") { rs =>
         result3 = rs.getString("feature")
         result4 = rs.getInt("id")
       }
@@ -128,11 +128,11 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with JdbcDataStore {
       var result2 = false
       var result3 = ""
       var result4 = 0
-      JdbcDataStore.executeSqlQueryWithCallback(s"""SELECT * FROM dataloader1 WHERE id = 0""") { rs =>
+      JdbcDataStoreObject.executeSqlQueryWithCallback(s"""SELECT * FROM dataloader1 WHERE id = 0""") { rs =>
         result1 = rs.getString("feature")
         result2 = rs.getBoolean("is_correct")
       }
-      JdbcDataStore.executeSqlQueryWithCallback(s"""SELECT * FROM dataloader1 WHERE is_correct = false""") { rs =>
+      JdbcDataStoreObject.executeSqlQueryWithCallback(s"""SELECT * FROM dataloader1 WHERE is_correct = false""") { rs =>
         result3 = rs.getString("feature")
         result4 = rs.getInt("id")
       }

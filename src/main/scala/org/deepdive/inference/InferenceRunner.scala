@@ -6,7 +6,7 @@ import org.deepdive.settings._
 import java.io.File
 
 
-trait InferenceDataStore {
+trait InferenceRunner {
 
     /* Initializes the data store. This method must be called before any other methods in this class. */
     def init() : Unit
@@ -21,14 +21,6 @@ trait InferenceDataStore {
     def groundFactorGraph(schema: Map[String, _ <: VariableDataType],
         factorDescs: Seq[FactorDesc], calibrationSettings: CalibrationSettings, 
         skipLearning: Boolean, weightTable: String, dbSettings: DbSettings = null, parallelGrounding: Boolean) : Unit 
-
-    /* 
-     * Dumps the factor graphs with the given serializier
-     */
-    def dumpFactorGraph(serializer: Serializer, schema: Map[String, _ <: VariableDataType],
-        factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String],
-        weightsPath: String, variablesPath: String, factorsPath: String, edgesPath: String,
-        parallelGrounding: Boolean) : Unit
 
     /* 
      * Writes inference results produced by the sampler back to the data store.
@@ -49,8 +41,8 @@ trait InferenceDataStore {
 }
 
 /* Stores the factor graph and inference results. */
-trait InferenceDataStoreComponent {
+trait InferenceRunnerComponent {
 
-  def inferenceDataStore : InferenceDataStore
+  def inferenceRunner : InferenceRunner
 
 }

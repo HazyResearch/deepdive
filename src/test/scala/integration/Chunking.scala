@@ -31,14 +31,14 @@ class ChunkingApp extends FunSpec with Logging{
   val env = TestHelper.getTestEnv()
 
   val ds = env match {
-    case TestHelper.Psql => PostgresDataStore
-    case TestHelper.Mysql => MysqlDataStore
+    case TestHelper.Psql => new PostgresDataStore
+    case TestHelper.Mysql => new MysqlDataStore
   }
 
   /** prepare data */
   def prepareData() {
     Helpers.executeCmd("rm -f out/test_chunking/tmp/*")
-    JdbcDataStore.init(config)
+    JdbcDataStoreObject.init(config)
     env match {
       case TestHelper.Psql =>
         ds.withConnection { implicit conn =>
@@ -95,7 +95,7 @@ class ChunkingApp extends FunSpec with Logging{
 
       case _ => 
     }
-    JdbcDataStore.close()
+    JdbcDataStoreObject.close()
   }
 
   def query1 = s"""${"\"\"\""}
@@ -186,7 +186,7 @@ class ChunkingApp extends FunSpec with Logging{
 
   /** Process DeepDive's results */
   def processResults() : Double = {
-    JdbcDataStore.init(config)
+    JdbcDataStoreObject.init(config)
     val resultFile = File.createTempFile("result", "")
     resultFile.setWritable(true, false)
 
@@ -212,7 +212,7 @@ class ChunkingApp extends FunSpec with Logging{
     } 
 
 
-    JdbcDataStore.close()
+    JdbcDataStoreObject.close()
     val converter = s"""${getClass.getResource("/chunking/convert.py").getFile}"""
     val evaluator = s"""${getClass.getResource("/chunking/conlleval.pl").getFile}"""
     // TODO: this sometimes stuck forever. It's a bug not reproducible.

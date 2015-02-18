@@ -5,9 +5,12 @@ import scalikejdbc._
 import scalikejdbc.config._
 import org.deepdive.Logging
 import com.typesafe.config._
-import org.deepdive.helpers.Helpers
 import play.api.libs.json._
 import org.deepdive.inference.InferenceNamespace
+
+trait JdbcDataStoreComponent {
+  def dataStore : JdbcDataStore
+}
 
 trait JdbcDataStore extends Logging {
 
@@ -22,24 +25,7 @@ trait JdbcDataStore extends Logging {
   /* Closes the connection pool and all of its connections */
   def close() = ConnectionPool.closeAll()
 
-  /**
-   * Execute any sql query
-   * (sql must be only ONE query for mysql, but can be multiple queries for psql.)
-   * 
-   * @return SQL result set
-   */
-  def executeSqlQuery(sql: String) = {
-    log.debug("Executing single query: " + sql)
-    val conn = borrowConnection()
-    conn.setAutoCommit(false)
-    val stmt = conn.createStatement();
-    // Using prepareStatement should be better: faster, prevents SQL injection
-    conn.prepareStatement(sql).execute
-    // stmt.execute(sql)
-    
-    conn.commit()
-    conn.close()
-  }
+  def init() : Unit = {}
 
   /**
    * Issues a single SQL query that can return results, and perform {@code op} 
@@ -64,7 +50,7 @@ trait JdbcDataStore extends Logging {
       log.error(exception.toString)
       throw exception
     } finally {
-      conn.close() 
+      conn.close()
     }
   }
   
@@ -72,21 +58,23 @@ trait JdbcDataStore extends Logging {
   *  Execute one or multiple SQL update commands with connection to JDBC datastore
    *  
    */
-  def executeSqlQueries(sql: String) : Unit = {
+  def executeSqlQueries(sql: String, split: Boolean = true) : Unit = {
     val conn = borrowConnection()
-//    // This commented code can only execute SQL updates that do not return results
-//    val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
-//      java.sql.ResultSet.CONCUR_UPDATABLE)
-
     // Supporting more general SQL queries (e.g. SELECT)
     val stmt = conn.createStatement()
     try {
-      // changed \s+ to \s* here.
-      """;\s*""".r.split(sql.trim()).filterNot(_.isEmpty).foreach(q => {
-        log.debug("Executing query via JDBC: " + q.trim())
-        // Using prepareStatement should be better: faster, prevents SQL injection
-        conn.prepareStatement(q.trim()).execute
-      })
+      if (split) {
+        // changed \s+ to \s* here.
+        """;\s*""".r.split(sql.trim()).filterNot(_.isEmpty).foreach(q => {
+          log.debug("Executing query via JDBC: " + q.trim())
+          // Using prepareStatement should be better: faster, prevents SQL injection
+          conn.prepareStatement(q.trim()).execute
+        })
+        } else {
+          conn.setAutoCommit(false)
+          conn.prepareStatement(sql).execute
+          conn.commit()
+        }
     } catch {
       // SQL cmd exception
       case exception : Throwable =>
@@ -98,7 +86,7 @@ trait JdbcDataStore extends Logging {
   }
   
   def bulkInsert(outputRelation: String, data: Iterator[Map[String, Any]])(implicit session: DBSession) = {
-    val columnNames = PostgresDataStore.DB.getColumnNames(outputRelation).sorted
+    val columnNames = DB.getColumnNames(outputRelation).sorted
     val columnValues = columnNames.map (x => "?")
     val tuples = data.map { tuple =>
       columnNames.map(c => tuple.get(c).orElse(tuple.get(c.toLowerCase)).getOrElse(null))
@@ -243,10 +231,160 @@ trait JdbcDataStore extends Logging {
     return usingGreenplum
   }
 
+  // ========================================
+  // Extraction
+
+  def queryAsMap[A](query: String, batchSize: Option[Int] = None)
+    (block: Iterator[Map[String, Any]] => A) : A = {
+    DB.readOnly { implicit session =>
+      session.connection.setAutoCommit(false)
+      val stmt = session.connection.createStatement(
+        java.sql.ResultSet.TYPE_FORWARD_ONLY, java.sql.ResultSet.CONCUR_READ_ONLY)
+      stmt.setFetchSize(10000)
+      try {
+        // stmt.executeUpdate("ANALYZE");
+        log.debug(query)
+        val expQuery = "EXPLAIN " + query
+        val ex = stmt.executeQuery(expQuery)
+        log.debug(ex.getMetaData().getColumnLabel(1))
+        while (ex.next()) {
+          log.debug(ex getString 1)
+        }
+
+        val rs = stmt.executeQuery(query)
+        // No result return
+        if (!rs.isBeforeFirst) {
+          log.warning(s"query returned no results: ${query}")
+          block(Iterator.empty)
+        } else {
+          val resultIter = new Iterator[Map[String, Any]] {
+            def hasNext = {
+              // TODO: This is expensive
+              !(rs.isLast)
+            }              
+            def next() = {
+              rs.next()
+              val metadata = rs.getMetaData()
+              (1 to metadata.getColumnCount()).map { i => 
+                val label = metadata.getColumnLabel(i)
+                val data = unwrapSQLType(rs.getObject(i))
+                (label, data)
+              }
+              .toMap
+            }
+          }
+          block(resultIter)
+        }
+      } catch {
+        // SQL cmd exception
+        case exception : Throwable =>
+          log.error(exception.toString)
+          throw exception
+      }
+    }
+  }
+
+  def queryAsJson[A](query: String, batchSize: Option[Int] = None)
+    (block: Iterator[JsObject] => A) : A = {
+    queryAsMap(query, batchSize) { iter =>
+      val jsonIter = iter.map { row =>
+        JsObject(row.mapValues(anyValToJson).toSeq)
+      }
+      block(jsonIter)
+    }
+  }
+
+  def queryUpdate(query: String) {
+    val conn = borrowConnection()
+    //conn.setAutoCommit(false);
+    val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY, java.sql.ResultSet.CONCUR_UPDATABLE)
+    try {
+      val prep = conn.prepareStatement(query)
+      prep.executeUpdate
+    } catch {
+      // SQL cmd exception
+      case exception : Throwable =>
+        log.error(exception.toString)
+        throw exception
+    } finally {
+      conn.close()
+    }
+  }
+
+  /* Translates an arbitary values that comes back from the database to a JSON value */
+  def anyValToJson(x: Any) : JsValue = x match {
+    case Some(x) => anyValToJson(x)
+    case None | null => JsNull
+    case x : String => JsString(x)
+    case x : Boolean => JsBoolean(x)
+    case x : Int => JsNumber(x)
+    case x : Long => JsNumber(x)
+    case x : Double => JsNumber(x)
+    case x : java.sql.Date => JsString(x.toString)
+    case x : Array[_] => JsArray(x.toList.map(x => anyValToJson(x)))
+    case x : List[_] => JsArray(x.toList.map(x => anyValToJson(x)))
+    case x : JsObject => x      case x =>
+      log.error(s"Could not convert ${x.toString} of type=${x.getClass.getName} to JSON")
+      JsNull
+  }
+
+  def addBatch(result: Iterator[JsObject], outputRelation: String) : Unit = {}
+
+  // Datastore-specific methods:
+  // Below are methods to implement in any type of datastore.
+    
+  /**
+   * Drop and create a sequence, based on database type.
+   * 
+   * @see http://dev.mysql.com/doc/refman/5.0/en/user-variables.html
+   * @see http://www.it-iss.com/mysql/mysql-renumber-field-values/
+   */
+  def createSequenceFunction(seqName: String) : String = null
+  
+  /**
+   * Cast an expression to a type
+   */
+  def cast(expr: Any, toType: String): String = null
+  
+  /**
+   * Given a string column name, Get a quoted version dependent on DB.
+   *          if psql, return "column" 
+   *          if mysql, return `column`
+   */
+  def quoteColumn(column: String) : String = null
+  
+  /**
+   * Generate a random real number from 0 to 1.
+   */
+  def randomFunction : String = null
+  
+  /**
+   * Concatenate a list of strings in the database.
+   * @param list
+   *     the list to concat
+   * @param delimiter
+   *     the delimiter used to seperate elements
+   * @return
+   *   Use '||' in psql, use 'concat' function in mysql
+   */
+  def concat(list: Seq[String], delimiter: String) : String = null
+
+  // fast sequential id assign function
+  def createAssignIdFunctionGreenplum() : Unit = {}
+  
+  /**
+   * ANALYZE TABLE
+   */
+  def analyzeTable(table: String) : String = ""
+
+  // assign senquential ids to table's id column
+  def assignIds(table: String, startId: Long, sequence: String) : Long = 0
+
+  // end: Datastore-specific methods
+
 }
 
-
-object JdbcDataStore extends JdbcDataStore with Logging {
+object JdbcDataStoreObject extends JdbcDataStore with Logging {
 
   class JdbcDBsWithEnv(envValue: String, configObj: Config) extends DBsWithEnv(envValue) {
     override lazy val config = configObj
@@ -268,7 +406,7 @@ object JdbcDataStore extends JdbcDataStore with Logging {
     }
   }
 
-  def init() : Unit = init(ConfigFactory.load)
+  override def init() : Unit = init(ConfigFactory.load)
 
   /* Closes the data store */
   override def close() = {

@@ -23,8 +23,7 @@ class TestInferenceManager(
   val variableSchema: Map[String, _ <: VariableDataType],
   val dbSettings: DbSettings
   )  
-  extends InferenceManager with MemoryInferenceDataStoreComponent {
-    def factorGraphBuilderProps = Props(classOf[Forwarder], factorGraphBuilderProbe)
+  extends InferenceManager with MemoryInferenceRunnerComponent {
     override def samplerProps  = Props(classOf[Forwarder], samplerProbe)
     override def calibrationDataWriterProps = Props(classOf[Forwarder], cdwProbe)
   }
@@ -41,11 +40,6 @@ class InferenceManagerSpec(_system: ActorSystem) extends TestKit(_system) with F
   val schema = Map("r1.c1" -> BooleanType, "r2.c1" -> BooleanType, "r2.c2" -> BooleanType)
   def actorProps = Props(classOf[TestInferenceManager], taskManager.ref, sampler.ref, 
     factorGraphBuilder.ref, cdw.ref, schema, dbSettings)
-
-  describe("Grounding the factor graph") {
-    // TODO
-    it("should work")(pending)
-  }
 
   describe("Running inference") {
     it("should work") {
