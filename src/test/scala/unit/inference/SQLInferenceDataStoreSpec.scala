@@ -595,7 +595,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val holdoutFraction = 0.0
         inferenceRunner.groundFactorGraph(Map(), Seq(), CalibrationSettings(holdoutFraction, None, None), inferenceSettings, dbSettings)
         SQL(s"""create table has_spouse(id bigint primary key, is_true boolean)""").execute.apply()
-        inferenceRunner.writebackInferenceResult(schema, variablesFile, weightsFile, false, dbSettings)
+        inferenceRunner.writebackInferenceResult(schema, variablesFile, weightsFile, dbSettings)
       }
 
     }

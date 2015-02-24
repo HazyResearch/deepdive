@@ -65,11 +65,9 @@ trait InferenceManager extends Actor with ActorLogging {
         sender ! Status.Failure(e)
         context.stop(self)
       }
-    case InferenceManager.RunInference(factorDescs, holdoutFraction, holdoutQuery, 
-      samplerJavaArgs, samplerOptions, skipSerializing, dbSettings, parallelGrounding) =>
+    case InferenceManager.RunInference(factorDescs, samplerJavaArgs, samplerOptions, dbSettings) =>
       val _sender = sender
-      val result = runInference(factorDescs, holdoutFraction, holdoutQuery, 
-        samplerJavaArgs, samplerOptions, skipSerializing, dbSettings, parallelGrounding)
+      val result = runInference(factorDescs, samplerJavaArgs, samplerOptions, dbSettings)
       result pipeTo _sender
 
     case InferenceManager.WriteCalibrationData =>
@@ -86,22 +84,21 @@ trait InferenceManager extends Actor with ActorLogging {
       calibrationWriter ! PoisonPill
   }
 
-  def runInference(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], 
-    samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false, dbSettings: DbSettings, 
-    parallelGrounding: Boolean) = {
+  def runInference(factorDescs: Seq[FactorDesc], samplerJavaArgs: String, 
+    samplerOptions: String, dbSettings: DbSettings) = {
 
     val sampler = context.actorOf(samplerProps, "sampler")
 
     val samplingResult = sampler ? Sampler.Run(samplerJavaArgs, samplerOptions,
       factorGraphDumpFileWeights.getCanonicalPath, factorGraphDumpFileVariables.getCanonicalPath,
       factorGraphDumpFileFactors.getCanonicalPath, factorGraphDumpFileEdges.getCanonicalPath,
-      factorGraphDumpFileMeta.getCanonicalPath, SamplingOutputDir.getCanonicalPath, parallelGrounding)
+      factorGraphDumpFileMeta.getCanonicalPath, SamplingOutputDir.getCanonicalPath)
     // Kill the sampler after it's done :)
     sampler ! PoisonPill
     samplingResult.map { x =>
       inferenceRunner.writebackInferenceResult(
       variableSchema, SamplingOutputFile.getCanonicalPath, 
-      SamplingOutputFileWeights.getCanonicalPath, parallelGrounding, dbSettings)
+      SamplingOutputFileWeights.getCanonicalPath, dbSettings)
     }  
   }
 
@@ -138,8 +135,8 @@ object InferenceManager {
   case class GroundFactorGraph(factorDescs: Seq[FactorDesc], calibrationSettings: CalibrationSettings, 
     inferenceSettings: InferenceSettings)
   // Runs the sampler with the given arguments
-  case class RunInference(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], 
-    samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false, dbSettings: DbSettings, parallelGrounding: Boolean)
+  case class RunInference(factorDescs: Seq[FactorDesc],  
+    samplerJavaArgs: String, samplerOptions: String, dbSettings: DbSettings)
   // Writes calibration data to predefined files
   case object WriteCalibrationData
 
