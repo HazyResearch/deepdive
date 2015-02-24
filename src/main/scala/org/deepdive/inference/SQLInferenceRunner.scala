@@ -784,8 +784,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
    * This function is executed when sampler finished.
    */
   def writebackInferenceResult(variableSchema: Map[String, _ <: VariableDataType],
-    //variableOutputFile: String, weightsOutputFile: String, parallelGrounding: Boolean) = {
-    variableOutputFile: String, weightsOutputFile: String, parallelGrounding: Boolean, dbSettings: DbSettings) = {
+    variableOutputFile: String, weightsOutputFile: String, dbSettings: DbSettings) = {
 
     execute(createInferenceResultSQL)
     execute(createInferenceResultWeightsSQL)

@@ -26,7 +26,7 @@ trait MemoryInferenceRunnerComponent extends InferenceRunnerComponent{
     def BatchSize = None
 
     def writebackInferenceResult(variableSchema: Map[String, _ <: VariableDataType], 
-      variableOutputFile: String, weightsOutputFile: String, parallelGrounding: Boolean, dbSettings: DbSettings) : Unit = {
+      variableOutputFile: String, weightsOutputFile: String, dbSettings: DbSettings) : Unit = {
     }
 
     def getCalibrationData(variable: String, dataType: VariableDataType, buckets: List[Bucket]) : Map[Bucket, BucketData] = {
