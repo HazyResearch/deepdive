@@ -5,7 +5,7 @@ import com.typesafe.config._
 import org.deepdive.test._
 import org.deepdive.Context
 import org.deepdive._
-import org.deepdive.datastore.{PostgresDataStore, JdbcDataStore}
+import org.deepdive.datastore._
 import org.deepdive.test.helpers.TestHelper
 import org.scalatest._
 import scalikejdbc.ConnectionPool
@@ -17,8 +17,8 @@ class BiasedCoin extends FunSpec {
   /** insert data into db
    */
   def prepareData() {
-    JdbcDataStore.init(config)
-    JdbcDataStore.withConnection { implicit conn =>
+    JdbcDataStoreObject.init(config)
+    JdbcDataStoreObject.withConnection { implicit conn =>
       TestHelper.getTestEnv() match {
         case TestHelper.Psql =>
           SQL("drop schema if exists public cascade; create schema public;").execute()
@@ -34,7 +34,7 @@ class BiasedCoin extends FunSpec {
         (NULL), (NULL), (NULL), (NULL),
         (NULL);""").execute()
     }
-    JdbcDataStore.close()
+    JdbcDataStoreObject.close()
   }
   
   /** application.conf configuration
@@ -60,6 +60,8 @@ class BiasedCoin extends FunSpec {
         case "true" | "1" | "True" | "TRUE" => "true"
         case _ => "false"
       }}
+
+      DeepDive.sampler.sampler_args: "-l 300 -i 500 -s 1 --alpha 0.1 --diminish 0.99 --quiet"
     """
   
 
@@ -68,8 +70,8 @@ class BiasedCoin extends FunSpec {
     prepareData()
     
     DeepDive.run(config, "out/test_coin")
-    JdbcDataStore.init(config)
-    JdbcDataStore.withConnection { implicit conn =>
+    JdbcDataStoreObject.init(config)
+    JdbcDataStoreObject.withConnection { implicit conn =>
       
       // get learned weight
       val weight = SQL("select weight from dd_inference_result_weights;")().head[Double]("weight")
@@ -84,7 +86,7 @@ class BiasedCoin extends FunSpec {
       assert(inference === 0)
 
     }
-    JdbcDataStore.close()
+    JdbcDataStoreObject.close()
   }
 
 

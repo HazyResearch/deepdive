@@ -5,10 +5,9 @@ import akka.util.Timeout
 import com.typesafe.config._
 import java.io.File
 import org.deepdive.settings._
-import org.deepdive.datastore.{JdbcDataStore}
-import org.deepdive.extraction.{ExtractionManager, ExtractionTask, ExtractionTaskResult}
-import org.deepdive.extraction.datastore._
-import org.deepdive.inference.{InferenceManager, FactorGraphBuilder}
+import org.deepdive.datastore._
+import org.deepdive.extraction.{ExtractionManager, ExtractionTask}
+import org.deepdive.inference.{InferenceManager}
 import org.deepdive.profiling._
 import org.deepdive.calibration._
 import scala.concurrent.duration._
@@ -54,11 +53,11 @@ object DeepDive extends Logging {
     }
 
     // Setup the data store
-    JdbcDataStore.init(config)
+    JdbcDataStoreObject.init(config)
     settings.schemaSettings.setupFile.foreach { file =>
       log.info(s"Setting up the schema using ${file}")
       val cmd = Source.fromFile(file).getLines.mkString("\n")
-      JdbcDataStore.executeSqlQueries(cmd)
+      JdbcDataStoreObject.executeSqlQueries(cmd)
     }
     
     implicit val timeout = Timeout(1337 hours)

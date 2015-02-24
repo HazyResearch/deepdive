@@ -49,14 +49,15 @@ each variable, and the learned factor weights. DeepDive creates a view called
 learned values sorted by absolute value. The
 `dd_inference_result_weights_mapping` view has the following schema:
 
-          View "public.dd_inference_result_weights_mapping"
-        Column     |       Type       | Modifiers | Storage  | Description
-    ---------------+------------------+-----------+----------+-------------
-     id            | bigint           |           | plain    |
-     initial_value | double precision |           | plain    |
-     is_fixed      | boolean          |           | plain    |
-     description   | text             |           | extended |
-     weight        | double precision |           | plain    |
+    View "public.dd_inference_result_weights_mapping"
+       Column    |       Type       | Modifiers
+    -------------+------------------+-----------
+     id          | bigint           |
+     isfixed     | integer          |
+     initvalue   | real             |
+     cardinality | text             |
+     description | text             |
+     weight      | double precision |
 
 
 Specification for these fields:
@@ -64,8 +65,37 @@ Specification for these fields:
 - **id**: the unique identifier for the weight
 - **initial_value**: the initial value for the weight
 - **is_fixed**: whether the weight is fixed (cannot be changed during learning)
+- **cardinality**: the cardinality of this factor. Meaningful for [multinomial factors](chunking.html).
 - **description**: description of the weight, composed by [the name of inference rule]-[the specified value of "weight" in inference rule]
 - **weight**: the learned weight value
+
+DeepDive also creates a view `dd_feature_statistics` that maps factor names, weights and number of positive / negative examples associated with this factor:
+
+         View "public.dd_feature_statistics"
+        Column    |       Type       | Modifiers
+    --------------+------------------+-----------
+     id           | bigint           |
+     isfixed      | integer          |
+     initvalue    | real             |
+     cardinality  | text             |
+     description  | text             |
+     weight       | double precision |
+     pos_examples | bigint           |
+     neg_examples | bigint           |
+     queries      | bigint           |
+
+It has all columns from `dd_inference_result_weights_mapping`, and three additional columns:
+
+- **pos_examples**: The number of positive examples associated with this feature.
+- **neg_examples**: The number of negative examples associated with this feature.
+- **queries**: The number of queries associated with this feature.
+
+Note these columns contain non-NULL values only when the factor is a unary `IsTrue` factor.
+
+This table can be used to diagnose features, e.g. if a feature gets
+too high weight, it might because there are not enough negative
+examples for this feature, and you may need to add more data or more 
+distant supervision rules.
 
 ### Calibration data and plots
 

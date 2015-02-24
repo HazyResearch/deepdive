@@ -3,7 +3,6 @@ package org.deepdive.test.unit
 import anorm._
 import org.deepdive.datastore._
 import org.deepdive.extraction._
-import org.deepdive.extraction.datastore._
 import org.deepdive.test._
 import org.scalatest._
 import scala.io.Source
@@ -11,12 +10,12 @@ import play.api.libs.json._
 import java.io.StringWriter
 
 class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
-  with PostgresExtractionDataStoreComponent {
+  with PostgresDataStoreComponent {
 
-  lazy implicit val connection = PostgresDataStore.borrowConnection()
+  lazy implicit val connection = dataStore.borrowConnection()
 
   before {
-    JdbcDataStore.init()
+    JdbcDataStoreObject.init()
     dataStore.init()
     SQL("drop schema if exists public cascade; create schema public;").execute()
     SQL("""create table datatype_test(id bigserial primary key, key integer, some_text text, 
@@ -25,7 +24,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
   }
 
   after {
-    JdbcDataStore.close()
+    JdbcDataStoreObject.close()
   }
 
   describe("Querying as a Map") {

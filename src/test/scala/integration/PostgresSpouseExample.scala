@@ -11,7 +11,7 @@ import com.typesafe.config._
 import org.deepdive.test._
 import org.deepdive.Context
 import org.deepdive._
-import org.deepdive.datastore.{PostgresDataStore, JdbcDataStore}
+import org.deepdive.datastore._
 import org.scalatest._
 import org.deepdive.Logging
 import org.deepdive.settings._
@@ -24,7 +24,7 @@ import scalikejdbc.ConnectionPool
 /** Text running spouse example.
  * 
  */
-class PostgresSpouseExample extends FunSpec with Logging{
+class PostgresSpouseExample extends FunSpec with Logging with PostgresDataStoreComponent {
 
   // Read the schema from test file
   val schema = scala.io.Source.fromFile(getClass.getResource("/spouse/schema_psql.sql").getFile).mkString
@@ -34,16 +34,16 @@ class PostgresSpouseExample extends FunSpec with Logging{
     /** prepare data */
   def prepareData() {
 
-    JdbcDataStore.init(config)
-    PostgresDataStore.withConnection { implicit conn =>
+    JdbcDataStoreObject.init(config)
+    dataStore.withConnection { implicit conn =>
 
-      JdbcDataStore.executeSqlQueries(schema);
+      JdbcDataStoreObject.executeSqlQueries(schema);
 
       Helpers.executeSqlQueriesByFile(TestHelper.getDbSettings,
               s"""\\COPY sentences FROM '${getClass.getResource(
               "/spouse/data/sentences_dump.csv").getFile}' CSV;""" )
     }
-    JdbcDataStore.close()
+    JdbcDataStoreObject.close()
   }
 
 
@@ -193,7 +193,7 @@ deepdive {
   """
   /** Process DeepDive's results */
   def processResults(): Double = {
-    JdbcDataStore.init(config)
+    JdbcDataStoreObject.init(config)
     var score = 0.0;
 
     // There is a chance that num_incorrect is 0 in bucket=9, in this case
@@ -205,12 +205,12 @@ deepdive {
       CASE WHEN num_incorrect IS NULL THEN 0 ELSE num_incorrect END) 
       from has_spouse_is_true_calibration where bucket = 9"""
 
-    PostgresDataStore.withConnection { implicit conn =>
-      JdbcDataStore.executeSqlQueryWithCallback(checkQuery) { rs =>
+    dataStore.withConnection { implicit conn =>
+      JdbcDataStoreObject.executeSqlQueryWithCallback(checkQuery) { rs =>
         score = rs.getDouble(1)
       }
     }
-    JdbcDataStore.close()
+    JdbcDataStoreObject.close()
     score
   }
   
@@ -226,12 +226,12 @@ deepdive {
       prepareData()
       Helpers.executeCmd("rm -f out/test_spouse/tmp/*")
       DeepDive.run(config, "out/test_spouse")
-      // DeepDive.run will finally call JdbcDataStore.close()...
+      // DeepDive.run will finally call JdbcDataStoreObject.close()...
 
       val score = processResults()
       assert(score > 0.9)
 
-      JdbcDataStore.close()
+      JdbcDataStoreObject.close()
     }
   }
 

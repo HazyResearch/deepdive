@@ -8,8 +8,8 @@ import org.deepdive.settings._
 import org.deepdive.Context
 import org.deepdive.extraction._
 import org.deepdive.extraction.ExtractorRunner._
-import org.deepdive.extraction.datastore._
-import org.deepdive.extraction.datastore.ExtractionDataStore._
+import org.deepdive.datastore._
+import org.deepdive.datastore.FileDataUtils
 import org.deepdive.Logging
 import org.deepdive.datastore.DataLoader
 import scala.util.{Try, Success, Failure}
@@ -30,7 +30,7 @@ import org.deepdive.helpers.Helpers.{Mysql, Psql}
  */
 object ExtractorRunner {
   
-  def props(dataStore: JsonExtractionDataStore, dbSettings: DbSettings) = Props(classOf[ExtractorRunner], dataStore, dbSettings)
+  def props(dataStore: JdbcDataStore, dbSettings: DbSettings) = Props(classOf[ExtractorRunner], dataStore, dbSettings)
 
 
   // Messages
@@ -56,7 +56,7 @@ object ExtractorRunner {
 }
 
 /* Runs a single extrator by executing its before script, UDF, and after sript */
-class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings) extends Actor 
+class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends Actor 
   with ActorLogging with FSM[State, Data] {
 
   import ExtractorRunner._
@@ -242,7 +242,6 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
   /* Queries the data store and gets all the data */
   private def sendData(task: ExtractionTask, workers: Router, taskSender: ActorRef) {
     log.info(s"Getting data from the data store and sending it to the workers. query='${task.extractor.inputQuery}'")
-
     // Figure out where to get the input from
     val extractorInput = task.extractor.inputQuery match {
       case CSVInputQuery(filename, seperator) =>
@@ -368,6 +367,13 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
    */
   private def runTsvExtractor(task: ExtractionTask, dbSettings: DbSettings, taskSender: ActorRef) = {
   
+    // Determine if parallel loading and unloading is used by Env var
+    val parallelLoading = System.getenv("PARALLEL_LOADING") match {
+      case "true" => true
+      case _ => false
+    }
+    log.debug(s"Parallel Loading: ${parallelLoading}")
+    val loader = new DataLoader
     val udfCmd = task.extractor.udf
     // make udfCmd executable if file
     val udfFile = new java.io.File(udfCmd)
@@ -393,29 +399,49 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
 
     // NEW: for mysqlimport compatibility, the file basename must be same as table name.
     val queryOutputFile = new File(queryOutputPath + s"${outputRel}.copy_query_${funcName}.tsv")
-    // val queryOutputFile = File.createTempFile(s"copy_query_${funcName}", ".tsv")
+    val gpFileName = s"${outputRel}_unload_${funcName}"
+    val psqlFilePath = queryOutputFile.getAbsolutePath()
 
-    // Single-thread copy to a file
-    val copyQuery = dbtype match {
-      case Psql => "COPY (" + s"${inputQuery}".replaceAll("""(?m)[;\s\n]+$""", "") + ") TO STDOUT;"
-
-      //TODO: cannot overwrite existing file
-      // mysql -u root -D test -e "select * from name into outfile '/tmp/tmpa.tsv'"
-      // ERROR 1086 (HY000) at line 1: File '/tmp/tmpa.tsv' already exists
-
-      // trimming ending ";"s
-      case Mysql => s"${inputQuery}".replaceAll("""(?m)[;\s\n]+$""", "")
-      // after adding "--silence" it will just print as a TSV to STDOUT!
+    // Get the actual dumped file 
+    val fname = parallelLoading match {
+      case true => gpFileName
+      case _ => queryOutputFile.getName()
     }
-    log.info(s"Copying file into ${queryOutputFile}")
-    executeSqlQueryOrFail(copyQuery, taskSender, queryOutputFile.getAbsolutePath())
 
-    val fname = queryOutputFile.getName()
-    val fpath = queryOutputFile.getParent()
+    val fpath = parallelLoading match {
+      case true => dbSettings.gppath
+      case _ => queryOutputFile.getParent()
+    } 
 
-    val splitPrefix = queryOutputFile.getAbsolutePath() + "-"
+    // Clean the output path first
+    val delCmd = s"find ${fpath} -name '${fname}*' 2>/dev/null -print0 | xargs -0 rm -f"
+    log.info(s"Executing: ${delCmd}")
+    val delTmpFile = new File(queryOutputPath + s"exec_delete.sh")
+    // val delTmpFile = File.createTempFile(s"exec_delete", ".sh")
+    val delWriter = new PrintWriter(delTmpFile)
+    delWriter.println(s"${delCmd}")
+    delWriter.close()
+    executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
+
+    // Helpers.executeCmd(delCmd) // This won't work because of escaping issues?
+
+    try {
+      loader.unload(gpFileName, psqlFilePath, dbSettings, parallelLoading, 
+        s"${inputQuery}", "")
+    } catch {
+      case exception: Throwable =>
+        log.error(exception.toString)
+        taskSender ! Status.Failure(exception)
+        context.stop(self)
+        throw exception
+    }
+
+    // Get the actually dumped file path
+    val actualDumpedPath = s"${fpath}/${fname}"
+    log.info(s"File dumped to ${actualDumpedPath}")
+    val splitPrefix = s"${actualDumpedPath}-"
     val linesPerSplit = task.extractor.inputBatchSize
-    val splitCmd = s"split -a 10 -l ${linesPerSplit} " + queryOutputFile.getAbsolutePath() + s" ${splitPrefix}"
+    val splitCmd = s"split -a 10 -l ${linesPerSplit} " + actualDumpedPath + s" ${splitPrefix}"
 
     log.info(s"Executing split command...")
     executeScriptOrFail(splitCmd, taskSender)
@@ -445,7 +471,6 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
         if (dbtype != Mysql) {
           throw new RuntimeException("ERROR: ndbloader can only be used on MySQL cluster.")
         }
-        val loader = new DataLoader
         val loaderConfig = task.extractor.loaderConfig
         try {
           loader.ndbLoad(
@@ -466,32 +491,9 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
         }
 
       case _ =>
-        val writebackPrefix = s"find ${fpath} -name '${fname}-*.out' -print0 | xargs -0" +
-          s" -P 1 -L 1 bash -c ";
-        // Only allow single-threaded copy
-
-        val writebackCmd = dbtype match {
-          case Psql => writebackPrefix + s"'psql " +
-            Helpers.getOptionString(dbSettings) +
-            "-c \"COPY " +
-            s"${outputRel} FROM STDIN;" + // weak matching 
-            " \" < \"$0\"'" // strong matching
-          case Mysql => 
-            writebackPrefix +
-              s"'mysqlimport --local " + Helpers.getOptionString(dbSettings) +
-              " $0'"    
-        }
-
-        // MYSQL writeback: use mysqlimport.
-        // See: https://mariadb.com/kb/en/mariadb/documentation/clients-and-utilities/backup-restore-and-import/mysqlimport/
-        val writebackTmpFile = new File(queryOutputPath + s"exec_parallel_writeback.sh")
-        // val writebackTmpFile = File.createTempFile(s"exec_parallel_writeback", ".sh")
-
-        val writer2 = new PrintWriter(writebackTmpFile)
-        writer2.println(s"${writebackCmd}")
-        writer2.close()
-        log.debug(s"Temporary writeback file saved to ${writebackTmpFile.getAbsolutePath()}")
-        executeScriptOrFail(writebackTmpFile.getAbsolutePath(), taskSender)
+        // If parallelWriteback is specified, run the loader with the GP loader.
+        val loader = new DataLoader
+        loader.load(s"${fpath}/${fname}-*.out", outputRel, dbSettings, parallelLoading)
 
     }
 
@@ -501,13 +503,6 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
     log.info("Removing temporary files...")
     queryOutputFile.delete()
 
-    val delCmd = s"find ${fpath} -name '${fname}*' 2>/dev/null -print0 | xargs -0 rm -f"
-    log.info(s"Executing: ${delCmd}")
-    val delTmpFile = new File(queryOutputPath + s"exec_delete.sh")
-    // val delTmpFile = File.createTempFile(s"exec_delete", ".sh")
-    val delWriter = new PrintWriter(delTmpFile)
-    delWriter.println(s"${delCmd}")
-    delWriter.close()
     executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
     delTmpFile.delete()
     queryOutputPathDir.delete()
@@ -521,9 +516,6 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
     if (dbtype != Psql) {
       failTask(s"do not support ${task.extractor.style} on ${dbtype}.", taskSender)
     }
-
-    // Try to create language; if exists do nothing; if other errors report
-    executeSqlQueryOrFail("drop language if exists plpythonu cascade; CREATE LANGUAGE plpythonu;", taskSender)
 
     // Create Function in GP
     val udfFile = task.extractor.udf

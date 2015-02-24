@@ -1,7 +1,6 @@
 package org.deepdive.datastore
 
 import org.deepdive.settings._
-// import org.deepdive.datastore.JdbcDataStore
 import org.deepdive.Logging
 import org.deepdive.Context
 import org.deepdive.helpers.Helpers
@@ -11,9 +10,8 @@ import scala.util.{Try, Success, Failure}
 import java.io._
 import org.postgresql.util.PSQLException
 
-class DataLoader extends JdbcDataStore with Logging {
 
-  // def ds : JdbcDataStore
+class DataLoader extends JdbcDataStore with Logging {
 
   /** Unload data of a SQL query from database to a TSV file 
    * 
@@ -26,8 +24,10 @@ class DataLoader extends JdbcDataStore with Logging {
    * @param dbSettings: database settings (DD's class)
    * @param usingGreenplum: whether to use greenplum's gpunload
    * @param query: the query to be dumped
+   * @param folder: for greenplum, the relative path to gpfdist
    */
-  def unload(filename: String, filepath: String, dbSettings: DbSettings, usingGreenplum: Boolean, query: String) : Unit = {
+  def unload(filename: String, filepath: String, dbSettings: DbSettings, 
+    usingGreenplum: Boolean, query: String, folder: String) : Unit = {
     
     if (usingGreenplum) {
       val hostname = dbSettings.gphost
@@ -51,7 +51,7 @@ class DataLoader extends JdbcDataStore with Logging {
       executeSqlQueries(s"""
         DROP EXTERNAL TABLE IF EXISTS _${filename} CASCADE;
         CREATE WRITABLE EXTERNAL TABLE _${filename} (LIKE _${filename}_tmp)
-        LOCATION ('gpfdist://${hostname}:${port}/${filename}')
+        LOCATION ('gpfdist://${hostname}:${port}/${folder}/${filename}')
         FORMAT 'TEXT';
         """)
 
@@ -73,33 +73,18 @@ class DataLoader extends JdbcDataStore with Logging {
         case Mysql => "mysql " + Helpers.getOptionString(dbSettings) + " --silent -N -e "
       }
   
-      executeSqlQueries(s"""
-        DROP VIEW IF EXISTS _${filename}_view CASCADE;
-        CREATE VIEW _${filename}_view AS ${query};
-        """)
-
       val outfile = new File(filepath)
       outfile.getParentFile().mkdirs()
 
-      val cmdfile = File.createTempFile(s"unload", ".sh")
-      val writer = new PrintWriter(cmdfile)
+      // Trimming ending semicolons
+      val trimmedQuery = query.replaceAll("""(?m)[;\s\n]+$""", "")
       
-      // This query CANNOT contain double-quotes (").
+      // This query can contain double-quotes (") now.
       val copyStr = dbtype match {
-        case Psql => List(sqlQueryPrefixRun + "\"", 
-            """\COPY """, s"(SELECT * FROM _${filename}_view) TO '${filepath}'", "\"").mkString("")
-            
-        case Mysql => List(sqlQueryPrefixRun + "\"", 
-            s"SELECT * FROM _${filename}_view", "\"", s" > ${filepath}").mkString("")
+        case Psql => s"COPY (${trimmedQuery}) TO STDOUT;"
+        case Mysql => trimmedQuery
       }
-        
-      log.info(copyStr)
-      writer.println(copyStr)
-      writer.close()
-      Helpers.executeCmd(cmdfile.getAbsolutePath())
-      // executeSqlQuery(s"""COPY (SELECT * FROM _${filename}_view) TO '${filepath}';""")
-      executeSqlQueries(s"DROP VIEW _${filename}_view;")
-      s"rm ${cmdfile.getAbsolutePath()}".!
+      Helpers.executeSqlQueriesByFile(dbSettings, copyStr, filepath)
     }
   }
   
@@ -114,7 +99,8 @@ class DataLoader extends JdbcDataStore with Logging {
    * @param dbSettings: database settings (DD's class)
    * @param usingGreenplum: whether to use greenplum's gpload
    */ 
-  def load(filepath: String, tablename: String, dbSettings: DbSettings, usingGreenplum: Boolean) : Unit = {
+  def load(filepath: String, tablename: String, dbSettings: DbSettings, usingGreenplum: Boolean,
+    delimiter: String = "\\t") : Unit = {
     
     if (usingGreenplum) {
       val loadyaml = File.createTempFile(s"gpload", ".yml")
@@ -138,7 +124,7 @@ class DataLoader extends JdbcDataStore with Logging {
         |         FILE:
         |            - ${filepath}
         |      - FORMAT: text
-        |      - DELIMITER: E'\\t'
+        |      - DELIMITER: E'${delimiter}'
         |   OUTPUT:
         |      - TABLE: ${tablename}
       """.stripMargin
@@ -162,10 +148,11 @@ class DataLoader extends JdbcDataStore with Logging {
       val dbtype = Helpers.getDbType(dbSettings)
       val cmdfile = File.createTempFile(s"${tablename}.copy", ".sh")
       val writer = new PrintWriter(cmdfile)
-      val writebackPrefix = s"find ${filepath} -print0 | xargs -0 -P 1 -L 1 bash -c ";
+      val writebackPrefix = s"find ${filepath} -print0 | xargs -0 -P 1 -L 1 bash -c "
+      val delimiterStr = if (delimiter == "\\t") "" else "DELIMITER '\"'\"'" + delimiter + "'\"'\"'" 
       val writebackCmd = dbtype match {
         case Psql => writebackPrefix + s"'psql " + Helpers.getOptionString(dbSettings) + 
-          "-c \"COPY " + s"${tablename} FROM STDIN;" + 
+          "-c \"COPY " + s"${tablename} FROM STDIN " + delimiterStr + ";" + 
           " \" < $0'"
         case Mysql => 
           writebackPrefix + s"'mysqlimport --local " + Helpers.getOptionString(dbSettings) +
