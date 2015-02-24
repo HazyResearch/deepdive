@@ -761,7 +761,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
     // handle partition
     handlePartition(schema, factorDescs, du, dbSettings, parallelGrounding, groundingPath,
-      calibrationSettings.partitionColumn, calibrationSettings.numPartitions)
+      inferenceSettings.partitionColumn, inferenceSettings.numPartitions)
 
     // create inference result table
     execute(createInferenceResultSQL)

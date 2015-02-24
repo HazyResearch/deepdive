@@ -171,26 +171,25 @@ object SettingsParser extends Logging {
       FactorDesc(factorName, factorInputQuery, factorFunction, 
           factorWeight, factorWeightPrefix)
     }.toList
-    InferenceSettings(factors, batchSize, skipLearning, weightTable, parallelGrounding)
+    // partition the factor graph
+    val partitionColumn = Try(inferenceConfig.getString("partition_column")).toOption
+    val numPartitions = Try(inferenceConfig.getInt("num_partitions")).toOption
+    if (partitionColumn.isDefined && !numPartitions.isDefined) {
+      throw new RuntimeException(s"Must specify number of partitions!")
+    }
+    InferenceSettings(factors, batchSize, skipLearning, weightTable, parallelGrounding, partitionColumn, numPartitions)
   }
 
   private def loadCalibrationSettings(config: Config) : CalibrationSettings = {
     val calibrationConfig = Try(config.getConfig("calibration")).getOrElse { 
-      return CalibrationSettings(0.0, None, None, None, None)
+      return CalibrationSettings(0.0, None, None)
     }
     val holdoutFraction = Try(calibrationConfig.getDouble("holdout_fraction")).getOrElse(0.0)
     val holdoutQuery = Try(calibrationConfig.getString("holdout_query")).toOption
     val observationQuery = Try(calibrationConfig.getString("observation_query")).toOption
-    
-    // partition the factor graph
-    val partitionColumn = Try(calibrationConfig.getString("partition_column")).toOption
-    val numPartitions = Try(calibrationConfig.getInt("num_partitions")).toOption
-    if (partitionColumn.isDefined && !numPartitions.isDefined) {
-      throw new RuntimeException(s"Must specify number of partitions!")
-    }
 
-    CalibrationSettings(holdoutFraction, holdoutQuery, observationQuery, 
-      partitionColumn, numPartitions)
+
+    CalibrationSettings(holdoutFraction, holdoutQuery, observationQuery)
   }
 
   private def loadSamplerSettings(config: Config) : SamplerSettings = {
