@@ -40,6 +40,8 @@ trait InferenceManager extends Actor with ActorLogging {
   lazy val SamplingOutputDir = new File(s"${Context.outputDir}")
   lazy val SamplingOutputFile = new File(s"${SamplingOutputDir}/inference_result.out.text")
   lazy val SamplingOutputFileWeights = new File(s"${SamplingOutputDir}/inference_result.out.weights.text")
+  lazy val factorGraphDumpFileVariablePartition = new File(s"${Context.outputDir}/graph.partition.variables")
+  lazy val factorGraphDumpFileFactorPartition = new File(s"${Context.outputDir}/graph.partition.factors")
 
   override def preStart() {
     log.info("Starting")
@@ -65,9 +67,10 @@ trait InferenceManager extends Actor with ActorLogging {
         sender ! Status.Failure(e)
         context.stop(self)
       }
-    case InferenceManager.RunInference(factorDescs, samplerJavaArgs, samplerOptions, dbSettings) =>
+    case InferenceManager.RunInference(factorDescs, samplerJavaArgs, samplerOptions, dbSettings,
+      inferenceSettings) =>
       val _sender = sender
-      val result = runInference(factorDescs, samplerJavaArgs, samplerOptions, dbSettings)
+      val result = runInference(factorDescs, samplerJavaArgs, samplerOptions, dbSettings, inferenceSettings)
       result pipeTo _sender
 
     case InferenceManager.WriteCalibrationData =>
@@ -85,14 +88,16 @@ trait InferenceManager extends Actor with ActorLogging {
   }
 
   def runInference(factorDescs: Seq[FactorDesc], samplerJavaArgs: String, 
-    samplerOptions: String, dbSettings: DbSettings) = {
+    samplerOptions: String, dbSettings: DbSettings, inferenceSettings: InferenceSettings) = {
 
     val sampler = context.actorOf(samplerProps, "sampler")
 
     val samplingResult = sampler ? Sampler.Run(samplerJavaArgs, samplerOptions,
       factorGraphDumpFileWeights.getCanonicalPath, factorGraphDumpFileVariables.getCanonicalPath,
       factorGraphDumpFileFactors.getCanonicalPath, factorGraphDumpFileEdges.getCanonicalPath,
-      factorGraphDumpFileMeta.getCanonicalPath, SamplingOutputDir.getCanonicalPath)
+      factorGraphDumpFileMeta.getCanonicalPath, SamplingOutputDir.getCanonicalPath,
+      inferenceSettings.numPartitions, factorGraphDumpFileVariablePartition.getCanonicalPath,
+      factorGraphDumpFileFactorPartition.getCanonicalPath)
     // Kill the sampler after it's done :)
     sampler ! PoisonPill
     samplingResult.map { x =>
@@ -135,8 +140,8 @@ object InferenceManager {
   case class GroundFactorGraph(factorDescs: Seq[FactorDesc], calibrationSettings: CalibrationSettings, 
     inferenceSettings: InferenceSettings)
   // Runs the sampler with the given arguments
-  case class RunInference(factorDescs: Seq[FactorDesc],  
-    samplerJavaArgs: String, samplerOptions: String, dbSettings: DbSettings)
+  case class RunInference(factorDescs: Seq[FactorDesc], samplerJavaArgs: String,
+    samplerOptions: String, dbSettings: DbSettings, inferenceSettings: InferenceSettings)
   // Writes calibration data to predefined files
   case object WriteCalibrationData
 

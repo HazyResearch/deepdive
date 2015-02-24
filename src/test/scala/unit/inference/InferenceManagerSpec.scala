@@ -9,6 +9,7 @@ import org.deepdive.test.helpers._
 import org.scalatest._
 import org.deepdive.settings.{BooleanType, VariableDataType, DbSettings}
 import scala.util.Success
+import org.deepdive.settings._
 
 class Forwarder(target: ActorRef) extends Actor {
   def receive = { case x => target.forward(x) }
@@ -44,7 +45,8 @@ class InferenceManagerSpec(_system: ActorSystem) extends TestKit(_system) with F
   describe("Running inference") {
     it("should work") {
       val actor = TestActorRef(actorProps)
-      actor ! InferenceManager.RunInference(Seq(), "javaArgs", "samplerOptions", dbSettings)
+      actor ! InferenceManager.RunInference(Seq(), "javaArgs", "samplerOptions", dbSettings, 
+        InferenceSettings(Nil, None))
       sampler.expectMsgClass(classOf[Sampler.Run])
       sampler.reply("Done")
       expectMsg(())

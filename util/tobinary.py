@@ -84,7 +84,6 @@ os.system("cat {0}/dd_factors/dd_factors*factors.bin > {1}/graph.factors".format
 os.system("cat {0}/dd_factors/dd_factors*edges.bin > {1}/graph.edges".format(INPUTFOLDER, OUTPUTFOLDER))
 os.system("cat {0}/dd_partition_variables* > {1}/graph.partition.variables".format(INPUTFOLDER, OUTPUTFOLDER))
 os.system("cat {0}/dd_partition_factors* > {1}/graph.partition.factors".format(INPUTFOLDER, OUTPUTFOLDER))
-os.system("mv {0}/dd_partition_meta {1}/graph.partition.meta".format(INPUTFOLDER, OUTPUTFOLDER))
 
 # clean up folder
 print "Cleaning up files"
