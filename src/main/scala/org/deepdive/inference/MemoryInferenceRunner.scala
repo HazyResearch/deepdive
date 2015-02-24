@@ -19,7 +19,7 @@ trait MemoryInferenceRunnerComponent extends InferenceRunnerComponent{
 
     def groundFactorGraph(schema: Map[String, _ <: VariableDataType],
       factorDescs: Seq[FactorDesc], calibrationSettings: CalibrationSettings, 
-      skipLearning: Boolean, weightTable: String, dbSettings: DbSettings, parallelGrounding: Boolean) : Unit = {
+      inferenceSettings: InferenceSettings, dbSettings: DbSettings) : Unit = {
 
     }
 

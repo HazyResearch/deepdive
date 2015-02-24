@@ -677,8 +677,10 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
    * purposes
    */
   def groundFactorGraph(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
-    calibrationSettings: CalibrationSettings, skipLearning: Boolean, weightTable: String, 
-    dbSettings: DbSettings, parallelGrounding: Boolean) {
+    calibrationSettings: CalibrationSettings, inferenceSettings: InferenceSettings, 
+    dbSettings: DbSettings) {
+
+    val parallelGrounding = inferenceSettings.parallelGrounding
 
     val du = new DataLoader
     val groundingDir = getFileNameFromPath(Context.outputDir)
@@ -709,7 +711,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
     // ground weights and factors
     groundFactorsAndWeights(factorDescs, calibrationSettings, du, dbSettings, 
-      groundingPath, parallelGrounding, skipLearning, weightTable)
+      groundingPath, parallelGrounding, inferenceSettings.skipLearning, inferenceSettings.weightTable)
 
     // create inference result table
     execute(createInferenceResultSQL)
