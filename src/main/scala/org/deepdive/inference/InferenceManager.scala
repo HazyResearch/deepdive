@@ -52,12 +52,12 @@ trait InferenceManager extends Actor with ActorLogging {
 
   def receive = {
     case InferenceManager.GroundFactorGraph(factorDescs, calibrationSettings, 
-      skipLearning, weightTable, parallelGrounding) =>
+      inferenceSettings) =>
       val _sender = sender
       try {
         inferenceRunner.asInstanceOf[SQLInferenceRunner]
           .groundFactorGraph(variableSchema, factorDescs, calibrationSettings,
-            skipLearning, weightTable, dbSettings, parallelGrounding)
+            inferenceSettings, dbSettings)
         sender ! "OK"
       } catch {
         // If some exception is thrown, terminate DeepDive
@@ -136,7 +136,7 @@ object InferenceManager {
 
   // Executes a task to build part of the factor graph
   case class GroundFactorGraph(factorDescs: Seq[FactorDesc], calibrationSettings: CalibrationSettings, 
-    skipLearning: Boolean, weightTable: String, parallelGrounding: Boolean)
+    inferenceSettings: InferenceSettings)
   // Runs the sampler with the given arguments
   case class RunInference(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], 
     samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false, dbSettings: DbSettings, parallelGrounding: Boolean)
