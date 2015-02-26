@@ -42,6 +42,8 @@ namespace dd{
     
     Variable & variable = p_fg->variables[vid];
 
+    if (variable.is_evid == false) return;
+
     if(variable.domain_type == DTYPE_BOOLEAN){ // boolean
 
         // sample the variable with evidence unchanged
@@ -55,6 +57,11 @@ namespace dd{
           // flip a coin with probability 
           // (exp(potential_pos) + exp(potential_neg)) / exp(potential_neg)
           // = exp(potential_pos - potential_neg) + 1
+
+          /**********************************************************
+           * NOTE this call to update<false> is WRONG!
+           * The variable will be counted as a sample for inference
+           **********************************************************/
           if((*this->p_rand_obj_buf) * (1.0 + exp(potential_neg-potential_pos)) < 1.0){
             p_fg->template update<false>(variable, 1.0);
           }else{
