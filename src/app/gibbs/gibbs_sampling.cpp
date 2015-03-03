@@ -191,7 +191,7 @@ void dd::GibbsSampling::learn(const int & n_epoch, const int & n_sample_per_epoc
 
   double elapsed = t_total.elapsed();
   std::cout << "TOTAL LEARNING TIME: " << elapsed << " sec." << std::endl;
-
+  delete[] ori_weights;
 }
 
 void dd::GibbsSampling::dump_weights(const bool is_quiet){
@@ -314,31 +314,34 @@ void dd::GibbsSampling::aggregate_results_and_dump(const bool is_quiet){
   }
   fout_text.close();
 
-  if (is_quiet) return;
-  
-  // show a histogram of inference results
-  std::cout << "INFERENCE CALIBRATION (QUERY BINS):" << std::endl;
-  std::vector<int> abc;
-  for(int i=0;i<=10;i++){
-    abc.push_back(0);
-  }
-  int bad = 0;
-  for(long i=0;i<factorgraphs[0].n_var;i++){
-    const Variable & variable = factorgraphs[0].variables[i];
-    if(variable.is_evid == true){
-      continue;
+  if (!is_quiet) {
+    // show a histogram of inference results
+    std::cout << "INFERENCE CALIBRATION (QUERY BINS):" << std::endl;
+    std::vector<int> abc;
+    for(int i=0;i<=10;i++){
+      abc.push_back(0);
     }
-    int bin = (int)(agg_means[variable.id]/agg_nsamples[variable.id]*10);
-    if(bin >= 0 && bin <=10){
-      abc[bin] ++;
-    }else{
-      bad ++;
+    int bad = 0;
+    for(long i=0;i<factorgraphs[0].n_var;i++){
+      const Variable & variable = factorgraphs[0].variables[i];
+      if(variable.is_evid == true){
+        continue;
+      }
+      int bin = (int)(agg_means[variable.id]/agg_nsamples[variable.id]*10);
+      if(bin >= 0 && bin <=10){
+        abc[bin] ++;
+      }else{
+        bad ++;
+      }
+    }
+    abc[9] += abc[10];
+    for(int i=0;i<10;i++){
+      std::cout << "PROB BIN 0." << i << "~0." << (i+1) << "  -->  # " << abc[i] << std::endl;
     }
   }
-  abc[9] += abc[10];
-  for(int i=0;i<10;i++){
-    std::cout << "PROB BIN 0." << i << "~0." << (i+1) << "  -->  # " << abc[i] << std::endl;
-  }
+  delete[] multinomial_tallies;
+  delete[] agg_means;
+  delete[] agg_nsamples;
 
 }
 
