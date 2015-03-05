@@ -4,6 +4,7 @@
 #include "common.h"
 #include <unistd.h>
 #include <fstream>
+#include <memory>
 #include "timer.h"
 
 dd::GibbsSampling::GibbsSampling(FactorGraph * const _p_fg, 
@@ -108,8 +109,8 @@ void dd::GibbsSampling::learn(const int & n_epoch, const int & n_sample_per_epoc
     single_node_samplers.push_back(SingleNodeSampler(&this->factorgraphs[i], n_thread_per_numa, i));
   }
 
-  double * ori_weights = new double[nweight];
-  memcpy(ori_weights, this->factorgraphs[0].infrs->weight_values, sizeof(double)*nweight);
+  std::unique_ptr<double[]> ori_weights(new double[nweight]);
+  memcpy(ori_weights.get(), this->factorgraphs[0].infrs->weight_values, sizeof(double)*nweight);
 
   // learning epochs
   for(int i_epoch=0;i_epoch<n_epoch;i_epoch++){
@@ -191,7 +192,6 @@ void dd::GibbsSampling::learn(const int & n_epoch, const int & n_sample_per_epoc
 
   double elapsed = t_total.elapsed();
   std::cout << "TOTAL LEARNING TIME: " << elapsed << " sec." << std::endl;
-
 }
 
 void dd::GibbsSampling::dump_weights(const bool is_quiet){
@@ -227,10 +227,10 @@ void dd::GibbsSampling::dump_weights(const bool is_quiet){
 void dd::GibbsSampling::aggregate_results_and_dump(const bool is_quiet){
 
   // sum of variable assignments
-  double * agg_means = new double[factorgraphs[0].n_var];
+  std::unique_ptr<double[]> agg_means(new double[factorgraphs[0].n_var]);
   // number of samples
-  double * agg_nsamples = new double[factorgraphs[0].n_var];
-  int * multinomial_tallies = new int[factorgraphs[0].infrs->ntallies];
+  std::unique_ptr<double[]> agg_nsamples(new double[factorgraphs[0].n_var]);
+  std::unique_ptr<int[]> multinomial_tallies(new int[factorgraphs[0].infrs->ntallies]);
 
   for(long i=0;i<factorgraphs[0].n_var;i++){
     agg_means[i] = 0;
@@ -314,30 +314,30 @@ void dd::GibbsSampling::aggregate_results_and_dump(const bool is_quiet){
   }
   fout_text.close();
 
-  if (is_quiet) return;
-  
-  // show a histogram of inference results
-  std::cout << "INFERENCE CALIBRATION (QUERY BINS):" << std::endl;
-  std::vector<int> abc;
-  for(int i=0;i<=10;i++){
-    abc.push_back(0);
-  }
-  int bad = 0;
-  for(long i=0;i<factorgraphs[0].n_var;i++){
-    const Variable & variable = factorgraphs[0].variables[i];
-    if(variable.is_evid == true){
-      continue;
+  if (!is_quiet) {
+    // show a histogram of inference results
+    std::cout << "INFERENCE CALIBRATION (QUERY BINS):" << std::endl;
+    std::vector<int> abc;
+    for(int i=0;i<=10;i++){
+      abc.push_back(0);
     }
-    int bin = (int)(agg_means[variable.id]/agg_nsamples[variable.id]*10);
-    if(bin >= 0 && bin <=10){
-      abc[bin] ++;
-    }else{
-      bad ++;
+    int bad = 0;
+    for(long i=0;i<factorgraphs[0].n_var;i++){
+      const Variable & variable = factorgraphs[0].variables[i];
+      if(variable.is_evid == true){
+        continue;
+      }
+      int bin = (int)(agg_means[variable.id]/agg_nsamples[variable.id]*10);
+      if(bin >= 0 && bin <=10){
+        abc[bin] ++;
+      }else{
+        bad ++;
+      }
     }
-  }
-  abc[9] += abc[10];
-  for(int i=0;i<10;i++){
-    std::cout << "PROB BIN 0." << i << "~0." << (i+1) << "  -->  # " << abc[i] << std::endl;
+    abc[9] += abc[10];
+    for(int i=0;i<10;i++){
+      std::cout << "PROB BIN 0." << i << "~0." << (i+1) << "  -->  # " << abc[i] << std::endl;
+    }
   }
 
 }
