@@ -163,17 +163,24 @@ necessary tables and loads the data. If you are interested in what this script d
 ```
 
 This will create and populate some relations. You can check that the relations
-have been successfully created with the following command:
+have been successfully created with the following command (also, use `\q` to quit database prompt after
+running the following commands):
+
+```bash
+psql deepdive_spouse
+\d
+```
 
 The output should be the following:
 
                          List of relations
-     Schema |        Name         | Type  |  Owner   | Storage
-    --------+---------------------+-------+----------+---------
-     public | has_spouse          | table | deepdive | heap
-     public | has_spouse_features | table | deepdive | heap
-     public | people_mentions     | table | deepdive | heap
-     public | sentences           | table | deepdive | heap
+     Schema |        Name         | Type  |  Owner
+    --------+---------------------+-------+----------
+     public | articles            | table | deepdive
+     public | has_spouse          | table | deepdive
+     public | has_spouse_features | table | deepdive
+     public | people_mentions     | table | deepdive
+     public | sentences           | table | deepdive
     (5 rows)
 
 
