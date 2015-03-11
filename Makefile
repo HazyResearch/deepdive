@@ -37,6 +37,11 @@ test:
 	@echo "\n=== Testing DeepDive modules... ==="
 	./test.sh
 
+.PHONY: build-mindbender
+build-mindbender:
+	$(MAKE) -C mindbender
+	cp -f mindbender/mindbender-LATEST-*.sh util/mindbender
+
 .PHONY: all
 all: build test
 
