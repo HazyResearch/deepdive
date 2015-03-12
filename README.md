@@ -33,4 +33,4 @@ To test, run
     
 # Reference
 
-C. Zhang and C. R ́e. DimmWitted: A study of main-memory statistical analytics. PVLDB, 2014.
+C. Zhang and C. Ré. DimmWitted: A study of main-memory statistical analytics. PVLDB, 2014.
