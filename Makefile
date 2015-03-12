@@ -121,7 +121,7 @@ endif
 
 clean:
 	rm -rf *.o
-	rm -rf dw
+	rm -rf dw dw_test
 
 gibbs:
 	./dw gibbs -m data3/graph.meta.csv      \
