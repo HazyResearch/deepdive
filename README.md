@@ -29,4 +29,8 @@ This will use whatever in you $(CXX) variable to compile. We assume that you hav
 
 To test, run
 
-		make test
+    make test
+    
+# Reference
+
+C. Zhang and C. R ́e. DimmWitted: A study of main-memory statistical analytics. PVLDB, 2014.
