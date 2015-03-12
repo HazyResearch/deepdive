@@ -39,6 +39,7 @@ test:
 
 .PHONY: build-mindbender
 build-mindbender:
+	git submodule update --init
 	$(MAKE) -C mindbender
 	cp -f mindbender/mindbender-LATEST-*.sh util/mindbender
 
