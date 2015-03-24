@@ -1,7 +1,7 @@
 language: cpp
 notifications:
   email:
-    - feiran@stanford.edu
+    - deepdive-dev@lists.stanford.edu
 before_install:
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
   - sudo apt-get update -qq
