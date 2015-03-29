@@ -270,8 +270,8 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       val Array(relation, column) = variable.split('.')
       // note we use five-digit fixed-length representation here
       val cardinalityValues = dataType match {
-        case BooleanType => "('00001')"
-        case MultinomialType(x) => (0 to x-1).map (n => s"""('${"%05d".format(n)}')""").mkString(", ")
+        case BooleanType => "('0000000001')"
+        case MultinomialType(x) => (0 to x-1).map (n => s"""('${"%010d".format(n)}')""").mkString(", ")
       }
       val cardinalityTableName = InferenceNamespace.getCardinalityTableName(relation, column)
       dataStore.dropAndCreateTable(cardinalityTableName, "cardinality text")
@@ -606,7 +606,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
             SELECT id, isfixed, initvalue, cardinality, ${weightDesc} FROM ${weighttableForThisFactor};""")
 
           // use weight id corresponding to cardinality 0 (like C array...)
-          val cardinalityKey = factorDesc.func.variables.map(v => "00000").mkString(",")
+          val cardinalityKey = factorDesc.func.variables.map(v => "0000000000").mkString(",")
 
           // dump factors
           // TODO we don't have enough code reuse here.
