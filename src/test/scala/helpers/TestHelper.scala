@@ -39,7 +39,8 @@ object TestHelper {
           System.getenv("GPHOST"), 
           System.getenv("GPPATH"), 
           System.getenv("GPPORT"),
-          getGPLOADEnv())
+          getGPLOADEnv(),
+          System.getenv("INCREMENTALTABLES"))
     
   def getConfig() = s"""
       deepdive.db.default {
@@ -54,6 +55,7 @@ object TestHelper {
         gppath: "${System.getenv("GPPATH")}"
         gpport: "${System.getenv("GPPORT")}"
         gpload: "${getGPLOADEnv()}"
+        incrementalTables: "${System.getenv("INCREMENTALTABLES")}"
       }
     """
   
