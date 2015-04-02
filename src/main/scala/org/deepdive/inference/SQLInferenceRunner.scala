@@ -280,62 +280,79 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         """)
     }
   }
+
+  def isIncremental(dbSettings: DbSettings) : Boolean = dbSettings.incrementalTables.nonEmpty
   
   // ground variables
   def groundVariables(schema: Map[String, _ <: VariableDataType], du: DataLoader, 
       dbSettings: DbSettings, groundingPath: String) {
         schema.foreach { case(variable, dataType) =>
-      val Array(relation, column) = variable.split('.')
+      var Array(relation, column) = variable.split('.')
+
+      if (isIncremental(dbSettings) && !dbSettings.incrementalTables.contains(relation)) {
+      } else {
+        // whether it's incremental (delta table)
+        if (dbSettings.incrementalTables.contains(relation)) {
+          relation = InferenceNamespace.getIncrementalTableName(relation)
+        }
       
-      val variableDataType = InferenceNamespace.getVariableDataTypeId(dataType)
+        val variableDataType = InferenceNamespace.getVariableDataTypeId(dataType)
 
-      // cardinality (domain size) of the variable
-      // boolean: 2
-      // multinomial: as user defined
-      val cardinality = dataType match {
-        case BooleanType => 2
-        case MultinomialType(x) => x.toInt
+        // cardinality (domain size) of the variable
+        // boolean: 2
+        // multinomial: as user defined
+        val cardinality = dataType match {
+          case BooleanType => 2
+          case MultinomialType(x) => x.toInt
+        }
+
+        // Create a table to denote variable type - query, evidence, observation
+        // variable table join with holdout table 
+        // - a variable is an evidence if it has initial value and it is not holdout
+        val variableTypeColumn = "__dd_variable_type__"
+
+        // IF:
+        //  in observation table, in evidence table => Observation 2
+        //  in holdout table => Query 1
+        //  not in observation table, not in holdout table, in evidence table => Evidence 1
+        //  else => Query 1
+        val variableTypeTable = InferenceNamespace.getVariableTypeTableName(relation)
+        dataStore.dropAndCreateTableAs(variableTypeTable,
+          s"""SELECT t0.id, CASE WHEN t2.variable_id IS NOT NULL AND ${column} IS NOT NULL THEN 2
+                             WHEN t1.variable_id IS NOT NULL THEN 0
+                             WHEN ${column} IS NOT NULL THEN 1
+                             ELSE 0
+                        END as ${variableTypeColumn}
+          FROM ${relation} t0 LEFT OUTER JOIN ${VariablesHoldoutTable} t1 ON t0.id=t1.variable_id
+          LEFT OUTER JOIN ${VariablesObservationTable} t2 ON t0.id=t2.variable_id""")
+
+        // Create an index on the id column of type table to optimize MySQL join, since MySQL uses BNLJ.
+        // It's important to tailor join queries for MySQL as they don't have efficient join algorithms.
+        // Specifically, we should create indexes on join condition columns (at least in MySQL implementation).
+        createIndexForJoinOptimization(variableTypeTable, "id")
+
+        // dump variables
+        val initvalueCast = dataStore.cast(dataStore.cast(column, "int"), "float")
+        // Sen
+        // du.unload(s"dd_variables_${relation}", s"${groundingPath}/dd_variables_${relation}",
+        val groundingDir = getFileNameFromPath(groundingPath)
+
+        // for incremental we use positive id for add and negative for delete
+        val idColumn = dbSettings.incrementalTables.contains(relation) match {
+          case true => "CASE WHEN COUNT > 0 THEN t0.id ELSE -t0.id END"
+          case false => "t0.id"
+        }
+
+        du.unload(InferenceNamespace.getVariableFileName(relation),
+          s"${groundingPath}/${InferenceNamespace.getVariableFileName(relation)}",
+          dbSettings,
+          s"""SELECT ${idColumn}, t1.${variableTypeColumn},
+          CASE WHEN t1.${variableTypeColumn} = 0 THEN 0 ELSE ${initvalueCast} END AS initvalue,
+          ${variableDataType} AS type, ${cardinality} AS cardinality
+          FROM ${relation} t0, ${variableTypeTable} t1
+          WHERE t0.id=t1.id
+          """, groundingDir)
       }
-
-      // Create a table to denote variable type - query, evidence, observation
-      // variable table join with holdout table 
-      // - a variable is an evidence if it has initial value and it is not holdout
-      val variableTypeColumn = "__dd_variable_type__"
-
-      // IF:
-      //  in observation table, in evidence table => Observation 2
-      //  in holdout table => Query 1
-      //  not in observation table, not in holdout table, in evidence table => Evidence 1
-      //  else => Query 1
-      val variableTypeTable = InferenceNamespace.getVariableTypeTableName(relation)
-      dataStore.dropAndCreateTableAs(variableTypeTable,
-        s"""SELECT t0.id, CASE WHEN t2.variable_id IS NOT NULL AND ${column} IS NOT NULL THEN 2
-                           WHEN t1.variable_id IS NOT NULL THEN 0
-                           WHEN ${column} IS NOT NULL THEN 1
-                           ELSE 0
-                      END as ${variableTypeColumn}
-        FROM ${relation} t0 LEFT OUTER JOIN ${VariablesHoldoutTable} t1 ON t0.id=t1.variable_id
-        LEFT OUTER JOIN ${VariablesObservationTable} t2 ON t0.id=t2.variable_id""")
-
-      // Create an index on the id column of type table to optimize MySQL join, since MySQL uses BNLJ.
-      // It's important to tailor join queries for MySQL as they don't have efficient join algorithms.
-      // Specifically, we should create indexes on join condition columns (at least in MySQL implementation).
-      createIndexForJoinOptimization(variableTypeTable, "id")
-
-      // dump variables
-      val initvalueCast = dataStore.cast(dataStore.cast(column, "int"), "float")
-      // Sen
-      // du.unload(s"dd_variables_${relation}", s"${groundingPath}/dd_variables_${relation}",
-      val groundingDir = getFileNameFromPath(groundingPath)
-      du.unload(InferenceNamespace.getVariableFileName(relation),
-        s"${groundingPath}/${InferenceNamespace.getVariableFileName(relation)}",
-        dbSettings,
-        s"""SELECT t0.id, t1.${variableTypeColumn},
-        CASE WHEN t1.${variableTypeColumn} = 0 THEN 0 ELSE ${initvalueCast} END AS initvalue,
-        ${variableDataType} AS type, ${cardinality} AS cardinality
-        FROM ${relation} t0, ${variableTypeTable} t1
-        WHERE t0.id=t1.id
-        """, groundingDir)
     }
   }
 
@@ -416,8 +433,10 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     }
 
     // weights table
-    dataStore.dropAndCreateTable(WeightsTable, """id bigint, isfixed int, initvalue real, cardinality text, 
-      description text""")
+    if (!isIncremental(dbSettings)) {
+      dataStore.dropAndCreateTable(WeightsTable, """id bigint, isfixed int, initvalue real, cardinality text, 
+        description text""")
+    }
     
     // Create the feature stats table
     execute(createFeatureStatsSupportTableSQL)
@@ -453,7 +472,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       // weight variable list
       val weightlist = factorDesc.weight.variables.map(v => 
         s""" ${dataStore.quoteColumn(v)} """).mkString(",")
-      val isFixed = factorDesc.weight.isInstanceOf[KnownFactorWeight]
+      val isFixed = factorDesc.weight.isInstanceOf[KnownFactorWeight] 
       val initvalue = factorDesc.weight match { 
         case x : KnownFactorWeight => x.value
         case _ => 0.0
