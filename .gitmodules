@@ -1,0 +1,6 @@
+[submodule "sampler"]
+	path = sampler
+	url = https://github.com/HazyResearch/sampler.git
+[submodule "mindbender"]
+	path = mindbender
+	url = https://github.com/netj/mindbender.git

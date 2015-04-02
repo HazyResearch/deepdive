@@ -9,7 +9,7 @@ build:
 	sbt/sbt pack
 
 	@echo "\n=== Installing DeepDive... ==="
-	make -C target/pack/ install ; 
+	$(MAKE) -C target/pack/ install ; 
 
 	@echo "\n=== Verifying installation... ==="
 	@if [ -f ${HOME}/local/bin/deepdive ]; then \
@@ -20,11 +20,28 @@ build:
 		exit 1; \
 	fi 
 	
+.PHONY: build-sampler
+build-sampler:
+	git submodule update --init
+	[ -e sampler/lib/gtest -a -e sampler/lib/tclap ] || $(MAKE) -C sampler dep
+	$(MAKE) -C sampler dw
+ifeq ($(shell uname),Linux)
+	cp -f sampler/dw util/sampler-dw-linux
+endif
+ifeq ($(shell uname),Darwin)
+	cp -f sampler/dw util/sampler-dw-mac
+endif
 
 .PHONY: test
 test: 
 	@echo "\n=== Testing DeepDive modules... ==="
 	./test.sh
+
+.PHONY: build-mindbender
+build-mindbender:
+	git submodule update --init
+	$(MAKE) -C mindbender
+	cp -f mindbender/mindbender-LATEST-*.sh util/mindbender
 
 .PHONY: all
 all: build test

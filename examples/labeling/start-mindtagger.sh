@@ -6,12 +6,20 @@ set -eu
 
 # set up environment to run Mindtagger
 cd "$(dirname "$0")"
-PATH="$PWD:$PATH"
+utildir=../../../util
+if [[ -d $utildir ]]; then
+    # use the util directory if this script is under DeepDive source tree
+    PATH="$PWD/$utildir:$PATH"
+else
+    # otherwise, the current working directory
+    PATH="$PWD:$PATH"
+    utildir=.
+fi
 
 # install Mindbender locally if not available or broken
 release=${MINDBENDER_RELEASE:=v0.1.3}
 if ! type mindbender &>/dev/null || [[ $(mindbender version | head -1) < "Mindbender $release" ]]; then
-    tool=mindbender
+    tool=$utildir/mindbender
     mkdir -p "$(dirname "$tool")"
     echo >&2 "Downloading Mindbender..."
     curl --location --show-error --output $tool.download \
