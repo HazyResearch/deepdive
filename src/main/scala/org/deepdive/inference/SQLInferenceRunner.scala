@@ -517,8 +517,8 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
                 v => s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)} """).mkString("AND")
             case false => ""
           }
-          execute(s"ANALYZE ${querytable}")
-          execute(s"ANALYZE ${weighttableForThisFactor}")
+          execute(dataStore.analyzeTable(querytable))
+          execute(dataStore.analyzeTable(weighttableForThisFactor))
           du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
             s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
              FROM ${querytable} t0, ${weighttableForThisFactor} t1
@@ -614,8 +614,8 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
           // TODO we don't have enough code reuse here.
           val weightjoinlist = factorDesc.weight.variables.map(v => 
             s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)} """).mkString("AND")
-          execute(s"ANALYZE ${querytable}")
-          execute(s"ANALYZE ${weighttableForThisFactor}")
+          execute(dataStore.analyzeTable(querytable))
+          execute(dataStore.analyzeTable(weighttableForThisFactor))
           du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
             s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
              FROM ${querytable} t0, ${weighttableForThisFactor} t1
