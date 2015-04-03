@@ -8,6 +8,7 @@ import org.deepdive.settings._
 import org.deepdive.datastore._
 import org.deepdive.extraction.{ExtractionManager, ExtractionTask}
 import org.deepdive.inference.{InferenceManager}
+import org.deepdive.inference.InferenceNamespace
 import org.deepdive.profiling._
 import org.deepdive.calibration._
 import scala.concurrent.duration._
@@ -62,6 +63,10 @@ object DeepDive extends Logging {
     
     implicit val timeout = Timeout(1337 hours)
     implicit val ec = system.dispatcher
+
+    for (table <- dbSettings.incrementalTables) {
+      JdbcDataStoreObject.dropAndCreateTableAs(InferenceNamespace.getIncrementalTableName(table), s"SELECT * FROM " + table + " LIMIT 0")
+    }
 
     // Start actors
     val profiler = system.actorOf(Profiler.props, "profiler")
