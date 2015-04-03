@@ -40,7 +40,7 @@ object TestHelper {
           System.getenv("GPPATH"), 
           System.getenv("GPPORT"),
           getGPLOADEnv(),
-          System.getenv("INCREMENTALTABLES"))
+          Set[String]())
     
   def getConfig() = s"""
       deepdive.db.default {

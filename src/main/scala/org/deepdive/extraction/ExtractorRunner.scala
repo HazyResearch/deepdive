@@ -12,6 +12,7 @@ import org.deepdive.datastore._
 import org.deepdive.datastore.FileDataUtils
 import org.deepdive.Logging
 import org.deepdive.datastore.DataLoader
+import org.deepdive.inference.InferenceNamespace
 import scala.util.{Try, Success, Failure}
 import scala.concurrent._
 import scala.concurrent.duration._
@@ -383,7 +384,11 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
       case _ =>
     }
 
-    val outputRel = task.extractor.outputRelation
+    val outputRel = (dbSettings.incrementalTables contains task.extractor.outputRelation) match {
+      case true => InferenceNamespace.getIncrementalTableName(task.extractor.outputRelation)
+      case _ => task.extractor.outputRelation
+    }
+
     // TODO do not use password for now
 
     val queryOutputPath = Context.outputDir + s"/tmp/"
@@ -536,7 +541,11 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
     writer.println(inputQuery)
     writer.close()
 
-    val outputRel = task.extractor.outputRelation
+    val outputRel = (dbSettings.incrementalTables contains task.extractor.outputRelation) match {
+      case true => InferenceNamespace.getIncrementalTableName(task.extractor.outputRelation)
+      case _ => task.extractor.outputRelation
+    }
+
     val SQLTranslatorFile = s"${deepDiveDir}/util/ddext_input_sql_translator.py"
     val sqlInsertFile = File.createTempFile(s"${funcName}_exec", ".sql")
     executeScriptOrFail(s"python ${SQLTranslatorFile} ${udfFile} ${inputQueryFile} ${outputRel} ${funcName} ${sqlInsertFile}", taskSender)
