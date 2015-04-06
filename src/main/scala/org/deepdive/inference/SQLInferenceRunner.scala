@@ -339,7 +339,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
         // for incremental we use positive id for add and negative for delete
         val idColumn = dbSettings.incrementalTables.contains(relation) match {
-          case true => "CASE WHEN COUNT > 0 THEN t0.id ELSE -t0.id END"
+          case true => "CASE WHEN count > 0 THEN t0.id ELSE -t0.id END"
           case false => "t0.id"
         }
 
@@ -431,12 +431,6 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     if (skipLearning && weightTable.isEmpty()) {
       execute(copyLastWeightsSQL)
     }
-
-    // weights table
-    if (!isIncremental(dbSettings)) {
-      dataStore.dropAndCreateTable(WeightsTable, """id bigint, isfixed int, initvalue real, cardinality text, 
-        description text""")
-    }
     
     // Create the feature stats table
     execute(createFeatureStatsSupportTableSQL)
@@ -450,10 +444,38 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     execute(dataStore.createSequenceFunction(weightidSequence));
     execute(dataStore.createSequenceFunction(factoridSequence));
 
-    factorDescs.zipWithIndex.foreach { case (factorDesc, idx) =>
+    val isIncrementalGrounding = isIncremental(dbSettings)
+
+    if (isIncrementalGrounding) {
+      issueQuery(s"SELECT COUNT(id) FROM ${WeightsTable}") { rs =>
+        cweightid = rs.getLong(1) + 1
+      }
+    }
+
+    // weights table
+    dataStore.dropAndCreateTable(WeightsTable, """id bigint, isfixed int, initvalue real, cardinality text, 
+      description text""")
+
+    var factorDescsCopy : Seq[FactorDesc] = Seq[FactorDesc]()
+    if (isIncrementalGrounding) {
+      factorDescs.foreach { case f =>
+        if (dbSettings.incrementalTables.contains(f.func.variables.mkString)) {
+          factorDescsCopy :+ f
+        }
+      }
+    } else {
+      factorDescsCopy = factorDescs
+    }
+
+    factorDescsCopy.zipWithIndex.foreach { case (factorDesc, idx) =>
       // id columns
-      val idcols = factorDesc.func.variables.map(v => 
-        s""" ${dataStore.quoteColumn(s"${v.relation}.id")} """).mkString(", ")
+      val idcols = isIncrementalGrounding match {
+        case true => factorDesc.func.variables.map(v => 
+          s""" ${dataStore.quoteColumn(s"${InferenceNamespace.getIncrementalTableName(v.relation)}.id")} """).mkString(", ")
+        case false => factorDesc.func.variables.map(v => 
+          s""" ${dataStore.quoteColumn(s"${v.relation}.id")} """).mkString(", ")
+      }
+      
       // Sen
       // val querytable = s"dd_query_${factorDesc.name}"
       // val weighttableForThisFactor = s"dd_weights_${factorDesc.name}"
@@ -463,7 +485,13 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       val outfile = InferenceNamespace.getFactorFileName(factorDesc.name)
 
       // table of input query
-      dataStore.dropAndCreateTableAs(querytable, factorDesc.inputQuery)
+      if (isIncrementalGrounding) {
+        val variableRelations = factorDesc.func.variables.map(v => v.relation).mkString
+        dataStore.dropAndCreateTableAs(querytable, factorDesc.inputQuery.replaceAll(variableRelations, 
+          InferenceNamespace.getIncrementalTableName(variableRelations)))
+      } else {
+        dataStore.dropAndCreateTableAs(querytable, factorDesc.inputQuery)
+      }
       execute(s"""ALTER TABLE ${querytable} ADD COLUMN id bigint;""")
 
       // handle factor id
@@ -498,50 +526,76 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
         // branch if weight variables present
         val hasWeightVariables = !(isFixed || weightlist == "")
+        val lastWeightsTableForThisFactor = s"${weighttableForThisFactor}_last"
+        if (isIncrementalGrounding) {
+          dataStore.dropAndCreateTable(lastWeightsTableForThisFactor, s"SELECT * FROM ${weighttableForThisFactor}")
+        }
         hasWeightVariables match {
-            // create a table that only contains one row (one weight) 
-            case false => dataStore.dropAndCreateTableAs(weighttableForThisFactor, 
-              s"""SELECT ${dataStore.cast(isFixed, "int")} AS isfixed, ${dataStore.cast(initvalue, "float")} AS initvalue, 
-                ${dataStore.cast(0, "bigint")} AS id;""")
-            // create one weight for each different element in weightlist.
-            case true => dataStore.dropAndCreateTableAs(weighttableForThisFactor,
-              s"""SELECT ${weightlist}, ${dataStore.cast(isFixed, "int")} AS isfixed, 
-              ${dataStore.cast(initvalue, "float")} AS initvalue, ${dataStore.cast(0, "bigint")} AS id
-              FROM ${querytable}
-              GROUP BY ${weightlist}""")
-          }
+          // create a table that only contains one row (one weight) 
+          case false => dataStore.dropAndCreateTableAs(weighttableForThisFactor, 
+            s"""SELECT ${dataStore.cast(isFixed, "int")} AS isfixed, ${dataStore.cast(initvalue, "float")} AS initvalue, 
+              ${dataStore.cast(0, "bigint")} AS id;""")
+          // create one weight for each different element in weightlist.
+          case true => dataStore.dropAndCreateTableAs(weighttableForThisFactor,
+            s"""SELECT ${weightlist}, ${dataStore.cast(isFixed, "int")} AS isfixed, 
+            ${dataStore.cast(initvalue, "float")} AS initvalue, ${dataStore.cast(0, "bigint")} AS id
+            FROM ${querytable}
+            GROUP BY ${weightlist}""")
+        }
 
+        // assign weight id for incremental, use previous weight id if we have seen that weight before,
+        // otherwise, assign new id
+        if (isIncrementalGrounding) {
+          val tmpTable = s"${weighttableForThisFactor}_inc"
+          execute(s"""UPDATE ${weighttableForThisFactor} SET id = ${lastWeightsTableForThisFactor}.id 
+            FROM ${lastWeightsTableForThisFactor} 
+            WHERE ${weighttableForThisFactor}.${weightlist} = ${lastWeightsTableForThisFactor}.${weightlist}""")
+          dataStore.dropAndCreateTableAs(tmpTable, s"SELECT * FROM ${lastWeightsTableForThisFactor} WHERE id = 0")
+          execute(s"ALTER SEQUENCE ${weightidSequence} RESTART ${cweightid}")
+          cweightid += dataStore.assignIds(tmpTable.toLowerCase(), cweightid, weightidSequence)
+          execute(s"""UPDATE ${weighttableForThisFactor} SET id = ${weightidSequence}.id
+            FROM ${tmpTable}
+            WHERE ${weighttableForThisFactor}.${weightlist} = ${tmpTable}.${weightlist}""")
+        } else {
           // handle weight id
           cweightid += dataStore.assignIds(weighttableForThisFactor.toLowerCase(), cweightid, weightidSequence)
+        }
 
-          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, description) 
-            SELECT id, isfixed, initvalue, ${weightDesc} FROM ${weighttableForThisFactor};""")
+        execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, description) 
+          SELECT id, isfixed, initvalue, ${weightDesc} FROM ${weighttableForThisFactor};""")
 
-          // check null weight (only if there are weight variables)
-          if (hasWeightVariables) {
-            val weightChecklist = factorDesc.weight.variables.map(v => s""" ${dataStore.quoteColumn(v)} IS NULL """).mkString("AND")
-            issueQuery(s"SELECT COUNT(*) FROM ${querytable} WHERE ${weightChecklist}") { rs =>
-              if (rs.getLong(1) > 0) {
-                throw new RuntimeException("Weight variable has null values")
-              }
+        // check null weight (only if there are weight variables)
+        if (hasWeightVariables) {
+          val weightChecklist = factorDesc.weight.variables.map(v => s""" ${dataStore.quoteColumn(v)} IS NULL """).mkString("AND")
+          issueQuery(s"SELECT COUNT(*) FROM ${querytable} WHERE ${weightChecklist}") { rs =>
+            if (rs.getLong(1) > 0) {
+              throw new RuntimeException("Weight variable has null values")
             }
           }
+        }
 
-          // dump factors
-          val weightjoinlist = factorDesc.weight.variables.map(
-            v => s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)} """).mkString("AND")
-          // do not have join conditions if there are no weight variables, and t1 will only have 1 row
-          val weightJoinCondition = hasWeightVariables match {
-            case true => "WHERE " + factorDesc.weight.variables.map(
-                v => s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)} """).mkString("AND")
-            case false => ""
-          }
-          execute(dataStore.analyzeTable(querytable))
-          execute(dataStore.analyzeTable(weighttableForThisFactor))
-          du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
-            s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
-             FROM ${querytable} t0, ${weighttableForThisFactor} t1
-             ${weightJoinCondition};""", groundingDir)
+        // dump factors
+        val weightjoinlist = factorDesc.weight.variables.map(
+          v => s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)} """).mkString("AND")
+        // do not have join conditions if there are no weight variables, and t1 will only have 1 row
+        val weightJoinCondition = hasWeightVariables match {
+          case true => "WHERE " + factorDesc.weight.variables.map(
+              v => s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)} """).mkString("AND")
+          case false => ""
+        }
+        execute(dataStore.analyzeTable(querytable))
+        execute(dataStore.analyzeTable(weighttableForThisFactor))
+
+        // for incremental we use positive id for add and negative for delete
+        val idColumn = isIncrementalGrounding match {
+          case true => "CASE WHEN count > 0 THEN t0.id ELSE -t0.id END"
+          case false => "t0.id"
+        }
+
+        du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
+          s"""SELECT ${idColumn} AS factor_id, t1.id AS weight_id, ${idcols}
+           FROM ${querytable} t0, ${weighttableForThisFactor} t1
+           ${weightJoinCondition};""", groundingDir)
 
       } else if (factorDesc.func.getClass.getSimpleName == "MultinomialFactorFunction") {
         // TODO needs better code reuse
@@ -650,10 +704,16 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       reuseWeights(weightTable)
     }
 
+    // for incremental we use positive id for add and negative for delete
+    val idColumn = isIncrementalGrounding match {
+      case true => "CASE WHEN count > 0 THEN id ELSE -id END"
+      case false => "id"
+    }
+
     // dump weights
     du.unload(InferenceNamespace.getWeightFileName,
       s"${groundingPath}/${InferenceNamespace.getWeightFileName}",dbSettings,
-      s"SELECT id, isfixed, COALESCE(initvalue, 0) FROM ${WeightsTable}",
+      s"SELECT ${idColumn}, isfixed, COALESCE(initvalue, 0) FROM ${WeightsTable}",
       groundingDir)
   }
 
