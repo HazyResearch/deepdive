@@ -519,7 +519,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
           }
           execute(dataStore.analyzeTable(querytable))
           execute(dataStore.analyzeTable(weighttableForThisFactor))
-          du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
+          du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
             s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
              FROM ${querytable} t0, ${weighttableForThisFactor} t1
              ${weightJoinCondition};""", groundingDir)
@@ -616,7 +616,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
             s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)} """).mkString("AND")
           execute(dataStore.analyzeTable(querytable))
           execute(dataStore.analyzeTable(weighttableForThisFactor))
-          du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
+          du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
             s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
              FROM ${querytable} t0, ${weighttableForThisFactor} t1
              WHERE ${weightjoinlist} AND t1.cardinality = '${cardinalityKey}';""",
