@@ -12,6 +12,7 @@ export PGDATABASE=$DBNAME  # for testing to work with null settings
 export GPHOST=${GPHOST:-localhost}
 export GPPORT=${GPPORT:-15433}
 export GPPATH=${GPPATH:-/tmp}
+export GPLOAD=true
 export DBCONNSTRING=jdbc:postgresql://$PGHOST:$PGPORT/$DBNAME
 echo "CONN STRING: $DBCONNSTRING"
 export DEEPDIVE_HOME=`cd $(dirname $0)/../; pwd`
@@ -23,7 +24,6 @@ export DBPORT=$PGPORT
 export DBPASSWORD=$PGPASSWORD
 export DBUSER=$PGUSER
 
-export PARALLEL_GROUNDING=true
 
 # Launch gpfdist if not launched.
 gpfdist -d $GPPATH -p $GPPORT &

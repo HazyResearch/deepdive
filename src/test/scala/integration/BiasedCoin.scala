@@ -56,11 +56,6 @@ class BiasedCoin extends FunSpec {
         }
       }
 
-      deepdive.inference.parallel_grounding: ${System.getenv("PARALLEL_GROUNDING") match {
-        case "true" | "1" | "True" | "TRUE" => "true"
-        case _ => "false"
-      }}
-
       DeepDive.sampler.sampler_args: "-l 300 -i 500 -s 1 --alpha 0.1 --diminish 0.99 --quiet"
     """
   

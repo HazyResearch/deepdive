@@ -38,10 +38,6 @@ class BrokenTest extends FunSpec with TimeLimitedTests {
         }
       }
 
-      deepdive.inference.parallel_grounding: ${System.getenv("PARALLEL_GROUNDING") match {
-        case "true" | "1" | "True" | "TRUE" => "true"
-        case _ => "false"
-      }}
     """
   
   it("should not get stuck for bad configs") {

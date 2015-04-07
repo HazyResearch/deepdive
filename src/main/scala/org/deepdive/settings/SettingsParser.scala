@@ -12,19 +12,19 @@ object SettingsParser extends Logging {
    def loadFromConfig(rootConfig: Config) : Settings = {
     val config = rootConfig.getConfig("deepdive")
 
+    val inferenceSettings = loadInferenceSettings(config)
     val dbSettings = loadDbSettings(config)
     val schemaSettings = loadSchemaSettings(config)
     val extractors = loadExtractionSettings(config)
-    val inferenceSettings = loadInferenceSettings(config)
     val calibrationSettings = loadCalibrationSettings(config)
     val samplerSettings = loadSamplerSettings(config)
     val pipelineSettings = loadPipelineSettings(config)
 
     // Make sure that the variables related to the Greenplum distributed
     // filesystem are set if the user wants to use parallel grounding
-    if (inferenceSettings.parallelGrounding) {
+    if (dbSettings.gpload) {
       if (dbSettings.gphost == "" || dbSettings.gpport == "" || dbSettings.gppath == "") {
-        throw new RuntimeException(s"inference.parallelGrounding is set to true, but one of db.default.gphost, db.default.gpport, or db.default.gppath is not specified")
+        throw new RuntimeException(s"Parallel Loading is set to true, but one of db.default.gphost, db.default.gpport, or db.default.gppath is not specified")
       }
     }
 
@@ -36,7 +36,7 @@ object SettingsParser extends Logging {
   private def loadDbSettings(config: Config) : DbSettings = {
     val dbConfig = Try(config.getConfig("db.default")).getOrElse {
       log.warning("No schema defined.")
-      return DbSettings(Helpers.PsqlDriver, null, null, null, null, null, null, null, null, null)
+      return DbSettings(Helpers.PsqlDriver, null, null, null, null, null, null, null, null, null, false)
     }
     val driver = Try(dbConfig.getString("driver")).getOrElse(null)
     val url = Try(dbConfig.getString("url")).getOrElse(null)
@@ -48,12 +48,14 @@ object SettingsParser extends Logging {
     val gphost = Try(dbConfig.getString("gphost")).getOrElse("")
     val gpport = Try(dbConfig.getString("gpport")).getOrElse("")
     var gppath = Try(dbConfig.getString("gppath")).getOrElse("")
+    val parallelGrounding = Try(config.getConfig("inference").getBoolean("parallel_grounding")).getOrElse(false)
+    var gpload = Try(dbConfig.getBoolean("gpload")).getOrElse(false) || parallelGrounding
     if (gppath.takeRight(1) == "/") gppath = gppath.take(gppath.length -1)
     log.info(s"Database settings: user ${user}, dbname ${dbname}, host ${host}, port ${port}.")
     if (gphost != "") {
       log.info(s"GPFDIST settings: host ${gphost} port ${gpport} path ${gppath}")
     }
-    return DbSettings(driver, url, user, password, dbname, host, port, gphost, gppath, gpport)
+    return DbSettings(driver, url, user, password, dbname, host, port, gphost, gppath, gpport, gpload)
   }
 
 

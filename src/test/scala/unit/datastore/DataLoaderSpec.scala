@@ -27,14 +27,16 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with Logging {
   val dbSettings = TestHelper.getDbSettings
 
   val du = new org.deepdive.datastore.DataLoader
-
+  val dbSettingsWithoutGPLOAD = DbSettings(dbSettings.driver, dbSettings.url, dbSettings.user, 
+    dbSettings.password, dbSettings.dbname, dbSettings.host, dbSettings.port, dbSettings.gphost, 
+    dbSettings.gpport, dbSettings.gppath, false)
   describe("Unloading data using DataLoader") {
     it("should work with COPY basic types") {
       val outputFile = File.createTempFile("test_unloader", "")
       SQL(s"""DROP TABLE IF EXISTS unloader CASCADE;""").execute.apply()
       SQL(s"""CREATE TABLE unloader(feature text, is_correct boolean, id bigint);""").execute.apply()
       SQL(s"""INSERT INTO unloader values ('hi', true, 0), (null, false, 100);""").execute.apply()
-      du.unload("test_tmp", s"${outputFile.getAbsolutePath}", dbSettings, false, "select * from unloader;", "")
+      du.unload("test_tmp", s"${outputFile.getAbsolutePath}", dbSettingsWithoutGPLOAD, "select * from unloader;", "")
       val rd = new BufferedReader(new FileReader(s"${outputFile.getAbsolutePath}"))
       val line1 = rd.readLine()
       val line2 = rd.readLine()
@@ -46,6 +48,7 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with Logging {
       rd.close()
     }
 
+
     it("should work with COPY array types") {
       // MySQL do not have array type
       assume(TestHelper.getTestEnv != TestHelper.Mysql)
@@ -54,7 +57,7 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with Logging {
       SQL(s"""DROP TABLE IF EXISTS unloader CASCADE;""").execute.apply()
       SQL(s"""CREATE TABLE unloader(feature text, id int[]);""").execute.apply()
       SQL(s"""INSERT INTO unloader values ('hi', '{0,1,2}');""").execute.apply()
-      du.unload("test_tmp", s"${outputFile.getAbsolutePath}", dbSettings, false, "select * from unloader;", "")
+      du.unload("test_tmp", s"${outputFile.getAbsolutePath}", dbSettingsWithoutGPLOAD, "select * from unloader;", "")
       val rd = new BufferedReader(new FileReader(s"${outputFile.getAbsolutePath}"))
       var line = rd.readLine()
       assert(line === "hi\t{0,1,2}")
@@ -82,7 +85,7 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with Logging {
       SQL(s"""DROP TABLE IF EXISTS dataloader1 CASCADE;""").execute.apply()
       SQL(s"""CREATE TABLE dataloader1(feature text, is_correct boolean, id bigint);""").execute.apply()
       val tsvFile = getClass.getResource("/dataloader1.tsv").getFile
-      du.load(new File(tsvFile).getAbsolutePath(), "dataloader1", dbSettings, false)
+      du.load(new File(tsvFile).getAbsolutePath(), "dataloader1", dbSettings)
 
       // JdbcDataStoreObject.executeSqlQueryWithCallback(sql)(op)
       var result1 = ""
@@ -119,7 +122,7 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with Logging {
       SQL(s"""CREATE TABLE dataloader1(feature text, is_correct boolean, id bigint);""").execute.apply()
       val tsvFile = getClass.getResource("/dataloader1.tsv").getFile
       val filePath = new File(tsvFile).getParent() + "/dataloader*.tsv"
-      du.load(filePath, "dataloader1", dbSettings, false)
+      du.load(filePath, "dataloader1", dbSettings)
       // val result1 = SQL(s"""SELECT * FROM loader WHERE id = 0""").map(rs => rs.string("feature")).single.apply().get 
       // val result2 = SQL(s"""SELECT * FROM loader WHERE id = 0""").map(rs => rs.boolean("is_correct")).single.apply().get 
       // val result3 = SQL(s"""SELECT * FROM loader WHERE is_correct = false""").map(rs => rs.string("feature")).single.apply() 

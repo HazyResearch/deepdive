@@ -83,8 +83,8 @@ deepdive {
     ext_people {
       input: \"\"\"
           SELECT  sentence_id, 
-                  array_to_string(words, '~^~'), 
-                  array_to_string(ner_tags, '~^~') 
+                  array_to_string(words, '~^~') AS words,
+                  array_to_string(ner_tags, '~^~') AS ner_tags
           FROM    sentences
           \"\"\"
       output_relation: "people_mentions"
@@ -97,9 +97,11 @@ deepdive {
     ext_has_spouse_candidates {
       input: \"\"\"
        SELECT p1.sentence_id,
-              p1.mention_id, p1.text, 
-              p2.mention_id, p2.text
-        FROM  people_mentions p1, 
+              p1.mention_id AS mention_id_1,
+              p1.text AS text_1,
+              p2.mention_id AS mention_id_2,
+              p2.text AS text_2
+        FROM  people_mentions p1,
               people_mentions p2
         WHERE p1.sentence_id = p2.sentence_id
           AND p1.mention_id != p2.mention_id;
@@ -112,12 +114,12 @@ deepdive {
 
     ext_has_spouse_features {
       input: \"\"\"
-        SELECT  array_to_string(words, '~^~'), 
+        SELECT  array_to_string(words, '~^~') AS words,
                 has_spouse.relation_id, 
-                p1.start_position, 
-                p1.length, 
-                p2.start_position, 
-                p2.length
+                p1.start_position AS start_position_1,
+                p1.length AS length_1,
+                p2.start_position AS start_position_2,
+                p2.length AS length_2
         FROM    has_spouse, 
                 people_mentions p1, 
                 people_mentions p2, 
@@ -182,11 +184,6 @@ deepdive {
 
   # Specify a holdout fraction
   calibration.holdout_fraction: 0.25
-
-  inference.parallel_grounding: ${System.getenv("PARALLEL_GROUNDING") match {
-    case "true" | "1" | "True" | "TRUE" => "true"
-    case _ => "false"
-  }}
 
 }
 
