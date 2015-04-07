@@ -158,6 +158,7 @@ Zhang](http://pages.cs.wisc.edu/~czhang/).
 - [Using DeepDive on Ubuntu](doc/advanced/ubuntu.html)
 - [Tuffy and Markov Logic Networks (MLN)](doc/advanced/markov_logic_network.html)
 - [Amazon EC2 AMI guide](doc/advanced/ec2.html)
+- [Using DeepDive with Docker](doc/advanced/docker.html)
 - [Internal database schema](doc/advanced/reserved_tables.html)
 - [Factor graph grounding output reference](doc/advanced/factor_graph_schema.html)
 
