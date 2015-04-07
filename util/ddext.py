@@ -139,16 +139,25 @@ def make_pg_func():
 
 
     ret += """
-  if '"""+ varname +"""' in SD: 
-    """+ varname +""" = SD['"""+ varname +"""']
-  else: 
-    """+ from_str + """import """+ libname + as_str +"""
-    SD['"""+ varname +"""'] = """+ varname + '\n'
+if '"""+ varname +"""' in SD: 
+  """+ varname +""" = SD['"""+ varname +"""']
+else: 
+  """+ from_str + """import """+ libname + as_str +"""
+  SD['"""+ varname +"""'] = """+ varname + '\n'
 
-  # TODO now we do not need library name...
-  # _run_func_content = re.sub(r'ddext\.', '', _run_func_content)
+  # Find out the indent level in the function,
+  # determined by the first non-empty line
+  lines = _run_func_content.split('\n')
+  indent_level = 0
+  for l in lines:
+    if l.strip() == '':
+      continue
+    indent_level = len(l) - len(l.lstrip(' '))
 
-  ret += '\n' + _run_func_content \
+  # Remove first-level indents
+  run_func_content_noindent = '\n'.join([ l[indent_level:] for l in lines])
+
+  ret += '\n' + run_func_content_noindent \
     + '\n$$ LANGUAGE plpythonu ;'
 
   return ret
