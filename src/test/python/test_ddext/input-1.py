@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-#! /usr/bin/env python
 
 # Imports written in this area is useless, just for local debugging
 import ddext

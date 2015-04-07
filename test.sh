@@ -18,3 +18,6 @@ if hash gpfdist 2>/dev/null; then
   bash test/test_gp.sh
 fi
 
+echo "Testing Other modules..."
+bash src/test/python/test_ddext/test.sh
+
