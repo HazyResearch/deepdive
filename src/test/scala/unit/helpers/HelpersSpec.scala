@@ -44,7 +44,7 @@ class HelpersSpec extends FunSpec with BeforeAndAfter {
         "host", "port", null, null, null)
       val query = "select * from test;"
       val cmd = Helpers.buildSqlCmd(dbSettings, query)
-      val trueCmd = "psql -d dbname -U user -p port -h host -c '" + query + "'"
+      val trueCmd = "psql -d dbname -U user -p port -h host -v ON_ERROR_STOP=1 -c '" + query + "'"
       assert(cmd.replaceAll(" +", " ").trim() === trueCmd)
     }
 
@@ -53,7 +53,7 @@ class HelpersSpec extends FunSpec with BeforeAndAfter {
         "host", "port", null, null, null)
       val query = "select '123';"
       val cmd = Helpers.buildSqlCmd(dbSettings, query)
-      val trueCmd = "psql -d dbname -U user -p port -h host -c 'select '\\''123'\\'';'"
+      val trueCmd = "psql -d dbname -U user -p port -h host -v ON_ERROR_STOP=1 -c 'select '\\''123'\\'';'"
       assert(cmd.replaceAll(" +", " ").trim() === trueCmd)
     }
 
@@ -62,7 +62,7 @@ class HelpersSpec extends FunSpec with BeforeAndAfter {
         "host", "port", null, null, null)
       val query = "select \"123\";"
       val cmd = Helpers.buildSqlCmd(dbSettings, query)
-      val trueCmd = "psql -d dbname -U user -p port -h host -c 'select \"123\";'"
+      val trueCmd = "psql -d dbname -U user -p port -h host -v ON_ERROR_STOP=1 -c 'select \"123\";'"
       assert(cmd.replaceAll(" +", " ").trim() === trueCmd)
     }
 

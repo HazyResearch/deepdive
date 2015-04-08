@@ -1,6 +1,6 @@
 import ddext
 
-# Anything Write outside these two functions will not be accepted.
+# Anything written outside these two functions will not be accepted.
 
 def init():
   # SD['json'] = __import__('json')
