@@ -46,7 +46,7 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
   def statements : Parser[List[Statement]] = rep1sep(statement, ";") ^^ { case(x) => x }
 }
 
-object ConjunctiveQueryParser extends ConjunctiveQueryParser  {
+object Test extends ConjunctiveQueryParser  {
 
   def main(args: Array[String]) = {
     val q = parse(statements, args(0))
