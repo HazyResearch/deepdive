@@ -248,17 +248,11 @@ object Test extends ConjunctiveQueryParser  {
 
   // Generate extraction rule part for deepdive
   def extractionRule( ss: StatementSchema, r : ExtractionRule ) : String = {
-    println(r.udfs.get)
     // Generate the body of the query.
     val qs              = new QuerySchema( r.q )
     // variable columns
     val variableCols = r.q.head.terms flatMap {
-      case(Variable(v,rr,i)) => {
-        val index = qs.getBodyIndex(v)
-        val name  = ss.resolveName(qs.getVar(v))
-        val relation = r.q.body(index).name
-        Some(s"""R${index}.${name} AS "${relation}.R${index}.${name}" """)
-      }
+      case(Variable(v,rr,i)) => resolveColumn(v, ss, qs, r.q, true)
     }
 
     val variableColsStr = if (variableCols.length > 0) Some(variableCols.mkString(", ")) else None
@@ -286,11 +280,11 @@ object Test extends ConjunctiveQueryParser  {
 
 
   // resolve a column name with alias
-  def resolveColumn(s: String, ss: StatementSchema, qs: QuerySchema, r : InferenceRule,
+  def resolveColumn(s: String, ss: StatementSchema, qs: QuerySchema, q : ConjunctiveQuery,
    alias: Boolean) : Option[String] = {
     val index = qs.getBodyIndex(s)
     val name  = ss.resolveName(qs.getVar(s))
-    val relation = r.q.body(index).name
+    val relation = q.body(index).name
     if (alias)
       Some(s"""R${index}.${name} AS "${relation}.R${index}.${name}" """)
     else
@@ -312,14 +306,14 @@ object Test extends ConjunctiveQueryParser  {
 
     // variable columns
     val variableCols = r.q.head.terms flatMap {
-      case(Variable(v,rr,i)) => resolveColumn(v, ss, qs, r, true)
+      case(Variable(v,rr,i)) => resolveColumn(v, ss, qs, r.q, true)
     }
     val variableColsStr = if (variableCols.length > 0) Some(variableCols.mkString(", ")) else None
 
     // weight string
     val uwStr = r.weights match {
       case KnownFactorWeight(x) => None
-      case UnknownFactorWeight(w) => Some(w.flatMap(s => resolveColumn(s, ss, qs, r, true)).mkString(", "))
+      case UnknownFactorWeight(w) => Some(w.flatMap(s => resolveColumn(s, ss, qs, r.q, true)).mkString(", "))
     }
 
     val selectStr = (List(variableIdsStr, variableColsStr, uwStr) flatMap (u => u)).mkString(", ")
@@ -331,7 +325,7 @@ object Test extends ConjunctiveQueryParser  {
 
     // variable columns using alias (for factor function)
     val variableColsAlias = r.q.head.terms flatMap {
-      case(Variable(v,rr,i)) => resolveColumn(v, ss, qs, r, false)
+      case(Variable(v,rr,i)) => resolveColumn(v, ss, qs, r.q, false)
     }
     val variableColsAliasStr = if (variableColsAlias.length > 0) Some(variableColsAlias.mkString(", ")) else None
 
@@ -342,7 +336,7 @@ object Test extends ConjunctiveQueryParser  {
     val weight = r.weights match {
       case KnownFactorWeight(x) => s"${x}"
       case UnknownFactorWeight(w) => {
-        s"""?(${w.flatMap(s => resolveColumn(s, ss, qs, r, false)).mkString(", ")})"""
+        s"""?(${w.flatMap(s => resolveColumn(s, ss, qs, r.q, false)).mkString(", ")})"""
       }
     }
     
