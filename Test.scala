@@ -246,6 +246,29 @@ object Test extends ConjunctiveQueryParser  {
      """
   }
 
+  // generate variable schema statements
+  def variableSchema(statements : List[Statement], ss: StatementSchema) : String = {
+    var schema = Set[String]() 
+    // generate the statements.
+    statements.foreach {
+      case InferenceRule(q, weights) =>
+        val qs = new QuerySchema(q)
+        q.head.terms.foreach {
+          case Variable(n,r,i) => {
+            println(n)
+            val index = qs.getBodyIndex(n)
+            val name  = ss.resolveName(qs.getVar(n))
+            val relation = q.body(index).name
+            schema += s"${relation}.${name} : Boolean"
+          }
+        }
+      case _ => ()
+    }
+    val ddSchema = schema.mkString("\n")
+    println(ddSchema)
+    ddSchema
+  }
+
   // Generate extraction rule part for deepdive
   def extractionRule( ss: StatementSchema, em: List[(Int, String)], r : ExtractionRule, index : Int ) : String = {
     // Generate the body of the query.
@@ -444,11 +467,9 @@ object Test extends ConjunctiveQueryParser  {
         people_mentions(sentence_id, p2.start_position, p2.length, p2.text, person2_id)
       udf=ext_has_spouse_features;
     """
-    val q      = parse(statements, test4)
+    val q      = parse(statements, test3)
     val schema = new StatementSchema( q.get )
-
-    // println(test4)
-    // println()
+    val variables = variableSchema(q.get, schema)
 
     val extracions = q.get flatMap {
       case _ : SchemaElement  => None
@@ -473,7 +494,5 @@ object Test extends ConjunctiveQueryParser  {
     // val queries = q.get flatMap {
     //   case _ : SchemaElement  => None
     //   case e : ExtractionRule => Some(extractionRule(schema, extractionMap, e))
-    //   case w : InferenceRule  => Some(inferenceRule(schema, w))
-    // }
   }
 }
