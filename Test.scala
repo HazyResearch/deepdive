@@ -58,7 +58,7 @@ Consider
 // * The union types for for the parser. *
 // ***************************************
 trait Statement
-case class Variable(varName : String, relName: String, index : Int ) 
+case class Variable(varName : String, relName : String, index : Int ) 
 case class Atom(name : String, terms : List[Variable]) 
 case class ConjunctiveQuery(head: Atom, body: List[Atom])
 
@@ -247,7 +247,7 @@ object Test extends ConjunctiveQueryParser  {
   }
 
   // Generate extraction rule part for deepdive
-  def extractionRule( ss: StatementSchema, r : ExtractionRule ) : String = {
+  def extractionRule( ss: StatementSchema, em: List[(Int, String)], r : ExtractionRule, index : Int ) : String = {
     // Generate the body of the query.
     val qs              = new QuerySchema( r.q )
     // variable columns
@@ -259,19 +259,27 @@ object Test extends ConjunctiveQueryParser  {
     
     val selectStr = (List(variableColsStr) flatMap (u => u)).mkString(", ")
     
-    println(s"${selectStr}")
+    // println(s"${selectStr}")
     val inputQuery = s"""
       SELECT ${selectStr} 
       ${ generateSQLBody(ss, r.q) }"""
 
+    val dependencyRelation = r.q.body map { case(x) => s"${x.name}"}
+    var dependencies = List[String]()
+    for (e <- em) {
+      if (dependencyRelation contains e._2) 
+        dependencies ::= s""" "extraction_rule_${e._1}" """
+    }
+    val dependencyStr = if (dependencies.length > 0) s"dependencies: [${dependencies.mkString(", ")}]" else ""
     
     val extractor = s"""
-      e_${r.udfs.get} {
+      extraction_rule_${index} {
         input : \"\"\" ${inputQuery}
         \"\"\"
         output_relation : \"${r.q.head.name}\"
         udf : \"/udf/${r.udfs.get}.py\"
         style : \"tsv_extractor\"
+        ${dependencyStr}
       }
     """
     println(extractor)
@@ -439,13 +447,33 @@ object Test extends ConjunctiveQueryParser  {
     val q      = parse(statements, test4)
     val schema = new StatementSchema( q.get )
 
-    println(test4)
-    println()
+    // println(test4)
+    // println()
 
-    val queries = q.get flatMap {
+    val extracions = q.get flatMap {
       case _ : SchemaElement  => None
-      case e : ExtractionRule => Some(extractionRule(schema, e))
-      case w : InferenceRule  => Some(inferenceRule(schema, w))
+      case e : ExtractionRule => Some(e)
+      case w : InferenceRule  => None
     }
+    val extractionsWithIndex = extracions.zipWithIndex
+    val extractionMap = extractionsWithIndex map {
+      case (e) => (e._2, e._1.q.head.name)
+    }
+    // for (extractor <- extractionsWithIndex) {
+    //   extractionMap += (extractor.get(1), extractor.get(0).q.head)
+    // }
+
+    println(extractionMap)
+
+    val queries = extractionsWithIndex flatMap {
+      case (e) => Some(extractionRule(schema, extractionMap, e._1, e._2))
+    }
+    // println(extractionsWithIndex)
+    // println(extracions)
+    // val queries = q.get flatMap {
+    //   case _ : SchemaElement  => None
+    //   case e : ExtractionRule => Some(extractionRule(schema, extractionMap, e))
+    //   case w : InferenceRule  => Some(inferenceRule(schema, w))
+    // }
   }
 }
