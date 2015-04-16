@@ -87,6 +87,8 @@ processing systems.
 
 Examples of DeepDive applications include:
 
+- [MEMEX](http://www.cbsnews.com/news/new-search-engine-exposes-the-dark-web/) - Supporting the fight against human trafficking.
+  <br><small>(The project was recently featured on [60 minutes](http://www.cbsnews.com/news/new-search-engine-exposes-the-dark-web/), [Scientific American](http://www.scientificamerican.com/article/human-traffickers-caught-on-hidden-internet/), [Wall St. Journal](http://www.wsj.com/articles/sleuthing-search-engine-even-better-than-google-1423703464), [BBC](http://www.bbc.com/news/technology-31808104), and [Wired](http://www.wired.com/2015/02/darpa-memex-dark-web/). It is supporting actual [investigations](http://www.defenseone.com/technology/2015/02/darpas-new-search-engine-puts-google-dust/105342).)</small>
 - [PaleoDeepDive](https://www.youtube.com/watch?v=Cj2-dQ2nwoY) - A knowledge base for Paleobiologists
 - [GeoDeepDive](https://www.youtube.com/watch?v=X8uhs28O3eA) - Extracting dark data from geology journal articles
 - [Wisci](https://www.youtube.com/watch?v=Q1IpE9_pBu4) - Enriching Wikipedia with structured data
@@ -102,11 +104,12 @@ DeepDive is project led by [Christopher
 Ré](http://cs.stanford.edu/people/chrismre/) at Stanford University. Current
 group members include: [Michael Cafarella](http://web.eecs.umich.edu/~michjc/),
 Amir Abbas Sadeghian, [Zifei Shan](http://www.zifeishan.org/), 
-Jaeo Shin, Feiran Wang, [Sen Wu](http://stanford.edu/~senwu/), and [Ce
+[Jaeho Shin](http://cs.stanford.edu/~netj/), Feiran Wang, [Sen Wu](http://stanford.edu/~senwu/), and [Ce
 Zhang](http://pages.cs.wisc.edu/~czhang/).
 
 ### Updates &amp; Changelog 
 
+- [Changelog for version 0.05-alpha](doc/changelog/0.05.01-alpha.html) (02/08/2015)
 - [Changelog for version 0.04.2-alpha](doc/changelog/0.04.2-alpha.html) (12/23/2014)
 - [Changelog for version 0.04.1-alpha](doc/changelog/0.04.1-alpha.html) (11/25/2014)
 - [Changelog for version 0.04-alpha](doc/changelog/0.04-alpha.html) (11/19/2014)
