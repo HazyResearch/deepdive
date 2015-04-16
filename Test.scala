@@ -72,7 +72,7 @@ case class UnknownFactorWeight(variables: List[String]) extends FactorWeight
 
 case class SchemaElement( a : Atom , query : Boolean ) extends Statement // atom and whether this is a query relation.
 case class ExtractionRule(q : ConjunctiveQuery, udfs : Option[String]) extends Statement // Extraction rule
-case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight) extends Statement // Weighted rule
+case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, supervision : String) extends Statement // Weighted rule
 
 
 // Parser
@@ -116,8 +116,10 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
   }
   def factorWeight = constantWeight | unknwonWeight
 
-  def inferenceRule : Parser[InferenceRule] = query ~ factorWeight ^^ {
-    case (q ~ weight) => InferenceRule(q, weight)
+  def supervision = "label" ~> "=" ~> col
+
+  def inferenceRule : Parser[InferenceRule] = query ~ factorWeight ~ supervision ^^ {
+    case (q ~ weight ~ supervision) => InferenceRule(q, weight, supervision)
   }
 
   // rules or schema elements in aribitrary order
@@ -148,7 +150,7 @@ class StatementSchema( statements : List[Statement] )  {
             ground_relations += { r -> query } // record whether a query or a ground term.
         }
       case ExtractionRule(_,_) => ()
-      case InferenceRule(_,_) => ()
+      case InferenceRule(_,_,_) => ()
     }
     println(schema)
     println(ground_relations)
@@ -235,14 +237,17 @@ object Test extends ConjunctiveQueryParser  {
         ${ whereClauseStr }"""
   }
   // generate the node portion (V) of the factor graph
-  def nodeRule(ss : StatementSchema, z : ConjunctiveQuery) : String = {
-    val headTerms = z.head.terms map {
-      case Variable(v,r,i) => s"R${i}.${ss.resolveName(Variable(v,r,i)) }"
+  def nodeRule(ss : StatementSchema, qs: QuerySchema, z : InferenceRule) : String = {
+    val headTerms = z.q.head.terms map {
+      case Variable(v,r,i) => s"R${i}.${ss.resolveName(qs.getVar(v)) }"
     }
-    val headTermsStr = ( "0 as _id"  :: headTerms ).mkString(",")
-    s"""CREATE TABLE ${ z.head.name } AS
-    SELECT DISTINCT ${ headTermsStr }
-    ${ generateSQLBody(ss,z) }
+    val index = qs.getBodyIndex(z.supervision)
+    val name  = ss.resolveName(qs.getVar(z.supervision))
+    val labelCol = s"R${index}.${name}"
+    val headTermsStr = ( "0 as id"  :: headTerms ).mkString(", ")
+    s"""CREATE TABLE ${ z.q.head.name } AS
+    SELECT DISTINCT ${ headTermsStr }, ${labelCol} AS label
+    ${ generateSQLBody(ss,z.q) }
      """
   }
 
@@ -251,7 +256,7 @@ object Test extends ConjunctiveQueryParser  {
     var schema = Set[String]() 
     // generate the statements.
     statements.foreach {
-      case InferenceRule(q, weights) =>
+      case InferenceRule(q, weights, supervision) =>
         val qs = new QuerySchema(q)
         q.head.terms.foreach {
           case Variable(n,r,i) => {
@@ -324,22 +329,36 @@ object Test extends ConjunctiveQueryParser  {
 
   // generate inference rule part for deepdive
   def inferenceRule(ss : StatementSchema, r : InferenceRule) : String = {
-    // Generate the body of the query.
+    println("==================")
     val qs = new QuerySchema( r.q )
+
+    // node query
+    val node_query = if (ss.isQueryTerm(r.q.head.name)) Some(nodeRule(ss,qs,r)) else None  
+    println(node_query)
+
+    // edge query
+    val fakeBody        = r.q.head +: r.q.body 
+    println(fakeBody)
+    val fakeCQ          = ConjunctiveQuery(r.q.head, fakeBody) // we will just use the fakeBody below.
+
+    // Generate the body of the query.
     // check if relName is a ground term, if so skip it.
     // if not, generate the id column.
-    val variableIds = r.q.body.zipWithIndex flatMap {
-      case (Atom(r,_),i) =>
-        if(ss.isQueryTerm(r)) Some(s"""R${i}.id AS "${r}.R${i}.id" """) else None
-    } // we know have all variables in the body
+    // val variableIds = r.q.body.zipWithIndex flatMap {
+    //   case (Atom(r,_),i) =>
+    //     if(ss.isQueryTerm(r)) Some(s"""R${i}.id AS "${r}.R${i}.id" """) else None
+    // } // we know have all variables in the body
 
-    val variableIdsStr = if (variableIds.length > 0) Some(variableIds.mkString(", ")) else None
+    // val variableIdsStr = if (variableIds.length > 0) Some(variableIds.mkString(", ")) else None
 
     // variable columns
-    val variableCols = r.q.head.terms flatMap {
-      case(Variable(v,rr,i)) => resolveColumn(v, ss, qs, r.q, true)
-    }
-    val variableColsStr = if (variableCols.length > 0) Some(variableCols.mkString(", ")) else None
+    // val variableCols = r.q.head.terms flatMap {
+    //   case(Variable(v,rr,i)) => resolveColumn(v, ss, qs, r.q, true)
+    // }
+    // val variableColsStr = if (variableCols.length > 0) Some(variableCols.mkString(", ")) else None
+    
+    val variableIdsStr = Some(s"""R0.id AS "${r.q.head.name}.R0.id" """)
+    val variableColsStr = Some(s"""R0.label AS "${r.q.head.name}.R0.label" """)
 
     // weight string
     val uwStr = r.weights match {
@@ -352,16 +371,16 @@ object Test extends ConjunctiveQueryParser  {
     // factor input query
     val inputQuery = s"""
       SELECT ${selectStr} 
-      ${ generateSQLBody(ss, r.q) }"""
+      ${ generateSQLBody(ss, fakeCQ) }"""
 
     // variable columns using alias (for factor function)
-    val variableColsAlias = r.q.head.terms flatMap {
-      case(Variable(v,rr,i)) => resolveColumn(v, ss, qs, r.q, false)
-    }
-    val variableColsAliasStr = if (variableColsAlias.length > 0) Some(variableColsAlias.mkString(", ")) else None
+    // val variableColsAlias = r.q.head.terms flatMap {
+    //   case(Variable(v,rr,i)) => resolveColumn(v, ss, qs, r.q, false)
+    // }
+    // val variableColsAliasStr = if (variableColsAlias.length > 0) Some(variableColsAlias.mkString(", ")) else None
 
     // factor function
-    val func = s"""Imply(${variableColsAliasStr.get})"""
+    val func = s"""Imply(${r.q.head.name}.R0.label)"""
 
     // weight
     val weight = r.weights match {
@@ -419,7 +438,7 @@ object Test extends ConjunctiveQueryParser  {
    =======
    
    */
-  def main(args: Array[String]) = {
+  def main(args: Array[String]) {
     val test1 = """
       S(a1,a2); 
       R(pk,f)!; 
@@ -434,19 +453,22 @@ object Test extends ConjunctiveQueryParser  {
       R(y,x) :- U(x,y); 
       S(x,y) :- R(x,y);"""
     val test3 = """
-      has_spouse(person1_id, person2_id, sentence_id, description, is_true, relation_id, id)!;
+      has_spouse(person1_id, person2_id, sentence_id, description, is_true, relation_id);
       has_spouse_features(relation_id, feature);
+      q(rid)!;
 
-      f_has_spouse_features(x) :-
-        has_spouse(a, b, c, d, x, y, e),
+      q(y) :-
+        has_spouse(a, b, c, d, x, y),
         has_spouse_features(y, f)
-        weight = f;
+        weight = f
+        label = x;
+        """
 
-      f_has_spouse_symmetry(x, y) :-
-        has_spouse(a1, a2, a3, a4, x, a6, a7),
-        has_spouse(a2, a1, b3, b4, y, b6, b7)
-        weight = 1;
-    """
+    //   f_has_spouse_symmetry(x, y) :-
+    //     has_spouse(a1, a2, a3, a4, x, a6),
+    //     has_spouse(a2, a1, b3, b4, y, b6)
+    //     weight = 1;
+    // """
     val test4 = """
       articles(article_id, text);
       sentences(document_id, sentence, words, lemma, pos_tags, dependencies, ner_tags, sentence_offset, sentence_id);
@@ -489,6 +511,12 @@ object Test extends ConjunctiveQueryParser  {
     val queries = extractionsWithIndex flatMap {
       case (e) => Some(extractionRule(schema, extractionMap, e._1, e._2))
     }
+
+    q.get flatMap {
+      case w : InferenceRule  => Some(inferenceRule(schema, w))
+      case _ => None
+    }
+
     // println(extractionsWithIndex)
     // println(extracions)
     // val queries = q.get flatMap {
