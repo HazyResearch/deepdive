@@ -9,3 +9,4 @@ exclude:
   - params.json
   - "*.graffle"
   - Makefile
+  - README
