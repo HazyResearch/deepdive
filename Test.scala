@@ -71,7 +71,9 @@ case class KnownFactorWeight(value: Double) extends FactorWeight {
 case class UnknownFactorWeight(variables: List[String]) extends FactorWeight
 
 case class SchemaElement( a : Atom , query : Boolean ) extends Statement // atom and whether this is a query relation.
-case class ExtractionRule(q : ConjunctiveQuery, udfs : Option[String]) extends Statement // Extraction rule
+case class FunctionElement( functionName: String, input: String, output: String, implementation: String, mode: String) extends Statement
+case class ExtractionRule(q : ConjunctiveQuery) extends Statement // Extraction rule
+case class FunctionRule(input : String, output : String, function : String) extends Statement // Extraction rule
 case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight) extends Statement // Weighted rule
 
 
@@ -79,7 +81,7 @@ case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight) extends S
 class ConjunctiveQueryParser extends JavaTokenParsers {   
   // Odd definitions, but we'll keep them.
   def stringliteral1: Parser[String] = ("'"+"""([^'\p{Cntrl}\\]|\\[\\"'bfnrt]|\\u[a-fA-F0-9]{4})*"""+"'").r ^^ {case (x) => x}
-  def stringliteral2: Parser[String] = """[a-zA-Z_0-9\.]*""".r ^^ {case (x) => x}
+  def stringliteral2: Parser[String] = """[a-zA-Z_0-9\./]*""".r ^^ {case (x) => x}
   def stringliteral: Parser[String] = (stringliteral1 | stringliteral2) ^^ {case (x) => x}
 
   // relation names and columns are just strings.
@@ -104,9 +106,19 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
     case (a ~ Some(_)) =>  SchemaElement(a,false)
   }
 
-  def extractionRule : Parser[ExtractionRule] = query ~  "udf" ~ "=" ~ opt(udf) ^^ {
-    case (q ~ "udf" ~ "=" ~ Some(udfs)) => ExtractionRule(q,Some(udfs))
-    case (q ~ "udf" ~ "=" ~ None)       => ExtractionRule(q,None)
+
+  def functionElement : Parser[FunctionElement] = "function" ~ stringliteral ~ "over like" ~ stringliteral ~ "returns like" ~ stringliteral ~ "implementation" ~ stringliteral ~ "handles" ~ stringliteral ~ "lines" ^^ {
+    case ("function" ~ a ~ "over like" ~ b ~ "returns like" ~ c ~ "implementation" ~ d ~ "handles" ~ e ~ "lines") => FunctionElement(a, b, c, d, e)
+  }
+
+
+  def extractionRule : Parser[ExtractionRule] = query  ^^ {
+    case (q) => ExtractionRule(q)
+    // case (q ~ "udf" ~ "=" ~ None)       => ExtractionRule(q,None)
+  }
+
+  def functionRule : Parser[FunctionRule] = stringliteral ~ ":-" ~ "!" ~ stringliteral ~ "(" ~ stringliteral ~ ")" ^^ {
+    case (a ~ ":-" ~ "!" ~ b ~ "(" ~ c ~ ")") => FunctionRule(c, a, b)
   }
 
   def constantWeight = "weight" ~> "=" ~> """-?[\d\.]+""".r ^^ { x => KnownFactorWeight(x.toDouble) }
@@ -121,9 +133,9 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
   }
 
   // rules or schema elements in aribitrary order
-  def statement : Parser[Statement] = (extractionRule | inferenceRule | schemaElement) ^^ {case(x) => x}
+  def statement : Parser[Statement] = (functionElement | extractionRule | functionRule | inferenceRule | schemaElement) ^^ {case(x) => x}
 
-  def statements : Parser[List[Statement]] = rep1sep(statement, ";") ^^ { case(x) => x }
+  def statements : Parser[List[Statement]] = rep1sep(statement, ".") ^^ { case(x) => x }
 }
 
 // This handles the schema statements.
@@ -138,6 +150,8 @@ class StatementSchema( statements : List[Statement] )  {
 
   var ground_relations : Map[ String, Boolean ]  = new HashMap[ String, Boolean ]()
 
+  var function_schema : Map[String, FunctionElement] = new HashMap[ String, FunctionElement]()
+
   def init() = {    
     // generate the statements.
     statements.foreach {
@@ -147,8 +161,10 @@ class StatementSchema( statements : List[Statement] )  {
             schema           += { (r,i) -> n }
             ground_relations += { r -> query } // record whether a query or a ground term.
         }
-      case ExtractionRule(_,_) => ()
+      case ExtractionRule(_) => ()
       case InferenceRule(_,_) => ()
+      case FunctionElement(a, b, c, d, e) => function_schema += {a -> FunctionElement(a, b, c, d, e)}
+      case FunctionRule(_,_,_) => ()
     }
     println(schema)
     println(ground_relations)
@@ -168,6 +184,15 @@ class StatementSchema( statements : List[Statement] )  {
       }
     }
   }
+
+  def resolveFunctionName( v : String ) : FunctionElement = {
+    if (function_schema contains v) {
+      function_schema(v)
+    } else {
+      return FunctionElement("0","0","0","0","0")
+    }
+
+  } 
 
   // The default is query term.
   def isQueryTerm( relName : String ): Boolean = {
@@ -203,6 +228,8 @@ class QuerySchema(q : ConjunctiveQuery) {
   def getVar(varName : String ) : Variable   = { query_schema(varName)._2 }
 
 }
+
+
 object Test extends ConjunctiveQueryParser  {
 
   // This is generic code that generates the FROM with positional aliasing R0, R1, etc.
@@ -294,14 +321,56 @@ object Test extends ConjunctiveQueryParser  {
         dependencies ::= s""" "extraction_rule_${e._1}" """
     }
     val dependencyStr = if (dependencies.length > 0) s"dependencies: [${dependencies.mkString(", ")}]" else ""
+
+    val extractor = s"""
+      extraction_rule_${index} {
+        input : \"\"\" CREATE VIEW ${r.q.head.name} AS ${inputQuery}
+        \"\"\"
+        style : \"sql_extractor\"
+        ${dependencyStr}
+      }
+    """
+    
+    // val extractor = s"""
+    //   extraction_rule_${index} {
+    //     input : \"\"\" CREATE VIEW ${r.q.head.name} AS ${inputQuery}
+    //     \"\"\"
+    //     output_relation : \"${r.q.head.name}\"
+    //     udf : \"/udf/${r.udfs.get}.py\"
+    //     style : \"tsv_extractor\"
+    //     ${dependencyStr}
+    //   }
+    // """
+    println(extractor)
+    extractor
+  }
+
+  def functionRule( ss: StatementSchema, dependencies: List[(Int, String)], r : FunctionRule, index : Int) : String = {
+    
+    val inputQuery = s"""
+    SELECT * FROM ${r.input}
+    """
+
+    val function = ss.resolveFunctionName(r.function)    
+
+    // val dependencyRelation = r.q.body map { case(x) => s"${x.name}"}
+    var dependency = List[String]()
+    for (d <- dependencies) {
+      if (r.input == d._2) {
+        dependency ::= s""" "extraction_rule_${d._1}" """
+      }
+    }
+    val dependencyStr = if (dependency.length > 0) s"dependencies: [${dependency.mkString(", ")}]" else ""
+
+
     
     val extractor = s"""
       extraction_rule_${index} {
-        input : \"\"\" ${inputQuery}
+        input : \"\"\" SELECT * FROM ${r.input}
         \"\"\"
-        output_relation : \"${r.q.head.name}\"
-        udf : \"/udf/${r.udfs.get}.py\"
-        style : \"tsv_extractor\"
+        output_relation : \"${r.output}\"
+        udf : \"${function.implementation}\"
+        style : \"${function.mode}_extractor\"
         ${dependencyStr}
       }
     """
@@ -467,32 +536,40 @@ object Test extends ConjunctiveQueryParser  {
         people_mentions(sentence_id, p2.start_position, p2.length, p2.text, person2_id)
       udf=ext_has_spouse_features;
     """
-    val q      = parse(statements, test3)
+
+    val test5 = """
+      ext_people_input(
+        sentence_id,
+        words,
+        ner_tags).
+      function ext_has_spouse_features over like ext_has_spouse_features_input
+                                  returns like has_spouse_features
+      implementation udf/ext_has_spouse_features.py handles tsv lines.
+      function ext_people over like ext_people_input
+                     returns like people_mentions
+      implementation udf/ext_people.py handles tsv lines.
+      ext_people_input(sentence_id, words, ner_tags):- 
+        sentences(document_id, sentence, words, lemma, pos_tags, dependencies, ner_tags, sentence_offset, sentence_id).
+      people_mentions :-
+      !ext_people(ext_people_input).
+      people_mentions_1 :-
+      !ext_people(people_mentions).
+    """
+    val q      = parse(statements, test5)
+    println(q)
     val schema = new StatementSchema( q.get )
     val variables = variableSchema(q.get, schema)
 
-    val extracions = q.get flatMap {
-      case _ : SchemaElement  => None
-      case e : ExtractionRule => Some(e)
-      case w : InferenceRule  => None
+    var dependencies = q.get.zipWithIndex map {
+      case (e : ExtractionRule, i) => (i, e.q.head.name)
+      case (f : FunctionRule, i) => (i, f.output)
+      case (_,_) => (-1, "-1")
     }
-    val extractionsWithIndex = extracions.zipWithIndex
-    val extractionMap = extractionsWithIndex map {
-      case (e) => (e._2, e._1.q.head.name)
+    val extracions = q.get.zipWithIndex flatMap {
+      case (e : ExtractionRule, i) => Some(extractionRule(schema, dependencies, e, i))
+      // case (w : InferenceRule, i)  => None
+      case (f : FunctionRule, i) => Some(functionRule(schema, dependencies, f, i))
+      case (_,_) => None
     }
-    // for (extractor <- extractionsWithIndex) {
-    //   extractionMap += (extractor.get(1), extractor.get(0).q.head)
-    // }
-
-    println(extractionMap)
-
-    val queries = extractionsWithIndex flatMap {
-      case (e) => Some(extractionRule(schema, extractionMap, e._1, e._2))
-    }
-    // println(extractionsWithIndex)
-    // println(extracions)
-    // val queries = q.get flatMap {
-    //   case _ : SchemaElement  => None
-    //   case e : ExtractionRule => Some(extractionRule(schema, extractionMap, e))
   }
 }
