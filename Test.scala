@@ -169,8 +169,8 @@ class StatementSchema( statements : List[Statement] )  {
       case FunctionElement(a, b, c, d, e) => function_schema += {a -> FunctionElement(a, b, c, d, e)}
       case FunctionRule(_,_,_) => ()
     }
-    println(schema)
-    println(ground_relations)
+    // println(schema)
+    // println(ground_relations)
   }
 
   init()
@@ -284,13 +284,8 @@ object Test extends ConjunctiveQueryParser  {
     }
     val dependencyStr = if (dependencies.length > 0) s"dependencies: [${dependencies.mkString(", ")}]" else ""
 
-
-    // s"""CREATE TABLE ${ z.q.head.name } AS
-    // SELECT DISTINCT ${ headTermsStr }, ${labelCol} AS label
-    // ${ generateSQLBody(ss,z.q) }
-    //  """
-    s"""
-      extraction_rule_${z.q.head.name} {
+    val ext = s"""
+      extraction.extractors.extraction_rule_${z.q.head.name} {
         input : \"\"\" CREATE TABLE ${z.q.head.name} AS 
         ${query}
         \"\"\"
@@ -298,6 +293,8 @@ object Test extends ConjunctiveQueryParser  {
         ${dependencyStr}
       }
     """
+    println(ext)
+    ext
   }
 
   // generate variable schema statements
@@ -310,7 +307,11 @@ object Test extends ConjunctiveQueryParser  {
         schema += s"${q.head.name}.label : Boolean"
       case _ => ()
     }
-    val ddSchema = schema.mkString("\n")
+    val ddSchema = s"""
+      deepdive.schema.variables {
+        ${schema.mkString("\n")}
+      }
+    """
     println(ddSchema)
     ddSchema
   }
@@ -328,7 +329,6 @@ object Test extends ConjunctiveQueryParser  {
     
     val selectStr = (List(variableColsStr) flatMap (u => u)).mkString(", ")
     
-    // println(s"${selectStr}")
     val inputQuery = s"""
       SELECT ${selectStr} 
       ${ generateSQLBody(ss, r.q) }"""
@@ -342,7 +342,7 @@ object Test extends ConjunctiveQueryParser  {
     val dependencyStr = if (dependencies.length > 0) s"dependencies: [${dependencies.mkString(", ")}]" else ""
 
     val extractor = s"""
-      extraction_rule_${index} {
+      extraction.extractors.extraction_rule_${index} {
         input : \"\"\" CREATE VIEW ${r.q.head.name} AS ${inputQuery}
         \"\"\"
         style : \"sql_extractor\"
@@ -384,7 +384,7 @@ object Test extends ConjunctiveQueryParser  {
 
     
     val extractor = s"""
-      extraction_rule_${index} {
+      extraction.extractors.extraction_rule_${index} {
         input : \"\"\" SELECT * FROM ${r.input}
         \"\"\"
         output_relation : \"${r.output}\"
@@ -412,16 +412,13 @@ object Test extends ConjunctiveQueryParser  {
 
   // generate inference rule part for deepdive
   def inferenceRule(ss : StatementSchema, r : InferenceRule, dep : List[(Int, String)]) : String = {
-    println("==================")
     val qs = new QuerySchema( r.q )
 
     // node query
     val node_query = if (ss.isQueryTerm(r.q.head.name)) Some(nodeRule(ss,qs,r, dep)) else None  
-    println(node_query)
 
     // edge query
     val fakeBody        = r.q.head +: r.q.body 
-    println(fakeBody)
     val fakeCQ          = ConjunctiveQuery(r.q.head, fakeBody) // we will just use the fakeBody below.
 
     // Generate the body of the query.
@@ -474,7 +471,7 @@ object Test extends ConjunctiveQueryParser  {
     }
     
     val rule = s"""
-      factor_${r.q.head.name} {
+      inference.factors.factor_${r.q.head.name} {
         input_query: \"\"\"${inputQuery}\"\"\"
         function: "${func}"
         weight: "${weight}"
@@ -484,6 +481,18 @@ object Test extends ConjunctiveQueryParser  {
 
     return inputQuery
   }
+
+  def dbSettings() : String = """
+  deepdive.db.default {
+    driver: "org.postgresql.Driver"
+    url: "jdbc:postgresql://"${PGHOST}":"${PGPORT}"/"${DBNAME}
+    user: ${PGUSER}
+    password: ${PGPASSWORD}
+    dbname: ${DBNAME}
+    host: ${PGHOST}
+    port: ${PGPORT}
+  }
+  """
   /*
    T(base_attr);
    S(a1,a2)
@@ -687,10 +696,8 @@ object Test extends ConjunctiveQueryParser  {
     // weight = f;
     // """
     val q      = parse(statements, test6)
-    println(q)
     val schema = new StatementSchema( q.get )
     val variables = variableSchema(q.get, schema)
-    println(variables)
     var dependencies = q.get.zipWithIndex map {
       case (e : ExtractionRule, i) => (i, e.q.head.name)
       case (f : FunctionRule, i) => (i, f.output)
