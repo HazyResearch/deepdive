@@ -108,7 +108,8 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
   }
 
 
-  def functionElement : Parser[FunctionElement] = "function" ~ stringliteral ~ "over like" ~ stringliteral ~ "returns like" ~ stringliteral ~ "implementation" ~ stringliteral ~ "handles" ~ stringliteral ~ "lines" ^^ {
+  def functionElement : Parser[FunctionElement] = "function" ~ stringliteral 
+  ~ "over like" ~ stringliteral ~ "returns like" ~ stringliteral ~ "implementation" ~ stringliteral ~ "handles" ~ stringliteral ~ "lines" ^^ {
     case ("function" ~ a ~ "over like" ~ b ~ "returns like" ~ c ~ "implementation" ~ d ~ "handles" ~ e ~ "lines") => FunctionElement(a, b, c, d, e)
   }
 
@@ -286,10 +287,10 @@ object Test extends ConjunctiveQueryParser  {
 
     val ext = s"""
       extraction.extractors.extraction_rule_${z.q.head.name} {
-        input : \"\"\" CREATE TABLE ${z.q.head.name} AS 
+        input: \"\"\" CREATE TABLE ${z.q.head.name} AS 
         ${query}
         \"\"\"
-        style : \"sql_extractor\"
+        style: "sql_extractor"
         ${dependencyStr}
       }
     """
@@ -304,7 +305,7 @@ object Test extends ConjunctiveQueryParser  {
     statements.foreach {
       case InferenceRule(q, weights, supervision) =>
         val qs = new QuerySchema(q)
-        schema += s"${q.head.name}.label : Boolean"
+        schema += s"${q.head.name}.label: Boolean"
       case _ => ()
     }
     val ddSchema = s"""
@@ -343,9 +344,9 @@ object Test extends ConjunctiveQueryParser  {
 
     val extractor = s"""
       extraction.extractors.extraction_rule_${index} {
-        input : \"\"\" CREATE VIEW ${r.q.head.name} AS ${inputQuery}
+        input: \"\"\" CREATE VIEW ${r.q.head.name} AS ${inputQuery}
         \"\"\"
-        style : \"sql_extractor\"
+        style: \"sql_extractor\"
         ${dependencyStr}
       }
     """
@@ -385,11 +386,11 @@ object Test extends ConjunctiveQueryParser  {
     
     val extractor = s"""
       extraction.extractors.extraction_rule_${index} {
-        input : \"\"\" SELECT * FROM ${r.input}
+        input: \"\"\" SELECT * FROM ${r.input}
         \"\"\"
-        output_relation : \"${r.output}\"
-        udf : \"${function.implementation}\"
-        style : \"${function.mode}_extractor\"
+        output_relation: \"${r.output}\"
+        udf: \"${function.implementation}\"
+        style: \"${function.mode}_extractor\"
         ${dependencyStr}
       }
     """
@@ -695,6 +696,7 @@ object Test extends ConjunctiveQueryParser  {
     //   has_spouse_features(rid, f)
     // weight = f;
     // """
+    println(dbSettings())
     val q      = parse(statements, test6)
     val schema = new StatementSchema( q.get )
     val variables = variableSchema(q.get, schema)
