@@ -108,8 +108,7 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
   }
 
 
-  def functionElement : Parser[FunctionElement] = "function" ~ stringliteral 
-  ~ "over like" ~ stringliteral ~ "returns like" ~ stringliteral ~ "implementation" ~ stringliteral ~ "handles" ~ stringliteral ~ "lines" ^^ {
+  def functionElement : Parser[FunctionElement] = "function" ~ stringliteral ~ "over like" ~ stringliteral ~ "returns like" ~ stringliteral ~ "implementation" ~ stringliteral ~ "handles" ~ stringliteral ~ "lines" ^^ {
     case ("function" ~ a ~ "over like" ~ b ~ "returns like" ~ c ~ "implementation" ~ d ~ "handles" ~ e ~ "lines") => FunctionElement(a, b, c, d, e)
   }
 
@@ -286,7 +285,7 @@ object Test extends ConjunctiveQueryParser  {
     val dependencyStr = if (dependencies.length > 0) s"dependencies: [${dependencies.mkString(", ")}]" else ""
 
     val ext = s"""
-      extraction.extractors.extraction_rule_${z.q.head.name} {
+      deepdive.extraction.extractors.extraction_rule_${z.q.head.name} {
         input: \"\"\" CREATE TABLE ${z.q.head.name} AS 
         ${query}
         \"\"\"
@@ -343,7 +342,7 @@ object Test extends ConjunctiveQueryParser  {
     val dependencyStr = if (dependencies.length > 0) s"dependencies: [${dependencies.mkString(", ")}]" else ""
 
     val extractor = s"""
-      extraction.extractors.extraction_rule_${index} {
+      deepdive.extraction.extractors.extraction_rule_${index} {
         input: \"\"\" CREATE VIEW ${r.q.head.name} AS ${inputQuery}
         \"\"\"
         style: \"sql_extractor\"
@@ -385,7 +384,7 @@ object Test extends ConjunctiveQueryParser  {
 
     
     val extractor = s"""
-      extraction.extractors.extraction_rule_${index} {
+      deepdive.extraction.extractors.extraction_rule_${index} {
         input: \"\"\" SELECT * FROM ${r.input}
         \"\"\"
         output_relation: \"${r.output}\"
@@ -472,7 +471,7 @@ object Test extends ConjunctiveQueryParser  {
     }
     
     val rule = s"""
-      inference.factors.factor_${r.q.head.name} {
+      deepdive.inference.factors.factor_${r.q.head.name} {
         input_query: \"\"\"${inputQuery}\"\"\"
         function: "${func}"
         weight: "${weight}"
