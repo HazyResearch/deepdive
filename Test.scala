@@ -265,7 +265,7 @@ object Test extends ConjunctiveQueryParser  {
         ${ whereClauseStr }"""
   }
   // generate the node portion (V) of the factor graph
-  def nodeRule(ss : StatementSchema, qs: QuerySchema, z : InferenceRule) : String = {
+  def nodeRule(ss : StatementSchema, qs: QuerySchema, z : InferenceRule, dep: List[(Int, String)]) : String = {
     val headTerms = z.q.head.terms map {
       case Variable(v,r,i) => s"R${i}.${ss.resolveName(qs.getVar(v)) }"
     }
@@ -273,10 +273,31 @@ object Test extends ConjunctiveQueryParser  {
     val name  = ss.resolveName(qs.getVar(z.supervision))
     val labelCol = s"R${index}.${name}"
     val headTermsStr = ( "0 as id"  :: headTerms ).mkString(", ")
-    s"""CREATE TABLE ${ z.q.head.name } AS
-    SELECT DISTINCT ${ headTermsStr }, ${labelCol} AS label
-    ${ generateSQLBody(ss,z.q) }
-     """
+    val query = s"""SELECT DISTINCT ${ headTermsStr }, ${labelCol} AS label
+    ${ generateSQLBody(ss,z.q) }"""
+    
+    val dependencyRelation = z.q.body map { case(x) => s"${x.name}"}
+    var dependencies = List[String]()
+    for (e <- dep) {
+      if (dependencyRelation contains e._2) 
+        dependencies ::= s""" "extraction_rule_${e._1}" """
+    }
+    val dependencyStr = if (dependencies.length > 0) s"dependencies: [${dependencies.mkString(", ")}]" else ""
+
+
+    // s"""CREATE TABLE ${ z.q.head.name } AS
+    // SELECT DISTINCT ${ headTermsStr }, ${labelCol} AS label
+    // ${ generateSQLBody(ss,z.q) }
+    //  """
+    s"""
+      extraction_rule_${z.q.head.name} {
+        input : \"\"\" CREATE TABLE ${z.q.head.name} AS 
+        ${query}
+        \"\"\"
+        style : \"sql_extractor\"
+        ${dependencyStr}
+      }
+    """
   }
 
   // generate variable schema statements
@@ -286,15 +307,7 @@ object Test extends ConjunctiveQueryParser  {
     statements.foreach {
       case InferenceRule(q, weights, supervision) =>
         val qs = new QuerySchema(q)
-        q.head.terms.foreach {
-          case Variable(n,r,i) => {
-            println(n)
-            val index = qs.getBodyIndex(n)
-            val name  = ss.resolveName(qs.getVar(n))
-            val relation = q.body(index).name
-            schema += s"${relation}.${name} : Boolean"
-          }
-        }
+        schema += s"${q.head.name}.label : Boolean"
       case _ => ()
     }
     val ddSchema = schema.mkString("\n")
@@ -303,7 +316,7 @@ object Test extends ConjunctiveQueryParser  {
   }
 
   // Generate extraction rule part for deepdive
-  def extractionRule( ss: StatementSchema, em: List[(Int, String)], r : ExtractionRule, index : Int ) : String = {
+  def extractionRule( ss: StatementSchema, em: List[(Int, String)], r : ExtractionRule, index : Int) : String = {
     // Generate the body of the query.
     val qs              = new QuerySchema( r.q )
     // variable columns
@@ -398,12 +411,12 @@ object Test extends ConjunctiveQueryParser  {
   }
 
   // generate inference rule part for deepdive
-  def inferenceRule(ss : StatementSchema, r : InferenceRule) : String = {
+  def inferenceRule(ss : StatementSchema, r : InferenceRule, dep : List[(Int, String)]) : String = {
     println("==================")
     val qs = new QuerySchema( r.q )
 
     // node query
-    val node_query = if (ss.isQueryTerm(r.q.head.name)) Some(nodeRule(ss,qs,r)) else None  
+    val node_query = if (ss.isQueryTerm(r.q.head.name)) Some(nodeRule(ss,qs,r, dep)) else None  
     println(node_query)
 
     // edge query
@@ -591,11 +604,12 @@ object Test extends ConjunctiveQueryParser  {
     var dependencies = q.get.zipWithIndex map {
       case (e : ExtractionRule, i) => (i, e.q.head.name)
       case (f : FunctionRule, i) => (i, f.output)
+      case (w : InferenceRule, i) => (i, w.q.head.name)
       case (_,_) => (-1, "-1")
     }
     val queries = q.get.zipWithIndex flatMap {
       case (e : ExtractionRule, i) => Some(extractionRule(schema, dependencies, e, i))
-      case (w : InferenceRule, i)  => Some(inferenceRule(schema, w))
+      case (w : InferenceRule, i)  => Some(inferenceRule(schema, w, dependencies))
       case (f : FunctionRule, i) => Some(functionRule(schema, dependencies, f, i))
       case (_,_) => None
     }
