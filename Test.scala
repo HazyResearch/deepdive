@@ -668,7 +668,7 @@ object Test extends ConjunctiveQueryParser  {
       p2_length);
     ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :-
       sentences(a, b, words, c, d, e, f, g, s),
-      has_spouse_candidates(person1_id, person2_id, s, h, i, rid),
+      has_spouse_candidates(person1_id, person2_id, s, h, rid, x),
       people_mentions(s, p1idx, p1len, k, person1_id),
       people_mentions(s, p2idx, p2len, l, person2_id);
     function ext_has_spouse_features over like ext_has_spouse_features_input
