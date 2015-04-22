@@ -351,17 +351,6 @@ object Test extends ConjunctiveQueryParser  {
         ${dependencyStr}
       }
     """
-    
-    // val extractor = s"""
-    //   extraction_rule_${index} {
-    //     input : \"\"\" CREATE VIEW ${r.q.head.name} AS ${inputQuery}
-    //     \"\"\"
-    //     output_relation : \"${r.q.head.name}\"
-    //     udf : \"/udf/${r.udfs.get}.py\"
-    //     style : \"tsv_extractor\"
-    //     ${dependencyStr}
-    //   }
-    // """
     println(extractor)
     extractor
   }
@@ -423,21 +412,6 @@ object Test extends ConjunctiveQueryParser  {
     val fakeBody        = r.q.head +: r.q.body 
     val fakeCQ          = ConjunctiveQuery(r.q.head, fakeBody) // we will just use the fakeBody below.
 
-    // Generate the body of the query.
-    // check if relName is a ground term, if so skip it.
-    // if not, generate the id column.
-    // val variableIds = r.q.body.zipWithIndex flatMap {
-    //   case (Atom(r,_),i) =>
-    //     if(ss.isQueryTerm(r)) Some(s"""R${i}.id AS "${r}.R${i}.id" """) else None
-    // } // we know have all variables in the body
-
-    // val variableIdsStr = if (variableIds.length > 0) Some(variableIds.mkString(", ")) else None
-
-    // variable columns
-    // val variableCols = r.q.head.terms flatMap {
-    //   case(Variable(v,rr,i)) => resolveColumn(v, ss, qs, r.q, true)
-    // }
-    // val variableColsStr = if (variableCols.length > 0) Some(variableCols.mkString(", ")) else None
     val index = r.q.body.length + 1
     val qs2 = new QuerySchema( fakeCQ )
     val variableIdsStr = Some(s"""R0.id AS "${r.q.head.name}.R0.id" """)
@@ -455,12 +429,6 @@ object Test extends ConjunctiveQueryParser  {
     val inputQuery = s"""
       SELECT ${selectStr} 
       ${ generateSQLBody(ss, fakeCQ) }"""
-
-    // variable columns using alias (for factor function)
-    // val variableColsAlias = r.q.head.terms flatMap {
-    //   case(Variable(v,rr,i)) => resolveColumn(v, ss, qs, r.q, false)
-    // }
-    // val variableColsAliasStr = if (variableColsAlias.length > 0) Some(variableColsAlias.mkString(", ")) else None
 
     // factor function
     val func = s"""Imply(${r.q.head.name}.R0.label)"""
@@ -693,11 +661,6 @@ object Test extends ConjunctiveQueryParser  {
     weight = f
     label = l;
     """
-    // has_spouse(rid) :-
-    //   has_spouse_candidates(a, b, c, d, rid),
-    //   has_spouse_features(rid, f)
-    // weight = f;
-    // """
     println(dbSettings())
     val q      = parse(statements, test6)
     val schema = new StatementSchema( q.get )
