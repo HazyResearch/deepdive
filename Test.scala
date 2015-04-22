@@ -60,17 +60,21 @@ Consider
 trait Statement
 case class Variable(varName : String, relName : String, index : Int ) 
 case class Atom(name : String, terms : List[Variable]) 
+case class Attribute(name : String, terms : List[Variable], types : List[String]) 
 case class ConjunctiveQuery(head: Atom, body: List[Atom])
+case class Column(name : String, t : String)
 
 sealed trait FactorWeight {
   def variables : List[String]
 }
+
 case class KnownFactorWeight(value: Double) extends FactorWeight {
   def variables = Nil
 }
+
 case class UnknownFactorWeight(variables: List[String]) extends FactorWeight
 
-case class SchemaElement( a : Atom , query : Boolean ) extends Statement // atom and whether this is a query relation.
+case class SchemaElement( a : Attribute , query : Boolean ) extends Statement // atom and whether this is a query relation.
 case class FunctionElement( functionName: String, input: String, output: String, implementation: String, mode: String) extends Statement
 case class ExtractionRule(q : ConjunctiveQuery) extends Statement // Extraction rule
 case class FunctionRule(input : String, output : String, function : String) extends Statement // Extraction rule
@@ -83,17 +87,28 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
   // def stringliteral1: Parser[String] = ("'"+"""([^'\p{Cntrl}\\]|\\[\\"'bfnrt]|\\u[a-fA-F0-9]{4})*"""+"'").r ^^ {case (x) => x}
   // def stringliteral2: Parser[String] = """[a-zA-Z_0-9\./]*""".r ^^ {case (x) => x}
   // def stringliteral: Parser[String] = (stringliteral1 | stringliteral2) ^^ {case (x) => x}
-  def stringliteral: Parser[String] = """[a-zA-Z0-9_]+""".r
+  def stringliteral: Parser[String] = """[a-zA-Z0-9_\[\]]+""".r
   def path: Parser[String] = """[a-zA-Z0-9\./_]+""".r
 
   // relation names and columns are just strings.
   def relation_name: Parser[String] = stringliteral ^^ {case (x) => x}
   def col : Parser[String] = stringliteral  ^^ { case(x) => x }
+  def attr : Parser[Column] = stringliteral ~ stringliteral ^^ {
+    case(x ~ y) => Column(x, y)
+  }
 
   def atom: Parser[Atom] = relation_name ~ "(" ~ rep1sep(col, ",") ~ ")" ^^ {
     case (r ~ "(" ~ cols ~ ")") => {
       val vars = cols.zipWithIndex map { case(name,i) => Variable(name, r, i) }
       Atom(r,vars)
+    }
+  }
+
+  def attribute: Parser[Attribute] = relation_name ~ "(" ~ rep1sep(attr, ",") ~ ")" ^^ {
+    case (r ~ "(" ~ attrs ~ ")") => {
+      val vars = attrs.zipWithIndex map { case(x, i) => Variable(x.name, r, i) }
+      var types = attrs map { case(x) => x.t }
+      Attribute(r,vars, types)
     }
   }
 
@@ -103,7 +118,7 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
     case (headatom ~ ":-" ~ bodyatoms) => ConjunctiveQuery(headatom, bodyatoms.toList)
   }
 
-  def schemaElement : Parser[SchemaElement] = atom ~ opt("?") ^^ {
+  def schemaElement : Parser[SchemaElement] = attribute ~ opt("?") ^^ {
     case (a ~ None) => SchemaElement(a,true)
     case (a ~ Some(_)) =>  SchemaElement(a,false)
   }
@@ -115,7 +130,6 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
     case ("function" ~ a ~ "over like" ~ b ~ "returns like" ~ c ~ "implementation" ~ 
       "\"" ~ d ~ "\"" ~ "handles" ~ e ~ "lines") => FunctionElement(a, b, c, d, e)
   }
-
 
   def extractionRule : Parser[ExtractionRule] = query  ^^ {
     case (q) => ExtractionRule(q)
@@ -162,7 +176,7 @@ class StatementSchema( statements : List[Statement] )  {
   def init() = {    
     // generate the statements.
     statements.foreach {
-      case SchemaElement(Atom(r, terms),query) =>
+      case SchemaElement(Attribute(r, terms, types),query) =>
         terms.foreach {
           case Variable(n,r,i) =>
             schema           += { (r,i) -> n }
@@ -583,43 +597,44 @@ object Test extends ConjunctiveQueryParser  {
 
     val test6 = """
     articles(
-      article_id,
-      text).
+      article_id text,
+      text       text).
     sentences(
-      document_id,
-      sentence,
-      words,
-      lemma,
-      pos_tags,
-      dependencies,
-      ner_tags,
-      sentence_offset,
-      sentence_id).
+      document_id     text,
+      sentence        text,
+      words           text[],
+      lemma           text[],
+      pos_tags        text[],
+      dependencies    text[],
+      ner_tags        text[],
+      sentence_offset int,
+      sentence_id     text).
     people_mentions(
-      sentence_id,
-      start_position,
-      length,
-      text,
-      mention_id).
+      sentence_id    text,
+      start_position int,
+      length         int,
+      text           text,
+      mention_id     text).
+
     has_spouse_candidates(
-      person1_id,
-      person2_id,
-      sentence_id,
-      description,
-      relation_id,
-      is_correct).
+      person1_id  text,
+      person2_id  text,
+      sentence_id text,
+      description text,
+      relation_id text).
     has_spouse_features(
-      relation_id,
-      feature).
+      relation_id text,
+      feature     text).
 
-    has_spouse(relation_id)?.
-
+    has_spouse(relation_id text)?.
+    
     people_mentions :-
       !ext_people(ext_people_input).
+
     ext_people_input(
-      sentence_id,
-      words,
-      ner_tags).
+      sentence_id text,
+      words       text[],
+      ner_tags    text[]).
 
     ext_people_input(s, words, ner_tags) :-
       sentences(a, b, words, c, d, e, ner_tags, f, s).
@@ -632,11 +647,11 @@ object Test extends ConjunctiveQueryParser  {
       !ext_has_spouse(ext_has_spouse_input).
 
     ext_has_spouse_input(
-      sentence_id,
-      p1_id,
-      p1_text,
-      p2_id,
-      p2_text).
+      sentence_id text,
+      p1_id       text,
+      p1_text     text,
+      p2_id       text,
+      p2_text     text).
 
     ext_has_spouse_input(s, p1_id, p1_text, p2_id, p2_text) :-
       people_mentions(s, a, b, p1_text, p1_id),
@@ -650,12 +665,12 @@ object Test extends ConjunctiveQueryParser  {
       !ext_has_spouse_features(ext_has_spouse_features_input).
 
     ext_has_spouse_features_input(
-      words,
-      relation_id,
-      p1_start_position,
-      p1_length,
-      p2_start_position,
-      p2_length).
+      words             text[],
+      relation_id       text,
+      p1_start_position int,
+      p1_length         int,
+      p2_start_position int,
+      p2_length         int).
 
     ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :-
       sentences(a, b, words, c, d, e, f, g, s),
