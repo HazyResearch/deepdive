@@ -286,7 +286,8 @@ object Test extends ConjunctiveQueryParser  {
 
     val ext = s"""
       deepdive.extraction.extractors.extraction_rule_${z.q.head.name} {
-        input: \"\"\" CREATE TABLE ${z.q.head.name} AS 
+        sql: \"\"\" DROP TABLE IF EXISTS ${z.q.head.name};
+        CREATE TABLE ${z.q.head.name} AS 
         ${query}
         \"\"\"
         style: "sql_extractor"
@@ -343,9 +344,10 @@ object Test extends ConjunctiveQueryParser  {
 
     val extractor = s"""
       deepdive.extraction.extractors.extraction_rule_${index} {
-        input: \"\"\" CREATE VIEW ${r.q.head.name} AS ${inputQuery}
+        sql: \"\"\" DROP VIEW IF EXISTS ${r.q.head.name};
+        CREATE VIEW ${r.q.head.name} AS ${inputQuery}
         \"\"\"
-        style: \"sql_extractor\"
+        style: "sql_extractor"
         ${dependencyStr}
       }
     """
@@ -436,14 +438,15 @@ object Test extends ConjunctiveQueryParser  {
     //   case(Variable(v,rr,i)) => resolveColumn(v, ss, qs, r.q, true)
     // }
     // val variableColsStr = if (variableCols.length > 0) Some(variableCols.mkString(", ")) else None
-    
+    val index = r.q.body.length + 1
+    val qs2 = new QuerySchema( fakeCQ )
     val variableIdsStr = Some(s"""R0.id AS "${r.q.head.name}.R0.id" """)
     val variableColsStr = Some(s"""R0.label AS "${r.q.head.name}.R0.label" """)
 
     // weight string
     val uwStr = r.weights match {
       case KnownFactorWeight(x) => None
-      case UnknownFactorWeight(w) => Some(w.flatMap(s => resolveColumn(s, ss, qs, r.q, true)).mkString(", "))
+      case UnknownFactorWeight(w) => Some(w.flatMap(s => resolveColumn(s, ss, qs2, fakeCQ, true)).mkString(", "))
     }
 
     val selectStr = (List(variableIdsStr, variableColsStr, uwStr) flatMap (u => u)).mkString(", ")
@@ -466,7 +469,7 @@ object Test extends ConjunctiveQueryParser  {
     val weight = r.weights match {
       case KnownFactorWeight(x) => s"${x}"
       case UnknownFactorWeight(w) => {
-        s"""?(${w.flatMap(s => resolveColumn(s, ss, qs, r.q, false)).mkString(", ")})"""
+        s"""?(${w.flatMap(s => resolveColumn(s, ss, qs2, fakeCQ, false)).mkString(", ")})"""
       }
     }
     
@@ -649,7 +652,7 @@ object Test extends ConjunctiveQueryParser  {
       sentences(a, b, words, c, d, e, ner_tags, f, s);
     function ext_people over like ext_people_input
                      returns like people_mentions
-      implementation udf/ext_people.py handles tsv lines;
+      implementation /Users/feiran/workspace/release/deepdive/app/spouse_datalog/udf/ext_people.py handles tsv lines;
 
     has_spouse_candidates :-
       !ext_has_spouse(ext_has_spouse_input);
@@ -664,7 +667,7 @@ object Test extends ConjunctiveQueryParser  {
       people_mentions(s, c, d, p2_text, p2_id);
     function ext_has_spouse over like ext_has_spouse_input
                          returns like has_spouse_candidates
-      implementation udf/ext_has_spouse.py handles tsv lines;
+      implementation /Users/feiran/workspace/release/deepdive/app/spouse_datalog/udf/ext_has_spouse.py handles tsv lines;
 
     has_spouse_features :-
       !ext_has_spouse_features(ext_has_spouse_features_input);
@@ -682,7 +685,7 @@ object Test extends ConjunctiveQueryParser  {
       people_mentions(s, p2idx, p2len, l, person2_id);
     function ext_has_spouse_features over like ext_has_spouse_features_input
                                   returns like has_spouse_features
-      implementation udf/ext_has_spouse_features.py handles tsv lines;
+      implementation /Users/feiran/workspace/release/deepdive/app/spouse_datalog/udf/ext_has_spouse_features.py handles tsv lines;
 
     has_spouse(rid) :-
       has_spouse_candidates(a, b, c, d, rid, l),
