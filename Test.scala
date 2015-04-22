@@ -83,7 +83,8 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
   // def stringliteral1: Parser[String] = ("'"+"""([^'\p{Cntrl}\\]|\\[\\"'bfnrt]|\\u[a-fA-F0-9]{4})*"""+"'").r ^^ {case (x) => x}
   // def stringliteral2: Parser[String] = """[a-zA-Z_0-9\./]*""".r ^^ {case (x) => x}
   // def stringliteral: Parser[String] = (stringliteral1 | stringliteral2) ^^ {case (x) => x}
-  def stringliteral: Parser[String] = """[a-zA-Z0-9\./_]+""".r
+  def stringliteral: Parser[String] = """[a-zA-Z0-9_]+""".r
+  def path: Parser[String] = """[a-zA-Z0-9\./_]+""".r
 
   // relation names and columns are just strings.
   def relation_name: Parser[String] = stringliteral ^^ {case (x) => x}
@@ -102,14 +103,17 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
     case (headatom ~ ":-" ~ bodyatoms) => ConjunctiveQuery(headatom, bodyatoms.toList)
   }
 
-  def schemaElement : Parser[SchemaElement] = atom ~ opt("!") ^^ {
+  def schemaElement : Parser[SchemaElement] = atom ~ opt("?") ^^ {
     case (a ~ None) => SchemaElement(a,true)
     case (a ~ Some(_)) =>  SchemaElement(a,false)
   }
 
 
-  def functionElement : Parser[FunctionElement] = "function" ~ stringliteral ~ "over like" ~ stringliteral ~ "returns like" ~ stringliteral ~ "implementation" ~ stringliteral ~ "handles" ~ stringliteral ~ "lines" ^^ {
-    case ("function" ~ a ~ "over like" ~ b ~ "returns like" ~ c ~ "implementation" ~ d ~ "handles" ~ e ~ "lines") => FunctionElement(a, b, c, d, e)
+  def functionElement : Parser[FunctionElement] = "function" ~ stringliteral ~ 
+  "over like" ~ stringliteral ~ "returns like" ~ stringliteral ~ "implementation" ~ 
+  "\"" ~ path ~ "\"" ~ "handles" ~ stringliteral ~ "lines" ^^ {
+    case ("function" ~ a ~ "over like" ~ b ~ "returns like" ~ c ~ "implementation" ~ 
+      "\"" ~ d ~ "\"" ~ "handles" ~ e ~ "lines") => FunctionElement(a, b, c, d, e)
   }
 
 
@@ -138,7 +142,7 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
   // rules or schema elements in aribitrary order
   def statement : Parser[Statement] = (functionElement | inferenceRule | extractionRule | functionRule | schemaElement) ^^ {case(x) => x}
 
-  def statements : Parser[List[Statement]] = rep1sep(statement, ";") ^^ { case(x) => x }
+  def statements : Parser[List[Statement]] = rep1sep(statement, ".") ^^ { case(x) => x }
 }
 
 // This handles the schema statements.
@@ -580,7 +584,7 @@ object Test extends ConjunctiveQueryParser  {
     val test6 = """
     articles(
       article_id,
-      text);
+      text).
     sentences(
       document_id,
       sentence,
@@ -590,76 +594,84 @@ object Test extends ConjunctiveQueryParser  {
       dependencies,
       ner_tags,
       sentence_offset,
-      sentence_id);
+      sentence_id).
     people_mentions(
       sentence_id,
       start_position,
       length,
       text,
-      mention_id);
+      mention_id).
     has_spouse_candidates(
       person1_id,
       person2_id,
       sentence_id,
       description,
       relation_id,
-      is_correct);
+      is_correct).
     has_spouse_features(
       relation_id,
-      feature);
+      feature).
 
-    has_spouse(relation_id)!;
+    has_spouse(relation_id)?.
 
     people_mentions :-
-      !ext_people(ext_people_input);
+      !ext_people(ext_people_input).
     ext_people_input(
       sentence_id,
       words,
-      ner_tags);
+      ner_tags).
+
     ext_people_input(s, words, ner_tags) :-
-      sentences(a, b, words, c, d, e, ner_tags, f, s);
+      sentences(a, b, words, c, d, e, ner_tags, f, s).
+
     function ext_people over like ext_people_input
                      returns like people_mentions
-      implementation /Users/feiran/workspace/release/deepdive/app/spouse_datalog/udf/ext_people.py handles tsv lines;
+      implementation "/Users/feiran/workspace/release/deepdive/app/spouse_datalog/udf/ext_people.py" handles tsv lines.
 
     has_spouse_candidates :-
-      !ext_has_spouse(ext_has_spouse_input);
+      !ext_has_spouse(ext_has_spouse_input).
+
     ext_has_spouse_input(
       sentence_id,
       p1_id,
       p1_text,
       p2_id,
-      p2_text);
+      p2_text).
+
     ext_has_spouse_input(s, p1_id, p1_text, p2_id, p2_text) :-
       people_mentions(s, a, b, p1_text, p1_id),
-      people_mentions(s, c, d, p2_text, p2_id);
+      people_mentions(s, c, d, p2_text, p2_id).
+
     function ext_has_spouse over like ext_has_spouse_input
                          returns like has_spouse_candidates
-      implementation /Users/feiran/workspace/release/deepdive/app/spouse_datalog/udf/ext_has_spouse.py handles tsv lines;
+      implementation "/Users/feiran/workspace/release/deepdive/app/spouse_datalog/udf/ext_has_spouse.py" handles tsv lines.
 
     has_spouse_features :-
-      !ext_has_spouse_features(ext_has_spouse_features_input);
+      !ext_has_spouse_features(ext_has_spouse_features_input).
+
     ext_has_spouse_features_input(
       words,
       relation_id,
       p1_start_position,
       p1_length,
       p2_start_position,
-      p2_length);
+      p2_length).
+
     ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :-
       sentences(a, b, words, c, d, e, f, g, s),
       has_spouse_candidates(person1_id, person2_id, s, h, rid, x),
       people_mentions(s, p1idx, p1len, k, person1_id),
-      people_mentions(s, p2idx, p2len, l, person2_id);
+      people_mentions(s, p2idx, p2len, l, person2_id).
+      
     function ext_has_spouse_features over like ext_has_spouse_features_input
                                   returns like has_spouse_features
-      implementation /Users/feiran/workspace/release/deepdive/app/spouse_datalog/udf/ext_has_spouse_features.py handles tsv lines;
+      implementation "/Users/feiran/workspace/release/deepdive/app/spouse_datalog/udf/ext_has_spouse_features.py" handles tsv lines.
 
     has_spouse(rid) :-
       has_spouse_candidates(a, b, c, d, rid, l),
       has_spouse_features(rid, f)
     weight = f
-    label = l;
+    label = l.
     """
     println(dbSettings())
     val q      = parse(statements, test6)
