@@ -31,72 +31,94 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
   def path: Parser[String] = """[a-zA-Z0-9\./_]+""".r
 
   // relation names and columns are just strings.
-  def relation_name: Parser[String] = stringliteral ^^ {case (x) => x}
-  def col : Parser[String] = stringliteral  ^^ { case(x) => x }
-  def attr : Parser[Column] = stringliteral ~ stringliteral ^^ {
-    case(x ~ y) => Column(x, y)
-  }
-
-  def atom: Parser[Atom] = relation_name ~ "(" ~ rep1sep(col, ",") ~ ")" ^^ {
-    case (r ~ "(" ~ cols ~ ")") => {
-      val vars = cols.zipWithIndex map { case(name,i) => Variable(name, r, i) }
-      Atom(r,vars)
+  def relation_name: Parser[String] = stringliteral
+  def col : Parser[String] = stringliteral
+  def attr : Parser[Column] =
+    stringliteral ~ stringliteral ^^ {
+      case(x ~ y) => Column(x, y)
     }
-  }
 
-  def attribute: Parser[Attribute] = relation_name ~ "(" ~ rep1sep(attr, ",") ~ ")" ^^ {
-    case (r ~ "(" ~ attrs ~ ")") => {
-      val vars = attrs.zipWithIndex map { case(x, i) => Variable(x.name, r, i) }
-      var types = attrs map { case(x) => x.t }
-      Attribute(r,vars, types)
+  def atom: Parser[Atom] =
+    relation_name ~ "(" ~ rep1sep(col, ",") ~ ")" ^^ {
+      case (r ~ "(" ~ cols ~ ")") =>
+        Atom(r, cols.zipWithIndex map { case(name,i) => Variable(name, r, i) })
     }
-  }
 
-  def udf : Parser[String] = stringliteral ^^ {case (x) => x}
+  def attribute: Parser[Attribute] =
+    relation_name ~ "(" ~ rep1sep(attr, ",") ~ ")" ^^ {
+      case (r ~ "(" ~ attrs ~ ")") => {
+        val vars = attrs.zipWithIndex map { case(x, i) => Variable(x.name, r, i) }
+        var types = attrs map { case(x) => x.t }
+        Attribute(r, vars, types)
+      }
+    }
 
-  def query : Parser[ConjunctiveQuery] = atom ~ ":-" ~ rep1sep(atom, ",") ^^ {
-    case (headatom ~ ":-" ~ bodyatoms) => ConjunctiveQuery(headatom, bodyatoms.toList)
-  }
+  def query : Parser[ConjunctiveQuery] =
+    atom ~ ":-" ~ rep1sep(atom, ",") ^^ {
+      case (headatom ~ ":-" ~ bodyatoms) =>
+        ConjunctiveQuery(headatom, bodyatoms.toList)
+    }
 
-  def schemaElement : Parser[SchemaElement] = attribute ~ opt("?") ^^ {
-    case (a ~ None) => SchemaElement(a,true)
-    case (a ~ Some(_)) =>  SchemaElement(a,false)
-  }
+  def schemaElement : Parser[SchemaElement] =
+    attribute ~ opt("?") ^^ {
+      case (a ~ None   ) => SchemaElement(a,true)
+      case (a ~ Some(_)) => SchemaElement(a,false)
+    }
 
 
-  def functionElement : Parser[FunctionElement] = "function" ~ stringliteral ~
-  "over like" ~ stringliteral ~ "returns like" ~ stringliteral ~ "implementation" ~
-  "\"" ~ path ~ "\"" ~ "handles" ~ stringliteral ~ "lines" ^^ {
-    case ("function" ~ a ~ "over like" ~ b ~ "returns like" ~ c ~ "implementation" ~
-      "\"" ~ d ~ "\"" ~ "handles" ~ e ~ "lines") => FunctionElement(a, b, c, d, e)
-  }
+  def functionElement : Parser[FunctionElement] =
+    ( "function" ~ stringliteral
+    ~ "over" ~ "like" ~ stringliteral
+    ~ "returns" ~ "like" ~ stringliteral
+    ~ "implementation" ~ "\"" ~ path ~ "\"" ~ "handles" ~ stringliteral ~ "lines"
+    ) ^^ {
+      case ("function" ~ a
+           ~ "over" ~ "like" ~ b
+           ~ "returns" ~ "like" ~ c
+           ~ "implementation" ~ "\"" ~ d ~ "\"" ~ "handles" ~ e ~ "lines") =>
+             FunctionElement(a, b, c, d, e)
+    }
 
-  def extractionRule : Parser[ExtractionRule] = query  ^^ {
-    case (q) => ExtractionRule(q)
-    // case (q ~ "udf" ~ "=" ~ None)       => ExtractionRule(q,None)
-  }
+  def extractionRule : Parser[ExtractionRule] =
+    query ^^ {
+      ExtractionRule(_)
+    }
 
-  def functionRule : Parser[FunctionRule] = stringliteral ~ ":-" ~ "!" ~ stringliteral ~ "(" ~ stringliteral ~ ")" ^^ {
-    case (a ~ ":-" ~ "!" ~ b ~ "(" ~ c ~ ")") => FunctionRule(c, a, b)
-  }
+  def functionRule : Parser[FunctionRule] =
+    ( stringliteral ~ ":-" ~ "!"
+    ~ stringliteral ~ "(" ~ stringliteral ~ ")"
+    ) ^^ {
+      case (out ~ ":-" ~ "!" ~ fn ~ "(" ~ in ~ ")") =>
+        FunctionRule(in, out, fn)
+    }
 
-  def constantWeight = "weight" ~> "=" ~> """-?[\d\.]+""".r ^^ { x => KnownFactorWeight(x.toDouble) }
-  def unknwonWeight = "weight" ~> "=" ~> opt(rep1sep(col, ",")) ^^ {
-    case Some(varList) => UnknownFactorWeight(varList.toList)
-    case _ => UnknownFactorWeight(List())
-  }
+  def constantWeight =
+    "weight" ~> "=" ~> """-?[\d\.]+""".r ^^ {
+      x => KnownFactorWeight(x.toDouble)
+    }
+  def unknwonWeight =
+    "weight" ~> "=" ~> opt(rep1sep(col, ",")) ^^ {
+      case Some(varList) => UnknownFactorWeight(varList.toList)
+      case _ => UnknownFactorWeight(List())
+    }
   def factorWeight = constantWeight | unknwonWeight
 
   def supervision = "label" ~> "=" ~> col
 
-  def inferenceRule : Parser[InferenceRule] = query ~ factorWeight ~ supervision ^^ {
-    case (q ~ weight ~ supervision) => InferenceRule(q, weight, supervision)
-  }
+  def inferenceRule : Parser[InferenceRule] =
+    ( query ~ factorWeight ~ supervision
+    ) ^^ {
+      case (q ~ weight ~ supervision) => InferenceRule(q, weight, supervision)
+    }
 
   // rules or schema elements in aribitrary order
-  def statement : Parser[Statement] = (functionElement | inferenceRule | extractionRule | functionRule | schemaElement) ^^ {case(x) => x}
-
-  def program : Parser[List[Statement]] = rep1sep(statement, ".") ^^ { case(x) => x }
+  def statement : Parser[Statement] = ( functionElement
+                                      | inferenceRule
+                                      | extractionRule
+                                      | functionRule
+                                      | schemaElement
+                                      )
+  def program : Parser[List[Statement]] = rep1sep(statement, ".")
 
   def parseProgram(inputProgram: CharSequence, fileName: Option[String] = None): List[Statement] = {
     parse(program, inputProgram) match {
