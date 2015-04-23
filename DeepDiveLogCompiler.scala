@@ -1,5 +1,7 @@
-import scala.util.parsing.combinator._
-import scala.collection.immutable.HashMap
+// DeepDiveLog compiler
+// See: https://docs.google.com/document/d/1SBIvvki3mnR28Mf0Pkin9w9mWNam5AA0SpIGj1ZN2c4
+
+// TODO update the following comment to new syntax.
 /*
  This file parses an extended form of datalog like sugar.
 
@@ -53,6 +55,9 @@ Consider
  Refactor schema object and introduce error checking (unsafe queries,
  unordered attributes, etc.).
 */
+
+import scala.util.parsing.combinator._
+import scala.collection.immutable.HashMap
 
 // ***************************************
 // * The union types for for the parser. *
@@ -148,14 +153,14 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
   // rules or schema elements in aribitrary order
   def statement : Parser[Statement] = (functionElement | inferenceRule | extractionRule | functionRule | schemaElement) ^^ {case(x) => x}
 
-  type Program = List[Statement]
-  def statements : Parser[Program] = rep1sep(statement, ".") ^^ { case(x) => x }
+  def program : Parser[List[Statement]] = rep1sep(statement, ".") ^^ { case(x) => x }
 }
+
 
 // This handles the schema statements.
 // It can tell you if a predicate is a "query" predicate or a "ground prediate"
 // and it resolves Variables their correct and true name in the schema, i.e. R(x,y) then x could be Attribute1 declared.
-class CompilationState( statements : List[Statement] )  {
+class CompilationState( statements : DeepDiveLogCompiler.Program )  {
     // TODO: refactor the schema into a class that constructs and
     // manages these maps. Also it should have appropriate
     // abstractions and error handling for missing values.
@@ -325,6 +330,8 @@ class QuerySchema(q : ConjunctiveQuery) {
 
 
 // Statements that will be parsed and compiled
+// Statement-local compilation logic is kept in each case class' compile() method.
+// Any global compilation logic should be kept in DeepDiveLogCompiler object.
 trait Statement {
   type CompiledBlocks = DeepDiveLogCompiler.CompiledBlocks
   def compile(state: CompilationState): CompiledBlocks = List()
@@ -471,6 +478,10 @@ case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, supervisi
 // Compiler object that wires up everything together
 object DeepDiveLogCompiler {
 
+  type Program = List[Statement]
+  type CompiledBlock = String
+  type CompiledBlocks = List[CompiledBlock]
+
   def parseArgs(args: Array[String]) = {
     val getContents = (filename: String) => {
       val source = scala.io.Source.fromFile(filename)
@@ -480,9 +491,9 @@ object DeepDiveLogCompiler {
   }
 
   val parser = new ConjunctiveQueryParser
-  def parseProgram(inputProgram: String) = parser.parse(parser.statements, inputProgram)
-
-  type CompiledBlocks = List[String]
+  def parseProgram(inputProgram: String) = {
+    parser.parse(parser.program, inputProgram)
+  }
 
   def compileUserSettings(): CompiledBlocks = {
     // TODO read user's proto-application.conf and augment it
@@ -500,7 +511,7 @@ object DeepDiveLogCompiler {
   }
 
   // generate variable schema statements
-  def compileVariableSchema(statements: List[Statement], ss: CompilationState): CompiledBlocks = {
+  def compileVariableSchema(statements: Program, ss: CompilationState): CompiledBlocks = {
     var schema = Set[String]()
     // generate the statements.
     statements.foreach {
@@ -517,6 +528,7 @@ object DeepDiveLogCompiler {
     List(ddSchema)
   }
 
+  // entry point for command-line interface
   def main(args: Array[String]) {
     // get contents of all given files as one flat input program
     val inputProgram = parseArgs(args)
@@ -526,7 +538,7 @@ object DeepDiveLogCompiler {
     val state = new CompilationState( parsedProgram )
 
     // compile the program into blocks of application.conf
-    val compiledBlocks = (
+    val blocks = (
       compileUserSettings
       :::
       compileVariableSchema(parsedProgram, state)
@@ -535,6 +547,6 @@ object DeepDiveLogCompiler {
     )
 
     // emit the generated code
-    compiledBlocks foreach println
+    blocks foreach println
   }
 }
