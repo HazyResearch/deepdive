@@ -8,6 +8,7 @@ import org.apache.commons.lang3.StringEscapeUtils
 // * The union types for for the parser. *
 // ***************************************
 case class Variable(varName : String, relName : String, index : Int )
+// TODO make Atom a trait, and have multiple case classes, e.g., RelationAtom and CondExprAtom
 case class Atom(name : String, terms : List[Variable])
 case class Attribute(name : String, terms : List[Variable], types : List[String])
 case class ConjunctiveQuery(head: Atom, body: List[Atom])
@@ -42,36 +43,48 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
     }
   def variableName = ident
   def functionName = ident
-  def columnDeclaration : Parser[Column] =
+
+  def columnDeclaration: Parser[Column] =
     columnName ~ columnType ^^ {
       case(name ~ ty) => Column(name, ty)
     }
-
-  def atom: Parser[Atom] =
-    relationName ~ "(" ~ rep1sep(variableName, ",") ~ ")" ^^ {
-      case (r ~ "(" ~ cols ~ ")") =>
-        Atom(r, cols.zipWithIndex map { case(name,i) => Variable(name, r, i) })
-    }
-
-  def relationDeclaration: Parser[Attribute] =
-    relationName ~ "(" ~ rep1sep(columnDeclaration, ",") ~ ")" ^^ {
-      case (r ~ "(" ~ attrs ~ ")") => {
+  def schemaDeclaration: Parser[SchemaElement] =
+    relationName ~ opt("?") ~ "(" ~ rep1sep(columnDeclaration, ",") ~ ")" ^^ {
+      case (r ~ isQuery ~ "(" ~ attrs ~ ")") => {
         val vars = attrs.zipWithIndex map { case(x, i) => Variable(x.name, r, i) }
         var types = attrs map { case(x) => x.t }
-        Attribute(r, vars, types)
+        SchemaElement(Attribute(r, vars, types), (isQuery != None))
       }
     }
 
-  def query : Parser[ConjunctiveQuery] =
-    atom ~ ":-" ~ rep1sep(atom, ",") ^^ {
-      case (headatom ~ ":-" ~ bodyatoms) =>
-        ConjunctiveQuery(headatom, bodyatoms.toList)
+
+  // TODO support aggregate function syntax somehow
+  def cqHead = relationName ~ "(" ~ repsep(variableName, ",") ~ ")" ^^ {
+      case (r ~ "(" ~ variableUses ~ ")") =>
+        Atom(r, variableUses.zipWithIndex map {
+          case(name,i) => Variable(name, r, i)
+        })
     }
 
-  def schemaDeclaration : Parser[SchemaElement] =
-    relationDeclaration ~ opt("?") ^^ {
-      case (a ~ None   ) => SchemaElement(a,true)
-      case (a ~ Some(_)) => SchemaElement(a,false)
+  // TODO add conditional expressions for where clause
+  def cqConditionalExpr = failure("No conditional expression supported yet")
+  def cqBodyAtom: Parser[Atom] =
+    ( relationName ~ "(" ~ repsep(variableName, ",") ~ ")" ^^ {
+        case (r ~ "(" ~ variableBindings ~ ")") =>
+          Atom(r, variableBindings.zipWithIndex map {
+            case(name,i) => Variable(name, r, i)
+          })
+      }
+    | cqConditionalExpr
+    )
+  def cqBody: Parser[List[Atom]] = rep1sep(cqBodyAtom, ",")
+  def conjunctiveQuery : Parser[ConjunctiveQuery] =
+    cqHead ~ ":-" ~ rep1sep(cqBody, ";") ^^ {
+      case (headatom ~ ":-" ~ disjunctiveBodies) =>
+        // TODO handle all disjunctiveBodies
+        // XXX only compiling the first body
+        val bodyatoms = disjunctiveBodies(0)
+        ConjunctiveQuery(headatom, bodyatoms.toList)
     }
 
 
@@ -89,7 +102,7 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
     }
 
   def extractionRule : Parser[ExtractionRule] =
-    query ^^ {
+    conjunctiveQuery ^^ {
       ExtractionRule(_)
     }
 
@@ -108,7 +121,7 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
   def supervision = "label" ~> "=" ~> variableName
 
   def inferenceRule : Parser[InferenceRule] =
-    ( query ~ factorWeight ~ supervision
+    ( conjunctiveQuery ~ factorWeight ~ supervision
     ) ^^ {
       case (q ~ weight ~ supervision) =>
         InferenceRule(q, weight, supervision)

@@ -83,7 +83,7 @@ class CompilationState( statements : DeepDiveLogCompiler.Program )  {
         terms.foreach {
           case Variable(n,r,i) =>
             schema           += { (r,i) -> n }
-            ground_relations += { r -> query } // record whether a query or a ground term.
+            ground_relations += { r -> !query } // record whether a query or a ground term.
         }
       case ExtractionRule(_) => ()
       case InferenceRule(_,_,_) => ()

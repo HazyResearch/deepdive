@@ -28,7 +28,7 @@ has_spouse_features(
   relation_id text,
   feature     text).
 
-has_spouse(relation_id text)?.
+has_spouse?(relation_id text).
 
 people_mentions :-
   !ext_people(ext_people_input).
