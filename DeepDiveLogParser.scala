@@ -48,12 +48,12 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
     columnName ~ columnType ^^ {
       case(name ~ ty) => Column(name, ty)
     }
-  def schemaDeclaration: Parser[SchemaElement] =
+  def schemaDeclaration: Parser[SchemaDeclaration] =
     relationName ~ opt("?") ~ "(" ~ rep1sep(columnDeclaration, ",") ~ ")" ^^ {
       case (r ~ isQuery ~ "(" ~ attrs ~ ")") => {
         val vars = attrs.zipWithIndex map { case(x, i) => Variable(x.name, r, i) }
         var types = attrs map { case(x) => x.t }
-        SchemaElement(Attribute(r, vars, types), (isQuery != None))
+        SchemaDeclaration(Attribute(r, vars, types), (isQuery != None))
       }
     }
 
@@ -88,7 +88,7 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
     }
 
 
-  def functionDeclaration : Parser[FunctionElement] =
+  def functionDeclaration : Parser[FunctionDeclaration] =
     ( "function" ~ functionName
     ~ "over" ~ "like" ~ relationName
     ~ "returns" ~ "like" ~ relationName
@@ -98,7 +98,7 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
            ~ "over" ~ "like" ~ b
            ~ "returns" ~ "like" ~ c
            ~ "implementation" ~ d ~ "handles" ~ e ~ "lines") =>
-             FunctionElement(a, b, c, d, e)
+             FunctionDeclaration(a, b, c, d, e)
     }
 
   def extractionRule : Parser[ExtractionRule] =
@@ -106,12 +106,12 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
       ExtractionRule(_)
     }
 
-  def functionCallRule : Parser[FunctionRule] =
+  def functionCallRule : Parser[FunctionCallRule] =
     ( relationName ~ ":-" ~ "!"
     ~ functionName ~ "(" ~ relationName ~ ")"
     ) ^^ {
       case (out ~ ":-" ~ "!" ~ fn ~ "(" ~ in ~ ")") =>
-        FunctionRule(in, out, fn)
+        FunctionCallRule(in, out, fn)
     }
 
   def constantWeight = floatingPointNumberAsDouble ^^ {   KnownFactorWeight(_) }

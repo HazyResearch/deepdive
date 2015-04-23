@@ -71,7 +71,7 @@ class CompilationState( statements : DeepDiveLogCompiler.Program )  {
 
   var ground_relations : Map[ String, Boolean ]  = new HashMap[ String, Boolean ]()
 
-  var function_schema : Map[String, FunctionElement] = new HashMap[ String, FunctionElement]()
+  var function_schema : Map[String, FunctionDeclaration] = new HashMap[ String, FunctionDeclaration]()
 
   // The dependency graph between statements.
   var dependencies : Map[Statement, Set[Statement]] = new HashMap()
@@ -79,16 +79,16 @@ class CompilationState( statements : DeepDiveLogCompiler.Program )  {
   def init() = {
     // generate the statements.
     statements.foreach {
-      case SchemaElement(Attribute(r, terms, types),query) =>
+      case SchemaDeclaration(Attribute(r, terms, types), isQuery) =>
         terms.foreach {
           case Variable(n,r,i) =>
             schema           += { (r,i) -> n }
-            ground_relations += { r -> !query } // record whether a query or a ground term.
+            ground_relations += { r -> !isQuery } // record whether a query or a ground term.
         }
       case ExtractionRule(_) => ()
       case InferenceRule(_,_,_) => ()
-      case FunctionElement(a, b, c, d, e) => function_schema += {a -> FunctionElement(a, b, c, d, e)}
-      case FunctionRule(_,_,_) => ()
+      case FunctionDeclaration(a, b, c, d, e) => function_schema += {a -> FunctionDeclaration(a, b, c, d, e)}
+      case FunctionCallRule(_,_,_) => ()
     }
 
     analyzeDependency(statements)
@@ -98,9 +98,9 @@ class CompilationState( statements : DeepDiveLogCompiler.Program )  {
 
   // Given a statement, resolve its name for the compiled extractor block.
   def resolveExtractorBlockName(s: Statement): String = s match {
-    case s: ExtractionRule => s"extraction_rule_${statements indexOf s}"
-    case s: FunctionRule   => s"extraction_rule_${statements indexOf s}"
-    case s: InferenceRule  => s"extraction_rule_${s.q.head.name}"
+    case s: FunctionCallRule => s"extraction_rule_${statements indexOf s}"
+    case s: ExtractionRule   => s"extraction_rule_${statements indexOf s}"
+    case s: InferenceRule    => s"extraction_rule_${s.q.head.name}"
   }
 
   // Given a variable, resolve it.  TODO: This should give a warning,
@@ -116,13 +116,8 @@ class CompilationState( statements : DeepDiveLogCompiler.Program )  {
     }
   }
 
-  def resolveFunctionName( v : String ) : FunctionElement = {
-    if (function_schema contains v) {
-      function_schema(v)
-    } else {
-      return FunctionElement("0","0","0","0","0")
-    }
-
+  def resolveFunctionName( v : String ) : FunctionDeclaration = {
+    function_schema(v)
   }
 
   // The default is query term.
@@ -178,15 +173,15 @@ class CompilationState( statements : DeepDiveLogCompiler.Program )  {
     var stmtByHeadName = new HashMap[String, Statement]()
     statements foreach {
       case e : ExtractionRule => stmtByHeadName += { e.q.head.name -> e }
-      case f : FunctionRule   => stmtByHeadName += { f.output      -> f }
+      case f : FunctionCallRule   => stmtByHeadName += { f.output      -> f }
       case w : InferenceRule  => stmtByHeadName += { w.q.head.name -> w }
       case _ =>
     }
     // then, look at the body of each statement to construct a dependency graph
     statements foreach {
-      case f : FunctionRule   => dependencies += { f -> (        Some(f.input) flatMap (stmtByHeadName get _)).toSet }
-      case e : ExtractionRule => dependencies += { e -> (e.q.body map (_.name) flatMap (stmtByHeadName get _)).toSet }
-      case w : InferenceRule  => dependencies += { w -> (w.q.body map (_.name) flatMap (stmtByHeadName get _)).toSet }
+      case f : FunctionCallRule => dependencies += { f -> (        Some(f.input) flatMap (stmtByHeadName get _)).toSet }
+      case e : ExtractionRule   => dependencies += { e -> (e.q.body map (_.name) flatMap (stmtByHeadName get _)).toSet }
+      case w : InferenceRule    => dependencies += { w -> (w.q.body map (_.name) flatMap (stmtByHeadName get _)).toSet }
       case _ =>
     }
   }
@@ -237,8 +232,8 @@ trait Statement {
   type CompiledBlocks = DeepDiveLogCompiler.CompiledBlocks
   def compile(state: CompilationState): CompiledBlocks = List()
 }
-case class SchemaElement( a : Attribute , query : Boolean ) extends Statement // atom and whether this is a query relation.
-case class FunctionElement( functionName: String, input: String, output: String, implementation: String, mode: String) extends Statement
+case class SchemaDeclaration( a : Attribute , isQuery : Boolean ) extends Statement // atom and whether this is a query relation.
+case class FunctionDeclaration( functionName: String, input: String, output: String, implementation: String, mode: String) extends Statement
 case class ExtractionRule(q : ConjunctiveQuery) extends Statement // Extraction rule
 {
   // Generate extraction rule part for deepdive
@@ -271,7 +266,7 @@ case class ExtractionRule(q : ConjunctiveQuery) extends Statement // Extraction 
     List(extractor)
   }
 }
-case class FunctionRule(input : String, output : String, function : String) extends Statement // Extraction rule
+case class FunctionCallRule(input : String, output : String, function : String) extends Statement // Extraction rule
 {
   override def compile(ss: CompilationState): CompiledBlocks = {
     val inputQuery = s"""
