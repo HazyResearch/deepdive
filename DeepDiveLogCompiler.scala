@@ -174,6 +174,8 @@ class CompilationState( statements : List[Statement] )  {
 
   var function_schema : Map[String, FunctionElement] = new HashMap[ String, FunctionElement]()
 
+  var headNames : List[(Int, String)] = List()
+
   def init() = {
     // generate the statements.
     statements.foreach {
@@ -188,6 +190,15 @@ class CompilationState( statements : List[Statement] )  {
       case FunctionElement(a, b, c, d, e) => function_schema += {a -> FunctionElement(a, b, c, d, e)}
       case FunctionRule(_,_,_) => ()
     }
+
+    // TODO analyze the real dependency (Map[headname, List[headname]]) here
+    headNames = statements.zipWithIndex flatMap {
+      case (e : ExtractionRule, i) => Some(i, e.q.head.name)
+      case (f : FunctionRule  , i) => Some(i, f.output     )
+      case (w : InferenceRule , i) => Some(i, w.q.head.name)
+      case _ => None
+    }
+
   }
 
   init()
@@ -340,7 +351,7 @@ object DeepDiveLogCompiler {
   }
 
   // Generate extraction rule part for deepdive
-  def compile(r: ExtractionRule, index: Int, ss: CompilationState, em: List[(Int, String)]): CompiledBlocks = {
+  def compile(r: ExtractionRule, index: Int, ss: CompilationState): CompiledBlocks = {
     // Generate the body of the query.
     val qs              = new QuerySchema( r.q )
     // variable columns
@@ -356,6 +367,7 @@ object DeepDiveLogCompiler {
       SELECT ${selectStr}
       ${ ss.generateSQLBody(r.q) }"""
 
+    val em = ss.headNames // TODO move this dependency analysis to a separate method
     val dependencyRelation = r.q.body map { case(x) => s"${x.name}"}
     var dependencies = List[String]()
     for (e <- em) {
@@ -376,13 +388,14 @@ object DeepDiveLogCompiler {
     List(extractor)
   }
 
-  def compile(r: FunctionRule, index: Int, ss: CompilationState, dependencies: List[(Int, String)]): CompiledBlocks = {
+  def compile(r: FunctionRule, index: Int, ss: CompilationState): CompiledBlocks = {
     val inputQuery = s"""
     SELECT * FROM ${r.input}
     """
 
     val function = ss.resolveFunctionName(r.function)
 
+    val dependencies = ss.headNames // TODO move this dependency analysis to a separate method
     // val dependencyRelation = r.q.body map { case(x) => s"${x.name}"}
     var dependency = List[String]()
     for (d <- dependencies) {
@@ -408,13 +421,13 @@ object DeepDiveLogCompiler {
   }
 
   // generate inference rule part for deepdive
-  def compile(r: InferenceRule, i: Int, ss: CompilationState, dep: List[(Int, String)]): CompiledBlocks = {
+  def compile(r: InferenceRule, i: Int, ss: CompilationState): CompiledBlocks = {
     var blocks = List[String]()
     val qs = new QuerySchema( r.q )
 
     // node query
     // generate the node portion (V) of the factor graph
-    def compileNodeRule(z: InferenceRule, qs: QuerySchema, ss: CompilationState, dep: List[(Int, String)]) : CompiledBlocks = {
+    def compileNodeRule(z: InferenceRule, qs: QuerySchema, ss: CompilationState) : CompiledBlocks = {
       val headTerms = z.q.head.terms map {
         case Variable(v,r,i) => s"R${i}.${ss.resolveName(qs.getVar(v)) }"
       }
@@ -425,6 +438,7 @@ object DeepDiveLogCompiler {
       val query = s"""SELECT DISTINCT ${ headTermsStr }, ${labelCol} AS label
     ${ ss.generateSQLBody(z.q) }"""
 
+      val dep = ss.headNames
       val dependencyRelation = z.q.body map { case(x) => s"${x.name}"}
       var dependencies = List[String]()
       for (e <- dep) {
@@ -446,7 +460,7 @@ object DeepDiveLogCompiler {
       List(ext)
     }
     if (ss.isQueryTerm(r.q.head.name))
-      blocks :::= compileNodeRule(r, qs, ss, dep)
+      blocks :::= compileNodeRule(r, qs, ss)
 
     // edge query
     val fakeBody        = r.q.head +: r.q.body
@@ -499,13 +513,6 @@ object DeepDiveLogCompiler {
 
     // take an initial pass to analyze the parsed program
     val state = new CompilationState( parsedProgram.get )
-    // TODO analyze the real dependency (Map[headname, List[headname]]) here
-    var dependencies = parsedProgram.get.zipWithIndex map {
-      case (e : ExtractionRule, i) => (i, e.q.head.name)
-      case (f : FunctionRule, i) => (i, f.output)
-      case (w : InferenceRule, i) => (i, w.q.head.name)
-      case (_,_) => (-1, "-1")
-    }
 
     // compile the program into blocks of application.conf
     val compiledBlocks = (
@@ -521,9 +528,9 @@ object DeepDiveLogCompiler {
         // methods to all case classes of Statement.
         // TODO move state, dependencies args into a composite field of type CompilationState
         // TODO get rid of zipWithIndex by keeping a counter in the CompilationState
-        case (s:InferenceRule , i:Int) => compile(s, i, state, dependencies)
-        case (s:ExtractionRule, i:Int) => compile(s, i, state, dependencies)
-        case (s:FunctionRule  , i:Int) => compile(s, i, state, dependencies)
+        case (s:InferenceRule , i:Int) => compile(s, i, state)
+        case (s:ExtractionRule, i:Int) => compile(s, i, state)
+        case (s:FunctionRule  , i:Int) => compile(s, i, state)
         case _ => List()
       }
       )
