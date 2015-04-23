@@ -156,13 +156,14 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
   // rules or schema elements in aribitrary order
   def statement : Parser[Statement] = (functionElement | inferenceRule | extractionRule | functionRule | schemaElement) ^^ {case(x) => x}
 
-  def statements : Parser[List[Statement]] = rep1sep(statement, ".") ^^ { case(x) => x }
+  type Program = List[Statement]
+  def statements : Parser[Program] = rep1sep(statement, ".") ^^ { case(x) => x }
 }
 
 // This handles the schema statements.
 // It can tell you if a predicate is a "query" predicate or a "ground prediate"
 // and it resolves Variables their correct and true name in the schema, i.e. R(x,y) then x could be Attribute1 declared.
-class StatementSchema( statements : List[Statement] )  {
+class CompilationState( statements : List[Statement] )  {
     // TODO: refactor the schema into a class that constructs and
     // manages these maps. Also it should have appropriate
     // abstractions and error handling for missing values.
@@ -263,17 +264,10 @@ object DeepDiveLogCompiler {
   def parseProgram(inputProgram: String) = parser.parse(parser.statements, inputProgram)
 
   type CompiledBlocks = List[String]
-  class CompilationState(
-    // schema derived from all statements
-    ss: Option[StatementSchema],
-    // all head names
-    headNames: List[String],
-    // a handy counter for generating unique names
-    numRules: Int)
 
   // This is generic code that generates the FROM with positional aliasing R0, R1, etc.
   // and the corresponding WHERE clause (equating all variables)
-  def generateSQLBody(ss : StatementSchema, z : ConjunctiveQuery) : String = {
+  def generateSQLBody(ss : CompilationState, z : ConjunctiveQuery) : String = {
     val bodyNames = ( z.body.zipWithIndex map { case(x,i) => s"${x.name} R${i}"}).mkString(", ")
     // Simple logic for the where clause, first find every first occurence of a
     // and stick it in a map.
@@ -301,7 +295,7 @@ object DeepDiveLogCompiler {
         ${ whereClauseStr }"""
   }
   // generate the node portion (V) of the factor graph
-  def compileNodeRule(z: InferenceRule, qs: QuerySchema, ss: StatementSchema, dep: List[(Int, String)]) : CompiledBlocks = {
+  def compileNodeRule(z: InferenceRule, qs: QuerySchema, ss: CompilationState, dep: List[(Int, String)]) : CompiledBlocks = {
     val headTerms = z.q.head.terms map {
       case Variable(v,r,i) => s"R${i}.${ss.resolveName(qs.getVar(v)) }"
     }
@@ -334,7 +328,7 @@ object DeepDiveLogCompiler {
   }
 
   // generate variable schema statements
-  def compileVariableSchema(statements: List[Statement], ss: StatementSchema): CompiledBlocks = {
+  def compileVariableSchema(statements: List[Statement], ss: CompilationState): CompiledBlocks = {
     var schema = Set[String]()
     // generate the statements.
     statements.foreach {
@@ -352,7 +346,7 @@ object DeepDiveLogCompiler {
   }
 
   // Generate extraction rule part for deepdive
-  def compile(r: ExtractionRule, index: Int, ss: StatementSchema, em: List[(Int, String)]): CompiledBlocks = {
+  def compile(r: ExtractionRule, index: Int, ss: CompilationState, em: List[(Int, String)]): CompiledBlocks = {
     // Generate the body of the query.
     val qs              = new QuerySchema( r.q )
     // variable columns
@@ -388,7 +382,7 @@ object DeepDiveLogCompiler {
     List(extractor)
   }
 
-  def compile(r: FunctionRule, index: Int, ss: StatementSchema, dependencies: List[(Int, String)]): CompiledBlocks = {
+  def compile(r: FunctionRule, index: Int, ss: CompilationState, dependencies: List[(Int, String)]): CompiledBlocks = {
 
     val inputQuery = s"""
     SELECT * FROM ${r.input}
@@ -422,7 +416,7 @@ object DeepDiveLogCompiler {
 
 
   // resolve a column name with alias
-  def resolveColumn(s: String, ss: StatementSchema, qs: QuerySchema, q : ConjunctiveQuery,
+  def resolveColumn(s: String, ss: CompilationState, qs: QuerySchema, q : ConjunctiveQuery,
    alias: Boolean) : Option[String] = {
     val index = qs.getBodyIndex(s)
     val name  = ss.resolveName(qs.getVar(s))
@@ -434,7 +428,7 @@ object DeepDiveLogCompiler {
   }
 
   // generate inference rule part for deepdive
-  def compile(r: InferenceRule, i: Int, ss: StatementSchema, dep: List[(Int, String)]): CompiledBlocks = {
+  def compile(r: InferenceRule, i: Int, ss: CompilationState, dep: List[(Int, String)]): CompiledBlocks = {
     var blocks = List[String]()
     val qs = new QuerySchema( r.q )
 
@@ -540,7 +534,7 @@ object DeepDiveLogCompiler {
     val parsedProgram = parseProgram(inputProgram)
 
     // take an initial pass to analyze the parsed program
-    val schema = new StatementSchema( parsedProgram.get )
+    val state = new CompilationState( parsedProgram.get )
     // TODO analyze the real dependency (Map[headname, List[headname]]) here
     var dependencies = parsedProgram.get.zipWithIndex map {
       case (e : ExtractionRule, i) => (i, e.q.head.name)
@@ -551,7 +545,7 @@ object DeepDiveLogCompiler {
 
     // compile the program into blocks of application.conf
     val compiledBlocks = (
-      compileVariableSchema(parsedProgram.get, schema)
+      compileVariableSchema(parsedProgram.get, state)
       :::
       (
       parsedProgram.get.zipWithIndex flatMap {
@@ -559,11 +553,11 @@ object DeepDiveLogCompiler {
         // cases, but Scala/Java's ad-hoc polymorphism doesn't work that way.
         // Instead, we need to use the visitor pattern, adding compile(...)
         // methods to all case classes of Statement.
-        // TODO move schema, dependencies args into a composite field of type CompilationState
+        // TODO move state, dependencies args into a composite field of type CompilationState
         // TODO get rid of zipWithIndex by keeping a counter in the CompilationState
-        case (s:InferenceRule , i:Int) => compile(s, i, schema, dependencies)
-        case (s:ExtractionRule, i:Int) => compile(s, i, schema, dependencies)
-        case (s:FunctionRule  , i:Int) => compile(s, i, schema, dependencies)
+        case (s:InferenceRule , i:Int) => compile(s, i, state, dependencies)
+        case (s:ExtractionRule, i:Int) => compile(s, i, state, dependencies)
+        case (s:FunctionRule  , i:Int) => compile(s, i, state, dependencies)
         case _ => List()
       }
       )
