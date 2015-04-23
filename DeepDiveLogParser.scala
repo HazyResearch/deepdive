@@ -1,4 +1,5 @@
 // DeepDiveLog syntax
+// See: https://docs.google.com/document/d/1SBIvvki3mnR28Mf0Pkin9w9mWNam5AA0SpIGj1ZN2c4
 
 import scala.util.parsing.combinator._
 
@@ -27,25 +28,28 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
   // def stringliteral1: Parser[String] = ("'"+"""([^'\p{Cntrl}\\]|\\[\\"'bfnrt]|\\u[a-fA-F0-9]{4})*"""+"'").r ^^ {case (x) => x}
   // def stringliteral2: Parser[String] = """[a-zA-Z_0-9\./]*""".r ^^ {case (x) => x}
   // def stringliteral: Parser[String] = (stringliteral1 | stringliteral2) ^^ {case (x) => x}
-  def stringliteral: Parser[String] = """[a-zA-Z0-9_\[\]]+""".r
+  def name: Parser[String] = """[a-zA-Z0-9_\[\]]+""".r
   def path: Parser[String] = """[a-zA-Z0-9\./_]+""".r
 
   // relation names and columns are just strings.
-  def relation_name: Parser[String] = stringliteral
-  def col : Parser[String] = stringliteral
-  def attr : Parser[Column] =
-    stringliteral ~ stringliteral ^^ {
-      case(x ~ y) => Column(x, y)
+  def relationName = name
+  def columnName = name
+  def columnType = name
+  def variableName = name
+  def functionName = name
+  def columnDeclaration : Parser[Column] =
+    columnName ~ columnType ^^ {
+      case(name ~ ty) => Column(name, ty)
     }
 
   def atom: Parser[Atom] =
-    relation_name ~ "(" ~ rep1sep(col, ",") ~ ")" ^^ {
+    relationName ~ "(" ~ rep1sep(variableName, ",") ~ ")" ^^ {
       case (r ~ "(" ~ cols ~ ")") =>
         Atom(r, cols.zipWithIndex map { case(name,i) => Variable(name, r, i) })
     }
 
-  def attribute: Parser[Attribute] =
-    relation_name ~ "(" ~ rep1sep(attr, ",") ~ ")" ^^ {
+  def relationDeclaration: Parser[Attribute] =
+    relationName ~ "(" ~ rep1sep(columnDeclaration, ",") ~ ")" ^^ {
       case (r ~ "(" ~ attrs ~ ")") => {
         val vars = attrs.zipWithIndex map { case(x, i) => Variable(x.name, r, i) }
         var types = attrs map { case(x) => x.t }
@@ -59,18 +63,18 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
         ConjunctiveQuery(headatom, bodyatoms.toList)
     }
 
-  def schemaElement : Parser[SchemaElement] =
-    attribute ~ opt("?") ^^ {
+  def schemaDeclaration : Parser[SchemaElement] =
+    relationDeclaration ~ opt("?") ^^ {
       case (a ~ None   ) => SchemaElement(a,true)
       case (a ~ Some(_)) => SchemaElement(a,false)
     }
 
 
-  def functionElement : Parser[FunctionElement] =
-    ( "function" ~ stringliteral
-    ~ "over" ~ "like" ~ stringliteral
-    ~ "returns" ~ "like" ~ stringliteral
-    ~ "implementation" ~ "\"" ~ path ~ "\"" ~ "handles" ~ stringliteral ~ "lines"
+  def functionDeclaration : Parser[FunctionElement] =
+    ( "function" ~ functionName
+    ~ "over" ~ "like" ~ relationName
+    ~ "returns" ~ "like" ~ relationName
+    ~ "implementation" ~ "\"" ~ path ~ "\"" ~ "handles" ~ ("tsv" | "json") ~ "lines"
     ) ^^ {
       case ("function" ~ a
            ~ "over" ~ "like" ~ b
@@ -84,9 +88,9 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
       ExtractionRule(_)
     }
 
-  def functionRule : Parser[FunctionRule] =
-    ( stringliteral ~ ":-" ~ "!"
-    ~ stringliteral ~ "(" ~ stringliteral ~ ")"
+  def functionCallRule : Parser[FunctionRule] =
+    ( relationName ~ ":-" ~ "!"
+    ~ functionName ~ "(" ~ relationName ~ ")"
     ) ^^ {
       case (out ~ ":-" ~ "!" ~ fn ~ "(" ~ in ~ ")") =>
         FunctionRule(in, out, fn)
@@ -97,13 +101,13 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
       x => KnownFactorWeight(x.toDouble)
     }
   def unknwonWeight =
-    "weight" ~> "=" ~> opt(rep1sep(col, ",")) ^^ {
+    "weight" ~> "=" ~> opt(rep1sep(variableName, ",")) ^^ {
       case Some(varList) => UnknownFactorWeight(varList.toList)
       case _ => UnknownFactorWeight(List())
     }
   def factorWeight = constantWeight | unknwonWeight
 
-  def supervision = "label" ~> "=" ~> col
+  def supervision = "label" ~> "=" ~> variableName
 
   def inferenceRule : Parser[InferenceRule] =
     ( query ~ factorWeight ~ supervision
@@ -112,11 +116,11 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
     }
 
   // rules or schema elements in aribitrary order
-  def statement : Parser[Statement] = ( functionElement
+  def statement : Parser[Statement] = ( functionDeclaration
                                       | inferenceRule
                                       | extractionRule
-                                      | functionRule
-                                      | schemaElement
+                                      | functionCallRule
+                                      | schemaDeclaration
                                       )
   def program : Parser[List[Statement]] = rep1sep(statement, ".")
 
