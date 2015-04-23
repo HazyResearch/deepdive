@@ -10,25 +10,25 @@ import scala.collection.immutable.HashMap
  And queries
 
  Q(x,y) :- R(x,y), SomeOther(y, z)
- 
+
  Using the schema can SQLized as
- 
+
  SELECT R1.x,R2.y
  FROM   R as R1,SomeOther as R2
  WHERE  R1.y = R2.realname
 
  We translate by introducing aliases R1, R2 , etc. to deal with
  repeated symbols.
- 
- TODO: 
+
+ TODO:
  =================
 
  Our schema needs to know whether a symbol is this a query table (and
  so should contain an _id) field or is a regular table from the
- user. 
+ user.
 
  If a head term is not mentioned in the schema, its assumed it is a
- query table that this code must create. 
+ query table that this code must create.
 
  If one wants to explicilty mention a query table in the schema, they
  do so with a trailing exclamation point as follows
@@ -37,10 +37,10 @@ import scala.collection.immutable.HashMap
 
 Consider
 
- Q(x) :- R(x,f) weight=f 
+ Q(x) :- R(x,f) weight=f
 
  ... R is likely *not* a variable table ... we record its translation below.
- 
+
  In contrast, Q(x) :- R(x),S(x) ... coule be treated as variable tables. Hence, the schema has:
 
  R(x,f) // regular table
@@ -58,9 +58,9 @@ Consider
 // * The union types for for the parser. *
 // ***************************************
 trait Statement
-case class Variable(varName : String, relName : String, index : Int ) 
-case class Atom(name : String, terms : List[Variable]) 
-case class Attribute(name : String, terms : List[Variable], types : List[String]) 
+case class Variable(varName : String, relName : String, index : Int )
+case class Atom(name : String, terms : List[Variable])
+case class Attribute(name : String, terms : List[Variable], types : List[String])
 case class ConjunctiveQuery(head: Atom, body: List[Atom])
 case class Column(name : String, t : String)
 
@@ -82,7 +82,7 @@ case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, supervisi
 
 
 // Parser
-class ConjunctiveQueryParser extends JavaTokenParsers {   
+class ConjunctiveQueryParser extends JavaTokenParsers {
   // Odd definitions, but we'll keep them.
   // def stringliteral1: Parser[String] = ("'"+"""([^'\p{Cntrl}\\]|\\[\\"'bfnrt]|\\u[a-fA-F0-9]{4})*"""+"'").r ^^ {case (x) => x}
   // def stringliteral2: Parser[String] = """[a-zA-Z_0-9\./]*""".r ^^ {case (x) => x}
@@ -124,10 +124,10 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
   }
 
 
-  def functionElement : Parser[FunctionElement] = "function" ~ stringliteral ~ 
-  "over like" ~ stringliteral ~ "returns like" ~ stringliteral ~ "implementation" ~ 
+  def functionElement : Parser[FunctionElement] = "function" ~ stringliteral ~
+  "over like" ~ stringliteral ~ "returns like" ~ stringliteral ~ "implementation" ~
   "\"" ~ path ~ "\"" ~ "handles" ~ stringliteral ~ "lines" ^^ {
-    case ("function" ~ a ~ "over like" ~ b ~ "returns like" ~ c ~ "implementation" ~ 
+    case ("function" ~ a ~ "over like" ~ b ~ "returns like" ~ c ~ "implementation" ~
       "\"" ~ d ~ "\"" ~ "handles" ~ e ~ "lines") => FunctionElement(a, b, c, d, e)
   }
 
@@ -173,7 +173,7 @@ class StatementSchema( statements : List[Statement] )  {
 
   var function_schema : Map[String, FunctionElement] = new HashMap[ String, FunctionElement]()
 
-  def init() = {    
+  def init() = {
     // generate the statements.
     statements.foreach {
       case SchemaElement(Attribute(r, terms, types),query) =>
@@ -211,7 +211,7 @@ class StatementSchema( statements : List[Statement] )  {
       return FunctionElement("0","0","0","0","0")
     }
 
-  } 
+  }
 
   // The default is query term.
   def isQueryTerm( relName : String ): Boolean = {
@@ -225,7 +225,7 @@ class StatementSchema( statements : List[Statement] )  {
 // conditions, select, etc.)
 class QuerySchema(q : ConjunctiveQuery) {
     var query_schema = new HashMap[ String, Tuple2[Int,Variable] ]()
-  
+
   // maps each variable name to a canonical version of itself (first occurence in body in left-to-right order)
   // index is the index of the subgoal/atom this variable is found in the body.
   // variable is the complete Variable type for the found variable.
@@ -311,11 +311,11 @@ object DeepDiveLogCompiler {
     val headTermsStr = ( "0 as id"  :: headTerms ).mkString(", ")
     val query = s"""SELECT DISTINCT ${ headTermsStr }, ${labelCol} AS label
     ${ generateSQLBody(ss,z.q) }"""
-    
+
     val dependencyRelation = z.q.body map { case(x) => s"${x.name}"}
     var dependencies = List[String]()
     for (e <- dep) {
-      if (dependencyRelation contains e._2) 
+      if (dependencyRelation contains e._2)
         dependencies ::= s""" "extraction_rule_${e._1}" """
     }
     val dependencyStr = if (dependencies.length > 0) s"dependencies: [${dependencies.mkString(", ")}]" else ""
@@ -323,7 +323,7 @@ object DeepDiveLogCompiler {
     val ext = s"""
       deepdive.extraction.extractors.extraction_rule_${z.q.head.name} {
         sql: \"\"\" DROP TABLE IF EXISTS ${z.q.head.name};
-        CREATE TABLE ${z.q.head.name} AS 
+        CREATE TABLE ${z.q.head.name} AS
         ${query}
         \"\"\"
         style: "sql_extractor"
@@ -335,7 +335,7 @@ object DeepDiveLogCompiler {
 
   // generate variable schema statements
   def compileVariableSchema(statements: List[Statement], ss: StatementSchema): CompiledBlocks = {
-    var schema = Set[String]() 
+    var schema = Set[String]()
     // generate the statements.
     statements.foreach {
       case InferenceRule(q, weights, supervision) =>
@@ -361,17 +361,17 @@ object DeepDiveLogCompiler {
     }
 
     val variableColsStr = if (variableCols.length > 0) Some(variableCols.mkString(", ")) else None
-    
+
     val selectStr = (List(variableColsStr) flatMap (u => u)).mkString(", ")
-    
+
     val inputQuery = s"""
-      SELECT ${selectStr} 
+      SELECT ${selectStr}
       ${ generateSQLBody(ss, r.q) }"""
 
     val dependencyRelation = r.q.body map { case(x) => s"${x.name}"}
     var dependencies = List[String]()
     for (e <- em) {
-      if (dependencyRelation contains e._2) 
+      if (dependencyRelation contains e._2)
         dependencies ::= s""" "extraction_rule_${e._1}" """
     }
     val dependencyStr = if (dependencies.length > 0) s"dependencies: [${dependencies.mkString(", ")}]" else ""
@@ -389,12 +389,12 @@ object DeepDiveLogCompiler {
   }
 
   def compile(r: FunctionRule, index: Int, ss: StatementSchema, dependencies: List[(Int, String)]): CompiledBlocks = {
-    
+
     val inputQuery = s"""
     SELECT * FROM ${r.input}
     """
 
-    val function = ss.resolveFunctionName(r.function)    
+    val function = ss.resolveFunctionName(r.function)
 
     // val dependencyRelation = r.q.body map { case(x) => s"${x.name}"}
     var dependency = List[String]()
@@ -406,7 +406,7 @@ object DeepDiveLogCompiler {
     val dependencyStr = if (dependency.length > 0) s"dependencies: [${dependency.mkString(", ")}]" else ""
 
 
-    
+
     val extractor = s"""
       deepdive.extraction.extractors.extraction_rule_${index} {
         input: \"\"\" SELECT * FROM ${r.input}
@@ -443,7 +443,7 @@ object DeepDiveLogCompiler {
       blocks :::= compileNodeRule(r, qs, ss, dep)
 
     // edge query
-    val fakeBody        = r.q.head +: r.q.body 
+    val fakeBody        = r.q.head +: r.q.body
     val fakeCQ          = ConjunctiveQuery(r.q.head, fakeBody) // we will just use the fakeBody below.
 
     val index = r.q.body.length + 1
@@ -461,7 +461,7 @@ object DeepDiveLogCompiler {
 
     // factor input query
     val inputQuery = s"""
-      SELECT ${selectStr} 
+      SELECT ${selectStr}
       ${ generateSQLBody(ss, fakeCQ) }"""
 
     // factor function
@@ -474,7 +474,7 @@ object DeepDiveLogCompiler {
         s"""?(${w.flatMap(s => resolveColumn(s, ss, qs2, fakeCQ, false)).mkString(", ")})"""
       }
     }
-    
+
     blocks ::= s"""
       deepdive.inference.factors.factor_${r.q.head.name} {
         input_query: \"\"\"${inputQuery}\"\"\"
@@ -500,21 +500,21 @@ object DeepDiveLogCompiler {
   /*
    T(base_attr);
    S(a1,a2)
-   Q(x) :- S(x,y),T(y) 
+   Q(x) :- S(x,y),T(y)
    Should generate.
 
    Node query:
    CREATE TABLE Q AS
    SELECT 0 as _id, R0.a1
-   FROM S as R0,T as R1 
+   FROM S as R0,T as R1
    WHERE R0.a2 = R1.base_attr
-   
+
    Edge Query (if S and T are probabilistic)
    SELECT Q._id, array_agg( (S._id, T_.id) )
-   FROM Q as R0,S as R1,T as R2 
-   WHERE S.y = T.base_attr AND 
-         Q.x = S.x AND Q.z = S.z  
-   
+   FROM Q as R0,S as R1,T as R2
+   WHERE S.y = T.base_attr AND
+         Q.x = S.x AND Q.z = S.z
+
    Factor Function: OR
 
    =======
@@ -525,14 +525,14 @@ object DeepDiveLogCompiler {
    Node Query:
    CREATE TABLE Q AS
    SELECT DISTINCT 0 as _id, x FROM R
-   
+
    Edge Query:
    SELECT 0 as _fid, Q.id, R.f as w
    FROM Q, R
    WHERE Q.x = R.x
 
    =======
-   
+
    */
   def main(args: Array[String]) {
     // get contents of all given files as one flat input program
