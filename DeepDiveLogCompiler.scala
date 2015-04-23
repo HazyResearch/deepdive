@@ -203,6 +203,13 @@ class CompilationState( statements : List[Statement] )  {
 
   init()
 
+  // Given a statement, resolve its name for the compiled extractor block.
+  def resolveExtractorBlockName(s: Statement): String = s match {
+    case s: ExtractionRule => s"extraction_rule_${statements indexOf s}"
+    case s: FunctionRule   => s"extraction_rule_${statements indexOf s}"
+    case s: InferenceRule  => s"extraction_rule_${s.q.head.name}"
+  }
+
   // Given a variable, resolve it.  TODO: This should give a warning,
   // if we encouter a variable that is not in this map, then something
   // odd has happened.
@@ -351,7 +358,7 @@ object DeepDiveLogCompiler {
   }
 
   // Generate extraction rule part for deepdive
-  def compile(r: ExtractionRule, index: Int, ss: CompilationState): CompiledBlocks = {
+  def compile(r: ExtractionRule, ss: CompilationState): CompiledBlocks = {
     // Generate the body of the query.
     val qs              = new QuerySchema( r.q )
     // variable columns
@@ -376,8 +383,9 @@ object DeepDiveLogCompiler {
     }
     val dependencyStr = if (dependencies.length > 0) s"dependencies: [${dependencies.mkString(", ")}]" else ""
 
+    val blockName = ss.resolveExtractorBlockName(r)
     val extractor = s"""
-      deepdive.extraction.extractors.extraction_rule_${index} {
+      deepdive.extraction.extractors.${blockName} {
         sql: \"\"\" DROP VIEW IF EXISTS ${r.q.head.name};
         CREATE VIEW ${r.q.head.name} AS ${inputQuery}
         \"\"\"
@@ -388,7 +396,7 @@ object DeepDiveLogCompiler {
     List(extractor)
   }
 
-  def compile(r: FunctionRule, index: Int, ss: CompilationState): CompiledBlocks = {
+  def compile(r: FunctionRule, ss: CompilationState): CompiledBlocks = {
     val inputQuery = s"""
     SELECT * FROM ${r.input}
     """
@@ -407,8 +415,9 @@ object DeepDiveLogCompiler {
 
 
 
+    val blockName = ss.resolveExtractorBlockName(r)
     val extractor = s"""
-      deepdive.extraction.extractors.extraction_rule_${index} {
+      deepdive.extraction.extractors.${blockName} {
         input: \"\"\" SELECT * FROM ${r.input}
         \"\"\"
         output_relation: \"${r.output}\"
@@ -421,7 +430,7 @@ object DeepDiveLogCompiler {
   }
 
   // generate inference rule part for deepdive
-  def compile(r: InferenceRule, i: Int, ss: CompilationState): CompiledBlocks = {
+  def compile(r: InferenceRule, ss: CompilationState): CompiledBlocks = {
     var blocks = List[String]()
     val qs = new QuerySchema( r.q )
 
@@ -447,8 +456,9 @@ object DeepDiveLogCompiler {
       }
       val dependencyStr = if (dependencies.length > 0) s"dependencies: [${dependencies.mkString(", ")}]" else ""
 
+      val blockName = ss.resolveExtractorBlockName(z)
       val ext = s"""
-      deepdive.extraction.extractors.extraction_rule_${z.q.head.name} {
+      deepdive.extraction.extractors.${blockName} {
         sql: \"\"\" DROP TABLE IF EXISTS ${z.q.head.name};
         CREATE TABLE ${z.q.head.name} AS
         ${query}
@@ -521,16 +531,14 @@ object DeepDiveLogCompiler {
       compileVariableSchema(parsedProgram.get, state)
       :::
       (
-      parsedProgram.get.zipWithIndex flatMap {
+      parsedProgram.get flatMap {
         // XXX Ideally, a single compile call should handle all the polymorphic
         // cases, but Scala/Java's ad-hoc polymorphism doesn't work that way.
         // Instead, we need to use the visitor pattern, adding compile(...)
         // methods to all case classes of Statement.
-        // TODO move state, dependencies args into a composite field of type CompilationState
-        // TODO get rid of zipWithIndex by keeping a counter in the CompilationState
-        case (s:InferenceRule , i:Int) => compile(s, i, state)
-        case (s:ExtractionRule, i:Int) => compile(s, i, state)
-        case (s:FunctionRule  , i:Int) => compile(s, i, state)
+        case s:InferenceRule  => compile(s, state)
+        case s:ExtractionRule => compile(s, state)
+        case s:FunctionRule   => compile(s, state)
         case _ => List()
       }
       )
