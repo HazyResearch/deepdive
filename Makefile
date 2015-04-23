@@ -3,7 +3,7 @@
 JAR = ddlc.jar
 
 test: $(JAR)
-	scala $(JAR) examples/test6.ddl
+	scala $(JAR) examples/test6.ddl | diff -u examples/test6.expected -
 
 $(JAR): $(wildcard *.scala)
 	sbt package
