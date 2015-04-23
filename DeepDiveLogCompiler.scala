@@ -57,6 +57,7 @@ Consider
 */
 
 import scala.collection.immutable.HashMap
+import org.apache.commons.lang3.StringEscapeUtils
 
 // This handles the schema statements.
 // It can tell you if a predicate is a "query" predicate or a "ground prediate"
@@ -285,7 +286,7 @@ case class FunctionRule(input : String, output : String, function : String) exte
         input: \"\"\" SELECT * FROM ${input}
         \"\"\"
         output_relation: \"${output}\"
-        udf: \"${function.implementation}\"
+        udf: \"${StringEscapeUtils.escapeJava(function.implementation)}\"
         style: \"${function.mode}_extractor\"
         ${ss.generateDependenciesOfCompiledBlockFor(this)}
       }
