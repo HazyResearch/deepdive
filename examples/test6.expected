@@ -89,7 +89,7 @@
         WHERE R1.relation_id = R0.relation_id 
         """
         style: "sql_extractor"
-        dependencies: [ "extraction_rule_14" ,  "extraction_rule_10" ]
+        dependencies: [ "extraction_rule_10" ,  "extraction_rule_14" ]
       }
     
 

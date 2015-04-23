@@ -174,7 +174,8 @@ class CompilationState( statements : List[Statement] )  {
 
   var function_schema : Map[String, FunctionElement] = new HashMap[ String, FunctionElement]()
 
-  var headNames : List[(Int, String)] = List()
+  // The dependency graph between statements.
+  var dependencies : Map[Statement, Set[Statement]] = new HashMap()
 
   def init() = {
     // generate the statements.
@@ -191,14 +192,7 @@ class CompilationState( statements : List[Statement] )  {
       case FunctionRule(_,_,_) => ()
     }
 
-    // TODO analyze the real dependency (Map[headname, List[headname]]) here
-    headNames = statements.zipWithIndex flatMap {
-      case (e : ExtractionRule, i) => Some(i, e.q.head.name)
-      case (f : FunctionRule  , i) => Some(i, f.output     )
-      case (w : InferenceRule , i) => Some(i, w.q.head.name)
-      case _ => None
-    }
-
+    analyzeDependency(statements)
   }
 
   init()
@@ -276,6 +270,35 @@ class CompilationState( statements : List[Statement] )  {
 
     s"""FROM ${ bodyNames }
         ${ whereClauseStr }"""
+  }
+
+
+  // Analyze the dependency between statements and construct a graph.
+  def analyzeDependency(statements: List[Statement]) = {
+    // first map head names to the actual statement
+    var stmtByHeadName = new HashMap[String, Statement]()
+    statements foreach {
+      case e : ExtractionRule => stmtByHeadName += { e.q.head.name -> e }
+      case f : FunctionRule   => stmtByHeadName += { f.output      -> f }
+      case w : InferenceRule  => stmtByHeadName += { w.q.head.name -> w }
+      case _ =>
+    }
+    // then, look at the body of each statement to construct a dependency graph
+    statements foreach {
+      case f : FunctionRule   => dependencies += { f -> (        Some(f.input) flatMap (stmtByHeadName get _)).toSet }
+      case e : ExtractionRule => dependencies += { e -> (e.q.body map (_.name) flatMap (stmtByHeadName get _)).toSet }
+      case w : InferenceRule  => dependencies += { w -> (w.q.body map (_.name) flatMap (stmtByHeadName get _)).toSet }
+      case _ =>
+    }
+  }
+  // Generates a "dependencies" value for a compiled block of given statement.
+  def generateDependenciesOfCompiledBlockFor(statement: Statement): String = {
+    val dependentExtractorBlockNames =
+      dependencies getOrElse (statement, Set()) map resolveExtractorBlockName
+    if (dependentExtractorBlockNames.size == 0) "" else {
+      val depStr = dependentExtractorBlockNames map {" \"" + _ + "\" "} mkString(", ")
+      s"dependencies: [${depStr}]"
+    }
   }
 }
 
@@ -374,15 +397,6 @@ object DeepDiveLogCompiler {
       SELECT ${selectStr}
       ${ ss.generateSQLBody(r.q) }"""
 
-    val em = ss.headNames // TODO move this dependency analysis to a separate method
-    val dependencyRelation = r.q.body map { case(x) => s"${x.name}"}
-    var dependencies = List[String]()
-    for (e <- em) {
-      if (dependencyRelation contains e._2)
-        dependencies ::= s""" "extraction_rule_${e._1}" """
-    }
-    val dependencyStr = if (dependencies.length > 0) s"dependencies: [${dependencies.mkString(", ")}]" else ""
-
     val blockName = ss.resolveExtractorBlockName(r)
     val extractor = s"""
       deepdive.extraction.extractors.${blockName} {
@@ -390,7 +404,7 @@ object DeepDiveLogCompiler {
         CREATE VIEW ${r.q.head.name} AS ${inputQuery}
         \"\"\"
         style: "sql_extractor"
-        ${dependencyStr}
+        ${ss.generateDependenciesOfCompiledBlockFor(r)}
       }
     """
     List(extractor)
@@ -403,18 +417,6 @@ object DeepDiveLogCompiler {
 
     val function = ss.resolveFunctionName(r.function)
 
-    val dependencies = ss.headNames // TODO move this dependency analysis to a separate method
-    // val dependencyRelation = r.q.body map { case(x) => s"${x.name}"}
-    var dependency = List[String]()
-    for (d <- dependencies) {
-      if (r.input == d._2) {
-        dependency ::= s""" "extraction_rule_${d._1}" """
-      }
-    }
-    val dependencyStr = if (dependency.length > 0) s"dependencies: [${dependency.mkString(", ")}]" else ""
-
-
-
     val blockName = ss.resolveExtractorBlockName(r)
     val extractor = s"""
       deepdive.extraction.extractors.${blockName} {
@@ -423,7 +425,7 @@ object DeepDiveLogCompiler {
         output_relation: \"${r.output}\"
         udf: \"${function.implementation}\"
         style: \"${function.mode}_extractor\"
-        ${dependencyStr}
+        ${ss.generateDependenciesOfCompiledBlockFor(r)}
       }
     """
     List(extractor)
@@ -447,15 +449,6 @@ object DeepDiveLogCompiler {
       val query = s"""SELECT DISTINCT ${ headTermsStr }, ${labelCol} AS label
     ${ ss.generateSQLBody(z.q) }"""
 
-      val dep = ss.headNames
-      val dependencyRelation = z.q.body map { case(x) => s"${x.name}"}
-      var dependencies = List[String]()
-      for (e <- dep) {
-        if (dependencyRelation contains e._2)
-          dependencies ::= s""" "extraction_rule_${e._1}" """
-      }
-      val dependencyStr = if (dependencies.length > 0) s"dependencies: [${dependencies.mkString(", ")}]" else ""
-
       val blockName = ss.resolveExtractorBlockName(z)
       val ext = s"""
       deepdive.extraction.extractors.${blockName} {
@@ -464,7 +457,7 @@ object DeepDiveLogCompiler {
         ${query}
         \"\"\"
         style: "sql_extractor"
-        ${dependencyStr}
+        ${ss.generateDependenciesOfCompiledBlockFor(z)}
       }
     """
       List(ext)
