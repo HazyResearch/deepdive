@@ -251,7 +251,7 @@ class QuerySchema(q : ConjunctiveQuery) {
 }
 
 
-object Test extends ConjunctiveQueryParser  {
+object ddlc extends ConjunctiveQueryParser  {
 
   // This is generic code that generates the FROM with positional aliasing R0, R1, etc.
   // and the corresponding WHERE clause (equating all variables)
