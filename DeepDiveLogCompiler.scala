@@ -187,8 +187,6 @@ class StatementSchema( statements : List[Statement] )  {
       case FunctionElement(a, b, c, d, e) => function_schema += {a -> FunctionElement(a, b, c, d, e)}
       case FunctionRule(_,_,_) => ()
     }
-    // println(schema)
-    // println(ground_relations)
   }
 
   init()
@@ -250,8 +248,28 @@ class QuerySchema(q : ConjunctiveQuery) {
 
 }
 
+// The compiler
+object DeepDiveLogCompiler {
 
-object ddlc extends ConjunctiveQueryParser  {
+  def parseArgs(args: Array[String]) = {
+    val getContents = (filename: String) => {
+      val source = scala.io.Source.fromFile(filename)
+      try source.getLines mkString "\n" finally source.close()
+    }
+    args.map(getContents).reduce(_ ++ _)
+  }
+
+  val parser = new ConjunctiveQueryParser
+  def parseProgram(inputProgram: String) = parser.parse(parser.statements, inputProgram)
+
+  type CompiledBlocks = List[String]
+  class CompilationState(
+    // schema derived from all statements
+    ss: Option[StatementSchema],
+    // all head names
+    headNames: List[String],
+    // a handy counter for generating unique names
+    numRules: Int)
 
   // This is generic code that generates the FROM with positional aliasing R0, R1, etc.
   // and the corresponding WHERE clause (equating all variables)
@@ -283,7 +301,7 @@ object ddlc extends ConjunctiveQueryParser  {
         ${ whereClauseStr }"""
   }
   // generate the node portion (V) of the factor graph
-  def nodeRule(ss : StatementSchema, qs: QuerySchema, z : InferenceRule, dep: List[(Int, String)]) : String = {
+  def compileNodeRule(z: InferenceRule, qs: QuerySchema, ss: StatementSchema, dep: List[(Int, String)]) : CompiledBlocks = {
     val headTerms = z.q.head.terms map {
       case Variable(v,r,i) => s"R${i}.${ss.resolveName(qs.getVar(v)) }"
     }
@@ -312,12 +330,11 @@ object ddlc extends ConjunctiveQueryParser  {
         ${dependencyStr}
       }
     """
-    println(ext)
-    ext
+    List(ext)
   }
 
   // generate variable schema statements
-  def variableSchema(statements : List[Statement], ss: StatementSchema) : String = {
+  def compileVariableSchema(statements: List[Statement], ss: StatementSchema): CompiledBlocks = {
     var schema = Set[String]() 
     // generate the statements.
     statements.foreach {
@@ -331,12 +348,11 @@ object ddlc extends ConjunctiveQueryParser  {
         ${schema.mkString("\n")}
       }
     """
-    println(ddSchema)
-    ddSchema
+    List(ddSchema)
   }
 
   // Generate extraction rule part for deepdive
-  def extractionRule( ss: StatementSchema, em: List[(Int, String)], r : ExtractionRule, index : Int) : String = {
+  def compile(r: ExtractionRule, index: Int, ss: StatementSchema, em: List[(Int, String)]): CompiledBlocks = {
     // Generate the body of the query.
     val qs              = new QuerySchema( r.q )
     // variable columns
@@ -369,11 +385,10 @@ object ddlc extends ConjunctiveQueryParser  {
         ${dependencyStr}
       }
     """
-    println(extractor)
-    extractor
+    List(extractor)
   }
 
-  def functionRule( ss: StatementSchema, dependencies: List[(Int, String)], r : FunctionRule, index : Int) : String = {
+  def compile(r: FunctionRule, index: Int, ss: StatementSchema, dependencies: List[(Int, String)]): CompiledBlocks = {
     
     val inputQuery = s"""
     SELECT * FROM ${r.input}
@@ -402,8 +417,7 @@ object ddlc extends ConjunctiveQueryParser  {
         ${dependencyStr}
       }
     """
-    println(extractor)
-    extractor
+    List(extractor)
   }
 
 
@@ -420,11 +434,13 @@ object ddlc extends ConjunctiveQueryParser  {
   }
 
   // generate inference rule part for deepdive
-  def inferenceRule(ss : StatementSchema, r : InferenceRule, dep : List[(Int, String)]) : String = {
+  def compile(r: InferenceRule, i: Int, ss: StatementSchema, dep: List[(Int, String)]): CompiledBlocks = {
+    var blocks = List[String]()
     val qs = new QuerySchema( r.q )
 
     // node query
-    val node_query = if (ss.isQueryTerm(r.q.head.name)) Some(nodeRule(ss,qs,r, dep)) else None  
+    if (ss.isQueryTerm(r.q.head.name))
+      blocks :::= compileNodeRule(r, qs, ss, dep)
 
     // edge query
     val fakeBody        = r.q.head +: r.q.body 
@@ -459,16 +475,15 @@ object ddlc extends ConjunctiveQueryParser  {
       }
     }
     
-    val rule = s"""
+    blocks ::= s"""
       deepdive.inference.factors.factor_${r.q.head.name} {
         input_query: \"\"\"${inputQuery}\"\"\"
         function: "${func}"
         weight: "${weight}"
       }
     """
-    println(rule)
 
-    return inputQuery
+    blocks.reverse
   }
 
   def dbSettings() : String = """
@@ -521,29 +536,41 @@ object ddlc extends ConjunctiveQueryParser  {
    */
   def main(args: Array[String]) {
     // get contents of all given files as one flat input program
-    val getContents = (filename: String) => {
-      val source = scala.io.Source.fromFile(filename)
-      try source.getLines mkString "\n" finally source.close()
-    }
-    val inputProgram = args.map(getContents).reduce(_ ++ _)
+    val inputProgram = parseArgs(args)
+    val parsedProgram = parseProgram(inputProgram)
 
-    // TODO refactor side effects out of the codegen functions
-    // TODO print the generated code all at once at the end
-    println(dbSettings())
-    val q      = parse(statements, inputProgram)
-    val schema = new StatementSchema( q.get )
-    val variables = variableSchema(q.get, schema)
-    var dependencies = q.get.zipWithIndex map {
+    // take an initial pass to analyze the parsed program
+    val schema = new StatementSchema( parsedProgram.get )
+    // TODO analyze the real dependency (Map[headname, List[headname]]) here
+    var dependencies = parsedProgram.get.zipWithIndex map {
       case (e : ExtractionRule, i) => (i, e.q.head.name)
       case (f : FunctionRule, i) => (i, f.output)
       case (w : InferenceRule, i) => (i, w.q.head.name)
       case (_,_) => (-1, "-1")
     }
-    val queries = q.get.zipWithIndex flatMap {
-      case (e : ExtractionRule, i) => Some(extractionRule(schema, dependencies, e, i))
-      case (w : InferenceRule, i)  => Some(inferenceRule(schema, w, dependencies))
-      case (f : FunctionRule, i) => Some(functionRule(schema, dependencies, f, i))
-      case (_,_) => None
-    }
+
+    // compile the program into blocks of application.conf
+    val compiledBlocks = (
+      compileVariableSchema(parsedProgram.get, schema)
+      :::
+      (
+      parsedProgram.get.zipWithIndex flatMap {
+        // XXX Ideally, a single compile call should handle all the polymorphic
+        // cases, but Scala/Java's ad-hoc polymorphism doesn't work that way.
+        // Instead, we need to use the visitor pattern, adding compile(...)
+        // methods to all case classes of Statement.
+        // TODO move schema, dependencies args into a composite field of type CompilationState
+        // TODO get rid of zipWithIndex by keeping a counter in the CompilationState
+        case (s:InferenceRule , i:Int) => compile(s, i, schema, dependencies)
+        case (s:ExtractionRule, i:Int) => compile(s, i, schema, dependencies)
+        case (s:FunctionRule  , i:Int) => compile(s, i, schema, dependencies)
+        case _ => List()
+      }
+      )
+    )
+
+    // emit the generated code
+    println(dbSettings())  // TODO read user's proto-application.conf and augment it
+    compiledBlocks foreach println
   }
 }
