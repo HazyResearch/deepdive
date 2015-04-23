@@ -230,6 +230,35 @@ class CompilationState( statements : List[Statement] )  {
       Some(s"${relation}.R${index}.${name}")
   }
 
+  // This is generic code that generates the FROM with positional aliasing R0, R1, etc.
+  // and the corresponding WHERE clause (equating all variables)
+  def generateSQLBody(z : ConjunctiveQuery) : String = {
+    val bodyNames = ( z.body.zipWithIndex map { case(x,i) => s"${x.name} R${i}"}).mkString(", ")
+    // Simple logic for the where clause, first find every first occurence of a
+    // and stick it in a map.
+    val qs = new QuerySchema(z)
+
+    val whereClause = z.body.zipWithIndex flatMap {
+      case (Atom(relName, terms),body_index) =>
+        terms flatMap {
+          case Variable(varName, relName, index) =>
+            val canonical_body_index = qs.getBodyIndex(varName)
+
+            if (canonical_body_index != body_index) {
+              val real_attr_name1 = resolveName( Variable(varName, relName, index) )
+              val real_attr_name2 = resolveName( qs.getVar(varName))
+              Some(s"R${ body_index }.${ real_attr_name1 } = R${ canonical_body_index }.${ real_attr_name2 } ")
+            } else { None }
+        }
+    }
+    val whereClauseStr = whereClause match {
+      case Nil => ""
+      case _ => s"""WHERE ${whereClause.mkString(" AND ")}"""
+    }
+
+    s"""FROM ${ bodyNames }
+        ${ whereClauseStr }"""
+  }
 }
 
 // This is responsible for schema elements within a given query, e.g.,
@@ -277,66 +306,19 @@ object DeepDiveLogCompiler {
 
   type CompiledBlocks = List[String]
 
-  // This is generic code that generates the FROM with positional aliasing R0, R1, etc.
-  // and the corresponding WHERE clause (equating all variables)
-  def generateSQLBody(ss : CompilationState, z : ConjunctiveQuery) : String = {
-    val bodyNames = ( z.body.zipWithIndex map { case(x,i) => s"${x.name} R${i}"}).mkString(", ")
-    // Simple logic for the where clause, first find every first occurence of a
-    // and stick it in a map.
-    val qs = new QuerySchema(z)
-
-    val whereClause = z.body.zipWithIndex flatMap {
-      case (Atom(relName, terms),body_index) =>
-        terms flatMap {
-          case Variable(varName, relName, index) =>
-            val canonical_body_index = qs.getBodyIndex(varName)
-
-            if (canonical_body_index != body_index) {
-              val real_attr_name1 = ss.resolveName( Variable(varName, relName, index) )
-              val real_attr_name2 = ss.resolveName( qs.getVar(varName))
-              Some(s"R${ body_index }.${ real_attr_name1 } = R${ canonical_body_index }.${ real_attr_name2 } ")
-            } else { None }
-        }
-    }
-    val whereClauseStr = whereClause match {
-      case Nil => ""
-      case _ => s"""WHERE ${whereClause.mkString(" AND ")}"""
-    }
-
-    s"""FROM ${ bodyNames }
-        ${ whereClauseStr }"""
+  def compileUserSettings(): CompiledBlocks = {
+    // TODO read user's proto-application.conf and augment it
+    List("""
+  deepdive.db.default {
+    driver: "org.postgresql.Driver"
+    url: "jdbc:postgresql://"${PGHOST}":"${PGPORT}"/"${DBNAME}
+    user: ${PGUSER}
+    password: ${PGPASSWORD}
+    dbname: ${DBNAME}
+    host: ${PGHOST}
+    port: ${PGPORT}
   }
-  // generate the node portion (V) of the factor graph
-  def compileNodeRule(z: InferenceRule, qs: QuerySchema, ss: CompilationState, dep: List[(Int, String)]) : CompiledBlocks = {
-    val headTerms = z.q.head.terms map {
-      case Variable(v,r,i) => s"R${i}.${ss.resolveName(qs.getVar(v)) }"
-    }
-    val index = qs.getBodyIndex(z.supervision)
-    val name  = ss.resolveName(qs.getVar(z.supervision))
-    val labelCol = s"R${index}.${name}"
-    val headTermsStr = ( "0 as id"  :: headTerms ).mkString(", ")
-    val query = s"""SELECT DISTINCT ${ headTermsStr }, ${labelCol} AS label
-    ${ generateSQLBody(ss,z.q) }"""
-
-    val dependencyRelation = z.q.body map { case(x) => s"${x.name}"}
-    var dependencies = List[String]()
-    for (e <- dep) {
-      if (dependencyRelation contains e._2)
-        dependencies ::= s""" "extraction_rule_${e._1}" """
-    }
-    val dependencyStr = if (dependencies.length > 0) s"dependencies: [${dependencies.mkString(", ")}]" else ""
-
-    val ext = s"""
-      deepdive.extraction.extractors.extraction_rule_${z.q.head.name} {
-        sql: \"\"\" DROP TABLE IF EXISTS ${z.q.head.name};
-        CREATE TABLE ${z.q.head.name} AS
-        ${query}
-        \"\"\"
-        style: "sql_extractor"
-        ${dependencyStr}
-      }
-    """
-    List(ext)
+  """)
   }
 
   // generate variable schema statements
@@ -372,7 +354,7 @@ object DeepDiveLogCompiler {
 
     val inputQuery = s"""
       SELECT ${selectStr}
-      ${ generateSQLBody(ss, r.q) }"""
+      ${ ss.generateSQLBody(r.q) }"""
 
     val dependencyRelation = r.q.body map { case(x) => s"${x.name}"}
     var dependencies = List[String]()
@@ -395,7 +377,6 @@ object DeepDiveLogCompiler {
   }
 
   def compile(r: FunctionRule, index: Int, ss: CompilationState, dependencies: List[(Int, String)]): CompiledBlocks = {
-
     val inputQuery = s"""
     SELECT * FROM ${r.input}
     """
@@ -426,13 +407,44 @@ object DeepDiveLogCompiler {
     List(extractor)
   }
 
-
   // generate inference rule part for deepdive
   def compile(r: InferenceRule, i: Int, ss: CompilationState, dep: List[(Int, String)]): CompiledBlocks = {
     var blocks = List[String]()
     val qs = new QuerySchema( r.q )
 
     // node query
+    // generate the node portion (V) of the factor graph
+    def compileNodeRule(z: InferenceRule, qs: QuerySchema, ss: CompilationState, dep: List[(Int, String)]) : CompiledBlocks = {
+      val headTerms = z.q.head.terms map {
+        case Variable(v,r,i) => s"R${i}.${ss.resolveName(qs.getVar(v)) }"
+      }
+      val index = qs.getBodyIndex(z.supervision)
+      val name  = ss.resolveName(qs.getVar(z.supervision))
+      val labelCol = s"R${index}.${name}"
+      val headTermsStr = ( "0 as id"  :: headTerms ).mkString(", ")
+      val query = s"""SELECT DISTINCT ${ headTermsStr }, ${labelCol} AS label
+    ${ ss.generateSQLBody(z.q) }"""
+
+      val dependencyRelation = z.q.body map { case(x) => s"${x.name}"}
+      var dependencies = List[String]()
+      for (e <- dep) {
+        if (dependencyRelation contains e._2)
+          dependencies ::= s""" "extraction_rule_${e._1}" """
+      }
+      val dependencyStr = if (dependencies.length > 0) s"dependencies: [${dependencies.mkString(", ")}]" else ""
+
+      val ext = s"""
+      deepdive.extraction.extractors.extraction_rule_${z.q.head.name} {
+        sql: \"\"\" DROP TABLE IF EXISTS ${z.q.head.name};
+        CREATE TABLE ${z.q.head.name} AS
+        ${query}
+        \"\"\"
+        style: "sql_extractor"
+        ${dependencyStr}
+      }
+    """
+      List(ext)
+    }
     if (ss.isQueryTerm(r.q.head.name))
       blocks :::= compileNodeRule(r, qs, ss, dep)
 
@@ -456,7 +468,7 @@ object DeepDiveLogCompiler {
     // factor input query
     val inputQuery = s"""
       SELECT ${selectStr}
-      ${ generateSQLBody(ss, fakeCQ) }"""
+      ${ ss.generateSQLBody(fakeCQ) }"""
 
     // factor function
     val func = s"""Imply(${r.q.head.name}.R0.label)"""
@@ -480,54 +492,6 @@ object DeepDiveLogCompiler {
     blocks.reverse
   }
 
-  def dbSettings() : String = """
-  deepdive.db.default {
-    driver: "org.postgresql.Driver"
-    url: "jdbc:postgresql://"${PGHOST}":"${PGPORT}"/"${DBNAME}
-    user: ${PGUSER}
-    password: ${PGPASSWORD}
-    dbname: ${DBNAME}
-    host: ${PGHOST}
-    port: ${PGPORT}
-  }
-  """
-  /*
-   T(base_attr);
-   S(a1,a2)
-   Q(x) :- S(x,y),T(y)
-   Should generate.
-
-   Node query:
-   CREATE TABLE Q AS
-   SELECT 0 as _id, R0.a1
-   FROM S as R0,T as R1
-   WHERE R0.a2 = R1.base_attr
-
-   Edge Query (if S and T are probabilistic)
-   SELECT Q._id, array_agg( (S._id, T_.id) )
-   FROM Q as R0,S as R1,T as R2
-   WHERE S.y = T.base_attr AND
-         Q.x = S.x AND Q.z = S.z
-
-   Factor Function: OR
-
-   =======
-   R(x,y) (assume non probabilistic)
-
-   Q(x) :- R(x,f) weight=f
-
-   Node Query:
-   CREATE TABLE Q AS
-   SELECT DISTINCT 0 as _id, x FROM R
-
-   Edge Query:
-   SELECT 0 as _fid, Q.id, R.f as w
-   FROM Q, R
-   WHERE Q.x = R.x
-
-   =======
-
-   */
   def main(args: Array[String]) {
     // get contents of all given files as one flat input program
     val inputProgram = parseArgs(args)
@@ -545,6 +509,8 @@ object DeepDiveLogCompiler {
 
     // compile the program into blocks of application.conf
     val compiledBlocks = (
+      compileUserSettings
+      :::
       compileVariableSchema(parsedProgram.get, state)
       :::
       (
@@ -564,7 +530,6 @@ object DeepDiveLogCompiler {
     )
 
     // emit the generated code
-    println(dbSettings())  // TODO read user's proto-application.conf and augment it
     compiledBlocks foreach println
   }
 }
