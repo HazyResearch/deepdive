@@ -218,6 +218,18 @@ class CompilationState( statements : List[Statement] )  {
   def isQueryTerm( relName : String ): Boolean = {
     if( ground_relations contains relName ) !ground_relations(relName) else true
   }
+
+  // resolve a column name with alias
+  def resolveColumn(s: String, qs: QuerySchema, q : ConjunctiveQuery, alias: Boolean) : Option[String] = {
+    val index = qs.getBodyIndex(s)
+    val name  = resolveName(qs.getVar(s))
+    val relation = q.body(index).name
+    if (alias)
+      Some(s"""R${index}.${name} AS "${relation}.R${index}.${name}" """)
+    else
+      Some(s"${relation}.R${index}.${name}")
+  }
+
 }
 
 // This is responsible for schema elements within a given query, e.g.,
@@ -351,7 +363,7 @@ object DeepDiveLogCompiler {
     val qs              = new QuerySchema( r.q )
     // variable columns
     val variableCols = r.q.head.terms flatMap {
-      case(Variable(v,rr,i)) => resolveColumn(v, ss, qs, r.q, true)
+      case(Variable(v,rr,i)) => ss.resolveColumn(v, qs, r.q, true)
     }
 
     val variableColsStr = if (variableCols.length > 0) Some(variableCols.mkString(", ")) else None
@@ -415,18 +427,6 @@ object DeepDiveLogCompiler {
   }
 
 
-  // resolve a column name with alias
-  def resolveColumn(s: String, ss: CompilationState, qs: QuerySchema, q : ConjunctiveQuery,
-   alias: Boolean) : Option[String] = {
-    val index = qs.getBodyIndex(s)
-    val name  = ss.resolveName(qs.getVar(s))
-    val relation = q.body(index).name
-    if (alias)
-      Some(s"""R${index}.${name} AS "${relation}.R${index}.${name}" """)
-    else
-      Some(s"${relation}.R${index}.${name}")
-  }
-
   // generate inference rule part for deepdive
   def compile(r: InferenceRule, i: Int, ss: CompilationState, dep: List[(Int, String)]): CompiledBlocks = {
     var blocks = List[String]()
@@ -448,7 +448,7 @@ object DeepDiveLogCompiler {
     // weight string
     val uwStr = r.weights match {
       case KnownFactorWeight(x) => None
-      case UnknownFactorWeight(w) => Some(w.flatMap(s => resolveColumn(s, ss, qs2, fakeCQ, true)).mkString(", "))
+      case UnknownFactorWeight(w) => Some(w.flatMap(s => ss.resolveColumn(s, qs2, fakeCQ, true)).mkString(", "))
     }
 
     val selectStr = (List(variableIdsStr, variableColsStr, uwStr) flatMap (u => u)).mkString(", ")
@@ -465,7 +465,7 @@ object DeepDiveLogCompiler {
     val weight = r.weights match {
       case KnownFactorWeight(x) => s"${x}"
       case UnknownFactorWeight(w) => {
-        s"""?(${w.flatMap(s => resolveColumn(s, ss, qs2, fakeCQ, false)).mkString(", ")})"""
+        s"""?(${w.flatMap(s => ss.resolveColumn(s, qs2, fakeCQ, false)).mkString(", ")})"""
       }
     }
 
