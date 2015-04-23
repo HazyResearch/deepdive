@@ -512,19 +512,19 @@ object DeepDiveLogCompiler {
   def main(args: Array[String]) {
     // get contents of all given files as one flat input program
     val inputProgram = parseArgs(args)
-    val parsedProgram = parseProgram(inputProgram)
+    val parsedProgram = parseProgram(inputProgram).get
 
     // take an initial pass to analyze the parsed program
-    val state = new CompilationState( parsedProgram.get )
+    val state = new CompilationState( parsedProgram )
 
     // compile the program into blocks of application.conf
     val compiledBlocks = (
       compileUserSettings
       :::
-      compileVariableSchema(parsedProgram.get, state)
+      compileVariableSchema(parsedProgram, state)
       :::
       (
-      parsedProgram.get flatMap {
+      parsedProgram flatMap {
         // XXX Ideally, a single compile call should handle all the polymorphic
         // cases, but Scala/Java's ad-hoc polymorphism doesn't work that way.
         // Instead, we need to use the visitor pattern, adding compile(...)
