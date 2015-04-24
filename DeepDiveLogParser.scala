@@ -97,4 +97,17 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
   def statement : Parser[Statement] = (functionElement | inferenceRule | extractionRule | functionRule | schemaElement) ^^ {case(x) => x}
 
   def program : Parser[List[Statement]] = rep1sep(statement, ".") ^^ { case(x) => x }
+
+  def parseProgram(inputProgram: CharSequence, fileName: Option[String] = None): List[Statement] = {
+    parse(program, inputProgram) match {
+      case result: Success[_] => result.get
+      case error:  NoSuccess  => throw new RuntimeException(fileName.getOrElse("") + error.toString())
+    }
+  }
+
+  def parseProgramFile(fileName: String): List[Statement] = {
+    val source = scala.io.Source.fromFile(fileName)
+    try parseProgram(source.getLines mkString "\n", Some(fileName))
+    finally source.close()
+  }
 }

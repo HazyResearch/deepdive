@@ -381,17 +381,16 @@ object DeepDiveLogCompiler {
   type CompiledBlock = String
   type CompiledBlocks = List[CompiledBlock]
 
-  def parseArgs(args: Array[String]) = {
-    val getContents = (filename: String) => {
-      val source = scala.io.Source.fromFile(filename)
-      try source.getLines mkString "\n" finally source.close()
-    }
-    args.map(getContents).reduce(_ ++ _)
-  }
-
   val parser = new ConjunctiveQueryParser
-  def parseProgram(inputProgram: String) = {
-    parser.parse(parser.program, inputProgram)
+  def parseFilesOrExit(fileNames: Array[String]): Program = {
+    try {
+      fileNames.toList flatMap { parser.parseProgramFile(_) }
+    } catch {
+      case e: RuntimeException =>
+        System.err.println("[error] " + e.getMessage)
+        System.exit(1)
+        null
+    }
   }
 
   def compileUserSettings(): CompiledBlocks = {
@@ -429,9 +428,8 @@ object DeepDiveLogCompiler {
 
   // entry point for command-line interface
   def main(args: Array[String]) {
-    // get contents of all given files as one flat input program
-    val inputProgram = parseArgs(args)
-    val parsedProgram = parseProgram(inputProgram).get
+    // parse each file into a single program
+    val parsedProgram = parseFilesOrExit(args)
 
     // take an initial pass to analyze the parsed program
     val state = new CompilationState( parsedProgram )
