@@ -1,12 +1,24 @@
 # Makefile for DeepDiveLogCompiler
 
-JAR = ddlc.jar
+TESTJAR = ddlc-test.jar
+TEST = examples/test6.ddl
 
-test: $(JAR)
-	scala $(JAR) examples/test6.ddl | diff -u examples/test6.expected -
-
-$(JAR): $(wildcard *.scala)
+test: $(TESTJAR)
+	CLASSPATH=$(shell sbt "export compile:dependency-classpath" | tail -1) \
+	scala $< $(TEST) | diff -u $(TEST:.ddl=.expected) -
+$(TESTJAR): $(wildcard *.scala)
 	sbt package
-	jar=(target/scala-*/*.jar); ln -sfn $${jar[0]} $(JAR)
-	touch $(JAR)
+	ln -sfn $(shell ls -t target/scala-*/*_*.jar | head -1) $@
+	touch $@
 
+# standalone jar
+JAR = ddlc.jar
+test-package: $(JAR)
+	scala $< $(TEST) | diff -u $(TEST:.ddl=.expected) -
+$(JAR): $(wildcard *.scala)
+	sbt assembly
+	ln -sfn $(shell ls -t target/scala-*/*-assembly-*.jar | head -1) $@
+	touch $@
+
+clean:
+	sbt clean
