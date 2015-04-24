@@ -1,7 +1,7 @@
 # Makefile for DeepDiveLogCompiler
 
 TESTJAR = ddlc-test.jar
-TEST = examples/test6.ddl
+TEST = examples/spouse_example.ddl
 
 test: $(TESTJAR)
 	CLASSPATH=$(shell sbt "export compile:dependency-classpath" | tail -1) \
