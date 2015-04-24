@@ -87,7 +87,7 @@ class CompilationState( statements : DeepDiveLogCompiler.Program )  {
         }
       case ExtractionRule(_) => ()
       case InferenceRule(_,_,_) => ()
-      case f @ FunctionDeclaration(a, b, c, d, e) => function_schema += {a -> f}
+      case fdecl : FunctionDeclaration => function_schema += {fdecl.functionName -> fdecl}
       case FunctionCallRule(_,_,_) => ()
     }
 
@@ -95,6 +95,10 @@ class CompilationState( statements : DeepDiveLogCompiler.Program )  {
   }
 
   init()
+
+  def error(message: String) {
+    throw new RuntimeException(message)
+  }
 
   // Given a statement, resolve its name for the compiled extractor block.
   def resolveExtractorBlockName(s: Statement): String = s match {
@@ -233,7 +237,7 @@ trait Statement {
   def compile(state: CompilationState): CompiledBlocks = List()
 }
 case class SchemaDeclaration( a : Attribute , isQuery : Boolean ) extends Statement // atom and whether this is a query relation.
-case class FunctionDeclaration( functionName: String, inputType: RelationType, outputType: RelationType, implementation: String, mode: String) extends Statement
+case class FunctionDeclaration( functionName: String, inputType: RelationType, outputType: RelationType, implementations: List[FunctionImplementationDeclaration]) extends Statement
 case class ExtractionRule(q : ConjunctiveQuery) extends Statement // Extraction rule
 {
   // Generate extraction rule part for deepdive
@@ -274,6 +278,15 @@ case class FunctionCallRule(input : String, output : String, function : String) 
     """
 
     val function = ss.resolveFunctionName(this.function)
+    val udfDetails = (function.implementations collectFirst {
+      case impl: RowWiseLineHandler =>
+        s"""udf: \"${StringEscapeUtils.escapeJava(impl.command)}\"
+        style: \"${impl.format}_extractor\""""
+    })
+
+    if (udfDetails.isEmpty)
+      ss.error(s"Cannot find compilable implementation for function ${this.function} among:\n  "
+        + (function.implementations mkString "\n  "))
 
     val blockName = ss.resolveExtractorBlockName(this)
     val extractor = s"""
@@ -281,8 +294,7 @@ case class FunctionCallRule(input : String, output : String, function : String) 
         input: \"\"\" SELECT * FROM ${input}
         \"\"\"
         output_relation: \"${output}\"
-        udf: \"${StringEscapeUtils.escapeJava(function.implementation)}\"
-        style: \"${function.mode}_extractor\"
+        ${udfDetails.get}
         ${ss.generateDependenciesOfCompiledBlockFor(this)}
       }
     """
@@ -378,15 +390,8 @@ object DeepDiveLogCompiler {
   type CompiledBlocks = List[CompiledBlock]
 
   val parser = new ConjunctiveQueryParser
-  def parseFilesOrExit(fileNames: Array[String]): Program = {
-    try {
-      fileNames.toList flatMap { parser.parseProgramFile(_) }
-    } catch {
-      case e: RuntimeException =>
-        System.err.println("[error] " + e.getMessage)
-        System.exit(1)
-        null
-    }
+  def parseFiles(fileNames: Array[String]): Program = {
+    fileNames.toList flatMap { parser.parseProgramFile(_) }
   }
 
   def compileUserSettings(): CompiledBlocks = {
@@ -423,9 +428,9 @@ object DeepDiveLogCompiler {
   }
 
   // entry point for command-line interface
-  def main(args: Array[String]) {
+  def main(args: Array[String]) = try {
     // parse each file into a single program
-    val parsedProgram = parseFilesOrExit(args)
+    val parsedProgram = parseFiles(args)
 
     // take an initial pass to analyze the parsed program
     val state = new CompilationState( parsedProgram )
@@ -441,5 +446,9 @@ object DeepDiveLogCompiler {
 
     // emit the generated code
     blocks foreach println
+  } catch {
+    case e: RuntimeException =>
+      System.err.println("[error] " + e.getMessage)
+      System.exit(1)
   }
 }

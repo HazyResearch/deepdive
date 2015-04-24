@@ -27,6 +27,10 @@ trait RelationType
 case class RelationTypeDeclaration(names: List[String], types: List[String]) extends RelationType
 case class RelationTypeAlias(likeRelationName: String) extends RelationType
 
+trait FunctionImplementationDeclaration
+case class RowWiseLineHandler(format: String, command: String) extends FunctionImplementationDeclaration
+
+
 // Parser
 class ConjunctiveQueryParser extends JavaTokenParsers {
 
@@ -97,17 +101,20 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
     | "like" ~> relationName ^^ { RelationTypeAlias(_) }
     )
 
+  def functionImplementation : Parser[FunctionImplementationDeclaration] =
+    "implementation" ~ stringLiteralAsString ~ "handles" ~ ("tsv" | "json") ~ "lines" ^^ {
+      case (_ ~ command ~ _ ~ format ~ _) => RowWiseLineHandler(command=command, format=format)
+    }
+
   def functionDeclaration : Parser[FunctionDeclaration] =
-    ( "function" ~ functionName
-    ~ "over" ~ relationType
-    ~ "returns" ~ relationType
-    ~ "implementation" ~ stringLiteralAsString ~ "handles" ~ ("tsv" | "json") ~ "lines"
+    ( "function" ~ functionName ~ "over" ~ relationType
+                             ~ "returns" ~ relationType
+                 ~ (functionImplementation+)
     ) ^^ {
-      case ("function" ~ a
-           ~ "over" ~ inTy
-           ~ "returns" ~ outTy
-           ~ "implementation" ~ d ~ "handles" ~ e ~ "lines") =>
-             FunctionDeclaration(a, inTy, outTy, d, e)
+      case ("function" ~ a ~ "over" ~ inTy
+                           ~ "returns" ~ outTy
+                       ~ implementationDecls) =>
+             FunctionDeclaration(a, inTy, outTy, implementationDecls)
     }
 
   def extractionRule : Parser[ExtractionRule] =
