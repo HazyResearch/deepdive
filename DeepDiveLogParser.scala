@@ -21,8 +21,11 @@ sealed trait FactorWeight {
 case class KnownFactorWeight(value: Double) extends FactorWeight {
   def variables = Nil
 }
-
 case class UnknownFactorWeight(variables: List[String]) extends FactorWeight
+
+trait RelationType
+case class RelationTypeDeclaration(names: List[String], types: List[String]) extends RelationType
+case class RelationTypeAlias(likeRelationName: String) extends RelationType
 
 // Parser
 class ConjunctiveQueryParser extends JavaTokenParsers {
@@ -87,18 +90,24 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
         ConjunctiveQuery(headatom, bodyatoms.toList)
     }
 
+  def relationType: Parser[RelationType] =
+    ( rep1sep(columnDeclaration, ",") ^^ {
+        attrs => RelationTypeDeclaration(attrs map { _.name }, attrs map { _.t })
+      }
+    | "like" ~> relationName ^^ { RelationTypeAlias(_) }
+    )
 
   def functionDeclaration : Parser[FunctionDeclaration] =
     ( "function" ~ functionName
-    ~ "over" ~ "like" ~ relationName
-    ~ "returns" ~ "like" ~ relationName
+    ~ "over" ~ relationType
+    ~ "returns" ~ relationType
     ~ "implementation" ~ stringLiteralAsString ~ "handles" ~ ("tsv" | "json") ~ "lines"
     ) ^^ {
       case ("function" ~ a
-           ~ "over" ~ "like" ~ b
-           ~ "returns" ~ "like" ~ c
+           ~ "over" ~ inTy
+           ~ "returns" ~ outTy
            ~ "implementation" ~ d ~ "handles" ~ e ~ "lines") =>
-             FunctionDeclaration(a, b, c, d, e)
+             FunctionDeclaration(a, inTy, outTy, d, e)
     }
 
   def extractionRule : Parser[ExtractionRule] =

@@ -87,7 +87,7 @@ class CompilationState( statements : DeepDiveLogCompiler.Program )  {
         }
       case ExtractionRule(_) => ()
       case InferenceRule(_,_,_) => ()
-      case FunctionDeclaration(a, b, c, d, e) => function_schema += {a -> FunctionDeclaration(a, b, c, d, e)}
+      case f @ FunctionDeclaration(a, b, c, d, e) => function_schema += {a -> f}
       case FunctionCallRule(_,_,_) => ()
     }
 
@@ -233,7 +233,7 @@ trait Statement {
   def compile(state: CompilationState): CompiledBlocks = List()
 }
 case class SchemaDeclaration( a : Attribute , isQuery : Boolean ) extends Statement // atom and whether this is a query relation.
-case class FunctionDeclaration( functionName: String, input: String, output: String, implementation: String, mode: String) extends Statement
+case class FunctionDeclaration( functionName: String, inputType: RelationType, outputType: RelationType, implementation: String, mode: String) extends Statement
 case class ExtractionRule(q : ConjunctiveQuery) extends Statement // Extraction rule
 {
   // Generate extraction rule part for deepdive
