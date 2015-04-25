@@ -153,6 +153,8 @@ else:
     if l.strip() == '':
       continue
     indent_level = len(l) - len(l.lstrip(' '))
+    if indent_level > 0:
+      break
 
   # Remove first-level indents
   run_func_content_noindent = '\n'.join([ l[indent_level:] for l in lines])
