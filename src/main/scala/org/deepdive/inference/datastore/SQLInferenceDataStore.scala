@@ -807,8 +807,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
                 v => s""" t0.${quoteColumn(v)} = t1.${quoteColumn(v)} """).mkString("AND")
             case false => ""
           }
-          execute(s"ANALYZE ${querytable}")
-          execute(s"ANALYZE ${weighttableForThisFactor}")
+          execute(analyzeTable(querytable))
+          execute(analyzeTable(weighttableForThisFactor))
           du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
             s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
              FROM ${querytable} t0, ${weighttableForThisFactor} t1
@@ -928,8 +928,8 @@ trait SQLInferenceDataStore extends InferenceDataStore with Logging {
           // TODO we don't have enough code reuse here.
           val weightjoinlist = factorDesc.weight.variables.map(v => 
             s""" t0.${quoteColumn(v)} = t1.${quoteColumn(v)} """).mkString("AND")
-          execute(s"ANALYZE ${querytable}")
-          execute(s"ANALYZE ${weighttableForThisFactor}")
+          execute(analyzeTable(querytable))
+          execute(analyzeTable(weighttableForThisFactor))
           du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
             s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
              FROM ${querytable} t0, ${weighttableForThisFactor} t1
