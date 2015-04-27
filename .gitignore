@@ -1,1 +1,3 @@
-*.class
+/ddlc.jar
+/ddlc-test.jar
+target
