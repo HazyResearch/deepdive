@@ -428,6 +428,11 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
 
     // Helpers.executeCmd(delCmd) // This won't work because of escaping issues?
 
+    var newInputQuery : String = inputQuery.toString
+    for (table <- dbSettings.incrementalTables) {
+      newInputQuery = newInputQuery.replaceAll(table, InferenceNamespace.getIncrementalTableName(table))
+    }
+
     try {
       dl.unload(fname, psqlFilePath, dbSettings, s"${inputQuery}", "")
     } catch {
