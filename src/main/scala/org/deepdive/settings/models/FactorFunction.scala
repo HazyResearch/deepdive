@@ -46,6 +46,12 @@ case class MultinomialFactorFunction(variables: Seq[FactorFunctionVariable]) ext
   override def variableDataType = "Discrete"
 }
 
+/* A factor function describing exactly one is true of A, B, C, ... */
+case class OneIsTrueFactorFunction(variables: Seq[FactorFunctionVariable]) extends FactorFunction {
+  override def variableDataType = "Boolean"
+}
+
+
 /* A variable used in a Factor function */
 case class FactorFunctionVariable(relation: String, field: String, isArray: Boolean = false, 
   isNegated: Boolean = false, predicate: Option[Long] = None) {
