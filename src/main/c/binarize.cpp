@@ -128,10 +128,12 @@ void load_factor(std::string filename, short funcid, long nvar, char** positives
     fout.write((char *)&factorid, 8);
     fout.write((char *)&weightid, 8);
     fout.write((char *)&funcid, 2);
-    fout.write((char *)&nvars_big, 8);
+    // fout.write((char *)&nvars_big, 8);
 
     uint64_t position = 0;
     uint64_t position_big;
+    long n_vars = 0;
+
     for (long i = 0; i < nvar; i++) {
       getline(ss, field, field_delim);
 
@@ -153,6 +155,7 @@ void load_factor(std::string filename, short funcid, long nvar, char** positives
 
           nedge++;
           position++;
+          n_vars++;
         }
       } else {
         variableid = atol(field.c_str());
@@ -167,11 +170,13 @@ void load_factor(std::string filename, short funcid, long nvar, char** positives
 
         nedge++;
         position++;
+        n_vars++;
       }
     }
+    n_vars = bswap_64(n_vars);
+    fout.write((char *)&n_vars, 8);
 
   }
-
   std::cout << nedge << std::endl;
 
   fin.close();
