@@ -19,6 +19,7 @@ namespace dd{
     FUNC_EQUAL      = 3,
     FUNC_ISTRUE     = 4,
     FUNC_MULTINOMIAL= 5,
+    FUNC_ONEISTRUE  = 6,
     FUNC_SQLSELECT  = 10,
     FUNC_ContLR     = 20
   };
@@ -93,6 +94,13 @@ namespace dd{
                                    const VariableValue * const var_values, 
                                    const VariableIndex &, const VariableValue &) const;
 
+    /**
+     * Returns the potential of oneIsTrue factor function. See factor.hxx for more detail
+     */
+    inline double _potential_oneistrue(const VariableInFactor * const vifs,
+                                       const VariableValue * const var_values,
+                                       const VariableIndex &, const VariableValue &) const;
+
     /** 
      * Returns potential of the factor. 
      * (potential is the value of the factor) 
@@ -118,6 +126,7 @@ namespace dd{
         case FUNC_AND         : return _potential_and(vifs, var_values, vid, proposal);   
         case FUNC_EQUAL       : return _potential_equal(vifs, var_values, vid, proposal);  
         case FUNC_MULTINOMIAL : return _potential_multinomial(vifs, var_values, vid, proposal);
+        case FUNC_ONEISTRUE   : return _potential_oneistrue(vifs, var_values, vid, proposal);
         case FUNC_SQLSELECT   : std::cout << "SQLSELECT Not supported yet!" << std::endl; assert(false); return 0;  
         case FUNC_ContLR   : std::cout << "ContinuousLR Not supported yet!" << std::endl; assert(false); return 0;  
         std::cout << "Unsupported Factor Function ID= " << func_id << std::endl;
