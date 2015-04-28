@@ -757,7 +757,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     execute(createMappedWeightsViewSQL)
     
     // Create feature statistics tables for error analysis
-    execute(createMappedFeatureStatsViewSQL)
+    // execute(createMappedFeatureStatsViewSQL)
 
     relationsColumns.foreach { case(relationName, columnName) =>
       execute(createInferenceViewSQL(relationName, columnName))

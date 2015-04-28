@@ -141,8 +141,13 @@ void load_factor(std::string filename, short funcid, long nvar, char** positives
       if (field.at(0) == '{') {
         string subfield;
         istringstream ss1(field);
+        ss1.get(); // get '{'
+        bool ended = false;
         while (getline(ss1, subfield, array_delim)) {
-          if (subfield.at(0) == '}') break;
+          if (subfield.at(subfield.length() - 1) == '}') {
+            ended = true;
+            subfield = subfield.substr(0, subfield.length() - 1);
+          }
           variableid = atol(subfield.c_str());
           variableid = bswap_64(variableid);
           position_big = bswap_64(position);
@@ -156,6 +161,7 @@ void load_factor(std::string filename, short funcid, long nvar, char** positives
           nedge++;
           position++;
           n_vars++;
+          if (ended) break;
         }
       } else {
         variableid = atol(field.c_str());
