@@ -2,6 +2,9 @@
 
 .PHONY: build
 build:
+	@echo "=== Checking dependencies... ==="
+	lib/check-depends.sh
+
 	@echo "=== Extracting sampler library... ==="
 	lib/dw_extract.sh
 
@@ -29,6 +32,6 @@ test:
 .PHONY: all
 all: build test
 
-.DEFAULT_GOAL:= build   # `make` only do installation for now. 
-						# testing needs `make test` on users' will
+.DEFAULT_GOAL: build    # `make` only do installation for now. 
+                        # testing needs `make test` on users' will
 
