@@ -27,10 +27,21 @@ This will use whatever in you $(CXX) variable to compile. We assume that you hav
 
     CXX=/dfs/rulk/0/czhang/software/gcc/bin/g++ make
 
+On MacOS, `CXX=/opt/local/bin/clang++ make`
+
 To test, run
 
     make test
 
+On MacOS, you can use MacPorts to install clang.
+
+    port select --list clang
+    sudo port install clang-3.7
+    sudo port select --set clang mp-clang-3.7 
+
+You can then compile using
+
+    CXX=/opt/local/bin/clang++ make
 
 # Reference
 
