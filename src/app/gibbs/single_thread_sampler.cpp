@@ -42,7 +42,7 @@ namespace dd{
     
     Variable & variable = p_fg->variables[vid];
 
-    if (variable.is_evid == false) return;
+    // if (variable.is_evid == false) return;
 
     if(variable.domain_type == DTYPE_BOOLEAN){ // boolean
 
@@ -63,9 +63,9 @@ namespace dd{
            * The variable will be counted as a sample for inference
            **********************************************************/
           if((*this->p_rand_obj_buf) * (1.0 + exp(potential_neg-potential_pos)) < 1.0){
-            p_fg->template update<false>(variable, 1.0);
+            p_fg->update_evid(variable, 1.0);
           }else{
-            p_fg->template update<false>(variable, 0.0);
+            p_fg->update_evid(variable, 0.0);
           }
         }
 

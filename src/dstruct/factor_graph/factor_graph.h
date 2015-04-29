@@ -108,6 +108,8 @@ namespace dd{
     template<bool does_change_evid>
     inline void update(Variable & variable, const double & new_value);
 
+    inline void update_evid(Variable & variable, const double & new_value);
+
     /**
      * Returns log-linear weighted potential of the all factors for the given 
      * variable using the propsal value.
@@ -200,6 +202,13 @@ namespace dd{
 
   /**
    * Updates the evid assignments for the given variable useing new_value
+   */
+  inline void FactorGraph::update_evid(Variable & variable, const double & new_value){
+    infrs->assignments_evid[variable.id] = new_value;
+  }
+
+  /**
+   * Updates the evid assignments for the given variable useing new_value, for inference
    */
   template<>
   inline void FactorGraph::update<false>(Variable & variable, const double & new_value){
