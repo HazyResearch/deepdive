@@ -182,10 +182,10 @@ namespace dd{
 	    if(satisfied) {
 	      if(!found) found = true;
 	      /* Early return if we find that two variables are satisfied */
-	      else return 0.0;
+	      else return -1.0;
 	    }
 	  }
 	  if (found) return 1.0;
-	  else return 0.0;
+	  else return -1.0;
 	}
 }
