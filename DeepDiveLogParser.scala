@@ -30,6 +30,13 @@ case class RelationTypeAlias(likeRelationName: String) extends RelationType
 trait FunctionImplementationDeclaration
 case class RowWiseLineHandler(format: String, command: String) extends FunctionImplementationDeclaration
 
+// Statements that will be parsed and compiled
+trait Statement
+case class SchemaDeclaration( a : Attribute , isQuery : Boolean ) extends Statement // atom and whether this is a query relation.
+case class FunctionDeclaration( functionName: String, inputType: RelationType, outputType: RelationType, implementations: List[FunctionImplementationDeclaration]) extends Statement
+case class ExtractionRule(q : ConjunctiveQuery) extends Statement // Extraction rule
+case class FunctionCallRule(input : String, output : String, function : String) extends Statement // Extraction rule
+case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, supervision : String) extends Statement // Weighted rule
 
 // Parser
 class ConjunctiveQueryParser extends JavaTokenParsers {

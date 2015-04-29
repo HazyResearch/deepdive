@@ -229,24 +229,26 @@ class QuerySchema(q : ConjunctiveQuery) {
 }
 
 
-// Statements that will be parsed and compiled
-// Statement-local compilation logic is kept in each case class' compile() method.
-// Any global compilation logic should be kept in DeepDiveLogCompiler object.
-trait Statement {
-  type CompiledBlocks = DeepDiveLogCompiler.CompiledBlocks
-  def compile(state: CompilationState): CompiledBlocks = List()
-}
-case class SchemaDeclaration( a : Attribute , isQuery : Boolean ) extends Statement // atom and whether this is a query relation.
-case class FunctionDeclaration( functionName: String, inputType: RelationType, outputType: RelationType, implementations: List[FunctionImplementationDeclaration]) extends Statement
-case class ExtractionRule(q : ConjunctiveQuery) extends Statement // Extraction rule
-{
+// Compiler that takes parsed program as input and prints blocks of application.conf
+object DeepDiveLogCompiler extends DeepDiveLogHandler {
+  type CompiledBlock = String
+  type CompiledBlocks = List[CompiledBlock]
+
+  // Dispatch to the corresponding compile function
+  def compile(stmt: Statement, ss: CompilationState): CompiledBlocks = stmt match {
+    case s:  ExtractionRule   => compile(s, ss)
+    case s:  FunctionCallRule => compile(s, ss)
+    case s:  InferenceRule    => compile(s, ss)
+    case _                    => List()  // defaults to compiling into empty block
+  }
+
   // Generate extraction rule part for deepdive
-  override def compile(ss: CompilationState): CompiledBlocks = {
+  def compile(stmt: ExtractionRule, ss: CompilationState): CompiledBlocks = {
     // Generate the body of the query.
-    val qs              = new QuerySchema( q )
+    val qs              = new QuerySchema( stmt.q )
     // variable columns
-    val variableCols = q.head.terms flatMap {
-      case(Variable(v,rr,i)) => ss.resolveColumn(v, qs, q, true)
+    val variableCols = stmt.q.head.terms flatMap {
+      case(Variable(v,rr,i)) => ss.resolveColumn(v, qs, stmt.q, true)
     }
 
     val variableColsStr = if (variableCols.length > 0) Some(variableCols.mkString(", ")) else None
@@ -255,29 +257,27 @@ case class ExtractionRule(q : ConjunctiveQuery) extends Statement // Extraction 
 
     val inputQuery = s"""
       SELECT ${selectStr}
-      ${ ss.generateSQLBody(q) }"""
+      ${ ss.generateSQLBody(stmt.q) }"""
 
-    val blockName = ss.resolveExtractorBlockName(this)
+    val blockName = ss.resolveExtractorBlockName(stmt)
     val extractor = s"""
       deepdive.extraction.extractors.${blockName} {
-        sql: \"\"\" DROP VIEW IF EXISTS ${q.head.name};
-        CREATE VIEW ${q.head.name} AS ${inputQuery}
+        sql: \"\"\" DROP VIEW IF EXISTS ${stmt.q.head.name};
+        CREATE VIEW ${stmt.q.head.name} AS ${inputQuery}
         \"\"\"
         style: "sql_extractor"
-        ${ss.generateDependenciesOfCompiledBlockFor(this)}
+        ${ss.generateDependenciesOfCompiledBlockFor(stmt)}
       }
     """
     List(extractor)
   }
-}
-case class FunctionCallRule(input : String, output : String, function : String) extends Statement // Extraction rule
-{
-  override def compile(ss: CompilationState): CompiledBlocks = {
+
+  def compile(stmt: FunctionCallRule, ss: CompilationState): CompiledBlocks = {
     val inputQuery = s"""
-    SELECT * FROM ${input}
+    SELECT * FROM ${stmt.input}
     """
 
-    val function = ss.resolveFunctionName(this.function)
+    val function = ss.resolveFunctionName(stmt.function)
     val udfDetails = (function.implementations collectFirst {
       case impl: RowWiseLineHandler =>
         s"""udf: \"${StringEscapeUtils.escapeJava(impl.command)}\"
@@ -285,28 +285,26 @@ case class FunctionCallRule(input : String, output : String, function : String) 
     })
 
     if (udfDetails.isEmpty)
-      ss.error(s"Cannot find compilable implementation for function ${this.function} among:\n  "
+      ss.error(s"Cannot find compilable implementation for function ${stmt.function} among:\n  "
         + (function.implementations mkString "\n  "))
 
-    val blockName = ss.resolveExtractorBlockName(this)
+    val blockName = ss.resolveExtractorBlockName(stmt)
     val extractor = s"""
       deepdive.extraction.extractors.${blockName} {
-        input: \"\"\" SELECT * FROM ${input}
+        input: \"\"\" SELECT * FROM ${stmt.input}
         \"\"\"
-        output_relation: \"${output}\"
+        output_relation: \"${stmt.output}\"
         ${udfDetails.get}
-        ${ss.generateDependenciesOfCompiledBlockFor(this)}
+        ${ss.generateDependenciesOfCompiledBlockFor(stmt)}
       }
     """
     List(extractor)
   }
-}
-case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, supervision : String) extends Statement // Weighted rule
-{
+
   // generate inference rule part for deepdive
-  override def compile(ss: CompilationState): CompiledBlocks = {
+  def compile(stmt: InferenceRule, ss: CompilationState): CompiledBlocks = {
     var blocks = List[String]()
-    val qs = new QuerySchema( q )
+    val qs = new QuerySchema( stmt.q )
 
     // node query
     // generate the node portion (V) of the factor graph
@@ -334,20 +332,20 @@ case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, supervisi
     """
       List(ext)
     }
-    if (ss.isQueryTerm(q.head.name))
-      blocks :::= compileNodeRule(this, qs, ss)
+    if (ss.isQueryTerm(stmt.q.head.name))
+      blocks :::= compileNodeRule(stmt, qs, ss)
 
     // edge query
-    val fakeBody        = q.head +: q.body
-    val fakeCQ          = ConjunctiveQuery(q.head, fakeBody) // we will just use the fakeBody below.
+    val fakeBody        = stmt.q.head +: stmt.q.body
+    val fakeCQ          = ConjunctiveQuery(stmt.q.head, fakeBody) // we will just use the fakeBody below.
 
-    val index = q.body.length + 1
+    val index = stmt.q.body.length + 1
     val qs2 = new QuerySchema( fakeCQ )
-    val variableIdsStr = Some(s"""R0.id AS "${q.head.name}.R0.id" """)
-    val variableColsStr = Some(s"""R0.label AS "${q.head.name}.R0.label" """)
+    val variableIdsStr = Some(s"""R0.id AS "${stmt.q.head.name}.R0.id" """)
+    val variableColsStr = Some(s"""R0.label AS "${stmt.q.head.name}.R0.label" """)
 
     // weight string
-    val uwStr = weights match {
+    val uwStr = stmt.weights match {
       case KnownFactorWeight(x) => None
       case UnknownFactorWeight(w) => Some(w.flatMap(s => ss.resolveColumn(s, qs2, fakeCQ, true)).mkString(", "))
     }
@@ -360,10 +358,10 @@ case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, supervisi
       ${ ss.generateSQLBody(fakeCQ) }"""
 
     // factor function
-    val func = s"""Imply(${q.head.name}.R0.label)"""
+    val func = s"""Imply(${stmt.q.head.name}.R0.label)"""
 
     // weight
-    val weight = weights match {
+    val weight = stmt.weights match {
       case KnownFactorWeight(x) => s"${x}"
       case UnknownFactorWeight(w) => {
         s"""?(${w.flatMap(s => ss.resolveColumn(s, qs2, fakeCQ, false)).mkString(", ")})"""
@@ -371,7 +369,7 @@ case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, supervisi
     }
 
     blocks ::= s"""
-      deepdive.inference.factors.factor_${q.head.name} {
+      deepdive.inference.factors.factor_${stmt.q.head.name} {
         input_query: \"\"\"${inputQuery}\"\"\"
         function: "${func}"
         weight: "${weight}"
@@ -380,12 +378,7 @@ case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, supervisi
 
     blocks.reverse
   }
-}
 
-// Compiler that wires up everything together
-object DeepDiveLogCompiler extends DeepDiveLogHandler {
-  type CompiledBlock = String
-  type CompiledBlocks = List[CompiledBlock]
 
   def compileUserSettings(): CompiledBlocks = {
     // TODO read user's proto-application.conf and augment it
@@ -420,6 +413,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     List(ddSchema)
   }
 
+
   // entry point for compilation
   override def run(parsedProgram: DeepDiveLog.Program, config: DeepDiveLog.Config) = {
     // determine the program to compile
@@ -437,7 +431,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       :::
       compileVariableSchema(programToCompile, state)
       :::
-      (programToCompile flatMap (_.compile(state)))
+      (programToCompile flatMap {compile(_, state)})
     )
 
     // emit the generated code
