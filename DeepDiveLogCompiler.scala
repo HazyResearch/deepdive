@@ -62,7 +62,7 @@ import org.apache.commons.lang3.StringEscapeUtils
 // This handles the schema statements.
 // It can tell you if a predicate is a "query" predicate or a "ground prediate"
 // and it resolves Variables their correct and true name in the schema, i.e. R(x,y) then x could be Attribute1 declared.
-class CompilationState( statements : DeepDiveLogCompiler.Program )  {
+class CompilationState( statements : DeepDiveLog.Program )  {
     // TODO: refactor the schema into a class that constructs and
     // manages these maps. Also it should have appropriate
     // abstractions and error handling for missing values.
@@ -382,17 +382,36 @@ case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, supervisi
   }
 }
 
+// An abstraction of DeepDiveLog handlers
+trait DeepDiveLogHandler {
+  def run(program: DeepDiveLog.Program, config: DeepDiveLog.Config): Unit
 
-// Compiler object that wires up everything together
-object DeepDiveLogCompiler {
-  type Program = List[Statement]
+  def run(config: DeepDiveLog.Config): Unit = try {
+    // parse each file into a single program
+    val parsedProgram = parseFiles(config.inputFiles)
+
+    // run handler with the parsed program
+    run(parsedProgram, config)
+  } catch {
+    case e: RuntimeException => die(e.getMessage)
+  }
+
+  def parseFiles(fileNames: List[String]): DeepDiveLog.Program = {
+    val ddlParser = new ConjunctiveQueryParser
+    fileNames flatMap { ddlParser.parseProgramFile(_) }
+  }
+
+  def die(message: String = null) = {
+    if (message != null)
+      System.err.println("[error] " + message)
+    System.exit(1)
+  }
+}
+
+// Compiler that wires up everything together
+object DeepDiveLogCompiler extends DeepDiveLogHandler {
   type CompiledBlock = String
   type CompiledBlocks = List[CompiledBlock]
-
-  val parser = new ConjunctiveQueryParser
-  def parseFiles(fileNames: Array[String]): Program = {
-    fileNames.toList flatMap { parser.parseProgramFile(_) }
-  }
 
   def compileUserSettings(): CompiledBlocks = {
     // TODO read user's proto-application.conf and augment it
@@ -410,7 +429,7 @@ object DeepDiveLogCompiler {
   }
 
   // generate variable schema statements
-  def compileVariableSchema(statements: Program, ss: CompilationState): CompiledBlocks = {
+  def compileVariableSchema(statements: DeepDiveLog.Program, ss: CompilationState): CompiledBlocks = {
     var schema = Set[String]()
     // generate the statements.
     statements.foreach {
@@ -427,11 +446,8 @@ object DeepDiveLogCompiler {
     List(ddSchema)
   }
 
-  // entry point for command-line interface
-  def main(args: Array[String]) = try {
-    // parse each file into a single program
-    val parsedProgram = parseFiles(args)
-
+  // entry point for compilation
+  override def run(parsedProgram: DeepDiveLog.Program, config: DeepDiveLog.Config) = {
     // take an initial pass to analyze the parsed program
     val state = new CompilationState( parsedProgram )
 
@@ -446,9 +462,42 @@ object DeepDiveLogCompiler {
 
     // emit the generated code
     blocks foreach println
-  } catch {
-    case e: RuntimeException =>
-      System.err.println("[error] " + e.getMessage)
-      System.exit(1)
+  }
+}
+
+// Pretty printer that simply prints the parsed input
+object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
+  override def run(parsedProgram: DeepDiveLog.Program, config: DeepDiveLog.Config) = {
+    // TODO pretty print in original syntax
+    println(parsedProgram)
+  }
+}
+
+// A command-line interface
+object DeepDiveLog {
+  type Program = List[Statement]
+
+  case class Config
+  ( handler: DeepDiveLogHandler = null
+  , inputFiles: List[String] = List()
+  )
+  val parser = new scopt.OptionParser[Config]("ddlogc") {
+    head("ddlogc", "0.0.1")
+    cmd("compile")                     required() action { (_, c) => c.copy(handler = DeepDiveLogCompiler)        }
+    cmd("print")                       required() action { (_, c) => c.copy(handler = DeepDiveLogPrettyPrinter)   }
+    arg[String]("FILE...") unbounded() required() action { (f, c) => c.copy(inputFiles = c.inputFiles ++ List(f)) } text("Input DDLog programs files")
+    checkConfig { c =>
+      if (c.handler == null) failure("No command specified")
+      else success
+    }
+  }
+
+  def main(args: Array[String]) = {
+    parser.parse(args, Config()) match {
+      case Some(config) =>
+        config.handler.run(config)
+      case None =>
+        System.err.println("[error] ")
+    }
   }
 }
