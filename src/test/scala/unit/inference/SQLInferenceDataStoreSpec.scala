@@ -603,7 +603,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
 
       it("should work for Boolean variables") {
-        SQL(s"""create table t1_c1_inference(id bigint primary key, c1 boolean, 
+        SQL(s"""create table t1_c1_inference(id bigint, c1 boolean, 
           category bigint, expectation double precision)""").execute.apply()
         SQL("""insert into t1_c1_inference(c1, category, expectation) VALUES
           (null, null, 0.31), (null, null, 0.93), (null, null, 0.97), 
@@ -625,7 +625,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
       }
 
       it("should work for categorical variables") {
-         SQL(s"""create table t1_c1_inference(id bigint primary key, c1 bigint, 
+         SQL(s"""create table t1_c1_inference(id bigint, c1 bigint, 
           category bigint, expectation double precision)""").execute.apply()
          SQL("""insert into t1_c1_inference(c1, category, expectation) VALUES
           (null, 0, 0.55), (null, 1, 0.55), (null, 2, 0.55), 
