@@ -448,28 +448,43 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
 
   // entry point for compilation
   override def run(parsedProgram: DeepDiveLog.Program, config: DeepDiveLog.Config) = {
+    // determine the program to compile
+    val programToCompile =
+      // derive and compile the program with delta rules instead for incremental version
+      if (config.isIncremental) DeepDiveLogDeltaDeriver.derive(parsedProgram)
+      else parsedProgram
+
     // take an initial pass to analyze the parsed program
-    val state = new CompilationState( parsedProgram )
+    val state = new CompilationState( programToCompile )
 
     // compile the program into blocks of application.conf
     val blocks = (
       compileUserSettings
       :::
-      compileVariableSchema(parsedProgram, state)
+      compileVariableSchema(programToCompile, state)
       :::
-      (parsedProgram flatMap (_.compile(state)))
+      (programToCompile flatMap (_.compile(state)))
     )
 
     // emit the generated code
     blocks foreach println
+
+    if (config.isIncremental) {
+      // TODO emit extra extractor for moving rows of dd_delta_* to *
+    }
   }
 }
 
 // Pretty printer that simply prints the parsed input
 object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   override def run(parsedProgram: DeepDiveLog.Program, config: DeepDiveLog.Config) = {
+    val programToPrint =
+      // derive the delta rules for incremental version
+      if (config.isIncremental) DeepDiveLogDeltaDeriver.derive(parsedProgram)
+      else parsedProgram
+
     // TODO pretty print in original syntax
-    println(parsedProgram)
+    println(programToPrint)
   }
 }
 
@@ -480,11 +495,13 @@ object DeepDiveLog {
   case class Config
   ( handler: DeepDiveLogHandler = null
   , inputFiles: List[String] = List()
+  , isIncremental: Boolean = false
   )
   val parser = new scopt.OptionParser[Config]("ddlogc") {
     head("ddlogc", "0.0.1")
     cmd("compile")                     required() action { (_, c) => c.copy(handler = DeepDiveLogCompiler)        }
     cmd("print")                       required() action { (_, c) => c.copy(handler = DeepDiveLogPrettyPrinter)   }
+    opt[Unit]('i', "incremental")      optional() action { (_, c) => c.copy(isIncremental = true)                 } text("Whether to derive delta rules")
     arg[String]("FILE...") unbounded() required() action { (f, c) => c.copy(inputFiles = c.inputFiles ++ List(f)) } text("Input DDLog programs files")
     checkConfig { c =>
       if (c.handler == null) failure("No command specified")
