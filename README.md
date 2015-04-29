@@ -20,6 +20,6 @@ make ddlog.jar
 The following will generate an application.conf for the [spouse example in DeepDive's tutorial](http://deepdive.stanford.edu/doc/basics/walkthrough/walkthrough.html).
 ```bash
 mkdir -p examples/spouse_example
-java -jar ddlog.jar examples/spouse_example.ddl >examples/spouse_example/application.conf
+java -jar ddlog.jar compile examples/spouse_example.ddl >examples/spouse_example/application.conf
 ```
 
