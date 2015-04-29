@@ -128,10 +128,12 @@ void load_factor(std::string filename, short funcid, long nvar, char** positives
     fout.write((char *)&factorid, 8);
     fout.write((char *)&weightid, 8);
     fout.write((char *)&funcid, 2);
-    fout.write((char *)&nvars_big, 8);
+    // fout.write((char *)&nvars_big, 8);
 
     uint64_t position = 0;
     uint64_t position_big;
+    long n_vars = 0;
+
     for (long i = 0; i < nvar; i++) {
       getline(ss, field, field_delim);
 
@@ -139,8 +141,13 @@ void load_factor(std::string filename, short funcid, long nvar, char** positives
       if (field.at(0) == '{') {
         string subfield;
         istringstream ss1(field);
+        ss1.get(); // get '{'
+        bool ended = false;
         while (getline(ss1, subfield, array_delim)) {
-          if (subfield.at(0) == '}') break;
+          if (subfield.at(subfield.length() - 1) == '}') {
+            ended = true;
+            subfield = subfield.substr(0, subfield.length() - 1);
+          }
           variableid = atol(subfield.c_str());
           variableid = bswap_64(variableid);
           position_big = bswap_64(position);
@@ -153,6 +160,8 @@ void load_factor(std::string filename, short funcid, long nvar, char** positives
 
           nedge++;
           position++;
+          n_vars++;
+          if (ended) break;
         }
       } else {
         variableid = atol(field.c_str());
@@ -167,11 +176,13 @@ void load_factor(std::string filename, short funcid, long nvar, char** positives
 
         nedge++;
         position++;
+        n_vars++;
       }
     }
+    n_vars = bswap_64(n_vars);
+    fout.write((char *)&n_vars, 8);
 
   }
-
   std::cout << nedge << std::endl;
 
   fin.close();

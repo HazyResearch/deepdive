@@ -420,7 +420,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       description text""")
     
     // Create the feature stats table
-    execute(createFeatureStatsSupportTableSQL)
+    // execute(createFeatureStatsSupportTableSQL)
 
     // weight and factor id
     // greenplum: use fast_seqassign postgres: use sequence
@@ -624,7 +624,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         }
       }
       // create feature stats for boolean LR
-      createFeatureStats(factorDesc, querytable, weightlist, weightDesc)
+      // createFeatureStats(factorDesc, querytable, weightlist, weightDesc)
     }
 
     if (skipLearning) {
@@ -757,7 +757,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     execute(createMappedWeightsViewSQL)
     
     // Create feature statistics tables for error analysis
-    execute(createMappedFeatureStatsViewSQL)
+    // execute(createMappedFeatureStatsViewSQL)
 
     relationsColumns.foreach { case(relationName, columnName) =>
       execute(createInferenceViewSQL(relationName, columnName))
