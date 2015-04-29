@@ -1,0 +1,61 @@
+Maintaining DeepDive website
+============================
+
+## Testing Locally
+
+If you want to make changes, BE SURE TO TEST LOCALLY, and do a "git push" first
+and wait for the travis test to pass before you run "make deploy".
+
+To test the docs locally, be sure to have dependency `jekyll` installed via
+`gem install jekyll`. Then under DEEPDIVE_HOME/doc/:
+
+    make test
+
+
+## Checking Links
+
+This will host the docs on your http://localhost:4000. Keep it hosted, and open
+a new terminal, navigate into DEEPDIVE_HOME/src/test/bash/, then run:
+
+    ./linkcheck.sh http://localhost:4000 --check-extern
+
+This will do a BETTER test than the travis one since it also checks external
+links. We have not figured out a good way to do this on Travis, since it
+occasionally suffers from a timeout problem.  Ideally you will find the output
+like:
+
+    [Thu Apr 16 11:28:04 PDT 2015] No errors found.
+
+
+## Deploying to deepdive.stanford.edu
+
+When all the tests are passed, you can run:
+
+    make deploy DEPLOY_USER=[yourUserName]
+
+where [yourUserName] is your account to log into our server that hosts
+deepdive.
+
+
+## Deploying to a Different URL
+
+To deploy the website at a different URL, e.g., under your personal homepage
+for asking review by others, you can tweak the DEPLOY_USER_HOST, DEPLOY_DIR,
+and WEBSITE_BASEURL variables.
+
+For example, to deploy to a temporary directory under your personal
+cs.stanford.edu page, run:
+
+    make deploy \
+      DEPLOY_USER_HOST=whale.stanford.edu \
+      DEPLOY_DIR=www/tmp/deepdive \
+      WEBSITE_BASEURL=http://cs.stanford.edu/~$USER/tmp/deepdive
+
+As another example, the following command will deploy under your Stanford's
+personal web page:
+
+    make deploy \
+      DEPLOY_USER_HOST=cardinal.stanford.edu \
+      DEPLOY_DIR=WWW/tmp/deepdive \
+      WEBSITE_BASEURL=http://web.stanford.edu/~$USER/tmp/deepdive
+

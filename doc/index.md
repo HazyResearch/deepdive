@@ -93,6 +93,7 @@ Examples of DeepDive applications include:
 - [GeoDeepDive](https://www.youtube.com/watch?v=X8uhs28O3eA) - Extracting dark data from geology journal articles
 - [Wisci](https://www.youtube.com/watch?v=Q1IpE9_pBu4) - Enriching Wikipedia with structured data
 
+More detail of these examples are available in the [showcase page](doc/showcase/apps.html).
 The complete code for these examples is available with DeepDive. We are
 currently working on other domains with even more collaborators. Stay tuned, and
 [get in touch with us](mailto:contact.hazy@gmail.com) to talk about interesting
