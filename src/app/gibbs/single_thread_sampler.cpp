@@ -58,10 +58,6 @@ namespace dd{
           // (exp(potential_pos) + exp(potential_neg)) / exp(potential_neg)
           // = exp(potential_pos - potential_neg) + 1
 
-          /**********************************************************
-           * NOTE this call to update<false> is WRONG!
-           * The variable will be counted as a sample for inference
-           **********************************************************/
           if((*this->p_rand_obj_buf) * (1.0 + exp(potential_neg-potential_pos)) < 1.0){
             p_fg->update_evid(variable, 1.0);
           }else{
