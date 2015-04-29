@@ -42,7 +42,7 @@
 
       <section id="carousel" style="margin-top:30px; margin-bottom: -20px;">
       <div class="container">
-        <div id="deepdive-carousel" class="carousel slide" data-ride="carousel" data-pause="false">
+        <div id="deepdive-carousel" class="carousel slide" data-ride="carousel" data-pause="false" data-wrap="true">
           <!-- Indicators -->
           <ol class="carousel-indicators">
             <li data-target="#deepdive-carousel" data-slide-to="0" class="active"></li>
@@ -93,6 +93,15 @@
             <span class="glyphicon glyphicon-chevron-right"></span>
           </a> -->
         </div>
+        <script>
+            // cycle only once per refresh
+            var $carousel = $("#deepdive-carousel");
+            $carousel.on("slid.bs.carousel", function(){
+                if ($carousel.find(".carousel-inner .item:first").is(".active")) {
+                    $carousel.carousel("pause");
+                }
+            });
+        </script>
 <!--         <blockquote>
         <ul>
         <li>DeepDive asks the developer to think about features—not algorithms. In contrast, other machine learning systems require the developer think about which clustering algorithm classification algorithm, etc. In DeepDive’s joint inference based approach, the user only specifies the necessary signals or features.</li>
