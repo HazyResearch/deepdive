@@ -106,7 +106,7 @@ namespace dd{
           }
         }
         assert(multi_proposal != -1);
-        p_fg->template update<false>(variable, multi_proposal);
+        p_fg->update_evid(variable, multi_proposal);
       }
 
       sum = -100000.0;
