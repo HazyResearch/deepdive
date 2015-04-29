@@ -19,7 +19,7 @@ TEST(LogisticRegressionTest, INFERENCE) {
 	const char* argv[23] = {
 		"dw", "gibbs", "-w", "./test/coin/graph.weights", "-v", "./test/coin/graph.variables", 
 		"-f", "./test/coin/graph.factors", "-e", "./test/coin/graph.edges", "-m", "./test/coin/graph.meta",
-		"-o", ".", "-l", "300", "-i", "300", "-s", "1", "--alpha", "0.1", ""
+		"-o", ".", "-l", "800", "-i", "300", "-s", "1", "--alpha", "0.1", "--diminish 0.995"
 	};
 
 	dd::CmdParser cmd_parser = parse_input(23, (char **)argv);
