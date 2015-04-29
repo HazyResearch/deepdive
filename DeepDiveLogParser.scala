@@ -103,10 +103,10 @@ class DeepDiveLogParser extends JavaTokenParsers {
     }
 
   def relationType: Parser[RelationType] =
-    ( rep1sep(columnDeclaration, ",") ^^ {
+    ( "like" ~> relationName ^^ { RelationTypeAlias(_) }
+    | rep1sep(columnDeclaration, ",") ^^ {
         attrs => RelationTypeDeclaration(attrs map { _.name }, attrs map { _.t })
       }
-    | "like" ~> relationName ^^ { RelationTypeAlias(_) }
     )
 
   def functionImplementation : Parser[FunctionImplementationDeclaration] =
