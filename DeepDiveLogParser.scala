@@ -38,8 +38,9 @@ case class ExtractionRule(q : ConjunctiveQuery) extends Statement // Extraction 
 case class FunctionCallRule(input : String, output : String, function : String) extends Statement // Extraction rule
 case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, supervision : String) extends Statement // Weighted rule
 
+
 // Parser
-class ConjunctiveQueryParser extends JavaTokenParsers {
+class DeepDiveLogParser extends JavaTokenParsers {
 
   // JavaTokenParsers provides several useful number parsers:
   //   wholeNumber, decimalNumber, floatingPointNumber 
@@ -157,7 +158,7 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
                                       | functionDeclaration
                                       | functionCallRule
                                       )
-  def program : Parser[List[Statement]] = phrase(rep1(statement <~ "."))
+  def program : Parser[DeepDiveLog.Program] = phrase(rep1(statement <~ "."))
 
   def parseProgram(inputProgram: CharSequence, fileName: Option[String] = None): List[Statement] = {
     parse(program, inputProgram) match {

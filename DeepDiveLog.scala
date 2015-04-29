@@ -44,7 +44,7 @@ trait DeepDiveLogHandler {
   }
 
   def parseFiles(fileNames: List[String]): DeepDiveLog.Program = {
-    val ddlParser = new ConjunctiveQueryParser
+    val ddlParser = new DeepDiveLogParser
     fileNames flatMap { ddlParser.parseProgramFile(_) }
   }
 
