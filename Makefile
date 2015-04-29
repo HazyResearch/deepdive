@@ -21,13 +21,13 @@ test-package: $(JAR)
 # build test jar
 $(TEST_JAR): $(wildcard *.scala)
 	sbt package
-	ln -sfn $(shell ls -t target/scala-*/*_*.jar | head -1) $@
+	ln -sfn $$(ls -t target/scala-*/*_*.jar | head -1) $@
 	touch $@
 
 # build standalone jar
 $(JAR): $(wildcard *.scala)
 	sbt assembly
-	ln -sfn $(shell ls -t target/scala-*/*-assembly-*.jar | head -1) $@
+	ln -sfn $$(ls -t target/scala-*/*-assembly-*.jar | head -1) $@
 	touch $@
 
 .PHONY: clean
