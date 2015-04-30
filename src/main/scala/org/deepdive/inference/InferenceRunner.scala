@@ -20,7 +20,7 @@ trait InferenceRunner {
     /* Generate a grounded graph based on the factor description */
     def groundFactorGraph(schema: Map[String, _ <: VariableDataType],
         factorDescs: Seq[FactorDesc], calibrationSettings: CalibrationSettings, 
-        skipLearning: Boolean, weightTable: String, dbSettings: DbSettings = null, parallelGrounding: Boolean) : Unit 
+        skipLearning: Boolean, weightTable: String, dbSettings: DbSettings = null) : Unit 
 
     /* 
      * Writes inference results produced by the sampler back to the data store.
@@ -28,8 +28,7 @@ trait InferenceRunner {
      * VariableID, LastSampleValue, ExpectedValue
      */
     def writebackInferenceResult(variableSchema: Map[String, _ <: VariableDataType],
-        //variableOutputFile: String, weightsOutputFile: String, parallelGrounding: Boolean) : Unit
-        variableOutputFile: String, weightsOutputFile: String, parallelGrounding: Boolean, dbSettings: DbSettings) : Unit
+        variableOutputFile: String, weightsOutputFile: String, dbSettings: DbSettings) : Unit
 
 
     /* 

@@ -25,11 +25,11 @@ trait PostgresInferenceRunnerComponent extends SQLInferenceRunnerComponent {
      * weightsFile: location to the binary format. Assume "weightsFile.text" file exists.
      */
     def bulkCopyWeights(weightsFile: String, dbSettings: DbSettings) : Unit = {
-      (new DataLoader).load(weightsFile, WeightResultTable, dbSettings, false, " ")
+      (new DataLoader).load(weightsFile, WeightResultTable, dbSettings, " ")
     }
     
     def bulkCopyVariables(variablesFile: String, dbSettings: DbSettings) : Unit = {
-      (new DataLoader).load(variablesFile, VariableResultTable, dbSettings, false, " ")
+      (new DataLoader).load(variablesFile, VariableResultTable, dbSettings, " ")
     }
 
     /**

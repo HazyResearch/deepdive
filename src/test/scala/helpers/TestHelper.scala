@@ -22,6 +22,12 @@ object TestHelper {
     case Mysql => "com.mysql.jdbc.Driver"
   }
 
+  def getGPLOADEnv() = System.getenv("GPLOAD") match {
+    case "true" | "True" | "TRUE" => true
+    case _ => false
+  }
+  
+
   def getDbSettings() = 
       DbSettings(getDriverFromEnv,      // driver 
           System.getenv("DBCONNSTRING"),  // nrl
@@ -32,7 +38,8 @@ object TestHelper {
           System.getenv("DBPORT"), 
           System.getenv("GPHOST"), 
           System.getenv("GPPATH"), 
-          System.getenv("GPPORT"))
+          System.getenv("GPPORT"),
+          getGPLOADEnv())
     
   def getConfig() = s"""
       deepdive.db.default {
@@ -46,6 +53,7 @@ object TestHelper {
         gphost: "${System.getenv("GPHOST")}"
         gppath: "${System.getenv("GPPATH")}"
         gpport: "${System.getenv("GPPORT")}"
+        gpload: "${getGPLOADEnv()}"
       }
     """
   

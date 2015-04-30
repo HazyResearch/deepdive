@@ -283,7 +283,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
   
   // ground variables
   def groundVariables(schema: Map[String, _ <: VariableDataType], du: DataLoader, 
-      dbSettings: DbSettings, parallelGrounding: Boolean, groundingPath: String) {
+      dbSettings: DbSettings, groundingPath: String) {
         schema.foreach { case(variable, dataType) =>
       val Array(relation, column) = variable.split('.')
       
@@ -329,7 +329,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       val groundingDir = getFileNameFromPath(groundingPath)
       du.unload(InferenceNamespace.getVariableFileName(relation),
         s"${groundingPath}/${InferenceNamespace.getVariableFileName(relation)}",
-        dbSettings, parallelGrounding,
+        dbSettings,
         s"""SELECT t0.id, t1.${variableTypeColumn},
         CASE WHEN t1.${variableTypeColumn} = 0 THEN 0 ELSE ${initvalueCast} END AS initvalue,
         ${variableDataType} AS type, ${cardinality} AS cardinality
@@ -341,7 +341,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
   // ground factor meta data
   def groundFactorMeta(du: DataLoader, factorDescs: Seq[FactorDesc], dbSettings: DbSettings,
-    groundingPath: String, parallelGrounding: Boolean) {
+    groundingPath: String) {
     dataStore.dropAndCreateTable(FactorMetaTable, "name text, funcid int, sign text")
 
     // generate a string containing the signs (whether negated) of variables for each factor
@@ -355,7 +355,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     val groundingDir = getFileNameFromPath(groundingPath)
     du.unload(InferenceNamespace.getFactorMetaFileName, 
       s"${groundingPath}/${InferenceNamespace.getFactorMetaFileName}", 
-      dbSettings, parallelGrounding, s"SELECT * FROM ${FactorMetaTable}",
+      dbSettings, s"SELECT * FROM ${FactorMetaTable}",
       groundingDir)
   }
 
@@ -406,7 +406,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
   def groundFactorsAndWeights(factorDescs: Seq[FactorDesc],
     calibrationSettings: CalibrationSettings, du: DataLoader,
-    dbSettings: DbSettings, groundingPath: String, parallelGrounding: Boolean,
+    dbSettings: DbSettings, groundingPath: String,
     skipLearning: Boolean, weightTable: String) {
     val groundingDir = getFileNameFromPath(groundingPath)
 
@@ -519,7 +519,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
           }
           execute(dataStore.analyzeTable(querytable))
           execute(dataStore.analyzeTable(weighttableForThisFactor))
-          du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
+          du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
             s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
              FROM ${querytable} t0, ${weighttableForThisFactor} t1
              ${weightJoinCondition};""", groundingDir)
@@ -559,7 +559,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
           execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, cardinality, description) 
             SELECT id, isfixed, initvalue, cardinality, ${weightDesc} FROM ${weighttableForThisFactor};""")
 
-          du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
+          du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
             s"SELECT id AS factor_id, ${cweightid} AS weight_id, ${idcols} FROM ${querytable}",
             groundingDir)
 
@@ -616,7 +616,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
             s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)} """).mkString("AND")
           execute(dataStore.analyzeTable(querytable))
           execute(dataStore.analyzeTable(weighttableForThisFactor))
-          du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, parallelGrounding,
+          du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
             s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
              FROM ${querytable} t0, ${weighttableForThisFactor} t1
              WHERE ${weightjoinlist} AND t1.cardinality = '${cardinalityKey}';""",
@@ -633,7 +633,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
     // dump weights
     du.unload(InferenceNamespace.getWeightFileName,
-      s"${groundingPath}/${InferenceNamespace.getWeightFileName}",dbSettings, parallelGrounding,
+      s"${groundingPath}/${InferenceNamespace.getWeightFileName}",dbSettings,
       s"SELECT id, isfixed, COALESCE(initvalue, 0) FROM ${WeightsTable}",
       groundingDir)
   }
@@ -682,9 +682,10 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
    */
   def groundFactorGraph(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
     calibrationSettings: CalibrationSettings, skipLearning: Boolean, weightTable: String, 
-    dbSettings: DbSettings, parallelGrounding: Boolean) {
+    dbSettings: DbSettings) {
 
     val du = new DataLoader
+    val parallelGrounding = dbSettings.gpload
     val groundingDir = getFileNameFromPath(Context.outputDir)
     val groundingPath = parallelGrounding match {
       case false => Context.outputDir 
@@ -706,14 +707,14 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     generateCardinalityTables(schema)
 
     // ground variables
-    groundVariables(schema, du, dbSettings, parallelGrounding, groundingPath)
+    groundVariables(schema, du, dbSettings, groundingPath)
 
     // generate factor meta data
-    groundFactorMeta(du, factorDescs, dbSettings, groundingPath, parallelGrounding)
+    groundFactorMeta(du, factorDescs, dbSettings, groundingPath)
 
     // ground weights and factors
     groundFactorsAndWeights(factorDescs, calibrationSettings, du, dbSettings, 
-      groundingPath, parallelGrounding, skipLearning, weightTable)
+      groundingPath, skipLearning, weightTable)
 
     // create inference result table
     execute(createInferenceResultSQL)
@@ -736,8 +737,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
    * This function is executed when sampler finished.
    */
   def writebackInferenceResult(variableSchema: Map[String, _ <: VariableDataType],
-    //variableOutputFile: String, weightsOutputFile: String, parallelGrounding: Boolean) = {
-    variableOutputFile: String, weightsOutputFile: String, parallelGrounding: Boolean, dbSettings: DbSettings) = {
+    variableOutputFile: String, weightsOutputFile: String, dbSettings: DbSettings) = {
 
     execute(createInferenceResultSQL)
     execute(createInferenceResultWeightsSQL)

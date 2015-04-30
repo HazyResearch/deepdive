@@ -19,14 +19,14 @@ trait MemoryInferenceRunnerComponent extends InferenceRunnerComponent{
 
     def groundFactorGraph(schema: Map[String, _ <: VariableDataType],
       factorDescs: Seq[FactorDesc], calibrationSettings: CalibrationSettings, 
-      skipLearning: Boolean, weightTable: String, dbSettings: DbSettings, parallelGrounding: Boolean) : Unit = {
+      skipLearning: Boolean, weightTable: String, dbSettings: DbSettings) : Unit = {
 
     }
 
     def BatchSize = None
 
     def writebackInferenceResult(variableSchema: Map[String, _ <: VariableDataType], 
-      variableOutputFile: String, weightsOutputFile: String, parallelGrounding: Boolean, dbSettings: DbSettings) : Unit = {
+      variableOutputFile: String, weightsOutputFile: String, dbSettings: DbSettings) : Unit = {
     }
 
     def getCalibrationData(variable: String, dataType: VariableDataType, buckets: List[Bucket]) : Map[Bucket, BucketData] = {

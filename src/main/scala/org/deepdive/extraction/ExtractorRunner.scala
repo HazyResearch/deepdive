@@ -367,13 +367,10 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
    */
   private def runTsvExtractor(task: ExtractionTask, dbSettings: DbSettings, taskSender: ActorRef) = {
   
-    // Determine if parallel loading and unloading is used by Env var
-    val parallelLoading = System.getenv("PARALLEL_LOADING") match {
-      case "true" => true
-      case _ => false
-    }
-    log.debug(s"Parallel Loading: ${parallelLoading}")
-    val loader = new DataLoader
+    log.debug(s"Parallel Loading: ${dbSettings.gpload}")
+    val dl = new DataLoader
+    val parallelLoading = dbSettings.gpload
+    
     val udfCmd = task.extractor.udf
     // make udfCmd executable if file
     val udfFile = new java.io.File(udfCmd)
@@ -403,6 +400,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
     val psqlFilePath = queryOutputFile.getAbsolutePath()
 
     // Get the actual dumped file 
+    // val fname = queryOutputFile.getName()
     val fname = parallelLoading match {
       case true => gpFileName
       case _ => queryOutputFile.getName()
@@ -426,8 +424,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
     // Helpers.executeCmd(delCmd) // This won't work because of escaping issues?
 
     try {
-      loader.unload(gpFileName, psqlFilePath, dbSettings, parallelLoading, 
-        s"${inputQuery}", "")
+      dl.unload(fname, psqlFilePath, dbSettings, s"${inputQuery}", "")
     } catch {
       case exception: Throwable =>
         log.error(exception.toString)
@@ -473,7 +470,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
         }
         val loaderConfig = task.extractor.loaderConfig
         try {
-          loader.ndbLoad(
+          dl.ndbLoad(
             fpath,                  // fileDirPath: String,
             s"${fname}-*.out",      // fileNamePattern: String,
             dbSettings,             // dbSettings: DbSettings,
@@ -492,8 +489,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
 
       case _ =>
         // If parallelWriteback is specified, run the loader with the GP loader.
-        val loader = new DataLoader
-        loader.load(s"${fpath}/${fname}-*.out", outputRel, dbSettings, parallelLoading)
+        dl.load(s"${fpath}/${fname}-*.out", outputRel, dbSettings)
 
     }
 
