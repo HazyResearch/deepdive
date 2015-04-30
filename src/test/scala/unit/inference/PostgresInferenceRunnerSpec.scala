@@ -26,7 +26,7 @@ class PostgresInferenceRunnerSpec extends SQLInferenceRunnerSpec
   // Override with a postgres-specific dbSettings
   override val dbSettings = DbSettings(Helpers.PsqlDriver, null, System.getenv("PGUSER"), 
       null, System.getenv("DBNAME"), System.getenv("PGHOST"), 
-      System.getenv("PGPORT"), null, null, null)
+      System.getenv("PGPORT"), null, null, null, false)
 
   lazy val inferenceRunner = new PostgresInferenceRunner(dbSettings)
   // def inferenceDataStore = new PostgresInferenceRunner(dbSettings)
