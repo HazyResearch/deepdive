@@ -11,6 +11,7 @@ import org.deepdive.test.helpers._
 import org.deepdive.Context
 import scala.io.Source
 import scalikejdbc._
+import scala.sys.process._
 
 trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInferenceRunnerComponent =>
 
@@ -419,6 +420,29 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val numFactors = SQL(s"""SELECT COUNT(*) AS "count" FROM dd_query_testFactor""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numFactors === 100)
+
+      }
+
+      it("format converter should work (flat/array type)") {
+        val resourceFolder = s"${Context.deepdiveHome}/src/test/resources/format_converter"
+        val converter = InferenceNamespace.getFormatConvertingWorkerPath
+        val variableFile = s"${resourceFolder}/dd_variables"
+        val factorFile = s"${resourceFolder}/dd_factors"
+        val weightFile = s"${resourceFolder}/dd_weights"
+        val edgeFile = s"${resourceFolder}/dd_edges"
+
+        s"${converter} variable ${variableFile}".!
+        s"${converter} factor ${factorFile} 2 1 1".!
+        s"${converter} weight ${weightFile}".!
+
+        var cmp = s"cmp ${variableFile}.bin ${variableFile}_expected.bin"
+        assert(cmp.! == 0)
+        cmp = s"cmp ${factorFile}_factors.bin ${factorFile}_expected.bin"
+        assert(cmp.! == 0)
+        cmp = s"cmp ${weightFile}.bin ${weightFile}_expected.bin"
+        assert(cmp.! == 0)
+        cmp = s"cmp ${factorFile}_edges.bin ${edgeFile}_expected.bin"
+        assert(cmp.! == 0)
 
       }
 
