@@ -114,11 +114,18 @@ object InferenceManager {
     lazy val inferenceRunner = new PostgresInferenceRunner(dbSettings)
   }
 
-  /* An inference manager that uses postgres as its datastore */
+  /* An inference manager that uses mysql as its datastore */
   class MysqlInferenceManager(val taskManager: ActorRef, val variableSchema: Map[String, _ <: VariableDataType], val dbSettings: DbSettings) 
     extends InferenceManager with MysqlInferenceRunnerComponent {
     lazy val inferenceRunner = new MysqlInferenceRunner(dbSettings)
   }
+
+  /* An inference manager that uses impala as its datastore */
+  class ImpalaInferenceManager(val taskManager: ActorRef, val variableSchema: Map[String, _ <: VariableDataType], val dbSettings: DbSettings)
+    extends InferenceManager with ImpalaInferenceRunnerComponent {
+    lazy val inferenceRunner = new ImpalaInferenceRunner(dbSettings)
+  }
+
 
   def props(taskManager: ActorRef, variableSchema: Map[String, _ <: VariableDataType],
     dbSettings: DbSettings) = {
@@ -126,6 +133,10 @@ object InferenceManager {
        case "org.postgresql.Driver" => Props(classOf[PostgresInferenceManager], taskManager, variableSchema, dbSettings)
 
        case "com.mysql.jdbc.Driver" => Props(classOf[MysqlInferenceManager], taskManager, variableSchema, dbSettings)
+
+       case "com.cloudera.impala.jdbc41.Driver" => Props(classOf[ImpalaInferenceManager], taskManager, variableSchema, dbSettings)
+
+       case "org.apache.hive.jdbc.HiveDriver" => Props(classOf[ImpalaInferenceManager], taskManager, variableSchema, dbSettings)
     }
   }
     

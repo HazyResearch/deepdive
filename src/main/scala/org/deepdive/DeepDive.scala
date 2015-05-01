@@ -28,6 +28,7 @@ object DeepDive extends Logging {
 
     // Load Settings
     val settings = Settings.loadFromConfig(config)
+
     // If relearn_from specified, set output dir to that dir and skip everything
     val relearnFrom = settings.pipelineSettings.relearnFrom
 
@@ -54,12 +55,13 @@ object DeepDive extends Logging {
 
     // Setup the data store
     JdbcDataStoreObject.init(config)
+
     settings.schemaSettings.setupFile.foreach { file =>
       log.info(s"Setting up the schema using ${file}")
       val cmd = Source.fromFile(file).getLines.mkString("\n")
       JdbcDataStoreObject.executeSqlQueries(cmd)
     }
-    
+
     implicit val timeout = Timeout(1337 hours)
     implicit val ec = system.dispatcher
 
@@ -71,7 +73,7 @@ object DeepDive extends Logging {
     val extractionManager = system.actorOf(
       ExtractionManager.props(settings.extractionSettings.parallelism, dbSettings), 
       "extractionManager")
-    
+
     // Build tasks for extractors
     val extractionTasks = for {
       extractor <- settings.extractionSettings.extractors

@@ -22,6 +22,10 @@ object ExtractionManager {
       case "org.postgresql.Driver" => Props(classOf[PostgresExtractionManager], parallelism, dbSettings)
 
       case "com.mysql.jdbc.Driver" => Props(classOf[MysqlExtractionManager], parallelism, dbSettings)
+
+      case "org.apache.hive.jdbc.HiveDriver" => Props(classOf[ImpalaExtractionManager], parallelism, dbSettings)
+
+      case "com.cloudera.impala.jdbc41.Driver" => Props(classOf[ImpalaExtractionManager], parallelism, dbSettings)
     }
   }
 
@@ -30,6 +34,9 @@ object ExtractionManager {
 
   class MysqlExtractionManager(val parallelism: Int, val dbSettings: DbSettings) extends ExtractionManager
     with MysqlDataStoreComponent
+
+  class ImpalaExtractionManager(val parallelism: Int, val dbSettings: DbSettings) extends ExtractionManager
+    with ImpalaDataStoreComponent
 
   case object ScheduleTasks
 

@@ -14,10 +14,14 @@ object Helpers extends Logging {
   // Constants
   val Psql = "psql"
   val Mysql = "mysql"
-    
+  val Impala = "impala"
+  val Hive = "hive"
+
   val PsqlDriver = "org.postgresql.Driver"
   val MysqlDriver = "com.mysql.jdbc.Driver"
-  
+  val ImpalaDriver = "com.cloudera.impala.jdbc41.Driver"
+  val HiveDriver = "org.apache.hive.jdbc.HiveDriver"
+
   /**
    * Get the dbtype from DbSettings
    * 
@@ -31,7 +35,9 @@ object Helpers extends Logging {
     dbSettings.driver match {
       case PsqlDriver => Psql
       case MysqlDriver => Mysql
-    }    
+      case ImpalaDriver => Impala
+      case HiveDriver => Hive
+    }
   }
   
   /**
@@ -56,6 +62,8 @@ object Helpers extends Logging {
       case _ => dbtype match {
         case Psql => s" -d ${dbname} "
         case Mysql => s" ${dbname} " // can also use -D but mysqlimport does not support -D
+        case Impala => s""
+        case Hive => s""
       }
     }
 
@@ -68,6 +76,8 @@ object Helpers extends Logging {
           case "" => s" -u ${dbuser} "
           case _ => s" -u ${dbuser} -p${dbpassword}"
         }
+        case Impala => s" -u ${dbuser}"
+        case Hive => s" -n ${dbuser}"
       }
     }
     val dbportStr = dbport match {
@@ -75,14 +85,27 @@ object Helpers extends Logging {
       case _ => dbtype match {
         case Psql => s" -p ${dbport} "
         case Mysql => s" -P ${dbport} "
+        case Impala => s""
+        case Hive => s""
       }
     }
     val dbhostStr = dbhost match {
       case null => ""
-      case _ => s" -h ${dbhost} "
+      case _ => dbtype match {
+        case Psql => s" -h ${dbhost} "
+        case Mysql => s" -h ${dbhost} "
+        case Impala => s" -i ${dbhost}:${dbport} "
+        case Hive => s""
+      }
     }
+    val dbJdbcStr = dbtype match {
+      case Impala => s" -u jdbc:impala://${dbhost}:${dbport}/${dbname} "
+      case Hive => s" -u jdbc:hive2://${dbhost}:${dbport}/${dbname} "
+      case _ => ""
+    }
+
     // Return a concatinated options string
-    dbnameStr + dbuserStr + dbportStr + dbhostStr
+    dbJdbcStr + dbnameStr + dbuserStr + dbportStr + dbhostStr
   }
   
   /** 
@@ -153,6 +176,8 @@ object Helpers extends Logging {
     val sqlQueryPrefix = dbtype match {
       case Psql => "psql " + getOptionString(dbSettings)
       case Mysql => "mysql " + getOptionString(dbSettings)
+      case Impala => "impala-shell " + getOptionString(dbSettings)
+      case Hive => "beeline " + getOptionString(dbSettings)
     }
 
     // Return the command below to handle " in queries
@@ -161,6 +186,10 @@ object Helpers extends Logging {
         s""" -c '${query.replaceAll("'", "'\\\\''")}' """
       case Mysql => sqlQueryPrefix +
         s""" --silent -N -e '${query.replaceAll("'", "'\\\\''")}' """
+      case Impala => sqlQueryPrefix +
+        s""" --quiet -B -q '${query.replaceAll("'", "'\\\\''")}' """
+      case Hive => sqlQueryPrefix +
+        s""" --silent=true -e '${query.replaceAll("'", "'\\\\''")}' """
     }
   }
 }

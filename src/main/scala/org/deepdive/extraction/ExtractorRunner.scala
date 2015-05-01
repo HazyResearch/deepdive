@@ -22,7 +22,7 @@ import scala.util.Random
 import java.io.{File, PrintWriter}
 import scala.io.Source
 import org.deepdive.helpers.Helpers
-import org.deepdive.helpers.Helpers.{Mysql, Psql}
+import org.deepdive.helpers.Helpers.{Mysql, Psql, Impala}
 
 /** 
  *  Companion object to the ExtractorRunner, using a state machine model.
@@ -71,11 +71,13 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
   val sqlQueryPrefix = dbtype match {
     case Psql => "psql " + Helpers.getOptionString(dbSettings)
     case Mysql => "mysql " + Helpers.getOptionString(dbSettings)
+    case Impala => "impala-shell " + Helpers.getOptionString(dbSettings)
   }
 
   val sqlAnalyzeCommand = dbtype match {
     case Psql => "ANALYZE "
     case Mysql => "ANALYZE TABLE "
+    case Impala => ""
   } 
 
     // DONE mysql pw: -p=password. psql: cannot?  
@@ -312,6 +314,8 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
             throw new RuntimeException(ex.toString)
         }
       case Mysql => 
+        executeSqlQueryOrFail(sqlQuery, failureReceiver)
+      case Impala =>
         executeSqlQueryOrFail(sqlQuery, failureReceiver)
     }
     

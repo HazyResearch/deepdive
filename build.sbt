@@ -31,7 +31,11 @@ libraryDependencies ++= List(
   "org.scalikejdbc" %% "scalikejdbc" % "[1.7,)",
   "org.scalikejdbc" %% "scalikejdbc-config" % "[1.7,)",
   "play" %% "anorm" % "2.1.5"
+  //"org.apache.hive" % "hive-jdbc" % "1.1.0",
+  //"org.apache.hadoop" % "hadoop-common" % "2.7.0"
 )
+
+unmanagedJars in Compile += file("lib/ImpalaJDBC41.jar")
 
 parallelExecution in Test := false
 
