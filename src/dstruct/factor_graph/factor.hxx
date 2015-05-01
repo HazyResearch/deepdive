@@ -162,4 +162,30 @@ namespace dd{
 	  return 1.0;
 	}
 
+	/** Return the value of the oneIsTrue of the variables in the factor, with
+	 * the variable of index vid (wrt the factor) is set to the value of the
+	 * 'proposal' argument.
+	 *
+	 */
+	inline double dd::CompactFactor::_potential_oneistrue(
+	  const VariableInFactor * const vifs,
+	  const VariableValue * const var_values,
+	  const VariableIndex & vid,
+	  const VariableValue & proposal) const{
+
+      bool found = false;
+	  /* Iterate over the factor variables */
+	  for(long i_vif=n_start_i_vif; (i_vif<n_start_i_vif+n_variables);i_vif++){
+	    const VariableInFactor & vif = vifs[i_vif];
+	    const bool satisfied = is_variable_satisfied(vif, vid, var_values, proposal);
+
+	    if(satisfied) {
+	      if(!found) found = true;
+	      /* Early return if we find that two variables are satisfied */
+	      else return -1.0;
+	    }
+	  }
+	  if (found) return 1.0;
+	  else return -1.0;
+	}
 }
