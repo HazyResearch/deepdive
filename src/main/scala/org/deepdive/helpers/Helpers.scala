@@ -62,7 +62,7 @@ object Helpers extends Logging {
       case _ => dbtype match {
         case Psql => s" -d ${dbname} "
         case Mysql => s" ${dbname} " // can also use -D but mysqlimport does not support -D
-        case Impala => s""
+        case Impala => s" -d ${dbname} "
         case Hive => s""
       }
     }
@@ -94,12 +94,12 @@ object Helpers extends Logging {
       case _ => dbtype match {
         case Psql => s" -h ${dbhost} "
         case Mysql => s" -h ${dbhost} "
-        case Impala => s" -i ${dbhost}:${dbport} "
+          // impala-shell uses different port from jdbc
+        case Impala => s" -i ${dbhost}:21000 "
         case Hive => s""
       }
     }
     val dbJdbcStr = dbtype match {
-      case Impala => s" -u jdbc:impala://${dbhost}:${dbport}/${dbname} "
       case Hive => s" -u jdbc:hive2://${dbhost}:${dbport}/${dbname} "
       case _ => ""
     }

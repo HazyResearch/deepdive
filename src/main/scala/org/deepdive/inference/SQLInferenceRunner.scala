@@ -226,6 +226,10 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
   
   // assign variable holdout
   def assignHoldout(schema: Map[String, _ <: VariableDataType], calibrationSettings: CalibrationSettings) {
+    println(this.getClass.getName)
+    println(dataStore.getClass.getName)
+
+
     // variable holdout table - if user defined, execute once
     dataStore.dropAndCreateTable(VariablesHoldoutTable, "variable_id bigint primary key")
     calibrationSettings.holdoutQuery match {

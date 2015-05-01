@@ -117,7 +117,7 @@ class ImpalaDataStore extends JdbcDataStore with Logging {
    * Cast an expression to a type
    */
   override def cast(expr: Any, toType: String): String =
-    s"""${expr.toString()}::${toType}"""
+    s"""cast(${expr.toString()} as ${toType})"""
 
   /**
    * Given a string column name, Get a quoted version dependent on DB.
@@ -157,10 +157,10 @@ class ImpalaDataStore extends JdbcDataStore with Logging {
 
     val values = ArrayBuffer[String]()
     for (i <- 0 until columns.size)
-      values += { if (columns(i).equals("id")) "(startId + (row_number() over(ORDER BY (SELECT 0))))" else columns(i) }
+      values += { if (columns(i).equals("id")) s"(${startId} + (row_number() over(ORDER BY id)))" else columns(i) }
 
     executeSqlQueries(s"INSERT OVERWRITE TABLE ${table} (" + columns.mkString(", ") +
-      ") { SELECT " + values.mkString(", ") + s" FROM ${table} }")
+      ") SELECT " + values.mkString(", ") + s" FROM ${table} ")
 
 //    if (isUsingGreenplum()) {
 //      executeSqlQueries(s"SELECT fast_seqassign('${table.toLowerCase()}', ${startId});");
@@ -178,6 +178,26 @@ class ImpalaDataStore extends JdbcDataStore with Logging {
   override def createAssignIdFunctionGreenplum() : Unit = {
     if (!isUsingGreenplum()) return
     executeSqlQueries(SQLFunctions.fastSequenceAssignForGreenplum, false)
+  }
+
+  /**
+   * Drops a table if it exists, and then create it
+   * Ensures we are only dropping tables inside the DeepDive namespace.
+   */
+  override def dropAndCreateTable(name: String, schema: String) = {
+    checkTableNamespace(name)
+    executeSqlQueries(s"""DROP TABLE IF EXISTS ${name};""")
+    executeSqlQueries(s"""CREATE TABLE ${name} (${schema});""")
+  }
+
+  /**
+   * Drops a table if it exists, and then create it using the given query
+   * Ensures we are only dropping tables inside the DeepDive namespace.
+   */
+  override def dropAndCreateTableAs(name: String, query: String) = {
+    checkTableNamespace(name)
+    executeSqlQueries(s"""DROP TABLE IF EXISTS ${name};""")
+    executeSqlQueries(s"""CREATE TABLE ${name} AS ${query};""")
   }
 
 }
