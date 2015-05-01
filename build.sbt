@@ -41,6 +41,8 @@ unmanagedJars in Compile += file("lib/ImpalaJDBC41.jar")
 
 unmanagedJars in Compile += file("lib/libthrift-0.9.0.jar")
 
+unmanagedJars in Compile += file("lib/TCLIServiceClient.jar")
+
 parallelExecution in Test := false
 
 packSettings
