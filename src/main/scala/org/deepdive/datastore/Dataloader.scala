@@ -4,7 +4,7 @@ import org.deepdive.settings._
 import org.deepdive.Logging
 import org.deepdive.Context
 import org.deepdive.helpers.Helpers
-import org.deepdive.helpers.Helpers.{Psql, Mysql}
+import org.deepdive.helpers.Helpers.{Psql, Mysql, Impala}
 import scala.sys.process._
 import scala.util.{Try, Success, Failure}
 import java.io._
@@ -70,6 +70,8 @@ class DataLoader extends JdbcDataStore with Logging {
         case Psql => "psql " + Helpers.getOptionString(dbSettings) + " -c "
         // -N: skip column names
         case Mysql => "mysql " + Helpers.getOptionString(dbSettings) + " --silent -N -e "
+
+        case Impala => "impala-shell " + Helpers.getOptionString(dbSettings) + " --silent -B -q "
       }
   
       val outfile = new File(filepath)
@@ -82,6 +84,7 @@ class DataLoader extends JdbcDataStore with Logging {
       val copyStr = dbtype match {
         case Psql => s"COPY (${trimmedQuery}) TO STDOUT;"
         case Mysql => trimmedQuery
+        case Impala => trimmedQuery
       }
       Helpers.executeSqlQueriesByFile(dbSettings, copyStr, filepath)
     }
@@ -144,6 +147,13 @@ class DataLoader extends JdbcDataStore with Logging {
     } else {
       // Generate SQL query prefixes
       val dbtype = Helpers.getDbType(dbSettings)
+      dbtype match {
+        case Impala =>
+          Helpers.executeCmd("hdfs dfs rmr /user/cloudera/tmp")
+          Helpers.executeCmd("hdfs dfs mkdir /user/cloudera/tmp")   
+        case _ =>
+      }
+
       val cmdfile = File.createTempFile(s"${tablename}.copy", ".sh")
       val writer = new PrintWriter(cmdfile)
       val writebackPrefix = s"find ${filepath} -print0 | xargs -0 -P 1 -L 1 bash -c "
@@ -157,6 +167,9 @@ class DataLoader extends JdbcDataStore with Logging {
           " $0'"
           // mysqlimport requires input file to have basename that is same as 
           // tablename.
+        case Impala =>
+          // write to tsv file in HDFS
+          writebackPrefix + " | hdfs dfs -put $0 /user/cloudera/$0"
       }
       
       log.info(writebackCmd)
@@ -164,6 +177,12 @@ class DataLoader extends JdbcDataStore with Logging {
       writer.close()
       Helpers.executeCmd(cmdfile.getAbsolutePath())
       cmdfile.delete()
+     
+      dbtype match {
+        case Impala =>
+          executeSqlQueries(s"LOAD DATA INPATH '/user/cloudera' INTO TABLE ${tablename}")
+        case _ =>
+      }
     }
   }
 
