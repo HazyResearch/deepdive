@@ -39,7 +39,7 @@ TEST(LogisticRegressionTest, INFERENCE) {
 	int nweight = 0;
 	double weight;
 	while(fin_weight >> id >> weight){
-		EXPECT_NEAR(weight, 2.0, 0.3);
+		EXPECT_NEAR(weight, 2.1, 0.3);
 		nweight ++;
 	}
 	EXPECT_EQ(nweight, 1);
