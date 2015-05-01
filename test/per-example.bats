@@ -24,7 +24,7 @@ setup() {
     diff -u "$expectedOutput" -
 }
 
-# compare the pretty-printed output with the input
+# compare the pretty-printed output with what's expected
 @test "print $EXAMPLE_NAME as expected" {
     expectedOutput=$EXAMPLE_BASEPATH.print.expected
     [ -e "$expectedOutput" ] || skip
@@ -41,6 +41,12 @@ setup() {
 }
 
 
-# TODO incremental print
+# compare the pretty-printed incremental output with what's expected
+@test "print $EXAMPLE_NAME as expected" {
+    expectedOutput=$EXAMPLE_BASEPATH.delta.expected
+    [ -e "$expectedOutput" ] || skip
+    scala "$DDLOG_JAR" print --incremental "$EXAMPLE" |
+    diff -u "$expectedOutput" -
+}
 
 # TODO incremental compile
