@@ -400,7 +400,7 @@ class ExtractorRunner(dataStore: JsonExtractionDataStore, dbSettings: DbSettings
 
     // NEW: for mysqlimport compatibility, the file basename must be same as table name.
     val queryOutputFile = new File(queryOutputPath + s"${outputRel}.copy_query_${funcName}.tsv")
-    val gpFileName = s"${outputRel}_unload_${funcName}"
+    val gpFileName = s"${outputRel}_query_unload"
     val psqlFilePath = queryOutputFile.getAbsolutePath()
 
     // Get the actual dumped file 
