@@ -35,7 +35,11 @@ libraryDependencies ++= List(
   //"org.apache.hadoop" % "hadoop-common" % "2.7.0"
 )
 
+// Impala JDBC is not in maven central; we may want to set up our own 
+// maven repository at some point to avoid unmanaged jars
 unmanagedJars in Compile += file("lib/ImpalaJDBC41.jar")
+
+unmanagedJars in Compile += file("lib/libthrift-0.9.0.jar")
 
 parallelExecution in Test := false
 
