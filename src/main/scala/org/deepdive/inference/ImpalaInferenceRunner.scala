@@ -49,7 +49,8 @@ trait ImpalaInferenceRunnerComponent extends SQLInferenceRunnerComponent {
      * In Mysql the subqueries have to be created as views first.
      */
     def createCalibrationViewBooleanSQL(name: String, bucketedView: String, columnName: String) = s"""
-        CREATE OR REPLACE VIEW ${name} AS
+        DROP VIEW IF EXISTS ${name};
+        CREATE VIEW ${name} AS
         SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
         (SELECT bucket, COUNT(*) AS num_variables from ${bucketedView} GROUP BY bucket) b1
         LEFT JOIN (SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
@@ -64,7 +65,8 @@ trait ImpalaInferenceRunnerComponent extends SQLInferenceRunnerComponent {
      * SELECT contains a subquery in the FROM clause.
      */
     def createCalibrationViewMultinomialSQL(name: String, bucketedView: String, columnName: String) = s"""
-        CREATE OR REPLACE VIEW ${name} AS
+        DROP VIEW IF EXISTS ${name}; 
+        CREATE VIEW ${name} AS
         SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
         (SELECT bucket, COUNT(*) AS num_variables from ${bucketedView} GROUP BY bucket) b1
         LEFT JOIN (SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
@@ -87,15 +89,43 @@ trait ImpalaInferenceRunnerComponent extends SQLInferenceRunnerComponent {
         CREATE TABLE ${VariableResultTable}(
           id bigint,
           category bigint,
-          expectation double);
+          expectation double)
+row format delimited
+  fields terminated by ' '
+  stored as textfile;
         """
 
     override def createInferenceResultWeightsSQL = s"""
         DROP TABLE IF EXISTS ${WeightResultTable};
         CREATE TABLE ${WeightResultTable}(
           id bigint,
-          weight double);
+          weight double)
+row format delimited
+  fields terminated by ' '
+  stored as textfile;
         """
+
+  override def createInferenceViewSQL(relationName: String, columnName: String) = s"""
+    DROP VIEW IF EXISTS ${relationName}_${columnName}_inference;
+    CREATE VIEW ${relationName}_${columnName}_inference AS
+    (SELECT ${relationName}.*, mir.category, mir.expectation FROM
+    ${relationName}, ${VariableResultTable} mir
+    WHERE ${relationName}.id = mir.id
+    ORDER BY mir.expectation DESC);
+  """
+
+  override def createBucketedCalibrationViewSQL(name: String, inferenceViewName: String, buckets: List[Bucket]) = {
+    val bucketCaseStatement = buckets.zipWithIndex.map { case(bucket, index) =>
+      s"WHEN expectation >= ${bucket.from} AND expectation <= ${bucket.to} THEN ${index}"
+    }.mkString("\n")
+    s"""
+      DROP VIEW IF EXISTS ${name};
+      CREATE VIEW ${name} AS
+      SELECT ${inferenceViewName}.*, CASE ${bucketCaseStatement} END bucket
+      FROM ${inferenceViewName} ORDER BY bucket ASC;"""
+  }
+
+
 
   /**
    * Create a table of how LR features are supported by supervision examples
@@ -109,6 +139,30 @@ trait ImpalaInferenceRunnerComponent extends SQLInferenceRunnerComponent {
     neg_examples bigint,
     queries bigint);"""
 
+  /**
+   * Create a view that shows weights of features as well as their supports 
+   */
+  override def createMappedFeatureStatsViewSQL = s"""
+        DROP VIEW IF EXISTS ${FeatureStatsView};
+        CREATE VIEW ${FeatureStatsView} AS
+        SELECT w.*, f.pos_examples, f.neg_examples, f.queries
+        FROM ${LearnedWeightsTable} w LEFT OUTER JOIN ${FeatureStatsSupportTable} f
+        ON w.description = f.description
+        ORDER BY abs(weight) DESC;
+        """
+
+  override def createMappedWeightsViewSQL = s"""
+    DROP VIEW IF EXISTS ${LearnedWeightsTable};
+    CREATE VIEW ${LearnedWeightsTable} AS
+    SELECT ${WeightsTable}.*, ${WeightResultTable}.weight FROM
+    ${WeightsTable} JOIN ${WeightResultTable} ON ${WeightsTable}.id = ${WeightResultTable}.id
+    ORDER BY abs(weight) DESC;
+
+    DROP VIEW IF EXISTS ${VariableResultTable}_mapped_weights;
+    CREATE VIEW ${VariableResultTable}_mapped_weights AS
+    SELECT * FROM ${LearnedWeightsTable}
+    ORDER BY abs(weight) DESC;
+  """
 
   // assign variable holdout
   override def assignHoldout(schema: Map[String, _ <: VariableDataType], calibrationSettings: CalibrationSettings) {
@@ -217,8 +271,8 @@ trait ImpalaInferenceRunnerComponent extends SQLInferenceRunnerComponent {
 
     factorDescs.zipWithIndex.foreach { case (factorDesc, idx) =>
       // id columns
-      val idcols = factorDesc.func.variables.map(v => 
-        s""" ${dataStore.quoteColumn(s"${v.relation}.id")} """).mkString(", ")
+      //val idcols = factorDesc.func.variables.map(v => 
+      //  s""" ${dataStore.quoteColumn(s"${v.relation}.id")} """).mkString(", ")
       // Sen
       // val querytable = s"dd_query_${factorDesc.name}"
       // val weighttableForThisFactor = s"dd_weights_${factorDesc.name}"
@@ -227,15 +281,29 @@ trait ImpalaInferenceRunnerComponent extends SQLInferenceRunnerComponent {
 
       val outfile = InferenceNamespace.getFactorFileName(factorDesc.name)
 
-      
+      // create table to hold data of factor
+      val idcols = factorDesc.func.variables.zipWithIndex.map { case (v,i) => s"id$i" }
+      val valcols = factorDesc.func.variables.zipWithIndex.map { case (v,i) => s"v$i" }
+      val typ = factorDesc.func.variableDataType match {
+        case "Boolean" => "boolean"
+        case "Discrete" => "int"
+      }
+      val coldefstr = factorDesc.func.variables.zipWithIndex.map { case (v,i) => s"id$i bigint, v$i $typ" }.mkString(", ")
+
 
       //val withIdQuery = s"CREATE TABLE ${querytable} AS SELECT t.*, ${factorid} + row_number() over(order by count(*)) FROM (${factorDesc.inputQuery}) t"
       //execute(withIdQuery)
 
       val withIdQuery = s"""
         DROP TABLE IF EXISTS ${querytable};
-        CREATE TABLE ${querytable} AS SELECT ${factorid} + row_sequence() as id, t.* FROM (${factorDesc.inputQuery}) t;
+        CREATE TABLE ${querytable} (${coldefstr}, id bigint);  
+        INSERT INTO ${querytable} SELECT t.*, ${factorid} -2 + row_sequence() as id FROM (${factorDesc.inputQuery}) t;
       """
+
+      //val withIdQuery = s"""
+      //  DROP TABLE IF EXISTS ${querytable};
+      //  CREATE TABLE ${querytable} AS SELECT t.*, ${factorid} -2 + row_sequence() as id FROM (${factorDesc.inputQuery}) t;
+      //"""
       execute(withIdQuery)
 
 
@@ -243,10 +311,14 @@ trait ImpalaInferenceRunnerComponent extends SQLInferenceRunnerComponent {
       //dataStore.dropAndCreateTableAs(querytable, factorDesc.inputQuery)
       //execute(s"""ALTER TABLE ${querytable} ADD COLUMN id bigint;""")
 
-
+      var count : Long = 0
+      dataStore.executeSqlQueryWithCallback(s"""SELECT COUNT(*) FROM ${querytable};""") { rs =>
+         count = rs.getLong(1)
+      }
+      factorid += count
 
       // handle factor id
-      factorid += dataStore.assignIds(querytable.toLowerCase(), factorid, factoridSequence)
+      //factorid += dataStore.assignIds(querytable.toLowerCase(), factorid, factoridSequence)
 
       // weight variable list
       val weightlist = factorDesc.weight.variables.map(v => 
@@ -256,6 +328,8 @@ trait ImpalaInferenceRunnerComponent extends SQLInferenceRunnerComponent {
         case x : KnownFactorWeight => x.value
         case _ => 0.0
       }
+
+      println(weightlist)
 
       // for mysql, create indexes on weight variables of query tables.
       // for psql, this function is overwritten to do nothing.
@@ -309,6 +383,9 @@ trait ImpalaInferenceRunnerComponent extends SQLInferenceRunnerComponent {
           // dump factors
           val weightjoinlist = factorDesc.weight.variables.map(
             v => s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)} """).mkString("AND")
+
+          println("=============================== weightjoinlist")
+          println(weightjoinlist)
           // do not have join conditions if there are no weight variables, and t1 will only have 1 row
           val weightJoinCondition = hasWeightVariables match {
             case true => "WHERE " + factorDesc.weight.variables.map(
@@ -318,7 +395,7 @@ trait ImpalaInferenceRunnerComponent extends SQLInferenceRunnerComponent {
           execute(dataStore.analyzeTable(querytable))
           execute(dataStore.analyzeTable(weighttableForThisFactor))
           du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
-            s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
+            s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols.mkString(", ")}
              FROM ${querytable} t0, ${weighttableForThisFactor} t1
              ${weightJoinCondition};""", groundingDir)
 
@@ -415,7 +492,7 @@ trait ImpalaInferenceRunnerComponent extends SQLInferenceRunnerComponent {
           execute(dataStore.analyzeTable(querytable))
           execute(dataStore.analyzeTable(weighttableForThisFactor))
           du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
-            s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
+            s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols.mkString(", ")}
              FROM ${querytable} t0, ${weighttableForThisFactor} t1
              WHERE ${weightjoinlist} AND t1.cardinality = '${cardinalityKey}';""",
              groundingDir)
