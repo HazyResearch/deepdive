@@ -12,6 +12,7 @@ import java.sql.Connection
 import play.api.libs.json._
 import scalikejdbc._
 import com.typesafe.config._
+import org.deepdive.helpers.Helpers
 
 trait ImpalaDataStoreComponent extends JdbcDataStoreComponent {
   def dataStore = new ImpalaDataStore
@@ -21,15 +22,12 @@ trait ImpalaDataStoreComponent extends JdbcDataStoreComponent {
 class ImpalaDataStore extends JdbcDataStore with Logging {
 
   override def init() : Unit = {
-  //override def init(config:Config) : Unit = {
 
-  // TODO: read from config
-  val DEEPDIVE_HOME = "/home/ubuntu/deepdive"
+  // copy UDF jar to hdfs
+  val jarFile = "hive-contrib-0.13.1-cdh5.3.3.jar"
+  if (Helpers.executeCmdWithExitCode(s"hdfs dfs -test -f /tmp/${jarFile}") != 0)
+    Helpers.executeCmd(s"hdfs dfs -put ${Context.deepdiveHome}/udf/${jarFile} /tmp")
 
-  // TODO: move from local file system to HDFS
-  //hdfs dfs -put /home/ubuntu/deepdive/udf/hive-contrib-0.13.1-cdh5.3.3.jar /tmp
-
-    
   val rowSequenceForImpala = s"""
     DROP FUNCTION IF EXISTS row_sequence();
     CREATE FUNCTION row_sequence() returns BIGINT location '/tmp/hive-contrib-0.13.1-cdh5.3.3.jar'
@@ -175,7 +173,8 @@ class ImpalaDataStore extends JdbcDataStore with Logging {
 
     val values = ArrayBuffer[String]()
     for (i <- 0 until columns.size)
-      values += { if (columns(i).equals("id")) s"(${startId} + (row_number() over(ORDER BY id)))" else columns(i) }
+      //values += { if (columns(i).equals("id")) s"(${startId} + (row_number() over(ORDER BY id)))" else columns(i) }
+      values += { if (columns(i).equals("id")) s"${startId} - 2 + row_sequence()" else columns(i) }
 
     executeSqlQueries(s"INSERT OVERWRITE TABLE ${table} (" + columns.mkString(", ") +
       ") SELECT " + values.mkString(", ") + s" FROM ${table} ")

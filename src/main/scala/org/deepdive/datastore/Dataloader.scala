@@ -149,8 +149,8 @@ class DataLoader extends JdbcDataStore with Logging {
       val dbtype = Helpers.getDbType(dbSettings)
       dbtype match {
         case Impala =>
-          Helpers.executeCmd("hdfs dfs rmr /user/cloudera/tmp")
-          Helpers.executeCmd("hdfs dfs mkdir /user/cloudera/tmp")   
+          Helpers.executeCmd("hdfs dfs -rm -r -f -skipTrash /tmp/result")
+          Helpers.executeCmd("hdfs dfs -mkdir /tmp/result")   
         case _ =>
       }
 
@@ -169,7 +169,7 @@ class DataLoader extends JdbcDataStore with Logging {
           // tablename.
         case Impala =>
           // write to tsv file in HDFS
-          writebackPrefix + " | hdfs dfs -put $0 /user/cloudera/$0"
+          writebackPrefix + "'hdfs dfs -put $0 /tmp/result/$(basename $0)'"
       }
       
       log.info(writebackCmd)
@@ -180,7 +180,8 @@ class DataLoader extends JdbcDataStore with Logging {
      
       dbtype match {
         case Impala =>
-          executeSqlQueries(s"LOAD DATA INPATH '/user/cloudera' INTO TABLE ${tablename}")
+          Helpers.executeCmd("hdfs dfs -chmod -R go+w /tmp/result")
+          executeSqlQueries(s"LOAD DATA INPATH '/tmp/result' INTO TABLE ${tablename}")
         case _ =>
       }
     }

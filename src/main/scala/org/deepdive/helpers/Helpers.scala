@@ -114,17 +114,23 @@ object Helpers extends Logging {
    *  @throws RuntimeException if failed
    */
   def executeCmd(cmd: String) : Unit = {
-    // Make the file executable, if necessary
-    val file = new java.io.File(cmd)
-    if (file.isFile) file.setExecutable(true, false)
-    log.info(s"""Executing command: "$cmd" """)
-    val exitValue = cmd!(ProcessLogger(out => log.info(out)))
+    val exitValue = executeCmdWithExitCode(cmd)
     // Depending on the exit value we return success or throw an exception
     exitValue match {
       case 0 => 
       case _ => throw new RuntimeException(s"Failure when executing script: ${cmd}")
     }
   }
+
+  def executeCmdWithExitCode(cmd: String) : Int = {
+    // Make the file executable, if necessary
+    val file = new java.io.File(cmd)
+    if (file.isFile) file.setExecutable(true, false)
+    log.info(s"""Executing command: "$cmd" """)
+    val exitValue = cmd!(ProcessLogger(out => log.info(out)))
+    exitValue
+  }
+
 
   /**
    * Executes a SQL query by piping it into a file without talking to JDBC.
