@@ -19,6 +19,22 @@ trait PostgresDataStoreComponent extends JdbcDataStoreComponent {
 /* Helper object for working with Postgres */
 class PostgresDataStore extends JdbcDataStore with Logging {
 
+  override def init(): Unit = {
+    // create language for and greenplum if not exist
+    if (isUsingGreenplum()) {
+      if (!existsLanguage("plpgsql")) {
+        executeSqlQueries("CREATE LANGUAGE plpgsql;")
+      }
+      if (!existsLanguage("plpythonu")) {
+        executeSqlQueries("CREATE LANGUAGE plpythonu;")
+      }
+    }
+
+    if (!isUsingGreenplum()) return
+    executeSqlQueries(SQLFunctions.fastSequenceAssignForGreenplum, false)
+  }
+
+
   // Executes a "COPY FROM STDIN" statement using raw data */
   def copyBatchData(sqlStatement: String, dataReader: Reader)
     (implicit connection: Connection) : Unit = {

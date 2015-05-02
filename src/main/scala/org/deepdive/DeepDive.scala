@@ -54,12 +54,13 @@ object DeepDive extends Logging {
     }
 
     // Setup the data store
-    JdbcDataStoreObject.init(config)
+    JdbcDataStoreControl.init(config, dbSettings)
 
+    val dataStore = JdbcDataStoreControl.createStore
     settings.schemaSettings.setupFile.foreach { file =>
       log.info(s"Setting up the schema using ${file}")
       val cmd = Source.fromFile(file).getLines.mkString("\n")
-      JdbcDataStoreObject.executeSqlQueries(cmd)
+      dataStore.executeSqlQueries(cmd)
     }
 
     implicit val timeout = Timeout(1337 hours)
