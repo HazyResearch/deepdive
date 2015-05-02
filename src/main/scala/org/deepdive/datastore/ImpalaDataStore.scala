@@ -11,7 +11,7 @@ import org.deepdive.Context
 import java.sql.Connection
 import play.api.libs.json._
 import scalikejdbc._
-
+import com.typesafe.config._
 
 trait ImpalaDataStoreComponent extends JdbcDataStoreComponent {
   def dataStore = new ImpalaDataStore
@@ -19,6 +19,24 @@ trait ImpalaDataStoreComponent extends JdbcDataStoreComponent {
 
 /* Helper object for working with Postgres */
 class ImpalaDataStore extends JdbcDataStore with Logging {
+
+  override def init() : Unit = {
+  //override def init(config:Config) : Unit = {
+
+  // TODO: read from config
+  val DEEPDIVE_HOME = "/home/ubuntu/deepdive"
+
+  // TODO: move from local file system to HDFS
+  //hdfs dfs -put /home/ubuntu/deepdive/udf/hive-contrib-0.13.1-cdh5.3.3.jar /tmp
+
+    
+  val rowSequenceForImpala = s"""
+    DROP FUNCTION IF EXISTS row_sequence();
+    CREATE FUNCTION row_sequence() returns BIGINT location '/tmp/hive-contrib-0.13.1-cdh5.3.3.jar'
+      symbol='org.apache.hadoop.hive.contrib.udf.UDFRowSequence';
+    """
+    executeSqlQueries(rowSequenceForImpala)    
+  }
 
   // Executes a "COPY FROM STDIN" statement using raw data */
   def copyBatchData(sqlStatement: String, dataReader: Reader)
@@ -174,11 +192,6 @@ class ImpalaDataStore extends JdbcDataStore with Logging {
     return count
   }
   
-  // create fast sequence assign function for greenplum
-  override def createAssignIdFunctionGreenplum() : Unit = {
-    if (!isUsingGreenplum()) return
-    executeSqlQueries(SQLFunctions.fastSequenceAssignForGreenplum, false)
-  }
 
   /**
    * Drops a table if it exists, and then create it

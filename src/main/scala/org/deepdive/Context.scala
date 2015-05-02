@@ -45,7 +45,7 @@ object Context extends Logging {
   
 
   def shutdown(exitValue: Int = 0) {
-    JdbcDataStoreObject.close()
+    JdbcDataStoreControl.close()
     system.shutdown()
     system.awaitTermination()
   }

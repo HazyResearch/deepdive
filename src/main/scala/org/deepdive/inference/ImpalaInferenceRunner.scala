@@ -87,14 +87,14 @@ trait ImpalaInferenceRunnerComponent extends SQLInferenceRunnerComponent {
         CREATE TABLE ${VariableResultTable}(
           id bigint,
           category bigint,
-          expectation double precision);
+          expectation double);
         """
 
     override def createInferenceResultWeightsSQL = s"""
         DROP TABLE IF EXISTS ${WeightResultTable};
         CREATE TABLE ${WeightResultTable}(
-          id bigint primary key,
-          weight double precision);
+          id bigint,
+          weight double);
         """
 
   /**
@@ -227,8 +227,17 @@ trait ImpalaInferenceRunnerComponent extends SQLInferenceRunnerComponent {
 
       val outfile = InferenceNamespace.getFactorFileName(factorDesc.name)
 
-      val withIdQuery = s"CREATE TABLE ${querytable} AS SELECT t.*, ${factorid} + row_number() over(order by count(*)) FROM (${factorDesc.inputQuery}) t"
+      
+
+      //val withIdQuery = s"CREATE TABLE ${querytable} AS SELECT t.*, ${factorid} + row_number() over(order by count(*)) FROM (${factorDesc.inputQuery}) t"
+      //execute(withIdQuery)
+
+      val withIdQuery = s"""
+        DROP TABLE IF EXISTS ${querytable};
+        CREATE TABLE ${querytable} AS SELECT ${factorid} + row_sequence() as id, t.* FROM (${factorDesc.inputQuery}) t;
+      """
       execute(withIdQuery)
+
 
       // table of input query
       //dataStore.dropAndCreateTableAs(querytable, factorDesc.inputQuery)

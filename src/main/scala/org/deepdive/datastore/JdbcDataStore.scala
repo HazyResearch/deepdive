@@ -7,6 +7,7 @@ import org.deepdive.Logging
 import com.typesafe.config._
 import play.api.libs.json._
 import org.deepdive.inference.InferenceNamespace
+import org.deepdive.settings.DbSettings
 
 trait JdbcDataStoreComponent {
   def dataStore : JdbcDataStore
@@ -384,32 +385,61 @@ trait JdbcDataStore extends Logging {
 
 }
 
-object JdbcDataStoreObject extends JdbcDataStore with Logging {
+sealed abstract class StoreType
+case object Postgres extends StoreType
+case object MySQL extends StoreType
+case object IMPALA extends StoreType
+case object NoStore extends StoreType
+
+object JdbcDataStoreControl extends Logging {
+
+  var storeType:StoreType = NoStore
+
+  def createStore : JdbcDataStore =
+    storeType match {
+    case Postgres => new PostgresDataStore()
+    case MySQL => new MysqlDataStore()
+    case IMPALA => new ImpalaDataStore()
+    case NoStore => {
+      log.error("JdbcDataStoreControl not initialized")
+      null
+    }
+  }
 
   class JdbcDBsWithEnv(envValue: String, configObj: Config) extends DBsWithEnv(envValue) {
     override lazy val config = configObj
   }
 
   /* Initializes the data stores */
-  def init(config: Config) : Unit = {
+  def init(config: Config, dbSettings: DbSettings) : Unit = {
     val initializer = new JdbcDBsWithEnv("deepdive", config)
     log.info("Intializing all JDBC data stores")
     initializer.setupAll()
-    // create language for and greenplum if not exist
-    if (isUsingGreenplum()) {
-      if (!existsLanguage("plpgsql")) {
-        executeSqlQueries("CREATE LANGUAGE plpgsql;")
-      }
-      if (!existsLanguage("plpythonu")) {
-        executeSqlQueries("CREATE LANGUAGE plpythonu;")
+
+    storeType = dbSettings.driver match {
+      case "org.postgresql.Driver" => Postgres
+      case "com.mysql.jdbc.Driver" => MySQL
+      case "com.cloudera.impala.jdbc41.Driver" => IMPALA
+      case _ => {
+        log.error("Unknown jdbc driver")
+        NoStore
       }
     }
+
+    // each data store wants to do its own initializations;
+    // some of these require sql queries, so we need to instantiate
+    // a store for the initializations;
+    // later, new store objects are created by akka
+
+    val store = createStore
+    store.init()
   }
 
-  override def init() : Unit = init(ConfigFactory.load)
+  //override def init() : Unit = init(ConfigFactory.load)
 
   /* Closes the data store */
-  override def close() = {
+  //override 
+  def close() = {
     log.info("Closing all JDBC data stores")
     ConnectionPool.closeAll() // TODO not tested
     DBsWithEnv("deepdive").closeAll()
