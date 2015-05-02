@@ -77,7 +77,7 @@ dw_test: factor_graph.o inference_result.o gibbs_sampling.o  binary_parser.o sin
 	$(COMPILE_CMD) -I./lib/gtest-1.7.0/include/ -L./lib/gtest/ \
 	-o dw_test test/test.cpp test/FactorTest.cpp test/LogisticRegressionTest.cpp \
 	test/binary_parser_test.cpp test/loading_test.cpp test/factor_graph_test.cpp \
-	test/sampler_test.cpp test/multinomial.cpp test/partial_observation_test.cpp \
+	test/sampler_test.cpp test/multinomial.cpp \
 	gibbs_sampling.o binary_parser.o \
     timer.o gibbs.o single_node_sampler.o \
 	factor_graph.o inference_result.o single_thread_sampler.o factor.o \
@@ -132,7 +132,13 @@ gibbs:
 		-o data3/                    \
 		-i 1000 -l 1000 -s 10 --alpha 0.01 --diminish 0.95
 
-test: clean dw_test
+test:
+	rm -f dw_test
+	$(MAKE) dw_test
 	./dw_test
+	
+	@# install bats if not available
+	@type bats >/dev/null || git clone https://github.com/sstephenson/bats test/bats
+	bats test/*.bats
 
-.PHONY: test clean dw
+.PHONY: test clean
