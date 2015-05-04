@@ -15,7 +15,7 @@ datasets](http://creativecommons.org/) as we can find. Below, we describe the da
 
 <div class="panel panel-default" style="position:relative;">
   <div class="panel-heading">Acknowledgement</div>
-
+<div class="panel-body">
 <center>
 <a href="http://chtc.cs.wisc.edu/">
 <img src="http://chtc.cs.wisc.edu/images/CHTC-logo.png" style="width:188px;"/></a>
@@ -26,9 +26,10 @@ datasets](http://creativecommons.org/) as we can find. Below, we describe the da
 <a href="http://nlp.stanford.edu/software/corenlp.shtml">
 <img src="https://pbs.twimg.com/profile_images/722745234/nlp-logo-4x4_400x400.jpg" style="width:65px;"/></a>
 </center>
-<p>
-We would like to thank the HTCondor research group and the <a href="http://chtc.cs.wisc.edu/">Center for High Throughput Computing (CHTC)</a> at the University of Wisconsin-Madison, who have provided millions of machine hours to our group. Thank you, Miron Livny. We would also like to thank the <a href="http://nlp.stanford.edu/software/corenlp.shtml">Stanford Natural Language Processing Group</a>, whose tools we use in many of our applications. DeepDive is also generously supported by <a href="http://deepdive.stanford.edu/doc/support.html">our sponsors</a>.
-</p>
+<div style="margin-top:10px;">
+We would like to thank the HTCondor research group and the <a href="http://chtc.cs.wisc.edu/">Center for High Throughput Computing (CHTC)</a> at the University of Wisconsin-Madison, who have provided millions of machine hours to our group. Thank you, Miron Livny. We would also like to thank the <a href="http://nlp.stanford.edu/index.shtml">Stanford Natural Language Processing Group</a>, whose tools we use in many of our applications. DeepDive is also generously supported by <a href="http://deepdive.stanford.edu/doc/support.html">our sponsors</a>.
+</div>
+</div>
 </div>
 
 
