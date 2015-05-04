@@ -2,13 +2,12 @@
 
 namespace dd{
 
-
-    SingleThreadSampler::SingleThreadSampler(FactorGraph * _p_fg) :
-      p_fg (_p_fg), p_rand_obj_buf(new double){
-      p_rand_seed[0] = rand();
-      p_rand_seed[1] = rand();
-      p_rand_seed[2] = rand();
-    }
+  SingleThreadSampler::SingleThreadSampler(FactorGraph * _p_fg, bool sample_evidence) :
+    p_fg (_p_fg), p_rand_obj_buf(new double), sample_evidence(sample_evidence) {
+    p_rand_seed[0] = rand();
+    p_rand_seed[1] = rand();
+    p_rand_seed[2] = rand();
+  }
 
   void SingleThreadSampler::sample(const int & i_sharding, const int & n_sharding){
     long nvar = p_fg->n_var;
@@ -146,7 +145,7 @@ namespace dd{
 
     if(variable.domain_type == DTYPE_BOOLEAN){
 
-      if(variable.is_evid == false){
+      if(variable.is_evid == false || sample_evidence){
 
         potential_pos = p_fg->template potential<false>(variable, 1);
         potential_neg = p_fg->template potential<false>(variable, 0);
@@ -166,7 +165,7 @@ namespace dd{
         varlen_potential_buffer.push_back(0.0);
       }
 
-      if(variable.is_evid == false){
+      if(variable.is_evid == false || sample_evidence){
         sum = -100000.0;
         acc = 0.0;
         multi_proposal = -1;

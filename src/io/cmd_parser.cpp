@@ -29,6 +29,7 @@ namespace dd{
         n_datacopy = new TCLAP::ValueArg<int>("c","n_datacopy","Number of factor graph copies",false,0,"int");
         reg_param = new TCLAP::ValueArg<double>("b","reg_param","l2 regularization parameter",false,0.01,"double");
         quiet = new TCLAP::SwitchArg("q", "quiet", "quiet output", false);
+        sample_evidence = new TCLAP::SwitchArg("", "sample_evidence", "also sample evidence variables in inference", false);
 
         cmd->add(*fg_file);
         
@@ -50,6 +51,7 @@ namespace dd{
         cmd->add(*n_datacopy);
         cmd->add(*reg_param);
         cmd->add(*quiet);
+        cmd->add(*sample_evidence);
       }else{
         std::cout << "ERROR: UNKNOWN APP NAME " << app_name << std::endl;
         std::cout << "AVAILABLE APP {gibbs}" << app_name << std::endl;
