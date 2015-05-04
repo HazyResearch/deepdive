@@ -13,8 +13,25 @@ Our work would not be possible without open data. As a result, our group decided
 datasets](http://creativecommons.org/) as we can find. Below, we describe the data format and provide a small list of data sets in this page. We plan to process more data sets and to provide richer data as well (extracted entities and relationships). Feel free to contact us to suggest more open data sets to process. 
 
 
-**Acknowledgement.** We would like to thank the HTCondor research group and the Center for High Throughput Computing (CHTC) at the University of Wisconsin-Madison, who have provided millions of machine hours to our group. Thank you, Miron Livny. We would also like to thank the Stanford Natural Language Processing Group, whose tools we use in many of our applications. DeepDive is also generously supported by [our
-sponsors](http://deepdive.stanford.edu/doc/support.html).
+<div class="panel panel-default" style="position:relative;">
+  <div class="panel-heading">Acknowledgement</div>
+<div class="panel-body">
+<center>
+<a href="http://chtc.cs.wisc.edu/">
+<img src="http://chtc.cs.wisc.edu/images/CHTC-logo.png" style="width:188px;"/></a>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="http://research.cs.wisc.edu/htcondor/">
+<img src="http://research.cs.wisc.edu/htcondor/images/white_bird_logo.png" style="width:188px;"/></a>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="http://nlp.stanford.edu/software/corenlp.shtml">
+<img src="https://pbs.twimg.com/profile_images/722745234/nlp-logo-4x4_400x400.jpg" style="width:65px;"/></a>
+</center>
+<div style="margin-top:10px;">
+We would like to thank the HTCondor research group and the <a href="http://chtc.cs.wisc.edu/">Center for High Throughput Computing (CHTC)</a> at the University of Wisconsin-Madison, who have provided millions of machine hours to our group. Thank you, Miron Livny. We would also like to thank the <a href="http://nlp.stanford.edu/index.shtml">Stanford Natural Language Processing Group</a>, whose tools we use in many of our applications. DeepDive is also generously supported by <a href="http://deepdive.stanford.edu/doc/support.html">our sponsors</a>.
+</div>
+</div>
+</div>
+
 
 ### Data Format (NLP Markups)
 
@@ -76,7 +93,7 @@ Each dataset is versioned with date, and with the MD5 checksum in the file name.
       <span class="label label-warning">&gt;</span>
       <span class="label label-info">STRIP (html2text)</span>
       <span class="label label-warning">&gt;</span>
-      <span class="label label-info">NLP (Stanford CoreNLP)</span>
+      <span class="label label-info">NLP (Stanford CoreNLP 1.3.4)</span>
       </p>
 
       </td>
@@ -139,7 +156,7 @@ Information obtained at [Jan 27, 2015](http://www.ncbi.nlm.nih.gov/pmc/tools/ope
       <span class="label label-warning">&gt;</span>
       <span class="label label-info">STRIP (html2text)</span>
       <span class="label label-warning">&gt;</span>
-      <span class="label label-info">NLP (Stanford CoreNLP)</span>
+      <span class="label label-info">NLP (Stanford CoreNLP 1.3.4)</span>
 
       </td>
     <tr>
@@ -230,7 +247,7 @@ Information obtained at [Jan 27, 2015](http://www.biomedcentral.com/about).
       <span class="label label-warning">&gt;</span>
       <span class="label label-info">OCR (Tesseract)</span>
       <span class="label label-warning">&gt;</span>
-      <span class="label label-info">NLP (Stanford CoreNLP)</span>
+      <span class="label label-info">NLP (Stanford CoreNLP 1.3.4)</span>
       </p>
 
       </td>
@@ -288,7 +305,7 @@ Information obtained at [Jan 26, 2015](http://www.plosone.org/static/license).
       <td colspan=3>
       <span class="label label-info">OCR'ed Text</span> 
       <span class="label label-warning">&gt;</span>
-      <span class="label label-info">NLP (Stanford CoreNLP)</span>
+      <span class="label label-info">NLP (Stanford CoreNLP 1.3.4)</span>
       </td>
     <tr>
       <th> Size </th>  <td> 229 GB </td>
@@ -325,7 +342,6 @@ Information obtained at [Jan 26, 2015](http://www.plosone.org/static/license).
   </table>
 </div>
 
-
 The Biodiversity Heritage Library (BHL) is a consortium of natural history and botanical libraries that cooperate to digitize and make accessible the legacy literature of biodiversity held in their collections and to make that literature available for open access and responsible use as a part of a global ''biodiversity commons.'' DeepDive's BHL corpus contains a full snapshot that we downloaded in Jan 2014 from the Biodiversity Heritage Library.
 
 <i>
@@ -335,120 +351,48 @@ Information obtained at [Jan 26, 2015](http://biodivlib.wikispaces.com/Licensing
 </i>
 
 
-
-## WIKI (Wikipedia)
-
-<div class="panel panel-default" style="position:relative;">
-  <div style="position:absolute; left: -20px; top: -30px;">
-   <img src="/images/coming_soon.png" style="width:200px;">
-  </div>
-  <div class="panel-heading">Quick Statistics & Downloads</div>
-  <table class="table">
-    <tr>
-      <th> Pipeline </th> 
-      <td colspan=3>
-
-      <span class="label label-info">WIKI PAGE</span> 
-      <span class="label label-warning">&gt;</span>
-      <span class="label label-info">STRIP</span>
-      <span class="label label-warning">&gt;</span>
-      <span class="label label-info">NLP (Stanford CoreNLP)</span>
-
-      </td>
-    <tr>
-      <th> Size </th>  <td> - </td>
-      <th> Document Type </th> <td> Web page </td>
-    </tr>
-    <tr>
-      <th> # Documents </th>  <td> - </td>
-      <th> # Machine Hours </th> <td> - </td>
-    </tr>
-    <tr>
-      <th> # Sentences </th>  <td> - </td>
-      <th> # Words </th>  <td> - </td>
-    </tr>
-    <tr>
-      <th> Downloads </th> <td colspan="3"> 
-        <div class="btn-group" text-aligh="right">
-          <button type="button" class="btn btn-primary dropdown-toggle disabled" data-toggle="dropdown" aria-expanded="false"> Download Full Corpus <span class="caret"></span>
-          </button>
-          <ul class="dropdown-menu" role="menu">
-            <li><a href="#">DeepDive-ready DB Dump</a></li>
-            <li><a href="#">CoNLL-format Markups</a></li>
-          </ul>
-        </div>
-        <div class="btn-group" text-aligh="right">
-          <button type="button" class="btn btn-primary dropdown-toggled disabled" data-toggle="dropdown" aria-expanded="false"> Download Small Teaser <span class="caret"></span>
-          </button>
-          <ul class="dropdown-menu" role="menu">
-            <li><a href="http://i.stanford.edu/hazy/opendata/bhl/bhl_teaser_dddb_20150131_4a2021210453c3f9985484a24347b980.zip">DeepDive-ready DB Dump</a></li>
-            <li><a href="http://i.stanford.edu/hazy/opendata/bhl/bhl_teaser_conll_20150131_30f3c9a574438b138d3a442394540cff.zip">CoNLL-format Markups</a></li>
-          </ul>
-        </div>
-      </td>
-    </tr>
-  </table>
-</div>
-
-Wikipedia is a free-access, free content Internet encyclopedia, supported and hosted by the non-profit Wikimedia Foundation. We plan to have 
-DeepDive's WIKI Corpus to contain a full snapshot 
-of Wikipedia in Jan 2015.
-
-<i>
-<img src="http://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-sa.png" style="width:88px;"/> Wikipedia
-applies CC BY-SA 3.0 Unported license.
-Information obtained at [Jan 27, 2015](http://en.wikipedia.org/wiki/Wikipedia:Text_of_Creative_Commons_Attribution-ShareAlike_3.0_Unported_License).
-</i>
-
-
-
 ## PATENT (Google Patents)
 
 <div class="panel panel-default" style="position:relative;">
-  <div style="position:absolute; left: -20px; top: -30px;">
-   <img src="/images/coming_soon.png" style="width:200px;">
-  </div>
   <div class="panel-heading">Quick Statistics & Downloads</div>
   <table class="table">
     <tr>
       <th> Pipeline </th> 
       <td colspan=3>
 
-      <span class="label label-info">PDF</span> 
+      <span class="label label-info">OCR'ed Text</span>
       <span class="label label-warning">&gt;</span>
-      <span class="label label-info">OCR (Tesseract)</span>
-      <span class="label label-warning">&gt;</span>
-      <span class="label label-info">NLP (Stanford CoreNLP)</span>
+      <span class="label label-info">NLP (Stanford CoreNLP 3.5.1)</span>
 
       </td>
     <tr>
-      <th> Size </th>  <td> - </td>
+      <th> Size </th>  <td> 428 GB </td>
       <th> Document Type </th> <td> Government Document </td>
     </tr>
     <tr>
-      <th> # Documents </th>  <td> - </td>
-      <th> # Machine Hours </th> <td> - </td>
+      <th> # Documents </th>  <td> 2,437,000 </td>
+      <th> # Machine Hours </th> <td> 100 K </td>
     </tr>
     <tr>
-      <th> # Sentences </th>  <td> - </td>
-      <th> # Words </th>  <td> - </td>
+      <th> # Sentences </th>  <td> 248 Million </td>
+      <th> # Words </th>  <td> 7.7 Billion </td>
     </tr>
     <tr>
       <th> Downloads </th> <td colspan="3"> 
         <div class="btn-group" text-aligh="right">
-          <button type="button" class="btn btn-primary dropdown-toggle disabled" data-toggle="dropdown" aria-expanded="false"> Download Full Corpus <span class="caret"></span>
+          <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false"> Download Full Corpus <span class="caret"></span>
           </button>
           <ul class="dropdown-menu" role="menu">
-            <li><a href="#">DeepDive-ready DB Dump</a></li>
-            <li><a href="#">CoNLL-format Markups</a></li>
+            <li><a href="http://i.stanford.edu/hazy/opendata/patent/patent_full_dddb_20150225_55cdbd28e1da22b6a53a9f85b2986682.zip">DeepDive-ready DB Dump</a></li>
+            <li><a href="http://i.stanford.edu/hazy/opendata/patent/patent_full_conll_20150223_60b7de946848f3cf59b362bf97328385.zip">CoNLL-format Markups</a></li>
           </ul>
         </div>
         <div class="btn-group" text-aligh="right">
-          <button type="button" class="btn btn-primary dropdown-toggle disabled" data-toggle="dropdown" aria-expanded="false"> Download Small Teaser <span class="caret"></span>
+          <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false"> Download Small Teaser <span class="caret"></span>
           </button>
           <ul class="dropdown-menu" role="menu">
-            <li><a href="#">DeepDive-ready DB Dump</a></li>
-            <li><a href="#">CoNLL-format Markups</a></li>
+            <li><a href="http://i.stanford.edu/hazy/opendata/patent/patent_teaser_dddb_20150225_0e17ceda4c9903610015b690b69dd273.zip">DeepDive-ready DB Dump</a></li>
+            <li><a href="http://i.stanford.edu/hazy/opendata/patent/patent_teaser_conll_20150223_fa335b247b11239f97d5b49bf8d4718f.zip">CoNLL-format Markups</a></li>
           </ul>
         </div>
       </td>
@@ -458,12 +402,102 @@ Information obtained at [Jan 27, 2015](http://en.wikipedia.org/wiki/Wikipedia:Te
 
 We plan to have
 DeepDive's PATENT Corpus to contain a full snapshot 
-of patent applications from the United States Patent and Trademark Office (USPTO), European Patent Office (EPO), and World Intellectual Property Organization (WIPO),
-indexed by Google Patents in Jan 2015.
+of patent grants since 1920 from the United States Patent and Trademark Office (USPTO), European Patent Office (EPO), and World Intellectual Property Organization (WIPO),
+indexed by Google Patents in Feb 2015.
 
 <i>
 <img src="http://mirrors.creativecommons.org/presskit/buttons/88x31/png/publicdomain.png" style="width:88px;"/> Patent applications we processed belong to the public domain.
 Information obtained at [Jan 27, 2015](http://en.wikipedia.org/wiki/Google_Patents).
+</i>
+
+
+## WIKI (Wikipedia (English Edition))
+
+<div class="panel panel-default" style="position:relative;">
+  <div class="panel-heading">Quick Statistics & Downloads</div>
+  <table class="table">
+    <tr>
+      <th> Pipeline </th> 
+      <td colspan=3>
+
+      <span class="label label-info">WIKI PAGE</span> 
+      <span class="label label-warning">&gt;</span>
+      <span class="label label-info">WikiExtractor <a href="http://www.mediawiki.org/wiki/Alternative_parsers">(link)</a></span>
+      <span class="label label-warning">&gt;</span>
+      <span class="label label-info">NLP (Stanford CoreNLP 3.5.1)</span>
+
+      </td>
+    <tr>
+      <th> Size </th>  <td> 97 GB </td>
+      <th> Document Type </th> <td> Web page </td>
+    </tr>
+    <tr>
+      <th> # Documents </th>  <td> 4,776,093 </td>
+      <th> # Machine Hours </th> <td> 24 K </td>
+    </tr>
+    <tr>
+      <th> # Sentences </th>  <td> 85 Million </td>
+      <th> # Words </th>  <td> 2 Billion </td>
+    </tr>
+    <tr>
+      <th> Downloads </th> <td colspan="3"> 
+        <div class="btn-group" text-aligh="right">
+          <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false"> Download Full Corpus <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="http://i.stanford.edu/hazy/opendata/wiki/wiki_full_dddb_20150302_0c4da2a51c34be087a99337e3eaca980.tar">DeepDive-ready DB Dump</a></li>
+            <li><a href="http://i.stanford.edu/hazy/opendata/wiki/wiki_full_conll_20150302_9c7672a52dfc4744944899b4fd141e0.tar">CoNLL-format Markups</a></li>
+          </ul>
+        </div>
+        <div class="btn-group" text-aligh="right">
+          <button type="button" class="btn btn-primary dropdown-toggled" data-toggle="dropdown" aria-expanded="false"> Download Small Teaser <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="http://i.stanford.edu/hazy/opendata/wiki/wiki_teaser_dddb_20150302_3bae78be71eb975b730cc0ff47d7f2d2.zip">DeepDive-ready DB Dump</a></li>
+            <li><a href="http://i.stanford.edu/hazy/opendata/wiki/wiki_teaser_conll_20150302_0c4da2a51c34be087a99337e3eaca980.zip">CoNLL-format Markups</a></li>
+          </ul>
+        </div>
+      </td>
+    </tr>
+  </table>
+</div>
+
+Wikipedia is a free-access, free content Internet encyclopedia, supported and hosted by the non-profit Wikimedia Foundation. We plan to have 
+DeepDive's WIKI Corpus to contain a full snapshot 
+of the English-language edition of Wikipedia in Feb 2015.
+
+**Note.** For Web-based data sets that contain million
+of Web pages, e.g., Wikipedia, CommonCrawl, and ClueWeb, we follow
+the standard WARC format to deliver CoNLL-based NLP result. Each chunk
+is a `.gz` file that contains a single `.warc` file. Each
+`.warc` file contains multiple Web pages, e.g.,
+
+    WARC/1.0
+    WARC-Type: conversion
+    Content-Length: 30098
+    WARC-Date: 2015-03-03T15:11:08Z
+    WARC-Payload-Digest: sha1:e7e0459dce73775510147726156fb74f30aa07c3
+    WARC-Target-URI: http://en.wikipedia.org/wiki?curid=2504364
+    Content-Type: application/octet-stream
+    WARC-Record-ID: <urn:uuid:855b1a64-c1b7-11e4-886d-842b2b4a49e6>
+
+    1 Mr. NNP O Mr. nn  4 SENT_1  0:3
+    2 Capone-E  NNP O Capone-E  nn  4 SENT_1  4:12
+    3 Mr. NNP O Mr. nn  4 SENT_1  14:17
+    4 Capone-E  NNP O Capone-E  nsubj 11  SENT_1  18:26
+    5 or  CC  O or  null  0 SENT_1  27:29
+    6 Fahd  NNP O Fahd  nn  7 SENT_1  30:34
+    7 Azam  NNP O Azam  conj_or 4 SENT_1  35:39
+    8 is  VBZ O be  cop 11  SENT_1  40:42
+    9 an  DT  O a det 11  SENT_1  43:45
+    10  Pakistani JJ  MISC  pakistani amod  11  SENT_1  46:55
+    11  rapper  NN  O rapper  null  0 SENT_1  56:62
+    12  . . O . null  0 SENT_1  62:63
+
+<i>
+<img src="http://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-sa.png" style="width:88px;"/> Wikipedia
+applies CC BY-SA 3.0 Unported license.
+Information obtained at [Jan 27, 2015](http://en.wikipedia.org/wiki/Wikipedia:Text_of_Creative_Commons_Attribution-ShareAlike_3.0_Unported_License).
 </i>
 
 
@@ -488,7 +522,7 @@ Information obtained at [Jan 27, 2015](http://en.wikipedia.org/wiki/Google_Paten
       </td>
     <tr>
       <th> Size </th>  <td> - </td>
-      <th> Document Type </th> <td> Government Document </td>
+      <th> Document Type </th> <td> Web page </td>
     </tr>
     <tr>
       <th> # Documents </th>  <td> - </td>
@@ -525,10 +559,69 @@ We plan to have
 DeepDive's CCRAWL Corpus to process a full
 snapshot of the [Common Crawl Corpus](http://commoncrawl.org/), which is a corpus of web crawl data composed of over 5 billion web pages. 
 
-
 <i>
 <img src="https://commoncrawl.atlassian.net/wiki/download/attachments/655375/CRWL?version=1&modificationDate=1341953825985&api=v2" style="width:88px;"/> This data set is freely available on Amazon S3 and is released under the Common Crawl Terms of Use. 
 </i>
+
+
+
+## CLUEWEB (ClueWeb)
+
+<div class="panel panel-default" style="position:relative;">
+  <div style="position:absolute; left: -20px; top: -30px;">
+   <img src="/images/coming_soon.png" style="width:200px;">
+  </div>
+  <div class="panel-heading">Quick Statistics & Downloads</div>
+  <table class="table">
+    <tr>
+      <th> Pipeline </th> 
+      <td colspan=3>
+
+      <span class="label label-info">HTML</span> 
+      <span class="label label-warning">&gt;</span>
+      <span class="label label-info">STRIP (html2text)</span>
+      <span class="label label-warning">&gt;</span>
+      <span class="label label-info">NLP (Stanford CoreNLP)</span>
+
+      </td>
+    <tr>
+      <th> Size </th>  <td> - </td>
+      <th> Document Type </th> <td> Web page </td>
+    </tr>
+    <tr>
+      <th> # Documents </th>  <td> - </td>
+      <th> # Machine Hours </th> <td> - </td>
+    </tr>
+    <tr>
+      <th> # Sentences </th>  <td> - </td>
+      <th> # Words </th>  <td> - </td>
+    </tr>
+    <tr>
+      <th> Downloads </th> <td colspan="3"> 
+        <div class="btn-group" text-aligh="right">
+          <button type="button" class="btn btn-primary dropdown-toggle disabled" data-toggle="dropdown" aria-expanded="false"> Download Full Corpus <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="#">DeepDive-ready DB Dump</a></li>
+            <li><a href="#">CoNLL-format Markups</a></li>
+          </ul>
+        </div>
+        <div class="btn-group" text-aligh="right">
+          <button type="button" class="btn btn-primary dropdown-toggle disabled" data-toggle="dropdown" aria-expanded="false"> Download Small Teaser <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="#">DeepDive-ready DB Dump</a></li>
+            <li><a href="#">CoNLL-format Markups</a></li>
+          </ul>
+        </div>
+      </td>
+    </tr>
+  </table>
+</div>
+
+We plan to have
+DeepDive's CLUEWEB Corpus to process a full
+snapshot of the [ClueWeb 2012](http://commoncrawl.org/) corpus, which is a corpus of web crawl data composed of over 733 million web pages. 
 
 
 ## More Datasets Are Coming -- Stay Tuned!
