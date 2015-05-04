@@ -35,19 +35,39 @@ namespace dd{
   }
 
   void SingleNodeSampler::sample(){
-    this->sample_worker->execute();
+    numa_run_on_node(this->nodeid);
+
+    this->threads.clear();
+
+    for(int i=0;i<this->nthread;i++){
+      this->threads.push_back(std::thread(gibbs_single_thread_task, p_fg, i, nthread));
+    }
+    // this->sample_worker->execute();
   }
 
   void SingleNodeSampler::wait(){
-    this->sample_worker->wait();
+    for(int i=0;i<this->nthread;i++){
+      this->threads[i].join();
+    }
+    // this->sample_worker->wait();
   }
 
   void SingleNodeSampler::sample_sgd(){
-    this->sgd_worker->execute();
+    numa_run_on_node(this->nodeid);
+
+    this->threads.clear();
+
+    for(int i=0;i<this->nthread;i++){
+      this->threads.push_back(std::thread(gibbs_single_thread_sgd_task, p_fg, i, nthread));
+    }
+    // this->sgd_worker->execute();
   }
 
   void SingleNodeSampler::wait_sgd(){
-    this->sgd_worker->wait();
+    for(int i=0;i<this->nthread;i++){
+      this->threads[i].join();
+    }
+    // this->sgd_worker->wait();
   }
 
 }

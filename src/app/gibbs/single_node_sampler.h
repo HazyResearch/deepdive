@@ -26,6 +26,8 @@ namespace dd{
     // node id
     int nodeid;
 
+    std::vector<std::thread> threads;
+
     // worker for sampling (used in inference)
     SingeNodeWorker<FactorGraph, gibbs_single_thread_task> * sample_worker;
     // worker for learning
