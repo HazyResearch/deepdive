@@ -30,9 +30,17 @@ case class RelationTypeAlias(likeRelationName: String) extends RelationType
 trait FunctionImplementationDeclaration
 case class RowWiseLineHandler(format: String, command: String) extends FunctionImplementationDeclaration
 
+// Statements that will be parsed and compiled
+trait Statement
+case class SchemaDeclaration( a : Attribute , isQuery : Boolean ) extends Statement // atom and whether this is a query relation.
+case class FunctionDeclaration( functionName: String, inputType: RelationType, outputType: RelationType, implementations: List[FunctionImplementationDeclaration]) extends Statement
+case class ExtractionRule(q : ConjunctiveQuery) extends Statement // Extraction rule
+case class FunctionCallRule(input : String, output : String, function : String) extends Statement // Extraction rule
+case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, supervision : String) extends Statement // Weighted rule
+
 
 // Parser
-class ConjunctiveQueryParser extends JavaTokenParsers {
+class DeepDiveLogParser extends JavaTokenParsers {
 
   // JavaTokenParsers provides several useful number parsers:
   //   wholeNumber, decimalNumber, floatingPointNumber 
@@ -95,10 +103,10 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
     }
 
   def relationType: Parser[RelationType] =
-    ( rep1sep(columnDeclaration, ",") ^^ {
+    ( "like" ~> relationName ^^ { RelationTypeAlias(_) }
+    | rep1sep(columnDeclaration, ",") ^^ {
         attrs => RelationTypeDeclaration(attrs map { _.name }, attrs map { _.t })
       }
-    | "like" ~> relationName ^^ { RelationTypeAlias(_) }
     )
 
   def functionImplementation : Parser[FunctionImplementationDeclaration] =
@@ -150,7 +158,7 @@ class ConjunctiveQueryParser extends JavaTokenParsers {
                                       | functionDeclaration
                                       | functionCallRule
                                       )
-  def program : Parser[List[Statement]] = phrase(rep1(statement <~ "."))
+  def program : Parser[DeepDiveLog.Program] = phrase(rep1(statement <~ "."))
 
   def parseProgram(inputProgram: CharSequence, fileName: Option[String] = None): List[Statement] = {
     parse(program, inputProgram) match {
