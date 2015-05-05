@@ -2,6 +2,7 @@ import scala.collection.mutable.ListBuffer
 
 object DeepDiveLogDeltaDeriver{
 
+  // Default prefix for incremental tables
   val deltaPrefix = "dd_delta_"
 
   def transfer(stmt: Statement): List[Statement] = stmt match {
@@ -12,6 +13,8 @@ object DeepDiveLogDeltaDeriver{
     case s: InferenceRule       => transfer(s)
   }
 
+  // Incremental scheme declaration,
+  // keep the original scheme and create one delta scheme
   def transfer(stmt: SchemaDeclaration): List[Statement] = {
     var incrementalStatement = new ListBuffer[Statement]()
     incrementalStatement += stmt
@@ -23,9 +26,10 @@ object DeepDiveLogDeltaDeriver{
     incrementalStatement.toList
   }
 
+  // Incremental function declaration,
+  // create one delta function scheme based on original function scheme
   def transfer(stmt: FunctionDeclaration): List[Statement] = {
     var incrementalStatement = new ListBuffer[Statement]()
-    // incrementalStatement += stmt
     var newTerms = new ListBuffer[Variable]()
     var newInputType: RelationType = stmt.inputType match {
       case inTy: RelationTypeDeclaration => {
@@ -49,9 +53,12 @@ object DeepDiveLogDeltaDeriver{
     incrementalStatement.toList
   }
 
+  // Incremental extraction rule,
+  // create delta rules based on original extraction rule
   def transfer(stmt: ExtractionRule): List[Statement] = {
     var incrementalStatement = new ListBuffer[Statement]()
     
+    // New head
     var newStmtCqHeadTerms = new ListBuffer[Variable]()
     for (headTerm <- stmt.q.head.terms) {
       newStmtCqHeadTerms += Variable(headTerm.varName, deltaPrefix + headTerm.relName, headTerm.index)
@@ -67,6 +74,7 @@ object DeepDiveLogDeltaDeriver{
       deltaStmtCqBody += Atom(deltaPrefix + stmtCqBody.name, stmtCqBodyTerms.toList)
     }
 
+    // New body
     var i = 0
     var j = 0
     for (i <- 1 to ((1 << stmt.q.body.length) - 1)) {
@@ -82,15 +90,20 @@ object DeepDiveLogDeltaDeriver{
     incrementalStatement.toList
   }
 
+  // Incremental function call rule,
+  // modify function input and output
   def transfer(stmt: FunctionCallRule): List[Statement] = {
     var incrementalStatement = new ListBuffer[Statement]()
     incrementalStatement += FunctionCallRule(deltaPrefix + stmt.input, deltaPrefix + stmt.output, stmt.function)
     incrementalStatement.toList
   }
 
+  // Incremental inference rule,
+  // create delta rules based on original extraction rule
   def transfer(stmt: InferenceRule): List[Statement] = {
     var incrementalStatement = new ListBuffer[Statement]()
     
+    // New head
     var newStmtCqHeadTerms = new ListBuffer[Variable]()
     for (headTerm <- stmt.q.head.terms) {
       newStmtCqHeadTerms += Variable(headTerm.varName, deltaPrefix + headTerm.relName, headTerm.index)
@@ -106,6 +119,7 @@ object DeepDiveLogDeltaDeriver{
       deltaStmtCqBody += Atom(deltaPrefix + stmtCqBody.name, stmtCqBodyTerms.toList)
     }
 
+    // New body
     var i = 0
     var j = 0
     for (i <- 1 to ((1 << stmt.q.body.length) - 1)) {
