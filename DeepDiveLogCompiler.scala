@@ -235,15 +235,15 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
   type CompiledBlocks = List[CompiledBlock]
 
   // Dispatch to the corresponding compile function
-  def compile(stmt: Statement, ss: CompilationState): CompiledBlocks = stmt match {
-    case s:  ExtractionRule   => compile(s, ss)
-    case s:  FunctionCallRule => compile(s, ss)
-    case s:  InferenceRule    => compile(s, ss)
+  def compile(stmt: Statement, ss: CompilationState, isIncremental: Boolean): CompiledBlocks = stmt match {
+    case s:  ExtractionRule   => compile(s, ss, isIncremental)
+    case s:  FunctionCallRule => compile(s, ss, isIncremental)
+    case s:  InferenceRule    => compile(s, ss, isIncremental)
     case _                    => List()  // defaults to compiling into empty block
   }
 
   // Generate extraction rule part for deepdive
-  def compile(stmt: ExtractionRule, ss: CompilationState): CompiledBlocks = {
+  def compile(stmt: ExtractionRule, ss: CompilationState, isIncremental: Boolean): CompiledBlocks = {
     // Generate the body of the query.
     val qs              = new QuerySchema( stmt.q )
     // variable columns
@@ -255,8 +255,11 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
 
     val selectStr = (List(variableColsStr) flatMap (u => u)).mkString(", ")
 
+    val ddCount = if (isIncremental) ( stmt.q.body.zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
+    val ddCountStr = if (ddCount.length > 0) s""", ${ddCount} AS \"dd_count\"""" else ""
+
     val inputQuery = s"""
-      SELECT ${selectStr}
+      SELECT ${selectStr}${ddCountStr}
       ${ ss.generateSQLBody(stmt.q) }"""
 
     val blockName = ss.resolveExtractorBlockName(stmt)
@@ -272,7 +275,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     List(extractor)
   }
 
-  def compile(stmt: FunctionCallRule, ss: CompilationState): CompiledBlocks = {
+  def compile(stmt: FunctionCallRule, ss: CompilationState, isIncremental: Boolean): CompiledBlocks = {
     val inputQuery = s"""
     SELECT * FROM ${stmt.input}
     """
@@ -302,7 +305,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
   }
 
   // generate inference rule part for deepdive
-  def compile(stmt: InferenceRule, ss: CompilationState): CompiledBlocks = {
+  def compile(stmt: InferenceRule, ss: CompilationState, isIncremental: Boolean): CompiledBlocks = {
     var blocks = List[String]()
     val qs = new QuerySchema( stmt.q )
 
@@ -316,7 +319,10 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       val name  = ss.resolveName(qs.getVar(z.supervision))
       val labelCol = s"R${index}.${name}"
       val headTermsStr = ( "0 as id"  :: headTerms ).mkString(", ")
-      val query = s"""SELECT DISTINCT ${ headTermsStr }, ${labelCol} AS label
+      val ddCount = if (isIncremental) ( stmt.q.body.zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
+      val ddCountStr = if (ddCount.length > 0) s", ${ddCount} AS dd_count" else ""
+
+      val query = s"""SELECT DISTINCT ${ headTermsStr }, ${labelCol} AS label ${ddCountStr}
     ${ ss.generateSQLBody(z.q) }"""
 
       val blockName = ss.resolveExtractorBlockName(z)
@@ -352,9 +358,12 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
 
     val selectStr = (List(variableIdsStr, variableColsStr, uwStr) flatMap (u => u)).mkString(", ")
 
+    val ddCount = if (isIncremental) ( fakeCQ.body.zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
+    val ddCountStr = if (ddCount.length > 0) s""", ${ddCount} AS \"dd_count\"""" else ""
+
     // factor input query
     val inputQuery = s"""
-      SELECT ${selectStr}
+      SELECT ${selectStr} ${ddCountStr}
       ${ ss.generateSQLBody(fakeCQ) }"""
 
     // factor function
@@ -431,7 +440,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       :::
       compileVariableSchema(programToCompile, state)
       :::
-      (programToCompile flatMap {compile(_, state)})
+      (programToCompile flatMap {compile(_, state, config.isIncremental)})
     )
 
     // emit the generated code
