@@ -135,12 +135,13 @@ gibbs:
 		-o data3/                    \
 		-i 1000 -l 1000 -s 10 --alpha 0.01 --diminish 0.95
 
-PATH := $(shell pwd)/test/bats/bin:$(PATH)
-test:
+test: unit-test end2end-test
+unit-test:
 	rm -f dw_test
 	$(MAKE) dw_test
 	./dw_test
-	
+PATH := $(shell pwd)/test/bats/bin:$(PATH)
+end2end-test: dw
 	bats test/*.bats
 
-.PHONY: test clean
+.PHONY: test unit-test end2end-test clean
