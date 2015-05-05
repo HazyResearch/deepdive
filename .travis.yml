@@ -12,4 +12,4 @@ install: make dep
 compiler:
   - gcc
 # Change this to your needs
-script: ./test.sh
+script: make test
