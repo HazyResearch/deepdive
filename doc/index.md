@@ -101,12 +101,18 @@ projects.
 
 ### Who develops DeepDive?
 
-DeepDive is project led by [Christopher
-Ré](http://cs.stanford.edu/people/chrismre/) at Stanford University. Current
-group members include: [Michael Cafarella](http://web.eecs.umich.edu/~michjc/),
-Amir Abbas Sadeghian, [Zifei Shan](http://www.zifeishan.org/), 
-[Jaeho Shin](http://cs.stanford.edu/~netj/), Feiran Wang, [Sen Wu](http://stanford.edu/~senwu/), and [Ce
-Zhang](http://pages.cs.wisc.edu/~czhang/).
+DeepDive is project led by [Christopher Ré](http://cs.stanford.edu/people/chrismre/)
+at Stanford University. Current group members include:
+[Michael Cafarella](http://web.eecs.umich.edu/~michjc/),
+Michael Fitzpatrick,
+[Raphael Hoffman](http://raphaelhoffmann.com/),
+Alex Ratner,
+[Zifei Shan](http://www.zifeishan.org/), 
+[Jaeho Shin](http://cs.stanford.edu/~netj/),
+Feiran Wang,
+[Sen Wu](http://stanford.edu/~senwu/),
+and
+[Ce Zhang](http://pages.cs.wisc.edu/~czhang/).
 
 ### Updates &amp; Changelog 
 
