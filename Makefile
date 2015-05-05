@@ -119,6 +119,9 @@ ifeq ($(UNAME), Linux)
 	make install
 endif
 
+	# bats for end-to-end tests
+	git clone https://github.com/sstephenson/bats test/bats
+
 clean:
 	rm -rf *.o
 	rm -rf dw dw_test
@@ -132,13 +135,12 @@ gibbs:
 		-o data3/                    \
 		-i 1000 -l 1000 -s 10 --alpha 0.01 --diminish 0.95
 
+PATH := $(shell pwd)/test/bats/bin:$(PATH)
 test:
 	rm -f dw_test
 	$(MAKE) dw_test
 	./dw_test
 	
-	@# install bats if not available
-	@type bats >/dev/null || git clone https://github.com/sstephenson/bats test/bats
 	bats test/*.bats
 
 .PHONY: test clean

@@ -16,6 +16,7 @@ dw_test
 
 # library
 lib/
+/test/bats
 
 # others
 .DS_Store
