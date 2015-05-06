@@ -1,7 +1,6 @@
 # Makefile for sampler
 
-# run tests when doing just `make`
-.DEFAULT_GOAL := test
+.DEFAULT_GOAL := $(PROGRAM)
 
 # common compiler flags
 CXXFLAGS = -std=c++0x -Wall -fno-strict-aliasing
