@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-@test "Integration test for learning hidden models" {
+@test "${BATS_TEST_FILENAME##*/}: Integration test for learning hidden models" {
     # The factor graph contains a chain A-B-C, where A, C are evidence, and B
     # is partially observed. The factor between A, B and B, C is equal,
     # respectively.  There are 4 training examples with A = C = true, and only
