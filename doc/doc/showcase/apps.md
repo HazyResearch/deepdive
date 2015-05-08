@@ -17,13 +17,22 @@ Here are a list of notable public DeepDive applications.
 
 <a name="tac-kbp"></a>
 ### TAC-KBP Challenge
-TAC-KBP (Text Analysis Conference, Knowledge Base Population track, organized by NIST) is a research competition where the task is to extract common properties of people and organizations (e.g., age, birthplace, spouses, and shareholders) from a few million of newswire and web documents -- this task is also termed [Slot Filling](http://surdeanu.info/kbp2014/KBP2014_TaskDefinition_EnglishSlotFilling_1.1.pdf). In the 2014 evaluation, 31 US and international teams participated in the competition, including [a solution based on DeepDive](http://i.stanford.edu/hazy/papers/2014kbp-systemdescription.pdf) from Stanford. The DeepDive based solution achieved **the highest precision, recall, and F1** among all submissions. (See Table 6 in [Mihai Surdeanu and Heng Ji. *Overview of the English Slot Filling Track at the TAC2014 Knowledge Base Population Evaluation.* Proceedings of the TAC-KBP 2014 Workshop, 2014.](http://nlp.cs.rpi.edu/paper/sf2014overview.pdf))
+TAC-KBP (Text Analysis Conference, Knowledge Base Population track, organized by NIST) is a research competition where the task is to extract common properties of people and organizations (e.g., age, birthplace, spouses, and shareholders) from a few million of newswire and web documents -- this task is also termed [Slot Filling](http://surdeanu.info/kbp2014/KBP2014_TaskDefinition_EnglishSlotFilling_1.1.pdf).
+In the 2014 evaluation, 31 US and international teams participated in the competition, including [a solution based on DeepDive](http://i.stanford.edu/hazy/papers/2014kbp-systemdescription.pdf) from Stanford.
+The DeepDive based solution achieved **the highest precision, recall, and F1** among all submissions.
+(See Table 6 in [Mihai Surdeanu and Heng Ji. *Overview of the English Slot Filling Track at the TAC2014 Knowledge Base Population Evaluation.* Proceedings of the TAC-KBP 2014 Workshop, 2014.](http://nlp.cs.rpi.edu/paper/sf2014overview.pdf))
 
 
 <a name="wisci"></a>
 ### Wisci(-pedia)
-Wisci is a first incarnation of the &ldquo;[encyclopedia built by the machines, for the people](https://www.youtube.com/watch?v=Q1IpE9_pBu4)&rdquo; vision. (It was developed by the Hazy research group when the team was at University of Wisconsin-Madison. Hence the project name.) We applied similar techniques as our solution to the TAC-KBP challenge -- namely [NLP, distant supervision, and probabilistic inference](http://www.cs.stanford.edu/people/chrismre/papers/deepdive_vlds.pdf) -- over the ClueWeb09 corpus that contains 500 million web pages. The extraction and inference results include millions of common properties of people and organizations, as well as confidence scores and provenance. They are used to augment a Wikipedia mirror, where we supplement human-authored page content and infoboxes with related facts, references, excerpts, and videos discovered by DeepDive. Wisci also accepts user feedback and learns from it.
+Wisci is a first incarnation of the &ldquo;[encyclopedia built by the machines, for the people](https://www.youtube.com/watch?v=Q1IpE9_pBu4)&rdquo; vision.
+(It was developed by the Hazy research group when the team was at University of Wisconsin-Madison. Hence the project name.)
+We applied similar techniques as our solution to the TAC-KBP challenge -- namely [NLP, distant supervision, and probabilistic inference](http://www.cs.stanford.edu/people/chrismre/papers/deepdive_vlds.pdf) -- over the ClueWeb09 corpus that contains 500 million web pages.
+The extraction and inference results include millions of common properties of people and organizations, as well as confidence scores and provenance.
+They are used to augment a Wikipedia mirror, where we supplement human-authored page content and infoboxes with related facts, references, excerpts, and videos discovered by DeepDive.
+Wisci also accepts user feedback and learns from it.
 <p style="text-align:center;"><img style="width:80%;" src="../../images/showcase/wisci.png"></p>
+
 
 <a name="geo-paleo"></a>
 ### Geology and Paleontology
@@ -34,13 +43,27 @@ In collaboration with [Prof. Shanan Peters](http://geoscience.wisc.edu/geoscienc
 
 <a name="memex"></a>
 ### Memex / Human trafficking
-[Memex](http://www.darpa.mil/newsevents/releases/2014/02/09.aspx) is a DARPA program to explore next-generation domain-specific information retrieval systems. As an ongoing application, the federal government has been using the Memex technology to [fight human trafficking](http://www.cbsnews.com/news/new-search-engine-exposes-the-dark-web/). For this application, the input is a portion of the dark web where human traffickers are likely to (surreptitiously) post supply and demand information about illegal labor, involuntary sex workers, etc. DeepDive would process the web documents to extract evidential data such as names, addresses, phone numbers, job types, job requirements, etc. Together with provenance information, such evidential data are then passed on to other collaborators on the Memex program as well as law enforcement for structured analysis and consumption by operational applications. This application has been [featured](http://www.scientificamerican.com/article/human-traffickers-caught-on-hidden-internet/) [extensively](http://www.wsj.com/articles/sleuthing-search-engine-even-better-than-google-1423703464) [in](http://www.wired.com/2015/02/darpa-memex-dark-web/) [the](http://www.bbc.com/news/technology-31808104) [media](http://www.defenseone.com/technology/2015/02/darpas-new-search-engine-puts-google-dust/105342). It is supporting [actual investigations](http://www.defenseone.com/technology/2015/02/darpas-new-search-engine-puts-google-dust/105342/). Here is a detailed description of [DeepDive's role in Memex](memex.html).
+[Memex](http://www.darpa.mil/newsevents/releases/2014/02/09.aspx) is a DARPA program to explore next-generation domain-specific information retrieval systems.
+As an ongoing application, the federal government has been using the Memex technology to [fight human trafficking](http://www.cbsnews.com/news/new-search-engine-exposes-the-dark-web/).
+For this application, the input is a portion of the dark web where human traffickers are likely to (surreptitiously) post supply and demand information about illegal labor, involuntary sex workers, etc.
+DeepDive would process the web documents to extract evidential data such as names, addresses, phone numbers, job types, job requirements, etc.
+Together with provenance information, such evidential data are then passed on to other collaborators on the Memex program as well as law enforcement for structured analysis and consumption by operational applications.
+This application has been [featured](http://www.scientificamerican.com/article/human-traffickers-caught-on-hidden-internet/) [extensively](http://www.wsj.com/articles/sleuthing-search-engine-even-better-than-google-1423703464) [in](http://www.wired.com/2015/02/darpa-memex-dark-web/) [the](http://www.bbc.com/news/technology-31808104) [media](http://www.defenseone.com/technology/2015/02/darpas-new-search-engine-puts-google-dust/105342).
+It is supporting [actual investigations](http://www.defenseone.com/technology/2015/02/darpas-new-search-engine-puts-google-dust/105342/).
+Here is a detailed description of [DeepDive's role in Memex](memex.html).
 <p><img src="../../images/showcase/memex-human-trafficking.jpg"></p>
 
 
 <a name="genetics"></a>
 ### Medical Genetics
-The body of literature in life sciences has been [growing at accelerating speeds](http://www.nlm.nih.gov/bsd/index_stats_comp.html) to the extent that it has been unrealistic for scientists to perform research solely based on reading and memorization (even with the help of keyword search). As a result, there have been numerous initiatives to build structured knowledge bases from literature. For example, [OMIM](http://omim.org/) is an authoritative database of human genes and genetic disorders. It dates back to the 1960s, and so far contains about 6,000 hereditary diseases or phenotypes. Because OMIM is curated by humans, it has been growing at a rate of [roughly 50 records / month for many years](http://omim.org/statistics/update). In collaboration with [Prof. Gill Bejerano](http://bejerano.stanford.edu/pi.html) at Stanford, we are developing DeepDive applications in the field of [medical genetics](http://en.wikipedia.org/wiki/Medical_genetics). Specifically, we use DeepDive to extract mentions of genes, diseases, and phenotypes from the literature, and statistically infer their relationships.
+The body of literature in life sciences has been [growing at accelerating speeds](http://www.nlm.nih.gov/bsd/index_stats_comp.html) to the extent that it has been unrealistic for scientists to perform research solely based on reading and memorization (even with the help of keyword search).
+As a result, there have been numerous initiatives to build structured knowledge bases from literature.
+For example, [OMIM](http://omim.org/) is an authoritative database of human genes and genetic disorders.
+It dates back to the 1960s, and so far contains about 6,000 hereditary diseases or phenotypes.
+Because OMIM is curated by humans, it has been growing at a rate of [roughly 50 records / month for many years](http://omim.org/statistics/update).
+In collaboration with [Prof.
+Gill Bejerano](http://bejerano.stanford.edu/pi.html) at Stanford, we are developing DeepDive applications in the field of [medical genetics](http://en.wikipedia.org/wiki/Medical_genetics).
+Specifically, we use DeepDive to extract mentions of genes, diseases, and phenotypes from the literature, and statistically infer their relationships.
 <p><img src="../../images/showcase/genetics.jpg"></p>
 
 
