@@ -12,6 +12,7 @@ source-url: https://docs.google.com/document/d/1ruBshA-oSoqJ0CCqOQR9DIdBWlfeA3fQ
 <li><span class="c1"><a class="c3" href="#geo-paleo">Geology and Paleontology</a></span></li>
 <li><span class="c1"><a class="c3" href="#memex">Memex / Human trafficking</a></span></li>
 <li><span class="c1"><a class="c3" href="#genetics">Medical Genetics</a></span></li>
+<li><span class="c1"><a class="c3" href="#pharmacogenomics">Pharmacogenomics</a></span></li>
 </ul>
 
 
@@ -48,4 +49,16 @@ source-url: https://docs.google.com/document/d/1ruBshA-oSoqJ0CCqOQR9DIdBWlfeA3fQ
 </h3>
 <p class="c4"><span>The body of literature in life sciences has been </span><span class="c1"><a class="c3" href="http://www.nlm.nih.gov/bsd/index_stats_comp.html">growing at accelerating speeds</a></span><span>&nbsp;to the extent that it has been unrealistic for scientists to perform research solely based on reading and memorization (even with the help of keyword search)</span><span>. As a result, there have been numerous initiatives to build structured knowledge bases from literature. For example, </span><span class="c1"><a class="c3" href="http://omim.org/">OMIM</a></span><span>&nbsp;is an authoritative database of human genes and genetic disorders. It dates back to the 1960s, and so far contains about 6,000 hereditary diseases or phenotypes. Because OMIM is curated by humans, it has been growing at a rate of </span><span class="c1"><a class="c3" href="http://omim.org/statistics/update">roughly 50 records / month for many years</a></span><span>. In collaboration with </span><span class="c1"><a class="c3" href="http://bejerano.stanford.edu/pi.html">Prof. Gill Bejerano</a></span><span>&nbsp;at Stanford, we are developing DeepDive applications in the field of </span><span class="c1"><a class="c3" href="http://en.wikipedia.org/wiki/Medical_genetics">medical genetics</a></span><span>. Specifically, we use DeepDive to extract mentions of genes, diseases, and phenotypes from the literature, and statistically infer their relationships.</span></p>
 <p class="c4"><img src="../../images/showcase/genetics.jpg"></p>
+
+
+<a name="pharmacogenomics"></a>
+### Pharmacogenomics
+
+Understanding the interactions of small chemicals or drugs in the body is key for drug discovery.
+However, the majority of this data resides in the biomedical literature and cannot be easily accessed.
+The Pharmacogenomics Knowledgebase (PharmGKB, [www.pharmgkb.org](http://www.pharmgkb.org)) is a high quality database that aims to annotate the relationships between drugs, genes, diseases, genetic variation, and pathways in the literature.
+With the exponential growth of the literature, manual curation requires prioritization of specific drugs or genes in order to stay up to date with current research.
+In collaboration with Prof.
+Russ Altman at Stanford, we are developing DeepDive applications in the field of pharmacogenomics.
+Specifically, we use DeepDive to extract relations between genes, diseases, and drugs in order to predict novel pharmacological relationships.
 
