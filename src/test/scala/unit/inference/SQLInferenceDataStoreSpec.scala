@@ -11,6 +11,7 @@ import org.deepdive.test.helpers._
 import org.deepdive.Context
 import scala.io.Source
 import scalikejdbc._
+import scala.sys.process._
 
 trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInferenceRunnerComponent =>
 
@@ -422,6 +423,29 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
       }
 
+      it("format converter should work (flat/array type)") {
+        val resourceFolder = s"${Context.deepdiveHome}/src/test/resources/format_converter"
+        val converter = InferenceNamespace.getFormatConvertingWorkerPath
+        val variableFile = s"${resourceFolder}/dd_variables"
+        val factorFile = s"${resourceFolder}/dd_factors"
+        val weightFile = s"${resourceFolder}/dd_weights"
+        val edgeFile = s"${resourceFolder}/dd_edges"
+
+        s"${converter} variable ${variableFile}".!
+        s"${converter} factor ${factorFile} 2 1 1".!
+        s"${converter} weight ${weightFile}".!
+
+        var cmp = s"cmp ${variableFile}.bin ${variableFile}_expected.bin"
+        assert(cmp.! == 0)
+        cmp = s"cmp ${factorFile}_factors.bin ${factorFile}_expected.bin"
+        assert(cmp.! == 0)
+        cmp = s"cmp ${weightFile}.bin ${weightFile}_expected.bin"
+        assert(cmp.! == 0)
+        cmp = s"cmp ${factorFile}_edges.bin ${edgeFile}_expected.bin"
+        assert(cmp.! == 0)
+
+      }
+
     }
 
     describe("grounding the factor graph with Multinomial variables") {
@@ -603,7 +627,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
 
       it("should work for Boolean variables") {
-        SQL(s"""create table t1_c1_inference(id bigint primary key, c1 boolean, 
+        SQL(s"""create table t1_c1_inference(id bigint, c1 boolean, 
           category bigint, expectation double precision)""").execute.apply()
         SQL("""insert into t1_c1_inference(c1, category, expectation) VALUES
           (null, null, 0.31), (null, null, 0.93), (null, null, 0.97), 
@@ -625,7 +649,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
       }
 
       it("should work for categorical variables") {
-         SQL(s"""create table t1_c1_inference(id bigint primary key, c1 bigint, 
+         SQL(s"""create table t1_c1_inference(id bigint, c1 bigint, 
           category bigint, expectation double precision)""").execute.apply()
          SQL("""insert into t1_c1_inference(c1, category, expectation) VALUES
           (null, 0, 0.55), (null, 1, 0.55), (null, 2, 0.55), 
