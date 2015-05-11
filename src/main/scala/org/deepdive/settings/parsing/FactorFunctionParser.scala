@@ -38,6 +38,17 @@ object FactorFunctionParser extends RegexParsers with Logging {
     MultinomialFactorFunction(varList)
   }
 
+  def linearFactorFunction = ("Linear" | "LINEAR") ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
+    LinearFactorFunction(varList)
+  }
+
+  def ratioFactorFunction = ("Ratio" | "RATIO") ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
+    RatioFactorFunction(varList)
+  }
+  
+  def logicalFactorFunction = ("Logical" | "LOGICAL") ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
+    LogicalFactorFunction(varList)
+  }
   
   def factorVariable = ("!"?) ~ rep1sep(relationOrField, ".") ~ (arrayDefinition?) ~ 
     (("=" ~> equalPredicate)?) ^^ { 
@@ -54,6 +65,7 @@ object FactorFunctionParser extends RegexParsers with Logging {
   }
 
   def factorFunc = implyFactorFunction | orFactorFunction | andFactorFunction | 
-    equalFactorFunction | isTrueFactorFunction | xorFactorFunction | multinomialFactorFunction
+    equalFactorFunction | isTrueFactorFunction | xorFactorFunction | multinomialFactorFunction | 
+    linearFactorFunction | ratioFactorFunction | logicalFactorFunction
 
 }
