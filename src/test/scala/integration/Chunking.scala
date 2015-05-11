@@ -215,6 +215,7 @@ class ChunkingApp extends FunSpec with Logging{
     log.debug(s"Executing evaluation command: ${cmd}")
     val f1 = cmd.!!
     resultFile.delete()
+    System.err.println(s"F1 = ${f1}")
     f1.toDouble
   }
 
