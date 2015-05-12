@@ -63,7 +63,7 @@ import scala.collection.mutable.ListBuffer
 // This handles the schema statements.
 // It can tell you if a predicate is a "query" predicate or a "ground prediate"
 // and it resolves Variables their correct and true name in the schema, i.e. R(x,y) then x could be Attribute1 declared.
-class CompilationState( statements : DeepDiveLog.Program )  {
+class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.Config )  {
     // TODO: refactor the schema into a class that constructs and
     // manages these maps. Also it should have appropriate
     // abstractions and error handling for missing values.
@@ -80,8 +80,17 @@ class CompilationState( statements : DeepDiveLog.Program )  {
   // The statement whether will compile or union to other statements
   var visible : Set[Statement] = Set()
 
+  var isIncremental : Boolean = false
+
+  // Mapping head names to the actual statements
+  var extractionRuleGroupByHead     : Map[String, List[ExtractionRule]] = new HashMap[String, List[ExtractionRule]]()
+  var inferenceRuleGroupByHead      : Map[String, List[InferenceRule]] = new HashMap[String, List[InferenceRule]]()
+  var functionCallRuleGroupByInput  : Map[String, List[FunctionCallRule]] = new HashMap[String, List[FunctionCallRule]]()
+  var functionCallRuleGroupByOutput : Map[String, List[FunctionCallRule]] = new HashMap[String, List[FunctionCallRule]]()
+
   def init() = {
     // generate the statements.
+    isIncremental = config.isIncremental
     statements.foreach {
       case SchemaDeclaration(Attribute(r, terms, types), isQuery) =>
         terms.foreach {
@@ -94,7 +103,7 @@ class CompilationState( statements : DeepDiveLog.Program )  {
       case fdecl : FunctionDeclaration => function_schema += {fdecl.functionName -> fdecl}
       case FunctionCallRule(_,_,_) => ()
     }
-
+    groupByHead(statements)
     analyzeVisible(statements)
     analyzeDependency(statements)
   }
@@ -136,7 +145,7 @@ class CompilationState( statements : DeepDiveLog.Program )  {
     if( ground_relations contains relName ) !ground_relations(relName) else true
   }
 
-  // resolve a column name with alias
+  // Resolve a column name with alias
   def resolveColumn(s: String, qs: QuerySchema, q : ConjunctiveQuery, alias: Boolean) : Option[String] = {
     val index = qs.getBodyIndex(s)
     val name  = resolveName(qs.getVar(s))
@@ -177,55 +186,37 @@ class CompilationState( statements : DeepDiveLog.Program )  {
         ${ whereClauseStr }"""
   }
 
-  // Analyze the block visibility among statements 
-  def analyzeVisible(statements: List[Statement]) = {
-    val extractionRules   = new ListBuffer[ExtractionRule]()
-    val functionCallRules = new ListBuffer[FunctionCallRule]()
-    val inferenceRules    = new ListBuffer[InferenceRule]()
-    
+  // Group statements by head
+  def groupByHead(statements: List[Statement]) = {
+    // Compile compilation states by head name based on type
+    val extractionRuleToCompile = new ListBuffer[ExtractionRule]()
+    val inferenceRuleToCompile = new ListBuffer[InferenceRule]()
+    val functionCallRuleToCompile = new ListBuffer[FunctionCallRule]()
     statements foreach (_ match {
-      case s: ExtractionRule   => extractionRules += s
-      case s: FunctionCallRule => functionCallRules += s
-      case s: InferenceRule    => inferenceRules += s
+      case s: ExtractionRule   => extractionRuleToCompile += s
+      case s: FunctionCallRule => functionCallRuleToCompile += s
+      case s: InferenceRule    => inferenceRuleToCompile += s
       case _                   => 
     })
 
-    val extractionRulesGroup   = extractionRules.groupBy(_.q.head.name)
-    val functionCallRulesGroup = functionCallRules.groupBy(_.input)
-    val inferenceRulesGroup    = inferenceRules.groupBy(_.q.head.name)
+    extractionRuleGroupByHead     = extractionRuleToCompile.toList.groupBy(_.q.head.name)
+    inferenceRuleGroupByHead      = inferenceRuleToCompile.toList.groupBy(_.q.head.name)
+    functionCallRuleGroupByInput  = functionCallRuleToCompile.toList.groupBy(_.input)
+    functionCallRuleGroupByOutput = functionCallRuleToCompile.toList.groupBy(_.output)
+  }
 
-    extractionRulesGroup   foreach {keyVal => visible += keyVal._2(0)}
-    functionCallRulesGroup foreach {keyVal => visible += keyVal._2(0)}
-    inferenceRulesGroup    foreach {keyVal => visible += keyVal._2(0)}
+  // Analyze the block visibility among statements 
+  def analyzeVisible(statements: List[Statement]) = {
+    extractionRuleGroupByHead   foreach {keyVal => visible += keyVal._2(0)}
+    functionCallRuleGroupByInput foreach {keyVal => visible += keyVal._2(0)}
+    inferenceRuleGroupByHead    foreach {keyVal => visible += keyVal._2(0)}
   }
 
   // Analyze the dependency between statements and construct a graph.
   def analyzeDependency(statements: List[Statement]) = {
-    // first map head names to the actual statement
-    val extractionRuleByHeadName   = new ListBuffer[ExtractionRule]()
-    val inferenceRuleByHeadName    = new ListBuffer[InferenceRule]()
-    val functionCallRuleByHeadName = new ListBuffer[FunctionCallRule]()
-    
-    statements foreach {
-      case s: ExtractionRule   => extractionRuleByHeadName += s
-      case s: FunctionCallRule => functionCallRuleByHeadName += s
-      case s: InferenceRule    => inferenceRuleByHeadName += s
-      case _                   => 
-    }
+    var stmtByHeadName = (extractionRuleGroupByHead.toSeq ++ inferenceRuleGroupByHead.toSeq ++ functionCallRuleGroupByOutput.toSeq).groupBy(_._1).mapValues(_.map(_._2).toList)
 
-    val eByHeadNameGroup = extractionRuleByHeadName.toList.groupBy(_.q.head.name)
-    val iByHeadNameGroup = inferenceRuleByHeadName.toList.groupBy(_.q.head.name)
-    val fByHeadNameGroup = functionCallRuleByHeadName.toList.groupBy(_.output)
-
-    var stmtByHeadName = (eByHeadNameGroup.toSeq ++ iByHeadNameGroup.toSeq ++ fByHeadNameGroup.toSeq).groupBy(_._1).mapValues(_.map(_._2).toList)
-    // var stmtByHeadName = new HashMap[String, Statement]()
-    // statements foreach {
-    //   case e : ExtractionRule => stmtByHeadName += { e.q.head.name -> e }
-    //   case f : FunctionCallRule   => stmtByHeadName += { f.output      -> f }
-    //   case w : InferenceRule  => stmtByHeadName += { w.q.head.name -> w }
-    //   case _ =>
-    // }
-    // then, look at the body of each statement to construct a dependency graph
+    // Look at the body of each statement to construct a dependency graph
     statements foreach {
       case f : FunctionCallRule => dependencies += { f -> ((        Some(f.input) flatMap (stmtByHeadName get _)).toSet.flatten.flatten) }
       case e : ExtractionRule   => dependencies += { e -> ((e.q.body map (_.name) flatMap (stmtByHeadName get _)).toSet.flatten.flatten) }
@@ -280,16 +271,8 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
   type CompiledBlock = String
   type CompiledBlocks = List[CompiledBlock]
 
-  // Dispatch to the corresponding compile function
-  // def compile(stmts: List[Statement], ss: CompilationState, isIncremental: Boolean): CompiledBlocks = stmts(0) match {
-  //   case s: ExtractionRule   => compileE(stmts, ss, isIncremental)
-  //   case s: FunctionCallRule => compileF(stmts, ss, isIncremental)
-  //   case s: InferenceRule    => compileI(stmts, ss, isIncremental)
-  //   case _                   => List()  // defaults to compiling into empty block
-  // }
-
   // Generate extraction rule part for deepdive
-  def compileE(stmts: List[ExtractionRule], ss: CompilationState, isIncremental: Boolean): CompiledBlocks = {
+  def compileExtractionRules(stmts: List[ExtractionRule], ss: CompilationState): CompiledBlocks = {
     var inputQueries = new ListBuffer[String]()
     for (stmt <- stmts) {
       // Generate the body of the query.
@@ -299,11 +282,8 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
         case(Variable(v,rr,i)) => ss.resolveColumn(v, qs, stmt.q, true)
       }
 
-      val variableColsStr = if (variableCols.length > 0) Some(variableCols.mkString(", ")) else None
-
-      val selectStr = (List(variableColsStr) flatMap (u => u)).mkString(", ")
-
-      val ddCount = if (isIncremental) ( stmt.q.body.zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
+      val selectStr = variableCols.mkString(", ")
+      val ddCount = if (ss.isIncremental) ( stmt.q.body.zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
       val ddCountStr = if (ddCount.length > 0) s""", ${ddCount} AS \"dd_count\" """ else ""
 
       inputQueries += s"""
@@ -324,7 +304,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     List(extractor)
   }
 
-  def compileF(stmts: List[FunctionCallRule], ss: CompilationState, isIncremental: Boolean): CompiledBlocks = {
+  def compileFunctionCallRules(stmts: List[FunctionCallRule], ss: CompilationState): CompiledBlocks = {
     var extractors = new ListBuffer[String]()
     for (stmt <- stmts) {
       val inputQuery = s"""
@@ -358,7 +338,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
   }
 
   // generate inference rule part for deepdive
-  def compileI(stmts: List[InferenceRule], ss: CompilationState, isIncremental: Boolean): CompiledBlocks = {
+  def compileInferenceRules(stmts: List[InferenceRule], ss: CompilationState): CompiledBlocks = {
     var blocks = List[String]()
     val qs = new QuerySchema( stmts(0).q )
     // node query
@@ -373,7 +353,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
         val name  = ss.resolveName(qs.getVar(z.supervision))
         val labelCol = s"R${index}.${name}"
         val headTermsStr = ( "0 as id"  :: headTerms ).mkString(", ")
-        val ddCount = if (isIncremental) ( z.q.body.zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
+        val ddCount = if (ss.isIncremental) ( z.q.body.zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
         val ddCountStr = if (ddCount.length > 0) s", ${ddCount} AS dd_count" else ""
 
         inputQueries += s"""SELECT DISTINCT ${ headTermsStr }, ${labelCol} AS label ${ddCountStr}
@@ -396,7 +376,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     if (ss.isQueryTerm(stmts(0).q.head.name))
       blocks :::= compileNodeRule(stmts, qs, ss)
 
-    val inferenceRuleToCompileGroup    = stmts.groupBy(_.q.head.name)
+    val inferenceRuleGroupByHead    = stmts.groupBy(_.q.head.name)
 
     for (stmt <- stmts) {
       // edge query
@@ -414,9 +394,9 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
         case UnknownFactorWeight(w) => Some(w.flatMap(s => ss.resolveColumn(s, qs2, fakeCQ, true)).mkString(", "))
       }
 
-      val selectStr = (List(variableIdsStr, variableColsStr, uwStr) flatMap (u => u)).mkString(", ")
+      val selectStr = (List(variableIdsStr, variableColsStr, uwStr) flatten).mkString(", ")
 
-      val ddCount = if (isIncremental) ( fakeCQ.body.zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
+      val ddCount = if (ss.isIncremental) ( fakeCQ.body.zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
       val ddCountStr = if (ddCount.length > 0) s""", ${ddCount} AS \"dd_count\" """ else ""
 
       // factor input query
@@ -489,27 +469,12 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       else parsedProgram
 
     // take an initial pass to analyze the parsed program
-    val state = new CompilationState( programToCompile )
-
-    // compile compilation states by head name based on type
-    val extractionRuleToCompile = new ListBuffer[ExtractionRule]()
-    val inferenceRuleToCompile = new ListBuffer[InferenceRule]()
-    val functionCallRuleToCompile = new ListBuffer[FunctionCallRule]()
-    programToCompile foreach (_ match {
-      case s: ExtractionRule   => extractionRuleToCompile += s
-      case s: FunctionCallRule => functionCallRuleToCompile += s
-      case s: InferenceRule    => inferenceRuleToCompile += s
-      case _                   => 
-    })
-
-    val extractionRuleToCompileGroup   = extractionRuleToCompile.groupBy(_.q.head.name)
-    val inferenceRuleToCompileGroup    = inferenceRuleToCompile.groupBy(_.q.head.name)
-    val functionCallRuleToCompileGroup = functionCallRuleToCompile.groupBy(_.input)
+    val state = new CompilationState( programToCompile, config )
 
     val body = new ListBuffer[String]()
-    extractionRuleToCompileGroup   foreach {keyVal => body ++= compileE(keyVal._2.toList, state, config.isIncremental)}
-    functionCallRuleToCompileGroup foreach {keyVal => body ++= compileF(keyVal._2.toList, state, config.isIncremental)}
-    inferenceRuleToCompileGroup    foreach {keyVal => body ++= compileI(keyVal._2.toList, state, config.isIncremental)}
+    state.extractionRuleGroupByHead    foreach {keyVal => body ++= compileExtractionRules(keyVal._2, state)}
+    state.functionCallRuleGroupByInput foreach {keyVal => body ++= compileFunctionCallRules(keyVal._2, state)}
+    state.inferenceRuleGroupByHead     foreach {keyVal => body ++= compileInferenceRules(keyVal._2, state)}
     
     // compile the program into blocks of application.conf
     val blocks = (
