@@ -202,7 +202,7 @@ namespace dd{
 	  for(long i_vif=n_start_i_vif; (i_vif<n_start_i_vif+n_variables - 1); i_vif++){
 	    const VariableInFactor & vif = vifs[i_vif];
 	    const bool satisfied = is_variable_satisfied(vif, vid, var_values, proposal);
-	    res += (satisfied || (1 - bHead));
+	    res += ((1 - satisfied) || bHead);
 	  }
 	  if (n_variables == 1) return double(bHead);
 	  else return res;
@@ -221,7 +221,7 @@ namespace dd{
 	  for(long i_vif=n_start_i_vif; (i_vif<n_start_i_vif+n_variables - 1); i_vif++){
 	    const VariableInFactor & vif = vifs[i_vif];
 	    const bool satisfied = is_variable_satisfied(vif, vid, var_values, proposal);
-	    res += satisfied || (1 - bHead);
+	    res += ((1 - satisfied) || bHead);
 	  }
 	  if (n_variables == 1) return log2(res + double(bHead));
 	  return log2(res);
@@ -240,7 +240,7 @@ namespace dd{
 	  for(long i_vif=n_start_i_vif; (i_vif<n_start_i_vif+n_variables - 1); i_vif++){
 	    const VariableInFactor & vif = vifs[i_vif];
 	    const bool satisfied = is_variable_satisfied(vif, vid, var_values, proposal);
-	    res += satisfied || (1 - bHead);
+	    res += ((1 - satisfied) || bHead);
 	  }
 	  if (n_variables == 1) return double(bHead);
 	  else {

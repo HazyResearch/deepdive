@@ -89,9 +89,9 @@ TEST(FactorTest, TWO_VAR_FACTORS) {
 	EXPECT_NEAR(f._potential_or(vifs, values, vid, propose), 1.0, EQ_TOL);
 	EXPECT_NEAR(f._potential_equal(vifs, values, vid, propose), 0.0, EQ_TOL);
 	EXPECT_NEAR(f._potential_imply(vifs, values, vid, propose), -1.0, EQ_TOL);
-	EXPECT_NEAR(f._potential_linear(vifs, values, vid, propose), 1.0, EQ_TOL);
-	EXPECT_NEAR(f._potential_ratio(vifs, values, vid, propose), 1.0, EQ_TOL);
-	EXPECT_NEAR(f._potential_logical(vifs, values, vid, propose), 1.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_linear(vifs, values, vid, propose), 0.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_ratio(vifs, values, vid, propose), 0.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_logical(vifs, values, vid, propose), 0.0, EQ_TOL);
 
 	// CASE 3: False op True
 	values[0] = 0;
@@ -102,9 +102,9 @@ TEST(FactorTest, TWO_VAR_FACTORS) {
 	EXPECT_NEAR(f._potential_or(vifs, values, vid, propose), 1.0, EQ_TOL);
 	EXPECT_NEAR(f._potential_equal(vifs, values, vid, propose), 0.0, EQ_TOL);
 	EXPECT_NEAR(f._potential_imply(vifs, values, vid, propose), 0.0, EQ_TOL);
-	EXPECT_NEAR(f._potential_linear(vifs, values, vid, propose), 0.0, EQ_TOL);
-	EXPECT_NEAR(f._potential_ratio(vifs, values, vid, propose), 0.0, EQ_TOL);
-	EXPECT_NEAR(f._potential_logical(vifs, values, vid, propose), 0.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_linear(vifs, values, vid, propose), 1.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_ratio(vifs, values, vid, propose), 1.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_logical(vifs, values, vid, propose), 1.0, EQ_TOL);
 
 	// CASE 4: False op False
 	values[0] = 0;
@@ -154,8 +154,8 @@ TEST(FactorTest, THREE_VAR_IMPLY) {
 
 	EXPECT_NEAR(f._potential_imply(vifs, values, vid, propose), 0.0, EQ_TOL);
 	EXPECT_NEAR(f._potential_imply_mln(vifs, values, vid, propose), 1.0, EQ_TOL);
-	EXPECT_NEAR(f._potential_linear(vifs, values, vid, propose), 1.0, EQ_TOL);
-	EXPECT_NEAR(f._potential_ratio(vifs, values, vid, propose), 1.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_linear(vifs, values, vid, propose), 2.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_ratio(vifs, values, vid, propose), log2(3.0), EQ_TOL);
 	EXPECT_NEAR(f._potential_logical(vifs, values, vid, propose), 1.0, EQ_TOL);
 
 	// second test case: True /\ x => True, x propose to True, Expect 1
@@ -172,9 +172,9 @@ TEST(FactorTest, THREE_VAR_IMPLY) {
 	propose = 0;
 	EXPECT_NEAR(f._potential_imply(vifs, values, vid, propose), -1.0, EQ_TOL);
 	EXPECT_NEAR(f._potential_imply_mln(vifs, values, vid, propose), 0.0, EQ_TOL);
-	EXPECT_NEAR(f._potential_linear(vifs, values, vid, propose), 2.0, EQ_TOL);
-	EXPECT_NEAR(f._potential_ratio(vifs, values, vid, propose), log2(3.0), EQ_TOL);
-	EXPECT_NEAR(f._potential_logical(vifs, values, vid, propose), 1.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_linear(vifs, values, vid, propose), 0.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_ratio(vifs, values, vid, propose), 0.0, EQ_TOL);
+	EXPECT_NEAR(f._potential_logical(vifs, values, vid, propose), 0.0, EQ_TOL);
 
 	// forth test case: True /\ True => x, x propose to True, Expect 1
 	vid = 2;
@@ -184,15 +184,5 @@ TEST(FactorTest, THREE_VAR_IMPLY) {
 	EXPECT_NEAR(f._potential_linear(vifs, values, vid, propose), 2.0, EQ_TOL);
 	EXPECT_NEAR(f._potential_ratio(vifs, values, vid, propose), log2(3.0), EQ_TOL);
 	EXPECT_NEAR(f._potential_logical(vifs, values, vid, propose), 1.0, EQ_TOL);
-
-	// fifth test case: False => True, Expect 1
-	values[0] = 0;
-	values[1] = 0;
-	values[2] = 0;
-	vid = 2;
-	propose = 1;
-	EXPECT_NEAR(f._potential_linear(vifs, values, vid, propose), 0.0, EQ_TOL);
-	EXPECT_NEAR(f._potential_ratio(vifs, values, vid, propose), 0.0, EQ_TOL);
-	EXPECT_NEAR(f._potential_logical(vifs, values, vid, propose), 0.0, EQ_TOL);
 
 }
