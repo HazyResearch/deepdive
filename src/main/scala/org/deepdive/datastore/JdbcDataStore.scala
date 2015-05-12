@@ -396,6 +396,8 @@ trait JdbcDataStore extends Logging {
 
   def sqlDataTypeText = "TEXT"
 
+  def sqlDataTypeDouble = "DOUBLE"
+
   // A few features we didn't factor out:
 
   // We used to have CREATE OR REPLACE VIEW instead of DROP VIEW & CREATE VIEW.
