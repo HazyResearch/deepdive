@@ -212,4 +212,16 @@ class ImpalaDataStore extends JdbcDataStore with Logging {
     executeSqlQueries(s"""CREATE TABLE ${name} AS ${query};""")
   }
 
+  // supports DROP .. CASCADE
+  override def sqlCascade = ""
+
+  // supports CREATE TABLE (...) ROW FORMAT ..
+  override def sqlStoreAsText = s"""row format delimited
+    fields terminated by ' '
+    stored as textfile;"""
+
+  override def sqlPrimaryKey = ""
+
+  override def sqlDataTypeText = "STRING"
+
 }

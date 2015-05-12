@@ -74,7 +74,7 @@ trait MysqlInferenceRunnerComponent extends SQLInferenceRunnerComponent {
      */
     def createIndexForJoinOptimization(relation: String, column: String) = {
       val indexName = s"${relation}_${column}_idx"
-      execute(s"""
+      dataStore.executeSqlQueries(s"""
         ${dropIndexIfExistsMysql(indexName, relation)};
         CREATE INDEX ${indexName} ON ${relation}(${column});
         """)
@@ -145,13 +145,13 @@ trait MysqlInferenceRunnerComponent extends SQLInferenceRunnerComponent {
     /**
      * Calibration is very slow in MySQL so we materialize it and create indexes
      */
-    override def createBucketedCalibrationViewSQL(name: String, 
+    override def createBucketedCalibrationView(name: String,
         inferenceViewName: String, buckets: List[Bucket]) = {
       val bucketCaseStatement = buckets.zipWithIndex.map {
         case (bucket, index) =>
           s"WHEN expectation >= ${bucket.from} AND expectation <= ${bucket.to} THEN ${index}"
       }.mkString("\n")
-      s"""
+      val sql = s"""
       DROP TABLE IF EXISTS ${name} CASCADE;
       
       CREATE TABLE ${name} AS
@@ -159,8 +159,8 @@ trait MysqlInferenceRunnerComponent extends SQLInferenceRunnerComponent {
       FROM ${inferenceViewName} ORDER BY bucket ASC;
       
       CREATE INDEX ${name}_bucket_idx ON ${name}(bucket);
-      
       """
+      dataStore.executeSqlQueries(sql)
     }
 
     /**
@@ -169,9 +169,9 @@ trait MysqlInferenceRunnerComponent extends SQLInferenceRunnerComponent {
      * 
      * Note: "CREATE INDEX ${indexName}" clause can only handle non-text/blob type columns.
      */
-    override def createInferenceViewSQL(relationName: String, columnName: String) = {
+    override def createInferenceView(relationName: String, columnName: String) = {
       val indexName = s"${relationName}_id_idx"
-      s"""
+      val sql = s"""
       DROP TABLE IF EXISTS ${relationName}_${columnName}_inference CASCADE;
       
       ${dropIndexIfExistsMysql(indexName, relationName)}
@@ -183,26 +183,48 @@ trait MysqlInferenceRunnerComponent extends SQLInferenceRunnerComponent {
       ${relationName}, ${VariableResultTable} mir
       WHERE ${relationName}.id = mir.id
       ORDER BY mir.expectation DESC);
-      
     """
+      dataStore.executeSqlQueries(sql)
+    }
+
+    /**
+     * Returns a column type. Applicable for all DBMSs.
+     */
+    def checkColumnType(table: String, column: String): String = {
+      var colType = ""
+      dataStore.executeSqlQueryWithCallback(s"select data_type from information_schema.columns " +
+        s"where table_name='${table}' and column_name='${column}';") { rs =>
+        colType = rs.getString(1)
+      }
+      log.debug(s"Column type for ${table}: ${colType}")
+      return colType
     }
     
     /** 
      *  Create indexes for query table to speed up grounding. (this is useful for MySQL) 
      *  Behavior may varies depending on different DBMS.
      */
-    def createIndexesForQueryTable(queryTable: String, weightVariables: Seq[String]) = {
+    private def createIndexesForQueryTable(queryTable: String, weightVariables: Seq[String]) = {
       log.debug("weight variables: ${factorDesc.weight.variables}")
       weightVariables.foreach( v => {
         val colType = checkColumnType(queryTable, v)
         if (colType.equals("text") || colType.equals("blob")) {
           // create a partial index
-          execute(s"CREATE INDEX ${queryTable}_${v}_idx ON ${queryTable}(${v}(255))") 
+          dataStore.executeSqlQueries(s"CREATE INDEX ${queryTable}_${v}_idx ON ${queryTable}(${v}(255))")
         } else {
-          execute(s"CREATE INDEX ${queryTable}_${v}_idx ON ${queryTable}(${v})")
+          dataStore.executeSqlQueries(s"CREATE INDEX ${queryTable}_${v}_idx ON ${queryTable}(${v})")
         }
       })
     }
 
+    override def createFactorQueryTableWithId(factorDesc:FactorDesc, startId:Long, sequenceName:String): Long = {
+      val count = super.createFactorQueryTableWithId(factorDesc, startId, sequenceName)
+
+      // for mysql, create indexes on weight variables of query tables.
+      // for psql, this function is overwritten to do nothing.
+      createIndexesForQueryTable(InferenceNamespace.getQueryTableName(factorDesc.name), factorDesc.weight.variables)
+
+      count
+    }
   }
 }

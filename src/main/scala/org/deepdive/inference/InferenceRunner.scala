@@ -6,6 +6,10 @@ import org.deepdive.settings._
 import java.io.File
 
 
+/* Stores the factor graph and inference results. */
+trait InferenceRunnerComponent {
+  def inferenceRunner : InferenceRunner
+}
 trait InferenceRunner {
 
     /* Initializes the data store. This method must be called before any other methods in this class. */
@@ -39,9 +43,3 @@ trait InferenceRunner {
 
 }
 
-/* Stores the factor graph and inference results. */
-trait InferenceRunnerComponent {
-
-  def inferenceRunner : InferenceRunner
-
-}
