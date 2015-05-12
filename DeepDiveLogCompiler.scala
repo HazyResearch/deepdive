@@ -78,7 +78,7 @@ class CompilationState( statements : DeepDiveLog.Program )  {
   var dependencies : Map[Statement, Set[Statement]] = new HashMap()
 
   // The statement whether will compile or union to other statements
-  var visable : Set[Statement] = Set()
+  var visible : Set[Statement] = Set()
 
   def init() = {
     // generate the statements.
@@ -95,7 +95,7 @@ class CompilationState( statements : DeepDiveLog.Program )  {
       case FunctionCallRule(_,_,_) => ()
     }
 
-    analyzeVisable(statements)
+    analyzeVisible(statements)
     analyzeDependency(statements)
   }
 
@@ -178,7 +178,7 @@ class CompilationState( statements : DeepDiveLog.Program )  {
   }
 
   // Analyze the block visibility among statements 
-  def analyzeVisable(statements: List[Statement]) = {
+  def analyzeVisible(statements: List[Statement]) = {
     val extractionRules   = new ListBuffer[ExtractionRule]()
     val functionCallRules = new ListBuffer[FunctionCallRule]()
     val inferenceRules    = new ListBuffer[InferenceRule]()
@@ -194,9 +194,9 @@ class CompilationState( statements : DeepDiveLog.Program )  {
     val functionCallRulesGroup = functionCallRules.groupBy(_.input)
     val inferenceRulesGroup    = inferenceRules.groupBy(_.q.head.name)
 
-    extractionRulesGroup   foreach {keyVal => visable += keyVal._2(0)}
-    functionCallRulesGroup foreach {keyVal => visable += keyVal._2(0)}
-    inferenceRulesGroup    foreach {keyVal => visable += keyVal._2(0)}
+    extractionRulesGroup   foreach {keyVal => visible += keyVal._2(0)}
+    functionCallRulesGroup foreach {keyVal => visible += keyVal._2(0)}
+    inferenceRulesGroup    foreach {keyVal => visible += keyVal._2(0)}
   }
 
   // Analyze the dependency between statements and construct a graph.
@@ -237,7 +237,7 @@ class CompilationState( statements : DeepDiveLog.Program )  {
   def generateDependenciesOfCompiledBlockFor(statements: List[Statement]): String = {
     var dependentExtractorBlockNames = Set[String]()
     for (statement <- statements) {
-      dependentExtractorBlockNames ++= ((dependencies getOrElse (statement, Set())) & visable) map resolveExtractorBlockName
+      dependentExtractorBlockNames ++= ((dependencies getOrElse (statement, Set())) & visible) map resolveExtractorBlockName
     }
     if (dependentExtractorBlockNames.size == 0) "" else {
       val depStr = dependentExtractorBlockNames map {" \"" + _ + "\" "} mkString(", ")
