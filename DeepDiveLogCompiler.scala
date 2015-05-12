@@ -77,6 +77,7 @@ class CompilationState( statements : DeepDiveLog.Program )  {
   // The dependency graph between statements.
   var dependencies : Map[Statement, Set[Statement]] = new HashMap()
 
+  // The statement whether will compile or union to other statements
   var visable : Set[Statement] = Set()
 
   def init() = {
@@ -106,13 +107,11 @@ class CompilationState( statements : DeepDiveLog.Program )  {
 
   // Given a statement, resolve its name for the compiled extractor block.
   def resolveExtractorBlockName(s: Statement): String = {
-    if (visable contains s) {
-      s match {
-        case s: FunctionCallRule => s"extraction_rule_${statements indexOf s}"
-        case s: ExtractionRule   => s"extraction_rule_${statements indexOf s}"
-        case s: InferenceRule    => s"extraction_rule_${s.q.head.name}"
-      }
-    } else ""
+    s match {
+      case s: FunctionCallRule => s"extraction_rule_${statements indexOf s}"
+      case s: ExtractionRule   => s"extraction_rule_${statements indexOf s}"
+      case s: InferenceRule    => s"extraction_rule_${s.q.head.name}"
+    }
   }
 
   // Given a variable, resolve it.  TODO: This should give a warning,
@@ -492,7 +491,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     // take an initial pass to analyze the parsed program
     val state = new CompilationState( programToCompile )
 
-
+    // compile compilation states by head name based on type
     val extractionRuleToCompile = new ListBuffer[ExtractionRule]()
     val inferenceRuleToCompile = new ListBuffer[InferenceRule]()
     val functionCallRuleToCompile = new ListBuffer[FunctionCallRule]()
