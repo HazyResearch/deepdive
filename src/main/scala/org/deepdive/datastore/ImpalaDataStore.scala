@@ -224,4 +224,6 @@ class ImpalaDataStore extends JdbcDataStore with Logging {
 
   override def sqlDataTypeText = "STRING"
 
+  override def sqlDataTypeDouble = "DOUBLE"
+
 }

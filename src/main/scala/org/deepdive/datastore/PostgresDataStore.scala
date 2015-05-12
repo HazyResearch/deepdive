@@ -180,4 +180,5 @@ class PostgresDataStore extends JdbcDataStore with Logging {
     executeSqlQueries(SQLFunctions.fastSequenceAssignForGreenplum, false)
   }
 
+  override def sqlDataTypeDouble = "DOUBLE PRECISION"
 }

@@ -352,10 +352,9 @@ trait SQLInferenceRunner extends AbstractInferenceRunner {
       s""" ${dataStore.quoteColumn(s"${v.relation}.id")} """).mkString(", ")
     val outfile = InferenceNamespace.getFactorFileName(factorDesc.name)
     val groundingDir = getFileNameFromPath(groundingPath)
-    du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
-      s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
-             FROM ${factorQueryTable} t0, ${factorWeightTable} t1
-             ${weightJoinCondition};""", groundingDir)
+    du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, s"""
+      SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
+      FROM ${factorQueryTable} t0, ${factorWeightTable} t1 ${weightJoinCondition};""", groundingDir)
 
     return count
   }
@@ -435,26 +434,26 @@ trait SQLInferenceRunner extends AbstractInferenceRunner {
       // another for an ordered version. The reason that we cannot
       // do this with only one table is not fundemental -- it is just
       // a specific property of Greenplum to make it right
-      dataStore.dropAndCreateTableAs(s"${factorWeightTable}_unsorted",
-        s"""SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} AS cardinality,
-            ${dataStore.cast(0, "bigint")} AS id
-            FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")} LIMIT 0;""")
+      dataStore.dropAndCreateTableAs(s"${factorWeightTable}_unsorted", s"""
+        SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} AS cardinality,
+          ${dataStore.cast(0, "bigint")} AS id
+        FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")} LIMIT 0;""")
 
       dataStore.executeSqlQueries(s"""
-            INSERT INTO ${factorWeightTable}_unsorted
-            SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} as cardinality, 0 AS id
-            FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")}
-            ORDER BY ${weightlist}, cardinality;""")
+        INSERT INTO ${factorWeightTable}_unsorted
+        SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} as cardinality, 0 AS id
+        FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")}
+        ORDER BY ${weightlist}, cardinality;""")
 
-      dataStore.dropAndCreateTableAs(factorWeightTable,
-        s"""SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} AS cardinality,
-            ${dataStore.cast(0, "bigint")} AS id
-            FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")} LIMIT 0""")
+      dataStore.dropAndCreateTableAs(factorWeightTable, s"""
+        SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} AS cardinality,
+          ${dataStore.cast(0, "bigint")} AS id
+        FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")} LIMIT 0""")
 
       dataStore.executeSqlQueries(s"""
-            INSERT INTO ${factorWeightTable}
-            SELECT * FROM ${factorWeightTable}_unsorted
-            ORDER BY ${weightlist}, cardinality;""")
+        INSERT INTO ${factorWeightTable}
+        SELECT * FROM ${factorWeightTable}_unsorted
+        ORDER BY ${weightlist}, cardinality;""")
 
       // handle weight id
       val count = dataStore.assignIds(factorWeightTable.toLowerCase(), cweightid, weightidSequence)
@@ -535,101 +534,93 @@ trait SQLInferenceRunner extends AbstractInferenceRunner {
     // Note: MySQL doesn't allow subqueries in from clause of view; must override
     // in MySQL implementation
     dataStore.executeSqlQueries(s"""
-        DROP VIEW IF EXISTS ${name};
-        CREATE VIEW ${name} AS
-        SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
-        (SELECT bucket, COUNT(*) AS num_variables from ${bucketedView} GROUP BY bucket) b1
-        LEFT JOIN (SELECT bucket, COUNT(*) AS num_correct from ${bucketedView}
-          WHERE ${columnName}=true GROUP BY bucket) b2 ON b1.bucket = b2.bucket
-        LEFT JOIN (SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView}
-          WHERE ${columnName}=false GROUP BY bucket) b3 ON b1.bucket = b3.bucket
-        ORDER BY b1.bucket ASC;
-        """)
+      DROP VIEW IF EXISTS ${name};
+      CREATE VIEW ${name} AS
+      SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
+      (SELECT bucket, COUNT(*) AS num_variables from ${bucketedView} GROUP BY bucket) b1
+      LEFT JOIN (SELECT bucket, COUNT(*) AS num_correct from ${bucketedView}
+        WHERE ${columnName}=true GROUP BY bucket) b2 ON b1.bucket = b2.bucket
+      LEFT JOIN (SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView}
+        WHERE ${columnName}=false GROUP BY bucket) b3 ON b1.bucket = b3.bucket
+      ORDER BY b1.bucket ASC;""")
 
   def createCalibrationViewMultinomial(name: String, bucketedView: String, columnName: String) =
     // Note: MySQL doesn't allow subqueries in from clause of view; must override
     // in MySQL implementation
     dataStore.executeSqlQueries(s"""
-        DROP VIEW IF EXISTS ${name};
-        CREATE VIEW ${name} AS
-        SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
-        (SELECT bucket, COUNT(*) AS num_variables from ${bucketedView} GROUP BY bucket) b1
-        LEFT JOIN (SELECT bucket, COUNT(*) AS num_correct from ${bucketedView}
-          WHERE ${columnName} = category GROUP BY bucket) b2 ON b1.bucket = b2.bucket
-        LEFT JOIN (SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView}
-          WHERE ${columnName} != category GROUP BY bucket) b3 ON b1.bucket = b3.bucket
-        ORDER BY b1.bucket ASC;
-        """)
+      DROP VIEW IF EXISTS ${name};
+      CREATE VIEW ${name} AS
+      SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
+      (SELECT bucket, COUNT(*) AS num_variables from ${bucketedView} GROUP BY bucket) b1
+      LEFT JOIN (SELECT bucket, COUNT(*) AS num_correct from ${bucketedView}
+        WHERE ${columnName} = category GROUP BY bucket) b2 ON b1.bucket = b2.bucket
+      LEFT JOIN (SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView}
+        WHERE ${columnName} != category GROUP BY bucket) b3 ON b1.bucket = b3.bucket
+      ORDER BY b1.bucket ASC;""")
 
 
   //////////////////////////// writebackInferenceResult
 
   def createInferenceResult =
     dataStore.executeSqlQueries(s"""
-    DROP TABLE IF EXISTS ${VariableResultTable} ${dataStore.sqlCascade};
-    CREATE TABLE ${VariableResultTable}(
-      id bigint,
-      category bigint,
-      expectation double precision) ${dataStore.sqlStoreAsText};
-  """)
+      DROP TABLE IF EXISTS ${VariableResultTable} ${dataStore.sqlCascade};
+      CREATE TABLE ${VariableResultTable}(
+        id bigint,
+        category bigint,
+        expectation ${dataStore.sqlDataTypeDouble}) ${dataStore.sqlStoreAsText};""")
 
   def createInferenceResultWeights =
     dataStore.executeSqlQueries(s"""
-    DROP TABLE IF EXISTS ${WeightResultTable} ${dataStore.sqlCascade};
-    CREATE TABLE ${WeightResultTable}(
-      id bigint primary key,
-      weight double precision) ${dataStore.sqlStoreAsText};
-  """)
+      DROP TABLE IF EXISTS ${WeightResultTable} ${dataStore.sqlCascade};
+      CREATE TABLE ${WeightResultTable}(
+        id bigint ${dataStore.sqlPrimaryKey},
+        weight ${dataStore.sqlDataTypeDouble}) ${dataStore.sqlStoreAsText};""")
 
   def createInferenceView(relationName: String, columnName: String) =
     dataStore.executeSqlQueries(s"""
-    DROP VIEW IF EXISTS ${relationName}_${columnName}_inference;
-    CREATE VIEW ${relationName}_${columnName}_inference AS
-    (SELECT ${relationName}.*, mir.category, mir.expectation FROM
-    ${relationName}, ${VariableResultTable} mir
-    WHERE ${relationName}.id = mir.id
-    ORDER BY mir.expectation DESC);
-  """)
-
+      DROP VIEW IF EXISTS ${relationName}_${columnName}_inference;
+      CREATE VIEW ${relationName}_${columnName}_inference AS
+      (SELECT ${relationName}.*, mir.category, mir.expectation FROM
+      ${relationName}, ${VariableResultTable} mir
+      WHERE ${relationName}.id = mir.id
+      ORDER BY mir.expectation DESC);""")
 
   /**
    * Create a view that shows weights of features as well as their supports
    */
-  def createMappedFeatureStatsView = dataStore.executeSqlQueries(s"""
-        DROP VIEW IF EXISTS ${FeatureStatsView};
-        CREATE VIEW ${FeatureStatsView} AS
-        SELECT w.*, f.pos_examples, f.neg_examples, f.queries
-        FROM ${LearnedWeightsTable} w LEFT OUTER JOIN ${FeatureStatsSupportTable} f
-        ON w.description = f.description
-        ORDER BY abs(weight) DESC;
-        """)
+  def createMappedFeatureStatsView =
+    dataStore.executeSqlQueries(s"""
+      DROP VIEW IF EXISTS ${FeatureStatsView};
+      CREATE VIEW ${FeatureStatsView} AS
+      SELECT w.*, f.pos_examples, f.neg_examples, f.queries
+      FROM ${LearnedWeightsTable} w LEFT OUTER JOIN ${FeatureStatsSupportTable} f
+      ON w.description = f.description
+      ORDER BY abs(weight) DESC;""")
 
   /**
    * Create a table of how LR features are supported by supervision examples
    */
   def createFeatureStatsSupportTable =
-    dataStore.executeSqlQueries(
-    s"""DROP TABLE IF EXISTS ${FeatureStatsSupportTable} ${dataStore.sqlCascade};
-
-          CREATE TABLE ${FeatureStatsSupportTable}(
-            description text,
-            pos_examples bigint,
-            neg_examples bigint,
-            queries bigint);""")
+    dataStore.executeSqlQueries(s"""
+      DROP TABLE IF EXISTS ${FeatureStatsSupportTable} ${dataStore.sqlCascade};
+      CREATE TABLE ${FeatureStatsSupportTable}(
+        description ${dataStore.sqlDataTypeText},
+        pos_examples bigint,
+        neg_examples bigint,
+        queries bigint);""")
 
   def createMappedWeightsView =
     dataStore.executeSqlQueries(s"""
-    DROP VIEW IF EXISTS ${LearnedWeightsTable};
-    CREATE VIEW ${LearnedWeightsTable} AS
-    SELECT ${WeightsTable}.*, ${WeightResultTable}.weight FROM
-    ${WeightsTable} JOIN ${WeightResultTable} ON ${WeightsTable}.id = ${WeightResultTable}.id
-    ORDER BY abs(weight) DESC;
+      DROP VIEW IF EXISTS ${LearnedWeightsTable};
+      CREATE VIEW ${LearnedWeightsTable} AS
+      SELECT ${WeightsTable}.*, ${WeightResultTable}.weight FROM
+      ${WeightsTable} JOIN ${WeightResultTable} ON ${WeightsTable}.id = ${WeightResultTable}.id
+      ORDER BY abs(weight) DESC;
 
-    DROP VIEW IF EXISTS ${VariableResultTable}_mapped_weights;
-    CREATE VIEW ${VariableResultTable}_mapped_weights AS
-    SELECT * FROM ${LearnedWeightsTable}
-    ORDER BY abs(weight) DESC;
-  """)
+      DROP VIEW IF EXISTS ${VariableResultTable}_mapped_weights;
+      CREATE VIEW ${VariableResultTable}_mapped_weights AS
+      SELECT * FROM ${LearnedWeightsTable}
+      ORDER BY abs(weight) DESC;""")
 
 //<<<<<<< HEAD
 //    // Create the view for mapped weights

@@ -77,7 +77,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
   val sqlAnalyzeCommand = dbtype match {
     case Psql => "ANALYZE "
     case Mysql => "ANALYZE TABLE "
-    case Impala => ""
+    case Impala => "COMPUTE STATS "
   } 
 
     // DONE mysql pw: -p=password. psql: cannot?  
