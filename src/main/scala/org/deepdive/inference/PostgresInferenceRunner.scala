@@ -33,17 +33,6 @@ trait PostgresInferenceRunnerComponent extends SQLInferenceRunnerComponent {
     }
 
     /**
-    * This query optimizes slow joins on certain DBMS (MySQL) by creating indexes
-    * on the join condition column.
-    */
-    def createIndexForJoinOptimization(relation: String, column: String) = {}
-
-    /**
-     * For postgres, do not create indexes for query table
-     */
-    def createIndexesForQueryTable(queryTable: String, weightVariables: Seq[String]) = {}
-
-    /**
      * This query is datastore-specific since it creates a view whose 
      * SELECT contains a subquery in the FROM clause.
      * In Mysql the subqueries have to be created as views first.

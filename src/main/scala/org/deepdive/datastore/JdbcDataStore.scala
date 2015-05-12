@@ -383,6 +383,26 @@ trait JdbcDataStore extends Logging {
 
   // end: Datastore-specific methods
 
+  // SQL dialects vary between databases; we try to maximize statement reuse
+  // by factoring out some features
+
+  // supports DROP .. CASCADE
+  def sqlCascade = "CASCADE"
+
+  // supports CREATE TABLE (...) ROW FORMAT ..
+  def sqlStoreAsText = ""
+
+  def sqlPrimaryKey = "PRIMARY KEY"
+
+  def sqlDataTypeText = "TEXT"
+
+  // A few features we didn't factor out:
+
+  // We used to have CREATE OR REPLACE VIEW instead of DROP VIEW & CREATE VIEW.
+  // The semantics are slightly different (the former translates to CREATE/ALTER)
+  // but we don't need that and we can increase code re-use by using the latter.
+
+  def createIndexForJoinOptimization(relation: String, column: String) : Unit = {}
 }
 
 sealed abstract class StoreType
