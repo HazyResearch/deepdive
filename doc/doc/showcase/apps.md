@@ -76,4 +76,18 @@ With the exponential growth of the literature, manual curation requires prioriti
 In collaboration with Prof.
 Russ Altman at Stanford, we are developing DeepDive applications in the field of pharmacogenomics.
 Specifically, we use DeepDive to extract relations between genes, diseases, and drugs in order to predict novel pharmacological relationships.
+<p><figure style="width:80%; margin:0 auto;">
+<a href="https://www.pharmgkb.org/pathway/PA145011114"><img
+    src="../../images/showcase/PA145011114.png" style="display:block; margin:0 auto;"></a>
+<figcaption><small>
+<div>
+  M. Whirl-Carrillo, E.M. McDonagh, J. M. Hebert, L. Gong, K. Sangkuhl, C.F. Thorn, R.B. Altman and T.E. Klein.
+  "<a href="http://www.ncbi.nlm.nih.gov/pubmed/22992668">Pharmacogenomics Knowledge for Personalized Medicine</a>"
+  <i>Clinical Pharmacology &amp; Therapeutics (2012) 92(4): 414-417.</i>
+</div>
+<div>
+    Copyright PharmGKB. Permission has been given by PharmGKB and Stanford University.
+</div>
+</small></figcaption>
+</figure></p>
 
