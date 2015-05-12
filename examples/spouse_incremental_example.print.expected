@@ -36,17 +36,19 @@ dd_delta_people_mentions(sentence_id text,
                          text text,
                          mention_id text).
 
-has_spouse_candidates(person1_id text,
-                      person2_id text,
-                      sentence_id text,
-                      description text,
-                      relation_id text).
+has_spouse(person1_id text,
+           person2_id text,
+           sentence_id text,
+           description text,
+           relation_id text,
+           is_true boolean).
 
-dd_delta_has_spouse_candidates(person1_id text,
-                               person2_id text,
-                               sentence_id text,
-                               description text,
-                               relation_id text).
+dd_delta_has_spouse(person1_id text,
+                    person2_id text,
+                    sentence_id text,
+                    description text,
+                    relation_id text,
+                    is_true boolean).
 
 has_spouse_features(relation_id text,
                     feature text).
@@ -54,9 +56,9 @@ has_spouse_features(relation_id text,
 dd_delta_has_spouse_features(relation_id text,
                              feature text).
 
-has_spouse?(relation_id text).
+f_has_spouse?(relation_id text).
 
-dd_delta_has_spouse?(relation_id text).
+dd_delta_f_has_spouse?(relation_id text).
 
 dd_delta_people_mentions :- !ext_people(dd_delta_ext_people_input).
 
@@ -77,7 +79,7 @@ function ext_people
  implementation "/Users/feiran/workspace/release/deepdive/app/spouse_datalog/udf/ext_people.py"
         handles tsv lines.
 
-dd_delta_has_spouse_candidates :- !ext_has_spouse(dd_delta_ext_has_spouse_input).
+dd_delta_has_spouse :- !ext_has_spouse(dd_delta_ext_has_spouse_input).
 
 ext_has_spouse_input(sentence_id text,
                      p1_id text,
@@ -105,7 +107,7 @@ dd_delta_ext_has_spouse_input(s, p1_id, p1_text, p2_id, p2_text) :-
 
 function ext_has_spouse
     over like dd_delta_ext_has_spouse_input
- returns like dd_delta_has_spouse_candidates
+ returns like dd_delta_has_spouse
  implementation "/Users/feiran/workspace/release/deepdive/app/spouse_datalog/udf/ext_has_spouse.py"
         handles tsv lines.
 
@@ -127,91 +129,91 @@ dd_delta_ext_has_spouse_features_input(words text[],
 
 dd_delta_ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :-
     dd_delta_sentences(a, b, words, c, d, e, f, g, s),
-    has_spouse_candidates(person1_id, person2_id, s, h, rid, x),
+    has_spouse(person1_id, person2_id, s, h, rid, x),
     people_mentions(s, p1idx, p1len, k, person1_id),
     people_mentions(s, p2idx, p2len, l, person2_id).
 
 dd_delta_ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :-
     sentences(a, b, words, c, d, e, f, g, s),
-    dd_delta_has_spouse_candidates(person1_id, person2_id, s, h, rid, x),
+    dd_delta_has_spouse(person1_id, person2_id, s, h, rid, x),
     people_mentions(s, p1idx, p1len, k, person1_id),
     people_mentions(s, p2idx, p2len, l, person2_id).
 
 dd_delta_ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :-
     dd_delta_sentences(a, b, words, c, d, e, f, g, s),
-    dd_delta_has_spouse_candidates(person1_id, person2_id, s, h, rid, x),
+    dd_delta_has_spouse(person1_id, person2_id, s, h, rid, x),
     people_mentions(s, p1idx, p1len, k, person1_id),
     people_mentions(s, p2idx, p2len, l, person2_id).
 
 dd_delta_ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :-
     sentences(a, b, words, c, d, e, f, g, s),
-    has_spouse_candidates(person1_id, person2_id, s, h, rid, x),
+    has_spouse(person1_id, person2_id, s, h, rid, x),
     dd_delta_people_mentions(s, p1idx, p1len, k, person1_id),
     people_mentions(s, p2idx, p2len, l, person2_id).
 
 dd_delta_ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :-
     dd_delta_sentences(a, b, words, c, d, e, f, g, s),
-    has_spouse_candidates(person1_id, person2_id, s, h, rid, x),
+    has_spouse(person1_id, person2_id, s, h, rid, x),
     dd_delta_people_mentions(s, p1idx, p1len, k, person1_id),
     people_mentions(s, p2idx, p2len, l, person2_id).
 
 dd_delta_ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :-
     sentences(a, b, words, c, d, e, f, g, s),
-    dd_delta_has_spouse_candidates(person1_id, person2_id, s, h, rid, x),
+    dd_delta_has_spouse(person1_id, person2_id, s, h, rid, x),
     dd_delta_people_mentions(s, p1idx, p1len, k, person1_id),
     people_mentions(s, p2idx, p2len, l, person2_id).
 
 dd_delta_ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :-
     dd_delta_sentences(a, b, words, c, d, e, f, g, s),
-    dd_delta_has_spouse_candidates(person1_id, person2_id, s, h, rid, x),
+    dd_delta_has_spouse(person1_id, person2_id, s, h, rid, x),
     dd_delta_people_mentions(s, p1idx, p1len, k, person1_id),
     people_mentions(s, p2idx, p2len, l, person2_id).
 
 dd_delta_ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :-
     sentences(a, b, words, c, d, e, f, g, s),
-    has_spouse_candidates(person1_id, person2_id, s, h, rid, x),
+    has_spouse(person1_id, person2_id, s, h, rid, x),
     people_mentions(s, p1idx, p1len, k, person1_id),
     dd_delta_people_mentions(s, p2idx, p2len, l, person2_id).
 
 dd_delta_ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :-
     dd_delta_sentences(a, b, words, c, d, e, f, g, s),
-    has_spouse_candidates(person1_id, person2_id, s, h, rid, x),
-    people_mentions(s, p1idx, p1len, k, person1_id),
-    dd_delta_people_mentions(s, p2idx, p2len, l, person2_id).
-
-dd_delta_ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :-
-    sentences(a, b, words, c, d, e, f, g, s),
-    dd_delta_has_spouse_candidates(person1_id, person2_id, s, h, rid, x),
-    people_mentions(s, p1idx, p1len, k, person1_id),
-    dd_delta_people_mentions(s, p2idx, p2len, l, person2_id).
-
-dd_delta_ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :-
-    dd_delta_sentences(a, b, words, c, d, e, f, g, s),
-    dd_delta_has_spouse_candidates(person1_id, person2_id, s, h, rid, x),
+    has_spouse(person1_id, person2_id, s, h, rid, x),
     people_mentions(s, p1idx, p1len, k, person1_id),
     dd_delta_people_mentions(s, p2idx, p2len, l, person2_id).
 
 dd_delta_ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :-
     sentences(a, b, words, c, d, e, f, g, s),
-    has_spouse_candidates(person1_id, person2_id, s, h, rid, x),
+    dd_delta_has_spouse(person1_id, person2_id, s, h, rid, x),
+    people_mentions(s, p1idx, p1len, k, person1_id),
+    dd_delta_people_mentions(s, p2idx, p2len, l, person2_id).
+
+dd_delta_ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :-
+    dd_delta_sentences(a, b, words, c, d, e, f, g, s),
+    dd_delta_has_spouse(person1_id, person2_id, s, h, rid, x),
+    people_mentions(s, p1idx, p1len, k, person1_id),
+    dd_delta_people_mentions(s, p2idx, p2len, l, person2_id).
+
+dd_delta_ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :-
+    sentences(a, b, words, c, d, e, f, g, s),
+    has_spouse(person1_id, person2_id, s, h, rid, x),
     dd_delta_people_mentions(s, p1idx, p1len, k, person1_id),
     dd_delta_people_mentions(s, p2idx, p2len, l, person2_id).
 
 dd_delta_ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :-
     dd_delta_sentences(a, b, words, c, d, e, f, g, s),
-    has_spouse_candidates(person1_id, person2_id, s, h, rid, x),
+    has_spouse(person1_id, person2_id, s, h, rid, x),
     dd_delta_people_mentions(s, p1idx, p1len, k, person1_id),
     dd_delta_people_mentions(s, p2idx, p2len, l, person2_id).
 
 dd_delta_ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :-
     sentences(a, b, words, c, d, e, f, g, s),
-    dd_delta_has_spouse_candidates(person1_id, person2_id, s, h, rid, x),
+    dd_delta_has_spouse(person1_id, person2_id, s, h, rid, x),
     dd_delta_people_mentions(s, p1idx, p1len, k, person1_id),
     dd_delta_people_mentions(s, p2idx, p2len, l, person2_id).
 
 dd_delta_ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :-
     dd_delta_sentences(a, b, words, c, d, e, f, g, s),
-    dd_delta_has_spouse_candidates(person1_id, person2_id, s, h, rid, x),
+    dd_delta_has_spouse(person1_id, person2_id, s, h, rid, x),
     dd_delta_people_mentions(s, p1idx, p1len, k, person1_id),
     dd_delta_people_mentions(s, p2idx, p2len, l, person2_id).
 
@@ -221,18 +223,18 @@ function ext_has_spouse_features
  implementation "/Users/feiran/workspace/release/deepdive/app/spouse_datalog/udf/ext_has_spouse_features.py"
         handles tsv lines.
 
-dd_delta_has_spouse(rid) :-
-    dd_delta_has_spouse_candidates(a, b, c, d, rid, l),
+dd_delta_f_has_spouse(rid) :-
+    dd_delta_has_spouse(a, b, c, d, rid, l),
     has_spouse_features(rid, f)
   weight = f
   label = l.
-dd_delta_has_spouse(rid) :-
-    has_spouse_candidates(a, b, c, d, rid, l),
+dd_delta_f_has_spouse(rid) :-
+    has_spouse(a, b, c, d, rid, l),
     dd_delta_has_spouse_features(rid, f)
   weight = f
   label = l.
-dd_delta_has_spouse(rid) :-
-    dd_delta_has_spouse_candidates(a, b, c, d, rid, l),
+dd_delta_f_has_spouse(rid) :-
+    dd_delta_has_spouse(a, b, c, d, rid, l),
     dd_delta_has_spouse_features(rid, f)
   weight = f
   label = l.
