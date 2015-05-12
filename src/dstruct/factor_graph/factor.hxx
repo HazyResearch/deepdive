@@ -188,4 +188,64 @@ namespace dd{
 	  if (found) return 1.0;
 	  else return -1.0;
 	}
+
+	// potential for linear expression
+	inline double dd::CompactFactor::_potential_linear(
+	  const VariableInFactor * const vifs,
+	  const VariableValue * const var_values,
+	  const VariableIndex & vid,
+	  const VariableValue & proposal) const{
+
+		double res = 0.0;
+		bool bHead = is_variable_satisfied(vifs[n_start_i_vif + n_variables - 1], vid, var_values, proposal);
+	  /* Compute the value of the body of the rule */
+	  for(long i_vif=n_start_i_vif; (i_vif<n_start_i_vif+n_variables - 1); i_vif++){
+	    const VariableInFactor & vif = vifs[i_vif];
+	    const bool satisfied = is_variable_satisfied(vif, vid, var_values, proposal);
+	    res += (satisfied || (1 - bHead));
+	  }
+	  if (n_variables == 1) return double(bHead);
+	  else return res;
+	}
+
+	// potential for linear expression
+	inline double dd::CompactFactor::_potential_ratio(
+	  const VariableInFactor * const vifs,
+	  const VariableValue * const var_values,
+	  const VariableIndex & vid,
+	  const VariableValue & proposal) const{
+
+		double res = 1.0;
+		bool bHead = is_variable_satisfied(vifs[n_start_i_vif + n_variables - 1], vid, var_values, proposal);
+	  /* Compute the value of the body of the rule */
+	  for(long i_vif=n_start_i_vif; (i_vif<n_start_i_vif+n_variables - 1); i_vif++){
+	    const VariableInFactor & vif = vifs[i_vif];
+	    const bool satisfied = is_variable_satisfied(vif, vid, var_values, proposal);
+	    res += satisfied || (1 - bHead);
+	  }
+	  if (n_variables == 1) return log2(res + double(bHead));
+	  return log2(res);
+	}
+
+	// potential for linear expression
+	inline double dd::CompactFactor::_potential_logical(
+	  const VariableInFactor * const vifs,
+	  const VariableValue * const var_values,
+	  const VariableIndex & vid,
+	  const VariableValue & proposal) const{
+
+		double res = 0.0;
+		bool bHead = is_variable_satisfied(vifs[n_start_i_vif + n_variables - 1], vid, var_values, proposal);
+	  /* Compute the value of the body of the rule */
+	  for(long i_vif=n_start_i_vif; (i_vif<n_start_i_vif+n_variables - 1); i_vif++){
+	    const VariableInFactor & vif = vifs[i_vif];
+	    const bool satisfied = is_variable_satisfied(vif, vid, var_values, proposal);
+	    res += satisfied || (1 - bHead);
+	  }
+	  if (n_variables == 1) return double(bHead);
+	  else {
+	  	if (res > 0.0) return 1.0;
+	  	else return 0.0;
+	  }
+	}
 }
