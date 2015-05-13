@@ -69,6 +69,8 @@ trait AbstractInferenceRunner extends InferenceRunner with Logging {
     log.info(s"Parallel grounding = ${parallelGrounding}")
     log.debug(s"Grounding Path = ${groundingPath}")
 
+    //assignRandom(schema)
+
     // assign variable id - sequential and unique
     assignVariablesIds(schema)
 
@@ -96,6 +98,8 @@ trait AbstractInferenceRunner extends InferenceRunner with Logging {
     // split grounding files and transform to binary format
     convertGroundingFormat(groundingPath)
   }
+
+  //def assignRandom(schema: Map[String, _ <: VariableDataType])
 
   def assignVariablesIds(schema: Map[String, _ <: VariableDataType])
 

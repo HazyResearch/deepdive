@@ -158,10 +158,13 @@ class ImpalaDataStore extends JdbcDataStore with Logging {
   override def quoteColumn(column: String): String = '`' + column + '`'
 
     
-  /**
-   * Generate random number in [0,1] in psql
-   */
-  override def randomFunction: String = "RAND()"
+  // There's a bug in Impala that makes function RAND() unusable
+  // Eg. see https://issues.cloudera.org/browse/IMPALA-397
+  // We therefore do something else for Impala: we pre-compute a
+  // column with random number for every relation. The column
+  // table must be "rand"
+  override def randomFunction: String = "rand"
+  //override def randomFunction: String = "RAND()"
 
   /**
    * Concatinate strings using "||" in psql/GP, adding user-specified
@@ -189,7 +192,9 @@ class ImpalaDataStore extends JdbcDataStore with Logging {
     val values = ArrayBuffer[String]()
     for (i <- 0 until columns.size)
       //values += { if (columns(i).equals("id")) s"(${startId} + (row_number() over(ORDER BY id)))" else columns(i) }
-      values += { if (columns(i).equals("id")) s"${startId} - 2 + row_sequence()" else columns(i) }
+      values += { if (columns(i).equals("id")) s"${startId} - 2 + row_sequence()"
+                  else if (columns(i).equals("rand")) "rand()"
+                  else columns(i) }
 
     executeSqlQueries(s"INSERT OVERWRITE TABLE ${table} (" + columns.mkString(", ") +
       ") SELECT " + values.mkString(", ") + s" FROM ${table} ")
