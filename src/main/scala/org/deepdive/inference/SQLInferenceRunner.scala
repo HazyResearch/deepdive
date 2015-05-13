@@ -195,8 +195,9 @@ trait SQLInferenceRunner extends AbstractInferenceRunner {
     // only if it's boolean LR feature (the most common one)
     if (factorDesc.func.variables.length == 1 && factorDesc.func.variableDataType == "Boolean") {
       // This should be a single variable, e.g. "is_true"
-      val variableName = factorDesc.func.variables.map(v => 
-          s""" ${dataStore.quoteColumn(v.toString)} """).mkString(",")
+      //val variableName = factorDesc.func.variables.map(v => 
+      //    s""" ${dataStore.quoteColumn(v.toString)} """).mkString(",")
+      val variableName = "v0"
       val groupByClause = weightlist match {
         case "" => ""
         case _ => s"GROUP BY ${weightlist}"
@@ -263,6 +264,14 @@ trait SQLInferenceRunner extends AbstractInferenceRunner {
     val factorQueryTable = InferenceNamespace.getQueryTableName(factorDesc.name)
     val factorWeightTable = InferenceNamespace.getWeightTableName(factorDesc.name)
 
+    val idcols = factorDesc.func.variables.zipWithIndex.map { case (v,i) => s"id$i" }
+    //val valcols = factorDesc.func.variables.zipWithIndex.map { case (v,i) => s"v$i" }
+    //val typ = factorDesc.func.variableDataType match {
+    //    case "Boolean" => "boolean"
+    //    case "Discrete" => "int"
+    //}
+    //val coldefstr = factorDesc.func.variables.zipWithIndex.map { case (v,i) => s"id$i bigint, v$i $typ" }.mkString(", ")
+
     // weight variable list
     val hasWeightVariables = !factorDesc.weight.variables.isEmpty
     val isFixed = factorDesc.weight.isInstanceOf[KnownFactorWeight]
@@ -320,12 +329,12 @@ trait SQLInferenceRunner extends AbstractInferenceRunner {
       case false => ""
     }
 
-    val idcols = factorDesc.func.variables.map(v =>
-      s""" ${dataStore.quoteColumn(s"${v.relation}.id")} """).mkString(", ")
+    //val idcols = factorDesc.func.variables.map(v =>
+    //  s""" ${dataStore.quoteColumn(s"${v.relation}.id")} """).mkString(", ")
     val outfile = InferenceNamespace.getFactorFileName(factorDesc.name)
     val groundingDir = getFileNameFromPath(groundingPath)
     du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings, s"""
-      SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
+      SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols.mkString(", ")}
       FROM ${factorQueryTable} t0, ${factorWeightTable} t1 ${weightJoinCondition};""", groundingDir)
 
     return count

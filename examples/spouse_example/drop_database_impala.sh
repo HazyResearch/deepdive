@@ -19,5 +19,14 @@ do
   impala-shell -i localhost -d $DBNAME --quiet -q "DROP TABLE $line"
 done
 
+FUNCTIONS=$(impala-shell -i localhost -d $DBNAME -B --quiet -q "SHOW FUNCTIONS")
+IFS=$'\n' #make newline the only separator
+for line in $FUNCTIONS
+do
+  name=$(echo $line | cut -f 2)  #split line on tab and take second column
+  impala-shell -i localhost -d $DBNAME --quiet -q "DROP FUNCTION $name"
+done
+
+
 impala-shell -i localhost --quiet -q "DROP DATABASE IF EXISTS $DBNAME"
 

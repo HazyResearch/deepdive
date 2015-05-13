@@ -51,11 +51,18 @@ trait ImpalaInferenceRunnerComponent extends SQLInferenceRunnerComponent {
     //val withIdQuery = s"CREATE TABLE ${querytable} AS SELECT t.*, ${factorid} + row_number() over(order by count(*)) FROM (${factorDesc.inputQuery}) t"
     //execute(withIdQuery)
 
+    //val withIdQuery = s"""
+    //    DROP TABLE IF EXISTS ${querytable};
+    //    CREATE TABLE ${querytable} (${coldefstr}, id bigint);
+    //      INSERT INTO ${querytable} SELECT t.*, ${startId} -2 + row_sequence() as id FROM (${factorDesc.inputQuery}) t;
+    //  """
+
     val withIdQuery = s"""
         DROP TABLE IF EXISTS ${querytable};
-        CREATE TABLE ${querytable} (${coldefstr}, id bigint);
-          INSERT INTO ${querytable} SELECT t.*, ${startId} -2 + row_sequence() as id FROM (${factorDesc.inputQuery}) t;
+        CREATE TABLE ${querytable} AS
+          SELECT t.*, cast(${startId} -2 + row_sequence() as bigint) as id FROM (${factorDesc.inputQuery}) t;
       """
+
 
     dataStore.executeSqlQueries(withIdQuery)
 

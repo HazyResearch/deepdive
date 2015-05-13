@@ -36,6 +36,19 @@ class ImpalaDataStore extends JdbcDataStore with Logging {
     executeSqlQueries(rowSequenceForImpala)    
   }
 
+ override def concat(list: Seq[String], delimiter: String): String = {
+    list.length match {
+      // return a SQL empty string if list is empty
+      case 0 => "''"
+      case _ =>
+      delimiter match {
+        case null => s"concat(${list.mkString(", ")})"
+        case "" => s"concat(${list.mkString(", ")})"
+        case _ => s"concat(${list.mkString(s",'${delimiter}',")})"
+      }
+    }
+  }
+
   // Executes a "COPY FROM STDIN" statement using raw data */
   def copyBatchData(sqlStatement: String, dataReader: Reader)
     (implicit connection: Connection) : Unit = {
@@ -140,8 +153,10 @@ class ImpalaDataStore extends JdbcDataStore with Logging {
    *          if psql, return "column"
    *          if mysql, return `column`
    */
-  override def quoteColumn(column: String): String =
-    '"' + column + '"'
+  //override def quoteColumn(column: String): String =
+  //  '"' + column + '"'
+  override def quoteColumn(column: String): String = '`' + column + '`'
+
     
   /**
    * Generate random number in [0,1] in psql
@@ -152,13 +167,13 @@ class ImpalaDataStore extends JdbcDataStore with Logging {
    * Concatinate strings using "||" in psql/GP, adding user-specified
    * delimiter in between
    */
-  override def concat(list: Seq[String], delimiter: String): String = {
-    delimiter match {
-      case null => list.mkString(s" || ")
-      case "" => list.mkString(s" || ")
-      case _ => list.mkString(s" || '${delimiter}' || ")
-    }
-  }
+  //override def concat(list: Seq[String], delimiter: String): String = {
+  //  delimiter match {
+  //    case null => list.mkString(s" || ")
+  //    case "" => list.mkString(s" || ")
+  //    case _ => list.mkString(s" || '${delimiter}' || ")
+  //  }
+  //}
   
   override def analyzeTable(table: String) = s"" //s"ANALYZE ${table}"
 
