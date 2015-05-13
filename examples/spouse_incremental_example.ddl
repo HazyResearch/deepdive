@@ -1,6 +1,7 @@
 articles(
   article_id text,
-  text       text).
+  text       text,
+  dd_count   int).
 
 sentences(
   document_id     text,
@@ -11,14 +12,16 @@ sentences(
   dependencies    text[],
   ner_tags        text[],
   sentence_offset int,
-  sentence_id     text).
+  sentence_id     text,
+  dd_count        int).
 
 people_mentions(
   sentence_id    text,
   start_position int,
   length         int,
   text           text,
-  mention_id     text).
+  mention_id     text,
+  dd_count       int).
 
 has_spouse_candidates(
   person1_id  text,
@@ -26,11 +29,13 @@ has_spouse_candidates(
   sentence_id text,
   description text,
   relation_id text,
-  is_true boolean).
+  is_true     boolean,
+  dd_count    int).
 
 has_spouse_features(
   relation_id text,
-  feature     text).
+  feature     text,
+  dd_count    int).
 
 has_spouse?(relation_id text).
 
@@ -40,7 +45,8 @@ people_mentions :-
 ext_people_input(
   sentence_id text,
   words       text[],
-  ner_tags    text[]).
+  ner_tags    text[],
+  dd_count    int).
 
 ext_people_input(s, words, ner_tags) :-
   sentences(a, b, words, c, d, e, ner_tags, f, s).
@@ -57,7 +63,8 @@ ext_has_spouse_input(
   p1_id       text,
   p1_text     text,
   p2_id       text,
-  p2_text     text).
+  p2_text     text,
+  dd_count    int).
 
 ext_has_spouse_input(s, p1_id, p1_text, p2_id, p2_text) :-
   people_mentions(s, a, b, p1_text, p1_id),
@@ -76,7 +83,8 @@ ext_has_spouse_features_input(
   p1_start_position int,
   p1_length         int,
   p2_start_position int,
-  p2_length         int).
+  p2_length         int,
+  dd_count          int).
 
 ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :-
   sentences(a, b, words, c, d, e, f, g, s),

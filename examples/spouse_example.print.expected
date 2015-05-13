@@ -21,7 +21,8 @@ has_spouse_candidates(person1_id text,
                       person2_id text,
                       sentence_id text,
                       description text,
-                      relation_id text).
+                      relation_id text,
+                      is_true boolean).
 
 has_spouse_features(relation_id text,
                     feature text).
