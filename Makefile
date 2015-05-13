@@ -1,138 +1,113 @@
+# Makefile for sampler
 
+.DEFAULT_GOAL := $(PROGRAM)
 
+# common compiler flags
+CXXFLAGS = -std=c++0x -Wall -fno-strict-aliasing
+LDFLAGS =
+LDLIBS =
+CXXFLAGS += -I./lib/tclap/include/ -I./src
+
+# platform dependent compiler flags
 UNAME := $(shell uname)
 
 ifeq ($(UNAME), Linux)
 ifndef CXX
 CXX = g++
 endif
-OPT_FLAG = -Ofast
-GCC_INCLUDE = -I./lib/tclap/include/ -I./src -I./lib/numactl-2.0.9/
-GCC_LIB = -L./lib/numactl-2.0.9/ 
-CPP_FLAG = -std=c++0x -Wl,-Bstatic -Wl,-Bdynamic -lnuma -lrt -Wall -fno-strict-aliasing
+# optimization flags
+CXXFLAGS += -Ofast
+# using NUMA for Linux
+CXXFLAGS += -I./lib/numactl-2.0.9/
+LDFLAGS += -L./lib/numactl-2.0.9/
+LDFLAGS += -Wl,-Bstatic -Wl,-Bdynamic
+LDLIBS += -lnuma -lrt
 endif
 
 ifeq ($(UNAME), Darwin)
 ifndef CXX
 CXX = clang++
 endif
-OPT_FLAG =  -O3 -stdlib=libc++ -mmacosx-version-min=10.7
-GCC_INCLUDE = -I./lib/tclap/include/ -I./src
-GCC_LIB = 
-CPP_FLAG = -flto -std=c++0x -Wall -fno-strict-aliasing
+# optimization
+CXXFLAGS += -O3 -stdlib=libc++ -mmacosx-version-min=10.7
+CXXFLAGS += -flto
 endif
 
-COMPILE_CMD = $(CXX) $(OPT_FLAG) $(GCC_INCLUDE) $(GCC_LIB) $(CPP_FLAG)
+# source files
+SOURCES += src/gibbs.cpp
+SOURCES += src/io/cmd_parser.cpp
+SOURCES += src/io/binary_parser.cpp
+SOURCES += src/main.cpp
+SOURCES += src/dstruct/factor_graph/weight.cpp
+SOURCES += src/dstruct/factor_graph/variable.cpp
+SOURCES += src/dstruct/factor_graph/factor.cpp
+SOURCES += src/dstruct/factor_graph/factor_graph.cpp
+SOURCES += src/dstruct/factor_graph/inference_result.cpp
+SOURCES += src/app/gibbs/gibbs_sampling.cpp
+SOURCES += src/app/gibbs/single_thread_sampler.cpp
+SOURCES += src/app/gibbs/single_node_sampler.cpp
+SOURCES += src/timer.cpp
+OBJECTS = $(SOURCES:.cpp=.o)
+PROGRAM = dw
 
-dw: factor_graph.o inference_result.o gibbs_sampling.o main.o binary_parser.o single_thread_sampler.o \
-	timer.o gibbs.o single_node_sampler.o factor.o variable.o weight.o cmd_parser.o
-	$(COMPILE_CMD) -o dw gibbs_sampling.o main.o binary_parser.o \
-					    timer.o gibbs.o single_node_sampler.o \
-						factor_graph.o inference_result.o single_thread_sampler.o factor.o \
-						variable.o weight.o cmd_parser.o \
-	$(CPP_FLAG) 
+# test files
+TEST_SOURCES += test/test.cpp
+TEST_SOURCES += test/FactorTest.cpp
+TEST_SOURCES += test/LogisticRegressionTest.cpp
+TEST_SOURCES += test/binary_parser_test.cpp
+TEST_SOURCES += test/loading_test.cpp
+TEST_SOURCES += test/factor_graph_test.cpp
+TEST_SOURCES += test/sampler_test.cpp
+TEST_SOURCES += test/multinomial.cpp
+TEST_OBJECTS = $(TEST_SOURCES:.cpp=.o)
+TEST_PROGRAM = $(PROGRAM)_test
+# test files need gtest
+$(TEST_OBJECTS): CXXFLAGS += -I./lib/gtest-1.7.0/include/
+$(TEST_PROGRAM): LDFLAGS += -L./lib/gtest/
+$(TEST_PROGRAM): LDLIBS += -lgtest
 
-gibbs.o: src/gibbs.cpp
-	$(COMPILE_CMD) -c src/gibbs.cpp
+# how to link our sampler
+$(PROGRAM): $(OBJECTS)
+	$(CXX) -o $@ $(LDFLAGS) $^ $(LDLIBS)
 
-cmd_parser.o: src/io/cmd_parser.cpp
-	$(COMPILE_CMD) -c src/io/cmd_parser.cpp
+# how to link our sampler unit tests
+$(TEST_PROGRAM): $(TEST_OBJECTS) $(filter-out src/main.o,$(OBJECTS))
+	$(CXX) -o $@ $(LDFLAGS) $^ $(LDLIBS)
 
-binary_parser.o: src/io/binary_parser.cpp
-	$(COMPILE_CMD) -c src/io/binary_parser.cpp
+# how to compile each source
+%.o: %.cpp
+	$(CXX) -o $@ $(CPPFLAGS) $(CXXFLAGS) -c $<
 
-main.o: src/main.cpp
-	$(COMPILE_CMD) -c src/main.cpp
-
-weight.o: src/dstruct/factor_graph/weight.cpp
-	$(COMPILE_CMD) -c src/dstruct/factor_graph/weight.cpp
-
-variable.o: src/dstruct/factor_graph/variable.cpp
-	$(COMPILE_CMD) -c src/dstruct/factor_graph/variable.cpp
-
-factor.o: src/dstruct/factor_graph/factor.cpp
-	$(COMPILE_CMD) -c src/dstruct/factor_graph/factor.cpp
-
-factor_graph.o: src/dstruct/factor_graph/factor_graph.cpp
-	$(COMPILE_CMD) -c src/dstruct/factor_graph/factor_graph.cpp
-
-inference_result.o: src/dstruct/factor_graph/inference_result.cpp
-	$(COMPILE_CMD) -c src/dstruct/factor_graph/inference_result.cpp
-
-gibbs_sampling.o: src/app/gibbs/gibbs_sampling.cpp 
-	$(COMPILE_CMD)  -c src/app/gibbs/gibbs_sampling.cpp
-
-single_thread_sampler.o: src/app/gibbs/single_thread_sampler.cpp
-	$(COMPILE_CMD) -c src/app/gibbs/single_thread_sampler.cpp
-
-single_node_sampler.o: src/app/gibbs/single_node_sampler.cpp
-	$(COMPILE_CMD) -c src/app/gibbs/single_node_sampler.cpp
-
-timer.o : src/timer.cpp 
-	$(COMPILE_CMD) -o timer.o -c src/timer.cpp 
-
-dw_test: factor_graph.o inference_result.o gibbs_sampling.o  binary_parser.o single_thread_sampler.o \
-	timer.o gibbs.o single_node_sampler.o factor.o variable.o weight.o cmd_parser.o
-	
-	$(COMPILE_CMD) -I./lib/gtest-1.7.0/include/ -L./lib/gtest/ \
-	-o dw_test test/test.cpp test/FactorTest.cpp test/LogisticRegressionTest.cpp \
-	test/binary_parser_test.cpp test/loading_test.cpp test/factor_graph_test.cpp \
-	test/sampler_test.cpp test/multinomial.cpp test/partial_observation_test.cpp \
-	gibbs_sampling.o binary_parser.o \
-    timer.o gibbs.o single_node_sampler.o \
-	factor_graph.o inference_result.o single_thread_sampler.o factor.o \
-	variable.o weight.o cmd_parser.o \
-	$(CPP_FLAG) -lgtest
-
+# how to get dependencies prepared
 dep:
-ifeq ($(UNAME), Darwin)
-
+	# gtest for tests
 	cd lib;\
 	unzip gtest-1.7.0.zip;\
 	mkdir gtest;\
 	cd gtest;\
 	cmake ../gtest-1.7.0;\
 	make
-
+	# tclap for command-line args parsing
 	cd lib;\
 	tar xf tclap-1.2.1.tar.gz;\
 	cd tclap-1.2.1;\
 	./configure --prefix=`pwd`/../tclap;\
 	make;\
 	make install
-endif
+	# bats for end-to-end tests
+	git clone https://github.com/sstephenson/bats test/bats
+.PHONY: dep
 
-ifeq ($(UNAME), Linux)
-
-	cd lib;\
-	unzip gtest-1.7.0.zip;\
-	mkdir gtest;\
-	cd gtest;\
-	cmake ../gtest-1.7.0;\
-	make
-
-	cd lib;\
-	tar xf tclap-1.2.1.tar.gz;\
-	cd tclap-1.2.1;\
-	./configure --prefix=`pwd`/../tclap;\
-	make;\
-	make install
-endif
-
+# how to clean
 clean:
-	rm -rf *.o
-	rm -rf dw dw_test
+	rm -f $(PROGRAM) $(OBJECTS) $(TEST_PROGRAM) $(TEST_OBJECTS)
+.PHONY: clean
 
-gibbs:
-	./dw gibbs -m data3/graph.meta.csv      \
-		-e data3/graph.edges         \
-		-w data3/graph.weights   \
-		-v data3/graph.variables     \
-		-f data3/graph.factors    \
-		-o data3/                    \
-		-i 1000 -l 1000 -s 10 --alpha 0.01 --diminish 0.95
-
-test: clean dw_test
-	./dw_test
-
-.PHONY: test clean dw
+# how to test
+test: unit-test end2end-test
+unit-test: $(TEST_PROGRAM)
+	./$(TEST_PROGRAM)
+PATH := $(shell pwd)/test/bats/bin:$(PATH)
+end2end-test: $(PROGRAM)
+	bats test/*.bats
+.PHONY: test unit-test end2end-test
