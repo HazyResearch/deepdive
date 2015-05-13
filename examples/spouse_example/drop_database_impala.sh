@@ -16,7 +16,8 @@ fi
 TABLES=$(impala-shell -i localhost -d $DBNAME -B --quiet -q "SHOW TABLES")
 for line in $TABLES 
 do
-  impala-shell -i localhost -d $DBNAME --quiet -q "DROP TABLE $line"
+  impala-shell -i localhost -d $DBNAME --quiet -q "DROP TABLE IF EXISTS $line"
+  impala-shell -i localhost -d $DBNAME --quiet -q "DROP VIEW IF EXISTS $line"
 done
 
 FUNCTIONS=$(impala-shell -i localhost -d $DBNAME -B --quiet -q "SHOW FUNCTIONS")
