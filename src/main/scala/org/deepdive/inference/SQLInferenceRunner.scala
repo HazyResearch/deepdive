@@ -33,6 +33,13 @@ trait SQLInferenceRunner extends AbstractInferenceRunner {
 
   ////////////////////////////////// groundFactorGraph
 
+//  def assignRandom(schema: Map[String, _ <: VariableDataType]) {
+//    schema.foreach { case(variable, dataType) =>
+//      val Array(relation, column) = variable.split('.')
+//        dataStore.assignRandom(relation)
+//    }
+//  }
+
   // assign variable id - sequential and unique
   def assignVariablesIds(schema: Map[String, _ <: VariableDataType]) {
     // fast sequential id assign function

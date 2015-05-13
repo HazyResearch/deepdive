@@ -398,6 +398,8 @@ trait JdbcDataStore extends Logging {
 
   def sqlDataTypeDouble = "DOUBLE"
 
+  //def assignRandom(table: String)
+
   // A few features we didn't factor out:
 
   // We used to have CREATE OR REPLACE VIEW instead of DROP VIEW & CREATE VIEW.
