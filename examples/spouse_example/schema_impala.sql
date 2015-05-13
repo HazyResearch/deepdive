@@ -29,7 +29,9 @@ CREATE TABLE people_mentions(
   length int,
   text string,
   mention_id string  -- unique identifier for people_mentions
-  );
+  ) ROW FORMAT DELIMITED
+  FIELDS TERMINATED BY '\t'
+  STORED AS TEXTFILE;
 
 
 DROP TABLE IF EXISTS has_spouse;
@@ -41,9 +43,13 @@ CREATE TABLE has_spouse(
   is_true boolean,
   relation_id string, -- unique identifier for has_spouse
   id bigint   -- reserved for DeepDive
-  );
+  ) ROW FORMAT DELIMITED
+  FIELDS TERMINATED BY '\t'
+  STORED AS TEXTFILE;
 
 DROP TABLE IF EXISTS has_spouse_features;
 CREATE TABLE has_spouse_features(
   relation_id string,
-  feature string);
+  feature string) ROW FORMAT DELIMITED
+  FIELDS TERMINATED BY '\t'
+  STORED AS TEXTFILE;
