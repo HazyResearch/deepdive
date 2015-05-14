@@ -9,6 +9,8 @@ import play.api.libs.json._
 import org.deepdive.inference.InferenceNamespace
 import org.deepdive.settings.DbSettings
 
+import scala.collection.mutable.ArrayBuffer
+
 trait JdbcDataStoreComponent {
   def dataStore : JdbcDataStore
 }
@@ -81,6 +83,27 @@ trait JdbcDataStore extends Logging {
       case exception : Throwable =>
       log.error(exception.toString)
       throw exception
+    } finally {
+      conn.close()
+    }
+  }
+
+
+  def columnNameTypes(sql:String):Seq[(String,String)] = {
+    val conn = borrowConnection()
+    val stmt = conn.createStatement()
+    try {
+      val rs = stmt.getResultSet
+      val rsmd = rs.getMetaData
+      val arr = new Array[(String,String)](rsmd.getColumnCount)
+      for (i <- 0 until arr.size)
+        arr(i) = (rsmd.getColumnName(i), rsmd.getColumnTypeName(i))
+      stmt.close
+      arr
+    } catch {
+      case exception : Throwable =>
+        log.error(exception.toString)
+        throw exception
     } finally {
       conn.close()
     }
