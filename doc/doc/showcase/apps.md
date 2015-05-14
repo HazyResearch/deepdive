@@ -73,8 +73,7 @@ Understanding the interactions of small chemicals or drugs in the body is key fo
 However, the majority of this data resides in the biomedical literature and cannot be easily accessed.
 The Pharmacogenomics Knowledgebase (PharmGKB, [www.pharmgkb.org](http://www.pharmgkb.org)) is a high quality database that aims to annotate the relationships between drugs, genes, diseases, genetic variation, and pathways in the literature.
 With the exponential growth of the literature, manual curation requires prioritization of specific drugs or genes in order to stay up to date with current research.
-In collaboration with Prof.
-Russ Altman at Stanford, we are developing DeepDive applications in the field of pharmacogenomics.
+In collaboration with [Emily Mallory](http://bmi.stanford.edu/people-directory/current-students-postdocs.html#thirdyear) (PhD candidate in the Biomedical Informatics training program) and Prof. Russ Altman at Stanford, we are developing DeepDive applications in the field of pharmacogenomics.
 Specifically, we use DeepDive to extract relations between genes, diseases, and drugs in order to predict novel pharmacological relationships.
 <p><figure style="width:80%; margin:0 auto;">
 <a href="https://www.pharmgkb.org/pathway/PA145011114"><img
