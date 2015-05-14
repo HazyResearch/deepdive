@@ -20,10 +20,7 @@ trait ImpalaInferenceRunnerComponent extends SQLInferenceRunnerComponent {
     // Default batch size, if not overwritten by user
     val BatchSize = Some(250000)
 
-    override def init() : Unit = {
-      // Note: Impala does not (yet) support DROP ... CASCADE
-
-    }
+    override def init() : Unit = { }
 
     /**
      * weightsFile: location to the binary format. Assume "weightsFile.text" file exists.
@@ -39,30 +36,39 @@ trait ImpalaInferenceRunnerComponent extends SQLInferenceRunnerComponent {
   override def createFactorQueryTableWithId(factorDesc:FactorDesc, startId:Long, sequenceName:String): Long = {
     val querytable = InferenceNamespace.getQueryTableName(factorDesc.name)
 
-    // create table to hold data of factor
-    val idcols = factorDesc.func.variables.zipWithIndex.map { case (v,i) => s"id$i" }
-    val valcols = factorDesc.func.variables.zipWithIndex.map { case (v,i) => s"v$i" }
-    val typ = factorDesc.func.variableDataType match {
-      case "Boolean" => "boolean"
-      case "Discrete" => "int"
+    // determine schema of factor query
+    val columnNameTypes = dataStore.columnNameTypes(s"""SELECT * FROM (${factorDesc.inputQuery}) t LIMIT 0""")
+
+    // now, we need to rename the columns as id0, v0, id1, v1 etc. because impala
+    // does not support periods in column names of tables
+    //val newColumnNames = new Array[String](columnNames.size)
+    val superIdCols = super.getIdCols(factorDesc)
+    val superValCols = super.getValCols(factorDesc)
+    val newColumnNameTypes = for (i <- 0 until columnNameTypes.size) yield {
+      var n = columnNameTypes(i)
+      for (j <- 0 until superIdCols.size)
+        if (columnNameTypes(i).equals(superIdCols(i)))
+          n = ("id" + j, n._2)
+      for (j <- 0 until superValCols.size)
+        if (columnNameTypes(i).equals(superValCols(i)))
+          n = ("v" + j, n._2)
+      n
     }
-    val coldefstr = factorDesc.func.variables.zipWithIndex.map { case (v,i) => s"id$i bigint, v$i $typ" }.mkString(", ")
-
-    //val withIdQuery = s"CREATE TABLE ${querytable} AS SELECT t.*, ${factorid} + row_number() over(order by count(*)) FROM (${factorDesc.inputQuery}) t"
-    //execute(withIdQuery)
-
-    //val withIdQuery = s"""
-    //    DROP TABLE IF EXISTS ${querytable};
-    //    CREATE TABLE ${querytable} (${coldefstr}, id bigint);
-    //      INSERT INTO ${querytable} SELECT t.*, ${startId} -2 + row_sequence() as id FROM (${factorDesc.inputQuery}) t;
-    //  """
+    val coldefstr = newColumnNameTypes.map { case (n,t) => s"$n $t" }.mkString(", ")
 
     val withIdQuery = s"""
-        DROP TABLE IF EXISTS ${querytable};
-        CREATE TABLE ${querytable} AS
-          SELECT t.*, cast(${startId} -2 + row_sequence() as bigint) as id FROM (${factorDesc.inputQuery}) t;
+      DROP TABLE IF EXISTS ${querytable};
+      CREATE TABLE ${querytable} (${coldefstr}, id bigint);
+        INSERT INTO ${querytable}
+          SELECT t.*, cast(${startId} -2 + row_sequence() as bigint) as id
+          FROM (${factorDesc.inputQuery}) t;
       """
 
+//    val withIdQuery = s"""
+//        DROP TABLE IF EXISTS ${querytable};
+//        CREATE TABLE ${querytable} AS
+//          SELECT t.*, cast(${startId} -2 + row_sequence() as bigint) as id FROM (${factorDesc.inputQuery}) t;
+//      """
 
     dataStore.executeSqlQueries(withIdQuery)
 
@@ -70,10 +76,16 @@ trait ImpalaInferenceRunnerComponent extends SQLInferenceRunnerComponent {
     dataStore.executeSqlQueryWithCallback(s"""SELECT COUNT(*) FROM ${querytable};""") { rs =>
       count = rs.getLong(1)
     }
-
     count
   }
-//
+
+  override def getIdCols(factorDesc:FactorDesc) =
+      factorDesc.func.variables.zipWithIndex.map { case (v,i) => s"id$i" }
+
+  override def getValCols(factorDesc:FactorDesc) =
+    factorDesc.func.variables.zipWithIndex.map { case (v,i) => s"v$i" }
+
+      //
 //  override def groundFactorsAndWeights(factorDescs: Seq[FactorDesc],
 //    calibrationSettings: CalibrationSettings, du: DataLoader,
 //    dbSettings: DbSettings, groundingPath: String,

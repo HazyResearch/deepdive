@@ -202,9 +202,10 @@ trait SQLInferenceRunner extends AbstractInferenceRunner {
     // only if it's boolean LR feature (the most common one)
     if (factorDesc.func.variables.length == 1 && factorDesc.func.variableDataType == "Boolean") {
       // This should be a single variable, e.g. "is_true"
+      val variableName = getValCols(factorDesc)(0)
       //val variableName = factorDesc.func.variables.map(v => 
       //    s""" ${dataStore.quoteColumn(v.toString)} """).mkString(",")
-      val variableName = "v0"
+      //val variableName = "v0"
       val groupByClause = weightlist match {
         case "" => ""
         case _ => s"GROUP BY ${weightlist}"
@@ -266,12 +267,19 @@ trait SQLInferenceRunner extends AbstractInferenceRunner {
     }
   }
 
+  def getIdCols(factorDesc:FactorDesc) = factorDesc.func.variables.map(v =>
+     s""" ${dataStore.quoteColumn(s"${v.relation}.id")} """)
+
+  def getValCols(factorDesc:FactorDesc) = factorDesc.func.variables.map(v =>
+     s""" ${dataStore.quoteColumn(v.toString)} """)
+
   def createBooleanFactorWeightTableWithId(factorDesc:FactorDesc, cweightid:Long, weightidSequence:String,
                                            du:DataLoader, groundingPath:String, dbSettings: DbSettings):Long = {
     val factorQueryTable = InferenceNamespace.getQueryTableName(factorDesc.name)
     val factorWeightTable = InferenceNamespace.getWeightTableName(factorDesc.name)
 
-    val idcols = factorDesc.func.variables.zipWithIndex.map { case (v,i) => s"id$i" }
+    val idcols = getIdCols(factorDesc)
+    //factorDesc.func.variables.zipWithIndex.map { case (v,i) => s"id$i" }
     //val valcols = factorDesc.func.variables.zipWithIndex.map { case (v,i) => s"v$i" }
     //val typ = factorDesc.func.variableDataType match {
     //    case "Boolean" => "boolean"
@@ -396,13 +404,14 @@ trait SQLInferenceRunner extends AbstractInferenceRunner {
       dataStore.executeSqlQueries(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, cardinality, description)
             SELECT id, isfixed, initvalue, cardinality, ${weightDesc} FROM ${factorWeightTable};""")
 
+      val idcols = getIdCols(factorDesc)
 
-      val idcols = factorDesc.func.variables.map(v =>
-        s""" ${dataStore.quoteColumn(s"${v.relation}.id")} """).mkString(", ")
+      //val idcols = factorDesc.func.variables.map(v =>
+      //  s""" ${dataStore.quoteColumn(s"${v.relation}.id")} """).mkString(", ")
       val outfile = InferenceNamespace.getFactorFileName(factorDesc.name)
       val groundingDir = getFileNameFromPath(groundingPath)
       du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
-        s"SELECT id AS factor_id, ${cweightid} AS weight_id, ${idcols} FROM ${factorQueryTable}",
+        s"SELECT id AS factor_id, ${cweightid} AS weight_id, ${idcols.mkString(", ")} FROM ${factorQueryTable}",
         groundingDir)
 
       // increment weight id
@@ -459,12 +468,15 @@ trait SQLInferenceRunner extends AbstractInferenceRunner {
         s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)} """).mkString("AND")
       dataStore.executeSqlQueries(dataStore.analyzeTable(factorQueryTable))
       dataStore.executeSqlQueries(dataStore.analyzeTable(factorWeightTable))
-      val idcols = factorDesc.func.variables.map(v =>
-        s""" ${dataStore.quoteColumn(s"${v.relation}.id")} """).mkString(", ")
+
+      val idcols = getIdCols(factorDesc)
+
+      //val idcols = factorDesc.func.variables.map(v =>
+      //  s""" ${dataStore.quoteColumn(s"${v.relation}.id")} """).mkString(", ")
       val outfile = InferenceNamespace.getFactorFileName(factorDesc.name)
       val groundingDir = getFileNameFromPath(groundingPath)
       du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
-        s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
+        s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols.mkString(", ")}
              FROM ${factorQueryTable} t0, ${factorWeightTable} t1
              WHERE ${weightjoinlist} AND t1.cardinality = '${cardinalityKey}';""",
         groundingDir)
