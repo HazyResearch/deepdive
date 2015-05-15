@@ -93,11 +93,12 @@ trait JdbcDataStore extends Logging {
     val conn = borrowConnection()
     val stmt = conn.createStatement()
     try {
-      val rs = stmt.getResultSet
-      val rsmd = rs.getMetaData
-      val arr = new Array[(String,String)](rsmd.getColumnCount)
-      for (i <- 0 until arr.size)
-        arr(i) = (rsmd.getColumnName(i), rsmd.getColumnTypeName(i))
+      val rs = stmt.executeQuery(sql)
+      val rsmd = rs.getMetaData()
+      val arr = new Array[(String,String)](rsmd.getColumnCount())
+      for (i <- 1 to arr.size) {
+        arr(i-1) = (rsmd.getColumnName(i), rsmd.getColumnTypeName(i))
+      }
       stmt.close
       arr
     } catch {
