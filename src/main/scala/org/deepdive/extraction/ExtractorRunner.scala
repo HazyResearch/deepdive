@@ -384,10 +384,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
       case _ =>
     }
 
-    val outputRel = (dbSettings.incrementalTables contains task.extractor.outputRelation) match {
-      case true => InferenceNamespace.getIncrementalTableName(task.extractor.outputRelation)
-      case _ => task.extractor.outputRelation
-    }
+    val outputRel = task.extractor.outputRelation
 
     // TODO do not use password for now
 
@@ -427,11 +424,6 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
     executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
 
     // Helpers.executeCmd(delCmd) // This won't work because of escaping issues?
-
-    var newInputQuery : String = inputQuery.toString
-    for (table <- dbSettings.incrementalTables) {
-      newInputQuery = newInputQuery.replaceAll(table, InferenceNamespace.getIncrementalTableName(table))
-    }
 
     try {
       dl.unload(fname, psqlFilePath, dbSettings, s"${inputQuery}", "")
@@ -546,10 +538,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
     writer.println(inputQuery)
     writer.close()
 
-    val outputRel = (dbSettings.incrementalTables contains task.extractor.outputRelation) match {
-      case true => InferenceNamespace.getIncrementalTableName(task.extractor.outputRelation)
-      case _ => task.extractor.outputRelation
-    }
+    val outputRel = task.extractor.outputRelation
 
     val SQLTranslatorFile = s"${deepDiveDir}/util/ddext_input_sql_translator.py"
     val sqlInsertFile = File.createTempFile(s"${funcName}_exec", ".sql")

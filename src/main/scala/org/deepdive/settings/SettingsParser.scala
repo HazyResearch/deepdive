@@ -36,7 +36,7 @@ object SettingsParser extends Logging {
   private def loadDbSettings(config: Config) : DbSettings = {
     val dbConfig = Try(config.getConfig("db.default")).getOrElse {
       log.warning("No schema defined.")
-      return DbSettings(Helpers.PsqlDriver, null, null, null, null, null, null, null, null, null, false, Set[String]())
+      return DbSettings(Helpers.PsqlDriver, null, null, null, null, null, null, null, null, null, false, false)
     }
     val driver = Try(dbConfig.getString("driver")).getOrElse(null)
     val url = Try(dbConfig.getString("url")).getOrElse(null)
@@ -55,8 +55,21 @@ object SettingsParser extends Logging {
     if (gphost != "") {
       log.info(s"GPFDIST settings: host ${gphost} port ${gpport} path ${gppath}")
     }
-    var incrementalTables = Try(dbConfig.getStringList("incrementalTables").toSet).getOrElse(Set[String]())
-    return DbSettings(driver, url, user, password, dbname, host, port, gphost, gppath, gpport, gpload, incrementalTables)
+    var isIncremental = Try(dbConfig.getBoolean("isIncremental")).getOrElse(false)
+    val schemaConfig = Try(config.getConfig("schema")).getOrElse {
+      log.warning("No schema defined.")
+      null
+    }
+    val keyConfig = Try(schemaConfig.getConfig("keys")).getOrElse(null)
+    val keyMap = keyConfig match {
+      case null => null
+      case _ => {
+        val keyRelations = keyConfig.root.keySet.toList
+        val keyRelationsWithConfig = keyRelations.zip(keyRelations.map(keyConfig.getStringList))
+        keyRelationsWithConfig.groupBy(_._1).map { case (k,v) => (k,v.map(_._2).flatten.distinct)}
+      }
+    }
+    return DbSettings(driver, url, user, password, dbname, host, port, gphost, gppath, gpport, gpload, isIncremental, keyMap)
   }
 
 

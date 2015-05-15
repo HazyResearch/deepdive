@@ -64,10 +64,6 @@ object DeepDive extends Logging {
     implicit val timeout = Timeout(1337 hours)
     implicit val ec = system.dispatcher
 
-    for (table <- dbSettings.incrementalTables) {
-      JdbcDataStoreObject.dropAndCreateTableAs(InferenceNamespace.getIncrementalTableName(table), s"SELECT * FROM " + table + " LIMIT 0")
-    }
-
     // Start actors
     val profiler = system.actorOf(Profiler.props, "profiler")
     val taskManager = system.actorOf(TaskManager.props, "taskManager")

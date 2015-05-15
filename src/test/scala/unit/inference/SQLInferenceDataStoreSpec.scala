@@ -88,9 +88,9 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val schema = Map[String, VariableDataType]("t1.is_correct" ->
           BooleanType, "t2.is_correct" -> BooleanType, "t3.is_correct" ->
           BooleanType)
-
+ 
         // Assign variable id - sequential and unique
-        inferenceRunner.assignVariablesIds(schema)
+        inferenceRunner.assignVariablesIds(schema, dbSettings)
 
         // Check the results
         val minIdt1 = SQL(s"""SELECT min(id) FROM t1""" ).map(rs =>

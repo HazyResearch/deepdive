@@ -27,6 +27,10 @@ object TestHelper {
     case _ => false
   }
   
+  def getIsIncrementalEnv() = System.getenv("IsIncremental") match {
+    case "true" | "True" | "TRUE" => true
+    case _ => false
+  }
 
   def getDbSettings() = 
       DbSettings(getDriverFromEnv,      // driver 
@@ -40,7 +44,7 @@ object TestHelper {
           System.getenv("GPPATH"), 
           System.getenv("GPPORT"),
           getGPLOADEnv(),
-          Set[String]())
+          getIsIncrementalEnv())
     
   def getConfig() = s"""
       deepdive.db.default {

@@ -39,15 +39,17 @@ void load_var(std::string filename){
   short type;
   long edge_count = -1;
   long cardinality;
+  long dd_count;
 
   edge_count = bswap_64(edge_count);
 
-  while(fin >> vid >> is_evidence >> initial_value >> type >> cardinality){
+  while(fin >> vid >> is_evidence >> initial_value >> type >> cardinality >> dd_count){
     // endianess
     vid = bswap_64(vid);
     uint64_t initval = bswap_64(*(uint64_t *)&initial_value);
     type = bswap_16(type);
     cardinality = bswap_64(cardinality);
+    dd_count = bswap_64(dd_count);
 
 
     fout.write((char*)&vid, 8);
@@ -56,6 +58,7 @@ void load_var(std::string filename){
     fout.write((char*)&type, 2);
     fout.write((char *)&edge_count, 8);
     fout.write((char*)&cardinality, 8);
+    fout.write((char*)&dd_count, 8);
   }
 
   fin.close();
@@ -98,6 +101,7 @@ void load_factor(std::string filename, short funcid, long nvar, char** positives
   long nedge = 0;
   long nvars_big = bswap_64(nvar);
   long predicate = funcid == 5 ? -1 : 1;
+  long dd_count;
   vector<int> positives_vec;
 
   funcid = bswap_16(funcid);
@@ -125,10 +129,15 @@ void load_factor(std::string filename, short funcid, long nvar, char** positives
     weightid = atol(field.c_str());
     weightid = bswap_64(weightid);
 
+    getline(ss, field, field_delim);
+    dd_count = atol(field.c_str());
+    dd_count = bswap_64(dd_count);
+    
     fout.write((char *)&factorid, 8);
     fout.write((char *)&weightid, 8);
     fout.write((char *)&funcid, 2);
     fout.write((char *)&nvars_big, 8);
+    fout.write((char *)&dd_count, 8);
 
     uint64_t position = 0;
     uint64_t position_big;
@@ -150,6 +159,7 @@ void load_factor(std::string filename, short funcid, long nvar, char** positives
           fedgeout.write((char *)&position_big, 8);
           fedgeout.write((char *)&positives_vec[i], 1);
           fedgeout.write((char *)&predicate, 8);
+          fedgeout.write((char *)&dd_count, 8);
 
           nedge++;
           position++;
@@ -164,6 +174,7 @@ void load_factor(std::string filename, short funcid, long nvar, char** positives
         fedgeout.write((char *)&position_big, 8);
         fedgeout.write((char *)&positives_vec[i], 1);
         fedgeout.write((char *)&predicate, 8);
+        fedgeout.write((char *)&dd_count, 8);
 
         nedge++;
         position++;

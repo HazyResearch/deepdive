@@ -30,6 +30,8 @@ object InferenceNamespace {
   def getVariableTypeTableName(relation: String) = s"dd_${relation}_vtype"
   def getCardinalityInFactorTableName(prefix: String, idx: Int) = s"dd_${prefix}_cardinality_${idx}"
   def getIncrementalTableName(table: String) = s"dd_delta_${table}"
+  def getLastTableName(table: String) = s"dd_last_${table}"
+  def getMetaTableName() = s"dd_meta_data"
 
   // files
   def getVariableFileName(relation: String) = s"dd_variables_${relation}"

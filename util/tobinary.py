@@ -83,7 +83,25 @@ os.system("cat {0}/dd_variables/* > {1}/graph.variables".format(INPUTFOLDER, OUT
 os.system("cat {0}/dd_factors/dd_factors*factors.bin > {1}/graph.factors".format(INPUTFOLDER, OUTPUTFOLDER))
 os.system("cat {0}/dd_factors/dd_factors*edges.bin > {1}/graph.edges".format(INPUTFOLDER, OUTPUTFOLDER))
 
+LAST_FG = os.environ['LAST_FG']
+if len(LAST_FG) > 0:
+  os.system("cat {0}/graph.variables >> {1}/graph.variables".format(LAST_FG, OUTPUTFOLDER))
+  os.system("cat {0}/graph.weights >> {1}/graph.weights".format(LAST_FG, OUTPUTFOLDER))
+  os.system("cat {0}/graph.factors >> {1}/graph.factors".format(LAST_FG, OUTPUTFOLDER))
+  os.system("cat {0}/graph.edges >> {1}/graph.edges".format(LAST_FG, OUTPUTFOLDER))
+  fin = open("{0}/graph.meta".format(LAST_FG), 'r')
+  meta1 = fin.readline().strip().split(',')
+  fin.close()
+  fin = open("{0}/graph.meta".format(OUTPUTFOLDER), 'r')
+  meta2 = fin.readline().strip().split(',')
+  fin.close()
+  meta2[0] = str(int(meta1[0]) + int(meta2[0]))
+  meta2[1] = str(int(meta1[1]) + int(meta2[1]))
+  meta2[2] = str(int(meta1[2]) + int(meta2[2]))
+  meta2[3] = str(int(meta1[3]) + int(meta2[3]))
+  os.system("echo {0} > {1}/graph.meta".format(",".join(meta2), OUTPUTFOLDER))
+
 
 # clean up folder
-print "Cleaning up files"
+# print "Cleaning up files"
 os.system('rm -rf {0}/dd_*'.format(INPUTFOLDER))

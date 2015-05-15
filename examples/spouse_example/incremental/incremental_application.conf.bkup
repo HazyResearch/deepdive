@@ -1,0 +1,150 @@
+
+  deepdive.db.default {
+    driver: "org.postgresql.Driver"
+    url: "jdbc:postgresql://"${PGHOST}":"${PGPORT}"/"${DBNAME}
+    user: ${PGUSER}
+    password: ${PGPASSWORD}
+    dbname: ${DBNAME}
+    host: ${PGHOST}
+    port: ${PGPORT}
+  }
+  
+
+      deepdive.schema.variables {
+        dd_delta_has_spouse.is_true: Boolean
+      }
+    
+
+      deepdive.extraction.extractors.extraction_rule_15 {
+        sql: """ DROP VIEW IF EXISTS dd_delta_ext_people_input CASCADE;
+        CREATE VIEW dd_delta_ext_people_input AS 
+        SELECT R0.sentence_id AS "dd_delta_sentences.R0.sentence_id" , R0.words AS "dd_delta_sentences.R0.words" , R0.ner_tags AS "dd_delta_sentences.R0.ner_tags" , R0.dd_count AS "dd_count" 
+        FROM dd_delta_sentences R0
+        
+        """
+        style: "sql_extractor"
+          
+      }
+    
+
+      deepdive.extraction.extractors.extraction_rule_27 {
+        sql: """ DROP VIEW IF EXISTS dd_delta_ext_has_spouse_features_input CASCADE;
+        CREATE VIEW dd_delta_ext_has_spouse_features_input AS 
+        SELECT R0.words AS "dd_delta_sentences.R0.words" , R1.relation_id AS "has_spouse_candidates.R1.relation_id" , R2.start_position AS "people_mentions.R2.start_position" , R2.length AS "people_mentions.R2.length" , R3.start_position AS "people_mentions.R3.start_position" , R3.length AS "people_mentions.R3.length" , R0.dd_count * R1.dd_count * R2.dd_count * R3.dd_count AS "dd_count" 
+        FROM dd_delta_sentences R0, has_spouse_candidates R1, people_mentions R2, people_mentions R3
+        WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id  UNION 
+        SELECT R0.words AS "sentences.R0.words" , R1.relation_id AS "dd_delta_has_spouse_candidates.R1.relation_id" , R2.start_position AS "people_mentions.R2.start_position" , R2.length AS "people_mentions.R2.length" , R3.start_position AS "people_mentions.R3.start_position" , R3.length AS "people_mentions.R3.length" , R0.dd_count * R1.dd_count * R2.dd_count * R3.dd_count AS "dd_count" 
+        FROM sentences R0, dd_delta_has_spouse_candidates R1, people_mentions R2, people_mentions R3
+        WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id  UNION 
+        SELECT R0.words AS "dd_delta_sentences.R0.words" , R1.relation_id AS "dd_delta_has_spouse_candidates.R1.relation_id" , R2.start_position AS "people_mentions.R2.start_position" , R2.length AS "people_mentions.R2.length" , R3.start_position AS "people_mentions.R3.start_position" , R3.length AS "people_mentions.R3.length" , R0.dd_count * R1.dd_count * R2.dd_count * R3.dd_count AS "dd_count" 
+        FROM dd_delta_sentences R0, dd_delta_has_spouse_candidates R1, people_mentions R2, people_mentions R3
+        WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id  UNION 
+        SELECT R0.words AS "sentences.R0.words" , R1.relation_id AS "has_spouse_candidates.R1.relation_id" , R2.start_position AS "dd_delta_people_mentions.R2.start_position" , R2.length AS "dd_delta_people_mentions.R2.length" , R3.start_position AS "people_mentions.R3.start_position" , R3.length AS "people_mentions.R3.length" , R0.dd_count * R1.dd_count * R2.dd_count * R3.dd_count AS "dd_count" 
+        FROM sentences R0, has_spouse_candidates R1, dd_delta_people_mentions R2, people_mentions R3
+        WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id  UNION 
+        SELECT R0.words AS "dd_delta_sentences.R0.words" , R1.relation_id AS "has_spouse_candidates.R1.relation_id" , R2.start_position AS "dd_delta_people_mentions.R2.start_position" , R2.length AS "dd_delta_people_mentions.R2.length" , R3.start_position AS "people_mentions.R3.start_position" , R3.length AS "people_mentions.R3.length" , R0.dd_count * R1.dd_count * R2.dd_count * R3.dd_count AS "dd_count" 
+        FROM dd_delta_sentences R0, has_spouse_candidates R1, dd_delta_people_mentions R2, people_mentions R3
+        WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id  UNION 
+        SELECT R0.words AS "sentences.R0.words" , R1.relation_id AS "dd_delta_has_spouse_candidates.R1.relation_id" , R2.start_position AS "dd_delta_people_mentions.R2.start_position" , R2.length AS "dd_delta_people_mentions.R2.length" , R3.start_position AS "people_mentions.R3.start_position" , R3.length AS "people_mentions.R3.length" , R0.dd_count * R1.dd_count * R2.dd_count * R3.dd_count AS "dd_count" 
+        FROM sentences R0, dd_delta_has_spouse_candidates R1, dd_delta_people_mentions R2, people_mentions R3
+        WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id  UNION 
+        SELECT R0.words AS "dd_delta_sentences.R0.words" , R1.relation_id AS "dd_delta_has_spouse_candidates.R1.relation_id" , R2.start_position AS "dd_delta_people_mentions.R2.start_position" , R2.length AS "dd_delta_people_mentions.R2.length" , R3.start_position AS "people_mentions.R3.start_position" , R3.length AS "people_mentions.R3.length" , R0.dd_count * R1.dd_count * R2.dd_count * R3.dd_count AS "dd_count" 
+        FROM dd_delta_sentences R0, dd_delta_has_spouse_candidates R1, dd_delta_people_mentions R2, people_mentions R3
+        WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id  UNION 
+        SELECT R0.words AS "sentences.R0.words" , R1.relation_id AS "has_spouse_candidates.R1.relation_id" , R2.start_position AS "people_mentions.R2.start_position" , R2.length AS "people_mentions.R2.length" , R3.start_position AS "dd_delta_people_mentions.R3.start_position" , R3.length AS "dd_delta_people_mentions.R3.length" , R0.dd_count * R1.dd_count * R2.dd_count * R3.dd_count AS "dd_count" 
+        FROM sentences R0, has_spouse_candidates R1, people_mentions R2, dd_delta_people_mentions R3
+        WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id  UNION 
+        SELECT R0.words AS "dd_delta_sentences.R0.words" , R1.relation_id AS "has_spouse_candidates.R1.relation_id" , R2.start_position AS "people_mentions.R2.start_position" , R2.length AS "people_mentions.R2.length" , R3.start_position AS "dd_delta_people_mentions.R3.start_position" , R3.length AS "dd_delta_people_mentions.R3.length" , R0.dd_count * R1.dd_count * R2.dd_count * R3.dd_count AS "dd_count" 
+        FROM dd_delta_sentences R0, has_spouse_candidates R1, people_mentions R2, dd_delta_people_mentions R3
+        WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id  UNION 
+        SELECT R0.words AS "sentences.R0.words" , R1.relation_id AS "dd_delta_has_spouse_candidates.R1.relation_id" , R2.start_position AS "people_mentions.R2.start_position" , R2.length AS "people_mentions.R2.length" , R3.start_position AS "dd_delta_people_mentions.R3.start_position" , R3.length AS "dd_delta_people_mentions.R3.length" , R0.dd_count * R1.dd_count * R2.dd_count * R3.dd_count AS "dd_count" 
+        FROM sentences R0, dd_delta_has_spouse_candidates R1, people_mentions R2, dd_delta_people_mentions R3
+        WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id  UNION 
+        SELECT R0.words AS "dd_delta_sentences.R0.words" , R1.relation_id AS "dd_delta_has_spouse_candidates.R1.relation_id" , R2.start_position AS "people_mentions.R2.start_position" , R2.length AS "people_mentions.R2.length" , R3.start_position AS "dd_delta_people_mentions.R3.start_position" , R3.length AS "dd_delta_people_mentions.R3.length" , R0.dd_count * R1.dd_count * R2.dd_count * R3.dd_count AS "dd_count" 
+        FROM dd_delta_sentences R0, dd_delta_has_spouse_candidates R1, people_mentions R2, dd_delta_people_mentions R3
+        WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id  UNION 
+        SELECT R0.words AS "sentences.R0.words" , R1.relation_id AS "has_spouse_candidates.R1.relation_id" , R2.start_position AS "dd_delta_people_mentions.R2.start_position" , R2.length AS "dd_delta_people_mentions.R2.length" , R3.start_position AS "dd_delta_people_mentions.R3.start_position" , R3.length AS "dd_delta_people_mentions.R3.length" , R0.dd_count * R1.dd_count * R2.dd_count * R3.dd_count AS "dd_count" 
+        FROM sentences R0, has_spouse_candidates R1, dd_delta_people_mentions R2, dd_delta_people_mentions R3
+        WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id  UNION 
+        SELECT R0.words AS "dd_delta_sentences.R0.words" , R1.relation_id AS "has_spouse_candidates.R1.relation_id" , R2.start_position AS "dd_delta_people_mentions.R2.start_position" , R2.length AS "dd_delta_people_mentions.R2.length" , R3.start_position AS "dd_delta_people_mentions.R3.start_position" , R3.length AS "dd_delta_people_mentions.R3.length" , R0.dd_count * R1.dd_count * R2.dd_count * R3.dd_count AS "dd_count" 
+        FROM dd_delta_sentences R0, has_spouse_candidates R1, dd_delta_people_mentions R2, dd_delta_people_mentions R3
+        WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id  UNION 
+        SELECT R0.words AS "sentences.R0.words" , R1.relation_id AS "dd_delta_has_spouse_candidates.R1.relation_id" , R2.start_position AS "dd_delta_people_mentions.R2.start_position" , R2.length AS "dd_delta_people_mentions.R2.length" , R3.start_position AS "dd_delta_people_mentions.R3.start_position" , R3.length AS "dd_delta_people_mentions.R3.length" , R0.dd_count * R1.dd_count * R2.dd_count * R3.dd_count AS "dd_count" 
+        FROM sentences R0, dd_delta_has_spouse_candidates R1, dd_delta_people_mentions R2, dd_delta_people_mentions R3
+        WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id  UNION 
+        SELECT R0.words AS "dd_delta_sentences.R0.words" , R1.relation_id AS "dd_delta_has_spouse_candidates.R1.relation_id" , R2.start_position AS "dd_delta_people_mentions.R2.start_position" , R2.length AS "dd_delta_people_mentions.R2.length" , R3.start_position AS "dd_delta_people_mentions.R3.start_position" , R3.length AS "dd_delta_people_mentions.R3.length" , R0.dd_count * R1.dd_count * R2.dd_count * R3.dd_count AS "dd_count" 
+        FROM dd_delta_sentences R0, dd_delta_has_spouse_candidates R1, dd_delta_people_mentions R2, dd_delta_people_mentions R3
+        WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id 
+        """
+        style: "sql_extractor"
+          dependencies: [ "extraction_rule_17" ,  "extraction_rule_12" ]
+      }
+    
+
+      deepdive.extraction.extractors.extraction_rule_20 {
+        sql: """ DROP VIEW IF EXISTS dd_delta_ext_has_spouse_input CASCADE;
+        CREATE VIEW dd_delta_ext_has_spouse_input AS 
+        SELECT R0.sentence_id AS "dd_delta_people_mentions.R0.sentence_id" , R0.mention_id AS "dd_delta_people_mentions.R0.mention_id" , R0.text AS "dd_delta_people_mentions.R0.text" , R1.mention_id AS "people_mentions.R1.mention_id" , R1.text AS "people_mentions.R1.text" , R0.dd_count * R1.dd_count AS "dd_count" 
+        FROM dd_delta_people_mentions R0, people_mentions R1
+        WHERE R1.sentence_id = R0.sentence_id  UNION 
+        SELECT R0.sentence_id AS "people_mentions.R0.sentence_id" , R0.mention_id AS "people_mentions.R0.mention_id" , R0.text AS "people_mentions.R0.text" , R1.mention_id AS "dd_delta_people_mentions.R1.mention_id" , R1.text AS "dd_delta_people_mentions.R1.text" , R0.dd_count * R1.dd_count AS "dd_count" 
+        FROM people_mentions R0, dd_delta_people_mentions R1
+        WHERE R1.sentence_id = R0.sentence_id  UNION 
+        SELECT R0.sentence_id AS "dd_delta_people_mentions.R0.sentence_id" , R0.mention_id AS "dd_delta_people_mentions.R0.mention_id" , R0.text AS "dd_delta_people_mentions.R0.text" , R1.mention_id AS "dd_delta_people_mentions.R1.mention_id" , R1.text AS "dd_delta_people_mentions.R1.text" , R0.dd_count * R1.dd_count AS "dd_count" 
+        FROM dd_delta_people_mentions R0, dd_delta_people_mentions R1
+        WHERE R1.sentence_id = R0.sentence_id 
+        """
+        style: "sql_extractor"
+          dependencies: [ "extraction_rule_12" ]
+      }
+    
+
+        deepdive.extraction.extractors.extraction_rule_12 {
+          input: """ SELECT * FROM dd_delta_ext_people_input
+          """
+          output_relation: "dd_delta_people_mentions"
+          udf: ${APP_HOME}"/udf/ext_people.py"
+          style: "tsv_extractor" 
+          dependencies: [ "extraction_rule_15" ]
+        }
+      
+
+        deepdive.extraction.extractors.extraction_rule_24 {
+          input: """ SELECT * FROM dd_delta_ext_has_spouse_features_input
+          """
+          output_relation: "dd_delta_has_spouse_features"
+          udf: ${APP_HOME}"/udf/ext_has_spouse_features.py"
+          style: "tsv_extractor" 
+          dependencies: [ "extraction_rule_27" ]
+        }
+      
+
+        deepdive.extraction.extractors.extraction_rule_17 {
+          input: """ SELECT * FROM dd_delta_ext_has_spouse_input
+          """
+          output_relation: "dd_delta_has_spouse_candidates"
+          udf: ${APP_HOME}"/udf/ext_has_spouse.py"
+          style: "tsv_extractor" 
+          dependencies: [ "extraction_rule_20" ]
+        }
+      
+
+      deepdive.extraction.extractors.extraction_rule_dd_delta_has_spouse {
+        sql: """ DROP TABLE IF EXISTS dd_delta_has_spouse CASCADE;
+        CREATE TABLE dd_delta_has_spouse AS
+        SELECT DISTINCT 0 as id, R0.relation_id, R0.is_true AS label , R0.dd_count * R1.dd_count AS dd_count
+        FROM dd_delta_has_spouse_candidates R0, has_spouse_features R1
+        WHERE R1.relation_id = R0.relation_id 
+         UNION SELECT DISTINCT 0 as id, R0.relation_id, R0.is_true AS label , R0.dd_count * R1.dd_count AS dd_count
+        FROM has_spouse_candidates R0, dd_delta_has_spouse_features R1
+        WHERE R1.relation_id = R0.relation_id 
+         UNION SELECT DISTINCT 0 as id, R0.relation_id, R0.is_true AS label , R0.dd_count * R1.dd_count AS dd_count
+        FROM dd_delta_has_spouse_candidates R0, dd_delta_has_spouse_features R1
+        WHERE R1.relation_id = R0.relation_id 
+        
+        """
+        style: "sql_extractor"
+        dependencies: [ "extraction_rule_17" ,  "extraction_rule_24" ]
+      }
+    
+
