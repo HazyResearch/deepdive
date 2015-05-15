@@ -42,7 +42,8 @@ CREATE TABLE has_spouse(
   description string,
   is_true boolean,
   relation_id string, -- unique identifier for has_spouse
-  id bigint   -- reserved for DeepDive
+  id bigint,   -- reserved for DeepDive
+  rand double
   ) ROW FORMAT DELIMITED
   FIELDS TERMINATED BY '\t'
   STORED AS TEXTFILE;
