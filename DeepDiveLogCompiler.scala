@@ -386,7 +386,6 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       val index = stmt.q.body.length + 1
       val qs2 = new QuerySchema( fakeCQ )
       val variableIdsStr = Some(s"""R0.id AS "${stmt.q.head.name}.R0.id" """)
-      val variableColsStr = Some(s"""R0.label AS "${stmt.q.head.name}.R0.label" """)
 
       // weight string
       val uwStr = stmt.weights match {
@@ -394,7 +393,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
         case UnknownFactorWeight(w) => Some(w.flatMap(s => ss.resolveColumn(s, qs2, fakeCQ, true)).mkString(", "))
       }
 
-      val selectStr = (List(variableIdsStr, variableColsStr, uwStr) flatten).mkString(", ")
+      val selectStr = (List(variableIdsStr, uwStr) flatten).mkString(", ")
 
       val ddCount = if (ss.isIncremental) ( fakeCQ.body.zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
       val ddCountStr = if (ddCount.length > 0) s""", ${ddCount} AS \"dd_count\" """ else ""
