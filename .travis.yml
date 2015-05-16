@@ -2,7 +2,7 @@ language:
   - scala
   - python
 scala:
-  - "2.10.3"
+  - "2.10.5"
 python:
   - "2.7"
 install: 
@@ -45,4 +45,4 @@ script:
   - bash ./src/test/bash/linkcheck.sh http://deepdive.stanford.edu/
 
 after_success:
-  - sbt coveralls
+  - bash ./src/test/test_coverage.sh
