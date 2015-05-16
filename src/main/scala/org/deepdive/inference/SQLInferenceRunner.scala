@@ -197,15 +197,11 @@ trait SQLInferenceRunner extends AbstractInferenceRunner {
     val weightlist = factorDesc.weight.variables.map(v =>
       s""" ${dataStore.quoteColumn(v)} """).mkString(",")
 
-
     // Create feature statistics support tables for error analysis, 
     // only if it's boolean LR feature (the most common one)
     if (factorDesc.func.variables.length == 1 && factorDesc.func.variableDataType == "Boolean") {
       // This should be a single variable, e.g. "is_true"
       val variableName = getValCols(factorDesc)(0)
-      //val variableName = factorDesc.func.variables.map(v => 
-      //    s""" ${dataStore.quoteColumn(v.toString)} """).mkString(",")
-      //val variableName = "v0"
       val groupByClause = weightlist match {
         case "" => ""
         case _ => s"GROUP BY ${weightlist}"
@@ -224,36 +220,8 @@ trait SQLInferenceRunner extends AbstractInferenceRunner {
   }
 
 
-  ////////////////////// groundFactorsAndWeights
+  /* groundFactorsAndWeights methods */
 
-
-//<<<<<<< HEAD
-//    // weights table
-//    dataStore.dropAndCreateTable(WeightsTable, """id bigint, isfixed int, initvalue real, cardinality text,
-//      description text""")
-//
-//    // Create the feature stats table
-//    // execute(createFeatureStatsSupportTableSQL)
-//
-//    // weight and factor id
-//    // greenplum: use fast_seqassign postgres: use sequence
-//    var cweightid : Long = 0
-//    var factorid : Long = 0
-//    val weightidSequence = "dd_weight_sequence"
-//    val factoridSequence = "dd_factor_sequence"
-//    execute(dataStore.createSequenceFunction(weightidSequence));
-//    execute(dataStore.createSequenceFunction(factoridSequence));
-//
-//    factorDescs.zipWithIndex.foreach { case (factorDesc, idx) =>
-//      // id columns
-//      val idcols = factorDesc.func.variables.map(v =>
-//        s""" ${dataStore.quoteColumn(s"${v.relation}.id")} """).mkString(", ")
-//      // Sen
-//      // val querytable = s"dd_query_${factorDesc.name}"
-//      // val weighttableForThisFactor = s"dd_weights_${factorDesc.name}"
-//      val querytable = InferenceNamespace.getQueryTableName(factorDesc.name)
-//      val weighttableForThisFactor = InferenceNamespace.getWeightTableName(factorDesc.name)
-//=======
   def copyLastWeights = {
     dataStore.executeSqlQueries(s"""
       DROP TABLE IF EXISTS ${lastWeightsTable} ${dataStore.sqlCascade};
@@ -262,7 +230,6 @@ trait SQLInferenceRunner extends AbstractInferenceRunner {
         FROM ${WeightsTable} AS X INNER JOIN ${WeightResultTable} AS Y ON X.id = Y.id;
       """)
   }
-//>>>>>>> impala refactoring
 
   def createWeightsTable =
     dataStore.dropAndCreateTable(WeightsTable, s"""
@@ -307,13 +274,6 @@ trait SQLInferenceRunner extends AbstractInferenceRunner {
     val factorWeightTable = InferenceNamespace.getWeightTableName(factorDesc.name)
 
     val idcols = getIdCols(factorDesc)
-    //factorDesc.func.variables.zipWithIndex.map { case (v,i) => s"id$i" }
-    //val valcols = factorDesc.func.variables.zipWithIndex.map { case (v,i) => s"v$i" }
-    //val typ = factorDesc.func.variableDataType match {
-    //    case "Boolean" => "boolean"
-    //    case "Discrete" => "int"
-    //}
-    //val coldefstr = factorDesc.func.variables.zipWithIndex.map { case (v,i) => s"id$i bigint, v$i $typ" }.mkString(", ")
 
     // weight variable list
     val hasWeightVariables = !factorDesc.weight.variables.isEmpty
@@ -538,7 +498,7 @@ trait SQLInferenceRunner extends AbstractInferenceRunner {
       """)
   }
 
-  //////////////////////////// Calibration
+  /* Calibration methods */
 
   def createBucketedCalibrationView(name: String, inferenceViewName: String, buckets: List[Bucket]) = {
     val bucketCaseStatement = buckets.zipWithIndex.map { case(bucket, index) =>
@@ -587,7 +547,7 @@ trait SQLInferenceRunner extends AbstractInferenceRunner {
       ORDER BY b1.bucket ASC;""")
 
 
-  //////////////////////////// writebackInferenceResult
+  /* writebackInferenceResult methods */
 
   def createInferenceResult =
     dataStore.executeSqlQueries(s"""
@@ -649,15 +609,4 @@ trait SQLInferenceRunner extends AbstractInferenceRunner {
       CREATE VIEW ${VariableResultTable}_mapped_weights AS
       SELECT * FROM ${LearnedWeightsTable}
       ORDER BY abs(weight) DESC;""")
-
-//<<<<<<< HEAD
-//    // Create the view for mapped weights
-//    execute(createMappedWeightsViewSQL)
-//
-//    // Create feature statistics tables for error analysis
-//    // execute(createMappedFeatureStatsViewSQL)
-//=======
-//>>>>>>> impala refactoring
-
-
 }

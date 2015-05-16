@@ -133,7 +133,7 @@ trait AbstractInferenceRunner extends InferenceRunner with Logging {
                        groundingPath: String)
 
 
-  ///////////////////////////////// groundFactorsAndWeights
+  /* groundFactorsAndWeights methods */
 
   def groundFactorsAndWeights(factorDescs: Seq[FactorDesc],
                               calibrationSettings: CalibrationSettings, du: DataLoader,
@@ -206,9 +206,7 @@ trait AbstractInferenceRunner extends InferenceRunner with Logging {
 
   def dumpWeights(du:DataLoader, groundingPath:String, dbSettings: DbSettings)
 
-
-
-  //////////////////////////// CALIBRATION
+  /* Calibration methods */
 
   def getCalibrationData(variable: String, dataType: VariableDataType,
                          buckets: List[Bucket]) : Map[Bucket, BucketData] = {
