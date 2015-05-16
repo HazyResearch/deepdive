@@ -49,11 +49,12 @@ createdb $DBNAME
 # Separate different tests to fix the issue of unable to run multiple integration tests. If any of the tests return non-0 value, exit with the error code.
 export SBT_OPTS="-XX:MaxHeapSize=256m -Xmx512m -XX:MaxPermSize=256m" 
 # # Test argument "-- -oF" shows full stack trace when error occurs
-sbt "test-only org.deepdive.test.unit.* -- -oF" && \
-sbt "test-only org.deepdive.test.integration.BrokenTest -- -oF" && \
-sbt "test-only org.deepdive.test.integration.BiasedCoin -- -oF" && \
-sbt "test-only org.deepdive.test.integration.PostgresSpouseExample -- -oF" && \
-sbt "test-only org.deepdive.test.integration.ChunkingApp -- -oF"
+sbt coverage "test-only org.deepdive.test.unit.* -- -oF" && \
+sbt coverage "test-only org.deepdive.test.integration.BrokenTest -- -oF" && \
+sbt coverage "test-only org.deepdive.test.integration.BiasedCoin -- -oF" && \
+sbt coverage "test-only org.deepdive.test.integration.PostgresSpouseExample -- -oF" && \
+sbt coverage "test-only org.deepdive.test.integration.ChunkingApp -- -oF" && \
+sbt coverageAggregate
 
 # Running a specific test with Eclipse debugger
 # SBT_OPTS="-agentlib:jdwp=transport=dt_socket,address=localhost:8000,server=y,suspend=y -Xmx4g" sbt/sbt "test-only org.deepdive.test.unit.PostgresInferenceDataStoreSpec"
