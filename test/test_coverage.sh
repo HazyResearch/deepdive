@@ -1,10 +1,9 @@
 #! /usr/bin/env bash
 
-# Create a link for the code to current dir
+# Create a symbolic link at src/main/scala/org to let coverage test retrieve all source,
+# and remove it after test
+# Ref: https://github.com/scoverage/sbt-coveralls
+sbt coverageAggregate
 ln -s src/main/scala/org ./
-
-# Do the coverage test and push the report
 sbt coveralls
-
-# Remove the symbolic link
 rm -f org
