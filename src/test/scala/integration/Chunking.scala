@@ -173,6 +173,8 @@ class ChunkingApp extends FunSpec with Logging{
 
       } 
 
+      sampler.sampler_args: "-s 1 -l 500 -i 500 --alpha 0.01 --diminish 0.99 --quiet"
+
       calibration: {
         holdout_query: "INSERT INTO dd_graph_variables_holdout(variable_id) SELECT id FROM words WHERE word_id > 50078"
       }
