@@ -6,17 +6,17 @@ object DeepDiveLogDeltaDeriver{
   val deltaPrefix = "dd_delta_"
   val newPrefix = "dd_new_"
 
-  def transfer(stmt: Statement): List[Statement] = stmt match {
-    case s: SchemaDeclaration   => transfer(s)
-    case s: FunctionDeclaration => transfer(s)
-    case s: ExtractionRule      => transfer(s)
-    case s: FunctionCallRule    => transfer(s)
-    case s: InferenceRule       => transfer(s)
+  def transform(stmt: Statement): List[Statement] = stmt match {
+    case s: SchemaDeclaration   => transform(s)
+    case s: FunctionDeclaration => transform(s)
+    case s: ExtractionRule      => transform(s)
+    case s: FunctionCallRule    => transform(s)
+    case s: InferenceRule       => transform(s)
   }
 
   // Incremental scheme declaration,
   // keep the original scheme and create one delta scheme
-  def transfer(stmt: SchemaDeclaration): List[Statement] = {
+  def transform(stmt: SchemaDeclaration): List[Statement] = {
     var incrementalStatement = new ListBuffer[Statement]()
     // Origin table
     incrementalStatement += stmt
@@ -26,6 +26,7 @@ object DeepDiveLogDeltaDeriver{
       deltaTerms += Variable(term.varName, deltaPrefix + term.relName, term.index)
     }
     var deltaStmt = SchemaDeclaration(Attribute(deltaPrefix + stmt.a.name, deltaTerms.toList, stmt.a.types), stmt.isQuery)
+    
     incrementalStatement += deltaStmt
     // New table
     val newTerms = new ListBuffer[Variable]()
@@ -43,7 +44,7 @@ object DeepDiveLogDeltaDeriver{
 
   // Incremental function declaration,
   // create one delta function scheme based on original function scheme
-  def transfer(stmt: FunctionDeclaration): List[Statement] = {
+  def transform(stmt: FunctionDeclaration): List[Statement] = {
     var incrementalStatement = new ListBuffer[Statement]()
     var newTerms = new ListBuffer[Variable]()
     var newInputType: RelationType = stmt.inputType match {
@@ -70,7 +71,7 @@ object DeepDiveLogDeltaDeriver{
 
   // Incremental extraction rule,
   // create delta rules based on original extraction rule
-  def transfer(stmt: ExtractionRule): List[Statement] = {
+  def transform(stmt: ExtractionRule): List[Statement] = {
     var incrementalStatement = new ListBuffer[Statement]()
     
     // New head
@@ -118,7 +119,7 @@ object DeepDiveLogDeltaDeriver{
 
   // Incremental function call rule,
   // modify function input and output
-  def transfer(stmt: FunctionCallRule): List[Statement] = {
+  def transform(stmt: FunctionCallRule): List[Statement] = {
     var incrementalStatement = new ListBuffer[Statement]()
     incrementalStatement += FunctionCallRule(deltaPrefix + stmt.input, deltaPrefix + stmt.output, stmt.function)
     incrementalStatement.toList
@@ -126,7 +127,7 @@ object DeepDiveLogDeltaDeriver{
 
   // Incremental inference rule,
   // create delta rules based on original extraction rule
-  def transfer(stmt: InferenceRule): List[Statement] = {
+  def transform(stmt: InferenceRule): List[Statement] = {
     var incrementalStatement = new ListBuffer[Statement]()
     
     // New head
@@ -175,7 +176,7 @@ object DeepDiveLogDeltaDeriver{
   def derive(program: DeepDiveLog.Program): DeepDiveLog.Program = {
     var incrementalProgram = new ListBuffer[Statement]()
     for (x <- program) {
-      incrementalProgram = incrementalProgram ++ transfer(x)
+      incrementalProgram = incrementalProgram ++ transform(x)
     }
     incrementalProgram.toList
   }
