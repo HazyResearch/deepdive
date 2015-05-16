@@ -197,7 +197,7 @@ trait SQLInferenceRunner extends AbstractInferenceRunner {
     val weightlist = factorDesc.weight.variables.map(v =>
       s""" ${dataStore.quoteColumn(v)} """).mkString(",")
 
-    // Create feature statistics support tables for error analysis, 
+    // Create feature statistics support tables for error analysis,
     // only if it's boolean LR feature (the most common one)
     if (factorDesc.func.variables.length == 1 && factorDesc.func.variableDataType == "Boolean") {
       // This should be a single variable, e.g. "is_true"
@@ -218,7 +218,6 @@ trait SQLInferenceRunner extends AbstractInferenceRunner {
       dataStore.executeSqlQueries(dataStore.analyzeTable(FeatureStatsSupportTable))
     }
   }
-
 
   /* groundFactorsAndWeights methods */
 
@@ -274,6 +273,14 @@ trait SQLInferenceRunner extends AbstractInferenceRunner {
     val factorWeightTable = InferenceNamespace.getWeightTableName(factorDesc.name)
 
     val idcols = getIdCols(factorDesc)
+
+    //factorDesc.func.variables.zipWithIndex.map { case (v,i) => s"id$i" }
+    //val valcols = factorDesc.func.variables.zipWithIndex.map { case (v,i) => s"v$i" }
+    //val typ = factorDesc.func.variableDataType match {
+    //    case "Boolean" => "boolean"
+    //    case "Discrete" => "int"
+    //}
+    //val coldefstr = factorDesc.func.variables.zipWithIndex.map { case (v,i) => s"id$i bigint, v$i $typ" }.mkString(", ")
 
     // weight variable list
     val hasWeightVariables = !factorDesc.weight.variables.isEmpty
@@ -342,6 +349,31 @@ trait SQLInferenceRunner extends AbstractInferenceRunner {
 
     return count
   }
+
+//  def createMultinomialFactorWeightTableWithId(factorDesc:FactorDesc, cweightid:Long, weightidSequence:String,
+//                                                du:DataLoader, groundingPath:String, dbSettings: DbSettings):Long ={
+//    val factorQueryTable = InferenceNamespace.getQueryTableName(factorDesc.name)
+//    val factorWeightTable = InferenceNamespace.getWeightTableName(factorDesc.name)
+//
+//    val hasWeightVariables = !factorDesc.weight.variables.isEmpty
+//    val isFixed = factorDesc.weight.isInstanceOf[KnownFactorWeight]
+//    val initvalue = factorDesc.weight match {
+//      case x : KnownFactorWeight => x.value
+//      case _ => 0.0
+//    }
+//    val weightlist = factorDesc.weight.variables.map(v =>
+//      s""" ${dataStore.quoteColumn(v)} """).mkString(",")
+//
+//    // TODO needs better code reuse
+//    // handle multinomial
+//    // generate cardinality table for each variable
+//    factorDesc.func.variables.zipWithIndex.foreach { case(v,idx) =>
+//      val cardinalityTableName = InferenceNamespace.getCardinalityInFactorTableName(
+//        factorDesc.weightPrefix, idx)
+//      dataStore.dropAndCreateTableAs(cardinalityTableName, s"""SELECT * FROM
+//            ${InferenceNamespace.getCardinalityTableName(v.headRelation, v.field)};""")
+//    }
+
 
   def createMultinomialFactorWeightTableWithId(factorDesc:FactorDesc, cweightid:Long, weightidSequence:String,
                                                 du:DataLoader, groundingPath:String, dbSettings: DbSettings):Long ={
