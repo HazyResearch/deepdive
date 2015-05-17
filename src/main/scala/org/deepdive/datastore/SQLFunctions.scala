@@ -1,17 +1,52 @@
 package org.deepdive.datastore
 
 object SQLFunctions {
+  val radicalSequenceAssignForXL = """
+    CREATE OR REPLACE FUNCTION copy_table_assign_ids_replace(
+      schema_name character varying,
+      table_name character varying,
+      col_name character varying,
+      start_id bigint)
+    RETURNS TEXT AS
+    $$
+    DECLARE
+      table_cur text := quote_ident(schema_name) || '.' || quote_ident(table_name);
+      table_old text := quote_ident(schema_name) || '.' || quote_ident(table_name || '__old');
+      table_new text := quote_ident(schema_name) || '.' || quote_ident(table_name || '__new');
+      cols text[] := ARRAY(SELECT
+                        CASE lower(attname)
+                        WHEN lower(col_name) THEN start_id || ' + (row_number() over ()) - 1'
+                        ELSE quote_ident(attname)
+                        END
+                      FROM   pg_attribute
+                      WHERE  attrelid = table_cur::regclass
+                      AND    attnum > 0
+                      AND    NOT attisdropped
+                      ORDER  BY attnum);
+    BEGIN
+      RAISE NOTICE '%',  cols;
+      EXECUTE 'drop table if exists ' || table_old || ' cascade;';
+      EXECUTE 'drop table if exists ' || table_new || ' cascade;';
+      EXECUTE 'create table ' || table_new || ' (like ' || table_cur || ' including all)';
+      EXECUTE 'insert into ' || table_new || ' select ' || array_to_string(cols, ',') || ' from ' || table_cur;
+      EXECUTE 'alter table ' || table_cur || ' rename to ' || table_name || '__old';
+      EXECUTE 'alter table ' || table_new || ' rename to ' || table_name;
+      RETURN '';
+    END;
+    $$ LANGUAGE 'plpgsql';
+  """
+
 	val fastSequenceAssignForGreenplum = """
-    CREATE OR REPLACE FUNCTION clear_count_1(sid int) RETURNS int AS 
+    CREATE OR REPLACE FUNCTION clear_count_1(sid int) RETURNS int AS
     $$
     if '__count_1' in SD:
       SD['__count_1'] = -1
       return 1
     return 0
     $$ LANGUAGE plpythonu;
-     
-     
-    CREATE OR REPLACE FUNCTION updateid(startid bigint, sid int, sids int[], base_ids bigint[], base_ids_noagg bigint[]) RETURNS bigint AS 
+
+
+    CREATE OR REPLACE FUNCTION updateid(startid bigint, sid int, sids int[], base_ids bigint[], base_ids_noagg bigint[]) RETURNS bigint AS
     $$
     if '__count_1' in SD:
       a = SD['__count_2']
@@ -31,10 +66,10 @@ object SQLFunctions {
       if SD['__count_2'] < 0:
         SD.pop('__count_1')
       return startid+b-a
-      
+
     $$ LANGUAGE plpythonu;
-     
-    CREATE OR REPLACE FUNCTION fast_seqassign(tname character varying, startid bigint) RETURNS TEXT AS 
+
+    CREATE OR REPLACE FUNCTION fast_seqassign(tname character varying, startid bigint) RETURNS TEXT AS
     $$
     BEGIN
       EXECUTE 'drop table if exists tmp_gpsid_count cascade;';
@@ -47,7 +82,7 @@ object SQLFunctions {
       RETURN '';
     END;
     $$ LANGUAGE 'plpgsql';
-     
+
     CREATE OR REPLACE FUNCTION _fast_seqassign(tname character varying, startid bigint)
     RETURNS TEXT AS
     $$

@@ -6,13 +6,13 @@
  * Input: variable tables, factor descriptions, holdout configuration, (feature tables)
  * Output: factor graph files: variables, factors, edges, weights, meta that the
  * sampler can read. Refer to deepdive.stanford.edu for more details of the output format.
- * 
+ *
  * The workflow is defined in groundFactorGraph. Table and file names are defined in
  * InferenceNamespace
  *
- * We might want to promulgate a new coding standard: no direct SQL queries without a function wrapper, 
- * into which parameters are passed. The goal in doing that would be to enforce type checking by the compiler. 
- * As it stands, if there's a type clash you don't find out until you try to run the query. 
+ * We might want to promulgate a new coding standard: no direct SQL queries without a function wrapper,
+ * into which parameters are passed. The goal in doing that would be to enforce type checking by the compiler.
+ * As it stands, if there's a type clash you don't find out until you try to run the query.
  *
  * DROP TABLE is such a toxic operation. One SHOULD call dataStore.dropAndCreateTable or
  * dataStore.dropAndCreateTableAs in order to drop and create a table. These method will
@@ -67,7 +67,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
   def FeatureStatsSupportTable = "dd_feature_statistics_support"
   def FeatureStatsView = "dd_feature_statistics"
 
-  /** 
+  /**
    * execute one or multiple SQL queries
    */
   def execute(sql: String) = {
@@ -75,7 +75,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
   }
 
   /**
-   * Issues a single SQL query that can return results, and perform {@code op} 
+   * Issues a single SQL query that can return results, and perform {@code op}
    * as callback function
    */
   def issueQuery(sql: String)(op: (java.sql.ResultSet) => Unit) = {
@@ -90,17 +90,17 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
   """
 
   def createInferenceResultSQL = s"""
-    DROP TABLE IF EXISTS ${VariableResultTable} CASCADE; 
+    DROP TABLE IF EXISTS ${VariableResultTable} CASCADE;
     CREATE TABLE ${VariableResultTable}(
-      id bigint, 
-      category bigint, 
+      id bigint,
+      category bigint,
       expectation double precision);
   """
 
   def createInferenceResultWeightsSQL = s"""
-    DROP TABLE IF EXISTS ${WeightResultTable} CASCADE; 
+    DROP TABLE IF EXISTS ${WeightResultTable} CASCADE;
     CREATE TABLE ${WeightResultTable}(
-      id bigint primary key, 
+      id bigint primary key,
       weight double precision);
   """
 
@@ -120,20 +120,20 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       SELECT ${inferenceViewName}.*, CASE ${bucketCaseStatement} END bucket
       FROM ${inferenceViewName} ORDER BY bucket ASC;"""
   }
-  
+
   /**
    * Create a table of how LR features are supported by supervision examples
    */
-  def createFeatureStatsSupportTableSQL = 
+  def createFeatureStatsSupportTableSQL =
       s"""DROP TABLE IF EXISTS ${FeatureStatsSupportTable} CASCADE;
 
           CREATE TABLE ${FeatureStatsSupportTable}(
-            description text, 
-            pos_examples bigint, 
-            neg_examples bigint, 
+            description text,
+            pos_examples bigint,
+            neg_examples bigint,
             queries bigint);"""
   /**
-   * Create a view that shows weights of features as well as their supports 
+   * Create a view that shows weights of features as well as their supports
    */
   def createMappedFeatureStatsViewSQL = s"""
         CREATE OR REPLACE VIEW ${FeatureStatsView} AS
@@ -143,8 +143,8 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         ORDER BY abs(weight) DESC;
         """
 
-  /** 
-   *  Create indexes for query table to speed up grounding. (this is useful for MySQL) 
+  /**
+   *  Create indexes for query table to speed up grounding. (this is useful for MySQL)
    *  Behavior may varies depending on different DBMS.
    */
   def createIndexesForQueryTable(queryTable: String, weightVariables: Seq[String]) : Unit
@@ -158,14 +158,14 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
   def createIndexForJoinOptimization(relation: String, column: String) : Unit
 
   /**
-   * This query is datastore-specific since it creates a view whose 
+   * This query is datastore-specific since it creates a view whose
    * SELECT contains a subquery in the FROM clause.
    * In Mysql the subqueries have to be created as views first.
    */
   def createCalibrationViewBooleanSQL(name: String, bucketedView: String, columnName: String) : String
 
   /**
-   * This query is datastore-specific since it creates a view whose 
+   * This query is datastore-specific since it creates a view whose
    * SELECT contains a subquery in the FROM clause.
    */
   def createCalibrationViewMultinomialSQL(name: String, bucketedView: String, columnName: String) : String
@@ -173,7 +173,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
   // end data store specific query
 
   def selectCalibrationDataSQL(name: String) = s"""
-    SELECT bucket as "bucket", num_variables AS "num_variables", 
+    SELECT bucket as "bucket", num_variables AS "num_variables",
       num_correct AS "num_correct", num_incorrect AS "num_incorrect"
     FROM ${name};
   """
@@ -203,8 +203,8 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
    */
   def checkColumnType(table: String, column: String): String = {
     var colType = ""
-    issueQuery(s"select data_type from information_schema.columns " + 
-        s"where table_name='${table}' and column_name='${column}';") { rs => 
+    issueQuery(s"select data_type from information_schema.columns " +
+        s"where table_name='${table}' and column_name='${column}';") { rs =>
         colType = rs.getString(1)
       }
     log.debug(s"Column type for ${table}: ${colType}")
@@ -214,7 +214,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
   // assign variable id - sequential and unique
   def assignVariablesIds(schema: Map[String, _ <: VariableDataType]) {
     // fast sequential id assign function
-    dataStore.createAssignIdFunctionGreenplum()
+    dataStore.createSpecialUDFs()
     execute(dataStore.createSequenceFunction(IdSequence))
 
     var idoffset : Long = 0
@@ -223,7 +223,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       idoffset += dataStore.assignIds(relation, idoffset, IdSequence)
     }
   }
-  
+
   // assign variable holdout
   def assignHoldout(schema: Map[String, _ <: VariableDataType], calibrationSettings: CalibrationSettings) {
     // variable holdout table - if user defined, execute once
@@ -253,7 +253,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     dataStore.dropAndCreateTable(VariablesObservationTable, "variable_id bigint primary key")
     calibrationSettings.observationQuery match {
       case Some(query) => {
-        log.info("Executing user supplied observation query")  
+        log.info("Executing user supplied observation query")
         execute(query)
       }
       case None => {
@@ -262,7 +262,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     }
 
   }
-  
+
   // generate cardinality tables for variables in the schema
   // cardinality tables is used to indicate the domains of the variables
   def generateCardinalityTables(schema: Map[String, _ <: VariableDataType]) {
@@ -280,13 +280,13 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         """)
     }
   }
-  
+
   // ground variables
-  def groundVariables(schema: Map[String, _ <: VariableDataType], du: DataLoader, 
+  def groundVariables(schema: Map[String, _ <: VariableDataType], du: DataLoader,
       dbSettings: DbSettings, groundingPath: String) {
         schema.foreach { case(variable, dataType) =>
       val Array(relation, column) = variable.split('.')
-      
+
       val variableDataType = InferenceNamespace.getVariableDataTypeId(dataType)
 
       // cardinality (domain size) of the variable
@@ -298,7 +298,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       }
 
       // Create a table to denote variable type - query, evidence, observation
-      // variable table join with holdout table 
+      // variable table join with holdout table
       // - a variable is an evidence if it has initial value and it is not holdout
       val variableTypeColumn = "__dd_variable_type__"
 
@@ -353,8 +353,8 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
     // dump factor meta data
     val groundingDir = getFileNameFromPath(groundingPath)
-    du.unload(InferenceNamespace.getFactorMetaFileName, 
-      s"${groundingPath}/${InferenceNamespace.getFactorMetaFileName}", 
+    du.unload(InferenceNamespace.getFactorMetaFileName,
+      s"${groundingPath}/${InferenceNamespace.getFactorMetaFileName}",
       dbSettings, s"SELECT * FROM ${FactorMetaTable}",
       groundingDir)
   }
@@ -362,11 +362,11 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
   // create feature stats for boolean LR function
   def createFeatureStats(factorDesc: FactorDesc, querytable: String, weightlist: String,
     weightDesc: String) {
-    // Create feature statistics support tables for error analysis, 
+    // Create feature statistics support tables for error analysis,
     // only if it's boolean LR feature (the most common one)
     if (factorDesc.func.variables.length == 1 && factorDesc.func.variableDataType == "Boolean") {
       // This should be a single variable, e.g. "is_true"
-      val variableName = factorDesc.func.variables.map(v => 
+      val variableName = factorDesc.func.variables.map(v =>
           s""" ${dataStore.quoteColumn(v.toString)} """).mkString(",")
       val groupByClause = weightlist match {
         case "" => ""
@@ -390,7 +390,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
   def convertGroundingFormat(groundingPath: String) {
     log.info("Converting grounding file format...")
     // TODO: this python script is dangerous and ugly. It changes too many states!
-    val cmd = s"python ${InferenceNamespace.getFormatConvertingScriptPath} ${groundingPath} " + 
+    val cmd = s"python ${InferenceNamespace.getFormatConvertingScriptPath} ${groundingPath} " +
         s"${InferenceNamespace.getFormatConvertingWorkerPath} ${Context.outputDir}"
     log.debug("Executing: " + cmd)
     val exitValue = cmd!(ProcessLogger(
@@ -399,7 +399,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     ))
 
     exitValue match {
-      case 0 => 
+      case 0 =>
       case _ => throw new RuntimeException("Converting format failed.")
     }
   }
@@ -416,9 +416,9 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     }
 
     // weights table
-    dataStore.dropAndCreateTable(WeightsTable, """id bigint, isfixed int, initvalue real, cardinality text, 
+    dataStore.dropAndCreateTable(WeightsTable, """id bigint, isfixed int, initvalue real, cardinality text,
       description text""")
-    
+
     // Create the feature stats table
     // execute(createFeatureStatsSupportTableSQL)
 
@@ -433,7 +433,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
     factorDescs.zipWithIndex.foreach { case (factorDesc, idx) =>
       // id columns
-      val idcols = factorDesc.func.variables.map(v => 
+      val idcols = factorDesc.func.variables.map(v =>
         s""" ${dataStore.quoteColumn(s"${v.relation}.id")} """).mkString(", ")
       // Sen
       // val querytable = s"dd_query_${factorDesc.name}"
@@ -451,10 +451,10 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       factorid += dataStore.assignIds(querytable.toLowerCase(), factorid, factoridSequence)
 
       // weight variable list
-      val weightlist = factorDesc.weight.variables.map(v => 
+      val weightlist = factorDesc.weight.variables.map(v =>
         s""" ${dataStore.quoteColumn(v)} """).mkString(",")
       val isFixed = factorDesc.weight.isInstanceOf[KnownFactorWeight]
-      val initvalue = factorDesc.weight match { 
+      val initvalue = factorDesc.weight match {
         case x : KnownFactorWeight => x.value
         case _ => 0.0
       }
@@ -465,8 +465,8 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
       // generate weight description
       def generateWeightDesc(weightPrefix: String, weightVariables: Seq[String]) : String =
-        dataStore.concat(weightVariables.map ( v => 
-          s"""(CASE WHEN ${dataStore.quoteColumn(v)} IS NULL THEN '' ELSE ${dataStore.cast(dataStore.quoteColumn(v), "text")} END)""" ), 
+        dataStore.concat(weightVariables.map ( v =>
+          s"""(CASE WHEN ${dataStore.quoteColumn(v)} IS NULL THEN '' ELSE ${dataStore.cast(dataStore.quoteColumn(v), "text")} END)""" ),
           "-") // Delimiter '-' for concat
           match {
             case "" => s"'${weightPrefix}-' "
@@ -480,13 +480,13 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         // branch if weight variables present
         val hasWeightVariables = !(isFixed || weightlist == "")
         hasWeightVariables match {
-            // create a table that only contains one row (one weight) 
-            case false => dataStore.dropAndCreateTableAs(weighttableForThisFactor, 
-              s"""SELECT ${dataStore.cast(isFixed, "int")} AS isfixed, ${dataStore.cast(initvalue, "float")} AS initvalue, 
+            // create a table that only contains one row (one weight)
+            case false => dataStore.dropAndCreateTableAs(weighttableForThisFactor,
+              s"""SELECT ${dataStore.cast(isFixed, "int")} AS isfixed, ${dataStore.cast(initvalue, "float")} AS initvalue,
                 ${dataStore.cast(0, "bigint")} AS id;""")
             // create one weight for each different element in weightlist.
             case true => dataStore.dropAndCreateTableAs(weighttableForThisFactor,
-              s"""SELECT ${weightlist}, ${dataStore.cast(isFixed, "int")} AS isfixed, 
+              s"""SELECT ${weightlist}, ${dataStore.cast(isFixed, "int")} AS isfixed,
               ${dataStore.cast(initvalue, "float")} AS initvalue, ${dataStore.cast(0, "bigint")} AS id
               FROM ${querytable}
               GROUP BY ${weightlist}""")
@@ -495,7 +495,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
           // handle weight id
           cweightid += dataStore.assignIds(weighttableForThisFactor.toLowerCase(), cweightid, weightidSequence)
 
-          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, description) 
+          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, description)
             SELECT id, isfixed, initvalue, ${weightDesc} FROM ${weighttableForThisFactor};""")
 
           // check null weight (only if there are weight variables)
@@ -536,7 +536,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         }
 
         // cardinality values used in weight
-        val cardinalityValues = factorDesc.func.variables.zipWithIndex.map { case(v,idx) => 
+        val cardinalityValues = factorDesc.func.variables.zipWithIndex.map { case(v,idx) =>
           s"""_c${idx}.cardinality"""
         }
         val cardinalityTables = factorDesc.func.variables.zipWithIndex.map { case(v,idx) =>
@@ -556,7 +556,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
           // handle weight id
           val count = dataStore.assignIds(weighttableForThisFactor.toLowerCase(), cweightid, weightidSequence)
 
-          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, cardinality, description) 
+          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, cardinality, description)
             SELECT id, isfixed, initvalue, cardinality, ${weightDesc} FROM ${weighttableForThisFactor};""")
 
           du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
@@ -575,7 +575,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
             ${dataStore.cast(initvalue, "float")} AS initvalue
             FROM ${querytable}
             GROUP BY ${weightlist}""")
-  
+
           // We need to create two tables -- one for a non-order'ed version
           // another for an ordered version. The reason that we cannot
           // do this with only one table is not fundemental -- it is just
@@ -584,13 +584,13 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
             s"""SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} AS cardinality,
             ${dataStore.cast(0, "bigint")} AS id
             FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")} LIMIT 0;""")
-          
+
           execute(s"""
             INSERT INTO ${weighttableForThisFactor}_unsorted
             SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} as cardinality, 0 AS id
             FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")}
             ORDER BY ${weightlist}, cardinality;""")
-          
+
           dataStore.dropAndCreateTableAs(weighttableForThisFactor,
             s"""SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} AS cardinality,
             ${dataStore.cast(0, "bigint")} AS id
@@ -604,7 +604,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
           // handle weight id
           cweightid += dataStore.assignIds(weighttableForThisFactor.toLowerCase(), cweightid, weightidSequence)
 
-          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, cardinality, description) 
+          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, cardinality, description)
             SELECT id, isfixed, initvalue, cardinality, ${weightDesc} FROM ${weighttableForThisFactor};""")
 
           // use weight id corresponding to cardinality 0 (like C array...)
@@ -612,7 +612,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
           // dump factors
           // TODO we don't have enough code reuse here.
-          val weightjoinlist = factorDesc.weight.variables.map(v => 
+          val weightjoinlist = factorDesc.weight.variables.map(v =>
             s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)} """).mkString("AND")
           execute(dataStore.analyzeTable(querytable))
           execute(dataStore.analyzeTable(weighttableForThisFactor))
@@ -649,8 +649,8 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
     // Already set -l 0 for sampler
     execute(s"""
-      UPDATE ${WeightsTable} SET initvalue = weight 
-      FROM ${fromWeightTable} 
+      UPDATE ${WeightsTable} SET initvalue = weight
+      FROM ${fromWeightTable}
       WHERE ${WeightsTable}.description = ${fromWeightTable}.description;
       """)
   }
@@ -664,8 +664,8 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
    * Output: factor graph files: variables, factors, edges, weights, meta
    *
    * NOTE: for this to work in greenplum, do not put id as the first column!
-   * The first column in greenplum is distribution key by default. 
-   * We need to update this column, but update is not allowed on distribution key. 
+   * The first column in greenplum is distribution key by default.
+   * We need to update this column, but update is not allowed on distribution key.
    *
    * It is important to remember that we should not modify the user schema,
    * e.g., by adding columns to user relations. The right way to do it is
@@ -676,24 +676,24 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
    * assume any relation actually contains rows, or the rows are in some
    * predefined special order, or anything like that so the code must take care of
    * these cases, and there *must* be tests for the corner cases.
-   * 
+   *
    * TODO: This method is way too long and needs to be split, also for testing
    * purposes
    */
   def groundFactorGraph(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
-    calibrationSettings: CalibrationSettings, skipLearning: Boolean, weightTable: String, 
+    calibrationSettings: CalibrationSettings, skipLearning: Boolean, weightTable: String,
     dbSettings: DbSettings) {
 
     val du = new DataLoader
     val parallelGrounding = dbSettings.gpload
     val groundingDir = getFileNameFromPath(Context.outputDir)
     val groundingPath = parallelGrounding match {
-      case false => Context.outputDir 
+      case false => Context.outputDir
       case true => new java.io.File(dbSettings.gppath + s"/${groundingDir}").getCanonicalPath()
     }
     new java.io.File(groundingPath).mkdirs()
 
-    log.info(s"Datastore type = ${Helpers.getDbType(dbSettings)}")    
+    log.info(s"Datastore type = ${Helpers.getDbType(dbSettings)}")
     log.info(s"Parallel grounding = ${parallelGrounding}")
     log.debug(s"Grounding Path = ${groundingPath}")
 
@@ -702,7 +702,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
     // assign holdout
     assignHoldout(schema, calibrationSettings)
-    
+
     // generate cardinality tables
     generateCardinalityTables(schema)
 
@@ -713,7 +713,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     groundFactorMeta(du, factorDescs, dbSettings, groundingPath)
 
     // ground weights and factors
-    groundFactorsAndWeights(factorDescs, calibrationSettings, du, dbSettings, 
+    groundFactorsAndWeights(factorDescs, calibrationSettings, du, dbSettings,
       groundingPath, skipLearning, weightTable)
 
     // create inference result table
@@ -755,7 +755,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
     // Create the view for mapped weights
     execute(createMappedWeightsViewSQL)
-    
+
     // Create feature statistics tables for error analysis
     // execute(createMappedFeatureStatsViewSQL)
 
@@ -764,7 +764,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     }
   }
 
-  def getCalibrationData(variable: String, dataType: VariableDataType, 
+  def getCalibrationData(variable: String, dataType: VariableDataType,
     buckets: List[Bucket]) : Map[Bucket, BucketData] = {
 
     val Array(relationName, columnName) = variable.split('.')
@@ -775,17 +775,17 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     execute(createBucketedCalibrationViewSQL(bucketedViewName, inferenceViewName, buckets))
     log.info(s"created calibration_view=${calibrationViewName}")
     dataType match {
-      case BooleanType => 
+      case BooleanType =>
         execute(createCalibrationViewBooleanSQL(calibrationViewName, bucketedViewName, columnName))
       case MultinomialType(_) =>
         execute(createCalibrationViewMultinomialSQL(calibrationViewName, bucketedViewName, columnName))
     }
-    
+
     val bucketData = dataStore.selectAsMap(selectCalibrationDataSQL(calibrationViewName)).map { row =>
       val bucket = row("bucket")
       val data = BucketData(
-        row.get("num_variables").map(_.asInstanceOf[Long]).getOrElse(0), 
-        row.get("num_correct").map(_.asInstanceOf[Long]).getOrElse(0), 
+        row.get("num_variables").map(_.asInstanceOf[Long]).getOrElse(0),
+        row.get("num_correct").map(_.asInstanceOf[Long]).getOrElse(0),
         row.get("num_incorrect").map(_.asInstanceOf[Long]).getOrElse(0))
       (bucket, data)
     }.toMap

@@ -31,10 +31,10 @@ class PostgresDataStore extends JdbcDataStore with Logging {
     }
 
   /**
-   * input: iterator (of what?)  
-   * 
+   * input: iterator (of what?)
+   *
    * - Create a temp CSV file
-   * - run writeCopyData to write   
+   * - run writeCopyData to write
    */
   override def addBatch(result: Iterator[JsObject], outputRelation: String) : Unit = {
     val file = File.createTempFile(s"deepdive_$outputRelation", ".csv", new File(Context.outputDir))
@@ -49,15 +49,15 @@ class PostgresDataStore extends JdbcDataStore with Logging {
       s"file='${file.getCanonicalPath}'")
     withConnection { implicit connection =>
       Try(copyBatchData(copySQL, new BufferedReader(new FileReader(file)))) match {
-        case Success(_) => 
-          log.debug("Successfully copied batch data to postgres.") 
+        case Success(_) =>
+          log.debug("Successfully copied batch data to postgres.")
           file.delete()
-        case Failure(ex) => 
+        case Failure(ex) =>
           log.error(s"Error during copy: ${ex}")
           log.error(s"Problematic CSV file can be found at file=${file.getCanonicalPath}")
           throw ex
       }
-    } 
+    }
   }
 
   /* Builds a COPY statement for a given relation and column names */
@@ -71,7 +71,7 @@ class PostgresDataStore extends JdbcDataStore with Logging {
   /* Builds a CSV dat astring for given JSON data and column names */
   def writeCopyData(data: Iterator[JsObject], fileWriter: Writer) : Unit = {
     val writer = new CSVWriter(fileWriter)
-    for (obj <- data) { 
+    for (obj <- data) {
       val dataList = obj.value.filterKeys(_ != "id").toList.sortBy(_._1)
       val strList = dataList.map (x => jsValueToString(x._2))
       // // We get a unique id for the record
@@ -87,12 +87,12 @@ class PostgresDataStore extends JdbcDataStore with Logging {
     case JsNumber(x) => x.toString
     case JsNull => null
     case JsBoolean(x) => x.toString
-    case JsArray(x) => 
+    case JsArray(x) =>
       val innerData = x.map {
-        case JsString(x) => 
+        case JsString(x) =>
           val convertedStr = jsValueToString(JsString(x))
           val escapedStr = convertedStr.replace("\"", "\\\"")
-          s""" "${escapedStr}" """ 
+          s""" "${escapedStr}" """
         case x: JsValue => jsValueToString(x)
       }.mkString(",")
       val arrayStr = s"{${innerData}}"
@@ -124,7 +124,7 @@ class PostgresDataStore extends JdbcDataStore with Logging {
    */
   override def quoteColumn(column: String): String =
     '"' + column + '"'
-    
+
   /**
    * Generate random number in [0,1] in psql
    */
@@ -141,13 +141,15 @@ class PostgresDataStore extends JdbcDataStore with Logging {
       case _ => list.mkString(s" || '${delimiter}' || ")
     }
   }
-  
+
   override def analyzeTable(table: String) = s"ANALYZE ${table}"
 
   // assign senquential ids to table's id column
   override def assignIds(table: String, startId: Long, sequence: String) : Long = {
     if (isUsingGreenplum()) {
       executeSqlQueries(s"SELECT fast_seqassign('${table.toLowerCase()}', ${startId});");
+    } else if (isUsingPostgresXL()) {
+      executeSqlQueries(s"SELECT copy_table_assign_ids_replace('public', '${table}', 'id', ${startId});");
     } else {
       executeSqlQueries(s"UPDATE ${table} SET id = nextval('${sequence}');")
     }
@@ -157,11 +159,14 @@ class PostgresDataStore extends JdbcDataStore with Logging {
     }
     return count
   }
-  
+
   // create fast sequence assign function for greenplum
-  override def createAssignIdFunctionGreenplum() : Unit = {
-    if (!isUsingGreenplum()) return
-    executeSqlQueries(SQLFunctions.fastSequenceAssignForGreenplum, false)
+  override def createSpecialUDFs() : Unit = {
+    if (isUsingGreenplum()) {
+      executeSqlQueries(SQLFunctions.fastSequenceAssignForGreenplum, false)
+    } else if (isUsingPostgresXL()) {
+      executeSqlQueries(SQLFunctions.radicalSequenceAssignForXL, false)
+    }
   }
 
 }
