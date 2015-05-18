@@ -182,6 +182,8 @@ deepdive {
     "f_has_spouse_features", "f_has_spouse_symmetry"
     ]
 
+  sampler.sampler_args: "-l 300 -i 500 -s 1 --alpha 0.001 --diminish 0.99 --quiet"
+
   # Specify a holdout fraction
   calibration.holdout_fraction: 0.25
 
