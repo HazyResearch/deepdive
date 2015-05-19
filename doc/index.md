@@ -12,7 +12,7 @@ relationships between entities and make inference about facts
 involving those entities. DeepDive can process structured,
 unstructured, clean, or noisy data and put the results into a database
 for consumption by standard tools that consumed structured data, e.g.,
-visualization tools like Tablaeu, analytics tools like Excel.
+visualization tools like Tablaeu or analytics tools like Excel.
 
 ### What is DeepDive?
 
@@ -25,11 +25,12 @@ portion of their system that most directly improves the quality of
 their application. In contrast, previous pipeline-based systems
 require developers to build extractors, integration code, and other
 components&mdash;without any clear idea of how their changes improve
-the quality of their data product. This simple insight allows DeepDive
-systems to produce higher quality data in less time. DeepDive-based
-systems are used by users without machine learning expertise in a
-number of domains from paleobiology to genomics to human trafficking,
-see our [showcase](doc/showcase/apps.html) for examples.
+the quality of their data product. This simple insight is the key to
+how DeepDive systems produce higher quality data in less
+time. DeepDive-based systems are used by users without machine
+learning expertise in a number of domains from paleobiology to
+genomics to human trafficking, see our
+[showcase](doc/showcase/apps.html) for examples.
 
 DeepDive is a **trained system** that uses machine learning to cope
 with various forms of noise and imprecision. DeepDive is designed to
