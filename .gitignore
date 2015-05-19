@@ -24,3 +24,4 @@ examples/spouse_example/data/sentences_dump_large.csv
 examples/spouse_example/data/spouses.tsv
 *~
 #*#
+project/target
