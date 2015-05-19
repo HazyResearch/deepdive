@@ -61,6 +61,7 @@ sbt coverage "test-only org.deepdive.test.integration.BrokenTest -- -oF" && \
 sbt coverage "test-only org.deepdive.test.integration.BiasedCoin -- -oF" && \
 sbt coverage "test-only org.deepdive.test.integration.PostgresSpouseExample -- -oF"
 # sbt coverage "test-only org.deepdive.test.integration.ChunkingApp -- -oF" && \
+sbt coverageAggregate
 
 
 # Running a specific test with Eclipse debugger
