@@ -3,32 +3,42 @@ layout: homepage
 root: "."
 ---
 
+### What does DeepDive do?
+
+DeepDive helps create structured data (SQL tables) from unstructured
+information (text documents) and integrate it with an existing
+structured database. DeepDive is used to extract sophisticated
+relationships between entities and make inference about facts
+involving those entities. DeepDive can process structured,
+unstructured, clean, or noisy data and put the results into a database
+for consumption by standard tools that consumed structured data, e.g.,
+visualization tools like Tablaeu, analytics tools like Excel.
+
 ### What is DeepDive?
 
 DeepDive is a new type of data management system that enables one to
 tackle extraction, integration, and prediction problems in a single
-system, which allows users to rapidly end-to-end construct
-sophisticated data pipelines, such as, document-based BI systems. By
-allowing users to build their system end-to-end, users can focus on
-the portion of their system that most directly improves the quality of
+system, which allows users to rapidly construct sophisticated
+end-to-end data pipelines, such as, document-based BI systems. By
+allowing users to build their system end-to-end, users focus on the
+portion of their system that most directly improves the quality of
 their application. In contrast, previous pipeline-based systems
 require developers to build extractors, integration code, and other
-components without any clear idea of how their changes improve the
-quality of their end data product. This simple insight allows DeepDive
-systems to produce higher quality in less time. DeepDive-based systems
-are used by users without machine learning expertise in a number of
-domains from paleobiology to genomics to
-human trafficking, see our [showcase](doc/showcase/apps.html) for examples.
+components&mdash;without any clear idea of how their changes improve
+the quality of their data product. This simple insight allows DeepDive
+systems to produce higher quality data in less time. DeepDive-based
+systems are used by users without machine learning expertise in a
+number of domains from paleobiology to genomics to human trafficking,
+see our [showcase](doc/showcase/apps.html) for examples.
 
 DeepDive is a **trained system** that uses machine learning to cope
-with the various forms of noise and imprecision. DeepDive is designed
-to make it easy for users to train the system through low-level
-feedback (as in standard machine learning approaches) and rich,
-structured domain knowledge via rules. DeepDive has an emphasis on
-enabling non-machine-learning experts, and DeepDive's technical
-innovations are in the ability to solve the result statistical
-inference problems at massive scale and in the programming and
-interaction model.
+with various forms of noise and imprecision. DeepDive is designed to
+make it easy for users to train the system through low-level feedback
+via the [MindTagger interface](doc/basics/labeling.html) and rich,
+structured domain knowledge via rules. DeepDive wants to enable
+experts who do not have machine learning expertise. One of DeepDive's
+key technical innovations is the ability to solve the statistical
+inference at massive scale.
 
 DeepDive differs from traditional systems in several ways:
 
@@ -84,20 +94,6 @@ DeepDive differs from traditional systems in several ways:
 
 For more details, check out [our papers](doc/papers.html).
 
-### Who should use DeepDive?
-
-DeepDive helps create structured data (SQL tables) from unstructured
-information (text) and integrate it with an existing structured
-database. In particular, DeepDive helps users extract sophisticated
-relationships between entities and make inference about facts
-involving those entities. DeepDive can process structured,
-unstructured, clean, or noisy data and outputs the results into a
-database.
-
-Users should be familiar with SQL and Python to build applications on
-DeepDive or to integrate DeepDive with other tools. A developer who
-would like to modify and improve DeepDive must have some basic
-background knowledge listed in the documentation below.
 
 ### What is DeepDive used for?
 
@@ -117,6 +113,13 @@ is available with DeepDive (where permitted). DeepDive is currently
 used in other domains with even more collaborators. Stay tuned, and
 [get in touch with us](mailto:contact.hazy@gmail.com) to talk about
 interesting projects.
+
+### Who should use DeepDive?
+
+Users should be familiar with SQL and Python to build applications on
+DeepDive or to integrate DeepDive with other tools. A developer who
+would like to modify and improve DeepDive must have some basic
+background knowledge listed in the documentation below.
 
 ### Who develops DeepDive?
 
