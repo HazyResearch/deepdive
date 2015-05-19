@@ -17,13 +17,16 @@ Here are a list of notable public DeepDive applications.
 
 <a name="memex"></a>
 ### MEMEX / Human trafficking
-[MEMEX](http://www.darpa.mil/newsevents/releases/2014/02/09.aspx) is a DARPA program to explore next-generation domain-specific information retrieval systems.
-As an ongoing application, the federal government has been using the MEMEX technology to [fight human trafficking](http://www.cbsnews.com/news/new-search-engine-exposes-the-dark-web/).
-For this application, the input is a portion of the dark web where human traffickers are likely to (surreptitiously) post supply and demand information about illegal labor, involuntary sex workers, etc.
-DeepDive would process the web documents to extract evidential data such as names, addresses, phone numbers, job types, job requirements, etc.
-Together with provenance information, such evidential data are then passed on to other collaborators on the MEMEX program as well as law enforcement for structured analysis and consumption by operational applications.
-This application has been [featured](http://www.scientificamerican.com/article/human-traffickers-caught-on-hidden-internet/) [extensively](http://www.wsj.com/articles/sleuthing-search-engine-even-better-than-google-1423703464) [in](http://www.wired.com/2015/02/darpa-memex-dark-web/) [the](http://www.bbc.com/news/technology-31808104) [media](http://www.defenseone.com/technology/2015/02/darpas-new-search-engine-puts-google-dust/105342).
-It is supporting [actual investigations](http://humantraffickingcenter.org/posts-by-htc-associates/memex-helps-find-human-trafficking-cases-online/).
+
+[MEMEX](http://www.darpa.mil/newsevents/releases/2014/02/09.aspx) is a DARPA program that explores how next generation search and extraction systems can help with real-world use cases.
+The initial application is the [fight against human trafficking](http://www.cbsnews.com/news/new-search-engine-exposes-the-dark-web/).
+In this application, the input is a portion of the public and dark web in which human traffickers are likely to (surreptitiously) post supply and demand information about illegal labor, sex workers, and more.
+DeepDive processes such documents to extract evidential data, such as names, addresses, phone numbers, job types, job requirements, information about rates of service, etc.
+Some of these data items are difficult for trained human annotators to accurately extract and have never been previously available, but DeepDive-based systems have high accuracy (Precision and Recall in the 90s, which may exceed non-experts).
+Together with provenance information, such structured, evidential data are then passed on to both other collaborators on the MEMEX program as well as law enforcement for analysis and consumption in operational applications.
+MEMEX has been [featured](http://www.scientificamerican.com/article/human-traffickers-caught-on-hidden-internet/) [extensively](http://www.wsj.com/articles/sleuthing-search-engine-even-better-than-google-1423703464) [in](http://www.wired.com/2015/02/darpa-memex-dark-web/) [the](http://www.bbc.com/news/technology-31808104) [media](http://www.defenseone.com/technology/2015/02/darpas-new-search-engine-puts-google-dust/105342) and is supporting [actual investigations](http://humantraffickingcenter.org/posts-by-htc-associates/memex-helps-find-human-trafficking-cases-online/).
+For example, every human trafficking investigation pursued by the Human Trafficking Response Unity in New York City [involves MEMEX](http://humantraffickingcenter.org/posts-by-htc-associates/memex-helps-find-human-trafficking-cases-online/).
+DeepDive is the [main extracted data provider](http://www.forbes.com/sites/thomasbrewster/2015/04/17/darpa-nasa-and-partners-show-off-memex/) for MEMEX.
 Here is a detailed description of [DeepDive's role in MEMEX](memex.html).
 <p><img src="../../images/showcase/memex-human-trafficking.jpg"></p>
 
