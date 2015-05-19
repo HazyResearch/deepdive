@@ -168,7 +168,7 @@ object DeepDiveLogDeltaDeriver{
           else if (j == i)
             newStmtCqBody += ddDeltaStmtCqBody(j)
       }
-      incrementalStatement += InferenceRule(ConjunctiveQuery(newStmtCqHead, newStmtCqBody.toList), stmt.weights, stmt.supervision)
+      incrementalStatement += InferenceRule(ConjunctiveQuery(newStmtCqHead, newStmtCqBody.toList), stmt.weights, stmt.supervision, stmt.rule)
     }
     incrementalStatement.toList
   }

@@ -74,7 +74,9 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
     ( if (stmt.supervision == null) ""
       else "\n  label = " + stmt.supervision
     ) +
-    "."
+    ( if (stmt.rule == null) ""
+      else "\n  rule = " + stmt.rule
+    ) + "."
   }
 
   override def run(parsedProgram: DeepDiveLog.Program, config: DeepDiveLog.Config) = {

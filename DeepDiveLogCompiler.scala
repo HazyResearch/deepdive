@@ -99,7 +99,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
             ground_relations += { r -> !isQuery } // record whether a query or a ground term.
         }
       case ExtractionRule(_) => ()
-      case InferenceRule(_,_,_) => ()
+      case InferenceRule(_,_,_,_) => ()
       case fdecl : FunctionDeclaration => function_schema += {fdecl.functionName -> fdecl}
       case FunctionCallRule(_,_,_) => ()
     }
@@ -446,7 +446,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     var schema = Set[String]()
     // generate the statements.
     statements.foreach {
-      case InferenceRule(q, weights, supervision) =>
+      case InferenceRule(q, weights, supervision, rule) =>
         val qs = new QuerySchema(q)
         schema += s"${q.head.name}.label: Boolean"
       case _ => ()
