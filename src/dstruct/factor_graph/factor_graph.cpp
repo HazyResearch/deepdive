@@ -186,7 +186,7 @@ void dd::FactorGraph::sort_by_id() {
 }
 
 bool dd::compare_position(const VariableInFactor& x, const VariableInFactor& y) {
-  return x.n_position - y.n_position;
+  return x.n_position < y.n_position;
 }
 
 void dd::FactorGraph::organize_graph_by_edge() {
