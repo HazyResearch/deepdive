@@ -163,7 +163,7 @@ Next, we add the extractor into your `application.conf`:
 ```bash
 extraction.extractors {
 
-  ext_sentences: {
+  ext_sentences {
     input: """
       SELECT  article_id, text
       FROM    articles

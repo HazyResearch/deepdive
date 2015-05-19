@@ -91,7 +91,7 @@ Here is an example of using the parallel loader for MySQL cluster (it can be fou
       style: "tsv_extractor"
 
       loader: "ndbloader"   # Using the parallel loader
-      loader_config: {      # Specify a loader config
+      loader_config {       # Specify a loader config
         # A loader schema file that specifies table schema to load into (mandatory)
         schema: ${APP_HOME}"/mysqlcluster/people_mentions.loaderschema"
         # Connection string to NDB cluster management node (mandatory)

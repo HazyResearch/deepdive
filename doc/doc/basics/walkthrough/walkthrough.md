@@ -167,8 +167,7 @@ have been successfully created with the following command (also, use `\q` to qui
 running the following commands):
 
 ```bash
-psql deepdive_spouse
-\d
+psql deepdive_spouse -c '\d'
 ```
 
 The output should be the following:

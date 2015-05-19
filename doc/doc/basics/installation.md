@@ -45,9 +45,9 @@ We provide a Makefile to quickly install DeepDive. Under `DEEPDIVE_HOME`, run th
 make
 ```
 
-This will first extract our sampler library, compile and pack DeepDive, and deploy the executable to `${HOME}/local/bin/deepdive`. You can also find the compiled executable in `DEEPDIVE_HOME/target/pack/bin/deepdive`.
+This will first extract our sampler library, compile and pack DeepDive, and deploy the executable to `$HOME/local/bin/deepdive`. You can also find the compiled executable in `$DEEPDIVE_HOME/target/pack/bin/deepdive`.
 
-After `make` you should be already able to use DeepDive on your machine. You can either use the command `deepdive` (make sure to add `${HOME}/local/bin/` into your `$PATH`) to run the compiled binary, or compile and run each time by `sbt run` under `DEEPDIVE_HOME`.
+After `make` you should be already able to use DeepDive on your machine. You can either use the command `deepdive` (make sure to add `$HOME/local/bin/` into your `$PATH`) to run the compiled binary, or compile and run each time by `sbt run` under `DEEPDIVE_HOME`.
 
 After that, make sure to **set environmental variables** needed for running sampler, depending on what OS you are using:
 
@@ -101,7 +101,7 @@ If the setup fails, check the console log for detailed error information, and ma
 
 #### Deploying DeepDive Binary
 
-The Makefile will finally pack the compiled code into a binary file, and deploy it into `DEEPDIVE_HOME/target/pack/bin/deepdive`. Make sure you have write permissions to that folder. If deploying succeeded, you will see information like this:
+The Makefile will finally pack the compiled code into a binary file, and deploy it into `$DEEPDIVE_HOME/target/pack/bin/deepdive`. Make sure you have write permissions to that folder. If deploying succeeded, you will see information like this:
 
     SUCCESS! DeepDive binary has been put into $HOME/local/bin.
 
@@ -125,11 +125,11 @@ renamed.
 DDLib is our Python library that provides useful utilities such as "Span" to
 manipulate elements in sentences. It can be useful to write your UDFs during the
 [extraction step](overview.html#extraction). To use `ddlib`,
-`DEEPDIVE_HOME/ddlib` must be added to the `PATH` or `PYTHONPATH` environment
+`$DEEPDIVE_HOME/ddlib` must be added to the `PATH` or `PYTHONPATH` environment
 variables:
 
 ```bash
-export PYTHONPATH=DEEPDIVE_HOME/ddlib:$PYTHONPATH
+export PYTHONPATH=$DEEPDIVE_HOME/ddlib:$PYTHONPATH
 ```
 
 For more documentation about `ddlib`, please refer to its pydoc. Specifically, in a python terminal:

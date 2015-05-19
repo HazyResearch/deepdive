@@ -17,7 +17,7 @@ the training data. DeepDive uses the holdout to evaluate its predictions. By
 default, no holdout is used.
 
 ```bash
-calibration: {
+calibration {
   holdout_fraction: 0.25
 }
 ```
@@ -33,7 +33,7 @@ are to be held out into the `dd_graph_variables_holdout` table through arbitrary
 SQL. A custom holdout query can be specified as follows:
 
 ```bash
-calibration: {
+calibration {
   holdout_query: "INSERT INTO dd_graph_variables_holdout(variable_id) SELECT id FROM mytable WHERE predicate"
 }
 ```
