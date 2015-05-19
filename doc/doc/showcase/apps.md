@@ -7,12 +7,25 @@ source-url: https://docs.google.com/document/d/1ruBshA-oSoqJ0CCqOQR9DIdBWlfeA3fQ
 
 Here are a list of notable public DeepDive applications.
 
+* [MEMEX / Human trafficking](#memex)
 * [TAC-KBP Challenge](#tac-kbp)
 * [Wisci(-pedia)](#wisci)
 * [Geology and Paleontology](#geo-paleo)
-* [Memex / Human trafficking](#memex)
 * [Medical Genetics](#genetics)
 * [Pharmacogenomics](#pharmacogenomics)
+
+
+<a name="memex"></a>
+### MEMEX / Human trafficking
+[MEMEX](http://www.darpa.mil/newsevents/releases/2014/02/09.aspx) is a DARPA program to explore next-generation domain-specific information retrieval systems.
+As an ongoing application, the federal government has been using the MEMEX technology to [fight human trafficking](http://www.cbsnews.com/news/new-search-engine-exposes-the-dark-web/).
+For this application, the input is a portion of the dark web where human traffickers are likely to (surreptitiously) post supply and demand information about illegal labor, involuntary sex workers, etc.
+DeepDive would process the web documents to extract evidential data such as names, addresses, phone numbers, job types, job requirements, etc.
+Together with provenance information, such evidential data are then passed on to other collaborators on the MEMEX program as well as law enforcement for structured analysis and consumption by operational applications.
+This application has been [featured](http://www.scientificamerican.com/article/human-traffickers-caught-on-hidden-internet/) [extensively](http://www.wsj.com/articles/sleuthing-search-engine-even-better-than-google-1423703464) [in](http://www.wired.com/2015/02/darpa-memex-dark-web/) [the](http://www.bbc.com/news/technology-31808104) [media](http://www.defenseone.com/technology/2015/02/darpas-new-search-engine-puts-google-dust/105342).
+It is supporting [actual investigations](http://humantraffickingcenter.org/posts-by-htc-associates/memex-helps-find-human-trafficking-cases-online/).
+Here is a detailed description of [DeepDive's role in MEMEX](memex.html).
+<p><img src="../../images/showcase/memex-human-trafficking.jpg"></p>
 
 
 <a name="tac-kbp"></a>
@@ -39,19 +52,6 @@ Wisci also accepts user feedback and learns from it.
 [Geology](http://en.wikipedia.org/wiki/Geology) studies history of the solid Earth; [paleontology](http://en.wikipedia.org/wiki/Paleontology) studies fossils and ancient organisms. At the core of both disciplines are discovery and knowledge sharing. In particular, the research communities have maintained two live databases: [Macrostrat](http://macrostrat.org/about.php), which contains tens of thousands of rock units and their attributes, and the [Paleobiology Database](https://paleobiodb.org/#/) (PBDB), which contains hundreds of thousands of taxonomic names and their attributes. However, both projects require researchers to laboriously sift through massive amounts of scientific publications, find relevant statements, and manually enter them into the database. For example, PBDB has taken approximately nine continuous person years to read from roughly 40K documents in the past two decades.
 In collaboration with [Prof. Shanan Peters](http://geoscience.wisc.edu/geoscience/people/faculty/shanan-peters/) at UW-Madison, we developed two DeepDive programs, [GeoDeepDive](http://www.cs.stanford.edu/people/chrismre/papers/gdd_demo.pdf) and [PaleoDeepDive](http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0113523), that process roughly 300K scientific documents (including text, tables, and figures). On the document set covered by both DeepDive and PBDB contributors (12K), DeepDive achieves recall roughly 2.5X that of humans, and precision that is as high as or higher than humans.
 <p style="text-align:center;"><img style="width:80%;" src="../../images/showcase/paleontology.jpg"></p>
-
-
-<a name="memex"></a>
-### Memex / Human trafficking
-[Memex](http://www.darpa.mil/newsevents/releases/2014/02/09.aspx) is a DARPA program to explore next-generation domain-specific information retrieval systems.
-As an ongoing application, the federal government has been using the Memex technology to [fight human trafficking](http://www.cbsnews.com/news/new-search-engine-exposes-the-dark-web/).
-For this application, the input is a portion of the dark web where human traffickers are likely to (surreptitiously) post supply and demand information about illegal labor, involuntary sex workers, etc.
-DeepDive would process the web documents to extract evidential data such as names, addresses, phone numbers, job types, job requirements, etc.
-Together with provenance information, such evidential data are then passed on to other collaborators on the Memex program as well as law enforcement for structured analysis and consumption by operational applications.
-This application has been [featured](http://www.scientificamerican.com/article/human-traffickers-caught-on-hidden-internet/) [extensively](http://www.wsj.com/articles/sleuthing-search-engine-even-better-than-google-1423703464) [in](http://www.wired.com/2015/02/darpa-memex-dark-web/) [the](http://www.bbc.com/news/technology-31808104) [media](http://www.defenseone.com/technology/2015/02/darpas-new-search-engine-puts-google-dust/105342).
-It is supporting [actual investigations](http://www.defenseone.com/technology/2015/02/darpas-new-search-engine-puts-google-dust/105342/).
-Here is a detailed description of [DeepDive's role in Memex](memex.html).
-<p><img src="../../images/showcase/memex-human-trafficking.jpg"></p>
 
 
 <a name="genetics"></a>
