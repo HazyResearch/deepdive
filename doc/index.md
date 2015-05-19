@@ -5,99 +5,99 @@ root: "."
 
 ### What is DeepDive?
 
-DeepDive is a new type of system that enables developers to analyze data on a
-deeper level than ever before. DeepDive is a **trained system**: it uses machine
-learning techniques to leverage on domain-specific knowledge and incorporates
-user feedback to improve the quality of its analysis.
+DeepDive is a new type of system that enables one to tackle
+extraction, integration, and prediction problems in a single
+engine. The key idea is to treat all of these problems as a
+statistical prediction task. DeepDive is a **trained system** that
+uses machine learning techniques to make it easier to build
+sophisticated extraction and integration systems. In addition,
+DeepDive is designed to make it easy for users to train the system
+through low-level feedback (as in standard machine learning
+approaches) and rich structured domain knowledge through sophisticated
+rules. DeepDive has an emphasis on enabling non-machine-learning
+experts, and DeepDive-based to be used in a large number of
+[domains](doc/showcase/apps.html) from paleobiology to genomics to
+human trafficking.
 
 DeepDive differs from traditional systems in several ways:
 
 - DeepDive asks the developer to **think about features—not algorithms**.
   In contrast, other machine learning systems require the developer
-  think about which clustering algorithm classification algorithm, etc.
+  think about which clustering algorithm, which classification algorithm, etc.
   In DeepDive’s joint inference based approach, the user only specifies
-  the necessary signals or features.
-- DeepDive has achieved **winning performance** in 
-  [text competitions](http://i.stanford.edu/hazy/papers/2014kbp-systemdescription.pdf) 
-  and even **beat human volunteers** in extracting complex knowledge in 
-  [scientific domains](http://www.plosone.org/article/info:doi/10.1371/journal.pone.0113523).
-- DeepDive is aware that **data is often noisy and imprecise**: names are
-  misspelled, natural language is ambiguous, and humans make mistakes. Taking
-  such imprecisions into account, DeepDive computes
-  [calibrated](doc/basics/calibration.html) probabilities for every assertion
-  it makes. For example, if DeepDive produces a fact with probability 0.9 it
-  means the fact is 90% likely to be true. 
-- DeepDive is able to use large amounts of data from a **variety of sources**.
-  Applications built using DeepDive have extracted data from millions of
-  documents, web pages, PDFs, tables, and figures.
-- DeepDive allows developers to **use their knowledge of a given domain** to
+  the necessary **signals or features**. 
+- DeepDive systems can achieve high quality: PaleoDeepDive has **higher than human volunteers** in extracting complex knowledge in 
+  [scientific domains](http://www.plosone.org/article/info:doi/10.1371/journal.pone.0113523) and  **winning performance** in 
+  [entity relation extraction competitions](http://i.stanford.edu/hazy/papers/2014kbp-systemdescription.pdf). 
+  
+- DeepDive is aware that **data is often noisy and imprecise**: names
+  are misspelled, natural language is ambiguous, and humans make
+  mistakes. Taking such imprecision into account, DeepDive computes
+  [calibrated](doc/basics/calibration.html) probabilities for every
+  assertion it makes. For example, if DeepDive produces a fact with
+  probability 0.9, the fact is 90% likely to be true.  - DeepDive is
+  able to use large amounts of data from a **variety of sources**.
+  Applications built using DeepDive have extracted data from millions
+  of documents, web pages, PDFs, tables, and figures.  - DeepDive
+  allows developers to **use their knowledge of a given domain** to
   improve the quality of the results by [writing simple
-  rules](doc/basics/inference_rules.html) that inform the inference (learning) process.
-  DeepDive can also take into account user feedback on the correctness of the
-  predictions, with the goal of improving the predictions.
-- DeepDive is able to use the data to [learn
-  "distantly"](doc/general/distant_supervision.html). In contrast, most machine
-  learning systems require tedious training for each prediction. In fact,
-  many DeepDive applications, especially at early stages, need no traditional
-  training data at all!
-- DeepDive’s secret is a **scalable, high-performance inference and learning
-  engine**. For the past few years, we have been working to make the underlying
-  algorithms run as fast as possible. The techniques pioneered in this project
-  are part of commercial and open source tools including
-  [MADlib](http://madlib.net/),
+  rules](doc/basics/inference_rules.html) that inform the inference
+  (learning) process.  DeepDive can also take into account user
+  feedback on the correctness of the predictions, to improve the
+  predictions.  - DeepDive is able to use the data to [learn
+  "distantly"](doc/general/distant_supervision.html). In contrast,
+  most machine learning systems require tedious training for each
+  prediction. In fact, many DeepDive applications, especially at early
+  stages, need no traditional training data at all!  - DeepDive’s
+  secret is a **scalable, high-performance inference and learning
+  engine**. For the past few years, we have been working to make the
+  underlying algorithms run as fast as possible. The techniques
+  pioneered in this project are part of commercial and open source
+  tools including [MADlib](http://madlib.net/),
   [Impala](http://www.cloudera.com/content/cloudera/en/products-and-services/cdh/impala.html),
   a product from
   [Oracle](https://blogs.oracle.com/R/entry/low_rank_matrix_factorization_in),
   and low-level techniques, such as
   [Hogwild!](http://i.stanford.edu/hazy/papers/hogwild-nips.pdf). They
   have also been included in [Microsoft's
-  Adam](http://www.wired.com/2014/07/microsoft-adam/).
+  Adam](http://www.wired.com/2014/07/microsoft-adam/) and other major
+  web companies.
 
 For more details, check out [our papers](doc/papers.html).
 
 ### Who should use DeepDive?
 
-DeepDive is targeted to help user extract relations between entities from data
-and make inference about facts involving the entities. DeepDive can process
-structured, unstructured, clean, or noisy data and outputs the results into a
+DeepDive helps create structured data (SQL tables) from unstructured
+information (text) and integrate it with an existing structured
+database. In particular, DeepDive helps users extract sophisticated
+relationships between entities and make inference about facts
+involving those entities. DeepDive can process structured,
+unstructured, clean, or noisy data and outputs the results into a
 database.
 
-Users should be familiar with SQL and Python in order to build applications on
-top of DeepDive or to integrate DeepDive with other tools. A developer who
-would like to modify and improve DeepDive must have some basic background
-knowledge listed in the documentation below. 
+Users should be familiar with SQL and Python to build applications on
+DeepDive or to integrate DeepDive with other tools. A developer who
+would like to modify and improve DeepDive must have some basic
+background knowledge listed in the documentation below.
 
 ### What is DeepDive used for?
 
-Over the last few years, we have built applications for both broad domains that
-[read the Web](https://www.youtube.com/watch?v=Q1IpE9_pBu4) and for specific
-domains like paleobiology. In collaboration with Shanan Peters
-([PaleobioDB](http://paleobiodb.org/)), we built a
-[system](https://www.youtube.com/watch?v=Cj2-dQ2nwoY) that reads documents with
-higher accuracy and from larger corpora than expert human volunteers. We find
-this very exciting as it demonstrates that trained systems may have the ability
-to change the way science is conducted. 
+Examples of DeepDive applications are described in our [showcase page](doc/showcase/apps.html).
 
-In a number of research papers we demonstrated the power of DeepDive on NMR data
-and financial, oil, and gas documents. For example, we
-[showed](http://cs.stanford.edu/people/chrismre/papers/jointable-acl.pdf) that
-DeepDive can understand tabular data. We are using DeepDive to support our own
-research, exploring how knowledge can be used to build the next generation of data
-processing systems.
+- MEMEX. Supporting the fight against human trafficking, which was recently featured on [Forbes](http://www.forbes.com/sites/thomasbrewster/2015/04/17/darpa-nasa-and-partners-show-off-memex/) and is now actively used by [law enforcement agencies](http://humantraffickingcenter.org/posts-by-htc-associates/memex-helps-find-human-trafficking-cases-online/). 
 
-Examples of DeepDive applications include:
+- [PaleoDeepDive](https://www.youtube.com/watch?v=Cj2-dQ2nwoY) - A knowledge base for Paleobiologists with quality higher than human volunteers
 
-- [MEMEX](http://www.cbsnews.com/news/new-search-engine-exposes-the-dark-web/) - Supporting the fight against human trafficking.
-  <br><small>(The project was recently featured on [60 minutes](http://www.cbsnews.com/news/new-search-engine-exposes-the-dark-web/), [Scientific American](http://www.scientificamerican.com/article/human-traffickers-caught-on-hidden-internet/), [Wall St. Journal](http://www.wsj.com/articles/sleuthing-search-engine-even-better-than-google-1423703464), [BBC](http://www.bbc.com/news/technology-31808104), and [Wired](http://www.wired.com/2015/02/darpa-memex-dark-web/). It is supporting actual [investigations](http://www.defenseone.com/technology/2015/02/darpas-new-search-engine-puts-google-dust/105342).)</small>
-- [PaleoDeepDive](https://www.youtube.com/watch?v=Cj2-dQ2nwoY) - A knowledge base for Paleobiologists
 - [GeoDeepDive](https://www.youtube.com/watch?v=X8uhs28O3eA) - Extracting dark data from geology journal articles
+
 - [Wisci](https://www.youtube.com/watch?v=Q1IpE9_pBu4) - Enriching Wikipedia with structured data
 
-More detail of these examples are available in the [showcase page](doc/showcase/apps.html).
-The complete code for these examples is available with DeepDive. We are
-currently working on other domains with even more collaborators. Stay tuned, and
-[get in touch with us](mailto:contact.hazy@gmail.com) to talk about interesting
-projects.
+These examples are described in the [showcase
+page](doc/showcase/apps.html).  The complete code for these examples
+is available with DeepDive (where permitted). DeepDive is currently
+used in other domains with even more collaborators. Stay tuned, and
+[get in touch with us](mailto:contact.hazy@gmail.com) to talk about
+interesting projects.
 
 ### Who develops DeepDive?
 

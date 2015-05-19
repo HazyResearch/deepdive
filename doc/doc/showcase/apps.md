@@ -26,7 +26,9 @@ Some of these data items are difficult for trained human annotators to accuratel
 Together with provenance information, such structured, evidential data are then passed on to both other collaborators on the MEMEX program as well as law enforcement for analysis and consumption in operational applications.
 MEMEX has been [featured](http://www.scientificamerican.com/article/human-traffickers-caught-on-hidden-internet/) [extensively](http://www.wsj.com/articles/sleuthing-search-engine-even-better-than-google-1423703464) [in](http://www.wired.com/2015/02/darpa-memex-dark-web/) [the](http://www.bbc.com/news/technology-31808104) [media](http://www.defenseone.com/technology/2015/02/darpas-new-search-engine-puts-google-dust/105342) and is supporting [actual investigations](http://humantraffickingcenter.org/posts-by-htc-associates/memex-helps-find-human-trafficking-cases-online/).
 For example, every human trafficking investigation pursued by the Human Trafficking Response Unity in New York City [involves MEMEX](http://humantraffickingcenter.org/posts-by-htc-associates/memex-helps-find-human-trafficking-cases-online/).
-DeepDive is the [main extracted data provider](http://www.forbes.com/sites/thomasbrewster/2015/04/17/darpa-nasa-and-partners-show-off-memex/) for MEMEX.
+DeepDive is the [main extracted data provider](http://www.forbes.com/sites/thomasbrewster/2015/04/17/darpa-nasa-and-partners-show-off-memex/) for MEMEX.  See als, [60 minutes](http://www.cbsnews.com/news/new-search-engine-exposes-the-dark-web/), [Scientific American](http://www.scientificamerican.com/article/human-traffickers-caught-on-hidden-internet/), [Wall St. Journal](http://www.wsj.com/articles/sleuthing-search-engine-even-better-than-google-1423703464), [BBC](http://www.bbc.com/news/technology-31808104), and [Wired](http://www.wired.com/2015/02/darpa-memex-dark-web/). It is supporting actual [investigations](http://www.defenseone.com/technology/2015/02/darpas-new-search-engine-puts-google-dust/105342).)</small>
+
+
 Here is a detailed description of [DeepDive's role in MEMEX](memex.html).
 <p><img src="../../images/showcase/memex-human-trafficking.jpg"></p>
 
