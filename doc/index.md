@@ -6,12 +6,12 @@ root: "."
 ### What does DeepDive do?
 
 DeepDive helps create structured data (SQL tables) from unstructured
-information (text documents) and integrate it with an existing
+information (text documents) and integrate such data with an existing
 structured database. DeepDive is used to extract sophisticated
 relationships between entities and make inference about facts
 involving those entities. DeepDive can process structured,
 unstructured, clean, or noisy data and put the results into a database
-for consumption by standard tools that consumed structured data, e.g.,
+for consumption by standard tools that consume structured data, e.g.,
 visualization tools like Tablaeu or analytics tools like Excel.
 
 ### What is DeepDive?
