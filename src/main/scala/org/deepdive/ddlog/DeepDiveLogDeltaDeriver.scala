@@ -1,3 +1,5 @@
+package org.deepdive.ddlog
+
 import scala.collection.mutable.ListBuffer
 
 object DeepDiveLogDeltaDeriver{

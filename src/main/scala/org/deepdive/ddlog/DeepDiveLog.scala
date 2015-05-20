@@ -1,3 +1,5 @@
+package org.deepdive.ddlog
+
 // A command-line interface
 object DeepDiveLog {
   type Program = List[Statement]
