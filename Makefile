@@ -21,7 +21,7 @@ CXXFLAGS += -Ofast
 CXXFLAGS += -I./lib/numactl-2.0.9/
 LDFLAGS += -L./lib/numactl-2.0.9/
 LDFLAGS += -Wl,-Bstatic -Wl,-Bdynamic
-LDLIBS += -lnuma -lrt
+LDLIBS += -lnuma -lrt -lpthread
 endif
 
 ifeq ($(UNAME), Darwin)
