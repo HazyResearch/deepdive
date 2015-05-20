@@ -16,6 +16,8 @@ setup() {
     [ -e "$EXAMPLE" ]
 }
 
+## tests for basic compilation and pretty-printing
+
 # compare the compiled output with what's expected
 @test "compile $EXAMPLE_NAME" {
     expectedOutput=$EXAMPLE_BASEPATH.compile.expected
@@ -24,7 +26,7 @@ setup() {
     diff -u "$expectedOutput" -
 }
 
-# compare the pretty-printed output with the input
+# compare the pretty-printed output with what's expected
 @test "print $EXAMPLE_NAME as expected" {
     expectedOutput=$EXAMPLE_BASEPATH.print.expected
     [ -e "$expectedOutput" ] || skip
@@ -41,6 +43,21 @@ setup() {
 }
 
 
-# TODO incremental print
+## tests for --incremental support
 
-# TODO incremental compile
+# compare the compiled output of the incremental version with what's expected
+@test "print $EXAMPLE_NAME as expected" {
+    expectedOutput=$EXAMPLE_BASEPATH.compile-incremental.expected
+    [ -e "$expectedOutput" ] || skip
+    scala "$DDLOG_JAR" compile --incremental "$EXAMPLE" |
+    diff -u "$expectedOutput" -
+}
+
+# compare the pretty-printed output of the incremental version with what's expected
+@test "print $EXAMPLE_NAME as expected" {
+    expectedOutput=$EXAMPLE_BASEPATH.print-incremental.expected
+    [ -e "$expectedOutput" ] || skip
+    scala "$DDLOG_JAR" print --incremental "$EXAMPLE" |
+    diff -u "$expectedOutput" -
+}
+
