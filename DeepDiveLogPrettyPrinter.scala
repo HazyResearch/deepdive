@@ -49,8 +49,11 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
       val vars = a.terms map { _.varName }
       s"${a.name}(${vars.mkString(", ")})"
     }
+    val printListAtom = {a:List[Atom] =>
+      s"${(a map printAtom).mkString(",\n    ")}"
+    }
     s"""${printAtom(cq.head)} :-
-       |    ${(cq.body map printAtom).mkString(",\n    ")}""".stripMargin
+       |    ${(cq.bodies map printListAtom).mkString(";\n    ")}""".stripMargin
   }
 
   def print(stmt: ExtractionRule): String = {

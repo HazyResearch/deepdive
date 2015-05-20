@@ -11,7 +11,7 @@ case class Variable(varName : String, relName : String, index : Int )
 // TODO make Atom a trait, and have multiple case classes, e.g., RelationAtom and CondExprAtom
 case class Atom(name : String, terms : List[Variable])
 case class Attribute(name : String, terms : List[Variable], types : List[String])
-case class ConjunctiveQuery(head: Atom, body: List[Atom])
+case class ConjunctiveQuery(head: Atom, bodies: List[List[Atom]])
 case class Column(name : String, t : String)
 
 sealed trait FactorWeight {
@@ -36,7 +36,7 @@ case class SchemaDeclaration( a : Attribute , isQuery : Boolean ) extends Statem
 case class FunctionDeclaration( functionName: String, inputType: RelationType, outputType: RelationType, implementations: List[FunctionImplementationDeclaration]) extends Statement
 case class ExtractionRule(q : ConjunctiveQuery) extends Statement // Extraction rule
 case class FunctionCallRule(input : String, output : String, function : String) extends Statement // Extraction rule
-case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, supervision : String, rule : String) extends Statement // Weighted rule
+case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, supervision : String, rule : String = "imply") extends Statement // Weighted rule
 
 
 // Parser
@@ -99,8 +99,9 @@ class DeepDiveLogParser extends JavaTokenParsers {
       case (headatom ~ ":-" ~ disjunctiveBodies) =>
         // TODO handle all disjunctiveBodies
         // XXX only compiling the first body
-        val bodyatoms = disjunctiveBodies(0)
-        ConjunctiveQuery(headatom, bodyatoms.toList)
+        // val bodyatoms = disjunctiveBodies(0)
+        // ConjunctiveQuery(headatom, bodyatoms.toList)
+        ConjunctiveQuery(headatom, disjunctiveBodies)
     }
 
   def relationType: Parser[RelationType] =

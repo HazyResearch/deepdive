@@ -146,25 +146,30 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
   }
 
   // Resolve a column name with alias
-  def resolveColumn(s: String, qs: QuerySchema, q : ConjunctiveQuery, alias: Boolean) : Option[String] = {
+  def resolveColumn(s: String, qs: QuerySchema, q : ConjunctiveQuery, alias: Int) : Option[String] = {
     val index = qs.getBodyIndex(s)
     val name  = resolveName(qs.getVar(s))
-    val relation = q.body(index).name
-    if (alias)
-      Some(s"""R${index}.${name} AS "${relation}.R${index}.${name}" """)
-    else
-      Some(s"${relation}.R${index}.${name}")
+    val relation = q.bodies(0)(index).name
+    // Three kinds of column expressions:
+    // 0 => use alias for unknown weight in inference
+    // 1 => use column name and alias for normal extraction rule
+    // 2 => use column name for dd_new_ tables
+    alias match {
+      case 0 => Some(s"${relation}.R${index}.${name}")
+      case 1 => Some(s"""R${index}.${name} AS "${relation}.R${index}.${name}" """)
+      case 2 => Some(s"R${index}.${name}")
+    }
   }
 
   // This is generic code that generates the FROM with positional aliasing R0, R1, etc.
   // and the corresponding WHERE clause (equating all variables)
   def generateSQLBody(z : ConjunctiveQuery) : String = {
-    val bodyNames = ( z.body.zipWithIndex map { case(x,i) => s"${x.name} R${i}"}).mkString(", ")
+    val bodyNames = ( z.bodies(0).zipWithIndex map { case(x,i) => s"${x.name} R${i}"}).mkString(", ")
     // Simple logic for the where clause, first find every first occurence of a
     // and stick it in a map.
     val qs = new QuerySchema(z)
 
-    val whereClause = z.body.zipWithIndex flatMap {
+    val whereClause = z.bodies(0).zipWithIndex flatMap {
       case (Atom(relName, terms),body_index) =>
         terms flatMap {
           case Variable(varName, relName, index) =>
@@ -219,8 +224,8 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
     // Look at the body of each statement to construct a dependency graph
     statements foreach {
       case f : FunctionCallRule => dependencies += { f -> ((        Some(f.input) flatMap (stmtByHeadName get _)).toSet.flatten.flatten) }
-      case e : ExtractionRule   => dependencies += { e -> ((e.q.body map (_.name) flatMap (stmtByHeadName get _)).toSet.flatten.flatten) }
-      case w : InferenceRule    => dependencies += { w -> ((w.q.body map (_.name) flatMap (stmtByHeadName get _)).toSet.flatten.flatten) }
+      case e : ExtractionRule   => dependencies += { e -> ((e.q.bodies.flatten map (_.name) flatMap (stmtByHeadName get _)).toSet.flatten.flatten) }
+      case w : InferenceRule    => dependencies += { w -> ((w.q.bodies.flatten map (_.name) flatMap (stmtByHeadName get _)).toSet.flatten.flatten) }
       case _ =>
     }
   }
@@ -248,7 +253,7 @@ class QuerySchema(q : ConjunctiveQuery) {
   // index is the index of the subgoal/atom this variable is found in the body.
   // variable is the complete Variable type for the found variable.
   def generateCanonicalVar()  = {
-    q.body.zipWithIndex.foreach {
+    q.bodies(0).zipWithIndex.foreach {
       case (Atom(relName,terms),index) =>  {
         terms.foreach {
           case Variable(v, r, i) =>
@@ -275,21 +280,27 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
   def compileExtractionRules(stmts: List[ExtractionRule], ss: CompilationState): CompiledBlocks = {
     var inputQueries = new ListBuffer[String]()
     for (stmt <- stmts) {
-      // Generate the body of the query.
-      val qs              = new QuerySchema( stmt.q )
-      // variable columns
-      val variableCols = stmt.q.head.terms flatMap {
-        case(Variable(v,rr,i)) => ss.resolveColumn(v, qs, stmt.q, true)
+      for (cqBody <- stmt.q.bodies) {
+        var tmpStmt = ConjunctiveQuery(stmt.q.head, List(cqBody))
+        // Generate the body of the query.
+        val qs              = new QuerySchema( tmpStmt )
+        // variable columns
+        var resolveColumnFlag = tmpStmt.head.name.startsWith("dd_new_") match {
+          case true => 2
+          case false => 1
+        }
+        val variableCols = tmpStmt.head.terms flatMap {
+          case(Variable(v,rr,i)) => ss.resolveColumn(v, qs, tmpStmt, resolveColumnFlag)
+        }
+
+        val selectStr = variableCols.mkString(", ")
+        val ddCount = if (ss.isIncremental && (resolveColumnFlag == 1)) ( tmpStmt.bodies(0).zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
+        val ddCountStr = if (ddCount.length > 0) s""", ${ddCount} AS \"dd_count\" """ else ""
+
+        inputQueries += s"""
+          SELECT ${selectStr}${ddCountStr}
+          ${ ss.generateSQLBody(tmpStmt) }"""
       }
-
-      val selectStr = variableCols.mkString(", ")
-      val ddCount = if (ss.isIncremental) ( stmt.q.body.zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
-      val ddCountStr = if (ddCount.length > 0) s""", ${ddCount} AS \"dd_count\" """ else ""
-
-      inputQueries += s"""
-        SELECT ${selectStr}${ddCountStr}
-        ${ ss.generateSQLBody(stmt.q) }"""
-
     }
     val blockName = ss.resolveExtractorBlockName(stmts(0))
     val extractor = s"""
@@ -340,25 +351,28 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
   // generate inference rule part for deepdive
   def compileInferenceRules(stmts: List[InferenceRule], ss: CompilationState): CompiledBlocks = {
     var blocks = List[String]()
-    val qs = new QuerySchema( stmts(0).q )
     // node query
     // generate the node portion (V) of the factor graph
-    def compileNodeRule(zs: List[InferenceRule], qs: QuerySchema, ss: CompilationState) : CompiledBlocks = {
+    def compileNodeRule(zs: List[InferenceRule], ss: CompilationState) : CompiledBlocks = {
       var inputQueries = new ListBuffer[String]()
       for (z <- zs) {
-        val headTerms = z.q.head.terms map {
-          case Variable(v,r,i) => s"R${i}.${ss.resolveName(qs.getVar(v)) }"
-        }
-        val index = qs.getBodyIndex(z.supervision)
-        val name  = ss.resolveName(qs.getVar(z.supervision))
-        val labelCol = s"R${index}.${name}"
-        val headTermsStr = ( "0 as id"  :: headTerms ).mkString(", ")
-        val ddCount = if (ss.isIncremental) ( z.q.body.zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
-        val ddCountStr = if (ddCount.length > 0) s", ${ddCount} AS dd_count" else ""
+        for (cqBody <- z.q.bodies) {
+          var tmpStmt = ConjunctiveQuery(z.q.head, List(cqBody))
+          val qs = new QuerySchema(tmpStmt)
+          val headTerms = tmpStmt.head.terms map {
+            case Variable(v,r,i) => s"R${i}.${ss.resolveName(qs.getVar(v)) }"
+          }
+          val index = qs.getBodyIndex(z.supervision)
+          val name  = ss.resolveName(qs.getVar(z.supervision))
+          val labelCol = s"R${index}.${name}"
+          val headTermsStr = ( "0 as id"  :: headTerms ).mkString(", ")
+          val ddCount = if (ss.isIncremental) ( tmpStmt.bodies(0).zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
+          val ddCountStr = if (ddCount.length > 0) s", ${ddCount} AS dd_count" else ""
 
-        inputQueries += s"""SELECT DISTINCT ${ headTermsStr }, ${labelCol} AS label ${ddCountStr}
-        ${ ss.generateSQLBody(z.q) }
-        """
+          inputQueries += s"""SELECT DISTINCT ${ headTermsStr }, ${labelCol} AS label ${ddCountStr}
+          ${ ss.generateSQLBody(tmpStmt) }
+          """
+        }
       }
       val blockName = ss.resolveExtractorBlockName(zs(0))
       val ext = s"""
@@ -374,53 +388,59 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       List(ext)
     }
     if (ss.isQueryTerm(stmts(0).q.head.name))
-      blocks :::= compileNodeRule(stmts, qs, ss)
+      blocks :::= compileNodeRule(stmts, ss)
 
     val inferenceRuleGroupByHead    = stmts.groupBy(_.q.head.name)
-
+    var stmtIndex = 0
     for (stmt <- stmts) {
-      // edge query
-      val fakeBody        = stmt.q.head +: stmt.q.body
-      val fakeCQ          = ConjunctiveQuery(stmt.q.head, fakeBody) // we will just use the fakeBody below.
+      var inputQueries = new ListBuffer[String]()
+      var func = ""
+      var weight = ""
+      for (cqBody <- stmt.q.bodies) {
+        var tmpStmt = ConjunctiveQuery(stmt.q.head, List(cqBody))
+        // edge query
+        val fakeBody        = tmpStmt.head +: tmpStmt.bodies(0)
+        // val fakeBody        = stmt.q.bodies +: List(stmt.q.head)
+        val fakeCQ          = ConjunctiveQuery(tmpStmt.head, List(fakeBody)) // we will just use the fakeBody below.
 
-      val index = stmt.q.body.length + 1
-      val qs2 = new QuerySchema( fakeCQ )
-      val variableIdsStr = Some(s"""R0.id AS "${stmt.q.head.name}.R0.id" """)
+        val index = tmpStmt.bodies(0).length + 1
+        val qs2 = new QuerySchema( fakeCQ )
+        val variableIdsStr = Some(s"""R0.id AS "${tmpStmt.head.name}.R0.id" """)
 
-      // weight string
-      val uwStr = stmt.weights match {
-        case KnownFactorWeight(x) => None
-        case UnknownFactorWeight(w) => Some(w.flatMap(s => ss.resolveColumn(s, qs2, fakeCQ, true)).mkString(", "))
-      }
-
-      val selectStr = (List(variableIdsStr, uwStr) flatten).mkString(", ")
-
-      val ddCount = if (ss.isIncremental) ( fakeCQ.body.zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
-      val ddCountStr = if (ddCount.length > 0) s""", ${ddCount} AS \"dd_count\" """ else ""
-
-      // factor input query
-      val inputQuery = s"""
-        SELECT ${selectStr} ${ddCountStr}
-        ${ ss.generateSQLBody(fakeCQ) }"""
-
-      // factor function
-      val func = s"""Imply(${stmt.q.head.name}.R0.label)"""
-
-      // weight
-      val weight = stmt.weights match {
-        case KnownFactorWeight(x) => s"${x}"
-        case UnknownFactorWeight(w) => {
-          s"""?(${w.flatMap(s => ss.resolveColumn(s, qs2, fakeCQ, false)).mkString(", ")})"""
+        // weight string
+        val uwStr = stmt.weights match {
+          case KnownFactorWeight(x) => None
+          case UnknownFactorWeight(w) => Some(w.flatMap(s => ss.resolveColumn(s, qs2, fakeCQ, 1)).mkString(", "))
         }
-      }
 
+        val selectStr = (List(variableIdsStr, uwStr) flatten).mkString(", ")
+
+        val ddCount = if (ss.isIncremental) ( fakeCQ.bodies(0).zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
+        val ddCountStr = if (ddCount.length > 0) s""", ${ddCount} AS \"dd_count\" """ else ""
+
+        // factor input query
+        inputQueries += s"""
+          SELECT ${selectStr} ${ddCountStr}
+          ${ ss.generateSQLBody(fakeCQ) }"""
+        // factor function
+        func = s"""Imply(${stmt.q.head.name}.R0.label)"""
+        // weight
+        if (weight.length == 0)
+          weight = stmt.weights match {
+            case KnownFactorWeight(x) => s"${x}"
+            case UnknownFactorWeight(w) => {
+              s"""?(${w.flatMap(s => ss.resolveColumn(s, qs2, fakeCQ, 0)).mkString(", ")})"""
+            }
+          }
+      }
       blocks ::= s"""
-        deepdive.inference.factors.factor_${stmt.q.head.name} {
-          input_query: \"\"\"${inputQuery}\"\"\"
+        deepdive.inference.factors.factor_${stmt.q.head.name}_${stmtIndex} {
+          input_query: \"\"\"${inputQueries.mkString(" UNION ")}\"\"\"
           function: "${func}"
           weight: "${weight}"
         }
       """
+      stmtIndex += 1
     }
     blocks.reverse
   }
