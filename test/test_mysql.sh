@@ -60,7 +60,7 @@ export SBT_OPTS="-XX:MaxHeapSize=256m -Xmx512m -XX:MaxPermSize=256m"
 sbt coverage "test-only org.deepdive.test.unit.* -- -oF" && \
 sbt coverage "test-only org.deepdive.test.integration.BrokenTest -- -oF" && \
 sbt coverage "test-only org.deepdive.test.integration.BiasedCoin -- -oF" && \
-sbt coverage "test-only org.deepdive.test.integration.PostgresSpouseExample -- -oF" && \
+sbt coverage "test-only org.deepdive.test.integration.MysqlSpouseExample -- -oF" && \
 sbt coverage "test-only org.deepdive.test.integration.ChunkingApp -- -oF"
 sbt coverageAggregate
 
