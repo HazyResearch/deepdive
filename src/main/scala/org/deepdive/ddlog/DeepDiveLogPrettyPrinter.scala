@@ -1,3 +1,5 @@
+package org.deepdive.ddlog
+
 import org.apache.commons.lang3.StringEscapeUtils
 
 // Pretty printer that simply prints the parsed input

@@ -19,7 +19,7 @@ test-package: $(JAR)
 	$(MAKE) test TEST_JAR=$<
 
 # build test jar
-$(TEST_JAR): $(wildcard *.scala)
+$(TEST_JAR): $(wildcard src/main/scala/org/deepdive/ddlog/*.scala)
 	sbt package
 	ln -sfn $$(ls -t target/scala-*/*_*.jar | head -1) $@
 	touch $@

@@ -1,3 +1,5 @@
+package org.deepdive.ddlog
+
 // DeepDiveLog compiler
 // See: https://docs.google.com/document/d/1SBIvvki3mnR28Mf0Pkin9w9mWNam5AA0SpIGj1ZN2c4
 
