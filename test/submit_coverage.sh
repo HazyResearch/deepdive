@@ -4,5 +4,5 @@
 # and remove it after test
 # Ref: https://github.com/scoverage/sbt-coveralls
 ln -s src/main/scala/org ./
-COVERALLS_REPO_TOKEN=QknRiHqsMIzaOEbmSYtikFuxuVWEiPAJe sbt coveralls
+sbt coveralls
 rm -f org
