@@ -93,4 +93,4 @@ has_spouse(rid) :-
   has_spouse_features(rid, f)
 weight = f
 label = l
-rule = imply.
+semantics = imply.

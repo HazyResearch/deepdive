@@ -256,4 +256,4 @@ dd_delta_has_spouse(rid) :-
     dd_delta_has_spouse_features(rid, f)
   weight = f
   label = l
-  rule = imply.
+  semantics = imply.
