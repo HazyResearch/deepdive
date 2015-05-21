@@ -16,34 +16,102 @@ object DeepDiveLogDeltaDeriver{
     case s: InferenceRule       => transform(s)
   }
 
+  def transform(cq: ConjunctiveQuery): ConjunctiveQuery = {
+    // New head
+    val incCqHead = cq.head.copy(
+      name = deltaPrefix + cq.head.name,
+      terms = cq.head.terms map {term => term.copy(relName = deltaPrefix + term.relName)}
+    )
+    var incCqBodies = new ListBuffer[List[Atom]]()
+    // New incremental bodies
+    for (body <- cq.bodies) {
+      // Delta body
+      val incDeltaBody = body map {
+        a => a.copy(
+          name = deltaPrefix + a.name,
+          terms = a.terms map {term => term.copy(relName = deltaPrefix + term.relName)}
+        )
+      }
+      // New body
+      val incNewBody = body map {
+        a => a.copy(
+          name = newPrefix + a.name,
+          terms = a.terms map {term => term.copy(relName = newPrefix + term.relName)}
+        )
+      }
+      var i = 0
+      var j = 0
+      for (i <- 0 to (body.length - 1)) {
+        var newBody = new ListBuffer[Atom]()
+        for (j <- 0 to (body.length - 1)) {
+          if (j > i)
+            newBody += body(j)
+          else if (j < i)
+            newBody += incNewBody(j)
+          else if (j == i)
+            newBody += incDeltaBody(j)
+        }
+        incCqBodies += newBody.toList
+      }
+    }
+    ConjunctiveQuery(incCqHead, incCqBodies.toList)
+  }
+
   // Incremental scheme declaration,
   // keep the original scheme and create one delta scheme
   def transform(stmt: SchemaDeclaration): List[Statement] = {
     var incrementalStatement = new ListBuffer[Statement]()
-    // Origin table
-    incrementalStatement += stmt
+    // Incremental table
+    val incStmt = stmt.copy(
+      a = stmt.a.copy(
+          terms = stmt.isQuery match {
+            case true  => stmt.a.terms
+            case false => stmt.a.terms :+ Variable("dd_count", stmt.a.name, stmt.a.terms.length)
+          },
+          types = stmt.isQuery match { 
+            case true  => stmt.a.types
+            case false => stmt.a.types :+ "int"
+          })
+    )
+    incrementalStatement += incStmt
+
     // Delta table
-    var deltaTerms = new ListBuffer[Variable]()
-    for (term <- stmt.a.terms) {
-      deltaTerms += Variable(term.varName, deltaPrefix + term.relName, term.index)
-    }
-    var deltaStmt = SchemaDeclaration(Attribute(deltaPrefix + stmt.a.name, deltaTerms.toList, stmt.a.types), stmt.isQuery)
-    
-    incrementalStatement += deltaStmt
+    val incDeltaStmt = stmt.copy(
+      a = stmt.a.copy(
+        name = deltaPrefix + stmt.a.name,
+        terms = stmt.isQuery match {
+          case true  => stmt.a.terms map {term => term.copy(relName = deltaPrefix + term.relName)}
+          case false => (stmt.a.terms map {term => term.copy(relName = deltaPrefix + term.relName)}) :+ 
+            Variable("dd_count", deltaPrefix + stmt.a.name, stmt.a.terms.length)
+        },
+        types = stmt.isQuery match { 
+          case true  => stmt.a.types
+          case false => stmt.a.types :+ "int"
+        }
+      )
+    )    
+    incrementalStatement += incDeltaStmt
+
     // New table
-    val newTerms = new ListBuffer[Variable]()
-    for (term <- stmt.a.terms) {
-      newTerms += Variable(term.varName, newPrefix + term.relName, term.index)
-    }
-    var newStmt = SchemaDeclaration(Attribute(newPrefix + stmt.a.name, newTerms.toList, stmt.a.types), stmt.isQuery)
-    incrementalStatement += newStmt
+    val incNewStmt = stmt.copy(
+      a = stmt.a.copy(
+        name = newPrefix + stmt.a.name,
+        terms = stmt.isQuery match {
+          case true  => stmt.a.terms map {term => term.copy(relName = newPrefix + term.relName)}
+          case false => (stmt.a.terms map {term => term.copy(relName = newPrefix + term.relName)}) :+ 
+            Variable("dd_count", newPrefix + stmt.a.name, stmt.a.terms.length)
+        },
+        types = stmt.isQuery match { 
+          case true  => stmt.a.types
+          case false => stmt.a.types :+ "int"
+        }
+      )
+    )
+    incrementalStatement += incNewStmt
+
     if (!stmt.isQuery) {
-      var newStmtCqBodies = new ListBuffer[List[Atom]]()
-      newStmtCqBodies += List(Atom(stmt.a.name, stmt.a.terms.toList))
-      newStmtCqBodies += List(Atom(deltaStmt.a.name, deltaStmt.a.terms.toList))
-      incrementalStatement += ExtractionRule(ConjunctiveQuery(Atom(newStmt.a.name, newStmt.a.terms.toList), newStmtCqBodies.toList))
-      
-      // incrementalStatement += ExtractionRule(ConjunctiveQuery(Atom(newStmt.a.name, newStmt.a.terms.toList), List(Atom(deltaStmt.a.name, deltaStmt.a.terms.toList))))
+      incrementalStatement += ExtractionRule(ConjunctiveQuery(Atom(incNewStmt.a.name, incNewStmt.a.terms),
+        List(List(Atom(incStmt.a.name, incStmt.a.terms)), List(Atom(incDeltaStmt.a.name, incDeltaStmt.a.terms)))))
     }
     incrementalStatement.toList
   }
@@ -51,140 +119,38 @@ object DeepDiveLogDeltaDeriver{
   // Incremental function declaration,
   // create one delta function scheme based on original function scheme
   def transform(stmt: FunctionDeclaration): List[Statement] = {
-    var incrementalStatement = new ListBuffer[Statement]()
-    var newTerms = new ListBuffer[Variable]()
-    var newInputType: RelationType = stmt.inputType match {
-      case inTy: RelationTypeDeclaration => {
-        var newNames = new ListBuffer[String]()
-        for (name <- inTy.names)
-          newNames += deltaPrefix + name
-        RelationTypeDeclaration(newNames.toList, inTy.types)
+    List(stmt.copy(
+      inputType = stmt.inputType match {
+        case inTy: RelationTypeDeclaration => 
+          inTy.copy(names = inTy.names map {name => deltaPrefix + name})
+        case inTy: RelationTypeAlias => 
+          inTy.copy(likeRelationName = deltaPrefix + inTy.likeRelationName)
+      },
+      outputType = stmt.outputType match {
+        case outTy: RelationTypeDeclaration =>
+          outTy.copy(names = outTy.names map {name => deltaPrefix + name})
+        case outTy: RelationTypeAlias =>
+          outTy.copy(likeRelationName = deltaPrefix + outTy.likeRelationName)
       }
-      case inTy: RelationTypeAlias => RelationTypeAlias(deltaPrefix + inTy.likeRelationName)
-    }
-    var newOutputType: RelationType = stmt.outputType match {
-      case outTy: RelationTypeDeclaration => {
-        var newNames = new ListBuffer[String]()
-        for (name <- outTy.names)
-          newNames += deltaPrefix + name
-        RelationTypeDeclaration(newNames.toList, outTy.types)
-      }
-      case outTy: RelationTypeAlias => RelationTypeAlias(deltaPrefix + outTy.likeRelationName)
-    }
-    incrementalStatement += FunctionDeclaration(stmt.functionName, newInputType, newOutputType, stmt.implementations)
-    incrementalStatement.toList
+    ))
   }
 
   // Incremental extraction rule,
   // create delta rules based on original extraction rule
   def transform(stmt: ExtractionRule): List[Statement] = {
-    var incrementalStatement = new ListBuffer[Statement]()
-    
-    // New head
-    var newStmtCqHeadTerms = new ListBuffer[Variable]()
-    for (headTerm <- stmt.q.head.terms) {
-      newStmtCqHeadTerms += Variable(headTerm.varName, deltaPrefix + headTerm.relName, headTerm.index)
-    }
-    var newStmtCqHead = Atom(deltaPrefix + stmt.q.head.name, newStmtCqHeadTerms.toList)
-    var newStmtCqBodies = new ListBuffer[List[Atom]]()
-    for (stmtCqBody <- stmt.q.bodies) {
-      // dd delta table from dd_delta_ table
-      var ddDeltaStmtCqBody = new ListBuffer[Atom]()
-      for (cqBody <- stmtCqBody) { // List[Atom]
-        var stmtCqBodyTerms = new ListBuffer[Variable]()
-        for (bodyTerm <- cqBody.terms) {
-          stmtCqBodyTerms += Variable(bodyTerm.varName, deltaPrefix + bodyTerm.relName, bodyTerm.index)
-        }
-        ddDeltaStmtCqBody += Atom(deltaPrefix + cqBody.name, stmtCqBodyTerms.toList)
-      }
-      // dd new body from dd_new_ table
-      var ddNewStmtCqBody = new ListBuffer[Atom]()
-      for (cqBody <- stmtCqBody) { // List[Atom]
-        var stmtCqBodyTerms = new ListBuffer[Variable]()
-        for (bodyTerm <- cqBody.terms) {
-          stmtCqBodyTerms += Variable(bodyTerm.varName, newPrefix + bodyTerm.relName, bodyTerm.index)
-        }
-        ddNewStmtCqBody += Atom(newPrefix + cqBody.name, stmtCqBodyTerms.toList)
-      }
-
-      // New statement
-      var i = 0
-      var j = 0
-      for (i <- 0 to (stmtCqBody.length - 1)) {
-        var newStmtCqBody = new ListBuffer[Atom]()
-        for (j <- 0 to (stmtCqBody.length - 1)) {
-          if (j > i)
-            newStmtCqBody += stmtCqBody(j)
-          else if (j < i)
-            newStmtCqBody += ddNewStmtCqBody(j)
-            else if (j == i)
-              newStmtCqBody += ddDeltaStmtCqBody(j)
-        }
-        newStmtCqBodies += newStmtCqBody.toList
-      }
-    }
-    incrementalStatement += ExtractionRule(ConjunctiveQuery(newStmtCqHead, newStmtCqBodies.toList))
-    incrementalStatement.toList
+    List(ExtractionRule(transform(stmt.q)))
   }
 
   // Incremental function call rule,
   // modify function input and output
   def transform(stmt: FunctionCallRule): List[Statement] = {
-    var incrementalStatement = new ListBuffer[Statement]()
-    incrementalStatement += FunctionCallRule(deltaPrefix + stmt.input, deltaPrefix + stmt.output, stmt.function)
-    incrementalStatement.toList
+    List(FunctionCallRule(deltaPrefix + stmt.input, deltaPrefix + stmt.output, stmt.function))
   }
 
   // Incremental inference rule,
   // create delta rules based on original extraction rule
   def transform(stmt: InferenceRule): List[Statement] = {
-    var incrementalStatement = new ListBuffer[Statement]()
-    
-    // New head
-    var newStmtCqHeadTerms = new ListBuffer[Variable]()
-    for (headTerm <- stmt.q.head.terms) {
-      newStmtCqHeadTerms += Variable(headTerm.varName, deltaPrefix + headTerm.relName, headTerm.index)
-    }
-    var newStmtCqHead = Atom(deltaPrefix + stmt.q.head.name, newStmtCqHeadTerms.toList)
-    var newStmtCqBodies = new ListBuffer[List[Atom]]()
-    for (stmtCqBody <- stmt.q.bodies) {
-      // dd delta table from dd_delta_ table
-      var ddDeltaStmtCqBody = new ListBuffer[Atom]()
-      for (cqBody <- stmtCqBody) { // List[Atom]
-        var stmtCqBodyTerms = new ListBuffer[Variable]()
-        for (bodyTerm <- cqBody.terms) {
-          stmtCqBodyTerms += Variable(bodyTerm.varName, deltaPrefix + bodyTerm.relName, bodyTerm.index)
-        }
-        ddDeltaStmtCqBody += Atom(deltaPrefix + cqBody.name, stmtCqBodyTerms.toList)
-      }
-      // dd new body from dd_new_ table
-      var ddNewStmtCqBody = new ListBuffer[Atom]()
-      for (cqBody <- stmtCqBody) { // List[Atom]
-        var stmtCqBodyTerms = new ListBuffer[Variable]()
-        for (bodyTerm <- cqBody.terms) {
-          stmtCqBodyTerms += Variable(bodyTerm.varName, newPrefix + bodyTerm.relName, bodyTerm.index)
-        }
-        ddNewStmtCqBody += Atom(newPrefix + cqBody.name, stmtCqBodyTerms.toList)
-      }
-
-      // New statement
-      var i = 0
-      var j = 0
-      for (i <- 0 to (stmtCqBody.length - 1)) {
-        var newStmtCqBody = new ListBuffer[Atom]()
-        for (j <- 0 to (stmtCqBody.length - 1)) {
-          if (j > i)
-            newStmtCqBody += stmtCqBody(j)
-          else if (j < i)
-            newStmtCqBody += ddNewStmtCqBody(j)
-            else if (j == i)
-              newStmtCqBody += ddDeltaStmtCqBody(j)
-        }
-        newStmtCqBodies += newStmtCqBody.toList
-      }
-    }
-    incrementalStatement += InferenceRule(ConjunctiveQuery(newStmtCqHead, newStmtCqBodies.toList), stmt.weights, stmt.supervision, stmt.rule)
-    incrementalStatement.toList
+    List(InferenceRule(transform(stmt.q), stmt.weights, stmt.supervision, stmt.semantics))
   }
 
   def derive(program: DeepDiveLog.Program): DeepDiveLog.Program = {
