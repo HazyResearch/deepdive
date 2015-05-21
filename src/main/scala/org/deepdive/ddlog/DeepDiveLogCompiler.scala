@@ -227,7 +227,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
 
   // Analyze the dependency between statements and construct a graph.
   def analyzeDependency(statements: List[Statement]) = {
-    var stmtByHeadName = (extractionRuleGroupByHead.toSeq ++ inferenceRuleGroupByHead.toSeq ++ functionCallRuleGroupByOutput.toSeq).groupBy(_._1).mapValues(_.map(_._2).toList)
+    val stmtByHeadName = (extractionRuleGroupByHead.toSeq ++ inferenceRuleGroupByHead.toSeq ++ functionCallRuleGroupByOutput.toSeq).groupBy(_._1).mapValues(_.map(_._2).toList)
 
     // Look at the body of each statement to construct a dependency graph
     statements foreach {
@@ -289,13 +289,13 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     var inputQueries = new ListBuffer[String]()
     for (stmt <- stmts) {
       for (cqBody <- stmt.q.bodies) {
-        var tmpCq = ConjunctiveQuery(stmt.q.head, List(cqBody))
+        val tmpCq = ConjunctiveQuery(stmt.q.head, List(cqBody))
         // Generate the body of the query.
         val qs              = new QuerySchema( tmpCq )
         // variable columns
         // dd_new_ tale only need original column name to make sure the schema is the same with original table
         val tmpCqIsForNewTable = tmpCq.head.name.startsWith("dd_new_")
-        var resolveColumnFlag = tmpCqIsForNewTable match {
+        val resolveColumnFlag = tmpCqIsForNewTable match {
           case true => AliasStyle.OriginalOnly
           case false => AliasStyle.OriginalAndAlias
         }
@@ -369,7 +369,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       var inputQueries = new ListBuffer[String]()
       for (z <- zs) {
         for (cqBody <- z.q.bodies) {
-          var tmpCq = ConjunctiveQuery(z.q.head, List(cqBody))
+          val tmpCq = ConjunctiveQuery(z.q.head, List(cqBody))
           val qs = new QuerySchema(tmpCq)
           val headTerms = tmpCq.head.terms map {
             case Variable(v,r,i) => s"R${i}.${ss.resolveName(qs.getVar(v)) }"
@@ -409,7 +409,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       var func = ""
       var weight = ""
       for (cqBody <- stmt.q.bodies) {
-        var tmpCq = ConjunctiveQuery(stmt.q.head, List(cqBody))
+        val tmpCq = ConjunctiveQuery(stmt.q.head, List(cqBody))
         // edge query
         val fakeBody        = tmpCq.head +: tmpCq.bodies(0)
         // val fakeBody        = stmt.q.bodies +: List(stmt.q.head)
