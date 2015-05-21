@@ -8,8 +8,8 @@
 #include "timer.h"
 
 dd::GibbsSampling::GibbsSampling(FactorGraph * const _p_fg, 
-  CmdParser * const _p_cmd_parser, int n_datacopy) 
-  : p_fg(_p_fg), p_cmd_parser(_p_cmd_parser) {
+  CmdParser * const _p_cmd_parser, int n_datacopy, bool sample_evidence) 
+  : p_fg(_p_fg), p_cmd_parser(_p_cmd_parser), sample_evidence(sample_evidence) {
     // the highest node number available
     n_numa_nodes = numa_max_node(); 
 
@@ -50,7 +50,7 @@ void dd::GibbsSampling::inference(const int & n_epoch, const bool is_quiet){
   std::vector<SingleNodeSampler> single_node_samplers;
   for(int i=0;i<=n_numa_nodes;i++){
     single_node_samplers.push_back(SingleNodeSampler(&this->factorgraphs[i], 
-      n_thread_per_numa, i));
+      n_thread_per_numa, i, sample_evidence));
   }
 
   for(int i=0;i<=n_numa_nodes;i++){
@@ -260,7 +260,7 @@ void dd::GibbsSampling::aggregate_results_and_dump(const bool is_quiet){
     int ct = 0;
     for(long i=0;i<factorgraphs[0].n_var;i++){
       const Variable & variable = factorgraphs[0].variables[i];
-      if(variable.is_evid == false){
+      if(variable.is_evid == false || sample_evidence){
         ct ++;
         std::cout << "   " << variable.id << " EXP=" 
                   << agg_means[variable.id]/agg_nsamples[variable.id] << "  NSAMPLE=" 
@@ -292,7 +292,7 @@ void dd::GibbsSampling::aggregate_results_and_dump(const bool is_quiet){
   std::ofstream fout_text(filename_text.c_str());
   for(long i=0;i<factorgraphs[0].n_var;i++){
     const Variable & variable = factorgraphs[0].variables[i];
-    if(variable.is_evid == true){
+    if(variable.is_evid == true && !sample_evidence){
       continue;
     }
     
@@ -324,7 +324,7 @@ void dd::GibbsSampling::aggregate_results_and_dump(const bool is_quiet){
     int bad = 0;
     for(long i=0;i<factorgraphs[0].n_var;i++){
       const Variable & variable = factorgraphs[0].variables[i];
-      if(variable.is_evid == true){
+      if(variable.is_evid == true && !sample_evidence){
         continue;
       }
       int bin = (int)(agg_means[variable.id]/agg_nsamples[variable.id]*10);

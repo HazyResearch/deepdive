@@ -33,13 +33,17 @@ namespace dd{
     // factor graph copies
     std::vector<FactorGraph> factorgraphs;
 
+    // sample evidence in inference
+    bool sample_evidence;
+
     /**
      * Constructs GibbsSampling class with given factor graph, command line parser,
      * and number of data copies. Allocate factor graph to NUMA nodes.
      * n_datacopy number of factor graph copies. n_datacopy = 1 means only 
      * keeping one factor graph.
      */
-    GibbsSampling(FactorGraph * const _p_fg, CmdParser * const _p_cmd_parser, int n_datacopy);
+    GibbsSampling(FactorGraph * const _p_fg, CmdParser * const _p_cmd_parser, 
+        int n_datacopy, bool sample_evidence);
 
     /**
      * Performs learning

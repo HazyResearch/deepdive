@@ -9,7 +9,8 @@
 
 namespace dd{
   // single thread sample task
-  void gibbs_single_thread_task(FactorGraph * const _p_fg, int i_worker, int n_worker);
+  void gibbs_single_thread_task(FactorGraph * const _p_fg, int i_worker, int n_worker,
+    bool sample_evidence);
   // single thread sgd task
   void gibbs_single_thread_sgd_task(FactorGraph * const _p_fg, int i_worker, int n_worker);
 
@@ -26,16 +27,21 @@ namespace dd{
     // node id
     int nodeid;
 
-    // worker for sampling (used in inference)
-    SingeNodeWorker<FactorGraph, gibbs_single_thread_task> * sample_worker;
-    // worker for learning
-    SingeNodeWorker<FactorGraph, gibbs_single_thread_sgd_task> * sgd_worker;
+    bool sample_evidence;
+
+    std::vector<std::thread> threads;
+
+    // // worker for sampling (used in inference)
+    // SingeNodeWorker<FactorGraph, gibbs_single_thread_task> * sample_worker;
+    // // worker for learning
+    // SingeNodeWorker<FactorGraph, gibbs_single_thread_sgd_task> * sgd_worker;
 
     /**
      * Constructs a SingleNodeSampler given factor graph, number of threads, and
      * node id.
      */
     SingleNodeSampler(FactorGraph * _p_fg, int _nthread, int _nodeid);
+    SingleNodeSampler(FactorGraph * _p_fg, int _nthread, int _nodeid, bool sample_evidence);
 
     /**
      * Clears the inference results in this sampler
