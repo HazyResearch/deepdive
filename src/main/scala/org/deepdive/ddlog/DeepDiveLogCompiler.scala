@@ -64,7 +64,12 @@ import scala.collection.mutable.ListBuffer
 
 object AliasStyle extends Enumeration {
   type AliasStyle = Value
+  // Three kinds of column expressions:
+  // OriginalOnly => use column name for dd_new_ tables
+  // AliasOnly => use alias for unknown weight in inference
+  // OriginalAndAlias => use column name and alias for normal extraction rule
   val OriginalOnly, AliasOnly, OriginalAndAlias = Value
+
 }
 import AliasStyle._
 
@@ -158,14 +163,10 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
     val index = qs.getBodyIndex(s)
     val name  = resolveName(qs.getVar(s))
     val relation = q.bodies(0)(index).name
-    // Three kinds of column expressions:
-    // 0 => use alias for unknown weight in inference
-    // 1 => use column name and alias for normal extraction rule
-    // 2 => use column name for dd_new_ tables
     alias match {
-      case AliasStyle.OriginalOnly => Some(s"R${index}.${name}")
-      case AliasStyle.AliasOnly => Some(s"${relation}.R${index}.${name}")
-      case AliasStyle.OriginalAndAlias => Some(s"""R${index}.${name} AS "${relation}.R${index}.${name}" """)
+      case OriginalOnly => Some(s"R${index}.${name}")
+      case AliasOnly => Some(s"${relation}.R${index}.${name}")
+      case OriginalAndAlias => Some(s"""R${index}.${name} AS "${relation}.R${index}.${name}" """)
     }
   }
 
@@ -296,8 +297,8 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
         // dd_new_ tale only need original column name to make sure the schema is the same with original table
         val tmpCqIsForNewTable = tmpCq.head.name.startsWith("dd_new_")
         val resolveColumnFlag = tmpCqIsForNewTable match {
-          case true => AliasStyle.OriginalOnly
-          case false => AliasStyle.OriginalAndAlias
+          case true => OriginalOnly
+          case false => OriginalAndAlias
         }
         val variableCols = tmpCq.head.terms flatMap {
           case(Variable(v,rr,i)) => ss.resolveColumn(v, qs, tmpCq, resolveColumnFlag)
@@ -409,20 +410,19 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       var func = ""
       var weight = ""
       for (cqBody <- stmt.q.bodies) {
-        val tmpCq = ConjunctiveQuery(stmt.q.head, List(cqBody))
         // edge query
-        val fakeBody        = tmpCq.head +: tmpCq.bodies(0)
+        val fakeBody        = stmt.q.head +: cqBody
         // val fakeBody        = stmt.q.bodies +: List(stmt.q.head)
-        val fakeCQ          = ConjunctiveQuery(tmpCq.head, List(fakeBody)) // we will just use the fakeBody below.
+        val fakeCQ          = ConjunctiveQuery(stmt.q.head, List(fakeBody)) // we will just use the fakeBody below.
 
-        val index = tmpCq.bodies(0).length + 1
+        val index = cqBody.length + 1
         val qs2 = new QuerySchema( fakeCQ )
-        val variableIdsStr = Some(s"""R0.id AS "${tmpCq.head.name}.R0.id" """)
+        val variableIdsStr = Some(s"""R0.id AS "${stmt.q.head.name}.R0.id" """)
 
         // weight string
         val uwStr = stmt.weights match {
           case KnownFactorWeight(x) => None
-          case UnknownFactorWeight(w) => Some(w.flatMap(s => ss.resolveColumn(s, qs2, fakeCQ, AliasStyle.OriginalAndAlias)).mkString(", "))
+          case UnknownFactorWeight(w) => Some(w.flatMap(s => ss.resolveColumn(s, qs2, fakeCQ, OriginalAndAlias)).mkString(", "))
         }
 
         val selectStr = (List(variableIdsStr, uwStr) flatten).mkString(", ")
@@ -441,7 +441,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           weight = stmt.weights match {
             case KnownFactorWeight(x) => s"${x}"
             case UnknownFactorWeight(w) => {
-              s"""?(${w.flatMap(s => ss.resolveColumn(s, qs2, fakeCQ, AliasStyle.AliasOnly)).mkString(", ")})"""
+              s"""?(${w.flatMap(s => ss.resolveColumn(s, qs2, fakeCQ, AliasOnly)).mkString(", ")})"""
             }
           }
       }
