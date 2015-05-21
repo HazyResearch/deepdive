@@ -36,6 +36,9 @@ namespace dd{
     // sample evidence in inference
     bool sample_evidence;
 
+    // burn-in period
+    int burn_in;
+
     /**
      * Constructs GibbsSampling class with given factor graph, command line parser,
      * and number of data copies. Allocate factor graph to NUMA nodes.
@@ -43,7 +46,7 @@ namespace dd{
      * keeping one factor graph.
      */
     GibbsSampling(FactorGraph * const _p_fg, CmdParser * const _p_cmd_parser, 
-        int n_datacopy, bool sample_evidence);
+        int n_datacopy, bool sample_evidence, int burn_in);
 
     /**
      * Performs learning

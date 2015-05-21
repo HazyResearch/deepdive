@@ -2,8 +2,10 @@
 
 namespace dd{
 
-  SingleThreadSampler::SingleThreadSampler(FactorGraph * _p_fg, bool sample_evidence) :
-    p_fg (_p_fg), p_rand_obj_buf(new double), sample_evidence(sample_evidence) {
+  SingleThreadSampler::SingleThreadSampler(FactorGraph * _p_fg, bool sample_evidence,
+    bool burn_in) :
+    p_fg (_p_fg), p_rand_obj_buf(new double), sample_evidence(sample_evidence),
+    burn_in(burn_in) {
     p_rand_seed[0] = rand();
     p_rand_seed[1] = rand();
     p_rand_seed[2] = rand();
@@ -152,9 +154,17 @@ namespace dd{
 
         *this->p_rand_obj_buf = erand48(this->p_rand_seed);
         if((*this->p_rand_obj_buf) * (1.0 + exp(potential_neg-potential_pos)) < 1.0){
-          p_fg->template update<false>(variable, 1.0);
+          if (burn_in) {
+            p_fg->update_evid(variable, 1.0);
+          } else {
+            p_fg->template update<false>(variable, 1.0);
+          }
         }else{
-          p_fg->template update<false>(variable, 0.0);
+          if (burn_in) {
+            p_fg->update_evid(variable, 0.0);
+          } else {
+            p_fg->template update<false>(variable, 0.0);
+          }
         }
 
       }

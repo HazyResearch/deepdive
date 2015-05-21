@@ -8,8 +8,10 @@
 #include "timer.h"
 
 dd::GibbsSampling::GibbsSampling(FactorGraph * const _p_fg, 
-  CmdParser * const _p_cmd_parser, int n_datacopy, bool sample_evidence) 
-  : p_fg(_p_fg), p_cmd_parser(_p_cmd_parser), sample_evidence(sample_evidence) {
+  CmdParser * const _p_cmd_parser, int n_datacopy, bool sample_evidence,
+  int burn_in) 
+  : p_fg(_p_fg), p_cmd_parser(_p_cmd_parser), sample_evidence(sample_evidence),
+    burn_in(burn_in) {
     // the highest node number available
     n_numa_nodes = numa_max_node(); 
 
@@ -50,7 +52,7 @@ void dd::GibbsSampling::inference(const int & n_epoch, const bool is_quiet){
   std::vector<SingleNodeSampler> single_node_samplers;
   for(int i=0;i<=n_numa_nodes;i++){
     single_node_samplers.push_back(SingleNodeSampler(&this->factorgraphs[i], 
-      n_thread_per_numa, i, sample_evidence));
+      n_thread_per_numa, i, sample_evidence, burn_in));
   }
 
   for(int i=0;i<=n_numa_nodes;i++){
@@ -70,7 +72,7 @@ void dd::GibbsSampling::inference(const int & n_epoch, const bool is_quiet){
 
     // sample
     for(int i=0;i<nnode;i++){
-      single_node_samplers[i].sample();
+      single_node_samplers[i].sample(i_epoch);
     }
 
     // wait for samplers to finish

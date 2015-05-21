@@ -58,6 +58,7 @@ void gibbs(dd::CmdParser & cmd_parser){
   double reg_param = cmd_parser.reg_param->getValue();
   bool is_quiet = cmd_parser.quiet->getValue();
   bool sample_evidence = cmd_parser.sample_evidence->getValue();
+  int burn_in = cmd_parser.burn_in->getValue();
 
   Meta meta = read_meta(fg_file); 
 
@@ -103,7 +104,7 @@ void gibbs(dd::CmdParser & cmd_parser){
   // load factor graph
   dd::FactorGraph fg(meta.num_variables, meta.num_factors, meta.num_weights, meta.num_edges);
   fg.load(cmd_parser, is_quiet);
-  dd::GibbsSampling gibbs(&fg, &cmd_parser, n_datacopy, sample_evidence);
+  dd::GibbsSampling gibbs(&fg, &cmd_parser, n_datacopy, sample_evidence, burn_in);
 
   // number of learning epochs
   // the factor graph is copied on each NUMA node, so the total epochs =

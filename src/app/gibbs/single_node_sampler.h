@@ -1,18 +1,13 @@
 
-#include "worker/single_node_worker.h"
 #include "app/gibbs/single_thread_sampler.h"
 #include <stdlib.h>
+#include <thread>
 #include "common.h"
 
 #ifndef _SINGLE_NODE_SAMPLER_H
 #define _SINGLE_NODE_SAMPLER_H
 
 namespace dd{
-  // single thread sample task
-  void gibbs_single_thread_task(FactorGraph * const _p_fg, int i_worker, int n_worker,
-    bool sample_evidence);
-  // single thread sgd task
-  void gibbs_single_thread_sgd_task(FactorGraph * const _p_fg, int i_worker, int n_worker);
 
   /**
    * Class for a single NUMA node sampler
@@ -28,20 +23,17 @@ namespace dd{
     int nodeid;
 
     bool sample_evidence;
+    int burn_in;
 
     std::vector<std::thread> threads;
-
-    // // worker for sampling (used in inference)
-    // SingeNodeWorker<FactorGraph, gibbs_single_thread_task> * sample_worker;
-    // // worker for learning
-    // SingeNodeWorker<FactorGraph, gibbs_single_thread_sgd_task> * sgd_worker;
 
     /**
      * Constructs a SingleNodeSampler given factor graph, number of threads, and
      * node id.
      */
     SingleNodeSampler(FactorGraph * _p_fg, int _nthread, int _nodeid);
-    SingleNodeSampler(FactorGraph * _p_fg, int _nthread, int _nodeid, bool sample_evidence);
+    SingleNodeSampler(FactorGraph * _p_fg, int _nthread, int _nodeid, 
+      bool sample_evidence, int burn_in);
 
     /**
      * Clears the inference results in this sampler
@@ -51,7 +43,7 @@ namespace dd{
     /**
      * Performs sample
      */
-    void sample();
+    void sample(int i_epoch);
 
     /**
      * Waits for sample worker to finish

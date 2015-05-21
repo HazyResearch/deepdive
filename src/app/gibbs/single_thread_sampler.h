@@ -50,12 +50,13 @@ namespace dd{
     int multi_proposal;
 
     bool sample_evidence;
+    bool burn_in;
 
     /**
      * Constructs a SingleThreadSampler with given factor graph
      */ 
     // SingleThreadSampler(FactorGraph * _p_fg);
-    SingleThreadSampler(FactorGraph * _p_fg, bool sample_evidence = false);
+    SingleThreadSampler(FactorGraph * _p_fg, bool sample_evidence, bool burn_in);
 
     /**
      * Samples variables. The variables are divided into n_sharding equal partitions
