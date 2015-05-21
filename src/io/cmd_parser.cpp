@@ -30,6 +30,8 @@ namespace dd{
         reg_param = new TCLAP::ValueArg<double>("b","reg_param","l2 regularization parameter",false,0.01,"double");
         quiet = new TCLAP::SwitchArg("q", "quiet", "quiet output", false);
 
+        burn_in = new TCLAP::ValueArg<int>("", "burn_in", "Burn-in period", false, 0, "int");
+
         cmd->add(*fg_file);
         
         cmd->add(*edge_file);
@@ -50,6 +52,8 @@ namespace dd{
         cmd->add(*n_datacopy);
         cmd->add(*reg_param);
         cmd->add(*quiet);
+
+        cmd->add(*burn_in);
       }else{
         std::cout << "ERROR: UNKNOWN APP NAME " << app_name << std::endl;
         std::cout << "AVAILABLE APP {gibbs}" << app_name << std::endl;
