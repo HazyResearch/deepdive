@@ -38,7 +38,7 @@ case class SchemaDeclaration( a : Attribute , isQuery : Boolean ) extends Statem
 case class FunctionDeclaration( functionName: String, inputType: RelationType, outputType: RelationType, implementations: List[FunctionImplementationDeclaration]) extends Statement
 case class ExtractionRule(q : ConjunctiveQuery) extends Statement // Extraction rule
 case class FunctionCallRule(input : String, output : String, function : String) extends Statement // Extraction rule
-case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, supervision : String, rule : String = "imply") extends Statement // Weighted rule
+case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, supervision : String, semantics : String = "imply") extends Statement // Weighted rule
 
 
 // Parser
@@ -60,7 +60,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
     }
   def variableName = ident
   def functionName = ident
-  def ruleType = ident
+  def semanticType = ident
 
   def columnDeclaration: Parser[Column] =
     columnName ~ columnType ^^ {
@@ -148,13 +148,13 @@ class DeepDiveLogParser extends JavaTokenParsers {
 
   def supervision = "label" ~> "=" ~> variableName
 
-  def rule = "rule" ~> "=" ~> ruleType
+  def semantics = "semantics" ~> "=" ~> semanticType
 
   def inferenceRule : Parser[InferenceRule] =
-    ( conjunctiveQuery ~ factorWeight ~ supervision ~ rule
+    ( conjunctiveQuery ~ factorWeight ~ supervision ~ semantics
     ) ^^ {
-      case (q ~ weight ~ supervision ~ rule) =>
-        InferenceRule(q, weight, supervision, rule)
+      case (q ~ weight ~ supervision ~ semantics) =>
+        InferenceRule(q, weight, supervision, semantics)
     }
 
   // rules or schema elements in arbitrary order
