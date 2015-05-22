@@ -1,3 +1,5 @@
+package org.deepdive.ddlog
+
 // DeepDiveLog syntax
 // See: https://docs.google.com/document/d/1SBIvvki3mnR28Mf0Pkin9w9mWNam5AA0SpIGj1ZN2c4
 
@@ -11,7 +13,7 @@ case class Variable(varName : String, relName : String, index : Int )
 // TODO make Atom a trait, and have multiple case classes, e.g., RelationAtom and CondExprAtom
 case class Atom(name : String, terms : List[Variable])
 case class Attribute(name : String, terms : List[Variable], types : List[String])
-case class ConjunctiveQuery(head: Atom, body: List[Atom])
+case class ConjunctiveQuery(head: Atom, bodies: List[List[Atom]])
 case class Column(name : String, t : String)
 
 sealed trait FactorWeight {
@@ -36,7 +38,7 @@ case class SchemaDeclaration( a : Attribute , isQuery : Boolean ) extends Statem
 case class FunctionDeclaration( functionName: String, inputType: RelationType, outputType: RelationType, implementations: List[FunctionImplementationDeclaration]) extends Statement
 case class ExtractionRule(q : ConjunctiveQuery) extends Statement // Extraction rule
 case class FunctionCallRule(input : String, output : String, function : String) extends Statement // Extraction rule
-case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, supervision : String) extends Statement // Weighted rule
+case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, supervision : String, semantics : String = "imply") extends Statement // Weighted rule
 
 
 // Parser
@@ -58,6 +60,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
     }
   def variableName = ident
   def functionName = ident
+  def semanticType = ident
 
   def columnDeclaration: Parser[Column] =
     columnName ~ columnType ^^ {
@@ -98,8 +101,9 @@ class DeepDiveLogParser extends JavaTokenParsers {
       case (headatom ~ ":-" ~ disjunctiveBodies) =>
         // TODO handle all disjunctiveBodies
         // XXX only compiling the first body
-        val bodyatoms = disjunctiveBodies(0)
-        ConjunctiveQuery(headatom, bodyatoms.toList)
+        // val bodyatoms = disjunctiveBodies(0)
+        // ConjunctiveQuery(headatom, bodyatoms.toList)
+        ConjunctiveQuery(headatom, disjunctiveBodies)
     }
 
   def relationType: Parser[RelationType] =
@@ -144,14 +148,16 @@ class DeepDiveLogParser extends JavaTokenParsers {
 
   def supervision = "label" ~> "=" ~> variableName
 
+  def semantics = "semantics" ~> "=" ~> semanticType
+
   def inferenceRule : Parser[InferenceRule] =
-    ( conjunctiveQuery ~ factorWeight ~ supervision
+    ( conjunctiveQuery ~ factorWeight ~ supervision ~ semantics
     ) ^^ {
-      case (q ~ weight ~ supervision) =>
-        InferenceRule(q, weight, supervision)
+      case (q ~ weight ~ supervision ~ semantics) =>
+        InferenceRule(q, weight, supervision, semantics)
     }
 
-  // rules or schema elements in aribitrary order
+  // rules or schema elements in arbitrary order
   def statement : Parser[Statement] = ( schemaDeclaration
                                       | inferenceRule
                                       | extractionRule

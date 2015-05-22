@@ -3,3 +3,4 @@
 /ddlog-test.jar.classpath
 target
 /test/bats
+/test/*.for-example-*.bats

@@ -1,3 +1,5 @@
+package org.deepdive.ddlog
+
 import org.apache.commons.lang3.StringEscapeUtils
 
 // Pretty printer that simply prints the parsed input
@@ -49,8 +51,11 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
       val vars = a.terms map { _.varName }
       s"${a.name}(${vars.mkString(", ")})"
     }
+    val printListAtom = {a:List[Atom] =>
+      s"${(a map printAtom).mkString(",\n    ")}"
+    }
     s"""${printAtom(cq.head)} :-
-       |    ${(cq.body map printAtom).mkString(",\n    ")}""".stripMargin
+       |    ${(cq.bodies map printListAtom).mkString(";\n    ")}""".stripMargin
   }
 
   def print(stmt: ExtractionRule): String = {
@@ -74,7 +79,9 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
     ( if (stmt.supervision == null) ""
       else "\n  label = " + stmt.supervision
     ) +
-    "."
+    ( if (stmt.semantics == null) ""
+      else "\n  semantics = " + stmt.semantics
+    ) + "."
   }
 
   override def run(parsedProgram: DeepDiveLog.Program, config: DeepDiveLog.Config) = {
