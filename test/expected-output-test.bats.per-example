@@ -60,4 +60,3 @@ setup() {
     scala "$DDLOG_JAR" print --incremental "$EXAMPLE" |
     diff -u "$expectedOutput" -
 }
-
