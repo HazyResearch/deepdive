@@ -84,14 +84,14 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
   def copyLastWeightsSQL = s"""
     DROP TABLE IF EXISTS ${lastWeightsTable} CASCADE;
-    CREATE TABLE ${lastWeightsTable} AS
+    CREATE TABLE ${dataStore.unlogged} ${lastWeightsTable} AS
       SELECT X.*, Y.weight
       FROM ${WeightsTable} AS X INNER JOIN ${WeightResultTable} AS Y ON X.id = Y.id;
   """
 
   def createInferenceResultSQL = s"""
     DROP TABLE IF EXISTS ${VariableResultTable} CASCADE;
-    CREATE TABLE ${VariableResultTable}(
+    CREATE TABLE ${dataStore.unlogged} ${VariableResultTable}(
       id bigint,
       category bigint,
       expectation double precision);
@@ -99,7 +99,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
   def createInferenceResultWeightsSQL = s"""
     DROP TABLE IF EXISTS ${WeightResultTable} CASCADE;
-    CREATE TABLE ${WeightResultTable}(
+    CREATE TABLE ${dataStore.unlogged} ${WeightResultTable}(
       id bigint primary key,
       weight double precision);
   """
@@ -127,7 +127,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
   def createFeatureStatsSupportTableSQL =
       s"""DROP TABLE IF EXISTS ${FeatureStatsSupportTable} CASCADE;
 
-          CREATE TABLE ${FeatureStatsSupportTable}(
+          CREATE ${dataStore.unlogged} TABLE ${FeatureStatsSupportTable}(
             description text,
             pos_examples bigint,
             neg_examples bigint,

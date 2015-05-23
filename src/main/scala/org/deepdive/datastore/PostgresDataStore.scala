@@ -148,7 +148,7 @@ class PostgresDataStore extends JdbcDataStore with Logging {
   override def assignIds(table: String, startId: Long, sequence: String) : Long = {
     if (isUsingGreenplum()) {
       executeSqlQueries(s"SELECT fast_seqassign('${table.toLowerCase()}', ${startId});");
-    } else if (isUsingPostgresXL()) {
+    } else if (isUsingPostgresXL) {
       executeSqlQueries(s"SELECT copy_table_assign_ids_replace('public', '${table}', 'id', ${startId});");
     } else {
       executeSqlQueries(s"UPDATE ${table} SET id = nextval('${sequence}');")
@@ -164,7 +164,7 @@ class PostgresDataStore extends JdbcDataStore with Logging {
   override def createSpecialUDFs() : Unit = {
     if (isUsingGreenplum()) {
       executeSqlQueries(SQLFunctions.fastSequenceAssignForGreenplum, false)
-    } else if (isUsingPostgresXL()) {
+    } else if (isUsingPostgresXL) {
       executeSqlQueries(SQLFunctions.radicalSequenceAssignForXL, false)
     }
   }

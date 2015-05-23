@@ -138,7 +138,7 @@ trait JdbcDataStore extends Logging {
   def dropAndCreateTable(name: String, schema: String) = {
     checkTableNamespace(name)
     executeSqlQueries(s"""DROP TABLE IF EXISTS ${name} CASCADE;""")
-    executeSqlQueries(s"""CREATE TABLE ${name} (${schema});""")
+    executeSqlQueries(s"""CREATE ${unlogged} TABLE ${name} (${schema});""")
   }
 
   /**
@@ -148,7 +148,7 @@ trait JdbcDataStore extends Logging {
   def dropAndCreateTableAs(name: String, query: String) = {
     checkTableNamespace(name)
     executeSqlQueries(s"""DROP TABLE IF EXISTS ${name} CASCADE;""")
-    executeSqlQueries(s"""CREATE TABLE ${name} AS ${query};""")
+    executeSqlQueries(s"""CREATE ${unlogged} TABLE ${name} AS ${query};""")
   }
 
   // execute sql, store results in a map
@@ -232,13 +232,15 @@ trait JdbcDataStore extends Logging {
   }
 
   // check whether postgres-xl is used
-  def isUsingPostgresXL() : Boolean = {
+  lazy val isUsingPostgresXL : Boolean = {
     var usingXL = false
     executeSqlQueryWithCallback("""SELECT version() LIKE '%Postgres-XL%';""") { rs =>
       usingXL = rs.getBoolean(1)
     }
-    return usingXL
+    usingXL
   }
+
+  def unlogged = if (isUsingPostgresXL) "UNLOGGED" else ""
 
   // ========================================
   // Extraction
