@@ -1,5 +1,5 @@
 /ddlog.jar
 target
 
-/test/expected-output-test/**/*.bats
-/test/expected-output-test/**/*.actual
+/test/*-test/**/*.bats
+/test/*-test/**/*.actual

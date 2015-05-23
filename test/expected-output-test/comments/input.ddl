@@ -13,4 +13,4 @@ R(x) :- S(x, y, z).
 Multi
 -line
 comments
-    /* unfortunately cannot be nested */
+*/

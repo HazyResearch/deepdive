@@ -1,36 +1,10 @@
 #!/usr/bin/env bats
-# Expected output test with Bats
-#
+# Expected output tests
+# 
 # These test cases compares outputs of various modes of ddlog against a .ddl example file with its expected output.
 # Tests are skipped if no expected output is found.
-#
-# This .bats.template file should be run by creating a .bats symlink to it
-# next to a directory with the same name (without .bats) that contains
-# input.ddl.
 
-# required variables
-: ${TEST_CLASS_OR_JAR:?class name or -jar with the path to the ddlog.jar to test}
-
-# some shorthands
-TESTDIR=${BATS_TEST_FILENAME%.bats}
-TESTDIR=${TESTDIR#$PWD/}
-TEST=${BATS_TEST_FILENAME#$PWD/}
-it="${TEST%.bats}:"
-
-# how to invoke ddlog compiler
-ddlog() {
-    java $TEST_CLASS_OR_JAR "$@"
-}
-# how to diff (prefer wdiff)
-if type wdiff &>/dev/null; then
-    if ${TRAVIS:-false}; then
-        diff() { wdiff            --statistics -- "$@"; }
-    else
-        diff() { wdiff --terminal --statistics -- "$@"; }
-    fi
-else
-    diff() { command diff --unified --ignore-all-space -- "$@"; }
-fi
+source bats-template.bash  # for $TESTDIR, $it, etc.
 
 # some preconditions
 setup() {
@@ -41,7 +15,16 @@ setup() {
 
 # check if example can be parsed
 @test "$it parses input" {
-    ddlog print "$TESTDIR"/input.ddl >/dev/null
+    expectedError="$TESTDIR"/parse-error.expected
+    if [ -e "$expectedError" ]; then
+        # input is expected to have parse errors
+        actualError=${expectedError%.expected}.actual
+        ! ddlog print "$TESTDIR"/input.ddl >/dev/null 2>"$actualError"
+        diff "$expectedError" "$actualError"
+    else
+        # input is supposed to parse without errors
+        ddlog print "$TESTDIR"/input.ddl >/dev/null
+    fi
 }
 
 # check if print is idempotent
