@@ -1,0 +1,85 @@
+#!/usr/bin/env bats
+# Expected output test with Bats
+#
+# These test cases compares outputs of various modes of ddlog against a .ddl example file with its expected output.
+# Tests are skipped if no expected output is found.
+#
+# This .bats.template file should be run by creating a .bats symlink to it
+# next to a directory with the same name (without .bats) that contains
+# input.ddl.
+
+# required variables
+: ${DDLOG_JAR:?path to ddlog jar}
+
+# some shorthands
+cd "$BATS_TEST_DIRNAME"
+TESTDIR=${BATS_TEST_FILENAME%.bats}
+TESTDIR=${TESTDIR#$PWD/}
+TEST=${BATS_TEST_FILENAME#$PWD/}
+it="${TEST%.bats}:"
+
+# how to invoke ddlog compiler
+ddlog() {
+    scala "$DDLOG_JAR" "$@"
+}
+
+# some preconditions
+setup() {
+    [ -e "$DDLOG_JAR" ]
+    [ -e "$TESTDIR" ]
+}
+
+## tests for basic compilation and pretty-printing
+
+# check if example can be parsed
+@test "$it parses input" {
+    ddlog print "$TESTDIR"/input.ddl >/dev/null
+}
+
+# check if print is idempotent
+@test "$it parses and prints what it prints (idempotent)" {
+    printed=$TESTDIR/print-idempotent.actual
+    ddlog print "$TESTDIR"/input.ddl >"$printed" || skip
+    ddlog print "$printed" |
+    diff -u "$printed" -
+}
+
+
+# compare the compiled output with what's expected
+@test "$it compiles input as expected" {
+    expectedOutput=$TESTDIR/compile.expected
+    [ -e "$expectedOutput" ] || skip
+    ddlog compile "$TESTDIR"/input.ddl |
+    tee "${expectedOutput%.expected}.actual" |
+    diff -u "$expectedOutput" -
+}
+
+# compare the pretty-printed output with what's expected
+@test "$it prints input as expected" {
+    expectedOutput=$TESTDIR/print.expected
+    [ -e "$expectedOutput" ] || skip
+    ddlog print "$TESTDIR"/input.ddl |
+    tee "${expectedOutput%.expected}.actual" |
+    diff -u "$expectedOutput" -
+}
+
+
+## tests for --incremental support
+
+# compare the compiled output of the incremental version with what's expected
+@test "$it compiles --incremental input as expected" {
+    expectedOutput=$TESTDIR/compile-incremental.expected
+    [ -e "$expectedOutput" ] || skip
+    ddlog compile --incremental "$TESTDIR"/input.ddl |
+    tee "${expectedOutput%.expected}.actual" |
+    diff -u "$expectedOutput" -
+}
+
+# compare the pretty-printed output of the incremental version with what's expected
+@test "$it prints --incremental input as expected" {
+    expectedOutput=$TESTDIR/print-incremental.expected
+    [ -e "$expectedOutput" ] || skip
+    ddlog print --incremental "$TESTDIR"/input.ddl |
+    tee "${expectedOutput%.expected}.actual" |
+    diff -u "$expectedOutput" -
+}

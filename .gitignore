@@ -2,6 +2,7 @@
 /ddlog-test.jar
 /ddlog-test.jar.classpath
 target
+
 /test/bats
-/test/*.for-example-*.bats
-/examples/*.actual
+/test/expected-output-test/**/*.bats
+/test/expected-output-test/**/*.actual
