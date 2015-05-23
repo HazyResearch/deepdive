@@ -2,6 +2,7 @@
 
 SOURCE_DIR = src/main/scala/org/deepdive/ddlog
 TARGET_DIR = target/scala-2.10/classes
+COVERAGE_DIR = $(TARGET_DIR)/../scoverage-data
 TEST_CLASSPATH_CACHE = $(TARGET_DIR)/../dependency-classpath
 JAR = ddlog.jar
 
@@ -13,18 +14,22 @@ TEST_CLASS_OR_JAR=org.deepdive.ddlog.DeepDiveLog \
 test/test.sh
 $(TEST_CLASSPATH_CACHE): build.sbt $(wildcard project/*.sbt)
 	sbt "export compile:dependency-classpath" | tail -1 >$@
-$(TARGET_DIR): $(wildcard $(SOURCE_DIR)/*.scala)
+
+SOURCES = $(wildcard $(SOURCE_DIR)/*.scala)
 ifndef MEASURE_COVERAGE
+$(TARGET_DIR): $(SOURCES)
 	sbt compile
 else
+$(TARGET_DIR): $(COVERAGE_DIR)
+$(COVERAGE_DIR): $(SOURCES)
 	# enabling coverage measurement
 	sbt coverage compile
 endif
 
-# test coverage report from a clean build
+# test coverage report
 .PHONY: test-coverage coveralls
-test-coverage: clean
-	-$(MAKE) test MEASURE_COVERAGE=1
+test-coverage:
+	-$(MAKE) test MEASURE_COVERAGE=true
 	sbt coverageReport
 coveralls: test-coverage
 	# submit coverage data to https://coveralls.io/r/HazyResearch/ddlog
