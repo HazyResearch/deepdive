@@ -9,7 +9,7 @@
 # input.ddl.
 
 # required variables
-: ${TEST_CLASS_OR_JAR:?class name or path to the ddlog.jar to test}
+: ${TEST_CLASS_OR_JAR:?class name or -jar with the path to the ddlog.jar to test}
 
 # some shorthands
 cd "$BATS_TEST_DIRNAME"
@@ -24,13 +24,13 @@ ddlog() {
 }
 # how to diff (prefer wdiff)
 if type wdiff &>/dev/null; then
-    diff() {
-        wdiff --terminal --statistics -- "$@"
-    }
+    if ${TRAVIS:-false}; then
+        diff() { wdiff            --statistics -- "$@"; }
+    else
+        diff() { wdiff --terminal --statistics -- "$@"; }
+    fi
 else
-    diff() {
-        command diff --unified --ignore-all-space -- "$@"
-    }
+    diff() { command diff --unified --ignore-all-space -- "$@"; }
 fi
 
 # some preconditions
