@@ -1,4 +1,4 @@
-DeepDiveLogCompiler
+DeepDiveLogCompiler [![Build Status](https://travis-ci.org/HazyResearch/ddlog.svg)](https://travis-ci.org/HazyResearch/ddlog)
 ===================
 
 A compiler that enables writing DeepDive apps in a Datalog-like syntax.
