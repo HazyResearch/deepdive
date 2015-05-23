@@ -14,8 +14,8 @@ for t in *.bats.template; do
     testSpecDir=${t%.bats.template}
     rm -f "$testSpecDir"/*.bats
     # create a .bats symlink for each test specification
-    for testSpec in "$testSpecDir"/*/input.ddl; do
-        [[ -e "$testSpec" ]] || continue
+    for testSpec in "$testSpecDir"/*; do
+        [[ -d "$testSpec" ]] || continue
         testSpec=${testSpec%/input.ddl}
         batsFile="$testSpec".bats
         ln -sfn ../"$t" "$batsFile"
