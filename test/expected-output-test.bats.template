@@ -22,6 +22,16 @@ it="${TEST%.bats}:"
 ddlog() {
     scala "$DDLOG_JAR" "$@"
 }
+# how to diff (prefer wdiff)
+if type wdiff &>/dev/null; then
+    diff() {
+        wdiff --terminal --statistics -- "$@"
+    }
+else
+    diff() {
+        command diff --unified --ignore-all-space -- "$@"
+    }
+fi
 
 # some preconditions
 setup() {
@@ -41,7 +51,7 @@ setup() {
     printed=$TESTDIR/print-idempotent.actual
     ddlog print "$TESTDIR"/input.ddl >"$printed" || skip
     ddlog print "$printed" |
-    diff -u "$printed" -
+    diff "$printed" -
 }
 
 
@@ -51,7 +61,7 @@ setup() {
     [ -e "$expectedOutput" ] || skip
     ddlog compile "$TESTDIR"/input.ddl |
     tee "${expectedOutput%.expected}.actual" |
-    diff -u "$expectedOutput" -
+    diff "$expectedOutput" -
 }
 
 # compare the pretty-printed output with what's expected
@@ -60,7 +70,7 @@ setup() {
     [ -e "$expectedOutput" ] || skip
     ddlog print "$TESTDIR"/input.ddl |
     tee "${expectedOutput%.expected}.actual" |
-    diff -u "$expectedOutput" -
+    diff "$expectedOutput" -
 }
 
 
@@ -72,7 +82,7 @@ setup() {
     [ -e "$expectedOutput" ] || skip
     ddlog compile --incremental "$TESTDIR"/input.ddl |
     tee "${expectedOutput%.expected}.actual" |
-    diff -u "$expectedOutput" -
+    diff "$expectedOutput" -
 }
 
 # compare the pretty-printed output of the incremental version with what's expected
@@ -81,5 +91,5 @@ setup() {
     [ -e "$expectedOutput" ] || skip
     ddlog print --incremental "$TESTDIR"/input.ddl |
     tee "${expectedOutput%.expected}.actual" |
-    diff -u "$expectedOutput" -
+    diff "$expectedOutput" -
 }
