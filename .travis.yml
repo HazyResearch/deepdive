@@ -45,4 +45,4 @@ script:
   - bash ./src/test/bash/linkcheck.sh http://deepdive.stanford.edu/
 
 after_success:
-  - bash ./test/submit_coverage.sh
+  - sbt coveralls
