@@ -46,7 +46,7 @@ setup() {
 ## tests for --incremental support
 
 # compare the compiled output of the incremental version with what's expected
-@test "print $EXAMPLE_NAME as expected" {
+@test "compile --incremental $EXAMPLE_NAME as expected" {
     expectedOutput=$EXAMPLE_BASEPATH.compile-incremental.expected
     [ -e "$expectedOutput" ] || skip
     scala "$DDLOG_JAR" compile --incremental "$EXAMPLE" |
@@ -54,7 +54,7 @@ setup() {
 }
 
 # compare the pretty-printed output of the incremental version with what's expected
-@test "print $EXAMPLE_NAME as expected" {
+@test "print --incremental $EXAMPLE_NAME as expected" {
     expectedOutput=$EXAMPLE_BASEPATH.print-incremental.expected
     [ -e "$expectedOutput" ] || skip
     scala "$DDLOG_JAR" print --incremental "$EXAMPLE" |
