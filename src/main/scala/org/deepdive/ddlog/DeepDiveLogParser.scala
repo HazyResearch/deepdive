@@ -52,6 +52,10 @@ class DeepDiveLogParser extends JavaTokenParsers {
       s.stripPrefix("\"").stripSuffix("\""))
   }
 
+  // C/Java/Scala-style as well as shell script-style comments are supported
+  // by treating them as whiteSpace
+  protected override val whiteSpace = """(?:(?:^|\s+)#.*|//.*|(?m)/\*(\*(?!/)|[^*])*\*/|\s)+""".r
+
   // We just use Java identifiers to parse various names
   def relationName = ident
   def columnName   = ident
