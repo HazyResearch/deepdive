@@ -12,7 +12,6 @@
 : ${TEST_CLASS_OR_JAR:?class name or -jar with the path to the ddlog.jar to test}
 
 # some shorthands
-cd "$BATS_TEST_DIRNAME"
 TESTDIR=${BATS_TEST_FILENAME%.bats}
 TESTDIR=${TESTDIR#$PWD/}
 TEST=${BATS_TEST_FILENAME#$PWD/}

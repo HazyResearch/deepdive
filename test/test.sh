@@ -22,8 +22,5 @@ for t in *.bats.template; do
     done
 done
 
-# TravisCI supports colorful output
-! ${TRAVIS:-false} || set -- --pretty "$@"
-
 # run all .bats tests
 bats "$@" *.bats */*.bats
