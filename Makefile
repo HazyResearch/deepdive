@@ -14,7 +14,23 @@ test/test.sh
 $(TEST_CLASSPATH_CACHE): build.sbt $(wildcard project/*.sbt)
 	sbt "export compile:dependency-classpath" | tail -1 >$@
 $(TARGET_DIR): $(wildcard $(SOURCE_DIR)/*.scala)
+ifndef MEASURE_COVERAGE
 	sbt compile
+else
+	# enabling coverage measurement
+	sbt coverage compile
+endif
+
+# test coverage report from a clean build
+.PHONY: coverage-report test-coverage
+coverage-report: test-coverage
+	sbt coverageReport
+test-coverage: clean
+	-$(MAKE) test MEASURE_COVERAGE=1
+coveralls: coverage-report
+	# submit coverage data to https://coveralls.io/r/HazyResearch/ddlog
+	# (Make sure you have set COVERALLS_REPO_TOKEN=...)
+	sbt coveralls
 
 # test standalone package
 .PHONY: test-package
@@ -24,6 +40,8 @@ TEST_CLASS_OR_JAR=$(realpath $(JAR)) \
 test/test.sh
 
 # build standalone jar
+.PHONY: package
+package: $(JAR)
 $(JAR): $(wildcard $(SOURCE_DIR)/*.scala)
 	sbt clean assembly
 	ln -sfn $$(ls -t target/scala-*/*-assembly-*.jar | head -1) $@

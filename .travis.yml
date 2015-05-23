@@ -1,5 +1,8 @@
 scala:
     - "2.11.1"
 before_install:
-    - sudo apt-get install -qq make bats wdiff
-script: make
+    - sudo apt-get install -qq make wdiff
+script:
+    - make
+after_success:
+    - sbt coverageReport coveralls
