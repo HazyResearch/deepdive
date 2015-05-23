@@ -8,6 +8,7 @@ type bats &>/dev/null ||
     git clone https://github.com/sstephenson/bats.git
 
 # generate bats tests for every per-example templates
+rm -f *.for-example-*.bats
 for t in *.bats.per-example; do
     testName=${t%.bats.per-example}
     # generate one for each example
