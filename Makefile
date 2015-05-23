@@ -22,12 +22,11 @@ else
 endif
 
 # test coverage report from a clean build
-.PHONY: coverage-report test-coverage
-coverage-report: test-coverage
-	sbt coverageReport
+.PHONY: test-coverage coveralls
 test-coverage: clean
 	-$(MAKE) test MEASURE_COVERAGE=1
-coveralls: coverage-report
+	sbt coverageReport
+coveralls: test-coverage
 	# submit coverage data to https://coveralls.io/r/HazyResearch/ddlog
 	# (Make sure you have set COVERALLS_REPO_TOKEN=...)
 	sbt coveralls

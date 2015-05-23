@@ -30,5 +30,5 @@ make  # or make test
 The following command produces a test coverage report.
 
 ```bash
-make coverage-report
+make test-coverage
 ```
