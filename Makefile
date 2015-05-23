@@ -2,7 +2,7 @@
 
 SOURCE_DIR = src/main/scala/org/deepdive/ddlog
 TARGET_DIR = target/scala-2.10/classes
-TEST_CLASSPATH_CACHE = $(TARGET_DIR)/dependency-classpath
+TEST_CLASSPATH_CACHE = $(TARGET_DIR)/../dependency-classpath
 JAR = ddlog.jar
 
 # test
@@ -35,7 +35,7 @@ coveralls: test-coverage
 .PHONY: test-package
 test-package: $(JAR)
 	CLASSPATH= \
-TEST_CLASS_OR_JAR=$(realpath $(JAR)) \
+TEST_CLASS_OR_JAR="-jar $(realpath $(JAR))" \
 test/test.sh
 
 # build standalone jar

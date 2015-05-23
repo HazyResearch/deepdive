@@ -20,7 +20,7 @@ it="${TEST%.bats}:"
 
 # how to invoke ddlog compiler
 ddlog() {
-    scala "$TEST_CLASS_OR_JAR" "$@"
+    java $TEST_CLASS_OR_JAR "$@"
 }
 # how to diff (prefer wdiff)
 if type wdiff &>/dev/null; then
