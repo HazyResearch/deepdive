@@ -18,6 +18,20 @@ setup() {
 
 ## tests for basic compilation and pretty-printing
 
+# check if example can be parsed
+@test "parse $EXAMPLE_NAME" {
+    scala "$DDLOG_JAR" print "$EXAMPLE" >/dev/null
+}
+
+# check if print is idempotent
+@test "print $EXAMPLE_NAME is idempotent" {
+    printed=$BATS_TMPDIR/ddlog-$EXAMPLE_NAME-printed.ddl
+    scala "$DDLOG_JAR" print "$EXAMPLE" >"$printed" || skip
+    scala "$DDLOG_JAR" print "$printed" |
+    diff -u "$printed" -
+}
+
+
 # compare the compiled output with what's expected
 @test "compile $EXAMPLE_NAME" {
     expectedOutput=$EXAMPLE_BASEPATH.compile.expected
@@ -34,14 +48,6 @@ setup() {
     scala "$DDLOG_JAR" print "$EXAMPLE" |
     tee "${expectedOutput%.expected}.actual" |
     diff -u "$expectedOutput" -
-}
-
-# check if print is idempotent
-@test "print $EXAMPLE_NAME is idempotent" {
-    printed=$BATS_TMPDIR/ddlog-$EXAMPLE_NAME-printed.ddl
-    scala "$DDLOG_JAR" print "$EXAMPLE" >"$printed" || skip
-    scala "$DDLOG_JAR" print "$printed" |
-    diff -u "$printed" -
 }
 
 
