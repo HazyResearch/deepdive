@@ -23,6 +23,7 @@ setup() {
     expectedOutput=$EXAMPLE_BASEPATH.compile.expected
     [ -e "$expectedOutput" ] || skip
     scala "$DDLOG_JAR" compile "$EXAMPLE" |
+    tee "${expectedOutput%.expected}.actual" |
     diff -u "$expectedOutput" -
 }
 
@@ -31,6 +32,7 @@ setup() {
     expectedOutput=$EXAMPLE_BASEPATH.print.expected
     [ -e "$expectedOutput" ] || skip
     scala "$DDLOG_JAR" print "$EXAMPLE" |
+    tee "${expectedOutput%.expected}.actual" |
     diff -u "$expectedOutput" -
 }
 
@@ -50,6 +52,7 @@ setup() {
     expectedOutput=$EXAMPLE_BASEPATH.compile-incremental.expected
     [ -e "$expectedOutput" ] || skip
     scala "$DDLOG_JAR" compile --incremental "$EXAMPLE" |
+    tee "${expectedOutput%.expected}.actual" |
     diff -u "$expectedOutput" -
 }
 
@@ -58,5 +61,6 @@ setup() {
     expectedOutput=$EXAMPLE_BASEPATH.print-incremental.expected
     [ -e "$expectedOutput" ] || skip
     scala "$DDLOG_JAR" print --incremental "$EXAMPLE" |
+    tee "${expectedOutput%.expected}.actual" |
     diff -u "$expectedOutput" -
 }

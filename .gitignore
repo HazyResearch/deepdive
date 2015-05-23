@@ -4,3 +4,4 @@
 target
 /test/bats
 /test/*.for-example-*.bats
+/examples/*.actual
