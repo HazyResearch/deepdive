@@ -9,7 +9,7 @@
 # input.ddl.
 
 # required variables
-: ${DDLOG_JAR:?path to ddlog jar}
+: ${TEST_CLASS_OR_JAR:?class name or path to the ddlog.jar to test}
 
 # some shorthands
 cd "$BATS_TEST_DIRNAME"
@@ -20,7 +20,7 @@ it="${TEST%.bats}:"
 
 # how to invoke ddlog compiler
 ddlog() {
-    scala "$DDLOG_JAR" "$@"
+    scala "$TEST_CLASS_OR_JAR" "$@"
 }
 # how to diff (prefer wdiff)
 if type wdiff &>/dev/null; then
@@ -35,7 +35,6 @@ fi
 
 # some preconditions
 setup() {
-    [ -e "$DDLOG_JAR" ]
     [ -e "$TESTDIR" ]
 }
 
