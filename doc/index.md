@@ -5,18 +5,18 @@ root: "."
 
 ### What does DeepDive do?
 
-DeepDive is a system to cope with **dark data**. Like dark matter,
-dark data is the great mass of data buried in text, tables, figures,
-and images, which lacks structure and so is essentially unprocessable
-by modern analytics software. DeepDive helps bring dark data to light
-by creating structured data (SQL tables) from unstructured information
-(text documents) and integrate such data with an existing structured
-database. DeepDive is used to extract sophisticated relationships
-between entities and make inferences about facts involving those
-entities. DeepDive helps one process a wide variety of dark data and
-put the results into a database. Once in a database, one can use a
-variety of standard tools that consume structured data, e.g.,
-visualization tools like Tablaeu or analytics tools like Excel.
+DeepDive is a system to extract value from **dark data**. Like dark
+matter, dark data is the great mass of data buried in text, tables,
+figures, and images, which lacks structure and so is essentially
+unprocessable by existing software. DeepDive helps bring dark data to
+light by creating structured data (SQL tables) from unstructured
+information (text documents) and integrate such data with an existing
+structured database. DeepDive is used to extract sophisticated
+relationships between entities and make inferences about facts
+involving those entities. DeepDive helps one process a wide variety of
+dark data and put the results into a database. Once in a database, one
+can use a variety of standard tools that consume structured data,
+e.g., visualization tools like Tablaeu or analytics tools like Excel.
 
 ### What is DeepDive?
 
