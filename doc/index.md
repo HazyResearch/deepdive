@@ -5,7 +5,7 @@ root: "."
 
 ### What does DeepDive do?
 
-DeepDive is a system to extract value from **dark data**. Like dark
+DeepDive is a system to extract value from [dark data](http://www.gartner.com/it-glossary/dark-data). Like dark
 matter, dark data is the great mass of data buried in text, tables,
 figures, and images, which lacks structure and so is essentially
 unprocessable by existing software. DeepDive helps bring dark data to
