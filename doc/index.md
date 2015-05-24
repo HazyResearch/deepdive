@@ -23,7 +23,7 @@ e.g., visualization tools like Tablaeu or analytics tools like Excel.
 DeepDive is a new type of data management system that enables one to
 tackle extraction, integration, and prediction problems in a single
 system, which allows users to rapidly construct sophisticated
-end-to-end data pipelines, such as, document-based BI systems. By
+end-to-end data pipelines, such as, dark data BI systems. By
 allowing users to build their system end-to-end, users focus on the
 portion of their system that most directly improves the quality of
 their application. In contrast, previous pipeline-based systems
