@@ -6,14 +6,14 @@ layout: default
 
 This document describes how to install and configure
 [Postgres-XL](http://www.postgres-xl.org/) to work
-with DeepDive. It also describes one caveat needed in writing queries when using
+with DeepDive. It also describes two caveats needed in writing queries when using
 XL, and some [FAQs](#faq) about using XL.
 
 After installing XL, DeepDive should work well with it. Apart from the
 following caveat below, you should not observe any difference than if you
 were running PostgreSQL.
 
-## Important Caveat
+## Important Caveats
 
 You should add a `DISTRIBUTE BY HASH` clause in all `CREATE TABLE` commands. **Do
 not use the column `id`** as the distribution key. **Do not use** a distribution
@@ -23,42 +23,14 @@ Refer to the [XL
 manual](http://files.postgres-xl.org/documentation/) for
 more information.
 
+You should always create tables as `CREATE UNLOGGED TABLE ...`. The unlogged
+keyword turns off write-ahead logging (WAL), and gives a significant speedup
+in writes (often 10X). WAL is not needed for DeepDive apps, because the
+database is only used for processing, not for persisting data.
+
 ## Installation
 We now describe how to install XL and configure it to be used with
-DeepDive. The steps were tested to install XL on Ubunut 15.04. 
-
-### Installation Notes
-The following is a list of alternative steps that you may have to take in case
-your environment is more complex than usual.
-
-- If you do not have write permissions to the `/usr/local/` directory,  let
-  `GREENPLUM_DIR` be the directory where you wish to install Greenplum and in
-  the steps below, replace `/usr/local/` with `GREENPLUM_DIR`.
-
-- If you are installing Greenplum on a machine without root access, skip the
-  step **Setting the Greenplum Recommended OS Parameters**.
-
-- You will be prompted to enter your password to `localhost` several times
-  throughout the installation process.
-
-- If you can not change your settings to login to localhost without a password,
-  skip the step **Configure ssh with localhost**.
-
-- If you do not have write permissions to the ~/.bashrc file, in the steps **Set
-  Greenplum related session variables** and **Configure PATH to add master data
-  directory**,  simply run the commands `source
-  GREENPLUM_DIR/greenplum-db/greenplum_path.sh` and `export
-  MASTER_DATA_DIRECTORY=GREENPLUM_DIR/greenplumdb/master/gpsne-1`. In order to
-  have these commands run every time you log in to the system, save a new script
-  called `greenplum_startup.sh` with the following contents:
-
-	```bash
-	source GREENPLUM_DIR/greenplum-db/greenplum_path.sh
-	export MASTER_DATA_DIRECTORY=GREENPLUM_DIR/greenplumdb/master/gpsne-1
-	```
-	and edit your shell settings so that this script gets executed every time
-	the shell opens (or remember to run it).
-
+DeepDive. The steps were tested to install XL on Ubuntu 15.04. 
 
 ### Setting OS Parameters
 
@@ -69,7 +41,7 @@ kernel.shmmax = 429496729600  #400GB
 ```
 
 After making these changes, run
-```
+```bash
 sudo sysctl -p /etc/sysctl.conf
 ```
 
@@ -83,13 +55,13 @@ Finally, set the following parameter in the `/etc/ssh/sshd_config` file:
 MaxStartups 100
 ```
 After that, run
-```
+```bash
 sudo service ssh restart
 ```
 
 ### Building XL from Source
 
-```
+```bash
 sudo apt-get update
 sudo apt-get -y install -y screen curl git rsync openssl locales openssh-server openssh-client
 sudo apt-get -y install -y gcc flex bison make cmake jade openjade docbook docbook-dsssl
@@ -98,18 +70,18 @@ sudo localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-
 ```
 
 Now set `$TARGET_DIR` to the directory into which you would like to install XL.
-```
+```bash
 TARGET_DIR=/opt/pgxl
 ```
 
-Then add the following line(s) to `/etc/ld.so.conf` (replace $TARGET_DIR with dir):
-```
+Then add the following line(s) to `/etc/ld.so.conf` (replace `$TARGET_DIR` with dir):
+```bash
 /usr/local/lib
 $TARGET_DIR/lib
 ```
 
 The remaining parts of the installation do not require sudo rights. However, make sure
-the user account doing the installation has write permissions to $TARGET_DIR.
+the user account doing the installation has write permissions to `$TARGET_DIR`.
 
 Create a build directory and download the XL sources.
 ```bash
@@ -168,7 +140,7 @@ move on.
 ### Create directories for the database
 
 Now set `$DATA_DIR` to the directory, where the database files will be stored.
-**Be sure that you have write permission to these directory**.
+**Be sure that you have write permission to this directory**.
 
 ```bash
 mkdir -p $DATA_DIR
@@ -326,10 +298,13 @@ postgres=# \q
 Use `pgxc_ctl "stop all"` and `pgxc_ctl "start all"` to stop / start the XL server at any time.
 
 ## <a name="faq" href="#"></a> FAQs
-<!--
-- **How do I enable fuzzy string match / install "contrib" module in Greenplum?**
+- **How do I enable fuzzy string match / install "contrib" module in XL?**
 
-	To enable *fuzzystringmatch* / the *contrib* module available for PostgreSQL
-	for Greenplum, see [this
-	link](http://blog.2ndquadrant.com/fuzzystrmatch_greenplum/).
--->
+	To enable *fuzzystringmatch* or another *contrib* module available for XL,
+        see above build instructions on how to build XL with extensions.
+- **Can I create a cluster with N nodes?**
+
+        You certainly can. Note that for clusters larger than 16 nodes you may need
+        to adjust certain configuration parameters, especially buffer sizes (so that
+        you don't run out of memory) and kernel settings (so that the system can open
+        enough SSH sessions).
