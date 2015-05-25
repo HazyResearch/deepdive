@@ -155,6 +155,7 @@ Zhang](http://pages.cs.wisc.edu/~czhang/).
 - [Performance tuning](doc/advanced/performance.html)
 - [Scala developer guide for DeepDive](doc/advanced/developer.html)
 - [Using DeepDive with GreenPlum](doc/advanced/greenplum.html)
+- [Using DeepDive with Postgres-XL](doc/advanced/pgxl.html)
 - [Using DeepDive with MySQL / MySQL Cluster](doc/advanced/mysql.html)
 - [Using DeepDive on Ubuntu](doc/advanced/ubuntu.html)
 - [Tuffy and Markov Logic Networks (MLN)](doc/advanced/markov_logic_network.html)
