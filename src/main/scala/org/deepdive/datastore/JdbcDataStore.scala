@@ -328,6 +328,7 @@ trait JdbcDataStore extends Logging {
     case x : Boolean => JsBoolean(x)
     case x : Int => JsNumber(x)
     case x : Long => JsNumber(x)
+    case x : Float => JsNumber(x)
     case x : Double => JsNumber(x)
     case x : java.sql.Date => JsString(x.toString)
     case x : Array[_] => JsArray(x.toList.map(x => anyValToJson(x)))
