@@ -476,11 +476,11 @@ deepdive {
 A variable is defined by its name and its type:
 
 ```bash
-people.smoke: Boolean
-people.has_cancer: Boolean
+person_smokes.smokes: Boolean
+person_has_cancer.has_cancer: Boolean
 ```
 
-DeepDive currently supports only Boolean variables.
+DeepDive currently supports Boolean and Multinomial variables.
 
 ## <a name="inference_rules" href="#"></a> Inference rules
 
@@ -534,16 +534,17 @@ The **mandatory** definition directives for each rule are:
 An example inference rule is the following:
 
 ```bash
-myRule {
-  input_query : """
-    SELECT people.id         AS "people.id",
-           people.smokes     AS "people.smokes",
-           people.has_cancer AS "people.has_cancer",
-           people.gender     AS "people.gender"
-    FROM people
+smokes_cancer {
+  input_query: """
+      SELECT person_has_cancer.id as "person_has_cancer.id",
+             person_smokes.id as "person_smokes.id",
+             person_smokes.smokes as "person_smokes.smokes",
+             person_has_cancer.has_cancer as "person_has_cancer.has_cancer"
+        FROM person_has_cancer, person_smokes
+       WHERE person_has_cancer.person_id = person_smokes.person_id
     """
-  function    : "Imply(people.smokes, people.has_cancer)"
-  weight      : "?(people.gender)"
+  function: "Imply(person_smokes.smokes, person_has_cancer.has_cancer)"
+  weight: 0.5
 }
 ```
 
