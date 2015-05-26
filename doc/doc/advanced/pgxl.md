@@ -15,7 +15,7 @@ were running PostgreSQL.
 
 ## Important Caveats
 
-You should add a `DISTRIBUTE BY HASH` clause in all `CREATE TABLE` commands. **Do
+First, you should add a `DISTRIBUTE BY HASH` clause in all `CREATE TABLE` commands. **Do
 not use the column `id`** as the distribution key. **Do not use** a distribution
 key that is **not initially assigned**.
 
@@ -23,14 +23,19 @@ Refer to the [XL
 manual](http://files.postgres-xl.org/documentation/) for
 more information.
 
-You should always create tables as `CREATE UNLOGGED TABLE ...`. The unlogged
+Second, you should always create tables as `CREATE UNLOGGED TABLE ...`. The unlogged
 keyword turns off write-ahead logging (WAL), and gives a significant speedup
 in writes (often 10X). WAL is not needed for DeepDive apps, because the
 database is only used for processing, not for persisting data.
 
+For more details on XL-specific SQL queries in a DeepDive example application,
+see [this example](https://github.com/HazyResearch/deepdive/tree/master/examples/spouse_example).
+
 ## Installation
 We now describe how to install XL and configure it to be used with
 DeepDive. The steps were tested to install XL on Ubuntu 15.04. 
+
+We assume that the user executing these commands has sudo rights.
 
 ### Setting OS Parameters
 
@@ -110,16 +115,6 @@ tablefunc tsearch2 unaccent; do
 done
 ```
 
-### Set XL related session variables
-
-To set Greenplum related session variables, modify your
-`~/.bashrc` script and add the line:
-
-```bash
-export PATH=$TARGET_DIR/bin:\$PATH
-export PGXC_CTL_HOME=$TARGET_DIR/conf
-```
-
 ### Configure ssh with localhost
 
 Now you need to generate ssh keys for `localhost`. Run: 
@@ -165,10 +160,10 @@ DATA_NODE_WAL_BUFFERS="16MB"
 DATA_NODE_CHECKPOINT_SEGMENTS="256"
 ```
 
-Create a file `$TARGET_DIR/conf/pgxc_ctl.conf` with the following contents (replace
-variables with their values):
+Now create a file `$TARGET_DIR/conf/pgxc_ctl.conf` as follows:
 
 ```
+cat <<EOT > $TARGET_DIR/conf/pgxc_ctl.conf
 pgxcOwner=$USER
 pgxcUser=\$pgxcOwner
 tmpDir=/tmp
@@ -233,6 +228,7 @@ work_mem = $DATA_NODE_WORK_MEM
 maintenance_work_mem = $DATA_NODE_MAINTENANCE_MEM
 wal_buffers = $DATA_NODE_WAL_BUFFERS
 EOF
+EOT
 ```
 
 Above configuration creates a cluster with two data nodes, one coordinator,
@@ -254,7 +250,6 @@ Run `source ~/.bashrc`.
 Execute the following command to launch the database server
 
 ```bash
-# create all nodes
 pgxc_ctl "init all"
 ```
 
