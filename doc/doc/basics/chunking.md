@@ -226,7 +226,7 @@ It is similar with skip-chain CRF, where we have skip edges that link labels of 
 
 We also specify the holdout variables according to task description about training and test data.
 
-    calibration: {
+    calibration {
       holdout_query: "INSERT INTO dd_graph_variables_holdout(variable_id) SELECT id FROM words WHERE word_id > 220663"
     }
 

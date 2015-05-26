@@ -791,7 +791,7 @@ Next, add the extractor:
 
     extraction.extractors {
 
-      ext_sentences: {
+      ext_sentences {
         input: """
           SELECT  article_id, text
           FROM    articles

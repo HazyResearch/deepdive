@@ -492,7 +492,7 @@ The definitions of inference rules for the factor graphs go in the
 
 ```bash
 deepdive {
-  inference.factors: {
+  inference.factors {
     rule1 {
       # definition of rule1
     }
@@ -557,7 +557,7 @@ The available directives are:
   [holdout](calibration.html#holdout). E.g.:
 
     ```bash
-    calibration: {
+    calibration {
       holdout_fraction: 0.25
     }
     ```
@@ -566,7 +566,7 @@ The available directives are:
   `dd_graph_variables_holdout` table through arbitrary SQL. E.g.:
  
     ```bash
-    calibration: {
+    calibration {
       holdout_query: "INSERT INTO dd_graph_variables_holdout(variable_id) SELECT id FROM mytable WHERE predicate"
     }
     ```
@@ -577,7 +577,7 @@ The available directives are:
 - `observation_query`: specifies a custom query to be used to define observation only evidence. Observation only evidence will not be fitted during weight learning. So there will be 3 kinds of variables during learning -- evidence that will be fitted, evidence that will not be fitted and non-evidence variables. This query must insert all variable IDs that are observation only evidence into the `dd_graph_variables_observation` table through arbitrary SQL. E.g.:
  
     ```bash
-    calibration: {
+    calibration {
       observation_query: "INSERT INTO dd_graph_variables_observation SELECT id FROM mytable WHERE predicate"
     }
     ```

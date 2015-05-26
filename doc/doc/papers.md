@@ -32,6 +32,7 @@ root: "."
 
 #### The Underlying Engine
 
+- *Best Overall Description:* [Incremental Knowledge Base Construction Using DeepDive](http://i.stanford.edu/hazy/papers/inc.pdf) Sen Wu, Ce Zhang, Christopher De Sa, Jaeho Shin, Feiran Wang, and C. Ré. VLDB. 2015.
 - *Best Reference for Sampler:* [DimmWitted: A Study of Main-Memory Statistical Analytics.](http://arxiv.org/abs/1403.7550) Ce Zhang and C. Ré. VLDB 2014.
 - *Best Reference for Grounding:* [Tuffy: Scaling up Statistical Inference in Markov Logic Networks using an RDBMS.](http://www.cs.stanford.edu/people/chrismre/papers/tuffy-vldb11.pdf) F. Niu, C. Ré, A.Doan, and J.W. Shavlik. PVLDB 11.
 
