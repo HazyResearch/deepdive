@@ -4,3 +4,6 @@
 [submodule "mindbender"]
 	path = mindbender
 	url = https://github.com/netj/mindbender.git
+[submodule "ddlog"]
+	path = ddlog
+	url = https://github.com/HazyResearch/ddlog.git
