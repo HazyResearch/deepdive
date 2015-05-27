@@ -1,0 +1,9 @@
+language: scala
+scala:
+    - "2.11.1"
+before_install:
+    - sudo apt-get install -qq wdiff
+script:
+    - make test MEASURE_COVERAGE=true
+after_success:
+    - sbt coveralls

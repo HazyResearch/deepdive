@@ -1,6 +1,5 @@
 /ddlog.jar
-/ddlog-test.jar
-/ddlog-test.jar.classpath
 target
-/test/bats
-/test/*.for-example-*.bats
+
+/test/*-test/**/*.bats
+/test/*-test/**/*.actual
