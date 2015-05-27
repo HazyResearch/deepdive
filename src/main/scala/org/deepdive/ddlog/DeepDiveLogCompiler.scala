@@ -96,11 +96,12 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
   var isIncremental : Boolean = false
 
   // Mapping head names to the actual statements
+  var schemaDeclarationGroupByHead  : Map[String, List[SchemaDeclaration]] = new HashMap[String, List[SchemaDeclaration]]()
   var extractionRuleGroupByHead     : Map[String, List[ExtractionRule]] = new HashMap[String, List[ExtractionRule]]()
   var inferenceRuleGroupByHead      : Map[String, List[InferenceRule]] = new HashMap[String, List[InferenceRule]]()
   var functionCallRuleGroupByInput  : Map[String, List[FunctionCallRule]] = new HashMap[String, List[FunctionCallRule]]()
   var functionCallRuleGroupByOutput : Map[String, List[FunctionCallRule]] = new HashMap[String, List[FunctionCallRule]]()
-  
+
   def init() = {
     // generate the statements.
     isIncremental = config.isIncremental
@@ -130,10 +131,16 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
   // Given a statement, resolve its name for the compiled extractor block.
   def resolveExtractorBlockName(s: Statement): String = {
     s match {
-      case s: FunctionCallRule => s"extraction_rule_${statements indexOf s}"
-      case s: ExtractionRule   => s"extraction_rule_${statements indexOf s}"
-      case s: InferenceRule    => s"extraction_rule_${s.q.head.name}"
+      case s: SchemaDeclaration => s"extraction_rule_${statements indexOf s}"
+      case s: FunctionCallRule  => s"extraction_rule_${statements indexOf s}"
+      case s: ExtractionRule    => s"extraction_rule_${statements indexOf s}"
+      case s: InferenceRule     => s"extraction_rule_${s.q.head.name}"
     }
+  }
+
+  // Given an inference rule, resolve its name for the compiled inference block.
+  def resolveInferenceBlockName(s: InferenceRule): String = {
+    s"factor_${s.q.head.name}_${statements indexOf s}"
   }
 
   // Given a variable, resolve it.  TODO: This should give a warning,
@@ -203,20 +210,24 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
   // Group statements by head
   def groupByHead(statements: List[Statement]) = {
     // Compile compilation states by head name based on type
-    val extractionRuleToCompile = new ListBuffer[ExtractionRule]()
-    val inferenceRuleToCompile = new ListBuffer[InferenceRule]()
-    val functionCallRuleToCompile = new ListBuffer[FunctionCallRule]()
+    val schemaDeclarationToCompile = new ListBuffer[SchemaDeclaration]()
+    val extractionRuleToCompile    = new ListBuffer[ExtractionRule]()
+    val inferenceRuleToCompile     = new ListBuffer[InferenceRule]()
+    val functionCallRuleToCompile  = new ListBuffer[FunctionCallRule]()
+
     statements foreach (_ match {
-      case s: ExtractionRule   => extractionRuleToCompile += s
-      case s: FunctionCallRule => functionCallRuleToCompile += s
-      case s: InferenceRule    => inferenceRuleToCompile += s
-      case _                   => 
+      case s: SchemaDeclaration    => schemaDeclarationToCompile += s
+      case s: ExtractionRule       => extractionRuleToCompile += s
+      case s: FunctionCallRule     => functionCallRuleToCompile += s
+      case s: InferenceRule        => inferenceRuleToCompile += s
+      case _                       =>
     })
 
-    extractionRuleGroupByHead     = extractionRuleToCompile.toList.groupBy(_.q.head.name)
-    inferenceRuleGroupByHead      = inferenceRuleToCompile.toList.groupBy(_.q.head.name)
-    functionCallRuleGroupByInput  = functionCallRuleToCompile.toList.groupBy(_.input)
-    functionCallRuleGroupByOutput = functionCallRuleToCompile.toList.groupBy(_.output)
+    schemaDeclarationGroupByHead   = schemaDeclarationToCompile.toList.groupBy(_.a.name)
+    extractionRuleGroupByHead      = extractionRuleToCompile.toList.groupBy(_.q.head.name)
+    inferenceRuleGroupByHead       = inferenceRuleToCompile.toList.groupBy(_.q.head.name)
+    functionCallRuleGroupByInput   = functionCallRuleToCompile.toList.groupBy(_.input)
+    functionCallRuleGroupByOutput  = functionCallRuleToCompile.toList.groupBy(_.output)
   }
 
   // Analyze the block visibility among statements 
@@ -285,6 +296,27 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
   type CompiledBlock = String
   type CompiledBlocks = List[CompiledBlock]
 
+  // Generate schema for database
+  def compileSchemaDeclarations(stmts: List[SchemaDeclaration], ss: CompilationState): CompiledBlocks = {
+    var schemas = new ListBuffer[String]()
+    for (stmt <- stmts) {
+      val columnDecls = stmt.a.terms map {
+        case Variable(name, _, i) => s"${name} ${stmt.a.types(i)}"
+      }
+      val indentation = " " * stmt.a.name.length
+      val blockName = ss.resolveExtractorBlockName(stmt)
+      schemas += s"""
+        deepdive.extraction.extractors.${blockName} {
+          sql: \"\"\" DROP TABLE IF EXISTS ${stmt.a.name} CASCADE;
+          CREATE TABLE
+          ${stmt.a.name}(${columnDecls.mkString(",\n" + indentation)})
+          \"\"\"
+          style: "sql_extractor"
+        }"""
+    }
+    schemas.toList
+  }
+
   // Generate extraction rule part for deepdive
   def compileExtractionRules(stmts: List[ExtractionRule], ss: CompilationState): CompiledBlocks = {
     var inputQueries = new ListBuffer[String]()
@@ -316,10 +348,13 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       }
     }
     val blockName = ss.resolveExtractorBlockName(stmts(0))
+    val sqlCmdForCleanUp = if (ss.schemaDeclarationGroupByHead contains stmts(0).q.head.name) "TRUNCATE" else "DROP VIEW IF EXISTS"
+    val sqlCmdForInsert  = if (ss.schemaDeclarationGroupByHead contains stmts(0).q.head.name) "INSERT INTO" else "CREATE VIEW"
+    val useAS            = if (ss.schemaDeclarationGroupByHead contains stmts(0).q.head.name) "" else " AS"
     val extractor = s"""
       deepdive.extraction.extractors.${blockName} {
-        sql: \"\"\" DROP VIEW IF EXISTS ${stmts(0).q.head.name};
-        CREATE VIEW ${stmts(0).q.head.name} AS ${inputQueries.mkString(" UNION ")}
+        sql: \"\"\" ${sqlCmdForCleanUp} ${stmts(0).q.head.name};
+        ${sqlCmdForInsert} ${stmts(0).q.head.name}${useAS} ${inputQueries.mkString(" UNION ")}
         \"\"\"
         style: "sql_extractor"
           ${ss.generateDependenciesOfCompiledBlockFor(stmts)}
@@ -388,10 +423,13 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
         }
       }
       val blockName = ss.resolveExtractorBlockName(zs(0))
+      val sqlCmdForCleanUp = if (ss.schemaDeclarationGroupByHead contains zs(0).q.head.name) "TRUNCATE" else "DROP VIEW IF EXISTS"
+      val sqlCmdForInsert  = if (ss.schemaDeclarationGroupByHead contains zs(0).q.head.name) "INSERT INTO" else "CREATE VIEW"
+      val useAS            = if (ss.schemaDeclarationGroupByHead contains zs(0).q.head.name) "" else " AS"
       val ext = s"""
       deepdive.extraction.extractors.${blockName} {
-        sql: \"\"\" DROP TABLE IF EXISTS ${zs(0).q.head.name};
-        CREATE TABLE ${zs(0).q.head.name} AS
+        sql: \"\"\" ${sqlCmdForCleanUp} ${zs(0).q.head.name};
+        ${sqlCmdForInsert} ${zs(0).q.head.name}${useAS}
         ${inputQueries.mkString(" UNION ")}
         \"\"\"
         style: "sql_extractor"
@@ -403,8 +441,6 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     if (ss.isQueryTerm(stmts(0).q.head.name))
       blocks :::= compileNodeRule(stmts, ss)
 
-    val inferenceRuleGroupByHead    = stmts.groupBy(_.q.head.name)
-    var stmtIndex = 0
     for (stmt <- stmts) {
       var inputQueries = new ListBuffer[String]()
       var func = ""
@@ -445,14 +481,14 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
             }
           }
       }
+      val blockName = ss.resolveInferenceBlockName(stmt)
       blocks ::= s"""
-        deepdive.inference.factors.factor_${stmt.q.head.name}_${stmtIndex} {
+        deepdive.inference.factors.${blockName} {
           input_query: \"\"\"${inputQueries.mkString(" UNION ")}\"\"\"
           function: "${func}"
           weight: "${weight}"
         }
       """
-      stmtIndex += 1
     }
     blocks.reverse
   }
@@ -471,6 +507,18 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     port: ${PGPORT}
   }
   """)
+  }
+
+  def compilePipelines(ss: CompilationState): CompiledBlocks = {
+    val run = "deepdive.pipeline.run: ${PIPELINE}"
+    val setup_database_pipeline = ((ss.schemaDeclarationGroupByHead map (_._2)).flatten map {s => ss.resolveExtractorBlockName(s)}).mkString(", ")
+    val initdb = s"deepdive.pipeline.pipelines.initdb: [${setup_database_pipeline}]"
+    val extraction = (ss.visible map {s => ss.resolveExtractorBlockName(s)}).mkString(", ")
+    val extraction_pipeline = s"deepdive.pipeline.pipelines.extraction: [${extraction}]"
+    val inference = ((ss.inferenceRuleGroupByHead map (_._2)).flatten map {s => ss.resolveInferenceBlockName(s)}).mkString(", ")
+    val inference_pipeline = s"deepdive.pipeline.pipelines.inference: [${inference}]"
+
+    List(run, initdb, extraction_pipeline, inference_pipeline)
   }
 
   // generate variable schema statements
@@ -498,11 +546,11 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       // derive and compile the program with delta rules instead for incremental version
       if (config.isIncremental) DeepDiveLogDeltaDeriver.derive(parsedProgram)
       else parsedProgram
-
     // take an initial pass to analyze the parsed program
     val state = new CompilationState( programToCompile, config )
 
     val body = new ListBuffer[String]()
+    body ++= compileSchemaDeclarations((state.schemaDeclarationGroupByHead map (_._2)).flatten.toList, state)
     state.extractionRuleGroupByHead    foreach {keyVal => body ++= compileExtractionRules(keyVal._2, state)}
     state.functionCallRuleGroupByInput foreach {keyVal => body ++= compileFunctionCallRules(keyVal._2, state)}
     state.inferenceRuleGroupByHead     foreach {keyVal => body ++= compileInferenceRules(keyVal._2, state)}
@@ -513,7 +561,9 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       :::
       compileVariableSchema(programToCompile, state)
       :::
-      body.toList 
+      body.toList
+      :::
+      compilePipelines(state)
     )
 
     // emit the generated code

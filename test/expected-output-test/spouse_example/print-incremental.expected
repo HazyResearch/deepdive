@@ -128,25 +128,6 @@ dd_new_has_spouse?(relation_id text).
 
 dd_delta_people_mentions :- !ext_people(dd_delta_ext_people_input).
 
-ext_people_input(sentence_id text,
-                 words text[],
-                 ner_tags text[],
-                 dd_count int).
-
-dd_delta_ext_people_input(sentence_id text,
-                          words text[],
-                          ner_tags text[],
-                          dd_count int).
-
-dd_new_ext_people_input(sentence_id text,
-                        words text[],
-                        ner_tags text[],
-                        dd_count int).
-
-dd_new_ext_people_input(sentence_id, words, ner_tags, dd_count) :-
-    ext_people_input(sentence_id, words, ner_tags, dd_count);
-    dd_delta_ext_people_input(sentence_id, words, ner_tags, dd_count).
-
 dd_delta_ext_people_input(s, words, ner_tags) :-
     dd_delta_sentences(a, b, words, c, d, e, ner_tags, f, s).
 
@@ -157,31 +138,6 @@ function ext_people
         handles tsv lines.
 
 dd_delta_has_spouse_candidates :- !ext_has_spouse(dd_delta_ext_has_spouse_input).
-
-ext_has_spouse_input(sentence_id text,
-                     p1_id text,
-                     p1_text text,
-                     p2_id text,
-                     p2_text text,
-                     dd_count int).
-
-dd_delta_ext_has_spouse_input(sentence_id text,
-                              p1_id text,
-                              p1_text text,
-                              p2_id text,
-                              p2_text text,
-                              dd_count int).
-
-dd_new_ext_has_spouse_input(sentence_id text,
-                            p1_id text,
-                            p1_text text,
-                            p2_id text,
-                            p2_text text,
-                            dd_count int).
-
-dd_new_ext_has_spouse_input(sentence_id, p1_id, p1_text, p2_id, p2_text, dd_count) :-
-    ext_has_spouse_input(sentence_id, p1_id, p1_text, p2_id, p2_text, dd_count);
-    dd_delta_ext_has_spouse_input(sentence_id, p1_id, p1_text, p2_id, p2_text, dd_count).
 
 dd_delta_ext_has_spouse_input(s, p1_id, p1_text, p2_id, p2_text) :-
     dd_delta_people_mentions(s, a, b, p1_text, p1_id),
@@ -196,34 +152,6 @@ function ext_has_spouse
         handles tsv lines.
 
 dd_delta_has_spouse_features :- !ext_has_spouse_features(dd_delta_ext_has_spouse_features_input).
-
-ext_has_spouse_features_input(words text[],
-                              relation_id text,
-                              p1_start_position int,
-                              p1_length int,
-                              p2_start_position int,
-                              p2_length int,
-                              dd_count int).
-
-dd_delta_ext_has_spouse_features_input(words text[],
-                                       relation_id text,
-                                       p1_start_position int,
-                                       p1_length int,
-                                       p2_start_position int,
-                                       p2_length int,
-                                       dd_count int).
-
-dd_new_ext_has_spouse_features_input(words text[],
-                                     relation_id text,
-                                     p1_start_position int,
-                                     p1_length int,
-                                     p2_start_position int,
-                                     p2_length int,
-                                     dd_count int).
-
-dd_new_ext_has_spouse_features_input(words, relation_id, p1_start_position, p1_length, p2_start_position, p2_length, dd_count) :-
-    ext_has_spouse_features_input(words, relation_id, p1_start_position, p1_length, p2_start_position, p2_length, dd_count);
-    dd_delta_ext_has_spouse_features_input(words, relation_id, p1_start_position, p1_length, p2_start_position, p2_length, dd_count).
 
 dd_delta_ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :-
     dd_delta_sentences(a, b, words, c, d, e, f, g, s),

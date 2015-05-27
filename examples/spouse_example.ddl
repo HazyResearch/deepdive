@@ -37,11 +37,6 @@ has_spouse?(relation_id text).
 people_mentions :-
   !ext_people(ext_people_input).
 
-ext_people_input(
-  sentence_id text,
-  words       text[],
-  ner_tags    text[]).
-
 ext_people_input(s, words, ner_tags) :-
   sentences(a, b, words, c, d, e, ner_tags, f, s).
 
@@ -51,13 +46,6 @@ function ext_people over like ext_people_input
 
 has_spouse_candidates :-
   !ext_has_spouse(ext_has_spouse_input).
-
-ext_has_spouse_input(
-  sentence_id text,
-  p1_id       text,
-  p1_text     text,
-  p2_id       text,
-  p2_text     text).
 
 ext_has_spouse_input(s, p1_id, p1_text, p2_id, p2_text) :-
   people_mentions(s, a, b, p1_text, p1_id),
@@ -69,14 +57,6 @@ function ext_has_spouse over like ext_has_spouse_input
 
 has_spouse_features :-
   !ext_has_spouse_features(ext_has_spouse_features_input).
-
-ext_has_spouse_features_input(
-  words             text[],
-  relation_id       text,
-  p1_start_position int,
-  p1_length         int,
-  p2_start_position int,
-  p2_length         int).
 
 ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :-
   sentences(a, b, words, c, d, e, f, g, s),
