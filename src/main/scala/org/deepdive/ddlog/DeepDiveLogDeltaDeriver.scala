@@ -96,8 +96,8 @@ object DeepDiveLogDeltaDeriver{
     )
     if (!stmt.isQuery) incNewStmt = incNewStmt.copy(
       a = incNewStmt.a.copy(
-        terms = stmt.a.terms :+ Variable("dd_count", newPrefix + stmt.a.name, stmt.a.terms.length),
-        types = stmt.a.types :+ "int"
+        terms = incNewStmt.a.terms :+ Variable("dd_count", newPrefix + stmt.a.name, stmt.a.terms.length),
+        types = incNewStmt.a.types :+ "int"
       )
     )
     incrementalStatement += incNewStmt
