@@ -453,6 +453,12 @@ Configuration directives to control the inference steps go in the global
     `dd_graph_last_weights` used when `inference.skip_learning` is `true`) or
     manually assigned, or a combination of the two.
 
+    If weight for a specific factor is not in the weight table, the
+    weight will be treated as 0. For example, if
+    `f_has_spouse_features-SOME_NEW_FEATURE` is not found in
+    the specified weight table, but this factor is found in the
+    inference step, the weight of it will be treated as 0.
+
     If `inference_skip_learning` is `false` (default) this directive is ignored.
 
     ```bash
