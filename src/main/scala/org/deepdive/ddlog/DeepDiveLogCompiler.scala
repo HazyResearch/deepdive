@@ -300,9 +300,10 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
   def compileSchemaDeclarations(stmts: List[SchemaDeclaration], ss: CompilationState): CompiledBlocks = {
     var schemas = new ListBuffer[String]()
     for (stmt <- stmts) {
-      val columnDecls = stmt.a.terms map {
+      var columnDecls = stmt.a.terms map {
         case Variable(name, _, i) => s"${name} ${stmt.a.types(i)}"
       }
+      if (ss.isIncremental && !stmt.isQuery) columnDecls = columnDecls :+ "dd_count int"
       val indentation = " " * stmt.a.name.length
       val blockName = ss.resolveExtractorBlockName(stmt)
       schemas += s"""
@@ -327,7 +328,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
         val qs              = new QuerySchema( tmpCq )
         // variable columns
         // dd_new_ tale only need original column name to make sure the schema is the same with original table
-        val tmpCqIsForNewTable = tmpCq.head.name.startsWith("dd_new_")
+        var tmpCqIsForNewTable = tmpCq.head.name.startsWith("dd_new_")
         val resolveColumnFlag = tmpCqIsForNewTable match {
           case true => OriginalOnly
           case false => OriginalAndAlias
@@ -339,8 +340,10 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
         val selectStr = variableCols.mkString(", ")
         // additional dd_count column will be added in incremental version not dd_new_ table
         // dd_new_ table does not need additional dd_count column
-        val ddCount = if (ss.isIncremental && !tmpCqIsForNewTable) ( tmpCq.bodies(0).zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
-        val ddCountStr = if (ddCount.length > 0) s""", ${ddCount} AS \"dd_count\" """ else ""
+        val ddCount = if (ss.isIncremental) ( tmpCq.bodies(0).zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
+        val ddCountStr = if (ddCount.length > 0) {
+          if (!tmpCqIsForNewTable) s""", ${ddCount} AS \"dd_count\" """ else s", ${ddCount}"
+        } else ""
 
         inputQueries += s"""
           SELECT ${selectStr}${ddCountStr}

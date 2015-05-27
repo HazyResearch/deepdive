@@ -1,18 +1,15 @@
 articles(article_id text,
-         text text,
-         dd_count int).
+         text text).
 
 dd_delta_articles(article_id text,
-                  text text,
-                  dd_count int).
+                  text text).
 
 dd_new_articles(article_id text,
-                text text,
-                dd_count int).
+                text text).
 
-dd_new_articles(article_id, text, dd_count) :-
-    articles(article_id, text, dd_count);
-    dd_delta_articles(article_id, text, dd_count).
+dd_new_articles(article_id, text) :-
+    articles(article_id, text);
+    dd_delta_articles(article_id, text).
 
 sentences(document_id text,
           sentence text,
@@ -22,8 +19,7 @@ sentences(document_id text,
           dependencies text[],
           ner_tags text[],
           sentence_offset int,
-          sentence_id text,
-          dd_count int).
+          sentence_id text).
 
 dd_delta_sentences(document_id text,
                    sentence text,
@@ -33,8 +29,7 @@ dd_delta_sentences(document_id text,
                    dependencies text[],
                    ner_tags text[],
                    sentence_offset int,
-                   sentence_id text,
-                   dd_count int).
+                   sentence_id text).
 
 dd_new_sentences(document_id text,
                  sentence text,
@@ -44,81 +39,71 @@ dd_new_sentences(document_id text,
                  dependencies text[],
                  ner_tags text[],
                  sentence_offset int,
-                 sentence_id text,
-                 dd_count int).
+                 sentence_id text).
 
-dd_new_sentences(document_id, sentence, words, lemma, pos_tags, dependencies, ner_tags, sentence_offset, sentence_id, dd_count) :-
-    sentences(document_id, sentence, words, lemma, pos_tags, dependencies, ner_tags, sentence_offset, sentence_id, dd_count);
-    dd_delta_sentences(document_id, sentence, words, lemma, pos_tags, dependencies, ner_tags, sentence_offset, sentence_id, dd_count).
+dd_new_sentences(document_id, sentence, words, lemma, pos_tags, dependencies, ner_tags, sentence_offset, sentence_id) :-
+    sentences(document_id, sentence, words, lemma, pos_tags, dependencies, ner_tags, sentence_offset, sentence_id);
+    dd_delta_sentences(document_id, sentence, words, lemma, pos_tags, dependencies, ner_tags, sentence_offset, sentence_id).
 
 people_mentions(sentence_id text,
                 start_position int,
                 length int,
                 text text,
-                mention_id text,
-                dd_count int).
+                mention_id text).
 
 dd_delta_people_mentions(sentence_id text,
                          start_position int,
                          length int,
                          text text,
-                         mention_id text,
-                         dd_count int).
+                         mention_id text).
 
 dd_new_people_mentions(sentence_id text,
                        start_position int,
                        length int,
                        text text,
-                       mention_id text,
-                       dd_count int).
+                       mention_id text).
 
-dd_new_people_mentions(sentence_id, start_position, length, text, mention_id, dd_count) :-
-    people_mentions(sentence_id, start_position, length, text, mention_id, dd_count);
-    dd_delta_people_mentions(sentence_id, start_position, length, text, mention_id, dd_count).
+dd_new_people_mentions(sentence_id, start_position, length, text, mention_id) :-
+    people_mentions(sentence_id, start_position, length, text, mention_id);
+    dd_delta_people_mentions(sentence_id, start_position, length, text, mention_id).
 
 has_spouse_candidates(person1_id text,
                       person2_id text,
                       sentence_id text,
                       description text,
                       relation_id text,
-                      is_true boolean,
-                      dd_count int).
+                      is_true boolean).
 
 dd_delta_has_spouse_candidates(person1_id text,
                                person2_id text,
                                sentence_id text,
                                description text,
                                relation_id text,
-                               is_true boolean,
-                               dd_count int).
+                               is_true boolean).
 
 dd_new_has_spouse_candidates(person1_id text,
                              person2_id text,
                              sentence_id text,
                              description text,
                              relation_id text,
-                             is_true boolean,
-                             dd_count int).
+                             is_true boolean).
 
-dd_new_has_spouse_candidates(person1_id, person2_id, sentence_id, description, relation_id, is_true, dd_count) :-
-    has_spouse_candidates(person1_id, person2_id, sentence_id, description, relation_id, is_true, dd_count);
-    dd_delta_has_spouse_candidates(person1_id, person2_id, sentence_id, description, relation_id, is_true, dd_count).
+dd_new_has_spouse_candidates(person1_id, person2_id, sentence_id, description, relation_id, is_true) :-
+    has_spouse_candidates(person1_id, person2_id, sentence_id, description, relation_id, is_true);
+    dd_delta_has_spouse_candidates(person1_id, person2_id, sentence_id, description, relation_id, is_true).
 
 has_spouse_features(relation_id text,
-                    feature text,
-                    dd_count int).
+                    feature text).
 
 dd_delta_has_spouse_features(relation_id text,
-                             feature text,
-                             dd_count int).
+                             feature text).
 
 dd_new_has_spouse_features(relation_id text,
-                           feature text,
-                           dd_count int).
+                           feature text).
 
-dd_new_has_spouse_features(relation_id, feature, dd_count) :-
-    has_spouse_features(relation_id, feature, dd_count);
-    dd_delta_has_spouse_features(relation_id, feature, dd_count).
+dd_new_has_spouse_features(relation_id, feature) :-
+    has_spouse_features(relation_id, feature);
+    dd_delta_has_spouse_features(relation_id, feature).
 
 has_spouse?(relation_id text).
 
