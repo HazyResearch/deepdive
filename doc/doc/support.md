@@ -12,7 +12,7 @@ MEMEX program, the National Science Foundation (NSF) CAREER Award
 under No. IIS-1353606 and EarthCube Award under No. ACI-1343760, the
 Sloan Research Fellowship, the Office of Naval Research (ONR) under
 awards No. N000141210041 and No. N000141310129, the Moore Foundation,
-American Family Insurance, Google, Lightspeed Ventures, and Toshiba.
+American Family Insurance, CHTC, Google, Lightspeed Ventures, and Toshiba.
 Any opinions, findings, and conclusions or recommendations expressed
 in this material are those of the authors and do not necessarily
 reflect the views of DARPA, AFRL, NSF, ONR, or the U.S. government.
