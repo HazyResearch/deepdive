@@ -40,10 +40,11 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
         "\"" + StringEscapeUtils.escapeJava(impl.command) + "\"" +
         s"\n        handles ${impl.format} lines"
     }
+    val modeStr = if (stmt.mode == null) "" else s" mode = ${stmt.mode}"
     s"""function ${stmt.functionName}
        |    over ${inputType}
        | returns ${outputType}
-       | ${(impls map {"implementation " + _}).mkString("\n ")}.
+       | ${(impls map {"implementation " + _}).mkString("\n ")}${modeStr}.
        |""".stripMargin
   }
 

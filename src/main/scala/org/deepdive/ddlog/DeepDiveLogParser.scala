@@ -5,6 +5,7 @@ package org.deepdive.ddlog
 
 import scala.util.parsing.combinator._
 import org.apache.commons.lang3.StringEscapeUtils
+import scala.util.Try
 
 // ***************************************
 // * The union types for for the parser. *
@@ -35,7 +36,7 @@ case class RowWiseLineHandler(format: String, command: String) extends FunctionI
 // Statements that will be parsed and compiled
 trait Statement
 case class SchemaDeclaration( a : Attribute , isQuery : Boolean ) extends Statement // atom and whether this is a query relation.
-case class FunctionDeclaration( functionName: String, inputType: RelationType, outputType: RelationType, implementations: List[FunctionImplementationDeclaration]) extends Statement
+case class FunctionDeclaration( functionName: String, inputType: RelationType, outputType: RelationType, implementations: List[FunctionImplementationDeclaration], mode: String = null) extends Statement
 case class ExtractionRule(q : ConjunctiveQuery, supervision: String = null) extends Statement // Extraction rule
 case class FunctionCallRule(input : String, output : String, function : String) extends Statement // Extraction rule
 case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, supervision : String, semantics : String = "Imply") extends Statement // Weighted rule
@@ -65,6 +66,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def variableName = ident
   def functionName = ident
   def semanticType = ident
+  def functionModeType = ident
 
   def columnDeclaration: Parser[Column] =
     columnName ~ columnType ^^ {
@@ -103,10 +105,6 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def conjunctiveQuery : Parser[ConjunctiveQuery] =
     cqHead ~ ":-" ~ rep1sep(cqBody, ";") ^^ {
       case (headatom ~ ":-" ~ disjunctiveBodies) =>
-        // TODO handle all disjunctiveBodies
-        // XXX only compiling the first body
-        // val bodyatoms = disjunctiveBodies(0)
-        // ConjunctiveQuery(headatom, bodyatoms.toList)
         ConjunctiveQuery(headatom, disjunctiveBodies)
     }
 
@@ -117,6 +115,8 @@ class DeepDiveLogParser extends JavaTokenParsers {
       }
     )
 
+  def functionMode = "mode" ~> "=" ~> functionModeType
+
   def functionImplementation : Parser[FunctionImplementationDeclaration] =
     "implementation" ~ stringLiteralAsString ~ "handles" ~ ("tsv" | "json") ~ "lines" ^^ {
       case (_ ~ command ~ _ ~ format ~ _) => RowWiseLineHandler(command=command, format=format)
@@ -125,12 +125,12 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def functionDeclaration : Parser[FunctionDeclaration] =
     ( "function" ~ functionName ~ "over" ~ relationType
                              ~ "returns" ~ relationType
-                 ~ (functionImplementation+)
+                 ~ (functionImplementation+) ~ opt(functionMode)
     ) ^^ {
       case ("function" ~ a ~ "over" ~ inTy
                            ~ "returns" ~ outTy
-                       ~ implementationDecls) =>
-             FunctionDeclaration(a, inTy, outTy, implementationDecls)
+                       ~ implementationDecls ~ mode) =>
+             FunctionDeclaration(a, inTy, outTy, implementationDecls, mode.getOrElse(null))
     }
 
   def extractionRule : Parser[ExtractionRule] =

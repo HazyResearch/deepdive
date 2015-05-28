@@ -8,6 +8,8 @@ object DeepDiveLogDeltaDeriver{
   val deltaPrefix = "dd_delta_"
   val newPrefix = "dd_new_"
 
+  var incrementalFunctionInput = new ListBuffer[String]()
+
   def transform(stmt: Statement): List[Statement] = stmt match {
     case s: SchemaDeclaration   => transform(s)
     case s: FunctionDeclaration => transform(s)
@@ -41,7 +43,8 @@ object DeepDiveLogDeltaDeriver{
       }
       var i = 0
       var j = 0
-      for (i <- 0 to (body.length - 1)) {
+      var index = if (incrementalFunctionInput contains incCqHead.name) -1 else 0
+      for (i <- index to (body.length - 1)) {
         var newBody = new ListBuffer[Atom]()
         for (j <- 0 to (body.length - 1)) {
           if (j > i)
@@ -128,8 +131,23 @@ object DeepDiveLogDeltaDeriver{
     List(InferenceRule(transform(stmt.q), stmt.weights, stmt.supervision, stmt.semantics))
   }
 
+  def generateIncrementalFunctionInputList(program: DeepDiveLog.Program) {
+    program.foreach {
+      case x:FunctionDeclaration => if (x.mode == "inc") {
+        x.inputType match {
+          case inTy: RelationTypeAlias => incrementalFunctionInput += deltaPrefix + inTy.likeRelationName
+          case _ =>
+        }
+      }
+      case _ =>
+    }
+  }
+
   def derive(program: DeepDiveLog.Program): DeepDiveLog.Program = {
     var incrementalProgram = new ListBuffer[Statement]()
+
+    generateIncrementalFunctionInputList(program)
+
     for (x <- program) {
       incrementalProgram = incrementalProgram ++ transform(x)
     }
