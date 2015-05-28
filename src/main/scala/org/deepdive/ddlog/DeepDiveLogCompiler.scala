@@ -309,7 +309,8 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       var columnDecls = stmt.a.terms map {
         case Variable(name, _, i) => s"${name} ${stmt.a.types(i)}"
       }
-      if (ss.useDeltaCount && !stmt.isQuery) columnDecls = columnDecls :+ "dd_count int"
+      if (stmt.isQuery) columnDecls = columnDecls :+ "id bigint" :+ "label boolean"
+      if (ss.useDeltaCount) columnDecls = columnDecls :+ "dd_count int"
       val indentation = " " * stmt.a.name.length
       val blockName = ss.resolveExtractorBlockName(stmt)
       schemas += s"""
@@ -352,7 +353,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           val index = qs.getBodyIndex(stmt.supervision)
           val name  = ss.resolveName(qs.getVar(stmt.supervision))
           val labelCol = s"R${index}.${name}"
-          val headTermsStr = ( "0 as id"  :: headTerms ).mkString(", ")
+          val headTermsStr = ( headTerms :+ "0 as id" ).mkString(", ")
           val ddCount = if (ss.useDeltaCount) ( tmpCq.bodies(0).zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
           val ddCountStr = if (ddCount.length > 0) s", ${ddCount} AS dd_count" else ""
           inputQueries += s"""SELECT DISTINCT ${ headTermsStr }, ${labelCol} AS label ${ddCountStr}

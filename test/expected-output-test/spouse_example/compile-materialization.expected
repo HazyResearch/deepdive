@@ -49,7 +49,10 @@
         deepdive.extraction.extractors.extraction_rule_5 {
           sql: """ DROP TABLE IF EXISTS has_spouse CASCADE;
           CREATE TABLE
-          has_spouse(relation_id text)
+          has_spouse(relation_id text,
+          id bigint,
+          label boolean,
+          dd_count int)
           """
           style: "sql_extractor"
         }
@@ -89,7 +92,7 @@
 
       deepdive.extraction.extractors.extraction_rule_15 {
         sql: """ TRUNCATE has_spouse;
-        INSERT INTO has_spouse SELECT DISTINCT 0 as id, R0.relation_id, R0.is_true AS label , R0.dd_count AS dd_count
+        INSERT INTO has_spouse SELECT DISTINCT R0.relation_id, 0 as id, R0.is_true AS label , R0.dd_count AS dd_count
           FROM has_spouse_candidates R0
         
           

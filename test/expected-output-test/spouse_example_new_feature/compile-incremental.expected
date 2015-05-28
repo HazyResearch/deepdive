@@ -72,7 +72,10 @@
         deepdive.extraction.extractors.extraction_rule_20 {
           sql: """ DROP TABLE IF EXISTS has_spouse CASCADE;
           CREATE TABLE
-          has_spouse(relation_id text)
+          has_spouse(relation_id text,
+          id bigint,
+          label boolean,
+          dd_count int)
           """
           style: "sql_extractor"
         }
@@ -218,7 +221,10 @@
         deepdive.extraction.extractors.extraction_rule_21 {
           sql: """ DROP TABLE IF EXISTS dd_delta_has_spouse CASCADE;
           CREATE TABLE
-          dd_delta_has_spouse(relation_id text)
+          dd_delta_has_spouse(relation_id text,
+                   id bigint,
+                   label boolean,
+                   dd_count int)
           """
           style: "sql_extractor"
         }
@@ -226,7 +232,10 @@
         deepdive.extraction.extractors.extraction_rule_22 {
           sql: """ DROP TABLE IF EXISTS dd_new_has_spouse CASCADE;
           CREATE TABLE
-          dd_new_has_spouse(relation_id text)
+          dd_new_has_spouse(relation_id text,
+                 id bigint,
+                 label boolean,
+                 dd_count int)
           """
           style: "sql_extractor"
         }
@@ -377,7 +386,7 @@
 
       deepdive.extraction.extractors.extraction_rule_32 {
         sql: """ TRUNCATE dd_delta_has_spouse;
-        INSERT INTO dd_delta_has_spouse SELECT DISTINCT 0 as id, R0.relation_id, R0.is_true AS label , R0.dd_count AS dd_count
+        INSERT INTO dd_delta_has_spouse SELECT DISTINCT R0.relation_id, 0 as id, R0.is_true AS label , R0.dd_count AS dd_count
           FROM dd_delta_has_spouse_candidates R0
         
           
