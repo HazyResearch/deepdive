@@ -1,6 +1,7 @@
 package org.deepdive.ddlog
 
 import org.apache.commons.lang3.StringEscapeUtils
+import org.deepdive.ddlog.DeepDiveLog.Mode._
 
 // Pretty printer that simply prints the parsed input
 object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
@@ -88,10 +89,13 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
 
   override def run(parsedProgram: DeepDiveLog.Program, config: DeepDiveLog.Config) = {
     val programToPrint =
-      // derive the delta rules for incremental version
-      if (config.isIncremental) DeepDiveLogDeltaDeriver.derive(parsedProgram)
-      else parsedProgram
-
+      // derive the program based on mode information
+      config.mode match {
+        case ORIGINAL => parsedProgram
+        case INCREMENTAL => DeepDiveLogDeltaDeriver.derive(parsedProgram)
+        case MATERIALIZATION => parsedProgram
+        case MERGE => DeepDiveLogMergeDeriver.derive(parsedProgram)
+      }
     // pretty print in original syntax
     programToPrint foreach {stmt => println(print(stmt))}
   }

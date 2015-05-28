@@ -61,6 +61,7 @@ Consider
 import scala.collection.immutable.HashMap
 import org.apache.commons.lang3.StringEscapeUtils
 import scala.collection.mutable.ListBuffer
+import org.deepdive.ddlog.DeepDiveLog.Mode._
 
 object AliasStyle extends Enumeration {
   type AliasStyle = Value
@@ -93,7 +94,9 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
   // The statement whether will compile or union to other statements
   var visible : Set[Statement] = Set()
 
-  var isIncremental : Boolean = false
+  var mode : Mode = ORIGINAL
+
+  var useDeltaCount : Boolean = false
 
   // Mapping head names to the actual statements
   var schemaDeclarationGroupByHead  : Map[String, List[SchemaDeclaration]] = new HashMap[String, List[SchemaDeclaration]]()
@@ -104,7 +107,11 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
 
   def init() = {
     // generate the statements.
-    isIncremental = config.isIncremental
+    mode = config.mode
+    useDeltaCount = mode match {
+      case ORIGINAL => false
+      case _ => true
+    }
     statements.foreach {
       case SchemaDeclaration(Attribute(r, terms, types), isQuery) =>
         terms.foreach {
@@ -303,7 +310,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       var columnDecls = stmt.a.terms map {
         case Variable(name, _, i) => s"${name} ${stmt.a.types(i)}"
       }
-      if (ss.isIncremental && !stmt.isQuery) columnDecls = columnDecls :+ "dd_count int"
+      if (ss.useDeltaCount && !stmt.isQuery) columnDecls = columnDecls :+ "dd_count int"
       val indentation = " " * stmt.a.name.length
       val blockName = ss.resolveExtractorBlockName(stmt)
       schemas += s"""
@@ -336,7 +343,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           val name  = ss.resolveName(qs.getVar(stmt.supervision))
           val labelCol = s"R${index}.${name}"
           val headTermsStr = ( "0 as id"  :: headTerms ).mkString(", ")
-          val ddCount = if (ss.isIncremental) ( tmpCq.bodies(0).zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
+          val ddCount = if (ss.useDeltaCount) ( tmpCq.bodies(0).zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
           val ddCountStr = if (ddCount.length > 0) s", ${ddCount} AS dd_count" else ""
           inputQueries += s"""SELECT DISTINCT ${ headTermsStr }, ${labelCol} AS label ${ddCountStr}
           ${ ss.generateSQLBody(tmpCq) }
@@ -344,8 +351,11 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
         } else {
           // variable columns
           // dd_new_ tale only need original column name to make sure the schema is the same with original table
-          var tmpCqIsForNewTable = tmpCq.head.name.startsWith("dd_new_")
-          val resolveColumnFlag = tmpCqIsForNewTable match {
+          var tmpCqUseOnlyOriginal = ss.mode match {
+            case MERGE => true
+            case _     => if (tmpCq.head.name.startsWith("dd_new_")) true else false
+          }
+          val resolveColumnFlag = tmpCqUseOnlyOriginal match {
             case true => OriginalOnly
             case false => OriginalAndAlias
           }
@@ -354,27 +364,42 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           }
 
           val selectStr = variableCols.mkString(", ")
-          // additional dd_count column will be added in incremental version not dd_new_ table
-          // dd_new_ table does not need additional dd_count column
-          val ddCount = if (ss.isIncremental) ( tmpCq.bodies(0).zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
-          val ddCountStr = if (ddCount.length > 0) {
-            if (!tmpCqIsForNewTable) s""", ${ddCount} AS \"dd_count\" """ else s", ${ddCount}"
-          } else ""
 
+          var ddCount = if (ss.useDeltaCount) ( tmpCq.bodies(0).zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
+          ddCount = ss.mode match {
+            case MERGE => s"SUM(${ddCount})"
+            case _ => ddCount
+          }
+          val ddCountStr = if (ddCount.length > 0) {
+            if (!tmpCqUseOnlyOriginal) s""", ${ddCount} AS \"dd_count\" """ else s", ${ddCount}"
+          } else ""
+          val groupBy = ss.mode match {
+            case MERGE => s" GROUP BY ${selectStr}"
+            case _ => ""
+          }
           inputQueries += s"""
             SELECT ${selectStr}${ddCountStr}
-            ${ ss.generateSQLBody(tmpCq) }"""
+            ${ ss.generateSQLBody(tmpCq) }${ groupBy }"""
         }
       }
     }
     val blockName = ss.resolveExtractorBlockName(stmts(0))
-    val sqlCmdForCleanUp = if (ss.schemaDeclarationGroupByHead contains stmts(0).q.head.name) "TRUNCATE" else "DROP VIEW IF EXISTS"
-    val sqlCmdForInsert  = if (ss.schemaDeclarationGroupByHead contains stmts(0).q.head.name) "INSERT INTO" else "CREATE VIEW"
-    val useAS            = if (ss.schemaDeclarationGroupByHead contains stmts(0).q.head.name) "" else " AS"
+    val createTable = ss.mode match {
+      case MERGE => true
+      case _ => if (ss.schemaDeclarationGroupByHead contains stmts(0).q.head.name) true else false
+    }
+    val sqlCmdForCleanUp = if (createTable) "TRUNCATE" else "DROP VIEW IF EXISTS"
+    val sqlCmdForInsert  = if (createTable) "INSERT INTO" else "CREATE VIEW"
+    val useAS            = if (createTable) "" else " AS"
+    val cleanUp          = ss.mode match {
+      case MERGE => s""";
+        DELETE FROM ${stmts(0).q.head.name} WHERE dd_count = 0;"""
+      case _     => ""
+    }
     val extractor = s"""
       deepdive.extraction.extractors.${blockName} {
         sql: \"\"\" ${sqlCmdForCleanUp} ${stmts(0).q.head.name};
-        ${sqlCmdForInsert} ${stmts(0).q.head.name}${useAS} ${inputQueries.mkString(" UNION ")}
+        ${sqlCmdForInsert} ${stmts(0).q.head.name}${useAS} ${inputQueries.mkString(" UNION ")}${cleanUp}
         \"\"\"
         style: "sql_extractor"
           ${ss.generateDependenciesOfCompiledBlockFor(stmts)}
@@ -441,7 +466,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
 
         val selectStr = (List(variableIdsStr, uwStr) flatten).mkString(", ")
 
-        val ddCount = if (ss.isIncremental) ( fakeCQ.bodies(0).zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
+        val ddCount = if (ss.useDeltaCount) ( fakeCQ.bodies(0).zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
         val ddCountStr = if (ddCount.length > 0) s""", ${ddCount} AS \"dd_count\" """ else ""
 
         // factor input query
@@ -490,13 +515,13 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
   def compilePipelines(ss: CompilationState): CompiledBlocks = {
     val run = "deepdive.pipeline.run: ${PIPELINE}"
     val setup_database_pipeline = ((ss.schemaDeclarationGroupByHead map (_._2)).flatten map {s => ss.resolveExtractorBlockName(s)}).mkString(", ")
-    val initdb = s"deepdive.pipeline.pipelines.initdb: [${setup_database_pipeline}]"
+    val initdb = if (setup_database_pipeline.length > 0) s"deepdive.pipeline.pipelines.initdb: [${setup_database_pipeline}]" else ""
     val extraction = (ss.visible map {s => ss.resolveExtractorBlockName(s)}).mkString(", ")
-    val extraction_pipeline = s"deepdive.pipeline.pipelines.extraction: [${extraction}]"
+    val extraction_pipeline = if (extraction.length > 0) s"deepdive.pipeline.pipelines.extraction: [${extraction}]" else ""
     val inference = ((ss.inferenceRuleGroupByHead map (_._2)).flatten map {s => ss.resolveInferenceBlockName(s)}).mkString(", ")
-    val inference_pipeline = s"deepdive.pipeline.pipelines.inference: [${inference}]"
+    val inference_pipeline = if (inference.length > 0) s"deepdive.pipeline.pipelines.inference: [${inference}]" else ""
 
-    List(run, initdb, extraction_pipeline, inference_pipeline)
+    List(run, initdb, extraction_pipeline, inference_pipeline).filter(_ != "")
   }
 
   // generate variable schema statements
@@ -521,9 +546,13 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
   override def run(parsedProgram: DeepDiveLog.Program, config: DeepDiveLog.Config) = {
     // determine the program to compile
     val programToCompile =
-      // derive and compile the program with delta rules instead for incremental version
-      if (config.isIncremental) DeepDiveLogDeltaDeriver.derive(parsedProgram)
-      else parsedProgram
+      // derive and compile the program based on mode information
+      config.mode match {
+        case ORIGINAL => parsedProgram
+        case INCREMENTAL => DeepDiveLogDeltaDeriver.derive(parsedProgram)
+        case MATERIALIZATION => parsedProgram
+        case MERGE => DeepDiveLogMergeDeriver.derive(parsedProgram)
+      }
     // take an initial pass to analyze the parsed program
     val state = new CompilationState( programToCompile, config )
 
@@ -547,8 +576,8 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     // emit the generated code
     blocks foreach println
 
-    if (config.isIncremental) {
-      // TODO emit extra extractor for moving rows of dd_delta_* to *
-    }
+    // if (config.isIncremental) {
+    //   // TODO emit extra extractor for moving rows of dd_delta_* to *
+    // }
   }
 }
