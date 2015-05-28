@@ -112,7 +112,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
             schema           += { (r,i) -> n }
             ground_relations += { r -> !isQuery } // record whether a query or a ground term.
         }
-      case ExtractionRule(_) => ()
+      case ExtractionRule(_,_) => ()
       case InferenceRule(_,_,_,_) => ()
       case fdecl : FunctionDeclaration => function_schema += {fdecl.functionName -> fdecl}
       case FunctionCallRule(_,_,_) => ()
@@ -234,7 +234,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
   def analyzeVisible(statements: List[Statement]) = {
     extractionRuleGroupByHead   foreach {keyVal => visible += keyVal._2(0)}
     functionCallRuleGroupByInput foreach {keyVal => visible += keyVal._2(0)}
-    inferenceRuleGroupByHead    foreach {keyVal => visible += keyVal._2(0)}
+    // inferenceRuleGroupByHead    foreach {keyVal => visible += keyVal._2(0)}
   }
 
   // Analyze the dependency between statements and construct a graph.
@@ -326,28 +326,45 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
         val tmpCq = ConjunctiveQuery(stmt.q.head, List(cqBody))
         // Generate the body of the query.
         val qs              = new QuerySchema( tmpCq )
-        // variable columns
-        // dd_new_ tale only need original column name to make sure the schema is the same with original table
-        var tmpCqIsForNewTable = tmpCq.head.name.startsWith("dd_new_")
-        val resolveColumnFlag = tmpCqIsForNewTable match {
-          case true => OriginalOnly
-          case false => OriginalAndAlias
-        }
-        val variableCols = tmpCq.head.terms flatMap {
-          case(Variable(v,rr,i)) => ss.resolveColumn(v, qs, tmpCq, resolveColumnFlag)
-        }
+        if (ss.inferenceRuleGroupByHead contains stmt.q.head.name) {
+          if (stmt.supervision == null) ss.error(s"Cannot find supervision for variable ${stmt.q.head.name}.\n")
+          if (stmt.q.bodies.length > 1) ss.error(s"Scoping rule does not allow disjunction.\n")
+          val headTerms = tmpCq.head.terms map {
+            case Variable(v,r,i) => s"R${i}.${ss.resolveName(qs.getVar(v)) }"
+          }
+          val index = qs.getBodyIndex(stmt.supervision)
+          val name  = ss.resolveName(qs.getVar(stmt.supervision))
+          val labelCol = s"R${index}.${name}"
+          val headTermsStr = ( "0 as id"  :: headTerms ).mkString(", ")
+          val ddCount = if (ss.isIncremental) ( tmpCq.bodies(0).zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
+          val ddCountStr = if (ddCount.length > 0) s", ${ddCount} AS dd_count" else ""
+          inputQueries += s"""SELECT DISTINCT ${ headTermsStr }, ${labelCol} AS label ${ddCountStr}
+          ${ ss.generateSQLBody(tmpCq) }
+          """
+        } else {
+          // variable columns
+          // dd_new_ tale only need original column name to make sure the schema is the same with original table
+          var tmpCqIsForNewTable = tmpCq.head.name.startsWith("dd_new_")
+          val resolveColumnFlag = tmpCqIsForNewTable match {
+            case true => OriginalOnly
+            case false => OriginalAndAlias
+          }
+          val variableCols = tmpCq.head.terms flatMap {
+            case(Variable(v,rr,i)) => ss.resolveColumn(v, qs, tmpCq, resolveColumnFlag)
+          }
 
-        val selectStr = variableCols.mkString(", ")
-        // additional dd_count column will be added in incremental version not dd_new_ table
-        // dd_new_ table does not need additional dd_count column
-        val ddCount = if (ss.isIncremental) ( tmpCq.bodies(0).zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
-        val ddCountStr = if (ddCount.length > 0) {
-          if (!tmpCqIsForNewTable) s""", ${ddCount} AS \"dd_count\" """ else s", ${ddCount}"
-        } else ""
+          val selectStr = variableCols.mkString(", ")
+          // additional dd_count column will be added in incremental version not dd_new_ table
+          // dd_new_ table does not need additional dd_count column
+          val ddCount = if (ss.isIncremental) ( tmpCq.bodies(0).zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
+          val ddCountStr = if (ddCount.length > 0) {
+            if (!tmpCqIsForNewTable) s""", ${ddCount} AS \"dd_count\" """ else s", ${ddCount}"
+          } else ""
 
-        inputQueries += s"""
-          SELECT ${selectStr}${ddCountStr}
-          ${ ss.generateSQLBody(tmpCq) }"""
+          inputQueries += s"""
+            SELECT ${selectStr}${ddCountStr}
+            ${ ss.generateSQLBody(tmpCq) }"""
+        }
       }
     }
     val blockName = ss.resolveExtractorBlockName(stmts(0))
@@ -402,48 +419,6 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
   // generate inference rule part for deepdive
   def compileInferenceRules(stmts: List[InferenceRule], ss: CompilationState): CompiledBlocks = {
     var blocks = List[String]()
-    // node query
-    // generate the node portion (V) of the factor graph
-    def compileNodeRule(zs: List[InferenceRule], ss: CompilationState) : CompiledBlocks = {
-      var inputQueries = new ListBuffer[String]()
-      for (z <- zs) {
-        for (cqBody <- z.q.bodies) {
-          val tmpCq = ConjunctiveQuery(z.q.head, List(cqBody))
-          val qs = new QuerySchema(tmpCq)
-          val headTerms = tmpCq.head.terms map {
-            case Variable(v,r,i) => s"R${i}.${ss.resolveName(qs.getVar(v)) }"
-          }
-          val index = qs.getBodyIndex(z.supervision)
-          val name  = ss.resolveName(qs.getVar(z.supervision))
-          val labelCol = s"R${index}.${name}"
-          val headTermsStr = ( "0 as id"  :: headTerms ).mkString(", ")
-          val ddCount = if (ss.isIncremental) ( tmpCq.bodies(0).zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
-          val ddCountStr = if (ddCount.length > 0) s", ${ddCount} AS dd_count" else ""
-
-          inputQueries += s"""SELECT DISTINCT ${ headTermsStr }, ${labelCol} AS label ${ddCountStr}
-          ${ ss.generateSQLBody(tmpCq) }
-          """
-        }
-      }
-      val blockName = ss.resolveExtractorBlockName(zs(0))
-      val sqlCmdForCleanUp = if (ss.schemaDeclarationGroupByHead contains zs(0).q.head.name) "TRUNCATE" else "DROP VIEW IF EXISTS"
-      val sqlCmdForInsert  = if (ss.schemaDeclarationGroupByHead contains zs(0).q.head.name) "INSERT INTO" else "CREATE VIEW"
-      val useAS            = if (ss.schemaDeclarationGroupByHead contains zs(0).q.head.name) "" else " AS"
-      val ext = s"""
-      deepdive.extraction.extractors.${blockName} {
-        sql: \"\"\" ${sqlCmdForCleanUp} ${zs(0).q.head.name};
-        ${sqlCmdForInsert} ${zs(0).q.head.name}${useAS}
-        ${inputQueries.mkString(" UNION ")}
-        \"\"\"
-        style: "sql_extractor"
-        ${ss.generateDependenciesOfCompiledBlockFor(zs)}
-      }
-    """
-      List(ext)
-    }
-    if (ss.isQueryTerm(stmts(0).q.head.name))
-      blocks :::= compileNodeRule(stmts, ss)
-
     for (stmt <- stmts) {
       var inputQueries = new ListBuffer[String]()
       var func = ""

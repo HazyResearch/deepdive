@@ -163,6 +163,10 @@ function ext_has_spouse_features
         handles tsv lines.
 
 dd_delta_has_spouse(rid) :-
+    dd_delta_has_spouse_candidates(a, b, c, d, rid, l)
+  label = l.
+
+dd_delta_has_spouse(rid) :-
     dd_delta_has_spouse_candidates(a, b, c, d, rid, l),
     has_spouse_features(rid, f);
     dd_new_has_spouse_candidates(a, b, c, d, rid, l),
@@ -170,3 +174,4 @@ dd_delta_has_spouse(rid) :-
   weight = f
   label = l
   semantics = imply.
+

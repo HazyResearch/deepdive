@@ -36,9 +36,9 @@ case class RowWiseLineHandler(format: String, command: String) extends FunctionI
 trait Statement
 case class SchemaDeclaration( a : Attribute , isQuery : Boolean ) extends Statement // atom and whether this is a query relation.
 case class FunctionDeclaration( functionName: String, inputType: RelationType, outputType: RelationType, implementations: List[FunctionImplementationDeclaration]) extends Statement
-case class ExtractionRule(q : ConjunctiveQuery) extends Statement // Extraction rule
+case class ExtractionRule(q : ConjunctiveQuery, supervision: String = null) extends Statement // Extraction rule
 case class FunctionCallRule(input : String, output : String, function : String) extends Statement // Extraction rule
-case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, supervision : String, semantics : String = "imply") extends Statement // Weighted rule
+case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, supervision : String, semantics : String = "Imply") extends Statement // Weighted rule
 
 
 // Parser
@@ -134,8 +134,9 @@ class DeepDiveLogParser extends JavaTokenParsers {
     }
 
   def extractionRule : Parser[ExtractionRule] =
-    conjunctiveQuery ^^ {
-      ExtractionRule(_)
+    conjunctiveQuery ~ opt(supervision) ^^ {
+      case (q ~ supervision) =>
+        ExtractionRule(q, supervision.getOrElse(null))
     }
 
   def functionCallRule : Parser[FunctionCallRule] =
@@ -155,10 +156,10 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def semantics = "semantics" ~> "=" ~> semanticType
 
   def inferenceRule : Parser[InferenceRule] =
-    ( conjunctiveQuery ~ factorWeight ~ supervision ~ semantics
+    ( conjunctiveQuery ~ factorWeight ~ supervision ~ opt(semantics)
     ) ^^ {
       case (q ~ weight ~ supervision ~ semantics) =>
-        InferenceRule(q, weight, supervision, semantics)
+        InferenceRule(q, weight, supervision, semantics.getOrElse("Imply"))
     }
 
   // rules or schema elements in arbitrary order

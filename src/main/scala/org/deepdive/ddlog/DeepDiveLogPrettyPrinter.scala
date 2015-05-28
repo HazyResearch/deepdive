@@ -59,8 +59,10 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   }
 
   def print(stmt: ExtractionRule): String = {
-    s"""${print(stmt.q)}.
-       |""".stripMargin
+    print(stmt.q) +
+    ( if (stmt.supervision == null) ""
+      else  "\n  label = " + stmt.supervision
+    ) + ".\n"
   }
 
   def print(stmt: FunctionCallRule): String = {
@@ -81,7 +83,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
     ) +
     ( if (stmt.semantics == null) ""
       else "\n  semantics = " + stmt.semantics
-    ) + "."
+    ) + ".\n"
   }
 
   override def run(parsedProgram: DeepDiveLog.Program, config: DeepDiveLog.Config) = {

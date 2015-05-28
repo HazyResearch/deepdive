@@ -68,6 +68,8 @@ function ext_has_spouse_features over like ext_has_spouse_features_input
                               returns like has_spouse_features
   implementation "/Users/feiran/workspace/release/deepdive/app/spouse_datalog/udf/ext_has_spouse_features.py" handles tsv lines.
 
+has_spouse(rid) :- has_spouse_candidates(a, b, c, d, rid, l) label = l.
+
 has_spouse(rid) :-
   has_spouse_candidates(a, b, c, d, rid, l),
   has_spouse_features(rid, f)

@@ -113,7 +113,7 @@ object DeepDiveLogDeltaDeriver{
   // Incremental extraction rule,
   // create delta rules based on original extraction rule
   def transform(stmt: ExtractionRule): List[Statement] = {
-    List(ExtractionRule(transform(stmt.q)))
+    List(ExtractionRule(transform(stmt.q), stmt.supervision))
   }
 
   // Incremental function call rule,
