@@ -241,7 +241,6 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
   def analyzeVisible(statements: List[Statement]) = {
     extractionRuleGroupByHead   foreach {keyVal => visible += keyVal._2(0)}
     functionCallRuleGroupByInput foreach {keyVal => visible += keyVal._2(0)}
-    // inferenceRuleGroupByHead    foreach {keyVal => visible += keyVal._2(0)}
   }
 
   // Analyze the dependency between statements and construct a graph.
@@ -303,7 +302,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
   type CompiledBlock = String
   type CompiledBlocks = List[CompiledBlock]
 
-  // Generate schema for database
+  // Generate schema and cleanup part for database
   def compileSchemaDeclarations(stmts: List[SchemaDeclaration], ss: CompilationState): CompiledBlocks = {
     var schemas = new ListBuffer[String]()
     for (stmt <- stmts) {
@@ -318,6 +317,17 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           sql: \"\"\" DROP TABLE IF EXISTS ${stmt.a.name} CASCADE;
           CREATE TABLE
           ${stmt.a.name}(${columnDecls.mkString(",\n" + indentation)})
+          \"\"\"
+          style: "sql_extractor"
+        }"""
+    }
+    // Cleanup incremental table extractor
+    val truncateTableList = (stmts map (x => if (x.a.name.startsWith("dd_")) s"TRUNCATE ${x.a.name};" else "")).filter(_ != "")
+    if (truncateTableList.length > 0) {
+      schemas += s"""
+        deepdive.extraction.extractors.cleanup {
+          sql: \"\"\"
+          ${truncateTableList.mkString("\n          ")}
           \"\"\"
           style: "sql_extractor"
         }"""
@@ -520,8 +530,11 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     val extraction_pipeline = if (extraction.length > 0) s"deepdive.pipeline.pipelines.extraction: [${extraction}]" else ""
     val inference = ((ss.inferenceRuleGroupByHead map (_._2)).flatten map {s => ss.resolveInferenceBlockName(s)}).mkString(", ")
     val inference_pipeline = if (inference.length > 0) s"deepdive.pipeline.pipelines.inference: [${inference}]" else ""
-
-    List(run, initdb, extraction_pipeline, inference_pipeline).filter(_ != "")
+    val cleanup_pipeline = ss.mode match {
+      case INCREMENTAL => if (setup_database_pipeline.length > 0) s"deepdive.pipeline.pipelines.cleanup: [cleanup]" else ""
+      case _ => ""
+    }
+    List(run, initdb, extraction_pipeline, inference_pipeline, cleanup_pipeline).filter(_ != "")
   }
 
   // generate variable schema statements
