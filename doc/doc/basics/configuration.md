@@ -417,7 +417,7 @@ Configuration directives to control the inference steps go in the global
 
     The default value depends on the used datastore (50000 for PostgreSQL).
 
-- <a href="parallelgrounding" href="#"></a> `inference.parallel_grounding`. If
+- <a name="parallelgrounding" href="#"></a> `inference.parallel_grounding`. If
   set to `true` and you are using <a href="../advanced/greenplum.html">GreenPlum
   on DeepDive</a>, use <a
   href="../advanced/performance.html#parallelgrounding">parallelism when
