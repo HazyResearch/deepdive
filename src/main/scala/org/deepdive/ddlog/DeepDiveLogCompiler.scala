@@ -541,6 +541,23 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     """)
   }
 
+  def compileVariableKey(ss: CompilationState): CompiledBlocks = {
+    var keys = new ListBuffer[String]()
+    for (stmt <- (ss.schemaDeclarationGroupByHead map (_._2)).flatten) {
+      var columnNames = stmt.a.terms map {
+        case Variable(name, _, i) => name
+      }
+      if (stmt.isQuery) keys += s"""${stmt.a.name} : [${columnNames.mkString(", ")}]"""
+    }
+    ss.mode match {
+      case INCREMENTAL => List(s"""
+      deepdive.schema.keys {
+        ${keys.mkString("\n        ")}
+      }""")
+      case _ => List("")
+    }
+  }
+
   def compilePipelines(ss: CompilationState): CompiledBlocks = {
     val run = "deepdive.pipeline.run: ${PIPELINE}"
     val setup_database_pipeline = ((ss.schemaDeclarationGroupByHead map (_._2)).flatten map {s => ss.resolveExtractorBlockName(s)}).mkString(", ")
@@ -597,6 +614,8 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     // compile the program into blocks of application.conf
     val blocks = (
       compileUserSettings(state)
+      :::
+      compileVariableKey(state)
       :::
       compileVariableSchema(programToCompile, state)
       :::

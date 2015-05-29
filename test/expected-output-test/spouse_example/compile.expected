@@ -11,6 +11,7 @@
     }
     
 
+
       deepdive.schema.variables {
         has_spouse.label: Boolean
       }

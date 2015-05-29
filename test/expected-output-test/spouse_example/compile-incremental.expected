@@ -11,6 +11,11 @@
     }
     
 
+      deepdive.schema.keys {
+        dd_delta_has_spouse : [relation_id]
+        dd_new_has_spouse : [relation_id]
+      }
+
       deepdive.schema.variables {
         dd_delta_has_spouse.label: Boolean
       }
