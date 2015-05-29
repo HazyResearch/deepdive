@@ -30,7 +30,11 @@ for l in open(INPUTFOLDER + "/dd_factormeta"):
   os.system('split -a 10 -l ' + CHUNKSIZE + ' ' + INPUTFOLDER + '/dd_factors_' + factor_name + '_out ' + INPUTFOLDER + '/dd_tmp/dd_factors_' + factor_name + '_out')
 
   print "BINARIZE ", factor_name, "..."
-  os.system('ls ' + INPUTFOLDER + '/dd_tmp | egrep "^dd_factors_' + factor_name + '_out"  | xargs -P 40 -I {} -n 1 sh -c \'' + transform_script + ' factor ' + INPUTFOLDER + '/dd_tmp/{} ' + function_id + ' ' + nvars + ' ' + (' '.join(positives)) + ' \' | awk \'{s+=$1} END {printf \"%.0f\\n\", s}\' >>' + INPUTFOLDER + "/dd_nedges_")
+  os.system('ls ' + INPUTFOLDER + '/dd_tmp | egrep "^dd_factors_' + factor_name 
+    + '_out"  | xargs -P 40 -I {} -n 1 sh -c \'' + transform_script + ' factor ' 
+    + INPUTFOLDER + '/dd_tmp/{} ' + function_id + ' ' + nvars + ' ' 
+    + (' '.join(positives)) + ' \' | awk \'{s+=$1} END {printf \"%.0f\\n\", s}\' >>' 
+    + INPUTFOLDER + "/dd_nedges_")
 
 # handle variables
 for f in os.listdir(INPUTFOLDER):
@@ -77,31 +81,13 @@ os.system("cat {0}/dd_nweights {0}/dd_nvariables {0}/dd_nfactors {0}/dd_nedges |
 os.system("echo {0}/graph.weights,{0}/graph.variables,{0}/graph.factors,{0}/graph.edges >> {1}/graph.meta".format(OUTPUTFOLDER, INPUTFOLDER))
 
 if INPUTFOLDER != OUTPUTFOLDER:
-    os.system("mv {0}/graph.meta {1}/graph.meta".format(INPUTFOLDER, OUTPUTFOLDER))
+  os.system("mv {0}/graph.meta {1}/graph.meta".format(INPUTFOLDER, OUTPUTFOLDER))
 os.system("mv {0}/dd_weights.bin {1}/graph.weights".format(INPUTFOLDER, OUTPUTFOLDER))
 os.system("cat {0}/dd_variables/* > {1}/graph.variables".format(INPUTFOLDER, OUTPUTFOLDER))
 os.system("cat {0}/dd_factors/dd_factors*factors.bin > {1}/graph.factors".format(INPUTFOLDER, OUTPUTFOLDER))
 os.system("cat {0}/dd_factors/dd_factors*edges.bin > {1}/graph.edges".format(INPUTFOLDER, OUTPUTFOLDER))
 
-LAST_FG = os.environ['LAST_FG']
-if len(LAST_FG) > 0:
-  os.system("cat {0}/graph.variables >> {1}/graph.variables".format(LAST_FG, OUTPUTFOLDER))
-  os.system("cat {0}/graph.weights >> {1}/graph.weights".format(LAST_FG, OUTPUTFOLDER))
-  os.system("cat {0}/graph.factors >> {1}/graph.factors".format(LAST_FG, OUTPUTFOLDER))
-  os.system("cat {0}/graph.edges >> {1}/graph.edges".format(LAST_FG, OUTPUTFOLDER))
-  fin = open("{0}/graph.meta".format(LAST_FG), 'r')
-  meta1 = fin.readline().strip().split(',')
-  fin.close()
-  fin = open("{0}/graph.meta".format(OUTPUTFOLDER), 'r')
-  meta2 = fin.readline().strip().split(',')
-  fin.close()
-  meta2[0] = str(int(meta1[0]) + int(meta2[0]))
-  meta2[1] = str(int(meta1[1]) + int(meta2[1]))
-  meta2[2] = str(int(meta1[2]) + int(meta2[2]))
-  meta2[3] = str(int(meta1[3]) + int(meta2[3]))
-  os.system("echo {0} > {1}/graph.meta".format(",".join(meta2), OUTPUTFOLDER))
-
 
 # clean up folder
 # print "Cleaning up files"
-os.system('rm -rf {0}/dd_*'.format(INPUTFOLDER))
+# os.system('rm -rf {0}/dd_*'.format(INPUTFOLDER))

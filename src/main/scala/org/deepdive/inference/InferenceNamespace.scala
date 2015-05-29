@@ -31,6 +31,9 @@ object InferenceNamespace {
   def getCardinalityInFactorTableName(prefix: String, idx: Int) = s"dd_${prefix}_cardinality_${idx}"
   def getIncrementalTableName(table: String) = s"dd_delta_${table}"
   def getLastTableName(table: String) = s"dd_last_${table}"
+  // given an incremental table, get the table name for its base table
+  // incremental table names are like dd_delta_...
+  def getBaseTableName(table: String) = table.replaceAll("dd_delta_", "")
   def getMetaTableName() = s"dd_meta_data"
 
   // files

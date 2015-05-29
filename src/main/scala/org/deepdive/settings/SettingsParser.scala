@@ -36,7 +36,8 @@ object SettingsParser extends Logging {
   private def loadDbSettings(config: Config) : DbSettings = {
     val dbConfig = Try(config.getConfig("db.default")).getOrElse {
       log.warning("No schema defined.")
-      return DbSettings(Helpers.PsqlDriver, null, null, null, null, null, null, null, null, null, false, false)
+      return DbSettings(Helpers.PsqlDriver, null, null, null, null, null, null, 
+        null, null, null, false, null)
     }
     val driver = Try(dbConfig.getString("driver")).getOrElse(null)
     val url = Try(dbConfig.getString("url")).getOrElse(null)
@@ -55,7 +56,12 @@ object SettingsParser extends Logging {
     if (gphost != "") {
       log.info(s"GPFDIST settings: host ${gphost} port ${gpport} path ${gppath}")
     }
-    var isIncremental = Try(dbConfig.getBoolean("isIncremental")).getOrElse(false)
+    val incrementalModeStr = Try(dbConfig.getString("incremental_mode")).getOrElse("ORIGINAL")
+    val incrementalMode = incrementalModeStr match {
+      case "INCREMENTAL" => IncrementalMode.INCREMENTAL
+      case "MATERIALIZATION" => IncrementalMode.MATERIALIZATION
+      case _ => IncrementalMode.ORIGINAL
+    }
     val schemaConfig = Try(config.getConfig("schema")).getOrElse {
       log.warning("No schema defined.")
       null
@@ -69,7 +75,8 @@ object SettingsParser extends Logging {
         keyRelationsWithConfig.groupBy(_._1).map { case (k,v) => (k,v.map(_._2).flatten.distinct)}
       }
     }
-    return DbSettings(driver, url, user, password, dbname, host, port, gphost, gppath, gpport, gpload, isIncremental, keyMap)
+    return DbSettings(driver, url, user, password, dbname, host, port,
+      gphost, gppath, gpport, gpload, incrementalMode, keyMap)
   }
 
 
