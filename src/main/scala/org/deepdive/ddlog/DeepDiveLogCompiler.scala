@@ -230,7 +230,10 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
       case _                       =>
     })
 
-    schemaDeclarationGroupByHead   = schemaDeclarationToCompile.toList.groupBy(_.a.name)
+    schemaDeclarationGroupByHead = mode match {
+      case INCREMENTAL => schemaDeclarationToCompile.toList.filter(_.a.name.startsWith("dd_")).groupBy(_.a.name)
+      case _           => schemaDeclarationToCompile.toList.groupBy(_.a.name)
+    }
     extractionRuleGroupByHead      = extractionRuleToCompile.toList.groupBy(_.q.head.name)
     inferenceRuleGroupByHead       = inferenceRuleToCompile.toList.groupBy(_.q.head.name)
     functionCallRuleGroupByInput   = functionCallRuleToCompile.toList.groupBy(_.input)
@@ -395,11 +398,19 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       }
     }
     val blockName = ss.resolveExtractorBlockName(stmts(0))
+    // val createTable = if (ss.schemaDeclarationGroupByHead contains stmts(0).q.head.name) true else false
+    val sqlCmdForCleanUp = ss.mode match {
+      case MERGE => s"TRUNCATE ${stmts(0).q.head.name};"
+      case _ => if (ss.schemaDeclarationGroupByHead contains stmts(0).q.head.name) {
+        if (stmts(0).q.head.name.startsWith("dd_new_"))
+          s"TRUNCATE ${stmts(0).q.head.name};"
+        else ""
+      } else s"DROP VIEW IF EXISTS ${stmts(0).q.head.name};"
+    }
     val createTable = ss.mode match {
       case MERGE => true
       case _ => if (ss.schemaDeclarationGroupByHead contains stmts(0).q.head.name) true else false
     }
-    val sqlCmdForCleanUp = if (createTable) "TRUNCATE" else "DROP VIEW IF EXISTS"
     val sqlCmdForInsert  = if (createTable) "INSERT INTO" else "CREATE VIEW"
     val useAS            = if (createTable) "" else " AS"
     val cleanUp          = ss.mode match {
@@ -409,7 +420,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     }
     val extractor = s"""
       deepdive.extraction.extractors.${blockName} {
-        sql: \"\"\" ${sqlCmdForCleanUp} ${stmts(0).q.head.name};
+        sql: \"\"\" ${sqlCmdForCleanUp}
         ${sqlCmdForInsert} ${stmts(0).q.head.name}${useAS} ${inputQueries.mkString(" UNION ")}${cleanUp}
         \"\"\"
         style: "sql_extractor"

@@ -91,7 +91,7 @@
         }
 
       deepdive.extraction.extractors.extraction_rule_15 {
-        sql: """ TRUNCATE has_spouse;
+        sql: """ 
         INSERT INTO has_spouse SELECT DISTINCT R0.relation_id, 0 as id, R0.is_true AS label , R0.dd_count AS dd_count
           FROM has_spouse_candidates R0
         

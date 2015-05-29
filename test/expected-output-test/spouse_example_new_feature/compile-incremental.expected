@@ -15,43 +15,12 @@
       }
     
 
-        deepdive.extraction.extractors.extraction_rule_4 {
-          sql: """ DROP TABLE IF EXISTS sentences CASCADE;
-          CREATE TABLE
-          sentences(document_id text,
-         sentence text,
-         words text[],
-         lemma text[],
-         pos_tags text[],
-         dependencies text[],
-         ner_tags text[],
-         sentence_offset int,
-         sentence_id text,
-         dd_count int)
-          """
-          style: "sql_extractor"
-        }
-
         deepdive.extraction.extractors.extraction_rule_1 {
           sql: """ DROP TABLE IF EXISTS dd_delta_articles CASCADE;
           CREATE TABLE
           dd_delta_articles(article_id text,
                  text text,
                  dd_count int)
-          """
-          style: "sql_extractor"
-        }
-
-        deepdive.extraction.extractors.extraction_rule_12 {
-          sql: """ DROP TABLE IF EXISTS has_spouse_candidates CASCADE;
-          CREATE TABLE
-          has_spouse_candidates(person1_id text,
-                     person2_id text,
-                     sentence_id text,
-                     description text,
-                     relation_id text,
-                     is_true boolean,
-                     dd_count int)
           """
           style: "sql_extractor"
         }
@@ -65,17 +34,6 @@
                       text text,
                       mention_id text,
                       dd_count int)
-          """
-          style: "sql_extractor"
-        }
-
-        deepdive.extraction.extractors.extraction_rule_20 {
-          sql: """ DROP TABLE IF EXISTS has_spouse CASCADE;
-          CREATE TABLE
-          has_spouse(relation_id text,
-          id bigint,
-          label boolean,
-          dd_count int)
           """
           style: "sql_extractor"
         }
@@ -96,16 +54,6 @@
           dd_new_articles(article_id text,
                text text,
                dd_count int)
-          """
-          style: "sql_extractor"
-        }
-
-        deepdive.extraction.extractors.extraction_rule_0 {
-          sql: """ DROP TABLE IF EXISTS articles CASCADE;
-          CREATE TABLE
-          articles(article_id text,
-        text text,
-        dd_count int)
           """
           style: "sql_extractor"
         }
@@ -178,16 +126,6 @@
           style: "sql_extractor"
         }
 
-        deepdive.extraction.extractors.extraction_rule_16 {
-          sql: """ DROP TABLE IF EXISTS has_spouse_features CASCADE;
-          CREATE TABLE
-          has_spouse_features(relation_id text,
-                   feature text,
-                   dd_count int)
-          """
-          style: "sql_extractor"
-        }
-
         deepdive.extraction.extractors.extraction_rule_5 {
           sql: """ DROP TABLE IF EXISTS dd_delta_sentences CASCADE;
           CREATE TABLE
@@ -201,19 +139,6 @@
                   sentence_offset int,
                   sentence_id text,
                   dd_count int)
-          """
-          style: "sql_extractor"
-        }
-
-        deepdive.extraction.extractors.extraction_rule_8 {
-          sql: """ DROP TABLE IF EXISTS people_mentions CASCADE;
-          CREATE TABLE
-          people_mentions(sentence_id text,
-               start_position int,
-               length int,
-               text text,
-               mention_id text,
-               dd_count int)
           """
           style: "sql_extractor"
         }
@@ -385,7 +310,7 @@
     
 
       deepdive.extraction.extractors.extraction_rule_32 {
-        sql: """ TRUNCATE dd_delta_has_spouse;
+        sql: """ 
         INSERT INTO dd_delta_has_spouse SELECT DISTINCT R0.relation_id, 0 as id, R0.is_true AS label , R0.dd_count AS dd_count
           FROM dd_delta_has_spouse_candidates R0
         
@@ -439,7 +364,7 @@
         }
       
 deepdive.pipeline.run: ${PIPELINE}
-deepdive.pipeline.pipelines.initdb: [extraction_rule_4, extraction_rule_1, extraction_rule_12, extraction_rule_10, extraction_rule_20, extraction_rule_17, extraction_rule_2, extraction_rule_0, extraction_rule_14, extraction_rule_18, extraction_rule_6, extraction_rule_9, extraction_rule_13, extraction_rule_16, extraction_rule_5, extraction_rule_8, extraction_rule_21, extraction_rule_22]
+deepdive.pipeline.pipelines.initdb: [extraction_rule_1, extraction_rule_10, extraction_rule_17, extraction_rule_2, extraction_rule_14, extraction_rule_18, extraction_rule_6, extraction_rule_9, extraction_rule_13, extraction_rule_5, extraction_rule_21, extraction_rule_22]
 deepdive.pipeline.pipelines.extraction: [extraction_rule_7, extraction_rule_19, extraction_rule_32, extraction_rule_3, extraction_rule_26, extraction_rule_30, extraction_rule_23, extraction_rule_27, extraction_rule_11, extraction_rule_24, extraction_rule_29, extraction_rule_15]
 deepdive.pipeline.pipelines.inference: [factor_dd_delta_has_spouse_33]
 deepdive.pipeline.pipelines.cleanup: [cleanup]
