@@ -5,5 +5,4 @@ Q?(x int).
 
 Q(x) :- R(x, y, z); R(x, y, z), S(y, z, w); S(y, x, w), T(x, z, w)
 weight = y
-label   = z
 semantics = imply.

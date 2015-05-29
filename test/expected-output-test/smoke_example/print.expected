@@ -26,6 +26,5 @@ cancer(pid) :-
     smoke(pid),
     person_smokes(pid, l)
   weight = 3.0
-  label = l
   semantics = Imply.
 

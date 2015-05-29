@@ -76,6 +76,5 @@ dd_delta_cancer(pid) :-
     dd_new_smoke(pid),
     dd_delta_person_smokes(pid, l)
   weight = 3.0
-  label = l
   semantics = Imply.
 

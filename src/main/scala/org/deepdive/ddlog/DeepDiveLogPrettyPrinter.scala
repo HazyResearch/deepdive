@@ -80,9 +80,6 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
         case UnknownFactorWeight(vs) => vs.mkString(", ")
       })
     ) +
-    ( if (stmt.supervision == null) ""
-      else "\n  label = " + stmt.supervision
-    ) +
     ( if (stmt.semantics == null) ""
       else "\n  semantics = " + stmt.semantics
     ) + ".\n"
