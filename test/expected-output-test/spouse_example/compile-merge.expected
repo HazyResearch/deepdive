@@ -7,8 +7,9 @@
     dbname: ${DBNAME}
     host: ${PGHOST}
     port: ${PGPORT}
-  }
-  
+    incremental_mode: MERGE
+    }
+    
 
       deepdive.schema.variables {
         

@@ -519,8 +519,14 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
   }
 
 
-  def compileUserSettings(): CompiledBlocks = {
+  def compileUserSettings(ss: CompilationState): CompiledBlocks = {
     // TODO read user's proto-application.conf and augment it
+    val mode = ss.mode match {
+      case ORIGINAL        => "ORIGINAL"
+      case INCREMENTAL     => "INCREMENTAL"
+      case MATERIALIZATION => "MATERIALIZATION"
+      case MERGE           => "MERGE"
+    }
     List("""
   deepdive.db.default {
     driver: "org.postgresql.Driver"
@@ -530,8 +536,9 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     dbname: ${DBNAME}
     host: ${PGHOST}
     port: ${PGPORT}
-  }
-  """)
+    incremental_mode: """ + s"""${mode}
+    }
+    """)
   }
 
   def compilePipelines(ss: CompilationState): CompiledBlocks = {
@@ -589,7 +596,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     
     // compile the program into blocks of application.conf
     val blocks = (
-      compileUserSettings
+      compileUserSettings(state)
       :::
       compileVariableSchema(programToCompile, state)
       :::

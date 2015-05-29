@@ -7,8 +7,9 @@
     dbname: ${DBNAME}
     host: ${PGHOST}
     port: ${PGPORT}
-  }
-  
+    incremental_mode: MATERIALIZATION
+    }
+    
 
       deepdive.schema.variables {
         has_spouse.label: Boolean

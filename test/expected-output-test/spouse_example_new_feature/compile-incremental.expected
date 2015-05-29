@@ -7,8 +7,9 @@
     dbname: ${DBNAME}
     host: ${PGHOST}
     port: ${PGPORT}
-  }
-  
+    incremental_mode: INCREMENTAL
+    }
+    
 
       deepdive.schema.variables {
         dd_delta_has_spouse.label: Boolean
