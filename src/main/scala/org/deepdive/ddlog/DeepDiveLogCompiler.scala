@@ -147,7 +147,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
 
   // Given an inference rule, resolve its name for the compiled inference block.
   def resolveInferenceBlockName(s: InferenceRule): String = {
-    s"factor_${s.q.head.name}_${statements indexOf s}"
+    s"${s.q.head.name}_${(inferenceRuleGroupByHead map (_._2)).flatten.toList indexOf s}"
   }
 
   // Given a variable, resolve it.  TODO: This should give a warning,

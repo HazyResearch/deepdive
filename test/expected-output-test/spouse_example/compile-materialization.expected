@@ -168,7 +168,7 @@
         }
       
 
-        deepdive.inference.factors.factor_has_spouse_16 {
+        deepdive.inference.factors.has_spouse_0 {
           input_query: """
           SELECT R0.id AS "has_spouse.R0.id" , R2.feature AS "has_spouse_features.R2.feature"  , R0.dd_count * R1.dd_count * R2.dd_count AS "dd_count" 
           FROM has_spouse R0, has_spouse_candidates R1, has_spouse_features R2
@@ -180,4 +180,4 @@
 deepdive.pipeline.run: ${PIPELINE}
 deepdive.pipeline.pipelines.initdb: [extraction_rule_1, extraction_rule_3, extraction_rule_5, extraction_rule_0, extraction_rule_4, extraction_rule_2]
 deepdive.pipeline.pipelines.extraction: [extraction_rule_7, extraction_rule_12, extraction_rule_10, extraction_rule_13, extraction_rule_9, extraction_rule_15, extraction_rule_6]
-deepdive.pipeline.pipelines.inference: [factor_has_spouse_16]
+deepdive.pipeline.pipelines.inference: [has_spouse_0]
