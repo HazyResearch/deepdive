@@ -94,6 +94,8 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
   // The statement whether will compile or union to other statements
   var visible : Set[Statement] = Set()
 
+  var variableTableNames : Set[String] = Set()
+
   var mode : Mode = ORIGINAL
 
   var useDeltaCount : Boolean = false
@@ -113,12 +115,14 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
       case _ => true
     }
     statements.foreach {
-      case SchemaDeclaration(Attribute(r, terms, types), isQuery) =>
+      case SchemaDeclaration(Attribute(r, terms, types), isQuery) => {
         terms.foreach {
           case Variable(n,r,i) =>
             schema           += { (r,i) -> n }
             ground_relations += { r -> !isQuery } // record whether a query or a ground term.
         }
+        if (isQuery) variableTableNames += r
+      }
       case ExtractionRule(_,_) => ()
       case InferenceRule(_,_,_,_) => ()
       case fdecl : FunctionDeclaration => function_schema += {fdecl.functionName -> fdecl}
@@ -478,7 +482,13 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
 
         val index = cqBody.length + 1
         val qs2 = new QuerySchema( fakeCQ )
-        val variableIdsStr = Some(s"""R0.id AS "${stmt.q.head.name}.R0.id" """)
+        val varInBody = (fakeBody map {x =>
+          if (ss.variableTableNames contains x.name)
+            s"""R${fakeBody indexOf x}.id AS "${x.name}.R${fakeBody indexOf x}.id" """
+          else ""
+          }).filter(_ != "")
+
+        val variableIdsStr = Some(varInBody.mkString(", "))
 
         // weight string
         val uwStr = stmt.weights match {
@@ -496,7 +506,15 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           SELECT ${selectStr} ${ddCountStr}
           ${ ss.generateSQLBody(fakeCQ) }"""
         // factor function
-        func = s"""Imply(${stmt.q.head.name}.R0.label)"""
+        if (func.length == 0) {
+          val funcBody = (fakeBody map {x =>
+          if (ss.variableTableNames contains x.name)
+            s"""${x.name}.R${fakeBody indexOf x}.label"""
+          else ""
+          }).filter(_ != "")
+          val firstFunc = funcBody(0)
+          func = s"""${stmt.semantics}(${(funcBody.tail :+ firstFunc).mkString(", ")})"""
+        }
         // weight
         if (weight.length == 0)
           weight = stmt.weights match {
