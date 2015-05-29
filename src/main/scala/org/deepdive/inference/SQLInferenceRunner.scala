@@ -84,14 +84,14 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
   def copyLastWeightsSQL = s"""
     DROP TABLE IF EXISTS ${lastWeightsTable} CASCADE;
-    CREATE TABLE ${dataStore.unlogged} ${lastWeightsTable} AS
+    CREATE ${dataStore.unlogged} TABLE ${lastWeightsTable} AS
       SELECT X.*, Y.weight
       FROM ${WeightsTable} AS X INNER JOIN ${WeightResultTable} AS Y ON X.id = Y.id;
   """
 
   def createInferenceResultSQL = s"""
     DROP TABLE IF EXISTS ${VariableResultTable} CASCADE;
-    CREATE TABLE ${dataStore.unlogged} ${VariableResultTable}(
+    CREATE ${dataStore.unlogged} TABLE ${VariableResultTable}(
       id bigint,
       category bigint,
       expectation double precision);
@@ -99,7 +99,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
   def createInferenceResultWeightsSQL = s"""
     DROP TABLE IF EXISTS ${WeightResultTable} CASCADE;
-    CREATE TABLE ${dataStore.unlogged} ${WeightResultTable}(
+    CREATE ${dataStore.unlogged} TABLE ${WeightResultTable}(
       id bigint primary key,
       weight double precision);
   """
@@ -404,6 +404,20 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     }
   }
 
+  def createWeightsTable() {
+    if (dataStore.isUsingPostgresXL) {
+       val name = WeightsTable
+       val schema = """id bigint, isfixed int, initvalue real, cardinality text,
+        description text"""
+       dataStore.checkTableNamespace(name)
+       dataStore.executeSqlQueries(s"""DROP TABLE IF EXISTS ${name} CASCADE;""")
+       dataStore.executeSqlQueries(s"""CREATE ${dataStore.unlogged} TABLE ${name} (${schema}) DISTRIBUTE BY REPLICATION;""")
+    } else { 
+      dataStore.dropAndCreateTable(WeightsTable, """id bigint, isfixed int, initvalue real, cardinality text,
+        description text""")
+    }
+  }
+
   def groundFactorsAndWeights(factorDescs: Seq[FactorDesc],
     calibrationSettings: CalibrationSettings, du: DataLoader,
     dbSettings: DbSettings, groundingPath: String,
@@ -416,8 +430,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     }
 
     // weights table
-    dataStore.dropAndCreateTable(WeightsTable, """id bigint, isfixed int, initvalue real, cardinality text,
-      description text""")
+    createWeightsTable()
 
     // Create the feature stats table
     // execute(createFeatureStatsSupportTableSQL)
