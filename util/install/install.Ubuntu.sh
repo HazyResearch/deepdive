@@ -2,8 +2,10 @@
 # DeepDive installers for Ubuntu Linux
 
 LSB=$(lsb_release -r 2>/dev/null) 
-[[ $LSB =~ "14.04" || $LSB =~ "15.04" ]] ||
-    error "Ubuntu $LSB found: This installer only works with Ubuntu 14.04 and 15.04."
+case $LSB in
+    12.04|14.04|15.04) true ;;
+    *) error "Ubuntu $LSB found: This installer only works with Ubuntu 12.04, 14.04, and 15.04."
+esac
 
 list_installers() {
     list_common_installers
