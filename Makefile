@@ -13,13 +13,14 @@ build:
 	@echo "=== Extracting sampler library... ==="
 	lib/dw_extract.sh
 
+test install: PATH := $(PATH):$(shell pwd)/sbt
+
 .PHONY: test
 test: build
 	@echo "\n=== Testing DeepDive modules... ==="
 	./test.sh
 
 .PHONY: install
-install: PATH := $(PATH):$(shell pwd)/sbt
 install: depends build
 	@echo "\n=== Compiling DeepDive... ==="
 	sbt pack
