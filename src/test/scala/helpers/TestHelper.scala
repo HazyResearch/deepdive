@@ -1,6 +1,6 @@
 package org.deepdive.test.helpers
 
-import org.deepdive.settings.DbSettings
+import org.deepdive.settings._
 import org.deepdive.helpers._
 
 object TestHelper {
@@ -27,9 +27,11 @@ object TestHelper {
     case _ => false
   }
   
-  def getIsIncrementalEnv() = System.getenv("IsIncremental") match {
-    case "true" | "True" | "TRUE" => true
-    case _ => false
+  def getIsIncrementalEnv() = System.getenv("INCREMENTAL") match {
+    case "MATERIALIZATION"  => IncrementalMode.MATERIALIZATION
+    case "INCREMENTAL"      => IncrementalMode.INCREMENTAL
+    case "ORIGINAL"         => IncrementalMode.ORIGINAL
+    case _                  => IncrementalMode.ORIGINAL
   }
 
   def getDbSettings() = 
@@ -59,7 +61,7 @@ object TestHelper {
         gppath: "${System.getenv("GPPATH")}"
         gpport: "${System.getenv("GPPORT")}"
         gpload: "${getGPLOADEnv()}"
-        incrementalTables: "${System.getenv("INCREMENTALTABLES")}"
+        incremental_mode: "${System.getenv("INCREMENTALTABLES")}"
       }
     """
   

@@ -208,7 +208,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
   // assign variable ids for incremental
   def assignVariableIdsIncremental(schema: Map[String, _ <: VariableDataType], dbSettings: DbSettings) {
     var idoffset : Long = 0
-    issueQuery(s""" SELECT count FROM ${InferenceNamespace.getMetaTableName()} WHERE name = 'num_variables' """) {
+    issueQuery(s""" SELECT num_variables FROM ${InferenceNamespace.getIncrementalMetaTableName()}""") {
       rs => idoffset = rs.getLong(1)
     }
 
@@ -257,7 +257,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
   // handles incremental component deduplication (set model)
   // if a variable has been seen in original factor graph, then we don't need to add it
   def handleIncrementalDeduplication(relation: String) {
-    return
+    // return
     val lastRelationTable = InferenceNamespace.getBaseTableName(relation)
     execute(s"""DELETE FROM ${relation}
       WHERE id IN (SELECT id FROM ${lastRelationTable}) AND dd_count = 1;""")
@@ -367,11 +367,6 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         FROM ${relation} t0 LEFT OUTER JOIN ${VariablesHoldoutTable} t1 ON t0.id=t1.variable_id
         LEFT OUTER JOIN ${VariablesObservationTable} t2 ON t0.id=t2.variable_id""")
 
-      // Create an index on the id column of type table to optimize MySQL join, since MySQL uses BNLJ.
-      // It's important to tailor join queries for MySQL as they don't have efficient join algorithms.
-      // Specifically, we should create indexes on join condition columns (at least in MySQL implementation).
-      createIndexForJoinOptimization(variableTypeTable, "id")
-
       // dump variables
       val initvalueCast = dataStore.cast(dataStore.cast(column, "int"), "float")
       // Sen
@@ -379,8 +374,8 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       val groundingDir = getFileNameFromPath(groundingPath)
 
       val dd_count_col = dbSettings.incrementalMode match {
-        case IncrementalMode.INCREMENTAL | IncrementalMode.MATERIALIZATION => 
-          ", t0.dd_count AS dd_count"
+        case IncrementalMode.INCREMENTAL => ", t0.dd_count AS dd_count"
+        case IncrementalMode.MATERIALIZATION => ", 1 AS dd_count"
         case _ => ""
       }
       du.unload(InferenceNamespace.getVariableFileName(relation),
@@ -404,7 +399,8 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
             numVariables += rs.getLong(1)
           }
         }
-        execute(s"""UPDATE ${InferenceNamespace.getMetaTableName()} SET num_variables = ${numVariables}""")
+        execute(s"""UPDATE ${InferenceNamespace.getIncrementalMetaTableName()} 
+          SET num_variables = ${numVariables}; """)
       }
       case _ =>
     }
@@ -432,11 +428,15 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
   // convert grounding file format to be compatible with sampler
   // for more information about format, please refer to deepdive's website
-  def convertGroundingFormat(groundingPath: String) {
+  def convertGroundingFormat(groundingPath: String, incrementalMode: IncrementalMode.IncrementalMode) {
     log.info("Converting grounding file format...")
+    val inc = incrementalMode match {
+      case IncrementalMode.INCREMENTAL | IncrementalMode.MATERIALIZATION => 1
+      case _ => 0
+    }
     // TODO: this python script is dangerous and ugly. It changes too many states!
     val cmd = s"python ${InferenceNamespace.getFormatConvertingScriptPath} ${groundingPath} " + 
-        s"${InferenceNamespace.getFormatConvertingWorkerPath} ${Context.outputDir}"
+        s"${InferenceNamespace.getFormatConvertingWorkerPath} ${Context.outputDir} ${inc}"
     log.debug("Executing: " + cmd)
     val exitValue = cmd!(ProcessLogger(
       out => log.info(out),
@@ -471,12 +471,10 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
     dbSettings.incrementalMode match {
       case IncrementalMode.INCREMENTAL =>  {
-        issueQuery(s""" SELECT count FROM ${InferenceNamespace.getMetaTableName()} 
-          WHERE name = 'num_weights' """) { rs =>
+        issueQuery(s""" SELECT num_weights FROM ${InferenceNamespace.getIncrementalMetaTableName()}""") { rs =>
           cweightid = rs.getLong(1)
         }
-        issueQuery(s""" SELECT count FROM ${InferenceNamespace.getMetaTableName()} 
-          WHERE name = 'num_factors' """) { rs => 
+        issueQuery(s""" SELECT num_factors FROM ${InferenceNamespace.getIncrementalMetaTableName()}""") { rs => 
           factorid = rs.getLong(1)
         }
       }
@@ -573,7 +571,8 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
           issueQuery(s"SELECT COUNT(*) FROM ${querytable}") { rs => 
             numFactors += rs.getLong(1)
           }
-          execute(s"""UPDATE ${InferenceNamespace.getMetaTableName()} SET num_factors = ${numFactors}""")
+          execute(s"""UPDATE ${InferenceNamespace.getIncrementalMetaTableName()}
+            SET num_factors = ${numFactors};""")
         }
         case _ =>
       }
@@ -649,7 +648,8 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
             issueQuery(s"SELECT COUNT(*) FROM ${weighttableForThisFactor}") { rs => 
               numWeights += rs.getLong(1)
             }
-            execute(s"""UPDATE ${InferenceNamespace.getMetaTableName()} SET num_weights = ${numWeights}""")
+            execute(s"""UPDATE ${InferenceNamespace.getIncrementalMetaTableName()} 
+              SET num_weights = ${numWeights}""")
           }
           case _ =>
         }
@@ -677,13 +677,14 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         execute(dataStore.analyzeTable(weighttableForThisFactor))
 
         val dd_col = dbSettings.incrementalMode match {
-          case IncrementalMode.INCREMENTAL | IncrementalMode.MATERIALIZATION => ", t0.dd_count"
+          case IncrementalMode.INCREMENTAL => ", t0.dd_count"
+          case IncrementalMode.MATERIALIZATION => ", 1 AS dd_count"
           case _ => ""
         }
 
         du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
-          s"""SELECT DISTINCT t0.id AS factor_id, t1.id AS weight_id, ${idcols} ${dd_col}
-           FROM ${querytable} t0, ${weighttableForThisFactor} t1 
+          s"""SELECT DISTINCT t0.id AS factor_id, t1.id AS weight_id ${dd_col}, ${idcols}
+           FROM ${querytable} t0, ${weighttableForThisFactor} t1
            ${weightJoinCondition};""", groundingDir)
 
         // delete weights that have already been seen
@@ -831,13 +832,14 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
   // create global meta data for incremental
   def createIncrementalMetaData() {
-    dataStore.createTableIfNotExists(InferenceNamespace.getMetaTableName(),
-      s"name text, count int")
-    issueQuery(s"SELECT COUNT(*) FROM ${InferenceNamespace.getMetaTableName()}") {
+    dataStore.createTableIfNotExists(InferenceNamespace.getIncrementalMetaTableName(),
+      s"num_variables bigint, num_factors bigint, num_weights bigint")
+    issueQuery(s"SELECT COUNT(*) FROM ${InferenceNamespace.getIncrementalMetaTableName()}") {
       rs => if (rs.getLong(1) == 0) {
-        execute(s""" INSERT INTO ${InferenceNamespace.getMetaTableName()} VALUES ('num_variables', 0) """)
-        execute(s""" INSERT INTO ${InferenceNamespace.getMetaTableName()} VALUES ('num_factors', 0) """)
-        execute(s""" INSERT INTO ${InferenceNamespace.getMetaTableName()} VALUES ('num_weights', 0) """)
+        execute(s""" INSERT INTO ${InferenceNamespace.getIncrementalMetaTableName()} VALUES (0, 0, 0); """)
+        // execute(s""" INSERT INTO ${InferenceNamespace.getIncrementalMetaTableName()} VALUES ('num_variables', 0) """)
+        // execute(s""" INSERT INTO ${InferenceNamespace.getIncrementalMetaTableName()} VALUES ('num_factors', 0) """)
+        // execute(s""" INSERT INTO ${InferenceNamespace.getIncrementalMetaTableName()} VALUES ('num_weights', 0) """)
       }
     }
   }
@@ -886,7 +888,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
     // create global meta data 
     dbSettings.incrementalMode match {
-      case IncrementalMode.INCREMENTAL => createIncrementalMetaData()
+      case IncrementalMode.MATERIALIZATION => createIncrementalMetaData()
       case _ => 
     }
 
@@ -899,9 +901,6 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     // generate cardinality tables
     generateCardinalityTables(schema)
 
-    // ground variables
-    groundVariables(schema, du, dbSettings, groundingPath)
-
     // generate factor meta data
     groundFactorMeta(du, factorDescs, dbSettings, groundingPath)
 
@@ -909,12 +908,15 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     groundFactorsAndWeights(factorDescs, calibrationSettings, du, dbSettings, 
       groundingPath, skipLearning, weightTable)
 
+    // ground variables
+    groundVariables(schema, du, dbSettings, groundingPath)
+
     // create inference result table
     execute(createInferenceResultSQL)
     execute(createInferenceResultWeightsSQL)
 
     // split grounding files and transform to binary format
-    convertGroundingFormat(groundingPath)
+    convertGroundingFormat(groundingPath, dbSettings.incrementalMode)
   }
 
   /**

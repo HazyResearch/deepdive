@@ -34,7 +34,7 @@ object InferenceNamespace {
   // given an incremental table, get the table name for its base table
   // incremental table names are like dd_delta_...
   def getBaseTableName(table: String) = table.replaceAll("dd_delta_", "")
-  def getMetaTableName() = s"dd_meta_data"
+  def getIncrementalMetaTableName() = s"dd_incremental_meta_data"
 
   // files
   def getVariableFileName(relation: String) = s"dd_variables_${relation}"
