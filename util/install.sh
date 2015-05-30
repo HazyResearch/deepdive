@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Install DeepDive including its dependencies
 set -eu
-INSTALLER_HOME_URL=https://raw.github.com/HazyResearch/deepdive/master/util/install
+: ${INSTALLER_BRANCH:=master}
+INSTALLER_HOME_URL=https://raw.github.com/HazyResearch/deepdive/$INSTALLER_BRANCH/util/install
 INSTALLER_HOME_DIR=$(dirname "$0")/install
 
 running_from_git=true; [[ -e "$INSTALLER_HOME_DIR"/../../.git ]] || running_from_git=false
@@ -9,7 +10,7 @@ has() { type "$@"; } &>/dev/null
 error() { echo "$@"; false; } >&2
 
 # common installers ###########################################################
-install_runtime_deps() { true; }
+install_runtime_deps() { false; }
 $running_from_git ||
 install_git_repo() {
     git clone --recursive https://github.com/HazyResearch/deepdive.git
