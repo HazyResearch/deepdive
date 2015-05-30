@@ -19,9 +19,10 @@ test: build
 	./test.sh
 
 .PHONY: install
+install: PATH := $(PATH):$(shell pwd)/sbt
 install: depends build
 	@echo "\n=== Compiling DeepDive... ==="
-	sbt/sbt pack
+	sbt pack
 
 	@echo "\n=== Installing DeepDive... ==="
 	$(MAKE) -C target/pack/ install ; 
