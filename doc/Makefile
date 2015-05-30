@@ -48,20 +48,6 @@ deploy: jekyll
 	rsync -av --delete-after _site/ $(DEPLOY_USER_HOST):$(DEPLOY_DIR)/
 	@echo "Deployed to $(WEBSITE_BASEURL)"
 
-.PHONY: deploy-github
-deploy-github: jekyll
-	# Building site...
-	jekyll build
-	# Deploying the same contents to gh-pages
-	rm -rf .gh-pages
-	git clone $(GITHUB_REPO_URL) --branch gh-pages --reference .. .gh-pages
-	rsync -avH --delete --exclude=/{.git,README.md} _site/ .gh-pages/
-	cd .gh-pages && \
-	  git add . && git add -u . && \
-	  git commit -m "Deploying changes" && \
-	  git push origin gh-pages
-	rm -rf .gh-pages
-
 .PHONY: jekyll linkchecker
 jekyll:
 	type jekyll || gem install jekyll
