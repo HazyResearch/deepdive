@@ -42,7 +42,7 @@ read -p "Would you like to install DeepDive? [Yn]: " REPLY
 REPLY=${REPLY:-$DEFAULT_REPLY}
 if [[ $REPLY =~ ^[Yy]$ ]]
 then
-    curl -s https://raw.githubusercontent.com/hazyresearch/deepdive/raphael-script/util/script/pgxl_install.sh > $CONF_DIR/dd_install.sh
+    curl -s https://raw.githubusercontent.com/hazyresearch/deepdive/raphael-script/util/script/dd_install.sh > $CONF_DIR/dd_install.sh
     chmod +x $CONF_DIR/dd_install.sh
     . $CONF_DIR/dd_install.sh
 fi
