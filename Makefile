@@ -5,7 +5,7 @@
 .PHONY: depends
 depends:
 	@echo "=== Installing and Checking dependencies... ==="
-	util/install.sh runtime_deps
+	util/install.sh deepdive_build_deps deepdive_runtime_deps
 	lib/check-depends.sh
 
 .PHONY: build

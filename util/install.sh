@@ -10,18 +10,23 @@ has() { type "$@"; } &>/dev/null
 error() { echo "$@"; false; } >&2
 
 # common installers ###########################################################
-install_runtime_deps() { false; }
-$running_from_git ||
-install_git_repo() {
-    git clone --recursive https://github.com/HazyResearch/deepdive.git
-    cd deepdive
+install_deepdive_build_deps() { false; }
+install_deepdive_runtime_deps() { false; }
+install_deepdive_git_repo() {
+    if $running_from_git; then
+        cd "$INSTALLER_HOME_DIR"/../..
+    else
+        git clone --recursive https://github.com/HazyResearch/deepdive.git
+        cd deepdive
+    fi
     make
 }
-list_common_installers() {
-    echo install_runtime_deps
-    $running_from_git || echo install_git_repo
+install_deepdive() {
+    # TODO replace the following two lines with binary distribution
+    run_installer_for deepdive_build_deps
+    run_installer_for deepdive_git_repo || true
+    run_installer_for deepdive_runtime_deps
 }
-list_installers() { list_common_installers; }
 ################################################################################
 
 # detect operating system
@@ -47,8 +52,7 @@ case $(uname) in
 esac
 echo "### DeepDive installer for $os"
 # load OS-specific install scripts located at install/install.*.sh
-# each script defines bash functions whose names start with `install_` and a
-# `list_installers` function that enumerates available install_* functions.
+# each script defines bash functions whose names start with `install_`.
 source_script() {
     local script=$1
     if [ -e "$INSTALLER_HOME_DIR/$script" ]; then
@@ -62,15 +66,20 @@ source_script install."$os".sh
 source_os_script() { source_script install."$os"."$1".sh; }
 
 # run selected installers, either interactively or via command-line arguments
-list_installer_names() { list_installers | sed 's/^install_//'; }
+list_installer_names() {
+    # find installer names from all defined install_* functions
+    declare -F | sed 's/^declare -f //; /^install_/!d; s/^install_//'
+}
 run_installer_for() {
     local name=$1
-    local install_func="install_$name"
-    if type "$install_func" &>/dev/null; then
-        ( set -x; "$install_func" )
-    else
-        error "$name: No such installer"
-    fi
+    for name; do
+        local install_func="install_$name"
+        if type "$install_func" &>/dev/null; then
+            ( set -x; "$install_func" )
+        else
+            error "$name: No such installer"
+        fi
+    done
 }
 if [ $# -eq 0 ]; then
     if [ -t 0 ]; then
@@ -87,7 +96,5 @@ if [ $# -eq 0 ]; then
     fi
 else
     # what to install specified via command line arguments
-    for option; do
-        run_installer_for "$option"
-    done
+    run_installer_for "$@"
 fi

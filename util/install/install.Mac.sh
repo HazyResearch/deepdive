@@ -1,24 +1,26 @@
 #!/usr/bin/env bash
 # DeepDive installers for Mac OS X
 
-list_installers() {
-    list_common_installers
-    echo install_Postgres
+install_deepdive_build_deps() {
+    has brew || error "Cannot install dependencies without Homebrew (http://brew.sh)"
+    set -x
+    javac -version
+    xcode-select --install || true
+    has git     || brew install git
+    has unzip   || brew install unzip
 }
 
-install_runtime_deps() {
-    if has brew; then
-        set -x
-        javac -version
-        xcode-select --install || true
-        has unzip   || brew install unzip
-        has gnuplot || brew install gnuplot
-        has git     || brew install git
+install_deepdive_runtime_deps() {
+    has brew || error "Cannot install dependencies without Homebrew (http://brew.sh)"
+    set -x
+    java -version
+    has gnuplot || brew install gnuplot
+}
+
+install_postgres() {
+    if has psql; then
+        brew info postgres | grep 'postgres -D ' | bash &
     else
-        error "Cannot install dependencies without Homebrew (http://brew.sh)"
+        brew install postgres
     fi
-}
-
-install_Postgres() {
-    has psql && brew info postgres || brew install postgres
 }
