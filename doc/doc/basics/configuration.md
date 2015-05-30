@@ -171,10 +171,10 @@ Configuration directives for executing [extractors](extractors.html) go in the
 ```bash
 deepdive {
   extraction {
-	# extraction directives 
+    # extraction directives 
   }
   extraction.extractors {
-	# extractor definitions
+    # extractor definitions
   }
   # ...
 }
@@ -186,7 +186,7 @@ There is currently only one available extraction configuration directive:
   parallel. The default value of `parallelism` is 1. E.g.:
   
     ```bash
-	# 3 extractors can run in parallel if all their dependencies are met
+    # 3 extractors can run in parallel if all their dependencies are met
     extraction.parallelism: 3
 
     #...
@@ -401,7 +401,7 @@ extractor style, if any.
 ## <a name="inference-opt" href="#"></a> Inference 
 
 *Note:* this section presents configuration directive for the inference step.
-Refer to the [appropriate section](#inferencerules) for the directives to define
+Refer to the [appropriate section](#inference_rules) for the directives to define
 inference rules.
 
 Configuration directives to control the inference steps go in the global
@@ -415,13 +415,25 @@ Configuration directives to control the inference steps go in the global
     inference.batch_size = 1000000 
     ```
 
-  The default value depends on the used datastore (50000 for PostgreSQL).
+    The default value depends on the used datastore (50000 for PostgreSQL).
 
-<!-- - <a name="skip_learning" href="#"></a> `inference.skip_learning`: if `true`,
-  DeepDive will skip the learning step for the factor weights and reuse the
-  weights learned in the last execution. It will generate a table
+- <a name="parallelgrounding" href="#"></a> `inference.parallel_grounding`. If
+  set to `true` and you are using <a href="../advanced/greenplum.html">GreenPlum
+  on DeepDive</a>, use <a
+  href="../advanced/performance.html#parallelgrounding">parallelism when
+  grounding the graph</a>. Default is `false`.
+
+    ```bash
+    inference.parallel_grounding: true
+    ```
+
+- <a name="skip_learning" href="#"></a> `inference.skip_learning`: if `true`,
+  DeepDive will skip the weight learning step, and reuse the
+  weights **learned in the last execution**. It will generate a table
   `dd_graph_last_weights` containing all the weights.  Weights will be matched
-  by their ''text form'' (which is composed by `[name of inference rule]-[specified value of "weight" in inference rule]`, e.g. `myRule-male`), and no learning will be performed.  
+  by their "text description" (which is composed by `[name of inference rule]-[specified value of "weight" in inference rule]`, e.g. `myRule-male`), and no learning will be performed. To get meaningful results, A DeepDive run must be already 
+  performed in the database, and the view `dd_inference_result_weights_mapping` 
+  must be present. 
   
 
     ```bash
@@ -437,25 +449,22 @@ Configuration directives to control the inference steps go in the global
 
 
     This table can be the result from one execution of DeepDive (an example would
-    be the view `dd_inference_result_variable_mapped_weights`, or
+    be the view `dd_inference_result_weights_mapping`, or
     `dd_graph_last_weights` used when `inference.skip_learning` is `true`) or
     manually assigned, or a combination of the two.
+
+    If weight for a specific factor is not in the weight table, the
+    weight will be treated as 0. For example, if
+    `f_has_spouse_features-SOME_NEW_FEATURE` is not found in
+    the specified weight table, but this factor is found in the
+    inference step, the weight of it will be treated as 0.
 
     If `inference_skip_learning` is `false` (default) this directive is ignored.
 
     ```bash
     inference.skip_learning: true
     inference.weight_table: [weight table name]
-    ``` -->
-- <a href="parallelgrounding" href="#"></a> `inference.parallel_grounding`. If
-  set to `true` and you are using <a href="../advanced/greenplum.html">GreenPlum
-  on DeepDive</a>, use <a
-  href="../advanced/performance.html#parallelgrounding">parallelism when
-  grounding the graph</a>. Default is `false`.
-
-	```bash
-	inference.parallel_grounding: true
-	```
+    ```
 
 ## <a name="inference_schema" href="#"></a> Inference schema
 
