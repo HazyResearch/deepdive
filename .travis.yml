@@ -24,7 +24,7 @@ env:
     - DBNAME=deepdive_test
 
 install:
-  - make install
+  - make depends
 
 script:
   # Run all tests
