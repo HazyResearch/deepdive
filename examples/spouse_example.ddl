@@ -5,11 +5,11 @@ articles(
 sentences(
   document_id     text,
   sentence        text,
-  words           text[],
-  lemma           text[],
-  pos_tags        text[],
-  dependencies    text[],
-  ner_tags        text[],
+  words           text,
+  lemma           text,
+  pos_tags        text,
+  dependencies    text,
+  ner_tags        text,
   sentence_offset int,
   sentence_id     text).
 
@@ -73,4 +73,5 @@ has_spouse(rid) :- has_spouse_candidates(a, b, c, d, rid, l) label = l.
 has_spouse(rid) :-
   has_spouse_candidates(a, b, c, d, rid, l),
   has_spouse_features(rid, f)
-weight = f.
+weight = f
+semantics = Imply.
