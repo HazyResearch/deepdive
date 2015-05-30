@@ -32,7 +32,7 @@ case $(uname) in
     ;;
 
   Linux*)
-    export LD_LIBRARY_PATH=$DEEPDIVE_HOME/lib/dw_linux/lib:$DEEPDIVE_HOME/lib/dw_linux/lib64:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=$DEEPDIVE_HOME/lib/dw_linux/lib:$DEEPDIVE_HOME/lib/dw_linux/lib64:$DEEPDIVE_HOME/lib/dw_linux/lib/numactl-2.0.9/:$LD_LIBRARY_PATH
     ;;
 
   *)
