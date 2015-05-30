@@ -1,4 +1,5 @@
 #! /usr/bin/env bash
+set -x
 
 # Set username and password
 export PGUSER=${PGUSER:-`whoami`}
