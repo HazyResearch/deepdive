@@ -2,7 +2,7 @@
 # DeepDive installers for Ubuntu Linux
 
 LSB=$(lsb_release -r 2>/dev/null) 
-case $LSB in
+case ${LSB##*	} in
     12.04|14.04|15.04) true ;;
     *) error "Ubuntu $LSB found: This installer only works with Ubuntu 12.04, 14.04, and 15.04."
 esac
