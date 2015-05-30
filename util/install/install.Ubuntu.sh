@@ -3,7 +3,7 @@
 
 LSB=$(lsb_release -r 2>/dev/null) 
 [[ $LSB =~ "14.04" || $LSB =~ "15.04" ]] ||
-    error "This installer only works with Ubuntu 14.04 and 15.04."
+    error "Ubuntu $LSB found: This installer only works with Ubuntu 14.04 and 15.04."
 
 list_installers() {
     list_common_installers
