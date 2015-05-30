@@ -75,17 +75,22 @@ run_installer_for() {
     for name; do
         local install_func="install_$name"
         if type "$install_func" &>/dev/null; then
-            ( set -x; "$install_func" )
+            if ( set -x; "$install_func" ); then
+                echo "## Finished installation for $name"
+            else
+                error "## Failed installation for $name"
+            fi
         else
-            error "$name: No such installer"
+            error "No such installer: $name"
         fi
     done
 }
 if [ $# -eq 0 ]; then
     if [ -t 0 ]; then
         # ask user what to install if input is a tty
-        PS3="Choose what to install for DeepDive: "
+        PS3="# Select what to install (enter a number or q to quit)? "
         select option in $(list_installer_names); do
+            [ -n "$option" ] || break
             run_installer_for "$option" || continue
         done
     else
