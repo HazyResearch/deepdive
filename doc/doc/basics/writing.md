@@ -134,12 +134,21 @@ that define the relationships between variables. For example, the following rule
 states that if a person smokes, he or she is likely to have cancer, and that the
 weight of the rule should be learned automatically based on training data
 (special value '?'):
-
-    smokesFactor {
-      input_query : """SELECT * from people"""
-      function    : "Imply(people.smokes, people.has_cancer)"
-      weight      : ?
-    }
+    
+```bash
+smokes_cancer {
+  input_query: """
+      SELECT person_has_cancer.id as "person_has_cancer.id",
+             person_smokes.id as "person_smokes.id",
+             person_smokes.smokes as "person_smokes.smokes",
+             person_has_cancer.has_cancer as "person_has_cancer.has_cancer"
+        FROM person_has_cancer, person_smokes
+       WHERE person_has_cancer.person_id = person_smokes.person_id
+    """
+  function: "Imply(person_smokes.smokes, person_has_cancer.has_cancer)"
+  weight: "?"
+}
+```
 
 DeepDive's language can express complex relationships that use extracted
 features. Refer to the [guide for writing inference rules](inference_rules.html)
