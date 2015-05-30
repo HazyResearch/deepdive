@@ -28,10 +28,11 @@ case $(uname) in
     Linux)
         if has apt-get && has debconf; then
             # Ubuntu/Debian
-            os=Linux.Ubuntu
-        elif [ -e /etc/redhat-release ]; then
-            # CentOS/RedHat
-            os=Linux.RedHat
+            os=Ubuntu
+        # TODO support other Linux distros
+        #elif [ -e /etc/redhat-release ]; then
+        #    # CentOS/RedHat
+        #    os=RedHat
         fi
         ;;
 
@@ -43,6 +44,7 @@ case $(uname) in
     *)
         error "$(uname): Unsupported Operating System"
 esac
+echo "### DeepDive installer for $os"
 # load OS-specific install scripts located at install/install.*.sh
 # each script defines bash functions whose names start with `install_` and a
 # `list_installers` function that enumerates available install_* functions.
@@ -52,7 +54,7 @@ source_script() {
         source "$INSTALLER_HOME_DIR/$script"
     else
         # may be this script is run as a one-liner, get script from GitHub
-        source <(curl -fsSL "$INSTALLER_HOME_URL/$script") "$@"
+        source <(set -x; curl -fsSL "$INSTALLER_HOME_URL/$script") "$@"
     fi
 }
 source_script install."$os".sh
