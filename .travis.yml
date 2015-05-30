@@ -25,17 +25,15 @@ env:
 
 install:
   - make install
+
 script:
+  # Run all tests
   - make test
 
-  # Install linkchecker
-  - sudo pip install linkchecker --use-mirrors
-  # Install jekyll for "make serve" local hosting
-  - gem install jekyll
-  - make -C doc/ serve  # serve to localhost
-  - sleep 3 # give Web server some time to bind to sockets, etc
-  # Check both localhost and website
-  - bash ./src/test/bash/linkcheck.sh http://localhost:4000/
-  - bash ./src/test/bash/linkcheck.sh http://deepdive.stanford.edu/
+  # Check broken links in documentation
+  # TODO check only when doc/ has changed
+  #- make -C doc/ linkcheck
+
 after_success:
+  # Report test coverage
   - sbt coveralls

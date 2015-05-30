@@ -18,17 +18,25 @@ WEBSITE_BASEURL = http://$(WEBSITE_CNAME)
 TEST_PORT = 4000
 
 .PHONY: test
-test:
+test: jekyll
 	# Launching a server for testing...
 	jekyll serve --host localhost --port $(TEST_PORT) --baseurl "" --watch
 
-.PHONY: serve
-serve:
-	# Launching a server and detach it to background
-	jekyll serve --host localhost --port $(TEST_PORT) --baseurl "" --detach
+.PHONY: linkcheck linkcheck-deployed
+linkcheck: jekyll linkchecker
+	# Checking broken links locally
+	jekyll serve --host localhost --port $(TEST_PORT) --baseurl "" & \
+	    trap "kill -TERM $$!" EXIT; sleep 3; \
+	linkchecker --timeout 30 --check-extern http://localhost:$(TEST_PORT)/
+linkcheck-deployed: jekyll linkchecker
+	# Checking broken links from deployed website
+	linkchecker --timeout 30 --check-extern $(WEBSITE_BASEURL)/
 
 .PHONY: deploy
-deploy:
+deploy: jekyll
+	######################################################################
+	# NOTE: `make linkcheck` before every deployment highly recommended! #
+	######################################################################
 	# Building site...
 	echo 'baseurl:	$(WEBSITE_BASEURL)' >_config.baseurl.yml
 	jekyll build --config _config.yml,_config.baseurl.yml
@@ -41,7 +49,7 @@ deploy:
 	@echo "Deployed to $(WEBSITE_BASEURL)"
 
 .PHONY: deploy-github
-deploy-github:
+deploy-github: jekyll
 	# Building site...
 	jekyll build
 	# Deploying the same contents to gh-pages
@@ -54,8 +62,14 @@ deploy-github:
 	  git push origin gh-pages
 	rm -rf .gh-pages
 
+.PHONY: jekyll linkchecker
+jekyll:
+	type jekyll || gem install jekyll
+linkchecker:
+	type linkchecker >/dev/null || pip install linkchecker --use-mirrors
+
 .PHONY: help
 help:
 	@cat README
 
-.DEFAULT_GOAL:= help
+.DEFAULT_GOAL := help
