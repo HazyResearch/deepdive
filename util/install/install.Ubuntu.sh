@@ -20,7 +20,7 @@ install_runtime_deps() {
     sudo apt-get update
 
     # Many dependencies are already available in TravisCI
-    if [ -z "$TRAVIS" ]; then
+    if [ -z "${TRAVIS:-}" ]; then
         # automate license agreement for oracle java
         echo debconf shared/accepted-oracle-license-v1-1 select true |
         sudo debconf-set-selections
