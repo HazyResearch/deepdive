@@ -1,14 +1,24 @@
 #!/usr/bin/env bash
 # DeepDive installers for Mac OS X
 
+list_installers() {
+    list_common_installers
+    echo install_Postgres
+}
+
 install_runtime_deps() {
     if has brew; then
         set -x
-        brew install unzip gnuplot
-    elif has port; then
-        set -x
-        sudo port install unzip gnuplot
+        javac -version
+        xcode-select --install || true
+        has unzip   || brew install unzip
+        has gnuplot || brew install gnuplot
+        has git     || brew install git
     else
-        error "Cannot install dependencies without brew or MacPorts"
+        error "Cannot install dependencies without Homebrew (http://brew.sh)"
     fi
+}
+
+install_Postgres() {
+    has psql && brew info postgres || brew install postgres
 }

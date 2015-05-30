@@ -1,13 +1,25 @@
 # Makefile for DeepDive
 
-.PHONY: build
-build:
-	@echo "=== Checking dependencies... ==="
+.DEFAULT_GOAL := install
+
+.PHONY: depends
+depends:
+	@echo "=== Installing and Checking dependencies... ==="
+	util/install.sh runtime_deps
 	lib/check-depends.sh
 
+.PHONY: build
+build:
 	@echo "=== Extracting sampler library... ==="
 	lib/dw_extract.sh
 
+.PHONY: test
+test: build
+	@echo "\n=== Testing DeepDive modules... ==="
+	./test.sh
+
+.PHONY: install
+install: depends build
 	@echo "\n=== Compiling DeepDive... ==="
 	sbt/sbt pack
 
@@ -22,7 +34,8 @@ build:
 		echo "FAILED."; \
 		exit 1; \
 	fi 
-	
+
+
 .PHONY: build-sampler
 build-sampler:
 	git submodule update --init
@@ -35,20 +48,9 @@ ifeq ($(shell uname),Darwin)
 	cp -f sampler/dw util/sampler-dw-mac
 endif
 
-.PHONY: test
-test: 
-	@echo "\n=== Testing DeepDive modules... ==="
-	./test.sh
-
 .PHONY: build-mindbender
 build-mindbender:
 	git submodule update --init
 	$(MAKE) -C mindbender
 	cp -f mindbender/mindbender-LATEST-*.sh util/mindbender
-
-.PHONY: all
-all: build test
-
-.DEFAULT_GOAL: build    # `make` only do installation for now. 
-                        # testing needs `make test` on users' will
 

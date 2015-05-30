@@ -30,7 +30,7 @@ install_runtime_deps() {
     sudo apt-get install -y oracle-java8-installer 
 
     # install additional packages for deepdive
-    sudo apt-get install -y make gnuplot awscli unzip 
+    sudo apt-get install -y make gnuplot awscli unzip bc
 
     # install additional packages for sampler
     sudo apt-get install -y g++ cmake libnuma-dev libtclap-dev
