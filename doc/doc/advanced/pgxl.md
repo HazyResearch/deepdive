@@ -71,9 +71,9 @@ sudo service ssh restart
 
 ```bash
 sudo apt-get update
-sudo apt-get -y install -y screen curl git rsync openssl locales openssh-server openssh-client
-sudo apt-get -y install -y build-essential gcc flex bison make cmake jade openjade docbook docbook-dsssl
-sudo apt-get -y install zlib1g-dev libreadline6-dev python-dev libssl-dev
+sudo apt-get install -y screen curl git rsync openssl locales openssh-server openssh-client \
+                        build-essential gcc flex bison make cmake jade openjade docbook docbook-dsssl \
+                        zlib1g-dev libreadline6-dev python-dev libssl-dev
 sudo localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
 ```
 
