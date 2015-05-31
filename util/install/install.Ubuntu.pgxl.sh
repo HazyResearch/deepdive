@@ -38,6 +38,11 @@ BUILD_DIR=~/pgxl_install
 TARGET_DIR=/opt/pgxl
 ###################################################
 
+# ask user for confirmation 
+read -p "Enter number of data nodes [$NUM_DATA_NODES]: " NUM_DATA_NODES
+read -p "Enter data dir to hold segment data [$DATA_DIR]: " DATA_DIR
+read -p "Enter port number [$USER_DB_PORT]: " USER_DB_PORT
+
 
 sudo apt-get update
 sudo apt-get -y install -y screen curl git rsync openssl locales openssh-server openssh-client
