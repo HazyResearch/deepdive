@@ -10,7 +10,7 @@ needs_command() {
 
 # runtime dependency
 needs_command bash
-needs_command psql
+#needs_command psql
 needs_command java
 needs_command python
 needs_command bc
