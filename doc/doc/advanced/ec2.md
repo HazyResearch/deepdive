@@ -25,12 +25,19 @@ The following are the steps needed to launch an EC2 instance and start DeepDive 
     curl -fsSL deepdive.stanford.edu/install | bash -s postgres deepdive
     ```
 
+    You will be asked to create a new password for Postgres user account.
+    Remember to set `PGPASSWORD` environment varible to that password, e.g., `pa$$w0rd`, to let DeepDive and `psql` command access the database.
+
+    ```bash
+    export PGPASSWORD='pa$$w0rd'
+    ```
+
 - Navigate to `./deepdive` and run tests to confirm that the
   installation was successful.
 
     ```bash
     cd ./deepdive
-    make test PGHOST=/var/run/postgresql
+    make test
     ```
 
 ### Notes

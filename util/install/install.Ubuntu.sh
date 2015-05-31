@@ -57,5 +57,6 @@ install_postgres_xl() {
 install_postgres() {
     set -x
     sudo apt-get install -y postgresql
-    sudo -u postgres createuser --superuser --no-password $USER || true
+    sudo -u postgres dropuser --if-exists $USER
+    sudo -u postgres createuser --superuser --pwprompt $USER || true
 }
