@@ -19,12 +19,15 @@ The following are the steps needed to launch an EC2 instance and start DeepDive 
 - Follow the wizard to launch the instance.
 - SSH into the instance as `ubuntu` with the private key you specified in the
   AWS wizard.
-- Run the following command to install Postgre and DeepDive.
+- Run the following command to install Postgres and DeepDive.
+
     ```bash
     curl -fsSL deepdive.stanford.edu/install | bash -s postgres deepdive
     ```
+
 - Navigate to `./deepdive` and run tests to confirm that the
   installation was successful.
+
     ```bash
     cd ./deepdive
     make test PGHOST=/var/run/postgresql
