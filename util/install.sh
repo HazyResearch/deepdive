@@ -75,7 +75,8 @@ run_installer_for() {
     for name; do
         local install_func="install_$name"
         if type "$install_func" &>/dev/null; then
-            if ( set -x; "$install_func" ); then
+            echo "## Starting installation for $name"
+            if ( set +u; "$install_func" ); then
                 echo "## Finished installation for $name"
             else
                 error "## Failed installation for $name"
