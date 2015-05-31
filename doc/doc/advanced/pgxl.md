@@ -39,25 +39,28 @@ We assume that the user executing these commands has sudo rights.
 
 ### Setting OS Parameters
 
-Set the following parameters in the `/etc/sysctl.conf` file: 
+Set the following parameters in the `/etc/sysctl.d/50-pgxl.conf` file: 
 ```
+sudo tee /etc/sysctl.d/50-pgxl.conf <<EOF
 kernel.sem = 1000  32000  32  1000
-kernel.shmmax = 429496729600  #400GB
+# up to 400GB shared memory
+kernel.shmmax = 429496729600
+EOF
 ```
 
 After making these changes, run
 ```bash
-sudo sysctl -p /etc/sysctl.conf
+sudo sysctl --system
 ```
 
-Set the following parameter in the `/etc/ssh/ssh_config` file:
+Finally, adjust ssh settings in `/etc/ssh/ssh_config` and `/etc/ssh/sshd_config` files:
 ```
+sudo tee -a /etc/ssh/ssh_config <<EOF
 StrictHostKeyChecking no
-```
-
-Finally, set the following parameter in the `/etc/ssh/sshd_config` file:
-```
+EOF
+sudo tee -a /etc/ssh/sshd_config <<EOF
 MaxStartups 100
+EOF
 ```
 After that, run
 ```bash
@@ -69,7 +72,7 @@ sudo service ssh restart
 ```bash
 sudo apt-get update
 sudo apt-get -y install -y screen curl git rsync openssl locales openssh-server openssh-client
-sudo apt-get -y install -y gcc flex bison make cmake jade openjade docbook docbook-dsssl
+sudo apt-get -y install -y build-essential gcc flex bison make cmake jade openjade docbook docbook-dsssl
 sudo apt-get -y install zlib1g-dev libreadline6-dev python-dev libssl-dev
 sudo localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
 ```
@@ -77,12 +80,15 @@ sudo localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-
 Now set `$TARGET_DIR` to the directory into which you would like to install XL.
 ```bash
 TARGET_DIR=/opt/pgxl
+sudo mkdir -p $TARGET_DIR
+sudo chown $USER $TARGET_DIR
 ```
 
-Then add the following line(s) to `/etc/ld.so.conf` (replace `$TARGET_DIR` with dir):
+Then create a file `/etc/ld.so.conf.d/pgxl.conf` for the `$TARGET_DIR`:
 ```bash
-/usr/local/lib
+sudo tee /etc/ld.so.conf.d/pgxl.conf <<EOF
 $TARGET_DIR/lib
+EOF
 ```
 
 The remaining parts of the installation do not require sudo rights. However, make sure
@@ -138,6 +144,7 @@ Now set `$DATA_DIR` to the directory, where the database files will be stored.
 **Be sure that you have write permission to this directory**.
 
 ```bash
+DATA_DIR=$TARGET_DIR/data
 mkdir -p $DATA_DIR
 ```
 
@@ -236,11 +243,15 @@ and one manager.
 
 ### Configure PATH
 
-Configure the following paths into your `~/.bashrc`:
+Configure the necessary paths into your `~/.bashrc`, so they're effective via ssh:
 
 ```bash
-export PATH=$TARGET_DIR/bin:$PATH
+( echo 1i  # insert following lines at the beginning of bashrc
+cat <<EOF
+export PATH=$TARGET_DIR/bin:\$PATH
 export PGXC_CTL_HOME=$TARGET_DIR/conf
+EOF
+echo .; echo wq ) | ed ~/.bashrc
 ```
 
 Run `source ~/.bashrc`.
