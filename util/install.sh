@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Install DeepDive including its dependencies
 set -eu
-: ${INSTALLER_BRANCH:=master}
-INSTALLER_HOME_URL=https://raw.github.com/HazyResearch/deepdive/$INSTALLER_BRANCH/util/install
+: ${BRANCH:=master}
+INSTALLER_HOME_URL=https://raw.github.com/HazyResearch/deepdive/$BRANCH/util/install
 INSTALLER_HOME_DIR=$(dirname "$0")/install
 
 running_from_git=true; [[ -e "$INSTALLER_HOME_DIR"/../../.git ]] || running_from_git=false
@@ -16,7 +16,7 @@ install_deepdive_git_repo() {
     if $running_from_git; then
         cd "$INSTALLER_HOME_DIR"/../..
     else
-        git clone --recursive https://github.com/HazyResearch/deepdive.git
+        git clone --recursive --branch $BRANCH https://github.com/HazyResearch/deepdive.git
         cd deepdive
     fi
     make
