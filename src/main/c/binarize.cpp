@@ -50,8 +50,6 @@ void load_var(std::string filename, int inc) {
     uint64_t initval = bswap_64(*(uint64_t *)&initial_value);
     type = bswap_16(type);
     cardinality = bswap_64(cardinality);
-    dd_count = bswap_64(dd_count);
-
 
     fout.write((char*)&vid, 8);
     fout.write((char*)&is_evidence, 1);
@@ -61,6 +59,7 @@ void load_var(std::string filename, int inc) {
     fout.write((char*)&cardinality, 8);
     if (inc) {
       fin >> dd_count;
+      dd_count = bswap_64(dd_count);
       fout.write((char*)&dd_count, 8);
     }
   }
@@ -202,7 +201,7 @@ void load_factor(std::string filename, int inc, short funcid, long nvar, char** 
 
 int main(int argc, char** argv){
   std::string app(argv[1]);
-  std::cerr << app << " " << argv[2] << " " << argv[3] << std::endl;
+  // std::cerr << app << " " << argv[2] << " " << argv[3] << std::endl;
   if(app.compare("variable")==0){
     load_var(argv[2], atoi(argv[3]));
   }
