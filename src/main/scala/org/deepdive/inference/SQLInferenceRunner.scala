@@ -602,7 +602,10 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
             INSERT INTO ${weighttableForThisFactor}_unsorted
             SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} as cardinality, 0 AS id
             FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")}
-            ORDER BY ${weightlist}, cardinality;""")
+            """) 
+          // NOTE: XL does not support ORDER BY here, at least not if we don't
+          // change the distribution strategy.
+          //ORDER BY ${weightlist}, cardinality;""")
 
           dataStore.dropAndCreateTableAs(weighttableForThisFactor,
             s"""SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} AS cardinality,
@@ -612,7 +615,10 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
           execute(s"""
             INSERT INTO ${weighttableForThisFactor}
             SELECT * FROM ${weighttableForThisFactor}_unsorted
-            ORDER BY ${weightlist}, cardinality;""")
+            """) 
+          // NOTE: XL does not support ORDER BY here, at least not if we don't
+          // change the distribution strategy.
+          //ORDER BY ${weightlist}, cardinality;""")
 
           // handle weight id
           cweightid += dataStore.assignIds(weighttableForThisFactor.toLowerCase(), cweightid, weightidSequence)
@@ -629,6 +635,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
             s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)} """).mkString("AND")
           execute(dataStore.analyzeTable(querytable))
           execute(dataStore.analyzeTable(weighttableForThisFactor))
+
           du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
             s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
              FROM ${querytable} t0, ${weighttableForThisFactor} t1
