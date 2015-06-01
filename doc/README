@@ -14,17 +14,16 @@ To test the docs locally, be sure to have dependency `jekyll` installed via
 
 ## Checking Links
 
-This will host the docs on your http://localhost:4000. Keep it hosted, and open
-a new terminal, navigate into DEEPDIVE_HOME/src/test/bash/, then run:
+To check if the docs have any broken links, run:
 
-    ./linkcheck.sh http://localhost:4000 --check-extern
+    make linkcheck
 
-This will do a BETTER test than the travis one since it also checks external
-links. We have not figured out a good way to do this on Travis, since it
-occasionally suffers from a timeout problem.  Ideally you will find the output
-like:
+This will launch a jekyll server in the background and check all internal links
+as well as external ones.  Ideally your output should end with a line like:
 
     [Thu Apr 16 11:28:04 PDT 2015] No errors found.
+
+Otherwise, the broken links are shown and you can fix them before deploying.
 
 
 ## Deploying to deepdive.stanford.edu
