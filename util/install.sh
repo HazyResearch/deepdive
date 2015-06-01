@@ -8,6 +8,13 @@ INSTALLER_HOME_DIR=$(dirname "$0")/install
 running_from_git=true; [[ -e "$INSTALLER_HOME_DIR"/../../.git ]] || running_from_git=false
 has() { type "$@"; } &>/dev/null
 error() { echo "$@"; false; } >&2
+enter() {
+    local name=$1
+    local desc=${2:-$name}
+    local value=${!name:-}
+    read -p "Enter $desc ${value:+[$value]}: "
+    eval "$name=\${REPLY:-\${$name:-}}"
+}
 
 # common installers ###########################################################
 install_deepdive_build_deps() { false; }
