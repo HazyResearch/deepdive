@@ -16,8 +16,9 @@ namespace dd{
       this->upper_bound = _upper_bound;
       this->assignment_evid = _init_value;
       this->assignment_free = _current_value;
-
       this->n_factors = _n_factors;
+      this->isactive = false;
+      this->component_id = -1;
     }
 
     bool VariableInFactor::satisfiedUsing(int value) const{
@@ -27,7 +28,6 @@ namespace dd{
     VariableInFactor::VariableInFactor(){
 
     }
-
 
     VariableInFactor::VariableInFactor(int dummy,
                       const int & _dimension, 

@@ -52,14 +52,14 @@ namespace dd{
      */
     void learn(const int & n_epoch, const int & n_sample_per_epoch, 
       const double & stepsize, const double & decay, const double reg_param,
-      const bool is_quiet);
+      const bool is_quiet, const bool is_inc);
 
     /**
      * Performs inference
      * n_epoch number of epochs. A epoch is one pass over data
      * is_quiet whether to compress information display
      */
-    void inference(const int & n_epoch, const bool is_quiet);
+    void inference(const int & n_epoch, const bool is_quiet, const bool is_mat, const bool is_inc);
 
     /**
      * Aggregates results from different NUMA nodes

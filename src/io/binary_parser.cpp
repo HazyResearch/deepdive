@@ -62,6 +62,7 @@ long long read_weights(string filename, dd::FactorGraph &fg)
         isfixed = padding;
         long long tmp = bswap_64(*(uint64_t *)&initial_value);
         initial_value = *(double *)&tmp;
+
         // load into factor graph
         fg.weights[fg.c_nweight] = dd::Weight(id, initial_value, isfixed);
 		fg.c_nweight++;
@@ -85,6 +86,7 @@ long long read_variables(string filename, dd::FactorGraph &fg)
     short type;
     long long edge_count;
     long long cardinality;
+    long long dd_count;
     while (file.good()) {
         // read fields
         file.read((char *)&id, 8);
@@ -92,7 +94,9 @@ long long read_variables(string filename, dd::FactorGraph &fg)
         file.read((char *)&initial_value, 8);
         file.read((char *)&type, 2);
         file.read((char *)&edge_count, 8);
-        if (!file.read((char *)&cardinality, 8)) break;
+        file.read((char *)&cardinality, 8);
+        if (!file.read((char*)&dd_count, 8)) break;
+
         // convert endian
         id = bswap_64(id);
         isevidence = padding1;
@@ -101,6 +105,10 @@ long long read_variables(string filename, dd::FactorGraph &fg)
         initial_value = *(double *)&tmp;
         edge_count = bswap_64(edge_count);
         cardinality = bswap_64(cardinality);
+        dd_count = bswap_64(dd_count);
+
+        assert(dd_count == 0 || dd_count == 1);
+
         count++;
 
         // add to factor graph
@@ -147,6 +155,7 @@ long long read_variables(string filename, dd::FactorGraph &fg)
 
     }
     file.close();
+
     return count;
 }
 
@@ -159,15 +168,24 @@ long long read_factors(string filename, dd::FactorGraph &fg)
     long long weightid;
     short type;
     long long edge_count;
+    long long dd_count;
     while (file.good()) {
         file.read((char *)&id, 8);
         file.read((char *)&weightid, 8);
         file.read((char *)&type, 2);
-        if (!file.read((char *)&edge_count, 8)) break;
+        file.read((char *)&edge_count, 8);
+        if (!file.read((char*)&dd_count, 8)) break;
+
         id = bswap_64(id);
         weightid = bswap_64(weightid);
         type = bswap_16(type);
         edge_count = bswap_64(edge_count);
+        dd_count = bswap_64(dd_count);
+
+        //std::cout << id << std::endl;
+
+        assert(dd_count == 0 || dd_count == 1);
+
         count++;
         fg.factors[fg.c_nfactor] = dd::Factor(id, weightid, type, edge_count);
         fg.c_nfactor ++;
@@ -187,19 +205,28 @@ long long read_edges(string filename, dd::FactorGraph &fg)
     bool ispositive;
     char padding;
     long long equal_predicate;
+    long long dd_count;
     while (file.good()) {
         // read fields
         file.read((char *)&variable_id, 8);
         file.read((char *)&factor_id, 8);
         file.read((char *)&position, 8);
         file.read((char *)&padding, 1);
-        if (!file.read((char *)&equal_predicate, 8)) break;
+        file.read((char *)&equal_predicate, 8);
+        if (!file.read((char *)&dd_count, 8)) break;
+        
         variable_id = bswap_64(variable_id);
         factor_id = bswap_64(factor_id);
         position = bswap_64(position);
         ispositive = padding;
         equal_predicate = bswap_64(equal_predicate);
+        
+        dd_count = bswap_64(dd_count);
+        assert(dd_count == 0 || dd_count == 1);
+        
         count++;
+
+        //std::cout << variable_id << std::endl;
 
         // wrong id
     	if(variable_id >= fg.n_var || variable_id < 0){

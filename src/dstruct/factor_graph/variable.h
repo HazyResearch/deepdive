@@ -40,6 +40,12 @@ namespace dd{
 
     std::vector<long> tmp_factor_ids; // factor ids the variable connects to
 
+    bool isactive;
+
+    long long component_id;
+
+    int next_sample;
+
     Variable();
 
     /**

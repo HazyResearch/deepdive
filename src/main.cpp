@@ -11,6 +11,15 @@ int main(int argv, char** argc){
     gibbs(cmd_parser);
   }
 
+  if(cmd_parser.app_name == "mat"){
+    mat(cmd_parser);
+  }
+
+  if(cmd_parser.app_name == "inc"){
+    inc(cmd_parser);
+  }
+
+
 }
 
 

@@ -42,7 +42,7 @@ namespace dd{
     
     Variable & variable = p_fg->variables[vid];
 
-    // if (variable.is_evid == false) return;
+    if (variable.is_evid == false) return;
 
     if(variable.domain_type == DTYPE_BOOLEAN){ // boolean
 
@@ -131,11 +131,11 @@ namespace dd{
       this->p_fg->update_weight(variable);
 
     }else{
+      //std::cout << "~~~~~~~~~" << std::endl;
       std::cerr << "[ERROR] Only Boolean and Multinomial variables are supported now!" << std::endl;
       assert(false);
       return;
-    } // end if for variable types
-    
+    } // end if for variable types 
   }
 
   void SingleThreadSampler::sample_single_variable(long vid){
@@ -144,6 +144,45 @@ namespace dd{
 
     Variable & variable = this->p_fg->variables[vid];
 
+    if(variable.domain_type == DTYPE_BOOLEAN){
+
+      if(variable.is_evid == false){
+
+        int newvalue = variable.next_sample;
+        //std::cout << newvalue << std::endl;
+        int oldvalue = p_fg->infrs->assignments_free[vid];
+
+        
+        //if(newvalue == oldvalue){
+          //p_fg->template update<false>(variable, newvalue);
+          //std::cout << "/" << std::endl;
+          // accept
+        //}else{
+        
+        potential_pos = p_fg->template potential<false>(variable, newvalue); // flip
+        potential_neg = p_fg->template potential<false>(variable, oldvalue); // not flip
+        //std::cout << vid << " -> " << newvalue << "(" << potential_pos << ")" 
+        //      << "    " << oldvalue << "(" << potential_neg << ")" << std::endl;
+        *this->p_rand_obj_buf = erand48(this->p_rand_seed);
+        float r = (*this->p_rand_obj_buf);
+        float prob = exp(potential_pos-potential_neg);
+        //std::cout << r << "  " << prob << std::endl;
+        if(r < prob){
+          p_fg->template update<false>(variable, newvalue);
+        }else{
+          p_fg->template update<false>(variable, oldvalue);
+          //std::cout << "~" << std::endl;
+        }
+        //}
+
+      }
+
+    }else{
+      std::cout << "INC DOES NOT SUPPORT BOOLEAN" << std::endl;
+    }
+
+
+    /*
     if(variable.domain_type == DTYPE_BOOLEAN){
 
       if(variable.is_evid == false){
@@ -192,6 +231,7 @@ namespace dd{
       assert(false);
       return;
     }
+    */
 
   }
 }

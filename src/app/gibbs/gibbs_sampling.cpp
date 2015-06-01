@@ -20,6 +20,7 @@ dd::GibbsSampling::GibbsSampling(FactorGraph * const _p_fg,
 
     // max possible threads per NUMA node
     n_thread_per_numa = (sysconf(_SC_NPROCESSORS_CONF))/(n_numa_nodes+1);
+    //n_thread_per_numa = 1;
 
     this->factorgraphs.push_back(*p_fg);
 
@@ -38,7 +39,7 @@ dd::GibbsSampling::GibbsSampling(FactorGraph * const _p_fg,
     }
   };
 
-void dd::GibbsSampling::inference(const int & n_epoch, const bool is_quiet){
+void dd::GibbsSampling::inference(const int & n_epoch, const bool is_quiet, const bool is_mat, const bool is_inc){
 
   Timer t_total;
 
@@ -59,6 +60,18 @@ void dd::GibbsSampling::inference(const int & n_epoch, const bool is_quiet){
 
   // inference epochs
   for(int i_epoch=0;i_epoch<n_epoch;i_epoch++){
+
+    if(is_inc){
+      std::string a = p_cmd_parser->original_folder->getValue() + 
+          "/mat_samples.epoch_" + std::to_string(i_epoch) + "_numa_" + std::to_string(0) + ".text";
+      std::cout << "Loading samples... " << a << std::endl;
+      std::ifstream fin(a);
+      long long ct = 0;
+      while(fin >> factorgraphs[0].variables[ct].next_sample){
+        //std::cout << factorgraphs[0].variables[ct].next_sample << std::endl;
+        ct = ct + 1;
+      }
+    }
 
     if (!is_quiet) {
       std::cout << std::setprecision(2) << "INFERENCE EPOCH " << i_epoch * nnode <<  "~" 
@@ -83,6 +96,23 @@ void dd::GibbsSampling::inference(const int & n_epoch, const bool is_quiet){
       std::cout << ""  << elapsed << " sec." ;
       std::cout << ","  << (nvar*nnode)/elapsed << " vars/sec" << std::endl;
     }
+
+    if(is_mat){
+      std::cout << "    | Dumping samples for materailization..." << std::endl;
+      for(int i=0;i<=n_numa_nodes;i++){
+        std::string filename_text = p_cmd_parser->original_folder->getValue() + 
+          "/mat_samples.epoch_" + std::to_string(i_epoch) + "_numa_" + std::to_string(i) + ".text";
+        std::ofstream fout(filename_text.c_str());
+        const FactorGraph & cfg = factorgraphs[i];
+        for(long i=0;i<factorgraphs[0].n_var;i++){
+          const Variable & variable = factorgraphs[0].variables[i];
+          if(variable.isactive){
+            fout << factorgraphs[0].infrs->assignments_evid[i] << std::endl; 
+          }
+        }
+        fout.close();
+      }
+    }
   }
 
   double elapsed = t_total.elapsed();
@@ -92,7 +122,8 @@ void dd::GibbsSampling::inference(const int & n_epoch, const bool is_quiet){
 
 void dd::GibbsSampling::learn(const int & n_epoch, const int & n_sample_per_epoch, 
                               const double & stepsize, const double & decay, 
-                              const double reg_param, const bool is_quiet){
+                              const double reg_param, const bool is_quiet,
+                              const bool is_inc){
 
   Timer t_total;
 
@@ -192,6 +223,39 @@ void dd::GibbsSampling::learn(const int & n_epoch, const int & n_sample_per_epoc
 
   double elapsed = t_total.elapsed();
   std::cout << "TOTAL LEARNING TIME: " << elapsed << " sec." << std::endl;
+
+  if(is_inc){
+    std::cout << "CALCULATING DELTA WEIGHTS..." << std::endl;
+    long nnot_change = 0;
+    long nnot_change2 = 0;
+    for(long wid=0;wid<nweight;wid++){
+      float f1 = factorgraphs[0].infrs->weight_values[wid];
+      float f2 = factorgraphs[0].old_weight_values[wid];
+
+      if(f1 == f2){
+        nnot_change ++;
+      }
+
+      factorgraphs[0].old_weight_values[wid] = f1 - f2;
+      if(fabs(f1-f2) < 0.1){
+        factorgraphs[0].old_weight_values[wid] = 0.0;
+        nnot_change2 ++;
+      }
+    }
+
+    std::cout << nnot_change << "/" << nweight << std::endl;
+    std::cout << nnot_change2 << "/" << nweight << std::endl;
+
+    std::cout << "INACTIVATE FACTORS THAT DOES NOT CHANGE." << std::endl;
+    for(long long fid=0;fid<factorgraphs[0].n_edge;fid++){
+      long long wid = factorgraphs[0].compact_factors_weightids[fid];
+      if(factorgraphs[0].old_weight_values[wid] == 0){
+        factorgraphs[0].compact_factors_weightids[fid] = -1;
+      }
+      //std::cout << factorgraphs[0].compact_factors_weightids[fid] << std::endl;
+    }
+
+  }
 }
 
 void dd::GibbsSampling::dump_weights(const bool is_quiet){
@@ -212,7 +276,7 @@ void dd::GibbsSampling::dump_weights(const bool is_quiet){
   }
 
   // dump learned weights
-  std::string filename_text = p_cmd_parser->output_folder->getValue() 
+  std::string filename_text = p_cmd_parser->original_folder->getValue() 
     + "/inference_result.out.weights.text";
 
   std::cout << "DUMPING... TEXT    : " << filename_text << std::endl;
@@ -286,7 +350,7 @@ void dd::GibbsSampling::aggregate_results_and_dump(const bool is_quiet){
   }
 
   // dump inference results
-  std::string filename_text = p_cmd_parser->output_folder->getValue() + 
+  std::string filename_text = p_cmd_parser->original_folder->getValue() + 
     "/inference_result.out.text";
   std::cout << "DUMPING... TEXT    : " << filename_text << std::endl;
   std::ofstream fout_text(filename_text.c_str());

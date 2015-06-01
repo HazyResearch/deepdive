@@ -43,6 +43,8 @@ namespace dd{
     Factor * const factors;
     Weight * const weights;
 
+    float * old_weight_values;
+
     // For each edge, we store the factor, weight id, factor id, and the variable, 
     // in the same index of seperate arrays. The edges are ordered so that the
     // edges for a variable is in a continuous region (sequentially). 
@@ -119,6 +121,7 @@ namespace dd{
      */
     template<bool does_change_evid>
     inline double potential(const Variable & variable, const double & proposal){
+
       // potential
       double pot = 0.0;  
       double tmp;
@@ -136,6 +139,10 @@ namespace dd{
         // for all factors that the variable connects to, calculate the 
         // weighted potential
         for(long i=0;i<variable.n_factors;i++){
+          if(ws[i] == -1){
+            continue;
+          //  //std::cout << "Skip" << std::endl;
+          }
           if(does_change_evid == true){
             tmp = fs[i].potential(
                 vifs, infrs->assignments_free, variable.id, proposal);
@@ -147,6 +154,10 @@ namespace dd{
         }
       } else if (variable.domain_type == DTYPE_MULTINOMIAL) { // multinomial
         for (long i = 0; i < variable.n_factors; i++) {
+          //if(ws[i] == -1){
+          //  continue;
+          //  //std::cout << "Skip" << std::endl;
+          //}
           if(does_change_evid == true) {
             tmp = fs[i].potential(vifs, infrs->assignments_free, variable.id, proposal);
             // get weight id associated with this factor and variable assignment
@@ -164,7 +175,7 @@ namespace dd{
     /**
      * Loads the factor graph using arguments specified from command line
      */
-    void load(const CmdParser & cmd, const bool is_quiet);
+    void load(const CmdParser & cmd, const bool is_quiet, const bool is_inc);
 
     /**
      * Sorts the variables, factors, and weights in ascending id order.

@@ -4,6 +4,20 @@
 #include "dstruct/factor_graph/factor_graph.h"
 #include "dstruct/factor_graph/factor.h"
 
+#include <fstream>
+
+// 64-bit big endian to little endian
+# define bswap_64(x) \
+     ((((x) & 0xff00000000000000ull) >> 56)                                   \
+      | (((x) & 0x00ff000000000000ull) >> 40)                                 \
+      | (((x) & 0x0000ff0000000000ull) >> 24)                                 \
+      | (((x) & 0x000000ff00000000ull) >> 8)                                  \
+      | (((x) & 0x00000000ff000000ull) << 8)                                  \
+      | (((x) & 0x0000000000ff0000ull) << 24)                                 \
+      | (((x) & 0x000000000000ff00ull) << 40)                                 \
+      | (((x) & 0x00000000000000ffull) << 56))
+
+
 bool dd::FactorGraph::is_usable(){
   return this->sorted && this->safety_check_passed;
 }
@@ -20,7 +34,8 @@ dd::FactorGraph::FactorGraph(long _n_var, long _n_factor, long _n_weight, long _
   vifs(new VariableInFactor[_n_edge]),
   infrs(new InferenceResult(_n_var, _n_weight)),
   sorted(false),
-  safety_check_passed(false) {}
+  safety_check_passed(false),
+  old_weight_values(NULL) {}
 
 void dd::FactorGraph::copy_from(const FactorGraph * const p_other_fg){
   // copy each member from the given graph
@@ -32,6 +47,13 @@ void dd::FactorGraph::copy_from(const FactorGraph * const p_other_fg){
 
   memcpy(compact_factors, p_other_fg->compact_factors, sizeof(CompactFactor)*n_edge);
   memcpy(compact_factors_weightids, p_other_fg->compact_factors_weightids, sizeof(int)*n_edge);
+
+  if(p_other_fg->old_weight_values != NULL){
+    if(old_weight_values == NULL){
+      old_weight_values = new float[n_weight];
+    }
+    memcpy(old_weight_values, p_other_fg->old_weight_values, sizeof(float)*n_weight);
+  }
 
   c_nvar = p_other_fg->c_nvar;
   c_nfactor = p_other_fg->c_nfactor;
@@ -111,13 +133,13 @@ void dd::FactorGraph::update_weight(const Variable & variable){
   }
 }
 
-void dd::FactorGraph::load(const CmdParser & cmd, const bool is_quiet){
+void dd::FactorGraph::load(const CmdParser & cmd, const bool is_quiet, const bool is_inc){
 
   // get factor graph file names from command line arguments
-  std::string weight_file = cmd.weight_file->getValue();
-  std::string variable_file = cmd.variable_file->getValue();
-  std::string factor_file = cmd.factor_file->getValue();
-  std::string edge_file = cmd.edge_file->getValue();
+  std::string weight_file = cmd.original_folder->getValue() + "/graph.weights";
+  std::string variable_file = cmd.original_folder->getValue() + "/graph.variables";
+  std::string factor_file = cmd.original_folder->getValue() + "/graph.factors";
+  std::string edge_file = cmd.original_folder->getValue() + "/graph.edges";
 
   std::string filename_edges = edge_file;
   std::string filename_factors = factor_file;
@@ -126,6 +148,12 @@ void dd::FactorGraph::load(const CmdParser & cmd, const bool is_quiet){
 
   // load variables
   long long n_loaded = read_variables(filename_variables, *this);
+
+  if(cmd.delta_folder->getValue() != ""){
+    std::cout << "Loading delta..." << std::endl;
+    std::cout << cmd.delta_folder->getValue() + "/graph.variables" << std::endl;
+    n_loaded += read_variables(cmd.delta_folder->getValue() + "/graph.variables", *this);
+  }
   assert(n_loaded == n_var);
   if (!is_quiet) {
     std::cout << "LOADED VARIABLES: #" << n_loaded << std::endl;
@@ -135,6 +163,16 @@ void dd::FactorGraph::load(const CmdParser & cmd, const bool is_quiet){
 
   // load factors
   n_loaded = read_factors(filename_factors, *this);
+  std::cout << "~~~~" << n_loaded << std::endl;
+  if(cmd.delta_folder->getValue() != ""){
+    std::cout << "Loading delta..." << cmd.delta_folder->getValue() + "/graph.factors" << std::endl;
+    n_loaded += read_factors(cmd.delta_folder->getValue() + "/graph.factors", *this);
+    std::cout << n_loaded << std::endl;
+  }
+
+  std::cout << n_loaded << std::endl;
+  std::cout << n_factor << std::endl;
+
   assert(n_loaded == n_factor);
   if (!is_quiet) {
     std::cout << "LOADED FACTORS: #" << n_loaded << std::endl;
@@ -142,6 +180,10 @@ void dd::FactorGraph::load(const CmdParser & cmd, const bool is_quiet){
 
   // load weights
   n_loaded = read_weights(filename_weights, *this);
+  if(cmd.delta_folder->getValue() != ""){
+    std::cout << "Loading delta..." << std::endl;
+    n_loaded += read_weights(cmd.delta_folder->getValue() + "/graph.weights", *this);
+  }
   assert(n_loaded == n_weight);
   if (!is_quiet) {
     std::cout << "LOADED WEIGHTS: #" << n_loaded << std::endl;
@@ -155,8 +197,66 @@ void dd::FactorGraph::load(const CmdParser & cmd, const bool is_quiet){
 
   // load edges
   n_loaded = read_edges(edge_file, *this);
+  if(cmd.delta_folder->getValue() != ""){
+    std::cout << "Loading delta..." << std::endl;
+    n_loaded += read_edges(cmd.delta_folder->getValue() + "/graph.edges", *this);
+  }
   if (!is_quiet) {
     std::cout << "LOADED EDGES: #" << n_loaded << std::endl;
+  }
+
+  // load active variables
+  std::string active_vars = cmd.original_folder->getValue() + "/active.variables";
+  long long active_id;
+  std::ifstream file;
+  file.open(active_vars.c_str(), ios::in | ios::binary);
+  while (file.good()) {
+    if(!file.read((char *)&active_id, 8)) break;
+    active_id = bswap_64(active_id);
+    this->variables[active_id].isactive = true;
+  }
+
+  // a slow, but good enough algorithm for connected components
+  std::string useful_training = cmd.original_folder->getValue() + "/mat_components_hasevids";
+  std::ofstream fout2(useful_training.c_str());
+  long long component_id = -1;
+  for(long long vid=0;vid < n_var;vid++){
+    const Variable & var = this->variables[vid];
+    if(var.component_id != -1) continue;
+    component_id ++;
+    bool isuseful_for_training = false;
+    std::vector<long long> vars_to_work_on;
+    vars_to_work_on.push_back(vid);
+    long long var_to_work_on;
+    while(vars_to_work_on.size() != 0){
+      var_to_work_on = vars_to_work_on.back();
+      vars_to_work_on.pop_back();
+      this->variables[var_to_work_on].component_id = component_id;
+      if(this->variables[var_to_work_on].is_evid){
+        isuseful_for_training = true;
+      }
+      for(long long fid : this->variables[var_to_work_on].tmp_factor_ids){
+        const Factor & factor = this->factors[fid];
+        for(const VariableInFactor & next_var : factor.tmp_variables){
+          if(this->variables[next_var.vid].component_id != -1){
+            assert(this->variables[next_var.vid].component_id == component_id);
+          }else{
+            this->variables[next_var.vid].component_id = component_id;
+            vars_to_work_on.push_back(next_var.vid);
+          }
+        }
+      }
+    }
+    fout2 << component_id << " " << isuseful_for_training << std::endl;
+  }
+  std::string component_file = cmd.original_folder->getValue() + "/mat_active_components";
+  std::ofstream fout(component_file.c_str());
+  for(long long vid=0;vid < n_var;vid++){
+    const Variable & var = this->variables[vid];
+    assert(var.component_id != -1);
+    if(var.isactive){
+      fout << var.id << " " << var.component_id << std::endl;
+    }
   }
 
   // construct edge-based store
@@ -164,6 +264,19 @@ void dd::FactorGraph::load(const CmdParser & cmd, const bool is_quiet){
   this->safety_check();
 
   assert(this->is_usable() == true);
+
+  if(is_inc){
+    std::cout << "LOADING PREVIOUS WEIGHT..." << std::endl;
+    this->old_weight_values = new float[n_weight];
+    std::ifstream fin(cmd.original_folder->getValue() + "/inference_result.out.weights.text");
+    long long wid;
+    float weight;
+    while(fin >> wid >> weight){
+      this->weights[wid].weight = weight;
+      this->old_weight_values[wid] = weight;
+    }
+    fin.close();
+  }
 
 }
 

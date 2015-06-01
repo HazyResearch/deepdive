@@ -1,4 +1,5 @@
 #include "dstruct/factor_graph/inference_result.h"
+#include <iostream>
 
 dd::InferenceResult::InferenceResult(long _nvars, long _nweights):
   nvars(_nvars),

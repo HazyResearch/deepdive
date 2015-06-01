@@ -7,8 +7,8 @@
 dd::CmdParser parse_input(int argc, char** argv){
 
   std::vector<std::string> new_args;
-  if (argc < 2 || strcmp(argv[1], "gibbs") != 0) {
-    new_args.push_back(std::string(argv[0]) + " " + "gibbs");
+  if (argc < 2 || (strcmp(argv[1], "gibbs") != 0 && strcmp(argv[1], "mat") != 0 && strcmp(argv[1], "inc") != 0)) {
+    new_args.push_back(std::string(argv[0]) + " " + "gibbs/mat/inc");
     new_args.push_back("-h");
   } else {
     new_args.push_back(std::string(argv[0]) + " " + std::string(argv[1]));
@@ -22,10 +22,166 @@ dd::CmdParser parse_input(int argc, char** argv){
     std::copy(new_args[i].begin(), new_args[i].end(), new_argv[i]);
     new_argv[i][new_args[i].length()] = '\0';
   }
-  dd::CmdParser cmd_parser("gibbs");
+  dd::CmdParser cmd_parser(argv[1]);
   cmd_parser.parse(new_args.size(), new_argv);
   return cmd_parser;
 }
+
+/**
+* The incremental function does the following
+   (1) load the original graph
+   (2) load whether a variable is used for learning or not
+   (3) run learning for all variables that used for learning
+   (4) caluclate the delta weight
+   (5) add delta weight's factor to variables used for inference
+   (6) load "compact factor" obtained by relaxation to variables used for inference
+   (7) run inference on all variables
+*
+**/
+void inc(dd::CmdParser & cmd_parser){
+
+  // number of NUMA nodes
+  int n_numa_node = numa_max_node() + 1;
+  // number of max threads per NUMA node
+  int n_thread_per_numa = (sysconf(_SC_NPROCESSORS_CONF))/(n_numa_node);
+
+  // get command line arguments
+  std::string original_folder = cmd_parser.original_folder->getValue();
+  std::string delta_folder = cmd_parser.delta_folder->getValue();
+
+  // get command line arguments
+  std::string fg_file = original_folder + "/graph.meta";
+  std::string weight_file = original_folder + "/graph.weights";
+  std::string variable_file = original_folder + "/graph.variables";
+  std::string factor_file = original_folder + "/graph.factors";
+  std::string edge_file = original_folder + "/graph.edges";
+
+  std::string delta_fg_file = delta_folder + "/graph.meta";
+
+  std::string output_folder = delta_folder;
+
+  int n_learning_epoch = cmd_parser.n_learning_epoch->getValue();
+  int n_samples_per_learning_epoch = cmd_parser.n_samples_per_learning_epoch->getValue();
+  int n_inference_epoch = cmd_parser.n_inference_epoch->getValue();
+
+  double stepsize = cmd_parser.stepsize->getValue();
+  double stepsize2 = cmd_parser.stepsize2->getValue();
+  // hack to support two parameters to specify step size
+  if (stepsize == 0.01) stepsize = stepsize2;
+  double decay = cmd_parser.decay->getValue();
+
+  int n_datacopy = cmd_parser.n_datacopy->getValue();
+  double reg_param = cmd_parser.reg_param->getValue();
+  bool is_quiet = cmd_parser.quiet->getValue();
+
+  Meta meta = read_meta(fg_file); 
+  Meta meta2 = read_meta(delta_fg_file);
+
+
+  // run on NUMA node 0
+  numa_run_on_node(0);
+  numa_set_localalloc();
+
+  //std::cout << "#######" << meta.num_factors+meta2.num_factors << std::endl;
+
+  // load factor graph
+  dd::FactorGraph fg(meta.num_variables+meta2.num_variables,  /* THis is REALLY UGLY!!!! FIX!!!!*/
+                    meta.num_factors+meta2.num_factors, 
+                    meta.num_weights+meta2.num_weights, 
+                    meta.num_edges+meta2.num_edges);
+  fg.load(cmd_parser, is_quiet, true);
+  dd::GibbsSampling gibbs(&fg, &cmd_parser, n_datacopy);
+
+  // number of learning epochs
+  // the factor graph is copied on each NUMA node, so the total epochs =
+  // epochs specified / number of NUMA nodes
+  int numa_aware_n_learning_epoch = (int)(n_learning_epoch/n_numa_node) + 
+                            (n_learning_epoch%n_numa_node==0?0:1);
+
+  // learning
+  gibbs.learn(numa_aware_n_learning_epoch, n_samples_per_learning_epoch, 
+    stepsize, decay, reg_param, is_quiet, true);
+
+  // dump weights
+  gibbs.dump_weights(is_quiet);
+
+  // number of inference epochs
+  int numa_aware_n_epoch = (int)(n_inference_epoch/n_numa_node) + 
+                            (n_inference_epoch%n_numa_node==0?0:1);
+
+  // inference
+  gibbs.inference(numa_aware_n_epoch, is_quiet, false, true);
+  gibbs.aggregate_results_and_dump(is_quiet);
+
+}
+
+void mat(dd::CmdParser & cmd_parser){
+
+  // number of NUMA nodes
+  int n_numa_node = numa_max_node() + 1;
+  // number of max threads per NUMA node
+  int n_thread_per_numa = (sysconf(_SC_NPROCESSORS_CONF))/(n_numa_node);
+
+  // get command line arguments
+  std::string original_folder = cmd_parser.original_folder->getValue();
+
+  // get command line arguments
+  std::string fg_file = original_folder + "/graph.meta";
+  std::string weight_file = original_folder + "/graph.weights";
+  std::string variable_file = original_folder + "/graph.variables";
+  std::string factor_file = original_folder + "/graph.factors";
+  std::string edge_file = original_folder + "/graph.edges";
+
+  std::string output_folder = original_folder;
+
+  int n_learning_epoch = cmd_parser.n_learning_epoch->getValue();
+  int n_samples_per_learning_epoch = cmd_parser.n_samples_per_learning_epoch->getValue();
+  int n_inference_epoch = cmd_parser.n_inference_epoch->getValue();
+
+  double stepsize = cmd_parser.stepsize->getValue();
+  double stepsize2 = cmd_parser.stepsize2->getValue();
+  // hack to support two parameters to specify step size
+  if (stepsize == 0.01) stepsize = stepsize2;
+  double decay = cmd_parser.decay->getValue();
+
+  int n_datacopy = cmd_parser.n_datacopy->getValue();
+  double reg_param = cmd_parser.reg_param->getValue();
+  bool is_quiet = cmd_parser.quiet->getValue();
+
+  Meta meta = read_meta(fg_file); 
+
+  // run on NUMA node 0
+  numa_run_on_node(0);
+  numa_set_localalloc();
+
+  // load factor graph
+  dd::FactorGraph fg(meta.num_variables, meta.num_factors, meta.num_weights, meta.num_edges);
+  fg.load(cmd_parser, is_quiet, false);
+  dd::GibbsSampling gibbs(&fg, &cmd_parser, n_datacopy);
+
+  // number of learning epochs
+  // the factor graph is copied on each NUMA node, so the total epochs =
+  // epochs specified / number of NUMA nodes
+  int numa_aware_n_learning_epoch = (int)(n_learning_epoch/n_numa_node) + 
+                            (n_learning_epoch%n_numa_node==0?0:1);
+
+  // learning
+  gibbs.learn(numa_aware_n_learning_epoch, n_samples_per_learning_epoch, 
+    stepsize, decay, reg_param, is_quiet, false);
+
+  // dump weights
+  gibbs.dump_weights(is_quiet);
+
+  // number of inference epochs
+  int numa_aware_n_epoch = (int)(n_inference_epoch/n_numa_node) + 
+                            (n_inference_epoch%n_numa_node==0?0:1);
+
+  // inference
+  gibbs.inference(numa_aware_n_epoch, is_quiet, true, false);
+  gibbs.aggregate_results_and_dump(is_quiet);
+
+}
+
 
 void gibbs(dd::CmdParser & cmd_parser){
 
@@ -101,7 +257,7 @@ void gibbs(dd::CmdParser & cmd_parser){
 
   // load factor graph
   dd::FactorGraph fg(meta.num_variables, meta.num_factors, meta.num_weights, meta.num_edges);
-  fg.load(cmd_parser, is_quiet);
+  fg.load(cmd_parser, is_quiet, false);
   dd::GibbsSampling gibbs(&fg, &cmd_parser, n_datacopy);
 
   // number of learning epochs
@@ -112,7 +268,7 @@ void gibbs(dd::CmdParser & cmd_parser){
 
   // learning
   gibbs.learn(numa_aware_n_learning_epoch, n_samples_per_learning_epoch, 
-    stepsize, decay, reg_param, is_quiet);
+    stepsize, decay, reg_param, is_quiet, false);
 
   // dump weights
   gibbs.dump_weights(is_quiet);
@@ -122,7 +278,7 @@ void gibbs(dd::CmdParser & cmd_parser){
                             (n_inference_epoch%n_numa_node==0?0:1);
 
   // inference
-  gibbs.inference(numa_aware_n_epoch, is_quiet);
+  gibbs.inference(numa_aware_n_epoch, is_quiet, false, false);
   gibbs.aggregate_results_and_dump(is_quiet);
 
 }

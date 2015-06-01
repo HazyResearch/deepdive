@@ -21,6 +21,9 @@ namespace dd{
 
     TCLAP::ValueArg<std::string> * fg_file;
 
+    TCLAP::ValueArg<std::string> * original_folder;
+    TCLAP::ValueArg<std::string> * delta_folder;
+
     TCLAP::ValueArg<std::string> * edge_file;
     TCLAP::ValueArg<std::string> * weight_file;
     TCLAP::ValueArg<std::string> * variable_file;
