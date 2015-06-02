@@ -47,6 +47,8 @@ namespace dd{
      */
     void sample();
 
+    void sample_inc();
+
     /**
      * Waits for sample worker to finish
      */

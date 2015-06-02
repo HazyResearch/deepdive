@@ -50,6 +50,7 @@ void dd::GibbsSampling::inference(const int & n_epoch, const bool is_quiet, cons
   // single node samplers
   std::vector<SingleNodeSampler> single_node_samplers;
   for(int i=0;i<=n_numa_nodes;i++){
+    factorgraphs[i].is_inc = is_inc;
     single_node_samplers.push_back(SingleNodeSampler(&this->factorgraphs[i], 
       n_thread_per_numa, i));
   }

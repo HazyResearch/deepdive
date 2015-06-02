@@ -76,7 +76,7 @@ namespace dd{
     /**
      * Samples a single variable with id vid
      */
-    void sample_single_variable(long vid);
+    void sample_single_variable(long vid, bool is_inc);
 
   };
 

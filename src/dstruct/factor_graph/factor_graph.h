@@ -65,6 +65,8 @@ namespace dd{
     // see safety_check() below
     bool safety_check_passed;
 
+    bool is_inc;
+
     /**
      * Constructs a new factor graph with given number number of variables,
      * factors, weights, and edges

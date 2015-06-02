@@ -3,7 +3,7 @@
 namespace dd{
 
 
-    SingleThreadSampler::SingleThreadSampler(FactorGraph * _p_fg) :
+  SingleThreadSampler::SingleThreadSampler(FactorGraph * _p_fg) :
       p_fg (_p_fg), p_rand_obj_buf(new double){
       p_rand_seed[0] = rand();
       p_rand_seed[1] = rand();
@@ -19,7 +19,7 @@ namespace dd{
 
     // sample each variable in the partition
     for(long i=start; i<end; i++){
-      this->sample_single_variable(i);
+      this->sample_single_variable(i, p_fg->is_inc);
     }
   }
 
@@ -138,100 +138,105 @@ namespace dd{
     } // end if for variable types 
   }
 
-  void SingleThreadSampler::sample_single_variable(long vid){
+
+  void SingleThreadSampler::sample_single_variable(long vid, bool is_inc){
 
     // this function uses the same sampling technique as in sample_sgd_single_variable
 
     Variable & variable = this->p_fg->variables[vid];
 
-    if(variable.domain_type == DTYPE_BOOLEAN){
+    if(is_inc){
+      if(variable.domain_type == DTYPE_BOOLEAN){
 
-      if(variable.is_evid == false){
+        if(variable.is_evid == false){
 
-        int newvalue = variable.next_sample;
-        //std::cout << newvalue << std::endl;
-        int oldvalue = p_fg->infrs->assignments_free[vid];
+          int newvalue = variable.next_sample;
+          //std::cout << newvalue << std::endl;
+          int oldvalue = p_fg->infrs->assignments_evid[vid];
 
-        
-        //if(newvalue == oldvalue){
-          //p_fg->template update<false>(variable, newvalue);
-          //std::cout << "/" << std::endl;
-          // accept
-        //}else{
-        
-        potential_pos = p_fg->template potential<false>(variable, newvalue); // flip
-        potential_neg = p_fg->template potential<false>(variable, oldvalue); // not flip
-        //std::cout << vid << " -> " << newvalue << "(" << potential_pos << ")" 
-        //      << "    " << oldvalue << "(" << potential_neg << ")" << std::endl;
-        *this->p_rand_obj_buf = erand48(this->p_rand_seed);
-        float r = (*this->p_rand_obj_buf);
-        float prob = exp(potential_pos-potential_neg);
-        //std::cout << r << "  " << prob << std::endl;
-        if(r < prob){
-          p_fg->template update<false>(variable, newvalue);
-        }else{
-          p_fg->template update<false>(variable, oldvalue);
-          //std::cout << "~" << std::endl;
-        }
-        //}
+          //if(newvalue == oldvalue){
+            //p_fg->template update<false>(variable, newvalue);
+            //std::cout << "/" << std::endl;
+            // accept
+          //}else{
+          
+          potential_pos = p_fg->template potential<false>(variable, newvalue); // flip
+          potential_neg = p_fg->template potential<false>(variable, oldvalue); // not flip
+          //std::cout << vid << " -> " << newvalue << "(" << potential_pos << ")" 
+          //      << "    " << oldvalue << "(" << potential_neg << ")" << std::endl;
+          *this->p_rand_obj_buf = erand48(this->p_rand_seed);
+          float r = (*this->p_rand_obj_buf);
+          float prob = exp(potential_pos-potential_neg);
+          //std::cout << r << "  " << prob << std::endl;
 
-      }
-
-    }else{
-      std::cout << "INC DOES NOT SUPPORT BOOLEAN" << std::endl;
-    }
-
-
-    /*
-    if(variable.domain_type == DTYPE_BOOLEAN){
-
-      if(variable.is_evid == false){
-
-        potential_pos = p_fg->template potential<false>(variable, 1);
-        potential_neg = p_fg->template potential<false>(variable, 0);
-
-        *this->p_rand_obj_buf = erand48(this->p_rand_seed);
-        if((*this->p_rand_obj_buf) * (1.0 + exp(potential_neg-potential_pos)) < 1.0){
-          p_fg->template update<false>(variable, 1.0);
-        }else{
-          p_fg->template update<false>(variable, 0.0);
-        }
-
-      }
-
-    }else if(variable.domain_type == DTYPE_MULTINOMIAL){
-
-      while(variable.upper_bound >= varlen_potential_buffer.size()){
-        varlen_potential_buffer.push_back(0.0);
-      }
-
-      if(variable.is_evid == false){
-        sum = -100000.0;
-        acc = 0.0;
-        multi_proposal = -1;
-        for(int propose=variable.lower_bound;propose <= variable.upper_bound; propose++){
-          varlen_potential_buffer[propose] = p_fg->template potential<false>(variable, propose);
-          sum = logadd(sum, varlen_potential_buffer[propose]);
-        }
-
-        *this->p_rand_obj_buf = erand48(this->p_rand_seed);
-        for(int propose=variable.lower_bound;propose <= variable.upper_bound; propose++){
-          acc += exp(varlen_potential_buffer[propose]-sum);
-          if(*this->p_rand_obj_buf <= acc){
-            multi_proposal = propose;
-            break;
+          if(r < prob){
+            p_fg->template update<false>(variable, newvalue);
+          }else{
+            p_fg->template update<false>(variable, oldvalue);
+            //std::cout << "~" << std::endl;
           }
-        }
-        assert(multi_proposal != -1);
-        p_fg->template update<false>(variable, multi_proposal);
-      }
+          //}
 
+        }
+
+      }else{
+        std::cout << "INC DOES NOT SUPPORT BOOLEAN" << std::endl;
+      }
     }else{
-      std::cerr << "[ERROR] Only Boolean and Multinomial variables are supported now!" << std::endl;
-      assert(false);
-      return;
+
+      if(variable.domain_type == DTYPE_BOOLEAN){
+
+        if(variable.is_evid == false){
+
+          potential_pos = p_fg->template potential<false>(variable, 1);
+          potential_neg = p_fg->template potential<false>(variable, 0);
+
+          *this->p_rand_obj_buf = erand48(this->p_rand_seed);
+          if((*this->p_rand_obj_buf) * (1.0 + exp(potential_neg-potential_pos)) < 1.0){
+            p_fg->template update<false>(variable, 1.0);
+          }else{
+            p_fg->template update<false>(variable, 0.0);
+          }
+
+        }
+
+      }else if(variable.domain_type == DTYPE_MULTINOMIAL){
+
+        while(variable.upper_bound >= varlen_potential_buffer.size()){
+          varlen_potential_buffer.push_back(0.0);
+        }
+
+        if(variable.is_evid == false){
+          sum = -100000.0;
+          acc = 0.0;
+          multi_proposal = -1;
+          for(int propose=variable.lower_bound;propose <= variable.upper_bound; propose++){
+            varlen_potential_buffer[propose] = p_fg->template potential<false>(variable, propose);
+            sum = logadd(sum, varlen_potential_buffer[propose]);
+          }
+
+          *this->p_rand_obj_buf = erand48(this->p_rand_seed);
+          for(int propose=variable.lower_bound;propose <= variable.upper_bound; propose++){
+            acc += exp(varlen_potential_buffer[propose]-sum);
+            if(*this->p_rand_obj_buf <= acc){
+              multi_proposal = propose;
+              break;
+            }
+          }
+          assert(multi_proposal != -1);
+          p_fg->template update<false>(variable, multi_proposal);
+        }
+
+      }else{
+        std::cerr << "[ERROR] Only Boolean and Multinomial variables are supported now!" << std::endl;
+        assert(false);
+        return;
+      }
     }
-    */
+
+
 
   }
+
+
 }
