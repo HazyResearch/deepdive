@@ -39,6 +39,8 @@ class ChunkingApp extends FunSpec with Logging{
   def prepareData() {
     Helpers.executeCmd("rm -f out/test_chunking/tmp/*")
     JdbcDataStoreObject.init(config)
+    if (JdbcDataStoreObject.isUsingPostgresXL) pending // XXX skipping multinomial tests on Postgres-XL
+
     env match {
       case TestHelper.Psql =>
         ds.withConnection { implicit conn =>
