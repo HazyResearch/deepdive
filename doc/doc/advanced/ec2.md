@@ -4,26 +4,41 @@ layout: default
 
 # Using DeepDive on EC2
 
-We distribute a pre-configured [Amazon EC2 Machine
-Image](http://aws.amazon.com/ec2/) (AMI) which uses the Amazon Linux
-distribution and has DeepDive installed.
+Although we no longer distribute a pre-configured [Amazon EC2 Machine
+Image](http://aws.amazon.com/ec2/) (AMI), DeepDive can be installed fairly quickly on an EC2 instance.
 
-### Using the AMI
+### Launching an Instance
 
-The following are the steps needed to run the AMI from the Amazon EC2 console:
+The following are the steps needed to launch an EC2 instance and start DeepDive in it with Postgres:
 
 - Choose the "US-East" region (top right menu)
-- Click on "Launch Instance", choose "Community AMIs" and search for "DeepDive"
-  (AMI id: `ami-8c832de4`). Choose the AMI image.
-- In the next step, pick the instance type. The `m1.large` instance type is fine
+- Click on "Launch Instance", choose "Quick Start" and "Select" the "Ubuntu" AMI image.
+- In the next step, pick the instance type. For example, the `m3.large` instance type is fine
   for testing-purposes. We recommend using the compute- or memory-optimized
   instances (depending on your use case) for production purposes.
 - Follow the wizard to launch the instance.
-- SSH into the instance as `ec2-user` with the private key you specified in the
+- SSH into the instance as `ubuntu` with the private key you specified in the
   AWS wizard.
-- run `~/init.sh` to start PostgreSQL and update DeepDive.
-- Navigate to `~/deepdive` and execute `./test.sh` to check that the
+- Run the following command to install Postgres and DeepDive.
+
+    ```bash
+    curl -fsSL deepdive.stanford.edu/install | bash -s postgres deepdive
+    ```
+
+    You will be asked to create a new password for Postgres user account.
+    Remember to set `PGPASSWORD` environment varible to that password, e.g., `pa$$w0rd`, to let DeepDive and `psql` command access the database.
+
+    ```bash
+    export PGPASSWORD='pa$$w0rd'
+    ```
+
+- Navigate to `./deepdive` and run tests to confirm that the
   installation was successful.
+
+    ```bash
+    cd ./deepdive
+    make test
+    ```
 
 ### Notes
 

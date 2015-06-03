@@ -95,7 +95,7 @@ You can specify the path to the file holding the data items as well as the colum
 
 ```
 title: Example Mindtagger task for labeling false positives for calculating precision error
-items: {
+items {
     file: input.csv
     key_columns: [relation_id]
 }

@@ -131,7 +131,7 @@ Lastly, we need to slightly modify the `test.sh` file in the deepdive directory.
 
 ```bash
 cd
-gedit deepdive/test.sh
+gedit deepdive/test/test_psql.sh
 ```
 
 You’ll notice the following lines right at the top.

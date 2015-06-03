@@ -26,7 +26,7 @@ The following is an example of an inference rule:
 
 ```bash
 deepdive {
-  inference.factors: {
+  inference.factors {
     smokesFactor {
       input_query : """
         SELECT people.id         AS "people.id",

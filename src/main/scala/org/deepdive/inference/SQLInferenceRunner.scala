@@ -64,8 +64,6 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
   def FactorMetaTable = "dd_graph_factormeta"
   def VariablesObservationTable = "dd_graph_variables_observation"
   def LearnedWeightsTable = "dd_inference_result_weights_mapping"
-  def FeatureStatsSupportTable = "dd_feature_statistics_support"
-  def FeatureStatsView = "dd_feature_statistics"
 
   /**
    * execute one or multiple SQL queries
@@ -120,28 +118,6 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       SELECT ${inferenceViewName}.*, CASE ${bucketCaseStatement} END bucket
       FROM ${inferenceViewName} ORDER BY bucket ASC;"""
   }
-
-  /**
-   * Create a table of how LR features are supported by supervision examples
-   */
-  def createFeatureStatsSupportTableSQL =
-      s"""DROP TABLE IF EXISTS ${FeatureStatsSupportTable} CASCADE;
-
-          CREATE ${dataStore.unlogged} TABLE ${FeatureStatsSupportTable}(
-            description text,
-            pos_examples bigint,
-            neg_examples bigint,
-            queries bigint);"""
-  /**
-   * Create a view that shows weights of features as well as their supports
-   */
-  def createMappedFeatureStatsViewSQL = s"""
-        CREATE OR REPLACE VIEW ${FeatureStatsView} AS
-        SELECT w.*, f.pos_examples, f.neg_examples, f.queries
-        FROM ${LearnedWeightsTable} w LEFT OUTER JOIN ${FeatureStatsSupportTable} f
-        ON w.description = f.description
-        ORDER BY abs(weight) DESC;
-        """
 
   /**
    *  Create indexes for query table to speed up grounding. (this is useful for MySQL)
@@ -359,32 +335,6 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       groundingDir)
   }
 
-  // create feature stats for boolean LR function
-  def createFeatureStats(factorDesc: FactorDesc, querytable: String, weightlist: String,
-    weightDesc: String) {
-    // Create feature statistics support tables for error analysis,
-    // only if it's boolean LR feature (the most common one)
-    if (factorDesc.func.variables.length == 1 && factorDesc.func.variableDataType == "Boolean") {
-      // This should be a single variable, e.g. "is_true"
-      val variableName = factorDesc.func.variables.map(v =>
-          s""" ${dataStore.quoteColumn(v.toString)} """).mkString(",")
-      val groupByClause = weightlist match {
-        case "" => ""
-        case _ => s"GROUP BY ${weightlist}"
-      }
-      execute(s"""
-      INSERT INTO ${FeatureStatsSupportTable}
-      SELECT ${weightDesc} as description,
-             count(CASE WHEN ${variableName}=TRUE THEN 1 ELSE NULL END) AS pos_examples,
-             count(CASE WHEN ${variableName}=FALSE THEN 1 ELSE NULL END) AS neg_examples,
-             count(CASE WHEN ${variableName} IS NULL THEN 1 ELSE NULL END) AS queries
-      FROM ${querytable}
-      ${groupByClause};
-      """)
-      execute(dataStore.analyzeTable(FeatureStatsSupportTable))
-    }
-  }
-
   // convert grounding file format to be compatible with sampler
   // for more information about format, please refer to deepdive's website
   def convertGroundingFormat(groundingPath: String) {
@@ -431,9 +381,6 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
     // weights table
     createWeightsTable()
-
-    // Create the feature stats table
-    // execute(createFeatureStatsSupportTableSQL)
 
     // weight and factor id
     // greenplum: use fast_seqassign postgres: use sequence
@@ -588,7 +535,15 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
             ${dataStore.cast(initvalue, "float")} AS initvalue
             FROM ${querytable}
             GROUP BY ${weightlist}""")
-
+          
+          // We need to order by weights and cardinality, in order for the sampler to
+          // use an array-like access to the weights for multinomial factor.
+          // For example, on http://deepdive.stanford.edu/doc/basics/schema.html,
+          // Multinomial(a,b) is expanded to 6 indicator factors, each has a corresponding
+          // weights. If the cardinalities are ordered, we can access the weights by using 
+          // the start address + the offset. See 
+          // https://github.com/HazyResearch/sampler/blob/master/src/dstruct/factor_graph/factor_graph.cpp#L51 
+          
           // We need to create two tables -- one for a non-order'ed version
           // another for an ordered version. The reason that we cannot
           // do this with only one table is not fundemental -- it is just
@@ -643,8 +598,6 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
              groundingDir)
         }
       }
-      // create feature stats for boolean LR
-      // createFeatureStats(factorDesc, querytable, weightlist, weightDesc)
     }
 
     if (skipLearning) {
