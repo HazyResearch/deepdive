@@ -3,9 +3,9 @@
 namespace dd{
 
   SingleThreadSampler::SingleThreadSampler(FactorGraph * _p_fg, bool sample_evidence,
-    bool burn_in) :
+    bool burn_in, bool learn_non_evidence) :
     p_fg (_p_fg), p_rand_obj_buf(new double), sample_evidence(sample_evidence),
-    burn_in(burn_in) {
+    burn_in(burn_in), learn_non_evidence(learn_non_evidence) {
     p_rand_seed[0] = rand();
     p_rand_seed[1] = rand();
     p_rand_seed[2] = rand();
@@ -43,7 +43,7 @@ namespace dd{
     
     Variable & variable = p_fg->variables[vid];
 
-    // if (variable.is_evid == false) return;
+    if (!learn_non_evidence && !variable.is_evid) return;
 
     if(variable.domain_type == DTYPE_BOOLEAN){ // boolean
 

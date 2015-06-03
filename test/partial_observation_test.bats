@@ -16,7 +16,7 @@
         -e "$fg"/graph.edges \
         -m "$fg"/graph.meta \
         -o "$fg" \
-        -l 300 -i 500 -s 1 --alpha 0.1
+        -l 300 -i 500 -s 1 --alpha 0.1 --learn_non_evidence
 
     # check results
     cd "$fg"

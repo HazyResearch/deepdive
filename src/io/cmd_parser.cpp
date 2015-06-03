@@ -30,6 +30,7 @@ namespace dd{
         reg_param = new TCLAP::ValueArg<double>("b","reg_param","l2 regularization parameter",false,0.01,"double");
         quiet = new TCLAP::SwitchArg("q", "quiet", "quiet output", false);
         sample_evidence = new TCLAP::SwitchArg("", "sample_evidence", "also sample evidence variables in inference", false);
+        learn_non_evidence = new TCLAP::SwitchArg("", "learn_non_evidence", "sample non-evidence variables in learning", false);
 
         burn_in = new TCLAP::ValueArg<int>("", "burn_in", "Burn-in period", false, 0, "int");
 
@@ -56,6 +57,7 @@ namespace dd{
 
         cmd->add(*burn_in);
         cmd->add(*sample_evidence);
+        cmd->add(*learn_non_evidence);
       }else{
         std::cout << "ERROR: UNKNOWN APP NAME " << app_name << std::endl;
         std::cout << "AVAILABLE APP {gibbs}" << app_name << std::endl;

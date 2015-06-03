@@ -24,6 +24,7 @@ namespace dd{
 
     bool sample_evidence;
     int burn_in;
+    bool learn_non_evidence;
 
     std::vector<std::thread> threads;
 
@@ -34,6 +35,8 @@ namespace dd{
     SingleNodeSampler(FactorGraph * _p_fg, int _nthread, int _nodeid);
     SingleNodeSampler(FactorGraph * _p_fg, int _nthread, int _nodeid, 
       bool sample_evidence, int burn_in);
+    SingleNodeSampler(FactorGraph * _p_fg, int _nthread, int _nodeid, 
+      bool sample_evidence, int burn_in, bool learn_non_evidence);
 
     /**
      * Clears the inference results in this sampler

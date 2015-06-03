@@ -18,7 +18,7 @@ protected:
 	dd::SingleThreadSampler sampler;
 
 	SamplerTest() : fg(dd::FactorGraph(18, 18, 1, 18)),
-		sampler(dd::SingleThreadSampler(&fg, false, 0)) {}
+		sampler(dd::SingleThreadSampler(&fg, false, 0, false)) {}
 
 	virtual void SetUp() {
 		const char* argv[23] = {

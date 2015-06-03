@@ -9,9 +9,9 @@
 
 dd::GibbsSampling::GibbsSampling(FactorGraph * const _p_fg, 
   CmdParser * const _p_cmd_parser, int n_datacopy, bool sample_evidence,
-  int burn_in) 
+  int burn_in, bool learn_non_evidence) 
   : p_fg(_p_fg), p_cmd_parser(_p_cmd_parser), sample_evidence(sample_evidence),
-    burn_in(burn_in) {
+    burn_in(burn_in), learn_non_evidence(learn_non_evidence) {
     // the highest node number available
     n_numa_nodes = numa_max_node(); 
 
@@ -108,7 +108,8 @@ void dd::GibbsSampling::learn(const int & n_epoch, const int & n_sample_per_epoc
   // single node samplers
   std::vector<SingleNodeSampler> single_node_samplers;
   for(int i=0;i<=n_numa_nodes;i++){
-    single_node_samplers.push_back(SingleNodeSampler(&this->factorgraphs[i], n_thread_per_numa, i));
+    single_node_samplers.push_back(SingleNodeSampler(&this->factorgraphs[i], 
+      n_thread_per_numa, i, false, 0, learn_non_evidence));
   }
 
   std::unique_ptr<double[]> ori_weights(new double[nweight]);
