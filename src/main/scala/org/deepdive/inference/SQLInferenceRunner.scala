@@ -522,7 +522,15 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
             ${dataStore.cast(initvalue, "float")} AS initvalue
             FROM ${querytable}
             GROUP BY ${weightlist}""")
-
+          
+          // We need to order by weights and cardinality, in order for the sampler to
+          // use an array-like access to the weights for multinomial factor.
+          // For example, on http://deepdive.stanford.edu/doc/basics/schema.html,
+          // Multinomial(a,b) is expanded to 6 indicator factors, each has a corresponding
+          // weights. If the cardinalities are ordered, we can access the weights by using 
+          // the start address + the offset. See 
+          // https://github.com/HazyResearch/sampler/blob/master/src/dstruct/factor_graph/factor_graph.cpp#L51 
+          
           // We need to create two tables -- one for a non-order'ed version
           // another for an ordered version. The reason that we cannot
           // do this with only one table is not fundemental -- it is just
