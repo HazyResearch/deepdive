@@ -6,7 +6,8 @@ object SQLFunctions {
       schema_name character varying,
       table_name character varying,
       col_name character varying,
-      start_id bigint)
+      start_id bigint,
+      order_by character varying DEFAULT '')
     RETURNS TEXT AS
     $$
     DECLARE
@@ -15,7 +16,7 @@ object SQLFunctions {
       table_new text := quote_ident(schema_name) || '.' || quote_ident(table_name || '__new');
       cols text[] := ARRAY(SELECT
                         CASE lower(attname)
-                        WHEN lower(col_name) THEN start_id || ' + (row_number() over ()) - 1'
+                        WHEN lower(col_name) THEN start_id || ' + (row_number() over (' || order_by || ')) - 1'
                         ELSE quote_ident(attname)
                         END
                       FROM   pg_attribute

@@ -388,8 +388,11 @@ trait JdbcDataStore extends Logging {
    */
   def analyzeTable(table: String) : String = ""
 
-  // assign senquential ids to table's id column
+  // assign sequential ids to table's id column
   def assignIds(table: String, startId: Long, sequence: String) : Long = 0
+
+  // assign sequential ids in particular order
+  def assignIdsOrdered(table: String, startId: Long, sequence: String, orderBy: String = "") : Long = throw new UnsupportedOperationException
 
   // end: Datastore-specific methods
 

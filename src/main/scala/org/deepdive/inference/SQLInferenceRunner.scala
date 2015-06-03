@@ -560,20 +560,26 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         // handle weights table
         // weight is fixed, or doesn't have weight variables
         if (isFixed || weightlist == ""){
+          val weighttableForFactorOrderBy = if (dataStore.isUsingPostgresXL) "" else
+             s"ORDER BY cardinality"
+
           dataStore.dropAndCreateTableAs(weighttableForThisFactor, s"""
             SELECT ${dataStore.cast(isFixed, "int")} AS isfixed, ${initvalue} AS initvalue,
             ${cardinalityCmd} AS cardinality, ${cweightid} AS id
             FROM ${cardinalityTables.mkString(", ")}
-            ORDER BY cardinality""")
+            ${weighttableForFactorOrderBy}""")
 
           // handle weight id
-          val count = dataStore.assignIds(weighttableForThisFactor.toLowerCase(), cweightid, weightidSequence)
+          val count = if (dataStore.isUsingPostgresXL)
+            dataStore.assignIdsOrdered(weighttableForThisFactor.toLowerCase(), cweightid, weightidSequence, "ORDER BY cardinality")
+          else
+            dataStore.assignIds(weighttableForThisFactor.toLowerCase(), cweightid, weightidSequence)
 
           execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, cardinality, description)
             SELECT id, isfixed, initvalue, cardinality, ${weightDesc} FROM ${weighttableForThisFactor};""")
 
           du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
-            s"SELECT id AS factor_id, ${cweightid} AS weight_id, ${idcols} FROM ${querytable}",
+            s"SELECT id AS factor_id, ${cweightid} AS weight_id, ${idcols} FROM ${querytable} ORDER BY id",
             groundingDir)
 
           // increment weight id
@@ -598,14 +604,18 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
             ${dataStore.cast(0, "bigint")} AS id
             FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")} LIMIT 0;""")
 
+          // Similar to Greenplum, we need special handling for XL. The notion
+          // of a physically sorted table that is sharded doesn't make sense, so
+          // we keep XL's tables unsorted, but provide an order when we do sequence
+          // assignment.
+          val weighttableForFactorOrderBy = if (dataStore.isUsingPostgresXL) "" else
+             s"ORDER BY ${weightlist}, cardinality"
+
           execute(s"""
             INSERT INTO ${weighttableForThisFactor}_unsorted
             SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} as cardinality, 0 AS id
             FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")}
-            """) 
-          // NOTE: XL does not support ORDER BY here, at least not if we don't
-          // change the distribution strategy.
-          //ORDER BY ${weightlist}, cardinality;""")
+            ${weighttableForFactorOrderBy}""") 
 
           dataStore.dropAndCreateTableAs(weighttableForThisFactor,
             s"""SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} AS cardinality,
@@ -615,13 +625,13 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
           execute(s"""
             INSERT INTO ${weighttableForThisFactor}
             SELECT * FROM ${weighttableForThisFactor}_unsorted
-            """) 
-          // NOTE: XL does not support ORDER BY here, at least not if we don't
-          // change the distribution strategy.
-          //ORDER BY ${weightlist}, cardinality;""")
+            ${weighttableForFactorOrderBy}""")
 
           // handle weight id
-          cweightid += dataStore.assignIds(weighttableForThisFactor.toLowerCase(), cweightid, weightidSequence)
+          if (dataStore.isUsingPostgresXL)
+            cweightid += dataStore.assignIdsOrdered(weighttableForThisFactor.toLowerCase(), cweightid, weightidSequence, s"ORDER BY ${weightlist}, cardinality")
+          else
+            cweightid += dataStore.assignIds(weighttableForThisFactor.toLowerCase(), cweightid, weightidSequence)
 
           execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, cardinality, description)
             SELECT id, isfixed, initvalue, cardinality, ${weightDesc} FROM ${weighttableForThisFactor};""")
@@ -639,7 +649,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
           du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
             s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
              FROM ${querytable} t0, ${weighttableForThisFactor} t1
-             WHERE ${weightjoinlist} AND t1.cardinality = '${cardinalityKey}';""",
+             WHERE ${weightjoinlist} AND t1.cardinality = '${cardinalityKey}' ORDER BY t0.id;""",
              groundingDir)
         }
       }

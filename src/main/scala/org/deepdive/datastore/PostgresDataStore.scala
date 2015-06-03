@@ -160,6 +160,19 @@ class PostgresDataStore extends JdbcDataStore with Logging {
     return count
   }
 
+  override def assignIdsOrdered(table: String, startId: Long, sequence: String, orderBy: String = "") : Long = {
+    if (isUsingPostgresXL) {
+      executeSqlQueries(s"SELECT copy_table_assign_ids_replace('public', '${table}', 'id', ${startId}, '${orderBy}');");
+    } else {
+      throw new UnsupportedOperationException()
+    }
+    var count : Long = 0
+    executeSqlQueryWithCallback(s"""SELECT COUNT(*) FROM ${table};""") { rs =>
+      count = rs.getLong(1)
+    }
+    return count
+  }
+
   // create fast sequence assign function for greenplum
   override def createSpecialUDFs() : Unit = {
     if (isUsingGreenplum()) {
