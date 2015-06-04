@@ -28,8 +28,6 @@ keyword turns off write-ahead logging (WAL), and gives a significant speedup
 in writes (often 10X). WAL is not needed for DeepDive apps, because the
 database is only used for processing, not for persisting data.
 
-Third, multinomial variables are not supported on XL due to a limitation of using ORDER BY.
-
 For more details on XL-specific SQL queries in a DeepDive example application,
 see [this example](https://github.com/HazyResearch/deepdive/tree/master/examples/spouse_example).
 
