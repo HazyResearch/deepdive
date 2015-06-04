@@ -82,12 +82,15 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     dataStore.executeSqlQueryWithCallback(sql)(op)
   }
 
-  def copyLastWeightsSQL = s"""
+  def copyLastWeightsSQL = {
+   val distribution = if (dataStore.isUsingPostgresXL) "DISTRIBUTE BY REPLICATION" else ""
+   s"""
     DROP TABLE IF EXISTS ${lastWeightsTable} CASCADE;
-    CREATE ${dataStore.unlogged} TABLE ${lastWeightsTable} AS
+    CREATE ${dataStore.unlogged} TABLE ${lastWeightsTable} ${distribution} AS
       SELECT X.*, Y.weight
       FROM ${WeightsTable} AS X INNER JOIN ${WeightResultTable} AS Y ON X.id = Y.id;
   """
+ }
 
   def createInferenceResultSQL = s"""
     DROP TABLE IF EXISTS ${VariableResultTable} CASCADE;
