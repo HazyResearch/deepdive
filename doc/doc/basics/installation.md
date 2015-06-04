@@ -4,25 +4,76 @@ layout: default
 
 # DeepDive Installation Guide 
 
-This document explains how to install DeepDive.
+DeepDive runs on Linux or Mac OS X.
+This document explains how to install DeepDive on your system.
 
-### <a name="dependencies" href="#"></a> Dependencies
+## Quick Installation
 
-DeepDive uses PostgreSQL, Scala, and Python (version 2.X). The following
-software packages must be installed to run DeepDive:
+We provide a simple installation method for the following supported systems:
 
+* Ubuntu Linux (12.04LTS, 14.04LTS, or later)
+    * [VirtualBox](https://help.ubuntu.com/community/VirtualBox)
+    * [AWS EC2](../advanced/ec2.html)
+    * [Docker](../advanced/docker.html)
+* Mac OS X with [Homebrew](http://brew.sh)
+
+You can install DeepDive and all its dependencies with a single command and verify.
+
+1. Open your terminal and run this:
+   <pre style="width:80%; margin:0 auto; padding:20px;"><code><big style="font-size:175%;">bash <(curl -fsSL deepdive.stanford.edu/install)</big></code></pre>
+
+2. Select `deepdive` when asked.
+
+    ```
+    $ bash <(curl -fsSL deepdive.stanford.edu/install)
+    ### DeepDive installer for Mac
+    1) deepdive               3) deepdive_git_repo      5) postgres
+    2) deepdive_build_deps    4) deepdive_runtime_deps
+    # Select what to install (enter a number or q to quit)? 1
+    [...]
+    ```
+
+3. You'll see that all dependencies are being installed. Note that some steps may ask your password.
+
+4. DeepDive source tree is cloned at `./deepdive`, and some executables are installed under `~/local/`.
+
+5. Since DeepDive needs a database installation to run correctly.  You should install one of the provided options:
+    * postgres
+    * postgres_xl
+    * greenplum
+    * mysql
+
+6. Finally, you may run tests in DeepDive's source tree to make sure everything will run fine.
+
+    ```bash
+    cd ./deepdive
+    make test
+    ```
+
+Congratulations! DeepDive is now installed on your system, and you can proceed to the [next steps](walkthrough/walkthrough.html).
+
+
+
+## Installing from Source
+
+If you need to install DeepDive on a different Linux distribution, the following steps can be followed.
+
+### <a name="dependencies" href="#"></a> Install Dependencies
+
+The following software packages must be installed to run DeepDive:
+
+- [Git](http://git-scm.com/book/en/Getting-Started-Installing-Git) needed to get DeepDive's source tree. 
 - [Java](http://www.oracle.com/technetwork/java/javase/downloads/jre7-downloads-1880261.html)
   (version **1.7.0_45 or higher**)
-
 - [Python](https://www.python.org/) *2.X* (not Python 3.X)
-- [PostgreSQL](http://wiki.postgresql.org/wiki/Detailed_installation_guides)
-- [SBT](http://www.scala-sbt.org/release/tutorial/Setup.html)
 - [Gnuplot](http://www.gnuplot.info/)
+- A database installation
+    - [Postgres](http://wiki.postgresql.org/wiki/Detailed_installation_guides)
+    - [Postgres-XL](../advanced/pgxl.html)
+    - [Greenplum](../advanced/greenplum.html)
+    - [MySQL](../advanced/mysql.html)
 
-[Git](http://git-scm.com/book/en/Getting-Started-Installing-Git) is needed to
-install DeepDive. 
-
-### Download 
+### Downloading Source
 
 Clone the Deepdive repository in the desired directory with:
 
@@ -35,9 +86,7 @@ paths are relative to this directory. We denote the *full* path to this
 directory as `DEEPDIVE_HOME`.
 
 
-### Quick install
-
-<!-- TODO (All): needs another one to go through the install process to make sure it works. -Zifei -->
+### Building Source
 
 We provide a Makefile to quickly install DeepDive. Under `DEEPDIVE_HOME`, run the following command to install DeepDive:
 
@@ -45,9 +94,9 @@ We provide a Makefile to quickly install DeepDive. Under `DEEPDIVE_HOME`, run th
 make
 ```
 
-This will first extract our sampler library, compile and pack DeepDive, and deploy the executable to `${HOME}/local/bin/deepdive`. You can also find the compiled executable in `DEEPDIVE_HOME/target/pack/bin/deepdive`.
+This will first extract our sampler library, compile and pack DeepDive, and deploy the executable to `$HOME/local/bin/deepdive`. You can also find the compiled executable in `$DEEPDIVE_HOME/target/pack/bin/deepdive`.
 
-After `make` you should be already able to use DeepDive on your machine. You can either use the command `deepdive` (make sure to add `${HOME}/local/bin/` into your `$PATH`) to run the compiled binary, or compile and run each time by `sbt run` under `DEEPDIVE_HOME`.
+After `make` you should be already able to use DeepDive on your machine. You can either use the command `deepdive` (make sure to add `$HOME/local/bin/` into your `$PATH`) to run the compiled binary, or compile and run each time by `sbt run` under `DEEPDIVE_HOME`.
 
 After that, make sure to **set environmental variables** needed for running sampler, depending on what OS you are using:
 
@@ -89,7 +138,7 @@ We ship pre-built dependencies for Linux and Mac systems in the `lib/` folder, a
 
 After this step, be sure to set environmental variables as described above, to make sure the extracted directories are included in the appropriate search paths.
 
-#### Compiling DeepDive
+#### Packaging DeepDive
 
 The Makefile then compiles DeepDive by `sbt pack`. It involves downloading all the necessary frameworks and libraries used
 internally, and may take some time. If the operation completes with success, the
@@ -101,11 +150,11 @@ If the setup fails, check the console log for detailed error information, and ma
 
 #### Deploying DeepDive Binary
 
-The Makefile will finally pack the compiled code into a binary file, and deploy it into `DEEPDIVE_HOME/target/pack/bin/deepdive`. Make sure you have write permissions to that folder. If deploying succeeded, you will see information like this:
+The Makefile will finally pack the compiled code into a binary file, and deploy it into `$DEEPDIVE_HOME/target/pack/bin/deepdive`. Make sure you have write permissions to that folder. If deploying succeeded, you will see information like this:
 
     SUCCESS! DeepDive binary has been put into $HOME/local/bin.
 
-#### Running Tests
+### Running Tests
 
 The command `make test` executed from the `DEEPDIVE_HOME` directory runs the
 sanity checks to make sure DeepDive runs properly on your machine. DeepDive will create a database `deepdive_test` using your login username and no password, and connect to the database during the tests. You should make sure Postgres is successfully installed to pass the tests. 
@@ -125,11 +174,11 @@ renamed.
 DDLib is our Python library that provides useful utilities such as "Span" to
 manipulate elements in sentences. It can be useful to write your UDFs during the
 [extraction step](overview.html#extraction). To use `ddlib`,
-`DEEPDIVE_HOME/ddlib` must be added to the `PATH` or `PYTHONPATH` environment
+`$DEEPDIVE_HOME/ddlib` must be added to the `PATH` or `PYTHONPATH` environment
 variables:
 
 ```bash
-export PYTHONPATH=DEEPDIVE_HOME/ddlib:$PYTHONPATH
+export PYTHONPATH=$DEEPDIVE_HOME/ddlib:$PYTHONPATH
 ```
 
 For more documentation about `ddlib`, please refer to its pydoc. Specifically, in a python terminal:

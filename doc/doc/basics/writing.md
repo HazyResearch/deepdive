@@ -80,7 +80,7 @@ format](http://jdbc.postgresql.org/documentation/80/connect.html). A username
 and password can also be specified:
     
 ```bash
-    deepdive: {
+    deepdive {
       db.default {
         driver   : "org.postgresql.Driver"
         url      : "jdbc:postgresql://[host]:[port]/[database_name]"

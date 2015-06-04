@@ -33,7 +33,9 @@ file, and learning and inference parameters:
 		Quiet output
 
 	-c <int>,  --n_datacopy <int> (Linux only)
-		Number of data copies
+		Number of data copies. Each NUMA node has a copy of factor graph. This
+        argument specifies number of NUMA nodes to use. Default is using all
+        NUMA nodes.
 
     -w <weightsFile> | --weights <weightsFile>
         weights file (required)
@@ -77,8 +79,10 @@ file, and learning and inference parameters:
         
     -b <regularizationParameter> | --reg_param <regularizationParameter>
         the l2 regularization parameter for learning (default: 0.01).
-        This argument can be used several times to activate a cross-validation
-        that chooses between specified parameters. e.g. "-b 0.01 -b 0.1 -b 1 -b 10"
+
+    --sample_evidence
+        output probablities for evidence variables. Default is off, i.e., output
+        only contains probabilities for non-evidence variables.
 
 You can see a detailed list by running `util/sampler-dw-mac gibbs --help` or `util/sampler-dw-linux gibbs --help`.
 

@@ -55,12 +55,8 @@ true. It is restricted to one variable. One may implement a *Not* function using
 
 ### Multinomial function
   
-    Multinomial(A == a,B,C)
+    Multinomial(A,B,C)
 
 The *Multinomial* function allows multinomial variables as arguments, and 
-it evaluates to true if and only if its variables have the same value as input (e.g.,
- a for A).
-
-    
-
+has a weight for each variable assignment. This function always evaluates to true.
 
