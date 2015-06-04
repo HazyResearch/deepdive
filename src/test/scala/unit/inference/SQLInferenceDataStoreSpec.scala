@@ -452,8 +452,6 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
       it("should work with weight variables that are null")
       {
-	if (dataStoreHelper.isUsingPostgresXL) pending // XXX skipping multinomial tests on Postgres-XL
-
         inferenceRunner.init()
         
         // Create table with multinomial data
@@ -490,8 +488,6 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
       it("should work with weight variables")
       {
-	if (dataStoreHelper.isUsingPostgresXL) pending // XXX skipping multinomial tests on Postgres-XL
-
         inferenceRunner.init()
         
         // Create table with multinomial data
@@ -528,8 +524,6 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
       it("should work with fixed weight")
       {
-	if (dataStoreHelper.isUsingPostgresXL) pending // XXX skipping multinomial tests on Postgres-XL
-
         inferenceRunner.init()
         
         // Create table with multinomial data
@@ -574,8 +568,6 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
       it("should work with weight to learn without weight variables")
       {
-	if (dataStoreHelper.isUsingPostgresXL) pending // XXX skipping multinomial tests on Postgres-XL
-
         inferenceRunner.init()
         
         // Create table with multinomial data
