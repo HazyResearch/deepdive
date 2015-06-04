@@ -84,5 +84,10 @@ file, and learning and inference parameters:
         output probablities for evidence variables. Default is off, i.e., output
         only contains probabilities for non-evidence variables.
 
+    --learn_non_evidence
+        sample non-evidence variables during learning. Default if off. This option
+        should be turned on if there exists a factor connecting evidence and non-evidence
+        variables.
+
 You can see a detailed list by running `util/sampler-dw-mac gibbs --help` or `util/sampler-dw-linux gibbs --help`.
 
