@@ -100,54 +100,46 @@ The function is supposed to take as input a triple of sentence id, array of word
 The Python implementation `udf/ext_people.py` takes the input as tab-separated values in each line and  outputs in the same format.
 
 ```
-function ext_people over (sentence_id text,
-                          words       text[],
-                          ner_tags    text[])
-                 returns rows like people_mentions
+function ext_people over like ext_people_input
+                 returns like people_mentions
   implementation "udf/ext_people.py" handles tsv lines.
 ```
 
 Then this user-defined function `ext_people` can be called in the following way to add more tuples to `people_mentions` taking triples from the `sentences` relation:
 
 ```
-people_mentions += ext_people(s, words, ner_tags) :-
-  sentences(_, _, words, _, _, _, ner_tags, _, s).
+people_mentions :- !ext_people(ext_people_input).
+ext_people_input(s, words, ner_tags) :-
+  sentences(_1, _2, words, _3, _4, _5, ner_tags, _6, s).
 ```
 
 In a similar way, we can have another UDF map candidate relationships and supervise them.
 
 ```
-function ext_has_spouse over (sentence_id text,
-                              p1_id       text,
-                              p1_text     text,
-                              p2_id       text,
-                              p2_text     text)
-                     returns rows like has_spouse_candidates
+function ext_has_spouse over like ext_has_spouse_input
+                     returns like has_spouse_candidates
   implementation "udf/ext_has_spouse.py" handles tsv lines.
 
-has_spouse_candidates += ext_has_spouse(s, p1_id, p1_text, p2_id, p2_text) :-
-  people_mentions(s, a, b, p1_text, p1_id),
-  people_mentions(s, c, d, p2_text, p2_id).
+has_spouse_candidates :- !ext_has_spouse(ext_has_spouse_input).
+ext_has_spouse_input(s, p1_id, p1_text, p2_id, p2_text) :-
+  people_mentions(s, _1, _2, p1_text, p1_id),
+  people_mentions(s, _3, _4, p2_text, p2_id).
 ```
 
 ### Feature Extraction Rules
 Also, we use a UDF to extract features for the candidate relationships.
 
 ```
-function ext_has_spouse_features over (words             text[],
-                                       relation_id       text,
-                                       p1_start_position int,
-                                       p1_length         int,
-                                       p2_start_position int,
-                                       p2_length         int)
-                              returns rows like has_spouse_features
+function ext_has_spouse_features over like ext_has_spouse_features_input
+                              returns like has_spouse_features
   implementation "udf/ext_has_spouse_features.py" handles tsv lines.
 
-has_spouse_features += ext_has_spouse_features(words, rid, p1idx, p1len, p2idx, p2len) :-
-  sentences(_, _, words, _, _, _, _, _, s),
-  has_spouse_candidates(person1_id, person2_id, s, _, rid, _),
-  people_mentions(s, p1idx, p1len, _, person1_id),
-  people_mentions(s, p2idx, p2len, _, person2_id).
+has_spouse_features :- !ext_has_spouse_features(ext_has_spouse_features_input).
+ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :-
+  sentences(_1, _2, words, _3, _4, _5, _6, _7, s),
+  has_spouse_candidates(person1_id, person2_id, s, _8, rid, _9),
+  people_mentions(s, p1idx, p1len, _10, person1_id),
+  people_mentions(s, p2idx, p2len, _11, person2_id).
 ```
 
 
@@ -156,7 +148,7 @@ Finally, we define a binary classifier for our boolean variable `has_spouse`.
 
 ```
 has_spouse(rid) :-
-  has_spouse_candidates(_, _, _, _, rid, l),
+  has_spouse_candidates(_1, _2, _3, _4, rid, l),
   has_spouse_features(rid, f)
 weight = f
 label = l.
