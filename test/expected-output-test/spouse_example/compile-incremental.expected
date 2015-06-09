@@ -328,7 +328,7 @@
           input: """ SELECT * FROM dd_delta_ext_people_input
           """
           output_relation: "dd_delta_people_mentions"
-          udf: "/Users/feiran/workspace/release/deepdive/app/spouse_datalog/udf/ext_people.py"
+          udf: ${APP_HOME}"/udf/ext_people.py"
           style: "tsv_extractor" 
           dependencies: [ "extraction_rule_24" ]
         }
@@ -338,7 +338,7 @@
           input: """ SELECT * FROM dd_delta_ext_has_spouse_features_input
           """
           output_relation: "dd_delta_has_spouse_features"
-          udf: "/Users/feiran/workspace/release/deepdive/app/spouse_datalog/udf/ext_has_spouse_features.py"
+          udf: ${APP_HOME}"/udf/ext_has_spouse_features.py"
           style: "tsv_extractor" 
           dependencies: [ "extraction_rule_30" ]
         }
@@ -348,7 +348,7 @@
           input: """ SELECT * FROM dd_delta_ext_has_spouse_input
           """
           output_relation: "dd_delta_has_spouse_candidates"
-          udf: "/Users/feiran/workspace/release/deepdive/app/spouse_datalog/udf/ext_has_spouse.py"
+          udf: ${APP_HOME}"/udf/ext_has_spouse.py"
           style: "tsv_extractor" 
           dependencies: [ "extraction_rule_27" ]
         }

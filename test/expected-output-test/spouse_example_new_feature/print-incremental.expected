@@ -120,7 +120,7 @@ dd_delta_ext_people_input(s, words, ner_tags) :-
 function ext_people
     over like dd_delta_ext_people_input
  returns like dd_delta_people_mentions
- implementation "/Users/feiran/workspace/release/deepdive/app/spouse_datalog/udf/ext_people.py"
+ implementation "/udf/ext_people.py"
         handles tsv lines mode = inc.
 
 dd_delta_has_spouse_candidates :- !ext_has_spouse(dd_delta_ext_has_spouse_input).
@@ -134,7 +134,7 @@ dd_delta_ext_has_spouse_input(s, p1_id, p1_text, p2_id, p2_text) :-
 function ext_has_spouse
     over like dd_delta_ext_has_spouse_input
  returns like dd_delta_has_spouse_candidates
- implementation "/Users/feiran/workspace/release/deepdive/app/spouse_datalog/udf/ext_has_spouse.py"
+ implementation "/udf/ext_has_spouse.py"
         handles tsv lines.
 
 dd_delta_has_spouse_features :- !ext_has_spouse_features(dd_delta_ext_has_spouse_features_input).
@@ -160,7 +160,7 @@ dd_delta_ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :
 function ext_has_spouse_features
     over like dd_delta_ext_has_spouse_features_input
  returns like dd_delta_has_spouse_features
- implementation "/Users/feiran/workspace/release/deepdive/app/spouse_datalog/udf/ext_has_spouse_features.py"
+ implementation "/udf/ext_has_spouse_features.py"
         handles tsv lines.
 
 dd_delta_has_spouse(rid) :-

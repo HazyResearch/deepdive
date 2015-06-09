@@ -444,7 +444,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       val function = ss.resolveFunctionName(stmt.function)
       val udfDetails = (function.implementations collectFirst {
         case impl: RowWiseLineHandler =>
-          s"""udf: \"${StringEscapeUtils.escapeJava(impl.command)}\"
+          s"""udf: $${APP_HOME}\"${StringEscapeUtils.escapeJava(impl.command)}\"
           style: \"${impl.format}_extractor\" """
       })
 
@@ -576,6 +576,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     }
   }
 
+  // generate application.conf pipelines
   def compilePipelines(ss: CompilationState): CompiledBlocks = {
     val run = "deepdive.pipeline.run: ${PIPELINE}"
     val setup_database_pipeline = ((ss.schemaDeclarationGroupByHead map (_._2)).flatten map {s => ss.resolveExtractorBlockName(s)}).mkString(", ")
