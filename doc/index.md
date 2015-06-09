@@ -142,6 +142,7 @@ Zhang](http://pages.cs.wisc.edu/~czhang/).
 - [Generic features library](doc/basics/gen_feats.html)
 - [High-speed sampler](doc/basics/sampler.html)
 - [**application.conf** Reference](doc/basics/configuration.html)
+- [Writing applications in DDlog](doc/basics/ddlog.html)
 - [FAQ](doc/basics/faq.html)
 
 #### Tutorial
