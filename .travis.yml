@@ -6,4 +6,4 @@ before_install:
 script:
     - make test MEASURE_COVERAGE=true
 after_success:
-    - sbt coveralls
+    - sbt coverageReport coveralls
