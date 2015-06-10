@@ -277,9 +277,10 @@ void dd::GibbsSampling::dump_weights(const bool is_quiet){
   }
 
   // dump learned weights
-  std::string filename_text = p_cmd_parser->original_folder->getValue() 
+  // std::string filename_text = p_cmd_parser->original_folder->getValue() 
+  //   + "/inference_result.out.weights.text";
+  std::string filename_text = p_cmd_parser->output_folder->getValue() 
     + "/inference_result.out.weights.text";
-
   std::cout << "DUMPING... TEXT    : " << filename_text << std::endl;
 
   std::ofstream fout_text(filename_text.c_str());
@@ -351,7 +352,10 @@ void dd::GibbsSampling::aggregate_results_and_dump(const bool is_quiet){
   }
 
   // dump inference results
-  std::string filename_text = p_cmd_parser->original_folder->getValue() + 
+  // std::string filename_text = p_cmd_parser->original_folder->getValue() + 
+  //   "/inference_result.out.text";
+
+  std::string filename_text = p_cmd_parser->output_folder->getValue() + 
     "/inference_result.out.text";
   std::cout << "DUMPING... TEXT    : " << filename_text << std::endl;
   std::ofstream fout_text(filename_text.c_str());

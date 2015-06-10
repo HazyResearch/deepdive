@@ -136,23 +136,29 @@ void dd::FactorGraph::update_weight(const Variable & variable){
 void dd::FactorGraph::load(const CmdParser & cmd, const bool is_quiet, const bool is_inc){
 
   // get factor graph file names from command line arguments
-  std::string weight_file = cmd.original_folder->getValue() + "/graph.weights";
-  std::string variable_file = cmd.original_folder->getValue() + "/graph.variables";
-  std::string factor_file = cmd.original_folder->getValue() + "/graph.factors";
-  std::string edge_file = cmd.original_folder->getValue() + "/graph.edges";
-
-  std::string filename_edges = edge_file;
-  std::string filename_factors = factor_file;
-  std::string filename_variables = variable_file;
-  std::string filename_weights = weight_file;
+  std::string filename_edges;
+  std::string filename_factors;
+  std::string filename_variables;
+  std::string filename_weights;
+  if (is_inc) {
+    filename_weights    = cmd.original_folder->getValue() + "/graph.weights";
+    filename_variables  = cmd.original_folder->getValue() + "/graph.variables";
+    filename_factors    = cmd.original_folder->getValue() + "/graph.factors";
+    filename_edges      = cmd.original_folder->getValue() + "/graph.edges";
+  } else {
+    filename_weights    = cmd.weight_file->getValue();
+    filename_variables  = cmd.variable_file->getValue();
+    filename_factors    = cmd.factor_file->getValue();
+    filename_edges      = cmd.edge_file->getValue();
+  }
 
   // load variables
-  long long n_loaded = read_variables(filename_variables, *this);
+  long long n_loaded = read_variables(filename_variables, *this, is_inc);
 
   if(cmd.delta_folder->getValue() != ""){
     std::cout << "Loading delta..." << std::endl;
     std::cout << cmd.delta_folder->getValue() + "/graph.variables" << std::endl;
-    n_loaded += read_variables(cmd.delta_folder->getValue() + "/graph.variables", *this);
+    n_loaded += read_variables(cmd.delta_folder->getValue() + "/graph.variables", *this, is_inc);
   }
   assert(n_loaded == n_var);
   if (!is_quiet) {
@@ -162,11 +168,10 @@ void dd::FactorGraph::load(const CmdParser & cmd, const bool is_quiet, const boo
   }
 
   // load factors
-  n_loaded = read_factors(filename_factors, *this);
-  std::cout << "~~~~" << n_loaded << std::endl;
+  n_loaded = read_factors(filename_factors, *this, is_inc);
   if(cmd.delta_folder->getValue() != ""){
     std::cout << "Loading delta..." << cmd.delta_folder->getValue() + "/graph.factors" << std::endl;
-    n_loaded += read_factors(cmd.delta_folder->getValue() + "/graph.factors", *this);
+    n_loaded += read_factors(cmd.delta_folder->getValue() + "/graph.factors", *this, is_inc);
     std::cout << n_loaded << std::endl;
   }
 
@@ -196,10 +201,10 @@ void dd::FactorGraph::load(const CmdParser & cmd, const bool is_quiet, const boo
   this->sort_by_id();
 
   // load edges
-  n_loaded = read_edges(edge_file, *this);
+  n_loaded = read_edges(filename_edges, *this, is_inc);
   if(cmd.delta_folder->getValue() != ""){
     std::cout << "Loading delta..." << std::endl;
-    n_loaded += read_edges(cmd.delta_folder->getValue() + "/graph.edges", *this);
+    n_loaded += read_edges(cmd.delta_folder->getValue() + "/graph.edges", *this, is_inc);
   }
   if (!is_quiet) {
     std::cout << "LOADED EDGES: #" << n_loaded << std::endl;

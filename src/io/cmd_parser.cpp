@@ -10,7 +10,7 @@ namespace dd{
       if(app_name == "mat" || app_name == "gibbs" || app_name == "inc"){
         cmd = new TCLAP::CmdLine("DimmWitted GIBBS", ' ', "0.01");
 
-        original_folder = new TCLAP::ValueArg<std::string>("r","ori_folder","Folder of original factor graph",true,"","string"); 
+        original_folder = new TCLAP::ValueArg<std::string>("r","ori_folder","Folder of original factor graph",false,"","string");
         delta_folder = new TCLAP::ValueArg<std::string>("j","delta_folder","Folder of delta factor graph",false,"","string"); 
 
         fg_file = new TCLAP::ValueArg<std::string>("m","fg_meta","factor graph metadata file",false,"","string"); 

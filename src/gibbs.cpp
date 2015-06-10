@@ -49,6 +49,12 @@ void inc(dd::CmdParser & cmd_parser){
   std::string original_folder = cmd_parser.original_folder->getValue();
   std::string delta_folder = cmd_parser.delta_folder->getValue();
 
+  // check arguments
+  if (original_folder == "" || delta_folder == "") {
+    std::cout << "original folder or delta folder not specified" << std::endl;
+    exit(1);
+  }
+
   // get command line arguments
   std::string fg_file = original_folder + "/graph.meta";
   std::string weight_file = original_folder + "/graph.weights";
@@ -125,6 +131,12 @@ void mat(dd::CmdParser & cmd_parser){
   // get command line arguments
   std::string original_folder = cmd_parser.original_folder->getValue();
 
+  // check arguments
+  if (original_folder == "") {
+    std::cout << "original folder not specified" << std::endl;
+    exit(1);
+  }
+
   // get command line arguments
   std::string fg_file = original_folder + "/graph.meta";
   std::string weight_file = original_folder + "/graph.weights";
@@ -199,6 +211,13 @@ void gibbs(dd::CmdParser & cmd_parser){
   std::string edge_file = cmd_parser.edge_file->getValue();
 
   std::string output_folder = cmd_parser.output_folder->getValue();
+
+  // check arguments
+  if (fg_file == "" || weight_file == "" || variable_file == "" || factor_file == "" ||
+      edge_file == "" || output_folder == "") {
+    std::cout << "factor graph files not specified" << std::endl;
+    exit(1);
+  }
 
   int n_learning_epoch = cmd_parser.n_learning_epoch->getValue();
   int n_samples_per_learning_epoch = cmd_parser.n_samples_per_learning_epoch->getValue();
