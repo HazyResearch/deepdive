@@ -324,15 +324,15 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
   def groundVariables(schema: Map[String, _ <: VariableDataType], du: DataLoader, 
       dbSettings: DbSettings, groundingPath: String) {
 
-    dbSettings.incrementalMode match {
-      case IncrementalMode.INCREMENTAL => {
-        schema.foreach { case(variable, dataType) =>
-          var Array(relation, column) = variable.split('.')
-          handleIncrementalDeduplication(relation)
-        }
-      }
-      case _ =>
-    }
+    // dbSettings.incrementalMode match {
+    //   case IncrementalMode.INCREMENTAL => {
+    //     schema.foreach { case(variable, dataType) =>
+    //       var Array(relation, column) = variable.split('.')
+    //       handleIncrementalDeduplication(relation)
+    //     }
+    //   }
+    //   case _ =>
+    // }
 
     schema.foreach { case(variable, dataType) =>
       var Array(relation, column) = variable.split('.')
@@ -378,6 +378,13 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         case IncrementalMode.MATERIALIZATION => ", 1 AS dd_count"
         case _ => ""
       }
+
+      val incCondition = dbSettings.incrementalMode match {
+        case IncrementalMode.INCREMENTAL => """AND 
+          (t0.id NOT IN (SELECT id FROM ${InferenceNamespace.getBaseTableName(relation)}) 
+          AND dd_count != 1)"""
+        case _ => ""
+      }
       du.unload(InferenceNamespace.getVariableFileName(relation),
         s"${groundingPath}/${InferenceNamespace.getVariableFileName(relation)}",
         dbSettings,
@@ -385,7 +392,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         CASE WHEN t1.${variableTypeColumn} = 0 THEN 0 ELSE ${initvalueCast} END AS initvalue,
         ${variableDataType} AS type, ${cardinality} AS cardinality ${dd_count_col}
         FROM ${relation} t0, ${variableTypeTable} t1
-        WHERE t0.id=t1.id
+        WHERE t0.id=t1.id ${incCondition}
         """, groundingDir)
     }
 
@@ -837,9 +844,6 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     issueQuery(s"SELECT COUNT(*) FROM ${InferenceNamespace.getIncrementalMetaTableName()}") {
       rs => if (rs.getLong(1) == 0) {
         execute(s""" INSERT INTO ${InferenceNamespace.getIncrementalMetaTableName()} VALUES (0, 0, 0); """)
-        // execute(s""" INSERT INTO ${InferenceNamespace.getIncrementalMetaTableName()} VALUES ('num_variables', 0) """)
-        // execute(s""" INSERT INTO ${InferenceNamespace.getIncrementalMetaTableName()} VALUES ('num_factors', 0) """)
-        // execute(s""" INSERT INTO ${InferenceNamespace.getIncrementalMetaTableName()} VALUES ('num_weights', 0) """)
       }
     }
   }
