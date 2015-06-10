@@ -380,7 +380,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       }
 
       val incCondition = dbSettings.incrementalMode match {
-        case IncrementalMode.INCREMENTAL => """AND 
+        case IncrementalMode.INCREMENTAL => s"""AND 
           (t0.id NOT IN (SELECT id FROM ${InferenceNamespace.getBaseTableName(relation)}) 
           AND dd_count != 1)"""
         case _ => ""
@@ -632,9 +632,17 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
           case IncrementalMode.INCREMENTAL => {
             val lastWeightsTableForThisFactor = InferenceNamespace.getBaseTableName(weighttableForThisFactor)
             val tmpTable = s"${weighttableForThisFactor}_inc"
+            val weightJoinlistInc = factorDesc.weight.variables.map(v => {
+              log.debug("&&&&&&&&&&&&&&&&&&&&&&&&&&")
+              // split column to get relation name
+              val colSplit = v.split('.')
+              val lastvrel = InferenceNamespace.getBaseTableName(colSplit(0))
+              val lastv = s"${lastvrel}.${colSplit.takeRight(colSplit.length-1).mkString(".")}"
+              s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(lastv)}"""
+            }).mkString("AND")
             execute(s"""UPDATE ${weighttableForThisFactor} AS t0 SET id = t1.id 
               FROM ${lastWeightsTableForThisFactor} t1
-              WHERE ${weightJoinlist}""")
+              WHERE ${weightJoinlistInc}""")
             dataStore.dropAndCreateTableAs(tmpTable, s"SELECT * FROM ${weighttableForThisFactor} WHERE id = -1")
             execute(s"ALTER SEQUENCE ${weightidSequence} RESTART ${cweightid}")
             cweightid += dataStore.assignIds(tmpTable.toLowerCase(), cweightid, weightidSequence)
