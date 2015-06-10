@@ -74,3 +74,25 @@ setup() {
     ddlog print --incremental "$TESTDIR"/input.ddl >"$actualOutput"
     diff "$expectedOutput" "$actualOutput"
 }
+
+## tests for --merge support
+
+# compare the compiled output of the merge version with what's expected
+@test "$it compiles --merge input as expected" {
+    expectedOutput=$TESTDIR/compile-merge.expected
+    actualOutput=${expectedOutput%.expected}.actual
+    [ -e "$expectedOutput" ] || skip
+    ddlog compile --merge "$TESTDIR"/input.ddl >"$actualOutput"
+    diff "$expectedOutput" "$actualOutput"
+}
+
+## tests for --materialization support
+
+# compare the compiled output of the merge version with what's expected
+@test "$it compiles --materialization input as expected" {
+    expectedOutput=$TESTDIR/compile-materialization.expected
+    actualOutput=${expectedOutput%.expected}.actual
+    [ -e "$expectedOutput" ] || skip
+    ddlog compile --materialization "$TESTDIR"/input.ddl >"$actualOutput"
+    diff "$expectedOutput" "$actualOutput"
+}

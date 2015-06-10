@@ -114,13 +114,14 @@ dd_new_has_spouse?(relation_id text).
 dd_delta_people_mentions :- !ext_people(dd_delta_ext_people_input).
 
 dd_delta_ext_people_input(s, words, ner_tags) :-
+    sentences(a, b, words, c, d, e, ner_tags, f, s);
     dd_delta_sentences(a, b, words, c, d, e, ner_tags, f, s).
 
 function ext_people
     over like dd_delta_ext_people_input
  returns like dd_delta_people_mentions
  implementation "/udf/ext_people.py"
-        handles tsv lines.
+        handles tsv lines mode = inc.
 
 dd_delta_has_spouse_candidates :- !ext_has_spouse(dd_delta_ext_has_spouse_input).
 
@@ -172,5 +173,5 @@ dd_delta_has_spouse(rid) :-
     dd_new_has_spouse_candidates(a, b, c, d, rid, l),
     dd_delta_has_spouse_features(rid, f)
   weight = f
-  semantics = Imply.
+  semantics = Linear.
 

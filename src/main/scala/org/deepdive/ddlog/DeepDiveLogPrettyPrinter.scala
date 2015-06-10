@@ -1,6 +1,7 @@
 package org.deepdive.ddlog
 
 import org.apache.commons.lang3.StringEscapeUtils
+import org.deepdive.ddlog.DeepDiveLog.Mode._
 
 // Pretty printer that simply prints the parsed input
 object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
@@ -39,10 +40,11 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
         "\"" + StringEscapeUtils.escapeJava(impl.command) + "\"" +
         s"\n        handles ${impl.format} lines"
     }
+    val modeStr = if (stmt.mode == null) "" else s" mode = ${stmt.mode}"
     s"""function ${stmt.functionName}
        |    over ${inputType}
        | returns ${outputType}
-       | ${(impls map {"implementation " + _}).mkString("\n ")}.
+       | ${(impls map {"implementation " + _}).mkString("\n ")}${modeStr}.
        |""".stripMargin
   }
 
@@ -59,8 +61,10 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   }
 
   def print(stmt: ExtractionRule): String = {
-    s"""${print(stmt.q)}.
-       |""".stripMargin
+    print(stmt.q) +
+    ( if (stmt.supervision == null) ""
+      else  "\n  label = " + stmt.supervision
+    ) + ".\n"
   }
 
   def print(stmt: FunctionCallRule): String = {
@@ -76,20 +80,20 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
         case UnknownFactorWeight(vs) => vs.mkString(", ")
       })
     ) +
-    ( if (stmt.supervision == null) ""
-      else "\n  label = " + stmt.supervision
-    ) +
     ( if (stmt.semantics == null) ""
       else "\n  semantics = " + stmt.semantics
-    ) + "."
+    ) + ".\n"
   }
 
   override def run(parsedProgram: DeepDiveLog.Program, config: DeepDiveLog.Config) = {
     val programToPrint =
-      // derive the delta rules for incremental version
-      if (config.isIncremental) DeepDiveLogDeltaDeriver.derive(parsedProgram)
-      else parsedProgram
-
+      // derive the program based on mode information
+      config.mode match {
+        case ORIGINAL => parsedProgram
+        case INCREMENTAL => DeepDiveLogDeltaDeriver.derive(parsedProgram)
+        case MATERIALIZATION => parsedProgram
+        case MERGE => DeepDiveLogMergeDeriver.derive(parsedProgram)
+      }
     // pretty print in original syntax
     programToPrint foreach {stmt => println(print(stmt))}
   }

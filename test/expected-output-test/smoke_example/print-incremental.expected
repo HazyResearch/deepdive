@@ -1,0 +1,80 @@
+person(person_id bigint,
+       name text).
+
+dd_delta_person(person_id bigint,
+                name text).
+
+dd_new_person(person_id bigint,
+              name text).
+
+dd_new_person(person_id, name) :-
+    person(person_id, name);
+    dd_delta_person(person_id, name).
+
+person_has_cancer(person_id bigint,
+                  has_cancer boolean).
+
+dd_delta_person_has_cancer(person_id bigint,
+                           has_cancer boolean).
+
+dd_new_person_has_cancer(person_id bigint,
+                         has_cancer boolean).
+
+dd_new_person_has_cancer(person_id, has_cancer) :-
+    person_has_cancer(person_id, has_cancer);
+    dd_delta_person_has_cancer(person_id, has_cancer).
+
+person_smokes(person_id bigint,
+              smokes boolean).
+
+dd_delta_person_smokes(person_id bigint,
+                       smokes boolean).
+
+dd_new_person_smokes(person_id bigint,
+                     smokes boolean).
+
+dd_new_person_smokes(person_id, smokes) :-
+    person_smokes(person_id, smokes);
+    dd_delta_person_smokes(person_id, smokes).
+
+friends(person_id bigint,
+        friend_id bigint).
+
+dd_delta_friends(person_id bigint,
+                 friend_id bigint).
+
+dd_new_friends(person_id bigint,
+               friend_id bigint).
+
+dd_new_friends(person_id, friend_id) :-
+    friends(person_id, friend_id);
+    dd_delta_friends(person_id, friend_id).
+
+smoke?(person_id bigint).
+
+dd_delta_smoke?(person_id bigint).
+
+dd_new_smoke?(person_id bigint).
+
+cancer?(person_id bigint).
+
+dd_delta_cancer?(person_id bigint).
+
+dd_new_cancer?(person_id bigint).
+
+dd_delta_smoke(pid) :-
+    dd_delta_person_smokes(pid, l)
+  label = l.
+
+dd_delta_cancer(pid) :-
+    dd_delta_person_has_cancer(pid, l)
+  label = l.
+
+dd_delta_cancer(pid) :-
+    dd_delta_smoke(pid),
+    person_smokes(pid, l);
+    dd_new_smoke(pid),
+    dd_delta_person_smokes(pid, l)
+  weight = 3.0
+  semantics = Imply.
+

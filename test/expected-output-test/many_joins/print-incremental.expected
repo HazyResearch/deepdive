@@ -2,6 +2,8 @@ R?(x text).
 
 dd_delta_R?(x text).
 
+dd_new_R?(x text).
+
 S(x text).
 
 dd_delta_S(x text).
@@ -9,9 +11,7 @@ dd_delta_S(x text).
 dd_new_S(x text).
 
 dd_new_S(x) :-
-    S(x).
-
-dd_new_S(x) :-
+    S(x);
     dd_delta_S(x).
 
 T(x text,
@@ -23,9 +23,9 @@ dd_delta_T(x text,
 dd_new_T(x text,
          f text).
 
-dd_new_T(x, f, dd_count) :-
-    T(x, f, dd_count);
-    dd_delta_T(x, f, dd_count).
+dd_new_T(x, f) :-
+    T(x, f);
+    dd_delta_T(x, f).
 
 U(x text,
   l text).
@@ -33,10 +33,12 @@ U(x text,
 dd_delta_U(x text,
            l text).
 
-R(x) :-
-    S(x),
-    T(x, f),
-    U(x, l).
+dd_new_U(x text,
+         l text).
+
+dd_new_U(x, l) :-
+    U(x, l);
+    dd_delta_U(x, l).
 
 dd_delta_R(x) :-
     dd_delta_S(x),
