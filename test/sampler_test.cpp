@@ -27,7 +27,7 @@ protected:
 			"-o", ".", "-l", "100", "-i", "100", "-s", "1", "--alpha", "0.1", ""
 		};
 		dd::CmdParser cmd_parser = parse_input(23, (char **)argv);
-		fg.load(cmd_parser, false);
+		fg.load(cmd_parser, false, false);
   }
 
 };
@@ -61,17 +61,17 @@ TEST_F(SamplerTest, sample_single_variable) {
 	}
 	fg.infrs->weight_values[0] = 2;
 
-	sampler.sample_single_variable(0);
+	sampler.sample_single_variable(0, false);
 	EXPECT_EQ(fg.infrs->assignments_evid[0], 1);
 
-	sampler.sample_single_variable(10);
+	sampler.sample_single_variable(10, false);
 	EXPECT_EQ(fg.infrs->assignments_evid[10], 1);
 
 	fg.infrs->weight_values[0] = 20;
-	sampler.sample_single_variable(11);
+	sampler.sample_single_variable(11, false);
 	EXPECT_EQ(fg.infrs->assignments_evid[11], 1);
 
-	sampler.sample_single_variable(12);
+	sampler.sample_single_variable(12, false);
 	EXPECT_EQ(fg.infrs->assignments_evid[12], 1);
 }
 

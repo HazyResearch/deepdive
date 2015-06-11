@@ -186,7 +186,7 @@ namespace dd{
 
       if(variable.domain_type == DTYPE_BOOLEAN){
 
-        if(variable.is_evid == false){
+        if(variable.is_evid == false || sample_evidence) {
 
           potential_pos = p_fg->template potential<false>(variable, 1);
           potential_neg = p_fg->template potential<false>(variable, 0);
