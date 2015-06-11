@@ -44,5 +44,36 @@ TEST(LogisticRegressionTest, INFERENCE) {
 	}
 	EXPECT_EQ(nweight, 1);
 
+	fin.close();
+	fin_weight.close();
+
+	// test sample_evidence
+	const char* argv2[24] = {
+		"dw", "gibbs", "-w", "./test/coin/graph.weights", "-v", "./test/coin/graph.variables", 
+		"-f", "./test/coin/graph.factors", "-e", "./test/coin/graph.edges", "-m", "./test/coin/graph.meta",
+		"-o", ".", "-l", "800", "-i", "300", "-s", "1", "--alpha", "0.1", "--diminish 0.995", "--sample_evidence"
+	};
+
+	cmd_parser = parse_input(24, (char **)argv2);
+	gibbs(cmd_parser);
+
+	fin.open("./inference_result.out.text");
+	nvar = 0;
+	while(fin >> id >> e >> prob){
+		EXPECT_NEAR(prob, 0.89, 0.1);
+		nvar ++;
+	}
+	EXPECT_EQ(nvar, 18);
+
+	fin_weight.open("./inference_result.out.weights.text");
+	nweight = 0;
+	while(fin_weight >> id >> weight){
+		EXPECT_NEAR(weight, 2.1, 0.3);
+		nweight ++;
+	}
+	EXPECT_EQ(nweight, 1);
+
+	fin.close();
+	fin_weight.close();
 }
 

@@ -2,13 +2,14 @@
 
 namespace dd{
 
-
-  SingleThreadSampler::SingleThreadSampler(FactorGraph * _p_fg) :
-      p_fg (_p_fg), p_rand_obj_buf(new double){
-      p_rand_seed[0] = rand();
-      p_rand_seed[1] = rand();
-      p_rand_seed[2] = rand();
-    }
+  SingleThreadSampler::SingleThreadSampler(FactorGraph * _p_fg, bool sample_evidence,
+    bool burn_in, bool learn_non_evidence) :
+    p_fg (_p_fg), p_rand_obj_buf(new double), sample_evidence(sample_evidence),
+    burn_in(burn_in), learn_non_evidence(learn_non_evidence) {
+    p_rand_seed[0] = rand();
+    p_rand_seed[1] = rand();
+    p_rand_seed[2] = rand();
+  }
 
   void SingleThreadSampler::sample(const int & i_sharding, const int & n_sharding){
     long nvar = p_fg->n_var;
@@ -42,7 +43,7 @@ namespace dd{
     
     Variable & variable = p_fg->variables[vid];
 
-    if (variable.is_evid == false) return;
+    if (!learn_non_evidence && !variable.is_evid) return;
 
     if(variable.domain_type == DTYPE_BOOLEAN){ // boolean
 
@@ -148,7 +149,7 @@ namespace dd{
     if(is_inc){
       if(variable.domain_type == DTYPE_BOOLEAN){
 
-        if(variable.is_evid == false){
+      if(variable.is_evid == false || sample_evidence){
 
           int newvalue = variable.next_sample;
           //std::cout << newvalue << std::endl;
@@ -176,7 +177,6 @@ namespace dd{
             //std::cout << "~" << std::endl;
           }
           //}
-
         }
 
       }else{
