@@ -199,17 +199,33 @@ void load_factor(std::string filename, int inc, short funcid, long nvar, char** 
   fedgeout.close();
 }
 
+void load_active(std::string filename) {
+  std::ifstream fin(filename.c_str());
+  std::ofstream fout((filename + ".bin").c_str(), std::ios::binary);
+
+  long id;
+  while (fin >> id) {
+    id = bswap_64(id);
+    fout.write((char*)&id, 8);
+  }
+  fin.close();
+  fout.close();
+}
+
 int main(int argc, char** argv){
   std::string app(argv[1]);
   // std::cerr << app << " " << argv[2] << " " << argv[3] << std::endl;
   if(app.compare("variable")==0){
     load_var(argv[2], atoi(argv[3]));
-  }
-  if(app.compare("weight")==0){
+  } else if(app.compare("weight")==0){
     load_weight(argv[2]);
-  }
-  if(app.compare("factor")==0){
+  } else if(app.compare("factor")==0){
     load_factor(argv[2], atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), &argv[6]);
+  } else if (app.compare("active") == 0) {
+    load_active(argv[2]);
+  } else {
+    std::cout << "Unsupported type" << std::endl;
+    exit(1);
   }
   return 0;
 }
