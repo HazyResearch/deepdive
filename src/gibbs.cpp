@@ -93,7 +93,7 @@ void inc(dd::CmdParser & cmd_parser){
                     meta.num_factors+meta2.num_factors, 
                     meta.num_weights+meta2.num_weights, 
                     meta.num_edges+meta2.num_edges);
-  fg.load(cmd_parser, is_quiet, true);
+  fg.load(cmd_parser, is_quiet, 2);
   dd::GibbsSampling gibbs(&fg, &cmd_parser, n_datacopy, false, 0, false);
 
   // number of learning epochs
@@ -165,7 +165,7 @@ void mat(dd::CmdParser & cmd_parser){
 
   // load factor graph
   dd::FactorGraph fg(meta.num_variables, meta.num_factors, meta.num_weights, meta.num_edges);
-  fg.load(cmd_parser, is_quiet, false);
+  fg.load(cmd_parser, is_quiet, 1);
   dd::GibbsSampling gibbs(&fg, &cmd_parser, n_datacopy, false, 0, false);
 
   // number of learning epochs

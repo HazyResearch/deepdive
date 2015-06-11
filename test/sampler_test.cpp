@@ -27,7 +27,7 @@ protected:
 			"-o", ".", "-l", "100", "-i", "100", "-s", "1", "--alpha", "0.1", ""
 		};
 		dd::CmdParser cmd_parser = parse_input(23, (char **)argv);
-		fg.load(cmd_parser, false, false);
+		fg.load(cmd_parser, false, 0);
   }
 
 };
