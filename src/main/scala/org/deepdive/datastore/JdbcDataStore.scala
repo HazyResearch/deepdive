@@ -398,6 +398,9 @@ trait JdbcDataStore extends Logging {
   // assign senquential ids to table's id column
   def assignIds(table: String, startId: Long, sequence: String) : Long = 0
 
+  // check if a table exists
+  def existsTable(table: String) : Boolean = false;
+
   // end: Datastore-specific methods
 
 }

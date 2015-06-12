@@ -520,41 +520,47 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         case IncrementalMode.INCREMENTAL => {
           // Create new saved factor table to save origin factor table
           val lastFactorTable = InferenceNamespace.getBaseTableName(querytable)
-          val factorJoinlist = factorDesc.func.variables.map(
-            v => s""" t0.${dataStore.quoteColumn(s"${v.relation}.id")} 
-              |= t1.${dataStore.quoteColumn(s"${InferenceNamespace.getBaseTableName(v.relation)}.id")}
-              |""".stripMargin.replaceAll("\n", " ")).mkString("AND")
-          val weightJoinlist = factorDesc.weight.variables.map(v => {
-            // split column to get relation name
-            val colSplit = v.split('.')
-            val lastvrel = InferenceNamespace.getBaseTableName(colSplit(0))
-            val lastv = s"${lastvrel}.${colSplit.takeRight(colSplit.length-1).mkString(".")}"
-            s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(lastv)}"""
-          }).mkString("AND")
-          val joinList = Seq(factorJoinlist, weightJoinlist).mkString(" AND ")
-          val tmpTable = s"${querytable}_inc"
-          execute(s"""UPDATE ${querytable} AS t0 SET id = t1.id 
-            FROM ${lastFactorTable} t1
-            WHERE ${joinList}""")
+          // if adding new inference rule, the original rule does not exist
+          val exists = dataStore.existsTable(lastFactorTable)
+          if (!exists) {
+            factorid += dataStore.assignIds(querytable.toLowerCase(), factorid, factoridSequence)
+          } else {
+            val factorJoinlist = factorDesc.func.variables.map(
+              v => s""" t0.${dataStore.quoteColumn(s"${v.relation}.id")} 
+                |= t1.${dataStore.quoteColumn(s"${InferenceNamespace.getBaseTableName(v.relation)}.id")}
+                |""".stripMargin.replaceAll("\n", " ")).mkString("AND")
+            val weightJoinlist = factorDesc.weight.variables.map(v => {
+              // split column to get relation name
+              val colSplit = v.split('.')
+              val lastvrel = InferenceNamespace.getBaseTableName(colSplit(0))
+              val lastv = s"${lastvrel}.${colSplit.takeRight(colSplit.length-1).mkString(".")}"
+              s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(lastv)}"""
+            }).mkString("AND")
+            val joinList = Seq(factorJoinlist, weightJoinlist).mkString(" AND ")
+            val tmpTable = s"${querytable}_inc"
+            execute(s"""UPDATE ${querytable} AS t0 SET id = t1.id 
+              FROM ${lastFactorTable} t1
+              WHERE ${joinList}""")
 
-          dataStore.dropAndCreateTableAs(tmpTable, s"""SELECT ${selectcols}, SUM(dd_count), id 
-            FROM ${querytable} 
-            WHERE id is NULL GROUP BY ${condcols}, id""")
-          execute(s"ALTER SEQUENCE ${factoridSequence} RESTART ${factorid}")
-          factorid += dataStore.assignIds(tmpTable.toLowerCase(), factorid, factoridSequence)
+            dataStore.dropAndCreateTableAs(tmpTable, s"""SELECT ${selectcols}, SUM(dd_count), id 
+              FROM ${querytable} 
+              WHERE id is NULL GROUP BY ${condcols}, id""")
+            execute(s"ALTER SEQUENCE ${factoridSequence} RESTART ${factorid}")
+            factorid += dataStore.assignIds(tmpTable.toLowerCase(), factorid, factoridSequence)
 
-          val factorJoinlist2 = factorDesc.func.variables.map(
-            v => s""" t0.${dataStore.quoteColumn(s"${v.relation}.id")} 
-              |= t1.${dataStore.quoteColumn(s"${v.relation}.id")}
-              |""".stripMargin.replaceAll("\n", " ")).mkString("AND")
-          val weightJoinlist2 = factorDesc.weight.variables.map(v =>
-            s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)}""").mkString("AND")
-          val joinList2 = Seq(factorJoinlist2, weightJoinlist2).mkString(" AND ")
-          execute(s"""UPDATE ${querytable} AS t0 SET id = t1.id 
-            FROM ${tmpTable} t1
-            WHERE ${joinList2}""")
+            val factorJoinlist2 = factorDesc.func.variables.map(
+              v => s""" t0.${dataStore.quoteColumn(s"${v.relation}.id")} 
+                |= t1.${dataStore.quoteColumn(s"${v.relation}.id")}
+                |""".stripMargin.replaceAll("\n", " ")).mkString("AND")
+            val weightJoinlist2 = factorDesc.weight.variables.map(v =>
+              s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)}""").mkString("AND")
+            val joinList2 = Seq(factorJoinlist2, weightJoinlist2).mkString(" AND ")
+            execute(s"""UPDATE ${querytable} AS t0 SET id = t1.id 
+              FROM ${tmpTable} t1
+              WHERE ${joinList2}""")
 
-          handleIncrementalDeduplication(querytable)
+            handleIncrementalDeduplication(querytable)
+          }
         }
         case _ => {
           // handle factor id
@@ -622,23 +628,28 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         dbSettings.incrementalMode match {
           case IncrementalMode.INCREMENTAL => {
             val lastWeightsTableForThisFactor = InferenceNamespace.getBaseTableName(weighttableForThisFactor)
-            val tmpTable = s"${weighttableForThisFactor}_inc"
-            val weightJoinlistInc = factorDesc.weight.variables.map(v => {
-              // split column to get relation name
-              val colSplit = v.split('.')
-              val lastvrel = InferenceNamespace.getBaseTableName(colSplit(0))
-              val lastv = s"${lastvrel}.${colSplit.takeRight(colSplit.length-1).mkString(".")}"
-              s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(lastv)}"""
-            }).mkString("AND")
-            execute(s"""UPDATE ${weighttableForThisFactor} AS t0 SET id = t1.id 
-              FROM ${lastWeightsTableForThisFactor} t1
-              WHERE ${weightJoinlistInc}""")
-            dataStore.dropAndCreateTableAs(tmpTable, s"SELECT * FROM ${weighttableForThisFactor} WHERE id = -1")
-            execute(s"ALTER SEQUENCE ${weightidSequence} RESTART ${cweightid}")
-            cweightid += dataStore.assignIds(tmpTable.toLowerCase(), cweightid, weightidSequence)
-            execute(s"""UPDATE ${weighttableForThisFactor} AS t0 SET id = t1.id
-              FROM ${tmpTable} t1
-              WHERE ${weightJoinlist}""")
+            val exists = dataStore.existsTable(lastWeightsTableForThisFactor)
+            if (!exists) {
+              cweightid += dataStore.assignIds(weighttableForThisFactor.toLowerCase(), cweightid, weightidSequence)
+            } else {
+              val tmpTable = s"${weighttableForThisFactor}_inc"
+              val weightJoinlistInc = factorDesc.weight.variables.map(v => {
+                // split column to get relation name
+                val colSplit = v.split('.')
+                val lastvrel = InferenceNamespace.getBaseTableName(colSplit(0))
+                val lastv = s"${lastvrel}.${colSplit.takeRight(colSplit.length-1).mkString(".")}"
+                s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(lastv)}"""
+              }).mkString("AND")
+              execute(s"""UPDATE ${weighttableForThisFactor} AS t0 SET id = t1.id 
+                FROM ${lastWeightsTableForThisFactor} t1
+                WHERE ${weightJoinlistInc}""")
+              dataStore.dropAndCreateTableAs(tmpTable, s"SELECT * FROM ${weighttableForThisFactor} WHERE id = -1")
+              execute(s"ALTER SEQUENCE ${weightidSequence} RESTART ${cweightid}")
+              cweightid += dataStore.assignIds(tmpTable.toLowerCase(), cweightid, weightidSequence)
+              execute(s"""UPDATE ${weighttableForThisFactor} AS t0 SET id = t1.id
+                FROM ${tmpTable} t1
+                WHERE ${weightJoinlist}""")
+            }
           }
           case _ => {
             // handle weight id
@@ -696,8 +707,11 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         dbSettings.incrementalMode match {
           case IncrementalMode.INCREMENTAL => {
             val lastWeightsTableForThisFactor = InferenceNamespace.getBaseTableName(weighttableForThisFactor)
-            execute(s"""DELETE FROM ${weighttableForThisFactor}
-              WHERE id IN (SELECT id FROM ${lastWeightsTableForThisFactor});""")
+            val exists = dataStore.existsTable(lastWeightsTableForThisFactor)
+            if (exists) {
+              execute(s"""DELETE FROM ${weighttableForThisFactor}
+                WHERE id IN (SELECT id FROM ${lastWeightsTableForThisFactor});""")
+            }
           }
           case _ =>
         }
