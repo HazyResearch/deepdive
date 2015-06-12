@@ -175,6 +175,12 @@ class PostgresDataStore extends JdbcDataStore with Logging {
 
   override def init() : Unit = {
     super.init()
+    if (!existsLanguage("plpgsql")) {
+      executeSqlQueries("CREATE LANGUAGE plpgsql;")
+    }
+    if (!existsLanguage("plpythonu")) {
+      executeSqlQueries("CREATE LANGUAGE plpythonu;")
+    }
     executeSqlQueries("SET search_path to 'public'", false)
     executeSqlQueries(SQLFunctions.piggyExtractorDriverDeclaration, false)
   }
