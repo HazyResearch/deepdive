@@ -33,7 +33,7 @@ object InferenceNamespace {
   def getLastTableName(table: String) = s"dd_last_${table}"
   // given an incremental table, get the table name for its base table
   // incremental table names are like dd_delta_...
-  def getBaseTableName(table: String) = table.replaceAll("dd_new_", "")
+  def getBaseTableName(table: String) = table.replaceAll("dd_new_", "").replaceAll("dd_delta_", "")
   def getIncrementalMetaTableName() = s"dd_incremental_meta_data"
 
   // files
