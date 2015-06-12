@@ -12,11 +12,6 @@ jdk:
   - oraclejdk7
 python:
   - "2.7"
-addons:
-  postgresql: "9.1"
-before_install:
-  - sudo apt-get update
-  - sudo apt-get install postgresql-plpython-9.1 -y
 services:
   - postgresql
 
