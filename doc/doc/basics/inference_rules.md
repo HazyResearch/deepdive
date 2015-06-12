@@ -27,16 +27,17 @@ The following is an example of an inference rule:
 ```bash
 deepdive {
   inference.factors {
-    smokesFactor {
-      input_query : """
-        SELECT people.id         AS "people.id",
-               people.smokes     AS "people.smokes",
-               people.has_cancer AS "people.has_cancer",
-               people.gender     AS "people.gender"
-        FROM people
+    smokes_cancer {
+      input_query: """
+          SELECT person_has_cancer.id as "person_has_cancer.id",
+                 person_smokes.id as "person_smokes.id",
+                 person_smokes.smokes as "person_smokes.smokes",
+                 person_has_cancer.has_cancer as "person_has_cancer.has_cancer"
+            FROM person_has_cancer, person_smokes
+           WHERE person_has_cancer.person_id = person_smokes.person_id
         """
-      function    : "Imply(people.smokes, people.has_cancer)"
-      weight      : "?(people.gender)"
+      function: "Imply(person_smokes.smokes, person_has_cancer.has_cancer)"
+      weight: 0.5
     }
 
     # More rules...
@@ -52,34 +53,35 @@ learn the weight of the factor. It usually takes the form of a join query
 using feature relations produced by extractors, as in the following example:
 
 ```bash
-someFactor {
-  input_query: """
-    SELECT p1.id     AS "people.p1.id",     p2.id     AS "people.p2.id",
-           p1.smokes AS "people.p1.smokes", p2.smokes AS "people.p2.smokes",
-           friends.person_id AS "friends.person_id"
-    FROM friends
-      INNER JOIN people AS p1 ON (friends.person_id = p1.id)
-      INNER JOIN people AS p2 ON (friends.friend_id = p2.id)
-    """
-	# ...
-}
+    friends_smoke {
+      input_query: """
+          SELECT p1.id AS "person_smokes.p1.id",
+                 p2.id AS "person_smokes.p2.id",
+                 p1.smokes AS "person_smokes.p1.smokes",
+                 p2.smokes AS "person_smokes.p2.smokes"
+            FROM friends INNER JOIN person_smokes AS p1 ON
+              (friends.person_id = p1.person_id) INNER JOIN person_smokes AS p2 ON
+                (friends.friend_id = p2.person_id)
+        """
+      ...
+    }
 ```
 
 There are a number of caveats when writing input queries for factors:
 
 - The query result **must** contain all variable attributes that are used in your
-  factor function. For example, if you are using the `people.has_cancer`
-  variable in the factor function, then an attribute called `people.has_cancer`
+  factor function. For example, if you are using the `has_cancer.is_true`
+  variable in the factor function, then an attribute called `has_cancer.is_true`
   must be part of the query result. 
 
 - Always use `[relation_name].[attribute]` to refer to the variables in the
 factor function, regardless whether or not you are using an alias in your input
-query. For example, even if you write `SELECT p1.is_male from people p1`, the
-variable would be called `people.is_male`.
+query. For example, even if you write `SELECT s1.is_true from smokes s1`, the
+variable must be called `smokes.is_true`.
 
 - The query result **must** contain the reserved column `id` for each variable.
   DeepDive uses `id` column to assign unique variable ids. For example, if you
-  have `people.has_cancer` variable in your factor function, then `people.id`
+  have `has_cancer.is_true` variable in your factor function, then `has_cancer.id`
   must also be part of the query result. There are several **requirements for
   the `id` column**:
 
@@ -107,17 +109,29 @@ variable would be called `people.is_male`.
 your query. For example, the following will **not** work:
 
     ```sql
-SELECT p1.name, p1.id, p2.name, p2.id FROM people p1 LEFT JOIN people p2 ON p1.manager_id = p2.id
+    SELECT p1.id
+           p2.id
+           p1.smokes
+           p2.smokes
+      FROM friends, person_smokes p1, person_smokes p2
+      WHERE  friends.person_id = p1.person_id
+        AND  friends.friend_id = p2.person_id
     ```
 
-    Instead, you must write something like the following:
+    Instead, you must rename the variable columns to `[table_name].[alias].[variable_name]`, like the following:
 
     ```sql
-SELECT p1.name AS "p1.name", p1.id AS "p1.id", p2.name AS "p2.name", p2.id
-AS "p2.id" FROM people p1 LEFT JOIN people p2 ON p1.manager_id = p2.id;
+    SELECT p1.id AS "person_smokes.p1.id"
+           p2.id AS "person_smokes.p2.id"
+           p1.smokes AS "person_smokes.p1.smokes"
+           p2.smokes AS "person_smokes.p1.smokes"
+      FROM friends, person_smokes p1, person_smokes p2
+      WHERE  friends.person_id = p1.person_id
+        AND  friends.friend_id = p2.person_id
     ```
-	Your factor function variables would be called `people.p1.name` and
-	`people.p2.name`.
+
+	  Your factor function variables would be called `person_smokes.p1.smokes` and
+	  `person_smokes.p1.smokes`.
 
 ### Factor function
 
@@ -131,14 +145,14 @@ the `Imply` function, which expresses a first-order logic statement. For
 example, `Imply(B, C, A)` means "if B and C, then A".
 
 ```bash
-    # If people.smokes, then people.has_cancer
+    # If smokes.is_true, then has_cancer.is_true
     someFactor {
-      function: "Imply(people.smokes, people.has_cancer)"
+      function: "Imply(smokes.is_true, has_cancer.is_true)"
     }
     
-    # Evaluates to true, when people.has_cancer is true
+    # Evaluates to true, when has_cancer.is_true is true
     someFactor {
-      function: "Imply(people.has_cancer)"
+      function: "IsTrue(has_cancer.is_true)"
     }
 ```
 

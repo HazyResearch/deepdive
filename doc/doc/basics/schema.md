@@ -18,14 +18,17 @@ example of defining the schema with two Boolean variables:
 ```bash
 deepdive {
   schema.variables {
-    people.smokes: Boolean
-    people.has_cancer: Boolean
+    person_smokes.smokes: Boolean
+    person_has_cancer.has_cancer: Boolean
   }
 }
 ```
-In the above example `smokes` and `has_cancer` are Boolean attributes in the
-`people` table. The name of variables *must* be in the '[table].[column]'
-format.
+
+In the above example `person_smokes.smokes` and `person_has_cancer.has_cancer` are
+Boolean variables. `person_smokes` and `person_has_cancer` are table names, and
+`smokes` and `has_cancer` are boolean columns in the corresponding table. The name of variables
+*must* be in the `[table].[column]` format. Each table can at most
+hold one variable.
 
 ## <a name="multinomial" href="#"></a> Categorical/Multinomial variables
 
