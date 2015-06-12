@@ -4,7 +4,8 @@ package org.deepdive.settings
 case class Pipeline(id: String, tasks: Set[String])
 
 /* User settings pipelines */
-case class PipelineSettings(activePipelineName: Option[String], pipelines: List[Pipeline], relearnFrom: String = null) {
+case class PipelineSettings(activePipelineName: Option[String], pipelines: List[Pipeline], 
+  relearnFrom: String, baseDir: Option[String]) {
   def activePipeline : Option[Pipeline] = activePipelineName.flatMap { name =>
     pipelines.find(_.id == name)
   }

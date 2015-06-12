@@ -3,6 +3,7 @@ package org.deepdive.inference
 import akka.actor._
 import scala.sys.process._
 import scala.util.{Success, Failure}
+import org.deepdive.settings.IncrementalMode._
 
 /* Companion object for the Sampler actor. Use the props method to create a new Sampler */
 object Sampler {
@@ -10,7 +11,8 @@ object Sampler {
 
   // Tells the Sampler to run inference
   case class Run(samplerCmd: String, samplerOptions: String, weightsFile: String, variablesFile: String,
-    factorsFile: String, edgesFile: String, metaFile: String, outputDir: String)
+    factorsFile: String, edgesFile: String, metaFile: String, outputDir: String,
+    baseDir: Option[String], incMode: IncrementalMode)
 }
 
 /* Runs inferece on a dumped factor graph. */
@@ -20,10 +22,10 @@ class Sampler extends Actor with ActorLogging {
 
   def receive = {
     case Sampler.Run(samplerCmd, samplerOptions, weightsFile, variablesFile,
-      factorsFile, edgesFile, metaFile, outputDir) =>
+      factorsFile, edgesFile, metaFile, outputDir, baseDir, incMode) =>
       // Build the command
       val cmd = buildSamplerCmd(samplerCmd, samplerOptions, weightsFile, variablesFile,
-      factorsFile, edgesFile, metaFile, outputDir)
+      factorsFile, edgesFile, metaFile, outputDir, baseDir.getOrElse(""), incMode)
       log.info(s"Executing: ${cmd.mkString(" ")}")
       
       // Handle the case where cmd! throw exception rather than return a value
@@ -61,15 +63,26 @@ class Sampler extends Actor with ActorLogging {
   // Build the command to run the sampler
   def buildSamplerCmd(samplerCmd: String, samplerOptions: String, weightsFile: String, 
     variablesFile: String, factorsFile: String, edgesFile: String, metaFile: String, 
-    outputDir: String) = {
-    log.info(samplerCmd)
-    samplerCmd.split(" ").toSeq ++ Seq(
-      "-w", weightsFile,
-      "-v", variablesFile,
-      "-f", factorsFile,
-      "-e", edgesFile,
-      "-m", metaFile,
-      "-o", outputDir) ++ samplerOptions.split(" ")
-  }
+    outputDir: String, baseDir: String, incMode: IncrementalMode) = {
+    incMode match {
+      case MATERIALIZATION =>
+        samplerCmd.split(" ").toSeq ++ Seq(
+          "mat", "-r", baseDir) ++ samplerOptions.split(" ")
+      case INCREMENTAL =>
+        samplerCmd.split(" ").toSeq ++ Seq(
+          "inc",
+          "-r", baseDir,
+          "-j", outputDir) ++ samplerOptions.split(" ")
+      case _ =>
+        samplerCmd.split(" ").toSeq ++ Seq(
+          "gibbs",
+          "-w", weightsFile,
+          "-v", variablesFile,
+          "-f", factorsFile,
+          "-e", edgesFile,
+          "-m", metaFile,
+          "-o", outputDir) ++ samplerOptions.split(" ")
+      }
+    }
 
 }

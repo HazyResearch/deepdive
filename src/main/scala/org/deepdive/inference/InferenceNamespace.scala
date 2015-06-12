@@ -74,5 +74,7 @@ object InferenceNamespace {
   def getFormatConvertingWorkerPath : String = {
     new File(s"${Context.deepdiveHome}/${utilFolder}/${formatConvertingWorkerName}").getCanonicalPath()
   }
+
+  def getActiveScript : String = new File(s"${Context.deepdiveHome}/${utilFolder}/active.sh").getCanonicalPath()
   
 }

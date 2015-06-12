@@ -456,6 +456,19 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     }
   }
 
+  def generateAcitve(groundingPath: String) {
+    val cmd = s"${InferenceNamespace.getActiveScript}"
+    log.debug("Executing: " + cmd)
+    val exitValue = cmd!(ProcessLogger(
+      out => log.info(out),
+      err => log.info(err)
+    ))
+    exitValue match {
+      case 0 => 
+      case _ => throw new RuntimeException("Generating active variables/factors/weights failed.")
+    }
+  }
+
   def groundFactorsAndWeights(factorDescs: Seq[FactorDesc],
     calibrationSettings: CalibrationSettings, du: DataLoader,
     dbSettings: DbSettings, groundingPath: String,
@@ -929,6 +942,12 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
     // split grounding files and transform to binary format
     convertGroundingFormat(groundingPath, dbSettings.incrementalMode)
+
+    // generate active compoenents for incremental
+    dbSettings.incrementalMode match {
+      case IncrementalMode.MATERIALIZATION => generateAcitve(groundingPath)
+      case _ => 
+    }
   }
 
   /**

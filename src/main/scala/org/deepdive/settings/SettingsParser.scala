@@ -217,10 +217,10 @@ object SettingsParser extends Logging {
         val osname = System.getProperty("os.name")
         log.info(s"Detected OS: ${osname}")
         if (osname.startsWith("Linux")) {
-          s"${Context.deepdiveHome}/util/sampler-dw-linux gibbs"
+          s"${Context.deepdiveHome}/util/sampler-dw-linux"
         }
         else {
-          s"${Context.deepdiveHome}/util/sampler-dw-mac gibbs"
+          s"${Context.deepdiveHome}/util/sampler-dw-mac"
         }
       case _ => samplingConfig.getString("sampler_cmd")
     }
@@ -243,20 +243,21 @@ object SettingsParser extends Logging {
 
   private def loadPipelineSettings(config: Config) : PipelineSettings = {
     val pipelineConfig = Try(config.getConfig("pipeline")).getOrElse {
-      return PipelineSettings(None, Nil, null)
+      return PipelineSettings(None, Nil, null, None)
     }
     val relearnFrom = Try(pipelineConfig.getString("relearn_from")).getOrElse(null)
     val activePipeline = Try(pipelineConfig.getString("run")).toOption
+    val baseDir = Try(pipelineConfig.getString("base_dir")).toOption
     if (relearnFrom == null) {
       val pipelinesObj = Try(pipelineConfig.getObject("pipelines")).getOrElse {
-        return PipelineSettings(None, Nil, null)
+        return PipelineSettings(None, Nil, null, None)
       }
       val pipelines = pipelinesObj.keySet().map { pipelineName =>
         val tasks = pipelineConfig.getStringList(s"pipelines.$pipelineName").toSet
         Pipeline(pipelineName, tasks)
       }.toList
-      return PipelineSettings(activePipeline, pipelines, relearnFrom)
+      return PipelineSettings(activePipeline, pipelines, relearnFrom, baseDir)
     }
-    PipelineSettings(activePipeline, Nil, relearnFrom)
+    PipelineSettings(activePipeline, Nil, relearnFrom, baseDir)
   }
 }
