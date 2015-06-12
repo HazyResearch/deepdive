@@ -4,8 +4,8 @@ layout: default
 
 # Building an Incremental Application
 
-This document describes how to build an incremental application using ddlog and
-Deepdive. The example application is from spouse example.
+This document describes how to build an incremental application using [DDlog][] and
+DeepDive. The example application is [the spouse example](../basics/walkthrough/walkthrough.html).
 
 This document assumes you are familiar with basic concepts in DeepDive and the
 spouse application tutorial.
@@ -14,220 +14,125 @@ spouse application tutorial.
 
 In building knowledge base construction, a typical scenario is the user has
 already built a knowledge base application, and wants to try new features or add
-new data. We call the base case materialization phase, and the iterative process
-of adding features or data incremental phase. The user will run materialization
+new data. We call the base case *materialization phase*, and the iterative process
+of adding features or data *incremental phase*. The user will run materialization
 phase to  materialize the base factor graph, and can run multiple incremental
-phase on top of the base factor  graph. Each incremental run is independent, and
+phase on top of the base factor  graph. Each incremental run is independent and
 is relative to the base run. Once the user is satisfied with the incremental
-experiments, the user can run  merge phase to merge the incremental part into
-the base part. The workflow can be summaried as follows.
+experiments, the user can run  *merge phase* to merge the incremental part into
+the base part. The workflow can be summarized as follows.
 
-1. Preprocess and load data
-2. Write the ddlog program
-3. Run materialization phase to materialize the base factor graph
-4. Add features, or add new data
-5. Run incremental phase
-6. Repeat 4 and 5 until satisfied
-7. Run merge phase to merge the incremental part into the base part
+1. Preprocess and load data.
+2. Write the DDlog program.
+3. Run *materialization phase* to materialize the base factor graph.
+4. Add features or add new data.
+5. Run *incremental phase*.
+6. Repeat 4 and 5 until satisfied.
+7. Run *merge phase* to merge the incremental part into the base part.
 
-
-### Preprocess and load data
-
-This walkthrough is based on tsv-extractor spouse example under
-deepdive/examples/spouse_example/tsv_extractor. First, copy the whole folder
-into the app folder where we want to put our application files. Then, follow the
-corresponding section in the spouse example tutorial to load the data. Note all
-the arrays should be transformed into string using array_to_string with delimiter
-'~^~'.
-
-
-### Write ddlog application
-
-We can rewrite the spouse example in ddlog. Please refer to ddlog tutorial about
-how to  write a ddlog program. The ddlog spouse example is as follows
-
-  articles(
-    article_id text,
-    text       text).
-
-  sentences(
-    document_id     text,
-    sentence        text,
-    words           text,
-    lemma           text,
-    pos_tags        text,
-    dependencies    text,
-    ner_tags        text,
-    sentence_offset int,
-    sentence_id     text).
-
-  people_mentions(
-    sentence_id    text,
-    start_position int,
-    length         int,
-    text           text,
-    mention_id     text).
-
-  has_spouse_candidates(
-    person1_id  text,
-    person2_id  text,
-    sentence_id text,
-    description text,
-    relation_id text,
-    is_true boolean).
-
-  has_spouse_features(
-    relation_id text,
-    feature     text).
-
-  has_spouse?(relation_id text).
-
-  people_mentions :-
-    !ext_people(ext_people_input).
-
-  ext_people_input(s, words, ner_tags) :-
-    sentences(a, b, words, c, d, e, ner_tags, f, s).
-
-  function ext_people over like ext_people_input
-                   returns like people_mentions
-    implementation "udf/ext_people.py" handles tsv lines.
-
-  has_spouse_candidates :-
-    !ext_has_spouse(ext_has_spouse_input).
-
-  ext_has_spouse_input(s, p1_id, p1_text, p2_id, p2_text) :-
-    people_mentions(s, a, b, p1_text, p1_id),
-    people_mentions(s, c, d, p2_text, p2_id).
-
-  function ext_has_spouse over like ext_has_spouse_input
-                       returns like has_spouse_candidates
-    implementation "udf/ext_has_spouse.py" handles tsv lines.
-
-  has_spouse_features :-
-    !ext_has_spouse_features(ext_has_spouse_features_input).
-
-  ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :-
-    sentences(a, b, words, c, d, e, f, g, s),
-    has_spouse_candidates(person1_id, person2_id, s, h, rid, x),
-    people_mentions(s, p1idx, p1len, k, person1_id),
-    people_mentions(s, p2idx, p2len, l, person2_id).
-    
-  function ext_has_spouse_features over like ext_has_spouse_features_input
-                                returns like has_spouse_features
-    implementation "udf/ext_has_spouse_features.py" handles tsv lines.
-
-  has_spouse(rid) :- has_spouse_candidates(a, b, c, d, rid, l) label = l.
-
-  has_spouse(rid) :-
-    has_spouse_candidates(a, b, c, d, rid, l),
-    has_spouse_features(rid, f)
-  weight = f.
-
-We put it under the application folder, called spouse.ddl.
-
-### Materialization phase
-
-In this phase, we will compile the ddlog program into application.conf, and then
-run the application. 
-
-In this walkthrough, we will demostrate incremental application by adding new
-features. In the udf `ext_has_spouse_features.py`, we'll use basic feature 1 as
-for materialization phase, and feature 2 for incremental phase. 
-
-Suppose we have the ddlog compiler ddlog.jar under current
-folder. Compile the ddlog using the following command
+We will assuming `DEEPDIVE_HOME` environment variable is set to the path of DeepDive's source tree:
 
 ```bash
-java -jar ddlog.jar compile --materialization spouse.ddl > application.conf
+export DEEPDIVE_HOME=~/deepdive
 ```
 
-After compiling ddlog to application.conf, we can run the application by setting 
-up a pipeline and run `run.sh`. First do
+### Preprocessing and loading data
+
+The incremental version of the spouse example is under [`examples/spouse_example/incremental`](https://github.com/HazyResearch/deepdive/tree/master/examples/spouse_example/incremental).
+The only difference is that all the arrays are transformed into string using array_to_string with delimiter '~^~' due to DDlog's limited support for array type.
+You can follow the [corresponding section in the original walkthrough](../basics/walkthrough/walkthrough.html#loading_data) to load the data.
+
+Alternatively, you can try the handy scripts included incremental example we include in the source tree.
 
 ```bash
-export PIPELINE=initdb
-sh run.sh
+cd examples/spouse_example/incremental
+./0-setup.sh
 ```
 
-to initialize the database. Then do
+
+### Writing Application in DDlog
+
+In order to make use of the incremental support of DeepDive, the application must be written in DDlog.
+Please refer to [DDlog tutorial][DDlog] for how to write your DeepDive application in DDlog.
+Let's assume you have put the DDlog program shown below in a file named `spouse_example.ddl` under the application folder.
+
+<script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/incremental/spouse_example.ddl?footer=minimal">
+</script>
+
+In this walkthrough, we demonstrate an incremental development workflow by adding new features.
+In the udf `ext_has_spouse_features.py`, suppose you had only feature 1 at the time of materialization phase.
+Then, suppose you want to try feature 2 as an incremental phase.
+
+Note that the [`run.sh` included in the incremental example](https://github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/incremental/run.sh) takes care of compiling a given DDlog program into a particular mode.
+
+
+### Materialization Phase
+
+Materialization phase is basically for taking a snapshot of the current model that serves as a base for the following incremental phases.
+You need to specify which variables and inference rules you are going to vary in the following incremental phases.
+They are called active variables and active inference rules, and the names can be put into files `spouse_example.active.vars` and `spouse_example.active.rules`.
+
+<script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/incremental/spouse_example.active.vars?footer=minimal">
+</script>
+
+<script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/incremental/spouse_example.active.rules?footer=minimal">
+</script>
+
+There is a script included in the example, and the materialization phase can be run using the following single command:
+```bash
+./1-materialization_phase.sh spouse_example.ddl
+```
+
+It will do the following:
+1. The DDlog program `spouse_example.ddl` is compiled.
+2. The `initdb`, `extraction`, and `inference` pipelines are run.
+3. A materialized base factor graph is produced under `$BASEDIR/`, which defaults to `./base/` under the application directory.
+
+
+### Incremental Phase
+
+In the incremental phase, suppose you added feature 2 to your udf, `ext_has_spouse_features.py`.
+Let's say you saved this modified udf in a file named `ext_has_spouse_features.f2.ddl`.
+
+<script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/incremental/udf/ext_has_spouse_features.f2.py?footer=minimal&slice=27:39">
+</script>
+
+
+You need to mark in the DDlog program which udf has been modified to produce the correct incremental pipeline.
+Let's say you saved this modified DDlog program in a file named `spouse_example.f2.ddl`.
+
+<script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/incremental/spouse_example.f2.ddl?footer=minimal&slice=67:70">
+</script>
+
+
+Finally, there is also a script included in the example, so the incremental phase can be done as simple as running the following command:
 
 ```bash
-export PIPELINE=extraction
-sh run.sh
-export PIPELINE=inference
-sh run.sh
+./2-incremental_phase.sh spouse_example.f2.ddl ./spouse_example.f2.inc.out/
 ```
 
-to run extraction and inference. We will get a materialized base factor graph under
-`deepdive/out/[timestamp]` folder.
+The incremental result will be stored in `./spouse_example.f2.inc.out/` by default.
 
-We also need to indicate the active variables/factors/weights. We call variables
-in the relations that the user wants to improve active variables, and we call
-inactive variables those that are not needed in the next KBC iteration. Similarly
-for factors and weights. These are generated using deepdive/util/active.sh.
-There are db connection and folder settings in this file. The output folder should
-be the same output folder as above. We can fill in the active variable relation
-name and the active inference rule name. These names can be found in application.conf.
-In our example, active variable relation would be `has_spouse`. Active inference
-rule would be `has_spouse_0`.
 
-We can run the sampler by using the following command
+#### Repeating Incremental Phase
+
+The incremental phase can be repeated several times until you are satisfied with the result.
+You need to run the following command before running another incremental phase:
 
 ```bash
-[sampler] mat -i 100 -s 100 -l 100 -r data/base/
+./4-cleanup.sh spouse_example.f2.ddl
 ```
 
-where [sampler] is the sampler binary. The materialized result is stored in 
-`data/base`.
 
-### Incremental phase
+### Merge Phase
 
-In this phase, we will update the application by adding a new feature for each
-relation candidate, and run the application. 
-
-In `ext_has_spouse_features.py`, we use feature 2. Then, compile the ddlog using
-the following command
+Once you decide to keep the current version, you can merge the incremental part into the base with the `--merge` mode:
 
 ```bash
-java -jar ddlog.jar compile --incremental spouse.ddl > application.conf
+./3-merge.sh spouse_example.f2.ddl
 ```
 
-After compilation, we can run the application. First do
-
-```bash
-export PIPELINE=initdb
-sh run.sh
-```
-
-to initialize the database. Then do
-
-```bash
-export PIPELINE=extraction
-sh run.sh
-export PIPELINE=inference
-sh run.sh
-```
-
-We will get an incremental factor graph also in `deepdive/out/[timestamp]` folder.
-
-We can run sampler using
-
-```bash
-[sampler] inc -i 100 -s 100 -l 100 -r data/base/ -j data/inc/
-```
-The incremental result will be stored in `data/inc/`. The above incremental phase
-can be repeated for several times until we are satisfied with our result. When
-running another incremental run, instead of using `export PIPELINE=initdb`,
-we will use `export PIPELINE=cleanup` before each run.
+Finally, you've finished a full workflow of the incremental application development cycle.
 
 
-### Merge phase
-
-Once we decide to keep the current version, we can merge the incremental part into
-the base by compiling the ddlog using `--merge` flag:
-
-```bash
-java -jar ddlog.jar compile --merge spouse.ddl > application.conf
-```
-
-The run `run.sh`. Till here, we finish a full workflow of incremental application.
+[DDlog]: ../basics/ddlog.html

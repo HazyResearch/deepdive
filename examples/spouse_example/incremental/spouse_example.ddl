@@ -73,4 +73,5 @@ has_spouse(rid) :- has_spouse_candidates(a, b, c, d, rid, l) label = l.
 has_spouse(rid) :-
   has_spouse_candidates(a, b, c, d, rid, l),
   has_spouse_features(rid, f)
-weight = f.
+weight = f
+semantics = Imply.

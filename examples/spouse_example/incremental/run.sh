@@ -5,13 +5,17 @@ DDlog=$1; shift
 Mode=$1; shift
 Pipeline=$1; shift
 
-appConf="$PWD/${DDlog%.ddl}.${Mode#--}_application.conf"
+appConf="${DDlog%.ddl}.${Mode#--}_application.conf"
 
 # compile application.conf from DDlog if necessary
 [[ "$appConf" -nt "$DDlog" ]] ||
     java -jar $DEEPDIVE_HOME/util/ddlog.jar compile $Mode "$DDlog" >"$appConf"
 
+# To run sbt, we must chdir to DEEPDIVE_HOME
+appConf="$(cd "$(dirname "$appConf")" && pwd)/$(basename "$appConf")"
 cd "$DEEPDIVE_HOME"
+
+# ddlog-generated application.conf contains a PIPELINE, so we must set it here
 export PIPELINE=$Pipeline
 
 # run DeepDive, passing the rest of the arguments

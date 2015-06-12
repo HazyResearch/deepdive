@@ -2,11 +2,11 @@
 
 export APP_HOME=$PWD
 export DEEPDIVE_HOME="$PWD/../../.."
-export BASEDIR="$PWD/base"
 export PYTHONPATH="$DEEPDIVE_HOME/ddlib:${PYTHONPATH:-}"
+export BASEDIR=${BASEDIR:-"$APP_HOME/base"}
 
 # Database Configuration
-export DBNAME=deepdive_spouse_inc
+export DBNAME=${DBNAME:-deepdive_spouse_inc}
 
 export PGUSER=${PGUSER:-`whoami`}
 export PGPASSWORD=${PGPASSWORD:-}
