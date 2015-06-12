@@ -125,7 +125,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
 
       val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "testtable",
-        "SELECT 5", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
+        "SELECT 5", null, t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       //expectMsg("Done!")
@@ -162,7 +162,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
       val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "testtable",
-        "SELECT 5", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some("/bin/i_am_not_exist"), None, "", None))
+        "SELECT 5", null, t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some("/bin/i_am_not_exist"), None, "", None))
 
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
@@ -199,7 +199,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
       val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "testtable",
-        "SELECT 5", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
+        "SELECT 5", null, t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
@@ -242,7 +242,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
       val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "testtable",
-        "SELECT 5", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), Some(t4.getAbsolutePath), "", None))
+        "SELECT 5", null, t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), Some(t4.getAbsolutePath), "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       //expectMsg("Done!")
@@ -282,7 +282,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
       val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "testtable",
-        "SELECT 5", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, None, Some("/bin/i_am_not_exist"), "", None))
+        "SELECT 5", null, t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, None, Some("/bin/i_am_not_exist"), "", None))
 
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
@@ -319,7 +319,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
       val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "testtable",
-        "SELECT 5", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, None, Some(t.getAbsolutePath), "", None))
+        "SELECT 5", null, t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, None, Some(t.getAbsolutePath), "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
@@ -343,7 +343,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       }
 
       val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1",
-        "SELECT * FROM relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet, None, None, "SELECT * FROM relation1", None))
+        "SELECT * FROM relation1", null, "/bin/cat", 1, 1000, 1000, Nil.toSet, None, None, "SELECT * FROM relation1", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       //expectMsg("Done!")
@@ -364,7 +364,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
       val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1",
-        "SELECT * FROM relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet))
+        "SELECT * FROM relation1", null, "/bin/cat", 1, 1000, 1000, Nil.toSet))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       //expectMsg("Done!")
@@ -394,7 +394,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       }.toList
       dataStore.addBatch(batchData.iterator, "relation1")
       val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1",
-        "SELECT * FROM relation1", "/bin/cat", 4, 500, 200, Nil.toSet, None, None, "", None))
+        "SELECT * FROM relation1", null, "/bin/cat", 4, 500, 200, Nil.toSet, None, None, "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       //expectMsg("Done!")
@@ -416,7 +416,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       val failingExtractorFile = getClass.getResource("/failing_extractor.py").getFile
       dataStore.addBatch(List(Json.parse("""{"key": 5}""").asInstanceOf[JsObject]).iterator, "relation1")
       val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1",
-        "SELECT * FROM relation1", failingExtractorFile, 1, 1000, 1000, Nil.toSet, None, None, "", None))
+        "SELECT * FROM relation1", null, failingExtractorFile, 1, 1000, 1000, Nil.toSet, None, None, "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
@@ -429,7 +429,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
       val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1",
-        "SELECT * FROM relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet, Option("echo Hello"), Option("echo World"), "", None))
+        "SELECT * FROM relation1", null, "/bin/cat", 1, 1000, 1000, Nil.toSet, Option("echo Hello"), Option("echo World"), "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       //expectMsg("Done!")
@@ -444,7 +444,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
       val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation5",
-        "relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet,None, None, "", None))
+        "relation1", null, "/bin/cat", 1, 1000, 1000, Nil.toSet,None, None, "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
@@ -457,7 +457,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
       val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1",
-        "SELECT * FROM relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet, Option("/bin/OHNO!"), Option("echo World"), "", None))
+        "SELECT * FROM relation1", null, "/bin/cat", 1, 1000, 1000, Nil.toSet, Option("/bin/OHNO!"), Option("echo World"), "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
@@ -470,7 +470,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
       val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1",
-        "SELECT * FROM relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet, Option("echo Hello"), Option("/bin/OHNO!"), "", None))
+        "SELECT * FROM relation1", null, "/bin/cat", 1, 1000, 1000, Nil.toSet, Option("echo Hello"), Option("/bin/OHNO!"), "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
@@ -509,7 +509,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
       val task = new ExtractionTask(Extractor("testExtractor", "tsv_extractor", "testtable",
-        "SELECT 5", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
+        "SELECT 5", null, t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       //expectMsg("Done!")
@@ -561,7 +561,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
       val task = new ExtractionTask(Extractor("testExtractor", "tsv_extractor", "testtable",
-        "SELECT * FROM testtable", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
+        "SELECT * FROM testtable", null, t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       //expectMsg("Done!")
@@ -624,7 +624,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
       val task = new ExtractionTask(Extractor("testExtractor", "tsv_extractor", "testtable",
-        "SELECT * FROM testtable", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
+        "SELECT * FROM testtable", null, t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       //expectMsg("Done!")
@@ -676,7 +676,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
         val task = new ExtractionTask(Extractor("testExtractor", exttype, "testtable",
-          "SELECT * FROM testtable", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
+          "SELECT * FROM testtable", null, t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
         actor ! ExtractorRunner.SetTask(task)
         watch(actor)
         expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
@@ -712,7 +712,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
         val task = new ExtractionTask(Extractor("testExtractor", exttype, "testtable",
-          "AAAAAAAAAAAAAAAAAAAAAAAAA * FROM testtable", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
+          "AAAAAAAAAAAAAAAAAAAAAAAAA * FROM testtable", null, t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
         actor ! ExtractorRunner.SetTask(task)
         watch(actor)
         expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
@@ -746,7 +746,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
       val task = new ExtractionTask(Extractor("testExtractor", "sql_extractor", "testtable",
-        "DELETE FROM testtable WHERE a='I should be in the table';", "", 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "DELETE FROM testtable WHERE a='I should be in the table';", None))
+        "DELETE FROM testtable WHERE a='I should be in the table';", null, "", 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "DELETE FROM testtable WHERE a='I should be in the table';", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       //expectMsg("Done!")
@@ -783,7 +783,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
       val task = new ExtractionTask(Extractor("testExtractor", "sql_extractor", "testtable",
-        "DELETEAAAAAA FROM testtable WHERE a='I should be in the table';", "", 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "DELETEAAAAAA FROM testtable WHERE a='I should be in the table';", None))
+        "DELETEAAAAAA FROM testtable WHERE a='I should be in the table';", null, "", 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "DELETEAAAAAA FROM testtable WHERE a='I should be in the table';", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
@@ -823,7 +823,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
       val task = new ExtractionTask(Extractor("testExtractor", "cmd_extractor", "testtable",
-        t4.getAbsolutePath, "", 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "",
+        t4.getAbsolutePath, null, "", 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "",
         Some(t4.getAbsolutePath)))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
@@ -868,7 +868,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
       val task = new ExtractionTask(Extractor("testExtractor", "cmd_extractor", "testtable",
-        t4.getAbsolutePath, "", 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "",
+        t4.getAbsolutePath, null, "", 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "",
         Some(t4.getAbsolutePath)))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
