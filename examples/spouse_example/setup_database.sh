@@ -1,4 +1,7 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
+# A script for setting up the PostgreSQL database for DeepDive's spouse example
+set -eux
+cd "$(dirname "$0")"
 
 if [ $# = 1 ]; then
   export DBNAME=$1
@@ -9,11 +12,9 @@ fi
 echo "Set DB_NAME to ${DBNAME}."
 echo "HOST is ${PGHOST}, PORT is ${PGPORT}."
 
-dropdb $DBNAME
+dropdb --if-exists $DBNAME
 createdb $DBNAME
 
-export APP_HOME=`cd $(dirname $0)/; pwd`
-
-psql -d $DBNAME < $APP_HOME/schema.sql
-psql -d $DBNAME -c "copy articles from STDIN CSV;" < $APP_HOME/data/articles_dump.csv
-psql -d $DBNAME -c "copy sentences from STDIN CSV;" < $APP_HOME/data/sentences_dump.csv
+psql -d $DBNAME <./schema.sql
+bzcat ./data/articles_dump.csv.bz2  | psql -d $DBNAME -c "COPY articles  FROM STDIN CSV"
+bzcat ./data/sentences_dump.csv.bz2 | psql -d $DBNAME -c "COPY sentences FROM STDIN CSV"

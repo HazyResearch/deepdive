@@ -1,0 +1,4 @@
+# ignore everything except compressed files
+*
+!*.bz2
+!*.gz
