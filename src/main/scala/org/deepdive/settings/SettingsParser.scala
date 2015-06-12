@@ -28,7 +28,7 @@ object SettingsParser extends Logging {
       }
     }
 
-    Settings(schemaSettings, extractors, inferenceSettings, 
+    Settings(schemaSettings, extractors, inferenceSettings,
       calibrationSettings, samplerSettings, pipelineSettings, dbSettings)
   }
 
@@ -110,7 +110,7 @@ object SettingsParser extends Logging {
       val extractorConfig = extractionConfig.getConfig(s"extractors.$extractorName")
       val style = Try(extractorConfig.getString(s"style")).getOrElse("json_extractor")
       style match {
-        case "json_extractor" | "plpy_extractor" | "tsv_extractor" =>
+        case "json_extractor" | "plpy_extractor" | "tsv_extractor" | "piggy_python" =>
           val outputRelation = extractorConfig.getString ("output_relation")
           val inputQuery = InputQueryParser.parse (InputQueryParser.inputQueryExpr,
             extractorConfig.getString (s"input") ).getOrElse {
@@ -119,6 +119,10 @@ object SettingsParser extends Logging {
             } failed")
           }
           val udf = extractorConfig.getString (s"udf")
+          val udfDir = Try (extractorConfig.getString (s"udf_dir") ).getOrElse(null)
+          if (style == "piggy_python" && udfDir == null) {
+            throw new RuntimeException("you must specify udf_dir for piggy_python extractors")
+          }
           val sqlQuery = Try (extractorConfig.getString (s"sql") ).getOrElse ("")
           val cmd = Try (extractorConfig.getString ("cmd") ).toOption
           val parallelism = Try (extractorConfig.getInt (s"parallelism") ).getOrElse (1)
@@ -138,7 +142,7 @@ object SettingsParser extends Logging {
                 Try(loaderConfigObj.getInt("parallel_transactions")).getOrElse(60)
             )
           }
-          Extractor(extractorName, style, outputRelation, inputQuery, udf, parallelism,
+          Extractor(extractorName, style, outputRelation, inputQuery, udfDir, udf, parallelism,
             inputBatchSize, outputBatchSize, dependencies, beforeScript, afterScript, sqlQuery, cmd,
             loader, loaderConfig)
 
@@ -148,7 +152,7 @@ object SettingsParser extends Logging {
           val dependencies = Try (extractorConfig.getStringList ("dependencies").toSet).getOrElse (Set () )
           val beforeScript = Try (extractorConfig.getString ("before") ).toOption
           val afterScript = Try (extractorConfig.getString ("after") ).toOption
-          Extractor(extractorName, style, "", null, "", 1,
+          Extractor(extractorName, style, "", null, null, "", 1,
             10000, 50000, dependencies, beforeScript, afterScript, sqlQuery, cmd)
       }
     }.toList
@@ -178,7 +182,7 @@ object SettingsParser extends Logging {
     }
     val factors = factorConfig.keySet().map { factorName =>
       val factorConfig = inferenceConfig.getConfig(s"factors.$factorName")
-      val factorInputQuery = InputQueryParser.parse(InputQueryParser.DatastoreInputQueryExpr, 
+      val factorInputQuery = InputQueryParser.parse(InputQueryParser.DatastoreInputQueryExpr,
         factorConfig.getString("input_query")).getOrElse {
         throw new RuntimeException(s"parsing ${factorConfig.getString("input_query")} failed")
       }.query
@@ -191,14 +195,14 @@ object SettingsParser extends Logging {
         throw new RuntimeException(s"parsing ${factorConfig.getString("weight")} failed")
       }
       val factorWeightPrefix = Try(factorConfig.getString("weightPrefix")).getOrElse(factorName)
-      FactorDesc(factorName, factorInputQuery, factorFunction, 
+      FactorDesc(factorName, factorInputQuery, factorFunction,
           factorWeight, factorWeightPrefix)
     }.toList
     InferenceSettings(factors, batchSize, skipLearning, weightTable, parallelGrounding)
   }
 
   private def loadCalibrationSettings(config: Config) : CalibrationSettings = {
-    val calibrationConfig = Try(config.getConfig("calibration")).getOrElse { 
+    val calibrationConfig = Try(config.getConfig("calibration")).getOrElse {
       return CalibrationSettings(0.0, None, None)
     }
     val holdoutFraction = Try(calibrationConfig.getDouble("holdout_fraction")).getOrElse(0.0)
@@ -225,20 +229,20 @@ object SettingsParser extends Logging {
       case _ => samplingConfig.getString("sampler_cmd")
     }
 
-    
+
     // Zifei's changes: Add capability to skip learning
     // If skip learning, set "-l 0" in sampler
     val skipLearning = Try(config.getConfig("inference").getBoolean("skip_learning")).getOrElse(false)
     val samplerArgs = skipLearning match {
-      case false => 
+      case false =>
         samplingConfig.getString("sampler_args")
       case true =>
         samplingConfig.getString("sampler_args").replaceAll("""-l +[0-9]+ *""", """-l 0 """)
     }
     log.debug(s"samplerArgs: ${samplerArgs}")
-    
+
     SamplerSettings(samplerCmd, samplerArgs)
-    
+
   }
 
   private def loadPipelineSettings(config: Config) : PipelineSettings = {
