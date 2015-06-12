@@ -1,15 +1,11 @@
-#! /bin/bash
-
+#!/usr/bin/env bash
+# A script for setting up the database for incremental application
+set -eux
+cd "$(dirname "$0")"
 . env.sh
 
-export APP_HOME=`cd $(dirname $0)/; pwd`
-export DEEPDIVE_HOME=`cd $(dirname $0)/../../../; pwd`
-export BASEDIR=`cd $(dirname $0)/base; pwd`
-export PYTHONPATH=$DEEPDIVE_HOME/ddlib:$PYTHONPATH
-
-cd $DEEPDIVE_HOME
-
-dropdb $DBNAME
+dropdb --if-exists $DBNAME
 createdb $DBNAME
-sh $APP_HOME/run.sh materialization_application.conf initdb
-psql -d $DBNAME -c "copy sentences from STDIN DELIMITER ',';" < $APP_HOME/../data/sentences_dump_inc.csv
+
+./run.sh spouse_example.ddl --materialization initdb
+psql -d $DBNAME -c "COPY SENTENCES FROM STDIN DELIMITER ',';" < ../data/sentences_dump_inc.csv
