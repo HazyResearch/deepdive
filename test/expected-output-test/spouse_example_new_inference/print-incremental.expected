@@ -111,6 +111,10 @@ dd_delta_has_spouse?(relation_id text).
 
 dd_new_has_spouse?(relation_id text).
 
+dd_new_has_spouse(relation_id) :-
+    has_spouse(relation_id);
+    dd_delta_has_spouse(relation_id).
+
 dd_delta_people_mentions :- !ext_people(dd_delta_ext_people_input).
 
 dd_delta_ext_people_input(s, words, ner_tags) :-
@@ -166,13 +170,18 @@ dd_delta_has_spouse(rid) :-
     dd_delta_has_spouse_candidates(a, b, c, d, rid, l)
   label = l.
 
-dd_delta_has_spouse(rid) :-
-    has_spouse_candidates(a, b, c, d, rid, l),
-    has_spouse_features(rid, f);
+dd_new_has_spouse(rid) :-
     dd_delta_has_spouse_candidates(a, b, c, d, rid, l),
     has_spouse_features(rid, f);
     dd_new_has_spouse_candidates(a, b, c, d, rid, l),
     dd_delta_has_spouse_features(rid, f)
   weight = f
-  semantics = Linear.
+  semantics = Imply.
+
+dd_new_has_spouse(rid) :-
+    dd_new_has_spouse(rid2),
+    dd_new_has_spouse_candidates(a1, b1, c1, d1, rid, l1),
+    dd_new_has_spouse_candidates(b1, a1, c2, d2, rid2, l2)
+  weight = 3.0
+  semantics = Imply.
 

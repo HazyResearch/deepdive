@@ -4,6 +4,10 @@ dd_delta_R?(x text).
 
 dd_new_R?(x text).
 
+dd_new_R(x) :-
+    R(x);
+    dd_delta_R(x).
+
 S(x text).
 
 dd_delta_S(x text).

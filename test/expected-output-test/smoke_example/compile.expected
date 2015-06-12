@@ -13,7 +13,8 @@
 
 
       deepdive.schema.variables {
-        cancer.label: Boolean
+        smoke.label: Boolean
+cancer.label: Boolean
       }
     
 
@@ -87,10 +88,10 @@
 
       deepdive.extraction.extractors.extraction_rule_6 {
         sql: """ 
-        INSERT INTO smoke 
-            SELECT R0.person_id AS "person_smokes.R0.person_id" 
-            FROM person_smokes R0
+        INSERT INTO smoke SELECT DISTINCT R0.person_id, 0 as id, R0.smokes AS label 
+          FROM person_smokes R0
         
+          
         """
         style: "sql_extractor"
           

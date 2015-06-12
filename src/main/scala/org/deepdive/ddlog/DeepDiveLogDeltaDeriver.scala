@@ -18,12 +18,20 @@ object DeepDiveLogDeltaDeriver{
     case s: InferenceRule       => transform(s)
   }
 
-  def transform(cq: ConjunctiveQuery, mode: String): ConjunctiveQuery = {
+  def transform(cq: ConjunctiveQuery, isInference: Boolean, mode: String): ConjunctiveQuery = {
     // New head
-    val incCqHead = cq.head.copy(
-      name = deltaPrefix + cq.head.name,
-      terms = cq.head.terms map {term => term.copy(relName = deltaPrefix + term.relName)}
-    )
+    val incCqHead = if (isInference) {
+      cq.head.copy(
+        name = newPrefix + cq.head.name,
+        terms = cq.head.terms map {term => term.copy(relName = newPrefix + term.relName)}
+      )
+    } else {
+      cq.head.copy(
+        name = deltaPrefix + cq.head.name,
+        terms = cq.head.terms map {term => term.copy(relName = deltaPrefix + term.relName)}
+      )
+    }
+
     var incCqBodies = new ListBuffer[List[Atom]]()
     // New incremental bodies
     for (body <- cq.bodies) {
@@ -43,18 +51,22 @@ object DeepDiveLogDeltaDeriver{
       }
       var i = 0
       var j = 0
-      var index = if ((incrementalFunctionInput contains incCqHead.name) || (mode == "inc")) -1 else 0
-      for (i <- index to (body.length - 1)) {
-        var newBody = new ListBuffer[Atom]()
-        for (j <- 0 to (body.length - 1)) {
-          if (j > i)
-            newBody += body(j)
-          else if (j < i)
-            newBody += incNewBody(j)
-          else if (j == i)
-            newBody += incDeltaBody(j)
+      var index = if (incrementalFunctionInput contains incCqHead.name) -1 else 0
+      if (mode == "inc") {
+        incCqBodies += incNewBody
+      } else {
+        for (i <- index to (body.length - 1)) {
+          var newBody = new ListBuffer[Atom]()
+          for (j <- 0 to (body.length - 1)) {
+            if (j > i)
+              newBody += body(j)
+            else if (j < i)
+              newBody += incNewBody(j)
+            else if (j == i)
+              newBody += incDeltaBody(j)
+          }
+          incCqBodies += newBody.toList
         }
-        incCqBodies += newBody.toList
       }
     }
     ConjunctiveQuery(incCqHead, incCqBodies.toList)
@@ -87,10 +99,10 @@ object DeepDiveLogDeltaDeriver{
     )
     incrementalStatement += incNewStmt
 
-    if (!stmt.isQuery) {
-      incrementalStatement += ExtractionRule(ConjunctiveQuery(Atom(incNewStmt.a.name, incNewStmt.a.terms),
-        List(List(Atom(stmt.a.name, stmt.a.terms)), List(Atom(incDeltaStmt.a.name, incDeltaStmt.a.terms)))))
-    }
+    // if (!stmt.isQuery) {
+    incrementalStatement += ExtractionRule(ConjunctiveQuery(Atom(incNewStmt.a.name, incNewStmt.a.terms),
+      List(List(Atom(stmt.a.name, stmt.a.terms)), List(Atom(incDeltaStmt.a.name, incDeltaStmt.a.terms)))))
+    // }
     incrementalStatement.toList
   }
 
@@ -116,7 +128,10 @@ object DeepDiveLogDeltaDeriver{
   // Incremental extraction rule,
   // create delta rules based on original extraction rule
   def transform(stmt: ExtractionRule): List[Statement] = {
-    List(ExtractionRule(transform(stmt.q, null), stmt.supervision))
+    // if (stmt.supervision != null)
+      // List(ExtractionRule(transform(stmt.q, true, null), stmt.supervision))
+    // else
+      List(ExtractionRule(transform(stmt.q, false, null), stmt.supervision))
   }
 
   // Incremental function call rule,
@@ -128,7 +143,7 @@ object DeepDiveLogDeltaDeriver{
   // Incremental inference rule,
   // create delta rules based on original extraction rule
   def transform(stmt: InferenceRule): List[Statement] = {
-    List(InferenceRule(transform(stmt.q, stmt.mode), stmt.weights, stmt.semantics))
+    List(InferenceRule(transform(stmt.q, true, stmt.mode), stmt.weights, stmt.semantics))
   }
 
   def generateIncrementalFunctionInputList(program: DeepDiveLog.Program) {
