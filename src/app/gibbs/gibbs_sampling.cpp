@@ -261,7 +261,7 @@ void dd::GibbsSampling::learn(const int & n_epoch, const int & n_sample_per_epoc
   }
 }
 
-void dd::GibbsSampling::dump_weights(const bool is_quiet){
+void dd::GibbsSampling::dump_weights(const bool is_quiet, int inc){
 
   // learning weights snippets
   FactorGraph const & cfg = this->factorgraphs[0];
@@ -279,10 +279,15 @@ void dd::GibbsSampling::dump_weights(const bool is_quiet){
   }
 
   // dump learned weights
-  // std::string filename_text = p_cmd_parser->original_folder->getValue() 
-  //   + "/inference_result.out.weights.text";
-  std::string filename_text = p_cmd_parser->output_folder->getValue() 
-    + "/inference_result.out.weights.text";
+  std::string filename_text;
+  if (inc == 0) { // original
+    filename_text = p_cmd_parser->output_folder->getValue();
+  } else if (inc == 1) { // materialization
+    filename_text = p_cmd_parser->original_folder->getValue();
+  } else { // incremental
+    filename_text = p_cmd_parser->delta_folder->getValue();
+  }
+  filename_text += "/inference_result.out.weights.text";
   std::cout << "DUMPING... TEXT    : " << filename_text << std::endl;
 
   std::ofstream fout_text(filename_text.c_str());
@@ -292,7 +297,7 @@ void dd::GibbsSampling::dump_weights(const bool is_quiet){
   fout_text.close();
 }
 
-void dd::GibbsSampling::aggregate_results_and_dump(const bool is_quiet){
+void dd::GibbsSampling::aggregate_results_and_dump(const bool is_quiet, int inc){
 
   // sum of variable assignments
   std::unique_ptr<double[]> agg_means(new double[factorgraphs[0].n_var]);
@@ -354,11 +359,16 @@ void dd::GibbsSampling::aggregate_results_and_dump(const bool is_quiet){
   }
 
   // dump inference results
-  // std::string filename_text = p_cmd_parser->original_folder->getValue() + 
-  //   "/inference_result.out.text";
+  std::string filename_text;
+  if (inc == 0) { // original
+    filename_text = p_cmd_parser->output_folder->getValue();
+  } else if (inc == 1) { // materialization
+    filename_text = p_cmd_parser->original_folder->getValue();
+  } else { // incremental
+    filename_text = p_cmd_parser->delta_folder->getValue();
+  }
 
-  std::string filename_text = p_cmd_parser->output_folder->getValue() + 
-    "/inference_result.out.text";
+  filename_text += "/inference_result.out.text";
   std::cout << "DUMPING... TEXT    : " << filename_text << std::endl;
   std::ofstream fout_text(filename_text.c_str());
   for(long i=0;i<factorgraphs[0].n_var;i++){

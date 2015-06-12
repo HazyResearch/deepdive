@@ -107,7 +107,7 @@ void inc(dd::CmdParser & cmd_parser){
     stepsize, decay, reg_param, is_quiet, true);
 
   // dump weights
-  gibbs.dump_weights(is_quiet);
+  gibbs.dump_weights(is_quiet, 2);
 
   // number of inference epochs
   int numa_aware_n_epoch = (int)(n_inference_epoch/n_numa_node) + 
@@ -115,7 +115,7 @@ void inc(dd::CmdParser & cmd_parser){
 
   // inference
   gibbs.inference(numa_aware_n_epoch, is_quiet, false, true);
-  gibbs.aggregate_results_and_dump(is_quiet);
+  gibbs.aggregate_results_and_dump(is_quiet, 2);
 
 }
 
@@ -132,7 +132,6 @@ void mat(dd::CmdParser & cmd_parser){
     std::cout << "original folder not specified" << std::endl;
     exit(1);
   }
-  cmd_parser.output_folder = cmd_parser.original_folder;
 
   // get command line arguments
   std::string fg_file = original_folder + "/graph.meta";
@@ -140,8 +139,6 @@ void mat(dd::CmdParser & cmd_parser){
   std::string variable_file = original_folder + "/graph.variables";
   std::string factor_file = original_folder + "/graph.factors";
   std::string edge_file = original_folder + "/graph.edges";
-
-  std::string output_folder = original_folder;
 
   int n_learning_epoch = cmd_parser.n_learning_epoch->getValue();
   int n_samples_per_learning_epoch = cmd_parser.n_samples_per_learning_epoch->getValue();
@@ -179,7 +176,7 @@ void mat(dd::CmdParser & cmd_parser){
     stepsize, decay, reg_param, is_quiet, false);
 
   // dump weights
-  gibbs.dump_weights(is_quiet);
+  gibbs.dump_weights(is_quiet, 1);
 
   // number of inference epochs
   int numa_aware_n_epoch = (int)(n_inference_epoch/n_numa_node) + 
@@ -187,7 +184,7 @@ void mat(dd::CmdParser & cmd_parser){
 
   // inference
   gibbs.inference(numa_aware_n_epoch, is_quiet, true, false);
-  gibbs.aggregate_results_and_dump(is_quiet);
+  gibbs.aggregate_results_and_dump(is_quiet, 1);
 
 }
 
@@ -290,7 +287,7 @@ void gibbs(dd::CmdParser & cmd_parser){
     stepsize, decay, reg_param, is_quiet, false);
 
   // dump weights
-  gibbs.dump_weights(is_quiet);
+  gibbs.dump_weights(is_quiet, 0);
 
   // number of inference epochs
   int numa_aware_n_epoch = (int)(n_inference_epoch/n_numa_node) + 
@@ -298,6 +295,6 @@ void gibbs(dd::CmdParser & cmd_parser){
 
   // inference
   gibbs.inference(numa_aware_n_epoch, is_quiet, false, false);
-  gibbs.aggregate_results_and_dump(is_quiet);
+  gibbs.aggregate_results_and_dump(is_quiet, 0);
 
 }

@@ -76,13 +76,13 @@ namespace dd{
      * Dumps the inference result for variables
      * is_quiet whether to compress information display
      */
-    void aggregate_results_and_dump(const bool is_quiet);
+    void aggregate_results_and_dump(const bool is_quiet, int inc);
 
     /**
      * Dumps the learned weights
      * is_quiet whether to compress information display
      */
-    void dump_weights(const bool is_quiet);
+    void dump_weights(const bool is_quiet, int inc);
 
   };
 }
