@@ -11,6 +11,5 @@ ActiveRulesFile=${3:-${DDlog%.ddl}.active.rules}
 export DEEPDIVE_ACTIVE_INCREMENTAL_VARIABLES="$(cat "$ActiveVarsFile")"
 export DEEPDIVE_ACTIVE_INCREMENTAL_RULES="$(cat "$ActiveRulesFile")"
 
-./run.sh "$DDlog" --materialization initdb      -o "$BASEDIR"
 ./run.sh "$DDlog" --materialization extraction  -o "$BASEDIR"
 ./run.sh "$DDlog" --materialization inference   -o "$BASEDIR"
