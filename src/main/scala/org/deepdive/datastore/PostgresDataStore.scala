@@ -173,6 +173,12 @@ class PostgresDataStore extends JdbcDataStore with Logging {
     return count
   }
 
+  override def init() : Unit = {
+    super.init()
+    executeSqlQueries("SET search_path to 'public'", false)
+    executeSqlQueries(SQLFunctions.piggyExtractorDriverDeclaration, false)
+  }
+
   // create fast sequence assign function for greenplum
   override def createSpecialUDFs() : Unit = {
     if (isUsingGreenplum()) {

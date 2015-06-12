@@ -17,10 +17,13 @@ import scala.util.{Try, Success, Failure}
 import scala.concurrent._
 import scala.concurrent.duration._
 import scala.sys.process._
+import collection.mutable.HashMap
 import rx.lang.scala.subjects._
 import play.api.libs.json._
 import scala.util.Random
 import java.io.{File, PrintWriter}
+import java.nio.file.{Paths, Files}
+import java.net.InetAddress
 import scala.io.Source
 import org.deepdive.helpers.Helpers
 import org.deepdive.helpers.Helpers.{Mysql, Psql}
@@ -66,6 +69,9 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
   implicit val timeout = Timeout(1337.hours)
 
   private val PRINT_PERIOD = 30.seconds
+
+  // UDF dir path -> staged env path on the DB server
+  private val piggyEnvs = HashMap[String, String]()
 
   // Branch by database driver type (temporary solution)
   val dbtype = Helpers.getDbType(dbSettings)
@@ -146,6 +152,10 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
 
         case "plpy_extractor" =>
           runPlpyExtractor(task, dbSettings, taskSender)
+          runAfterScript(task, taskSender)
+
+        case "piggy_python" =>
+          runPiggyPythonExtractor(task, dbSettings, taskSender)
           runAfterScript(task, taskSender)
       }
 
@@ -554,6 +564,94 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
     log.debug("Analyzing output relation.")
     executeSqlUpdateOrFail(s"${sqlAnalyzeCommand} ${outputRel};", taskSender)
   }
+
+  /**
+   * Run piggy python extractor
+   */
+  private def runPiggyPythonExtractor(task: ExtractionTask, dbSettings: DbSettings, taskSender: ActorRef) = {
+    if (dbtype != Psql) {
+      failTask(s"do not support ${task.extractor.style} on ${dbtype}.", taskSender)
+    }
+
+    // Upload UDF directory and setup runtime env on DB nodes
+    val udfDir = task.extractor.udfDir
+    if (!Files.exists(Paths.get(udfDir))) {
+      throw new RuntimeException("UDF directory does not exist: " + udfDir)
+    }
+
+    // Setup plpython UDF
+    val envDir = ensurePiggyEnv(udfDir)
+
+    val udf = task.extractor.udf
+    val outputRel = task.extractor.outputRelation
+    val inputQuery = task.extractor.inputQuery match {
+      case DatastoreInputQuery(query) => query
+      case _ => ""
+    }
+
+    val sql = "SELECT piggy_prepare_run(?, ?, ?, ?)"
+    var runSqlParts: Array[String] = null
+    dataStore.prepareStatement(sql) { ps =>
+      ps.setString(1, envDir)
+      ps.setString(2, udf)
+      ps.setString(3, inputQuery)
+      ps.setString(4, task.extractor.outputRelation)
+      val rs = ps.executeQuery()
+      if (rs.next()) {
+        runSqlParts = rs.getArray(1).getArray.asInstanceOf[Array[String]]
+      }
+      rs.close()
+    }
+    if (runSqlParts == null || runSqlParts.length != 2) {
+      throw new RuntimeException("Failed to prepare piggy run: " + task.extractor.name)
+    }
+
+    // Run plpython UDF
+    val insertion = runSqlParts(0)
+    val cleaning = runSqlParts(1)
+
+    log.info(insertion)
+    dataStore.prepareStatement(insertion) { ps =>
+      val count = ps.executeUpdate()
+      log.info("Extractor " + task.extractor.name + " created " + count + " rows")
+    }
+
+    log.debug(cleaning)
+    dataStore.executeSqlQueries(cleaning, false)
+
+    log.debug("Analyzing output relation.")
+    executeSqlUpdateOrFail(s"${sqlAnalyzeCommand} ${outputRel};", taskSender)
+  }
+
+
+  private def ensurePiggyEnv(udfDir: String): String = {
+    if (piggyEnvs.contains(udfDir)) {
+      return piggyEnvs(udfDir)
+    }
+    val blob = FileDataUtils.zipDir(udfDir)
+    val localhost = InetAddress.getLocalHost
+    val hostname = localhost.getHostName
+    val clientname = Helpers.slugify(hostname) + '_' + Helpers.md5Hash(localhost.toString + udfDir)
+    val sql = "SELECT piggy_setup_env(?, ?)"
+    var remotePath: String = null
+    dataStore.prepareStatement(sql) { ps =>
+      ps.setString(1, clientname)
+      ps.setBytes(2, blob)
+      val rs = ps.executeQuery()
+      if (rs.next()) {
+        remotePath = rs.getString(1)
+        piggyEnvs(udfDir) = remotePath
+        log.info("Piggy env source: " + udfDir)
+        log.info("Piggy env destination: " + remotePath)
+      }
+      rs.close()
+    }
+    if (remotePath == null) {
+      throw new RuntimeException("Failed to stage piggy UDF: " + udfDir)
+    }
+    return remotePath
+  }
+
 
   /**
    * Run after script and finalize the extractor. Fail if the after script fails.

@@ -106,4 +106,216 @@ object SQLFunctions {
     $$
     LANGUAGE 'plpgsql';
     """
+
+    val piggyExtractorDriverDeclaration = """
+
+CREATE OR REPLACE FUNCTION piggy_setup_env (client_name text, zip_blob bytea)
+  RETURNS text
+AS $$
+
+import hashlib
+import os
+import shutil
+import subprocess
+import tempfile
+import zipfile
+
+try:
+    from cStringIO import StringIO
+except:
+    from StringIO import StringIO
+
+# postgres on homebrew somehow does not have /usr/local/bin in PATH
+os.environ['PATH'] += os.pathsep + '/usr/local/bin'
+
+if not zip_blob:
+    plpy.error('No blob provided')
+    return
+
+# create subdir for this version
+fp = hashlib.sha1(zip_blob).hexdigest()[:8]
+client_dir = os.path.join(tempfile.gettempdir(), 'piggy_envs', client_name)
+dir = os.path.join(client_dir, fp)
+try:
+    # only one contending process would succeed here
+    os.makedirs(dir)
+except OSError:
+    plpy.info('Directory already exists: ' + dir)
+    return
+plpy.info('Created ' + dir)
+
+# remove the other versions
+for x in os.listdir(client_dir):
+    if x in ['env', fp]:
+        continue
+    plpy.info('Removing subdir: ' + fp)
+    shutil.rmtree(os.path.join(client_dir, x))
+
+# expand zip blob
+content = StringIO(zip_blob)
+zipf = zipfile.ZipFile(content, 'r')
+zipf.extractall(dir)
+plpy.info('Extracted zip content to ' + dir)
+
+# make / update virtualenv -- only one per client
+venv = os.path.join(client_dir, 'env')
+plpy.info('Ensuring env: ' + venv)
+subprocess.check_output('virtualenv "%s"' % venv,
+                        stderr=subprocess.STDOUT,
+                        shell=True)
+
+# install pip libraries
+reqfile = os.path.join(dir, 'requirements.txt')
+if os.path.isfile(reqfile):
+    plpy.info('Installing libs from ' + reqfile)
+    output = subprocess.check_output('%s/bin/pip install -r "%s"' % (venv, reqfile),
+                                     stderr=subprocess.STDOUT,
+                                     shell=True)
+    plpy.info(output)
+
+return dir
+
+$$ LANGUAGE plpythonu;
+
+
+
+CREATE OR REPLACE FUNCTION piggy_prepare_run (dir text, func text, source text, target text)
+  RETURNS text[]
+AS $$
+
+import hashlib
+import os
+import time
+
+date = time.strftime('%Y%m%d')
+fp = date + '_' + hashlib.sha1('\t'.join([dir, func, source, target])).hexdigest()[:8]
+fname = 'piggy_func_' + fp
+sview = 'piggy_source_' + fp
+tview = 'piggy_target_' + fp
+pymodule, pyfunc = func.rsplit('.', 1)
+venv = os.path.join(dir, os.pardir, 'env')
+activate_this = os.path.join(venv, 'bin', 'activate_this.py')
+
+if ' ' not in source:
+    source_query = 'SELECT * FROM ' + source
+else:
+    source_query = source
+
+if '(' not in target:
+    target_query = 'SELECT * FROM ' + target
+else:
+    tname, tcols = target.strip(' )').split('(')
+    target_query = 'SELECT %s FROM %s' (tcols, tname)
+
+# Why do we have these in a separate call?
+# Because PGXL would whine if you have them together with CREATE TABLE.
+sql = '''
+DROP TABLE IF EXISTS %(sview)s CASCADE;
+DROP TABLE IF EXISTS %(tview)s CASCADE;
+''' % {
+    'sview': sview,
+    'tview': tview,
+}
+plpy.execute(sql)
+
+# Why TABLE not VIEW?
+# Because PGXL does not create views on data nodes.
+# Why do we need the column names?
+# Because we need them to convert row type to composite type.
+sql = '''
+CREATE TABLE %(sview)s AS %(source_query)s LIMIT 0;
+CREATE TABLE %(tview)s AS %(target_query)s LIMIT 0;
+
+SELECT string_agg(name, ', ') as scols
+FROM
+(
+    SELECT attname as name
+    FROM   pg_attribute
+    WHERE  attrelid = '%(sview)s'::regclass
+    AND    attnum > 0
+    AND    NOT attisdropped
+    ORDER  BY attnum
+) t;
+''' % {
+    'sview': sview,
+    'tview': tview,
+    'source_query': source_query,
+    'target_query': target_query,
+}
+
+plpy.info(sql)
+scols = plpy.execute(sql)[0]['scols']
+
+# Why not merge CREATE FUNCTION with CREATE TABLE?
+# Because PGXL sucks.
+sql = '''
+CREATE OR REPLACE FUNCTION %(fname)s (record %(sview)s)
+    RETURNS SETOF %(tview)s
+AS $func$
+
+    if 'func' not in SD:
+        import os
+        import sys
+        activate_this = '%(activate_this)s'
+        if os.path.isfile(activate_this):
+            execfile(activate_this, dict(__file__=activate_this))
+        sys.path.insert(0, '%(dir)s')
+        module = __import__('%(pymodule)s')
+        module = reload(module)
+        SD['func'] = getattr(module, '%(pyfunc)s')
+
+    func = SD['func']
+    return func(record)
+
+$func$ LANGUAGE plpythonu VOLATILE;
+''' % {
+    'dir': dir,
+    'pyfunc': pyfunc,
+    'pymodule': pymodule,
+    'fname': fname,
+    'sview': sview,
+    'tview': tview,
+    'activate_this': activate_this,
+}
+
+plpy.info(sql)
+plpy.execute(sql)
+
+sql = '''
+INSERT INTO %(target)s
+SELECT (x).* FROM
+(
+  SELECT %(fname)s((%(scols)s)) x
+  FROM (%(source_query)s) s
+) t;
+''' % {
+    'fname': fname,
+    'sview': sview,
+    'scols': scols,
+    'target': target,
+    'source_query': source_query,
+}
+
+sql_clean = '''
+DROP FUNCTION %(fname)s (%(sview)s);
+DROP TABLE IF EXISTS %(sview)s;
+DROP TABLE IF EXISTS %(tview)s;
+''' % {
+    'fname': fname,
+    'sview': sview,
+    'tview': tview,
+}
+
+# The user is supposed to run the returned SQL.
+# Why not execute it here?
+# Because PGXL wouldn't recognize the existence of the newly created tables (and hence types)
+# if we execute the dynamic SQL within this function call.
+# Solution: wait for this function call finishes on all nodes before we run the insertion.
+plpy.info(sql)
+plpy.info(sql_clean)
+return (sql, sql_clean)
+
+$$ LANGUAGE plpythonu;
+
+    """
 }
