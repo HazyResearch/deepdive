@@ -324,16 +324,6 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
   def groundVariables(schema: Map[String, _ <: VariableDataType], du: DataLoader, 
       dbSettings: DbSettings, groundingPath: String) {
 
-    // dbSettings.incrementalMode match {
-    //   case IncrementalMode.INCREMENTAL => {
-    //     schema.foreach { case(variable, dataType) =>
-    //       var Array(relation, column) = variable.split('.')
-    //       handleIncrementalDeduplication(relation)
-    //     }
-    //   }
-    //   case _ =>
-    // }
-
     schema.foreach { case(variable, dataType) =>
       var Array(relation, column) = variable.split('.')
     
@@ -646,7 +636,6 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
             val lastWeightsTableForThisFactor = InferenceNamespace.getBaseTableName(weighttableForThisFactor)
             val tmpTable = s"${weighttableForThisFactor}_inc"
             val weightJoinlistInc = factorDesc.weight.variables.map(v => {
-              log.debug("&&&&&&&&&&&&&&&&&&&&&&&&&&")
               // split column to get relation name
               val colSplit = v.split('.')
               val lastvrel = InferenceNamespace.getBaseTableName(colSplit(0))
@@ -917,14 +906,19 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       case _ => 
     }
 
+    val schemaForGrounding = dbSettings.incrementalMode match {
+      case IncrementalMode.INCREMENTAL => schema.filter(_._1.startsWith("dd_delta_"))
+      case _ => schema
+    }
+
     // assign variable id - sequential and unique
-    assignVariablesIds(schema, dbSettings)
+    assignVariablesIds(schemaForGrounding, dbSettings)
 
     // assign holdout
-    assignHoldout(schema, calibrationSettings)
+    assignHoldout(schemaForGrounding, calibrationSettings)
     
     // generate cardinality tables
-    generateCardinalityTables(schema)
+    generateCardinalityTables(schemaForGrounding)
 
     // generate factor meta data
     groundFactorMeta(du, factorDescs, dbSettings, groundingPath)
@@ -934,7 +928,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       groundingPath, skipLearning, weightTable)
 
     // ground variables
-    groundVariables(schema, du, dbSettings, groundingPath)
+    groundVariables(schemaForGrounding, du, dbSettings, groundingPath)
 
     // create inference result table
     execute(createInferenceResultSQL)
