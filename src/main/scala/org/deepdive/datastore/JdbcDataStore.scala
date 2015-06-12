@@ -447,15 +447,6 @@ object JdbcDataStoreObject extends JdbcDataStore with Logging {
     val initializer = new JdbcDBsWithEnv("deepdive", config)
     log.info("Intializing all JDBC data stores")
     initializer.setupAll()
-    // create language for and greenplum if not exist
-    if (isUsingGreenplum()) {
-      if (!existsLanguage("plpgsql")) {
-        executeSqlQueries("CREATE LANGUAGE plpgsql;")
-      }
-      if (!existsLanguage("plpythonu")) {
-        executeSqlQueries("CREATE LANGUAGE plpythonu;")
-      }
-    }
   }
 
   override def init() : Unit = init(ConfigFactory.load)
