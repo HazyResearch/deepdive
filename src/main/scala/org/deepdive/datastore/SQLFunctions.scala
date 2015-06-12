@@ -160,5 +160,6 @@ plpy.info('Extracted zip content to ' + dir)
 return dir
 
 $$ LANGUAGE plpythonu;
+
     """
 }
