@@ -26,17 +26,17 @@ for row in sys.stdin:
   
   # Feature 1: Bag of words between the two phrases
   words_between = ddlib.tokens_between_spans(words, span1, span2)
-  for word in words_between.elements:
-    features.add("word_between=" + word)
+  # for word in words_between.elements:
+  #   features.add("word_between=" + word)
 
   # Feature 2: Number of words between the two phrases
   features.add("num_words_between=%s" % len(words_between.elements))
 
   # Feature 3: Does the last word (last name) match?
-  last_word_left = ddlib.materialize_span(words, span1)[-1]
-  last_word_right = ddlib.materialize_span(words, span2)[-1]
-  if (last_word_left == last_word_right):
-    features.add("potential_last_name_match")
+  # last_word_left = ddlib.materialize_span(words, span1)[-1]
+  # last_word_right = ddlib.materialize_span(words, span2)[-1]
+  # if (last_word_left == last_word_right):
+  #   features.add("potential_last_name_match")
 
   ######################## 
   # Improved Feature Set #

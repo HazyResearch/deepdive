@@ -21,6 +21,11 @@ export DBPORT=$PGPORT
 export DBPASSWORD=$PGPASSWORD
 export DBUSER=$PGUSER
 
+# incremental active
+export DEEPDIVE_ACTIVE_INCREMENTAL_VARIABLES="r1"
+export DEEPDIVE_ACTIVE_INCREMENTAL_RULES="testFactor"
+export BASEDIR=$DEEPDIVE_HOME/out
+
 cd $DEEPDIVE_HOME/lib
 
 case $(uname) in
