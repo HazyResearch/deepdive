@@ -313,24 +313,27 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
   def compileSchemaDeclarations(stmts: List[SchemaDeclaration], ss: CompilationState): CompiledBlocks = {
     var schemas = new ListBuffer[String]()
     for (stmt <- stmts) {
-      var columnDecls = stmt.a.terms map {
-        case Variable(name, _, i) => s"${name} ${stmt.a.types(i)}"
+      if ((stmt.a.name startsWith "dd_new_") && (ss.inferenceRuleGroupByHead contains stmt.a.name)) {
+      } else {
+        var columnDecls = stmt.a.terms map {
+          case Variable(name, _, i) => s"${name} ${stmt.a.types(i)}"
+        }
+        if (stmt.isQuery) columnDecls = columnDecls :+ "id bigint" :+ "label boolean"
+        if (ss.useDeltaCount) columnDecls = columnDecls :+ "dd_count int"
+        val indentation = " " * stmt.a.name.length
+        val blockName = ss.resolveExtractorBlockName(stmt)
+        schemas += s"""
+          deepdive.extraction.extractors.${blockName} {
+            sql: \"\"\" DROP TABLE IF EXISTS ${stmt.a.name} CASCADE;
+            CREATE TABLE
+            ${stmt.a.name}(${columnDecls.mkString(",\n" + indentation)})
+            \"\"\"
+            style: "sql_extractor"
+          }"""
       }
-      if (stmt.isQuery) columnDecls = columnDecls :+ "id bigint" :+ "label boolean"
-      if (ss.useDeltaCount) columnDecls = columnDecls :+ "dd_count int"
-      val indentation = " " * stmt.a.name.length
-      val blockName = ss.resolveExtractorBlockName(stmt)
-      schemas += s"""
-        deepdive.extraction.extractors.${blockName} {
-          sql: \"\"\" DROP TABLE IF EXISTS ${stmt.a.name} CASCADE;
-          CREATE TABLE
-          ${stmt.a.name}(${columnDecls.mkString(",\n" + indentation)})
-          \"\"\"
-          style: "sql_extractor"
-        }"""
     }
     // Cleanup incremental table extractor
-    val truncateTableList = (stmts map (x => if (x.a.name.startsWith("dd_")) s"TRUNCATE ${x.a.name};" else "")).filter(_ != "")
+    val truncateTableList = (stmts map (x => if ((x.a.name startsWith "dd_new_") && (ss.inferenceRuleGroupByHead contains x.a.name)) "" else s"TRUNCATE ${x.a.name};")).filter(_ != "")
     if (truncateTableList.length > 0) {
       schemas += s"""
         deepdive.extraction.extractors.cleanup {
@@ -369,7 +372,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           val headTerms = tmpCq.head.terms map {
             case Variable(v,r,i) => s"R${i}.${ss.resolveName(qs.getVar(v)) }"
           }
-          val headTermsStr = ( headTerms :+ "0 as id" ).mkString(", ")
+          val headTermsStr = ( headTerms :+ "id" ).mkString(", ")
           val ddCount = if (ss.useDeltaCount) ( tmpCq.bodies(0).zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
           val ddCountStr = if (ddCount.length > 0) s", ${ddCount} AS dd_count" else ""
           inputQueries += s"""SELECT DISTINCT ${ headTermsStr }, label ${ddCountStr}
@@ -415,14 +418,14 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     val sqlCmdForCleanUp = ss.mode match {
       case MERGE => s"TRUNCATE ${stmts(0).q.head.name};"
       case _ => if (ss.schemaDeclarationGroupByHead contains stmts(0).q.head.name) {
-        if (stmts(0).q.head.name.startsWith("dd_new_"))
+        if (stmts(0).q.head.name.startsWith("dd_new_") && !(ss.inferenceRuleGroupByHead contains stmts(0).q.head.name))
           s"TRUNCATE ${stmts(0).q.head.name};"
         else ""
       } else s"DROP VIEW IF EXISTS ${stmts(0).q.head.name};"
     }
     val createTable = ss.mode match {
       case MERGE => true
-      case _ => if (ss.schemaDeclarationGroupByHead contains stmts(0).q.head.name) true else false
+      case _ => if ((!(stmts(0).q.head.name startsWith "dd_new_") && (ss.schemaDeclarationGroupByHead contains stmts(0).q.head.name)) || ((stmts(0).q.head.name startsWith "dd_new_") && !(ss.inferenceRuleGroupByHead contains stmts(0).q.head.name))) true else false
     }
     val sqlCmdForInsert  = if (createTable) "INSERT INTO" else "CREATE VIEW"
     val useAS            = if (createTable) "" else " AS"
@@ -434,7 +437,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     val extractor = s"""
       deepdive.extraction.extractors.${blockName} {
         sql: \"\"\" ${sqlCmdForCleanUp}
-        ${sqlCmdForInsert} ${stmts(0).q.head.name}${useAS} ${inputQueries.mkString(" UNION ")}${cleanUp}
+        ${sqlCmdForInsert} ${stmts(0).q.head.name}${useAS} ${inputQueries.mkString(" UNION ALL ")}${cleanUp}
         \"\"\"
         style: "sql_extractor"
           ${ss.generateDependenciesOfCompiledBlockFor(stmts)}
@@ -536,7 +539,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       val blockName = ss.resolveInferenceBlockName(stmt)
       blocks ::= s"""
         deepdive.inference.factors.${blockName} {
-          input_query: \"\"\"${inputQueries.mkString(" UNION ")}\"\"\"
+          input_query: \"\"\"${inputQueries.mkString(" UNION ALL ")}\"\"\"
           function: "${func}"
           weight: "${weight}"
         }
@@ -599,7 +602,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       case _ => ""
     }
     val base_dir = ss.mode match {
-      case INCREMENTAL => "deepdive.pipeline.base_dir: ${BASEDIR}"
+      case MATERIALIZATION | INCREMENTAL => "deepdive.pipeline.base_dir: ${BASEDIR}"
       case _ => ""
     }
     List(run, initdb, extraction_pipeline, inference_pipeline, cleanup_pipeline, base_dir).filter(_ != "")

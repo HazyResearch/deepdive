@@ -17,10 +17,10 @@
       }
     
 
-        deepdive.extraction.extractors.extraction_rule_1 {
-          sql: """ DROP TABLE IF EXISTS sentences CASCADE;
-          CREATE TABLE
-          sentences(document_id text,
+          deepdive.extraction.extractors.extraction_rule_1 {
+            sql: """ DROP TABLE IF EXISTS sentences CASCADE;
+            CREATE TABLE
+            sentences(document_id text,
          sentence text,
          words text,
          lemma text,
@@ -29,59 +29,71 @@
          ner_tags text,
          sentence_offset int,
          sentence_id text)
-          """
-          style: "sql_extractor"
-        }
+            """
+            style: "sql_extractor"
+          }
 
-        deepdive.extraction.extractors.extraction_rule_3 {
-          sql: """ DROP TABLE IF EXISTS has_spouse_candidates CASCADE;
-          CREATE TABLE
-          has_spouse_candidates(person1_id text,
+          deepdive.extraction.extractors.extraction_rule_3 {
+            sql: """ DROP TABLE IF EXISTS has_spouse_candidates CASCADE;
+            CREATE TABLE
+            has_spouse_candidates(person1_id text,
                      person2_id text,
                      sentence_id text,
                      description text,
                      relation_id text,
                      is_true boolean)
-          """
-          style: "sql_extractor"
-        }
+            """
+            style: "sql_extractor"
+          }
 
-        deepdive.extraction.extractors.extraction_rule_5 {
-          sql: """ DROP TABLE IF EXISTS has_spouse CASCADE;
-          CREATE TABLE
-          has_spouse(relation_id text,
+          deepdive.extraction.extractors.extraction_rule_5 {
+            sql: """ DROP TABLE IF EXISTS has_spouse CASCADE;
+            CREATE TABLE
+            has_spouse(relation_id text,
           id bigint,
           label boolean)
-          """
-          style: "sql_extractor"
-        }
+            """
+            style: "sql_extractor"
+          }
 
-        deepdive.extraction.extractors.extraction_rule_0 {
-          sql: """ DROP TABLE IF EXISTS articles CASCADE;
-          CREATE TABLE
-          articles(article_id text,
+          deepdive.extraction.extractors.extraction_rule_0 {
+            sql: """ DROP TABLE IF EXISTS articles CASCADE;
+            CREATE TABLE
+            articles(article_id text,
         text text)
-          """
-          style: "sql_extractor"
-        }
+            """
+            style: "sql_extractor"
+          }
 
-        deepdive.extraction.extractors.extraction_rule_4 {
-          sql: """ DROP TABLE IF EXISTS has_spouse_features CASCADE;
-          CREATE TABLE
-          has_spouse_features(relation_id text,
+          deepdive.extraction.extractors.extraction_rule_4 {
+            sql: """ DROP TABLE IF EXISTS has_spouse_features CASCADE;
+            CREATE TABLE
+            has_spouse_features(relation_id text,
                    feature text)
-          """
-          style: "sql_extractor"
-        }
+            """
+            style: "sql_extractor"
+          }
 
-        deepdive.extraction.extractors.extraction_rule_2 {
-          sql: """ DROP TABLE IF EXISTS people_mentions CASCADE;
-          CREATE TABLE
-          people_mentions(sentence_id text,
+          deepdive.extraction.extractors.extraction_rule_2 {
+            sql: """ DROP TABLE IF EXISTS people_mentions CASCADE;
+            CREATE TABLE
+            people_mentions(sentence_id text,
                start_position int,
                length int,
                text text,
                mention_id text)
+            """
+            style: "sql_extractor"
+          }
+
+        deepdive.extraction.extractors.cleanup {
+          sql: """
+          TRUNCATE sentences;
+          TRUNCATE has_spouse_candidates;
+          TRUNCATE has_spouse;
+          TRUNCATE articles;
+          TRUNCATE has_spouse_features;
+          TRUNCATE people_mentions;
           """
           style: "sql_extractor"
         }

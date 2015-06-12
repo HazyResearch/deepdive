@@ -18,64 +18,76 @@ cancer.label: Boolean
       }
     
 
-        deepdive.extraction.extractors.extraction_rule_2 {
-          sql: """ DROP TABLE IF EXISTS person_smokes CASCADE;
-          CREATE TABLE
-          person_smokes(person_id bigint,
+          deepdive.extraction.extractors.extraction_rule_2 {
+            sql: """ DROP TABLE IF EXISTS person_smokes CASCADE;
+            CREATE TABLE
+            person_smokes(person_id bigint,
              smokes boolean,
              dd_count int)
-          """
-          style: "sql_extractor"
-        }
+            """
+            style: "sql_extractor"
+          }
 
-        deepdive.extraction.extractors.extraction_rule_4 {
-          sql: """ DROP TABLE IF EXISTS smoke CASCADE;
-          CREATE TABLE
-          smoke(person_id bigint,
+          deepdive.extraction.extractors.extraction_rule_4 {
+            sql: """ DROP TABLE IF EXISTS smoke CASCADE;
+            CREATE TABLE
+            smoke(person_id bigint,
      id bigint,
      label boolean,
      dd_count int)
-          """
-          style: "sql_extractor"
-        }
+            """
+            style: "sql_extractor"
+          }
 
-        deepdive.extraction.extractors.extraction_rule_5 {
-          sql: """ DROP TABLE IF EXISTS cancer CASCADE;
-          CREATE TABLE
-          cancer(person_id bigint,
+          deepdive.extraction.extractors.extraction_rule_5 {
+            sql: """ DROP TABLE IF EXISTS cancer CASCADE;
+            CREATE TABLE
+            cancer(person_id bigint,
       id bigint,
       label boolean,
       dd_count int)
-          """
-          style: "sql_extractor"
-        }
+            """
+            style: "sql_extractor"
+          }
 
-        deepdive.extraction.extractors.extraction_rule_3 {
-          sql: """ DROP TABLE IF EXISTS friends CASCADE;
-          CREATE TABLE
-          friends(person_id bigint,
+          deepdive.extraction.extractors.extraction_rule_3 {
+            sql: """ DROP TABLE IF EXISTS friends CASCADE;
+            CREATE TABLE
+            friends(person_id bigint,
        friend_id bigint,
        dd_count int)
-          """
-          style: "sql_extractor"
-        }
+            """
+            style: "sql_extractor"
+          }
 
-        deepdive.extraction.extractors.extraction_rule_1 {
-          sql: """ DROP TABLE IF EXISTS person_has_cancer CASCADE;
-          CREATE TABLE
-          person_has_cancer(person_id bigint,
+          deepdive.extraction.extractors.extraction_rule_1 {
+            sql: """ DROP TABLE IF EXISTS person_has_cancer CASCADE;
+            CREATE TABLE
+            person_has_cancer(person_id bigint,
                  has_cancer boolean,
                  dd_count int)
-          """
-          style: "sql_extractor"
-        }
+            """
+            style: "sql_extractor"
+          }
 
-        deepdive.extraction.extractors.extraction_rule_0 {
-          sql: """ DROP TABLE IF EXISTS person CASCADE;
-          CREATE TABLE
-          person(person_id bigint,
+          deepdive.extraction.extractors.extraction_rule_0 {
+            sql: """ DROP TABLE IF EXISTS person CASCADE;
+            CREATE TABLE
+            person(person_id bigint,
       name text,
       dd_count int)
+            """
+            style: "sql_extractor"
+          }
+
+        deepdive.extraction.extractors.cleanup {
+          sql: """
+          TRUNCATE person_smokes;
+          TRUNCATE smoke;
+          TRUNCATE cancer;
+          TRUNCATE friends;
+          TRUNCATE person_has_cancer;
+          TRUNCATE person;
           """
           style: "sql_extractor"
         }
@@ -117,3 +129,4 @@ deepdive.pipeline.run: ${PIPELINE}
 deepdive.pipeline.pipelines.initdb: [extraction_rule_2, extraction_rule_4, extraction_rule_5, extraction_rule_3, extraction_rule_1, extraction_rule_0]
 deepdive.pipeline.pipelines.extraction: [extraction_rule_7, extraction_rule_6]
 deepdive.pipeline.pipelines.inference: [cancer_0]
+deepdive.pipeline.base_dir: ${BASEDIR}
