@@ -1,11 +1,23 @@
 #!/usr/bin/env bash
+# A lower-level script for compiling DDlog program and running it with DeepDive
+# Usage: run.sh DDLOG_FILE DDLOG_MODE PIPELINE [DEEPDIVE_ARG...]
+# 
+# DDLOG_MODE is one of: --materialization or --incremental or --merge
+# 
+# Not intended to be used directly by users.  Please use the higher-level scripts.
 set -eux
 
 DDlog=$1; shift
 Mode=$1; shift
 Pipeline=$1; shift
 
-appConf="${DDlog%.ddl}.${Mode#--}_application.conf"
+# sanitize Mode and default to original
+case $Mode in
+    --materialization|--incremental|--merge) ;;
+    *) Mode=
+esac
+
+appConf="${DDlog%.ddl}${Mode:+.${Mode#--}}.application.conf"
 userConf="$(dirname "$DDlog")"/application.conf
 
 # compile application.conf from DDlog if necessary
