@@ -57,7 +57,8 @@ install_postgres_xl() {
 install_postgres() {
     set -x
     sudo apt-get update
-    sudo apt-get install -y postgresql postgresql-plpython
+    sudo apt-get install -y postgresql
+    sudo apt-get install -y postgresql-plpython-`ls -1 /var/lib/postgresql/ | head -n 1`
     sudo -u postgres dropuser --if-exists $USER
     sudo -u postgres createuser --superuser --pwprompt $USER || true
 }
