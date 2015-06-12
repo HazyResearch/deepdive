@@ -242,18 +242,6 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     }
   }
 
-  // handles incremental variable deduplication
-  // if a variable has been seen in original factor graph, then we don't need to add it
-  def handleIncrementalVariableDeduplication(schema: Map[String, _ <: VariableDataType], dbSettings: DbSettings) {
-    schema.foreach { case(variable, dataType) =>
-      val Array(relation, column) = variable.split('.')
-      // Find origin relation if it doesn't exist
-      val lastRelationTable = InferenceNamespace.getBaseTableName(relation)
-      execute(s"""DELETE FROM ${relation}
-        WHERE id IN (SELECT id FROM ${lastRelationTable}) AND dd_count = 1;""")
-    }
-  }
-
   // handles incremental component deduplication (set model)
   // if a variable has been seen in original factor graph, then we don't need to add it
   def handleIncrementalDeduplication(relation: String) {

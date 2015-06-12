@@ -492,6 +492,8 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val deltaData = (91 to 110).map { i =>
           Map("id" -> i, "weight" -> s"weight_${i}", "is_correct" -> s"${i%2==0}".toBoolean, "dd_count" -> 1)
         }
+        SQL(s"""CREATE VIEW dd_new_r1 AS SELECT * FROM r1 UNION 
+          SELECT * FROM dd_delta_r1;""").execute.apply()    
         dataStoreHelper.bulkInsert("dd_delta_r1", deltaData.iterator)
         val keyMap = Map[String, List[String]]("dd_delta_r1" -> List("weight"))
 
@@ -501,12 +503,12 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
           IncrementalMode.INCREMENTAL, keyMap)
 
         // Build the factor description
-        val factorDescInc = FactorDesc("dd_delta_testFactor", 
-            """SELECT id AS "dd_delta_r1.R0.id", weight AS "dd_delta_r1.R0.weight", 
-            is_correct AS "dd_delta_r1.R0.is_correct", 1 AS dd_count
-            FROM dd_delta_r1 R0""", 
-          IsTrueFactorFunction(Seq("dd_delta_r1.R0.is_correct")), 
-          UnknownFactorWeight(List("dd_delta_r1.R0.weight")), "weight_prefix")
+        val factorDescInc = FactorDesc("dd_new_testFactor", 
+            """SELECT id AS "dd_new_r1.R0.id", weight AS "dd_new_r1.R0.weight", 
+            is_correct AS "dd_new_r1.R0.is_correct", 1 AS dd_count
+            FROM dd_new_r1 R0""", 
+          IsTrueFactorFunction(Seq("dd_new_r1.R0.is_correct")), 
+          UnknownFactorWeight(List("dd_new_r1.R0.weight")), "weight_prefix")
 
         val schemaInc = Map[String, VariableDataType]("dd_delta_r1.is_correct" -> BooleanType)
 
@@ -519,7 +521,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
           .map(rs => rs.long("count")).single.apply().get
         assert(numWeightsInc === 10)
 
-        val numFactorsInc = SQL(s"""SELECT COUNT(*) AS "count" FROM dd_query_dd_delta_testFactor""")
+        val numFactorsInc = SQL(s"""SELECT COUNT(*) AS "count" FROM dd_query_dd_new_testFactor""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numFactorsInc === 10)
 
