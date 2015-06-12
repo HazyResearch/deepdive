@@ -6,10 +6,13 @@ Mode=$1; shift
 Pipeline=$1; shift
 
 appConf="${DDlog%.ddl}.${Mode#--}_application.conf"
+userConf="$(dirname "$DDlog")"/application.conf
 
 # compile application.conf from DDlog if necessary
-[[ "$appConf" -nt "$DDlog" ]] ||
-    java -jar $DEEPDIVE_HOME/util/ddlog.jar compile $Mode "$DDlog" >"$appConf"
+[[ "$appConf" -nt "$DDlog" && "$appConf" -nt "$userConf" ]] || {
+    "$DEEPDIVE_HOME"/util/ddlog compile $Mode "$DDlog"
+    cat "$userConf"
+} >"$appConf"
 
 # To run sbt, we must chdir to DEEPDIVE_HOME
 appConf="$(cd "$(dirname "$appConf")" && pwd)/$(basename "$appConf")"

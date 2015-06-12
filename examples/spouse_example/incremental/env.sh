@@ -1,6 +1,6 @@
 #! /bin/bash
 
-export APP_HOME=$PWD
+export APP_HOME="$PWD"/
 export DEEPDIVE_HOME="$PWD/../../.."
 export PYTHONPATH="$DEEPDIVE_HOME/ddlib:${PYTHONPATH:-}"
 export BASEDIR=${BASEDIR:-"$APP_HOME/base"}
