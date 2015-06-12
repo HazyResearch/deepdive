@@ -36,7 +36,7 @@ object SettingsParser extends Logging {
   private def loadDbSettings(config: Config) : DbSettings = {
     val dbConfig = Try(config.getConfig("db.default")).getOrElse {
       log.warning("No schema defined.")
-      return DbSettings(Helpers.PsqlDriver, null, null, null, null, null, null, 
+      return DbSettings(Helpers.PsqlDriver, null, null, null, null, null, null,
         null, null, null, false, null)
     }
     val driver = Try(dbConfig.getString("driver")).getOrElse(null)
