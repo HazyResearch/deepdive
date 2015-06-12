@@ -189,7 +189,6 @@ and
 #### Advanced topics
 
 - [Performance tuning](doc/advanced/performance.html)
-- [Scala developer guide for DeepDive](doc/advanced/developer.html)
 - [Using DeepDive with GreenPlum](doc/advanced/greenplum.html)
 - [Using DeepDive with Postgres-XL](doc/advanced/pgxl.html)
 - [Using DeepDive with MySQL / MySQL Cluster](doc/advanced/mysql.html)
@@ -199,6 +198,7 @@ and
 - [Using DeepDive with Docker](doc/advanced/docker.html)
 - [Internal database schema](doc/advanced/reserved_tables.html)
 - [Factor graph grounding output reference](doc/advanced/factor_graph_schema.html)
+- [DeepDive Developer's Guide](doc/advanced/developer.html)
 
 ### Support
 
