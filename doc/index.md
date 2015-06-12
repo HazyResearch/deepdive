@@ -152,6 +152,7 @@ Zhang](http://pages.cs.wisc.edu/~czhang/).
 
 #### Advanced topics
 
+- [Incremental DeepDive](doc/advanced/incremental.html)
 - [Performance tuning](doc/advanced/performance.html)
 - [Scala developer guide for DeepDive](doc/advanced/developer.html)
 - [Using DeepDive with GreenPlum](doc/advanced/greenplum.html)
