@@ -8,6 +8,7 @@ import org.deepdive.settings._
 import org.deepdive.datastore._
 import org.deepdive.extraction.{ExtractionManager, ExtractionTask}
 import org.deepdive.inference.{InferenceManager}
+import org.deepdive.inference.InferenceNamespace
 import org.deepdive.profiling._
 import org.deepdive.calibration._
 import scala.concurrent.duration._
@@ -52,6 +53,16 @@ object DeepDive extends Logging {
       case _ =>
     }
 
+    // check incremental settings
+    dbSettings.incrementalMode match {
+      case IncrementalMode.MATERIALIZATION | IncrementalMode.INCREMENTAL =>
+        if (!settings.pipelineSettings.baseDir.isDefined) {
+          log.error(s"base folder not set for incremental run")
+          Context.shutdown()
+        }
+      case _ =>
+    }
+
     // Setup the data store
     JdbcDataStoreObject.init(config)
     settings.schemaSettings.setupFile.foreach { file =>
@@ -93,11 +104,10 @@ object DeepDive extends Logging {
     val groundFactorGraphTask = Task("inference_grounding", extractionTasks.map(_.id), 
       groundFactorGraphMsg, inferenceManager)
 
-    val skipSerializing = (relearnFrom != null)
     val inferenceTask = Task("inference", extractionTasks.map(_.id) ++ Seq("inference_grounding"),
       InferenceManager.RunInference(activeFactors, settings.calibrationSettings.holdoutFraction, 
         settings.calibrationSettings.holdoutQuery, settings.samplerSettings.samplerCmd, 
-        settings.samplerSettings.samplerArgs, skipSerializing, settings.dbSettings), 
+        settings.samplerSettings.samplerArgs, settings.pipelineSettings, settings.dbSettings), 
         inferenceManager, true)
 
     val calibrationTask = Task("calibration", List("inference"), 

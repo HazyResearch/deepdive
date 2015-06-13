@@ -16,6 +16,7 @@ hsql:*
 .idea/
 .project
 doc/_*local*
+/util/ddlog.jar
 /util/mindbender
 .mindtagger.conf.json
 examples/tutorial_example/*/experiment-reports/latest

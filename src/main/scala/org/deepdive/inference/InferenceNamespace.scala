@@ -29,6 +29,12 @@ object InferenceNamespace {
   def getCardinalityTableName(relation: String, column: String) = s"dd_${relation}_${column}_cardinality"
   def getVariableTypeTableName(relation: String) = s"dd_${relation}_vtype"
   def getCardinalityInFactorTableName(prefix: String, idx: Int) = s"dd_${prefix}_cardinality_${idx}"
+  def getIncrementalTableName(table: String) = s"dd_delta_${table}"
+  def getLastTableName(table: String) = s"dd_last_${table}"
+  // given an incremental table, get the table name for its base table
+  // incremental table names are like dd_delta_...
+  def getBaseTableName(table: String) = table.replaceAll("dd_new_", "").replaceAll("dd_delta_", "")
+  def getIncrementalMetaTableName() = s"dd_incremental_meta_data"
 
   // files
   def getVariableFileName(relation: String) = s"dd_variables_${relation}"
@@ -71,5 +77,7 @@ object InferenceNamespace {
   def getFormatConvertingWorkerPath : String = {
     new File(s"${Context.deepdiveHome}/${utilFolder}/${formatConvertingWorkerName}").getCanonicalPath()
   }
+
+  def getActiveScript : String = new File(s"${Context.deepdiveHome}/${utilFolder}/active.sh").getCanonicalPath()
   
 }

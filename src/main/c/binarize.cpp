@@ -29,7 +29,7 @@ using namespace std;
      ((unsigned short int) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8)))
 
 // read variables and convert to binary format
-void load_var(std::string filename){
+void load_var(std::string filename) {
   std::ifstream fin(filename.c_str());
   std::ofstream fout((filename + ".bin").c_str(), std::ios::binary | std::ios::out);
 
@@ -41,14 +41,14 @@ void load_var(std::string filename){
   long cardinality;
 
   edge_count = bswap_64(edge_count);
+  // std::cerr << filename << " " << inc << std::endl;
 
-  while(fin >> vid >> is_evidence >> initial_value >> type >> cardinality){
+  while (fin >> vid >> is_evidence >> initial_value >> type >> cardinality) {
     // endianess
     vid = bswap_64(vid);
     uint64_t initval = bswap_64(*(uint64_t *)&initial_value);
     type = bswap_16(type);
     cardinality = bswap_64(cardinality);
-
 
     fout.write((char*)&vid, 8);
     fout.write((char*)&is_evidence, 1);
@@ -64,7 +64,7 @@ void load_var(std::string filename){
 
 
 // convert weights
-void load_weight(std::string filename){
+void load_weight(std::string filename) {
   std::ifstream fin(filename.c_str());
   std::ofstream fout((filename + ".bin").c_str(), std::ios::binary | std::ios::out);
 
@@ -87,7 +87,7 @@ void load_weight(std::string filename){
 
 // load factors
 // fid, wid, vids
-void load_factor(std::string filename, short funcid, long nvar, char** positives){
+void load_factor(std::string filename, short funcid, long nvar, char** positives) {
   std::ifstream fin(filename.c_str());
   std::ofstream fout((filename + "_factors.bin").c_str(), std::ios::binary | std::ios::out);
   std::ofstream fedgeout((filename + "_edges.bin").c_str(), std::ios::binary | std::ios::out);
@@ -124,7 +124,7 @@ void load_factor(std::string filename, short funcid, long nvar, char** positives
     getline(ss, field, field_delim);
     weightid = atol(field.c_str());
     weightid = bswap_64(weightid);
-
+    
     fout.write((char *)&factorid, 8);
     fout.write((char *)&weightid, 8);
     fout.write((char *)&funcid, 2);
@@ -190,16 +190,33 @@ void load_factor(std::string filename, short funcid, long nvar, char** positives
   fedgeout.close();
 }
 
+void load_active(std::string filename) {
+  std::ifstream fin(filename.c_str());
+  std::ofstream fout((filename + ".bin").c_str(), std::ios::binary);
+
+  long id;
+  while (fin >> id) {
+    id = bswap_64(id);
+    fout.write((char*)&id, 8);
+  }
+  fin.close();
+  fout.close();
+}
+
 int main(int argc, char** argv){
   std::string app(argv[1]);
+  // std::cerr << app << " " << argv[2] << " " << argv[3] << std::endl;
   if(app.compare("variable")==0){
     load_var(argv[2]);
-  }
-  if(app.compare("weight")==0){
+  } else if(app.compare("weight")==0){
     load_weight(argv[2]);
-  }
-  if(app.compare("factor")==0){
+  } else if(app.compare("factor")==0){
     load_factor(argv[2], atoi(argv[3]), atoi(argv[4]), &argv[5]);
+  } else if (app.compare("active") == 0) {
+    load_active(argv[2]);
+  } else {
+    std::cout << "Unsupported type" << std::endl;
+    exit(1);
   }
   return 0;
 }

@@ -182,4 +182,19 @@ class PostgresDataStore extends JdbcDataStore with Logging {
     }
   }
 
+  override def existsTable(table: String) : Boolean = {
+    val sql = s"""
+      SELECT EXISTS (
+        SELECT 1
+        FROM   information_schema.tables 
+        WHERE  table_schema = 'public'
+        AND    table_name = '${table.toLowerCase}'
+      );"""
+    var exists = false
+    executeSqlQueryWithCallback(sql) { rs =>
+      exists = rs.getBoolean(1)
+    }
+    return exists;
+  }
+
 }

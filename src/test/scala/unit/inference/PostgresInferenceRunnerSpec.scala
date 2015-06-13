@@ -1,5 +1,6 @@
 package org.deepdive.test.unit
 
+import org.deepdive.test.helpers._
 import org.deepdive.inference._
 import org.deepdive.test._
 import org.scalatest._
@@ -24,9 +25,7 @@ class PostgresInferenceRunnerSpec extends SQLInferenceRunnerSpec
   with PostgresInferenceRunnerComponent with Logging {
 
   // Override with a postgres-specific dbSettings
-  override val dbSettings = DbSettings(Helpers.PsqlDriver, null, System.getenv("PGUSER"), 
-      null, System.getenv("DBNAME"), System.getenv("PGHOST"), 
-      System.getenv("PGPORT"), null, null, null, false)
+  override val dbSettings = TestHelper.getDbSettings()
 
   lazy val inferenceRunner = new PostgresInferenceRunner(dbSettings)
   // def inferenceDataStore = new PostgresInferenceRunner(dbSettings)

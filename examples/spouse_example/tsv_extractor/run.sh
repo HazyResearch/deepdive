@@ -14,7 +14,8 @@ export PGPORT=${PGPORT:-5432}
 export PGHOST=${PGHOST:-localhost}
 
 # Initialize database
-# bash $APP_HOME/../setup_database.sh $DBNAME
+bash $APP_HOME/../prepare_data.sh
+#bash $APP_HOME/../setup_database.sh $DBNAME
 
 # Using ddlib
 export PYTHONPATH=$DEEPDIVE_HOME/ddlib:$PYTHONPATH

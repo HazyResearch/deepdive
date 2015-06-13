@@ -1,0 +1,3 @@
+# List names of the inference rule to mark as active in materialization phase here.
+# It's in the form of the relation name of the head in the inference rule followed by an underscore and the zero-based index of the rule.
+has_spouse_0  # You can put comments after a hash letter.

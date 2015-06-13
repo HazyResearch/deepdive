@@ -36,7 +36,8 @@ object SettingsParser extends Logging {
   private def loadDbSettings(config: Config) : DbSettings = {
     val dbConfig = Try(config.getConfig("db.default")).getOrElse {
       log.warning("No schema defined.")
-      return DbSettings(Helpers.PsqlDriver, null, null, null, null, null, null, null, null, null, false)
+      return DbSettings(Helpers.PsqlDriver, null, null, null, null, null, null, 
+        null, null, null, false, null)
     }
     val driver = Try(dbConfig.getString("driver")).getOrElse(null)
     val url = Try(dbConfig.getString("url")).getOrElse(null)
@@ -55,7 +56,27 @@ object SettingsParser extends Logging {
     if (gphost != "") {
       log.info(s"GPFDIST settings: host ${gphost} port ${gpport} path ${gppath}")
     }
-    return DbSettings(driver, url, user, password, dbname, host, port, gphost, gppath, gpport, gpload)
+    val incrementalModeStr = Try(dbConfig.getString("incremental_mode")).getOrElse("ORIGINAL")
+    val incrementalMode = incrementalModeStr match {
+      case "INCREMENTAL" => IncrementalMode.INCREMENTAL
+      case "MATERIALIZATION" => IncrementalMode.MATERIALIZATION
+      case _ => IncrementalMode.ORIGINAL
+    }
+    val schemaConfig = Try(config.getConfig("schema")).getOrElse {
+      log.warning("No schema defined.")
+      null
+    }
+    val keyConfig = Try(schemaConfig.getConfig("keys")).getOrElse(null)
+    val keyMap = keyConfig match {
+      case null => null
+      case _ => {
+        val keyRelations = keyConfig.root.keySet.toList
+        val keyRelationsWithConfig = keyRelations.zip(keyRelations.map(keyConfig.getStringList))
+        keyRelationsWithConfig.groupBy(_._1).map { case (k,v) => (k,v.map(_._2).flatten.distinct)}
+      }
+    }
+    return DbSettings(driver, url, user, password, dbname, host, port,
+      gphost, gppath, gpport, gpload, incrementalMode, keyMap)
   }
 
 
@@ -196,10 +217,10 @@ object SettingsParser extends Logging {
         val osname = System.getProperty("os.name")
         log.info(s"Detected OS: ${osname}")
         if (osname.startsWith("Linux")) {
-          s"${Context.deepdiveHome}/util/sampler-dw-linux gibbs"
+          s"${Context.deepdiveHome}/util/sampler-dw-linux"
         }
         else {
-          s"${Context.deepdiveHome}/util/sampler-dw-mac gibbs"
+          s"${Context.deepdiveHome}/util/sampler-dw-mac"
         }
       case _ => samplingConfig.getString("sampler_cmd")
     }
@@ -222,20 +243,21 @@ object SettingsParser extends Logging {
 
   private def loadPipelineSettings(config: Config) : PipelineSettings = {
     val pipelineConfig = Try(config.getConfig("pipeline")).getOrElse {
-      return PipelineSettings(None, Nil, null)
+      return PipelineSettings(None, Nil, null, None)
     }
     val relearnFrom = Try(pipelineConfig.getString("relearn_from")).getOrElse(null)
     val activePipeline = Try(pipelineConfig.getString("run")).toOption
+    val baseDir = Try(pipelineConfig.getString("base_dir")).toOption
     if (relearnFrom == null) {
       val pipelinesObj = Try(pipelineConfig.getObject("pipelines")).getOrElse {
-        return PipelineSettings(None, Nil, null)
+        return PipelineSettings(None, Nil, null, None)
       }
       val pipelines = pipelinesObj.keySet().map { pipelineName =>
         val tasks = pipelineConfig.getStringList(s"pipelines.$pipelineName").toSet
         Pipeline(pipelineName, tasks)
       }.toList
-      return PipelineSettings(activePipeline, pipelines, relearnFrom)
+      return PipelineSettings(activePipeline, pipelines, relearnFrom, baseDir)
     }
-    PipelineSettings(activePipeline, Nil, relearnFrom)
+    PipelineSettings(activePipeline, Nil, relearnFrom, baseDir)
   }
 }

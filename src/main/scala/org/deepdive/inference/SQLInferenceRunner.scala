@@ -191,18 +191,68 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
   }
 
   // assign variable id - sequential and unique
-  def assignVariablesIds(schema: Map[String, _ <: VariableDataType]) {
+  def assignVariablesIds(schema: Map[String, _ <: VariableDataType], dbSettings: DbSettings) {
     // fast sequential id assign function
     dataStore.createSpecialUDFs()
     execute(dataStore.createSequenceFunction(IdSequence))
-
-    var idoffset : Long = 0
-    schema.foreach { case(variable, dataType) =>
-      val Array(relation, column) = variable.split('.')
-      idoffset += dataStore.assignIds(relation, idoffset, IdSequence)
+    dbSettings.incrementalMode match {
+      case IncrementalMode.INCREMENTAL => assignVariableIdsIncremental(schema, dbSettings)
+      case _ => {
+        var idoffset : Long = 0
+        schema.foreach { case(variable, dataType) =>
+          val Array(relation, column) = variable.split('.')
+          idoffset += dataStore.assignIds(relation, idoffset, IdSequence)
+        }
+      }
     }
   }
 
+  // assign variable ids for incremental
+  def assignVariableIdsIncremental(schema: Map[String, _ <: VariableDataType], dbSettings: DbSettings) {
+    var idoffset : Long = 0
+    issueQuery(s""" SELECT num_variables FROM ${InferenceNamespace.getIncrementalMetaTableName()}""") {
+      rs => idoffset = rs.getLong(1)
+    }
+
+    schema.foreach { case(variable, dataType) =>
+      val Array(relation, column) = variable.split('.')
+      // Find origin relation
+      val lastRelationTable = InferenceNamespace.getBaseTableName(relation)
+
+      // Update all Ids to NULL in relation table
+      var key = dbSettings.keyMap(relation)
+      val keyJoinlist = key.map(v => s""" t0.${v} = t1.${v} """).mkString("AND")
+      execute(s"""UPDATE ${relation} SET id = NULL""")
+
+      val variableJoinlist = s""" ${keyJoinlist} AND (t0.${column} = t1.${column} 
+        OR (t0.${column} is NULL AND t1.${column} is NULL)) """
+      val tmpTable = s"${relation}_inc"
+
+      // Assign Id based on original relation table otherwise assign new Id
+      execute(s"""UPDATE ${relation} AS t0 SET id = t1.id 
+        FROM ${lastRelationTable} t1
+        WHERE ${variableJoinlist}""")
+      dataStore.dropAndCreateTableAs(tmpTable, s""" 
+        SELECT id, ${key.mkString(", ")}, ${column}
+        FROM ${relation} 
+        WHERE id is NULL GROUP BY id, ${key.mkString(", ")}, ${column} """)
+      execute(s"ALTER SEQUENCE ${IdSequence} RESTART ${idoffset}")
+      idoffset += dataStore.assignIds(tmpTable.toLowerCase(), idoffset, IdSequence)
+      execute(s"""UPDATE ${relation} AS t0 SET id = t1.id 
+        FROM ${tmpTable} t1
+        WHERE ${variableJoinlist}""")
+    }
+  }
+
+  // handles incremental component deduplication (set model)
+  // if a variable has been seen in original factor graph, then we don't need to add it
+  def handleIncrementalDeduplication(relation: String) {
+    // return
+    val lastRelationTable = InferenceNamespace.getBaseTableName(relation)
+    execute(s"""DELETE FROM ${relation}
+      WHERE id IN (SELECT id FROM ${lastRelationTable});""")
+  }
+  
   // assign variable holdout
   def assignHoldout(schema: Map[String, _ <: VariableDataType], calibrationSettings: CalibrationSettings) {
     // variable holdout table - if user defined, execute once
@@ -263,9 +313,10 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
   // ground variables
   def groundVariables(schema: Map[String, _ <: VariableDataType], du: DataLoader,
       dbSettings: DbSettings, groundingPath: String) {
-        schema.foreach { case(variable, dataType) =>
-      val Array(relation, column) = variable.split('.')
 
+    schema.foreach { case(variable, dataType) =>
+      var Array(relation, column) = variable.split('.')
+    
       val variableDataType = InferenceNamespace.getVariableDataTypeId(dataType)
 
       // cardinality (domain size) of the variable
@@ -296,16 +347,17 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         FROM ${relation} t0 LEFT OUTER JOIN ${VariablesHoldoutTable} t1 ON t0.id=t1.variable_id
         LEFT OUTER JOIN ${VariablesObservationTable} t2 ON t0.id=t2.variable_id""")
 
-      // Create an index on the id column of type table to optimize MySQL join, since MySQL uses BNLJ.
-      // It's important to tailor join queries for MySQL as they don't have efficient join algorithms.
-      // Specifically, we should create indexes on join condition columns (at least in MySQL implementation).
-      createIndexForJoinOptimization(variableTypeTable, "id")
-
       // dump variables
       val initvalueCast = dataStore.cast(dataStore.cast(column, "int"), "float")
       // Sen
       // du.unload(s"dd_variables_${relation}", s"${groundingPath}/dd_variables_${relation}",
       val groundingDir = getFileNameFromPath(groundingPath)
+
+      val incCondition = dbSettings.incrementalMode match {
+        case IncrementalMode.INCREMENTAL => s"""AND 
+          (t0.id NOT IN (SELECT id FROM ${InferenceNamespace.getBaseTableName(relation)}))"""
+        case _ => ""
+      }
       du.unload(InferenceNamespace.getVariableFileName(relation),
         s"${groundingPath}/${InferenceNamespace.getVariableFileName(relation)}",
         dbSettings,
@@ -313,8 +365,24 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         CASE WHEN t1.${variableTypeColumn} = 0 THEN 0 ELSE ${initvalueCast} END AS initvalue,
         ${variableDataType} AS type, ${cardinality} AS cardinality
         FROM ${relation} t0, ${variableTypeTable} t1
-        WHERE t0.id=t1.id
+        WHERE t0.id=t1.id ${incCondition}
         """, groundingDir)
+    }
+
+    // maintain incremental meta data
+    dbSettings.incrementalMode match {
+      case IncrementalMode.MATERIALIZATION => {
+        var numVariables : Long = 0
+        schema.foreach { case(variable, dataType) =>
+          var Array(relation, column) = variable.split('.')
+          issueQuery(s"SELECT COUNT(*) FROM ${relation}") { rs => 
+            numVariables += rs.getLong(1)
+          }
+        }
+        execute(s"""UPDATE ${InferenceNamespace.getIncrementalMetaTableName()} 
+          SET num_variables = ${numVariables}; """)
+      }
+      case _ =>
     }
   }
 
@@ -357,6 +425,19 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     }
   }
 
+  def generateAcitve(groundingPath: String) {
+    val cmd = s"${InferenceNamespace.getActiveScript}"
+    log.debug("Executing: " + cmd)
+    val exitValue = cmd!(ProcessLogger(
+      out => log.info(out),
+      err => log.info(err)
+    ))
+    exitValue match {
+      case 0 => 
+      case _ => throw new RuntimeException("Generating active variables/factors/weights failed.")
+    }
+  }
+
   def createWeightsTable() {
     if (dataStore.isUsingPostgresXL) {
        val name = WeightsTable
@@ -394,10 +475,39 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     execute(dataStore.createSequenceFunction(weightidSequence));
     execute(dataStore.createSequenceFunction(factoridSequence));
 
-    factorDescs.zipWithIndex.foreach { case (factorDesc, idx) =>
+    dbSettings.incrementalMode match {
+      case IncrementalMode.INCREMENTAL =>  {
+        issueQuery(s""" SELECT num_weights FROM ${InferenceNamespace.getIncrementalMetaTableName()}""") { rs =>
+          cweightid = rs.getLong(1)
+        }
+        issueQuery(s""" SELECT num_factors FROM ${InferenceNamespace.getIncrementalMetaTableName()}""") { rs => 
+          factorid = rs.getLong(1)
+        }
+      }
+      case _ =>
+    }
+
+    // weights table
+    dataStore.dropAndCreateTable(WeightsTable, """id bigint, isfixed int, initvalue real, cardinality text, 
+      description text""")
+
+    var factorDescsCopy : Seq[FactorDesc] = Seq[FactorDesc]()
+    factorDescsCopy = factorDescs
+
+    factorDescsCopy.zipWithIndex.foreach { case (factorDesc, idx) =>
       // id columns
       val idcols = factorDesc.func.variables.map(v =>
         s""" ${dataStore.quoteColumn(s"${v.relation}.id")} """).mkString(", ")
+
+      // val filedcols = factorDesc.func.variables.map(v => 
+      //     s""" every(${dataStore.quoteColumn(s"${v.relation}.${v.field}")}) """).mkString(", ")
+
+      val weightcols = factorDesc.weight.variables.map(v => 
+          s""" ${dataStore.quoteColumn(v)} """).mkString(", ")
+
+      val selectcols = Seq(idcols, weightcols).mkString(", ")
+      val condcols = Seq(idcols, weightcols).mkString(", ")
+      
       // Sen
       // val querytable = s"dd_query_${factorDesc.name}"
       // val weighttableForThisFactor = s"dd_weights_${factorDesc.name}"
@@ -406,12 +516,78 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
       val outfile = InferenceNamespace.getFactorFileName(factorDesc.name)
 
-      // table of input query
+      // Ground new factor table based on input query
       dataStore.dropAndCreateTableAs(querytable, factorDesc.inputQuery)
+
+
+      // Assign Id for new factor table, reuse Id if factor already exists other wise assign new Id
+
       execute(s"""ALTER TABLE ${querytable} ADD COLUMN id bigint;""")
 
-      // handle factor id
-      factorid += dataStore.assignIds(querytable.toLowerCase(), factorid, factoridSequence)
+      dbSettings.incrementalMode match {
+        case IncrementalMode.INCREMENTAL => {
+          // Create new saved factor table to save origin factor table
+          val lastFactorTable = InferenceNamespace.getBaseTableName(querytable)
+          // if adding new inference rule, the original rule does not exist
+          val exists = dataStore.existsTable(lastFactorTable)
+          if (!exists) {
+            factorid += dataStore.assignIds(querytable.toLowerCase(), factorid, factoridSequence)
+          } else {
+            val factorJoinlist = factorDesc.func.variables.map(
+              v => s""" t0.${dataStore.quoteColumn(s"${v.relation}.id")} 
+                |= t1.${dataStore.quoteColumn(s"${InferenceNamespace.getBaseTableName(v.relation)}.id")}
+                |""".stripMargin.replaceAll("\n", " ")).mkString("AND")
+            val weightJoinlist = factorDesc.weight.variables.map(v => {
+              // split column to get relation name
+              val colSplit = v.split('.')
+              val lastvrel = InferenceNamespace.getBaseTableName(colSplit(0))
+              val lastv = s"${lastvrel}.${colSplit.takeRight(colSplit.length-1).mkString(".")}"
+              s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(lastv)}"""
+            }).mkString("AND")
+            val joinList = Seq(factorJoinlist, weightJoinlist).mkString(" AND ")
+            val tmpTable = s"${querytable}_inc"
+            execute(s"""UPDATE ${querytable} AS t0 SET id = t1.id 
+              FROM ${lastFactorTable} t1
+              WHERE ${joinList}""")
+
+            dataStore.dropAndCreateTableAs(tmpTable, s"""SELECT ${selectcols}, id 
+              FROM ${querytable} 
+              WHERE id is NULL GROUP BY ${condcols}, id""")
+            execute(s"ALTER SEQUENCE ${factoridSequence} RESTART ${factorid}")
+            factorid += dataStore.assignIds(tmpTable.toLowerCase(), factorid, factoridSequence)
+
+            val factorJoinlist2 = factorDesc.func.variables.map(
+              v => s""" t0.${dataStore.quoteColumn(s"${v.relation}.id")} 
+                |= t1.${dataStore.quoteColumn(s"${v.relation}.id")}
+                |""".stripMargin.replaceAll("\n", " ")).mkString("AND")
+            val weightJoinlist2 = factorDesc.weight.variables.map(v =>
+              s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)}""").mkString("AND")
+            val joinList2 = Seq(factorJoinlist2, weightJoinlist2).mkString(" AND ")
+            execute(s"""UPDATE ${querytable} AS t0 SET id = t1.id 
+              FROM ${tmpTable} t1
+              WHERE ${joinList2}""")
+
+            handleIncrementalDeduplication(querytable)
+          }
+        }
+        case _ => {
+          // handle factor id
+          factorid += dataStore.assignIds(querytable.toLowerCase(), factorid, factoridSequence)
+        }
+      }
+
+      // maintain incremental meta data
+      dbSettings.incrementalMode match {
+        case IncrementalMode.MATERIALIZATION => {
+          var numFactors : Long = 0
+          issueQuery(s"SELECT COUNT(*) FROM ${querytable}") { rs => 
+            numFactors += rs.getLong(1)
+          }
+          execute(s"""UPDATE ${InferenceNamespace.getIncrementalMetaTableName()}
+            SET num_factors = ${numFactors};""")
+        }
+        case _ =>
+      }
 
       // weight variable list
       val weightlist = factorDesc.weight.variables.map(v =>
@@ -421,10 +597,6 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         case x : KnownFactorWeight => x.value
         case _ => 0.0
       }
-
-      // for mysql, create indexes on weight variables of query tables.
-      // for psql, this function is overwritten to do nothing.
-      createIndexesForQueryTable(querytable, factorDesc.weight.variables)
 
       // generate weight description
       def generateWeightDesc(weightPrefix: String, weightVariables: Seq[String]) : String =
@@ -443,49 +615,111 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         // branch if weight variables present
         val hasWeightVariables = !(isFixed || weightlist == "")
         hasWeightVariables match {
-            // create a table that only contains one row (one weight)
-            case false => dataStore.dropAndCreateTableAs(weighttableForThisFactor,
-              s"""SELECT ${dataStore.cast(isFixed, "int")} AS isfixed, ${dataStore.cast(initvalue, "float")} AS initvalue,
-                ${dataStore.cast(0, "bigint")} AS id;""")
-            // create one weight for each different element in weightlist.
-            case true => dataStore.dropAndCreateTableAs(weighttableForThisFactor,
-              s"""SELECT ${weightlist}, ${dataStore.cast(isFixed, "int")} AS isfixed,
-              ${dataStore.cast(initvalue, "float")} AS initvalue, ${dataStore.cast(0, "bigint")} AS id
-              FROM ${querytable}
-              GROUP BY ${weightlist}""")
-          }
+          // create a table that only contains one row (one weight) 
+          case false => dataStore.dropAndCreateTableAs(weighttableForThisFactor, 
+            s"""SELECT ${dataStore.cast(isFixed, "int")} AS isfixed, ${dataStore.cast(initvalue, "float")} AS initvalue, 
+              ${dataStore.cast(-1, "bigint")} AS id;""")
+          // create one weight for each different element in weightlist.
+          case true => dataStore.dropAndCreateTableAs(weighttableForThisFactor,
+            s"""SELECT ${weightlist}, ${dataStore.cast(isFixed, "int")} AS isfixed, 
+            ${dataStore.cast(initvalue, "float")} AS initvalue, ${dataStore.cast(-1, "bigint")} AS id
+            FROM ${querytable}
+            GROUP BY ${weightlist}""")
+        }
 
-          // handle weight id
-          cweightid += dataStore.assignIds(weighttableForThisFactor.toLowerCase(), cweightid, weightidSequence)
+        val weightJoinlist = factorDesc.weight.variables.map(
+          v => s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)} """).mkString("AND")
 
-          execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, description)
-            SELECT id, isfixed, initvalue, ${weightDesc} FROM ${weighttableForThisFactor};""")
 
-          // check null weight (only if there are weight variables)
-          if (hasWeightVariables) {
-            val weightChecklist = factorDesc.weight.variables.map(v => s""" ${dataStore.quoteColumn(v)} IS NULL """).mkString("AND")
-            issueQuery(s"SELECT COUNT(*) FROM ${querytable} WHERE ${weightChecklist}") { rs =>
-              if (rs.getLong(1) > 0) {
-                throw new RuntimeException("Weight variable has null values")
-              }
+        // assign weight id for incremental, use previous weight id if we have seen that weight before,
+        // otherwise, assign new id
+        dbSettings.incrementalMode match {
+          case IncrementalMode.INCREMENTAL => {
+            val lastWeightsTableForThisFactor = InferenceNamespace.getBaseTableName(weighttableForThisFactor)
+            val exists = dataStore.existsTable(lastWeightsTableForThisFactor)
+            if (!exists) {
+              cweightid += dataStore.assignIds(weighttableForThisFactor.toLowerCase(), cweightid, weightidSequence)
+            } else {
+              val tmpTable = s"${weighttableForThisFactor}_inc"
+              val weightJoinlistInc = factorDesc.weight.variables.map(v => {
+                // split column to get relation name
+                val colSplit = v.split('.')
+                val lastvrel = InferenceNamespace.getBaseTableName(colSplit(0))
+                val lastv = s"${lastvrel}.${colSplit.takeRight(colSplit.length-1).mkString(".")}"
+                s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(lastv)}"""
+              }).mkString("AND")
+              execute(s"""UPDATE ${weighttableForThisFactor} AS t0 SET id = t1.id 
+                FROM ${lastWeightsTableForThisFactor} t1
+                WHERE ${weightJoinlistInc}""")
+              dataStore.dropAndCreateTableAs(tmpTable, s"SELECT * FROM ${weighttableForThisFactor} WHERE id = -1")
+              execute(s"ALTER SEQUENCE ${weightidSequence} RESTART ${cweightid}")
+              cweightid += dataStore.assignIds(tmpTable.toLowerCase(), cweightid, weightidSequence)
+              execute(s"""UPDATE ${weighttableForThisFactor} AS t0 SET id = t1.id
+                FROM ${tmpTable} t1
+                WHERE ${weightJoinlist}""")
             }
           }
-
-          // dump factors
-          val weightjoinlist = factorDesc.weight.variables.map(
-            v => s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)} """).mkString("AND")
-          // do not have join conditions if there are no weight variables, and t1 will only have 1 row
-          val weightJoinCondition = hasWeightVariables match {
-            case true => "WHERE " + factorDesc.weight.variables.map(
-                v => s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)} """).mkString("AND")
-            case false => ""
+          case _ => {
+            // handle weight id
+            cweightid += dataStore.assignIds(weighttableForThisFactor.toLowerCase(), cweightid, weightidSequence)
           }
-          execute(dataStore.analyzeTable(querytable))
-          execute(dataStore.analyzeTable(weighttableForThisFactor))
-          du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
-            s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
-             FROM ${querytable} t0, ${weighttableForThisFactor} t1
-             ${weightJoinCondition};""", groundingDir)
+        }
+
+        // maintain incremental meta data
+        dbSettings.incrementalMode match {
+          case IncrementalMode.MATERIALIZATION => {
+            var numWeights : Long = 0
+            issueQuery(s"SELECT COUNT(*) FROM ${weighttableForThisFactor}") { rs => 
+              numWeights += rs.getLong(1)
+            }
+            execute(s"""UPDATE ${InferenceNamespace.getIncrementalMetaTableName()} 
+              SET num_weights = ${numWeights}""")
+          }
+          case _ =>
+        }
+
+        // check null weight (only if there are weight variables)
+        if (hasWeightVariables) {
+          val weightChecklist = factorDesc.weight.variables.map(v => s""" ${dataStore.quoteColumn(v)} IS NULL """).mkString("AND")
+          issueQuery(s"SELECT COUNT(*) FROM ${querytable} WHERE ${weightChecklist}") { rs =>
+            if (rs.getLong(1) > 0) {
+              throw new RuntimeException("Weight variable has null values")
+            }
+          }
+        }
+
+        // dump factors
+        val weightjoinlist = factorDesc.weight.variables.map(
+          v => s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)} """).mkString("AND")
+        // do not have join conditions if there are no weight variables, and t1 will only have 1 row
+        val weightJoinCondition = hasWeightVariables match {
+          case true => "WHERE " + factorDesc.weight.variables.map(
+              v => s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)} """).mkString("AND")
+          case false => ""
+        }
+        execute(dataStore.analyzeTable(querytable))
+        execute(dataStore.analyzeTable(weighttableForThisFactor))
+
+        du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
+          s"""SELECT DISTINCT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
+           FROM ${querytable} t0, ${weighttableForThisFactor} t1
+           ${weightJoinCondition};""", groundingDir)
+
+        // delete weights that have already been seen
+        dbSettings.incrementalMode match {
+          case IncrementalMode.INCREMENTAL => {
+            val lastWeightsTableForThisFactor = InferenceNamespace.getBaseTableName(weighttableForThisFactor)
+            val exists = dataStore.existsTable(lastWeightsTableForThisFactor)
+            if (exists) {
+              execute(s"""DELETE FROM ${weighttableForThisFactor}
+                WHERE id IN (SELECT id FROM ${lastWeightsTableForThisFactor});""")
+            }
+          }
+          case _ =>
+        }
+
+        execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, description) 
+          SELECT id, isfixed, initvalue, ${weightDesc} FROM ${weighttableForThisFactor};""")
 
       } else if (factorDesc.func.getClass.getSimpleName == "MultinomialFactorFunction") {
         // TODO needs better code reuse
@@ -642,6 +876,18 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
   }
 
 
+  // create global meta data for incremental
+  def createIncrementalMetaData() {
+    dataStore.createTableIfNotExists(InferenceNamespace.getIncrementalMetaTableName(),
+      s"num_variables bigint, num_factors bigint, num_weights bigint")
+    issueQuery(s"SELECT COUNT(*) FROM ${InferenceNamespace.getIncrementalMetaTableName()}") {
+      rs => if (rs.getLong(1) == 0) {
+        execute(s""" INSERT INTO ${InferenceNamespace.getIncrementalMetaTableName()} VALUES (0, 0, 0); """)
+      }
+    }
+  }
+
+
   /** Ground the factor graph to file
    *
    * Using the schema and inference rules defined in application.conf, construct factor
@@ -683,17 +929,25 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     log.info(s"Parallel grounding = ${parallelGrounding}")
     log.debug(s"Grounding Path = ${groundingPath}")
 
+    // create global meta data 
+    dbSettings.incrementalMode match {
+      case IncrementalMode.MATERIALIZATION => createIncrementalMetaData()
+      case _ => 
+    }
+
+    val schemaForGrounding = dbSettings.incrementalMode match {
+      case IncrementalMode.INCREMENTAL => schema.filter(_._1.startsWith("dd_delta_"))
+      case _ => schema
+    }
+
     // assign variable id - sequential and unique
-    assignVariablesIds(schema)
+    assignVariablesIds(schemaForGrounding, dbSettings)
 
     // assign holdout
-    assignHoldout(schema, calibrationSettings)
-
+    assignHoldout(schemaForGrounding, calibrationSettings)
+    
     // generate cardinality tables
-    generateCardinalityTables(schema)
-
-    // ground variables
-    groundVariables(schema, du, dbSettings, groundingPath)
+    generateCardinalityTables(schemaForGrounding)
 
     // generate factor meta data
     groundFactorMeta(du, factorDescs, dbSettings, groundingPath)
@@ -702,12 +956,21 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     groundFactorsAndWeights(factorDescs, calibrationSettings, du, dbSettings,
       groundingPath, skipLearning, weightTable)
 
+    // ground variables
+    groundVariables(schemaForGrounding, du, dbSettings, groundingPath)
+
     // create inference result table
     execute(createInferenceResultSQL)
     execute(createInferenceResultWeightsSQL)
 
     // split grounding files and transform to binary format
     convertGroundingFormat(groundingPath)
+
+    // generate active compoenents for incremental
+    dbSettings.incrementalMode match {
+      case IncrementalMode.MATERIALIZATION => generateAcitve(groundingPath)
+      case _ => 
+    }
   }
 
   /**
@@ -741,9 +1004,6 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
     // Create the view for mapped weights
     execute(createMappedWeightsViewSQL)
-
-    // Create feature statistics tables for error analysis
-    // execute(createMappedFeatureStatsViewSQL)
 
     relationsColumns.foreach { case(relationName, columnName) =>
       execute(createInferenceViewSQL(relationName, columnName))

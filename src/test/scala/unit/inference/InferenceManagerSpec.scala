@@ -6,6 +6,7 @@ import org.deepdive.calibration._
 import org.deepdive.inference._
 import org.deepdive.helpers.Helpers
 import org.deepdive.test.helpers._
+import org.deepdive.settings._
 import org.scalatest._
 import org.deepdive.settings.{BooleanType, VariableDataType, DbSettings}
 import scala.util.Success
@@ -44,7 +45,8 @@ class InferenceManagerSpec(_system: ActorSystem) extends TestKit(_system) with F
   describe("Running inference") {
     it("should work") {
       val actor = TestActorRef(actorProps)
-      actor ! InferenceManager.RunInference(Seq(), 0.0, None, "javaArgs", "samplerOptions", false, dbSettings)
+      actor ! InferenceManager.RunInference(Seq(), 0.0, None, "javaArgs", "samplerOptions", 
+        PipelineSettings(None, Nil, null, None), dbSettings)
       sampler.expectMsgClass(classOf[Sampler.Run])
       sampler.reply("Done")
       expectMsg(())

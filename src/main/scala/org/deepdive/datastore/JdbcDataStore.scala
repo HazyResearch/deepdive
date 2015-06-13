@@ -197,6 +197,24 @@ trait JdbcDataStore extends Logging {
     }
   }
 
+  /**
+   * Creates a table if it doesn't exist
+   * Ensures we are only creating tables inside the DeepDive namespace.
+   */
+  def createTableIfNotExists(name: String, schema: String) = {
+    checkTableNamespace(name)
+    executeSqlQueries(s"""CREATE TABLE IF NOT EXISTS ${name} (${schema});""")
+  }
+
+  /**
+   * Creates a table if it doesn't exist
+   * Ensures we are only creating tables inside the DeepDive namespace.
+   */
+  def createTableIfNotExistsLike(name: String, source: String) = {
+    checkTableNamespace(name)
+    executeSqlQueries(s"""CREATE TABLE IF NOT EXISTS ${name} (LIKE ${source});""")
+  }
+
   private def unwrapSQLType(x: Any) : Any = {
     x match {
       case x : org.postgresql.jdbc4.Jdbc4Array => x.getArray().asInstanceOf[Array[_]].toList
@@ -391,6 +409,9 @@ trait JdbcDataStore extends Logging {
 
   // assign sequential ids to table's id column
   def assignIds(table: String, startId: Long, sequence: String) : Long = 0
+
+  // check if a table exists
+  def existsTable(table: String) : Boolean = false;
 
   // assign sequential ids in particular order
   def assignIdsOrdered(table: String, startId: Long, sequence: String, orderBy: String = "") : Long = throw new UnsupportedOperationException

@@ -1,0 +1,3 @@
+#!/bin/sh
+# ddlog.jar wrapper
+exec java -jar "`dirname "$0"`"/ddlog.jar "$@"

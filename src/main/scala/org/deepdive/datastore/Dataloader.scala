@@ -39,11 +39,13 @@ class DataLoader extends JdbcDataStore with Logging {
         throw new RuntimeException("greenplum parameters gphost, gpport, gppath are not set!")
       }
 
+      val queryList = query.split(";")
+
       // hacky way to get schema from a query...
       executeSqlQueries(s"""
         DROP VIEW IF EXISTS _${filename}_view CASCADE;
         DROP TABLE IF EXISTS _${filename}_tmp CASCADE;
-        CREATE VIEW _${filename}_view AS ${query};
+        CREATE VIEW _${filename}_view AS ${queryList(0)};
         CREATE TABLE _${filename}_tmp AS SELECT * FROM _${filename}_view LIMIT 0;
         """)
 
@@ -58,9 +60,11 @@ class DataLoader extends JdbcDataStore with Logging {
         DROP VIEW _${filename}_view CASCADE;
         DROP TABLE _${filename}_tmp CASCADE;""")
 
-      executeSqlQueries(s"""
-        INSERT INTO _${filename} ${query};
-        """)
+      for (q <- queryList) {
+        executeSqlQueries(s"""
+          INSERT INTO _${filename} ${q};
+          """)
+      }
     } else { // psql / mysql
   
       // Branch by database driver type (temporary solution)
@@ -75,15 +79,18 @@ class DataLoader extends JdbcDataStore with Logging {
       val outfile = new File(filepath)
       outfile.getParentFile().mkdirs()
 
-      // Trimming ending semicolons
-      val trimmedQuery = query.replaceAll("""(?m)[;\s\n]+$""", "")
-      
-      // This query can contain double-quotes (") now.
-      val copyStr = dbtype match {
-        case Psql => s"COPY (${trimmedQuery}) TO STDOUT;"
-        case Mysql => trimmedQuery
+      val queryList = query.split(";")
+      for (q <- queryList) {
+        // Trimming ending semicolons
+        val trimmedQuery = q.replaceAll("""(?m)[;\s\n]+$""", "")
+        
+        // This query can contain double-quotes (") now.
+        val copyStr = dbtype match {
+          case Psql => s"COPY (${trimmedQuery}) TO STDOUT;"
+          case Mysql => trimmedQuery
+        }
+        Helpers.executeSqlQueriesByFile(dbSettings, copyStr, filepath)
       }
-      Helpers.executeSqlQueriesByFile(dbSettings, copyStr, filepath)
     }
   }
   

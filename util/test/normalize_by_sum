@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -eu
+vs=$(cat)
+{
+    echo 'scale=6'
+    sed 's:$: / '"$( sum <<<"$vs" )"':' <<<"$vs"
+} | bc

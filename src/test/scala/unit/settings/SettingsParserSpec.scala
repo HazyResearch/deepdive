@@ -385,15 +385,14 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester with Logging {
       val loadPipelineSettings = PrivateMethod[PipelineSettings]('loadPipelineSettings)
       val result = SettingsParser invokePrivate loadPipelineSettings(config)
       assert(result == PipelineSettings(Some("p1"), 
-        List(Pipeline("p1", Set("f1", "f2")), Pipeline("p2", Set("f2", "f3")))
-      ))
+        List(Pipeline("p1", Set("f1", "f2")), Pipeline("p2", Set("f2", "f3"))), null, None))
       assert(result.activePipeline.get == Pipeline("p1", Set("f1", "f2")))
     }
 
     it ("should work when not specified") {
       val loadPipelineSettings = PrivateMethod[PipelineSettings]('loadPipelineSettings)
       val result = SettingsParser invokePrivate loadPipelineSettings(ConfigFactory.parseString(""))
-      assert(result == PipelineSettings(None, Nil))
+      assert(result == PipelineSettings(None, Nil, null, None))
     }
 
     it ("should work when relearn_from") {
@@ -402,8 +401,7 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester with Logging {
       """)
       val loadPipelineSettings = PrivateMethod[PipelineSettings]('loadPipelineSettings)
       val result = SettingsParser invokePrivate loadPipelineSettings(config)
-      assert(result == PipelineSettings(None, List(), "/PATH_TO_DEEPDIVE_HOME/out/2014-05-02T131658/"
-      ))
+      assert(result == PipelineSettings(None, List(), "/PATH_TO_DEEPDIVE_HOME/out/2014-05-02T131658/", None))
     }
   }
 

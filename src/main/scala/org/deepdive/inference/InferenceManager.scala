@@ -66,10 +66,10 @@ trait InferenceManager extends Actor with ActorLogging {
         context.stop(self)
       }
     case InferenceManager.RunInference(factorDescs, holdoutFraction, holdoutQuery, 
-      samplerJavaArgs, samplerOptions, skipSerializing, dbSettings) =>
+      samplerJavaArgs, samplerOptions, pipelineSettings, dbSettings) =>
       val _sender = sender
       val result = runInference(factorDescs, holdoutFraction, holdoutQuery, 
-        samplerJavaArgs, samplerOptions, skipSerializing, dbSettings)
+        samplerJavaArgs, samplerOptions, pipelineSettings, dbSettings)
       result pipeTo _sender
 
     case InferenceManager.WriteCalibrationData =>
@@ -87,14 +87,15 @@ trait InferenceManager extends Actor with ActorLogging {
   }
 
   def runInference(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], 
-    samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false, dbSettings: DbSettings) = {
+    samplerJavaArgs: String, samplerOptions: String, pipelineSettings: PipelineSettings, dbSettings: DbSettings) = {
 
     val sampler = context.actorOf(samplerProps, "sampler")
 
     val samplingResult = sampler ? Sampler.Run(samplerJavaArgs, samplerOptions,
       factorGraphDumpFileWeights.getCanonicalPath, factorGraphDumpFileVariables.getCanonicalPath,
       factorGraphDumpFileFactors.getCanonicalPath, factorGraphDumpFileEdges.getCanonicalPath,
-      factorGraphDumpFileMeta.getCanonicalPath, SamplingOutputDir.getCanonicalPath)
+      factorGraphDumpFileMeta.getCanonicalPath, SamplingOutputDir.getCanonicalPath,
+      pipelineSettings.baseDir, dbSettings.incrementalMode)
     // Kill the sampler after it's done :)
     sampler ! PoisonPill
     samplingResult.map { x =>
@@ -138,7 +139,7 @@ object InferenceManager {
     skipLearning: Boolean, weightTable: String)
   // Runs the sampler with the given arguments
   case class RunInference(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], 
-    samplerJavaArgs: String, samplerOptions: String, skipSerializing: Boolean = false, dbSettings: DbSettings)
+    samplerJavaArgs: String, samplerOptions: String, pipelineSettings: PipelineSettings, dbSettings: DbSettings)
   // Writes calibration data to predefined files
   case object WriteCalibrationData
 

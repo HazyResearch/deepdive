@@ -23,7 +23,7 @@ test: build
 .PHONY: install
 install: depends build
 	@echo "\n=== Compiling DeepDive... ==="
-	sbt pack
+	sbt/sbt pack
 
 	@echo "\n=== Installing DeepDive... ==="
 	$(MAKE) -C target/pack/ install ; 
@@ -40,7 +40,7 @@ install: depends build
 
 .PHONY: build-sampler
 build-sampler:
-	git submodule update --init
+	git submodule update --init sampler
 	[ -e sampler/lib/gtest -a -e sampler/lib/tclap ] || $(MAKE) -C sampler dep
 	$(MAKE) -C sampler dw
 ifeq ($(shell uname),Linux)
@@ -52,7 +52,13 @@ endif
 
 .PHONY: build-mindbender
 build-mindbender:
-	git submodule update --init
+	git submodule update --init mindbender
 	$(MAKE) -C mindbender
 	cp -f mindbender/mindbender-LATEST-*.sh util/mindbender
+
+.PHONY: build-ddlog
+build-ddlog:
+	git submodule update --init ddlog
+	$(MAKE) -C ddlog ddlog.jar
+	cp -f ddlog/ddlog.jar util/ddlog.jar
 
