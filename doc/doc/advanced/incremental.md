@@ -30,11 +30,6 @@ the base part. The workflow can be summarized as follows.
 6. Repeat 4 and 5 until satisfied.
 7. Run *merge phase* to merge the incremental part into the base part.
 
-We will assuming `DEEPDIVE_HOME` environment variable is set to the path of DeepDive's source tree:
-
-```bash
-export DEEPDIVE_HOME=~/deepdive
-```
 
 ### Preprocessing and loading data
 
@@ -46,7 +41,7 @@ Alternatively, you can try the handy scripts included incremental example we inc
 
 ```bash
 cd examples/spouse_example/incremental
-./0-setup.sh
+./0-setup.sh spouse_example.f1.ddl inc-base.out
 ```
 
 
@@ -135,7 +130,7 @@ Once you decide to keep the current version, you can merge the incremental part 
 Finally, you've finished a full workflow of the incremental application development cycle.
 
 
-### Non-incremental Runs
+## Non-incremental Runs
 
 In contrast, you can see how the same application written in DDlog can be run from scratch, non-incrementally with the following series of commands:
 
