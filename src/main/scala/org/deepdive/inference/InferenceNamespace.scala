@@ -59,6 +59,9 @@ object InferenceNamespace {
       case "EqualFactorFunction" => 3
       case "IsTrueFactorFunction" =>  4
       case "MultinomialFactorFunction" => 5
+      case "LinearFactorFunction" => 7
+      case "RatioFactorFunction" => 8
+      case "LogicalFactorFunction" => 9
     }
   }
 

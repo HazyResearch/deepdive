@@ -24,3 +24,7 @@ fi
 
 echo "Testing incremental support..."
 test/test_incremental.sh
+
+echo "Testing Other modules..."
+bash src/test/python/test_ddext/test.sh
+

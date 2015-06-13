@@ -36,7 +36,8 @@ install: depends build
 		echo "FAILED."; \
 		exit 1; \
 	fi 
-	
+
+
 .PHONY: build-sampler
 build-sampler:
 	git submodule update --init sampler
@@ -48,11 +49,6 @@ endif
 ifeq ($(shell uname),Darwin)
 	cp -f sampler/dw util/sampler-dw-mac
 endif
-
-.PHONY: test
-test: 
-	@echo "\n=== Testing DeepDive modules... ==="
-	./test.sh
 
 .PHONY: build-mindbender
 build-mindbender:

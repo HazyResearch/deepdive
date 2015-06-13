@@ -46,6 +46,21 @@ case class MultinomialFactorFunction(variables: Seq[FactorFunctionVariable]) ext
   override def variableDataType = "Discrete"
 }
 
+/* A factor function describing linear semantics, (A -> Z) + (B -> Z) + (C -> Z). */
+case class LinearFactorFunction(variables: Seq[FactorFunctionVariable]) extends FactorFunction {
+  override def variableDataType = "Boolean"
+}
+
+/* A factor function describing ratio semantics, log(1 + (A -> Z) + (B -> Z) + (C -> Z)). */
+case class RatioFactorFunction(variables: Seq[FactorFunctionVariable]) extends FactorFunction {
+  override def variableDataType = "Boolean"
+}
+
+/* A factor function describing logical semantics, (A -> Z) or (B -> Z) or (C -> Z)*/
+case class LogicalFactorFunction(variables: Seq[FactorFunctionVariable]) extends FactorFunction {
+  override def variableDataType = "Boolean"
+}
+
 /* A variable used in a Factor function */
 case class FactorFunctionVariable(relation: String, field: String, isArray: Boolean = false, 
   isNegated: Boolean = false, predicate: Option[Long] = None) {

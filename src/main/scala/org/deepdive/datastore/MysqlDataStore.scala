@@ -50,7 +50,7 @@ class MysqlDataStore extends JdbcDataStore with Logging {
   /**
    * Cast an expression to a type
    */
-  override def cast(expr: Any, toType: String): String = 
+  override def cast(expr: Any, toType: String): String =
     toType match {
       // convert text/varchar to char(N) where N is max length of given
       case "text" | "varchar" => s"convert(${expr.toString()}, char)"
@@ -61,14 +61,14 @@ class MysqlDataStore extends JdbcDataStore with Logging {
       // for others, try to convert as it is expressed.
       case _ => s"convert(${expr.toString()}, ${toType})"
     }
-  
+
   /**
    * Concatinate multiple strings use "concat" function in mysql
    */
   override def concat(list: Seq[String], delimiter: String): String = {
     list.length match {
       // return a SQL empty string if list is empty
-      case 0 => "''" 
+      case 0 => "''"
       case _ =>
       delimiter match {
         case null => s"concat(${list.mkString(", ")})"
@@ -82,7 +82,7 @@ class MysqlDataStore extends JdbcDataStore with Logging {
    * ANALYZE TABLE
    */
   override def analyzeTable(table: String) = s"ANALYZE TABLE ${table}"
-  
+
   /**
    * Given a string column name, Get a quoted version dependent on DB.
    *
@@ -90,11 +90,11 @@ class MysqlDataStore extends JdbcDataStore with Logging {
    *          if mysql, return `column`
    */
   override def quoteColumn(column: String): String = '`' + column + '`'
-  
+
   override def randomFunction: String = "RAND()"
 
   // this function is specific for greenplum
-  override def createAssignIdFunctionGreenplum() = {
+  override def createSpecialUDFs() = {
     // nothing
   }
 

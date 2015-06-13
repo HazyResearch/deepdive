@@ -35,7 +35,10 @@ class DocumentParser(props: Properties) {
       val posList = tokens.map(_.get(classOf[PartOfSpeechAnnotation]))
       val nerList = tokens.map(_.get(classOf[NamedEntityTagAnnotation]))
       val lemmaList = tokens.map(_.get(classOf[LemmaAnnotation]))
-      val depList = sentence.get(classOf[CollapsedCCProcessedDependenciesAnnotation]).toList.lines
+      val depList = sentence.get(classOf[CollapsedCCProcessedDependenciesAnnotation]) match { 
+	case null => List() 
+        case l => l.toList.lines
+      }
       SentenceParseResult(wordList.mkString(" "), wordList.toList, lemmaList.toList, 
         posList.toList, depList.toList, nerList.toList)
     }

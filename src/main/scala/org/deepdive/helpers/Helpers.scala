@@ -81,8 +81,16 @@ object Helpers extends Logging {
       case null => ""
       case _ => s" -h ${dbhost} "
     }
+    // Make psql stop on errors. By default it would not stop even if
+    // an error occur in the middle of the script. This helps when
+    // using a file to execute SQL queries, e.g.
+    // ExtractorRunner#executeSqlFileOrFail.
+    val otherOptionStr = dbtype match {
+      case Psql => s" -v ON_ERROR_STOP=1 "
+      case Mysql => ""
+    }
     // Return a concatinated options string
-    dbnameStr + dbuserStr + dbportStr + dbhostStr
+    dbnameStr + dbuserStr + dbportStr + dbhostStr + otherOptionStr
   }
   
   /** 

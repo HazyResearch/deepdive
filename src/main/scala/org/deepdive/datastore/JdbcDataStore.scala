@@ -28,7 +28,7 @@ trait JdbcDataStore extends Logging {
   def init() : Unit = {}
 
   /**
-   * Issues a single SQL query that can return results, and perform {@code op} 
+   * Issues a single SQL query that can return results, and perform {@code op}
    * as callback function
    */
   def executeSqlQueryWithCallback(sql: String)
@@ -53,10 +53,10 @@ trait JdbcDataStore extends Logging {
       conn.close()
     }
   }
-  
- /** 
+
+ /**
   *  Execute one or multiple SQL update commands with connection to JDBC datastore
-   *  
+   *
    */
   def executeSqlQueries(sql: String, split: Boolean = true) : Unit = {
     val conn = borrowConnection()
@@ -84,7 +84,7 @@ trait JdbcDataStore extends Logging {
       conn.close()
     }
   }
-  
+
   def bulkInsert(outputRelation: String, data: Iterator[Map[String, Any]])(implicit session: DBSession) = {
     val columnNames = DB.getColumnNames(outputRelation).sorted
     val columnValues = columnNames.map (x => "?")
@@ -94,13 +94,13 @@ trait JdbcDataStore extends Logging {
     val conn = ConnectionPool.borrow()
     val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
       java.sql.ResultSet.CONCUR_UPDATABLE)
-    val ps = conn.prepareStatement(s"""INSERT INTO ${outputRelation} (${columnNames.mkString(", ")}) 
+    val ps = conn.prepareStatement(s"""INSERT INTO ${outputRelation} (${columnNames.mkString(", ")})
       VALUES (${columnValues.mkString(", ")})""")
     try {
       for (tuple <- tuples) {
         for((value, index) <- tuple.view.zipWithIndex) {
           value match {
-            case z:Boolean => ps.setBoolean(index + 1, z) 
+            case z:Boolean => ps.setBoolean(index + 1, z)
             case z:Byte => ps.setByte(index + 1, z)
             case z:Int => ps.setInt(index + 1, z)
             case z:Long => ps.setLong(index + 1, z)
@@ -130,7 +130,7 @@ trait JdbcDataStore extends Logging {
       throw new RuntimeException("Dropping a non-deepdive internal table!")
     }
   }
-  
+
   /**
    * Drops a table if it exists, and then create it
    * Ensures we are only dropping tables inside the DeepDive namespace.
@@ -138,7 +138,7 @@ trait JdbcDataStore extends Logging {
   def dropAndCreateTable(name: String, schema: String) = {
     checkTableNamespace(name)
     executeSqlQueries(s"""DROP TABLE IF EXISTS ${name} CASCADE;""")
-    executeSqlQueries(s"""CREATE TABLE ${name} (${schema});""")
+    executeSqlQueries(s"""CREATE ${unlogged} TABLE ${name} (${schema});""")
   }
 
   /**
@@ -148,7 +148,7 @@ trait JdbcDataStore extends Logging {
   def dropAndCreateTableAs(name: String, query: String) = {
     checkTableNamespace(name)
     executeSqlQueries(s"""DROP TABLE IF EXISTS ${name} CASCADE;""")
-    executeSqlQueries(s"""CREATE TABLE ${name} AS ${query};""")
+    executeSqlQueries(s"""CREATE ${unlogged} TABLE ${name} AS ${query};""")
   }
 
   // execute sql, store results in a map
@@ -169,11 +169,11 @@ trait JdbcDataStore extends Logging {
           def hasNext = {
             // TODO: This is expensive
             !(rs.isLast)
-          }              
+          }
           def next() = {
             rs.next()
             val metadata = rs.getMetaData()
-            (1 to metadata.getColumnCount()).map { i => 
+            (1 to metadata.getColumnCount()).map { i =>
               val label = metadata.getColumnLabel(i)
               val data = unwrapSQLType(rs.getObject(i))
               (label, data)
@@ -243,11 +243,22 @@ trait JdbcDataStore extends Logging {
   // check whether greenplum is used
   def isUsingGreenplum() : Boolean = {
     var usingGreenplum = false
-    executeSqlQueryWithCallback("""SELECT version() LIKE '%Greenplum%';""") { rs => 
-      usingGreenplum = rs.getBoolean(1) 
+    executeSqlQueryWithCallback("""SELECT version() LIKE '%Greenplum%';""") { rs =>
+      usingGreenplum = rs.getBoolean(1)
     }
     return usingGreenplum
   }
+
+  // check whether postgres-xl is used
+  lazy val isUsingPostgresXL : Boolean = {
+    var usingXL = false
+    executeSqlQueryWithCallback("""SELECT version() LIKE '%Postgres-XL%';""") { rs =>
+      usingXL = rs.getBoolean(1)
+    }
+    usingXL
+  }
+
+  def unlogged = if (isUsingPostgresXL) "UNLOGGED" else ""
 
   // ========================================
   // Extraction
@@ -279,11 +290,11 @@ trait JdbcDataStore extends Logging {
             def hasNext = {
               // TODO: This is expensive
               !(rs.isLast)
-            }              
+            }
             def next() = {
               rs.next()
               val metadata = rs.getMetaData()
-              (1 to metadata.getColumnCount()).map { i => 
+              (1 to metadata.getColumnCount()).map { i =>
                 val label = metadata.getColumnLabel(i)
                 val data = unwrapSQLType(rs.getObject(i))
                 (label, data)
@@ -337,6 +348,7 @@ trait JdbcDataStore extends Logging {
     case x : Boolean => JsBoolean(x)
     case x : Int => JsNumber(x)
     case x : Long => JsNumber(x)
+    case x : Float => JsNumber(x)
     case x : Double => JsNumber(x)
     case x : java.sql.Date => JsString(x.toString)
     case x : Array[_] => JsArray(x.toList.map(x => anyValToJson(x)))
@@ -350,32 +362,32 @@ trait JdbcDataStore extends Logging {
 
   // Datastore-specific methods:
   // Below are methods to implement in any type of datastore.
-    
+
   /**
    * Drop and create a sequence, based on database type.
-   * 
+   *
    * @see http://dev.mysql.com/doc/refman/5.0/en/user-variables.html
    * @see http://www.it-iss.com/mysql/mysql-renumber-field-values/
    */
   def createSequenceFunction(seqName: String) : String = null
-  
+
   /**
    * Cast an expression to a type
    */
   def cast(expr: Any, toType: String): String = null
-  
+
   /**
    * Given a string column name, Get a quoted version dependent on DB.
-   *          if psql, return "column" 
+   *          if psql, return "column"
    *          if mysql, return `column`
    */
   def quoteColumn(column: String) : String = null
-  
+
   /**
    * Generate a random real number from 0 to 1.
    */
   def randomFunction : String = null
-  
+
   /**
    * Concatenate a list of strings in the database.
    * @param list
@@ -388,18 +400,21 @@ trait JdbcDataStore extends Logging {
   def concat(list: Seq[String], delimiter: String) : String = null
 
   // fast sequential id assign function
-  def createAssignIdFunctionGreenplum() : Unit = {}
-  
+  def createSpecialUDFs() : Unit = {}
+
   /**
    * ANALYZE TABLE
    */
   def analyzeTable(table: String) : String = ""
 
-  // assign senquential ids to table's id column
+  // assign sequential ids to table's id column
   def assignIds(table: String, startId: Long, sequence: String) : Long = 0
 
   // check if a table exists
   def existsTable(table: String) : Boolean = false;
+
+  // assign sequential ids in particular order
+  def assignIdsOrdered(table: String, startId: Long, sequence: String, orderBy: String = "") : Long = throw new UnsupportedOperationException
 
   // end: Datastore-specific methods
 
@@ -435,5 +450,5 @@ object JdbcDataStoreObject extends JdbcDataStore with Logging {
     ConnectionPool.closeAll() // TODO not tested
     DBsWithEnv("deepdive").closeAll()
   }
-  
+
 }

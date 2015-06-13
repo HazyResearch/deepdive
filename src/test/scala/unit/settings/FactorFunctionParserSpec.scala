@@ -117,8 +117,92 @@ class FactorFunctionParserSpec extends FunSpec {
 
   }
 
+  describe("Parsing Linear expressions") {
+
+    it("should parse Linear expressions with one variable") {
+      val expr = "Linear(words.is_true)"
+      val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
+      assert(result.successful)
+      assert(result.get == LinearFactorFunction(List(FactorFunctionVariable("words", "is_true", false, false)))
+      )
+    }
 
 
+    it("should parse Linear expressions with multiple variables") {
+      val expr = "Linear(relation1.is_true, relation2.is_true)"
+      val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
+      assert(result.successful)
+      assert(result.get == LinearFactorFunction(
+        List(
+          FactorFunctionVariable("relation1", "is_true", false), 
+          FactorFunctionVariable("relation2", "is_true", false)
+      )))
+    }
+
+    it("should not parse malformed Linear expressions") {
+      val expr = "Linear(a"
+      val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
+      assert(!result.successful)
+    }
+  }
+
+  describe("Parsing Ratio expressions") {
+
+    it("should parse Ratio expressions with one variable") {
+      val expr = "Ratio(words.is_true)"
+      val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
+      assert(result.successful)
+      assert(result.get == RatioFactorFunction(List(FactorFunctionVariable("words", "is_true", false, false)))
+      )
+    }
+
+
+    it("should parse Ratio expressions with multiple variables") {
+      val expr = "Ratio(relation1.is_true, relation2.is_true)"
+      val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
+      assert(result.successful)
+      assert(result.get == RatioFactorFunction(
+        List(
+          FactorFunctionVariable("relation1", "is_true", false), 
+          FactorFunctionVariable("relation2", "is_true", false)
+      )))
+    }
+
+    it("should not parse malformed Ratio expressions") {
+      val expr = "Ratio(a"
+      val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
+      assert(!result.successful)
+    }
+  }
+
+  describe("Parsing Logical expressions") {
+
+    it("should parse Logical expressions with one variable") {
+      val expr = "Logical(words.is_true)"
+      val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
+      assert(result.successful)
+      assert(result.get == LogicalFactorFunction(List(FactorFunctionVariable("words", "is_true", false, false)))
+      )
+    }
+
+
+    it("should parse Logical expressions with multiple variables") {
+      val expr = "Logical(relation1.is_true, relation2.is_true)"
+      val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
+      assert(result.successful)
+      assert(result.get == LogicalFactorFunction(
+        List(
+          FactorFunctionVariable("relation1", "is_true", false), 
+          FactorFunctionVariable("relation2", "is_true", false)
+      )))
+    }
+
+    it("should not parse malformed Logical expressions") {
+      val expr = "Logical(a"
+      val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
+      assert(!result.successful)
+    }
+  }
 
   describe("Parsing variables") {
     it("should parse expressions with deep identifiers") {

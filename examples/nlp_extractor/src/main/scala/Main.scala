@@ -7,7 +7,8 @@ import java.util.Properties
 object Main extends App {
 
   // Parse command line options
-  case class Config(documentKey: String, idKey: String, maxSentenceLength: String, numThreads: String)
+  case class Config(documentKey: String, idKey: String, maxSentenceLength: String, numThreads: String, 
+    annotators: String = "tokenize, cleanxml, ssplit, pos, lemma, ner, parse")
 
   val parser = new scopt.OptionParser[Config]("DeepDive DocumentParser") {
     head("documentParser", "0.1")
@@ -23,6 +24,9 @@ object Main extends App {
     opt[String]('t', "numThreads") action { (x, c) =>
       c.copy(numThreads = x) 
     } text("Number of threads (default: # of available cores)")
+    opt[String]('a', "annotators") action { (x, c) =>
+      c.copy(annotators = x)
+    } text("CoreNLP annotators (default: 'tokenize,cleanxml,ssplit,pos,lemma', minimum: 'tokenize,ssplit')")
   }
 
   val conf = parser.parse(args, Config("documents.text", "documents.id", "40", 
@@ -35,7 +39,7 @@ object Main extends App {
 
   // Configuration has been parsed, execute the Document parser
   val props = new Properties()
-  props.put("annotators", "tokenize, cleanxml, ssplit, pos, lemma, ner, parse")
+  props.put("annotators", conf.annotators) 
   props.put("parse.maxlen", conf.maxSentenceLength)
   props.put("threads", conf.numThreads)
   val dp = new DocumentParser(props)
