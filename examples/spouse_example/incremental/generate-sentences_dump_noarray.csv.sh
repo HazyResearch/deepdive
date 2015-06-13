@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # A script to generate a sentences dump that doesn't use Postgres ARRAYs for applications compiled from DDlog
-set -eu
+set -eux
 cd "$(dirname "$0")"
 
 DBNAME=deepdive_spouse_data_$$

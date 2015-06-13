@@ -120,7 +120,7 @@ The incremental phase can be repeated several times until you are satisfied with
 You need to run the following command before running another incremental phase:
 
 ```bash
-./4-cleanup.sh spouse_example.f2.ddl
+./3-cleanup.sh spouse_example.f2.ddl
 ```
 
 
@@ -129,7 +129,7 @@ You need to run the following command before running another incremental phase:
 Once you decide to keep the current version, you can merge the incremental part into the base with the `--merge` mode:
 
 ```bash
-./3-merge.sh spouse_example.f2.ddl
+./4-merge.sh spouse_example.f2.ddl
 ```
 
 Finally, you've finished a full workflow of the incremental application development cycle.
