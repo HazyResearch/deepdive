@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+inner_product_of <(unit_vector <"$1") <(unit_vector <"$2")

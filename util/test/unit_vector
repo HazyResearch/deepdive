@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -eu
+vs=$(cat)
+vlen=$( (squares | sum | sqrt) <<<"$vs" )
+{
+    echo 'scale=6'
+    sed 's:$: / '"$vlen"':' <<<"$vs"
+} | bc

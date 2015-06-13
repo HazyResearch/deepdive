@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -eu
+
+Variable=$1; shift
+Out=$1; shift
+calibration_tsv="$Out"/calibration/${Variable}.label.tsv
+
+cut -f 3 "$calibration_tsv"
