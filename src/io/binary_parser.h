@@ -32,16 +32,16 @@ long long read_weights(string filename, dd::FactorGraph &);
 /**
  * Loads variables from the given file into the given factor graph
  */
-long long read_variables(string filename, dd::FactorGraph &, bool is_inc);
+long long read_variables(string filename, dd::FactorGraph &);
 
 /**
  * Loads factors from the given file into the given factor graph
  */
-long long read_factors(string filename, dd::FactorGraph &, bool is_inc);
+long long read_factors(string filename, dd::FactorGraph &);
 
 /**
  * Loads edges from the given file into the given factor graph
  */
-long long read_edges(string filename, dd::FactorGraph &, bool is_inc);
+long long read_edges(string filename, dd::FactorGraph &);
 
 #endif

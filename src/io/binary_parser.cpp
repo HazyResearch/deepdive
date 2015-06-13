@@ -74,7 +74,7 @@ long long read_weights(string filename, dd::FactorGraph &fg)
 
 
 // Read variables
-long long read_variables(string filename, dd::FactorGraph &fg, bool is_inc)
+long long read_variables(string filename, dd::FactorGraph &fg)
 {
     ifstream file;
     file.open(filename.c_str(), ios::in | ios::binary);
@@ -86,7 +86,6 @@ long long read_variables(string filename, dd::FactorGraph &fg, bool is_inc)
     short type;
     long long edge_count;
     long long cardinality;
-    long long dd_count = 0;
     while (file.good()) {
         // read fields
         file.read((char *)&id, 8);
@@ -95,7 +94,6 @@ long long read_variables(string filename, dd::FactorGraph &fg, bool is_inc)
         file.read((char *)&type, 2);
         file.read((char *)&edge_count, 8);
         if (!file.read((char *)&cardinality, 8)) break;
-        if (is_inc) file.read((char*)&dd_count, 8);
 
         // convert endian
         id = bswap_64(id);
@@ -105,9 +103,7 @@ long long read_variables(string filename, dd::FactorGraph &fg, bool is_inc)
         initial_value = *(double *)&tmp;
         edge_count = bswap_64(edge_count);
         cardinality = bswap_64(cardinality);
-        dd_count = bswap_64(dd_count);
 
-        assert(dd_count == 0 || dd_count == 1);
         // printf("----- id=%lli isevidence=%d initial=%f type=%d edge_count=%lli cardinality=%lli\n", id, isevidence, initial_value, type, edge_count, cardinality);
 
         count++;
@@ -160,7 +156,7 @@ long long read_variables(string filename, dd::FactorGraph &fg, bool is_inc)
     return count;
 }
 
-long long read_factors(string filename, dd::FactorGraph &fg, bool is_inc)
+long long read_factors(string filename, dd::FactorGraph &fg)
 {
     ifstream file;
     file.open(filename.c_str(), ios::in | ios::binary);
@@ -169,23 +165,16 @@ long long read_factors(string filename, dd::FactorGraph &fg, bool is_inc)
     long long weightid;
     short type;
     long long edge_count;
-    long long dd_count = 0;
     while (file.good()) {
         file.read((char *)&id, 8);
         file.read((char *)&weightid, 8);
         file.read((char *)&type, 2);
         if (!file.read((char *)&edge_count, 8)) break;
-        if (is_inc) file.read((char*)&dd_count, 8);
 
         id = bswap_64(id);
         weightid = bswap_64(weightid);
         type = bswap_16(type);
         edge_count = bswap_64(edge_count);
-        dd_count = bswap_64(dd_count);
-
-        //std::cout << id << std::endl;
-
-        assert(dd_count == 0 || dd_count == 1);
 
         count++;
         fg.factors[fg.c_nfactor] = dd::Factor(id, weightid, type, edge_count);
@@ -195,7 +184,7 @@ long long read_factors(string filename, dd::FactorGraph &fg, bool is_inc)
     return count;
 }
 
-long long read_edges(string filename, dd::FactorGraph &fg, bool is_inc)
+long long read_edges(string filename, dd::FactorGraph &fg)
 {
     ifstream file;
     file.open(filename.c_str(), ios::in | ios::binary);
@@ -206,7 +195,6 @@ long long read_edges(string filename, dd::FactorGraph &fg, bool is_inc)
     bool ispositive;
     char padding;
     long long equal_predicate;
-    long long dd_count = 0;
     while (file.good()) {
         // read fields
         file.read((char *)&variable_id, 8);
@@ -214,16 +202,12 @@ long long read_edges(string filename, dd::FactorGraph &fg, bool is_inc)
         file.read((char *)&position, 8);
         file.read((char *)&padding, 1);
         if (!file.read((char *)&equal_predicate, 8)) break;
-        if (is_inc) file.read((char *)&dd_count, 8);
         
         variable_id = bswap_64(variable_id);
         factor_id = bswap_64(factor_id);
         position = bswap_64(position);
         ispositive = padding;
         equal_predicate = bswap_64(equal_predicate);
-        
-        dd_count = bswap_64(dd_count);
-        assert(dd_count == 0 || dd_count == 1);
         
         count++;
         // printf("varid=%lli, factorid=%lli, position=%lli, predicate=%lli\n", variable_id, factor_id, position, equal_predicate);

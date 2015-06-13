@@ -32,6 +32,8 @@
 #define LOG_2   0.693147180559945
 #define MINUS_LOG_THRESHOLD   -18.42
 
+enum inc_mode { ORIGINAL, MAT, INC };
+
 inline bool fast_exact_is_equal(double a, double b){
     return (a <= b && b <= a);
 }
