@@ -834,7 +834,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
   // create global meta data for incremental
   def createIncrementalMetaData() {
-    dataStore.createTableIfNotExists(InferenceNamespace.getIncrementalMetaTableName(),
+    dataStore.dropAndCreateTable(InferenceNamespace.getIncrementalMetaTableName(),
       s"num_variables bigint, num_factors bigint, num_weights bigint")
     issueQuery(s"SELECT COUNT(*) FROM ${InferenceNamespace.getIncrementalMetaTableName()}") {
       rs => if (rs.getLong(1) == 0) {

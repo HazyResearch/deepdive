@@ -19,6 +19,8 @@ os.system('rm -rf ' + INPUTFOLDER + "/dd_tmp")
 os.system('mkdir -p ' + INPUTFOLDER + "/dd_tmp")
 os.system('rm -rf ' + INPUTFOLDER + "/nedges_")
 
+if not os.path.isfile(INPUTFOLDER + "/dd_factormeta"):
+  os.system("touch %s/dd_factormeta" %INPUTFOLDER)
 
 # handle factors
 for l in open(INPUTFOLDER + "/dd_factormeta"):
