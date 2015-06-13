@@ -24,11 +24,11 @@ for line in lines:
 # For each input tuple
 for row in sys.stdin:
   parts = row.strip().split('\t')
-  if len(parts) != 6: 
+  if len(parts) != 5: 
     print >>sys.stderr, 'Failed to parse row:', row
     continue
   
-  sentence_id, p1_id, p1_text, p2_id, p2_text, dd_count = parts
+  sentence_id, p1_id, p1_text, p2_id, p2_text = parts
 
   p1_text = p1_text.strip()
   p2_text = p2_text.strip()
@@ -53,8 +53,7 @@ for row in sys.stdin:
     p1_id, p2_id, sentence_id, 
     "%s-%s" %(p1_text, p2_text),
     "%s-%s" %(p1_id, p2_id),
-    is_true,
-    dd_count
+    is_true
     ])
 
   # TABLE FORMAT: CREATE TABLE has_spouse(

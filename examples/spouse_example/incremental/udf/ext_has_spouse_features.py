@@ -8,14 +8,14 @@ ARR_DELIM = '~^~'
 # For each input tuple
 for row in sys.stdin:
   parts = row.strip().split('\t')
-  # if len(parts) != 7: 
-  #   print >>sys.stderr, 'Failed to parse row:', row
-  #   continue
+  if len(parts) != 6: 
+    print >>sys.stderr, 'Failed to parse row:', row
+    continue
   
   # Get all fields from a row
   words = parts[0].split(ARR_DELIM)
   relation_id = parts[1]
-  p1_start, p1_length, p2_start, p2_length, dd_count = [int(x) for x in parts[2:]]
+  p1_start, p1_length, p2_start, p2_length = [int(x) for x in parts[2:]]
   
   # Unpack input into tuples.
   span1 = ddlib.Span(begin_word_id=p1_start, length=p1_length)
@@ -72,4 +72,4 @@ for row in sys.stdin:
   # ddlib.log(features)
 
   for feature in features:  
-    print str(relation_id) + '\t' + feature + '\t' + str(dd_count)
+    print str(relation_id) + '\t' + feature
