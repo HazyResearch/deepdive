@@ -30,7 +30,7 @@ if hash psql 2>/dev/null; then
 fi
 
 # if command mysql exist, then test mysql
-if hash mysql 2>/dev/null; then
+if false && hash mysql 2>/dev/null; then
   echo "Testing mysql..."
   bash test/test_mysql.sh
 fi
