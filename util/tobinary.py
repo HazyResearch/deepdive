@@ -13,7 +13,6 @@ CHUNKSIZE = '10000000'
 INPUTFOLDER = sys.argv[1]
 transform_script = sys.argv[2]
 OUTPUTFOLDER = sys.argv[3]
-incremental = sys.argv[4]
 
 # clean up folder
 os.system('rm -rf ' + INPUTFOLDER + "/dd_tmp")
@@ -31,24 +30,16 @@ for l in open(INPUTFOLDER + "/dd_factormeta"):
   os.system('split -a 10 -l ' + CHUNKSIZE + ' ' + INPUTFOLDER + '/dd_factors_' + factor_name + '_out ' + INPUTFOLDER + '/dd_tmp/dd_factors_' + factor_name + '_out')
 
   print "BINARIZE ", factor_name, "..."
-  os.system('ls ' + INPUTFOLDER + '/dd_tmp | egrep "^dd_factors_' + factor_name 
-    + '_out"  | xargs -P 40 -I {} -n 1 sh -c \'' + transform_script + ' factor '
-    + INPUTFOLDER + '/dd_tmp/{} ' + incremental + ' ' + function_id + ' ' + nvars + ' ' 
-    + (' '.join(positives)) + ' \' | awk \'{s+=$1} END {printf \"%.0f\\n\", s}\' >>' 
-    + INPUTFOLDER + "/dd_nedges_")
+  os.system('ls ' + INPUTFOLDER + '/dd_tmp | egrep "^dd_factors_' + factor_name + '_out"  | xargs -P 40 -I {} -n 1 sh -c \'' + transform_script + ' factor ' + INPUTFOLDER + '/dd_tmp/{} ' + function_id + ' ' + nvars + ' ' + (' '.join(positives)) + ' \' | awk \'{s+=$1} END {printf \"%.0f\\n\", s}\' >>' + INPUTFOLDER + "/dd_nedges_")
 
 # handle variables
 for f in os.listdir(INPUTFOLDER):
   if f.startswith('dd_variables_'):
     print "SPLITTING", f, "..."
-    os.system("touch %s/dd_tmp/%s" %(INPUTFOLDER, f))
-    cmd = 'split -a 10 -l ' + CHUNKSIZE + ' ' + INPUTFOLDER + '/' + f + ' ' + INPUTFOLDER + '/dd_tmp/' + f
-    os.system(cmd)
+    os.system('split -a 10 -l ' + CHUNKSIZE + ' ' + INPUTFOLDER + '/' + f + ' ' + INPUTFOLDER + '/dd_tmp/' + f)
 
     print "BINARIZE ", f, "..."
-    cmd = 'ls ' + INPUTFOLDER + '/dd_tmp | egrep "^' + f + '"  | xargs -P 40 -I {} -n 1 sh -c \'' \
-      + transform_script + ' variable ' + INPUTFOLDER + '/dd_tmp/{} ' + incremental + "\'"
-    os.system(cmd)
+    os.system('ls ' + INPUTFOLDER + '/dd_tmp | egrep "^' + f + '"  | xargs -P 40 -I {} -n 1 sh -c \'' + transform_script + ' variable ' + INPUTFOLDER + '/dd_tmp/{} \'')
 
 # handle weights
 print "BINARIZE ", 'weights', "..."
@@ -86,7 +77,7 @@ os.system("cat {0}/dd_nweights {0}/dd_nvariables {0}/dd_nfactors {0}/dd_nedges |
 os.system("echo {0}/graph.weights,{0}/graph.variables,{0}/graph.factors,{0}/graph.edges >> {1}/graph.meta".format(OUTPUTFOLDER, INPUTFOLDER))
 
 if INPUTFOLDER != OUTPUTFOLDER:
-  os.system("mv {0}/graph.meta {1}/graph.meta".format(INPUTFOLDER, OUTPUTFOLDER))
+    os.system("mv {0}/graph.meta {1}/graph.meta".format(INPUTFOLDER, OUTPUTFOLDER))
 os.system("mv {0}/dd_weights.bin {1}/graph.weights".format(INPUTFOLDER, OUTPUTFOLDER))
 os.system("cat {0}/dd_variables/* > {1}/graph.variables".format(INPUTFOLDER, OUTPUTFOLDER))
 os.system("cat {0}/dd_factors/dd_factors*factors.bin > {1}/graph.factors".format(INPUTFOLDER, OUTPUTFOLDER))

@@ -170,7 +170,7 @@ class PostgresDataStore extends JdbcDataStore with Logging {
         SELECT 1
         FROM   information_schema.tables 
         WHERE  table_schema = 'public'
-        AND    table_name = '${table}'
+        AND    table_name = '${table.toLowerCase}'
       );"""
     var exists = false
     executeSqlQueryWithCallback(sql) { rs =>
