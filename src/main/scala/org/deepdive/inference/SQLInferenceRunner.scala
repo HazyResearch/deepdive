@@ -231,7 +231,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         FROM ${lastRelationTable} t1
         WHERE ${variableJoinlist}""")
       dataStore.dropAndCreateTableAs(tmpTable, s""" 
-        SELECT id, ${key.mkString(", ")}, ${column}, SUM(dd_count) AS dd_count 
+        SELECT id, ${key.mkString(", ")}, ${column}
         FROM ${relation} 
         WHERE id is NULL GROUP BY id, ${key.mkString(", ")}, ${column} """)
       execute(s"ALTER SEQUENCE ${IdSequence} RESTART ${idoffset}")
@@ -248,7 +248,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     // return
     val lastRelationTable = InferenceNamespace.getBaseTableName(relation)
     execute(s"""DELETE FROM ${relation}
-      WHERE id IN (SELECT id FROM ${lastRelationTable}) AND dd_count = 1;""")
+      WHERE id IN (SELECT id FROM ${lastRelationTable});""")
   }
   
   // assign variable holdout
@@ -351,16 +351,9 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       // du.unload(s"dd_variables_${relation}", s"${groundingPath}/dd_variables_${relation}",
       val groundingDir = getFileNameFromPath(groundingPath)
 
-      val dd_count_col = dbSettings.incrementalMode match {
-        case IncrementalMode.INCREMENTAL => ", t0.dd_count AS dd_count"
-        case IncrementalMode.MATERIALIZATION => ", 1 AS dd_count"
-        case _ => ""
-      }
-
       val incCondition = dbSettings.incrementalMode match {
         case IncrementalMode.INCREMENTAL => s"""AND 
-          (t0.id NOT IN (SELECT id FROM ${InferenceNamespace.getBaseTableName(relation)}) 
-          AND dd_count != 1)"""
+          (t0.id NOT IN (SELECT id FROM ${InferenceNamespace.getBaseTableName(relation)}))"""
         case _ => ""
       }
       du.unload(InferenceNamespace.getVariableFileName(relation),
@@ -368,7 +361,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         dbSettings,
         s"""SELECT t0.id, t1.${variableTypeColumn},
         CASE WHEN t1.${variableTypeColumn} = 0 THEN 0 ELSE ${initvalueCast} END AS initvalue,
-        ${variableDataType} AS type, ${cardinality} AS cardinality ${dd_count_col}
+        ${variableDataType} AS type, ${cardinality} AS cardinality
         FROM ${relation} t0, ${variableTypeTable} t1
         WHERE t0.id=t1.id ${incCondition}
         """, groundingDir)
@@ -413,15 +406,11 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
   // convert grounding file format to be compatible with sampler
   // for more information about format, please refer to deepdive's website
-  def convertGroundingFormat(groundingPath: String, incrementalMode: IncrementalMode.IncrementalMode) {
+  def convertGroundingFormat(groundingPath: String) {
     log.info("Converting grounding file format...")
-    val inc = incrementalMode match {
-      case IncrementalMode.INCREMENTAL | IncrementalMode.MATERIALIZATION => 1
-      case _ => 0
-    }
     // TODO: this python script is dangerous and ugly. It changes too many states!
     val cmd = s"python ${InferenceNamespace.getFormatConvertingScriptPath} ${groundingPath} " + 
-        s"${InferenceNamespace.getFormatConvertingWorkerPath} ${Context.outputDir} ${inc}"
+        s"${InferenceNamespace.getFormatConvertingWorkerPath} ${Context.outputDir}"
     log.debug("Executing: " + cmd)
     val exitValue = cmd!(ProcessLogger(
       out => log.info(out),
@@ -542,7 +531,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
               FROM ${lastFactorTable} t1
               WHERE ${joinList}""")
 
-            dataStore.dropAndCreateTableAs(tmpTable, s"""SELECT ${selectcols}, SUM(dd_count), id 
+            dataStore.dropAndCreateTableAs(tmpTable, s"""SELECT ${selectcols}, id 
               FROM ${querytable} 
               WHERE id is NULL GROUP BY ${condcols}, id""")
             execute(s"ALTER SEQUENCE ${factoridSequence} RESTART ${factorid}")
@@ -692,14 +681,8 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         execute(dataStore.analyzeTable(querytable))
         execute(dataStore.analyzeTable(weighttableForThisFactor))
 
-        val dd_col = dbSettings.incrementalMode match {
-          case IncrementalMode.INCREMENTAL => ", t0.dd_count"
-          case IncrementalMode.MATERIALIZATION => ", 1 AS dd_count"
-          case _ => ""
-        }
-
         du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
-          s"""SELECT DISTINCT t0.id AS factor_id, t1.id AS weight_id ${dd_col}, ${idcols}
+          s"""SELECT DISTINCT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
            FROM ${querytable} t0, ${weighttableForThisFactor} t1
            ${weightJoinCondition};""", groundingDir)
 
@@ -937,7 +920,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     execute(createInferenceResultWeightsSQL)
 
     // split grounding files and transform to binary format
-    convertGroundingFormat(groundingPath, dbSettings.incrementalMode)
+    convertGroundingFormat(groundingPath)
 
     // generate active compoenents for incremental
     dbSettings.incrementalMode match {

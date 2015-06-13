@@ -36,6 +36,7 @@ for l in open(INPUTFOLDER + "/dd_factormeta"):
 for f in os.listdir(INPUTFOLDER):
   if f.startswith('dd_variables_'):
     print "SPLITTING", f, "..."
+    os.system("touch %s/dd_tmp/%s" %(INPUTFOLDER, f))
     os.system('split -a 10 -l ' + CHUNKSIZE + ' ' + INPUTFOLDER + '/' + f + ' ' + INPUTFOLDER + '/dd_tmp/' + f)
 
     print "BINARIZE ", f, "..."
