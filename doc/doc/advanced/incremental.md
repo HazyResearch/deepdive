@@ -10,6 +10,8 @@ DeepDive. The example application is [the spouse example](../basics/walkthrough/
 This document assumes you are familiar with basic concepts in DeepDive and the
 spouse application tutorial.
 
+Incremental workflow is currently supported only on Postgres and MySQL, but not on Greenplum or Postgres-XL.
+
 ## Incremental application workflow
 
 In building knowledge base construction, a typical scenario is the user has

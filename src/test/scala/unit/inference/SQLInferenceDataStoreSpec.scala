@@ -451,6 +451,15 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
     describe("test incremental grounding") {
 
       it("should work with materialization and incremental modes") {
+        // XXX Incremental workflow not supported on Postgres-XL as inference.PostgresInferenceRunner.groundVariables raises the following error:
+        //   org.postgresql.util.PSQLException: ERROR: could not plan this distributed update
+        //   Detail: correlated UPDATE or updating distribution column currently not supported in Postgres-XL.
+        if (dataStoreHelper.isUsingPostgresXL) pending
+        // XXX Incremental workflow not supported on Greenplum as datastore.PostgresDataStore.createTableIfNotExists raising following error:
+        //   org.postgresql.util.PSQLException: ERROR: syntax error at or near "NOT"
+        //   Position: 17
+        if (dataStoreHelper.isUsingGreenplum) pending
+
         inferenceRunner.init()
         
         // Insert sample data
