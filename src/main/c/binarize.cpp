@@ -29,7 +29,7 @@ using namespace std;
      ((unsigned short int) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8)))
 
 // read variables and convert to binary format
-void load_var(std::string filename, int inc) {
+void load_var(std::string filename) {
   std::ifstream fin(filename.c_str());
   std::ofstream fout((filename + ".bin").c_str(), std::ios::binary | std::ios::out);
 
@@ -39,7 +39,6 @@ void load_var(std::string filename, int inc) {
   short type;
   long edge_count = -1;
   long cardinality;
-  long dd_count;
 
   edge_count = bswap_64(edge_count);
   // std::cerr << filename << " " << inc << std::endl;
@@ -57,11 +56,6 @@ void load_var(std::string filename, int inc) {
     fout.write((char*)&type, 2);
     fout.write((char *)&edge_count, 8);
     fout.write((char*)&cardinality, 8);
-    if (inc) {
-      fin >> dd_count;
-      dd_count = bswap_64(dd_count);
-      fout.write((char*)&dd_count, 8);
-    }
   }
 
   fin.close();
@@ -93,7 +87,7 @@ void load_weight(std::string filename) {
 
 // load factors
 // fid, wid, vids
-void load_factor(std::string filename, int inc, short funcid, long nvar, char** positives) {
+void load_factor(std::string filename, short funcid, long nvar, char** positives) {
   std::ifstream fin(filename.c_str());
   std::ofstream fout((filename + "_factors.bin").c_str(), std::ios::binary | std::ios::out);
   std::ofstream fedgeout((filename + "_edges.bin").c_str(), std::ios::binary | std::ios::out);
@@ -104,7 +98,6 @@ void load_factor(std::string filename, int inc, short funcid, long nvar, char** 
   long nedge = 0;
   long nvars_big = bswap_64(nvar);
   long predicate = funcid == 5 ? -1 : 1;
-  long dd_count;
   vector<int> positives_vec;
 
   funcid = bswap_16(funcid);
@@ -137,13 +130,6 @@ void load_factor(std::string filename, int inc, short funcid, long nvar, char** 
     fout.write((char *)&funcid, 2);
     fout.write((char *)&nvars_big, 8);
 
-    if (inc) {
-      getline(ss, field, field_delim);
-      dd_count = atol(field.c_str());
-      dd_count = bswap_64(dd_count);
-      fout.write((char *)&dd_count, 8);
-    }
-
     uint64_t position = 0;
     uint64_t position_big;
     for (long i = 0; i < nvar; i++) {
@@ -164,9 +150,6 @@ void load_factor(std::string filename, int inc, short funcid, long nvar, char** 
           fedgeout.write((char *)&position_big, 8);
           fedgeout.write((char *)&positives_vec[i], 1);
           fedgeout.write((char *)&predicate, 8);
-          if (inc) {
-            fedgeout.write((char *)&dd_count, 8);
-          }
 
           nedge++;
           position++;
@@ -181,9 +164,6 @@ void load_factor(std::string filename, int inc, short funcid, long nvar, char** 
         fedgeout.write((char *)&position_big, 8);
         fedgeout.write((char *)&positives_vec[i], 1);
         fedgeout.write((char *)&predicate, 8);
-        if (inc) {
-          fedgeout.write((char *)&dd_count, 8);
-        }
 
         nedge++;
         position++;
@@ -216,11 +196,11 @@ int main(int argc, char** argv){
   std::string app(argv[1]);
   // std::cerr << app << " " << argv[2] << " " << argv[3] << std::endl;
   if(app.compare("variable")==0){
-    load_var(argv[2], atoi(argv[3]));
+    load_var(argv[2]);
   } else if(app.compare("weight")==0){
     load_weight(argv[2]);
   } else if(app.compare("factor")==0){
-    load_factor(argv[2], atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), &argv[6]);
+    load_factor(argv[2], atoi(argv[3]), atoi(argv[4]), &argv[5]);
   } else if (app.compare("active") == 0) {
     load_active(argv[2]);
   } else {

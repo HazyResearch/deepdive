@@ -432,9 +432,9 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         
         // Insert sample data
         SQL(s"""CREATE TABLE r1(weight text,
-          is_correct boolean, id bigint, dd_count int);""").execute.apply()        
+          is_correct boolean, id bigint);""").execute.apply()        
         val data = (1 to 100).map { i =>
-          Map("id" -> i, "weight" -> s"weight_${i}", "is_correct" -> s"${i%2==0}".toBoolean, "dd_count" -> 1)
+          Map("id" -> i, "weight" -> s"weight_${i}", "is_correct" -> s"${i%2==0}".toBoolean)
         }
         dataStoreHelper.bulkInsert("r1", data.iterator)
 
@@ -447,8 +447,8 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
         // Build the factor description
         val factorDesc = FactorDesc("testFactor", 
-            """SELECT id AS "r1.R0.id", weight AS "r1.R0.weight", is_correct AS "r1.R0.is_correct",
-            1 AS dd_count FROM r1 R0""", 
+            """SELECT id AS "r1.R0.id", weight AS "r1.R0.weight", is_correct AS "r1.R0.is_correct"
+            FROM r1 R0""", 
           IsTrueFactorFunction(Seq("r1.R0.is_correct")), 
           UnknownFactorWeight(List("r1.R0.weight")), "weight_prefix")
         val holdoutFraction = 0.0
@@ -488,9 +488,9 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         // incremental phase
 
         SQL(s"""CREATE TABLE dd_delta_r1(weight text,
-          is_correct boolean, id bigint, dd_count int);""").execute.apply()        
+          is_correct boolean, id bigint);""").execute.apply()        
         val deltaData = (91 to 110).map { i =>
-          Map("id" -> i, "weight" -> s"weight_${i}", "is_correct" -> s"${i%2==0}".toBoolean, "dd_count" -> 1)
+          Map("id" -> i, "weight" -> s"weight_${i}", "is_correct" -> s"${i%2==0}".toBoolean)
         }
         SQL(s"""CREATE VIEW dd_new_r1 AS SELECT * FROM r1 UNION 
           SELECT * FROM dd_delta_r1;""").execute.apply()    
@@ -505,7 +505,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         // Build the factor description
         val factorDescInc = FactorDesc("dd_new_testFactor", 
             """SELECT id AS "dd_new_r1.R0.id", weight AS "dd_new_r1.R0.weight", 
-            is_correct AS "dd_new_r1.R0.is_correct", 1 AS dd_count
+            is_correct AS "dd_new_r1.R0.is_correct"
             FROM dd_new_r1 R0""", 
           IsTrueFactorFunction(Seq("dd_new_r1.R0.is_correct")), 
           UnknownFactorWeight(List("dd_new_r1.R0.weight")), "weight_prefix")
@@ -528,22 +528,6 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val numVariablesInc = SQL(s"""SELECT COUNT(*) AS "count" FROM dd_delta_r1""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numVariablesInc === 20)
-      }
-
-      it("converting grounding file format should work") {
-        inferenceRunner.init()
-        Context.outputDir = "out/test_incremental"
-        new File(Context.outputDir).mkdirs()
-        val groundingPath = getClass.getResource("/incremental/grounding/").getFile
-        inferenceRunner.convertGroundingFormat(groundingPath, IncrementalMode.INCREMENTAL)
-        val variables = getClass.getResource("/incremental/grounding/expected/graph.variables").getFile
-        val factors   = getClass.getResource("/incremental/grounding/expected/graph.factors").getFile
-        val weights   = getClass.getResource("/incremental/grounding/expected/graph.weights").getFile
-        val edges     = getClass.getResource("/incremental/grounding/expected/graph.edges").getFile
-        assert(s"cmp ${variables} ${Context.outputDir}/graph.variables".! == 0)
-        assert(s"cmp ${factors} ${Context.outputDir}/graph.factors".! == 0)
-        assert(s"cmp ${weights} ${Context.outputDir}/graph.weights".! == 0)
-        assert(s"cmp ${edges} ${Context.outputDir}/graph.edges".! == 0)
       }
     }
 
