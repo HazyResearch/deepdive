@@ -1,19 +1,18 @@
 #!/usr/bin/env bash
-# A script for setting up the database for DDlog-based incremental application
+# A script for setting up the database for DDlog-based spouse example application
 set -eux
 cd "$(dirname "$0")"
 . env.sh
 
-DDlog=${1:-$PWD/spouse_example.ddl}
-Out=${2:-${DDlog%.ddl}.base.application.out}
-Mode=${3:---materialization}
+DDlog=${1:-spouse_example.f1.ddl}
+Out=${2:-inc-base.out}
+
+export BASEDIR=$Out
 
 dropdb --if-exists $DBNAME
 createdb $DBNAME
 
-export BASEDIR=$Out
-
-./run.sh "$DDlog" $Mode initdb
+./run.sh "$DDlog" "" initdb "$Out"
 ./generate-sentences_dump_noarray.csv.sh |
 psql $DBNAME -c "COPY sentences(
     document_id,

@@ -4,12 +4,12 @@ set -eux
 cd "$(dirname "$0")"
 . env.sh
 
-DDlog=${1:-$PWD/spouse_example.f2.ddl}
-Out=${2:-${DDlog%.ddl}.inc.application.out}
-Base=${3:-${DDlog%.*.ddl}.base.application.out}
+DDlog=${1:-spouse_example.f2.ddl}
+Base=${2:-inc-base.out}
+Out=${3:-inc-delta.out}
 
 export BASEDIR=$Base
 
-./run.sh "$DDlog" --incremental initdb      -o "$Out"
-./run.sh "$DDlog" --incremental extraction  -o "$Out"
-./run.sh "$DDlog" --incremental inference   -o "$Out"
+./run.sh "$DDlog" --incremental initdb     "$Out"
+./run.sh "$DDlog" --incremental extraction "$Out"
+./run.sh "$DDlog" --incremental inference  "$Out"

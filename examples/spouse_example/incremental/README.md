@@ -5,15 +5,23 @@ See the [full documentation](http://deepdive.stanford.edu/doc/advanced/increment
 ## Incremental Workflow Synopsis
 
 1. `export DBNAME=deepdive_spouse_inc`
-1. `./0-setup.sh spouse_example.ddl`
-2. `./1-materialization_phase.sh spouse_example.ddl base.out  spouse_example.active.vars spouse_example.active.rules`
-3. `./2-incremental_phase.sh spouse_example.f2.ddl inc.out base.out`
-4. `./3-cleanup.sh spouse_example.ddl`
-3. `./2-incremental_phase.sh spouse_example.symmetry_rule.ddl inc2.out base.out`
-5. `./4-merge.sh spouse_example.ddl`
+2. `./0-setup.sh                 spouse_example.f1.ddl       inc-base.out`
+3. `./1-materialization_phase.sh spouse_example.f1.ddl       inc-base.out  spouse_example.f1.active.vars spouse_example.f1.active.rules`
+4. `./2-incremental_phase.sh     spouse_example.f2.ddl       inc-base.out  inc-f1+f2.out`
+7. `./4-merge.sh                 spouse_example.f2.ddl                     inc-f1+f2.out`
+6. `./2-incremental_phase.sh     spouse_example.symmetry.ddl inc-base.out  inc-f1+f2+symmetry.out`
+5. `./3-cleanup.sh               spouse_example.symmetry.ddl               inc-f1+f2+symmetry.out`
 
 ## Non-incremental Workflow
 
-1. `export DBNAME=deepdive_spouse_ddlog`
-1. `./0-setup.sh spouse_example.ddl spouse_example.application.out normal`
-1. `./1-nonincremental_run.sh spouse_example.ddl  spouse_example.application.out`
+One full run:
+
+1. `export DBNAME=deepdive_spouse_noninc`
+2. `./0-setup.sh              spouse_example.f1+f2.ddl       noninc-f1+f2.out`
+3. `./9-nonincremental_run.sh spouse_example.f1+f2.ddl       noninc-f1+f2.out`
+
+Another full run:
+
+1. `export DBNAME=deepdive_spouse_noninc2`
+2. `./0-setup.sh              spouse_example.f1+f2+symmetry.ddl noninc-f1+f2+symmetry.out`
+3. `./9-nonincremental_run.sh spouse_example.f1+f2+symmetry.ddl noninc-f1+f2+symmetry.out`

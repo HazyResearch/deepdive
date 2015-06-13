@@ -54,13 +54,13 @@ cd examples/spouse_example/incremental
 
 In order to make use of the incremental support of DeepDive, the application must be written in DDlog.
 Please refer to [DDlog tutorial][DDlog] for how to write your DeepDive application in DDlog.
-Let's assume you have put the DDlog program shown below in a file named `spouse_example.ddl` under the application folder.
+Let's assume you have put the DDlog program shown below in a file named `spouse_example.f1.ddl` under the application folder.
 
-<script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/incremental/spouse_example.ddl?footer=minimal">
+<script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/incremental/spouse_example.f1.ddl?footer=minimal">
 </script>
 
 In this walkthrough, we demonstrate an incremental development workflow by adding new features.
-In the udf `ext_has_spouse_features.py`, suppose you had only feature 1 at the time of materialization phase.
+In the udf `ext_has_spouse_features.f1.py`, suppose you had only feature 1 at the time of materialization phase.
 Then, suppose you want to try feature 2 as an incremental phase.
 
 Note that the [`run.sh` included in the incremental example](https://github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/incremental/run.sh) takes care of compiling a given DDlog program into a particular mode.
@@ -70,28 +70,28 @@ Note that the [`run.sh` included in the incremental example](https://github.com/
 
 Materialization phase is basically for taking a snapshot of the current model that serves as a base for the following incremental phases.
 You need to specify which variables and inference rules you are going to vary in the following incremental phases.
-They are called active variables and active inference rules, and the names can be put into files `spouse_example.active.vars` and `spouse_example.active.rules`.
+They are called active variables and active inference rules, and the names can be put into files `spouse_example.f1.active.vars` and `spouse_example.f1.active.rules`.
 
-<script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/incremental/spouse_example.active.vars?footer=minimal">
+<script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/incremental/spouse_example.f1.active.vars?footer=minimal">
 </script>
 
-<script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/incremental/spouse_example.active.rules?footer=minimal">
+<script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/incremental/spouse_example.f1.active.rules?footer=minimal">
 </script>
 
 There is a script included in the example, and the materialization phase can be run using the following single command:
 ```bash
-./1-materialization_phase.sh spouse_example.ddl
+./1-materialization_phase.sh spouse_example.f1.ddl inc-base.out
 ```
 
 It will do the following:
-1. The DDlog program `spouse_example.ddl` is compiled.
-2. The `initdb`, `extraction`, and `inference` pipelines are run.
-3. A materialized base factor graph is produced under `$BASEDIR/`, which defaults to `./base/` under the application directory.
+1. The DDlog program `spouse_example.f1.ddl` is compiled.
+2. The `extraction` and `inference` pipelines are run.
+3. A materialized base factor graph is produced under `./inc-base.out/` under the application directory.
 
 
 ### Incremental Phase
 
-In the incremental phase, suppose you added feature 2 to your udf, `ext_has_spouse_features.py`.
+In the incremental phase, suppose you added feature 2 to your udf, `ext_has_spouse_features.f2.py`.
 Let's say you saved this modified udf in a file named `ext_has_spouse_features.f2.ddl`.
 
 <script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/incremental/udf/ext_has_spouse_features.f2.py?footer=minimal&slice=27:39">
@@ -108,10 +108,10 @@ Let's say you saved this modified DDlog program in a file named `spouse_example.
 Finally, there is also a script included in the example, so the incremental phase can be done as simple as running the following command:
 
 ```bash
-./2-incremental_phase.sh spouse_example.f2.ddl ./spouse_example.f2.inc.out/
+./2-incremental_phase.sh spouse_example.f2.ddl ./inc-base.out/ ./inc-f1+f2.out/
 ```
 
-The incremental result will be stored in `./spouse_example.f2.inc.out/` by default.
+The incremental result computed from `./inc-base.out/` will be stored in `./inc-f1+f2.out/`.
 
 
 #### Repeating Incremental Phase
@@ -120,7 +120,7 @@ The incremental phase can be repeated several times until you are satisfied with
 You need to run the following command before running another incremental phase:
 
 ```bash
-./3-cleanup.sh spouse_example.f2.ddl
+./3-cleanup.sh spouse_example.f2.ddl ./inc-f1+f2.out/
 ```
 
 
@@ -129,10 +129,21 @@ You need to run the following command before running another incremental phase:
 Once you decide to keep the current version, you can merge the incremental part into the base with the `--merge` mode:
 
 ```bash
-./4-merge.sh spouse_example.f2.ddl
+./4-merge.sh spouse_example.f2.ddl ./inc-f1+f2.out/
 ```
 
 Finally, you've finished a full workflow of the incremental application development cycle.
+
+
+### Non-incremental Runs
+
+In contrast, you can see how the same application written in DDlog can be run from scratch, non-incrementally with the following series of commands:
+
+```bash
+export DBNAME=deepdive_spouse_noninc
+./0-setup.sh              spouse_example.f1+f2.ddl ./noninc-f1+f2.out/
+./9-nonincremental_run.sh spouse_example.f1+f2.ddl ./noninc-f1+f2.out/
+```
 
 
 [DDlog]: ../basics/ddlog.html
