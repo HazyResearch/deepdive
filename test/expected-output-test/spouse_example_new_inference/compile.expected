@@ -100,7 +100,7 @@
 
       deepdive.extraction.extractors.extraction_rule_15 {
         sql: """ 
-        INSERT INTO has_spouse SELECT DISTINCT R0.relation_id, 0 as id, R0.is_true AS label 
+        INSERT INTO has_spouse SELECT DISTINCT R0.relation_id, 0 as id, R0.is_true AS label
           FROM has_spouse_candidates R0
         
           
@@ -178,7 +178,7 @@
 
         deepdive.inference.factors.has_spouse_0 {
           input_query: """
-          SELECT R0.id AS "has_spouse.R0.id" , R2.feature AS "has_spouse_features.R2.feature"  
+          SELECT R0.id AS "has_spouse.R0.id" , R2.feature AS "has_spouse_features.R2.feature" 
           FROM has_spouse R0, has_spouse_candidates R1, has_spouse_features R2
         WHERE R1.relation_id = R0.relation_id  AND R2.relation_id = R0.relation_id """
           function: "Imply(has_spouse.R0.label)"
@@ -188,7 +188,7 @@
 
         deepdive.inference.factors.has_spouse_1 {
           input_query: """
-          SELECT R0.id AS "has_spouse.R0.id" , R1.id AS "has_spouse.R1.id"  
+          SELECT R0.id AS "has_spouse.R0.id" , R1.id AS "has_spouse.R1.id" 
           FROM has_spouse R0, has_spouse R1, has_spouse_candidates R2, has_spouse_candidates R3
         WHERE R2.relation_id = R0.relation_id  AND R3.person1_id = R2.person2_id  AND R3.person2_id = R2.person1_id  AND R3.relation_id = R1.relation_id """
           function: "Imply(has_spouse.R1.label, has_spouse.R0.label)"

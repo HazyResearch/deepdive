@@ -32,8 +32,7 @@ dd_delta_smoke.label: Boolean
             sql: """ DROP TABLE IF EXISTS dd_delta_friends CASCADE;
             CREATE TABLE
             dd_delta_friends(person_id bigint,
-                friend_id bigint,
-                dd_count int)
+                friend_id bigint)
             """
             style: "sql_extractor"
           }
@@ -43,8 +42,7 @@ dd_delta_smoke.label: Boolean
             CREATE TABLE
             dd_delta_smoke(person_id bigint,
               id bigint,
-              label boolean,
-              dd_count int)
+              label boolean)
             """
             style: "sql_extractor"
           }
@@ -53,8 +51,7 @@ dd_delta_smoke.label: Boolean
             sql: """ DROP TABLE IF EXISTS dd_new_person_has_cancer CASCADE;
             CREATE TABLE
             dd_new_person_has_cancer(person_id bigint,
-                        has_cancer boolean,
-                        dd_count int)
+                        has_cancer boolean)
             """
             style: "sql_extractor"
           }
@@ -63,8 +60,7 @@ dd_delta_smoke.label: Boolean
             sql: """ DROP TABLE IF EXISTS dd_delta_person CASCADE;
             CREATE TABLE
             dd_delta_person(person_id bigint,
-               name text,
-               dd_count int)
+               name text)
             """
             style: "sql_extractor"
           }
@@ -73,8 +69,7 @@ dd_delta_smoke.label: Boolean
             sql: """ DROP TABLE IF EXISTS dd_new_person CASCADE;
             CREATE TABLE
             dd_new_person(person_id bigint,
-             name text,
-             dd_count int)
+             name text)
             """
             style: "sql_extractor"
           }
@@ -83,8 +78,7 @@ dd_delta_smoke.label: Boolean
             sql: """ DROP TABLE IF EXISTS dd_delta_person_has_cancer CASCADE;
             CREATE TABLE
             dd_delta_person_has_cancer(person_id bigint,
-                          has_cancer boolean,
-                          dd_count int)
+                          has_cancer boolean)
             """
             style: "sql_extractor"
           }
@@ -94,8 +88,7 @@ dd_delta_smoke.label: Boolean
             CREATE TABLE
             dd_new_smoke(person_id bigint,
             id bigint,
-            label boolean,
-            dd_count int)
+            label boolean)
             """
             style: "sql_extractor"
           }
@@ -105,8 +98,7 @@ dd_delta_smoke.label: Boolean
             CREATE TABLE
             dd_delta_cancer(person_id bigint,
                id bigint,
-               label boolean,
-               dd_count int)
+               label boolean)
             """
             style: "sql_extractor"
           }
@@ -115,8 +107,7 @@ dd_delta_smoke.label: Boolean
             sql: """ DROP TABLE IF EXISTS dd_delta_person_smokes CASCADE;
             CREATE TABLE
             dd_delta_person_smokes(person_id bigint,
-                      smokes boolean,
-                      dd_count int)
+                      smokes boolean)
             """
             style: "sql_extractor"
           }
@@ -125,8 +116,7 @@ dd_delta_smoke.label: Boolean
             sql: """ DROP TABLE IF EXISTS dd_new_person_smokes CASCADE;
             CREATE TABLE
             dd_new_person_smokes(person_id bigint,
-                    smokes boolean,
-                    dd_count int)
+                    smokes boolean)
             """
             style: "sql_extractor"
           }
@@ -135,8 +125,7 @@ dd_delta_smoke.label: Boolean
             sql: """ DROP TABLE IF EXISTS dd_new_friends CASCADE;
             CREATE TABLE
             dd_new_friends(person_id bigint,
-              friend_id bigint,
-              dd_count int)
+              friend_id bigint)
             """
             style: "sql_extractor"
           }
@@ -160,7 +149,7 @@ dd_delta_smoke.label: Boolean
 
       deepdive.extraction.extractors.extraction_rule_24 {
         sql: """ 
-        INSERT INTO dd_delta_smoke SELECT DISTINCT R0.person_id, 0 as id, R0.smokes AS label , R0.dd_count AS dd_count
+        INSERT INTO dd_delta_smoke SELECT DISTINCT R0.person_id, 0 as id, R0.smokes AS label
           FROM dd_delta_person_smokes R0
         
           
@@ -173,10 +162,10 @@ dd_delta_smoke.label: Boolean
       deepdive.extraction.extractors.extraction_rule_7 {
         sql: """ TRUNCATE dd_new_person_has_cancer;
         INSERT INTO dd_new_person_has_cancer 
-            SELECT R0.person_id, R0.has_cancer, R0.dd_count
+            SELECT R0.person_id, R0.has_cancer
             FROM person_has_cancer R0
          UNION ALL 
-            SELECT R0.person_id, R0.has_cancer, R0.dd_count
+            SELECT R0.person_id, R0.has_cancer
             FROM dd_delta_person_has_cancer R0
         
         """
@@ -188,10 +177,10 @@ dd_delta_smoke.label: Boolean
       deepdive.extraction.extractors.extraction_rule_3 {
         sql: """ TRUNCATE dd_new_person;
         INSERT INTO dd_new_person 
-            SELECT R0.person_id, R0.name, R0.dd_count
+            SELECT R0.person_id, R0.name
             FROM person R0
          UNION ALL 
-            SELECT R0.person_id, R0.name, R0.dd_count
+            SELECT R0.person_id, R0.name
             FROM dd_delta_person R0
         
         """
@@ -202,10 +191,10 @@ dd_delta_smoke.label: Boolean
 
       deepdive.extraction.extractors.extraction_rule_19 {
         sql: """ TRUNCATE dd_new_smoke;
-        INSERT INTO dd_new_smoke SELECT DISTINCT R0.person_id,  id, label , R0.dd_count AS dd_count
+        INSERT INTO dd_new_smoke SELECT DISTINCT R0.person_id, id, label
           FROM smoke R0
         
-           UNION ALL SELECT DISTINCT R0.person_id,  id, label , R0.dd_count AS dd_count
+           UNION ALL SELECT DISTINCT R0.person_id, id, label
           FROM dd_delta_smoke R0
         
           
@@ -217,7 +206,7 @@ dd_delta_smoke.label: Boolean
 
       deepdive.extraction.extractors.extraction_rule_25 {
         sql: """ 
-        INSERT INTO dd_delta_cancer SELECT DISTINCT R0.person_id, 0 as id, R0.has_cancer AS label , R0.dd_count AS dd_count
+        INSERT INTO dd_delta_cancer SELECT DISTINCT R0.person_id, 0 as id, R0.has_cancer AS label
           FROM dd_delta_person_has_cancer R0
         
           
@@ -229,10 +218,10 @@ dd_delta_smoke.label: Boolean
 
       deepdive.extraction.extractors.extraction_rule_23 {
         sql: """ 
-        CREATE VIEW dd_new_cancer AS SELECT DISTINCT R0.person_id,  id, label , R0.dd_count AS dd_count
+        CREATE VIEW dd_new_cancer AS SELECT DISTINCT R0.person_id, id, label
           FROM cancer R0
         
-           UNION ALL SELECT DISTINCT R0.person_id,  id, label , R0.dd_count AS dd_count
+           UNION ALL SELECT DISTINCT R0.person_id, id, label
           FROM dd_delta_cancer R0
         
           
@@ -245,10 +234,10 @@ dd_delta_smoke.label: Boolean
       deepdive.extraction.extractors.extraction_rule_11 {
         sql: """ TRUNCATE dd_new_person_smokes;
         INSERT INTO dd_new_person_smokes 
-            SELECT R0.person_id, R0.smokes, R0.dd_count
+            SELECT R0.person_id, R0.smokes
             FROM person_smokes R0
          UNION ALL 
-            SELECT R0.person_id, R0.smokes, R0.dd_count
+            SELECT R0.person_id, R0.smokes
             FROM dd_delta_person_smokes R0
         
         """
@@ -260,10 +249,10 @@ dd_delta_smoke.label: Boolean
       deepdive.extraction.extractors.extraction_rule_15 {
         sql: """ TRUNCATE dd_new_friends;
         INSERT INTO dd_new_friends 
-            SELECT R0.person_id, R0.friend_id, R0.dd_count
+            SELECT R0.person_id, R0.friend_id
             FROM friends R0
          UNION ALL 
-            SELECT R0.person_id, R0.friend_id, R0.dd_count
+            SELECT R0.person_id, R0.friend_id
             FROM dd_delta_friends R0
         
         """
@@ -274,10 +263,10 @@ dd_delta_smoke.label: Boolean
 
         deepdive.inference.factors.dd_new_cancer_0 {
           input_query: """
-          SELECT R0.id AS "dd_new_cancer.R0.id" , R1.id AS "dd_delta_smoke.R1.id"  , R0.dd_count * R1.dd_count * R2.dd_count AS "dd_count" 
+          SELECT R0.id AS "dd_new_cancer.R0.id" , R1.id AS "dd_delta_smoke.R1.id" 
           FROM dd_new_cancer R0, dd_delta_smoke R1, person_smokes R2
         WHERE R1.person_id = R0.person_id  AND R2.person_id = R0.person_id  UNION ALL 
-          SELECT R0.id AS "dd_new_cancer.R0.id" , R1.id AS "dd_new_smoke.R1.id"  , R0.dd_count * R1.dd_count * R2.dd_count AS "dd_count" 
+          SELECT R0.id AS "dd_new_cancer.R0.id" , R1.id AS "dd_new_smoke.R1.id" 
           FROM dd_new_cancer R0, dd_new_smoke R1, dd_delta_person_smokes R2
         WHERE R1.person_id = R0.person_id  AND R2.person_id = R0.person_id """
           function: "Imply(dd_delta_smoke.R1.label, dd_new_cancer.R0.label)"

@@ -22,8 +22,7 @@ cancer.label: Boolean
             sql: """ DROP TABLE IF EXISTS person_smokes CASCADE;
             CREATE TABLE
             person_smokes(person_id bigint,
-             smokes boolean,
-             dd_count int)
+             smokes boolean)
             """
             style: "sql_extractor"
           }
@@ -33,8 +32,7 @@ cancer.label: Boolean
             CREATE TABLE
             smoke(person_id bigint,
      id bigint,
-     label boolean,
-     dd_count int)
+     label boolean)
             """
             style: "sql_extractor"
           }
@@ -44,8 +42,7 @@ cancer.label: Boolean
             CREATE TABLE
             cancer(person_id bigint,
       id bigint,
-      label boolean,
-      dd_count int)
+      label boolean)
             """
             style: "sql_extractor"
           }
@@ -54,8 +51,7 @@ cancer.label: Boolean
             sql: """ DROP TABLE IF EXISTS friends CASCADE;
             CREATE TABLE
             friends(person_id bigint,
-       friend_id bigint,
-       dd_count int)
+       friend_id bigint)
             """
             style: "sql_extractor"
           }
@@ -64,8 +60,7 @@ cancer.label: Boolean
             sql: """ DROP TABLE IF EXISTS person_has_cancer CASCADE;
             CREATE TABLE
             person_has_cancer(person_id bigint,
-                 has_cancer boolean,
-                 dd_count int)
+                 has_cancer boolean)
             """
             style: "sql_extractor"
           }
@@ -74,8 +69,7 @@ cancer.label: Boolean
             sql: """ DROP TABLE IF EXISTS person CASCADE;
             CREATE TABLE
             person(person_id bigint,
-      name text,
-      dd_count int)
+      name text)
             """
             style: "sql_extractor"
           }
@@ -94,7 +88,7 @@ cancer.label: Boolean
 
       deepdive.extraction.extractors.extraction_rule_7 {
         sql: """ 
-        INSERT INTO cancer SELECT DISTINCT R0.person_id, 0 as id, R0.has_cancer AS label , R0.dd_count AS dd_count
+        INSERT INTO cancer SELECT DISTINCT R0.person_id, 0 as id, R0.has_cancer AS label
           FROM person_has_cancer R0
         
           
@@ -106,7 +100,7 @@ cancer.label: Boolean
 
       deepdive.extraction.extractors.extraction_rule_6 {
         sql: """ 
-        INSERT INTO smoke SELECT DISTINCT R0.person_id, 0 as id, R0.smokes AS label , R0.dd_count AS dd_count
+        INSERT INTO smoke SELECT DISTINCT R0.person_id, 0 as id, R0.smokes AS label
           FROM person_smokes R0
         
           
@@ -118,7 +112,7 @@ cancer.label: Boolean
 
         deepdive.inference.factors.cancer_0 {
           input_query: """
-          SELECT R0.id AS "cancer.R0.id" , R1.id AS "smoke.R1.id"  , R0.dd_count * R1.dd_count * R2.dd_count AS "dd_count" 
+          SELECT R0.id AS "cancer.R0.id" , R1.id AS "smoke.R1.id" 
           FROM cancer R0, smoke R1, person_smokes R2
         WHERE R1.person_id = R0.person_id  AND R2.person_id = R0.person_id """
           function: "Imply(smoke.R1.label, cancer.R0.label)"

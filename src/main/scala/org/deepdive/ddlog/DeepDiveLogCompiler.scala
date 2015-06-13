@@ -98,8 +98,6 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
 
   var mode : Mode = ORIGINAL
 
-  var useDeltaCount : Boolean = false
-
   // Mapping head names to the actual statements
   var schemaDeclarationGroupByHead  : Map[String, List[SchemaDeclaration]] = new HashMap[String, List[SchemaDeclaration]]()
   var extractionRuleGroupByHead     : Map[String, List[ExtractionRule]] = new HashMap[String, List[ExtractionRule]]()
@@ -110,10 +108,6 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
   def init() = {
     // generate the statements.
     mode = config.mode
-    useDeltaCount = mode match {
-      case ORIGINAL => false
-      case _ => true
-    }
     statements.foreach {
       case SchemaDeclaration(Attribute(r, terms, types), isQuery) => {
         terms.foreach {
@@ -319,7 +313,6 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           case Variable(name, _, i) => s"${name} ${stmt.a.types(i)}"
         }
         if (stmt.isQuery) columnDecls = columnDecls :+ "id bigint" :+ "label boolean"
-        if (ss.useDeltaCount) columnDecls = columnDecls :+ "dd_count int"
         val indentation = " " * stmt.a.name.length
         val blockName = ss.resolveExtractorBlockName(stmt)
         schemas += s"""
@@ -363,9 +356,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           val name  = ss.resolveName(qs.getVar(stmt.supervision))
           val labelCol = s"R${index}.${name}"
           val headTermsStr = ( headTerms :+ "0 as id" ).mkString(", ")
-          val ddCount = if (ss.useDeltaCount) ( tmpCq.bodies(0).zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
-          val ddCountStr = if (ddCount.length > 0) s", ${ddCount} AS dd_count" else ""
-          inputQueries += s"""SELECT DISTINCT ${ headTermsStr }, ${labelCol} AS label ${ddCountStr}
+          inputQueries += s"""SELECT DISTINCT ${ headTermsStr }, ${labelCol} AS label
           ${ ss.generateSQLBody(tmpCq) }
           """
         } else if ((ss.schemaDeclarationGroupByHead contains stmt.q.head.name) && (ss.schemaDeclarationGroupByHead(stmt.q.head.name)(0).isQuery) && (stmt.q.head.name startsWith "dd_new_")) {
@@ -373,9 +364,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
             case Variable(v,r,i) => s"R${i}.${ss.resolveName(qs.getVar(v)) }"
           }
           val headTermsStr = ( headTerms :+ "id" ).mkString(", ")
-          val ddCount = if (ss.useDeltaCount) ( tmpCq.bodies(0).zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
-          val ddCountStr = if (ddCount.length > 0) s", ${ddCount} AS dd_count" else ""
-          inputQueries += s"""SELECT DISTINCT ${ headTermsStr }, label ${ddCountStr}
+          inputQueries += s"""SELECT DISTINCT ${ headTermsStr }, label
           ${ ss.generateSQLBody(tmpCq) }
           """
         } else {
@@ -395,21 +384,9 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
 
           val selectStr = variableCols.mkString(", ")
 
-          var ddCount = if (ss.useDeltaCount) ( tmpCq.bodies(0).zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
-          ddCount = ss.mode match {
-            case MERGE => s"SUM(${ddCount})"
-            case _ => ddCount
-          }
-          val ddCountStr = if (ddCount.length > 0) {
-            if (!tmpCqUseOnlyOriginal) s""", ${ddCount} AS \"dd_count\" """ else s", ${ddCount}"
-          } else ""
-          val groupBy = ss.mode match {
-            case MERGE => s" GROUP BY ${selectStr}"
-            case _ => ""
-          }
           inputQueries += s"""
-            SELECT ${selectStr}${ddCountStr}
-            ${ ss.generateSQLBody(tmpCq) }${ groupBy }"""
+            SELECT ${selectStr}
+            ${ ss.generateSQLBody(tmpCq) }"""
         }
       }
     }
@@ -429,15 +406,10 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     }
     val sqlCmdForInsert  = if (createTable) "INSERT INTO" else "CREATE VIEW"
     val useAS            = if (createTable) "" else " AS"
-    val cleanUp          = ss.mode match {
-      case MERGE => s""";
-        DELETE FROM ${stmts(0).q.head.name} WHERE dd_count = 0;"""
-      case _     => ""
-    }
     val extractor = s"""
       deepdive.extraction.extractors.${blockName} {
         sql: \"\"\" ${sqlCmdForCleanUp}
-        ${sqlCmdForInsert} ${stmts(0).q.head.name}${useAS} ${inputQueries.mkString(" UNION ALL ")}${cleanUp}
+        ${sqlCmdForInsert} ${stmts(0).q.head.name}${useAS} ${inputQueries.mkString(" UNION ALL ")}
         \"\"\"
         style: "sql_extractor"
           ${ss.generateDependenciesOfCompiledBlockFor(stmts)}
@@ -489,7 +461,6 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       for (cqBody <- stmt.q.bodies) {
         // edge query
         val fakeBody        = stmt.q.head +: cqBody
-        // val fakeBody        = stmt.q.bodies +: List(stmt.q.head)
         val fakeCQ          = ConjunctiveQuery(stmt.q.head, List(fakeBody)) // we will just use the fakeBody below.
 
         val index = cqBody.length + 1
@@ -510,12 +481,9 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
 
         val selectStr = (List(variableIdsStr, uwStr) flatten).mkString(", ")
 
-        val ddCount = if (ss.useDeltaCount) ( fakeCQ.bodies(0).zipWithIndex map { case(x,i) => s"R${i}.dd_count"}).mkString(" * ") else ""
-        val ddCountStr = if (ddCount.length > 0) s""", ${ddCount} AS \"dd_count\" """ else ""
-
         // factor input query
         inputQueries += s"""
-          SELECT ${selectStr} ${ddCountStr}
+          SELECT ${selectStr}
           ${ ss.generateSQLBody(fakeCQ) }"""
         // factor function
         if (func.length == 0) {
@@ -660,9 +628,5 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
 
     // emit the generated code
     blocks foreach println
-
-    // if (config.isIncremental) {
-    //   // TODO emit extra extractor for moving rows of dd_delta_* to *
-    // }
   }
 }

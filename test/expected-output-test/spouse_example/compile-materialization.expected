@@ -28,8 +28,7 @@
          dependencies text,
          ner_tags text,
          sentence_offset int,
-         sentence_id text,
-         dd_count int)
+         sentence_id text)
             """
             style: "sql_extractor"
           }
@@ -42,8 +41,7 @@
                      sentence_id text,
                      description text,
                      relation_id text,
-                     is_true boolean,
-                     dd_count int)
+                     is_true boolean)
             """
             style: "sql_extractor"
           }
@@ -53,8 +51,7 @@
             CREATE TABLE
             has_spouse(relation_id text,
           id bigint,
-          label boolean,
-          dd_count int)
+          label boolean)
             """
             style: "sql_extractor"
           }
@@ -63,8 +60,7 @@
             sql: """ DROP TABLE IF EXISTS articles CASCADE;
             CREATE TABLE
             articles(article_id text,
-        text text,
-        dd_count int)
+        text text)
             """
             style: "sql_extractor"
           }
@@ -73,8 +69,7 @@
             sql: """ DROP TABLE IF EXISTS has_spouse_features CASCADE;
             CREATE TABLE
             has_spouse_features(relation_id text,
-                   feature text,
-                   dd_count int)
+                   feature text)
             """
             style: "sql_extractor"
           }
@@ -86,8 +81,7 @@
                start_position int,
                length int,
                text text,
-               mention_id text,
-               dd_count int)
+               mention_id text)
             """
             style: "sql_extractor"
           }
@@ -106,7 +100,7 @@
 
       deepdive.extraction.extractors.extraction_rule_15 {
         sql: """ 
-        INSERT INTO has_spouse SELECT DISTINCT R0.relation_id, 0 as id, R0.is_true AS label , R0.dd_count AS dd_count
+        INSERT INTO has_spouse SELECT DISTINCT R0.relation_id, 0 as id, R0.is_true AS label
           FROM has_spouse_candidates R0
         
           
@@ -119,7 +113,7 @@
       deepdive.extraction.extractors.extraction_rule_7 {
         sql: """ DROP VIEW IF EXISTS ext_people_input;
         CREATE VIEW ext_people_input AS 
-            SELECT R0.sentence_id AS "sentences.R0.sentence_id" , R0.words AS "sentences.R0.words" , R0.ner_tags AS "sentences.R0.ner_tags" , R0.dd_count AS "dd_count" 
+            SELECT R0.sentence_id AS "sentences.R0.sentence_id" , R0.words AS "sentences.R0.words" , R0.ner_tags AS "sentences.R0.ner_tags" 
             FROM sentences R0
         
         """
@@ -131,7 +125,7 @@
       deepdive.extraction.extractors.extraction_rule_13 {
         sql: """ DROP VIEW IF EXISTS ext_has_spouse_features_input;
         CREATE VIEW ext_has_spouse_features_input AS 
-            SELECT R0.words AS "sentences.R0.words" , R1.relation_id AS "has_spouse_candidates.R1.relation_id" , R2.start_position AS "people_mentions.R2.start_position" , R2.length AS "people_mentions.R2.length" , R3.start_position AS "people_mentions.R3.start_position" , R3.length AS "people_mentions.R3.length" , R0.dd_count * R1.dd_count * R2.dd_count * R3.dd_count AS "dd_count" 
+            SELECT R0.words AS "sentences.R0.words" , R1.relation_id AS "has_spouse_candidates.R1.relation_id" , R2.start_position AS "people_mentions.R2.start_position" , R2.length AS "people_mentions.R2.length" , R3.start_position AS "people_mentions.R3.start_position" , R3.length AS "people_mentions.R3.length" 
             FROM sentences R0, has_spouse_candidates R1, people_mentions R2, people_mentions R3
         WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id 
         """
@@ -143,7 +137,7 @@
       deepdive.extraction.extractors.extraction_rule_10 {
         sql: """ DROP VIEW IF EXISTS ext_has_spouse_input;
         CREATE VIEW ext_has_spouse_input AS 
-            SELECT R0.sentence_id AS "people_mentions.R0.sentence_id" , R0.mention_id AS "people_mentions.R0.mention_id" , R0.text AS "people_mentions.R0.text" , R1.mention_id AS "people_mentions.R1.mention_id" , R1.text AS "people_mentions.R1.text" , R0.dd_count * R1.dd_count AS "dd_count" 
+            SELECT R0.sentence_id AS "people_mentions.R0.sentence_id" , R0.mention_id AS "people_mentions.R0.mention_id" , R0.text AS "people_mentions.R0.text" , R1.mention_id AS "people_mentions.R1.mention_id" , R1.text AS "people_mentions.R1.text" 
             FROM people_mentions R0, people_mentions R1
         WHERE R1.sentence_id = R0.sentence_id 
         """
@@ -184,7 +178,7 @@
 
         deepdive.inference.factors.has_spouse_0 {
           input_query: """
-          SELECT R0.id AS "has_spouse.R0.id" , R2.feature AS "has_spouse_features.R2.feature"  , R0.dd_count * R1.dd_count * R2.dd_count AS "dd_count" 
+          SELECT R0.id AS "has_spouse.R0.id" , R2.feature AS "has_spouse_features.R2.feature" 
           FROM has_spouse R0, has_spouse_candidates R1, has_spouse_features R2
         WHERE R1.relation_id = R0.relation_id  AND R2.relation_id = R0.relation_id """
           function: "Imply(has_spouse.R0.label)"

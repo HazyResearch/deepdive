@@ -27,8 +27,7 @@ dd_new_has_spouse.label: Boolean
             sql: """ DROP TABLE IF EXISTS dd_delta_articles CASCADE;
             CREATE TABLE
             dd_delta_articles(article_id text,
-                 text text,
-                 dd_count int)
+                 text text)
             """
             style: "sql_extractor"
           }
@@ -40,8 +39,7 @@ dd_new_has_spouse.label: Boolean
                       start_position int,
                       length int,
                       text text,
-                      mention_id text,
-                      dd_count int)
+                      mention_id text)
             """
             style: "sql_extractor"
           }
@@ -50,8 +48,7 @@ dd_new_has_spouse.label: Boolean
             sql: """ DROP TABLE IF EXISTS dd_delta_has_spouse_features CASCADE;
             CREATE TABLE
             dd_delta_has_spouse_features(relation_id text,
-                            feature text,
-                            dd_count int)
+                            feature text)
             """
             style: "sql_extractor"
           }
@@ -60,8 +57,7 @@ dd_new_has_spouse.label: Boolean
             sql: """ DROP TABLE IF EXISTS dd_new_articles CASCADE;
             CREATE TABLE
             dd_new_articles(article_id text,
-               text text,
-               dd_count int)
+               text text)
             """
             style: "sql_extractor"
           }
@@ -74,8 +70,7 @@ dd_new_has_spouse.label: Boolean
                             sentence_id text,
                             description text,
                             relation_id text,
-                            is_true boolean,
-                            dd_count int)
+                            is_true boolean)
             """
             style: "sql_extractor"
           }
@@ -84,8 +79,7 @@ dd_new_has_spouse.label: Boolean
             sql: """ DROP TABLE IF EXISTS dd_new_has_spouse_features CASCADE;
             CREATE TABLE
             dd_new_has_spouse_features(relation_id text,
-                          feature text,
-                          dd_count int)
+                          feature text)
             """
             style: "sql_extractor"
           }
@@ -101,8 +95,7 @@ dd_new_has_spouse.label: Boolean
                 dependencies text,
                 ner_tags text,
                 sentence_offset int,
-                sentence_id text,
-                dd_count int)
+                sentence_id text)
             """
             style: "sql_extractor"
           }
@@ -114,8 +107,7 @@ dd_new_has_spouse.label: Boolean
                         start_position int,
                         length int,
                         text text,
-                        mention_id text,
-                        dd_count int)
+                        mention_id text)
             """
             style: "sql_extractor"
           }
@@ -128,8 +120,7 @@ dd_new_has_spouse.label: Boolean
                               sentence_id text,
                               description text,
                               relation_id text,
-                              is_true boolean,
-                              dd_count int)
+                              is_true boolean)
             """
             style: "sql_extractor"
           }
@@ -145,8 +136,7 @@ dd_new_has_spouse.label: Boolean
                   dependencies text,
                   ner_tags text,
                   sentence_offset int,
-                  sentence_id text,
-                  dd_count int)
+                  sentence_id text)
             """
             style: "sql_extractor"
           }
@@ -156,8 +146,7 @@ dd_new_has_spouse.label: Boolean
             CREATE TABLE
             dd_delta_has_spouse(relation_id text,
                    id bigint,
-                   label boolean,
-                   dd_count int)
+                   label boolean)
             """
             style: "sql_extractor"
           }
@@ -182,16 +171,16 @@ dd_new_has_spouse.label: Boolean
       deepdive.extraction.extractors.extraction_rule_31 {
         sql: """ DROP VIEW IF EXISTS dd_delta_ext_has_spouse_features_input;
         CREATE VIEW dd_delta_ext_has_spouse_features_input AS 
-            SELECT R0.words AS "dd_delta_sentences.R0.words" , R1.relation_id AS "has_spouse_candidates.R1.relation_id" , R2.start_position AS "people_mentions.R2.start_position" , R2.length AS "people_mentions.R2.length" , R3.start_position AS "people_mentions.R3.start_position" , R3.length AS "people_mentions.R3.length" , R0.dd_count * R1.dd_count * R2.dd_count * R3.dd_count AS "dd_count" 
+            SELECT R0.words AS "dd_delta_sentences.R0.words" , R1.relation_id AS "has_spouse_candidates.R1.relation_id" , R2.start_position AS "people_mentions.R2.start_position" , R2.length AS "people_mentions.R2.length" , R3.start_position AS "people_mentions.R3.start_position" , R3.length AS "people_mentions.R3.length" 
             FROM dd_delta_sentences R0, has_spouse_candidates R1, people_mentions R2, people_mentions R3
         WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id  UNION ALL 
-            SELECT R0.words AS "dd_new_sentences.R0.words" , R1.relation_id AS "dd_delta_has_spouse_candidates.R1.relation_id" , R2.start_position AS "people_mentions.R2.start_position" , R2.length AS "people_mentions.R2.length" , R3.start_position AS "people_mentions.R3.start_position" , R3.length AS "people_mentions.R3.length" , R0.dd_count * R1.dd_count * R2.dd_count * R3.dd_count AS "dd_count" 
+            SELECT R0.words AS "dd_new_sentences.R0.words" , R1.relation_id AS "dd_delta_has_spouse_candidates.R1.relation_id" , R2.start_position AS "people_mentions.R2.start_position" , R2.length AS "people_mentions.R2.length" , R3.start_position AS "people_mentions.R3.start_position" , R3.length AS "people_mentions.R3.length" 
             FROM dd_new_sentences R0, dd_delta_has_spouse_candidates R1, people_mentions R2, people_mentions R3
         WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id  UNION ALL 
-            SELECT R0.words AS "dd_new_sentences.R0.words" , R1.relation_id AS "dd_new_has_spouse_candidates.R1.relation_id" , R2.start_position AS "dd_delta_people_mentions.R2.start_position" , R2.length AS "dd_delta_people_mentions.R2.length" , R3.start_position AS "people_mentions.R3.start_position" , R3.length AS "people_mentions.R3.length" , R0.dd_count * R1.dd_count * R2.dd_count * R3.dd_count AS "dd_count" 
+            SELECT R0.words AS "dd_new_sentences.R0.words" , R1.relation_id AS "dd_new_has_spouse_candidates.R1.relation_id" , R2.start_position AS "dd_delta_people_mentions.R2.start_position" , R2.length AS "dd_delta_people_mentions.R2.length" , R3.start_position AS "people_mentions.R3.start_position" , R3.length AS "people_mentions.R3.length" 
             FROM dd_new_sentences R0, dd_new_has_spouse_candidates R1, dd_delta_people_mentions R2, people_mentions R3
         WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id  UNION ALL 
-            SELECT R0.words AS "dd_new_sentences.R0.words" , R1.relation_id AS "dd_new_has_spouse_candidates.R1.relation_id" , R2.start_position AS "dd_new_people_mentions.R2.start_position" , R2.length AS "dd_new_people_mentions.R2.length" , R3.start_position AS "dd_delta_people_mentions.R3.start_position" , R3.length AS "dd_delta_people_mentions.R3.length" , R0.dd_count * R1.dd_count * R2.dd_count * R3.dd_count AS "dd_count" 
+            SELECT R0.words AS "dd_new_sentences.R0.words" , R1.relation_id AS "dd_new_has_spouse_candidates.R1.relation_id" , R2.start_position AS "dd_new_people_mentions.R2.start_position" , R2.length AS "dd_new_people_mentions.R2.length" , R3.start_position AS "dd_delta_people_mentions.R3.start_position" , R3.length AS "dd_delta_people_mentions.R3.length" 
             FROM dd_new_sentences R0, dd_new_has_spouse_candidates R1, dd_new_people_mentions R2, dd_delta_people_mentions R3
         WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id 
         """
@@ -203,10 +192,10 @@ dd_new_has_spouse.label: Boolean
       deepdive.extraction.extractors.extraction_rule_11 {
         sql: """ TRUNCATE dd_new_people_mentions;
         INSERT INTO dd_new_people_mentions 
-            SELECT R0.sentence_id, R0.start_position, R0.length, R0.text, R0.mention_id, R0.dd_count
+            SELECT R0.sentence_id, R0.start_position, R0.length, R0.text, R0.mention_id
             FROM people_mentions R0
          UNION ALL 
-            SELECT R0.sentence_id, R0.start_position, R0.length, R0.text, R0.mention_id, R0.dd_count
+            SELECT R0.sentence_id, R0.start_position, R0.length, R0.text, R0.mention_id
             FROM dd_delta_people_mentions R0
         
         """
@@ -218,10 +207,10 @@ dd_new_has_spouse.label: Boolean
       deepdive.extraction.extractors.extraction_rule_3 {
         sql: """ TRUNCATE dd_new_articles;
         INSERT INTO dd_new_articles 
-            SELECT R0.article_id, R0.text, R0.dd_count
+            SELECT R0.article_id, R0.text
             FROM articles R0
          UNION ALL 
-            SELECT R0.article_id, R0.text, R0.dd_count
+            SELECT R0.article_id, R0.text
             FROM dd_delta_articles R0
         
         """
@@ -233,10 +222,10 @@ dd_new_has_spouse.label: Boolean
       deepdive.extraction.extractors.extraction_rule_25 {
         sql: """ DROP VIEW IF EXISTS dd_delta_ext_people_input;
         CREATE VIEW dd_delta_ext_people_input AS 
-            SELECT R0.sentence_id AS "sentences.R0.sentence_id" , R0.words AS "sentences.R0.words" , R0.ner_tags AS "sentences.R0.ner_tags" , R0.dd_count AS "dd_count" 
+            SELECT R0.sentence_id AS "sentences.R0.sentence_id" , R0.words AS "sentences.R0.words" , R0.ner_tags AS "sentences.R0.ner_tags" 
             FROM sentences R0
          UNION ALL 
-            SELECT R0.sentence_id AS "dd_delta_sentences.R0.sentence_id" , R0.words AS "dd_delta_sentences.R0.words" , R0.ner_tags AS "dd_delta_sentences.R0.ner_tags" , R0.dd_count AS "dd_count" 
+            SELECT R0.sentence_id AS "dd_delta_sentences.R0.sentence_id" , R0.words AS "dd_delta_sentences.R0.words" , R0.ner_tags AS "dd_delta_sentences.R0.ner_tags" 
             FROM dd_delta_sentences R0
         
         """
@@ -248,10 +237,10 @@ dd_new_has_spouse.label: Boolean
       deepdive.extraction.extractors.extraction_rule_15 {
         sql: """ TRUNCATE dd_new_has_spouse_candidates;
         INSERT INTO dd_new_has_spouse_candidates 
-            SELECT R0.person1_id, R0.person2_id, R0.sentence_id, R0.description, R0.relation_id, R0.is_true, R0.dd_count
+            SELECT R0.person1_id, R0.person2_id, R0.sentence_id, R0.description, R0.relation_id, R0.is_true
             FROM has_spouse_candidates R0
          UNION ALL 
-            SELECT R0.person1_id, R0.person2_id, R0.sentence_id, R0.description, R0.relation_id, R0.is_true, R0.dd_count
+            SELECT R0.person1_id, R0.person2_id, R0.sentence_id, R0.description, R0.relation_id, R0.is_true
             FROM dd_delta_has_spouse_candidates R0
         
         """
@@ -263,10 +252,10 @@ dd_new_has_spouse.label: Boolean
       deepdive.extraction.extractors.extraction_rule_19 {
         sql: """ TRUNCATE dd_new_has_spouse_features;
         INSERT INTO dd_new_has_spouse_features 
-            SELECT R0.relation_id, R0.feature, R0.dd_count
+            SELECT R0.relation_id, R0.feature
             FROM has_spouse_features R0
          UNION ALL 
-            SELECT R0.relation_id, R0.feature, R0.dd_count
+            SELECT R0.relation_id, R0.feature
             FROM dd_delta_has_spouse_features R0
         
         """
@@ -278,10 +267,10 @@ dd_new_has_spouse.label: Boolean
       deepdive.extraction.extractors.extraction_rule_7 {
         sql: """ TRUNCATE dd_new_sentences;
         INSERT INTO dd_new_sentences 
-            SELECT R0.document_id, R0.sentence, R0.words, R0.lemma, R0.pos_tags, R0.dependencies, R0.ner_tags, R0.sentence_offset, R0.sentence_id, R0.dd_count
+            SELECT R0.document_id, R0.sentence, R0.words, R0.lemma, R0.pos_tags, R0.dependencies, R0.ner_tags, R0.sentence_offset, R0.sentence_id
             FROM sentences R0
          UNION ALL 
-            SELECT R0.document_id, R0.sentence, R0.words, R0.lemma, R0.pos_tags, R0.dependencies, R0.ner_tags, R0.sentence_offset, R0.sentence_id, R0.dd_count
+            SELECT R0.document_id, R0.sentence, R0.words, R0.lemma, R0.pos_tags, R0.dependencies, R0.ner_tags, R0.sentence_offset, R0.sentence_id
             FROM dd_delta_sentences R0
         
         """
@@ -293,10 +282,10 @@ dd_new_has_spouse.label: Boolean
       deepdive.extraction.extractors.extraction_rule_28 {
         sql: """ DROP VIEW IF EXISTS dd_delta_ext_has_spouse_input;
         CREATE VIEW dd_delta_ext_has_spouse_input AS 
-            SELECT R0.sentence_id AS "dd_delta_people_mentions.R0.sentence_id" , R0.mention_id AS "dd_delta_people_mentions.R0.mention_id" , R0.text AS "dd_delta_people_mentions.R0.text" , R1.mention_id AS "people_mentions.R1.mention_id" , R1.text AS "people_mentions.R1.text" , R0.dd_count * R1.dd_count AS "dd_count" 
+            SELECT R0.sentence_id AS "dd_delta_people_mentions.R0.sentence_id" , R0.mention_id AS "dd_delta_people_mentions.R0.mention_id" , R0.text AS "dd_delta_people_mentions.R0.text" , R1.mention_id AS "people_mentions.R1.mention_id" , R1.text AS "people_mentions.R1.text" 
             FROM dd_delta_people_mentions R0, people_mentions R1
         WHERE R1.sentence_id = R0.sentence_id  UNION ALL 
-            SELECT R0.sentence_id AS "dd_new_people_mentions.R0.sentence_id" , R0.mention_id AS "dd_new_people_mentions.R0.mention_id" , R0.text AS "dd_new_people_mentions.R0.text" , R1.mention_id AS "dd_delta_people_mentions.R1.mention_id" , R1.text AS "dd_delta_people_mentions.R1.text" , R0.dd_count * R1.dd_count AS "dd_count" 
+            SELECT R0.sentence_id AS "dd_new_people_mentions.R0.sentence_id" , R0.mention_id AS "dd_new_people_mentions.R0.mention_id" , R0.text AS "dd_new_people_mentions.R0.text" , R1.mention_id AS "dd_delta_people_mentions.R1.mention_id" , R1.text AS "dd_delta_people_mentions.R1.text" 
             FROM dd_new_people_mentions R0, dd_delta_people_mentions R1
         WHERE R1.sentence_id = R0.sentence_id 
         """
@@ -307,7 +296,7 @@ dd_new_has_spouse.label: Boolean
 
       deepdive.extraction.extractors.extraction_rule_33 {
         sql: """ 
-        INSERT INTO dd_delta_has_spouse SELECT DISTINCT R0.relation_id, 0 as id, R0.is_true AS label , R0.dd_count AS dd_count
+        INSERT INTO dd_delta_has_spouse SELECT DISTINCT R0.relation_id, 0 as id, R0.is_true AS label
           FROM dd_delta_has_spouse_candidates R0
         
           
@@ -319,10 +308,10 @@ dd_new_has_spouse.label: Boolean
 
       deepdive.extraction.extractors.extraction_rule_23 {
         sql: """ 
-        CREATE VIEW dd_new_has_spouse AS SELECT DISTINCT R0.relation_id,  id, label , R0.dd_count AS dd_count
+        CREATE VIEW dd_new_has_spouse AS SELECT DISTINCT R0.relation_id, id, label
           FROM has_spouse R0
         
-           UNION ALL SELECT DISTINCT R0.relation_id,  id, label , R0.dd_count AS dd_count
+           UNION ALL SELECT DISTINCT R0.relation_id, id, label
           FROM dd_delta_has_spouse R0
         
           
@@ -364,10 +353,10 @@ dd_new_has_spouse.label: Boolean
 
         deepdive.inference.factors.dd_new_has_spouse_0 {
           input_query: """
-          SELECT R0.id AS "dd_new_has_spouse.R0.id" , R2.feature AS "has_spouse_features.R2.feature"  , R0.dd_count * R1.dd_count * R2.dd_count AS "dd_count" 
+          SELECT R0.id AS "dd_new_has_spouse.R0.id" , R2.feature AS "has_spouse_features.R2.feature" 
           FROM dd_new_has_spouse R0, dd_delta_has_spouse_candidates R1, has_spouse_features R2
         WHERE R1.relation_id = R0.relation_id  AND R2.relation_id = R0.relation_id  UNION ALL 
-          SELECT R0.id AS "dd_new_has_spouse.R0.id" , R2.feature AS "dd_delta_has_spouse_features.R2.feature"  , R0.dd_count * R1.dd_count * R2.dd_count AS "dd_count" 
+          SELECT R0.id AS "dd_new_has_spouse.R0.id" , R2.feature AS "dd_delta_has_spouse_features.R2.feature" 
           FROM dd_new_has_spouse R0, dd_new_has_spouse_candidates R1, dd_delta_has_spouse_features R2
         WHERE R1.relation_id = R0.relation_id  AND R2.relation_id = R0.relation_id """
           function: "Linear(dd_new_has_spouse.R0.label)"
