@@ -5,10 +5,13 @@ cd "$(dirname "$0")"
 . env.sh
 
 DDlog=${1:-$PWD/spouse_example.ddl}
-Mode=${2:---materialization}
+Out=${2:-${DDlog%.ddl}.base.application.out}
+Mode=${3:---materialization}
 
 dropdb --if-exists $DBNAME
 createdb $DBNAME
+
+export BASEDIR=$Out
 
 ./run.sh "$DDlog" $Mode initdb
 ./generate-sentences_dump_noarray.csv.sh |
@@ -23,5 +26,3 @@ psql $DBNAME -c "COPY sentences(
     sentence_offset,
     sentence_id
 ) FROM STDIN CSV"
-
-psql $DBNAME -c "UPDATE sentences SET dd_count = 1" &>/dev/null || true

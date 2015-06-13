@@ -4,7 +4,7 @@ set -eux
 cd "$(dirname "$0")"
 . env.sh
 
-DDlog=${1:-$PWD/spouse_example.ddl}
+DDlog=${1:-$PWD/spouse_example.f1+f2.ddl}
 Out=${2:-${DDlog%.ddl}.application.out}
 
 ./run.sh "$DDlog" --original extraction  -o "$Out"
