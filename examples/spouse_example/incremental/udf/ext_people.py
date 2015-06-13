@@ -13,7 +13,7 @@ ARR_DELIM = '~^~'
 # For-loop for each row in the input query
 for row in sys.stdin:
   # Find phrases that are continuous words tagged with PERSON.
-  sentence_id, words_str, ner_tags_str, dd_count = row.strip().split('\t')
+  sentence_id, words_str, ner_tags_str = row.strip().split('\t')
   words = words_str.split(ARR_DELIM)
   ner_tags = ner_tags_str.split(ARR_DELIM)
   start_index = 0
@@ -38,6 +38,5 @@ for row in sys.stdin:
         start_position,   # start_position
         length, # length
         text,  # text
-        '%s_%d' % (sentence_id, start_position),        # mention_id
-        dd_count
+        '%s_%d' % (sentence_id, start_position)        # mention_id
       ]])

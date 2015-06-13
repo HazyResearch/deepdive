@@ -4,12 +4,14 @@ set -eux
 cd "$(dirname "$0")"
 . env.sh
 
-DDlog=${1:-$PWD/spouse_example.ddl}
-ActiveVarsFile=${2:-${DDlog%.ddl}.active.vars}
-ActiveRulesFile=${3:-${DDlog%.ddl}.active.rules}
+DDlog=${1:-spouse_example.f1.ddl}
+Out=${2:-inc-base.out}
+ActiveVarsFile=${3:-${DDlog%.ddl}.active.vars}
+ActiveRulesFile=${4:-${DDlog%.ddl}.active.rules}
 
-export DEEPDIVE_ACTIVE_INCREMENTAL_VARIABLES="$(cat "$ActiveVarsFile")"
-export DEEPDIVE_ACTIVE_INCREMENTAL_RULES="$(cat "$ActiveRulesFile")"
+export BASEDIR=$Out
+export DEEPDIVE_ACTIVE_INCREMENTAL_VARIABLES="$(sed 's/#.*$//' "$ActiveVarsFile" )"
+export DEEPDIVE_ACTIVE_INCREMENTAL_RULES="$(    sed 's/#.*$//' "$ActiveRulesFile")"
 
-./run.sh "$DDlog" --materialization extraction  -o "$BASEDIR"
-./run.sh "$DDlog" --materialization inference   -o "$BASEDIR"
+./run.sh "$DDlog" --materialization extraction "$Out"
+./run.sh "$DDlog" --materialization inference  "$Out"
