@@ -878,11 +878,11 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
   // create global meta data for incremental
   def createIncrementalMetaData() {
-    dataStore.createTableIfNotExists(InferenceNamespace.getIncrementalMetaTableName(),
-      s"num_variables bigint, num_factors bigint, num_weights bigint")
+    dataStore.dropAndCreateTable(InferenceNamespace.getIncrementalMetaTableName(),
+      s"id int, num_variables bigint, num_factors bigint, num_weights bigint")
     issueQuery(s"SELECT COUNT(*) FROM ${InferenceNamespace.getIncrementalMetaTableName()}") {
       rs => if (rs.getLong(1) == 0) {
-        execute(s""" INSERT INTO ${InferenceNamespace.getIncrementalMetaTableName()} VALUES (0, 0, 0); """)
+        execute(s""" INSERT INTO ${InferenceNamespace.getIncrementalMetaTableName()} VALUES (0, 0, 0, 0); """)
       }
     }
   }

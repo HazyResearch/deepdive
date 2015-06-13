@@ -56,7 +56,7 @@ class BiasedCoin extends FunSpec {
         }
       }
 
-      DeepDive.sampler.sampler_args: "-l 300 -i 500 -s 1 --alpha 0.1 --diminish 0.99 --quiet"
+      deepdive.sampler.sampler_args: "-l 2000 -i 500 -s 1 --alpha 0.1 --diminish 0.99 --quiet"
     """
   
 
