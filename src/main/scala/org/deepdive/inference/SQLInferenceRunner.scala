@@ -233,7 +233,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         FROM ${lastRelationTable} t1
         WHERE ${variableJoinlist}""")
       dataStore.dropAndCreateTableAs(tmpTable, s""" 
-        SELECT id, ${key.mkString(", ")}, ${column}
+        SELECT ${key.mkString(", ")}, ${column}, id
         FROM ${relation} 
         WHERE id is NULL; """)
       execute(s"ALTER SEQUENCE ${IdSequence} RESTART ${idoffset}")
