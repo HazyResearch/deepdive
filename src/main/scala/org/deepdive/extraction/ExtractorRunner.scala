@@ -589,28 +589,29 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
       case _ => ""
     }
 
-    val sql = "SELECT piggy_prepare_run(?, ?, ?, ?)"
-    var runSqlParts: Array[String] = null
-    dataStore.prepareStatement(sql) { ps =>
-      ps.setString(1, envDir)
-      ps.setString(2, udf)
-      ps.setString(3, inputQuery)
-      ps.setString(4, task.extractor.outputRelation)
-      log.info(ps.toString)
-      val rs = ps.executeQuery()
-      if (rs.next()) {
-        runSqlParts = rs.getArray(1).getArray.asInstanceOf[Array[String]]
-      }
-      rs.close()
-    }
-    if (runSqlParts == null || runSqlParts.length != 3) {
-      throw new RuntimeException("Failed to prepare piggy run: " + task.extractor.name)
-    }
+    val deepDiveDir = System.getProperty("user.dir")
+    val compilerFile = s"${deepDiveDir}/util/piggy_prepare.py"
+    val params = Json.obj(
+      "dir" -> envDir,
+      "func" -> udf,
+      "source" -> inputQuery,
+      "target" -> task.extractor.outputRelation,
+      "is_pgxl" -> dataStore.isUsingPostgresXL
+    )
+    val paramsJson = Json.stringify(params)
+    val cmd = Seq("python", compilerFile, paramsJson)
+    val res = cmd.!!
+    val queries = Json.parse(res)
 
     // Run plpython UDF
-    val insertion = runSqlParts(0)
-    val getlog = runSqlParts(1)
-    val cleaning = runSqlParts(2)
+    val create_tables: String = (queries \ "sql_create_tables").as[String]
+    val create_functions: String = (queries \ "sql_create_functions").as[String]
+    val insertion: String = (queries \ "sql_insert").as[String]
+    val getlog: String = (queries \ "sql_getlog").as[String]
+    val cleaning: String = (queries \ "sql_clean").as[String]
+
+    dataStore.executeSqlQueries(create_tables, false)
+    dataStore.executeSqlQueries(create_functions, false)
 
     class GetLogThread extends Runnable {
       var stopped = false
