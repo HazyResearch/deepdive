@@ -7,15 +7,15 @@ export PGUSER=${PGUSER:-`whoami`}
 export PGPASSWORD=${PGPASSWORD:-}
 export PGPORT=${PGPORT:-5432}
 export PGHOST=${PGHOST:-localhost}
-export DBNAME=deepdive_test
+export DBNAME=${DBNAME:-deepdive_test}
 export PGDATABASE=$DBNAME  # for testing to work with null settings
 export GPHOST=${GPHOST:-localhost}
-export GPPORT=${GPPORT:-15433}
-export GPPATH=${GPPATH:-/tmp}
+export GPPORT=${GPPORT:-$((15433 + ${RANDOM:0:4}))}
 export GPLOAD=true
 export DBCONNSTRING=jdbc:postgresql://$PGHOST:$PGPORT/$DBNAME
 echo "CONN STRING: $DBCONNSTRING"
 export DEEPDIVE_HOME=`cd $(dirname $0)/../; pwd`
+export GPPATH=${GPPATH:-$DEEPDIVE_HOME/out/tmp}
 
 export DEEPDIVE_TEST_ENV="psql"
 # for compatibility with psql/mysql generic tests. Should get rid of "PG" stuff.
@@ -27,6 +27,8 @@ export DBUSER=$PGUSER
 
 # Launch gpfdist if not launched.
 gpfdist -d $GPPATH -p $GPPORT &
+gpfdist_pid=$!
+trap "kill $gpfdist_pid" EXIT
 
 cd $DEEPDIVE_HOME/lib
 
