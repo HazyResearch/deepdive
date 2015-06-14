@@ -9,7 +9,7 @@ NAMES_FILE = os.path.join(DATA_DIR, 'names.tsv')
 dicts = {}
 
 
-def find_people(record):
+def find_people(record, piggy):
     if 'names' not in dicts:
         dicts['names'] = set(x.strip() for x in open(NAMES_FILE).readlines())
     good_names = dicts['names']
@@ -22,4 +22,7 @@ def find_people(record):
     length = 1
     if w.lower() in good_names:
         length = 99999999
+        piggy.log(str(words))
+    # if piggy.input_count > 5000:
+    #     fsdflksakl
     yield (sid, 1, length, words[0] if words else '', '%s_1' % sid)
