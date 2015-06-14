@@ -3,14 +3,17 @@
 set -eu
 cd "$(dirname "$0")"
 
+# subsample sentences for quicker test
+: ${INCREMENTAL_SPOUSE_EXAMPLE_LIMIT_SENTENCES:=2000}
+export INCREMENTAL_SPOUSE_EXAMPLE_LIMIT_SENTENCES
+# require cosine similarity between incremental and non-incremental distributions to be no lower than 0.9
+: ${INCREMENTAL_SPOUSE_EXAMPLE_MIN_SIMILARITY:=0.9}
+
 TestUtils=$(cd ../util/test; pwd)
 set -x
 
 ## Use spouse example
 cd ../examples/spouse_example/incremental
-
-# subsample sentences for quicker test
-export INCREMENTAL_SPOUSE_EXAMPLE_LIMIT_SENTENCES=2000
 
 ## Incremental runs
 export DBNAME=deepdive_test_inc
@@ -46,7 +49,7 @@ compare() {
             ) <(
                 probability_distribution_of        has_spouse noninc.${what}.out
             ))
-    if [[ $(bc <<<"$cos_sim >= 0.95") == 1 ]]; then
+    if [[ $(bc <<<"$cos_sim >= $INCREMENTAL_SPOUSE_EXAMPLE_MIN_SIMILARITY") == 1 ]]; then
         echo >&2 "PASS: $what: incremental and non-incremental probability distributions are similar enough (cosine similarity = $cos_sim)"
     else
         echo >&2 "FAIL: $what: incremental and non-incremental probability distributions are NOT similar enough (cosine similarity = $cos_sim)"
