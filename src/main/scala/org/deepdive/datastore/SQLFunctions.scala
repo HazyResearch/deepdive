@@ -188,7 +188,7 @@ import os
 import time
 
 date = time.strftime('%Y%m%d')
-fp = date + '_' + hashlib.sha1('\t'.join([dir, func, source, target])).hexdigest()[:8]
+fp = date + '_' + hashlib.sha1('\\t'.join([dir, func, source, target])).hexdigest()[:8]
 fname = 'piggy_func_' + fp
 sview = 'piggy_source_' + fp
 tview = 'piggy_target_' + fp
@@ -223,7 +223,7 @@ plpy.execute(sql)
 # Why do we need the column names?
 # Because we need them to convert row type to composite type.
 sql = '''
-CREATE TABLE %(sview)s AS %(source_query)s LIMIT 0;
+CREATE TABLE %(sview)s AS SELECT * FROM (%(source_query)s) _sview_source LIMIT 0;
 CREATE TABLE %(tview)s AS %(target_query)s LIMIT 0;
 
 SELECT string_agg(name, ', ') as scols
@@ -246,16 +246,32 @@ FROM
 plpy.info(sql)
 scols = plpy.execute(sql)[0]['scols']
 
+logfile_path = os.path.join(dir, fname + '.log')
+if os.path.isfile(logfile_path):
+    os.remove(logfile_path)
+
+ts_format = '%Y-%m-%d %H:%M:%S.%f'
+
+
 # Why not merge CREATE FUNCTION with CREATE TABLE?
 # Because PGXL sucks.
+#
+# Why log to file instead of a DB table?
+# PGXL would complain something like 'no XID'.
+# This may have fixed it though: https://github.com/snaga/postgres-xl/commit/d4136935a1d741c61ada13ef8c5ae44f68162cc9
+
 sql = '''
 CREATE OR REPLACE FUNCTION %(fname)s (record %(sview)s)
     RETURNS SETOF %(tview)s
 AS $func$
 
     if 'func' not in SD:
+        import fcntl
         import os
         import sys
+        import time
+        from datetime import datetime
+
         activate_this = '%(activate_this)s'
         if os.path.isfile(activate_this):
             execfile(activate_this, dict(__file__=activate_this))
@@ -264,10 +280,83 @@ AS $func$
         module = reload(module)
         SD['func'] = getattr(module, '%(pyfunc)s')
 
-    func = SD['func']
-    return func(record)
+        # set up file-based logging
+        logfile = open('%(logfile_path)s', 'a')
+
+        def log_line(x):
+            fcntl.flock(logfile, fcntl.LOCK_EX)
+            ts = datetime.now().strftime('%(ts_format)s')
+            content = str(x)
+            for line in content.split('\\n'):
+                logfile.write(ts + '\\t' + line + '\\n')
+            # TODO: more efficient way to flush.
+            # Difficulty is we don't know when input ends.
+            logfile.flush()
+            fcntl.flock(logfile, fcntl.LOCK_UN)
+
+        class Piggy(object):
+            pass
+
+        piggy = Piggy()
+        piggy.log = log_line
+        piggy.input_count = 0
+        piggy.output_count = 0
+        piggy.start_time = time.time()
+        piggy.last_update_time = piggy.start_time
+
+        SD['piggy'] = piggy
+        SD['time'] = time
+
+    func, piggy = SD['func'], SD['piggy']
+
+    try:
+        result = list(func(record, piggy))
+    except:
+        import traceback
+        tb = traceback.format_exc()
+        piggy.log('*' * 80)
+        piggy.log(tb)
+        piggy.log('*' * 80)
+        piggy.log('Offending input record:')
+        piggy.log(record)
+        piggy.log('*' * 80)
+        raise
+
+    piggy.input_count += 1
+    piggy.output_count += len(result)
+    cur_time = SD['time'].time()
+    if cur_time - piggy.last_update_time > 1:
+        piggy.log('STATS: in = ' + str(piggy.input_count) +
+                  '; out = ' + str(piggy.output_count) +
+                  '; time = ' + str(int(cur_time - piggy.start_time)) + ' sec.')
+        piggy.last_update_time = cur_time
+
+    return result
 
 $func$ LANGUAGE plpythonu VOLATILE;
+
+
+CREATE OR REPLACE FUNCTION %(fname)s_getlog (threshold text)
+    RETURNS SETOF text
+AS $log$
+    import os
+
+    file = '%(logfile_path)s'
+    if not os.path.isfile(file):
+        return
+
+    with open(file) as logfile:
+        for line in logfile:
+            line = line.rstrip('\\n ')
+            parts = line.split('\\t', 1)
+            if len(parts) != 2:
+                continue
+            ts, content = parts
+            if ts > threshold:
+                yield line
+
+$log$ LANGUAGE plpythonu VOLATILE;
+
 ''' % {
     'dir': dir,
     'pyfunc': pyfunc,
@@ -276,6 +365,8 @@ $func$ LANGUAGE plpythonu VOLATILE;
     'sview': sview,
     'tview': tview,
     'activate_this': activate_this,
+    'logfile_path': logfile_path,
+    'ts_format': ts_format,
 }
 
 plpy.info(sql)
@@ -296,8 +387,27 @@ SELECT (x).* FROM
     'source_query': source_query,
 }
 
+is_pgxl = False
+try:
+    plpy.execute('SELECT * from pgxl_dual_hosts LIMIT 1')
+    is_pgxl = True
+except plpy.SPIError:
+    pass
+
+if is_pgxl:
+    sql_getlog = '''
+    SELECT %(fname)s_getlog(?) AS line FROM pgxl_dual_hosts ORDER BY line;
+    '''
+else:
+    sql_getlog = '''
+    SELECT %(fname)s_getlog(?) AS line ORDER BY line;
+    '''
+
+sql_getlog = sql_getlog % {'fname': fname}
+
 sql_clean = '''
 DROP FUNCTION %(fname)s (%(sview)s);
+DROP FUNCTION %(fname)s_getlog (text);
 DROP TABLE IF EXISTS %(sview)s;
 DROP TABLE IF EXISTS %(tview)s;
 ''' % {
@@ -311,9 +421,8 @@ DROP TABLE IF EXISTS %(tview)s;
 # Because PGXL wouldn't recognize the existence of the newly created tables (and hence types)
 # if we execute the dynamic SQL within this function call.
 # Solution: wait for this function call finishes on all nodes before we run the insertion.
-plpy.info(sql)
-plpy.info(sql_clean)
-return (sql, sql_clean)
+
+return (sql, sql_getlog, sql_clean)
 
 $$ LANGUAGE plpythonu;
 

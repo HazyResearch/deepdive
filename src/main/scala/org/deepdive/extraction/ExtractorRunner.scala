@@ -596,28 +596,70 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
       ps.setString(2, udf)
       ps.setString(3, inputQuery)
       ps.setString(4, task.extractor.outputRelation)
+      log.info(ps.toString)
       val rs = ps.executeQuery()
       if (rs.next()) {
         runSqlParts = rs.getArray(1).getArray.asInstanceOf[Array[String]]
       }
       rs.close()
     }
-    if (runSqlParts == null || runSqlParts.length != 2) {
+    if (runSqlParts == null || runSqlParts.length != 3) {
       throw new RuntimeException("Failed to prepare piggy run: " + task.extractor.name)
     }
 
     // Run plpython UDF
     val insertion = runSqlParts(0)
-    val cleaning = runSqlParts(1)
+    val getlog = runSqlParts(1)
+    val cleaning = runSqlParts(2)
 
-    log.info(insertion)
-    dataStore.prepareStatement(insertion) { ps =>
-      val count = ps.executeUpdate()
-      log.info("Extractor " + task.extractor.name + " created " + count + " rows")
+    class GetLogThread extends Runnable {
+      var stopped = false
+      var threshold = ""
+
+      def getLog() {
+        this.synchronized {
+          dataStore.prepareStatement(getlog) { ps =>
+            ps.setString(1, threshold)
+            val rs = ps.executeQuery
+            while (rs.next()) {
+              val content = rs.getString(1)
+              if (content != null) {
+                val Array(ts, text) = content.split("\t", 2)
+                log.info(text)
+                threshold = ts
+              }
+            }
+          }
+        }
+      }
+
+      def die() {
+        stopped = true
+        getLog()
+      }
+
+      def run() {
+        while (!stopped) {
+          getLog()
+          Thread.sleep(1000)
+        }
+      }
     }
 
-    log.debug(cleaning)
-    dataStore.executeSqlQueries(cleaning, false)
+    log.info(insertion)
+    val thread = new GetLogThread
+    try {
+      dataStore.prepareStatement(insertion) { ps =>
+        new Thread(thread).start()
+        val count = ps.executeUpdate()
+        thread.die()
+        log.info("Extractor " + task.extractor.name + " created " + count + " rows")
+      }
+    } finally {
+      thread.die()
+      log.debug(cleaning)
+      dataStore.executeSqlQueries(cleaning, false)
+    }
 
     log.debug("Analyzing output relation.")
     executeSqlUpdateOrFail(s"${sqlAnalyzeCommand} ${outputRel};", taskSender)
@@ -632,7 +674,10 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
     val localhost = InetAddress.getLocalHost
     val hostname = localhost.getHostName
     val clientname = Helpers.slugify(hostname) + '_' + Helpers.md5Hash(localhost.toString + udfDir)
-    val sql = "SELECT piggy_setup_env(?, ?)"
+    var sql = "SELECT piggy_setup_env(?, ?)"
+    if (dataStore.isUsingPostgresXL) {
+      sql += " FROM pgxl_dual_hosts"
+    }
     var remotePath: String = null
     dataStore.prepareStatement(sql) { ps =>
       ps.setString(1, clientname)
@@ -644,6 +689,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
         log.info("Piggy env source: " + udfDir)
         log.info("Piggy env destination: " + remotePath)
       }
+      // For PGXL, we assume the TEMP DIR is the same for all data nodes.
       rs.close()
     }
     if (remotePath == null) {
