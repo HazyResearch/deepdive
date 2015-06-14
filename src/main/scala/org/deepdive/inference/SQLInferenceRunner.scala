@@ -235,7 +235,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       dataStore.dropAndCreateTableAs(tmpTable, s""" 
         SELECT id, ${key.mkString(", ")}, ${column}
         FROM ${relation} 
-        WHERE id is NULL GROUP BY id, ${key.mkString(", ")}, ${column} """)
+        WHERE id is NULL; """)
       execute(s"ALTER SEQUENCE ${IdSequence} RESTART ${idoffset}")
       idoffset += dataStore.assignIds(tmpTable.toLowerCase(), idoffset, IdSequence)
       execute(s"""UPDATE ${relation} AS t0 SET id = t1.id 
@@ -552,7 +552,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
             dataStore.dropAndCreateTableAs(tmpTable, s"""SELECT ${selectcols}, id 
               FROM ${querytable} 
-              WHERE id is NULL GROUP BY ${condcols}, id""")
+              WHERE id is NULL""")
             execute(s"ALTER SEQUENCE ${factoridSequence} RESTART ${factorid}")
             factorid += dataStore.assignIds(tmpTable.toLowerCase(), factorid, factoridSequence)
 
@@ -878,11 +878,11 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
   // create global meta data for incremental
   def createIncrementalMetaData() {
-    dataStore.createTableIfNotExists(InferenceNamespace.getIncrementalMetaTableName(),
-      s"num_variables bigint, num_factors bigint, num_weights bigint")
+    dataStore.dropAndCreateTable(InferenceNamespace.getIncrementalMetaTableName(),
+      s"id int, num_variables bigint, num_factors bigint, num_weights bigint")
     issueQuery(s"SELECT COUNT(*) FROM ${InferenceNamespace.getIncrementalMetaTableName()}") {
       rs => if (rs.getLong(1) == 0) {
-        execute(s""" INSERT INTO ${InferenceNamespace.getIncrementalMetaTableName()} VALUES (0, 0, 0); """)
+        execute(s""" INSERT INTO ${InferenceNamespace.getIncrementalMetaTableName()} VALUES (0, 0, 0, 0); """)
       }
     }
   }
