@@ -3,8 +3,6 @@
 export APP_HOME=`cd $(dirname $0)/; pwd`
 export DEEPDIVE_HOME=`cd $(dirname $0)/../../../; pwd`
 
-source $APP_HOME/../env.sh
-
 # Database Configuration
 export DBNAME=deepdive_spouse_tsv
 

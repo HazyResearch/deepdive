@@ -9,7 +9,7 @@ Out=${2:-inc-base.out}
 
 export BASEDIR=$Out
 
-dropdb --if-exists $DBNAME
+dropdb $DBNAME || true
 createdb $DBNAME
 
 ./run.sh "$DDlog" "" initdb "$Out"

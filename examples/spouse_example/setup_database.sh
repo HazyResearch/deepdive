@@ -12,7 +12,7 @@ fi
 echo "Set DB_NAME to ${DBNAME}."
 echo "HOST is ${PGHOST}, PORT is ${PGPORT}."
 
-dropdb --if-exists $DBNAME
+dropdb $DBNAME || true
 createdb $DBNAME
 
 psql -d $DBNAME <./schema.sql
