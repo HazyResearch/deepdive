@@ -182,6 +182,22 @@ class PostgresDataStore extends JdbcDataStore with Logging {
       executeSqlQueries("CREATE LANGUAGE plpythonu;")
     }
     executeSqlQueries("SET search_path to 'public'", false)
+    if (isUsingPostgresXL) {
+      // Create a special "dual" table that has one tuple per data node,
+      // and a view on top that has one tuple per host.
+      // They are used by several places where we want to do something on each data node / host.
+      // E.g.: SELECT read_from_fs FROM pgxl_dual_hosts;
+      executeSqlQueries("""
+        DROP VIEW IF EXISTS pgxl_dual_hosts CASCADE;
+        DROP TABLE IF EXISTS pgxl_dual CASCADE;
+        CREATE TABLE pgxl_dual(id int, host text, port int) DISTRIBUTE BY modulo(id);
+        INSERT INTO pgxl_dual(id) SELECT generate_series(1, count(*)) from pgxc_node where node_type = 'D';
+        UPDATE pgxl_dual set host = inet_server_addr(), port = inet_server_port();
+        CREATE VIEW pgxl_dual_hosts AS
+          SELECT * FROM pgxl_dual
+          WHERE (host, port) IN (SELECT host, min(port) FROM pgxl_dual group by host);
+      """)
+    }
     executeSqlQueries(SQLFunctions.piggyExtractorDriverDeclaration, false)
   }
 
