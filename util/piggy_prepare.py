@@ -31,7 +31,6 @@ def piggy_prepare_run(dir, script, source, target, is_pgxl):
 
     ts_format = '%m-%d %H:%M:%S'
 
-
     # Why TABLE not VIEW?
     # Because PGXL does not create views on data nodes.
 
