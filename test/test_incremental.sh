@@ -9,6 +9,9 @@ set -x
 ## Use spouse example
 cd ../examples/spouse_example/incremental
 
+# subsample sentences for quicker test
+export INCREMENTAL_SPOUSE_EXAMPLE_LIMIT_SENTENCES=2000
+
 ## Incremental runs
 export DBNAME=deepdive_test_inc
 ./0-setup.sh                  spouse_example.f1.ddl        inc.base.out

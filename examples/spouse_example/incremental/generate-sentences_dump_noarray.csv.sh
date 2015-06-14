@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # A script to generate a sentences dump that doesn't use Postgres ARRAYs for applications compiled from DDlog
+#
+# Set INCREMENTAL_SPOUSE_EXAMPLE_LIMIT_SENTENCES to a number to subsample sentences
 set -eux
 cd "$(dirname "$0")"
 
@@ -19,4 +21,5 @@ SELECT
   sentence_offset,
   sentence_id
 FROM sentences
+${INCREMENTAL_SPOUSE_EXAMPLE_LIMIT_SENTENCES:+LIMIT $INCREMENTAL_SPOUSE_EXAMPLE_LIMIT_SENTENCES}
 ) TO STDOUT CSV"
