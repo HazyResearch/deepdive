@@ -210,26 +210,21 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     var idoffset : Long = 0
     issueQuery(s""" SELECT num_variables FROM ${InferenceNamespace.getIncrementalMetaTableName()}""") {
       rs => idoffset = rs.getLong(1)
+      execute(s"ALTER SEQUENCE ${IdSequence} RESTART ${idoffset}")
     }
 
     schema.foreach { case(variable, dataType) =>
       val Array(relation, column) = variable.split('.')
-      // Find origin relation
-      val lastRelationTable = InferenceNamespace.getBaseTableName(relation)
-
-      // Update all Ids to NULL in relation table
-      var key = dbSettings.keyMap(relation)
+      val baseRelation = InferenceNamespace.getBaseTableName(relation)
+      val key = dbSettings.keyMap(relation)
       val keyJoinlist = key.map(v => s""" t0.${v} = t1.${v} """).mkString("AND")
-      execute(s"""UPDATE ${relation} SET id = NULL""")
-
-      val variableJoinlist = s""" ${keyJoinlist} AND (t0.${column} = t1.${column} 
-        OR (t0.${column} is NULL AND t1.${column} is NULL)) """
-      val tmpTable = s"${relation}_inc"
+      val tmpTable = s"dd_inc_${relation}"
 
       // Assign Id based on original relation table otherwise assign new Id
+      execute(s"""UPDATE ${relation} SET id = NULL""")
       execute(s"""UPDATE ${relation} AS t0 SET id = t1.id 
-        FROM ${lastRelationTable} t1
-        WHERE ${variableJoinlist}""")
+        FROM ${baseRelation} t1
+        WHERE ${keyJoinlist}""")
       dataStore.dropAndCreateTableAs(tmpTable, s""" 
         SELECT id, ${key.mkString(", ")}, ${column}
         FROM ${relation} 
@@ -238,17 +233,9 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       idoffset += dataStore.assignIds(tmpTable.toLowerCase(), idoffset, IdSequence)
       execute(s"""UPDATE ${relation} AS t0 SET id = t1.id 
         FROM ${tmpTable} t1
-        WHERE ${variableJoinlist}""")
+        WHERE ${keyJoinlist}""")
+      execute(s"""DROP TABLE ${tmpTable}""")
     }
-  }
-
-  // handles incremental component deduplication (set model)
-  // if a variable has been seen in original factor graph, then we don't need to add it
-  def handleIncrementalDeduplication(relation: String) {
-    // return
-    val lastRelationTable = InferenceNamespace.getBaseTableName(relation)
-    execute(s"""DELETE FROM ${relation}
-      WHERE id IN (SELECT id FROM ${lastRelationTable});""")
   }
   
   // assign variable holdout
@@ -436,6 +423,23 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     }
   }
 
+  // delete the tuples that have duplicates in the base table
+  def deleteDuplicatesFromDelta(relation: String, joinCondition: String) {
+    // this is achieved by creating a new table using outer join
+    // and replace the original one
+    val baseRelation = InferenceNamespace.getBaseTableName(relation)
+    val tmpTable = s"dd_inc_${relation}"
+    execute(s"""CREATE TABLE ${tmpTable} AS
+      SELECT t0.*
+      FROM ${relation} t0 LEFT OUTER JOIN ${baseRelation} t1
+      ON ${joinCondition}
+      WHERE t1.id IS NULL;
+      """)
+    execute(s"""TRUNCATE TABLE ${relation}""")
+    execute(s"""INSERT INTO ${relation} SELECT * FROM ${tmpTable}""")
+    execute(s"""DROP TABLE ${tmpTable}""")
+  }
+
   def groundFactorsAndWeights(factorDescs: Seq[FactorDesc],
     calibrationSettings: CalibrationSettings, du: DataLoader,
     dbSettings: DbSettings, groundingPath: String,
@@ -505,15 +509,14 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
       execute(s"""ALTER TABLE ${querytable} ADD COLUMN id bigint;""")
 
+      // for incremental mode, delete duplicates (tuples that exist in base table) from delta table
       dbSettings.incrementalMode match {
         case IncrementalMode.INCREMENTAL => {
-          // Create new saved factor table to save origin factor table
-          val lastFactorTable = InferenceNamespace.getBaseTableName(querytable)
+          // Create new save
+          val baseFactorTable = InferenceNamespace.getBaseTableName(querytable)
           // if adding new inference rule, the original rule does not exist
-          val exists = dataStore.existsTable(lastFactorTable)
-          if (!exists) {
-            factorid += dataStore.assignIds(querytable.toLowerCase(), factorid, factoridSequence)
-          } else {
+          val exists = dataStore.existsTable(baseFactorTable)
+          if (exists) {
             val factorJoinlist = factorDesc.func.variables.map(
               v => s""" t0.${dataStore.quoteColumn(s"${v.relation}.id")} 
                 |= t1.${dataStore.quoteColumn(s"${InferenceNamespace.getBaseTableName(v.relation)}.id")}
@@ -526,36 +529,17 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
               s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(lastv)}"""
             }).mkString("AND")
             val joinList = Seq(factorJoinlist, weightJoinlist).mkString(" AND ")
-            val tmpTable = s"${querytable}_inc"
-            execute(s"""UPDATE ${querytable} AS t0 SET id = t1.id 
-              FROM ${lastFactorTable} t1
-              WHERE ${joinList}""")
-
-            dataStore.dropAndCreateTableAs(tmpTable, s"""SELECT ${selectcols}, id 
-              FROM ${querytable} 
-              WHERE id is NULL""")
-            execute(s"ALTER SEQUENCE ${factoridSequence} RESTART ${factorid}")
-            factorid += dataStore.assignIds(tmpTable.toLowerCase(), factorid, factoridSequence)
-
-            val factorJoinlist2 = factorDesc.func.variables.map(
-              v => s""" t0.${dataStore.quoteColumn(s"${v.relation}.id")} 
-                |= t1.${dataStore.quoteColumn(s"${v.relation}.id")}
-                |""".stripMargin.replaceAll("\n", " ")).mkString("AND")
-            val weightJoinlist2 = factorDesc.weight.variables.map(v =>
-              s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)}""").mkString("AND")
-            val joinList2 = Seq(factorJoinlist2, weightJoinlist2).mkString(" AND ")
-            execute(s"""UPDATE ${querytable} AS t0 SET id = t1.id 
-              FROM ${tmpTable} t1
-              WHERE ${joinList2}""")
-
-            handleIncrementalDeduplication(querytable)
+            
+            // delete the tuples that have duplicates in the base table
+            deleteDuplicatesFromDelta(querytable, joinList)
           }
         }
         case _ => {
-          // handle factor id
-          factorid += dataStore.assignIds(querytable.toLowerCase(), factorid, factoridSequence)
         }
       }
+
+      // handle factor id
+      factorid += dataStore.assignIds(querytable.toLowerCase(), factorid, factoridSequence)
 
       // maintain incremental meta data
       dbSettings.incrementalMode match {
@@ -611,40 +595,8 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         val weightJoinlist = factorDesc.weight.variables.map(
           v => s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)} """).mkString("AND")
 
-
-        // assign weight id for incremental, use previous weight id if we have seen that weight before,
-        // otherwise, assign new id
-        dbSettings.incrementalMode match {
-          case IncrementalMode.INCREMENTAL => {
-            val lastWeightsTableForThisFactor = InferenceNamespace.getBaseTableName(weighttableForThisFactor)
-            val exists = dataStore.existsTable(lastWeightsTableForThisFactor)
-            if (!exists) {
-              cweightid += dataStore.assignIds(weighttableForThisFactor.toLowerCase(), cweightid, weightidSequence)
-            } else {
-              val tmpTable = s"${weighttableForThisFactor}_inc"
-              val weightJoinlistInc = factorDesc.weight.variables.map(v => {
-                // split column to get relation name
-                val colSplit = v.split('.')
-                val lastvrel = InferenceNamespace.getBaseTableName(colSplit(0))
-                val lastv = s"${lastvrel}.${colSplit.takeRight(colSplit.length-1).mkString(".")}"
-                s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(lastv)}"""
-              }).mkString("AND")
-              execute(s"""UPDATE ${weighttableForThisFactor} AS t0 SET id = t1.id 
-                FROM ${lastWeightsTableForThisFactor} t1
-                WHERE ${weightJoinlistInc}""")
-              dataStore.dropAndCreateTableAs(tmpTable, s"SELECT * FROM ${weighttableForThisFactor} WHERE id = -1")
-              execute(s"ALTER SEQUENCE ${weightidSequence} RESTART ${cweightid}")
-              cweightid += dataStore.assignIds(tmpTable.toLowerCase(), cweightid, weightidSequence)
-              execute(s"""UPDATE ${weighttableForThisFactor} AS t0 SET id = t1.id
-                FROM ${tmpTable} t1
-                WHERE ${weightJoinlist}""")
-            }
-          }
-          case _ => {
-            // handle weight id
-            cweightid += dataStore.assignIds(weighttableForThisFactor.toLowerCase(), cweightid, weightidSequence)
-          }
-        }
+        // handle weight id
+        cweightid += dataStore.assignIds(weighttableForThisFactor.toLowerCase(), cweightid, weightidSequence)
 
         // maintain incremental meta data
         dbSettings.incrementalMode match {
@@ -685,19 +637,6 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
           s"""SELECT DISTINCT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
            FROM ${querytable} t0, ${weighttableForThisFactor} t1
            ${weightJoinCondition};""", groundingDir)
-
-        // delete weights that have already been seen
-        dbSettings.incrementalMode match {
-          case IncrementalMode.INCREMENTAL => {
-            val lastWeightsTableForThisFactor = InferenceNamespace.getBaseTableName(weighttableForThisFactor)
-            val exists = dataStore.existsTable(lastWeightsTableForThisFactor)
-            if (exists) {
-              execute(s"""DELETE FROM ${weighttableForThisFactor}
-                WHERE id IN (SELECT id FROM ${lastWeightsTableForThisFactor});""")
-            }
-          }
-          case _ =>
-        }
 
         execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, description) 
           SELECT id, isfixed, initvalue, ${weightDesc} FROM ${weighttableForThisFactor};""")
