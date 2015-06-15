@@ -47,11 +47,11 @@ We'll populate the following `sentences` relation by parsing sentences from ever
 sentences(
   document_id     text,
   sentence        text,
-  words           text[],
-  lemma           text[],
-  pos_tags        text[],
-  dependencies    text[],
-  ner_tags        text[],
+  words           text,
+  lemma           text,
+  pos_tags        text,
+  dependencies    text,
+  ner_tags        text,
   sentence_offset int,
   sentence_id     text).
 ```
