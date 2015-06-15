@@ -126,7 +126,7 @@ You need to run the following command before running another incremental phase:
 Once you decide to keep the current version, you can merge the incremental part into the base with the `--merge` mode:
 
 ```bash
-./4-merge.sh spouse_example.f2.ddl ./inc-f1+f2.out/
+./4-merge.sh spouse_example.f1.ddl ./inc-base.out/
 ```
 
 Finally, you've finished a full workflow of the incremental application development cycle.
