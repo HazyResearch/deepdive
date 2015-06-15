@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-paste --delimiter '-' "$@" | squares | sum | sqrt
+paste -d '-' "$@" | squares | sum | sqrt
