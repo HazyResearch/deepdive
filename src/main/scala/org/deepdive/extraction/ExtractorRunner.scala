@@ -448,7 +448,8 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
     val maxParallel = task.extractor.parallelism
 
     // Note (msushkov): the extractor must take TSV as input and produce TSV as output
-    val runCmd = s"find ${fpath} -name '${fname}-*' 2>/dev/null -print0 | xargs -0 -P ${maxParallel} -L 1 bash -c '${udfCmd} " + "<" + " \"$0\" > \"$0.out\"'"
+    val runCmd = s"touch '${fpath}/${fname}-'; " + // XXX make sure xargs gets at least one file to process
+        s"find ${fpath} -name '${fname}-*' 2>/dev/null -print0 | xargs -0 -P ${maxParallel} -L 1 bash -c '${udfCmd} " + "<" + " \"$0\" > \"$0.out\"'"
 
     log.info(s"Executing parallel UDF command: ${runCmd}")
     // executeScriptOrFail(runCmd, taskSender)
