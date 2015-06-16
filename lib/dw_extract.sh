@@ -10,11 +10,13 @@ case $(uname) in
     [ -d dw_mac ] ||
       ditto -xk dw_mac.zip .  # XXX ditto handles .zip better on OS X
       # unzip dw_mac.zip
+    ln -sfnv sampler-dw-mac.sh ../util/sampler-dw
     ;;
 
   Linux*)
     [ -d dw_linux ] ||
       unzip dw_linux.zip
+    ln -sfnv sampler-dw-linux.sh ../util/sampler-dw
     ;;
 
   *)

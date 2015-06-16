@@ -10,7 +10,6 @@ RUN cd ~/deepdive && make
 RUN echo 'export PGPORT=$DB_PORT_5432_TCP_PORT' >> ~/.bashrc && echo 'export PGHOST=$DB_PORT_5432_TCP_ADDR' >> ~/.bashrc && \
     echo 'export PGPASSWORD=' >> ~/.bashrc && echo 'export PGUSER=gpadmin' >> ~/.bashrc && \
     echo 'export DEEPDIVE_HOME=~/deepdive' >> ~/.bashrc && \
-    echo 'export LD_LIBRARY_PATH=$DEEPDIVE_HOME/lib/dw_linux/lib:$DEEPDIVE_HOME/sbt:$DEEPDIVE_HOME/lib/dw_linux/lib64' >> ~/.bashrc && \
     echo 'export PATH=~/deepdive/sbt:$PATH' >> ~/.bashrc && \
     echo 'echo "DeepDive needs a database connection to run and is waiting for the DB to finish initializing. After it finishes, the shell will return control to you."' >> ~/.bashrc && \
     echo 'while true; do' >> ~/.bashrc && \

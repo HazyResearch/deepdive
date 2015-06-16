@@ -24,23 +24,6 @@ export DEEPDIVE_HOME=`cd $(dirname $0)/../; pwd`
 # This env var specifies system under test
 export DEEPDIVE_TEST_ENV="mysql"
 
-cd $DEEPDIVE_HOME/lib
-
-case $(uname) in
-  Darwin)
-    export LD_LIBRARY_PATH=$DEEPDIVE_HOME/lib/dw_mac/lib/protobuf/lib:$DEEPDIVE_HOME/lib/dw_mac/lib:$LD_LIBRARY_PATH
-    export DYLD_LIBRARY_PATH=$DEEPDIVE_HOME/lib/dw_mac:$DYLD_LIBRARY_PATH
-    ;;
-
-  Linux*)
-    export LD_LIBRARY_PATH=$DEEPDIVE_HOME/lib/dw_linux/lib:$DEEPDIVE_HOME/lib/dw_linux/lib64:$DEEPDIVE_HOME/lib/dw_linux/lib/numactl-2.0.9/:$LD_LIBRARY_PATH
-    ;;
-
-  *)
-    echo >&2 "$(uname): Unsupported OS"
-    false
-esac
-
 ##### unit tests have not been ported. Run integration tests (spouse example )instead ####
 cd $DEEPDIVE_HOME
 

@@ -104,15 +104,12 @@ On Mac:
 
 ```bash
 export DEEPDIVE_HOME=[your path to install deepdive]
-export LD_LIBRARY_PATH=$DEEPDIVE_HOME/lib/dw_mac/lib/protobuf/lib:$DEEPDIVE_HOME/lib/dw_mac/lib
-export DYLD_LIBRARY_PATH=$DEEPDIVE_HOME/lib/dw_mac
 ```
 
 On Linux:
 
 ```bash
 export DEEPDIVE_HOME=[your path to install deepdive]
-export LD_LIBRARY_PATH=$DEEPDIVE_HOME/lib/dw_linux/lib:$DEEPDIVE_HOME/lib/dw_linux/lib64
 ```
 
 (The set of environmental variable `DEEPDIVE_HOME` is optional. If not set, DeepDive will assume that `DEEPDIVE_HOME` is current directory.)

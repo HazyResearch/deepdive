@@ -213,15 +213,7 @@ object SettingsParser extends Logging {
 
     // Parse Default sampler command based on mac / linux
     val samplerCmd = samplingConfig.getString("sampler_cmd") match {
-      case "__DEFAULT__" =>
-        val osname = System.getProperty("os.name")
-        log.info(s"Detected OS: ${osname}")
-        if (osname.startsWith("Linux")) {
-          s"${Context.deepdiveHome}/util/sampler-dw-linux"
-        }
-        else {
-          s"${Context.deepdiveHome}/util/sampler-dw-mac"
-        }
+      case "__DEFAULT__" => s"${Context.deepdiveHome}/util/sampler-dw"
       case _ => samplingConfig.getString("sampler_cmd")
     }
 
