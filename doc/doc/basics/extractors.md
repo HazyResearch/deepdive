@@ -22,8 +22,8 @@ class contains different extractor *styles*:
   - [`plpy_extractor`](#plpy_extractor): parallel database-built-in extractors
   with seriously restricted flexibility because only the UDF function definition
   is shipped to the DB
-  - [`piggy_python`](#piggy_python): also runs plpython but much cleaner;
-  we ship the entire runtime environment (code, data, and pip libraries) to
+  - [`piggy_extractor`](#piggy_extractor): a distributed language-agnostic pipe-based extractor driver.
+  We ship the entire runtime environment (code, data, and pip libraries) to
   the DB server(s) and avoid multi-user collision by staging separate environments
   for concurrent users. See `examples/spouse_example/piggy_extractor/`.
 

@@ -110,7 +110,7 @@ object SettingsParser extends Logging {
       val extractorConfig = extractionConfig.getConfig(s"extractors.$extractorName")
       val style = Try(extractorConfig.getString(s"style")).getOrElse("json_extractor")
       style match {
-        case "json_extractor" | "plpy_extractor" | "tsv_extractor" | "piggy_python" =>
+        case "json_extractor" | "plpy_extractor" | "tsv_extractor" | "piggy_extractor" =>
           val outputRelation = extractorConfig.getString ("output_relation")
           val inputQuery = InputQueryParser.parse (InputQueryParser.inputQueryExpr,
             extractorConfig.getString (s"input") ).getOrElse {
@@ -120,8 +120,8 @@ object SettingsParser extends Logging {
           }
           val udf = extractorConfig.getString (s"udf")
           val udfDir = Try (extractorConfig.getString (s"udf_dir") ).getOrElse(null)
-          if (style == "piggy_python" && udfDir == null) {
-            throw new RuntimeException("you must specify udf_dir for piggy_python extractors")
+          if (style == "piggy_extractor" && (udfDir == null || udf == null)) {
+            throw new RuntimeException("you must specify udf_dir and udf for piggy extractors")
           }
           val sqlQuery = Try (extractorConfig.getString (s"sql") ).getOrElse ("")
           val cmd = Try (extractorConfig.getString ("cmd") ).toOption
