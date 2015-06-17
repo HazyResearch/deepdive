@@ -1,1 +1,1 @@
-RedirectTemp  /install  https://raw.github.com/HazyResearch/deepdive/master/util/install.sh
+RedirectTemp  /install  https://github.com/HazyResearch/deepdive/raw/master/util/install.sh

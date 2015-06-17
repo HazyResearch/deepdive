@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Install DeepDive including its dependencies
 set -eu
-: ${BRANCH:=master}
+: ${BRANCH:=v0.6.x}
 INSTALLER_HOME_URL=https://raw.github.com/HazyResearch/deepdive/$BRANCH/util/install
 INSTALLER_HOME_DIR=$(dirname "$0")/install
 

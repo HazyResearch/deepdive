@@ -106,4 +106,61 @@ object SQLFunctions {
     $$
     LANGUAGE 'plpgsql';
     """
+
+    val piggyExtractorDriverDeclaration = """
+
+CREATE OR REPLACE FUNCTION piggy_setup_package (package_name text, zip_blob bytea)
+  RETURNS text
+AS $$
+
+import hashlib
+import os
+import shutil
+import subprocess
+import tempfile
+import zipfile
+
+try:
+    from cStringIO import StringIO
+except:
+    from StringIO import StringIO
+
+# postgres on homebrew somehow does not have /usr/local/bin in PATH
+os.environ['PATH'] += os.pathsep + '/usr/local/bin'
+
+if not zip_blob:
+    plpy.error('No blob provided')
+    return
+
+# create subdir for this version
+fp = hashlib.sha1(zip_blob).hexdigest()[:8]
+client_dir = os.path.join(tempfile.gettempdir(), 'piggy_packages', package_name)
+dir = os.path.join(client_dir, fp)
+try:
+    # only one contending process would succeed here
+    os.makedirs(dir)
+except OSError:
+    plpy.info('Directory already exists: ' + dir)
+    return
+plpy.info('Created ' + dir)
+
+# remove older versions
+for x in os.listdir(client_dir):
+    if x in ['env', fp]:
+        continue
+    plpy.info('Removing subdir: ' + fp)
+    shutil.rmtree(os.path.join(client_dir, x))
+
+# expand zip blob
+content = StringIO(zip_blob)
+zipf = zipfile.ZipFile(content, 'r')
+zipf.extractall(dir)
+plpy.info('Extracted zip content to ' + dir)
+
+return dir
+
+$$ LANGUAGE plpythonu;
+
+
+    """
 }

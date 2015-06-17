@@ -54,14 +54,33 @@ trait JdbcDataStore extends Logging {
     }
   }
 
- /**
-  *  Execute one or multiple SQL update commands with connection to JDBC datastore
+
+  def prepareStatement(query: String)
+          (op: (java.sql.PreparedStatement) => Unit) = {
+    val conn = borrowConnection()
+    try {
+      conn.setAutoCommit(false)
+      val ps = conn.prepareStatement(query)
+      op(ps)
+      conn.commit()
+    } catch {
+      // SQL cmd exception
+      case exception : Throwable =>
+        log.error(exception.toString)
+        throw exception
+    } finally {
+      conn.close()
+    }
+  }
+
+
+  /**
+   *  Execute one or multiple SQL update commands with connection to JDBC datastore
    *
    */
   def executeSqlQueries(sql: String, split: Boolean = true) : Unit = {
     val conn = borrowConnection()
     // Supporting more general SQL queries (e.g. SELECT)
-    val stmt = conn.createStatement()
     try {
       if (split) {
         // changed \s+ to \s* here.
@@ -92,8 +111,6 @@ trait JdbcDataStore extends Logging {
       columnNames.map(c => tuple.get(c).orElse(tuple.get(c.toLowerCase)).getOrElse(null))
     }.toSeq
     val conn = ConnectionPool.borrow()
-    val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
-      java.sql.ResultSet.CONCUR_UPDATABLE)
     val ps = conn.prepareStatement(s"""INSERT INTO ${outputRelation} (${columnNames.mkString(", ")})
       VALUES (${columnValues.mkString(", ")})""")
     try {
@@ -326,7 +343,6 @@ trait JdbcDataStore extends Logging {
   def queryUpdate(query: String) {
     val conn = borrowConnection()
     //conn.setAutoCommit(false);
-    val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY, java.sql.ResultSet.CONCUR_UPDATABLE)
     try {
       val prep = conn.prepareStatement(query)
       prep.executeUpdate
@@ -431,15 +447,6 @@ object JdbcDataStoreObject extends JdbcDataStore with Logging {
     val initializer = new JdbcDBsWithEnv("deepdive", config)
     log.info("Intializing all JDBC data stores")
     initializer.setupAll()
-    // create language for and greenplum if not exist
-    if (isUsingGreenplum()) {
-      if (!existsLanguage("plpgsql")) {
-        executeSqlQueries("CREATE LANGUAGE plpgsql;")
-      }
-      if (!existsLanguage("plpythonu")) {
-        executeSqlQueries("CREATE LANGUAGE plpythonu;")
-      }
-    }
   }
 
   override def init() : Unit = init(ConfigFactory.load)
