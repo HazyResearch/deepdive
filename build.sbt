@@ -1,6 +1,6 @@
 name := "deepdive"
 
-version := "0.0.3"
+version := "0.6.0"
 
 scalaVersion := "2.10.5"
 

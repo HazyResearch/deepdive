@@ -26,3 +26,4 @@ examples/spouse_example/data/spouses.tsv
 .settings
 *~
 #*#
+project/target

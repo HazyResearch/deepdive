@@ -12,7 +12,7 @@ object Main extends App with Logging {
   // Parsing command-line options
   case class CliOptions(configFile: File, outputDir: File)
   val parser = new scopt.OptionParser[CliOptions]("scopt") {
-    head("deepdive", "0.0.3")
+    head("deepdive", "0.6.0")
     opt[File]('c', "config") required() valueName("<config>") action { (x,c) =>
       c.copy(configFile = x)
     } text("configuration file path (required)")
