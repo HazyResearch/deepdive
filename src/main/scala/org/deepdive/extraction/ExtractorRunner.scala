@@ -154,8 +154,8 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
           runPlpyExtractor(task, dbSettings, taskSender)
           runAfterScript(task, taskSender)
 
-        case "piggy_python" =>
-          runPiggyPythonExtractor(task, dbSettings, taskSender)
+        case "piggy_extractor" =>
+          runPiggyExtractor(task, dbSettings, taskSender)
           runAfterScript(task, taskSender)
       }
 
@@ -566,9 +566,9 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
   }
 
   /**
-   * Run piggy python extractor
+   * Run piggy extractor
    */
-  private def runPiggyPythonExtractor(task: ExtractionTask, dbSettings: DbSettings, taskSender: ActorRef) = {
+  private def runPiggyExtractor(task: ExtractionTask, dbSettings: DbSettings, taskSender: ActorRef) = {
     if (dbtype != Psql) {
       failTask(s"do not support ${task.extractor.style} on ${dbtype}.", taskSender)
     }
@@ -579,7 +579,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
       throw new RuntimeException("UDF directory does not exist: " + udfDir)
     }
 
-    // Setup plpython UDF
+    // Setup UDF env
     val envDir = ensurePiggyEnv(udfDir)
 
     val udf = task.extractor.udf
@@ -593,7 +593,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
     val compilerFile = s"${deepDiveDir}/util/piggy_prepare.py"
     val params = Json.obj(
       "dir" -> envDir,
-      "func" -> udf,
+      "script" -> udf,
       "source" -> inputQuery,
       "target" -> task.extractor.outputRelation,
       "is_pgxl" -> dataStore.isUsingPostgresXL
@@ -615,19 +615,17 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
 
     class GetLogThread extends Runnable {
       var stopped = false
-      var threshold = ""
 
       def getLog() {
         this.synchronized {
           dataStore.prepareStatement(getlog) { ps =>
-            ps.setString(1, threshold)
             val rs = ps.executeQuery
             while (rs.next()) {
               val content = rs.getString(1)
               if (content != null) {
-                val Array(ts, text) = content.split("\t", 2)
-                log.info(text)
-                threshold = ts
+                content.split("\n").foreach { line =>
+                  log.info(line)
+                }
               }
             }
           }
@@ -647,15 +645,14 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
       }
     }
 
-    log.info(insertion)
     val thread = new GetLogThread
     try {
+      log.info(insertion)
       dataStore.prepareStatement(insertion) { ps =>
         new Thread(thread).start()
-        val count = ps.executeUpdate()
-        thread.die()
-        log.info("Extractor " + task.extractor.name + " created " + count + " rows")
+        ps.executeUpdate()
       }
+      thread.die()
     } finally {
       thread.die()
       log.debug(cleaning)
@@ -674,14 +671,14 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
     val blob = FileDataUtils.zipDir(udfDir)
     val localhost = InetAddress.getLocalHost
     val hostname = localhost.getHostName
-    val clientname = Helpers.slugify(hostname) + '_' + Helpers.md5Hash(localhost.toString + udfDir)
-    var sql = "SELECT piggy_setup_env(?, ?)"
+    val pkgname = Helpers.slugify(hostname) + '_' + Helpers.md5Hash(localhost.toString + udfDir)
+    var sql = "SELECT piggy_setup_package(?, ?)"
     if (dataStore.isUsingPostgresXL) {
       sql += " FROM pgxl_dual_hosts"
     }
     var remotePath: String = null
     dataStore.prepareStatement(sql) { ps =>
-      ps.setString(1, clientname)
+      ps.setString(1, pkgname)
       ps.setBytes(2, blob)
       val rs = ps.executeQuery()
       if (rs.next()) {

@@ -109,7 +109,7 @@ object SQLFunctions {
 
     val piggyExtractorDriverDeclaration = """
 
-CREATE OR REPLACE FUNCTION piggy_setup_env (client_name text, zip_blob bytea)
+CREATE OR REPLACE FUNCTION piggy_setup_package (package_name text, zip_blob bytea)
   RETURNS text
 AS $$
 
@@ -134,7 +134,7 @@ if not zip_blob:
 
 # create subdir for this version
 fp = hashlib.sha1(zip_blob).hexdigest()[:8]
-client_dir = os.path.join(tempfile.gettempdir(), 'piggy_envs', client_name)
+client_dir = os.path.join(tempfile.gettempdir(), 'piggy_packages', package_name)
 dir = os.path.join(client_dir, fp)
 try:
     # only one contending process would succeed here
@@ -144,7 +144,7 @@ except OSError:
     return
 plpy.info('Created ' + dir)
 
-# remove the other versions
+# remove older versions
 for x in os.listdir(client_dir):
     if x in ['env', fp]:
         continue
@@ -156,22 +156,6 @@ content = StringIO(zip_blob)
 zipf = zipfile.ZipFile(content, 'r')
 zipf.extractall(dir)
 plpy.info('Extracted zip content to ' + dir)
-
-# make / update virtualenv -- only one per client
-venv = os.path.join(client_dir, 'env')
-plpy.info('Ensuring env: ' + venv)
-subprocess.check_output('virtualenv "%s"' % venv,
-                        stderr=subprocess.STDOUT,
-                        shell=True)
-
-# install pip libraries
-reqfile = os.path.join(dir, 'requirements.txt')
-if os.path.isfile(reqfile):
-    plpy.info('Installing libs from ' + reqfile)
-    output = subprocess.check_output('%s/bin/pip install -r "%s"' % (venv, reqfile),
-                                     stderr=subprocess.STDOUT,
-                                     shell=True)
-    plpy.info(output)
 
 return dir
 
