@@ -20,6 +20,9 @@ test: build
 	@echo "\n=== Testing DeepDive modules... ==="
 	./test.sh
 
+checkstyle:
+	@./test/checkstyle.sh
+
 .PHONY: install
 install: depends build
 	@echo "\n=== Compiling DeepDive... ==="
