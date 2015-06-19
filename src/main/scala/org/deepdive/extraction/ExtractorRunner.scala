@@ -652,7 +652,6 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
         new Thread(thread).start()
         ps.executeUpdate()
       }
-      thread.die()
     } finally {
       thread.die()
       log.debug(cleaning)

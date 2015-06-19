@@ -236,25 +236,36 @@ def piggy_prepare_run(dir, script, source, target, is_pgxl):
     CREATE OR REPLACE FUNCTION %(fname)s_getlog ()
         RETURNS SETOF text
     AS $log$
-        import errno
         import os
-
         log_pipe_name = os.path.join('%(dir)s', '%(fname)s.pipe')
         if not os.path.exists(log_pipe_name):
             raise StopIteration
 
-        # http://stackoverflow.com/questions/14345816/how-to-read-named-fifo-non-blockingly
-        log_pipe = os.open(log_pipe_name, os.O_RDONLY | os.O_NONBLOCK)
-        try:
-            buffer = os.read(log_pipe, 1 << 20)
-        except OSError as err:
-            if err.errno == errno.EAGAIN or err.errno == errno.EWOULDBLOCK:
-                buffer = None
-            else:
-                raise
+        if 'buffer' not in SD:
+            import collections
+            from threading import Thread
 
-        if buffer:
-            yield buffer
+            # circular buffer
+            buffer = collections.deque(maxlen=10000)
+
+            def log_sucker():
+                # log_fd = os.read(log_pipe_name, os.O_RDONLY)
+                with open(log_pipe_name, 'r') as log:
+                    for line in iter(log.readline, ''):
+                        buffer.append(line.rstrip())
+
+            t = Thread(target=log_sucker)
+            t.daemon = True
+            t.start()
+
+            SD['buffer'] = buffer
+
+        try:
+            buf = SD['buffer']
+            while True:
+                yield buf.popleft()
+        except IndexError:
+            raise StopIteration
 
     $log$ LANGUAGE plpythonu VOLATILE;
 
