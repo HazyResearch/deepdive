@@ -17,26 +17,26 @@ import tuffy.util.*;
     private String clauseName = null;
     private boolean clauseLabelTrailing = false;
     private Predicate curPred = null;
-    
+
     public long lineOffset = 0;
-    
+
     private void die(String msg){
         ExceptionMan.die(msg);
     }
-    
+
     protected Object recoverFromMismatchedToken(IntStream input,
                                             int ttype,
                                             BitSet follow)
-		    throws RecognitionException
-		{   
-		    throw new MismatchedTokenException(ttype, input);
-		}   
-		
-		public void emitErrorMessage(String msg) {
+                    throws RecognitionException
+                {
+                    throw new MismatchedTokenException(ttype, input);
+                }
+
+                public void emitErrorMessage(String msg) {
         die(msg);
     }
-		
-    
+
+
 }
 
 WS  :   ( ' '
@@ -45,30 +45,30 @@ WS  :   ( ' '
         | '\n'
         ) {$channel=HIDDEN;}
     ;
-  
+
 COMMENT
     :   '//' ~('\n'|'\r')* '\r'? '\n' {$channel=HIDDEN;}
     |   '/*' ( options {greedy=false;} : . )* '*/' {$channel=HIDDEN;}
     ;
 
-NOT 	:	'!';
+NOT     :       '!';
 PLUS   : '+';
 MINUS   : '-';
-ASTERISK:	'*';
+ASTERISK:       '*';
 PERIOD: '.';
-EXIST	:	'EXIST' | 'Exist' | 'exist';
+EXIST   :       'EXIST' | 'Exist' | 'exist';
 IMPLIES : '=>';
 
 STRING
 @init{StringBuilder lBuf = new StringBuilder();}
-    :   
+    :
    '"'
-   ( escaped=ESC {lBuf.append(getText());} | 
-     normal=~('"'|'\\'|'\n'|'\r') {lBuf.appendCodePoint(normal);} )* 
+   ( escaped=ESC {lBuf.append(getText());} |
+     normal=~('"'|'\\'|'\n'|'\r') {lBuf.appendCodePoint(normal);} )*
    '"'
    {setText(lBuf.toString());}
     ;
-    
+
 fragment
 ESC
     :   '\\'
@@ -91,59 +91,59 @@ ESC
         | ~('u'|'r'|'n'|'t'|'b'|'f'|'"'|'\''|'/'|'\\')
         )
     ;
-    
-fragment 
+
+fragment
 HEXDIGIT
   : '0'..'9' | 'A'..'F' | 'a'..'f'
   ;
-  
+
 NUMBER :  INTEGER | FLOAT;
 fragment
 INTEGER : '0' | ('+'|'-')? '1'..'9' '0'..'9'*;
-fragment 
+fragment
 EXPONENT : ('e'|'E') ('+'|'-')? ('0'..'9')+ ;
-fragment 
+fragment
 FLOAT
     :   ('+'|'-')? ('0'..'9')+ '.' ('0'..'9')* EXPONENT?
     |   '.' ('0'..'9')+ EXPONENT?
     |   ('0'..'9')+ EXPONENT
     ;
-  
+
 ID
   :   ('a'..'z'|'A'..'Z')('a'..'z'|'A'..'Z'|'0'..'9'|'_'|'-')*
   ;
-  
-    
-    
-    
-    
-    
+
+
+
+
+
+
 definitions : schemaList ruleList EOF;
 
 schemaList : (schema | schemaConstraint)*;
 
 schema : (du='+')? (aa='**'|a1=ASTERISK)? (vt='@')? pname=ID a2=ASTERISK?
-	{
-		//boolean cwa = ($a1 != null || $aa != null);
-		boolean cwa = ($a1 != null);
+        {
+                //boolean cwa = ($a1 != null || $aa != null);
+                boolean cwa = ($a1 != null);
     boolean eqrel = ($a2 != null);
-		Predicate pred = new Predicate(ml, $pname.text, cwa);
-		if($aa != null) pred.setCompeletelySpecified(true);
-		//if(eqrel) pred.isDedupalogHead = true;
-		if($vt != null){
-		    //if($vt.text.equals("@")) pred.isInMem = true;
-		}
+                Predicate pred = new Predicate(ml, $pname.text, cwa);
+                if($aa != null) pred.setCompeletelySpecified(true);
+                //if(eqrel) pred.isDedupalogHead = true;
+                if($vt != null){
+                    //if($vt.text.equals("@")) pred.isInMem = true;
+                }
     if($du != null){
         //if($du.text.equals("+")) pred.toDump = true;
     }
-		curPred = pred;
-	}
-	'(' types+=predArg (',' types+=predArg)* ')'
-	{
-	    curPred.sealDefinition();
+                curPred = pred;
+        }
+        '(' types+=predArg (',' types+=predArg)* ')'
+        {
+            curPred.sealDefinition();
       ml.registerPred(curPred);
-	}
-	;
+        }
+        ;
 
 predArg : type=ID (name=ID)? uni='!'?
   {
@@ -159,7 +159,7 @@ predArg : type=ID (name=ID)? uni='!'?
 
 schemaConstraint :
   functionalDependency;
-  
+
 functionalDependency :
   ('FUNCTIONAL DEPENDENCY' | 'FD') ':'
   functionalDependencyItem
@@ -186,22 +186,22 @@ functionalDependencyItem:
 
 
 
-ruleList : (mlnRule | scopingRule | datalogRule)* 
+ruleList : (mlnRule | scopingRule | datalogRule)*
     ;
 
 mlnRule
     :
     (
-	    tag=('[Label]'|'[+Label]'|'[Label+]') STRING
-	    {
-	       clauseName = $STRING.getText();
-	       String t = $tag.text;
-	       if(t != null && t.contains("+")){
-	          clauseLabelTrailing = true;
-	       }else{
+            tag=('[Label]'|'[+Label]'|'[Label+]') STRING
+            {
+               clauseName = $STRING.getText();
+               String t = $tag.text;
+               if(t != null && t.contains("+")){
+                  clauseLabelTrailing = true;
+               }else{
             clauseLabelTrailing = false;
-	       }
-	    }
+               }
+            }
     )?
     (softRule | hardRule)
     ;
@@ -209,7 +209,7 @@ mlnRule
 softRule returns [Clause c]
     :   (du='@')? weight=NUMBER fc=foclause
     {
-    $c = $fc.c; 
+    $c = $fc.c;
     $c.setWeight(Double.parseDouble($weight.text));
     ml.registerClause($c);
     $c.addSpecText($text);
@@ -222,7 +222,7 @@ softRule returns [Clause c]
     |
     (du='@')? warg=ID ':' fc=foclause
     {
-    $c = $fc.c; 
+    $c = $fc.c;
     $c.setWeight(1);
     $c.setVarWeight($warg.text);
     ml.registerClause($c);
@@ -240,24 +240,24 @@ softRule returns [Clause c]
 hardRule returns [Clause c]
     :   fc=foclause PERIOD
     {
-    $c = $fc.c; 
+    $c = $fc.c;
     $c.setHardWeight();
     ml.registerClause($c);
     $c.addSpecText($text);
-    } 
+    }
     ;
 
 
 functionalAtom returns [AtomEx cond]
     :
-    func=ID 
+    func=ID
     {
       Predicate p = ml.getPredByName($func.text);
       if(p==null) die("Line #" + $func.getLine() + ": undefined predicate: " + $func.text);
       $cond = new AtomEx(p);
     }
-    '(' 
-    e1=expression 
+    '('
+    e1=expression
     {$cond.appendTerm($e1.expr);}
       (',' ep=expression
       {$cond.appendTerm($ep.expr);}
@@ -285,20 +285,20 @@ datalogRule returns [ConjunctiveQuery cq = new ConjunctiveQuery();]
             $cq.addConstraint($be.be);
            }
        ']')?
-     PERIOD 
+     PERIOD
      {
         if($st != null){
             if($st.text.equals("$")) $cq.isView = true;
         }
-		    if($vt != null){
-		        if($vt.text.equals("@")) ml.registerPostprocRule($cq);
+                    if($vt != null){
+                        if($vt.text.equals("@")) ml.registerPostprocRule($cq);
             else if($vt.text.equals("#")){
                // ml.registerDatalogRule($cq);
                ml.registerIntermediateRule($cq);
             }
-		    }else{
-		        ml.registerDatalogRule($cq);
-		    }
+                    }else{
+                        ml.registerDatalogRule($cq);
+                    }
      }
      ;
 
@@ -322,7 +322,7 @@ scopingRule returns [ConjunctiveQuery cq = new ConjunctiveQuery();]
             $cq.addConstraint($be.be);
            }
        ']')?
-     PERIOD 
+     PERIOD
      {
       if($prior != null){
         double pr = Double.parseDouble($prior.text);
@@ -338,14 +338,14 @@ scopingRule returns [ConjunctiveQuery cq = new ConjunctiveQuery();]
 
 /****************
 clusteringRule returns [ConjunctiveQuery cq = new ConjunctiveQuery();]
-    :   weight=NUMBER? (et='~')?  (st='*')? (vt='$')? 
-        head=literal {$cq.setHead($head.lit);} 
+    :   weight=NUMBER? (et='~')?  (st='*')? (vt='$')?
+        head=literal {$cq.setHead($head.lit);}
         conn=('<='|'<-'|'<->'|'<@'|'<~'|'<!-'|'<CLASS-'|'<TAG-'|'<@-'|'<@='|'<@~')
         body0=literal {
           if($body0.lit!=null){
             $cq.addBodyLit($body0.lit);
           }
-        } 
+        }
         (',' bodyp=literal {
           if($bodyp.lit!=null){
             $cq.addBodyLit($bodyp.lit);
@@ -359,15 +359,15 @@ clusteringRule returns [ConjunctiveQuery cq = new ConjunctiveQuery();]
             $cq.addConstraint($be.be);
            }
        ']')?
-     PERIOD 
+     PERIOD
      {
-	     if($conn.text.equals("<=")){
-	        $cq.type = ConjunctiveQuery.CLUSTERING_RULE_TYPE.HARD;
-	     }else if($conn.text.equals("<-")){
-	        $cq.type = ConjunctiveQuery.CLUSTERING_RULE_TYPE.SOFT_INCOMPLETE;
-	     }else if($conn.text.equals("<->")){
-	        $cq.type = ConjunctiveQuery.CLUSTERING_RULE_TYPE.SOFT_COMPLETE;
-	     }else if($conn.text.equals("<@~")){
+             if($conn.text.equals("<=")){
+                $cq.type = ConjunctiveQuery.CLUSTERING_RULE_TYPE.HARD;
+             }else if($conn.text.equals("<-")){
+                $cq.type = ConjunctiveQuery.CLUSTERING_RULE_TYPE.SOFT_INCOMPLETE;
+             }else if($conn.text.equals("<->")){
+                $cq.type = ConjunctiveQuery.CLUSTERING_RULE_TYPE.SOFT_COMPLETE;
+             }else if($conn.text.equals("<@~")){
           $cq.type = ConjunctiveQuery.CLUSTERING_RULE_TYPE.COULD_LINK_CLIQUE;
        }else if($conn.text.equals("<@=")){
           $cq.type = ConjunctiveQuery.CLUSTERING_RULE_TYPE.MUST_LINK_CLIQUE;
@@ -385,48 +385,48 @@ clusteringRule returns [ConjunctiveQuery cq = new ConjunctiveQuery();]
        if($weight.text != null){
         $cq.setWeight(Double.parseDouble($weight.text));
        }
-      
-	    if($vt != null){
-	        if($vt.text.equals("$")) $cq.isView = true;
-	    }
-	    
+
+            if($vt != null){
+                if($vt.text.equals("$")) $cq.isView = true;
+            }
+
       if($st != null){
           if($st.text.equals("*")) $cq.isStatic = true;
       }
-	    
+
       if($et != null){
           if($et.text.equals("~")) $cq.isFictitious = true;
       }
-      
-	     ml.registerClusteringRule($cq);
+
+             ml.registerClusteringRule($cq);
      }
      ;
 ****/
 
 foclause returns [Clause c = new Clause()]
-    :   exq=existQuan?  
+    :   exq=existQuan?
      (
         ant0=literal {
           if($ant0.lit!=null){
-            $ant0.lit.flipSense(); 
+            $ant0.lit.flipSense();
             $c.addLiteral($ant0.lit);
           }
         }
         (',' antp=literal {
           if($antp.lit!=null){
-            $antp.lit.flipSense(); 
+            $antp.lit.flipSense();
             $c.addLiteral($antp.lit);
           }
         })*
         (',' mc=mathComparison {
           $c.addConstraint($mc.expr);
         })*
-	     (',' '['
-	         be=boolExpression {
-	          $c.addConstraint($be.be);
-	         }
-	     ']')?
-        
+             (',' '['
+                 be=boolExpression {
+                  $c.addConstraint($be.be);
+                 }
+             ']')?
+
         IMPLIES
      )?
       lit0=literal {$c.addLiteral($lit0.lit);}
@@ -434,7 +434,7 @@ foclause returns [Clause c = new Clause()]
         ('v' mc=mathComparison {
           $c.addConstraint(Expression.not($mc.expr));
         })*
-     
+
      ('v' '['
          sbe=boolExpression {
           $c.addConstraint(Expression.not($sbe.be));
@@ -471,10 +471,10 @@ boolExpression returns [Expression be]
     (
         ('||' | 'OR') cp=boolConjunction
         {
-	        Expression enew = new Expression(Function.OR);
-	        enew.addArgument($be);
-	        enew.addArgument($cp.be);
-	        $be = enew;
+                Expression enew = new Expression(Function.OR);
+                enew.addArgument($be);
+                enew.addArgument($cp.be);
+                $be = enew;
         }
     )*
     ;
@@ -498,7 +498,7 @@ boolConjunction returns [Expression be]
 
 boolConjunctionElement returns [Expression be]
     :
-    negc=('!' | 'NOT')? 
+    negc=('!' | 'NOT')?
       (
         mc=mathComparison{$be=$mc.expr;}
       | fe=funcExpression{$be=$fe.expr;}
@@ -536,7 +536,7 @@ mathComparison returns [Expression expr]
 
 mathExpression returns [Expression expr]
     :
-    t0=mathTerm 
+    t0=mathTerm
     {
       $expr = $t0.expr;
     }
@@ -558,8 +558,8 @@ mathExpression returns [Expression expr]
     ;
 
 mathTerm returns [Expression expr]
-    :   
-    t0=mathFactor 
+    :
+    t0=mathFactor
     {
       $expr = $t0.expr;
     }
@@ -586,59 +586,59 @@ mathTerm returns [Expression expr]
         $expr = enew;
       }
     )*;
-    
+
 mathFactor returns [Expression expr]
     :
     (
-		    fe=funcExpression
-		    {
-		      $expr = $fe.expr;
-		    }
-		    | ae=atomicExpression
-		    {
-		      $expr = $ae.expr;
-		    }
-		    | '(' ee=mathExpression ')'
-		    {
-		      $expr = $ee.expr;
-		    }
-		    | '~' mf=mathFactor
-		    {
-		      Expression enew = new Expression(Function.BitNeg);
-		      enew.addArgument($mf.expr);
-		      $expr = enew;
-		    }
+                    fe=funcExpression
+                    {
+                      $expr = $fe.expr;
+                    }
+                    | ae=atomicExpression
+                    {
+                      $expr = $ae.expr;
+                    }
+                    | '(' ee=mathExpression ')'
+                    {
+                      $expr = $ee.expr;
+                    }
+                    | '~' mf=mathFactor
+                    {
+                      Expression enew = new Expression(Function.BitNeg);
+                      enew.addArgument($mf.expr);
+                      $expr = enew;
+                    }
     ) fact='!'?
-	    {
-	      if($fact != null){
-			      Expression enew = new Expression(Function.Factorial);
-			      enew.addArgument($expr);
-			      $expr = enew;
-	      }
-	    }
+            {
+              if($fact != null){
+                              Expression enew = new Expression(Function.Factorial);
+                              enew.addArgument($expr);
+                              $expr = enew;
+              }
+            }
     ;
 
 funcExpression returns [Expression expr]
     :
-    func=ID 
-	    {
-	        Function f = ml.getFunctionByName($func.text);
-	        if(f == null) die("Line #" + $func.getLine() + 
-	        ": unknown function " + $func.text +
-	        ". Are you putting a bool expression before a "+
-	        "regular literal in a rule? (HINT: You shouldn't.)"
-	        );
-	        $expr = new Expression(f);
-	    }
-    '(' a0=funcArgument 
-	    {
-	        $expr.addArgument($a0.expr);
-	    }
+    func=ID
+            {
+                Function f = ml.getFunctionByName($func.text);
+                if(f == null) die("Line #" + $func.getLine() +
+                ": unknown function " + $func.text +
+                ". Are you putting a bool expression before a "+
+                "regular literal in a rule? (HINT: You shouldn't.)"
+                );
+                $expr = new Expression(f);
+            }
+    '(' a0=funcArgument
+            {
+                $expr.addArgument($a0.expr);
+            }
     (',' ap=funcArgument
-	    {
-	        $expr.addArgument($ap.expr);
-	    }
-    )* 
+            {
+                $expr.addArgument($ap.expr);
+            }
+    )*
     ')'
     ;
 
@@ -661,7 +661,7 @@ funcArgument returns [Expression expr]
       $expr = $ae.expr;
     }
     ;
-    
+
 
 atomicExpression returns [Expression expr]
     :
@@ -690,7 +690,7 @@ atomicExpression returns [Expression expr]
       }
     }
     ;
-    
+
 
 literal returns [Literal lit]
     :   pref=(PLUS|NOT)?  atom
@@ -700,7 +700,7 @@ literal returns [Literal lit]
         if($pref.text.equals("!")) $lit.setSense(false);
         else $lit.setCoversAllMaterializedTuples(true);
        }
-       
+
     }
     ;
 
@@ -715,12 +715,12 @@ term returns [Term t]
             if(Config.constants_as_raw_string) {
               $t = new Term(s, true);
             } else {
-			        Integer cid = ml.getSymbolID(s, null);
-			        $t = new Term(cid);
-			      }
-			    }else{ // a variable
-			       $t = new Term(s);
-			    }
+                                Integer cid = ml.getSymbolID(s, null);
+                                $t = new Term(cid);
+                              }
+                            }else{ // a variable
+                               $t = new Term(s);
+                            }
     }
     | d=(NUMBER|STRING)
     {
@@ -735,18 +735,18 @@ term returns [Term t]
     ;
 
 atom returns [Literal lit]
-    :   pred=ID '(' 
+    :   pred=ID '('
     {
         Predicate p = ml.getPredByName($pred.text);
         if(p == null) die("Line #" + $pred.getLine() + ": unknown predicate name - " + $pred.text);
         $lit = new Literal(p, true);
     }
-    term1=term 
+    term1=term
     {
         if($term1.t.isConstant()) $lit.getPred().getTypeAt($lit.getTerms().size()).addConstant($term1.t.constant());
         $lit.appendTerm($term1.t);
     }
-    (',' 
+    (','
     termp=term
     {
         if($termp.t.isConstant()) $lit.getPred().getTypeAt($lit.getTerms().size()).addConstant($termp.t.constant());
@@ -756,21 +756,21 @@ atom returns [Literal lit]
     {
         Predicate p = $lit.getPred();
         if($lit.getTerms().size() != p.arity()){
-          die("Line #" + $pred.getLine() + 
+          die("Line #" + $pred.getLine() +
           ": incorrect # of args (read " + $lit.getTerms().size() +
           " but expected " + p.arity() + ")" +
-          " for pred " + 
+          " for pred " +
           p.getName());
         }
         // Register constants (to types) that only appear in the program
         if (!Config.constants_as_raw_string) {
-	        for(int i=0; i<p.arity(); i++){
-	          Type t = p.getTypeAt(i);
-	          Term term = $lit.getTerms().get(i);
-	          if(term.isConstant()){
-	            t.addConstant(term.constant());
-	          }
-	        }
+                for(int i=0; i<p.arity(); i++){
+                  Type t = p.getTypeAt(i);
+                  Term term = $lit.getTerms().get(i);
+                  if(term.isConstant()){
+                    t.addConstant(term.constant());
+                  }
+                }
         }
     }
     ;
@@ -778,11 +778,11 @@ atom returns [Literal lit]
 queryList : query+ EOF
   ;
 
-query  :  
+query  :
   atom
   {
-		  Atom q = $atom.lit.toAtom(Atom.AtomType.QUERY);
-		  $atom.lit.getPred().addQuery(q);
+                  Atom q = $atom.lit.toAtom(Atom.AtomType.QUERY);
+                  $atom.lit.getPred().addQuery(q);
   }
   | ID
   {
@@ -803,46 +803,46 @@ evidence : prior=NUMBER? NOT? pred=ID '(' terms+=(ID|NUMBER|STRING) (',' terms+=
       Boolean truth = null;
       Double pr = null;
       if($prior != null){
-	      pr = Double.parseDouble($prior.text);
-	      if(pr > 1 || pr < 0){
+              pr = Double.parseDouble($prior.text);
+              if(pr > 1 || pr < 0){
             die("Line #" + (lineOffset+$pred.getLine()) + ": " + $prior.text + " - probabilities of soft evidence should be in [0,1]");
-	      }
+              }
         if($NOT != null) pr = 1 - pr;
         if(pr == 0 || pr == 1){
           if(pr == 0) truth = false;
           else truth = true;
           pr = null;
         }
-	    }else{
-	      truth = ($NOT == null);
-	    }
-	    Predicate p = ml.getPredByName($pred.text);
-	    if(p == null) die("Line #" + (lineOffset+$pred.getLine()) + ": unknown predicate name - " + $pred.text);
-	    ArrayList<String> args = new ArrayList<String>();
-	    ArrayList<Token> ts = (ArrayList<Token>)($terms);
+            }else{
+              truth = ($NOT == null);
+            }
+            Predicate p = ml.getPredByName($pred.text);
+            if(p == null) die("Line #" + (lineOffset+$pred.getLine()) + ": unknown predicate name - " + $pred.text);
+            ArrayList<String> args = new ArrayList<String>();
+            ArrayList<Token> ts = (ArrayList<Token>)($terms);
       if(ts.size() != p.arity()) die("Line #" + (lineOffset+$pred.getLine()) + ": incorrect # args - " + $evidence.text);
       for(int i=0; i<p.arity(); i++){
           Token t = ts.get(i);
           Type type = p.getTypeAt(i);
-	    	  String s = t.getText();
-	    	  if(type.isNonSymbolicType()){
-	    	    args.add(s);
-	    	  }else{
+                  String s = t.getText();
+                  if(type.isNonSymbolicType()){
+                    args.add(s);
+                  }else{
             if(Config.constants_as_raw_string) {
                args.add(s);
             } else {
                Integer sid = ml.getSymbolID(s,type);
-			         args.add(sid.toString());
-			      }
-			    }
-	    }
-		  Atom gp = null;
-		  if(pr == null) {
-		    gp = new Atom(args, truth);
-		  }else{
-		    gp = new Atom(args, pr);
-		  }
-	    p.addEvidence(gp);
-	    gp = null;
+                                 args.add(sid.toString());
+                              }
+                            }
+            }
+                  Atom gp = null;
+                  if(pr == null) {
+                    gp = new Atom(args, truth);
+                  }else{
+                    gp = new Atom(args, pr);
+                  }
+            p.addEvidence(gp);
+            gp = null;
     }
     ;

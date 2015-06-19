@@ -7,22 +7,22 @@ import java.io._
 import scala.sys.process._
 import scala.util.{Try, Success, Failure}
 
-/** Some helper functions that are used in many places 
+/** Some helper functions that are used in many places
  */
 object Helpers extends Logging {
-  
+
   // Constants
   val Psql = "psql"
   val Mysql = "mysql"
-    
+
   val PsqlDriver = "org.postgresql.Driver"
   val MysqlDriver = "com.mysql.jdbc.Driver"
-  
+
   /**
    * Get the dbtype from DbSettings
-   * 
-   * @returns 
-   *     Helpers.Psql 
+   *
+   * @returns
+   *     Helpers.Psql
    *     or
    *     Helpsers.Mysql
    */
@@ -31,15 +31,15 @@ object Helpers extends Logging {
     dbSettings.driver match {
       case PsqlDriver => Psql
       case MysqlDriver => Mysql
-    }    
+    }
   }
-  
+
   /**
-   * Return a string of psql / mysql options, including user / password / host 
+   * Return a string of psql / mysql options, including user / password / host
    * / port / database.
    * Do not support password for psql for now.
-   * 
-   * TODO: using passwords via command line is poor practice. postgres support 
+   *
+   * TODO: using passwords via command line is poor practice. postgres support
    * specifying password through a PGPASSFILE:
    *   http://www.postgresql.org/docs/current/static/libpq-pgpass.html
    */
@@ -92,10 +92,10 @@ object Helpers extends Logging {
     // Return a concatinated options string
     dbnameStr + dbuserStr + dbportStr + dbhostStr + otherOptionStr
   }
-  
-  /** 
+
+  /**
    *  Execute a file as a bash script.
-   *  
+   *
    *  @throws RuntimeException if failed
    */
   def executeCmd(cmd: String) : Unit = {
@@ -106,20 +106,20 @@ object Helpers extends Logging {
     val exitValue = cmd!(ProcessLogger(out => log.info(out)))
     // Depending on the exit value we return success or throw an exception
     exitValue match {
-      case 0 => 
+      case 0 =>
       case _ => throw new RuntimeException(s"Failure when executing script: ${cmd}")
     }
   }
 
   /**
    * Executes a SQL query by piping it into a file without talking to JDBC.
-   * 
+   *
    * @param pipeOutFilePath   set if you need to pipe the query output to somewhere.
-   * 
+   *
    * @throws IOException when bad I/O
    * @throws RuntimeException when script fails
    */
-  def executeSqlQueriesByFile(dbSettings: DbSettings, query: String, 
+  def executeSqlQueriesByFile(dbSettings: DbSettings, query: String,
       pipeOutFilePath: String = null) {
     val file = File.createTempFile(s"exec_sql", ".sh")
     val writer = new PrintWriter(file)
@@ -139,25 +139,25 @@ object Helpers extends Logging {
       // Delete the tmp file when finished
       file.delete();
     }
-    
+
   }
 
-  
-  /** 
-   *  Build a SQL command like 
+
+  /**
+   *  Build a SQL command like
    *    psql -c 'QUERY'
    *  or
    *    mysql --silent -N -e 'QUERY'
-   *    
+   *
    *  Use single-quote in bash for reliability. Escape all ' into '\'' inside query.
-   *  
+   *
    *  NOTE: Cannot be used with xargs where there are more quotes outside
    */
   def buildSqlCmd(dbSettings: DbSettings, query: String) : String = {
 
     // Branch by database driver type
     val dbtype = getDbType(dbSettings)
-    
+
     val sqlQueryPrefix = dbtype match {
       case Psql => "psql " + getOptionString(dbSettings)
       case Mysql => "mysql " + getOptionString(dbSettings)
@@ -165,7 +165,7 @@ object Helpers extends Logging {
 
     // Return the command below to handle " in queries
     dbtype match {
-      case Psql => sqlQueryPrefix + 
+      case Psql => sqlQueryPrefix +
         s""" -c '${query.replaceAll("'", "'\\\\''")}' """
       case Mysql => sqlQueryPrefix +
         s""" --silent -N -e '${query.replaceAll("'", "'\\\\''")}' """

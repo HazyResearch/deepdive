@@ -7,7 +7,7 @@ CREATE TABLE articles(
 DROP TABLE IF EXISTS sentences CASCADE;
 CREATE TABLE sentences(
   document_id bigint,
-  sentence text, 
+  sentence text,
   words TEXT,
   lemma TEXT,
   pos_tags TEXT,

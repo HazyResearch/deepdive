@@ -25,12 +25,12 @@ import scala.io.Source
 import org.deepdive.helpers.Helpers
 import org.deepdive.helpers.Helpers.{Mysql, Psql}
 
-/** 
+/**
  *  Companion object to the ExtractorRunner, using a state machine model.
- *  Only change states for JSON extractor. For other extractors, do all the work in "Idle" state. 
+ *  Only change states for JSON extractor. For other extractors, do all the work in "Idle" state.
  */
 object ExtractorRunner {
-  
+
   def props(dataStore: JdbcDataStore, dbSettings: DbSettings) = Props(classOf[ExtractorRunner], dataStore, dbSettings)
 
 
@@ -57,14 +57,14 @@ object ExtractorRunner {
 }
 
 /* Runs a single extrator by executing its before script, UDF, and after sript */
-class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends Actor 
+class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends Actor
   with ActorLogging with FSM[State, Data] {
 
   import ExtractorRunner._
   // Execute futures using the current Akka dispatcher
   import context.dispatcher
   implicit val timeout = Timeout(1337.hours)
-  
+
   private val PRINT_PERIOD = 30.seconds
 
   // Branch by database driver type (temporary solution)
@@ -77,9 +77,9 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
   val sqlAnalyzeCommand = dbtype match {
     case Psql => "ANALYZE "
     case Mysql => "ANALYZE TABLE "
-  } 
+  }
 
-    // DONE mysql pw: -p=password. psql: cannot?  
+    // DONE mysql pw: -p=password. psql: cannot?
 
   // Properties to start workers
   def workerProps = ProcessExecutor.props
@@ -87,7 +87,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
   // Periodically print the status
   val scheduledStatus = context.system.scheduler.schedule(PRINT_PERIOD, PRINT_PERIOD, self, PrintStatus)
 
-  override def preStart() { 
+  override def preStart() {
     log.info("waiting for tasks")
   }
 
@@ -101,7 +101,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
   when(Idle) {
     case Event(SetTask(task), Uninitialized) =>
       log.info(s"Received task=${task.extractor.name}. Executing")
-      
+
       val taskSender = sender
 
       // Execute the before script. Fail if the script fails.
@@ -117,7 +117,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
           if (dbtype != Psql) {
             failTask(s"do not support ${task.extractor.style} on ${dbtype}.", taskSender)
           }
-          
+
           // Start the children workers
           val workers = startWorkers(task)
 
@@ -153,7 +153,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
 
   // This state can only happen for JSON extractors.
   when(Running) {
-    
+
     case Event(Terminated(actor), Task(task, taskSender, workers)) =>
       // A worker has terminated, remove it from our list
       val newWorkers = workers.removeRoutee(actor)
@@ -165,10 +165,10 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
           self ! ExecuteAfterScript
           self ! Shutdown
           goto(Finishing) using(Task(task, taskSender, newWorkers))
-        case _ => 
-          stay using(Task(task, taskSender, newWorkers)) 
+        case _ =>
+          stay using(Task(task, taskSender, newWorkers))
       }
-    
+
     case Event(ProcessExecutor.OutputData(chunk), Task(task, taskSender, workers)) =>
       // Don't close over this
       val _sender = sender
@@ -185,13 +185,13 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
           throw exception
       }
       stay
-    
+
     case Event(ProcessExecutor.ProcessExited(exitCode), Task(task, taskSender, workers)) =>
       // A worker process has exited. If successful, continue.
       // If the process failed, shutdown and respond with failure
       exitCode match {
         case 0 => stay
-        case exitCode => 
+        case exitCode =>
           taskSender ! Status.Failure(new RuntimeException(s"process exited with exit_code=${exitCode}"))
           stop
       }
@@ -283,7 +283,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
     log.debug("all data was sent to workers.")
   }
 
-  
+
   /**
    *  Executes a given command. If it fails, shutdown and respond to the sender with failure.
    */
@@ -292,7 +292,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
       Helpers.executeCmd(script);
     } catch {
       case e: Throwable =>
-        log.error(e.toString) 
+        log.error(e.toString)
         failureReceiver ! Status.Failure(e)
         context.stop(self)
         throw new RuntimeException(e.toString)
@@ -312,10 +312,10 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
             context.stop(self)
             throw new RuntimeException(ex.toString)
         }
-      case Mysql => 
+      case Mysql =>
         executeSqlQueryOrFail(sqlQuery, failureReceiver)
     }
-    
+
   }
 
   /**
@@ -326,7 +326,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
       Helpers.executeSqlQueriesByFile(dbSettings, query, pipeOutFilePath)
     } catch {
       case e: Throwable =>
-        log.error(e.toString) 
+        log.error(e.toString)
         failureReceiver ! Status.Failure(e)
         context.stop(self)
         throw new RuntimeException(e.toString)
@@ -336,12 +336,12 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
   /**
    * This function is only used by plpy extractor when the function to execute is compiled.
    */
-  private def executeSqlFileOrFail(filename: String, failureReceiver: ActorRef) { 
+  private def executeSqlFileOrFail(filename: String, failureReceiver: ActorRef) {
     // val queryOutputPath = Context.outputDir + s"/tmp/"
     // val file = new File(queryOutputPath + s"exec_sql.sh")
     val file = File.createTempFile(s"exec_sql", ".sh")
     val writer = new PrintWriter(file)
-    
+
     // TODO do not use password for now
     val cmd = sqlQueryPrefix + " < " + filename
     writer.println(s"${cmd}")
@@ -349,7 +349,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
     log.debug(s"Temporary bash file saved to ${file.getAbsolutePath()}")
     executeScriptOrFail(file.getAbsolutePath(), failureReceiver)
   }
-  
+
   /**
    * Fail the current task, log the error message, and throw new RuntimeException.
    * This will terminate DeepDive.
@@ -367,15 +367,15 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
    * Run UDF of TSV extractor. Do not include before and after script
    */
   private def runTsvExtractor(task: ExtractionTask, dbSettings: DbSettings, taskSender: ActorRef) = {
-  
+
     log.debug(s"Parallel Loading: ${dbSettings.gpload}")
     val dl = new DataLoader
     val parallelLoading = dbSettings.gpload
-    
+
     val udfCmd = task.extractor.udf
     // make udfCmd executable if file
     val udfFile = new java.io.File(udfCmd)
-    if (udfFile.isFile) 
+    if (udfFile.isFile)
       udfFile.setExecutable(true, false)
     val funcName = s"func_${task.extractor.name}"
 
@@ -390,7 +390,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
 
     val queryOutputPath = Context.outputDir + s"/tmp/"
     log.info(queryOutputPath)
-    // Try to create the extractor output directory if not already present 
+    // Try to create the extractor output directory if not already present
     val queryOutputPathDir = new File(queryOutputPath)
     if ((!queryOutputPathDir.exists()) && (!queryOutputPathDir.mkdirs())) {
       Status.Failure(new RuntimeException(s"TSV extractor directory creation failed"))
@@ -401,7 +401,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
     val gpFileName = s"${outputRel}_query_unload"
     val psqlFilePath = queryOutputFile.getAbsolutePath()
 
-    // Get the actual dumped file 
+    // Get the actual dumped file
     // val fname = queryOutputFile.getName()
     val fname = parallelLoading match {
       case true => gpFileName
@@ -411,7 +411,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
     val fpath = parallelLoading match {
       case true => dbSettings.gppath
       case _ => queryOutputFile.getParent()
-    } 
+    }
 
     // Clean the output path first
     val delCmd = s"find ${fpath} -name '${fname}*' 2>/dev/null -print0 | xargs -0 rm -f"
@@ -465,7 +465,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
     // Copy each of the files into the DB. If user is using Greenplum, use gpload (TODO)
 
     // If loader specified, use the chosen loader
-    
+
     task.extractor.loader match {
       case "ndbloader" =>
         if (dbtype != Mysql) {
@@ -507,7 +507,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
     queryOutputPathDir.delete()
 
   }
-  
+
   /**
    * Run PLPY extractor
    */
@@ -569,5 +569,5 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
     taskSender ! "Done!"
     stop
   }
-  
+
 }

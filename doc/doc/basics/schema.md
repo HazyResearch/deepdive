@@ -37,7 +37,7 @@ DeepDive supports multinomial variables, which take integer values ranging from
 can declare it in the `schema.variables` directive in `application.conf` using
 type `Categorical(N)`, to specify that the variable domain is be 0, 1, ..., N-1.
 The schema definition would be  look like
-  
+
 ```bash
 schema.variables {
   [table].[column]: Categorical(10)
@@ -46,13 +46,13 @@ schema.variables {
 
 The factor function for multinomial is `Multinomial`. It takes multinomial
 variables as arguments, and is equivalent to having indicator functions for each
-combination of variable assignments. 
+combination of variable assignments.
 
 
 For examples, if `a` is a variable taking values 0, 1, 2, and `b` is a variable
 taking values 0, 1. Then, `Multinomial(a, b)` is equivalent to the following
 factors between a and b
-  
+
     I{a = 0, b = 0}
     I{a = 0, b = 1}
     I{a = 1, b = 0}

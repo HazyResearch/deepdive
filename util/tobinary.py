@@ -60,7 +60,7 @@ os.system('mv ' + INPUTFOLDER + '/dd_tmp/dd_variables*.bin ' + INPUTFOLDER + '/d
 nfactor_files = 0
 nvariable_files = 0
 
-# counting 
+# counting
 print "COUNTING", "variables", "..."
 os.system('wc -l ' + INPUTFOLDER + "/dd_tmp/dd_variables_* | tail -n 1 | sed -e 's/^[ \t]*//g' | cut -d ' ' -f 1 > " + INPUTFOLDER + '/dd_nvariables_wc')
 os.system('export dd_nvar=`cat ' + INPUTFOLDER + '/dd_nvariables_wc`; echo $dd_nvar + %d | bc > ' % nvariable_files + INPUTFOLDER + '/dd_nvariables; unset dd_nvar')

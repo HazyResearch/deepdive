@@ -39,7 +39,7 @@ for row in sys.stdin:
   is_true = None
   if (p1_lower, p2_lower) in spouses:
     is_true = True    # the mention pair is in our supervision dictionary
-  elif (p1_lower, p2_lower) in non_spouses: 
+  elif (p1_lower, p2_lower) in non_spouses:
     is_true = False   # they appear in other relations
   elif (p1_text == p2_text) or (p1_text in p2_text) or (p2_text in p1_text):
     is_true = False   # they are the same person

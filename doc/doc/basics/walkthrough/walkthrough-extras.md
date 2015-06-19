@@ -5,7 +5,7 @@ layout: default
 # Example Application: Extras
 
 This document contains the extra section for the [Example Application: A Mention-Level
-Extraction System](walkthrough.html) document. 
+Extraction System](walkthrough.html) document.
 
 ### Contents
 
@@ -46,7 +46,7 @@ Then, the scripts creates a new database called `deepdive_spouse`:
 createdb deepdive_spouse
 ```
 
-It then creates all tables specified in `$APP_HOME/schema.sql`. 
+It then creates all tables specified in `$APP_HOME/schema.sql`.
 Refer to the [table format cheat-sheet](#table_cheatsheet) below.
 
 Finally, it loads the prepared sentences into our database:
@@ -108,18 +108,18 @@ CREATE TABLE has_spouse_features(
 
 ### <a id="nlp_extractor" href="#"> </a> Data preprocessing using NLP extractor
 
-When you start your own application, you usually start with your own dataset containing raw text. 
+When you start your own application, you usually start with your own dataset containing raw text.
 The first step towards performing entity and relation extraction is to extract
 natural language features from the raw text. This is usually done using an NLP
 library such as [the Stanford
 Parser](http://nlp.stanford.edu/software/lex-parser.shtml) or
 [NLTK](http://nltk.org/). Because natural language processing is such a common
-first step, DeepDive provides a pre-built extractor which uses the 
-[Stanford CoreNLP Kit](http://nlp.stanford.edu/software/corenlp.shtml) 
-to split documents into sentences and tag them. 
+first step, DeepDive provides a pre-built extractor which uses the
+[Stanford CoreNLP Kit](http://nlp.stanford.edu/software/corenlp.shtml)
+to split documents into sentences and tag them.
 
-One instance of output of the NLP extractor is the `sentences` table used in 
-[the tutorial](walkthrough.html). 
+One instance of output of the NLP extractor is the `sentences` table used in
+[the tutorial](walkthrough.html).
 
 To start using an NLP extractor, we first load all your articles into our
 database. We start by creating a table:
@@ -144,7 +144,7 @@ psql -d deepdive_spouse -c "
 The NLP extractor is in `examples/nlp_extractor` folder. Refer to
 its `README.md` for details. Now we go into it and compile it:
 
-```bash  
+```bash
 cd ../../examples/nlp_extractor
 sbt stage
 cd ../../app/spouse
@@ -158,7 +158,7 @@ output of the extractor in the database. Since the output format of the NLP
 extractor is fixed, we must create a compatible table, like the `sentences`
 table defined [above](#tables).
 
-Next, we add the extractor into your `application.conf`: 
+Next, we add the extractor into your `application.conf`:
 
 ```bash
 extraction.extractors {
@@ -178,7 +178,7 @@ extraction.extractors {
 
 <!-- TODO before          : ${APP_HOME}"/udf/before_sentences.sh"
     after           : ${APP_HOME}"/util/fill_sequence.sh sentences sentence_id"
- -->    
+ -->
 
 When running your application, this extractor will run NLP over all the sentences in your `articles` table and output the parsed results into `sentences` table.
 

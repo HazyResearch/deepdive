@@ -14,7 +14,7 @@ root: "."
   F. Niu, Ce Zhang, C. Ré, and J. Shavlik. IJSWIS, Special Issue on Knowledge Extraction from the Web, 2012.
 - [Stanford’s 2014 Slot Filling Systems.](http://i.stanford.edu/hazy/papers/2014kbp-systemdescription.pdf)
   Gabor Angeli, Sonal Gupta, Melvin Jose, Christopher D. Manning, Christopher Ré, Julie Tibshirani, Jean Y. Wu, Sen Wu, Ce Zhang.
-- [Using Social Media to Measure Labor Market Flow.](http://www-personal.umich.edu/~shapiro/papers/LaborFlowsSocialMedia.pdf) 
+- [Using Social Media to Measure Labor Market Flow.](http://www-personal.umich.edu/~shapiro/papers/LaborFlowsSocialMedia.pdf)
   D. Antenucci, M. Cafarella, M. Levenstein, C. Ré, and M. Shapiro. NBER. Selected for [NBER Digest](http://www.nber.org/digest/aug14/aug14.pdf).
 - [Feature Selection in Enterprise Analytics: A Demonstration using an R-based Data Analytics System](http://cs.stanford.edu/people/chrismre/papers/ColumbusDemo-VLDB.pdf)
   P. Konda, A. Kumar, C. Ré, and V. Sashikanth. VLDB Demo 2013
@@ -23,7 +23,7 @@ root: "."
   Arun Kumar, Feng Niu, and C. Ré ACM Queue, 2013. Invited to CACM March 2013
 - [Building an Entity-Centric Stream Filtering Test Collection for TREC 2102](http://trec.nist.gov/pubs/trec21/papers/KBA.OVERVIEW.pdf). J.R. Frank, M.Kleiman-Weiner, D. A. Roberts, F.Niu, Ce Zhang, C. Ré, and I. Soboroff. TREC 2013
 
-#### Feature Engineering 
+#### Feature Engineering
 
 - *Best Reference:* [Feature Engineering for Knowledge Base Construction.](http://arxiv.org/abs/1407.6439) DeepDive Group. Data Engineering Bulletin.
 - [Brainwash: A Data System for Feature Engineering.](http://www.cs.stanford.edu/people/chrismre/papers/mythical_man.pdf) M. Anderson et al. CIDR Conference 2013 (Vision Track)
@@ -37,7 +37,7 @@ root: "."
 - *Best Reference for Grounding:* [Tuffy: Scaling up Statistical Inference in Markov Logic Networks using an RDBMS.](http://www.cs.stanford.edu/people/chrismre/papers/tuffy-vldb11.pdf) F. Niu, C. Ré, A.Doan, and J.W. Shavlik. PVLDB 11.
 
 - [Towards High-Throughput Gibbs Sampling at Scale: A Study across Storage Managers.](http://www.cs.stanford.edu/people/chrismre/papers/elementary_sigmod.pdf) Ce Zhang and C. Ré. SIGMOD 2013
-- [An Asynchronous Parallel Stochastic Coordinate Descent Algorithm.](http://arxiv.org/abs/1311.1873) J. Liu, S. Wright, C. Ré, V. Bittorf, S. Sridhar. ICML 2014. 
+- [An Asynchronous Parallel Stochastic Coordinate Descent Algorithm.](http://arxiv.org/abs/1311.1873) J. Liu, S. Wright, C. Ré, V. Bittorf, S. Sridhar. ICML 2014.
 - [Hogwild!: A Lock-Free Approach to Parallelizing Stochastic Gradient Descent.](http://i.stanford.edu/hazy/papers/hogwild-nips.pdf) F. Niu, B. Recht, C. Ré, and S. J. Wright. NIPS, 2011
 - [Felix: Scaling Inference for Markov Logic with an Operator-based Approach.](http://arxiv.org/pdf/1108.0294v1) Feng Niu, Ce Zhang, C. Ré, and Jude Shavlik.
 

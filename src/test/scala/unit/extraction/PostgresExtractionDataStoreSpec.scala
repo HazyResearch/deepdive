@@ -18,8 +18,8 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
     JdbcDataStoreObject.init()
     dataStore.init()
     SQL("drop schema if exists public cascade; create schema public;").execute()
-    SQL("""create table datatype_test(id bigserial primary key, key integer, some_text text, 
-      some_boolean boolean, some_double double precision, some_null boolean, 
+    SQL("""create table datatype_test(id bigserial primary key, key integer, some_text text,
+      some_boolean boolean, some_double double precision, some_null boolean,
       some_array text[]);""").execute()
   }
 
@@ -30,7 +30,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
   describe("Querying as a Map") {
 
     def insertSampleData() = {
-      SQL("""insert into datatype_test(key) 
+      SQL("""insert into datatype_test(key)
         VALUES (1), (2), (3), (4)""").execute()
     }
 
@@ -49,7 +49,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
 
     it("should work for aggregated attributes") {
       insertSampleData()
-      val result = dataStore.queryAsMap("""SELECT COUNT(*) AS num 
+      val result = dataStore.queryAsMap("""SELECT COUNT(*) AS num
         from datatype_test GROUP BY key""")(_.toList)
       assert(result.head === Map("num" -> 1))
     }
@@ -71,7 +71,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
   describe("Querying as JSON") {
 
     def insertSampleData() = {
-      SQL("""insert into datatype_test(key) 
+      SQL("""insert into datatype_test(key)
         VALUES (1), (2), (3), (4)""").execute()
     }
 
@@ -82,12 +82,12 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
 
   }
 
-  describe("Serializing to JSON") {  
+  describe("Serializing to JSON") {
 
     def insertSampleRow() : Unit = {
-      SQL("""insert into datatype_test(key, some_text, some_boolean, some_double, some_array) 
-        VALUES 
-          (1, 'Hello', true, 1.0, '{"A","B"}'), 
+      SQL("""insert into datatype_test(key, some_text, some_boolean, some_double, some_array)
+        VALUES
+          (1, 'Hello', true, 1.0, '{"A","B"}'),
           (1, 'Ce', false, 2.3, '{"C","D"}')""").execute()
     }
 
@@ -155,7 +155,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
       val result = dataStore.queryAsJson("SELECT * from datatype_test")(_.toList)
       val resultFields = result.head.fields
       val expectedResult = testRow.value
-      assert(resultFields.toMap.filterKeys(_ != "id").values.toSet == expectedResult.values.toSet) 
+      assert(resultFields.toMap.filterKeys(_ != "id").values.toSet == expectedResult.values.toSet)
     }
   }
 
@@ -176,7 +176,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
     assert(resultFields.toMap.filterKeys(_ != "id").values.toSet == expectedResult.values.toSet)
   }
 }
-  
 
 
-    
+
+

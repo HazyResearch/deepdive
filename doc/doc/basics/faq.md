@@ -16,18 +16,18 @@ Refer to the [Performance Tuning guide](../advanced/performance.html) and try th
   reference](configuration.html#json) for details.
 
 - If the error happens while executing a database query and the query uses the
-	`array_agg` aggregate, try changing it to `array_accum`, which is a custom
-	aggregate that can be defined as:
+        `array_agg` aggregate, try changing it to `array_accum`, which is a custom
+        aggregate that can be defined as:
 
-	```sql
-	CREATE AGGREGATE array_accum (anyelement)
-	(
-		sfunc = array_append,
-		stype = anyarray,
-		initcond = '{}'
-	);
-	```
-	
+        ```sql
+        CREATE AGGREGATE array_accum (anyelement)
+        (
+                sfunc = array_append,
+                stype = anyarray,
+                initcond = '{}'
+        );
+        ```
+
 
 ### How can I debug my extractors?
 
@@ -44,8 +44,8 @@ the same weights?
 
 No, weights are unique within each inference rule, this is achieved in DeepDive
 by concating a ''prefix'' to the
-feature, which by default is the name of the corresponding rule. You can force 
-the sharing of weights by specifying this 
+feature, which by default is the name of the corresponding rule. You can force
+the sharing of weights by specifying this
 prefix, for example:
 
 ```bash

@@ -12,7 +12,7 @@
 <tr>
 <xsl:for-each select="header_element">
 <th bgcolor="#ccdddd" colspan="{@colspan}">
-<xsl:value-of select="." /> 
+<xsl:value-of select="." />
 </th>
 </xsl:for-each>
 </tr>

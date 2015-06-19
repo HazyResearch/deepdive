@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # DeepDive installers for Ubuntu Linux
 
-LSB=$(lsb_release -r 2>/dev/null) 
+LSB=$(lsb_release -r 2>/dev/null)
 case ${LSB##*	} in
     12.04|14.04|15.04) true ;;
     *) error "Ubuntu $LSB found: This installer only works with Ubuntu 12.04, 14.04, and 15.04."
@@ -31,7 +31,7 @@ install_deepdive_runtime_deps() {
         # install oracle java
         sudo add-apt-repository -y ppa:webupd8team/java
         sudo apt-get update
-        sudo apt-get install -y oracle-java8-installer 
+        sudo apt-get install -y oracle-java8-installer
 
         # install dependencies for deepdive
         sudo apt-get install -y python-software-properties make

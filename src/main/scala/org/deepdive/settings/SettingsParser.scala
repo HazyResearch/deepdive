@@ -28,7 +28,7 @@ object SettingsParser extends Logging {
       }
     }
 
-    Settings(schemaSettings, extractors, inferenceSettings, 
+    Settings(schemaSettings, extractors, inferenceSettings,
       calibrationSettings, samplerSettings, pipelineSettings, dbSettings)
   }
 
@@ -36,7 +36,7 @@ object SettingsParser extends Logging {
   private def loadDbSettings(config: Config) : DbSettings = {
     val dbConfig = Try(config.getConfig("db.default")).getOrElse {
       log.warning("No schema defined.")
-      return DbSettings(Helpers.PsqlDriver, null, null, null, null, null, null, 
+      return DbSettings(Helpers.PsqlDriver, null, null, null, null, null, null,
         null, null, null, false, null)
     }
     val driver = Try(dbConfig.getString("driver")).getOrElse(null)
@@ -178,7 +178,7 @@ object SettingsParser extends Logging {
     }
     val factors = factorConfig.keySet().map { factorName =>
       val factorConfig = inferenceConfig.getConfig(s"factors.$factorName")
-      val factorInputQuery = InputQueryParser.parse(InputQueryParser.DatastoreInputQueryExpr, 
+      val factorInputQuery = InputQueryParser.parse(InputQueryParser.DatastoreInputQueryExpr,
         factorConfig.getString("input_query")).getOrElse {
         throw new RuntimeException(s"parsing ${factorConfig.getString("input_query")} failed")
       }.query
@@ -191,14 +191,14 @@ object SettingsParser extends Logging {
         throw new RuntimeException(s"parsing ${factorConfig.getString("weight")} failed")
       }
       val factorWeightPrefix = Try(factorConfig.getString("weightPrefix")).getOrElse(factorName)
-      FactorDesc(factorName, factorInputQuery, factorFunction, 
+      FactorDesc(factorName, factorInputQuery, factorFunction,
           factorWeight, factorWeightPrefix)
     }.toList
     InferenceSettings(factors, batchSize, skipLearning, weightTable, parallelGrounding)
   }
 
   private def loadCalibrationSettings(config: Config) : CalibrationSettings = {
-    val calibrationConfig = Try(config.getConfig("calibration")).getOrElse { 
+    val calibrationConfig = Try(config.getConfig("calibration")).getOrElse {
       return CalibrationSettings(0.0, None, None)
     }
     val holdoutFraction = Try(calibrationConfig.getDouble("holdout_fraction")).getOrElse(0.0)
@@ -225,20 +225,20 @@ object SettingsParser extends Logging {
       case _ => samplingConfig.getString("sampler_cmd")
     }
 
-    
+
     // Zifei's changes: Add capability to skip learning
     // If skip learning, set "-l 0" in sampler
     val skipLearning = Try(config.getConfig("inference").getBoolean("skip_learning")).getOrElse(false)
     val samplerArgs = skipLearning match {
-      case false => 
+      case false =>
         samplingConfig.getString("sampler_args")
       case true =>
         samplingConfig.getString("sampler_args").replaceAll("""-l +[0-9]+ *""", """-l 0 """)
     }
     log.debug(s"samplerArgs: ${samplerArgs}")
-    
+
     SamplerSettings(samplerCmd, samplerArgs)
-    
+
   }
 
   private def loadPipelineSettings(config: Config) : PipelineSettings = {

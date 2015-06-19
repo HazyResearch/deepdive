@@ -34,23 +34,23 @@ class DocumentParser(props: Properties) {
       val nerList = tokens.map(_.get(classOf[NamedEntityTagAnnotation]))
       val lemmaList = tokens.map(_.get(classOf[LemmaAnnotation]))
       val depList = sentence.get(classOf[CollapsedCCProcessedDependenciesAnnotation]).toList.lines
-      SentenceParseResult(wordList.mkString(" "), wordList.toList, lemmaList.toList, 
+      SentenceParseResult(wordList.mkString(" "), wordList.toList, lemmaList.toList,
         posList.toList, depList.toList, nerList.toList)
     }
 
-    DocumentParseResult(sentenceResults.toList) 
+    DocumentParseResult(sentenceResults.toList)
   }
 
   /**
     Construct a Postgres-acceptable array in the TSV format, from a list
   */
   def list2TSVArray(arr: List[String]) : String = {
-    return arr.map( x => 
+    return arr.map( x =>
       // Replace '\' with '\\\\' to be accepted by COPY FROM
       // Replace '"' with '\\"' to be accepted by COPY FROM
-      if (x.contains("\\")) 
+      if (x.contains("\\"))
         "\"" + x.replace("\\", "\\\\\\\\").replace("\"", "\\\\\"") + "\""
-      else 
+      else
         "\"" + x + "\""
       ).mkString("{", ",", "}")
   }

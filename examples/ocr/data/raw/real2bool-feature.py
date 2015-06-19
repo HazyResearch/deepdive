@@ -1,10 +1,10 @@
 import os,sys   # needed by most
-import random   # random 
+import random   # random
 import yaml     # yaml parsing
 import pprint   # pretty print
 
 
-if __name__ == "__main__": 
+if __name__ == "__main__":
 	inpath = 'f52-c3-m1011/'
 	outpath = ''
   # ...

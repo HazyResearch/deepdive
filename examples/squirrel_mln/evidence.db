@@ -18,7 +18,7 @@ Entity(Var3)
 // Evidence for RHS(Some(When some animals prepare for the long winters by storing food and going dormant it is called hibernation)) => RHS(Question)
 
 Entity(Var4)
-// Question Setup 
+// Question Setup
 
 For(Var7, Var6)
 IsaEv(Var7, "prepare")

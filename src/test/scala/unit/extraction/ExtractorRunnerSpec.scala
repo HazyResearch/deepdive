@@ -23,7 +23,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
     case TestHelper.Psql => new PostgresDataStore
     case TestHelper.Mysql=> new MysqlDataStore
   }
-  
+
   // execute a query
   def execute(ds : JdbcDataStore, sql: String) = {
     log.debug("EXECUTING.... " + sql)
@@ -31,7 +31,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
     val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
       java.sql.ResultSet.CONCUR_UPDATABLE)
     try {
-      """;\s+""".r.split(sql.trim()).filterNot(_.isEmpty).foreach(q => 
+      """;\s+""".r.split(sql.trim()).filterNot(_.isEmpty).foreach(q =>
         conn.prepareStatement(q.trim()).executeUpdate)
     } catch {
       // SQL cmd exception
@@ -78,7 +78,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
           SQL("""DROP TABLE IF EXISTS testtable CASCADE;""").execute()
         }
     }
-  } 
+  }
 
   after {
     //JdbcDataStore.close()
@@ -95,7 +95,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
   // lazy implicit val session = ds.DB.autoCommitSession()
 
   describe("Running extractor-type-independent task (e.g., before/after script)"){
-    
+
     it("should work for before script"){
       execute(dataStore, "drop table if exists testtable;")
       execute(dataStore, "create table testtable ( a text );")
@@ -106,11 +106,11 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       log.info(t.getAbsolutePath)
 
       writeToFile(t, s"""
-        | echo "I should be in the table" > ${t2.getAbsolutePath} 
+        | echo "I should be in the table" > ${t2.getAbsolutePath}
         | echo "I should also be in the table" >> ${t2.getAbsolutePath}
       """.stripMargin)
 
-      writeToFile(t3, 
+      writeToFile(t3,
      s"""|#! /usr/bin/python
          |import json
          |for l in open('${t2.getAbsolutePath}'):
@@ -124,7 +124,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       assume(TestHelper.getTestEnv != TestHelper.Mysql)
 
 
-      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "testtable", 
+      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "testtable",
         "SELECT 5", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
@@ -149,7 +149,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         assert(numRecords === 0)
       }
     }
-    
+
     it("should fail if before script is not executable"){
 
       val t = java.io.File.createTempFile("test", ".sh")
@@ -161,7 +161,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
-      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "testtable", 
+      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "testtable",
         "SELECT 5", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some("/bin/i_am_not_exist"), None, "", None))
 
       actor ! ExtractorRunner.SetTask(task)
@@ -170,7 +170,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
 
     }
-    
+
     it("should fail if before script is executable but contains errors"){
 
       // TODO do not run json_extractor for MySQL
@@ -183,12 +183,12 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       log.info(t.getAbsolutePath)
 
-      writeToFile(t, 
+      writeToFile(t,
       s"""|#! /usr/bin/python
           | echo "I should also be in the table" >> ${t2.getAbsolutePath}
       """.stripMargin)
 
-      writeToFile(t3, 
+      writeToFile(t3,
      s"""|#! /usr/bin/python
          |import json
          |for l in open('${t2.getAbsolutePath}'):
@@ -198,7 +198,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
-      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "testtable", 
+      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "testtable",
         "SELECT 5", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
@@ -221,11 +221,11 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       log.info(t.getAbsolutePath)
 
       writeToFile(t, s"""
-        | echo "I should be in the table" > ${t2.getAbsolutePath} 
+        | echo "I should be in the table" > ${t2.getAbsolutePath}
         | echo "I should also be in the table" >> ${t2.getAbsolutePath}
       """.stripMargin)
 
-      writeToFile(t3, 
+      writeToFile(t3,
      s"""|#! /usr/bin/python
          |import json
          |for l in open('${t2.getAbsolutePath}'):
@@ -241,7 +241,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
-      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "testtable", 
+      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "testtable",
         "SELECT 5", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), Some(t4.getAbsolutePath), "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
@@ -268,7 +268,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       }
 
     }
-    
+
     it("should fail if after script is not executable"){
 
       // TODO do not run json_extractor for MySQL
@@ -281,7 +281,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       val t3 = java.io.File.createTempFile("test", ".py")
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
-      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "testtable", 
+      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "testtable",
         "SELECT 5", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, None, Some("/bin/i_am_not_exist"), "", None))
 
       actor ! ExtractorRunner.SetTask(task)
@@ -290,7 +290,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
 
     }
-    
+
     it("should fail if after script is executable but contains errors"){
 
       // TODO do not run json_extractor for MySQL
@@ -303,12 +303,12 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       log.info(t.getAbsolutePath)
 
-      writeToFile(t, 
+      writeToFile(t,
       s"""|#! /usr/bin/python
           | echo "I should also be in the table" >> ${t2.getAbsolutePath}
       """.stripMargin)
 
-      writeToFile(t3, 
+      writeToFile(t3,
      s"""|#! /usr/bin/python
          |import json
          |for l in open('${t2.getAbsolutePath}'):
@@ -318,7 +318,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
-      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "testtable", 
+      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "testtable",
         "SELECT 5", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, None, Some(t.getAbsolutePath), "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
@@ -342,7 +342,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         assert(numRecords === 1)
       }
 
-      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1", 
+      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1",
         "SELECT * FROM relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet, None, None, "SELECT * FROM relation1", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
@@ -363,7 +363,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       assume(TestHelper.getTestEnv != TestHelper.Mysql)
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
-      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1", 
+      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1",
         "SELECT * FROM relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
@@ -393,7 +393,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         Json.parse(s"""{"key": ${i}}""").asInstanceOf[JsObject]
       }.toList
       dataStore.addBatch(batchData.iterator, "relation1")
-      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1", 
+      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1",
         "SELECT * FROM relation1", "/bin/cat", 4, 500, 200, Nil.toSet, None, None, "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
@@ -415,7 +415,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
       val failingExtractorFile = getClass.getResource("/failing_extractor.py").getFile
       dataStore.addBatch(List(Json.parse("""{"key": 5}""").asInstanceOf[JsObject]).iterator, "relation1")
-      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1", 
+      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1",
         "SELECT * FROM relation1", failingExtractorFile, 1, 1000, 1000, Nil.toSet, None, None, "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
@@ -428,7 +428,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       assume(TestHelper.getTestEnv != TestHelper.Mysql)
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
-      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1", 
+      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1",
         "SELECT * FROM relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet, Option("echo Hello"), Option("echo World"), "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
@@ -443,7 +443,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       assume(TestHelper.getTestEnv != TestHelper.Mysql)
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
-      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation5", 
+      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation5",
         "relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet,None, None, "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
@@ -456,7 +456,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       assume(TestHelper.getTestEnv != TestHelper.Mysql)
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
-      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1", 
+      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1",
         "SELECT * FROM relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet, Option("/bin/OHNO!"), Option("echo World"), "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
@@ -469,7 +469,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       assume(TestHelper.getTestEnv != TestHelper.Mysql)
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
-      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1", 
+      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1",
         "SELECT * FROM relation1", "/bin/cat", 1, 1000, 1000, Nil.toSet, Option("echo Hello"), Option("/bin/OHNO!"), "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
@@ -494,11 +494,11 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       log.info(t.getAbsolutePath)
 
       writeToFile(t, s"""
-        | echo "I should be in the table" > ${t2.getAbsolutePath} 
+        | echo "I should be in the table" > ${t2.getAbsolutePath}
         | echo "I should also be in the table" >> ${t2.getAbsolutePath}
       """.stripMargin)
 
-      writeToFile(t3, 
+      writeToFile(t3,
      s"""|#! /usr/bin/python
          |import json
          |for l in open('${t2.getAbsolutePath}'):
@@ -508,7 +508,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
-      val task = new ExtractionTask(Extractor("testExtractor", "tsv_extractor", "testtable", 
+      val task = new ExtractionTask(Extractor("testExtractor", "tsv_extractor", "testtable",
         "SELECT 5", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
@@ -532,11 +532,11 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         assert(numRecords === 0)
       }
     }
-    
+
     it("should work for TSV extractor when output and input are from the same table"){
 
       execute(dataStore, "drop table if exists testtable ;")
-      execute(dataStore, "create table testtable ( a text );") 
+      execute(dataStore, "create table testtable ( a text );")
       val t = java.io.File.createTempFile("test", ".sh")
       val t2 = java.io.File.createTempFile("test", ".tsv")
       val t3 = java.io.File.createTempFile("test", ".py")
@@ -550,7 +550,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       | ${sqlScriptPrefix} "INSERT INTO testtable VALUES ('Mesasge_1'), ('Mesasge_2'), ('Mesasge_3'), ('Mesasge_4'), ('Mesasge_5'), ('Mesasge_6'), ('Mesasge_7'), ('Mesasge_8'), ('Mesasge_9'), ('Mesasge_10');"
       """.stripMargin)
 
-      writeToFile(t3, 
+      writeToFile(t3,
      s"""|#! /usr/bin/python
          |import json, sys
          |for l in sys.stdin:
@@ -560,7 +560,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
-      val task = new ExtractionTask(Extractor("testExtractor", "tsv_extractor", "testtable", 
+      val task = new ExtractionTask(Extractor("testExtractor", "tsv_extractor", "testtable",
         "SELECT * FROM testtable", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
@@ -585,7 +585,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       execute(dataStore, "DELETE FROM testtable WHERE a='Mesasge_8';");
       execute(dataStore, "DELETE FROM testtable WHERE a='Mesasge_9';");
       execute(dataStore, "DELETE FROM testtable WHERE a='Mesasge_10';");
-     
+
       dataStore.DB.readOnly { implicit session =>
         val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
           .map(rs => rs.long("count")).single.apply().get
@@ -598,7 +598,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
     it("should work for TSV extractor when input query contains multiple columns"){
 
       execute(dataStore, "drop table if exists testtable ;")
-      execute(dataStore, "create table testtable ( a text, b text );") 
+      execute(dataStore, "create table testtable ( a text, b text );")
       val t = java.io.File.createTempFile("test", ".sh")
       val t2 = java.io.File.createTempFile("test", ".tsv")
       val t3 = java.io.File.createTempFile("test", ".py")
@@ -612,7 +612,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       | ${sqlScriptPrefix} "INSERT INTO testtable VALUES ('Mesasge_1', '1'), ('Mesasge_2', '1'), ('Mesasge_3', '1'), ('Mesasge_4', '1'), ('Mesasge_5', '1'), ('Mesasge_6', '1'), ('Mesasge_7', '1'), ('Mesasge_8', '1'), ('Mesasge_9', '1'), ('Mesasge_10', '1');"
       """.stripMargin)
 
-      writeToFile(t3, 
+      writeToFile(t3,
      s"""|#! /usr/bin/python
          |import json, sys
          |for l in sys.stdin:
@@ -623,7 +623,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
-      val task = new ExtractionTask(Extractor("testExtractor", "tsv_extractor", "testtable", 
+      val task = new ExtractionTask(Extractor("testExtractor", "tsv_extractor", "testtable",
         "SELECT * FROM testtable", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
@@ -650,7 +650,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
     for(exttype <- List("json_extractor", "tsv_extractor")){
       it(s"should fail if extractor contain errors (${exttype})"){
         execute(dataStore, "drop table if exists testtable ;")
-        execute(dataStore, "create table testtable ( a text, b text );") 
+        execute(dataStore, "create table testtable ( a text, b text );")
         val t = java.io.File.createTempFile("test", ".sh")
         val t2 = java.io.File.createTempFile("test", ".tsv")
         val t3 = java.io.File.createTempFile("test", ".py")
@@ -663,7 +663,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       | ${sqlScriptPrefix} "INSERT INTO testtable VALUES ('Mesasge_1', '1'), ('Mesasge_2', '1'), ('Mesasge_3', '1'), ('Mesasge_4', '1'), ('Mesasge_5', '1'), ('Mesasge_6', '1'), ('Mesasge_7', '1'), ('Mesasge_8', '1'), ('Mesasge_9', '1'), ('Mesasge_10', '1');"
       """.stripMargin)
 
-        writeToFile(t3, 
+        writeToFile(t3,
        s"""|#! /usr/bin/python
            |import json, sys
            |for l in sys.stdin:
@@ -675,7 +675,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
         val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
-        val task = new ExtractionTask(Extractor("testExtractor", exttype, "testtable", 
+        val task = new ExtractionTask(Extractor("testExtractor", exttype, "testtable",
           "SELECT * FROM testtable", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
         actor ! ExtractorRunner.SetTask(task)
         watch(actor)
@@ -686,7 +686,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       it(s"should fail if SQL queries contain errors (${exttype})"){
         execute(dataStore, "drop table if exists testtable ;")
-        execute(dataStore, "create table testtable ( a text, b text );") 
+        execute(dataStore, "create table testtable ( a text, b text );")
         val t = java.io.File.createTempFile("test", ".sh")
         val t2 = java.io.File.createTempFile("test", ".tsv")
         val t3 = java.io.File.createTempFile("test", ".py")
@@ -700,7 +700,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         | ${sqlScriptPrefix} "INSERT INTO testtable VALUES ('Mesasge_1', '1'), ('Mesasge_2', '1'), ('Mesasge_3', '1'), ('Mesasge_4', '1'), ('Mesasge_5', '1'), ('Mesasge_6', '1'), ('Mesasge_7', '1'), ('Mesasge_8', '1'), ('Mesasge_9', '1'), ('Mesasge_10', '1');"
         """.stripMargin)
 
-        writeToFile(t3, 
+        writeToFile(t3,
             s"""|#! /usr/bin/python
                 |import json, sys
                 |for l in sys.stdin:
@@ -711,7 +711,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
         val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
-        val task = new ExtractionTask(Extractor("testExtractor", exttype, "testtable", 
+        val task = new ExtractionTask(Extractor("testExtractor", exttype, "testtable",
           "AAAAAAAAAAAAAAAAAAAAAAAAA * FROM testtable", t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
         actor ! ExtractorRunner.SetTask(task)
         watch(actor)
@@ -745,7 +745,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
-      val task = new ExtractionTask(Extractor("testExtractor", "sql_extractor", "testtable", 
+      val task = new ExtractionTask(Extractor("testExtractor", "sql_extractor", "testtable",
         "DELETE FROM testtable WHERE a='I should be in the table';", "", 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "DELETE FROM testtable WHERE a='I should be in the table';", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
@@ -782,7 +782,7 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
-      val task = new ExtractionTask(Extractor("testExtractor", "sql_extractor", "testtable", 
+      val task = new ExtractionTask(Extractor("testExtractor", "sql_extractor", "testtable",
         "DELETEAAAAAA FROM testtable WHERE a='I should be in the table';", "", 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "DELETEAAAAAA FROM testtable WHERE a='I should be in the table';", None))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
@@ -790,8 +790,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
 
     }
-  
-    
+
+
   }
 
   describe("Running an CMD extractor"){
@@ -822,8 +822,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
-      val task = new ExtractionTask(Extractor("testExtractor", "cmd_extractor", "testtable", 
-        t4.getAbsolutePath, "", 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", 
+      val task = new ExtractionTask(Extractor("testExtractor", "cmd_extractor", "testtable",
+        t4.getAbsolutePath, "", 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "",
         Some(t4.getAbsolutePath)))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
@@ -867,8 +867,8 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
-      val task = new ExtractionTask(Extractor("testExtractor", "cmd_extractor", "testtable", 
-        t4.getAbsolutePath, "", 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", 
+      val task = new ExtractionTask(Extractor("testExtractor", "cmd_extractor", "testtable",
+        t4.getAbsolutePath, "", 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "",
         Some(t4.getAbsolutePath)))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)

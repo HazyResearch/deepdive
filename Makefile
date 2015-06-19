@@ -20,13 +20,16 @@ test: build
 	@echo "\n=== Testing DeepDive modules... ==="
 	./test.sh
 
+checkstyle:
+	@./test/checkstyle.sh
+
 .PHONY: install
 install: depends build
 	@echo "\n=== Compiling DeepDive... ==="
 	sbt/sbt pack
 
 	@echo "\n=== Installing DeepDive... ==="
-	$(MAKE) -C target/pack/ install ; 
+	$(MAKE) -C target/pack/ install ;
 
 	@echo "\n=== Verifying installation... ==="
 	@if [ -f ${HOME}/local/bin/deepdive ]; then \
@@ -35,7 +38,7 @@ install: depends build
 	else \
 		echo "FAILED."; \
 		exit 1; \
-	fi 
+	fi
 
 
 .PHONY: build-sampler

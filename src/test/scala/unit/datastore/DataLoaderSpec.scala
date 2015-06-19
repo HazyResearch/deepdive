@@ -27,8 +27,8 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with Logging {
   val dbSettings = TestHelper.getDbSettings
 
   val du = new org.deepdive.datastore.DataLoader
-  val dbSettingsWithoutGPLOAD = DbSettings(dbSettings.driver, dbSettings.url, dbSettings.user, 
-    dbSettings.password, dbSettings.dbname, dbSettings.host, dbSettings.port, dbSettings.gphost, 
+  val dbSettingsWithoutGPLOAD = DbSettings(dbSettings.driver, dbSettings.url, dbSettings.user,
+    dbSettings.password, dbSettings.dbname, dbSettings.host, dbSettings.port, dbSettings.gphost,
     dbSettings.gpport, dbSettings.gppath, false, dbSettings.incrementalMode)
   describe("Unloading data using DataLoader") {
     it("should work with COPY basic types") {
@@ -41,9 +41,9 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with Logging {
       val line1 = rd.readLine()
       val line2 = rd.readLine()
       assert(
-        (line1 === "hi\tt\t0" && line2 === "\\N\tf\t100") || 
-        (line2 === "hi\tt\t0" && line1 === "\\N\tf\t100") || 
-        (line1 === "hi\t1\t0" && line2 === "NULL\t0\t100") || 
+        (line1 === "hi\tt\t0" && line2 === "\\N\tf\t100") ||
+        (line2 === "hi\tt\t0" && line1 === "\\N\tf\t100") ||
+        (line1 === "hi\t1\t0" && line2 === "NULL\t0\t100") ||
         (line2 === "hi\t1\t0" && line1 === "NULL\t0\t100"))   // TODO: MySQL now dumps NULL and 0/1
       rd.close()
     }
@@ -100,12 +100,12 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with Logging {
         result3 = rs.getString("feature")
         result4 = rs.getInt("id")
       }
-      
-//      val result1 = SQL(s"""SELECT * FROM loader WHERE id = 0""").map(rs => rs.string("feature")).single.apply().get 
-//      val result2 = SQL(s"""SELECT * FROM loader WHERE id = 0""").map(rs => rs.boolean("is_correct")).single.apply().get 
-//      val result3 = SQL(s"""SELECT * FROM loader WHERE is_correct = false""").map(rs => rs.string("feature")).single.apply() 
-//      val result4 = SQL(s"""SELECT * FROM loader WHERE is_correct = false""").map(rs => rs.int("id")).single.apply().get 
-      
+
+//      val result1 = SQL(s"""SELECT * FROM loader WHERE id = 0""").map(rs => rs.string("feature")).single.apply().get
+//      val result2 = SQL(s"""SELECT * FROM loader WHERE id = 0""").map(rs => rs.boolean("is_correct")).single.apply().get
+//      val result3 = SQL(s"""SELECT * FROM loader WHERE is_correct = false""").map(rs => rs.string("feature")).single.apply()
+//      val result4 = SQL(s"""SELECT * FROM loader WHERE is_correct = false""").map(rs => rs.int("id")).single.apply().get
+
       log.debug(s"DEBUG: GET RESULT ${result1}")
       log.debug(s"DEBUG: GET RESULT ${result2}")
       log.debug(s"DEBUG: GET RESULT ${result3}")
@@ -123,10 +123,10 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with Logging {
       val tsvFile = getClass.getResource("/dataloader1.tsv").getFile
       val filePath = new File(tsvFile).getParent() + "/dataloader*.tsv"
       du.load(filePath, "dataloader1", dbSettings)
-      // val result1 = SQL(s"""SELECT * FROM loader WHERE id = 0""").map(rs => rs.string("feature")).single.apply().get 
-      // val result2 = SQL(s"""SELECT * FROM loader WHERE id = 0""").map(rs => rs.boolean("is_correct")).single.apply().get 
-      // val result3 = SQL(s"""SELECT * FROM loader WHERE is_correct = false""").map(rs => rs.string("feature")).single.apply() 
-      // val result4 = SQL(s"""SELECT * FROM loader WHERE is_correct = false""").map(rs => rs.int("id")).single.apply().get 
+      // val result1 = SQL(s"""SELECT * FROM loader WHERE id = 0""").map(rs => rs.string("feature")).single.apply().get
+      // val result2 = SQL(s"""SELECT * FROM loader WHERE id = 0""").map(rs => rs.boolean("is_correct")).single.apply().get
+      // val result3 = SQL(s"""SELECT * FROM loader WHERE is_correct = false""").map(rs => rs.string("feature")).single.apply()
+      // val result4 = SQL(s"""SELECT * FROM loader WHERE is_correct = false""").map(rs => rs.int("id")).single.apply().get
       var result1 = ""
       var result2 = false
       var result3 = ""
@@ -153,10 +153,10 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with Logging {
     //   SQL(s"""CREATE TABLE loader(feature text, is_correct boolean, id bigint);""").execute.apply()
     //   val tsvFile = getClass.getResource("/dataloader1.tsv").getFile
     //   du.load(new File(tsvFile).getAbsolutePath(), "loader", dbSettings, true)
-    //   val result1 = SQL(s"""SELECT * FROM loader WHERE id = 0""").map(rs => rs.string("feature")).single.apply().get 
-    //   val result2 = SQL(s"""SELECT * FROM loader WHERE id = 0""").map(rs => rs.boolean("is_correct")).single.apply().get 
-    //   val result3 = SQL(s"""SELECT * FROM loader WHERE is_correct = false""").map(rs => rs.string("feature")).single.apply() 
-    //   val result4 = SQL(s"""SELECT * FROM loader WHERE is_correct = false""").map(rs => rs.int("id")).single.apply().get 
+    //   val result1 = SQL(s"""SELECT * FROM loader WHERE id = 0""").map(rs => rs.string("feature")).single.apply().get
+    //   val result2 = SQL(s"""SELECT * FROM loader WHERE id = 0""").map(rs => rs.boolean("is_correct")).single.apply().get
+    //   val result3 = SQL(s"""SELECT * FROM loader WHERE is_correct = false""").map(rs => rs.string("feature")).single.apply()
+    //   val result4 = SQL(s"""SELECT * FROM loader WHERE is_correct = false""").map(rs => rs.int("id")).single.apply().get
 
     //   assert(result1 === "hi")
     //   assert(result2 === true)

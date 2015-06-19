@@ -40,7 +40,7 @@ class HelpersSpec extends FunSpec with BeforeAndAfter {
 
   describe("Building psql command helper function") {
     it("should work for queries without quotes") {
-      val dbSettings = DbSettings(Helpers.PsqlDriver, null, "user", null, "dbname", 
+      val dbSettings = DbSettings(Helpers.PsqlDriver, null, "user", null, "dbname",
         "host", "port", null, null, null, false, IncrementalMode.ORIGINAL)
       val query = "select * from test;"
       val cmd = Helpers.buildSqlCmd(dbSettings, query)
@@ -49,7 +49,7 @@ class HelpersSpec extends FunSpec with BeforeAndAfter {
     }
 
     it("should work for queries with single-quotes") {
-      val dbSettings = DbSettings(Helpers.PsqlDriver, null, "user", null, "dbname", 
+      val dbSettings = DbSettings(Helpers.PsqlDriver, null, "user", null, "dbname",
         "host", "port", null, null, null, false, IncrementalMode.ORIGINAL)
       val query = "select '123';"
       val cmd = Helpers.buildSqlCmd(dbSettings, query)
@@ -58,7 +58,7 @@ class HelpersSpec extends FunSpec with BeforeAndAfter {
     }
 
     it("should work for queries with double-quotes") {
-      val dbSettings = DbSettings(Helpers.PsqlDriver, null, "user", null, "dbname", 
+      val dbSettings = DbSettings(Helpers.PsqlDriver, null, "user", null, "dbname",
         "host", "port", null, null, null, false, IncrementalMode.ORIGINAL)
       val query = "select \"123\";"
       val cmd = Helpers.buildSqlCmd(dbSettings, query)

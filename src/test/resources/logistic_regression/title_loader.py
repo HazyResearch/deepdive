@@ -11,5 +11,5 @@ for line in fileinput.input():
   row = json.loads(line)
   # We are emitting one variable and one factor for each word.
   sys.stderr.write(json.dumps({"title": row[0], "has_extractions": bool(row[1])}) + "\n")
-  has_extractions = bool(row[1]) if row[1] else None 
+  has_extractions = bool(row[1]) if row[1] else None
   print json.dumps({"title": row[0], "has_extractions": has_extractions})

@@ -4,7 +4,7 @@ import unittest
 import ddlib as dd
 
 class TestDDLib(unittest.TestCase):
-  
+
   def setUp(self):
     self.words = ["Tanja", "married", "Jake", "five", "years", "ago"]
     self.lemma = ["Tanja", "marry", "Jake", "five", "years", "ago"]

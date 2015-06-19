@@ -27,13 +27,13 @@ As an example, if we want to generate negative examples for "spouse" relation, w
 
 ### Domain specific rules
 
-Sometimes we can make use of other domain-specific knowledge to generate negative examples. The design of such rules are largely dependent on the application. 
+Sometimes we can make use of other domain-specific knowledge to generate negative examples. The design of such rules are largely dependent on the application.
 
 For example, for spouse relation, one possible domain-specific rule that uses temporal information is that "people that do not live in the same time cannot be spouse". Specifically, if a person `x` has `birth_date` later than `y`'s `death_date`, then `x` and `y` cannot be spouses.
 
 ### Random samples
 
-Another way to generate negative evidence is to randomly sample a small proportion among all the variables (people mention pairs in our spouse example), and mark them as negative evidence. 
+Another way to generate negative evidence is to randomly sample a small proportion among all the variables (people mention pairs in our spouse example), and mark them as negative evidence.
 
 This is likely to generate some false negative examples, but if statistically variables are much more likely to be false, the random sampling will work.
 

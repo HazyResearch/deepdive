@@ -39,7 +39,7 @@ calibration {
 ```
 
 When a custom holdout query is defined in `holdout_query`, the
-`holdout_fraction` setting is ignored. 
+`holdout_fraction` setting is ignored.
 
 ### Inspecting probabilities and weights
 
@@ -94,7 +94,7 @@ Note these columns contain non-NULL values only when the factor is a unary `IsTr
 
 This table can be used to diagnose features, e.g. if a feature gets
 too high weight, it might because there are not enough negative
-examples for this feature, and you may need to add more data or more 
+examples for this feature, and you may need to add more data or more
 distant supervision rules.
 
 ### Calibration data and plots
@@ -115,13 +115,13 @@ three columns is the:
   including both holdout and query variables (unknown variables).
   It can be shown as num_predictions = num_holdout + num_unknown_var.
 
-- `num_true` is the number of holdout variables in the probability bucket with the 
+- `num_true` is the number of holdout variables in the probability bucket with the
   value of true. The number should be high for buckets with large
   probabilities and small for buckets with small probabilities since the actual value
-  of these variables are true and with high probability they should be predicted as true. 
+  of these variables are true and with high probability they should be predicted as true.
   Not that in this case only the holdout data is used.
 
-- `num_false` is the number of holdout variables in the probability bucket with the 
+- `num_false` is the number of holdout variables in the probability bucket with the
   value of false. The number should be small for buckets with large
   probabilities and large for buckets with small probabilities since the actual value
   of these variables are false and with low probability they should be predicted as true.
@@ -132,7 +132,7 @@ DeepDive also generates a calibration plot for each of the variables defined
 in schema. The location of the plot is given in the DeepDive output of each run:
 
 13:05:28 [profiler] INFO  calibration plot written to $DEEPDIVE_HOME/out/2014-06-23T130346/calibration/has_spouse.is_true.png [0 ms]
-	
+
 DeepDive also prints in its output the commands to generate the calibration
 plots, so the user can create the plots manually.
 

@@ -27,6 +27,9 @@ install:
   - make depends
 
 script:
+  # Check coding style first
+  - make checkstyle
+
   # Run all tests
   - make test
 

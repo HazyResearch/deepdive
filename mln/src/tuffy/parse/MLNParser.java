@@ -89,10 +89,10 @@ public class MLNParser extends Parser {
         public MLNParser(TokenStream input, RecognizerSharedState state) {
             super(input, state);
             this.state.ruleMemo = new HashMap[133+1];
-             
-             
+
+
         }
-        
+
     protected TreeAdaptor adaptor = new CommonTreeAdaptor();
 
     public void setTreeAdaptor(TreeAdaptor adaptor) {
@@ -110,26 +110,26 @@ public class MLNParser extends Parser {
         private String clauseName = null;
         private boolean clauseLabelTrailing = false;
         private Predicate curPred = null;
-        
+
         public long lineOffset = 0;
-        
+
         private void die(String msg){
             ExceptionMan.die(msg);
         }
-        
+
         protected Object recoverFromMismatchedToken(IntStream input,
                                                 int ttype,
                                                 BitSet follow)
-    		    throws RecognitionException
-    		{   
-    		    throw new MismatchedTokenException(ttype, input);
-    		}   
-    		
-    		public void emitErrorMessage(String msg) {
+                    throws RecognitionException
+                {
+                    throw new MismatchedTokenException(ttype, input);
+                }
+
+                public void emitErrorMessage(String msg) {
             die(msg);
         }
-    		
-        
+
+
 
 
     public static class definitions_return extends ParserRuleReturnScope {
@@ -191,7 +191,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -233,33 +233,33 @@ public class MLNParser extends Parser {
                 int alt1=3;
                 alt1 = dfa1.predict(input);
                 switch (alt1) {
-            	case 1 :
-            	    // MLN.g:123:15: schema
-            	    {
-            	    pushFollow(FOLLOW_schema_in_schemaList908);
-            	    schema4=schema();
+                case 1 :
+                    // MLN.g:123:15: schema
+                    {
+                    pushFollow(FOLLOW_schema_in_schemaList908);
+                    schema4=schema();
 
-            	    state._fsp--;
-            	    if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) adaptor.addChild(root_0, schema4.getTree());
+                    state._fsp--;
+                    if (state.failed) return retval;
+                    if ( state.backtracking==0 ) adaptor.addChild(root_0, schema4.getTree());
 
-            	    }
-            	    break;
-            	case 2 :
-            	    // MLN.g:123:24: schemaConstraint
-            	    {
-            	    pushFollow(FOLLOW_schemaConstraint_in_schemaList912);
-            	    schemaConstraint5=schemaConstraint();
+                    }
+                    break;
+                case 2 :
+                    // MLN.g:123:24: schemaConstraint
+                    {
+                    pushFollow(FOLLOW_schemaConstraint_in_schemaList912);
+                    schemaConstraint5=schemaConstraint();
 
-            	    state._fsp--;
-            	    if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) adaptor.addChild(root_0, schemaConstraint5.getTree());
+                    state._fsp--;
+                    if (state.failed) return retval;
+                    if ( state.backtracking==0 ) adaptor.addChild(root_0, schemaConstraint5.getTree());
 
-            	    }
-            	    break;
+                    }
+                    break;
 
-            	default :
-            	    break loop1;
+                default :
+                    break loop1;
                 }
             } while (true);
 
@@ -277,7 +277,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -437,20 +437,20 @@ public class MLNParser extends Parser {
 
             if ( state.backtracking==0 ) {
 
-              		//boolean cwa = (a1 != null || aa != null);
-              		boolean cwa = (a1 != null);
+                        //boolean cwa = (a1 != null || aa != null);
+                        boolean cwa = (a1 != null);
                   boolean eqrel = (a2 != null);
-              		Predicate pred = new Predicate(ml, (pname!=null?pname.getText():null), cwa);
-              		if(aa != null) pred.setCompeletelySpecified(true);
-              		//if(eqrel) pred.isDedupalogHead = true;
-              		if(vt != null){
-              		    //if((vt!=null?vt.getText():null).equals("@")) pred.isInMem = true;
-              		}
+                        Predicate pred = new Predicate(ml, (pname!=null?pname.getText():null), cwa);
+                        if(aa != null) pred.setCompeletelySpecified(true);
+                        //if(eqrel) pred.isDedupalogHead = true;
+                        if(vt != null){
+                            //if((vt!=null?vt.getText():null).equals("@")) pred.isInMem = true;
+                        }
                   if(du != null){
                       //if((du!=null?du.getText():null).equals("+")) pred.toDump = true;
                   }
-              		curPred = pred;
-              	
+                        curPred = pred;
+
             }
             char_literal6=(Token)match(input,23,FOLLOW_23_in_schema960); if (state.failed) return retval;
             if ( state.backtracking==0 ) {
@@ -478,29 +478,29 @@ public class MLNParser extends Parser {
 
 
                 switch (alt6) {
-            	case 1 :
-            	    // MLN.g:141:22: ',' types+= predArg
-            	    {
-            	    char_literal7=(Token)match(input,24,FOLLOW_24_in_schema967); if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) {
-            	    char_literal7_tree = (Object)adaptor.create(char_literal7);
-            	    adaptor.addChild(root_0, char_literal7_tree);
-            	    }
-            	    pushFollow(FOLLOW_predArg_in_schema971);
-            	    types=predArg();
+                case 1 :
+                    // MLN.g:141:22: ',' types+= predArg
+                    {
+                    char_literal7=(Token)match(input,24,FOLLOW_24_in_schema967); if (state.failed) return retval;
+                    if ( state.backtracking==0 ) {
+                    char_literal7_tree = (Object)adaptor.create(char_literal7);
+                    adaptor.addChild(root_0, char_literal7_tree);
+                    }
+                    pushFollow(FOLLOW_predArg_in_schema971);
+                    types=predArg();
 
-            	    state._fsp--;
-            	    if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) adaptor.addChild(root_0, types.getTree());
-            	    if (list_types==null) list_types=new ArrayList();
-            	    list_types.add(types.getTree());
+                    state._fsp--;
+                    if (state.failed) return retval;
+                    if ( state.backtracking==0 ) adaptor.addChild(root_0, types.getTree());
+                    if (list_types==null) list_types=new ArrayList();
+                    list_types.add(types.getTree());
 
 
-            	    }
-            	    break;
+                    }
+                    break;
 
-            	default :
-            	    break loop6;
+                default :
+                    break loop6;
                 }
             } while (true);
 
@@ -511,9 +511,9 @@ public class MLNParser extends Parser {
             }
             if ( state.backtracking==0 ) {
 
-              	    curPred.sealDefinition();
+                    curPred.sealDefinition();
                     ml.registerPred(curPred);
-              	
+
             }
 
             }
@@ -529,7 +529,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -625,7 +625,7 @@ public class MLNParser extends Parser {
                   if(uni != null){
                     curPred.addDependentAttrPosition(curPred.arity() - 1);
                   }
-                
+
             }
 
             }
@@ -641,7 +641,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -695,7 +695,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -772,26 +772,26 @@ public class MLNParser extends Parser {
 
 
                 switch (alt9) {
-            	case 1 :
-            	    // MLN.g:166:4: ';' functionalDependencyItem
-            	    {
-            	    char_literal13=(Token)match(input,29,FOLLOW_29_in_functionalDependency1048); if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) {
-            	    char_literal13_tree = (Object)adaptor.create(char_literal13);
-            	    adaptor.addChild(root_0, char_literal13_tree);
-            	    }
-            	    pushFollow(FOLLOW_functionalDependencyItem_in_functionalDependency1050);
-            	    functionalDependencyItem14=functionalDependencyItem();
+                case 1 :
+                    // MLN.g:166:4: ';' functionalDependencyItem
+                    {
+                    char_literal13=(Token)match(input,29,FOLLOW_29_in_functionalDependency1048); if (state.failed) return retval;
+                    if ( state.backtracking==0 ) {
+                    char_literal13_tree = (Object)adaptor.create(char_literal13);
+                    adaptor.addChild(root_0, char_literal13_tree);
+                    }
+                    pushFollow(FOLLOW_functionalDependencyItem_in_functionalDependency1050);
+                    functionalDependencyItem14=functionalDependencyItem();
 
-            	    state._fsp--;
-            	    if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) adaptor.addChild(root_0, functionalDependencyItem14.getTree());
+                    state._fsp--;
+                    if (state.failed) return retval;
+                    if ( state.backtracking==0 ) adaptor.addChild(root_0, functionalDependencyItem14.getTree());
 
-            	    }
-            	    break;
+                    }
+                    break;
 
-            	default :
-            	    break loop9;
+                default :
+                    break loop9;
                 }
             } while (true);
 
@@ -799,7 +799,7 @@ public class MLNParser extends Parser {
 
                   UIMan.warn("The feature of functional dependency " +
                     "is still in development; use at your own risk.");
-                
+
             }
 
             }
@@ -815,7 +815,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -876,28 +876,28 @@ public class MLNParser extends Parser {
 
 
                 switch (alt10) {
-            	case 1 :
-            	    // MLN.g:174:11: ',' pa+= ID
-            	    {
-            	    char_literal15=(Token)match(input,24,FOLLOW_24_in_functionalDependencyItem1073); if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) {
-            	    char_literal15_tree = (Object)adaptor.create(char_literal15);
-            	    adaptor.addChild(root_0, char_literal15_tree);
-            	    }
-            	    pa=(Token)match(input,ID,FOLLOW_ID_in_functionalDependencyItem1077); if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) {
-            	    pa_tree = (Object)adaptor.create(pa);
-            	    adaptor.addChild(root_0, pa_tree);
-            	    }
-            	    if (list_pa==null) list_pa=new ArrayList();
-            	    list_pa.add(pa);
+                case 1 :
+                    // MLN.g:174:11: ',' pa+= ID
+                    {
+                    char_literal15=(Token)match(input,24,FOLLOW_24_in_functionalDependencyItem1073); if (state.failed) return retval;
+                    if ( state.backtracking==0 ) {
+                    char_literal15_tree = (Object)adaptor.create(char_literal15);
+                    adaptor.addChild(root_0, char_literal15_tree);
+                    }
+                    pa=(Token)match(input,ID,FOLLOW_ID_in_functionalDependencyItem1077); if (state.failed) return retval;
+                    if ( state.backtracking==0 ) {
+                    pa_tree = (Object)adaptor.create(pa);
+                    adaptor.addChild(root_0, pa_tree);
+                    }
+                    if (list_pa==null) list_pa=new ArrayList();
+                    list_pa.add(pa);
 
 
-            	    }
-            	    break;
+                    }
+                    break;
 
-            	default :
-            	    break loop10;
+                default :
+                    break loop10;
                 }
             } while (true);
 
@@ -921,7 +921,7 @@ public class MLNParser extends Parser {
                     }
                     String dep = sa.getText();
                     curPred.addFunctionalDependency(dets, dep);
-                
+
             }
 
             }
@@ -937,7 +937,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -981,45 +981,45 @@ public class MLNParser extends Parser {
                 int alt11=4;
                 alt11 = dfa11.predict(input);
                 switch (alt11) {
-            	case 1 :
-            	    // MLN.g:189:13: mlnRule
-            	    {
-            	    pushFollow(FOLLOW_mlnRule_in_ruleList1103);
-            	    mlnRule17=mlnRule();
+                case 1 :
+                    // MLN.g:189:13: mlnRule
+                    {
+                    pushFollow(FOLLOW_mlnRule_in_ruleList1103);
+                    mlnRule17=mlnRule();
 
-            	    state._fsp--;
-            	    if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) adaptor.addChild(root_0, mlnRule17.getTree());
+                    state._fsp--;
+                    if (state.failed) return retval;
+                    if ( state.backtracking==0 ) adaptor.addChild(root_0, mlnRule17.getTree());
 
-            	    }
-            	    break;
-            	case 2 :
-            	    // MLN.g:189:23: scopingRule
-            	    {
-            	    pushFollow(FOLLOW_scopingRule_in_ruleList1107);
-            	    scopingRule18=scopingRule();
+                    }
+                    break;
+                case 2 :
+                    // MLN.g:189:23: scopingRule
+                    {
+                    pushFollow(FOLLOW_scopingRule_in_ruleList1107);
+                    scopingRule18=scopingRule();
 
-            	    state._fsp--;
-            	    if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) adaptor.addChild(root_0, scopingRule18.getTree());
+                    state._fsp--;
+                    if (state.failed) return retval;
+                    if ( state.backtracking==0 ) adaptor.addChild(root_0, scopingRule18.getTree());
 
-            	    }
-            	    break;
-            	case 3 :
-            	    // MLN.g:189:37: datalogRule
-            	    {
-            	    pushFollow(FOLLOW_datalogRule_in_ruleList1111);
-            	    datalogRule19=datalogRule();
+                    }
+                    break;
+                case 3 :
+                    // MLN.g:189:37: datalogRule
+                    {
+                    pushFollow(FOLLOW_datalogRule_in_ruleList1111);
+                    datalogRule19=datalogRule();
 
-            	    state._fsp--;
-            	    if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) adaptor.addChild(root_0, datalogRule19.getTree());
+                    state._fsp--;
+                    if (state.failed) return retval;
+                    if ( state.backtracking==0 ) adaptor.addChild(root_0, datalogRule19.getTree());
 
-            	    }
-            	    break;
+                    }
+                    break;
 
-            	default :
-            	    break loop11;
+                default :
+                    break loop11;
                 }
             } while (true);
 
@@ -1037,7 +1037,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -1107,14 +1107,14 @@ public class MLNParser extends Parser {
                     }
                     if ( state.backtracking==0 ) {
 
-                      	       clauseName = STRING20.getText();
-                      	       String t = (tag!=null?tag.getText():null);
-                      	       if(t != null && t.contains("+")){
-                      	          clauseLabelTrailing = true;
-                      	       }else{
+                               clauseName = STRING20.getText();
+                               String t = (tag!=null?tag.getText():null);
+                               if(t != null && t.contains("+")){
+                                  clauseLabelTrailing = true;
+                               }else{
                                   clauseLabelTrailing = false;
-                      	       }
-                      	    
+                               }
+
                     }
 
                     }
@@ -1207,7 +1207,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -1326,7 +1326,7 @@ public class MLNParser extends Parser {
                     if ( state.backtracking==0 ) adaptor.addChild(root_0, fc.getTree());
                     if ( state.backtracking==0 ) {
 
-                          retval.c = (fc!=null?fc.c:null); 
+                          retval.c = (fc!=null?fc.c:null);
                           retval.c.setWeight(Double.parseDouble((weight!=null?weight.getText():null)));
                           ml.registerClause(retval.c);
                           retval.c.addSpecText(input.toString(retval.start,input.LT(-1)));
@@ -1335,7 +1335,7 @@ public class MLNParser extends Parser {
                             }else{
                                 retval.c.isFixedWeight = false;
                             }
-                          
+
                     }
 
                     }
@@ -1385,7 +1385,7 @@ public class MLNParser extends Parser {
                     if ( state.backtracking==0 ) adaptor.addChild(root_0, fc.getTree());
                     if ( state.backtracking==0 ) {
 
-                          retval.c = (fc!=null?fc.c:null); 
+                          retval.c = (fc!=null?fc.c:null);
                           retval.c.setWeight(1);
                           retval.c.setVarWeight((warg!=null?warg.getText():null));
                           ml.registerClause(retval.c);
@@ -1395,7 +1395,7 @@ public class MLNParser extends Parser {
                             }else{
                                 retval.c.isFixedWeight = false;
                             }
-                          
+
                     }
 
                     }
@@ -1413,7 +1413,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -1463,11 +1463,11 @@ public class MLNParser extends Parser {
             }
             if ( state.backtracking==0 ) {
 
-                  retval.c = (fc!=null?fc.c:null); 
+                  retval.c = (fc!=null?fc.c:null);
                   retval.c.setHardWeight();
                   ml.registerClause(retval.c);
                   retval.c.addSpecText(input.toString(retval.start,input.LT(-1)));
-                  
+
             }
 
             }
@@ -1483,7 +1483,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -1538,7 +1538,7 @@ public class MLNParser extends Parser {
                     Predicate p = ml.getPredByName((func!=null?func.getText():null));
                     if(p==null) die("Line #" + func.getLine() + ": undefined predicate: " + (func!=null?func.getText():null));
                     retval.cond = new AtomEx(p);
-                  
+
             }
             char_literal25=(Token)match(input,23,FOLLOW_23_in_functionalAtom1330); if (state.failed) return retval;
             if ( state.backtracking==0 ) {
@@ -1566,29 +1566,29 @@ public class MLNParser extends Parser {
 
 
                 switch (alt17) {
-            	case 1 :
-            	    // MLN.g:262:8: ',' ep= expression
-            	    {
-            	    char_literal26=(Token)match(input,24,FOLLOW_24_in_functionalAtom1355); if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) {
-            	    char_literal26_tree = (Object)adaptor.create(char_literal26);
-            	    adaptor.addChild(root_0, char_literal26_tree);
-            	    }
-            	    pushFollow(FOLLOW_expression_in_functionalAtom1359);
-            	    ep=expression();
+                case 1 :
+                    // MLN.g:262:8: ',' ep= expression
+                    {
+                    char_literal26=(Token)match(input,24,FOLLOW_24_in_functionalAtom1355); if (state.failed) return retval;
+                    if ( state.backtracking==0 ) {
+                    char_literal26_tree = (Object)adaptor.create(char_literal26);
+                    adaptor.addChild(root_0, char_literal26_tree);
+                    }
+                    pushFollow(FOLLOW_expression_in_functionalAtom1359);
+                    ep=expression();
 
-            	    state._fsp--;
-            	    if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) adaptor.addChild(root_0, ep.getTree());
-            	    if ( state.backtracking==0 ) {
-            	      retval.cond.appendTerm((ep!=null?ep.expr:null));
-            	    }
+                    state._fsp--;
+                    if (state.failed) return retval;
+                    if ( state.backtracking==0 ) adaptor.addChild(root_0, ep.getTree());
+                    if ( state.backtracking==0 ) {
+                      retval.cond.appendTerm((ep!=null?ep.expr:null));
+                    }
 
-            	    }
-            	    break;
+                    }
+                    break;
 
-            	default :
-            	    break loop17;
+                default :
+                    break loop17;
                 }
             } while (true);
 
@@ -1611,7 +1611,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -1748,7 +1748,7 @@ public class MLNParser extends Parser {
                         if((body0!=null?body0.lit:null)!=null){
                           retval.cq.addBodyLit((body0!=null?body0.lit:null));
                         }
-                      
+
             }
             // MLN.g:275:9: ( ',' bodyp= literal )*
             loop20:
@@ -1756,33 +1756,33 @@ public class MLNParser extends Parser {
                 int alt20=2;
                 alt20 = dfa20.predict(input);
                 switch (alt20) {
-            	case 1 :
-            	    // MLN.g:275:10: ',' bodyp= literal
-            	    {
-            	    char_literal29=(Token)match(input,24,FOLLOW_24_in_datalogRule1454); if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) {
-            	    char_literal29_tree = (Object)adaptor.create(char_literal29);
-            	    adaptor.addChild(root_0, char_literal29_tree);
-            	    }
-            	    pushFollow(FOLLOW_literal_in_datalogRule1458);
-            	    bodyp=literal();
+                case 1 :
+                    // MLN.g:275:10: ',' bodyp= literal
+                    {
+                    char_literal29=(Token)match(input,24,FOLLOW_24_in_datalogRule1454); if (state.failed) return retval;
+                    if ( state.backtracking==0 ) {
+                    char_literal29_tree = (Object)adaptor.create(char_literal29);
+                    adaptor.addChild(root_0, char_literal29_tree);
+                    }
+                    pushFollow(FOLLOW_literal_in_datalogRule1458);
+                    bodyp=literal();
 
-            	    state._fsp--;
-            	    if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) adaptor.addChild(root_0, bodyp.getTree());
-            	    if ( state.backtracking==0 ) {
+                    state._fsp--;
+                    if (state.failed) return retval;
+                    if ( state.backtracking==0 ) adaptor.addChild(root_0, bodyp.getTree());
+                    if ( state.backtracking==0 ) {
 
-            	                if((bodyp!=null?bodyp.lit:null)!=null){
-            	                  retval.cq.addBodyLit((bodyp!=null?bodyp.lit:null));
-            	                }
-            	              
-            	    }
+                                if((bodyp!=null?bodyp.lit:null)!=null){
+                                  retval.cq.addBodyLit((bodyp!=null?bodyp.lit:null));
+                                }
 
-            	    }
-            	    break;
+                    }
 
-            	default :
-            	    break loop20;
+                    }
+                    break;
+
+                default :
+                    break loop20;
                 }
             } while (true);
 
@@ -1804,31 +1804,31 @@ public class MLNParser extends Parser {
 
 
                 switch (alt21) {
-            	case 1 :
-            	    // MLN.g:280:10: ',' mc= mathComparison
-            	    {
-            	    char_literal30=(Token)match(input,24,FOLLOW_24_in_datalogRule1473); if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) {
-            	    char_literal30_tree = (Object)adaptor.create(char_literal30);
-            	    adaptor.addChild(root_0, char_literal30_tree);
-            	    }
-            	    pushFollow(FOLLOW_mathComparison_in_datalogRule1477);
-            	    mc=mathComparison();
+                case 1 :
+                    // MLN.g:280:10: ',' mc= mathComparison
+                    {
+                    char_literal30=(Token)match(input,24,FOLLOW_24_in_datalogRule1473); if (state.failed) return retval;
+                    if ( state.backtracking==0 ) {
+                    char_literal30_tree = (Object)adaptor.create(char_literal30);
+                    adaptor.addChild(root_0, char_literal30_tree);
+                    }
+                    pushFollow(FOLLOW_mathComparison_in_datalogRule1477);
+                    mc=mathComparison();
 
-            	    state._fsp--;
-            	    if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) adaptor.addChild(root_0, mc.getTree());
-            	    if ( state.backtracking==0 ) {
+                    state._fsp--;
+                    if (state.failed) return retval;
+                    if ( state.backtracking==0 ) adaptor.addChild(root_0, mc.getTree());
+                    if ( state.backtracking==0 ) {
 
-            	                retval.cq.addConstraint((mc!=null?mc.expr:null));
-            	              
-            	    }
+                                retval.cq.addConstraint((mc!=null?mc.expr:null));
 
-            	    }
-            	    break;
+                    }
 
-            	default :
-            	    break loop21;
+                    }
+                    break;
+
+                default :
+                    break loop21;
                 }
             } while (true);
 
@@ -1862,7 +1862,7 @@ public class MLNParser extends Parser {
                     if ( state.backtracking==0 ) {
 
                                   retval.cq.addConstraint((be!=null?be.be:null));
-                                 
+
                     }
                     char_literal33=(Token)match(input,38,FOLLOW_38_in_datalogRule1519); if (state.failed) return retval;
                     if ( state.backtracking==0 ) {
@@ -1885,16 +1885,16 @@ public class MLNParser extends Parser {
                       if(st != null){
                           if((st!=null?st.getText():null).equals("$")) retval.cq.isView = true;
                       }
-              		    if(vt != null){
-              		        if((vt!=null?vt.getText():null).equals("@")) ml.registerPostprocRule(retval.cq);
+                            if(vt != null){
+                                if((vt!=null?vt.getText():null).equals("@")) ml.registerPostprocRule(retval.cq);
                           else if((vt!=null?vt.getText():null).equals("#")){
                              // ml.registerDatalogRule(retval.cq);
                              ml.registerIntermediateRule(retval.cq);
                           }
-              		    }else{
-              		        ml.registerDatalogRule(retval.cq);
-              		    }
-                   
+                            }else{
+                                ml.registerDatalogRule(retval.cq);
+                            }
+
             }
 
             }
@@ -1910,7 +1910,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -2044,7 +2044,7 @@ public class MLNParser extends Parser {
                         if((body0!=null?body0.lit:null)!=null){
                           retval.cq.addBodyLit((body0!=null?body0.lit:null));
                         }
-                      
+
             }
             // MLN.g:312:9: ( ',' bodyp= literal )*
             loop24:
@@ -2052,33 +2052,33 @@ public class MLNParser extends Parser {
                 int alt24=2;
                 alt24 = dfa24.predict(input);
                 switch (alt24) {
-            	case 1 :
-            	    // MLN.g:312:10: ',' bodyp= literal
-            	    {
-            	    char_literal40=(Token)match(input,24,FOLLOW_24_in_scopingRule1606); if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) {
-            	    char_literal40_tree = (Object)adaptor.create(char_literal40);
-            	    adaptor.addChild(root_0, char_literal40_tree);
-            	    }
-            	    pushFollow(FOLLOW_literal_in_scopingRule1610);
-            	    bodyp=literal();
+                case 1 :
+                    // MLN.g:312:10: ',' bodyp= literal
+                    {
+                    char_literal40=(Token)match(input,24,FOLLOW_24_in_scopingRule1606); if (state.failed) return retval;
+                    if ( state.backtracking==0 ) {
+                    char_literal40_tree = (Object)adaptor.create(char_literal40);
+                    adaptor.addChild(root_0, char_literal40_tree);
+                    }
+                    pushFollow(FOLLOW_literal_in_scopingRule1610);
+                    bodyp=literal();
 
-            	    state._fsp--;
-            	    if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) adaptor.addChild(root_0, bodyp.getTree());
-            	    if ( state.backtracking==0 ) {
+                    state._fsp--;
+                    if (state.failed) return retval;
+                    if ( state.backtracking==0 ) adaptor.addChild(root_0, bodyp.getTree());
+                    if ( state.backtracking==0 ) {
 
-            	                if((bodyp!=null?bodyp.lit:null)!=null){
-            	                  retval.cq.addBodyLit((bodyp!=null?bodyp.lit:null));
-            	                }
-            	              
-            	    }
+                                if((bodyp!=null?bodyp.lit:null)!=null){
+                                  retval.cq.addBodyLit((bodyp!=null?bodyp.lit:null));
+                                }
 
-            	    }
-            	    break;
+                    }
 
-            	default :
-            	    break loop24;
+                    }
+                    break;
+
+                default :
+                    break loop24;
                 }
             } while (true);
 
@@ -2100,31 +2100,31 @@ public class MLNParser extends Parser {
 
 
                 switch (alt25) {
-            	case 1 :
-            	    // MLN.g:317:10: ',' mc= mathComparison
-            	    {
-            	    char_literal41=(Token)match(input,24,FOLLOW_24_in_scopingRule1625); if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) {
-            	    char_literal41_tree = (Object)adaptor.create(char_literal41);
-            	    adaptor.addChild(root_0, char_literal41_tree);
-            	    }
-            	    pushFollow(FOLLOW_mathComparison_in_scopingRule1629);
-            	    mc=mathComparison();
+                case 1 :
+                    // MLN.g:317:10: ',' mc= mathComparison
+                    {
+                    char_literal41=(Token)match(input,24,FOLLOW_24_in_scopingRule1625); if (state.failed) return retval;
+                    if ( state.backtracking==0 ) {
+                    char_literal41_tree = (Object)adaptor.create(char_literal41);
+                    adaptor.addChild(root_0, char_literal41_tree);
+                    }
+                    pushFollow(FOLLOW_mathComparison_in_scopingRule1629);
+                    mc=mathComparison();
 
-            	    state._fsp--;
-            	    if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) adaptor.addChild(root_0, mc.getTree());
-            	    if ( state.backtracking==0 ) {
+                    state._fsp--;
+                    if (state.failed) return retval;
+                    if ( state.backtracking==0 ) adaptor.addChild(root_0, mc.getTree());
+                    if ( state.backtracking==0 ) {
 
-            	                retval.cq.addConstraint((mc!=null?mc.expr:null));
-            	              
-            	    }
+                                retval.cq.addConstraint((mc!=null?mc.expr:null));
 
-            	    }
-            	    break;
+                    }
 
-            	default :
-            	    break loop25;
+                    }
+                    break;
+
+                default :
+                    break loop25;
                 }
             } while (true);
 
@@ -2158,7 +2158,7 @@ public class MLNParser extends Parser {
                     if ( state.backtracking==0 ) {
 
                                   retval.cq.addConstraint((be!=null?be.be:null));
-                                 
+
                     }
                     char_literal44=(Token)match(input,38,FOLLOW_38_in_scopingRule1671); if (state.failed) return retval;
                     if ( state.backtracking==0 ) {
@@ -2187,7 +2187,7 @@ public class MLNParser extends Parser {
                       }
                     }
                    ml.registerScopingRule(retval.cq);
-                   
+
             }
 
             }
@@ -2203,7 +2203,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -2313,10 +2313,10 @@ public class MLNParser extends Parser {
                     if ( state.backtracking==0 ) {
 
                                 if((ant0!=null?ant0.lit:null)!=null){
-                                  (ant0!=null?ant0.lit:null).flipSense(); 
+                                  (ant0!=null?ant0.lit:null).flipSense();
                                   retval.c.addLiteral((ant0!=null?ant0.lit:null));
                                 }
-                              
+
                     }
                     // MLN.g:415:9: ( ',' antp= literal )*
                     loop28:
@@ -2324,34 +2324,34 @@ public class MLNParser extends Parser {
                         int alt28=2;
                         alt28 = dfa28.predict(input);
                         switch (alt28) {
-                    	case 1 :
-                    	    // MLN.g:415:10: ',' antp= literal
-                    	    {
-                    	    char_literal46=(Token)match(input,24,FOLLOW_24_in_foclause1752); if (state.failed) return retval;
-                    	    if ( state.backtracking==0 ) {
-                    	    char_literal46_tree = (Object)adaptor.create(char_literal46);
-                    	    adaptor.addChild(root_0, char_literal46_tree);
-                    	    }
-                    	    pushFollow(FOLLOW_literal_in_foclause1756);
-                    	    antp=literal();
+                        case 1 :
+                            // MLN.g:415:10: ',' antp= literal
+                            {
+                            char_literal46=(Token)match(input,24,FOLLOW_24_in_foclause1752); if (state.failed) return retval;
+                            if ( state.backtracking==0 ) {
+                            char_literal46_tree = (Object)adaptor.create(char_literal46);
+                            adaptor.addChild(root_0, char_literal46_tree);
+                            }
+                            pushFollow(FOLLOW_literal_in_foclause1756);
+                            antp=literal();
 
-                    	    state._fsp--;
-                    	    if (state.failed) return retval;
-                    	    if ( state.backtracking==0 ) adaptor.addChild(root_0, antp.getTree());
-                    	    if ( state.backtracking==0 ) {
+                            state._fsp--;
+                            if (state.failed) return retval;
+                            if ( state.backtracking==0 ) adaptor.addChild(root_0, antp.getTree());
+                            if ( state.backtracking==0 ) {
 
-                    	                if((antp!=null?antp.lit:null)!=null){
-                    	                  (antp!=null?antp.lit:null).flipSense(); 
-                    	                  retval.c.addLiteral((antp!=null?antp.lit:null));
-                    	                }
-                    	              
-                    	    }
+                                        if((antp!=null?antp.lit:null)!=null){
+                                          (antp!=null?antp.lit:null).flipSense();
+                                          retval.c.addLiteral((antp!=null?antp.lit:null));
+                                        }
 
-                    	    }
-                    	    break;
+                            }
 
-                    	default :
-                    	    break loop28;
+                            }
+                            break;
+
+                        default :
+                            break loop28;
                         }
                     } while (true);
 
@@ -2373,31 +2373,31 @@ public class MLNParser extends Parser {
 
 
                         switch (alt29) {
-                    	case 1 :
-                    	    // MLN.g:421:10: ',' mc= mathComparison
-                    	    {
-                    	    char_literal47=(Token)match(input,24,FOLLOW_24_in_foclause1771); if (state.failed) return retval;
-                    	    if ( state.backtracking==0 ) {
-                    	    char_literal47_tree = (Object)adaptor.create(char_literal47);
-                    	    adaptor.addChild(root_0, char_literal47_tree);
-                    	    }
-                    	    pushFollow(FOLLOW_mathComparison_in_foclause1775);
-                    	    mc=mathComparison();
+                        case 1 :
+                            // MLN.g:421:10: ',' mc= mathComparison
+                            {
+                            char_literal47=(Token)match(input,24,FOLLOW_24_in_foclause1771); if (state.failed) return retval;
+                            if ( state.backtracking==0 ) {
+                            char_literal47_tree = (Object)adaptor.create(char_literal47);
+                            adaptor.addChild(root_0, char_literal47_tree);
+                            }
+                            pushFollow(FOLLOW_mathComparison_in_foclause1775);
+                            mc=mathComparison();
 
-                    	    state._fsp--;
-                    	    if (state.failed) return retval;
-                    	    if ( state.backtracking==0 ) adaptor.addChild(root_0, mc.getTree());
-                    	    if ( state.backtracking==0 ) {
+                            state._fsp--;
+                            if (state.failed) return retval;
+                            if ( state.backtracking==0 ) adaptor.addChild(root_0, mc.getTree());
+                            if ( state.backtracking==0 ) {
 
-                    	                retval.c.addConstraint((mc!=null?mc.expr:null));
-                    	              
-                    	    }
+                                        retval.c.addConstraint((mc!=null?mc.expr:null));
 
-                    	    }
-                    	    break;
+                            }
 
-                    	default :
-                    	    break loop29;
+                            }
+                            break;
+
+                        default :
+                            break loop29;
                         }
                     } while (true);
 
@@ -2430,8 +2430,8 @@ public class MLNParser extends Parser {
                             if ( state.backtracking==0 ) adaptor.addChild(root_0, be.getTree());
                             if ( state.backtracking==0 ) {
 
-                              	          retval.c.addConstraint((be!=null?be.be:null));
-                              	         
+                                          retval.c.addConstraint((be!=null?be.be:null));
+
                             }
                             char_literal50=(Token)match(input,38,FOLLOW_38_in_foclause1814); if (state.failed) return retval;
                             if ( state.backtracking==0 ) {
@@ -2470,29 +2470,29 @@ public class MLNParser extends Parser {
                 int alt32=2;
                 alt32 = dfa32.predict(input);
                 switch (alt32) {
-            	case 1 :
-            	    // MLN.g:433:7: 'v' litp= literal
-            	    {
-            	    char_literal52=(Token)match(input,42,FOLLOW_42_in_foclause1863); if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) {
-            	    char_literal52_tree = (Object)adaptor.create(char_literal52);
-            	    adaptor.addChild(root_0, char_literal52_tree);
-            	    }
-            	    pushFollow(FOLLOW_literal_in_foclause1867);
-            	    litp=literal();
+                case 1 :
+                    // MLN.g:433:7: 'v' litp= literal
+                    {
+                    char_literal52=(Token)match(input,42,FOLLOW_42_in_foclause1863); if (state.failed) return retval;
+                    if ( state.backtracking==0 ) {
+                    char_literal52_tree = (Object)adaptor.create(char_literal52);
+                    adaptor.addChild(root_0, char_literal52_tree);
+                    }
+                    pushFollow(FOLLOW_literal_in_foclause1867);
+                    litp=literal();
 
-            	    state._fsp--;
-            	    if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) adaptor.addChild(root_0, litp.getTree());
-            	    if ( state.backtracking==0 ) {
-            	      retval.c.addLiteral((litp!=null?litp.lit:null));
-            	    }
+                    state._fsp--;
+                    if (state.failed) return retval;
+                    if ( state.backtracking==0 ) adaptor.addChild(root_0, litp.getTree());
+                    if ( state.backtracking==0 ) {
+                      retval.c.addLiteral((litp!=null?litp.lit:null));
+                    }
 
-            	    }
-            	    break;
+                    }
+                    break;
 
-            	default :
-            	    break loop32;
+                default :
+                    break loop32;
                 }
             } while (true);
 
@@ -2514,31 +2514,31 @@ public class MLNParser extends Parser {
 
 
                 switch (alt33) {
-            	case 1 :
-            	    // MLN.g:434:10: 'v' mc= mathComparison
-            	    {
-            	    char_literal53=(Token)match(input,42,FOLLOW_42_in_foclause1882); if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) {
-            	    char_literal53_tree = (Object)adaptor.create(char_literal53);
-            	    adaptor.addChild(root_0, char_literal53_tree);
-            	    }
-            	    pushFollow(FOLLOW_mathComparison_in_foclause1886);
-            	    mc=mathComparison();
+                case 1 :
+                    // MLN.g:434:10: 'v' mc= mathComparison
+                    {
+                    char_literal53=(Token)match(input,42,FOLLOW_42_in_foclause1882); if (state.failed) return retval;
+                    if ( state.backtracking==0 ) {
+                    char_literal53_tree = (Object)adaptor.create(char_literal53);
+                    adaptor.addChild(root_0, char_literal53_tree);
+                    }
+                    pushFollow(FOLLOW_mathComparison_in_foclause1886);
+                    mc=mathComparison();
 
-            	    state._fsp--;
-            	    if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) adaptor.addChild(root_0, mc.getTree());
-            	    if ( state.backtracking==0 ) {
+                    state._fsp--;
+                    if (state.failed) return retval;
+                    if ( state.backtracking==0 ) adaptor.addChild(root_0, mc.getTree());
+                    if ( state.backtracking==0 ) {
 
-            	                retval.c.addConstraint(Expression.not((mc!=null?mc.expr:null)));
-            	              
-            	    }
+                                retval.c.addConstraint(Expression.not((mc!=null?mc.expr:null)));
 
-            	    }
-            	    break;
+                    }
 
-            	default :
-            	    break loop33;
+                    }
+                    break;
+
+                default :
+                    break loop33;
                 }
             } while (true);
 
@@ -2572,7 +2572,7 @@ public class MLNParser extends Parser {
                     if ( state.backtracking==0 ) {
 
                                 retval.c.addConstraint(Expression.not((sbe!=null?sbe.be:null)));
-                               
+
                     }
                     char_literal56=(Token)match(input,38,FOLLOW_38_in_foclause1928); if (state.failed) return retval;
                     if ( state.backtracking==0 ) {
@@ -2594,7 +2594,7 @@ public class MLNParser extends Parser {
                     }
                     retval.c.addUserProvidedName(clauseName);
                     if(!clauseLabelTrailing) clauseName = null;
-                  
+
             }
 
             }
@@ -2610,7 +2610,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -2676,28 +2676,28 @@ public class MLNParser extends Parser {
 
 
                 switch (alt35) {
-            	case 1 :
-            	    // MLN.g:457:10: ',' vp= ID
-            	    {
-            	    char_literal58=(Token)match(input,24,FOLLOW_24_in_existQuan1984); if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) {
-            	    char_literal58_tree = (Object)adaptor.create(char_literal58);
-            	    adaptor.addChild(root_0, char_literal58_tree);
-            	    }
-            	    vp=(Token)match(input,ID,FOLLOW_ID_in_existQuan1988); if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) {
-            	    vp_tree = (Object)adaptor.create(vp);
-            	    adaptor.addChild(root_0, vp_tree);
-            	    }
-            	    if ( state.backtracking==0 ) {
-            	      retval.vars.add((vp!=null?vp.getText():null));
-            	    }
+                case 1 :
+                    // MLN.g:457:10: ',' vp= ID
+                    {
+                    char_literal58=(Token)match(input,24,FOLLOW_24_in_existQuan1984); if (state.failed) return retval;
+                    if ( state.backtracking==0 ) {
+                    char_literal58_tree = (Object)adaptor.create(char_literal58);
+                    adaptor.addChild(root_0, char_literal58_tree);
+                    }
+                    vp=(Token)match(input,ID,FOLLOW_ID_in_existQuan1988); if (state.failed) return retval;
+                    if ( state.backtracking==0 ) {
+                    vp_tree = (Object)adaptor.create(vp);
+                    adaptor.addChild(root_0, vp_tree);
+                    }
+                    if ( state.backtracking==0 ) {
+                      retval.vars.add((vp!=null?vp.getText():null));
+                    }
 
-            	    }
-            	    break;
+                    }
+                    break;
 
-            	default :
-            	    break loop35;
+                default :
+                    break loop35;
                 }
             } while (true);
 
@@ -2715,7 +2715,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -2770,7 +2770,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -2818,7 +2818,7 @@ public class MLNParser extends Parser {
             if ( state.backtracking==0 ) {
 
                       retval.be = (c0!=null?c0.be:null);
-                  
+
             }
             // MLN.g:471:5: ( ( '||' | 'OR' ) cp= boolConjunction )*
             loop36:
@@ -2832,41 +2832,41 @@ public class MLNParser extends Parser {
 
 
                 switch (alt36) {
-            	case 1 :
-            	    // MLN.g:472:9: ( '||' | 'OR' ) cp= boolConjunction
-            	    {
-            	    set59=(Token)input.LT(1);
-            	    if ( (input.LA(1)>=43 && input.LA(1)<=44) ) {
-            	        input.consume();
-            	        if ( state.backtracking==0 ) adaptor.addChild(root_0, (Object)adaptor.create(set59));
-            	        state.errorRecovery=false;state.failed=false;
-            	    }
-            	    else {
-            	        if (state.backtracking>0) {state.failed=true; return retval;}
-            	        MismatchedSetException mse = new MismatchedSetException(null,input);
-            	        throw mse;
-            	    }
+                case 1 :
+                    // MLN.g:472:9: ( '||' | 'OR' ) cp= boolConjunction
+                    {
+                    set59=(Token)input.LT(1);
+                    if ( (input.LA(1)>=43 && input.LA(1)<=44) ) {
+                        input.consume();
+                        if ( state.backtracking==0 ) adaptor.addChild(root_0, (Object)adaptor.create(set59));
+                        state.errorRecovery=false;state.failed=false;
+                    }
+                    else {
+                        if (state.backtracking>0) {state.failed=true; return retval;}
+                        MismatchedSetException mse = new MismatchedSetException(null,input);
+                        throw mse;
+                    }
 
-            	    pushFollow(FOLLOW_boolConjunction_in_boolExpression2074);
-            	    cp=boolConjunction();
+                    pushFollow(FOLLOW_boolConjunction_in_boolExpression2074);
+                    cp=boolConjunction();
 
-            	    state._fsp--;
-            	    if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) adaptor.addChild(root_0, cp.getTree());
-            	    if ( state.backtracking==0 ) {
+                    state._fsp--;
+                    if (state.failed) return retval;
+                    if ( state.backtracking==0 ) adaptor.addChild(root_0, cp.getTree());
+                    if ( state.backtracking==0 ) {
 
-            	      	        Expression enew = new Expression(Function.OR);
-            	      	        enew.addArgument(retval.be);
-            	      	        enew.addArgument((cp!=null?cp.be:null));
-            	      	        retval.be = enew;
-            	              
-            	    }
+                                Expression enew = new Expression(Function.OR);
+                                enew.addArgument(retval.be);
+                                enew.addArgument((cp!=null?cp.be:null));
+                                retval.be = enew;
 
-            	    }
-            	    break;
+                    }
 
-            	default :
-            	    break loop36;
+                    }
+                    break;
+
+                default :
+                    break loop36;
                 }
             } while (true);
 
@@ -2884,7 +2884,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -2932,7 +2932,7 @@ public class MLNParser extends Parser {
             if ( state.backtracking==0 ) {
 
                       retval.be = (c0!=null?c0.be:null);
-                  
+
             }
             // MLN.g:488:5: ( ( '&&' | 'AND' ) cp= boolConjunctionElement )*
             loop37:
@@ -2946,41 +2946,41 @@ public class MLNParser extends Parser {
 
 
                 switch (alt37) {
-            	case 1 :
-            	    // MLN.g:489:9: ( '&&' | 'AND' ) cp= boolConjunctionElement
-            	    {
-            	    set60=(Token)input.LT(1);
-            	    if ( (input.LA(1)>=45 && input.LA(1)<=46) ) {
-            	        input.consume();
-            	        if ( state.backtracking==0 ) adaptor.addChild(root_0, (Object)adaptor.create(set60));
-            	        state.errorRecovery=false;state.failed=false;
-            	    }
-            	    else {
-            	        if (state.backtracking>0) {state.failed=true; return retval;}
-            	        MismatchedSetException mse = new MismatchedSetException(null,input);
-            	        throw mse;
-            	    }
+                case 1 :
+                    // MLN.g:489:9: ( '&&' | 'AND' ) cp= boolConjunctionElement
+                    {
+                    set60=(Token)input.LT(1);
+                    if ( (input.LA(1)>=45 && input.LA(1)<=46) ) {
+                        input.consume();
+                        if ( state.backtracking==0 ) adaptor.addChild(root_0, (Object)adaptor.create(set60));
+                        state.errorRecovery=false;state.failed=false;
+                    }
+                    else {
+                        if (state.backtracking>0) {state.failed=true; return retval;}
+                        MismatchedSetException mse = new MismatchedSetException(null,input);
+                        throw mse;
+                    }
 
-            	    pushFollow(FOLLOW_boolConjunctionElement_in_boolConjunction2150);
-            	    cp=boolConjunctionElement();
+                    pushFollow(FOLLOW_boolConjunctionElement_in_boolConjunction2150);
+                    cp=boolConjunctionElement();
 
-            	    state._fsp--;
-            	    if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) adaptor.addChild(root_0, cp.getTree());
-            	    if ( state.backtracking==0 ) {
+                    state._fsp--;
+                    if (state.failed) return retval;
+                    if ( state.backtracking==0 ) adaptor.addChild(root_0, cp.getTree());
+                    if ( state.backtracking==0 ) {
 
-            	                Expression enew = new Expression(Function.AND);
-            	                enew.addArgument(retval.be);
-            	                enew.addArgument((cp!=null?cp.be:null));
-            	                retval.be = enew;
-            	              
-            	    }
+                                Expression enew = new Expression(Function.AND);
+                                enew.addArgument(retval.be);
+                                enew.addArgument((cp!=null?cp.be:null));
+                                retval.be = enew;
 
-            	    }
-            	    break;
+                    }
 
-            	default :
-            	    break loop37;
+                    }
+                    break;
+
+                default :
+                    break loop37;
                 }
             } while (true);
 
@@ -2998,7 +2998,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -3205,7 +3205,7 @@ public class MLNParser extends Parser {
                                 enew.addArgument(retval.be);
                                 retval.be = enew;
                               }
-                          
+
                     }
 
                     }
@@ -3268,7 +3268,7 @@ public class MLNParser extends Parser {
                                 enew.addArgument(retval.be);
                                 retval.be = enew;
                               }
-                          
+
                     }
 
                     }
@@ -3286,7 +3286,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -3355,7 +3355,7 @@ public class MLNParser extends Parser {
                       retval.expr = new Expression(f);
                       retval.expr.addArgument((e1!=null?e1.expr:null));
                       retval.expr.addArgument((e2!=null?e2.expr:null));
-                  
+
             }
 
             }
@@ -3371,7 +3371,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -3419,7 +3419,7 @@ public class MLNParser extends Parser {
             if ( state.backtracking==0 ) {
 
                     retval.expr = (t0!=null?t0.expr:null);
-                  
+
             }
             // MLN.g:543:5: (op= ( '+' | '-' | '%' ) tp= mathTerm )*
             loop42:
@@ -3427,48 +3427,48 @@ public class MLNParser extends Parser {
                 int alt42=2;
                 alt42 = dfa42.predict(input);
                 switch (alt42) {
-            	case 1 :
-            	    // MLN.g:543:6: op= ( '+' | '-' | '%' ) tp= mathTerm
-            	    {
-            	    op=(Token)input.LT(1);
-            	    if ( (input.LA(1)>=PLUS && input.LA(1)<=MINUS)||input.LA(1)==54 ) {
-            	        input.consume();
-            	        if ( state.backtracking==0 ) adaptor.addChild(root_0, (Object)adaptor.create(op));
-            	        state.errorRecovery=false;state.failed=false;
-            	    }
-            	    else {
-            	        if (state.backtracking>0) {state.failed=true; return retval;}
-            	        MismatchedSetException mse = new MismatchedSetException(null,input);
-            	        throw mse;
-            	    }
+                case 1 :
+                    // MLN.g:543:6: op= ( '+' | '-' | '%' ) tp= mathTerm
+                    {
+                    op=(Token)input.LT(1);
+                    if ( (input.LA(1)>=PLUS && input.LA(1)<=MINUS)||input.LA(1)==54 ) {
+                        input.consume();
+                        if ( state.backtracking==0 ) adaptor.addChild(root_0, (Object)adaptor.create(op));
+                        state.errorRecovery=false;state.failed=false;
+                    }
+                    else {
+                        if (state.backtracking>0) {state.failed=true; return retval;}
+                        MismatchedSetException mse = new MismatchedSetException(null,input);
+                        throw mse;
+                    }
 
-            	    pushFollow(FOLLOW_mathTerm_in_mathExpression2391);
-            	    tp=mathTerm();
+                    pushFollow(FOLLOW_mathTerm_in_mathExpression2391);
+                    tp=mathTerm();
 
-            	    state._fsp--;
-            	    if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) adaptor.addChild(root_0, tp.getTree());
-            	    if ( state.backtracking==0 ) {
+                    state._fsp--;
+                    if (state.failed) return retval;
+                    if ( state.backtracking==0 ) adaptor.addChild(root_0, tp.getTree());
+                    if ( state.backtracking==0 ) {
 
-            	              Expression enew = null;
-            	              if((op!=null?op.getText():null).equals("+")){
-            	                  enew = new Expression(Function.Add);
-            	              }else if((op!=null?op.getText():null).equals("-")){
-            	                  enew = new Expression(Function.Subtract);
-            	              }else if((op!=null?op.getText():null).equals("%")){
-            	                  enew = new Expression(Function.Modulo);
-            	              }
-            	              enew.addArgument(retval.expr);
-            	              enew.addArgument((tp!=null?tp.expr:null));
-            	              retval.expr = enew;
-            	            
-            	    }
+                              Expression enew = null;
+                              if((op!=null?op.getText():null).equals("+")){
+                                  enew = new Expression(Function.Add);
+                              }else if((op!=null?op.getText():null).equals("-")){
+                                  enew = new Expression(Function.Subtract);
+                              }else if((op!=null?op.getText():null).equals("%")){
+                                  enew = new Expression(Function.Modulo);
+                              }
+                              enew.addArgument(retval.expr);
+                              enew.addArgument((tp!=null?tp.expr:null));
+                              retval.expr = enew;
 
-            	    }
-            	    break;
+                    }
 
-            	default :
-            	    break loop42;
+                    }
+                    break;
+
+                default :
+                    break loop42;
                 }
             } while (true);
 
@@ -3486,7 +3486,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -3534,7 +3534,7 @@ public class MLNParser extends Parser {
             if ( state.backtracking==0 ) {
 
                     retval.expr = (t0!=null?t0.expr:null);
-                  
+
             }
             // MLN.g:566:5: (op= ( '*' | '/' | '&' | '|' | '^' | '<<' | '>>' ) tp= mathFactor )*
             loop43:
@@ -3548,56 +3548,56 @@ public class MLNParser extends Parser {
 
 
                 switch (alt43) {
-            	case 1 :
-            	    // MLN.g:566:6: op= ( '*' | '/' | '&' | '|' | '^' | '<<' | '>>' ) tp= mathFactor
-            	    {
-            	    op=(Token)input.LT(1);
-            	    if ( input.LA(1)==ASTERISK||(input.LA(1)>=55 && input.LA(1)<=60) ) {
-            	        input.consume();
-            	        if ( state.backtracking==0 ) adaptor.addChild(root_0, (Object)adaptor.create(op));
-            	        state.errorRecovery=false;state.failed=false;
-            	    }
-            	    else {
-            	        if (state.backtracking>0) {state.failed=true; return retval;}
-            	        MismatchedSetException mse = new MismatchedSetException(null,input);
-            	        throw mse;
-            	    }
+                case 1 :
+                    // MLN.g:566:6: op= ( '*' | '/' | '&' | '|' | '^' | '<<' | '>>' ) tp= mathFactor
+                    {
+                    op=(Token)input.LT(1);
+                    if ( input.LA(1)==ASTERISK||(input.LA(1)>=55 && input.LA(1)<=60) ) {
+                        input.consume();
+                        if ( state.backtracking==0 ) adaptor.addChild(root_0, (Object)adaptor.create(op));
+                        state.errorRecovery=false;state.failed=false;
+                    }
+                    else {
+                        if (state.backtracking>0) {state.failed=true; return retval;}
+                        MismatchedSetException mse = new MismatchedSetException(null,input);
+                        throw mse;
+                    }
 
-            	    pushFollow(FOLLOW_mathFactor_in_mathTerm2470);
-            	    tp=mathFactor();
+                    pushFollow(FOLLOW_mathFactor_in_mathTerm2470);
+                    tp=mathFactor();
 
-            	    state._fsp--;
-            	    if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) adaptor.addChild(root_0, tp.getTree());
-            	    if ( state.backtracking==0 ) {
+                    state._fsp--;
+                    if (state.failed) return retval;
+                    if ( state.backtracking==0 ) adaptor.addChild(root_0, tp.getTree());
+                    if ( state.backtracking==0 ) {
 
-            	              Expression enew = null;
-            	              if((op!=null?op.getText():null).equals("*")){
-            	                  enew = new Expression(Function.Multiply);
-            	              }else if((op!=null?op.getText():null).equals("/")){
-            	                  enew = new Expression(Function.Divide);
-            	              }else if((op!=null?op.getText():null).equals("&")){
-            	                  enew = new Expression(Function.BitAnd);
-            	              }else if((op!=null?op.getText():null).equals("|")){
-            	                  enew = new Expression(Function.BitOr);
-            	              }else if((op!=null?op.getText():null).equals("^")){
-            	                  enew = new Expression(Function.BitXor);
-            	              }else if((op!=null?op.getText():null).equals("<<")){
-            	                  enew = new Expression(Function.BitShiftLeft);
-            	              }else if((op!=null?op.getText():null).equals(">>")){
-            	                  enew = new Expression(Function.BitShiftRight);
-            	              }
-            	              enew.addArgument(retval.expr);
-            	              enew.addArgument((tp!=null?tp.expr:null));
-            	              retval.expr = enew;
-            	            
-            	    }
+                              Expression enew = null;
+                              if((op!=null?op.getText():null).equals("*")){
+                                  enew = new Expression(Function.Multiply);
+                              }else if((op!=null?op.getText():null).equals("/")){
+                                  enew = new Expression(Function.Divide);
+                              }else if((op!=null?op.getText():null).equals("&")){
+                                  enew = new Expression(Function.BitAnd);
+                              }else if((op!=null?op.getText():null).equals("|")){
+                                  enew = new Expression(Function.BitOr);
+                              }else if((op!=null?op.getText():null).equals("^")){
+                                  enew = new Expression(Function.BitXor);
+                              }else if((op!=null?op.getText():null).equals("<<")){
+                                  enew = new Expression(Function.BitShiftLeft);
+                              }else if((op!=null?op.getText():null).equals(">>")){
+                                  enew = new Expression(Function.BitShiftRight);
+                              }
+                              enew.addArgument(retval.expr);
+                              enew.addArgument((tp!=null?tp.expr:null));
+                              retval.expr = enew;
 
-            	    }
-            	    break;
+                    }
 
-            	default :
-            	    break loop43;
+                    }
+                    break;
+
+                default :
+                    break loop43;
                 }
             } while (true);
 
@@ -3615,7 +3615,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -3722,8 +3722,8 @@ public class MLNParser extends Parser {
                     if ( state.backtracking==0 ) adaptor.addChild(root_0, fe.getTree());
                     if ( state.backtracking==0 ) {
 
-                      		      retval.expr = (fe!=null?fe.expr:null);
-                      		    
+                                      retval.expr = (fe!=null?fe.expr:null);
+
                     }
 
                     }
@@ -3739,8 +3739,8 @@ public class MLNParser extends Parser {
                     if ( state.backtracking==0 ) adaptor.addChild(root_0, ae.getTree());
                     if ( state.backtracking==0 ) {
 
-                      		      retval.expr = (ae!=null?ae.expr:null);
-                      		    
+                                      retval.expr = (ae!=null?ae.expr:null);
+
                     }
 
                     }
@@ -3766,8 +3766,8 @@ public class MLNParser extends Parser {
                     }
                     if ( state.backtracking==0 ) {
 
-                      		      retval.expr = (ee!=null?ee.expr:null);
-                      		    
+                                      retval.expr = (ee!=null?ee.expr:null);
+
                     }
 
                     }
@@ -3788,10 +3788,10 @@ public class MLNParser extends Parser {
                     if ( state.backtracking==0 ) adaptor.addChild(root_0, mf.getTree());
                     if ( state.backtracking==0 ) {
 
-                      		      Expression enew = new Expression(Function.BitNeg);
-                      		      enew.addArgument((mf!=null?mf.expr:null));
-                      		      retval.expr = enew;
-                      		    
+                                      Expression enew = new Expression(Function.BitNeg);
+                                      enew.addArgument((mf!=null?mf.expr:null));
+                                      retval.expr = enew;
+
                     }
 
                     }
@@ -3827,12 +3827,12 @@ public class MLNParser extends Parser {
 
             if ( state.backtracking==0 ) {
 
-              	      if(fact != null){
-              			      Expression enew = new Expression(Function.Factorial);
-              			      enew.addArgument(retval.expr);
-              			      retval.expr = enew;
-              	      }
-              	    
+                      if(fact != null){
+                                      Expression enew = new Expression(Function.Factorial);
+                                      enew.addArgument(retval.expr);
+                                      retval.expr = enew;
+                      }
+
             }
 
             }
@@ -3848,7 +3848,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -3900,14 +3900,14 @@ public class MLNParser extends Parser {
             }
             if ( state.backtracking==0 ) {
 
-              	        Function f = ml.getFunctionByName((func!=null?func.getText():null));
-              	        if(f == null) die("Line #" + func.getLine() + 
-              	        ": unknown function " + (func!=null?func.getText():null) +
-              	        ". Are you putting a bool expression before a "+
-              	        "regular literal in a rule? (HINT: You shouldn't.)"
-              	        );
-              	        retval.expr = new Expression(f);
-              	    
+                        Function f = ml.getFunctionByName((func!=null?func.getText():null));
+                        if(f == null) die("Line #" + func.getLine() +
+                        ": unknown function " + (func!=null?func.getText():null) +
+                        ". Are you putting a bool expression before a "+
+                        "regular literal in a rule? (HINT: You shouldn't.)"
+                        );
+                        retval.expr = new Expression(f);
+
             }
             char_literal66=(Token)match(input,23,FOLLOW_23_in_funcExpression2652); if (state.failed) return retval;
             if ( state.backtracking==0 ) {
@@ -3922,8 +3922,8 @@ public class MLNParser extends Parser {
             if ( state.backtracking==0 ) adaptor.addChild(root_0, a0.getTree());
             if ( state.backtracking==0 ) {
 
-              	        retval.expr.addArgument((a0!=null?a0.expr:null));
-              	    
+                        retval.expr.addArgument((a0!=null?a0.expr:null));
+
             }
             // MLN.g:637:5: ( ',' ap= funcArgument )*
             loop46:
@@ -3937,31 +3937,31 @@ public class MLNParser extends Parser {
 
 
                 switch (alt46) {
-            	case 1 :
-            	    // MLN.g:637:6: ',' ap= funcArgument
-            	    {
-            	    char_literal67=(Token)match(input,24,FOLLOW_24_in_funcExpression2671); if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) {
-            	    char_literal67_tree = (Object)adaptor.create(char_literal67);
-            	    adaptor.addChild(root_0, char_literal67_tree);
-            	    }
-            	    pushFollow(FOLLOW_funcArgument_in_funcExpression2675);
-            	    ap=funcArgument();
+                case 1 :
+                    // MLN.g:637:6: ',' ap= funcArgument
+                    {
+                    char_literal67=(Token)match(input,24,FOLLOW_24_in_funcExpression2671); if (state.failed) return retval;
+                    if ( state.backtracking==0 ) {
+                    char_literal67_tree = (Object)adaptor.create(char_literal67);
+                    adaptor.addChild(root_0, char_literal67_tree);
+                    }
+                    pushFollow(FOLLOW_funcArgument_in_funcExpression2675);
+                    ap=funcArgument();
 
-            	    state._fsp--;
-            	    if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) adaptor.addChild(root_0, ap.getTree());
-            	    if ( state.backtracking==0 ) {
+                    state._fsp--;
+                    if (state.failed) return retval;
+                    if ( state.backtracking==0 ) adaptor.addChild(root_0, ap.getTree());
+                    if ( state.backtracking==0 ) {
 
-            	      	        retval.expr.addArgument((ap!=null?ap.expr:null));
-            	      	    
-            	    }
+                                retval.expr.addArgument((ap!=null?ap.expr:null));
 
-            	    }
-            	    break;
+                    }
 
-            	default :
-            	    break loop46;
+                    }
+                    break;
+
+                default :
+                    break loop46;
                 }
             } while (true);
 
@@ -3984,7 +3984,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -4038,7 +4038,7 @@ public class MLNParser extends Parser {
                     if ( state.backtracking==0 ) {
 
                             retval.expr = (be!=null?be.be:null);
-                          
+
                     }
 
                     }
@@ -4057,7 +4057,7 @@ public class MLNParser extends Parser {
                     if ( state.backtracking==0 ) {
 
                             retval.expr = (me!=null?me.expr:null);
-                          
+
                     }
 
                     }
@@ -4076,7 +4076,7 @@ public class MLNParser extends Parser {
                     if ( state.backtracking==0 ) {
 
                             retval.expr = (fe!=null?fe.expr:null);
-                          
+
                     }
 
                     }
@@ -4095,7 +4095,7 @@ public class MLNParser extends Parser {
                     if ( state.backtracking==0 ) {
 
                             retval.expr = (ae!=null?ae.expr:null);
-                          
+
                     }
 
                     }
@@ -4113,7 +4113,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -4192,7 +4192,7 @@ public class MLNParser extends Parser {
                             }catch(NumberFormatException e){
                               retval.expr = Expression.exprConstNum(Double.parseDouble((num!=null?num.getText():null)));
                             }
-                          
+
                     }
 
                     }
@@ -4211,7 +4211,7 @@ public class MLNParser extends Parser {
 
                             String s = (str!=null?str.getText():null);
                             retval.expr = Expression.exprConstString(s);
-                          
+
                     }
 
                     }
@@ -4235,7 +4235,7 @@ public class MLNParser extends Parser {
                             }else{
                               retval.expr = Expression.exprVariableBinding(s);
                             }
-                          
+
                     }
 
                     }
@@ -4253,7 +4253,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -4332,8 +4332,8 @@ public class MLNParser extends Parser {
                       if((pref!=null?pref.getText():null).equals("!")) retval.lit.setSense(false);
                       else retval.lit.setCoversAllMaterializedTuples(true);
                      }
-                     
-                  
+
+
             }
 
             }
@@ -4349,7 +4349,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -4417,13 +4417,13 @@ public class MLNParser extends Parser {
                                   if(Config.constants_as_raw_string) {
                                     retval.t = new Term(s, true);
                                   } else {
-                      			        Integer cid = ml.getSymbolID(s, null);
-                      			        retval.t = new Term(cid);
-                      			      }
-                      			    }else{ // a variable
-                      			       retval.t = new Term(s);
-                      			    }
-                          
+                                                Integer cid = ml.getSymbolID(s, null);
+                                                retval.t = new Term(cid);
+                                              }
+                                            }else{ // a variable
+                                               retval.t = new Term(s);
+                                            }
+
                     }
 
                     }
@@ -4454,7 +4454,7 @@ public class MLNParser extends Parser {
                                   Integer cid = ml.getSymbolID(s, null);
                                   retval.t = new Term(cid);
                                 }
-                          
+
                     }
 
                     }
@@ -4472,7 +4472,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -4532,7 +4532,7 @@ public class MLNParser extends Parser {
                       Predicate p = ml.getPredByName((pred!=null?pred.getText():null));
                       if(p == null) die("Line #" + pred.getLine() + ": unknown predicate name - " + (pred!=null?pred.getText():null));
                       retval.lit = new Literal(p, true);
-                  
+
             }
             pushFollow(FOLLOW_term_in_atom2984);
             term1=term();
@@ -4544,7 +4544,7 @@ public class MLNParser extends Parser {
 
                       if((term1!=null?term1.t:null).isConstant()) retval.lit.getPred().getTypeAt(retval.lit.getTerms().size()).addConstant((term1!=null?term1.t:null).constant());
                       retval.lit.appendTerm((term1!=null?term1.t:null));
-                  
+
             }
             // MLN.g:749:5: ( ',' termp= term )*
             loop51:
@@ -4558,32 +4558,32 @@ public class MLNParser extends Parser {
 
 
                 switch (alt51) {
-            	case 1 :
-            	    // MLN.g:749:6: ',' termp= term
-            	    {
-            	    char_literal72=(Token)match(input,24,FOLLOW_24_in_atom2998); if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) {
-            	    char_literal72_tree = (Object)adaptor.create(char_literal72);
-            	    adaptor.addChild(root_0, char_literal72_tree);
-            	    }
-            	    pushFollow(FOLLOW_term_in_atom3007);
-            	    termp=term();
+                case 1 :
+                    // MLN.g:749:6: ',' termp= term
+                    {
+                    char_literal72=(Token)match(input,24,FOLLOW_24_in_atom2998); if (state.failed) return retval;
+                    if ( state.backtracking==0 ) {
+                    char_literal72_tree = (Object)adaptor.create(char_literal72);
+                    adaptor.addChild(root_0, char_literal72_tree);
+                    }
+                    pushFollow(FOLLOW_term_in_atom3007);
+                    termp=term();
 
-            	    state._fsp--;
-            	    if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) adaptor.addChild(root_0, termp.getTree());
-            	    if ( state.backtracking==0 ) {
+                    state._fsp--;
+                    if (state.failed) return retval;
+                    if ( state.backtracking==0 ) adaptor.addChild(root_0, termp.getTree());
+                    if ( state.backtracking==0 ) {
 
-            	              if((termp!=null?termp.t:null).isConstant()) retval.lit.getPred().getTypeAt(retval.lit.getTerms().size()).addConstant((termp!=null?termp.t:null).constant());
-            	              retval.lit.appendTerm((termp!=null?termp.t:null));
-            	          
-            	    }
+                              if((termp!=null?termp.t:null).isConstant()) retval.lit.getPred().getTypeAt(retval.lit.getTerms().size()).addConstant((termp!=null?termp.t:null).constant());
+                              retval.lit.appendTerm((termp!=null?termp.t:null));
 
-            	    }
-            	    break;
+                    }
 
-            	default :
-            	    break loop51;
+                    }
+                    break;
+
+                default :
+                    break loop51;
                 }
             } while (true);
 
@@ -4596,23 +4596,23 @@ public class MLNParser extends Parser {
 
                       Predicate p = retval.lit.getPred();
                       if(retval.lit.getTerms().size() != p.arity()){
-                        die("Line #" + pred.getLine() + 
+                        die("Line #" + pred.getLine() +
                         ": incorrect # of args (read " + retval.lit.getTerms().size() +
                         " but expected " + p.arity() + ")" +
-                        " for pred " + 
+                        " for pred " +
                         p.getName());
                       }
                       // Register constants (to types) that only appear in the program
                       if (!Config.constants_as_raw_string) {
-              	        for(int i=0; i<p.arity(); i++){
-              	          Type t = p.getTypeAt(i);
-              	          Term term = retval.lit.getTerms().get(i);
-              	          if(term.isConstant()){
-              	            t.addConstant(term.constant());
-              	          }
-              	        }
+                        for(int i=0; i<p.arity(); i++){
+                          Type t = p.getTypeAt(i);
+                          Term term = retval.lit.getTerms().get(i);
+                          if(term.isConstant()){
+                            t.addConstant(term.constant());
+                          }
+                        }
                       }
-                  
+
             }
 
             }
@@ -4628,7 +4628,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -4677,22 +4677,22 @@ public class MLNParser extends Parser {
 
 
                 switch (alt52) {
-            	case 1 :
-            	    // MLN.g:0:0: query
-            	    {
-            	    pushFollow(FOLLOW_query_in_queryList3041);
-            	    query74=query();
+                case 1 :
+                    // MLN.g:0:0: query
+                    {
+                    pushFollow(FOLLOW_query_in_queryList3041);
+                    query74=query();
 
-            	    state._fsp--;
-            	    if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) adaptor.addChild(root_0, query74.getTree());
+                    state._fsp--;
+                    if (state.failed) return retval;
+                    if ( state.backtracking==0 ) adaptor.addChild(root_0, query74.getTree());
 
-            	    }
-            	    break;
+                    }
+                    break;
 
-            	default :
-            	    if ( cnt52 >= 1 ) break loop52;
-            	    if (state.backtracking>0) {state.failed=true; return retval;}
+                default :
+                    if ( cnt52 >= 1 ) break loop52;
+                    if (state.backtracking>0) {state.failed=true; return retval;}
                         EarlyExitException eee =
                             new EarlyExitException(52, input);
                         throw eee;
@@ -4719,7 +4719,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -4792,9 +4792,9 @@ public class MLNParser extends Parser {
                     if ( state.backtracking==0 ) adaptor.addChild(root_0, atom76.getTree());
                     if ( state.backtracking==0 ) {
 
-                      		  Atom q = (atom76!=null?atom76.lit:null).toAtom(Atom.AtomType.QUERY);
-                      		  (atom76!=null?atom76.lit:null).getPred().addQuery(q);
-                        
+                                  Atom q = (atom76!=null?atom76.lit:null).toAtom(Atom.AtomType.QUERY);
+                                  (atom76!=null?atom76.lit:null).getPred().addQuery(q);
+
                     }
 
                     }
@@ -4814,7 +4814,7 @@ public class MLNParser extends Parser {
                             Predicate p = ml.getPredByName((ID77!=null?ID77.getText():null));
                             if(p == null) die("Line #" + ID77.getLine() + ": unknown predicate name - " + (ID77!=null?ID77.getText():null));
                             p.setAllQuery();
-                        
+
                     }
 
                     }
@@ -4832,7 +4832,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -4890,26 +4890,26 @@ public class MLNParser extends Parser {
 
 
                 switch (alt54) {
-            	case 1 :
-            	    // MLN.g:795:25: ',' query
-            	    {
-            	    char_literal79=(Token)match(input,24,FOLLOW_24_in_queryCommaList3088); if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) {
-            	    char_literal79_tree = (Object)adaptor.create(char_literal79);
-            	    adaptor.addChild(root_0, char_literal79_tree);
-            	    }
-            	    pushFollow(FOLLOW_query_in_queryCommaList3090);
-            	    query80=query();
+                case 1 :
+                    // MLN.g:795:25: ',' query
+                    {
+                    char_literal79=(Token)match(input,24,FOLLOW_24_in_queryCommaList3088); if (state.failed) return retval;
+                    if ( state.backtracking==0 ) {
+                    char_literal79_tree = (Object)adaptor.create(char_literal79);
+                    adaptor.addChild(root_0, char_literal79_tree);
+                    }
+                    pushFollow(FOLLOW_query_in_queryCommaList3090);
+                    query80=query();
 
-            	    state._fsp--;
-            	    if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) adaptor.addChild(root_0, query80.getTree());
+                    state._fsp--;
+                    if (state.failed) return retval;
+                    if ( state.backtracking==0 ) adaptor.addChild(root_0, query80.getTree());
 
-            	    }
-            	    break;
+                    }
+                    break;
 
-            	default :
-            	    break loop54;
+                default :
+                    break loop54;
                 }
             } while (true);
 
@@ -4932,7 +4932,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -4981,22 +4981,22 @@ public class MLNParser extends Parser {
 
 
                 switch (alt55) {
-            	case 1 :
-            	    // MLN.g:0:0: evidence
-            	    {
-            	    pushFollow(FOLLOW_evidence_in_evidenceList3103);
-            	    evidence82=evidence();
+                case 1 :
+                    // MLN.g:0:0: evidence
+                    {
+                    pushFollow(FOLLOW_evidence_in_evidenceList3103);
+                    evidence82=evidence();
 
-            	    state._fsp--;
-            	    if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) adaptor.addChild(root_0, evidence82.getTree());
+                    state._fsp--;
+                    if (state.failed) return retval;
+                    if ( state.backtracking==0 ) adaptor.addChild(root_0, evidence82.getTree());
 
-            	    }
-            	    break;
+                    }
+                    break;
 
-            	default :
-            	    if ( cnt55 >= 1 ) break loop55;
-            	    if (state.backtracking>0) {state.failed=true; return retval;}
+                default :
+                    if ( cnt55 >= 1 ) break loop55;
+                    if (state.backtracking>0) {state.failed=true; return retval;}
                         EarlyExitException eee =
                             new EarlyExitException(55, input);
                         throw eee;
@@ -5023,7 +5023,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -5151,35 +5151,35 @@ public class MLNParser extends Parser {
 
 
                 switch (alt58) {
-            	case 1 :
-            	    // MLN.g:801:70: ',' terms+= ( ID | NUMBER | STRING )
-            	    {
-            	    char_literal86=(Token)match(input,24,FOLLOW_24_in_evidence3140); if (state.failed) return retval;
-            	    if ( state.backtracking==0 ) {
-            	    char_literal86_tree = (Object)adaptor.create(char_literal86);
-            	    adaptor.addChild(root_0, char_literal86_tree);
-            	    }
-            	    terms=(Token)input.LT(1);
-            	    if ( input.LA(1)==STRING||input.LA(1)==NUMBER||input.LA(1)==ID ) {
-            	        input.consume();
-            	        if ( state.backtracking==0 ) adaptor.addChild(root_0, (Object)adaptor.create(terms));
-            	        state.errorRecovery=false;state.failed=false;
-            	    }
-            	    else {
-            	        if (state.backtracking>0) {state.failed=true; return retval;}
-            	        MismatchedSetException mse = new MismatchedSetException(null,input);
-            	        throw mse;
-            	    }
+                case 1 :
+                    // MLN.g:801:70: ',' terms+= ( ID | NUMBER | STRING )
+                    {
+                    char_literal86=(Token)match(input,24,FOLLOW_24_in_evidence3140); if (state.failed) return retval;
+                    if ( state.backtracking==0 ) {
+                    char_literal86_tree = (Object)adaptor.create(char_literal86);
+                    adaptor.addChild(root_0, char_literal86_tree);
+                    }
+                    terms=(Token)input.LT(1);
+                    if ( input.LA(1)==STRING||input.LA(1)==NUMBER||input.LA(1)==ID ) {
+                        input.consume();
+                        if ( state.backtracking==0 ) adaptor.addChild(root_0, (Object)adaptor.create(terms));
+                        state.errorRecovery=false;state.failed=false;
+                    }
+                    else {
+                        if (state.backtracking>0) {state.failed=true; return retval;}
+                        MismatchedSetException mse = new MismatchedSetException(null,input);
+                        throw mse;
+                    }
 
-            	    if (list_terms==null) list_terms=new ArrayList();
-            	    list_terms.add(terms);
+                    if (list_terms==null) list_terms=new ArrayList();
+                    list_terms.add(terms);
 
 
-            	    }
-            	    break;
+                    }
+                    break;
 
-            	default :
-            	    break loop58;
+                default :
+                    break loop58;
                 }
             } while (true);
 
@@ -5193,48 +5193,48 @@ public class MLNParser extends Parser {
                     Boolean truth = null;
                     Double pr = null;
                     if(prior != null){
-              	      pr = Double.parseDouble((prior!=null?prior.getText():null));
-              	      if(pr > 1 || pr < 0){
+                      pr = Double.parseDouble((prior!=null?prior.getText():null));
+                      if(pr > 1 || pr < 0){
                           die("Line #" + (lineOffset+pred.getLine()) + ": " + (prior!=null?prior.getText():null) + " - probabilities of soft evidence should be in [0,1]");
-              	      }
+                      }
                       if(NOT84 != null) pr = 1 - pr;
                       if(pr == 0 || pr == 1){
                         if(pr == 0) truth = false;
                         else truth = true;
                         pr = null;
                       }
-              	    }else{
-              	      truth = (NOT84 == null);
-              	    }
-              	    Predicate p = ml.getPredByName((pred!=null?pred.getText():null));
-              	    if(p == null) die("Line #" + (lineOffset+pred.getLine()) + ": unknown predicate name - " + (pred!=null?pred.getText():null));
-              	    ArrayList<String> args = new ArrayList<String>();
-              	    ArrayList<Token> ts = (ArrayList<Token>)(list_terms);
+                    }else{
+                      truth = (NOT84 == null);
+                    }
+                    Predicate p = ml.getPredByName((pred!=null?pred.getText():null));
+                    if(p == null) die("Line #" + (lineOffset+pred.getLine()) + ": unknown predicate name - " + (pred!=null?pred.getText():null));
+                    ArrayList<String> args = new ArrayList<String>();
+                    ArrayList<Token> ts = (ArrayList<Token>)(list_terms);
                     if(ts.size() != p.arity()) die("Line #" + (lineOffset+pred.getLine()) + ": incorrect # args - " + input.toString(retval.start,input.LT(-1)));
                     for(int i=0; i<p.arity(); i++){
                         Token t = ts.get(i);
                         Type type = p.getTypeAt(i);
-              	    	  String s = t.getText();
-              	    	  if(type.isNonSymbolicType()){
-              	    	    args.add(s);
-              	    	  }else{
+                          String s = t.getText();
+                          if(type.isNonSymbolicType()){
+                            args.add(s);
+                          }else{
                           if(Config.constants_as_raw_string) {
                              args.add(s);
                           } else {
                              Integer sid = ml.getSymbolID(s,type);
-              			         args.add(sid.toString());
-              			      }
-              			    }
-              	    }
-              		  Atom gp = null;
-              		  if(pr == null) {
-              		    gp = new Atom(args, truth);
-              		  }else{
-              		    gp = new Atom(args, pr);
-              		  }
-              	    p.addEvidence(gp);
-              	    gp = null;
-                  
+                                         args.add(sid.toString());
+                                      }
+                                    }
+                    }
+                          Atom gp = null;
+                          if(pr == null) {
+                            gp = new Atom(args, truth);
+                          }else{
+                            gp = new Atom(args, pr);
+                          }
+                    p.addEvidence(gp);
+                    gp = null;
+
             }
 
             }
@@ -5250,7 +5250,7 @@ public class MLNParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -5261,7 +5261,7 @@ public class MLNParser extends Parser {
     // $ANTLR end "evidence"
 
     // $ANTLR start synpred51_MLN
-    public final void synpred51_MLN_fragment() throws RecognitionException {   
+    public final void synpred51_MLN_fragment() throws RecognitionException {
         MLNParser.mathComparison_return mc = null;
 
 
@@ -5279,7 +5279,7 @@ public class MLNParser extends Parser {
     // $ANTLR end synpred51_MLN
 
     // $ANTLR start synpred52_MLN
-    public final void synpred52_MLN_fragment() throws RecognitionException {   
+    public final void synpred52_MLN_fragment() throws RecognitionException {
         Token negc=null;
         MLNParser.mathComparison_return mc = null;
 
@@ -5380,7 +5380,7 @@ public class MLNParser extends Parser {
     // $ANTLR end synpred52_MLN
 
     // $ANTLR start synpred64_MLN
-    public final void synpred64_MLN_fragment() throws RecognitionException {   
+    public final void synpred64_MLN_fragment() throws RecognitionException {
         Token op=null;
         MLNParser.mathTerm_return tp = null;
 
@@ -5410,7 +5410,7 @@ public class MLNParser extends Parser {
     // $ANTLR end synpred64_MLN
 
     // $ANTLR start synpred75_MLN
-    public final void synpred75_MLN_fragment() throws RecognitionException {   
+    public final void synpred75_MLN_fragment() throws RecognitionException {
         Token fact=null;
 
         // MLN.g:611:11: (fact= '!' )
@@ -5423,7 +5423,7 @@ public class MLNParser extends Parser {
     // $ANTLR end synpred75_MLN
 
     // $ANTLR start synpred77_MLN
-    public final void synpred77_MLN_fragment() throws RecognitionException {   
+    public final void synpred77_MLN_fragment() throws RecognitionException {
         MLNParser.boolExpression_return be = null;
 
 
@@ -5441,7 +5441,7 @@ public class MLNParser extends Parser {
     // $ANTLR end synpred77_MLN
 
     // $ANTLR start synpred78_MLN
-    public final void synpred78_MLN_fragment() throws RecognitionException {   
+    public final void synpred78_MLN_fragment() throws RecognitionException {
         MLNParser.mathExpression_return me = null;
 
 
@@ -5459,7 +5459,7 @@ public class MLNParser extends Parser {
     // $ANTLR end synpred78_MLN
 
     // $ANTLR start synpred79_MLN
-    public final void synpred79_MLN_fragment() throws RecognitionException {   
+    public final void synpred79_MLN_fragment() throws RecognitionException {
         MLNParser.funcExpression_return fe = null;
 
 
@@ -6134,12 +6134,12 @@ public class MLNParser extends Parser {
         }
         public int specialStateTransition(int s, IntStream _input) throws NoViableAltException {
             TokenStream input = (TokenStream)_input;
-        	int _s = s;
+                int _s = s;
             switch ( s ) {
-                    case 0 : 
+                    case 0 :
                         int LA42_10 = input.LA(1);
 
-                         
+
                         int index42_10 = input.index();
                         input.rewind();
                         s = -1;
@@ -6147,7 +6147,7 @@ public class MLNParser extends Parser {
 
                         else if ( (true) ) {s = 1;}
 
-                         
+
                         input.seek(index42_10);
                         if ( s>=0 ) return s;
                         break;
@@ -6219,12 +6219,12 @@ public class MLNParser extends Parser {
         }
         public int specialStateTransition(int s, IntStream _input) throws NoViableAltException {
             TokenStream input = (TokenStream)_input;
-        	int _s = s;
+                int _s = s;
             switch ( s ) {
-                    case 0 : 
+                    case 0 :
                         int LA47_2 = input.LA(1);
 
-                         
+
                         int index47_2 = input.index();
                         input.rewind();
                         s = -1;
@@ -6236,14 +6236,14 @@ public class MLNParser extends Parser {
 
                         else if ( (true) ) {s = 9;}
 
-                         
+
                         input.seek(index47_2);
                         if ( s>=0 ) return s;
                         break;
-                    case 1 : 
+                    case 1 :
                         int LA47_3 = input.LA(1);
 
-                         
+
                         int index47_3 = input.index();
                         input.rewind();
                         s = -1;
@@ -6253,14 +6253,14 @@ public class MLNParser extends Parser {
 
                         else if ( (true) ) {s = 9;}
 
-                         
+
                         input.seek(index47_3);
                         if ( s>=0 ) return s;
                         break;
-                    case 2 : 
+                    case 2 :
                         int LA47_4 = input.LA(1);
 
-                         
+
                         int index47_4 = input.index();
                         input.rewind();
                         s = -1;
@@ -6270,14 +6270,14 @@ public class MLNParser extends Parser {
 
                         else if ( (true) ) {s = 9;}
 
-                         
+
                         input.seek(index47_4);
                         if ( s>=0 ) return s;
                         break;
-                    case 3 : 
+                    case 3 :
                         int LA47_5 = input.LA(1);
 
-                         
+
                         int index47_5 = input.index();
                         input.rewind();
                         s = -1;
@@ -6285,14 +6285,14 @@ public class MLNParser extends Parser {
 
                         else if ( (synpred78_MLN()) ) {s = 7;}
 
-                         
+
                         input.seek(index47_5);
                         if ( s>=0 ) return s;
                         break;
-                    case 4 : 
+                    case 4 :
                         int LA47_6 = input.LA(1);
 
-                         
+
                         int index47_6 = input.index();
                         input.rewind();
                         s = -1;
@@ -6300,7 +6300,7 @@ public class MLNParser extends Parser {
 
                         else if ( (synpred78_MLN()) ) {s = 7;}
 
-                         
+
                         input.seek(index47_6);
                         if ( s>=0 ) return s;
                         break;
@@ -6312,7 +6312,7 @@ public class MLNParser extends Parser {
             throw nvae;
         }
     }
- 
+
 
     public static final BitSet FOLLOW_schemaList_in_definitions895 = new BitSet(new long[]{0x0000002F805408C0L});
     public static final BitSet FOLLOW_ruleList_in_definitions897 = new BitSet(new long[]{0x0000000000000000L});

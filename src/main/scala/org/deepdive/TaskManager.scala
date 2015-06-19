@@ -11,7 +11,7 @@ import scala.language.postfixOps
 import scala.util.{Try, Failure, Success}
 
 object TaskManager {
-  
+
   def props = Props(classOf[TaskManager])
 
   case class AddTask(task: Task)
@@ -54,7 +54,7 @@ class TaskManager extends Actor with ActorLogging {
 
       // Don't print task pool status at initialization
       scheduleTasks(false)
-    
+
     case msg @ Done(task, result) =>
       val reportDesc = result match {
         case Success(x) => "SUCCESS"
@@ -65,12 +65,12 @@ class TaskManager extends Actor with ActorLogging {
       completedTasks += msg
       log.info(s"Completed task_id=${task.id} with ${result.toString}")
       result match {
-        case Success(x) => 
+        case Success(x) =>
           scheduleTasks()
-        case Failure(exception) => 
+        case Failure(exception) =>
           log.error(s"task=${task.id} Failed: ${exception}")
           self ! ForceShutdown
-      }        
+      }
 
     case x : Terminated =>
       val worker = x.actor
@@ -138,7 +138,7 @@ class TaskManager extends Actor with ActorLogging {
       case true => log.debug(s"${eligibileTasks.size}/${taskQueue.size} tasks eligible. Waiting tasks: ${notEligibleTasks.map(_.id).toSet}")
       case _ =>
     }
-    
+
     // Forward eligible tasks
     eligibileTasks.foreach { task =>
       log.debug(s"Sending task_id=${task.id} to ${task.worker}")

@@ -12,7 +12,7 @@ trap "dropdb $DBNAME" EXIT
 psql $DBNAME -c "COPY (
 SELECT
   document_id,
-  sentence, 
+  sentence,
   ARRAY_TO_STRING(words       , '~^~'),
   ARRAY_TO_STRING(lemma       , '~^~'),
   ARRAY_TO_STRING(pos_tags    , '~^~'),

@@ -2,7 +2,7 @@
 
 import ddext
 
-# Format of plpy_extractor: 
+# Format of plpy_extractor:
 # Anything Write functions "init", "run" will not be accepted.
 # In "init", import libraries, specify input variables and return types
 # In "run", write your extractor. Return a list containing your results, each item in the list should be a list/tuple of your return types.
@@ -34,10 +34,10 @@ def run(words, ner_tags, lemma, relation_id, p1_start, p1_length, p2_start, p2_l
   # Features for this pair come in here
   features = set()
 
-  ######################## 
+  ########################
   # Improved Feature Set #
   ########################
-  
+
   # Feature 1: Find out if a lemma of marry occurs.
   # A better feature would ensure this is on the dependency path between the two.
   left_idx = min(p1_end, p2_end)
@@ -48,7 +48,7 @@ def run(words, ner_tags, lemma, relation_id, p1_start, p1_length, p2_start, p2_l
   non_married_words = ['father', 'mother', 'brother', 'sister', 'son']
   if len(words_between) <= 10:
     for mw in married_words + non_married_words:
-      if mw in lemma_between: 
+      if mw in lemma_between:
         features.add("important_word=%s" % mw)
 
 

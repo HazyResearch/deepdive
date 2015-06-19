@@ -10,7 +10,7 @@ applications](http://deepdive.stanford.edu). Often, these applications are inter
 
 
 Our work would not be possible without open data. As a result, our group decided to enhance as many [Creative Commons
-datasets](http://creativecommons.org/) as we can find. Below, we describe the data format and provide a small list of data sets in this page. We plan to process more data sets and to provide richer data as well (extracted entities and relationships). Feel free to contact us to suggest more open data sets to process. 
+datasets](http://creativecommons.org/) as we can find. Below, we describe the data format and provide a small list of data sets in this page. We plan to process more data sets and to provide richer data as well (extracted entities and relationships). Feel free to contact us to suggest more open data sets to process.
 
 
 <div class="panel panel-default" style="position:relative;">
@@ -36,7 +36,7 @@ We would like to thank the HTCondor research group and the <a href="http://chtc.
 ### Data Format (NLP Markups)
 
 The datasets we provide are in two formats, and for
-most datasets, we provide data in both formats. 
+most datasets, we provide data in both formats.
 
   - **DeepDive-ready DB Dump.** In this format, the
   data is a database table that can be loaded directly
@@ -47,7 +47,7 @@ most datasets, we provide data in both formats.
 
   - **CoNLL-format Markups.** Using DeepDive provides us
   the opportunity to better support your application and
-  related technical questions, however, you do not need to 
+  related technical questions, however, you do not need to
   be tied up to DeepDive to use our datasets. We also provide
   a format that is similar to what has been used in the [CoNLL-X
   shared task](https://code.google.com/p/clearparser/wiki/DataFormat#CoNLL-X_format_(conll)). The columns of the TSV file is arranged as follows:
@@ -85,11 +85,11 @@ Each dataset is versioned with date, and with the MD5 checksum in the file name.
   <div class="panel-heading">Quick Statistics & Downloads</div>
   <table class="table">
     <tr>
-      <th> Pipeline </th> 
+      <th> Pipeline </th>
       <td colspan=3>
 
       <p>
-      <span class="label label-info">HTML</span> 
+      <span class="label label-info">HTML</span>
       <span class="label label-warning">&gt;</span>
       <span class="label label-info">STRIP (html2text)</span>
       <span class="label label-warning">&gt;</span>
@@ -110,7 +110,7 @@ Each dataset is versioned with date, and with the MD5 checksum in the file name.
       <th> # Sentences </th>  <td> 110 Million </td>
     </tr>
     <tr>
-      <th> Downloads </th> <td colspan="3"> 
+      <th> Downloads </th> <td colspan="3">
         <div class="btn-group" text-aligh="right">
           <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false"> Download Full Corpus <span class="caret"></span>
           </button>
@@ -149,10 +149,10 @@ Information obtained at [Jan 27, 2015](http://www.ncbi.nlm.nih.gov/pmc/tools/ope
   <div class="panel-heading">Quick Statistics & Downloads</div>
   <table class="table">
     <tr>
-      <th> Pipeline </th> 
+      <th> Pipeline </th>
       <td colspan=3>
 
-      <span class="label label-info">HTML</span> 
+      <span class="label label-info">HTML</span>
       <span class="label label-warning">&gt;</span>
       <span class="label label-info">STRIP (html2text)</span>
       <span class="label label-warning">&gt;</span>
@@ -172,7 +172,7 @@ Information obtained at [Jan 27, 2015](http://www.ncbi.nlm.nih.gov/pmc/tools/ope
       <th> # Words </th>  <td> 400 Million </td>
     </tr>
     <tr>
-      <th> Downloads </th> <td colspan="3"> 
+      <th> Downloads </th> <td colspan="3">
         <div class="btn-group" text-aligh="right">
           <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false"> Download Full Corpus <span class="caret"></span>
           </button>
@@ -211,23 +211,23 @@ Information obtained at [Jan 27, 2015](http://www.biomedcentral.com/about).
   <div class="panel-heading">Quick Statistics & Download</div>
   <table class="table">
     <tr>
-      <th>  </th>  <th> # Documents </th> 
-      <th> # Words </th> <th> Size </th> 
+      <th>  </th>  <th> # Documents </th>
+      <th> # Words </th> <th> Size </th>
       <th> Download </th>
     </tr>
     <tr>
       <th> Full Corpus </th>
       <td> 110K </td> <td> XXX </td> <td> YYY </td>
-      <td> 
-           <span class="label label-info">DD-ready DB Dump</span> 
+      <td>
+           <span class="label label-info">DD-ready DB Dump</span>
            <span class="label label-success">CoNLL Markups</span>
       </td>
     </tr>
     <tr>
       <th> Small Teaser </th>
       <td> 1 </td> <td> XXX </td> <td> YYY </td>
-      <td> 
-           <span class="label label-info">DD-ready DB Dump</span> 
+      <td>
+           <span class="label label-info">DD-ready DB Dump</span>
            <span class="label label-success">CoNLL Markups</span>
       </td>
     </tr>
@@ -239,11 +239,11 @@ Information obtained at [Jan 27, 2015](http://www.biomedcentral.com/about).
   <div class="panel-heading">Quick Statistics & Downloads</div>
   <table class="table" style="text-align: left !important;">
     <tr>
-      <th> Pipeline </th> 
+      <th> Pipeline </th>
       <td colspan=3>
       <p>
       <!--<span class="label label-warning">1</span>-->
-      <span class="label label-info">PDF</span> 
+      <span class="label label-info">PDF</span>
       <span class="label label-warning">&gt;</span>
       <span class="label label-info">OCR (Tesseract)</span>
       <span class="label label-warning">&gt;</span>
@@ -264,7 +264,7 @@ Information obtained at [Jan 27, 2015](http://www.biomedcentral.com/about).
       <th> # Sentences </th>  <td> 73 Million </td>
     </tr>
     <tr>
-      <th> Downloads </th> <td colspan="3"> 
+      <th> Downloads </th> <td colspan="3">
         <div class="btn-group" text-aligh="right">
           <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false"> Download Full Corpus <span class="caret"></span>
           </button>
@@ -290,7 +290,7 @@ Information obtained at [Jan 27, 2015](http://www.biomedcentral.com/about).
 
 <i>
 <img src="http://mirrors.creativecommons.org/presskit/buttons/88x31/png/by.png" style="width:88px;"/> PLOS applies
-CC BY 3.0 license. 
+CC BY 3.0 license.
 Information obtained at [Jan 26, 2015](http://www.plosone.org/static/license).
 </i>
 
@@ -301,9 +301,9 @@ Information obtained at [Jan 26, 2015](http://www.plosone.org/static/license).
   <div class="panel-heading">Quick Statistics & Downloads</div>
   <table class="table">
     <tr>
-      <th> Pipeline </th> 
+      <th> Pipeline </th>
       <td colspan=3>
-      <span class="label label-info">OCR'ed Text</span> 
+      <span class="label label-info">OCR'ed Text</span>
       <span class="label label-warning">&gt;</span>
       <span class="label label-info">NLP (Stanford CoreNLP 1.3.4)</span>
       </td>
@@ -320,7 +320,7 @@ Information obtained at [Jan 26, 2015](http://www.plosone.org/static/license).
       <th> # Words </th>  <td> 8.7 Billion </td>
     </tr>
     <tr>
-      <th> Downloads </th> <td colspan="3"> 
+      <th> Downloads </th> <td colspan="3">
         <div class="btn-group" text-aligh="right">
           <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false"> Download Full Corpus <span class="caret"></span>
           </button>
@@ -346,7 +346,7 @@ The Biodiversity Heritage Library (BHL) is a consortium of natural history and b
 
 <i>
 <img src="https://licensebuttons.net/l/by-nc-sa/3.0/88x31.png" style="width:88px;"/> BHL applies
-CC BY-NC-SA 4.0 license. 
+CC BY-NC-SA 4.0 license.
 Information obtained at [Jan 26, 2015](http://biodivlib.wikispaces.com/Licensing+and+Copyright).
 </i>
 
@@ -357,7 +357,7 @@ Information obtained at [Jan 26, 2015](http://biodivlib.wikispaces.com/Licensing
   <div class="panel-heading">Quick Statistics & Downloads</div>
   <table class="table">
     <tr>
-      <th> Pipeline </th> 
+      <th> Pipeline </th>
       <td colspan=3>
 
       <span class="label label-info">OCR'ed Text</span>
@@ -378,7 +378,7 @@ Information obtained at [Jan 26, 2015](http://biodivlib.wikispaces.com/Licensing
       <th> # Words </th>  <td> 7.7 Billion </td>
     </tr>
     <tr>
-      <th> Downloads </th> <td colspan="3"> 
+      <th> Downloads </th> <td colspan="3">
         <div class="btn-group" text-aligh="right">
           <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false"> Download Full Corpus <span class="caret"></span>
           </button>
@@ -401,7 +401,7 @@ Information obtained at [Jan 26, 2015](http://biodivlib.wikispaces.com/Licensing
 </div>
 
 We plan to have
-DeepDive's PATENT Corpus to contain a full snapshot 
+DeepDive's PATENT Corpus to contain a full snapshot
 of patent grants since 1920 from the United States Patent and Trademark Office (USPTO), European Patent Office (EPO), and World Intellectual Property Organization (WIPO),
 indexed by Google Patents in Feb 2015.
 
@@ -417,10 +417,10 @@ Information obtained at [Jan 27, 2015](http://en.wikipedia.org/wiki/Google_Paten
   <div class="panel-heading">Quick Statistics & Downloads</div>
   <table class="table">
     <tr>
-      <th> Pipeline </th> 
+      <th> Pipeline </th>
       <td colspan=3>
 
-      <span class="label label-info">WIKI PAGE</span> 
+      <span class="label label-info">WIKI PAGE</span>
       <span class="label label-warning">&gt;</span>
       <span class="label label-info">WikiExtractor <a href="http://www.mediawiki.org/wiki/Alternative_parsers">(link)</a></span>
       <span class="label label-warning">&gt;</span>
@@ -440,7 +440,7 @@ Information obtained at [Jan 27, 2015](http://en.wikipedia.org/wiki/Google_Paten
       <th> # Words </th>  <td> 2 Billion </td>
     </tr>
     <tr>
-      <th> Downloads </th> <td colspan="3"> 
+      <th> Downloads </th> <td colspan="3">
         <div class="btn-group" text-aligh="right">
           <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false"> Download Full Corpus <span class="caret"></span>
           </button>
@@ -462,8 +462,8 @@ Information obtained at [Jan 27, 2015](http://en.wikipedia.org/wiki/Google_Paten
   </table>
 </div>
 
-Wikipedia is a free-access, free content Internet encyclopedia, supported and hosted by the non-profit Wikimedia Foundation. We plan to have 
-DeepDive's WIKI Corpus to contain a full snapshot 
+Wikipedia is a free-access, free content Internet encyclopedia, supported and hosted by the non-profit Wikimedia Foundation. We plan to have
+DeepDive's WIKI Corpus to contain a full snapshot
 of the English-language edition of Wikipedia in Feb 2015.
 
 **Note.** For Web-based data sets that contain million
@@ -510,10 +510,10 @@ Information obtained at [Jan 27, 2015](http://en.wikipedia.org/wiki/Wikipedia:Te
   <div class="panel-heading">Quick Statistics & Downloads</div>
   <table class="table">
     <tr>
-      <th> Pipeline </th> 
+      <th> Pipeline </th>
       <td colspan=3>
 
-      <span class="label label-info">HTML</span> 
+      <span class="label label-info">HTML</span>
       <span class="label label-warning">&gt;</span>
       <span class="label label-info">STRIP (html2text)</span>
       <span class="label label-warning">&gt;</span>
@@ -533,7 +533,7 @@ Information obtained at [Jan 27, 2015](http://en.wikipedia.org/wiki/Wikipedia:Te
       <th> # Words </th>  <td> - </td>
     </tr>
     <tr>
-      <th> Downloads </th> <td colspan="3"> 
+      <th> Downloads </th> <td colspan="3">
         <div class="btn-group" text-aligh="right">
           <button type="button" class="btn btn-primary dropdown-toggle disabled" data-toggle="dropdown" aria-expanded="false"> Download Full Corpus <span class="caret"></span>
           </button>
@@ -557,10 +557,10 @@ Information obtained at [Jan 27, 2015](http://en.wikipedia.org/wiki/Wikipedia:Te
 
 We plan to have
 DeepDive's CCRAWL Corpus to process a full
-snapshot of the [Common Crawl Corpus](http://commoncrawl.org/), which is a corpus of web crawl data composed of over 5 billion web pages. 
+snapshot of the [Common Crawl Corpus](http://commoncrawl.org/), which is a corpus of web crawl data composed of over 5 billion web pages.
 
 <i>
-<img src="https://commoncrawl.atlassian.net/wiki/download/attachments/655375/CRWL?version=1&modificationDate=1341953825985&api=v2" style="width:88px;"/> This data set is freely available on Amazon S3 and is released under the Common Crawl Terms of Use. 
+<img src="https://commoncrawl.atlassian.net/wiki/download/attachments/655375/CRWL?version=1&modificationDate=1341953825985&api=v2" style="width:88px;"/> This data set is freely available on Amazon S3 and is released under the Common Crawl Terms of Use.
 </i>
 
 
@@ -574,10 +574,10 @@ snapshot of the [Common Crawl Corpus](http://commoncrawl.org/), which is a corpu
   <div class="panel-heading">Quick Statistics & Downloads</div>
   <table class="table">
     <tr>
-      <th> Pipeline </th> 
+      <th> Pipeline </th>
       <td colspan=3>
 
-      <span class="label label-info">HTML</span> 
+      <span class="label label-info">HTML</span>
       <span class="label label-warning">&gt;</span>
       <span class="label label-info">STRIP (html2text)</span>
       <span class="label label-warning">&gt;</span>
@@ -597,7 +597,7 @@ snapshot of the [Common Crawl Corpus](http://commoncrawl.org/), which is a corpu
       <th> # Words </th>  <td> - </td>
     </tr>
     <tr>
-      <th> Downloads </th> <td colspan="3"> 
+      <th> Downloads </th> <td colspan="3">
         <div class="btn-group" text-aligh="right">
           <button type="button" class="btn btn-primary dropdown-toggle disabled" data-toggle="dropdown" aria-expanded="false"> Download Full Corpus <span class="caret"></span>
           </button>
@@ -621,7 +621,7 @@ snapshot of the [Common Crawl Corpus](http://commoncrawl.org/), which is a corpu
 
 We plan to have
 DeepDive's CLUEWEB Corpus to process a full
-snapshot of the [ClueWeb 2012](http://commoncrawl.org/) corpus, which is a corpus of web crawl data composed of over 733 million web pages. 
+snapshot of the [ClueWeb 2012](http://commoncrawl.org/) corpus, which is a corpus of web crawl data composed of over 733 million web pages.
 
 
 ## More Datasets Are Coming -- Stay Tuned!

@@ -9,7 +9,7 @@ class FileDataUtilsSpec extends FunSpec {
   val sampleCSVFile = getClass.getResource("/sample.csv").getFile
 
   describe("Querying a file as JSON") {
-    
+
     it("should work with absolute paths") {
       FileDataUtils.queryAsJson(sampleCSVFile, ',') { data =>
         assert(data.toList == List(

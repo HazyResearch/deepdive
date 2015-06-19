@@ -18,7 +18,7 @@ import scala.util.Try
 /* Manages the Factor and Variable relations in the database */
 trait InferenceManager extends Actor with ActorLogging {
   self: InferenceRunnerComponent =>
-  
+
   implicit val taskTimeout = Timeout(200 hours)
   import context.dispatcher
 
@@ -51,7 +51,7 @@ trait InferenceManager extends Actor with ActorLogging {
   }
 
   def receive = {
-    case InferenceManager.GroundFactorGraph(factorDescs, calibrationSettings, 
+    case InferenceManager.GroundFactorGraph(factorDescs, calibrationSettings,
       skipLearning, weightTable) =>
       val _sender = sender
       try {
@@ -65,10 +65,10 @@ trait InferenceManager extends Actor with ActorLogging {
         sender ! Status.Failure(e)
         context.stop(self)
       }
-    case InferenceManager.RunInference(factorDescs, holdoutFraction, holdoutQuery, 
+    case InferenceManager.RunInference(factorDescs, holdoutFraction, holdoutQuery,
       samplerJavaArgs, samplerOptions, pipelineSettings, dbSettings) =>
       val _sender = sender
-      val result = runInference(factorDescs, holdoutFraction, holdoutQuery, 
+      val result = runInference(factorDescs, holdoutFraction, holdoutQuery,
         samplerJavaArgs, samplerOptions, pipelineSettings, dbSettings)
       result pipeTo _sender
 
@@ -86,7 +86,7 @@ trait InferenceManager extends Actor with ActorLogging {
       calibrationWriter ! PoisonPill
   }
 
-  def runInference(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], 
+  def runInference(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String],
     samplerJavaArgs: String, samplerOptions: String, pipelineSettings: PipelineSettings, dbSettings: DbSettings) = {
 
     val sampler = context.actorOf(samplerProps, "sampler")
@@ -100,9 +100,9 @@ trait InferenceManager extends Actor with ActorLogging {
     sampler ! PoisonPill
     samplingResult.map { x =>
       inferenceRunner.writebackInferenceResult(
-      variableSchema, SamplingOutputFile.getCanonicalPath, 
+      variableSchema, SamplingOutputFile.getCanonicalPath,
       SamplingOutputFileWeights.getCanonicalPath, dbSettings)
-    }  
+    }
   }
 
 }
@@ -110,13 +110,13 @@ trait InferenceManager extends Actor with ActorLogging {
 object InferenceManager {
 
   /* An inference manager that uses postgres as its datastore */
-  class PostgresInferenceManager(val taskManager: ActorRef, val variableSchema: Map[String, _ <: VariableDataType], val dbSettings: DbSettings) 
+  class PostgresInferenceManager(val taskManager: ActorRef, val variableSchema: Map[String, _ <: VariableDataType], val dbSettings: DbSettings)
     extends InferenceManager with PostgresInferenceRunnerComponent {
     lazy val inferenceRunner = new PostgresInferenceRunner(dbSettings)
   }
 
   /* An inference manager that uses postgres as its datastore */
-  class MysqlInferenceManager(val taskManager: ActorRef, val variableSchema: Map[String, _ <: VariableDataType], val dbSettings: DbSettings) 
+  class MysqlInferenceManager(val taskManager: ActorRef, val variableSchema: Map[String, _ <: VariableDataType], val dbSettings: DbSettings)
     extends InferenceManager with MysqlInferenceRunnerComponent {
     lazy val inferenceRunner = new MysqlInferenceRunner(dbSettings)
   }
@@ -129,16 +129,16 @@ object InferenceManager {
        case "com.mysql.jdbc.Driver" => Props(classOf[MysqlInferenceManager], taskManager, variableSchema, dbSettings)
     }
   }
-    
+
 
   // Messages
   // ==================================================
 
   // Executes a task to build part of the factor graph
-  case class GroundFactorGraph(factorDescs: Seq[FactorDesc], calibrationSettings: CalibrationSettings, 
+  case class GroundFactorGraph(factorDescs: Seq[FactorDesc], calibrationSettings: CalibrationSettings,
     skipLearning: Boolean, weightTable: String)
   // Runs the sampler with the given arguments
-  case class RunInference(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String], 
+  case class RunInference(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String],
     samplerJavaArgs: String, samplerOptions: String, pipelineSettings: PipelineSettings, dbSettings: DbSettings)
   // Writes calibration data to predefined files
   case object WriteCalibrationData

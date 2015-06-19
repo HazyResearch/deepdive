@@ -25,7 +25,7 @@ object FactorFunctionParser extends RegexParsers with Logging {
     AndFactorFunction(varList)
   }
 
-  def equalFactorFunction = ("Equal" | "EQUAL") ~> "(" ~> factorVariable ~ ("," ~> factorVariable) <~ ")" ^^ { 
+  def equalFactorFunction = ("Equal" | "EQUAL") ~> "(" ~> factorVariable ~ ("," ~> factorVariable) <~ ")" ^^ {
     case v1 ~ v2 =>
     EqualFactorFunction(List(v1, v2))
   }
@@ -45,15 +45,15 @@ object FactorFunctionParser extends RegexParsers with Logging {
   def ratioFactorFunction = ("Ratio" | "RATIO") ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
     RatioFactorFunction(varList)
   }
-  
+
   def logicalFactorFunction = ("Logical" | "LOGICAL") ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
     LogicalFactorFunction(varList)
   }
-  
-  def factorVariable = ("!"?) ~ rep1sep(relationOrField, ".") ~ (arrayDefinition?) ~ 
-    (("=" ~> equalPredicate)?) ^^ { 
-    case (isNegated ~ varList ~ isArray ~ predicate)  => 
-      FactorFunctionVariable(varList.take(varList.size - 1).mkString("."), varList.last, 
+
+  def factorVariable = ("!"?) ~ rep1sep(relationOrField, ".") ~ (arrayDefinition?) ~
+    (("=" ~> equalPredicate)?) ^^ {
+    case (isNegated ~ varList ~ isArray ~ predicate)  =>
+      FactorFunctionVariable(varList.take(varList.size - 1).mkString("."), varList.last,
         isArray.isDefined, isNegated.isDefined, readLong(predicate))
   }
 
@@ -64,8 +64,8 @@ object FactorFunctionParser extends RegexParsers with Logging {
     }
   }
 
-  def factorFunc = implyFactorFunction | orFactorFunction | andFactorFunction | 
-    equalFactorFunction | isTrueFactorFunction | xorFactorFunction | multinomialFactorFunction | 
+  def factorFunc = implyFactorFunction | orFactorFunction | andFactorFunction |
+    equalFactorFunction | isTrueFactorFunction | xorFactorFunction | multinomialFactorFunction |
     linearFactorFunction | ratioFactorFunction | logicalFactorFunction
 
 }

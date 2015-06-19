@@ -2,7 +2,7 @@
 layout: default
 ---
 
-# Performance Tuning 
+# Performance Tuning
 
 Processing large amounts of data may expose bottlenecks in various parts of the
 system. The following sections show how to tune different parameters to obtain
@@ -31,11 +31,11 @@ follows
       gppath   : [**absolute path** of gpfdist directory]
     }
 
-where gphost, gpport, gppath are the host, port, and absolute path 
+where gphost, gpport, gppath are the host, port, and absolute path
 gpfdist is running on (specified when starting gpfdist server).
 
 Finally, tell DeepDive to use parallel grounding by adding the following to
-`application.conf`: 
+`application.conf`:
 
     inference.parallel_grounding: true
 
@@ -59,7 +59,7 @@ many tuples each extractor should receive at once, and the `output_batch_size`
 option to define how many extracted tuples should be inserted into the data
 store at once. The [extractor
 documentation](../basics/extractors.html#jsonparallelism) contains more details about
-these options. 
+these options.
 
 ### Setting the batch size for factor graph construction
 

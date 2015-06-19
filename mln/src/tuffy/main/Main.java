@@ -9,15 +9,15 @@ import tuffy.util.UIMan;
  * The Main.
  */
 public class Main {
-	public static void main(String[] args) throws SQLException {
-		
-		CommandOptions options = UIMan.parseCommand(args);
-		
-		UIMan.println("*** Welcome to Deepdive Tuffy Port!");
-		if(options == null){
-			return;
-		}
+        public static void main(String[] args) throws SQLException {
 
-		new DeepDiveTuffy().run(options);
-	}
+                CommandOptions options = UIMan.parseCommand(args);
+
+                UIMan.println("*** Welcome to Deepdive Tuffy Port!");
+                if(options == null){
+                        return;
+                }
+
+                new DeepDiveTuffy().run(options);
+        }
 }

@@ -28,7 +28,7 @@ hist(x,width)=width*floor(x/width)+width/2.0
 width = 0.1
 
 # second plot (predictions: test set)
-set xrange [0:1] 
+set xrange [0:1]
 set auto y
 set title "(b) # Predictions (Testing Set)"
 set xlabel "Probability"
@@ -39,7 +39,7 @@ plot input_file using (hist(($1+$2)/2,width)):($4+$5) smooth freq w boxes lc rgb
 
 
 # third plot (predictions: whole set)
-set xrange [0:1] 
+set xrange [0:1]
 set auto y
 set title "(c) # Predictions (Whole Set)"
 set xlabel "Probability"

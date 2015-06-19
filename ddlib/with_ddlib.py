@@ -5,7 +5,7 @@ import sys, json
 import ddlib
 
 # For each input tuple
-# TODO: Sample Data and the input schema. 
+# TODO: Sample Data and the input schema.
 # sample json
 for row in sys.stdin:
 
@@ -25,7 +25,7 @@ for row in sys.stdin:
   married_words = ('marry', 'widow')
   for lemma in lemma_between.elements:
     if lemma in married_words:
-      features.add("important_word=%s" % lemma) 
+      features.add("important_word=%s" % lemma)
 
   # Feature 2: The number of words between the two phrases.
   # Intuition: if they are close by, the link may be stronger.
@@ -35,17 +35,17 @@ for row in sys.stdin:
   features.add("num_words_between=%s" % l if l<5 else "many_words_between")
 
   # Feature 3: Check if the last name matches heuristically.
-  # 
+  #
   last_word_left = ddlib.materialize_span(words, span1)[-1]
   last_word_right = ddlib.materialize_span(words, span2)[-1]
-  if (last_word_left == last_word_right): 
+  if (last_word_left == last_word_right):
     features.add("potential_last_name_match")
 
   # Use this line if you want to print out all features extracted
   #
   #ddlib.log(features)
 
-  for feature in features:  
+  for feature in features:
     print json.dumps({
       "relation_id": obj["relation_id"],
       "feature": feature

@@ -13,7 +13,7 @@ import scalikejdbc.ConnectionPool
 class BiasedCoin extends FunSpec {
 
   val config = ConfigFactory.parseString(getConfig).withFallback(ConfigFactory.load)
-  
+
   /** insert data into db
    */
   def prepareData() {
@@ -24,19 +24,19 @@ class BiasedCoin extends FunSpec {
           SQL("drop schema if exists public cascade; create schema public;").execute()
         case _ =>
       }
-      
+
       SQL("""create table coin(is_correct boolean, id bigint);""").execute()
-      SQL("""insert into coin(is_correct) values 
+      SQL("""insert into coin(is_correct) values
         (true), (true), (true), (true),
         (true), (true), (true), (true),
-        (false),  
+        (false),
         (NULL), (NULL), (NULL), (NULL),
         (NULL), (NULL), (NULL), (NULL),
         (NULL);""").execute()
     }
     JdbcDataStoreObject.close()
   }
-  
+
   /** application.conf configuration
    */
   def getConfig = TestHelper.getConfig +
@@ -58,26 +58,26 @@ class BiasedCoin extends FunSpec {
 
       deepdive.sampler.sampler_args: "-l 2000 -i 500 -s 1 --alpha 0.1 --diminish 0.99 --quiet"
     """
-  
+
 
   it("should work") {
-      
+
     prepareData()
-    
+
     DeepDive.run(config, "out/test_coin")
     JdbcDataStoreObject.init(config)
     JdbcDataStoreObject.withConnection { implicit conn =>
-      
+
       // get learned weight
       val weight = SQL("select weight from dd_inference_result_weights;")().head[Double]("weight")
 
       // weight = log(#positive) / log(#negative) ~= 2.1
       assert(weight > 1.9 && weight < 2.3)
-      
+
       // get inference results, probability should be around 8/9
-      val inference = SQL("""select count(*) as c from (select expectation from dd_inference_result_variables 
+      val inference = SQL("""select count(*) as c from (select expectation from dd_inference_result_variables
         where expectation > 0.94 or expectation < 0.84) tmp;""")().head[Long]("c")
-      
+
       assert(inference === 0)
 
     }

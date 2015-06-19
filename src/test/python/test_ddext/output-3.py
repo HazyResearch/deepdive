@@ -4,15 +4,15 @@ CREATE OR REPLACE FUNCTION func_test(
     words text[], id bigint, p1_start int, p1_length int, p2_start int, p2_length int) RETURNS SETOF ret_func_test AS
 $$
 
-if 're' in SD: 
+if 're' in SD:
   re = SD['re']
-else: 
+else:
   import re
   SD['re'] = re
 
-if 'sys' in SD: 
+if 'sys' in SD:
   sys = SD['sys']
-else: 
+else:
   import sys
   SD['sys'] = sys
 
@@ -32,7 +32,7 @@ features = set()
 left_idx = min(p1_end, p2_end)
 right_idx = max(p1_start, p2_start)
 words_between = words[left_idx:right_idx]
-if words_between: 
+if words_between:
   features.add("words_between=" + "-".join(words_between))
 
 # Feature 2: Number of words between the two phrases

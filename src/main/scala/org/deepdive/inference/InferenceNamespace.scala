@@ -4,7 +4,7 @@ import org.deepdive.Context
 import java.io.File
 
 object InferenceNamespace {
-  
+
   val deepdivePrefix = "dd_"
   def WeightsTable = "dd_graph_weights"
   def lastWeightsTable = "dd_graph_last_weights"
@@ -21,7 +21,7 @@ object InferenceNamespace {
   def LearnedWeightsTable = "dd_inference_result_weights_mapping"
   def FeatureStatsSupportTable = "dd_feature_statistics_support"
   def FeatureStatsView = "dd_feature_statistics"
-  
+
   // internal tables
   def getWeightTableName(tableName: String) = s"dd_weights_${tableName}"
   def getQueryTableName(tableName: String) = s"dd_query_${tableName}"
@@ -68,7 +68,7 @@ object InferenceNamespace {
   // converting format scripts
   val utilFolder = "util"
   val formatConvertingScriptName = s"tobinary.py"
-  val formatConvertingWorkerName = s"""format_converter_${if (System.getProperty("os.name").startsWith("Linux")) 
+  val formatConvertingWorkerName = s"""format_converter_${if (System.getProperty("os.name").startsWith("Linux"))
     "linux" else "mac"}"""
 
   def getFormatConvertingScriptPath : String = {
@@ -79,5 +79,5 @@ object InferenceNamespace {
   }
 
   def getActiveScript : String = new File(s"${Context.deepdiveHome}/${utilFolder}/active.sh").getCanonicalPath()
-  
+
 }

@@ -5,7 +5,7 @@ layout: default
 # Using DeepDive with Docker
 
 IMPORTANT: You need to be running a database on port 5432 that is accessible to your Docker container. [Postgres](https://registry.hub.docker.com/_/postgres/) or [MySQL](https://registry.hub.docker.com/_/mysql/)
-are great options. 
+are great options.
 
 ### Docker instructions
 
@@ -17,7 +17,7 @@ docker pull adamwgoldberg/deepdive-github
 # Run Deepdive
 # All deepdive application code should be created in /root/deepdive/app
 # Make sure the deepdive-github tag matches the above one.
-# This assumes you have a db container named db. 
+# This assumes you have a db container named db.
 docker run -t -d --link db:db --name deepdive adamwgoldberg/deepdive-github bash
 
 # Attach shell to Deepdive

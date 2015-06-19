@@ -38,7 +38,7 @@ reasonable choice in most cases.
 A common measure of quality is *precision*, i.e., the fraction of extractions
 that are indeed expressing a marriage relation. Another quality measure of
 interest is *recall*, which is the fraction of candidates expressing marriage
-relations that appear in the extractions. 
+relations that appear in the extractions.
 
 For now, we focus on assessing and improving *precision*. This may have
 an impact on recall (there is a somewhat natural tradeoff between the two), but
@@ -68,7 +68,7 @@ We provide a script `./get-braindump.sh` in the folder
 `$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/` to download and install
 BrainDump. After running the script, BrainDump will be installed in your user home
 directory (`$HOME`), as `$HOME/local/bin/braindump`. From now on, we refer to this
-executable as `braindump`.  
+executable as `braindump`.
 
 `braindump` requires a configuration file `braindump.conf` to be put in
 `$APP_HOME`, which should be created as below:
@@ -81,7 +81,7 @@ You can use the one in
 <!--
 The first time you run `braindump` from `$APP_HOME`, it presents an interactive
 command line interface to create the configuration file `braindump.conf`. The
-created file should look like the following. 
+created file should look like the following.
 A copy of this file can be
 found in `$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/braindump.conf`.
 -->
@@ -102,7 +102,7 @@ export REPORT_DIR="$WORKING_DIR/experiment-reports"
 
 # Use absolute path if possible.
 # Avoid using "pwd" or "dirname $0", they don't work properly.
-# $WORKING_DIR is set to be the directory where braindump is running. 
+# $WORKING_DIR is set to be the directory where braindump is running.
 # (the directory that contains braindump.conf)
 export APP_HOME=$WORKING_DIR
 
@@ -116,7 +116,7 @@ export PGPASSWORD=${PGPASSWORD:-}
 export PGPORT=${PGPORT:-5432}
 export PGHOST=${PGHOST:-localhost}
 
-# Specify all feature tables. 
+# Specify all feature tables.
 # e.g. FEATURE_TABLES=(f1 f2 f3)
 export FEATURE_TABLES=(has_spouse_features)
 export FEATURE_COLUMNS=(feature)
@@ -126,7 +126,7 @@ export VARIABLE_TABLES=(has_spouse)
 export VARIABLE_COLUMNS=(is_true)
 # Assume that in DeepDive, inference result tables will be named as [VARIABLE_TABLE]_[VARIABLE_COLUMN]_inference
 
-# If the variable is a mention, specify the words / description for the mention. 
+# If the variable is a mention, specify the words / description for the mention.
 # This is used for a statistics with naive entity linking. If empty, do not count deduplicated mentions.
 # e.g. export VARIABLE_WORDS_COLUMNS=(w1 "" w3)
 # In the examples above, the second element is left empty
@@ -156,9 +156,9 @@ export SEND_RESULT_WITH_EMAIL=false
 
 ######## CUSTOM SCRIPTS ###########
 # Leave blank for default stats report.
-# Set to a location of a script (e.g. $APP_HOME/your_script) to use it instead of default 
+# Set to a location of a script (e.g. $APP_HOME/your_script) to use it instead of default
 
-# Self-defined scripts for stats. 
+# Self-defined scripts for stats.
 export STATS_SCRIPT=
 export SUPERVISION_SAMPLE_SCRIPT=
 export INFERENCE_SAMPLE_SCRIPT="$APP_HOME/bdconfigs/sample-inference.sh"
@@ -173,11 +173,11 @@ export DD_THIS_OUTPUT_DIR=$DD_OUTPUT_DIR/$DD_TIMESTAMP
 
 ```
 
-Note that we customize the variable `INFERENCE_SAMPLE_SCRIPT` to our customized script 
-`$APP_HOME/bdconfigs/sample-inference.sh`, which can be found in 
-`$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/bdconfigs/sample-inference.sh`. 
-This script is used to get 100 random extractions with expectation > 0.9, 
-which we will use in later steps. Copy the `bdconfigs` folder into 
+Note that we customize the variable `INFERENCE_SAMPLE_SCRIPT` to our customized script
+`$APP_HOME/bdconfigs/sample-inference.sh`, which can be found in
+`$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/bdconfigs/sample-inference.sh`.
+This script is used to get 100 random extractions with expectation > 0.9,
+which we will use in later steps. Copy the `bdconfigs` folder into
 your `$APP_HOME` to make it work:
 
 ```bash
@@ -205,7 +205,7 @@ set -e
 deepdive -c $APP_HOME/application.conf
 
 # Note that you should go back to your APP_HOME directory to run braindump
-cd $APP_HOME  
+cd $APP_HOME
 braindump
 ```
 
@@ -283,7 +283,7 @@ precisely assess the quality of the results and diagnose what errors the system
 makes, we should look at actual examples of extractions and verify how many of
 them are indeed representing marriage relations, how many are not, and why are
 non-correct candidates assigned a high probability. This task is called *error
-analysis*. 
+analysis*.
 
 Deepdive includes a tool named [MindTagger](../labeling.html) that simplifies
 the execution of error analysis.
@@ -291,14 +291,14 @@ the execution of error analysis.
 ### <a name="mindtagger" href="#"> </a> Using MindTagger to label results
 
 We now conduct the error analysis based on our initial spouse relation mention
-extractor developed in the [first part of the tutorial](walkthrough.html). 
+extractor developed in the [first part of the tutorial](walkthrough.html).
 
 We use [MindTagger](../labeling.html) to inspect and label 100 extractions.
 A random sample of 100 extractions is usually sufficiently large to correctly
 assess precision and to identify the most common sources of error. For more
 information about the labeling process, please refer to the
 [MindTagger](../labeling.html) page, which describes in depth how to use the
-tool, with specific examples that use the spouse application. 
+tool, with specific examples that use the spouse application.
 
 The goal of the labeling task with MindTagger is to identify categories of
 misclassified relation candidates, and to understand why the system does not
@@ -349,7 +349,7 @@ cd $APP_HOME/labeling
 
 We can now open a browser, go to `localhost:8000` and perform the labeling of
 the extractions as described in the [MindTagger](../labeling.html)
-documentation. You should be able to see an interface like the following 
+documentation. You should be able to see an interface like the following
 screenshot:
 
 ![Screenshot of labeling interface in Mindtagger](../../../images/tutorial-labeling.png)
@@ -360,7 +360,7 @@ we include a sample of 100 extractions that we already labelled using
 MindTagger. To look at our labeling results, you can enter this directory, run
 `./start-mindtagger.sh` and point your browser to `localhost:8000`. In our case,
 the precision is 40%: out of 100 extractions, 40 are actually expressing a
-marriage relation. 
+marriage relation.
 
 <blockquote>Precision of basic tutorial: 40%.</blockquote>
 
@@ -371,7 +371,7 @@ example, if there is a word like "married", "husband" or "wife" between the sent
 the relation candidate is likely to be assigned a high probability. At the same time,
 features that are not indicative of a marriage relation (e.g.,
 `word_between=started` in the above screenshot) gets assigned a very high weight (1.567), which is
-a sign of overfitting. 
+a sign of overfitting.
 
 With the goal of improving the quality of the extractions, in the next
 section we first describe how to easily enrich the set of features using the
@@ -409,7 +409,7 @@ can help distinguish between spouse relation and non-spouse relations, like
 "husband", "daughter", "fiancee", and so on. These lists do not contain all
 possible keywords (such a list would probably be impossible to even imagine),
 but they can still help the system learn how to distinguish between correct and
-incorrect relations. 
+incorrect relations.
 
 We created one dictionary `married.txt` for keywords that are usually associated
 with correct marriage relations, and another dictionary `non_married.txt` for
@@ -448,7 +448,7 @@ ddlib.load_dictionary(BASE_DIR + "/dicts/non_married.txt", dict_id="non_married"
 # For each input tuple
 for row in sys.stdin:
   parts = row.strip().split('\t')
-  
+
   # Get all fields from a row
   words = parts[0].split(ARR_DELIM)
   lemmas = parts[1].split(ARR_DELIM)
@@ -471,7 +471,7 @@ for row in sys.stdin:
   except:
     print >>sys.stderr, dependencies
     continue
-  
+
   # Create two spans of person mentions
   span1 = ddlib.Span(begin_word_id=p1_start, length=p1_length)
   span2 = ddlib.Span(begin_word_id=p2_start, length=p2_length)
@@ -531,8 +531,8 @@ version of `application.conf` is available at
 In order to mitigate the effect of overfitting, we can use a functionality
 offered by the [DimmWitted! Sampler](../sampler.html) to automatically pick
 (from a user-specified set) a good value for *regularization*. Regularization is a
-standard machine learning technique to mitigate the effect of overfitting. 
-It is critical when we use the generic feature library, since the library 
+standard machine learning technique to mitigate the effect of overfitting.
+It is critical when we use the generic feature library, since the library
 yields a lot of features and many of them may be irrelevant.
 
 The Gibbs sampler in DeepDive accept one or more `--reg_param VALUE` options that
@@ -563,7 +563,7 @@ executing `./run.sh`.
 Once the application has completed successfully, we can perform another round of
 error analysis by looking at another 100 extractions using MindTagger to assess
 the changes in the precision of the extractions due to the use of the generic
-feature library. 
+feature library.
 
 We already labelled 100 extractions using MindTagger. You can look at the
 results of our labeling by entering the directory
@@ -578,7 +578,7 @@ now 86%.
 
 We can further improve the precision by using more data: having additional data
 allows the system to gather more evidence and learn better weights for the
-features. 
+features.
 
 The data archive that we downloaded at the beginning of the tutorial contains a
 additional dataset with more sentences that contains more negative examples
@@ -587,7 +587,7 @@ additional dataset with more sentences that contains more negative examples
 `$DEEPDIVE_HOME/examples/tutorial_example/step3-more-data/setup_database.sh` to
 the `$APP_HOME` directory, and execute `./run.sh`: it will setup a new database
 `deepdive_spouse_large` containing the enlarged dataset and run the application
-using this database. 
+using this database.
 
 At the end, you can analyze the results using MindTagger as described before,
 but make sure to update the database name in `braindump.conf`:
@@ -610,7 +610,7 @@ In this section we showed only some basic examples of the actions that can be
 taken to improve the quality of an application. Many more are possible, for
 example adding additional supervision rules or specifying additional
 correlations among the variables using inference rules. Actions should be taken
-according to the results of error analysis. For a detailed discussion, please 
+according to the results of error analysis. For a detailed discussion, please
 refer to this paper:
 [Feature Engineering for Knowledge Base Construction](http://arxiv.org/abs/1407.6439).
 
@@ -618,8 +618,8 @@ refer to this paper:
 
 We can use MindTagger also to evaluate recall, i.e., the fraction of candidates
 expressing a marriage relation that is actually extracted (i.e., assigned a
-probability at least 0.9). Note that in this section, we are only 
-assessing the recall of extractions with regards to the candidates, 
+probability at least 0.9). Note that in this section, we are only
+assessing the recall of extractions with regards to the candidates,
 ignoring the imperfection of the candidate generation.
 
 We start by preparing some data for MindTagger that allows for the evaluation of
@@ -632,12 +632,12 @@ application was using the `deepdive_spouse_large` database created at the end of
 the previous section. If that is not the case, edit the script and set the
 `DBNAME` directory to the correct database). This script collects two thousands
 sentences containing at least one relation mention candidate, independently from
-the predicted probability. 
+the predicted probability.
 
 Once the script has completed, start MindTagger with `./start-mindtagger.sh`.
 Point your browser to `localhost:8000` and make sure that on the left of the
 upper bar of the page, the `spouse_example-recall` task is selected (otherwise
-select it). 
+select it).
 
 You should be able to see the interface similar as below:
 
@@ -666,7 +666,7 @@ The above screenshot shows an example of "correct" extraction, and below shows a
 
 ![Screenshot of recall-labeling interface](../../../images/tutorial-labeling-recall-missed.png)
 
-We performed the labeling over 1,000 candidates, and found a recall of 19%. 
+We performed the labeling over 1,000 candidates, and found a recall of 19%.
 While this is not very
 satisfactory, remember that all the steps we took earlier in this section were
 focused on improving precision, without even assessing or considering the impact

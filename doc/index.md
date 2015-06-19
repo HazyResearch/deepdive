@@ -51,11 +51,11 @@ DeepDive differs from traditional systems in several ways:
   In contrast, other machine learning systems require the developer
   think about which clustering algorithm, which classification algorithm, etc.
   In DeepDive’s joint inference based approach, the user only specifies
-  the necessary **signals or features**. 
-- DeepDive systems can achieve high quality: PaleoDeepDive has **higher quality than human volunteers** in extracting complex knowledge in 
-  [scientific domains](http://www.plosone.org/article/info:doi/10.1371/journal.pone.0113523) and  **winning performance** in 
-  [entity relation extraction competitions](http://i.stanford.edu/hazy/papers/2014kbp-systemdescription.pdf). 
-  
+  the necessary **signals or features**.
+- DeepDive systems can achieve high quality: PaleoDeepDive has **higher quality than human volunteers** in extracting complex knowledge in
+  [scientific domains](http://www.plosone.org/article/info:doi/10.1371/journal.pone.0113523) and  **winning performance** in
+  [entity relation extraction competitions](http://i.stanford.edu/hazy/papers/2014kbp-systemdescription.pdf).
+
 - DeepDive is aware that **data is often noisy and imprecise**: names
   are misspelled, natural language is ambiguous, and humans make
   mistakes. Taking such imprecision into account, DeepDive computes
@@ -104,7 +104,7 @@ For more details, check out [our papers](doc/papers.html).
 
 Examples of DeepDive applications are described in our [showcase page](doc/showcase/apps.html).
 
-- [MEMEX](doc/showcase/apps.html#memex). Supporting the fight against human trafficking, which was recently featured on [Forbes](http://www.forbes.com/sites/thomasbrewster/2015/04/17/darpa-nasa-and-partners-show-off-memex/) and is now actively used by [law enforcement agencies](http://humantraffickingcenter.org/posts-by-htc-associates/memex-helps-find-human-trafficking-cases-online/). 
+- [MEMEX](doc/showcase/apps.html#memex). Supporting the fight against human trafficking, which was recently featured on [Forbes](http://www.forbes.com/sites/thomasbrewster/2015/04/17/darpa-nasa-and-partners-show-off-memex/) and is now actively used by [law enforcement agencies](http://humantraffickingcenter.org/posts-by-htc-associates/memex-helps-find-human-trafficking-cases-online/).
 
 - [PaleoDeepDive](https://www.youtube.com/watch?v=Cj2-dQ2nwoY) - A knowledge base for Paleobiologists with quality higher than human volunteers
 
@@ -134,14 +134,14 @@ at Stanford University. Current group members include:
 Michael Fitzpatrick,
 [Raphael Hoffman](http://raphaelhoffmann.com/),
 Alex Ratner,
-[Zifei Shan](http://www.zifeishan.org/), 
+[Zifei Shan](http://www.zifeishan.org/),
 [Jaeho Shin](http://cs.stanford.edu/~netj/),
 Feiran Wang,
 [Sen Wu](http://stanford.edu/~senwu/),
 and
 [Ce Zhang](http://pages.cs.wisc.edu/~czhang/).
 
-### Updates &amp; Changelog 
+### Updates &amp; Changelog
 
 - [Changelog for version 0.6.0-alpha](doc/changelog/0.6.0-alpha.html) (06/17/2015)
 - [Changelog for version 0.05-alpha](doc/changelog/0.05.01-alpha.html) (02/08/2015)

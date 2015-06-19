@@ -20,7 +20,7 @@ consists of three components:
 
 - The **factor weight** describes the confidence in the relationship expressed
   by the factor. This is used during probabilistic inference. Weights can be
-  constants, or automatically learned based on training data. 
+  constants, or automatically learned based on training data.
 
 The following is an example of an inference rule:
 
@@ -72,7 +72,7 @@ There are a number of caveats when writing input queries for factors:
 - The query result **must** contain all variable attributes that are used in your
   factor function. For example, if you are using the `has_cancer.is_true`
   variable in the factor function, then an attribute called `has_cancer.is_true`
-  must be part of the query result. 
+  must be part of the query result.
 
 - Always use `[relation_name].[attribute]` to refer to the variables in the
 factor function, regardless whether or not you are using an alias in your input
@@ -85,25 +85,25 @@ variable must be called `smokes.is_true`.
   must also be part of the query result. There are several **requirements for
   the `id` column**:
 
-	- When creating a table containing variables, the column `id` must be
-	  explicitly created, with the type of big integer, i.e. `id bigint`.
+        - When creating a table containing variables, the column `id` must be
+          explicitly created, with the type of big integer, i.e. `id bigint`.
 
-	- The value of `id` should **always** be `NULL` before the inference step.
-	  DeepDive fills this column with variable IDs in the inference steps, so
-	  any value in this column will be lost.
+        - The value of `id` should **always** be `NULL` before the inference step.
+          DeepDive fills this column with variable IDs in the inference steps, so
+          any value in this column will be lost.
 
-	- If you use Greenplum, the column `id` must not be the distribution key for
-	  a table.
+        - If you use Greenplum, the column `id` must not be the distribution key for
+          a table.
 
-	- If you want an unique identifier of this table to refer to, you should use
-	  columns other than `id`.
+        - If you want an unique identifier of this table to refer to, you should use
+          columns other than `id`.
 
-	- Generally, for any table in a DeepDive application, it is recommended
-	  **not** to use the name `id` for any column other than this reserved
-	  field. Meaningful column names such as `sentence_id`, `people_id` are
-	  recommended.
+        - Generally, for any table in a DeepDive application, it is recommended
+          **not** to use the name `id` for any column other than this reserved
+          field. Meaningful column names such as `sentence_id`, `people_id` are
+          recommended.
 
-	- The values in the columns used to learn the factor weight should not be `null`.
+        - The values in the columns used to learn the factor weight should not be `null`.
 
 - When using self-joins, you must avoid naming collisions by defining an alias in
 your query. For example, the following will **not** work:
@@ -130,8 +130,8 @@ your query. For example, the following will **not** work:
         AND  friends.friend_id = p2.person_id
     ```
 
-	  Your factor function variables would be called `person_smokes.p1.smokes` and
-	  `person_smokes.p1.smokes`.
+          Your factor function variables would be called `person_smokes.p1.smokes` and
+          `person_smokes.p1.smokes`.
 
 ### Factor function
 
@@ -149,7 +149,7 @@ example, `Imply(B, C, A)` means "if B and C, then A".
     someFactor {
       function: "Imply(smokes.is_true, has_cancer.is_true)"
     }
-    
+
     # Evaluates to true, when has_cancer.is_true is true
     someFactor {
       function: "IsTrue(has_cancer.is_true)"
@@ -181,10 +181,10 @@ weight depending on the variable value.
 ```bash
 # Known weight (10 can be treated as positive infinite)
 someFactor.weight: 10
-    
+
 # Learn the weight, not depending on any variables. All factors created by this rule will have the same weight.
 someFactor.weight: ?
-    
+
 # Learn the weight. Each factor will get a different weight depending on the value of people.gender
 someFactor.weight: ?(people.gender)
 ```

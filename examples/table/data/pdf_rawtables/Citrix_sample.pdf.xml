@@ -138,18 +138,18 @@ table 5 page 4 row 22 col 0 to 1	Part IV:    	t425l19w535h9
 table 5 page 4 row 22 col 1 to 2		t0l0w0h0
 table 5 page 4 row 22 col 2 to 3		t0l0w0h0
 table 5 page 4 row 22 col 3 to 4		t0l0w0h0
-table 5 page 4 row 23 col 0 to 1	
+table 5 page 4 row 23 col 0 to 1
 	t439l19w1h9
 table 5 page 4 row 23 col 1 to 2	Item 15	t439l78w35h9
 table 5 page 4 row 23 col 2 to 3	Exhibits, Financial Statement Schedules 	t439l133w162h9
 table 5 page 4 row 23 col 3 to 4	59	t439l574w12h9
 table 6 page 6 row 0 col 0 to 1	*	t64l48w8h9
-table 6 page 6 row 0 col 1 to 2	Citrix (R) XenApp is a widely deployed solution that allows Windows applications to be delivered as cloud services to Android and (R) 
+table 6 page 6 row 0 col 1 to 2	Citrix (R) XenApp is a widely deployed solution that allows Windows applications to be delivered as cloud services to Android and (R)
 iOS mobile devices, Macs, PCs and thin clients. XenApp enables mobile workstyles by running applications in the security of the data
 center and using HDX technologies to deliver the user experience to any device, anywhere. XenApp can optimize the application
 experience for smartphones, tablets and touchscreen laptops, providing intuitive touch capabilities for the latest generation of devices.
 Keeping applications under the centralized control of IT administrators enhances data security and reduces the costs of managing
-(R) applications on every PC. XenApp runs on all current versions of Microsoft Windows Server (R) and tightly integrates with the 
+(R) applications on every PC. XenApp runs on all current versions of Microsoft Windows Server (R) and tightly integrates with the
 Microsoft (R) Desktop Optimization Pack, Microsoft App-V, and Microsoft System Center. Our joint solution lowers the cost of
 delivering and maintaining Windows applications for all users in the enterprise. The capabilities of XenApp are available standalone
 as well as with XenDesktop Enterprise and Platinum Editions.	t64l66w249h9
@@ -162,7 +162,7 @@ table 6 page 6 row 2 col 1 to 2	Citrix (R) VDI-in-a-BoxTM is an easy, affordable
 branch office, and other small to medium sized deployments. Running on off-the-shelf servers, the solution enables IT to quickly and
 easily deliver centrally-managed virtual desktops to virtually any user, on virtually any device.	t216l66w376h9
 table 6 page 6 row 3 col 0 to 1	*	t256l45w8h9
-table 6 page 6 row 3 col 1 to 2	(R) Citrix (R) XenClient is a high-performance, bare-metal hypervisor that runs directly on the client device hardware, dividing up the 
+table 6 page 6 row 3 col 1 to 2	(R) Citrix (R) XenClient is a high-performance, bare-metal hypervisor that runs directly on the client device hardware, dividing up the
 resources of the machine and enabling multiple operating systems to run side by side in complete isolation. XenClient is available as a
 free download on citrix.com.	t256l66w118h9
 table 7 page 7 row 0 col 0 to 1	*	t64l36w8h9
@@ -187,7 +187,7 @@ scalable and reliable private and public cloud computing environments. With Clou
 cloud services within their existing infrastructure and start realizing the benefits of this transformative service delivery model without the
 overhead of integration, professional services and complex deployment schedules.	t227l53w328h9
 table 7 page 7 row 5 col 0 to 1	*	t279l36w8h9
-table 7 page 7 row 5 col 1 to 2	Citrix (R) (R) XenServer offers a complete virtualization platform enabling companies to create and manage virtual infrastructures for servers, 
+table 7 page 7 row 5 col 1 to 2	Citrix (R) (R) XenServer offers a complete virtualization platform enabling companies to create and manage virtual infrastructures for servers,
 desktops and clouds. Built on the powerful open source-based Xen hypervisor, XenServer is designed for efficient management of
 Windows (R) and Linux (R) virtual servers, delivering cost-effective server consolidation and business continuity.	t279l53w439h9
 table 8 page 7 row 0 col 0 to 1	*	t386l36w8h9
@@ -280,7 +280,7 @@ table 10 page 9 row 3 col 0 to 1	*	t392l36w8h9
 table 10 page 9 row 3 col 1 to 2	NetScaler (R) Software Packet Engine , or the Packet Engine, forms the foundation of our NetScaler line of products. The Packet Engine
 allows high-performance networking and packet processing without the need for special purpose hardware.	t392l53w425h9
 table 10 page 9 row 4 col 0 to 1	*	t421l36w8h9
-table 10 page 9 row 4 col 1 to 2	TM NetScaler (R) nCore Technology is an architecture which enables execution of multiple Packet Engines in parallel. nCore technology 
+table 10 page 9 row 4 col 1 to 2	TM NetScaler (R) nCore Technology is an architecture which enables execution of multiple Packet Engines in parallel. nCore technology
 allows the distribution of packet flows across multiple central processing unit cores to achieve efficient, high-performance parallel
 processing across multiple Packet Engines. The new architecture incorporates innovations in flow distribution and state sharing and
 provides for efficient execution across Packet Engines.	t421l53w220h9
@@ -5353,7 +5353,7 @@ table 97 page 109 row 3 col 0 to 1	(4)  	t467l18w12h4
 table 97 page 109 row 3 col 1 to 2	Credits issued for returns.	t469l40w104h9
 table 97 page 109 row 4 col 0 to 1	(5)  	t480l18w12h4
 table 97 page 109 row 4 col 1 to 2	Related to deferred tax assets on unrealized losses and acquisitions.	t481l40w267h9
-table 97 page 109 row 5 col 0 to 1	(6)  
+table 97 page 109 row 5 col 0 to 1	(6)
 
 
 	t492l18w2h4

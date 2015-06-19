@@ -6,17 +6,17 @@ layout: default
 
 Here, we walk through the codebase that powers PaleoDeepDive, an application built upon the [DeepDive machine reading infrastructure](http://deepdive.stanford.edu).
 The code can be found [here](https://github.com/zhangce/pdd), and
-one example data dump can be 
+one example data dump can be
 found [here](https://github.com/zhangce/pdd/tree/master/example_data).
 
 ## Prerequisite
 
 To fully understand PaleoDeepDive, it is useful to first go through the online tutorial for DeepDive,
 which provides an overview of [basic concepts](basics/walkthrough/walkthrough.html)
-and an example of 
+and an example of
 [how relations between people, locations, and organizations](basics/walkthrough/walkthrough.html) are inferred.
 In this document, you will see how similar approaches can be applied
-to paleontology in order to extract relations between 
+to paleontology in order to extract relations between
 biological taxa, geological rock formations, geographic locations, and geological time intervals.
 
 <a id="high_level_picture" href="#"> </a>
@@ -59,7 +59,7 @@ To produce this factor graph, we use the following relations that contain random
 <a id="input" href="#"> </a>
 ## Input Walkthrough
 
-There are four tables as input, namely (1) `sentences` (individual sentences within each document) (2) `ddtables` (tables in PDF documents parsed by existing tools), 
+There are four tables as input, namely (1) `sentences` (individual sentences within each document) (2) `ddtables` (tables in PDF documents parsed by existing tools),
 (3) `layout_align` (document layout and formatting information), and (4) `layout_fonts` (text fonts). These four tables contain
 the raw input to PaleoDeepDive, and we will walk through each of them.
 
@@ -99,7 +99,7 @@ The `ddtables` table contains tables in the original PDF document that are parse
 by existing tools (e.g., [pdf2table](http://ieg.ifs.tuwien.ac.at/projects/pdf2table/)) and our pre-processing scripts. The schema of this table is
 as follows.
 
-     id |     docid      |          tableid           |  type   | sentid 
+     id |     docid      |          tableid           |  type   | sentid
     ----+----------------+----------------------------+---------+--------
         | JOURNAL_102293 | TABLE_1_DOC_JOURNAL_102293 | CAPTION | 156
         | JOURNAL_102293 | TABLE_1_DOC_JOURNAL_102293 | CAPTION | 157
@@ -111,7 +111,7 @@ as follows.
 
 These seven rows define a table with ID TABLE\_1\_DOC\_JOURNAL\_102293, where
 the caption consists of sentences with IDs 156 and 157, and content
-that consists of sentences with IDs 158-162. 
+that consists of sentences with IDs 158-162.
 
 ### Table `layout_align`
 
@@ -143,10 +143,10 @@ of this table is as follows.
     top_margin     : 698
     right_margin   : 1856
     bottom_margin  : 737
-    content        : ("Pseudocetorhinus pickfordi", 
+    content        : ("Pseudocetorhinus pickfordi",
 
 Similar to the table `layout_align`, this row defines a bounding box that
-contains a special font. 
+contains a special font.
 
 <a id="deepdive_program" href="#"> </a>
 ## DeepDive Program
@@ -164,7 +164,7 @@ We start from the simplest extractor in PaleoDeepDive. The task is
 to populate the relation `entity_temporal`, where each row
 is one entity mention for temporal intervals.
 
-    id         : 
+    id         :
     docid      : JOURNAL_105771
     type       : INTERVAL
     eid        : TIME_DOC_JOURNAL_105771_1676_19_19
@@ -212,7 +212,7 @@ The python script is as follows.
      1  #! /usr/bin/env python
      2  from lib import dd as ddlib
      3  import re, sys, json
-     4  
+     4
      5  dict_intervals = {}
      6  for l in open(ddlib.BASE_FOLDER + '/dicts/intervals.tsv', 'r'):
      7    (begin, end, name) = l.rstrip().split('\t')
@@ -220,7 +220,7 @@ The python script is as follows.
      9    dict_intervals[name.lower()] = name + '|' + begin + '|' + end
     10    va = name.lower().replace('late ', 'upper ').replace('early ', 'lower')
     11    if va != name.lower():
-    12      dict_intervals[va] = name + '|' + begin + '|' + end 
+    12      dict_intervals[va] = name + '|' + begin + '|' + end
     13
     14  MAXPHRASELEN = 3
     15  for _row in sys.stdin:
@@ -239,13 +239,13 @@ The python script is as follows.
     28    history = {}
     29    for start in range(0, len(words)):
     30      for end in reversed(range(start + 1, min(len(words), start + 1 + MAXPHRASELEN))):
-    31                    
+    31
     32        if start in history or end in history: continue
-    33            
+    33
     34        phrase = " ".join(words[start:end])
     35
     36        if phrase.lower() in dict_intervals:
-    37        
+    37
     38          eid = "TIME_DOC_" + docid + "_%s_%d_%d" % (sentid, start, end-1)
     39          prov = [sentid, "%d"%start, "%d"%(end-1), phrase]
     40          name = dict_intervals[phrase.lower()]
@@ -262,12 +262,12 @@ This script contains three components.
   entities, e.g., taxon.
   - Line 15 - 26: Load the input of this extractor into corresponding Python objects.
   - Line 28 - 44: Enumerate phrases with up to 3 words, match it with the dictionary, and output
-  an entity mention if it matches. One example output is 
+  an entity mention if it matches. One example output is
 
 
 
     {"docid":"JOURNAL\_105771", "type":"INTERVAL", "eid":"TIME\_DOC\_JOURNAL\_105771\_1676\_19\_19", "entity":"Permian|298.90000|252.17000", "prov":{"1676","19","19","Permian"}, "is\_correct":None}
-  
+
 Note that this example output will produce the example tuple we just show for the table `entity_temporal`.
 
 
@@ -277,24 +277,24 @@ Here, the goal is to
 extract the entity-mention for formations (table `entity_formation`). One example tuple
 in this table is:
 
-    id          : 
+    id          :
     docid       : JOURNAL_105815
     type        : shale
     eid         : ROCK_DOC_JOURNAL_105815_1505_0_1
     entity      : pierre shale
-    prov        : {1505,0,1,"Pierre Shale"}    
+    prov        : {1505,0,1,"Pierre Shale"}
     is_correct  :
-    
+
 This table has a similar structure to the table `entity_temporal`, above. The extractor attempts to encode the following rule:
 
 ```
-If we extracted ''Pierre Shale'' as a formation entity mention candidate, 
-then instances of the word ''Pierre'' in the same document are also a formation 
+If we extracted ''Pierre Shale'' as a formation entity mention candidate,
+then instances of the word ''Pierre'' in the same document are also a formation
 entity mention candidate.
 ```
 
 To encode this rule, we create an extractor called ext\_entity\_formation\_global
-that will be run after an extractor called ext\_entity\_formation\_local 
+that will be run after an extractor called ext\_entity\_formation\_local
 populates the `entity_formation` with entity mentions like ''Pierre Shale''. The
 extractor ext\_entity\_formation\_global is defined as:
 
@@ -302,8 +302,8 @@ extractor ext\_entity\_formation\_global is defined as:
       2    output_relation : "entity_formation"
       3      input           : """
       4                 WITH local_entity_names AS (
-      5                   SELECT docid, array_agg(entity) AS entities, array_agg(type) AS types 
-      6                   FROM entity_formation 
+      5                   SELECT docid, array_agg(entity) AS entities, array_agg(type) AS types
+      6                   FROM entity_formation
       7                   GROUP BY docid
       8                 )
       9                 SELECT t0.docid as docid,
@@ -344,11 +344,11 @@ The feature extractor that we used to distantly supervise the relation
     ext_relation_variable_formationtemporal :{
         output_relation : "relation_formationtemporal"
         input           : """
-                            SELECT DISTINCT docid AS docid, 
-                                            type AS type, 
-                                            eid1 AS eid1, 
-                                            eid2 AS eid2, 
-                                            entity1 AS entity1, 
+                            SELECT DISTINCT docid AS docid,
+                                            type AS type,
+                                            eid1 AS eid1,
+                                            eid2 AS eid2,
+                                            entity1 AS entity1,
                                             entity2 AS entity2
                             FROM relation_candidates
                             WHERE type = 'FORMATIONINTERVAL'
@@ -386,7 +386,7 @@ The Python function supervise_formationtemporal.py is used
 to produce this type of transformation on input tuples.
 
      1    #! /usr/bin/env pypy
-     2  
+     2
      3    from lib import dd as ddlib
      4    import re
      5    import sys
@@ -455,10 +455,10 @@ two examples.
 
     inference_rule_formation : {
       input_query: """
-          SELECT t0.features, 
-               t1.id as "relation_formation.id", 
+          SELECT t0.features,
+               t1.id as "relation_formation.id",
                t1.is_correct as "relation_formation.is_correct"
-          FROM relation_candidates t0, relation_formation t1 
+          FROM relation_candidates t0, relation_formation t1
           WHERE t0.docid=t1.docid AND t0.eid1=t1.eid1 AND t0.eid2=t1.eid2
         """
       function: "Imply(relation_formation.is_correct)"
@@ -469,9 +469,9 @@ In this inference rule, predictions are made for random variables in `relation_f
 which derive from `relation_candidates`. The result
 of this SQL query:
 
-    features                      : [SAMESENT PROV=INV:]  
+    features                      : [SAMESENT PROV=INV:]
     relation_formation.id         : 7564
-    relation_formation.is_correct : 
+    relation_formation.is_correct :
 
 The column ''features'' defines the justification for the relation and DeepDive will train a weight
 for each feature.
@@ -480,7 +480,7 @@ A more sophisticated example is as follows:
 
     inference_rule_formationtemporal_global1 : {
         input_query: """
-            SELECT  t0.id as "global1.id", 
+            SELECT  t0.id as "global1.id",
                 t1.id as "global2.id",
                 t0.is_correct as "global1.is_correct",
                 t1.is_correct as "global2.is_correct"
@@ -514,7 +514,7 @@ which contains tuple:
     eid2         : TIME_DOC_JOURNAL_105815_658_30_31
     entity1      : morrison formation
     entity2      : Late Jurassic|161.2000|145.5000
-    is_correct   : 
+    is_correct   :
     category     : 1
     expectation  : 1
 
@@ -525,7 +525,7 @@ which contains tuple:
     eid2         : TIME_DOC_JOURNAL_105815_3356_14_14
     entity1      : white river formation
     entity2      : Oligocene|33.90000|23.03000
-    is_correct   : 
+    is_correct   :
     category     : 1
     expectation  : 1
 

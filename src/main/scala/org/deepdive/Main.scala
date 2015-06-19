@@ -8,7 +8,7 @@ import java.io.File
 
 /* DeepDive main entry point */
 object Main extends App with Logging {
-  
+
   // Parsing command-line options
   case class CliOptions(configFile: File, outputDir: File)
   val parser = new scopt.OptionParser[CliOptions]("scopt") {

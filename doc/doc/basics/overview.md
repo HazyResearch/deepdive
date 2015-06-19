@@ -14,7 +14,7 @@ performed during the execution of a DeepDive application:
 - [Extraction](#extraction)
 
 - [Factor graph grounding](#grounding)
-  
+
 - [Weight learning](#weight)
 
 - [Inference](#inference)
@@ -43,7 +43,7 @@ factors according to [inference rules](inference_rules.html) specified by the
 user, who also defines the factor functions which describe how the variables are
 related. The user can specify whether the factor weights should be constant or
 learned by the system (refer to the ['Writing inference rules'
-document](inference_rules.html) ). 
+document](inference_rules.html) ).
 
 Grounding is the process of writing the graph to disk so that it can be used to
 perform inference. DeepDive writes the graph to a set of five files: one for
@@ -56,7 +56,7 @@ accepted as input by our [sampler](sampler.html).
 DeepDive can learn the weights of the factor graph from training data that can
 be either obtained through [distant
 supervision](../general/distant_supervision.html) or specified by the user while
-populating the database during the extraction phase. The main general way for 
+populating the database during the extraction phase. The main general way for
 learning the weights is maximum likelihood.
 
 

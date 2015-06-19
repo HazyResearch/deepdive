@@ -54,13 +54,13 @@ The train and test data consist of words, their part-of-speech tag and the chunk
 
 The input table `words_raw` looks like
 
-     word_id |    word    | pos | tag  | id 
+     word_id |    word    | pos | tag  | id
     ---------+------------+-----+------+----
-           1 | Confidence | NN  | B-NP |    
+           1 | Confidence | NN  | B-NP |
 
 The output table `words` looks like
 
-     sent_id | word_id |    word    | pos | true_tag | tag | id 
+     sent_id | word_id |    word    | pos | true_tag | tag | id
     ---------+---------+------------+-----+----------+-----+----
            1 |       1 | Confidence | NN  | B-NP     |   0 |  0
 
@@ -85,10 +85,10 @@ for row in sys.stdin:
   # extractor bug!
   if 'tag' in obj.keys():
     tag = obj['tag']
-    if (tag != None and tag != 'O'): 
+    if (tag != None and tag != 'O'):
       tag = tag.split('-')[1]
 
-    if tag not in tagNames: 
+    if tag not in tagNames:
       tag = ''
 
     print json.dumps({
@@ -118,7 +118,7 @@ for row in sys.stdin:
 To predict chunking label, we need to add features. We use three simple features: the word itself, its part-of-speech tag, and the part-of-speech tag of its previous word. We add an extractor in `application.conf`
 
     ext_features.input: """
-      select w1.word_id as "w1.word_id", w1.word as "w1.word", w1.pos as "w1.pos", 
+      select w1.word_id as "w1.word_id", w1.word as "w1.word", w1.pos as "w1.pos",
         w2.word as "w2.word", w2.pos as "w2.pos"
       from words w1, words w2
       where w1.word_id = w2.word_id + 1 and w1.word is not null"""
@@ -128,17 +128,17 @@ To predict chunking label, we need to add features. We use three simple features
 
 where the input is generating 2-grams from `words` table, which looks like
 
-     w1.word_id | w1.word | w1.pos | w2.word | w2.pos 
+     w1.word_id | w1.word | w1.pos | w2.word | w2.pos
     ------------+---------+--------+---------+--------
              15 | figures | NNS    | trade   | NN
 
 The output will look like
 
-     word_id |   feature    | id 
+     word_id |   feature    | id
     ---------+--------------+----
-          15 | word=figures |   
-          15 | pos=NNS      |   
-          15 | prev_pos=NN  |   
+          15 | word=figures |
+          15 | pos=NNS      |
+          15 | prev_pos=NN  |
 
 The user-defined function is
 
@@ -193,8 +193,8 @@ We will predicate the chunk tag for each word, which corresponds to `tag` column
 Here, we have 13 types of chunk tags `NP, VP, PP, ADJP, ADVP, SBAR, O, PRT, CONJP, INTJ, LST, B, null` according to CoNLL-2000 task description. We have three rules, logistic regression, linear-chain CRF, and skip-chain CRF. The logistic regression rule is
 
     factor_feature {
-      input_query: """select words.id as "words.id", words.tag as "words.tag", word_features.feature as "feature" 
-        from words, word_features 
+      input_query: """select words.id as "words.id", words.tag as "words.tag", word_features.feature as "feature"
+        from words, word_features
         where words.word_id = word_features.word_id and words.word is not null"""
       function: "Multinomial(words.tag)"
       weight: "?(feature)"
@@ -219,7 +219,7 @@ It is similar with skip-chain CRF, where we have skip edges that link labels of 
           row_number() over (partition by w1.id) as rn
         from words w1, words w2
         where w1.tag is not null and w1.sent_id = w2.sent_id and w1.word = w2.word and w1.id < w2.id) scrf
-      where scrf.rn = 1""" 
+      where scrf.rn = 1"""
       function: "Multinomial(words.w1.tag, words.w2.tag)"
       weight: "?"
     }

@@ -23,7 +23,7 @@ class FactorFunctionParserSpec extends FunSpec {
       assert(result.successful)
       assert(result.get == ImplyFactorFunction(
         List(
-          FactorFunctionVariable("relation2", "predicate", false), 
+          FactorFunctionVariable("relation2", "predicate", false),
           FactorFunctionVariable("relation3", "predicate", false),
           FactorFunctionVariable("words", "is_true", false))
       ))
@@ -134,7 +134,7 @@ class FactorFunctionParserSpec extends FunSpec {
       assert(result.successful)
       assert(result.get == LinearFactorFunction(
         List(
-          FactorFunctionVariable("relation1", "is_true", false), 
+          FactorFunctionVariable("relation1", "is_true", false),
           FactorFunctionVariable("relation2", "is_true", false)
       )))
     }
@@ -163,7 +163,7 @@ class FactorFunctionParserSpec extends FunSpec {
       assert(result.successful)
       assert(result.get == RatioFactorFunction(
         List(
-          FactorFunctionVariable("relation1", "is_true", false), 
+          FactorFunctionVariable("relation1", "is_true", false),
           FactorFunctionVariable("relation2", "is_true", false)
       )))
     }
@@ -192,7 +192,7 @@ class FactorFunctionParserSpec extends FunSpec {
       assert(result.successful)
       assert(result.get == LogicalFactorFunction(
         List(
-          FactorFunctionVariable("relation1", "is_true", false), 
+          FactorFunctionVariable("relation1", "is_true", false),
           FactorFunctionVariable("relation2", "is_true", false)
       )))
     }

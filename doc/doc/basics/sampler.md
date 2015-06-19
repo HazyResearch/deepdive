@@ -9,7 +9,7 @@ sampler](../general/inference.html#gibbs) for DeepDive.
 
 
 In `application.conf`, you can change the sampler executable as follows:
-  
+
 ```bash
 deepdive {
   sampler.sampler_cmd: "util/sampler-dw-mac gibbs"
@@ -17,7 +17,7 @@ deepdive {
 ```
 
 Use `sampler-dw-mac` or `sampler-dw-linux` depending on which type
-of system your are on. 
+of system your are on.
 
 Since [version 0.03](../changelog/0.03-alpha.html), DeepDive automatically
 chooses the correct executable based on the system environment, so we recommend to
@@ -29,11 +29,11 @@ The sampler executable can be invoked independently of DeepDive. The following
 arguments to the sampler executable are used to specify input files, output
 file, and learning and inference parameters:
 
-	-q, --quiet
-		Quiet output
+        -q, --quiet
+                Quiet output
 
-	-c <int>,  --n_datacopy <int> (Linux only)
-		Number of data copies. Each NUMA node has a copy of factor graph. This
+        -c <int>,  --n_datacopy <int> (Linux only)
+                Number of data copies. Each NUMA node has a copy of factor graph. This
         argument specifies number of NUMA nodes to use. Default is using all
         NUMA nodes.
 
@@ -76,7 +76,7 @@ file, and learning and inference parameters:
     -d <diminishRate> | --diminish <diminishRate>
         the diminish rate for learning (default: 0.95).
         Learning rate will shrink by this parameter after each iteration.
-        
+
     -b <regularizationParameter> | --reg_param <regularizationParameter>
         the l2 regularization parameter for learning (default: 0.01).
 

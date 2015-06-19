@@ -13,21 +13,21 @@ import org.postgresql.util.PSQLException
 
 class DataLoader extends JdbcDataStore with Logging {
 
-  /** Unload data of a SQL query from database to a TSV file 
-   * 
+  /** Unload data of a SQL query from database to a TSV file
+   *
    * For Greenplum, use gpfdist. Must specify gpport, gppath, gphost in dbSettings. No need for filepath
    * For Postgresql, filepath is an abosulute path. No need for dbSettings or filename.
    * For greenplum, use gpload; for postgres, use \copy
-   * 
+   *
    * @param filename: the name of the output file
    * @param filepath: the absolute path of the output file (including file name)
    * @param dbSettings: database settings (DD's class)
    * @param query: the query to be dumped
    * @param folder: for greenplum, the relative path to gpfdist
    */
-  def unload(filename: String, filepath: String, dbSettings: DbSettings, 
+  def unload(filename: String, filepath: String, dbSettings: DbSettings,
     query: String, folder: String) : Unit = {
-    
+
     if (dbSettings.gpload) {
       val hostname = dbSettings.gphost
       val port = dbSettings.gpport
@@ -66,7 +66,7 @@ class DataLoader extends JdbcDataStore with Logging {
           """)
       }
     } else { // psql / mysql
-  
+
       // Branch by database driver type (temporary solution)
       val dbtype = Helpers.getDbType(dbSettings)
 
@@ -75,7 +75,7 @@ class DataLoader extends JdbcDataStore with Logging {
         // -N: skip column names
         case Mysql => "mysql " + Helpers.getOptionString(dbSettings) + " --silent -N -e "
       }
-  
+
       val outfile = new File(filepath)
       outfile.getParentFile().mkdirs()
 
@@ -83,7 +83,7 @@ class DataLoader extends JdbcDataStore with Logging {
       for (q <- queryList) {
         // Trimming ending semicolons
         val trimmedQuery = q.replaceAll("""(?m)[;\s\n]+$""", "")
-        
+
         // This query can contain double-quotes (") now.
         val copyStr = dbtype match {
           case Psql => s"COPY (${trimmedQuery}) TO STDOUT;"
@@ -93,7 +93,7 @@ class DataLoader extends JdbcDataStore with Logging {
       }
     }
   }
-  
+
   /** Load data from a TSV file to database
    *
    * For greenplum, use gpload; for postgres, use \copy
@@ -103,10 +103,10 @@ class DataLoader extends JdbcDataStore with Logging {
    * @param filepath: the absolute path of the input file, it can contain wildchar characters
    * @param tablename: the table to be copied to
    * @param dbSettings: database settings (DD's class)
-   */ 
+   */
   def load(filepath: String, tablename: String, dbSettings: DbSettings,
     delimiter: String = "\\t") : Unit = {
-    
+
     if (dbSettings.gpload) {
       val loadyaml = File.createTempFile(s"gpload", ".yml")
       val dbname = dbSettings.dbname
@@ -154,18 +154,18 @@ class DataLoader extends JdbcDataStore with Logging {
       val cmdfile = File.createTempFile(s"${tablename}.copy", ".sh")
       val writer = new PrintWriter(cmdfile)
       val writebackPrefix = s"find ${filepath} -print0 | xargs -0 -P 1 -L 1 bash -c "
-      val delimiterStr = if (delimiter == "\\t") "" else "DELIMITER '\"'\"'" + delimiter + "'\"'\"'" 
+      val delimiterStr = if (delimiter == "\\t") "" else "DELIMITER '\"'\"'" + delimiter + "'\"'\"'"
       val writebackCmd = dbtype match {
-        case Psql => writebackPrefix + s"'psql " + Helpers.getOptionString(dbSettings) + 
-          "-c \"COPY " + s"${tablename} FROM STDIN " + delimiterStr + ";" + 
+        case Psql => writebackPrefix + s"'psql " + Helpers.getOptionString(dbSettings) +
+          "-c \"COPY " + s"${tablename} FROM STDIN " + delimiterStr + ";" +
           " \" < $0'"
-        case Mysql => 
+        case Mysql =>
           writebackPrefix + s"'mysqlimport --local " + Helpers.getOptionString(dbSettings) +
           " $0'"
-          // mysqlimport requires input file to have basename that is same as 
+          // mysqlimport requires input file to have basename that is same as
           // tablename.
       }
-      
+
       log.info(writebackCmd)
       writer.println(writebackCmd)
       writer.close()
@@ -197,7 +197,7 @@ class DataLoader extends JdbcDataStore with Logging {
 
     val writebackPrefix = s"find ${fileDirPath} -name '${fileNamePattern}' -print0 | xargs -0" +
       s" -P ${threadNum} -L 1 bash -c "
-    
+
     val ndbLoader = {
       val osname = System.getProperty("os.name")
       if (osname.startsWith("Linux")) {
@@ -210,7 +210,7 @@ class DataLoader extends JdbcDataStore with Logging {
 
     val writebackCmd = writebackPrefix + s"'${ndbLoader} ${ndbConnectionString} ${dbSettings.dbname}" +
         " $0 " + s"${schemaFilePath} ${parallelTransactionNum}'"
-    
+
     val cmdfile = File.createTempFile(s"ndbloader", ".sh")
     val writer = new PrintWriter(cmdfile)
 

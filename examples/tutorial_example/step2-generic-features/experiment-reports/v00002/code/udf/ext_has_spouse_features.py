@@ -15,7 +15,7 @@ ddlib.load_dictionary(BASE_DIR + "/dicts/non_married.txt", dict_id="non_married"
 # For each input tuple
 for row in sys.stdin:
   parts = row.strip().split('\t')
-  
+
   # Get all fields from a row
   words = parts[0].split(ARR_DELIM)
   lemmas = parts[1].split(ARR_DELIM)
@@ -37,7 +37,7 @@ for row in sys.stdin:
   except:
     print >>sys.stderr, dependencies
     continue
-  
+
   # Create two spans of person mentions
   span1 = ddlib.Span(begin_word_id=p1_start, length=p1_length)
   span2 = ddlib.Span(begin_word_id=p2_start, length=p2_length)

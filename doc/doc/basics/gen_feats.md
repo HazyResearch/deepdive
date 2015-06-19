@@ -36,7 +36,7 @@ are in the 'Using Dictionaries' section below.
 
 The generic feature library creates wo different sets of features for mentions
 and relations, due to the different nature of these objects, and to which
-features are more relevant for each type. 
+features are more relevant for each type.
 
 There are various "classes" of generic features, which can be distinguished by
 their prefix.
@@ -44,55 +44,55 @@ their prefix.
 The list of generic features for a *mention* is the following:
 
 - The set of Part of Speech tag(s) of the word(s) composing the mention (prefix:
-	`POS_SEQ`);
+        `POS_SEQ`);
 - The set of Named Entity Recognition tag(s) of the word(s) composing the
-	mention (`NER_SEQ`);
-- The set of lemmas of the word(s) composing the mention (`LEMMA_SEQ`); 
+        mention (`NER_SEQ`);
+- The set of lemmas of the word(s) composing the mention (`LEMMA_SEQ`);
 - The set of word(s) composing the mention (`WORD_SEQ`);
 - The (sum of the) length(s) of the word(s) composing the mention (`LENGTH`);
 - A feature denoting whether the first word of the mention starts with a capital
-	letter (`STARTS_WITH_CAPITAL`);
+        letter (`STARTS_WITH_CAPITAL`);
 - The lemmas and the NER tags in a window of size up to 3 around the mention,
-	both on the left and on the right of the mention. These are also combined
-	(i.e., a window on the left and a window on the right are merged into a
-	single feature), to give a total of (up to) 15 features (3 on left, 3 on
-	right, 3 times 3 combinations of left and right) with lemmas, and 15 for
-	NERs (`W`);
+        both on the left and on the right of the mention. These are also combined
+        (i.e., a window on the left and a window on the right are merged into a
+        single feature), to give a total of (up to) 15 features (3 on left, 3 on
+        right, 3 times 3 combinations of left and right) with lemmas, and 15 for
+        NERs (`W`);
 - Features denoting whether the mention (or a substring of it of length up to 3)
-	appears in a user-specified dictionary (`IN_DICT`);
+        appears in a user-specified dictionary (`IN_DICT`);
 - Features indicating whether the sentence containing the mention also contains
-	some keyword that appears in a user-specified dictionary (`KW_IND`);
+        some keyword that appears in a user-specified dictionary (`KW_IND`);
 - The shortest dependency path(s) between the mention and the keyword(s) from
-	user-specified dictionaries that appear in the sentence. Multiple variants
-	of the dependency path are used as feature (edge labels and lemmas, edge
-	labels only, edge labels and lemmas replaced with dictionary identifier if
-	the lemma is in a dictionary) (`KW`);
+        user-specified dictionaries that appear in the sentence. Multiple variants
+        of the dependency path are used as feature (edge labels and lemmas, edge
+        labels only, edge labels and lemmas replaced with dictionary identifier if
+        the lemma is in a dictionary) (`KW`);
 
 The list of generic features for a relation is the following (the prefixes are
 the same as the ones for the mentions, except where otherwise specified):
 
 - The set of Part of Speech tags for the words *between* the mentions in the
-	relation;
+        relation;
 - The set of Named Entity Recognition tags for the words between the mentions
-	in the relation;
+        in the relation;
 - The set of lemmas of the words between the mentions in the relation;
 - The set of words between the mentions in the relation;
 - The sum of the lengths of the words in the mentions;
 - Indicator feature for whether the mentions start with a capital letter;
 - The n-grams of size up to 3 of the lemmas and the NER tags of the words
-	between the mentions in the relation (prefix: `NGRAM`);
+        between the mentions in the relation (prefix: `NGRAM`);
 - The lemmas and the NERs in a window of size up to 3 around the mentions
-	composing the relation. These are only combined (i.e., a left window and a
-	right window are merged into a single feature), giving a total of (up to) 9
-	features for the lemmas, and 9 for the NERS;
+        composing the relation. These are only combined (i.e., a left window and a
+        right window are merged into a single feature), giving a total of (up to) 9
+        features for the lemmas, and 9 for the NERS;
 - Features denoting whether the mentions in the relation (or substrings of them
-	of size up to 3) appear in some user-specified dictionaries;
+        of size up to 3) appear in some user-specified dictionaries;
 - Indicator features denoting whether the sentence containing the relation also
-	contains keywords appearing in user-specified dictionaries;
+        contains keywords appearing in user-specified dictionaries;
 - The shortest dependency paths between the mentions and keywords in
-	user-specified dictionaries that are in the sentence. Each feature is
-	composed by both dependency paths from each mention to the keyword. Multiple
-	variants of the paths are used, as in the mention case;
+        user-specified dictionaries that are in the sentence. Each feature is
+        composed by both dependency paths from each mention to the keyword. Multiple
+        variants of the paths are used, as in the mention case;
 
 If the two mentions composing a relation are 'inverted' with respect to a
 canonical order defined by the user, a prefix indicating this fact is prepended
@@ -115,7 +115,7 @@ environmental variable in order to be able to use `ddlib`.
 As explained in the introduction of this document, the user may optionally
 specify one or more dictionaries of keywords that are used to create generic
 features and can be seen as a way to incorporate domain-/application-specific
-knowledge to the set of generic features. 
+knowledge to the set of generic features.
 
 Dictionaries are seen as sets of keywords that are mapped to a dictionary
 identifier. All keywords in a dictionary are mapped to the same dictionary
@@ -158,7 +158,7 @@ To obtain the generic features for a mention, the library provides the generator
 import ddlib
 ...
 for feature in ddlib.get_generic_features_mention(sentence, span):
-	# do something with the feature
+        # do something with the feature
 ```
 
 The first parameter `sentence` is a ordered list of `ddlib.Word` objects, where
@@ -176,7 +176,7 @@ For relations, the user can obtain the generic features using the
 import ddlib
 ...
 for feature in ddlib.get_generic_features_relation(sentence, span1, span2):
-	# do something with the feature
+        # do something with the feature
 ```
 
 The parameters are respectively a ordered list of `ddlib.Word` objects and the
@@ -185,7 +185,7 @@ two `ddlib.Span` objects representing mentions composing the relation.
 We remark that `ddlib.get_generic_featurse_mention` and
 `ddlib.get_generic_features_relation` are [Python
 generators](https://wiki.python.org/moin/Generators), so they should be used
-in a loop. 
+in a loop.
 
 Moreover, the generators may yield multiple copies of the same feature (e.g., if
 a word appears twice between two mentions in a relation, the feature

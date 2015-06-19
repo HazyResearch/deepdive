@@ -9,13 +9,13 @@
 
     <path id="tuffy.classpath">
         <pathelement location="bin"/>
-		<pathelement location="lib/postgresql-8.4-701.jdbc4.jar"/>
+                <pathelement location="lib/postgresql-8.4-701.jdbc4.jar"/>
         <pathelement location="lib/antlr-3.2.jar"/>
         <pathelement location="lib/args4j-2.0.12.jar"/>
         <pathelement location="lib/commons-lang3-3.0-beta.jar"/>
         <pathelement location="lib/jgrapht-jdk1.6.jar"/>
-		<pathelement location="lib/commons-math-2.2.jar"/>
-		<pathelement location="lib/junit-4.9.jar"/>
+                <pathelement location="lib/commons-math-2.2.jar"/>
+                <pathelement location="lib/junit-4.9.jar"/>
     </path>
 
     <target name="init">
@@ -50,22 +50,22 @@
             <classpath refid="tuffy.classpath"/>
         </java>
     </target>
-	
-	
-	<target name="dist" depends="Main"
+        
+        
+        <target name="dist" depends="Main"
         description="generate the distribution" >
-		
-		<manifestclasspath property="jar.classpath" jarfile="tuffy.jar">
-		<classpath refid="tuffy.classpath"/>
-		</manifestclasspath>
-		
-		<jar jarfile="tuffy.jar" basedir="bin">
-		<manifest>
-			<attribute name="Main-Class" value="tuffy.main.Main"/>
-			<attribute name="Class-Path" value="${jar.classpath}" />
-		</manifest>
-		
-		</jar>
-	</target>
-	
+                
+                <manifestclasspath property="jar.classpath" jarfile="tuffy.jar">
+                <classpath refid="tuffy.classpath"/>
+                </manifestclasspath>
+                
+                <jar jarfile="tuffy.jar" basedir="bin">
+                <manifest>
+                        <attribute name="Main-Class" value="tuffy.main.Main"/>
+                        <attribute name="Class-Path" value="${jar.classpath}" />
+                </manifest>
+                
+                </jar>
+        </target>
+        
 </project>

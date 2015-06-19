@@ -14,7 +14,7 @@ object TestHelper {
     case "psql" => Psql
     case "mysql" => Mysql
     // Do not have tests for GP right now.
-    case "greenplum" => Greenplum 
+    case "greenplum" => Greenplum
   }
 
   def getDriverFromEnv() = System.getenv("DEEPDIVE_TEST_ENV") match {
@@ -26,7 +26,7 @@ object TestHelper {
     case "true" | "True" | "TRUE" => true
     case _ => false
   }
-  
+
   def getIsIncrementalEnv() = System.getenv("INCREMENTAL") match {
     case "MATERIALIZATION"  => IncrementalMode.MATERIALIZATION
     case "INCREMENTAL"      => IncrementalMode.INCREMENTAL
@@ -34,20 +34,20 @@ object TestHelper {
     case _                  => IncrementalMode.ORIGINAL
   }
 
-  def getDbSettings() = 
-      DbSettings(getDriverFromEnv,      // driver 
+  def getDbSettings() =
+      DbSettings(getDriverFromEnv,      // driver
           System.getenv("DBCONNSTRING"),  // nrl
           System.getenv("DBUSER"),        // user
           System.getenv("DBPASSWORD"),    // password
           System.getenv("DBNAME"),        // dbname
-          System.getenv("DBHOST"), 
-          System.getenv("DBPORT"), 
-          System.getenv("GPHOST"), 
-          System.getenv("GPPATH"), 
+          System.getenv("DBHOST"),
+          System.getenv("DBPORT"),
+          System.getenv("GPHOST"),
+          System.getenv("GPPATH"),
           System.getenv("GPPORT"),
           getGPLOADEnv(),
           getIsIncrementalEnv())
-    
+
   def getConfig() = s"""
       deepdive.db.default {
         driver: ${TestHelper.getDriverFromEnv()}
@@ -64,7 +64,7 @@ object TestHelper {
         incremental_mode: "${System.getenv("INCREMENTALTABLES")}"
       }
     """
-  
-  
+
+
 
 }

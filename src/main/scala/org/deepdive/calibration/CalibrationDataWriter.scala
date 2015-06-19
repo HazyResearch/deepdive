@@ -33,16 +33,16 @@ class CalibrationDataWriter extends Actor with ActorLogging {
       }
       writer.close()
       log.info(s"Wrote calibration_file=${file.getCanonicalPath}")
-      
+
       // Generate the calibration plot
       val deepDiveDir = Context.deepdiveHome
       val plotOutputFile = FilenameUtils.removeExtension(file.getCanonicalPath) + ".png"
-      val calibrationCmd = Seq("gnuplot", 
-        "-e", s"""input_file='${file.getCanonicalPath}';output_file='${plotOutputFile}'""", 
+      val calibrationCmd = Seq("gnuplot",
+        "-e", s"""input_file='${file.getCanonicalPath}';output_file='${plotOutputFile}'""",
         s"${deepDiveDir}/util/calibration.plg")
       log.info(s"Running '${calibrationCmd}' to generate the calibration plot.")
       calibrationCmd! match {
-        case 0 => 
+        case 0 =>
           context.system.eventStream.publish(QuickReport("calibration", s"calibration plot written to ${plotOutputFile}"))
         case other =>
           val errorStr = s"ERROR generating calibration data plot. Run '${calibrationCmd}' manually."
@@ -51,13 +51,13 @@ class CalibrationDataWriter extends Actor with ActorLogging {
       }
 
 
-      
-      
-      
+
+
+
 
       // Reply with success
       sender ! Success()
-  } 
+  }
 
 
 }

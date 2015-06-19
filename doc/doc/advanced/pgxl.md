@@ -2,7 +2,7 @@
 layout: default
 ---
 
-# Using DeepDive with Postgres-XL 
+# Using DeepDive with Postgres-XL
 
 This document describes how to install and configure
 [Postgres-XL](http://www.postgres-xl.org/) to work
@@ -33,13 +33,13 @@ see [this example](https://github.com/HazyResearch/deepdive/tree/master/examples
 
 ## Installation
 We now describe how to install XL and configure it to be used with
-DeepDive. The steps were tested to install XL on Ubuntu 15.04. 
+DeepDive. The steps were tested to install XL on Ubuntu 15.04.
 
 We assume that the user executing these commands has sudo rights.
 
 ### Setting OS Parameters
 
-Set the following parameters in the `/etc/sysctl.d/50-pgxl.conf` file: 
+Set the following parameters in the `/etc/sysctl.d/50-pgxl.conf` file:
 ```
 sudo tee /etc/sysctl.d/50-pgxl.conf <<EOF
 kernel.sem = 1000  32000  32  1000
@@ -123,7 +123,7 @@ done
 
 ### Configure ssh with localhost
 
-Now you need to generate ssh keys for `localhost`. Run: 
+Now you need to generate ssh keys for `localhost`. Run:
 ```bash
 mkdir -p ~/.ssh
 chmod 700 ~/.ssh
@@ -290,10 +290,10 @@ postgres=# \l
    Name    | Owner | Encoding | Access privileges
 -----------+-------+----------+-------------------
  postgres  | Xxx   | UTF8     |
- template0 | Xxx   | UTF8     | =c/Xxx  
-                              : Xxx=CTc/Xxx  
- template1 | Xxx   | UTF8     | =c/Xxx  
-                              : Xxx=CTc/Xxx  
+ template0 | Xxx   | UTF8     | =c/Xxx
+                              : Xxx=CTc/Xxx
+ template1 | Xxx   | UTF8     | =c/Xxx
+                              : Xxx=CTc/Xxx
 (3 rows)
 
 postgres=# \q
@@ -306,11 +306,11 @@ Use `pgxc_ctl "stop all"` and `pgxc_ctl "start all"` to stop / start the XL serv
 ## <a name="faq" href="#"></a> FAQs
 - **How do I enable fuzzy string match / install "contrib" module in XL?**
 
-	To enable *fuzzystringmatch* or another *contrib* module available for XL,
+        To enable *fuzzystringmatch* or another *contrib* module available for XL,
         see above build instructions on how to build XL with extensions.
 - **Can I create a cluster with N nodes?**
 
-	You certainly can. Note that for clusters larger than 16 nodes you may need
-	to adjust certain configuration parameters, especially buffer sizes (so that
-	you don't run out of memory) and kernel settings (so that the system can open
-	enough SSH sessions).
+        You certainly can. Note that for clusters larger than 16 nodes you may need
+        to adjust certain configuration parameters, especially buffer sizes (so that
+        you don't run out of memory) and kernel settings (so that the system can open
+        enough SSH sessions).

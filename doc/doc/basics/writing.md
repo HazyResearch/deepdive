@@ -5,11 +5,11 @@ layout: default
 # Writing a new DeepDive application
 
 This document describes how to create a new application that uses DeepDive to
-analyze data. 
+analyze data.
 
 This task is composed by a number of steps:
 
-1. Creating the application skeleton 
+1. Creating the application skeleton
 2. Configuring the database connection
 3. Importing the data
 4. Writing extractors
@@ -20,10 +20,10 @@ This task is composed by a number of steps:
 ### 1 - Creating the application skeleton
 
 We start by creating a new folder `app/testapp` in the `deepdive` directory. All
-files for our application will reside in this directory. 
+files for our application will reside in this directory.
 
 ```bash
-mkdir -p app/testapp 
+mkdir -p app/testapp
 cd app/testapp
 ```
 
@@ -34,7 +34,7 @@ graph. It is often useful to have a small 'env.sh' script to specify
 environmental variables and a `run.sh` script that loads those variables and
 executes the DeepDive pipeline. The DeepDive distribution provides simple
 templates for both of these scripts and for the `application.conf` file. We copy
-these templates to our directory with the following commands: 
+these templates to our directory with the following commands:
 
 ```bash
 cp ../../examples/template/application.conf .
@@ -43,12 +43,12 @@ cp ../../examples/template/env.sh .
 ```
 
 In `env.sh` there is a placeholder line `export DBNAME=` that must be modified
-to contain the name of the database used by the application: 
+to contain the name of the database used by the application:
 
 ```bash
 # File: env.sh
 ...
-export DBNAME=deepdive_testapp 
+export DBNAME=deepdive_testapp
 ...
 ```
 
@@ -65,7 +65,7 @@ working correctly:
 ```
 Since we have not defined any extractors or inference rules, the results will
 not be interesting, but DeepDive should run successfully from end to end. If
-this is the case, the summary report should look like this: 
+this is the case, the summary report should look like this:
 
     15:57:55 [profiler] INFO  --------------------------------------------------
     15:57:55 [profiler] INFO  Summary Report
@@ -78,7 +78,7 @@ We define the connection to the PostgreSQL instance in the `application.conf`
 file. The URL of the instance should be specified in [JDBC
 format](http://jdbc.postgresql.org/documentation/80/connect.html). A username
 and password can also be specified:
-    
+
 ```bash
     deepdive {
       db.default {
@@ -109,7 +109,7 @@ to have a **unique primary key called `id`**. If these tables are populated by
 an [extractor](extractors.html), the extractor should fill the `id` column with
 `NULL` values.
 
-### <a name="extractors" href="#"></a> 4 - Writing extractors 
+### <a name="extractors" href="#"></a> 4 - Writing extractors
 
 DeepDive supports [multiple types of extractors](extractors.html) to perform
 [feature extraction](overview.html#extractors). The output of an extractor is
@@ -134,7 +134,7 @@ that define the relationships between variables. For example, the following rule
 states that if a person smokes, he or she is likely to have cancer, and that the
 weight of the rule should be learned automatically based on training data
 (special value '?'):
-    
+
 ```bash
 smokes_cancer {
   input_query: """
@@ -164,5 +164,5 @@ schema, and inference rules. DeepDive tries to simplify this task by providing
 *calibration data* and plots, as explained in the [calibration
 guide](calibration.html). While testing extractors and inference rules, it can be
 useful to execute only a subset of them. This is possible by [configuring
-pipelines](running.html#pipelines). 
+pipelines](running.html#pipelines).
 

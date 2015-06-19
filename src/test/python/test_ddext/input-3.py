@@ -28,12 +28,12 @@ def run(words, id, p1_start, p1_length, p2_start, p2_length):
 
   # Features for this pair come in here
   features = set()
-  
+
   # Feature 1: Words between the two phrases
   left_idx = min(p1_end, p2_end)
   right_idx = max(p1_start, p2_start)
   words_between = words[left_idx:right_idx]
-  if words_between: 
+  if words_between:
     features.add("words_between=" + "-".join(words_between))
 
   # Feature 2: Number of words between the two phrases
@@ -50,4 +50,4 @@ def run(words, id, p1_start, p1_length, p2_start, p2_length):
 
 def somethingelse():
   print 'This function can never be executed!'
-  
+

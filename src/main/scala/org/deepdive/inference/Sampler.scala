@@ -27,14 +27,14 @@ class Sampler extends Actor with ActorLogging {
       val cmd = buildSamplerCmd(samplerCmd, samplerOptions, weightsFile, variablesFile,
       factorsFile, edgesFile, metaFile, outputDir, baseDir.getOrElse(""), incMode)
       log.info(s"Executing: ${cmd.mkString(" ")}")
-      
+
       // Handle the case where cmd! throw exception rather than return a value
       try {
         // We run the process, get its exit value, and print its output to the log file
         val exitValue = cmd!(ProcessLogger(
           out => log.info(out),
           err => System.err.println(err)
-        ))        
+        ))
         // Depending on the exit value we return success or kill the program
         exitValue match {
           case 0 => sender ! Success()
@@ -61,8 +61,8 @@ class Sampler extends Actor with ActorLogging {
   }
 
   // Build the command to run the sampler
-  def buildSamplerCmd(samplerCmd: String, samplerOptions: String, weightsFile: String, 
-    variablesFile: String, factorsFile: String, edgesFile: String, metaFile: String, 
+  def buildSamplerCmd(samplerCmd: String, samplerOptions: String, weightsFile: String,
+    variablesFile: String, factorsFile: String, edgesFile: String, metaFile: String,
     outputDir: String, baseDir: String, incMode: IncrementalMode) = {
     incMode match {
       case MATERIALIZATION =>

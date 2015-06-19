@@ -25,6 +25,6 @@ Input queries are copied into temporary TSV files, split into chunks, and your U
 
 If you are using array types in input queries, it might be hard to parse in UDF. It's developers duty to make sure the query can be parsed with UDFs. What potentially help is converting these arrays to strings with a special delimiter.
 
-UDFs should output to STDOUT, each line should contain exactly the SAME number of columns with `output_relation`, also separated by '\t'. 
+UDFs should output to STDOUT, each line should contain exactly the SAME number of columns with `output_relation`, also separated by '\t'.
 DeepDive will pipe these outputs to files, and an ordinary COPY FROM STDIN command will be executed on the outputs.
 

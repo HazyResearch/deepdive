@@ -33,14 +33,14 @@ object ExtractionManager {
 
   case object ScheduleTasks
 
-  // Messages 
+  // Messages
   sealed trait Message
 }
 
-/* 
+/*
  * Manages extraction tasks. The ExtractionManager is responsible for executing
  * extractions tasks in the correct order. It parallelizes execution when possible.
- */ 
+ */
 trait ExtractionManager extends Actor with ActorLogging {
   this: JdbcDataStoreComponent =>
 
@@ -55,7 +55,7 @@ trait ExtractionManager extends Actor with ActorLogging {
 
   implicit val ExtractorTimeout = Timeout(200 hours)
   import context.dispatcher
-  
+
   // Keeps track of the tasks
   val taskQueue = Map[ExtractionTask, ActorRef]()
 
@@ -81,7 +81,7 @@ trait ExtractionManager extends Actor with ActorLogging {
 
     // How many more tasks can we execute in parallel right now?
     val capacity = parallelism - context.children.size
-    
+
     taskQueue.take(capacity).foreach { case(task, sender) =>
       log.info(s"executing extractorName=${task.extractor.name}")
       val newWorker = context.actorOf(extractorRunnerProps, s"extractorRunner-${task.extractor.name}")

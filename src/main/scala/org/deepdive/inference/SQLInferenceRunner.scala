@@ -224,21 +224,21 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
       // Assign Id based on original relation table otherwise assign new Id
       execute(s"""UPDATE ${relation} SET id = NULL""")
-      execute(s"""UPDATE ${relation} AS t0 SET id = t1.id 
+      execute(s"""UPDATE ${relation} AS t0 SET id = t1.id
         FROM ${baseRelation} t1
         WHERE ${keyJoinlist}""")
-      dataStore.dropAndCreateTableAs(tmpTable, s""" 
+      dataStore.dropAndCreateTableAs(tmpTable, s"""
         SELECT ${key.mkString(", ")}, ${column}, id
-        FROM ${relation} 
+        FROM ${relation}
         WHERE id is NULL; """)
       idoffset += dataStore.assignIds(tmpTable.toLowerCase(), idoffset, IdSequence)
-      execute(s"""UPDATE ${relation} AS t0 SET id = t1.id 
+      execute(s"""UPDATE ${relation} AS t0 SET id = t1.id
         FROM ${tmpTable} t1
         WHERE ${keyJoinlist}""")
       execute(s"""DROP TABLE ${tmpTable}""")
     }
   }
-  
+
   // assign variable holdout
   def assignHoldout(schema: Map[String, _ <: VariableDataType], calibrationSettings: CalibrationSettings) {
     // variable holdout table - if user defined, execute once
@@ -302,7 +302,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
     schema.foreach { case(variable, dataType) =>
       var Array(relation, column) = variable.split('.')
-    
+
       val variableDataType = InferenceNamespace.getVariableDataTypeId(dataType)
 
       // cardinality (domain size) of the variable
@@ -366,11 +366,11 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         var numVariables : Long = 0
         schema.foreach { case(variable, dataType) =>
           var Array(relation, column) = variable.split('.')
-          issueQuery(s"SELECT COUNT(*) FROM ${relation}") { rs => 
+          issueQuery(s"SELECT COUNT(*) FROM ${relation}") { rs =>
             numVariables += rs.getLong(1)
           }
         }
-        execute(s"""UPDATE ${InferenceNamespace.getIncrementalMetaTableName()} 
+        execute(s"""UPDATE ${InferenceNamespace.getIncrementalMetaTableName()}
           SET num_variables = ${numVariables}; """)
       }
       case _ =>
@@ -424,7 +424,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       err => log.info(err)
     ))
     exitValue match {
-      case 0 => 
+      case 0 =>
       case _ => throw new RuntimeException("Generating active variables/factors/weights failed.")
     }
   }
@@ -437,7 +437,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
        dataStore.checkTableNamespace(name)
        dataStore.executeSqlQueries(s"""DROP TABLE IF EXISTS ${name} CASCADE;""")
        dataStore.executeSqlQueries(s"""CREATE ${dataStore.unlogged} TABLE ${name} (${schema}) DISTRIBUTE BY REPLICATION;""")
-    } else { 
+    } else {
       dataStore.dropAndCreateTable(WeightsTable, """id bigint, isfixed int, initvalue real, cardinality text,
         description text""")
     }
@@ -489,7 +489,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
           cweightid = rs.getLong(1)
         }
         execute(s"ALTER SEQUENCE ${weightidSequence} RESTART ${cweightid}")
-        issueQuery(s""" SELECT num_factors FROM ${InferenceNamespace.getIncrementalMetaTableName()}""") { rs => 
+        issueQuery(s""" SELECT num_factors FROM ${InferenceNamespace.getIncrementalMetaTableName()}""") { rs =>
           factorid = rs.getLong(1)
         }
         execute(s"ALTER SEQUENCE ${factoridSequence} RESTART ${factorid}")
@@ -498,7 +498,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     }
 
     // weights table
-    dataStore.dropAndCreateTable(WeightsTable, """id bigint, isfixed int, initvalue real, cardinality text, 
+    dataStore.dropAndCreateTable(WeightsTable, """id bigint, isfixed int, initvalue real, cardinality text,
       description text""")
 
     var factorDescsCopy : Seq[FactorDesc] = Seq[FactorDesc]()
@@ -509,15 +509,15 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       val idcols = factorDesc.func.variables.map(v =>
         s""" ${dataStore.quoteColumn(s"${v.relation}.id")} """).mkString(", ")
 
-      // val filedcols = factorDesc.func.variables.map(v => 
+      // val filedcols = factorDesc.func.variables.map(v =>
       //     s""" every(${dataStore.quoteColumn(s"${v.relation}.${v.field}")}) """).mkString(", ")
 
-      val weightcols = factorDesc.weight.variables.map(v => 
+      val weightcols = factorDesc.weight.variables.map(v =>
           s""" ${dataStore.quoteColumn(v)} """).mkString(", ")
 
       val selectcols = Seq(idcols, weightcols).mkString(", ")
       val condcols = Seq(idcols, weightcols).mkString(", ")
-      
+
       // Sen
       // val querytable = s"dd_query_${factorDesc.name}"
       // val weighttableForThisFactor = s"dd_weights_${factorDesc.name}"
@@ -543,7 +543,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
           val exists = dataStore.existsTable(baseFactorTable)
           if (exists) {
             val factorJoinlist = factorDesc.func.variables.map(
-              v => s""" t0.${dataStore.quoteColumn(s"${v.relation}.id")} 
+              v => s""" t0.${dataStore.quoteColumn(s"${v.relation}.id")}
                 |= t1.${dataStore.quoteColumn(s"${InferenceNamespace.getBaseTableName(v.relation)}.id")}
                 |""".stripMargin.replaceAll("\n", " ")).mkString("AND")
             val weightJoinlist = factorDesc.weight.variables.map(v => {
@@ -554,7 +554,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
               s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(lastv)}"""
             }).mkString("AND")
             val joinList = Seq(factorJoinlist, weightJoinlist).mkString(" AND ")
-            
+
             // delete the tuples that have duplicates in the base table
             deleteDuplicatesFromDelta(querytable, joinList)
           }
@@ -570,7 +570,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       dbSettings.incrementalMode match {
         case IncrementalMode.MATERIALIZATION => {
           var numFactors : Long = 0
-          issueQuery(s"SELECT COUNT(*) FROM ${querytable}") { rs => 
+          issueQuery(s"SELECT COUNT(*) FROM ${querytable}") { rs =>
             numFactors += rs.getLong(1)
           }
           execute(s"""UPDATE ${InferenceNamespace.getIncrementalMetaTableName()}
@@ -605,13 +605,13 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         // branch if weight variables present
         val hasWeightVariables = !(isFixed || weightlist == "")
         hasWeightVariables match {
-          // create a table that only contains one row (one weight) 
-          case false => dataStore.dropAndCreateTableAs(weighttableForThisFactor, 
-            s"""SELECT ${dataStore.cast(isFixed, "int")} AS isfixed, ${dataStore.cast(initvalue, "float")} AS initvalue, 
+          // create a table that only contains one row (one weight)
+          case false => dataStore.dropAndCreateTableAs(weighttableForThisFactor,
+            s"""SELECT ${dataStore.cast(isFixed, "int")} AS isfixed, ${dataStore.cast(initvalue, "float")} AS initvalue,
               ${dataStore.cast(-1, "bigint")} AS id;""")
           // create one weight for each different element in weightlist.
           case true => dataStore.dropAndCreateTableAs(weighttableForThisFactor,
-            s"""SELECT ${weightlist}, ${dataStore.cast(isFixed, "int")} AS isfixed, 
+            s"""SELECT ${weightlist}, ${dataStore.cast(isFixed, "int")} AS isfixed,
             ${dataStore.cast(initvalue, "float")} AS initvalue, ${dataStore.cast(-1, "bigint")} AS id
             FROM ${querytable}
             GROUP BY ${weightlist}""")
@@ -619,7 +619,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
         val weightJoinlist = factorDesc.weight.variables.map(
           v => s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)} """).mkString("AND")
-        
+
         // assign weight id for incremental, use previous weight id if we have seen that weight before,
         // otherwise, assign new id
         dbSettings.incrementalMode match {
@@ -637,7 +637,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
                 val lastv = s"${lastvrel}.${colSplit.takeRight(colSplit.length-1).mkString(".")}"
                 s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(lastv)}"""
               }).mkString("AND")
-              execute(s"""UPDATE ${weighttableForThisFactor} AS t0 SET id = t1.id 
+              execute(s"""UPDATE ${weighttableForThisFactor} AS t0 SET id = t1.id
                 FROM ${lastWeightsTableForThisFactor} t1
                 WHERE ${weightJoinlistInc}""")
               dataStore.dropAndCreateTableAs(tmpTable, s"SELECT * FROM ${weighttableForThisFactor} WHERE id = -1")
@@ -658,10 +658,10 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         dbSettings.incrementalMode match {
           case IncrementalMode.MATERIALIZATION => {
             var numWeights : Long = 0
-            issueQuery(s"SELECT COUNT(*) FROM ${weighttableForThisFactor}") { rs => 
+            issueQuery(s"SELECT COUNT(*) FROM ${weighttableForThisFactor}") { rs =>
               numWeights += rs.getLong(1)
             }
-            execute(s"""UPDATE ${InferenceNamespace.getIncrementalMetaTableName()} 
+            execute(s"""UPDATE ${InferenceNamespace.getIncrementalMetaTableName()}
               SET num_weights = ${numWeights}""")
           }
           case _ =>
@@ -706,7 +706,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
           case _ => ""
         }
 
-        execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, description) 
+        execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, description)
           SELECT id, isfixed, initvalue, ${weightDesc} FROM ${weighttableForThisFactor}
           ${incCondition};""")
 
@@ -767,15 +767,15 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
             ${dataStore.cast(initvalue, "float")} AS initvalue
             FROM ${querytable}
             GROUP BY ${weightlist}""")
-          
+
           // We need to order by weights and cardinality, in order for the sampler to
           // use an array-like access to the weights for multinomial factor.
           // For example, on http://deepdive.stanford.edu/doc/basics/schema.html,
           // Multinomial(a,b) is expanded to 6 indicator factors, each has a corresponding
-          // weights. If the cardinalities are ordered, we can access the weights by using 
-          // the start address + the offset. See 
-          // https://github.com/HazyResearch/sampler/blob/master/src/dstruct/factor_graph/factor_graph.cpp#L51 
-          
+          // weights. If the cardinalities are ordered, we can access the weights by using
+          // the start address + the offset. See
+          // https://github.com/HazyResearch/sampler/blob/master/src/dstruct/factor_graph/factor_graph.cpp#L51
+
           // We need to create two tables -- one for a non-order'ed version
           // another for an ordered version. The reason that we cannot
           // do this with only one table is not fundemental -- it is just
@@ -796,7 +796,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
             INSERT INTO ${weighttableForThisFactor}_unsorted
             SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} as cardinality, 0 AS id
             FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")}
-            ${weighttableForFactorOrderBy}""") 
+            ${weighttableForFactorOrderBy}""")
 
           dataStore.dropAndCreateTableAs(weighttableForThisFactor,
             s"""SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} AS cardinality,
@@ -918,10 +918,10 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     log.info(s"Parallel grounding = ${parallelGrounding}")
     log.debug(s"Grounding Path = ${groundingPath}")
 
-    // create global meta data 
+    // create global meta data
     dbSettings.incrementalMode match {
       case IncrementalMode.MATERIALIZATION => createIncrementalMetaData()
-      case _ => 
+      case _ =>
     }
 
     val schemaForGrounding = dbSettings.incrementalMode match {
@@ -934,7 +934,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
     // assign holdout
     assignHoldout(schemaForGrounding, calibrationSettings)
-    
+
     // generate cardinality tables
     generateCardinalityTables(schemaForGrounding)
 
@@ -958,7 +958,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     // generate active compoenents for incremental
     dbSettings.incrementalMode match {
       case IncrementalMode.MATERIALIZATION => generateAcitve(groundingPath)
-      case _ => 
+      case _ =>
     }
   }
 

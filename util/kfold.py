@@ -4,11 +4,11 @@
 # KFOLD_NUM (K): number of folds to do evaluation
 # KFOLD_ITER (i): current number of iterations. range: 1..KFOLD_NUM
 
-# Functionality: 
+# Functionality:
   # In temporal_table_to_fold,
   # For rows in fraction [ (i-1)/K, (i)/K ), e.g. 0%--25% for K=4, i=1,
-  # Columns specified in query_col_1 [, query_col_2 ... ] 
-  # will be DELETED. 
+  # Columns specified in query_col_1 [, query_col_2 ... ]
+  # will be DELETED.
 
 # Should be used as AFTER function of an extractor that generates temporal_table_to_fold.
 
@@ -37,10 +37,10 @@ numrows = 'select count(*) from ' + table
 
 # K-fold query: hold out columns with ID from (i-1)/K to i/K
 updatequery = ' '.join(
-  ['UPDATE', table, 'SET', 
+  ['UPDATE', table, 'SET',
    ','.join([var + '= NULL' for var in remove_vars]),
    'where id < ('+ numrows + ') * ' + KFOLD_ITER + ' / '
-   + KFOLD_NUM + ' and id >= ('+ numrows + ') * (' + 
+   + KFOLD_NUM + ' and id >= ('+ numrows + ') * (' +
     KFOLD_ITER + ' - 1) / '+ KFOLD_NUM + ';'])
 
 sql_queries.append(updatequery)

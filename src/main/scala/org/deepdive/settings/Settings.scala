@@ -22,8 +22,8 @@ trait SettingsImpl {
 
 case class Settings(schemaSettings : SchemaSettings,
   extractionSettings: ExtractionSettings,
-  inferenceSettings: InferenceSettings, 
-  calibrationSettings: CalibrationSettings, 
+  inferenceSettings: InferenceSettings,
+  calibrationSettings: CalibrationSettings,
   samplerSettings: SamplerSettings,
   pipelineSettings: PipelineSettings,
   dbSettings: DbSettings) extends SettingsImpl

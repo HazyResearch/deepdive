@@ -1,12 +1,12 @@
 /******************************
- * 
+ *
  * DeepDive.run cannot be called more than once in integration
  * tests, so we run tests one by one to cover them.
- * 
+ *
  ******************************/
 package org.deepdive.test.integration
 
-import anorm._ 
+import anorm._
 import com.typesafe.config._
 import org.deepdive.test._
 import org.deepdive.Context
@@ -22,7 +22,7 @@ import scala.sys.process._
 import scalikejdbc.ConnectionPool
 
 /** Text chunking with linear chain CRF. Test whether we get a reasonable F1 score.
- * 
+ *
  * Please refer to examples/chunking for more details.
  */
 class ChunkingApp extends FunSpec with Logging{
@@ -61,9 +61,9 @@ class ChunkingApp extends FunSpec with Logging{
             word_id bigint,
             feature text,
             id bigint);""")
-          ds.executeSqlQueries(s"""copy words_raw(word, pos, tag) from '${getClass.getResource("/chunking/data/train_null_terminated.txt").getFile}' 
+          ds.executeSqlQueries(s"""copy words_raw(word, pos, tag) from '${getClass.getResource("/chunking/data/train_null_terminated.txt").getFile}'
             delimiter ' ';""")
-          ds.executeSqlQueries(s"""copy words_raw(word, pos, tag) from '${getClass.getResource("/chunking/data/test_null_terminated.txt").getFile}' 
+          ds.executeSqlQueries(s"""copy words_raw(word, pos, tag) from '${getClass.getResource("/chunking/data/test_null_terminated.txt").getFile}'
             delimiter ' ';""")
         }
 
@@ -87,26 +87,26 @@ class ChunkingApp extends FunSpec with Logging{
             word_id bigint,
             feature text,
             id bigint);""")
-          ds.executeSqlQueries(s"""LOAD DATA INFILE '${getClass.getResource("/chunking/data/train_null_terminated.txt").getFile}' 
+          ds.executeSqlQueries(s"""LOAD DATA INFILE '${getClass.getResource("/chunking/data/train_null_terminated.txt").getFile}'
             INTO TABLE words_raw FIELDS TERMINATED BY ' ' (word, pos, tag);""")
-          ds.executeSqlQueries(s"""LOAD DATA INFILE '${getClass.getResource("/chunking/data/test_null_terminated.txt").getFile}' 
+          ds.executeSqlQueries(s"""LOAD DATA INFILE '${getClass.getResource("/chunking/data/test_null_terminated.txt").getFile}'
             INTO TABLE words_raw FIELDS TERMINATED BY ' ' (word, pos, tag);""")
         }
 
-      case _ => 
+      case _ =>
     }
     JdbcDataStoreObject.close()
   }
 
   def query1 = s"""${"\"\"\""}
-    select w1.word_id as "w1.word_id", w1.word as "w1.word", w1.pos as "w1.pos", 
+    select w1.word_id as "w1.word_id", w1.word as "w1.word", w1.pos as "w1.pos",
       w2.word as "w2.word", w2.pos as "w2.pos"
     from words w1, words w2
     where w1.word_id = w2.word_id + 1 and w1.word is not null ${"\"\"\""}"""
 
   def query2 = s"""${"\"\"\""}
-    select words.id as "words.id", words.tag as "words.tag", word_features.feature as "feature" 
-    from words, word_features 
+    select words.id as "words.id", words.tag as "words.tag", word_features.feature as "feature"
+    from words, word_features
     where words.word_id = word_features.word_id and words.word is not null ${"\"\"\""}"""
 
   def query3 = s"""${"\"\"\""}
@@ -171,7 +171,7 @@ class ChunkingApp extends FunSpec with Logging{
           weight: "?"
         }
 
-      } 
+      }
 
       sampler.sampler_args: "-s 1 -l 500 -i 500 --alpha 0.01 --diminish 0.99 --quiet"
 
@@ -192,10 +192,10 @@ class ChunkingApp extends FunSpec with Logging{
       ds.executeSqlQueries("""drop table if exists result cascade;""")
       ds.executeSqlQueries("""create table result
         (word_id bigint, word text, pos text, true_tag text, tag text);""")
-      ds.executeSqlQueries("""insert into result 
+      ds.executeSqlQueries("""insert into result
         select b.word_id, b.word, b.pos, b.true_tag, b.category
-        from (select word_id, max(expectation) as m 
-          from words_tag_inference group by word_id 
+        from (select word_id, max(expectation) as m
+          from words_tag_inference group by word_id
         ) as a inner join words_tag_inference as b
         on a.word_id = b.word_id and a.m = b.expectation;""")
 
@@ -204,9 +204,9 @@ class ChunkingApp extends FunSpec with Logging{
       val du = new DataLoader
       du.unload(resultFile.getName, resultFile.getAbsolutePath,
           dbSettings,
-          """select word, pos, true_tag, max(tag) from result 
+          """select word, pos, true_tag, max(tag) from result
          group by word_id, word, pos, true_tag order by word_id""", "")
-    } 
+    }
 
 
     JdbcDataStoreObject.close()

@@ -19,7 +19,7 @@ trait PostgresInferenceRunnerComponent extends SQLInferenceRunnerComponent {
 
     // Default batch size, if not overwritten by user
     val BatchSize = Some(250000)
-      
+
 
     /**
      * weightsFile: location to the binary format. Assume "weightsFile.text" file exists.
@@ -27,7 +27,7 @@ trait PostgresInferenceRunnerComponent extends SQLInferenceRunnerComponent {
     def bulkCopyWeights(weightsFile: String, dbSettings: DbSettings) : Unit = {
       (new DataLoader).load(weightsFile, WeightResultTable, dbSettings, " ")
     }
-    
+
     def bulkCopyVariables(variablesFile: String, dbSettings: DbSettings) : Unit = {
       (new DataLoader).load(variablesFile, VariableResultTable, dbSettings, " ")
     }
@@ -44,7 +44,7 @@ trait PostgresInferenceRunnerComponent extends SQLInferenceRunnerComponent {
     def createIndexesForQueryTable(queryTable: String, weightVariables: Seq[String]) = {}
 
     /**
-     * This query is datastore-specific since it creates a view whose 
+     * This query is datastore-specific since it creates a view whose
      * SELECT contains a subquery in the FROM clause.
      * In Mysql the subqueries have to be created as views first.
      */
@@ -52,25 +52,25 @@ trait PostgresInferenceRunnerComponent extends SQLInferenceRunnerComponent {
         CREATE OR REPLACE VIEW ${name} AS
         SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
         (SELECT bucket, COUNT(*) AS num_variables from ${bucketedView} GROUP BY bucket) b1
-        LEFT JOIN (SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
+        LEFT JOIN (SELECT bucket, COUNT(*) AS num_correct from ${bucketedView}
           WHERE ${columnName}=true GROUP BY bucket) b2 ON b1.bucket = b2.bucket
-        LEFT JOIN (SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView} 
-          WHERE ${columnName}=false GROUP BY bucket) b3 ON b1.bucket = b3.bucket 
+        LEFT JOIN (SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView}
+          WHERE ${columnName}=false GROUP BY bucket) b3 ON b1.bucket = b3.bucket
         ORDER BY b1.bucket ASC;
         """
 
     /**
-     * This query is datastore-specific since it creates a view whose 
+     * This query is datastore-specific since it creates a view whose
      * SELECT contains a subquery in the FROM clause.
      */
     def createCalibrationViewMultinomialSQL(name: String, bucketedView: String, columnName: String) = s"""
         CREATE OR REPLACE VIEW ${name} AS
         SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
         (SELECT bucket, COUNT(*) AS num_variables from ${bucketedView} GROUP BY bucket) b1
-        LEFT JOIN (SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
+        LEFT JOIN (SELECT bucket, COUNT(*) AS num_correct from ${bucketedView}
           WHERE ${columnName} = category GROUP BY bucket) b2 ON b1.bucket = b2.bucket
-        LEFT JOIN (SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView} 
-          WHERE ${columnName} != category GROUP BY bucket) b3 ON b1.bucket = b3.bucket 
+        LEFT JOIN (SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView}
+          WHERE ${columnName} != category GROUP BY bucket) b3 ON b1.bucket = b3.bucket
         ORDER BY b1.bucket ASC;
         """
   }

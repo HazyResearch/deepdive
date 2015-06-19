@@ -6,7 +6,7 @@ import org.scalatest._
 class InputQueryParserSpec extends FunSpec {
 
   describe("Parsing filename expressions") {
-    
+
     it("should work with simple file names") {
       val expr = "'someFile.txt'"
       val result = InputQueryParser.parse(InputQueryParser.filenameExpr, expr)

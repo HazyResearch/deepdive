@@ -7,10 +7,10 @@ ARR_DELIM = '~^~'
 # For each input tuple
 for row in fileinput.input():
   parts = row.strip().split('\t')
-  if len(parts) != 6: 
+  if len(parts) != 6:
     print >>sys.stderr, 'Failed to parse row:', row
     continue
-  
+
   # Get all fields from a row
   words = parts[0].split(ARR_DELIM)
   relation_id = parts[1]
@@ -23,12 +23,12 @@ for row in fileinput.input():
 
   # Features for this pair come in here
   features = set()
-  
+
   # Feature 1: Words between the two phrases
   left_idx = min(p1_end, p2_end)
   right_idx = max(p1_start, p2_start)
   words_between = words[left_idx:right_idx]
-  if words_between: 
+  if words_between:
     features.add("words_between=" + "-".join(words_between))
 
   # Feature 2: Number of words between the two phrases
@@ -43,5 +43,5 @@ for row in fileinput.input():
   # TODO: Add more features, look at dependency paths, etc
 
 
-  for feature in features:  
+  for feature in features:
     print str(relation_id) + '\t' + feature

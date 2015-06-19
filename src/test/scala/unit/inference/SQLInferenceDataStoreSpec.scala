@@ -35,15 +35,15 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
   after {
     JdbcDataStoreObject.close()
   }
-  
+
   /**********************
    * Note id must not be the first column,
    * since the first column is the distribution key in greenplum,
-   * and DeepDive will try to do update id, which is not allowed 
+   * and DeepDive will try to do update id, which is not allowed
    * on distribution key.
    **********************/
   describe("Postgres inference data store") {
-    
+
     describe("intializing") {
       it("should work") {
         inferenceRunner.init()
@@ -62,7 +62,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val size_3 = 20
 
         // Create sample data for table 1
-        val data_1 = (1 to size_1).map { i => 
+        val data_1 = (1 to size_1).map { i =>
           Map("id" -> -1, "is_correct" -> s"${i%2==0}".toBoolean)
         }
 
@@ -76,7 +76,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
           bigint);""").execute.apply()
 
         // Create sample data for table 3
-        val data_3 = (1 to size_3).map { i => 
+        val data_3 = (1 to size_3).map { i =>
           Map("id" -> -1, "is_correct" -> s"${i%2==0}".toBoolean)
         }
 
@@ -89,7 +89,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val schema = Map[String, VariableDataType]("t1.is_correct" ->
           BooleanType, "t2.is_correct" -> BooleanType, "t3.is_correct" ->
           BooleanType)
- 
+
         // Assign variable id - sequential and unique
         inferenceRunner.assignVariablesIds(schema, dbSettings)
 
@@ -110,13 +110,13 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
     }
 
     describe("grounding the factor graph with Boolean variables") {
-      
+
       it("should work with fixed weight") {
         inferenceRunner.init()
-        
+
         // Insert sample data
         SQL(s"""CREATE TABLE r1(weight text,
-          is_correct boolean, id bigint);""").execute.apply()        
+          is_correct boolean, id bigint);""").execute.apply()
         val data = (1 to 100).map { i =>
           Map("id" -> i, "is_correct" -> s"${i%2==0}".toBoolean)
         }
@@ -125,9 +125,9 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
 
         // Build the factor description
-        val factorDesc = FactorDesc("testFactor", 
-            """SELECT id AS "r1.id", is_correct AS "r1.is_correct" FROM r1""", 
-          IsTrueFactorFunction(Seq("r1.is_correct")), 
+        val factorDesc = FactorDesc("testFactor",
+            """SELECT id AS "r1.id", is_correct AS "r1.is_correct" FROM r1""",
+          IsTrueFactorFunction(Seq("r1.is_correct")),
           KnownFactorWeight(0.37), "weight_prefix")
         val holdoutFraction = 0.0
 
@@ -161,13 +161,13 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
           .map(rs => rs.long("count")).single.apply().get
         assert(numFactors === 100)
       }
-      
+
       it("should work with weight to learn without weight variables") {
         inferenceRunner.init()
-        
+
         // Insert sample data
         SQL(s"""CREATE TABLE r1(weight text,
-          is_correct boolean, id bigint);""").execute.apply()        
+          is_correct boolean, id bigint);""").execute.apply()
         val data = (1 to 100).map { i =>
           Map("id" -> i, "is_correct" -> s"${i%2==0}".toBoolean)
         }
@@ -176,9 +176,9 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
 
         // Build the factor description
-        val factorDesc = FactorDesc("testFactor", 
-            """SELECT id AS "r1.id", is_correct AS "r1.is_correct" FROM r1""", 
-          IsTrueFactorFunction(Seq("r1.is_correct")), 
+        val factorDesc = FactorDesc("testFactor",
+            """SELECT id AS "r1.id", is_correct AS "r1.is_correct" FROM r1""",
+          IsTrueFactorFunction(Seq("r1.is_correct")),
           UnknownFactorWeight(List()), "weight_prefix")
         val holdoutFraction = 0.0
 
@@ -212,13 +212,13 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
           .map(rs => rs.long("count")).single.apply().get
         assert(numFactors === 100)
       }
-      
+
       it("should work with a one-variable factor rule") {
         inferenceRunner.init()
-        
+
         // Insert sample data
         SQL(s"""CREATE TABLE r1(weight text,
-          is_correct boolean, id bigint);""").execute.apply()        
+          is_correct boolean, id bigint);""").execute.apply()
         val data = (1 to 100).map { i =>
           Map("id" -> i, "weight" -> s"weight_${i}", "is_correct" -> s"${i%2==0}".toBoolean)
         }
@@ -227,9 +227,9 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
 
         // Build the factor description
-        val factorDesc = FactorDesc("testFactor", 
-            """SELECT id AS "r1.id", weight AS "weight", is_correct AS "r1.is_correct" FROM r1""", 
-          IsTrueFactorFunction(Seq("r1.is_correct")), 
+        val factorDesc = FactorDesc("testFactor",
+            """SELECT id AS "r1.id", weight AS "weight", is_correct AS "r1.is_correct" FROM r1""",
+          IsTrueFactorFunction(Seq("r1.is_correct")),
           UnknownFactorWeight(List("weight")), "weight_prefix")
         val holdoutFraction = 0.0
 
@@ -260,10 +260,10 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
       it("should work with a custom holdout query") {
         inferenceRunner.init()
-        
+
         // Insert sample data
         SQL(s"""CREATE TABLE r1(weight int,
-          is_correct boolean, id bigint);""").execute.apply()        
+          is_correct boolean, id bigint);""").execute.apply()
         val data = (1 to 100).map { i =>
           Map("id" -> i, "weight" -> i, "is_correct" -> s"${i%2==0}".toBoolean)
         }
@@ -272,9 +272,9 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
 
         // Build the factor description
-        val factorDesc = FactorDesc("testFactor", 
-            """SELECT id AS "r1.id", weight AS "weight", is_correct AS "r1.is_correct" FROM r1""", 
-          IsTrueFactorFunction(Seq("r1.is_correct")), 
+        val factorDesc = FactorDesc("testFactor",
+            """SELECT id AS "r1.id", weight AS "weight", is_correct AS "r1.is_correct" FROM r1""",
+          IsTrueFactorFunction(Seq("r1.is_correct")),
           UnknownFactorWeight(List("weight")), "weight_prefix")
         val holdoutFraction = 0.0
 
@@ -286,7 +286,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
 
         val numHoldout = SQL(s"""SELECT COUNT(*) AS "count" FROM r1
-          WHERE id IN (SELECT variable_id FROM ${inferenceRunner.VariablesHoldoutTable}) 
+          WHERE id IN (SELECT variable_id FROM ${inferenceRunner.VariablesHoldoutTable})
           AND is_correct = true;""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numHoldout === 5)
@@ -295,10 +295,10 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
       it("should work with custom a observation query") {
         inferenceRunner.init()
-        
+
         // Insert sample data
         SQL(s"""CREATE TABLE r1(weight int,
-          is_correct boolean, id bigint);""").execute.apply()        
+          is_correct boolean, id bigint);""").execute.apply()
         val data = (1 to 100).map { i =>
           Map("id" -> i, "weight" -> i, "is_correct" -> s"${i%2==0}".toBoolean)
         }
@@ -307,9 +307,9 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
 
         // Build the factor description
-        val factorDesc = FactorDesc("testFactor", 
-            """SELECT id AS "r1.id", weight AS "weight", is_correct AS "r1.is_correct" FROM r1""", 
-          IsTrueFactorFunction(Seq("r1.is_correct")), 
+        val factorDesc = FactorDesc("testFactor",
+            """SELECT id AS "r1.id", weight AS "weight", is_correct AS "r1.is_correct" FROM r1""",
+          IsTrueFactorFunction(Seq("r1.is_correct")),
           UnknownFactorWeight(List("weight")), "weight_prefix")
         val holdoutFraction = 0.0
 
@@ -321,7 +321,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
 
         val numHoldout = SQL(s"""SELECT COUNT(*) AS "count" FROM r1
-          WHERE id IN (SELECT variable_id FROM ${inferenceRunner.VariablesObservationTable}) 
+          WHERE id IN (SELECT variable_id FROM ${inferenceRunner.VariablesObservationTable})
           AND is_correct = true;""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numHoldout === 5)
@@ -330,10 +330,10 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
       it("should work with an observation query") {
         inferenceRunner.init()
-        
+
         // Insert sample data
         SQL(s"""CREATE TABLE r1(weight text,
-          is_correct boolean, id bigint);""").execute.apply()        
+          is_correct boolean, id bigint);""").execute.apply()
         val data = (1 to 100).map { i =>
           Map("id" -> i, "weight" -> s"weight_${i}", "is_correct" -> s"${i%2==0}".toBoolean)
         }
@@ -342,9 +342,9 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
 
         // Build the factor description
-        val factorDesc = FactorDesc("testFactor", 
-            """SELECT id AS "r1.id", weight AS "weight", is_correct AS "r1.is_correct" FROM r1""", 
-          IsTrueFactorFunction(Seq("r1.is_correct")), 
+        val factorDesc = FactorDesc("testFactor",
+            """SELECT id AS "r1.id", weight AS "weight", is_correct AS "r1.is_correct" FROM r1""",
+          IsTrueFactorFunction(Seq("r1.is_correct")),
           UnknownFactorWeight(List("weight")), "weight_prefix")
         val holdoutFraction = 0.0
 
@@ -365,7 +365,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
       it("should work with weight variables that are null") {
         inferenceRunner.init()
          SQL(s"""CREATE TABLE r1(weight text,
-          is_correct boolean, id bigint);""").execute.apply()        
+          is_correct boolean, id bigint);""").execute.apply()
         val data = (1 to 100).map { i =>
           Map("id" -> i, "is_correct" -> s"${i%2==0}".toBoolean)
         }
@@ -374,9 +374,9 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
 
         // Build the factor description
-        val factorDesc = FactorDesc("testFactor", 
-            """SELECT id AS "r1.id", weight AS "weight", is_correct AS "r1.is_correct" FROM r1""", 
-          IsTrueFactorFunction(Seq("r1.is_correct")), 
+        val factorDesc = FactorDesc("testFactor",
+            """SELECT id AS "r1.id", weight AS "weight", is_correct AS "r1.is_correct" FROM r1""",
+          IsTrueFactorFunction(Seq("r1.is_correct")),
           UnknownFactorWeight(List("weight")), "weight_prefix")
         val holdoutFraction = 0.0
 
@@ -404,13 +404,13 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         dataStoreHelper.bulkInsert("r2", data2.iterator)
 
         val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType, "r2.is_correct" -> BooleanType)
-        val factorDesc = FactorDesc("testFactor", 
+        val factorDesc = FactorDesc("testFactor",
           """SELECT r1.id AS "r1.id", r1.weight AS "weight", r1.is_correct AS "r1.is_correct",
           r2.id AS "r2.id", r2.is_correct AS "r2.is_correct" FROM r1, r2
           WHERE r1.id = (r2.id-100)""",
-          AndFactorFunction(Seq("r1.is_correct", "r2.is_correct")), 
+          AndFactorFunction(Seq("r1.is_correct", "r2.is_correct")),
           UnknownFactorWeight(List("weight")), "weight_prefix")
-        
+
         val holdoutFraction = 0.0
         inferenceRunner.groundFactorGraph(schema, Seq(factorDesc), CalibrationSettings(holdoutFraction, None, None), false, "", dbSettings)
 
@@ -461,10 +461,10 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         if (dataStoreHelper.isUsingGreenplum) pending
 
         inferenceRunner.init()
-        
+
         // Insert sample data
         SQL(s"""CREATE TABLE r1(weight text,
-          is_correct boolean, id bigint);""").execute.apply()        
+          is_correct boolean, id bigint);""").execute.apply()
         val data = (1 to 100).map { i =>
           Map("id" -> i, "weight" -> s"weight_${i}", "is_correct" -> s"${i%2==0}".toBoolean)
         }
@@ -478,15 +478,15 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
 
         // Build the factor description
-        val factorDesc = FactorDesc("testFactor", 
+        val factorDesc = FactorDesc("testFactor",
             """SELECT id AS "r1.R0.id", weight AS "r1.R0.weight", is_correct AS "r1.R0.is_correct"
-            FROM r1 R0""", 
-          IsTrueFactorFunction(Seq("r1.R0.is_correct")), 
+            FROM r1 R0""",
+          IsTrueFactorFunction(Seq("r1.R0.is_correct")),
           UnknownFactorWeight(List("r1.R0.weight")), "weight_prefix")
         val holdoutFraction = 0.0
 
         // Ground the graph
-        inferenceRunner.groundFactorGraph(schema, Seq(factorDesc), 
+        inferenceRunner.groundFactorGraph(schema, Seq(factorDesc),
           CalibrationSettings(holdoutFraction, None, None), false, "", dbSettingsMat)
 
         // check results
@@ -502,17 +502,17 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
           .map(rs => rs.long("count")).single.apply().get
         assert(numVariables === 100)
 
-        val numVariablesMeta = SQL(s"""SELECT num_variables AS "count" 
+        val numVariablesMeta = SQL(s"""SELECT num_variables AS "count"
           FROM ${InferenceNamespace.getIncrementalMetaTableName()}""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numVariablesMeta === 100)
 
-        val numFactorsMeta = SQL(s"""SELECT num_factors AS "count" 
+        val numFactorsMeta = SQL(s"""SELECT num_factors AS "count"
           FROM ${InferenceNamespace.getIncrementalMetaTableName()}""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numFactorsMeta === 100)
 
-        val numWeightsMeta = SQL(s"""SELECT num_weights AS "count" 
+        val numWeightsMeta = SQL(s"""SELECT num_weights AS "count"
           FROM ${InferenceNamespace.getIncrementalMetaTableName()}""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numWeightsMeta === 100)
@@ -520,12 +520,12 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         // incremental phase
 
         SQL(s"""CREATE TABLE dd_delta_r1(weight text,
-          is_correct boolean, id bigint);""").execute.apply()        
+          is_correct boolean, id bigint);""").execute.apply()
         val deltaData = (91 to 110).map { i =>
           Map("id" -> i, "weight" -> s"weight_${i}", "is_correct" -> s"${i%2==0}".toBoolean)
         }
-        SQL(s"""CREATE VIEW dd_new_r1 AS SELECT * FROM r1 UNION 
-          SELECT * FROM dd_delta_r1;""").execute.apply()    
+        SQL(s"""CREATE VIEW dd_new_r1 AS SELECT * FROM r1 UNION
+          SELECT * FROM dd_delta_r1;""").execute.apply()
         dataStoreHelper.bulkInsert("dd_delta_r1", deltaData.iterator)
         val keyMap = Map[String, List[String]]("dd_delta_r1" -> List("weight"))
 
@@ -535,17 +535,17 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
           IncrementalMode.INCREMENTAL, keyMap)
 
         // Build the factor description
-        val factorDescInc = FactorDesc("dd_new_testFactor", 
-            """SELECT id AS "dd_new_r1.R0.id", weight AS "dd_new_r1.R0.weight", 
+        val factorDescInc = FactorDesc("dd_new_testFactor",
+            """SELECT id AS "dd_new_r1.R0.id", weight AS "dd_new_r1.R0.weight",
             is_correct AS "dd_new_r1.R0.is_correct"
-            FROM dd_new_r1 R0""", 
-          IsTrueFactorFunction(Seq("dd_new_r1.R0.is_correct")), 
+            FROM dd_new_r1 R0""",
+          IsTrueFactorFunction(Seq("dd_new_r1.R0.is_correct")),
           UnknownFactorWeight(List("dd_new_r1.R0.weight")), "weight_prefix")
 
         val schemaInc = Map[String, VariableDataType]("dd_delta_r1.is_correct" -> BooleanType)
 
         // Ground the graph
-        inferenceRunner.groundFactorGraph(schemaInc, Seq(factorDescInc), 
+        inferenceRunner.groundFactorGraph(schemaInc, Seq(factorDescInc),
           CalibrationSettings(holdoutFraction, None, None), false, "", dbSettingsInc)
 
         // Check the result
@@ -568,10 +568,10 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
       it("should work with weight variables that are null")
       {
         inferenceRunner.init()
-        
+
         // Create table with multinomial data
         SQL(s"""CREATE TABLE r1(weight text,
-          value bigint, id bigint);""").execute.apply() 
+          value bigint, id bigint);""").execute.apply()
         val data = (1 to 100).map { i =>
           Map("id" -> i, "weight" -> s"weight_${i}", "value" -> (i%4))
         }
@@ -581,9 +581,9 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val schema = Map[String, VariableDataType]("r1.value" -> MultinomialType(4))
 
         // Build the factor description
-        val factorDesc = FactorDesc("testFactor", 
-          """SELECT id AS "r1.id", weight AS "weight", value AS "r1.value" FROM r1""", 
-          MultinomialFactorFunction(Seq("r1.value")), 
+        val factorDesc = FactorDesc("testFactor",
+          """SELECT id AS "r1.id", weight AS "weight", value AS "r1.value" FROM r1""",
+          MultinomialFactorFunction(Seq("r1.value")),
           UnknownFactorWeight(List()), "weight_prefix")
         val holdoutFraction = 0.0
 
@@ -604,10 +604,10 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
       it("should work with weight variables")
       {
         inferenceRunner.init()
-        
+
         // Create table with multinomial data
         SQL(s"""CREATE TABLE r1(weight text,
-          value bigint, id bigint);""").execute.apply() 
+          value bigint, id bigint);""").execute.apply()
         val data = (1 to 100).map { i =>
           Map("id" -> i, "weight" -> s"weight_${i%4}", "value" -> (i%4))
         }
@@ -617,9 +617,9 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val schema = Map[String, VariableDataType]("r1.value" -> MultinomialType(4))
 
         // Build the factor description
-        val factorDesc = FactorDesc("testFactor", 
-          """SELECT id AS "r1.id", weight AS "weight", value AS "r1.value" FROM r1""", 
-          MultinomialFactorFunction(Seq("r1.value")), 
+        val factorDesc = FactorDesc("testFactor",
+          """SELECT id AS "r1.id", weight AS "weight", value AS "r1.value" FROM r1""",
+          MultinomialFactorFunction(Seq("r1.value")),
           UnknownFactorWeight(List("weight")), "weight_prefix")
         val holdoutFraction = 0.0
 
@@ -640,10 +640,10 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
       it("should work with fixed weight")
       {
         inferenceRunner.init()
-        
+
         // Create table with multinomial data
         SQL(s"""CREATE TABLE r1(weight text,
-          value bigint, id bigint);""").execute.apply() 
+          value bigint, id bigint);""").execute.apply()
         val data = (1 to 100).map { i =>
           Map("id" -> i, "value" -> (i%4))
         }
@@ -653,9 +653,9 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val schema = Map[String, VariableDataType]("r1.value" -> MultinomialType(4))
 
         // Build the factor description
-        val factorDesc = FactorDesc("testFactor", 
-          """SELECT id AS "r1.id", value AS "r1.value" FROM r1""", 
-          MultinomialFactorFunction(Seq("r1.value")), 
+        val factorDesc = FactorDesc("testFactor",
+          """SELECT id AS "r1.id", value AS "r1.value" FROM r1""",
+          MultinomialFactorFunction(Seq("r1.value")),
           KnownFactorWeight(0.37), "weight_prefix")
         val holdoutFraction = 0.0
 
@@ -668,7 +668,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
         // TODO: what does cardinality mean in this table?
 
-        // For fixed weights, all rows should have same initvalue          
+        // For fixed weights, all rows should have same initvalue
         assert(SQL(s"""SELECT initvalue FROM ${inferenceRunner.WeightsTable} limit 1""")
           .map(rs => rs.double("initvalue")).single.apply().get === 0.37)
         assert(SQL(s"""SELECT isfixed FROM ${inferenceRunner.WeightsTable} limit 1""")
@@ -684,10 +684,10 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
       it("should work with weight to learn without weight variables")
       {
         inferenceRunner.init()
-        
+
         // Create table with multinomial data
         SQL(s"""CREATE TABLE r1(weight text,
-          value bigint, id bigint);""").execute.apply() 
+          value bigint, id bigint);""").execute.apply()
         val data = (1 to 100).map { i =>
           Map("id" -> i, "value" -> (i%4))
         }
@@ -697,9 +697,9 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val schema = Map[String, VariableDataType]("r1.value" -> MultinomialType(4))
 
         // Build the factor description
-        val factorDesc = FactorDesc("testFactor", 
-          """SELECT id AS "r1.id", value AS "r1.value" FROM r1""", 
-          MultinomialFactorFunction(Seq("r1.value")), 
+        val factorDesc = FactorDesc("testFactor",
+          """SELECT id AS "r1.id", value AS "r1.value" FROM r1""",
+          MultinomialFactorFunction(Seq("r1.value")),
           UnknownFactorWeight(List()), "weight_prefix")
         val holdoutFraction = 0.0
 
@@ -742,10 +742,10 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
 
       it("should work for Boolean variables") {
-        SQL(s"""create table t1_c1_inference(id bigint, c1 boolean, 
+        SQL(s"""create table t1_c1_inference(id bigint, c1 boolean,
           category bigint, expectation double precision)""").execute.apply()
         SQL("""insert into t1_c1_inference(c1, category, expectation) VALUES
-          (null, null, 0.31), (null, null, 0.93), (null, null, 0.97), 
+          (null, null, 0.31), (null, null, 0.93), (null, null, 0.97),
           (false, null, 0.0), (true, null, 0.77), (true, null, 0.81)""").execute.apply()
         val buckets = Bucket.ten
         val result = inferenceRunner.getCalibrationData("t1.c1", BooleanType, buckets)
@@ -764,11 +764,11 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
       }
 
       it("should work for categorical variables") {
-         SQL(s"""create table t1_c1_inference(id bigint, c1 bigint, 
+         SQL(s"""create table t1_c1_inference(id bigint, c1 bigint,
           category bigint, expectation double precision)""").execute.apply()
          SQL("""insert into t1_c1_inference(c1, category, expectation) VALUES
-          (null, 0, 0.55), (null, 1, 0.55), (null, 2, 0.55), 
-          (0, 0, 0.65), (0, 1, 0.95), (0, 2, 0.95), 
+          (null, 0, 0.55), (null, 1, 0.55), (null, 2, 0.55),
+          (0, 0, 0.65), (0, 1, 0.95), (0, 2, 0.95),
           (1, 0, 0.85), (1, 1, 0.95), (1, 2, 0.95)""").execute.apply()
         val buckets = Bucket.ten
         val result = inferenceRunner.getCalibrationData("t1.c1", MultinomialType(3), buckets)
@@ -779,7 +779,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
       }
 
     }
-    
+
   }
 
 }

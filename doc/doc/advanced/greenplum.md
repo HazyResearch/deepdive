@@ -55,17 +55,17 @@ your environment is more complex than usual.
   have these commands run every time you log in to the system, save a new script
   called `greenplum_startup.sh` with the following contents:
 
-	```bash
-	source GREENPLUM_DIR/greenplum-db/greenplum_path.sh
-	export MASTER_DATA_DIRECTORY=GREENPLUM_DIR/greenplumdb/master/gpsne-1
-	```
-	and edit your shell settings so that this script gets executed every time
-	the shell opens (or remember to run it).
+        ```bash
+        source GREENPLUM_DIR/greenplum-db/greenplum_path.sh
+        export MASTER_DATA_DIRECTORY=GREENPLUM_DIR/greenplumdb/master/gpsne-1
+        ```
+        and edit your shell settings so that this script gets executed every time
+        the shell opens (or remember to run it).
 
 
 ### Setting the Greenplum Recommended OS Parameters
 
-Set the following parameters in the `/etc/sysctl.conf` file and reboot: 
+Set the following parameters in the `/etc/sysctl.conf` file and reboot:
 
 ```
 xfs_mount_options = rw,noatime,inode64,allocsize=16m
@@ -114,7 +114,7 @@ net.core.netdev_max_backlog = 10000
 vm.overcommit_memory = 2
 ```
 
-Set the following parameters in the `/etc/security/limits.conf` file: 
+Set the following parameters in the `/etc/security/limits.conf` file:
 
 ```
 soft nofile 65536
@@ -130,9 +130,9 @@ Be sure to **reboot** after changing these kernel parameters.
 Download Greenplum for your operating system. For a free Community Edition, you
 can find the download link and the official guide on the [GoPivotal
 website](http://www.gopivotal.com/products/pivotal-greenplum-database), or you
-can download it directly [here](http://downloads.cfapps.io/gpdb_db_el5_64). 
+can download it directly [here](http://downloads.cfapps.io/gpdb_db_el5_64).
 
-Install Greenplum using the downloaded package: 
+Install Greenplum using the downloaded package:
 
 ```bash
 $ unzip greenplum-db-4.2.x.x-PLATFORM.zip
@@ -155,7 +155,7 @@ source /usr/local/greenplum-db/greenplum_path.sh
 
 ### Configure ssh with localhost
 
-Now you need to generate ssh keys for `localhost`. Run: 
+Now you need to generate ssh keys for `localhost`. Run:
 ```bash
 $ gpssh-exkeys -h localhost
 ```
@@ -239,10 +239,10 @@ postgres=# \l
    Name    | Owner | Encoding | Access privileges
 -----------+-------+----------+-------------------
  postgres  | Xxx   | UTF8     |
- template0 | Xxx   | UTF8     | =c/Xxx  
-                              : Xxx=CTc/Xxx  
- template1 | Xxx   | UTF8     | =c/Xxx  
-                              : Xxx=CTc/Xxx  
+ template0 | Xxx   | UTF8     | =c/Xxx
+                              : Xxx=CTc/Xxx
+ template1 | Xxx   | UTF8     | =c/Xxx
+                              : Xxx=CTc/Xxx
 (3 rows)
 
 postgres=# \q
@@ -257,21 +257,21 @@ Use `gpstop` and `gpstart` to stop / start the Greenplum server at any time.
 - **When I use Greeplum, I see the error "ERROR: data line too long. likely due to
 invalid csv data". But my program runs fine using PostgreSQL.**
 
-	Tune the `gp_max_csv_line_length` parameter in Greenplum.
+        Tune the `gp_max_csv_line_length` parameter in Greenplum.
 
 - **I get the following error: Could not reserve enough space for object heap.
   Error: Could not create the Java Virtual Machine.**
 
-	Tune `MaxPermSize` in Java, e.g., `-XX:MaxPermSize=128m`.
+        Tune `MaxPermSize` in Java, e.g., `-XX:MaxPermSize=128m`.
 
-	Another option, especially if you are running in a Virtual Machine
-	rather than on "bare metal", is to add `vm.overcommit_memory = 1` to
-	`/etc/syctl.conf` and then run `sudo sysctl -p` (Thanks to Michael Goddard
-	for providing this answer).
+        Another option, especially if you are running in a Virtual Machine
+        rather than on "bare metal", is to add `vm.overcommit_memory = 1` to
+        `/etc/syctl.conf` and then run `sudo sysctl -p` (Thanks to Michael Goddard
+        for providing this answer).
 
 - **How do I enable fuzzy string match / install "contrib" module in Greenplum?**
 
-	To enable *fuzzystringmatch* / the *contrib* module available for PostgreSQL
-	for Greenplum, see [this
-	link](http://blog.2ndquadrant.com/fuzzystrmatch_greenplum/).
+        To enable *fuzzystringmatch* / the *contrib* module available for PostgreSQL
+        for Greenplum, see [this
+        link](http://blog.2ndquadrant.com/fuzzystrmatch_greenplum/).
 

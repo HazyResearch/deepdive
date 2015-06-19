@@ -15,14 +15,14 @@ counts = []
 prec = []
 counts_train = []
 for l in open(CALIBRATION_FILE):
-	(a,b,c,d,e) = l.rstrip().split('\t')
-	labels.append((float(a) + float(b))/2)
-	counts.append(int(c))
-	if float(d) + float(e) == 0: 
-		prec.append(0.0)
-	else:
-		prec.append(float(d)/(float(d) + float(e)))
-	counts_train.append(float(d)+float(e))
+        (a,b,c,d,e) = l.rstrip().split('\t')
+        labels.append((float(a) + float(b))/2)
+        counts.append(int(c))
+        if float(d) + float(e) == 0:
+                prec.append(0.0)
+        else:
+                prec.append(float(d)/(float(d) + float(e)))
+        counts_train.append(float(d)+float(e))
 
 fig, ax = plt.subplots(figsize=(12,3))
 
@@ -36,9 +36,9 @@ width = 0.1
 labels_nz = []
 prec_nz = []
 for i in range(0, len(labels)):
-	if counts_train[i] != 0:
-		labels_nz.append(labels[i])
-		prec_nz.append(prec[i])
+        if counts_train[i] != 0:
+                labels_nz.append(labels[i])
+                prec_nz.append(prec[i])
 plt.plot(labels_nz, prec_nz, 'ro-')
 plt.plot([0,1],[0,1],'b--')
 plt.title("(a) Accuracy (Testing Set)")

@@ -4,21 +4,21 @@ CREATE OR REPLACE FUNCTION func_ext_has_spouse_candidates(
     sentence_id text, p1_id text, p1_text text, p2_id text, p2_text text) RETURNS SETOF ret_func_ext_has_spouse_candidates AS
 $$
 
-if 'csv' in SD: 
+if 'csv' in SD:
   csv = SD['csv']
-else: 
+else:
   import csv
   SD['csv'] = csv
 
-if 'os' in SD: 
+if 'os' in SD:
   os = SD['os']
-else: 
+else:
   import os
   SD['os'] = os
 
-if 'defaultdict' in SD: 
+if 'defaultdict' in SD:
   defaultdict = SD['defaultdict']
-else: 
+else:
   from collections import defaultdict
   SD['defaultdict'] = defaultdict
 
@@ -33,7 +33,7 @@ if 'spouses' in SD:
   spouses = SD['spouses']
 else:  # Read data from file once, and share it
   SD['spouses'] = spouses
-  # Read dict from file: MAKE SURE YOUR DATABASE SERVER 
+  # Read dict from file: MAKE SURE YOUR DATABASE SERVER
   #   HAVE THE ACCESS TO FILE!
   # Please use absolute path!
   with open ("/dfs/rulk/0/deepdive/shared/spouses.csv") as csvfile:

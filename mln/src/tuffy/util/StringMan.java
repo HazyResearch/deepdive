@@ -12,92 +12,92 @@ import tuffy.db.SQLMan;
  */
 public class StringMan {
 
-	private static int uniqVar = 1;
-	
-	public static String getUniqVarName(){
-		return "uniqvar" + (uniqVar++);
-	}
+        private static int uniqVar = 1;
 
-	public static String escapeJavaString(String s){
-		return StringEscapeUtils.escapeJava(s);
-	}
+        public static String getUniqVarName(){
+                return "uniqvar" + (uniqVar++);
+        }
 
-	public static String quoteJavaString(String s){
-		return "\"" + StringEscapeUtils.escapeJava(s) + "\"";
-	}
+        public static String escapeJavaString(String s){
+                return StringEscapeUtils.escapeJava(s);
+        }
 
-	/**
-	 * Gets a string with all zeros.
-	 * @param length
-	 * @return
-	 */
-	public static String zeros(int length){
-		StringBuilder sb = new StringBuilder();
-		for(int i=0;i<length;i++){
-			sb.append("0");
-		}
-		return sb.toString();
-	}
-	
-	/**
-	 * Concatenates multiple strings with a given separator.
-	 * 
-	 * @param sep the separator
-	 * @param parts substrings to be concatenated
-	 * @return the resulting string
-	 */
-	public static String join(String sep, ArrayList<String> parts) {
-		StringBuilder sb = new StringBuilder("");
-		for(int i=0; i<parts.size(); i++) {
-			sb.append(parts.get(i));
-			if(i != parts.size()-1) sb.append(sep);
-		}
-		return sb.toString();
-	}
-	
-	public static String joinAndEscape(String sep, ArrayList<String> parts) {
-		StringBuilder sb = new StringBuilder("");
-		for(int i=0; i<parts.size(); i++) {
-			sb.append(SQLMan.escapeStringNoE(parts.get(i)));
-			if(i != parts.size()-1) sb.append(sep);
-		}
-		return sb.toString();
-	}
-	
-	public static String join(String sep, List<String> parts) {
-		StringBuilder sb = new StringBuilder("");
-		for(int i=0; i<parts.size(); i++) {
-			sb.append(parts.get(i));
-			if(i != parts.size()-1) sb.append(sep);
-		}
-		return sb.toString();
-	}
+        public static String quoteJavaString(String s){
+                return "\"" + StringEscapeUtils.escapeJava(s) + "\"";
+        }
 
-	/**
-	 * Concatenates multiple strings with commas.
-	 * 
-	 * @param parts list substrings to be concatenated
-	 * @return the resulting string
-	 */
-	public static String commaList(ArrayList<String> parts) {
-		return join(", ", parts);
-	}
-	
-	public static String commaList(List<String> parts) {
-		return join(", ", parts);
-	}
+        /**
+         * Gets a string with all zeros.
+         * @param length
+         * @return
+         */
+        public static String zeros(int length){
+                StringBuilder sb = new StringBuilder();
+                for(int i=0;i<length;i++){
+                        sb.append("0");
+                }
+                return sb.toString();
+        }
+
+        /**
+         * Concatenates multiple strings with a given separator.
+         *
+         * @param sep the separator
+         * @param parts substrings to be concatenated
+         * @return the resulting string
+         */
+        public static String join(String sep, ArrayList<String> parts) {
+                StringBuilder sb = new StringBuilder("");
+                for(int i=0; i<parts.size(); i++) {
+                        sb.append(parts.get(i));
+                        if(i != parts.size()-1) sb.append(sep);
+                }
+                return sb.toString();
+        }
+
+        public static String joinAndEscape(String sep, ArrayList<String> parts) {
+                StringBuilder sb = new StringBuilder("");
+                for(int i=0; i<parts.size(); i++) {
+                        sb.append(SQLMan.escapeStringNoE(parts.get(i)));
+                        if(i != parts.size()-1) sb.append(sep);
+                }
+                return sb.toString();
+        }
+
+        public static String join(String sep, List<String> parts) {
+                StringBuilder sb = new StringBuilder("");
+                for(int i=0; i<parts.size(); i++) {
+                        sb.append(parts.get(i));
+                        if(i != parts.size()-1) sb.append(sep);
+                }
+                return sb.toString();
+        }
+
+        /**
+         * Concatenates multiple strings with commas.
+         *
+         * @param parts list substrings to be concatenated
+         * @return the resulting string
+         */
+        public static String commaList(ArrayList<String> parts) {
+                return join(", ", parts);
+        }
+
+        public static String commaList(List<String> parts) {
+                return join(", ", parts);
+        }
 
 
-	/**
-	 * Concatenates multiple strings with commas, and then
-	 * surrounds the result with a pair of parentheses.
-	 * 
-	 * @param ts substrings to be concatenated
-	 * @return the resulting string
-	 */
-	public static String commaListParen(ArrayList<String> ts) {
-		return "(" + commaList(ts) + ")";
-	}
+        /**
+         * Concatenates multiple strings with commas, and then
+         * surrounds the result with a pair of parentheses.
+         *
+         * @param ts substrings to be concatenated
+         * @return the resulting string
+         */
+        public static String commaListParen(ArrayList<String> ts) {
+                return "(" + commaList(ts) + ")";
+        }
 
     public static String repeat(String str, int repeat) {
         if (str == null) {
@@ -138,7 +138,7 @@ public class StringMan {
     }
 
     public static String comment(String str) {
-    	return "#" + str.replace("\n", "\n#") + "\n";
+        return "#" + str.replace("\n", "\n#") + "\n";
     }
 
 }

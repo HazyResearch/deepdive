@@ -2,7 +2,7 @@
 layout: default
 ---
 
-# Distant supervision 
+# Distant supervision
 
 Most machine learning techniques require a set of **training data**. A traditional
 approach for collecting training data is to have humans label a set of
@@ -10,7 +10,7 @@ documents. For example, for the marriage relation, human annotators may label
 the pair "Bill Clinton" and "Hillary Clinton" as a positive training example.
 This approach is expensive in terms of both time and money, and if our corpus is
 large, will not yield enough data for our algorithms to work with. And because
-humans make errors, the resulting training data will most likely be noisy. 
+humans make errors, the resulting training data will most likely be noisy.
 
 An alternative approach to generating training data is **distant supervision**.
 In distant supervision, we make use of an already existing database, such as

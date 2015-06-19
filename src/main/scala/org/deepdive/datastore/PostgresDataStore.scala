@@ -186,7 +186,7 @@ class PostgresDataStore extends JdbcDataStore with Logging {
     val sql = s"""
       SELECT EXISTS (
         SELECT 1
-        FROM   information_schema.tables 
+        FROM   information_schema.tables
         WHERE  table_schema = 'public'
         AND    table_name = '${table.toLowerCase}'
       );"""

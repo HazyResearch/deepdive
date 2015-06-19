@@ -1,38 +1,38 @@
 # Statsitics
-     number_of_documents 
+     number_of_documents
     ---------------------
                    14230
     (1 row)
-    
-     number_of_sentences 
+
+     number_of_sentences
     ---------------------
                    55507
     (1 row)
-    
+
 ## Variable has_spouse
-     mention_candidates 
+     mention_candidates
     --------------------
                  291986
     (1 row)
-    
+
     Supervision statistics:
-     is_true | count  
+     is_true | count
     ---------+--------
      t       |  23580
      f       |  84578
              | 183828
     (3 rows)
-    
-     extracted_mentions 
+
+     extracted_mentions
     --------------------
                    5442
     (1 row)
-    
-     extracted_entities 
+
+     extracted_entities
     --------------------
                    3669
     (1 row)
-    
+
 ### Top entities
     Asif Ali Zardari-Benazir Bhutto	67
     Benazir Bhutto-Asif Ali Zardari	66

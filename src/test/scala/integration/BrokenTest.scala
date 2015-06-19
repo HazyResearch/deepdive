@@ -18,7 +18,7 @@ class BrokenTest extends FunSpec with TimeLimitedTests {
 
   val timeLimit = 10000 millis
   val badConfig = ConfigFactory.parseString(getBadConfig).withFallback(ConfigFactory.load)
-  
+
   /** application.conf configuration
    */
   def getBadConfig = TestHelper.getConfig +
@@ -39,9 +39,9 @@ class BrokenTest extends FunSpec with TimeLimitedTests {
       }
 
     """
-  
+
   it("should not get stuck for bad configs") {
-    
+
     intercept[RuntimeException] {
       DeepDive.run(badConfig, "out/test_coin")
     }

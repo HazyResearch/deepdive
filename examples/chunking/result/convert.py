@@ -9,7 +9,7 @@ lastTag = ''
 
 for line in fin:
   tokens = line.split(' ')
-  
+
   # empty line
   if (tokens[0] in ['\N', 'NULL']): # for compatibility with MySQL
   # if (tokens[0] == '\N'):
@@ -19,7 +19,7 @@ for line in fin:
 
   # normal word
   tag = tagNames[int(tokens[3])]
-  if tag != 'O': 
+  if tag != 'O':
     if lastTag == tag:
       tag = 'I-' + tag
     else:

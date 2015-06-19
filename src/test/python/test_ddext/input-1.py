@@ -9,7 +9,7 @@ from collections import defaultdict
 
 # input: sentences.id, p1.id, p1.text, p2.id, p2.text
 # output: has_spouse
-# returns: 
+# returns:
 
 def init():
     # SD['json'] = __import__('json')
@@ -23,8 +23,8 @@ def init():
     # ddext.import_lib('defaultdict', 'collections', 'defdict')
     # # "import defaultdict as defdict":
     # ddext.import_lib('defaultdict', as_name='defdict')
-    
-    # Input commands MUST HAVE CORRECT ORDER: 
+
+    # Input commands MUST HAVE CORRECT ORDER:
     # SAME AS SELECT ORDER, and SAME AS "run" ARGUMENT ORDER
     ddext.input('sentence_id', 'text')
     ddext.input('p1_id', 'text')
@@ -42,7 +42,7 @@ def init():
 
 
 def run(sentence_id, p1_id, p1_text, p2_id, p2_text):
-    
+
     ####### NOTICE: SHARED MEMORY ########
     # If you really need shared memory / global dir, do "from ddext import SD."
     # Use SD as the global shared dict.
@@ -53,7 +53,7 @@ def run(sentence_id, p1_id, p1_text, p2_id, p2_text):
         spouses = SD['spouses']
     else:    # Read data from file once, and share it
         SD['spouses'] = spouses
-        # Read dict from file: MAKE SURE YOUR DATABASE SERVER 
+        # Read dict from file: MAKE SURE YOUR DATABASE SERVER
         #     HAVE THE ACCESS TO FILE!
         # Please use absolute path!
         with open ("/dfs/rulk/0/deepdive/shared/spouses.csv") as csvfile:
