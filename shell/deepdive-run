@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# deepdive-run -- Runs a pipeline of the DeepDive application
+# > deepdive run
+# Runs the default pipeline defined in deepdive.conf.
+#
+# > deepdive run PIPELINE
+# Runs the pipeline named PIPELINE defined in deepdive.conf.
+##
+set -eu
+
+# find the current application
+APP_HOME=$(find-deepdive-app)
+export APP_HOME
+cd "$APP_HOME"
+
+# create a fresh run directory
+run_id=$(date +%Y%m%d/%H%M%S.%N)
+run_dir=run/$run_id
+mkdir -p "$run_dir"
+
+# point to it with RUNNING symlink
+ln -sfn "$run_id" run/RUNNING
+trap "ln -sfn $run_id run/ABORTED" ERR
+
+# run DeepDive application with SBT
+"$DEEPDIVE_HOME"/sbt/sbt "run -c deepdive.conf -o $run_dir"
+# TODO log under $run_dir
+# TODO run assembly jar instead of using sbt
+# TODO provide a way to override configuration from command-line/environment
+
+# point to the run with LATEST symlink
+ln -sfn "$run_id" run/LATEST

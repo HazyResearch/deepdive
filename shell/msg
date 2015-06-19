@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# msg -- Show an informational message
+#
+# > msg [+-VERBOSITY_LEVEL] MESSAGE...
+#
+# Example:
+# > msg normal message
+# > msg +1 a bit verbose message
+# > msg -1 an important message
+##
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2012-11-01
+# TODO expose this as shell function
+if [ -t 2 -o -n "${DEEPDIVE_LOG_TO_NONTTY:-}" ]; then
+    case $1 in
+        [+-][0-9]*) dlevel=$1; shift ;;
+        *)          dlevel=0 ;;
+    esac
+    (( DEEPDIVE_LOGLVL += 1 - $SHLVL - dlevel ))
+    [[ $DEEPDIVE_LOGLVL -lt 0 ]] || echo "$@" >&2
+fi

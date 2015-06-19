@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# find-deepdive-app -- Recognizes which DeepDive application current working directory belongs to
+set -eu
+
+# locate application root
+at_deepdive_app_root() {
+    # recognize an app directory as defined in ../doc/doc/advanced/deepdiveapp.md
+    [[ -e deepdive.conf && -e schema.sql && -d input ]]
+}
+
+while ! at_deepdive_app_root && [[ $PWD != / ]]; do
+    cd ..
+done
+
+if at_deepdive_app_root; then
+    pwd
+else
+    error "Not inside a DeepDive application"
+fi

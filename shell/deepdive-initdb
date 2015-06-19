@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# deepdive-initdb -- Initializes the underlying database for the DeepDive application
+# > deepdive initdb
+##
+set -eu
+
+# find the current application
+APP_HOME=$(find-deepdive-app)
+export APP_HOME
+cd "$APP_HOME"
+
+error "Not implemented yet"
+
+createdb # TODO
+
+deepdive-sql <schema.sql
+
+input/load.sh

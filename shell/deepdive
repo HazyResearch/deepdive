@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# DeepDive shell
+# Usage: deepdive COMMAND [ARG]...
+##
+# Generated: 2015-06-19
+set -eu
+
+if [ -z "${DEEPDIVE_HOME:-}" ]; then
+    Self=$(readlink -f "$0" 2>/dev/null || {
+        # XXX readlink -f is only available in GNU coreutils
+        cd $(dirname -- "$0")
+        n=$(basename -- "$0")
+        if [ -L "$n" ]; then
+            L=$(readlink "$n")
+            if [ x"$L" != x"${L#/}" ]; then
+                echo "$L"; exit
+            else
+                cd "$(dirname -- "$L")"
+                n=$(basename -- "$L")
+            fi
+        fi
+        echo "$(pwd -P)/$n"
+    })
+    Here=$(dirname "$Self")
+
+    # Keep a backup of some environment variables
+    for v in PATH
+    do  vbak=DEEPDIVE_ORIG_$v
+          declare -p $v    &>/dev/null || continue
+        ! declare -p $vbak &>/dev/null || continue
+        export "$vbak=${!v}"
+    done
+
+    # Setup environment
+    unset CDPATH
+    export DEEPDIVE_HOME=${Here%/shell}
+    #  shell utilities
+    PATH="$DEEPDIVE_HOME/shell:$PATH"
+    #  DeepDive util/
+    PATH="$DEEPDIVE_HOME/util:$PATH"
+    export PATH
+
+    # for msg logging
+    export SHLVL=0 DEEPDIVE_LOGLVL=${DEEPDIVE_LOGLVL:-1}
+fi
+
+
+# Process input arguments
+[ $# -gt 0 ] || {
+    usage "$0" "No COMMAND given" || true
+    # enumerate available COMMANDs discoverable from PATH
+    echo
+    echo "# Available COMMANDs are:"
+    IFS=:
+    tmp=$(mktemp -d "${TMPDIR:-/tmp}"/deepdive-usage.XXXXXXX)
+    trap 'rm -rf "$tmp"' EXIT
+    for path in $PATH; do
+        for exe in "$path"/deepdive-*; do
+            [ -x "$exe" ] || continue
+            usage "$exe" | head -1 | sed -n '/ -- / s/.* -- //p' >>"$tmp"/desc
+            cmd=${exe##*/deepdive-}
+            echo "deepdive $cmd  #"
+        done
+    done | column -t >"$tmp"/commands
+    paste "$tmp"/commands "$tmp"/desc
+    false
+}
+Cmd=$1; shift
+
+
+# Check if it's a valid command
+exe=deepdive-"$Cmd"
+if type "$exe" &>/dev/null; then
+    set -- "$exe" "$@"
+else
+    usage "$0" "$Cmd: invalid COMMAND"
+fi
+
+
+# Run given command under this environment
+exec "$@"

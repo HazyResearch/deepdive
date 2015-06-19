@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# deepdive-sql -- Runs a SQL query against the database for the DeepDive application
+# > deepdive sql
+# Starts a SQL prompt for the underlying database.
+#
+# > deepdive sql SQL_QUERY
+# Runs SQL_QUERY against the underlying database and prints the result in TSV format.
+##
+set -eu
+
+# find the current application
+APP_HOME=$(find-deepdive-app)
+export APP_HOME
+cd "$APP_HOME"
+
+error "Not implemented yet"
+
+# TODO parse deepdive.db.default.url from deepdive.conf instead of grep'ing
+if grep -q "url:.*postgresql://" deepdive.conf; then
+    psql # TODO
+elif grep -q "url:.*mysql://" deepdive.conf; then
+    mysql # TODO
+fi
