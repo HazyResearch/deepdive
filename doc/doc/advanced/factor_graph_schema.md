@@ -12,7 +12,7 @@ edges. All files resides in the `out/` directory of the latest run. The format
 of these files is as follows, where numbers are in bytes and **network byte
 order** is used.
 
-Weights 
+Weights
 
     weightId        long    8
     isFixed         bool    1

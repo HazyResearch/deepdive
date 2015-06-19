@@ -18,7 +18,7 @@ for l in open(CALIBRATION_FILE):
 	(a,b,c,d,e) = l.rstrip().split('\t')
 	labels.append((float(a) + float(b))/2)
 	counts.append(int(c))
-	if float(d) + float(e) == 0: 
+	if float(d) + float(e) == 0:
 		prec.append(0.0)
 	else:
 		prec.append(float(d)/(float(d) + float(e)))

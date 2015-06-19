@@ -2,30 +2,30 @@ diff -ENwbur ../v00002/stats/documents.txt ./stats/documents.txt
 --- ../v00002/stats/documents.txt	2014-12-22 17:48:59.000000000 -0800
 +++ ./stats/documents.txt	2014-12-22 18:31:53.000000000 -0800
 @@ -1,10 +1,10 @@
-  number_of_documents 
+  number_of_documents
  ---------------------
 -               14230
 +               41811
  (1 row)
- 
-  number_of_sentences 
+
+  number_of_sentences
  ---------------------
 -               55469
 +               80978
  (1 row)
- 
+
 diff -ENwbur ../v00002/stats/has_spouse.txt ./stats/has_spouse.txt
 --- ../v00002/stats/has_spouse.txt	2014-12-22 17:48:59.000000000 -0800
 +++ ./stats/has_spouse.txt	2014-12-22 18:31:54.000000000 -0800
 @@ -1,23 +1,23 @@
-  mention_candidates 
+  mention_candidates
  --------------------
 -             285340
 +             528112
  (1 row)
- 
+
  Supervision statistics:
-  is_true | count  
+  is_true | count
  ---------+--------
 - f       |  83344
 -         | 178426
@@ -34,19 +34,19 @@ diff -ENwbur ../v00002/stats/has_spouse.txt ./stats/has_spouse.txt
 +         | 297348
 + t       |  23122
  (3 rows)
- 
-  extracted_mentions 
+
+  extracted_mentions
  --------------------
 -               1175
 +                560
  (1 row)
- 
-  extracted_entities 
+
+  extracted_entities
  --------------------
 -                668
 +                317
  (1 row)
- 
+
 diff -ENwbur ../v00002/stats/has_spouse_top_entities.tsv ./stats/has_spouse_top_entities.tsv
 --- ../v00002/stats/has_spouse_top_entities.tsv	2014-12-22 17:48:59.000000000 -0800
 +++ ./stats/has_spouse_top_entities.tsv	2014-12-22 18:31:54.000000000 -0800

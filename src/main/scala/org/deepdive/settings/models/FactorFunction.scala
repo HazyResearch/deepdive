@@ -62,7 +62,7 @@ case class LogicalFactorFunction(variables: Seq[FactorFunctionVariable]) extends
 }
 
 /* A variable used in a Factor function */
-case class FactorFunctionVariable(relation: String, field: String, isArray: Boolean = false, 
+case class FactorFunctionVariable(relation: String, field: String, isArray: Boolean = false,
   isNegated: Boolean = false, predicate: Option[Long] = None) {
   override def toString = s"${relation}.${field}"
   def headRelation = relation.split('.').headOption.getOrElse(relation)

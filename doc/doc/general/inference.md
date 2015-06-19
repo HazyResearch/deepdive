@@ -23,7 +23,7 @@ has two types of nodes:
 
 - <a name="variables" href="#"></a> **Variables**, which can be either *evidence
   variables* when their value is known, or *query variables* when their value
-  should be predicted. 
+  should be predicted.
 
 - **Factors** define the relationships between variables in the graph. Each factor
   can be connected to many variables and comes with a **factor function** to
@@ -57,7 +57,7 @@ possible worlds.
 taking a particular value. Using the [law of total
 probability](http://en.wikipedia.org/wiki/Law_of_total_probability), it is
 straightforward to express this probability as the sum of the probabilities of
-possible worlds that contain the requested value for that variable. 
+possible worlds that contain the requested value for that variable.
 
 <a name="gibbs" href="#"></a>
 Exact inference is an intractable problem on factor graphs, but a commonly used

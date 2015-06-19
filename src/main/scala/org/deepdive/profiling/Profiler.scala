@@ -9,10 +9,10 @@ import scala.util.{Try, Success}
 object Profiler {
   def props = Props(classOf[Profiler])
 
-  sealed trait Message 
+  sealed trait Message
   case object PrintReports extends Message
 
-  case class Report(id: String, startDescription: String, endDescription: String, 
+  case class Report(id: String, startDescription: String, endDescription: String,
     startTime: Long, endTime: Long)
 }
 
@@ -38,8 +38,8 @@ class Profiler extends Actor with ActorLogging {
       startedReports.get(id) match {
         case Some((startReport, startTime)) =>
           log.debug(s"ending report_id=${id}")
-          val finalReport = Report(id, startReport.description, 
-            endDescription.map(" " + _).getOrElse(""), 
+          val finalReport = Report(id, startReport.description,
+            endDescription.map(" " + _).getOrElse(""),
             startTime, System.currentTimeMillis)
           reports += finalReport
         case None =>

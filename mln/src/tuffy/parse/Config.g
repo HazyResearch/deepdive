@@ -16,7 +16,7 @@ import tuffy.util.*;
 public Hashtable<String, String> map = new Hashtable<String, String>();
 }
 
-WS  :   (' ' 
+WS  :   (' '
         | '\r'
         | '\n'
         | '\t'

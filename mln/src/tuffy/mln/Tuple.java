@@ -8,28 +8,28 @@ import java.util.ArrayList;
  *
  */
 public class Tuple {
-	
+
 	/**
-	 * positive element = constant; 
+	 * positive element = constant;
 	 * negative element = variable.
 	 * variables are encoded as -1, -2, ...
 	 */
 	public int[] list = null;
-	
+
 	// ASSUMPTION OF DATA STRUCTURE: the naming of variables
 	// are assigned sequentially with increment 1 for each new variable
 	// not seen before.
-	
+
 	/**
 	 * The degree of freedom, i.e. the number of distinct variables.
 	 * Actually, it corresponds to the smallest integer name of variables.
 	 */
 	public int dimension;
-	
+
 	/**
 	 * Constructor of Tuple.
 	 * Assuming args is already canonicalized
-	 * 
+	 *
 	 * @param args
 	 */
 	public Tuple(ArrayList<Integer> args) {
@@ -43,9 +43,9 @@ public class Tuple {
 		}
 		dimension = -dimension;
 	}
-	
-	
-	
+
+
+
 	/**
 	 * Return the i-th element. This value is the variable/constant
 	 * name of the i-th element.
@@ -53,19 +53,19 @@ public class Tuple {
 	public int get(int i) {
 		return list[i];
 	}
-	
+
 	///**
 	// * Test if this tuple subsumes the argument.
-	// * 
+	// *
 	// * @return 1 if subsumes, 0 if equiv, -1 if neither
 	// */
-	
+
 	/**
 	 * Test if the tuple subsumes the argument tuple.
-	 * Tuple $a$ subsumes tuple $b$, if there exists a mapping $\pi$ 
+	 * Tuple $a$ subsumes tuple $b$, if there exists a mapping $\pi$
 	 * from variable to variable/constant, s.t., $\forall i$,
 	 * $\pi$(a.variable[i]) = b.variable[i].
-	 * 
+	 *
 	 * @return true if subsumes, false otherwise;
 	 */
 	public boolean subsumes(Tuple other) {

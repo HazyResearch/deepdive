@@ -119,7 +119,7 @@ IsaEn(x,y), Entails(y,z) => IsaEn(x,z).  // string entailment implies IsaEn rela
 IsaEv(x,y), Entails(y,z) => IsaEv(x,z).  // string entailment implies IsaEv relationship
 //IsaEn(x,y), Example(y,z) => IsaEn(x,z).  // being an example implies IsaEn relationship
 //IsaEv(x,y), Example(y,z) => IsaEv(x,z).  // being an example implies IsaEv relationship
-IsaEn(x,y), IsaEn(x,z) => 
+IsaEn(x,y), IsaEn(x,z) =>
   Entails(y,z) v Entails(z,y). // v Example(y,z) v Example(z,y).  // closed-world behavior of IsaEn
-IsaEv(x,y), IsaEv(x,z) => 
+IsaEv(x,y), IsaEv(x,z) =>
   Entails(y,z) v Entails(z,y). // v Example(y,z) v Example(z,y).  // closed-world behavior of IsaEv

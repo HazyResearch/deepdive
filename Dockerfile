@@ -16,7 +16,7 @@ RUN echo 'export PGPORT=$DB_PORT_5432_TCP_PORT' >> ~/.bashrc && echo 'export PGH
     echo 'while true; do' >> ~/.bashrc && \
     echo '  psql -q -h $DB_PORT_5432_TCP_ADDR -p $DB_PORT_5432_TCP_PORT -U gpadmin deepdive -c "SELECT 1;" > /dev/null 2>&1' >> ~/.bashrc && \
     echo '  RETVAL=$?' >> ~/.bashrc &&     echo '  [ $RETVAL -eq 0 ] && break' >> ~/.bashrc && \
-    echo '  echo -ne "DeepDive is waiting for the DB to finish initializing\r"' >> ~/.bashrc && \ 
+    echo '  echo -ne "DeepDive is waiting for the DB to finish initializing\r"' >> ~/.bashrc && \
     echo '  sleep 1' >> ~/.bashrc && \
     echo '  echo -ne "DeepDive is waiting for the DB to finish initializing.\r"' >> ~/.bashrc && \
     echo '  sleep 1' >> ~/.bashrc && \
@@ -24,7 +24,7 @@ RUN echo 'export PGPORT=$DB_PORT_5432_TCP_PORT' >> ~/.bashrc && echo 'export PGH
     echo '  sleep 1' >> ~/.bashrc && \
     echo '  echo -ne "DeepDive is waiting for the DB to finish initializing...\r"' >> ~/.bashrc &&\
     echo '  sleep 1' >> ~/.bashrc && echo 'done' >> ~/.bashrc && \
-    echo 'echo -ne "\nGreenplum is up and running! You may now use deepdive.\n"' >> ~/.bashrc 
+    echo 'echo -ne "\nGreenplum is up and running! You may now use deepdive.\n"' >> ~/.bashrc
 
 RUN sed -i s/'sbt "test-only org.deepdive.test.integration.ChunkingApp -- -oF"'/'echo "Skipping ChunkingApp" \#sbt "test-only org.deepdive.test.integration.ChunkingApp -- -oF"'/g /root/deepdive/test/test_psql.sh
 

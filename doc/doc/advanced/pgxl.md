@@ -2,7 +2,7 @@
 layout: default
 ---
 
-# Using DeepDive with Postgres-XL 
+# Using DeepDive with Postgres-XL
 
 This document describes how to install and configure
 [Postgres-XL](http://www.postgres-xl.org/) to work
@@ -33,13 +33,13 @@ see [this example](https://github.com/HazyResearch/deepdive/tree/master/examples
 
 ## Installation
 We now describe how to install XL and configure it to be used with
-DeepDive. The steps were tested to install XL on Ubuntu 15.04. 
+DeepDive. The steps were tested to install XL on Ubuntu 15.04.
 
 We assume that the user executing these commands has sudo rights.
 
 ### Setting OS Parameters
 
-Set the following parameters in the `/etc/sysctl.d/50-pgxl.conf` file: 
+Set the following parameters in the `/etc/sysctl.d/50-pgxl.conf` file:
 ```
 sudo tee /etc/sysctl.d/50-pgxl.conf <<EOF
 kernel.sem = 1000  32000  32  1000
@@ -123,7 +123,7 @@ done
 
 ### Configure ssh with localhost
 
-Now you need to generate ssh keys for `localhost`. Run: 
+Now you need to generate ssh keys for `localhost`. Run:
 ```bash
 mkdir -p ~/.ssh
 chmod 700 ~/.ssh
@@ -290,10 +290,10 @@ postgres=# \l
    Name    | Owner | Encoding | Access privileges
 -----------+-------+----------+-------------------
  postgres  | Xxx   | UTF8     |
- template0 | Xxx   | UTF8     | =c/Xxx  
-                              : Xxx=CTc/Xxx  
- template1 | Xxx   | UTF8     | =c/Xxx  
-                              : Xxx=CTc/Xxx  
+ template0 | Xxx   | UTF8     | =c/Xxx
+                              : Xxx=CTc/Xxx
+ template1 | Xxx   | UTF8     | =c/Xxx
+                              : Xxx=CTc/Xxx
 (3 rows)
 
 postgres=# \q

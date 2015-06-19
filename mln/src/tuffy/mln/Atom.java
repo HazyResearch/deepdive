@@ -9,36 +9,36 @@ import tuffy.util.StringMan;
  * all fields are transparent (public).
  */
 public class Atom {
-	
+
 	/**
 	 * Enumerated type of Atoms. 1) NONE; 2) EVIDENCE: atom in evidence;
 	 * 3) QUERY: atom in query; 4) QUEVID: atom in query as evidence.
 	 */
 	public static enum AtomType {EVIDENCE, QUERY, NONE, QUEVID};
-	
+
 	/**
 	 * The predicate of this Atom.
 	 */
-	
+
 	public Predicate pred;
 	/**
 	 * The argument list represented as a tuple of integers:
 	 * constant as positive number and variable as negative number.
 	 */
 	public Tuple args = null;
-	
+
 	public ArrayList<String> sargs = null;
-	
+
 	/**
 	 * Truth value of this atom.
 	 */
 	public Boolean truth = null;
-	
+
 	/**
 	 * Probability of "soft evidence".
 	 */
 	public Double prior = null;
-	
+
 	/**
 	 * Type of this atom. Values are enumerated by {@link AtomType}.
 	 */
@@ -57,14 +57,14 @@ public class Atom {
 		default: return 0;
 		}
 	}
-	
+
 	/**
 	 * Test if this atom is soft evidence.
 	 */
 	public boolean isSoftEvidence(){
 		return prior != null;
 	}
-	
+
 	/**
 	 * Return the number of grounded atoms when grounding this atom.
 	 * This number equals to the multiplication of the domain size
@@ -73,7 +73,7 @@ public class Atom {
 	 */
 	public long groundSize(){
 		long size = 1;
-		
+
 		// ASSUMPTION OF DATA STRUCTURE: $\forall$ i<j, args.get(i) > args.get(j) if
 		// args.get(i), args.get(j) < 0. (i.e., naming new variables
 		// sequentially from left to right.
@@ -88,7 +88,7 @@ public class Atom {
 		}
 		return size;
 	}
-	
+
 	/**
 	 * Create an evidence atom.
 	 * @param p the predicate
@@ -98,7 +98,7 @@ public class Atom {
 	public Atom(Predicate p, ArrayList<Integer> as, boolean t){
 		pred = p;
 		args = new Tuple(as);
-		
+
 		truth = t;
 		type = AtomType.EVIDENCE;
 	}
@@ -117,16 +117,16 @@ public class Atom {
 		truth = t;
 		type = AtomType.EVIDENCE;
 	}
-	
-	
-	
+
+
+
 	/**
 	 * Create an atom of type NONE.
 	 * The default truth value of unknown is null.
-	 * 
+	 *
 	 * @param p the predicate
 	 * @param at the arguments in the form of a tuple
-	 * 
+	 *
 	 * @see tuffy.ground.KBMC#run()
 	 */
 	public Atom(Predicate p, Tuple at){
@@ -136,7 +136,7 @@ public class Atom {
 		truth = null;
 		type = AtomType.NONE;
 	}
-	
+
 	/**
 	 * Returns this atom's human-friendly string representation.
 	 */

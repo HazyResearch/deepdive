@@ -7,7 +7,7 @@ import org.deepdive.{Task, TaskManager}
 import org.scalatest._
 import scala.util.Success
 
-class TaskManagerSpec(_system: ActorSystem) extends TestKit(_system) 
+class TaskManagerSpec(_system: ActorSystem) extends TestKit(_system)
   with ImplicitSender with FunSpecLike {
 
   def this() = this(ActorSystem("TaskManagerSpec"))

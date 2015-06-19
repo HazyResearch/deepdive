@@ -18,17 +18,17 @@ trait MysqlInferenceRunnerComponent extends SQLInferenceRunnerComponent {
 
   // Do not define inferenceDatastore here, define it in the class with this trait.
   // Since we have to pass parameters there. May need to refactor.
-  
+
   class MysqlInferenceRunner(val dbSettings : DbSettings) extends SQLInferenceRunner with Logging with MysqlDataStoreComponent {
 
     // def ds : MysqlDataStore
-    
+
     // Default batch size, if not overwritten by user
     val BatchSize = Some(250000)
-    
+
     /**
-     * Internal utility to copy a file to a table. uses LOAD DATA INFILE 
-     * to retrieve the file in client-side rather than server-side. 
+     * Internal utility to copy a file to a table. uses LOAD DATA INFILE
+     * to retrieve the file in client-side rather than server-side.
      */
     private def copyFileToTable(filePath: String, tableName: String) : Unit = {
 
@@ -49,7 +49,7 @@ trait MysqlInferenceRunnerComponent extends SQLInferenceRunnerComponent {
       Helpers.executeCmd(tmpFile.getAbsolutePath())
       tmpFile.delete()
     }
-    
+
     /**
      * This function is called after sampler terminates.
      * It just copies weights from the sampler outputs into database.
@@ -86,56 +86,56 @@ trait MysqlInferenceRunnerComponent extends SQLInferenceRunnerComponent {
      * The view will be named to "NAME_sub".
      */
     private def createSubQueryForCalibrationViewMysql(name: String, bucketedView: String) =
-      s"""CREATE OR REPLACE VIEW ${name}_sub1 AS 
+      s"""CREATE OR REPLACE VIEW ${name}_sub1 AS
         SELECT bucket, COUNT(*) AS num_variables from ${bucketedView} GROUP BY bucket;
       """
 
     def createCalibrationViewBooleanSQL(name: String, bucketedView: String, columnName: String) = s"""
       ${createSubQueryForCalibrationViewMysql(name, bucketedView)}
-      CREATE OR REPLACE VIEW ${name}_sub2 AS SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
+      CREATE OR REPLACE VIEW ${name}_sub2 AS SELECT bucket, COUNT(*) AS num_correct from ${bucketedView}
           WHERE ${columnName}=true GROUP BY bucket;
-          
-      CREATE OR REPLACE VIEW ${name}_sub3 AS SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView} 
+
+      CREATE OR REPLACE VIEW ${name}_sub3 AS SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView}
           WHERE ${columnName}=false GROUP BY bucket;
-          
+
       CREATE OR REPLACE VIEW ${name} AS
         SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
         ${name}_sub1 b1
         LEFT JOIN ${name}_sub2 b2 ON b1.bucket = b2.bucket
-        LEFT JOIN ${name}_sub3 b3 ON b1.bucket = b3.bucket 
+        LEFT JOIN ${name}_sub3 b3 ON b1.bucket = b3.bucket
         ORDER BY b1.bucket ASC;
       """
 
     def createCalibrationViewMultinomialSQL(name: String, bucketedView: String, columnName: String) = s"""
       ${createSubQueryForCalibrationViewMysql(name, bucketedView)}
 
-      CREATE OR REPLACE VIEW ${name}_sub2 AS SELECT bucket, COUNT(*) AS num_correct from ${bucketedView} 
+      CREATE OR REPLACE VIEW ${name}_sub2 AS SELECT bucket, COUNT(*) AS num_correct from ${bucketedView}
         WHERE ${columnName} = category GROUP BY bucket;
-        
-      CREATE OR REPLACE VIEW ${name}_sub3 AS SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView} 
+
+      CREATE OR REPLACE VIEW ${name}_sub3 AS SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView}
         WHERE ${columnName} != category GROUP BY bucket;
-      
+
       CREATE OR REPLACE VIEW ${name} AS
       SELECT b1.bucket, b1.num_variables, b2.num_correct, b3.num_incorrect FROM
       ${name}_sub1 b1
       LEFT JOIN ${name}_sub2 b2 ON b1.bucket = b2.bucket
-      LEFT JOIN ${name}_sub3 b3 ON b1.bucket = b3.bucket 
+      LEFT JOIN ${name}_sub3 b3 ON b1.bucket = b3.bucket
       ORDER BY b1.bucket ASC;
       """
 
     /**
      * Dumb: mysql cannot drop index "if exists"...
      * We use 4 statements to implement that.
-     * 
+     *
      * Note: @exist will be NULL if the table do not exist, and "if" still branches into second.
      * Note: dbname must be provided to locate the index correctly
      */
     private def dropIndexIfExistsMysql(indexName: String, tableName: String): String = {
       s"""
-      set @exist := (select count(*) from information_schema.statistics 
-        where table_name = '${tableName}' and index_name = '${indexName}' 
+      set @exist := (select count(*) from information_schema.statistics
+        where table_name = '${tableName}' and index_name = '${indexName}'
         and TABLE_SCHEMA = '${dbSettings.dbname}');
-      set @sqlstmt := if( @exist > 0, 'drop index ${indexName} on ${tableName}', 
+      set @sqlstmt := if( @exist > 0, 'drop index ${indexName} on ${tableName}',
         'select ''"index ${indexName}" do not exist, skipping''');
       PREPARE stmt FROM @sqlstmt;
       EXECUTE stmt;
@@ -145,7 +145,7 @@ trait MysqlInferenceRunnerComponent extends SQLInferenceRunnerComponent {
     /**
      * Calibration is very slow in MySQL so we materialize it and create indexes
      */
-    override def createBucketedCalibrationViewSQL(name: String, 
+    override def createBucketedCalibrationViewSQL(name: String,
         inferenceViewName: String, buckets: List[Bucket]) = {
       val bucketCaseStatement = buckets.zipWithIndex.map {
         case (bucket, index) =>
@@ -153,42 +153,42 @@ trait MysqlInferenceRunnerComponent extends SQLInferenceRunnerComponent {
       }.mkString("\n")
       s"""
       DROP TABLE IF EXISTS ${name} CASCADE;
-      
+
       CREATE TABLE ${name} AS
       SELECT ${inferenceViewName}.*, CASE ${bucketCaseStatement} END bucket
       FROM ${inferenceViewName} ORDER BY bucket ASC;
-      
+
       CREATE INDEX ${name}_bucket_idx ON ${name}(bucket);
-      
+
       """
     }
 
     /**
-     * Inference view is very slow in MySQL so we create indexes on id, 
+     * Inference view is very slow in MySQL so we create indexes on id,
      * and materialize this table for future queries (e.g. calibration)
-     * 
+     *
      * Note: "CREATE INDEX ${indexName}" clause can only handle non-text/blob type columns.
      */
     override def createInferenceViewSQL(relationName: String, columnName: String) = {
       val indexName = s"${relationName}_id_idx"
       s"""
       DROP TABLE IF EXISTS ${relationName}_${columnName}_inference CASCADE;
-      
+
       ${dropIndexIfExistsMysql(indexName, relationName)}
-      
+
       CREATE INDEX ${indexName} ON ${relationName}(id);
-      
+
       CREATE TABLE ${relationName}_${columnName}_inference AS
       (SELECT ${relationName}.*, mir.category, mir.expectation FROM
       ${relationName}, ${VariableResultTable} mir
       WHERE ${relationName}.id = mir.id
       ORDER BY mir.expectation DESC);
-      
+
     """
     }
-    
-    /** 
-     *  Create indexes for query table to speed up grounding. (this is useful for MySQL) 
+
+    /**
+     *  Create indexes for query table to speed up grounding. (this is useful for MySQL)
      *  Behavior may varies depending on different DBMS.
      */
     def createIndexesForQueryTable(queryTable: String, weightVariables: Seq[String]) = {
@@ -197,7 +197,7 @@ trait MysqlInferenceRunnerComponent extends SQLInferenceRunnerComponent {
         val colType = checkColumnType(queryTable, v)
         if (colType.equals("text") || colType.equals("blob")) {
           // create a partial index
-          execute(s"CREATE INDEX ${queryTable}_${v}_idx ON ${queryTable}(${v}(255))") 
+          execute(s"CREATE INDEX ${queryTable}_${v}_idx ON ${queryTable}(${v}(255))")
         } else {
           execute(s"CREATE INDEX ${queryTable}_${v}_idx ON ${queryTable}(${v})")
         }

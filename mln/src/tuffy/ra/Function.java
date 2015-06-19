@@ -9,19 +9,19 @@ import tuffy.mln.Type;
 
 /**
  * Bool, numberic, and string functions; user-defined functions.
- * 
+ *
  * @author Feng Niu
  *
  */
 
 public class Function {
-	public static HashMap<String, Function> builtInMap = 
+	public static HashMap<String, Function> builtInMap =
 		new HashMap<String, Function>();
 
 	public static Function getBuiltInFunctionByName(String name){
 		return builtInMap.get(name);
 	}
-	
+
 	// atomic functions
 	public static Function ConstantNumber = null;
 	public static Function ConstantString = null;
@@ -43,30 +43,30 @@ public class Function {
 		VariableBinding.addArgument(Type.Generic);
 		builtInMap.put("_var", VariableBinding);
 	}
-	
-	
-	
+
+
+
 	// boolean functions
 	public static Function NOT = null;
 	public static Function OR = null;
 	public static Function AND = null;
-	
+
 	public static Function Eq = null;
 	public static Function Neq = null;
 	public static Function LessThan = null;
 	public static Function LessThanEq = null;
 	public static Function GreaterThan = null;
 	public static Function GreaterThanEq = null;
-	
+
 	public static Function StrContains = null;
 	public static Function StrStartsWith = null;
 	public static Function StrEndsWith = null;
-	
+
 	static{
 		Function f = null;
 
 		// logical operators
-		
+
 		f = new Function("NOT", Type.Bool);
 		f.isBuiltIn_ = true;
 		f.addArgument(Type.Bool);
@@ -89,10 +89,10 @@ public class Function {
 		builtInMap.put("AND", f);
 		f.isOperator_ = true;
 		AND = f;
-		
-		
+
+
 		// numeric bool functions
-		
+
 		f = new Function("_eq", Type.Bool);
 		f.isBuiltIn_ = true;
 		f.addArgument(Type.Generic);
@@ -101,7 +101,7 @@ public class Function {
 		builtInMap.put("=", f);
 		f.isOperator_ = true;
 		Eq = f;
-		
+
 		f = new Function("_neq", Type.Bool);
 		f.isBuiltIn_ = true;
 		f.addArgument(Type.Generic);
@@ -147,7 +147,7 @@ public class Function {
 		builtInMap.put(">=", f);
 		f.isOperator_ = true;
 		GreaterThanEq = f;
-		
+
 		// string bool functions
 
 		f = new Function("contains", Type.Bool);
@@ -171,8 +171,8 @@ public class Function {
 		builtInMap.put("endsWith", f);
 		StrEndsWith = f;
 	}
-	
-	
+
+
 	// math functions, unary
 	public static Function Sign = null;
 	public static Function Abs = null;
@@ -188,10 +188,10 @@ public class Function {
 	public static Function Tan = null;
 	public static Function Sqrt = null;
 	public static Function Factorial = null;
-	
+
 	static{
 		Function f = null;
-		
+
 		f = new Function("sign", Type.Integer);
 		f.isBuiltIn_ = true;
 		f.addArgument(Type.Float);
@@ -277,10 +277,10 @@ public class Function {
 		f.addArgument(Type.Float);
 		builtInMap.put(f.name_, f);
 		Factorial = f;
-		
+
 	}
-	
-	
+
+
 	// math functions, binary
 	public static Function Add = null;
 	public static Function Subtract = null;
@@ -295,7 +295,7 @@ public class Function {
 	public static Function BitNeg = null;
 	public static Function BitShiftLeft = null;
 	public static Function BitShiftRight = null;
-	
+
 	static{
 		Function f = null;
 		f = new Function("add", Type.Float);
@@ -412,11 +412,11 @@ public class Function {
 		builtInMap.put(">>", f);
 		f.isOperator_ = true;
 		BitShiftRight = f;
-		
+
 	}
-	
-	
-	
+
+
+
 	// string functions, unary
 	public static Function Length = null;
 	public static Function UpperCase = null;
@@ -427,7 +427,7 @@ public class Function {
 
 	static{
 		Function f = null;
-		
+
 		f = new Function("length", Type.Integer);
 		f.isBuiltIn_ = true;
 		f.addArgument(Type.String);
@@ -466,9 +466,9 @@ public class Function {
 		builtInMap.put(f.name_, f);
 		MD5 = f;
 	}
-	
-	
-	
+
+
+
 	// string functions, binary
 	public static Function Concat = null;
 	public static Function StrPos = null;
@@ -476,7 +476,7 @@ public class Function {
 
 	static{
 		Function f = null;
-		
+
 		f = new Function("concat", Type.String);
 		f.isBuiltIn_ = true;
 		f.addArgument(Type.String);
@@ -498,20 +498,20 @@ public class Function {
 		f.addArgument(Type.Integer);
 		builtInMap.put(f.name_, f);
 		Repeat = f;
-		
+
 	}
-	
-	
-	
+
+
+
 	// string functions, ternary
 	public static Function Substr = null;
 	public static Function Replace = null;
 	public static Function SplitPart = null;
 	public static Function RegexReplace = null;
-	
+
 	static{
 		Function f = null;
-		
+
 		f = new Function("substr", Type.String);
 		f.isBuiltIn_ = true;
 		f.addArgument(Type.String);
@@ -544,37 +544,37 @@ public class Function {
 		f.setPgFunction("regexp_replace");
 		builtInMap.put(f.name_, f);
 		RegexReplace = f;
-		
-	}
-	
 
-	
+	}
+
+
+
 	/**
 	 * Name of this function.
 	 */
 	private String name_;
 	private String pgfun_ = null;
-	
+
 	private boolean isOperator_ = false;
 	public boolean isOperator(){
 		return isOperator_;
 	}
-	
+
 	/**
-	 * List of argument types and return type of this function. 
+	 * List of argument types and return type of this function.
 	 */
 	private ArrayList<Type> argTypes_ = new ArrayList<Type>();
 	private Type retType_ = null;
-	
+
 	private boolean isBuiltIn_ = false;
-	
+
 	public boolean isBuiltIn(){
 		return isBuiltIn_;
 	}
-	
+
 	/**
 	 * Get the corresponding function name inside PgSQL.
-	 * 
+	 *
 	 */
 	public String getPgFunction(){
 		return pgfun_;
@@ -582,38 +582,38 @@ public class Function {
 
 	/**
 	 * Set the corresponding function name inside PgSQL.
-	 * 
+	 *
 	 */
 	public void setPgFunction(String fun){
 		pgfun_ = fun;
 	}
-	
+
 	public Function(String name, Type retType){
 		name_ = name;
 		retType_ = retType;
 		pgfun_ = name_;
 	}
-	
+
 	public void addArgument(Type type){
 		argTypes_.add(type);
 	}
-	
+
 	public int arity(){
 		return argTypes_.size();
 	}
-	
+
 	public String getName(){
 		return name_;
 	}
-	
+
 	/**
 	 * Get return type
-	 * 
+	 *
 	 */
 	public Type getRetType(){
 		return retType_;
 	}
-	
+
 	public List<Type> getArgTypes(){
 		return argTypes_;
 	}

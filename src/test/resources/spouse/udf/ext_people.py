@@ -7,7 +7,7 @@ ARR_DELIM = '~^~'
 
 # For each sentence
 for row in fileinput.input():
-  
+
   sentence_id, words_str, ner_tags_str = row.split('\t')
   words = words_str.split(ARR_DELIM)
   ner_tags = ner_tags_str.split(ARR_DELIM)
@@ -29,7 +29,7 @@ for row in fileinput.input():
   for phrase in phrases_indicies:
     print '\t'.join(
       [ str(x) for x in [
-        sentence_id, 
+        sentence_id,
         phrase[0],   # start_position
         len(phrase), # length
         " ".join(words[phrase[0]:phrase[-1]+1]),  # text

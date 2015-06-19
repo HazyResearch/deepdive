@@ -5,7 +5,7 @@ layout: default
 # Example Application: A Mention-Level Extraction System
 
 This document describes how to **build an application to extract mention-level
-marriage (`has_spouse`) relation between two people from text** in DeepDive. 
+marriage (`has_spouse`) relation between two people from text** in DeepDive.
 
 This document assumes you are familiar with basic concepts in DeepDive and in
 [Knowledge Base Construction](../../general/kbc.html). Please refer to other
@@ -26,11 +26,11 @@ relationships among companies.
 At a high level, we will go through the following steps:
 
 1. Data preprocessing and loading
-2. Candidate generation and Feature extraction: 
+2. Candidate generation and Feature extraction:
   - Extract mentions of people in the text
-  - Extract all candidate pairs of people that possibly participate in a 
-    `has_spouse` relation and prepare training data by 
-    [distant supervision](../../general/relation_extraction.html) 
+  - Extract all candidate pairs of people that possibly participate in a
+    `has_spouse` relation and prepare training data by
+    [distant supervision](../../general/relation_extraction.html)
     using an existing knowledge base
   - Add features to `has_spouse` candidates
 3. Generate the factor graph as specified by inference rules
@@ -40,7 +40,7 @@ At a high level, we will go through the following steps:
 We will use `tsv_extractors` for our
 extractors. A similar example application with implementations for the
 [different types of extractors](../extractors.html) is available under
-`$DEEPDIVE_HOME/examples/spouse_example`. 
+`$DEEPDIVE_HOME/examples/spouse_example`.
 -->
 
 This tutorial assumes that you [installed DeepDive](../installation.html). The
@@ -51,7 +51,7 @@ then your PostgreSQL server should already be running.
 
 The full application we develop in this and in the following section of the
 tutorial is also available in the directory
-`$DEEPDIVE_HOME/examples/tutorial_example`. 
+`$DEEPDIVE_HOME/examples/tutorial_example`.
 
 
 ### Contents
@@ -90,7 +90,7 @@ DeepDive's main entry point is the file `application.conf` which contains
 all information and configuration settings needed to run an application, e.g.,
 database connection information, extractor specification, inference rules,
 pipelines, and so on. A template `application.conf` is in
-`$DEEPDIVE_HOME/examples/template/application.conf` and must be copied 
+`$DEEPDIVE_HOME/examples/template/application.conf` and must be copied
 into `$APP_HOME`:
 
 ```
@@ -113,7 +113,7 @@ parameters that you should set according to your database settings. Finally, it
 contains the commands to actually run the application.
 
 In order to write the application, we need some data files, namely the input corpus of
-text and some existing knowledge base of interpersonal relationship. 
+text and some existing knowledge base of interpersonal relationship.
 **[Download the archive here](http://i.stanford.edu/hazy/deepdive-tutorial-data.zip)**.
 Expand the archive in the `$APP_HOME/data` directory. Specific steps:
 
@@ -197,7 +197,7 @@ the appendix.
 ### <a name="feature_extraction" href="#"></a> Step 2: Candidate Generation and Feature Extraction
 
 Our next task is to write several [extractors](../extractors.html) for candidate
-generation and feature extraction. 
+generation and feature extraction.
 
 In this step, we create three extractors whose UDFs are Python scripts. The
 scripts will will go through the sentences in the corpus and, respectively:
@@ -255,7 +255,7 @@ deepdive {
         DELETE FROM has_spouse_features;
         """
     }
-    
+
     # Extractor 2: extract people mentions:
     ext_people {
       # The style of the extractor
@@ -276,8 +276,8 @@ deepdive {
       dependencies: ["ext_clear_table"]
     }
     # ... (more extractors to add here)
-  } 
-  ...   
+  }
+  ...
 }
 ```
 
@@ -426,7 +426,7 @@ is hard to find ground truth on whether two mentions participate in `has_spouse`
 relation. Therefore, we use [distant
 supervision](../../general/distant_supervision.html) rules that generate
 mention-level training data by heuristically mapping them to known entity-level
-relations in an existing knowledge base.  
+relations in an existing knowledge base.
 
 The extractor we are now going to write takes all mentions of people in a
 sentence, and insert each pair of them into the table `has_spouse`, while also
@@ -543,7 +543,7 @@ include a TSV file in `data/non-spouses.tsv` containing such relations sampled
 from Freebase, which should have been downloaded in the archive.
 
 2. A pair of the same person is a negative example of `has_spouse` relations,
-e.g., "Barack Obama" cannot be married to "Barack Obama". 
+e.g., "Barack Obama" cannot be married to "Barack Obama".
 
 3. If the existing knowledge base of married couples (the `data/spouses.tsv`
 file) contains the fact that person A is married to person B and person C is
@@ -598,12 +598,12 @@ for row in sys.stdin:
   p1_text_lower = p1_text.lower()
   p2_text_lower = p2_text.lower()
 
-  # DS rule 1: true if they appear in spouse KB, 
+  # DS rule 1: true if they appear in spouse KB,
   is_true = '\N'
   if (p1_text_lower, p2_text_lower) in spouses or \
      (p2_text_lower, p1_text_lower) in spouses:
     is_true = '1'
-  # DS rule 2: false if they appear in non-spouse KB    
+  # DS rule 2: false if they appear in non-spouse KB
   elif (p1_text_lower, p2_text_lower) in non_spouses or \
        (p2_text_lower, p1_text_lower) in non_spouses:
     is_true = '0'
@@ -616,7 +616,7 @@ for row in sys.stdin:
 
   # Output relation candidates into output table
   print '\t'.join([
-    p1_id, p2_id, sentence_id, 
+    p1_id, p2_id, sentence_id,
     "%s-%s" %(p1_text, p2_text),
     is_true,
     "%s-%s" %(p1_id, p2_id),
@@ -642,7 +642,7 @@ The results will look like the following:
 
      person1_id  | person2_id  | sentence_id |         description         | is_true |       relation_id       |  id
     -------------+-------------+-------------+-----------------------------+---------+-------------------------+-------
-     118238@10_7 | 118238@10_1 | 118238@10   | Michelle Obama-Barack Obama | t       | 118238@10_7-118238@10_1 | 
+     118238@10_7 | 118238@10_1 | 118238@10   | Michelle Obama-Barack Obama | t       | 118238@10_7-118238@10_1 |
 
 To check that your results are correct, you can count the number of tuples in
 the table:
@@ -670,11 +670,11 @@ relation. For now, we use intuitive features, but this will lead to low quality
 results which we will improve later. We now write an extractor that computes
 features from the relation candidates and the sentences they come from.
 
-The features we use are: 
+The features we use are:
 
 1. the bag of words between the two mentions;
 
-2. the number of words between two phases; 
+2. the number of words between two phases;
 
 3. whether the last word of the two persons' name (last name) is the same.
 
@@ -736,7 +736,7 @@ properly use `ddlib`.
 
 Create the script `udf/ext_has_spouse_features.py` with the following content:
 
-(a copy of this script is also available from 
+(a copy of this script is also available from
 `$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/udf/ext_has_spouse_features.py`)
 
 
@@ -751,10 +751,10 @@ ARR_DELIM = '~^~'
 # For each input tuple
 for row in sys.stdin:
   parts = row.strip().split('\t')
-  if len(parts) != 6: 
+  if len(parts) != 6:
     print >>sys.stderr, 'Failed to parse row:', row
     continue
-  
+
   # Get all fields from a row
   words = parts[0].split(ARR_DELIM)
   relation_id = parts[1]
@@ -766,7 +766,7 @@ for row in sys.stdin:
 
   # Features for this pair come in here
   features = set()
-  
+
   # Feature 1: Bag of words between the two phrases
   words_between = ddlib.tokens_between_spans(words, span1, span2)
   for word in words_between.elements:
@@ -781,12 +781,12 @@ for row in sys.stdin:
   if (last_word_left == last_word_right):
     features.add("potential_last_name_match")
 
-  for feature in features:  
+  for feature in features:
     print str(relation_id) + '\t' + feature
 ```
 
 As before, you can run the system by executing `run.sh` and check the output
-relation `has_spouse_features`: 
+relation `has_spouse_features`:
 
 ```bash
 ./run.sh
@@ -832,7 +832,7 @@ We want to predict the `is_true` column of the `has_spouse` table based on the
 features we have extracted, by assigning to each feature a weight that DeepDive
 will learn from the training data. This is one of the simplest inference rules
 one can write in DeepDive, as it does not involve any domain knowledge or
-relationship among different random variables. 
+relationship among different random variables.
 
 Add the following lines to your `application.conf`, in the `inference.factors` block:
 
@@ -894,17 +894,17 @@ holdout fraction defines how much of our training data we want to treat as
 testing data used to compare our predictions against. By default the holdout
 fraction is `0`, which means that we cannot evaluate the precision of our
 results. One may add a line `calibration.holdout_fraction: 0.25`
-to `application.conf` to holdout one quarter of the training data randomly, 
+to `application.conf` to holdout one quarter of the training data randomly,
 but in our application, we instead specify a custom holdout SQL query which selects
-the column `id` of some random rows from the `has_spouse` mention table and 
+the column `id` of some random rows from the `has_spouse` mention table and
 add them into the table `dd_graph_variables_holdout`.
 Let's add it to `application.conf`:
 
 ```bash
 calibration.holdout_query:"""
-    DROP TABLE IF EXISTS holdout_sentence_ids CASCADE; 
+    DROP TABLE IF EXISTS holdout_sentence_ids CASCADE;
 
-    CREATE TABLE holdout_sentence_ids AS 
+    CREATE TABLE holdout_sentence_ids AS
     SELECT sentence_id FROM sentences WHERE RANDOM() < 0.25;
 
     INSERT INTO dd_graph_variables_holdout(variable_id)
@@ -980,7 +980,7 @@ neously .
 ```
 
 We see that the results do not seem very good, but we will improve them in the
-next section.  
+next section.
 
 Before that, let us mention the fact that  DeepDive generates [calibration
 plots](../calibration.html) for all variables defined in the schema to help with
@@ -992,7 +992,7 @@ look something like this:
 
 The calibration plots contain useful information that help you to improve the
 quality of your predictions. For actionable advice about interpreting
-calibration plots, refer to the [calibration guide](../calibration.html). 
+calibration plots, refer to the [calibration guide](../calibration.html).
 
 In the [next section](walkthrough-improve.html), we will discuss several ways to
 analyze and improve the quality of our application.

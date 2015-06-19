@@ -18,7 +18,7 @@ public class ConfigLexer extends Lexer {
     // delegates
     // delegators
 
-    public ConfigLexer() {;} 
+    public ConfigLexer() {;}
     public ConfigLexer(CharStream input) {
         this(input, new RecognizerSharedState());
     }
@@ -36,7 +36,7 @@ public class ConfigLexer extends Lexer {
             // /scratch/leonn/workspace/tuffy/src/tuffy/parse/Config.g:11:6: ( '=' )
             // /scratch/leonn/workspace/tuffy/src/tuffy/parse/Config.g:11:8: '='
             {
-            match('='); 
+            match('=');
 
             }
 
@@ -91,7 +91,7 @@ public class ConfigLexer extends Lexer {
             // /scratch/leonn/workspace/tuffy/src/tuffy/parse/Config.g:27:10: ( '#' (~ ( '\\n' | '\\r' ) )* ( '\\r' )? '\\n' )
             // /scratch/leonn/workspace/tuffy/src/tuffy/parse/Config.g:27:11: '#' (~ ( '\\n' | '\\r' ) )* ( '\\r' )? '\\n'
             {
-            match('#'); 
+            match('#');
             // /scratch/leonn/workspace/tuffy/src/tuffy/parse/Config.g:27:15: (~ ( '\\n' | '\\r' ) )*
             loop1:
             do {
@@ -136,14 +136,14 @@ public class ConfigLexer extends Lexer {
                 case 1 :
                     // /scratch/leonn/workspace/tuffy/src/tuffy/parse/Config.g:27:29: '\\r'
                     {
-                    match('\r'); 
+                    match('\r');
 
                     }
                     break;
 
             }
 
-            match('\n'); 
+            match('\n');
 
             }
 
@@ -324,28 +324,28 @@ public class ConfigLexer extends Lexer {
             case 1 :
                 // /scratch/leonn/workspace/tuffy/src/tuffy/parse/Config.g:1:10: T__7
                 {
-                mT__7(); 
+                mT__7();
 
                 }
                 break;
             case 2 :
                 // /scratch/leonn/workspace/tuffy/src/tuffy/parse/Config.g:1:15: WS
                 {
-                mWS(); 
+                mWS();
 
                 }
                 break;
             case 3 :
                 // /scratch/leonn/workspace/tuffy/src/tuffy/parse/Config.g:1:18: COMMENT
                 {
-                mCOMMENT(); 
+                mCOMMENT();
 
                 }
                 break;
             case 4 :
                 // /scratch/leonn/workspace/tuffy/src/tuffy/parse/Config.g:1:26: SPAN
                 {
-                mSPAN(); 
+                mSPAN();
 
                 }
                 break;
@@ -355,6 +355,6 @@ public class ConfigLexer extends Lexer {
     }
 
 
- 
+
 
 }

@@ -36,7 +36,7 @@ are in the 'Using Dictionaries' section below.
 
 The generic feature library creates wo different sets of features for mentions
 and relations, due to the different nature of these objects, and to which
-features are more relevant for each type. 
+features are more relevant for each type.
 
 There are various "classes" of generic features, which can be distinguished by
 their prefix.
@@ -47,7 +47,7 @@ The list of generic features for a *mention* is the following:
 	`POS_SEQ`);
 - The set of Named Entity Recognition tag(s) of the word(s) composing the
 	mention (`NER_SEQ`);
-- The set of lemmas of the word(s) composing the mention (`LEMMA_SEQ`); 
+- The set of lemmas of the word(s) composing the mention (`LEMMA_SEQ`);
 - The set of word(s) composing the mention (`WORD_SEQ`);
 - The (sum of the) length(s) of the word(s) composing the mention (`LENGTH`);
 - A feature denoting whether the first word of the mention starts with a capital
@@ -115,7 +115,7 @@ environmental variable in order to be able to use `ddlib`.
 As explained in the introduction of this document, the user may optionally
 specify one or more dictionaries of keywords that are used to create generic
 features and can be seen as a way to incorporate domain-/application-specific
-knowledge to the set of generic features. 
+knowledge to the set of generic features.
 
 Dictionaries are seen as sets of keywords that are mapped to a dictionary
 identifier. All keywords in a dictionary are mapped to the same dictionary
@@ -185,7 +185,7 @@ two `ddlib.Span` objects representing mentions composing the relation.
 We remark that `ddlib.get_generic_featurse_mention` and
 `ddlib.get_generic_features_relation` are [Python
 generators](https://wiki.python.org/moin/Generators), so they should be used
-in a loop. 
+in a loop.
 
 Moreover, the generators may yield multiple copies of the same feature (e.g., if
 a word appears twice between two mentions in a relation, the feature

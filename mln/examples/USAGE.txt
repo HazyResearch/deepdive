@@ -3,7 +3,7 @@ This folder contains several sample MLNs. We are thankful to Andrew McCallum and
 1. SMOKE.
 The famous SMOKING toy problem. Note that according to this program, the friendship closure of any smoker will all smoke and get cancer!
 
-2. CSE. 
+2. CSE.
 This is the UW-CSE dataset/program available at http://alchemy.cs.washington.edu/mlns/uw-cse/. The weights are learned using Alchemy.
 
 3. IE.

@@ -68,7 +68,7 @@ psql -p $PGPORT -h $PGHOST $DBNAME -c """
 ;"""
 
 psql -p $PGPORT -h $PGHOST $DBNAME -c """
-    INSERT INTO friends(person_id, friend_id) VALUES 
+    INSERT INTO friends(person_id, friend_id) VALUES
         (1, 2), (2, 1),
         (1, 3), (3, 1),
         (1, 4), (4, 1),

@@ -10,7 +10,7 @@
 #            o: alternative outside tag (default is O)
 # note:      the file should contain lines with items separated
 #            by $delimiter characters (default space). The final
-#            two items should contain the correct tag and the 
+#            two items should contain the correct tag and the
 #            guessed tag in that order. Sentences should be
 #            separated from each other by empty lines or lines
 #            with $boundary fields (default -X-).
@@ -63,10 +63,10 @@ my @sortedTypes;          # sorted list of chunk type names
 while (@ARGV and $ARGV[0] =~ /^-/) {
    if ($ARGV[0] eq "-l") { $latex = 1; shift(@ARGV); }
    elsif ($ARGV[0] eq "-r") { $raw = 1; shift(@ARGV); }
-   elsif ($ARGV[0] eq "-d") { 
-      shift(@ARGV); 
-      if (not defined $ARGV[0]) { 
-         die "conlleval: -d requires delimiter character"; 
+   elsif ($ARGV[0] eq "-d") {
+      shift(@ARGV);
+      if (not defined $ARGV[0]) {
+         die "conlleval: -d requires delimiter character";
       }
       $delimiter = shift(@ARGV);
    } elsif ($ARGV[0] eq "-o") {
@@ -88,18 +88,18 @@ while (<STDIN>) {
          $#features+1,$nbrOfFeatures+1;
       exit(1);
    }
-   if (@features == 0 or 
+   if (@features == 0 or
        $features[0] eq $boundary) { @features = ($boundary,"O","O"); }
-   if (@features < 2) { 
-      die "conlleval: unexpected number of features in line $line\n"; 
+   if (@features < 2) {
+      die "conlleval: unexpected number of features in line $line\n";
    }
    if ($raw) {
-      if ($features[$#features] eq $oTag) { $features[$#features] = "O"; } 
-      if ($features[$#features-1] eq $oTag) { $features[$#features-1] = "O"; } 
-      if ($features[$#features] ne "O") { 
+      if ($features[$#features] eq $oTag) { $features[$#features] = "O"; }
+      if ($features[$#features-1] eq $oTag) { $features[$#features-1] = "O"; }
+      if ($features[$#features] ne "O") {
          $features[$#features] = "B-$features[$#features]";
       }
-      if ($features[$#features-1] ne "O") { 
+      if ($features[$#features-1] ne "O") {
          $features[$#features-1] = "B-$features[$#features-1]";
       }
    }
@@ -107,17 +107,17 @@ while (<STDIN>) {
    if ($features[$#features] =~ /^([^-]*)-(.*)$/) {
       $guessed = $1;
       $guessedType = $2;
-   } else { 
-      $guessed = $features[$#features]; 
-      $guessedType = ""; 
+   } else {
+      $guessed = $features[$#features];
+      $guessedType = "";
    }
    pop(@features);
    if ($features[$#features] =~ /^([^-]*)-(.*)$/) {
       $correct = $1;
       $correctType = $2;
-   } else { 
-      $correct = $features[$#features]; 
-      $correctType = ""; 
+   } else {
+      $correct = $features[$#features];
+      $correctType = "";
    }
    pop(@features);
 #  ($guessed,$guessedType) = split(/-/,pop(@features));
@@ -137,33 +137,33 @@ while (<STDIN>) {
          $correctChunk++;
          $correctChunk{$lastCorrectType} = $correctChunk{$lastCorrectType} ?
              $correctChunk{$lastCorrectType}+1 : 1;
-      } elsif ( 
-           &endOfChunk($lastCorrect,$correct,$lastCorrectType,$correctType) != 
+      } elsif (
+           &endOfChunk($lastCorrect,$correct,$lastCorrectType,$correctType) !=
            &endOfChunk($lastGuessed,$guessed,$lastGuessedType,$guessedType) or
            $guessedType ne $correctType ) {
-         $inCorrect=$false; 
+         $inCorrect=$false;
       }
    }
 
-   if ( &startOfChunk($lastCorrect,$correct,$lastCorrectType,$correctType) and 
+   if ( &startOfChunk($lastCorrect,$correct,$lastCorrectType,$correctType) and
         &startOfChunk($lastGuessed,$guessed,$lastGuessedType,$guessedType) and
         $guessedType eq $correctType) { $inCorrect = $true; }
 
    if ( &startOfChunk($lastCorrect,$correct,$lastCorrectType,$correctType) ) {
-      $foundCorrect++; 
+      $foundCorrect++;
       $foundCorrect{$correctType} = $foundCorrect{$correctType} ?
           $foundCorrect{$correctType}+1 : 1;
    }
    if ( &startOfChunk($lastGuessed,$guessed,$lastGuessedType,$guessedType) ) {
-      $foundGuessed++; 
+      $foundGuessed++;
       $foundGuessed{$guessedType} = $foundGuessed{$guessedType} ?
           $foundGuessed{$guessedType}+1 : 1;
    }
-   if ( $firstItem ne $boundary ) { 
-      if ( $correct eq $guessed and $guessedType eq $correctType ) { 
-         $correctTags++; 
+   if ( $firstItem ne $boundary ) {
+      if ( $correct eq $guessed and $guessedType eq $correctType ) {
+         $correctTags++;
       }
-      $tokenCounter++; 
+      $tokenCounter++;
    }
 
    $lastGuessed = $guessed;
@@ -171,7 +171,7 @@ while (<STDIN>) {
    $lastGuessedType = $guessedType;
    $lastCorrectType = $correctType;
 }
-if ($inCorrect) { 
+if ($inCorrect) {
    $correctChunk++;
    $correctChunk{$lastCorrectType} = $correctChunk{$lastCorrectType} ?
        $correctChunk{$lastCorrectType}+1 : 1;
@@ -183,7 +183,7 @@ if (not $latex) {
    $recall = 100*$correctChunk/$foundCorrect if ($foundCorrect > 0);
    $FB1 = 2*$precision*$recall/($precision+$recall)
       if ($precision+$recall > 0);
-   
+
    # print overall performance
    if ($tokenCounter>0) {
       printf "%f",$FB1;
@@ -194,7 +194,7 @@ if (not $latex) {
 undef($lastType);
 @sortedTypes = ();
 foreach $i (sort (keys %foundCorrect,keys %foundGuessed)) {
-   if (not($lastType) or $lastType ne $i) { 
+   if (not($lastType) or $lastType ne $i) {
       push(@sortedTypes,($i));
    }
    $lastType = $i;
@@ -254,15 +254,15 @@ sub endOfChunk {
    if ( $prevTag eq "E" and $tag eq "O" ) { $chunkEnd = $true; }
    if ( $prevTag eq "I" and $tag eq "O" ) { $chunkEnd = $true; }
 
-   if ($prevTag ne "O" and $prevTag ne "." and $prevType ne $type) { 
-      $chunkEnd = $true; 
+   if ($prevTag ne "O" and $prevTag ne "." and $prevType ne $type) {
+      $chunkEnd = $true;
    }
 
    # corrected 1998-12-22: these chunks are assumed to have length 1
    if ( $prevTag eq "]" ) { $chunkEnd = $true; }
    if ( $prevTag eq "[" ) { $chunkEnd = $true; }
 
-   return($chunkEnd);   
+   return($chunkEnd);
 }
 
 # startOfChunk: checks if a chunk started between the previous and current word
@@ -288,13 +288,13 @@ sub startOfChunk {
    if ( $prevTag eq "O" and $tag eq "E" ) { $chunkStart = $true; }
    if ( $prevTag eq "O" and $tag eq "I" ) { $chunkStart = $true; }
 
-   if ($tag ne "O" and $tag ne "." and $prevType ne $type) { 
-      $chunkStart = $true; 
+   if ($tag ne "O" and $tag ne "." and $prevType ne $type) {
+      $chunkStart = $true;
    }
 
    # corrected 1998-12-22: these chunks are assumed to have length 1
    if ( $tag eq "[" ) { $chunkStart = $true; }
    if ( $tag eq "]" ) { $chunkStart = $true; }
 
-   return($chunkStart);   
+   return($chunkStart);
 }

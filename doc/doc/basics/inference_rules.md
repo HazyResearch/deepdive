@@ -20,7 +20,7 @@ consists of three components:
 
 - The **factor weight** describes the confidence in the relationship expressed
   by the factor. This is used during probabilistic inference. Weights can be
-  constants, or automatically learned based on training data. 
+  constants, or automatically learned based on training data.
 
 The following is an example of an inference rule:
 
@@ -72,7 +72,7 @@ There are a number of caveats when writing input queries for factors:
 - The query result **must** contain all variable attributes that are used in your
   factor function. For example, if you are using the `has_cancer.is_true`
   variable in the factor function, then an attribute called `has_cancer.is_true`
-  must be part of the query result. 
+  must be part of the query result.
 
 - Always use `[relation_name].[attribute]` to refer to the variables in the
 factor function, regardless whether or not you are using an alias in your input
@@ -149,7 +149,7 @@ example, `Imply(B, C, A)` means "if B and C, then A".
     someFactor {
       function: "Imply(smokes.is_true, has_cancer.is_true)"
     }
-    
+
     # Evaluates to true, when has_cancer.is_true is true
     someFactor {
       function: "IsTrue(has_cancer.is_true)"
@@ -181,10 +181,10 @@ weight depending on the variable value.
 ```bash
 # Known weight (10 can be treated as positive infinite)
 someFactor.weight: 10
-    
+
 # Learn the weight, not depending on any variables. All factors created by this rule will have the same weight.
 someFactor.weight: ?
-    
+
 # Learn the weight. Each factor will get a different weight depending on the value of people.gender
 someFactor.weight: ?(people.gender)
 ```

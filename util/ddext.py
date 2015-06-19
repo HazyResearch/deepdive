@@ -29,7 +29,7 @@ def input(name, datatype):
   global _input_names, _input_types
   if name in _input_names:
     raise RuntimeError('Input variable',name,'is added multiple times!')
-    
+
   _input_names.append(name)
   _input_types.append(datatype)
 
@@ -37,7 +37,7 @@ def returns(name, datatype):
   global _return_names, _return_types
   if name in _return_names:
     raise RuntimeError('Return variable',name,'is added multiple times!')
-    
+
   _return_names.append(name)
   _return_types.append(datatype)
 
@@ -63,7 +63,7 @@ def _match_function(code, function_name):
 # 1. def must be in a single line
 def parse(ext_code, ext_name):
   # Match till the end
-  
+
   global _run_func_content, _init_func_content
   global _ext_name
   _run_func_content = _match_function(ext_code, 'run')
@@ -113,12 +113,12 @@ def make_pg_func():
   ret += 'DROP TYPE IF EXISTS ' + ret_type_name + ' CASCADE;\n'
   ret += 'CREATE TYPE ' + ret_type_name + ' AS (' \
     + ', '.join([ _return_names[i] + ' ' \
-    + _return_types[i] 
+    + _return_types[i]
     # + ' []'   # previous version
     for i in range(len(_return_names))]) \
     + ');\n'
 
-  
+
   # Create the function.
   ret += 'CREATE OR REPLACE FUNCTION ' + func_name + '''(
     ''' + ', '.join([ _input_names[i] + ' ' \
@@ -139,9 +139,9 @@ def make_pg_func():
 
 
     ret += """
-if '"""+ varname +"""' in SD: 
+if '"""+ varname +"""' in SD:
   """+ varname +""" = SD['"""+ varname +"""']
-else: 
+else:
   """+ from_str + """import """+ libname + as_str +"""
   SD['"""+ varname +"""'] = """+ varname + '\n'
 

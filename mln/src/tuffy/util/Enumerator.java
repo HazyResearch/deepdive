@@ -9,7 +9,7 @@ public class Enumerator {
 
 	int[] upperBounds;
 	int[] currentState;
-	
+
 	/**
 	 * Enumerate 2**n worlds.
 	 * @param n
@@ -23,20 +23,20 @@ public class Enumerator {
 		}
 		currentState[0] = -1;
 	}
-	
-	
+
+
 	public void clear(){
 		for(int i=0;i<currentState.length;i++){
 			currentState[i] = 0;
 		}
 		currentState[0] = -1;
 	}
-	
+
 	public int[] next(){
-		
+
 		currentState[0] ++;
 		for(int i=0;i<currentState.length;i++){
-			
+
 			if(currentState[i] == upperBounds[i]){
 				currentState[i] = 0;
 				if(i+1 == currentState.length){
@@ -47,12 +47,12 @@ public class Enumerator {
 			}else{
 				return currentState;
 			}
-			
+
 		}
 		return null;
-		
+
 	}
-	
-	
-	
+
+
+
 }

@@ -24,10 +24,10 @@ for line in lines:
 # For each input tuple
 for row in sys.stdin:
   parts = row.strip().split('\t')
-  if len(parts) != 5: 
+  if len(parts) != 5:
     print >>sys.stderr, 'Failed to parse row:', row
     continue
-  
+
   sentence_id, p1_id, p1_text, p2_id, p2_text = parts
 
   p1_text = p1_text.strip()
@@ -50,7 +50,7 @@ for row in sys.stdin:
     is_true = '0'
 
   print '\t'.join([
-    p1_id, p2_id, sentence_id, 
+    p1_id, p2_id, sentence_id,
     "%s-%s" %(p1_text, p2_text),
     is_true,
     "%s-%s" %(p1_id, p2_id),

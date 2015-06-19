@@ -17,7 +17,7 @@ application"](writing.html) document or to the
 applications.
 
 
-## Running 
+## Running
 
 Running an application is as simple as running
 
@@ -41,7 +41,7 @@ As an example we now show how to run  the built-in 'spouse_example' application.
 This example uses a news articles dataset. The articles are in plain text
 format. The goal of the application is to extract spouse relationships between
 individuals from the raw text of the articles. In other words, we want DeepDive
-to compute information that can help us determining who is married to who.  
+to compute information that can help us determining who is married to who.
 
 In the remainder of the document we denote the DeepDive installation directory
 as 'DEEPDIVE_HOME'.
@@ -86,15 +86,15 @@ execution completes with success, the output will look like the following:
     13:05:28 [taskManager] INFO  1/1 tasks eligible.
     13:05:28 [taskManager] INFO  Tasks not_eligible: Set()
     [success] Total time: 103 s, completed Jun 23, 2014 1:05:28 PM
-	
+
 ## <a name="results" href="#"></a> Results
 
 DeepDive stores all the results in the application database. For our example
-application, this is the 'deepdive_spouse_default' database. 
+application, this is the 'deepdive_spouse_default' database.
 
 For each query variable, DeepDive generates a view called
 `[TABLE]_[VARIABLE_NAME]_inference`, which contains the original data, augmented
-with a `expectation` column, which is the result of the inference step. 
+with a `expectation` column, which is the result of the inference step.
 
 For example, the `has_spouse_is_true_inference` has the
 following schema:
@@ -128,9 +128,9 @@ psql -d deepdive_spouse_default -c "
 
 The output is formatted as 'person1-person2' like in the following example:
 
-  description   | expectation 
+  description   | expectation
 ----------------+-------------
- Obama-Michelle |       0.982 
+ Obama-Michelle |       0.982
 
 This means that 'Obama' is married to 'Michelle' with probability of 0.982.
 
@@ -151,9 +151,9 @@ rules are active and should be executed. This is useful for debugging purposes.
 You can define custom pipelines by adding the following configuration directives:
 
 ```bash
-	deepdive { 
-  	  pipeline.run: myPipeline 
-	  pipeline.pipelines { myPipeline: [ extractor1 extractor2 inferenceRule1 ] } 
+	deepdive {
+  	  pipeline.run: myPipeline
+	  pipeline.pipelines { myPipeline: [ extractor1 extractor2 inferenceRule1 ] }
 	}
 ```
 
@@ -161,16 +161,16 @@ Refer to the [configuration reference](configuration.html#pipelines) for details
 about the syntax of these directives.
 
 When the `pipeline.run` directive is not specified, DeepDive executes all
-extractors and inference rules. 
+extractors and inference rules.
 
 You can set `pipeline.relearn_from` to an output directory of a previous
 execution of DeepDive to use an existing factor graph for learning and
-inference: 
+inference:
 
     deepdive {
       pipeline.relearn_from: "/PATH/TO/DEEPDIVE/HOME/out/2014-05-02T131658/"
     }
-	
+
 In this case DeepDive would skip all extractors. This could be useful for tuning
 the sampler parameters.
 

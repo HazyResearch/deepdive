@@ -33,9 +33,9 @@ public class ConfigParser extends Parser {
         }
         public ConfigParser(TokenStream input, RecognizerSharedState state) {
             super(input, state);
-             
+
         }
-        
+
     protected TreeAdaptor adaptor = new CommonTreeAdaptor();
 
     public void setTreeAdaptor(TreeAdaptor adaptor) {
@@ -112,7 +112,7 @@ public class ConfigParser extends Parser {
                 cnt1++;
             } while (true);
 
-            EOF2=(Token)match(input,EOF,FOLLOW_EOF_in_config200); 
+            EOF2=(Token)match(input,EOF,FOLLOW_EOF_in_config200);
             EOF2_tree = (Object)adaptor.create(EOF2);
             adaptor.addChild(root_0, EOF2_tree);
 
@@ -164,21 +164,21 @@ public class ConfigParser extends Parser {
             {
             root_0 = (Object)adaptor.nil();
 
-            id=(Token)match(input,SPAN,FOLLOW_SPAN_in_state210); 
+            id=(Token)match(input,SPAN,FOLLOW_SPAN_in_state210);
             id_tree = (Object)adaptor.create(id);
             adaptor.addChild(root_0, id_tree);
 
-            char_literal3=(Token)match(input,7,FOLLOW_7_in_state212); 
+            char_literal3=(Token)match(input,7,FOLLOW_7_in_state212);
             char_literal3_tree = (Object)adaptor.create(char_literal3);
             adaptor.addChild(root_0, char_literal3_tree);
 
-            value=(Token)match(input,SPAN,FOLLOW_SPAN_in_state216); 
+            value=(Token)match(input,SPAN,FOLLOW_SPAN_in_state216);
             value_tree = (Object)adaptor.create(value);
             adaptor.addChild(root_0, value_tree);
 
 
                       map.put((id!=null?id.getText():null), (value!=null?value.getText():null));
-                  
+
 
             }
 
@@ -203,7 +203,7 @@ public class ConfigParser extends Parser {
     // Delegated rules
 
 
- 
+
 
     public static final BitSet FOLLOW_state_in_config196 = new BitSet(new long[]{0x0000000000000040L});
     public static final BitSet FOLLOW_EOF_in_config200 = new BitSet(new long[]{0x0000000000000002L});

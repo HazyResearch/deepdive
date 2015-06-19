@@ -89,19 +89,19 @@ DeepDive source tree includes several git submodules and ports:
 * To build the DDlog compiler from source and place the jar under `util/`, run:
 
     ```bash
-    make build-ddlog 
+    make build-ddlog
     ```
 
 * To build the sampler from source and replace the binaries, run:
 
     ```bash
-    make build-sampler 
+    make build-sampler
     ```
 
 * To build the Mindbender toolchain from source and place the binary under `util/`, run:
 
     ```bash
-    make build-mindbender 
+    make build-mindbender
     ```
 
 All commands shown above should be run from the top of the source tree.

@@ -24,10 +24,10 @@ import tuffy.parse.ConfigParser;
  * Container of user-interface utilities.
  */
 public class UIMan {
-	
+
 	protected static boolean silent = false;
 	protected static boolean silentErr = false;
-	
+
 	public static boolean isSilent() {
 		return silent;
 	}
@@ -35,15 +35,15 @@ public class UIMan {
 	public static boolean isSilentErr() {
 		return silentErr;
 	}
-	
+
 	public synchronized static void setSilentErr(boolean v){
 		silentErr = v;
 	}
-	
+
 	public synchronized static void setSilent(boolean v){
 		silent = v;
 	}
-	
+
 	public synchronized static void println(String... strings){
 		if(silent) return;
 		if(Config.console_line_header != null){
@@ -56,7 +56,7 @@ public class UIMan {
 		System.out.println();
 		writeToDribbleFile("\n");
 	}
-	
+
 	public synchronized static void print(String... strings){
 		if(silent) return;
 		for(String s : strings){
@@ -64,7 +64,7 @@ public class UIMan {
 			writeToDribbleFile(s);
 		}
 	}
-	
+
 	public synchronized static void warn(String... strings){
 		if(silentErr) return;
 		System.err.print("WARNING: ");
@@ -89,10 +89,10 @@ public class UIMan {
 
 
     private static PrintStream dribbleStream = null;
-    public static String dribbleFileName = null; 
+    public static String dribbleFileName = null;
 
     public synchronized static void writeToDribbleFile(String str) {
-        if (dribbleStream != null) { 
+        if (dribbleStream != null) {
         	dribbleStream.print(str);
         }
     }
@@ -103,7 +103,7 @@ public class UIMan {
         dribbleStream.close();
         dribbleStream = null;
     }
-    
+
     public synchronized static void createDribbleFile(String fileName) {
         closeDribbleFile();
         try {
@@ -117,20 +117,20 @@ public class UIMan {
     }
 
     public static String comma(int value) { // Always use separators (e.g., "100,000").
-        return String.format("%,d", value);        
-    }    
-    public static String comma(long value) {
-        return String.format("%,d", value);        
-    }   
-    public static String comma(double value) {
-        return String.format("%,.3f", value);        
+        return String.format("%,d", value);
     }
-    
-    
+    public static String comma(long value) {
+        return String.format("%,d", value);
+    }
+    public static String comma(double value) {
+        return String.format("%,.3f", value);
+    }
+
+
 	public static String decimalRound(int digits, double num){
 		return String.format("%." + digits + "f", num);
 	}
-	
+
 	public static CommandOptions processOptions(CommandOptions opt){
 
 		if(opt.pathConf != null){
@@ -140,27 +140,27 @@ public class UIMan {
 		Config.learning_mode = opt.isDLearningMode;
 
 		Config.evidDBSchema = opt.evidDBSchema;
-				
+
 		UIMan.parseConfigFile(Config.path_conf);
-		
+
 		Config.using_greenplum = opt.gp;
 		Config.innerPara = opt.innerPara;
-		
+
 		Config.constants_as_raw_string = opt.constantAsRawString;
-		
+
 		Config.soft_evidence_activation_threshold = opt.softT;
-		
+
 		Config.snapshot_mode = opt.snapshot;
-		
+
 		Config.mcsat_sample_para = opt.mcsatPara;
 		Config.avoid_breaking_hard_clauses = opt.avoidBreakingHardClauses;
 		Config.output_prolog_format = opt.outputProlog;
-		
+
 		Config.max_threads = opt.maxThreads;
 		//Config.use_atom_blocking = opt.block;
-		
+
 		Config.dbNeedTranslate = opt.dbNeedTranslate;
-		
+
 		Config.disable_partition = opt.disablePartition;
 		Config.output_files_in_gzip = opt.outputGz;
 		if(Config.output_files_in_gzip && !opt.fout.toLowerCase().endsWith(".gz")){
@@ -179,20 +179,20 @@ public class UIMan {
 		Config.dir_out = FileMan.getParentDir(opt.fout);
 		Config.file_stats = opt.fout + ".stats";
 		//Config.file_stats = Config.dir_out + "/tuffy_stats.txt";
-		
+
 		/*
 		if(opt.reportingFreq > 0 && opt.marginal == false){
 			Config.num_tries_per_periodic_flush = opt.reportingFreq;
 		}
-		
+
 		*/
 		Config.mark_all_atoms_active = opt.activateAllAtoms;
 		Config.keep_db_data = opt.keepData;
-		
+
 		Config.console_line_header = opt.consoleLineHeader;
-		
+
 		Config.no_pushdown = opt.noPushDown;
-		
+
 		if(opt.fDribble != null){
 			createDribbleFile(opt.fDribble);
 		}
@@ -203,7 +203,7 @@ public class UIMan {
 		}
 
 		Config.verbose_level = opt.verboseLevel;
-		
+
 		///////SGD & MLE
 		Config.mle_gibbs_mcmc_steps = opt.mle_gibbs_thinning;
 		Config.mle_use_gibbs_sampling = opt.mle_use_gibbs;
@@ -212,17 +212,17 @@ public class UIMan {
 		Config.mle_partition_components = opt.mle_part_component;
 		Config.mle_use_mcsat_sampling = opt.mle_use_mcsat;
 		Config.mle_optimize_small_components = opt.mle_optimize_small_component;
-		
+
 		Config.samplesat_sa_coef = opt.samplesat_sa_coef;
 		Config.walksat_random_step_probability = opt.random_step;
-		
+
 		if(opt.mle_serialmix != -1){
 			Config.mle_use_serialmix_sampling = true;
 			Config.mle_serialmix_constant = opt.mle_serialmix;
 		}
-		
+
 		Config.mle_use_junction_tree = opt.mle_use_junction_tree;
-		
+
 		if(opt.sampleLog){
 			try {
 				Config.sampleLog = new PrintWriter(
@@ -233,10 +233,10 @@ public class UIMan {
 				e.printStackTrace();
 			}
 		}
-		
+
 		return opt;
 	}
-	
+
 	public static CommandOptions parseCommand(String[] args){
 		CommandOptions opt = new CommandOptions();
 		CmdLineParser parser = new CmdLineParser(opt);
@@ -280,14 +280,14 @@ public class UIMan {
 			}
 			Hashtable<String, String> map = parser.map;
 			String value;
-			
+
 			value = map.get("db_url");
 			if(value == null){
 				ExceptionMan.die("missing db_url in config file " + fconf);
 			}else{
 				Config.db_url = value.trim();
 			}
-	
+
 			value = map.get("db_username");
 			if(value == null){
 				//Config.db_username = "tuffer";
@@ -295,7 +295,7 @@ public class UIMan {
 			}else{
 				Config.db_username = value.trim();
 			}
-	
+
 			value = map.get("db_password");
 			if(value == null){
 				//Config.db_password = "tuffer";
@@ -308,22 +308,22 @@ public class UIMan {
 			if(value != null){
 				Config.dir_working = value.trim().replace('\\', '/');
 			}
-						
+
 			String pid = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
 			String user = System.getProperty("user.name").toLowerCase().replaceAll("\\W", "_");
 			String machine = java.net.InetAddress.getLocalHost().getHostName().toLowerCase().replaceAll("\\W", "_");
-			
+
 			String prod = Config.product_line;
 			Config.dir_working += "/" + prod + "_" + machine + "_" + user + "_" + pid;
-			
+
 			if(Config.evidDBSchema == null){
 				Config.db_schema = prod + "_" + machine + "_" + user + "_" + pid;
 			}else{
 				Config.db_schema = Config.evidDBSchema;
 			}
-			
+
 			String curDir = System.getProperty("user.dir");
-			
+
 			println("Database schema     = " + Config.db_schema);
 			println("Current directory   = " + curDir);
 			println("Temporary directory = " + Config.dir_working);
@@ -341,18 +341,18 @@ public class UIMan {
 			println(s);
 		}
 	}
-	
+
 
 	public synchronized static void verboseInline(int level, String s){
 		if(Config.verbose_level >= level){
 			print(s);
 		}
 	}
-	
-	
-	
-	
-	
-	
-	
+
+
+
+
+
+
+
 }

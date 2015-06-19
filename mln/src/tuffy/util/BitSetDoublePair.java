@@ -6,7 +6,7 @@ public class BitSetDoublePair implements Comparable{
 
 		public BitSet bitset;
 		public Double doub;
-		
+
 		public BitSetDoublePair(BitSet _bitset, Double _double){
 			bitset = _bitset;
 			doub = _double;
@@ -20,9 +20,9 @@ public class BitSetDoublePair implements Comparable{
 				return -1;
 			}
 		}
-		
+
 		public String toString(){
 			return doub + ": " + bitset;
 		}
-		
+
 	}

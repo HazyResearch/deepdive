@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os,sys   # needed by most
-import random   # random 
+import random   # random
 import yaml     # yaml parsing
 import pprint   # pretty print
 
@@ -14,7 +14,7 @@ wid = 1
 fout = open('feature_table.csv', 'w')
 for fid in ids:
   lines = open(dirbase + fid+'.features.txt').readlines()
-  for l in lines: 
+  for l in lines:
     vals = [b for b in l.strip().split('\t')]
     # print vals
     for sub in range(0, len(vals)):
@@ -28,7 +28,7 @@ fl1 = open('label1_table.csv', 'w')
 fl2 = open('label2_table.csv', 'w')
 for fid in ids:
   labels = [int(s) for s in open(dirbase + fid+'.labels.txt').readlines()]
-  for l in labels: 
+  for l in labels:
     l1 = False
     l2 = False
     if l == 1: l1 = True

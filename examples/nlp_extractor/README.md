@@ -25,7 +25,7 @@ You can create a table like this, to be the `output_relation`:
 
     CREATE TABLE sentences(
       document_id bigint,
-      sentence text, 
+      sentence text,
       words text[],
       lemma text[],
       pos_tags text[],

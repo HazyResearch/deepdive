@@ -19,7 +19,7 @@ public class FileMan {
 		long tid = Thread.currentThread().getId();
 		return Config.getLoadingDir() + File.pathSeparator + String.format("tmp.%5d.%5d", tid, fguid++);
 	}
-	
+
 	public static long getFileSize(String filename) {
 
 		File file = new File(filename);

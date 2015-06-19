@@ -8,44 +8,44 @@ import tuffy.util.StringMan;
  * A literal in first-order logic.
  */
 public class Literal implements Cloneable {
-	
+
 	/**
 	 * Predicate object associated with this literal.
 	 */
 	private Predicate pred;
-	
+
 	/**
 	 * The index of this literal in its parent clause.
 	 */
 	private int idx = -1;
-	
-	
+
+
 	/**
-	 * List of terms (variable/constant) contained in this literal. 
+	 * List of terms (variable/constant) contained in this literal.
 	 */
 	private ArrayList<Term> terms = new ArrayList<Term>();
-	
+
 	/**
 	 * The positive/negative value of this literal. Here the positive/negative
 	 * refers to that in Horn clause.
 	 */
 	private boolean sense;
-	
+
 	private boolean coversAllMaterializedTuples = false;
-	
+
 	/**
 	 * The tuple format of this literal. Need call {@link Literal#toTuple()} to make
 	 * this variable not null. This variable is not automatically maintained.
 	 * To obtain the most update to date version, you need to call {@link Literal#toTuple()}.
 	 */
 	private Tuple tuple = null;
-	
+
 	/**
 	 * The name set of all variables in this literal.
 	 */
 	private HashSet<String> vars = new HashSet<String>();
-	
-	
+
+
 	@SuppressWarnings("unchecked")
 	public Object clone() throws CloneNotSupportedException {
 
@@ -62,18 +62,18 @@ public class Literal implements Cloneable {
 	    return clone;
 
 	  }
-	
-	
+
+
 	/**
 	 * Return whether the predicate of this literal is a built-in predicate.
 	 */
 	public boolean isBuiltIn(){
 		return pred.isBuiltIn();
 	}
-	
+
 	/**
 	 * Constructor of Literal.
-	 * 
+	 *
 	 * @param predicate the predicate
 	 * @param sense true for a positive literal; false for a negative one
 	 */
@@ -88,7 +88,7 @@ public class Literal implements Cloneable {
 	public HashSet<String> getVars(){
 		return vars;
 	}
-	
+
 	/**
 	 * Return the predicate of this literal.
 	 */
@@ -112,39 +112,39 @@ public class Literal implements Cloneable {
 
 	/**
 	 * Assign an unique (within its parent clause) index to this literal.
-	 * 
+	 *
 	 * @param i the index
 	 * @see Clause#addLiteral(Literal)
 	 */
 	public void setIdx(int i) {
 		idx = i;
 	}
-	
+
 	///**
 	// * Clique of variables.
 	// * Used for the purpose of computing MGU.
-	// * 
+	// *
 	// * @see Literal#mostGeneralUnification(Tuple)
 	// */
-	
+
 	/**
-	 * Clique of variables. Here by clique, it means a set of 
+	 * Clique of variables. Here by clique, it means a set of
 	 * variables, plus a constant.
-	 * 
+	 *
 	 * @see Literal#mostGeneralUnification(Tuple)
 	 */
 	private class VarClique{
-		
+
 		/**
 		 * The set of variable names in this clique.
 		 */
 		HashSet<String> vars = new HashSet<String>();
-		
+
 		/**
 		 * The constant of this clique.
 		 */
 		Integer constant = null;
-		
+
 		/**
 		 * Add variable to this clique.
 		 * @param v the name of added variable.
@@ -152,7 +152,7 @@ public class Literal implements Cloneable {
 		public void addVar(String v) {
 			vars.add(v);
 		}
-		
+
 		/**
 		 * Set the constant of this clique. This is allowed when
 		 * 1) current constant is null; 2) current constant is
@@ -167,7 +167,7 @@ public class Literal implements Cloneable {
 			constant = con;
 			return true;
 		}
-		
+
 		/**
 		 * Merge a new clique with the current one. Here by merge,
 		 * it requires the constant of these two cliques should be
@@ -177,7 +177,7 @@ public class Literal implements Cloneable {
 		 * @return whether the intending swallow is allowed and succeeded.
 		 */
 		public boolean swallow(VarClique c) {
-			if(constant != null && c.constant != null 
+			if(constant != null && c.constant != null
 					&& constant != c.constant) {
 				return false;
 			}
@@ -188,12 +188,12 @@ public class Literal implements Cloneable {
 			return true;
 		}
 	}
-	
+
 	/**
 	 * Compute the most general unification (MGU) of two literals.
-	 * 
+	 *
 	 * @param atuple the literal (in the form of a tuple) to be unified
-	 * @return the MGU in the form of a mapping from 
+	 * @return the MGU in the form of a mapping from
 	 * variables to variables/constants
 	 */
 	public HashMap<String, Term> mostGeneralUnification(Tuple atuple){
@@ -269,7 +269,7 @@ public class Literal implements Cloneable {
 		}
 		return lmap;
 	}
-	
+
 	/**
 	 * Return the human-friendly representation of this literal.
 	 */
@@ -287,10 +287,10 @@ public class Literal implements Cloneable {
 		s += StringMan.commaListParen(a);
 		return s;
 	}
-	
+
 	/**
 	 * Append a new term to this literal.
-	 * 
+	 *
 	 * @param t the term to be appended
 	 */
 	public void appendTerm(Term t){
@@ -299,10 +299,10 @@ public class Literal implements Cloneable {
 			vars.add(t.var());
 		}
 	}
-	
+
 	/**
 	 * Convert this literal into a tuple. This will assign an internal ID for
-	 * variables obeying the syntax of class Tuple from Strings. 
+	 * variables obeying the syntax of class Tuple from Strings.
 	 */
 	public Tuple toTuple() {
 		if(tuple != null) return tuple;
@@ -328,7 +328,7 @@ public class Literal implements Cloneable {
 		tuple = new Tuple(tlist);
 		return tuple;
 	}
-	
+
 	/**
 	 * Compare a given literal with this one. By ``same'', it means
 	 * 1) predicate is same; 2) sense is same; 3) corresponding constant
@@ -354,10 +354,10 @@ public class Literal implements Cloneable {
 		}
 		return true;
 	}
-	
+
 	/**
 	 * Apply a substitution to this literal.
-	 * 
+	 *
 	 * @param vmap the substitution
 	 * @return the new literal
 	 */
@@ -378,10 +378,10 @@ public class Literal implements Cloneable {
 		}
 		return copy;
 	}
-	
+
 	/**
 	 * Convert this literal to an atom.
-	 * 
+	 *
 	 * @param type indicates if it's an evidence, a query, etc.
 	 */
 	public Atom toAtom(Atom.AtomType type){
@@ -389,14 +389,14 @@ public class Literal implements Cloneable {
 		a.type = type;
 		return a;
 	}
-	
+
 	/**
 	 * Flip the sense of this literal.
 	 */
 	public void flipSense(){
 		sense = !sense;
 	}
-	
+
 	/**
 	 * Return true if this is a positive literal. Here the positive/negative
 	 * refers to that in Horn clause.
@@ -404,10 +404,10 @@ public class Literal implements Cloneable {
 	public boolean getSense(){
 		return sense;
 	}
-	
+
 	/**
 	 * Set the sense of this literal.
-	 * 
+	 *
 	 * @param asense true if this is intended to be a positive literal
 	 */
 	public void setSense(boolean asense){

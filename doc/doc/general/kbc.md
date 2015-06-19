@@ -43,7 +43,7 @@ a list of the most important ones
   Freebase](http://www.freebase.com/m/02mjmr).
 
 - A **mention** is a reference to an entity, such as the word "Barack" in the
-  sentence "Barack and Michelle are married". 
+  sentence "Barack and Michelle are married".
 
 - **Mention-level data** are textual data with mentions of entities, such as
   sentences in web articles, e.g. sentences in New York Times articles.
@@ -131,12 +131,12 @@ figure, we only highlight step 1--3):
 In the example above:
 
 1. During data preprocessing, the sentence is processed into words, POS tags and
-named entity tags; 
+named entity tags;
 
 2. During feature extraction, DeepDive extracts (1) mentions of person and
 location, (2) candidate relations of `has_spouse`, and (3) `feature` of
 candidate relations (such as words between mentions).
 
 3. In factor graph generation, DeepDive use rules written by developers (like
-`inference_rule_1` above) to build a factor graph. 
+`inference_rule_1` above) to build a factor graph.
 

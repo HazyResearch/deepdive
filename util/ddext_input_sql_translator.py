@@ -29,7 +29,7 @@ def input(name, datatype):
   global _input_names, _input_types
   if name in _input_names:
     raise RuntimeError('Input variable',name,'is added multiple times!')
-    
+
   _input_names.append(name)
   _input_types.append(datatype)
 
@@ -37,7 +37,7 @@ def returns(name, datatype):
   global _return_names, _return_types
   if name in _return_names:
     raise RuntimeError('Return variable',name,'is added multiple times!')
-    
+
   _return_names.append(name)
   _return_types.append(datatype)
 
@@ -63,7 +63,7 @@ def _match_function(code, function_name):
 # 1. def must be in a single line
 def parse(ext_code, ext_name):
   # Match till the end
-  
+
   global _run_func_content, _init_func_content
   global _ext_name
   _run_func_content = _match_function(ext_code, 'run')
@@ -105,11 +105,11 @@ def make_insert_func(query, funcname, outputrel):
   ret += "INSERT INTO " + outputrel + "(" + \
     ', '.join(_return_names) + """)\nSELECT """
   ret += ', '.join([
-    # 'unnest(' + 
+    # 'unnest(' +
     """(__X.__COLUMN).""" + name
-     # + ')' 
+     # + ')'
     for name in _return_names])
-  
+
   # # HEURISTIC: First select--FIRST from is the select content we need
   # # MIGHT BE WRONG!!!
   # query = query.lstrip().rstrip(' \t\n;').lower()
@@ -117,12 +117,12 @@ def make_insert_func(query, funcname, outputrel):
   # # parts = query.rsplit('from', 2)
   # # FIRST from
   # # Python bug: canot accept maxsplit
-  # parts = query.split('from', 2) 
+  # parts = query.split('from', 2)
   # if len(parts) < 2: # Only select part
   #   print 'WARNING: No FROM clause. Parts:',len(parts)
   #   print parts
   #   rest_part = ''
-  # else: 
+  # else:
   #   rest_part = 'from'.join([''] + parts[1:])
   #   # print rest_part
   # subparts = parts[0].split('select', 2)
@@ -131,7 +131,7 @@ def make_insert_func(query, funcname, outputrel):
   #   print 'ERROR: SUBPARTS:', '\n\n'.join(subparts), len(subparts)
   #   raise RuntimeError('NO SELECT IN INPUT SQL!')
   # select_content = 'select'.join( subparts[1:] )
-  
+
   # if '"' in select_content:
   #   print >>sys.stderr, 'WARNING: quotation marks "" in input query might cause errors.'
 

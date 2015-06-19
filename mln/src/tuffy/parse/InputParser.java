@@ -15,11 +15,11 @@ import tuffy.util.ExceptionMan;
 
 public class InputParser {
 	MarkovLogicNetwork mln;
-	
+
 	public InputParser(MarkovLogicNetwork amln){
 		mln = amln;
 	}
-	
+
 	public void parseProgramFile(String fprog){
 		MLNParser parser = new MLNParser(getTokens(fprog));
 		parser.ml = this.mln;
@@ -64,7 +64,7 @@ public class InputParser {
 		}
 	}
 
-	
+
 	public void parseQueryFile(String fquery){
 		MLNParser parser = new MLNParser(getTokens(fquery));
 		parser.ml = this.mln;
@@ -75,7 +75,7 @@ public class InputParser {
 			ExceptionMan.handle(e);
 		}
 	}
-	
+
 	public void parseQueryCommaList(String queryAtoms){
 		CharStream input = new ANTLRStringStream(queryAtoms);
 		MLNLexer lexer = new MLNLexer(input);
@@ -89,7 +89,7 @@ public class InputParser {
 			ExceptionMan.handle(e);
 		}
 	}
-	
+
 	private CommonTokenStream getTokens(String fname){
 		try {
 			InputStream is;

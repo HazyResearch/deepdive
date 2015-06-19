@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # A lower-level script for compiling DDlog program and running it with DeepDive
 # Usage: run.sh DDLOG_FILE DDLOG_MODE PIPELINE [DEEPDIVE_ARG...]
-# 
+#
 # DDLOG_MODE is one of: --materialization or --incremental or --merge
-# 
+#
 # Not intended to be used directly by users.  Please use the higher-level scripts.
 set -eux
 

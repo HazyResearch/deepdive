@@ -6,15 +6,15 @@ Span = collections.namedtuple('Span', ['begin_word_id', 'length'])
 Sequence = collections.namedtuple('Sequence', ['is_inversed', 'elements'])
 DepEdge = collections.namedtuple('DepEdge', ['word1', 'word2', 'label', 'is_bottom_up'])
 
-def unpack_words(input_dict, character_offset_begin=None, character_offset_end=None, lemma=None, 
+def unpack_words(input_dict, character_offset_begin=None, character_offset_end=None, lemma=None,
 	pos=None, ner = None, words = None, dep_graph = None, dep_graph_parser = lambda x: x.split('\t')):
 	"""Return a list of Word objects representing a sentence
 	"""
 
 	array_character_offset_begin = input_dict[character_offset_begin] if character_offset_begin != None else ()
 	array_character_offset_end = input_dict[character_offset_end] if character_offset_end != None else ()
-	array_lemma = input_dict[lemma] if lemma != None else () 
-	array_pos = input_dict[pos] if pos != None else ()	
+	array_lemma = input_dict[lemma] if lemma != None else ()
+	array_pos = input_dict[pos] if pos != None else ()
 	array_ner = input_dict[ner] if ner != None else ()
 	array_words = input_dict[words] if words != None else ()
 	dep_graph = input_dict[dep_graph] if dep_graph != None else ()
@@ -26,7 +26,7 @@ def unpack_words(input_dict, character_offset_begin=None, character_offset_end=N
 		dep_tree[child] = {"parent":parent, "label":label}
 		if parent not in dep_tree: dep_tree[parent] = {"parent":-1, "label":"ROOT"}
 
-	ziped_tags = map(None, array_character_offset_begin, array_character_offset_end, array_lemma, 
+	ziped_tags = map(None, array_character_offset_begin, array_character_offset_end, array_lemma,
 		array_pos, array_ner, array_words)
 	wordobjs = []
 	for i in range(0,len(ziped_tags)):
@@ -38,9 +38,9 @@ def unpack_words(input_dict, character_offset_begin=None, character_offset_end=N
 
 def log(obj):
 	"""Print the string form of an object to STDERR.
-	
+
 	Args:
-        obj: The object that the user wants to log to STDERR.  
+        obj: The object that the user wants to log to STDERR.
 	"""
 	sys.stderr.write(obj.__str__() + "\n")
 
@@ -95,7 +95,7 @@ def _path_to_root(words, word_idx):
 	return rs
 
 def dep_path_between_words(words, begin_idx, end_idx):
-	"""Given a sequence of Word objects and two indices, return the sequence of Edges 
+	"""Given a sequence of Word objects and two indices, return the sequence of Edges
 	corresponding to the dependency path between these two words.
 
 	Args:

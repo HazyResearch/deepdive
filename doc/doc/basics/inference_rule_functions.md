@@ -8,17 +8,17 @@ This document lists and describes all functions that can be used in the
 `function` directive when [writing inference rules](inference_rules.html).
 
 ### Variable Negation
-Variables can be negated by prefixing them with a `!`, as in `Or(A,!B)`. 
+Variables can be negated by prefixing them with a `!`, as in `Or(A,!B)`.
 
 ### Imply function
-    
+
     # B and C and D => A
     Imply(B,C,D,A)
 
 The *Imply* function describes a logical consequence. The last variable is the
 head. The variables in the body (`B,C,D`) are combined using a conjunction
 (logical AND ([truth
-table](http://en.wikipedia.org/wiki/Truth_table#Logical_implication))). 
+table](http://en.wikipedia.org/wiki/Truth_table#Logical_implication))).
 
 ### Or function
 
@@ -46,17 +46,17 @@ only if both variables have the same value ([truth
 table](http://en.wikipedia.org/wiki/Truth_table#Logical_equality)).
 
 ### IsTrue function
-  
-    IsTrue(A)  
+
+    IsTrue(A)
 
 The *IsTrue* function evaluates to true if and only if its variable evaluates to
 true. It is restricted to one variable. One may implement a *Not* function using
 `IsTrue(!A)`.
 
 ### Multinomial function
-  
+
     Multinomial(A,B,C)
 
-The *Multinomial* function allows multinomial variables as arguments, and 
+The *Multinomial* function allows multinomial variables as arguments, and
 has a weight for each variable assignment. This function always evaluates to true.
 

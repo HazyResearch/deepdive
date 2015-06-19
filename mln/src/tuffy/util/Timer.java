@@ -12,29 +12,29 @@ public class Timer {
 
 	private static long birth = now();
 	private static Hashtable<String, Long> points = new Hashtable<String, Long>();
-	
+
 	private static long secondInMillis = 1000;
 	private static long minuteInMillis = secondInMillis * 60;
-	
+
 	/**
 	 * Resets the global starting point of the Timer.
 	 */
 	public static void resetClock() {
 		birth = now();
 	}
-	
+
 	public static String getDateTime(){
 		DateFormat df = new SimpleDateFormat("H:mm:ss M/d/yy");
 		return df.format(new Date());
 	}
-	
+
 	/**
 	 * Kicks off a timer with the given name.
 	 */
 	public static void start(String name) {
 		points.put(name, now());
 	}
-	
+
 	/**
 	 * Returns the elapsed time of the timer with the given name.
 	 * The format is [XX minutes, YYseconds].
@@ -113,43 +113,43 @@ public class Timer {
 		String t = String.format("[%d min, %d.%03d sec]", min, sec, mm);
 		return t;
 	}
-	
+
 	public static RunStat runStat = new RunStat();
-	
+
 	public static class RunStat{
 		public double groundSec = 0;
 		public double inferSec = 0;
 		public double inferOps = 0;
 		public long effectiveSteps = 0;
-		
+
 		public ArrayList<Double> turns = new ArrayList<Double>();
 		public ArrayList<Double> costs = new ArrayList<Double>();
-		
+
 		public void addTurn(double cost){
 			turns.add(Timer.elapsedSeconds());
 			costs.add(cost);
 		}
-		
+
 		public double getGroundTime(){
 			return groundSec;
 		}
-		
+
 		public double getFlipRate(){
 			return inferOps / inferSec;
 		}
-		
+
 		public void markGroundingDone(){
 			groundSec = Timer.elapsedSeconds();
 		}
-		
+
 		public void markInferDone(){
 			inferSec = Timer.elapsedSeconds() - groundSec;
 		}
-		
+
 		public void setInferOps(long ops){
 			inferOps = ops;
 		}
-		
+
 		public void report(){
 			System.out.println("============================");
 			boolean report_trace = false;
@@ -169,5 +169,5 @@ public class Timer {
 			System.out.println("============================");
 		}
 	}
-	
+
 }

@@ -17,13 +17,13 @@ class Forwarder(target: ActorRef) extends Actor {
 
 class TestInferenceManager(
 
-  val taskManager: ActorRef, 
+  val taskManager: ActorRef,
   val samplerProbe: ActorRef,
   val factorGraphBuilderProbe: ActorRef,
   val cdwProbe: ActorRef,
   val variableSchema: Map[String, _ <: VariableDataType],
   val dbSettings: DbSettings
-  )  
+  )
   extends InferenceManager with MemoryInferenceRunnerComponent {
     override def samplerProps  = Props(classOf[Forwarder], samplerProbe)
     override def calibrationDataWriterProps = Props(classOf[Forwarder], cdwProbe)
@@ -39,13 +39,13 @@ class InferenceManagerSpec(_system: ActorSystem) extends TestKit(_system) with F
   val factorGraphBuilder = TestProbe()
   val cdw = TestProbe()
   val schema = Map("r1.c1" -> BooleanType, "r2.c1" -> BooleanType, "r2.c2" -> BooleanType)
-  def actorProps = Props(classOf[TestInferenceManager], taskManager.ref, sampler.ref, 
+  def actorProps = Props(classOf[TestInferenceManager], taskManager.ref, sampler.ref,
     factorGraphBuilder.ref, cdw.ref, schema, dbSettings)
 
   describe("Running inference") {
     it("should work") {
       val actor = TestActorRef(actorProps)
-      actor ! InferenceManager.RunInference(Seq(), 0.0, None, "javaArgs", "samplerOptions", 
+      actor ! InferenceManager.RunInference(Seq(), 0.0, None, "javaArgs", "samplerOptions",
         PipelineSettings(None, Nil, null, None), dbSettings)
       sampler.expectMsgClass(classOf[Sampler.Run])
       sampler.reply("Done")

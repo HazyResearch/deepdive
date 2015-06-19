@@ -14,10 +14,10 @@ import scala.sys.process._
 
 /* Companion object to process executor */
 object ProcessExecutor {
-  
+
   // Start the actor using this method
   def props = Props(classOf[ProcessExecutor])
-  
+
   // Received Messages
   // ==================================================
 
@@ -68,9 +68,9 @@ class ProcessExecutor extends Actor with FSM[State, Data] with ActorLogging {
       val _sender = sender
       val processInfo = startProcess(cmd, outputBatchSize, _sender)
       // Schedule a message when the process has exited
-      Future { 
+      Future {
         val exitValue = processInfo.process.exitValue()
-        self ! ProcessExited(exitValue) 
+        self ! ProcessExited(exitValue)
         processInfo.process.destroy()
       }
       // Transition to the running state
@@ -84,7 +84,7 @@ class ProcessExecutor extends Actor with FSM[State, Data] with ActorLogging {
       sender ! "OK!"
       stay
     case Event(CloseInputStream, RuntimeData(processInfo, taskInfo)) =>
-      // Close the input stream. 
+      // Close the input stream.
       // No more data goes to the process. We still need to wait for the process to exit.
       log.debug(s"closing input stream")
       processInfo.inputStream.close()
@@ -110,7 +110,7 @@ class ProcessExecutor extends Actor with FSM[State, Data] with ActorLogging {
       in => {
         val writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(in)))
         inputStreamFuture.success(writer)
-      },  
+      },
       out => {
         outputStreamFuture.success(out)
         Source.fromInputStream(out).getLines.grouped(batchSize).foreach { batch =>
@@ -120,7 +120,7 @@ class ProcessExecutor extends Actor with FSM[State, Data] with ActorLogging {
         log.debug(s"closing output stream")
         out.close()
       },
-      err => { 
+      err => {
         errorStreamFuture.success(err)
         // Log STDERR to info-level logging
         Source.fromInputStream(err).getLines foreach (log.info)

@@ -63,7 +63,7 @@ ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :-
   has_spouse_candidates(person1_id, person2_id, s, h, rid, x),
   people_mentions(s, p1idx, p1len, k, person1_id),
   people_mentions(s, p2idx, p2len, l, person2_id).
-  
+
 function ext_has_spouse_features over like ext_has_spouse_features_input
                               returns like has_spouse_features
   implementation "udf/ext_has_spouse_features.f2.py" handles tsv lines.

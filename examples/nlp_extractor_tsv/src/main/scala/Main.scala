@@ -12,11 +12,11 @@ object Main extends App {
     head("DocumentParser for TSV Extractors", "0.1")
     head("Input: a TSV file. The first row is document_id, the second row is the content of document.")
     opt[String]('l', "maxLength") action { (x, c) =>
-      c.copy(maxSentenceLength = x) 
+      c.copy(maxSentenceLength = x)
     } text("Maximum length of sentences to parse (makes things faster) (default: 40)")
   }
 
-  val conf = parser.parse(args, Config("40")) getOrElse { 
+  val conf = parser.parse(args, Config("40")) getOrElse {
     throw new IllegalArgumentException
   }
 
@@ -37,14 +37,14 @@ object Main extends App {
     {
       val documentId = tsvArr(0)
       val documentStr = tsvArr(1)
-  
+
       System.err.println(s"Parsing document ${documentId}...")
-  
+
       // Output a TSV row for each sentence
       dp.parseDocumentString(documentStr).sentences.zipWithIndex
           .foreach { case (sentenceResult, sentence_offset) =>
-  
-        if (documentId != "") 
+
+        if (documentId != "")
           Console.println(List(
             documentId,
             sentenceResult.sentence,
@@ -56,7 +56,7 @@ object Main extends App {
             sentence_offset.toString,
             s"${documentId}@${sentence_offset}" // sentence_id
           ).mkString("\t"))
-      }  
+      }
     } else {
       System.err.println(s"Warning: skipped malformed line ${idx}: ${line}")
     }

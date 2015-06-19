@@ -2,7 +2,7 @@
 layout: default
 ---
 
-# DeepDive Installation Guide 
+# DeepDive Installation Guide
 
 DeepDive runs on Linux or Mac OS X.
 This document explains how to install DeepDive on your system.
@@ -62,7 +62,7 @@ If you need to install DeepDive on a different Linux distribution, the following
 
 The following software packages must be installed to run DeepDive:
 
-- [Git](http://git-scm.com/book/en/Getting-Started-Installing-Git) needed to get DeepDive's source tree. 
+- [Git](http://git-scm.com/book/en/Getting-Started-Installing-Git) needed to get DeepDive's source tree.
 - [Java](http://www.oracle.com/technetwork/java/javase/downloads/jre7-downloads-1880261.html)
   (version **1.7.0_45 or higher**)
 - [Python](https://www.python.org/) *2.X* (not Python 3.X)
@@ -101,7 +101,7 @@ After `make` you should be already able to use DeepDive on your machine. You can
 After that, make sure to **set environmental variables** needed for running sampler, depending on what OS you are using:
 
 On Mac:
-  
+
 ```bash
 export DEEPDIVE_HOME=[your path to install deepdive]
 export LD_LIBRARY_PATH=$DEEPDIVE_HOME/lib/dw_mac/lib/protobuf/lib:$DEEPDIVE_HOME/lib/dw_mac/lib
@@ -109,7 +109,7 @@ export DYLD_LIBRARY_PATH=$DEEPDIVE_HOME/lib/dw_mac
 ```
 
 On Linux:
-  
+
 ```bash
 export DEEPDIVE_HOME=[your path to install deepdive]
 export LD_LIBRARY_PATH=$DEEPDIVE_HOME/lib/dw_linux/lib:$DEEPDIVE_HOME/lib/dw_linux/lib64
@@ -132,7 +132,7 @@ DimmWitted binaries for both Mac OS X and Linux ship with DeepDive in the
 `util/` directory. These work out of the box on many modern systems, but setting
 up dependencies may be required on others.
 
-*Note:* DimmWitted only supports 64-bit systems. 
+*Note:* DimmWitted only supports 64-bit systems.
 
 We ship pre-built dependencies for Linux and Mac systems in the `lib/` folder, and the first step of the Makefile is to extract them depending on the OS.
 
@@ -142,7 +142,7 @@ After this step, be sure to set environmental variables as described above, to m
 
 The Makefile then compiles DeepDive by `sbt pack`. It involves downloading all the necessary frameworks and libraries used
 internally, and may take some time. If the operation completes with success, the
-last line of the `sbt pack` output should read something similar to: 
+last line of the `sbt pack` output should read something similar to:
 
     [success] Total time: 110 s, completed Jan 28, 2014 6:31:09 PM
 
@@ -157,10 +157,10 @@ The Makefile will finally pack the compiled code into a binary file, and deploy 
 ### Running Tests
 
 The command `make test` executed from the `DEEPDIVE_HOME` directory runs the
-sanity checks to make sure DeepDive runs properly on your machine. DeepDive will create a database `deepdive_test` using your login username and no password, and connect to the database during the tests. You should make sure Postgres is successfully installed to pass the tests. 
+sanity checks to make sure DeepDive runs properly on your machine. DeepDive will create a database `deepdive_test` using your login username and no password, and connect to the database during the tests. You should make sure Postgres is successfully installed to pass the tests.
 
 In case of success, the last lines of `make test` output is something similar to:
-  
+
     [info] All tests passed.
     [success] Total time: 35 s, completed Jan 29, 2014 9:59:57 AM
 

@@ -46,16 +46,16 @@ cd $DEEPDIVE_HOME
 
 # Create test database
 if [ -z $DBPASSWORD ]; then
-  mysql -u $DBUSER -h $DBHOST -P $DBPORT -e "drop database if exists $DBNAME; 
+  mysql -u $DBUSER -h $DBHOST -P $DBPORT -e "drop database if exists $DBNAME;
   create database $DBNAME"
 else
-  mysql -u $DBUSER -h $DBHOST -P $DBPORT -p$DBPASSWORD -e "drop database if exists $DBNAME; 
+  mysql -u $DBUSER -h $DBHOST -P $DBPORT -p$DBPASSWORD -e "drop database if exists $DBNAME;
   create database $DBNAME"
 fi
 # Run the test
 
 # Separate different tests to fix the issue of unable to run multiple integration tests. If any of the tests return non-0 value, exit with the error code.
-export SBT_OPTS="-XX:MaxHeapSize=256m -Xmx512m -XX:MaxPermSize=256m" 
+export SBT_OPTS="-XX:MaxHeapSize=256m -Xmx512m -XX:MaxPermSize=256m"
 # # Test argument "-- -oF" shows full stack trace when error occurs
 # sbt "test-only org.deepdive.test.unit.* -- -oF" && sbt "test-only org.deepdive.test.integration.BiasedCoin -- -oF" && sbt "test-only org.deepdive.test.integration.ChunkingApp -- -oF"
 sbt coverage "test-only org.deepdive.test.unit.* -- -oF" && \

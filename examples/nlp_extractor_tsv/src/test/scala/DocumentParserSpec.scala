@@ -14,7 +14,7 @@ class DocumentParserSpec extends FunSpec {
     it("should work with plain text") {
       val inputFile = getClass.getResource("/testdoc.txt").getFile
       val documentStr = Source.fromFile(inputFile).mkString
-      
+
       val props = new Properties()
       props.put("annotators", "tokenize, cleanxml, ssplit, pos, lemma, ner, parse, dcoref")
       val dp = new DocumentParser(props)
@@ -44,10 +44,10 @@ class DocumentParserSpec extends FunSpec {
       val inputFile = getClass.getResource("/input.json.txt").getFile
       val is = new FileInputStream(inputFile)
       System.setIn(is)
-      
+
       // Execute the main method
       Main.main(Array("--valueKey", "documents.text", "--idKey", "documents.id"))
-    } 
+    }
   }
 
 }

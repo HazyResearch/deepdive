@@ -13,52 +13,52 @@ import tuffy.util.ProbMan;
  *
  */
 public class GClause {
-	
+
 	/**
 	 * ID of this GClause.
 	 */
 	public int id;
-	
+
 	/**
 	 * Weight of this GClause.
 	 */
 	public double weight = 0;
-	
+
 	/**
 	 * List of literals in this grounded clause. This
 	 * is from $lits$ attribute in {@link Config#relClauses}
 	 * table.
 	 */
 	public int[] lits = null;
-	
+
 	/**
-	 * List of original clauses used to generate this 
+	 * List of original clauses used to generate this
 	 * grounded clause. This is from $fcid$ attribute
 	 * in the clause table when
 	 * {@link Config#track_clause_provenance} set to true.
 	 */
 	public int[] fcid = null; // list of id to fo clauses collectivley generating this gclause
-	
+
 	/**
 	 * Finer-grained clause origin.
 	 * Similar to {@link GClause#fcid}, corresponding to
 	 * attribute $ffcid$ in {@link Config#relClauses} table.
 	 */
 	public String[] ffcid = null;
-	
+
 	/**
 	 * Number of satisfied literals in this GClause. This
 	 * GClause is true iff. nsat > 0.
 	 */
 	public int nsat = 0;
-	
+
 	/**
 	 * Whether this clause should be ignored while SampleSAT.
 	 * Used by MC-SAT.
 	 */
 	public boolean dead = false;
-	
-	
+
+
 	/**
 	 * The largest fcid seen when parsing the database for all GClause.
 	 */
@@ -71,7 +71,7 @@ public class GClause {
 	public boolean isPositiveClause(){
 		return weight >= 0;
 	}
-	
+
 	/**
 	 * Return whether this clause is a hard clause. Here by hard
 	 * it means this clause has a weight larger than {@link Config#hard_weight},
@@ -82,7 +82,7 @@ public class GClause {
 	}
 
 	/**
-	 * 
+	 *
 	 * Return true if this clause is not set to ``dead''. This is used
 	 * in MCSAT.
 	 */
@@ -91,7 +91,7 @@ public class GClause {
 		double r = ProbMan.nextDouble();
 		return r < (1 - Math.exp(-Math.abs((weight)) * Config.mcsat_sample_para));
 	}
-	
+
 	/**
 	 * Return the cost for violating this GClause. For positive
 	 * clause, if it is violated, cost equals to weight.
@@ -107,9 +107,9 @@ public class GClause {
 		}
 		return 0;
 	}
-	
+
 	/**
-	 * Returns +/-1 if this GClause contains this atom; 0 if not. 
+	 * Returns +/-1 if this GClause contains this atom; 0 if not.
 	 * If -1, then the atom in this clause is with negative sense.
 	 * @param atom
 	 */
@@ -147,13 +147,13 @@ public class GClause {
 	 * $lits$ to {@link GClause#lits}, $fcid$ to {@link GClause#fcid}.
 	 * @param rs the ResultSet for SQL. This sql is a sequential
 	 * scan on table {@link Config#relClauses}.
-	 * 
+	 *
 	 */
 	public void parse(ResultSet rs){
 		try {
 			id = rs.getInt("cid");
 			weight = rs.getDouble("weight");
-						
+
 			Array a = rs.getArray("lits");
 			Integer[] ilits = (Integer[]) a.getArray();
 			lits = new int[ilits.length];
@@ -178,7 +178,7 @@ public class GClause {
 				for(int i=0; i<fcid.length; i++){
 					fcid[i] = lfcid.get(i);
 				}
-				
+
 				fc = rs.getArray("ffcid");
 				String[] sfc = (String[]) fc.getArray();
 				ArrayList<String> lsfc = new ArrayList<String>();
@@ -197,12 +197,12 @@ public class GClause {
 			ExceptionMan.handle(e);
 		}
 	}
-	
+
 	/**
 	 * Returns the string form of this GClause, which is,
-	 * 
+	 *
 	 * { <lit_1>, <lit_2>, ..., <lit_n> } | weight
-	 * 
+	 *
 	 * where lit_i is the literal ID in {@link GClause#lits}.
 	 */
 	public String toPGString(){
@@ -215,12 +215,12 @@ public class GClause {
 		sb.append("} | " + weight);
 		return sb.toString();
 	}
-	
+
 	/**
 	 * Returns string form of this GClause. Compared
 	 * with {@link GClause#toString()}, this function also only shows
 	 * literals violating this clause.
-	 * 
+	 *
 	 * @param atoms Map from Literal ID to GAtom object. This is used
 	 * for obtaining the truth value of GAtom, which is inevitable
 	 * for determining violation.
@@ -243,7 +243,7 @@ public class GClause {
 		}
 		return sb.toString();
 	}
-	
+
 	/**
 	 * Returns its human-friendly representation.
 	 */
@@ -254,7 +254,7 @@ public class GClause {
 			sb.append(l + ",");
 		}
 		sb.append("]");
-		
+
 		if(this.ffcid != null){
 			sb.append("{");
 			for(String s : this.ffcid){
@@ -262,7 +262,7 @@ public class GClause {
 			}
 			sb.append("}");
 		}
-		
+
 		return sb.toString();
 	}
 

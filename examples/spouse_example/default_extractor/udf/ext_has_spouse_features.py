@@ -19,7 +19,7 @@ for row in sys.stdin:
 
   # Features for this pair come in here
   features = set()
-  
+
   # Feature 1: Bag of words between the two phrases
   words_between = ddlib.tokens_between_spans(words, span1, span2)
   for word in words_between.elements:
@@ -34,7 +34,7 @@ for row in sys.stdin:
   if (last_word_left == last_word_right):
     features.add("potential_last_name_match")
 
-  ######################## 
+  ########################
   # Improved Feature Set #
   ########################
 
@@ -47,7 +47,7 @@ for row in sys.stdin:
   # # Make sure the distance between mention pairs is not too long
   # if len(words_between.elements) <= 10:
   #   for mw in married_words + non_married_words:
-  #     if mw in lemma_between.elements: 
+  #     if mw in lemma_between.elements:
   #       features.add("important_word=%s" % mw)
 
   # # Feature 2: Number of words between the two phrases
@@ -67,7 +67,7 @@ for row in sys.stdin:
   # # Use this line if you want to print out all features extracted:
   # ddlib.log(features)
 
-  for feature in features:  
+  for feature in features:
     print json.dumps({
       "relation_id": obj["relation_id"],
       "feature": feature

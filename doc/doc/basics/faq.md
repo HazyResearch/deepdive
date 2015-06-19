@@ -27,7 +27,7 @@ Refer to the [Performance Tuning guide](../advanced/performance.html) and try th
 		initcond = '{}'
 	);
 	```
-	
+
 
 ### How can I debug my extractors?
 
@@ -44,8 +44,8 @@ the same weights?
 
 No, weights are unique within each inference rule, this is achieved in DeepDive
 by concating a ''prefix'' to the
-feature, which by default is the name of the corresponding rule. You can force 
-the sharing of weights by specifying this 
+feature, which by default is the name of the corresponding rule. You can force
+the sharing of weights by specifying this
 prefix, for example:
 
 ```bash

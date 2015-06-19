@@ -54,7 +54,7 @@ DeepDive)
 
     CREATE TABLE sentences(
       document_id bigint,
-      sentence text, 
+      sentence text,
       words text[],
       lemma text[],
       pos_tags text[],
@@ -71,7 +71,7 @@ cannot be achieved because of memory problems. In this case, we
 recommend to use the `run_parallel.sh`. It does the following steps:
 
 1. Split your input file `INPUT_FILE` into chunks in `INPUT_FILE.split/`
-2. Uses system parallelism tool `xargs` to run `run.sh` in parallel. 
+2. Uses system parallelism tool `xargs` to run `run.sh` in parallel.
    The outputs are saved to `INPUT_FILE.split/*.out`.
 
 Run it with the following command
@@ -86,7 +86,7 @@ Run it with the following command
   words in sentence is larger than this number. This helps in speeding
   up the parsing.
 
-When finished, you should manually import the files in 
+When finished, you should manually import the files in
 `INPUT_FILE.split/*.out` into your database. You can use a COPY query
 like this:
 

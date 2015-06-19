@@ -15,7 +15,7 @@ import scala.util.Try
 object Context extends Logging {
 
   // The akka actor is initialized when "Context.system" is first accessed.
-  // TODO: it might not be best to use a lazy val here, since we may want 
+  // TODO: it might not be best to use a lazy val here, since we may want
   // to run "DeepDive.run" multiple times, e.g. in tests.
   /* Notes @zifei:
     The difference between lazy val and val is, that a val is executed
@@ -35,14 +35,14 @@ object Context extends Logging {
   lazy val system = ActorSystem("deepdive")
   var outputDir = "out"
   // This needs to be variable since we might reassign it in relearnFrom feature
-  
-  // Set deepdive home according to environment variable. If not specified, 
+
+  // Set deepdive home according to environment variable. If not specified,
   // use user's current directory
   val deepdiveHome = System.getenv("DEEPDIVE_HOME") match {
     case null => System.getProperty("user.dir")
     case _ => System.getenv("DEEPDIVE_HOME")
   }
-  
+
 
   def shutdown(exitValue: Int = 0) {
     JdbcDataStoreObject.close()

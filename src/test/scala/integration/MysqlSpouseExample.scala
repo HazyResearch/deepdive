@@ -1,12 +1,12 @@
 /******************************
- * 
+ *
  * DeepDive.run cannot be called more than once in integration
  * tests, so we run tests one by one to cover them.
- * 
+ *
  ******************************/
 package org.deepdive.test.integration
 
-import anorm._ 
+import anorm._
 import com.typesafe.config._
 import org.deepdive.test._
 import org.deepdive.Context
@@ -21,15 +21,15 @@ import scala.sys.process._
 import scalikejdbc.ConnectionPool
 
 /** Text running spouse example.
- * 
+ *
  */
 class MysqlSpouseExample extends FunSpec with Logging with MysqlDataStoreComponent {
 
   // Read the schema from test file
   val schema = scala.io.Source.fromFile(getClass.getResource("/spouse/schema_mysql.sql").getFile).mkString
   val config = ConfigFactory.parseString(getConfig).withFallback(ConfigFactory.load).resolve()
-     
-  
+
+
     /** prepare data */
   def prepareData() {
 
@@ -39,7 +39,7 @@ class MysqlSpouseExample extends FunSpec with Logging with MysqlDataStoreCompone
       JdbcDataStoreObject.executeSqlQueries(schema);
 
       JdbcDataStoreObject.executeSqlQueries(s"""
-        LOAD DATA LOCAL INFILE '${getClass.getResource("/spouse/data/sentences_dump_mysql.tsv").getFile}' 
+        LOAD DATA LOCAL INFILE '${getClass.getResource("/spouse/data/sentences_dump_mysql.tsv").getFile}'
         INTO TABLE sentences(sentence_id, words, ner_tags);
           """)
     }
@@ -49,13 +49,13 @@ class MysqlSpouseExample extends FunSpec with Logging with MysqlDataStoreCompone
 
   /** application.conf configuration */
 //  def configFile = getClass.getResource("/spouse/data/application_mysql.conf").getFile
-  
+
   def getConfig = s"""
 deepdive {
-  
+
   db.default {
     driver: "com.mysql.jdbc.Driver"
-    url: "jdbc:mysql://${System.getenv("DBHOST")}:${System.getenv("DBPORT")}/${System.getenv("DBNAME")}" 
+    url: "jdbc:mysql://${System.getenv("DBHOST")}:${System.getenv("DBPORT")}/${System.getenv("DBNAME")}"
     user: "${System.getenv("DBUSER")}"
     password: "${System.getenv("DBPASSWORD")}"
     dbname: "${System.getenv("DBNAME")}"
@@ -90,12 +90,12 @@ deepdive {
       dependencies: ["ext_clear_table"]
     }
 
-    # With a tsv_extractor, developers have to make sure arrays 
-      # are parsable in the UDF. One easy way is to 
+    # With a tsv_extractor, developers have to make sure arrays
+      # are parsable in the UDF. One easy way is to
       # use "array_to_string(array, delimiter)" function by psql.
     ext_people {
       input: \"\"\"
-          SELECT  sentence_id, 
+          SELECT  sentence_id,
                   words,
                   ner_tags
           FROM    sentences
@@ -120,13 +120,13 @@ deepdive {
     ext_has_spouse_candidates {
       # This query is dramatically slow...
       input: \"\"\"
-       SELECT p1.sentence_id, 
-              p1.mention_id, p1.text, 
+       SELECT p1.sentence_id,
+              p1.mention_id, p1.text,
               p2.mention_id, p2.text
-        FROM  people_mentions p1, 
+        FROM  people_mentions p1,
               people_mentions p2
-        WHERE p1.sentence_id = p2.sentence_id 
-          AND p1.mention_id != p2.mention_id 
+        WHERE p1.sentence_id = p2.sentence_id
+          AND p1.mention_id != p2.mention_id
 
           \"\"\"
       output_relation: "has_spouse"
@@ -150,17 +150,17 @@ deepdive {
     ext_has_spouse_features {
       input: \"\"\"
         SELECT  words,
-                has_spouse.relation_id, 
-                p1.start_position, 
-                p1.length, 
-                p2.start_position, 
+                has_spouse.relation_id,
+                p1.start_position,
+                p1.length,
+                p2.start_position,
                 p2.length
-        FROM    has_spouse, 
-                people_mentions p1, 
+        FROM    has_spouse,
+                people_mentions p1,
                 people_mentions p2,
                 sentences
-        WHERE   has_spouse.person1_id = p1.mention_id 
-          AND   has_spouse.person2_id = p2.mention_id 
+        WHERE   has_spouse.person1_id = p1.mention_id
+          AND   has_spouse.person2_id = p2.mention_id
           AND   has_spouse.sentence_id = sentences.sentence_id
 
         \"\"\"
@@ -180,20 +180,20 @@ deepdive {
     }
   }
 
-  inference.factors: { 
+  inference.factors: {
 
-    # We require developers to select: 
-    #   - reserved "id" column, 
-    #   - variable column, 
+    # We require developers to select:
+    #   - reserved "id" column,
+    #   - variable column,
     #   - weight dependencies,
     # for variable tables.
     f_has_spouse_features {
       input_query: \"\"\"
-        SELECT  has_spouse.id AS "has_spouse.id", 
-                has_spouse.is_true AS "has_spouse.is_true", 
-                feature 
-        FROM    has_spouse, 
-                has_spouse_features 
+        SELECT  has_spouse.id AS "has_spouse.id",
+                has_spouse.is_true AS "has_spouse.is_true",
+                feature
+        FROM    has_spouse,
+                has_spouse_features
         WHERE   has_spouse_features.relation_id = has_spouse.relation_id
         \"\"\"
       function: "IsTrue(has_spouse.is_true)"
@@ -202,13 +202,13 @@ deepdive {
 
     f_has_spouse_symmetry {
       input_query: \"\"\"
-        SELECT  r1.is_true AS "has_spouse.r1.is_true", 
-                r2.is_true AS "has_spouse.r2.is_true", 
-                r1.id AS "has_spouse.r1.id", 
+        SELECT  r1.is_true AS "has_spouse.r1.is_true",
+                r2.is_true AS "has_spouse.r2.is_true",
+                r1.id AS "has_spouse.r1.id",
                 r2.id AS "has_spouse.r2.id"
-        FROM    has_spouse r1, 
-                has_spouse r2 
-        WHERE   r1.person1_id = r2.person2_id 
+        FROM    has_spouse r1,
+                has_spouse r2
+        WHERE   r1.person1_id = r2.person2_id
           AND   r1.person2_id = r2.person1_id
           \"\"\"
       function: "Equal(has_spouse.r1.is_true, has_spouse.r2.is_true)"
@@ -244,7 +244,7 @@ deepdive {
     // has_spouse_is_true_calibration table. Not sure if there is a design
     // decision there or is this a bug. But this query will try to compute
     // X / (X + NULL) and get NULL as result, which breaks the result.
-    val checkQuery = """select num_correct / (num_correct + 
+    val checkQuery = """select num_correct / (num_correct +
       CASE WHEN num_incorrect IS NULL THEN 0 ELSE num_incorrect END)
       from has_spouse_is_true_calibration where bucket = 9"""
 
@@ -256,7 +256,7 @@ deepdive {
     JdbcDataStoreObject.close()
     score
   }
-  
+
   /**
    * Run the test
    */

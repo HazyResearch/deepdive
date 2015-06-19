@@ -1,7 +1,7 @@
 DROP TABLE IF EXISTS sentences CASCADE;
 CREATE TABLE sentences(
   document_id text,
-  sentence text, 
+  sentence text,
   words text[],
   lemma text[],
   pos_tags text[],

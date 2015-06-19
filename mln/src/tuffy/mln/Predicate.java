@@ -30,22 +30,22 @@ import tuffy.util.UIMan;
 public class Predicate {
 
 	private boolean isCompletelySpecified = false;
-	
+
 	public boolean isCurrentlyView = false;
 
 	public boolean avoidGrounding = false;
-	
+
 	/**
 	 * e.g., %model(feature, rel)
 	 */
 	public boolean isFuncPredicate = false;
-	
+
 	/**
 	 * e.g., ~el(mention. entity)
 	 */
 	public boolean isParitialPredicate = false;
-	
-	
+
+
 	public void setCompeletelySpecified(boolean t) {
 		isCompletelySpecified = t;
 	}
@@ -59,7 +59,7 @@ public class Predicate {
 	/**
 	 * Set the attribute at position i to be dependent. Non-dependent attributes
 	 * form a possible-world key.
-	 * 
+	 *
 	 * @param i
 	 */
 	public void addDependentAttrPosition(int i) {
@@ -81,7 +81,7 @@ public class Predicate {
 		}
 		return kpos;
 	}
-	
+
 	public ArrayList<Integer> getLabelAttrPositions() {
 		ArrayList<Integer> kpos = new ArrayList<Integer>();
 		for (int i = 0; i < args.size(); i++) {
@@ -99,7 +99,7 @@ public class Predicate {
 	/**
 	 * Get attributes whose value depend on other attributes in any possible
 	 * world.
-	 * 
+	 *
 	 * @see #getKeyAttrs
 	 */
 	public ArrayList<String> getDependentAttrs() {
@@ -112,7 +112,7 @@ public class Predicate {
 
 	/**
 	 * Get attributes that form a possible world key.
-	 * 
+	 *
 	 * @see #getDependentAttrs
 	 */
 	public ArrayList<String> getKeyAttrs() {
@@ -132,7 +132,7 @@ public class Predicate {
 
 	/**
 	 * Return true if the argument is the name of a built-in predicate.
-	 * 
+	 *
 	 * @param s
 	 *            name of queried predicate
 	 * @return true if s is a built-in predicate.
@@ -143,7 +143,7 @@ public class Predicate {
 
 	/**
 	 * Return the predicate object with the name as the argument string.
-	 * 
+	 *
 	 * @param s
 	 *            name of queried predicate
 	 * @return the predicate object with name s.
@@ -293,7 +293,7 @@ public class Predicate {
 	 * Check if we need to ground this predicate on top of its evidence. A
 	 * predicate needs not to ground if 1) it only appears in negative literal
 	 * and 2) it follows closed world assumption.
-	 * 
+	 *
 	 * @return true if the closed world assumption is made on this predicate,
 	 *         and all literals of this predicate are negative
 	 */
@@ -329,7 +329,7 @@ public class Predicate {
 
 	/**
 	 * Register a query atom.
-	 * 
+	 *
 	 * @param q
 	 *            the query atom; could contain variables
 	 * @see Predicate#storeQueries()
@@ -349,27 +349,27 @@ public class Predicate {
 			groundAndStoreAtom(a);
 		}
 	}
-	
+
 	public boolean hasEvid = false;
 
 	public boolean scoped = false;
-	
+
 	/**
 	 * Ground an atom and store the result in the database. Repetitive
 	 * invocations of this method could be expensive, since it involves both
 	 * updates and inserts to the predicate table.
-	 * 
+	 *
 	 * First, for the grounded tuples satisfying this atom $a$ and already
 	 * existing in database, it only update its club values. If this $a$ is
 	 * query, then add query to club (0->1, 2->3). If this $a$ is evidence, then
 	 * add evidence to club (0->2, 1->3).
-	 * 
+	 *
 	 * Then, for the grounded tuples satisfying this atom $a$ and not existing
 	 * in database, it 1) select them with a $arity-way join in corresponding
 	 * type instance table; 2) left join them with current version database; 3)
 	 * select those not matching with any existing tuples; and 4) insert into
 	 * the database.
-	 * 
+	 *
 	 */
 	public void groundAndStoreAtom(Atom a) {
 		/*
@@ -491,15 +491,15 @@ public class Predicate {
 	 * CSV file) for each predicate that holds the DB tuple formats of its
 	 * evidence; this buffer will be flushed into the database once all evidence
 	 * has been read.
-	 * 
+	 *
 	 * @param a
 	 *            the evidence; following Alchemy, it must be a ground atom
 	 * @see Predicate#flushEvidence()
 	 */
 	public void addEvidence(Atom a) {
-		
+
 		hasEvid = true;
-		
+
 		if (a.isSoftEvidence())
 			setHasSoftEvidence(true);
 		addEvidenceTuple(a);
@@ -511,7 +511,7 @@ public class Predicate {
 	 * query) in this predicate is smaller than the number of active atoms of
 	 * this predicate. I.e., all the unknown atoms of this predicate is
 	 * activated.
-	 * 
+	 *
 	 * @return whether there are more groundings can be generated
 	 */
 	public boolean hasMoreToGround() {
@@ -531,7 +531,7 @@ public class Predicate {
 		}
 		return true;
 	}
-	
+
 	public void appendToWriter(String str) {
 		try {
 			if (loadingFileWriter == null) {
@@ -547,9 +547,9 @@ public class Predicate {
 	/**
 	 * Add evidence tuple related to this predicate. The output of this function
 	 * is written to file in format like:
-	 * 
+	 *
 	 * $tuple_id,$truth_value,$prior,$club_value,$variable_name,......
-	 * 
+	 *
 	 * @param a
 	 *            the atom as evidence. This atom need to be a grounded atom.
 	 */
@@ -595,18 +595,18 @@ public class Predicate {
 	/**
 	 * Flush the evidence buffer to the predicate table, using the COPY
 	 * statement in PostgreSQL.
-	 * 
+	 *
 	 * @see Predicate#addEvidence(Atom)
 	 */
 	public void materialize(boolean... specialMode) {
 		UIMan.println(">>> Materializing " + getRelName());
 		try {
-			
+
 			if(this.hasEvid == true && specialMode.length>0){
 				String sql = "DELETE FROM " + getRelName();
 				db.execute(sql);
 			}
-			
+
 			// flush the file
 			if (loadingFileWriter != null) {
 				loadingFileWriter.close();
@@ -664,7 +664,7 @@ public class Predicate {
 			createEvidenceTable();
 
 			// copy evidence to evidence table
-			sql = "COPY " + getRelName() + "_evidence" + 
+			sql = "COPY " + getRelName() + "_evidence" +
 			StringMan.commaListParen(cols) + " FROM STDIN CSV";
 			con.getCopyAPI().copyIn(sql, in);
 			in.close();
@@ -696,7 +696,7 @@ public class Predicate {
 
 	/**
 	 * Constructor of Predicate.
-	 * 
+	 *
 	 * @param mln
 	 *            the parent MLN that hosts this predicate
 	 * @param aname
@@ -721,12 +721,12 @@ public class Predicate {
 	public void setDB(RDB adb){
 		db = adb;
 	}
-	
-	
+
+
 	public RDB getDB(){
 		return db;
 	}
-	
+
 	/**
 	 * Initialize database objects for this predicate.
 	 */
@@ -734,7 +734,7 @@ public class Predicate {
 		db = adb;
 		loadingFile = new File(Config.getLoadingDir(), "loading_" + getName());
 
-		if (!Config.reuseTables || !this.isClosedWorld() || 
+		if (!Config.reuseTables || !this.isClosedWorld() ||
 				!db.tableExists(this.getRelName()) ) {
 			UIMan.verbose(1, ">>> Creating predicate table " + this.getRelName());
 			createTable();
@@ -748,7 +748,7 @@ public class Predicate {
 		loadingFile = new File(Config.getLoadingDir(), "loading_" + getName());
 		createTable();
 	}
-	
+
 	/**
 	 * Create table for storing groundings of this predicate. club: 1 = NONE; 2
 	 * = EVIDENCE: atom in evidence; 3 = QUERY: atom in query; 4 = QUEVID: atom
@@ -786,13 +786,13 @@ public class Predicate {
 			argDefs.add(attr + ts);
 		}
 		sql = "CREATE TABLE " + getRelName() + "(\n" + StringMan.commaList(argDefs) + ", " + sql + ")";
-		
+
 		if(Config.using_greenplum){
 			sql = sql + " DISTRIBUTED BY (" + args.get(0) + ")";
 		}
-		
+
 		db.update(sql);
-		
+
 		if (Config.build_predicate_table_indexes) {
 			for (String a : args) {
 				sql = "CREATE INDEX idx_" + id + "_" + a + " ON " + relName
@@ -836,13 +836,13 @@ public class Predicate {
 			argDefs.add(attr + ts);
 		}
 		sql += StringMan.commaList(argDefs) + ")";
-		
+
 		if(Config.using_greenplum){
 			sql = sql + " DISTRIBUTED BY (" + args.get(0) + ")";
 		}
-		
+
 		db.update(sql);
-		
+
 		if (Config.build_predicate_table_indexes) {
 			for (String a : args) {
 				sql = "CREATE INDEX idx_" + id + "_" + a + " ON " + relName
@@ -861,7 +861,7 @@ public class Predicate {
 
 	/**
 	 * Register a clause referencing this predicate
-	 * 
+	 *
 	 * @param c
 	 *            a clause referencing this predicate
 	 */
@@ -871,7 +871,7 @@ public class Predicate {
 
 	/**
 	 * Append a new argument without a user-provided name.
-	 * 
+	 *
 	 * @param t
 	 *            the type of the new argument
 	 */
@@ -886,7 +886,7 @@ public class Predicate {
 
 	/**
 	 * Append a new argument with a user provided name.
-	 * 
+	 *
 	 * @param t
 	 *            the type of the new argument
 	 * @param name
@@ -910,7 +910,7 @@ public class Predicate {
 
 	/**
 	 * Return the position of the given argument name.
-	 * 
+	 *
 	 * @param aname
 	 *            argument name
 	 */
@@ -947,7 +947,7 @@ public class Predicate {
 
 	/**
 	 * TODO: look into the implications of FDs
-	 * 
+	 *
 	 */
 	@SuppressWarnings("unused")
 	private class FunctionalDependency {
@@ -963,14 +963,14 @@ public class Predicate {
 	public void setMLN(MarkovLogicNetwork _mln){
 		mln = _mln;
 	}
-	
+
 	public MarkovLogicNetwork getMLN() {
 		return mln;
 	}
-	
+
 	/**
 	 * Add a functional dependency for the attributes of this predicate
-	 * 
+	 *
 	 * @param determinant
 	 * @param dependent
 	 */
@@ -1031,7 +1031,7 @@ public class Predicate {
 	 * Set whether all references to this predicate are safe; i.e., all
 	 * variables in corresponding positive literals are bound to other literals
 	 * in the same clause.
-	 * 
+	 *
 	 * @param safeRefOnly
 	 */
 	public void setSafeRefOnly(boolean safeRefOnly) {
@@ -1053,16 +1053,16 @@ public class Predicate {
 	public boolean isBuiltIn() {
 		return isBuiltIn;
 	}
-	
-	
+
+
 	public String toString(){
 		String ret = "";
-		
+
 		ret = this.getName();
 		ret += "(";
 		ret += StringMan.commaList(this.getArgs());
 		ret += ")";
-		
+
 		return ret;
 	}
 
@@ -1071,10 +1071,10 @@ public class Predicate {
 	 * The result is a single factor associated with the soft evidence atom
 	 * with weight ln(prior/(1-prior)) where prior is the probability that the
 	 * evidence holds true.
-	 * 
+	 *
 	 */
 	public ArrayList<String> generateDeepdiveSoftEvidenceInferenceRules() {
-		
+
 		if (!hasEvid)
 			return new ArrayList<String>();
 
@@ -1124,7 +1124,7 @@ public class Predicate {
 	/**
 	 * Tell Deepdive which evidence is observation only. Only evidence not
 	 * specified here will be fitted in learning.
-	 * 
+	 *
 	 */
 	public String generateDeepdiveObservationOnlyEvidence() {
 		return "INSERT INTO dd_graph_variables_observation SELECT id FROM "

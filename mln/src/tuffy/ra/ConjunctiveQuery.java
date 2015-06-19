@@ -149,8 +149,8 @@ public class ConjunctiveQuery implements Cloneable{
 	/**
 	 * Type used by CC.
 	 */
-	public enum CLUSTERING_RULE_TYPE 
-	{SOFT_COMPLETE, SOFT_INCOMPLETE, HARD, COULD_LINK_CLIQUE, MUST_LINK_CLIQUE, 
+	public enum CLUSTERING_RULE_TYPE
+	{SOFT_COMPLETE, SOFT_INCOMPLETE, HARD, COULD_LINK_CLIQUE, MUST_LINK_CLIQUE,
 		COULD_LINK_PAIRWISE, NODE_LIST, NODE_CLASS, CLASS_TAGS, WOULD_LINK_CLIQUE, SOFT_NEGATIVE,
 		HARD_NEGATIVE}
 
@@ -205,10 +205,10 @@ public class ConjunctiveQuery implements Cloneable{
 
 		String s = "";
 		if(this.sourceClause != null && this.sourceClause.hasEmbeddedWeight()){
-			s = "["+this.sourceClause.getVarWeight()+"] " + head.toString() + 
+			s = "["+this.sourceClause.getVarWeight()+"] " + head.toString() +
 			(isScopingRule ? " :=\t" : " :-\t");
 		}else{
-			s = "["+this.getWeight()+"] " + head.toString() + 
+			s = "["+this.getWeight()+"] " + head.toString() +
 			(isScopingRule ? " :=\t" : " :-\t");
 		}
 
@@ -234,10 +234,10 @@ public class ConjunctiveQuery implements Cloneable{
 
 		String s = "";
 		if(this.sourceClause != null && this.sourceClause.hasEmbeddedWeight()){
-			s = "["+this.sourceClause.getVarWeight()+"] " + head.toString() + 
+			s = "["+this.sourceClause.getVarWeight()+"] " + head.toString() +
 			(isScopingRule ? " :=\n\t" : " :-\n\t");
 		}else{
-			s = "["+this.getWeight()+"] " + head.toString() + 
+			s = "["+this.getWeight()+"] " + head.toString() +
 			(isScopingRule ? " :=\n\t" : " :-\n\t");
 		}
 
@@ -291,7 +291,7 @@ public class ConjunctiveQuery implements Cloneable{
 			if(!lit.coversAllMaterializedTuples()){
 				if(lit.getSense()){
 					//TODO
-					//	whereList.add("t" + idx + ".truth = " + 
+					//	whereList.add("t" + idx + ".truth = " +
 					//			(lit.getSense()?"TRUE" : "FALSE"));
 				}
 			}
@@ -335,8 +335,8 @@ public class ConjunctiveQuery implements Cloneable{
 					}
 				}
 
-				exceptList.add("(" + StringMan.commaList(args) + ") NOT IN (SELECT " + 
-						StringMan.commaList(lit.getPred().getArgs()) + 
+				exceptList.add("(" + StringMan.commaList(args) + ") NOT IN (SELECT " +
+						StringMan.commaList(lit.getPred().getArgs()) +
 						" FROM " + lit.getPred().getRelName() + ")");
 			}
 		}
@@ -415,7 +415,7 @@ public class ConjunctiveQuery implements Cloneable{
 		" WHERE " + SQLMan.andSelCond(whereList) ;
 		if (!updateNotInsert) {
 			if(!Config.using_greenplum){
-			sub += 
+			sub +=
 				"\nEXCEPT\n" +
 				" SELECT " + StringMan.commaList(p.getArgs()) +
 				" FROM " + p.getRelName()
@@ -432,17 +432,17 @@ public class ConjunctiveQuery implements Cloneable{
 		if (isQueryScopingRule) {
 			iargs.add("NULL");
 			iargs.add("1");
-			if(newTuplePrior != null && 
+			if(newTuplePrior != null &&
 					newTuplePrior <= 1 && newTuplePrior >= 0){
 				iargs.add(newTuplePrior.toString());
 			}else{
 				iargs.add("NULL");
 			}
-		} else if(truth == null || head.coversAllMaterializedTuples() 
+		} else if(truth == null || head.coversAllMaterializedTuples()
 				|| newTuplePrior != null){
 			iargs.add("NULL");
 			iargs.add("0");
-			if(newTuplePrior != null && 
+			if(newTuplePrior != null &&
 					newTuplePrior <= 1 && newTuplePrior >= 0){
 				iargs.add(newTuplePrior.toString());
 			}else{
@@ -475,7 +475,7 @@ public class ConjunctiveQuery implements Cloneable{
 			sql = "UPDATE " + p.getRelName() + " tar " +
 			" SET truth = " + iargs.get(0) + ", " +
 			" club = " + iargs.get(1) + ", " +
-			" prior = " + iargs.get(2) + 
+			" prior = " + iargs.get(2) +
 			(fromList.size() > 0 ? " FROM " + StringMan.commaList(fromList) : " ") +
 			" WHERE " +
 			SQLMan.andSelCond(conds);
@@ -484,12 +484,12 @@ public class ConjunctiveQuery implements Cloneable{
 
 			if(Config.using_greenplum){
 				System.out.println("--- I used to be a bug ? ...");
-				db.update("ALTER TABLE " + p.getRelName() 
+				db.update("ALTER TABLE " + p.getRelName()
 						+ " SET DISTRIBUTED BY (" + p.getArgs().get(0) + ");");
 			}
-			
-			//sql = "INSERT INTO " + p.getRelName() + "(id,truth,club,prior," 
-			sql = "INSERT INTO " + p.getRelName() + "(truth,club,prior," 
+
+			//sql = "INSERT INTO " + p.getRelName() + "(id,truth,club,prior,"
+			sql = "INSERT INTO " + p.getRelName() + "(truth,club,prior,"
 			+ StringMan.commaList(p.getArgs()) + ")\n";
 			sql += "SELECT " + StringMan.commaList(iargs) +
 			" FROM (" + sub + ") nt ";
@@ -508,8 +508,8 @@ public class ConjunctiveQuery implements Cloneable{
 			}
 
 		}
-		
-		
+
+
 		UIMan.verbose(2, sql);
 		db.update(sql);
 		/*
@@ -521,7 +521,7 @@ public class ConjunctiveQuery implements Cloneable{
 		db.update(sql);
 		double rtime = Timer.elapsedMilliSeconds("cqmat");
 		DebugMan.verbose(2, Timer.elapsed("cqmat"));
-		DebugMan.verbose(2, "COST-RATIO = " + (db.estimatedCost/rtime) + " ; ROW-RATIO = " + 
+		DebugMan.verbose(2, "COST-RATIO = " + (db.estimatedCost/rtime) + " ; ROW-RATIO = " +
 				((double)db.estimatedRows/db.getLastUpdateRowCount()));
 		 */
 	}
@@ -555,7 +555,7 @@ public class ConjunctiveQuery implements Cloneable{
 			}
 			if(!lit.coversAllMaterializedTuples()){
 				if(lit.getSense()){
-					//	whereList.add("t" + idx + ".truth = " + 
+					//	whereList.add("t" + idx + ".truth = " +
 					//			(lit.getSense()?"TRUE" : "FALSE"));
 				}
 			}
@@ -609,8 +609,8 @@ public class ConjunctiveQuery implements Cloneable{
 					}
 				}
 
-				exceptList.add("(" + StringMan.commaList(args) + ") NOT IN (SELECT " + 
-						StringMan.commaList(lit.getPred().getArgs()) + 
+				exceptList.add("(" + StringMan.commaList(args) + ") NOT IN (SELECT " +
+						StringMan.commaList(lit.getPred().getArgs()) +
 						" FROM " + lit.getPred().getRelName() + ")");
 			}
 		}
@@ -678,7 +678,7 @@ public class ConjunctiveQuery implements Cloneable{
 			}
 			selList.add(v + " AS " + p.getArgs().get(i));
 
-			if( whichToBound.contains(head.getTerms().get(i).toString()) ){				
+			if( whichToBound.contains(head.getTerms().get(i).toString()) ){
 				//					head.getTerms().get(i).toString().equals( whichToBound ) ){
 				whereList.add(v + " = " + "1");
 			}
@@ -729,7 +729,7 @@ public class ConjunctiveQuery implements Cloneable{
 			}
 			if(!lit.coversAllMaterializedTuples()){
 				if(lit.getSense()){
-					whereList.add("t" + idx + ".truth = " + 
+					whereList.add("t" + idx + ".truth = " +
 							(lit.getSense()?"'1'" : "'0'"));
 				}
 			}
@@ -779,8 +779,8 @@ public class ConjunctiveQuery implements Cloneable{
 					}
 				}
 
-				exceptList.add("(" + StringMan.commaList(args) + ") NOT IN (SELECT " + 
-						StringMan.commaList(lit.getPred().getArgs()) + 
+				exceptList.add("(" + StringMan.commaList(args) + ") NOT IN (SELECT " +
+						StringMan.commaList(lit.getPred().getArgs()) +
 						" FROM " + lit.getPred().getRelName() + ")");
 			}
 		}
@@ -851,7 +851,7 @@ public class ConjunctiveQuery implements Cloneable{
 			selList.add(v + " AS " + p.getArgs().get(i));
 
 
-			if( whichToBound.contains(head.getTerms().get(i).toString()) ){				
+			if( whichToBound.contains(head.getTerms().get(i).toString()) ){
 				whereList.add(v + " = " + "1");
 			}
 		}
@@ -899,7 +899,7 @@ public class ConjunctiveQuery implements Cloneable{
 		}
 	}
 
-	public void buildIndexes(RDB db, Boolean truth, Set<Predicate> IDB, String tableName, 
+	public void buildIndexes(RDB db, Boolean truth, Set<Predicate> IDB, String tableName,
 			boolean addM1LessThanM2, ArrayList<String> additionalSel, boolean... forceBuild){
 
 		Predicate p = head.getPred();
@@ -938,7 +938,7 @@ public class ConjunctiveQuery implements Cloneable{
 			if(!lit.coversAllMaterializedTuples()){
 				if(lit.getSense()){
 					whereList.add("t" + idx + ".truth <> FALSE ");
-					//					whereList.add("t" + idx + ".truth = " + 
+					//					whereList.add("t" + idx + ".truth = " +
 					//							(lit.getSense()?"TRUE" : "FALSE"));
 				}
 			}
@@ -951,7 +951,7 @@ public class ConjunctiveQuery implements Cloneable{
 			//			"(CASE WHEN t" + idx + ".prior >=1 THEN " + Config.hard_weight +
 			//			" WHEN t" + idx + ".prior<=0 THEN -" + Config.hard_weight +
 			//			" ELSE ln(t" + idx + ".prior / (1-t" + idx+ ".prior)) END) "
-			//			+ ")::FLOAT END)"		
+			//			+ ")::FLOAT END)"
 			//
 			//	);
 			//	whereList.add("t" + idx + ".prior > 0.5");
@@ -1002,17 +1002,17 @@ public class ConjunctiveQuery implements Cloneable{
 				///////////////////////////////////////////////////TODO://////////////////////////////////////////////////
 				//
 				// [10.0]  tmp_predicate_1143(mid, eid) :-
-				// mcoref(mid, mid1), 
-				// Mention(mid1, sentID, docID, w1), 
-				// EntityFeature_WikiTitlePartBefore(eid, w1), 
-				// MentionFeature_TextLength(mid, len), 
-				// MentionFeature_TextLength(mid1, len1), 
-				// !mcoref(mid1, mid2), 
+				// mcoref(mid, mid1),
+				// Mention(mid1, sentID, docID, w1),
+				// EntityFeature_WikiTitlePartBefore(eid, w1),
+				// MentionFeature_TextLength(mid, len),
+				// MentionFeature_TextLength(mid1, len1),
+				// !mcoref(mid1, mid2),
 				// len <= len1
 				//
 
-				exceptList.add("(" + StringMan.commaList(args) + ") NOT IN (SELECT " + 
-						StringMan.commaList(lit.getPred().getArgs()) + 
+				exceptList.add("(" + StringMan.commaList(args) + ") NOT IN (SELECT " +
+						StringMan.commaList(lit.getPred().getArgs()) +
 						" FROM " + lit.getPred().getRelName() + ")");
 			}
 		}
@@ -1082,8 +1082,8 @@ public class ConjunctiveQuery implements Cloneable{
 					if(indicesAssistor.containsKey(v)) indices.add(indicesAssistor.get(v));
 				}
 			}
-			selList.add(v + (p.getTypeAt(i).isNonSymbolicType() ? 
-					"::" + p.getTypeAt(i).getNonSymbolicTypeInSQL() : "") + 
+			selList.add(v + (p.getTypeAt(i).isNonSymbolicType() ?
+					"::" + p.getTypeAt(i).getNonSymbolicTypeInSQL() : "") +
 					" AS " + p.getArgs().get(i) );
 		}
 
@@ -1103,8 +1103,8 @@ public class ConjunctiveQuery implements Cloneable{
 					expoExp = "1";
 				}
 
-				selList.add((sourceClause.hasEmbeddedWeight()? 
-						(this.inverseEmbededWeight == true? "-" : "") + mapVarAttr.get(sourceClause.getVarWeight()) : 
+				selList.add((sourceClause.hasEmbeddedWeight()?
+						(this.inverseEmbededWeight == true? "-" : "") + mapVarAttr.get(sourceClause.getVarWeight()) :
 							this.weight) + "*" + expoExp + " AS weight ");
 				iargs.add("nt.weight::float");
 			}else if(s.equals("prov")){
@@ -1113,7 +1113,7 @@ public class ConjunctiveQuery implements Cloneable{
 				String deepprov = "";
 				ArrayList<String> smalls = new ArrayList<String>();
 				for(String var : mapVarAttr.keySet()){
-					smalls.add("'" + var + ":' || CAST(" + mapVarAttr.get(var) + " AS TEXT)");  
+					smalls.add("'" + var + ":' || CAST(" + mapVarAttr.get(var) + " AS TEXT)");
 				}
 				smalls.add("''");
 				deepprov = "ARRAY[" + StringMan.commaList(smalls) + "]::TEXT[] AS deepprov";
@@ -1140,7 +1140,7 @@ public class ConjunctiveQuery implements Cloneable{
 
 				String indexName = column.replaceAll("\\(|\\)", "") + Config.getNextGlobalCounter();
 				//String indexName = column.replaceAll("\\(|\\)", "") ;
-				String indexsql = "DROP INDEX IF EXISTS inair_" + indexName; 
+				String indexsql = "DROP INDEX IF EXISTS inair_" + indexName;
 				db.execute(indexsql);
 				indexsql = "CREATE INDEX inair_" + indexName + " ON " + column;
 				UIMan.verbose(3, indexsql);

@@ -6,12 +6,12 @@ import tuffy.util.StringMan;
  * A term in first-order logic; either a variable or a constant.
  */
 public class Term {
-	
+
 	/**
 	 * Whether this term is a variable.
 	 */
 	private boolean isVariable;
-	
+
 
 	/**
 	 * The name of this term. $var$ is not null iff.
@@ -25,18 +25,18 @@ public class Term {
 	 */
 	private Integer constantID = null;
 	private String constantString = null;
-	
-	
+
+
 	/**
 	 * Constructor of Term (variable version).
-	 * 
+	 *
 	 * @param var name of the variable
 	 */
 	public Term(String var){
 		isVariable = true;
 		this.var = var;
 	}
-	
+
 	public Term(String s, boolean isConstant) {
 		if (isConstant) {
 			constantString = s;
@@ -46,10 +46,10 @@ public class Term {
 			isVariable = true;
 		}
 	}
-	
+
 	/**
 	 * Constructor a Term (constant version).
-	 * 
+	 *
 	 * @param cid the constant in the form of its integer ID
 	 */
 	public Term(Integer cid){
@@ -57,22 +57,22 @@ public class Term {
 		constantID = cid;
 		constantString = cid.toString();
 	}
-	
+
 	/**
 	 * Return whether this term is a variable.
 	 */
 	public boolean isVariable(){
 		return isVariable;
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @return Whether this term is a constant.
 	 */
 	public boolean isConstant(){
 		return !isVariable;
 	}
-	
+
 	/**
 	 * @return The name of this term, which is null when it is
 	 * a constant.
@@ -80,20 +80,20 @@ public class Term {
 	public String var(){
 		return var;
 	}
-	
+
 	/**
-	 * 
-	 * @return The name of this term, which is null when it is 
+	 *
+	 * @return The name of this term, which is null when it is
 	 * a variable.
 	 */
 	public int constant(){
 		return constantID;
 	}
-	
+
 	public String constantString() {
 		return constantString;
 	}
-	
+
 	/**
 	 * @return This term's human-friendly representation.
 	 */
@@ -104,5 +104,5 @@ public class Term {
 			return StringMan.quoteJavaString(constantString);
 		}
 	}
-	
+
 }

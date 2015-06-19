@@ -1,9 +1,9 @@
 /**
  * DeepDive NDB loader
- * 
+ *
  * @author Zifei Shan
  *
- * This loader loads a TSV file into mysql cluster database. 
+ * This loader loads a TSV file into mysql cluster database.
  * It can be executed in parallel.
  */
 
@@ -66,8 +66,8 @@ typedef struct  {
  * Structure used in "free list" to a NdbTransaction
  */
 typedef struct  {
-  NdbTransaction*  conn;   
-  int used; 
+  NdbTransaction*  conn;
+  int used;
 } transaction_t;
 
 transaction_t transaction[MAXTRANS] = {};
@@ -79,7 +79,7 @@ closeTransaction(Ndb * ndb , async_callback_t * cb)
   ndb->closeTransaction(transaction[cb->transaction].conn);
   transaction[cb->transaction].conn = 0;
   transaction[cb->transaction].used = 0;
-  // cb->retries++;  
+  // cb->retries++;
 }
 
 /**
@@ -93,7 +93,7 @@ callback(int result, NdbTransaction* NdbObject, void* aObject)
 
   // in case error occurs, terminate the process.
   // TODO: error handling
-  if (result < 0) 
+  if (result < 0)
   {
     cerr << "Error when handling transaction #" << cbData->transaction << ". MESSAGE: " <<  NdbObject->getNdbError().message << ". Error code = " <<  NdbObject->getNdbError().code << endl;
 
@@ -101,8 +101,8 @@ callback(int result, NdbTransaction* NdbObject, void* aObject)
     if ((Ndb*)cbData->ndb != NULL)
       delete (Ndb*)cbData->ndb;
     exit(-1);
-  } 
-  else 
+  }
+  else
   {
     /**
      * OK! close transaction
@@ -137,7 +137,7 @@ Ndb_cluster_connection* connect_to_cluster(char* conn_string)
     exit(EXIT_FAILURE);
   }
 
-  return c; 
+  return c;
 }
 
 void disconnect_from_cluster(Ndb_cluster_connection *c)
@@ -172,7 +172,7 @@ vector<string> fieldType;
 
 void print_help() {
   printf("Usage: ndbloader conn_string database "
-    "data_file table_format_file [nParallelTransactions=%d] [milliSleep=%d]", 
+    "data_file table_format_file [nParallelTransactions=%d] [milliSleep=%d]",
     TRANACTION_SIZE, sleepTimeMilli);
   printf("Note you need to have dynamic library path set. Add `mysql_config --variable=pkglibdir` to your LD library path.");
 }
@@ -195,7 +195,7 @@ int main(int argc, char* argv[])
     printf("No filepath specified.\n");
     print_help();
     return -1;
-  }  
+  }
   if (argc < 5) {
     printf("No table format file specified.\n");
     print_help();
@@ -238,11 +238,11 @@ int main(int argc, char* argv[])
       // printf("Attr: %s %s\n", key.c_str(), value.c_str());
     }
     strcpy(tablename, firstpart.c_str());
-  } 
+  }
 
 
   // Initialize transaction array
-  for(int i = 0 ; i < MAXTRANS ; i++) 
+  for(int i = 0 ; i < MAXTRANS ; i++)
   {
     transaction[i].used = 0;
     transaction[i].conn = 0;
@@ -281,7 +281,7 @@ int main(int argc, char* argv[])
   // printf("table name: %s\n", tablename);
   const NdbDictionary::Table *myTable= myDict->getTable(tablename);
 
-  if (myTable == NULL) 
+  if (myTable == NULL)
     APIERROR(myDict->getNdbError());
 
   // Load the data
@@ -307,11 +307,11 @@ int main(int argc, char* argv[])
     }
 
     for(int retries = 0; retries < MAX_TRANSALLOC_RETRY; retries++) {
-      // for(int cursor=0; cursor < MAXTRANS; cursor++) 
+      // for(int cursor=0; cursor < MAXTRANS; cursor++)
       while(true)
       {
         if(transaction[cursor].used == 0)
-        {          
+        {
           current = cursor;
           cb = new async_callback_t;
           /**
@@ -327,7 +327,7 @@ int main(int argc, char* argv[])
           break;
         }
         else { // used
-          cursor += 1; 
+          cursor += 1;
           if (cursor >= MAXTRANS) {
             cursor = 0;
           }
@@ -384,15 +384,15 @@ int main(int argc, char* argv[])
 
       if (strcmp(fieldType[i].c_str(), "real") == 0) {
         double value = atof(field.c_str());
-        myOperation->setValue(fieldName[i].c_str(), value);    
+        myOperation->setValue(fieldName[i].c_str(), value);
       }
-      
+
       if (strcmp(fieldType[i].c_str(), "varchar") == 0) {
         char buffer[65535] = {};
         make_ndb_varchar(buffer, field.c_str());
         myOperation->setValue(fieldName[i].c_str(), buffer);
       }
-      
+
       if (strcmp(fieldType[i].c_str(), "char") == 0) {
         char buffer[65535] = {};
         make_ndb_char(buffer, field.c_str());
@@ -417,8 +417,8 @@ int main(int argc, char* argv[])
 
     }
 
-    transaction[current].conn->executeAsynchPrepare( NdbTransaction::Commit, 
-                                         &callback, 
+    transaction[current].conn->executeAsynchPrepare( NdbTransaction::Commit,
+                                         &callback,
                                          cb
                                          );
     nPreparedTransactions++;
@@ -426,8 +426,8 @@ int main(int argc, char* argv[])
     dataleft = true;
     /**
      * When we have prepared parallelism number of transactions ->
-     * send the transaction to ndb. 
-     * Next time we will deal with the transactions are in the 
+     * send the transaction to ndb.
+     * Next time we will deal with the transactions are in the
      * callback. There we will see which ones that were successful
      * and which ones to retry.
      */
@@ -438,7 +438,7 @@ int main(int argc, char* argv[])
       ndb->sendPollNdb(3000, tNoOfParallelTrans );
       nPreparedTransactions=0;
       dataleft = false;
-      
+
       usleep(sleepTimeMilli);
 
     }
@@ -461,11 +461,11 @@ int main(int argc, char* argv[])
   if (dataleft) {
     ndb->sendPollNdb(3000, nPreparedTransactions );
     nPreparedTransactions=0;
-      
+
     // SYNC way
     // if (myTransaction->execute( NdbTransaction::Commit ) == -1)
     //   APIERROR(myTransaction->getNdbError());
-    // ndb->closeTransaction(myTransaction);    
+    // ndb->closeTransaction(myTransaction);
   }
 
   ndb->waitUntilReady(10000);

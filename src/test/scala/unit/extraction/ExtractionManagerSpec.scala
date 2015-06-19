@@ -26,7 +26,7 @@ object ExtractionManagerSpec {
     override def extractorRunnerProps = Props(new Actor {
       def receive = {
         case ExtractorRunner.SetTask(task) =>
-          Thread.sleep(100) 
+          Thread.sleep(100)
           sender ! "Done!"
           context.stop(self)
       }
@@ -35,7 +35,7 @@ object ExtractionManagerSpec {
   }
 }
 
-class ExtractionManagerSpec(_system: ActorSystem) extends TestKit(_system) 
+class ExtractionManagerSpec(_system: ActorSystem) extends TestKit(_system)
   with FunSpecLike with BeforeAndAfter with ImplicitSender {
   import ExtractionManagerSpec._
 
@@ -43,7 +43,7 @@ class ExtractionManagerSpec(_system: ActorSystem) extends TestKit(_system)
   val dbSettings = TestHelper.getDbSettings
 
   describe("Extraction Manager") {
-    
+
     it("should execute one task") {
       val manager = TestActorRef[MemoryExtractionManager](Props(classOf[MemoryExtractionManager], 1, dbSettings))
       val someExtractor = Extractor("e1", "json_extractor", "r1", "query", "udf", 3, 1000, 1000, Set(),

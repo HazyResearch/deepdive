@@ -8,7 +8,7 @@ import tuffy.mln.Predicate;
 /**
  * STILL IN DEVELOPMENT.
  * An atomic formula with possibly functional arguments.
- * 
+ *
  */
 public class AtomEx{
 	private Predicate pred;
@@ -18,15 +18,15 @@ public class AtomEx{
 	public ArrayList<Expression> getArguments(){
 		return args;
 	}
-	
+
 	public boolean isBuiltIn(){
 		return pred.isBuiltIn();
 	}
-	
+
 	public AtomEx(Predicate predicate){
 		this.pred = predicate;
 	}
-	
+
 	/**
 	 * Returns the set of variable names in this literal.
 	 */
@@ -45,18 +45,18 @@ public class AtomEx{
 		// cast argument into correct types
 		return null;
 	}
-	
+
 
 	/**
 	 * Appends a new term.
-	 * 
+	 *
 	 * @param t the term to be appended
 	 */
 	public void appendTerm(Expression t){
 		args.add(t);
 		vars.addAll(t.getVars());
 	}
-	
-	
-	
+
+
+
 }

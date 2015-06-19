@@ -21,7 +21,7 @@ import tuffy.util.ExceptionMan;
  * A domain/type of constants; i.e., a subset of constants.
  */
 public class Type {
-	
+
 	/**
 	 * Built-in types
 	 */
@@ -30,7 +30,7 @@ public class Type {
 	public static Type Integer = new Type("_INTEGER");
 	public static Type String = new Type("_STRING");
 	public static Type Bool = new Type("_BOOL");
-	
+
 	static {
 		Float.isNonSymbolicType = true;
 		Integer.isNonSymbolicType = true;
@@ -39,11 +39,11 @@ public class Type {
 		Integer.nonSymbolicType = Integer;
 		Bool.nonSymbolicType = Bool;
 	}
-	
+
 	private boolean isNonSymbolicType = false;
-	
+
 	private Type nonSymbolicType = null;
-	
+
 	/**
 	 * See if this type is non-symbolic.
 	 * "Non-symbolic" means that the value of this type is directly
@@ -54,11 +54,11 @@ public class Type {
 	public boolean isNonSymbolicType(){
 		return isNonSymbolicType;
 	}
-	
+
 	public Type getNonSymbolicType(){
 		return nonSymbolicType;
 	}
-	
+
 	public String getNonSymbolicTypeInSQL(){
 		if(nonSymbolicType.name.equals("_FLOAT")){
 			return "float";
@@ -72,35 +72,35 @@ public class Type {
 			return null;
 		}
 	}
-	
+
 	/**
 	 * The domain of variable values. The members of a domain are
 	 * named as integer.
 	 */
 	private HashSet<Integer> domain = new HashSet<Integer>();
-	
+
 	/**
 	 * Name of this Type.
 	 */
 	public String name;
-	
+
 	/**
 	 * Name of the relational table corresponding to this type.
 	 * Here it is type_$name.
 	 */
 	private String relName;
-	
+
 	public boolean isProbArg = false;
-	
+
 	/**
 	 * Constructor of Type.
-	 * 
+	 *
 	 * @param name the name of this new type; it must be unique among all types
 	 */
 	public Type(String name){
 		this.name = name;
 		relName = "type_" + name;
-		
+
 		if(name.endsWith("_")){
 			isNonSymbolicType = true;
 			if(name.toLowerCase().startsWith("float")){
@@ -113,41 +113,41 @@ public class Type {
 				isNonSymbolicType = false;
 			}
 		}
-		
+
 		if(name.endsWith("_p_")){
 			this.isProbArg = true;
 		}
-		
+
 	}
-	
+
 	/**
 	 * Return the name of the DB relational table of this type.
 	 */
 	public String getRelName(){
 		return relName;
 	}
-	
+
 	/**
 	 * Store the list of constants in a DB table.
-	 * 
-	 * @param db 
+	 *
+	 * @param db
 	 */
 	public void storeConstantList(RDB db, boolean... onlyNonEmptyDomain){
-		
+
 		if(onlyNonEmptyDomain.length>0 && onlyNonEmptyDomain[0] == true && domain.size() == 0){
 			return;
 		}
-		
+
 		String sql;
-		
+
 		if(onlyNonEmptyDomain.length == 0){
 			db.dropTable(relName);
 			//String sql = "CREATE TEMPORARY TABLE " + relName + "(constantID INTEGER)\n";
 			sql = "CREATE TABLE " + relName + "(constantID bigint, constantVALUE TEXT)";
 			db.update(sql);
 		}
-		
-		
+
+
 		BufferedWriter writer = null;
 		File loadingFile = new File(Config.getLoadingDir(), "loading_type_" + name);
 		try {
@@ -157,44 +157,44 @@ public class Type {
 				writer.append(v + "\n");
 			}
 			writer.close();
-			
+
 			FileInputStream in = new FileInputStream(loadingFile);
 			PGConnection con = (PGConnection)db.getConnection();
 			sql = "COPY " + relName + " (constantID) FROM STDIN ";
 			con.getCopyAPI().copyIn(sql, in);
 			in.close();
-			
+
 			sql = "UPDATE " + relName + " SET constantVALUE = t1.string FROM " + Config.relConstants + " t1 WHERE t1.id = constantID AND constantVALUE IS NULL";
 			db.execute(sql);
-			
+
 			//domain.clear();
 		}catch(Exception e) {
 			ExceptionMan.handle(e);
 		}
-		
+
 		db.analyze(relName);
 	}
-	
+
 	/**
 	 * Add a constant to this type.
-	 * 
+	 *
 	 * @param con the constant to be added
 	 */
 	public void addConstant(int con) {
 		domain.add(con);
 	}
-	
+
 	public HashSet<Integer> getDomain(){
 		return domain;
 	}
-	
+
 	/**
 	 * Return true if this type contains the constant x
 	 */
 	public boolean contains(int x){
 		return domain.contains(x);
 	}
-	
+
 	/**
 	 * Return the number of constants in this type domain.
 	 */
@@ -205,7 +205,7 @@ public class Type {
 		return a;
 		//	return domain.size();
 	}
-	
+
 	/**
 	 * Return the name of this type.
 	 */

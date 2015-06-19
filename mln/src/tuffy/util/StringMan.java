@@ -13,7 +13,7 @@ import tuffy.db.SQLMan;
 public class StringMan {
 
 	private static int uniqVar = 1;
-	
+
 	public static String getUniqVarName(){
 		return "uniqvar" + (uniqVar++);
 	}
@@ -38,10 +38,10 @@ public class StringMan {
 		}
 		return sb.toString();
 	}
-	
+
 	/**
 	 * Concatenates multiple strings with a given separator.
-	 * 
+	 *
 	 * @param sep the separator
 	 * @param parts substrings to be concatenated
 	 * @return the resulting string
@@ -54,7 +54,7 @@ public class StringMan {
 		}
 		return sb.toString();
 	}
-	
+
 	public static String joinAndEscape(String sep, ArrayList<String> parts) {
 		StringBuilder sb = new StringBuilder("");
 		for(int i=0; i<parts.size(); i++) {
@@ -63,7 +63,7 @@ public class StringMan {
 		}
 		return sb.toString();
 	}
-	
+
 	public static String join(String sep, List<String> parts) {
 		StringBuilder sb = new StringBuilder("");
 		for(int i=0; i<parts.size(); i++) {
@@ -75,14 +75,14 @@ public class StringMan {
 
 	/**
 	 * Concatenates multiple strings with commas.
-	 * 
+	 *
 	 * @param parts list substrings to be concatenated
 	 * @return the resulting string
 	 */
 	public static String commaList(ArrayList<String> parts) {
 		return join(", ", parts);
 	}
-	
+
 	public static String commaList(List<String> parts) {
 		return join(", ", parts);
 	}
@@ -91,7 +91,7 @@ public class StringMan {
 	/**
 	 * Concatenates multiple strings with commas, and then
 	 * surrounds the result with a pair of parentheses.
-	 * 
+	 *
 	 * @param ts substrings to be concatenated
 	 * @return the resulting string
 	 */

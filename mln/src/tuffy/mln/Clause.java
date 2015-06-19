@@ -25,18 +25,18 @@ import tuffy.util.UIMan;
  * A first-order logic clause, namely a disjunct of literals.
  */
 public class Clause implements Cloneable{
-	
+
 	@SuppressWarnings("unchecked")
 	public Clause clone(){
 		Clause ret = new Clause();
-		
+
 		ret.bilits = (ArrayList<Literal>) this.bilits.clone();
-		
+
 		ret.constraints = new ArrayList<Expression>();
 		for(Expression sub : this.constraints){
 			ret.constraints.add(sub.clone());
 		}
-		
+
 		ret.cost = this.cost;
 		ret.existentialVars = (ArrayList<String>) this.existentialVars.clone();
 		ret.exprWeight = this.exprWeight;
@@ -59,17 +59,17 @@ public class Clause implements Cloneable{
 		ret.varWeight = this.varWeight;
 		//ret.violatedGClauses = (ArrayList<GClause>) this.violatedGClauses.clone();
 		ret.weight = this.weight;
-		
-		
+
+
 		return ret;
 	}
-	
-	
+
+
 	public Literal variableWeights = null;
-	
+
 	public boolean isFixedWeight = true;
-	
-	
+
+
 	/**
 	 * Map from clause ID to its description. This is used in
 	 * learning part to dump out the answers. Here by id it means
@@ -78,7 +78,7 @@ public class Clause implements Cloneable{
 	 */
 	public static HashMap<String, String> mappingFromID2Desc = null;
 	//	new HashMap<String, String>();
-	
+
 	/**
 	 * Map from Constant ID to Constant Name. This map is filled
 	 * in {@link MarkovLogicNetwork#getSymbolID(String, Type)}.
@@ -91,12 +91,12 @@ public class Clause implements Cloneable{
 	 * The set of boolean expressions that must all be TRUE;
 	 * otherwise the corresponding grounding is always true, and
 	 * is useless for inference -- and will be discarded.
-	 * 
+	 *
 	 * In other words, this is the set of constraints that must be
 	 * satisfied by the grounding process.
 	 */
 	protected ArrayList<Expression> constraints = new ArrayList<Expression>();
-	
+
 	/**
 	 * Add a constraint that must hold.
 	 * @param e A bool expression that must be TRUE.
@@ -104,7 +104,7 @@ public class Clause implements Cloneable{
 	public void addConstraint(Expression e){
 		constraints.add(e);
 	}
-	
+
 	public ArrayList<Expression> getConstraints(){
 		return constraints;
 	}
@@ -120,45 +120,45 @@ public class Clause implements Cloneable{
 		sb.append(StringMan.join("\n", clines));
 		return sb.toString();
 	}
-	
-	
+
+
 	/**
 	 * List of literals in this clause.
 	 */
 	protected ArrayList<Literal> lits = new ArrayList<Literal>();
-	
+
 	/**
 	 * List of regular literals in this clause.
 	 */
 	protected ArrayList<Literal> reglits = new ArrayList<Literal>(); //regular
-	
+
 	/**
 	 * List of built-in literals in this clause.
 	 */
 	protected ArrayList<Literal> bilits = new ArrayList<Literal>(); //built in
-	
+
 	/**
 	 * The index of predicate to set of literals referencing that predicate.
 	 */
 	protected HashMap<Predicate, ArrayList<Literal>> predIndex =
 		new HashMap<Predicate, ArrayList<Literal>>();
-	
+
 	/**
 	 * List of variables that are existentially quantified.
 	 */
 	protected ArrayList<String> existentialVars = new ArrayList<String>();
-	
-	
+
+
 	/**
 	 * Variables corresponding to constants in this clause.
 	 */
 	protected ArrayList<String> metaVars = new ArrayList<String>();
-	
+
 	/**
 	 * Types of meta variables.
 	 */
 	protected ArrayList<Type> metaTypes = new ArrayList<Type>();
-	
+
 	/**
 	 * List of instances of this clause. Here by instance, we mean
 	 * the possible bindings of meta-variables to constants.
@@ -169,32 +169,32 @@ public class Clause implements Cloneable{
 	 * weight of this clause.
 	 */
 	protected double weight = 0;
-	
+
 	/**
 	 * name of this clause.
 	 */
 	protected String name = null;
-	
+
 	/**
 	 * id of this cluase.
 	 */
 	protected int id = 0;
-	
-	/** 
+
+	/**
 	 * user provided names
 	 */
 	protected ArrayList<String> uNames = new ArrayList<String>();
-	
+
 	/**
 	 * Lines in the MLN rule file specifying this clause.
 	 */
 	protected ArrayList<String> specText = new ArrayList<String>();
-	
+
 	protected String getSpecTextFlat(){
 		return StringMan.join("\n", specText);
 	}
-	
-	
+
+
 	/**
 	 * The database table storing the clause instances.
 	 */
@@ -205,7 +205,7 @@ public class Clause implements Cloneable{
 	 * Indicates whether this clause contains constants.
 	 */
 	protected boolean isTemplate = false;
-	
+
 	/**
 	 * The signature of this clause. Clauses with the same
 	 * signature have the same pattern, and thus can be consolidated.
@@ -217,66 +217,66 @@ public class Clause implements Cloneable{
 	 * The From sub-clause of SQL for grounding.
 	 */
 	public String sqlFromList = null;
-	
+
 	public String sqlFromList_noModel = null;
-	
+
 	/**
 	 * The Where sub-clause of SQL for grounding.
 	 */
 	public String sqlWhereBindings = null;
-	
+
 	/**
 	 * The list of attributes that are NOT existential variables.
 	 */
-	public String sqlPivotAttrsList = null; 
-	
+	public String sqlPivotAttrsList = null;
+
 	/**
 	 * The cost ascribed to this clause.
 	 * For auditing purposes.
-	 * 
+	 *
 	 * @see tuffy.infer.MRF#auditClauseViolations()
 	 */
 	public double cost = 0;
-	
+
 	/**
 	 * The number of violations on this clause.
 	 * For auditing purposes.
-	 * 
+	 *
 	 * @see tuffy.infer.MRF#auditClauseViolations()
 	 */
 	public double violations = 0;
-	
+
 	/**
 	 * Violated ground clauses.
-	 * 
+	 *
 	 * @see tuffy.infer.MRF#auditClauseViolations()
 	 */
 	//public ArrayList<GClause> violatedGClauses = new ArrayList<GClause>();
-	
+
 	/**
 	 * FO variable that is used as clause weights
 	 */
 	protected String varWeight = null;
-	
+
 	public void setVarWeight(String vw){
 		varWeight = vw;
 	}
-	
+
 	/**
 	 * Get the variable in this clause that is used as clause weights
 	 */
 	public String getVarWeight(){
 		return varWeight;
 	}
-	
+
 	/**
 	 * Check if the weight of this clause comes from a variable in the clause
 	 */
 	public boolean hasEmbeddedWeight(){
 		return (varWeight != null);
 	}
-	
-	
+
+
 	/**
 	 * Return the weight of this clause.
 	 * If this clause contains multiple instances, the returned
@@ -285,7 +285,7 @@ public class Clause implements Cloneable{
 	public double getWeight(){
 		return weight;
 	}
-	
+
 	/**
 	 * Return true iff this clause contains constant. Note that
 	 * the result of this function is meaningful iff this
@@ -294,8 +294,8 @@ public class Clause implements Cloneable{
 	public boolean isTemplate(){
 		return isTemplate;
 	}
-	
-	
+
+
 	/**
 	 * Add user provided names to this clause.
 	 * @param nm user provided name
@@ -305,7 +305,7 @@ public class Clause implements Cloneable{
 			uNames.add(nm);
 		}
 	}
-	
+
 
 	/**
 	 * Class of an instance of a clause.
@@ -315,14 +315,14 @@ public class Clause implements Cloneable{
 		 * list of constant ID in this clause instance.
 		 */
 		public ArrayList<Term> conList;
-		
+
 		public boolean isFixedWeight = true;
-		
+
 		/**
 		 * weight of this clause instance.
 		 */
 		public double weight;
-		
+
 		/**
 		 * Constructor of ClauseInstance.
 		 * @param conList list of constant in this clause instance.
@@ -342,7 +342,7 @@ public class Clause implements Cloneable{
 	public String getName(){
 		return name;
 	}
-	
+
 	/**
 	 * Assign a name for this clause.
 	 */
@@ -350,10 +350,10 @@ public class Clause implements Cloneable{
 		name = aname;
 		relIntanceClauses = name + "_instances";
 	}
-	
+
 	/**
 	 * Return the "signature" of this clause.
-	 * 
+	 *
 	 * @see Clause#normalize()
 	 */
 	public String getSignature(){
@@ -362,23 +362,23 @@ public class Clause implements Cloneable{
 
 	/**
 	 * Return a normalized version of this clause.
-	 * 
-	 * The variables and constants are replaced standardized 
-	 * variable names, yielding a signature that can be used to 
-	 * identify clauses of the same pattern. 
+	 *
+	 * The variables and constants are replaced standardized
+	 * variable names, yielding a signature that can be used to
+	 * identify clauses of the same pattern.
 	 * If there are constants in the original clause,
-	 * the resulting clause is called a template. 
+	 * the resulting clause is called a template.
 	 * Clauses of the same pattern will be consolidated under
-	 * the same template. 
-	 * 
+	 * the same template.
+	 *
 	 * For example, clauses
 	 * "!likes(x, Candy) v has(x, Diabetes)" and
 	 * "!likes(x, WeightLifting) v has(x, Muscles)"
 	 * would be consolidated into the template
 	 * "!likes(v1, c1) v has(v1, c2)".
-	 * 
+	 *
 	 * Zero-weight clauses will be ignored.
-	 * 
+	 *
 	 * @see MarkovLogicNetwork#registerClause(Clause)
 	 */
 	public Clause normalize() {
@@ -386,9 +386,9 @@ public class Clause implements Cloneable{
 		HashMap<String, Integer> conIndex = new HashMap<String, Integer>();
 		ArrayList<Term> conList = new ArrayList<Term>();
 		ArrayList<Type> conTypeList = new ArrayList<Type>();
-		
+
 		if(this.weight == 0) return null;
-		
+
 		// normalization
 		// order into {enlits, eplits, unlits, uplits}.
 		if(Config.reorder_literals){
@@ -417,7 +417,7 @@ public class Clause implements Cloneable{
 			enlits.addAll(uplits);
 			lits = enlits;
 		}
-		
+
 		// TODO: cleaner object cloning
 		ArrayList<String> litlist = new ArrayList<String>();
 		for(Literal lit : lits){
@@ -471,7 +471,7 @@ public class Clause implements Cloneable{
 			sigb.append("\n   ");
 		}
 		sigb.append(StringMan.join((Config.clause_display_multiline ? "\n" : "") + " v ", litlist));
-		
+
 		HashMap<String, String> mapVarVar = new HashMap<String, String>();
 		for(String v : varIndex.keySet()){
 			mapVarVar.put(v, "v" + varIndex.get(v));
@@ -515,18 +515,18 @@ public class Clause implements Cloneable{
 		if(conTypeList.isEmpty()){
 			c.isTemplate = false;
 			c.weight = this.weight;
-			
+
 			if(this.isFixedWeight == false){
 				c.isFixedWeight = false;
 			}
-			
+
 		}else{
 			c.isTemplate = true;
 			c.weight = (this.weight > 0 ? 1 : -1);
 			for(int i=0; i<conTypeList.size(); i++){
 				c.addMetaVariable("c"+i, conTypeList.get(i));
 			}
-			
+
 			c.instances.add(new ClauseInstance(conList, this.weight, this.isFixedWeight));
 			if(this.isFixedWeight == false){
 				c.isFixedWeight = false;
@@ -539,7 +539,7 @@ public class Clause implements Cloneable{
 	 * "Absorb" another clause of the same pattern into this clause.
 	 * If this clause is a template, then adding instances into
 	 * the instance list. Otherwise, add its weight to current clause.
-	 * 
+	 *
 	 * @param c the clause to be absorbed
 	 * @see Clause#normalize()
 	 */
@@ -582,13 +582,13 @@ public class Clause implements Cloneable{
 		}
 		atts.add("myisfixed TEXT");
 		pholders.add("?");
-		
-		
+
+
 		db.dropTable(relIntanceClauses);
 		String sql = "CREATE TABLE " + relIntanceClauses +
 		StringMan.commaListParen(atts);
 		db.update(sql);
-		
+
 		//TODO:
 		db.dropSequence(relIntanceClauses+"_seq");
 		sql = "CREATE SEQUENCE " + relIntanceClauses + "_seq;";
@@ -598,13 +598,13 @@ public class Clause implements Cloneable{
 		sql = "ALTER TABLE " + relIntanceClauses + " ALTER COLUMN myid SET " +
 				"DEFAULT NEXTVAL('" + relIntanceClauses + "_seq');";
 		db.update(sql);
-		
+
 		int instanceCount = 0;
-		
-		sql = "INSERT INTO " + relIntanceClauses + " VALUES" + 
+
+		sql = "INSERT INTO " + relIntanceClauses + " VALUES" +
 		StringMan.commaListParen(pholders);
 		PreparedStatement psAddMeta = db.getPrepareStatement(sql);
-		
+
 		int ni = 0;
 		try {
 			for(ClauseInstance ins : instances){
@@ -630,7 +630,7 @@ public class Clause implements Cloneable{
 		}
 		psAddMeta = null;
 	}
-	
+
 	/**
 	 * Add a meta variable into this clause.
 	 * @param v name this this meta variable
@@ -644,10 +644,10 @@ public class Clause implements Cloneable{
 		metaTypes.add(t);
 		return true;
 	}
-	
+
 	/**
 	 * Existentially quantify a variable.
-	 * 
+	 *
 	 * @param v the variable to be existentially quantified
 	 */
 	public boolean addExistentialVariable(String v) {
@@ -655,40 +655,40 @@ public class Clause implements Cloneable{
 		existentialVars.add(v);
 		return true;
 	}
-	
+
 	/**
 	 * Construct an empty clause. Initial weight = 0.
-	 * 
+	 *
 	 */
 	public Clause(){
 		weight = 0;
 	}
-	
+
 	/**
 	 * Specify this clause as a hard rule.
 	 * Currently hard rules are treated as soft rules with
 	 * a very large weight.
-	 * 
+	 *
 	 * @see Config#hard_weight
 	 */
 	public void setHardWeight() {
 		weight = Config.hard_weight;
 	}
-	
+
 	/**
 	 * Return whether this clause is a hard rule.
 	 */
 	public boolean isHardClause(){
 		return weight >= Config.hard_weight;
-	}	
-	
+	}
+
 	/**
 	 * Set the weight of this clause.
 	 */
 	public void setWeight(double wt) {
 		weight = wt;
 	}
-	
+
 	/**
 	 * Return the expression of clause weights to be used in SQL.
 	 * For template clauses, it's the name of a table attribute;
@@ -697,14 +697,14 @@ public class Clause implements Cloneable{
 	public String getWeightExp() {
 		return exprWeight;
 	}
-	
+
 	/**
 	 * Check if the weight is positive.
 	 */
 	public boolean isPositiveClause(){
 		return weight > 0;
 	}
-	
+
 	/**
 	 * Initialize database objects for this clause.
 	 */
@@ -712,7 +712,7 @@ public class Clause implements Cloneable{
 		sealClauseInstances(db);
 		generateSQL();
 	}
-	
+
 	/**
 	 * Check for unsafe variables in the clause, and mark the corresponding
 	 * Predicates.
@@ -743,31 +743,31 @@ public class Clause implements Cloneable{
 			}
 		}
 	}
-	
+
 	protected String exprWeight = null;
-	
+
 	/**
 	 * Generate the SQL command for grounding this clause.
 	 * For each meta-variable, bind them to the clause instance (in FROM and WHERE clause)
 	 * For each regular-predicate's variable that is not meta-variable, use
-	 * their grounded atom table to bind the clause (in FROM CLAUSE), 
+	 * their grounded atom table to bind the clause (in FROM CLAUSE),
 	 * with inter-predicate constraints
 	 * introduced in the clause (in WHERE CLAUSE / JOIN CONDITION IN FROM CLAUSE).
 	 * For each built-in predicate, write its semantic into SQL conditions
 	 * directly.
-	 * 
+	 *
 	 * The sqlPivotAttrsList contains a list of variables that are not
 	 * existential variables in the form of $table_name.$column_name. Here
 	 * $table_name is consistent to other SQL sub-clauses generated by this
 	 * function.
 	 */
 	public void generateSQL() {
-		
+
 		HashMap<String, String> mapVarAttr = new HashMap<String, String>();
 		ArrayList<String> groundAttrs = new ArrayList<String>();
 		ArrayList<String> whereList = new ArrayList<String>();
 		whereList.add("1=1");
-		
+
 		StringBuilder from = new StringBuilder();
 		StringBuilder from_noModel = new StringBuilder();
 		int nJoinedTables = 0;
@@ -789,11 +789,11 @@ public class Clause implements Cloneable{
 		// reorder the literals to put antecendents first
 		ArrayList<Literal> ordlits = new ArrayList<Literal>();
 		ArrayList<Literal> poslits = new ArrayList<Literal>();
-		
+
 		ArrayList<Literal> skiplits = new ArrayList<Literal>();
-		
+
 		for(Literal lit : reglits){
-		
+
 			boolean skip = false;
 			if(this.hasEmbeddedWeight()){
 				for(int k=0;k<lit.getTerms().size();k++){
@@ -806,33 +806,33 @@ public class Clause implements Cloneable{
 				skiplits.add(lit);
 				continue;
 			}
-			
-			
+
+
 			if(lit.getSense()) poslits.add(lit);
 			else ordlits.add(lit);
 		}
 		ordlits.addAll(poslits);
 		ordlits.addAll(skiplits);
-		
+
 		// build variable bindings; distinguish pos lits that rely on partial materialization
 
 		HashMap<String, Type> var2type = new HashMap<String, Type>();
-		
+
 		ArrayList<String> attachConds = new ArrayList<String>();
-		
+
 		for(Literal lit : ordlits){
 			int idx = lit.getIdx();
 			String relP = lit.getPred().getRelName();
 
 			ArrayList<Term> terms = lit.getTerms();
-			
+
 			boolean hasNewVars = false;
 			for(int j=0; j<terms.size(); j++) {
 				Term t = terms.get(j);
 				String var = t.var();
-				
+
 				var2type.put(var, lit.getPred().getTypeAt(j));
-				
+
 				String attr = "t" + idx + "."+lit.getPred().getArgs().get(j);
 				if(t.isConstant()) {
 					attachConds.add(attr + "=" + SQLMan.escapeString(t.constantString()));
@@ -855,7 +855,7 @@ public class Clause implements Cloneable{
 			boolean clearAttachConds = false;
 			if(nJoinedTables >= 1){
 				// if hasNewVars, the pred should've been fully materialized
-				from.append(lit.getSense() && !hasNewVars ? 
+				from.append(lit.getSense() && !hasNewVars ?
 						" LEFT OUTER JOIN " : " JOIN ");
 				from.append(relP + " t" +idx + " ON ");
 				if(attachConds.isEmpty()){
@@ -868,7 +868,7 @@ public class Clause implements Cloneable{
 			}else{
 				from.append(relP + " t" +idx);
 			}
-			
+
 			boolean skip = false;
 			if(this.hasEmbeddedWeight()){
 				for(int k=0;k<lit.getTerms().size();k++){
@@ -877,11 +877,11 @@ public class Clause implements Cloneable{
 					}
 				}
 			}
-			
+
 			if(skip == false){
 				if(nJoinedTables_noModel++ >= 1){
 					// if hasNewVars, the pred should've been fully materialized
-					from_noModel.append(lit.getSense() && !hasNewVars ? 
+					from_noModel.append(lit.getSense() && !hasNewVars ?
 							" LEFT OUTER JOIN " : " JOIN ");
 					from_noModel.append(relP + " t" +idx + " ON ");
 					if(attachConds.isEmpty()){
@@ -895,27 +895,27 @@ public class Clause implements Cloneable{
 					from_noModel.append(relP + " t" +idx);
 				}
 			}
-			
+
 			if(clearAttachConds){
 				attachConds.clear();
 			}
-			
+
 			nJoinedTables++;
 			nJoinedTables_noModel++;
 		}
 
 		if(hasEmbeddedWeight() && exprWeight == null){
-			UIMan.warn("The following clause is specified to have embedded weights, but the variable '" + 
+			UIMan.warn("The following clause is specified to have embedded weights, but the variable '" +
 					varWeight + "' doesn't appear in the formula: " + this.toString());
 		}
-		
+
 		// this could happen only for unit clauses
 		if(!attachConds.isEmpty()){
 			whereList.addAll(attachConds);
 			attachConds.clear();
 		}
-		
-		
+
+
 		// express constraints in SQL
 		HashSet<String> cvars = new HashSet<String>();
 		int nChangeName = 0;
@@ -934,13 +934,13 @@ public class Clause implements Cloneable{
 			if(attr == null){
 				ExceptionMan.die("unsafe constraints in clause\n" + getSpecTextFlat());
 			}
-			
+
 			if(nChangeName > 0){
 				if(!var2type.get(v).isNonSymbolicType() && !Config.constants_as_raw_string){
-				
-					from.append(" JOIN " + var2type.get(v).getRelName() + 
+
+					from.append(" JOIN " + var2type.get(v).getRelName() +
 						" s" + idx + " ON s" + idx + ".constantid = " + attr);
-					//from.append(" JOIN " + Config.relConstants + 
+					//from.append(" JOIN " + Config.relConstants +
 					//		" s" + idx + " ON s" + idx + ".id = " + attr);
 					nJoinedTables++;
 				}
@@ -953,7 +953,7 @@ public class Clause implements Cloneable{
 			mapVarValNotChangeName.put(v, attr);
 		}
 		for(Expression e : constraints){
-			
+
 			if(e.changeName == true){
 				e.bindVariables(mapVarVal);
 				whereList.add(e.toSQL());
@@ -963,10 +963,10 @@ public class Clause implements Cloneable{
 				whereList.add(tmpE.toString());
 			}
 		}
-		
+
 		sqlFromList = from.toString();
 		sqlFromList_noModel = from_noModel.toString();
-		
+
 		sqlWhereBindings = SQLMan.andSelCond(whereList);
 		sqlPivotAttrsList = StringMan.commaList(groundAttrs);
 		/*
@@ -994,137 +994,137 @@ public class Clause implements Cloneable{
 		s += (isTemplate ? "[#instances="+instances.size()+"]" : "[weight="+w+"]");
 		return s + " " + (signature == null? getSpecTextFlat() : signature);
 	}
-	
+
 	/**
 	 * Return the definition of clause instance.
 	 * @param ni The ID of instance.
 	 */
 	public String toString(int ni) {
 		String s = ""; //= (name == null ? "" : name);
-		
+
 		String tmps = (signature == null? getSpecTextFlat() : signature);
 		if(ni >= 0 && !mappingFromID2Const.isEmpty()){
 			for(int i=0;i<this.instances.get(ni).conList.size();i++){
-				tmps = tmps.replaceAll("c"+(i), 
+				tmps = tmps.replaceAll("c"+(i),
 						"\"" + mappingFromID2Const.get(instances.get(ni).conList.get(i).constant()).replace("$", "\\$") + "\"");
 			}
 		}
-		
+
 		tmps = tmps.replaceAll("[\n|\r]", " ");
 		tmps = tmps.replaceAll("sign=\'.\'", "");
-		
+
 		return s + " " + tmps;
 	}
-		
+
 	public String toStringForFunctionClause(String signature, Double weight){
-		
+
 		String[] clauses = signature.split("\\.");
 		int clauseID = Integer.parseInt(clauses[0]);
 		String[] vars = clauses[1].split(",");
-		
-		
+
+
 		String s = "";
-		
-		
+
+
 		if(this.hasEmbeddedWeight() == false){
 			return null;
 		}
-		
+
 		ArrayList<String> tojoin = new ArrayList<String>();
 		HashMap<String, String> var2const = new HashMap<String, String>();
-		
+
 		for(Literal l : this.reglits){
-			
+
 			boolean isEmbeded = false;
 			for(int k=0;k<l.getTerms().size();k++){
 				if(l.getTerms().get(k).var().equals(this.getVarWeight())){
 					isEmbeded = true;
 				}
 			}
-			
+
 			if(isEmbeded == false){
-				
+
 			}else{
-				
+
 				for(int k=0;k<l.getTerms().size();k++){
 					if(vars[k].equals("%f")){
-						
+
 					}else{
 						String tmp = mappingFromID2Const.get(Integer.parseInt(vars[k]));
 						tmp = tmp.replaceAll("\\$","\\\\\\$");
-						var2const.put(l.getTerms().get(k).var(), 
+						var2const.put(l.getTerms().get(k).var(),
 								tmp);
 					}
 				}
 			}
 		}
-		
-		
+
+
 		for(Literal l : this.reglits){
-			
+
 			boolean isEmbeded = false;
 			for(int k=0;k<l.getTerms().size();k++){
 				if(l.getTerms().get(k).var().equals(this.getVarWeight())){
 					isEmbeded = true;
 				}
 			}
-			
+
 			String str  = (l.getSense()?"": "!") + l.getPred().getName();
 			ArrayList<String> args = new ArrayList<String>();
 			for(int k=0;k<l.getTerms().size();k++){
 				if(var2const.containsKey(l.getTerms().get(k).var())){
-					args.add("\"" + 
+					args.add("\"" +
 							StringMan.escapeJavaString(var2const.get(
 									l.getTerms().get(k).var())) + "\"");
 				}else{
 					args.add(l.getTerms().get(k).var());
 				}
 			}
-			
+
 			if(isEmbeded == false){
 				tojoin.add(str + "(" + StringMan.join(", ", args) + ")");
 			}else{
 				continue;
 			}
-			
+
 		}
-		
+
 		s = StringMan.join(" v ", tojoin);
-		
+
 		s = weight + " " + s;
-		
+
 		return s;
 	}
-	
-	
+
+
 	/**
 	 * Return the member literals of a particular predicate.
 	 */
 	public ArrayList<Literal> getLiteralsOfPredicate(Predicate pred){
 		return predIndex.get(pred);
 	}
-	
+
 	/**
 	 * Return the set of predicates referenced by this clause.
 	 */
 	public Set<Predicate> getReferencedPredicates(){
 		return predIndex.keySet();
 	}
-	
+
 	/**
 	 * Return the list of non-built-in literals (i.e., regular literals).
 	 */
 	public ArrayList<Literal> getRegLiterals(){
 		return reglits;
 	}
-	
+
 	/**
 	 * Check if any variable in this clause is existentially quantified.
 	 */
 	public boolean hasExistentialQuantifiers(){
 		return !existentialVars.isEmpty();
 	}
-	
+
 	/**
 	 * Add a literal to this clause.
 	 */
@@ -1150,7 +1150,7 @@ public class Clause implements Cloneable{
 		}
 		lits.add(lit);
 		plits.add(lit);
-		
+
 	}
 
 	/**
@@ -1167,7 +1167,7 @@ public class Clause implements Cloneable{
 	public int getId() {
 		return id;
 	}
-	
+
 	public void addSpecText(String s){
 		specText.add(s);
 	}
@@ -1318,7 +1318,7 @@ public class Clause implements Cloneable{
 					}
 				}
 				input_query += StringMan.commaList(attrs) + "\n";
-				
+
 				// the "FROM" part of the input_query
 				input_query += "FROM ";
 				attrs.clear();
@@ -1392,7 +1392,7 @@ public class Clause implements Cloneable{
 						attrs.add((lit.getSense()?"":"!") + "t" + Integer.toString(i) + ".truth[]");
 					}
 				}
-				function = "Or" + StringMan.commaListParen(attrs);	
+				function = "Or" + StringMan.commaListParen(attrs);
 
 				count++;
 				String rule = name + "_" + Integer.toString(count) + " {\n";

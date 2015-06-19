@@ -13,7 +13,7 @@ public class Config {
 
 	public static PrintWriter sampleLog = null;
 	public static String samplerWriterPath = null;
-	
+
 	public static String product_line = "tuffy";
 	public static String product_name = "Tuffy 0.3";
 	public static String path_conf = "./tuffy.conf";
@@ -23,22 +23,22 @@ public class Config {
 	public static int currentSampledNumber = 0;
 
 	public static boolean no_pushdown = false;
-	
+
 	public static boolean using_greenplum = false;
 
 	public static boolean skipUselessComponents = true;
-	
+
 	public static boolean mark_atoms_in_useful_components = false;
 
 	public static boolean activate_soft_evid = true;
-	
+
 	public static boolean count_only_useful_inconsistencies = false;
 
 	public static boolean warmTuffy = false;
-	
+
 
 	public static boolean log_trace = true;
-	
+
 	/**
 	 * Runtime
 	 */
@@ -78,7 +78,7 @@ public class Config {
 	public static int evidence_file_chunk_size = 1 << 22;
 	public static double partition_size_bound = 1L << 32;
 	public static double ram_size = 1L << 32;
-	
+
 	public static int max_number_components_per_bucket = Integer.MAX_VALUE;
 
 	public static String evidDBSchema = null;
@@ -94,8 +94,8 @@ public class Config {
 		"pred_mentionfeature_textalphanumeric","type_eid","type_docid","type_sentid",
 		"pred_mentionfeature_textabbreviation","type_mid","pred_mentionfeature_type",
 		"pred_mentionfeature_textlc","type_word","pred_fullmention"};
-	private static String[] aVolatileTables = {"pred_query", "pred_mcoref_scope", 
-		"pred_mcoref_map", "pred_asqueryfull"}; 
+	private static String[] aVolatileTables = {"pred_query", "pred_mcoref_scope",
+		"pred_mcoref_map", "pred_asqueryfull"};
 	public static HashSet<String> goodTables = new HashSet<String>();
 	public static HashSet<String> volatileTables = new HashSet<String>();
 	static {
@@ -106,7 +106,7 @@ public class Config {
 		for (String t : aVolatileTables) {
 			volatileTables.add(t);
 		}
-		
+
 	}
 	*/
 
@@ -130,11 +130,11 @@ public class Config {
 	public static boolean apply_greedy_throttling = true;
 
 	public static boolean ground_atoms_ignore_neg_embedded_wgts = false;
-	
+
 	public static enum TUFFY_INFERENCE_TASK {MAP, MARGINAL, MLE};
 
 	public static int gauss_seidel_infer_rounds = 5;
-	
+
 	public static boolean key_constraint_allows_null_label = false;
 
 	/**
@@ -151,12 +151,12 @@ public class Config {
 	public static double marginal_output_min_prob = 0;
 	public static boolean mcsat_output_hidden_atoms = false;
 	public static int mcsat_dump_interval = 0;
-	
+
 	public static boolean mcsat_cumulative = false;
 
 	public static boolean enron_exp = true;
 	public static boolean silent_on_single_thread = true;
-	
+
 	/**
 	 * Helper
 	 */
@@ -182,30 +182,30 @@ public class Config {
 	public static boolean checkNumCriticalNodes = false;
 	public static boolean focus_on_critical_atoms = false;
 
-	
+
 	//public static int mleTopK = 100;
 	public static int mleTopK = -1;
 	// very expensive
 	public static boolean calcRealMLECost = false;
 	public static int innerPara = 1;
 	public static int nMLESamples = 10000;
-	
-	public static boolean addReporter = true;	
+
+	public static boolean addReporter = true;
 	public static boolean debug_mode = false;
-	
+
 	public static int mle_gibbs_mcmc_steps = 10;
 	public static boolean mle_use_key_constraint = true;
-	
+
 	public static boolean mle_optimize_small_components = false;
 	public static boolean mle_partition_components = false;
-	
+
 	public static boolean mle_use_gibbs_sampling = false;
 	public static boolean mle_use_mcsat_sampling = false;
 	public static boolean mle_use_serialmix_sampling = false;
 	public static boolean mle_use_junction_tree = false;
-	
+
 	public static int mle_serialmix_constant = 100;
-	
+
 	public static int getNumThreads(){
 		if(max_threads > 0) return max_threads;
 		return Runtime.getRuntime().availableProcessors();
@@ -230,13 +230,13 @@ public class Config {
 			return globalCounter;
 		}
 	}
-	
-	
+
+
 
 	public static String getProcessID(){
 		return ManagementFactory.getRuntimeMXBean().getName();
 	}
-	
+
 	public static double logAdd(double logX, double logY) {
 
 	       if (logY > logX) {
@@ -248,13 +248,13 @@ public class Config {
 	       if (logX == Double.NEGATIVE_INFINITY) {
 	           return logX;
 	       }
-	       
+
 	       double negDiff = logY - logX;
 	       if (negDiff < -200) {
 	           return logX;
 	       }
-	       
-	       return logX + java.lang.Math.log(1.0 + java.lang.Math.exp(negDiff)); 
+
+	       return logX + java.lang.Math.log(1.0 + java.lang.Math.exp(negDiff));
 	 }
 
 }

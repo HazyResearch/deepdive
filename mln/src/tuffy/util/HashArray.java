@@ -8,38 +8,38 @@ public class HashArray<T> {
 	ArrayList<T> list = new ArrayList<T>();
 	HashMap<T, Integer> indices = new HashMap<T, Integer>();
 	Random rand = new Random();
-	
+
 	public int size = 0;
-	
+
 	public ArrayList<T> getList(){
 		return list;
 	}
-	
+
 	public T getRandomElement(){
 		return list.get(rand.nextInt(list.size()));
 	}
-	
+
 	public boolean contains(T e){
 		return indices.containsKey(e);
 	}
-	
+
 	public void clear(){
 		list.clear();
 		indices.clear();
 		size = 0;
 	}
-	
+
 	public boolean isEmpty(){
 		return list.isEmpty();
 	}
-	
+
 	public void add(T e){
 		if(indices.containsKey(e)) return;
 		list.add(e);
 		indices.put(e, list.size() - 1);
 		size ++;
 	}
-	
+
 	public void removeIdx(int i){
 		int ss = list.size();
 		if(i < 0 || i >= ss) return;
@@ -54,7 +54,7 @@ public class HashArray<T> {
 		}
 		size --;
 	}
-	
+
 	public void removeObj(T e){
 		if(!indices.containsKey(e)) return;
 		int i = indices.get(e);

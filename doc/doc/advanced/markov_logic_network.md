@@ -46,12 +46,12 @@ directory). Each directory contains the following files:
 	`DEEPDIVE_HOME/mln/examples/`.
 - `run.sh` controls the workflow of the Deepdive MLN support.
 
-To solve an MLN with Deepdive, the user should 
+To solve an MLN with Deepdive, the user should
 
 1) configure the database with `env_conf.sh` and the Deepdive sampler with
 `application.conf`
 
-2) specify the MLN in `prog.mln`, `evidence.db`, and `query.db` 
+2) specify the MLN in `prog.mln`, `evidence.db`, and `query.db`
 
 3) start run.sh to solve the MLN.
 

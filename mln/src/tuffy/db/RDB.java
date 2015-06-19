@@ -35,23 +35,23 @@ import tuffy.util.UIMan;
 public class RDB {
 	private int lastUpdateRowCount = -1;
 	private boolean savedAutoCommit = false;
-    
+
 	public static final long constantIdBase = 1 << 29;
-	
+
 	static ArrayList<RDB> allRDBs = new ArrayList<RDB>();
 	static int currentDBCounter = 0;
-    
+
 	public Connection con = null;
-    
+
 	private Statement currentlyRunningQuery = null;
-    
+
 	public String db;
 	public String user;
 	public String password;
 	public String schema = null;
-    
+
 	public static HashSet<RDB> historyInstances = new HashSet<RDB>();
-    
+
 	/**
 	 *  Disable auto-commit so that JDBC won't fetch all query results at once.
 	 *  Call this before retrieving data from a huge table.
@@ -70,7 +70,7 @@ public class RDB {
 			ExceptionMan.handle(e);
 		}
 	}
-    
+
 	/**
 	 * Register a stored procedure to explain SQL queries.
 	 * @param pname name of the stored procedure
@@ -84,11 +84,11 @@ public class RDB {
 		"    return next r.\"QUERY PLAN\";\r\n" +
 		"  end loop;\r\n" +
 		"end$$ language plpgsql";
-        
+
 		update(sql);
 	}
-    
-    
+
+
 	public void estimateQuery(String sql, boolean analyze){
 		RDB db = this;
 		db.estimateCost(sql);
@@ -102,7 +102,7 @@ public class RDB {
                           ((double)db.estimatedRows/db.getLastUpdateRowCount()));
 		}
 	}
-    
+
 	public double estimatedCost = 0;
 	public double estimatedRows = 0;
 	public String estimateCost(String sql){
@@ -124,24 +124,24 @@ public class RDB {
 		}
 		return rep;
 	}
-    
+
 	/**
 	 * Explain a SQL query with an execution plan.
 	 * @param sql
 	 */
 	public String explain(String sql){
-        
+
 		try {
-            
+
 			//this.execute("EXPLAIN " + sql);
 			//this.regExplainProc("expl");
-            
+
 			PreparedStatement ps = getPrepareStatement(
                                                        "SELECT * FROM expl(cast(? as text))");
 			ps.setString(1, sql);
 			//System.out.println(sql);
 			ResultSet rs = ps.executeQuery();
-            
+
 			StringBuilder sb = new StringBuilder();
 			while(rs.next()){
 				sb.append(rs.getString(1) + "\n");
@@ -150,9 +150,9 @@ public class RDB {
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			//e.printStackTrace();
-            
+
 			// dirty
-            
+
 			try {
 				this.con.close();
 				this.con = DriverManager.getConnection(db, user, password);
@@ -165,29 +165,29 @@ public class RDB {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-            
+
 			return null;
 		}
-        
+
 	}
-    
-    
+
+
 	public void createTempTableIntList(String rel, Collection<Integer> vals){
 		dropTable(rel);
 		String sql = "CREATE TABLE " + rel + "(id INT)";
 		update(sql);
 		try {
-			
+
 			String loadingFile = Config.dir_working + "/createTempTableIntList";
-			
+
 			BufferedWriter bw = new BufferedWriter(new FileWriter(
                                                                   Config.dir_working + "/createTempTableIntList"));
-			
+
 			for(int pid : vals){
 				bw.write(pid + "\n");
 			}
 			bw.close();
-            
+
 			ArrayList<String> cols = new ArrayList<String>();
 			cols.add("id");
 			FileInputStream in = new FileInputStream(loadingFile);
@@ -198,13 +198,13 @@ public class RDB {
 			in.close();
 			this.analyze(rel);
 			FileMan.removeFile(loadingFile);
-			
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-    
-    
+
+
 	/**
 	 * Restore the auto-commit state saved by {@link RDB#disableAutoCommitForNow()}.
 	 *
@@ -217,22 +217,22 @@ public class RDB {
 			ExceptionMan.handle(e);
 		}
 	}
-    
+
 	/**
 	 * Return the number of affected tuples from last update.
 	 */
 	public int getLastUpdateRowCount() {
 		return lastUpdateRowCount;
 	}
-    
+
 	/**
 	 * Return the database connection.
 	 */
 	public Connection getConnection(){
 		return con;
 	}
-    
-    
+
+
 	/**
 	 * Dump a MAP world produced by MAP inference.
 	 *
@@ -264,59 +264,59 @@ public class RDB {
 			ExceptionMan.handle(e);
 		}
 	}
-    
-    
-    
+
+
+
 	/**
 	 * Attempt to establish the connection as specified in the
 	 * (deault) configuration.
 	 */
 	public static RDB getRDBbyConfig() {
-        
+
 		//TODO: why need so large
 		//int nConnections = 1;
-        
+
 		//TODO: change nCores to # connect
 		//if(allRDBs.size() < nConnections){
 		RDB tmp = new RDB(Config.db_url,
                            Config.db_username, Config.db_password);
-        
+
 		tmp.db = Config.db_url;
 		tmp.user = Config.db_username;
 		tmp.password = Config.db_password;
-        
+
 		historyInstances.add(tmp);
-        
-        
+
+
 		//	allRDBs.add(tmp);
 		//	currentDBCounter = allRDBs.size() - 1;
 		//}else{
 		//	currentDBCounter = (currentDBCounter+1) % nConnections;
 		//}
-        
+
 		//return allRDBs.get(currentDBCounter);
 		return tmp;
-        
+
 	}
-    
+
 	public static RDB getRDBbyConfig(String schema) {
-        
+
 		RDB tmp  = new RDB(Config.db_url,
                            Config.db_username, Config.db_password);
-        
+
 		tmp.db = Config.db_url;
 		tmp.user = Config.db_username;
 		tmp.password = Config.db_password;
 		tmp.schema = schema;
-        
+
 		tmp.execute("SET search_path = " + schema);
-        
+
 		historyInstances.add(tmp);
-        
+
 		return tmp;
-        
+
 	}
-    
+
 	/**
 	 * Register the JDBC driver.
 	 */
@@ -330,13 +330,13 @@ public class RDB {
          }
 		 */
 	}
-    
+
 	private void dumpSQL(String sql){
 		UIMan.println("-----BEGIN:SQL-----");
 		UIMan.println(sql);
 		UIMan.println("-----END:SQL-----");
 	}
-    
+
 	/**
 	 * Execute an update SQL statement.
 	 *
@@ -357,7 +357,7 @@ public class RDB {
 		}
 		return lastUpdateRowCount;
 	}
-    
+
 	/**
 	 * Execute a SQL statement (query/update).
 	 */
@@ -373,11 +373,11 @@ public class RDB {
 		} catch (SQLException e) {
 			dumpSQL(sql);
 			e.printStackTrace();
-            
+
 			ExceptionMan.handle(e);
 		}
 	}
-    
+
 	public void executeWhatever(String sql) {
 		try {
 			Statement stmt = con.createStatement();
@@ -387,13 +387,13 @@ public class RDB {
 			dumpSQL(sql);
 		}
 	}
-    
+
 	private void executeRaw(String sql) throws SQLException{
 		Statement stmt = con.createStatement();
 		stmt.execute(sql);
 		stmt.close();
 	}
-    
+
 	private void updateRaw(String sql) throws SQLException{
 		this.commit();
 		this.setAutoCommit(true);
@@ -403,7 +403,7 @@ public class RDB {
 		stmt.close();
 		currentlyRunningQuery = null;
 	}
-    
+
 	/**
 	 * Execute a set of update SQL statements as a batch.
 	 *
@@ -425,7 +425,7 @@ public class RDB {
 		}
 		return false;
 	}
-    
+
 	/**
 	 * Execute a SQL query.
 	 *
@@ -447,7 +447,7 @@ public class RDB {
 			return null;
 		}
 	}
-    
+
 	/**
 	 * Load the symbol table into a hash table mapping
 	 * symbols to their IDs.
@@ -472,7 +472,7 @@ public class RDB {
 		}
 		return map;
 	}
-    
+
 	/**
 	 * Load the symbol table into a hash table mapping
 	 * symbol IDs to the original symbols.
@@ -496,7 +496,7 @@ public class RDB {
 		}
 		return map;
 	}
-    
+
 	/**
 	 * Store the symbol-ID mapping into a symbol table.
 	 *
@@ -507,18 +507,18 @@ public class RDB {
 		dropTable(rel);
 		String sql = "CREATE TABLE " + rel +
 		"(id bigint, string TEXT)";
-		
+
 		if (rel.equals(Config.relConstants)) {
 			sql = "CREATE TABLE " + rel +
 			"(id bigint PRIMARY KEY, string TEXT)";
 		}
-		
+
 		//if(Config.using_greenplum){
 		//	sql += " DISTRIBUTED BY (string)";
 		//}
-		
+
 		update(sql);
-        
+
 		BufferedWriter writer = null;
 		File loadingFile = new File(Config.getLoadingDir(), "loading_symbols_");
 		try {
@@ -540,16 +540,16 @@ public class RDB {
 			sql = "COPY " + rel + " FROM STDIN ";
 			con.getCopyAPI().copyIn(sql, in);
 			in.close();
-            
+
 			//sql = "CREATE INDEX " + rel + "_constants_index_id ON " + rel + "(id)";
 			//this.execute(sql);
-            
+
 		}catch(Exception e) {
 			ExceptionMan.handle(e);
 		}
-        
+
 	}
-    
+
 	public void insertConstantTable(Map<String, Integer> mapConstantID) {
 		String rel = Config.relConstants;
 		String sql;
@@ -572,15 +572,15 @@ public class RDB {
 			sql = "COPY " + rel + " FROM STDIN ";
 			con.getCopyAPI().copyIn(sql, in);
 			in.close();
-            
+
 			//sql = "CREATE INDEX constants_index_id ON " + rel + "(id)";
 			//this.execute(sql);
-            
+
 		}catch(Exception e) {
 			ExceptionMan.handle(e);
 		}
 	}
-    
+
 	/**
 	 * Create a table to store a set of integers
 	 * @param rel the name of the table
@@ -604,7 +604,7 @@ public class RDB {
 			e.printStackTrace();
 		}
 	}
-    
+
 	/**
 	 * Try to drop a table; remain silent if the specified
 	 * table doesn't exist.
@@ -613,7 +613,7 @@ public class RDB {
 		// System.out.println("####### drop " + rel);
 		dropStuff("TABLE", rel);
 	}
-    
+
 	/**
 	 * Try to drop a schema; remain silent if the specified
 	 * schema doesn't exist.
@@ -621,7 +621,7 @@ public class RDB {
 	public boolean dropSchema(String sch){
 		return dropStuff("SCHEMA", sch + "");
 	}
-    
+
 	/**
 	 * Try to drop a sequence; remain silent if the specified
 	 * sequence doesn't exist.
@@ -629,11 +629,11 @@ public class RDB {
 	public void dropSequence(String seq){
 		dropStuff("SEQUENCE", seq);
 	}
-    
+
 	public void dropView(String view){
 		dropStuff("VIEW", view);
 	}
-    
+
 	private boolean dropStuff(String type, String obj){
 		String sql = "DROP " + type + " IF EXISTS " + obj + " CASCADE";
 		String sql2 = "DROP " + type + " IF EXISTS " + obj + "";
@@ -641,7 +641,7 @@ public class RDB {
 			updateRaw(sql);
 			return true;
 		} catch (SQLException e) {
-            
+
 			// the target was not found; do nothing
 			try{
 				updateRaw(sql2);
@@ -649,11 +649,11 @@ public class RDB {
 			}catch(Exception e2){
 				return false;
 			}
-            
+
 		}
 	}
-    
-    
+
+
 	/**
 	 * Return a prepared statement of the given SQL statement.
 	 * A SQL statement with or without parameters can be pre-compiled
@@ -670,9 +670,9 @@ public class RDB {
 		}
 		return ps;
 	}
-    
+
 	public boolean schemaExists(String name){
-        
+
 		ResultSet rs = this.query("SELECT * FROM information_schema.schemata WHERE schema_name = '" + name.toLowerCase() + "'");
 		try {
 			if(rs.next()){
@@ -685,7 +685,7 @@ public class RDB {
 		}
 		return false;
 	}
-    
+
 	public boolean tableExists(String tableName) {
 		String sql = "SELECT * FROM " + tableName + " LIMIT 1";
 		try {
@@ -695,9 +695,9 @@ public class RDB {
 			return false;
 		}
 	}
-	
+
 	public boolean tableExists(String schemaName, String tableName){
-		
+
 		String sql = "SELECT * FROM " + schemaName + "." + tableName + " LIMIT 1";
 		try {
 			executeRaw(sql);
@@ -706,7 +706,7 @@ public class RDB {
 			return false;
 		}
 	}
-    
+
 	/**
 	 * Reset the database schema that serves as Tuffy's workspace.
 	 *
@@ -736,7 +736,7 @@ public class RDB {
             this.schema = schema;
         }
     }
-    
+
 	/**
 	 * Copy the tuples of a table to another.
 	 * Can be used to check out the content of a temporary table.
@@ -754,7 +754,7 @@ public class RDB {
 			ExceptionMan.handle(e);
 		}
 	}
-    
+
 	/**
 	 * Commit the previous actions.
 	 * Useless when AutoCommit is on, which is so by default.
@@ -766,14 +766,14 @@ public class RDB {
 			ExceptionMan.handle(e);
 		}
 	}
-    
+
 	/**
 	 * Specifies a JDBC connection.
 	 */
 	public RDB(String url, String user, String password){
-        
+
 		UIMan.verbose(1000, "------------------- Open a new DB " + this);
-        
+
 		registerDrivers();
 		try {
 			con = DriverManager.getConnection(url, user, password);
@@ -818,10 +818,10 @@ public class RDB {
 							System.out.println("Failed.");
 						}
 					}
-                    
+
 					System.out.print("Removing temporary dir '" + Config.getWorkingDir() + "'...");
 					System.out.println(FileMan.removeDirectory(new File(Config.getWorkingDir()))?"OK" : "FAILED");
-                    
+
 					if(!Config.keep_db_data){
 						System.out.print("Removing database schema '" + Config.db_schema + "'...");
 						System.out.println(dropSchema(Config.db_schema)?"OK" : "FAILED");
@@ -842,7 +842,7 @@ public class RDB {
 			return;
 		}
 	}
-    
+
 	/**
 	 * Set auto-commit state of this connection.
 	 */
@@ -854,7 +854,7 @@ public class RDB {
 			System.err.println(e.getMessage());
 		}
 	}
-    
+
 	/**
 	 * Read the current value of a sequence.
 	 *
@@ -873,7 +873,7 @@ public class RDB {
 		}
 		return -1;
 	}
-    
+
 	/**
 	 * Count the tuples in a table.
 	 */
@@ -893,25 +893,25 @@ public class RDB {
 		}
 		return -1;
 	}
-    
+
 	/**
 	 * Close this connection.
 	 */
 	public void close() {
-		
+
 		try {
 			if (con != null) {
 				UIMan.verbose(1000, "------------------- Close a DB " + this);
 				con.close();
 				con = null;
 			}
-			
+
 		} catch (SQLException e) {
 			ExceptionMan.handle(e);
 		}
-		
+
 	}
-    
+
 	/**
 	 * Analyze a specific table.
 	 *
@@ -924,7 +924,7 @@ public class RDB {
 		String sql = "ANALYZE " + rel;
 		this.update(sql);
 	}
-    
+
 	/**
 	 * Vacuum a specific table.
 	 *
@@ -937,7 +937,7 @@ public class RDB {
 		String sql = "VACUUM " + rel;
 		this.update(sql);
 	}
-    
+
 	/**
 	 * Drop an index if it exists.
 	 *
@@ -951,7 +951,7 @@ public class RDB {
 			ExceptionMan.handle(e);
 		}
 	}
-    
+
 	/**
 	 * Reset the value of a sequence to 1.
 	 *
@@ -962,10 +962,10 @@ public class RDB {
 		"', 1, false)";
 		execute(sql);
 	}
-    
+
 	/**
 	 * Call a stored procedure that doesn't have any parameters.
-	 * 
+	 *
 	 * @param proc name of the stored procedure
 	 */
 	public void callProcedure(String proc) {
@@ -978,10 +978,10 @@ public class RDB {
 			ExceptionMan.handle(e);
 		}
 	}
-    
+
 	/**
 	 * Call a function that returns a double.
-	 * 
+	 *
 	 * @param func name of the function
 	 * @param args arguments in the form of a string
 	 * @return value returned by the function; null on error
@@ -1001,5 +1001,5 @@ public class RDB {
 		}
 		return null;
 	}
-    
+
 }

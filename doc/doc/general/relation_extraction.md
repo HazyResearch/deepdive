@@ -7,7 +7,7 @@ layout: default
 **Relation extraction** helps extracting **structured information** from
 unstructured sources such as raw text. One may want to find interactions between
 drugs to build a medical database, understand the scenes in images, or extract
-relationships among people to build an easily searchable knowledge base. 
+relationships among people to build an easily searchable knowledge base.
 
 For example, let's assume we are interested in marriage relationships. We want
 to automatically figure out that "Michelle Obama" is the wife of "Barack Obama"
@@ -26,7 +26,7 @@ challenges:
   example, a sentence may refer to "Barack Obama" as "Barack" or "The
   president".
 - How do we get training data for our Machine Learning model?
-- How do we deal with conflicting or uncertain data? 
+- How do we deal with conflicting or uncertain data?
 
 ### <a name="entity" href="#"></a> Entity Linking
 

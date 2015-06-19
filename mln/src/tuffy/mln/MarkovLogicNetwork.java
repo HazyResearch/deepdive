@@ -27,7 +27,7 @@ import tuffy.util.UIMan;
 public class MarkovLogicNetwork implements Cloneable{
 	private static int idGen = 0;
 	private int id = 0;
-	
+
 	/**
 	 * The db connection associated with this MLN.
 	 */
@@ -60,27 +60,27 @@ public class MarkovLogicNetwork implements Cloneable{
 	/**
 	 * Map from string name to Predicate object.
 	 */
-	private Hashtable<String, Predicate> nameMapPred = 
+	private Hashtable<String, Predicate> nameMapPred =
 		new Hashtable<String, Predicate>();
 
-	private Hashtable<String, Function> nameMapFunc = 
+	private Hashtable<String, Function> nameMapFunc =
 		new Hashtable<String, Function>();
 
 	/**
 	 * Map from string name to Type object.
 	 */
-	private Hashtable<String, Type> nameMapType = 
+	private Hashtable<String, Type> nameMapType =
 		new Hashtable<String, Type>();
 
 	public Type getTypeByName(String tname) {
 		return nameMapType.get(tname);
 	}
-	
+
 	/**
 	 * List of clauses marked as relevant.
 	 */
 	private HashSet<Clause> relevantClauses = new HashSet<Clause>();
-	
+
 	private HashMap<Clause, Clause> unnormal2normal = new HashMap<Clause, Clause>();
 
 	/**
@@ -105,18 +105,18 @@ public class MarkovLogicNetwork implements Cloneable{
 	private HashMap<String, Integer> mapConstantID = new HashMap<String, Integer>();
 
 	/**
-	 * 
+	 *
 	 */
 	private HashMap<Predicate, ArrayList<ConjunctiveQuery>> scopes =
 		new HashMap<Predicate, ArrayList<ConjunctiveQuery>>();
 
 	private ArrayList<ConjunctiveQuery> scopingRules = new ArrayList<ConjunctiveQuery>();
-	
+
 	private ArrayList<Predicate> clusteringPredicates = new ArrayList<Predicate>();
-	
+
 	public HashSet<ConjunctiveQuery> dedupalogRules = new HashSet<ConjunctiveQuery>();
-	
-	
+
+
 	@SuppressWarnings("unchecked")
 	public Object clone() throws CloneNotSupportedException {
 
@@ -147,34 +147,34 @@ public class MarkovLogicNetwork implements Cloneable{
 		clone.scopes = (HashMap<Predicate, ArrayList<ConjunctiveQuery>>) scopes.clone();
 
 		clone.scopingRules = (ArrayList<ConjunctiveQuery>) scopingRules.clone();
-		
+
 		clone.clusteringPredicates = (ArrayList<Predicate>) clusteringPredicates.clone();
 
 	    return clone;
 
 	  }
-	
-	
+
+
 	public ArrayList<ConjunctiveQuery> getAllDatalogRules(){
 		return datalogRules;
 	}
-		
+
 	/**
 	 * Returns the RDB used by this MLN.
 	 */
 	public RDB getRDB() {
 		return db;
 	}
-	
-	
+
+
 	public int getID(){
 		return id;
 	}
-	
+
 	/**
-	 * Constructor of MLN. {@link MarkovLogicNetwork#parser} will be 
+	 * Constructor of MLN. {@link MarkovLogicNetwork#parser} will be
 	 * constructed here.
-	 * 
+	 *
 	 */
 	public MarkovLogicNetwork(){
 		parser = new InputParser(this);
@@ -189,7 +189,7 @@ public class MarkovLogicNetwork implements Cloneable{
 
 	/**
 	 * Marks a clause as relevant. Called by KBMC.
-	 * 
+	 *
 	 * @see tuffy.ground.KBMC#run()
 	 */
 	public void setClauseAsRelevant(Clause c){
@@ -199,7 +199,7 @@ public class MarkovLogicNetwork implements Cloneable{
 	public void setAllClausesAsRelevant() {
 		relevantClauses.addAll(listClauses);
 	}
-	
+
 	/**
 	 * Returns the set of relevant clauses.
 	 */
@@ -209,7 +209,7 @@ public class MarkovLogicNetwork implements Cloneable{
 
 	/**
 	 * Registers a new, unnormalized clause.
-	 * 
+	 *
 	 * @param c the clause to be registered
 	 */
 	public void registerClause(Clause c){
@@ -279,10 +279,10 @@ public class MarkovLogicNetwork implements Cloneable{
 			cq.materialize(db, true, new ArrayList<String>());
 			int ni = db.getLastUpdateRowCount();
 			total += ni;
-			UIMan.verbose(1, "### inserted " + UIMan.comma(ni) + 
+			UIMan.verbose(1, "### inserted " + UIMan.comma(ni) +
 					(ni!=1 ? " new tuples" : " new tuple"));
-			UIMan.verbose(1, "### current cardinality of '" + 
-					p.getName() + "' = " + 
+			UIMan.verbose(1, "### current cardinality of '" +
+					p.getName() + "' = " +
 					UIMan.comma(db.countTuples(p.getRelName())));
 			String tm = Timer.elapsed("datalogq");
 			UIMan.verbose(1, "### took time " + tm +
@@ -337,11 +337,11 @@ public class MarkovLogicNetwork implements Cloneable{
 			db.analyze(p.getRelName());
 		}
 	}
-	
+
 
 	/**
 	 * Execute all scoping rules
-	 * 
+	 *
 	 * @return true iff there is at least one scoping rule
 	 */
 	public boolean applyAllScopes(){
@@ -380,16 +380,16 @@ public class MarkovLogicNetwork implements Cloneable{
 	 * as the same as some some existing clauses in {@link MarkovLogicNetwork#listClauses},
 	 * then {@link Clause#absorb(Clause)} this new clause. If not
 	 * absorbed, this new clause is set an ID sequentially and a name
-	 * Clause$id. Predicates in this clause is registered 
+	 * Clause$id. Predicates in this clause is registered
 	 * by {@link Predicate#addRelatedClause(Clause)}.
-	 * 
+	 *
 	 * @see Clause#normalize()
 	 * @see Clause#absorb(Clause)
 	 */
 	public void normalizeClauses(){
 		listClauses.clear();
 		for(Clause c : unnormalizedClauses){
-			
+
 			// applyScopes(c);
 			if(c.hasEmbeddedWeight()){
 				listClauses.add(c);
@@ -404,9 +404,9 @@ public class MarkovLogicNetwork implements Cloneable{
 			}
 			Clause tmpc = c;
 			c = c.normalize();
-			
+
 			this.unnormal2normal.put(tmpc, c);
-			
+
 			if(c == null) continue;
 			c.checkVariableSafety();
 			Clause ec = sigMap.get(c.getSignature());
@@ -458,7 +458,7 @@ public class MarkovLogicNetwork implements Cloneable{
 	 * Call materialize() for all types. This will put
 	 * the domain members of each type into corresponding
 	 * database tables.
-	 * 
+	 *
 	 * @see Type#storeConstantList(RDB)
 	 */
 	private void materializeAllTypes(RDB adb){
@@ -527,7 +527,7 @@ public class MarkovLogicNetwork implements Cloneable{
 	/**
 	 * Get a function by its name; can be built-in.
 	 * @param name
-	 * 
+	 *
 	 */
 	public Function getFunctionByName(String name) {
 		Function f = Function.getBuiltInFunctionByName(name);
@@ -554,7 +554,7 @@ public class MarkovLogicNetwork implements Cloneable{
 	}
 
 	public HashSet<String> additionalHardClauseInstances = new HashSet<String>();
-	
+
 	/**
 	 * Return assigned ID of a constant symbol.
 	 * If this symbol is a new one, a new ID will be assigned to it,
@@ -577,7 +577,7 @@ public class MarkovLogicNetwork implements Cloneable{
 
 	/**
 	 * Ground and store all query atoms.
-	 * 
+	 *
 	 * @see Predicate#addQuery(Atom)
 	 * @see Predicate#groundAndStoreAtom(Atom)
 	 */
@@ -612,7 +612,7 @@ public class MarkovLogicNetwork implements Cloneable{
 
 	/**
 	 * Parse multiple MLN program files.
-	 * 
+	 *
 	 * @param progFiles list of MLN program files (in Alchemy format)
 	 */
 	public void loadPrograms(String[] progFiles){
@@ -628,7 +628,7 @@ public class MarkovLogicNetwork implements Cloneable{
 		}
 		normalizeClauses();
 	}
-	
+
 	public void loadProgramsButNotNormalizeClauses(String[] progFiles){
 		for(String f : progFiles){
 			String g = FileMan.getGZIPVariant(f);
@@ -646,7 +646,7 @@ public class MarkovLogicNetwork implements Cloneable{
 	 * Parse multiple MLN evidence files. If file size is larger
 	 * than 1MB, then uses a file stream
 	 * incrementally parse this file. Can also accept .gz file (see {@link GZIPInputStream#GZIPInputStream(InputStream)}).
-	 * 
+	 *
 	 * @param evidFiles list of MLN evidence files (in Alchemy format)
 	 */
 	public void loadEvidences(String[] evidFiles){
@@ -659,7 +659,7 @@ public class MarkovLogicNetwork implements Cloneable{
 				f = g;
 			}
 			UIMan.println(">>> Parsing evidence file: " + f);
-			
+
 			if(FileMan.getFileSize(f) <= chunkSize){
 				parser.parseEvidenceFile(f);
 			}else{
@@ -701,7 +701,7 @@ public class MarkovLogicNetwork implements Cloneable{
 
 	/**
 	 * Parse multiple MLN query files.
-	 * 
+	 *
 	 * @param queryFiles list of MLN query files (in Alchemy format)
 	 */
 	public void loadQueries(String[] queryFiles){
@@ -737,7 +737,7 @@ public class MarkovLogicNetwork implements Cloneable{
 		}
 		finalizeClauseDefinitions(adb);
 	}
-	
+
 	public void setDB(RDB adb){
 		this.db = adb;
 	}
@@ -745,7 +745,7 @@ public class MarkovLogicNetwork implements Cloneable{
 	/**
 	 * Clean up temporary data in DB and working dir, including
 	 * 1) drop schema in PostgreSQL; 2) remove directory.
-	 * 
+	 *
 	 * @return true on success
 	 */
 	public boolean cleanUp(){
@@ -756,7 +756,7 @@ public class MarkovLogicNetwork implements Cloneable{
 
 	/**
 	 * Stores constants and evidence into database table.
-	 * 
+	 *
 	 * @see MarkovLogicNetwork#materializeAllTypes(RDB)
 	 * @see MarkovLogicNetwork#storeAllEvidence()
 	 */

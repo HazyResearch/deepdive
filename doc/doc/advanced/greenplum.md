@@ -65,7 +65,7 @@ your environment is more complex than usual.
 
 ### Setting the Greenplum Recommended OS Parameters
 
-Set the following parameters in the `/etc/sysctl.conf` file and reboot: 
+Set the following parameters in the `/etc/sysctl.conf` file and reboot:
 
 ```
 xfs_mount_options = rw,noatime,inode64,allocsize=16m
@@ -114,7 +114,7 @@ net.core.netdev_max_backlog = 10000
 vm.overcommit_memory = 2
 ```
 
-Set the following parameters in the `/etc/security/limits.conf` file: 
+Set the following parameters in the `/etc/security/limits.conf` file:
 
 ```
 soft nofile 65536
@@ -130,9 +130,9 @@ Be sure to **reboot** after changing these kernel parameters.
 Download Greenplum for your operating system. For a free Community Edition, you
 can find the download link and the official guide on the [GoPivotal
 website](http://www.gopivotal.com/products/pivotal-greenplum-database), or you
-can download it directly [here](http://downloads.cfapps.io/gpdb_db_el5_64). 
+can download it directly [here](http://downloads.cfapps.io/gpdb_db_el5_64).
 
-Install Greenplum using the downloaded package: 
+Install Greenplum using the downloaded package:
 
 ```bash
 $ unzip greenplum-db-4.2.x.x-PLATFORM.zip
@@ -155,7 +155,7 @@ source /usr/local/greenplum-db/greenplum_path.sh
 
 ### Configure ssh with localhost
 
-Now you need to generate ssh keys for `localhost`. Run: 
+Now you need to generate ssh keys for `localhost`. Run:
 ```bash
 $ gpssh-exkeys -h localhost
 ```
@@ -239,10 +239,10 @@ postgres=# \l
    Name    | Owner | Encoding | Access privileges
 -----------+-------+----------+-------------------
  postgres  | Xxx   | UTF8     |
- template0 | Xxx   | UTF8     | =c/Xxx  
-                              : Xxx=CTc/Xxx  
- template1 | Xxx   | UTF8     | =c/Xxx  
-                              : Xxx=CTc/Xxx  
+ template0 | Xxx   | UTF8     | =c/Xxx
+                              : Xxx=CTc/Xxx
+ template1 | Xxx   | UTF8     | =c/Xxx
+                              : Xxx=CTc/Xxx
 (3 rows)
 
 postgres=# \q

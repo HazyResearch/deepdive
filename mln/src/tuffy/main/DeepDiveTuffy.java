@@ -18,17 +18,17 @@ import tuffy.util.StringMan;
  * Common routines to inference procedures.
  */
 public class DeepDiveTuffy {
-	
+
 	/**
 	 * The DB.
 	 */
 	protected RDB db = null;
-		
+
 	/**
 	 * The MLN.
 	 */
 	public MarkovLogicNetwork mln = null;
-	
+
 	/**
 	 * Command line options.
 	 */
@@ -36,11 +36,11 @@ public class DeepDiveTuffy {
 
 	/**
 	 * Set up database and generate Deepdive input file, including the following steps:
-	 * 
+	 *
 	 * 1) loadMLN {@link Infer#loadMLN};
 	 * 2) store symbols and evidence {@link MarkovLogicNetwork#materializeTables};
 	 * 3) generate Deepdive input file
-	 * 
+	 *
 	 * @param opt command line options.
 	 */
 	public void run(CommandOptions opt){
@@ -48,17 +48,17 @@ public class DeepDiveTuffy {
 
 		Clause.mappingFromID2Const = new HashMap<Integer, String>();
 		Clause.mappingFromID2Desc = new HashMap<String, String>();
-		
+
 		UIMan.println(">>> Connecting to RDBMS at " + Config.db_url);
 		db = RDB.getRDBbyConfig();
-		
+
 		db.resetSchema(Config.db_schema);
 
 		mln = new MarkovLogicNetwork();
 		loadMLN(mln, db, options);
 
 		mln.materializeTables();
-		
+
 		// generate the Deepdive input file.
 
 		ArrayList<String> template = FileMan.getLines(Config.dir_out + "/application.conf");
@@ -90,23 +90,23 @@ public class DeepDiveTuffy {
 		}
 		FileMan.writeLines(opt.fout, applicationConf);
 	}
-	
+
 	/**
 	 * Load the rules and data of the MLN program.
-	 * 
+	 *
 	 * 1) {@link MarkovLogicNetwork#loadPrograms(String[])};
 	 * 2) {@link MarkovLogicNetwork#loadQueries(String[])};
 	 * 3) {@link MarkovLogicNetwork#parseQueryCommaList(String)};
 	 * 4) Mark closed-world predicate specified by {@link CommandOptions#cwaPreds};
 	 * 5) {@link MarkovLogicNetwork#prepareDB(RDB)};
 	 * 6) {@link MarkovLogicNetwork#loadEvidences(String[])}.
-	 * 
+	 *
 	 * @param mln the target MLN
 	 * @param adb database object used for this MLN
 	 * @param opt command line options
 	 */
 	protected void loadMLN(MarkovLogicNetwork mln, RDB adb, CommandOptions opt){
-		
+
 		String[] progFiles = opt.fprog.split(",");
 		mln.loadPrograms(progFiles);
 
@@ -114,7 +114,7 @@ public class DeepDiveTuffy {
 			String[] queryFiles = opt.fquery.split(",");
 			mln.loadQueries(queryFiles);
 		}
-		
+
 		if(opt.queryAtoms != null){
 			UIMan.verbose(2, ">>> Parsing query atoms in command line");
 			mln.parseQueryCommaList(opt.queryAtoms);
@@ -132,14 +132,14 @@ public class DeepDiveTuffy {
 				}
 			}
 		}
-		
+
 		mln.prepareDB(adb);
-		
+
 		if(opt.fevid != null){
 			String[] evidFiles = opt.fevid.split(",");
 			mln.loadEvidences(evidFiles);
 		}
-		
+
 	}
 
 }

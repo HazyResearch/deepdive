@@ -17,7 +17,7 @@ class contains different extractor *styles*:
 
 - Row-wise extractors:
   - [`json_extractor`](#json_extractor): highly flexible and compatible with
-  previous systems, but with limited performance 
+  previous systems, but with limited performance
   - [`tsv_extractor`](#tsv_extractor): moderate flexibility and performance
   - [`plpy_extractor`](#plpy_extractor): parallel database-built-in extractors
   with restricted flexibility
@@ -40,7 +40,7 @@ instructor.
 ```bash
 deepdive {
   extraction.extractors {
-    
+
     anExtractor {
       # ...
     }
@@ -79,7 +79,7 @@ A `json_extractor` takes each tuple in the output of an `input` query (for
 example, a SQL statement), and produces new tuples as output. These tuples are
 written to an `output_relation`. The transformation function is defined by the
 value of the `udf` keyword, which can be an arbitrary executable or shell
-command. 
+command.
 
 The following is an example of an extractor definition:
 
@@ -143,10 +143,10 @@ line, independently of the format of the input. All output objects must have the
 same fields, so it may necessary to set the values for some fields to `null`.
 The following is an example of extractor output:
 
-    { title_id: 5, word: "I" } 
-    { title_id: 5, word: "am" } 
-    { title_id: 5, word: "a" } 
-    { title_id: 5, word: "title" } 
+    { title_id: 5, word: "I" }
+    { title_id: 5, word: "am" }
+    { title_id: 5, word: "a" }
+    { title_id: 5, word: "title" }
   { title_id: 6, word: null }
 
 When emitting tuples from the extractor, only use the column name of the
@@ -173,7 +173,7 @@ for line in fileinput.input():
     for word in set(row["title"].split(" ")):
       # Output the word
       print json.dumps({
-        "title_id": int(row["title_id"]), 
+        "title_id": int(row["title_id"]),
         "word": word
       })
 ```
@@ -316,7 +316,7 @@ ngramExtractor {
 }
 ```
 
-Next we explain how to write the UDF for a `plpy_extractor`. 
+Next we explain how to write the UDF for a `plpy_extractor`.
 
 Since it will be translated into PL/Python by translator in
 DeepDive, the UDF script of a `plpy_extractor` **must** follow a specific
@@ -356,7 +356,7 @@ function is defined as: `def input(name, datatype)`. A sample usage is:
         below).
         - Types are PostgreSQL types, e.g., `int`, `bigint`, `text`, `float`,
         `int[]`, `bigint[]`, `text[]`, `float[]`, etc.
-      
+
 3. The **return types and names** must be explicitly specified with
 `ddext.returns`. This function is defined as: `def returns(name, datatype)`. A
 sample usage is:
@@ -378,12 +378,12 @@ normally would, except for the following caveats:
 - `print` is NOT supported. If you want to print to the DeepDive log
   file, use `plpy.info('SOME TEXT')` or `plpy.debug('SOME TEXT')`.
 
-- You can not **reassign input variables** in the `run` function! 
+- You can not **reassign input variables** in the `run` function!
     - e.g., "input_var = x" is invalid and will cause error!
 
 - Libraries imported in the `init` function can be used in `run`. e.g., if you have `ddext.import_lib('re')` in `init`, you can call
 the function `re.sub` in `run`.
-  
+
 
 The function `run` can either return a list of tuples:
 
@@ -395,7 +395,7 @@ or `yield` a tuple multiple times. Each tuple it yields will be inserted into
 the database, just like each printed JSON object in a json_extractor. Each
 yielded/returned tuple can be either:
 
-- an ordered list / tuple according to the order of `ddext.return` specification: 
+- an ordered list / tuple according to the order of `ddext.return` specification:
 
     ```python
     yield sentence_id, gram, ngram[gram]
@@ -405,8 +405,8 @@ yielded/returned tuple can be either:
 
     ```python
     yield {
-        'sentence_id': sentence_id, 
-        'ngram': ngram, 
+        'sentence_id': sentence_id,
+        'ngram': ngram,
         'count':ngram[gram]
       }```
 
@@ -423,8 +423,8 @@ def run(sentence_id, words):
   def get_ngram(N):
     for i in range(len(words) - N):
       gram = ' '.join(words[i : i + N])
-      
-      if gram not in ngram: 
+
+      if gram not in ngram:
         ngram[gram] = 0
       ngram[gram] += 1
 
@@ -459,23 +459,23 @@ def run(sentence_id, words, gram_len):
   ngram = {}
   for i in range(len(words) - gram_len):
     gram = ' '.join(words[i : i + gram_len])
-    if gram not in ngram: 
+    if gram not in ngram:
       ngram[gram] = 0
     ngram[gram] += 1
-    
+
   for gram in ngram:
     # Yield an ordered tuple/list:
     yield (sentence_id, gram, ngram[gram])
 
     # Or yield a (unordered) dict:
     # yield {
-    #     'sentence_id': sentence_id, 
-    #     'ngram': ngram, 
+    #     'sentence_id': sentence_id,
+    #     'ngram': ngram,
     #     'count':ngram[gram]
     #   }
 
   # # Or return a list at once:
-  # return [[sentence_id, gram, ngram[ngram]] for gram in ngram] 
+  # return [[sentence_id, gram, ngram[ngram]] for gram in ngram]
 ```
 
 ### <a id="sql_extractor" href="#"></a> sql_extractor
@@ -527,7 +527,7 @@ wordsExtractor {
 ```
 
 If an extractor specified in dependencies does not exist or is not in the
-active [pipeline](running.html#pipelines), that extractor will be ignored. 
+active [pipeline](running.html#pipelines), that extractor will be ignored.
 
 ### <a name="parallelism" href="#"></a> Parallelism
 You can execute multiple independent extractors in parallel by setting
@@ -535,7 +535,7 @@ You can execute multiple independent extractors in parallel by setting
 
 ```bash
 deepdive {
-  extraction.parallelism: 5 
+  extraction.parallelism: 5
 }
 ```
 
@@ -545,7 +545,7 @@ Sometimes it is useful to execute a command before an extractor starts or after
 an extractor finishes. You can specify arbitrary commands to be executed as
 follows:
 
-```bash  
+```bash
 wordsExtractor {
   before : """echo Hello World"""
   after  : """/path/to/my/script.sh"""
@@ -553,7 +553,7 @@ wordsExtractor {
 }
 ```
 
-### <a name="jsonparallelism" href="#"></a> `json_extractor` parallelism and input batch size 
+### <a name="jsonparallelism" href="#"></a> `json_extractor` parallelism and input batch size
 
 *Note*: This section applies **only** to extractors with style `json_extractor`.
 
@@ -588,7 +588,7 @@ wordsExtractor {
 
 <a id="debug_extractors" href="#"> </a>
 
-### Debugging Extractors 
+### Debugging Extractors
 
 This section describes several ways to debug different extractors.
 
@@ -604,7 +604,7 @@ In `plpy_extractor`, you should use *plpy.debug* or *plpy.info* to print to cons
 "What do my extractor inputs look like?" Developers might find it helpful to
 print input to extractors to some temporary files. DeepDive provides a simple
 utility script for this task, in
-`$DEEPDIVE_HOME/util/extractor_input_writer.py`, to debug `json_extractor` and `tsv_extractor` (not applicable to `plpy_extractor`). 
+`$DEEPDIVE_HOME/util/extractor_input_writer.py`, to debug `json_extractor` and `tsv_extractor` (not applicable to `plpy_extractor`).
 
 The script is very simple:
 
@@ -634,23 +634,23 @@ SAMPLE_FILE_PATH` to obtain sample extractor inputs in the file `SAMPLE_FILE_PAT
 
 For example, in our [walkthrough](walkthrough/walkthrough.html), to debug the extractor `ext_has_spouse_features`, just change
 `application.conf` to:
- 
+
  ```bash
 ext_has_spouse_features {
   # Added "ORDER BY" and "LIMIT" to randomly sample a small amount of data
   input: """
     SELECT  sentences.words,
-            has_spouse.relation_id, 
+            has_spouse.relation_id,
             p1.start_position AS p1_start,
             p1.length AS p1_length,
             p2.start_position AS p2_start,
             p2.length AS p2_length
-      FROM  has_spouse, 
-            people_mentions p1, 
-            people_mentions p2, 
+      FROM  has_spouse,
+            people_mentions p1,
+            people_mentions p2,
             sentences
-     WHERE  has_spouse.person1_id = p1.mention_id 
-       AND  has_spouse.person2_id = p2.mention_id 
+     WHERE  has_spouse.person1_id = p1.mention_id
+       AND  has_spouse.person2_id = p2.mention_id
        AND  has_spouse.sentence_id = sentences.sentence_id
        ORDER BY RANDOM() LIMIT 100
        """

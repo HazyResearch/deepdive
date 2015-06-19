@@ -3,10 +3,10 @@ import os
 targetdir = '../../target/'
 weights_tab = [l.rstrip('\n').split('\t') for l in open(targetdir + 'weights.txt').readlines()]
 w_fid = {}
-for line in weights_tab: 
+for line in weights_tab:
 	f = line[3]
 	label = '1(C)'
-	if f.startswith('label2'): label = '2(T)' 
+	if f.startswith('label2'): label = '2(T)'
 	fid = f.rstrip(')').split('Some(')[1]
 	w_fid[line[0]] = (label, fid)
 
@@ -16,7 +16,7 @@ fname = [l.rstrip('\n') for l in open('data/raw/raw-words/feature_names.txt').re
 
 arr = []
 
-for line in weights_val: 
+for line in weights_val:
 	wid = line[0]
 	wval = float(line[1])
 	pair = w_fid[wid]

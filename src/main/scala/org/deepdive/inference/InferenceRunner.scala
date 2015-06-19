@@ -11,18 +11,18 @@ trait InferenceRunner {
     /* Initializes the data store. This method must be called before any other methods in this class. */
     def init() : Unit
 
-    /* 
-     * The number of tuples in each batch. If not defined, we use one large batch. 
+    /*
+     * The number of tuples in each batch. If not defined, we use one large batch.
      * The user can overwrite this number using the inference.batch_size config setting.
      */
     def BatchSize : Option[Int]
 
     /* Generate a grounded graph based on the factor description */
     def groundFactorGraph(schema: Map[String, _ <: VariableDataType],
-        factorDescs: Seq[FactorDesc], calibrationSettings: CalibrationSettings, 
-        skipLearning: Boolean, weightTable: String, dbSettings: DbSettings = null) : Unit 
+        factorDescs: Seq[FactorDesc], calibrationSettings: CalibrationSettings,
+        skipLearning: Boolean, weightTable: String, dbSettings: DbSettings = null) : Unit
 
-    /* 
+    /*
      * Writes inference results produced by the sampler back to the data store.
      * The given file is a space-separated file with three columns:
      * VariableID, LastSampleValue, ExpectedValue
@@ -31,7 +31,7 @@ trait InferenceRunner {
         variableOutputFile: String, weightsOutputFile: String, dbSettings: DbSettings) : Unit
 
 
-    /* 
+    /*
      * Gets calibration data for the given buckets.
      * writebackInferenceResult must be called before this method can be called.
      */

@@ -13,8 +13,8 @@ for row in sys.stdin:
 
 	obj = json.loads(row)
 
-	words = ddlib.unpack_words(obj, character_offset_begin='character_offset_begin', 
-		character_offset_end='character_offset_end', lemma='lemma', 
+	words = ddlib.unpack_words(obj, character_offset_begin='character_offset_begin',
+		character_offset_end='character_offset_end', lemma='lemma',
 		pos='pos', words = 'words', dep_graph = 'dep_graph', dep_graph_parser=my_dep_format_parser)
 
 	edges = ddlib.dep_path_between_words(words, 0, len(words)-1)

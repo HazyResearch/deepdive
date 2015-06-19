@@ -6,7 +6,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <stdlib.h> 
+#include <stdlib.h>
 #include <stdint.h>
 #include <vector>
 
@@ -106,7 +106,7 @@ void load_factor(std::string filename, short funcid, long nvar, char** positives
     positives_vec.push_back(atoi(positives[i]));
   }
 
-  predicate = bswap_64(predicate); 
+  predicate = bswap_64(predicate);
 
   const char field_delim = '\t'; // tsv file delimiter
   const char array_delim = ','; // array delimiter
@@ -119,12 +119,12 @@ void load_factor(std::string filename, short funcid, long nvar, char** positives
     getline(ss, field, field_delim);
     factorid = atol(field.c_str());
     factorid = bswap_64(factorid);
-    
+
     // weightid
     getline(ss, field, field_delim);
     weightid = atol(field.c_str());
     weightid = bswap_64(weightid);
-    
+
     fout.write((char *)&factorid, 8);
     fout.write((char *)&weightid, 8);
     fout.write((char *)&funcid, 2);

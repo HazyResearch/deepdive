@@ -89,10 +89,10 @@ public class MLNParser extends Parser {
         public MLNParser(TokenStream input, RecognizerSharedState state) {
             super(input, state);
             this.state.ruleMemo = new HashMap[133+1];
-             
-             
+
+
         }
-        
+
     protected TreeAdaptor adaptor = new CommonTreeAdaptor();
 
     public void setTreeAdaptor(TreeAdaptor adaptor) {
@@ -110,26 +110,26 @@ public class MLNParser extends Parser {
         private String clauseName = null;
         private boolean clauseLabelTrailing = false;
         private Predicate curPred = null;
-        
+
         public long lineOffset = 0;
-        
+
         private void die(String msg){
             ExceptionMan.die(msg);
         }
-        
+
         protected Object recoverFromMismatchedToken(IntStream input,
                                                 int ttype,
                                                 BitSet follow)
     		    throws RecognitionException
-    		{   
+    		{
     		    throw new MismatchedTokenException(ttype, input);
-    		}   
-    		
+    		}
+
     		public void emitErrorMessage(String msg) {
             die(msg);
         }
-    		
-        
+
+
 
 
     public static class definitions_return extends ParserRuleReturnScope {
@@ -450,7 +450,7 @@ public class MLNParser extends Parser {
                       //if((du!=null?du.getText():null).equals("+")) pred.toDump = true;
                   }
               		curPred = pred;
-              	
+
             }
             char_literal6=(Token)match(input,23,FOLLOW_23_in_schema960); if (state.failed) return retval;
             if ( state.backtracking==0 ) {
@@ -513,7 +513,7 @@ public class MLNParser extends Parser {
 
               	    curPred.sealDefinition();
                     ml.registerPred(curPred);
-              	
+
             }
 
             }
@@ -625,7 +625,7 @@ public class MLNParser extends Parser {
                   if(uni != null){
                     curPred.addDependentAttrPosition(curPred.arity() - 1);
                   }
-                
+
             }
 
             }
@@ -799,7 +799,7 @@ public class MLNParser extends Parser {
 
                   UIMan.warn("The feature of functional dependency " +
                     "is still in development; use at your own risk.");
-                
+
             }
 
             }
@@ -921,7 +921,7 @@ public class MLNParser extends Parser {
                     }
                     String dep = sa.getText();
                     curPred.addFunctionalDependency(dets, dep);
-                
+
             }
 
             }
@@ -1114,7 +1114,7 @@ public class MLNParser extends Parser {
                       	       }else{
                                   clauseLabelTrailing = false;
                       	       }
-                      	    
+
                     }
 
                     }
@@ -1326,7 +1326,7 @@ public class MLNParser extends Parser {
                     if ( state.backtracking==0 ) adaptor.addChild(root_0, fc.getTree());
                     if ( state.backtracking==0 ) {
 
-                          retval.c = (fc!=null?fc.c:null); 
+                          retval.c = (fc!=null?fc.c:null);
                           retval.c.setWeight(Double.parseDouble((weight!=null?weight.getText():null)));
                           ml.registerClause(retval.c);
                           retval.c.addSpecText(input.toString(retval.start,input.LT(-1)));
@@ -1335,7 +1335,7 @@ public class MLNParser extends Parser {
                             }else{
                                 retval.c.isFixedWeight = false;
                             }
-                          
+
                     }
 
                     }
@@ -1385,7 +1385,7 @@ public class MLNParser extends Parser {
                     if ( state.backtracking==0 ) adaptor.addChild(root_0, fc.getTree());
                     if ( state.backtracking==0 ) {
 
-                          retval.c = (fc!=null?fc.c:null); 
+                          retval.c = (fc!=null?fc.c:null);
                           retval.c.setWeight(1);
                           retval.c.setVarWeight((warg!=null?warg.getText():null));
                           ml.registerClause(retval.c);
@@ -1395,7 +1395,7 @@ public class MLNParser extends Parser {
                             }else{
                                 retval.c.isFixedWeight = false;
                             }
-                          
+
                     }
 
                     }
@@ -1463,11 +1463,11 @@ public class MLNParser extends Parser {
             }
             if ( state.backtracking==0 ) {
 
-                  retval.c = (fc!=null?fc.c:null); 
+                  retval.c = (fc!=null?fc.c:null);
                   retval.c.setHardWeight();
                   ml.registerClause(retval.c);
                   retval.c.addSpecText(input.toString(retval.start,input.LT(-1)));
-                  
+
             }
 
             }
@@ -1538,7 +1538,7 @@ public class MLNParser extends Parser {
                     Predicate p = ml.getPredByName((func!=null?func.getText():null));
                     if(p==null) die("Line #" + func.getLine() + ": undefined predicate: " + (func!=null?func.getText():null));
                     retval.cond = new AtomEx(p);
-                  
+
             }
             char_literal25=(Token)match(input,23,FOLLOW_23_in_functionalAtom1330); if (state.failed) return retval;
             if ( state.backtracking==0 ) {
@@ -1748,7 +1748,7 @@ public class MLNParser extends Parser {
                         if((body0!=null?body0.lit:null)!=null){
                           retval.cq.addBodyLit((body0!=null?body0.lit:null));
                         }
-                      
+
             }
             // MLN.g:275:9: ( ',' bodyp= literal )*
             loop20:
@@ -1775,7 +1775,7 @@ public class MLNParser extends Parser {
             	                if((bodyp!=null?bodyp.lit:null)!=null){
             	                  retval.cq.addBodyLit((bodyp!=null?bodyp.lit:null));
             	                }
-            	              
+
             	    }
 
             	    }
@@ -1821,7 +1821,7 @@ public class MLNParser extends Parser {
             	    if ( state.backtracking==0 ) {
 
             	                retval.cq.addConstraint((mc!=null?mc.expr:null));
-            	              
+
             	    }
 
             	    }
@@ -1862,7 +1862,7 @@ public class MLNParser extends Parser {
                     if ( state.backtracking==0 ) {
 
                                   retval.cq.addConstraint((be!=null?be.be:null));
-                                 
+
                     }
                     char_literal33=(Token)match(input,38,FOLLOW_38_in_datalogRule1519); if (state.failed) return retval;
                     if ( state.backtracking==0 ) {
@@ -1894,7 +1894,7 @@ public class MLNParser extends Parser {
               		    }else{
               		        ml.registerDatalogRule(retval.cq);
               		    }
-                   
+
             }
 
             }
@@ -2044,7 +2044,7 @@ public class MLNParser extends Parser {
                         if((body0!=null?body0.lit:null)!=null){
                           retval.cq.addBodyLit((body0!=null?body0.lit:null));
                         }
-                      
+
             }
             // MLN.g:312:9: ( ',' bodyp= literal )*
             loop24:
@@ -2071,7 +2071,7 @@ public class MLNParser extends Parser {
             	                if((bodyp!=null?bodyp.lit:null)!=null){
             	                  retval.cq.addBodyLit((bodyp!=null?bodyp.lit:null));
             	                }
-            	              
+
             	    }
 
             	    }
@@ -2117,7 +2117,7 @@ public class MLNParser extends Parser {
             	    if ( state.backtracking==0 ) {
 
             	                retval.cq.addConstraint((mc!=null?mc.expr:null));
-            	              
+
             	    }
 
             	    }
@@ -2158,7 +2158,7 @@ public class MLNParser extends Parser {
                     if ( state.backtracking==0 ) {
 
                                   retval.cq.addConstraint((be!=null?be.be:null));
-                                 
+
                     }
                     char_literal44=(Token)match(input,38,FOLLOW_38_in_scopingRule1671); if (state.failed) return retval;
                     if ( state.backtracking==0 ) {
@@ -2187,7 +2187,7 @@ public class MLNParser extends Parser {
                       }
                     }
                    ml.registerScopingRule(retval.cq);
-                   
+
             }
 
             }
@@ -2313,10 +2313,10 @@ public class MLNParser extends Parser {
                     if ( state.backtracking==0 ) {
 
                                 if((ant0!=null?ant0.lit:null)!=null){
-                                  (ant0!=null?ant0.lit:null).flipSense(); 
+                                  (ant0!=null?ant0.lit:null).flipSense();
                                   retval.c.addLiteral((ant0!=null?ant0.lit:null));
                                 }
-                              
+
                     }
                     // MLN.g:415:9: ( ',' antp= literal )*
                     loop28:
@@ -2341,10 +2341,10 @@ public class MLNParser extends Parser {
                     	    if ( state.backtracking==0 ) {
 
                     	                if((antp!=null?antp.lit:null)!=null){
-                    	                  (antp!=null?antp.lit:null).flipSense(); 
+                    	                  (antp!=null?antp.lit:null).flipSense();
                     	                  retval.c.addLiteral((antp!=null?antp.lit:null));
                     	                }
-                    	              
+
                     	    }
 
                     	    }
@@ -2390,7 +2390,7 @@ public class MLNParser extends Parser {
                     	    if ( state.backtracking==0 ) {
 
                     	                retval.c.addConstraint((mc!=null?mc.expr:null));
-                    	              
+
                     	    }
 
                     	    }
@@ -2431,7 +2431,7 @@ public class MLNParser extends Parser {
                             if ( state.backtracking==0 ) {
 
                               	          retval.c.addConstraint((be!=null?be.be:null));
-                              	         
+
                             }
                             char_literal50=(Token)match(input,38,FOLLOW_38_in_foclause1814); if (state.failed) return retval;
                             if ( state.backtracking==0 ) {
@@ -2531,7 +2531,7 @@ public class MLNParser extends Parser {
             	    if ( state.backtracking==0 ) {
 
             	                retval.c.addConstraint(Expression.not((mc!=null?mc.expr:null)));
-            	              
+
             	    }
 
             	    }
@@ -2572,7 +2572,7 @@ public class MLNParser extends Parser {
                     if ( state.backtracking==0 ) {
 
                                 retval.c.addConstraint(Expression.not((sbe!=null?sbe.be:null)));
-                               
+
                     }
                     char_literal56=(Token)match(input,38,FOLLOW_38_in_foclause1928); if (state.failed) return retval;
                     if ( state.backtracking==0 ) {
@@ -2594,7 +2594,7 @@ public class MLNParser extends Parser {
                     }
                     retval.c.addUserProvidedName(clauseName);
                     if(!clauseLabelTrailing) clauseName = null;
-                  
+
             }
 
             }
@@ -2818,7 +2818,7 @@ public class MLNParser extends Parser {
             if ( state.backtracking==0 ) {
 
                       retval.be = (c0!=null?c0.be:null);
-                  
+
             }
             // MLN.g:471:5: ( ( '||' | 'OR' ) cp= boolConjunction )*
             loop36:
@@ -2859,7 +2859,7 @@ public class MLNParser extends Parser {
             	      	        enew.addArgument(retval.be);
             	      	        enew.addArgument((cp!=null?cp.be:null));
             	      	        retval.be = enew;
-            	              
+
             	    }
 
             	    }
@@ -2932,7 +2932,7 @@ public class MLNParser extends Parser {
             if ( state.backtracking==0 ) {
 
                       retval.be = (c0!=null?c0.be:null);
-                  
+
             }
             // MLN.g:488:5: ( ( '&&' | 'AND' ) cp= boolConjunctionElement )*
             loop37:
@@ -2973,7 +2973,7 @@ public class MLNParser extends Parser {
             	                enew.addArgument(retval.be);
             	                enew.addArgument((cp!=null?cp.be:null));
             	                retval.be = enew;
-            	              
+
             	    }
 
             	    }
@@ -3205,7 +3205,7 @@ public class MLNParser extends Parser {
                                 enew.addArgument(retval.be);
                                 retval.be = enew;
                               }
-                          
+
                     }
 
                     }
@@ -3268,7 +3268,7 @@ public class MLNParser extends Parser {
                                 enew.addArgument(retval.be);
                                 retval.be = enew;
                               }
-                          
+
                     }
 
                     }
@@ -3355,7 +3355,7 @@ public class MLNParser extends Parser {
                       retval.expr = new Expression(f);
                       retval.expr.addArgument((e1!=null?e1.expr:null));
                       retval.expr.addArgument((e2!=null?e2.expr:null));
-                  
+
             }
 
             }
@@ -3419,7 +3419,7 @@ public class MLNParser extends Parser {
             if ( state.backtracking==0 ) {
 
                     retval.expr = (t0!=null?t0.expr:null);
-                  
+
             }
             // MLN.g:543:5: (op= ( '+' | '-' | '%' ) tp= mathTerm )*
             loop42:
@@ -3461,7 +3461,7 @@ public class MLNParser extends Parser {
             	              enew.addArgument(retval.expr);
             	              enew.addArgument((tp!=null?tp.expr:null));
             	              retval.expr = enew;
-            	            
+
             	    }
 
             	    }
@@ -3534,7 +3534,7 @@ public class MLNParser extends Parser {
             if ( state.backtracking==0 ) {
 
                     retval.expr = (t0!=null?t0.expr:null);
-                  
+
             }
             // MLN.g:566:5: (op= ( '*' | '/' | '&' | '|' | '^' | '<<' | '>>' ) tp= mathFactor )*
             loop43:
@@ -3590,7 +3590,7 @@ public class MLNParser extends Parser {
             	              enew.addArgument(retval.expr);
             	              enew.addArgument((tp!=null?tp.expr:null));
             	              retval.expr = enew;
-            	            
+
             	    }
 
             	    }
@@ -3723,7 +3723,7 @@ public class MLNParser extends Parser {
                     if ( state.backtracking==0 ) {
 
                       		      retval.expr = (fe!=null?fe.expr:null);
-                      		    
+
                     }
 
                     }
@@ -3740,7 +3740,7 @@ public class MLNParser extends Parser {
                     if ( state.backtracking==0 ) {
 
                       		      retval.expr = (ae!=null?ae.expr:null);
-                      		    
+
                     }
 
                     }
@@ -3767,7 +3767,7 @@ public class MLNParser extends Parser {
                     if ( state.backtracking==0 ) {
 
                       		      retval.expr = (ee!=null?ee.expr:null);
-                      		    
+
                     }
 
                     }
@@ -3791,7 +3791,7 @@ public class MLNParser extends Parser {
                       		      Expression enew = new Expression(Function.BitNeg);
                       		      enew.addArgument((mf!=null?mf.expr:null));
                       		      retval.expr = enew;
-                      		    
+
                     }
 
                     }
@@ -3832,7 +3832,7 @@ public class MLNParser extends Parser {
               			      enew.addArgument(retval.expr);
               			      retval.expr = enew;
               	      }
-              	    
+
             }
 
             }
@@ -3901,13 +3901,13 @@ public class MLNParser extends Parser {
             if ( state.backtracking==0 ) {
 
               	        Function f = ml.getFunctionByName((func!=null?func.getText():null));
-              	        if(f == null) die("Line #" + func.getLine() + 
+              	        if(f == null) die("Line #" + func.getLine() +
               	        ": unknown function " + (func!=null?func.getText():null) +
               	        ". Are you putting a bool expression before a "+
               	        "regular literal in a rule? (HINT: You shouldn't.)"
               	        );
               	        retval.expr = new Expression(f);
-              	    
+
             }
             char_literal66=(Token)match(input,23,FOLLOW_23_in_funcExpression2652); if (state.failed) return retval;
             if ( state.backtracking==0 ) {
@@ -3923,7 +3923,7 @@ public class MLNParser extends Parser {
             if ( state.backtracking==0 ) {
 
               	        retval.expr.addArgument((a0!=null?a0.expr:null));
-              	    
+
             }
             // MLN.g:637:5: ( ',' ap= funcArgument )*
             loop46:
@@ -3954,7 +3954,7 @@ public class MLNParser extends Parser {
             	    if ( state.backtracking==0 ) {
 
             	      	        retval.expr.addArgument((ap!=null?ap.expr:null));
-            	      	    
+
             	    }
 
             	    }
@@ -4038,7 +4038,7 @@ public class MLNParser extends Parser {
                     if ( state.backtracking==0 ) {
 
                             retval.expr = (be!=null?be.be:null);
-                          
+
                     }
 
                     }
@@ -4057,7 +4057,7 @@ public class MLNParser extends Parser {
                     if ( state.backtracking==0 ) {
 
                             retval.expr = (me!=null?me.expr:null);
-                          
+
                     }
 
                     }
@@ -4076,7 +4076,7 @@ public class MLNParser extends Parser {
                     if ( state.backtracking==0 ) {
 
                             retval.expr = (fe!=null?fe.expr:null);
-                          
+
                     }
 
                     }
@@ -4095,7 +4095,7 @@ public class MLNParser extends Parser {
                     if ( state.backtracking==0 ) {
 
                             retval.expr = (ae!=null?ae.expr:null);
-                          
+
                     }
 
                     }
@@ -4192,7 +4192,7 @@ public class MLNParser extends Parser {
                             }catch(NumberFormatException e){
                               retval.expr = Expression.exprConstNum(Double.parseDouble((num!=null?num.getText():null)));
                             }
-                          
+
                     }
 
                     }
@@ -4211,7 +4211,7 @@ public class MLNParser extends Parser {
 
                             String s = (str!=null?str.getText():null);
                             retval.expr = Expression.exprConstString(s);
-                          
+
                     }
 
                     }
@@ -4235,7 +4235,7 @@ public class MLNParser extends Parser {
                             }else{
                               retval.expr = Expression.exprVariableBinding(s);
                             }
-                          
+
                     }
 
                     }
@@ -4332,8 +4332,8 @@ public class MLNParser extends Parser {
                       if((pref!=null?pref.getText():null).equals("!")) retval.lit.setSense(false);
                       else retval.lit.setCoversAllMaterializedTuples(true);
                      }
-                     
-                  
+
+
             }
 
             }
@@ -4423,7 +4423,7 @@ public class MLNParser extends Parser {
                       			    }else{ // a variable
                       			       retval.t = new Term(s);
                       			    }
-                          
+
                     }
 
                     }
@@ -4454,7 +4454,7 @@ public class MLNParser extends Parser {
                                   Integer cid = ml.getSymbolID(s, null);
                                   retval.t = new Term(cid);
                                 }
-                          
+
                     }
 
                     }
@@ -4532,7 +4532,7 @@ public class MLNParser extends Parser {
                       Predicate p = ml.getPredByName((pred!=null?pred.getText():null));
                       if(p == null) die("Line #" + pred.getLine() + ": unknown predicate name - " + (pred!=null?pred.getText():null));
                       retval.lit = new Literal(p, true);
-                  
+
             }
             pushFollow(FOLLOW_term_in_atom2984);
             term1=term();
@@ -4544,7 +4544,7 @@ public class MLNParser extends Parser {
 
                       if((term1!=null?term1.t:null).isConstant()) retval.lit.getPred().getTypeAt(retval.lit.getTerms().size()).addConstant((term1!=null?term1.t:null).constant());
                       retval.lit.appendTerm((term1!=null?term1.t:null));
-                  
+
             }
             // MLN.g:749:5: ( ',' termp= term )*
             loop51:
@@ -4576,7 +4576,7 @@ public class MLNParser extends Parser {
 
             	              if((termp!=null?termp.t:null).isConstant()) retval.lit.getPred().getTypeAt(retval.lit.getTerms().size()).addConstant((termp!=null?termp.t:null).constant());
             	              retval.lit.appendTerm((termp!=null?termp.t:null));
-            	          
+
             	    }
 
             	    }
@@ -4596,10 +4596,10 @@ public class MLNParser extends Parser {
 
                       Predicate p = retval.lit.getPred();
                       if(retval.lit.getTerms().size() != p.arity()){
-                        die("Line #" + pred.getLine() + 
+                        die("Line #" + pred.getLine() +
                         ": incorrect # of args (read " + retval.lit.getTerms().size() +
                         " but expected " + p.arity() + ")" +
-                        " for pred " + 
+                        " for pred " +
                         p.getName());
                       }
                       // Register constants (to types) that only appear in the program
@@ -4612,7 +4612,7 @@ public class MLNParser extends Parser {
               	          }
               	        }
                       }
-                  
+
             }
 
             }
@@ -4794,7 +4794,7 @@ public class MLNParser extends Parser {
 
                       		  Atom q = (atom76!=null?atom76.lit:null).toAtom(Atom.AtomType.QUERY);
                       		  (atom76!=null?atom76.lit:null).getPred().addQuery(q);
-                        
+
                     }
 
                     }
@@ -4814,7 +4814,7 @@ public class MLNParser extends Parser {
                             Predicate p = ml.getPredByName((ID77!=null?ID77.getText():null));
                             if(p == null) die("Line #" + ID77.getLine() + ": unknown predicate name - " + (ID77!=null?ID77.getText():null));
                             p.setAllQuery();
-                        
+
                     }
 
                     }
@@ -5234,7 +5234,7 @@ public class MLNParser extends Parser {
               		  }
               	    p.addEvidence(gp);
               	    gp = null;
-                  
+
             }
 
             }
@@ -5261,7 +5261,7 @@ public class MLNParser extends Parser {
     // $ANTLR end "evidence"
 
     // $ANTLR start synpred51_MLN
-    public final void synpred51_MLN_fragment() throws RecognitionException {   
+    public final void synpred51_MLN_fragment() throws RecognitionException {
         MLNParser.mathComparison_return mc = null;
 
 
@@ -5279,7 +5279,7 @@ public class MLNParser extends Parser {
     // $ANTLR end synpred51_MLN
 
     // $ANTLR start synpred52_MLN
-    public final void synpred52_MLN_fragment() throws RecognitionException {   
+    public final void synpred52_MLN_fragment() throws RecognitionException {
         Token negc=null;
         MLNParser.mathComparison_return mc = null;
 
@@ -5380,7 +5380,7 @@ public class MLNParser extends Parser {
     // $ANTLR end synpred52_MLN
 
     // $ANTLR start synpred64_MLN
-    public final void synpred64_MLN_fragment() throws RecognitionException {   
+    public final void synpred64_MLN_fragment() throws RecognitionException {
         Token op=null;
         MLNParser.mathTerm_return tp = null;
 
@@ -5410,7 +5410,7 @@ public class MLNParser extends Parser {
     // $ANTLR end synpred64_MLN
 
     // $ANTLR start synpred75_MLN
-    public final void synpred75_MLN_fragment() throws RecognitionException {   
+    public final void synpred75_MLN_fragment() throws RecognitionException {
         Token fact=null;
 
         // MLN.g:611:11: (fact= '!' )
@@ -5423,7 +5423,7 @@ public class MLNParser extends Parser {
     // $ANTLR end synpred75_MLN
 
     // $ANTLR start synpred77_MLN
-    public final void synpred77_MLN_fragment() throws RecognitionException {   
+    public final void synpred77_MLN_fragment() throws RecognitionException {
         MLNParser.boolExpression_return be = null;
 
 
@@ -5441,7 +5441,7 @@ public class MLNParser extends Parser {
     // $ANTLR end synpred77_MLN
 
     // $ANTLR start synpred78_MLN
-    public final void synpred78_MLN_fragment() throws RecognitionException {   
+    public final void synpred78_MLN_fragment() throws RecognitionException {
         MLNParser.mathExpression_return me = null;
 
 
@@ -5459,7 +5459,7 @@ public class MLNParser extends Parser {
     // $ANTLR end synpred78_MLN
 
     // $ANTLR start synpred79_MLN
-    public final void synpred79_MLN_fragment() throws RecognitionException {   
+    public final void synpred79_MLN_fragment() throws RecognitionException {
         MLNParser.funcExpression_return fe = null;
 
 
@@ -6136,10 +6136,10 @@ public class MLNParser extends Parser {
             TokenStream input = (TokenStream)_input;
         	int _s = s;
             switch ( s ) {
-                    case 0 : 
+                    case 0 :
                         int LA42_10 = input.LA(1);
 
-                         
+
                         int index42_10 = input.index();
                         input.rewind();
                         s = -1;
@@ -6147,7 +6147,7 @@ public class MLNParser extends Parser {
 
                         else if ( (true) ) {s = 1;}
 
-                         
+
                         input.seek(index42_10);
                         if ( s>=0 ) return s;
                         break;
@@ -6221,10 +6221,10 @@ public class MLNParser extends Parser {
             TokenStream input = (TokenStream)_input;
         	int _s = s;
             switch ( s ) {
-                    case 0 : 
+                    case 0 :
                         int LA47_2 = input.LA(1);
 
-                         
+
                         int index47_2 = input.index();
                         input.rewind();
                         s = -1;
@@ -6236,14 +6236,14 @@ public class MLNParser extends Parser {
 
                         else if ( (true) ) {s = 9;}
 
-                         
+
                         input.seek(index47_2);
                         if ( s>=0 ) return s;
                         break;
-                    case 1 : 
+                    case 1 :
                         int LA47_3 = input.LA(1);
 
-                         
+
                         int index47_3 = input.index();
                         input.rewind();
                         s = -1;
@@ -6253,14 +6253,14 @@ public class MLNParser extends Parser {
 
                         else if ( (true) ) {s = 9;}
 
-                         
+
                         input.seek(index47_3);
                         if ( s>=0 ) return s;
                         break;
-                    case 2 : 
+                    case 2 :
                         int LA47_4 = input.LA(1);
 
-                         
+
                         int index47_4 = input.index();
                         input.rewind();
                         s = -1;
@@ -6270,14 +6270,14 @@ public class MLNParser extends Parser {
 
                         else if ( (true) ) {s = 9;}
 
-                         
+
                         input.seek(index47_4);
                         if ( s>=0 ) return s;
                         break;
-                    case 3 : 
+                    case 3 :
                         int LA47_5 = input.LA(1);
 
-                         
+
                         int index47_5 = input.index();
                         input.rewind();
                         s = -1;
@@ -6285,14 +6285,14 @@ public class MLNParser extends Parser {
 
                         else if ( (synpred78_MLN()) ) {s = 7;}
 
-                         
+
                         input.seek(index47_5);
                         if ( s>=0 ) return s;
                         break;
-                    case 4 : 
+                    case 4 :
                         int LA47_6 = input.LA(1);
 
-                         
+
                         int index47_6 = input.index();
                         input.rewind();
                         s = -1;
@@ -6300,7 +6300,7 @@ public class MLNParser extends Parser {
 
                         else if ( (synpred78_MLN()) ) {s = 7;}
 
-                         
+
                         input.seek(index47_6);
                         if ( s>=0 ) return s;
                         break;
@@ -6312,7 +6312,7 @@ public class MLNParser extends Parser {
             throw nvae;
         }
     }
- 
+
 
     public static final BitSet FOLLOW_schemaList_in_definitions895 = new BitSet(new long[]{0x0000002F805408C0L});
     public static final BitSet FOLLOW_ruleList_in_definitions897 = new BitSet(new long[]{0x0000000000000000L});

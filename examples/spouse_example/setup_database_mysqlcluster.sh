@@ -22,7 +22,7 @@ export APP_HOME=`cd $(dirname $0)/; pwd`
 mysql -u ${DBUSER} -P ${DBPORT} -h ${DBHOST} $DBNAME < $APP_HOME/schema_mysqlcluster.sql
 
 bunzip2 <"$APP_HOME/data/articles_dump.csv.bz2" >"$APP_HOME/data/articles_dump.csv"
-mysql -u ${DBUSER} -P ${DBPORT} -h ${DBHOST} $DBNAME -e "LOAD DATA INFILE '"$APP_HOME/data/articles_dump.csv"' 
+mysql -u ${DBUSER} -P ${DBPORT} -h ${DBHOST} $DBNAME -e "LOAD DATA INFILE '"$APP_HOME/data/articles_dump.csv"'
 INTO TABLE articles
   FIELDS TERMINATED BY ',' ENCLOSED BY '\"'
   LINES TERMINATED BY '\n'
@@ -31,7 +31,7 @@ INTO TABLE articles
 
 # TODO currently all arrays are stored as strings
 bunzip2 <"$APP_HOME/data/sentences_dump_mysql.tsv.bz2" >"$APP_HOME/data/sentences_dump_mysql.tsv"
-mysql -u ${DBUSER} -P ${DBPORT} -h ${DBHOST} $DBNAME -e "LOAD DATA INFILE '"$APP_HOME/data/sentences_dump_mysql.tsv"' 
+mysql -u ${DBUSER} -P ${DBPORT} -h ${DBHOST} $DBNAME -e "LOAD DATA INFILE '"$APP_HOME/data/sentences_dump_mysql.tsv"'
 INTO TABLE sentences(sentence_id, words, ner_tags)
   ;
 "

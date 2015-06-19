@@ -7,30 +7,30 @@ import java.util.Properties
 object Main extends App {
 
   // Parse command line options
-  case class Config(documentKey: String, idKey: String, maxSentenceLength: String, numThreads: String, 
+  case class Config(documentKey: String, idKey: String, maxSentenceLength: String, numThreads: String,
     annotators: String = "tokenize, cleanxml, ssplit, pos, lemma, ner, parse")
 
   val parser = new scopt.OptionParser[Config]("DeepDive DocumentParser") {
     head("documentParser", "0.1")
     opt[String]('v', "valueKey") required() action { (x, c) =>
-      c.copy(documentKey = x) 
+      c.copy(documentKey = x)
     } text("JSON key that contains the document, for example \"documents.text\"")
     opt[String]('k', "idKey") required() action { (x, c) =>
-      c.copy(idKey = x) 
+      c.copy(idKey = x)
     } text("JSON key that contains the document id, for example \"documents.id\"")
     opt[String]('l', "maxLength") action { (x, c) =>
-      c.copy(maxSentenceLength = x) 
+      c.copy(maxSentenceLength = x)
     } text("Maximum length of sentences to parse (makes things faster) (default: 40)")
     opt[String]('t', "numThreads") action { (x, c) =>
-      c.copy(numThreads = x) 
+      c.copy(numThreads = x)
     } text("Number of threads (default: # of available cores)")
     opt[String]('a', "annotators") action { (x, c) =>
       c.copy(annotators = x)
     } text("CoreNLP annotators (default: 'tokenize,cleanxml,ssplit,pos,lemma', minimum: 'tokenize,ssplit')")
   }
 
-  val conf = parser.parse(args, Config("documents.text", "documents.id", "40", 
-      Runtime.getRuntime.availableProcessors.toString)) getOrElse { 
+  val conf = parser.parse(args, Config("documents.text", "documents.id", "40",
+      Runtime.getRuntime.availableProcessors.toString)) getOrElse {
     throw new IllegalArgumentException
   }
 
@@ -39,7 +39,7 @@ object Main extends App {
 
   // Configuration has been parsed, execute the Document parser
   val props = new Properties()
-  props.put("annotators", conf.annotators) 
+  props.put("annotators", conf.annotators)
   props.put("parse.maxlen", conf.maxSentenceLength)
   props.put("threads", conf.numThreads)
   val dp = new DocumentParser(props)
@@ -48,7 +48,7 @@ object Main extends App {
   Source.stdin.getLines.zipWithIndex.foreach { case(line, idx) =>
 
     val jsObj = Json.parse(line).asInstanceOf[JsObject]
-    
+
     val documentId = jsObj.value.get(conf.idKey)
     val documentStr = jsObj.value.get(conf.documentKey).map(_.asInstanceOf[JsString].value)
 
@@ -79,7 +79,7 @@ object Main extends App {
       ).toSeq)
       Console.println(Json.stringify(json))
       sentence_offset += 1
-    }  
+    }
   }
 
 }
