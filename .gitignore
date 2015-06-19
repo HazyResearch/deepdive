@@ -11,6 +11,7 @@ hsql:*
 *.pyc
 /lib/dw_mac
 /lib/dw_linux
+/util/sampler-dw
 .cache
 .classpath
 .idea/
