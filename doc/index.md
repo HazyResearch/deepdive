@@ -190,6 +190,7 @@ and
 
 #### Advanced topics
 
+- [DeepDive Application's Structure and Operations](doc/advanced/deepdiveapp.html)
 - [Incremental DeepDive](doc/advanced/incremental.html)
 - [Performance tuning](doc/advanced/performance.html)
 - [Using DeepDive with GreenPlum](doc/advanced/greenplum.html)
