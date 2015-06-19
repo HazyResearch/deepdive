@@ -17,11 +17,11 @@ class contains different extractor *styles*:
 
 - Row-wise extractors:
   - [`json_extractor`](#json_extractor): highly flexible and compatible with
-  previous systems, but with limited performance
+  previous systems, but with limited performance (DEPRECATED!!!)
   - [`tsv_extractor`](#tsv_extractor): moderate flexibility and performance
   - [`plpy_extractor`](#plpy_extractor): parallel database-built-in extractors
   with seriously restricted flexibility because only the UDF function definition
-  is shipped to the DB
+  is shipped to the DB  (DEPRECATED!!!)
   - [`piggy_extractor`](#piggy_extractor): a distributed language-agnostic pipe-based extractor driver.
   We ship the entire runtime environment (code, data, and pip libraries) to
   the DB server(s) and avoid multi-user collision by staging separate environments
@@ -78,7 +78,7 @@ deepdive {
 
 If `style` is not specified, the system assumes the extractor has style `json_extractor`.
 
-### <a name="json_extractor" href="#"></a> json_extractor (default)
+### <a name="json_extractor" href="#"></a> json_extractor (default, but DEPRECATED!!!)
 
 A `json_extractor` takes each tuple in the output of an `input` query (for
 example, a SQL statement), and produces new tuples as output. These tuples are
@@ -293,7 +293,27 @@ for line in fileinput.input():
       print title_id + '\t' + word
 ```
 
-### <a name="plpy_extractor" href="#"></a> plpy_extractor
+### <a name="piggy_extractor" href="#"></a> piggy_extractor
+
+A `piggy_extractor` is similar to a `tsv_extractor`:
+
+- Input is a SQL query (could also be a bare table name like `input_table`).
+- Ouput is a table name (could be a projection like `target_table(mid, words)`).
+- `udf` field specifies a command line for the worker process.
+- The UDF can be written in any language.
+- Worker process moves input / output via stdin and stdout; logs to stderr.
+
+But, as its name suggests, it piggybacks on the DB servers. Here is what's different:
+
+- Piggy requires a new field `udf_dir` which points to the directory containing the UDF code and data (e.g., dictionary files). This directory is packaged and distributed to the database server(s), one copy per data node host.
+- The UDF command is executed on the database server(s), with the DB server's copy of the UDF directory as the working directory. As a result, make sure the command does not have dependencies beyond what's in the UDF directory and on the DB servers.
+- As a corollary, the computation occurs on the DB servers as opposed to the machine launching the DD program.
+
+
+See `examples/spouse_example/piggy_extractor/` for example extractors.
+
+
+### <a name="plpy_extractor" href="#"></a> plpy_extractor (DEPRECATED)
 
 A `plpy_extractor` is a high-performance type of extractors for PostgreSQL /
 Greenplum databases. It avoids additional I/O by executing the extractor
