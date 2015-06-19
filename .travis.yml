@@ -26,10 +26,11 @@ env:
 install:
   - make depends
 
-script:
-  # Check coding style first
+before_script:
+  # Check coding style before performing the build and tests
   - make checkstyle
 
+script:
   # Run all tests
   - make test
 
