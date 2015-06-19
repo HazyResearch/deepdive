@@ -6,28 +6,28 @@ import java.util.Scanner;
  */
 public class DebugMan {
 
-	private static StringBuilder log = new StringBuilder();
+        private static StringBuilder log = new StringBuilder();
 
-	public static void log(String s){
-		log.append(s);
-	}
+        public static void log(String s){
+                log.append(s);
+        }
 
-	public static String getLog(){
-		return log.toString();
-	}
+        public static String getLog(){
+                return log.toString();
+        }
 
-	public static void pause() {
-		System.out.println("\nPress enter to continue...");
-		Scanner in = new Scanner(System.in);
-		in.nextLine();
-	}
+        public static void pause() {
+                System.out.println("\nPress enter to continue...");
+                Scanner in = new Scanner(System.in);
+                in.nextLine();
+        }
 
-	public static boolean runningInWindows(){
-		String os = System.getProperty("os.name").toLowerCase();
-		return os.contains("win");
-	}
+        public static boolean runningInWindows(){
+                String os = System.getProperty("os.name").toLowerCase();
+                return os.contains("win");
+        }
 
-	private static final Runtime s_runtime = Runtime.getRuntime ();
+        private static final Runtime s_runtime = Runtime.getRuntime ();
     public static void runGC() throws Exception
     {
         // It helps to call Runtime.gc()
@@ -53,37 +53,37 @@ public class DebugMan {
         return s_runtime.totalMemory () - s_runtime.freeMemory ();
     }
 
-	public static long usedMemory(){
-		try{
-			runGC();
-		}catch(Exception e){
-			System.err.println(e.getMessage());
-		}
-	    long mem0 = Runtime.getRuntime().totalMemory() -
-	      Runtime.getRuntime().freeMemory();
-	    return mem0;
-	}
+        public static long usedMemory(){
+                try{
+                        runGC();
+                }catch(Exception e){
+                        System.err.println(e.getMessage());
+                }
+            long mem0 = Runtime.getRuntime().totalMemory() -
+              Runtime.getRuntime().freeMemory();
+            return mem0;
+        }
 
-	static private long baseMem = 0;
-	public static void checkBaseMem(){
-		baseMem = usedMemory();
-	}
+        static private long baseMem = 0;
+        public static void checkBaseMem(){
+                baseMem = usedMemory();
+        }
 
-	public static long getBaseMem(){
-		return baseMem;
-	}
+        public static long getBaseMem(){
+                return baseMem;
+        }
 
 
-	static private long peakMem = 0;
-	public static void checkPeakMem(){
-		long mem = usedMemory();
-		if(mem > peakMem){
-			peakMem = mem;
-		}
-	}
+        static private long peakMem = 0;
+        public static void checkPeakMem(){
+                long mem = usedMemory();
+                if(mem > peakMem){
+                        peakMem = mem;
+                }
+        }
 
-	public static long getPeakMem(){
-		return peakMem;
-	}
+        public static long getPeakMem(){
+                return peakMem;
+        }
 
 }

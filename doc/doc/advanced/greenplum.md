@@ -55,12 +55,12 @@ your environment is more complex than usual.
   have these commands run every time you log in to the system, save a new script
   called `greenplum_startup.sh` with the following contents:
 
-	```bash
-	source GREENPLUM_DIR/greenplum-db/greenplum_path.sh
-	export MASTER_DATA_DIRECTORY=GREENPLUM_DIR/greenplumdb/master/gpsne-1
-	```
-	and edit your shell settings so that this script gets executed every time
-	the shell opens (or remember to run it).
+        ```bash
+        source GREENPLUM_DIR/greenplum-db/greenplum_path.sh
+        export MASTER_DATA_DIRECTORY=GREENPLUM_DIR/greenplumdb/master/gpsne-1
+        ```
+        and edit your shell settings so that this script gets executed every time
+        the shell opens (or remember to run it).
 
 
 ### Setting the Greenplum Recommended OS Parameters
@@ -257,21 +257,21 @@ Use `gpstop` and `gpstart` to stop / start the Greenplum server at any time.
 - **When I use Greeplum, I see the error "ERROR: data line too long. likely due to
 invalid csv data". But my program runs fine using PostgreSQL.**
 
-	Tune the `gp_max_csv_line_length` parameter in Greenplum.
+        Tune the `gp_max_csv_line_length` parameter in Greenplum.
 
 - **I get the following error: Could not reserve enough space for object heap.
   Error: Could not create the Java Virtual Machine.**
 
-	Tune `MaxPermSize` in Java, e.g., `-XX:MaxPermSize=128m`.
+        Tune `MaxPermSize` in Java, e.g., `-XX:MaxPermSize=128m`.
 
-	Another option, especially if you are running in a Virtual Machine
-	rather than on "bare metal", is to add `vm.overcommit_memory = 1` to
-	`/etc/syctl.conf` and then run `sudo sysctl -p` (Thanks to Michael Goddard
-	for providing this answer).
+        Another option, especially if you are running in a Virtual Machine
+        rather than on "bare metal", is to add `vm.overcommit_memory = 1` to
+        `/etc/syctl.conf` and then run `sudo sysctl -p` (Thanks to Michael Goddard
+        for providing this answer).
 
 - **How do I enable fuzzy string match / install "contrib" module in Greenplum?**
 
-	To enable *fuzzystringmatch* / the *contrib* module available for PostgreSQL
-	for Greenplum, see [this
-	link](http://blog.2ndquadrant.com/fuzzystrmatch_greenplum/).
+        To enable *fuzzystringmatch* / the *contrib* module available for PostgreSQL
+        for Greenplum, see [this
+        link](http://blog.2ndquadrant.com/fuzzystrmatch_greenplum/).
 

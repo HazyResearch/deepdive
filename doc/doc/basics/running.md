@@ -151,10 +151,10 @@ rules are active and should be executed. This is useful for debugging purposes.
 You can define custom pipelines by adding the following configuration directives:
 
 ```bash
-	deepdive {
-  	  pipeline.run: myPipeline
-	  pipeline.pipelines { myPipeline: [ extractor1 extractor2 inferenceRule1 ] }
-	}
+        deepdive {
+          pipeline.run: myPipeline
+          pipeline.pipelines { myPipeline: [ extractor1 extractor2 inferenceRule1 ] }
+        }
 ```
 
 Refer to the [configuration reference](configuration.html#pipelines) for details

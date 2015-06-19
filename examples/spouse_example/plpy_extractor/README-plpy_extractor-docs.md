@@ -26,11 +26,11 @@ UDF Code Format
 - Anything out of functions "init", "run" will not be accepted.
 - In "init", import libraries, specify input variables and return types
 - In "run", write your extractor. Return **a list** containing your results, each item in the list should be a list/tuple of your return types.
-	- e.g. [[ret1, ret2], [ret1, ret2], ...]
+        - e.g. [[ret1, ret2], [ret1, ret2], ...]
 
 - Do not print. "print" command is not supported in plpy.
 - Do not reassign input variables in "run" function!
-	- e.g. "input_var = x" is invalid and will cause error!
+        - e.g. "input_var = x" is invalid and will cause error!
 
 The following must be in the same order:
 - SQL input query

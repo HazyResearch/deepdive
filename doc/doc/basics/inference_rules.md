@@ -85,25 +85,25 @@ variable must be called `smokes.is_true`.
   must also be part of the query result. There are several **requirements for
   the `id` column**:
 
-	- When creating a table containing variables, the column `id` must be
-	  explicitly created, with the type of big integer, i.e. `id bigint`.
+        - When creating a table containing variables, the column `id` must be
+          explicitly created, with the type of big integer, i.e. `id bigint`.
 
-	- The value of `id` should **always** be `NULL` before the inference step.
-	  DeepDive fills this column with variable IDs in the inference steps, so
-	  any value in this column will be lost.
+        - The value of `id` should **always** be `NULL` before the inference step.
+          DeepDive fills this column with variable IDs in the inference steps, so
+          any value in this column will be lost.
 
-	- If you use Greenplum, the column `id` must not be the distribution key for
-	  a table.
+        - If you use Greenplum, the column `id` must not be the distribution key for
+          a table.
 
-	- If you want an unique identifier of this table to refer to, you should use
-	  columns other than `id`.
+        - If you want an unique identifier of this table to refer to, you should use
+          columns other than `id`.
 
-	- Generally, for any table in a DeepDive application, it is recommended
-	  **not** to use the name `id` for any column other than this reserved
-	  field. Meaningful column names such as `sentence_id`, `people_id` are
-	  recommended.
+        - Generally, for any table in a DeepDive application, it is recommended
+          **not** to use the name `id` for any column other than this reserved
+          field. Meaningful column names such as `sentence_id`, `people_id` are
+          recommended.
 
-	- The values in the columns used to learn the factor weight should not be `null`.
+        - The values in the columns used to learn the factor weight should not be `null`.
 
 - When using self-joins, you must avoid naming collisions by defining an alias in
 your query. For example, the following will **not** work:
@@ -130,8 +130,8 @@ your query. For example, the following will **not** work:
         AND  friends.friend_id = p2.person_id
     ```
 
-	  Your factor function variables would be called `person_smokes.p1.smokes` and
-	  `person_smokes.p1.smokes`.
+          Your factor function variables would be called `person_smokes.p1.smokes` and
+          `person_smokes.p1.smokes`.
 
 ### Factor function
 

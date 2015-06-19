@@ -24,15 +24,15 @@ The other is saying that if a person's friends smoke, he/she might have cancer:
 
 ```
 friends_smoke {
-	input_query: """
-	  SELECT p1.id AS "person_smokes.p1.id",
-	         p2.id AS "person_smokes.p2.id",
-	         p1.smokes AS "person_smokes.p1.smokes",
-	         p2.smokes AS "person_smokes.p2.smokes"
-	    FROM friends INNER JOIN person_smokes AS p1 ON
-	      (friends.person_id = p1.person_id) INNER JOIN person_smokes AS p2 ON (friends.friend_id = p2.person_id)
-	"""
-	function: "Imply(person_smokes.p1.smokes, person_smokes.p2.smokes)"
-	weight: 0.4
+        input_query: """
+          SELECT p1.id AS "person_smokes.p1.id",
+                 p2.id AS "person_smokes.p2.id",
+                 p1.smokes AS "person_smokes.p1.smokes",
+                 p2.smokes AS "person_smokes.p2.smokes"
+            FROM friends INNER JOIN person_smokes AS p1 ON
+              (friends.person_id = p1.person_id) INNER JOIN person_smokes AS p2 ON (friends.friend_id = p2.person_id)
+        """
+        function: "Imply(person_smokes.p1.smokes, person_smokes.p2.smokes)"
+        weight: 0.4
 }
 ```

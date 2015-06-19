@@ -5,16 +5,16 @@ import org.kohsuke.args4j.Option;
  */
 public class CommandOptions {
 
-	public enum MAPInferAlgo {WALK, SWEEP};
-	public enum InferDataStore {RAM, DISK};
+        public enum MAPInferAlgo {WALK, SWEEP};
+        public enum InferDataStore {RAM, DISK};
 
 
     @Option(name="-snap", required=false, usage="Whether takes snapshot while MCSAT inference.")
     public boolean snapshot = false;
 
-	/**
-	 * Essential input/output
-	 */
+        /**
+         * Essential input/output
+         */
     @Option(name="-i", aliases="-mln", required=true, usage="REQUIRED. Input MLN program(s). Separate with comma.")
     public String fprog;
 
@@ -95,7 +95,7 @@ public class CommandOptions {
     public boolean mle = false;
 
     @Option(name="-dual", usage="Run both MAP and marginal inference. Results will be " +
-    		"written to $out_file.map and $out_file.marginal respectively.")
+                "written to $out_file.map and $out_file.marginal respectively.")
     public boolean dual = false;
 
     @Option(name="-learnwt", usage="Run Tuffy in discriminative weight learning mode.")
@@ -141,7 +141,7 @@ public class CommandOptions {
 
 
     @Option(name="-mcsatParam", usage="Set x; each step of MC-SAT retains each " +
-    		"non-violated clause with probability 1-exp(-|weight|*x). DEFAULT=1.")
+                "non-violated clause with probability 1-exp(-|weight|*x). DEFAULT=1.")
     public double mcsatPara = 1;
 
     @Option(name="-dMaxIter", usage="Max number of iterations for learning. DEFAULT=500")

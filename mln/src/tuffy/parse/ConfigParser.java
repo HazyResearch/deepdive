@@ -90,21 +90,21 @@ public class ConfigParser extends Parser {
 
 
                 switch (alt1) {
-            	case 1 :
-            	    // /scratch/leonn/workspace/tuffy/src/tuffy/parse/Config.g:32:12: state
-            	    {
-            	    pushFollow(FOLLOW_state_in_config196);
-            	    state1=state();
+                case 1 :
+                    // /scratch/leonn/workspace/tuffy/src/tuffy/parse/Config.g:32:12: state
+                    {
+                    pushFollow(FOLLOW_state_in_config196);
+                    state1=state();
 
-            	    state._fsp--;
+                    state._fsp--;
 
-            	    adaptor.addChild(root_0, state1.getTree());
+                    adaptor.addChild(root_0, state1.getTree());
 
-            	    }
-            	    break;
+                    }
+                    break;
 
-            	default :
-            	    if ( cnt1 >= 1 ) break loop1;
+                default :
+                    if ( cnt1 >= 1 ) break loop1;
                         EarlyExitException eee =
                             new EarlyExitException(1, input);
                         throw eee;
@@ -128,7 +128,7 @@ public class ConfigParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {
@@ -191,7 +191,7 @@ public class ConfigParser extends Parser {
         catch (RecognitionException re) {
             reportError(re);
             recover(input,re);
-    	retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
+        retval.tree = (Object)adaptor.errorNode(input, retval.start, input.LT(-1), re);
 
         }
         finally {

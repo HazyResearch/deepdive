@@ -1001,24 +1001,24 @@ public class MLNLexer extends Lexer {
 
 
                         switch (alt1) {
-                    	case 1 :
-                    	    // MLN.g:50:14: ~ ( '\\n' | '\\r' )
-                    	    {
-                    	    if ( (input.LA(1)>='\u0000' && input.LA(1)<='\t')||(input.LA(1)>='\u000B' && input.LA(1)<='\f')||(input.LA(1)>='\u000E' && input.LA(1)<='\uFFFF') ) {
-                    	        input.consume();
+                        case 1 :
+                            // MLN.g:50:14: ~ ( '\\n' | '\\r' )
+                            {
+                            if ( (input.LA(1)>='\u0000' && input.LA(1)<='\t')||(input.LA(1)>='\u000B' && input.LA(1)<='\f')||(input.LA(1)>='\u000E' && input.LA(1)<='\uFFFF') ) {
+                                input.consume();
 
-                    	    }
-                    	    else {
-                    	        MismatchedSetException mse = new MismatchedSetException(null,input);
-                    	        recover(mse);
-                    	        throw mse;}
+                            }
+                            else {
+                                MismatchedSetException mse = new MismatchedSetException(null,input);
+                                recover(mse);
+                                throw mse;}
 
 
-                    	    }
-                    	    break;
+                            }
+                            break;
 
-                    	default :
-                    	    break loop1;
+                        default :
+                            break loop1;
                         }
                     } while (true);
 
@@ -1074,16 +1074,16 @@ public class MLNLexer extends Lexer {
 
 
                         switch (alt3) {
-                    	case 1 :
-                    	    // MLN.g:51:42: .
-                    	    {
-                    	    matchAny();
+                        case 1 :
+                            // MLN.g:51:42: .
+                            {
+                            matchAny();
 
-                    	    }
-                    	    break;
+                            }
+                            break;
 
-                    	default :
-                    	    break loop3;
+                        default :
+                            break loop3;
                         }
                     } while (true);
 
@@ -1321,36 +1321,36 @@ public class MLNLexer extends Lexer {
 
 
                 switch (alt6) {
-            	case 1 :
-            	    // MLN.g:66:6: escaped= ESC
-            	    {
-            	    int escapedStart585 = getCharIndex();
-            	    mESC();
-            	    escaped = new CommonToken(input, Token.INVALID_TOKEN_TYPE, Token.DEFAULT_CHANNEL, escapedStart585, getCharIndex()-1);
-            	    lBuf.append(getText());
+                case 1 :
+                    // MLN.g:66:6: escaped= ESC
+                    {
+                    int escapedStart585 = getCharIndex();
+                    mESC();
+                    escaped = new CommonToken(input, Token.INVALID_TOKEN_TYPE, Token.DEFAULT_CHANNEL, escapedStart585, getCharIndex()-1);
+                    lBuf.append(getText());
 
-            	    }
-            	    break;
-            	case 2 :
-            	    // MLN.g:67:6: normal=~ ( '\"' | '\\\\' | '\\n' | '\\r' )
-            	    {
-            	    normal= input.LA(1);
-            	    if ( (input.LA(1)>='\u0000' && input.LA(1)<='\t')||(input.LA(1)>='\u000B' && input.LA(1)<='\f')||(input.LA(1)>='\u000E' && input.LA(1)<='!')||(input.LA(1)>='#' && input.LA(1)<='[')||(input.LA(1)>=']' && input.LA(1)<='\uFFFF') ) {
-            	        input.consume();
+                    }
+                    break;
+                case 2 :
+                    // MLN.g:67:6: normal=~ ( '\"' | '\\\\' | '\\n' | '\\r' )
+                    {
+                    normal= input.LA(1);
+                    if ( (input.LA(1)>='\u0000' && input.LA(1)<='\t')||(input.LA(1)>='\u000B' && input.LA(1)<='\f')||(input.LA(1)>='\u000E' && input.LA(1)<='!')||(input.LA(1)>='#' && input.LA(1)<='[')||(input.LA(1)>=']' && input.LA(1)<='\uFFFF') ) {
+                        input.consume();
 
-            	    }
-            	    else {
-            	        MismatchedSetException mse = new MismatchedSetException(null,input);
-            	        recover(mse);
-            	        throw mse;}
+                    }
+                    else {
+                        MismatchedSetException mse = new MismatchedSetException(null,input);
+                        recover(mse);
+                        throw mse;}
 
-            	    lBuf.appendCodePoint(normal);
+                    lBuf.appendCodePoint(normal);
 
-            	    }
-            	    break;
+                    }
+                    break;
 
-            	default :
-            	    break loop6;
+                default :
+                    break loop6;
                 }
             } while (true);
 
@@ -1673,16 +1673,16 @@ public class MLNLexer extends Lexer {
 
 
                         switch (alt10) {
-                    	case 1 :
-                    	    // MLN.g:102:37: '0' .. '9'
-                    	    {
-                    	    matchRange('0','9');
+                        case 1 :
+                            // MLN.g:102:37: '0' .. '9'
+                            {
+                            matchRange('0','9');
 
-                    	    }
-                    	    break;
+                            }
+                            break;
 
-                    	default :
-                    	    break loop10;
+                        default :
+                            break loop10;
                         }
                     } while (true);
 
@@ -1751,16 +1751,16 @@ public class MLNLexer extends Lexer {
 
 
                 switch (alt13) {
-            	case 1 :
-            	    // MLN.g:104:34: '0' .. '9'
-            	    {
-            	    matchRange('0','9');
+                case 1 :
+                    // MLN.g:104:34: '0' .. '9'
+                    {
+                    matchRange('0','9');
 
-            	    }
-            	    break;
+                    }
+                    break;
 
-            	default :
-            	    if ( cnt13 >= 1 ) break loop13;
+                default :
+                    if ( cnt13 >= 1 ) break loop13;
                         EarlyExitException eee =
                             new EarlyExitException(13, input);
                         throw eee;
@@ -1826,16 +1826,16 @@ public class MLNLexer extends Lexer {
 
 
                         switch (alt15) {
-                    	case 1 :
-                    	    // MLN.g:107:21: '0' .. '9'
-                    	    {
-                    	    matchRange('0','9');
+                        case 1 :
+                            // MLN.g:107:21: '0' .. '9'
+                            {
+                            matchRange('0','9');
 
-                    	    }
-                    	    break;
+                            }
+                            break;
 
-                    	default :
-                    	    if ( cnt15 >= 1 ) break loop15;
+                        default :
+                            if ( cnt15 >= 1 ) break loop15;
                                 EarlyExitException eee =
                                     new EarlyExitException(15, input);
                                 throw eee;
@@ -1856,16 +1856,16 @@ public class MLNLexer extends Lexer {
 
 
                         switch (alt16) {
-                    	case 1 :
-                    	    // MLN.g:107:37: '0' .. '9'
-                    	    {
-                    	    matchRange('0','9');
+                        case 1 :
+                            // MLN.g:107:37: '0' .. '9'
+                            {
+                            matchRange('0','9');
 
-                    	    }
-                    	    break;
+                            }
+                            break;
 
-                    	default :
-                    	    break loop16;
+                        default :
+                            break loop16;
                         }
                     } while (true);
 
@@ -1907,16 +1907,16 @@ public class MLNLexer extends Lexer {
 
 
                         switch (alt18) {
-                    	case 1 :
-                    	    // MLN.g:108:14: '0' .. '9'
-                    	    {
-                    	    matchRange('0','9');
+                        case 1 :
+                            // MLN.g:108:14: '0' .. '9'
+                            {
+                            matchRange('0','9');
 
-                    	    }
-                    	    break;
+                            }
+                            break;
 
-                    	default :
-                    	    if ( cnt18 >= 1 ) break loop18;
+                        default :
+                            if ( cnt18 >= 1 ) break loop18;
                                 EarlyExitException eee =
                                     new EarlyExitException(18, input);
                                 throw eee;
@@ -1961,16 +1961,16 @@ public class MLNLexer extends Lexer {
 
 
                         switch (alt20) {
-                    	case 1 :
-                    	    // MLN.g:109:10: '0' .. '9'
-                    	    {
-                    	    matchRange('0','9');
+                        case 1 :
+                            // MLN.g:109:10: '0' .. '9'
+                            {
+                            matchRange('0','9');
 
-                    	    }
-                    	    break;
+                            }
+                            break;
 
-                    	default :
-                    	    if ( cnt20 >= 1 ) break loop20;
+                        default :
+                            if ( cnt20 >= 1 ) break loop20;
                                 EarlyExitException eee =
                                     new EarlyExitException(20, input);
                                 throw eee;
@@ -2019,24 +2019,24 @@ public class MLNLexer extends Lexer {
 
 
                 switch (alt22) {
-            	case 1 :
-            	    // MLN.g:
-            	    {
-            	    if ( input.LA(1)=='-'||(input.LA(1)>='0' && input.LA(1)<='9')||(input.LA(1)>='A' && input.LA(1)<='Z')||input.LA(1)=='_'||(input.LA(1)>='a' && input.LA(1)<='z') ) {
-            	        input.consume();
+                case 1 :
+                    // MLN.g:
+                    {
+                    if ( input.LA(1)=='-'||(input.LA(1)>='0' && input.LA(1)<='9')||(input.LA(1)>='A' && input.LA(1)<='Z')||input.LA(1)=='_'||(input.LA(1)>='a' && input.LA(1)<='z') ) {
+                        input.consume();
 
-            	    }
-            	    else {
-            	        MismatchedSetException mse = new MismatchedSetException(null,input);
-            	        recover(mse);
-            	        throw mse;}
+                    }
+                    else {
+                        MismatchedSetException mse = new MismatchedSetException(null,input);
+                        recover(mse);
+                        throw mse;}
 
 
-            	    }
-            	    break;
+                    }
+                    break;
 
-            	default :
-            	    break loop22;
+                default :
+                    break loop22;
                 }
             } while (true);
 

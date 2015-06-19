@@ -57,35 +57,35 @@ mark
 /Q/grestore
 counttomark 2 idiv
 {ld}repeat pop
-/SC{	
+/SC{    
     /ColorSpace fr scs
 }bd
 /sopr /setoverprint where{pop/setoverprint}{/pop}ifelse ld
 /soprm /setoverprintmode where{pop/setoverprintmode}{/pop}ifelse ld
 /cgmtx matrix def
 /sdmtx{cgmtx currentmatrix pop}bd
-/CM {cgmtx setmatrix}bd		
-/cm {cmmtx astore CM concat}bd	
+/CM {cgmtx setmatrix}bd         
+/cm {cmmtx astore CM concat}bd  
 /W{clip newpath}bd
 /W*{eoclip newpath}bd
 statusdict begin product end dup (HP) anchorsearch{
-    pop pop pop	
+    pop pop pop 
     true
 }{
-    pop	
+    pop 
    (hp) anchorsearch{
-	pop pop true
+        pop pop true
     }{
-	pop false
+        pop false
     }ifelse
 }ifelse
-{	
+{       
     { 
-	{ 
-	    pop pop 
-	    (0)dup 0 4 -1 roll put
-	    F charpath
-	}cshow
+        { 
+            pop pop 
+            (0)dup 0 4 -1 roll put
+            F charpath
+        }cshow
     }
 }{
     {F charpath}
@@ -94,7 +94,7 @@ statusdict begin product end dup (HP) anchorsearch{
 /cps {cply stroke}bd
 /pgsave 0 def
 /bp{/pgsave save store}bd
-/ep{pgsave restore showpage}def		
+/ep{pgsave restore showpage}def         
 /re{4 2 roll m 1 index 0 rlineto 0 exch rlineto neg 0 rlineto h}bd
 /scrdict 10 dict def
 /scrmtx matrix def
@@ -120,7 +120,7 @@ setpattern
     /showpage {} def
     0 setgray 0 setlinecap 1 setlinewidth 0 setlinejoin
     10 setmiterlimit [] 0 setdash newpath
-    false setstrokeadjust false setoverprint	
+    false setstrokeadjust false setoverprint    
 }bd
 /cg_EndEPSF{
   countdictstack 3 sub { end } repeat
@@ -140,17 +140,17 @@ L3?{
     /ImageBandMask 0 def
     /ImageBandData 0 def
     /cg_mibiproc{
-	string/ImageBandMask xs
-	string/ImageBandData xs
-	/ImageDataSource{[currentfile/RunLengthDecode filter dup ImageBandMask/readstring cvx
-	    /pop cvx dup ImageBandData/readstring cvx/pop cvx]cvx bind}bd
+        string/ImageBandMask xs
+        string/ImageBandData xs
+        /ImageDataSource{[currentfile/RunLengthDecode filter dup ImageBandMask/readstring cvx
+            /pop cvx dup ImageBandData/readstring cvx/pop cvx]cvx bind}bd
     }bd
-    /cg_miaiproc{	
-	string/ImageBandMask xs
-	string/ImageBandData xs
-	/ImageDataSource{[currentfile/ASCII85Decode filter/RunLengthDecode filter
-	    dup ImageBandMask/readstring cvx
-	    /pop cvx dup ImageBandData/readstring cvx/pop cvx]cvx bind}bd
+    /cg_miaiproc{       
+        string/ImageBandMask xs
+        string/ImageBandData xs
+        /ImageDataSource{[currentfile/ASCII85Decode filter/RunLengthDecode filter
+            dup ImageBandMask/readstring cvx
+            /pop cvx dup ImageBandData/readstring cvx/pop cvx]cvx bind}bd
     }bd
 }ifelse
 /imsave 0 def
@@ -158,37 +158,37 @@ L3?{
 /EI{imsave restore}bd
 /ID{
 counttomark 2 idiv
-dup 2 add	
+dup 2 add       
 dict begin
 {def} repeat
-pop		
+pop             
 /ImageType 1 def
 /ImageMatrix[Width 0 0 Height neg 0 Height]def
 currentdict dup/ImageMask known{ImageMask}{F}ifelse exch
 L3?{
     dup/MaskedImage known
     { 
-	pop
-	<<
-	    /ImageType 3
-	    /InterleaveType 2
-	    /DataDict currentdict
-	    /MaskDict
-	    <<  /ImageType 1
-		/Width Width
-		/Height Height
-		/ImageMatrix ImageMatrix
-		/BitsPerComponent 1
-		/Decode [0 1]
-		currentdict/Interpolate known
-		{/Interpolate Interpolate}if
-	    >>
-	>>
+        pop
+        <<
+            /ImageType 3
+            /InterleaveType 2
+            /DataDict currentdict
+            /MaskDict
+            <<  /ImageType 1
+                /Width Width
+                /Height Height
+                /ImageMatrix ImageMatrix
+                /BitsPerComponent 1
+                /Decode [0 1]
+                currentdict/Interpolate known
+                {/Interpolate Interpolate}if
+            >>
+        >>
     }if
 }if
 exch
-{imagemask}{image}ifelse	
-end	
+{imagemask}{image}ifelse        
+end     
 }bd
 /cguidfix{statusdict begin mark version end
 {cvr}stopped{cleartomark 0}{exch pop}ifelse
@@ -211,25 +211,25 @@ currentdict end definefont pop
 }bd
 /xy_proc{
         
-	t_array t_i 2 copy 1 add get 3 1 roll get 
-	4 -1 roll add 3 1 roll add moveto
-	/t_i t_i 2 add store
+        t_array t_i 2 copy 1 add get 3 1 roll get 
+        4 -1 roll add 3 1 roll add moveto
+        /t_i t_i 2 add store
 }bd
-/sop 0 def		
-/cp_proc/x_proc ld 	
-/base_charpath		
+/sop 0 def              
+/cp_proc/x_proc ld      
+/base_charpath          
 {
     /t_array xs
     /t_i 0 def
     { 
-	t_c 0 3 -1 roll put
+        t_c 0 3 -1 roll put
         currentpoint
-	t_c cply sop
+        t_c cply sop
         cp_proc
     }forall
     /t_array 0 def
 }bd
-/sop/stroke ld		
+/sop/stroke ld          
 /nop{}def
 /xsp/base_charpath ld
 /ysp{/cp_proc/y_proc ld base_charpath/cp_proc/x_proc ld}bd
@@ -269,370 +269,370 @@ L3? dup dup{save exch}if
 /setupFunEval 
 {
     begin
-	/nRange Range length 2 idiv store
-	/mulRange   
-		    
-	[ 
-	    0 1 nRange 1 sub
-	    { 
-		    2 mul/nDim2 xd		
-		    Range nDim2 get		
-		    Range nDim2 1 add get	
-		    1 index sub			
-						
-		    255 div			
-		    exch			
-	    }for
-	]store
+        /nRange Range length 2 idiv store
+        /mulRange   
+                    
+        [ 
+            0 1 nRange 1 sub
+            { 
+                    2 mul/nDim2 xd              
+                    Range nDim2 get             
+                    Range nDim2 1 add get       
+                    1 index sub                 
+                                                
+                    255 div                     
+                    exch                        
+            }for
+        ]store
     end
 }bd
 /FunEval 
 {
     begin
-	
-	nRange mul /val xd	
-				
-	0 1 nRange 1 sub
-	{
-	    dup 2 mul/nDim2 xd 
-	    val	
-	    add DataSource exch get 
-	    mulRange nDim2 get mul 	
-	    mulRange nDim2 1 add get 
-	    add 
-	}for	
+        
+        nRange mul /val xd      
+                                
+        0 1 nRange 1 sub
+        {
+            dup 2 mul/nDim2 xd 
+            val 
+            add DataSource exch get 
+            mulRange nDim2 get mul      
+            mulRange nDim2 1 add get 
+            add 
+        }for    
     end
 }bd
 /max 
 {
-	2 copy lt
-	{exch pop}{pop}ifelse
+        2 copy lt
+        {exch pop}{pop}ifelse
 }bd
 /sh2
-{	
-	/Coords load aload pop 	
-	3 index 3 index translate	
-					
-	3 -1 roll sub	
-	3 1 roll exch 	
-	sub				
-	2 copy
-	dup mul exch dup mul add sqrt	
-	dup
-	scale  
-	atan	
-	
-	rotate		
-	
-	/Function load setupFunEval	
-	
-	
-	clippath {pathbbox}stopped {0 0 0 0}if newpath 	
-	/ymax xs
-	/xmax xs
-	/ymin xs
-	/xmin xs
-	currentdict/Extend known
-	{
-		/Extend load 0 get
-		{	
-			0/Function load FunEval sc	
-			xmin ymin xmin abs ymax ymin sub rectfill
-		}if
-	}if
-	
-	/Nsteps/Function load/Size get 0 get 1 sub store
-	/dx 1 Nsteps div store
-	gsave
-		/di ymax ymin sub store
-		/Function load
-		
-		0 1 Nsteps
-		{
-			1 index FunEval sc
-			0 ymin dx di rectfill
-			dx 0 translate
-		}for
-		pop	
-	grestore	
-	currentdict/Extend known
-	{
-		/Extend load 1 get
-		{	
-			Nsteps/Function load FunEval sc	
-			1 ymin xmax 1 sub abs ymax ymin sub rectfill
-		}if
-	}if
+{       
+        /Coords load aload pop  
+        3 index 3 index translate       
+                                        
+        3 -1 roll sub   
+        3 1 roll exch   
+        sub                             
+        2 copy
+        dup mul exch dup mul add sqrt   
+        dup
+        scale  
+        atan    
+        
+        rotate          
+        
+        /Function load setupFunEval     
+        
+        
+        clippath {pathbbox}stopped {0 0 0 0}if newpath  
+        /ymax xs
+        /xmax xs
+        /ymin xs
+        /xmin xs
+        currentdict/Extend known
+        {
+                /Extend load 0 get
+                {       
+                        0/Function load FunEval sc      
+                        xmin ymin xmin abs ymax ymin sub rectfill
+                }if
+        }if
+        
+        /Nsteps/Function load/Size get 0 get 1 sub store
+        /dx 1 Nsteps div store
+        gsave
+                /di ymax ymin sub store
+                /Function load
+                
+                0 1 Nsteps
+                {
+                        1 index FunEval sc
+                        0 ymin dx di rectfill
+                        dx 0 translate
+                }for
+                pop     
+        grestore        
+        currentdict/Extend known
+        {
+                /Extend load 1 get
+                {       
+                        Nsteps/Function load FunEval sc 
+                        1 ymin xmax 1 sub abs ymax ymin sub rectfill
+                }if
+        }if
 }bd
-/shp	
-{	
-	4 copy
-	
-	dup 0 gt{
-		0 exch a1 a0 arc
-	}{
-		pop 0 moveto
-	}ifelse
-	dup 0 gt{
-		0 exch a0 a1 arcn
-	}{
-		pop 0 lineto
-	}ifelse
-	
-	fill
-	
-	dup 0 gt{
-		0 exch a0 a1 arc
-	}{
-		pop 0 moveto
-	}ifelse
-	dup 0 gt{
-		0 exch a1 a0 arcn
-	}{
-		pop 0 lineto
-	}ifelse
-	
-	fill
+/shp    
+{       
+        4 copy
+        
+        dup 0 gt{
+                0 exch a1 a0 arc
+        }{
+                pop 0 moveto
+        }ifelse
+        dup 0 gt{
+                0 exch a0 a1 arcn
+        }{
+                pop 0 lineto
+        }ifelse
+        
+        fill
+        
+        dup 0 gt{
+                0 exch a0 a1 arc
+        }{
+                pop 0 moveto
+        }ifelse
+        dup 0 gt{
+                0 exch a1 a0 arcn
+        }{
+                pop 0 lineto
+        }ifelse
+        
+        fill
 }bd
 /calcmaxs
-{	
-	
-	xmin dup mul ymin dup mul add sqrt		
-	xmax dup mul ymin dup mul add sqrt		
-	xmin dup mul ymax dup mul add sqrt		
-	xmax dup mul ymax dup mul add sqrt		
-	max max max								
+{       
+        
+        xmin dup mul ymin dup mul add sqrt              
+        xmax dup mul ymin dup mul add sqrt              
+        xmin dup mul ymax dup mul add sqrt              
+        xmax dup mul ymax dup mul add sqrt              
+        max max max                                                             
 }bd
 /sh3
-{	
-	/Coords load aload pop 	
-	5 index 5 index translate	
-	3 -1 roll 6 -1 roll sub		
-	3 -1 roll 5 -1 roll sub		
-	2 copy dup mul exch dup mul add sqrt
-	/dx xs						
-	2 copy 0 ne exch 0 ne or
-	{
-		
-		exch atan rotate	
-	}{
-		pop pop
-	}ifelse
-	
-	/r2 xs
-	/r1 xs
-	/Function load 
-	dup/Size get 0 get 1 sub	
-	/Nsteps xs		
-	setupFunEval		
-	
-	
-	
-	
-	
-	dx r2 add r1 lt{
-		
-		0 
-	}{
-		dx r1 add r2 le
-		{ 
-			1
-		}{ 
-			r1 r2 eq
-			{	
-				2
-			}{ 
-				3
-			}ifelse		
-		}ifelse
-	}ifelse
-	/sh3tp xs		
-	clippath {pathbbox}stopped {0 0 0 0}if 
-	newpath 	
-	/ymax xs
-	/xmax xs
-	/ymin xs
-	/xmin xs
-	
-	dx dup mul r2 r1 sub dup mul sub dup 0 gt
-	{
-		sqrt r2 r1 sub atan
-		/a0 exch 180 exch sub store 
-		/a1 a0 neg store 
-	}{
-		pop
-		/a0 0 store
-		/a1 360 store		
-	}ifelse		
-	currentdict/Extend known
-	{
-		/Extend load 0 get r1 0 gt and	
-		{	
-			0/Function load FunEval sc	
-			
-			
-			
-			
-			{ 
-				{	
-					dx 0 r1 360 0 arcn
-					xmin ymin moveto
-					xmax ymin lineto
-					xmax ymax lineto
-					xmin ymax lineto
-					xmin ymin lineto
-					eofill		
-				}
-				{	
-					r1 0 gt{0 0 r1 0 360 arc fill}if
-				}
-				{	
-					
-					
-				
-					
-					0 r1 xmin abs r1 add neg r1 shp
-				}
-				{	
-					
-				
-					r2 r1 gt{	
-						
-						0 r1
-						r1 neg r2 r1 sub div dx mul	
-						0	
-						shp	
-					}{	
-						
-						
-						
-						0 r1 calcmaxs	
-						dup
-						
-						r2 add dx mul dx r1 r2 sub sub div
-						neg				
-						exch 1 index	
-						abs exch sub
-						shp
-					}ifelse
-				} 
-			}sh3tp get exec	
-		}if
-	}if
-	
-	/d0 0 store
-	/r0 r1 store
-	/di dx Nsteps div store
-	/ri r2 r1 sub Nsteps div store 
-	/Function load 
-	0 1 Nsteps
-	{	
-		1 index FunEval sc
-		d0 di add r0 ri add d0 r0 shp
-		{
-		
-		d0 0 r0 a1 a0 arc
-		d0 di add 0 r0 ri add a0 a1 arcn
-		fill
-		
-		
-		d0 0 r0 a0 a1 arc
-		d0 di add 0 r0 ri add a1 a0 arcn
-		fill
-		}pop
-		
-		
-		/d0 d0 di add store
-		/r0 r0 ri add store
-	}for
-	pop	
-	
-	currentdict/Extend known
-	{
-		/Extend load 1 get r2 0 gt and	
-		{	
-			Nsteps/Function load FunEval sc	
-			
-			
-			
-			
-			{ 
-				{
-					dx 0 r2 0 360 arc fill
-				} 
-				{
-					dx 0 r2 360 0 arcn
-					xmin ymin moveto
-					xmax ymin lineto
-					xmax ymax lineto
-					xmin ymax lineto
-					xmin ymin lineto
-					eofill		
-				} 
-				{	
-					
-					
-					xmax abs r1 add r1 dx r1 shp
-				}	
-				{	
-			
-					r2 r1 gt{
-						
-						
-						
-						calcmaxs dup	
-						
-						r1 add dx mul dx r2 r1 sub sub div	
-						exch 1 index	
-						exch sub
-						dx r2
-						shp
-					}{	
-						
-						r1 neg r2 r1 sub div dx mul	
-						0		
-						dx 		
-						r2		
-						shp
-					}ifelse
-				}
-			}			
-			sh3tp get exec	
-		}if
-	}if
+{       
+        /Coords load aload pop  
+        5 index 5 index translate       
+        3 -1 roll 6 -1 roll sub         
+        3 -1 roll 5 -1 roll sub         
+        2 copy dup mul exch dup mul add sqrt
+        /dx xs                                          
+        2 copy 0 ne exch 0 ne or
+        {
+                
+                exch atan rotate        
+        }{
+                pop pop
+        }ifelse
+        
+        /r2 xs
+        /r1 xs
+        /Function load 
+        dup/Size get 0 get 1 sub        
+        /Nsteps xs              
+        setupFunEval            
+        
+        
+        
+        
+        
+        dx r2 add r1 lt{
+                
+                0 
+        }{
+                dx r1 add r2 le
+                { 
+                        1
+                }{ 
+                        r1 r2 eq
+                        {       
+                                2
+                        }{ 
+                                3
+                        }ifelse         
+                }ifelse
+        }ifelse
+        /sh3tp xs               
+        clippath {pathbbox}stopped {0 0 0 0}if 
+        newpath         
+        /ymax xs
+        /xmax xs
+        /ymin xs
+        /xmin xs
+        
+        dx dup mul r2 r1 sub dup mul sub dup 0 gt
+        {
+                sqrt r2 r1 sub atan
+                /a0 exch 180 exch sub store 
+                /a1 a0 neg store 
+        }{
+                pop
+                /a0 0 store
+                /a1 360 store           
+        }ifelse         
+        currentdict/Extend known
+        {
+                /Extend load 0 get r1 0 gt and  
+                {       
+                        0/Function load FunEval sc      
+                        
+                        
+                        
+                        
+                        { 
+                                {       
+                                        dx 0 r1 360 0 arcn
+                                        xmin ymin moveto
+                                        xmax ymin lineto
+                                        xmax ymax lineto
+                                        xmin ymax lineto
+                                        xmin ymin lineto
+                                        eofill          
+                                }
+                                {       
+                                        r1 0 gt{0 0 r1 0 360 arc fill}if
+                                }
+                                {       
+                                        
+                                        
+                                
+                                        
+                                        0 r1 xmin abs r1 add neg r1 shp
+                                }
+                                {       
+                                        
+                                
+                                        r2 r1 gt{       
+                                                
+                                                0 r1
+                                                r1 neg r2 r1 sub div dx mul     
+                                                0       
+                                                shp     
+                                        }{      
+                                                
+                                                
+                                                
+                                                0 r1 calcmaxs   
+                                                dup
+                                                
+                                                r2 add dx mul dx r1 r2 sub sub div
+                                                neg                             
+                                                exch 1 index    
+                                                abs exch sub
+                                                shp
+                                        }ifelse
+                                } 
+                        }sh3tp get exec 
+                }if
+        }if
+        
+        /d0 0 store
+        /r0 r1 store
+        /di dx Nsteps div store
+        /ri r2 r1 sub Nsteps div store 
+        /Function load 
+        0 1 Nsteps
+        {       
+                1 index FunEval sc
+                d0 di add r0 ri add d0 r0 shp
+                {
+                
+                d0 0 r0 a1 a0 arc
+                d0 di add 0 r0 ri add a0 a1 arcn
+                fill
+                
+                
+                d0 0 r0 a0 a1 arc
+                d0 di add 0 r0 ri add a1 a0 arcn
+                fill
+                }pop
+                
+                
+                /d0 d0 di add store
+                /r0 r0 ri add store
+        }for
+        pop     
+        
+        currentdict/Extend known
+        {
+                /Extend load 1 get r2 0 gt and  
+                {       
+                        Nsteps/Function load FunEval sc 
+                        
+                        
+                        
+                        
+                        { 
+                                {
+                                        dx 0 r2 0 360 arc fill
+                                } 
+                                {
+                                        dx 0 r2 360 0 arcn
+                                        xmin ymin moveto
+                                        xmax ymin lineto
+                                        xmax ymax lineto
+                                        xmin ymax lineto
+                                        xmin ymin lineto
+                                        eofill          
+                                } 
+                                {       
+                                        
+                                        
+                                        xmax abs r1 add r1 dx r1 shp
+                                }       
+                                {       
+                        
+                                        r2 r1 gt{
+                                                
+                                                
+                                                
+                                                calcmaxs dup    
+                                                
+                                                r1 add dx mul dx r2 r1 sub sub div      
+                                                exch 1 index    
+                                                exch sub
+                                                dx r2
+                                                shp
+                                        }{      
+                                                
+                                                r1 neg r2 r1 sub div dx mul     
+                                                0               
+                                                dx              
+                                                r2              
+                                                shp
+                                        }ifelse
+                                }
+                        }                       
+                        sh3tp get exec  
+                }if
+        }if
 }bd
-/sh		
-{	
-	begin
-		/ShadingType load dup dup 2 eq exch 3 eq or
-		{	
-			gsave
-				newpath
-				/ColorSpace load scs
-				currentdict/BBox known
-				{
-					/BBox load aload pop	
-					2 index sub				
-					3 index					
-					3 -1 roll exch sub 
-					exch rectclip
-				}if
-				2 eq
-				{sh2}{sh3}ifelse
-			grestore
-		}{
-			
-			pop 
-			(DEBUG: shading type unimplemented\n)print flush
-		}ifelse
-	end
+/sh             
+{       
+        begin
+                /ShadingType load dup dup 2 eq exch 3 eq or
+                {       
+                        gsave
+                                newpath
+                                /ColorSpace load scs
+                                currentdict/BBox known
+                                {
+                                        /BBox load aload pop    
+                                        2 index sub                             
+                                        3 index                                 
+                                        3 -1 roll exch sub 
+                                        exch rectclip
+                                }if
+                                2 eq
+                                {sh2}{sh3}ifelse
+                        grestore
+                }{
+                        
+                        pop 
+                        (DEBUG: shading type unimplemented\n)print flush
+                }ifelse
+        end
 }bd
 {restore}if not dup{save exch}if
-	L3?{	
-		/sh/shfill ld
-		/csq/clipsave ld
-		/csQ/cliprestore ld
-	}if
+        L3?{    
+                /sh/shfill ld
+                /csq/clipsave ld
+                /csQ/cliprestore ld
+        }if
 {restore}if
 end
 setpacking

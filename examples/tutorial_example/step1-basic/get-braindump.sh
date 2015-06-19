@@ -15,7 +15,7 @@ if ! type braindump &>/dev/null; then
     mkdir -p "$(dirname "$tool")"
     echo >&2 "Downloading BrainDump..."
     curl -k --location --show-error --output $tool.download.zip \
-    		https://github.com/zifeishan/braindump/archive/v${VERSION}.zip
+                https://github.com/zifeishan/braindump/archive/v${VERSION}.zip
     unzip $tool.download.zip
     mkdir -p $HOME/local
     rm -rf $HOME/local/braindump-src

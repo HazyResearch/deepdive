@@ -306,11 +306,11 @@ Use `pgxc_ctl "stop all"` and `pgxc_ctl "start all"` to stop / start the XL serv
 ## <a name="faq" href="#"></a> FAQs
 - **How do I enable fuzzy string match / install "contrib" module in XL?**
 
-	To enable *fuzzystringmatch* or another *contrib* module available for XL,
+        To enable *fuzzystringmatch* or another *contrib* module available for XL,
         see above build instructions on how to build XL with extensions.
 - **Can I create a cluster with N nodes?**
 
-	You certainly can. Note that for clusters larger than 16 nodes you may need
-	to adjust certain configuration parameters, especially buffer sizes (so that
-	you don't run out of memory) and kernel settings (so that the system can open
-	enough SSH sessions).
+        You certainly can. Note that for clusters larger than 16 nodes you may need
+        to adjust certain configuration parameters, especially buffer sizes (so that
+        you don't run out of memory) and kernel settings (so that the system can open
+        enough SSH sessions).

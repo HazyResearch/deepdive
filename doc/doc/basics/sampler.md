@@ -29,11 +29,11 @@ The sampler executable can be invoked independently of DeepDive. The following
 arguments to the sampler executable are used to specify input files, output
 file, and learning and inference parameters:
 
-	-q, --quiet
-		Quiet output
+        -q, --quiet
+                Quiet output
 
-	-c <int>,  --n_datacopy <int> (Linux only)
-		Number of data copies. Each NUMA node has a copy of factor graph. This
+        -c <int>,  --n_datacopy <int> (Linux only)
+                Number of data copies. Each NUMA node has a copy of factor graph. This
         argument specifies number of NUMA nodes to use. Default is using all
         NUMA nodes.
 

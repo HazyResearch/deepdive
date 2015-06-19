@@ -11,51 +11,51 @@ import tuffy.mln.Predicate;
  *
  */
 public class AtomEx{
-	private Predicate pred;
-	private ArrayList<Expression> args = new ArrayList<Expression>();
-	private HashSet<String> vars = new HashSet<String>();
+        private Predicate pred;
+        private ArrayList<Expression> args = new ArrayList<Expression>();
+        private HashSet<String> vars = new HashSet<String>();
 
-	public ArrayList<Expression> getArguments(){
-		return args;
-	}
+        public ArrayList<Expression> getArguments(){
+                return args;
+        }
 
-	public boolean isBuiltIn(){
-		return pred.isBuiltIn();
-	}
+        public boolean isBuiltIn(){
+                return pred.isBuiltIn();
+        }
 
-	public AtomEx(Predicate predicate){
-		this.pred = predicate;
-	}
+        public AtomEx(Predicate predicate){
+                this.pred = predicate;
+        }
 
-	/**
-	 * Returns the set of variable names in this literal.
-	 */
-	public HashSet<String> getVars(){
-		return vars;
-	}
+        /**
+         * Returns the set of variable names in this literal.
+         */
+        public HashSet<String> getVars(){
+                return vars;
+        }
 
-	/**
-	 * Returns the predicate of this literal.
-	 */
-	public Predicate getPred() {
-		return pred;
-	}
+        /**
+         * Returns the predicate of this literal.
+         */
+        public Predicate getPred() {
+                return pred;
+        }
 
-	public String toSQL(){
-		// cast argument into correct types
-		return null;
-	}
+        public String toSQL(){
+                // cast argument into correct types
+                return null;
+        }
 
 
-	/**
-	 * Appends a new term.
-	 *
-	 * @param t the term to be appended
-	 */
-	public void appendTerm(Expression t){
-		args.add(t);
-		vars.addAll(t.getVars());
-	}
+        /**
+         * Appends a new term.
+         *
+         * @param t the term to be appended
+         */
+        public void appendTerm(Expression t){
+                args.add(t);
+                vars.addAll(t.getVars());
+        }
 
 
 

@@ -37,7 +37,7 @@ object SQLFunctions {
     $$ LANGUAGE 'plpgsql';
   """
 
-	val fastSequenceAssignForGreenplum = """
+        val fastSequenceAssignForGreenplum = """
     CREATE OR REPLACE FUNCTION clear_count_1(sid int) RETURNS int AS
     $$
     if '__count_1' in SD:

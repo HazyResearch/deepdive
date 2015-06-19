@@ -204,10 +204,10 @@ scripts will will go through the sentences in the corpus and, respectively:
 
 1. create mentions of people;
 2. create candidate pairs of people mentions that may be in a marriage relation,
-	and supervise some of them using distant supervision rules;
+        and supervise some of them using distant supervision rules;
 3. add features to the candidates, which will be used by DeepDive to learn how
-	to distinguish between correct marriage relation mentions and incorrect
-	ones;
+        to distinguish between correct marriage relation mentions and incorrect
+        ones;
 
 #### <a name="people_extractor" href="#"></a> Adding a people extractor
 
@@ -227,8 +227,8 @@ with elements separated by `~^~`, e.g.:
 
 **Output:** TSV lines that can be loaded as rows of the `people_mentions` table, e.g.:
 
-    118238@10	1	2	Barack Obama	118238@10_1
-    118238@10	7	2	Michelle Obama	118238@10_7
+    118238@10   1       2       Barack Obama    118238@10_1
+    118238@10   7       2       Michelle Obama  118238@10_7
 
 This first extractor identifies people mentions (in the above sample ,
 "Barack Obama" and "Michelle Obama") in the sentences, and insert them into the table
@@ -436,11 +436,11 @@ supervision rules.
 **Input:** two mentions from the `people_mentions` table coming from the same
 sentence, e.g.:
 
-    118238@10	118238@10_7	Michelle Obama	118238@10_1	Barack Obama
+    118238@10   118238@10_7     Michelle Obama  118238@10_1     Barack Obama
 
 **Output:** one row in `has_spouse` table:
 
-    118238@10_7	118238@10_1	118238@10	Michelle Obama-Barack Obama	t	118238@10_7-118238@10_1	247956
+    118238@10_7 118238@10_1     118238@10       Michelle Obama-Barack Obama     t       118238@10_7-118238@10_1 247956
 
 
 To understand how DeepDive works, we should look at the schema of the
@@ -684,16 +684,16 @@ For this new extractor:
 
 **Input:** a mention pair as well as all words in the sentence it appears. e.g.:
 
-    Sen.~^~Barack~^~Obama~^~and~^~his~^~wife~^~,~^~Michelle~^~Obama~^~,~^~have~^~released~^~eight~^~years~^~of~^~joint~^~returns~^~.	118238@10_7-118238@10_1	7	2	1	2
+    Sen.~^~Barack~^~Obama~^~and~^~his~^~wife~^~,~^~Michelle~^~Obama~^~,~^~have~^~released~^~eight~^~years~^~of~^~joint~^~returns~^~.    118238@10_7-118238@10_1 7       2       1       2
 
 **Output:** all features for this mention pair described above:
 
-    118238@10_1_118238@10_7	"word_between=,"
-    118238@10_1_118238@10_7	"word_between=his"
-    118238@10_1_118238@10_7	"potential_last_name_match"
-    118238@10_1_118238@10_7	"word_between=wife"
-    118238@10_1_118238@10_7	"num_words_between=4"
-    118238@10_1_118238@10_7	"word_between=and"
+    118238@10_1_118238@10_7     "word_between=,"
+    118238@10_1_118238@10_7     "word_between=his"
+    118238@10_1_118238@10_7     "potential_last_name_match"
+    118238@10_1_118238@10_7     "word_between=wife"
+    118238@10_1_118238@10_7     "num_words_between=4"
+    118238@10_1_118238@10_7     "word_between=and"
 
 Create a new extractor for features, which will execute after the
 `ext_has_spouse_candidates` extractor:
@@ -707,7 +707,7 @@ Create a new extractor for features, which will execute after the
     ext_has_spouse_features {
       style: "tsv_extractor"
       input: """
-  		SELECT  array_to_string(words, '~^~'),
+                SELECT  array_to_string(words, '~^~'),
                 has_spouse.relation_id,
                 p1.start_position  AS  p1_start,
                 p1.length          AS  p1_length,

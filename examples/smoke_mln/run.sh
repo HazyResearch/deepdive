@@ -2,8 +2,8 @@
 
 # check argument
 if [ $# -ne 1 ] || ([ "$1" != "-marginal" ] && [ "$1" != "-learnwt" ]); then
-	echo "Please use \"-marginal\" or \"-learnwt\" as argument."
-	exit
+        echo "Please use \"-marginal\" or \"-learnwt\" as argument."
+        exit
 fi
 
 # set environmental variables
