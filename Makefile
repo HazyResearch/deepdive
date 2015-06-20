@@ -24,20 +24,18 @@ checkstyle:
 	@./test/checkstyle.sh
 
 .PHONY: install
+PREFIX = ~/local
+DEST = $(PREFIX)/bin
 install: depends build
 	@echo "\n=== Compiling DeepDive... ==="
-	sbt/sbt pack
-
+	sbt/sbt compile
 	@echo "\n=== Installing DeepDive... ==="
-	$(MAKE) -C target/pack/ install ;
-
-	@echo "\n=== Verifying installation... ==="
-	@if [ -f ${HOME}/local/bin/deepdive ]; then \
-		echo "SUCCESS! DeepDive binary has been put into ${HOME}/local/bin."; \
-		echo "Make sure you set environment variables for sampler before running deepdive. See: http://deepdive.stanford.edu/doc/basics/installation.html"; \
-	else \
-		echo "FAILED."; \
-		exit 1; \
+	mkdir -p $(DEST)
+	ln -sfnv $(realpath shell/deepdive) $(DEST)/
+	@if [ -x $(DEST)/deepdive ]; then \
+		echo '# DeepDive binary has been install to $(DEST)/.'; \
+		echo '# Make sure your shell is configured to include the directory in PATH environment, e.g.:'; \
+		echo '  PATH=$(DEST):$$PATH'; \
 	fi
 
 
