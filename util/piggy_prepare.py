@@ -220,7 +220,6 @@ def piggy_prepare_run(dir, script, source, target, is_pgxl):
 
         piggy = SD['piggy']
         import os
-        plpy.info('ONE TUPLE AT ' + str(os.getpid()))
 
         pushed = False
         while not pushed:
@@ -233,39 +232,78 @@ def piggy_prepare_run(dir, script, source, target, is_pgxl):
     $func$ LANGUAGE plpythonu VOLATILE;
 
 
-    CREATE OR REPLACE FUNCTION %(fname)s_getlog ()
+    CREATE OR REPLACE FUNCTION %(fname)s_getlog (last_check bool)
         RETURNS SETOF text
     AS $log$
         import os
+        import time
         log_pipe_name = os.path.join('%(dir)s', '%(fname)s.pipe')
         if not os.path.exists(log_pipe_name):
             raise StopIteration
 
         if 'buffer' not in SD:
             import collections
+            import errno
             from threading import Thread
 
-            # circular buffer
-            buffer = collections.deque(maxlen=10000)
+            # circular buffer with fixed capacity
+            buffer = collections.deque(maxlen=100000)
+
+            class Flag(object):
+                def __init__(self):
+                    self.input_ended = False
+                    self.sucker_ended = False
+
+            flag = Flag()
+            SD['flag'] = flag
+            SD['buffer'] = buffer
 
             def log_sucker():
-                # log_fd = os.read(log_pipe_name, os.O_RDONLY)
-                with open(log_pipe_name, 'r') as log:
-                    for line in iter(log.readline, ''):
-                        buffer.append(line.rstrip())
+                log_fd = os.open(log_pipe_name, os.O_RDONLY | os.O_NONBLOCK)
+                last_prefix = ''
+
+                while True:
+                    try:
+                        input_already_ended = flag.input_ended
+                        chunk = os.read(log_fd, 1 << 20)
+                        if not chunk and input_already_ended:
+                            break
+                        lines = (last_prefix + chunk).split('\\n')
+                        last_prefix = lines[-1]
+                        whole_lines = lines[:-1]
+                        buffer.extend(whole_lines)
+                    except OSError as err:
+                        if err.errno == errno.EAGAIN or err.errno == errno.EWOULDBLOCK:
+                            if input_already_ended:
+                                break
+                            time.sleep(0.1)
+                        else:
+                            buffer.append('PIGGY_LOGGING: Bad exception ' + str(err))
+                            break
+
+                if last_prefix:
+                    buffer.append(last_prefix)
+
+                buffer.append('*' * 30 + ' END OF PIGGY LOG ' + '*' * 30)
+                flag.sucker_ended = True
 
             t = Thread(target=log_sucker)
             t.daemon = True
             t.start()
 
-            SD['buffer'] = buffer
-
-        try:
-            buf = SD['buffer']
-            while True:
+        buf = SD['buffer']
+        flag = SD['flag']
+        flag.input_ended = last_check
+        while True:
+            sucker_ended = flag.sucker_ended
+            try:
                 yield buf.popleft()
-        except IndexError:
-            raise StopIteration
+            except IndexError:
+                if (not last_check) or (last_check and sucker_ended):
+                    if last_check:
+                        del SD['buffer']
+                    return
+                time.sleep(0.1)
 
     $log$ LANGUAGE plpythonu VOLATILE;
 
@@ -281,12 +319,12 @@ def piggy_prepare_run(dir, script, source, target, is_pgxl):
     if is_pgxl:
         sql_dummy_source = 'FROM pgxl_dual'
         sql_getlog = '''
-        SELECT %(fname)s_getlog() AS content FROM pgxl_dual_hosts;
+        SELECT %(fname)s_getlog(?) AS content FROM pgxl_dual_hosts;
         ''' % {'fname': fname}
     else:
         sql_dummy_source = ''
         sql_getlog = '''
-        SELECT %(fname)s_getlog() AS content;
+        SELECT %(fname)s_getlog(?) AS content;
         ''' % {'fname': fname}
 
     # NOTE: relying on the assumption that the DB execution order
@@ -313,7 +351,7 @@ def piggy_prepare_run(dir, script, source, target, is_pgxl):
 
     sql_clean = '''
     DROP FUNCTION %(fname)s (%(sview)s);
-    DROP FUNCTION %(fname)s_getlog ();
+    DROP FUNCTION %(fname)s_getlog (bool);
     DROP TABLE IF EXISTS %(sview)s;
     DROP TABLE IF EXISTS %(tview)s;
     ''' % {

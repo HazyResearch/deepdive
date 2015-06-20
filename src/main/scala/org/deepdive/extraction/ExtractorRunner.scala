@@ -615,31 +615,34 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
 
     class GetLogThread extends Runnable {
       var stopped = false
+      val conn = dataStore.borrowConnection()
 
-      def getLog() {
+      def getLog(last_check: Boolean) {
         this.synchronized {
-          dataStore.prepareStatement(getlog) { ps =>
-            val rs = ps.executeQuery
-            while (rs.next()) {
-              val content = rs.getString(1)
-              if (content != null) {
-                content.split("\n").foreach { line =>
-                  log.info(line)
-                }
+          val ps = conn.prepareStatement(getlog)
+          ps.setBoolean(1, last_check)
+          val rs = ps.executeQuery()
+          while (rs.next()) {
+            val content = rs.getString(1)
+            if (content != null) {
+              content.split("\n").foreach { line =>
+                log.info(line)
               }
             }
           }
+          rs.close()
         }
       }
 
       def die() {
         stopped = true
-        getLog()
+        getLog(true)
+        conn.close()
       }
 
       def run() {
         while (!stopped) {
-          getLog()
+          getLog(false)
           Thread.sleep(1000)
         }
       }
