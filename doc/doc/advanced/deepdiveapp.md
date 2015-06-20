@@ -10,8 +10,13 @@ A DeepDive application is a directory that contains the following files and dire
 
 * `deepdive.conf`
 
-    Database configuration, extractors, and inference rules are written in [HOCON][] syntax in this file.
+    Extractors, and inference rules are written in [HOCON][] syntax in this file.
     See the [Configuration Reference](http://deepdive.stanford.edu/doc/basics/configuration.html) for full details.
+
+* `db.url`
+
+    A URL representing the database configuration is supposed to be stored in this file.
+    For example, `postgresql://user:password@localhost:5432/database_name` can be the line stored in it.
 
 * `schema.sql`
 

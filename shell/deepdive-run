@@ -13,6 +13,9 @@ APP_HOME=$(find-deepdive-app)
 export APP_HOME
 cd "$APP_HOME"
 
+# load database settings
+eval "$(parse-deepdive-app-db-url)"
+
 # create a fresh run directory
 run_id=$(date +%Y%m%d/%H%M%S.%N)
 run_dir=run/$run_id
@@ -20,10 +23,21 @@ mkdir -p "$run_dir"
 
 # point to it with RUNNING symlink
 ln -sfn "$run_id" run/RUNNING
+trap "! [[ run/RUNNING -ef $run_dir ]] || rm -f run/RUNNING" EXIT
 trap "ln -sfn $run_id run/ABORTED" ERR
 
 # run DeepDive application with SBT
-"$DEEPDIVE_HOME"/sbt/sbt "run -c deepdive.conf -o $run_dir"
+(
+    # make sure ddlib in Python is available to all udf
+    export PYTHONPATH="$DEEPDIVE_HOME"/ddlib:"${PYTHONPATH:+:$PYTHONPATH}"
+
+    # XXX SBT is total non-sense.
+    # How in the hell is it possible for such a widely used build tool to have completely no way to control the project path or working directory?
+    # Using SBT for running code was wrong in the first place, but rest of the shit in DeepDive originates from SBT.
+    cd "$DEEPDIVE_HOME"
+    "$DEEPDIVE_HOME"/sbt/sbt "run -c $APP_HOME/deepdive.conf -o $APP_HOME/$run_dir"
+)
+
 # TODO log under $run_dir
 # TODO run assembly jar instead of using sbt
 # TODO provide a way to override configuration from command-line/environment

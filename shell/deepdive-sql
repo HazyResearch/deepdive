@@ -3,8 +3,10 @@
 # > deepdive sql
 # Starts a SQL prompt for the underlying database.
 #
-# > deepdive sql SQL_QUERY
-# Runs SQL_QUERY against the underlying database and prints the result in TSV format.
+# > deepdive sql query "SELECT ..."
+# > deepdive sql update "INSERT ..."
+# Runs a given SQL query or update statement against the underlying database
+# and prints the result in TSV format.
 ##
 set -eu
 
@@ -13,11 +15,61 @@ APP_HOME=$(find-deepdive-app)
 export APP_HOME
 cd "$APP_HOME"
 
-error "Not implemented yet"
+# parse database settings
+eval "$(parse-deepdive-app-db-url)"
 
-# TODO parse deepdive.db.default.url from deepdive.conf instead of grep'ing
-if grep -q "url:.*postgresql://" deepdive.conf; then
-    psql # TODO
-elif grep -q "url:.*mysql://" deepdive.conf; then
-    mysql # TODO
+# process optional first SQL argument
+if [[ $# -gt 0 ]]; then
+    sql=$1; shift
+    case $sql in
+        query|update)
+            if [[ $# -gt 0 ]]; then
+                # the actual SQL statement may follow the mode
+                sql_mode=$sql
+                sql=$1; shift
+            else
+                # otherwise, we just default to query mode
+                sql_mode=query
+            fi
+            ;;
+        *)
+            sql_mode=query
+    esac
+else
+    sql_mode=prompt
+    sql=
 fi
+
+# TODO CSV format option
+# TODO HEADER option
+
+# based on the database type, open a prompt or run given SQL query
+case $DBTYPE in
+    postgresql)
+        case $sql_mode in
+            query)
+                set -- -c "COPY ($sql) TO STDOUT" "$@"
+                ;;
+            update)
+                set -- -c "$sql" "$@"
+                ;;
+        esac
+        exec psql -d $DBNAME "$@"
+        ;;
+
+    mysql)
+        case $sql_mode in
+            query)
+                # TODO ensure TSV output
+                set -- -e "$sql" --batch --column-names=off "$@"
+                ;;
+            update)
+                set -- -e "$sql" "$@"
+                ;;
+        esac
+        exec mysql -h $DBHOST -P $DBPORT -u $DBUSER -D $DBNAME --local-infile "$@"
+        ;;
+
+    *)
+        error "$DBTYPE: Running SQL is not supported for the database type"
+esac

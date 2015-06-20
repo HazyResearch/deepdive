@@ -9,10 +9,26 @@ APP_HOME=$(find-deepdive-app)
 export APP_HOME
 cd "$APP_HOME"
 
-error "Not implemented yet"
+# make sure database is created based on the database type
+eval "$(parse-deepdive-app-db-url)"
+case $DBTYPE in
+    postgresql)
+        dropdb $DBNAME || true
+        createdb $DBNAME
+        ;;
 
-createdb # TODO
+    mysql)
+        mysqladmin -h $DBHOST -P $DBPORT -u $DBUSER -f drop   $DBNAME || true
+        mysqladmin -h $DBHOST -P $DBPORT -u $DBUSER -f create $DBNAME
+        ;;
 
+    *)
+        error "$DBTYPE: Initialization is not supported for the database type"
+esac
+
+# make sure the underlying database exists, and the necessary tables are all created
 deepdive-sql <schema.sql
 
-input/load.sh
+# load the input data
+! [[ -x input/init.sh ]] ||
+    input/init.sh "$@"
