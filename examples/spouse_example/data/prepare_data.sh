@@ -4,3 +4,6 @@ set -eu
 cd "$(dirname "$0")"
 
 bunzip2 --verbose --keep --force {spouses,non-spouses}.*.bz2 || true
+
+# TODO remove this after migrating integration tests out of Scala
+bunzip2 --verbose --keep         sentences_dump.csv.bz2 || true

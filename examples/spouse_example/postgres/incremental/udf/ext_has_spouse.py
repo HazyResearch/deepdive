@@ -5,18 +5,18 @@ import os
 import sys
 from collections import defaultdict
 
-BASE_DIR = os.path.dirname(os.path.realpath(__file__))
+APP_HOME = os.environ['APP_HOME']
 
 # Load the spouse dictionary for distant supervision
 spouses = defaultdict(lambda: None)
-with open (BASE_DIR + "/../../data/spouses.csv") as csvfile:
+with open (APP_HOME + "/../../data/spouses.csv") as csvfile:
   reader = csv.reader(csvfile)
   for line in reader:
     spouses[line[0].strip().lower()] = line[1].strip().lower()
 
 # Load relations of people that are not spouse
 non_spouses = set()
-lines = open(BASE_DIR + '/../../data/non-spouses.tsv').readlines()
+lines = open(APP_HOME + '/../../data/non-spouses.tsv').readlines()
 for line in lines:
   name1, name2, relation = line.strip().split('\t')
   non_spouses.add((name1, name2))  # Add a non-spouse relation pair

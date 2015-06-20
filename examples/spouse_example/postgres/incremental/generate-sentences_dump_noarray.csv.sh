@@ -6,7 +6,7 @@ set -eux
 cd "$(dirname "$0")"
 
 DBNAME=deepdive_spouse_data_$$
-../setup_database.sh $DBNAME >&2
+./setup_database.sh $DBNAME >&2
 trap "dropdb $DBNAME" EXIT
 
 psql $DBNAME -c "COPY (

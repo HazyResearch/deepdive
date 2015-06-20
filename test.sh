@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 set -e
 
+# make sure deepdive command is on PATH
+PATH="$(dirname "$0")"/shell:"$PATH"
+
 # uncompress all test and example data
 echo "Preparing test data..."
-examples/spouse_example/prepare_data.sh
+examples/spouse_example/data/prepare_data.sh
 
 # if command psql exist, then test psql
 if hash psql 2>/dev/null; then

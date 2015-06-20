@@ -17,7 +17,7 @@ TestUtils=$(cd ../util/test; pwd)
 set -x
 
 ## Use spouse example
-cd ../examples/spouse_example/incremental
+cd ../examples/spouse_example/postgres/incremental
 
 ## Incremental runs
 export DBNAME=${DBPREFIX}_inc
