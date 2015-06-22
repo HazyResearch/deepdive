@@ -17,10 +17,13 @@ import scala.util.{Try, Success, Failure}
 import scala.concurrent._
 import scala.concurrent.duration._
 import scala.sys.process._
+import collection.mutable.HashMap
 import rx.lang.scala.subjects._
 import play.api.libs.json._
 import scala.util.Random
 import java.io.{File, PrintWriter}
+import java.nio.file.{Paths, Files}
+import java.net.InetAddress
 import scala.io.Source
 import org.deepdive.helpers.Helpers
 import org.deepdive.helpers.Helpers.{Mysql, Psql}
@@ -66,6 +69,9 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
   implicit val timeout = Timeout(1337.hours)
 
   private val PRINT_PERIOD = 30.seconds
+
+  // UDF dir path -> staged env path on the DB server
+  private val piggyEnvs = HashMap[String, String]()
 
   // Branch by database driver type (temporary solution)
   val dbtype = Helpers.getDbType(dbSettings)
@@ -146,6 +152,10 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
 
         case "plpy_extractor" =>
           runPlpyExtractor(task, dbSettings, taskSender)
+          runAfterScript(task, taskSender)
+
+        case "piggy_extractor" =>
+          runPiggyExtractor(task, dbSettings, taskSender)
           runAfterScript(task, taskSender)
       }
 
@@ -554,6 +564,140 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
     log.debug("Analyzing output relation.")
     executeSqlUpdateOrFail(s"${sqlAnalyzeCommand} ${outputRel};", taskSender)
   }
+
+  /**
+   * Run piggy extractor
+   */
+  private def runPiggyExtractor(task: ExtractionTask, dbSettings: DbSettings, taskSender: ActorRef) = {
+    if (dbtype != Psql) {
+      failTask(s"do not support ${task.extractor.style} on ${dbtype}.", taskSender)
+    }
+
+    // Upload UDF directory and setup runtime env on DB nodes
+    val udfDir = task.extractor.udfDir
+    if (!Files.exists(Paths.get(udfDir))) {
+      throw new RuntimeException("UDF directory does not exist: " + udfDir)
+    }
+
+    // Setup UDF env
+    val envDir = ensurePiggyEnv(udfDir)
+
+    val udf = task.extractor.udf
+    val outputRel = task.extractor.outputRelation
+    val inputQuery = task.extractor.inputQuery match {
+      case DatastoreInputQuery(query) => query
+      case _ => ""
+    }
+
+    val deepDiveDir = System.getProperty("user.dir")
+    val compilerFile = s"${deepDiveDir}/util/piggy_prepare.py"
+    val params = Json.obj(
+      "dir" -> envDir,
+      "script" -> udf,
+      "source" -> inputQuery,
+      "target" -> task.extractor.outputRelation,
+      "is_pgxl" -> dataStore.isUsingPostgresXL
+    )
+    val paramsJson = Json.stringify(params)
+    val cmd = Seq("python", compilerFile, paramsJson)
+    val res = cmd.!!
+    val queries = Json.parse(res)
+
+    // Run plpython UDF
+    val create_tables: String = (queries \ "sql_create_tables").as[String]
+    val create_functions: String = (queries \ "sql_create_functions").as[String]
+    val insertion: String = (queries \ "sql_insert").as[String]
+    val getlog: String = (queries \ "sql_getlog").as[String]
+    val cleaning: String = (queries \ "sql_clean").as[String]
+
+    dataStore.executeSqlQueries(create_tables, false)
+    dataStore.executeSqlQueries(create_functions, false)
+
+    class GetLogThread extends Runnable {
+      var stopped = false
+      val conn = dataStore.borrowConnection()
+
+      def getLog(last_check: Boolean) {
+        this.synchronized {
+          val ps = conn.prepareStatement(getlog)
+          ps.setBoolean(1, last_check)
+          val rs = ps.executeQuery()
+          while (rs.next()) {
+            val content = rs.getString(1)
+            if (content != null) {
+              content.split("\n").foreach { line =>
+                log.info(line)
+              }
+            }
+          }
+          rs.close()
+        }
+      }
+
+      def die() {
+        stopped = true
+        getLog(true)
+        conn.close()
+      }
+
+      def run() {
+        while (!stopped) {
+          getLog(false)
+          Thread.sleep(1000)
+        }
+      }
+    }
+
+    val thread = new GetLogThread
+    try {
+      log.info(insertion)
+      dataStore.prepareStatement(insertion) { ps =>
+        new Thread(thread).start()
+        ps.executeUpdate()
+      }
+    } finally {
+      thread.die()
+      log.debug(cleaning)
+      dataStore.executeSqlQueries(cleaning, false)
+    }
+
+    log.debug("Analyzing output relation.")
+    executeSqlUpdateOrFail(s"${sqlAnalyzeCommand} ${outputRel};", taskSender)
+  }
+
+
+  private def ensurePiggyEnv(udfDir: String): String = {
+    if (piggyEnvs.contains(udfDir)) {
+      return piggyEnvs(udfDir)
+    }
+    val blob = FileDataUtils.zipDir(udfDir)
+    val localhost = InetAddress.getLocalHost
+    val hostname = localhost.getHostName
+    val pkgname = Helpers.slugify(hostname) + '_' + Helpers.md5Hash(localhost.toString + udfDir)
+    var sql = "SELECT piggy_setup_package(?, ?)"
+    if (dataStore.isUsingPostgresXL) {
+      sql += " FROM pgxl_dual_hosts"
+    }
+    var remotePath: String = null
+    dataStore.prepareStatement(sql) { ps =>
+      ps.setString(1, pkgname)
+      ps.setBytes(2, blob)
+      val rs = ps.executeQuery()
+      if (rs.next()) {
+        remotePath = rs.getString(1)
+        piggyEnvs(udfDir) = remotePath
+        log.info("Piggy env source: " + udfDir)
+        log.info("Piggy env destination: " + remotePath)
+      }
+      // For PGXL, we assume the TEMP DIR is the same for all data nodes.
+      rs.close()
+    }
+    if (remotePath == null) {
+      throw new RuntimeException("Failed to stage piggy UDF: " + udfDir)
+    }
+    return remotePath
+  }
+
 
   /**
    * Run after script and finalize the extractor. Fail if the after script fails.

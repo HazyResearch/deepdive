@@ -69,7 +69,7 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester with Logging {
       val loadExtractionSettings = PrivateMethod[ExtractionSettings]('loadExtractionSettings)
       val result = SettingsParser invokePrivate loadExtractionSettings(config)
       assert(result == ExtractionSettings(List(
-        Extractor("extractor1", "json_extractor", "entities", "SELECT * FROM documents", "udf/entities.py",
+        Extractor("extractor1", "json_extractor", "entities", "SELECT * FROM documents", null, "udf/entities.py",
           4, 100, 1000, Set("extractor2"), Option("/bin/cat"), Option("/bin/dog"), "", None)), 5))
     }
 
@@ -90,7 +90,7 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester with Logging {
       val loadExtractionSettings = PrivateMethod[ExtractionSettings]('loadExtractionSettings)
       val result = SettingsParser invokePrivate loadExtractionSettings(config)
       assert(result == ExtractionSettings(List(
-        Extractor("extractor2", "tsv_extractor", "entities", "SELECT * FROM documents", "udf/entities.py",
+        Extractor("extractor2", "tsv_extractor", "entities", "SELECT * FROM documents", null, "udf/entities.py",
           4, 100, 1000, Set("extractor3"), Option("/bin/cat"), Option("/bin/dog"), "", None)), 5))
     }
 
@@ -111,7 +111,7 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester with Logging {
       val loadExtractionSettings = PrivateMethod[ExtractionSettings]('loadExtractionSettings)
       val result = SettingsParser invokePrivate loadExtractionSettings(config)
       assert(result == ExtractionSettings(List(
-        Extractor("extractor3", "plpy_extractor", "entities", "SELECT * FROM documents", "udf/entities.py",
+        Extractor("extractor3", "plpy_extractor", "entities", "SELECT * FROM documents", null, "udf/entities.py",
           4, 100, 1000, Set("extractor4"), Option("/bin/cat"), Option("/bin/dog"), "", None)), 5))
     }
 
@@ -126,7 +126,7 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester with Logging {
       val loadExtractionSettings = PrivateMethod[ExtractionSettings]('loadExtractionSettings)
       val result = SettingsParser invokePrivate loadExtractionSettings(config)
       assert(result == ExtractionSettings(List(
-        Extractor("extractor4", "cmd_extractor", "", null, "",
+        Extractor("extractor4", "cmd_extractor", "", null, null, "",
           1, 10000, 50000, Set("extractor5"), Option("/bin/cat"), Option("/bin/dog"), "", Some("ls"))), 1))
     }
 
@@ -141,7 +141,7 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester with Logging {
       val loadExtractionSettings = PrivateMethod[ExtractionSettings]('loadExtractionSettings)
       val result = SettingsParser invokePrivate loadExtractionSettings(config)
       assert(result == ExtractionSettings(List(
-        Extractor("extractor5", "sql_extractor", "", null, "",
+        Extractor("extractor5", "sql_extractor", "", null, null, "",
           1, 10000, 50000, Set("extractor6"), Option("/bin/cat"), Option("/bin/dog"), "SELECT * FROM documents", None)), 1))
     }
 
@@ -216,7 +216,7 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester with Logging {
       assert(result == ExtractionSettings(List(
         Extractor("ext_people", "tsv_extractor", "people_mentions",
           "SELECT sentence_id, words, ner_tags FROM sentences",
-          "udf/ext_people.py",
+          null, "udf/ext_people.py",
           6, 4000, 1000, Set("ext_create_index_sentences"),
           None, None, "", None, "ndbloader",
           LoaderConfig("127.0.0.1:1186", "udf/people_mentions.loaderschema", 4, 100)
@@ -247,7 +247,7 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester with Logging {
       assert(result == ExtractionSettings(List(
         Extractor("ext_people", "tsv_extractor", "people_mentions",
           "SELECT sentence_id, words, ner_tags FROM sentences",
-          "udf/ext_people.py",
+          null, "udf/ext_people.py",
           6, 4000, 1000, Set("ext_create_index_sentences"),
           None, None, "", None, "ndbloader",
           LoaderConfig("127.0.0.1:1186", "udf/people_mentions.loaderschema", 6, 60)

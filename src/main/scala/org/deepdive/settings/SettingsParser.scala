@@ -110,7 +110,7 @@ object SettingsParser extends Logging {
       val extractorConfig = extractionConfig.getConfig(s"extractors.$extractorName")
       val style = Try(extractorConfig.getString(s"style")).getOrElse("json_extractor")
       style match {
-        case "json_extractor" | "plpy_extractor" | "tsv_extractor" =>
+        case "json_extractor" | "plpy_extractor" | "tsv_extractor" | "piggy_extractor" =>
           val outputRelation = extractorConfig.getString ("output_relation")
           val inputQuery = InputQueryParser.parse (InputQueryParser.inputQueryExpr,
             extractorConfig.getString (s"input") ).getOrElse {
@@ -119,6 +119,10 @@ object SettingsParser extends Logging {
             } failed")
           }
           val udf = extractorConfig.getString (s"udf")
+          val udfDir = Try (extractorConfig.getString (s"udf_dir") ).getOrElse(null)
+          if (style == "piggy_extractor" && (udfDir == null || udf == null)) {
+            throw new RuntimeException("you must specify udf_dir and udf for piggy extractors")
+          }
           val sqlQuery = Try (extractorConfig.getString (s"sql") ).getOrElse ("")
           val cmd = Try (extractorConfig.getString ("cmd") ).toOption
           val parallelism = Try (extractorConfig.getInt (s"parallelism") ).getOrElse (1)
@@ -138,7 +142,7 @@ object SettingsParser extends Logging {
                 Try(loaderConfigObj.getInt("parallel_transactions")).getOrElse(60)
             )
           }
-          Extractor(extractorName, style, outputRelation, inputQuery, udf, parallelism,
+          Extractor(extractorName, style, outputRelation, inputQuery, udfDir, udf, parallelism,
             inputBatchSize, outputBatchSize, dependencies, beforeScript, afterScript, sqlQuery, cmd,
             loader, loaderConfig)
 
@@ -148,7 +152,7 @@ object SettingsParser extends Logging {
           val dependencies = Try (extractorConfig.getStringList ("dependencies").toSet).getOrElse (Set () )
           val beforeScript = Try (extractorConfig.getString ("before") ).toOption
           val afterScript = Try (extractorConfig.getString ("after") ).toOption
-          Extractor(extractorName, style, "", null, "", 1,
+          Extractor(extractorName, style, "", null, null, "", 1,
             10000, 50000, dependencies, beforeScript, afterScript, sqlQuery, cmd)
       }
     }.toList
