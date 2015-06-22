@@ -2,9 +2,15 @@
 
 ## [Introduction](http://www.cnts.ua.ac.be/conll2000/chunking/)
 
-Text chunking consists of dividing a text in syntactically correlated parts of words. For example, the sentence He reckons the current account deficit will narrow to only # 1.8 billion in September . can be divided as follows:
+Text chunking consists of dividing a text in syntactically correlated parts of words. For example, the following sentence:
 
+> He reckons the current account deficit will narrow to only # 1.8 billion in September .
+
+can be divided as follows:
+
+```
   [NP He ] [VP reckons ] [NP the current account deficit ] [VP will narrow ] [PP to ] [NP only # 1.8 billion ] [PP in ] [NP September ] .
+```
 
 Text chunking is an intermediate step towards full parsing. It was the shared task for CoNLL-2000. Training and test data for this task is derived from the Wall Street Journal corpus (WSJ), which includes words, part-of-speech tags, and chunking tags.
 
@@ -13,13 +19,14 @@ In the example, we include three inference rules, corresponding to logistic regr
 
 ## Runing
 
-1. Run run.sh
-2. Run result/eval.sh to evaluate the results
+1. Run `deepdive initdb`
+1. Run `deepdive run`
+2. Run `result/eval.sh` to evaluate the results
 
 
 ## Directory Structure
 
-- `data` contains training and testing data
+- `input` contains training and testing data
 - `udf` contains extractor for extracting training data and features
 - `result` contains evaluation scripts and sample results
 
@@ -27,6 +34,7 @@ In the example, we include three inference rules, corresponding to logistic regr
 ## Evaluation Results
 
 Logistic Regression
+```
   processed 47377 tokens with 23852 phrases; found: 23642 phrases; correct: 19156.
   accuracy:  89.56%; precision:  81.03%; recall:  80.31%; FB1:  80.67
                ADJP: precision:  50.40%; recall:  42.92%; FB1:  46.36  373
@@ -39,9 +47,11 @@ Logistic Regression
                 PRT: precision:  66.39%; recall:  76.42%; FB1:  71.05  122
                SBAR: precision:  83.51%; recall:  71.96%; FB1:  77.31  461
                  VP: precision:  79.48%; recall:  84.71%; FB1:  82.01  4965
+```
 
 
 LR + Linear-Chain CRF
+```
   processed 47377 tokens with 23852 phrases; found: 22996 phrases; correct: 19746.
   accuracy:  91.58%; precision:  85.87%; recall:  82.79%; FB1:  84.30
                    : precision:   0.00%; recall:   0.00%; FB1:   0.00  1
@@ -55,8 +65,10 @@ LR + Linear-Chain CRF
                 PRT: precision:  66.67%; recall:  69.81%; FB1:  68.20  111
                SBAR: precision:  84.93%; recall:  74.77%; FB1:  79.52  471
                  VP: precision:  90.37%; recall:  90.21%; FB1:  90.29  4650
+```
 
 LR + Linear-Chain CRF + Skip-Chain CRF
+```
   processed 47377 tokens with 23852 phrases; found: 22950 phrases; correct: 19794.
   accuracy:  91.79%; precision:  86.25%; recall:  82.99%; FB1:  84.59
                    : precision:   0.00%; recall:   0.00%; FB1:   0.00  1
@@ -70,3 +82,4 @@ LR + Linear-Chain CRF + Skip-Chain CRF
                 PRT: precision:  66.67%; recall:  69.81%; FB1:  68.20  111
                SBAR: precision:  83.37%; recall:  74.95%; FB1:  78.94  481
                  VP: precision:  90.34%; recall:  90.34%; FB1:  90.34  4658
+```
