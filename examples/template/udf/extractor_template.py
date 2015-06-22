@@ -1,12 +1,16 @@
 #! /usr/bin/env python
 
-import json, sys
+import sys
 import ddlib  # Load the ddlib Python library for NLP functions
 
 # For each input row
-for line in sys.stdin:
-  # Load the JSON object
-  row = json.loads(line)
+for row in sys.stdin:
+  # Parse tab-separated values
+  column1, column2, column3, ... = row.strip().split('\t')
 
-  # Output data
-  print json.dumps(row)
+  # Output rows
+  print '\t'.join(map(str, [
+      column1,
+      column2,
+      column3
+    ]))
