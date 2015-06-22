@@ -39,9 +39,6 @@ if [ -z "${DEEPDIVE_HOME:-}" ]; then
     #  DeepDive util/
     PATH="$DEEPDIVE_HOME/util:$PATH"
     export PATH
-
-    # for msg logging
-    export SHLVL=0 DEEPDIVE_LOGLVL=${DEEPDIVE_LOGLVL:-1}
 fi
 
 
