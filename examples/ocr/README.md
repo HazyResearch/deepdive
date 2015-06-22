@@ -20,14 +20,13 @@ Requirements
 How to run the system
 ----
 
-- Create a *deepdive_ocr* database (`createdb deepdive_ocr`)
-- Change the application.conf `db.default.user` entry to yours.
-- If necessary, add database connection details to `run.sh`
-- Execute `run.sh`
+- If necessary, modify `db.url` to fill in your database connection details.
+- Execute `deepdive initdb` to initialize database.
+- Execute `deepdive run`.
 
 Results
 ----
 
-- Feature analysis and system calibration result is in `output/`.
-- For details, enter your database specified in `application.conf`,
-  and examine the result relations.
+- Execute `python feature-analysis.py`.
+- Feature analysis and system calibration result are in `output/` and `run/LATEST/calibration/`, respectively.
+- For details, run `deepdive sql` to examine the result relations.

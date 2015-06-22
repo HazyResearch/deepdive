@@ -1,2 +1,3 @@
-data/raw/*.csv
-output/
+/run
+/input/raw/*.csv
+/output/
