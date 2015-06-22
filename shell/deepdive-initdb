@@ -11,23 +11,10 @@ cd "$APP_HOME"
 
 # make sure database is created based on the database type
 eval "$(parse-deepdive-app-db-url)"
-case $DBTYPE in
-    postgresql)
-        dropdb $DBNAME || true
-        createdb $DBNAME
-        ;;
-
-    mysql)
-        mysqladmin -h $DBHOST -P $DBPORT -u $DBUSER -f drop   $DBNAME || true
-        mysqladmin -h $DBHOST -P $DBPORT -u $DBUSER -f create $DBNAME
-        ;;
-
-    *)
-        error "$DBTYPE: Initialization is not supported for the database type"
-esac
+db-init "$@"
 
 # make sure the underlying database exists, and the necessary tables are all created
-deepdive-sql <schema.sql
+db-prompt <schema.sql
 
 # load the input data
 ! [[ -x input/init.sh ]] ||

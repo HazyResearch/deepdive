@@ -12,53 +12,20 @@ set -eu
 # parse URL for database
 url=${1:-${DEEPDIVE_DB_URL:-$(cat db.url)}}
 
-parse_url() {
-    local url=$1
-    dbtype=${url%%://*}
-    url_without_scheme=${url#*://}  # strip URL scheme
-    rest=${url_without_scheme#*/}
-    user_password_host_port=${url_without_scheme%%/*}
-    host_port=${user_password_host_port#*@}
-    user_password=${user_password_host_port%$host_port}
-    user_password=${user_password%@}
-    host=${host_port%:*}
-    port=${host_port#$host}
-    port=${port#:}
-    user=${user_password%:*}
-    password=${user_password#$user}
-    password=${password#:}
-    dbname=${rest}  # TODO do we need to strip any parameters from the rest of the URL?
-}
+# recognize the database type from the URL scheme
+dbtype=${url%%://*}
 
-case $url in
-    postgresql://*/*|postgresql-xl://*/*|greenplum://*/*)
-        parse_url $url
-        # map to environment variables for psql
-        echo "DBTYPE=postgresql"
-        echo "DBVARIANT=${dbtype}"
-        echo "PGHOST=${host}"
-        echo "PGPORT=${port:-5432}"
-        echo "PGUSER=${user:-$USER}"
-        echo "PGPASSWORD=${password}"
-        echo "DBNAME=${dbname}"
-        echo "export PGHOST PGPORT PGUSER PGPASSWORD DBNAME"
-        ;;
+# place the driver on PATH
+PATH="$DEEPDIVE_HOME"/shell/driver."$dbtype":"$PATH"
+# make sure all operations are defined
+for op in parse init update query
+do type db-$op &>/dev/null || error "db-$op operation not available for $dbtype"
+done
 
-    mysql://*/*|mysqlcluster://*/*)
-        parse_url $url
-        # map to environment variables for psql
-        echo "DBTYPE=mysql"
-        echo "DBVARIANT=${dbtype}"
-        echo "DBHOST=${host}"
-        echo "DBPORT=${port:-3306}"
-        echo "DBUSER=${user:-$USER}"
-        echo "DBPASSWORD=${password}"
-        echo "DBNAME=${dbname}"
-        echo "export DBHOST DBPORT DBUSER DBPASSWORD DBNAME"
-        ;;
+# default environment setup script
+echo "DEEPDIVE_DB_URL=${url}"
+echo 'PATH="$DEEPDIVE_HOME"/shell/driver.'"${dbtype}"':"$PATH"'
+echo "export DEEPDIVE_DB_URL PATH"
 
-    *)
-        error "$url: Unrecognized database URL"
-esac
-echo "DBURL=${url}"
-
+# parse the URL and print necessary environment setup script
+db-parse $url

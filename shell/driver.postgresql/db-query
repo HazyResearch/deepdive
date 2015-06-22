@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# db-query -- Evaluates given SQL query against the PostgreSQL database configured for a DeepDive application
+# > eval "$(db-parse "$url")"
+# > db-query SQL
+##
+set -eu
+
+sql=${1:?No SQL given}; shift
+
+exec db-prompt -c "COPY ($sql) TO STDOUT" "$@"

@@ -35,41 +35,11 @@ if [[ $# -gt 0 ]]; then
         *)
             sql_mode=query
     esac
+
+    # TODO CSV format option
+    # TODO HEADER option
+
+    exec db-$sql_mode "$sql" "$@"
 else
-    sql_mode=prompt
-    sql=
+    exec db-prompt "$@"
 fi
-
-# TODO CSV format option
-# TODO HEADER option
-
-# based on the database type, open a prompt or run given SQL query
-case $DBTYPE in
-    postgresql)
-        case $sql_mode in
-            query)
-                set -- -c "COPY ($sql) TO STDOUT" "$@"
-                ;;
-            update)
-                set -- -c "$sql" "$@"
-                ;;
-        esac
-        exec psql -d $DBNAME "$@"
-        ;;
-
-    mysql)
-        case $sql_mode in
-            query)
-                # TODO ensure TSV output
-                set -- -e "$sql" --batch --column-names=off "$@"
-                ;;
-            update)
-                set -- -e "$sql" "$@"
-                ;;
-        esac
-        exec mysql -h $DBHOST -P $DBPORT -u $DBUSER -D $DBNAME --local-infile "$@"
-        ;;
-
-    *)
-        error "$DBTYPE: Running SQL is not supported for the database type"
-esac
