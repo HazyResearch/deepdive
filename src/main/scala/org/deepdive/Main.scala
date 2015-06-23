@@ -9,8 +9,14 @@ import java.io.File
 /* DeepDive main entry point */
 object Main extends App with Logging {
 
+  // Save all files in a directory named by date
+  val dateStr = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HHmmss").format(new java.util.Date())
+  val defaultOutputDir = new java.io.File(s"./out/${dateStr}")
+
   // Parsing command-line options
-  case class CliOptions(configFile: File, outputDir: File)
+  case class CliOptions(
+      configFile: File = null,
+      outputDir: File = defaultOutputDir)
   val parser = new scopt.OptionParser[CliOptions]("scopt") {
     head("deepdive", "0.6.0")
     opt[File]('c', "config") required() valueName("<config>") action { (x,c) =>
@@ -21,11 +27,7 @@ object Main extends App with Logging {
     } text("Output directory for all files (calibration data, graph data)")
   }
 
-  // Save all files in a directory named by date
-  val dateStr = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HHmmss").format(new java.util.Date())
-  val defaultOutputDir = new java.io.File(s"./out/${dateStr}")
-
-  val options = parser.parse(args, CliOptions(null, defaultOutputDir)).getOrElse(null)
+  val options = parser.parse(args, CliOptions()).getOrElse(null)
 
   options match {
     case null =>

@@ -16,15 +16,34 @@ cd "$APP_HOME"
 # load database settings
 eval "$(parse-deepdive-app-db-url)"
 
-# create a fresh run directory
-run_id=$(date +%Y%m%d/%H%M%S.%N)
-run_dir=run/$run_id
+# create a fresh run directory or use the one specified in DEEPDIVE_OUTPUT environment variable
+if [[ -n "${DEEPDIVE_OUTPUT:-}" ]]; then
+    run_id=$(cd "$DEEPDIVE_OUTPUT" && pwd)
+    run_dir=$run_id
+else
+    run_id=$(date +%Y%m%d/%H%M%S.%N)
+    run_dir=run/$run_id
+fi
 mkdir -p "$run_dir"
 
 # point to it with RUNNING symlink
 ln -sfn "$run_id" run/RUNNING
 trap "! [[ run/RUNNING -ef $run_dir ]] || rm -f run/RUNNING" EXIT
 trap "ln -sfn $run_id run/ABORTED" ERR
+
+# create an extended version of deepdive.conf by collecting more configs from command-line and environment
+extendedConfig=$(mktemp ${TMPDIR:-/tmp}/deepdive.conf.XXXXXXX)
+trap "rm -f $extendedConfig" EXIT
+cat "$APP_HOME"/deepdive.conf >"$extendedConfig"
+# append any extra config present in DEEPDIVE_CONFIG_EXTRA environment
+[[ -z "${DEEPDIVE_CONFIG_EXTRA:-}" ]] || {
+    echo >>"$extendedConfig" "$DEEPDIVE_CONFIG_EXTRA"
+}
+# use the pipeline passed over command-line
+[[ $# -eq 0 ]] || {
+    Pipeline=$1; shift
+    echo >>"$extendedConfig" "deepdive.pipeline.run: \"$Pipeline\""
+}
 
 # run DeepDive application with SBT
 (
@@ -35,12 +54,11 @@ trap "ln -sfn $run_id run/ABORTED" ERR
     # How in the hell is it possible for such a widely used build tool to have completely no way to control the project path or working directory?
     # Using SBT for running code was wrong in the first place, but rest of the shit in DeepDive originates from SBT.
     cd "$DEEPDIVE_HOME"
-    "$DEEPDIVE_HOME"/sbt/sbt "run -c $APP_HOME/deepdive.conf -o $APP_HOME/$run_dir"
+    "$DEEPDIVE_HOME"/sbt/sbt "run -c $extendedConfig -o $APP_HOME/$run_dir"
 )
 
 # TODO log under $run_dir
 # TODO run assembly jar instead of using sbt
-# TODO provide a way to override configuration from command-line/environment
 
 # point to the run with LATEST symlink
 ln -sfn "$run_id" run/LATEST

@@ -12,5 +12,5 @@ export BASEDIR=$Out
 export DEEPDIVE_ACTIVE_INCREMENTAL_VARIABLES="$(sed 's/#.*$//' "$ActiveVarsFile" )"
 export DEEPDIVE_ACTIVE_INCREMENTAL_RULES="$(    sed 's/#.*$//' "$ActiveRulesFile")"
 
-./run.sh "$DDlog" --merge merge "$Out"
+./run.sh "$DDlog" --merge extraction "$Out"
 ./run.sh "$DDlog" --materialization inference "$Out"
