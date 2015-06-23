@@ -9,7 +9,7 @@
   </appender>
 
   <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-    <file>log/${bySecond}.txt</file>
+    <file>${DEEPDIVE_LOGFILE:-log/${bySecond}.txt}</file>
     <encoder><pattern>${defaultPattern}</pattern></encoder>
   </appender>
 

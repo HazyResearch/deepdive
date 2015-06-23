@@ -25,6 +25,8 @@ else
     run_dir=run/$run_id
 fi
 mkdir -p "$run_dir"
+export DEEPDIVE_OUTPUT=$(cd "$run_dir" && pwd)
+export DEEPDIVE_LOGFILE="$DEEPDIVE_OUTPUT/log.txt"
 
 # point to it with RUNNING symlink
 ln -sfn "$run_id" run/RUNNING
