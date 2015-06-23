@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# parse-deepdive-app-db-url -- Parses DeepDive app's database URL and prints a
-#                              shell script for setting up environment
+# load-db-driver.sh -- Loads the corresponding database driver for the DeepDive app's database URL
 # > cd $APP_HOME
-# > eval "$(parse-deepdive-app-db-url)"
+# > DEEPDIVE_DB_URL=...
+# > . load-db-driver.sh
 #
 # $DEEPDIVE_DB_URL environment variable has precedence over the db.url file in
 # the DeepDive application.
 ##
-set -eu
+eval "$(
 
 # parse URL for database
-url=${1:-${DEEPDIVE_DB_URL:-$(cat db.url)}}
+url=${DEEPDIVE_DB_URL:-$(cat db.url)}
 
 # recognize the database type from the URL scheme
 dbtype=${url%%://*}
@@ -28,4 +28,6 @@ echo 'PATH="$DEEPDIVE_HOME"/shell/driver.'"${dbtype}"':"$PATH"'
 echo "export DEEPDIVE_DB_URL PATH"
 
 # parse the URL and print necessary environment setup script
-db-parse $url
+db-parse "$url"
+
+)"

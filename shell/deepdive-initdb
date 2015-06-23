@@ -9,8 +9,9 @@ APP_HOME=$(find-deepdive-app)
 export APP_HOME
 cd "$APP_HOME"
 
+. load-db-driver.sh
+
 # make sure database is created based on the database type
-eval "$(parse-deepdive-app-db-url)"
 db-init "$@"
 
 # make sure the underlying database exists, and the necessary tables are all created

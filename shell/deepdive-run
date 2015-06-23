@@ -13,8 +13,8 @@ APP_HOME=$(find-deepdive-app)
 export APP_HOME
 cd "$APP_HOME"
 
-# load database settings
-eval "$(parse-deepdive-app-db-url)"
+# load database driver for the application
+. load-db-driver.sh
 
 # create a fresh run directory or use the one specified in DEEPDIVE_OUTPUT environment variable
 if [[ -n "${DEEPDIVE_OUTPUT:-}" ]]; then

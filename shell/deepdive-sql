@@ -16,7 +16,7 @@ export APP_HOME
 cd "$APP_HOME"
 
 # parse database settings
-eval "$(parse-deepdive-app-db-url)"
+. load-db-driver.sh
 
 # process optional first SQL argument
 if [[ $# -gt 0 ]]; then
