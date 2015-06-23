@@ -18,7 +18,7 @@ dropdb -p $PGPORT -h $PGHOST $DBNAME
 createdb -p $PGPORT -h $PGHOST $DBNAME
 
 # set ROOT_PATH
-cd "$(dirname $0)/../.."
+cd "$(dirname $0)/../../.."
 ROOT_PATH=`pwd`
 
 # generate mln_auto.conf
