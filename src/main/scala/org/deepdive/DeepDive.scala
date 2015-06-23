@@ -201,6 +201,7 @@ object DeepDive extends Logging {
       */
       case e: Exception =>
         // In case of any exception
+        log.error(e.getMessage)
         Context.shutdown()
         throw e
     }

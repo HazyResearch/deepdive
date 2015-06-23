@@ -56,6 +56,7 @@ cat "$APP_HOME"/deepdive.conf >"$extendedConfig"
     # How in the hell is it possible for such a widely used build tool to have completely no way to control the project path or working directory?
     # Using SBT for running code was wrong in the first place, but rest of the shit in DeepDive originates from SBT.
     cd "$DEEPDIVE_HOME"
+    export SBT_OPTS="-Xmx4g"
     "$DEEPDIVE_HOME"/sbt/sbt "run -c $extendedConfig -o $APP_HOME/$run_dir"
 )
 
