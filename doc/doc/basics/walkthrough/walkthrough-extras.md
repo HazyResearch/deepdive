@@ -24,13 +24,23 @@ Other sections:
 
 ### <a id="data_tables" href="#"></a> Preparing Data Tables
 
-This section explains how the `setup_database.sh` script prepares the data.
+This section explains how the `deepdive initdb` initializes the database in the walkthrough with the help of the `input/init.sh` script.
 
 #### <a id="data_tables_steps" href="#"></a> Step-by-step data preparation
 
-First, the script `setup_database.sh` checks if all data files exist in the `$APP_HOME` folder. You should have [downloaded the archive](http://i.stanford.edu/hazy/deepdive-tutorial-data.zip) and extracted the files to `data/` directory.
+First of all, the database `deepdive_spouse` configured in `db.url` is created as soon as we run the following command:
 
-The `data` folder contains several text dumps:
+```bash
+deepdive initdb
+```
+
+Then, it creates all tables specified in `schema.sql`.
+Refer to the [table format cheat-sheet](#table_cheatsheet) below.
+
+Next, the `input/init.sh` script is executed, which checks if the [dataset archive](http://i.stanford.edu/hazy/deepdive-tutorial-data.zip) has been already downloaded to the application's `input/` directory and does so if not.
+After downloading, it extracts the files in the zip archive under `input/` directory.
+
+The `input/` directory contains several text dumps:
 
 - `spouses.tsv` and `non-spouses.tsv` contains Freebase relations we use for distant
   supervision.
@@ -39,35 +49,24 @@ The `data` folder contains several text dumps:
   extractor](#nlp_extractor) section.
 - `sentences_dump_large.csv` contains a larger dataset of parsed sentences used in [Improving the results: adding more data](walkthrough-improve.html#error-analysis-2) section.
 
-
-Then, the scripts creates a new database called `deepdive_spouse`:
-
-```bash
-createdb deepdive_spouse
-```
-
-It then creates all tables specified in `$APP_HOME/schema.sql`.
-Refer to the [table format cheat-sheet](#table_cheatsheet) below.
-
-Finally, it loads the prepared sentences into our database:
+Finally, it loads the prepared sentences into our database with a command like the following:
 
 ```bash
-psql -d $DBNAME -c "copy sentences from STDIN CSV;" < $APP_HOME/data/sentences_dump.csv
+deepdive sql "COPY sentences FROM STDIN CSV" <./input/sentences_dump.csv
 ```
 
 #### <a id="table_cheatsheet" href="#"></a> Data table format Cheat-sheet
 
-The following relations are present in the database:
+The following tables are present in the database:
 
-                         List of relations
-     Schema |        Name         | Type  |  Owner   | Storage
+                        List of relations
+     Schema |        Name         | Type  | Owner | Storage
     --------+---------------------+-------+----------+---------
-     public | articles            | table | deepdive | heap
-     public | has_spouse          | table | deepdive | heap
-     public | has_spouse_features | table | deepdive | heap
-     public | people_mentions     | table | deepdive | heap
-     public | sentences           | table | deepdive | heap
-    (5 rows)
+     public | has_spouse          | table | user  | heap
+     public | has_spouse_features | table | user  | heap
+     public | people_mentions     | table | user  | heap
+     public | sentences           | table | user  | heap
+    (4 rows)
 
 <a name="tables" href="#"></a>
 This is how they are created:
@@ -125,7 +124,7 @@ To start using an NLP extractor, we first load all your articles into our
 database. We start by creating a table:
 
 ```bash
-psql -d deepdive_spouse -c "
+deepdive sql "
   CREATE TABLE articles(
     article_id bigint,    -- identifier of article
     text       text       -- all text in the article
@@ -133,15 +132,13 @@ psql -d deepdive_spouse -c "
 "
 ```
 
-Then we copy all the articles from your data. As an example, you can try loading with the dump in `DEEPDIVE_HOME/examples/spouse_example/data/articles_dump.csv`:
+Then we copy all the articles from your data. As an example, you can try loading with the dump in `DEEPDIVE_HOME/examples/spouse_example/input/articles_dump.csv`:
 
 ```bash
-psql -d deepdive_spouse -c "
-  COPY articles FROM STDIN CSV;
-" < $DEEPDIVE_HOME/examples/spouse_example/data/articles_dump.csv
+deepdive sql "COPY articles FROM STDIN CSV" <$DEEPDIVE_HOME/examples/spouse_example/input/articles_dump.csv
 ```
 
-The NLP extractor is in `examples/nlp_extractor` folder. Refer to
+The NLP extractor is in the `examples/nlp_extractor` directory. Refer to
 its `README.md` for details. Now we go into it and compile it:
 
 ```bash
@@ -158,7 +155,7 @@ output of the extractor in the database. Since the output format of the NLP
 extractor is fixed, we must create a compatible table, like the `sentences`
 table defined [above](#tables).
 
-Next, we add the extractor into your `application.conf`:
+Next, we add the extractor into your `deepdive.conf`:
 
 ```bash
 extraction.extractors {
@@ -176,10 +173,6 @@ extraction.extractors {
 }
 ```
 
-<!-- TODO before          : ${APP_HOME}"/udf/before_sentences.sh"
-    after           : ${APP_HOME}"/util/fill_sequence.sh sentences sentence_id"
- -->
-
 When running your application, this extractor will run NLP over all the sentences in your `articles` table and output the parsed results into `sentences` table.
 
 <a id="pipelines" href="#"> </a>
@@ -192,7 +185,7 @@ save time when the output of an early extractor hasn't changed. The NLP
 extractor is a good example of this. It takes a long time to run, and its output
 will be the same every time, so we don't want to run it more than once. DeepDive
 allows you to define different [pipelines](../running.html#pipelines) for this purpose, by
-adding the following to your `application.conf`:
+adding the following to your `deepdive.conf`:
 
 ```bash
 pipeline.pipelines.withnlp: [
@@ -214,8 +207,14 @@ without NLP. We further add a line:
 pipeline.run: "nonlp"
 ```
 
-This directive instructs DeepDive to execute the "nonlp" pipeline, which only
+This directive instructs DeepDive to execute the "nonlp" pipeline by default, which only
 contains the "ext_people" extractor.
+
+To run the pipeline `withnlp`, simply pass the name as a command-line argument:
+
+```bash
+deepdive run withnlp
+```
 
 <a id="debug_extractors" href="#"> </a>
 

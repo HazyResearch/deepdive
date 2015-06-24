@@ -352,7 +352,6 @@ what happens in the extractor:
 
 ```bash
 deepdive run    # Run extractors now
-[...]
 deepdive sql "SELECT * FROM people_mentions WHERE sentence_id='118238@10'"
 ```
 
@@ -380,7 +379,9 @@ The results should look like:
 -------
  55469
 ```
+
 and
+
 ```
  count
 -------
@@ -513,7 +514,6 @@ extractor:
 
 ```bash
 deepdive run
-[...]
 deepdive sql "SELECT * FROM has_spouse WHERE person1_id='118238@10_7'"
 ```
 
@@ -596,7 +596,6 @@ relation `has_spouse_features`:
 
 ```bash
 deepdive run
-[...]
 deepdive sql "SELECT * FROM has_spouse_features WHERE relation_id = '118238@10_1_118238@10_7'"
 ```
 
@@ -621,6 +620,7 @@ deepdive sql "SELECT COUNT(*) FROM has_spouse_features"
 ```
 
 The results should look like:
+
 ```
   count
 ---------

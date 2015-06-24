@@ -26,6 +26,9 @@ Other sections in the tutorial:
 - [A Mention-Level Extraction System](walkthrough.html)
 - [Extras: preprocessing, NLP, pipelines, debugging extractor](walkthrough-extras.html)
 
+
+
+
 ## <a name="error-analysis" href="#"> </a> Error Analysis
 After the execution of an application, it is necessary to assess the quality of
 its results. We consider any relation candidate that gets assigned a
@@ -54,7 +57,10 @@ describe how to set up and use these tools to evaluate the results obtained by
 running the application we developed in the [previous
 section](walkthrough.html), and to improve the quality of the extractions.
 
+
 ### <a name="braindump" href="#"> </a> Using BrainDump to generate automatic reports
+
+<div class="alert alert-danger">(This section is outdated and only accurate up to release 0.6.x.)</div> <!-- TODO rewrite -->
 
 We start by setting up [BrainDump](https://github.com/zifeishan/braindump), the
 automatic report generator for DeepDive. BrainDump creates a set of reports
@@ -288,6 +294,8 @@ analysis*.
 Deepdive includes a tool named [MindTagger](../labeling.html) that simplifies
 the execution of error analysis.
 
+
+
 ### <a name="mindtagger" href="#"> </a> Using MindTagger to label results
 
 We now conduct the error analysis based on our initial spouse relation mention
@@ -325,26 +333,26 @@ analysis.
 The input to MindTagger can be automatically generated from the output of
 BrainDump as follows. Copy the directory
 `$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/labeling/` to your
-`$APP_HOME` directory
+application directory
 
 ```
-cp -r $DEEPDIVE_HOME/examples/tutorial_example/step1-basic/labeling/ $APP_HOME/labeling
+cp -r $DEEPDIVE_HOME/examples/tutorial_example/step1-basic/labeling/ ./labeling
 ```
 
 Now, run the `prepare-data-from-braindump.sh` script located inside the
-`labeling` directory:
+`labeling/` directory:
 
 ```
-cd $APP_HOME/labeling
+( cd ./labeling
 ./prepare-data-from-braindump.sh
+)
 ```
 
 The script will output a success message, and we are now ready to start
 MindTagger:
 
 ```
-cd $APP_HOME/labeling
-./start-mindtagger.sh
+./labeling/start-mindtagger.sh
 ```
 
 We can now open a browser, go to `localhost:8000` and perform the labeling of
@@ -378,6 +386,9 @@ section we first describe how to easily enrich the set of features using the
 [generic feature library](../gen_feats.html) included in Deepdive, and then
 describe how to mitigate overfitting by letting the system select a
 regularization parameter automatically.
+
+
+
 
 ## <a name="feature-library" href="#"> </a> Improvements using Generic Feature Library
 
@@ -416,75 +427,20 @@ with correct marriage relations, and another dictionary `non_married.txt` for
 keywords that are usually associated with relations that are not about marriage.
 These files can be found in
 `$DEEPDIVE_HOME/examples/tutorial_example/step2-generic-features/udf/dicts/`.
-Copy this directory to your `$APP_HOME/udf/` directory:
+Copy this directory to your `udf/` directory:
 
 ```
-cp -r $DEEPDIVE_HOME/examples/tutorial_example/step2-generic-features/udf/dicts/ $APP_HOME/udf/dicts
+cp -r $DEEPDIVE_HOME/examples/tutorial_example/step2-generic-features/udf/dicts/ ./udf/dicts
 ```
 
 We now modify our feature extractor script `has_spouse_features.py` to use the
 generic feature library and the dictionaries. The new version of the script can
 be found in
 `$DEEPDIVE_HOME/examples/tutorial_example/step2-generic-features/udf/` and can be
-copied over the old one in `$APP_HOME/udf`. The content of the script are the
+copied over the old one in `udf/`. The content of the script are the
 following:
 
-```python
-
-#! /usr/bin/env python
-
-import sys, os
-import ddlib     # DeepDive python utility
-
-ARR_DELIM = '~^~'
-
-# Load keyword dictionaries using ddlib, for domain-specific features
-# Words in "married" dictionary are indicative of marriage
-# Words in "non_married" dictionary are indicative of non_marriage
-BASE_DIR = os.path.dirname(os.path.realpath(__file__))
-ddlib.load_dictionary(BASE_DIR + "/dicts/married.txt", dict_id="married")
-ddlib.load_dictionary(BASE_DIR + "/dicts/non_married.txt", dict_id="non_married")
-
-# For each input tuple
-for row in sys.stdin:
-  parts = row.strip().split('\t')
-
-  # Get all fields from a row
-  words = parts[0].split(ARR_DELIM)
-  lemmas = parts[1].split(ARR_DELIM)
-  poses = parts[2].split(ARR_DELIM)
-  dependencies = parts[3].split(ARR_DELIM)
-  ners = parts[4].split(ARR_DELIM)
-  relation_id = parts[5]
-  p1_start, p1_length, p2_start, p2_length = [int(x) for x in parts[6:]]
-
-  # Skip lines with empty dependency paths
-  if len(dependencies) == 0:
-    print >>sys.stderr, str(relation_id) + '\t' + 'DEP_PATH_EMPTY'
-    continue
-
-  # Get a sentence from ddlib -- array of "Word" objects
-  try:
-    sentence = ddlib.get_sentence(
-        [0, ] * len(words),  [0, ] * len(words), words, lemmas, poses,
-        dependencies, ners)
-  except:
-    print >>sys.stderr, dependencies
-    continue
-
-  # Create two spans of person mentions
-  span1 = ddlib.Span(begin_word_id=p1_start, length=p1_length)
-  span2 = ddlib.Span(begin_word_id=p2_start, length=p2_length)
-
-  # Features for this pair come in here
-  features = set()
-
-  # Get generic features generated by ddlib
-  for feature in ddlib.get_generic_features_relation(sentence, span1, span2):
-    features.add(feature)
-  for feature in features:
-    print str(relation_id) + '\t' + feature
-```
+<script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step2-generic-features/udf/ext_has_spouse_features.py?footer=minimal"></script>
 
 The dictionaries are loaded by calling the `ddlib.load_dictionary` function,
 while the set of features is obtained through the
@@ -493,38 +449,12 @@ library can be found in its [documentation](../gen_feats.html).
 
 The generic feature library uses additional columns of the `sentences` table to
 generate the feature, therefore we need to modify the `input` of the
-`has_spouse_features` extractor definition in `application.conf` (a modified
-version of `application.conf` is available at
-`$DEEPDIVE_HOME/tutorial_example/step2-generic-features/application.conf`):
+`has_spouse_features` extractor definition in `deepdive.conf` (a modified
+version of `deepdive.conf` is available at
+`$DEEPDIVE_HOME/tutorial_example/step2-generic-features/deepdive.conf`):
 
-```bash
-    ext_has_spouse_features {
-      input: """
-        SELECT  array_to_string(words, '~^~'),
-                array_to_string(lemma, '~^~'),
-                array_to_string(pos_tags, '~^~'),
-                array_to_string(dependencies, '~^~'),
-                array_to_string(ner_tags, '~^~'),
-                has_spouse.relation_id,
-                p1.start_position,
-                p1.length,
-                p2.start_position,
-                p2.length
-        FROM    has_spouse,
-                people_mentions p1,
-                people_mentions p2,
-                sentences
-        WHERE   has_spouse.person1_id = p1.mention_id
-          AND   has_spouse.person2_id = p2.mention_id
-          AND   has_spouse.sentence_id = sentences.sentence_id;
-        """
-      output_relation: "has_spouse_features"
-      udf: ${APP_HOME}"/udf/ext_has_spouse_features.py"
-      dependencies: ["ext_has_spouse_candidates"]
-      style: "tsv_extractor"
-      parallelism: 4
-    }
-```
+<script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step2-generic-features/deepdive.conf?footer=minimal&slice=82:112"></script>
+
 
 ### <a name="regularization" href="#"> </a> Mitigate overfitting with automatic regularization
 
@@ -544,21 +474,16 @@ F1-score in the cross validation.
 
 To specify a set of regularization parameters among which to choose, and in
 general to pass arguments to the sampler, we can add the following line to
-`application.conf`, in the `deepdive` section:
+`deepdive.conf`, in the `deepdive` section:
 
-```bash
-deepdive {
-  [... other configuration directives ...]
-  sampler.sampler_args: "-l 300 -s 1 -i 500 --alpha 0.1 --diminish 0.99 --reg_param 0.1 --reg_param 1 --reg_param 10"
-}
-```
+<script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step2-generic-features/deepdive.conf?footer=minimal&slice=173:178"></script>
 
 For an explanation of all the parameters passed to the sampler, check the
 [sampler documentation](../sampler.html).
 
 Now that we have performed some changes to the application (generic feature
 library, and automatic regularization) we can run the application again by
-executing `./run.sh`.
+executing `deepdive run`.
 
 Once the application has completed successfully, we can perform another round of
 error analysis by looking at another 100 extractions using MindTagger to assess
@@ -574,6 +499,10 @@ now 86%.
 
 <blockquote>Precision after adding feature library: 86%.</blockquote>
 
+
+
+
+
 ## <a name="error-analysis-2" href=#> </a> Further improvements: adding data
 
 We can further improve the precision by using more data: having additional data
@@ -582,11 +511,10 @@ features.
 
 The data archive that we downloaded at the beginning of the tutorial contains a
 additional dataset with more sentences that contains more negative examples
-(`$APP_HOME/data/sentences_dump_large.csv`).  Copy the file
-`$DEEPDIVE_HOME/examples/tutorial_example/step3-more-data/run.sh`, and the file
-`$DEEPDIVE_HOME/examples/tutorial_example/step3-more-data/setup_database.sh` to
-the `$APP_HOME` directory, and execute `./run.sh`: it will setup a new database
-`deepdive_spouse_large` containing the enlarged dataset and run the application
+(`input/sentences_dump_large.csv`).  Copy the file
+`$DEEPDIVE_HOME/examples/tutorial_example/step3-more-data/db.url` or modify `db.url` to use a different database, e.g., `deepdive_spouse_large`.
+Then execute `deepdive initdb` and `deepdive run`: it will setup a new database
+containing the enlarged dataset and run the application
 using this database.
 
 At the end, you can analyze the results using MindTagger as described before,
@@ -627,7 +555,7 @@ recall. Copy the script
 `$DEEPDIVE_HOME/examples/tutorial_example/step3-more-data/labeling/prepare-data-for-recall.sh`
 and the directory
 `$DEEPDIVE_HOME/examples/tutorial_example/step3-more-data/labeling/spouse_example-recall/`
-to `$APP_HOME/labeling` and execute the script (we assume that the last execution of the
+to `labeling/` and execute the script (we assume that the last execution of the
 application was using the `deepdive_spouse_large` database created at the end of
 the previous section. If that is not the case, edit the script and set the
 `DBNAME` directory to the correct database). This script collects two thousands

@@ -2,7 +2,6 @@
 
 import csv, os, sys
 
-# The directory of this UDF file
 APP_HOME = os.environ['APP_HOME']
 
 # Load the spouse dictionary for distant supervision.

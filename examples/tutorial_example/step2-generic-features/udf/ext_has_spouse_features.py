@@ -8,9 +8,9 @@ ARR_DELIM = '~^~'
 # Load keyword dictionaries using ddlib, for domain-specific features
 # Words in "married" dictionary are indicative of marriage
 # Words in "non_married" dictionary are indicative of non_marriage
-BASE_DIR = os.path.dirname(os.path.realpath(__file__))
-ddlib.load_dictionary(BASE_DIR + "/dicts/married.txt", dict_id="married")
-ddlib.load_dictionary(BASE_DIR + "/dicts/non_married.txt", dict_id="non_married")
+APP_HOME = os.environ['APP_HOME']
+ddlib.load_dictionary(APP_HOME + "/udf/dicts/married.txt", dict_id="married")
+ddlib.load_dictionary(APP_HOME + "/udf/dicts/non_married.txt", dict_id="non_married")
 
 # For each input tuple
 for row in sys.stdin:
