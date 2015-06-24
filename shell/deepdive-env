@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# deepdive-hack -- run commands inside deepdive's environment
-# > deepdive hack [COMMAND [ARG]...]
+# deepdive-env -- run commands inside deepdive's environment
+# > deepdive env [COMMAND [ARG]...]
 ##
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-05-10
