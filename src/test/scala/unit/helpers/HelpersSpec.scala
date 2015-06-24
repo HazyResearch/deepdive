@@ -38,6 +38,13 @@ class HelpersSpec extends FunSpec with BeforeAndAfter {
 
   }
 
+  describe("Slugify") {
+    it("should work") {
+      assert(Helpers.slugify("simple-string123") == "simple-string123")
+      assert(Helpers.slugify("This is the Title of my Blog Post!") == "this-is-the-title-of-my-blog-post")
+    }
+  }
+
   describe("Building psql command helper function") {
     it("should work for queries without quotes") {
       val dbSettings = DbSettings(Helpers.PsqlDriver, null, "user", null, "dbname",

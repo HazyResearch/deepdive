@@ -6,6 +6,7 @@ case class Extractor(
   style: String,
   outputRelation: String,
   inputQuery: InputQuery,
+  udfDir: String,
   udf: String,
   parallelism: Int,
   inputBatchSize: Int,

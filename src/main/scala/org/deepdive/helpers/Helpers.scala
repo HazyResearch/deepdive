@@ -4,6 +4,7 @@ import org.deepdive.Logging
 import org.deepdive.settings._
 import org.deepdive.datastore.JdbcDataStore
 import java.io._
+import java.text.Normalizer
 import scala.sys.process._
 import scala.util.{Try, Success, Failure}
 
@@ -171,4 +172,23 @@ object Helpers extends Logging {
         s""" --silent -N -e '${query.replaceAll("'", "'\\\\''")}' """
     }
   }
+
+
+  def slugify(input: String): String = {
+    Normalizer.normalize(input, Normalizer.Form.NFD)
+      .replaceAll("[^\\w\\s-]", "") // Remove all non-word, non-space or non-dash characters
+      .replace('-', ' ')            // Replace dashes with spaces
+      .trim                         // Trim leading/trailing whitespace (including what used to be leading/trailing dashes)
+      .replaceAll("\\s+", "-")      // Replace whitespace (including newlines and repetitions) with single dashes
+      .toLowerCase                  // Lowercase the final results
+  }
+
+
+  def md5Hash(s: String, length: Int = 8) = {
+    val m = java.security.MessageDigest.getInstance("MD5")
+    val b = s.getBytes("UTF-8")
+    m.update(b, 0, b.length)
+    new java.math.BigInteger(1, m.digest()).toString(16).substring(0, length)
+  }
+
 }

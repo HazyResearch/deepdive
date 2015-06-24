@@ -25,6 +25,7 @@ env:
 
 install:
   - make depends
+  - util/install.sh postgres
 
 before_script:
   # Check coding style before performing the build and tests
