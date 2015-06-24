@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eu
 
-deepdive sql execute "
+deepdive sql "
     INSERT INTO person(person_id, name) VALUES
         (1, 'Anna'),
         (2, 'Bob'),
@@ -11,7 +11,7 @@ deepdive sql execute "
         (6, 'Helen')
 "
 
-deepdive sql execute "
+deepdive sql "
     INSERT INTO person_smokes(person_id, smokes) VALUES
         (1, TRUE),
         (2, NULL),
@@ -21,7 +21,7 @@ deepdive sql execute "
         (6, NULL)
 "
 
-deepdive sql execute "
+deepdive sql "
     INSERT INTO person_has_cancer(person_id, has_cancer) VALUES
         (1, NULL),
         (2, NULL),
@@ -31,7 +31,7 @@ deepdive sql execute "
         (6, NULL)
 "
 
-deepdive sql execute "
+deepdive sql "
     INSERT INTO friends(person_id, friend_id) VALUES
         (1, 2), (2, 1),
         (1, 3), (3, 1),

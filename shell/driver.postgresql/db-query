@@ -1,10 +1,24 @@
 #!/usr/bin/env bash
 # db-query -- Evaluates given SQL query against the PostgreSQL database configured for a DeepDive application
 # > eval "$(db-parse "$url")"
-# > db-query SQL
+# > db-query SQL FORMAT HEADER
 ##
 set -eu
 
 sql=${1:?No SQL given}; shift
+format=${1:?No FORMAT given}; shift
+header=${1:?No HEADER given}; shift
 
-exec db-prompt -c "COPY ($sql) TO STDOUT" "$@"
+copy_option=
+case $format in
+    tsv) ;;
+    csv) copy_option+=" CSV" ;;
+    *) error "$format: unsupported format by PostgreSQL driver" ;; # TODO
+esac
+case $header in
+    0) ;;
+    1) copy_option+=" HEADER" ;;
+    *) error "$header: unrecognized value for HEADER"
+esac
+
+exec db-prompt -c "COPY ($sql) TO STDOUT $copy_option" "$@"

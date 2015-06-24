@@ -10,4 +10,4 @@ if ! [[ -e deepdive-tutorial-data.zip ]]; then
 fi
 
 # load the data into database
-deepdive sql execute "COPY sentences FROM STDIN CSV" <./sentences_dump.csv
+deepdive sql "COPY sentences FROM STDIN CSV" <./sentences_dump.csv

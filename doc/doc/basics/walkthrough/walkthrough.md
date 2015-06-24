@@ -141,7 +141,7 @@ You can check that the data have been successfully loaded with the command below
 Note that the `deepdive sql` command executes a given SQL query against the database configured in `db.url`.
 
 ```bash
-deepdive sql execute '\d+'
+deepdive sql '\d+'
 ```
 
 The output should look like the following:
@@ -199,14 +199,14 @@ Next, we should load these input data into the database.
 We can use a simple `COPY FROM` SQL query, as follows:
 
 ```bash
-deepdive sql execute "COPY sentences FROM STDIN CSV" <./input/sentences_dump.csv
+deepdive sql "COPY sentences FROM STDIN CSV" <./input/sentences_dump.csv
 ```
 
 This populates the `sentences` table.
 You can check that the data have been successfully loaded with the following command:
 
 ```bash
-deepdive sql execute '\d+'
+deepdive sql '\d+'
 ```
 
 The output should look like the following:
@@ -353,7 +353,7 @@ what happens in the extractor:
 ```bash
 deepdive run    # Run extractors now
 [...]
-deepdive sql execute "SELECT * FROM people_mentions WHERE sentence_id='118238@10'"
+deepdive sql "SELECT * FROM people_mentions WHERE sentence_id='118238@10'"
 ```
 
 The results will look like:
@@ -376,11 +376,15 @@ deepdive sql "SELECT COUNT(*) FROM people_mentions"
 The results should look like:
 
 ```
-55469
+ count
+-------
+ 55469
 ```
 and
 ```
-88266
+ count
+-------
+ 88266
 ```
 
 #### <a name="candidate_relations" href="#"></a> Extracting candidate relations between mention pairs
@@ -510,7 +514,7 @@ extractor:
 ```bash
 deepdive run
 [...]
-deepdive sql execute "SELECT * FROM has_spouse WHERE person1_id='118238@10_7'"
+deepdive sql "SELECT * FROM has_spouse WHERE person1_id='118238@10_7'"
 ```
 
 The results will look like the following:
@@ -523,7 +527,7 @@ To check that your results are correct, you can count the number of tuples in
 the table:
 
 ```bash
-deepdive sql execute "SELECT is_true, COUNT(*) FROM has_spouse GROUP BY is_true"
+deepdive sql "SELECT is_true, COUNT(*) FROM has_spouse GROUP BY is_true"
 ```
 
 The results should be:
@@ -593,7 +597,7 @@ relation `has_spouse_features`:
 ```bash
 deepdive run
 [...]
-deepdive sql execute "SELECT * FROM has_spouse_features WHERE relation_id = '118238@10_1_118238@10_7'"
+deepdive sql "SELECT * FROM has_spouse_features WHERE relation_id = '118238@10_1_118238@10_7'"
 ```
 
 The results would look like the following:
@@ -613,7 +617,7 @@ The results would look like the following:
 Again, you can count the number of tuples in the table:
 
 ```bash
-deepdive sql execute "SELECT COUNT(*) FROM has_spouse_features"
+deepdive sql "SELECT COUNT(*) FROM has_spouse_features"
 ```
 
 The results should look like:
@@ -711,7 +715,7 @@ the following query to sample some high-confidence mention-level relations and
 the sentences they come from:
 
 ```bash
-deepdive sql execute "
+deepdive sql "
   SELECT s.sentence_id, description, is_true, expectation, s.sentence
   FROM has_spouse_is_true_inference hsi, sentences s
   WHERE s.sentence_id = hsi.sentence_id and expectation > 0.9

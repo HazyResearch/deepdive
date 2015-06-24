@@ -88,10 +88,15 @@ deepdive sql
 
 This command opens a SQL prompt for the underlying database configured for the application.
 
-Optionally, the SQL query can be passed as a command line argument to run and print its result to standard output as tab-separated values.
+Optionally, the SQL query can be passed as a command line argument to run and print its result to standard output.
 For example, the following command prints the number of sentences per document:
 
 ```bash
 deepdive sql "SELECT doc_id, COUNT(*) FROM sentences GROUP BY doc_id"
 ```
 
+To get the result as tab-separated values (TSV), or comma-separated values (CSV), use the following command:
+```bash
+deepdive sql eval "SELECT doc_id, COUNT(*) FROM sentences GROUP BY doc_id" format=tsv
+deepdive sql eval "SELECT doc_id, COUNT(*) FROM sentences GROUP BY doc_id" format=csv header=1
+```

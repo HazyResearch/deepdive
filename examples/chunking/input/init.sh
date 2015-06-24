@@ -3,5 +3,5 @@
 set -eu
 cd "$(dirname "$0")"
 
-deepdive sql execute "copy words_raw(word, pos, tag) from STDIN delimiter ' ' null 'null'" <./train_null_terminated.txt
-deepdive sql execute "copy words_raw(word, pos, tag) from STDIN delimiter ' ' null 'null'" <./test_null_terminated.txt
+deepdive sql "copy words_raw(word, pos, tag) from STDIN delimiter ' ' null 'null'" <./train_null_terminated.txt
+deepdive sql "copy words_raw(word, pos, tag) from STDIN delimiter ' ' null 'null'" <./test_null_terminated.txt

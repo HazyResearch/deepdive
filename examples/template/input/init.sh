@@ -3,5 +3,5 @@
 set -eu
 cd "$(dirname "$0")"
 
-# TODO use `deepdive sql execute "COPY ... FROM STDIN"` command to load initial data from files
-# deepdive sql execute "COPY table_name FROM STDIN" <table_name.tsv
+# TODO use `deepdive sql "COPY ... FROM STDIN"` command to load initial data from files
+# deepdive sql "COPY table_name FROM STDIN" <table_name.tsv
