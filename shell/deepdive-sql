@@ -4,7 +4,7 @@
 # Starts a SQL prompt for the underlying database.
 #
 # > deepdive sql query "SELECT ..."
-# > deepdive sql update "INSERT ..."
+# > deepdive sql execute "INSERT ..."
 # Runs a given SQL query or update statement against the underlying database
 # and prints the result in TSV format.
 ##
@@ -22,17 +22,17 @@ cd "$APP_HOME"
 if [[ $# -gt 0 ]]; then
     sql=$1; shift
     case $sql in
-        query|update)
+        query|execute)
+            # there could be a mode argument we recognize, followed by the SQL
+            sql_mode=$sql
             if [[ $# -gt 0 ]]; then
-                # the actual SQL statement may follow the mode
-                sql_mode=$sql
                 sql=$1; shift
             else
-                # otherwise, we just default to query mode
-                sql_mode=query
+                error "Missing SQL statement for '$sql' mode"
             fi
             ;;
         *)
+            # otherwise, we just default to query mode
             sql_mode=query
     esac
 

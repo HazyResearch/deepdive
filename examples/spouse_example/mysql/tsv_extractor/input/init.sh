@@ -4,14 +4,14 @@ set -eux
 cd "$(dirname "$0")"
 
 bzcat ./articles_dump.csv.bz2 |
-deepdive sql update "
+deepdive sql execute "
     LOAD DATA LOCAL INFILE '/dev/stdin'
     INTO TABLE articles
       FIELDS TERMINATED BY ',' ENCLOSED BY '\"'
       LINES TERMINATED BY '\n'
     "
 bzcat ./sentences_dump.csv.bz2 |
-deepdive sql update "
+deepdive sql execute "
     LOAD DATA LOCAL INFILE '/dev/stdin'
     INTO TABLE sentences
       FIELDS TERMINATED BY ',' ENCLOSED BY '\"'

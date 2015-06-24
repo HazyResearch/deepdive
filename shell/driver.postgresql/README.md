@@ -12,5 +12,5 @@
 * `db-query`
     Evaluates a SQL query against the configured database for the DeepDive application and prints the result in tab-separated values.
 
-* `db-update`
-    Executes a SQL update query against the configured database for the DeepDive application.
+* `db-execute`
+    Executes a SQL query against the configured database for the DeepDive application.

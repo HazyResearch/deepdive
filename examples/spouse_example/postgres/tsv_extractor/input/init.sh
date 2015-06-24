@@ -3,7 +3,7 @@
 set -eux
 cd "$(dirname "$0")"
 
-bzcat ./articles_dump.csv.bz2  | deepdive sql update "COPY articles  FROM STDIN CSV"
-bzcat ./sentences_dump.csv.bz2 | deepdive sql update "COPY sentences FROM STDIN CSV"
+bzcat ./articles_dump.csv.bz2  | deepdive sql execute "COPY articles  FROM STDIN CSV"
+bzcat ./sentences_dump.csv.bz2 | deepdive sql execute "COPY sentences FROM STDIN CSV"
 
 ./prepare_data.sh
