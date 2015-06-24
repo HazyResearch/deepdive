@@ -33,7 +33,7 @@ A DeepDive application is a directory that contains the following files and dire
 * `udf/`
 
     Any user-defined function (UDF) code is suggested to be kept under this directory.
-    They can be referenced from application.conf with path names relative to the application root.
+    They can be referenced from deepdive.conf with path names relative to the application root.
 
 * `run/`
 

@@ -3,13 +3,13 @@
 import csv, os, sys
 
 # The directory of this UDF file
-BASE_DIR = os.path.dirname(os.path.realpath(__file__))
+APP_HOME = os.environ['APP_HOME']
 
 # Load the spouse dictionary for distant supervision.
 # A person can have multiple spouses
 spouses = set()
 married_people = set()
-lines = open(BASE_DIR + '/../data/spouses.tsv').readlines()
+lines = open(APP_HOME + '/input/spouses.tsv').readlines()
 for line in lines:
   name1, name2, relation = line.strip().split('\t')
   spouses.add((name1, name2))  # Add a spouse relation pair
@@ -19,7 +19,7 @@ for line in lines:
 # Load relations of people that are not spouse
 # The non-spouse KB lists incompatible relations, e.g. childrens, siblings, parents.
 non_spouses = set()
-lines = open(BASE_DIR + '/../data/non-spouses.tsv').readlines()
+lines = open(APP_HOME + '/input/non-spouses.tsv').readlines()
 for line in lines:
   name1, name2, relation = line.strip().split('\t')
   non_spouses.add((name1, name2))  # Add a non-spouse relation pair

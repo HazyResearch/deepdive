@@ -48,10 +48,17 @@ installation directory of DeepDive is denoted as`$DEEPDIVE_HOME`. The database
 system used for this tutorial is PostgreSQL. If you followed the [DeepDive
 installation guide](../installation.html) and all tests completed successfully,
 then your PostgreSQL server should already be running.
+You can run the following command to set the correct path for `DEEPDIVE_HOME` if you're at the top of DeepDive's source tree:
 
-The full application we develop in this and in the following section of the
+```bash
+DEEPDIVE_HOME=$PWD
+```
+
+The application we develop in this and the following sections of the
 tutorial is also available in the directory
-`$DEEPDIVE_HOME/examples/tutorial_example`.
+`$DEEPDIVE_HOME/examples/tutorial_example` in three parts.
+The complete example code is in `$DEEPDIVE_HOME/examples/spouse_example`.
+
 
 
 ### Contents
@@ -74,64 +81,85 @@ Other sections:
 
 ## <a name="preparation" href="#"></a> Preparation
 
-We start by creating a new application folder `app/spouse` in the DeepDive
-installation directory:
+A DeepDive application is a filesystem directory that contains the following files and directories:
+
+* `deepdive.conf`
+* `db.url`
+* `schema.sql`
+* `input/`
+* `udf/`
+
+In this section, we will create each of them either from scratch or by copying from the template.
+You can find more detail from the page about the [structure of a DeepDive app](../../advanced/deepdiveapp.html).
+
+### Application Directory
+First, we create a new directory `app/spouse` for our application under the DeepDive source tree.
+In fact, the application can be created anywhere you want.
 
 ```bash
 cd $DEEPDIVE_HOME
-mkdir -p app/spouse   # make folders recursively
+mkdir -p app/spouse   # makes sure the path exists
+```
+
+From now on we will assume the current working directory is this application directory we just created.
+
+```bash
 cd app/spouse
 ```
 
-From now on we will denote the `$DEEPDIVE_HOME/app/spouse` directory as
-`APP_HOME`.
-
-DeepDive's main entry point is the file `application.conf` which contains
-all information and configuration settings needed to run an application, e.g.,
-database connection information, extractor specification, inference rules,
-pipelines, and so on. A template `application.conf` is in
-`$DEEPDIVE_HOME/examples/template/application.conf` and must be copied
-into `$APP_HOME`:
-
-```
-cp $DEEPDIVE_HOME/examples/template/application.conf $APP_HOME
-```
-
-The execution of the application is controlled by a script `run.sh`. We created
-this script `$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/run.sh`
-which should be copied to `$APP_HOME`:
-
-```
-cp $DEEPDIVE_HOME/examples/tutorial_example/step1-basic/run.sh $APP_HOME
-```
-
-The `run.sh` scripts contains the definitions of two environment variables:
-`$DEEPDIVE_HOME` which is the installation directory of DeepDive, and `APP_HOME`
-which is the directory `$DEEPDIVE_HOME/app/spouse`. We will use these variables
-later. It also contains the definitions of various database connection
-parameters that you should set according to your database settings. Finally, it
-contains the commands to actually run the application.
-
-In order to write the application, we need some data files, namely the input corpus of
-text and some existing knowledge base of interpersonal relationship.
-**[Download the archive here](http://i.stanford.edu/hazy/deepdive-tutorial-data.zip)**.
-Expand the archive in the `$APP_HOME/data` directory. Specific steps:
+### DeepDive Configuration
+DeepDive's main input is the `deepdive.conf` file that contains all the information necessary for running an application, e.g., extractor specification, inference rules, pipelines, and so on.
+A skeleton `deepdive.conf` included in DeepDive's source tree can be copied into this application:
 
 ```bash
-cd $APP_HOME
-mkdir data
-cd data
-
-# Download and expand the data archive
-wget http://i.stanford.edu/hazy/deepdive-tutorial-data.zip
-unzip deepdive-tutorial-data.zip
+cp $DEEPDIVE_HOME/examples/template/deepdive.conf ./
 ```
 
-Now your `$APP_HOME/data` directory should contain following files:
+### Database Configuration
+Next, the `db.url` file contains the database connection settings represented as a URL for the application.
+Since we are assuming a local PostgreSQL installation, a simple URL can be used as follows:
+
+```bash
+echo postgresql://localhost/deepdive_spouse >./db.url
+```
+
+The `schema.sql` file should contain all `CREATE TABLE` SQL statements necessary for creating the tables that hold the input data as well as the data we extract with DeepDive.
+We can copy this one from DeepDive's source tree using the command below.
+For a detailed reference of how these tables should be created, refer to the [Preparing the Data Tables section](walkthrough-extras.html#data_tables) in the appendix.
+
+```bash
+cp $DEEPDIVE_HOME/examples/tutorial_example/step1-basic/schema.sql ./
+```
+
+Now, DeepDive will initialize the database for us if we run the following command:
+
+```bash
+deepdive initdb
+```
+
+You can check that the data have been successfully loaded with the command below.
+Note that the `deepdive sql` command executes a given SQL query against the database configured in `db.url`.
+
+```bash
+deepdive sql execute '\d+'
+```
+
+The output should look like the following:
 
 ```
-non-spouses.tsv  sentences_dump.csv  sentences_dump_large.csv  spouses.tsv
+                            List of relations
+ Schema |        Name         | Type  | Owner |    Size    | Description
+--------+---------------------+-------+-------+------------+-------------
+ public | has_spouse          | table | user  | 8192 bytes |
+ public | has_spouse_features | table | user  | 8192 bytes |
+ public | people_mentions     | table | user  | 8192 bytes |
+ public | sentences           | table | user  | 8192 bytes |
+(4 rows)
 ```
+
+Now, we're all set to start filling in more detail to this new application.
+
+
 
 ## <a name="implement_dataflow" href="#"></a> Implement the Data Flow
 
@@ -139,68 +167,87 @@ Let's now implement the [data flow](#dataflow) for this KBC application.
 
 ### <a name="loading_data" href="#"></a> Step 1: Data preprocessing and loading
 
-In this tutorial, we start from preprocessed sentence data, i.e., data that has
-already been parsed and tagged with a NLP toolkit. If the input corpus was
-instead composed by raw text articles, we would also need to perform some
-Natural Language Processing on the corpus before being able to extract candidate
-relation pairs and features. To learn how NLP extraction can be done in
-DeepDive, you can refer to the [appendix](walkthrough-extras.html#nlp_extractor)
-of this tutorial.
+For any DeepDive application, there's a set of input data from which we want to extract the information of our interest.
+For example, in this tutorial the text corpus of news articles and a set of known interpersonal relationships are the input data.
+Instead of starting from the raw text, we'll assume the corpus has been already preprocessed with an NLP (Natural Language Processing) toolkit, and consider the input as a set of sentences parsed and tagged with NLP markups.
+If you have your own text corpus and need to start from raw text, you should perform NLP steps on the corpus before continuing to the rest of the data flow.
+Refer to the [nlp_extractor section of this tutorial](walkthrough-extras.html#nlp_extractor) to find out how NLP can be done within DeepDive.
 
-We start by some scripts from the
-`$DEEPDIVE_HOME/example/tutorial_example/step1-basic` folder into `APP_HOME`
-
-```bash
-cp $DEEPDIVE_HOME/examples/tutorial_example/step1-basic/schema.sql $APP_HOME
-cp $DEEPDIVE_HOME/examples/tutorial_example/step1-basic/setup_database.sh $APP_HOME
-```
-
-Then, we run the script `$APP_HOME/setup_database.sh`, which creates the database and the
-necessary tables and loads the data. If you are interested in what this script does, refer to the [appendix](walkthrough-extras.html#data_tables).
+#### Input Data
+We made a sample input dataset for this tutorial available online.
+Let's download that dataset to the right place into our new application:
 
 ```bash
-./setup_database.sh deepdive_spouse
+mkdir -p ./input
+( cd ./input
+  curl -RLO http://i.stanford.edu/hazy/deepdive-tutorial-data.zip
+  unzip deepdive-tutorial-data.zip
+)
 ```
 
-This will create and populate some relations. You can check that the relations
-have been successfully created with the following command (also, use `\q` to quit database prompt after
-running the following commands):
+Now the `input/` directory under your application should contain the following files:
+
+* `non-spouses.tsv`
+* `sentences_dump.csv`
+* `sentences_dump_large.csv`
+* `spouses.tsv`
+
+
+#### Loading into Database
+
+Next, we should load these input data into the database.
+We can use a simple `COPY FROM` SQL query, as follows:
 
 ```bash
-psql deepdive_spouse -c '\d'
+deepdive sql execute "COPY sentences FROM STDIN CSV" <./input/sentences_dump.csv
 ```
 
-The output should be the following:
+This populates the `sentences` table.
+You can check that the data have been successfully loaded with the following command:
 
-                         List of relations
-     Schema |        Name         | Type  |  Owner
-    --------+---------------------+-------+----------
-     public | articles            | table | deepdive
-     public | has_spouse          | table | deepdive
-     public | has_spouse_features | table | deepdive
-     public | people_mentions     | table | deepdive
-     public | sentences           | table | deepdive
-    (5 rows)
+```bash
+deepdive sql execute '\d+'
+```
+
+The output should look like the following:
+
+```
+                            List of relations
+ Schema |        Name         | Type  | Owner |    Size    | Description
+--------+---------------------+-------+-------+------------+-------------
+ public | has_spouse          | table | user  | 8192 bytes |
+ public | has_spouse_features | table | user  | 8192 bytes |
+ public | people_mentions     | table | user  | 8192 bytes |
+ public | sentences           | table | user  | 90 MB      |
+(4 rows)
+```
+
+- The `sentences` table now holds the sentences preprocessed by an [NLP extractor](walkthrough-extras.html#nlp_extractor).
+    It contains tokenized words, lemmatized words, part of speech (POS) tags, named entity recognition (NER) tags, and dependency paths for each sentence.
+- Other tables are currently empty, and will be populated during the candidate generation and the feature extraction steps in the following sections.
 
 
-- `sentences` contains processed sentence data by an [NLP
-  extractor](walkthrough-extras.html#nlp_extractor). This table contains
-  tokenized words, lemmatized words, Part Of Speech tags, Named Entity
-  Recognition tags, and dependency paths for each sentence.
-- the other tables are currently empty, and will be populated during the
-  candidate generation and the feature extraction steps.
+#### Input Initialization Script
 
-For a detailed reference of how these tables are created and loaded, refer to
-the [Preparing the Data Tables](walkthrough-extras.html#data_tables) section in
-the appendix.
+In general, any input data for the DeepDive application should be kept under `input/`.
+An executable shell script at `input/init.sh` can handle any extra steps for preparing such data as well as the actual loading into the database.
+The `deepdive initdb` command we ran in the previous section will execute this script when available.
+
+The manual steps we performed above should be recorded in the `input/init.sh` script, so they're done automatically every time we initialize the database.
+For now, let's copy to our application a complete script included in DeepDive's source tree:
+
+```bash
+cp $DEEPDIVE_HOME/examples/tutorial_example/step1-basic/input/init.sh ./input/
+```
+
 
 ### <a name="feature_extraction" href="#"></a> Step 2: Candidate Generation and Feature Extraction
 
-Our next task is to write several [extractors](../extractors.html) for candidate
+Our next step is to write several [extractors](../extractors.html) for candidate
 generation and feature extraction.
 
-In this step, we create three extractors whose UDFs are Python scripts. The
-scripts will will go through the sentences in the corpus and, respectively:
+In this step, we create three extractors in Python. The Python
+scripts will go through each sentence in the corpus and respectively:
 
 1. create mentions of people;
 2. create candidate pairs of people mentions that may be in a marriage relation,
@@ -219,7 +266,7 @@ NLP toolkit. We could do something more sophisticated, but in this tutorial we
 just want to illustrate the basic concepts of KBC building.
 
 **Input:** sentences along with NER tags. Specifically, each line in the input to
-this extractor UDF is a row from the `sentences` table in a special TSV (Tab
+this extractor is a row from the `sentences` table in a special TSV (Tab
 Separated Values) format, where the arrays have been transformed into strings
 with elements separated by `~^~`, e.g.:
 
@@ -237,49 +284,10 @@ the `sentences` table to identify word phrases that have all words tagged as
 `PERSON`.
 
 To define our extractors in DeepDive, we start by adding several lines
-into the `deepdive.extraction.extractors` block in `application.conf`, which
+into the `deepdive.extraction.extractors` block in `deepdive.conf`, which
 should already be present in the template:
 
-```bash
-deepdive {
-  ...
-  # Put your extractors here
-  extraction.extractors {
-
-    # Extractor 1: Clean output tables of all extractors
-    ext_clear_table {
-      style: "sql_extractor"
-      sql: """
-        DELETE FROM people_mentions;
-        DELETE FROM has_spouse;
-        DELETE FROM has_spouse_features;
-        """
-    }
-
-    # Extractor 2: extract people mentions:
-    ext_people {
-      # The style of the extractor
-      style: "tsv_extractor"
-      # An input to the extractor is a row (tuple) of the following query:
-      input: """
-        SELECT  sentence_id,
-                array_to_string(words, '~^~'),
-                array_to_string(ner_tags, '~^~')
-          FROM  sentences"""
-
-      # output of extractor will be written to this table:
-      output_relation: "people_mentions"
-
-      # This user-defined function will be performed on each row (tuple) of input query:
-      udf: ${APP_HOME}"/udf/ext_people.py"
-
-      dependencies: ["ext_clear_table"]
-    }
-    # ... (more extractors to add here)
-  }
-  ...
-}
-```
+<script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=17:57"></script>
 
 Note that we first create an extractor `ext_clear_table`, which is executed
 before any other extractor and empties the output tables of all other
@@ -316,78 +324,39 @@ guide](../extractors.html).
 We then create a `udf` directory to store the scripts:
 
 ```bash
-mkdir $APP_HOME/udf
+mkdir ./udf
 ```
 
 Then we create a `udf/ext_people.py` script which acts as UDF for the people
 mention extractor. The script scans input sentences and outputs phrases
-representing mentions of people. The script contains the following code:
+representing mentions of people. The script should contain the following code:
 
 (a copy of this script is also available from
 `$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/udf/ext_people.py`):
 
-```python
-#! /usr/bin/env python
+<script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/udf/ext_people.py?footer=minimal"></script>
 
-import sys
-
-ARR_DELIM = '~^~'  # Array element delimiter in strings
-
-# For-loop for each row in the input query
-for row in sys.stdin:
-  # Find phrases that are continuous words tagged with PERSON.
-  sentence_id, words_str, ner_tags_str = row.strip().split('\t')
-  words = words_str.split(ARR_DELIM)
-  ner_tags = ner_tags_str.split(ARR_DELIM)
-  start_index = 0
-  phrases = []
-
-  while start_index < len(words):
-    # Checking if there is a PERSON phrase starting from start_index
-    index = start_index
-    while index < len(words) and ner_tags[index] == "PERSON":
-      index += 1
-    if index != start_index:   # found a person from "start_index" to "index"
-      text = ' '.join(words[start_index:index])
-      length = index - start_index
-      phrases.append((start_index, length, text))
-    start_index = index + 1
-
-  # Output a tuple for each PERSON phrase
-  for start_position, length, text in phrases:
-    print '\t'.join(
-      [ str(x) for x in [
-        sentence_id,
-        start_position,   # start_position
-        length, # length
-        text,  # text
-        '%s_%d' % (sentence_id, start_position)        # mention_id
-      ]])
-```
-
-To get a sample of the inputs to the extractor, refer to [getting example
-inputs](walkthrough-extras.html#debug_extractors) section in the Extras.
-
-This `udf/ext_people.py` Python script takes sentence records as an input, and
+This `udf/ext_people.py` Python script takes sentence records as input, and
 outputs a people mention record for each set of one or more continuous words
 with NER tag `PERSON` in the sentence.
-
+To get a sample of the inputs to the extractor, refer to [getting example
+inputs](walkthrough-extras.html#debug_extractors) section in the Extras.
 To add debug output, you can print to *stderr* instead of stdout, and the
 messages would appear on the terminal, as well as in the DeepDive log file
-(`$DEEPDIVE_HOME/log/DATE_TIME.txt`).
+(`run/LATEST/log.txt`).
 
-You can now run the extractor by executing `./run.sh`. Once the run has
+You can now run the extractor by executing `deepdive run`. Once the run has
 completed, you should be able to see the extracted results in the
 `people_mentions` table. We select the results of the sample input data to see
 what happens in the extractor:
 
 ```bash
-./run.sh    # Run extractors now
+deepdive run    # Run extractors now
 [...]
-psql -d deepdive_spouse -c "select * from people_mentions where sentence_id='118238@10'"
+deepdive sql execute "SELECT * FROM people_mentions WHERE sentence_id='118238@10'"
 ```
 
-The results are:
+The results will look like:
 
      sentence_id | start_position | length |      text      | mention_id
     -------------+----------------+--------+----------------+-------------
@@ -400,19 +369,19 @@ To double-check that the results you obtained are correct, count the number of
 tuples in your tables:
 
 ```bash
-psql -d deepdive_spouse -c "select count(*) from sentences;"
-psql -d deepdive_spouse -c "select count(*) from people_mentions;"
+deepdive sql "SELECT COUNT(*) FROM sentences"
+deepdive sql "SELECT COUNT(*) FROM people_mentions"
 ```
 
-The results should be:
+The results should look like:
 
-     count
-    -------
-     55469
-
-     count
-    -------
-     88266
+```
+55469
+```
+and
+```
+88266
+```
 
 #### <a name="candidate_relations" href="#"></a> Extracting candidate relations between mention pairs
 
@@ -472,50 +441,17 @@ inference rule syntax requirements related to the `id` column.
 
 We now tell DeepDive to create variables for the `is_true` column of the
 `has_spouse` table for probabilistic inference, by adding the following line
-to the `schema.variables` block in `application.conf`:
+to the `schema.variables` block in `deepdive.conf`:
 
-      schema.variables {
-        has_spouse.is_true: Boolean
-      }
+<script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=12:17"></script>
 
 We now define an extractor that creates all candidate relations and inserts them
 into the table `has_spouse`. We call them *candidate relations* because we do
 not know  whether or not they are actually expressing a marriage relation:
-that's for DeepDive to predict later. Add the following to `application.conf` to
+that's for DeepDive to predict later. Add the following to `deepdive.conf` to
 define the extractor:
 
-```bash
-  extraction.extractors {
-
-    # ... (other extractors)
-
-    # Extractor 3: extract mention relation candidates
-    ext_has_spouse_candidates {
-      # The style of the extractor
-      style: tsv_extractor
-      # Each input (p1, p2) is a pair of mentions
-      input: """
-        SELECT  sentences.sentence_id,
-                p1.mention_id AS p1_mention_id,
-                p1.text       AS p1_text,
-                p2.mention_id AS p2_mention_id,
-                p2.text       AS p2_text
-         FROM   people_mentions p1,
-                people_mentions p2,
-                sentences
-        WHERE   p1.sentence_id = p2.sentence_id
-          AND   p1.sentence_id = sentences.sentence_id
-          AND   p1.mention_id != p2.mention_id;
-          """
-      output_relation : "has_spouse"
-      udf             : ${APP_HOME}"/udf/ext_has_spouse.py"
-
-      # Run this extractor after "ext_people"
-      dependencies    : ["ext_people"]
-    }
-
-  }
-```
+<script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=57:83"></script>
 
 Note that this extractor must be executed after our previously added extractor
 `ext_people`, so we specify the latter in the `dependencies` field.
@@ -531,7 +467,7 @@ and use exact string matching to map mentions to entities.
 To generate positive examples, we have exported all pairs of people with a
 `has_spouse` relationship from the [Freebase data
 dump](https://developers.google.com/freebase/data) and included them in a TSV
-file `data/spouses.tsv`, which should have been downloaded in
+file `input/spouses.tsv`, which should have been downloaded in
 [Preparation section](#preparation).
 
 To generate negative examples, we use the following heuristics:
@@ -539,13 +475,13 @@ To generate negative examples, we use the following heuristics:
 1. A pair of persons who are in some kind of relation that is incompatible with
 a marriage relation can be treated as a negative example: if, for example, A is
 B's parent / children / sibling, then A is not likely to be married to B. We
-include a TSV file in `data/non-spouses.tsv` containing such relations sampled
+include a TSV file in `input/non-spouses.tsv` containing such relations sampled
 from Freebase, which should have been downloaded in the archive.
 
 2. A pair of the same person is a negative example of `has_spouse` relations,
 e.g., "Barack Obama" cannot be married to "Barack Obama".
 
-3. If the existing knowledge base of married couples (the `data/spouses.tsv`
+3. If the existing knowledge base of married couples (the `input/spouses.tsv`
 file) contains the fact that person A is married to person B and person C is
 married to person D, then it is unlikely that person A is married to person C.
 
@@ -561,81 +497,20 @@ perfect.
 We now create a script `udf/ext_has_spouse.py` to generate and label
 the relation candidates:
 
-```python
-#! /usr/bin/env python
+<script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/udf/ext_has_spouse.py?footer=minimal"></script>
 
-import csv, os, sys
-
-# The directory of this UDF file
-BASE_DIR = os.path.dirname(os.path.realpath(__file__))
-
-# Load the spouse dictionary for distant supervision.
-# A person can have multiple spouses
-spouses = set()
-married_people = set()
-lines = open(BASE_DIR + '/../data/spouses.tsv').readlines()
-for line in lines:
-  name1, name2, relation = line.strip().split('\t')
-  spouses.add((name1, name2))  # Add a spouse relation pair
-  married_people.add(name1)    # Record the person as married
-  married_people.add(name2)
-
-# Load relations of people that are not spouse
-# The non-spouse KB lists incompatible relations, e.g. childrens, siblings, parents.
-non_spouses = set()
-lines = open(BASE_DIR + '/../data/non-spouses.tsv').readlines()
-for line in lines:
-  name1, name2, relation = line.strip().split('\t')
-  non_spouses.add((name1, name2))  # Add a non-spouse relation pair
-
-# For each input tuple
-for row in sys.stdin:
-  parts = row.strip().split('\t')
-  sentence_id, p1_id, p1_text, p2_id, p2_text = parts
-
-  p1_text = p1_text.strip()
-  p2_text = p2_text.strip()
-  p1_text_lower = p1_text.lower()
-  p2_text_lower = p2_text.lower()
-
-  # DS rule 1: true if they appear in spouse KB,
-  is_true = '\N'
-  if (p1_text_lower, p2_text_lower) in spouses or \
-     (p2_text_lower, p1_text_lower) in spouses:
-    is_true = '1'
-  # DS rule 2: false if they appear in non-spouse KB
-  elif (p1_text_lower, p2_text_lower) in non_spouses or \
-       (p2_text_lower, p1_text_lower) in non_spouses:
-    is_true = '0'
-  # DS rule 3: false if they appear to be in same person
-  elif (p1_text == p2_text) or (p1_text in p2_text) or (p2_text in p1_text):
-    is_true = '0'
-  # DS rule 4 false if they are both married, but not married to each other:
-  elif p1_text_lower in married_people and p2_text_lower in married_people:
-    is_true = '0'
-
-  # Output relation candidates into output table
-  print '\t'.join([
-    p1_id, p2_id, sentence_id,
-    "%s-%s" %(p1_text, p2_text),
-    is_true,
-    "%s-%s" %(p1_id, p2_id),
-    '\N'   # leave "id" blank for system!
-    ])
-```
-
-We can now an run the system by executing `./run.sh` and check
-the output relation `has_spouse`. `./run.sh` will run the full pipeline with all
+We can now run the system by executing `deepdive run` and check
+the output relation `has_spouse`. `deepdive run` will run the full pipeline with all
 extractors. If you only want to run the new
-extractor, refer to the [Pipeline section in Extras](walkthrough-extras.html#pipelines).
+extractor, refer to the [Pipeline section](walkthrough-extras.html#pipelines) in the appendix.
 
 We can look at some relation candidate generated by the `ext_has_spouse`
 extractor:
 
 ```bash
-./run.sh
+deepdive run
 [...]
-psql -d deepdive_spouse -c "select * from has_spouse where person1_id='118238@10_7'"
+deepdive sql execute "SELECT * FROM has_spouse WHERE person1_id='118238@10_7'"
 ```
 
 The results will look like the following:
@@ -648,7 +523,7 @@ To check that your results are correct, you can count the number of tuples in
 the table:
 
 ```bash
-psql -d deepdive_spouse -c "select is_true, count(*) from has_spouse group by is_true;"
+deepdive sql execute "SELECT is_true, COUNT(*) FROM has_spouse GROUP BY is_true"
 ```
 
 The results should be:
@@ -698,36 +573,7 @@ For this new extractor:
 Create a new extractor for features, which will execute after the
 `ext_has_spouse_candidates` extractor:
 
-```bash
-  extraction.extractors {
-
-    # ... (other extractors)
-
-    # Extractor 4: extract features for relation candidates
-    ext_has_spouse_features {
-      style: "tsv_extractor"
-      input: """
-                SELECT  array_to_string(words, '~^~'),
-                has_spouse.relation_id,
-                p1.start_position  AS  p1_start,
-                p1.length          AS  p1_length,
-                p2.start_position  AS  p2_start,
-                p2.length          AS  p2_length
-          FROM  has_spouse,
-                people_mentions p1,
-                people_mentions p2,
-                sentences
-         WHERE  has_spouse.person1_id = p1.mention_id
-           AND  has_spouse.person2_id = p2.mention_id
-           AND  has_spouse.sentence_id = sentences.sentence_id;
-           """
-      output_relation : "has_spouse_features"
-      udf             : ${APP_HOME}"/udf/ext_has_spouse_features.py"
-      dependencies    : ["ext_has_spouse_candidates"]
-    }
-
-  }
-```
+<script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=82:107"></script>
 
 To create our extractor UDF, we make use of `ddlib`, our Python library that
 provides useful utilities such as `Span` to manipulate elements in sentences.
@@ -739,59 +585,15 @@ Create the script `udf/ext_has_spouse_features.py` with the following content:
 (a copy of this script is also available from
 `$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/udf/ext_has_spouse_features.py`)
 
+<script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/udf/ext_has_spouse_features.py?footer=minimal"></script>
 
-```python
-#! /usr/bin/env python
-
-import sys
-import ddlib     # DeepDive python utility
-
-ARR_DELIM = '~^~'
-
-# For each input tuple
-for row in sys.stdin:
-  parts = row.strip().split('\t')
-  if len(parts) != 6:
-    print >>sys.stderr, 'Failed to parse row:', row
-    continue
-
-  # Get all fields from a row
-  words = parts[0].split(ARR_DELIM)
-  relation_id = parts[1]
-  p1_start, p1_length, p2_start, p2_length = [int(x) for x in parts[2:]]
-
-  # Unpack input into tuples.
-  span1 = ddlib.Span(begin_word_id=p1_start, length=p1_length)
-  span2 = ddlib.Span(begin_word_id=p2_start, length=p2_length)
-
-  # Features for this pair come in here
-  features = set()
-
-  # Feature 1: Bag of words between the two phrases
-  words_between = ddlib.tokens_between_spans(words, span1, span2)
-  for word in words_between.elements:
-    features.add("word_between=" + word)
-
-  # Feature 2: Number of words between the two phrases
-  features.add("num_words_between=%s" % len(words_between.elements))
-
-  # Feature 3: Does the last word (last name) match?
-  last_word_left = ddlib.materialize_span(words, span1)[-1]
-  last_word_right = ddlib.materialize_span(words, span2)[-1]
-  if (last_word_left == last_word_right):
-    features.add("potential_last_name_match")
-
-  for feature in features:
-    print str(relation_id) + '\t' + feature
-```
-
-As before, you can run the system by executing `run.sh` and check the output
+As before, you can run the system by executing `deepdive run` and check the output
 relation `has_spouse_features`:
 
 ```bash
-./run.sh
+deepdive run
 [...]
-psql -d deepdive_spouse -c "select * from has_spouse_features where relation_id = '118238@10_1_118238@10_7'"
+deepdive sql execute "SELECT * FROM has_spouse_features WHERE relation_id = '118238@10_1_118238@10_7'"
 ```
 
 The results would look like the following:
@@ -808,21 +610,18 @@ The results would look like the following:
 (6 rows)
 ```
 
-<!--
-XXX Fix or remove
-
 Again, you can count the number of tuples in the table:
 
 ```bash
-psql -d deepdive_spouse -c "select count(*) from has_spouse_features;"
+deepdive sql execute "SELECT COUNT(*) FROM has_spouse_features"
 ```
 
-The results should be:
-
-      count
-    ---------
-     1160450
--->
+The results should look like:
+```
+  count
+---------
+ 3805294
+```
 
 ### <a name="inference_rules" href="#"></a> Step 3: Writing inference rules and defining holdout
 
@@ -834,36 +633,9 @@ will learn from the training data. This is one of the simplest inference rules
 one can write in DeepDive, as it does not involve any domain knowledge or
 relationship among different random variables.
 
-Add the following lines to your `application.conf`, in the `inference.factors` block:
+Add the following lines to your `deepdive.conf`, in the `inference.factors` block:
 
-```bash
-# Put your inference rules here
-  inference.factors {
-
-    # A simple logistic regression rule
-    f_has_spouse_features {
-
-      # input to the inference rule is all the has_spouse candidate relations,
-      #   as well as the features connected to them:
-      input_query: """
-        SELECT has_spouse.id      AS "has_spouse.id",
-               has_spouse.is_true AS "has_spouse.is_true",
-               feature
-        FROM has_spouse,
-             has_spouse_features
-        WHERE has_spouse_features.relation_id = has_spouse.relation_id
-        """
-
-      # Factor function:
-      function : "IsTrue(has_spouse.is_true)"
-
-      # Weight of the factor is decided by the value of "feature" column in input query
-      weight   : "?(feature)"
-    }
-
-    # ... (other inference rules)
-  }
-```
+<script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=109:141"></script>
 
 This rule generates a model similar to a logistic regression classifier: it uses
 a set of features to make a prediction about the expectation of the variable we
@@ -894,27 +666,16 @@ holdout fraction defines how much of our training data we want to treat as
 testing data used to compare our predictions against. By default the holdout
 fraction is `0`, which means that we cannot evaluate the precision of our
 results. One may add a line `calibration.holdout_fraction: 0.25`
-to `application.conf` to holdout one quarter of the training data randomly,
+to `deepdive.conf` to holdout one quarter of the training data randomly,
 but in our application, we instead specify a custom holdout SQL query which selects
 the column `id` of some random rows from the `has_spouse` mention table and
 add them into the table `dd_graph_variables_holdout`.
-Let's add it to `application.conf`:
+Let's add it to `deepdive.conf`:
 
-```bash
-calibration.holdout_query:"""
-    DROP TABLE IF EXISTS holdout_sentence_ids CASCADE;
-
-    CREATE TABLE holdout_sentence_ids AS
-    SELECT sentence_id FROM sentences WHERE RANDOM() < 0.25;
-
-    INSERT INTO dd_graph_variables_holdout(variable_id)
-    SELECT id FROM has_spouse WHERE sentence_id IN
-    (SELECT * FROM holdout_sentence_ids);
-"""
-```
+<script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=153:168"></script>
 
 At this point, the setup of the application is complete. Note that you can find
-all extractors, scripts, and the complete `application.conf` file that we wrote
+all extractors, scripts, and the complete `deepdive.conf` file that we wrote
 until now in the `$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/`
 directory.
 
@@ -923,7 +684,7 @@ directory.
 We can now run the application again
 
 ```bash
-./run.sh
+deepdive run
 ```
 
 After running, you should see a summary report similar to:
@@ -937,7 +698,7 @@ After running, you should see a summary report similar to:
     16:51:37 [profiler] INFO  ext_has_spouse_features SUCCESS [189242 ms]
     16:51:37 [profiler] INFO  inference_grounding SUCCESS [3881 ms]
     16:51:37 [profiler] INFO  inference SUCCESS [13366 ms]
-    16:51:37 [profiler] INFO  calibration plot written to /YOUR/PATH/TO/deepdive/out/TIME/calibration/has_spouse.is_true.png [0 ms]
+    16:51:37 [profiler] INFO  calibration plot written to /YOUR/PATH/TO/APP/run/DATE/TIME/calibration/has_spouse.is_true.png [0 ms]
     16:51:37 [profiler] INFO  calibration SUCCESS [920 ms]
     16:51:37 [profiler] INFO  --------------------------------------------------
 
@@ -950,15 +711,15 @@ the following query to sample some high-confidence mention-level relations and
 the sentences they come from:
 
 ```bash
-psql -d deepdive_spouse -c "
+deepdive sql execute "
   SELECT s.sentence_id, description, is_true, expectation, s.sentence
   FROM has_spouse_is_true_inference hsi, sentences s
   WHERE s.sentence_id = hsi.sentence_id and expectation > 0.9
-  ORDER BY random() LIMIT 5;
+  ORDER BY random() LIMIT 5
 "
 ```
 
-The result should look like the following (might not be the same):
+The result should look like the following (might not be the same because of random sampling):
 
 ```
  sentence_id |       description        | is_true | expectation | sentence
@@ -988,7 +749,7 @@ debugging. Let's take a look at the generated calibration plot, written to the
 file outputted in the summary report above (has_spouse.is_true.png). It should
 look something like this:
 
-![Calibration]({{site.baseurl}}/assets/walkthrough_has_spouse_is_true.png)
+![Calibration](../../../assets/walkthrough_has_spouse_is_true.png)
 
 The calibration plots contain useful information that help you to improve the
 quality of your predictions. For actionable advice about interpreting
