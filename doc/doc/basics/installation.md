@@ -56,6 +56,8 @@ Congratulations! DeepDive is now installed on your system, and you can proceed t
 
 ## Installing from Source
 
+<div class="alert alert-danger">(This section is largely outdated and only accurate up to release 0.6.x.)</div> <!-- TODO rewrite -->
+
 If you need to install DeepDive on a different Linux distribution, the following steps can be followed.
 
 ### <a name="dependencies" href="#"></a> Install Dependencies

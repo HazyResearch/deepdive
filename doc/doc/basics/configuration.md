@@ -18,7 +18,7 @@ deepdive {
 }
 ```
 
-A starter template of `application.conf` is below. You can found it in
+A starter template of `deepdive.conf` is below. You can found it in
 `examples/template/` in your `DEEPDIVE_HOME` installation directory:
 
 ```bash
@@ -102,6 +102,8 @@ Both `:` and `=` are valid key-value separators.
 
 
 ## <a name="database" href="#"></a> Database connection
+
+<div class="alert alert-danger">(This section is outdated and only accurate up to release 0.6.x. <code>db.url</code> is the recommended place for configuration the database connection.)</div> <!-- TODO rewrite -->
 
 The configuration directives for the database connection must be specified
 inside a `db.default` section:

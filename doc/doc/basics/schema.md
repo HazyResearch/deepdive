@@ -12,7 +12,7 @@ DeepDive requires the user to specify the name and type of the random variables
 on which to perform [inference](../general/inference.html). Currently DeepDive
 support Boolean (i.e., Bernoulli) variables and Categorical/Multinomial
 variables. Random variables and their types are declared in the
-`schema.variables` section of the `application.conf` file. The following is an
+`schema.variables` section of the `deepdive.conf` file. The following is an
 example of defining the schema with two Boolean variables:
 
 ```bash
@@ -34,7 +34,7 @@ hold one variable.
 
 DeepDive supports multinomial variables, which take integer values ranging from
 0 to a user-specified upper bound. In order to use a multinomial variable, you
-can declare it in the `schema.variables` directive in `application.conf` using
+can declare it in the `schema.variables` directive in `deepdive.conf` using
 type `Categorical(N)`, to specify that the variable domain is be 0, 1, ..., N-1.
 The schema definition would be  look like
 

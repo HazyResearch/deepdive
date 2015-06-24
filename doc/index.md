@@ -167,18 +167,18 @@ and
 - [System overview and fundamental terminology](doc/basics/overview.html)
 - [Installation guide](doc/basics/installation.html)
 - [Creating a new application](doc/basics/writing.html)
-- [Writing extractors](doc/basics/extractors.html)
+- [Writing extractors](doc/basics/extractors.html) <small>(outdated)</small>
 - [Declaring inference variables in the schema](doc/basics/schema.html)
 - [Writing inference rules](doc/basics/inference_rules.html)
 - [Inference rule function reference](doc/basics/inference_rule_functions.html)
 - [Generating negative examples](doc/basics/generating_negative_examples.html)
-- [Running an application](doc/basics/running.html)
+- [Running an application](doc/basics/running.html) <small>(outdated)</small>
 - [Calibration](doc/basics/calibration.html)
 - [Labeling data products](doc/basics/labeling.html)
 - [Text chunking application example](doc/basics/chunking.html)
 - [Generic features library](doc/basics/gen_feats.html)
 - [High-speed sampler](doc/basics/sampler.html)
-- [**application.conf** Reference](doc/basics/configuration.html)
+- [`deepdive.conf` Reference](doc/basics/configuration.html)
 - [Writing applications in DDlog](doc/basics/ddlog.html)
 - [FAQ](doc/basics/faq.html)
 
@@ -192,7 +192,7 @@ and
 
 - [DeepDive Application's Structure and Operations](doc/advanced/deepdiveapp.html)
 - [Incremental DeepDive](doc/advanced/incremental.html)
-- [Performance tuning](doc/advanced/performance.html)
+- [Performance tuning](doc/advanced/performance.html) <small>(outdated)</small>
 - [Using DeepDive with GreenPlum](doc/advanced/greenplum.html)
 - [Using DeepDive with Postgres-XL](doc/advanced/pgxl.html)
 - [Using DeepDive with MySQL / MySQL Cluster](doc/advanced/mysql.html)

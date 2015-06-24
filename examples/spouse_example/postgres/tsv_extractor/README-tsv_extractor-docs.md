@@ -5,11 +5,11 @@ This directory is an example of using tsv_extractor.
 
 These extractors only works on postgresql.
 
-NOTE: Please do learn from the application.conf and udf/pgext_* to learn more about the requirements!
+NOTE: Please do learn from the deepdive.conf and udf/pgext_* to learn more about the requirements!
 
 
 
-Extractor Config Format (in application.conf )
+Extractor Config Format (in deepdive.conf )
 ----
 - style: "tsv_extractor"
 - input: "[a sql query]"

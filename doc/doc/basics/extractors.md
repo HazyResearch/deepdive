@@ -4,6 +4,8 @@ layout: default
 
 # Writing extractors
 
+<div class="alert alert-danger">(This page is outdated and only accurate up to release 0.6.x.)</div> <!-- TODO rewrite -->
+
 Extractors are a powerful functionality provided by DeepDive to streamline
 [feature extraction](overview.html#extractors). This document presents the
 different types of extractors supported by DeepDive. Please refer to the

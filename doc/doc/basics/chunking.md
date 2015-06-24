@@ -43,7 +43,7 @@ The application performs the following high-level steps:
 
 ### Data Preprocessing
 
-The train and test data consist of words, their part-of-speech tag and the chunk tags as derived from the WSJ corpus. The raw data is first copied into into table `words_raw`, and then is processed to convert the chunk labels to integer indexes. This extractor is defined in `application.conf` using the following code:
+The train and test data consist of words, their part-of-speech tag and the chunk tags as derived from the WSJ corpus. The raw data is first copied into into table `words_raw`, and then is processed to convert the chunk labels to integer indexes. This extractor is defined in `deepdive.conf` using the following code:
 
     ext_training {
       input: "select * from words_raw"

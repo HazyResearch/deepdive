@@ -4,6 +4,8 @@ layout: default
 
 # PaleoDeepDive: A System Walkthrough
 
+<div class="alert alert-danger">(This page is outdated and only accurate up to release 0.6.x.)</div> <!-- TODO rewrite -->
+
 Here, we walk through the codebase that powers PaleoDeepDive, an application built upon the [DeepDive machine reading infrastructure](http://deepdive.stanford.edu).
 The code can be found [here](https://github.com/zhangce/pdd), and
 one example data dump can be
