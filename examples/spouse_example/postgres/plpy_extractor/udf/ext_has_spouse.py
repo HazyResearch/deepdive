@@ -13,6 +13,8 @@ from collections import defaultdict
 # returns:
 
 def init():
+  SD['APP_HOME'] = os.environ['APP_HOME']
+
   # SD['json'] = __import__('json')
   ddext.import_lib('csv')
   ddext.import_lib('os')
@@ -57,7 +59,7 @@ def run(sentence_id, p1_id, p1_text, p2_id, p2_text):
     # Read dict from file: MAKE SURE YOUR DATABASE SERVER
     #   HAVE THE ACCESS TO FILE!
     # Please use absolute path!
-    with open ("/dfs/rulk/0/deepdive/shared/spouses.csv") as csvfile:
+    with open (SD['APP_HOME'] + "/input/spouses.csv") as csvfile:
       reader = csv.reader(csvfile)
       for line in reader:
         spouses[line[0].strip().lower()] = line[1].strip().lower()
@@ -67,7 +69,7 @@ def run(sentence_id, p1_id, p1_text, p2_id, p2_text):
   else:
     non_spouses = set()
     SD['non_spouses'] = non_spouses
-    lines = open('/dfs/rulk/0/deepdive/shared/non-spouses.tsv').readlines()
+    lines = open(SD['APP_HOME'] + '/input/non-spouses.tsv').readlines()
     for line in lines:
       name1, name2, relation = line.strip().split('\t')
       non_spouses.add((name1, name2))  # Add a non-spouse relation pair

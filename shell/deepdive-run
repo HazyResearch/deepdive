@@ -36,7 +36,7 @@ trap "ln -sfn $run_id run/ABORTED" ERR
 # create an extended version of deepdive.conf by collecting more configs from command-line and environment
 extendedConfig=$(mktemp ${TMPDIR:-/tmp}/deepdive.conf.XXXXXXX)
 trap "rm -f $extendedConfig" EXIT
-cat "$APP_HOME"/deepdive.conf >"$extendedConfig"
+cat deepdive.conf >"$extendedConfig"
 # append any extra config present in DEEPDIVE_CONFIG_EXTRA environment
 [[ -z "${DEEPDIVE_CONFIG_EXTRA:-}" ]] || {
     echo >>"$extendedConfig" "$DEEPDIVE_CONFIG_EXTRA"
@@ -52,12 +52,8 @@ cat "$APP_HOME"/deepdive.conf >"$extendedConfig"
     # make sure ddlib in Python is available to all udf
     export PYTHONPATH="$DEEPDIVE_HOME"/ddlib:"${PYTHONPATH:+:$PYTHONPATH}"
 
-    # XXX SBT is total non-sense.
-    # How in the hell is it possible for such a widely used build tool to have completely no way to control the project path or working directory?
-    # Using SBT for running code was wrong in the first place, but rest of the shit in DeepDive originates from SBT.
-    cd "$DEEPDIVE_HOME"
-    export SBT_OPTS="-Xmx4g"
-    "$DEEPDIVE_HOME"/sbt/sbt "run -c $extendedConfig -o $APP_HOME/$run_dir"
+    exec java -cp "$(cat "$DEEPDIVE_HOME"/shell/deepdive-run.classpath)" \
+        org.deepdive.Main -c "$extendedConfig" -o "$APP_HOME/$run_dir"
 )
 
 # TODO log under $run_dir

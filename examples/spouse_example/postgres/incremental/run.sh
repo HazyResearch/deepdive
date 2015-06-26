@@ -31,11 +31,11 @@ userConf="$(dirname "$DDlog")"/application.conf
 appConf="$(cd "$(dirname "$appConf")" && pwd)/$(basename "$appConf")"
 Out=$(mkdir -p "$Out" && cd "$Out" && pwd)
 BASEDIR=${BASEDIR:+$(mkdir -p "$BASEDIR" && cd "$BASEDIR" && pwd)}
-# XXX To run sbt, we must chdir to DEEPDIVE_HOME (root of all evil)
-cd "$DEEPDIVE_HOME"
 
 # ddlog-generated application.conf contains a PIPELINE, so we must set it here
 export PIPELINE=$Pipeline
 
 # run DeepDive, passing the rest of the arguments
-sbt "run -c $appConf -o $Out  $*"
+# TODO use deepdive run instead
+java -cp "$(cat "$DEEPDIVE_HOME"/shell/deepdive-run.classpath)" \
+    org.deepdive.Main -c "$appConf" -o "$Out"  "$@"

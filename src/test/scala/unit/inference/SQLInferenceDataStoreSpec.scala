@@ -17,24 +17,8 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
   def dataStoreHelper : JdbcDataStore
 
-  lazy implicit val session = dataStoreHelper.DB.autoCommitSession()
   // Generate a dbSettings for testing
   val dbSettings = TestHelper.getDbSettings
-
-  def init() : Unit = {
-    JdbcDataStoreObject.init()
-    SQL("drop schema if exists public cascade; create schema public;").execute.apply()
-  }
-
-  /* Initialize and clear the data store before each test */
-  before {
-    init()
-    Context.outputDir = new File(".").getCanonicalPath() + "/out"
-  }
-
-  after {
-    JdbcDataStoreObject.close()
-  }
 
   /**********************
    * Note id must not be the first column,
@@ -43,15 +27,43 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
    * on distribution key.
    **********************/
   describe("Postgres inference data store") {
+    val isPostgres = TestHelper.getTestEnv match {
+        case TestHelper.Psql | TestHelper.Greenplum => true
+        case _ => false
+      }
+    def cancelUnlessPostgres() = assume(isPostgres)
+
+    lazy implicit val session = dataStoreHelper.DB.autoCommitSession()
+
+    def init() : Unit = {
+      JdbcDataStoreObject.init()
+      SQL("drop schema if exists public cascade; create schema public;").execute.apply()
+    }
+
+    /* Initialize and clear the data store before each test */
+    before {
+      if (isPostgres) {
+        init()
+        Context.outputDir = new File(".").getCanonicalPath() + "/out"
+      }
+    }
+
+    after {
+      if (isPostgres) {
+        JdbcDataStoreObject.close()
+      }
+    }
 
     describe("intializing") {
       it("should work") {
+        cancelUnlessPostgres()
         inferenceRunner.init()
       }
     }
 
     describe("testing the variable id assignment") {
       it("should work") {
+        cancelUnlessPostgres()
         inferenceRunner.init()
 
         // Size of t1. This is "1" to handle the corner case of having a table
@@ -112,6 +124,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
     describe("grounding the factor graph with Boolean variables") {
 
       it("should work with fixed weight") {
+        cancelUnlessPostgres()
         inferenceRunner.init()
 
         // Insert sample data
@@ -163,6 +176,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
       }
 
       it("should work with weight to learn without weight variables") {
+        cancelUnlessPostgres()
         inferenceRunner.init()
 
         // Insert sample data
@@ -214,6 +228,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
       }
 
       it("should work with a one-variable factor rule") {
+        cancelUnlessPostgres()
         inferenceRunner.init()
 
         // Insert sample data
@@ -259,6 +274,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
       }
 
       it("should work with a custom holdout query") {
+        cancelUnlessPostgres()
         inferenceRunner.init()
 
         // Insert sample data
@@ -294,6 +310,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
       }
 
       it("should work with custom a observation query") {
+        cancelUnlessPostgres()
         inferenceRunner.init()
 
         // Insert sample data
@@ -329,6 +346,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
       }
 
       it("should work with an observation query") {
+        cancelUnlessPostgres()
         inferenceRunner.init()
 
         // Insert sample data
@@ -363,6 +381,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
       }
 
       it("should work with weight variables that are null") {
+        cancelUnlessPostgres()
         inferenceRunner.init()
          SQL(s"""CREATE TABLE r1(weight text,
           is_correct boolean, id bigint);""").execute.apply()
@@ -388,6 +407,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
       }
 
       it("should work with multi-variable factor rules") {
+        cancelUnlessPostgres()
         inferenceRunner.init()
         SQL(s"""CREATE TABLE r1(weight text,
           is_correct boolean, id bigint);""").execute.apply()
@@ -424,6 +444,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
       }
 
       it("format converter should work (flat/array type)") {
+        cancelUnlessPostgres()
         val resourceFolder = s"${Context.deepdiveHome}/src/test/resources/format_converter"
         val converter = InferenceNamespace.getFormatConvertingWorkerPath
         val variableFile = s"${resourceFolder}/dd_variables"
@@ -451,6 +472,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
     describe("test incremental grounding") {
 
       it("should work with materialization and incremental modes") {
+        cancelUnlessPostgres()
         // XXX Incremental workflow not supported on Postgres-XL as inference.PostgresInferenceRunner.groundVariables raises the following error:
         //   org.postgresql.util.PSQLException: ERROR: could not plan this distributed update
         //   Detail: correlated UPDATE or updating distribution column currently not supported in Postgres-XL.
@@ -567,6 +589,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
       it("should work with weight variables that are null")
       {
+        cancelUnlessPostgres()
         inferenceRunner.init()
 
         // Create table with multinomial data
@@ -603,6 +626,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
       it("should work with weight variables")
       {
+        cancelUnlessPostgres()
         inferenceRunner.init()
 
         // Create table with multinomial data
@@ -639,6 +663,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
       it("should work with fixed weight")
       {
+        cancelUnlessPostgres()
         inferenceRunner.init()
 
         // Create table with multinomial data
@@ -683,6 +708,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
       it("should work with weight to learn without weight variables")
       {
+        cancelUnlessPostgres()
         inferenceRunner.init()
 
         // Create table with multinomial data
@@ -729,6 +755,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
       val schema = Map[String, VariableDataType]("has_spouse.is_true" -> BooleanType)
 
       it("should work") {
+        cancelUnlessPostgres()
         inferenceRunner.init()
         val holdoutFraction = 0.0
         inferenceRunner.groundFactorGraph(Map(), Seq(), CalibrationSettings(holdoutFraction, None, None), false, "", dbSettings)
@@ -742,6 +769,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
 
       it("should work for Boolean variables") {
+        cancelUnlessPostgres()
         SQL(s"""create table t1_c1_inference(id bigint, c1 boolean,
           category bigint, expectation double precision)""").execute.apply()
         SQL("""insert into t1_c1_inference(c1, category, expectation) VALUES
@@ -764,6 +792,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
       }
 
       it("should work for categorical variables") {
+        cancelUnlessPostgres()
          SQL(s"""create table t1_c1_inference(id bigint, c1 bigint,
           category bigint, expectation double precision)""").execute.apply()
          SQL("""insert into t1_c1_inference(c1, category, expectation) VALUES

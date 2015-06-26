@@ -1,0 +1,1 @@
+../postgresql/biased_coin_example.bats

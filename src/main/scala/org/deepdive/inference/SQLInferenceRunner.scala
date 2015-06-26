@@ -603,16 +603,20 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       if (factorDesc.func.getClass.getSimpleName != "MultinomialFactorFunction") {
 
         // branch if weight variables present
+        val idDefault = dataStore match {
+            case ds: org.deepdive.datastore.MysqlDataStore => 0
+            case _ => -1
+          }
         val hasWeightVariables = !(isFixed || weightlist == "")
         hasWeightVariables match {
           // create a table that only contains one row (one weight)
           case false => dataStore.dropAndCreateTableAs(weighttableForThisFactor,
             s"""SELECT ${dataStore.cast(isFixed, "int")} AS isfixed, ${dataStore.cast(initvalue, "float")} AS initvalue,
-              ${dataStore.cast(-1, "bigint")} AS id;""")
+              ${dataStore.cast(idDefault, "bigint")} AS id;""")
           // create one weight for each different element in weightlist.
           case true => dataStore.dropAndCreateTableAs(weighttableForThisFactor,
             s"""SELECT ${weightlist}, ${dataStore.cast(isFixed, "int")} AS isfixed,
-            ${dataStore.cast(initvalue, "float")} AS initvalue, ${dataStore.cast(-1, "bigint")} AS id
+            ${dataStore.cast(initvalue, "float")} AS initvalue, ${dataStore.cast(idDefault, "bigint")} AS id
             FROM ${querytable}
             GROUP BY ${weightlist}""")
         }

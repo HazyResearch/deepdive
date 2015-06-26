@@ -5,5 +5,7 @@
 ##
 set -eu
 
+{
 mysqladmin -h $DBHOST -P $DBPORT -u $DBUSER -f drop   $DBNAME || true
 mysqladmin -h $DBHOST -P $DBPORT -u $DBUSER -f create $DBNAME
+} >/dev/null

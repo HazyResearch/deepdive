@@ -5,5 +5,7 @@
 ##
 set -eu
 
+{
 dropdb $DBNAME || true
 createdb $DBNAME
+} >/dev/null

@@ -528,7 +528,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
 
     // Create Function in GP
     val udfFile = task.extractor.udf
-    val deepDiveDir = System.getProperty("user.dir")
+    val deepDiveDir = Context.deepdiveHome
     val compilerFile = s"${deepDiveDir}/util/ddext.py"
     val funcName = s"func_${task.extractor.name}"
     val sqlFunctionFile = File.createTempFile(funcName, ".sql")
@@ -589,7 +589,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
       case _ => ""
     }
 
-    val deepDiveDir = System.getProperty("user.dir")
+    val deepDiveDir = Context.deepdiveHome
     val compilerFile = s"${deepDiveDir}/util/piggy_prepare.py"
     val params = Json.obj(
       "dir" -> envDir,

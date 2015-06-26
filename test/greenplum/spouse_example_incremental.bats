@@ -1,0 +1,1 @@
+../postgresql/spouse_example_incremental.bats

@@ -3,6 +3,7 @@ package org.deepdive.test.unit
 import anorm._
 import org.deepdive.datastore._
 import org.deepdive.extraction._
+import org.deepdive.test.helpers._
 import org.deepdive.test._
 import org.scalatest._
 import scala.io.Source
@@ -14,17 +15,27 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
 
   lazy implicit val connection = dataStore.borrowConnection()
 
+  val isPostgres = TestHelper.getTestEnv match {
+      case TestHelper.Psql | TestHelper.Greenplum => true
+      case _ => false
+    }
+  def cancelUnlessPostgres() = assume(isPostgres)
+
   before {
-    JdbcDataStoreObject.init()
-    dataStore.init()
-    SQL("drop schema if exists public cascade; create schema public;").execute()
-    SQL("""create table datatype_test(id bigserial primary key, key integer, some_text text,
-      some_boolean boolean, some_double double precision, some_null boolean,
-      some_array text[]);""").execute()
+    if (isPostgres) {
+      JdbcDataStoreObject.init()
+      dataStore.init()
+      SQL("drop schema if exists public cascade; create schema public;").execute()
+      SQL("""create table datatype_test(id bigserial primary key, key integer, some_text text,
+        some_boolean boolean, some_double double precision, some_null boolean,
+        some_array text[]);""").execute()
+    }
   }
 
   after {
-    JdbcDataStoreObject.close()
+    if (isPostgres) {
+      JdbcDataStoreObject.close()
+    }
   }
 
   describe("Querying as a Map") {
@@ -35,6 +46,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
     }
 
     it("should work for simple attributes") {
+      cancelUnlessPostgres()
       insertSampleData()
       val result = dataStore.queryAsMap("SELECT key from datatype_test order by key asc;")(_.toList)
       assert(result.head === Map("key" -> 1))
@@ -42,12 +54,14 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
     }
 
     it("should work for aliased attributes") {
+      cancelUnlessPostgres()
       insertSampleData()
       val result = dataStore.queryAsMap("SELECT key AS \"d1.key2\" from datatype_test order by \"d1.key2\" asc;")(_.toList)
       assert(result.head === Map("d1.key2" -> 1))
     }
 
     it("should work for aggregated attributes") {
+      cancelUnlessPostgres()
       insertSampleData()
       val result = dataStore.queryAsMap("""SELECT COUNT(*) AS num
         from datatype_test GROUP BY key""")(_.toList)
@@ -55,11 +69,13 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
     }
 
     it("should work with empty tables") {
+      cancelUnlessPostgres()
       val result = dataStore.queryAsMap("SELECT * from datatype_test;")(_.toList)
       assert(result == Nil)
     }
 
     it("should throw an exception for invalid queries") {
+      cancelUnlessPostgres()
       intercept[org.postgresql.util.PSQLException] {
         val result = dataStore.queryAsMap("SELECT *a from datatype_test;")(_.toList)
         assert(result == Nil)
@@ -76,6 +92,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
     }
 
     it("should work with empty tables") {
+      cancelUnlessPostgres()
       val result = dataStore.queryAsJson("SELECT * from datatype_test;")(_.toList)
       assert(result == Nil)
     }
@@ -92,6 +109,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
     }
 
     it("should work with aggregate data types") {
+      cancelUnlessPostgres()
       insertSampleRow()
       val result = dataStore.queryAsJson(
         """SELECT key, array_agg(some_text ORDER BY some_text) AS "datatype_test.texts"
@@ -104,6 +122,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
     }
 
     it("should work with simple data types") {
+      cancelUnlessPostgres()
       insertSampleRow()
       val result = dataStore.queryAsJson("SELECT * from datatype_test WHERE some_text='Hello'")(_.toList)
       assert(result.head.asInstanceOf[JsObject].value == Map[String, JsValue](
@@ -120,6 +139,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
   describe ("Building the COPY SQL Statement") {
 
     it ("should work") {
+      cancelUnlessPostgres()
       val result = dataStore.buildCopySql("someRelation", Set("key1", "key2", "id", "anotherKey"))
       assert(result == "COPY someRelation(anotherKey, key1, key2) FROM STDIN CSV")
     }
@@ -129,6 +149,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
   describe ("Building the COPY FROM STDIN data") {
 
     it ("should work") {
+      cancelUnlessPostgres()
       val data = List[JsObject](
        JsObject(Map("key1" -> JsString("hi"), "key2" -> JsString("hello")).toSeq),
        JsObject(Map("key1" -> JsString("hi2"), "key2" -> JsNull).toSeq)
@@ -143,6 +164,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
   describe ("Writing to the data store") {
 
     it("should work with null values") {
+      cancelUnlessPostgres()
       val testRow = JsObject(Map[String, JsValue](
         "key" -> JsNumber(100),
         "some_text" -> JsString("I am sample text."),
@@ -160,6 +182,7 @@ class PostgresExtractionDataStoreSpec extends FunSpec with BeforeAndAfter
   }
 
   it("should correctly handle null values, and insert arrays with escape characters") {
+    cancelUnlessPostgres()
     val jsonArr = Json.parse("""["dobj@","@prep_}as","dobj\"@nsubj","dobj@prep_\\","dobj@prep_to"]""")
     val testRow = JsObject(Map[String, JsValue](
         "key" -> JsNull,

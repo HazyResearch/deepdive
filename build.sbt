@@ -39,3 +39,12 @@ jacoco.settings
 
 parallelExecution in jacoco.Config := false
 
+// print defined tests
+val printTests = taskKey[Unit]("printTests")
+
+printTests := {
+  val tests = (definedTests in Test).value
+  tests map { t =>
+    println(t.name)
+  }
+}

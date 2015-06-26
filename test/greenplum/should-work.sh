@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# A script to test whether the Greenplum tests should be done or not
+set -eu
+
+{
+    cd "$(dirname "$0")"
+    . ./env.sh
+
+    # gpfdist should be on PATH to say Greenplum is there
+    type gpfdist
+    # also check database version
+    [[ "$(db-execute "COPY (SELECT VERSION() LIKE 'Greenplum%') TO STDOUT")" == t ]]  # TODO move this check to db-init?
+    # finally try initializing the configured database
+    db-init
+} &>/dev/null
