@@ -16,14 +16,15 @@ SCALA_MAIN_CLASSPATH_EXPORTED = shell/deepdive-run.classpath
 SCALA_TEST_SOURCES            = $(shell find src/test/scala -name '*.scala')
 SCALA_TEST_CLASSES_DIR        = target/scala-2.10/test-classes
 SCALA_TEST_CLASSPATH_EXPORTED = test/.classpath
+SCALA_COVERAGE_DIR            = target/scala-2.10/scoverage-data
 
 # SBT on PATH
 $(SCALA_MAIN_CLASSES_DIR) \
 $(SCALA_MAIN_CLASSPATH_EXPORTED) \
 $(SCALA_TEST_CLASSES_DIR) \
 $(SCALA_TEST_CLASSPATH_EXPORTED) \
-install: PATH := $(PATH):$(shell pwd)/sbt
-SBT_OPTS = -Xmx4g
+PATH := $(shell pwd)/sbt:$(PATH)
+SBT_OPTS = -Xmx4g -XX:MaxHeapSize=4g -XX:MaxPermSize=4g
 export SBT_OPTS
 
 .PHONY: build
@@ -41,16 +42,17 @@ lib/dw:
 
 .PHONY: test coverage-build
 test: ONLY = $(shell test/enumerate-tests.sh)
-test: $(ONLY) $(SCALA_TEST_CLASSES_DIR) $(SCALA_TEST_CLASSPATH_EXPORTED) lib/dw
+test: $(ONLY) build $(SCALA_TEST_CLASSES_DIR) $(SCALA_TEST_CLASSPATH_EXPORTED) $(SCALA_COVERAGE_DIR)
 	# Running $(words $(ONLY)) tests with Bats
 	#  To test selectively, run:  make test ONLY=/path/to/bats/files
 	#  For a list of tests, run:  make test-list
 	test/bats/bin/bats $(ONLY)
 coverage-build \
+$(SCALA_COVERAGE_DIR) \
 $(SCALA_TEST_CLASSES_DIR): $(SCALA_MAIN_SOURCES) $(SCALA_TEST_SOURCES)
 	# Compiling Scala code for test with coverage
 	sbt coverage compile test:compile
-	touch $(SCALA_TEST_CLASSES_DIR)
+	touch $(SCALA_COVERAGE_DIR) $(SCALA_TEST_CLASSES_DIR)
 $(SCALA_TEST_CLASSPATH_EXPORTED): $(SCALA_BUILD_FILES)
 	# Exporting CLASSPATH for tests
 	sbt coverage "export test:full-classpath" | tail -1 >$@

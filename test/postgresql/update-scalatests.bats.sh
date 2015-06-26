@@ -10,6 +10,7 @@ cd "$(dirname "$0")"
 # Generated: $(date +%FT%T)
 
 . "\$BATS_TEST_DIRNAME"/env.sh >&2
+db-init
 
 EOF
 

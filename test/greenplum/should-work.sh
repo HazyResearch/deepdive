@@ -9,7 +9,5 @@ set -eu
     # gpfdist should be on PATH to say Greenplum is there
     type gpfdist
     # also check database version
-    [[ "$(db-execute "COPY (SELECT VERSION() LIKE 'Greenplum%') TO STDOUT")" == t ]]  # TODO move this check to db-init?
-    # finally try initializing the configured database
-    db-init
+    [[ "$(DBNAME=postgres db-execute "COPY (SELECT VERSION() LIKE '%Greenplum%') TO STDOUT")" == t ]]  # TODO move this check to db-init?
 } &>/dev/null

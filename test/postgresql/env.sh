@@ -7,7 +7,6 @@
 # initialize database
 : ${DEEPDIVE_DB_URL:=postgresql://${TEST_DBHOSTPORT:-localhost}/${TEST_DBNAME:-deepdive_test_$USER}}
 . load-db-driver.sh
-db-init >&2
 
 # environment variables expected by Scala test code
 export PGDATABASE=$DBNAME  # for testing to work with null settings

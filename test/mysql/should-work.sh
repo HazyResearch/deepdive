@@ -6,6 +6,6 @@ set -eu
     cd "$(dirname "$0")"
     . ./env.sh
 
-    # try initializing the configured database for tests
-    db-init
+    # try executing a SQL query against the configured database for tests
+    db-execute "SELECT VERSION()"
 } &>/dev/null
