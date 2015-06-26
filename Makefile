@@ -4,11 +4,9 @@
 
 .PHONY: depends
 depends:
-	@echo "=== Installing and Checking dependencies... ==="
+	# Installing and Checking dependencies...
 	util/install.sh deepdive_build_deps deepdive_runtime_deps
 	lib/check-depends.sh
-	@echo "=== Extracting sampler library... ==="
-	lib/dw_extract.sh
 
 # Some path names for Scala
 SCALA_BUILD_FILES             = build.sbt $(wildcard project/*.*)
@@ -25,9 +23,11 @@ $(SCALA_MAIN_CLASSPATH_EXPORTED) \
 $(SCALA_TEST_CLASSES_DIR) \
 $(SCALA_TEST_CLASSPATH_EXPORTED) \
 install: PATH := $(PATH):$(shell pwd)/sbt
+SBT_OPTS = -Xmx4g
+export SBT_OPTS
 
 .PHONY: build
-build: $(SCALA_MAIN_CLASSES_DIR) $(SCALA_MAIN_CLASSPATH_EXPORTED)
+build: $(SCALA_MAIN_CLASSES_DIR) $(SCALA_MAIN_CLASSPATH_EXPORTED) lib/dw
 $(SCALA_MAIN_CLASSES_DIR): $(SCALA_MAIN_SOURCES)
 	# Compiling Scala code
 	sbt compile
@@ -35,10 +35,13 @@ $(SCALA_MAIN_CLASSES_DIR): $(SCALA_MAIN_SOURCES)
 $(SCALA_MAIN_CLASSPATH_EXPORTED): $(SCALA_BUILD_FILES)
 	# Exporting CLASSPATH
 	sbt "export compile:full-classpath" | tail -1 >$@
+lib/dw:
+	# Extracting sampler library
+	lib/dw_extract.sh
 
 .PHONY: test coverage-build
 test: ONLY = $(shell test/enumerate-tests.sh)
-test: $(ONLY) $(SCALA_TEST_CLASSES_DIR) $(SCALA_TEST_CLASSPATH_EXPORTED)
+test: $(ONLY) $(SCALA_TEST_CLASSES_DIR) $(SCALA_TEST_CLASSPATH_EXPORTED) lib/dw
 	# Running $(words $(ONLY)) tests with Bats
 	#  To test selectively, run:  make test ONLY=/path/to/bats/files
 	#  For a list of tests, run:  make test-list
@@ -67,7 +70,7 @@ checkstyle:
 .PHONY: install
 PREFIX = ~/local
 DEST = $(PREFIX)/bin
-install: depends build
+install: build
 	# Installing DeepDive to $(PREFIX)/
 	mkdir -p $(DEST)
 	ln -sfnv $(realpath shell/deepdive) $(DEST)/

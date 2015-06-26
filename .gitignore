@@ -9,8 +9,7 @@ out/
 out/
 hsql:*
 *.pyc
-/lib/dw_mac
-/lib/dw_linux
+/lib/dw
 /util/sampler-dw
 .cache
 .classpath

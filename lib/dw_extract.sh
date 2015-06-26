@@ -7,15 +7,15 @@ cd "$(dirname "$0")"
 
 case $(uname) in
   Darwin)
-    [ -d dw_mac ] ||
-      ditto -xk dw_mac.zip .  # XXX ditto handles .zip better on OS X
-      # unzip dw_mac.zip
+    ditto -xk dw_mac.zip .  # XXX ditto handles .zip better on OS X
+    # unzip dw_mac.zip
+    mv -f dw_mac dw
     ln -sfnv sampler-dw-mac.sh ../util/sampler-dw
     ;;
 
   Linux*)
-    [ -d dw_linux ] ||
-      unzip dw_linux.zip
+    unzip dw_linux.zip
+    mv -f dw_linux dw
     ln -sfnv sampler-dw-linux.sh ../util/sampler-dw
     ;;
 
