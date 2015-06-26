@@ -15,7 +15,7 @@ CREATE TABLE sentences(
   ner_tags text[],
   sentence_offset bigint,
   sentence_id text -- unique identifier for sentences
-  ) distribute by hash(sentence_id);
+  ) distributed by (sentence_id);
 
 
 DROP TABLE IF EXISTS people_mentions CASCADE;
@@ -25,7 +25,7 @@ CREATE TABLE people_mentions(
   length int,
   text text,
   mention_id text  -- unique identifier for people_mentions
-  ) distribute by hash(sentence_id);
+  ) distributed by (sentence_id);
 
 
 DROP TABLE IF EXISTS has_spouse CASCADE;
@@ -37,7 +37,7 @@ CREATE TABLE has_spouse(
   is_true boolean,
   relation_id text, -- unique identifier for has_spouse
   id bigint   -- reserved for DeepDive
-  ) distribute by hash(sentence_id);
+  ) distributed by (sentence_id);
 
 DROP TABLE IF EXISTS has_spouse_features CASCADE;
 CREATE TABLE has_spouse_features(
