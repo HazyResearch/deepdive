@@ -7,5 +7,5 @@ set -eu
     . ./env.sh
 
     # try executing a SQL query against the configured database for tests
-    DBNAME=postgres db-execute "SELECT VERSION() LIKE '%Postgres%'"
+    DBNAME=postgres db-execute "SELECT VERSION() LIKE '%PostgreSQL%'"
 } &>/dev/null

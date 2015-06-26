@@ -4,7 +4,7 @@
 # load common test environment settings
 . "${BASH_SOURCE%/*}"/../env.sh
 
-export DEEPDIVE_DB_URL="greenplum://${TEST_DBHOSTPORT:-localhost}/${TEST_DBNAME:-deepdive_test_$USER}"
+export DEEPDIVE_DB_URL="greenplum://${TEST_DBHOST:-localhost}/${TEST_DBNAME:-deepdive_test_$USER}"
 . load-db-driver.sh
 
 # environment variables expected by Scala test code
@@ -29,7 +29,8 @@ export GPHOST=${GPHOST:-localhost}
 export GPPORT=${GPPORT:-$((15433 + ${RANDOM:0:4}))}
 export GPLOAD=true
 
-# Launch gpfdist if not launched.
-gpfdist -d $GPPATH -p $GPPORT &
-gpfdist_pid=$!
-trap "kill $gpfdist_pid" EXIT
+# FIXME launching gpfdist hangs Bats
+## Launch gpfdist if not launched.
+#gpfdist -d $GPPATH -p $GPPORT &
+#gpfdist_pid=$!
+#trap "kill $gpfdist_pid" EXIT
