@@ -4,7 +4,7 @@ set -eu
 cd "$(dirname "$0")"/..
 
 list_executable_bats() {
-     find "$@" -name '*.bats' -perm -0111 -maxdepth 1
+     find -L "$@" -name '*.bats' -perm -0111 -maxdepth 1
 } 2>/dev/null
 
 {
