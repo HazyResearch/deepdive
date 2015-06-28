@@ -5,7 +5,7 @@ set -eu
 # locate application root
 at_deepdive_app_root() {
     # recognize an app directory as defined in ../doc/doc/advanced/deepdiveapp.md
-    [[ -e deepdive.conf && -e db.url && -e schema.sql && -x input/init.sh ]]
+    [[ -e deepdive.conf && -e db.url && -e schema.sql ]]
 }
 
 while ! at_deepdive_app_root && [[ $PWD != / ]]; do
@@ -15,5 +15,5 @@ done
 if at_deepdive_app_root; then
     pwd
 else
-    error "Not inside a DeepDive application"
+    error "Not inside a DeepDive application: deepdive.conf, db.url, and schema.sql should be all present in a parent directory"
 fi
