@@ -596,7 +596,7 @@ relation `has_spouse_features`:
 
 ```bash
 deepdive run
-deepdive sql "SELECT * FROM has_spouse_features WHERE relation_id = '118238@10_1_118238@10_7'"
+deepdive sql "SELECT * FROM has_spouse_features WHERE relation_id = '118238@10_1-118238@10_7'"
 ```
 
 The results would look like the following:
@@ -604,12 +604,12 @@ The results would look like the following:
 ```
        relation_id       |          feature
 -------------------------+---------------------------
- 118238@10_1_118238@10_7 | word_between=,
- 118238@10_1_118238@10_7 | word_between=his
- 118238@10_1_118238@10_7 | potential_last_name_match
- 118238@10_1_118238@10_7 | word_between=wife
- 118238@10_1_118238@10_7 | num_words_between=4
- 118238@10_1_118238@10_7 | word_between=and
+ 118238@10_1-118238@10_7 | word_between=,
+ 118238@10_1-118238@10_7 | word_between=his
+ 118238@10_1-118238@10_7 | potential_last_name_match
+ 118238@10_1-118238@10_7 | word_between=wife
+ 118238@10_1-118238@10_7 | num_words_between=4
+ 118238@10_1-118238@10_7 | word_between=and
 (6 rows)
 ```
 
