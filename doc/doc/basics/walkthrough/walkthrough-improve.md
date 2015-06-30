@@ -112,8 +112,8 @@ export REPORT_DIR="$WORKING_DIR/experiment-reports"
 # (the directory that contains braindump.conf)
 export APP_HOME=$WORKING_DIR
 
-# Specify deepdive out directory ($DEEPDIVE_HOME/out)
-export DD_OUTPUT_DIR=$DEEPDIVE_HOME/out
+# Specify deepdive out directory
+export DD_OUTPUT_DIR=$APP_HOME/run
 
 # Database Configuration
 export DBNAME=deepdive_spouse
@@ -171,11 +171,8 @@ export INFERENCE_SAMPLE_SCRIPT="$APP_HOME/bdconfigs/sample-inference.sh"
 
 ########## Conventions. Do not recommend to change. ###########
 
-# Hack: use the last DD run as output dir
-# Suppose out/ is under $DEEPDIVE_HOME/
-# You may need to manually change it based on need
-export DD_TIMESTAMP=`ls -t $DD_OUTPUT_DIR/ | head -n 1`
-export DD_THIS_OUTPUT_DIR=$DD_OUTPUT_DIR/$DD_TIMESTAMP
+export DD_THIS_OUTPUT_DIR=$DD_OUTPUT_DIR/LATEST
+export DD_TIMESTAMP=`date -r $DD_OUTPUT_DIR +%Y%m%d-%H%M%S`
 
 ```
 
@@ -433,7 +430,7 @@ Copy this directory to your `udf/` directory:
 cp -r $DEEPDIVE_HOME/examples/tutorial_example/step2-generic-features/udf/dicts/ ./udf/dicts
 ```
 
-We now modify our feature extractor script `has_spouse_features.py` to use the
+We now modify our feature extractor script `ext_has_spouse_features.py` to use the
 generic feature library and the dictionaries. The new version of the script can
 be found in
 `$DEEPDIVE_HOME/examples/tutorial_example/step2-generic-features/udf/` and can be
@@ -451,7 +448,7 @@ The generic feature library uses additional columns of the `sentences` table to
 generate the feature, therefore we need to modify the `input` of the
 `has_spouse_features` extractor definition in `deepdive.conf` (a modified
 version of `deepdive.conf` is available at
-`$DEEPDIVE_HOME/tutorial_example/step2-generic-features/deepdive.conf`):
+`$DEEPDIVE_HOME/examples/tutorial_example/step2-generic-features/deepdive.conf`):
 
 <script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step2-generic-features/deepdive.conf?footer=minimal&slice=82:112"></script>
 
