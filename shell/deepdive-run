@@ -23,8 +23,10 @@ while getopts "C:c:o:" o; do
         C) APP_HOME=$OPTARG ;;
         c) DEEPDIVE_CONFIG=$OPTARG ;;
         o) DEEPDIVE_OUTPUT=$OPTARG ;;
+        *) usage "$0" "Illegal option given"
     esac
 done
+shift $(($OPTIND - 1))
 
 # find the current application
 # either specified with -C option or via APP_HOME environment
@@ -34,7 +36,7 @@ cd "$APP_HOME"
 
 # find the configuration file for the application
 # defaults to deepdive.conf, which can be overriden via command-line option -c or DEEPDIVE_CONFIG environment
-: ${DEEPDIVE_CONFIG:=$APP_HOME/deepdive.conf}
+: ${DEEPDIVE_CONFIG:=$PWD/deepdive.conf}
 export DEEPDIVE_CONFIG
 
 # load database driver for the application
