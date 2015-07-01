@@ -83,6 +83,14 @@ dd_new_cancer(pid) :-
     person_smokes(pid, l);
     dd_new_smoke(pid),
     dd_delta_person_smokes(pid, l)
-  weight = 3.0
+  weight = 0.5
+  semantics = Imply.
+
+dd_new_smoke(pid) :-
+    dd_delta_smoke(pid1),
+    friend(pid1, pid);
+    dd_new_smoke(pid1),
+    dd_delta_friend(pid1, pid)
+  weight = 0.4
   semantics = Imply.
 

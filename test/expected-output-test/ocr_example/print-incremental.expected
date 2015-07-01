@@ -1,0 +1,83 @@
+features(id BIGSERIAL,
+         word_id INT,
+         feature_id INT,
+         feature_val BOOLEAN).
+
+dd_delta_features(id BIGSERIAL,
+                  word_id INT,
+                  feature_id INT,
+                  feature_val BOOLEAN).
+
+dd_new_features(id BIGSERIAL,
+                word_id INT,
+                feature_id INT,
+                feature_val BOOLEAN).
+
+dd_new_features(id, word_id, feature_id, feature_val) :-
+    features(id, word_id, feature_id, feature_val);
+    dd_delta_features(id, word_id, feature_id, feature_val).
+
+label1(wid INT,
+       val BOOLEAN).
+
+dd_delta_label1(wid INT,
+                val BOOLEAN).
+
+dd_new_label1(wid INT,
+              val BOOLEAN).
+
+dd_new_label1(wid, val) :-
+    label1(wid, val);
+    dd_delta_label1(wid, val).
+
+label2(wid INT,
+       val BOOLEAN).
+
+dd_delta_label2(wid INT,
+                val BOOLEAN).
+
+dd_new_label2(wid INT,
+              val BOOLEAN).
+
+dd_new_label2(wid, val) :-
+    label2(wid, val);
+    dd_delta_label2(wid, val).
+
+q1?(wid INT).
+
+dd_delta_q1?(wid INT).
+
+dd_new_q1?(wid INT).
+
+dd_new_q1(wid) :-
+    q1(wid);
+    dd_delta_q1(wid).
+
+q2?(wid INT).
+
+dd_delta_q2?(wid INT).
+
+dd_new_q2?(wid INT).
+
+dd_new_q2(wid) :-
+    q2(wid);
+    dd_delta_q2(wid).
+
+dd_delta_q1(wid) :-
+    dd_delta_label1(wid, val)
+  label = val.
+
+dd_delta_q2(wid) :-
+    dd_delta_label2(wid, val)
+  label = val.
+
+dd_new_q1(wid) :-
+    dd_delta_features(id, wid, fid, fval)
+  weight = fid
+  semantics = Imply.
+
+dd_new_q2(wid) :-
+    dd_delta_features(id, wid, fid, fval)
+  weight = fid
+  semantics = Imply.
+

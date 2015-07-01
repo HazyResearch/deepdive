@@ -1,0 +1,246 @@
+
+  deepdive.db.default {
+    driver: "org.postgresql.Driver"
+    url: "jdbc:postgresql://"${PGHOST}":"${PGPORT}"/"${DBNAME}
+    user: ${PGUSER}
+    password: ${PGPASSWORD}
+    dbname: ${DBNAME}
+    host: ${PGHOST}
+    port: ${PGPORT}
+    incremental_mode: INCREMENTAL
+    }
+    
+
+      deepdive.schema.keys {
+        dd_new_q1 : [wid]
+        dd_delta_q2 : [wid]
+        dd_delta_q1 : [wid]
+        dd_new_q2 : [wid]
+      }
+
+      deepdive.schema.variables {
+        dd_delta_q1.label: Boolean
+dd_new_q2.label: Boolean
+dd_new_q1.label: Boolean
+q2.label: Boolean
+dd_delta_q2.label: Boolean
+q1.label: Boolean
+      }
+    
+
+          deepdive.extraction.extractors.extraction_rule_10 {
+            sql: """ DROP TABLE IF EXISTS dd_new_label2 CASCADE;
+            CREATE TABLE
+            dd_new_label2(wid INT,
+             val BOOLEAN)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.extraction_rule_5 {
+            sql: """ DROP TABLE IF EXISTS dd_delta_label1 CASCADE;
+            CREATE TABLE
+            dd_delta_label1(wid INT,
+               val BOOLEAN)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.extraction_rule_6 {
+            sql: """ DROP TABLE IF EXISTS dd_new_label1 CASCADE;
+            CREATE TABLE
+            dd_new_label1(wid INT,
+             val BOOLEAN)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.extraction_rule_1 {
+            sql: """ DROP TABLE IF EXISTS dd_delta_features CASCADE;
+            CREATE TABLE
+            dd_delta_features(id BIGSERIAL,
+                 word_id INT,
+                 feature_id INT,
+                 feature_val BOOLEAN)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.extraction_rule_17 {
+            sql: """ DROP TABLE IF EXISTS dd_delta_q2 CASCADE;
+            CREATE TABLE
+            dd_delta_q2(wid INT,
+           id bigint,
+           label boolean)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.extraction_rule_9 {
+            sql: """ DROP TABLE IF EXISTS dd_delta_label2 CASCADE;
+            CREATE TABLE
+            dd_delta_label2(wid INT,
+               val BOOLEAN)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.extraction_rule_2 {
+            sql: """ DROP TABLE IF EXISTS dd_new_features CASCADE;
+            CREATE TABLE
+            dd_new_features(id BIGSERIAL,
+               word_id INT,
+               feature_id INT,
+               feature_val BOOLEAN)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.extraction_rule_13 {
+            sql: """ DROP TABLE IF EXISTS dd_delta_q1 CASCADE;
+            CREATE TABLE
+            dd_delta_q1(wid INT,
+           id bigint,
+           label boolean)
+            """
+            style: "sql_extractor"
+          }
+
+        deepdive.extraction.extractors.cleanup {
+          sql: """
+          TRUNCATE dd_new_label2;
+          TRUNCATE dd_delta_label1;
+          TRUNCATE dd_new_label1;
+          TRUNCATE dd_delta_features;
+          TRUNCATE dd_delta_q2;
+          TRUNCATE dd_delta_label2;
+          TRUNCATE dd_new_features;
+          TRUNCATE dd_delta_q1;
+          """
+          style: "sql_extractor"
+        }
+
+      deepdive.extraction.extractors.extraction_rule_11 {
+        sql: """ TRUNCATE dd_new_label2;
+        INSERT INTO dd_new_label2 
+            SELECT R0.wid, R0.val
+            FROM label2 R0
+         UNION ALL 
+            SELECT R0.wid, R0.val
+            FROM dd_delta_label2 R0
+        
+        """
+        style: "sql_extractor"
+          
+      }
+    
+
+      deepdive.extraction.extractors.extraction_rule_15 {
+        sql: """ 
+        CREATE VIEW dd_new_q1 AS SELECT DISTINCT R0.wid, id, label
+          FROM q1 R0
+        
+           UNION ALL SELECT DISTINCT R0.wid, id, label
+          FROM dd_delta_q1 R0
+        
+          
+        """
+        style: "sql_extractor"
+          dependencies: [ "extraction_rule_20" ]
+      }
+    
+
+      deepdive.extraction.extractors.extraction_rule_7 {
+        sql: """ TRUNCATE dd_new_label1;
+        INSERT INTO dd_new_label1 
+            SELECT R0.wid, R0.val
+            FROM label1 R0
+         UNION ALL 
+            SELECT R0.wid, R0.val
+            FROM dd_delta_label1 R0
+        
+        """
+        style: "sql_extractor"
+          
+      }
+    
+
+      deepdive.extraction.extractors.extraction_rule_21 {
+        sql: """ 
+        INSERT INTO dd_delta_q2 SELECT DISTINCT R0.wid, 0 as id, R0.val AS label
+          FROM dd_delta_label2 R0
+        
+          
+        """
+        style: "sql_extractor"
+          
+      }
+    
+
+      deepdive.extraction.extractors.extraction_rule_3 {
+        sql: """ TRUNCATE dd_new_features;
+        INSERT INTO dd_new_features 
+            SELECT R0.id, R0.word_id, R0.feature_id, R0.feature_val
+            FROM features R0
+         UNION ALL 
+            SELECT R0.id, R0.word_id, R0.feature_id, R0.feature_val
+            FROM dd_delta_features R0
+        
+        """
+        style: "sql_extractor"
+          
+      }
+    
+
+      deepdive.extraction.extractors.extraction_rule_20 {
+        sql: """ 
+        INSERT INTO dd_delta_q1 SELECT DISTINCT R0.wid, 0 as id, R0.val AS label
+          FROM dd_delta_label1 R0
+        
+          
+        """
+        style: "sql_extractor"
+          
+      }
+    
+
+      deepdive.extraction.extractors.extraction_rule_19 {
+        sql: """ 
+        CREATE VIEW dd_new_q2 AS SELECT DISTINCT R0.wid, id, label
+          FROM q2 R0
+        
+           UNION ALL SELECT DISTINCT R0.wid, id, label
+          FROM dd_delta_q2 R0
+        
+          
+        """
+        style: "sql_extractor"
+          dependencies: [ "extraction_rule_21" ]
+      }
+    
+
+        deepdive.inference.factors.dd_new_q2_0 {
+          input_query: """
+          SELECT R0.id AS "dd_new_q2.R0.id" , R1.feature_id AS "dd_delta_features.R1.feature_id" 
+          FROM dd_new_q2 R0, dd_delta_features R1
+        WHERE R1.word_id = R0.wid """
+          function: "Imply(dd_new_q2.R0.label)"
+          weight: "?(dd_delta_features.R1.feature_id)"
+        }
+      
+
+        deepdive.inference.factors.dd_new_q1_1 {
+          input_query: """
+          SELECT R0.id AS "dd_new_q1.R0.id" , R1.feature_id AS "dd_delta_features.R1.feature_id" 
+          FROM dd_new_q1 R0, dd_delta_features R1
+        WHERE R1.word_id = R0.wid """
+          function: "Imply(dd_new_q1.R0.label)"
+          weight: "?(dd_delta_features.R1.feature_id)"
+        }
+      
+deepdive.pipeline.run: ${PIPELINE}
+deepdive.pipeline.pipelines.initdb: [extraction_rule_10, extraction_rule_5, extraction_rule_14, extraction_rule_6, extraction_rule_1, extraction_rule_17, extraction_rule_9, extraction_rule_2, extraction_rule_13, extraction_rule_18]
+deepdive.pipeline.pipelines.extraction: [extraction_rule_21, extraction_rule_7, extraction_rule_20, extraction_rule_19, extraction_rule_3, extraction_rule_11, extraction_rule_15]
+deepdive.pipeline.pipelines.inference: [dd_new_q2_0, dd_new_q1_1]
+deepdive.pipeline.pipelines.cleanup: [cleanup]
+deepdive.pipeline.base_dir: ${BASEDIR}
