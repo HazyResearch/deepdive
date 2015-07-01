@@ -39,7 +39,7 @@ case class SchemaDeclaration( a : Attribute , isQuery : Boolean ) extends Statem
 case class FunctionDeclaration( functionName: String, inputType: RelationType, outputType: RelationType, implementations: List[FunctionImplementationDeclaration], mode: String = null) extends Statement
 case class ExtractionRule(q : ConjunctiveQuery, supervision: String = null) extends Statement // Extraction rule
 case class FunctionCallRule(input : String, output : String, function : String) extends Statement // Extraction rule
-case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, semantics : String = "Imply") extends Statement // Weighted rule
+case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, semantics : String = "Imply", mode: String = null) extends Statement // Weighted rule
 
 
 // Parser
@@ -67,6 +67,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def functionName = ident
   def semanticType = ident
   def functionModeType = ident
+  def inferenceModeType = ident
 
   def columnDeclaration: Parser[Column] =
     columnName ~ columnType ^^ {
@@ -116,6 +117,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
     )
 
   def functionMode = "mode" ~> "=" ~> functionModeType
+  def inferenceMode = "mode" ~> "=" ~> inferenceModeType
 
   def functionImplementation : Parser[FunctionImplementationDeclaration] =
     "implementation" ~ stringLiteralAsString ~ "handles" ~ ("tsv" | "json") ~ "lines" ^^ {
@@ -156,10 +158,10 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def semantics = "semantics" ~> "=" ~> semanticType
 
   def inferenceRule : Parser[InferenceRule] =
-    ( conjunctiveQuery ~ factorWeight ~ opt(semantics)
+    ( conjunctiveQuery ~ factorWeight ~ opt(semantics) ~ opt(inferenceMode)
     ) ^^ {
-      case (q ~ weight ~ semantics) =>
-        InferenceRule(q, weight, semantics.getOrElse("Imply"))
+      case (q ~ weight ~ semantics ~ mode) =>
+        InferenceRule(q, weight, semantics.getOrElse("Imply"), mode.getOrElse(null))
     }
 
   // rules or schema elements in arbitrary order

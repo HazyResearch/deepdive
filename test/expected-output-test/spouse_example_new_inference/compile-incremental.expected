@@ -360,9 +360,19 @@ dd_new_has_spouse.label: Boolean
           weight: "?(has_spouse_features.R2.feature)"
         }
       
+
+        deepdive.inference.factors.dd_new_has_spouse_1 {
+          input_query: """
+          SELECT R0.id AS "dd_new_has_spouse.R0.id" , R1.id AS "dd_new_has_spouse.R1.id" 
+          FROM dd_new_has_spouse R0, dd_new_has_spouse R1, dd_new_has_spouse_candidates R2, dd_new_has_spouse_candidates R3
+        WHERE R2.relation_id = R0.relation_id  AND R3.person1_id = R2.person2_id  AND R3.person2_id = R2.person1_id  AND R3.relation_id = R1.relation_id """
+          function: "Imply(dd_new_has_spouse.R1.label, dd_new_has_spouse.R0.label)"
+          weight: "3.0"
+        }
+      
 deepdive.pipeline.run: ${PIPELINE}
 deepdive.pipeline.pipelines.initdb: [extraction_rule_1, extraction_rule_10, extraction_rule_17, extraction_rule_2, extraction_rule_14, extraction_rule_18, extraction_rule_6, extraction_rule_9, extraction_rule_13, extraction_rule_5, extraction_rule_21, extraction_rule_22]
 deepdive.pipeline.pipelines.extraction: [extraction_rule_7, extraction_rule_28, extraction_rule_25, extraction_rule_31, extraction_rule_19, extraction_rule_3, extraction_rule_33, extraction_rule_30, extraction_rule_23, extraction_rule_27, extraction_rule_11, extraction_rule_24, extraction_rule_15]
-deepdive.pipeline.pipelines.inference: [dd_new_has_spouse_0]
+deepdive.pipeline.pipelines.inference: [dd_new_has_spouse_0, dd_new_has_spouse_1]
 deepdive.pipeline.pipelines.cleanup: [cleanup]
 deepdive.pipeline.base_dir: ${BASEDIR}
