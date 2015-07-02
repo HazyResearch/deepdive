@@ -17,6 +17,17 @@ case class Attribute(name : String, terms : List[Variable], types : List[String]
 case class ConjunctiveQuery(head: Atom, bodies: List[List[Atom]])
 case class Column(name : String, t : String)
 
+// variable type
+sealed trait VariableType {
+  def cardinality: Long
+}
+case object BooleanType extends VariableType {
+  def cardinality = 2
+}
+case class MultinomialType(numCategories: Int) extends VariableType {
+  def cardinality = numCategories
+}
+
 sealed trait FactorWeight {
   def variables : List[String]
 }
@@ -35,7 +46,7 @@ case class RowWiseLineHandler(format: String, command: String) extends FunctionI
 
 // Statements that will be parsed and compiled
 trait Statement
-case class SchemaDeclaration( a : Attribute , isQuery : Boolean ) extends Statement // atom and whether this is a query relation.
+case class SchemaDeclaration( a : Attribute , isQuery : Boolean, variableType : Option[VariableType] = None) extends Statement // atom and whether this is a query relation.
 case class FunctionDeclaration( functionName: String, inputType: RelationType, outputType: RelationType, implementations: List[FunctionImplementationDeclaration], mode: String = null) extends Statement
 case class ExtractionRule(q : ConjunctiveQuery, supervision: String = null) extends Statement // Extraction rule
 case class FunctionCallRule(input : String, output : String, function : String) extends Statement // Extraction rule
@@ -73,12 +84,21 @@ class DeepDiveLogParser extends JavaTokenParsers {
     columnName ~ columnType ^^ {
       case(name ~ ty) => Column(name, ty)
     }
+
+  def CategoricalParser = "Categorical" ~> "(" ~> """\d+""".r <~ ")" ^^ { n => MultinomialType(n.toInt) }
+  def BooleanParser = "Boolean" ^^ { s => BooleanType }
+  def dataType = CategoricalParser | BooleanParser
+
   def schemaDeclaration: Parser[SchemaDeclaration] =
-    relationName ~ opt("?") ~ "(" ~ rep1sep(columnDeclaration, ",") ~ ")" ^^ {
-      case (r ~ isQuery ~ "(" ~ attrs ~ ")") => {
+    relationName ~ opt("?") ~ "(" ~ rep1sep(columnDeclaration, ",") ~ ")" ~ opt(dataType) ^^ {
+      case (r ~ isQuery ~ "(" ~ attrs ~ ")" ~ vType) => {
         val vars = attrs.zipWithIndex map { case(x, i) => Variable(x.name, r, i) }
         var types = attrs map { case(x) => x.t }
-        SchemaDeclaration(Attribute(r, vars, types), (isQuery != None))
+        val variableType = vType match {
+          case None => if (isQuery != None) Some(BooleanType) else None
+          case Some(s) => Some(s)
+        }
+        SchemaDeclaration(Attribute(r, vars, types), (isQuery != None), variableType)
       }
     }
 

@@ -86,6 +86,9 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
 
   var ground_relations : Map[ String, Boolean ]  = new HashMap[ String, Boolean ]()
 
+  // map relation name -> variable type
+  var variableType : Map[String, VariableType]   = new HashMap[String, VariableType]()
+
   var function_schema : Map[String, FunctionDeclaration] = new HashMap[ String, FunctionDeclaration]()
 
   // The dependency graph between statements.
@@ -109,11 +112,12 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
     // generate the statements.
     mode = config.mode
     statements.foreach {
-      case SchemaDeclaration(Attribute(r, terms, types), isQuery) => {
+      case SchemaDeclaration(Attribute(r, terms, types), isQuery, vType) => {
         terms.foreach {
           case Variable(n,r,i) =>
             schema           += { (r,i) -> n }
             ground_relations += { r -> !isQuery } // record whether a query or a ground term.
+            if (isQuery) variableType += { r -> vType.get }
         }
         if (isQuery) variableTableNames += r
       }
@@ -312,7 +316,13 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
         var columnDecls = stmt.a.terms map {
           case Variable(name, _, i) => s"${name} ${stmt.a.types(i)}"
         }
-        if (stmt.isQuery) columnDecls = columnDecls :+ "id bigint" :+ "label boolean"
+        if (stmt.isQuery) {
+          val labelColumn = stmt.variableType match {
+            case Some(BooleanType)        => "label boolean"
+            case Some(MultinomialType(_)) => "label int"
+          }
+          columnDecls = columnDecls :+ "id bigint" :+ labelColumn
+        }
         val indentation = " " * stmt.a.name.length
         val blockName = ss.resolveExtractorBlockName(stmt)
         schemas += s"""
@@ -493,7 +503,11 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           else ""
           }).filter(_ != "")
           val firstFunc = funcBody(0)
-          func = s"""${stmt.semantics}(${(funcBody.tail :+ firstFunc).mkString(", ")})"""
+          val function  = ss.variableType get stmt.q.head.name match {
+            case Some(BooleanType)        => stmt.semantics
+            case Some(MultinomialType(_)) => "Multinomial"
+          }
+          func = s"""${function}(${(funcBody.tail :+ firstFunc).mkString(", ")})"""
         }
         // weight
         if (weight.length == 0)
@@ -581,8 +595,14 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     var schema = Set[String]()
     // generate the statements.
     statements.foreach {
-      case SchemaDeclaration(a, isQuery) =>
-        if (isQuery) schema += s"${a.name}.label: Boolean"
+      case SchemaDeclaration(a, isQuery, variableType) =>
+        if (isQuery) {
+          val variableTypeDecl = variableType match {
+            case Some(BooleanType)        => "Boolean"
+            case Some(MultinomialType(x)) => s"Categorical(${x})"
+          }
+          schema += s"${a.name}.label: ${variableTypeDecl}"
+        }
       case _ => ()
     }
     val ddSchema = s"""
