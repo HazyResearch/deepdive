@@ -1,0 +1,128 @@
+
+  deepdive.db.default {
+    driver: "org.postgresql.Driver"
+    url: "jdbc:postgresql://"${PGHOST}":"${PGPORT}"/"${DBNAME}
+    user: ${PGUSER}
+    password: ${PGPASSWORD}
+    dbname: ${DBNAME}
+    host: ${PGHOST}
+    port: ${PGPORT}
+    incremental_mode: ORIGINAL
+    }
+    
+
+
+      deepdive.schema.variables {
+        tag.label: Categorical(13)
+      }
+    
+
+          deepdive.extraction.extractors.extraction_rule_0 {
+            sql: """ DROP TABLE IF EXISTS words_raw CASCADE;
+            CREATE TABLE
+            words_raw(word_id bigserial,
+         word text,
+         pos text,
+         tag text)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.extraction_rule_1 {
+            sql: """ DROP TABLE IF EXISTS words CASCADE;
+            CREATE TABLE
+            words(sent_id bigint,
+     word_id bigint,
+     word text,
+     pos text,
+     true_tag text)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.extraction_rule_3 {
+            sql: """ DROP TABLE IF EXISTS tag CASCADE;
+            CREATE TABLE
+            tag(word_id bigint,
+   id bigint,
+   label int)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.extraction_rule_2 {
+            sql: """ DROP TABLE IF EXISTS word_features CASCADE;
+            CREATE TABLE
+            word_features(word_id bigint,
+             feature text)
+            """
+            style: "sql_extractor"
+          }
+
+        deepdive.extraction.extractors.cleanup {
+          sql: """
+          TRUNCATE words_raw;
+          TRUNCATE words;
+          TRUNCATE tag;
+          TRUNCATE word_features;
+          """
+          style: "sql_extractor"
+        }
+
+      deepdive.extraction.extractors.extraction_rule_6 {
+        sql: """ DROP VIEW IF EXISTS ext_features_input;
+        CREATE VIEW ext_features_input AS 
+            SELECT R0.word_id AS "words.R0.word_id" , R0.word AS "words.R0.word" , R0.pos AS "words.R0.pos" , R1.word AS "words.R1.word" , R1.pos AS "words.R1.pos" 
+            FROM words R0, words R1
+        WHERE R1.sent_id = R0.sent_id 
+        """
+        style: "sql_extractor"
+          dependencies: [ "extraction_rule_5" ]
+      }
+    
+
+      deepdive.extraction.extractors.extraction_rule_9 {
+        sql: """ 
+        INSERT INTO tag SELECT DISTINCT R0.sent_id, 0 as id, R0.true_tag AS label
+          FROM words R0
+        
+          
+        """
+        style: "sql_extractor"
+          dependencies: [ "extraction_rule_5" ]
+      }
+    
+
+        deepdive.extraction.extractors.extraction_rule_8 {
+          input: """ SELECT * FROM ext_features_input
+          """
+          output_relation: "word_features"
+          udf: ${APP_HOME}"/udf/ext_features.py"
+          style: "tsv_extractor" 
+          dependencies: [ "extraction_rule_6" ]
+        }
+      
+
+        deepdive.extraction.extractors.extraction_rule_5 {
+          input: """ SELECT * FROM words_raw
+          """
+          output_relation: "words"
+          udf: ${APP_HOME}"/udf/ext_training.py"
+          style: "tsv_extractor" 
+          
+        }
+      
+
+        deepdive.inference.factors.tag_0 {
+          input_query: """
+          SELECT R0.id AS "tag.R0.id" , R1.feature AS "word_features.R1.feature" 
+          FROM tag R0, word_features R1
+        WHERE R1.word_id = R0.word_id """
+          function: "Multinomial(tag.R0.label)"
+          weight: "?(word_features.R1.feature)"
+        }
+      
+deepdive.pipeline.run: ${PIPELINE}
+deepdive.pipeline.pipelines.initdb: [extraction_rule_0, extraction_rule_1, extraction_rule_3, extraction_rule_2]
+deepdive.pipeline.pipelines.extraction: [extraction_rule_6, extraction_rule_9, extraction_rule_8, extraction_rule_5]
+deepdive.pipeline.pipelines.inference: [tag_0]
