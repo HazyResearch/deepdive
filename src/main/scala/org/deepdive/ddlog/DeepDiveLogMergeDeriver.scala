@@ -20,7 +20,7 @@ object DeepDiveLogMergeDeriver{
     )
 
     ExtractionRule(ConjunctiveQuery(Atom(stmt.a.name, stmt.a.terms),
-      List(List(Atom(incNewStmt.a.name, incNewStmt.a.terms)))))
+      List(List(Atom(incNewStmt.a.name, incNewStmt.a.terms))), Nil))
   }
 
   def derive(program: DeepDiveLog.Program): DeepDiveLog.Program = {

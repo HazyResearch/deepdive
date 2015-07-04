@@ -194,8 +194,8 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
     // and stick it in a map.
     val qs = new QuerySchema(z)
 
-    val whereClause = z.bodies(0).zipWithIndex flatMap {
-      case (Atom(relName, terms),body_index) =>
+    var whereClause = z.bodies(0).zipWithIndex flatMap {
+      case (Atom(relName, terms),body_index) => {
         terms flatMap {
           case Variable(varName, relName, index) =>
             val canonical_body_index = qs.getBodyIndex(varName)
@@ -205,9 +205,30 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
               val real_attr_name2 = resolveName( qs.getVar(varName))
               Some(s"R${ body_index }.${ real_attr_name1 } = R${ canonical_body_index }.${ real_attr_name2 } ")
             } else { None }
+          // a constant in body means a equality condition
+          case Constant(value, r, i) => {
+            val attr = schema(relName, i)
+            Some(s"R${body_index}.${attr} = ${value}")
+          }
         }
+      }
     }
-    val whereClauseStr = whereClause match {
+    println(whereClause)
+
+    // resolve conditions
+    val conditions = z.conditions(0) flatMap { case Condition(lhs, op, rhs, isRhsValue) =>
+      val resolvedLhs = resolveColumn(lhs, qs, z, OriginalOnly)
+      val resolvedRhs = isRhsValue match {
+        case true  => Some(rhs)
+        case false => resolveColumn(rhs, qs, z, OriginalOnly)
+      }
+      Some(s"${resolvedLhs.get} ${op} ${resolvedRhs.get}")
+    }
+    println(conditions)
+    
+    whereClause = whereClause ++ conditions
+
+    var whereClauseStr = whereClause match {
       case Nil => ""
       case _ => s"""WHERE ${whereClause.mkString(" AND ")}"""
     }
@@ -290,6 +311,7 @@ class QuerySchema(q : ConjunctiveQuery) {
           case Variable(v, r, i) =>
             if( ! (query_schema contains v) )
               query_schema += { v -> (index, Variable(v,r,i) ) }
+          case _ =>
         }
       }
     }
@@ -354,13 +376,14 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     var inputQueries = new ListBuffer[String]()
     for (stmt <- stmts) {
       for (cqBody <- stmt.q.bodies) {
-        val tmpCq = ConjunctiveQuery(stmt.q.head, List(cqBody))
+        val tmpCq = ConjunctiveQuery(stmt.q.head, List(cqBody), stmt.q.conditions)
         // Generate the body of the query.
         val qs              = new QuerySchema( tmpCq )
         if (stmt.supervision != null) {
           if (stmt.q.bodies.length > 1) ss.error(s"Scoping rule does not allow disjunction.\n")
           val headTerms = tmpCq.head.terms map {
             case Variable(v,r,i) => s"R${i}.${ss.resolveName(qs.getVar(v)) }"
+            case Constant(v,r,i) => Some(v)
           }
           val index = qs.getBodyIndex(stmt.supervision)
           val name  = ss.resolveName(qs.getVar(stmt.supervision))
@@ -372,6 +395,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
         } else if ((ss.schemaDeclarationGroupByHead contains stmt.q.head.name) && (ss.schemaDeclarationGroupByHead(stmt.q.head.name)(0).isQuery) && (stmt.q.head.name startsWith "dd_new_")) {
           val headTerms = tmpCq.head.terms map {
             case Variable(v,r,i) => s"R${i}.${ss.resolveName(qs.getVar(v)) }"
+            case Constant(v,r,i) => Some(v)
           }
           val headTermsStr = ( headTerms :+ "id" ).mkString(", ")
           inputQueries += s"""SELECT DISTINCT ${ headTermsStr }, label
@@ -390,6 +414,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           }
           val variableCols = tmpCq.head.terms flatMap {
             case(Variable(v,rr,i)) => ss.resolveColumn(v, qs, tmpCq, resolveColumnFlag)
+            case Constant(v,rr,i)  => Some(v)
           }
 
           val selectStr = variableCols.mkString(", ")
@@ -471,7 +496,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       for (cqBody <- stmt.q.bodies) {
         // edge query
         val fakeBody        = stmt.q.head +: cqBody
-        val fakeCQ          = ConjunctiveQuery(stmt.q.head, List(fakeBody)) // we will just use the fakeBody below.
+        val fakeCQ          = ConjunctiveQuery(stmt.q.head, List(fakeBody), stmt.q.conditions) // we will just use the fakeBody below.
 
         val index = cqBody.length + 1
         val qs2 = new QuerySchema( fakeCQ )

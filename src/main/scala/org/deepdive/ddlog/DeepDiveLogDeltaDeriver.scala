@@ -23,12 +23,18 @@ object DeepDiveLogDeltaDeriver{
     val incCqHead = if (isInference) {
       cq.head.copy(
         name = newPrefix + cq.head.name,
-        terms = cq.head.terms map {term => term.copy(relName = newPrefix + term.relName)}
+        terms = cq.head.terms map {
+          case term: Variable => term.copy(relName = newPrefix + term.relName)
+          case term: Constant => term
+        }
       )
     } else {
       cq.head.copy(
         name = deltaPrefix + cq.head.name,
-        terms = cq.head.terms map {term => term.copy(relName = deltaPrefix + term.relName)}
+        terms = cq.head.terms map {
+          case term: Variable => term.copy(relName = deltaPrefix + term.relName)
+          case term: Constant => term
+        }
       )
     }
 
@@ -39,14 +45,20 @@ object DeepDiveLogDeltaDeriver{
       val incDeltaBody = body map {
         a => a.copy(
           name = deltaPrefix + a.name,
-          terms = a.terms map {term => term.copy(relName = deltaPrefix + term.relName)}
+          terms = a.terms map {
+            case term: Variable => term.copy(relName = deltaPrefix + term.relName)
+            case term: Constant => term
+          }
         )
       }
       // New body
       val incNewBody = body map {
         a => a.copy(
           name = newPrefix + a.name,
-          terms = a.terms map {term => term.copy(relName = newPrefix + term.relName)}
+          terms = a.terms map {
+            case term: Variable => term.copy(relName = newPrefix + term.relName)
+            case term: Constant => term
+          }
         )
       }
       var i = 0
@@ -69,7 +81,7 @@ object DeepDiveLogDeltaDeriver{
         }
       }
     }
-    ConjunctiveQuery(incCqHead, incCqBodies.toList)
+    ConjunctiveQuery(incCqHead, incCqBodies.toList, Nil)
   }
 
   // Incremental scheme declaration,
@@ -101,7 +113,7 @@ object DeepDiveLogDeltaDeriver{
 
     // if (!stmt.isQuery) {
     incrementalStatement += ExtractionRule(ConjunctiveQuery(Atom(incNewStmt.a.name, incNewStmt.a.terms),
-      List(List(Atom(stmt.a.name, stmt.a.terms)), List(Atom(incDeltaStmt.a.name, incDeltaStmt.a.terms)))))
+      List(List(Atom(stmt.a.name, stmt.a.terms)), List(Atom(incDeltaStmt.a.name, incDeltaStmt.a.terms))), Nil))
     // }
     incrementalStatement.toList
   }

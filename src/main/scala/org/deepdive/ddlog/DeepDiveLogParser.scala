@@ -10,12 +10,20 @@ import scala.util.Try
 // ***************************************
 // * The union types for for the parser. *
 // ***************************************
-case class Variable(varName : String, relName : String, index : Int )
+// case class Variable(varName : String, relName : String, index : Int )
 // TODO make Atom a trait, and have multiple case classes, e.g., RelationAtom and CondExprAtom
-case class Atom(name : String, terms : List[Variable])
+// ddlog column variable type: constant or variable
+sealed trait ColumnVariable
+case class Variable(varName : String, relName : String, index : Int ) extends ColumnVariable
+case class Constant(value : String, relName: String, index: Int) extends ColumnVariable
+case class Atom(name : String, terms : List[ColumnVariable])
 case class Attribute(name : String, terms : List[Variable], types : List[String])
-case class ConjunctiveQuery(head: Atom, bodies: List[List[Atom]])
+case class ConjunctiveQuery(head: Atom, bodies: List[List[Atom]], conditions: List[List[Condition]])
 case class Column(name : String, t : String)
+
+// condition
+case class Condition(lhs: String, op: String, rhs: String, isRhsValue: Boolean)
+case class BodyWithConditions(body: List[Atom], conditions: List[Condition])
 
 // variable type
 sealed trait VariableType {
@@ -63,6 +71,10 @@ class DeepDiveLogParser extends JavaTokenParsers {
     s => StringEscapeUtils.unescapeJava(
       s.stripPrefix("\"").stripSuffix("\""))
   }
+  def stringLiteralAsSqlString = stringLiteral ^^ { s =>
+    s"""'${s.stripPrefix("\"").stripSuffix("\"")}'"""
+  }
+  def constant = stringLiteralAsSqlString | wholeNumber
 
   // C/Java/Scala-style as well as shell script-style comments are supported
   // by treating them as whiteSpace
@@ -102,31 +114,52 @@ class DeepDiveLogParser extends JavaTokenParsers {
       }
     }
 
+  def variable = variableName ^^ { Variable(_, "", 0) }
+  def columnConstant = constant ^^ { Constant(_, "", 0) }
+  def column = columnConstant | variable
 
   // TODO support aggregate function syntax somehow
-  def cqHead = relationName ~ "(" ~ repsep(variableName, ",") ~ ")" ^^ {
+  def cqHead = relationName ~ "(" ~ repsep(column, ",") ~ ")" ^^ {
       case (r ~ "(" ~ variableUses ~ ")") =>
         Atom(r, variableUses.zipWithIndex map {
-          case(name,i) => Variable(name, r, i)
+          case(Variable(name,_,_),i) => Variable(name, r, i)
+          case(Constant(name,_,_),i) => Constant(name, r, i)
         })
     }
 
   // TODO add conditional expressions for where clause
   def cqConditionalExpr = failure("No conditional expression supported yet")
   def cqBodyAtom: Parser[Atom] =
-    ( relationName ~ "(" ~ repsep(variableName, ",") ~ ")" ^^ {
+    ( relationName ~ "(" ~ repsep(column, ",") ~ ")" ^^ {
         case (r ~ "(" ~ variableBindings ~ ")") =>
           Atom(r, variableBindings.zipWithIndex map {
-            case(name,i) => Variable(name, r, i)
+            case(Variable(name,_,_),i) => Variable(name, r, i)
+            case(Constant(name,_,_),i) => Constant(name, r, i)
           })
       }
     | cqConditionalExpr
     )
   def cqBody: Parser[List[Atom]] = rep1sep(cqBodyAtom, ",")
+
+  // conditions
+  def convertOperator = "||" | "::"
+  def filterOperator = "LIKE" | ">" | "<" | ">=" | "<=" | "!=" | "="
+  def conditionWithConstant = variableName ~ filterOperator ~ constant ^^ {
+    case (lhs ~ op ~ rhs) => Condition(lhs, op, rhs, true)
+  }
+  def conditionWithVariable = variableName ~ filterOperator ~ variableName ^^ {
+    case (lhs ~ op ~ rhs) => Condition(lhs, op, rhs, false)
+  }
+  def condition = conditionWithVariable | conditionWithConstant
+  def cqCondition: Parser[List[Condition]] = repsep(condition, ",")
+  def cqBodyWithCondition = cqBody ~ opt(",") ~ cqCondition ^^ {
+    case (b ~ o ~ c) => BodyWithConditions(b, c)
+  }
+
   def conjunctiveQuery : Parser[ConjunctiveQuery] =
-    cqHead ~ ":-" ~ rep1sep(cqBody, ";") ^^ {
+    cqHead ~ ":-" ~ rep1sep(cqBodyWithCondition, ";") ^^ {
       case (headatom ~ ":-" ~ disjunctiveBodies) =>
-        ConjunctiveQuery(headatom, disjunctiveBodies)
+        ConjunctiveQuery(headatom, disjunctiveBodies.map(_.body), disjunctiveBodies.map(_.conditions))
     }
 
   def relationType: Parser[RelationType] =
