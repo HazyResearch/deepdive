@@ -16,7 +16,15 @@ import scala.util.Try
 sealed trait ColumnVariable
 case class Variable(varName : String, relName : String, index : Int ) extends ColumnVariable
 case class Constant(value : String, relName: String, index: Int) extends ColumnVariable
-case class Atom(name : String, terms : List[ColumnVariable])
+case class Expression(variables: List[ColumnVariable], ops: List[String], relName: String, index: Int) {
+  def print(resolve: ColumnVariable => String) = {
+    val resolvedVars = variables map (resolve(_))
+    resolvedVars(0) + ((ops zip resolvedVars.drop(1)).map { case (a,b) => s"${a} ${b}" }).mkString
+  }
+}
+case class Operator(operator: String, operand: ColumnVariable)
+
+case class Atom(name : String, terms : List[Expression])
 case class Attribute(name : String, terms : List[Variable], types : List[String])
 case class ConjunctiveQuery(head: Atom, bodies: List[List[Atom]], conditions: List[List[Condition]])
 case class Column(name : String, t : String)
@@ -54,7 +62,7 @@ case class RowWiseLineHandler(format: String, command: String) extends FunctionI
 
 // Statements that will be parsed and compiled
 trait Statement
-case class SchemaDeclaration( a : Attribute , isQuery : Boolean, variableType : Option[VariableType] = None) extends Statement // atom and whether this is a query relation.
+case class SchemaDeclaration( a : Attribute , isQuery : Boolean, variableType : Option[VariableType]) extends Statement // atom and whether this is a query relation.
 case class FunctionDeclaration( functionName: String, inputType: RelationType, outputType: RelationType, implementations: List[FunctionImplementationDeclaration], mode: String = null) extends Statement
 case class ExtractionRule(q : ConjunctiveQuery, supervision: String = null) extends Statement // Extraction rule
 case class FunctionCallRule(input : String, output : String, function : String) extends Statement // Extraction rule
@@ -74,7 +82,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def stringLiteralAsSqlString = stringLiteral ^^ { s =>
     s"""'${s.stripPrefix("\"").stripSuffix("\"")}'"""
   }
-  def constant = stringLiteralAsSqlString | wholeNumber
+  def constant = stringLiteralAsSqlString | wholeNumber | "TRUE" | "FALSE" | "TEXT" | "INT" | "BOOLEAN"
 
   // C/Java/Scala-style as well as shell script-style comments are supported
   // by treating them as whiteSpace
@@ -102,8 +110,8 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def dataType = CategoricalParser | BooleanParser
 
   def schemaDeclaration: Parser[SchemaDeclaration] =
-    relationName ~ opt("?") ~ "(" ~ rep1sep(columnDeclaration, ",") ~ ")" ~ opt(dataType) ^^ {
-      case (r ~ isQuery ~ "(" ~ attrs ~ ")" ~ vType) => {
+    relationName ~ opt("?") ~ opt("!") ~ "(" ~ rep1sep(columnDeclaration, ",") ~ ")" ~ opt(dataType) ^^ {
+      case (r ~ isQuery ~ isDistinct ~ "(" ~ attrs ~ ")" ~ vType) => {
         val vars = attrs.zipWithIndex map { case(x, i) => Variable(x.name, r, i) }
         var types = attrs map { case(x) => x.t }
         val variableType = vType match {
@@ -114,35 +122,58 @@ class DeepDiveLogParser extends JavaTokenParsers {
       }
     }
 
+  def operator = "||" | "+" | "-" | "*" | "/"
+  def castOp = "::"
+
   def variable = variableName ^^ { Variable(_, "", 0) }
   def columnConstant = constant ^^ { Constant(_, "", 0) }
-  def column = columnConstant | variable
+  def variableOrConstant = columnConstant | variable
+  def operateOn = operator ~ variableOrConstant ^^ { case (v ~ o) => Operator(v,o) }
+  def typecast = castOp ~ columnConstant ^^ { case (v ~ o) => Operator(v,o) }
+  def operatorAndOperand = operateOn | typecast
+  def expression = variableOrConstant ~ rep(operatorAndOperand) ^^ {
+    case (v ~ opList) => {
+      val variables = List(v) ++ (opList map (_.operand))
+      val ops = opList map (_.operator)
+      Expression(variables, ops, "", 0)
+    }
+  }
 
   // TODO support aggregate function syntax somehow
-  def cqHead = relationName ~ "(" ~ repsep(column, ",") ~ ")" ^^ {
+  def cqHead = relationName ~ "(" ~ repsep(expression, ",") ~ ")" ^^ {
       case (r ~ "(" ~ variableUses ~ ")") =>
         Atom(r, variableUses.zipWithIndex map {
-          case(Variable(name,_,_),i) => Variable(name, r, i)
-          case(Constant(name,_,_),i) => Constant(name, r, i)
+          case (Expression(v,op,_,_),i) => {
+            val vars = v map {
+              case Variable(x,_,_) => Variable(x,r,i)
+              case Constant(x,_,_) => Constant(x,r,i)
+            }
+            Expression(vars, op, r, i)
+          }
         })
     }
 
   // TODO add conditional expressions for where clause
   def cqConditionalExpr = failure("No conditional expression supported yet")
   def cqBodyAtom: Parser[Atom] =
-    ( relationName ~ "(" ~ repsep(column, ",") ~ ")" ^^ {
+    ( relationName ~ "(" ~ repsep(expression, ",") ~ ")" ^^ {
         case (r ~ "(" ~ variableBindings ~ ")") =>
           Atom(r, variableBindings.zipWithIndex map {
-            case(Variable(name,_,_),i) => Variable(name, r, i)
-            case(Constant(name,_,_),i) => Constant(name, r, i)
-          })
+          case (Expression(v,op,_,_),i) => {
+            val vars = v map {
+              case Variable(x,_,_) => Variable(x,r,i)
+              case Constant(x,_,_) => Constant(x,r,i)
+            }
+            // println(Expression(vars, op, r, i))
+            Expression(vars, op, r, i)
+          }
+        })
       }
     | cqConditionalExpr
     )
   def cqBody: Parser[List[Atom]] = rep1sep(cqBodyAtom, ",")
 
   // conditions
-  def convertOperator = "||" | "::"
   def filterOperator = "LIKE" | ">" | "<" | ">=" | "<=" | "!=" | "="
   def conditionWithConstant = variableName ~ filterOperator ~ constant ^^ {
     case (lhs ~ op ~ rhs) => Condition(lhs, op, rhs, true)

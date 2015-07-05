@@ -48,21 +48,30 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
        |""".stripMargin
   }
 
+  def printVarOrConst(x: ColumnVariable) = {
+    x match {
+      case x: Variable => x.varName
+      case x: Constant => {
+        if (x.value.startsWith("'"))
+          s""" "${x.value.stripPrefix("'").stripSuffix("'")}" """
+        else
+          x.value
+      }
+    }
+  }
+
   def print(cq: ConjunctiveQuery): String = {
     val printAtom = {a:Atom =>
       val vars = a.terms map { 
-        case x: Variable => x.varName
-        case x: Constant => {
-          if (x.value.startsWith("'"))
-            s""" "${x.value.stripPrefix("'").stripSuffix("'")}" """
-          else
-            x.value
-        }
+        case e => e.print(printVarOrConst)
       }
       s"${a.name}(${vars.mkString(", ")})"
     }
     val printListAtom = {a:List[Atom] =>
       s"${(a map printAtom).mkString(",\n    ")}"
+    }
+    val printCondition = {a: List[Condition] =>
+      (a map { case Condition(lhs, op, rhs, _) => s"${lhs} ${op} ${rhs}" }).mkString(",")
     }
     s"""${printAtom(cq.head)} :-
        |    ${(cq.bodies map printListAtom).mkString(";\n    ")}""".stripMargin

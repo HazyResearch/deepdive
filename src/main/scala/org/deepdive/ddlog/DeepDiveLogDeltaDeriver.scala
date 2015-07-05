@@ -19,22 +19,25 @@ object DeepDiveLogDeltaDeriver{
   }
 
   def transform(cq: ConjunctiveQuery, isInference: Boolean, mode: String): ConjunctiveQuery = {
+    // transform an expression
+    def transformExpression(expr: Expression, prefix: String) = {
+      val newVars = expr.variables map {
+        case term: Variable => term.copy(relName = prefix + term.relName)
+        case term: Constant => term
+      }
+      Expression(newVars, expr.ops, expr.relName, expr.index)
+    }
+
     // New head
     val incCqHead = if (isInference) {
       cq.head.copy(
         name = newPrefix + cq.head.name,
-        terms = cq.head.terms map {
-          case term: Variable => term.copy(relName = newPrefix + term.relName)
-          case term: Constant => term
-        }
+        terms = cq.head.terms map (transformExpression(_, newPrefix))
       )
     } else {
       cq.head.copy(
         name = deltaPrefix + cq.head.name,
-        terms = cq.head.terms map {
-          case term: Variable => term.copy(relName = deltaPrefix + term.relName)
-          case term: Constant => term
-        }
+        terms = cq.head.terms map (transformExpression(_, deltaPrefix))
       )
     }
 
@@ -45,20 +48,14 @@ object DeepDiveLogDeltaDeriver{
       val incDeltaBody = body map {
         a => a.copy(
           name = deltaPrefix + a.name,
-          terms = a.terms map {
-            case term: Variable => term.copy(relName = deltaPrefix + term.relName)
-            case term: Constant => term
-          }
+          terms = a.terms map (transformExpression(_, deltaPrefix))
         )
       }
       // New body
       val incNewBody = body map {
         a => a.copy(
           name = newPrefix + a.name,
-          terms = a.terms map {
-            case term: Variable => term.copy(relName = newPrefix + term.relName)
-            case term: Constant => term
-          }
+          terms = a.terms map (transformExpression(_, newPrefix))
         )
       }
       var i = 0
@@ -111,9 +108,17 @@ object DeepDiveLogDeltaDeriver{
     )
     incrementalStatement += incNewStmt
 
+    // from schema declaration to expressions
+    def variableToExpr(v: Variable) = Expression(List(v), List(), v.relName, v.index)
+    val originalExpr = stmt.a.terms map (variableToExpr(_))
+    val incDeltaExpr = incDeltaStmt.a.terms map (variableToExpr(_))
+    val incNewExpr = incNewStmt.a.terms map (variableToExpr(_))
+
     // if (!stmt.isQuery) {
-    incrementalStatement += ExtractionRule(ConjunctiveQuery(Atom(incNewStmt.a.name, incNewStmt.a.terms),
-      List(List(Atom(stmt.a.name, stmt.a.terms)), List(Atom(incDeltaStmt.a.name, incDeltaStmt.a.terms))), Nil))
+    incrementalStatement += ExtractionRule(ConjunctiveQuery(
+      Atom(incNewStmt.a.name, incNewExpr),
+      List(List(Atom(stmt.a.name, originalExpr)), List(Atom(incDeltaStmt.a.name, incDeltaExpr))), 
+      List()))
     // }
     incrementalStatement.toList
   }

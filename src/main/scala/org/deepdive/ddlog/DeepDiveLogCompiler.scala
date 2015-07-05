@@ -194,26 +194,58 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
     // and stick it in a map.
     val qs = new QuerySchema(z)
 
-    var whereClause = z.bodies(0).zipWithIndex flatMap {
-      case (Atom(relName, terms),body_index) => {
-        terms flatMap {
-          case Variable(varName, relName, index) =>
-            val canonical_body_index = qs.getBodyIndex(varName)
+    // def resolveVarOrConst(variable: ColumnVariable, bodyIndex: Int) = {
+    //   variable match {
+    //     case Variable(varName,relName,index) => {
+    //       val canonical_body_index = qs.getBodyIndex(varName)
+    //       if (canonical_body_index != bodyIndex) {
+    //         val real_attr_name1 = resolveName( Variable(varName, relName, index) )
+    //         val real_attr_name2 = resolveName( qs.getVar(varName))
+    //         Some(s"R${ bodyIndex }.${ real_attr_name1 } = R${ canonical_body_index }.${ real_attr_name2 } ")
+    //       } else { None }
+    //     }
+    //     case Constant(v,relName,i) => {
+    //       val attr = schema(relName, i)
+    //       Some(s"R${bodyIndex}.${attr} = ${v}")
+    //     }
+    //   }
+    // }
 
-            if (canonical_body_index != body_index) {
-              val real_attr_name1 = resolveName( Variable(varName, relName, index) )
-              val real_attr_name2 = resolveName( qs.getVar(varName))
-              Some(s"R${ body_index }.${ real_attr_name1 } = R${ canonical_body_index }.${ real_attr_name2 } ")
-            } else { None }
-          // a constant in body means a equality condition
-          case Constant(value, r, i) => {
-            val attr = schema(relName, i)
-            Some(s"R${body_index}.${attr} = ${value}")
+    def resolveVarOrConst(variable: ColumnVariable, bodyIndex: Int) : String = {
+      variable match {
+        case Variable(varName,relName,index) => resolveColumn(varName, qs, z, OriginalOnly).get
+        case Constant(v,relName,i) => "v"
+      }
+    }
+
+    var whereClause = z.bodies(0).zipWithIndex flatMap {
+      case (Atom(relName, terms),bodyIndex) => {
+        terms flatMap { case Expression(vars, ops, relName, index) =>
+          // simple variable name or constant 
+          if (ops isEmpty) {
+            vars(0) match {
+              case Variable(varName,relName,index) => {
+                val canonical_body_index = qs.getBodyIndex(varName)
+                if (canonical_body_index != bodyIndex) {
+                  val real_attr_name1 = resolveName( Variable(varName, relName, index) )
+                  val real_attr_name2 = resolveName( qs.getVar(varName))
+                  Some(s"R${ bodyIndex }.${ real_attr_name1 } = R${ canonical_body_index }.${ real_attr_name2 } ")
+                } else { None }
+              }
+              case Constant(v,relName,i) => {
+                val attr = schema(relName, i)
+                Some(s"R${bodyIndex}.${attr} = ${v}")
+              }
+            }
+          } else { // expression
+            val resolvedVars = vars map (resolveVarOrConst(_, bodyIndex))
+            val expr = resolvedVars(0) + " " + ((ops zip resolvedVars.drop(1)).map { case (a,b) => s"${a} ${b}" }).mkString
+            val attr = schema(relName, index)
+            Some(s"${expr} = R${bodyIndex}.${attr}")
           }
         }
       }
     }
-    println(whereClause)
 
     // resolve conditions
     val conditions = z.conditions(0) flatMap { case Condition(lhs, op, rhs, isRhsValue) =>
@@ -224,7 +256,6 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
       }
       Some(s"${resolvedLhs.get} ${op} ${resolvedRhs.get}")
     }
-    println(conditions)
     
     whereClause = whereClause ++ conditions
 
@@ -307,11 +338,15 @@ class QuerySchema(q : ConjunctiveQuery) {
   def generateCanonicalVar()  = {
     q.bodies(0).zipWithIndex.foreach {
       case (Atom(relName,terms),index) =>  {
-        terms.foreach {
-          case Variable(v, r, i) =>
-            if( ! (query_schema contains v) )
-              query_schema += { v -> (index, Variable(v,r,i) ) }
-          case _ =>
+        terms.foreach { case Expression(c, op, r, i) =>
+          if (op.isEmpty) {
+            c(0) match {
+              case Variable(v,r,i) =>
+                if (! (query_schema contains v) )
+                  query_schema += { v -> (index, Variable(v,r,i) ) }
+              case _ =>
+            }
+          }
         }
       }
     }
@@ -379,12 +414,26 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
         val tmpCq = ConjunctiveQuery(stmt.q.head, List(cqBody), stmt.q.conditions)
         // Generate the body of the query.
         val qs              = new QuerySchema( tmpCq )
+
+        // map head terms to sql
+        def mapHeadTerms(terms: List[Expression], alias: AliasStyle = OriginalOnly) = {
+          terms map { case Expression(v, ops, _, _) =>
+            val resolvedVars = v map (resolveVarOrConst(_))
+            val expr = resolvedVars(0) + ((ops zip resolvedVars.drop(1)).map { case (a,b) => s"${a} ${b}" }).mkString
+            expr
+          }
+        }
+
+        def resolveVarOrConst(v: ColumnVariable, alias: AliasStyle = OriginalOnly) = {
+          v match {
+            case Variable(v,r,i) => ss.resolveColumn(v, qs, tmpCq, alias).get
+            case Constant(v,r,i) => v
+          }
+        }
+
         if (stmt.supervision != null) {
           if (stmt.q.bodies.length > 1) ss.error(s"Scoping rule does not allow disjunction.\n")
-          val headTerms = tmpCq.head.terms map {
-            case Variable(v,r,i) => s"R${i}.${ss.resolveName(qs.getVar(v)) }"
-            case Constant(v,r,i) => Some(v)
-          }
+          val headTerms = mapHeadTerms(tmpCq.head.terms)
           val index = qs.getBodyIndex(stmt.supervision)
           val name  = ss.resolveName(qs.getVar(stmt.supervision))
           val labelCol = s"R${index}.${name}"
@@ -393,10 +442,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           ${ ss.generateSQLBody(tmpCq) }
           """
         } else if ((ss.schemaDeclarationGroupByHead contains stmt.q.head.name) && (ss.schemaDeclarationGroupByHead(stmt.q.head.name)(0).isQuery) && (stmt.q.head.name startsWith "dd_new_")) {
-          val headTerms = tmpCq.head.terms map {
-            case Variable(v,r,i) => s"R${i}.${ss.resolveName(qs.getVar(v)) }"
-            case Constant(v,r,i) => Some(v)
-          }
+          val headTerms = mapHeadTerms(tmpCq.head.terms)
           val headTermsStr = ( headTerms :+ "id" ).mkString(", ")
           inputQueries += s"""SELECT DISTINCT ${ headTermsStr }, label
           ${ ss.generateSQLBody(tmpCq) }
@@ -412,10 +458,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
             case true => OriginalOnly
             case false => OriginalAndAlias
           }
-          val variableCols = tmpCq.head.terms flatMap {
-            case(Variable(v,rr,i)) => ss.resolveColumn(v, qs, tmpCq, resolveColumnFlag)
-            case Constant(v,rr,i)  => Some(v)
-          }
+          val variableCols = mapHeadTerms(tmpCq.head.terms, resolveColumnFlag)
 
           val selectStr = variableCols.mkString(", ")
 
