@@ -70,9 +70,9 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
     val printListAtom = {a:List[Atom] =>
       s"${(a map printAtom).mkString(",\n    ")}"
     }
-    val printCondition = {a: List[Condition] =>
-      (a map { case Condition(lhs, op, rhs, _) => s"${lhs} ${op} ${rhs}" }).mkString(",")
-    }
+    // val printCondition = {a: List[Condition] =>
+    //   (a map { case Condition(lhs, op, rhs, _) => s"${lhs} ${op} ${rhs}" }).mkString(",")
+    // }
     s"""${printAtom(cq.head)} :-
        |    ${(cq.bodies map printListAtom).mkString(";\n    ")}""".stripMargin
   }

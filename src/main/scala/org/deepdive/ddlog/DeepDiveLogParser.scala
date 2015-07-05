@@ -26,12 +26,14 @@ case class Operator(operator: String, operand: ColumnVariable)
 
 case class Atom(name : String, terms : List[Expression])
 case class Attribute(name : String, terms : List[Variable], types : List[String])
-case class ConjunctiveQuery(head: Atom, bodies: List[List[Atom]], conditions: List[List[Condition]])
+case class ConjunctiveQuery(head: Atom, bodies: List[List[Atom]], conditions: List[CompoundCondition])
 case class Column(name : String, t : String)
 
 // condition
-case class Condition(lhs: String, op: String, rhs: String, isRhsValue: Boolean)
-case class BodyWithConditions(body: List[Atom], conditions: List[Condition])
+case class BodyWithConditions(body: List[Atom], conditions: CompoundCondition)
+
+case class Condition(lhs: Expression, op: String, rhs: Expression)
+case class CompoundCondition(conditions: List[List[Condition]])
 
 // variable type
 sealed trait VariableType {
@@ -175,16 +177,14 @@ class DeepDiveLogParser extends JavaTokenParsers {
 
   // conditions
   def filterOperator = "LIKE" | ">" | "<" | ">=" | "<=" | "!=" | "="
-  def conditionWithConstant = variableName ~ filterOperator ~ constant ^^ {
-    case (lhs ~ op ~ rhs) => Condition(lhs, op, rhs, true)
+  def condition = expression ~ filterOperator ~ expression ^^ {
+    case (lhs ~ op ~ rhs) => Condition(lhs, op, rhs)
   }
-  def conditionWithVariable = variableName ~ filterOperator ~ variableName ^^ {
-    case (lhs ~ op ~ rhs) => Condition(lhs, op, rhs, false)
-  }
-  def condition = conditionWithVariable | conditionWithConstant
-  def cqCondition: Parser[List[Condition]] = repsep(condition, ",")
-  def cqBodyWithCondition = cqBody ~ opt(",") ~ cqCondition ^^ {
-    case (b ~ o ~ c) => BodyWithConditions(b, c)
+  def conjunctiveCondition = repsep(condition, ",")
+  def compoundCondition = repsep(conjunctiveCondition, ";") ^^ { CompoundCondition(_) }
+  // def cqCondition: Parser[List[Condition]] = repsep(condition, ",")
+  def cqBodyWithCondition = cqBody ~ opt(",") ~ opt("[") ~ compoundCondition ~ opt("]") ^^ {
+    case (b ~ _ ~ _ ~ c ~ _) => BodyWithConditions(b, c)
   }
 
   def conjunctiveQuery : Parser[ConjunctiveQuery] =

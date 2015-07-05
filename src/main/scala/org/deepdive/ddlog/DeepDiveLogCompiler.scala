@@ -194,29 +194,19 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
     // and stick it in a map.
     val qs = new QuerySchema(z)
 
-    // def resolveVarOrConst(variable: ColumnVariable, bodyIndex: Int) = {
-    //   variable match {
-    //     case Variable(varName,relName,index) => {
-    //       val canonical_body_index = qs.getBodyIndex(varName)
-    //       if (canonical_body_index != bodyIndex) {
-    //         val real_attr_name1 = resolveName( Variable(varName, relName, index) )
-    //         val real_attr_name2 = resolveName( qs.getVar(varName))
-    //         Some(s"R${ bodyIndex }.${ real_attr_name1 } = R${ canonical_body_index }.${ real_attr_name2 } ")
-    //       } else { None }
-    //     }
-    //     case Constant(v,relName,i) => {
-    //       val attr = schema(relName, i)
-    //       Some(s"R${bodyIndex}.${attr} = ${v}")
-    //     }
-    //   }
-    // }
-
-    def resolveVarOrConst(variable: ColumnVariable, bodyIndex: Int) : String = {
+    def resolveVarOrConst(variable: ColumnVariable) : String = {
       variable match {
         case Variable(varName,relName,index) => resolveColumn(varName, qs, z, OriginalOnly).get
-        case Constant(v,relName,i) => "v"
+        case Constant(v,relName,i) => v
       }
     }
+
+    // // resolve an expression
+    // def resolveExpression(e: Expression) = {
+    //   val resolvedVars = e.variables map (resolveVarOrConst(_))
+    //   resolvedVars(0) + " " + ((e.ops zip resolvedVars.drop(1)).map { 
+    //     case (a,b) => s"${a} ${b}" }).mkString      
+    // }
 
     var whereClause = z.bodies(0).zipWithIndex flatMap {
       case (Atom(relName, terms),bodyIndex) => {
@@ -238,8 +228,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
               }
             }
           } else { // expression
-            val resolvedVars = vars map (resolveVarOrConst(_, bodyIndex))
-            val expr = resolvedVars(0) + " " + ((ops zip resolvedVars.drop(1)).map { case (a,b) => s"${a} ${b}" }).mkString
+            val expr = Expression(vars, ops, relName, index).print(resolveVarOrConst)
             val attr = schema(relName, index)
             Some(s"${expr} = R${bodyIndex}.${attr}")
           }
@@ -248,20 +237,17 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
     }
 
     // resolve conditions
-    val conditions = z.conditions(0) flatMap { case Condition(lhs, op, rhs, isRhsValue) =>
-      val resolvedLhs = resolveColumn(lhs, qs, z, OriginalOnly)
-      val resolvedRhs = isRhsValue match {
-        case true  => Some(rhs)
-        case false => resolveColumn(rhs, qs, z, OriginalOnly)
-      }
-      Some(s"${resolvedLhs.get} ${op} ${resolvedRhs.get}")
-    }
-    
-    whereClause = whereClause ++ conditions
-
+    val conditions = ((z.conditions(0).conditions map { case x: List[Condition] =>
+      (x map { case Condition(lhs, op, rhs) =>
+        val lhsExpr = lhs.print(resolveVarOrConst)
+        val rhsExpr = rhs.print(resolveVarOrConst)
+        s"${lhsExpr} ${op} ${rhsExpr}"
+      }).mkString(" AND ")
+    }) map(v => s"(${v})")).mkString(" OR ")
+  
     var whereClauseStr = whereClause match {
-      case Nil => ""
-      case _ => s"""WHERE ${whereClause.mkString(" AND ")}"""
+      case Nil => if (conditions == "") "" else s"WHERE ${conditions}"
+      case _ => s"""WHERE ${whereClause.mkString(" AND ")} ${if (conditions == "") "" else s" AND (${conditions})"}"""
     }
 
     s"""FROM ${ bodyNames }

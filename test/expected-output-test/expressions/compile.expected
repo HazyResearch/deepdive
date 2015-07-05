@@ -1,0 +1,71 @@
+
+  deepdive.db.default {
+    driver: "org.postgresql.Driver"
+    url: "jdbc:postgresql://"${PGHOST}":"${PGPORT}"/"${DBNAME}
+    user: ${PGUSER}
+    password: ${PGPASSWORD}
+    dbname: ${DBNAME}
+    host: ${PGHOST}
+    port: ${PGPORT}
+    incremental_mode: ORIGINAL
+    }
+    
+
+
+      deepdive.schema.variables {
+        
+      }
+    
+
+          deepdive.extraction.extractors.extraction_rule_1 {
+            sql: """ DROP TABLE IF EXISTS b CASCADE;
+            CREATE TABLE
+            b(k int,
+ p text,
+ q text,
+ r int)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.extraction_rule_0 {
+            sql: """ DROP TABLE IF EXISTS a CASCADE;
+            CREATE TABLE
+            a(k int)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.extraction_rule_2 {
+            sql: """ DROP TABLE IF EXISTS c CASCADE;
+            CREATE TABLE
+            c(s text,
+ n int,
+ t text)
+            """
+            style: "sql_extractor"
+          }
+
+        deepdive.extraction.extractors.cleanup {
+          sql: """
+          TRUNCATE b;
+          TRUNCATE a;
+          TRUNCATE c;
+          """
+          style: "sql_extractor"
+        }
+
+      deepdive.extraction.extractors.extraction_rule_3 {
+        sql: """ DROP VIEW IF EXISTS Q;
+        CREATE VIEW Q AS 
+            SELECT 'test':: TEXT, 123, R0.k
+            FROM a R0, b R1, c R2
+        WHERE R1.k = R0.k  AND R1.p|| R1.q = R2.s AND R2.n = 10 AND R2.t = 'foo'  AND ((R1.r > 100) OR (R1.r < 20 AND R1.r > 10))
+        """
+        style: "sql_extractor"
+          
+      }
+    
+deepdive.pipeline.run: ${PIPELINE}
+deepdive.pipeline.pipelines.initdb: [extraction_rule_1, extraction_rule_0, extraction_rule_2]
+deepdive.pipeline.pipelines.extraction: [extraction_rule_3]
