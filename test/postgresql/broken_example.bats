@@ -3,8 +3,8 @@
 
 . "$BATS_TEST_DIRNAME"/env.sh >&2
 
-setup() {
-    :
+@test "$DBVARIANT DeepDive returns error for a broken application" {
+    cd "$BATS_TEST_DIRNAME"/broken_example || skip
+    deepdive initdb
+    ! deepdive run
 }
-
-# TODO migrate org.deepdive.test.integration.BrokenTest to bats
