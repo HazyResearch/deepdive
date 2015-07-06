@@ -221,7 +221,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
               }
             }
           } else { // expression
-            val expr = Expression(vars, ops, relName, index).print(resolveVarOrConst)
+            val expr = DeepDiveLogPrettyPrinter.printExpr(Expression(vars, ops, relName, index), resolveVarOrConst)
             val attr = schema(relName, index)
             Some(s"${expr} = R${bodyIndex}.${attr}")
           }
@@ -233,8 +233,8 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
     val conditionList = z.conditions(0) match {
       case Some(c) => c.conditions map { case x: List[Condition] =>
         val inner = x map { case Condition(lhs, op, rhs) =>
-          val lhsExpr = lhs.print(resolveVarOrConst)
-          val rhsExpr = rhs.print(resolveVarOrConst)
+          val lhsExpr = DeepDiveLogPrettyPrinter.printExpr(lhs, resolveVarOrConst)
+          val rhsExpr = DeepDiveLogPrettyPrinter.printExpr(rhs, resolveVarOrConst)
           s"${lhsExpr} ${op} ${rhsExpr}"
         }
         inner.mkString(" AND ")

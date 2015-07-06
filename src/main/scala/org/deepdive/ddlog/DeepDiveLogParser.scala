@@ -16,12 +16,7 @@ import scala.util.Try
 sealed trait ColumnVariable
 case class Variable(varName : String, relName : String, index : Int ) extends ColumnVariable
 case class Constant(value : String, relName: String, index: Int) extends ColumnVariable
-case class Expression(variables: List[ColumnVariable], ops: List[String], relName: String, index: Int) {
-  def print(resolve: ColumnVariable => String) = {
-    val resolvedVars = variables map (resolve(_))
-    resolvedVars(0) + ((ops zip resolvedVars.drop(1)).map { case (a,b) => s"${a} ${b}" }).mkString
-  }
-}
+case class Expression(variables: List[ColumnVariable], ops: List[String], relName: String, index: Int)
 case class Operator(operator: String, operand: ColumnVariable)
 
 case class Atom(name : String, terms : List[Expression])

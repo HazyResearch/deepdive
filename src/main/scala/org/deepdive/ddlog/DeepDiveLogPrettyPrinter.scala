@@ -60,21 +60,47 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
     }
   }
 
+  def printExpr(e: Expression, resolve: ColumnVariable => String) = {
+    val resolvedVars = e.variables map (resolve(_))
+    resolvedVars(0) + ((e.ops zip resolvedVars.drop(1)).map { case (a,b) => s"${a} ${b}" }).mkString
+  }
+
   def print(cq: ConjunctiveQuery): String = {
     val printAtom = {a:Atom =>
       val vars = a.terms map { 
-        case e => e.print(printVarOrConst)
+        case e => printExpr(e, printVarOrConst)
       }
       s"${a.name}(${vars.mkString(", ")})"
     }
     val printListAtom = {a:List[Atom] =>
       s"${(a map printAtom).mkString(",\n    ")}"
     }
-    // val printCondition = {a: List[Condition] =>
-    //   (a map { case Condition(lhs, op, rhs, _) => s"${lhs} ${op} ${rhs}" }).mkString(",")
-    // }
+
+    def printVar(x: ColumnVariable) = { x match {
+        case Variable(v,_,_) => v
+        case Constant(v,_,_) => v 
+      }
+    }
+    val printConjunctiveCondition = {a: List[Condition] =>
+      (a map { case Condition(lhs, op, rhs) => 
+        val lhsExpr = printExpr(lhs, printVar)
+        val rhsExpr = printExpr(rhs, printVar)
+        s"${lhsExpr} ${op} ${rhsExpr}" }).mkString(", ")
+    }
+    val conditionList = cq.conditions map {
+      case Some(x) => Some(x.conditions map printConjunctiveCondition mkString("; "))
+      case None    => None
+    }
+    val bodyList = cq.bodies map printListAtom
+    val bodyWithCondition = (bodyList zip conditionList map { case(a,b) => 
+      b match {
+        case Some(c) => s"${a}, [ ${c} ]" 
+        case None    => a
+      }
+    }).mkString(";\n    ")
+
     s"""${printAtom(cq.head)} :-
-       |    ${(cq.bodies map printListAtom).mkString(";\n    ")}""".stripMargin
+       |    ${bodyWithCondition}""".stripMargin
   }
 
   def print(stmt: ExtractionRule): String = {

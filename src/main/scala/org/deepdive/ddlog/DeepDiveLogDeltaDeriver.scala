@@ -42,8 +42,9 @@ object DeepDiveLogDeltaDeriver{
     }
 
     var incCqBodies = new ListBuffer[List[Atom]]()
+    var incCqConditions = new ListBuffer[Option[CompoundCondition]]()
     // New incremental bodies
-    for (body <- cq.bodies) {
+    cq.bodies zip cq.conditions foreach { case (body, cond) =>
       // Delta body
       val incDeltaBody = body map {
         a => a.copy(
@@ -63,6 +64,7 @@ object DeepDiveLogDeltaDeriver{
       var index = if (incrementalFunctionInput contains incCqHead.name) -1 else 0
       if (mode == "inc") {
         incCqBodies += incNewBody
+        incCqConditions += cond
       } else {
         for (i <- index to (body.length - 1)) {
           var newBody = new ListBuffer[Atom]()
@@ -73,13 +75,14 @@ object DeepDiveLogDeltaDeriver{
               newBody += incNewBody(j)
             else if (j == i)
               newBody += incDeltaBody(j)
+            incCqConditions += cond
           }
           incCqBodies += newBody.toList
         }
       }
     }
     // TODO fix conditions
-    ConjunctiveQuery(incCqHead, incCqBodies.toList, cq.conditions)
+    ConjunctiveQuery(incCqHead, incCqBodies.toList, incCqConditions.toList)
   }
 
   // Incremental scheme declaration,
@@ -119,7 +122,7 @@ object DeepDiveLogDeltaDeriver{
     incrementalStatement += ExtractionRule(ConjunctiveQuery(
       Atom(incNewStmt.a.name, incNewExpr),
       List(List(Atom(stmt.a.name, originalExpr)), List(Atom(incDeltaStmt.a.name, incDeltaExpr))), 
-      List(None)))
+      List(None, None)))
     // }
     incrementalStatement.toList
   }
