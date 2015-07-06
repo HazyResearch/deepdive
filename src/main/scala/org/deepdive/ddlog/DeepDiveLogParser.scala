@@ -16,6 +16,7 @@ import scala.util.Try
 sealed trait ColumnVariable
 case class Variable(varName : String, relName : String, index : Int ) extends ColumnVariable
 case class Constant(value : String, relName: String, index: Int) extends ColumnVariable
+case class InlineFunction(functionName: String, args: List[ColumnVariable]) extends ColumnVariable
 case class Expression(variables: List[ColumnVariable], ops: List[String], relName: String, index: Int)
 case class Operator(operator: String, operand: ColumnVariable)
 
@@ -125,14 +126,20 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def variable = variableName ^^ { Variable(_, "", 0) }
   def columnConstant = constant ^^ { Constant(_, "", 0) }
   def variableOrConstant = columnConstant | variable
-  def operateOn = operator ~ variableOrConstant ^^ { case (v ~ o) => Operator(v,o) }
+  def inlineFunction = "!" ~> functionName ~ "(" ~ rep1sep(variableOrConstant, ",") ~ ")" ^^ {
+    case (name ~ _ ~ args ~ _) => {
+      InlineFunction(name, args)
+    }
+  }
+  def columnVariable = columnConstant | variable | inlineFunction
+  def operateOn = operator ~ columnVariable ^^ { case (v ~ o) => Operator(v,o) }
   def typecast = castOp ~ columnConstant ^^ { case (v ~ o) => Operator(v,o) }
   def operatorAndOperand = operateOn | typecast
-  def expression = variableOrConstant ~ rep(operatorAndOperand) ^^ {
+  def expression = columnVariable ~ rep(operatorAndOperand) ^^ {
     case (v ~ opList) => {
       val variables = List(v) ++ (opList map (_.operand))
       val ops = opList map (_.operator)
-      // println(Expression(variables, ops, "", 0))
+      // println(variables.mkString)
       Expression(variables, ops, "", 0)
     }
   }
@@ -145,6 +152,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
             val vars = v map {
               case Variable(x,_,_) => Variable(x,r,i)
               case Constant(x,_,_) => Constant(x,r,i)
+              case InlineFunction(x, args) => InlineFunction(x, args)
             }
             Expression(vars, op, r, i)
           }
@@ -161,6 +169,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
             val vars = v map {
               case Variable(x,_,_) => Variable(x,r,i)
               case Constant(x,_,_) => Constant(x,r,i)
+              case InlineFunction(x, args) => InlineFunction(x, args)
             }
             // println(Expression(vars, op, r, i))
             Expression(vars, op, r, i)
@@ -179,7 +188,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
     }
   }
   def conjunctiveCondition = repsep(condition, ",")
-  def compoundCondition = "[" ~> repsep(conjunctiveCondition, ";") <~ "]" ^^ { CompoundCondition(_) }
+  def compoundCondition = opt("[") ~> repsep(conjunctiveCondition, ";") <~ opt("]") ^^ { CompoundCondition(_) }
   def cqBodyWithCondition = cqBody ~ ("," ~> compoundCondition).? ^^ {
     case (b ~ c) => BodyWithConditions(b, c)
   }

@@ -57,18 +57,29 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
         else
           x.value
       }
+      case _ => ""
+    }
+  }
+
+  def printColumnVar(x: ColumnVariable) = {
+    x match {
+      case InlineFunction(name, args) => {
+        val resolvedArgs = args map printVarOrConst
+        s"!${name}(${resolvedArgs.mkString(", ")})"
+      }
+      case _ => printVarOrConst(x)
     }
   }
 
   def printExpr(e: Expression, resolve: ColumnVariable => String) = {
     val resolvedVars = e.variables map (resolve(_))
-    resolvedVars(0) + ((e.ops zip resolvedVars.drop(1)).map { case (a,b) => s"${a} ${b}" }).mkString
+    resolvedVars(0) + " " + ((e.ops zip resolvedVars.drop(1)).map { case (a,b) => s"${a} ${b}" }).mkString(" ")
   }
 
   def print(cq: ConjunctiveQuery): String = {
     val printAtom = {a:Atom =>
       val vars = a.terms map { 
-        case e => printExpr(e, printVarOrConst)
+        case e => printExpr(e, printColumnVar)
       }
       s"${a.name}(${vars.mkString(", ")})"
     }
@@ -76,15 +87,10 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
       s"${(a map printAtom).mkString(",\n    ")}"
     }
 
-    def printVar(x: ColumnVariable) = { x match {
-        case Variable(v,_,_) => v
-        case Constant(v,_,_) => v 
-      }
-    }
     val printConjunctiveCondition = {a: List[Condition] =>
       (a map { case Condition(lhs, op, rhs) => 
-        val lhsExpr = printExpr(lhs, printVar)
-        val rhsExpr = printExpr(rhs, printVar)
+        val lhsExpr = printExpr(lhs, printColumnVar)
+        val rhsExpr = printExpr(rhs, printColumnVar)
         s"${lhsExpr} ${op} ${rhsExpr}" }).mkString(", ")
     }
     val conditionList = cq.conditions map {

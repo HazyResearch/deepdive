@@ -21,5 +21,4 @@ for t in *.bats.template; do
 done
 
 # run all .bats tests
-# bats "$@" *.bats */*.bats
-bats "$@" expected*/expressions.bats
+bats "$@" *.bats */*.bats
