@@ -420,6 +420,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           val headTerms = tmpCq.head.terms map { x => 
             DeepDiveLogPrettyPrinter.printExpr(x, ss.resolveColumnVar(_, tmpCq, OriginalOnly))
           }
+          // println(headTerms)
           val index = qs.getBodyIndex(stmt.supervision)
           val name  = ss.resolveName(qs.getVar(stmt.supervision))
           val labelCol = s"R${index}.${name}"
@@ -450,7 +451,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
             DeepDiveLogPrettyPrinter.printExpr(x, ss.resolveColumnVar(_, tmpCq, resolveColumnFlag))
           }
           val selectStr = variableCols.mkString(", ")
-          val distinctStr = if (tmpCq.isDistinct) " DISTINCT " else ""
+          val distinctStr = if (tmpCq.isDistinct) "DISTINCT" else ""
           inputQueries += s"""
             SELECT ${distinctStr} ${selectStr}
             ${ ss.generateSQLBody(tmpCq) }"""

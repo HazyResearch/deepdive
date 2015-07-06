@@ -73,7 +73,8 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
 
   def printExpr(e: Expression, resolve: ColumnVariable => String) = {
     val resolvedVars = e.variables map (resolve(_))
-    resolvedVars(0) + " " + ((e.ops zip resolvedVars.drop(1)).map { case (a,b) => s"${a} ${b}" }).mkString(" ")
+    val rest = ((e.ops zip resolvedVars.drop(1)).map { case (a,b) => s"${a} ${b}" }).mkString(" ")
+    resolvedVars(0) + (if (rest != "") " " + rest else "")
   }
 
   def print(cq: ConjunctiveQuery): String = {
