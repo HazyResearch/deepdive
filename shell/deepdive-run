@@ -30,7 +30,7 @@ shift $(($OPTIND - 1))
 
 # find the current application
 # either specified with -C option or via APP_HOME environment
-: ${APP_HOME:=$(find-deepdive-app)}
+APP_HOME=$(find-deepdive-app)
 export APP_HOME
 cd "$APP_HOME"
 

@@ -42,6 +42,15 @@ if [ -z "${DEEPDIVE_HOME:-}" ]; then
 fi
 
 
+# Process common options
+while getopts "C:" o; do
+    case $o in
+        C) export APP_HOME=$OPTARG ;;
+    esac
+done
+shift $(($OPTIND - 1))
+
+
 # Process input arguments
 [ $# -gt 0 ] || {
     usage "$0" "No COMMAND given" || true
