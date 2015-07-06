@@ -2,70 +2,17 @@
 
 .DEFAULT_GOAL := install
 
+
+### dependency recipes ########################################################
+
 .PHONY: depends
 depends:
 	# Installing and Checking dependencies...
 	util/install.sh deepdive_build_deps deepdive_runtime_deps
 	lib/check-depends.sh
 
-lib/dw:
-	# Extracting sampler library
-	lib/dw_extract.sh
 
-# Some path names for Scala
-SCALA_BUILD_FILES             = build.sbt $(wildcard project/*.*)
-SCALA_MAIN_SOURCES            = $(shell find src/main/scala -name '*.scala')
-SCALA_MAIN_CLASSES_DIR        = target/scala-2.10/classes
-SCALA_MAIN_CLASSPATH_EXPORTED = shell/deepdive-run.classpath
-SCALA_TEST_SOURCES            = $(shell find src/test/scala -name '*.scala')
-SCALA_TEST_CLASSES_DIR        = target/scala-2.10/test-classes
-SCALA_TEST_CLASSPATH_EXPORTED = test/.classpath
-SCALA_COVERAGE_DIR            = target/scala-2.10/scoverage-data
-
-# SBT on PATH
-PATH := $(PATH):$(shell pwd)/sbt
-SBT_OPTS ?= -Xmx4g -XX:MaxHeapSize=4g -XX:MaxPermSize=4g
-export SBT_OPTS
-
-.PHONY: build
-build: $(SCALA_MAIN_CLASSES_DIR) $(SCALA_MAIN_CLASSPATH_EXPORTED) lib/dw
-$(SCALA_MAIN_CLASSES_DIR): $(SCALA_MAIN_SOURCES)
-	# Compiling Scala code
-	sbt compile
-	touch $(SCALA_MAIN_CLASSES_DIR)
-$(SCALA_MAIN_CLASSPATH_EXPORTED): $(SCALA_BUILD_FILES)
-	# Exporting CLASSPATH
-	sbt --error "export compile:full-classpath" | tee $@
-
-.PHONY: test
-test: ONLY = $(shell test/enumerate-tests.sh)
-test: $(ONLY) build $(SCALA_TEST_CLASSES_DIR) $(SCALA_TEST_CLASSPATH_EXPORTED) $(SCALA_COVERAGE_DIR)
-	# Running $(words $(ONLY)) tests with Bats
-	#  To test selectively, run:  make test ONLY=/path/to/bats/files
-	#  For a list of tests, run:  make test-list
-	test/bats/bin/bats $(ONLY)
-.PHONY: coverage-build
-coverage-build \
-$(SCALA_COVERAGE_DIR) $(SCALA_TEST_CLASSES_DIR): $(SCALA_MAIN_SOURCES) $(SCALA_TEST_SOURCES)
-	# Compiling Scala code for test with coverage
-	sbt coverage compile test:compile
-	touch $(SCALA_COVERAGE_DIR) $(SCALA_TEST_CLASSES_DIR)
-$(SCALA_TEST_CLASSPATH_EXPORTED): $(SCALA_BUILD_FILES)
-	# Exporting CLASSPATH for tests
-	sbt --error coverage "export test:full-classpath" | tee $@
-
-test/%/scalatests.bats: test/postgresql/update-scalatests.bats.sh $(SCALA_TEST_SOURCES)
-	# Regenerating .bats for Scala tests
-	$< >$@
-	chmod +x $@
-
-.PHONY: test-list
-test-list:
-	@test/enumerate-tests.sh | sed 's/^/make test ONLY=/'
-
-.PHONY: checkstyle
-checkstyle:
-	@./test/checkstyle.sh
+### install recipes ###########################################################
 
 .PHONY: install
 PREFIX = ~/local
@@ -80,6 +27,98 @@ install: build
 		echo '  PATH=$(DEST):$$PATH'; \
 	fi
 
+
+### build recipes #############################################################
+
+.PHONY: build
+build: scala-build lib/dw
+
+lib/dw:
+	# Extracting sampler library
+	lib/dw_extract.sh
+
+# Scala-specific build and test recipes #######################################
+
+# Why do we use Makefile instead of SBT?
+# - Makefile can build components written in any language.  We use it anyway
+#   for handling dependency and installation.
+# - It's much easier to run integration tests with non-Scala components outside
+#   SBT or ScalaTest.
+# - SBT is slow.
+#
+# How can Makefile build and test Scala code?
+# - By exporting the CLASSPATH and running java directly instead, we can avoid
+#   SBT's poor command-line interface performance.  Note that we try to invoke
+#   SBT as least as possible through out the Makefile, duplicating some commands.
+# - Since there are test-specific classes and dependencies, there has to be two
+#   CLASSPATHs.
+# - When built for tests, the classes are instrumented such that coverage can
+#   be measured.
+
+# Some path names for Scala
+SCALA_BUILD_FILES             = build.sbt $(wildcard project/*.*)
+SCALA_MAIN_SOURCES            = $(shell find src/main/scala -name '*.scala')
+SCALA_MAIN_CLASSES_DIR        = target/scala-2.10/classes
+SCALA_MAIN_CLASSPATH_EXPORTED = target/scala-2.10/classpath
+SCALA_TEST_SOURCES            = $(shell find src/test/scala -name '*.scala')
+SCALA_TEST_CLASSES_DIR        = target/scala-2.10/test-classes
+SCALA_TEST_CLASSPATH_EXPORTED = target/scala-2.10/test-classpath
+SCALA_COVERAGE_DIR            = target/scala-2.10/scoverage-data
+
+# SBT settings
+PATH := $(PATH):$(shell pwd)/sbt
+SBT_OPTS ?= -Xmx4g -XX:MaxHeapSize=4g -XX:MaxPermSize=4g
+export SBT_OPTS
+
+.PHONY: scala-build
+scala-build: $(SCALA_MAIN_CLASSES_DIR) $(SCALA_MAIN_CLASSPATH_EXPORTED)
+# How to build main Scala code and export main CLASSPATH
+$(SCALA_MAIN_CLASSES_DIR): $(SCALA_MAIN_SOURCES) $(SCALA_BUILD_FILES)
+	# Compiling Scala code
+	sbt compile
+	touch $(SCALA_MAIN_CLASSES_DIR)
+$(SCALA_MAIN_CLASSPATH_EXPORTED): $(SCALA_BUILD_FILES)
+	# Exporting CLASSPATH
+	sbt --error "export compile:full-classpath" | tee /dev/stderr | \
+	    tail -1 >$@
+
+# How to build test Scala code with coverage and export test CLASSPATH
+test-build: $(SCALA_COVERAGE_DIR) $(SCALA_TEST_CLASSES_DIR) $(SCALA_TEST_CLASSPATH_EXPORTED) lib/dw
+$(SCALA_COVERAGE_DIR) $(SCALA_TEST_CLASSES_DIR): $(SCALA_MAIN_SOURCES) $(SCALA_TEST_SOURCES) $(SCALA_BUILD_FILES)
+	# Compiling Scala code for test with coverage
+	sbt coverage compile test:compile
+	touch $(SCALA_COVERAGE_DIR) $(SCALA_TEST_CLASSES_DIR)
+$(SCALA_TEST_CLASSPATH_EXPORTED): $(SCALA_BUILD_FILES)
+	# Exporting CLASSPATH for tests
+	sbt --error coverage "export test:full-classpath" | tee /dev/stderr | \
+	    tail -1 | tee $(SCALA_MAIN_CLASSPATH_EXPORTED) >$@
+
+
+### test recipes #############################################################
+
+.PHONY: test test-build
+test: ONLY = $(shell test/enumerate-tests.sh)
+test: $(ONLY) test-build
+	# Running $(words $(ONLY)) .bats test files
+	#  To test selectively, run:  make test ONLY=/path/to/bats/files
+	#  For a list of tests, run:  make test-list
+	test/bats/bin/bats $(ONLY)
+test-build:
+test/%/scalatests.bats: test/postgresql/update-scalatests.bats.sh $(SCALA_TEST_SOURCES)
+	# Regenerating .bats for Scala tests
+	$< >$@
+	chmod +x $@
+
+.PHONY: test-list
+test-list:
+	@test/enumerate-tests.sh | sed 's/^/make test ONLY=/'
+
+.PHONY: checkstyle
+checkstyle:
+	@./test/checkstyle.sh
+
+
+### submodule build recipes ###################################################
 
 .PHONY: build-sampler
 build-sampler:

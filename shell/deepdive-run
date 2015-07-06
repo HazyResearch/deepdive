@@ -52,7 +52,7 @@ cat deepdive.conf >"$extendedConfig"
     # make sure ddlib in Python is available to all udf
     export PYTHONPATH="$DEEPDIVE_HOME"/ddlib:"${PYTHONPATH:+:$PYTHONPATH}"
 
-    exec java -cp "$(cat "$DEEPDIVE_HOME"/shell/deepdive-run.classpath)" \
+    exec java -cp "$(cat "$DEEPDIVE_HOME"/target/scala-2.10/classpath)" \
         org.deepdive.Main -c "$extendedConfig" -o "$APP_HOME/$run_dir"
 )
 

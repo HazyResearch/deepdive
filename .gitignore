@@ -27,5 +27,3 @@ examples/spouse_example/data/spouses.tsv
 *~
 #*#
 project/target
-
-/shell/deepdive-run.classpath

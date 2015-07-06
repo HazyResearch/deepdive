@@ -37,5 +37,5 @@ export PIPELINE=$Pipeline
 
 # run DeepDive, passing the rest of the arguments
 # TODO use deepdive run instead
-java -cp "$(cat "$DEEPDIVE_HOME"/shell/deepdive-run.classpath)" \
+java -cp "$(cat "$DEEPDIVE_HOME"/target/scala-2.10/classpath)" \
     org.deepdive.Main -c "$appConf" -o "$Out"  "$@"
