@@ -26,11 +26,11 @@ case class Operator(operator: String, operand: ColumnVariable)
 
 case class Atom(name : String, terms : List[Expression])
 case class Attribute(name : String, terms : List[Variable], types : List[String])
-case class ConjunctiveQuery(head: Atom, bodies: List[List[Atom]], conditions: List[CompoundCondition])
+case class ConjunctiveQuery(head: Atom, bodies: List[List[Atom]], conditions: List[Option[CompoundCondition]])
 case class Column(name : String, t : String)
 
 // condition
-case class BodyWithConditions(body: List[Atom], conditions: CompoundCondition)
+case class BodyWithConditions(body: List[Atom], conditions: Option[CompoundCondition])
 
 case class Condition(lhs: Expression, op: String, rhs: Expression)
 case class CompoundCondition(conditions: List[List[Condition]])
@@ -137,6 +137,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
     case (v ~ opList) => {
       val variables = List(v) ++ (opList map (_.operand))
       val ops = opList map (_.operator)
+      // println(Expression(variables, ops, "", 0))
       Expression(variables, ops, "", 0)
     }
   }
@@ -178,13 +179,14 @@ class DeepDiveLogParser extends JavaTokenParsers {
   // conditions
   def filterOperator = "LIKE" | ">" | "<" | ">=" | "<=" | "!=" | "="
   def condition = expression ~ filterOperator ~ expression ^^ {
-    case (lhs ~ op ~ rhs) => Condition(lhs, op, rhs)
+    case (lhs ~ op ~ rhs) => {
+      Condition(lhs, op, rhs)
+    }
   }
   def conjunctiveCondition = repsep(condition, ",")
-  def compoundCondition = repsep(conjunctiveCondition, ";") ^^ { CompoundCondition(_) }
-  // def cqCondition: Parser[List[Condition]] = repsep(condition, ",")
-  def cqBodyWithCondition = cqBody ~ opt(",") ~ opt("[") ~ compoundCondition ~ opt("]") ^^ {
-    case (b ~ _ ~ _ ~ c ~ _) => BodyWithConditions(b, c)
+  def compoundCondition = "[" ~> repsep(conjunctiveCondition, ";") <~ "]" ^^ { CompoundCondition(_) }
+  def cqBodyWithCondition = cqBody ~ ("," ~> compoundCondition).? ^^ {
+    case (b ~ c) => BodyWithConditions(b, c)
   }
 
   def conjunctiveQuery : Parser[ConjunctiveQuery] =

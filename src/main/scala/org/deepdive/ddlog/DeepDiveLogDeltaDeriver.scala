@@ -78,7 +78,8 @@ object DeepDiveLogDeltaDeriver{
         }
       }
     }
-    ConjunctiveQuery(incCqHead, incCqBodies.toList, Nil)
+    // TODO fix conditions
+    ConjunctiveQuery(incCqHead, incCqBodies.toList, cq.conditions)
   }
 
   // Incremental scheme declaration,
@@ -118,7 +119,7 @@ object DeepDiveLogDeltaDeriver{
     incrementalStatement += ExtractionRule(ConjunctiveQuery(
       Atom(incNewStmt.a.name, incNewExpr),
       List(List(Atom(stmt.a.name, originalExpr)), List(Atom(incDeltaStmt.a.name, incDeltaExpr))), 
-      List()))
+      List(None)))
     // }
     incrementalStatement.toList
   }

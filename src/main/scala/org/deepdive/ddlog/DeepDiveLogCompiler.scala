@@ -201,13 +201,6 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
       }
     }
 
-    // // resolve an expression
-    // def resolveExpression(e: Expression) = {
-    //   val resolvedVars = e.variables map (resolveVarOrConst(_))
-    //   resolvedVars(0) + " " + ((e.ops zip resolvedVars.drop(1)).map { 
-    //     case (a,b) => s"${a} ${b}" }).mkString      
-    // }
-
     var whereClause = z.bodies(0).zipWithIndex flatMap {
       case (Atom(relName, terms),bodyIndex) => {
         terms flatMap { case Expression(vars, ops, relName, index) =>
@@ -237,17 +230,24 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
     }
 
     // resolve conditions
-    val conditions = ((z.conditions(0).conditions map { case x: List[Condition] =>
-      (x map { case Condition(lhs, op, rhs) =>
-        val lhsExpr = lhs.print(resolveVarOrConst)
-        val rhsExpr = rhs.print(resolveVarOrConst)
-        s"${lhsExpr} ${op} ${rhsExpr}"
-      }).mkString(" AND ")
-    }) map(v => s"(${v})")).mkString(" OR ")
+    val conditionList = z.conditions(0) match {
+      case Some(c) => c.conditions map { case x: List[Condition] =>
+        val inner = x map { case Condition(lhs, op, rhs) =>
+          val lhsExpr = lhs.print(resolveVarOrConst)
+          val rhsExpr = rhs.print(resolveVarOrConst)
+          s"${lhsExpr} ${op} ${rhsExpr}"
+        }
+        inner.mkString(" AND ")
+      }
+      case None => List("")
+    }
+
+    val conditions = conditionList flatMap ( v => if (v != "") Some(s"(${v})") else None)
+    val conditionStr = conditions.mkString(" OR ")
   
     var whereClauseStr = whereClause match {
-      case Nil => if (conditions == "") "" else s"WHERE ${conditions}"
-      case _ => s"""WHERE ${whereClause.mkString(" AND ")} ${if (conditions == "") "" else s" AND (${conditions})"}"""
+      case Nil => if (conditionStr == "") "" else s"WHERE ${conditionStr}"
+      case _ => s"""WHERE ${whereClause.mkString(" AND ")} ${if (conditionStr == "") "" else s" AND (${conditionStr})"}"""
     }
 
     s"""FROM ${ bodyNames }
@@ -396,6 +396,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
   def compileExtractionRules(stmts: List[ExtractionRule], ss: CompilationState): CompiledBlocks = {
     var inputQueries = new ListBuffer[String]()
     for (stmt <- stmts) {
+      // println(DeepDiveLogPrettyPrinter.print(stmt))
       for (cqBody <- stmt.q.bodies) {
         val tmpCq = ConjunctiveQuery(stmt.q.head, List(cqBody), stmt.q.conditions)
         // Generate the body of the query.
@@ -404,7 +405,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
         // map head terms to sql
         def mapHeadTerms(terms: List[Expression], alias: AliasStyle = OriginalOnly) = {
           terms map { case Expression(v, ops, _, _) =>
-            val resolvedVars = v map (resolveVarOrConst(_))
+            val resolvedVars = v map (resolveVarOrConst(_, alias))
             val expr = resolvedVars(0) + ((ops zip resolvedVars.drop(1)).map { case (a,b) => s"${a} ${b}" }).mkString
             expr
           }
@@ -445,7 +446,6 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
             case false => OriginalAndAlias
           }
           val variableCols = mapHeadTerms(tmpCq.head.terms, resolveColumnFlag)
-
           val selectStr = variableCols.mkString(", ")
 
           inputQueries += s"""
@@ -680,6 +680,8 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       }
     // take an initial pass to analyze the parsed program
     val state = new CompilationState( programToCompile, config )
+
+    // programToCompile foreach {stmt => println(DeepDiveLogPrettyPrinter.print(stmt))}
 
     val body = new ListBuffer[String]()
     body ++= compileSchemaDeclarations((state.schemaDeclarationGroupByHead map (_._2)).flatten.toList, state)
