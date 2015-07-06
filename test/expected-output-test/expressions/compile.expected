@@ -58,7 +58,7 @@
       deepdive.extraction.extractors.extraction_rule_3 {
         sql: """ DROP VIEW IF EXISTS Q;
         CREATE VIEW Q AS 
-            SELECT 'test':: TEXT, 123, R0.k AS "a.R0.k" , unnest(R1.q)
+            SELECT  DISTINCT  'test':: TEXT, 123, R0.k AS "a.R0.k" , unnest(R1.q)
             FROM a R0, b R1, c R2
         WHERE R1.k = R0.k  AND R2.s = R1.p|| R1.q AND R2.n = 10 AND R2.t = 'foo'  AND ((R1.r > 100) OR (R1.r < 20 AND R1.r > 10))
         """

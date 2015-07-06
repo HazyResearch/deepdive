@@ -24,6 +24,7 @@ object DeepDiveLogDeltaDeriver{
       val newVars = expr.variables map {
         case term: Variable => term.copy(relName = prefix + term.relName)
         case term: Constant => term
+        case term: InlineFunction => term
       }
       Expression(newVars, expr.ops, expr.relName, expr.index)
     }
@@ -82,7 +83,7 @@ object DeepDiveLogDeltaDeriver{
       }
     }
     // TODO fix conditions
-    ConjunctiveQuery(incCqHead, incCqBodies.toList, incCqConditions.toList)
+    ConjunctiveQuery(incCqHead, incCqBodies.toList, incCqConditions.toList, cq.isDistinct)
   }
 
   // Incremental scheme declaration,
@@ -122,7 +123,7 @@ object DeepDiveLogDeltaDeriver{
     incrementalStatement += ExtractionRule(ConjunctiveQuery(
       Atom(incNewStmt.a.name, incNewExpr),
       List(List(Atom(stmt.a.name, originalExpr)), List(Atom(incDeltaStmt.a.name, incDeltaExpr))), 
-      List(None, None)))
+      List(None, None), false))
     // }
     incrementalStatement.toList
   }

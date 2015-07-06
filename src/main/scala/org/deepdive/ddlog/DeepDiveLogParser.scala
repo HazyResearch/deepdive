@@ -22,7 +22,7 @@ case class Operator(operator: String, operand: ColumnVariable)
 
 case class Atom(name : String, terms : List[Expression])
 case class Attribute(name : String, terms : List[Variable], types : List[String])
-case class ConjunctiveQuery(head: Atom, bodies: List[List[Atom]], conditions: List[Option[CompoundCondition]])
+case class ConjunctiveQuery(head: Atom, bodies: List[List[Atom]], conditions: List[Option[CompoundCondition]], isDistinct: Boolean)
 case class Column(name : String, t : String)
 
 // condition
@@ -194,9 +194,9 @@ class DeepDiveLogParser extends JavaTokenParsers {
   }
 
   def conjunctiveQuery : Parser[ConjunctiveQuery] =
-    cqHead ~ ":-" ~ rep1sep(cqBodyWithCondition, ";") ^^ {
-      case (headatom ~ ":-" ~ disjunctiveBodies) =>
-        ConjunctiveQuery(headatom, disjunctiveBodies.map(_.body), disjunctiveBodies.map(_.conditions))
+    cqHead ~ opt("*") ~ ":-" ~ rep1sep(cqBodyWithCondition, ";") ^^ {
+      case (headatom ~ isDistinct ~ ":-" ~ disjunctiveBodies) =>
+        ConjunctiveQuery(headatom, disjunctiveBodies.map(_.body), disjunctiveBodies.map(_.conditions), isDistinct != None)
     }
 
   def relationType: Parser[RelationType] =

@@ -411,7 +411,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     for (stmt <- stmts) {
       // println(DeepDiveLogPrettyPrinter.print(stmt))
       for (cqBody <- stmt.q.bodies) {
-        val tmpCq = ConjunctiveQuery(stmt.q.head, List(cqBody), stmt.q.conditions)
+        val tmpCq = ConjunctiveQuery(stmt.q.head, List(cqBody), stmt.q.conditions, stmt.q.isDistinct)
         // Generate the body of the query.
         val qs              = new QuerySchema( tmpCq )
 
@@ -450,9 +450,9 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
             DeepDiveLogPrettyPrinter.printExpr(x, ss.resolveColumnVar(_, tmpCq, resolveColumnFlag))
           }
           val selectStr = variableCols.mkString(", ")
-
+          val distinctStr = if (tmpCq.isDistinct) " DISTINCT " else ""
           inputQueries += s"""
-            SELECT ${selectStr}
+            SELECT ${distinctStr} ${selectStr}
             ${ ss.generateSQLBody(tmpCq) }"""
         }
       }
@@ -528,7 +528,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       for (cqBody <- stmt.q.bodies) {
         // edge query
         val fakeBody        = stmt.q.head +: cqBody
-        val fakeCQ          = ConjunctiveQuery(stmt.q.head, List(fakeBody), stmt.q.conditions) // we will just use the fakeBody below.
+        val fakeCQ          = ConjunctiveQuery(stmt.q.head, List(fakeBody), stmt.q.conditions, stmt.q.isDistinct) // we will just use the fakeBody below.
 
         val index = cqBody.length + 1
         val qs2 = new QuerySchema( fakeCQ )

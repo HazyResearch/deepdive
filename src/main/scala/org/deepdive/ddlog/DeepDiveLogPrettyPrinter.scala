@@ -105,7 +105,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
       }
     }).mkString(";\n    ")
 
-    s"""${printAtom(cq.head)} :-
+    s"""${printAtom(cq.head)} ${if (cq.isDistinct) "*" else ""} :-
        |    ${bodyWithCondition}""".stripMargin
   }
 
