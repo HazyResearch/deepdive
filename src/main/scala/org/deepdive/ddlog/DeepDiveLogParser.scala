@@ -80,7 +80,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def stringLiteralAsSqlString = stringLiteral ^^ { s =>
     s"""'${s.stripPrefix("\"").stripSuffix("\"")}'"""
   }
-  def constant = stringLiteralAsSqlString | wholeNumber | "TRUE" | "FALSE" | "TEXT" | "INT" | "BOOLEAN"
+  def constant = stringLiteralAsSqlString | wholeNumber | "TRUE" | "FALSE" | "NULL" | "TEXT" | "INT" | "BOOLEAN"
 
   // C/Java/Scala-style as well as shell script-style comments are supported
   // by treating them as whiteSpace

@@ -204,6 +204,15 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
     }
   }
 
+  def resolveExpr(e: Expression, cq: ConjunctiveQuery, alias: AliasStyle) = {
+    val resolvedVars = e.ops isEmpty match {
+      case true  => e.variables map (resolveColumnVar(_, cq, alias))
+      case false => e.variables map (resolveColumnVar(_, cq, OriginalOnly))
+    }
+    val rest = ((e.ops zip resolvedVars.drop(1)).map { case (a,b) => s"${a} ${b}" }).mkString(" ")
+    resolvedVars(0) + (if (rest != "") " " + rest else "")
+  }
+
   // This is generic code that generates the FROM with positional aliasing R0, R1, etc.
   // and the corresponding WHERE clause (equating all variables)
   def generateSQLBody(z : ConjunctiveQuery) : String = {
@@ -233,7 +242,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
               case _ => None
             }
           } else { // expression
-            val expr = DeepDiveLogPrettyPrinter.printExpr(Expression(vars, ops, relName, index), resolveColumnVar(_,z))
+            val expr = resolveExpr(Expression(vars, ops, relName, index), z, OriginalOnly)
             val attr = schema(relName, index)
             Some(s"R${bodyIndex}.${attr} = ${expr}")
           }
@@ -448,7 +457,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
             case false => OriginalAndAlias
           }
           val variableCols = tmpCq.head.terms map { x => 
-            DeepDiveLogPrettyPrinter.printExpr(x, ss.resolveColumnVar(_, tmpCq, resolveColumnFlag))
+            ss.resolveExpr(x, tmpCq, resolveColumnFlag)
           }
           val selectStr = variableCols.mkString(", ")
           val distinctStr = if (tmpCq.isDistinct) "DISTINCT" else ""
