@@ -7,7 +7,7 @@
     cd "$BATS_TEST_DIRNAME"/biased_coin_example || skip
     deepdive initdb
     deepdive run
-    
+
     # weight should be around log(#positive) / log(#negative) ~= 2.1
     [[ $(deepdive sql eval "
             select count(*)
