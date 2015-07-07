@@ -126,7 +126,11 @@ except:
     from StringIO import StringIO
 
 # postgres on homebrew somehow does not have /usr/local/bin in PATH
-os.environ['PATH'] += os.pathsep + '/usr/local/bin'
+try:
+    os.environ['PATH'] += os.pathsep + '/usr/local/bin'
+except:
+    # postgres on ubuntu does not even have PATH in environment
+    pass
 
 if not zip_blob:
     plpy.error('No blob provided')
