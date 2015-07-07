@@ -5,6 +5,9 @@
 : ${SUBSAMPLE_NUM_SENTENCES:=3000}
 export SUBSAMPLE_NUM_SENTENCES
 
+# load helpers
+. "$BATS_TEST_DIRNAME"/spouse_example.helpers.sh
+
 setup() {
     example_dir=$DBVARIANT
     case $DBVARIANT in
@@ -18,21 +21,22 @@ setup() {
     cd tsv_extractor || skip
     deepdive initdb
     deepdive run
-    # TODO check result
+    [[ $(getAccuracyPerCent) -gt 90 ]]
 }
 
 @test "$DBVARIANT spouse example (json_extractor)" {
     cd json_extractor || skip
     deepdive initdb
     deepdive run
-    # TODO check result
+    [[ $(getAccuracyPerCent) -gt 90 ]]
 }
 
 @test "$DBVARIANT spouse example (piggy_extractor)" {
     cd piggy_extractor || skip
     deepdive initdb
     deepdive run
-    # TODO check result
+    # TODO piggy doesn't have proper inference rules
+    # [[ $(getAccuracyPerCent) -gt 90 ]]
 }
 
 @test "$DBVARIANT spouse example (plpy_extractor)" {
@@ -40,5 +44,5 @@ setup() {
     cd plpy_extractor || skip
     deepdive initdb
     deepdive run
-    # TODO check result
+    [[ $(getAccuracyPerCent) -gt 90 ]]
 }
