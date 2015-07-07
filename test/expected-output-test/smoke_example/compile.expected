@@ -123,8 +123,8 @@ cancer.label: Boolean
         deepdive.inference.factors.smoke_1 {
           input_query: """
           SELECT R0.id AS "smoke.R0.id" , R1.id AS "smoke.R1.id" 
-          FROM smoke R0, smoke R1, friend R2
-        WHERE R2.pid1 = R1.person_id  AND R2.pid = R0.person_id """
+          FROM smoke R0, smoke R1, friends R2
+        WHERE R2.person_id = R1.person_id  AND R2.friend_id = R0.person_id """
           function: "Imply(smoke.R1.label, smoke.R0.label)"
           weight: "0.4"
         }

@@ -35,5 +35,5 @@ cancer(pid) :- person_has_cancer(pid, l) label = l.
 cancer(pid) :- smoke(pid), person_smokes(pid, l)
     weight = 0.5.
 
-smoke(pid)  :- smoke(pid1), friend(pid1, pid)
+smoke(pid)  :- smoke(pid1), friends(pid1, pid)
     weight = 0.4.

@@ -680,6 +680,8 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
 
   // entry point for compilation
   override def run(parsedProgram: DeepDiveLog.Program, config: DeepDiveLog.Config) = {
+    // semantic checking
+    DeepDiveLogSemanticChecker.run(parsedProgram, config)
     // determine the program to compile
     val programToCompile =
       // derive and compile the program based on mode information

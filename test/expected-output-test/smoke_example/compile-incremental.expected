@@ -266,11 +266,11 @@ dd_delta_smoke.label: Boolean
         deepdive.inference.factors.dd_new_smoke_1 {
           input_query: """
           SELECT R0.id AS "dd_new_smoke.R0.id" , R1.id AS "dd_delta_smoke.R1.id" 
-          FROM dd_new_smoke R0, dd_delta_smoke R1, friend R2
-        WHERE R2.pid1 = R1.person_id  AND R2.pid = R0.person_id  UNION ALL 
+          FROM dd_new_smoke R0, dd_delta_smoke R1, friends R2
+        WHERE R2.person_id = R1.person_id  AND R2.friend_id = R0.person_id  UNION ALL 
           SELECT R0.id AS "dd_new_smoke.R0.id" , R1.id AS "dd_new_smoke.R1.id" 
-          FROM dd_new_smoke R0, dd_new_smoke R1, dd_delta_friend R2
-        WHERE R2.pid1 = R1.person_id  AND R2.pid = R0.person_id """
+          FROM dd_new_smoke R0, dd_new_smoke R1, dd_delta_friends R2
+        WHERE R2.person_id = R1.person_id  AND R2.friend_id = R0.person_id """
           function: "Imply(dd_delta_smoke.R1.label, dd_new_smoke.R0.label)"
           weight: "0.4"
         }
