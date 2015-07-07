@@ -2,18 +2,13 @@
 set -eu
 cd "$(dirname "$0")"
 
-deepdive sql "drop table if exists result cascade;"
-deepdive sql "create table result(word_id bigint, word text, pos text, true_tag text, tag text);"
-
-deepdive sql "insert into result
-  select b.word_id, b.word, b.pos, b.true_tag, b.category
-  from (select word_id, max(expectation) as m
-    from words_tag_inference group by word_id
-  ) as a inner join words_tag_inference as b
-  on a.word_id = b.word_id and a.m = b.expectation;"
-
-deepdive sql "copy (select word, pos, true_tag, max(tag) from result group by word_id, word, pos, true_tag order by word_id)
-  to '$PWD/result' delimiter ' ';"
+deepdive sql "copy (
+    SELECT a.word, a.pos, a.true_tag, a.category
+      FROM words_tag_inference a LEFT JOIN words_tag_inference b
+        ON a.word_id = b.word_id AND a.expectation < b.expectation
+     WHERE b.expectation IS NULL
+     ORDER BY a.word_id
+  ) to '$PWD/result' delimiter ' ';"
 
 python convert.py
 
