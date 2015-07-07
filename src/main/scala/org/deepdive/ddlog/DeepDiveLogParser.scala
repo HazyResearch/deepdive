@@ -139,7 +139,6 @@ class DeepDiveLogParser extends JavaTokenParsers {
     case (v ~ opList) => {
       val variables = List(v) ++ (opList map (_.operand))
       val ops = opList map (_.operator)
-      // println(variables.mkString)
       Expression(variables, ops, "", 0)
     }
   }
@@ -171,7 +170,6 @@ class DeepDiveLogParser extends JavaTokenParsers {
               case Constant(x,_,_) => Constant(x,r,i)
               case InlineFunction(x, args) => InlineFunction(x, args)
             }
-            // println(Expression(vars, op, r, i))
             Expression(vars, op, r, i)
           }
         })

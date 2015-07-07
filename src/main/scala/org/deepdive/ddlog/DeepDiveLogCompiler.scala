@@ -418,7 +418,6 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
   def compileExtractionRules(stmts: List[ExtractionRule], ss: CompilationState): CompiledBlocks = {
     var inputQueries = new ListBuffer[String]()
     for (stmt <- stmts) {
-      // println(DeepDiveLogPrettyPrinter.print(stmt))
       for (cqBody <- stmt.q.bodies) {
         val tmpCq = ConjunctiveQuery(stmt.q.head, List(cqBody), stmt.q.conditions, stmt.q.isDistinct)
         // Generate the body of the query.
@@ -429,7 +428,6 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           val headTerms = tmpCq.head.terms map { x => 
             DeepDiveLogPrettyPrinter.printExpr(x, ss.resolveColumnVar(_, tmpCq, OriginalOnly))
           }
-          // println(headTerms)
           val index = qs.getBodyIndex(stmt.supervision)
           val name  = ss.resolveName(qs.getVar(stmt.supervision))
           val labelCol = s"R${index}.${name}"
@@ -693,8 +691,6 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       }
     // take an initial pass to analyze the parsed program
     val state = new CompilationState( programToCompile, config )
-
-    // programToCompile foreach {stmt => println(DeepDiveLogPrettyPrinter.print(stmt))}
 
     val body = new ListBuffer[String]()
     body ++= compileSchemaDeclarations((state.schemaDeclarationGroupByHead map (_._2)).flatten.toList, state)
