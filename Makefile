@@ -98,12 +98,14 @@ $(SCALA_TEST_CLASSPATH_EXPORTED): $(SCALA_BUILD_FILES)
 
 .PHONY: test test-build
 test: ONLY = $(shell test/enumerate-tests.sh)
-test: $(ONLY) test-build
-	# Running $(words $(ONLY)) .bats test files
+test: test/bats/bin/bats $(ONLY) test-build
+	# Running $(shell test/bats/bin/bats -c $(ONLY)) tests defined in $(words $(ONLY)) .bats files
 	#  To test selectively, run:  make test ONLY=/path/to/bats/files
 	#  For a list of tests, run:  make test-list
 	test/bats/bin/bats $(ONLY)
 test-build:
+test/bats/bin/bats:
+	git submodule update --init test/bats
 test/%/scalatests.bats: test/postgresql/update-scalatests.bats.sh $(SCALA_TEST_SOURCES)
 	# Regenerating .bats for Scala tests
 	$< >$@
