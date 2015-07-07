@@ -22,13 +22,14 @@ env:
     - PGHOST=localhost
     - DBNAME=deepdive_test
 
+before_install:
+  # Check coding style before performing the build and tests
+  - make checkstyle
+
 install:
   - make depends
   - util/install.sh postgres
-
-before_script:
-  # Check coding style before performing the build and tests
-  - make checkstyle
+  - make test-build  # XXX doing it here to hide the noise from sbt and unzip
 
 script:
   # Run all tests
