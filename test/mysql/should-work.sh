@@ -7,5 +7,5 @@ set -eu
     . ./env.sh
 
     # try executing a SQL query against the configured database for tests
-    db-execute "SELECT VERSION()"
+    DBNAME=mysql db-execute "SELECT VERSION()"
 } &>/dev/null

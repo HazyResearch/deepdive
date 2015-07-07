@@ -20,8 +20,8 @@ case $format in
     *) error "$format: unsupported format by MySQL driver" ;; # TODO
 esac
 case $header in
-    0) prompt_options+=(--column-names=off) ;;
-    1) prompt_options+=(--column-names=on)  ;;
+    0) prompt_options+=(--skip-column-names) ;;
+    1) prompt_options+=(--column-names)  ;;
     *) error "$header: unrecognized value for HEADER"
 esac
 

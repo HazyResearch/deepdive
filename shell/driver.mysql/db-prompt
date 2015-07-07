@@ -5,4 +5,4 @@
 ##
 set -eu
 
-exec mysql -h $DBHOST -P $DBPORT -u $DBUSER -D $DBNAME --local-infile "$@"
+exec mysql -h $DBHOST -P $DBPORT -u $DBUSER --password="$DBPASSWORD" -D $DBNAME --local-infile "$@"
