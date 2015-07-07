@@ -3,5 +3,10 @@
 set -eu
 cd "$(dirname "$0")"
 
-deepdive sql "copy words_raw(word, pos, tag) from STDIN delimiter ' ' null 'null'" <./train_null_terminated.txt
-deepdive sql "copy words_raw(word, pos, tag) from STDIN delimiter ' ' null 'null'" <./test_null_terminated.txt
+if [[ -n ${SUBSAMPLE_NUM_WORDS_TRAIN:-} && -n ${SUBSAMPLE_NUM_WORDS_TEST:-} ]]; then
+    head -n ${SUBSAMPLE_NUM_WORDS_TRAIN} ./train_null_terminated.txt
+    head -n ${SUBSAMPLE_NUM_WORDS_TEST}   ./test_null_terminated.txt
+else
+    cat ./train_null_terminated.txt ./test_null_terminated.txt
+fi |
+deepdive sql "copy words_raw(word, pos, tag) from STDIN delimiter ' ' null 'null'"
