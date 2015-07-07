@@ -27,3 +27,5 @@ examples/spouse_example/data/spouses.tsv
 *~
 #*#
 project/target
+
+/src/test/resources/format_converter/*.bin
