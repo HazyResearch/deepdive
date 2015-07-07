@@ -5,18 +5,45 @@
 #
 # > deepdive run PIPELINE
 # Runs the pipeline named PIPELINE defined in deepdive.conf.
+#
+# > deepdive run -C /path/to/app
+# Runs the application located on a different path than current working directory.
+#
+# > deepdive run -c application.conf
+# Runs the application defined in an alternative configuration file than deepdive.conf.
+#
+# > deepdive run -o /path/to/different/output/dir
+# Runs the application with an alternative output directory.
 ##
 set -eu
 
+# parse command-line options
+while getopts "C:c:o:" o; do
+    case $o in
+        C) APP_HOME=$OPTARG ;;
+        c) DEEPDIVE_CONFIG=$OPTARG ;;
+        o) DEEPDIVE_OUTPUT=$OPTARG ;;
+        *) usage "$0" "Illegal option given"
+    esac
+done
+shift $(($OPTIND - 1))
+
 # find the current application
+# either specified with -C option or via APP_HOME environment
 APP_HOME=$(find-deepdive-app)
 export APP_HOME
 cd "$APP_HOME"
 
+# find the configuration file for the application
+# defaults to deepdive.conf, which can be overriden via command-line option -c or DEEPDIVE_CONFIG environment
+: ${DEEPDIVE_CONFIG:=$PWD/deepdive.conf}
+export DEEPDIVE_CONFIG
+
 # load database driver for the application
 . load-db-driver.sh
 
-# create a fresh run directory or use the one specified in DEEPDIVE_OUTPUT environment variable
+# find the output directory for this run of the application
+# either use the path specified in DEEPDIVE_OUTPUT environment or command-line option -o, or create a fresh run directory by default
 if [[ -n "${DEEPDIVE_OUTPUT:-}" ]]; then
     run_id=$(cd "$DEEPDIVE_OUTPUT" && pwd)
     run_dir=$run_id
@@ -25,18 +52,20 @@ else
     run_dir=run/$run_id
 fi
 mkdir -p "$run_dir"
-export DEEPDIVE_OUTPUT=$(cd "$run_dir" && pwd)
-export DEEPDIVE_LOGFILE="$DEEPDIVE_OUTPUT/log.txt"
+DEEPDIVE_OUTPUT=$(cd "$run_dir" && pwd)
+: ${DEEPDIVE_LOGFILE:="$DEEPDIVE_OUTPUT/log.txt"}
+export DEEPDIVE_OUTPUT DEEPDIVE_LOGFILE
 
-# point to it with RUNNING symlink
+# point to the output directory with RUNNING symlink for convenience while it's running
 ln -sfn "$run_id" run/RUNNING
 trap "! [[ run/RUNNING -ef $run_dir ]] || rm -f run/RUNNING" EXIT
 trap "ln -sfn $run_id run/ABORTED" ERR
 
+# to make it possible to override certain configs,
 # create an extended version of deepdive.conf by collecting more configs from command-line and environment
 extendedConfig=$(mktemp ${TMPDIR:-/tmp}/deepdive.conf.XXXXXXX)
 trap "rm -f $extendedConfig" EXIT
-cat deepdive.conf >"$extendedConfig"
+cat "$DEEPDIVE_CONFIG" >"$extendedConfig"
 # append any extra config present in DEEPDIVE_CONFIG_EXTRA environment
 [[ -z "${DEEPDIVE_CONFIG_EXTRA:-}" ]] || {
     echo >>"$extendedConfig" "$DEEPDIVE_CONFIG_EXTRA"
@@ -47,7 +76,7 @@ cat deepdive.conf >"$extendedConfig"
     echo >>"$extendedConfig" "deepdive.pipeline.run: \"$Pipeline\""
 }
 
-# run DeepDive application with SBT
+# run the DeepDive application with SBT
 (
     # make sure ddlib in Python is available to all udf
     export PYTHONPATH="$DEEPDIVE_HOME"/ddlib:"${PYTHONPATH:+:$PYTHONPATH}"
@@ -55,9 +84,6 @@ cat deepdive.conf >"$extendedConfig"
     exec java -cp "$(cat "$DEEPDIVE_HOME"/target/scala-2.10/classpath)" \
         org.deepdive.Main -c "$extendedConfig" -o "$APP_HOME/$run_dir"
 )
-
-# TODO log under $run_dir
-# TODO run assembly jar instead of using sbt
 
 # point to the run with LATEST symlink
 ln -sfn "$run_id" run/LATEST
