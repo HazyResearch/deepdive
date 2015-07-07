@@ -5,7 +5,7 @@
 . "${BASH_SOURCE%/*}"/../env.sh
 
 # initialize database
-: ${DEEPDIVE_DB_URL:=postgresql://${TEST_DBHOST:-localhost}/${TEST_DBNAME:-deepdive_test_$USER}}
+: ${DEEPDIVE_DB_URL:=postgresql://${TEST_POSTGRES_DBHOST:-${TEST_DBHOST:-localhost}}/${TEST_DBNAME:-deepdive_test_$USER}}
 . load-db-driver.sh
 
 # environment variables expected by Scala test code

@@ -4,7 +4,7 @@
 # load common test environment settings
 . "${BASH_SOURCE%/*}"/../env.sh
 
-export DEEPDIVE_DB_URL="greenplum://${TEST_DBHOST:-localhost}/${TEST_DBNAME:-deepdive_test_$USER}"
+export DEEPDIVE_DB_URL="greenplum://${TEST_GREENPLUM_DBHOST:-${TEST_DBHOST:-localhost}}/${TEST_DBNAME:-deepdive_test_$USER}"
 . load-db-driver.sh
 
 # environment variables expected by Scala test code

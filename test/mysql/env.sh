@@ -5,7 +5,7 @@
 . "${BASH_SOURCE%/*}"/../env.sh
 
 # initialize database
-: ${DEEPDIVE_DB_URL:=mysql://${TEST_DBHOST:-root@localhost}/${TEST_DBNAME:-deepdive_test_$USER}}
+: ${DEEPDIVE_DB_URL:=mysql://${TEST_MYSQL_DBHOST:-${TEST_DBHOST:-root@localhost}}/${TEST_DBNAME:-deepdive_test_$USER}}
 . load-db-driver.sh
 
 # environment variables expected by Scala test code
