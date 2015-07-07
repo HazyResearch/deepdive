@@ -1,1 +1,0 @@
-../postgresql/chunking_example.bats
