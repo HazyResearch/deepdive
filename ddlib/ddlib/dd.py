@@ -6,6 +6,34 @@ Span = collections.namedtuple('Span', ['begin_word_id', 'length'])
 Sequence = collections.namedtuple('Sequence', ['is_inversed', 'elements'])
 DepEdge = collections.namedtuple('DepEdge', ['word1', 'word2', 'label', 'is_bottom_up'])
 
+
+def from_bazaar(line, field_sep="\t", array_sep="@@@@@", bazaar_version="0.0"):
+    """Return a list of objects decoded from Bazaar's output.
+       Note that, it is the user's responbility to make sure the input to this function
+       has fileds arranged with the same order as Bazaar's output with the correct version.
+       The output are in order of (docid, sentid, wordidxs, words, poses, ners, lemmas, dep_paths, dep_parents, bounding_boxes)
+    """
+
+    ss = line.split(field_sep)
+    if len(ss) == 10:
+
+        docid = ss[0]
+        sentid = ss[1]
+        wordidxs = ss[2].split(array_sep)
+        words = ss[3].split(array_sep)
+        poses = ss[4].split(array_sep)
+        ners = ss[5].split(array_sep)
+        lemmas = ss[6].split(array_sep)
+        dep_paths = ss[7].split(array_sep)
+        dep_parents = ss[8].split(array_sep)
+        bounding_boxes = ss[9].split(array_sep)
+
+        return (docid, sentid, wordidxs, words, poses, ners, lemmas, dep_paths, dep_parents, bounding_boxes)
+
+    else:
+        exit(1) # Error, # fileds do not match
+
+
 def unpack_words(input_dict, character_offset_begin=None, character_offset_end=None, lemma=None,
         pos=None, ner = None, words = None, dep_graph = None, dep_graph_parser = lambda x: x.split('\t')):
         """Return a list of Word objects representing a sentence
@@ -122,4 +150,6 @@ def dep_path_between_words(words, begin_idx, end_idx):
         for e in reversed(path_right):
                 path.append(e)
         return path
+
+
 
