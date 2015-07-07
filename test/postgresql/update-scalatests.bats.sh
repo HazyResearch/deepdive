@@ -15,7 +15,7 @@ db-init
 EOF
 
     # enumerate all tests with SBT
-    (cd ../.. && sbt coverage "export printTests") | grep ^org.deepdive.test.unit | sort |
+    (cd ../.. && sbt coverage "export printTests") | grep ^org.deepdive.test | sort |
     # generate a corresponding Bats test
     sed 's#.*#@test "$DBVARIANT ScalaTest &" {\
     java org.scalatest.tools.Runner -oDF -s &\

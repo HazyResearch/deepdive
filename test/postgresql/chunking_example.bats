@@ -3,8 +3,11 @@
 
 . "$BATS_TEST_DIRNAME"/env.sh >&2
 
-setup() {
-    :
-}
+@test "$DBVARIANT chunking example" {
+    cd "$BATS_TEST_DIRNAME"/chunking_example || skip
+    deepdive initdb
+    deepdive run
 
-# TODO migrate org.deepdive.test.integration.ChunkingApp to Bats
+    f1score=$(printf '%.0f' $(result/eval.sh | sed -n '/^accuracy:/ s/.* FB1: *//p'))
+    [[ $f1score -ge 80 ]]
+}
