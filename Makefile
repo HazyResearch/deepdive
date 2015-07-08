@@ -97,12 +97,23 @@ $(SCALA_TEST_CLASSPATH_EXPORTED): $(SCALA_BUILD_FILES)
 ### test recipes #############################################################
 
 .PHONY: test test-build
-test: ONLY = $(shell test/enumerate-tests.sh)
-test: test/bats/bin/bats $(ONLY) test-build
-	# Running $(shell test/bats/bin/bats -c $(ONLY)) tests defined in $(words $(ONLY)) .bats files
-	#  To test selectively, run:  make test ONLY=/path/to/bats/files
+# One can fine-tune the list of tests by setting environment variables
+# TEST_ONLY and TEST_EXCEPT, or passing the same glob patterns as Make
+# arguments ONLY and EXCEPT, e.g.:
+#   $ make test ONLY+=test/postgres/*.bats EXCEPT+=test/*/scalatests.bats
+#   $ TEST_ONLY=test/postgres/*.bats  make test EXCEPT+=test/*/scalatests.bats
+#   $ TEST_ONLY=test/postgres/*.bats TEST_EXCEPT=test/*/scalatests.bats   make test
+TEST_ONLY ?= $(shell test/enumerate-tests.sh)
+TEST_EXCEPT ?=
+test: ONLY = $(TEST_ONLY)
+test: EXCEPT = $(TEST_EXCEPT)
+test: BATS_FILES = $(filter-out $(wildcard $(EXCEPT)),$(wildcard $(ONLY)))
+test: test/bats/bin/bats $(BATS_FILES) test-build
+	# Running $(shell test/bats/bin/bats -c $(BATS_FILES)) tests defined in $(words $(BATS_FILES)) .bats files
+	#  To test selectively, run:  make test   ONLY+=/path/to/bats/files
+	#  To exclude certain tests:  make test EXCEPT+=/path/to/bats/files
 	#  For a list of tests, run:  make test-list
-	test/bats/bin/bats $(ONLY)
+	test/bats/bin/bats  $(BATS_FILES)
 test-build:
 test/bats/bin/bats:
 	git submodule update --init test/bats
@@ -113,7 +124,9 @@ test/%/scalatests.bats: test/postgresql/update-scalatests.bats.sh $(SCALA_TEST_S
 
 .PHONY: test-list
 test-list:
-	@test/enumerate-tests.sh | sed 's/^/make test ONLY=/'
+	@echo "make test \\"
+	@test/enumerate-tests.sh | sed 's/$$/ \\/; s/^/   ONLY+=/p; s/^   ONLY+=/ EXCEPT+=/'
+	@echo " #"
 
 .PHONY: checkstyle
 checkstyle:

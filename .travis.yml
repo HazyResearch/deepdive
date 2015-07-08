@@ -25,6 +25,13 @@ env:
     - PGPORT=5432
     - PGHOST=localhost
     - DBNAME=deepdive_test
+  matrix:
+      # unit tests
+    - TEST_ONLY=test/*/scalatests.bats
+      # PostgreSQL integration tests
+    - TEST_ONLY=test/postgresql/*.bats  TEST_EXCEPT=test/*/scalatests.bats
+      # MySQL integration tests
+    - TEST_ONLY=test/mysql/*.bats  TEST_EXCEPT=test/*/scalatests.bats
 
 before_install:
   # Check coding style before performing the build and tests
