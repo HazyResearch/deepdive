@@ -16,7 +16,7 @@ import scala.util.Try
 sealed trait ColumnVariable
 case class Variable(varName : String, relName : String, index : Int ) extends ColumnVariable
 case class Constant(value : String, relName: String, index: Int) extends ColumnVariable
-case class InlineFunction(functionName: String, args: List[ColumnVariable]) extends ColumnVariable
+case class InlineFunction(functionName: String, args: List[ColumnVariable], isAggregation: Boolean) extends ColumnVariable
 case class Expression(variables: List[ColumnVariable], ops: List[String], relName: String, index: Int)
 case class Operator(operator: String, operand: ColumnVariable)
 
@@ -108,8 +108,8 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def dataType = CategoricalParser | BooleanParser
 
   def schemaDeclaration: Parser[SchemaDeclaration] =
-    relationName ~ opt("?") ~ opt("!") ~ "(" ~ rep1sep(columnDeclaration, ",") ~ ")" ~ opt(dataType) ^^ {
-      case (r ~ isQuery ~ isDistinct ~ "(" ~ attrs ~ ")" ~ vType) => {
+    relationName ~ opt("?") ~ "(" ~ rep1sep(columnDeclaration, ",") ~ ")" ~ opt(dataType) ^^ {
+      case (r ~ isQuery ~ "(" ~ attrs ~ ")" ~ vType) => {
         val vars = attrs.zipWithIndex map { case(x, i) => Variable(x.name, r, i) }
         var types = attrs map { case(x) => x.t }
         val variableType = vType match {
@@ -126,12 +126,14 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def variable = variableName ^^ { Variable(_, "", 0) }
   def columnConstant = constant ^^ { Constant(_, "", 0) }
   def variableOrConstant = columnConstant | variable
-  def inlineFunction = "!" ~> functionName ~ "(" ~ rep1sep(variableOrConstant, ",") ~ ")" ^^ {
+  val aggregationFunctions = Set("MAX", "SUM", "MIN")
+  def inlineFunction = functionName ~ "(" ~ rep1sep(variableOrConstant, ",") ~ ")" ^^ {
     case (name ~ _ ~ args ~ _) => {
-      InlineFunction(name, args)
+      if (aggregationFunctions contains name) InlineFunction(name, args, true)
+      else InlineFunction(name, args, false)
     }
   }
-  def columnVariable = columnConstant | variable | inlineFunction
+  def columnVariable = columnConstant | inlineFunction | variable
   def operateOn = operator ~ columnVariable ^^ { case (v ~ o) => Operator(v,o) }
   def typecast = castOp ~ columnConstant ^^ { case (v ~ o) => Operator(v,o) }
   def operatorAndOperand = operateOn | typecast
@@ -151,7 +153,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
             val vars = v map {
               case Variable(x,_,_) => Variable(x,r,i)
               case Constant(x,_,_) => Constant(x,r,i)
-              case InlineFunction(x, args) => InlineFunction(x, args)
+              case InlineFunction(x, args, a) => InlineFunction(x, args, a)
             }
             Expression(vars, op, r, i)
           }
@@ -168,7 +170,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
             val vars = v map {
               case Variable(x,_,_) => Variable(x,r,i)
               case Constant(x,_,_) => Constant(x,r,i)
-              case InlineFunction(x, args) => InlineFunction(x, args)
+              case InlineFunction(x, args, _) => InlineFunction(x, args, false)
             }
             Expression(vars, op, r, i)
           }

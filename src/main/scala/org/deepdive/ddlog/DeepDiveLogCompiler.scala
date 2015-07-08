@@ -196,7 +196,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
       }
     }
     v match {
-      case InlineFunction(name, args) => {
+      case InlineFunction(name, args, _) => {
         val resolvedArgs = args map (resolveVarOrConst(_, OriginalOnly))
         s"${name}(${resolvedArgs.mkString(", ")})"
       }
@@ -265,10 +265,30 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
 
     val conditions = conditionList flatMap ( v => if (v != "") Some(s"(${v})") else None)
     val conditionStr = conditions.mkString(" OR ")
-  
+    
+    // handle group by
+    // map head terms, leaving out aggregation functions
+    val groupbyTerms = z.head.terms flatMap { case Expression(vars, ops, relName, index) =>
+      if (ops isEmpty) {
+        vars(0) match {
+          case InlineFunction(name, args, a) => if (a) None else Some("")
+          case Variable(v,r,i) => resolveColumn(v, qs, z, OriginalOnly)
+          case _ => Some("")
+        }
+      } else {
+        Some("")
+      }
+    }
+
+    val groupbyStr = if (groupbyTerms.size == z.head.terms.size) {
+      ""
+    } else {
+      s"\n        GROUP BY ${groupbyTerms.mkString(", ")}"
+    }
+
     var whereClauseStr = whereClause match {
-      case Nil => if (conditionStr == "") "" else s"WHERE ${conditionStr}"
-      case _ => s"""WHERE ${whereClause.mkString(" AND ")} ${if (conditionStr == "") "" else s" AND (${conditionStr})"}"""
+      case Nil => if (conditionStr == "") "" else s"WHERE ${conditionStr}${groupbyStr}"
+      case _ => s"""WHERE ${whereClause.mkString(" AND ")} ${if (conditionStr == "") "" else s" AND (${conditionStr})"}${groupbyStr}"""
     }
 
     s"""FROM ${ bodyNames }

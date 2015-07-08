@@ -63,9 +63,9 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
 
   def printColumnVar(x: ColumnVariable) = {
     x match {
-      case InlineFunction(name, args) => {
+      case InlineFunction(name, args, _) => {
         val resolvedArgs = args map printVarOrConst
-        s"!${name}(${resolvedArgs.mkString(", ")})"
+        s"${name}(${resolvedArgs.mkString(", ")})"
       }
       case _ => printVarOrConst(x)
     }

@@ -2,4 +2,6 @@ a(k int).
 b(k int, p text, q text, r int).
 c(s text, n int, t text).
 
-Q("test" :: TEXT, 123, id, !unnest(y)) * :- a(id), b(id, x,y,z), c(x || y,10,"foo"), [z>100; z < 20, z > 10].
+Q("test" :: TEXT, 123, id, unnest(y)) * :- a(id), b(id, x,y,z), c(x || y,10,"foo"), [z>100; z < 20, z > 10].
+
+Q(y, z, MAX(w)) :- a(x), b(x,y,z,w).
