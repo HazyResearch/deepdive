@@ -20,6 +20,7 @@ setup() {
 
 @test "incremental spouse example (F1, then F2 and Symmetry incrementally)" {
     export DBNAME=${DBPREFIX}_inc
+    rm -rf inc.base.out inc.f1+f2.out inc.f1+f2+symmetry.out
     ./0-setup.sh                  spouse_example.f1.ddl        inc.base.out
     # Prepare incremental runs with only F1 in base
     ./1-materialization_phase.sh  spouse_example.f1.ddl        inc.base.out
@@ -33,6 +34,7 @@ setup() {
 
 @test "incremental spouse example's non-incremental run (F1+F2)" {
     export DBNAME=${DBPREFIX}_noninc
+    rm -rf noninc.f1+f2.out
     # Run as usual for F1+F2
     ./0-setup.sh               spouse_example.f1+f2.ddl             noninc.f1+f2.out
     ./9-nonincremental_run.sh  spouse_example.f1+f2.ddl             noninc.f1+f2.out
@@ -40,6 +42,7 @@ setup() {
 
 @test "incremental spouse example's non-incremental run (F1+F2+Symmetry)" {
     export DBNAME=${DBPREFIX}_noninc
+    rm -rf noninc.f1+f2+symmetry.out
     # Run as usual for F1+F2+Symmetry
     ./0-setup.sh               spouse_example.f1+f2+symmetry.ddl    noninc.f1+f2+symmetry.out
     ./9-nonincremental_run.sh  spouse_example.f1+f2+symmetry.ddl    noninc.f1+f2+symmetry.out
