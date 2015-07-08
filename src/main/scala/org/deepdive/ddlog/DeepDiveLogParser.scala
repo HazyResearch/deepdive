@@ -120,7 +120,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
       }
     }
 
-  def operator = "||" | "+" | "-" | "*" | "/"
+  def operator = "||" | "+" | "-" | "*" | "/" | "&"
   def castOp = "::"
 
   def variable = variableName ^^ { Variable(_, "", 0) }
@@ -181,7 +181,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def cqBody: Parser[List[Atom]] = rep1sep(cqBodyAtom, ",")
 
   // conditions
-  def filterOperator = "LIKE" | ">" | "<" | ">=" | "<=" | "!=" | "="
+  def filterOperator = "LIKE" | ">" | "<" | ">=" | "<=" | "!=" | "=" | "IS" | "IS NOT"
   def condition = expression ~ filterOperator ~ expression ^^ {
     case (lhs ~ op ~ rhs) => {
       Condition(lhs, op, rhs)
