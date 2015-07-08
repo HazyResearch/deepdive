@@ -1,9 +1,12 @@
 #!/usr/bin/env bats
 # DeepDive Scala Tests
-# Generated: 2015-07-06T16:15:40
+# Generated: 2015-07-08T00:42:47
 
 . "$BATS_TEST_DIRNAME"/env.sh >&2
-db-init
+
+setup() {
+    db-init
+}
 
 @test "$DBVARIANT ScalaTest org.deepdive.test.unit.DataLoaderSpec" {
     java org.scalatest.tools.Runner -oDF -s org.deepdive.test.unit.DataLoaderSpec
