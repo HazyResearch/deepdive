@@ -20,18 +20,18 @@ cache:
 
 env:
   global:
-    - PGUSER=postgres
-    - PGPASSWORD=
-    - PGPORT=5432
-    - PGHOST=localhost
-    - DBNAME=deepdive_test
-  matrix:
-      # unit tests
-    - TEST_ONLY=test/*/scalatests.bats
-      # PostgreSQL integration tests
-    - TEST_ONLY=test/postgresql/*.bats  TEST_EXCEPT=test/*/scalatests.bats
-      # MySQL integration tests
-    - TEST_ONLY=test/mysql/*.bats  TEST_EXCEPT=test/*/scalatests.bats
+    - PGUSER: postgres
+    - PGPASSWORD:
+    - PGPORT: 5432
+    - PGHOST: localhost
+    - DBNAME: deepdive_test
+  matrix: # NOTE we're on a paid plan that gives us 2 parallel jobs
+      # 1. Unit tests with PostgreSQL and integration tests with MySQL
+    - TEST_ONLY: test/postgresql/scalatests.bats test/mysql/*.bats
+      TEST_EXCEPT: test/mysql/scalatests.bats
+      # 2. More integration tests with PostgreSQL
+    - TEST_ONLY:
+      TEST_EXCEPT: test/postgresql/scalatests.bats test/mysql/*.bats
 
 before_install:
   # Check coding style before performing the build and tests
