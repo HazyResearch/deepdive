@@ -61,7 +61,7 @@
             SELECT DISTINCT 'test' :: TEXT, 123, R0.k AS "a.R0.k" , unnest(R1.q)
             FROM a R0, b R1, c R2
         WHERE R1.k = R0.k  AND R2.s = R1.p || R1.q AND R2.n = 10 AND R2.t = 'foo'  AND ((R1.r > 100) OR (R1.r < 20 AND R1.r > 10)) UNION ALL 
-            SELECT  R1.p AS "b.R1.p" , R1.q AS "b.R1.q" , MAX(R1.r)
+            SELECT  R1.p AS "b.R1.p" , R1.q AS "b.R1.q" , MAX(R1.r) AS "MAX_R1.r"
             FROM a R0, b R1
         WHERE R1.k = R0.k  
         GROUP BY R1.p, R1.q

@@ -196,9 +196,14 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
       }
     }
     v match {
-      case InlineFunction(name, args, _) => {
+      case InlineFunction(name, args, agg) => {
         val resolvedArgs = args map (resolveVarOrConst(_, OriginalOnly))
-        s"${name}(${resolvedArgs.mkString(", ")})"
+        val resolved = s"${name}(${resolvedArgs.mkString(", ")})"
+        val aggAlias = if (agg) { args(0) match {
+          case Variable(v,r,i) => s""" AS "${name}_${resolveColumn(v, qs, cq, OriginalOnly).get}"""" // "
+          case _ => ""
+        }} else ""
+        resolved + aggAlias
       }
       case _ => resolveVarOrConst(v, alias)
     }
