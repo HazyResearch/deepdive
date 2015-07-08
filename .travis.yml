@@ -14,6 +14,10 @@ python:
 services:
   - postgresql
 
+cache:
+  directories:
+    - $HOME/.ivy2/cache
+
 env:
   global:
     - PGUSER=postgres
