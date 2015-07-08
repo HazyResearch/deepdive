@@ -9,12 +9,7 @@ export SUBSAMPLE_NUM_SENTENCES
 . "$BATS_TEST_DIRNAME"/spouse_example.helpers.sh
 
 setup() {
-    example_dir=$DBVARIANT
-    case $DBVARIANT in
-        postgresql)    example_dir=postgres ;;
-        postgresql-xl) example_dir=pgxl ;;
-    esac
-    cd "$DEEPDIVE_SOURCE_ROOT"/examples/spouse_example/$example_dir
+    cd "$BATS_TEST_DIRNAME"/spouse_example
 }
 
 @test "$DBVARIANT spouse example (tsv_extractor)" {
