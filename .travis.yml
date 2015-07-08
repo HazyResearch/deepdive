@@ -25,13 +25,14 @@ env:
     - PGPORT: 5432
     - PGHOST: localhost
     - DBNAME: deepdive_test
-  matrix: # NOTE we're on a paid plan that gives us 2 parallel jobs
-      # 1. Unit tests with PostgreSQL and integration tests with MySQL
-    - TEST_ONLY: "'test/postgresql/scalatests.bats test/mysql/*.bats'"
-      TEST_EXCEPT: test/mysql/scalatests.bats
-      # 2. More integration tests with PostgreSQL
-    - TEST_ONLY:
-      TEST_EXCEPT: "'test/postgresql/scalatests.bats test/mysql/*.bats'"
+# Parallel jobs aren't effective since the `install` step currently takes most of the time.
+#  matrix: # NOTE we're on a paid plan that gives us 2 parallel jobs
+#      # 1. Unit tests with PostgreSQL and integration tests with MySQL
+#    - TEST_ONLY: "'test/postgresql/scalatests.bats test/mysql/*.bats'"
+#      TEST_EXCEPT: test/mysql/scalatests.bats
+#      # 2. More integration tests with PostgreSQL
+#    - TEST_ONLY:
+#      TEST_EXCEPT: "'test/postgresql/scalatests.bats test/mysql/*.bats'"
 
 before_install:
   # Check coding style before performing the build and tests
