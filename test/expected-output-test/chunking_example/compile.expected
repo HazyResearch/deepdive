@@ -72,9 +72,9 @@
       deepdive.extraction.extractors.extraction_rule_6 {
         sql: """ DROP VIEW IF EXISTS ext_features_input;
         CREATE VIEW ext_features_input AS 
-            SELECT R0.word_id AS "words.R0.word_id" , R0.word AS "words.R0.word" , R0.pos AS "words.R0.pos" , R1.word AS "words.R1.word" , R1.pos AS "words.R1.pos" 
+            SELECT  R0.word_id AS "words.R0.word_id" , R0.word AS "words.R0.word" , R0.pos AS "words.R0.pos" , R1.word AS "words.R1.word" , R1.pos AS "words.R1.pos" 
             FROM words R0, words R1
-        WHERE R1.sent_id = R0.sent_id 
+        WHERE R1.sent_id = R0.sent_id  
         """
         style: "sql_extractor"
           dependencies: [ "extraction_rule_5" ]
@@ -117,7 +117,7 @@
           input_query: """
           SELECT R0.id AS "tag.R0.id" , R1.feature AS "word_features.R1.feature" 
           FROM tag R0, word_features R1
-        WHERE R1.word_id = R0.word_id """
+        WHERE R1.word_id = R0.word_id  """
           function: "Multinomial(tag.R0.label)"
           weight: "?(word_features.R1.feature)"
         }
@@ -126,3 +126,5 @@ deepdive.pipeline.run: ${PIPELINE}
 deepdive.pipeline.pipelines.initdb: [extraction_rule_0, extraction_rule_1, extraction_rule_3, extraction_rule_2]
 deepdive.pipeline.pipelines.extraction: [extraction_rule_6, extraction_rule_9, extraction_rule_8, extraction_rule_5]
 deepdive.pipeline.pipelines.inference: [tag_0]
+deepdive.pipeline.pipelines.endtoend: [extraction_rule_6, extraction_rule_9, extraction_rule_8, extraction_rule_5, tag_0]
+deepdive.pipeline.pipelines.cleanup: [cleanup]

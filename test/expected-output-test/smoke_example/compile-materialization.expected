@@ -114,7 +114,7 @@ cancer.label: Boolean
           input_query: """
           SELECT R0.id AS "cancer.R0.id" , R1.id AS "smoke.R1.id" 
           FROM cancer R0, smoke R1, person_smokes R2
-        WHERE R1.person_id = R0.person_id  AND R2.person_id = R0.person_id """
+        WHERE R1.person_id = R0.person_id  AND R2.person_id = R0.person_id  """
           function: "Imply(smoke.R1.label, cancer.R0.label)"
           weight: "0.5"
         }
@@ -124,7 +124,7 @@ cancer.label: Boolean
           input_query: """
           SELECT R0.id AS "smoke.R0.id" , R1.id AS "smoke.R1.id" 
           FROM smoke R0, smoke R1, friends R2
-        WHERE R2.person_id = R1.person_id  AND R2.friend_id = R0.person_id """
+        WHERE R2.person_id = R1.person_id  AND R2.friend_id = R0.person_id  """
           function: "Imply(smoke.R1.label, smoke.R0.label)"
           weight: "0.4"
         }
@@ -133,4 +133,5 @@ deepdive.pipeline.run: ${PIPELINE}
 deepdive.pipeline.pipelines.initdb: [extraction_rule_2, extraction_rule_4, extraction_rule_5, extraction_rule_3, extraction_rule_1, extraction_rule_0]
 deepdive.pipeline.pipelines.extraction: [extraction_rule_7, extraction_rule_6]
 deepdive.pipeline.pipelines.inference: [cancer_0, smoke_1]
+deepdive.pipeline.pipelines.endtoend: [extraction_rule_7, extraction_rule_6, cancer_0, smoke_1]
 deepdive.pipeline.base_dir: ${BASEDIR}

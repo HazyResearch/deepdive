@@ -73,3 +73,5 @@
 deepdive.pipeline.run: ${PIPELINE}
 deepdive.pipeline.pipelines.initdb: [extraction_rule_1, extraction_rule_0, extraction_rule_2]
 deepdive.pipeline.pipelines.extraction: [extraction_rule_3]
+deepdive.pipeline.pipelines.endtoend: [extraction_rule_3]
+deepdive.pipeline.pipelines.cleanup: [cleanup]

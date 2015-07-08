@@ -20,7 +20,7 @@
       deepdive.extraction.extractors.extraction_rule_1 {
         sql: """ TRUNCATE sentences;
         INSERT INTO sentences 
-            SELECT R0.document_id, R0.sentence, R0.words, R0.lemma, R0.pos_tags, R0.dependencies, R0.ner_tags, R0.sentence_offset, R0.sentence_id
+            SELECT  R0.document_id, R0.sentence, R0.words, R0.lemma, R0.pos_tags, R0.dependencies, R0.ner_tags, R0.sentence_offset, R0.sentence_id
             FROM dd_new_sentences R0
         
         """
@@ -32,7 +32,7 @@
       deepdive.extraction.extractors.extraction_rule_3 {
         sql: """ TRUNCATE has_spouse_candidates;
         INSERT INTO has_spouse_candidates 
-            SELECT R0.person1_id, R0.person2_id, R0.sentence_id, R0.description, R0.relation_id, R0.is_true
+            SELECT  R0.person1_id, R0.person2_id, R0.sentence_id, R0.description, R0.relation_id, R0.is_true
             FROM dd_new_has_spouse_candidates R0
         
         """
@@ -44,7 +44,7 @@
       deepdive.extraction.extractors.extraction_rule_0 {
         sql: """ TRUNCATE articles;
         INSERT INTO articles 
-            SELECT R0.article_id, R0.text
+            SELECT  R0.article_id, R0.text
             FROM dd_new_articles R0
         
         """
@@ -56,7 +56,7 @@
       deepdive.extraction.extractors.extraction_rule_4 {
         sql: """ TRUNCATE has_spouse_features;
         INSERT INTO has_spouse_features 
-            SELECT R0.relation_id, R0.feature
+            SELECT  R0.relation_id, R0.feature
             FROM dd_new_has_spouse_features R0
         
         """
@@ -68,7 +68,7 @@
       deepdive.extraction.extractors.extraction_rule_2 {
         sql: """ TRUNCATE people_mentions;
         INSERT INTO people_mentions 
-            SELECT R0.sentence_id, R0.start_position, R0.length, R0.text, R0.mention_id
+            SELECT  R0.sentence_id, R0.start_position, R0.length, R0.text, R0.mention_id
             FROM dd_new_people_mentions R0
         
         """
@@ -78,3 +78,4 @@
     
 deepdive.pipeline.run: ${PIPELINE}
 deepdive.pipeline.pipelines.extraction: [extraction_rule_0, extraction_rule_3, extraction_rule_4, extraction_rule_2, extraction_rule_1]
+deepdive.pipeline.pipelines.endtoend: [extraction_rule_0, extraction_rule_3, extraction_rule_4, extraction_rule_2, extraction_rule_1]

@@ -420,7 +420,9 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       }
     }
     // Cleanup incremental table extractor
-    val truncateTableList = (stmts map (x => if ((x.a.name startsWith "dd_new_") && (ss.inferenceRuleGroupByHead contains x.a.name)) "" else s"TRUNCATE ${x.a.name};")).filter(_ != "")
+    val truncateTableList = (stmts map (x => 
+      if ((x.a.name startsWith "dd_new_") && (ss.inferenceRuleGroupByHead contains x.a.name)) "" 
+      else s"TRUNCATE ${x.a.name};")).filter(_ != "")
     if (truncateTableList.length > 0) {
       schemas += s"""
         deepdive.extraction.extractors.cleanup {
@@ -664,15 +666,17 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     val extraction_pipeline = if (extraction.length > 0) s"deepdive.pipeline.pipelines.extraction: [${extraction}]" else ""
     val inference = ((ss.inferenceRuleGroupByHead map (_._2)).flatten map {s => ss.resolveInferenceBlockName(s)}).mkString(", ")
     val inference_pipeline = if (inference.length > 0) s"deepdive.pipeline.pipelines.inference: [${inference}]" else ""
+    val endtoend = List(extraction, inference).filter(_ != "").mkString(", ")
+    val endtoend_pipeline = if (endtoend.length > 0) s"deepdive.pipeline.pipelines.endtoend: [${endtoend}]" else ""
     val cleanup_pipeline = ss.mode match {
-      case INCREMENTAL => if (setup_database_pipeline.length > 0) s"deepdive.pipeline.pipelines.cleanup: [cleanup]" else ""
+      case INCREMENTAL | ORIGINAL => if (setup_database_pipeline.length > 0) s"deepdive.pipeline.pipelines.cleanup: [cleanup]" else ""
       case _ => ""
     }
     val base_dir = ss.mode match {
       case MATERIALIZATION | INCREMENTAL => "deepdive.pipeline.base_dir: ${BASEDIR}"
       case _ => ""
     }
-    List(run, initdb, extraction_pipeline, inference_pipeline, cleanup_pipeline, base_dir).filter(_ != "")
+    List(run, initdb, extraction_pipeline, inference_pipeline, endtoend_pipeline, cleanup_pipeline, base_dir).filter(_ != "")
   }
 
   // generate variable schema statements
