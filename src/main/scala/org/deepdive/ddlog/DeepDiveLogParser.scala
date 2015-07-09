@@ -126,7 +126,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def variable = variableName ^^ { Variable(_, "", 0) }
   def columnConstant = constant ^^ { Constant(_, "", 0) }
   def variableOrConstant = columnConstant | variable
-  val aggregationFunctions = Set("MAX", "SUM", "MIN")
+  val aggregationFunctions = Set("MAX", "SUM", "MIN", "ARRAY_ACCUM", "ARRAY_AGG")
   def inlineFunction = functionName ~ "(" ~ rep1sep(variableOrConstant, ",") ~ ")" ^^ {
     case (name ~ _ ~ args ~ _) => {
       if (aggregationFunctions contains name) InlineFunction(name, args, true)

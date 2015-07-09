@@ -291,10 +291,10 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
       s"\n        GROUP BY ${groupbyTerms.mkString(", ")}"
     }
 
-    var whereClauseStr = whereClause match {
-      case Nil => if (conditionStr == "") "" else s"WHERE ${conditionStr}${groupbyStr}"
-      case _ => s"""WHERE ${whereClause.mkString(" AND ")} ${if (conditionStr == "") "" else s" AND (${conditionStr})"}${groupbyStr}"""
-    }
+    var whereClauseStr = (whereClause match {
+      case Nil => if (conditionStr == "") "" else s"WHERE ${conditionStr}"
+      case _ => s"""WHERE ${whereClause.mkString(" AND ")} ${if (conditionStr == "") "" else s" AND (${conditionStr})"}"""
+    }) + groupbyStr
 
     s"""FROM ${ bodyNames }
         ${ whereClauseStr }"""
@@ -606,7 +606,9 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           weight = stmt.weights match {
             case KnownFactorWeight(x) => s"${x}"
             case UnknownFactorWeight(w) => {
-              s"""?(${w.flatMap(s => ss.resolveColumn(s, qs2, fakeCQ, AliasOnly)).mkString(", ")})"""
+              val weightVar = w.flatMap(s => ss.resolveColumn(s, qs2, fakeCQ, AliasOnly)).mkString(", ")
+              if (weightVar == "") "?"
+              else s"?(${weightVar})"
             }
           }
       }
