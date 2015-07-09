@@ -107,6 +107,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
   var inferenceRuleGroupByHead      : Map[String, List[InferenceRule]] = new HashMap[String, List[InferenceRule]]()
   var functionCallRuleGroupByInput  : Map[String, List[FunctionCallRule]] = new HashMap[String, List[FunctionCallRule]]()
   var functionCallRuleGroupByOutput : Map[String, List[FunctionCallRule]] = new HashMap[String, List[FunctionCallRule]]()
+  var functionCallList              : ListBuffer[FunctionCallRule] = new ListBuffer[FunctionCallRule]()
 
   def init() = {
     // generate the statements.
@@ -124,7 +125,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
       case ExtractionRule(_,_) => ()
       case InferenceRule(_,_,_,_) => ()
       case fdecl : FunctionDeclaration => function_schema += {fdecl.functionName -> fdecl}
-      case FunctionCallRule(_,_,_) => ()
+      case f: FunctionCallRule => functionCallList += f
     }
     groupByHead(statements)
     analyzeVisible(statements)
@@ -329,7 +330,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
   // Analyze the block visibility among statements 
   def analyzeVisible(statements: List[Statement]) = {
     extractionRuleGroupByHead   foreach {keyVal => visible += keyVal._2(0)}
-    functionCallRuleGroupByInput foreach {keyVal => visible += keyVal._2(0)}
+    functionCallList foreach { stmt => visible += stmt }
   }
 
   // Analyze the dependency between statements and construct a graph.

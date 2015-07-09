@@ -124,7 +124,7 @@
       
 deepdive.pipeline.run: ${PIPELINE}
 deepdive.pipeline.pipelines.initdb: [extraction_rule_0, extraction_rule_1, extraction_rule_3, extraction_rule_2]
-deepdive.pipeline.pipelines.extraction: [extraction_rule_6, extraction_rule_9, extraction_rule_8, extraction_rule_5]
+deepdive.pipeline.pipelines.extraction: [extraction_rule_6, extraction_rule_9, extraction_rule_5, extraction_rule_8]
 deepdive.pipeline.pipelines.inference: [tag_0]
-deepdive.pipeline.pipelines.endtoend: [extraction_rule_6, extraction_rule_9, extraction_rule_8, extraction_rule_5, tag_0]
+deepdive.pipeline.pipelines.endtoend: [extraction_rule_6, extraction_rule_9, extraction_rule_5, extraction_rule_8, tag_0]
 deepdive.pipeline.pipelines.cleanup: [cleanup]
