@@ -25,6 +25,12 @@ cancer(pid) :-
 cancer(pid) :-
     smoke(pid),
     person_smokes(pid, l)
-  weight = 3.0
+  weight = 0.5
+  semantics = Imply.
+
+smoke(pid) :-
+    smoke(pid1),
+    friend(pid1, pid)
+  weight = 0.4
   semantics = Imply.
 

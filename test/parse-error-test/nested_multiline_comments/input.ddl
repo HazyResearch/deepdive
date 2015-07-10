@@ -1,1 +1,1 @@
-/* Multi-line comments /* unfortunately cannot be nested */ */
+/* Multi-line comments are not supported */

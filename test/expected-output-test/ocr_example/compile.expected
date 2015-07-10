@@ -1,0 +1,127 @@
+
+  deepdive.db.default {
+    driver: "org.postgresql.Driver"
+    url: "jdbc:postgresql://"${PGHOST}":"${PGPORT}"/"${DBNAME}
+    user: ${PGUSER}
+    password: ${PGPASSWORD}
+    dbname: ${DBNAME}
+    host: ${PGHOST}
+    port: ${PGPORT}
+    incremental_mode: ORIGINAL
+    }
+    
+
+
+      deepdive.schema.variables {
+        q1.label: Boolean
+q2.label: Boolean
+      }
+    
+
+          deepdive.extraction.extractors.extraction_rule_1 {
+            sql: """ DROP TABLE IF EXISTS label1 CASCADE;
+            CREATE TABLE
+            label1(wid INT,
+      val BOOLEAN)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.extraction_rule_0 {
+            sql: """ DROP TABLE IF EXISTS features CASCADE;
+            CREATE TABLE
+            features(id BIGSERIAL,
+        word_id INT,
+        feature_id INT,
+        feature_val BOOLEAN)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.extraction_rule_2 {
+            sql: """ DROP TABLE IF EXISTS label2 CASCADE;
+            CREATE TABLE
+            label2(wid INT,
+      val BOOLEAN)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.extraction_rule_3 {
+            sql: """ DROP TABLE IF EXISTS q1 CASCADE;
+            CREATE TABLE
+            q1(wid INT,
+  id bigint,
+  label boolean)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.extraction_rule_4 {
+            sql: """ DROP TABLE IF EXISTS q2 CASCADE;
+            CREATE TABLE
+            q2(wid INT,
+  id bigint,
+  label boolean)
+            """
+            style: "sql_extractor"
+          }
+
+        deepdive.extraction.extractors.cleanup {
+          sql: """
+          TRUNCATE label1;
+          TRUNCATE features;
+          TRUNCATE label2;
+          TRUNCATE q1;
+          TRUNCATE q2;
+          """
+          style: "sql_extractor"
+        }
+
+      deepdive.extraction.extractors.extraction_rule_5 {
+        sql: """ 
+        INSERT INTO q1 SELECT DISTINCT R0.wid, 0 as id, R0.val AS label
+          FROM label1 R0
+        
+          
+        """
+        style: "sql_extractor"
+          
+      }
+    
+
+      deepdive.extraction.extractors.extraction_rule_6 {
+        sql: """ 
+        INSERT INTO q2 SELECT DISTINCT R0.wid, 0 as id, R0.val AS label
+          FROM label2 R0
+        
+          
+        """
+        style: "sql_extractor"
+          
+      }
+    
+
+        deepdive.inference.factors.q1_0 {
+          input_query: """
+          SELECT R0.id AS "q1.R0.id" , R1.feature_id AS "features.R1.feature_id" 
+          FROM q1 R0, features R1
+        WHERE R1.word_id = R0.wid """
+          function: "Imply(q1.R0.label)"
+          weight: "?(features.R1.feature_id)"
+        }
+      
+
+        deepdive.inference.factors.q2_1 {
+          input_query: """
+          SELECT R0.id AS "q2.R0.id" , R1.feature_id AS "features.R1.feature_id" 
+          FROM q2 R0, features R1
+        WHERE R1.word_id = R0.wid """
+          function: "Imply(q2.R0.label)"
+          weight: "?(features.R1.feature_id)"
+        }
+      
+deepdive.pipeline.run: ${PIPELINE}
+deepdive.pipeline.pipelines.initdb: [extraction_rule_1, extraction_rule_0, extraction_rule_2, extraction_rule_3, extraction_rule_4]
+deepdive.pipeline.pipelines.extraction: [extraction_rule_5, extraction_rule_6]
+deepdive.pipeline.pipelines.inference: [q1_0, q2_1]

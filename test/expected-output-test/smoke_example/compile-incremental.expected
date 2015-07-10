@@ -83,16 +83,6 @@ dd_delta_smoke.label: Boolean
             style: "sql_extractor"
           }
 
-          deepdive.extraction.extractors.extraction_rule_18 {
-            sql: """ DROP TABLE IF EXISTS dd_new_smoke CASCADE;
-            CREATE TABLE
-            dd_new_smoke(person_id bigint,
-            id bigint,
-            label boolean)
-            """
-            style: "sql_extractor"
-          }
-
           deepdive.extraction.extractors.extraction_rule_21 {
             sql: """ DROP TABLE IF EXISTS dd_delta_cancer CASCADE;
             CREATE TABLE
@@ -138,7 +128,6 @@ dd_delta_smoke.label: Boolean
           TRUNCATE dd_delta_person;
           TRUNCATE dd_new_person;
           TRUNCATE dd_delta_person_has_cancer;
-          TRUNCATE dd_new_smoke;
           TRUNCATE dd_delta_cancer;
           TRUNCATE dd_delta_person_smokes;
           TRUNCATE dd_new_person_smokes;
@@ -190,8 +179,8 @@ dd_delta_smoke.label: Boolean
     
 
       deepdive.extraction.extractors.extraction_rule_19 {
-        sql: """ TRUNCATE dd_new_smoke;
-        INSERT INTO dd_new_smoke SELECT DISTINCT R0.person_id, id, label
+        sql: """ 
+        CREATE VIEW dd_new_smoke AS SELECT DISTINCT R0.person_id, id, label
           FROM smoke R0
         
            UNION ALL SELECT DISTINCT R0.person_id, id, label
@@ -270,12 +259,25 @@ dd_delta_smoke.label: Boolean
           FROM dd_new_cancer R0, dd_new_smoke R1, dd_delta_person_smokes R2
         WHERE R1.person_id = R0.person_id  AND R2.person_id = R0.person_id """
           function: "Imply(dd_delta_smoke.R1.label, dd_new_cancer.R0.label)"
-          weight: "3.0"
+          weight: "0.5"
+        }
+      
+
+        deepdive.inference.factors.dd_new_smoke_1 {
+          input_query: """
+          SELECT R0.id AS "dd_new_smoke.R0.id" , R1.id AS "dd_delta_smoke.R1.id" 
+          FROM dd_new_smoke R0, dd_delta_smoke R1, friend R2
+        WHERE R2.pid1 = R1.person_id  AND R2.pid = R0.person_id  UNION ALL 
+          SELECT R0.id AS "dd_new_smoke.R0.id" , R1.id AS "dd_new_smoke.R1.id" 
+          FROM dd_new_smoke R0, dd_new_smoke R1, dd_delta_friend R2
+        WHERE R2.pid1 = R1.person_id  AND R2.pid = R0.person_id """
+          function: "Imply(dd_delta_smoke.R1.label, dd_new_smoke.R0.label)"
+          weight: "0.4"
         }
       
 deepdive.pipeline.run: ${PIPELINE}
 deepdive.pipeline.pipelines.initdb: [extraction_rule_13, extraction_rule_17, extraction_rule_6, extraction_rule_1, extraction_rule_2, extraction_rule_5, extraction_rule_18, extraction_rule_21, extraction_rule_22, extraction_rule_9, extraction_rule_10, extraction_rule_14]
 deepdive.pipeline.pipelines.extraction: [extraction_rule_7, extraction_rule_25, extraction_rule_19, extraction_rule_3, extraction_rule_23, extraction_rule_11, extraction_rule_24, extraction_rule_15]
-deepdive.pipeline.pipelines.inference: [dd_new_cancer_0]
+deepdive.pipeline.pipelines.inference: [dd_new_cancer_0, dd_new_smoke_1]
 deepdive.pipeline.pipelines.cleanup: [cleanup]
 deepdive.pipeline.base_dir: ${BASEDIR}
