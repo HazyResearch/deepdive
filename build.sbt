@@ -21,7 +21,7 @@ libraryDependencies ++= List(
   "com.typesafe.akka" %% "akka-actor" % "2.3-M2",
   "com.typesafe.akka" %% "akka-slf4j" % "2.3-M2",
   "com.typesafe.akka" %% "akka-testkit" % "2.3-M2",
-  "com.typesafe.atmos" % "trace-akka-2.2.1_2.10" % "1.3.0",
+  //"com.typesafe.atmos" % "trace-akka-2.2.1_2.10" % "1.3.0",
   "com.typesafe.play" %% "play-json" % "2.2.1",
   "mysql" % "mysql-connector-java" % "5.1.12",
   "net.sf.opencsv" % "opencsv" % "2.3",
@@ -43,3 +43,7 @@ printTests := {
     println(t.name)
   }
 }
+
+test in assembly := {}
+
+mainClass in assembly := Some("com.example.Main")
