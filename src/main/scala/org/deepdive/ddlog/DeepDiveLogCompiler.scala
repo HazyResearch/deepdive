@@ -204,7 +204,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
         case BinaryOpExpr(lhs, op, rhs) => {
           val resovledLhs = recurse(lhs, OriginalOnly, depth + 1)
           val resovledRhs = recurse(rhs, OriginalOnly, depth + 1)
-          s"${resovledLhs} ${op} ${resovledRhs}${columnAlias}"
+          s"(${resovledLhs} ${op} ${resovledRhs})${columnAlias}"
         }
       }
     }

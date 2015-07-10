@@ -60,7 +60,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
         val resolvedArgs = args map (x => printExpr(x))
         s"${function}(${resolvedArgs.mkString(", ")})"
       }
-      case BinaryOpExpr(lhs, op, rhs) => s"${printExpr(lhs)} ${op} ${printExpr(rhs)}"
+      case BinaryOpExpr(lhs, op, rhs) => s"(${printExpr(lhs)} ${op} ${printExpr(rhs)})"
     }
   }
 
