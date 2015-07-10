@@ -1,9 +1,19 @@
 language: scala
 scala:
     - "2.11.1"
-before_install:
-    - sudo apt-get install -qq wdiff
+
+sudo: false  # to use container-based infrastructure
+addons:
+    apt:
+        packages:
+            - wdiff
+cache:
+    directories:
+        - $HOME/.ivy2/cache
+
+install:
+    - make test-build
 script:
-    - make test MEASURE_COVERAGE=true
+    - make test
 after_success:
     - sbt coverageReport coveralls

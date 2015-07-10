@@ -94,9 +94,9 @@ class DeepDiveLogParser extends JavaTokenParsers {
   }
   def constant = stringLiteralAsSqlString | wholeNumber | "TRUE" | "FALSE" | "NULL" | "TEXT" | "INT" | "BOOLEAN"
 
-  // C/Java/Scala-style as well as shell script-style comments are supported
-  // by treating them as whiteSpace
-  protected override val whiteSpace = """(?:(?:^|\s+)#.*|//.*|(?m)/\*(\*(?!/)|[^*])*\*/|\s)+""".r
+  // Single-line comments beginning with # or // are supported by treating them as whiteSpace
+  // C/Java/Scala style multi-line comments cannot be easily supported with RegexParsers unless we introduce a dedicated lexer.
+  protected override val whiteSpace = """(?:(?:^|\s+)#.*|//.*|\s)+""".r
 
   // We just use Java identifiers to parse various names
   def relationName = ident
