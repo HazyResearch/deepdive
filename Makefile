@@ -1,59 +1,50 @@
-# Makefile for DeepDiveLogCompiler
+# Makefile for DDlog compiler
 
-SOURCE_DIR = src/main/scala/org/deepdive/ddlog
-TARGET_DIR = target/scala-2.10/classes
-COVERAGE_DIR = $(TARGET_DIR)/../scoverage-data
-TEST_CLASSPATH_CACHE = $(TARGET_DIR)/../dependency-classpath
+
+### Build & Clean #############################################################
+
+# build a standalone jar
 JAR = ddlog.jar
+.PHONY: package
+package: $(JAR)
+$(JAR): scala-assembly-jar
+	ln -sfn $(SCALA_ASSEMBLY_JAR) $@
+	touch $@
 
-# test
-.PHONY: test
-test: $(TARGET_DIR) $(TEST_CLASSPATH_CACHE)
-	CLASSPATH=$(realpath $<):$(shell cat $(TEST_CLASSPATH_CACHE)) \
-TEST_CLASS_OR_JAR=org.deepdive.ddlog.DeepDiveLog \
-test/test.sh
-$(TEST_CLASSPATH_CACHE): build.sbt $(wildcard project/*.sbt)
-	sbt "export compile:dependency-classpath" | tail -1 >$@
+.PHONY: clean
+clean: scala-clean
+	# clean test artifacts
+	rm -f $(JAR) $(wildcard test/*/*/*.actual)
+	find test/ -name '*.bats' -type l -exec rm -f {} +
 
-SOURCES = $(wildcard $(SOURCE_DIR)/*.scala)
-ifndef MEASURE_COVERAGE
-$(TARGET_DIR): $(SOURCES)
-	sbt compile
-else
-$(TARGET_DIR): $(COVERAGE_DIR)
-$(COVERAGE_DIR): $(SOURCES)
-	# enabling coverage measurement
-	sbt coverage compile
-endif
+include scala.mk  # defines scala-build, scala-test-build, scala-assembly-jar, scala-clean targets
+
+
+
+### Test ######################################################################
+
+# test prep for built classes or assembly jar
+test-package: $(JAR)
+	$(MAKE) test TEST_JAR=1
+ifndef TEST_JAR
+test-build: scala-test-build
+test: export CLASSPATH = $(shell cat $(SCALA_TEST_CLASSPATH_EXPORTED))
+
+else # ifdef TEST_JAR
+.PHONY: test-package
+test-build: $(JAR)
+test: export CLASSPATH = $(realpath $(JAR))
+
+endif # TEST_JAR
 
 # test coverage report
 .PHONY: test-coverage coveralls
 test-coverage:
-	-$(MAKE) test MEASURE_COVERAGE=true
+	-$(MAKE) test
 	sbt coverageReport
 coveralls: test-coverage
 	# submit coverage data to https://coveralls.io/r/HazyResearch/ddlog
 	# (Make sure you have set COVERALLS_REPO_TOKEN=...)
 	sbt coveralls
 
-# test standalone package
-.PHONY: test-package
-test-package: $(JAR)
-	CLASSPATH= \
-TEST_CLASS_OR_JAR="-jar $(realpath $(JAR))" \
-test/test.sh
-
-# build standalone jar
-.PHONY: package
-package: $(JAR)
-$(JAR): $(wildcard $(SOURCE_DIR)/*.scala)
-	sbt clean assembly
-	ln -sfn $$(ls -t target/scala-*/*-assembly-*.jar | head -1) $@
-	touch $@
-
-.PHONY: clean
-clean:
-	sbt clean
-	# clean test artifacts
-	rm -f $(JAR) $(TEST_CLASSPATH_CACHE) $(wildcard test/*/*/*.actual)
-	find test/ -name '*.bats' -type l -exec rm -f {} +
+include test/bats.mk  # defines test, test-build, test-list targets

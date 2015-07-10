@@ -4,7 +4,7 @@
 # These test cases compares outputs of various modes of ddlog against a .ddl example file with its expected output.
 # Tests are skipped if no expected output is found.
 
-source bats-template.bash  # for $TESTDIR, $it, etc.
+source "$BATS_TEST_DIRNAME"/../bats-template.bash  # for $TESTDIR, $it, etc.
 
 # some preconditions
 setup() {
