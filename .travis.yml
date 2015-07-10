@@ -1,8 +1,16 @@
 language: scala
 scala:
     - "2.11.1"
-before_install:
-    - sudo apt-get install -qq wdiff
+
+sudo: false  # to use container-based infrastructure
+addons:
+    apt:
+        packages:
+            - wdiff
+cache:
+    directories:
+        - $HOME/.ivy2/cache
+
 script:
     - make test MEASURE_COVERAGE=true
 after_success:
