@@ -13,18 +13,12 @@ object DeepDiveLogMergeDeriver{
     // New table
     var incNewStmt = stmt.copy(
       a = stmt.a.copy(
-        name = newPrefix + stmt.a.name,
-        terms = stmt.a.terms map {term => term.copy(relName = newPrefix + term.relName)},
-        types = stmt.a.types
+        name = newPrefix + stmt.a.name
       )
     )
 
-    def variableToExpr(v: Variable) = ColumnExpr(VarExpr(v.varName), v.relName, v.index)
-    val originalExpr = stmt.a.terms map variableToExpr
-    val incNewExpr = incNewStmt.a.terms map variableToExpr
-
-    ExtractionRule(ConjunctiveQuery(Atom(stmt.a.name, originalExpr),
-      List(List(Atom(incNewStmt.a.name, incNewExpr))), List(None), false))
+    ExtractionRule(ConjunctiveQuery(Atom(stmt.a.name, stmt.a.terms),
+      List(List(Atom(incNewStmt.a.name, incNewStmt.a.terms))), List(None), false))
   }
 
   def derive(program: DeepDiveLog.Program): DeepDiveLog.Program = {

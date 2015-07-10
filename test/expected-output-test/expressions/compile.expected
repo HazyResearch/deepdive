@@ -72,7 +72,7 @@
         CREATE VIEW Q AS 
             SELECT DISTINCT 'test' :: TEXT AS column_0, 123 AS column_1, R0.k AS "a.R0.k" , unnest(R1.q) AS column_3
             FROM a R0, b R1, c R2
-        WHERE R1.k = R0.k  AND R2.s = R1.p || R1.q AND R2.n = 10 AND R2.t = 'foo'  AND ((R1.r > 100) OR ((NOT (R1.r < 20)) AND (R1.r < 50)))
+        WHERE R1.k = R0.k  AND R2.s = R1.p || R1.q AND R2.n = 10 AND R2.t = 'foo' AND (R1.r > 100 OR (NOT (R1.r < 20) AND R1.r < 50))
         """
         style: "sql_extractor"
           

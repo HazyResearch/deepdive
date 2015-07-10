@@ -16,8 +16,8 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   }
 
   def print(stmt: SchemaDeclaration): String = {
-    val columnDecls = stmt.a.terms map {
-      case Variable(name, _, i) => s"${name} ${stmt.a.types(i)}"
+    val columnDecls = stmt.a.terms.zipWithIndex map {
+      case (VarExpr(name),i) => s"${name} ${stmt.a.types(i)}"
     }
     val prefix = s"${stmt.a.name}${if (stmt.isQuery) "?" else ""}("
     val indentation = " " * prefix.length
@@ -69,10 +69,10 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
     cond match {
       case ComparisonCond(lhs, op, rhs) => s"${printExpr(lhs)} ${op} ${printExpr(rhs)}"
       case NegationCond(c) => s"![${printCond(c)}]"
-      case BinaryOpCond(lhs, op, rhs) => {
+      case CompoundCond(lhs, op, rhs) => {
         op match {
-          case LogicOperator.AND => s"[${printCond(lhs)}], [${printCond(rhs)}]" 
-          case LogicOperator.OR  => s"[${printCond(lhs)}]; [${printCond(rhs)}]"
+          case LogicOperator.AND => s"[${printCond(lhs)}, ${printCond(rhs)}]" 
+          case LogicOperator.OR  => s"[${printCond(lhs)}; ${printCond(rhs)}]"
         }
       }
     }
@@ -80,9 +80,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
 
   def print(cq: ConjunctiveQuery): String = {
     val printAtom = {a:Atom =>
-      val vars = a.terms map { 
-        case e => printExpr(e.expr)
-      }
+      val vars = a.terms map printExpr
       s"${a.name}(${vars.mkString(", ")})"
     }
     val printListAtom = {a:List[Atom] =>

@@ -12,7 +12,7 @@ c(s text,
 Q( "test"  :: TEXT, 123, id, unnest(y)) * :-
     a(id),
     b(id, x, y, z),
-    c(x || y, 10,  "foo" ), [z > 100]; [[![z < 20]], [z < 50]].
+    c(x || y, 10,  "foo" ), [z > 100; [![z < 20], z < 50]].
 
 P(y, z, MAX(w))  :-
     a(x),

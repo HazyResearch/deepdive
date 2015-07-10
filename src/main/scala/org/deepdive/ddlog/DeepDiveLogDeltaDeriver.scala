@@ -23,13 +23,11 @@ object DeepDiveLogDeltaDeriver{
     // New head
     val incCqHead = if (isInference) {
       cq.head.copy(
-        name = newPrefix + cq.head.name,
-        terms = cq.head.terms
+        name = newPrefix + cq.head.name
       )
     } else {
       cq.head.copy(
-        name = deltaPrefix + cq.head.name,
-        terms = cq.head.terms
+        name = deltaPrefix + cq.head.name
       )
     }
 
@@ -40,15 +38,13 @@ object DeepDiveLogDeltaDeriver{
       // Delta body
       val incDeltaBody = body map {
         a => a.copy(
-          name = deltaPrefix + a.name,
-          terms = a.terms
+          name = deltaPrefix + a.name
         )
       }
       // New body
       val incNewBody = body map {
         a => a.copy(
-          name = newPrefix + a.name,
-          terms = a.terms
+          name = newPrefix + a.name
         )
       }
       var i = 0
@@ -87,9 +83,7 @@ object DeepDiveLogDeltaDeriver{
     // Delta table
     var incDeltaStmt = stmt.copy(
       a = stmt.a.copy(
-        name = deltaPrefix + stmt.a.name,
-        terms = stmt.a.terms map {term => term.copy(relName = deltaPrefix + term.relName)},
-        types = stmt.a.types
+        name = deltaPrefix + stmt.a.name
       )
     )
     incrementalStatement += incDeltaStmt
@@ -97,23 +91,15 @@ object DeepDiveLogDeltaDeriver{
     // New table
     var incNewStmt = stmt.copy(
       a = stmt.a.copy(
-        name = newPrefix + stmt.a.name,
-        terms = stmt.a.terms map {term => term.copy(relName = newPrefix + term.relName)},
-        types = stmt.a.types
+        name = newPrefix + stmt.a.name
       )
     )
     incrementalStatement += incNewStmt
 
-    // from schema declaration to expressions
-    def variableToExpr(v: Variable) = ColumnExpr(VarExpr(v.varName), v.relName, v.index)
-    val originalExpr = stmt.a.terms map variableToExpr
-    val incDeltaExpr = incDeltaStmt.a.terms map variableToExpr
-    val incNewExpr = incNewStmt.a.terms map variableToExpr
-
     // if (!stmt.isQuery) {
     incrementalStatement += ExtractionRule(ConjunctiveQuery(
-      Atom(incNewStmt.a.name, incNewExpr),
-      List(List(Atom(stmt.a.name, originalExpr)), List(Atom(incDeltaStmt.a.name, incDeltaExpr))), 
+      Atom(incNewStmt.a.name, incNewStmt.a.terms),
+      List(List(Atom(stmt.a.name, stmt.a.terms)), List(Atom(incDeltaStmt.a.name, incDeltaStmt.a.terms))), 
       List(None, None), false))
     // }
     incrementalStatement.toList

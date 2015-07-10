@@ -76,9 +76,9 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
     stmt match {
       case SchemaDeclaration(Attribute(r, terms, types), isQuery, vType) => {
         if (isQuery) {
-          terms.foreach { x => 
-            if (reservedSet contains x.varName) 
-              error(stmt, s"""variable relation contains reserved column "${x.varName}" """)
+          terms.foreach { case VarExpr(name) => 
+            if (reservedSet contains name) 
+              error(stmt, s"""variable relation contains reserved column "${name}" """)
           }
         }
       }

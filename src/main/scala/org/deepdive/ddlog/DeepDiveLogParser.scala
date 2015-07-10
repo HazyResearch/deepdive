@@ -13,12 +13,7 @@ import scala.util.Try
 // case class Variable(varName : String, relName : String, index : Int )
 // TODO make Atom a trait, and have multiple case classes, e.g., RelationAtom and CondExprAtom
 // ddlog column variable type: constant or variable
-sealed trait ColumnVariable
-case class Variable(varName : String, relName : String, index : Int ) extends ColumnVariable
-
-case class Expression(variables: List[ColumnVariable], ops: List[String], relName: String, index: Int)
-case class ColumnExpr(expr: Expr, relName: String, index: Int)
-case class Operator(operator: String, operand: ColumnVariable)
+case class Variable(varName : String, relName : String, index : Int )
 
 sealed trait Expr
 case class VarExpr(name: String) extends Expr
@@ -26,8 +21,8 @@ case class ConstExpr(value: String) extends Expr
 case class FuncExpr(function: String, args: List[Expr], isAggregation: Boolean) extends Expr
 case class BinaryOpExpr(lhs: Expr, op: String, rhs: Expr) extends Expr
 
-case class Atom(name : String, terms : List[ColumnExpr])
-case class Attribute(name : String, terms : List[Variable], types : List[String])
+case class Atom(name : String, terms : List[Expr])
+case class Attribute(name : String, terms : List[VarExpr], types : List[String])
 case class ConjunctiveQuery(head: Atom, bodies: List[List[Atom]], conditions: List[Option[Cond]], isDistinct: Boolean)
 case class Column(name : String, t : String)
 case class BodyWithCondition(body: List[Atom], condition: Option[Cond])
@@ -36,7 +31,7 @@ case class BodyWithCondition(body: List[Atom], condition: Option[Cond])
 sealed trait Cond
 case class ComparisonCond(lhs: Expr, op: String, rhs: Expr) extends Cond
 case class NegationCond(cond: Cond) extends Cond
-case class BinaryOpCond(lhs: Cond, op: LogicOperator.LogicOperator, rhs: Cond) extends Cond
+case class CompoundCond(lhs: Cond, op: LogicOperator.LogicOperator, rhs: Cond) extends Cond
 
 // logic operators
 object LogicOperator extends Enumeration {
@@ -122,7 +117,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def schemaDeclaration: Parser[SchemaDeclaration] =
     relationName ~ opt("?") ~ "(" ~ rep1sep(columnDeclaration, ",") ~ ")" ~ opt(dataType) ^^ {
       case (r ~ isQuery ~ "(" ~ attrs ~ ")" ~ vType) => {
-        val vars = attrs.zipWithIndex map { case(x, i) => Variable(x.name, r, i) }
+        val vars = attrs map { case(x) => VarExpr(x.name) }
         var types = attrs map { case(x) => x.t }
         val variableType = vType match {
           case None => if (isQuery != None) Some(BooleanType) else None
@@ -132,12 +127,14 @@ class DeepDiveLogParser extends JavaTokenParsers {
       }
     }
 
-  def operator = "||" | "+" | "-" | "*" | "/" | "&" | "::"
+  def operator = "||" | "+" | "-" | "*" | "/" | "&"
+  def typeOperator = "::"
   val aggregationFunctions = Set("MAX", "SUM", "MIN", "ARRAY_ACCUM", "ARRAY_AGG")
 
   // expressions
   def expr : Parser[Expr] =
     ( lexpr ~ operator ~ expr ^^ { case (lhs ~ op ~ rhs) => BinaryOpExpr(lhs, op, rhs) }
+    | lexpr ~ typeOperator ~ constant ^^ { case (lhs ~ op ~ rhs) => BinaryOpExpr(lhs, op, ConstExpr(rhs)) }
     | lexpr
     )
 
@@ -152,22 +149,19 @@ class DeepDiveLogParser extends JavaTokenParsers {
 
   // TODO support aggregate function syntax somehow
   def cqHead = relationName ~ "(" ~ rep1sep(expr, ",") ~ ")" ^^ {
-      case (r ~ "(" ~ variableUses ~ ")") =>
-        Atom(r, variableUses.zipWithIndex map {
-          case (e,i) => ColumnExpr(e, r, i)
-        })
-    }
+    case (r ~ "(" ~ expressions ~ ")") => Atom(r, expressions)
+  }
 
   // conditional expressions
   def compareOperator = "LIKE" | ">" | "<" | ">=" | "<=" | "!=" | "=" | "IS" | "IS NOT"
   def cond : Parser[Cond] = 
     ( acond ~ (";") ~ cond ^^ { case (lhs ~ op ~ rhs) =>
-        BinaryOpCond(lhs, LogicOperator.OR, rhs)
+        CompoundCond(lhs, LogicOperator.OR, rhs)
       }
     | acond
     )
   def acond : Parser[Cond] = 
-    ( lcond ~ (",") ~ acond ^^ { case (lhs ~ op ~ rhs) => BinaryOpCond(lhs, LogicOperator.AND, rhs) }
+    ( lcond ~ (",") ~ acond ^^ { case (lhs ~ op ~ rhs) => CompoundCond(lhs, LogicOperator.AND, rhs) }
     | lcond
     )
   // ! has higher priority...
@@ -184,10 +178,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
 
   def cqBodyAtom: Parser[Atom] =
     relationName ~ "(" ~ repsep(expr, ",") ~ ")" ^^ {
-      case (r ~ "(" ~ variableBindings ~ ")") =>
-        Atom(r, variableBindings.zipWithIndex map {
-        case (e,i) => ColumnExpr(e, r, i)
-      })
+      case (r ~ "(" ~ patterns ~ ")") => Atom(r, patterns)
     }
   def cqBody: Parser[List[Atom]] = rep1sep(cqBodyAtom, ",")
 
