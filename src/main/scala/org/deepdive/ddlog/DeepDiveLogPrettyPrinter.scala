@@ -48,39 +48,40 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
        |""".stripMargin
   }
 
-  def printVarOrConst(x: ColumnVariable) = {
-    x match {
-      case x: Variable => x.varName
-      case x: Constant => {
-        if (x.value.startsWith("'"))
-          s""" "${x.value.stripPrefix("'").stripSuffix("'")}" """
-        else
-          x.value
+  // print an expression
+  def printExpr(e: Expr) : String = {
+    e match {
+      case VarExpr(name) => name
+      case ConstExpr(value) => {
+        if (value.startsWith("'")) s""" "${value.stripPrefix("'").stripSuffix("'")}" """
+        else value
       }
-      case _ => ""
+      case FuncExpr(function, args, agg) => {
+        val resolvedArgs = args map (x => printExpr(x))
+        s"${function}(${resolvedArgs.mkString(", ")})"
+      }
+      case BinaryOpExpr(lhs, op, rhs) => s"${printExpr(lhs)} ${op} ${printExpr(rhs)}"
     }
   }
 
-  def printColumnVar(x: ColumnVariable) = {
-    x match {
-      case InlineFunction(name, args, _) => {
-        val resolvedArgs = args map printVarOrConst
-        s"${name}(${resolvedArgs.mkString(", ")})"
+  // print a condition
+  def printCond(cond: Cond) : String = {
+    cond match {
+      case ComparisonCond(lhs, op, rhs) => s"${printExpr(lhs)} ${op} ${printExpr(rhs)}"
+      case NegationCond(c) => s"![${printCond(c)}]"
+      case BinaryOpCond(lhs, op, rhs) => {
+        op match {
+          case LogicOperator.AND => s"[${printCond(lhs)}], [${printCond(rhs)}]" 
+          case LogicOperator.OR  => s"[${printCond(lhs)}]; [${printCond(rhs)}]"
+        }
       }
-      case _ => printVarOrConst(x)
     }
-  }
-
-  def printExpr(e: Expression, resolve: ColumnVariable => String) = {
-    val resolvedVars = e.variables map (resolve(_))
-    val rest = ((e.ops zip resolvedVars.drop(1)).map { case (a,b) => s"${a} ${b}" }).mkString(" ")
-    resolvedVars(0) + (if (rest != "") " " + rest else "")
   }
 
   def print(cq: ConjunctiveQuery): String = {
     val printAtom = {a:Atom =>
       val vars = a.terms map { 
-        case e => printExpr(e, printColumnVar)
+        case e => printExpr(e.expr)
       }
       s"${a.name}(${vars.mkString(", ")})"
     }
@@ -88,20 +89,14 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
       s"${(a map printAtom).mkString(",\n    ")}"
     }
 
-    val printConjunctiveCondition = {a: List[Condition] =>
-      (a map { case Condition(lhs, op, rhs) => 
-        val lhsExpr = printExpr(lhs, printColumnVar)
-        val rhsExpr = printExpr(rhs, printColumnVar)
-        s"${lhsExpr} ${op} ${rhsExpr}" }).mkString(", ")
-    }
     val conditionList = cq.conditions map {
-      case Some(x) => Some(x.conditions map printConjunctiveCondition mkString("; "))
+      case Some(x) => Some(printCond(x))
       case None    => None
     }
     val bodyList = cq.bodies map printListAtom
     val bodyWithCondition = (bodyList zip conditionList map { case(a,b) => 
       b match {
-        case Some(c) => s"${a}, [ ${c} ]" 
+        case Some(c) => s"${a}, ${c}" 
         case None    => a
       }
     }).mkString(";\n    ")

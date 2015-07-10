@@ -15,21 +15,34 @@ import scala.util.Try
 // ddlog column variable type: constant or variable
 sealed trait ColumnVariable
 case class Variable(varName : String, relName : String, index : Int ) extends ColumnVariable
-case class Constant(value : String, relName: String, index: Int) extends ColumnVariable
-case class InlineFunction(functionName: String, args: List[ColumnVariable], isAggregation: Boolean) extends ColumnVariable
+
 case class Expression(variables: List[ColumnVariable], ops: List[String], relName: String, index: Int)
+case class ColumnExpr(expr: Expr, relName: String, index: Int)
 case class Operator(operator: String, operand: ColumnVariable)
 
-case class Atom(name : String, terms : List[Expression])
+sealed trait Expr
+case class VarExpr(name: String) extends Expr
+case class ConstExpr(value: String) extends Expr
+case class FuncExpr(function: String, args: List[Expr], isAggregation: Boolean) extends Expr
+case class BinaryOpExpr(lhs: Expr, op: String, rhs: Expr) extends Expr
+
+case class Atom(name : String, terms : List[ColumnExpr])
 case class Attribute(name : String, terms : List[Variable], types : List[String])
-case class ConjunctiveQuery(head: Atom, bodies: List[List[Atom]], conditions: List[Option[CompoundCondition]], isDistinct: Boolean)
+case class ConjunctiveQuery(head: Atom, bodies: List[List[Atom]], conditions: List[Option[Cond]], isDistinct: Boolean)
 case class Column(name : String, t : String)
+case class BodyWithCondition(body: List[Atom], condition: Option[Cond])
 
 // condition
-case class BodyWithConditions(body: List[Atom], conditions: Option[CompoundCondition])
+sealed trait Cond
+case class ComparisonCond(lhs: Expr, op: String, rhs: Expr) extends Cond
+case class NegationCond(cond: Cond) extends Cond
+case class BinaryOpCond(lhs: Cond, op: LogicOperator.LogicOperator, rhs: Cond) extends Cond
 
-case class Condition(lhs: Expression, op: String, rhs: Expression)
-case class CompoundCondition(conditions: List[List[Condition]])
+// logic operators
+object LogicOperator extends Enumeration {
+  type LogicOperator = Value
+  val  AND, OR = Value
+}
 
 // variable type
 sealed trait VariableType {
@@ -65,7 +78,6 @@ case class FunctionDeclaration( functionName: String, inputType: RelationType, o
 case class ExtractionRule(q : ConjunctiveQuery, supervision: String = null) extends Statement // Extraction rule
 case class FunctionCallRule(input : String, output : String, function : String) extends Statement // Extraction rule
 case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, semantics : String = "Imply", mode: String = null) extends Statement // Weighted rule
-
 
 // Parser
 class DeepDiveLogParser extends JavaTokenParsers {
@@ -120,84 +132,74 @@ class DeepDiveLogParser extends JavaTokenParsers {
       }
     }
 
-  def operator = "||" | "+" | "-" | "*" | "/" | "&"
-  def castOp = "::"
-
-  def variable = variableName ^^ { Variable(_, "", 0) }
-  def columnConstant = constant ^^ { Constant(_, "", 0) }
-  def variableOrConstant = columnConstant | variable
+  def operator = "||" | "+" | "-" | "*" | "/" | "&" | "::"
   val aggregationFunctions = Set("MAX", "SUM", "MIN", "ARRAY_ACCUM", "ARRAY_AGG")
-  def inlineFunction = functionName ~ "(" ~ rep1sep(variableOrConstant, ",") ~ ")" ^^ {
-    case (name ~ _ ~ args ~ _) => {
-      if (aggregationFunctions contains name) InlineFunction(name, args, true)
-      else InlineFunction(name, args, false)
-    }
-  }
-  def columnVariable = columnConstant | inlineFunction | variable
-  def operateOn = operator ~ columnVariable ^^ { case (v ~ o) => Operator(v,o) }
-  def typecast = castOp ~ columnConstant ^^ { case (v ~ o) => Operator(v,o) }
-  def operatorAndOperand = operateOn | typecast
-  def expression = columnVariable ~ rep(operatorAndOperand) ^^ {
-    case (v ~ opList) => {
-      val variables = List(v) ++ (opList map (_.operand))
-      val ops = opList map (_.operator)
-      Expression(variables, ops, "", 0)
-    }
-  }
+
+  // expressions
+  def expr : Parser[Expr] =
+    ( lexpr ~ operator ~ expr ^^ { case (lhs ~ op ~ rhs) => BinaryOpExpr(lhs, op, rhs) }
+    | lexpr
+    )
+
+  def lexpr : Parser[Expr] =
+    ( functionName ~ "(" ~ rep1sep(expr, ",") ~ ")" ^^ { 
+        case (name ~ _ ~ args ~ _) => FuncExpr(name, args, (aggregationFunctions contains name))
+      }
+    | constant ^^ { ConstExpr(_) }
+    | variableName ^^ { VarExpr(_) }
+    | "(" ~> expr <~ ")" 
+    )
 
   // TODO support aggregate function syntax somehow
-  def cqHead = relationName ~ "(" ~ repsep(expression, ",") ~ ")" ^^ {
+  def cqHead = relationName ~ "(" ~ rep1sep(expr, ",") ~ ")" ^^ {
       case (r ~ "(" ~ variableUses ~ ")") =>
         Atom(r, variableUses.zipWithIndex map {
-          case (Expression(v,op,_,_),i) => {
-            val vars = v map {
-              case Variable(x,_,_) => Variable(x,r,i)
-              case Constant(x,_,_) => Constant(x,r,i)
-              case InlineFunction(x, args, a) => InlineFunction(x, args, a)
-            }
-            Expression(vars, op, r, i)
-          }
+          case (e,i) => ColumnExpr(e, r, i)
         })
     }
 
-  // TODO add conditional expressions for where clause
-  def cqConditionalExpr = failure("No conditional expression supported yet")
-  def cqBodyAtom: Parser[Atom] =
-    ( relationName ~ "(" ~ repsep(expression, ",") ~ ")" ^^ {
-        case (r ~ "(" ~ variableBindings ~ ")") =>
-          Atom(r, variableBindings.zipWithIndex map {
-          case (Expression(v,op,_,_),i) => {
-            val vars = v map {
-              case Variable(x,_,_) => Variable(x,r,i)
-              case Constant(x,_,_) => Constant(x,r,i)
-              case InlineFunction(x, args, _) => InlineFunction(x, args, false)
-            }
-            Expression(vars, op, r, i)
-          }
-        })
+  // conditional expressions
+  def compareOperator = "LIKE" | ">" | "<" | ">=" | "<=" | "!=" | "=" | "IS" | "IS NOT"
+  def cond : Parser[Cond] = 
+    ( acond ~ (";") ~ cond ^^ { case (lhs ~ op ~ rhs) =>
+        BinaryOpCond(lhs, LogicOperator.OR, rhs)
       }
-    | cqConditionalExpr
+    | acond
     )
+  def acond : Parser[Cond] = 
+    ( lcond ~ (",") ~ acond ^^ { case (lhs ~ op ~ rhs) => BinaryOpCond(lhs, LogicOperator.AND, rhs) }
+    | lcond
+    )
+  // ! has higher priority...
+  def lcond : Parser[Cond] = 
+    ( "!" ~> bcond ^^ { NegationCond(_) }
+    | bcond
+    )
+  def bcond : Parser[Cond] = 
+    ( expr ~ compareOperator ~ expr ^^ { case (lhs ~ op ~ rhs) =>
+        ComparisonCond(lhs, op, rhs)
+      }
+    | "[" ~> cond <~ "]"
+    )
+
+  def cqBodyAtom: Parser[Atom] =
+    relationName ~ "(" ~ repsep(expr, ",") ~ ")" ^^ {
+      case (r ~ "(" ~ variableBindings ~ ")") =>
+        Atom(r, variableBindings.zipWithIndex map {
+        case (e,i) => ColumnExpr(e, r, i)
+      })
+    }
   def cqBody: Parser[List[Atom]] = rep1sep(cqBodyAtom, ",")
 
-  // conditions
-  def filterOperator = "LIKE" | ">" | "<" | ">=" | "<=" | "!=" | "=" | "IS" | "IS NOT"
-  def condition = expression ~ filterOperator ~ expression ^^ {
-    case (lhs ~ op ~ rhs) => {
-      Condition(lhs, op, rhs)
-    }
-  }
-  def conjunctiveCondition = repsep(condition, ",")
-  def compoundCondition = opt("[") ~> repsep(conjunctiveCondition, ";") <~ opt("]") ^^ { CompoundCondition(_) }
-  def cqBodyWithCondition = cqBody ~ ("," ~> compoundCondition).? ^^ {
-    case (b ~ c) => BodyWithConditions(b, c)
+  def cqBodyWithCondition = cqBody ~ ("," ~> cond).? ^^ {
+    case (b ~ c) => BodyWithCondition(b, c)
   }
 
   def conjunctiveQuery : Parser[ConjunctiveQuery] =
     cqHead ~ opt("*") ~ ":-" ~ rep1sep(cqBodyWithCondition, ";") ^^ {
       case (headatom ~ isDistinct ~ ":-" ~ disjunctiveBodies) =>
-        ConjunctiveQuery(headatom, disjunctiveBodies.map(_.body), disjunctiveBodies.map(_.conditions), isDistinct != None)
-    }
+        ConjunctiveQuery(headatom, disjunctiveBodies.map(_.body), disjunctiveBodies.map(_.condition), isDistinct != None)
+  }
 
   def relationType: Parser[RelationType] =
     ( "like" ~> relationName ^^ { RelationTypeAlias(_) }

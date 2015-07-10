@@ -19,9 +19,9 @@ object DeepDiveLogMergeDeriver{
       )
     )
 
-    def variableToExpr(v: Variable) = Expression(List(v), List(), v.relName, v.index)
-    val originalExpr = stmt.a.terms map (variableToExpr(_))
-    val incNewExpr = incNewStmt.a.terms map (variableToExpr(_))
+    def variableToExpr(v: Variable) = ColumnExpr(VarExpr(v.varName), v.relName, v.index)
+    val originalExpr = stmt.a.terms map variableToExpr
+    val incNewExpr = incNewStmt.a.terms map variableToExpr
 
     ExtractionRule(ConjunctiveQuery(Atom(stmt.a.name, originalExpr),
       List(List(Atom(incNewStmt.a.name, incNewExpr))), List(None), false))

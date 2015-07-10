@@ -55,16 +55,24 @@
           style: "sql_extractor"
         }
 
+      deepdive.extraction.extractors.extraction_rule_4 {
+        sql: """ DROP VIEW IF EXISTS P;
+        CREATE VIEW P AS 
+            SELECT  R1.p AS "b.R1.p" , R1.q AS "b.R1.q" , MAX(R1.r) AS column_2
+            FROM a R0, b R1
+        WHERE R1.k = R0.k  
+        """
+        style: "sql_extractor"
+          
+      }
+    
+
       deepdive.extraction.extractors.extraction_rule_3 {
         sql: """ DROP VIEW IF EXISTS Q;
         CREATE VIEW Q AS 
-            SELECT DISTINCT 'test' :: TEXT, 123, R0.k AS "a.R0.k" , unnest(R1.q)
+            SELECT DISTINCT 'test' :: TEXT AS column_0, 123 AS column_1, R0.k AS "a.R0.k" , unnest(R1.q) AS column_3
             FROM a R0, b R1, c R2
-        WHERE R1.k = R0.k  AND R2.s = R1.p || R1.q AND R2.n = 10 AND R2.t = 'foo'  AND ((R1.r > 100) OR (R1.r < 20 AND R1.r > 10)) UNION ALL 
-            SELECT  R1.p AS "b.R1.p" , R1.q AS "b.R1.q" , MAX(R1.r) AS "MAX_R1.r"
-            FROM a R0, b R1
-        WHERE R1.k = R0.k  
-        GROUP BY R1.p, R1.q
+        WHERE R1.k = R0.k  AND R2.s = R1.p || R1.q AND R2.n = 10 AND R2.t = 'foo'  AND ((R1.r > 100) OR ((NOT (R1.r < 20)) AND (R1.r < 50)))
         """
         style: "sql_extractor"
           
@@ -72,6 +80,6 @@
     
 deepdive.pipeline.run: ${PIPELINE}
 deepdive.pipeline.pipelines.initdb: [extraction_rule_1, extraction_rule_0, extraction_rule_2]
-deepdive.pipeline.pipelines.extraction: [extraction_rule_3]
-deepdive.pipeline.pipelines.endtoend: [extraction_rule_3]
+deepdive.pipeline.pipelines.extraction: [extraction_rule_4, extraction_rule_3]
+deepdive.pipeline.pipelines.endtoend: [extraction_rule_4, extraction_rule_3]
 deepdive.pipeline.pipelines.cleanup: [cleanup]
