@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
+# A script for enumerating all .bats files after instantiating any templates
 set -eu
-shopt -s nullglob
-cd "$(dirname "$0")"
 
-# make sure bats is available
-PATH="$PWD/bats/bin:$PATH"
+: ${TEST_ROOT:=test}
+
+( cd "$(dirname "$0")"
 
 # instantiate bats tests templates under its directory
 for t in *.bats.template; do
@@ -14,11 +14,11 @@ for t in *.bats.template; do
     # create a .bats symlink for each test specification
     for testSpec in "$testSpecDir"/*; do
         [[ -d "$testSpec" ]] || continue
-        testSpec=${testSpec%/input.ddl}
         batsFile="$testSpec".bats
-        ln -sfn ../"$t" "$batsFile"
+        ln -sfn ../"$(basename "$t")" "$batsFile"
+        echo "$TEST_ROOT/$batsFile"
     done
 done
+)
 
-# run all .bats tests
-bats "$@" *.bats */*.bats
+ls "$TEST_ROOT"/*.bats 2>/dev/null

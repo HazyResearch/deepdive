@@ -3,7 +3,7 @@
 # 
 # The test case here feeds a malformed .ddl into ddlog's print command and compares whether it produces an expected error.
 
-source bats-template.bash  # for $TESTDIR, $it, etc.
+source "$BATS_TEST_DIRNAME"/../bats-template.bash  # for $TESTDIR, $it, etc.
 
 # some preconditions
 setup() {
