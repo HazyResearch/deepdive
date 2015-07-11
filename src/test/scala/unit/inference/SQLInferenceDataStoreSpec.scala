@@ -20,6 +20,9 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
   // Generate a dbSettings for testing
   val dbSettings = TestHelper.getDbSettings
 
+  // XXX make sure the outputDir is there, otherwise some tests fail
+  new File(org.deepdive.Context.outputDir).mkdirs()
+
   /**********************
    * Note id must not be the first column,
    * since the first column is the distribution key in greenplum,
@@ -445,7 +448,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
       it("format converter should work (flat/array type)") {
         cancelUnlessPostgres()
-        val resourceFolder = s"${Context.deepdiveHome}/src/test/resources/format_converter"
+        val resourceFolder = new File(getClass.getResource("/format_converter").toURI).getAbsolutePath
         val converter = InferenceNamespace.getFormatConvertingWorkerPath
         val variableFile = s"${resourceFolder}/dd_variables"
         val factorFile = s"${resourceFolder}/dd_factors"

@@ -1,7 +1,11 @@
 # Makefile for DeepDive
 
-.DEFAULT_GOAL := install
+# install destination
+PREFIX = ~/local
+# path to the staging area
+STAGE_DIR = dist
 
+.DEFAULT_GOAL := install
 
 ### dependency recipes ########################################################
 
@@ -9,34 +13,34 @@
 depends:
 	# Installing and Checking dependencies...
 	util/install.sh deepdive_build_deps deepdive_runtime_deps
-	lib/check-depends.sh
 
 
 ### install recipes ###########################################################
 
 .PHONY: install
-PREFIX = ~/local
-DEST = $(PREFIX)/bin
 install: build
 	# Installing DeepDive to $(PREFIX)/
-	mkdir -p $(DEST)
-	ln -sfnv $(realpath shell/deepdive) $(DEST)/
-	@if [ -x $(DEST)/deepdive ]; then \
-		echo '# DeepDive binary has been install to $(DEST)/.'; \
-		echo '# Make sure your shell is configured to include the directory in PATH environment, e.g.:'; \
-		echo '  PATH=$(DEST):$$PATH'; \
-	fi
+	mkdir -p $(PREFIX)
+	tar cf - -C $(STAGE_DIR) . | tar xf - -C $(PREFIX)
+	# DeepDive has been install to $(PREFIX)/
+	# Make sure your shell is configured to include the directory in PATH environment, e.g.:
+	#    PATH=$(PREFIX)/bin:$$PATH
 
 
 ### build recipes #############################################################
 
 .PHONY: build
-build: scala-build lib/dw
+export STAGE_DIR
 
-lib/dw:
-	# Extracting sampler library
-	lib/dw_extract.sh
-test-build: scala-test-build lib/dw
+build: scala-assembly-jar
+	# staging all executable code and runtime data under $(STAGE_DIR)/
+	./stage.sh $(STAGE_DIR)
+	echo 'export CLASSPATH="$$DEEPDIVE_HOME"/lib/deepdive.jar' >$(STAGE_DIR)/env.sh
+
+test-build: scala-test-build
+	# staging all executable code and runtime data under $(STAGE_DIR)/
+	./stage.sh $(STAGE_DIR)
+	echo "export CLASSPATH='$$(cat $(SCALA_TEST_CLASSPATH_EXPORTED))'" >$(STAGE_DIR)/env.sh
 
 include scala.mk  # for scala-build, scala-test-build, scala-assembly-jar, scala-clean, etc. targets
 

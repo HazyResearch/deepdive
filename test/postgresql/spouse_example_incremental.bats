@@ -49,7 +49,7 @@ setup() {
 }
 
 compare() {
-    local PATH="$DEEPDIVE_HOME/util/test:$PATH"
+    local PATH="$DEEPDIVE_SOURCE_ROOT/util/test:$PATH"
     local what=$1
     local cos_sim=$(cosine_similarity_of <(
                 probability_distribution_of dd_new_has_spouse    inc.${what}.out

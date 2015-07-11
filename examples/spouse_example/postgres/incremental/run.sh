@@ -23,7 +23,7 @@ userConf="$(dirname "$DDlog")"/application.conf
 
 # compile application.conf from DDlog if necessary
 [[ "$appConf" -nt "$DDlog" && "$appConf" -nt "$userConf" ]] || {
-    "$DEEPDIVE_HOME"/util/ddlog compile $Mode "$DDlog"
+    ddlog compile $Mode "$DDlog"
     cat "$userConf"
 } >"$appConf"
 
@@ -37,5 +37,4 @@ export PIPELINE=$Pipeline
 
 # run DeepDive, passing the rest of the arguments
 # TODO use deepdive run instead
-java -cp "$(cat "$DEEPDIVE_HOME"/target/scala-2.10/classpath)" \
-    org.deepdive.Main -c "$appConf" -o "$Out"  "$@"
+deepdive env java org.deepdive.Main -c "$appConf" -o "$Out"  "$@"

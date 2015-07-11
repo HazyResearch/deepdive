@@ -21,4 +21,4 @@ export DBUSER=$PGUSER
 # incremental active
 export DEEPDIVE_ACTIVE_INCREMENTAL_VARIABLES="r1"
 export DEEPDIVE_ACTIVE_INCREMENTAL_RULES="testFactor"
-export BASEDIR=$DEEPDIVE_HOME/out
+export BASEDIR="$PWD"/out  # XXX out/ under the working directory happens to be DeepDive's default output path

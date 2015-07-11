@@ -16,7 +16,7 @@ url=${DEEPDIVE_DB_URL:-$(cat db.url)}
 dbtype=${url%%://*}
 
 # place the driver on PATH
-PATH="$DEEPDIVE_HOME"/shell/driver."$dbtype":"$PATH"
+PATH="$DEEPDIVE_HOME"/util/driver."$dbtype":"$PATH"
 # make sure all operations are defined
 for op in parse init execute query
 do type db-$op &>/dev/null || error "db-$op operation not available for $dbtype"
@@ -24,7 +24,7 @@ done
 
 # default environment setup script
 echo "DEEPDIVE_DB_URL=${url}"
-echo 'PATH="$DEEPDIVE_HOME"/shell/driver.'"${dbtype}"':"$PATH"'
+echo 'PATH="$DEEPDIVE_HOME"/util/driver.'"${dbtype}"':"$PATH"'
 echo "export DEEPDIVE_DB_URL PATH"
 
 # parse the URL and print necessary environment setup script

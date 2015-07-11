@@ -33,12 +33,12 @@ if [ -z "${DEEPDIVE_HOME:-}" ]; then
 
     # Setup environment
     unset CDPATH
-    export DEEPDIVE_HOME=${Here%/shell}
-    #  shell utilities
-    PATH="$DEEPDIVE_HOME/shell:$PATH"
-    #  DeepDive util/
+    export DEEPDIVE_HOME=${Here%/bin}
+    #  make sure DeepDive utilities are on PATH
     PATH="$DEEPDIVE_HOME/util:$PATH"
     export PATH
+    #  import extra environment setup
+    source "$DEEPDIVE_HOME"/env.sh
 fi
 
 
