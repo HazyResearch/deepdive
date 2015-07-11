@@ -24,7 +24,7 @@ F( (x :: INT) + (w :: INT) ) :- b(x,y,z,w).
 # conditions
 G(x) :- b(x,y,z,w), x + w = 100.
 
-H(x) :- b(x,y,z,w), [x + w = 100, x > 50].
+H(x) :- b(x,y,z,w), x + w = 100, x > 50.
 
 I(x) :- b(x,y,z,w), [x + w = 100; [x > 50, w < 10]].
 

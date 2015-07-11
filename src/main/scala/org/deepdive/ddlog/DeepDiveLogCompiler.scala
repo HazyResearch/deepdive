@@ -115,7 +115,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
     statements.foreach {
       case SchemaDeclaration(Attribute(r, terms, types), isQuery, vType) => {
         terms.zipWithIndex.foreach { 
-          case (VarExpr(n), i) =>
+          case (n, i) =>
             schema           += { (r,i) -> n }
             ground_relations += { r -> !isQuery } // record whether a query or a ground term.
             if (isQuery) variableType += { r -> vType.get }
@@ -190,25 +190,35 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
 
   // resolve an expression
   def compileExpr(e: Expr, cq: ConjunctiveQuery, alias: AliasStyle, index : Int, isHead: Boolean) : String = {
-    def recurse(e: Expr, alias: AliasStyle, depth: Int) : String = {
-      // for columns without a name (constant, function call, binary operator), add an column index alias if necessary
-      val columnAlias = if (depth == 0 && isHead) s" AS column_${index}" else ""
+    // recursively compile an expression
+    def compileExprInner(e: Expr, alias: AliasStyle) : String = {
       e match {
         case VarExpr(name) => resolveColumn(name, cq, alias).get
-        case ConstExpr(value) => value + columnAlias
+        case ConstExpr(value) => value
         case FuncExpr(function, args, agg) => {
-          val resolvedArgs = args map (x => recurse(x, OriginalOnly, depth + 1))
+          // note alias is overriden with OriginalOnly, because when an expression appears in 
+          // the function, we only need it's column name, without " AS ..." aliasing, same below
+          val resolvedArgs = args map (x => compileExprInner(x, OriginalOnly))
           val resolved = s"${function}(${resolvedArgs.mkString(", ")})"
-          resolved + columnAlias
+          resolved
         }
         case BinaryOpExpr(lhs, op, rhs) => {
-          val resovledLhs = recurse(lhs, OriginalOnly, depth + 1)
-          val resovledRhs = recurse(rhs, OriginalOnly, depth + 1)
-          s"(${resovledLhs} ${op} ${resovledRhs})${columnAlias}"
+          val resovledLhs = compileExprInner(lhs, OriginalOnly)
+          val resovledRhs = compileExprInner(rhs, OriginalOnly)
+          s"(${resovledLhs} ${op} ${resovledRhs})"
+        }
+        case TypecastExpr(lhs, rhs) => {
+          val resovledLhs = compileExprInner(lhs, OriginalOnly)
+          s"(${resovledLhs} :: ${rhs})"
         }
       }
     }
-    recurse(e, alias, 0)
+    // for columns without a name (constant, function call, binary operator), add an column index alias if necessary
+    val columnAlias = e match {
+      case x: VarExpr => ""
+      case _ => if (isHead) s" AS column_${index}" else ""
+    }
+    compileExprInner(e, alias) + columnAlias
   }
 
   // resolve a condition
@@ -216,7 +226,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
     cond match {
       case ComparisonCond(lhs, op, rhs) => 
         s"${compileExpr(lhs, cq, OriginalOnly, 0, false)} ${op} ${compileExpr(rhs, cq, OriginalOnly, 0, false)}"
-      case NegationCond(c) => s"NOT (${compileCond(c, cq)})"
+      case NegationCond(c) => s"(NOT ${compileCond(c, cq)})"
       case CompoundCond(lhs, op, rhs) => {
         val resolvedLhs = s"${compileCond(lhs, cq)}"
         val resolvedRhs = s"${compileCond(rhs, cq)}"
@@ -261,10 +271,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
     }
 
     // resolve conditions
-    val conditionStr = z.conditions(0) match {
-      case Some(c) => compileCond(c, z)
-      case None    => ""
-    }
+    val conditionStr = z.conditions(0) map (compileCond(_, z))
 
     // handle group by
     // map head terms, leaving out aggregation functions
@@ -281,14 +288,11 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
       s"\n        GROUP BY ${groupbyTerms.mkString(", ")}"
     }
 
-    val whereClauseStrBody = List(whereClause.mkString(" AND "), conditionStr).filter(_ != "").mkString(" AND ")
-    val whereClauseStr = (whereClauseStrBody match {
-      case "" => ""
-      case _  => "WHERE " + whereClauseStrBody
-    }) + groupbyStr
+    val whereClauseConds = whereClause ++ conditionStr
+    val whereClauseStr = if (whereClauseConds isEmpty) "" else whereClauseConds.mkString("WHERE ", " AND ", "")
 
     s"""FROM ${ bodyNames }
-        ${ whereClauseStr }"""
+        ${ whereClauseStr }${groupbyStr}"""
   }
 
   // Group statements by head
@@ -319,7 +323,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
 
   // Analyze the block visibility among statements 
   def analyzeVisible(statements: List[Statement]) = {
-    extractionRuleGroupByHead.values foreach { value => visible += value(0) }
+    extractionRuleGroupByHead.values foreach { visible += _(0) }
     functionCallList foreach { visible += _ }
   }
 
@@ -392,7 +396,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       if ((stmt.a.name startsWith "dd_new_") && (ss.inferenceRuleGroupByHead contains stmt.a.name)) {
       } else {
         var columnDecls = stmt.a.terms.zipWithIndex map {
-          case (VarExpr(name),i) => s"${name} ${stmt.a.types(i)}"
+          case (name,i) => s"${name} ${stmt.a.types(i)}"
         }
         if (stmt.isQuery) {
           val labelColumn = stmt.variableType match {
@@ -639,10 +643,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
   def compileVariableKey(ss: CompilationState): CompiledBlocks = {
     var keys = new ListBuffer[String]()
     for (stmt <- (ss.schemaDeclarationGroupByHead map (_._2)).flatten) {
-      var columnNames = stmt.a.terms map {
-        case VarExpr(name) => name
-      }
-      if (stmt.isQuery) keys += s"""${stmt.a.name} : [${columnNames.mkString(", ")}]"""
+      if (stmt.isQuery) keys += s"""${stmt.a.name} : [${stmt.a.terms.mkString(", ")}]"""
     }
     ss.mode match {
       case INCREMENTAL => List(s"""

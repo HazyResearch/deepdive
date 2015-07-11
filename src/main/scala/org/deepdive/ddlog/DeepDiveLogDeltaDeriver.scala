@@ -98,8 +98,9 @@ object DeepDiveLogDeltaDeriver{
 
     // if (!stmt.isQuery) {
     incrementalStatement += ExtractionRule(ConjunctiveQuery(
-      Atom(incNewStmt.a.name, incNewStmt.a.terms),
-      List(List(Atom(stmt.a.name, stmt.a.terms)), List(Atom(incDeltaStmt.a.name, incDeltaStmt.a.terms))), 
+      Atom(incNewStmt.a.name, incNewStmt.a.terms map { VarExpr(_) } ),
+      List(List(Atom(stmt.a.name, stmt.a.terms map { VarExpr(_) })),
+        List(Atom(incDeltaStmt.a.name, incDeltaStmt.a.terms map { VarExpr(_) }))), 
       List(None, None), false))
     // }
     incrementalStatement.toList

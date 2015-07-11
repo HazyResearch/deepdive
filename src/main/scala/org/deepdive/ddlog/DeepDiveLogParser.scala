@@ -10,9 +10,6 @@ import scala.util.Try
 // ***************************************
 // * The union types for for the parser. *
 // ***************************************
-// case class Variable(varName : String, relName : String, index : Int )
-// TODO make Atom a trait, and have multiple case classes, e.g., RelationAtom and CondExprAtom
-// ddlog column variable type: constant or variable
 case class Variable(varName : String, relName : String, index : Int )
 
 sealed trait Expr
@@ -20,9 +17,10 @@ case class VarExpr(name: String) extends Expr
 case class ConstExpr(value: String) extends Expr
 case class FuncExpr(function: String, args: List[Expr], isAggregation: Boolean) extends Expr
 case class BinaryOpExpr(lhs: Expr, op: String, rhs: Expr) extends Expr
+case class TypecastExpr(lhs: Expr, rhs: String) extends Expr
 
 case class Atom(name : String, terms : List[Expr])
-case class Attribute(name : String, terms : List[VarExpr], types : List[String])
+case class Attribute(name : String, terms : List[String], types : List[String])
 case class ConjunctiveQuery(head: Atom, bodies: List[List[Atom]], conditions: List[Option[Cond]], isDistinct: Boolean)
 case class Column(name : String, t : String)
 case class BodyWithCondition(body: List[Atom], condition: Option[Cond])
@@ -87,7 +85,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def stringLiteralAsSqlString = stringLiteral ^^ { s =>
     s"""'${s.stripPrefix("\"").stripSuffix("\"")}'"""
   }
-  def constant = stringLiteralAsSqlString | wholeNumber | "TRUE" | "FALSE" | "NULL" | "TEXT" | "INT" | "BOOLEAN"
+  def constant = stringLiteralAsSqlString | wholeNumber | "TRUE" | "FALSE" | "NULL"
 
   // Single-line comments beginning with # or // are supported by treating them as whiteSpace
   // C/Java/Scala style multi-line comments cannot be easily supported with RegexParsers unless we introduce a dedicated lexer.
@@ -117,8 +115,8 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def schemaDeclaration: Parser[SchemaDeclaration] =
     relationName ~ opt("?") ~ "(" ~ rep1sep(columnDeclaration, ",") ~ ")" ~ opt(dataType) ^^ {
       case (r ~ isQuery ~ "(" ~ attrs ~ ")" ~ vType) => {
-        val vars = attrs map { case(x) => VarExpr(x.name) }
-        var types = attrs map { case(x) => x.t }
+        val vars = attrs map (_.name)
+        var types = attrs map (_.t)
         val variableType = vType match {
           case None => if (isQuery != None) Some(BooleanType) else None
           case Some(s) => Some(s)
@@ -134,7 +132,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
   // expressions
   def expr : Parser[Expr] =
     ( lexpr ~ operator ~ expr ^^ { case (lhs ~ op ~ rhs) => BinaryOpExpr(lhs, op, rhs) }
-    | lexpr ~ typeOperator ~ constant ^^ { case (lhs ~ op ~ rhs) => BinaryOpExpr(lhs, op, ConstExpr(rhs)) }
+    | lexpr ~ typeOperator ~ columnType ^^ { case (lhs ~ _ ~ rhs) => TypecastExpr(lhs, rhs) }
     | lexpr
     )
 

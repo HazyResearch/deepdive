@@ -17,7 +17,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
 
   def print(stmt: SchemaDeclaration): String = {
     val columnDecls = stmt.a.terms.zipWithIndex map {
-      case (VarExpr(name),i) => s"${name} ${stmt.a.types(i)}"
+      case (name,i) => s"${name} ${stmt.a.types(i)}"
     }
     val prefix = s"${stmt.a.name}${if (stmt.isQuery) "?" else ""}("
     val indentation = " " * prefix.length
@@ -61,6 +61,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
         s"${function}(${resolvedArgs.mkString(", ")})"
       }
       case BinaryOpExpr(lhs, op, rhs) => s"(${printExpr(lhs)} ${op} ${printExpr(rhs)})"
+      case TypecastExpr(lhs, rhs) => s"(${printExpr(lhs)} :: ${rhs})"
     }
   }
 
@@ -68,7 +69,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   def printCond(cond: Cond) : String = {
     cond match {
       case ComparisonCond(lhs, op, rhs) => s"${printExpr(lhs)} ${op} ${printExpr(rhs)}"
-      case NegationCond(c) => s"![${printCond(c)}]"
+      case NegationCond(c) => s"[!${printCond(c)}]"
       case CompoundCond(lhs, op, rhs) => {
         op match {
           case LogicOperator.AND => s"[${printCond(lhs)}, ${printCond(rhs)}]" 
