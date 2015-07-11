@@ -71,6 +71,7 @@ stage ddlib/ddlib                                                 lib/python/
 if ! [[ -e "$STAGE_DIR"/util/sampler-dw ]]; then
 case $(uname) in
 Linux)
+    stage util/ndbloader/ndbloader-linux                          util/ndbloader
     stage util/format_converter_linux                             util/format_converter
     unzip -o util/sampler-dw-linux-lib.zip                     -d "$STAGE_DIR"/lib/
     #stage sampler/dw                                             util/sampler-dw # TODO
@@ -79,6 +80,7 @@ Linux)
     ln -sfn sampler-dw-linux.sh                                   "$STAGE_DIR"/util/sampler-dw
     ;;
 Darwin)
+    stage util/ndbloader/ndbloader-mac                            util/ndbloader
     stage util/format_converter_mac                               util/format_converter
     ditto -xk util/sampler-dw-mac-lib.zip                         "$STAGE_DIR"/lib/
     stage util/sampler-dw-mac                                     util/

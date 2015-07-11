@@ -217,7 +217,7 @@ object SettingsParser extends Logging {
 
     // Parse Default sampler command based on mac / linux
     val samplerCmd = samplingConfig.getString("sampler_cmd") match {
-      case "__DEFAULT__" => s"${Context.deepdiveHome}/util/sampler-dw"
+      case "__DEFAULT__" => "sampler-dw"
       case _ => samplingConfig.getString("sampler_cmd")
     }
 
