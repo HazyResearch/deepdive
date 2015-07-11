@@ -600,6 +600,87 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       }
       val weightDesc = generateWeightDesc(factorDesc.weightPrefix, factorDesc.weight.variables)
 
+      val weightJoinlist = factorDesc.weight.variables.map(
+        v => s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)} """).mkString("AND")
+
+      // assign weight id, handle both normal case and incremental case
+      def handleWeightIds(orderbyClause: String, isMultinomial: Boolean) = {
+        // assign weight id for incremental, use previous weight id if we have seen that weight before,
+        // otherwise, assign new id
+        dbSettings.incrementalMode match {
+          case IncrementalMode.INCREMENTAL => {
+            val lastWeightsTableForThisFactor = InferenceNamespace.getBaseTableName(weighttableForThisFactor)
+            val exists = dataStore.existsTable(lastWeightsTableForThisFactor)
+            if (!exists) {
+              assignWeightIds(weighttableForThisFactor, orderbyClause)
+            } else {
+              val tmpTable = s"${weighttableForThisFactor}_inc"
+              val weightJoinlistInc = factorDesc.weight.variables.map(v => {
+                // split column to get relation name
+                val colSplit = v.split('.')
+                val lastvrel = InferenceNamespace.getBaseTableName(colSplit(0))
+                val lastv = s"${lastvrel}.${colSplit.takeRight(colSplit.length-1).mkString(".")}"
+                s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(lastv)}"""
+              })
+              val cardinalityCond = if (isMultinomial) List("t0.cardinality = t1.cardinality") else List("")
+              val weightConditionInc = (weightJoinlistInc ++ cardinalityCond).filter(_ != "").mkString("WHERE ", " AND ", "")
+              execute(s"""UPDATE ${weighttableForThisFactor} AS t0 SET id = t1.id
+                FROM ${lastWeightsTableForThisFactor} t1
+                ${weightConditionInc}""")
+              dataStore.dropAndCreateTableAs(tmpTable, s"SELECT * FROM ${weighttableForThisFactor} WHERE id = -1")
+              execute(s"ALTER SEQUENCE ${weightidSequence} RESTART ${cweightid}")
+              val count = assignWeightIds(tmpTable, orderbyClause)
+
+              val weightCondition = (List(weightJoinlist) ++ cardinalityCond).filter(_ != "").mkString("WHERE ", " AND ", "")
+              execute(s"""UPDATE ${weighttableForThisFactor} AS t0 SET id = t1.id
+                FROM ${tmpTable} t1
+                ${weightCondition}""")
+              count
+            }
+          }
+          case _ => {
+            // handle weight id
+            assignWeightIds(weighttableForThisFactor, orderbyClause)
+          }
+        }
+      }
+
+      // assign weight id
+      // TODO this function is branching for PostgresXL, we need to get rid of the branching
+      def assignWeightIds(table: String, orderbyClause: String) = {
+        if (dataStore.isUsingPostgresXL)
+          dataStore.assignIdsOrdered(table.toLowerCase(), cweightid, weightidSequence, orderbyClause)
+        else
+          dataStore.assignIds(table.toLowerCase(), cweightid, weightidSequence)
+      }
+
+      // update incremental weight meta data
+      def updateIncWeightMeta() {
+        dbSettings.incrementalMode match {
+          case IncrementalMode.MATERIALIZATION => {
+            var numWeights : Long = 0
+            issueQuery(s"SELECT COUNT(*) FROM ${weighttableForThisFactor}") { rs =>
+              numWeights += rs.getLong(1)
+            }
+            execute(s"""UPDATE ${InferenceNamespace.getIncrementalMetaTableName()}
+              SET num_weights = ${numWeights}""")
+          }
+          case _ =>
+        }
+      }
+
+      // condition for incremental mode
+      val incCondition = dbSettings.incrementalMode match {
+        case IncrementalMode.INCREMENTAL => {
+          var numWeightsMat : Long = 0
+          issueQuery(s""" SELECT num_weights FROM ${InferenceNamespace.getIncrementalMetaTableName()}""") {
+            rs => numWeightsMat = rs.getLong(1)
+          }
+          s"""WHERE id >= ${numWeightsMat}"""
+        }
+        case _ => ""
+      }
+
       if (factorDesc.func.getClass.getSimpleName != "MultinomialFactorFunction") {
 
         // branch if weight variables present
@@ -617,55 +698,12 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
             GROUP BY ${weightlist}""")
         }
 
-        val weightJoinlist = factorDesc.weight.variables.map(
-          v => s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)} """).mkString("AND")
-
         // assign weight id for incremental, use previous weight id if we have seen that weight before,
         // otherwise, assign new id
-        dbSettings.incrementalMode match {
-          case IncrementalMode.INCREMENTAL => {
-            val lastWeightsTableForThisFactor = InferenceNamespace.getBaseTableName(weighttableForThisFactor)
-            val exists = dataStore.existsTable(lastWeightsTableForThisFactor)
-            if (!exists) {
-              cweightid += dataStore.assignIds(weighttableForThisFactor.toLowerCase(), cweightid, weightidSequence)
-            } else {
-              val tmpTable = s"${weighttableForThisFactor}_inc"
-              val weightJoinlistInc = factorDesc.weight.variables.map(v => {
-                // split column to get relation name
-                val colSplit = v.split('.')
-                val lastvrel = InferenceNamespace.getBaseTableName(colSplit(0))
-                val lastv = s"${lastvrel}.${colSplit.takeRight(colSplit.length-1).mkString(".")}"
-                s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(lastv)}"""
-              }).mkString("AND")
-              execute(s"""UPDATE ${weighttableForThisFactor} AS t0 SET id = t1.id
-                FROM ${lastWeightsTableForThisFactor} t1
-                WHERE ${weightJoinlistInc}""")
-              dataStore.dropAndCreateTableAs(tmpTable, s"SELECT * FROM ${weighttableForThisFactor} WHERE id = -1")
-              execute(s"ALTER SEQUENCE ${weightidSequence} RESTART ${cweightid}")
-              cweightid += dataStore.assignIds(tmpTable.toLowerCase(), cweightid, weightidSequence)
-              execute(s"""UPDATE ${weighttableForThisFactor} AS t0 SET id = t1.id
-                FROM ${tmpTable} t1
-                WHERE ${weightJoinlist}""")
-            }
-          }
-          case _ => {
-            // handle weight id
-            cweightid += dataStore.assignIds(weighttableForThisFactor.toLowerCase(), cweightid, weightidSequence)
-          }
-        }
+        cweightid += handleWeightIds("", false)
 
         // maintain incremental meta data
-        dbSettings.incrementalMode match {
-          case IncrementalMode.MATERIALIZATION => {
-            var numWeights : Long = 0
-            issueQuery(s"SELECT COUNT(*) FROM ${weighttableForThisFactor}") { rs =>
-              numWeights += rs.getLong(1)
-            }
-            execute(s"""UPDATE ${InferenceNamespace.getIncrementalMetaTableName()}
-              SET num_weights = ${numWeights}""")
-          }
-          case _ =>
-        }
+        updateIncWeightMeta()
 
         // check null weight (only if there are weight variables)
         if (hasWeightVariables) {
@@ -678,8 +716,6 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         }
 
         // dump factors
-        val weightjoinlist = factorDesc.weight.variables.map(
-          v => s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)} """).mkString("AND")
         // do not have join conditions if there are no weight variables, and t1 will only have 1 row
         val weightJoinCondition = hasWeightVariables match {
           case true => "WHERE " + factorDesc.weight.variables.map(
@@ -693,18 +729,6 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
           s"""SELECT DISTINCT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
            FROM ${querytable} t0, ${weighttableForThisFactor} t1
            ${weightJoinCondition};""", groundingDir)
-
-        // condition for incremental mode
-        val incCondition = dbSettings.incrementalMode match {
-          case IncrementalMode.INCREMENTAL => {
-            var numWeightsMat : Long = 0
-            issueQuery(s""" SELECT num_weights FROM ${InferenceNamespace.getIncrementalMetaTableName()}""") {
-              rs => numWeightsMat = rs.getLong(1)
-            }
-            s"""WHERE id >= ${numWeightsMat}"""
-          }
-          case _ => ""
-        }
 
         execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, description)
           SELECT id, isfixed, initvalue, ${weightDesc} FROM ${weighttableForThisFactor}
@@ -743,13 +767,12 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
             ${weighttableForFactorOrderBy}""")
 
           // handle weight id
-          val count = if (dataStore.isUsingPostgresXL)
-            dataStore.assignIdsOrdered(weighttableForThisFactor.toLowerCase(), cweightid, weightidSequence, "ORDER BY cardinality")
-          else
-            dataStore.assignIds(weighttableForThisFactor.toLowerCase(), cweightid, weightidSequence)
+          val count = handleWeightIds("ORDER BY cardinality", true)
+          updateIncWeightMeta()
 
           execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, cardinality, description)
-            SELECT id, isfixed, initvalue, cardinality, ${weightDesc} FROM ${weighttableForThisFactor};""")
+            SELECT id, isfixed, initvalue, cardinality, ${weightDesc} FROM ${weighttableForThisFactor}
+            ${incCondition};""")
 
           du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
             s"SELECT id AS factor_id, ${cweightid} AS weight_id, ${idcols} FROM ${querytable} ORDER BY id",
@@ -782,7 +805,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
           // a specific property of Greenplum to make it right
           dataStore.dropAndCreateTableAs(s"${weighttableForThisFactor}_unsorted",
             s"""SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} AS cardinality,
-            ${dataStore.cast(0, "bigint")} AS id
+            ${dataStore.cast(-1, "bigint")} AS id
             FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")} LIMIT 0;""")
 
           // Similar to Greenplum, we need special handling for XL. The notion
@@ -794,13 +817,13 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
           execute(s"""
             INSERT INTO ${weighttableForThisFactor}_unsorted
-            SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} as cardinality, 0 AS id
+            SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} as cardinality, -1 AS id
             FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")}
             ${weighttableForFactorOrderBy}""")
 
           dataStore.dropAndCreateTableAs(weighttableForThisFactor,
             s"""SELECT ${weighttableForThisFactorTemp}.*, ${cardinalityCmd} AS cardinality,
-            ${dataStore.cast(0, "bigint")} AS id
+            ${dataStore.cast(-1, "bigint")} AS id
             FROM ${weighttableForThisFactorTemp}, ${cardinalityTables.mkString(", ")} LIMIT 0""")
 
           execute(s"""
@@ -809,28 +832,25 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
             ${weighttableForFactorOrderBy}""")
 
           // handle weight id
-          if (dataStore.isUsingPostgresXL)
-            cweightid += dataStore.assignIdsOrdered(weighttableForThisFactor.toLowerCase(), cweightid, weightidSequence, s"ORDER BY ${weightlist}, cardinality")
-          else
-            cweightid += dataStore.assignIds(weighttableForThisFactor.toLowerCase(), cweightid, weightidSequence)
+          cweightid += handleWeightIds(s"ORDER BY ${weightlist}, cardinality", true)
+          updateIncWeightMeta()
 
           execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, cardinality, description)
-            SELECT id, isfixed, initvalue, cardinality, ${weightDesc} FROM ${weighttableForThisFactor};""")
+            SELECT id, isfixed, initvalue, cardinality, ${weightDesc} FROM ${weighttableForThisFactor}
+            ${incCondition};""")
 
           // use weight id corresponding to cardinality 0 (like C array...)
           val cardinalityKey = factorDesc.func.variables.map(v => "00000").mkString(",")
 
           // dump factors
           // TODO we don't have enough code reuse here.
-          val weightjoinlist = factorDesc.weight.variables.map(v =>
-            s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)} """).mkString("AND")
           execute(dataStore.analyzeTable(querytable))
           execute(dataStore.analyzeTable(weighttableForThisFactor))
 
           du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
             s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
              FROM ${querytable} t0, ${weighttableForThisFactor} t1
-             WHERE ${weightjoinlist} AND t1.cardinality = '${cardinalityKey}' ORDER BY t0.id;""",
+             WHERE ${weightJoinlist} AND t1.cardinality = '${cardinalityKey}' ORDER BY t0.id;""",
              groundingDir)
         }
       }
@@ -936,7 +956,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     assignHoldout(schemaForGrounding, calibrationSettings)
 
     // generate cardinality tables
-    generateCardinalityTables(schemaForGrounding)
+    generateCardinalityTables(schema)
 
     // generate factor meta data
     groundFactorMeta(du, factorDescs, dbSettings, groundingPath)
