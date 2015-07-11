@@ -75,9 +75,8 @@ Linux)
     stage util/sampler-dw-linux                                   util/
     stage util/sampler-dw-linux.sh                                util/
     ln -sfn sampler-dw-linux.sh                                   "$STAGE_DIR"/util/sampler-dw
-    unzip util/sampler-dw-linux-lib.zip                        -d "$STAGE_DIR"/lib/
+    unzip -o util/sampler-dw-linux-lib.zip                     -d "$STAGE_DIR"/lib/
     ;;
-
 Darwin)
     stage util/format_converter_mac                               util/format_converter
     stage util/sampler-dw-mac                                     util/
@@ -85,10 +84,8 @@ Darwin)
     ln -sfn sampler-dw-mac.sh                                     "$STAGE_DIR"/util/sampler-dw
     ditto -xk util/sampler-dw-mac-lib.zip                         "$STAGE_DIR"/lib/
     ;;
-
 *)
-    echo >&2 "$(uname): Unsupported OS"
-    false
+    echo >&2 "$(uname): Unsupported OS"; false
     ;;
 esac
 
@@ -99,4 +96,4 @@ stage util/ddext.py                                               util/
 stage util/ddext_input_sql_translator.py                          util/
 
 # Mindbender
-stage mindbender/mindbender-LATEST-Darwin-x86_64.sh               bin/mindbender
+stage mindbender/mindbender-LATEST-$(uname)-x86_64.sh             bin/mindbender || true  # keeping it optional for now
