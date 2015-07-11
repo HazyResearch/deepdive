@@ -5,7 +5,7 @@
 # Generated: 2015-06-19
 set -eu
 
-if [ -z "${DEEPDIVE_HOME:-}" ]; then
+if [ -z "${DEEPDIVE_SHELL:-}" ]; then
     Self=$(readlink -f "$0" 2>/dev/null || {
         # XXX readlink -f is only available in GNU coreutils
         cd $(dirname -- "$0")
@@ -38,9 +38,12 @@ if [ -z "${DEEPDIVE_HOME:-}" ]; then
     PATH="$DEEPDIVE_HOME/util:$PATH"
     export PATH
     #  make sure ddlib in Python is available
-    export PYTHONPATH="$DEEPDIVE_HOME"/lib/python:"${PYTHONPATH:+:$PYTHONPATH}"
+    PYTHONPATH="$DEEPDIVE_HOME"/lib/python:"${PYTHONPATH:+:$PYTHONPATH}"
+    export PYTHONPATH
     #  import extra environment setup
     source "$DEEPDIVE_HOME"/env.sh
+
+    export DEEPDIVE_SHELL=$0
 fi
 
 
