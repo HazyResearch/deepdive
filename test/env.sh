@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # A bash script for setting up environment for DeepDive tests that is supposed to be sourced from every .bats
 
-: ${STAGE_DIR:=dist} #?path to the staging area must be set}
+: ${STAGE_DIR:=dist/stage} # path to the staging area must be set
 
 # find out the path to the root of DeepDive's source tree
 DEEPDIVE_TEST_ROOT=$(cd "$(dirname "${BASH_SOURCE:-$0}")" && pwd)

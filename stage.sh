@@ -3,11 +3,12 @@
 set -eu
 
 ###############################################################################
-STAGE_DIR=${1:-dist}
+STAGE_DIR=${1:-dist/stage}
 stage() {
     local src=$1 dst=$2
+    [[ -e "$src" ]]
     dst="$STAGE_DIR/$dst"
-    dstdir=$(dirname "$dst")
+    dstdir=$(dirname "$dst.")
     [[ -d "$dstdir" ]] || mkdir -p "$dstdir"
     if [[ -d "$src" ]]; then
         # use rsync(1) for staging directories
@@ -50,7 +51,7 @@ stage shell/driver.mysql                                          util/
 stage shell/driver.mysqlcluster                                   util/
 
 # DeepDive core
-stage target/scala-2.10/deepdive-assembly-*.jar                   lib/deepdive.jar
+stage target/scala-2.10/deepdive-assembly-*.jar                   lib/deepdive.jar || true  # when testing, .jar may be missing
 
 # DeepDive utilities
 stage util/tobinary.py                                            util/

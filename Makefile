@@ -3,7 +3,9 @@
 # install destination
 PREFIX = ~/local
 # path to the staging area
-STAGE_DIR = dist
+STAGE_DIR = dist/stage
+# path to the package to be built
+PACKAGE = $(dir $(STAGE_DIR))/deepdive.tar.gz
 
 .DEFAULT_GOAL := install
 
@@ -26,11 +28,16 @@ install: build
 	# Make sure your shell is configured to include the directory in PATH environment, e.g.:
 	#    PATH=$(PREFIX)/bin:$$PATH
 
+.PHONY: package
+package: $(PACKAGE)
+$(PACKAGE): build
+	tar cf $@ -C $(STAGE_DIR) .
 
 ### build recipes #############################################################
 
 .PHONY: build
 export STAGE_DIR
+# TODO record version
 
 build: scala-assembly-jar
 	# staging all executable code and runtime data under $(STAGE_DIR)/
