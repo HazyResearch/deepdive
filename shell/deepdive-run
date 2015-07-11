@@ -77,12 +77,7 @@ cat "$DEEPDIVE_CONFIG" >"$extendedConfig"
 }
 
 # run the DeepDive jar
-(
-    # make sure ddlib in Python is available to all udf
-    export PYTHONPATH="$DEEPDIVE_HOME"/lib/python:"${PYTHONPATH:+:$PYTHONPATH}"
-
-    exec java org.deepdive.Main -c "$extendedConfig" -o "$APP_HOME/$run_dir"
-)
+java org.deepdive.Main -c "$extendedConfig" -o "$APP_HOME/$run_dir"
 
 # point to the run with LATEST symlink
 ln -sfn "$run_id" run/LATEST

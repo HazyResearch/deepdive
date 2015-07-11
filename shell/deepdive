@@ -37,6 +37,8 @@ if [ -z "${DEEPDIVE_HOME:-}" ]; then
     #  make sure DeepDive utilities are on PATH
     PATH="$DEEPDIVE_HOME/util:$PATH"
     export PATH
+    #  make sure ddlib in Python is available
+    export PYTHONPATH="$DEEPDIVE_HOME"/lib/python:"${PYTHONPATH:+:$PYTHONPATH}"
     #  import extra environment setup
     source "$DEEPDIVE_HOME"/env.sh
 fi
