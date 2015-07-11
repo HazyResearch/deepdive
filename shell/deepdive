@@ -35,7 +35,7 @@ if [ -z "${DEEPDIVE_SHELL:-}" ]; then
     unset CDPATH
     export DEEPDIVE_HOME=${Here%/bin}
     #  make sure DeepDive utilities are on PATH
-    PATH="$DEEPDIVE_HOME/util:$PATH"
+    PATH="$DEEPDIVE_HOME/util:$DEEPDIVE_HOME/bin:$PATH"
     export PATH
     #  make sure ddlib in Python is available
     PYTHONPATH="$DEEPDIVE_HOME"/lib/python:"${PYTHONPATH:+:$PYTHONPATH}"
