@@ -7,6 +7,8 @@ STAGE_DIR = dist/stage
 # path to the package to be built
 PACKAGE = $(dir $(STAGE_DIR))/deepdive.tar.gz
 
+export STAGE_DIR
+
 .DEFAULT_GOAL := install
 
 ### dependency recipes ########################################################
@@ -35,18 +37,23 @@ $(PACKAGE): build
 
 ### build recipes #############################################################
 
-.PHONY: build
-export STAGE_DIR
-# TODO record version
-
-build: scala-assembly-jar
+# common build steps between build and test-build targets
+define STAGING_COMMANDS
 	# staging all executable code and runtime data under $(STAGE_DIR)/
 	./stage.sh $(STAGE_DIR)
+	# record version and build info
+	util/generate-build-info.sh >$(STAGE_DIR)/.build-info.sh
+endef
+
+.PHONY: build
+build: scala-assembly-jar
+	$(STAGING_COMMANDS)
+	# record production environment settings
 	echo 'export CLASSPATH="$$DEEPDIVE_HOME"/lib/deepdive.jar' >$(STAGE_DIR)/env.sh
 
 test-build: scala-test-build
-	# staging all executable code and runtime data under $(STAGE_DIR)/
-	./stage.sh $(STAGE_DIR)
+	$(STAGING_COMMANDS)
+	# record test-specific environment settings
 	echo "export CLASSPATH='$$(cat $(SCALA_TEST_CLASSPATH_EXPORTED))'" >$(STAGE_DIR)/env.sh
 
 include scala.mk  # for scala-build, scala-test-build, scala-assembly-jar, scala-clean, etc. targets
