@@ -291,8 +291,13 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
     val whereClauseConds = whereClause ++ conditionStr
     val whereClauseStr = if (whereClauseConds isEmpty) "" else whereClauseConds.mkString("WHERE ", " AND ", "")
 
+    val limitStr = z.limit match {
+      case Some(s) => s" LIMIT ${s}"
+      case None => ""
+    }
+
     s"""FROM ${ bodyNames }
-        ${ whereClauseStr }${groupbyStr}"""
+        ${ whereClauseStr }${groupbyStr}${limitStr}"""
   }
 
   // Group statements by head
@@ -439,7 +444,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     var inputQueries = new ListBuffer[String]()
     for (stmt <- stmts) {
       for (cqBody <- stmt.q.bodies) {
-        val tmpCq = ConjunctiveQuery(stmt.q.head, List(cqBody), stmt.q.conditions, stmt.q.isDistinct)
+        val tmpCq = stmt.q.copy(bodies = List(cqBody))
         // Generate the body of the query.
         val qs              = new QuerySchema( tmpCq )
 
@@ -556,7 +561,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       for (cqBody <- stmt.q.bodies) {
         // edge query
         val fakeBody        = stmt.q.head +: cqBody
-        val fakeCQ          = ConjunctiveQuery(stmt.q.head, List(fakeBody), stmt.q.conditions, stmt.q.isDistinct) // we will just use the fakeBody below.
+        val fakeCQ          = stmt.q.copy(bodies = List(fakeBody))
 
         val index = cqBody.length + 1
         val qs2 = new QuerySchema( fakeCQ )

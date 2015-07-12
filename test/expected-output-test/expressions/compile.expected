@@ -139,6 +139,18 @@
       }
     
 
+      deepdive.extraction.extractors.extraction_rule_16 {
+        sql: """ DROP VIEW IF EXISTS L;
+        CREATE VIEW L AS 
+            SELECT DISTINCT R0.k AS "b.R0.k" 
+            FROM b R0
+         LIMIT 100
+        """
+        style: "sql_extractor"
+          
+      }
+    
+
       deepdive.extraction.extractors.extraction_rule_6 {
         sql: """ DROP VIEW IF EXISTS B;
         CREATE VIEW B AS 
@@ -212,6 +224,6 @@
     
 deepdive.pipeline.run: ${PIPELINE}
 deepdive.pipeline.pipelines.initdb: [extraction_rule_1, extraction_rule_0, extraction_rule_2]
-deepdive.pipeline.pipelines.extraction: [extraction_rule_7, extraction_rule_12, extraction_rule_3, extraction_rule_4, extraction_rule_8, extraction_rule_10, extraction_rule_13, extraction_rule_5, extraction_rule_9, extraction_rule_14, extraction_rule_11, extraction_rule_15, extraction_rule_6]
-deepdive.pipeline.pipelines.endtoend: [extraction_rule_7, extraction_rule_12, extraction_rule_3, extraction_rule_4, extraction_rule_8, extraction_rule_10, extraction_rule_13, extraction_rule_5, extraction_rule_9, extraction_rule_14, extraction_rule_11, extraction_rule_15, extraction_rule_6]
+deepdive.pipeline.pipelines.extraction: [extraction_rule_7, extraction_rule_12, extraction_rule_16, extraction_rule_3, extraction_rule_4, extraction_rule_8, extraction_rule_10, extraction_rule_13, extraction_rule_5, extraction_rule_9, extraction_rule_14, extraction_rule_11, extraction_rule_15, extraction_rule_6]
+deepdive.pipeline.pipelines.endtoend: [extraction_rule_7, extraction_rule_12, extraction_rule_16, extraction_rule_3, extraction_rule_4, extraction_rule_8, extraction_rule_10, extraction_rule_13, extraction_rule_5, extraction_rule_9, extraction_rule_14, extraction_rule_11, extraction_rule_15, extraction_rule_6]
 deepdive.pipeline.pipelines.cleanup: [cleanup]

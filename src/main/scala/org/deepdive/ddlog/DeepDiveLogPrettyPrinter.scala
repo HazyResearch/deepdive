@@ -100,7 +100,13 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
       }
     }).mkString(";\n    ")
 
-    s"""${printAtom(cq.head)} ${if (cq.isDistinct) "*" else ""} :-
+    val distinctStr = if (cq.isDistinct) "*" else ""
+    val limitStr = cq.limit match {
+      case Some(s) => s" | ${s}"
+      case None => ""
+    }
+
+    s"""${printAtom(cq.head)} ${distinctStr}${limitStr} :-
        |    ${bodyWithCondition}""".stripMargin
   }
 

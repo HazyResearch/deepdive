@@ -70,7 +70,7 @@ object DeepDiveLogDeltaDeriver{
       }
     }
     // TODO fix conditions
-    ConjunctiveQuery(incCqHead, incCqBodies.toList, incCqConditions.toList, cq.isDistinct)
+    ConjunctiveQuery(incCqHead, incCqBodies.toList, incCqConditions.toList, cq.isDistinct, cq.limit)
   }
 
   // Incremental scheme declaration,
@@ -101,7 +101,7 @@ object DeepDiveLogDeltaDeriver{
       Atom(incNewStmt.a.name, incNewStmt.a.terms map { VarExpr(_) } ),
       List(List(Atom(stmt.a.name, stmt.a.terms map { VarExpr(_) })),
         List(Atom(incDeltaStmt.a.name, incDeltaStmt.a.terms map { VarExpr(_) }))), 
-      List(None, None), false))
+      List(None, None), false, None))
     // }
     incrementalStatement.toList
   }

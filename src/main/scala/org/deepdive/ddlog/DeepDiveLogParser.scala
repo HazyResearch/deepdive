@@ -21,7 +21,8 @@ case class TypecastExpr(lhs: Expr, rhs: String) extends Expr
 
 case class Atom(name : String, terms : List[Expr])
 case class Attribute(name : String, terms : List[String], types : List[String])
-case class ConjunctiveQuery(head: Atom, bodies: List[List[Atom]], conditions: List[Option[Cond]], isDistinct: Boolean)
+case class ConjunctiveQuery(head: Atom, bodies: List[List[Atom]], conditions: List[Option[Cond]], 
+  isDistinct: Boolean, limit: Option[Int])
 case class Column(name : String, t : String)
 case class BodyWithCondition(body: List[Atom], condition: Option[Cond])
 
@@ -185,9 +186,10 @@ class DeepDiveLogParser extends JavaTokenParsers {
   }
 
   def conjunctiveQuery : Parser[ConjunctiveQuery] =
-    cqHead ~ opt("*") ~ ":-" ~ rep1sep(cqBodyWithCondition, ";") ^^ {
-      case (headatom ~ isDistinct ~ ":-" ~ disjunctiveBodies) =>
-        ConjunctiveQuery(headatom, disjunctiveBodies.map(_.body), disjunctiveBodies.map(_.condition), isDistinct != None)
+    cqHead ~ opt("*") ~ opt("|" ~> decimalNumber) ~ ":-" ~ rep1sep(cqBodyWithCondition, ";") ^^ {
+      case (headatom ~ isDistinct ~ limit ~ ":-" ~ disjunctiveBodies) =>
+        ConjunctiveQuery(headatom, disjunctiveBodies.map(_.body), disjunctiveBodies.map(_.condition), 
+          isDistinct != None, limit map (_.toInt))
   }
 
   def relationType: Parser[RelationType] =
