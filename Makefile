@@ -33,7 +33,7 @@ install: build
 .PHONY: package
 package: $(PACKAGE)
 $(PACKAGE): build
-	tar cf $@ -C $(STAGE_DIR) .
+	tar czf $@ -C $(STAGE_DIR) .
 
 ### release recipes ###########################################################
 
