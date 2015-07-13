@@ -47,14 +47,20 @@ install_deepdive_release() {
     local os=$(uname)
     local tarball="deepdive-${RELEASE}-${os}.tar.gz"
     local url="https://github.com/HazyResearch/deepdive/releases/download/${RELEASE}/$tarball"
+    # showing what is going on
+    (
+    set -x
     rm -f "$tarball"
     # download tarball
-    curl -fsSLRO "$url" ||
-        # otherwise, try with wget(1)
-        wget -N "$url"
+    curl -fLRO "$url" || wget -N "$url"
     # unpack tarball
     mkdir -p "$PREFIX"
     tar xzvf "$tarball" -C "$PREFIX"
+    )
+    echo
+    echo "DeepDive release $RELEASE has been installed at $PREFIX"
+    echo "Please add the following line to your ~/.bashrc:"
+    echo '  export PATH="$PREFIX"/bin:"$PATH"'
 }
 # installs DeepDive with a release binary and runtime dependencies
 install_deepdive() {
