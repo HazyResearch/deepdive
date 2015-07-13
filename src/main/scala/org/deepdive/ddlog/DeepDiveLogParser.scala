@@ -31,6 +31,9 @@ sealed trait Cond
 case class ComparisonCond(lhs: Expr, op: String, rhs: Expr) extends Cond
 case class NegationCond(cond: Cond) extends Cond
 case class CompoundCond(lhs: Cond, op: LogicOperator.LogicOperator, rhs: Cond) extends Cond
+case class InCond(lhs: Expr, relName: String) extends Cond
+case class ExistCond(relName: String) extends Cond
+case class QuantifiedCond(lhs: Expr, op: String, quantifier: String, relName: String) extends Cond
 
 // logic operators
 object LogicOperator extends Enumeration {
@@ -153,6 +156,9 @@ class DeepDiveLogParser extends JavaTokenParsers {
 
   // conditional expressions
   def compareOperator = "LIKE" | ">" | "<" | ">=" | "<=" | "!=" | "=" | "IS" | "IS NOT"
+  def inOperator = "IN"
+  def quantifierOperator = "ANY" | "ALL"
+
   def cond : Parser[Cond] = 
     ( acond ~ (";") ~ cond ^^ { case (lhs ~ op ~ rhs) =>
         CompoundCond(lhs, LogicOperator.OR, rhs)
@@ -169,9 +175,12 @@ class DeepDiveLogParser extends JavaTokenParsers {
     | bcond
     )
   def bcond : Parser[Cond] = 
-    ( expr ~ compareOperator ~ expr ^^ { case (lhs ~ op ~ rhs) =>
-        ComparisonCond(lhs, op, rhs)
+    ( expr ~ compareOperator ~ quantifierOperator ~ relationName ^^ { case (lhs ~ op ~ quan ~ rhs) => 
+        QuantifiedCond(lhs, op, quan, rhs) 
       }
+    | expr ~ compareOperator ~ expr ^^ { case (lhs ~ op ~ rhs) => ComparisonCond(lhs, op, rhs) }
+    | expr ~ inOperator ~ relationName ^^ { case (lhs ~ _ ~ rhs) => InCond(lhs, rhs) } 
+    | "EXISTS" ~> relationName ^^ { ExistCond(_) }
     | "[" ~> cond <~ "]"
     )
 

@@ -34,3 +34,7 @@ K(x) :- b(x,y,z,w), [x + w = 100, [!x > 50; x = 40]].
 
 # limit
 L(x) * | 100 :- b(x, y, z, w).
+
+M(x) :- a(x), x IN G.
+
+N(x) :- a(x), x > ANY G.

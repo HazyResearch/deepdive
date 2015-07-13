@@ -235,6 +235,13 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
           case LogicOperator.OR  => s"(${resolvedLhs} OR ${resolvedRhs})"
         }
       }
+      case InCond(lhs, rhs) => {
+        s"${compileExpr(lhs, cq, OriginalOnly, 0, false)} IN (SELECT * FROM ${rhs})"
+      }
+      case ExistCond(rhs) => s"EXISTS (SELECT * FROM ${rhs})"
+      case QuantifiedCond(lhs, op, quan, rhs) => {
+        s"${compileExpr(lhs, cq, OriginalOnly, 0, false)} ${op} ${quan} (SELECT * FROM ${rhs})"
+      }
     }
   }
 
