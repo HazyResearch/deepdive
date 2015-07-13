@@ -60,7 +60,7 @@ install_deepdive_release() {
     echo
     echo "DeepDive release $RELEASE has been installed at $PREFIX"
     echo "Please add the following line to your ~/.bashrc:"
-    echo '  export PATH="$PREFIX"/bin:"$PATH"'
+    echo "  export PATH=\"$PREFIX/bin:\$PATH\""
 }
 # installs DeepDive with a release binary and runtime dependencies
 install_deepdive() {
