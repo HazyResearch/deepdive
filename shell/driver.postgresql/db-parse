@@ -5,12 +5,27 @@ set -eu
 
 . parse-url.sh "$@"
 
+# default values
+: ${user:=$USER} ${port:=5432}
+
 # map to environment variables for psql
 echo "DBTYPE=postgresql"
 echo "DBVARIANT=${dbtype}"
-echo "PGHOST=${host}"
-echo "PGPORT=${port:-5432}"
-echo "PGUSER=${user:-$USER}"
-echo "PGPASSWORD=${password}"
+echo "DBHOST=${host}"
+echo "DBPORT=${port}"
+echo "DBUSER=${user}"
+echo "DBPASSWORD=${password}"
 echo "DBNAME=${dbname}"
-echo "export PGHOST PGPORT PGUSER PGPASSWORD DBNAME"
+echo "export DBHOST DBPORT DBUSER DBPASSWORD DBNAME"
+
+# more variables for Scala application.conf
+echo "DEEPDIVE_JDBC_DRIVER=org.postgresql.Driver"
+echo "DEEPDIVE_JDBC_URL=jdbc:postgresql://$host${port:+:$port}/$dbname"
+echo "export DEEPDIVE_JDBC_DRIVER DEEPDIVE_JDBC_URL"
+
+# XXX several environment variables for legacy apps
+echo "PGHOST=${host}"
+echo "PGPORT=${port}"
+echo "PGUSER=${user}"
+echo "PGPASSWORD=${password}"
+echo "export PGHOST PGPORT PGUSER PGPASSWORD"

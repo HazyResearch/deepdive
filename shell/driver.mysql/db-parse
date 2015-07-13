@@ -5,13 +5,20 @@ set -eu
 
 . parse-url.sh "$@"
 
-# map to environment variables for psql
+# default values
+: ${user:=$USER} ${port:=3306}
+
+# map to environment variables for mysql
 echo "DBTYPE=mysql"
 echo "DBVARIANT=${dbtype}"
 echo "DBHOST=${host}"
-echo "DBPORT=${port:-3306}"
-echo "DBUSER=${user:-$USER}"
+echo "DBPORT=${port}"
+echo "DBUSER=${user}"
 echo "DBPASSWORD=${password}"
 echo "DBNAME=${dbname}"
 echo "export DBHOST DBPORT DBUSER DBPASSWORD DBNAME"
 
+# more variables for Scala application.conf
+echo "DEEPDIVE_JDBC_DRIVER=com.mysql.jdbc.Driver"
+echo "DEEPDIVE_JDBC_URL=jdbc:mysql://$host${port:+:$port}/$dbname"
+echo "export DEEPDIVE_JDBC_DRIVER DEEPDIVE_JDBC_URL"

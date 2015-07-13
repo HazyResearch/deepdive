@@ -24,16 +24,6 @@ A starter template of `deepdive.conf` is below. You can found it in
 ```bash
 deepdive {
 
-  db.default {
-    driver   : "org.postgresql.Driver"
-    url      : "jdbc:postgresql://"${PGHOST}":"${PGPORT}"/"${DBNAME}
-    user     : ${PGUSER}
-    password : ${PGPASSWORD}
-    dbname   : ${DBNAME}
-    host     : ${PGHOST}
-    port     : ${PGPORT}
-  }
-
   # Put your variables here
   schema.variables {
   }
@@ -44,6 +34,10 @@ deepdive {
 
   # Put your inference rules here
   inference.factors {
+  }
+
+  # Put your database connection tweaks here
+  db.default {
   }
 
   # Specify a holdout fraction

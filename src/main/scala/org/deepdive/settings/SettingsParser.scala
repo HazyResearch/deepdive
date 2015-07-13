@@ -214,13 +214,7 @@ object SettingsParser extends Logging {
 
   private def loadSamplerSettings(config: Config) : SamplerSettings = {
     val samplingConfig = config.getConfig("sampler")
-
-    // Parse Default sampler command based on mac / linux
-    val samplerCmd = samplingConfig.getString("sampler_cmd") match {
-      case "__DEFAULT__" => "sampler-dw"
-      case _ => samplingConfig.getString("sampler_cmd")
-    }
-
+    val samplerCmd = samplingConfig.getString("sampler_cmd")
 
     // Zifei's changes: Add capability to skip learning
     // If skip learning, set "-l 0" in sampler
