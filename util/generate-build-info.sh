@@ -20,8 +20,8 @@ build_info=(
 
 # determine version from git or use current date and time
 if git rev-parse HEAD &>/dev/null; then
-    version=$(git describe --tags)
-    version_long=$(git describe --tags --long)
+    version=$(git describe --tags || true)
+    version_long=$(git describe --tags --long || true)
     version_commit=$(git rev-parse HEAD)
 
     # work-in-progress? (is the working tree dirty?)
