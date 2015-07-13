@@ -2,12 +2,17 @@
 # DeepDive Installer
 set -eu
 
-: ${BRANCH:=v0.7.x}             # the branch from which the installer scripts should be downloaded
-: ${RELEASE:=v0.7.0}            # the DeepDive release version to install
-: ${PREFIX:=~/local/deepdive}   # the path to install deepdive
+: ${RELEASE:=v0.7.0}                        # the DeepDive release version to install
+: ${PREFIX:=~/local/deepdive}               # the path to install deepdive
 
-INSTALLER_HOME_URL=https://raw.github.com/HazyResearch/deepdive/$BRANCH/util/install
+: ${INSTALLER_BRANCH:=${BRANCH:-v0.7.x}}    # the branch from which the installer scripts should be downloaded
+INSTALLER_HOME_URL=https://github.com/HazyResearch/deepdive/raw/"${INSTALLER_BRANCH}"/util/install
 INSTALLER_HOME_DIR=$(dirname "$0")/install
+
+# run the correct installer directly from GitHub if BRANCH is specified
+[[ -z "${BRANCH:-}" || -n "${INSTALLER_REMOTE_EXEC:-}" ]] ||
+    INSTALLER_REMOTE_EXEC=true \
+    exec bash <(set -x; curl -fsSL "${INSTALLER_HOME_URL}.sh") "$@"
 
 running_from_git=true; [[ -e "$INSTALLER_HOME_DIR"/../../.git ]] || running_from_git=false
 has() { type "$@"; } &>/dev/null
@@ -23,7 +28,7 @@ install_deepdive_git_repo() {
     if $running_from_git; then
         cd "$INSTALLER_HOME_DIR"/../..
     else
-        git clone --recursive --branch $BRANCH https://github.com/HazyResearch/deepdive.git
+        git clone --recursive --branch "$INSTALLER_BRANCH" https://github.com/HazyResearch/deepdive.git
         cd deepdive
     fi
 }
