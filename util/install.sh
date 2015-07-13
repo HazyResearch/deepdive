@@ -43,7 +43,7 @@ install_deepdive_from_source() {
     run_installer_for deepdive_runtime_deps
 }
 # installs DeepDive with a release binary
-install_deepdive() {
+install_deepdive_release() {
     local os=$(uname)
     local tarball="deepdive-${RELEASE}-${os}.tar.gz"
     local url="https://github.com/HazyResearch/deepdive/releases/download/${RELEASE}/$tarball"
@@ -55,7 +55,10 @@ install_deepdive() {
     # unpack tarball
     mkdir -p "$PREFIX"
     tar xzvf "$tarball" -C "$PREFIX"
-    # install runtime dependencies
+}
+# installs DeepDive with a release binary and runtime dependencies
+install_deepdive() {
+    run_installer_for deepdive_release
     run_installer_for deepdive_runtime_deps
 }
 ################################################################################
