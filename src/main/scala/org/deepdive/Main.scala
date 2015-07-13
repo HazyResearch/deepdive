@@ -18,7 +18,7 @@ object Main extends App with Logging {
       configFile: File = null,
       outputDir: File = defaultOutputDir)
   val parser = new scopt.OptionParser[CliOptions]("scopt") {
-    head("deepdive", "0.6.0")
+    head("deepdive", "0.7.0")
     opt[File]('c', "config") required() valueName("<config>") action { (x,c) =>
       c.copy(configFile = x)
     } text("configuration file path (required)")
