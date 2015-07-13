@@ -36,9 +36,11 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
     val inputType = print(stmt.inputType)
     val outputType = print(stmt.outputType)
     val impls = stmt.implementations map {
-      case impl: RowWiseLineHandler =>
-        "\"" + StringEscapeUtils.escapeJava(impl.command) + "\"" +
-        s"\n        handles ${impl.format} lines"
+      case impl: RowWiseLineHandler => {
+        val styleStr = if (impl.style == "plpy") s"\n        runs as plpy"
+        else s"\n        handles ${impl.style} lines"
+        "\"" + StringEscapeUtils.escapeJava(impl.command) + "\"" + styleStr
+      }
     }
     val modeStr = if (stmt.mode == null) "" else s" mode = ${stmt.mode}"
     s"""function ${stmt.functionName}

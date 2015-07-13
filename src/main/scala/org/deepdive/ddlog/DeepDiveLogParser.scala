@@ -63,7 +63,7 @@ case class RelationTypeDeclaration(names: List[String], types: List[String]) ext
 case class RelationTypeAlias(likeRelationName: String) extends RelationType
 
 trait FunctionImplementationDeclaration
-case class RowWiseLineHandler(format: String, command: String) extends FunctionImplementationDeclaration
+case class RowWiseLineHandler(style: String, command: String) extends FunctionImplementationDeclaration
 
 // Statements that will be parsed and compiled
 trait Statement
@@ -203,9 +203,13 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def inferenceMode = "mode" ~> "=" ~> inferenceModeType
 
   def functionImplementation : Parser[FunctionImplementationDeclaration] =
-    "implementation" ~ stringLiteralAsString ~ "handles" ~ ("tsv" | "json") ~ "lines" ^^ {
-      case (_ ~ command ~ _ ~ format ~ _) => RowWiseLineHandler(command=command, format=format)
-    }
+    ( "implementation" ~ stringLiteralAsString ~ "handles" ~ ("tsv" | "json") ~ "lines" ^^ {
+        case (_ ~ command ~ _ ~ style ~ _) => RowWiseLineHandler(command=command, style=style)
+      }
+    | "implementation" ~ stringLiteralAsString ~ "runs" ~ "as" ~ "plpy" ^^ {
+        case (_ ~ command ~ _ ~ _ ~ style) => RowWiseLineHandler(command=command, style=style)
+      }
+    )
 
   def functionDeclaration : Parser[FunctionDeclaration] =
     ( "function" ~ functionName ~ "over" ~ relationType

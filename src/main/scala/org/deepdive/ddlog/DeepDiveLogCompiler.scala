@@ -529,7 +529,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       val udfDetails = (function.implementations collectFirst {
         case impl: RowWiseLineHandler =>
           s"""udf: $${APP_HOME}\"/${StringEscapeUtils.escapeJava(impl.command)}\"
-          style: \"${impl.format}_extractor\" """
+          style: \"${impl.style}_extractor\" """
       })
 
       if (udfDetails.isEmpty)
