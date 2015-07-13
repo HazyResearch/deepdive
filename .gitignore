@@ -17,6 +17,8 @@
 /doc/_*local*
 /util/ddlog.jar
 /util/mindbender
+/.github-release-assets
+/deepdive-*.tar.gz
 
 /src/test/resources/format_converter/*.bin
 /examples/**/*.pyc

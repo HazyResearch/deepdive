@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
-# Install DeepDive including its dependencies
+# DeepDive Installer
 set -eu
-: ${BRANCH:=v0.7.x}
+
+: ${BRANCH:=v0.7.x}             # the branch from which the installer scripts should be downloaded
+: ${RELEASE:=v0.7.0}            # the DeepDive release version to install
+: ${PREFIX:=~/local/deepdive}   # the path to install deepdive
+
 INSTALLER_HOME_URL=https://raw.github.com/HazyResearch/deepdive/$BRANCH/util/install
 INSTALLER_HOME_DIR=$(dirname "$0")/install
 
@@ -10,8 +14,11 @@ has() { type "$@"; } &>/dev/null
 error() { echo "$@"; false; } >&2
 
 # common installers ###########################################################
+# installs DeepDive's build dependencies
 install_deepdive_build_deps() { false; }
+# installs DeepDive's runtime dependencies
 install_deepdive_runtime_deps() { false; }
+# fetches DeepDive source tree
 install_deepdive_git_repo() {
     if $running_from_git; then
         cd "$INSTALLER_HOME_DIR"/../..
@@ -19,12 +26,31 @@ install_deepdive_git_repo() {
         git clone --recursive --branch $BRANCH https://github.com/HazyResearch/deepdive.git
         cd deepdive
     fi
-    make
 }
-install_deepdive() {
-    # TODO replace the following two lines with binary distribution
+# installs DeepDive from source by going through the full build
+install_deepdive_from_source() {
+    # prepare fetching and building source
     run_installer_for deepdive_build_deps
-    run_installer_for deepdive_git_repo || true
+    run_installer_for deepdive_git_repo
+    # install DeepDive from source
+    make install PREFIX="$PREFIX"
+    # install runtime dependencies
+    run_installer_for deepdive_runtime_deps
+}
+# installs DeepDive with a release binary
+install_deepdive() {
+    local os=$(uname)
+    local tarball="deepdive-${RELEASE}-${os}.tar.gz"
+    local url="https://github.com/HazyResearch/deepdive/releases/download/${RELEASE}/$tarball"
+    rm -f "$tarball"
+    # download tarball
+    curl -fsSLRO "$url" ||
+        # otherwise, try with wget(1)
+        wget -N "$url"
+    # unpack tarball
+    mkdir -p "$PREFIX"
+    tar xzvf "$tarball" -C "$PREFIX"
+    # install runtime dependencies
     run_installer_for deepdive_runtime_deps
 }
 ################################################################################

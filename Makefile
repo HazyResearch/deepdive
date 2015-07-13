@@ -35,6 +35,28 @@ package: $(PACKAGE)
 $(PACKAGE): build
 	tar cf $@ -C $(STAGE_DIR) .
 
+### release recipes ###########################################################
+
+# For example, `make release-v0.7.0` builds the package, tags it with version
+# v0.7.0, then uploads the file to the GitHub release.  Installers under
+# util/install/ can then download and install the binary release directly
+# without building the source tree.
+
+release-%: GITHUB_REPO = HazyResearch/deepdive
+release-%: RELEASE_VERSION = $*
+release-%: RELEASE_PACKAGE = deepdive-$(RELEASE_VERSION)-$(shell uname).tar.gz
+release-%:
+	git tag --force $(RELEASE_VERSION)
+	$(MAKE) RELEASE_VERSION=$(RELEASE_VERSION) $(PACKAGE)
+	ln -sfn $(PACKAGE) $(RELEASE_PACKAGE)
+	# Releasing $(RELEASE_PACKAGE) to GitHub
+	# (Make sure GITHUB_OAUTH_TOKEN is set directly or via ~/.netrc or OS X Keychain)
+	util/upload-github-release-asset \
+	    file=$(RELEASE_PACKAGE) \
+	    repo=$(GITHUB_REPO) \
+	    tag=$(RELEASE_VERSION)
+	# Released $(RELEASE_PACKAGE) to GitHub
+
 ### build recipes #############################################################
 
 # common build steps between build and test-build targets
