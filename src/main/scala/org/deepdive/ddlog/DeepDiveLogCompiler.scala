@@ -242,13 +242,13 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
       case QuantifiedCond(lhs, op, quan, rhs) => {
         s"${compileExpr(lhs, cq, OriginalOnly, 0, false)} ${op} ${quan} (SELECT * FROM ${rhs})"
       }
+      case _ => ""
     }
   }
 
   // This is generic code that generates the FROM with positional aliasing R0, R1, etc.
   // and the corresponding WHERE clause (equating all variables)
   def generateSQLBody(z : ConjunctiveQuery) : String = {
-    val bodyNames = ( z.bodies(0).zipWithIndex map { case(x,i) => s"${x.name} R${i}"}).mkString(", ")
     // Simple logic for the where clause, first find every first occurence of a
     // and stick it in a map.
     val qs = new QuerySchema(z)
@@ -278,7 +278,10 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
     }
 
     // resolve conditions
-    val conditionStr = z.conditions(0) map (compileCond(_, z))
+    val conditionStr = z.conditions(0).flatMap {
+      case x: OuterJoinCond => None
+      case x: Cond => Some(compileCond(x, z))
+    }
 
     // handle group by
     // map head terms, leaving out aggregation functions
@@ -303,7 +306,19 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
       case None => ""
     }
 
-    s"""FROM ${ bodyNames }
+    // compile outer join
+    val bodyNames = z.bodies(0) map (_.name)
+    val outerJoins = z.conditions(0).collect { case x: OuterJoinCond => x }
+    val outerRelations = outerJoins map (_.relName) toSet
+    val outerJoinStr = (outerJoins map { case OuterJoinCond(name, cond) =>
+      s" LEFT OUTER JOIN ${name} R${bodyNames.indexOf(name)} ON ${compileCond(cond, z)} "
+    }).mkString
+
+    val fromBodyNames = (z.bodies(0).filterNot(outerRelations contains _.name).zipWithIndex map 
+      { case(x,i) => s"${x.name} R${i}"}).mkString(", ")
+    val fromClause = fromBodyNames + outerJoinStr
+
+    s"""FROM ${ fromClause }
         ${ whereClauseStr }${groupbyStr}${limitStr}"""
   }
 

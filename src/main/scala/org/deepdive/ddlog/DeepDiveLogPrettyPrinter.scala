@@ -81,6 +81,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
       case InCond(lhs, rhs) => s"${printExpr(lhs)} IN ${rhs}"
       case ExistCond(rhs) => s"EXISTS ${rhs}"
       case QuantifiedCond(lhs, op, quan, rhs) => s"${printExpr(lhs)} ${op} ${quan} ${rhs}"
+      case OuterJoinCond(relName, c) => s"OUTER(${relName}: ${printCond(c)})"
     }
   }
 

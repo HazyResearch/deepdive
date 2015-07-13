@@ -34,6 +34,7 @@ case class CompoundCond(lhs: Cond, op: LogicOperator.LogicOperator, rhs: Cond) e
 case class InCond(lhs: Expr, relName: String) extends Cond
 case class ExistCond(relName: String) extends Cond
 case class QuantifiedCond(lhs: Expr, op: String, quantifier: String, relName: String) extends Cond
+case class OuterJoinCond(relName: String, cond: Cond) extends Cond
 
 // logic operators
 object LogicOperator extends Enumeration {
@@ -158,9 +159,13 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def compareOperator = "LIKE" | ">" | "<" | ">=" | "<=" | "!=" | "=" | "IS" | "IS NOT"
   def inOperator = "IN"
   def quantifierOperator = "ANY" | "ALL"
+  def outerJoinOperator = "OUTER"
 
   def cond : Parser[Cond] = 
-    ( acond ~ (";") ~ cond ^^ { case (lhs ~ op ~ rhs) =>
+    ( outerJoinOperator ~> "(" ~> relationName ~ ":" ~ cond <~ ")" ^^ { case (relName ~ _ ~ cond) =>
+        OuterJoinCond(relName, cond)
+      }
+    | acond ~ (";") ~ cond ^^ { case (lhs ~ op ~ rhs) =>
         CompoundCond(lhs, LogicOperator.OR, rhs)
       }
     | acond
