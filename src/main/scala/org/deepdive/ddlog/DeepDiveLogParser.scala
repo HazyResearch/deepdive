@@ -71,7 +71,7 @@ case class SchemaDeclaration( a : Attribute , isQuery : Boolean, variableType : 
 case class FunctionDeclaration( functionName: String, inputType: RelationType, outputType: RelationType, implementations: List[FunctionImplementationDeclaration], mode: String = null) extends Statement
 case class ExtractionRule(q : ConjunctiveQuery, supervision: String = null) extends Statement // Extraction rule
 case class FunctionCallRule(input : String, output : String, function : String) extends Statement // Extraction rule
-case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, semantics : String = "Imply", mode: String = null) extends Statement // Weighted rule
+case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, function : Option[String], mode: String = null) extends Statement // Weighted rule
 
 // Parser
 class DeepDiveLogParser extends JavaTokenParsers {
@@ -242,13 +242,14 @@ class DeepDiveLogParser extends JavaTokenParsers {
 
   def supervision = "label" ~> "=" ~> variableName
 
-  def semantics = "semantics" ~> "=" ~> semanticType
+  def factorFunctionName = "Imply" | "And" | "Equal" | "Or" | "Multinomial" | "Linear" | "Ratio"
+  def factorFunction = "function" ~> "=" ~> factorFunctionName
 
   def inferenceRule : Parser[InferenceRule] =
-    ( conjunctiveQuery ~ factorWeight ~ opt(semantics) ~ opt(inferenceMode)
+    ( conjunctiveQuery ~ factorWeight ~ opt(factorFunction) ~ opt(inferenceMode)
     ) ^^ {
-      case (q ~ weight ~ semantics ~ mode) =>
-        InferenceRule(q, weight, semantics.getOrElse("Imply"), mode.getOrElse(null))
+      case (q ~ weight ~ function ~ mode) =>
+        InferenceRule(q, weight, function, mode.getOrElse(null))
     }
 
   // rules or schema elements in arbitrary order

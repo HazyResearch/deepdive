@@ -143,7 +143,7 @@ object DeepDiveLogDeltaDeriver{
   // Incremental inference rule,
   // create delta rules based on original extraction rule
   def transform(stmt: InferenceRule): List[Statement] = {
-    List(InferenceRule(transform(stmt.q, true, stmt.mode), stmt.weights, stmt.semantics))
+    List(stmt.copy(q = transform(stmt.q, true, stmt.mode), mode = null))
   }
 
   def generateIncrementalFunctionInputList(program: DeepDiveLog.Program) {

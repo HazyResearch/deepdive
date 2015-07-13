@@ -132,8 +132,10 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
         case UnknownFactorWeight(vs) => vs.mkString(", ")
       })
     ) +
-    ( if (stmt.semantics == null) ""
-      else "\n  semantics = " + stmt.semantics
+    ( stmt.function match {
+        case Some(f) => s"\n  function = ${f}"
+        case None => ""
+      }
     ) + ".\n"
   }
 

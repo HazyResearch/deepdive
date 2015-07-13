@@ -593,9 +593,13 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           else ""
           }).filter(_ != "")
           val firstFunc = funcBody(0)
-          val function  = ss.variableType get stmt.q.head.name match {
-            case Some(BooleanType)        => stmt.semantics
-            case Some(MultinomialType(_)) => "Multinomial"
+          // if function is not specified, use Imply for boolean, and Multinomial for multinomial variables
+          val function  = stmt.function match {
+            case Some(f) => f
+            case None => ss.variableType get stmt.q.head.name match {
+              case Some(BooleanType)        => "Imply"
+              case Some(MultinomialType(_)) => "Multinomial"
+            }
           }
           func = s"""${function}(${(funcBody.tail :+ firstFunc).mkString(", ")})"""
         }
