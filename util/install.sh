@@ -47,8 +47,8 @@ install_deepdive_release() {
     local os=$(uname)
     local tarball="deepdive-${RELEASE}-${os}.tar.gz"
     local url="https://github.com/HazyResearch/deepdive/releases/download/${RELEASE}/$tarball"
-    # showing what is going on
     (
+    # showing what is going on
     set -x
     rm -f "$tarball"
     # download tarball
@@ -56,7 +56,7 @@ install_deepdive_release() {
     # unpack tarball
     mkdir -p "$PREFIX"
     tar xzvf "$tarball" -C "$PREFIX"
-    )
+    ) || return $?
     echo
     echo "DeepDive release $RELEASE has been installed at $PREFIX"
     echo "Please add the following line to your ~/.bashrc:"
