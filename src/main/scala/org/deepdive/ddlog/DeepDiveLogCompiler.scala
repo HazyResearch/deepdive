@@ -597,8 +597,8 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
 
         // weight string
         val uwStr = stmt.weights match {
-          case KnownFactorWeight(x) => None
           case UnknownFactorWeight(w) => Some(w.flatMap(s => ss.resolveColumn(s, fakeCQ, OriginalAndAlias)).mkString(", "))
+          case _ => None
         }
 
         val selectStr = (List(variableIdsStr, uwStr) flatten).mkString(", ")
@@ -631,9 +631,9 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
             case KnownFactorWeight(x) => s"${x}"
             case UnknownFactorWeight(w) => {
               val weightVar = w.flatMap(s => ss.resolveColumn(s, fakeCQ, AliasOnly)).mkString(", ")
-              if (weightVar == "") "?"
-              else s"?(${weightVar})"
+              s"?(${weightVar})"
             }
+            case UnknownFactorWeightBindingToConst(w) => "?"
           }
       }
       val blockName = ss.resolveInferenceBlockName(stmt)

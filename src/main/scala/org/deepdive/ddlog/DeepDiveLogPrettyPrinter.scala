@@ -134,6 +134,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
       else "\n  weight = " + (stmt.weights match {
         case KnownFactorWeight(w) => w.toString
         case UnknownFactorWeight(vs) => vs.mkString(", ")
+        case UnknownFactorWeightBindingToConst(vs) => "\"" + vs + "\""
       })
     ) +
     ( stmt.function match {
