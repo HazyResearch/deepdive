@@ -1,11 +1,11 @@
 # Makefile for DeepDive
 
 # install destination
-PREFIX = ~/local
+PREFIX = ~/local/deepdive
 # path to the staging area
 STAGE_DIR = dist/stage
 # path to the package to be built
-PACKAGE = $(dir $(STAGE_DIR))/deepdive.tar.gz
+PACKAGE = $(dir $(STAGE_DIR))deepdive.tar.gz
 
 export STAGE_DIR
 
@@ -28,7 +28,7 @@ install: build
 	tar cf - -C $(STAGE_DIR) . | tar xf - -C $(PREFIX)
 	# DeepDive has been install to $(PREFIX)/
 	# Make sure your shell is configured to include the directory in PATH environment, e.g.:
-	#    PATH=$(PREFIX)/bin:$$PATH
+	#    export PATH="$(PREFIX)/bin:$$PATH"
 
 .PHONY: package
 package: $(PACKAGE)
