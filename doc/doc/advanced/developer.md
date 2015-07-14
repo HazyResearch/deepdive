@@ -47,17 +47,20 @@ DeepDive is written in several programming languages.
 #### DeepDive Code Structure
 
 * `src/main/scala/` contains the main Scala code.
+* `shell/` contains the scripts used by the `deepdive` command-line interface.
 * `util/` contains utility scripts and binaries.
-* `lib/` contains libraries required by some DeepDive executables in `util/`.
 * `ddlib/` contains the ddlib Python library that helps users write feature extractors.
-* `src/test/`, `test/`, and `test.sh` contains the test code.
+* `src/test/` and `test/` contains the test code.
 * `doc/` contains the Markdown/Jekyll source for the DeepDive website and documentation.
 * `examples/` contains the DeepDive examples.
+* `dist/` is the default location where the built executables and runtime data will be staged.
 
 DeepDive build is controlled by several files:
 
 * `Makefile` takes care of the overall build process.
-* `build.sbt`, `sbt/` and `project/` contains the build tool and configuration for Scala.
+* `sbt/`, `scala.mk`, `build.sbt`, and `project/` contains the build tool and configuration for Scala.
+* `stage.sh` contains the commands that stages built code under `dist/`.
+* `test/bats.mk` contains the Make recipes for running tests written in [BATS](https://github.com/sstephenson/bats) under `test/`.
 * `.travis.yml` enables our continuous integration builds and tests at [Travis CI](https://travis-ci.org/HazyResearch/deepdive), which are triggered every time a new commit is pushed to our GitHub repository.
 * `Dockerfile` defines how a new Docker image for DeepDive is generated.
 
@@ -69,12 +72,24 @@ DeepDive source tree includes several git submodules and ports:
 * `mln/` contains a [Tuffy](http://i.stanford.edu/hazy/hazy/tuffy/) port.
 
 
-#### Building and Testing DeepDive
+#### <a name="build-test"></a> Building and Testing DeepDive
 
-* To install all dependencies and build what's under DeepDive's source tree, run:
+* To install all dependencies, run:
 
     ```bash
-    make
+    make depends
+    ```
+
+* To build most of what's under DeepDive's source tree and install at `~/local/`, run:
+
+    ```bash
+    make  # or make install
+    ```
+
+    Overriding the `PREFIX` variable allows the installation destination to be changed.  For example:
+
+    ```bash
+    make install PREFIX=/opt/deepdive
     ```
 
 * To run all tests, from the top of the source tree, run:
@@ -85,6 +100,27 @@ DeepDive source tree includes several git submodules and ports:
 
     Note that at least one of PostgreSQL, MySQL, or Greenplum database must be running to run the tests.
 
+* To run tests selectively, use `ONLY` and `EXCEPT` Make variables for `make test`.
+
+    For example, to run only the test with spouse example against PostgreSQL:
+
+    ```bash
+    make test ONLY=test/postgresql/spouse_example.bats
+    ```
+
+    Or, to skip the tests against MySQL:
+
+    ```bash
+    make test EXCEPT=test/mysql/*.bats
+    ```
+
+* To create a tarball package from the built and staged code, run:
+
+    ```bash
+    make package
+    ```
+
+    The tarball is created at `dist/deepdive.tar.gz`.
 
 * To build the DDlog compiler from source and place the jar under `util/`, run:
 
