@@ -16,7 +16,7 @@ export STAGE_DIR
 .PHONY: depends
 depends:
 	# Installing and Checking dependencies...
-	util/install.sh deepdive_build_deps deepdive_runtime_deps
+	util/install.sh _deepdive_build_deps _deepdive_runtime_deps
 
 
 ### install recipes ###########################################################

@@ -7,13 +7,13 @@ case ${LSB##*	} in
     *) error "Ubuntu $LSB found: This installer only works with Ubuntu 12.04, 14.04, and 15.04."
 esac
 
-install_deepdive_build_deps() {
+install__deepdive_build_deps() {
     set -x
     sudo apt-get update
     sudo apt-get install -y git unzip
 }
 
-install_deepdive_runtime_deps() {
+install__deepdive_runtime_deps() {
     set -x
     # Installation of the dependencies for the DeepDive stack.
     # (deepdive, sampler, mindbender)

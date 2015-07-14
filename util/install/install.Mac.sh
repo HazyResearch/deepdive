@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # DeepDive installers for Mac OS X
 
-install_deepdive_build_deps() {
+install__deepdive_build_deps() {
     has brew || error "Cannot install dependencies without Homebrew (http://brew.sh)"
     set -x
     javac -version
@@ -10,7 +10,7 @@ install_deepdive_build_deps() {
     has unzip   || brew install unzip
 }
 
-install_deepdive_runtime_deps() {
+install__deepdive_runtime_deps() {
     has brew || error "Cannot install dependencies without Homebrew (http://brew.sh)"
     set -x
     java -version

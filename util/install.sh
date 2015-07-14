@@ -20,11 +20,12 @@ error() { echo "$@"; false; } >&2
 
 # common installers ###########################################################
 # installs DeepDive's build dependencies
-install_deepdive_build_deps() { false; }
+install__deepdive_build_deps() { false; }
+install__deepdive_build_deps() { false; }
 # installs DeepDive's runtime dependencies
-install_deepdive_runtime_deps() { false; }
+install__deepdive_runtime_deps() { false; }
 # fetches DeepDive source tree
-install_deepdive_git_repo() {
+install__deepdive_git_repo() {
     if $running_from_git; then
         cd "$INSTALLER_HOME_DIR"/../..
     else
@@ -35,15 +36,16 @@ install_deepdive_git_repo() {
 # installs DeepDive from source by going through the full build
 install_deepdive_from_source() {
     # prepare fetching and building source
-    run_installer_for deepdive_build_deps
-    run_installer_for deepdive_git_repo
+    run_installer_for _deepdive_build_deps
+    run_installer_for _deepdive_git_repo
     # install DeepDive from source
     make install PREFIX="$PREFIX"
     # install runtime dependencies
-    run_installer_for deepdive_runtime_deps
+    run_installer_for _deepdive_runtime_deps
 }
 # installs DeepDive with a release binary
-install_deepdive_release() {
+install_deepdive_from_release() {
+    # TODO allow overriding RELEASE interactively
     local os=$(uname)
     local tarball="deepdive-${RELEASE}-${os}.tar.gz"
     local url="https://github.com/HazyResearch/deepdive/releases/download/${RELEASE}/$tarball"
@@ -64,8 +66,8 @@ install_deepdive_release() {
 }
 # installs DeepDive with a release binary and runtime dependencies
 install_deepdive() {
-    run_installer_for deepdive_release
-    run_installer_for deepdive_runtime_deps
+    run_installer_for deepdive_from_release
+    run_installer_for _deepdive_runtime_deps
 }
 ################################################################################
 
@@ -107,8 +109,14 @@ source_os_script() { source_script install."$os"."$1".sh; }
 
 # run selected installers, either interactively or via command-line arguments
 list_installer_names() {
+    local show_only=${1:-visible}
     # find installer names from all defined install_* functions
-    declare -F | sed 's/^declare -f //; /^install_/!d; s/^install_//'
+    declare -F | sed 's/^declare -f //; /^install_/!d; s/^install_//' |
+    # unless the first argument is 'all', hide installers whose name begins with underscore
+    case ${show_only:-visible} in
+        all) cat ;;
+        *) sed '/^_/d'
+    esac
 }
 run_installer_for() {
     local name=$1
@@ -137,7 +145,8 @@ if [ $# -eq 0 ]; then
     else
         # otherwise, show options
         echo "Specify what to install as command-line arguments:"
-        list_installer_names
+        list_installer_names all
+        # TODO show what each installer does
         false
     fi
 else
