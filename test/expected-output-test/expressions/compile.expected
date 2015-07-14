@@ -193,6 +193,7 @@
             SELECT  R1.p AS "b.R1.p" , R1.q AS "b.R1.q" , MAX(R1.r) AS column_2
             FROM a R0, b R1
         WHERE R1.k = R0.k 
+        GROUP BY R1.p, R1.q
         """
         style: "sql_extractor"
           

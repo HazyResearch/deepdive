@@ -283,13 +283,24 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
       case x: Cond => Some(compileCond(x, z))
     }
 
+    // check if an expression contains an aggregation function
+    def containsAggregation(expr: Expr) : Boolean = {
+      expr match {
+        case VarExpr(name) => false
+        case ConstExpr(value) => false
+        case FuncExpr(function, args, agg) => if (agg) agg else {
+          args.map(containsAggregation).foldLeft(false)(_ || _)
+        }
+        case BinaryOpExpr(lhs, op, rhs) => containsAggregation(lhs) || containsAggregation(rhs)
+        case TypecastExpr(lhs, rhs) => containsAggregation(lhs)
+      }
+    }
+
     // handle group by
     // map head terms, leaving out aggregation functions
-    val groupbyTerms = z.head.terms.zipWithIndex map { case (expr, index) =>
-      expr match {
-        case FuncExpr(f, args, agg) => if (agg) None else Some("")
-        case _ => Some(compileExpr(expr, z, OriginalOnly, index, false))
-      }
+    val groupbyTerms = z.head.terms.zipWithIndex flatMap { case (expr, index) =>
+      if (containsAggregation(expr)) None
+      else Some(compileExpr(expr, z, OriginalOnly, index, false))
     }
 
     val groupbyStr = if (groupbyTerms.size == z.head.terms.size) {
