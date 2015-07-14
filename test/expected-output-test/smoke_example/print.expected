@@ -30,7 +30,7 @@ cancer(pid) :-
 
 smoke(pid) :-
     smoke(pid1),
-    friend(pid1, pid)
+    friends(pid1, pid)
   weight = 0.4
   semantics = Imply.
 

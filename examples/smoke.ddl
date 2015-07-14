@@ -1,3 +1,6 @@
+// smoke example from deepdive
+// https://github.com/HazyResearch/deepdive/tree/master/examples/smoke
+
 person (
     person_id bigint,
     name text
@@ -30,6 +33,7 @@ smoke(pid)  :- person_smokes(pid, l)     label = l.
 cancer(pid) :- person_has_cancer(pid, l) label = l.
 
 cancer(pid) :- smoke(pid), person_smokes(pid, l)
-    weight = 3
-    label = l.
+    weight = 0.5.
 
+smoke(pid)  :- smoke(pid1), friends(pid1, pid)
+    weight = 0.4.

@@ -26,6 +26,7 @@ object DeepDiveLog {
     head("ddlogc", "0.0.1")
     cmd("compile")                     required() action { (_, c) => c.copy(handler = DeepDiveLogCompiler)        }
     cmd("print")                       required() action { (_, c) => c.copy(handler = DeepDiveLogPrettyPrinter)   }
+    cmd("check")                       required() action { (_, c) => c.copy(handler = DeepDiveLogSemanticChecker) }
     opt[Unit]('i', "incremental")      optional() action { (_, c) => c.copy(mode    = INCREMENTAL)                } text("Whether to derive delta rules")
     opt[Unit]("materialization")       optional() action { (_, c) => c.copy(mode    = MATERIALIZATION)            } text("Whether to materialize origin data")
     opt[Unit]("merge")                 optional() action { (_, c) => c.copy(mode    = MERGE)                      } text("Whether to merge delta data")
@@ -53,7 +54,6 @@ trait DeepDiveLogHandler {
   def run(config: DeepDiveLog.Config): Unit = try {
     // parse each file into a single program
     val parsedProgram = parseFiles(config.inputFiles)
-
     // run handler with the parsed program
     run(parsedProgram, config)
   } catch {

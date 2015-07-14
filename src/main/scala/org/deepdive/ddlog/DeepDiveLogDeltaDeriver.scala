@@ -19,34 +19,32 @@ object DeepDiveLogDeltaDeriver{
   }
 
   def transform(cq: ConjunctiveQuery, isInference: Boolean, mode: String): ConjunctiveQuery = {
+
     // New head
     val incCqHead = if (isInference) {
       cq.head.copy(
-        name = newPrefix + cq.head.name,
-        terms = cq.head.terms map {term => term.copy(relName = newPrefix + term.relName)}
+        name = newPrefix + cq.head.name
       )
     } else {
       cq.head.copy(
-        name = deltaPrefix + cq.head.name,
-        terms = cq.head.terms map {term => term.copy(relName = deltaPrefix + term.relName)}
+        name = deltaPrefix + cq.head.name
       )
     }
 
     var incCqBodies = new ListBuffer[List[Atom]]()
+    var incCqConditions = new ListBuffer[Option[Cond]]()
     // New incremental bodies
-    for (body <- cq.bodies) {
+    cq.bodies zip cq.conditions foreach { case (body, cond) =>
       // Delta body
       val incDeltaBody = body map {
         a => a.copy(
-          name = deltaPrefix + a.name,
-          terms = a.terms map {term => term.copy(relName = deltaPrefix + term.relName)}
+          name = deltaPrefix + a.name
         )
       }
       // New body
       val incNewBody = body map {
         a => a.copy(
-          name = newPrefix + a.name,
-          terms = a.terms map {term => term.copy(relName = newPrefix + term.relName)}
+          name = newPrefix + a.name
         )
       }
       var i = 0
@@ -54,6 +52,7 @@ object DeepDiveLogDeltaDeriver{
       var index = if (incrementalFunctionInput contains incCqHead.name) -1 else 0
       if (mode == "inc") {
         incCqBodies += incNewBody
+        incCqConditions += cond
       } else {
         for (i <- index to (body.length - 1)) {
           var newBody = new ListBuffer[Atom]()
@@ -64,12 +63,14 @@ object DeepDiveLogDeltaDeriver{
               newBody += incNewBody(j)
             else if (j == i)
               newBody += incDeltaBody(j)
+            incCqConditions += cond
           }
           incCqBodies += newBody.toList
         }
       }
     }
-    ConjunctiveQuery(incCqHead, incCqBodies.toList)
+    // TODO fix conditions
+    ConjunctiveQuery(incCqHead, incCqBodies.toList, incCqConditions.toList, cq.isDistinct)
   }
 
   // Incremental scheme declaration,
@@ -82,9 +83,7 @@ object DeepDiveLogDeltaDeriver{
     // Delta table
     var incDeltaStmt = stmt.copy(
       a = stmt.a.copy(
-        name = deltaPrefix + stmt.a.name,
-        terms = stmt.a.terms map {term => term.copy(relName = deltaPrefix + term.relName)},
-        types = stmt.a.types
+        name = deltaPrefix + stmt.a.name
       )
     )
     incrementalStatement += incDeltaStmt
@@ -92,16 +91,17 @@ object DeepDiveLogDeltaDeriver{
     // New table
     var incNewStmt = stmt.copy(
       a = stmt.a.copy(
-        name = newPrefix + stmt.a.name,
-        terms = stmt.a.terms map {term => term.copy(relName = newPrefix + term.relName)},
-        types = stmt.a.types
+        name = newPrefix + stmt.a.name
       )
     )
     incrementalStatement += incNewStmt
 
     // if (!stmt.isQuery) {
-    incrementalStatement += ExtractionRule(ConjunctiveQuery(Atom(incNewStmt.a.name, incNewStmt.a.terms),
-      List(List(Atom(stmt.a.name, stmt.a.terms)), List(Atom(incDeltaStmt.a.name, incDeltaStmt.a.terms)))))
+    incrementalStatement += ExtractionRule(ConjunctiveQuery(
+      Atom(incNewStmt.a.name, incNewStmt.a.terms map { VarExpr(_) } ),
+      List(List(Atom(stmt.a.name, stmt.a.terms map { VarExpr(_) })),
+        List(Atom(incDeltaStmt.a.name, incDeltaStmt.a.terms map { VarExpr(_) }))), 
+      List(None, None), false))
     // }
     incrementalStatement.toList
   }

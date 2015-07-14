@@ -13,14 +13,13 @@ object DeepDiveLogMergeDeriver{
     // New table
     var incNewStmt = stmt.copy(
       a = stmt.a.copy(
-        name = newPrefix + stmt.a.name,
-        terms = stmt.a.terms map {term => term.copy(relName = newPrefix + term.relName)},
-        types = stmt.a.types
+        name = newPrefix + stmt.a.name
       )
     )
 
-    ExtractionRule(ConjunctiveQuery(Atom(stmt.a.name, stmt.a.terms),
-      List(List(Atom(incNewStmt.a.name, incNewStmt.a.terms)))))
+    ExtractionRule(ConjunctiveQuery(Atom(stmt.a.name, stmt.a.terms map { VarExpr(_) }),
+      List(List(Atom(incNewStmt.a.name, incNewStmt.a.terms map { VarExpr(_) }))),
+      List(None), false))
   }
 
   def derive(program: DeepDiveLog.Program): DeepDiveLog.Program = {

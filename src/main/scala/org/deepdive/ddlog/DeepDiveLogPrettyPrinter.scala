@@ -16,8 +16,8 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   }
 
   def print(stmt: SchemaDeclaration): String = {
-    val columnDecls = stmt.a.terms map {
-      case Variable(name, _, i) => s"${name} ${stmt.a.types(i)}"
+    val columnDecls = stmt.a.terms.zipWithIndex map {
+      case (name,i) => s"${name} ${stmt.a.types(i)}"
     }
     val prefix = s"${stmt.a.name}${if (stmt.isQuery) "?" else ""}("
     val indentation = " " * prefix.length
@@ -48,16 +48,60 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
        |""".stripMargin
   }
 
+  // print an expression
+  def printExpr(e: Expr) : String = {
+    e match {
+      case VarExpr(name) => name
+      case ConstExpr(value) => {
+        if (value.startsWith("'")) s""" "${value.stripPrefix("'").stripSuffix("'")}" """
+        else value
+      }
+      case FuncExpr(function, args, agg) => {
+        val resolvedArgs = args map (x => printExpr(x))
+        s"${function}(${resolvedArgs.mkString(", ")})"
+      }
+      case BinaryOpExpr(lhs, op, rhs) => s"(${printExpr(lhs)} ${op} ${printExpr(rhs)})"
+      case TypecastExpr(lhs, rhs) => s"(${printExpr(lhs)} :: ${rhs})"
+    }
+  }
+
+  // print a condition
+  def printCond(cond: Cond) : String = {
+    cond match {
+      case ComparisonCond(lhs, op, rhs) => s"${printExpr(lhs)} ${op} ${printExpr(rhs)}"
+      case NegationCond(c) => s"[!${printCond(c)}]"
+      case CompoundCond(lhs, op, rhs) => {
+        op match {
+          case LogicOperator.AND => s"[${printCond(lhs)}, ${printCond(rhs)}]" 
+          case LogicOperator.OR  => s"[${printCond(lhs)}; ${printCond(rhs)}]"
+        }
+      }
+    }
+  }
+
   def print(cq: ConjunctiveQuery): String = {
     val printAtom = {a:Atom =>
-      val vars = a.terms map { _.varName }
+      val vars = a.terms map printExpr
       s"${a.name}(${vars.mkString(", ")})"
     }
     val printListAtom = {a:List[Atom] =>
       s"${(a map printAtom).mkString(",\n    ")}"
     }
-    s"""${printAtom(cq.head)} :-
-       |    ${(cq.bodies map printListAtom).mkString(";\n    ")}""".stripMargin
+
+    val conditionList = cq.conditions map {
+      case Some(x) => Some(printCond(x))
+      case None    => None
+    }
+    val bodyList = cq.bodies map printListAtom
+    val bodyWithCondition = (bodyList zip conditionList map { case(a,b) => 
+      b match {
+        case Some(c) => s"${a}, ${c}" 
+        case None    => a
+      }
+    }).mkString(";\n    ")
+
+    s"""${printAtom(cq.head)} ${if (cq.isDistinct) "*" else ""} :-
+       |    ${bodyWithCondition}""".stripMargin
   }
 
   def print(stmt: ExtractionRule): String = {
