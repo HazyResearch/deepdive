@@ -1,7 +1,7 @@
 # Makefile for DeepDive
 
 # install destination
-PREFIX = ~/local/deepdive
+PREFIX = ~/local
 # path to the staging area
 STAGE_DIR = dist/stage
 # path to the package to be built
