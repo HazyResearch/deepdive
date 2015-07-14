@@ -319,9 +319,8 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
 
     // compile outer join
     val bodyNames = z.bodies(0) map (_.name)
-    val outerJoins = z.conditions(0).collect { case x: OuterJoinCond => x }
-    val outerRelations = outerJoins map (_.relName) toSet
-    val outerJoinStr = (outerJoins map { case OuterJoinCond(name, cond) =>
+    val outerRelations = z.outerJoinConds(0) map (_.relName) toSet
+    val outerJoinStr = (z.outerJoinConds(0) map { case OuterJoinCond(name, cond) =>
       s" LEFT OUTER JOIN ${name} R${bodyNames.indexOf(name)} ON ${compileCond(cond, z)} "
     }).mkString
 

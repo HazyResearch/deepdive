@@ -62,5 +62,5 @@ N(x)  :-
 
 O(x)  :-
     a(x),
-    b(q, w, e, r), OUTER(b: x = q).
+    b(q, w, e, r), OUTER(b: x = q), x = r.
 

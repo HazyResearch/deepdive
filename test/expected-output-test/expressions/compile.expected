@@ -241,7 +241,7 @@
         CREATE VIEW O AS 
             SELECT  R0.k AS "a.R0.k" 
             FROM a R0 LEFT OUTER JOIN b R1 ON R0.k = R1.k 
-        
+        WHERE R0.k = R1.r
         """
         style: "sql_extractor"
           

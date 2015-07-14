@@ -81,7 +81,6 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
       case InCond(lhs, rhs) => s"${printExpr(lhs)} IN ${rhs}"
       case ExistCond(rhs) => s"EXISTS ${rhs}"
       case QuantifiedCond(lhs, op, quan, rhs) => s"${printExpr(lhs)} ${op} ${quan} ${rhs}"
-      case OuterJoinCond(relName, c) => s"OUTER(${relName}: ${printCond(c)})"
     }
   }
 
@@ -94,16 +93,25 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
       s"${(a map printAtom).mkString(",\n    ")}"
     }
 
-    val conditionList = cq.conditions map {
-      case Some(x) => Some(printCond(x))
-      case None    => None
+    var conditionList = cq.conditions map {
+      case Some(x) => printCond(x)
+      case None    => ""
     }
+
+    def printOuter(cond: OuterJoinCond) = {
+      s"OUTER(${cond.relName}: ${printCond(cond.cond)})"
+    }
+
+    def printOuterList(conds: List[OuterJoinCond]) : String = {
+      s"${(conds map printOuter).mkString(",\n    ")}"
+    }
+
+    val outerList = cq.outerJoinConds map (printOuterList(_))
+
+    // conditionList = outerList ++ conditionList
     val bodyList = cq.bodies map printListAtom
-    val bodyWithCondition = (bodyList zip conditionList map { case(a,b) => 
-      b match {
-        case Some(c) => s"${a}, ${c}" 
-        case None    => a
-      }
+    val bodyWithCondition = ((bodyList, outerList, conditionList).zipped.toList map { case(a,b,c) => 
+      List(a,b,c).filter(_ != "").mkString(", ")
     }).mkString(";\n    ")
 
     val distinctStr = if (cq.isDistinct) "*" else ""

@@ -39,4 +39,4 @@ M(x) :- a(x), x IN G.
 
 N(x) :- a(x), x > ANY G.
 
-O(x) :- a(x), b(q,w,e,r), OUTER(b: x = q).
+O(x) :- a(x), b(q,w,e,r), OUTER(b: x = q), x = r.

@@ -33,6 +33,7 @@ object DeepDiveLogDeltaDeriver{
 
     var incCqBodies = new ListBuffer[List[Atom]]()
     var incCqConditions = new ListBuffer[Option[Cond]]()
+    var incCqOuterConditions = new ListBuffer[List[OuterJoinCond]]()
     // New incremental bodies
     cq.bodies zip cq.conditions foreach { case (body, cond) =>
       // Delta body
@@ -53,6 +54,7 @@ object DeepDiveLogDeltaDeriver{
       if (mode == "inc") {
         incCqBodies += incNewBody
         incCqConditions += cond
+        incCqOuterConditions += List()
       } else {
         for (i <- index to (body.length - 1)) {
           var newBody = new ListBuffer[Atom]()
@@ -64,13 +66,15 @@ object DeepDiveLogDeltaDeriver{
             else if (j == i)
               newBody += incDeltaBody(j)
             incCqConditions += cond
+            // NOTE we don't support outer join in derivation
+            incCqOuterConditions += List()
           }
           incCqBodies += newBody.toList
         }
       }
     }
-    // TODO fix conditions
-    ConjunctiveQuery(incCqHead, incCqBodies.toList, incCqConditions.toList, cq.isDistinct, cq.limit)
+    cq.copy(head = incCqHead, bodies = incCqBodies.toList, conditions = incCqConditions.toList,
+      outerJoinConds = incCqOuterConditions.toList)
   }
 
   // Incremental scheme declaration,
@@ -101,7 +105,7 @@ object DeepDiveLogDeltaDeriver{
       Atom(incNewStmt.a.name, incNewStmt.a.terms map { VarExpr(_) } ),
       List(List(Atom(stmt.a.name, stmt.a.terms map { VarExpr(_) })),
         List(Atom(incDeltaStmt.a.name, incDeltaStmt.a.terms map { VarExpr(_) }))), 
-      List(None, None), false, None))
+      List(None, None), false, None, List(List(), List())))
     // }
     incrementalStatement.toList
   }
