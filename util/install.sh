@@ -78,7 +78,7 @@ case $(uname) in
             # Ubuntu/Debian
             os=Ubuntu
         # TODO support other Linux distros
-        #elif [ -e /etc/redhat-release ]; then
+        #elif [[ -e /etc/redhat-release ]]; then
         #    # CentOS/RedHat
         #    os=RedHat
         fi
@@ -97,7 +97,7 @@ echo "### DeepDive installer for $os"
 # each script defines bash functions whose names start with `install_`.
 source_script() {
     local script=$1
-    if [ -e "$INSTALLER_HOME_DIR/$script" ]; then
+    if $running_from_git && [[ -e "$INSTALLER_HOME_DIR/$script" ]]; then
         source "$INSTALLER_HOME_DIR/$script"
     else
         # may be this script is run as a one-liner, get script from GitHub
@@ -134,12 +134,12 @@ run_installer_for() {
         fi
     done
 }
-if [ $# -eq 0 ]; then
-    if [ -t 0 ]; then
+if [[ $# -eq 0 ]]; then
+    if [[ -t 0 ]]; then
         # ask user what to install if input is a tty
         PS3="# Select what to install (enter a number or q to quit)? "
         select option in $(list_installer_names); do
-            [ -n "$option" ] || break
+            [[ -n "$option" ]] || break
             run_installer_for "$option" || continue
         done
     else
