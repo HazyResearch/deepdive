@@ -78,6 +78,13 @@ test-build: scala-test-build
 	# record test-specific environment settings
 	echo "export CLASSPATH='$$(cat $(SCALA_TEST_CLASSPATH_EXPORTED))'" >$(STAGE_DIR)/env.sh
 
+# use bundled SBT launcher when necessary
+PATH += :$(shell pwd)/sbt
+# XXX For some inexplicable reason on OS X, the default SHELL (/bin/sh) won't pickup the extended PATH, so overriding it to bash.
+ifeq ($(shell uname),Darwin)
+export SHELL := /bin/bash
+endif
+
 include scala.mk  # for scala-build, scala-test-build, scala-assembly-jar, scala-clean, etc. targets
 
 

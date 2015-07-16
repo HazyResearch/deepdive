@@ -28,7 +28,6 @@ SCALA_COVERAGE_DIR            = target/scala-2.10/scoverage-data
 SCALA_ASSEMBLY_JAR            = target/scala-2.10/*-assembly-*.jar
 
 # SBT settings
-PATH := $(PATH):$(shell pwd)/sbt
 SBT_OPTS ?= -Xmx4g -XX:MaxHeapSize=4g -XX:MaxPermSize=4g
 export SBT_OPTS
 
