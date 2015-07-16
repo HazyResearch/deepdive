@@ -22,7 +22,6 @@ import rx.lang.scala.subjects._
 import play.api.libs.json._
 import scala.util.Random
 import java.io.{File, PrintWriter}
-import java.nio.file.{Paths, Files}
 import java.net.InetAddress
 import scala.io.Source
 import org.deepdive.helpers.Helpers
@@ -573,7 +572,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
 
     // Upload UDF directory and setup runtime env on DB nodes
     val udfDir = task.extractor.udfDir
-    if (!Files.exists(Paths.get(udfDir))) {
+    if (!new File(udfDir).exists()) {
       throw new RuntimeException("UDF directory does not exist: " + udfDir)
     }
 
