@@ -61,7 +61,7 @@ install_deepdive_from_release() {
     ) || return $?
     echo
     echo "DeepDive release $RELEASE has been installed at $PREFIX"
-    echo "Please add the following line to your ~/.bashrc:"
+    echo "Please add the following line to your ~/.bash_profile:"
     echo "  export PATH=\"$PREFIX/bin:\$PATH\""
 }
 # installs DeepDive with a release binary and runtime dependencies

@@ -51,7 +51,7 @@ You can install DeepDive and all its dependencies with a single command.
         make test
         ```
 
-3. To use the `deepdive` command on a regular basis, it is recommended to add the following line to your `~/.bashrc`.  Otherwise, you need to always type its full path: `~/local/bin/deepdive`.
+3. To use the `deepdive` command on a regular basis, it is recommended to add the following line to your `~/.bash_profile`.  Otherwise, you need to always type its full path: `~/local/bin/deepdive`.
 
     ```
     export PATH=~/local/bin:"$PATH"
