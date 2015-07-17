@@ -1,25 +1,33 @@
 package org.deepdive.settings
 
 import com.typesafe.config._
+import org.deepdive.helpers.Helpers
 import scala.collection.JavaConversions._
 import scala.util.Try
 
 
-object Settings {
-  def loadFromConfig(config: Config) = SettingsParser.loadFromConfig(config)
+case class Settings(schemaSettings : SchemaSettings = SchemaSettings(),
+  extractionSettings: ExtractionSettings = ExtractionSettings(),
+  inferenceSettings: InferenceSettings = InferenceSettings(),
+  calibrationSettings: CalibrationSettings = CalibrationSettings(),
+  samplerSettings: SamplerSettings = SamplerSettings(),
+  pipelineSettings: PipelineSettings = PipelineSettings(),
+  dbSettings: DbSettings = DbSettings(),
+  config: Config // TODO the sanitized Config we'll eventually migrate to
+) {
+  // handy ways to update config
+  def updatedConfig(config: Config): Settings = {
+    copy(config = config)
+  }
+  def updatedConfig(path: String, config: Config): Settings = {
+    copy(config = config.withValue(path, config.root))
+  }
 }
 
-case class Settings(schemaSettings : SchemaSettings,
-  extractionSettings: ExtractionSettings,
-  inferenceSettings: InferenceSettings,
-  calibrationSettings: CalibrationSettings,
-  samplerSettings: SamplerSettings,
-  pipelineSettings: PipelineSettings,
-  dbSettings: DbSettings)
-
-
 /* Calibration Settings */
-case class CalibrationSettings(holdoutFraction: Double, holdoutQuery: Option[String], observationQuery: Option[String])
+case class CalibrationSettings(holdoutFraction: Double = 0.0,
+                               holdoutQuery: Option[String] = None,
+                               observationQuery: Option[String] = None)
 
 /* Database connection specifie in the settings */
 case class Connection(url: String, user: String, password: String)
@@ -32,34 +40,55 @@ object IncrementalMode extends Enumeration {
 }
 
 /* Database connection specifie in the settings */
-case class DbSettings(driver: String, url: String, user: String, password: String,
-  dbname: String, host: String, port: String, gphost: String, gppath: String,
-  gpport: String, gpload: Boolean, incrementalMode: IncrementalMode.IncrementalMode,
-  keyMap: Map[String, List[String]] = null)
+case class DbSettings(
+  // TODO switch to Option type instead of using null
+  driver: String = null,
+  url: String = null,
+  user: String = null,
+  password: String = null,
+  dbname: String = null,
+  host: String = null,
+  port: String = null,
+  gphost: String = null,
+  gppath: String = null,
+  gpport: String = null,
+  gpload: Boolean = false,
+  incrementalMode: IncrementalMode.IncrementalMode = IncrementalMode.ORIGINAL,
+  keyMap: Map[String, List[String]] = null
+)
 
 
 /* Extraction Settings */
-case class ExtractionSettings(extractors: List[Extractor], parallelism: Int)
+case class ExtractionSettings(
+  extractors: List[Extractor] = List.empty,
+  parallelism: Int = 1
+)
 
 /* Extractor specified in the settings */
 case class Extractor(
   name: String,
   style: String,
-  outputRelation: String,
-  inputQuery: InputQuery,
-  udfDir: String,
-  udf: String,
-  parallelism: Int,
-  inputBatchSize: Int,
-  outputBatchSize: Int,
-  dependencies: Set[String],
+
+  outputRelation: String = "", // tsv, json, plpy, piggy
+  inputQuery: InputQuery = null, // tsv, json, plpy, piggy
+  udfDir: String = null, // tsv, json, plpy, piggy
+  udf: String = "", // tsv, json, plpy, piggy
+
+  parallelism: Int = 1,
+  inputBatchSize: Int = 10000,
+  outputBatchSize: Int = 50000,
+  dependencies: Set[String] = Set.empty,
   beforeScript: Option[String] = None,
   afterScript: Option[String] = None,
-  sqlQuery: String = "",
-  cmd: Option[String] = None,
+
+
+  sqlQuery: String = "", // sql_extractor
+
+  cmd: Option[String] = None, // cmd_extractor
+
   loader: String = "",
   loaderConfig: LoaderConfig = null
-  )
+)
 
 /* A Factor specified in the settings */
 case class FactorDesc(name: String, inputQuery: String, func: FactorFunction,
@@ -154,7 +183,7 @@ object FactorFunctionVariable {
   }
 }
 
-case class InferenceSettings(factors: List[FactorDesc], insertBatchSize: Option[Int],
+case class InferenceSettings(factors: List[FactorDesc] = Nil, insertBatchSize: Option[Int] = None,
   skipLearning: Boolean = false, weightTable: String = "", parallelGrounding: Boolean = false)
 
 import scala.language.implicitConversions
@@ -182,18 +211,22 @@ case class LoaderConfig (
 case class Pipeline(id: String, tasks: Set[String])
 
 /* User settings pipelines */
-case class PipelineSettings(activePipelineName: Option[String], pipelines: List[Pipeline],
-  relearnFrom: String, baseDir: Option[String]) {
+case class PipelineSettings(activePipelineName: Option[String] = None,
+                            pipelines: List[Pipeline] = List.empty,
+                            relearnFrom: String = null, // TODO Option
+                            baseDir: Option[String] = None) {
   def activePipeline : Option[Pipeline] = activePipelineName.flatMap { name =>
     pipelines.find(_.id == name)
   }
 }
 
 /* Calibration Settings */
-case class SamplerSettings(samplerCmd: String, samplerArgs: String)
+case class SamplerSettings(samplerCmd: String = null,
+                           samplerArgs: String = "")
 
 /* Schema Settings */
-case class SchemaSettings(variables: Map[String, _ <: VariableDataType], setupFile: Option[String])
+case class SchemaSettings(variables: Map[String, _ <: VariableDataType] = Map.empty,
+                          setupFile: Option[String] = None)
 
 // sealed trait VariableDataType {
 //   def cardinality: Option[Long]

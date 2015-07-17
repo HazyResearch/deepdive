@@ -28,7 +28,8 @@ object DeepDive extends Logging {
     try {
 
     // Load Settings
-    val settings = Settings.loadFromConfig(config)
+    val settings = SettingsParser.loadFromConfig(config)
+
     // If relearn_from specified, set output dir to that dir and skip everything
     val relearnFrom = settings.pipelineSettings.relearnFrom
 
