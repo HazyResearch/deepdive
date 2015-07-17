@@ -1,5 +1,6 @@
 package org.deepdive.settings
 
+import org.deepdive.DeepDive._
 import org.deepdive.{settings, Logging, Context}
 import org.deepdive.helpers.Helpers
 import com.typesafe.config._
@@ -19,7 +20,8 @@ object SettingsParser extends Logging {
       loadInferenceSettings andThen
       loadSamplerSettings andThen
       loadCalibrationSettings andThen
-      loadPipelineSettings
+      loadPipelineSettings andThen
+      checkSettings
 
   def configEntries(config: Config): Iterable[(String, Config)] = {
     config.root.keys zip (config.root.keys map config.getConfig)
@@ -27,6 +29,33 @@ object SettingsParser extends Logging {
 
   private def getDeepDiveConfig(rootConfig: Config): Settings = {
     Settings(config = rootConfig withFallback ConfigFactory.load() getConfig("deepdive"))
+  }
+
+  private def checkSettings(settings: Settings): Settings = {
+    // val dbDriver = config.getString("deepdive.db.default.driver")
+    val dbSettings = settings.dbSettings
+    dbSettings.dbname match {
+      case "" =>
+        sys.error(s"parsing dbname failed")
+      case _ =>
+    }
+
+    // check incremental settings
+    dbSettings.incrementalMode match {
+      case IncrementalMode.MATERIALIZATION | IncrementalMode.INCREMENTAL =>
+        if (!settings.pipelineSettings.baseDir.isDefined) {
+          log.error(s"base folder not set for incremental run")
+          Context.shutdown()
+        }
+      case _ =>
+    }
+
+    // Make sure the activePipelineName is defined
+    if (settings.pipelineSettings.activePipelineName.isDefined && settings.pipelineSettings.activePipeline.isEmpty) {
+      sys.error(s"${settings.pipelineSettings.activePipelineName.get}: No such pipeline defined")
+    }
+
+    settings
   }
 
   private def loadDatabaseSettings(settings: Settings): Settings = {

@@ -45,25 +45,6 @@ object DeepDive extends Logging {
     outputDirFile.mkdirs()
     log.debug(s"outputDir=${Context.outputDir}")
 
-    // val dbDriver = config.getString("deepdive.db.default.driver")
-    val dbSettings = settings.dbSettings
-    dbSettings.dbname match {
-      case "" =>
-        log.error(s"parsing dbname failed")
-        Context.shutdown()
-      case _ =>
-    }
-
-    // check incremental settings
-    dbSettings.incrementalMode match {
-      case IncrementalMode.MATERIALIZATION | IncrementalMode.INCREMENTAL =>
-        if (!settings.pipelineSettings.baseDir.isDefined) {
-          log.error(s"base folder not set for incremental run")
-          Context.shutdown()
-        }
-      case _ =>
-    }
-
     // Setup the data store
     JdbcDataStoreObject.init(config)
     settings.schemaSettings.setupFile.foreach { file =>
@@ -79,9 +60,9 @@ object DeepDive extends Logging {
     val profiler = system.actorOf(Profiler.props, "profiler")
     val taskManager = system.actorOf(TaskManager.props, "taskManager")
     val inferenceManager = system.actorOf(InferenceManager.props(
-      taskManager, settings.schemaSettings.variables, dbSettings), "inferenceManager")
+      taskManager, settings.schemaSettings.variables, settings.dbSettings), "inferenceManager")
     val extractionManager = system.actorOf(
-      ExtractionManager.props(settings.extractionSettings.parallelism, dbSettings),
+      ExtractionManager.props(settings.extractionSettings.parallelism, settings.dbSettings),
       "extractionManager")
 
     // Build tasks for extractors
@@ -90,11 +71,6 @@ object DeepDive extends Logging {
       extractionTask = ExtractionTask(extractor)
     } yield Task(s"${extractor.name}", extractor.dependencies.toList,
       extractionTask, extractionManager)
-
-    // Make sure the activePipelineName is defined
-    if (settings.pipelineSettings.activePipelineName != None && settings.pipelineSettings.activePipeline == None) {
-      throw new RuntimeException(s"${settings.pipelineSettings.activePipelineName.get}: No such pipeline defined")
-    }
 
     // Build task to construct the factor graph
     val activeFactors = settings.pipelineSettings.activePipeline match {
@@ -134,7 +110,6 @@ object DeepDive extends Logging {
         extractionTasks ++ Seq(groundFactorGraphTask) ++
         List(inferenceTask, calibrationTask, reportingTask, terminationTask)
     }
-
 
     // Create a default pipeline that executes all tasks
     val defaultPipeline = Pipeline("_default",
