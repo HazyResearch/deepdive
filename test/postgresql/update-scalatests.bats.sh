@@ -1,27 +1,27 @@
 #!/usr/bin/env bash
-# A script for regnerating scalatests.bats
+# A script for regnerating scalatests/*.bats
 set -eu
 
 cd "$(dirname "$0")"
-{
-    cat <<EOF
+
+# generate a corresponding bats file for every test in Scala
+mkdir -p scalatests
+for t in $(cd ../.. && sbt coverage "export printTests" | grep ^org.deepdive.test); do
+    bats=scalatests/${t}.bats
+    echo >&2 $bats
+    cat >$bats <<EOF
 #!/usr/bin/env bats
 # DeepDive Scala Tests
 # Generated: $(date +%FT%T)
 
-. "\$BATS_TEST_DIRNAME"/env.sh >&2
+. "\$BATS_TEST_DIRNAME"/../env.sh >&2
 
 setup() {
     db-init
 }
 
-EOF
-
-    # enumerate all tests with SBT
-    (cd ../.. && sbt coverage "export printTests") | grep ^org.deepdive.test | sort |
-    # generate a corresponding Bats test
-    sed 's#.*#@test "$DBVARIANT ScalaTest &" {\
-    java org.scalatest.tools.Runner -oDF -s &\
-}\
-#'
+@test "\$DBVARIANT ScalaTest $t" {
+    java org.scalatest.tools.Runner -oDF -s $t
 }
+EOF
+done
