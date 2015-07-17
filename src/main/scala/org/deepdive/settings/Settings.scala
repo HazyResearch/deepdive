@@ -1,9 +1,6 @@
 package org.deepdive.settings
 
 import com.typesafe.config._
-import org.deepdive.helpers.Helpers
-import scala.collection.JavaConversions._
-import scala.util.Try
 
 
 case class Settings(

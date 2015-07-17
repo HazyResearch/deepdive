@@ -1,14 +1,12 @@
 package org.deepdive.settings
 
-import org.deepdive.DeepDive._
-import org.deepdive.{settings, Logging, Context}
-import org.deepdive.helpers.Helpers
 import com.typesafe.config._
-import play.api.libs.iteratee.Enumerator
+import org.deepdive.{Context, Logging}
+
 import scala.collection.JavaConversions._
-import collection.JavaConversions._
-import scala.util.Try
 import scala.language.postfixOps
+import scala.util.Try
+import scala.util.parsing.combinator.RegexParsers
 
 object SettingsParser extends Logging {
 
@@ -383,10 +381,6 @@ object SettingsParser extends Logging {
   }
 }
 
-
-import scala.util.parsing.combinator.RegexParsers
-import org.deepdive.Context
-
 object DataTypeParser extends RegexParsers {
   def CategoricalParser = "Categorical" ~> "(" ~> """\d+""".r <~ ")" ^^ { n => MultinomialType(n.toInt) }
 
@@ -401,10 +395,6 @@ object DataTypeParser extends RegexParsers {
   }
 
 }
-
-import org.deepdive.Logging
-import scala.util.parsing.combinator.RegexParsers
-import scala.language.postfixOps
 
 object FactorFunctionParser extends RegexParsers with Logging {
   def relationOrField = """[\w]+""".r
@@ -481,9 +471,6 @@ object FactorFunctionParser extends RegexParsers with Logging {
   }
 }
 
-import scala.util.parsing.combinator.RegexParsers
-import org.deepdive.Context
-
 object FactorWeightParser extends RegexParsers {
   def relationOrField = """[^,()]+""".r
 
@@ -505,8 +492,6 @@ object FactorWeightParser extends RegexParsers {
     }
   }
 }
-
-import scala.util.parsing.combinator.RegexParsers
 
 object InputQueryParser extends RegexParsers {
 
