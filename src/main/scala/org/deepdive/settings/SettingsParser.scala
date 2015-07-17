@@ -122,6 +122,7 @@ object SettingsParser extends Logging {
           case "INCREMENTAL" => IncrementalMode.INCREMENTAL
           case "MATERIALIZATION" => IncrementalMode.MATERIALIZATION
           case "ORIGINAL" => IncrementalMode.ORIGINAL
+          case "MERGE" => IncrementalMode.ORIGINAL // XXX why does ddlog generate a MERGE mode?
           case incremental_mode => sys.error(s"${incremental_mode}: Invalid incremental_mode for db.default")
         },
         keyMap = config.getConfig("schema.keys") match {
