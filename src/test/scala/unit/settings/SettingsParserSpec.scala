@@ -21,9 +21,11 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester with Logging {
       val loadSchemaSettings = PrivateMethod[Settings]('loadSchemaSettings)
       val result = SettingsParser invokePrivate loadSchemaSettings(Settings(config = config))
       assert(result.schemaSettings == SchemaSettings(
-        Map("relation1.var1" -> BooleanType,
+        variables = Map("relation1.var1" -> BooleanType,
           "relation1.var2" -> BooleanType,
-          "relation2.var3" -> MultinomialType(2)), None))
+          "relation2.var3" -> MultinomialType(2)
+        )
+      ))
     }
 
     it ("should fail if variable column is missing"){
@@ -68,9 +70,24 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester with Logging {
       """).withFallback(defaultConfig)
       val loadExtractionSettings = PrivateMethod[Settings]('loadExtractionSettings)
       val result = SettingsParser invokePrivate loadExtractionSettings(Settings(config = config))
-      assert(result.extractionSettings == ExtractionSettings(List(
-        Extractor("extractor1", "json_extractor", "entities", "SELECT * FROM documents", null, "udf/entities.py",
-          4, 100, 1000, Set("extractor2"), Option("/bin/cat"), Option("/bin/dog"), "", None)), 5))
+      assert(result.extractionSettings == ExtractionSettings(
+        extractors = List(
+          Extractor(
+            name = "extractor1",
+            style = "json_extractor",
+            outputRelation = "entities",
+            inputQuery = "SELECT * FROM documents",
+            udf = "udf/entities.py",
+            parallelism = 4,
+            inputBatchSize = 100,
+            outputBatchSize = 1000,
+            dependencies = Set("extractor2"),
+            beforeScript = Option("/bin/cat"),
+            afterScript = Option("/bin/dog")
+          )
+        ),
+        parallelism = 5
+      ))
     }
 
     it ("should work with tsv_extractor"){
@@ -89,9 +106,24 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester with Logging {
       """).withFallback(defaultConfig)
       val loadExtractionSettings = PrivateMethod[Settings]('loadExtractionSettings)
       val result = SettingsParser invokePrivate loadExtractionSettings(Settings(config = config))
-      assert(result.extractionSettings == ExtractionSettings(List(
-        Extractor("extractor2", "tsv_extractor", "entities", "SELECT * FROM documents", null, "udf/entities.py",
-          4, 100, 1000, Set("extractor3"), Option("/bin/cat"), Option("/bin/dog"), "", None)), 5))
+      assert(result.extractionSettings == ExtractionSettings(
+        extractors = List(
+          Extractor(
+            name = "extractor2",
+            style = "tsv_extractor",
+            outputRelation = "entities",
+            inputQuery = "SELECT * FROM documents",
+            udf = "udf/entities.py",
+            parallelism = 4,
+            inputBatchSize = 100,
+            outputBatchSize = 1000,
+            dependencies = Set("extractor3"),
+            beforeScript = Option("/bin/cat"),
+            afterScript = Option("/bin/dog")
+          )
+        ),
+        parallelism = 5
+      ))
     }
 
     it ("should work with plpy_extractor"){
@@ -110,9 +142,24 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester with Logging {
       """).withFallback(defaultConfig)
       val loadExtractionSettings = PrivateMethod[Settings]('loadExtractionSettings)
       val result = SettingsParser invokePrivate loadExtractionSettings(Settings(config = config))
-      assert(result.extractionSettings == ExtractionSettings(List(
-        Extractor("extractor3", "plpy_extractor", "entities", "SELECT * FROM documents", null, "udf/entities.py",
-          4, 100, 1000, Set("extractor4"), Option("/bin/cat"), Option("/bin/dog"), "", None)), 5))
+      assert(result.extractionSettings == ExtractionSettings(
+        extractors = List(
+          Extractor(
+            name = "extractor3",
+            style = "plpy_extractor",
+            outputRelation = "entities",
+            inputQuery = "SELECT * FROM documents",
+            udf = "udf/entities.py",
+            parallelism = 4,
+            inputBatchSize = 100,
+            outputBatchSize = 1000,
+            dependencies = Set("extractor4"),
+            beforeScript = Option("/bin/cat"),
+            afterScript = Option("/bin/dog")
+          )
+        ),
+        parallelism = 5
+      ))
     }
 
     it ("should work with cmd_extractor"){
@@ -125,9 +172,19 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester with Logging {
       """).withFallback(defaultConfig)
       val loadExtractionSettings = PrivateMethod[Settings]('loadExtractionSettings)
       val result = SettingsParser invokePrivate loadExtractionSettings(Settings(config = config))
-      assert(result.extractionSettings == ExtractionSettings(List(
-        Extractor("extractor4", "cmd_extractor", "", null, null, "",
-          1, 10000, 50000, Set("extractor5"), Option("/bin/cat"), Option("/bin/dog"), "", Some("ls"))), 1))
+      assert(result.extractionSettings == ExtractionSettings(
+        extractors = List(
+          Extractor(
+            name = "extractor4",
+            style = "cmd_extractor",
+            dependencies = Set("extractor5"),
+            beforeScript = Option("/bin/cat"),
+            afterScript = Option("/bin/dog"),
+            cmd = Some("ls")
+          )
+        ),
+        parallelism = 1
+      ))
     }
 
     it ("should work with sql_extractor"){
@@ -140,9 +197,19 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester with Logging {
       """).withFallback(defaultConfig)
       val loadExtractionSettings = PrivateMethod[Settings]('loadExtractionSettings)
       val result = SettingsParser invokePrivate loadExtractionSettings(Settings(config = config))
-      assert(result.extractionSettings == ExtractionSettings(List(
-        Extractor("extractor5", "sql_extractor", "", null, null, "",
-          1, 10000, 50000, Set("extractor6"), Option("/bin/cat"), Option("/bin/dog"), "SELECT * FROM documents", None)), 1))
+      assert(result.extractionSettings == ExtractionSettings(
+        extractors = List(
+          Extractor(
+            name = "extractor5",
+            style = "sql_extractor",
+            dependencies = Set("extractor6"),
+            beforeScript = Option("/bin/cat"),
+            afterScript = Option("/bin/dog"),
+            sqlQuery = "SELECT * FROM documents"
+          )
+        ),
+        parallelism = 1
+      ))
     }
 
     it("should fail when the input query is not defined") {
@@ -213,14 +280,29 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester with Logging {
       """).withFallback(defaultConfig)
       val loadExtractionSettings = PrivateMethod[Settings]('loadExtractionSettings)
       val result = SettingsParser invokePrivate loadExtractionSettings(Settings(config = config))
-      assert(result.extractionSettings == ExtractionSettings(List(
-        Extractor("ext_people", "tsv_extractor", "people_mentions",
-          "SELECT sentence_id, words, ner_tags FROM sentences",
-          null, "udf/ext_people.py",
-          6, 4000, 1000, Set("ext_create_index_sentences"),
-          None, None, "", None, "ndbloader",
-          LoaderConfig("127.0.0.1:1186", "udf/people_mentions.loaderschema", 4, 100)
-          )), 5))
+      assert(result.extractionSettings == ExtractionSettings(
+        extractors = List(
+          Extractor(
+            name = "ext_people",
+            style = "tsv_extractor",
+            outputRelation = "people_mentions",
+            inputQuery = "SELECT sentence_id, words, ner_tags FROM sentences",
+            udf = "udf/ext_people.py",
+            parallelism = 6,
+            inputBatchSize = 4000,
+            outputBatchSize = 1000,
+            dependencies = Set("ext_create_index_sentences"),
+            loader = "ndbloader",
+            loaderConfig = LoaderConfig(
+              connection = "127.0.0.1:1186",
+              schemaFile = "udf/people_mentions.loaderschema",
+              threads = 4,
+              parallelTransactions = 100
+            )
+          )
+        ),
+        parallelism = 5
+      ))
     }
 
     it("should work with default loader configuration") {
@@ -244,14 +326,29 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester with Logging {
       """).withFallback(defaultConfig)
       val loadExtractionSettings = PrivateMethod[Settings]('loadExtractionSettings)
       val result = SettingsParser invokePrivate loadExtractionSettings(Settings(config = config))
-      assert(result.extractionSettings == ExtractionSettings(List(
-        Extractor("ext_people", "tsv_extractor", "people_mentions",
-          "SELECT sentence_id, words, ner_tags FROM sentences",
-          null, "udf/ext_people.py",
-          6, 4000, 1000, Set("ext_create_index_sentences"),
-          None, None, "", None, "ndbloader",
-          LoaderConfig("127.0.0.1:1186", "udf/people_mentions.loaderschema", 6, 60)
-          )), 5))
+      assert(result.extractionSettings == ExtractionSettings(
+        extractors = List(
+          Extractor(
+            name = "ext_people",
+            style = "tsv_extractor",
+            outputRelation = "people_mentions",
+            inputQuery = "SELECT sentence_id, words, ner_tags FROM sentences",
+            udf = "udf/ext_people.py",
+            parallelism = 6,
+            inputBatchSize = 4000,
+            outputBatchSize = 1000,
+            dependencies = Set("ext_create_index_sentences"),
+            loader = "ndbloader",
+            loaderConfig = LoaderConfig(
+              connection = "127.0.0.1:1186",
+              schemaFile = "udf/people_mentions.loaderschema",
+              threads = 6,
+              parallelTransactions = 60
+            )
+          )
+        ),
+        parallelism = 5
+      ))
     }
 
     it("should fail with wrong loader configuration (no connection)") {
@@ -315,10 +412,26 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester with Logging {
       """).withFallback(defaultConfig)
       val loadInferenceSettings = PrivateMethod[Settings]('loadInferenceSettings)
       val result = SettingsParser invokePrivate loadInferenceSettings(Settings(config = config))
-      assert(result.inferenceSettings == InferenceSettings(List(FactorDesc("factor1",
-        "SELECT a.*, b.* FROM a INNER JOIN b ON a.document_id = b.id",
-        ImplyFactorFunction(Seq(FactorFunctionVariable("a", "is_present", false))),
-        UnknownFactorWeight(Nil), "factor1")), Option(100000), false, ""))
+      assert(result.inferenceSettings == InferenceSettings(
+        factors = List(
+          FactorDesc(
+            name = "factor1",
+            inputQuery = "SELECT a.*, b.* FROM a INNER JOIN b ON a.document_id = b.id",
+            func = ImplyFactorFunction(
+              variables = Seq(
+                FactorFunctionVariable(
+                  relation = "a", field = "is_present", isArray = false
+                )
+              )
+            ),
+            weight = UnknownFactorWeight(Nil),
+            weightPrefix = "factor1"
+          )
+        ),
+        insertBatchSize = Some(100000),
+        skipLearning = false,
+        weightTable = ""
+      ))
     }
 
     it("should throw an exception when there's a syntax error") {
@@ -344,13 +457,17 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester with Logging {
       """)
       val loadCalibrationSettings = PrivateMethod[Settings]('loadCalibrationSettings)
       val result = SettingsParser invokePrivate loadCalibrationSettings(Settings(config = config))
-      assert(result.calibrationSettings == CalibrationSettings(0.25, Option("SELECT 0;"), Option("SELECT 1;")))
+      assert(result.calibrationSettings == CalibrationSettings(
+        holdoutFraction = 0.25,
+        holdoutQuery = Option("SELECT 0;"),
+        observationQuery = Option("SELECT 1;")
+      ))
     }
 
     it ("should work when not specified") {
       val loadCalibrationSettings = PrivateMethod[Settings]('loadCalibrationSettings)
       val result = SettingsParser invokePrivate loadCalibrationSettings(Settings(config = ConfigFactory.empty()))
-      assert(result.calibrationSettings == CalibrationSettings(0, None, None))
+      assert(result.calibrationSettings == CalibrationSettings())
     }
   }
 
@@ -362,7 +479,10 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester with Logging {
       """).withFallback(defaultConfig)
       val loadSamplerSettings = PrivateMethod[Settings]('loadSamplerSettings)
       val result = SettingsParser invokePrivate loadSamplerSettings(Settings(config = config))
-      assert(result.samplerSettings == SamplerSettings("java -jar util/sampler-assembly-0.1.jar", "-i 1000"))
+      assert(result.samplerSettings == SamplerSettings(
+        samplerCmd = "java -jar util/sampler-assembly-0.1.jar",
+        samplerArgs = "-i 1000"
+      ))
     }
 
     it ("should work when not specified") {
@@ -384,15 +504,23 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester with Logging {
       """)
       val loadPipelineSettings = PrivateMethod[Settings]('loadPipelineSettings)
       val result = SettingsParser invokePrivate loadPipelineSettings(Settings(config = config))
-      assert(result.pipelineSettings == PipelineSettings(Some("p1"),
-        List(Pipeline("p1", Set("f1", "f2")), Pipeline("p2", Set("f2", "f3"))), null, None))
+      assert(result.pipelineSettings == PipelineSettings(
+        activePipelineName = Some("p1"),
+        pipelines = List(
+          Pipeline(id = "p1", tasks = Set("f1", "f2")),
+          Pipeline("p2", Set("f2", "f3"))
+        )
+      ))
       assert(result.pipelineSettings.activePipeline.get == Pipeline("p1", Set("f1", "f2")))
     }
 
     it ("should work when not specified") {
       val loadPipelineSettings = PrivateMethod[Settings]('loadPipelineSettings)
       val result = SettingsParser invokePrivate loadPipelineSettings(Settings(config = ConfigFactory.empty()))
-      assert(result.pipelineSettings == PipelineSettings(None, Nil, null, None))
+      assert(result.pipelineSettings == PipelineSettings(
+        activePipelineName = None,
+        pipelines = Nil
+      ))
     }
 
     it ("should work when relearn_from") {
@@ -401,7 +529,11 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester with Logging {
       """)
       val loadPipelineSettings = PrivateMethod[Settings]('loadPipelineSettings)
       val result = SettingsParser invokePrivate loadPipelineSettings(Settings(config = config))
-      assert(result.pipelineSettings == PipelineSettings(None, List(), "/PATH_TO_DEEPDIVE_HOME/out/2014-05-02T131658/", None))
+      assert(result.pipelineSettings == PipelineSettings(
+        activePipelineName = None,
+        pipelines = Nil,
+        relearnFrom = "/PATH_TO_DEEPDIVE_HOME/out/2014-05-02T131658/"
+      ))
     }
   }
 
