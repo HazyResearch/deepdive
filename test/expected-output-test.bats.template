@@ -54,6 +54,15 @@ setup() {
     diff "$expectedOutput" "$actualOutput"
 }
 
+# compare the export-schema output with what's expected
+@test "$it exports schema and annotations as expected" {
+    expectedOutput=$TESTDIR/export-schema.expected
+    actualOutput=${expectedOutput%.expected}.actual
+    [ -e "$expectedOutput" ] || skip
+    ddlog export-schema "$TESTDIR"/input.ddl >"$actualOutput"
+    diff "$expectedOutput" "$actualOutput"
+}
+
 
 ## tests for --incremental support
 

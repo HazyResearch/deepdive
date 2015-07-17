@@ -27,6 +27,7 @@ object DeepDiveLog {
     cmd("compile")                     required() action { (_, c) => c.copy(handler = DeepDiveLogCompiler)        }
     cmd("print")                       required() action { (_, c) => c.copy(handler = DeepDiveLogPrettyPrinter)   }
     cmd("check")                       required() action { (_, c) => c.copy(handler = DeepDiveLogSemanticChecker) }
+    cmd("export-schema")               required() action { (_, c) => c.copy(handler = DeepDiveLogSchemaExporter)  }
     opt[Unit]('i', "incremental")      optional() action { (_, c) => c.copy(mode    = INCREMENTAL)                } text("Whether to derive delta rules")
     opt[Unit]("materialization")       optional() action { (_, c) => c.copy(mode    = MATERIALIZATION)            } text("Whether to materialize origin data")
     opt[Unit]("merge")                 optional() action { (_, c) => c.copy(mode    = MERGE)                      } text("Whether to merge delta data")

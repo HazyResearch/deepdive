@@ -15,12 +15,27 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
     case s: InferenceRule       => print(s)
   }
 
+  def printAnnotations(annos: List[Annotation], indentation: String = ""): String =
+    annos map {
+      case anno =>
+        s"@${anno.name}${
+          if (anno.args isEmpty) ""
+          else s"(${anno.args map {
+            case (name, value) => s"${name}=${printLiteral(value)}"
+          } mkString(", ")})"
+        }" + ("\n" + indentation)
+    } mkString
+
+
   def print(stmt: SchemaDeclaration): String = {
-    val columnDecls = stmt.a.terms.zipWithIndex map {
-      case (name,i) => s"${name} ${stmt.a.types(i)}"
-    }
     val prefix = s"${stmt.a.name}${if (stmt.isQuery) "?" else ""}("
     val indentation = " " * prefix.length
+    val columnDecls = stmt.a.terms.zipWithIndex map {
+      case (name,i) =>
+        printAnnotations(stmt.a.annotations(i), indentation) +
+        s"${name} ${stmt.a.types(i)}"
+    }
+    printAnnotations(stmt.annotation) +
     s"""${prefix}${columnDecls.mkString(",\n" + indentation)}).
        |""".stripMargin
   }
@@ -37,7 +52,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
     val outputType = print(stmt.outputType)
     val impls = stmt.implementations map {
       case impl: RowWiseLineHandler =>
-        "\"" + StringEscapeUtils.escapeJava(impl.command) + "\"" +
+        printLiteral(impl.command) +
         s"\n        handles ${impl.format} lines"
     }
     val modeStr = if (stmt.mode == null) "" else s" mode = ${stmt.mode}"
@@ -48,11 +63,17 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
        |""".stripMargin
   }
 
+  def printLiteral(value: Any): String = value match {
+    case s: String => "\"" + StringEscapeUtils.escapeJava(s) + "\""
+    case _ => value toString
+  }
+
   // print an expression
   def printExpr(e: Expr) : String = {
     e match {
       case VarExpr(name) => name
       case ConstExpr(value) => {
+        // TODO use distinct class for different types
         if (value.startsWith("'")) s""" "${value.stripPrefix("'").stripSuffix("'")}" """
         else value
       }

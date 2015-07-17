@@ -113,14 +113,15 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
     // generate the statements.
     mode = config.mode
     statements.foreach {
-      case SchemaDeclaration(Attribute(r, terms, types), isQuery, vType) => {
-        terms.zipWithIndex.foreach { 
+      case decl: SchemaDeclaration => {
+        val r = decl.a.name
+        decl.a.terms.zipWithIndex.foreach {
           case (n, i) =>
-            schema           += { (r,i) -> n }
-            ground_relations += { r -> !isQuery } // record whether a query or a ground term.
-            if (isQuery) variableType += { r -> vType.get }
+            schema           += { (r, i) -> n }
+            ground_relations += { r -> !decl.isQuery } // record whether a query or a ground term.
+            if (decl.isQuery) variableType += { r -> decl.variableType.get }
         }
-        if (isQuery) variableTableNames += r
+        if (decl.isQuery) variableTableNames += r
       }
       case ExtractionRule(_,_) => ()
       case InferenceRule(_,_,_,_) => ()
@@ -681,13 +682,13 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     var schema = Set[String]()
     // generate the statements.
     statements.foreach {
-      case SchemaDeclaration(a, isQuery, variableType) =>
-        if (isQuery) {
-          val variableTypeDecl = variableType match {
+      case decl: SchemaDeclaration =>
+        if (decl.isQuery) {
+          val variableTypeDecl = decl.variableType match {
             case Some(BooleanType)        => "Boolean"
             case Some(MultinomialType(x)) => s"Categorical(${x})"
           }
-          schema += s"${a.name}.label: ${variableTypeDecl}"
+          schema += s"${decl.a.name}.label: ${variableTypeDecl}"
         }
       case _ => ()
     }
