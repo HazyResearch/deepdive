@@ -14,11 +14,11 @@ case class Settings(
   config: Config // TODO the sanitized Config we'll eventually migrate most of the things to
 ) {
   // handy ways to update config
-  def updatedConfig(config: Config): Settings = {
-    copy(config = config)
+  def updatedConfig(configUpdated: Config): Settings = {
+    copy(config = configUpdated)
   }
-  def updatedConfig(path: String, config: Config): Settings = {
-    copy(config = config.withValue(path, config.root))
+  def updatedConfig(path: String, configForThePath: Config): Settings = {
+    copy(config = config.withValue(path, configForThePath.root))
   }
 }
 

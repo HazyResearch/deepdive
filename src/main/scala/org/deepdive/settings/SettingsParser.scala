@@ -22,11 +22,11 @@ object SettingsParser extends Logging {
       checkSettings
 
   def configEntries(config: Config): Iterable[(String, Config)] = {
-    config.root.keys zip (config.root.keys map config.getConfig)
+    config.root.keys map { key => key -> config.getConfig(key) }
   }
 
   private def getDeepDiveConfig(rootConfig: Config): Settings = {
-    Settings(config = rootConfig withFallback ConfigFactory.load() getConfig("deepdive"))
+    Settings(config = (rootConfig withFallback ConfigFactory.load()) getConfig("deepdive"))
   }
 
   private def checkSettings(settings: Settings): Settings = {
@@ -53,6 +53,9 @@ object SettingsParser extends Logging {
       sys.error(s"${settings.pipelineSettings.activePipelineName.get}: No such pipeline defined")
     }
 
+    log.info(settings.config.root.render(ConfigRenderOptions.concise().setFormatted(true)))
+    log.info(settings toString)
+
     settings
   }
 
@@ -70,7 +73,6 @@ object SettingsParser extends Logging {
         |  gphost: ""
         |  gpport: ""
         |  gppath: ""
-        |  inference.parallel_grounding: false
         |  gpload: false
         |  incremental_mode: ORIGINAL
         |}
@@ -78,6 +80,10 @@ object SettingsParser extends Logging {
         |schema {
         |  keys {
         |  }
+        |}
+        |
+        |inference {
+        |  parallel_grounding: false
         |}
       """.stripMargin)
     var dbConfig = config.getConfig("db.default")
@@ -89,7 +95,7 @@ object SettingsParser extends Logging {
 
     // Make sure that the variables related to the Greenplum distributed
     // filesystem are set if the user wants to use parallel grounding
-    if (dbConfig.getBoolean("gpload") || dbConfig.getBoolean("parallel_grounding")) {
+    if (dbConfig.getBoolean("gpload") || config.getBoolean("inference.parallel_grounding")) {
       if (dbConfig.getString("gphost").isEmpty || dbConfig.getString("gpport").isEmpty || gppath.isEmpty)
         sys.error(s"Parallel Loading is set to true, but one of db.default.gphost, db.default.gpport, or db.default.gppath is not specified")
     }
@@ -111,7 +117,7 @@ object SettingsParser extends Logging {
         gphost = dbConfig.getString("gphost"),
         gppath = gppath,
         gpport = dbConfig.getString("gpport"),
-        gpload = dbConfig.getBoolean("gpload") || dbConfig.getBoolean("parallel_grounding"),
+        gpload = dbConfig.getBoolean("gpload") || config.getBoolean("inference.parallel_grounding"),
         incrementalMode = dbConfig.getString("incremental_mode") match {
           case "INCREMENTAL" => IncrementalMode.INCREMENTAL
           case "MATERIALIZATION" => IncrementalMode.MATERIALIZATION
