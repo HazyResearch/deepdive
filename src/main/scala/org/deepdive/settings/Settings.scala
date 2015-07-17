@@ -6,14 +6,15 @@ import scala.collection.JavaConversions._
 import scala.util.Try
 
 
-case class Settings(schemaSettings : SchemaSettings = SchemaSettings(),
+case class Settings(
+  schemaSettings : SchemaSettings = SchemaSettings(),
   extractionSettings: ExtractionSettings = ExtractionSettings(),
   inferenceSettings: InferenceSettings = InferenceSettings(),
   calibrationSettings: CalibrationSettings = CalibrationSettings(),
   samplerSettings: SamplerSettings = SamplerSettings(),
   pipelineSettings: PipelineSettings = PipelineSettings(),
   dbSettings: DbSettings = DbSettings(),
-  config: Config // TODO the sanitized Config we'll eventually migrate to
+  config: Config // TODO the sanitized Config we'll eventually migrate most of the things to
 ) {
   // handy ways to update config
   def updatedConfig(config: Config): Settings = {

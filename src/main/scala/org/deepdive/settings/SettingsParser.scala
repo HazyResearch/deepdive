@@ -11,7 +11,7 @@ import scala.language.postfixOps
 
 object SettingsParser extends Logging {
 
-  val loadFromConfig = (
+  val loadFromConfig =
     getDeepDiveConfig _ andThen
       loadDatabaseSettings andThen
       loadSchemaSettings andThen
@@ -20,14 +20,17 @@ object SettingsParser extends Logging {
       loadSamplerSettings andThen
       loadCalibrationSettings andThen
       loadPipelineSettings
-    )
+
+  def configEntries(config: Config): Iterable[(String, Config)] = {
+    config.root.keys zip (config.root.keys map config.getConfig)
+  }
 
   private def getDeepDiveConfig(rootConfig: Config): Settings = {
     Settings(config = rootConfig withFallback ConfigFactory.load() getConfig("deepdive"))
   }
 
   private def loadDatabaseSettings(settings: Settings): Settings = {
-    var dbConfig = settings.config withFallback ConfigFactory.parseString(
+    var config = settings.config withFallback ConfigFactory.parseString(
       """
         |db.default {
         |  driver   : ""
@@ -44,21 +47,28 @@ object SettingsParser extends Logging {
         |  gpload: false
         |  incremental_mode: ORIGINAL
         |}
-      """.stripMargin) getConfig("db.default")
+        |
+        |schema {
+        |  keys {
+        |  }
+        |}
+      """.stripMargin)
+    var dbConfig = config.getConfig("db.default")
     // strip trailing slash
-    if (dbConfig.getString("gppath") endsWith "/")
+    val gppath: String = dbConfig.getString("gppath")
+    if (gppath endsWith "/")
       dbConfig = dbConfig.withValue("gppath", ConfigValueFactory.fromAnyRef(
-        dbConfig.getString("gppath") stripSuffix ("/")))
+        gppath stripSuffix ("/")))
 
     // Make sure that the variables related to the Greenplum distributed
     // filesystem are set if the user wants to use parallel grounding
     if (dbConfig.getBoolean("gpload") || dbConfig.getBoolean("parallel_grounding")) {
-      if (dbConfig.getString("gphost").isEmpty || dbConfig.getString("gpport").isEmpty || dbConfig.getString("gppath").isEmpty)
+      if (dbConfig.getString("gphost").isEmpty || dbConfig.getString("gpport").isEmpty || gppath.isEmpty)
         sys.error(s"Parallel Loading is set to true, but one of db.default.gphost, db.default.gpport, or db.default.gppath is not specified")
     }
     log.info(s"Database settings: user ${dbConfig.getString("user")}, dbname ${dbConfig.getString("dbname")}, host ${dbConfig.getString("host")}, port ${dbConfig.getString("port")}.")
     if (dbConfig.getString("gphost") != "") {
-      log.info(s"GPFDIST settings: host ${dbConfig.getString("gphost")} port ${dbConfig.getString("gpport")} path ${dbConfig.getString("gppath")}")
+      log.info(s"GPFDIST settings: host ${dbConfig.getString("gphost")} port ${dbConfig.getString("gpport")} path ${gppath}")
     }
 
     settings updatedConfig("db.default", dbConfig) copy(
@@ -72,7 +82,7 @@ object SettingsParser extends Logging {
         host = dbConfig.getString("host"),
         port = dbConfig.getString("port"),
         gphost = dbConfig.getString("gphost"),
-        gppath = dbConfig.getString("gppath"),
+        gppath = gppath,
         gpport = dbConfig.getString("gpport"),
         gpload = dbConfig.getBoolean("gpload") || dbConfig.getBoolean("parallel_grounding"),
         incrementalMode = dbConfig.getString("incremental_mode") match {
@@ -81,7 +91,7 @@ object SettingsParser extends Logging {
           case "ORIGINAL" => IncrementalMode.ORIGINAL
           case incremental_mode => sys.error(s"${incremental_mode}: Invalid incremental_mode for db.default")
         },
-        keyMap = settings.config.getConfig("schema.keys") match {
+        keyMap = config.getConfig("schema.keys") match {
           case keyConfig => keyConfig.root.keys map {
             case table => table -> keyConfig.getStringList(table).distinct.toList
           } toMap
@@ -106,12 +116,12 @@ object SettingsParser extends Logging {
         // This is complicated because we encode variable schema by abusing HOCON syntax,
         // e.g.: schema.variable { foo.bar: Boolean, table.column: Boolean }
         // which is equivalent to schema.variable { foo { bar: Boolean }, table { column: Boolean } }
-        variables = variableConfig.root.keys flatMap { relationName => // table names
-          val relationConf = variableConfig.getConfig(relationName)
-          relationConf.root.keys map { attributeName => // attribute maps to table
-            val variableType = DataTypeParser.parseVariableType(relationConf.getString(attributeName))
-            s"${relationName}.${attributeName}" -> variableType
-          }
+        variables = configEntries(variableConfig) flatMap {
+          case (relationName, relationConf) => // table names
+            relationConf.root.keys map { attributeName => // attribute maps to table
+              val variableType = DataTypeParser.parseVariableType(relationConf.getString(attributeName))
+              s"${relationName}.${attributeName}" -> variableType
+            }
         } toMap,
         setupFile = Try(config.getString("schema.setup")) toOption
       )
@@ -120,7 +130,7 @@ object SettingsParser extends Logging {
 
 
   private def loadExtractionSettings(settings: Settings): Settings = {
-    val config = settings.config withFallback ConfigFactory.parseString(
+    var config = settings.config withFallback ConfigFactory.parseString(
       """
         |extraction {
         |  parallelism: 1
@@ -139,6 +149,7 @@ object SettingsParser extends Logging {
         |dependencies: []
         |before: null
         |after: null
+        |loader: ""
       """.stripMargin
 
     val extractorConfigDefaults = Map(
@@ -158,78 +169,75 @@ object SettingsParser extends Logging {
           |sql: null
         """.stripMargin)
     )
-    val extractorsConfig = config.getConfig("extraction.extractors")
+    val extractors = configEntries(config.getConfig("extraction.extractors")) map {
+      case (extractorName, extractorConfigRaw) =>
+      val style = Try(extractorConfigRaw.getString("style")).getOrElse("json_extractor")
+      val extractorConfig = extractorConfigRaw withFallback
+          ConfigFactory.parseString(extractorConfigDefaults(style))
+      config = config.withValue(s"extraction.extractors.${extractorName}", extractorConfig.root)
+      val extractor = Extractor(
+        name = extractorName,
+        style = style,
+        parallelism = extractorConfig.getInt("parallelism"),
+        inputBatchSize = extractorConfig.getInt("input_batch_size"),
+        outputBatchSize = extractorConfig.getInt("output_batch_size"),
+        dependencies = extractorConfig.getStringList("dependencies") toSet,
+        beforeScript = Try(extractorConfig.getString("before")) toOption,
+        afterScript = Try(extractorConfig.getString("after")) toOption
+      )
+      style match {
+        case "json_extractor" |
+             "plpy_extractor" |
+             "tsv_extractor" |
+             "piggy_extractor" =>
+          val udfDir = Try(extractorConfig.getString("udf_dir")) toOption
+          val udf = extractorConfig.getString("udf")
+          style match {
+            case "piggy_extractor" if ((udfDir isEmpty) || udf == null) =>
+              sys.error("you must specify udf_dir and udf for piggy extractors")
+            case _ =>
+          }
+          extractor.copy(
+            outputRelation = extractorConfig.getString("output_relation"),
+            inputQuery = InputQueryParser.parseInputQuery(extractorConfig.getString("input")),
+            udfDir = udfDir orNull,
+            udf = udf,
+            loader = extractorConfig.getString("loader"),
+            loaderConfig = Try(extractorConfig.getConfig("loader_config")).toOption map {
+              case loaderConfigObj => LoaderConfig(
+                connection = loaderConfigObj.getString("connection"),
+                schemaFile = loaderConfigObj.getString("schema"),
+                // TODO instead of specifying default values here, try to augment settings.config
+                threads = Try(loaderConfigObj.getInt("threads")) getOrElse(extractor.parallelism),
+                parallelTransactions = Try(loaderConfigObj.getInt("parallel_transactions")) getOrElse(60)
+              )
+            } orNull
+          )
+
+        case "sql_extractor" =>
+          extractor.copy(
+            sqlQuery = extractorConfig.getString("sql")
+          )
+
+        case "cmd_extractor" =>
+          extractor.copy(
+            cmd = Try(extractorConfig.getString("cmd")) toOption
+          )
+
+        case _ =>
+          sys.error(s"${style}: Unrecognized extractor style")
+      }
+    }
     settings updatedConfig(config) copy(
       extractionSettings = ExtractionSettings(
-        // TODO have each extractor config also update settings.config, to enable direct use of config later
-        extractors = extractorsConfig.root.keys.map { extractorName =>
-          val extractorConfigUser = extractorsConfig.getConfig(extractorName)
-          val style = Try(extractorConfigUser.getString("style")).getOrElse("json_extractor")  // TODO move default values into config
-          val extractorConfig = extractorConfigUser withFallback
-            ConfigFactory.parseString(extractorConfigDefaults(style))
-          val extractor = Extractor(
-            name = extractorName,
-            style = style,
-            parallelism = extractorConfig.getInt("parallelism"),
-            inputBatchSize = extractorConfig.getInt("input_batch_size"),
-            outputBatchSize = extractorConfig.getInt("output_batch_size"),
-            dependencies = extractorConfig.getStringList("dependencies") toSet,
-            beforeScript = Try(extractorConfig.getString("before")) toOption,
-            afterScript = Try(extractorConfig.getString("after")) toOption
-          )
-          style match {
-            case "json_extractor" |
-                 "plpy_extractor" |
-                 "tsv_extractor" |
-                 "piggy_extractor" =>
-              val udfDir = Try(extractorConfig.getString("udf_dir")) toOption
-              val udf = extractorConfig.getString("udf")
-              style match {
-                case "piggy_extractor" if ((udfDir isEmpty) || udf == null) =>
-                  sys.error("you must specify udf_dir and udf for piggy extractors")
-                case _ =>
-              }
-              val inputQuery: String = extractorConfig.getString("input")
-              extractor.copy(
-                outputRelation = extractorConfig.getString("output_relation"),
-                inputQuery = InputQueryParser.parseInputQuery(inputQuery),
-                udfDir = udfDir orNull,
-                udf = udf,
-
-                loader = Try(extractorConfig.getString("loader")) getOrElse(""),  // TODO move default values into config
-                loaderConfig = Try(extractorConfig.getConfig("loader_config")) getOrElse(null) match {
-                  case null => null
-                  case loaderConfigObj => LoaderConfig(
-                    connection = loaderConfigObj.getString("connection"),
-                    schemaFile = loaderConfigObj.getString("schema"),
-                    // TODO instead of specifying default values here, try to augment settings.config
-                    threads = Try(loaderConfigObj.getInt("threads")) getOrElse(extractor.parallelism),
-                    parallelTransactions = Try(loaderConfigObj.getInt("parallel_transactions")) getOrElse(60)
-                  )
-                }
-              )
-
-            case "sql_extractor" =>
-              extractor.copy(
-                sqlQuery = extractorConfig.getString("sql")
-              )
-
-            case "cmd_extractor" =>
-              extractor.copy(
-                cmd = Try(extractorConfig.getString("cmd")) toOption
-              )
-
-            case _ =>
-              sys.error(s"${style}: Unrecognized extractor style")
-          }
-        } toList,
+        extractors = extractors toList,
         parallelism = config.getInt("extraction.parallelism")
       )
     )
   }
 
   private def loadInferenceSettings(settings: Settings): Settings = {
-    val config = settings.config withFallback ConfigFactory.parseString(
+    var config = settings.config withFallback ConfigFactory.parseString(
       """
         |inference {
         |  skip_learning: false
@@ -244,17 +252,23 @@ object SettingsParser extends Logging {
     val weightTable = config.getString("inference.weight_table")
     val parallelGrounding = config.getBoolean("inference.parallel_grounding")
     val batchSize = Try(config.getInt("inference.batch_size")).toOption
-    val factorsConfig: Config = config.getConfig("inference.factors")
-    val factors = factorsConfig.root.keys map { case factorName =>
-      val factorConfig = factorsConfig.getConfig(factorName)
-      // TODO have each factor config update settings.config as well, to enable direct use of config later
-      FactorDesc(
-        name = factorName,
-        inputQuery = InputQueryParser.parseDatastoreInputQuery(factorConfig.getString("input_query")).query,
-        func = FactorFunctionParser.parseFactorFunction(factorConfig.getString("function")),
-        weight = FactorWeightParser.parseFactorWeight(factorConfig.getString("weight")),
-        weightPrefix = Try(factorConfig.getString("weightPrefix")).getOrElse(factorName) // TODO move default values into config
-      )
+    val factors = configEntries(config.getConfig("inference.factors")) map {
+      case (factorName, factorConfigRaw) =>
+        val factorConfig = factorConfigRaw withFallback ConfigFactory.parseString(
+          s"""
+            |input_query: null
+            |function: null
+            |weight: null
+            |weightPrefix: ${factorName}
+          """.stripMargin)
+        config = config.withValue(s"inference.factors.${factorName}", factorConfig.root)
+        FactorDesc(
+          name = factorName,
+          inputQuery = InputQueryParser.parseDatastoreInputQuery(factorConfig.getString("input_query")).query,
+          func = FactorFunctionParser.parseFactorFunction(factorConfig.getString("function")),
+          weight = FactorWeightParser.parseFactorWeight(factorConfig.getString("weight")),
+          weightPrefix = factorConfig.getString("weightPrefix")
+        )
     }
     settings updatedConfig(config) copy(
       inferenceSettings = InferenceSettings(
