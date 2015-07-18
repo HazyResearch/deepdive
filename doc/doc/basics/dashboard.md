@@ -71,6 +71,30 @@ At the top right of the report are three buttons:
 
 ## Tasks
 
+Tasks allow you to perform further analysis on the data displayed in a report. For example, if you notice ...
+
+Tasks are configured and displayed in a very similar manner as reports, with one major difference: the parameters for a task are supplied, or *bound*, by the user interactively from a report. The type of the data you are binding to a parameter must match the type specified in the task template.
+
+Templates currently allow for 3 type specifications:
+* int
+* float
+* string
+
+If no type is specified on the task template, and data value can be bound to the parameter.
+
+### Configuring Task Templates
+
+Dashboard contains built-in task templates, but you may also write your own task templates. 
+
+Task templates are configured in the same way as report templates, from the "Configure Templates" page. Refer to the [documentation on writing custom templates](#writing-custom-templates) for more information.
+
+### Running Tasks
+
+Tasks are run from a report page. To initiate a task, click on any data value contained in a data table or chart tooltip within a report. Doing so will display a menu of all relevant tasks which accept a parameter of the type of the data value you clicked on.
+
+Next to each task is its corresponding list of parameters which should be supplied interactively by the user. Parameters in bold are those for which the data value selected can be bound to. To bind the data value you clicked on to a task parameter, simply click on it. The bound value will display next to the parameter. You can continue this process for any additional parameters. Parameter bindings can be un-bound by clicking the parameter you wish to remove.
+
+At any time, you can also open the Task control interface, by clicking the "Tasks" button at the top right of the report.
 
 [ Screenshot of task selection dialog ]
 
