@@ -66,10 +66,10 @@ import org.deepdive.ddlog.DeepDiveLog.Mode._
 object AliasStyle extends Enumeration {
   type AliasStyle = Value
   // Three kinds of column expressions:
-  // OriginalOnly => use column name for dd_new_ tables
-  // AliasOnly => use alias for unknown weight in inference
-  // OriginalAndAlias => use column name and alias for normal extraction rule
-  val OriginalOnly, AliasOnly, OriginalAndAlias = Value
+  // NoAlias => use column name for dd_new_ tables
+  // WeightAlias => use alias for unknown weight in inference
+  // HeadAlias => use column name and alias for normal extraction rule
+  val NoAlias, WeightAlias, HeadAlias = Value
 
 }
 import AliasStyle._
@@ -175,61 +175,66 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
     if( ground_relations contains relName ) !ground_relations(relName) else true
   }
 
-  // Resolve a column name with alias
-  def resolveColumn(s: String, q : ConjunctiveQuery, alias: AliasStyle) : Option[String] = {
-    val qs = new QuerySchema(q)
-    val index = qs.getBodyIndex(s)
-    val name  = resolveName(qs.getVar(s))
-    // TODO better way to get relation
-    val relation = q.bodies(0)(index) match {
-      case x: Atom => x.name
-      case _  => error("Wrong index")
-    }
-    alias match {
-      case OriginalOnly => Some(s"R${index}.${name}")
-      case AliasOnly => Some(s"${relation}.R${index}.${name}")
-      case OriginalAndAlias => Some(s"""R${index}.${name} AS "${relation}.R${index}.${name}" """)
+  // compile a variable name to its canonical relation and column in R{index}.{name} style
+  def compileVariable(v: String, cq: ConjunctiveQuery) = {
+    val qs = new QuerySchema(cq)
+    val index = qs.getBodyIndex(v)
+    val name  = resolveName(qs.getVar(v))
+    s"R${index}.${name}"
+  }
+
+  // compile alias, only used for head
+  def compileAlias(e: Expr, cq: ConjunctiveQuery, alias: AliasStyle) = {
+    e match {
+      case VarExpr(v) => {
+        val qs = new QuerySchema(cq)
+        val index = qs.getBodyIndex(v)
+        val name  = resolveName(qs.getVar(v))
+        val relation = cq.bodies(0)(index) match {
+          case x: Atom => x.name
+          case _ => error("Wrong index when compiling alias")
+        }
+        alias match {
+          case NoAlias => ""
+          case HeadAlias => s""" AS "${relation}.R${index}.${name}" """
+          case WeightAlias => s"${relation}.R${index}.${name}"
+        }
+      }
+      case _ => s" AS column_${cq.head.terms indexOf e}"
     }
   }
 
   // resolve an expression
-  def compileExpr(e: Expr, cq: ConjunctiveQuery, alias: AliasStyle, index : Int, isHead: Boolean) : String = {
+  def compileExpr(e: Expr, cq: ConjunctiveQuery, generateAlias: Expr => String = e => "") = {
     // recursively compile an expression
-    def compileExprInner(e: Expr, alias: AliasStyle) : String = {
+    def compileExprInner(e: Expr) : String = {
       e match {
-        case VarExpr(name) => resolveColumn(name, cq, alias).get
+        case VarExpr(name) => compileVariable(name, cq)
         case ConstExpr(value) => value
         case FuncExpr(function, args, agg) => {
-          // note alias is overriden with OriginalOnly, because when an expression appears in
-          // the function, we only need it's column name, without " AS ..." aliasing, same below
-          val resolvedArgs = args map (x => compileExprInner(x, OriginalOnly))
+          val resolvedArgs = args map (x => compileExprInner(x))
           val resolved = s"${function}(${resolvedArgs.mkString(", ")})"
           resolved
         }
         case BinaryOpExpr(lhs, op, rhs) => {
-          val resovledLhs = compileExprInner(lhs, OriginalOnly)
-          val resovledRhs = compileExprInner(rhs, OriginalOnly)
+          val resovledLhs = compileExprInner(lhs)
+          val resovledRhs = compileExprInner(rhs)
           s"(${resovledLhs} ${op} ${resovledRhs})"
         }
         case TypecastExpr(lhs, rhs) => {
-          val resovledLhs = compileExprInner(lhs, OriginalOnly)
+          val resovledLhs = compileExprInner(lhs)
           s"(${resovledLhs} :: ${rhs})"
         }
       }
     }
-    // for columns without a name (constant, function call, binary operator), add an column index alias if necessary
-    val columnAlias = e match {
-      case x: VarExpr => ""
-      case _ => if (isHead) s" AS column_${index}" else ""
-    }
-    compileExprInner(e, alias) + columnAlias
+    compileExprInner(e) + generateAlias(e)
   }
 
   // resolve a condition
   def compileCond(cond: Cond, cq: ConjunctiveQuery) : String = {
     cond match {
       case ComparisonCond(lhs, op, rhs) =>
-        s"${compileExpr(lhs, cq, OriginalOnly, 0, false)} ${op} ${compileExpr(rhs, cq, OriginalOnly, 0, false)}"
+        s"${compileExpr(lhs, cq)} ${op} ${compileExpr(rhs, cq)}"
       case NegationCond(c) => s"(NOT ${compileCond(c, cq)})"
       case CompoundCond(lhs, op, rhs) => {
         val resolvedLhs = s"${compileCond(lhs, cq)}"
@@ -240,7 +245,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
         }
       }
       case InCond(lhs, rhs) => {
-        s"${compileExpr(lhs, cq, OriginalOnly, 0, false)} IN (SELECT * FROM ${rhs})"
+        s"${compileExpr(lhs, cq)} IN (SELECT * FROM ${rhs})"
       }
       case ExistCond(rhs) => s"EXISTS (SELECT * FROM ${rhs})"
       case _ => ""
@@ -269,7 +274,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
             }
             // other expressions indicate a filter condition on the column
             case _ => {
-              val resolved = compileExpr(expr, z, OriginalOnly, index, false)
+              val resolved = compileExpr(expr, z)
               val attr = schema(relName, index)
               Some(s"R${bodyIndex}.${attr} = ${resolved}")
             }
@@ -296,7 +301,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
     // map head terms, leaving out aggregation functions
     val groupbyTerms = z.head.terms.zipWithIndex flatMap { case (expr, index) =>
       if (containsAggregation(expr)) None
-      else Some(compileExpr(expr, z, OriginalOnly, index, false))
+      else Some(compileExpr(expr, z))
     }
 
     val groupbyStr = if (groupbyTerms.size == z.head.terms.size || groupbyTerms.isEmpty) {
@@ -479,8 +484,8 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
 
         if (stmt.supervision != null) {
           if (stmt.q.bodies.length > 1) ss.error(s"Scoping rule does not allow disjunction.\n")
-          val headTerms = tmpCq.head.terms.zipWithIndex map { case (expr, index) =>
-            ss.compileExpr(expr, tmpCq, OriginalOnly, index, true)
+          val headTerms = tmpCq.head.terms map { expr =>
+            ss.compileExpr(expr, tmpCq, ss.compileAlias(_, tmpCq, NoAlias))
           }
           val index = qs.getBodyIndex(stmt.supervision)
           val name  = ss.resolveName(qs.getVar(stmt.supervision))
@@ -490,8 +495,8 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           ${ ss.generateSQLBody(tmpCq) }
           """
         } else if ((ss.schemaDeclarationGroupByHead contains stmt.q.head.name) && (ss.schemaDeclarationGroupByHead(stmt.q.head.name)(0).isQuery) && (stmt.q.head.name startsWith "dd_new_")) {
-          val headTerms = tmpCq.head.terms.zipWithIndex map { case (expr, index) =>
-            ss.compileExpr(expr, tmpCq, OriginalOnly, index, true)
+          val headTerms = tmpCq.head.terms map { expr =>
+            ss.compileExpr(expr, tmpCq, ss.compileAlias(_, tmpCq, NoAlias))
           }
           val headTermsStr = ( headTerms :+ "id" ).mkString(", ")
           inputQueries += s"""SELECT DISTINCT ${ headTermsStr }, label
@@ -505,11 +510,11 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
             case _     => if (tmpCq.head.name.startsWith("dd_new_")) true else false
           }
           val resolveColumnFlag = tmpCqUseOnlyOriginal match {
-            case true => OriginalOnly
-            case false => OriginalAndAlias
+            case true => NoAlias
+            case false => HeadAlias
           }
-          val variableCols = tmpCq.head.terms.zipWithIndex map { case (expr, index) =>
-            ss.compileExpr(expr, tmpCq, resolveColumnFlag, index, true)
+          val variableCols = tmpCq.head.terms map { expr =>
+            ss.compileExpr(expr, tmpCq, ss.compileAlias(_, tmpCq, resolveColumnFlag))
           }
           val selectStr = variableCols.mkString(", ")
           val distinctStr = if (tmpCq.isDistinct) "DISTINCT" else ""
@@ -609,7 +614,8 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
 
         // weight string
         val uwStr = stmt.weights match {
-          case UnknownFactorWeight(w) => Some(w.flatMap(s => ss.resolveColumn(s, fakeCQ, OriginalAndAlias)).mkString(", "))
+          case UnknownFactorWeight(w) => Some(w.map(s =>
+            ss.compileExpr(VarExpr(s), fakeCQ, ss.compileAlias(_, fakeCQ, HeadAlias))).mkString(", "))
           case _ => None
         }
 
@@ -642,7 +648,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           weight = stmt.weights match {
             case KnownFactorWeight(x) => s"${x}"
             case UnknownFactorWeight(w) => {
-              val weightVar = w.flatMap(s => ss.resolveColumn(s, fakeCQ, AliasOnly)).mkString(", ")
+              val weightVar = w.map(s => ss.compileAlias(VarExpr(s), fakeCQ, WeightAlias)).mkString(", ")
               s"?(${weightVar})"
             }
             case UnknownFactorWeightBindingToConst(w) => "?"
