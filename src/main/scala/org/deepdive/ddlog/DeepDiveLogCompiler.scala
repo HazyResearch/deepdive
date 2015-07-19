@@ -287,7 +287,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
           val subqueryWhereStr = generateWhereClause(x.bodies, newIndexPrefix).mkString(" AND ")
           val subqueryFromStr  = getnerateFromClauseStr(x.bodies, newIndexPrefix)
           x.modifier match {
-            case ExistModifier() => List(s"EXISTS (SELECT 1 FROM ${subqueryFromStr} WHERE ${subqueryWhereStr})")
+            case ExistModifier(negated) => List(s"${if (negated) "NOT " else ""}EXISTS (SELECT 1 FROM ${subqueryFromStr} WHERE ${subqueryWhereStr})")
             case _ => List()
           }
         }

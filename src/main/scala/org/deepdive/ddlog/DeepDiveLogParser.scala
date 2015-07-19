@@ -24,7 +24,7 @@ case class Atom(name : String, terms : List[Expr]) extends Body
 case class ModifierAtom(modifier: AtomModifier, bodies: List[Body]) extends Body
 
 sealed trait AtomModifier
-case class ExistModifier extends AtomModifier
+case class ExistModifier(negated: Boolean) extends AtomModifier
 case class OuterModifier extends AtomModifier
 
 case class Attribute(name : String, terms : List[String], types : List[String])
@@ -181,9 +181,9 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def atom = relationName ~ "(" ~ repsep(expr, ",") ~ ")" ^^ {
     case (r ~ "(" ~ patterns ~ ")") => Atom(r, patterns)
   }
-  def modifierAtom = ("EXIST" | "OUTER") ~ "[" ~ rep1sep(cqBody, ",") ~ "]" ^^ { case (m ~ _ ~ b ~ _) =>
+  def modifierAtom = (opt("NOT") ~ "EXIST" | "OUTER") ~ "[" ~ rep1sep(cqBody, ",") ~ "]" ^^ { case (m ~ _ ~ b ~ _) =>
     val modifier = m match {
-      case "EXIST" => new ExistModifier
+      case (not ~ "EXIST") => new ExistModifier(not != None)
       case "OUTER" => new OuterModifier
     }
     ModifierAtom(modifier, b)

@@ -90,7 +90,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
 
   def printModifierAtom(a: ModifierAtom) : String = {
     val modifier = a.modifier match {
-      case ExistModifier() => "EXIST"
+      case ExistModifier(negated) => if(negated) "NOT " else "" + "EXIST"
       case OuterModifier() => "OUTER"
     }
     val bodyStr = (a.bodies map printBody).mkString(", ")
