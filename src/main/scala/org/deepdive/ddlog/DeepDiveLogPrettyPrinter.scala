@@ -88,24 +88,24 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
     s"${a.name}(${vars.mkString(", ")})"
   }
 
-  def printModifierAtom(a: ModifierAtom) = {
+  def printModifierAtom(a: ModifierAtom) : String = {
     val modifier = a.modifier match {
       case ExistModifier() => "EXIST"
       case OuterModifier() => "OUTER"
     }
-    val conditionStr = (a.condition map { c => s": ${printCond(c)}" }).getOrElse("")
-    s"${modifier}[${printAtom(a.atom)}${conditionStr}]"
+    val bodyStr = (a.bodies map printBody).mkString(", ")
+    s"${modifier}[${bodyStr}]"
+  }
+
+  def printBody(b: Body) = {
+    b match {
+      case b: Atom => printAtom(b)
+      case b: Cond => printCond(b)
+      case b: ModifierAtom => printModifierAtom(b)
+    }
   }
 
   def print(cq: ConjunctiveQuery): String = {
-
-    def printBody(b: Body) = {
-      b match {
-        case b: Atom => printAtom(b)
-        case b: Cond => printCond(b)
-        case b: ModifierAtom => printModifierAtom(b)
-      }
-    }
 
     def printBodyList(b: List[Body]) = {
       s"${(b map printBody).mkString(",\n    ")}"

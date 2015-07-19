@@ -189,11 +189,9 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
       case VarExpr(v) => {
         val qs = new QuerySchema(cq)
         val index = qs.getBodyIndex(v)
-        val name  = resolveName(qs.getVar(v))
-        val relation = cq.bodies(0)(index) match {
-          case x: Atom => x.name
-          case _ => error("Wrong index when compiling alias")
-        }
+        val variable = qs.getVar(v)
+        val name  = resolveName(variable)
+        val relation = variable.relName
         alias match {
           case NoAlias => ""
           case HeadAlias => s""" AS "${relation}.R${index}.${name}" """
@@ -259,16 +257,17 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
     // and stick it in a map.
     val qs = new QuerySchema(z)
 
-    def generateWhereClause(body: Body, bodyIndex: Int) : List[String] = {
-      body match {
-        case Atom(relName, terms) => {
-          terms.zipWithIndex flatMap { case (expr, index) =>
+    def generateWhereClause(bodies: List[Body], indexPrefix: String) : List[String] = {
+      bodies.zipWithIndex.flatMap {
+        case (Atom(relName, terms), index) => {
+          val bodyIndex = s"${indexPrefix}${index}"
+          terms.zipWithIndex flatMap { case (expr, atomIndex) =>
             expr match {
               // a simple variable indicates a join condition with other columns having the same variable name
               case VarExpr(varName) => {
                 val canonical_body_index = qs.getBodyIndex(varName)
                 if (canonical_body_index != bodyIndex) {
-                  val real_attr_name1 = resolveName( Variable(varName, relName, index) )
+                  val real_attr_name1 = resolveName( Variable(varName, relName, atomIndex) )
                   val real_attr_name2 = resolveName( qs.getVar(varName))
                   Some(s"R${ bodyIndex }.${ real_attr_name1 } = R${ canonical_body_index }.${ real_attr_name2 } ")
                 } else { None }
@@ -276,26 +275,31 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
               // other expressions indicate a filter condition on the column
               case _ => {
                 val resolved = compileExpr(expr, z)
-                val attr = schema(relName, index)
+                val attr = schema(relName, atomIndex)
                 Some(s"R${bodyIndex}.${attr} = ${resolved}")
               }
             }
           }
         }
-        case x: Cond => List(compileCond(x, z))
-        case x: ModifierAtom => {
-          val unification = generateWhereClause(x.atom, bodyIndex)
-          val condition = x.condition map { c => compileCond(c, z) }
-          val subqueryWhereStr = (unification ++ condition).mkString(" AND ")
+        case (x: Cond, _) => List(compileCond(x, z))
+        case (x: ModifierAtom, index) => {
+          val newIndexPrefix = s"${indexPrefix}${index}_"
+          val subqueryWhereStr = generateWhereClause(x.bodies, newIndexPrefix).mkString(" AND ")
+          val subqueryFromStr  = getnerateFromClauseStr(x.bodies, newIndexPrefix)
           x.modifier match {
-            case ExistModifier() => List(s"EXISTS (SELECT 1 FROM ${x.atom.name} WHERE ${subqueryWhereStr})")
-            case _ => List() // TODO
+            case ExistModifier() => List(s"EXISTS (SELECT 1 FROM ${subqueryFromStr} WHERE ${subqueryWhereStr})")
+            case _ => List()
           }
         }
       }
     }
 
-    val whereClause = z.bodies(0).zipWithIndex flatMap { case (x,i) => generateWhereClause(x,i) }
+    def getnerateFromClauseStr(bodies: List[Body], indexPrefix: String) = (bodies.zipWithIndex flatMap {
+      case(x:Atom,i) => Some(s"${x.name} R${indexPrefix}${i}")
+      case _ => None
+    }).mkString(", ")
+
+    val whereClause = generateWhereClause(z.bodies(0), "")
 
     // check if an expression contains an aggregation function
     def containsAggregation(expr: Expr) : Boolean = {
@@ -408,13 +412,13 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
 // mentioned in the body. This is useful to translate to SQL (join
 // conditions, select, etc.)
 class QuerySchema(q : ConjunctiveQuery) {
-    var query_schema = new HashMap[ String, Tuple2[Int,Variable] ]()
+  var query_schema = new HashMap[ String, Tuple2[String,Variable] ]()
 
   // maps each variable name to a canonical version of itself (first occurence in body in left-to-right order)
   // index is the index of the subgoal/atom this variable is found in the body.
   // variable is the complete Variable type for the found variable.
   def generateCanonicalVar()  = {
-    def generateCanonicalVarFromAtom(a: Atom, index: Int) {
+    def generateCanonicalVarFromAtom(a: Atom, index: String) {
       a.terms.zipWithIndex.foreach { case (expr, i) =>
         expr match {
           case VarExpr(v) =>
@@ -424,16 +428,21 @@ class QuerySchema(q : ConjunctiveQuery) {
         }
       }
     }
-    q.bodies(0).zipWithIndex.foreach {
-      case (a: Atom, index) => generateCanonicalVarFromAtom(a, index)
-      case (a: ModifierAtom, index) => generateCanonicalVarFromAtom(a.atom, index)
-      case _ =>
+
+    def generateCanonicalVarFromBodies(bodies: List[Body], indexPrefix: String) {
+      bodies.zipWithIndex.foreach {
+        case (a: Atom, index) => generateCanonicalVarFromAtom(a, s"${indexPrefix}${index}")
+        case (a: ModifierAtom, index) => generateCanonicalVarFromBodies(a.bodies, s"${indexPrefix}${index}_")
+        case _ =>
+      }
     }
+
+    generateCanonicalVarFromBodies(q.bodies(0), "")
   }
   generateCanonicalVar() // initialize
 
   // accessors
-  def getBodyIndex( varName : String ) : Int = { query_schema(varName)._1 }
+  def getBodyIndex( varName : String )       = { query_schema(varName)._1 }
   def getVar(varName : String ) : Variable   = { query_schema(varName)._2 }
 }
 
@@ -502,9 +511,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           val headTerms = tmpCq.head.terms map { expr =>
             ss.compileExpr(expr, tmpCq, ss.compileAlias(_, tmpCq, NoAlias))
           }
-          val index = qs.getBodyIndex(stmt.supervision)
-          val name  = ss.resolveName(qs.getVar(stmt.supervision))
-          val labelCol = s"R${index}.${name}"
+          val labelCol = ss.compileVariable(stmt.supervision, tmpCq)
           val headTermsStr = ( headTerms :+ "0 as id" ).mkString(", ")
           inputQueries += s"""SELECT DISTINCT ${ headTermsStr }, ${labelCol} AS label
           ${ ss.generateSQLBody(tmpCq) }

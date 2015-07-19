@@ -37,4 +37,6 @@ L(x) * | 100 :- b(x, y, z, w).
 
 M(x) :- b(x,y,z,w), EXIST[c(a,x,b)].
 
-N(x) :- b(x,y,z,w), EXIST[c(a,x,b): a > "a"].
+N(x) :- b(x,y,z,w), EXIST[c(a,x,b), a > "a"].
+
+O(x) :- b(x,y,z,w), EXIST[c(a,x,b), a(x)].

@@ -21,7 +21,7 @@ case class TypecastExpr(lhs: Expr, rhs: String) extends Expr
 
 sealed trait Body
 case class Atom(name : String, terms : List[Expr]) extends Body
-case class ModifierAtom(modifier: AtomModifier, atom: Atom, condition: Option[Cond]) extends Body
+case class ModifierAtom(modifier: AtomModifier, bodies: List[Body]) extends Body
 
 sealed trait AtomModifier
 case class ExistModifier extends AtomModifier
@@ -181,17 +181,16 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def atom = relationName ~ "(" ~ repsep(expr, ",") ~ ")" ^^ {
     case (r ~ "(" ~ patterns ~ ")") => Atom(r, patterns)
   }
-  def modifierAtom = ("EXIST") ~ "[" ~ atom ~ opt(":" ~> cond) ~ "]" ^^ { case (m ~ _ ~ a ~ c ~ _) =>
+  def modifierAtom = ("EXIST" | "OUTER") ~ "[" ~ rep1sep(cqBody, ",") ~ "]" ^^ { case (m ~ _ ~ b ~ _) =>
     val modifier = m match {
       case "EXIST" => new ExistModifier
+      case "OUTER" => new OuterModifier
     }
-    ModifierAtom(modifier, a, c)
+    ModifierAtom(modifier, b)
   }
-  def cqBody: Parser[Body] =
-    ( cond
-    | modifierAtom
-    | atom
-    )
+
+  def cqBody: Parser[Body] = cond | modifierAtom | atom
+
   def cqConjunctiveBody: Parser[List[Body]] = rep1sep(cqBody, ",")
 
   def conjunctiveQuery : Parser[ConjunctiveQuery] =

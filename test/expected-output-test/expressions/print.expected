@@ -66,5 +66,9 @@ M(x)  :-
 
 N(x)  :-
     b(x, y, z, w),
-    EXIST[c(a, x, b): a >  "a" ].
+    EXIST[c(a, x, b), a >  "a" ].
+
+O(x)  :-
+    b(x, y, z, w),
+    EXIST[c(a, x, b), a(x)].
 
