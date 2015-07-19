@@ -46,12 +46,18 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
     stmt match {
       case s: ExtractionRule => {
         s.q.bodies foreach { x => 
-          x foreach { a => checkRelation(a.name) }
+          x foreach {
+            case a: Atom => checkRelation(a.name)
+            case _ =>
+          }
         }
       }
       case s: InferenceRule => {
         s.q.bodies foreach { x => 
-          x foreach { a => checkRelation(a.name) }
+          x foreach {
+            case a: Atom => checkRelation(a.name)
+            case _ =>
+          }
         }
       }
       case s: FunctionCallRule => checkRelation(s.input)
@@ -95,7 +101,12 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
     }
     def checkCq(cq: ConjunctiveQuery) {
       checkAtom(cq.head)
-      cq.bodies foreach { x => x foreach checkAtom }
+      cq.bodies foreach { x =>
+        x foreach {
+          case a: Atom => checkAtom(a)
+          case _ =>
+        }
+      }
     }
     stmt match {
       case s: ExtractionRule => checkCq(s.q)

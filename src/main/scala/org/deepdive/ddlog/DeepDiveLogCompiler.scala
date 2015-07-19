@@ -180,7 +180,11 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
     val qs = new QuerySchema(q)
     val index = qs.getBodyIndex(s)
     val name  = resolveName(qs.getVar(s))
-    val relation = q.bodies(0)(index).name
+    // TODO better way to get relation
+    val relation = q.bodies(0)(index) match {
+      case x: Atom => x.name
+      case _  => error("Wrong index")
+    }
     alias match {
       case OriginalOnly => Some(s"R${index}.${name}")
       case AliasOnly => Some(s"${relation}.R${index}.${name}")
@@ -196,7 +200,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
         case VarExpr(name) => resolveColumn(name, cq, alias).get
         case ConstExpr(value) => value
         case FuncExpr(function, args, agg) => {
-          // note alias is overriden with OriginalOnly, because when an expression appears in 
+          // note alias is overriden with OriginalOnly, because when an expression appears in
           // the function, we only need it's column name, without " AS ..." aliasing, same below
           val resolvedArgs = args map (x => compileExprInner(x, OriginalOnly))
           val resolved = s"${function}(${resolvedArgs.mkString(", ")})"
@@ -239,9 +243,6 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
         s"${compileExpr(lhs, cq, OriginalOnly, 0, false)} IN (SELECT * FROM ${rhs})"
       }
       case ExistCond(rhs) => s"EXISTS (SELECT * FROM ${rhs})"
-      case QuantifiedCond(lhs, op, quan, rhs) => {
-        s"${compileExpr(lhs, cq, OriginalOnly, 0, false)} ${op} ${quan} (SELECT * FROM ${rhs})"
-      }
       case _ => ""
     }
   }
@@ -275,12 +276,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
           }
         }
       }
-    }
-
-    // resolve conditions
-    val conditionStr = z.conditions(0).flatMap {
-      case x: OuterJoinCond => None
-      case x: Cond => Some(compileCond(x, z))
+      case (x: Cond, i) => Some(compileCond(x, z))
     }
 
     // check if an expression contains an aggregation function
@@ -303,30 +299,24 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
       else Some(compileExpr(expr, z, OriginalOnly, index, false))
     }
 
-    val groupbyStr = if (groupbyTerms.size == z.head.terms.size) {
+    val groupbyStr = if (groupbyTerms.size == z.head.terms.size || groupbyTerms.isEmpty) {
       ""
     } else {
       s"\n        GROUP BY ${groupbyTerms.mkString(", ")}"
     }
 
-    val whereClauseConds = whereClause ++ conditionStr
-    val whereClauseStr = if (whereClauseConds isEmpty) "" else whereClauseConds.mkString("WHERE ", " AND ", "")
+    val whereClauseStr = if (whereClause.isEmpty) "" else whereClause.mkString("WHERE ", " AND ", "")
 
     val limitStr = z.limit match {
       case Some(s) => s" LIMIT ${s}"
       case None => ""
     }
 
-    // compile outer join
-    val bodyNames = z.bodies(0) map (_.name)
-    val outerRelations = z.outerJoinConds(0) map (_.relName) toSet
-    val outerJoinStr = (z.outerJoinConds(0) map { case OuterJoinCond(name, cond) =>
-      s" LEFT OUTER JOIN ${name} R${bodyNames.indexOf(name)} ON ${compileCond(cond, z)} "
-    }).mkString
-
-    val fromBodyNames = (z.bodies(0).filterNot(outerRelations contains _.name).zipWithIndex map 
-      { case(x,i) => s"${x.name} R${i}"}).mkString(", ")
-    val fromClause = fromBodyNames + outerJoinStr
+    val fromBodyNames = (z.bodies(0).zipWithIndex flatMap {
+      case(x:Atom,i) => Some(s"${x.name} R${i}")
+      case _ => None
+    }).mkString(", ")
+    val fromClause = fromBodyNames
 
     s"""FROM ${ fromClause }
         ${ whereClauseStr }${groupbyStr}${limitStr}"""
@@ -358,7 +348,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
     functionCallRuleGroupByOutput  = functionCallRuleToCompile.toList.groupBy(_.output)
   }
 
-  // Analyze the block visibility among statements 
+  // Analyze the block visibility among statements
   def analyzeVisible(statements: List[Statement]) = {
     extractionRuleGroupByHead.values foreach { visible += _(0) }
     functionCallList foreach { visible += _ }
@@ -366,13 +356,19 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
 
   // Analyze the dependency between statements and construct a graph.
   def analyzeDependency(statements: List[Statement]) = {
-    val stmtByHeadName = (extractionRuleGroupByHead.toSeq ++ inferenceRuleGroupByHead.toSeq ++ functionCallRuleGroupByOutput.toSeq).groupBy(_._1).mapValues(_.map(_._2).toList)
+    val stmtByHeadName = (extractionRuleGroupByHead.toSeq ++ inferenceRuleGroupByHead.toSeq ++
+      functionCallRuleGroupByOutput.toSeq).groupBy(_._1).mapValues(_.map(_._2).toList)
 
     // Look at the body of each statement to construct a dependency graph
     statements foreach {
-      case f : FunctionCallRule => dependencies += { f -> ((        Some(f.input) flatMap (stmtByHeadName get _)).toSet.flatten.flatten) }
-      case e : ExtractionRule   => dependencies += { e -> ((e.q.bodies.flatten map (_.name) flatMap (stmtByHeadName get _)).toSet.flatten.flatten) }
-      case w : InferenceRule    => dependencies += { w -> ((w.q.bodies.flatten map (_.name) flatMap (stmtByHeadName get _)).toSet.flatten.flatten) }
+      case f : FunctionCallRule => dependencies += {
+        f -> (( Some(f.input) flatMap (stmtByHeadName get _)).toSet.flatten.flatten) }
+      case e : ExtractionRule   => dependencies += {
+        e -> (((e.q.bodies.flatten collect { case x: Atom => x.name })
+          flatMap (stmtByHeadName get _)).toSet.flatten.flatten) }
+      case w : InferenceRule    => dependencies += {
+        w -> (((w.q.bodies.flatten collect { case x: Atom => x.name })
+          flatMap (stmtByHeadName get _)).toSet.flatten.flatten) }
       case _ =>
     }
   }
@@ -404,13 +400,14 @@ class QuerySchema(q : ConjunctiveQuery) {
       case (Atom(relName,terms),index) =>  {
         terms.zipWithIndex.foreach { case (expr, i) =>
           expr match {
-            case VarExpr(v) => 
+            case VarExpr(v) =>
               if (! (query_schema contains v) )
                 query_schema += { v -> (index, Variable(v,relName,i) ) }
             case _ =>
           }
         }
       }
+      case _ =>
     }
   }
   generateCanonicalVar() // initialize
@@ -482,7 +479,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
 
         if (stmt.supervision != null) {
           if (stmt.q.bodies.length > 1) ss.error(s"Scoping rule does not allow disjunction.\n")
-          val headTerms = tmpCq.head.terms.zipWithIndex map { case (expr, index) => 
+          val headTerms = tmpCq.head.terms.zipWithIndex map { case (expr, index) =>
             ss.compileExpr(expr, tmpCq, OriginalOnly, index, true)
           }
           val index = qs.getBodyIndex(stmt.supervision)
@@ -493,7 +490,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           ${ ss.generateSQLBody(tmpCq) }
           """
         } else if ((ss.schemaDeclarationGroupByHead contains stmt.q.head.name) && (ss.schemaDeclarationGroupByHead(stmt.q.head.name)(0).isQuery) && (stmt.q.head.name startsWith "dd_new_")) {
-          val headTerms = tmpCq.head.terms.zipWithIndex map { case (expr, index) => 
+          val headTerms = tmpCq.head.terms.zipWithIndex map { case (expr, index) =>
             ss.compileExpr(expr, tmpCq, OriginalOnly, index, true)
           }
           val headTermsStr = ( headTerms :+ "id" ).mkString(", ")
@@ -511,7 +508,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
             case true => OriginalOnly
             case false => OriginalAndAlias
           }
-          val variableCols = tmpCq.head.terms.zipWithIndex map { case (expr, index) => 
+          val variableCols = tmpCq.head.terms.zipWithIndex map { case (expr, index) =>
             ss.compileExpr(expr, tmpCq, resolveColumnFlag, index, true)
           }
           val selectStr = variableCols.mkString(", ")
@@ -594,14 +591,19 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
         // edge query
         val fakeBody        = stmt.q.head +: cqBody
         val fakeCQ          = stmt.q.copy(bodies = List(fakeBody))
+        val fakeBodyAtoms   = fakeBody.collect { case x: Atom => x }
 
         val index = cqBody.length + 1
         val qs2 = new QuerySchema( fakeCQ )
-        val varInBody = (fakeBody map {x =>
-          if (ss.variableTableNames contains x.name)
-            s"""R${fakeBody indexOf x}.id AS "${x.name}.R${fakeBody indexOf x}.id" """
-          else ""
-          }).filter(_ != "")
+        // TODO self-join?
+        val varInBody = (fakeBody.zipWithIndex flatMap {
+          case (x: Atom, i) =>
+            if (ss.variableTableNames contains x.name)
+              Some(s"""R${fakeBody indexOf x}.id AS "${x.name}.R${fakeBody indexOf x}.id" """)
+            else
+              None
+          case _ => None
+        })
 
         val variableIdsStr = Some(varInBody.mkString(", "))
 
@@ -619,7 +621,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           ${ ss.generateSQLBody(fakeCQ) }"""
         // factor function
         if (func.length == 0) {
-          val funcBody = (fakeBody map {x =>
+          val funcBody = (fakeBodyAtoms map {x =>
           if (ss.variableTableNames contains x.name)
             s"""${x.name}.R${fakeBody indexOf x}.label"""
           else ""
@@ -761,7 +763,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     state.extractionRuleGroupByHead    foreach {keyVal => body ++= compileExtractionRules(keyVal._2, state)}
     state.functionCallRuleGroupByInput foreach {keyVal => body ++= compileFunctionCallRules(keyVal._2, state)}
     state.inferenceRuleGroupByHead     foreach {keyVal => body ++= compileInferenceRules(keyVal._2, state)}
-    
+
     // compile the program into blocks of application.conf
     val blocks = (
       compileUserSettings(state)

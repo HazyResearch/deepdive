@@ -19,22 +19,20 @@ case class FuncExpr(function: String, args: List[Expr], isAggregation: Boolean) 
 case class BinaryOpExpr(lhs: Expr, op: String, rhs: Expr) extends Expr
 case class TypecastExpr(lhs: Expr, rhs: String) extends Expr
 
-case class Atom(name : String, terms : List[Expr])
+sealed trait Body
+case class Atom(name : String, terms : List[Expr]) extends Body
 case class Attribute(name : String, terms : List[String], types : List[String])
-case class ConjunctiveQuery(head: Atom, bodies: List[List[Atom]], conditions: List[Option[Cond]], 
-  isDistinct: Boolean, limit: Option[Int], outerJoinConds: List[List[OuterJoinCond]])
+case class ConjunctiveQuery(head: Atom, bodies: List[List[Body]], isDistinct: Boolean, limit: Option[Int])
 case class Column(name : String, t : String)
-case class BodyWithCondition(body: List[Atom], condition: Option[Cond], outerJoinCond: List[OuterJoinCond])
+case class BodyWithCondition(body: List[Atom], condition: Option[Cond])
 
 // condition
-sealed trait Cond
+sealed trait Cond extends Body
 case class ComparisonCond(lhs: Expr, op: String, rhs: Expr) extends Cond
 case class NegationCond(cond: Cond) extends Cond
 case class CompoundCond(lhs: Cond, op: LogicOperator.LogicOperator, rhs: Cond) extends Cond
 case class InCond(lhs: Expr, relName: String) extends Cond
 case class ExistCond(relName: String) extends Cond
-case class QuantifiedCond(lhs: Expr, op: String, quantifier: String, relName: String) extends Cond
-case class OuterJoinCond(relName: String, cond: Cond)
 
 // logic operators
 object LogicOperator extends Enumeration {
@@ -129,9 +127,9 @@ class DeepDiveLogParser extends JavaTokenParsers {
 
   def operator = "||" | "+" | "-" | "*" | "/" | "&"
   def typeOperator = "::"
-  val aggregationFunctions = Set("MAX", "SUM", "MIN", "ARRAY_ACCUM", "ARRAY_AGG")
+  val aggregationFunctions = Set("MAX", "SUM", "MIN", "ARRAY_ACCUM", "ARRAY_AGG", "COUNT")
 
-  // expressions
+  // expression
   def expr : Parser[Expr] =
     ( lexpr ~ operator ~ expr ^^ { case (lhs ~ op ~ rhs) => BinaryOpExpr(lhs, op, rhs) }
     | lexpr ~ typeOperator ~ columnType ^^ { case (lhs ~ _ ~ rhs) => TypecastExpr(lhs, rhs) }
@@ -156,7 +154,6 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def compareOperator = "LIKE" | ">" | "<" | ">=" | "<=" | "!=" | "=" | "IS" | "IS NOT"
   def inOperator = "IN"
   def quantifierOperator = "ANY" | "ALL"
-  def outerJoinOperator = "OUTER"
 
   def cond : Parser[Cond] = 
     ( acond ~ (";") ~ cond ^^ { case (lhs ~ op ~ rhs) =>
@@ -174,35 +171,24 @@ class DeepDiveLogParser extends JavaTokenParsers {
     | bcond
     )
   def bcond : Parser[Cond] = 
-    ( expr ~ compareOperator ~ quantifierOperator ~ relationName ^^ { case (lhs ~ op ~ quan ~ rhs) => 
-        QuantifiedCond(lhs, op, quan, rhs) 
-      }
-    | expr ~ compareOperator ~ expr ^^ { case (lhs ~ op ~ rhs) => ComparisonCond(lhs, op, rhs) }
+    ( expr ~ compareOperator ~ expr ^^ { case (lhs ~ op ~ rhs) => ComparisonCond(lhs, op, rhs) }
     | expr ~ inOperator ~ relationName ^^ { case (lhs ~ _ ~ rhs) => InCond(lhs, rhs) } 
     | "EXISTS" ~> relationName ^^ { ExistCond(_) }
     | "[" ~> cond <~ "]"
     )
 
-  def outerJoinCond = 
-    outerJoinOperator ~> "(" ~> relationName ~ ":" ~ cond <~ ")" ^^ { case (relName ~ _ ~ cond) =>
-      OuterJoinCond(relName, cond)
-    }
-
-  def cqBodyAtom: Parser[Atom] =
-    relationName ~ "(" ~ repsep(expr, ",") ~ ")" ^^ {
-      case (r ~ "(" ~ patterns ~ ")") => Atom(r, patterns)
-    }
-  def cqBody: Parser[List[Atom]] = rep1sep(cqBodyAtom, ",")
-
-  def cqBodyWithCondition = cqBody ~ opt("," ~> rep1sep(outerJoinCond, ",")) ~ ("," ~> cond).? ^^ {
-    case (b ~ o ~ c) => BodyWithCondition(b, c, o.getOrElse(List()))
-  }
+  def cqBody: Parser[Body] =
+    ( relationName ~ "(" ~ repsep(expr, ",") ~ ")" ^^ {
+        case (r ~ "(" ~ patterns ~ ")") => Atom(r, patterns)
+      }
+    | cond
+    )
+  def cqConjunctiveBody: Parser[List[Body]] = rep1sep(cqBody, ",")
 
   def conjunctiveQuery : Parser[ConjunctiveQuery] =
-    cqHead ~ opt("*") ~ opt("|" ~> decimalNumber) ~ ":-" ~ rep1sep(cqBodyWithCondition, ";") ^^ {
+    cqHead ~ opt("*") ~ opt("|" ~> decimalNumber) ~ ":-" ~ rep1sep(cqConjunctiveBody, ";") ^^ {
       case (headatom ~ isDistinct ~ limit ~ ":-" ~ disjunctiveBodies) =>
-        ConjunctiveQuery(headatom, disjunctiveBodies.map(_.body), disjunctiveBodies.map(_.condition), 
-          isDistinct != None, limit map (_.toInt), disjunctiveBodies.map(_.outerJoinCond))
+        ConjunctiveQuery(headatom, disjunctiveBodies, isDistinct != None, limit map (_.toInt))
   }
 
   def relationType: Parser[RelationType] =
