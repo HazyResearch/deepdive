@@ -76,7 +76,7 @@ case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, function 
 class DeepDiveLogParser extends JavaTokenParsers {
 
   // JavaTokenParsers provides several useful number parsers:
-  //   wholeNumber, decimalNumber, floatingPointNumber 
+  //   wholeNumber, decimalNumber, floatingPointNumber
   def floatingPointNumberAsDouble = floatingPointNumber ^^ { _.toDouble }
   def stringLiteralAsString = stringLiteral ^^ {
     s => StringEscapeUtils.unescapeJava(
@@ -137,12 +137,12 @@ class DeepDiveLogParser extends JavaTokenParsers {
     )
 
   def lexpr : Parser[Expr] =
-    ( functionName ~ "(" ~ rep1sep(expr, ",") ~ ")" ^^ { 
+    ( functionName ~ "(" ~ rep1sep(expr, ",") ~ ")" ^^ {
         case (name ~ _ ~ args ~ _) => FuncExpr(name, args, (aggregationFunctions contains name))
       }
     | constant ^^ { ConstExpr(_) }
     | variableName ^^ { VarExpr(_) }
-    | "(" ~> expr <~ ")" 
+    | "(" ~> expr <~ ")"
     )
 
   // TODO support aggregate function syntax somehow
@@ -155,24 +155,24 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def inOperator = "IN"
   def quantifierOperator = "ANY" | "ALL"
 
-  def cond : Parser[Cond] = 
+  def cond : Parser[Cond] =
     ( acond ~ (";") ~ cond ^^ { case (lhs ~ op ~ rhs) =>
         CompoundCond(lhs, LogicOperator.OR, rhs)
       }
     | acond
     )
-  def acond : Parser[Cond] = 
+  def acond : Parser[Cond] =
     ( lcond ~ (",") ~ acond ^^ { case (lhs ~ op ~ rhs) => CompoundCond(lhs, LogicOperator.AND, rhs) }
     | lcond
     )
   // ! has higher priority...
-  def lcond : Parser[Cond] = 
+  def lcond : Parser[Cond] =
     ( "!" ~> bcond ^^ { NegationCond(_) }
     | bcond
     )
-  def bcond : Parser[Cond] = 
+  def bcond : Parser[Cond] =
     ( expr ~ compareOperator ~ expr ^^ { case (lhs ~ op ~ rhs) => ComparisonCond(lhs, op, rhs) }
-    | expr ~ inOperator ~ relationName ^^ { case (lhs ~ _ ~ rhs) => InCond(lhs, rhs) } 
+    | expr ~ inOperator ~ relationName ^^ { case (lhs ~ _ ~ rhs) => InCond(lhs, rhs) }
     | "EXISTS" ~> relationName ^^ { ExistCond(_) }
     | "[" ~> cond <~ "]"
     )

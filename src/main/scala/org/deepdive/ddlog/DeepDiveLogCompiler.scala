@@ -114,7 +114,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
     mode = config.mode
     statements.foreach {
       case SchemaDeclaration(Attribute(r, terms, types), isQuery, vType) => {
-        terms.zipWithIndex.foreach { 
+        terms.zipWithIndex.foreach {
           case (n, i) =>
             schema           += { (r,i) -> n }
             ground_relations += { r -> !isQuery } // record whether a query or a ground term.
@@ -228,14 +228,14 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
   // resolve a condition
   def compileCond(cond: Cond, cq: ConjunctiveQuery) : String = {
     cond match {
-      case ComparisonCond(lhs, op, rhs) => 
+      case ComparisonCond(lhs, op, rhs) =>
         s"${compileExpr(lhs, cq, OriginalOnly, 0, false)} ${op} ${compileExpr(rhs, cq, OriginalOnly, 0, false)}"
       case NegationCond(c) => s"(NOT ${compileCond(c, cq)})"
       case CompoundCond(lhs, op, rhs) => {
         val resolvedLhs = s"${compileCond(lhs, cq)}"
         val resolvedRhs = s"${compileCond(rhs, cq)}"
         op match {
-          case LogicOperator.AND => s"(${resolvedLhs} AND ${resolvedRhs})" 
+          case LogicOperator.AND => s"(${resolvedLhs} AND ${resolvedRhs})"
           case LogicOperator.OR  => s"(${resolvedLhs} OR ${resolvedRhs})"
         }
       }
@@ -452,8 +452,8 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       }
     }
     // Cleanup incremental table extractor
-    val truncateTableList = (stmts map (x => 
-      if ((x.a.name startsWith "dd_new_") && (ss.inferenceRuleGroupByHead contains x.a.name)) "" 
+    val truncateTableList = (stmts map (x =>
+      if ((x.a.name startsWith "dd_new_") && (ss.inferenceRuleGroupByHead contains x.a.name)) ""
       else s"TRUNCATE ${x.a.name};")).filter(_ != "")
     if (truncateTableList.length > 0) {
       schemas += s"""

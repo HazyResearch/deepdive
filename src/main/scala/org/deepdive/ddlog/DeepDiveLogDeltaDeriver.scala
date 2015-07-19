@@ -35,7 +35,7 @@ object DeepDiveLogDeltaDeriver{
     // New incremental bodies
     cq.bodies foreach { bodies =>
       // Delta body
-      val incDeltaBody = bodies map { 
+      val incDeltaBody = bodies map {
         case a: Atom => a.copy(name = deltaPrefix + a.name)
         case a: Cond => a
       }
@@ -111,9 +111,9 @@ object DeepDiveLogDeltaDeriver{
   def transform(stmt: FunctionDeclaration): List[Statement] = {
     List(stmt.copy(
       inputType = stmt.inputType match {
-        case inTy: RelationTypeDeclaration => 
+        case inTy: RelationTypeDeclaration =>
           inTy.copy(names = inTy.names map {name => deltaPrefix + name})
-        case inTy: RelationTypeAlias => 
+        case inTy: RelationTypeAlias =>
           inTy.copy(likeRelationName = deltaPrefix + inTy.likeRelationName)
       },
       outputType = stmt.outputType match {
