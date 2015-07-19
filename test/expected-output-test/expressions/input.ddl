@@ -35,8 +35,6 @@ K(x) :- b(x,y,z,w), [x + w = 100, [!x > 50; x = 40]].
 # limit
 L(x) * | 100 :- b(x, y, z, w).
 
-# M(x) :- a(x), x IN G.
+M(x) :- b(x,y,z,w), EXIST[c(a,x,b)].
 
-# N(x) :- a(x), x > ANY G.
-
-# O(x) :- a(x), b(q,w,e,r), OUTER(b: x = q), x = r.
+N(x) :- b(x,y,z,w), EXIST[c(a,x,b): a > "a"].

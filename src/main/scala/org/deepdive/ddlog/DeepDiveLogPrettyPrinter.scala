@@ -74,7 +74,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
       case NegationCond(c) => s"[!${printCond(c)}]"
       case CompoundCond(lhs, op, rhs) => {
         op match {
-          case LogicOperator.AND => s"[${printCond(lhs)}, ${printCond(rhs)}]" 
+          case LogicOperator.AND => s"[${printCond(lhs)}, ${printCond(rhs)}]"
           case LogicOperator.OR  => s"[${printCond(lhs)}; ${printCond(rhs)}]"
         }
       }
@@ -83,16 +83,27 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
     }
   }
 
-  def print(cq: ConjunctiveQuery): String = {
-    def printAtom(a: Atom) = {
-      val vars = a.terms map printExpr
-      s"${a.name}(${vars.mkString(", ")})"
+  def printAtom(a: Atom) = {
+    val vars = a.terms map printExpr
+    s"${a.name}(${vars.mkString(", ")})"
+  }
+
+  def printModifierAtom(a: ModifierAtom) = {
+    val modifier = a.modifier match {
+      case ExistModifier() => "EXIST"
+      case OuterModifier() => "OUTER"
     }
+    val conditionStr = (a.condition map { c => s": ${printCond(c)}" }).getOrElse("")
+    s"${modifier}[${printAtom(a.atom)}${conditionStr}]"
+  }
+
+  def print(cq: ConjunctiveQuery): String = {
 
     def printBody(b: Body) = {
       b match {
         case b: Atom => printAtom(b)
         case b: Cond => printCond(b)
+        case b: ModifierAtom => printModifierAtom(b)
       }
     }
 

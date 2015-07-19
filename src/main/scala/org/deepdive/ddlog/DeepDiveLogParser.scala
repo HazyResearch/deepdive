@@ -21,10 +21,15 @@ case class TypecastExpr(lhs: Expr, rhs: String) extends Expr
 
 sealed trait Body
 case class Atom(name : String, terms : List[Expr]) extends Body
+case class ModifierAtom(modifier: AtomModifier, atom: Atom, condition: Option[Cond]) extends Body
+
+sealed trait AtomModifier
+case class ExistModifier extends AtomModifier
+case class OuterModifier extends AtomModifier
+
 case class Attribute(name : String, terms : List[String], types : List[String])
 case class ConjunctiveQuery(head: Atom, bodies: List[List[Body]], isDistinct: Boolean, limit: Option[Int])
 case class Column(name : String, t : String)
-case class BodyWithCondition(body: List[Atom], condition: Option[Cond])
 
 // condition
 sealed trait Cond extends Body
@@ -145,15 +150,13 @@ class DeepDiveLogParser extends JavaTokenParsers {
     | "(" ~> expr <~ ")"
     )
 
-  // TODO support aggregate function syntax somehow
   def cqHead = relationName ~ "(" ~ rep1sep(expr, ",") ~ ")" ^^ {
     case (r ~ "(" ~ expressions ~ ")") => Atom(r, expressions)
   }
 
   // conditional expressions
   def compareOperator = "LIKE" | ">" | "<" | ">=" | "<=" | "!=" | "=" | "IS" | "IS NOT"
-  def inOperator = "IN"
-  def quantifierOperator = "ANY" | "ALL"
+  def atomModifier = "EXIST" | "OUTER"
 
   def cond : Parser[Cond] =
     ( acond ~ (";") ~ cond ^^ { case (lhs ~ op ~ rhs) =>
@@ -172,16 +175,22 @@ class DeepDiveLogParser extends JavaTokenParsers {
     )
   def bcond : Parser[Cond] =
     ( expr ~ compareOperator ~ expr ^^ { case (lhs ~ op ~ rhs) => ComparisonCond(lhs, op, rhs) }
-    | expr ~ inOperator ~ relationName ^^ { case (lhs ~ _ ~ rhs) => InCond(lhs, rhs) }
-    | "EXISTS" ~> relationName ^^ { ExistCond(_) }
     | "[" ~> cond <~ "]"
     )
 
+  def atom = relationName ~ "(" ~ repsep(expr, ",") ~ ")" ^^ {
+    case (r ~ "(" ~ patterns ~ ")") => Atom(r, patterns)
+  }
+  def modifierAtom = ("EXIST") ~ "[" ~ atom ~ opt(":" ~> cond) ~ "]" ^^ { case (m ~ _ ~ a ~ c ~ _) =>
+    val modifier = m match {
+      case "EXIST" => new ExistModifier
+    }
+    ModifierAtom(modifier, a, c)
+  }
   def cqBody: Parser[Body] =
-    ( relationName ~ "(" ~ repsep(expr, ",") ~ ")" ^^ {
-        case (r ~ "(" ~ patterns ~ ")") => Atom(r, patterns)
-      }
-    | cond
+    ( cond
+    | modifierAtom
+    | atom
     )
   def cqConjunctiveBody: Parser[List[Body]] = rep1sep(cqBody, ",")
 

@@ -253,36 +253,49 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
   }
 
   // This is generic code that generates the FROM with positional aliasing R0, R1, etc.
-  // and the corresponding WHERE clause (equating all variables)
+  // and the corresponding WHERE clause
   def generateSQLBody(z : ConjunctiveQuery) : String = {
     // Simple logic for the where clause, first find every first occurence of a
     // and stick it in a map.
     val qs = new QuerySchema(z)
 
-    var whereClause = z.bodies(0).zipWithIndex flatMap {
-      case (Atom(relName, terms),bodyIndex) => {
-        terms.zipWithIndex flatMap { case (expr, index) =>
-          expr match {
-            // a simple variable indicates a join condition with other columns having the same variable name
-            case VarExpr(varName) => {
-              val canonical_body_index = qs.getBodyIndex(varName)
-              if (canonical_body_index != bodyIndex) {
-                val real_attr_name1 = resolveName( Variable(varName, relName, index) )
-                val real_attr_name2 = resolveName( qs.getVar(varName))
-                Some(s"R${ bodyIndex }.${ real_attr_name1 } = R${ canonical_body_index }.${ real_attr_name2 } ")
-              } else { None }
-            }
-            // other expressions indicate a filter condition on the column
-            case _ => {
-              val resolved = compileExpr(expr, z)
-              val attr = schema(relName, index)
-              Some(s"R${bodyIndex}.${attr} = ${resolved}")
+    def generateWhereClause(body: Body, bodyIndex: Int) : List[String] = {
+      body match {
+        case Atom(relName, terms) => {
+          terms.zipWithIndex flatMap { case (expr, index) =>
+            expr match {
+              // a simple variable indicates a join condition with other columns having the same variable name
+              case VarExpr(varName) => {
+                val canonical_body_index = qs.getBodyIndex(varName)
+                if (canonical_body_index != bodyIndex) {
+                  val real_attr_name1 = resolveName( Variable(varName, relName, index) )
+                  val real_attr_name2 = resolveName( qs.getVar(varName))
+                  Some(s"R${ bodyIndex }.${ real_attr_name1 } = R${ canonical_body_index }.${ real_attr_name2 } ")
+                } else { None }
+              }
+              // other expressions indicate a filter condition on the column
+              case _ => {
+                val resolved = compileExpr(expr, z)
+                val attr = schema(relName, index)
+                Some(s"R${bodyIndex}.${attr} = ${resolved}")
+              }
             }
           }
         }
+        case x: Cond => List(compileCond(x, z))
+        case x: ModifierAtom => {
+          val unification = generateWhereClause(x.atom, bodyIndex)
+          val condition = x.condition map { c => compileCond(c, z) }
+          val subqueryWhereStr = (unification ++ condition).mkString(" AND ")
+          x.modifier match {
+            case ExistModifier() => List(s"EXISTS (SELECT 1 FROM ${x.atom.name} WHERE ${subqueryWhereStr})")
+            case _ => List() // TODO
+          }
+        }
       }
-      case (x: Cond, i) => Some(compileCond(x, z))
     }
+
+    val whereClause = z.bodies(0).zipWithIndex flatMap { case (x,i) => generateWhereClause(x,i) }
 
     // check if an expression contains an aggregation function
     def containsAggregation(expr: Expr) : Boolean = {
@@ -401,17 +414,19 @@ class QuerySchema(q : ConjunctiveQuery) {
   // index is the index of the subgoal/atom this variable is found in the body.
   // variable is the complete Variable type for the found variable.
   def generateCanonicalVar()  = {
-    q.bodies(0).zipWithIndex.foreach {
-      case (Atom(relName,terms),index) =>  {
-        terms.zipWithIndex.foreach { case (expr, i) =>
-          expr match {
-            case VarExpr(v) =>
-              if (! (query_schema contains v) )
-                query_schema += { v -> (index, Variable(v,relName,i) ) }
-            case _ =>
-          }
+    def generateCanonicalVarFromAtom(a: Atom, index: Int) {
+      a.terms.zipWithIndex.foreach { case (expr, i) =>
+        expr match {
+          case VarExpr(v) =>
+            if (! (query_schema contains v) )
+              query_schema += { v -> (index, Variable(v,a.name,i) ) }
+          case _ =>
         }
       }
+    }
+    q.bodies(0).zipWithIndex.foreach {
+      case (a: Atom, index) => generateCanonicalVarFromAtom(a, index)
+      case (a: ModifierAtom, index) => generateCanonicalVarFromAtom(a.atom, index)
       case _ =>
     }
   }

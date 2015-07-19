@@ -34,13 +34,18 @@ object DeepDiveLogDeltaDeriver{
     var incCqBodies = new ListBuffer[List[Body]]()
     // New incremental bodies
     cq.bodies foreach { bodies =>
+      // We don't support deriving delta rules for modifiers
+      bodies foreach {
+        case x: ModifierAtom => throw new RuntimeException("Deriving delta rules for modifier atom is not supported!")
+        case _ =>
+      }
       // Delta body
-      val incDeltaBody = bodies map {
+      val incDeltaBody = bodies collect {
         case a: Atom => a.copy(name = deltaPrefix + a.name)
         case a: Cond => a
       }
       // New body
-      val incNewBody = bodies map {
+      val incNewBody = bodies collect {
         case a: Atom => a.copy(name = newPrefix + a.name)
         case a: Cond => a
       }
