@@ -223,6 +223,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
           val resovledLhs = compileExprInner(lhs)
           s"(${resovledLhs} :: ${rhs})"
         }
+        case Placeholder() => ""
       }
     }
     compileExprInner(e) + generateAlias(e)
@@ -272,6 +273,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
                   Some(s"R${ bodyIndex }.${ real_attr_name1 } = R${ canonical_body_index }.${ real_attr_name2 } ")
                 } else { None }
               }
+              case Placeholder() => None
               // other expressions indicate a filter condition on the column
               case _ => {
                 val resolved = compileExpr(expr, z)
@@ -336,6 +338,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
         }
         case BinaryOpExpr(lhs, op, rhs) => containsAggregation(lhs) || containsAggregation(rhs)
         case TypecastExpr(lhs, rhs) => containsAggregation(lhs)
+        case Placeholder() => false
       }
     }
 

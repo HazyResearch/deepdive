@@ -64,6 +64,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
       }
       case BinaryOpExpr(lhs, op, rhs) => s"(${printExpr(lhs)} ${op} ${printExpr(rhs)})"
       case TypecastExpr(lhs, rhs) => s"(${printExpr(lhs)} :: ${rhs})"
+      case Placeholder() => "_"
     }
   }
 

@@ -18,6 +18,7 @@ case class ConstExpr(value: String) extends Expr
 case class FuncExpr(function: String, args: List[Expr], isAggregation: Boolean) extends Expr
 case class BinaryOpExpr(lhs: Expr, op: String, rhs: Expr) extends Expr
 case class TypecastExpr(lhs: Expr, rhs: String) extends Expr
+case class Placeholder extends Expr
 
 sealed trait Body
 case class Atom(name : String, terms : List[Expr]) extends Body
@@ -136,7 +137,8 @@ class DeepDiveLogParser extends JavaTokenParsers {
 
   // expression
   def expr : Parser[Expr] =
-    ( lexpr ~ operator ~ expr ^^ { case (lhs ~ op ~ rhs) => BinaryOpExpr(lhs, op, rhs) }
+    ( "_" ^^ { case _ => Placeholder() }
+    | lexpr ~ operator ~ expr ^^ { case (lhs ~ op ~ rhs) => BinaryOpExpr(lhs, op, rhs) }
     | lexpr ~ typeOperator ~ columnType ^^ { case (lhs ~ _ ~ rhs) => TypecastExpr(lhs, rhs) }
     | lexpr
     )

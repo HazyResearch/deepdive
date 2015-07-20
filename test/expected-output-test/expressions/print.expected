@@ -85,3 +85,7 @@ U(x)  :-
     OUTER[b(x, y, z, w)],
     OUTER[c(a, x, b)].
 
+V(x)  :-
+    c(_, x, _),
+    a(x).
+
