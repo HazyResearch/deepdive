@@ -20,7 +20,7 @@ To analyze the results of your DeepDive application runs over time, you can trac
 
 ## Report Templates
 
-Report templates, accessible from the "Configure Templates" page, define the data you want to display in a report, as well as the appearance of the report. A number of general report templates come with Dashboard, but you may also [create your own](#custom-report-templates).
+Report templates, accessible from the "Configure Templates" page, define the data displayed in a report, as well as the appearance of the report. A number of general report templates come with Dashboard, but you may also [create your own](#writing-custom-templates).
 
 ### Template Types
 
