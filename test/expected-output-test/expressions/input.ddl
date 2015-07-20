@@ -40,3 +40,9 @@ M(x) :- b(x,y,z,w), EXIST[c(a,x,b)].
 N(x) :- b(x,y,z,w), EXIST[c(a,x,b), a > "a"].
 
 O(x) :- b(x,y,z,w), EXIST[c(a,x,b), a(x)].
+
+S(x) :- b(x,y,z,w), OUTER[c(a,x,b)].
+
+T(x) :- b(x,y,z,w), OUTER[c(a,x,b), a > y], a > y.
+
+U(x) :- OUTER[b(x,y,z,w)], OUTER[c(a,x,b)].

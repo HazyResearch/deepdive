@@ -257,8 +257,8 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
     // and stick it in a map.
     val qs = new QuerySchema(z)
 
-    def generateWhereClause(bodies: List[Body], indexPrefix: String) : List[String] = {
-      bodies.zipWithIndex.flatMap {
+    def generateWhereClause(bodies: List[Body], indexPrefix: String) : String = {
+      val conditions = bodies.zipWithIndex.flatMap {
         case (Atom(relName, terms), index) => {
           val bodyIndex = s"${indexPrefix}${index}"
           terms.zipWithIndex flatMap { case (expr, atomIndex) =>
@@ -281,25 +281,50 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
             }
           }
         }
-        case (x: Cond, _) => List(compileCond(x, z))
+        case (x: Cond, _) => Some(compileCond(x, z))
         case (x: ModifierAtom, index) => {
           val newIndexPrefix = s"${indexPrefix}${index}_"
-          val subqueryWhereStr = generateWhereClause(x.bodies, newIndexPrefix).mkString(" AND ")
-          val subqueryFromStr  = getnerateFromClauseStr(x.bodies, newIndexPrefix)
+          val subqueryWhereStr = generateWhereClause(x.bodies, newIndexPrefix)
+          val subqueryFromStr  = generateFromClause(x.bodies, newIndexPrefix)
           x.modifier match {
-            case ExistModifier(negated) => List(s"${if (negated) "NOT " else ""}EXISTS (SELECT 1 FROM ${subqueryFromStr} WHERE ${subqueryWhereStr})")
-            case _ => List()
+            case ExistModifier(negated) => Some(s"${if (negated) "NOT " else ""}EXISTS (SELECT 1 FROM ${subqueryFromStr} WHERE ${subqueryWhereStr})")
+            case _ => None
           }
         }
       }
+      conditions.mkString(" AND ")
     }
 
-    def getnerateFromClauseStr(bodies: List[Body], indexPrefix: String) = (bodies.zipWithIndex flatMap {
-      case(x:Atom,i) => Some(s"${x.name} R${indexPrefix}${i}")
-      case _ => None
-    }).mkString(", ")
+    def generateFromClause(bodies: List[Body], indexPrefix: String) : String = {
+      val atoms = bodies.zipWithIndex flatMap {
+        case (x:Atom,i) => Some(s"${x.name} R${indexPrefix}${i}")
+        case _ => None
+      }
+      val outers = bodies.zipWithIndex flatMap {
+        case (x:ModifierAtom,i) => {
+          val newIndexPrefix = s"${indexPrefix}${i}_"
+          x.modifier match {
+            case OuterModifier() => {
+              val from = generateFromClause(x.bodies, newIndexPrefix)
+              val joinCond = generateWhereClause(x.bodies, newIndexPrefix)
+              Some(s"${from} ON ${joinCond}")
+            }
+            case _ => None
+          }
+        }
+        case _ => None
+      }
+      // full outer join
+      if (atoms isEmpty) {
+        outers.mkString(" FULL OUTER JOIN ")
+      } else {
+        (atoms.mkString(", ") +: outers).mkString(" LEFT OUTER JOIN ")
+      }
+    }
 
     val whereClause = generateWhereClause(z.bodies(0), "")
+    val whereClauseStr = if (whereClause.isEmpty) "" else "WHERE " + whereClause
+    val fromClauseStr = generateFromClause(z.bodies(0), "")
 
     // check if an expression contains an aggregation function
     def containsAggregation(expr: Expr) : Boolean = {
@@ -327,20 +352,13 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
       s"\n        GROUP BY ${groupbyTerms.mkString(", ")}"
     }
 
-    val whereClauseStr = if (whereClause.isEmpty) "" else whereClause.mkString("WHERE ", " AND ", "")
-
+    // limit clause
     val limitStr = z.limit match {
       case Some(s) => s" LIMIT ${s}"
       case None => ""
     }
 
-    val fromBodyNames = (z.bodies(0).zipWithIndex flatMap {
-      case(x:Atom,i) => Some(s"${x.name} R${i}")
-      case _ => None
-    }).mkString(", ")
-    val fromClause = fromBodyNames
-
-    s"""FROM ${ fromClause }
+    s"""FROM ${ fromClauseStr }
         ${ whereClauseStr }${groupbyStr}${limitStr}"""
   }
 
