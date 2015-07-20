@@ -28,9 +28,17 @@ sealed trait AtomModifier
 case class ExistModifier(negated: Boolean) extends AtomModifier
 case class OuterModifier extends AtomModifier
 
-case class Attribute(name : String, terms : List[String], types : List[String])
+case class Attribute(name : String, terms : List[String], types : List[String], annotations : List[List[Annotation]])
 case class ConjunctiveQuery(head: Atom, bodies: List[List[Body]], isDistinct: Boolean, limit: Option[Int])
-case class Column(name : String, t : String)
+case class Column(name : String // name of the column
+                 , t : String // type of the column
+                 , annotation: List[Annotation] = List.empty // optional annotation
+                 )
+case class BodyWithCondition(body: List[Atom], condition: Option[Cond])
+
+case class Annotation( name : String // name of the annotation
+                     , args : Map[String, Any] = Map.empty // optional, named arguments
+                     )
 
 // condition
 sealed trait Cond extends Body
@@ -72,7 +80,11 @@ case class RowWiseLineHandler(style: String, command: String) extends FunctionIm
 
 // Statements that will be parsed and compiled
 trait Statement
-case class SchemaDeclaration( a : Attribute , isQuery : Boolean, variableType : Option[VariableType]) extends Statement // atom and whether this is a query relation.
+case class SchemaDeclaration( a : Attribute
+                            , isQuery : Boolean
+                            , variableType : Option[VariableType]
+                            , annotation : List[Annotation] = List.empty // optional annotation
+                            ) extends Statement // atom and whether this is a query relation.
 case class FunctionDeclaration( functionName: String, inputType: RelationType, outputType: RelationType, implementations: List[FunctionImplementationDeclaration], mode: String = null) extends Statement
 case class ExtractionRule(q : ConjunctiveQuery, supervision: String = null) extends Statement // Extraction rule
 case class FunctionCallRule(input : String, output : String, function : String) extends Statement // Extraction rule
@@ -84,6 +96,8 @@ class DeepDiveLogParser extends JavaTokenParsers {
   // JavaTokenParsers provides several useful number parsers:
   //   wholeNumber, decimalNumber, floatingPointNumber
   def floatingPointNumberAsDouble = floatingPointNumber ^^ { _.toDouble }
+  def wholeNumberAsInt = wholeNumber ^^ { _.toInt }
+  def wholeNumberAsLong = wholeNumber ^^ { _.toLong }
   def stringLiteralAsString = stringLiteral ^^ {
     s => StringEscapeUtils.unescapeJava(
       s.stripPrefix("\"").stripSuffix("\""))
@@ -108,10 +122,26 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def semanticType = ident
   def functionModeType = ident
   def inferenceModeType = ident
+  def annotationName = ident
+  def annotationArgumentName = ident
+
+  def annotation: Parser[Annotation] =
+    "@" ~ annotationName ~ opt("(" ~> repsep(annotationArgument, ",") <~ ")") ^^ {
+      case (_ ~ name ~ optArgs) =>
+        Annotation(name, optArgs getOrElse { List.empty } toMap)
+    }
+
+  def annotationArgument: Parser[(String, Any)] =
+    annotationArgumentName ~ "=" ~ annotationArgumentValue ^^ {
+      case name ~ _ ~ value => name -> value
+    }
+  def annotationArgumentValue: Parser[Any] =
+    stringLiteralAsString | floatingPointNumberAsDouble | wholeNumberAsInt
 
   def columnDeclaration: Parser[Column] =
+    rep(annotation) ~
     columnName ~ columnType ^^ {
-      case(name ~ ty) => Column(name, ty)
+      case(anno ~ name ~ ty) => Column(name, ty, anno)
     }
 
   def CategoricalParser = "Categorical" ~> "(" ~> """\d+""".r <~ ")" ^^ { n => MultinomialType(n.toInt) }
@@ -119,15 +149,17 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def dataType = CategoricalParser | BooleanParser
 
   def schemaDeclaration: Parser[SchemaDeclaration] =
+    rep(annotation) ~
     relationName ~ opt("?") ~ "(" ~ rep1sep(columnDeclaration, ",") ~ ")" ~ opt(dataType) ^^ {
-      case (r ~ isQuery ~ "(" ~ attrs ~ ")" ~ vType) => {
+      case (anno ~ r ~ isQuery ~ "(" ~ attrs ~ ")" ~ vType) => {
         val vars = attrs map (_.name)
         var types = attrs map (_.t)
+        val annos = attrs map (_.annotation)
         val variableType = vType match {
           case None => if (isQuery != None) Some(BooleanType) else None
           case Some(s) => Some(s)
         }
-        SchemaDeclaration(Attribute(r, vars, types), (isQuery != None), variableType)
+        SchemaDeclaration(Attribute(r, vars, types, annos), (isQuery != None), variableType, anno)
       }
     }
 
@@ -176,7 +208,9 @@ class DeepDiveLogParser extends JavaTokenParsers {
     | bcond
     )
   def bcond : Parser[Cond] =
-    ( expr ~ compareOperator ~ expr ^^ { case (lhs ~ op ~ rhs) => ComparisonCond(lhs, op, rhs) }
+    ( expr ~ compareOperator ~ expr ^^ { case (lhs ~ op ~ rhs) =>
+        ComparisonCond(lhs, op, rhs)
+      }
     | "[" ~> cond <~ "]"
     )
 

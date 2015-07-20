@@ -80,9 +80,9 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
   def checkVariableRelationSchema(stmt: Statement) {
     val reservedSet = Set("id", "label")
     stmt match {
-      case SchemaDeclaration(Attribute(r, terms, types), isQuery, vType) => {
-        if (isQuery) {
-          terms.foreach { case name =>
+      case decl: SchemaDeclaration => {
+        if (decl.isQuery) {
+          decl.a.terms.foreach { case name =>
             if (reservedSet contains name)
               error(stmt, s"""variable relation contains reserved column "${name}" """)
           }
