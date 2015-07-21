@@ -14,14 +14,27 @@ case class Variable(varName : String, relName : String, index : Int )
 
 sealed trait Expr
 case class VarExpr(name: String) extends Expr
-case class ConstExpr(value: String) extends Expr
+sealed trait ConstExpr extends Expr
+case class StringConst(value: String) extends ConstExpr
+case class IntConst(value: Int) extends ConstExpr
+case class DoubleConst(value: Double) extends ConstExpr
+case class BooleanConst(value: Boolean) extends ConstExpr
+case class NullConst extends ConstExpr
 case class FuncExpr(function: String, args: List[Expr], isAggregation: Boolean) extends Expr
 case class BinaryOpExpr(lhs: Expr, op: String, rhs: Expr) extends Expr
 case class TypecastExpr(lhs: Expr, rhs: String) extends Expr
 
-case class Atom(name : String, terms : List[Expr])
+sealed trait Body
+case class Atom(name : String, terms : List[Expr]) extends Body
+case class QuantifiedBody(modifier: BodyModifier, bodies: List[Body]) extends Body
+
+sealed trait BodyModifier
+case class ExistModifier(negated: Boolean) extends BodyModifier
+case class OuterModifier extends BodyModifier
+case class AllModifier extends BodyModifier
+
 case class Attribute(name : String, terms : List[String], types : List[String], annotations : List[List[Annotation]])
-case class ConjunctiveQuery(head: Atom, bodies: List[List[Atom]], conditions: List[Option[Cond]], isDistinct: Boolean)
+case class ConjunctiveQuery(head: Atom, bodies: List[List[Body]], isDistinct: Boolean, limit: Option[Int])
 case class Column(name : String // name of the column
                  , t : String // type of the column
                  , annotation: List[Annotation] = List.empty // optional annotation
@@ -33,7 +46,7 @@ case class Annotation( name : String // name of the annotation
                      )
 
 // condition
-sealed trait Cond
+sealed trait Cond extends Body
 case class ComparisonCond(lhs: Expr, op: String, rhs: Expr) extends Cond
 case class NegationCond(cond: Cond) extends Cond
 case class CompoundCond(lhs: Cond, op: LogicOperator.LogicOperator, rhs: Cond) extends Cond
@@ -55,21 +68,14 @@ case class MultinomialType(numCategories: Int) extends VariableType {
   def cardinality = numCategories
 }
 
-sealed trait FactorWeight {
-  def variables : List[String]
-}
-
-case class KnownFactorWeight(value: Double) extends FactorWeight {
-  def variables = Nil
-}
-case class UnknownFactorWeight(variables: List[String]) extends FactorWeight
+case class FactorWeight(variables: List[Expr])
 
 trait RelationType
 case class RelationTypeDeclaration(names: List[String], types: List[String]) extends RelationType
 case class RelationTypeAlias(likeRelationName: String) extends RelationType
 
 trait FunctionImplementationDeclaration
-case class RowWiseLineHandler(format: String, command: String) extends FunctionImplementationDeclaration
+case class RowWiseLineHandler(style: String, command: String) extends FunctionImplementationDeclaration
 
 // Statements that will be parsed and compiled
 trait Statement
@@ -81,16 +87,15 @@ case class SchemaDeclaration( a : Attribute
 case class FunctionDeclaration( functionName: String, inputType: RelationType, outputType: RelationType, implementations: List[FunctionImplementationDeclaration], mode: String = null) extends Statement
 case class ExtractionRule(q : ConjunctiveQuery, supervision: String = null) extends Statement // Extraction rule
 case class FunctionCallRule(input : String, output : String, function : String) extends Statement // Extraction rule
-case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, semantics : String = "Imply", mode: String = null) extends Statement // Weighted rule
+case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, function : Option[String], mode: String = null) extends Statement // Weighted rule
 
 // Parser
 class DeepDiveLogParser extends JavaTokenParsers {
 
   // JavaTokenParsers provides several useful number parsers:
   //   wholeNumber, decimalNumber, floatingPointNumber
-  def floatingPointNumberAsDouble = floatingPointNumber ^^ { _.toDouble }
-  def wholeNumberAsInt = wholeNumber ^^ { _.toInt }
-  def wholeNumberAsLong = wholeNumber ^^ { _.toLong }
+  def double = opt("-") ~ """\d+\.\d+""".r ^^ { case (neg ~ num) => (neg.getOrElse("") + num).toDouble }
+  def integer = opt("-") ~ wholeNumber ^^ { case (neg ~ num) => (neg.getOrElse("") + num).toInt }
   def stringLiteralAsString = stringLiteral ^^ {
     s => StringEscapeUtils.unescapeJava(
       s.stripPrefix("\"").stripSuffix("\""))
@@ -98,7 +103,6 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def stringLiteralAsSqlString = stringLiteral ^^ { s =>
     s"""'${s.stripPrefix("\"").stripSuffix("\"")}'"""
   }
-  def constant = stringLiteralAsSqlString | wholeNumber | "TRUE" | "FALSE" | "NULL"
 
   // Single-line comments beginning with # or // are supported by treating them as whiteSpace
   // C/Java/Scala style multi-line comments cannot be easily supported with RegexParsers unless we introduce a dedicated lexer.
@@ -129,7 +133,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
       case name ~ _ ~ value => name -> value
     }
   def annotationArgumentValue: Parser[Any] =
-    stringLiteralAsString | floatingPointNumberAsDouble | wholeNumberAsInt
+    stringLiteralAsString | double | integer
 
   def columnDeclaration: Parser[Column] =
     rep(annotation) ~
@@ -158,9 +162,9 @@ class DeepDiveLogParser extends JavaTokenParsers {
 
   def operator = "||" | "+" | "-" | "*" | "/" | "&"
   def typeOperator = "::"
-  val aggregationFunctions = Set("MAX", "SUM", "MIN", "ARRAY_ACCUM", "ARRAY_AGG")
+  val aggregationFunctions = Set("MAX", "SUM", "MIN", "ARRAY_ACCUM", "ARRAY_AGG", "COUNT")
 
-  // expressions
+  // expression
   def expr : Parser[Expr] =
     ( lexpr ~ operator ~ expr ^^ { case (lhs ~ op ~ rhs) => BinaryOpExpr(lhs, op, rhs) }
     | lexpr ~ typeOperator ~ columnType ^^ { case (lhs ~ _ ~ rhs) => TypecastExpr(lhs, rhs) }
@@ -171,18 +175,22 @@ class DeepDiveLogParser extends JavaTokenParsers {
     ( functionName ~ "(" ~ rep1sep(expr, ",") ~ ")" ^^ {
         case (name ~ _ ~ args ~ _) => FuncExpr(name, args, (aggregationFunctions contains name))
       }
-    | constant ^^ { ConstExpr(_) }
+    | stringLiteralAsString ^^ { StringConst(_) }
+    | double ^^ { DoubleConst(_) }
+    | integer ^^ { IntConst(_) }
+    | ("TRUE" | "FALSE") ^^ { x => BooleanConst(x.toBoolean) }
+    | "NULL" ^^ { _ => new NullConst }
     | variableName ^^ { VarExpr(_) }
     | "(" ~> expr <~ ")"
     )
 
-  // TODO support aggregate function syntax somehow
   def cqHead = relationName ~ "(" ~ rep1sep(expr, ",") ~ ")" ^^ {
     case (r ~ "(" ~ expressions ~ ")") => Atom(r, expressions)
   }
 
   // conditional expressions
   def compareOperator = "LIKE" | ">" | "<" | ">=" | "<=" | "!=" | "=" | "IS" | "IS NOT"
+
   def cond : Parser[Cond] =
     ( acond ~ (";") ~ cond ^^ { case (lhs ~ op ~ rhs) =>
         CompoundCond(lhs, LogicOperator.OR, rhs)
@@ -205,20 +213,26 @@ class DeepDiveLogParser extends JavaTokenParsers {
     | "[" ~> cond <~ "]"
     )
 
-  def cqBodyAtom: Parser[Atom] =
-    relationName ~ "(" ~ repsep(expr, ",") ~ ")" ^^ {
-      case (r ~ "(" ~ patterns ~ ")") => Atom(r, patterns)
+  def atom = relationName ~ "(" ~ repsep(expr, ",") ~ ")" ^^ {
+    case (r ~ "(" ~ patterns ~ ")") => Atom(r, patterns)
+  }
+  def modifierAtom = (opt("!") ~ "EXISTS" | "OPTIONAL" | "ALL") ~ "[" ~ rep1sep(cqBody, ",") ~ "]" ^^ { case (m ~ _ ~ b ~ _) =>
+    val modifier = m match {
+      case (not ~ "EXISTS") => new ExistModifier(not != None)
+      case "OPTIONAL" => new OuterModifier
+      case "ALL" => new AllModifier
     }
-  def cqBody: Parser[List[Atom]] = rep1sep(cqBodyAtom, ",")
-
-  def cqBodyWithCondition = cqBody ~ ("," ~> cond).? ^^ {
-    case (b ~ c) => BodyWithCondition(b, c)
+    QuantifiedBody(modifier, b)
   }
 
+  def cqBody: Parser[Body] = cond | modifierAtom | atom
+
+  def cqConjunctiveBody: Parser[List[Body]] = rep1sep(cqBody, ",")
+
   def conjunctiveQuery : Parser[ConjunctiveQuery] =
-    cqHead ~ opt("*") ~ ":-" ~ rep1sep(cqBodyWithCondition, ";") ^^ {
-      case (headatom ~ isDistinct ~ ":-" ~ disjunctiveBodies) =>
-        ConjunctiveQuery(headatom, disjunctiveBodies.map(_.body), disjunctiveBodies.map(_.condition), isDistinct != None)
+    cqHead ~ opt("*") ~ opt("|" ~> decimalNumber) ~ ":-" ~ rep1sep(cqConjunctiveBody, ";") ^^ {
+      case (headatom ~ isDistinct ~ limit ~ ":-" ~ disjunctiveBodies) =>
+        ConjunctiveQuery(headatom, disjunctiveBodies, isDistinct != None, limit map (_.toInt))
   }
 
   def relationType: Parser[RelationType] =
@@ -232,9 +246,13 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def inferenceMode = "mode" ~> "=" ~> inferenceModeType
 
   def functionImplementation : Parser[FunctionImplementationDeclaration] =
-    "implementation" ~ stringLiteralAsString ~ "handles" ~ ("tsv" | "json") ~ "lines" ^^ {
-      case (_ ~ command ~ _ ~ format ~ _) => RowWiseLineHandler(command=command, format=format)
-    }
+    ( "implementation" ~ stringLiteralAsString ~ "handles" ~ ("tsv" | "json") ~ "lines" ^^ {
+        case (_ ~ command ~ _ ~ style ~ _) => RowWiseLineHandler(command=command, style=style)
+      }
+    | "implementation" ~ stringLiteralAsString ~ "runs" ~ "as" ~ "plpy" ^^ {
+        case (_ ~ command ~ _ ~ _ ~ style) => RowWiseLineHandler(command=command, style=style)
+      }
+    )
 
   def functionDeclaration : Parser[FunctionDeclaration] =
     ( "function" ~ functionName ~ "over" ~ relationType
@@ -261,19 +279,18 @@ class DeepDiveLogParser extends JavaTokenParsers {
         FunctionCallRule(in, out, fn)
     }
 
-  def constantWeight = floatingPointNumberAsDouble ^^ {   KnownFactorWeight(_) }
-  def unknownWeight  = repsep(variableName, ",")   ^^ { UnknownFactorWeight(_) }
-  def factorWeight = "weight" ~> "=" ~> (constantWeight | unknownWeight)
+  def factorWeight = "weight" ~> "=" ~> rep1sep(expr, ",") ^^ { FactorWeight(_) }
 
   def supervision = "label" ~> "=" ~> variableName
 
-  def semantics = "semantics" ~> "=" ~> semanticType
+  def factorFunctionName = "Imply" | "And" | "Equal" | "Or" | "Multinomial" | "Linear" | "Ratio"
+  def factorFunction = "function" ~> "=" ~> factorFunctionName
 
   def inferenceRule : Parser[InferenceRule] =
-    ( conjunctiveQuery ~ factorWeight ~ opt(semantics) ~ opt(inferenceMode)
+    ( conjunctiveQuery ~ factorWeight ~ opt(factorFunction) ~ opt(inferenceMode)
     ) ^^ {
-      case (q ~ weight ~ semantics ~ mode) =>
-        InferenceRule(q, weight, semantics.getOrElse("Imply"), mode.getOrElse(null))
+      case (q ~ weight ~ function ~ mode) =>
+        InferenceRule(q, weight, function, mode.getOrElse(null))
     }
 
   // rules or schema elements in arbitrary order

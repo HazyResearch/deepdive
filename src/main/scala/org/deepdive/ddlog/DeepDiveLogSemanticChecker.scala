@@ -5,7 +5,7 @@ import scala.collection.immutable.HashSet
 
 // semantic checker for ddlog
 object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
-  
+
   // initialize the checker
   def init(program: DeepDiveLog.Program) {
     program foreach {
@@ -34,28 +34,32 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
     checkFunctionDefined(stmt)
     checkVariableRelationSchema(stmt)
     checkNumberOfColumns(stmt)
+    checkOptionalModifier(stmt)
+    checkWeight(stmt)
+  }
+
+  // iterate over all atoms contained in the body list and apply the checker
+  def checkBodyAtoms(checker: Atom => Unit): List[Body] => Unit = bodies => {
+    bodies foreach {
+      case a: Atom => checker(a)
+      case a: QuantifiedBody => checkBodyAtoms(checker)(a.bodies)
+      case _ =>
+    }
   }
 
   // check if relations in the body are defined
   def checkRelationDefined(stmt: Statement) {
     val stmtStr = DeepDiveLogPrettyPrinter.print(stmt)
-    def checkRelation(name: String) {
-      if (!(heads contains name))
-        error(stmt, s"""relation "${name}" is not defined""")
+    def checkRelation(a: Atom) {
+      if (!(heads contains a.name))
+        error(stmt, s"""relation "${a.name}" is not defined""")
     }
+    def check = checkBodyAtoms(checkRelation)
     stmt match {
-      case s: ExtractionRule => {
-        s.q.bodies foreach { x => 
-          x foreach { a => checkRelation(a.name) }
-        }
-      }
-      case s: InferenceRule => {
-        s.q.bodies foreach { x => 
-          x foreach { a => checkRelation(a.name) }
-        }
-      }
-      case s: FunctionCallRule => checkRelation(s.input)
-      case _ => 
+      case s: ExtractionRule => s.q.bodies foreach check
+      case s: InferenceRule => s.q.bodies foreach check
+      case s: FunctionCallRule => checkRelation(Atom(s.input, Nil))
+      case _ =>
     }
   }
 
@@ -66,7 +70,7 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
         if (!(functionDeclaration.keySet contains s.function))
           error(stmt, s"""function "${s.function}" is not defined""")
       }
-      case _ => 
+      case _ =>
     }
   }
 
@@ -77,12 +81,12 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
       case decl: SchemaDeclaration => {
         if (decl.isQuery) {
           decl.a.terms.foreach { case name =>
-            if (reservedSet contains name) 
+            if (reservedSet contains name)
               error(stmt, s"""variable relation contains reserved column "${name}" """)
           }
         }
       }
-      case _ => 
+      case _ =>
     }
   }
 
@@ -95,16 +99,50 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
     }
     def checkCq(cq: ConjunctiveQuery) {
       checkAtom(cq.head)
-      cq.bodies foreach { x => x foreach checkAtom }
+      cq.bodies foreach checkBodyAtoms(checkAtom)
     }
     stmt match {
       case s: ExtractionRule => checkCq(s.q)
       case s: InferenceRule  => checkCq(s.q)
-      case _ => 
+      case _ =>
     }
   }
 
-  // throw exception 
+  // check if outer join body contains one atom
+  def checkOptionalModifier(stmt: Statement) {
+    def checkOuterJoinBodies(bodies: List[Body]) {
+      bodies.foreach {
+        case b: QuantifiedBody => {
+          b.modifier match {
+            case OuterModifier() =>
+              if ((b.bodies collect { case x: Atom => 1 }).size != 1) {
+                error(stmt, s"One and only one atom should be supplied in OPTIONAL modifier")
+              }
+            case _ =>
+          }
+        }
+        case _ =>
+      }
+    }
+    stmt match {
+      case s: ExtractionRule => s.q.bodies foreach checkOuterJoinBodies
+      case s: InferenceRule => s.q.bodies foreach checkOuterJoinBodies
+      case _ =>
+    }
+  }
+
+  // check if the weights makes sense
+  def checkWeight(stmt: Statement) {
+    stmt match {
+      case s: InferenceRule => {
+        if ((s.weights.variables collect { case x: ConstExpr => x }).size >= 2)
+          error(stmt, s"Weight variables can contain at most one constant")
+      }
+      case _ =>
+    }
+  }
+
+  // throw exception
   def error(stmt: Statement, message: String) {
     val stmtStr = DeepDiveLogPrettyPrinter.print(stmt)
     throw new RuntimeException(message + s"\n${stmtStr}")
@@ -117,7 +155,7 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
   }
 
   // schema declaration
-  var heads  : Set[String]                       = new HashSet[String]() 
+  var heads  : Set[String]                       = new HashSet[String]()
   // schema
   var schemaDeclaration : Map[String, SchemaDeclaration] = new HashMap[String, SchemaDeclaration]()
   // function declaration

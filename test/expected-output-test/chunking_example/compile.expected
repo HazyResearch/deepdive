@@ -72,9 +72,9 @@
       deepdive.extraction.extractors.extraction_rule_6 {
         sql: """ DROP VIEW IF EXISTS ext_features_input;
         CREATE VIEW ext_features_input AS 
-            SELECT  R0.word_id AS "words.R0.word_id" , R0.word AS "words.R0.word" , R0.pos AS "words.R0.pos" , R1.word AS "words.R1.word" , R1.pos AS "words.R1.pos" 
+            SELECT R0.word_id AS "words.R0.word_id" , R0.word AS "words.R0.word" , R0.pos AS "words.R0.pos" , R1.word AS "words.R1.word" , R1.pos AS "words.R1.pos" 
             FROM words R0, words R1
-        WHERE R1.sent_id = R0.sent_id  
+        WHERE R1.sent_id = R0.sent_id 
         """
         style: "sql_extractor"
           dependencies: [ "extraction_rule_5" ]
@@ -83,7 +83,7 @@
 
       deepdive.extraction.extractors.extraction_rule_9 {
         sql: """ 
-        INSERT INTO tag SELECT DISTINCT R0.sent_id, 0 as id, R0.true_tag AS label
+        INSERT INTO tag SELECT DISTINCT R0.sent_id, 0 AS id, R0.true_tag AS label
           FROM words R0
         
           
@@ -115,11 +115,11 @@
 
         deepdive.inference.factors.tag_0 {
           input_query: """
-          SELECT R0.id AS "tag.R0.id" , R1.feature AS "word_features.R1.feature" 
+          SELECT R0.id AS "tag.R0.id" , R1.feature AS "dd_weight_column_0" 
           FROM tag R0, word_features R1
-        WHERE R1.word_id = R0.word_id  """
+        WHERE R1.word_id = R0.word_id """
           function: "Multinomial(tag.R0.label)"
-          weight: "?(word_features.R1.feature)"
+          weight: "?(dd_weight_column_0)"
         }
       
 deepdive.pipeline.run: ${PIPELINE}

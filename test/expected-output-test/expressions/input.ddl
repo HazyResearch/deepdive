@@ -31,3 +31,24 @@ I(x) :- b(x,y,z,w), [x + w = 100; [x > 50, w < 10]].
 J(x) :- b(x,y,z,w), [x + w = 100; !x > 50].
 
 K(x) :- b(x,y,z,w), [x + w = 100, [!x > 50; x = 40]].
+
+# limit
+L(x) * | 100 :- b(x, y, z, w).
+
+# modifiers
+M(x) :- b(x,y,z,w), EXISTS[c(a,x,b)].
+
+N(x) :- b(x,y,z,w), EXISTS[c(a,x,b), a > "a"].
+
+O(x) :- b(x,y,z,w), EXISTS[c(a,x,b), a(x)].
+
+S(x) :- b(x,y,z,w), OPTIONAL[c(a,x,b)].
+
+T(x) :- b(x,y,z,w), OPTIONAL[c(a,x,b), a > y], a > y.
+
+U(x) :- OPTIONAL[b(x,y,z,w)], OPTIONAL[c(a,x,b)].
+
+W(x) :- a(x), ALL[c(_,y,_), y < x].
+
+# placeholder
+V(x) :- c(_,x,_), a(x).

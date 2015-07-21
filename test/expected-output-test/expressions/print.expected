@@ -12,7 +12,8 @@ c(s text,
 Q(( "test"  :: TEXT), 123, id, unnest(y)) * :-
     a(id),
     b(id, x, y, z),
-    c((x || y), 10,  "foo" ), [z > 100; [[!z < 20], z < 50]].
+    c((x || y), 10,  "foo" ),
+    [z > 100; [[!z < 20], z < 50]].
 
 P(y, z, MAX(w))  :-
     a(x),
@@ -37,17 +38,58 @@ F(((x :: INT) + (w :: INT)))  :-
     b(x, y, z, w).
 
 G(x)  :-
-    b(x, y, z, w), (x + w) = 100.
+    b(x, y, z, w),
+    (x + w) = 100.
 
 H(x)  :-
-    b(x, y, z, w), [(x + w) = 100, x > 50].
+    b(x, y, z, w),
+    [(x + w) = 100, x > 50].
 
 I(x)  :-
-    b(x, y, z, w), [(x + w) = 100; [x > 50, w < 10]].
+    b(x, y, z, w),
+    [(x + w) = 100; [x > 50, w < 10]].
 
 J(x)  :-
-    b(x, y, z, w), [(x + w) = 100; [!x > 50]].
+    b(x, y, z, w),
+    [(x + w) = 100; [!x > 50]].
 
 K(x)  :-
-    b(x, y, z, w), [(x + w) = 100, [[!x > 50]; x = 40]].
+    b(x, y, z, w),
+    [(x + w) = 100, [[!x > 50]; x = 40]].
+
+L(x) * | 100 :-
+    b(x, y, z, w).
+
+M(x)  :-
+    b(x, y, z, w),
+    EXISTS[c(a, x, b)].
+
+N(x)  :-
+    b(x, y, z, w),
+    EXISTS[c(a, x, b), a >  "a" ].
+
+O(x)  :-
+    b(x, y, z, w),
+    EXISTS[c(a, x, b), a(x)].
+
+S(x)  :-
+    b(x, y, z, w),
+    OPTIONAL[c(a, x, b)].
+
+T(x)  :-
+    b(x, y, z, w),
+    OPTIONAL[c(a, x, b), a > y],
+    a > y.
+
+U(x)  :-
+    OPTIONAL[b(x, y, z, w)],
+    OPTIONAL[c(a, x, b)].
+
+W(x)  :-
+    a(x),
+    ALL[c(_, y, _), y < x].
+
+V(x)  :-
+    c(_, x, _),
+    a(x).
 

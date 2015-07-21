@@ -51,9 +51,11 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
     val inputType = print(stmt.inputType)
     val outputType = print(stmt.outputType)
     val impls = stmt.implementations map {
-      case impl: RowWiseLineHandler =>
-        printLiteral(impl.command) +
-        s"\n        handles ${impl.format} lines"
+      case impl: RowWiseLineHandler => {
+        val styleStr = if (impl.style == "plpy") s"\n        runs as plpy"
+        else s"\n        handles ${impl.style} lines"
+        "\"" + StringEscapeUtils.escapeJava(impl.command) + "\"" + styleStr
+      }
     }
     val modeStr = if (stmt.mode == null) "" else s" mode = ${stmt.mode}"
     s"""function ${stmt.functionName}
@@ -69,60 +71,71 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   }
 
   // print an expression
-  def printExpr(e: Expr) : String = {
+  def print(e: Expr) : String = {
     e match {
       case VarExpr(name) => name
-      case ConstExpr(value) => {
-        // TODO use distinct class for different types
-        if (value.startsWith("'")) s""" "${value.stripPrefix("'").stripSuffix("'")}" """
-        else value
-      }
+      case NullConst() => "NULL"
+      case IntConst(value) => value.toString
+      case DoubleConst(value) => value.toString
+      case BooleanConst(value) => value.toString
+      case StringConst(value) => "\"" + StringEscapeUtils.escapeJava(value) + "\""
       case FuncExpr(function, args, agg) => {
-        val resolvedArgs = args map (x => printExpr(x))
+        val resolvedArgs = args map (x => print(x))
         s"${function}(${resolvedArgs.mkString(", ")})"
       }
-      case BinaryOpExpr(lhs, op, rhs) => s"(${printExpr(lhs)} ${op} ${printExpr(rhs)})"
-      case TypecastExpr(lhs, rhs) => s"(${printExpr(lhs)} :: ${rhs})"
+      case BinaryOpExpr(lhs, op, rhs) => s"(${print(lhs)} ${op} ${print(rhs)})"
+      case TypecastExpr(lhs, rhs) => s"(${print(lhs)} :: ${rhs})"
     }
   }
 
+  def print(a: Atom) : String = {
+    val vars = a.terms map print
+    s"${a.name}(${vars.mkString(", ")})"
+  }
+
+  def print(a: QuantifiedBody) : String = {
+    val modifier = a.modifier match {
+      case ExistModifier(negated) => if(negated) "NOT " else "" + "EXISTS"
+      case OuterModifier() => "OPTIONAL"
+      case AllModifier() => "ALL"
+    }
+    val bodyStr = (a.bodies map print).mkString(", ")
+    s"${modifier}[${bodyStr}]"
+  }
+
   // print a condition
-  def printCond(cond: Cond) : String = {
+  def print(cond: Cond) : String = {
     cond match {
-      case ComparisonCond(lhs, op, rhs) => s"${printExpr(lhs)} ${op} ${printExpr(rhs)}"
-      case NegationCond(c) => s"[!${printCond(c)}]"
+      case ComparisonCond(lhs, op, rhs) => s"${print(lhs)} ${op} ${print(rhs)}"
+      case NegationCond(c) => s"[!${print(c)}]"
       case CompoundCond(lhs, op, rhs) => {
         op match {
-          case LogicOperator.AND => s"[${printCond(lhs)}, ${printCond(rhs)}]" 
-          case LogicOperator.OR  => s"[${printCond(lhs)}; ${printCond(rhs)}]"
+          case LogicOperator.AND => s"[${print(lhs)}, ${print(rhs)}]"
+          case LogicOperator.OR  => s"[${print(lhs)}; ${print(rhs)}]"
         }
       }
     }
   }
 
+  def print(b: Body) : String = b match {
+    case b: Atom => print(b)
+    case b: Cond => print(b)
+    case b: QuantifiedBody => print(b)
+  }
+
   def print(cq: ConjunctiveQuery): String = {
-    val printAtom = {a:Atom =>
-      val vars = a.terms map printExpr
-      s"${a.name}(${vars.mkString(", ")})"
-    }
-    val printListAtom = {a:List[Atom] =>
-      s"${(a map printAtom).mkString(",\n    ")}"
+
+    def printBodyList(b: List[Body]) = {
+      s"${(b map print).mkString(",\n    ")}"
     }
 
-    val conditionList = cq.conditions map {
-      case Some(x) => Some(printCond(x))
-      case None    => None
-    }
-    val bodyList = cq.bodies map printListAtom
-    val bodyWithCondition = (bodyList zip conditionList map { case(a,b) => 
-      b match {
-        case Some(c) => s"${a}, ${c}" 
-        case None    => a
-      }
-    }).mkString(";\n    ")
+    val bodyStr = (cq.bodies map printBodyList).mkString(";\n    ")
 
-    s"""${printAtom(cq.head)} ${if (cq.isDistinct) "*" else ""} :-
-       |    ${bodyWithCondition}""".stripMargin
+    val distinctStr = if (cq.isDistinct) "*" else ""
+    val limitStr = cq.limit map { " | " + _ } getOrElse("")
+
+    s"""${print(cq.head)} ${distinctStr}${limitStr} :-
+       |    ${bodyStr}""".stripMargin
   }
 
   def print(stmt: ExtractionRule): String = {
@@ -140,13 +153,9 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   def print(stmt: InferenceRule): String = {
     print(stmt.q) +
     ( if (stmt.weights == null) ""
-      else "\n  weight = " + (stmt.weights match {
-        case KnownFactorWeight(w) => w.toString
-        case UnknownFactorWeight(vs) => vs.mkString(", ")
-      })
+      else "\n  weight = " + (stmt.weights.variables.map(print).mkString(", "))
     ) +
-    ( if (stmt.semantics == null) ""
-      else "\n  semantics = " + stmt.semantics
+    ( stmt.function map { "\n  function = " + _ } getOrElse("")
     ) + ".\n"
   }
 

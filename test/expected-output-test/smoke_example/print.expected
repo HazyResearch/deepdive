@@ -14,23 +14,21 @@ smoke?(person_id bigint).
 
 cancer?(person_id bigint).
 
-smoke(pid) :-
+smoke(pid)  :-
     person_smokes(pid, l)
   label = l.
 
-cancer(pid) :-
+cancer(pid)  :-
     person_has_cancer(pid, l)
   label = l.
 
-cancer(pid) :-
+cancer(pid)  :-
     smoke(pid),
     person_smokes(pid, l)
-  weight = 0.5
-  semantics = Imply.
+  weight = 0.5.
 
-smoke(pid) :-
+smoke(pid)  :-
     smoke(pid1),
     friends(pid1, pid)
-  weight = 0.4
-  semantics = Imply.
+  weight = 0.4.
 
