@@ -221,21 +221,21 @@ q1.label: Boolean
 
         deepdive.inference.factors.dd_new_q2_0 {
           input_query: """
-          SELECT R0.id AS "dd_new_q2.R0.id" , R1.feature_id AS "dd_delta_features.R1.feature_id" 
+          SELECT R0.id AS "dd_new_q2.R0.id" , R1.feature_id AS "dd_weight_column_0" 
           FROM dd_new_q2 R0, dd_delta_features R1
         WHERE R1.word_id = R0.wid """
           function: "Imply(dd_new_q2.R0.label)"
-          weight: "?(dd_delta_features.R1.feature_id)"
+          weight: "?(dd_weight_column_0)"
         }
       
 
         deepdive.inference.factors.dd_new_q1_1 {
           input_query: """
-          SELECT R0.id AS "dd_new_q1.R0.id" , R1.feature_id AS "dd_delta_features.R1.feature_id" 
+          SELECT R0.id AS "dd_new_q1.R0.id" , R1.feature_id AS "dd_weight_column_0" 
           FROM dd_new_q1 R0, dd_delta_features R1
         WHERE R1.word_id = R0.wid """
           function: "Imply(dd_new_q1.R0.label)"
-          weight: "?(dd_delta_features.R1.feature_id)"
+          weight: "?(dd_weight_column_0)"
         }
       
 deepdive.pipeline.run: ${PIPELINE}

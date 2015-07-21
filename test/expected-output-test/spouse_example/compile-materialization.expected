@@ -178,11 +178,11 @@
 
         deepdive.inference.factors.has_spouse_0 {
           input_query: """
-          SELECT R0.id AS "has_spouse.R0.id" , R2.feature AS "has_spouse_features.R2.feature" 
+          SELECT R0.id AS "has_spouse.R0.id" , R2.feature AS "dd_weight_column_0" 
           FROM has_spouse R0, has_spouse_candidates R1, has_spouse_features R2
         WHERE R1.relation_id = R0.relation_id  AND R2.relation_id = R0.relation_id """
           function: "Imply(has_spouse.R0.label)"
-          weight: "?(has_spouse_features.R2.feature)"
+          weight: "?(dd_weight_column_0)"
         }
       
 deepdive.pipeline.run: ${PIPELINE}

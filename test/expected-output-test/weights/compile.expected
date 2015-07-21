@@ -1,0 +1,83 @@
+
+  deepdive.db.default {
+    driver: "org.postgresql.Driver"
+    url: "jdbc:postgresql://"${PGHOST}":"${PGPORT}"/"${DBNAME}
+    user: ${PGUSER}
+    password: ${PGPASSWORD}
+    dbname: ${DBNAME}
+    host: ${PGHOST}
+    port: ${PGPORT}
+    incremental_mode: ORIGINAL
+    }
+    
+
+
+      deepdive.schema.variables {
+        a.label: Boolean
+c.label: Boolean
+      }
+    
+
+          deepdive.extraction.extractors.extraction_rule_2 {
+            sql: """ DROP TABLE IF EXISTS b CASCADE;
+            CREATE TABLE
+            b(k int,
+ p int,
+ q text)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.extraction_rule_0 {
+            sql: """ DROP TABLE IF EXISTS a CASCADE;
+            CREATE TABLE
+            a(k int,
+ id bigint,
+ label boolean)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.extraction_rule_1 {
+            sql: """ DROP TABLE IF EXISTS c CASCADE;
+            CREATE TABLE
+            c(k int,
+ id bigint,
+ label boolean)
+            """
+            style: "sql_extractor"
+          }
+
+        deepdive.extraction.extractors.cleanup {
+          sql: """
+          TRUNCATE b;
+          TRUNCATE a;
+          TRUNCATE c;
+          """
+          style: "sql_extractor"
+        }
+
+        deepdive.inference.factors.a_0 {
+          input_query: """
+          SELECT R0.id AS "a.R0.id" , (R0.k + R1.p) AS "dd_weight_column_0" 
+          FROM a R0, b R1
+        WHERE R1.k = R0.k """
+          function: "Imply(a.R0.label)"
+          weight: "?(dd_weight_column_0)"
+        }
+      
+
+        deepdive.inference.factors.c_1 {
+          input_query: """
+          SELECT R0.id AS "c.R0.id" , 
+          FROM c R0, b R1
+        WHERE R1.k = R0.k """
+          function: "Imply(c.R0.label)"
+          weight: "?"
+        }
+      
+deepdive.pipeline.run: ${PIPELINE}
+deepdive.pipeline.pipelines.initdb: [extraction_rule_2, extraction_rule_0, extraction_rule_1]
+deepdive.pipeline.pipelines.inference: [a_0, c_1]
+deepdive.pipeline.pipelines.endtoend: [a_0, c_1]
+deepdive.pipeline.pipelines.cleanup: [cleanup]

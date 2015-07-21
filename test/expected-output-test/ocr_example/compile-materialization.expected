@@ -104,21 +104,21 @@ q2.label: Boolean
 
         deepdive.inference.factors.q1_0 {
           input_query: """
-          SELECT R0.id AS "q1.R0.id" , R1.feature_id AS "features.R1.feature_id" 
+          SELECT R0.id AS "q1.R0.id" , R1.feature_id AS "dd_weight_column_0" 
           FROM q1 R0, features R1
         WHERE R1.word_id = R0.wid """
           function: "Imply(q1.R0.label)"
-          weight: "?(features.R1.feature_id)"
+          weight: "?(dd_weight_column_0)"
         }
       
 
         deepdive.inference.factors.q2_1 {
           input_query: """
-          SELECT R0.id AS "q2.R0.id" , R1.feature_id AS "features.R1.feature_id" 
+          SELECT R0.id AS "q2.R0.id" , R1.feature_id AS "dd_weight_column_0" 
           FROM q2 R0, features R1
         WHERE R1.word_id = R0.wid """
           function: "Imply(q2.R0.label)"
-          weight: "?(features.R1.feature_id)"
+          weight: "?(dd_weight_column_0)"
         }
       
 deepdive.pipeline.run: ${PIPELINE}

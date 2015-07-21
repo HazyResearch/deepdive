@@ -115,11 +115,11 @@
 
         deepdive.inference.factors.tag_0 {
           input_query: """
-          SELECT R0.id AS "tag.R0.id" , R1.feature AS "word_features.R1.feature" 
+          SELECT R0.id AS "tag.R0.id" , R1.feature AS "dd_weight_column_0" 
           FROM tag R0, word_features R1
         WHERE R1.word_id = R0.word_id """
           function: "Multinomial(tag.R0.label)"
-          weight: "?(word_features.R1.feature)"
+          weight: "?(dd_weight_column_0)"
         }
       
 deepdive.pipeline.run: ${PIPELINE}

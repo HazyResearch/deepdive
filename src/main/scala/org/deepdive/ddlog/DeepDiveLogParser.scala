@@ -66,8 +66,7 @@ case class MultinomialType(numCategories: Int) extends VariableType {
 sealed trait FactorWeight
 
 case class KnownFactorWeight(value: Double) extends FactorWeight
-case class UnknownFactorWeight(variables: List[String]) extends FactorWeight
-case class UnknownFactorWeightBindingToConst(value: String) extends FactorWeight
+case class UnknownFactorWeight(variables: List[Expr]) extends FactorWeight
 
 trait RelationType
 case class RelationTypeDeclaration(names: List[String], types: List[String]) extends RelationType
@@ -277,9 +276,8 @@ class DeepDiveLogParser extends JavaTokenParsers {
     }
 
   def constantWeight = floatingPointNumberAsDouble ^^ {   KnownFactorWeight(_) }
-  def unknownWeight  = repsep(variableName, ",")   ^^ { UnknownFactorWeight(_) }
-  def unknownWeightBindingToConst = stringLiteralAsString ^^ { UnknownFactorWeightBindingToConst(_) }
-  def factorWeight = "weight" ~> "=" ~> (constantWeight | unknownWeightBindingToConst | unknownWeight)
+  def unknownWeight  = repsep(expr, ",")   ^^ { UnknownFactorWeight(_) }
+  def factorWeight = "weight" ~> "=" ~> (constantWeight | unknownWeight)
 
   def supervision = "label" ~> "=" ~> variableName
 
