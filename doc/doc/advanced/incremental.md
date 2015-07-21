@@ -53,14 +53,14 @@ In order to make use of the incremental support of DeepDive, the application mus
 Please refer to [DDlog tutorial][DDlog] for how to write your DeepDive application in DDlog.
 Let's assume you have put the DDlog program shown below in a file named `spouse_example.f1.ddl` under the application folder.
 
-<script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/incremental/spouse_example.f1.ddl?footer=minimal">
+<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/incremental/spouse_example.f1.ddl?footer=minimal">
 </script>
 
 In this walkthrough, we demonstrate an incremental development workflow by adding new features.
 In the udf `ext_has_spouse_features.f1.py`, suppose you had only feature 1 at the time of materialization phase.
 Then, suppose you want to try feature 2 as an incremental phase.
 
-Note that the [`run.sh` included in the incremental example](https://github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/incremental/run.sh) takes care of compiling a given DDlog program into a particular mode.
+Note that the [`run.sh` included in the incremental example](https://github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/incremental/run.sh) takes care of compiling a given DDlog program into a particular mode.
 
 
 ### Materialization Phase
@@ -69,10 +69,10 @@ Materialization phase is basically for taking a snapshot of the current model th
 You need to specify which variables and inference rules you are going to vary in the following incremental phases.
 They are called active variables and active inference rules, and the names can be put into files `spouse_example.f1.active.vars` and `spouse_example.f1.active.rules`.
 
-<script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/incremental/spouse_example.f1.active.vars?footer=minimal">
+<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/incremental/spouse_example.f1.active.vars?footer=minimal">
 </script>
 
-<script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/incremental/spouse_example.f1.active.rules?footer=minimal">
+<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/incremental/spouse_example.f1.active.rules?footer=minimal">
 </script>
 
 There is a script included in the example, and the materialization phase can be run using the following single command:
@@ -91,14 +91,14 @@ It will do the following:
 In the incremental phase, suppose you added feature 2 to your udf, `ext_has_spouse_features.f2.py`.
 Let's say you saved this modified udf in a file named `ext_has_spouse_features.f2.ddl`.
 
-<script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/incremental/udf/ext_has_spouse_features.f2.py?footer=minimal&slice=27:39">
+<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/incremental/udf/ext_has_spouse_features.f2.py?footer=minimal&slice=27:39">
 </script>
 
 
 You need to mark in the DDlog program which udf has been modified to produce the correct incremental pipeline.
 Let's say you saved this modified DDlog program in a file named `spouse_example.f2.ddl`.
 
-<script src="http://gist-it.appspot.com/https://github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/incremental/spouse_example.f2.ddl?footer=minimal&slice=67:70">
+<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/incremental/spouse_example.f2.ddl?footer=minimal&slice=67:70">
 </script>
 
 
