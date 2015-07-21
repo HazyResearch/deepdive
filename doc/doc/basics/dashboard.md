@@ -12,7 +12,10 @@ Once a snapshot has been run, you will be able to view the resulting reports. Ad
 
 To analyze the results of your DeepDive application runs over time, you can track specified report values and view a visual representation of how they have changed over time using [Trends](#trends).
 
-[Screenshot of report]
+Below are two example reports based on built-in templates:
+![Dashboard Custom Report](../../images/dashboard/calibration_plot_report.png)
+
+![Dashboard Formatted Report](../../images/dashboard/top_positive_features_report.png)
 
 ## Launching Dashboard
 
@@ -60,7 +63,7 @@ Once you have finished adding the report templates and their corresponding param
 
 A configuration can be deleted by clicking the "Delete Configuration" button from an existing configuration.
 
-[ Screenshot of sample snapshot configuration ]
+![Running a Dashboard snapshot](../../images/dashboard/run_snapshot.png)
 
 ### Running Snapshots
 
@@ -84,8 +87,7 @@ At the top right of the report are three buttons:
 * Template: Go to the report template for this report.
 * Tasks: Opens the interface for running tasks on this report. See the [tasks documentation](#tasks).
 
-[ Screenshot of report ]
-
+![Dashboard Custom Report](../../images/dashboard/supervision_report.png)
 
 ## Tasks
 
@@ -98,7 +100,7 @@ Templates currently allow for 3 type specifications:
 * float
 * string
 
-If no type is specified on the task template, and data value can be bound to the parameter.
+If no type is specified on the task template, any data value can be bound to the parameter.
 
 ### Configuring Task Templates
 
@@ -112,12 +114,13 @@ Tasks are run from a report page. To initiate a task, click on any data value co
 
 Next to each task is its corresponding list of parameters which should be supplied interactively by the user. Parameters in bold are those for which the data value selected can be bound to. To bind the data value you clicked on to a task parameter, simply click on it. The bound value will display next to the parameter. You can continue this process for any additional parameters. Parameter bindings can be un-bound by clicking the parameter you wish to remove.
 
+![Select values from the report to use as task input](../../images/dashboard/task_input.png)
+
 At any time, you can also open the Task control interface, by clicking the "Tasks" button at the top right of the report. The Task control interface will display any currently selected task, as well as the current parameter bindings. You can edit any of the parameter bindings by cliking on them. You can also move the parameter bindings around by dragging them.
 
 When you are ready to run the task, click "Run Task" from the task control interface. When complete, the task's output will be available from the report navigation menu directly below the report you ran the task on.
 
-[ Screenshot of task selection dialog ]
-
+![Verify the task template parameters and run the task](../../images/dashboard/task_control.png)
 
 ## Trends
 
