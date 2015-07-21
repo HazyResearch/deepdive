@@ -111,6 +111,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
     val modifier = a.modifier match {
       case ExistModifier(negated) => if(negated) "NOT " else "" + "EXISTS"
       case OuterModifier() => "OPTIONAL"
+      case AllModifier() => "ALL"
     }
     val bodyStr = (a.bodies map printBody).mkString(", ")
     s"${modifier}[${bodyStr}]"

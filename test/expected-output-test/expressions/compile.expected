@@ -175,7 +175,7 @@
       }
     
 
-      deepdive.extraction.extractors.extraction_rule_23 {
+      deepdive.extraction.extractors.extraction_rule_24 {
         sql: """ DROP VIEW IF EXISTS V;
         CREATE VIEW V AS 
             SELECT R0.n AS "c.R0.n" 
@@ -260,6 +260,18 @@
       }
     
 
+      deepdive.extraction.extractors.extraction_rule_23 {
+        sql: """ DROP VIEW IF EXISTS W;
+        CREATE VIEW W AS 
+            SELECT R0.k AS "a.R0.k" 
+            FROM a R0
+        WHERE NOT EXISTS (SELECT 1 FROM c R1_0 WHERE NOT (R1_0.n < R0.k))
+        """
+        style: "sql_extractor"
+          
+      }
+    
+
       deepdive.extraction.extractors.extraction_rule_15 {
         sql: """ DROP VIEW IF EXISTS K;
         CREATE VIEW K AS 
@@ -309,6 +321,6 @@
     
 deepdive.pipeline.run: ${PIPELINE}
 deepdive.pipeline.pipelines.initdb: [extraction_rule_1, extraction_rule_0, extraction_rule_2]
-deepdive.pipeline.pipelines.extraction: [extraction_rule_21, extraction_rule_7, extraction_rule_12, extraction_rule_20, extraction_rule_16, extraction_rule_19, extraction_rule_22, extraction_rule_3, extraction_rule_4, extraction_rule_18, extraction_rule_8, extraction_rule_10, extraction_rule_13, extraction_rule_23, extraction_rule_5, extraction_rule_9, extraction_rule_14, extraction_rule_17, extraction_rule_11, extraction_rule_15, extraction_rule_6]
-deepdive.pipeline.pipelines.endtoend: [extraction_rule_21, extraction_rule_7, extraction_rule_12, extraction_rule_20, extraction_rule_16, extraction_rule_19, extraction_rule_22, extraction_rule_3, extraction_rule_4, extraction_rule_18, extraction_rule_8, extraction_rule_10, extraction_rule_13, extraction_rule_23, extraction_rule_5, extraction_rule_9, extraction_rule_14, extraction_rule_17, extraction_rule_11, extraction_rule_15, extraction_rule_6]
+deepdive.pipeline.pipelines.extraction: [extraction_rule_21, extraction_rule_7, extraction_rule_12, extraction_rule_20, extraction_rule_16, extraction_rule_19, extraction_rule_22, extraction_rule_3, extraction_rule_4, extraction_rule_18, extraction_rule_8, extraction_rule_10, extraction_rule_13, extraction_rule_23, extraction_rule_5, extraction_rule_9, extraction_rule_14, extraction_rule_17, extraction_rule_11, extraction_rule_24, extraction_rule_15, extraction_rule_6]
+deepdive.pipeline.pipelines.endtoend: [extraction_rule_21, extraction_rule_7, extraction_rule_12, extraction_rule_20, extraction_rule_16, extraction_rule_19, extraction_rule_22, extraction_rule_3, extraction_rule_4, extraction_rule_18, extraction_rule_8, extraction_rule_10, extraction_rule_13, extraction_rule_23, extraction_rule_5, extraction_rule_9, extraction_rule_14, extraction_rule_17, extraction_rule_11, extraction_rule_24, extraction_rule_15, extraction_rule_6]
 deepdive.pipeline.pipelines.cleanup: [cleanup]

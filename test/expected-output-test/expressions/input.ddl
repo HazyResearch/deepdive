@@ -48,5 +48,7 @@ T(x) :- b(x,y,z,w), OPTIONAL[c(a,x,b), a > y], a > y.
 
 U(x) :- OPTIONAL[b(x,y,z,w)], OPTIONAL[c(a,x,b)].
 
+W(x) :- a(x), ALL[c(_,y,_), y < x].
+
 # placeholder
 V(x) :- c(_,x,_), a(x).

@@ -26,6 +26,7 @@ case class QuantifiedBody(modifier: BodyModifier, bodies: List[Body]) extends Bo
 sealed trait BodyModifier
 case class ExistModifier(negated: Boolean) extends BodyModifier
 case class OuterModifier extends BodyModifier
+case class AllModifier extends BodyModifier
 
 case class Attribute(name : String, terms : List[String], types : List[String], annotations : List[List[Annotation]])
 case class ConjunctiveQuery(head: Atom, bodies: List[List[Body]], isDistinct: Boolean, limit: Option[Int])
@@ -212,10 +213,11 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def atom = relationName ~ "(" ~ repsep(expr, ",") ~ ")" ^^ {
     case (r ~ "(" ~ patterns ~ ")") => Atom(r, patterns)
   }
-  def modifierAtom = (opt("!") ~ "EXISTS" | "OPTIONAL") ~ "[" ~ rep1sep(cqBody, ",") ~ "]" ^^ { case (m ~ _ ~ b ~ _) =>
+  def modifierAtom = (opt("!") ~ "EXISTS" | "OPTIONAL" | "ALL") ~ "[" ~ rep1sep(cqBody, ",") ~ "]" ^^ { case (m ~ _ ~ b ~ _) =>
     val modifier = m match {
       case (not ~ "EXISTS") => new ExistModifier(not != None)
       case "OPTIONAL" => new OuterModifier
+      case "ALL" => new AllModifier
     }
     QuantifiedBody(modifier, b)
   }

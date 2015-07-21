@@ -392,6 +392,7 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
           val subqueryFromStr  = generateFromClause(x.bodies, newIndexPrefix)
           x.modifier match {
             case ExistModifier(negated) => Some(s"${if (negated) "NOT " else ""}EXISTS (SELECT 1 FROM ${subqueryFromStr} WHERE ${subqueryWhereStr})")
+            case AllModifier() => Some(s"NOT EXISTS (SELECT 1 FROM ${subqueryFromStr} WHERE NOT (${subqueryWhereStr}))")
             case _ => None
           }
         }
