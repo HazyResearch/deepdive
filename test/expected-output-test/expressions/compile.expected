@@ -58,7 +58,7 @@
       deepdive.extraction.extractors.extraction_rule_9 {
         sql: """ DROP VIEW IF EXISTS E;
         CREATE VIEW E AS 
-            SELECT (R0.k :: INT) AS column_0
+            SELECT (R0.k :: INT) AS "column_0" 
             FROM b R0
         
         """
@@ -118,7 +118,7 @@
       deepdive.extraction.extractors.extraction_rule_10 {
         sql: """ DROP VIEW IF EXISTS F;
         CREATE VIEW F AS 
-            SELECT ((R0.k :: INT) + (R0.r :: INT)) AS column_0
+            SELECT ((R0.k :: INT) + (R0.r :: INT)) AS "column_0" 
             FROM b R0
         
         """
@@ -130,7 +130,7 @@
       deepdive.extraction.extractors.extraction_rule_5 {
         sql: """ DROP VIEW IF EXISTS A;
         CREATE VIEW A AS 
-            SELECT (R0.k + (R0.r * (R0.k + R0.r))) AS column_0
+            SELECT (R0.k + (R0.r * (R0.k + R0.r))) AS "column_0" 
             FROM b R0
         
         """
@@ -190,7 +190,7 @@
       deepdive.extraction.extractors.extraction_rule_3 {
         sql: """ DROP VIEW IF EXISTS Q;
         CREATE VIEW Q AS 
-            SELECT DISTINCT ('test' :: TEXT) AS column_0, 123 AS column_1, R0.k AS "a.R0.k" , unnest(R1.q) AS column_3
+            SELECT DISTINCT ('test' :: TEXT) AS "column_0" , 123 AS "column_1" , R0.k AS "a.R0.k" , unnest(R1.q) AS "column_3" 
             FROM a R0, b R1, c R2
         WHERE R1.k = R0.k  AND R2.s = (R1.p || R1.q) AND R2.n = 10 AND R2.t = 'foo' AND (R1.r > 100 OR ((NOT R1.r < 20) AND R1.r < 50))
         """
@@ -214,7 +214,7 @@
       deepdive.extraction.extractors.extraction_rule_6 {
         sql: """ DROP VIEW IF EXISTS B;
         CREATE VIEW B AS 
-            SELECT func((R0.k + (R0.r + R0.k))) AS column_0
+            SELECT func((R0.k + (R0.r + R0.k))) AS "column_0" 
             FROM b R0
         
         """
@@ -226,7 +226,7 @@
       deepdive.extraction.extractors.extraction_rule_4 {
         sql: """ DROP VIEW IF EXISTS P;
         CREATE VIEW P AS 
-            SELECT R1.p AS "b.R1.p" , R1.q AS "b.R1.q" , MAX(R1.r) AS column_2
+            SELECT R1.p AS "b.R1.p" , R1.q AS "b.R1.q" , MAX(R1.r) AS "column_2" 
             FROM a R0, b R1
         WHERE R1.k = R0.k 
         GROUP BY R1.p, R1.q
@@ -239,7 +239,7 @@
       deepdive.extraction.extractors.extraction_rule_7 {
         sql: """ DROP VIEW IF EXISTS C;
         CREATE VIEW C AS 
-            SELECT func(func(func(R0.k))) AS column_0
+            SELECT func(func(func(R0.k))) AS "column_0" 
             FROM b R0
         
         """
@@ -299,7 +299,7 @@
       deepdive.extraction.extractors.extraction_rule_8 {
         sql: """ DROP VIEW IF EXISTS D;
         CREATE VIEW D AS 
-            SELECT (func((R0.k * func2((R0.r + R0.k)))) + R0.k) AS column_0
+            SELECT (func((R0.k * func2((R0.r + R0.k)))) + R0.k) AS "column_0" 
             FROM b R0
         
         """

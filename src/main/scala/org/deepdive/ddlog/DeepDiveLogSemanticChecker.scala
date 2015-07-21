@@ -34,13 +34,14 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
     checkFunctionDefined(stmt)
     checkVariableRelationSchema(stmt)
     checkNumberOfColumns(stmt)
+    checkOptionalModifier(stmt)
   }
 
   // iterate over all atoms contained in the body list and apply the checker
-  def checkBodyAtoms(bodies: List[Body], checker: Atom => Unit) : Unit = {
+  def checkBodyAtoms(checker: Atom => Unit)(bodies: List[Body]) : Unit = {
     bodies foreach {
       case a: Atom => checker(a)
-      case a: QuantifiedBody => checkBodyAtoms(a.bodies, checker)
+      case a: QuantifiedBody => checkBodyAtoms(checker)(a.bodies)
       case _ =>
     }
   }
@@ -52,9 +53,10 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
       if (!(heads contains a.name))
         error(stmt, s"""relation "${a.name}" is not defined""")
     }
+    def check = checkBodyAtoms(checkRelation)(_)
     stmt match {
-      case s: ExtractionRule => checkBodyAtoms(s.q.bodies.flatten, checkRelation)
-      case s: InferenceRule => checkBodyAtoms(s.q.bodies.flatten, checkRelation)
+      case s: ExtractionRule => s.q.bodies foreach check
+      case s: InferenceRule => s.q.bodies foreach check
       case s: FunctionCallRule => checkRelation(Atom(s.input, Nil))
       case _ =>
     }
@@ -96,7 +98,7 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
     }
     def checkCq(cq: ConjunctiveQuery) {
       checkAtom(cq.head)
-      checkBodyAtoms(cq.bodies.flatten, checkAtom)
+      checkBodyAtoms(checkAtom)(cq.bodies.flatten)
     }
     stmt match {
       case s: ExtractionRule => checkCq(s.q)
@@ -106,7 +108,7 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
   }
 
   // check if outer join body contains one atom
-  def checkOuterJoin(stmt: Statement) {
+  def checkOptionalModifier(stmt: Statement) {
     def checkOuterJoinBodies(bodies: List[Body]) {
       bodies.foreach {
         case b: QuantifiedBody => {

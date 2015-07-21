@@ -64,17 +64,6 @@ import scala.collection.mutable.ListBuffer
 import org.deepdive.ddlog.DeepDiveLog.Mode._
 import scala.language.postfixOps
 
-object AliasStyle extends Enumeration {
-  type AliasStyle = Value
-  // Three kinds of column expressions:
-  // NoAlias => use column name for dd_new_ tables
-  // WeightAlias => use alias for unknown weight in inference
-  // HeadAlias => use column name and alias for normal extraction rule
-  val NoAlias, WeightAlias, HeadAlias = Value
-
-}
-import AliasStyle._
-
 // This handles the schema statements.
 // It can tell you if a predicate is a "query" predicate or a "ground prediate"
 // and it resolves Variables their correct and true name in the schema, i.e. R(x,y) then x could be Attribute1 declared.
@@ -288,26 +277,17 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
   }
 
   // compile alias
-  def compileAlias(e: Expr, alias: AliasStyle) = {
+  def compileAlias(e: Expr) = {
     e match {
       case VarExpr(v) => {
         val index = getBodyIndex(v)
         val variable = getVar(v)
         val name  = ss.resolveName(variable)
         val relation = variable.relName
-        alias match {
-          case NoAlias => ""
-          case HeadAlias => s""" AS "${relation}.R${index}.${name}" """
-          case WeightAlias => s"${relation}.R${index}.${name}"
-        }
+        s"${relation}.R${index}.${name}"
       }
-      case _ => s" AS column_${cq.head.terms indexOf e}"
+      case _ => s"column_${cq.head.terms indexOf e}"
     }
-  }
-
-  // compile expression with alias, only used for head
-  def compileExprWithAlias(e: Expr, alias: AliasStyle) = {
-    compileExpr(e) + compileAlias(e, alias)
   }
 
   // resolve an expression
@@ -351,15 +331,17 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
   }
 
   // generate SQL SELECT cluase
-  def generateSQLHead(alias: AliasStyle) = {
-    val head = (cq.head.terms map { expr => compileExprWithAlias(expr, alias) }).mkString(", ")
+  def generateSQLHead(useAlias: Boolean) = {
+    val head = (cq.head.terms map { expr =>
+      compileExpr(expr) + (if (useAlias) s""" AS "${compileAlias(expr)}" """ else "")
+    }).mkString(", ")
     val distinctStr = if (cq.isDistinct) "DISTINCT " else ""
     s"${distinctStr}${head}"
   }
 
   // This is generic code that generates the FROM with positional aliasing R0, R1, etc.
   // and the corresponding WHERE clause
-  def generateSQLBody() : String = {
+  def generateSQLBody(body: List[Body]) : String = {
     // generate where clause from unification and conditions
     def generateWhereClause(bodies: List[Body], indexPrefix: String) : String = {
       val conditions = bodies.zipWithIndex.flatMap {
@@ -456,8 +438,8 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
     // limit clause
     val limitStr = optionalClause("LIMIT", cq.limit.getOrElse("").toString)
 
-    s"""FROM ${ generateFromClause(cq.bodies(0), "") }
-        ${ optionalClause("WHERE", generateWhereClause(cq.bodies(0), "")) }${groupbyStr}${limitStr}"""
+    s"""FROM ${ generateFromClause(body, "") }
+        ${ optionalClause("WHERE", generateWhereClause(body, "")) }${groupbyStr}${limitStr}"""
   }
 
 }
@@ -524,31 +506,26 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
 
         if (stmt.supervision != null) {
           if (stmt.q.bodies.length > 1) ss.error(s"Scoping rule does not allow disjunction.\n")
-          val headStr = qc.generateSQLHead(NoAlias)
+          val headStr = qc.generateSQLHead(false)
           val labelCol = qc.compileVariable(stmt.supervision)
           inputQueries += s"""SELECT DISTINCT ${ headStr }, 0 AS id, ${labelCol} AS label
-          ${ qc.generateSQLBody() }
+          ${ qc.generateSQLBody(cqBody) }
           """
         } else if ((ss.schemaDeclarationGroupByHead contains stmt.q.head.name) && (ss.schemaDeclarationGroupByHead(stmt.q.head.name)(0).isQuery) && (stmt.q.head.name startsWith "dd_new_")) {
-          val headStr = qc.generateSQLHead(NoAlias)
+          val headStr = qc.generateSQLHead(false)
           inputQueries += s"""SELECT DISTINCT ${ headStr }, id, label
-          ${ qc.generateSQLBody() }
+          ${ qc.generateSQLBody(cqBody) }
           """
         } else {
           // variable columns
           // dd_new_ tale only need original column name to make sure the schema is the same with original table
-          var tmpCqUseOnlyOriginal = ss.mode match {
-            case MERGE => true
-            case _     => if (tmpCq.head.name.startsWith("dd_new_")) true else false
+          var useAlias = ss.mode match {
+            case MERGE => false
+            case _     => if (tmpCq.head.name.startsWith("dd_new_")) false else true
           }
-          val resolveColumnFlag = tmpCqUseOnlyOriginal match {
-            case true => NoAlias
-            case false => HeadAlias
-          }
-          val headStr = qc.generateSQLHead(resolveColumnFlag)
           inputQueries += s"""
-            SELECT ${headStr}
-            ${ qc.generateSQLBody() }"""
+            SELECT ${qc.generateSQLHead(useAlias)}
+            ${ qc.generateSQLBody(cqBody) }"""
         }
       }
     }
@@ -643,7 +620,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
         // weight string
         val uwStr = stmt.weights match {
           case UnknownFactorWeight(w) => Some(w.map(s =>
-            qc.compileExprWithAlias(VarExpr(s), HeadAlias)).mkString(", "))
+            qc.compileExpr(VarExpr(s)) + s""" AS "${qc.compileAlias(VarExpr(s))}" """ ).mkString(", "))
           case _ => None
         }
 
@@ -652,7 +629,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
         // factor input query
         inputQueries += s"""
           SELECT ${selectStr}
-          ${ qc.generateSQLBody() }"""
+          ${ qc.generateSQLBody(fakeBody) }"""
         // factor function
         if (func.length == 0) {
           val funcBody = (fakeBodyAtoms map {x =>
@@ -676,7 +653,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           weight = stmt.weights match {
             case KnownFactorWeight(x) => s"${x}"
             case UnknownFactorWeight(w) => {
-              val weightVar = w.map(s => qc.compileAlias(VarExpr(s), WeightAlias)).mkString(", ")
+              val weightVar = w.map(s => qc.compileAlias(VarExpr(s))).mkString(", ")
               s"?(${weightVar})"
             }
             case UnknownFactorWeightBindingToConst(w) => "?"

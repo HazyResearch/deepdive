@@ -71,7 +71,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   }
 
   // print an expression
-  def printExpr(e: Expr) : String = {
+  def print(e: Expr) : String = {
     e match {
       case VarExpr(name) => name
       case ConstExpr(value) => {
@@ -80,44 +80,44 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
         else value
       }
       case FuncExpr(function, args, agg) => {
-        val resolvedArgs = args map (x => printExpr(x))
+        val resolvedArgs = args map (x => print(x))
         s"${function}(${resolvedArgs.mkString(", ")})"
       }
-      case BinaryOpExpr(lhs, op, rhs) => s"(${printExpr(lhs)} ${op} ${printExpr(rhs)})"
-      case TypecastExpr(lhs, rhs) => s"(${printExpr(lhs)} :: ${rhs})"
+      case BinaryOpExpr(lhs, op, rhs) => s"(${print(lhs)} ${op} ${print(rhs)})"
+      case TypecastExpr(lhs, rhs) => s"(${print(lhs)} :: ${rhs})"
     }
   }
 
-  // print a condition
-  def printCond(cond: Cond) : String = {
-    cond match {
-      case ComparisonCond(lhs, op, rhs) => s"${printExpr(lhs)} ${op} ${printExpr(rhs)}"
-      case NegationCond(c) => s"[!${printCond(c)}]"
-      case CompoundCond(lhs, op, rhs) => {
-        op match {
-          case LogicOperator.AND => s"[${printCond(lhs)}, ${printCond(rhs)}]"
-          case LogicOperator.OR  => s"[${printCond(lhs)}; ${printCond(rhs)}]"
+  // print a body
+  def print(b: Body) : String = {
+    def printAtom(a: Atom) = {
+      val vars = a.terms map print
+      s"${a.name}(${vars.mkString(", ")})"
+    }
+
+    def printQuantifiedBody(a: QuantifiedBody) : String = {
+      val modifier = a.modifier match {
+        case ExistModifier(negated) => if(negated) "NOT " else "" + "EXISTS"
+        case OuterModifier() => "OPTIONAL"
+        case AllModifier() => "ALL"
+      }
+      val bodyStr = (a.bodies map print).mkString(", ")
+      s"${modifier}[${bodyStr}]"
+    }
+
+    // print a condition
+    def printCond(cond: Cond) : String = {
+      cond match {
+        case ComparisonCond(lhs, op, rhs) => s"${print(lhs)} ${op} ${print(rhs)}"
+        case NegationCond(c) => s"[!${printCond(c)}]"
+        case CompoundCond(lhs, op, rhs) => {
+          op match {
+            case LogicOperator.AND => s"[${printCond(lhs)}, ${printCond(rhs)}]"
+            case LogicOperator.OR  => s"[${printCond(lhs)}; ${printCond(rhs)}]"
+          }
         }
       }
     }
-  }
-
-  def printAtom(a: Atom) = {
-    val vars = a.terms map printExpr
-    s"${a.name}(${vars.mkString(", ")})"
-  }
-
-  def printQuantifiedBody(a: QuantifiedBody) : String = {
-    val modifier = a.modifier match {
-      case ExistModifier(negated) => if(negated) "NOT " else "" + "EXISTS"
-      case OuterModifier() => "OPTIONAL"
-      case AllModifier() => "ALL"
-    }
-    val bodyStr = (a.bodies map printBody).mkString(", ")
-    s"${modifier}[${bodyStr}]"
-  }
-
-  def printBody(b: Body) = {
     b match {
       case b: Atom => printAtom(b)
       case b: Cond => printCond(b)
@@ -128,18 +128,15 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   def print(cq: ConjunctiveQuery): String = {
 
     def printBodyList(b: List[Body]) = {
-      s"${(b map printBody).mkString(",\n    ")}"
+      s"${(b map print).mkString(",\n    ")}"
     }
 
     val bodyStr = (cq.bodies map printBodyList).mkString(";\n    ")
 
     val distinctStr = if (cq.isDistinct) "*" else ""
-    val limitStr = cq.limit match {
-      case Some(s) => s" | ${s}"
-      case None => ""
-    }
+    val limitStr = cq.limit map { " | " + _ } getOrElse("")
 
-    s"""${printAtom(cq.head)} ${distinctStr}${limitStr} :-
+    s"""${print(cq.head)} ${distinctStr}${limitStr} :-
        |    ${bodyStr}""".stripMargin
   }
 
@@ -164,10 +161,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
         case UnknownFactorWeightBindingToConst(vs) => "\"" + vs + "\""
       })
     ) +
-    ( stmt.function match {
-        case Some(f) => s"\n  function = ${f}"
-        case None => ""
-      }
+    ( stmt.function map { "\n  function = " + _ } getOrElse("")
     ) + ".\n"
   }
 
