@@ -129,8 +129,7 @@ Be sure to **reboot** after changing these kernel parameters.
 
 Download Greenplum for your operating system. For a free Community Edition, you
 can find the download link and the official guide on the [GoPivotal
-website](http://www.gopivotal.com/products/pivotal-greenplum-database), or you
-can download it directly [here](http://downloads.cfapps.io/gpdb_db_el5_64).
+website](http://www.gopivotal.com/products/pivotal-greenplum-database).
 
 Install Greenplum using the downloaded package:
 
