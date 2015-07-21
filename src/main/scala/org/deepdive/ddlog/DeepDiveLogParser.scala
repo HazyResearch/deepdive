@@ -14,7 +14,12 @@ case class Variable(varName : String, relName : String, index : Int )
 
 sealed trait Expr
 case class VarExpr(name: String) extends Expr
-case class ConstExpr(value: String) extends Expr
+sealed trait ConstExpr extends Expr
+case class StringConst(value: String) extends ConstExpr
+case class IntConst(value: Int) extends ConstExpr
+case class DoubleConst(value: Double) extends ConstExpr
+case class BooleanConst(value: Boolean) extends ConstExpr
+case class NullConst extends ConstExpr
 case class FuncExpr(function: String, args: List[Expr], isAggregation: Boolean) extends Expr
 case class BinaryOpExpr(lhs: Expr, op: String, rhs: Expr) extends Expr
 case class TypecastExpr(lhs: Expr, rhs: String) extends Expr
@@ -63,10 +68,7 @@ case class MultinomialType(numCategories: Int) extends VariableType {
   def cardinality = numCategories
 }
 
-sealed trait FactorWeight
-
-case class KnownFactorWeight(value: Double) extends FactorWeight
-case class UnknownFactorWeight(variables: List[Expr]) extends FactorWeight
+case class FactorWeight(variables: List[Expr])
 
 trait RelationType
 case class RelationTypeDeclaration(names: List[String], types: List[String]) extends RelationType
@@ -92,9 +94,8 @@ class DeepDiveLogParser extends JavaTokenParsers {
 
   // JavaTokenParsers provides several useful number parsers:
   //   wholeNumber, decimalNumber, floatingPointNumber
-  def floatingPointNumberAsDouble = floatingPointNumber ^^ { _.toDouble }
-  def wholeNumberAsInt = wholeNumber ^^ { _.toInt }
-  def wholeNumberAsLong = wholeNumber ^^ { _.toLong }
+  def double = opt("-") ~ """\d+\.\d+""".r ^^ { case (neg ~ num) => (neg.getOrElse("") + num).toDouble }
+  def integer = opt("-") ~ wholeNumber ^^ { case (neg ~ num) => (neg.getOrElse("") + num).toInt }
   def stringLiteralAsString = stringLiteral ^^ {
     s => StringEscapeUtils.unescapeJava(
       s.stripPrefix("\"").stripSuffix("\""))
@@ -102,7 +103,6 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def stringLiteralAsSqlString = stringLiteral ^^ { s =>
     s"""'${s.stripPrefix("\"").stripSuffix("\"")}'"""
   }
-  def constant = stringLiteralAsSqlString | wholeNumber | "TRUE" | "FALSE" | "NULL"
 
   // Single-line comments beginning with # or // are supported by treating them as whiteSpace
   // C/Java/Scala style multi-line comments cannot be easily supported with RegexParsers unless we introduce a dedicated lexer.
@@ -133,7 +133,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
       case name ~ _ ~ value => name -> value
     }
   def annotationArgumentValue: Parser[Any] =
-    stringLiteralAsString | floatingPointNumberAsDouble | wholeNumberAsInt
+    stringLiteralAsString | double | integer
 
   def columnDeclaration: Parser[Column] =
     rep(annotation) ~
@@ -175,7 +175,11 @@ class DeepDiveLogParser extends JavaTokenParsers {
     ( functionName ~ "(" ~ rep1sep(expr, ",") ~ ")" ^^ {
         case (name ~ _ ~ args ~ _) => FuncExpr(name, args, (aggregationFunctions contains name))
       }
-    | constant ^^ { ConstExpr(_) }
+    | stringLiteralAsString ^^ { StringConst(_) }
+    | double ^^ { DoubleConst(_) }
+    | integer ^^ { IntConst(_) }
+    | ("TRUE" | "FALSE") ^^ { x => BooleanConst(x.toBoolean) }
+    | "NULL" ^^ { _ => new NullConst }
     | variableName ^^ { VarExpr(_) }
     | "(" ~> expr <~ ")"
     )
@@ -275,9 +279,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
         FunctionCallRule(in, out, fn)
     }
 
-  def constantWeight = floatingPointNumberAsDouble ^^ {   KnownFactorWeight(_) }
-  def unknownWeight  = repsep(expr, ",")   ^^ { UnknownFactorWeight(_) }
-  def factorWeight = "weight" ~> "=" ~> (constantWeight | unknownWeight)
+  def factorWeight = "weight" ~> "=" ~> rep1sep(expr, ",") ^^ { FactorWeight(_) }
 
   def supervision = "label" ~> "=" ~> variableName
 

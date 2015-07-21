@@ -74,11 +74,11 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   def print(e: Expr) : String = {
     e match {
       case VarExpr(name) => name
-      case ConstExpr(value) => {
-        // TODO use distinct class for different types
-        if (value.startsWith("'")) s""" "${value.stripPrefix("'").stripSuffix("'")}" """
-        else value
-      }
+      case NullConst() => "NULL"
+      case IntConst(value) => value.toString
+      case DoubleConst(value) => value.toString
+      case BooleanConst(value) => value.toString
+      case StringConst(value) => "\"" + StringEscapeUtils.escapeJava(value) + "\""
       case FuncExpr(function, args, agg) => {
         val resolvedArgs = args map (x => print(x))
         s"${function}(${resolvedArgs.mkString(", ")})"
@@ -88,41 +88,39 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
     }
   }
 
-  // print a body
-  def print(b: Body) : String = {
-    def printAtom(a: Atom) = {
-      val vars = a.terms map print
-      s"${a.name}(${vars.mkString(", ")})"
-    }
+  def print(a: Atom) : String = {
+    val vars = a.terms map print
+    s"${a.name}(${vars.mkString(", ")})"
+  }
 
-    def printQuantifiedBody(a: QuantifiedBody) : String = {
-      val modifier = a.modifier match {
-        case ExistModifier(negated) => if(negated) "NOT " else "" + "EXISTS"
-        case OuterModifier() => "OPTIONAL"
-        case AllModifier() => "ALL"
-      }
-      val bodyStr = (a.bodies map print).mkString(", ")
-      s"${modifier}[${bodyStr}]"
+  def print(a: QuantifiedBody) : String = {
+    val modifier = a.modifier match {
+      case ExistModifier(negated) => if(negated) "NOT " else "" + "EXISTS"
+      case OuterModifier() => "OPTIONAL"
+      case AllModifier() => "ALL"
     }
+    val bodyStr = (a.bodies map print).mkString(", ")
+    s"${modifier}[${bodyStr}]"
+  }
 
-    // print a condition
-    def printCond(cond: Cond) : String = {
-      cond match {
-        case ComparisonCond(lhs, op, rhs) => s"${print(lhs)} ${op} ${print(rhs)}"
-        case NegationCond(c) => s"[!${printCond(c)}]"
-        case CompoundCond(lhs, op, rhs) => {
-          op match {
-            case LogicOperator.AND => s"[${printCond(lhs)}, ${printCond(rhs)}]"
-            case LogicOperator.OR  => s"[${printCond(lhs)}; ${printCond(rhs)}]"
-          }
+  // print a condition
+  def print(cond: Cond) : String = {
+    cond match {
+      case ComparisonCond(lhs, op, rhs) => s"${print(lhs)} ${op} ${print(rhs)}"
+      case NegationCond(c) => s"[!${print(c)}]"
+      case CompoundCond(lhs, op, rhs) => {
+        op match {
+          case LogicOperator.AND => s"[${print(lhs)}, ${print(rhs)}]"
+          case LogicOperator.OR  => s"[${print(lhs)}; ${print(rhs)}]"
         }
       }
     }
-    b match {
-      case b: Atom => printAtom(b)
-      case b: Cond => printCond(b)
-      case b: QuantifiedBody => printQuantifiedBody(b)
-    }
+  }
+
+  def print(b: Body) : String = b match {
+    case b: Atom => print(b)
+    case b: Cond => print(b)
+    case b: QuantifiedBody => print(b)
   }
 
   def print(cq: ConjunctiveQuery): String = {
@@ -155,10 +153,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   def print(stmt: InferenceRule): String = {
     print(stmt.q) +
     ( if (stmt.weights == null) ""
-      else "\n  weight = " + (stmt.weights match {
-        case KnownFactorWeight(w) => w.toString
-        case UnknownFactorWeight(vs) => vs.map(print).mkString(", ")
-      })
+      else "\n  weight = " + (stmt.weights.variables.map(print).mkString(", "))
     ) +
     ( stmt.function map { "\n  function = " + _ } getOrElse("")
     ) + ".\n"

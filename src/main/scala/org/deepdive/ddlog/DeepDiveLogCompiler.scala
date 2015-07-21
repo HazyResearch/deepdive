@@ -294,7 +294,11 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
   def compileExpr(e: Expr) : String = {
     e match {
       case VarExpr(name) => compileVariable(name)
-      case ConstExpr(value) => value
+      case NullConst() => "NULL"
+      case IntConst(value) => value.toString
+      case DoubleConst(value) => value.toString
+      case BooleanConst(value) => value.toString
+      case StringConst(value) => s"'${value.replaceAll("'", "''")}'"
       case FuncExpr(function, args, agg) => {
         val resolvedArgs = args map (x => compileExpr(x))
         val resolved = s"${function}(${resolvedArgs.mkString(", ")})"
@@ -416,7 +420,7 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
     def containsAggregation(expr: Expr) : Boolean = {
       expr match {
         case VarExpr(name) => false
-        case ConstExpr(value) => false
+        case _: ConstExpr => false
         case FuncExpr(function, args, agg) => if (agg) agg else {
           args.map(containsAggregation).foldLeft(false)(_ || _)
         }
@@ -613,20 +617,15 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
             else
               None
           case _ => None
-        })
-
-        val variableIdsStr = Some(varInBody.mkString(", "))
+        }) mkString(", ")
 
         // weight string
-        val uwStr = stmt.weights match {
-          case UnknownFactorWeight(w) => Some(w.zipWithIndex.flatMap {
-            case(s: ConstExpr, i) => None
-            case(s: Expr, i) => Some(qc.compileExpr(s) + s""" AS "dd_weight_column_${i}" """)
-          } mkString(", "))
-          case _ => None
-        }
+        val uwStr = stmt.weights.variables.zipWithIndex.flatMap {
+          case(s: ConstExpr, i) => None
+          case(s: Expr, i) => Some(qc.compileExpr(s) + s""" AS "dd_weight_column_${i}" """)
+        } mkString(", ")
 
-        val selectStr = (List(variableIdsStr, uwStr) flatten).mkString(", ")
+        val selectStr = List(varInBody, uwStr).filterNot(_.isEmpty).mkString(", ")
 
         // factor input query
         inputQueries += s"""
@@ -651,17 +650,20 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           func = s"""${function}(${(funcBody.tail :+ firstFunc).mkString(", ")})"""
         }
         // weight
-        if (weight.length == 0)
-          weight = stmt.weights match {
-            case KnownFactorWeight(x) => s"${x}"
-            case UnknownFactorWeight(w) => {
-              val weightStr = w.zipWithIndex.flatMap {
-                case(s: ConstExpr, i) => None
+        if (weight.length == 0) {
+          // note error cases should be handled in semantic checker
+          weight = stmt.weights.variables(0) match {
+            case IntConst(value) => value.toString
+            case DoubleConst(value) => value.toString
+            case StringConst(value) => "?"
+            case _ => {
+              val weightVars = stmt.weights.variables.zipWithIndex.flatMap {
                 case(s: Expr, i) => Some(s"dd_weight_column_${i}")
               } mkString(", ")
-              if (weightStr.isEmpty) "?" else s"?(${weightStr})"
+              s"?(${weightVars})"
             }
           }
+        }
       }
       val blockName = ss.resolveInferenceBlockName(stmt)
       blocks ::= s"""

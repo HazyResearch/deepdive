@@ -35,10 +35,11 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
     checkVariableRelationSchema(stmt)
     checkNumberOfColumns(stmt)
     checkOptionalModifier(stmt)
+    checkWeight(stmt)
   }
 
   // iterate over all atoms contained in the body list and apply the checker
-  def checkBodyAtoms(checker: Atom => Unit)(bodies: List[Body]) : Unit = {
+  def checkBodyAtoms(checker: Atom => Unit): List[Body] => Unit = bodies => {
     bodies foreach {
       case a: Atom => checker(a)
       case a: QuantifiedBody => checkBodyAtoms(checker)(a.bodies)
@@ -53,7 +54,7 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
       if (!(heads contains a.name))
         error(stmt, s"""relation "${a.name}" is not defined""")
     }
-    def check = checkBodyAtoms(checkRelation)(_)
+    def check = checkBodyAtoms(checkRelation)
     stmt match {
       case s: ExtractionRule => s.q.bodies foreach check
       case s: InferenceRule => s.q.bodies foreach check
@@ -98,7 +99,7 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
     }
     def checkCq(cq: ConjunctiveQuery) {
       checkAtom(cq.head)
-      checkBodyAtoms(checkAtom)(cq.bodies.flatten)
+      cq.bodies foreach checkBodyAtoms(checkAtom)
     }
     stmt match {
       case s: ExtractionRule => checkCq(s.q)
@@ -124,8 +125,19 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
       }
     }
     stmt match {
-      case s: ExtractionRule => checkOuterJoinBodies(s.q.bodies.flatten)
-      case s: InferenceRule => checkOuterJoinBodies(s.q.bodies.flatten)
+      case s: ExtractionRule => s.q.bodies foreach checkOuterJoinBodies
+      case s: InferenceRule => s.q.bodies foreach checkOuterJoinBodies
+      case _ =>
+    }
+  }
+
+  // check if the weights makes sense
+  def checkWeight(stmt: Statement) {
+    stmt match {
+      case s: InferenceRule => {
+        if ((s.weights.variables collect { case x: ConstExpr => x }).size >= 2)
+          error(stmt, s"Weight variables can contain at most one constant")
+      }
       case _ =>
     }
   }

@@ -6,7 +6,7 @@ mention_candidate(doc_id text,
                   len int).
 
 @foo
-@bar(x=1.0)
+@bar(x=1)
 @qux(y=2.345)
 R(p text,
   q int,
