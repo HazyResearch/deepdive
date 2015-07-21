@@ -80,7 +80,7 @@ q2.label: Boolean
 
       deepdive.extraction.extractors.extraction_rule_5 {
         sql: """ 
-        INSERT INTO q1 SELECT DISTINCT R0.wid, 0 as id, R0.val AS label
+        INSERT INTO q1 SELECT DISTINCT R0.wid, 0 AS id, R0.val AS label
           FROM label1 R0
         
           
@@ -92,7 +92,7 @@ q2.label: Boolean
 
       deepdive.extraction.extractors.extraction_rule_6 {
         sql: """ 
-        INSERT INTO q2 SELECT DISTINCT R0.wid, 0 as id, R0.val AS label
+        INSERT INTO q2 SELECT DISTINCT R0.wid, 0 AS id, R0.val AS label
           FROM label2 R0
         
           
@@ -106,7 +106,7 @@ q2.label: Boolean
           input_query: """
           SELECT R0.id AS "q1.R0.id" , R1.feature_id AS "features.R1.feature_id" 
           FROM q1 R0, features R1
-        WHERE R1.word_id = R0.wid  """
+        WHERE R1.word_id = R0.wid """
           function: "Imply(q1.R0.label)"
           weight: "?(features.R1.feature_id)"
         }
@@ -116,7 +116,7 @@ q2.label: Boolean
           input_query: """
           SELECT R0.id AS "q2.R0.id" , R1.feature_id AS "features.R1.feature_id" 
           FROM q2 R0, features R1
-        WHERE R1.word_id = R0.wid  """
+        WHERE R1.word_id = R0.wid """
           function: "Imply(q2.R0.label)"
           weight: "?(features.R1.feature_id)"
         }

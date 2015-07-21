@@ -85,7 +85,6 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
       }
       case BinaryOpExpr(lhs, op, rhs) => s"(${printExpr(lhs)} ${op} ${printExpr(rhs)})"
       case TypecastExpr(lhs, rhs) => s"(${printExpr(lhs)} :: ${rhs})"
-      case Placeholder() => "_"
     }
   }
 
@@ -100,8 +99,6 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
           case LogicOperator.OR  => s"[${printCond(lhs)}; ${printCond(rhs)}]"
         }
       }
-      case InCond(lhs, rhs) => s"${printExpr(lhs)} IN ${rhs}"
-      case ExistCond(rhs) => s"EXISTS ${rhs}"
     }
   }
 
@@ -110,10 +107,10 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
     s"${a.name}(${vars.mkString(", ")})"
   }
 
-  def printModifierAtom(a: ModifierAtom) : String = {
+  def printQuantifiedBody(a: QuantifiedBody) : String = {
     val modifier = a.modifier match {
-      case ExistModifier(negated) => if(negated) "NOT " else "" + "EXIST"
-      case OuterModifier() => "OUTER"
+      case ExistModifier(negated) => if(negated) "NOT " else "" + "EXISTS"
+      case OuterModifier() => "OPTIONAL"
     }
     val bodyStr = (a.bodies map printBody).mkString(", ")
     s"${modifier}[${bodyStr}]"
@@ -123,7 +120,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
     b match {
       case b: Atom => printAtom(b)
       case b: Cond => printCond(b)
-      case b: ModifierAtom => printModifierAtom(b)
+      case b: QuantifiedBody => printQuantifiedBody(b)
     }
   }
 

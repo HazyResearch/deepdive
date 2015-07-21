@@ -123,10 +123,10 @@ q1.label: Boolean
       deepdive.extraction.extractors.extraction_rule_11 {
         sql: """ TRUNCATE dd_new_label2;
         INSERT INTO dd_new_label2 
-            SELECT  R0.wid, R0.val
+            SELECT R0.wid, R0.val
             FROM label2 R0
          UNION ALL 
-            SELECT  R0.wid, R0.val
+            SELECT R0.wid, R0.val
             FROM dd_delta_label2 R0
         
         """
@@ -153,10 +153,10 @@ q1.label: Boolean
       deepdive.extraction.extractors.extraction_rule_7 {
         sql: """ TRUNCATE dd_new_label1;
         INSERT INTO dd_new_label1 
-            SELECT  R0.wid, R0.val
+            SELECT R0.wid, R0.val
             FROM label1 R0
          UNION ALL 
-            SELECT  R0.wid, R0.val
+            SELECT R0.wid, R0.val
             FROM dd_delta_label1 R0
         
         """
@@ -167,7 +167,7 @@ q1.label: Boolean
 
       deepdive.extraction.extractors.extraction_rule_21 {
         sql: """ 
-        INSERT INTO dd_delta_q2 SELECT DISTINCT R0.wid, 0 as id, R0.val AS label
+        INSERT INTO dd_delta_q2 SELECT DISTINCT R0.wid, 0 AS id, R0.val AS label
           FROM dd_delta_label2 R0
         
           
@@ -180,10 +180,10 @@ q1.label: Boolean
       deepdive.extraction.extractors.extraction_rule_3 {
         sql: """ TRUNCATE dd_new_features;
         INSERT INTO dd_new_features 
-            SELECT  R0.id, R0.word_id, R0.feature_id, R0.feature_val
+            SELECT R0.id, R0.word_id, R0.feature_id, R0.feature_val
             FROM features R0
          UNION ALL 
-            SELECT  R0.id, R0.word_id, R0.feature_id, R0.feature_val
+            SELECT R0.id, R0.word_id, R0.feature_id, R0.feature_val
             FROM dd_delta_features R0
         
         """
@@ -194,7 +194,7 @@ q1.label: Boolean
 
       deepdive.extraction.extractors.extraction_rule_20 {
         sql: """ 
-        INSERT INTO dd_delta_q1 SELECT DISTINCT R0.wid, 0 as id, R0.val AS label
+        INSERT INTO dd_delta_q1 SELECT DISTINCT R0.wid, 0 AS id, R0.val AS label
           FROM dd_delta_label1 R0
         
           
@@ -223,7 +223,7 @@ q1.label: Boolean
           input_query: """
           SELECT R0.id AS "dd_new_q2.R0.id" , R1.feature_id AS "dd_delta_features.R1.feature_id" 
           FROM dd_new_q2 R0, dd_delta_features R1
-        WHERE R1.word_id = R0.wid  """
+        WHERE R1.word_id = R0.wid """
           function: "Imply(dd_new_q2.R0.label)"
           weight: "?(dd_delta_features.R1.feature_id)"
         }
@@ -233,7 +233,7 @@ q1.label: Boolean
           input_query: """
           SELECT R0.id AS "dd_new_q1.R0.id" , R1.feature_id AS "dd_delta_features.R1.feature_id" 
           FROM dd_new_q1 R0, dd_delta_features R1
-        WHERE R1.word_id = R0.wid  """
+        WHERE R1.word_id = R0.wid """
           function: "Imply(dd_new_q1.R0.label)"
           weight: "?(dd_delta_features.R1.feature_id)"
         }

@@ -18,15 +18,14 @@ case class ConstExpr(value: String) extends Expr
 case class FuncExpr(function: String, args: List[Expr], isAggregation: Boolean) extends Expr
 case class BinaryOpExpr(lhs: Expr, op: String, rhs: Expr) extends Expr
 case class TypecastExpr(lhs: Expr, rhs: String) extends Expr
-case class Placeholder extends Expr
 
 sealed trait Body
 case class Atom(name : String, terms : List[Expr]) extends Body
-case class ModifierAtom(modifier: AtomModifier, bodies: List[Body]) extends Body
+case class QuantifiedBody(modifier: BodyModifier, bodies: List[Body]) extends Body
 
-sealed trait AtomModifier
-case class ExistModifier(negated: Boolean) extends AtomModifier
-case class OuterModifier extends AtomModifier
+sealed trait BodyModifier
+case class ExistModifier(negated: Boolean) extends BodyModifier
+case class OuterModifier extends BodyModifier
 
 case class Attribute(name : String, terms : List[String], types : List[String], annotations : List[List[Annotation]])
 case class ConjunctiveQuery(head: Atom, bodies: List[List[Body]], isDistinct: Boolean, limit: Option[Int])
@@ -45,8 +44,6 @@ sealed trait Cond extends Body
 case class ComparisonCond(lhs: Expr, op: String, rhs: Expr) extends Cond
 case class NegationCond(cond: Cond) extends Cond
 case class CompoundCond(lhs: Cond, op: LogicOperator.LogicOperator, rhs: Cond) extends Cond
-case class InCond(lhs: Expr, relName: String) extends Cond
-case class ExistCond(relName: String) extends Cond
 
 // logic operators
 object LogicOperator extends Enumeration {
@@ -169,8 +166,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
 
   // expression
   def expr : Parser[Expr] =
-    ( "_" ^^ { case _ => Placeholder() }
-    | lexpr ~ operator ~ expr ^^ { case (lhs ~ op ~ rhs) => BinaryOpExpr(lhs, op, rhs) }
+    ( lexpr ~ operator ~ expr ^^ { case (lhs ~ op ~ rhs) => BinaryOpExpr(lhs, op, rhs) }
     | lexpr ~ typeOperator ~ columnType ^^ { case (lhs ~ _ ~ rhs) => TypecastExpr(lhs, rhs) }
     | lexpr
     )
@@ -190,7 +186,6 @@ class DeepDiveLogParser extends JavaTokenParsers {
 
   // conditional expressions
   def compareOperator = "LIKE" | ">" | "<" | ">=" | "<=" | "!=" | "=" | "IS" | "IS NOT"
-  def atomModifier = "EXIST" | "OUTER"
 
   def cond : Parser[Cond] =
     ( acond ~ (";") ~ cond ^^ { case (lhs ~ op ~ rhs) =>
@@ -217,12 +212,12 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def atom = relationName ~ "(" ~ repsep(expr, ",") ~ ")" ^^ {
     case (r ~ "(" ~ patterns ~ ")") => Atom(r, patterns)
   }
-  def modifierAtom = (opt("NOT") ~ "EXIST" | "OUTER") ~ "[" ~ rep1sep(cqBody, ",") ~ "]" ^^ { case (m ~ _ ~ b ~ _) =>
+  def modifierAtom = (opt("!") ~ "EXISTS" | "OPTIONAL") ~ "[" ~ rep1sep(cqBody, ",") ~ "]" ^^ { case (m ~ _ ~ b ~ _) =>
     val modifier = m match {
-      case (not ~ "EXIST") => new ExistModifier(not != None)
-      case "OUTER" => new OuterModifier
+      case (not ~ "EXISTS") => new ExistModifier(not != None)
+      case "OPTIONAL" => new OuterModifier
     }
-    ModifierAtom(modifier, b)
+    QuantifiedBody(modifier, b)
   }
 
   def cqBody: Parser[Body] = cond | modifierAtom | atom

@@ -62,28 +62,28 @@ L(x) * | 100 :-
 
 M(x)  :-
     b(x, y, z, w),
-    EXIST[c(a, x, b)].
+    EXISTS[c(a, x, b)].
 
 N(x)  :-
     b(x, y, z, w),
-    EXIST[c(a, x, b), a >  "a" ].
+    EXISTS[c(a, x, b), a >  "a" ].
 
 O(x)  :-
     b(x, y, z, w),
-    EXIST[c(a, x, b), a(x)].
+    EXISTS[c(a, x, b), a(x)].
 
 S(x)  :-
     b(x, y, z, w),
-    OUTER[c(a, x, b)].
+    OPTIONAL[c(a, x, b)].
 
 T(x)  :-
     b(x, y, z, w),
-    OUTER[c(a, x, b), a > y],
+    OPTIONAL[c(a, x, b), a > y],
     a > y.
 
 U(x)  :-
-    OUTER[b(x, y, z, w)],
-    OUTER[c(a, x, b)].
+    OPTIONAL[b(x, y, z, w)],
+    OPTIONAL[c(a, x, b)].
 
 V(x)  :-
     c(_, x, _),

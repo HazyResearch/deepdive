@@ -36,8 +36,8 @@ object DeepDiveLogDeltaDeriver{
     cq.bodies foreach { bodies =>
       // We don't support deriving delta rules for modifiers
       bodies foreach {
-        case x: ModifierAtom => throw new RuntimeException("Deriving delta rules for modifier atom is not supported!")
-        case _ =>
+        case _: Cond | _: Atom => // supported
+        case _: QuantifiedBody => throw new RuntimeException("Deriving delta rules for modifier atom is not supported!")
       }
       // Delta body
       val incDeltaBody = bodies collect {

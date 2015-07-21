@@ -36,17 +36,17 @@ K(x) :- b(x,y,z,w), [x + w = 100, [!x > 50; x = 40]].
 L(x) * | 100 :- b(x, y, z, w).
 
 # modifiers
-M(x) :- b(x,y,z,w), EXIST[c(a,x,b)].
+M(x) :- b(x,y,z,w), EXISTS[c(a,x,b)].
 
-N(x) :- b(x,y,z,w), EXIST[c(a,x,b), a > "a"].
+N(x) :- b(x,y,z,w), EXISTS[c(a,x,b), a > "a"].
 
-O(x) :- b(x,y,z,w), EXIST[c(a,x,b), a(x)].
+O(x) :- b(x,y,z,w), EXISTS[c(a,x,b), a(x)].
 
-S(x) :- b(x,y,z,w), OUTER[c(a,x,b)].
+S(x) :- b(x,y,z,w), OPTIONAL[c(a,x,b)].
 
-T(x) :- b(x,y,z,w), OUTER[c(a,x,b), a > y], a > y.
+T(x) :- b(x,y,z,w), OPTIONAL[c(a,x,b), a > y], a > y.
 
-U(x) :- OUTER[b(x,y,z,w)], OUTER[c(a,x,b)].
+U(x) :- OPTIONAL[b(x,y,z,w)], OPTIONAL[c(a,x,b)].
 
 # placeholder
 V(x) :- c(_,x,_), a(x).

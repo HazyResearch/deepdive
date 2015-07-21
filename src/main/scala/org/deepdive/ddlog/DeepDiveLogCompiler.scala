@@ -62,6 +62,7 @@ import scala.collection.immutable.HashMap
 import org.apache.commons.lang3.StringEscapeUtils
 import scala.collection.mutable.ListBuffer
 import org.deepdive.ddlog.DeepDiveLog.Mode._
+import scala.language.postfixOps
 
 object AliasStyle extends Enumeration {
   type AliasStyle = Value
@@ -176,196 +177,6 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
     if( ground_relations contains relName ) !ground_relations(relName) else true
   }
 
-  // compile a variable name to its canonical relation and column in R{index}.{name} style
-  def compileVariable(v: String, cq: ConjunctiveQuery) = {
-    val qs = new QuerySchema(cq)
-    val index = qs.getBodyIndex(v)
-    val name  = resolveName(qs.getVar(v))
-    s"R${index}.${name}"
-  }
-
-  // compile alias, only used for head
-  def compileAlias(e: Expr, cq: ConjunctiveQuery, alias: AliasStyle) = {
-    e match {
-      case VarExpr(v) => {
-        val qs = new QuerySchema(cq)
-        val index = qs.getBodyIndex(v)
-        val variable = qs.getVar(v)
-        val name  = resolveName(variable)
-        val relation = variable.relName
-        alias match {
-          case NoAlias => ""
-          case HeadAlias => s""" AS "${relation}.R${index}.${name}" """
-          case WeightAlias => s"${relation}.R${index}.${name}"
-        }
-      }
-      case _ => s" AS column_${cq.head.terms indexOf e}"
-    }
-  }
-
-  // resolve an expression
-  def compileExpr(e: Expr, cq: ConjunctiveQuery, generateAlias: Expr => String = e => "") = {
-    // recursively compile an expression
-    def compileExprInner(e: Expr) : String = {
-      e match {
-        case VarExpr(name) => compileVariable(name, cq)
-        case ConstExpr(value) => value
-        case FuncExpr(function, args, agg) => {
-          val resolvedArgs = args map (x => compileExprInner(x))
-          val resolved = s"${function}(${resolvedArgs.mkString(", ")})"
-          resolved
-        }
-        case BinaryOpExpr(lhs, op, rhs) => {
-          val resovledLhs = compileExprInner(lhs)
-          val resovledRhs = compileExprInner(rhs)
-          s"(${resovledLhs} ${op} ${resovledRhs})"
-        }
-        case TypecastExpr(lhs, rhs) => {
-          val resovledLhs = compileExprInner(lhs)
-          s"(${resovledLhs} :: ${rhs})"
-        }
-        case Placeholder() => ""
-      }
-    }
-    compileExprInner(e) + generateAlias(e)
-  }
-
-  // resolve a condition
-  def compileCond(cond: Cond, cq: ConjunctiveQuery) : String = {
-    cond match {
-      case ComparisonCond(lhs, op, rhs) =>
-        s"${compileExpr(lhs, cq)} ${op} ${compileExpr(rhs, cq)}"
-      case NegationCond(c) => s"(NOT ${compileCond(c, cq)})"
-      case CompoundCond(lhs, op, rhs) => {
-        val resolvedLhs = s"${compileCond(lhs, cq)}"
-        val resolvedRhs = s"${compileCond(rhs, cq)}"
-        op match {
-          case LogicOperator.AND => s"(${resolvedLhs} AND ${resolvedRhs})"
-          case LogicOperator.OR  => s"(${resolvedLhs} OR ${resolvedRhs})"
-        }
-      }
-      case InCond(lhs, rhs) => {
-        s"${compileExpr(lhs, cq)} IN (SELECT * FROM ${rhs})"
-      }
-      case ExistCond(rhs) => s"EXISTS (SELECT * FROM ${rhs})"
-      case _ => ""
-    }
-  }
-
-  // This is generic code that generates the FROM with positional aliasing R0, R1, etc.
-  // and the corresponding WHERE clause
-  def generateSQLBody(z : ConjunctiveQuery) : String = {
-    // Simple logic for the where clause, first find every first occurence of a
-    // and stick it in a map.
-    val qs = new QuerySchema(z)
-
-    def generateWhereClause(bodies: List[Body], indexPrefix: String) : String = {
-      val conditions = bodies.zipWithIndex.flatMap {
-        case (Atom(relName, terms), index) => {
-          val bodyIndex = s"${indexPrefix}${index}"
-          terms.zipWithIndex flatMap { case (expr, atomIndex) =>
-            expr match {
-              // a simple variable indicates a join condition with other columns having the same variable name
-              case VarExpr(varName) => {
-                val canonical_body_index = qs.getBodyIndex(varName)
-                if (canonical_body_index != bodyIndex) {
-                  val real_attr_name1 = resolveName( Variable(varName, relName, atomIndex) )
-                  val real_attr_name2 = resolveName( qs.getVar(varName))
-                  Some(s"R${ bodyIndex }.${ real_attr_name1 } = R${ canonical_body_index }.${ real_attr_name2 } ")
-                } else { None }
-              }
-              case Placeholder() => None
-              // other expressions indicate a filter condition on the column
-              case _ => {
-                val resolved = compileExpr(expr, z)
-                val attr = schema(relName, atomIndex)
-                Some(s"R${bodyIndex}.${attr} = ${resolved}")
-              }
-            }
-          }
-        }
-        case (x: Cond, _) => Some(compileCond(x, z))
-        case (x: ModifierAtom, index) => {
-          val newIndexPrefix = s"${indexPrefix}${index}_"
-          val subqueryWhereStr = generateWhereClause(x.bodies, newIndexPrefix)
-          val subqueryFromStr  = generateFromClause(x.bodies, newIndexPrefix)
-          x.modifier match {
-            case ExistModifier(negated) => Some(s"${if (negated) "NOT " else ""}EXISTS (SELECT 1 FROM ${subqueryFromStr} WHERE ${subqueryWhereStr})")
-            case _ => None
-          }
-        }
-      }
-      conditions.mkString(" AND ")
-    }
-
-    def generateFromClause(bodies: List[Body], indexPrefix: String) : String = {
-      val atoms = bodies.zipWithIndex flatMap {
-        case (x:Atom,i) => Some(s"${x.name} R${indexPrefix}${i}")
-        case _ => None
-      }
-      val outers = bodies.zipWithIndex flatMap {
-        case (x:ModifierAtom,i) => {
-          val newIndexPrefix = s"${indexPrefix}${i}_"
-          x.modifier match {
-            case OuterModifier() => {
-              val from = generateFromClause(x.bodies, newIndexPrefix)
-              val joinCond = generateWhereClause(x.bodies, newIndexPrefix)
-              Some(s"${from} ON ${joinCond}")
-            }
-            case _ => None
-          }
-        }
-        case _ => None
-      }
-      // full outer join
-      if (atoms isEmpty) {
-        outers.mkString(" FULL OUTER JOIN ")
-      } else {
-        (atoms.mkString(", ") +: outers).mkString(" LEFT OUTER JOIN ")
-      }
-    }
-
-    val whereClause = generateWhereClause(z.bodies(0), "")
-    val whereClauseStr = if (whereClause.isEmpty) "" else "WHERE " + whereClause
-    val fromClauseStr = generateFromClause(z.bodies(0), "")
-
-    // check if an expression contains an aggregation function
-    def containsAggregation(expr: Expr) : Boolean = {
-      expr match {
-        case VarExpr(name) => false
-        case ConstExpr(value) => false
-        case FuncExpr(function, args, agg) => if (agg) agg else {
-          args.map(containsAggregation).foldLeft(false)(_ || _)
-        }
-        case BinaryOpExpr(lhs, op, rhs) => containsAggregation(lhs) || containsAggregation(rhs)
-        case TypecastExpr(lhs, rhs) => containsAggregation(lhs)
-        case Placeholder() => false
-      }
-    }
-
-    // handle group by
-    // map head terms, leaving out aggregation functions
-    val groupbyTerms = z.head.terms.zipWithIndex flatMap { case (expr, index) =>
-      if (containsAggregation(expr)) None
-      else Some(compileExpr(expr, z))
-    }
-
-    val groupbyStr = if (groupbyTerms.size == z.head.terms.size || groupbyTerms.isEmpty) {
-      ""
-    } else {
-      s"\n        GROUP BY ${groupbyTerms.mkString(", ")}"
-    }
-
-    // limit clause
-    val limitStr = z.limit match {
-      case Some(s) => s" LIMIT ${s}"
-      case None => ""
-    }
-
-    s"""FROM ${ fromClauseStr }
-        ${ whereClauseStr }${groupbyStr}${limitStr}"""
-  }
-
   // Group statements by head
   def groupByHead(statements: List[Statement]) = {
     // Compile compilation states by head name based on type
@@ -429,11 +240,12 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
   }
 }
 
-// This is responsible for schema elements within a given query, e.g.,
-// what is the canonical version of x? (i.e., the first time it is
-// mentioned in the body. This is useful to translate to SQL (join
-// conditions, select, etc.)
-class QuerySchema(q : ConjunctiveQuery) {
+// This is responsible for compiling a single conjunctive query
+class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
+  // This is responsible for schema elements within a given query, e.g.,
+  // what is the canonical version of x? (i.e., the first time it is
+  // mentioned in the body. This is useful to translate to SQL (join
+  // conditions, select, etc.)
   var query_schema = new HashMap[ String, Tuple2[String,Variable] ]()
 
   // maps each variable name to a canonical version of itself (first occurence in body in left-to-right order)
@@ -450,22 +262,203 @@ class QuerySchema(q : ConjunctiveQuery) {
         }
       }
     }
-
+    // For quantified body, we need to recursively add variables from the atoms inside the quantified body
     def generateCanonicalVarFromBodies(bodies: List[Body], indexPrefix: String) {
       bodies.zipWithIndex.foreach {
         case (a: Atom, index) => generateCanonicalVarFromAtom(a, s"${indexPrefix}${index}")
-        case (a: ModifierAtom, index) => generateCanonicalVarFromBodies(a.bodies, s"${indexPrefix}${index}_")
+        // we need to recursively handle the atoms inside the modifier
+        case (a: QuantifiedBody, index) => generateCanonicalVarFromBodies(a.bodies, s"${indexPrefix}${index}_")
         case _ =>
       }
     }
 
-    generateCanonicalVarFromBodies(q.bodies(0), "")
+    generateCanonicalVarFromBodies(cq.bodies(0), "")
   }
   generateCanonicalVar() // initialize
 
   // accessors
   def getBodyIndex( varName : String )       = { query_schema(varName)._1 }
   def getVar(varName : String ) : Variable   = { query_schema(varName)._2 }
+
+  // compile a variable name to its canonical relation and column in R{index}.{name} style
+  def compileVariable(v: String) = {
+    val index = getBodyIndex(v)
+    val name  = ss.resolveName(getVar(v))
+    s"R${index}.${name}"
+  }
+
+  // compile alias
+  def compileAlias(e: Expr, alias: AliasStyle) = {
+    e match {
+      case VarExpr(v) => {
+        val index = getBodyIndex(v)
+        val variable = getVar(v)
+        val name  = ss.resolveName(variable)
+        val relation = variable.relName
+        alias match {
+          case NoAlias => ""
+          case HeadAlias => s""" AS "${relation}.R${index}.${name}" """
+          case WeightAlias => s"${relation}.R${index}.${name}"
+        }
+      }
+      case _ => s" AS column_${cq.head.terms indexOf e}"
+    }
+  }
+
+  // compile expression with alias, only used for head
+  def compileExprWithAlias(e: Expr, alias: AliasStyle) = {
+    compileExpr(e) + compileAlias(e, alias)
+  }
+
+  // resolve an expression
+  def compileExpr(e: Expr) : String = {
+    e match {
+      case VarExpr(name) => compileVariable(name)
+      case ConstExpr(value) => value
+      case FuncExpr(function, args, agg) => {
+        val resolvedArgs = args map (x => compileExpr(x))
+        val resolved = s"${function}(${resolvedArgs.mkString(", ")})"
+        resolved
+      }
+      case BinaryOpExpr(lhs, op, rhs) => {
+        val resovledLhs = compileExpr(lhs)
+        val resovledRhs = compileExpr(rhs)
+        s"(${resovledLhs} ${op} ${resovledRhs})"
+      }
+      case TypecastExpr(lhs, rhs) => {
+        val resovledLhs = compileExpr(lhs)
+        s"(${resovledLhs} :: ${rhs})"
+      }
+    }
+  }
+
+  // resolve a condition
+  def compileCond(cond: Cond) : String = {
+    cond match {
+      case ComparisonCond(lhs, op, rhs) =>
+        s"${compileExpr(lhs)} ${op} ${compileExpr(rhs)}"
+      case NegationCond(c) => s"(NOT ${compileCond(c)})"
+      case CompoundCond(lhs, op, rhs) => {
+        val resolvedLhs = s"${compileCond(lhs)}"
+        val resolvedRhs = s"${compileCond(rhs)}"
+        op match {
+          case LogicOperator.AND => s"(${resolvedLhs} AND ${resolvedRhs})"
+          case LogicOperator.OR  => s"(${resolvedLhs} OR ${resolvedRhs})"
+        }
+      }
+      case _ => ""
+    }
+  }
+
+  // generate SQL SELECT cluase
+  def generateSQLHead(alias: AliasStyle) = {
+    val head = (cq.head.terms map { expr => compileExprWithAlias(expr, alias) }).mkString(", ")
+    val distinctStr = if (cq.isDistinct) "DISTINCT " else ""
+    s"${distinctStr}${head}"
+  }
+
+  // This is generic code that generates the FROM with positional aliasing R0, R1, etc.
+  // and the corresponding WHERE clause
+  def generateSQLBody() : String = {
+    // generate where clause from unification and conditions
+    def generateWhereClause(bodies: List[Body], indexPrefix: String) : String = {
+      val conditions = bodies.zipWithIndex.flatMap {
+        case (Atom(relName, terms), index) => {
+          val bodyIndex = s"${indexPrefix}${index}"
+          terms.zipWithIndex flatMap { case (expr, atomIndex) =>
+            expr match {
+              // a simple variable indicates a join condition with other columns having the same variable name
+              case VarExpr(varName) => {
+                val canonical_body_index = getBodyIndex(varName)
+                if (canonical_body_index != bodyIndex) {
+                  val real_attr_name1 = ss.resolveName( Variable(varName, relName, atomIndex) )
+                  val real_attr_name2 = ss.resolveName( getVar(varName))
+                  Some(s"R${ bodyIndex }.${ real_attr_name1 } = R${ canonical_body_index }.${ real_attr_name2 } ")
+                } else { None }
+              }
+              // other expressions indicate a filter condition on the column
+              case _ => {
+                val resolved = compileExpr(expr)
+                val attr = ss.schema(relName, atomIndex)
+                Some(s"R${bodyIndex}.${attr} = ${resolved}")
+              }
+            }
+          }
+        }
+        case (x: Cond, _) => Some(compileCond(x))
+        case (x: QuantifiedBody, index) => {
+          val newIndexPrefix = s"${indexPrefix}${index}_"
+          val subqueryWhereStr = generateWhereClause(x.bodies, newIndexPrefix)
+          val subqueryFromStr  = generateFromClause(x.bodies, newIndexPrefix)
+          x.modifier match {
+            case ExistModifier(negated) => Some(s"${if (negated) "NOT " else ""}EXISTS (SELECT 1 FROM ${subqueryFromStr} WHERE ${subqueryWhereStr})")
+            case _ => None
+          }
+        }
+      }
+      conditions.mkString(" AND ")
+    }
+
+    def generateFromClause(bodies: List[Body], indexPrefix: String) : String = {
+      val atoms = bodies.zipWithIndex flatMap {
+        case (x:Atom,i) => Some(s"${x.name} R${indexPrefix}${i}")
+        case _ => None
+      }
+      val outers = bodies.zipWithIndex flatMap {
+        case (x:QuantifiedBody,i) => {
+          val newIndexPrefix = s"${indexPrefix}${i}_"
+          x.modifier match {
+            case OuterModifier() => {
+              val from = generateFromClause(x.bodies, newIndexPrefix)
+              val joinCond = generateWhereClause(x.bodies, newIndexPrefix)
+              Some(s"${from} ON ${joinCond}")
+            }
+            case _ => None
+          }
+        }
+        case _ => None
+      }
+      // full outer join
+      if (atoms isEmpty) {
+        outers.mkString(" FULL OUTER JOIN ")
+      } else {
+        (atoms.mkString(", ") +: outers).mkString(" LEFT OUTER JOIN ")
+      }
+    }
+
+    def optionalClause(prefix: String, clause: String): String =
+      if (clause.isEmpty) "" else prefix + " " + clause
+
+    // check if an expression contains an aggregation function
+    def containsAggregation(expr: Expr) : Boolean = {
+      expr match {
+        case VarExpr(name) => false
+        case ConstExpr(value) => false
+        case FuncExpr(function, args, agg) => if (agg) agg else {
+          args.map(containsAggregation).foldLeft(false)(_ || _)
+        }
+        case BinaryOpExpr(lhs, op, rhs) => containsAggregation(lhs) || containsAggregation(rhs)
+        case TypecastExpr(lhs, rhs) => containsAggregation(lhs)
+      }
+    }
+
+    // handle group by
+    // map head terms, leaving out aggregation functions
+    val groupbyTerms = cq.head.terms.filterNot(containsAggregation) map (compileExpr(_))
+
+    val groupbyStr = if (groupbyTerms.size == cq.head.terms.size || groupbyTerms.isEmpty) {
+      ""
+    } else {
+      s"\n        GROUP BY ${groupbyTerms.mkString(", ")}"
+    }
+
+    // limit clause
+    val limitStr = optionalClause("LIMIT", cq.limit.getOrElse("").toString)
+
+    s"""FROM ${ generateFromClause(cq.bodies(0), "") }
+        ${ optionalClause("WHERE", generateWhereClause(cq.bodies(0), "")) }${groupbyStr}${limitStr}"""
+  }
+
 }
 
 
@@ -526,25 +519,19 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       for (cqBody <- stmt.q.bodies) {
         val tmpCq = stmt.q.copy(bodies = List(cqBody))
         // Generate the body of the query.
-        val qs              = new QuerySchema( tmpCq )
+        val qc              = new QueryCompiler(tmpCq, ss)
 
         if (stmt.supervision != null) {
           if (stmt.q.bodies.length > 1) ss.error(s"Scoping rule does not allow disjunction.\n")
-          val headTerms = tmpCq.head.terms map { expr =>
-            ss.compileExpr(expr, tmpCq, ss.compileAlias(_, tmpCq, NoAlias))
-          }
-          val labelCol = ss.compileVariable(stmt.supervision, tmpCq)
-          val headTermsStr = ( headTerms :+ "0 as id" ).mkString(", ")
-          inputQueries += s"""SELECT DISTINCT ${ headTermsStr }, ${labelCol} AS label
-          ${ ss.generateSQLBody(tmpCq) }
+          val headStr = qc.generateSQLHead(NoAlias)
+          val labelCol = qc.compileVariable(stmt.supervision)
+          inputQueries += s"""SELECT DISTINCT ${ headStr }, 0 AS id, ${labelCol} AS label
+          ${ qc.generateSQLBody() }
           """
         } else if ((ss.schemaDeclarationGroupByHead contains stmt.q.head.name) && (ss.schemaDeclarationGroupByHead(stmt.q.head.name)(0).isQuery) && (stmt.q.head.name startsWith "dd_new_")) {
-          val headTerms = tmpCq.head.terms map { expr =>
-            ss.compileExpr(expr, tmpCq, ss.compileAlias(_, tmpCq, NoAlias))
-          }
-          val headTermsStr = ( headTerms :+ "id" ).mkString(", ")
-          inputQueries += s"""SELECT DISTINCT ${ headTermsStr }, label
-          ${ ss.generateSQLBody(tmpCq) }
+          val headStr = qc.generateSQLHead(NoAlias)
+          inputQueries += s"""SELECT DISTINCT ${ headStr }, id, label
+          ${ qc.generateSQLBody() }
           """
         } else {
           // variable columns
@@ -557,14 +544,10 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
             case true => NoAlias
             case false => HeadAlias
           }
-          val variableCols = tmpCq.head.terms map { expr =>
-            ss.compileExpr(expr, tmpCq, ss.compileAlias(_, tmpCq, resolveColumnFlag))
-          }
-          val selectStr = variableCols.mkString(", ")
-          val distinctStr = if (tmpCq.isDistinct) "DISTINCT" else ""
+          val headStr = qc.generateSQLHead(resolveColumnFlag)
           inputQueries += s"""
-            SELECT ${distinctStr} ${selectStr}
-            ${ ss.generateSQLBody(tmpCq) }"""
+            SELECT ${headStr}
+            ${ qc.generateSQLBody() }"""
         }
       }
     }
@@ -643,7 +626,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
         val fakeBodyAtoms   = fakeBody.collect { case x: Atom => x }
 
         val index = cqBody.length + 1
-        val qs2 = new QuerySchema( fakeCQ )
+        val qc = new QueryCompiler(fakeCQ, ss)
         // TODO self-join?
         val varInBody = (fakeBody.zipWithIndex flatMap {
           case (x: Atom, i) =>
@@ -659,7 +642,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
         // weight string
         val uwStr = stmt.weights match {
           case UnknownFactorWeight(w) => Some(w.map(s =>
-            ss.compileExpr(VarExpr(s), fakeCQ, ss.compileAlias(_, fakeCQ, HeadAlias))).mkString(", "))
+            qc.compileExprWithAlias(VarExpr(s), HeadAlias)).mkString(", "))
           case _ => None
         }
 
@@ -668,7 +651,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
         // factor input query
         inputQueries += s"""
           SELECT ${selectStr}
-          ${ ss.generateSQLBody(fakeCQ) }"""
+          ${ qc.generateSQLBody() }"""
         // factor function
         if (func.length == 0) {
           val funcBody = (fakeBodyAtoms map {x =>
@@ -692,7 +675,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           weight = stmt.weights match {
             case KnownFactorWeight(x) => s"${x}"
             case UnknownFactorWeight(w) => {
-              val weightVar = w.map(s => ss.compileAlias(VarExpr(s), fakeCQ, WeightAlias)).mkString(", ")
+              val weightVar = w.map(s => qc.compileAlias(VarExpr(s), WeightAlias)).mkString(", ")
               s"?(${weightVar})"
             }
             case UnknownFactorWeightBindingToConst(w) => "?"
