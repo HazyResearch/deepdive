@@ -34,8 +34,9 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
     checkFunctionDefined(stmt)
     checkVariableRelationSchema(stmt)
     checkNumberOfColumns(stmt)
-    checkOptionalModifier(stmt)
+    checkQuantifiedBody(stmt)
     checkWeight(stmt)
+    checkHeadVariables(stmt)
   }
 
   // iterate over all atoms contained in the body list and apply the checker
@@ -108,25 +109,29 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
     }
   }
 
-  // check if outer join body contains one atom
-  def checkOptionalModifier(stmt: Statement) {
-    def checkOuterJoinBodies(bodies: List[Body]) {
+  // check if quantified body contains required number of atoms
+  def checkQuantifiedBody(stmt: Statement) {
+    def checkBody(bodies: List[Body]) {
       bodies.foreach {
         case b: QuantifiedBody => {
           b.modifier match {
             case OuterModifier() =>
-              if ((b.bodies collect { case x: Atom => 1 }).size != 1) {
+              if ((b.bodies collect { case x: Atom => 1 }).size != 1)
                 error(stmt, s"One and only one atom should be supplied in OPTIONAL modifier")
-              }
-            case _ =>
+            case ExistModifier(_) =>
+              if ((b.bodies collect { case x: Atom => 1 }).size == 0)
+                error(stmt, s"At least one atom should be supplied in EXISTS modifier")
+            case AllModifier() =>
+              if ((b.bodies collect { case x: Atom => 1 }).size == 0)
+                error(stmt, s"At least one atom should be supplied in ALL modifier")
           }
         }
         case _ =>
       }
     }
     stmt match {
-      case s: ExtractionRule => s.q.bodies foreach checkOuterJoinBodies
-      case s: InferenceRule => s.q.bodies foreach checkOuterJoinBodies
+      case s: ExtractionRule => s.q.bodies foreach checkBody
+      case s: InferenceRule => s.q.bodies foreach checkBody
       case _ =>
     }
   }
@@ -138,6 +143,43 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
         if ((s.weights.variables collect { case x: ConstExpr => x }).size >= 2)
           error(stmt, s"Weight variables can contain at most one constant")
       }
+      case _ =>
+    }
+  }
+
+  // check if head variables have bindings in the body
+  def checkHeadVariables(stmt: Statement) {
+    var variableSet = new HashSet[String]()
+    def addVariable(body: List[Body]) {
+      body foreach {
+        case a: Atom => a.terms.foreach {
+          case VarExpr(v) => variableSet += v
+          case _ =>
+        }
+        case a: QuantifiedBody => addVariable(a.bodies)
+        case _ =>
+      }
+    }
+    def checkHeadExpr(e: Expr) {
+      e match {
+        case VarExpr(v) =>
+          if (!variableSet.contains(v)) error(stmt, s"Head variable ${v} is not defined in the body")
+        case FuncExpr(_, args, _) => args foreach checkHeadExpr
+        case BinaryOpExpr(lhs, _, rhs) => {
+          checkHeadExpr(lhs)
+          checkHeadExpr(rhs)
+        }
+        case TypecastExpr(lhs, _) => checkHeadExpr(lhs)
+        case _ =>
+      }
+    }
+    def checkCq(cq: ConjunctiveQuery) {
+      cq.bodies foreach addVariable
+      cq.head.terms foreach checkHeadExpr
+    }
+    stmt match {
+      case s: ExtractionRule => checkCq(s.q)
+      case s: InferenceRule  => checkCq(s.q)
       case _ =>
     }
   }
