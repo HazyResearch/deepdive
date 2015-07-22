@@ -44,6 +44,7 @@ case class Column(name : String // name of the column
 case class Annotation( name : String // name of the annotation
                      , args : Map[String, Any] = Map.empty // optional, named arguments
                      )
+case class RuleAnnotation(name: String, args: List[Any])
 
 // condition
 sealed trait Cond extends Body
@@ -241,8 +242,14 @@ class DeepDiveLogParser extends JavaTokenParsers {
       }
     )
 
-  def functionMode = "mode" ~> "=" ~> functionModeType
-  def inferenceMode = "mode" ~> "=" ~> inferenceModeType
+  def ruleAnnotation(arg: Parser[Any]) = "@" ~> annotationName ~ "(" ~ rep1sep(arg, ",") <~ ")" ^^ {
+    case (name ~ _ ~ args) => RuleAnnotation(name, args)
+  }
+
+  def ruleAnnotations(arg: Parser[Any]) = rep(ruleAnnotation(arg))
+
+  def functionMode = "@mode" ~> "(" ~> functionModeType <~ ")"
+  def inferenceMode = "@mode" ~> "(" ~> inferenceModeType <~ ")"
 
   def functionImplementation : Parser[FunctionImplementationDeclaration] =
     ( "implementation" ~ stringLiteralAsString ~ "handles" ~ ("tsv" | "json") ~ "lines" ^^ {
@@ -254,41 +261,39 @@ class DeepDiveLogParser extends JavaTokenParsers {
     )
 
   def functionDeclaration : Parser[FunctionDeclaration] =
-    ( "function" ~ functionName ~ "over" ~ relationType
+    ( opt(functionMode) ~ "function" ~ functionName ~ "over" ~ relationType
                              ~ "returns" ~ relationType
-                 ~ (functionImplementation+) ~ opt(functionMode)
+                 ~ (functionImplementation+)
     ) ^^ {
-      case ("function" ~ a ~ "over" ~ inTy
+      case (mode ~ "function" ~ a ~ "over" ~ inTy
                            ~ "returns" ~ outTy
-                       ~ implementationDecls ~ mode) =>
+                       ~ implementationDecls) =>
              FunctionDeclaration(a, inTy, outTy, implementationDecls, mode.getOrElse(null))
     }
 
   def extractionRule : Parser[ExtractionRule] =
-    conjunctiveQuery ~ opt(supervision) ^^ {
-      case (q ~ supervision) =>
+    opt(supervision) ~ conjunctiveQuery ^^ {
+      case (supervision ~ q) =>
         ExtractionRule(q, supervision.getOrElse(null))
     }
 
   def functionCallRule : Parser[FunctionCallRule] =
-    ( relationName ~ ":-" ~ "!"
-    ~ functionName ~ "(" ~ relationName ~ ")"
-    ) ^^ {
-      case (out ~ ":-" ~ "!" ~ fn ~ "(" ~ in ~ ")") =>
+    ( relationName ~ ":-" ~ "!" ~ functionName ~ "(" ~ relationName ~ ")" ) ^^ {
+      case (out ~ ":-" ~ _ ~ fn ~ "(" ~ in ~ ")") =>
         FunctionCallRule(in, out, fn)
     }
 
-  def factorWeight = "weight" ~> "=" ~> rep1sep(expr, ",") ^^ { FactorWeight(_) }
+  def factorWeight = "@weight" ~> "(" ~> rep1sep(expr, ",") <~ ")" ^^ { FactorWeight(_) }
 
-  def supervision = "label" ~> "=" ~> variableName
+  def supervision = "@label" ~> "(" ~> variableName <~ ")"
 
   def factorFunctionName = "Imply" | "And" | "Equal" | "Or" | "Multinomial" | "Linear" | "Ratio"
-  def factorFunction = "function" ~> "=" ~> factorFunctionName
+  def factorFunction = "@function" ~> "(" ~> factorFunctionName <~ ")"
 
   def inferenceRule : Parser[InferenceRule] =
-    ( conjunctiveQuery ~ factorWeight ~ opt(factorFunction) ~ opt(inferenceMode)
+    ( opt(inferenceMode) ~ opt(factorFunction) ~ factorWeight ~ conjunctiveQuery
     ) ^^ {
-      case (q ~ weight ~ function ~ mode) =>
+      case (mode ~ function ~ weight ~ q) =>
         InferenceRule(q, weight, function, mode.getOrElse(null))
     }
 

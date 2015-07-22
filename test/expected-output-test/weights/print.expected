@@ -12,23 +12,23 @@ b(k int,
   p int,
   q text).
 
+@weight((x + y))
 a(x)  :-
-    b(x, y, _)
-  weight = (x + y).
+    b(x, y, _).
 
+@weight("string")
 c(x)  :-
-    b(x, y, _)
-  weight = "string".
+    b(x, y, _).
 
+@weight(x, y)
 d(x)  :-
-    b(x, y, _)
-  weight = x, y.
+    b(x, y, _).
 
+@weight(-10)
 e(x)  :-
-    b(x, y, _)
-  weight = -10.
+    b(x, y, _).
 
+@weight(-0.3)
 f(x)  :-
-    b(x, y, _)
-  weight = -0.3.
+    b(x, y, _).
 

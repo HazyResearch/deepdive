@@ -1,5 +1,5 @@
 [error] Weight variables can contain at most one constant
+@weight(1, 2)
 a(x)  :-
-    b(x, y, _, _)
-  weight = 1, 2.
+    b(x, y, _, _).
 

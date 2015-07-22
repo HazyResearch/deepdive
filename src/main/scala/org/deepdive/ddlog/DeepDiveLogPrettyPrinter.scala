@@ -57,11 +57,11 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
         "\"" + StringEscapeUtils.escapeJava(impl.command) + "\"" + styleStr
       }
     }
-    val modeStr = if (stmt.mode == null) "" else s" mode = ${stmt.mode}"
-    s"""function ${stmt.functionName}
+    val modeStr = if (stmt.mode == null) "" else s"@mode(${stmt.mode})\n"
+    s"""${modeStr}function ${stmt.functionName}
        |    over ${inputType}
        | returns ${outputType}
-       | ${(impls map {"implementation " + _}).mkString("\n ")}${modeStr}.
+       | ${(impls map {"implementation " + _}).mkString("\n ")}.
        |""".stripMargin
   }
 
@@ -140,10 +140,9 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   }
 
   def print(stmt: ExtractionRule): String = {
-    print(stmt.q) +
     ( if (stmt.supervision == null) ""
-      else  "\n  label = " + stmt.supervision
-    ) + ".\n"
+      else  s"@label(${stmt.supervision})\n"
+    ) + print(stmt.q) + ".\n"
   }
 
   def print(stmt: FunctionCallRule): String = {
@@ -152,12 +151,10 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   }
 
   def print(stmt: InferenceRule): String = {
-    print(stmt.q) +
+    ( stmt.function map { f => s"@function(${f})\n" } getOrElse("") ) +
     ( if (stmt.weights == null) ""
-      else "\n  weight = " + (stmt.weights.variables.map(print).mkString(", "))
-    ) +
-    ( stmt.function map { "\n  function = " + _ } getOrElse("")
-    ) + ".\n"
+      else s"@weight(${stmt.weights.variables.map(print).mkString(", ")})\n"
+    ) + print(stmt.q) + ".\n"
   }
 
   override def run(parsedProgram: DeepDiveLog.Program, config: DeepDiveLog.Config) = {

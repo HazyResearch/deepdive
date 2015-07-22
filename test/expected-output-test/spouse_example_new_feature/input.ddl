@@ -40,10 +40,10 @@ people_mentions :-
 ext_people_input(s, words, ner_tags) :-
   sentences(a, b, words, c, d, e, ner_tags, f, s).
 
+@mode(inc)
 function ext_people over like ext_people_input
                  returns like people_mentions
-  implementation "udf/ext_people.py" handles tsv lines
-  mode = inc.
+  implementation "udf/ext_people.py" handles tsv lines.
 
 has_spouse_candidates :-
   !ext_has_spouse(ext_has_spouse_input).
@@ -69,10 +69,11 @@ function ext_has_spouse_features over like ext_has_spouse_features_input
                               returns like has_spouse_features
   implementation "udf/ext_has_spouse_features.py" handles tsv lines.
 
-has_spouse(rid) :- has_spouse_candidates(a, b, c, d, rid, l) label = l.
+@label(l)
+has_spouse(rid) :- has_spouse_candidates(a, b, c, d, rid, l).
 
+@function(Linear)
+@weight(f)
 has_spouse(rid) :-
   has_spouse_candidates(a, b, c, d, rid, l),
-  has_spouse_features(rid, f)
-weight = f
-function = Linear.
+  has_spouse_features(rid, f).

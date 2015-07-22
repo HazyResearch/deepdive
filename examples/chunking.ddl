@@ -38,6 +38,8 @@ function ext_features
 
 word_features :- !ext_features(ext_features_input).
 
-tag(word_id) :- words(word_id, a, b, c, tag) label = tag.
+@label(tag)
+tag(word_id) :- words(word_id, a, b, c, tag).
 
-tag(word_id) :- word_features(word_id, f) weight = f.
+@weight(f)
+tag(word_id) :- word_features(word_id, f).
