@@ -52,3 +52,5 @@ W(x) :- a(x), ALL[c(_,y,_), y < x].
 
 # placeholder
 V(x) :- c(_,x,_), a(x).
+
+X(x) :- b(x,_,_,z), c(_,x,y).

@@ -23,6 +23,7 @@ case class NullConst extends ConstExpr
 case class FuncExpr(function: String, args: List[Expr], isAggregation: Boolean) extends Expr
 case class BinaryOpExpr(lhs: Expr, op: String, rhs: Expr) extends Expr
 case class TypecastExpr(lhs: Expr, rhs: String) extends Expr
+case class Placeholder extends Expr
 
 sealed trait Body
 case class Atom(name : String, terms : List[Expr]) extends Body
@@ -39,7 +40,6 @@ case class Column(name : String // name of the column
                  , t : String // type of the column
                  , annotation: List[Annotation] = List.empty // optional annotation
                  )
-case class BodyWithCondition(body: List[Atom], condition: Option[Cond])
 
 case class Annotation( name : String // name of the annotation
                      , args : Map[String, Any] = Map.empty // optional, named arguments
@@ -99,9 +99,6 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def stringLiteralAsString = stringLiteral ^^ {
     s => StringEscapeUtils.unescapeJava(
       s.stripPrefix("\"").stripSuffix("\""))
-  }
-  def stringLiteralAsSqlString = stringLiteral ^^ { s =>
-    s"""'${s.stripPrefix("\"").stripSuffix("\"")}'"""
   }
 
   // Single-line comments beginning with # or // are supported by treating them as whiteSpace
@@ -184,6 +181,8 @@ class DeepDiveLogParser extends JavaTokenParsers {
     | "(" ~> expr <~ ")"
     )
 
+  def pattern : Parser[Expr] = "_" ^^ { case _ => Placeholder() } | expr
+
   def cqHead = relationName ~ "(" ~ rep1sep(expr, ",") ~ ")" ^^ {
     case (r ~ "(" ~ expressions ~ ")") => Atom(r, expressions)
   }
@@ -213,7 +212,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
     | "[" ~> cond <~ "]"
     )
 
-  def atom = relationName ~ "(" ~ repsep(expr, ",") ~ ")" ^^ {
+  def atom = relationName ~ "(" ~ repsep(pattern, ",") ~ ")" ^^ {
     case (r ~ "(" ~ patterns ~ ")") => Atom(r, patterns)
   }
   def modifierAtom = (opt("!") ~ "EXISTS" | "OPTIONAL" | "ALL") ~ "[" ~ rep1sep(cqBody, ",") ~ "]" ^^ { case (m ~ _ ~ b ~ _) =>

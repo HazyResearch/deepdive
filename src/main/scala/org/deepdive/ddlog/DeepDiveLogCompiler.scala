@@ -313,6 +313,7 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
         val resovledLhs = compileExpr(lhs)
         s"(${resovledLhs} :: ${rhs})"
       }
+      case Placeholder() => ""
     }
   }
 
@@ -362,6 +363,7 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
                   Some(s"R${ bodyIndex }.${ real_attr_name1 } = R${ canonical_body_index }.${ real_attr_name2 } ")
                 } else { None }
               }
+              case Placeholder() => None
               // other expressions indicate a filter condition on the column
               case _ => {
                 val resolved = compileExpr(expr)
@@ -419,13 +421,12 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
     // check if an expression contains an aggregation function
     def containsAggregation(expr: Expr) : Boolean = {
       expr match {
-        case VarExpr(name) => false
-        case _: ConstExpr => false
         case FuncExpr(function, args, agg) => if (agg) agg else {
           args.map(containsAggregation).foldLeft(false)(_ || _)
         }
         case BinaryOpExpr(lhs, op, rhs) => containsAggregation(lhs) || containsAggregation(rhs)
         case TypecastExpr(lhs, rhs) => containsAggregation(lhs)
+        case _ => false
       }
     }
 
