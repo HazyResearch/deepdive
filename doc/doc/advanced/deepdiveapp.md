@@ -8,25 +8,31 @@ layout: default
 
 A DeepDive application is a directory that contains the following files and directories:
 
-* `deepdive.conf`
+* `app.ddlog`
 
-    Extractors, and inference rules are written in [HOCON][] syntax in this file.
-    See the [Configuration Reference](http://deepdive.stanford.edu/doc/basics/configuration.html) for full details.
+    Schema, extractors, and inference rules written in our higher-level language, [DDlog][], are put in this file.
 
 * `db.url`
 
     A URL representing the database configuration is supposed to be stored in this file.
     For example, `postgresql://user:password@localhost:5432/database_name` can be the line stored in it.
 
+* `deepdive.conf`
+
+    Extra configuration not expressed in the DDlog program is in this file.
+    Extractors, and inference rules can be also be written in [HOCON][] syntax in this file, although DDlog is the recommended way.
+    See the [Configuration Reference](http://deepdive.stanford.edu/doc/basics/configuration.html) for full details.
+
 * `schema.sql`
 
     Data-Definition Language (DDL) statements for setting up the underlying database tables should be kept in this file.
+    This may be omitted when the application is written in DDlog.
 
 * `input/`
 
     Any data to be processed by this application is suggested to be kept under this directory.
 
-    * `load.sh`
+    * `init.sh`
 
         In addition to the data files, there should be an executable script that knows how to load the data here to the database once its tables are created.
 
@@ -37,10 +43,11 @@ A DeepDive application is a directory that contains the following files and dire
 
 * `run/`
 
-    Each run of the DeepDive application has a corresponding subdirectory under this directory whose name contains the timestamp when the run was started, e.g., `run/20150618-223344.567890/`.
+    Each run of the DeepDive application has a corresponding subdirectory under this directory whose name contains the timestamp when the run was started, e.g., `run/20150618/223344.567890/`.
     All output and log files that belong to the run are kept under that subdirectory.
     There are a few symbolic links with mnemonic names to the most recently started run, last successful run, last failed run for handy access.
 
+[DDlog]: ../basics/ddlog.html
 [HOCON]: https://github.com/typesafehub/config/blob/master/HOCON.md#readme "Human Optimized Configuration Object Notation"
 
 

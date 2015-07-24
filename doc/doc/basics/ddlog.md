@@ -4,7 +4,7 @@ layout: default
 
 # Writing Applications in DDlog
 
-DDlog is a declarative language for writing DeepDive applications in datalog-like syntax.
+DDlog is a declarative language for writing DeepDive applications in Datalog-like syntax.
 The current version may not be able to express everything, but we plan to extend it to support Markov Logic Network syntax as well.
 
 ## Writing a DDlog Program
@@ -23,7 +23,6 @@ We show how each part should look like using the [spouse example in our walk thr
 Each declaration and rule ends with a period (`.`).
 The order of the rules have no meaning.
 Comments in DDlog begin with a hash (`#`) character.
-C/Java-style comments are also supported (`// comment` and `/* comment block */`), but we'll use hash comments in the rest of the document.
 
 ### Schema Declaration
 
