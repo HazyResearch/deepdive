@@ -14,8 +14,15 @@ cd "$APP_HOME"
 # make sure database is created based on the database type
 db-init "$@"
 
-# make sure the underlying database exists, and the necessary tables are all created
-db-prompt <schema.sql
+# make sure the necessary tables are all created
+if [[ -e app.ddlog ]]; then
+    # TODO export schema.sql from ddlog instead of running initdb pipeline
+    deepdive-run initdb
+fi
+# run all DDL statements in schema.sql if available
+if [[ -e schema.sql ]]; then
+    db-prompt <schema.sql
+fi
 
 # load the input data
 ! [[ -x input/init.sh ]] ||
