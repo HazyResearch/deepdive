@@ -147,7 +147,7 @@ namespace dd{
     Variable & variable = this->p_fg->variables[vid];
 
     if(is_inc){
-      if(variable.domain_type == DTYPE_BOOLEAN){
+      if(variable.domain_type == DTYPE_BOOLEAN || variable.domain_type == DTYPE_MULTINOMIAL) {
 
       if(variable.is_evid == false || sample_evidence){
 
