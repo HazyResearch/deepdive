@@ -18,21 +18,11 @@ deepdive {
 }
 ```
 
-A starter template of `application.conf` is below. You can found it in
+A starter template of `deepdive.conf` is below. You can found it in
 `examples/template/` in your `DEEPDIVE_HOME` installation directory:
 
 ```bash
 deepdive {
-
-  db.default {
-    driver   : "org.postgresql.Driver"
-    url      : "jdbc:postgresql://"${PGHOST}":"${PGPORT}"/"${DBNAME}
-    user     : ${PGUSER}
-    password : ${PGPASSWORD}
-    dbname   : ${DBNAME}
-    host     : ${PGHOST}
-    port     : ${PGPORT}
-  }
 
   # Put your variables here
   schema.variables {
@@ -44,6 +34,10 @@ deepdive {
 
   # Put your inference rules here
   inference.factors {
+  }
+
+  # Put your database connection tweaks here
+  db.default {
   }
 
   # Specify a holdout fraction
@@ -102,6 +96,8 @@ Both `:` and `=` are valid key-value separators.
 
 
 ## <a name="database" href="#"></a> Database connection
+
+<div class="alert alert-danger">(This section is outdated and only accurate up to release 0.6.x. <code>db.url</code> is the recommended place for configuration the database connection.)</div> <!-- TODO rewrite -->
 
 The configuration directives for the database connection must be specified
 inside a `db.default` section:

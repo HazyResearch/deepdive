@@ -24,6 +24,9 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
     case TestHelper.Mysql=> new MysqlDataStore
   }
 
+  // XXX make sure the outputDir is there, otherwise some tests fail
+  new File(org.deepdive.Context.outputDir).mkdirs()
+
   // execute a query
   def execute(ds : JdbcDataStore, sql: String) = {
     log.debug("EXECUTING.... " + sql)

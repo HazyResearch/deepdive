@@ -17,6 +17,6 @@ class SamplerSpec(_system: ActorSystem) extends TestKit(_system) with ImplicitSe
   val edgesFile = getClass.getResource("/inference/binary_factor_graph/edges").getFile()
   val metaFile = getClass.getResource("/inference/binary_factor_graph/meta.csv").getFile()
 
-  var samplerCmd = "util/sampler-dw"
+  var samplerCmd = "sampler-dw"
 }
 

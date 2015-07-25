@@ -90,6 +90,11 @@ object DeepDive extends Logging {
     } yield Task(s"${extractor.name}", extractor.dependencies.toList,
       extractionTask, extractionManager)
 
+    // Make sure the activePipelineName is defined
+    if (settings.pipelineSettings.activePipelineName != None && settings.pipelineSettings.activePipeline == None) {
+      throw new RuntimeException(s"${settings.pipelineSettings.activePipelineName.get}: No such pipeline defined")
+    }
+
     // Build task to construct the factor graph
     val activeFactors = settings.pipelineSettings.activePipeline match {
       case Some(pipeline) =>
@@ -196,6 +201,7 @@ object DeepDive extends Logging {
       */
       case e: Exception =>
         // In case of any exception
+        log.error(e.getMessage)
         Context.shutdown()
         throw e
     }

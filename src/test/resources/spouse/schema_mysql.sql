@@ -1,1 +1,0 @@
-../../../../examples/spouse_example/schema_mysql.sql

@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# db-parse -- Parses URL for PostgreSQL database set up for a DeepDive application
+# > db-parse "$url"
+set -eu
+
+. parse-url.sh "$@"
+
+# default values
+: ${user:=$USER} ${port:=5432}
+
+# map to environment variables for psql
+echo "DBTYPE=postgresql"
+echo "DBVARIANT=${dbtype}"
+echo "DBHOST=${host}"
+echo "DBPORT=${port}"
+echo "DBUSER=${user}"
+echo "DBPASSWORD=${password}"
+echo "DBNAME=${dbname}"
+echo "export DBHOST DBPORT DBUSER DBPASSWORD DBNAME"
+
+# more variables for Scala application.conf
+echo "DEEPDIVE_JDBC_DRIVER=org.postgresql.Driver"
+echo "DEEPDIVE_JDBC_URL=jdbc:postgresql://$host${port:+:$port}/$dbname"
+echo "export DEEPDIVE_JDBC_DRIVER DEEPDIVE_JDBC_URL"
+
+# XXX several environment variables for legacy apps
+echo "PGHOST=${host}"
+echo "PGPORT=${port}"
+echo "PGUSER=${user}"
+echo "PGPASSWORD=${password}"
+echo "export PGHOST PGPORT PGUSER PGPASSWORD"

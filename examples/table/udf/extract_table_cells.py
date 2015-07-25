@@ -24,7 +24,7 @@ if not os.path.exists(TMP_DIR):
 
 # Process each file
 for row in fileinput.input():
-  for filename in [os.path.abspath(f) for f in glob.glob("%s/data/*.pdf" % BASE_FOLDER)]:
+  for filename in [os.path.abspath(f) for f in glob.glob("%s/input/*.pdf" % BASE_FOLDER)]:
     debug("Processing %s" % filename)
     OUTPUT_FILE = "%s/%s.xml" %(OUTPUT_DIR, os.path.basename(filename))
     os.system("java -jar %s/lib/totable.jar %s %s >| %s" %(BASE_FOLDER, filename, TMP_DIR, OUTPUT_FILE))

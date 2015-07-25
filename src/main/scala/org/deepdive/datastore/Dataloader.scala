@@ -198,15 +198,7 @@ class DataLoader extends JdbcDataStore with Logging {
     val writebackPrefix = s"find ${fileDirPath} -name '${fileNamePattern}' -print0 | xargs -0" +
       s" -P ${threadNum} -L 1 bash -c "
 
-    val ndbLoader = {
-      val osname = System.getProperty("os.name")
-      if (osname.startsWith("Linux")) {
-        s"${Context.deepdiveHome}/util/ndbloader/ndbloader-linux"
-      }
-      else {
-        s"${Context.deepdiveHome}/util/ndbloader/ndbloader-mac"
-      }
-    }
+    val ndbLoader = "ndbloader"
 
     val writebackCmd = writebackPrefix + s"'${ndbLoader} ${ndbConnectionString} ${dbSettings.dbname}" +
         " $0 " + s"${schemaFilePath} ${parallelTransactionNum}'"

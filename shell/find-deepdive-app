@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# find-deepdive-app -- Recognizes which DeepDive application current working directory belongs to
+set -eu
+
+# locate application root
+at_deepdive_app_root() {
+    # recognize an app directory as defined in ../doc/doc/advanced/deepdiveapp.md
+    [[ -e deepdive.conf && -e db.url && -e schema.sql ]]
+}
+
+if [[ -d "${APP_HOME:-}" ]]; then
+    cd "$APP_HOME"
+    if at_deepdive_app_root; then
+        echo "$APP_HOME"
+    else
+        error "$APP_HOME: Not a DeepDive application: deepdive.conf, db.url, and schema.sql should be all present"
+    fi
+else
+    while ! at_deepdive_app_root && [[ $PWD != / ]]; do
+        cd ..
+    done
+
+    if at_deepdive_app_root; then
+        pwd
+    else
+        error "Not inside a DeepDive application: deepdive.conf, db.url, and schema.sql should be all present in a parent directory"
+    fi
+fi

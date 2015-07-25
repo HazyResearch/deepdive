@@ -1,36 +1,21 @@
-Spouse Example
-====
+# Spouse Example
 
-This directory contains 3 different implementation of spouse example listed online.
+This directory contains various implementations of the spouse example used in [our walk-through](http://deepdive.stanford.edu/doc/basics/walkthrough/walkthrough.html).
 
-Use these examples to learn about different extractor types.
+* PostgreSQL (`postgres/`)
+    * `tsv_extractor/`
+    * `json_extractor/`
+    * `plpy_extractor/`
 
+* Greenplum (`greenplum/`)
+    * `tsv_extractor/`
 
-Performance Comparison
-----
+* Postgres-XL (`pgxl/`)
+    * `tsv_extractor/`
 
-Environment: Macbook Retina Pro, PostgreSQL database.
+* MySQL (`mysql/`)
+    * `tsv_extractor/`
 
-### json_extractor (default)
+* MySQL Cluster (`mysql/`)
+    * `tsv_extractor/`
 
-    --------------------------------------------------
-    ext_people SUCCESS [8559 ms]
-    ext_has_spouse_candidates SUCCESS [3811 ms]
-    ext_has_spouse_features SUCCESS [8401 ms]
-    --------------------------------------------------
-
-### plpy_extractor
-
-    --------------------------------------------------
-    ext_people SUCCESS [3893 ms]
-    ext_has_spouse_candidates SUCCESS [2188 ms]
-    ext_has_spouse_features SUCCESS [3371 ms]
-    --------------------------------------------------
-
-### tsv_extractor
-
-    --------------------------------------------------
-    ext_people SUCCESS [5826 ms]
-    ext_has_spouse_candidates SUCCESS [5744 ms]
-    ext_has_spouse_features SUCCESS [4744 ms]
-    --------------------------------------------------

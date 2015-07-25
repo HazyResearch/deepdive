@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # DeepDive installers for Mac OS X
 
-install_deepdive_build_deps() {
+install__deepdive_build_deps() {
     has brew || error "Cannot install dependencies without Homebrew (http://brew.sh)"
     set -x
     javac -version
@@ -10,7 +10,7 @@ install_deepdive_build_deps() {
     has unzip   || brew install unzip
 }
 
-install_deepdive_runtime_deps() {
+install__deepdive_runtime_deps() {
     has brew || error "Cannot install dependencies without Homebrew (http://brew.sh)"
     set -x
     java -version
@@ -18,9 +18,12 @@ install_deepdive_runtime_deps() {
 }
 
 install_postgres() {
-    if has psql; then
+    if has psql &&
+        brew list postgres | grep -q plpython  # XXX necessary for "CREATE LANGUAGE plpythonu"
+    then
         brew info postgres | grep 'postgres -D ' | bash &
     else
-        brew install postgres
+        brew uninstall postgres || true
+        brew install postgres --with-python  # XXX necessary for "CREATE LANGUAGE plpythonu"
     fi
 }

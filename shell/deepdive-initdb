@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# deepdive-initdb -- Initializes the underlying database for the DeepDive application
+# > deepdive initdb
+##
+set -eu
+
+# find the current application
+APP_HOME=$(find-deepdive-app)
+export APP_HOME
+cd "$APP_HOME"
+
+. load-db-driver.sh
+
+# make sure database is created based on the database type
+db-init "$@"
+
+# make sure the underlying database exists, and the necessary tables are all created
+db-prompt <schema.sql
+
+# load the input data
+! [[ -x input/init.sh ]] ||
+    input/init.sh "$@"

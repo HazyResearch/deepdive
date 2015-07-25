@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+# deepdive-run -- Runs a pipeline of the DeepDive application
+# > deepdive run
+# Runs the default pipeline defined in deepdive.conf.
+#
+# > deepdive run PIPELINE
+# Runs the pipeline named PIPELINE defined in deepdive.conf.
+#
+# > deepdive run -C /path/to/app
+# Runs the application located on a different path than current working directory.
+#
+# > deepdive run -c application.conf
+# Runs the application defined in an alternative configuration file than deepdive.conf.
+#
+# > deepdive run -o /path/to/different/output/dir
+# Runs the application with an alternative output directory.
+##
+set -eu
+
+# parse command-line options
+while getopts "C:c:o:" o; do
+    case $o in
+        C) APP_HOME=$OPTARG ;;
+        c) DEEPDIVE_CONFIG=$OPTARG ;;
+        o) DEEPDIVE_OUTPUT=$OPTARG ;;
+        *) usage "$0" "Illegal option given"
+    esac
+done
+shift $(($OPTIND - 1))
+
+# find the current application
+# either specified with -C option or via APP_HOME environment
+APP_HOME=$(find-deepdive-app)
+export APP_HOME
+cd "$APP_HOME"
+
+# find the configuration file for the application
+# defaults to deepdive.conf, which can be overriden via command-line option -c or DEEPDIVE_CONFIG environment
+: ${DEEPDIVE_CONFIG:=$PWD/deepdive.conf}
+export DEEPDIVE_CONFIG
+
+# load database driver for the application
+. load-db-driver.sh
+
+# find the output directory for this run of the application
+# either use the path specified in DEEPDIVE_OUTPUT environment or command-line option -o, or create a fresh run directory by default
+if [[ -n "${DEEPDIVE_OUTPUT:-}" ]]; then
+    run_id=$(cd "$DEEPDIVE_OUTPUT" && pwd)
+    run_dir=$run_id
+else
+    run_id=$(date +%Y%m%d/%H%M%S.%N)
+    run_dir=run/$run_id
+fi
+mkdir -p "$run_dir"
+DEEPDIVE_OUTPUT=$(cd "$run_dir" && pwd)
+: ${DEEPDIVE_LOGFILE:="$DEEPDIVE_OUTPUT/log.txt"}
+export DEEPDIVE_OUTPUT DEEPDIVE_LOGFILE
+
+# point to the output directory with RUNNING symlink for convenience while it's running
+ln -sfn "$run_id" run/RUNNING
+trap "! [[ run/RUNNING -ef $run_dir ]] || rm -f run/RUNNING" EXIT
+trap "ln -sfn $run_id run/ABORTED" ERR
+
+# to make it possible to override certain configs,
+# create an extended version of deepdive.conf by collecting more configs from command-line and environment
+extendedConfig=$(mktemp ${TMPDIR:-/tmp}/deepdive.conf.XXXXXXX)
+trap "rm -f $extendedConfig" EXIT
+cat "$DEEPDIVE_CONFIG" >"$extendedConfig"
+# append any extra config present in DEEPDIVE_CONFIG_EXTRA environment
+[[ -z "${DEEPDIVE_CONFIG_EXTRA:-}" ]] || {
+    echo >>"$extendedConfig" "$DEEPDIVE_CONFIG_EXTRA"
+}
+# use the pipeline passed over command-line
+[[ $# -eq 0 ]] || {
+    Pipeline=$1; shift
+    echo >>"$extendedConfig" "deepdive.pipeline.run: \"$Pipeline\""
+}
+
+# run the DeepDive jar
+java org.deepdive.Main -c "$extendedConfig" -o "$APP_HOME/$run_dir"
+
+# point to the run with LATEST symlink
+ln -sfn "$run_id" run/LATEST

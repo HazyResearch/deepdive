@@ -10,14 +10,14 @@ analyze data.
 This task is composed by a number of steps:
 
 1. Creating the application skeleton
-2. Configuring the database connection
-3. Importing the data
-4. Writing extractors
-5. Writing the inference schema
-6. Writing inference rules
-7. Testing
+2. Loading the data
+3. Writing extractors
+4. Writing the inference schema
+5. Writing inference rules
+6. Running, testing, and evaluating the results
 
-### 1 - Creating the application skeleton
+
+### 1. Creating the application skeleton
 
 We start by creating a new folder `app/testapp` in the `deepdive` directory. All
 files for our application will reside in this directory.
@@ -27,41 +27,28 @@ mkdir -p app/testapp
 cd app/testapp
 ```
 
-DeepDive's main entry point is a file called `application.conf` which contains
-the database connection information as well as the specification for feature
-extraction and for specifying the schema and the inference rules for the factor
-graph. It is often useful to have a small 'env.sh' script to specify
-environmental variables and a `run.sh` script that loads those variables and
-executes the DeepDive pipeline. The DeepDive distribution provides simple
-templates for both of these scripts and for the `application.conf` file. We copy
-these templates to our directory with the following commands:
+The DeepDive source tree provides simple templates for the `deepdive.conf` file.
+We copy these templates to our directory with the following commands:
 
 ```bash
-cp ../../examples/template/application.conf .
-cp ../../examples/template/run.sh .
-cp ../../examples/template/env.sh .
+cp -av ../../examples/template/. .
 ```
 
-In `env.sh` there is a placeholder line `export DBNAME=` that must be modified
-to contain the name of the database used by the application:
-
+The database connection for the application can be configured in the `db.url` file, for example, to use the `deepdive_testapp` database on a local PostgreSQL installation:
 ```bash
-# File: env.sh
-...
-export DBNAME=deepdive_testapp
-...
+echo postgresql://localhost/deepdive_testapp  >./db.url
 ```
 
-Make sure the database is created. Execute:
+The following command initializes an empty database:
 ```bash
-createdb deepdive_testapp
+deepdive initdb
 ```
 
-We can try executing the `run.sh` script now to verify that everything is
+Then we can run the following command to verify that everything is
 working correctly:
 
 ```bash
-./run.sh
+deepdive run
 ```
 Since we have not defined any extractors or inference rules, the results will
 not be interesting, but DeepDive should run successfully from end to end. If
@@ -72,44 +59,17 @@ this is the case, the summary report should look like this:
     15:57:55 [profiler] INFO  --------------------------------------------------
     15:57:55 [profiler] INFO  --------------------------------------------------
 
-### 2 - Configuring the database connection
 
-We define the connection to the PostgreSQL instance in the `application.conf`
-file. The URL of the instance should be specified in [JDBC
-format](http://jdbc.postgresql.org/documentation/80/connect.html). A username
-and password can also be specified:
+### <a name="loading" href="#"></a> 2. Loading the data
 
-```bash
-    deepdive {
-      db.default {
-        driver   : "org.postgresql.Driver"
-        url      : "jdbc:postgresql://[host]:[port]/[database_name]"
-        user     : "deepdive"
-        password : ""
-        dbname   : [database_name]
-        host     : [host]
-        port     : [port]
+DeepDive assumes the table schema for the application is defined in the `schema.sql` file as `CREATE TABLE` statements.
+All tables used by any of the extractors and inference rules must be created by this file.
+It is **mandatory** for **all tables** that will contain variables to have a **unique primary key called `id`**.
+If these tables are populated by an [extractor](extractors.html), the extractor should fill the `id` column with `NULL` values.
+Any data that should be populated for the extractors should be loaded by the `input/init.sh` script as [demonstrated in the walkthrough](walkthrough/walkthrough.html#loading_data).
 
-      }
-    }
-```
 
-For advanced connection pool options refer to the [Scalikejdbc
-configuration](http://scalikejdbc.org/documentation/configuration.html).
-
-### <a name="loading" href="#"></a> 3 - Importing the data
-
-DeepDive assumes that the schema for the application has been created in the
-database. This means that all relations used by any of the extractors and inference
-rules must exist before running DeepDive. It is recommended to do this in a data
-preparation script, as shown in the [example
-walkthrough](walkthrough/walkthrough.html) or in the examples that ship with
-deepdive. It is **mandatory** for **all relations** that will contain variables
-to have a **unique primary key called `id`**. If these tables are populated by
-an [extractor](extractors.html), the extractor should fill the `id` column with
-`NULL` values.
-
-### <a name="extractors" href="#"></a> 4 - Writing extractors
+### <a name="extractors" href="#"></a> 3. Writing extractors
 
 DeepDive supports [multiple types of extractors](extractors.html) to perform
 [feature extraction](overview.html#extractors). The output of an extractor is
@@ -119,15 +79,18 @@ execute SQL queries or an arbitrary shell commands. The ['Writing
 extractors'](extractors.html) document contains an in-depth description of the
 available types of extractors complete with examples.
 
-###<a name="schema" href="#"></a> 5 - Writing the inference schema
+
+###<a name="schema" href="#"></a> 4. Writing the inference schema
+
 The schema is used to define the [query variable nodes of the factor
 graph](../general/inference.html#variables). Each variable has a data type
 associated with it. Currently, DeepDive supports Boolean variables and
 [Multinomial/Categorical variables](schema.html#multinomial). See the ['Defining
-inference variables in the schema'][schema.html] for more information and
+inference variables in the schema'](schema.html) for more information and
 examples.
 
-### <a name="inference" href="#"></a> 6 - Writing inference rules
+
+### <a name="inference" href="#"></a> 5. Writing inference rules
 
 DeepDive exposes a language to easily build factor graphs by writing *rules*
 that define the relationships between variables. For example, the following rule
@@ -155,7 +118,8 @@ features. Refer to the [guide for writing inference rules](inference_rules.html)
 and to the ['Inference Rule Function Reference'](inference_rule_functions.html)
 for in-depth information about writing inference rules.
 
-### 7 - Running, testing, and evaluating the results
+
+### 6. Running, testing, and evaluating the results
 
 For details about running an application and querying the results see the
 [appropriate document](running.html). Writing an application is an iterative

@@ -18,8 +18,8 @@ The `TableCell` in `udf/table_cell.py` can be reused in your own applications to
 
 ## Running
 
-1. Edit the `env.sh` file according to your sytem and databse configuration.
-2. Run `run.sh`
+1. Edit the `db.url` file according to your database configuration.
+2. Run `deepdive initdb`, then `deepdive run`
 
 ## Notes
 

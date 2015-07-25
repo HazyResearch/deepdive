@@ -4,6 +4,8 @@ layout: default
 
 # Writing extractors
 
+<div class="alert alert-danger">(This page is outdated and only accurate up to release 0.6.x.)</div> <!-- TODO rewrite -->
+
 Extractors are a powerful functionality provided by DeepDive to streamline
 [feature extraction](overview.html#extractors). This document presents the
 different types of extractors supported by DeepDive. Please refer to the
@@ -25,7 +27,7 @@ class contains different extractor *styles*:
   - [`piggy_extractor`](#piggy_extractor): a distributed language-agnostic pipe-based extractor driver.
   We ship the entire runtime environment (code, data, and pip libraries) to
   the DB server(s) and avoid multi-user collision by staging separate environments
-  for concurrent users. See `examples/spouse_example/piggy_extractor/`.
+  for concurrent users. See `examples/spouse_example/postgres/piggy_extractor/`.
 
 - Procedural extractors:
   - [`sql_extractor`](#sql_extractor): a SQL command
@@ -310,7 +312,7 @@ But, as its name suggests, it piggybacks on the DB servers. Here is what's diffe
 - As a corollary, the computation occurs on the DB servers as opposed to the machine launching the DD program.
 
 
-See `examples/spouse_example/piggy_extractor/` for example extractors.
+See `examples/spouse_example/postgres/piggy_extractor/` for example extractors.
 
 
 ### <a name="plpy_extractor" href="#"></a> plpy_extractor (DEPRECATED)

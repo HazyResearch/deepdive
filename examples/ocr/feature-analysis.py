@@ -1,18 +1,18 @@
 import os
 
-targetdir = '../../target/'
-weights_tab = [l.rstrip('\n').split('\t') for l in open(targetdir + 'weights.txt').readlines()]
+targetdir = './run/LATEST/'
+weights_tab = [l.rstrip('\n').split('\t') for l in os.popen("""deepdive sql "SELECT id, description FROM dd_graph_weights" """).readlines()]
 w_fid = {}
 for line in weights_tab:
-        f = line[3]
+        f = line[1]
         label = '1(C)'
         if f.startswith('label2'): label = '2(T)'
-        fid = f.rstrip(')').split('Some(')[1]
+        fid = f.split('-')[1]
         w_fid[line[0]] = (label, fid)
 
-weights_val = [l.rstrip('\n').split('\t') for l in open(targetdir + 'inference_result.out.weights').readlines()]
+weights_val = [l.rstrip('\n').split(' ') for l in open(targetdir + 'inference_result.out.weights.text').readlines()]
 
-fname = [l.rstrip('\n') for l in open('data/raw/raw-words/feature_names.txt').readlines()]
+fname = [l.rstrip('\n') for l in open('input/raw/raw-words/feature_names.txt').readlines()]
 
 arr = []
 

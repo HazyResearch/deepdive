@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# deepdive-version -- show deepdive's version and build information
+# > deepdive version
+##
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2014-10-09
+# Generated: 2015-06-19
+set -eu
+
+cd "$DEEPDIVE_HOME"
+. .build-info.sh
+
+cat <<-HEADER
+deepdive $version ($build_os $build_machine)
+HEADER
+
+if [ -s LICENSE.txt ]; then
+    echo
+    sed 's/^/  /' <LICENSE.txt
+    echo
+fi
+
+cat <<-VERSION
+Information on this build of deepdive follows.
+
+  deepdive version: $version_long
+  deepdive Git commit: $version_commit
+
+  Build Date: $build_timestamp
+  Build Host: $build_hostname
+  Build Operating System: $build_os
+  Build Machine: $build_machine
+
+  Bundled Dependencies:
+$(ls depends/bundled | sed 's/^/    /')
+
+  Running Operating System: $(uname)
+  Running Machine: $(uname -m)
+
+VERSION

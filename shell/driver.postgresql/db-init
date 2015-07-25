@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# db-init -- Initializes PostgreSQL database configured for a DeepDive application
+# > eval "$(db-parse "$url")"
+# > db-init
+##
+set -eu
+
+{
+dropdb $DBNAME || true
+createdb $DBNAME
+} >/dev/null

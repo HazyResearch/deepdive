@@ -22,7 +22,6 @@ import rx.lang.scala.subjects._
 import play.api.libs.json._
 import scala.util.Random
 import java.io.{File, PrintWriter}
-import java.nio.file.{Paths, Files}
 import java.net.InetAddress
 import scala.io.Source
 import org.deepdive.helpers.Helpers
@@ -528,12 +527,11 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
 
     // Create Function in GP
     val udfFile = task.extractor.udf
-    val deepDiveDir = System.getProperty("user.dir")
-    val compilerFile = s"${deepDiveDir}/util/ddext.py"
+    val deepDiveDir = Context.deepdiveHome
     val funcName = s"func_${task.extractor.name}"
     val sqlFunctionFile = File.createTempFile(funcName, ".sql")
 
-    executeScriptOrFail(s"python ${compilerFile} ${udfFile} ${sqlFunctionFile} ${funcName}", taskSender)
+    executeScriptOrFail(s"ddext.py ${udfFile} ${sqlFunctionFile} ${funcName}", taskSender)
     log.debug(s"Compiled ${udfFile} into ${sqlFunctionFile}")
 
     // Source.fromFile(sqlFunctionFile).getLines.mkString
@@ -551,9 +549,8 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
 
     val outputRel = task.extractor.outputRelation
 
-    val SQLTranslatorFile = s"${deepDiveDir}/util/ddext_input_sql_translator.py"
     val sqlInsertFile = File.createTempFile(s"${funcName}_exec", ".sql")
-    executeScriptOrFail(s"python ${SQLTranslatorFile} ${udfFile} ${inputQueryFile} ${outputRel} ${funcName} ${sqlInsertFile}", taskSender)
+    executeScriptOrFail(s"ddext_input_sql_translator.py ${udfFile} ${inputQueryFile} ${outputRel} ${funcName} ${sqlInsertFile}", taskSender)
 
     log.debug(s"Compiled query into: ${sqlInsertFile}")
 
@@ -575,7 +572,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
 
     // Upload UDF directory and setup runtime env on DB nodes
     val udfDir = task.extractor.udfDir
-    if (!Files.exists(Paths.get(udfDir))) {
+    if (!new File(udfDir).exists()) {
       throw new RuntimeException("UDF directory does not exist: " + udfDir)
     }
 
@@ -589,8 +586,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
       case _ => ""
     }
 
-    val deepDiveDir = System.getProperty("user.dir")
-    val compilerFile = s"${deepDiveDir}/util/piggy_prepare.py"
+    val deepDiveDir = Context.deepdiveHome
     val params = Json.obj(
       "dir" -> envDir,
       "script" -> udf,
@@ -599,7 +595,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
       "is_pgxl" -> dataStore.isUsingPostgresXL
     )
     val paramsJson = Json.stringify(params)
-    val cmd = Seq("python", compilerFile, paramsJson)
+    val cmd = Seq("piggy_prepare.py", paramsJson)
     val res = cmd.!!
     val queries = Json.parse(res)
 

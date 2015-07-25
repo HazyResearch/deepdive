@@ -7,3 +7,6 @@
 [submodule "ddlog"]
 	path = ddlog
 	url = https://github.com/HazyResearch/ddlog.git
+[submodule "test/bats"]
+	path = test/bats
+	url = https://github.com/sstephenson/bats.git

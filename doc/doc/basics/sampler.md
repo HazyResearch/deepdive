@@ -8,7 +8,7 @@ This document briefly presents DimmWitted, a high-speed [Gibbs
 sampler](../general/inference.html#gibbs) for DeepDive.
 
 
-In `application.conf`, you can change the sampler executable as follows:
+In `deepdive.conf`, you can change the sampler executable as follows:
 
 ```bash
 deepdive {

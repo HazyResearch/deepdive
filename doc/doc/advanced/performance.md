@@ -4,6 +4,8 @@ layout: default
 
 # Performance Tuning
 
+<div class="alert alert-danger">(This page is mostly outdated and only accurate up to release 0.6.x.)</div> <!-- TODO rewrite -->
+
 Processing large amounts of data may expose bottlenecks in various parts of the
 system. The following sections show how to tune different parameters to obtain
 better performances.

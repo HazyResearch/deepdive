@@ -1,0 +1,137 @@
+#!/usr/bin/env bash
+# upload-github-release-asset -- A script that uploads release asset to GitHub
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2014-10-10
+set -eu
+
+canProceed=true
+for p in coffee curl
+do  ! type "$p" >/dev/null || continue
+    canProceed=false
+    break
+done
+$canProceed || {
+    echo >&2 "Cannot upload because some dependencies are missing."
+    exit 2
+}
+
+declare -- "$@"
+
+: \
+${file:?to upload required} \
+${repo:?owning the release required} \
+${tag:?or name of the release required} \
+${ASSET_HISTORY_ROOT:=.github-release-assets/} \
+#
+
+# look for OAuth token
+#  from ~/.netrc first
+[ -n "${GITHUB_OAUTH_TOKEN:=$(sed -n '
+        /machine *github.com/,/password/{
+        /password/ s/.*password *//p
+    }' <~/.netrc)}" ] || unset GITHUB_OAUTH_TOKEN
+#  from Keychain on OS X
+if [[ $(uname) = Darwin ]] && type security &>/dev/null; then
+    [ -n "${GITHUB_OAUTH_TOKEN:=$(
+        security find-internet-password -gs github.com 2>&1 |
+        sed -n '/^password:/{ s/" *$//; s/.*: "//; p; }'
+    )}" ] || unset GITHUB_OAUTH_TOKEN
+fi
+: \
+${GITHUB_OAUTH_TOKEN:?must be set to a github access token that can add assets to $repo} \
+${GITHUB_OAUTH_BASIC:=$(printf %s:x-oauth-basic $GITHUB_OAUTH_TOKEN)} \
+#
+
+PATH=$(cd "$(dirname "$0")" && pwd -P)/deps:"$PATH"
+
+error() { echo >&2 "$@"; false; }
+curlGitHub() {
+    curl --silent --show-error --user "$GITHUB_OAUTH_BASIC" "$@"
+}
+githubAPI() {
+    local method=$1; shift
+    local path=$1; shift
+    curlGitHub -X "$method" https://api.github.com"$path" "$@"
+}
+coffeeInputJSON() {
+    local coffeeScript=$1; shift
+    coffee -e '
+res = JSON.parse ((require "fs").readFileSync "/dev/stdin")
+argv = process.argv[5..]
+(\
+'"$coffeeScript"'
+)' -- "$@"
+}
+
+tmp=$(mktemp -d "${TMPDIR:-/tmp}/upload-github-release-asset.XXXXXX")
+trap 'rm -rf "$tmp"' EXIT
+
+# figure out the release id (hitting cache first)
+releaseId=$(
+releaseIdFile="$ASSET_HISTORY_ROOT/$repo/$tag/releaseId"
+if [[ -s "$releaseIdFile" ]]; then
+    cat "$releaseIdFile"
+else
+    mkdir -p "$(dirname "$releaseIdFile")"
+    githubAPI GET /repos/$repo/releases |
+    coffeeInputJSON '
+        [tag] = argv
+        for release in res when release.tag_name is tag
+            console.log release.id
+            break
+    ' "$tag" |
+    tee "$releaseIdFile"
+fi
+)
+[[ -n "$releaseId" ]] ||
+    error "Cannot determine release id of $tag in $repo.
+You first need to create the release for $tag from https://github.com/$repo/releases."
+
+# figure out the current version
+version=$(git rev-parse HEAD)
+label="$file (${version:0:7})"
+githubAPI GET /repos/$repo/releases/$releaseId/assets >"$tmp"/assets.json
+
+# first, check if there is an identical asset already uploaded
+# (by checking its name and $version recorded in label)
+if [[ -n "$(coffeeInputJSON <"$tmp"/assets.json '
+        [filename, label] = argv
+        for a in res when a.name is filename and a.label is label
+            console.log a.id
+        ' "$file" "$label"
+    )" ]]; then
+    echo "$label already uploaded for $repo's $tag release ($releaseId)"
+    exit
+fi
+
+# otherwise, delete existing assets whose name is $file
+coffeeInputJSON <"$tmp"/assets.json '
+[filename] = argv
+for a in res when a.name is filename
+    console.log a.id
+' "$file" |
+while read assetId; do
+    # keeping a record of it before deleting
+    assetHistoryFile="$ASSET_HISTORY_ROOT/$repo/$tag/$file-$assetId.json"
+    mkdir -p "$(dirname "$assetHistoryFile")"
+    githubAPI GET /repos/$repo/releases/assets/$assetId >"$assetHistoryFile"
+    githubAPI DELETE /repos/$repo/releases/assets/$assetId
+done
+
+# then, upload the new file
+curlGitHub \
+    --data-binary @"$file" \
+    --header "Content-Type: application/octet-stream" \
+    https://uploads.github.com/repos/$repo/releases/$releaseId/assets?name="$file" \
+    |
+coffeeInputJSON 'console.log res.id' |
+while read assetId; do
+    # and record the label
+    githubAPI PATCH /repos/$repo/releases/assets/$assetId --data '
+    { "name": "'"$file"'", "label": "'"$label"'" }'
+    echo
+done
+
+# update the tag
+git push https://github.com/$repo.git HEAD:tags/$tag -f

@@ -157,10 +157,10 @@ label = l.
 
 ## Compiling a DDlog Program
 Let's say we wrote everything described so far in a file called `spouse_example.ddl`.
-DeepDive's application.conf can be compiled and run in the following way:
+DeepDive's deepdive.conf can be compiled and run in the following way:
 
 ```bash
-$DEEPDIVE_HOME/util/ddlog compile spouse_example.ddl >application.conf
+$DEEPDIVE_HOME/util/ddlog compile spouse_example.ddl >deepdive.conf
 
-deepdive -c application.conf
+deepdive run
 ```
