@@ -476,15 +476,6 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
       it("should work with materialization and incremental modes (boolean)") {
         cancelUnlessPostgres()
-        // XXX Incremental workflow not supported on Postgres-XL as inference.PostgresInferenceRunner.groundVariables raises the following error:
-        //   org.postgresql.util.PSQLException: ERROR: could not plan this distributed update
-        //   Detail: correlated UPDATE or updating distribution column currently not supported in Postgres-XL.
-        if (dataStoreHelper.isUsingPostgresXL) pending
-        // XXX Incremental workflow not supported on Greenplum as datastore.PostgresDataStore.createTableIfNotExists raising following error:
-        //   org.postgresql.util.PSQLException: ERROR: syntax error at or near "NOT"
-        //   Position: 17
-        if (dataStoreHelper.isUsingGreenplum) pending
-
         inferenceRunner.init()
 
         // Insert sample data
@@ -589,22 +580,13 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
       it("should work with materialization and incremental modes (multinomial)") {
         cancelUnlessPostgres()
-        // XXX Incremental workflow not supported on Postgres-XL as inference.PostgresInferenceRunner.groundVariables raises the following error:
-        //   org.postgresql.util.PSQLException: ERROR: could not plan this distributed update
-        //   Detail: correlated UPDATE or updating distribution column currently not supported in Postgres-XL.
-        if (dataStoreHelper.isUsingPostgresXL) pending
-        // XXX Incremental workflow not supported on Greenplum as datastore.PostgresDataStore.createTableIfNotExists raising following error:
-        //   org.postgresql.util.PSQLException: ERROR: syntax error at or near "NOT"
-        //   Position: 17
-        if (dataStoreHelper.isUsingGreenplum) pending
-
         inferenceRunner.init()
 
         // Insert sample data
         SQL(s"""CREATE TABLE r1(weight text,
-          is_correct int, id bigint);""").execute.apply()
+          class int, id bigint);""").execute.apply()
         val data = (1 to 100).map { i =>
-          Map("id" -> i, "weight" -> s"weight_${i}", "is_correct" -> i%2)
+          Map("id" -> i, "weight" -> s"weight_${i}", "class" -> i%3)
         }
         dataStoreHelper.bulkInsert("r1", data.iterator)
 
@@ -613,13 +595,13 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
           dbSettings.gphost, dbSettings.gppath, dbSettings.gpport, dbSettings.gpload,
           IncrementalMode.MATERIALIZATION, null)
 
-        val schema = Map[String, VariableDataType]("r1.is_correct" -> MultinomialType(2))
+        val schema = Map[String, VariableDataType]("r1.class" -> MultinomialType(3))
 
         // Build the factor description
         val factorDesc = FactorDesc("testFactor",
-            """SELECT id AS "r1.R0.id", weight AS "dd_weight_column_0", is_correct AS "r1.R0.is_correct"
+            """SELECT id AS "r1.R0.id", weight AS "dd_weight_column_0", class AS "r1.R0.class"
             FROM r1 R0""",
-          MultinomialFactorFunction(Seq("r1.R0.is_correct")),
+          MultinomialFactorFunction(Seq("r1.R0.class")),
           UnknownFactorWeight(List("dd_weight_column_0")), "weight_prefix")
         val holdoutFraction = 0.0
 
@@ -630,7 +612,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         // check results
         val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceRunner.WeightsTable}""")
           .map(rs => rs.long("count")).single.apply().get
-        assert(numWeights === 200)
+        assert(numWeights === 300)
 
         val numFactors = SQL(s"""SELECT COUNT(*) AS "count" FROM dd_query_testFactor""")
           .map(rs => rs.long("count")).single.apply().get
@@ -653,14 +635,14 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val numWeightsMeta = SQL(s"""SELECT num_weights AS "count"
           FROM ${InferenceNamespace.getIncrementalMetaTableName()}""")
           .map(rs => rs.long("count")).single.apply().get
-        assert(numWeightsMeta === 200)
+        assert(numWeightsMeta === 300)
 
         // incremental phase
 
         SQL(s"""CREATE TABLE dd_delta_r1(weight text,
-          is_correct int, id bigint);""").execute.apply()
+          class int, id bigint);""").execute.apply()
         val deltaData = (91 to 110).map { i =>
-          Map("id" -> i, "weight" -> s"weight_${i}", "is_correct" -> i%2)
+          Map("id" -> i, "weight" -> s"weight_${i}", "class" -> i%3)
         }
         SQL(s"""CREATE VIEW dd_new_r1 AS SELECT * FROM r1 UNION
           SELECT * FROM dd_delta_r1;""").execute.apply()
@@ -675,13 +657,13 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         // Build the factor description
         val factorDescInc = FactorDesc("dd_new_testFactor",
             """SELECT id AS "dd_new_r1.R0.id", weight AS "dd_weight_column_0",
-            is_correct AS "dd_new_r1.R0.is_correct"
+            class AS "dd_new_r1.R0.class"
             FROM dd_new_r1 R0""",
-          MultinomialFactorFunction(Seq("dd_new_r1.R0.is_correct")),
+          MultinomialFactorFunction(Seq("dd_new_r1.R0.class")),
           UnknownFactorWeight(List("dd_weight_column_0")), "weight_prefix")
 
-        val schemaInc = Map[String, VariableDataType]("dd_delta_r1.is_correct" -> MultinomialType(2),
-          "dd_new_r1.is_correct" -> MultinomialType(2))
+        val schemaInc = Map[String, VariableDataType]("dd_delta_r1.class" -> MultinomialType(3),
+          "dd_new_r1.class" -> MultinomialType(3))
 
         // Ground the graph
         inferenceRunner.groundFactorGraph(schemaInc, Seq(factorDescInc),
@@ -690,7 +672,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         // Check the result
         val numWeightsInc = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceRunner.WeightsTable}""")
           .map(rs => rs.long("count")).single.apply().get
-        assert(numWeightsInc === 20)
+        assert(numWeightsInc === 30)
 
         val numFactorsInc = SQL(s"""SELECT COUNT(*) AS "count" FROM dd_query_dd_new_testFactor""")
           .map(rs => rs.long("count")).single.apply().get
