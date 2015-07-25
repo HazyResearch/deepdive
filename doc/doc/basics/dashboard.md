@@ -136,7 +136,7 @@ Assuming the report is called "my_report", this command will store the precision
 
 To view an overview of the changes in all trends for all time, visit the "Trends" page. Numeric trends will show small charts indicating the change in value over time, and non-numeric trends will display a color band, where each color uniquely identifies a categorical report value. Hovering over any of the data points will reveal an exact data value and the time of the snapshot which captured it.
 
-[ screenshot of report values summary ]
+![Trends](../../images/dashboard/trends.png)
 
 ### Comprehensive Trend View
 
@@ -146,13 +146,13 @@ Toggling the Null Values button will add/remove snapshots from the chart which e
 
 Clicking on a data point or colored band block will take you to the report in the relevant snapshot for that data value.
 
-[ screenshot of individual report value page ]
+![Trend](../../images/dashboard/trend.png)
 
 ### Dashboard Trends
 
 You may want to make a few important trends easily viewable from the homepage of Dashboard for quick monitoring. To do so, click the "Add to Dashboard" button on the comprehensive trend view page to add a smaller version of the chart to the homepage of Dashboard. You can toggle this button to remove the chart from the homepage at any time.
 
-[ Screenshot of dashboard with charts added ]
+![Dashboard](../../images/dashboard/homepage.png)
 
 ## Advanced Topics
 
