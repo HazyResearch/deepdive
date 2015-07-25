@@ -547,11 +547,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
                 |= t1.${dataStore.quoteColumn(s"${InferenceNamespace.getBaseTableName(v.relation)}.id")}
                 |""".stripMargin.replaceAll("\n", " ")).mkString("AND")
             val weightJoinlist = factorDesc.weight.variables.map(v => {
-              // split column to get relation name
-              val colSplit = v.split('.')
-              val lastvrel = InferenceNamespace.getBaseTableName(colSplit(0))
-              val lastv = s"${lastvrel}.${colSplit.takeRight(colSplit.length-1).mkString(".")}"
-              s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(lastv)}"""
+              s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)}"""
             }).mkString("AND")
             val joinList = Seq(factorJoinlist, weightJoinlist).mkString(" AND ")
 
@@ -615,13 +611,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
               assignWeightIds(weighttableForThisFactor, orderbyClause)
             } else {
               val tmpTable = s"${weighttableForThisFactor}_inc"
-              val weightJoinlistInc = factorDesc.weight.variables.map(v => {
-                // split column to get relation name
-                val colSplit = v.split('.')
-                val lastvrel = InferenceNamespace.getBaseTableName(colSplit(0))
-                val lastv = s"${lastvrel}.${colSplit.takeRight(colSplit.length-1).mkString(".")}"
-                s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(lastv)}"""
-              })
+              val weightJoinlistInc = List(weightJoinlist)
               val cardinalityCond = if (isMultinomial) List("t0.cardinality = t1.cardinality") else List("")
               val weightConditionInc = (weightJoinlistInc ++ cardinalityCond).filter(_ != "").mkString("WHERE ", " AND ", "")
               execute(s"""UPDATE ${weighttableForThisFactor} AS t0 SET id = t1.id

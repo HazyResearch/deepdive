@@ -479,10 +479,10 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
         // Build the factor description
         val factorDesc = FactorDesc("testFactor",
-            """SELECT id AS "r1.R0.id", weight AS "r1.R0.weight", is_correct AS "r1.R0.is_correct"
+            """SELECT id AS "r1.R0.id", weight AS "dd_weight_column_0", is_correct AS "r1.R0.is_correct"
             FROM r1 R0""",
           IsTrueFactorFunction(Seq("r1.R0.is_correct")),
-          UnknownFactorWeight(List("r1.R0.weight")), "weight_prefix")
+          UnknownFactorWeight(List("dd_weight_column_0")), "weight_prefix")
         val holdoutFraction = 0.0
 
         // Ground the graph
@@ -536,11 +536,11 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
         // Build the factor description
         val factorDescInc = FactorDesc("dd_new_testFactor",
-            """SELECT id AS "dd_new_r1.R0.id", weight AS "dd_new_r1.R0.weight",
+            """SELECT id AS "dd_new_r1.R0.id", weight AS "dd_weight_column_0",
             is_correct AS "dd_new_r1.R0.is_correct"
             FROM dd_new_r1 R0""",
           IsTrueFactorFunction(Seq("dd_new_r1.R0.is_correct")),
-          UnknownFactorWeight(List("dd_new_r1.R0.weight")), "weight_prefix")
+          UnknownFactorWeight(List("dd_weight_column_0")), "weight_prefix")
 
         val schemaInc = Map[String, VariableDataType]("dd_delta_r1.is_correct" -> BooleanType)
 
@@ -591,10 +591,10 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
         // Build the factor description
         val factorDesc = FactorDesc("testFactor",
-            """SELECT id AS "r1.R0.id", weight AS "r1.R0.weight", is_correct AS "r1.R0.is_correct"
+            """SELECT id AS "r1.R0.id", weight AS "dd_weight_column_0", is_correct AS "r1.R0.is_correct"
             FROM r1 R0""",
           MultinomialFactorFunction(Seq("r1.R0.is_correct")),
-          UnknownFactorWeight(List("r1.R0.weight")), "weight_prefix")
+          UnknownFactorWeight(List("dd_weight_column_0")), "weight_prefix")
         val holdoutFraction = 0.0
 
         // Ground the graph
@@ -648,11 +648,11 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
         // Build the factor description
         val factorDescInc = FactorDesc("dd_new_testFactor",
-            """SELECT id AS "dd_new_r1.R0.id", weight AS "dd_new_r1.R0.weight",
+            """SELECT id AS "dd_new_r1.R0.id", weight AS "dd_weight_column_0",
             is_correct AS "dd_new_r1.R0.is_correct"
             FROM dd_new_r1 R0""",
           MultinomialFactorFunction(Seq("dd_new_r1.R0.is_correct")),
-          UnknownFactorWeight(List("dd_new_r1.R0.weight")), "weight_prefix")
+          UnknownFactorWeight(List("dd_weight_column_0")), "weight_prefix")
 
         val schemaInc = Map[String, VariableDataType]("dd_delta_r1.is_correct" -> MultinomialType(2),
           "dd_new_r1.is_correct" -> MultinomialType(2))
