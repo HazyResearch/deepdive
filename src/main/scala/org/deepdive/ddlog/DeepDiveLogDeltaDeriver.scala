@@ -36,23 +36,23 @@ object DeepDiveLogDeltaDeriver{
     cq.bodies foreach { bodies =>
       // We don't support deriving delta rules for modifiers
       bodies foreach {
-        case _: Cond | _: Atom => // supported
+        case _: Cond | _: BodyAtom => // supported
         case _ => throw new RuntimeException("Deriving delta rules for modifier atom is not supported!")
       }
       // Delta body
       val incDeltaBody = bodies collect {
-        case a: Atom => a.copy(name = deltaPrefix + a.name)
+        case a: BodyAtom => a.copy(name = deltaPrefix + a.name)
         case a: Cond => a
       }
       // New body
       val incNewBody = bodies collect {
-        case a: Atom => a.copy(name = newPrefix + a.name)
+        case a: BodyAtom => a.copy(name = newPrefix + a.name)
         case a: Cond => a
       }
-      val bodyAtoms         = bodies       collect { case a: Atom => a }
+      val bodyAtoms         = bodies       collect { case a: BodyAtom => a }
       val bodyConds         = bodies       collect { case a: Cond => a }
-      val incDeltaBodyAtoms = incDeltaBody collect { case a: Atom => a }
-      val incNewBodyAtoms   = incNewBody   collect { case a: Atom => a }
+      val incDeltaBodyAtoms = incDeltaBody collect { case a: BodyAtom => a }
+      val incNewBodyAtoms   = incNewBody   collect { case a: BodyAtom => a }
 
       var i = 0
       var j = 0
@@ -103,9 +103,9 @@ object DeepDiveLogDeltaDeriver{
 
     // if (!stmt.isQuery) {
     incrementalStatement += ExtractionRule(ConjunctiveQuery(
-      Atom(incNewStmt.a.name, incNewStmt.a.terms map { VarExpr(_) } ),
-      List(List(Atom(stmt.a.name, stmt.a.terms map { VarExpr(_) })),
-        List(Atom(incDeltaStmt.a.name, incDeltaStmt.a.terms map { VarExpr(_) }))),
+      HeadAtom(incNewStmt.a.name, incNewStmt.a.terms map { VarExpr(_) } ),
+      List(List(BodyAtom(stmt.a.name, stmt.a.terms map { VarPattern(_) })),
+        List(BodyAtom(incDeltaStmt.a.name, incDeltaStmt.a.terms map { VarPattern(_) }))),
       false, None))
     // }
     incrementalStatement.toList
