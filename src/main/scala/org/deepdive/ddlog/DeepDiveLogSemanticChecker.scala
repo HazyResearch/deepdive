@@ -36,13 +36,13 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
     checkNumberOfColumns(stmt)
     checkQuantifiedBody(stmt)
     checkWeight(stmt)
-    checkHeadVariables(stmt)
+    checkVariableBindings(stmt)
   }
 
   // iterate over all atoms contained in the body list and apply the checker
-  def checkBodyAtoms(checker: Atom => Unit): List[Body] => Unit = bodies => {
+  def checkBodyAtoms(checker: BodyAtom => Unit): List[Body] => Unit = bodies => {
     bodies foreach {
-      case a: Atom => checker(a)
+      case a: BodyAtom => checker(a)
       case a: QuantifiedBody => checkBodyAtoms(checker)(a.bodies)
       case _ =>
     }
@@ -51,7 +51,7 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
   // check if relations in the body are defined
   def checkRelationDefined(stmt: Statement) {
     val stmtStr = DeepDiveLogPrettyPrinter.print(stmt)
-    def checkRelation(a: Atom) {
+    def checkRelation(a: BodyAtom) {
       if (!(heads contains a.name))
         error(stmt, s"""relation "${a.name}" is not defined""")
     }
@@ -59,7 +59,7 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
     stmt match {
       case s: ExtractionRule => s.q.bodies foreach check
       case s: InferenceRule => s.q.bodies foreach check
-      case s: FunctionCallRule => checkRelation(Atom(s.input, Nil))
+      case s: FunctionCallRule => checkRelation(BodyAtom(s.input, Nil))
       case _ =>
     }
   }
@@ -93,14 +93,16 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
 
   // check if the number of columns match schema declaration
   def checkNumberOfColumns(stmt: Statement) {
-    def checkAtom(a: Atom) {
-      if ((schemaDeclaration.keySet contains a.name) &&
-        (a.terms.size != schemaDeclaration(a.name).a.terms.size))
-        error(stmt, s""""${a.name}": number of columns in the query does not match number of columns in the schema""")
+    def check(name: String, size: Int) {
+      if ((schemaDeclaration.keySet contains name) &&
+        (size != schemaDeclaration(name).a.terms.size))
+        error(stmt, s""""${name}": number of columns in the query does not match number of columns in the schema""")
     }
+    def checkBodyAtom(a: BodyAtom) = check(a.name, a.terms.size)
+    def checkHeadAtom(a: HeadAtom) = check(a.name, a.terms.size)
     def checkCq(cq: ConjunctiveQuery) {
-      checkAtom(cq.head)
-      cq.bodies foreach checkBodyAtoms(checkAtom)
+      checkHeadAtom(cq.head)
+      cq.bodies foreach checkBodyAtoms(checkBodyAtom)
     }
     stmt match {
       case s: ExtractionRule => checkCq(s.q)
@@ -116,13 +118,13 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
         case b: QuantifiedBody => {
           b.modifier match {
             case OuterModifier() =>
-              if ((b.bodies collect { case x: Atom => 1 }).size != 1)
+              if ((b.bodies collect { case x: BodyAtom => 1 }).size != 1)
                 error(stmt, s"One and only one atom should be supplied in OPTIONAL modifier")
             case ExistModifier(_) =>
-              if ((b.bodies collect { case x: Atom => 1 }).size == 0)
+              if ((b.bodies collect { case x: BodyAtom => 1 }).size == 0)
                 error(stmt, s"At least one atom should be supplied in EXISTS modifier")
             case AllModifier() =>
-              if ((b.bodies collect { case x: Atom => 1 }).size == 0)
+              if ((b.bodies collect { case x: BodyAtom => 1 }).size == 0)
                 error(stmt, s"At least one atom should be supplied in ALL modifier")
           }
         }
@@ -147,39 +149,90 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
     }
   }
 
-  // check if head variables have bindings in the body
-  def checkHeadVariables(stmt: Statement) {
-    var variableSet = new HashSet[String]()
-    def addVariable(body: List[Body]) {
-      body foreach {
-        case a: Atom => a.terms.foreach {
-          case VarExpr(v) => variableSet += v
-          case _ =>
-        }
-        case a: QuantifiedBody => addVariable(a.bodies)
-        case _ =>
+  // collect variables used in the expression
+  def collectVariables(expr: Expr) : Set[String] = {
+    var set = new HashSet[String]()
+    def collectVariablesInner(e: Expr) : Unit = e match {
+      case VarExpr(name) => set += name
+      case FuncExpr(function, args, agg) => args foreach (collectVariablesInner(_))
+      case BinaryOpExpr(lhs, op, rhs) => {
+        collectVariablesInner(lhs)
+        collectVariablesInner(rhs)
       }
+      case TypecastExpr(lhs, rhs) => collectVariablesInner(lhs)
+      case _ =>
     }
-    def checkHeadExpr(e: Expr) {
-      e match {
-        case VarExpr(v) =>
-          if (!variableSet.contains(v)) error(stmt, s"Head variable ${v} is not defined in the body")
-        case FuncExpr(_, args, _) => args foreach checkHeadExpr
-        case BinaryOpExpr(lhs, _, rhs) => {
-          checkHeadExpr(lhs)
-          checkHeadExpr(rhs)
-        }
-        case TypecastExpr(lhs, _) => checkHeadExpr(lhs)
-        case _ =>
+    collectVariablesInner(expr)
+    set
+  }
+
+  def collectVariables(pattern: Pattern, definitionOnly: Boolean) : Set[String] = {
+    var set = new HashSet[String]()
+    pattern match {
+      case VarPattern(name) => set += name
+      case ExprPattern(e) => if (!definitionOnly) set ++= collectVariables(e)
+      case PlaceholderPattern() =>
+    }
+    set
+  }
+
+  def collectVariables(cond: Cond) : Set[String] = {
+    var set = new HashSet[String]()
+    cond match {
+      case ComparisonCond(lhs, op, rhs) => {
+        set ++= collectVariables(lhs)
+        set ++= collectVariables(rhs)
       }
+      case CompoundCond(lhs, op, rhs) => {
+        set ++= collectVariables(lhs)
+        set ++= collectVariables(rhs)
+      }
+      case NegationCond(c) => set ++= collectVariables(c)
     }
-    def checkCq(cq: ConjunctiveQuery) {
-      cq.bodies foreach addVariable
-      cq.head.terms foreach checkHeadExpr
+    set
+  }
+
+  // collect variable
+  def collectVariablesFromBody(body: Body, definitionOnly: Boolean) : Set[String] = {
+    var set = new HashSet[String]()
+    body match {
+      case a: BodyAtom => a.terms.foreach { x =>
+        set ++= collectVariables(x, definitionOnly)
+      }
+      case a: QuantifiedBody => a.bodies.foreach {
+        x => set ++= collectVariablesFromBody(x, definitionOnly)
+      }
+      case a: Cond => if (!definitionOnly) set ++= collectVariables(a)
+    }
+    set
+  }
+
+  // check if variables have bindings in the body
+  def checkVariableBindings(stmt: Statement) {
+    // check variable bindings in a conjunctive query
+    def checkCq(cq: ConjunctiveQuery, additionalVars: Set[String] = Set()) {
+      // collect variable definitions and usages
+      var varDefSet = new HashSet[String]()
+      var varUseSet = new HashSet[String]()
+      cq.bodies.foreach { case x =>
+        x.foreach { case a =>
+          varDefSet ++= collectVariablesFromBody(a, true)
+          varUseSet ++= collectVariablesFromBody(a, false)
+        }
+      }
+      cq.head.terms.foreach  { x => varUseSet ++= collectVariables(x) }
+      varUseSet ++= additionalVars
+      varUseSet.foreach { x =>
+        if (!varDefSet.contains(x)) error(stmt, s"Variable ${x} does not have bindings")
+      }
     }
     stmt match {
       case s: ExtractionRule => checkCq(s.q)
-      case s: InferenceRule  => checkCq(s.q)
+      case s: InferenceRule  => {
+        var set = new HashSet[String]()
+        s.weights.variables.foreach { set ++= collectVariables(_) }
+        checkCq(s.q, set)
+      }
       case _ =>
     }
   }

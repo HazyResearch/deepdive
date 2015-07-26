@@ -1,4 +1,0 @@
-[error] Head variable y is not defined in the body
-Q(y)  :-
-    a(x).
-

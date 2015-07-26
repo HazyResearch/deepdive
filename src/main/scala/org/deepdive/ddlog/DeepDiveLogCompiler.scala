@@ -208,10 +208,10 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
       case f : FunctionCallRule => dependencies += {
         f -> (( Some(f.input) flatMap (stmtByHeadName get _)).toSet.flatten.flatten) }
       case e : ExtractionRule   => dependencies += {
-        e -> (((e.q.bodies.flatten collect { case x: Atom => x.name })
+        e -> (((e.q.bodies.flatten collect { case x: BodyAtom => x.name })
           flatMap (stmtByHeadName get _)).toSet.flatten.flatten) }
       case w : InferenceRule    => dependencies += {
-        w -> (((w.q.bodies.flatten collect { case x: Atom => x.name })
+        w -> (((w.q.bodies.flatten collect { case x: BodyAtom => x.name })
           flatMap (stmtByHeadName get _)).toSet.flatten.flatten) }
       case _ =>
     }
@@ -241,10 +241,10 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
   // index is the index of the subgoal/atom this variable is found in the body.
   // variable is the complete Variable type for the found variable.
   def generateCanonicalVar()  = {
-    def generateCanonicalVarFromAtom(a: Atom, index: String) {
+    def generateCanonicalVarFromAtom(a: BodyAtom, index: String) {
       a.terms.zipWithIndex.foreach { case (expr, i) =>
         expr match {
-          case VarExpr(v) =>
+          case VarPattern(v) =>
             if (! (query_schema contains v) )
               query_schema += { v -> (index, Variable(v,a.name,i) ) }
           case _ =>
@@ -254,7 +254,7 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
     // For quantified body, we need to recursively add variables from the atoms inside the quantified body
     def generateCanonicalVarFromBodies(bodies: List[Body], indexPrefix: String) {
       bodies.zipWithIndex.foreach {
-        case (a: Atom, index) => generateCanonicalVarFromAtom(a, s"${indexPrefix}${index}")
+        case (a: BodyAtom, index) => generateCanonicalVarFromAtom(a, s"${indexPrefix}${index}")
         // we need to recursively handle the atoms inside the modifier
         case (a: QuantifiedBody, index) => generateCanonicalVarFromBodies(a.bodies, s"${indexPrefix}${index}_")
         case _ =>
@@ -313,7 +313,6 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
         val resovledLhs = compileExpr(lhs)
         s"(${resovledLhs} :: ${rhs})"
       }
-      case Placeholder() => ""
     }
   }
 
@@ -350,24 +349,24 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
     // generate where clause from unification and conditions
     def generateWhereClause(bodies: List[Body], indexPrefix: String) : String = {
       val conditions = bodies.zipWithIndex.flatMap {
-        case (Atom(relName, terms), index) => {
+        case (BodyAtom(relName, terms), index) => {
           val bodyIndex = s"${indexPrefix}${index}"
-          terms.zipWithIndex flatMap { case (expr, atomIndex) =>
-            expr match {
+          terms.zipWithIndex flatMap { case (pattern, termIndex) =>
+            pattern match {
               // a simple variable indicates a join condition with other columns having the same variable name
-              case VarExpr(varName) => {
+              case VarPattern(varName) => {
                 val canonical_body_index = getBodyIndex(varName)
                 if (canonical_body_index != bodyIndex) {
-                  val real_attr_name1 = ss.resolveName( Variable(varName, relName, atomIndex) )
+                  val real_attr_name1 = ss.resolveName( Variable(varName, relName, termIndex) )
                   val real_attr_name2 = ss.resolveName( getVar(varName))
                   Some(s"R${ bodyIndex }.${ real_attr_name1 } = R${ canonical_body_index }.${ real_attr_name2 } ")
                 } else { None }
               }
-              case Placeholder() => None
-              // other expressions indicate a filter condition on the column
-              case _ => {
+              case PlaceholderPattern() => None
+              // expression patterns indicate a filter condition on the column
+              case ExprPattern(expr) => {
                 val resolved = compileExpr(expr)
-                val attr = ss.schema(relName, atomIndex)
+                val attr = ss.schema(relName, termIndex)
                 Some(s"R${bodyIndex}.${attr} = ${resolved}")
               }
             }
@@ -390,7 +389,7 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
 
     def generateFromClause(bodies: List[Body], indexPrefix: String) : String = {
       val atoms = bodies.zipWithIndex flatMap {
-        case (x:Atom,i) => Some(s"${x.name} R${indexPrefix}${i}")
+        case (x:BodyAtom,i) => Some(s"${x.name} R${indexPrefix}${i}")
         case _ => None
       }
       val outers = bodies.zipWithIndex flatMap {
@@ -509,10 +508,10 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
         // Generate the body of the query.
         val qc              = new QueryCompiler(tmpCq, ss)
 
-        if (stmt.supervision != null) {
+        if (stmt.supervision != None) {
           if (stmt.q.bodies.length > 1) ss.error(s"Scoping rule does not allow disjunction.\n")
           val headStr = qc.generateSQLHead(false)
-          val labelCol = qc.compileVariable(stmt.supervision)
+          val labelCol = qc.compileVariable(stmt.supervision.get)
           inputQueries += s"""SELECT DISTINCT ${ headStr }, 0 AS id, ${labelCol} AS label
           ${ qc.generateSQLBody(cqBody) }
           """
@@ -604,15 +603,19 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       var weight = ""
       for (cqBody <- stmt.q.bodies) {
         // edge query
-        val fakeBody        = stmt.q.head +: cqBody
+        val fakeHeadAsBody  = BodyAtom(stmt.q.head.name, stmt.q.head.terms map {
+          case x: VarExpr => VarPattern(x.name)
+          case x: Expr    => ExprPattern(x)
+        })
+        val fakeBody        = fakeHeadAsBody +: cqBody
         val fakeCQ          = stmt.q.copy(bodies = List(fakeBody))
-        val fakeBodyAtoms   = fakeBody.collect { case x: Atom => x }
+        val fakeBodyAtoms   = fakeBody.collect { case x: BodyAtom => x }
 
         val index = cqBody.length + 1
         val qc = new QueryCompiler(fakeCQ, ss)
         // TODO self-join?
         val varInBody = (fakeBody.zipWithIndex flatMap {
-          case (x: Atom, i) =>
+          case (x: BodyAtom, i) =>
             if (ss.variableTableNames contains x.name)
               Some(s"""R${fakeBody indexOf x}.id AS "${x.name}.R${fakeBody indexOf x}.id" """)
             else

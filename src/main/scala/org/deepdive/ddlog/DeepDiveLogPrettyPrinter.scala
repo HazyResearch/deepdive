@@ -85,13 +85,23 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
       }
       case BinaryOpExpr(lhs, op, rhs) => s"(${print(lhs)} ${op} ${print(rhs)})"
       case TypecastExpr(lhs, rhs) => s"(${print(lhs)} :: ${rhs})"
-      case Placeholder() => "_"
     }
   }
 
-  def print(a: Atom) : String = {
+  def print(a: BodyAtom) : String = {
     val vars = a.terms map print
     s"${a.name}(${vars.mkString(", ")})"
+  }
+
+  def print(a: HeadAtom) : String = {
+    val vars = a.terms map print
+    s"${a.name}(${vars.mkString(", ")})"
+  }
+
+  def print(p: Pattern) : String = p match {
+    case VarPattern(x) => x
+    case PlaceholderPattern() => "_"
+    case ExprPattern(e) => print(e)
   }
 
   def print(a: QuantifiedBody) : String = {
@@ -119,7 +129,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   }
 
   def print(b: Body) : String = b match {
-    case b: Atom => print(b)
+    case b: BodyAtom => print(b)
     case b: Cond => print(b)
     case b: QuantifiedBody => print(b)
   }
@@ -140,9 +150,8 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   }
 
   def print(stmt: ExtractionRule): String = {
-    ( if (stmt.supervision == null) ""
-      else  s"@label(${stmt.supervision})\n"
-    ) + print(stmt.q) + ".\n"
+    ( stmt.supervision map (s => s"@label(${s})\n") getOrElse("") ) +
+    print(stmt.q) + ".\n"
   }
 
   def print(stmt: FunctionCallRule): String = {
@@ -152,8 +161,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
 
   def print(stmt: InferenceRule): String = {
     ( stmt.function map { f => s"@function(${f})\n" } getOrElse("") ) +
-    ( if (stmt.weights == null) ""
-      else s"@weight(${stmt.weights.variables.map(print).mkString(", ")})\n"
+    ( s"@weight(${stmt.weights.variables.map(print).mkString(", ")})\n"
     ) + print(stmt.q) + ".\n"
   }
 
