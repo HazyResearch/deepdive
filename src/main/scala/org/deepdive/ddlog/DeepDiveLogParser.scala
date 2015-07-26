@@ -91,7 +91,7 @@ case class SchemaDeclaration( a : Attribute
                             , annotation : List[Annotation] = List.empty // optional annotation
                             ) extends Statement // atom and whether this is a query relation.
 case class FunctionDeclaration( functionName: String, inputType: RelationType, outputType: RelationType, implementations: List[FunctionImplementationDeclaration], mode: String = null) extends Statement
-case class ExtractionRule(q : ConjunctiveQuery, supervision: String = null) extends Statement // Extraction rule
+case class ExtractionRule(q : ConjunctiveQuery, supervision: Option[String] = None) extends Statement // Extraction rule
 case class FunctionCallRule(input : String, output : String, function : String) extends Statement // Extraction rule
 case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, function : Option[String], mode: String = null) extends Statement // Weighted rule
 
@@ -278,8 +278,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
 
   def extractionRule : Parser[ExtractionRule] =
     conjunctiveQuery ~ opt(supervision) ^^ {
-      case (q ~ supervision) =>
-        ExtractionRule(q, supervision.getOrElse(null))
+      case (q ~ supervision) => ExtractionRule(q, supervision)
     }
 
   def functionCallRule : Parser[FunctionCallRule] =

@@ -151,8 +151,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
 
   def print(stmt: ExtractionRule): String = {
     print(stmt.q) +
-    ( if (stmt.supervision == null) ""
-      else  "\n  label = " + stmt.supervision
+    ( stmt.supervision map ("\n  label = " + _) getOrElse("")
     ) + ".\n"
   }
 
@@ -163,8 +162,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
 
   def print(stmt: InferenceRule): String = {
     print(stmt.q) +
-    ( if (stmt.weights == null) ""
-      else "\n  weight = " + (stmt.weights.variables.map(print).mkString(", "))
+    ( "\n  weight = " + (stmt.weights.variables.map(print).mkString(", "))
     ) +
     ( stmt.function map { "\n  function = " + _ } getOrElse("")
     ) + ".\n"

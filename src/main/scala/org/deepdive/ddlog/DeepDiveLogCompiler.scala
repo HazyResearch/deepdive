@@ -508,10 +508,10 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
         // Generate the body of the query.
         val qc              = new QueryCompiler(tmpCq, ss)
 
-        if (stmt.supervision != null) {
+        if (stmt.supervision != None) {
           if (stmt.q.bodies.length > 1) ss.error(s"Scoping rule does not allow disjunction.\n")
           val headStr = qc.generateSQLHead(false)
-          val labelCol = qc.compileVariable(stmt.supervision)
+          val labelCol = qc.compileVariable(stmt.supervision.get)
           inputQueries += s"""SELECT DISTINCT ${ headStr }, 0 AS id, ${labelCol} AS label
           ${ qc.generateSQLBody(cqBody) }
           """
