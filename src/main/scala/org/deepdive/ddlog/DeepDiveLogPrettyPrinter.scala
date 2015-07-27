@@ -160,7 +160,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
 
   def print(stmt: InferenceRule): String = {
     ( stmt.function map { f => s"@function(${f})\n" } getOrElse("") ) +
-    ( s"@weight(${stmt.weights.variables.map(print).mkString(", ")})\n"
+    ( s"@weight(${stmt.weights.variables map print mkString(", ")})\n"
     ) + print(stmt.q) + ".\n"
   }
 
