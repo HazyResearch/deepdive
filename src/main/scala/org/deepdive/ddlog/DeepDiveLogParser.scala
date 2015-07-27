@@ -187,8 +187,8 @@ class DeepDiveLogParser extends JavaTokenParsers {
     | "(" ~> expr <~ ")"
     )
 
-  def cqHead = relationName ~ "(" ~ rep1sep(expr, ",") ~ ")" ^^ {
-    case (r ~ _ ~ expressions ~ _) => HeadAtom(r, expressions)
+  def cqHead = relationName ~ ("(" ~> rep1sep(expr, ",") <~ ")") ^^ {
+    case (r ~ expressions) => HeadAtom(r, expressions)
   }
 
   // conditional expressions

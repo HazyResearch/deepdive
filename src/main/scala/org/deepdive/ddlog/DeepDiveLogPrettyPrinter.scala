@@ -162,7 +162,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
 
   def print(stmt: InferenceRule): String = {
     print(stmt.q) +
-    ( "\n  weight = " + (stmt.weights.variables.map(print).mkString(", "))
+    ( "\n  weight = " + (stmt.weights.variables map print mkString(", "))
     ) +
     ( stmt.function map { "\n  function = " + _ } getOrElse("")
     ) + ".\n"

@@ -150,89 +150,58 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
   }
 
   // collect variables used in the expression
-  def collectVariables(expr: Expr) : Set[String] = {
-    var set = new HashSet[String]()
-    def collectVariablesInner(e: Expr) : Unit = e match {
-      case VarExpr(name) => set += name
-      case FuncExpr(function, args, agg) => args foreach (collectVariablesInner(_))
-      case BinaryOpExpr(lhs, op, rhs) => {
-        collectVariablesInner(lhs)
-        collectVariablesInner(rhs)
-      }
-      case TypecastExpr(lhs, rhs) => collectVariablesInner(lhs)
-      case _ =>
-    }
-    collectVariablesInner(expr)
-    set
+  def collectVars(expr: Expr) : Set[String] = expr match {
+    case VarExpr(name) => Set(name)
+    case FuncExpr(function, args, agg) => args flatMap collectVars toSet
+    case BinaryOpExpr(lhs, op, rhs) => collectVars(lhs) ++ collectVars(rhs)
+    case TypecastExpr(lhs, rhs) => collectVars(lhs)
+    case _ => Set()
   }
 
-  def collectVariables(pattern: Pattern, definitionOnly: Boolean) : Set[String] = {
-    var set = new HashSet[String]()
-    pattern match {
-      case VarPattern(name) => set += name
-      case ExprPattern(e) => if (!definitionOnly) set ++= collectVariables(e)
-      case PlaceholderPattern() =>
-    }
-    set
+  def collectUsedVars(pattern: Pattern) : Set[String] = pattern match {
+    case VarPattern(name) => Set(name)
+    case ExprPattern(e) => collectVars(e)
+    case PlaceholderPattern() => Set()
   }
 
-  def collectVariables(cond: Cond) : Set[String] = {
-    var set = new HashSet[String]()
-    cond match {
-      case ComparisonCond(lhs, op, rhs) => {
-        set ++= collectVariables(lhs)
-        set ++= collectVariables(rhs)
-      }
-      case CompoundCond(lhs, op, rhs) => {
-        set ++= collectVariables(lhs)
-        set ++= collectVariables(rhs)
-      }
-      case NegationCond(c) => set ++= collectVariables(c)
-    }
-    set
+  def collectDefinedVars(pattern: Pattern) : Set[String] = pattern match {
+    case VarPattern(name) => Set(name)
+    case _ => Set()
   }
 
-  // collect variable
-  def collectVariablesFromBody(body: Body, definitionOnly: Boolean) : Set[String] = {
-    var set = new HashSet[String]()
-    body match {
-      case a: BodyAtom => a.terms.foreach { x =>
-        set ++= collectVariables(x, definitionOnly)
-      }
-      case a: QuantifiedBody => a.bodies.foreach {
-        x => set ++= collectVariablesFromBody(x, definitionOnly)
-      }
-      case a: Cond => if (!definitionOnly) set ++= collectVariables(a)
-    }
-    set
+  def collectVars(cond: Cond) : Set[String] = cond match {
+    case ComparisonCond(lhs, op, rhs) => collectVars(lhs) ++ collectVars(rhs)
+    case CompoundCond(lhs, op, rhs)   => collectVars(lhs) ++ collectVars(rhs)
+    case NegationCond(c)              => collectVars(c)
+  }
+
+  def collectUsedVars(body: Body) : Set[String] = body match {
+    case a: BodyAtom => a.terms flatMap collectUsedVars toSet
+    case a: QuantifiedBody => a.bodies flatMap collectUsedVars toSet
+    case a: Cond => collectVars(a)
+  }
+
+  def collectDefinedVars(body: Body) : Set[String] = body match {
+    case a: BodyAtom => a.terms flatMap collectDefinedVars toSet
+    case a: QuantifiedBody => a.bodies flatMap collectDefinedVars toSet
+    case a: Cond => Set()
   }
 
   // check if variables have bindings in the body
   def checkVariableBindings(stmt: Statement) {
     // check variable bindings in a conjunctive query
-    def checkCq(cq: ConjunctiveQuery, additionalVars: Set[String] = Set()) {
+    def checkCq(cq: ConjunctiveQuery, additionalUsedVars: Set[String] = Set()) {
       // collect variable definitions and usages
-      var varDefSet = new HashSet[String]()
-      var varUseSet = new HashSet[String]()
-      cq.bodies.foreach { case x =>
-        x.foreach { case a =>
-          varDefSet ++= collectVariablesFromBody(a, true)
-          varUseSet ++= collectVariablesFromBody(a, false)
-        }
-      }
-      cq.head.terms.foreach  { x => varUseSet ++= collectVariables(x) }
-      varUseSet ++= additionalVars
-      varUseSet.foreach { x =>
-        if (!varDefSet.contains(x)) error(stmt, s"Variable ${x} does not have bindings")
-      }
+      var varDefs = cq.bodies flatMap (_ flatMap collectDefinedVars) toSet
+      val varUses = (cq.bodies flatMap (_ flatMap collectUsedVars) toSet) ++
+        (cq.head.terms flatMap collectVars) ++
+        (additionalUsedVars)
+      val varUndefined = varUses -- varDefs
+      varUndefined foreach { x => error(stmt, s"Variable ${x} does not have bindings") }
     }
     stmt match {
       case s: ExtractionRule => checkCq(s.q)
-      case s: InferenceRule  => {
-        var set = new HashSet[String]()
-        s.weights.variables.foreach { set ++= collectVariables(_) }
-        checkCq(s.q, set)
-      }
+      case s: InferenceRule  => checkCq(s.q, (s.weights.variables flatMap collectVars toSet))
       case _ =>
     }
   }
