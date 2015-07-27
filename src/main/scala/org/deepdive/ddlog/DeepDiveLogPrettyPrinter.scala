@@ -155,8 +155,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   }
 
   def print(stmt: FunctionCallRule): String = {
-    s"""${stmt.output} :- !${stmt.function}(${stmt.input}).
-       |""".stripMargin
+    s"${stmt.output} += ${print(stmt.input)}.\n"
   }
 
   def print(stmt: InferenceRule): String = {

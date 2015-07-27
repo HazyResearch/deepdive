@@ -95,7 +95,6 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
   var schemaDeclarationGroupByHead  : Map[String, List[SchemaDeclaration]] = new HashMap[String, List[SchemaDeclaration]]()
   var extractionRuleGroupByHead     : Map[String, List[ExtractionRule]] = new HashMap[String, List[ExtractionRule]]()
   var inferenceRuleGroupByHead      : Map[String, List[InferenceRule]] = new HashMap[String, List[InferenceRule]]()
-  var functionCallRuleGroupByInput  : Map[String, List[FunctionCallRule]] = new HashMap[String, List[FunctionCallRule]]()
   var functionCallRuleGroupByOutput : Map[String, List[FunctionCallRule]] = new HashMap[String, List[FunctionCallRule]]()
   var functionCallList              : ListBuffer[FunctionCallRule] = new ListBuffer[FunctionCallRule]()
 
@@ -188,7 +187,6 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
     }
     extractionRuleGroupByHead      = extractionRuleToCompile.toList.groupBy(_.q.head.name)
     inferenceRuleGroupByHead       = inferenceRuleToCompile.toList.groupBy(_.q.head.name)
-    functionCallRuleGroupByInput   = functionCallRuleToCompile.toList.groupBy(_.input)
     functionCallRuleGroupByOutput  = functionCallRuleToCompile.toList.groupBy(_.output)
   }
 
@@ -206,7 +204,8 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
     // Look at the body of each statement to construct a dependency graph
     statements foreach {
       case f : FunctionCallRule => dependencies += {
-        f -> (( Some(f.input) flatMap (stmtByHeadName get _)).toSet.flatten.flatten) }
+        f -> ((( f.input.bodies.flatten collect { case x: BodyAtom => x.name })
+          flatMap (stmtByHeadName get _)).toSet.flatten.flatten) }
       case e : ExtractionRule   => dependencies += {
         e -> (((e.q.bodies.flatten collect { case x: BodyAtom => x.name })
           flatMap (stmtByHeadName get _)).toSet.flatten.flatten) }
@@ -446,6 +445,12 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
         ${ optionalClause("WHERE", generateWhereClause(body, "")) }${groupbyStr}${limitStr}"""
   }
 
+  def generateSQL(useAlias: Boolean) = {
+    val head = generateSQLHead(useAlias)
+    val body = cq.bodies map generateSQLBody mkString("\nUNION ALL\n")
+    s"SELECT ${head}\n${body}"
+  }
+
 }
 
 
@@ -527,9 +532,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
             case MERGE => false
             case _     => if (tmpCq.head.name.startsWith("dd_new_")) false else true
           }
-          inputQueries += s"""
-            SELECT ${qc.generateSQLHead(useAlias)}
-            ${ qc.generateSQLBody(cqBody) }"""
+          inputQueries += qc.generateSQL(useAlias)
         }
       }
     }
@@ -552,7 +555,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     val extractor = s"""
       deepdive.extraction.extractors.${blockName} {
         sql: \"\"\" ${sqlCmdForCleanUp}
-        ${sqlCmdForInsert} ${stmts(0).q.head.name}${useAS} ${inputQueries.mkString(" UNION ALL ")}
+        ${sqlCmdForInsert} ${stmts(0).q.head.name}${useAS} ${inputQueries.mkString("\nUNION ALL\n")}
         \"\"\"
         style: "sql_extractor"
           ${ss.generateDependenciesOfCompiledBlockFor(stmts)}
@@ -568,7 +571,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       SELECT * FROM ${stmt.input}
       """
 
-      val function = ss.resolveFunctionName(stmt.function)
+      val function = ss.resolveFunctionName(stmt.input.head.name)
       val udfDetails = (function.implementations collectFirst {
         case impl: RowWiseLineHandler =>
           s"""udf: $${APP_HOME}\"/${StringEscapeUtils.escapeJava(impl.command)}\"
@@ -576,13 +579,13 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       })
 
       if (udfDetails.isEmpty)
-        ss.error(s"Cannot find compilable implementation for function ${stmt.function} among:\n  "
+        ss.error(s"Cannot find compilable implementation for function ${stmt.input.head.name} among:\n  "
           + (function.implementations mkString "\n  "))
 
       val blockName = ss.resolveExtractorBlockName(stmt)
       val extractor = s"""
         deepdive.extraction.extractors.${blockName} {
-          input: \"\"\" SELECT * FROM ${stmt.input}
+          input: \"\"\" ${new QueryCompiler(stmt.input, ss).generateSQL(true)}
           \"\"\"
           output_relation: \"${stmt.output}\"
           ${udfDetails.get}
@@ -781,9 +784,9 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
 
     val body = new ListBuffer[String]()
     body ++= compileSchemaDeclarations((state.schemaDeclarationGroupByHead map (_._2)).flatten.toList, state)
-    state.extractionRuleGroupByHead    foreach {keyVal => body ++= compileExtractionRules(keyVal._2, state)}
-    state.functionCallRuleGroupByInput foreach {keyVal => body ++= compileFunctionCallRules(keyVal._2, state)}
-    state.inferenceRuleGroupByHead     foreach {keyVal => body ++= compileInferenceRules(keyVal._2, state)}
+    state.extractionRuleGroupByHead foreach {keyVal => body ++= compileExtractionRules(keyVal._2, state)}
+    state.functionCallList          foreach {func   => body ++= compileFunctionCallRules(List(func), state)}
+    state.inferenceRuleGroupByHead  foreach {keyVal => body ++= compileInferenceRules(keyVal._2, state)}
 
     // compile the program into blocks of application.conf
     val blocks = (

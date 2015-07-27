@@ -20,23 +20,23 @@ word_features(
 
 tag?(word_id bigint) Categorical(13).
 
-function ext_training 
+function ext_training
   over like words_raw
   returns like words
   implementation "udf/ext_training.py" handles tsv lines.
 
-words :- !ext_training(words_raw).
-
-ext_features_input(word_id1, word1, pos1, word2, pos2) :-
-  words(sent_id, word_id1, word1, pos1, tag1),
-  words(sent_id, word_id2, word2, pos2, tag2).
+words +=
+  ext_training(wid, word, pos, tag) :- words_raw(wid, word, pos, tag).
 
 function ext_features
   over like ext_features_input
   returns like word_features
   implementation "udf/ext_features.py" handles tsv lines.
 
-word_features :- !ext_features(ext_features_input).
+word_features +=
+  ext_features(word_id1, word1, pos1, word2, pos2) :-
+  words(sent_id, word_id1, word1, pos1, tag1),
+  words(sent_id, word_id2, word2, pos2, tag2).
 
 @label(tag)
 tag(word_id) :- words(word_id, a, b, c, tag).

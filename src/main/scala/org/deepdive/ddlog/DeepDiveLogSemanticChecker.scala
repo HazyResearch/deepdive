@@ -22,7 +22,7 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
       case f: FunctionDeclaration => {
         functionDeclaration += { f.functionName -> f }
       }
-      case FunctionCallRule(input, output, function) => {
+      case FunctionCallRule(input, output) => {
         heads += output
       }
     }
@@ -59,7 +59,7 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
     stmt match {
       case s: ExtractionRule => s.q.bodies foreach check
       case s: InferenceRule => s.q.bodies foreach check
-      case s: FunctionCallRule => checkRelation(BodyAtom(s.input, Nil))
+      case s: FunctionCallRule => s.input.bodies foreach check
       case _ =>
     }
   }
@@ -68,8 +68,8 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
   def checkFunctionDefined(stmt: Statement) {
     stmt match {
       case s: FunctionCallRule => {
-        if (!(functionDeclaration.keySet contains s.function))
-          error(stmt, s"""function "${s.function}" is not defined""")
+        if (!(functionDeclaration.keySet contains s.input.head.name))
+          error(stmt, s"""function "${s.input.head.name}" is not defined""")
       }
       case _ =>
     }

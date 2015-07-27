@@ -30,7 +30,11 @@ object DeepDiveLogDeltaDeriver{
         name = deltaPrefix + cq.head.name
       )
     }
+    val incCqBodies = transformBody(cq, incCqHead.name, mode)
+    cq.copy(head = incCqHead, bodies = incCqBodies)
+  }
 
+  def transformBody(cq: ConjunctiveQuery, incCqHead: String, mode: Option[String]) : List[List[Body]] = {
     var incCqBodies = new ListBuffer[List[Body]]()
     // New incremental bodies
     cq.bodies foreach { bodies =>
@@ -56,7 +60,7 @@ object DeepDiveLogDeltaDeriver{
 
       var i = 0
       var j = 0
-      var index = if (incrementalFunctionInput contains incCqHead.name) -1 else 0
+      var index = if (incrementalFunctionInput contains incCqHead) -1 else 0
       if (mode == Some("inc")) {
         incCqBodies += incNewBody
       } else {
@@ -75,7 +79,7 @@ object DeepDiveLogDeltaDeriver{
         }
       }
     }
-    cq.copy(head = incCqHead, bodies = incCqBodies.toList)
+    incCqBodies.toList
   }
 
   // Incremental scheme declaration,
@@ -142,7 +146,8 @@ object DeepDiveLogDeltaDeriver{
   // Incremental function call rule,
   // modify function input and output
   def transform(stmt: FunctionCallRule): List[Statement] = {
-    List(FunctionCallRule(deltaPrefix + stmt.input, deltaPrefix + stmt.output, stmt.function))
+    List(FunctionCallRule(stmt.input.copy(bodies = transformBody(stmt.input, "", None)),
+      deltaPrefix + stmt.output))
   }
 
   // Incremental inference rule,

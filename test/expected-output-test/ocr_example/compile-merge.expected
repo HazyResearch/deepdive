@@ -19,9 +19,8 @@
 
       deepdive.extraction.extractors.extraction_rule_2 {
         sql: """ TRUNCATE label2;
-        INSERT INTO label2 
-            SELECT  R0.wid, R0.val
-            FROM dd_new_label2 R0
+        INSERT INTO label2 SELECT R0.wid, R0.val
+FROM dd_new_label2 R0
         
         """
         style: "sql_extractor"
@@ -31,9 +30,8 @@
 
       deepdive.extraction.extractors.extraction_rule_1 {
         sql: """ TRUNCATE label1;
-        INSERT INTO label1 
-            SELECT  R0.wid, R0.val
-            FROM dd_new_label1 R0
+        INSERT INTO label1 SELECT R0.wid, R0.val
+FROM dd_new_label1 R0
         
         """
         style: "sql_extractor"
@@ -43,9 +41,8 @@
 
       deepdive.extraction.extractors.extraction_rule_0 {
         sql: """ TRUNCATE features;
-        INSERT INTO features 
-            SELECT  R0.id, R0.word_id, R0.feature_id, R0.feature_val
-            FROM dd_new_features R0
+        INSERT INTO features SELECT R0.id, R0.word_id, R0.feature_id, R0.feature_val
+FROM dd_new_features R0
         
         """
         style: "sql_extractor"

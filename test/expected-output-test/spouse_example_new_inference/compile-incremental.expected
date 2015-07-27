@@ -168,35 +168,14 @@ dd_new_has_spouse.label: Boolean
           style: "sql_extractor"
         }
 
-      deepdive.extraction.extractors.extraction_rule_31 {
-        sql: """ DROP VIEW IF EXISTS dd_delta_ext_has_spouse_features_input;
-        CREATE VIEW dd_delta_ext_has_spouse_features_input AS 
-            SELECT R0.words AS "dd_delta_sentences.R0.words" , R1.relation_id AS "has_spouse_candidates.R1.relation_id" , R2.start_position AS "people_mentions.R2.start_position" , R2.length AS "people_mentions.R2.length" , R3.start_position AS "people_mentions.R3.start_position" , R3.length AS "people_mentions.R3.length" 
-            FROM dd_delta_sentences R0, has_spouse_candidates R1, people_mentions R2, people_mentions R3
-        WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id  UNION ALL 
-            SELECT R0.words AS "dd_new_sentences.R0.words" , R1.relation_id AS "dd_delta_has_spouse_candidates.R1.relation_id" , R2.start_position AS "people_mentions.R2.start_position" , R2.length AS "people_mentions.R2.length" , R3.start_position AS "people_mentions.R3.start_position" , R3.length AS "people_mentions.R3.length" 
-            FROM dd_new_sentences R0, dd_delta_has_spouse_candidates R1, people_mentions R2, people_mentions R3
-        WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id  UNION ALL 
-            SELECT R0.words AS "dd_new_sentences.R0.words" , R1.relation_id AS "dd_new_has_spouse_candidates.R1.relation_id" , R2.start_position AS "dd_delta_people_mentions.R2.start_position" , R2.length AS "dd_delta_people_mentions.R2.length" , R3.start_position AS "people_mentions.R3.start_position" , R3.length AS "people_mentions.R3.length" 
-            FROM dd_new_sentences R0, dd_new_has_spouse_candidates R1, dd_delta_people_mentions R2, people_mentions R3
-        WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id  UNION ALL 
-            SELECT R0.words AS "dd_new_sentences.R0.words" , R1.relation_id AS "dd_new_has_spouse_candidates.R1.relation_id" , R2.start_position AS "dd_new_people_mentions.R2.start_position" , R2.length AS "dd_new_people_mentions.R2.length" , R3.start_position AS "dd_delta_people_mentions.R3.start_position" , R3.length AS "dd_delta_people_mentions.R3.length" 
-            FROM dd_new_sentences R0, dd_new_has_spouse_candidates R1, dd_new_people_mentions R2, dd_delta_people_mentions R3
-        WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id 
-        """
-        style: "sql_extractor"
-          dependencies: [ "extraction_rule_15" ,  "extraction_rule_27" ,  "extraction_rule_24" ,  "extraction_rule_7" ,  "extraction_rule_11" ]
-      }
-    
-
       deepdive.extraction.extractors.extraction_rule_11 {
         sql: """ TRUNCATE dd_new_people_mentions;
-        INSERT INTO dd_new_people_mentions 
-            SELECT R0.sentence_id, R0.start_position, R0.length, R0.text, R0.mention_id
-            FROM people_mentions R0
-         UNION ALL 
-            SELECT R0.sentence_id, R0.start_position, R0.length, R0.text, R0.mention_id
-            FROM dd_delta_people_mentions R0
+        INSERT INTO dd_new_people_mentions SELECT R0.sentence_id, R0.start_position, R0.length, R0.text, R0.mention_id
+FROM people_mentions R0
+        
+UNION ALL
+SELECT R0.sentence_id, R0.start_position, R0.length, R0.text, R0.mention_id
+FROM dd_delta_people_mentions R0
         
         """
         style: "sql_extractor"
@@ -206,24 +185,12 @@ dd_new_has_spouse.label: Boolean
 
       deepdive.extraction.extractors.extraction_rule_3 {
         sql: """ TRUNCATE dd_new_articles;
-        INSERT INTO dd_new_articles 
-            SELECT R0.article_id, R0.text
-            FROM articles R0
-         UNION ALL 
-            SELECT R0.article_id, R0.text
-            FROM dd_delta_articles R0
+        INSERT INTO dd_new_articles SELECT R0.article_id, R0.text
+FROM articles R0
         
-        """
-        style: "sql_extractor"
-          
-      }
-    
-
-      deepdive.extraction.extractors.extraction_rule_25 {
-        sql: """ DROP VIEW IF EXISTS dd_delta_ext_people_input;
-        CREATE VIEW dd_delta_ext_people_input AS 
-            SELECT R0.sentence_id AS "dd_delta_sentences.R0.sentence_id" , R0.words AS "dd_delta_sentences.R0.words" , R0.ner_tags AS "dd_delta_sentences.R0.ner_tags" 
-            FROM dd_delta_sentences R0
+UNION ALL
+SELECT R0.article_id, R0.text
+FROM dd_delta_articles R0
         
         """
         style: "sql_extractor"
@@ -233,42 +200,42 @@ dd_new_has_spouse.label: Boolean
 
       deepdive.extraction.extractors.extraction_rule_15 {
         sql: """ TRUNCATE dd_new_has_spouse_candidates;
-        INSERT INTO dd_new_has_spouse_candidates 
-            SELECT R0.person1_id, R0.person2_id, R0.sentence_id, R0.description, R0.relation_id, R0.is_true
-            FROM has_spouse_candidates R0
-         UNION ALL 
-            SELECT R0.person1_id, R0.person2_id, R0.sentence_id, R0.description, R0.relation_id, R0.is_true
-            FROM dd_delta_has_spouse_candidates R0
+        INSERT INTO dd_new_has_spouse_candidates SELECT R0.person1_id, R0.person2_id, R0.sentence_id, R0.description, R0.relation_id, R0.is_true
+FROM has_spouse_candidates R0
+        
+UNION ALL
+SELECT R0.person1_id, R0.person2_id, R0.sentence_id, R0.description, R0.relation_id, R0.is_true
+FROM dd_delta_has_spouse_candidates R0
         
         """
         style: "sql_extractor"
-          dependencies: [ "extraction_rule_27" ]
+          dependencies: [ "extraction_rule_26" ]
       }
     
 
       deepdive.extraction.extractors.extraction_rule_19 {
         sql: """ TRUNCATE dd_new_has_spouse_features;
-        INSERT INTO dd_new_has_spouse_features 
-            SELECT R0.relation_id, R0.feature
-            FROM has_spouse_features R0
-         UNION ALL 
-            SELECT R0.relation_id, R0.feature
-            FROM dd_delta_has_spouse_features R0
+        INSERT INTO dd_new_has_spouse_features SELECT R0.relation_id, R0.feature
+FROM has_spouse_features R0
+        
+UNION ALL
+SELECT R0.relation_id, R0.feature
+FROM dd_delta_has_spouse_features R0
         
         """
         style: "sql_extractor"
-          dependencies: [ "extraction_rule_30" ]
+          dependencies: [ "extraction_rule_28" ]
       }
     
 
       deepdive.extraction.extractors.extraction_rule_7 {
         sql: """ TRUNCATE dd_new_sentences;
-        INSERT INTO dd_new_sentences 
-            SELECT R0.document_id, R0.sentence, R0.words, R0.lemma, R0.pos_tags, R0.dependencies, R0.ner_tags, R0.sentence_offset, R0.sentence_id
-            FROM sentences R0
-         UNION ALL 
-            SELECT R0.document_id, R0.sentence, R0.words, R0.lemma, R0.pos_tags, R0.dependencies, R0.ner_tags, R0.sentence_offset, R0.sentence_id
-            FROM dd_delta_sentences R0
+        INSERT INTO dd_new_sentences SELECT R0.document_id, R0.sentence, R0.words, R0.lemma, R0.pos_tags, R0.dependencies, R0.ner_tags, R0.sentence_offset, R0.sentence_id
+FROM sentences R0
+        
+UNION ALL
+SELECT R0.document_id, R0.sentence, R0.words, R0.lemma, R0.pos_tags, R0.dependencies, R0.ner_tags, R0.sentence_offset, R0.sentence_id
+FROM dd_delta_sentences R0
         
         """
         style: "sql_extractor"
@@ -276,22 +243,7 @@ dd_new_has_spouse.label: Boolean
       }
     
 
-      deepdive.extraction.extractors.extraction_rule_28 {
-        sql: """ DROP VIEW IF EXISTS dd_delta_ext_has_spouse_input;
-        CREATE VIEW dd_delta_ext_has_spouse_input AS 
-            SELECT R0.sentence_id AS "dd_delta_people_mentions.R0.sentence_id" , R0.mention_id AS "dd_delta_people_mentions.R0.mention_id" , R0.text AS "dd_delta_people_mentions.R0.text" , R1.mention_id AS "people_mentions.R1.mention_id" , R1.text AS "people_mentions.R1.text" 
-            FROM dd_delta_people_mentions R0, people_mentions R1
-        WHERE R1.sentence_id = R0.sentence_id  UNION ALL 
-            SELECT R0.sentence_id AS "dd_new_people_mentions.R0.sentence_id" , R0.mention_id AS "dd_new_people_mentions.R0.mention_id" , R0.text AS "dd_new_people_mentions.R0.text" , R1.mention_id AS "dd_delta_people_mentions.R1.mention_id" , R1.text AS "dd_delta_people_mentions.R1.text" 
-            FROM dd_new_people_mentions R0, dd_delta_people_mentions R1
-        WHERE R1.sentence_id = R0.sentence_id 
-        """
-        style: "sql_extractor"
-          dependencies: [ "extraction_rule_24" ,  "extraction_rule_11" ]
-      }
-    
-
-      deepdive.extraction.extractors.extraction_rule_33 {
+      deepdive.extraction.extractors.extraction_rule_30 {
         sql: """ 
         INSERT INTO dd_delta_has_spouse SELECT DISTINCT R0.relation_id, 0 AS id, R0.is_true AS label
           FROM dd_delta_has_spouse_candidates R0
@@ -299,7 +251,7 @@ dd_new_has_spouse.label: Boolean
           
         """
         style: "sql_extractor"
-          dependencies: [ "extraction_rule_27" ]
+          dependencies: [ "extraction_rule_26" ]
       }
     
 
@@ -308,43 +260,63 @@ dd_new_has_spouse.label: Boolean
         CREATE VIEW dd_new_has_spouse AS SELECT DISTINCT R0.relation_id, id, label
           FROM has_spouse R0
         
-           UNION ALL SELECT DISTINCT R0.relation_id, id, label
+          
+UNION ALL
+SELECT DISTINCT R0.relation_id, id, label
           FROM dd_delta_has_spouse R0
         
           
         """
         style: "sql_extractor"
-          dependencies: [ "extraction_rule_33" ]
+          dependencies: [ "extraction_rule_30" ]
       }
     
 
         deepdive.extraction.extractors.extraction_rule_24 {
-          input: """ SELECT * FROM dd_delta_ext_people_input
+          input: """ SELECT R0.sentence_id AS "dd_delta_sentences.R0.sentence_id" , R0.words AS "dd_delta_sentences.R0.words" , R0.ner_tags AS "dd_delta_sentences.R0.ner_tags" 
+FROM dd_delta_sentences R0
+        
           """
           output_relation: "dd_delta_people_mentions"
           udf: ${APP_HOME}"/udf/ext_people.py"
           style: "tsv_extractor" 
-          dependencies: [ "extraction_rule_25" ]
+          
         }
       
 
-        deepdive.extraction.extractors.extraction_rule_30 {
-          input: """ SELECT * FROM dd_delta_ext_has_spouse_features_input
-          """
-          output_relation: "dd_delta_has_spouse_features"
-          udf: ${APP_HOME}"/udf/ext_has_spouse_features.py"
-          style: "tsv_extractor" 
-          dependencies: [ "extraction_rule_31" ]
-        }
-      
-
-        deepdive.extraction.extractors.extraction_rule_27 {
-          input: """ SELECT * FROM dd_delta_ext_has_spouse_input
+        deepdive.extraction.extractors.extraction_rule_26 {
+          input: """ SELECT R0.sentence_id AS "dd_delta_people_mentions.R0.sentence_id" , R0.mention_id AS "dd_delta_people_mentions.R0.mention_id" , R0.text AS "dd_delta_people_mentions.R0.text" , R1.mention_id AS "people_mentions.R1.mention_id" , R1.text AS "people_mentions.R1.text" 
+FROM dd_delta_people_mentions R0, people_mentions R1
+        WHERE R1.sentence_id = R0.sentence_id 
+UNION ALL
+FROM dd_new_people_mentions R0, dd_delta_people_mentions R1
+        WHERE R1.sentence_id = R0.sentence_id 
           """
           output_relation: "dd_delta_has_spouse_candidates"
           udf: ${APP_HOME}"/udf/ext_has_spouse.py"
           style: "tsv_extractor" 
-          dependencies: [ "extraction_rule_28" ]
+          dependencies: [ "extraction_rule_24" ,  "extraction_rule_11" ]
+        }
+      
+
+        deepdive.extraction.extractors.extraction_rule_28 {
+          input: """ SELECT R0.words AS "dd_delta_sentences.R0.words" , R1.relation_id AS "has_spouse_candidates.R1.relation_id" , R2.start_position AS "people_mentions.R2.start_position" , R2.length AS "people_mentions.R2.length" , R3.start_position AS "people_mentions.R3.start_position" , R3.length AS "people_mentions.R3.length" 
+FROM dd_delta_sentences R0, has_spouse_candidates R1, people_mentions R2, people_mentions R3
+        WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id 
+UNION ALL
+FROM dd_new_sentences R0, dd_delta_has_spouse_candidates R1, people_mentions R2, people_mentions R3
+        WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id 
+UNION ALL
+FROM dd_new_sentences R0, dd_new_has_spouse_candidates R1, dd_delta_people_mentions R2, people_mentions R3
+        WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id 
+UNION ALL
+FROM dd_new_sentences R0, dd_new_has_spouse_candidates R1, dd_new_people_mentions R2, dd_delta_people_mentions R3
+        WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id 
+          """
+          output_relation: "dd_delta_has_spouse_features"
+          udf: ${APP_HOME}"/udf/ext_has_spouse_features.py"
+          style: "tsv_extractor" 
+          dependencies: [ "extraction_rule_15" ,  "extraction_rule_26" ,  "extraction_rule_24" ,  "extraction_rule_7" ,  "extraction_rule_11" ]
         }
       
 
@@ -372,8 +344,8 @@ dd_new_has_spouse.label: Boolean
       
 deepdive.pipeline.run: ${PIPELINE}
 deepdive.pipeline.pipelines.initdb: [extraction_rule_1, extraction_rule_10, extraction_rule_17, extraction_rule_2, extraction_rule_14, extraction_rule_18, extraction_rule_6, extraction_rule_9, extraction_rule_13, extraction_rule_5, extraction_rule_21, extraction_rule_22]
-deepdive.pipeline.pipelines.extraction: [extraction_rule_7, extraction_rule_28, extraction_rule_25, extraction_rule_31, extraction_rule_19, extraction_rule_3, extraction_rule_33, extraction_rule_30, extraction_rule_23, extraction_rule_27, extraction_rule_11, extraction_rule_24, extraction_rule_15]
+deepdive.pipeline.pipelines.extraction: [extraction_rule_7, extraction_rule_28, extraction_rule_19, extraction_rule_3, extraction_rule_26, extraction_rule_30, extraction_rule_23, extraction_rule_11, extraction_rule_24, extraction_rule_15]
 deepdive.pipeline.pipelines.inference: [dd_new_has_spouse_0, dd_new_has_spouse_1]
-deepdive.pipeline.pipelines.endtoend: [extraction_rule_7, extraction_rule_28, extraction_rule_25, extraction_rule_31, extraction_rule_19, extraction_rule_3, extraction_rule_33, extraction_rule_30, extraction_rule_23, extraction_rule_27, extraction_rule_11, extraction_rule_24, extraction_rule_15, dd_new_has_spouse_0, dd_new_has_spouse_1]
+deepdive.pipeline.pipelines.endtoend: [extraction_rule_7, extraction_rule_28, extraction_rule_19, extraction_rule_3, extraction_rule_26, extraction_rule_30, extraction_rule_23, extraction_rule_11, extraction_rule_24, extraction_rule_15, dd_new_has_spouse_0, dd_new_has_spouse_1]
 deepdive.pipeline.pipelines.cleanup: [cleanup]
 deepdive.pipeline.base_dir: ${BASEDIR}
