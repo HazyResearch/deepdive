@@ -197,7 +197,7 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
         (cq.head.terms flatMap collectUsedVars) ++
         (additionalUsedVars)
       val varUndefined = varUses -- varDefs
-      if (!varUndefined.isEmpty) error(stmt, varUndefined map { x => s"Variable ${x} does not have bindings" } mkString("\n"))
+      if (varUndefined nonEmpty) error(stmt, s"Variable ${varUndefined mkString(", ")} must have bindings")
     }
     stmt match {
       case s: ExtractionRule => checkCq(s.q)
