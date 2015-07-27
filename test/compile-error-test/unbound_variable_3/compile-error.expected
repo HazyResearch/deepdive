@@ -1,0 +1,5 @@
+[error] Variable y must have bindings
+b(x)  :-
+    a(x)
+  weight = y.
+

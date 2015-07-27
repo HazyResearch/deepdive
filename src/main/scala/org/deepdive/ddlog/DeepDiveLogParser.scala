@@ -24,8 +24,15 @@ case class FuncExpr(function: String, args: List[Expr], isAggregation: Boolean) 
 case class BinaryOpExpr(lhs: Expr, op: String, rhs: Expr) extends Expr
 case class TypecastExpr(lhs: Expr, rhs: String) extends Expr
 
+sealed trait Pattern
+case class VarPattern(name: String) extends Pattern
+case class ExprPattern(expr: Expr) extends Pattern
+case class PlaceholderPattern extends Pattern
+
+case class HeadAtom(name : String, terms : List[Expr])
+
 sealed trait Body
-case class Atom(name : String, terms : List[Expr]) extends Body
+case class BodyAtom(name : String, terms : List[Pattern]) extends Body
 case class QuantifiedBody(modifier: BodyModifier, bodies: List[Body]) extends Body
 
 sealed trait BodyModifier
@@ -34,12 +41,11 @@ case class OuterModifier extends BodyModifier
 case class AllModifier extends BodyModifier
 
 case class Attribute(name : String, terms : List[String], types : List[String], annotations : List[List[Annotation]])
-case class ConjunctiveQuery(head: Atom, bodies: List[List[Body]], isDistinct: Boolean, limit: Option[Int])
+case class ConjunctiveQuery(head: HeadAtom, bodies: List[List[Body]], isDistinct: Boolean, limit: Option[Int])
 case class Column(name : String // name of the column
                  , t : String // type of the column
                  , annotation: List[Annotation] = List.empty // optional annotation
                  )
-case class BodyWithCondition(body: List[Atom], condition: Option[Cond])
 
 case class Annotation( name : String // name of the annotation
                      , args : Map[String, Any] = Map.empty // optional, named arguments
@@ -85,7 +91,7 @@ case class SchemaDeclaration( a : Attribute
                             , annotation : List[Annotation] = List.empty // optional annotation
                             ) extends Statement // atom and whether this is a query relation.
 case class FunctionDeclaration( functionName: String, inputType: RelationType, outputType: RelationType, implementations: List[FunctionImplementationDeclaration], mode: String = null) extends Statement
-case class ExtractionRule(q : ConjunctiveQuery, supervision: String = null) extends Statement // Extraction rule
+case class ExtractionRule(q : ConjunctiveQuery, supervision: Option[String] = None) extends Statement // Extraction rule
 case class FunctionCallRule(input : String, output : String, function : String) extends Statement // Extraction rule
 case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, function : Option[String], mode: String = null) extends Statement // Weighted rule
 
@@ -99,9 +105,6 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def stringLiteralAsString = stringLiteral ^^ {
     s => StringEscapeUtils.unescapeJava(
       s.stripPrefix("\"").stripSuffix("\""))
-  }
-  def stringLiteralAsSqlString = stringLiteral ^^ { s =>
-    s"""'${s.stripPrefix("\"").stripSuffix("\"")}'"""
   }
 
   // Single-line comments beginning with # or // are supported by treating them as whiteSpace
@@ -184,8 +187,8 @@ class DeepDiveLogParser extends JavaTokenParsers {
     | "(" ~> expr <~ ")"
     )
 
-  def cqHead = relationName ~ "(" ~ rep1sep(expr, ",") ~ ")" ^^ {
-    case (r ~ "(" ~ expressions ~ ")") => Atom(r, expressions)
+  def cqHead = relationName ~ ("(" ~> rep1sep(expr, ",") <~ ")") ^^ {
+    case (r ~ expressions) => HeadAtom(r, expressions)
   }
 
   // conditional expressions
@@ -213,10 +216,18 @@ class DeepDiveLogParser extends JavaTokenParsers {
     | "[" ~> cond <~ "]"
     )
 
-  def atom = relationName ~ "(" ~ repsep(expr, ",") ~ ")" ^^ {
-    case (r ~ "(" ~ patterns ~ ")") => Atom(r, patterns)
+  def pattern : Parser[Pattern] =
+    ( "_"  ^^ { case _ => PlaceholderPattern() }
+    | expr ^^ {
+        case VarExpr(x) => VarPattern(x)
+        case x: Expr => ExprPattern(x)
+      }
+    )
+
+  def atom = relationName ~ "(" ~ rep1sep(pattern, ",") ~ ")" ^^ {
+    case (r ~ _ ~ patterns ~ _) => BodyAtom(r, patterns)
   }
-  def modifierAtom = (opt("!") ~ "EXISTS" | "OPTIONAL" | "ALL") ~ "[" ~ rep1sep(cqBody, ",") ~ "]" ^^ { case (m ~ _ ~ b ~ _) =>
+  def quantifiedBody = (opt("!") ~ "EXISTS" | "OPTIONAL" | "ALL") ~ "[" ~ rep1sep(cqBody, ",") ~ "]" ^^ { case (m ~ _ ~ b ~ _) =>
     val modifier = m match {
       case (not ~ "EXISTS") => new ExistModifier(not != None)
       case "OPTIONAL" => new OuterModifier
@@ -225,7 +236,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
     QuantifiedBody(modifier, b)
   }
 
-  def cqBody: Parser[Body] = cond | modifierAtom | atom
+  def cqBody: Parser[Body] = cond | quantifiedBody | atom
 
   def cqConjunctiveBody: Parser[List[Body]] = rep1sep(cqBody, ",")
 
@@ -267,8 +278,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
 
   def extractionRule : Parser[ExtractionRule] =
     conjunctiveQuery ~ opt(supervision) ^^ {
-      case (q ~ supervision) =>
-        ExtractionRule(q, supervision.getOrElse(null))
+      case (q ~ supervision) => ExtractionRule(q, supervision)
     }
 
   def functionCallRule : Parser[FunctionCallRule] =

@@ -88,9 +88,20 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
     }
   }
 
-  def print(a: Atom) : String = {
+  def print(a: BodyAtom) : String = {
     val vars = a.terms map print
     s"${a.name}(${vars.mkString(", ")})"
+  }
+
+  def print(a: HeadAtom) : String = {
+    val vars = a.terms map print
+    s"${a.name}(${vars.mkString(", ")})"
+  }
+
+  def print(p: Pattern) : String = p match {
+    case VarPattern(x) => x
+    case PlaceholderPattern() => "_"
+    case ExprPattern(e) => print(e)
   }
 
   def print(a: QuantifiedBody) : String = {
@@ -118,7 +129,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   }
 
   def print(b: Body) : String = b match {
-    case b: Atom => print(b)
+    case b: BodyAtom => print(b)
     case b: Cond => print(b)
     case b: QuantifiedBody => print(b)
   }
@@ -140,8 +151,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
 
   def print(stmt: ExtractionRule): String = {
     print(stmt.q) +
-    ( if (stmt.supervision == null) ""
-      else  "\n  label = " + stmt.supervision
+    ( stmt.supervision map ("\n  label = " + _) getOrElse("")
     ) + ".\n"
   }
 
@@ -152,8 +162,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
 
   def print(stmt: InferenceRule): String = {
     print(stmt.q) +
-    ( if (stmt.weights == null) ""
-      else "\n  weight = " + (stmt.weights.variables.map(print).mkString(", "))
+    ( "\n  weight = " + (stmt.weights.variables map print mkString(", "))
     ) +
     ( stmt.function map { "\n  function = " + _ } getOrElse("")
     ) + ".\n"
