@@ -57,7 +57,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
         "\"" + StringEscapeUtils.escapeJava(impl.command) + "\"" + styleStr
       }
     }
-    val modeStr = if (stmt.mode == null) "" else s"@mode(${stmt.mode})\n"
+    val modeStr = stmt.mode map (s => s"@mode(${s})\n") getOrElse ""
     s"""${modeStr}function ${stmt.functionName}
        |    over ${inputType}
        | returns ${outputType}
