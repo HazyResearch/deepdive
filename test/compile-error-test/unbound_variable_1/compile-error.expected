@@ -1,4 +1,4 @@
-[error] Variable y does not have bindings
+[error] Variable y must have bindings
 Q(y)  :-
     a(x).
 
