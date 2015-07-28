@@ -48,10 +48,7 @@ case class Column(name : String // name of the column
 case class Annotation( name : String // name of the annotation
                      , args : Map[String, Any] = Map.empty // optional, named arguments
                      )
-case class RuleAnnotation(name: String, args: List[RuleAnnotationArg])
-sealed trait RuleAnnotationArg
-case class ExprAnnoArg(expr: Expr) extends RuleAnnotationArg
-case class IdentAnnoArg(name: String) extends RuleAnnotationArg
+case class RuleAnnotation(name: String, args: List[String])
 
 // condition
 sealed trait Cond extends Body
@@ -242,26 +239,14 @@ class DeepDiveLogParser extends JavaTokenParsers {
       }
     )
 
-  def ruleAnnoArg : Parser[RuleAnnotationArg] = expr  ^^ {
-    case VarExpr(x) => IdentAnnoArg(x)
-    case x: Expr    => ExprAnnoArg(x)
-  }
-
-  def ruleAnnotation = "@" ~> annotationName ~ "(" ~ rep1sep(ruleAnnoArg, ",") <~ ")" ^^ {
-    case (name ~ _ ~ args) => RuleAnnotation(name, args)
+  def ruleAnnotation = "@" ~> annotationName ~ ("(" ~> rep1sep(ident, ",") <~ ")") ^^ {
+    case (name ~ args) => RuleAnnotation(name, args)
   }
 
   def ruleAnnotations = rep(ruleAnnotation)
 
-  def getArgs(annos: List[RuleAnnotation], name: String) = {
-    annos.find(_.name == name) map (_.args)
-  }
-
-  def getFirstIdentArg(annos: List[RuleAnnotation], name: String)  = {
-    getArgs(annos, name) map (_(0)) map {
-      case x: IdentAnnoArg => x.name
-      case _ => error("Invalid rule annotation argument(s) for " + name)
-    }
+  def getArg(annos: List[RuleAnnotation], name: String)  = {
+    annos.find(_.name == name) map (_.args) map (_(0))
   }
 
   def functionImplementation : Parser[FunctionImplementationDeclaration] =
@@ -305,27 +290,25 @@ class DeepDiveLogParser extends JavaTokenParsers {
 
   def factorFunctionName = "Imply" | "And" | "Equal" | "Or" | "Multinomial" | "Linear" | "Ratio"
 
-  def extractionOrInferenceRule =
-    ruleAnnotations ~ relationName ~ conjunctiveQuery ^^ { case (annos ~ head ~ cq) =>
-    val weight = getArgs(annos, "weight")
-    if (weight == None) { // extraction rule
-      val supervision = getFirstIdentArg(annos, "label")
-      ExtractionRule(head, cq, supervision)
-    } else { // inference rule
-      val mode          = getFirstIdentArg(annos, "mode")
-      val function      = getFirstIdentArg(annos, "function")
-      // NOTE there's an ambiguation between ident and variable expression
-      val factorWeight  = FactorWeight(weight.get.map {
-        case x: ExprAnnoArg  => x.expr
-        case x: IdentAnnoArg => VarExpr(x.name)
-      })
-      InferenceRule(head, cq, factorWeight, function, mode)
-    }
+  def supervision = "@label" ~> "(" ~> variableName <~ ")"
+  def extractionRule =
+    opt(supervision) ~ relationName ~ conjunctiveQuery ^^ {
+      case (sup ~ head ~ cq) => ExtractionRule(head, cq, sup)
   }
+
+  def factorWeight = "@weight" ~> "(" ~> rep1sep(expr, ",") <~ ")" ^^ { FactorWeight(_) }
+  def factorFunction = "@function" ~> "(" ~> factorFunctionName <~ ")"
+  def inferenceMode = "@mode" ~> "(" ~> inferenceModeType <~ ")"
+  def inferenceRule =
+    opt(inferenceMode) ~ opt(factorFunction) ~ factorWeight ~ relationName ~ conjunctiveQuery ^^ {
+      case (mode ~ function ~ weight ~ head ~ cq) => InferenceRule(head, cq, weight, function, mode)
+  }
+
 
   // rules or schema elements in arbitrary order
   def statement : Parser[Statement] = ( schemaDeclaration
-                                      | extractionOrInferenceRule
+                                      | inferenceRule
+                                      | extractionRule
                                       | functionDeclaration
                                       | functionCallRule
                                       )
