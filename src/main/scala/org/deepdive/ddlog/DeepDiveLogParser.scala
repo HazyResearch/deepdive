@@ -29,8 +29,6 @@ case class VarPattern(name: String) extends Pattern
 case class ExprPattern(expr: Expr) extends Pattern
 case class PlaceholderPattern extends Pattern
 
-case class HeadAtom(name : String, terms : List[Expr])
-
 sealed trait Body
 case class BodyAtom(name : String, terms : List[Pattern]) extends Body
 case class QuantifiedBody(modifier: BodyModifier, bodies: List[Body]) extends Body
@@ -41,7 +39,7 @@ case class OuterModifier extends BodyModifier
 case class AllModifier extends BodyModifier
 
 case class Attribute(name : String, terms : List[String], types : List[String], annotations : List[List[Annotation]])
-case class ConjunctiveQuery(head: HeadAtom, bodies: List[List[Body]], isDistinct: Boolean, limit: Option[Int])
+case class ConjunctiveQuery(headTerms: List[Expr], bodies: List[List[Body]], isDistinct: Boolean, limit: Option[Int])
 case class Column(name : String // name of the column
                  , t : String // type of the column
                  , annotation: List[Annotation] = List.empty // optional annotation
@@ -96,9 +94,9 @@ case class SchemaDeclaration( a : Attribute
                             ) extends Statement // atom and whether this is a query relation.
 case class FunctionDeclaration( functionName: String, inputType: RelationType,
   outputType: RelationType, implementations: List[FunctionImplementationDeclaration], mode: Option[String] = None) extends Statement
-case class ExtractionRule(q : ConjunctiveQuery, supervision: Option[String] = None) extends Statement // Extraction rule
-case class FunctionCallRule(input : ConjunctiveQuery, output : String) extends Statement // Extraction rule
-case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, function : Option[String], mode: Option[String] = None) extends Statement // Weighted rule
+case class ExtractionRule(headName: String, q : ConjunctiveQuery, supervision: Option[String] = None) extends Statement // Extraction rule
+case class FunctionCallRule(output: String, function: String, q : ConjunctiveQuery) extends Statement // Extraction rule
+case class InferenceRule(headName: String, q : ConjunctiveQuery, weights : FactorWeight, function : Option[String], mode: Option[String] = None) extends Statement // Weighted rule
 
 // Parser
 class DeepDiveLogParser extends JavaTokenParsers {
@@ -192,10 +190,6 @@ class DeepDiveLogParser extends JavaTokenParsers {
     | "(" ~> expr <~ ")"
     )
 
-  def cqHead = relationName ~ ("(" ~> rep1sep(expr, ",") <~ ")") ^^ {
-    case (r ~ expressions) => HeadAtom(r, expressions)
-  }
-
   // conditional expressions
   def compareOperator = "LIKE" | ">" | "<" | ">=" | "<=" | "!=" | "=" | "IS" | "IS NOT"
 
@@ -241,16 +235,6 @@ class DeepDiveLogParser extends JavaTokenParsers {
     QuantifiedBody(modifier, b)
   }
 
-  def cqBody: Parser[Body] = cond | quantifiedBody | atom
-
-  def cqConjunctiveBody: Parser[List[Body]] = rep1sep(cqBody, ",")
-
-  def conjunctiveQuery : Parser[ConjunctiveQuery] =
-    cqHead ~ opt("*") ~ opt("|" ~> decimalNumber) ~ ":-" ~ rep1sep(cqConjunctiveBody, ";") ^^ {
-      case (headatom ~ isDistinct ~ limit ~ ":-" ~ disjunctiveBodies) =>
-        ConjunctiveQuery(headatom, disjunctiveBodies, isDistinct != None, limit map (_.toInt))
-  }
-
   def relationType: Parser[RelationType] =
     ( "like" ~> relationName ^^ { RelationTypeAlias(_) }
     | rep1sep(columnDeclaration, ",") ^^ {
@@ -280,9 +264,6 @@ class DeepDiveLogParser extends JavaTokenParsers {
     }
   }
 
-  def functionMode = "@mode" ~> "(" ~> functionModeType <~ ")"
-  def inferenceMode = "@mode" ~> "(" ~> inferenceModeType <~ ")"
-
   def functionImplementation : Parser[FunctionImplementationDeclaration] =
     ( "implementation" ~ stringLiteralAsString ~ "handles" ~ ("tsv" | "json") ~ "lines" ^^ {
         case (_ ~ command ~ _ ~ style ~ _) => RowWiseLineHandler(command=command, style=style)
@@ -291,6 +272,8 @@ class DeepDiveLogParser extends JavaTokenParsers {
         case (_ ~ command ~ _ ~ _ ~ style) => RowWiseLineHandler(command=command, style=style)
       }
     )
+
+  def functionMode = "@mode" ~> "(" ~> functionModeType <~ ")"
 
   def functionDeclaration : Parser[FunctionDeclaration] =
     ( opt(functionMode) ~ "function" ~ functionName ~ "over" ~ relationType
@@ -303,18 +286,31 @@ class DeepDiveLogParser extends JavaTokenParsers {
              FunctionDeclaration(a, inTy, outTy, implementationDecls, mode)
     }
 
+  def cqBody: Parser[Body] = cond | quantifiedBody | atom
+
+  def cqConjunctiveBody: Parser[List[Body]] = rep1sep(cqBody, ",")
+
+  def cqHeadTerms = "(" ~> rep1sep(expr, ",") <~ ")"
+
+  def conjunctiveQuery : Parser[ConjunctiveQuery] =
+    cqHeadTerms ~ opt("*") ~ opt("|" ~> decimalNumber) ~ ":-" ~ rep1sep(cqConjunctiveBody, ";") ^^ {
+      case (head ~ isDistinct ~ limit ~ ":-" ~ disjunctiveBodies) =>
+        ConjunctiveQuery(head, disjunctiveBodies, isDistinct != None, limit map (_.toInt))
+  }
+
   def functionCallRule : Parser[FunctionCallRule] =
-    relationName ~ "+=" ~ conjunctiveQuery ^^ {
-      case (out ~ _ ~ cq) => FunctionCallRule(cq, out)
+    relationName ~ "+=" ~ functionName ~ conjunctiveQuery ^^ {
+      case (out ~ _ ~ func ~ cq) => FunctionCallRule(out, func, cq)
     }
 
   def factorFunctionName = "Imply" | "And" | "Equal" | "Or" | "Multinomial" | "Linear" | "Ratio"
 
-  def extractionOrInferenceRule = ruleAnnotations ~ conjunctiveQuery ^^ { case (annos ~ cq) =>
+  def extractionOrInferenceRule =
+    ruleAnnotations ~ relationName ~ conjunctiveQuery ^^ { case (annos ~ head ~ cq) =>
     val weight = getArgs(annos, "weight")
     if (weight == None) { // extraction rule
       val supervision = getFirstIdentArg(annos, "label")
-      ExtractionRule(cq, supervision)
+      ExtractionRule(head, cq, supervision)
     } else { // inference rule
       val mode          = getFirstIdentArg(annos, "mode")
       val function      = getFirstIdentArg(annos, "function")
@@ -323,7 +319,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
         case x: ExprAnnoArg  => x.expr
         case x: IdentAnnoArg => VarExpr(x.name)
       })
-      InferenceRule(cq, factorWeight, function, mode)
+      InferenceRule(head, cq, factorWeight, function, mode)
     }
   }
 

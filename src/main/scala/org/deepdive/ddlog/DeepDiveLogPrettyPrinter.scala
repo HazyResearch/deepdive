@@ -93,11 +93,6 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
     s"${a.name}(${vars.mkString(", ")})"
   }
 
-  def print(a: HeadAtom) : String = {
-    val vars = a.terms map print
-    s"${a.name}(${vars.mkString(", ")})"
-  }
-
   def print(p: Pattern) : String = p match {
     case VarPattern(x) => x
     case PlaceholderPattern() => "_"
@@ -142,26 +137,26 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
 
     val bodyStr = (cq.bodies map printBodyList).mkString(";\n    ")
 
-    val distinctStr = if (cq.isDistinct) "*" else ""
-    val limitStr = cq.limit map { " | " + _ } getOrElse("")
+    val distinctStr = if (cq.isDistinct) " *" else ""
+    val limitStr    = cq.limit map { " | " + _ } getOrElse("")
+    val headStr     = cq.headTerms map print mkString("(", ", ", ")")
 
-    s"""${print(cq.head)} ${distinctStr}${limitStr} :-
-       |    ${bodyStr}""".stripMargin
+    headStr + distinctStr + limitStr + " :-\n    " + bodyStr
   }
 
   def print(stmt: ExtractionRule): String = {
     ( stmt.supervision map (s => s"@label(${s})\n") getOrElse("") ) +
-    print(stmt.q) + ".\n"
+    stmt.headName + print(stmt.q) + ".\n"
   }
 
   def print(stmt: FunctionCallRule): String = {
-    s"${stmt.output} += ${print(stmt.input)}.\n"
+    s"${stmt.output} += ${stmt.function}${print(stmt.q)}.\n"
   }
 
   def print(stmt: InferenceRule): String = {
     ( stmt.function map { f => s"@function(${f})\n" } getOrElse("") ) +
     ( s"@weight(${stmt.weights.variables map print mkString(", ")})\n"
-    ) + print(stmt.q) + ".\n"
+    ) + stmt.headName + print(stmt.q) + ".\n"
   }
 
   override def run(parsedProgram: DeepDiveLog.Program, config: DeepDiveLog.Config) = {

@@ -17,7 +17,8 @@ object DeepDiveLogMergeDeriver{
       )
     )
 
-    ExtractionRule(ConjunctiveQuery(HeadAtom(stmt.a.name, stmt.a.terms map { VarExpr(_) }),
+    ExtractionRule(stmt.a.name,
+      ConjunctiveQuery(stmt.a.terms map { VarExpr(_) },
       List(List(BodyAtom(incNewStmt.a.name, incNewStmt.a.terms map { VarPattern(_) }))),
       false, None))
   }

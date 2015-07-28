@@ -13,17 +13,17 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
         heads += s.a.name
         schemaDeclaration += { s.a.name -> s }
       }
-      case ExtractionRule(q, supervision) => {
-        heads += q.head.name
+      case s: ExtractionRule => {
+        heads += s.headName
       }
-      case InferenceRule(q, weight, semantic, mode) => {
-        heads += q.head.name
+      case s: InferenceRule => {
+        heads += s.headName
       }
-      case f: FunctionDeclaration => {
-        functionDeclaration += { f.functionName -> f }
+      case s: FunctionDeclaration => {
+        functionDeclaration += { s.functionName -> s }
       }
-      case FunctionCallRule(input, output) => {
-        heads += output
+      case s: FunctionCallRule => {
+        heads += s.output
       }
     }
   }
@@ -59,7 +59,7 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
     stmt match {
       case s: ExtractionRule => s.q.bodies foreach check
       case s: InferenceRule => s.q.bodies foreach check
-      case s: FunctionCallRule => s.input.bodies foreach check
+      case s: FunctionCallRule => s.q.bodies foreach check
       case _ =>
     }
   }
@@ -68,8 +68,8 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
   def checkFunctionDefined(stmt: Statement) {
     stmt match {
       case s: FunctionCallRule => {
-        if (!(functionDeclaration.keySet contains s.input.head.name))
-          error(stmt, s"""function "${s.input.head.name}" is not defined""")
+        if (!(functionDeclaration.keySet contains s.function))
+          error(stmt, s"""function "${s.function}" is not defined""")
       }
       case _ =>
     }
@@ -99,14 +99,13 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
         error(stmt, s""""${name}": number of columns in the query does not match number of columns in the schema""")
     }
     def checkBodyAtom(a: BodyAtom) = check(a.name, a.terms.size)
-    def checkHeadAtom(a: HeadAtom) = check(a.name, a.terms.size)
-    def checkCq(cq: ConjunctiveQuery) {
-      checkHeadAtom(cq.head)
+    def checkCq(headName: String, cq: ConjunctiveQuery) {
+      check(headName, cq.headTerms.size)
       cq.bodies foreach checkBodyAtoms(checkBodyAtom)
     }
     stmt match {
-      case s: ExtractionRule => checkCq(s.q)
-      case s: InferenceRule  => checkCq(s.q)
+      case s: ExtractionRule   => checkCq(s.headName, s.q)
+      case s: InferenceRule    => checkCq(s.headName, s.q)
       case _ =>
     }
   }
@@ -194,7 +193,7 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
       // collect variable definitions and usages
       var varDefs = cq.bodies flatMap (_ flatMap collectDefinedVars) toSet
       val varUses = (cq.bodies flatMap (_ flatMap collectUsedVars) toSet) ++
-        (cq.head.terms flatMap collectUsedVars) ++
+        (cq.headTerms flatMap collectUsedVars) ++
         (additionalUsedVars)
       val varUndefined = varUses -- varDefs
       if (!varUndefined.isEmpty) error(stmt, varUndefined map { x => s"Variable ${x} does not have bindings" } mkString("\n"))
