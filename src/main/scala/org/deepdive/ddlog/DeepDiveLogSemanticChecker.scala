@@ -16,15 +16,13 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
       case s: ExtractionRule => {
         heads += s.headName
       }
-      case s: InferenceRule => {
-        heads += s.headName
-      }
       case s: FunctionDeclaration => {
         functionDeclaration += { s.functionName -> s }
       }
       case s: FunctionCallRule => {
         heads += s.output
       }
+      case _ =>
     }
   }
 
@@ -99,13 +97,19 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
         error(stmt, s""""${name}": number of columns in the query does not match number of columns in the schema""")
     }
     def checkBodyAtom(a: BodyAtom) = check(a.name, a.terms.size)
-    def checkCq(headName: String, cq: ConjunctiveQuery) {
-      check(headName, cq.headTerms.size)
+    def checkHeadAtom(a: HeadAtom) = check(a.name, a.terms.size)
+    def checkCq(cq: ConjunctiveQuery) {
       cq.bodies foreach checkBodyAtoms(checkBodyAtom)
     }
     stmt match {
-      case s: ExtractionRule   => checkCq(s.headName, s.q)
-      case s: InferenceRule    => checkCq(s.headName, s.q)
+      case s: ExtractionRule   => {
+        check(s.headName, s.q.headTerms.size)
+        checkCq(s.q)
+      }
+      case s: InferenceRule    => {
+        s.head.terms foreach checkHeadAtom
+        checkCq(s.q)
+      }
       case _ =>
     }
   }

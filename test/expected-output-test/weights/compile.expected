@@ -93,27 +93,7 @@ c.label: Boolean
           style: "sql_extractor"
         }
 
-        deepdive.inference.factors.e_0 {
-          input_query: """
-          SELECT R0.id AS "e.R0.id" 
-          FROM e R0, b R1
-        WHERE R1.k = R0.k """
-          function: "Imply(e.R0.label)"
-          weight: "-10"
-        }
-      
-
-        deepdive.inference.factors.f_1 {
-          input_query: """
-          SELECT R0.id AS "f.R0.id" 
-          FROM f R0, b R1
-        WHERE R1.k = R0.k """
-          function: "Imply(f.R0.label)"
-          weight: "-0.3"
-        }
-      
-
-        deepdive.inference.factors.a_2 {
+        deepdive.inference.factors.inference_rule_0 {
           input_query: """
           SELECT R0.id AS "a.R0.id" , (R0.k + R1.p) AS "dd_weight_column_0" 
           FROM a R0, b R1
@@ -123,7 +103,7 @@ c.label: Boolean
         }
       
 
-        deepdive.inference.factors.c_3 {
+        deepdive.inference.factors.inference_rule_1 {
           input_query: """
           SELECT R0.id AS "c.R0.id" 
           FROM c R0, b R1
@@ -133,7 +113,7 @@ c.label: Boolean
         }
       
 
-        deepdive.inference.factors.d_4 {
+        deepdive.inference.factors.inference_rule_2 {
           input_query: """
           SELECT R0.id AS "d.R0.id" , R0.k AS "dd_weight_column_0" , R1.p AS "dd_weight_column_1" 
           FROM d R0, b R1
@@ -142,8 +122,28 @@ c.label: Boolean
           weight: "?(dd_weight_column_0, dd_weight_column_1)"
         }
       
+
+        deepdive.inference.factors.inference_rule_3 {
+          input_query: """
+          SELECT R0.id AS "e.R0.id" 
+          FROM e R0, b R1
+        WHERE R1.k = R0.k """
+          function: "Imply(e.R0.label)"
+          weight: "-10"
+        }
+      
+
+        deepdive.inference.factors.inference_rule_4 {
+          input_query: """
+          SELECT R0.id AS "f.R0.id" 
+          FROM f R0, b R1
+        WHERE R1.k = R0.k """
+          function: "Imply(f.R0.label)"
+          weight: "-0.3"
+        }
+      
 deepdive.pipeline.run: ${PIPELINE}
 deepdive.pipeline.pipelines.initdb: [extraction_rule_3, extraction_rule_4, extraction_rule_0, extraction_rule_5, extraction_rule_1, extraction_rule_2]
-deepdive.pipeline.pipelines.inference: [e_0, f_1, a_2, c_3, d_4]
-deepdive.pipeline.pipelines.endtoend: [e_0, f_1, a_2, c_3, d_4]
+deepdive.pipeline.pipelines.inference: [inference_rule_0, inference_rule_1, inference_rule_2, inference_rule_3, inference_rule_4]
+deepdive.pipeline.pipelines.endtoend: [inference_rule_0, inference_rule_1, inference_rule_2, inference_rule_3, inference_rule_4]
 deepdive.pipeline.pipelines.cleanup: [cleanup]

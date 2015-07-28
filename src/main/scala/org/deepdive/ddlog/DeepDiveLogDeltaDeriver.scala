@@ -18,10 +18,10 @@ object DeepDiveLogDeltaDeriver{
     case s: InferenceRule       => transform(s)
   }
 
-  def transform(headName: String, cq: ConjunctiveQuery, isInference: Boolean, mode: Option[String]): ConjunctiveQuery = {
+  def transform(headName: String, cq: ConjunctiveQuery, mode: Option[String]): ConjunctiveQuery = {
 
     // New head
-    val incCqHead = transform(headName, isInference)
+    val incCqHead = transform(headName)
 
     var incCqBodies = new ListBuffer[List[Body]]()
     // New incremental bodies
@@ -71,9 +71,9 @@ object DeepDiveLogDeltaDeriver{
     cq.copy(bodies = incCqBodies.toList)
   }
 
-  def transform(headName: String, isInference: Boolean) : String = {
-    (if (isInference) newPrefix else deltaPrefix) + headName
-  }
+  def transform(headName: String) : String = deltaPrefix + headName
+
+  def transform(a: HeadAtom) : HeadAtom = a.copy(name = newPrefix + a.name)
 
   // Incremental scheme declaration,
   // keep the original scheme and create one delta scheme
@@ -130,23 +130,23 @@ object DeepDiveLogDeltaDeriver{
   // create delta rules based on original extraction rule
   def transform(stmt: ExtractionRule): List[Statement] = {
     List(stmt.copy(
-      headName = transform(stmt.headName, false),
-      q = transform(stmt.headName, stmt.q, false, None)))
+      headName = transform(stmt.headName),
+      q = transform(stmt.headName, stmt.q, None)))
   }
 
   // Incremental function call rule,
   // modify function input and output
   def transform(stmt: FunctionCallRule): List[Statement] = {
     List(stmt.copy(
-      output = deltaPrefix + stmt.output,
-      q = transform(stmt.output, stmt.q, false, None)))
+      output = transform(stmt.output),
+      q = transform(stmt.output, stmt.q, None)))
   }
 
   // Incremental inference rule,
   // create delta rules based on original extraction rule
   def transform(stmt: InferenceRule): List[Statement] = {
-    List(stmt.copy(headName = transform(stmt.headName, true),
-      q = transform(stmt.headName, stmt.q, true, stmt.mode), mode = None))
+    List(stmt.copy(head = stmt.head.copy(terms = stmt.head.terms map transform),
+      q = transform("", stmt.q, stmt.mode), mode = None))
   }
 
   def generateIncrementalFunctionInputList(program: DeepDiveLog.Program) {

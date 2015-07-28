@@ -146,7 +146,7 @@ FROM sentences R0, has_spouse_candidates R1, people_mentions R2, people_mentions
         }
       
 
-        deepdive.inference.factors.has_spouse_0 {
+        deepdive.inference.factors.inference_rule_0 {
           input_query: """
           SELECT R0.id AS "has_spouse.R0.id" , R2.feature AS "dd_weight_column_0" 
           FROM has_spouse R0, has_spouse_candidates R1, has_spouse_features R2
@@ -156,7 +156,7 @@ FROM sentences R0, has_spouse_candidates R1, people_mentions R2, people_mentions
         }
       
 
-        deepdive.inference.factors.has_spouse_1 {
+        deepdive.inference.factors.inference_rule_1 {
           input_query: """
           SELECT R0.id AS "has_spouse.R0.id" , R1.id AS "has_spouse.R1.id" 
           FROM has_spouse R0, has_spouse R1, has_spouse_candidates R2, has_spouse_candidates R3
@@ -168,6 +168,6 @@ FROM sentences R0, has_spouse_candidates R1, people_mentions R2, people_mentions
 deepdive.pipeline.run: ${PIPELINE}
 deepdive.pipeline.pipelines.initdb: [extraction_rule_1, extraction_rule_3, extraction_rule_5, extraction_rule_0, extraction_rule_4, extraction_rule_2]
 deepdive.pipeline.pipelines.extraction: [extraction_rule_12, extraction_rule_6, extraction_rule_8, extraction_rule_10]
-deepdive.pipeline.pipelines.inference: [has_spouse_0, has_spouse_1]
-deepdive.pipeline.pipelines.endtoend: [extraction_rule_12, extraction_rule_6, extraction_rule_8, extraction_rule_10, has_spouse_0, has_spouse_1]
+deepdive.pipeline.pipelines.inference: [inference_rule_0, inference_rule_1]
+deepdive.pipeline.pipelines.endtoend: [extraction_rule_12, extraction_rule_6, extraction_rule_8, extraction_rule_10, inference_rule_0, inference_rule_1]
 deepdive.pipeline.pipelines.cleanup: [cleanup]

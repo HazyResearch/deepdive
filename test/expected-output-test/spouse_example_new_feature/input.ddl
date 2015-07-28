@@ -66,7 +66,6 @@ function ext_has_spouse_features over like ext_has_spouse_features_input
 @label(l)
 has_spouse(rid) :- has_spouse_candidates(a, b, c, d, rid, l).
 
-@function(Linear)
 @weight(f)
 has_spouse(rid) :-
   has_spouse_candidates(a, b, c, d, rid, l),

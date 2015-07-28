@@ -139,9 +139,29 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
 
     val distinctStr = if (cq.isDistinct) " *" else ""
     val limitStr    = cq.limit map { " | " + _ } getOrElse("")
-    val headStr     = cq.headTerms map print mkString("(", ", ", ")")
+    val headStrTmp  = cq.headTerms map print mkString(", ")
+    val headStr     = if (headStrTmp isEmpty) "" else s"(${headStrTmp})"
 
     headStr + distinctStr + limitStr + " :-\n    " + bodyStr
+  }
+
+  def print(a: HeadAtom) : String = {
+    val vars = a.terms map print
+    s"${a.name}(${vars.mkString(", ")})"
+  }
+
+  def print(head: InferenceRuleHead) : String = {
+    def printHead(a: List[HeadAtom], delim: String) : String = a map print mkString(delim)
+    head.function match {
+      case FactorFunction.Imply  =>
+        s"""${printHead(head.terms.dropRight(1), ", ")} => ${print(head.terms.last)}"""
+      case FactorFunction.And    => printHead(head.terms, " ^ ")
+      case FactorFunction.Or     => printHead(head.terms, " v ")
+      case FactorFunction.Equal  => printHead(head.terms, " = ")
+      case FactorFunction.Linear => s"Linear(${printHead(head.terms, ", ")})"
+      case FactorFunction.Ratio  => s"Ratio(${printHead(head.terms, ", ")})"
+      case FactorFunction.IsTrue => printHead(head.terms, "")
+    }
   }
 
   def print(stmt: ExtractionRule): String = {
@@ -154,9 +174,8 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   }
 
   def print(stmt: InferenceRule): String = {
-    ( stmt.function map { f => s"@function(${f})\n" } getOrElse("") ) +
     ( s"@weight(${stmt.weights.variables map print mkString(", ")})\n"
-    ) + stmt.headName + print(stmt.q) + ".\n"
+    ) + print(stmt.head) + print(stmt.q) + ".\n"
   }
 
   override def run(parsedProgram: DeepDiveLog.Program, config: DeepDiveLog.Config) = {

@@ -102,7 +102,7 @@ q2.label: Boolean
       }
     
 
-        deepdive.inference.factors.q1_0 {
+        deepdive.inference.factors.inference_rule_0 {
           input_query: """
           SELECT R0.id AS "q1.R0.id" , R1.feature_id AS "dd_weight_column_0" 
           FROM q1 R0, features R1
@@ -112,7 +112,7 @@ q2.label: Boolean
         }
       
 
-        deepdive.inference.factors.q2_1 {
+        deepdive.inference.factors.inference_rule_1 {
           input_query: """
           SELECT R0.id AS "q2.R0.id" , R1.feature_id AS "dd_weight_column_0" 
           FROM q2 R0, features R1
@@ -124,6 +124,6 @@ q2.label: Boolean
 deepdive.pipeline.run: ${PIPELINE}
 deepdive.pipeline.pipelines.initdb: [extraction_rule_1, extraction_rule_0, extraction_rule_2, extraction_rule_3, extraction_rule_4]
 deepdive.pipeline.pipelines.extraction: [extraction_rule_5, extraction_rule_6]
-deepdive.pipeline.pipelines.inference: [q1_0, q2_1]
-deepdive.pipeline.pipelines.endtoend: [extraction_rule_5, extraction_rule_6, q1_0, q2_1]
+deepdive.pipeline.pipelines.inference: [inference_rule_0, inference_rule_1]
+deepdive.pipeline.pipelines.endtoend: [extraction_rule_5, extraction_rule_6, inference_rule_0, inference_rule_1]
 deepdive.pipeline.base_dir: ${BASEDIR}

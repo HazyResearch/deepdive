@@ -75,6 +75,15 @@ case class MultinomialType(numCategories: Int) extends VariableType {
 
 case class FactorWeight(variables: List[Expr])
 
+// factor function
+object FactorFunction extends Enumeration {
+  type FactorFunction = Value
+  val  IsTrue, Imply, Or, And, Equal, Multinomial, Linear, Ratio = Value
+}
+case class HeadAtom(name : String, terms : List[Expr])
+case class InferenceRuleHead(function: FactorFunction.FactorFunction, terms: List[HeadAtom])
+
+
 trait RelationType
 case class RelationTypeDeclaration(names: List[String], types: List[String]) extends RelationType
 case class RelationTypeAlias(likeRelationName: String) extends RelationType
@@ -93,7 +102,7 @@ case class FunctionDeclaration( functionName: String, inputType: RelationType,
   outputType: RelationType, implementations: List[FunctionImplementationDeclaration], mode: Option[String] = None) extends Statement
 case class ExtractionRule(headName: String, q : ConjunctiveQuery, supervision: Option[String] = None) extends Statement // Extraction rule
 case class FunctionCallRule(output: String, function: String, q : ConjunctiveQuery) extends Statement // Extraction rule
-case class InferenceRule(headName: String, q : ConjunctiveQuery, weights : FactorWeight, function : Option[String], mode: Option[String] = None) extends Statement // Weighted rule
+case class InferenceRule(head: InferenceRuleHead, q : ConjunctiveQuery, weights : FactorWeight, mode: Option[String] = None) extends Statement // Weighted rule
 
 // Parser
 class DeepDiveLogParser extends JavaTokenParsers {
@@ -288,8 +297,6 @@ class DeepDiveLogParser extends JavaTokenParsers {
       case (out ~ _ ~ func ~ cq) => FunctionCallRule(out, func, cq)
     }
 
-  def factorFunctionName = "Imply" | "And" | "Equal" | "Or" | "Multinomial" | "Linear" | "Ratio"
-
   def supervision = "@label" ~> "(" ~> variableName <~ ")"
   def extractionRule =
     opt(supervision) ~ relationName ~ conjunctiveQuery ^^ {
@@ -297,13 +304,45 @@ class DeepDiveLogParser extends JavaTokenParsers {
   }
 
   def factorWeight = "@weight" ~> "(" ~> rep1sep(expr, ",") <~ ")" ^^ { FactorWeight(_) }
-  def factorFunction = "@function" ~> "(" ~> factorFunctionName <~ ")"
   def inferenceMode = "@mode" ~> "(" ~> inferenceModeType <~ ")"
-  def inferenceRule =
-    opt(inferenceMode) ~ opt(factorFunction) ~ factorWeight ~ relationName ~ conjunctiveQuery ^^ {
-      case (mode ~ function ~ weight ~ head ~ cq) => InferenceRule(head, cq, weight, function, mode)
+
+  // factor functions
+  def headAtom = relationName ~ ("(" ~> rep1sep(expr, ",") <~ ")") ^^ {
+    case (r ~ expressions) => HeadAtom(r, expressions)
+  }
+  def implyHead = rep1sep(headAtom, ",") ~ "=>" ~ headAtom ^^ {
+    case (a ~ _ ~ b) => InferenceRuleHead(FactorFunction.Imply, a :+ b)
+  }
+  def isTrueHead = headAtom ^^ { x => InferenceRuleHead(FactorFunction.IsTrue, List(x)) }
+  def equalHead = headAtom ~ "=" ~ rep1sep(headAtom, "=") ^^ { case (a ~ _ ~ b) =>
+    InferenceRuleHead(FactorFunction.Equal, a +: b)
+  }
+  def andHead   = headAtom ~ "^" ~ rep1sep(headAtom, "^") ^^ { case (a ~ _ ~ b) =>
+    InferenceRuleHead(FactorFunction.And, a +: b)
+  }
+  def orHead    = headAtom ~ "v" ~ rep1sep(headAtom, "v") ^^ { case (a ~ _ ~ b) =>
+    InferenceRuleHead(FactorFunction.Or, a +: b)
+  }
+  def multinomialHead = "Multinomial" ~> "(" ~> rep1sep(headAtom, ",") <~ ")" ^^ {
+    InferenceRuleHead(FactorFunction.Multinomial, _)
+  }
+  def linearHead = "Linear" ~> "(" ~> rep1sep(headAtom, ",") <~ ")" ^^ {
+    InferenceRuleHead(FactorFunction.Linear, _)
+  }
+  def ratioHead = "Ratio" ~> "(" ~> rep1sep(headAtom, ",") <~ ")" ^^ {
+    InferenceRuleHead(FactorFunction.Ratio, _)
+  }
+  def inferenceRuleHead = implyHead | equalHead | andHead | orHead | multinomialHead | linearHead | ratioHead | isTrueHead
+
+  def inferenceConjunctiveQuery : Parser[ConjunctiveQuery] =
+    ":-" ~> rep1sep(cqConjunctiveBody, ";") ^^ {
+      ConjunctiveQuery(List(), _, false, None)
   }
 
+  def inferenceRule =
+    opt(inferenceMode) ~ factorWeight ~ inferenceRuleHead ~ inferenceConjunctiveQuery ^^ {
+      case (mode ~ weight ~ head ~ cq) => InferenceRule(head, cq, weight, mode)
+  }
 
   // rules or schema elements in arbitrary order
   def statement : Parser[Statement] = ( schemaDeclaration

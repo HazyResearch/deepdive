@@ -110,7 +110,7 @@ cancer.label: Boolean
       }
     
 
-        deepdive.inference.factors.cancer_0 {
+        deepdive.inference.factors.inference_rule_0 {
           input_query: """
           SELECT R0.id AS "cancer.R0.id" , R1.id AS "smoke.R1.id" 
           FROM cancer R0, smoke R1, person_smokes R2
@@ -120,7 +120,7 @@ cancer.label: Boolean
         }
       
 
-        deepdive.inference.factors.smoke_1 {
+        deepdive.inference.factors.inference_rule_1 {
           input_query: """
           SELECT R0.id AS "smoke.R0.id" , R1.id AS "smoke.R1.id" 
           FROM smoke R0, smoke R1, friends R2
@@ -132,6 +132,6 @@ cancer.label: Boolean
 deepdive.pipeline.run: ${PIPELINE}
 deepdive.pipeline.pipelines.initdb: [extraction_rule_2, extraction_rule_4, extraction_rule_5, extraction_rule_3, extraction_rule_1, extraction_rule_0]
 deepdive.pipeline.pipelines.extraction: [extraction_rule_7, extraction_rule_6]
-deepdive.pipeline.pipelines.inference: [cancer_0, smoke_1]
-deepdive.pipeline.pipelines.endtoend: [extraction_rule_7, extraction_rule_6, cancer_0, smoke_1]
+deepdive.pipeline.pipelines.inference: [inference_rule_0, inference_rule_1]
+deepdive.pipeline.pipelines.endtoend: [extraction_rule_7, extraction_rule_6, inference_rule_0, inference_rule_1]
 deepdive.pipeline.base_dir: ${BASEDIR}

@@ -105,7 +105,7 @@ FROM words R0, words R1
         }
       
 
-        deepdive.inference.factors.tag_0 {
+        deepdive.inference.factors.inference_rule_0 {
           input_query: """
           SELECT R0.id AS "tag.R0.id" , R1.feature AS "dd_weight_column_0" 
           FROM tag R0, word_features R1
@@ -117,6 +117,6 @@ FROM words R0, words R1
 deepdive.pipeline.run: ${PIPELINE}
 deepdive.pipeline.pipelines.initdb: [extraction_rule_0, extraction_rule_1, extraction_rule_3, extraction_rule_2]
 deepdive.pipeline.pipelines.extraction: [extraction_rule_8, extraction_rule_5, extraction_rule_7]
-deepdive.pipeline.pipelines.inference: [tag_0]
-deepdive.pipeline.pipelines.endtoend: [extraction_rule_8, extraction_rule_5, extraction_rule_7, tag_0]
+deepdive.pipeline.pipelines.inference: [inference_rule_0]
+deepdive.pipeline.pipelines.endtoend: [extraction_rule_8, extraction_rule_5, extraction_rule_7, inference_rule_0]
 deepdive.pipeline.pipelines.cleanup: [cleanup]
