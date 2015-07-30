@@ -858,9 +858,20 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
     // Already set -l 0 for sampler
     execute(s"""
-      UPDATE ${WeightsTable} SET initvalue = weight
-      FROM ${fromWeightTable}
-      WHERE ${WeightsTable}.description = ${fromWeightTable}.description;
+      DROP TABLE IF EXISTS __dd_tmp_${WeightsTable};
+      CREATE TABLE __dd_tmp_${WeightsTable} AS
+      SELECT w.id, fw.weight
+      FROM ${WeightsTable} w, 
+           ${fromWeightTable} fw
+      WHERE w.description = fw.description;
+      """)
+
+    execute(s"""
+      UPDATE ${WeightsTable} SET initvalue = weight 
+      FROM __dd_tmp_${WeightsTable} fw
+      WHERE ${WeightsTable}.id = fw.id;
+
+      DROP TABLE IF EXISTS __dd_tmp_${WeightsTable};
       """)
   }
 
