@@ -47,6 +47,8 @@ namespace dd{
     TCLAP::SwitchArg * sample_evidence;
     TCLAP::SwitchArg * learn_non_evidence;
 
+    TCLAP::ValueArg<std::string> * regularization;
+
     TCLAP::CmdLine * cmd;
 
     CmdParser(std::string _app_name);

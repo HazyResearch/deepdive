@@ -8,7 +8,7 @@ dd::CmdParser parse_input(int argc, char** argv){
 
   std::vector<std::string> new_args;
   if (argc < 2 || (strcmp(argv[1], "gibbs") != 0 && strcmp(argv[1], "mat") != 0 && strcmp(argv[1], "inc") != 0)) {
-    new_args.push_back(std::string(argv[0]) + " " + "gibbs/mat/inc");
+    new_args.push_back(std::string(argv[0]) + " " + "gibbs");
     new_args.push_back("-h");
   } else {
     new_args.push_back(std::string(argv[0]) + " " + std::string(argv[1]));
@@ -22,7 +22,8 @@ dd::CmdParser parse_input(int argc, char** argv){
     std::copy(new_args[i].begin(), new_args[i].end(), new_argv[i]);
     new_argv[i][new_args[i].length()] = '\0';
   }
-  dd::CmdParser cmd_parser(argv[1]);
+  std::string app_name = argc < 2 ? "" : argv[1];
+  dd::CmdParser cmd_parser(app_name.c_str());
   cmd_parser.parse(new_args.size(), new_argv);
   return cmd_parser;
 }
@@ -78,6 +79,8 @@ void inc(dd::CmdParser & cmd_parser){
   double reg_param = cmd_parser.reg_param->getValue();
   bool is_quiet = cmd_parser.quiet->getValue();
 
+  regularization reg = cmd_parser.regularization->getValue() == "l1" ? REG_L1 : REG_L2;
+
   Meta meta = read_meta(fg_file); 
   Meta meta2 = read_meta(delta_fg_file);
 
@@ -104,7 +107,7 @@ void inc(dd::CmdParser & cmd_parser){
 
   // learning
   gibbs.learn(numa_aware_n_learning_epoch, n_samples_per_learning_epoch, 
-    stepsize, decay, reg_param, is_quiet, true);
+    stepsize, decay, reg_param, is_quiet, true, reg);
 
   // dump weights
   gibbs.dump_weights(is_quiet, 2);
@@ -153,6 +156,7 @@ void mat(dd::CmdParser & cmd_parser){
   int n_datacopy = cmd_parser.n_datacopy->getValue();
   double reg_param = cmd_parser.reg_param->getValue();
   bool is_quiet = cmd_parser.quiet->getValue();
+  regularization reg = cmd_parser.regularization->getValue() == "l1" ? REG_L1 : REG_L2;
 
   Meta meta = read_meta(fg_file); 
 
@@ -173,7 +177,7 @@ void mat(dd::CmdParser & cmd_parser){
 
   // learning
   gibbs.learn(numa_aware_n_learning_epoch, n_samples_per_learning_epoch, 
-    stepsize, decay, reg_param, is_quiet, false);
+    stepsize, decay, reg_param, is_quiet, false, reg);
 
   // dump weights
   gibbs.dump_weights(is_quiet, 1);
@@ -229,6 +233,7 @@ void gibbs(dd::CmdParser & cmd_parser){
   bool sample_evidence = cmd_parser.sample_evidence->getValue();
   int burn_in = cmd_parser.burn_in->getValue();
   bool learn_non_evidence = cmd_parser.learn_non_evidence->getValue();
+  regularization reg = cmd_parser.regularization->getValue() == "l1" ? REG_L1 : REG_L2;
 
   Meta meta = read_meta(fg_file); 
 
@@ -284,7 +289,7 @@ void gibbs(dd::CmdParser & cmd_parser){
 
   // learning
   gibbs.learn(numa_aware_n_learning_epoch, n_samples_per_learning_epoch, 
-    stepsize, decay, reg_param, is_quiet, false);
+    stepsize, decay, reg_param, is_quiet, false, reg);
 
   // dump weights
   gibbs.dump_weights(is_quiet, 0);

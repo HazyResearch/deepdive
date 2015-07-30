@@ -62,7 +62,7 @@ namespace dd{
      */
     void learn(const int & n_epoch, const int & n_sample_per_epoch, 
       const double & stepsize, const double & decay, const double reg_param,
-      const bool is_quiet, const bool is_inc);
+      const bool is_quiet, const bool is_inc, const regularization reg);
 
     /**
      * Performs inference

@@ -35,6 +35,8 @@ namespace dd{
         sample_evidence = new TCLAP::SwitchArg("", "sample_evidence", "also sample evidence variables in inference", false);
         learn_non_evidence = new TCLAP::SwitchArg("", "learn_non_evidence", "sample non-evidence variables in learning", false);
 
+        regularization = new TCLAP::ValueArg<std::string>("", "regularization", "Regularization (l1 or l2)", false, "l2", "string");
+
         burn_in = new TCLAP::ValueArg<int>("", "burn_in", "Burn-in period", false, 0, "int");
 
         cmd->add(*original_folder);
@@ -64,9 +66,10 @@ namespace dd{
         cmd->add(*burn_in);
         cmd->add(*sample_evidence);
         cmd->add(*learn_non_evidence);
+        cmd->add(*regularization);
       }else{
         std::cout << "ERROR: UNKNOWN APP NAME " << app_name << std::endl;
-        std::cout << "AVAILABLE APP {gibbs}" << app_name << std::endl;
+        std::cout << "AVAILABLE APP {gibbs/mat/inc}" << app_name << std::endl;
         assert(false);
       }
     }
