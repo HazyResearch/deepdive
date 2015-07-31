@@ -73,3 +73,7 @@ for row in sys.stdin:
 
   for feature in features:
     print str(relation_id) + '\t' + feature
+    # Output lines should conform to:
+    #   has_spouse_features(
+    #     relation_id text,
+    #     feature     text).

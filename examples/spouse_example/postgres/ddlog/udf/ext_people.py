@@ -40,3 +40,10 @@ for row in sys.stdin:
         text,  # text
         '%s_%d' % (sentence_id, start_position)        # mention_id
       ]])
+    # Output lines should conform to:
+    #   people_mentions(
+    #     sentence_id    text,
+    #     start_position int,
+    #     length         int,
+    #     text           text,
+    #     mention_id     text).

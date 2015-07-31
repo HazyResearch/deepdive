@@ -55,13 +55,12 @@ for row in sys.stdin:
     "%s-%s" %(p1_id, p2_id),
     is_true
     ])
+  # Output lines should conform to:
+  #   has_spouse_candidates(
+  #     person1_id  text,
+  #     person2_id  text,
+  #     sentence_id text,
+  #     description text,
+  #     relation_id text,
+  #     is_true boolean).
 
-  # TABLE FORMAT: CREATE TABLE has_spouse(
-  # person1_id bigint,
-  # person2_id bigint,
-  # sentence_id bigint,
-  # description text,
-  # is_true boolean,
-  # relation_id bigint, -- unique identifier for has_spouse
-  # id bigint   -- reserved for DeepDive
-  # );
