@@ -310,29 +310,37 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def headAtom = relationName ~ ("(" ~> rep1sep(expr, ",") <~ ")") ^^ {
     case (r ~ expressions) => HeadAtom(r, expressions)
   }
-  def implyHead = rep1sep(headAtom, ",") ~ "=>" ~ headAtom ^^ {
-    case (a ~ _ ~ b) => InferenceRuleHead(FactorFunction.Imply, a :+ b)
+
+  def implyHeadAtoms = rep1sep(headAtom, ",") ~ "=>" ~ headAtom ^^ {
+    case (a ~ _ ~ b) => a :+ b
   }
-  def isTrueHead = headAtom ^^ { x => InferenceRuleHead(FactorFunction.IsTrue, List(x)) }
-  def equalHead = headAtom ~ "=" ~ rep1sep(headAtom, "=") ^^ { case (a ~ _ ~ b) =>
-    InferenceRuleHead(FactorFunction.Equal, a +: b)
-  }
-  def andHead   = headAtom ~ "^" ~ rep1sep(headAtom, "^") ^^ { case (a ~ _ ~ b) =>
-    InferenceRuleHead(FactorFunction.And, a +: b)
-  }
-  def orHead    = headAtom ~ "v" ~ rep1sep(headAtom, "v") ^^ { case (a ~ _ ~ b) =>
-    InferenceRuleHead(FactorFunction.Or, a +: b)
-  }
-  def multinomialHead = "Multinomial" ~> "(" ~> rep1sep(headAtom, ",") <~ ")" ^^ {
-    InferenceRuleHead(FactorFunction.Multinomial, _)
-  }
-  def linearHead = "Linear" ~> "(" ~> rep1sep(headAtom, ",") <~ ")" ^^ {
-    InferenceRuleHead(FactorFunction.Linear, _)
-  }
-  def ratioHead = "Ratio" ~> "(" ~> rep1sep(headAtom, ",") <~ ")" ^^ {
-    InferenceRuleHead(FactorFunction.Ratio, _)
-  }
-  def inferenceRuleHead = implyHead | equalHead | andHead | orHead | multinomialHead | linearHead | ratioHead | isTrueHead
+
+  def inferenceRuleHead =
+  ( implyHeadAtoms ^^ {
+      InferenceRuleHead(FactorFunction.Imply, _)
+    }
+  | headAtom ~ "=" ~ rep1sep(headAtom, "=") ^^ { case (a ~ _ ~ b) =>
+      InferenceRuleHead(FactorFunction.Equal, a +: b)
+    }
+  | headAtom ~ "^" ~ rep1sep(headAtom, "^") ^^ { case (a ~ _ ~ b) =>
+      InferenceRuleHead(FactorFunction.And, a +: b)
+    }
+  | headAtom ~ "v" ~ rep1sep(headAtom, "v") ^^ { case (a ~ _ ~ b) =>
+      InferenceRuleHead(FactorFunction.Or, a +: b)
+    }
+  | "Multinomial" ~> "(" ~> rep1sep(headAtom, ",") <~ ")" ^^ {
+      InferenceRuleHead(FactorFunction.Multinomial, _)
+    }
+  | "@semantics(linear)" ~> implyHeadAtoms ^^ {
+      InferenceRuleHead(FactorFunction.Linear, _)
+    }
+  | "@semantics(ratio)" ~> implyHeadAtoms ^^ {
+      InferenceRuleHead(FactorFunction.Ratio, _)
+    }
+  | headAtom ^^ {
+      x => InferenceRuleHead(FactorFunction.IsTrue, List(x))
+    }
+  )
 
   def inferenceConjunctiveQuery : Parser[ConjunctiveQuery] =
     ":-" ~> rep1sep(cqConjunctiveBody, ";") ^^ {
@@ -359,8 +367,6 @@ class DeepDiveLogParser extends JavaTokenParsers {
       case error:  NoSuccess  => throw new RuntimeException(fileName.getOrElse("") + error.toString())
     }
   }
-
-  def error(meesage: String) = throw new RuntimeException(meesage)
 
   def parseProgramFile(fileName: String): List[Statement] = {
     val source = scala.io.Source.fromFile(fileName)

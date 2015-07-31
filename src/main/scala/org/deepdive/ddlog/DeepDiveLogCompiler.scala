@@ -95,8 +95,8 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
   var schemaDeclarationGroupByHead  : Map[String, List[SchemaDeclaration]] = new HashMap[String, List[SchemaDeclaration]]()
   var extractionRuleGroupByHead     : Map[String, List[ExtractionRule]] = new HashMap[String, List[ExtractionRule]]()
   var functionCallRuleGroupByOutput : Map[String, List[FunctionCallRule]] = new HashMap[String, List[FunctionCallRule]]()
-  var functionCallList              : ListBuffer[FunctionCallRule] = new ListBuffer[FunctionCallRule]()
-  var inferenceRules : ListBuffer[InferenceRule] = new ListBuffer[InferenceRule]()
+  var functionCallList              : List[FunctionCallRule] = Nil
+  var inferenceRules                : List[InferenceRule] = Nil
 
   def init() = {
     // generate the statements.
@@ -113,10 +113,10 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
         if (decl.isQuery) variableTableNames += r
       }
       case fdecl : FunctionDeclaration => function_schema += {fdecl.functionName -> fdecl}
-      case f: FunctionCallRule => functionCallList += f
-      case f: InferenceRule => inferenceRules += f
       case _ =>
     }
+    functionCallList = statements collect { case s: FunctionCallRule => s }
+    inferenceRules   = statements collect { case s: InferenceRule    => s }
     groupByHead(statements)
     analyzeVisible(statements)
     analyzeDependency(statements)
@@ -130,14 +130,6 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
 
   // Given a statement, resolve its name for the compiled extractor block.
   def resolveExtractorBlockName(s: Statement): String = s"extraction_rule_${statements indexOf s}"
-  // {
-  //   s match {
-  //     case s: SchemaDeclaration => s"extraction_rule_${statements indexOf s}"
-  //     case s: FunctionCallRule  => s"extraction_rule_${statements indexOf s}"
-  //     case s: ExtractionRule    => s"extraction_rule_${statements indexOf s}"
-  //     case s: InferenceRule     => s"extraction_rule_${statements indexOf s}"
-  //   }
-  // }
 
   // Given an inference rule, resolve its name for the compiled inference block.
   def resolveInferenceBlockName(s: InferenceRule): String = {
@@ -164,6 +156,11 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
   // The default is query term.
   def isQueryTerm( relName : String ): Boolean = {
     if( ground_relations contains relName ) !ground_relations(relName) else true
+  }
+
+  // has schema declared
+  def hasSchemaDeclared(relName: String) : Boolean = {
+    schemaDeclarationGroupByHead contains relName
   }
 
   // Group statements by head
@@ -201,14 +198,17 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
     val stmtByHeadName = (extractionRuleGroupByHead.toSeq ++
       functionCallRuleGroupByOutput.toSeq).groupBy(_._1).mapValues(_.map(_._2).toList)
 
+    def collectUsedRelations(bodies: List[List[Body]]): Set[Statement] = {
+      (bodies.flatten collect { case x: BodyAtom => x.name }
+      flatMap (stmtByHeadName get _)).toSet.flatten.flatten
+    }
+
     // Look at the body of each statement to construct a dependency graph
     statements foreach {
       case f : FunctionCallRule => dependencies += {
-        f -> ((( f.q.bodies.flatten collect { case x: BodyAtom => x.name })
-          flatMap (stmtByHeadName get _)).toSet.flatten.flatten) }
+        f -> collectUsedRelations(f.q.bodies) }
       case e : ExtractionRule   => dependencies += {
-        e -> (((e.q.bodies.flatten collect { case x: BodyAtom => x.name })
-          flatMap (stmtByHeadName get _)).toSet.flatten.flatten) }
+        e -> collectUsedRelations(e.q.bodies) }
       case _ =>
     }
   }
@@ -442,8 +442,8 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
 
   def generateSQL(useAlias: Boolean) = {
     val head = generateSQLHead(useAlias)
-    val body = cq.bodies map generateSQLBody mkString("\nUNION ALL\n")
-    s"SELECT ${head}\n${body}"
+    val body = cq.bodies map generateSQLBody
+    body map { b => s"SELECT ${head}\n${b}" } mkString("\nUNION ALL\n")
   }
 
 }
@@ -454,11 +454,13 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
   type CompiledBlock = String
   type CompiledBlocks = List[CompiledBlock]
 
+  def isForIncremental(name: String) = name startsWith "dd_new_"
+
   // Generate schema and cleanup part for database
   def compileSchemaDeclarations(stmts: List[SchemaDeclaration], ss: CompilationState): CompiledBlocks = {
     var schemas = new ListBuffer[String]()
     for (stmt <- stmts) {
-      if ((stmt.a.name startsWith "dd_new_") && (ss.isQueryTerm(stmt.a.name))) {
+      if (isForIncremental(stmt.a.name) && (ss.isQueryTerm(stmt.a.name))) {
       } else {
         var columnDecls = stmt.a.terms.zipWithIndex map {
           case (name,i) => s"${name} ${stmt.a.types(i)}"
@@ -484,7 +486,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     }
     // Cleanup incremental table extractor
     val truncateTableList = (stmts map (x =>
-      if ((x.a.name startsWith "dd_new_") && (ss.isQueryTerm(x.a.name))) ""
+      if (isForIncremental(x.a.name) && (ss.isQueryTerm(x.a.name))) ""
       else s"TRUNCATE ${x.a.name};")).filter(_ != "")
     if (truncateTableList.length > 0) {
       schemas += s"""
@@ -515,9 +517,9 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           inputQueries += s"""SELECT DISTINCT ${ headStr }, 0 AS id, ${labelCol} AS label
           ${ qc.generateSQLBody(cqBody) }
           """
-        } else if ((ss.schemaDeclarationGroupByHead contains stmt.headName) &&
+        } else if ((ss.hasSchemaDeclared(stmt.headName)) &&
           (ss.schemaDeclarationGroupByHead(stmt.headName)(0).isQuery) &&
-          (stmt.headName startsWith "dd_new_")) {
+          isForIncremental(stmt.headName)) {
           val headStr = qc.generateSQLHead(false)
           inputQueries += s"""SELECT DISTINCT ${ headStr }, id, label
           ${ qc.generateSQLBody(cqBody) }
@@ -527,7 +529,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           // dd_new_ tale only need original column name to make sure the schema is the same with original table
           var useAlias = ss.mode match {
             case MERGE => false
-            case _     => if (stmt.headName.startsWith("dd_new_")) false else true
+            case _     => !isForIncremental(stmt.headName)
           }
           inputQueries += qc.generateSQL(useAlias)
         }
@@ -536,17 +538,17 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     val blockName = ss.resolveExtractorBlockName(stmts(0))
     val sqlCmdForCleanUp = ss.mode match {
       case MERGE => s"TRUNCATE ${stmts(0).headName};"
-      case _ => if (ss.schemaDeclarationGroupByHead contains stmts(0).headName) {
-        if (stmts(0).headName.startsWith("dd_new_") && !(ss.isQueryTerm(stmts(0).headName)))
+      case _ => if (ss.hasSchemaDeclared(stmts(0).headName)) {
+        if (isForIncremental(stmts(0).headName) && !(ss.isQueryTerm(stmts(0).headName)))
           s"TRUNCATE ${stmts(0).headName};"
         else ""
       } else s"DROP VIEW IF EXISTS ${stmts(0).headName};"
     }
     val createTable = ss.mode match {
       case MERGE => true
-      case _ => (!(stmts(0).headName startsWith "dd_new_") &&
-        (ss.schemaDeclarationGroupByHead contains stmts(0).headName)) ||
-        ((stmts(0).headName startsWith "dd_new_") &&
+      case _ => (!isForIncremental(stmts(0).headName) &&
+        (ss.hasSchemaDeclared(stmts(0).headName))) ||
+        (isForIncremental(stmts(0).headName) &&
         !(ss.isQueryTerm(stmts(0).headName)))
     }
     val sqlCmdForInsert  = if (createTable) "INSERT INTO" else "CREATE VIEW"
@@ -602,6 +604,9 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       var weight = ""
       for (cqBody <- stmt.q.bodies) {
         // edge query
+        // Here we need to select from the bodies atoms as well as the head atoms,
+        // which are the variable relations.
+        // This is achieved by puting head atoms into the body.
         val headAsBody = stmt.head.terms map { x =>
           BodyAtom(x.name, x.terms map {
             case x: VarExpr => VarPattern(x.name)
@@ -643,7 +648,6 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
             s"""${x.name}.R${fakeBody indexOf x}.label"""
           else ""
           }).filter(_ != "")
-          val firstFunc = funcBody(0)
 
           val function = stmt.head.function match {
             case FactorFunction.Imply  => "Imply"
@@ -657,7 +661,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
               case Some(MultinomialType(_)) => "Multinomial"
             }
           }
-          func = s"""${function}(${(funcBody.tail :+ firstFunc).mkString(", ")})"""
+          func = s"""${function}(${funcBody.mkString(", ")})"""
         }
         // weight
         if (weight.length == 0) {

@@ -36,7 +36,7 @@ smoke(pid)  :- person_smokes(pid, l).
 cancer(pid) :- person_has_cancer(pid, l).
 
 @weight(0.5)
-cancer(pid) :- smoke(pid), person_smokes(pid, l).
+smoke(pid) => cancer(pid) :- person_smokes(pid, l).
 
 @weight(0.4)
-smoke(pid)  :- smoke(pid1), friends(pid1, pid).
+smoke(pid1) => smoke(pid) :- friends(pid1, pid).

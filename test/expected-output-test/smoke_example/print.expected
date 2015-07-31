@@ -15,20 +15,18 @@ smoke?(person_id bigint).
 cancer?(person_id bigint).
 
 @label(l)
-smoke(pid)  :-
+smoke(pid) :-
     person_smokes(pid, l).
 
 @label(l)
-cancer(pid)  :-
+cancer(pid) :-
     person_has_cancer(pid, l).
 
 @weight(0.5)
-cancer(pid)  :-
-    smoke(pid),
+smoke(pid) => cancer(pid) :-
     person_smokes(pid, l).
 
 @weight(0.4)
-smoke(pid)  :-
-    smoke(pid1),
+smoke(pid1) => smoke(pid) :-
     friends(pid1, pid).
 

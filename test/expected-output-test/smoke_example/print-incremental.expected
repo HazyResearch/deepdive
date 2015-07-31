@@ -79,16 +79,10 @@ dd_delta_cancer(pid) :-
     dd_delta_person_has_cancer(pid, l).
 
 @weight(0.5)
-dd_new_cancer(pid) :-
-    dd_delta_smoke(pid),
-    person_smokes(pid, l);
-    dd_new_smoke(pid),
+dd_new_smoke(pid) => dd_new_cancer(pid) :-
     dd_delta_person_smokes(pid, l).
 
 @weight(0.4)
-dd_new_smoke(pid) :-
-    dd_delta_smoke(pid1),
-    friends(pid1, pid);
-    dd_new_smoke(pid1),
+dd_new_smoke(pid1) => dd_new_smoke(pid) :-
     dd_delta_friends(pid1, pid).
 

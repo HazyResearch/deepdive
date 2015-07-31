@@ -172,8 +172,7 @@ dd_new_has_spouse(rid) :-
     dd_delta_has_spouse_features(rid, f).
 
 @weight(3.0)
-dd_new_has_spouse(rid) :-
-    dd_new_has_spouse(rid2),
+dd_new_has_spouse(rid2) => dd_new_has_spouse(rid) :-
     dd_new_has_spouse_candidates(a1, b1, c1, d1, rid, l1),
     dd_new_has_spouse_candidates(b1, a1, c2, d2, rid2, l2).
 
