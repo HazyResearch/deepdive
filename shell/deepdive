@@ -59,21 +59,8 @@ shift $(($OPTIND - 1))
 # Process input arguments
 [ $# -gt 0 ] || {
     usage "$0" "No COMMAND given" || true
-    # enumerate available COMMANDs discoverable from PATH
     echo
-    echo "# Available COMMANDs are:"
-    IFS=:
-    tmp=$(mktemp -d "${TMPDIR:-/tmp}"/deepdive-usage.XXXXXXX)
-    trap 'rm -rf "$tmp"' EXIT
-    for path in $PATH; do
-        for exe in "$path"/deepdive-*; do
-            [ -x "$exe" ] || continue
-            usage "$exe" | head -1 | sed -n '/ -- / s/.* -- //p' >>"$tmp"/desc
-            cmd=${exe##*/deepdive-}
-            echo "deepdive $cmd  #"
-        done
-    done | column -t >"$tmp"/commands
-    paste "$tmp"/commands "$tmp"/desc
+    deepdive-help | sed -n '/^# Available COMMANDs/,$p'
     false
 }
 Cmd=$1; shift

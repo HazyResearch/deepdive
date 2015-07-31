@@ -49,6 +49,11 @@ A DeepDive application is a directory that contains the following files and dire
 There are several operations that are frequently performed on a DeepDive application.
 Any of the following command can be run under any subdirectory of a DeepDive application to perform a certain operation.
 
+To see all options for each command, such as specifying alternative configuration file for running, see the online help message with the `deepdive help` command.  For example:
+```bash
+deepdive help run
+```
+
 ### Initializing Database
 
 ```bash

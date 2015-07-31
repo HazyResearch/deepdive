@@ -33,6 +33,7 @@ stage() {
 # DeepDive shell
 stage shell/deepdive                                              bin/
 stage shell/deepdive-version                                      util/
+stage shell/deepdive-help                                         util/
 stage shell/deepdive-env                                          util/
 stage shell/find-deepdive-app                                     util/
 stage shell/parse-url.sh                                          util/
