@@ -4,8 +4,8 @@ layout: default
 
 # Writing Applications in DDlog
 
-DDlog is a declarative language for writing DeepDive applications in datalog-like syntax.
-The current version may not be able to express everything, but we plan to extend it to support Markov Logic Network syntax as well.
+DDlog is a higher-level language for writing DeepDive applications in succinct Datalog-like syntax.
+We are gradually extending the language to allow expression of advanced SQL queries used by complex extractors as well as a variety of factors with Markov Logic-like syntax.
 
 ## Writing a DDlog Program
 
@@ -17,13 +17,15 @@ A DDlog program consists of the following parts:
 4. Inference rules for describing dependency between the variables.
 
 We show how each part should look like using the [spouse example in our walk through](walkthrough/walkthrough.html).
+All DDlog code should be placed in a file named `app.ddlog` under the DeepDive application.
+A complete example written in DDlog can be found from [examples/spouse_example/postgres/ddlog](https://github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/ddlog)
+
 
 ### Basic Syntax
 
 Each declaration and rule ends with a period (`.`).
 The order of the rules have no meaning.
 Comments in DDlog begin with a hash (`#`) character.
-C/Java-style comments are also supported (`// comment` and `/* comment block */`), but we'll use hash comments in the rest of the document.
 
 ### Schema Declaration
 
@@ -47,11 +49,11 @@ We'll populate the following `sentences` relation by parsing sentences from ever
 sentences(
   document_id     text,
   sentence        text,
-  words           text,
-  lemma           text,
-  pos_tags        text,
-  dependencies    text,
-  ner_tags        text,
+  words           text[],
+  lemma           text[],
+  pos_tags        text[],
+  dependencies    text[],
+  ner_tags        text[],
   sentence_offset int,
   sentence_id     text).
 ```
@@ -109,7 +111,7 @@ Then this user-defined function `ext_people` can be called in the following way 
 
 ```
 people_mentions :- !ext_people(ext_people_input).
-ext_people_input(s, words, ner_tags) :-
+ext_people_input(s, ARRAY_TO_STRING(words, "~^~"), ARRAY_TO_STRING(ner_tags, "~^~")) :-
   sentences(_1, _2, words, _3, _4, _5, ner_tags, _6, s).
 ```
 
@@ -135,7 +137,7 @@ function ext_has_spouse_features over like ext_has_spouse_features_input
   implementation "udf/ext_has_spouse_features.py" handles tsv lines.
 
 has_spouse_features :- !ext_has_spouse_features(ext_has_spouse_features_input).
-ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :-
+ext_has_spouse_features_input(ARRAY_TO_STRING(words, "~^~"), rid, p1idx, p1len, p2idx, p2len) :-
   sentences(_1, _2, words, _3, _4, _5, _6, _7, s),
   has_spouse_candidates(person1_id, person2_id, s, _8, rid, _9),
   people_mentions(s, p1idx, p1len, _10, person1_id),
@@ -147,20 +149,12 @@ ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :-
 Finally, we define a binary classifier for our boolean variable `has_spouse`.
 
 ```
+has_spouse(rid) :- has_spouse_candidates(_1, _2, _3, _4, rid, l)
+label = l.
+
 has_spouse(rid) :-
-  has_spouse_candidates(_1, _2, _3, _4, rid, l),
+  has_spouse_candidates(_1, _2, _3, _4, rid, _5),
   has_spouse_features(rid, f)
 weight = f
-label = l.
-```
-
-
-## Compiling a DDlog Program
-Let's say we wrote everything described so far in a file called `spouse_example.ddl`.
-DeepDive's deepdive.conf can be compiled and run in the following way:
-
-```bash
-$DEEPDIVE_HOME/util/ddlog compile spouse_example.ddl >deepdive.conf
-
-deepdive run
+function = Imply.
 ```
