@@ -13,6 +13,7 @@ copy_option=
 case $format in
     tsv) ;;
     csv) copy_option+=" CSV" ;;
+    json) sql="SELECT to_json(result) FROM ($sql) result" ;;
     *) error "$format: unsupported format by PostgreSQL driver" ;; # TODO
 esac
 case $header in
