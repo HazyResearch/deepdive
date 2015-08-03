@@ -10,16 +10,20 @@ format=${1:?No FORMAT given}; shift
 header=${1:?No HEADER given}; shift
 
 copy_option=
-case $format in
-    tsv) ;;
-    csv) copy_option+=" CSV" ;;
-    json) sql="SELECT to_json(result) FROM ($sql) result" ;;
-    *) error "$format: unsupported format by PostgreSQL driver" ;; # TODO
-esac
 case $header in
     0) ;;
     1) copy_option+=" HEADER" ;;
     *) error "$header: unrecognized value for HEADER"
 esac
+case $format in
+    tsv) ;;
+    csv) copy_option+=" csv" ;;
+    json)
+        db-query "SELECT to_json(result) FROM ($sql) result" csv 0 |
+        sed 's/^"//; s/"$//; s/""/"/g'
+        exit $?
+        ;;
+    *) error "$format: unsupported format by PostgreSQL driver" ;; # TODO
+esac
 
-exec db-prompt -c "COPY ($sql) TO STDOUT $copy_option" "$@"
+exec db-prompt -c "COPY ($sql) TO STDOUT${copy_option:+ $copy_option}" "$@"
