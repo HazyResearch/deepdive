@@ -58,6 +58,7 @@ stage util/tobinary.py                                            util/
 stage util/active.sh                                              util/
 stage util/calibration.py                                         util/
 stage util/calibration.plg                                        util/
+stage util/csvtojson.py                                           util/
 
 # DDlog compiler
 stage util/ddlog                                                  bin/
