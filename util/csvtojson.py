@@ -1,21 +1,26 @@
 #! /usr/bin/env python
 
-import json, sys, csv, os, pipes, subprocess
+import json, sys, csv
 
-def convert_type(value, column_type):
-  if value == "": return None
+def convert_flat_type_func(column_type):
   column_type = column_type.lower()
   if column_type == "integer" or column_type == "int" or column_type == "bigint":
-    return int(value)
+    return lambda x: None if x == "" else int(x)
   elif column_type == "float" or column_type == "numeric":
-    return float(value)
+    return lambda x: None if x == "" else float(x)
   elif column_type == "text":
-    return value
+    return lambda x: None if x == "" else x
   elif column_type == "boolean":
-    return value == "t"
-  elif column_type.endswith("[]"):
+    return lambda x: None if x == "" else x == "t"
+  else:
+    raise ValueError("Unsupported data type %s" %column_type)
+
+# given a column type, returns a function that takes a string input
+# and output with the correct type
+def convert_type_func(column_type):
+  column_type = column_type.lower()
+  if column_type.endswith("[]"):
     # csv array starts and ends with curly braces
-    value = value[1:-1]
     column_type = column_type[:-2]
     # string unescaping
     # note this is an array as a csv field, we first unescape csv escaping,
@@ -23,36 +28,36 @@ def convert_type(value, column_type):
     # elements as csv
     # csv escapes double quote with two double quotes
     # array escapes double quote using backslashes
+    flat_func = convert_flat_type_func(column_type)
+    def convert_text_array_func(value):
+      if value == "": return None
+      arr = csv.reader([value[1:-1].replace('""', '"').replace('\\"', '""')], delimiter=',', quotechar='"').next()
+      return [flat_func(x) for x in arr]
+    def convert_other_array_func(value):
+      if value == "": return None
+      arr = csv.reader([value[1:-1]], delimiter=',', quotechar='"').next()
+      return [flat_func(x) for x in arr]
     if column_type == "text":
-      value = value.replace('""', '"').replace('\\"', '""')
-    arr = csv.reader([value], delimiter=',', quotechar='"').next()
-    return [convert_type(x, column_type) for x in arr]
+      return convert_text_array_func
+    else:
+      return convert_other_array_func
   else:
-    raise ValueError("Unsupported data type %s" %column_type)
-
+    return convert_flat_type_func(column_type)
 
 def main():
   # get column types
-  sql = "CREATE TEMP TABLE __to_json_temp AS (%s) LIMIT 0; \
-  COPY (SELECT format_type(atttypid, atttypmod) AS type \
-  FROM pg_attribute \
-  WHERE attrelid = '__to_json_temp'::regclass \
-  AND attnum > 0 \
-  AND NOT attisdropped \
-  ORDER BY attnum) TO STDOUT" %(sys.argv[1].rstrip(";"))
-  types = subprocess.check_output("deepdive sql %s" %pipes.quote(sql), shell=True).strip().split("\n")
+  types = sys.argv[1].split(",")
+  convert_funcs = [convert_type_func(x) for x in types]
 
   # read the contents
-  reader = csv.reader(sys.stdin, delimiter = ',', quotechar = '"')
+  reader     = csv.reader(sys.stdin, delimiter = ',', quotechar = '"')
   fieldnames = reader.next()
   if len(types) != len(fieldnames):
     raise ValueError("Number of columns does not match schema")
   for line in reader:
-    if len(line) != len(fieldnames):
-      raise ValueError("Number of columns does not match schema")
     obj = {}
-    for i in range(len(fieldnames)):
-      obj[fieldnames[i]] = convert_type(line[i], types[i])
+    for name, field, func in zip(fieldnames, line, convert_funcs):
+      obj[name] = func(field)
     print json.dumps(obj)
 
 if __name__ == "__main__":
