@@ -319,6 +319,12 @@ class DeepDiveLogParser extends JavaTokenParsers {
   ( implyHeadAtoms ^^ {
       InferenceRuleHead(FactorFunction.Imply, _)
     }
+  | "@semantics(linear)" ~> implyHeadAtoms ^^ {
+      InferenceRuleHead(FactorFunction.Linear, _)
+    }
+  | "@semantics(ratio)" ~> implyHeadAtoms ^^ {
+      InferenceRuleHead(FactorFunction.Ratio, _)
+    }
   | headAtom ~ "=" ~ rep1sep(headAtom, "=") ^^ { case (a ~ _ ~ b) =>
       InferenceRuleHead(FactorFunction.Equal, a +: b)
     }
@@ -330,12 +336,6 @@ class DeepDiveLogParser extends JavaTokenParsers {
     }
   | "Multinomial" ~> "(" ~> rep1sep(headAtom, ",") <~ ")" ^^ {
       InferenceRuleHead(FactorFunction.Multinomial, _)
-    }
-  | "@semantics(linear)" ~> implyHeadAtoms ^^ {
-      InferenceRuleHead(FactorFunction.Linear, _)
-    }
-  | "@semantics(ratio)" ~> implyHeadAtoms ^^ {
-      InferenceRuleHead(FactorFunction.Ratio, _)
     }
   | headAtom ^^ {
       x => InferenceRuleHead(FactorFunction.IsTrue, List(x))
