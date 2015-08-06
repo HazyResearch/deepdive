@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-import json, sys, csv
+import json, sys, csv, re
 
 def convert_flat_type_func(column_type):
   column_type = column_type.lower()
@@ -22,16 +22,13 @@ def convert_type_func(column_type):
   if column_type.endswith("[]"):
     # csv array starts and ends with curly braces
     column_type = column_type[:-2]
-    # string unescaping
-    # note this is an array as a csv field, we first unescape csv escaping,
-    # and then do array unescaping, apply csv escaping, and parse the arry
-    # elements as csv
-    # csv escapes double quote with two double quotes
-    # array escapes double quote using backslashes
     flat_func = convert_flat_type_func(column_type)
     def convert_text_array_func(value):
       if value == "": return None
-      arr = csv.reader([value[1:-1].replace('""', '"').replace('\\"', '""')], delimiter=',', quotechar='"').next()
+      # string unescaping
+      def rep(match):
+        return '""' if match.group(2) == '"' else match.group(2)
+      arr = csv.reader([re.sub(r"(\\)(.)", rep, value[1:-1])], delimiter=',', quotechar='"').next()
       return [flat_func(x) for x in arr]
     def convert_other_array_func(value):
       if value == "": return None
@@ -46,7 +43,7 @@ def convert_type_func(column_type):
 
 def main():
   # get column types
-  types = sys.argv[1].split(",")
+  types = sys.argv[1:]
   convert_funcs = [convert_type_func(x) for x in types]
 
   # read the contents

@@ -25,8 +25,8 @@ case $format in
             WHERE attrelid = '__to_json_temp'::regclass
             AND attnum > 0
             AND NOT attisdropped
-            ORDER BY attnum) TO STDOUT" | tr '\n' ',' | sed 's/,$//')"
-        db-query "$sql" csv 1 | csvtojson.py "$types"
+            ORDER BY attnum) TO STDOUT")"
+        db-query "$sql" csv 1 | csvtojson.py $types
         exit $?
         ;;
     *) error "$format: unsupported format by Greenplum driver" ;; # TODO
