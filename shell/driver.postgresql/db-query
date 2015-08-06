@@ -19,11 +19,32 @@ case $format in
     tsv) ;;
     csv) copy_option+=" csv" ;;
     json)
-        db-query "SELECT to_json(result) FROM ($sql) result" csv 0 |
-        sed 's/^"//; s/"$//; s/""/"/g'
-        exit $?
+        # make sure we stop if db-execute or db-query go wrong that sit before the last pipe
+        set -o pipefail
+        if db-execute "SELECT to_json(pg_type) FROM pg_type LIMIT 0" &>/dev/null; then
+            # use the preferred to_json() method if supported
+            db-query "SELECT to_json(result) FROM ($sql) result" csv 0 |
+            sed 's/^"//; s/"$//; s/""/"/g'
+        else
+            # otherwise, fallback to our own workaround
+            # first, we need to figure out the what types are output by user's SQL
+            types=$(db-execute "
+                CREATE TEMP TABLE __to_json_temp AS ($sql) LIMIT 0;
+                COPY (
+                    SELECT format_type(atttypid, atttypmod) AS type
+                      FROM pg_attribute
+                     WHERE attrelid = '__to_json_temp'::regclass
+                       AND attnum > 0
+                       AND NOT attisdropped
+                     ORDER BY attnum
+                ) TO STDOUT
+            ")
+            # next, use our conversion script to transform to valid JSON object per line
+            db-query "$sql" csv 1 | csvtojson.py $types
+        fi
+        exit $?  # all done, no need to go further
         ;;
     *) error "$format: unsupported format by PostgreSQL driver" ;; # TODO
 esac
 
-exec db-prompt -c "COPY ($sql) TO STDOUT${copy_option:+ $copy_option}" "$@"
+exec db-execute "COPY ($sql) TO STDOUT${copy_option:+ $copy_option}" "$@"
