@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # load-db-driver.sh -- Loads the corresponding database driver for the DeepDive app's database URL
-# > cd $APP_HOME
 # > DEEPDIVE_DB_URL=...
 # > . load-db-driver.sh
 #
@@ -10,7 +9,11 @@
 eval "$(
 
 # parse URL for database
-url=${DEEPDIVE_DB_URL:-$(cat db.url)}
+url=${DEEPDIVE_DB_URL:-$(
+    APP_HOME=$(find-deepdive-app)
+    export APP_HOME
+    cat "$APP_HOME"/db.url
+)}
 
 # recognize the database type from the URL scheme
 dbtype=${url%%://*}

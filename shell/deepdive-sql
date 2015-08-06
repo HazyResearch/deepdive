@@ -3,6 +3,9 @@
 # > deepdive sql
 # Starts a SQL prompt for the underlying database.
 #
+# You must either have the DEEPDIVE_DB_URL environment set to a proper URL or
+# run this command under a DeepDive application where the URL is set in a db.url file.
+#
 # > deepdive sql "SELECT ..."
 # > deepdive sql "INSERT ..."
 # > deepdive sql "UPDATE ..."
@@ -16,11 +19,6 @@
 # Prints the header line for tsv and csv format when header=1 is given.
 ##
 set -eu
-
-# find the current application
-APP_HOME=$(find-deepdive-app)
-export APP_HOME
-cd "$APP_HOME"
 
 # parse database settings
 . load-db-driver.sh

@@ -4,7 +4,7 @@
 . "$BATS_TEST_DIRNAME"/env.sh >&2
 PATH="$DEEPDIVE_SOURCE_ROOT/util/test:$PATH"
 
-@test "$DBVARIANT deepdive sql eval format=json" {
+@test "$DBVARIANT deepdive sql eval format=json works" {
     q="SELECT 123::bigint as i
             , 45.678 as float
             , TRUE as t
@@ -79,7 +79,7 @@ PATH="$DEEPDIVE_SOURCE_ROOT/util/test:$PATH"
           ]
         }
     '
-    actual=$(db-query "$q" json 0) # TODO change to: deepdive sql eval "$q" format=json
+    actual=$(deepdive sql eval "$q" format=json)
     # test whether two JSONs are the same
     compare_json "$expected" "$actual"
 }
