@@ -7,7 +7,7 @@ dd_delta_articles(article_id text,
 dd_new_articles(article_id text,
                 text text).
 
-dd_new_articles(article_id, text)  :-
+dd_new_articles(article_id, text) :-
     articles(article_id, text);
     dd_delta_articles(article_id, text).
 
@@ -41,7 +41,7 @@ dd_new_sentences(document_id text,
                  sentence_offset int,
                  sentence_id text).
 
-dd_new_sentences(document_id, sentence, words, lemma, pos_tags, dependencies, ner_tags, sentence_offset, sentence_id)  :-
+dd_new_sentences(document_id, sentence, words, lemma, pos_tags, dependencies, ner_tags, sentence_offset, sentence_id) :-
     sentences(document_id, sentence, words, lemma, pos_tags, dependencies, ner_tags, sentence_offset, sentence_id);
     dd_delta_sentences(document_id, sentence, words, lemma, pos_tags, dependencies, ner_tags, sentence_offset, sentence_id).
 
@@ -63,7 +63,7 @@ dd_new_people_mentions(sentence_id text,
                        text text,
                        mention_id text).
 
-dd_new_people_mentions(sentence_id, start_position, length, text, mention_id)  :-
+dd_new_people_mentions(sentence_id, start_position, length, text, mention_id) :-
     people_mentions(sentence_id, start_position, length, text, mention_id);
     dd_delta_people_mentions(sentence_id, start_position, length, text, mention_id).
 
@@ -88,7 +88,7 @@ dd_new_has_spouse_candidates(person1_id text,
                              relation_id text,
                              is_true boolean).
 
-dd_new_has_spouse_candidates(person1_id, person2_id, sentence_id, description, relation_id, is_true)  :-
+dd_new_has_spouse_candidates(person1_id, person2_id, sentence_id, description, relation_id, is_true) :-
     has_spouse_candidates(person1_id, person2_id, sentence_id, description, relation_id, is_true);
     dd_delta_has_spouse_candidates(person1_id, person2_id, sentence_id, description, relation_id, is_true).
 
@@ -101,7 +101,7 @@ dd_delta_has_spouse_features(relation_id text,
 dd_new_has_spouse_features(relation_id text,
                            feature text).
 
-dd_new_has_spouse_features(relation_id, feature)  :-
+dd_new_has_spouse_features(relation_id, feature) :-
     has_spouse_features(relation_id, feature);
     dd_delta_has_spouse_features(relation_id, feature).
 
@@ -111,13 +111,11 @@ dd_delta_has_spouse?(relation_id text).
 
 dd_new_has_spouse?(relation_id text).
 
-dd_new_has_spouse(relation_id)  :-
+dd_new_has_spouse(relation_id) :-
     has_spouse(relation_id);
     dd_delta_has_spouse(relation_id).
 
-dd_delta_people_mentions :- !ext_people(dd_delta_ext_people_input).
-
-dd_delta_ext_people_input(s, words, ner_tags)  :-
+dd_delta_people_mentions += ext_people(s, words, ner_tags) :-
     dd_delta_sentences(a, b, words, c, d, e, ner_tags, f, s).
 
 function ext_people
@@ -126,9 +124,7 @@ function ext_people
  implementation "udf/ext_people.py"
         handles tsv lines.
 
-dd_delta_has_spouse_candidates :- !ext_has_spouse(dd_delta_ext_has_spouse_input).
-
-dd_delta_ext_has_spouse_input(s, p1_id, p1_text, p2_id, p2_text)  :-
+dd_delta_has_spouse_candidates += ext_has_spouse(s, p1_id, p1_text, p2_id, p2_text) :-
     dd_delta_people_mentions(s, a, b, p1_text, p1_id),
     people_mentions(s, c, d, p2_text, p2_id);
     dd_new_people_mentions(s, a, b, p1_text, p1_id),
@@ -140,9 +136,7 @@ function ext_has_spouse
  implementation "udf/ext_has_spouse.py"
         handles tsv lines.
 
-dd_delta_has_spouse_features :- !ext_has_spouse_features(dd_delta_ext_has_spouse_features_input).
-
-dd_delta_ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len)  :-
+dd_delta_has_spouse_features += ext_has_spouse_features(words, rid, p1idx, p1len, p2idx, p2len) :-
     dd_delta_sentences(a, b, words, c, d, e, f, g, s),
     has_spouse_candidates(person1_id, person2_id, s, h, rid, x),
     people_mentions(s, p1idx, p1len, k, person1_id),
@@ -166,20 +160,19 @@ function ext_has_spouse_features
  implementation "udf/ext_has_spouse_features.py"
         handles tsv lines.
 
-dd_delta_has_spouse(rid)  :-
-    dd_delta_has_spouse_candidates(a, b, c, d, rid, l)
-  label = l.
+@label(l)
+dd_delta_has_spouse(rid) :-
+    dd_delta_has_spouse_candidates(a, b, c, d, rid, l).
 
-dd_new_has_spouse(rid)  :-
+@weight(f)
+dd_new_has_spouse(rid) :-
     dd_delta_has_spouse_candidates(a, b, c, d, rid, l),
     has_spouse_features(rid, f);
     dd_new_has_spouse_candidates(a, b, c, d, rid, l),
-    dd_delta_has_spouse_features(rid, f)
-  weight = f.
+    dd_delta_has_spouse_features(rid, f).
 
-dd_new_has_spouse(rid)  :-
-    dd_new_has_spouse(rid2),
+@weight(3.0)
+dd_new_has_spouse(rid2) = dd_new_has_spouse(rid) :-
     dd_new_has_spouse_candidates(a1, b1, c1, d1, rid, l1),
-    dd_new_has_spouse_candidates(b1, a1, c2, d2, rid2, l2)
-  weight = 3.0.
+    dd_new_has_spouse_candidates(b1, a1, c2, d2, rid2, l2).
 

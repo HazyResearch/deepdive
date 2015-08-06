@@ -5,17 +5,17 @@ e?(k int).
 f?(k int).
 b(k int, p int, q text).
 
-a(x) :- b(x,y,_)
-weight = x + y.
+@weight(x + y)
+a(x) :- b(x,y,_).
 
-c(x) :- b(x,y,_)
-weight = "string".
+@weight("string")
+c(x) :- b(x,y,_).
 
-d(x) :- b(x,y,_)
-weight = x, y.
+@weight(x, y)
+d(x) :- b(x,y,_).
 
-e(x) :- b(x,y,_)
-weight = -10.
+@weight(-10)
+e(x) :- b(x,y,_).
 
-f(x) :- b(x,y,_)
-weight = -0.3.
+@weight(-0.3)
+f(x) :- b(x,y,_).

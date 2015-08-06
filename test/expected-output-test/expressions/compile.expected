@@ -57,9 +57,8 @@
 
       deepdive.extraction.extractors.extraction_rule_9 {
         sql: """ DROP VIEW IF EXISTS E;
-        CREATE VIEW E AS 
-            SELECT (R0.k :: INT) AS "column_0" 
-            FROM b R0
+        CREATE VIEW E AS SELECT (R0.k :: INT) AS "column_0" 
+FROM b R0
         
         """
         style: "sql_extractor"
@@ -69,9 +68,8 @@
 
       deepdive.extraction.extractors.extraction_rule_25 {
         sql: """ DROP VIEW IF EXISTS X;
-        CREATE VIEW X AS 
-            SELECT R0.k AS "b.R0.k" 
-            FROM b R0, c R1
+        CREATE VIEW X AS SELECT R0.k AS "b.R0.k" 
+FROM b R0, c R1
         WHERE R1.n = R0.k 
         """
         style: "sql_extractor"
@@ -81,9 +79,8 @@
 
       deepdive.extraction.extractors.extraction_rule_18 {
         sql: """ DROP VIEW IF EXISTS N;
-        CREATE VIEW N AS 
-            SELECT R0.k AS "b.R0.k" 
-            FROM b R0
+        CREATE VIEW N AS SELECT R0.k AS "b.R0.k" 
+FROM b R0
         WHERE EXISTS (SELECT 1 FROM c R1_0 WHERE R1_0.n = R0.k  AND R1_0.s > 'a')
         """
         style: "sql_extractor"
@@ -93,9 +90,8 @@
 
       deepdive.extraction.extractors.extraction_rule_21 {
         sql: """ DROP VIEW IF EXISTS T;
-        CREATE VIEW T AS 
-            SELECT R0.k AS "b.R0.k" 
-            FROM b R0 LEFT OUTER JOIN c R1_0 ON R1_0.n = R0.k  AND R1_0.s > R0.p
+        CREATE VIEW T AS SELECT R0.k AS "b.R0.k" 
+FROM b R0 LEFT OUTER JOIN c R1_0 ON R1_0.n = R0.k  AND R1_0.s > R0.p
         WHERE R1_0.s > R0.p
         """
         style: "sql_extractor"
@@ -105,9 +101,8 @@
 
       deepdive.extraction.extractors.extraction_rule_14 {
         sql: """ DROP VIEW IF EXISTS J;
-        CREATE VIEW J AS 
-            SELECT R0.k AS "b.R0.k" 
-            FROM b R0
+        CREATE VIEW J AS SELECT R0.k AS "b.R0.k" 
+FROM b R0
         WHERE ((R0.k + R0.r) = 100 OR (NOT R0.k > 50))
         """
         style: "sql_extractor"
@@ -117,9 +112,8 @@
 
       deepdive.extraction.extractors.extraction_rule_22 {
         sql: """ DROP VIEW IF EXISTS U;
-        CREATE VIEW U AS 
-            SELECT R0_0.k AS "b.R0_0.k" 
-            FROM b R0_0 ON  FULL OUTER JOIN c R1_0 ON R1_0.n = R0_0.k 
+        CREATE VIEW U AS SELECT R0_0.k AS "b.R0_0.k" 
+FROM b R0_0 ON  FULL OUTER JOIN c R1_0 ON R1_0.n = R0_0.k 
         
         """
         style: "sql_extractor"
@@ -129,9 +123,8 @@
 
       deepdive.extraction.extractors.extraction_rule_10 {
         sql: """ DROP VIEW IF EXISTS F;
-        CREATE VIEW F AS 
-            SELECT ((R0.k :: INT) + (R0.r :: INT)) AS "column_0" 
-            FROM b R0
+        CREATE VIEW F AS SELECT ((R0.k :: INT) + (R0.r :: INT)) AS "column_0" 
+FROM b R0
         
         """
         style: "sql_extractor"
@@ -141,9 +134,8 @@
 
       deepdive.extraction.extractors.extraction_rule_5 {
         sql: """ DROP VIEW IF EXISTS A;
-        CREATE VIEW A AS 
-            SELECT (R0.k + (R0.r * (R0.k + R0.r))) AS "column_0" 
-            FROM b R0
+        CREATE VIEW A AS SELECT (R0.k + (R0.r * (R0.k + R0.r))) AS "column_0" 
+FROM b R0
         
         """
         style: "sql_extractor"
@@ -153,9 +145,8 @@
 
       deepdive.extraction.extractors.extraction_rule_17 {
         sql: """ DROP VIEW IF EXISTS M;
-        CREATE VIEW M AS 
-            SELECT R0.k AS "b.R0.k" 
-            FROM b R0
+        CREATE VIEW M AS SELECT R0.k AS "b.R0.k" 
+FROM b R0
         WHERE EXISTS (SELECT 1 FROM c R1_0 WHERE R1_0.n = R0.k )
         """
         style: "sql_extractor"
@@ -165,9 +156,8 @@
 
       deepdive.extraction.extractors.extraction_rule_13 {
         sql: """ DROP VIEW IF EXISTS I;
-        CREATE VIEW I AS 
-            SELECT R0.k AS "b.R0.k" 
-            FROM b R0
+        CREATE VIEW I AS SELECT R0.k AS "b.R0.k" 
+FROM b R0
         WHERE ((R0.k + R0.r) = 100 OR (R0.k > 50 AND R0.r < 10))
         """
         style: "sql_extractor"
@@ -177,9 +167,8 @@
 
       deepdive.extraction.extractors.extraction_rule_11 {
         sql: """ DROP VIEW IF EXISTS G;
-        CREATE VIEW G AS 
-            SELECT R0.k AS "b.R0.k" 
-            FROM b R0
+        CREATE VIEW G AS SELECT R0.k AS "b.R0.k" 
+FROM b R0
         WHERE (R0.k + R0.r) = 100
         """
         style: "sql_extractor"
@@ -189,9 +178,8 @@
 
       deepdive.extraction.extractors.extraction_rule_24 {
         sql: """ DROP VIEW IF EXISTS V;
-        CREATE VIEW V AS 
-            SELECT R0.n AS "c.R0.n" 
-            FROM c R0, a R1
+        CREATE VIEW V AS SELECT R0.n AS "c.R0.n" 
+FROM c R0, a R1
         WHERE R1.k = R0.n 
         """
         style: "sql_extractor"
@@ -201,9 +189,8 @@
 
       deepdive.extraction.extractors.extraction_rule_3 {
         sql: """ DROP VIEW IF EXISTS Q;
-        CREATE VIEW Q AS 
-            SELECT DISTINCT ('test' :: TEXT) AS "column_0" , 123 AS "column_1" , R0.k AS "a.R0.k" , unnest(R1.q) AS "column_3" 
-            FROM a R0, b R1, c R2
+        CREATE VIEW Q AS SELECT DISTINCT ('test' :: TEXT) AS "column_0" , 123 AS "column_1" , R0.k AS "a.R0.k" , unnest(R1.q) AS "column_3" 
+FROM a R0, b R1, c R2
         WHERE R1.k = R0.k  AND R2.s = (R1.p || R1.q) AND R2.n = 10 AND R2.t = 'foo' AND (R1.r > 100 OR ((NOT R1.r < 20) AND R1.r < 50))
         """
         style: "sql_extractor"
@@ -213,9 +200,8 @@
 
       deepdive.extraction.extractors.extraction_rule_16 {
         sql: """ DROP VIEW IF EXISTS L;
-        CREATE VIEW L AS 
-            SELECT DISTINCT R0.k AS "b.R0.k" 
-            FROM b R0
+        CREATE VIEW L AS SELECT DISTINCT R0.k AS "b.R0.k" 
+FROM b R0
         LIMIT 100
         """
         style: "sql_extractor"
@@ -225,9 +211,8 @@
 
       deepdive.extraction.extractors.extraction_rule_6 {
         sql: """ DROP VIEW IF EXISTS B;
-        CREATE VIEW B AS 
-            SELECT func((R0.k + (R0.r + R0.k))) AS "column_0" 
-            FROM b R0
+        CREATE VIEW B AS SELECT func((R0.k + (R0.r + R0.k))) AS "column_0" 
+FROM b R0
         
         """
         style: "sql_extractor"
@@ -237,9 +222,8 @@
 
       deepdive.extraction.extractors.extraction_rule_4 {
         sql: """ DROP VIEW IF EXISTS P;
-        CREATE VIEW P AS 
-            SELECT R1.p AS "b.R1.p" , R1.q AS "b.R1.q" , MAX(R1.r) AS "column_2" 
-            FROM a R0, b R1
+        CREATE VIEW P AS SELECT R1.p AS "b.R1.p" , R1.q AS "b.R1.q" , MAX(R1.r) AS "column_2" 
+FROM a R0, b R1
         WHERE R1.k = R0.k 
         GROUP BY R1.p, R1.q
         """
@@ -250,9 +234,8 @@
 
       deepdive.extraction.extractors.extraction_rule_7 {
         sql: """ DROP VIEW IF EXISTS C;
-        CREATE VIEW C AS 
-            SELECT func(func(func(R0.k))) AS "column_0" 
-            FROM b R0
+        CREATE VIEW C AS SELECT func(func(func(R0.k))) AS "column_0" 
+FROM b R0
         
         """
         style: "sql_extractor"
@@ -262,9 +245,8 @@
 
       deepdive.extraction.extractors.extraction_rule_12 {
         sql: """ DROP VIEW IF EXISTS H;
-        CREATE VIEW H AS 
-            SELECT R0.k AS "b.R0.k" 
-            FROM b R0
+        CREATE VIEW H AS SELECT R0.k AS "b.R0.k" 
+FROM b R0
         WHERE ((R0.k + R0.r) = 100 AND R0.k > 50)
         """
         style: "sql_extractor"
@@ -274,9 +256,8 @@
 
       deepdive.extraction.extractors.extraction_rule_23 {
         sql: """ DROP VIEW IF EXISTS W;
-        CREATE VIEW W AS 
-            SELECT R0.k AS "a.R0.k" 
-            FROM a R0
+        CREATE VIEW W AS SELECT R0.k AS "a.R0.k" 
+FROM a R0
         WHERE NOT EXISTS (SELECT 1 FROM c R1_0 WHERE NOT (R1_0.n < R0.k))
         """
         style: "sql_extractor"
@@ -286,9 +267,8 @@
 
       deepdive.extraction.extractors.extraction_rule_15 {
         sql: """ DROP VIEW IF EXISTS K;
-        CREATE VIEW K AS 
-            SELECT R0.k AS "b.R0.k" 
-            FROM b R0
+        CREATE VIEW K AS SELECT R0.k AS "b.R0.k" 
+FROM b R0
         WHERE ((R0.k + R0.r) = 100 AND ((NOT R0.k > 50) OR R0.k = 40))
         """
         style: "sql_extractor"
@@ -298,9 +278,8 @@
 
       deepdive.extraction.extractors.extraction_rule_19 {
         sql: """ DROP VIEW IF EXISTS O;
-        CREATE VIEW O AS 
-            SELECT R0.k AS "b.R0.k" 
-            FROM b R0
+        CREATE VIEW O AS SELECT R0.k AS "b.R0.k" 
+FROM b R0
         WHERE EXISTS (SELECT 1 FROM c R1_0, a R1_1 WHERE R1_0.n = R0.k  AND R1_1.k = R0.k )
         """
         style: "sql_extractor"
@@ -310,9 +289,8 @@
 
       deepdive.extraction.extractors.extraction_rule_8 {
         sql: """ DROP VIEW IF EXISTS D;
-        CREATE VIEW D AS 
-            SELECT (func((R0.k * func2((R0.r + R0.k)))) + R0.k) AS "column_0" 
-            FROM b R0
+        CREATE VIEW D AS SELECT (func((R0.k * func2((R0.r + R0.k)))) + R0.k) AS "column_0" 
+FROM b R0
         
         """
         style: "sql_extractor"
@@ -322,9 +300,8 @@
 
       deepdive.extraction.extractors.extraction_rule_20 {
         sql: """ DROP VIEW IF EXISTS S;
-        CREATE VIEW S AS 
-            SELECT R0.k AS "b.R0.k" 
-            FROM b R0 LEFT OUTER JOIN c R1_0 ON R1_0.n = R0.k 
+        CREATE VIEW S AS SELECT R0.k AS "b.R0.k" 
+FROM b R0 LEFT OUTER JOIN c R1_0 ON R1_0.n = R0.k 
         
         """
         style: "sql_extractor"

@@ -122,12 +122,12 @@ q1.label: Boolean
 
       deepdive.extraction.extractors.extraction_rule_11 {
         sql: """ TRUNCATE dd_new_label2;
-        INSERT INTO dd_new_label2 
-            SELECT R0.wid, R0.val
-            FROM label2 R0
-         UNION ALL 
-            SELECT R0.wid, R0.val
-            FROM dd_delta_label2 R0
+        INSERT INTO dd_new_label2 SELECT R0.wid, R0.val
+FROM label2 R0
+        
+UNION ALL
+SELECT R0.wid, R0.val
+FROM dd_delta_label2 R0
         
         """
         style: "sql_extractor"
@@ -140,7 +140,9 @@ q1.label: Boolean
         CREATE VIEW dd_new_q1 AS SELECT DISTINCT R0.wid, id, label
           FROM q1 R0
         
-           UNION ALL SELECT DISTINCT R0.wid, id, label
+          
+UNION ALL
+SELECT DISTINCT R0.wid, id, label
           FROM dd_delta_q1 R0
         
           
@@ -152,12 +154,12 @@ q1.label: Boolean
 
       deepdive.extraction.extractors.extraction_rule_7 {
         sql: """ TRUNCATE dd_new_label1;
-        INSERT INTO dd_new_label1 
-            SELECT R0.wid, R0.val
-            FROM label1 R0
-         UNION ALL 
-            SELECT R0.wid, R0.val
-            FROM dd_delta_label1 R0
+        INSERT INTO dd_new_label1 SELECT R0.wid, R0.val
+FROM label1 R0
+        
+UNION ALL
+SELECT R0.wid, R0.val
+FROM dd_delta_label1 R0
         
         """
         style: "sql_extractor"
@@ -179,12 +181,12 @@ q1.label: Boolean
 
       deepdive.extraction.extractors.extraction_rule_3 {
         sql: """ TRUNCATE dd_new_features;
-        INSERT INTO dd_new_features 
-            SELECT R0.id, R0.word_id, R0.feature_id, R0.feature_val
-            FROM features R0
-         UNION ALL 
-            SELECT R0.id, R0.word_id, R0.feature_id, R0.feature_val
-            FROM dd_delta_features R0
+        INSERT INTO dd_new_features SELECT R0.id, R0.word_id, R0.feature_id, R0.feature_val
+FROM features R0
+        
+UNION ALL
+SELECT R0.id, R0.word_id, R0.feature_id, R0.feature_val
+FROM dd_delta_features R0
         
         """
         style: "sql_extractor"
@@ -209,7 +211,9 @@ q1.label: Boolean
         CREATE VIEW dd_new_q2 AS SELECT DISTINCT R0.wid, id, label
           FROM q2 R0
         
-           UNION ALL SELECT DISTINCT R0.wid, id, label
+          
+UNION ALL
+SELECT DISTINCT R0.wid, id, label
           FROM dd_delta_q2 R0
         
           
@@ -219,17 +223,7 @@ q1.label: Boolean
       }
     
 
-        deepdive.inference.factors.dd_new_q2_0 {
-          input_query: """
-          SELECT R0.id AS "dd_new_q2.R0.id" , R1.feature_id AS "dd_weight_column_0" 
-          FROM dd_new_q2 R0, dd_delta_features R1
-        WHERE R1.word_id = R0.wid """
-          function: "Imply(dd_new_q2.R0.label)"
-          weight: "?(dd_weight_column_0)"
-        }
-      
-
-        deepdive.inference.factors.dd_new_q1_1 {
+        deepdive.inference.factors.inference_rule_0 {
           input_query: """
           SELECT R0.id AS "dd_new_q1.R0.id" , R1.feature_id AS "dd_weight_column_0" 
           FROM dd_new_q1 R0, dd_delta_features R1
@@ -238,10 +232,20 @@ q1.label: Boolean
           weight: "?(dd_weight_column_0)"
         }
       
+
+        deepdive.inference.factors.inference_rule_1 {
+          input_query: """
+          SELECT R0.id AS "dd_new_q2.R0.id" , R1.feature_id AS "dd_weight_column_0" 
+          FROM dd_new_q2 R0, dd_delta_features R1
+        WHERE R1.word_id = R0.wid """
+          function: "Imply(dd_new_q2.R0.label)"
+          weight: "?(dd_weight_column_0)"
+        }
+      
 deepdive.pipeline.run: ${PIPELINE}
 deepdive.pipeline.pipelines.initdb: [extraction_rule_10, extraction_rule_5, extraction_rule_14, extraction_rule_6, extraction_rule_1, extraction_rule_17, extraction_rule_9, extraction_rule_2, extraction_rule_13, extraction_rule_18]
 deepdive.pipeline.pipelines.extraction: [extraction_rule_21, extraction_rule_7, extraction_rule_20, extraction_rule_19, extraction_rule_3, extraction_rule_11, extraction_rule_15]
-deepdive.pipeline.pipelines.inference: [dd_new_q2_0, dd_new_q1_1]
-deepdive.pipeline.pipelines.endtoend: [extraction_rule_21, extraction_rule_7, extraction_rule_20, extraction_rule_19, extraction_rule_3, extraction_rule_11, extraction_rule_15, dd_new_q2_0, dd_new_q1_1]
+deepdive.pipeline.pipelines.inference: [inference_rule_0, inference_rule_1]
+deepdive.pipeline.pipelines.endtoend: [extraction_rule_21, extraction_rule_7, extraction_rule_20, extraction_rule_19, extraction_rule_3, extraction_rule_11, extraction_rule_15, inference_rule_0, inference_rule_1]
 deepdive.pipeline.pipelines.cleanup: [cleanup]
 deepdive.pipeline.base_dir: ${BASEDIR}

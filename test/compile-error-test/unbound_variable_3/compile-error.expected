@@ -1,5 +1,5 @@
 [error] Variable y must have bindings
-b(x)  :-
-    a(x)
-  weight = y.
+@weight(y)
+b(x) :-
+    a(x).
 

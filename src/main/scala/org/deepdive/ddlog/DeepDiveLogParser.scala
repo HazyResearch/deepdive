@@ -29,8 +29,6 @@ case class VarPattern(name: String) extends Pattern
 case class ExprPattern(expr: Expr) extends Pattern
 case class PlaceholderPattern extends Pattern
 
-case class HeadAtom(name : String, terms : List[Expr])
-
 sealed trait Body
 case class BodyAtom(name : String, terms : List[Pattern]) extends Body
 case class QuantifiedBody(modifier: BodyModifier, bodies: List[Body]) extends Body
@@ -41,7 +39,7 @@ case class OuterModifier extends BodyModifier
 case class AllModifier extends BodyModifier
 
 case class Attribute(name : String, terms : List[String], types : List[String], annotations : List[List[Annotation]])
-case class ConjunctiveQuery(head: HeadAtom, bodies: List[List[Body]], isDistinct: Boolean, limit: Option[Int])
+case class ConjunctiveQuery(headTerms: List[Expr], bodies: List[List[Body]], isDistinct: Boolean, limit: Option[Int])
 case class Column(name : String // name of the column
                  , t : String // type of the column
                  , annotation: List[Annotation] = List.empty // optional annotation
@@ -50,6 +48,7 @@ case class Column(name : String // name of the column
 case class Annotation( name : String // name of the annotation
                      , args : Map[String, Any] = Map.empty // optional, named arguments
                      )
+case class RuleAnnotation(name: String, args: List[String])
 
 // condition
 sealed trait Cond extends Body
@@ -76,6 +75,15 @@ case class MultinomialType(numCategories: Int) extends VariableType {
 
 case class FactorWeight(variables: List[Expr])
 
+// factor function
+object FactorFunction extends Enumeration {
+  type FactorFunction = Value
+  val  IsTrue, Imply, Or, And, Equal, Multinomial, Linear, Ratio = Value
+}
+case class HeadAtom(name : String, terms : List[Expr])
+case class InferenceRuleHead(function: FactorFunction.FactorFunction, terms: List[HeadAtom])
+
+
 trait RelationType
 case class RelationTypeDeclaration(names: List[String], types: List[String]) extends RelationType
 case class RelationTypeAlias(likeRelationName: String) extends RelationType
@@ -90,10 +98,11 @@ case class SchemaDeclaration( a : Attribute
                             , variableType : Option[VariableType]
                             , annotation : List[Annotation] = List.empty // optional annotation
                             ) extends Statement // atom and whether this is a query relation.
-case class FunctionDeclaration( functionName: String, inputType: RelationType, outputType: RelationType, implementations: List[FunctionImplementationDeclaration], mode: String = null) extends Statement
-case class ExtractionRule(q : ConjunctiveQuery, supervision: Option[String] = None) extends Statement // Extraction rule
-case class FunctionCallRule(input : String, output : String, function : String) extends Statement // Extraction rule
-case class InferenceRule(q : ConjunctiveQuery, weights : FactorWeight, function : Option[String], mode: String = null) extends Statement // Weighted rule
+case class FunctionDeclaration( functionName: String, inputType: RelationType,
+  outputType: RelationType, implementations: List[FunctionImplementationDeclaration], mode: Option[String] = None) extends Statement
+case class ExtractionRule(headName: String, q : ConjunctiveQuery, supervision: Option[String] = None) extends Statement // Extraction rule
+case class FunctionCallRule(output: String, function: String, q : ConjunctiveQuery) extends Statement // Extraction rule
+case class InferenceRule(head: InferenceRuleHead, q : ConjunctiveQuery, weights : FactorWeight, mode: Option[String] = None) extends Statement // Weighted rule
 
 // Parser
 class DeepDiveLogParser extends JavaTokenParsers {
@@ -187,10 +196,6 @@ class DeepDiveLogParser extends JavaTokenParsers {
     | "(" ~> expr <~ ")"
     )
 
-  def cqHead = relationName ~ ("(" ~> rep1sep(expr, ",") <~ ")") ^^ {
-    case (r ~ expressions) => HeadAtom(r, expressions)
-  }
-
   // conditional expressions
   def compareOperator = "LIKE" | ">" | "<" | ">=" | "<=" | "!=" | "=" | "IS" | "IS NOT"
 
@@ -236,16 +241,6 @@ class DeepDiveLogParser extends JavaTokenParsers {
     QuantifiedBody(modifier, b)
   }
 
-  def cqBody: Parser[Body] = cond | quantifiedBody | atom
-
-  def cqConjunctiveBody: Parser[List[Body]] = rep1sep(cqBody, ",")
-
-  def conjunctiveQuery : Parser[ConjunctiveQuery] =
-    cqHead ~ opt("*") ~ opt("|" ~> decimalNumber) ~ ":-" ~ rep1sep(cqConjunctiveBody, ";") ^^ {
-      case (headatom ~ isDistinct ~ limit ~ ":-" ~ disjunctiveBodies) =>
-        ConjunctiveQuery(headatom, disjunctiveBodies, isDistinct != None, limit map (_.toInt))
-  }
-
   def relationType: Parser[RelationType] =
     ( "like" ~> relationName ^^ { RelationTypeAlias(_) }
     | rep1sep(columnDeclaration, ",") ^^ {
@@ -253,8 +248,15 @@ class DeepDiveLogParser extends JavaTokenParsers {
       }
     )
 
-  def functionMode = "mode" ~> "=" ~> functionModeType
-  def inferenceMode = "mode" ~> "=" ~> inferenceModeType
+  def ruleAnnotation = "@" ~> annotationName ~ ("(" ~> rep1sep(ident, ",") <~ ")") ^^ {
+    case (name ~ args) => RuleAnnotation(name, args)
+  }
+
+  def ruleAnnotations = rep(ruleAnnotation)
+
+  def getArg(annos: List[RuleAnnotation], name: String)  = {
+    annos.find(_.name == name) map (_.args) map (_(0))
+  }
 
   def functionImplementation : Parser[FunctionImplementationDeclaration] =
     ( "implementation" ~ stringLiteralAsString ~ "handles" ~ ("tsv" | "json") ~ "lines" ^^ {
@@ -265,43 +267,90 @@ class DeepDiveLogParser extends JavaTokenParsers {
       }
     )
 
+  def functionMode = "@mode" ~> "(" ~> functionModeType <~ ")"
+
   def functionDeclaration : Parser[FunctionDeclaration] =
-    ( "function" ~ functionName ~ "over" ~ relationType
+    ( opt(functionMode) ~ "function" ~ functionName ~ "over" ~ relationType
                              ~ "returns" ~ relationType
-                 ~ (functionImplementation+) ~ opt(functionMode)
+                 ~ (functionImplementation+)
     ) ^^ {
-      case ("function" ~ a ~ "over" ~ inTy
+      case (mode ~ "function" ~ a ~ "over" ~ inTy
                            ~ "returns" ~ outTy
-                       ~ implementationDecls ~ mode) =>
-             FunctionDeclaration(a, inTy, outTy, implementationDecls, mode.getOrElse(null))
+                       ~ implementationDecls) =>
+             FunctionDeclaration(a, inTy, outTy, implementationDecls, mode)
     }
 
-  def extractionRule : Parser[ExtractionRule] =
-    conjunctiveQuery ~ opt(supervision) ^^ {
-      case (q ~ supervision) => ExtractionRule(q, supervision)
-    }
+  def cqBody: Parser[Body] = cond | quantifiedBody | atom
+
+  def cqConjunctiveBody: Parser[List[Body]] = rep1sep(cqBody, ",")
+
+  def cqHeadTerms = "(" ~> rep1sep(expr, ",") <~ ")"
+
+  def conjunctiveQuery : Parser[ConjunctiveQuery] =
+    cqHeadTerms ~ opt("*") ~ opt("|" ~> decimalNumber) ~ ":-" ~ rep1sep(cqConjunctiveBody, ";") ^^ {
+      case (head ~ isDistinct ~ limit ~ ":-" ~ disjunctiveBodies) =>
+        ConjunctiveQuery(head, disjunctiveBodies, isDistinct != None, limit map (_.toInt))
+  }
 
   def functionCallRule : Parser[FunctionCallRule] =
-    ( relationName ~ ":-" ~ "!"
-    ~ functionName ~ "(" ~ relationName ~ ")"
-    ) ^^ {
-      case (out ~ ":-" ~ "!" ~ fn ~ "(" ~ in ~ ")") =>
-        FunctionCallRule(in, out, fn)
+    relationName ~ "+=" ~ functionName ~ conjunctiveQuery ^^ {
+      case (out ~ _ ~ func ~ cq) => FunctionCallRule(out, func, cq)
     }
 
-  def factorWeight = "weight" ~> "=" ~> rep1sep(expr, ",") ^^ { FactorWeight(_) }
+  def supervision = "@label" ~> "(" ~> variableName <~ ")"
+  def extractionRule =
+    opt(supervision) ~ relationName ~ conjunctiveQuery ^^ {
+      case (sup ~ head ~ cq) => ExtractionRule(head, cq, sup)
+  }
 
-  def supervision = "label" ~> "=" ~> variableName
+  def factorWeight = "@weight" ~> "(" ~> rep1sep(expr, ",") <~ ")" ^^ { FactorWeight(_) }
+  def inferenceMode = "@mode" ~> "(" ~> inferenceModeType <~ ")"
 
-  def factorFunctionName = "Imply" | "And" | "Equal" | "Or" | "Multinomial" | "Linear" | "Ratio"
-  def factorFunction = "function" ~> "=" ~> factorFunctionName
+  // factor functions
+  def headAtom = relationName ~ ("(" ~> rep1sep(expr, ",") <~ ")") ^^ {
+    case (r ~ expressions) => HeadAtom(r, expressions)
+  }
 
-  def inferenceRule : Parser[InferenceRule] =
-    ( conjunctiveQuery ~ factorWeight ~ opt(factorFunction) ~ opt(inferenceMode)
-    ) ^^ {
-      case (q ~ weight ~ function ~ mode) =>
-        InferenceRule(q, weight, function, mode.getOrElse(null))
+  def implyHeadAtoms = rep1sep(headAtom, ",") ~ "=>" ~ headAtom ^^ {
+    case (a ~ _ ~ b) => a :+ b
+  }
+
+  def inferenceRuleHead =
+  ( implyHeadAtoms ^^ {
+      InferenceRuleHead(FactorFunction.Imply, _)
     }
+  | "@semantics(linear)" ~> implyHeadAtoms ^^ {
+      InferenceRuleHead(FactorFunction.Linear, _)
+    }
+  | "@semantics(ratio)" ~> implyHeadAtoms ^^ {
+      InferenceRuleHead(FactorFunction.Ratio, _)
+    }
+  | headAtom ~ "=" ~ rep1sep(headAtom, "=") ^^ { case (a ~ _ ~ b) =>
+      InferenceRuleHead(FactorFunction.Equal, a +: b)
+    }
+  | headAtom ~ "^" ~ rep1sep(headAtom, "^") ^^ { case (a ~ _ ~ b) =>
+      InferenceRuleHead(FactorFunction.And, a +: b)
+    }
+  | headAtom ~ "v" ~ rep1sep(headAtom, "v") ^^ { case (a ~ _ ~ b) =>
+      InferenceRuleHead(FactorFunction.Or, a +: b)
+    }
+  | "Multinomial" ~> "(" ~> rep1sep(headAtom, ",") <~ ")" ^^ {
+      InferenceRuleHead(FactorFunction.Multinomial, _)
+    }
+  | headAtom ^^ {
+      x => InferenceRuleHead(FactorFunction.IsTrue, List(x))
+    }
+  )
+
+  def inferenceConjunctiveQuery : Parser[ConjunctiveQuery] =
+    ":-" ~> rep1sep(cqConjunctiveBody, ";") ^^ {
+      ConjunctiveQuery(List(), _, false, None)
+  }
+
+  def inferenceRule =
+    opt(inferenceMode) ~ factorWeight ~ inferenceRuleHead ~ inferenceConjunctiveQuery ^^ {
+      case (mode ~ weight ~ head ~ cq) => InferenceRule(head, cq, weight, mode)
+  }
 
   // rules or schema elements in arbitrary order
   def statement : Parser[Statement] = ( schemaDeclaration

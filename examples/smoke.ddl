@@ -29,11 +29,14 @@ cancer? (
     person_id bigint
 ).
 
-smoke(pid)  :- person_smokes(pid, l)     label = l.
-cancer(pid) :- person_has_cancer(pid, l) label = l.
+@label(l)
+smoke(pid)  :- person_smokes(pid, l).
 
-cancer(pid) :- smoke(pid), person_smokes(pid, l)
-    weight = 0.5.
+@label(l)
+cancer(pid) :- person_has_cancer(pid, l).
 
-smoke(pid)  :- smoke(pid1), friends(pid1, pid)
-    weight = 0.4.
+@weight(0.5)
+smoke(pid) => cancer(pid) :- person_smokes(pid, l).
+
+@weight(0.4)
+smoke(pid1) => smoke(pid) :- friends(pid1, pid).

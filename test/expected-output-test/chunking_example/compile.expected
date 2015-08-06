@@ -69,19 +69,7 @@
           style: "sql_extractor"
         }
 
-      deepdive.extraction.extractors.extraction_rule_6 {
-        sql: """ DROP VIEW IF EXISTS ext_features_input;
-        CREATE VIEW ext_features_input AS 
-            SELECT R0.word_id AS "words.R0.word_id" , R0.word AS "words.R0.word" , R0.pos AS "words.R0.pos" , R1.word AS "words.R1.word" , R1.pos AS "words.R1.pos" 
-            FROM words R0, words R1
-        WHERE R1.sent_id = R0.sent_id 
-        """
-        style: "sql_extractor"
-          dependencies: [ "extraction_rule_5" ]
-      }
-    
-
-      deepdive.extraction.extractors.extraction_rule_9 {
+      deepdive.extraction.extractors.extraction_rule_8 {
         sql: """ 
         INSERT INTO tag SELECT DISTINCT R0.sent_id, 0 AS id, R0.true_tag AS label
           FROM words R0
@@ -93,18 +81,10 @@
       }
     
 
-        deepdive.extraction.extractors.extraction_rule_8 {
-          input: """ SELECT * FROM ext_features_input
-          """
-          output_relation: "word_features"
-          udf: ${APP_HOME}"/udf/ext_features.py"
-          style: "tsv_extractor" 
-          dependencies: [ "extraction_rule_6" ]
-        }
-      
-
         deepdive.extraction.extractors.extraction_rule_5 {
-          input: """ SELECT * FROM words_raw
+          input: """ SELECT R0.word_id AS "words_raw.R0.word_id" , R0.word AS "words_raw.R0.word" , R0.pos AS "words_raw.R0.pos" , R0.tag AS "words_raw.R0.tag" 
+FROM words_raw R0
+        
           """
           output_relation: "words"
           udf: ${APP_HOME}"/udf/ext_training.py"
@@ -113,7 +93,19 @@
         }
       
 
-        deepdive.inference.factors.tag_0 {
+        deepdive.extraction.extractors.extraction_rule_7 {
+          input: """ SELECT R0.word_id AS "words.R0.word_id" , R0.word AS "words.R0.word" , R0.pos AS "words.R0.pos" , R1.word AS "words.R1.word" , R1.pos AS "words.R1.pos" 
+FROM words R0, words R1
+        WHERE R1.sent_id = R0.sent_id 
+          """
+          output_relation: "word_features"
+          udf: ${APP_HOME}"/udf/ext_features.py"
+          style: "tsv_extractor" 
+          dependencies: [ "extraction_rule_5" ]
+        }
+      
+
+        deepdive.inference.factors.inference_rule_0 {
           input_query: """
           SELECT R0.id AS "tag.R0.id" , R1.feature AS "dd_weight_column_0" 
           FROM tag R0, word_features R1
@@ -124,7 +116,7 @@
       
 deepdive.pipeline.run: ${PIPELINE}
 deepdive.pipeline.pipelines.initdb: [extraction_rule_0, extraction_rule_1, extraction_rule_3, extraction_rule_2]
-deepdive.pipeline.pipelines.extraction: [extraction_rule_6, extraction_rule_9, extraction_rule_5, extraction_rule_8]
-deepdive.pipeline.pipelines.inference: [tag_0]
-deepdive.pipeline.pipelines.endtoend: [extraction_rule_6, extraction_rule_9, extraction_rule_5, extraction_rule_8, tag_0]
+deepdive.pipeline.pipelines.extraction: [extraction_rule_8, extraction_rule_5, extraction_rule_7]
+deepdive.pipeline.pipelines.inference: [inference_rule_0]
+deepdive.pipeline.pipelines.endtoend: [extraction_rule_8, extraction_rule_5, extraction_rule_7, inference_rule_0]
 deepdive.pipeline.pipelines.cleanup: [cleanup]

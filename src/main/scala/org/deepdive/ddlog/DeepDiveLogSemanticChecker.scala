@@ -13,18 +13,16 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
         heads += s.a.name
         schemaDeclaration += { s.a.name -> s }
       }
-      case ExtractionRule(q, supervision) => {
-        heads += q.head.name
+      case s: ExtractionRule => {
+        heads += s.headName
       }
-      case InferenceRule(q, weight, semantic, mode) => {
-        heads += q.head.name
+      case s: FunctionDeclaration => {
+        functionDeclaration += { s.functionName -> s }
       }
-      case f: FunctionDeclaration => {
-        functionDeclaration += { f.functionName -> f }
+      case s: FunctionCallRule => {
+        heads += s.output
       }
-      case FunctionCallRule(input, output, function) => {
-        heads += output
-      }
+      case _ =>
     }
   }
 
@@ -59,7 +57,7 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
     stmt match {
       case s: ExtractionRule => s.q.bodies foreach check
       case s: InferenceRule => s.q.bodies foreach check
-      case s: FunctionCallRule => checkRelation(BodyAtom(s.input, Nil))
+      case s: FunctionCallRule => s.q.bodies foreach check
       case _ =>
     }
   }
@@ -101,12 +99,17 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
     def checkBodyAtom(a: BodyAtom) = check(a.name, a.terms.size)
     def checkHeadAtom(a: HeadAtom) = check(a.name, a.terms.size)
     def checkCq(cq: ConjunctiveQuery) {
-      checkHeadAtom(cq.head)
       cq.bodies foreach checkBodyAtoms(checkBodyAtom)
     }
     stmt match {
-      case s: ExtractionRule => checkCq(s.q)
-      case s: InferenceRule  => checkCq(s.q)
+      case s: ExtractionRule   => {
+        check(s.headName, s.q.headTerms.size)
+        checkCq(s.q)
+      }
+      case s: InferenceRule    => {
+        s.head.terms foreach checkHeadAtom
+        checkCq(s.q)
+      }
       case _ =>
     }
   }
@@ -194,7 +197,7 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
       // collect variable definitions and usages
       var varDefs = cq.bodies flatMap (_ flatMap collectDefinedVars) toSet
       val varUses = (cq.bodies flatMap (_ flatMap collectUsedVars) toSet) ++
-        (cq.head.terms flatMap collectUsedVars) ++
+        (cq.headTerms flatMap collectUsedVars) ++
         (additionalUsedVars)
       val varUndefined = varUses -- varDefs
       if (varUndefined nonEmpty) error(stmt, s"Variable ${varUndefined mkString(", ")} must have bindings")
