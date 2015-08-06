@@ -81,5 +81,5 @@ PATH="$DEEPDIVE_SOURCE_ROOT/util/test:$PATH"
     '
     actual=$(db-query "$q" json 0) # TODO change to: deepdive sql eval "$q" format=json
     # test whether two JSONs are the same
-    compare-json "$expected" "$actual"
+    compare_json "$expected" "$actual"
 }
