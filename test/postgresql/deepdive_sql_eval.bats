@@ -28,11 +28,13 @@ PATH="$DEEPDIVE_SOURCE_ROOT/util/test:$PATH"
                    , '('
                    , ')'
                    , '\"'
-                   , '\\'
+                   , E'\\\\' -- XXX Greenplum doesn't like the simpler '\\'
                    ] AS punctuations
             , ARRAY[ 'asdf  qwer"$'\t'"zxcv"$'\n'"1234'
                    , '\"I''m your father,\" said Darth Vader.'
-                   , '"'{"csv in a json": "a,b c,\",\",\"line '\'\''1'\'\'$'\n''line \"\"2\"\"",  "foo":123,'$'\n''"bar":45.678}'"'
+                   , E'"'{"csv in a json": "a,b c,\\",\\",\\"line '\'\''1'\'\'$'\n''line \\"\\"2\\"\\"",  "foo":123,'$'\n''"bar":45.678}'"'
+                     -- XXX Greenplum (or older PostgreSQL 8.x) treats backslashes as escapes in strings '...'
+                     -- and E'...' is a consistent way to write backslashes in string literal across versions
                    ] AS torture_arr
     "
     expected='
