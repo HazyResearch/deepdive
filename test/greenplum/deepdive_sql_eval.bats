@@ -1,0 +1,1 @@
+../postgresql/deepdive_sql_eval.bats
