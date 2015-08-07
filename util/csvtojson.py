@@ -10,6 +10,11 @@ def convert_flat_type_func(column_type):
     return lambda x: None if x == "" else float(x)
   elif column_type == "text":
     return lambda x: None if x == "" else x
+        # FIXME it's impossible to distinguish empty strings from nulls
+        # In PostgreSQL's csv output, `1,,2.34` means 1, null, 2.34, whereas `1,"",2.34` means 1, empty string, 2.34.
+        # csv.reader provides no formatter option to handle this.
+        # See: http://stackoverflow.com/questions/11379300/python-csv-reader-behavior-with-none-and-empty-string
+        # See: https://github.com/JoshClose/CsvHelper/issues/252
   elif column_type == "boolean":
     return lambda x: None if x == "" else x == "t"
   else:

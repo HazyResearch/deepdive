@@ -60,6 +60,7 @@ NastySQL="
             , TRUE as t
             , FALSE as f
             , 'foo bar baz'::text AS s
+            , ''::text AS empty_str
             , NULL::text AS n
             , ARRAY[1,2,3] AS num_arr
             , ARRAY[1.2,3.45,67.890] AS float_arr
@@ -95,6 +96,7 @@ NastyTSVHeader+=$'\t''float'            NastyTSV+=$'\t''45.678'
 NastyTSVHeader+=$'\t''t'                NastyTSV+=$'\t''t'
 NastyTSVHeader+=$'\t''f'                NastyTSV+=$'\t''f'
 NastyTSVHeader+=$'\t''s'                NastyTSV+=$'\t''foo bar baz'
+NastyTSVHeader+=$'\t''empty_str'        NastyTSV+=$'\t'''
 NastyTSVHeader+=$'\t''n'                NastyTSV+=$'\t''\N'
 NastyTSVHeader+=$'\t''num_arr'          NastyTSV+=$'\t''{1,2,3}'
 NastyTSVHeader+=$'\t''float_arr'        NastyTSV+=$'\t''{1.2,3.45,67.890}'
@@ -113,6 +115,7 @@ NastyCSVHeader+=',float'            NastyCSV+=',45.678'
 NastyCSVHeader+=',t'                NastyCSV+=',t'
 NastyCSVHeader+=',f'                NastyCSV+=',f'
 NastyCSVHeader+=',s'                NastyCSV+=',foo bar baz'
+NastyCSVHeader+=',empty_str'        NastyCSV+=',""'
 NastyCSVHeader+=',n'                NastyCSV+=','
 NastyCSVHeader+=',num_arr'          NastyCSV+=',"{1,2,3}"'
 NastyCSVHeader+=',float_arr'        NastyCSV+=',"{1.2,3.45,67.890}"'
@@ -132,6 +135,7 @@ NastyJSON='
           "t": true,
           "f": false,
           "s": "foo bar baz",
+          "empty_str": "",
           "n": null,
           "num_arr": [
             1,
