@@ -66,6 +66,10 @@ NastySQL="
             , 'foo bar baz'::text AS s
             , ''::text AS empty_str
             , NULL::text AS n
+            , 'NULL'   AS n1
+            , 'null'   AS n2
+            , E'\\\\N' AS n3
+            , 'N'      AS n4
             , ARRAY[1,2,3] AS num_arr
             , ARRAY[1.2,3.45,67.890] AS float_arr
             , ARRAY[ 'easy'
@@ -86,8 +90,14 @@ NastySQL="
                    , E'\\\\' -- XXX Greenplum doesn't like the simpler '\\'
                    ] AS punctuations
             , ARRAY[ 'asdf  qwer"$'\t'"zxcv"$'\n'"1234'
+                   , ''
+                   , NULL
+                   , 'NULL'
+                   , 'null'
+                   , E'\\\\N'
+                   , 'N'
                    , '\"I''m your father,\" said Darth Vader.'
-                   , E'"'{"csv in a json": "a,b c,\\",\\",\\"line '\'\''1'\'\'$'\n''line \\"\\"2\\"\\"",  "foo":123,'$'\n''"bar":45.678}'"'
+                   , E'"'{"csv in a json": "a,b c,\\",\\",\\"line '\'\''1'\'\'$'\n''bogus,NULL,null,\\\\N,N,line \\"\\"2\\"\\"",  "foo":123,'$'\n''"bar":45.678, "null": "\\\\N"}'"'
                      -- XXX Greenplum (or older PostgreSQL 8.x) treats backslashes as escapes in strings '...'
                      -- and E'...' is a consistent way to write backslashes in string literal across versions
                    ] AS torture_arr
@@ -102,13 +112,23 @@ NastyTSVHeader+=$'\t''f'                NastyTSV+=$'\t''f'
 NastyTSVHeader+=$'\t''s'                NastyTSV+=$'\t''foo bar baz'
 NastyTSVHeader+=$'\t''empty_str'        NastyTSV+=$'\t'''
 NastyTSVHeader+=$'\t''n'                NastyTSV+=$'\t''\N'
+NastyTSVHeader+=$'\t''n1'               NastyTSV+=$'\t''NULL'
+NastyTSVHeader+=$'\t''n2'               NastyTSV+=$'\t''null'
+NastyTSVHeader+=$'\t''n3'               NastyTSV+=$'\t''\\N'
+NastyTSVHeader+=$'\t''n4'               NastyTSV+=$'\t''N'
 NastyTSVHeader+=$'\t''num_arr'          NastyTSV+=$'\t''{1,2,3}'
 NastyTSVHeader+=$'\t''float_arr'        NastyTSV+=$'\t''{1.2,3.45,67.890}'
 NastyTSVHeader+=$'\t''text_arr'         NastyTSV+=$'\t''{easy,123,abc,"two words"}'
 NastyTSVHeader+=$'\t''punctuations'     NastyTSV+=$'\t''{.,",",.,"{","}",[,],(,),"\\"","\\\\"}'
 NastyTSVHeader+=$'\t''torture_arr'      NastyTSV+=$'\t''{"asdf  qwer\tzxcv\n1234"'
+                                        NastyTSV+=',""'
+                                        NastyTSV+=',NULL'
+                                        NastyTSV+=',"NULL"'
+                                        NastyTSV+=',"null"'
+                                        NastyTSV+=',"\\\\N"'
+                                        NastyTSV+=',N'
                                         NastyTSV+=',"\\"I'\''m your father,\\" said Darth Vader."'
-                                        NastyTSV+=',"{\\"csv in a json\\": \\"a,b c,\\\\\\",\\\\\\",\\\\\\"line '\''1'\''\nline \\\\\\"\\\\\\"2\\\\\\"\\\\\\"\\",  \\"foo\\":123,\n\\"bar\\":45.678}"'
+                                        NastyTSV+=',"{\\"csv in a json\\": \\"a,b c,\\\\\\",\\\\\\",\\\\\\"line '\''1'\''\nbogus,NULL,null,\\\\\\\\N,N,line \\\\\\"\\\\\\"2\\\\\\"\\\\\\"\\",  \\"foo\\":123,\n\\"bar\\":45.678, \\"null\\": \\"\\\\\\\\N\\"}"'
                                         NastyTSV+='}'
 NastyTSVHeader=${NastyCSVHeader#$'\t'}  NastyTSV=${NastyTSV#$'\t'}  # strip the first delimiter
 
@@ -121,13 +141,23 @@ NastyCSVHeader+=',f'                NastyCSV+=',f'
 NastyCSVHeader+=',s'                NastyCSV+=',foo bar baz'
 NastyCSVHeader+=',empty_str'        NastyCSV+=',""'
 NastyCSVHeader+=',n'                NastyCSV+=','
+NastyCSVHeader+=',n1'               NastyCSV+=',NULL'
+NastyCSVHeader+=',n2'               NastyCSV+=',null'
+NastyCSVHeader+=',n3'               NastyCSV+=',\N'
+NastyCSVHeader+=',n4'               NastyCSV+=',N'
 NastyCSVHeader+=',num_arr'          NastyCSV+=',"{1,2,3}"'
 NastyCSVHeader+=',float_arr'        NastyCSV+=',"{1.2,3.45,67.890}"'
 NastyCSVHeader+=',text_arr'         NastyCSV+=',"{easy,123,abc,""two words""}"'
 NastyCSVHeader+=',punctuations'     NastyCSV+=',"{.,"","",.,""{"",""}"",[,],(,),""\"""",""\\""}"'
 NastyCSVHeader+=',torture_arr'      NastyCSV+=',"{""asdf  qwer'$'\t''zxcv'$'\n''1234""'
+                                    NastyCSV+=',""""'
+                                    NastyCSV+=',NULL'
+                                    NastyCSV+=',""NULL""'
+                                    NastyCSV+=',""null""'
+                                    NastyCSV+=',""\\N""'
+                                    NastyCSV+=',N'
                                     NastyCSV+=',""\""I'\''m your father,\"" said Darth Vader.""'
-                                    NastyCSV+=',""{\""csv in a json\"": \""a,b c,\\\"",\\\"",\\\""line '\''1'\'$'\n''line \\\""\\\""2\\\""\\\""\"",  \""foo\"":123,'$'\n''\""bar\"":45.678}""'
+                                    NastyCSV+=',""{\""csv in a json\"": \""a,b c,\\\"",\\\"",\\\""line '\''1'\'$'\n''bogus,NULL,null,\\\\N,N,line \\\""\\\""2\\\""\\\""\"",  \""foo\"":123,'$'\n''\""bar\"":45.678, \""null\"": \""\\\\N\""}""'
                                     NastyCSV+='}"'
 NastyCSVHeader=${NastyCSVHeader#,}  NastyCSV=${NastyCSV#,}  # strip the first delimiter
 
@@ -141,6 +171,10 @@ NastyJSON='
           "s": "foo bar baz",
           "empty_str": "",
           "n": null,
+          "n1": "NULL",
+          "n2": "null",
+          "n3": "\\N",
+          "n4": "N",
           "num_arr": [
             1,
             2,
@@ -172,8 +206,14 @@ NastyJSON='
           ],
           "torture_arr": [
             "asdf  qwer\tzxcv\n1234",
+            "",
+            null,
+            "NULL",
+            "null",
+            "\\N",
+            "N",
             "\"I'\''m your father,\" said Darth Vader.",
-            "{\"csv in a json\": \"a,b c,\\\",\\\",\\\"line '\''1'\''\nline \\\"\\\"2\\\"\\\"\",  \"foo\":123,\n\"bar\":45.678}"
+            "{\"csv in a json\": \"a,b c,\\\",\\\",\\\"line '\''1'\''\nbogus,NULL,null,\\\\N,N,line \\\"\\\"2\\\"\\\"\",  \"foo\":123,\n\"bar\":45.678, \"null\": \"\\\\N\"}"
           ]
         }
     '
