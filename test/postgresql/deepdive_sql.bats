@@ -4,6 +4,10 @@
 . "$BATS_TEST_DIRNAME"/env.sh >&2
 PATH="$DEEPDIVE_SOURCE_ROOT/util/test:$PATH"
 
+setup() {
+    db-execute "SELECT 1" &>/dev/null || db-init
+}
+
 @test "$DBVARIANT deepdive sql works" {
     result=$(deepdive sql "
         CREATE TEMP TABLE foo(a INT);
