@@ -76,7 +76,13 @@ NastySQL="
                    , '123'
                    , 'abc'
                    , 'two words'
-                   ] as text_arr
+                   ] AS text_arr
+            , ARRAY[ E'\b'
+                   , E'\f'
+                   , E'\n'
+                   , E'\r'
+                   , E'\t'
+                   ] AS nonprintable
             , ARRAY[ '.'
                    , ','
                    , '.'
@@ -119,6 +125,7 @@ NastyTSVHeader+=$'\t''n4'               NastyTSV+=$'\t''N'
 NastyTSVHeader+=$'\t''num_arr'          NastyTSV+=$'\t''{1,2,3}'
 NastyTSVHeader+=$'\t''float_arr'        NastyTSV+=$'\t''{1.2,3.45,67.890}'
 NastyTSVHeader+=$'\t''text_arr'         NastyTSV+=$'\t''{easy,123,abc,"two words"}'
+NastyTSVHeader+=$'\t''nonprintable'     NastyTSV+=$'\t''{\b,"\f","\n","\r","\t"}'
 NastyTSVHeader+=$'\t''punctuations'     NastyTSV+=$'\t''{.,",",.,"{","}",[,],(,),"\\"","\\\\"}'
 NastyTSVHeader+=$'\t''torture_arr'      NastyTSV+=$'\t''{"asdf  qwer\tzxcv\n1234"'
                                         NastyTSV+=',""'
@@ -148,6 +155,7 @@ NastyCSVHeader+=',n4'               NastyCSV+=',N'
 NastyCSVHeader+=',num_arr'          NastyCSV+=',"{1,2,3}"'
 NastyCSVHeader+=',float_arr'        NastyCSV+=',"{1.2,3.45,67.890}"'
 NastyCSVHeader+=',text_arr'         NastyCSV+=',"{easy,123,abc,""two words""}"'
+NastyCSVHeader+=',nonprintable'     NastyCSV+=',"{'$'\b'',""'$'\f''"",""'$'\n''"",""'$'\r''"",""'$'\t''""}"'
 NastyCSVHeader+=',punctuations'     NastyCSV+=',"{.,"","",.,""{"",""}"",[,],(,),""\"""",""\\""}"'
 NastyCSVHeader+=',torture_arr'      NastyCSV+=',"{""asdf  qwer'$'\t''zxcv'$'\n''1234""'
                                     NastyCSV+=',""""'
@@ -190,6 +198,13 @@ NastyJSON='
             "123",
             "abc",
             "two words"
+          ],
+          "nonprintable": [
+            "\b",
+            "\f",
+            "\n",
+            "\r",
+            "\t"
           ],
           "punctuations": [
             ".",
