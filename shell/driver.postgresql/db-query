@@ -42,7 +42,7 @@ case $format in
             # quote each line
             sed "s/'/'\\''/g; s/^/'/; s/\$/'/" | tr '\n' ' ')
             # next, use our conversion script to transform to valid JSON object per line
-            db-execute "COPY ($sql) TO STDOUT" | eval "csvtojson.py $namesAndTypes"
+            db-execute "COPY ($sql) TO STDOUT" | eval "pgtsv_to_json $namesAndTypes"
         fi
         exit $?  # all done, no need to go further
         ;;
