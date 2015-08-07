@@ -28,12 +28,11 @@ def convert_type_func(column_type):
     # csv array starts and ends with curly braces
     column_type = column_type[:-2]
     flat_func = convert_flat_type_func(column_type)
+    def backslashes_to_csv_escapes(s):
+        return re.sub(r"\\(.)", lambda m: '""' if m.group(1) is '"' else m.group(1), s)
     def convert_text_array_func(value):
       if value == "": return None
-      # string unescaping
-      def rep(match):
-        return '""' if match.group(2) == '"' else match.group(2)
-      arr = csv.reader([re.sub(r"(\\)(.)", rep, value[1:-1])], delimiter=',', quotechar='"').next()
+      arr = csv.reader([backslashes_to_csv_escapes(value[1:-1])], delimiter=',', quotechar='"').next()
       return [flat_func(x) for x in arr]
     def convert_other_array_func(value):
       if value == "": return None
