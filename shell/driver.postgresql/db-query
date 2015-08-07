@@ -28,19 +28,21 @@ case $format in
         else
             # otherwise, fallback to our own workaround
             # first, we need to figure out the what types are output by user's SQL
-            types=$(db-execute "
+            namesAndTypes=$(db-execute "
                 CREATE TEMP TABLE __to_json_temp AS ($sql) LIMIT 0;
                 COPY (
-                    SELECT format_type(atttypid, atttypmod) AS type
+                    SELECT attname || ':' || format_type(atttypid, atttypmod) AS nameAndType
                       FROM pg_attribute
                      WHERE attrelid = '__to_json_temp'::regclass
                        AND attnum > 0
                        AND NOT attisdropped
                      ORDER BY attnum
                 ) TO STDOUT
-            ")
+            " |
+            # quote each line
+            sed "s/'/'\\''/g; s/^/'/; s/\$/'/" | tr '\n' ' ')
             # next, use our conversion script to transform to valid JSON object per line
-            db-query "$sql" csv 1 | csvtojson.py $types
+            db-execute "COPY ($sql) TO STDOUT" | eval "csvtojson.py $namesAndTypes"
         fi
         exit $?  # all done, no need to go further
         ;;

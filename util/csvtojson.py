@@ -8,15 +8,10 @@ def convert_flat_type_func(column_type):
     return lambda x: None if x == "" else int(x)
   elif column_type == "float" or column_type == "numeric":
     return lambda x: None if x == "" else float(x)
-  elif column_type == "text":
-    return lambda x: None if x == "" else x
-        # FIXME it's impossible to distinguish empty strings from nulls
-        # In PostgreSQL's csv output, `1,,2.34` means 1, null, 2.34, whereas `1,"",2.34` means 1, empty string, 2.34.
-        # csv.reader provides no formatter option to handle this.
-        # See: http://stackoverflow.com/questions/11379300/python-csv-reader-behavior-with-none-and-empty-string
-        # See: https://github.com/JoshClose/CsvHelper/issues/252
   elif column_type == "boolean":
     return lambda x: None if x == "" else x == "t"
+  elif column_type == "text" or column_type == "unknown":
+    return lambda x: x
   else:
     raise ValueError("Unsupported data type %s" %column_type)
 
@@ -45,20 +40,50 @@ def convert_type_func(column_type):
   else:
     return convert_flat_type_func(column_type)
 
+# PostgreSQL COPY TO text Format
+# See: http://www.postgresql.org/docs/9.1/static/sql-copy.html#AEN64302
+pgTextEscapeSeqs = {
+    "b": "\b",
+    "f": "\f",
+    "n": "\n",
+    "r": "\r",
+    "t": "\t",
+    "v": "\v"
+    }
+def decode_pg_text_escapes(m):
+  c = m.group(1)
+  if c in pgTextEscapeSeqs:
+    return pgTextEscapeSeqs[c]
+  elif c.startswith("x"):
+    return chr(int(c, base=16))
+  elif c.startswith("0"):
+    return chr(int(c, base=8))
+  else:
+    return c
+def unescape_postgres_text_format(s):
+  # unescape PostgreSQL text format
+  return re.sub(r"\\(.|0[0-7]{1,2}|x[0-9A-Fa-f]{1,2})", decode_pg_text_escapes, s)
+
 def main():
   # get column types
-  types = sys.argv[1:]
-  convert_funcs = [convert_type_func(x) for x in types]
+  def parseArg(arg):
+      field_name, field_type = re.match(r"(.+):([^:]+)", arg).groups()
+      return field_name, convert_type_func(field_type)
+  names_converters = map(parseArg, sys.argv[1:])
 
-  # read the contents
-  reader     = csv.reader(sys.stdin, delimiter = ',', quotechar = '"')
-  fieldnames = reader.next()
-  if len(types) != len(fieldnames):
-    raise ValueError("Number of columns does not match schema")
+  # read the PostgreSQL COPY TO text format
+  # XXX With Python's csv.reader, it's impossible to distinguish empty strings from nulls in PostgreSQL's csv output.
+  # In PostgreSQL's csv output, `1,,2.34` means 1, null, 2.34, whereas `1,"",2.34` means 1, empty string, 2.34.
+  # csv.reader provides no formatter option to handle this.
+  # See: http://grokbase.com/t/python/python-ideas/131b0eaykx/csv-dialect-enhancement
+  # See: http://stackoverflow.com/questions/11379300/python-csv-reader-behavior-with-none-and-empty-string
+  # See: https://github.com/JoshClose/CsvHelper/issues/252
+  reader = csv.reader(sys.stdin, delimiter='\t', quotechar=None, quoting=csv.QUOTE_NONE)
   for line in reader:
     obj = {}
-    for name, field, func in zip(fieldnames, line, convert_funcs):
-      obj[name] = func(field)
+    for (name, convert), field in zip(names_converters, line):
+        obj[name] = None if field == "\\N" \
+                         else convert(unescape_postgres_text_format(field))
     print json.dumps(obj)
 
 if __name__ == "__main__":
