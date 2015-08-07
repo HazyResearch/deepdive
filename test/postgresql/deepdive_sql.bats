@@ -82,6 +82,10 @@ NastySQL="
                    , E'\n'
                    , E'\r'
                    , E'\t'
+                   , E'\x1c'
+                   , E'\x1d'
+                   , E'\x1e \x1f'
+                   , E'\x7f'
                    ] AS nonprintable
             , ARRAY[ '.'
                    , ','
@@ -135,7 +139,7 @@ NastyTSVHeader+=$'\t''n4'               NastyTSV+=$'\t''N'
 NastyTSVHeader+=$'\t''num_arr'          NastyTSV+=$'\t''{1,2,3}'
 NastyTSVHeader+=$'\t''float_arr'        NastyTSV+=$'\t''{1.2,3.45,67.890}'
 NastyTSVHeader+=$'\t''text_arr'         NastyTSV+=$'\t''{easy,123,abc,"two words"}'
-NastyTSVHeader+=$'\t''nonprintable'     NastyTSV+=$'\t''{\b,"\f","\n","\r","\t"}'
+NastyTSVHeader+=$'\t''nonprintable'     NastyTSV+=$'\t''{\b,"\f","\n","\r","\t",'$'\x1c'','$'\x1d'',"'$'\x1e'' '$'\x1f''",'$'\x7f''}'
 NastyTSVHeader+=$'\t''punctuations'     NastyTSV+=$'\t''{.,",",.,"{","}",[,],(,),"\\"","\\\\"}'
 NastyTSVHeader+=$'\t''torture_arr'      NastyTSV+=$'\t''{"asdf  qwer\tzxcv\n1234"'
                                              NastyTSV+=',""'
@@ -175,7 +179,7 @@ NastyCSVHeader+=',n4'               NastyCSV+=',N'
 NastyCSVHeader+=',num_arr'          NastyCSV+=',"{1,2,3}"'
 NastyCSVHeader+=',float_arr'        NastyCSV+=',"{1.2,3.45,67.890}"'
 NastyCSVHeader+=',text_arr'         NastyCSV+=',"{easy,123,abc,""two words""}"'
-NastyCSVHeader+=',nonprintable'     NastyCSV+=',"{'$'\b'',""'$'\f''"",""'$'\n''"",""'$'\r''"",""'$'\t''""}"'
+NastyCSVHeader+=',nonprintable'     NastyCSV+=',"{'$'\b'',""'$'\f''"",""'$'\n''"",""'$'\r''"",""'$'\t''"",'$'\x1c'','$'\x1d'',""'$'\x1e'' '$'\x1f''"",'$'\x7f''}"'
 NastyCSVHeader+=',punctuations'     NastyCSV+=',"{.,"","",.,""{"",""}"",[,],(,),""\"""",""\\""}"'
 NastyCSVHeader+=',torture_arr'      NastyCSV+=',"{""asdf  qwer'$'\t''zxcv'$'\n''1234""'
                                       NastyCSV+=',""""'
@@ -234,7 +238,11 @@ NastyJSON='
             "\f",
             "\n",
             "\r",
-            "\t"
+            "\t",
+            "\u1c",
+            "\u1d",
+            "\u1e \u1f",
+            "\u7f"
           ],
           "punctuations": [
             ".",
