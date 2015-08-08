@@ -6,11 +6,11 @@ import json, sys, csv, re
 
 # given a column type, returns a function that takes a string input
 # and output with the correct type
-def convert_type_func(ty):
-  if ty.endswith("[]"):
+def convert_type_func(ty, ty_rest = ""):
+  if ty.endswith("[]") and ty_rest == "": # XXX nested arrays are not supported
     # csv array starts and ends with curly braces
     ty_el = ty[:-2]
-    convert = convert_type_func(ty_el)
+    convert = convert_type_func(ty_el, ty_rest=ty[-2:])
     def backslashes_to_csv_escapes(s):
         return re.sub(r"\\(.)", lambda m: '""' if m.group(1) is '"' else m.group(1), s)
     if ty_el == "text":

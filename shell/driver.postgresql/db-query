@@ -28,6 +28,7 @@ case $format in
         else
             # otherwise, fallback to our own workaround
             # first, we need to figure out the what types are output by user's SQL
+            # XXX This does not handle multidimensional (nested) arrays!
             namesAndTypes=$(db-execute "
                 CREATE TEMP TABLE __to_json_temp AS ($sql) LIMIT 0;
                 COPY (
