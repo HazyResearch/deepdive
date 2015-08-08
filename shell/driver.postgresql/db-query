@@ -10,14 +10,27 @@ format=${1:?No FORMAT given}; shift
 header=${1:?No HEADER given}; shift
 
 copy_option=
-case $header in
-    0) ;;
-    1) copy_option+=" HEADER" ;;
-    *) error "$header: unrecognized value for HEADER"
-esac
 case $format in
-    tsv) ;;
-    csv) copy_option+=" csv" ;;
+    tsv)
+        case $header in
+            0) ;;
+            1)
+                # XXX HEADER is only available for PostgreSQL's csv format
+                # hence the following workaround
+                db-execute "COPY ($sql LIMIT 0) TO STDOUT csv HEADER" |
+                python -c 'import sys, csv; print "\t".join([c.replace("\t", "\\t") for c in csv.reader([sys.stdin.readline()], delimiter=",", quotechar="\"").next()])'
+                ;;
+            *) error "$header: unrecognized value for HEADER"
+        esac
+        ;;
+    csv)
+        copy_option+=" csv"
+        case $header in
+            0) ;;
+            1) copy_option+=" HEADER" ;;
+            *) error "$header: unrecognized value for HEADER"
+        esac
+        ;;
     json)
         # make sure we stop if db-execute or db-query go wrong that sit before the last pipe
         set -o pipefail
