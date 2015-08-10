@@ -1,0 +1,96 @@
+#!/usr/bin/env python
+# A script to convert PostgreSQL's COPY TO text (tsv; tab-delimited values) lines into JSON sequence
+# Usage: pgtsv_to_json COLUMN_NAME1:TYPE1 COLUMN_NAME2:TYPE2 ...
+
+import json, sys, csv, re
+
+# given a column type, returns a function that takes a string input
+# and output with the correct type
+def convert_type_func(ty, ty_rest = ""):
+  if ty.endswith("[]") and ty_rest == "": # XXX nested arrays are not supported
+    # csv array starts and ends with curly braces
+    ty_el = ty[:-2]
+    convert = convert_type_func(ty_el, ty_rest=ty[-2:])
+    def backslashes_to_csv_escapes(s):
+        return re.sub(r"\\(.)", lambda m: '""' if m.group(1) is '"' else m.group(1), s)
+    if ty_el == "text":
+      def convert_text_array(value):
+        arr = csv.reader([backslashes_to_csv_escapes(value[1:-1])], delimiter=',', quotechar='"').next()
+        return map(convert, arr)
+      return convert_text_array
+    else:
+      def convert_other_array(value):
+        arr = csv.reader([value[1:-1]], delimiter=',', quotechar='"').next()
+        return map(convert, arr)
+      return convert_other_array
+  else: # non-array, must be primitive type
+    normalized_type_name = {
+        "integer" : "int",
+        "bigint"  : "int",
+        "double"  : "float",
+        "numeric" : "float",
+        "unknown" : "text",
+        }
+    convert_for_primitive_types = {
+        "int"     : int,
+        "float"   : float,
+        "text"    : lambda x: x,
+        "boolean" : lambda x: x == "t",
+        }
+    # find the convert function with normalized type name
+    ty = ty.lower()
+    if ty in normalized_type_name:
+      ty = normalized_type_name[ty]
+    if ty in convert_for_primitive_types:
+      return convert_for_primitive_types[ty]
+    else:
+      raise ValueError("Unsupported data type %s" % ty)
+
+# PostgreSQL COPY TO text Format parser
+# See: http://www.postgresql.org/docs/9.1/static/sql-copy.html#AEN64302
+pgTextEscapeSeqs = {
+    "b": "\b",
+    "f": "\f",
+    "n": "\n",
+    "r": "\r",
+    "t": "\t",
+    "v": "\v",
+    }
+def decode_pg_text_escapes(m):
+  c = m.group(1)
+  if c in pgTextEscapeSeqs:
+    return pgTextEscapeSeqs[c]
+  elif c.startswith("x"):
+    return chr(int(c, base=16))
+  elif c.startswith("0"):
+    return chr(int(c, base=8))
+  else:
+    return c
+def unescape_postgres_text_format(s):
+  # unescape PostgreSQL text format
+  return re.sub(r"\\(.|0[0-7]{1,2}|x[0-9A-Fa-f]{1,2})", decode_pg_text_escapes, s)
+
+def main():
+  # parse column names and types from arguments
+  def parseArg(arg):
+      field_name, field_type = re.match(r"(.+):([^:]+)", arg).groups()
+      return field_name, convert_type_func(field_type)
+  names_converters = map(parseArg, sys.argv[1:])
+
+  # read the PostgreSQL COPY TO text format
+  # XXX With Python's csv.reader, it's impossible to distinguish empty strings from nulls in PostgreSQL's csv output.
+  # In PostgreSQL's csv output, `1,,2.34` means 1, null, 2.34, whereas `1,"",2.34` means 1, empty string, 2.34.
+  # csv.reader provides no formatter option to handle this.
+  # See: http://grokbase.com/t/python/python-ideas/131b0eaykx/csv-dialect-enhancement
+  # See: http://stackoverflow.com/questions/11379300/python-csv-reader-behavior-with-none-and-empty-string
+  # See: https://github.com/JoshClose/CsvHelper/issues/252
+  reader = csv.reader(sys.stdin, delimiter='\t', quotechar=None, quoting=csv.QUOTE_NONE)
+  for line in reader:
+    obj = {}
+    for (name, convert), field in zip(names_converters, line):
+        obj[name] = None if field == "\\N" \
+                         else convert(unescape_postgres_text_format(field))
+    print json.dumps(obj)
+
+if __name__ == "__main__":
+  main()
