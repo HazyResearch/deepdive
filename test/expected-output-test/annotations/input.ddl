@@ -19,3 +19,10 @@ R(
     @empty_args()
     r float
 ).
+
+@fact
+has_spouse?(
+    @key
+    @references(relation="couples", column="id")
+    couple_id text
+).
