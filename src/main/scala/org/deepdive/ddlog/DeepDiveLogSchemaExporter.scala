@@ -32,8 +32,19 @@ object DeepDiveLogSchemaExporter extends DeepDiveLogHandler {
     // relation annotations are omitted when not present
     if (decl.annotation nonEmpty)
       schema += "annotations" -> exportAnnotations(decl.annotation)
+    // what type of random variable this relation is
+    if (decl.isQuery)
+      decl.variableType getOrElse { BooleanType } match {
+        case ty =>
+          schema += "variable_type" -> (ty match {
+            case BooleanType        => "boolean"
+            case MultinomialType(n) => "multinomial"
+          })
+          schema += "variable_cardinality" -> ty.cardinality
+      }
 
-    (decl.a.name, JSONObject(schema))
+    // finally, mapping for this relation
+    decl.a.name -> JSONObject(schema)
   }
 
   def exportAnnotations(annos: Seq[Annotation]): JSONArray =
@@ -44,7 +55,7 @@ object DeepDiveLogSchemaExporter extends DeepDiveLogHandler {
       "name" -> anno.name
     )
     if (anno.args nonEmpty)
-      a += "args" -> JSONObject(anno.args)
+      a += "args" -> (anno.args.get fold (JSONObject, JSONArray))
     JSONObject(a)
   }
 
