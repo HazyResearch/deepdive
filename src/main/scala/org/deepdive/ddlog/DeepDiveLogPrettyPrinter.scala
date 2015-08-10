@@ -20,9 +20,12 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
       case anno =>
         s"@${anno.name}${
           if (anno.args isEmpty) ""
-          else s"(${anno.args map {
-            case (name, value) => s"${name}=${printLiteral(value)}"
-          } mkString(", ")})"
+          else s"(${anno.args.get fold (
+            // named arguments case
+            {_ map { case (name, value) => s"${name}=${printLiteral(value)}" }},
+            // unnamed argument list case
+            {_ map printLiteral}
+          ) mkString(", ") })"
         }" + ("\n" + indentation)
     } mkString
 

@@ -46,7 +46,7 @@ case class Column(name : String // name of the column
                  )
 
 case class Annotation( name : String // name of the annotation
-                     , args : Map[String, Any] = Map.empty // optional, named arguments
+                     , args : Option[Either[Map[String, Any],List[Any]]] = None // optional, named arguments map or unnamed list
                      )
 case class RuleAnnotation(name: String, args: List[String])
 
@@ -135,12 +135,22 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def annotationArgumentName = ident
 
   def annotation: Parser[Annotation] =
-    "@" ~ annotationName ~ opt("(" ~> repsep(annotationArgument, ",") <~ ")") ^^ {
-      case (_ ~ name ~ optArgs) =>
-        Annotation(name, optArgs getOrElse { List.empty } toMap)
+    "@" ~ annotationName ~ opt(annotationArguments) ^^ {
+      case (_ ~ name ~ optArgs) => Annotation(name, optArgs)
     }
 
-  def annotationArgument: Parser[(String, Any)] =
+  def annotationArguments: Parser[Either[Map[String, Any], List[Any]]] =
+    "(" ~> (
+      // XXX rep1sep must be above repsep to parse "()"
+      rep1sep(annotationArgumentValue, ",") ^^ {
+        case values => Right(values)
+      }
+    |
+      repsep(annotationNamedArgument, ",") ^^ {
+        case namedArgs => Left(namedArgs toMap)
+      }
+    ) <~ ")"
+  def annotationNamedArgument: Parser[(String, Any)] =
     annotationArgumentName ~ "=" ~ annotationArgumentValue ^^ {
       case name ~ _ ~ value => name -> value
     }

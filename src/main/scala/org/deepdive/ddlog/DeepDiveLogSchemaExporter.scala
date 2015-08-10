@@ -44,7 +44,7 @@ object DeepDiveLogSchemaExporter extends DeepDiveLogHandler {
       "name" -> anno.name
     )
     if (anno.args nonEmpty)
-      a += "args" -> JSONObject(anno.args)
+      a += "args" -> (anno.args.get fold (JSONObject, JSONArray))
     JSONObject(a)
   }
 
