@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# deepdive-help -- Shows help
+# > deepdive help [COMMAND]
+##
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2015-07-30
+set -eu
+
+if [[ $# -gt 0 ]]; then
+    Cmd=$1; shift
+    exe=deepdive-"$Cmd"
+    if exePath=$(type -p "$exe"); then
+        exec usage "$exePath"
+    else
+        usage "$0" "$Cmd: invalid COMMAND" || true  # continue to enumerate available ones
+    fi
+else
+    usage "$0"
+fi
+
+# enumerate available COMMANDs discoverable from PATH
+echo
+echo "# Available COMMANDs are:"
+IFS=:
+tmp=$(mktemp -d "${TMPDIR:-/tmp}"/deepdive-usage.XXXXXXX)
+trap 'rm -rf "$tmp"' EXIT
+for path in $PATH; do
+    for exe in "$path"/deepdive-*; do
+        [ -x "$exe" ] || continue
+        usage "$exe" | head -1 | sed -n '/ -- / s/.* -- //p' >>"$tmp"/desc
+        cmd=${exe##*/deepdive-}
+        echo "deepdive $cmd  #"
+    done
+done | column -t >"$tmp"/commands
+paste "$tmp"/commands "$tmp"/desc
