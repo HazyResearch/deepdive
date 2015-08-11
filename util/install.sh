@@ -34,19 +34,22 @@ install__deepdive_build_deps() { false; }
 install__deepdive_runtime_deps() { false; }
 # fetches DeepDive source tree
 install__deepdive_git_repo() {
-    if $running_from_git; then
-        cd "$INSTALLER_HOME_DIR"/../..
-    else
+    $running_from_git ||
         git clone --recursive --branch "$INSTALLER_BRANCH" https://github.com/HazyResearch/deepdive.git
-        cd deepdive
-    fi
 }
 # installs DeepDive from source by going through the full build
 install_deepdive_from_source() {
     # prepare fetching and building source
     run_installer_for _deepdive_build_deps
-    run_installer_for _deepdive_git_repo
     # install DeepDive from source
+    if $running_from_git; then
+        cd "$INSTALLER_HOME_DIR"/../..
+        echo "# Already have DeepDive source at $PWD"
+    else
+        run_installer_for _deepdive_git_repo
+        cd deepdive
+        echo "# DeepDive source cloned at $PWD"
+    fi
     make install PREFIX="$PREFIX"
     # install runtime dependencies
     run_installer_for _deepdive_runtime_deps
@@ -134,28 +137,42 @@ list_installer_names() {
     esac
 }
 run_installer_for() {
+    (
+    # XXX running this in a context where set -e (errexit) is ignored, e.g., in
+    # if, while, ||, or && command lists (except the last one) is problematic
+    # since the install_* functions will continue running even upon errors.
+    set +e; (set -e; false; true); local errexit_effective=$?; set -e
+    if [[ $errexit_effective -eq 0 ]]; then
+        read line file <<<$(caller)
+        error "INSTALLER INTERNAL ERROR: $file:$line: "'run_installer_for cannot be run in a context where `set -e` is ignored.'
+        return 1
+    fi
+    # run installer by name
     local name=$1
-    for name; do
-        local install_func="install_$name"
-        if type "$install_func" &>/dev/null; then
-            echo "## Starting installation for $name"
-            if ( set +u; "$install_func" ); then
-                echo "## Finished installation for $name"
-            else
-                error "## Failed installation for $name"
-            fi
+    local install_func="install_$name"
+    if type "$install_func" &>/dev/null; then
+        echo "## Starting installation for $name"
+        # isolate install function in a subshell
+        set +e; (set -e +u; "$install_func"); local c=$?; set -e
+        if [[ $c -eq 0 ]]; then
+            echo "## Finished installation for $name"
         else
-            error "No such installer: $name"
+            error "## Failed installation for $name" || true
+            return $c
         fi
-    done
+    else
+        error "No such installer: $name"
+    fi
+    )
 }
 if [[ $# -eq 0 ]]; then
     if [[ -t 0 ]]; then
         # ask user what to install if input is a tty
         PS3="# Select what to install (enter a number or q to quit)? "
+        set +e  # dont abort the select loop on installer error
         select option in $(list_installer_names); do
             [[ -n "$option" ]] || break
-            run_installer_for "$option" || continue
+            run_installer_for "$option"
         done
     else
         # otherwise, show options
@@ -166,5 +183,7 @@ if [[ $# -eq 0 ]]; then
     fi
 else
     # what to install specified via command line arguments
-    run_installer_for "$@"
+    for name; do
+        run_installer_for "$name"
+    done
 fi
