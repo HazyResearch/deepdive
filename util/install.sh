@@ -17,6 +17,14 @@ INSTALLER_HOME_DIR=$(dirname "$0")/install
 running_from_git=true; [[ -e "$INSTALLER_HOME_DIR"/../../.git ]] || running_from_git=false
 has() { type "$@"; } &>/dev/null
 error() { echo "$@"; false; } >&2
+INSTALLER_TEMP_DIR=
+init_INSTALLER_TEMP_DIR() {
+    # makes sure INSTALLER_TEMP_DIR points to a temporary directory
+    if ! [[ -d "$INSTALLER_TEMP_DIR" ]]; then
+        INSTALLER_TEMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}"/deepdive-installer.XXXXXXX)
+        trap "rm -rf $INSTALLER_TEMP_DIR" EXIT
+    fi
+}
 
 # common installers ###########################################################
 # installs DeepDive's build dependencies
@@ -101,7 +109,14 @@ source_script() {
         source "$INSTALLER_HOME_DIR/$script"
     else
         # may be this script is run as a one-liner, get script from GitHub
-        source <(set -x; curl -fsSL "$INSTALLER_HOME_URL/$script") "$@"
+        #source <(set -x; curl -fsSL "$INSTALLER_HOME_URL/$script") "$@"
+        # XXX using a workaround since source with process substitution has problem in bash 3 (OS X default)
+        # See: https://bugzilla.altlinux.org/show_bug.cgi?id=7475
+        init_INSTALLER_TEMP_DIR
+        local script_path="$INSTALLER_TEMP_DIR/$script"
+        mkdir -p "$(dirname "$script_path")"
+        (set -x; curl -fsSL "$INSTALLER_HOME_URL/$script" >"$script_path")
+        source "$script_path" "$@"
     fi
 }
 source_script install."$os".sh
