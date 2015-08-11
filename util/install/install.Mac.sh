@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 # DeepDive installers for Mac OS X
 
+needs_brew() {
+    has brew || error "This requires Homebrew (http://brew.sh)"
+}
+
 install__deepdive_build_deps() {
-    has brew || error "Cannot install dependencies without Homebrew (http://brew.sh)"
+    needs_brew
     set -x
     javac -version
     xcode-select --install || true
@@ -11,13 +15,14 @@ install__deepdive_build_deps() {
 }
 
 install__deepdive_runtime_deps() {
-    has brew || error "Cannot install dependencies without Homebrew (http://brew.sh)"
+    needs_brew
     set -x
     java -version
     has gnuplot || brew install gnuplot
 }
 
 install_postgres() {
+    needs_brew
     if has psql &&
         brew list postgres | grep -q plpython  # XXX necessary for "CREATE LANGUAGE plpythonu"
     then

@@ -16,7 +16,17 @@ INSTALLER_HOME_DIR=$(dirname "$0")/install
 
 running_from_git=true; [[ -e "$INSTALLER_HOME_DIR"/../../.git ]] || running_from_git=false
 has() { type "$@"; } &>/dev/null
-error() { echo "$@"; false; } >&2
+error() {
+    if [ -t 1 ]; then
+        # on tty output, color errors in red
+        echo -ne '\033[31m'
+        echo "$@"
+        echo -ne '\033[0m'
+    else
+        echo "$@"
+    fi
+    false
+} >&2
 INSTALLER_TEMP_DIR=
 init_INSTALLER_TEMP_DIR() {
     # makes sure INSTALLER_TEMP_DIR points to a temporary directory
@@ -44,7 +54,7 @@ install_deepdive_from_source() {
     # install DeepDive from source
     if $running_from_git; then
         cd "$INSTALLER_HOME_DIR"/../..
-        echo "# Already have DeepDive source at $PWD"
+        echo "# DeepDive source already at $PWD"
     else
         run_installer_for _deepdive_git_repo
         cd deepdive
@@ -168,7 +178,7 @@ run_installer_for() {
 if [[ $# -eq 0 ]]; then
     if [[ -t 0 ]]; then
         # ask user what to install if input is a tty
-        PS3="# Select what to install (enter a number or q to quit)? "
+        PS3="# Select what to install (enter for all options, q to quit, or a number)? "
         set +e  # dont abort the select loop on installer error
         select option in $(list_installer_names); do
             [[ -n "$option" ]] || break
