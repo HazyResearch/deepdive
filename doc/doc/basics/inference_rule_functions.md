@@ -21,6 +21,9 @@ head. The variables in the body (`B,C,D`) are combined using a conjunction
 (logical AND ([truth
 table](http://en.wikipedia.org/wiki/Truth_table#Logical_implication))).
 
+Another version of imply function is *Imply3*, which returns three values:
+when the body and the head are true, it returns 1; when the body and the head are false, it returns 0; when the body is true but the head is false, it returns -1.
+
 ### Or function
 
     # A or B or C
