@@ -454,8 +454,13 @@ object FactorFunctionParser extends RegexParsers with Logging {
   def factorVariable = ("!" ?) ~ rep1sep(relationOrField, ".") ~ (arrayDefinition ?) ~
     (("=" ~> equalPredicate) ?) ^^ {
     case (isNegated ~ varList ~ isArray ~ predicate) =>
-      FactorFunctionVariable(varList.take(varList.size - 1).mkString("."), varList.last,
-        isArray.isDefined, isNegated.isDefined, readLong(predicate))
+      FactorFunctionVariable(
+        relation = varList.take(varList.size - 1).mkString("."),
+        field = varList.last,
+        isArray = isArray.isDefined,
+        isNegated = isNegated.isDefined,
+        predicate = readLong(predicate)
+      )
   }
 
   def readLong(predicate: Option[String]): Option[Long] = {

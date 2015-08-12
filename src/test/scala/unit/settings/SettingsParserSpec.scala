@@ -417,13 +417,7 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester with Logging {
           FactorDesc(
             name = "factor1",
             inputQuery = "SELECT a.*, b.* FROM a INNER JOIN b ON a.document_id = b.id",
-            func = ImplyFactorFunction(
-              variables = Seq(
-                FactorFunctionVariable(
-                  relation = "a", field = "is_present", isArray = false
-                )
-              )
-            ),
+            func = ImplyFactorFunction(Seq(FactorFunctionVariable("a", "is_present"))),
             weight = UnknownFactorWeight(Nil),
             weightPrefix = "factor1"
           )
