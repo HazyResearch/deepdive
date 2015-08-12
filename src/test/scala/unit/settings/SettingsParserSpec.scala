@@ -21,7 +21,8 @@ class SettingsParserSpec extends FunSpec with PrivateMethodTester with Logging {
       val loadSchemaSettings = PrivateMethod[Settings]('loadSchemaSettings)
       val result = SettingsParser invokePrivate loadSchemaSettings(Settings(config = config))
       assert(result.schemaSettings == SchemaSettings(
-        variables = Map("relation1.var1" -> BooleanType,
+        variables = Map(
+          "relation1.var1" -> BooleanType,
           "relation1.var2" -> BooleanType,
           "relation2.var3" -> MultinomialType(2)
         )
