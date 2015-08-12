@@ -149,11 +149,14 @@ class DataLoader extends JdbcDataStore with Logging {
       cmdfile.delete()
       loadyaml.delete()
     } else {
+      // Generate file dir path and name path pattern
+      val fileDirPath = new File(filepath).getParentFile()
+      val fileNamePattern = new File(filepath).getName()
       // Generate SQL query prefixes
       val dbtype = Helpers.getDbType(dbSettings)
       val cmdfile = File.createTempFile(s"${tablename}.copy", ".sh")
       val writer = new PrintWriter(cmdfile)
-      val writebackPrefix = s"find ${filepath} -print0 | xargs -0 -P 1 -L 1 bash -c "
+      val writebackPrefix = s"find ${fileDirPath} -name '${fileNamePattern}' -print0 | xargs -0 -P 1 -L 1 bash -c "
       val delimiterStr = if (delimiter == "\\t") "" else "DELIMITER '\"'\"'" + delimiter + "'\"'\"'" 
       val writebackCmd = dbtype match {
         case Psql => writebackPrefix + s"'psql " + Helpers.getOptionString(dbSettings) + 
