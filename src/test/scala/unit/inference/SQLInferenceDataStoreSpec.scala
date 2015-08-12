@@ -511,10 +511,10 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         }
         dataStoreHelper.bulkInsert("r1", data.iterator)
 
-        val dbSettingsMat = DbSettings(dbSettings.driver, dbSettings.url, dbSettings.user,
-          dbSettings.password, dbSettings.dbname, dbSettings.host, dbSettings.port,
-          dbSettings.gphost, dbSettings.gppath, dbSettings.gpport, dbSettings.gpload,
-          IncrementalMode.MATERIALIZATION, null)
+        val dbSettingsMat = dbSettings.copy(
+          incrementalMode = IncrementalMode.MATERIALIZATION,
+          keyMap = null
+        )
 
         val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
 
@@ -623,10 +623,10 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         }
         dataStoreHelper.bulkInsert("r1", data.iterator)
 
-        val dbSettingsMat = DbSettings(dbSettings.driver, dbSettings.url, dbSettings.user,
-          dbSettings.password, dbSettings.dbname, dbSettings.host, dbSettings.port,
-          dbSettings.gphost, dbSettings.gppath, dbSettings.gpport, dbSettings.gpload,
-          IncrementalMode.MATERIALIZATION, null)
+        val dbSettingsMat = dbSettings.copy(
+          incrementalMode = IncrementalMode.MATERIALIZATION,
+          keyMap = null
+        )
 
         val schema = Map[String, VariableDataType]("r1.class" -> MultinomialType(3))
 
@@ -686,10 +686,10 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         dataStoreHelper.bulkInsert("dd_delta_r1", deltaData.iterator)
         val keyMap = Map[String, List[String]]("dd_delta_r1" -> List("weight"))
 
-        val dbSettingsInc = DbSettings(dbSettings.driver, dbSettings.url, dbSettings.user,
-          dbSettings.password, dbSettings.dbname, dbSettings.host, dbSettings.port,
-          dbSettings.gphost, dbSettings.gppath, dbSettings.gpport, dbSettings.gpload,
-          IncrementalMode.INCREMENTAL, keyMap)
+        val dbSettingsInc = dbSettings.copy(
+          incrementalMode = IncrementalMode.INCREMENTAL,
+          keyMap = keyMap
+        )
 
         // Build the factor description
         val factorDescInc = FactorDesc(

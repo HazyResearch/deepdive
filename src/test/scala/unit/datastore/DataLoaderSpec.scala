@@ -27,9 +27,7 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with Logging {
   val dbSettings = TestHelper.getDbSettings
 
   val du = new org.deepdive.datastore.DataLoader
-  val dbSettingsWithoutGPLOAD = DbSettings(dbSettings.driver, dbSettings.url, dbSettings.user,
-    dbSettings.password, dbSettings.dbname, dbSettings.host, dbSettings.port, dbSettings.gphost,
-    dbSettings.gpport, dbSettings.gppath, false, dbSettings.incrementalMode)
+  val dbSettingsWithoutGPLOAD = dbSettings.copy(gpload = false)
   describe("Unloading data using DataLoader") {
     it("should work with COPY basic types") {
       val outputFile = File.createTempFile("test_unloader", "")
