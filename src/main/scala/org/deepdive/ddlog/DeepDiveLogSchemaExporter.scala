@@ -22,6 +22,7 @@ object DeepDiveLogSchemaExporter extends DeepDiveLogHandler {
 //              "name" -> name, // XXX redundant but potentially useful
               "type" -> decl.a.types(i)
           )
+          columnSchema += "index" -> i
           // column annotations are omitted when not present
           val annos = decl.a.annotations(i)
           if (annos nonEmpty)
