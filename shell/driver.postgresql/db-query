@@ -17,7 +17,7 @@ case $format in
             1)
                 # XXX HEADER is only available for PostgreSQL's csv format
                 # hence the following workaround
-                db-execute "COPY ($sql LIMIT 0) TO STDOUT csv HEADER" |
+                db-execute "COPY (SELECT * FROM ($sql) result LIMIT 0) TO STDOUT csv HEADER" |
                 python -c 'import sys, csv; print "\t".join([c.replace("\t", "\\t") for c in csv.reader([sys.stdin.readline()], delimiter=",", quotechar="\"").next()])'
                 ;;
             *) error "$header: unrecognized value for HEADER"
@@ -43,7 +43,7 @@ case $format in
             # first, we need to figure out the what types are output by user's SQL
             # XXX This does not handle multidimensional (nested) arrays!
             namesAndTypes=$(db-execute "
-                CREATE TEMP TABLE __to_json_temp AS ($sql) LIMIT 0;
+                CREATE TEMP TABLE __to_json_temp AS SELECT * FROM ($sql) result LIMIT 0;
                 COPY (
                     SELECT attname || ':' || format_type(atttypid, atttypmod) AS nameAndType
                       FROM pg_attribute
