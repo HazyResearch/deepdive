@@ -46,16 +46,44 @@ class ExtractionManagerSpec(_system: ActorSystem) extends TestKit(_system)
 
     it("should execute one task") {
       val manager = TestActorRef[MemoryExtractionManager](Props(classOf[MemoryExtractionManager], 1, dbSettings))
-      val someExtractor = Extractor("e1", "json_extractor", "r1", "query", null, "udf", 3, 1000, 1000, Set(),
-        None, None, "query", None)
+      val someExtractor = Extractor(
+        name = "e1",
+        style = "json_extractor",
+        outputRelation = "r1",
+        inputQuery = "query",
+        udfDir = null,
+        udf = "udf",
+        parallelism = 3,
+        inputBatchSize = 1000,
+        outputBatchSize = 1000,
+        dependencies = Set(),
+        beforeScript = None,
+        afterScript = None,
+        sqlQuery = "query",
+        cmd = None
+      )
       manager ! ExtractionTask(someExtractor)
       expectMsg("Done!")
     }
 
     it("should execute tasks when parallelism=1") {
       val manager = TestActorRef[MemoryExtractionManager](Props(classOf[MemoryExtractionManager], 1, dbSettings))
-      val someExtractor = Extractor("e1", "json_extractor", "r1", "query", null, "udf", 3, 1000, 1000, Set(),
-         None, None, "query", None)
+      val someExtractor = Extractor(
+        name = "e1",
+        style = "json_extractor",
+        outputRelation = "r1",
+        inputQuery = "query",
+        udfDir = null,
+        udf = "udf",
+        parallelism = 3,
+        inputBatchSize = 1000,
+        outputBatchSize = 1000,
+        dependencies = Set(),
+        beforeScript = None,
+        afterScript = None,
+        sqlQuery = "query",
+        cmd = None
+      )
       manager ! ExtractionTask(someExtractor)
       manager ! ExtractionTask(someExtractor.copy(name="e2"))
       manager ! ExtractionTask(someExtractor.copy(name="e3"))
@@ -66,8 +94,22 @@ class ExtractionManagerSpec(_system: ActorSystem) extends TestKit(_system)
 
     it("should execute tasks when paralleism > 1") {
       val manager = TestActorRef[MemoryExtractionManager](Props(classOf[MemoryExtractionManager], 4, dbSettings))
-      val someExtractor = Extractor("e1", "json_extractor", "r1", "query", null, "udf", 3, 1000, 1000, Set(),
-         None, None, "query", None)
+      val someExtractor = Extractor(
+        name = "e1",
+        style = "json_extractor",
+        outputRelation = "r1",
+        inputQuery = "query",
+        udfDir = null,
+        udf = "udf",
+        parallelism = 3,
+        inputBatchSize = 1000,
+        outputBatchSize = 1000,
+        dependencies = Set(),
+        beforeScript = None,
+        afterScript = None,
+        sqlQuery = "query",
+        cmd = None
+      )
       manager ! ExtractionTask(someExtractor)
       manager ! ExtractionTask(someExtractor.copy(name="e2"))
       manager ! ExtractionTask(someExtractor.copy(name="e3"))

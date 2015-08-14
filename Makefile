@@ -90,10 +90,9 @@ include scala.mk  # for scala-build, scala-test-build, scala-assembly-jar, scala
 
 ### test recipes #############################################################
 
-test/%/scalatests.bats: test/postgresql/update-scalatests.bats.sh $(SCALA_TEST_SOURCES)
+test/*/scalatests/%.bats: test/postgresql/update-scalatests.bats.sh $(SCALA_TEST_SOURCES)
 	# Regenerating .bats for Scala tests
-	$< >$@
-	chmod +x $@
+	$<
 
 include test/bats.mk
 

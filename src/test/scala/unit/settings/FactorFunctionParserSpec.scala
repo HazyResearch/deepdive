@@ -12,7 +12,7 @@ class FactorFunctionParserSpec extends FunSpec {
       val expr = "Imply(words.is_present)"
       val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
       assert(result.successful)
-      assert(result.get == ImplyFactorFunction(List(FactorFunctionVariable("words", "is_present", false, false)))
+      assert(result.get == ImplyFactorFunction(List(FactorFunctionVariable("words", "is_present")))
       )
     }
 
@@ -23,9 +23,9 @@ class FactorFunctionParserSpec extends FunSpec {
       assert(result.successful)
       assert(result.get == ImplyFactorFunction(
         List(
-          FactorFunctionVariable("relation2", "predicate", false),
-          FactorFunctionVariable("relation3", "predicate", false),
-          FactorFunctionVariable("words", "is_true", false))
+          FactorFunctionVariable("relation2", "predicate"),
+          FactorFunctionVariable("relation3", "predicate"),
+          FactorFunctionVariable("words", "is_true"))
       ))
     }
 
@@ -43,7 +43,7 @@ class FactorFunctionParserSpec extends FunSpec {
       val expr = "And(a.b)"
       val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
       assert(result.successful)
-      assert(result.get === AndFactorFunction(List(FactorFunctionVariable("a", "b", false, false))))
+      assert(result.get === AndFactorFunction(List(FactorFunctionVariable("a", "b"))))
     }
 
   }
@@ -55,8 +55,8 @@ class FactorFunctionParserSpec extends FunSpec {
       val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
       assert(result.successful)
       assert(result.get === OrFactorFunction(List(
-        FactorFunctionVariable("a", "b", false, false),
-        FactorFunctionVariable("c", "d", false, false))))
+        FactorFunctionVariable("a", "b"),
+        FactorFunctionVariable("c", "d"))))
     }
 
   }
@@ -68,8 +68,8 @@ class FactorFunctionParserSpec extends FunSpec {
       val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
       assert(result.successful)
       assert(result.get === XorFactorFunction(List(
-        FactorFunctionVariable("a", "b", false, false),
-        FactorFunctionVariable("c", "d", false, false))))
+        FactorFunctionVariable("a", "b"),
+        FactorFunctionVariable("c", "d"))))
     }
 
   }
@@ -81,8 +81,8 @@ class FactorFunctionParserSpec extends FunSpec {
       val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
       assert(result.successful)
       assert(result.get === EqualFactorFunction(List(
-        FactorFunctionVariable("a", "b", false, false),
-        FactorFunctionVariable("c", "d", false, false))))
+        FactorFunctionVariable("a", "b"),
+        FactorFunctionVariable("c", "d"))))
     }
 
     it("should fail for more than two variables") {
@@ -105,8 +105,7 @@ class FactorFunctionParserSpec extends FunSpec {
       val expr = "IsTrue(a.b)"
       val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
       assert(result.successful)
-      assert(result.get === IsTrueFactorFunction(List(
-        FactorFunctionVariable("a", "b", false, false))))
+      assert(result.get === IsTrueFactorFunction(List(FactorFunctionVariable("a", "b"))))
     }
 
     it("should fail for more than one variable") {
@@ -123,7 +122,7 @@ class FactorFunctionParserSpec extends FunSpec {
       val expr = "Linear(words.is_true)"
       val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
       assert(result.successful)
-      assert(result.get == LinearFactorFunction(List(FactorFunctionVariable("words", "is_true", false, false)))
+      assert(result.get == LinearFactorFunction(List(FactorFunctionVariable("words", "is_true")))
       )
     }
 
@@ -134,8 +133,8 @@ class FactorFunctionParserSpec extends FunSpec {
       assert(result.successful)
       assert(result.get == LinearFactorFunction(
         List(
-          FactorFunctionVariable("relation1", "is_true", false),
-          FactorFunctionVariable("relation2", "is_true", false)
+          FactorFunctionVariable("relation1", "is_true"),
+          FactorFunctionVariable("relation2", "is_true")
       )))
     }
 
@@ -152,7 +151,7 @@ class FactorFunctionParserSpec extends FunSpec {
       val expr = "Ratio(words.is_true)"
       val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
       assert(result.successful)
-      assert(result.get == RatioFactorFunction(List(FactorFunctionVariable("words", "is_true", false, false)))
+      assert(result.get == RatioFactorFunction(List(FactorFunctionVariable("words", "is_true")))
       )
     }
 
@@ -163,8 +162,8 @@ class FactorFunctionParserSpec extends FunSpec {
       assert(result.successful)
       assert(result.get == RatioFactorFunction(
         List(
-          FactorFunctionVariable("relation1", "is_true", false),
-          FactorFunctionVariable("relation2", "is_true", false)
+          FactorFunctionVariable("relation1", "is_true"),
+          FactorFunctionVariable("relation2", "is_true")
       )))
     }
 
@@ -181,7 +180,7 @@ class FactorFunctionParserSpec extends FunSpec {
       val expr = "Logical(words.is_true)"
       val result = FactorFunctionParser.parse(FactorFunctionParser.factorFunc, expr)
       assert(result.successful)
-      assert(result.get == LogicalFactorFunction(List(FactorFunctionVariable("words", "is_true", false, false)))
+      assert(result.get == LogicalFactorFunction(List(FactorFunctionVariable("words", "is_true")))
       )
     }
 
@@ -192,8 +191,8 @@ class FactorFunctionParserSpec extends FunSpec {
       assert(result.successful)
       assert(result.get == LogicalFactorFunction(
         List(
-          FactorFunctionVariable("relation1", "is_true", false),
-          FactorFunctionVariable("relation2", "is_true", false)
+          FactorFunctionVariable("relation1", "is_true"),
+          FactorFunctionVariable("relation2", "is_true")
       )))
     }
 
@@ -209,21 +208,21 @@ class FactorFunctionParserSpec extends FunSpec {
       val expr = "relation2.r2.predicate"
       val result = FactorFunctionParser.parse(FactorFunctionParser.factorVariable, expr)
       assert(result.successful)
-      assert(result.get == FactorFunctionVariable("relation2.r2", "predicate", false))
+      assert(result.get == FactorFunctionVariable("relation2.r2", "predicate"))
     }
 
     it("should parse array factor functions") {
       val expr = "words.char[]"
       val result = FactorFunctionParser.parse(FactorFunctionParser.factorVariable, expr)
       assert(result.successful)
-      assert(result.get == FactorFunctionVariable("words", "char", true))
+      assert(result.get == FactorFunctionVariable("words", "char", isArray = true))
     }
 
     it("should parse expression with negated variables") {
       val expr = "!words.is_present"
       val result = FactorFunctionParser.parse(FactorFunctionParser.factorVariable, expr)
       assert(result.successful)
-      assert(result.get === FactorFunctionVariable("words", "is_present", false, true))
+      assert(result.get === FactorFunctionVariable("words", "is_present", isNegated = true))
     }
   }
 
