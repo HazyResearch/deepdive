@@ -128,9 +128,8 @@ class DeepDiveLogParser extends JavaTokenParsers {
     }
   def variableName = ident
   def functionName = ident
-  def semanticType = ident
-  def functionModeType = ident
-  def inferenceModeType = ident
+  def functionModeType = stringLiteralAsString
+  def inferenceModeType = stringLiteralAsString
   def annotationName = ident
   def annotationArgumentName = ident
 
@@ -329,10 +328,10 @@ class DeepDiveLogParser extends JavaTokenParsers {
   ( implyHeadAtoms ^^ {
       InferenceRuleHead(FactorFunction.Imply, _)
     }
-  | "@semantics(linear)" ~> implyHeadAtoms ^^ {
+  | ("@semantics" ~ "(" ~ "\"linear\"" ~ ")") ~> implyHeadAtoms ^^ {
       InferenceRuleHead(FactorFunction.Linear, _)
     }
-  | "@semantics(ratio)" ~> implyHeadAtoms ^^ {
+  | ("@semantics" ~ "(" ~ "\"ratio\"" ~ ")") ~> implyHeadAtoms ^^ {
       InferenceRuleHead(FactorFunction.Ratio, _)
     }
   | headAtom ~ "=" ~ rep1sep(headAtom, "=") ^^ { case (a ~ _ ~ b) =>

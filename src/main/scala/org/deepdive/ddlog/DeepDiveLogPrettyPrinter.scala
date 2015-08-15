@@ -60,7 +60,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
         "\"" + StringEscapeUtils.escapeJava(impl.command) + "\"" + styleStr
       }
     }
-    val modeStr = stmt.mode map (s => s"@mode(${s})\n") getOrElse ""
+    val modeStr = stmt.mode map (s => s"""@mode("${s}")\n""") getOrElse ""
     s"""${modeStr}function ${stmt.functionName}
        |    over ${inputType}
        | returns ${outputType}
@@ -154,15 +154,15 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   }
 
   def print(head: InferenceRuleHead) : String = {
+    def printImplyHead = s"""${printHead(head.terms.dropRight(1), ", ")} => ${print(head.terms.last)}"""
     def printHead(a: List[HeadAtom], delim: String) : String = a map print mkString(delim)
     head.function match {
-      case FactorFunction.Imply  =>
-        s"""${printHead(head.terms.dropRight(1), ", ")} => ${print(head.terms.last)}"""
+      case FactorFunction.Imply  => printImplyHead
+      case FactorFunction.Linear => s"""@semantics("linear")\n${printImplyHead}"""
+      case FactorFunction.Ratio  => s"""@semantics("ratio")\n${printImplyHead}"""
       case FactorFunction.And    => printHead(head.terms, " ^ ")
       case FactorFunction.Or     => printHead(head.terms, " v ")
       case FactorFunction.Equal  => printHead(head.terms, " = ")
-      case FactorFunction.Linear => s"Linear(${printHead(head.terms, ", ")})"
-      case FactorFunction.Ratio  => s"Ratio(${printHead(head.terms, ", ")})"
       case FactorFunction.IsTrue => printHead(head.terms, "")
     }
   }

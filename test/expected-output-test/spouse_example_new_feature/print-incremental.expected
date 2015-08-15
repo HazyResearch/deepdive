@@ -118,7 +118,7 @@ dd_new_has_spouse(relation_id) :-
 dd_delta_people_mentions += ext_people(s, words, ner_tags) :-
     dd_delta_sentences(a, b, words, c, d, e, ner_tags, f, s).
 
-@mode(inc)
+@mode("inc")
 function ext_people
     over like dd_delta_ext_people_input
  returns like dd_delta_people_mentions

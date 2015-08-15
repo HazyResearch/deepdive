@@ -38,7 +38,7 @@ people_mentions +=
   ext_people(s, words, ner_tags) :-
   sentences(a, b, words, c, d, e, ner_tags, f, s).
 
-@mode(inc)
+@mode("inc")
 function ext_people over like ext_people_input
                  returns like people_mentions
   implementation "udf/ext_people.py" handles tsv lines.
