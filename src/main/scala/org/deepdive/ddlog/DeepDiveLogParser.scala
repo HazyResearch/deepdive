@@ -328,11 +328,11 @@ class DeepDiveLogParser extends JavaTokenParsers {
   ( implyHeadAtoms ^^ {
       InferenceRuleHead(FactorFunction.Imply, _)
     }
-  | ("@semantics" ~ "(" ~ "\"linear\"" ~ ")") ~> implyHeadAtoms ^^ {
-      InferenceRuleHead(FactorFunction.Linear, _)
-    }
-  | ("@semantics" ~ "(" ~ "\"ratio\"" ~ ")") ~> implyHeadAtoms ^^ {
-      InferenceRuleHead(FactorFunction.Ratio, _)
+  | ("@semantics" ~> "(" ~> stringLiteralAsString <~ ")" ^? ({
+      case "linear" => FactorFunction.Linear
+      case "ratio"  => FactorFunction.Ratio
+    }, { "Unrecognized semantics: " + _ })) ~ implyHeadAtoms ^^ {
+      case s ~ h => InferenceRuleHead(s, h)
     }
   | headAtom ~ "=" ~ rep1sep(headAtom, "=") ^^ { case (a ~ _ ~ b) =>
       InferenceRuleHead(FactorFunction.Equal, a +: b)

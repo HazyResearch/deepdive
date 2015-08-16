@@ -1,0 +1,4 @@
+[error] test/parse-error-test/annotation_semantics/input.ddl[3.4] failure: string matching regex `\p{javaJavaIdentifierStart}\p{javaJavaIdentifierPart}*' expected but `)' found
+
+Q(x) => P(x) :- R(x).
+   ^
