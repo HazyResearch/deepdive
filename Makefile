@@ -3,6 +3,9 @@
 
 ### Build & Clean #############################################################
 
+.PHONY: build
+build: scala-build
+
 # build a standalone jar
 JAR = ddlog.jar
 .PHONY: package
