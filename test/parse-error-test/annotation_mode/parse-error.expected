@@ -1,0 +1,5 @@
+[error] test/parse-error-test/annotation_mode/input.ddl[1.17] error: unknown: unrecognized mode
+
+@mode("unknown")
+
+                ^

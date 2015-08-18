@@ -1,0 +1,5 @@
+[error] test/parse-error-test/annotation_semantics/input.ddl[2.22] error: unknown: unrecognized semantics
+
+@semantics("unknown")
+
+                     ^
