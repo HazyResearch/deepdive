@@ -114,7 +114,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def stringLiteralAsString = stringLiteral ^^ {
     s => StringEscapeUtils.unescapeJava(
       s.stripPrefix("\"").stripSuffix("\""))
-  }
+  } withFailureMessage "a string literal is expected"
 
   // Single-line comments beginning with # or // are supported by treating them as whiteSpace
   // C/Java/Scala style multi-line comments cannot be easily supported with RegexParsers unless we introduce a dedicated lexer.
@@ -276,7 +276,9 @@ class DeepDiveLogParser extends JavaTokenParsers {
       }
     )
 
-  def functionMode = "@mode" ~> "(" ~> functionModeType <~ ")"
+  def functionMode = "@mode" ~> commit("(" ~> functionModeType <~ ")" ^? ({
+    case "inc" => "inc"
+  }, (s) => s"${s}: unrecognized mode"))
 
   def functionDeclaration : Parser[FunctionDeclaration] =
     ( opt(functionMode) ~ "function" ~ functionName ~ "over" ~ relationType
@@ -313,7 +315,9 @@ class DeepDiveLogParser extends JavaTokenParsers {
   }
 
   def factorWeight = "@weight" ~> "(" ~> rep1sep(expr, ",") <~ ")" ^^ { FactorWeight(_) }
-  def inferenceMode = "@mode" ~> "(" ~> inferenceModeType <~ ")"
+  def inferenceMode = "@mode" ~> commit("(" ~> inferenceModeType <~ ")" ^? ({
+    case "inc" => "inc"
+  }, (s) => s"${s}: unrecognized mode"))
 
   // factor functions
   def headAtom = relationName ~ ("(" ~> rep1sep(expr, ",") <~ ")") ^^ {
@@ -328,11 +332,11 @@ class DeepDiveLogParser extends JavaTokenParsers {
   ( implyHeadAtoms ^^ {
       InferenceRuleHead(FactorFunction.Imply, _)
     }
-  | ("@semantics" ~> "(" ~> stringLiteralAsString <~ ")" ^? ({
+  | "@semantics" ~> commit("(" ~> stringLiteralAsString <~ ")" ^? ({
       case "linear" => FactorFunction.Linear
       case "ratio"  => FactorFunction.Ratio
-    }, { "Unrecognized semantics: " + _ })) ~ implyHeadAtoms ^^ {
-      case s ~ h => InferenceRuleHead(s, h)
+    }, (s) => s"${s}: unrecognized semantics")) ~ implyHeadAtoms ^^ {
+      case (s ~ h) => InferenceRuleHead(s, h)
     }
   | headAtom ~ "=" ~ rep1sep(headAtom, "=") ^^ { case (a ~ _ ~ b) =>
       InferenceRuleHead(FactorFunction.Equal, a +: b)
@@ -362,8 +366,8 @@ class DeepDiveLogParser extends JavaTokenParsers {
   }
 
   // rules or schema elements in arbitrary order
-  def statement : Parser[Statement] = ( schemaDeclaration
-                                      | inferenceRule
+  def statement : Parser[Statement] = ( inferenceRule
+                                      | schemaDeclaration
                                       | extractionRule
                                       | functionDeclaration
                                       | functionCallRule

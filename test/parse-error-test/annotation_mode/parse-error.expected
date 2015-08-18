@@ -1,4 +1,5 @@
-[error] test/parse-error-test/annotation_mode/input.ddl[3.4] failure: string matching regex `\p{javaJavaIdentifierStart}\p{javaJavaIdentifierPart}*' expected but `)' found
+[error] test/parse-error-test/annotation_mode/input.ddl[1.17] error: unknown: unrecognized mode
 
-Q(x) :- R(x).
-   ^
+@mode("unknown")
+
+                ^
