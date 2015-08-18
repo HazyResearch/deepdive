@@ -64,6 +64,14 @@ import scala.collection.mutable.ListBuffer
 import org.deepdive.ddlog.DeepDiveLog.Mode._
 import scala.language.postfixOps
 
+object AliasStyle extends Enumeration {
+  type AliasStyle = Value
+  // TableStyle: tableName.R{tableIndex}.columnName
+  // ViewStyle: column_{columnIndex}
+  val ViewAlias, TableAlias, NoAlias = Value
+}
+import AliasStyle._
+
 // This handles the schema statements.
 // It can tell you if a predicate is a "query" predicate or a "ground prediate"
 // and it resolves Variables their correct and true name in the schema, i.e. R(x,y) then x could be Attribute1 declared.
@@ -144,7 +152,8 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
       if(schema contains (relName,i)) {
         schema(relName,i)
       } else {
-        return v // I do not like this default, as it allows some errors. TOOD: MAKE MORE PRECISE!
+        // for views, columns names are in the form of "column_index"
+        return if (DeepDiveLogCompiler.isForIncremental(relName)) v else s"column_${i}"
       }
     }
   }
@@ -273,15 +282,19 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
   }
 
   // compile alias
-  def compileAlias(e: Expr) = e match {
-    case VarExpr(v) => {
-      val index = getBodyIndex(v)
-      val variable = getVar(v)
-      val name  = ss.resolveName(variable)
-      val relation = variable.relName
-      s"${relation}.R${index}.${name}"
+  def compileAlias(e: Expr, aliasStyle: AliasStyle) = aliasStyle match {
+    case NoAlias => ""
+    case TableAlias => e match {
+      case VarExpr(v) => {
+        val index = getBodyIndex(v)
+        val variable = getVar(v)
+        val name  = ss.resolveName(variable)
+        val relation = variable.relName
+        s""" AS "${relation}.R${index}.${name}"""" //"
+      }
+      case _ => s" AS column_${cq.headTerms indexOf e}"
     }
-    case _ => s"column_${cq.headTerms indexOf e}"
+    case ViewAlias => s" AS column_${cq.headTerms indexOf e}"
   }
 
   // resolve an expression
@@ -329,9 +342,9 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
   }
 
   // generate SQL SELECT cluase
-  def generateSQLHead(useAlias: Boolean) = {
+  def generateSQLHead(aliasStyle: AliasStyle) = {
     val head = cq.headTerms map { expr =>
-      compileExpr(expr) + (if (useAlias) s""" AS "${compileAlias(expr)}" """ else "")
+      compileExpr(expr) + compileAlias(expr, aliasStyle)
     } mkString(", ")
     val distinctStr = if (cq.isDistinct) "DISTINCT " else ""
     s"${distinctStr}${head}"
@@ -440,8 +453,8 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
         ${ optionalClause("WHERE", generateWhereClause(body, "")) }${groupbyStr}${limitStr}"""
   }
 
-  def generateSQL(useAlias: Boolean) = {
-    val head = generateSQLHead(useAlias)
+  def generateSQL(aliasStyle: AliasStyle) = {
+    val head = generateSQLHead(aliasStyle)
     val body = cq.bodies map generateSQLBody
     body map { b => s"SELECT ${head}\n${b}" } mkString("\nUNION ALL\n")
   }
@@ -512,7 +525,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
 
         if (stmt.supervision != None) {
           if (stmt.q.bodies.length > 1) ss.error(s"Scoping rule does not allow disjunction.\n")
-          val headStr = qc.generateSQLHead(false)
+          val headStr = qc.generateSQLHead(NoAlias)
           val labelCol = qc.compileVariable(stmt.supervision.get)
           inputQueries += s"""SELECT DISTINCT ${ headStr }, 0 AS id, ${labelCol} AS label
           ${ qc.generateSQLBody(cqBody) }
@@ -520,18 +533,21 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
         } else if ((ss.hasSchemaDeclared(stmt.headName)) &&
           (ss.schemaDeclarationGroupByHead(stmt.headName)(0).isQuery) &&
           isForIncremental(stmt.headName)) {
-          val headStr = qc.generateSQLHead(false)
+          val headStr = qc.generateSQLHead(NoAlias)
           inputQueries += s"""SELECT DISTINCT ${ headStr }, id, label
           ${ qc.generateSQLBody(cqBody) }
           """
         } else {
           // variable columns
           // dd_new_ tale only need original column name to make sure the schema is the same with original table
-          var useAlias = ss.mode match {
-            case MERGE => false
-            case _     => !isForIncremental(stmt.headName)
+          // views uses view alias
+          val aliasStyle = ss.mode match {
+            case MERGE => NoAlias
+            case _     => if (isForIncremental(stmt.headName)) NoAlias
+              else if (!ss.hasSchemaDeclared(stmt.headName)) ViewAlias
+              else TableAlias
           }
-          inputQueries += qc.generateSQL(useAlias)
+          inputQueries += qc.generateSQL(aliasStyle)
         }
       }
     }
@@ -583,7 +599,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       val blockName = ss.resolveExtractorBlockName(stmt)
       val extractor = s"""
         deepdive.extraction.extractors.${blockName} {
-          input: \"\"\" ${new QueryCompiler(stmt.q, ss).generateSQL(true)}
+          input: \"\"\" ${new QueryCompiler(stmt.q, ss).generateSQL(TableAlias)}
           \"\"\"
           output_relation: \"${stmt.output}\"
           ${udfDetails.get}
