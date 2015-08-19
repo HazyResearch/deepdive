@@ -1,0 +1,61 @@
+
+  deepdive.db.default {
+    driver: "org.postgresql.Driver"
+    url: "jdbc:postgresql://"${PGHOST}":"${PGPORT}"/"${DBNAME}
+    user: ${PGUSER}
+    password: ${PGPASSWORD}
+    dbname: ${DBNAME}
+    host: ${PGHOST}
+    port: ${PGPORT}
+    incremental_mode: ORIGINAL
+    }
+    
+
+
+      deepdive.schema.variables {
+        
+      }
+    
+
+          deepdive.extraction.extractors.extraction_rule_0 {
+            sql: """ DROP TABLE IF EXISTS R CASCADE;
+            CREATE TABLE
+            R(a int,
+ b int)
+            """
+            style: "sql_extractor"
+          }
+
+        deepdive.extraction.extractors.cleanup {
+          sql: """
+          TRUNCATE R;
+          """
+          style: "sql_extractor"
+        }
+
+      deepdive.extraction.extractors.extraction_rule_1 {
+        sql: """ DROP VIEW IF EXISTS A;
+        CREATE VIEW A AS SELECT R0.a AS column_0, (R0.a + R0.b) AS column_1
+FROM R R0
+        
+        """
+        style: "sql_extractor"
+          
+      }
+    
+
+      deepdive.extraction.extractors.extraction_rule_2 {
+        sql: """ DROP VIEW IF EXISTS B;
+        CREATE VIEW B AS SELECT R0.column_0 AS column_0, R1.b AS column_1
+FROM A R0, R R1
+        WHERE R1.a = R0.column_1 
+        """
+        style: "sql_extractor"
+          dependencies: [ "extraction_rule_1" ]
+      }
+    
+deepdive.pipeline.run: ${PIPELINE}
+deepdive.pipeline.pipelines.initdb: [extraction_rule_0]
+deepdive.pipeline.pipelines.extraction: [extraction_rule_1, extraction_rule_2]
+deepdive.pipeline.pipelines.endtoend: [extraction_rule_1, extraction_rule_2]
+deepdive.pipeline.pipelines.cleanup: [cleanup]
