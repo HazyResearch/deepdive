@@ -140,8 +140,9 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
   def resolveExtractorBlockName(s: Statement): String = s"extraction_rule_${statements indexOf s}"
 
   // Given an inference rule, resolve its name for the compiled inference block.
-  def resolveInferenceBlockName(s: InferenceRule): String = {
-    s"inference_rule_${inferenceRules indexOf s}"
+  def resolveInferenceBlockName(s: InferenceRule): String = mode match {
+    case INCREMENTAL => s"dd_delta_inference_rule_${inferenceRules indexOf s}"
+    case _ =>           s"inference_rule_${inferenceRules indexOf s}"
   }
 
   // Given a variable, resolve it.  TODO: This should give a warning,

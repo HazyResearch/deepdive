@@ -13,31 +13,31 @@ dd_new_articles(article_id, text) :-
 
 sentences(document_id text,
           sentence text,
-          words text,
-          lemma text,
-          pos_tags text,
-          dependencies text,
-          ner_tags text,
+          words text[],
+          lemma text[],
+          pos_tags text[],
+          dependencies text[],
+          ner_tags text[],
           sentence_offset int,
           sentence_id text).
 
 dd_delta_sentences(document_id text,
                    sentence text,
-                   words text,
-                   lemma text,
-                   pos_tags text,
-                   dependencies text,
-                   ner_tags text,
+                   words text[],
+                   lemma text[],
+                   pos_tags text[],
+                   dependencies text[],
+                   ner_tags text[],
                    sentence_offset int,
                    sentence_id text).
 
 dd_new_sentences(document_id text,
                  sentence text,
-                 words text,
-                 lemma text,
-                 pos_tags text,
-                 dependencies text,
-                 ner_tags text,
+                 words text[],
+                 lemma text[],
+                 pos_tags text[],
+                 dependencies text[],
+                 ner_tags text[],
                  sentence_offset int,
                  sentence_id text).
 
@@ -115,64 +115,64 @@ dd_new_has_spouse(relation_id) :-
     has_spouse(relation_id);
     dd_delta_has_spouse(relation_id).
 
-dd_delta_people_mentions += ext_people(s, words, ner_tags) :-
-    dd_delta_sentences(a, b, words, c, d, e, ner_tags, f, s).
-
 function ext_people
-    over like dd_delta_ext_people_input
+    over (dd_delta_sentence_id text, dd_delta_words text, dd_delta_ner_tags text)
  returns like dd_delta_people_mentions
  implementation "udf/ext_people.py"
         handles tsv lines.
 
-dd_delta_has_spouse_candidates += ext_has_spouse(s, p1_id, p1_text, p2_id, p2_text) :-
-    dd_delta_people_mentions(s, a, b, p1_text, p1_id),
-    people_mentions(s, c, d, p2_text, p2_id);
-    dd_new_people_mentions(s, a, b, p1_text, p1_id),
-    dd_delta_people_mentions(s, c, d, p2_text, p2_id).
+dd_delta_people_mentions += ext_people(s, ARRAY_TO_STRING(words, "~^~"), ARRAY_TO_STRING(ner_tags, "~^~")) :-
+    dd_delta_sentences(_, _, words, _, _, _, ner_tags, _, s).
 
 function ext_has_spouse
-    over like dd_delta_ext_has_spouse_input
+    over (dd_delta_sentence_id text, dd_delta_mid1 text, dd_delta_text1 text, dd_delta_mid2 text, dd_delta_text2 text)
  returns like dd_delta_has_spouse_candidates
  implementation "udf/ext_has_spouse.py"
         handles tsv lines.
 
-dd_delta_has_spouse_features += ext_has_spouse_features(words, rid, p1idx, p1len, p2idx, p2len) :-
-    dd_delta_sentences(a, b, words, c, d, e, f, g, s),
-    has_spouse_candidates(person1_id, person2_id, s, h, rid, x),
-    people_mentions(s, p1idx, p1len, k, person1_id),
-    people_mentions(s, p2idx, p2len, l, person2_id);
-    dd_new_sentences(a, b, words, c, d, e, f, g, s),
-    dd_delta_has_spouse_candidates(person1_id, person2_id, s, h, rid, x),
-    people_mentions(s, p1idx, p1len, k, person1_id),
-    people_mentions(s, p2idx, p2len, l, person2_id);
-    dd_new_sentences(a, b, words, c, d, e, f, g, s),
-    dd_new_has_spouse_candidates(person1_id, person2_id, s, h, rid, x),
-    dd_delta_people_mentions(s, p1idx, p1len, k, person1_id),
-    people_mentions(s, p2idx, p2len, l, person2_id);
-    dd_new_sentences(a, b, words, c, d, e, f, g, s),
-    dd_new_has_spouse_candidates(person1_id, person2_id, s, h, rid, x),
-    dd_new_people_mentions(s, p1idx, p1len, k, person1_id),
-    dd_delta_people_mentions(s, p2idx, p2len, l, person2_id).
+dd_delta_has_spouse_candidates += ext_has_spouse(s, p1_id, p1_text, p2_id, p2_text) :-
+    dd_delta_people_mentions(s, _, _, p1_text, p1_id),
+    people_mentions(s, _, _, p2_text, p2_id);
+    dd_new_people_mentions(s, _, _, p1_text, p1_id),
+    dd_delta_people_mentions(s, _, _, p2_text, p2_id).
 
 function ext_has_spouse_features
-    over like dd_delta_ext_has_spouse_features_input
+    over (dd_delta_words text, dd_delta_rid text, dd_delta_position1 int, dd_delta_length1 int, dd_delta_position2 int, dd_delta_length2 int)
  returns like dd_delta_has_spouse_features
  implementation "udf/ext_has_spouse_features.py"
         handles tsv lines.
 
+dd_delta_has_spouse_features += ext_has_spouse_features(ARRAY_TO_STRING(words, "~^~"), rid, p1idx, p1len, p2idx, p2len) :-
+    dd_delta_sentences(_, _, words, _, _, _, _, _, s),
+    has_spouse_candidates(person1_id, person2_id, s, _, rid, _),
+    people_mentions(s, p1idx, p1len, _, person1_id),
+    people_mentions(s, p2idx, p2len, _, person2_id);
+    dd_new_sentences(_, _, words, _, _, _, _, _, s),
+    dd_delta_has_spouse_candidates(person1_id, person2_id, s, _, rid, _),
+    people_mentions(s, p1idx, p1len, _, person1_id),
+    people_mentions(s, p2idx, p2len, _, person2_id);
+    dd_new_sentences(_, _, words, _, _, _, _, _, s),
+    dd_new_has_spouse_candidates(person1_id, person2_id, s, _, rid, _),
+    dd_delta_people_mentions(s, p1idx, p1len, _, person1_id),
+    people_mentions(s, p2idx, p2len, _, person2_id);
+    dd_new_sentences(_, _, words, _, _, _, _, _, s),
+    dd_new_has_spouse_candidates(person1_id, person2_id, s, _, rid, _),
+    dd_new_people_mentions(s, p1idx, p1len, _, person1_id),
+    dd_delta_people_mentions(s, p2idx, p2len, _, person2_id).
+
 @label(l)
 dd_delta_has_spouse(rid) :-
-    dd_delta_has_spouse_candidates(a, b, c, d, rid, l).
+    dd_delta_has_spouse_candidates(_, _, _, _, rid, l).
 
 @weight(f)
 dd_new_has_spouse(rid) :-
-    dd_delta_has_spouse_candidates(a, b, c, d, rid, l),
+    dd_delta_has_spouse_candidates(_, _, _, _, rid, _),
     has_spouse_features(rid, f);
-    dd_new_has_spouse_candidates(a, b, c, d, rid, l),
+    dd_new_has_spouse_candidates(_, _, _, _, rid, _),
     dd_delta_has_spouse_features(rid, f).
 
 @weight(3.0)
 dd_new_has_spouse(rid2) = dd_new_has_spouse(rid) :-
-    dd_new_has_spouse_candidates(a1, b1, c1, d1, rid, l1),
-    dd_new_has_spouse_candidates(b1, a1, c2, d2, rid2, l2).
+    dd_new_has_spouse_candidates(a1, b1, _, _, rid, _),
+    dd_new_has_spouse_candidates(b1, a1, _, _, rid2, _).
 
