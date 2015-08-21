@@ -14,7 +14,7 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
         schemaDeclaration += { s.a.name -> s }
       }
       case s: ExtractionRule => {
-        heads += s.headName
+        if (s.supervision == None) heads += s.headName
       }
       case s: FunctionDeclaration => {
         functionDeclaration += { s.functionName -> s }
@@ -49,14 +49,18 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
   // check if relations in the body are defined
   def checkRelationDefined(stmt: Statement) {
     val stmtStr = DeepDiveLogPrettyPrinter.print(stmt)
-    def checkRelation(a: BodyAtom) {
-      if (!(heads contains a.name))
-        error(stmt, s"""relation "${a.name}" is not defined""")
+    def checkRelation(name: String) {
+      if (!(heads contains name))
+        error(stmt, s"""relation "${name}" is not defined""")
     }
-    def check = checkBodyAtoms(checkRelation)
+    def checkAtom(a: BodyAtom) = checkRelation(a.name)
+    def check = checkBodyAtoms(checkAtom)
     stmt match {
       case s: ExtractionRule => s.q.bodies foreach check
-      case s: InferenceRule => s.q.bodies foreach check
+      case s: InferenceRule => {
+        s.q.bodies foreach check
+        s.head.terms map(_.name) foreach checkRelation
+      }
       case s: FunctionCallRule => s.q.bodies foreach check
       case _ =>
     }

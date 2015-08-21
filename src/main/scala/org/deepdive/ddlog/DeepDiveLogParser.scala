@@ -84,9 +84,9 @@ case class HeadAtom(name : String, terms : List[Expr])
 case class InferenceRuleHead(function: FactorFunction.FactorFunction, terms: List[HeadAtom])
 
 
-trait RelationType
-case class RelationTypeDeclaration(names: List[String], types: List[String]) extends RelationType
-case class RelationTypeAlias(likeRelationName: String) extends RelationType
+trait FunctionInputOutputType
+case class RelationTypeDeclaration(names: List[String], types: List[String]) extends FunctionInputOutputType
+case class RelationTypeAlias(likeRelationName: String) extends FunctionInputOutputType
 
 trait FunctionImplementationDeclaration
 case class RowWiseLineHandler(style: String, command: String) extends FunctionImplementationDeclaration
@@ -98,8 +98,8 @@ case class SchemaDeclaration( a : Attribute
                             , variableType : Option[VariableType]
                             , annotation : List[Annotation] = List.empty // optional annotation
                             ) extends Statement // atom and whether this is a query relation.
-case class FunctionDeclaration( functionName: String, inputType: RelationType,
-  outputType: RelationType, implementations: List[FunctionImplementationDeclaration], mode: Option[String] = None) extends Statement
+case class FunctionDeclaration( functionName: String, inputType: FunctionInputOutputType,
+  outputType: FunctionInputOutputType, implementations: List[FunctionImplementationDeclaration], mode: Option[String] = None) extends Statement
 case class ExtractionRule(headName: String, q : ConjunctiveQuery, supervision: Option[String] = None) extends Statement // Extraction rule
 case class FunctionCallRule(output: String, function: String, q : ConjunctiveQuery) extends Statement // Extraction rule
 case class InferenceRule(head: InferenceRuleHead, q : ConjunctiveQuery, weights : FactorWeight, mode: Option[String] = None) extends Statement // Weighted rule
@@ -250,9 +250,9 @@ class DeepDiveLogParser extends JavaTokenParsers {
     QuantifiedBody(modifier, b)
   }
 
-  def relationType: Parser[RelationType] =
-    ( "like" ~> relationName ^^ { RelationTypeAlias(_) }
-    | rep1sep(columnDeclaration, ",") ^^ {
+  def functionInputOutputType: Parser[FunctionInputOutputType] =
+    ( "rows" ~> "like" ~> relationName ^^ { RelationTypeAlias(_) }
+    | "(" ~> rep1sep(columnDeclaration, ",") <~ ")" ^^ {
         attrs => RelationTypeDeclaration(attrs map { _.name }, attrs map { _.t })
       }
     )
@@ -281,8 +281,8 @@ class DeepDiveLogParser extends JavaTokenParsers {
   }, (s) => s"${s}: unrecognized mode"))
 
   def functionDeclaration : Parser[FunctionDeclaration] =
-    ( opt(functionMode) ~ "function" ~ functionName ~ "over" ~ relationType
-                             ~ "returns" ~ relationType
+    ( opt(functionMode) ~ "function" ~ functionName ~ "over" ~ functionInputOutputType
+                             ~ "returns" ~ functionInputOutputType
                  ~ (functionImplementation+)
     ) ^^ {
       case (mode ~ "function" ~ a ~ "over" ~ inTy

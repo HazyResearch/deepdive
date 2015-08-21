@@ -1,1 +1,0 @@
-../../../examples/ocr.ddl

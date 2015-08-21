@@ -19,18 +19,18 @@ setup() {
     if [ -e "$expectedError" ]; then
         # input is expected to have parse errors
         actualError=${expectedError%.expected}.actual
-        ! ddlog print "$TESTDIR"/input.ddl >/dev/null 2>"$actualError"
+        ! ddlog print "$TESTDIR"/input.ddlog >/dev/null 2>"$actualError"
         diff "$expectedError" "$actualError"
     else
         # input is supposed to parse without errors
-        ddlog print "$TESTDIR"/input.ddl >/dev/null
+        ddlog print "$TESTDIR"/input.ddlog >/dev/null
     fi
 }
 
 # check if print is idempotent
 @test "$it parses and prints what it prints (idempotent)" {
     printed=$TESTDIR/printed.actual
-    ddlog print "$TESTDIR"/input.ddl >"$printed" || skip
+    ddlog print "$TESTDIR"/input.ddlog >"$printed" || skip
     ddlog print "$printed" >"$TESTDIR"/printed-printed.actual
     diff "$printed" "$TESTDIR"/printed-printed.actual
 }
@@ -41,7 +41,7 @@ setup() {
     expectedOutput=$TESTDIR/compile.expected
     actualOutput=${expectedOutput%.expected}.actual
     [ -e "$expectedOutput" ] || skip
-    ddlog compile "$TESTDIR"/input.ddl >"$actualOutput"
+    ddlog compile "$TESTDIR"/input.ddlog >"$actualOutput"
     diff "$expectedOutput" "$actualOutput"
 }
 
@@ -50,7 +50,7 @@ setup() {
     expectedOutput=$TESTDIR/print.expected
     actualOutput=${expectedOutput%.expected}.actual
     [ -e "$expectedOutput" ] || skip
-    ddlog print "$TESTDIR"/input.ddl >"$actualOutput"
+    ddlog print "$TESTDIR"/input.ddlog >"$actualOutput"
     diff "$expectedOutput" "$actualOutput"
 }
 
@@ -59,7 +59,7 @@ setup() {
     expectedOutput=$TESTDIR/export-schema.expected
     actualOutput=${expectedOutput%.expected}.actual
     [ -e "$expectedOutput" ] || skip
-    ddlog export-schema "$TESTDIR"/input.ddl >"$actualOutput"
+    ddlog export-schema "$TESTDIR"/input.ddlog >"$actualOutput"
     diff "$expectedOutput" "$actualOutput"
 }
 
@@ -71,7 +71,7 @@ setup() {
     expectedOutput=$TESTDIR/compile-incremental.expected
     actualOutput=${expectedOutput%.expected}.actual
     [ -e "$expectedOutput" ] || skip
-    ddlog compile --incremental "$TESTDIR"/input.ddl >"$actualOutput"
+    ddlog compile --incremental "$TESTDIR"/input.ddlog >"$actualOutput"
     diff "$expectedOutput" "$actualOutput"
 }
 
@@ -80,7 +80,7 @@ setup() {
     expectedOutput=$TESTDIR/print-incremental.expected
     actualOutput=${expectedOutput%.expected}.actual
     [ -e "$expectedOutput" ] || skip
-    ddlog print --incremental "$TESTDIR"/input.ddl >"$actualOutput"
+    ddlog print --incremental "$TESTDIR"/input.ddlog >"$actualOutput"
     diff "$expectedOutput" "$actualOutput"
 }
 
@@ -91,7 +91,7 @@ setup() {
     expectedOutput=$TESTDIR/compile-merge.expected
     actualOutput=${expectedOutput%.expected}.actual
     [ -e "$expectedOutput" ] || skip
-    ddlog compile --merge "$TESTDIR"/input.ddl >"$actualOutput"
+    ddlog compile --merge "$TESTDIR"/input.ddlog >"$actualOutput"
     diff "$expectedOutput" "$actualOutput"
 }
 
@@ -102,6 +102,6 @@ setup() {
     expectedOutput=$TESTDIR/compile-materialization.expected
     actualOutput=${expectedOutput%.expected}.actual
     [ -e "$expectedOutput" ] || skip
-    ddlog compile --materialization "$TESTDIR"/input.ddl >"$actualOutput"
+    ddlog compile --materialization "$TESTDIR"/input.ddlog >"$actualOutput"
     diff "$expectedOutput" "$actualOutput"
 }

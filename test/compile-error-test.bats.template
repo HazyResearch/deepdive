@@ -15,7 +15,7 @@ setup() {
 
 # check if input produces a compile error
 @test "$it compiles input" {
-    ! ddlog check "$TESTDIR"/input.ddl >/dev/null 2>"$actualError"
+    ! ddlog check "$TESTDIR"/input.ddlog >/dev/null 2>"$actualError"
     diff "$expectedError" "$actualError"
 }
 

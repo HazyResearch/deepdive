@@ -223,7 +223,7 @@ SELECT DISTINCT R0.wid, id, label
       }
     
 
-        deepdive.inference.factors.inference_rule_0 {
+        deepdive.inference.factors.dd_delta_inference_rule_0 {
           input_query: """
           SELECT R0.id AS "dd_new_q1.R0.id" , R1.feature_id AS "dd_weight_column_0" 
           FROM dd_new_q1 R0, dd_delta_features R1
@@ -233,7 +233,7 @@ SELECT DISTINCT R0.wid, id, label
         }
       
 
-        deepdive.inference.factors.inference_rule_1 {
+        deepdive.inference.factors.dd_delta_inference_rule_1 {
           input_query: """
           SELECT R0.id AS "dd_new_q2.R0.id" , R1.feature_id AS "dd_weight_column_0" 
           FROM dd_new_q2 R0, dd_delta_features R1
@@ -245,7 +245,7 @@ SELECT DISTINCT R0.wid, id, label
 deepdive.pipeline.run: ${PIPELINE}
 deepdive.pipeline.pipelines.initdb: [extraction_rule_10, extraction_rule_5, extraction_rule_14, extraction_rule_6, extraction_rule_1, extraction_rule_17, extraction_rule_9, extraction_rule_2, extraction_rule_13, extraction_rule_18]
 deepdive.pipeline.pipelines.extraction: [extraction_rule_21, extraction_rule_7, extraction_rule_20, extraction_rule_19, extraction_rule_3, extraction_rule_11, extraction_rule_15]
-deepdive.pipeline.pipelines.inference: [inference_rule_0, inference_rule_1]
-deepdive.pipeline.pipelines.endtoend: [extraction_rule_21, extraction_rule_7, extraction_rule_20, extraction_rule_19, extraction_rule_3, extraction_rule_11, extraction_rule_15, inference_rule_0, inference_rule_1]
+deepdive.pipeline.pipelines.inference: [dd_delta_inference_rule_0, dd_delta_inference_rule_1]
+deepdive.pipeline.pipelines.endtoend: [extraction_rule_21, extraction_rule_7, extraction_rule_20, extraction_rule_19, extraction_rule_3, extraction_rule_11, extraction_rule_15, dd_delta_inference_rule_0, dd_delta_inference_rule_1]
 deepdive.pipeline.pipelines.cleanup: [cleanup]
 deepdive.pipeline.base_dir: ${BASEDIR}
