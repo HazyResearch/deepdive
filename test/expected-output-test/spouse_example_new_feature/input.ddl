@@ -36,7 +36,7 @@ has_spouse?(relation_id text).
 
 @mode("inc")
 function ext_people over (sentence_id text, words text, ner_tags text)
-                 returns like people_mentions
+                 returns rows like people_mentions
   implementation "udf/ext_people.py" handles tsv lines.
 
 people_mentions +=
@@ -44,7 +44,7 @@ people_mentions +=
   sentences(_, _, words, _, _, _, ner_tags, _, s).
 
 function ext_has_spouse over (sentence_id text, mid1 text, text1 text, mid2 text, text2 text)
-                     returns like has_spouse_candidates
+                     returns rows like has_spouse_candidates
   implementation "udf/ext_has_spouse.py" handles tsv lines.
 
 has_spouse_candidates +=
@@ -53,7 +53,7 @@ has_spouse_candidates +=
   people_mentions(s, _, _, p2_text, p2_id).
 
 function ext_has_spouse_features over (words text, rid text, position1 int, length1 int, position2 int, length2 int)
-                              returns like has_spouse_features
+                              returns rows like has_spouse_features
   implementation "udf/ext_has_spouse_features.py" handles tsv lines.
 
 has_spouse_features +=

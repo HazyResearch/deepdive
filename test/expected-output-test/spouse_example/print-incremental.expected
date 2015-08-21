@@ -117,7 +117,7 @@ dd_new_has_spouse(relation_id) :-
 
 function ext_people
     over (dd_delta_sentence_id text, dd_delta_words text, dd_delta_ner_tags text)
- returns like dd_delta_people_mentions
+ returns rows like dd_delta_people_mentions
  implementation "udf/ext_people.py"
         handles tsv lines.
 
@@ -126,7 +126,7 @@ dd_delta_people_mentions += ext_people(s, ARRAY_TO_STRING(words, "~^~"), ARRAY_T
 
 function ext_has_spouse
     over (dd_delta_sentence_id text, dd_delta_mid1 text, dd_delta_text1 text, dd_delta_mid2 text, dd_delta_text2 text)
- returns like dd_delta_has_spouse_candidates
+ returns rows like dd_delta_has_spouse_candidates
  implementation "udf/ext_has_spouse.py"
         handles tsv lines.
 
@@ -138,7 +138,7 @@ dd_delta_has_spouse_candidates += ext_has_spouse(s, p1_id, p1_text, p2_id, p2_te
 
 function ext_has_spouse_features
     over (dd_delta_words text, dd_delta_rid text, dd_delta_position1 int, dd_delta_length1 int, dd_delta_position2 int, dd_delta_length2 int)
- returns like dd_delta_has_spouse_features
+ returns rows like dd_delta_has_spouse_features
  implementation "udf/ext_has_spouse_features.py"
         handles tsv lines.
 

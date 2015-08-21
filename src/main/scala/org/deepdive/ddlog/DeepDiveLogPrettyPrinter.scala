@@ -43,8 +43,8 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
        |""".stripMargin
   }
 
-  def print(relationType: RelationType): String = relationType match {
-    case ty: RelationTypeAlias => s"like ${ty.likeRelationName}"
+  def print(functionInputOutputType: FunctionInputOutputType): String = functionInputOutputType match {
+    case ty: RelationTypeAlias => s"rows like ${ty.likeRelationName}"
     case ty: RelationTypeDeclaration =>
       val namesWithTypes = (ty.names, ty.types).zipped map {
         (colName,colType) => s"${colName} ${colType}"}
