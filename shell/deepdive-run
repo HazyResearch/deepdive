@@ -24,7 +24,7 @@ set -eu
 ddlogFiles=()
 while getopts "C:c:o:" o; do
     case $o in
-        C) APP_HOME=$OPTARG ;;
+        C) DEEPDIVE_APP=$OPTARG ;;
         c) DEEPDIVE_CONFIG=$OPTARG ;;
         o) DEEPDIVE_OUTPUT=$OPTARG ;;
         d) ddlogFiles+=("$OPTARG") ;;
@@ -39,10 +39,10 @@ Pipeline=
 }
 
 ## find the current application
-# either specified with -C option or via APP_HOME environment
-APP_HOME=$(find-deepdive-app)
-export APP_HOME
-cd "$APP_HOME"
+# either specified with -C option or via DEEPDIVE_APP environment
+DEEPDIVE_APP=$(find-deepdive-app)
+export DEEPDIVE_APP
+cd "$DEEPDIVE_APP"
 
 # find the configuration file for the application
 # defaults to deepdive.conf, which can be overriden via command-line option -c or DEEPDIVE_CONFIG environment
@@ -107,10 +107,12 @@ fullConfig=$run_dir/deepdive.conf
 
 } >"$fullConfig"
 
+# XXX set the legacy environment variables
+export APP_HOME=$DEEPDIVE_APP
 
 ## run DeepDive
 # JVM directly executes everything currently
-java org.deepdive.Main -c "$fullConfig" -o "$APP_HOME/$run_dir"
+java org.deepdive.Main -c "$fullConfig" -o "$DEEPDIVE_APP/$run_dir"
 
 # point to the run with LATEST symlink
 ln -sfn "$run_id" run/LATEST
