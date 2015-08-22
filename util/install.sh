@@ -123,6 +123,7 @@ install_deepdive_examples_tests() {
     else
         mkdir -p "$dest"
         touch "$dest"/.downloaded
+        set -x
         curl -fsSL https://github.com/HazyResearch/deepdive/archive/$RELEASE.tar.gz |
         tar xvzf - -C . "$dest"/{examples,src/test/python,test,util/test}
         date >"$dest"/.downloaded
@@ -131,6 +132,7 @@ install_deepdive_examples_tests() {
 # runs tests against installed DeepDive
 install_run_deepdive_tests() {
     run_installer_for deepdive_examples_tests
+    set -x
     PATH="$PREFIX/bin:$PATH" \
     deepdive-${RELEASE#v}/test/test-installed.sh
 }
