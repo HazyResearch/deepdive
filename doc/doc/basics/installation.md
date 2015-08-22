@@ -11,7 +11,7 @@ This document explains how to install DeepDive on your system.
 
 We provide a simple installation method for the following supported systems:
 
-* Ubuntu Linux (12.04LTS, 14.04LTS, or later)
+* GNU/Linux: Debian (7, 8, or later) and Ubuntu (12.04LTS, 14.04LTS, or later)
     * [VirtualBox](https://help.ubuntu.com/community/VirtualBox)
     * [AWS EC2](../advanced/ec2.html)
     * [Docker](../advanced/docker.html)
