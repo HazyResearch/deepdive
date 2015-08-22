@@ -6,7 +6,7 @@
 # find out the path to the root of DeepDive's source tree
 DEEPDIVE_TEST_ROOT=$(cd "$(dirname "${BASH_SOURCE:-$0}")" && pwd)
 DEEPDIVE_SOURCE_ROOT=$(cd "$DEEPDIVE_TEST_ROOT/.." && pwd)
-DEEPDIVE_HOME="$DEEPDIVE_SOURCE_ROOT/$STAGE_DIR"
+DEEPDIVE_HOME=$(cd "$STAGE_DIR" && pwd)
 
 # configure PATH and CLASSPATH for tests
 PATH="$DEEPDIVE_HOME/util:$DEEPDIVE_HOME/bin:$PATH"
