@@ -4,8 +4,11 @@ set -eu
 cd "$(dirname "$0")"/.. # move to top of DeepDive's source tree
 
 # find which DeepDive installation we're testing against from $PATH
-DEEPDIVE_HOME=$(deepdive env sh -c 'echo "$DEEPDIVE_HOME"') ||
-shell/error "No deepdive command found on PATH"
+DEEPDIVE_HOME=$(deepdive env sh -c 'echo "$DEEPDIVE_HOME"') || {
+    echo >&2 "No deepdive command found on PATH"
+    false
+}
+export DEEPDIVE_HOME
 echo "Testing DeepDive installed at: $DEEPDIVE_HOME"
 
 # make sure we have BATS
@@ -20,8 +23,7 @@ echo "Testing DeepDive installed at: $DEEPDIVE_HOME"
 echo "Testing against database TEST_DBNAME=${TEST_DBNAME:-deepdive_test_$USER} running at TEST_DBHOST=${TEST_DBHOST:-localhost}"
 
 # run tests
-export STAGE_DIR="$DEEPDIVE_HOME"
 [[ $# -gt 0 ]] || set -- $(test/enumerate-tests.sh | grep -v scalatests)
 echo "Running $(test/bats/bin/bats -c "$@") tests defined in $# .bats files: $*"
-[[ $# -gt 0 ]] || echo " (To test selectively, pass the .bats files over command-line.)"
+[[ $# -gt 0 ]] || echo " (To test selectively, pass the .bats files over command-line)"
 test/bats/bin/bats "$@"
