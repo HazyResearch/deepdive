@@ -102,6 +102,8 @@ case $(uname) in
         #elif [[ -e /etc/redhat-release ]]; then
         #    # CentOS/RedHat
         #    os=RedHat
+        else
+            error "$(lsb_release -i | cut -f2): Unsupported GNU/Linux distribution"
         fi
         ;;
 
@@ -112,7 +114,9 @@ case $(uname) in
 
     *)
         error "$(uname): Unsupported Operating System"
-esac
+esac ||
+    error "To build and install DeepDive for your system, see: http://deepdive.stanford.edu/doc/advanced/developer.html#build-test"
+
 echo "### DeepDive installer for $os"
 # load OS-specific install scripts located at install/install.*.sh
 # each script defines bash functions whose names start with `install_`.
