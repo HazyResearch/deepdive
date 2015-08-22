@@ -38,10 +38,35 @@ init_INSTALLER_TEMP_DIR() {
 
 # common installers ###########################################################
 # installs DeepDive's build dependencies
-install__deepdive_build_deps() { false; }
-install__deepdive_build_deps() { false; }
+install__deepdive_build_deps() {
+    local deps=
+    deps=(
+        git
+        make
+        bzip2
+        unzip
+        jdk
+    )
+    error "Please make sure the following packages are available on your system: $(
+        printf '\n  %s' "${deps[@]}")" ||
+            [[ ! -t 1 ]] || read -p "# Continue? " || true
+}
 # installs DeepDive's runtime dependencies
-install__deepdive_runtime_deps() { false; }
+install__deepdive_runtime_deps() {
+    local deps=
+    deps=(
+        bash
+        coreutils
+        xargs
+        bc
+        gnuplot
+        jre
+        python
+    )
+    error "Please make sure the following packages are available on your system:$(
+        printf '\n  %s' "${deps[@]}")" ||
+            [[ ! -t 1 ]] || read -p "# Continue? " || true
+}
 # fetches DeepDive source tree
 install__deepdive_git_repo() {
     $running_from_git ||
@@ -102,8 +127,15 @@ case $(uname) in
         #elif [[ -e /etc/redhat-release ]]; then
         #    # CentOS/RedHat
         #    os=RedHat
-        else
-            error "$(lsb_release -i | cut -f2): Unsupported GNU/Linux distribution"
+        else # unrecognized Linux distro
+            os=
+            # try to grab a Linux distro identifier
+            {
+                set -o pipefail
+                hint=$(lsb_release -i | cut -f2) ||
+                hint=$(head -1 /etc/redhat-release)
+            } 2>/dev/null
+            error "WARNING: Unsupported GNU/Linux distribution${hint:+: $hint}"
         fi
         ;;
 
@@ -113,11 +145,16 @@ case $(uname) in
         ;;
 
     *)
-        error "$(uname): Unsupported Operating System"
+        # unsupported OS
+        os=
+        error "WARNING: Unsupported Operating System: $(uname)"
 esac ||
-    error "To build and install DeepDive for your system, see: http://deepdive.stanford.edu/doc/advanced/developer.html#build-test"
+    error "To build and install DeepDive correctly on your system, see:" ||
+    error "  http://deepdive.stanford.edu/doc/advanced/developer.html#build-test" ||
+    error "Beware that the following installer options may not work." ||
+    true
 
-echo "### DeepDive installer for $os"
+echo "### DeepDive installer${os:+ for $os}"
 # load OS-specific install scripts located at install/install.*.sh
 # each script defines bash functions whose names start with `install_`.
 source_script() {
@@ -136,8 +173,8 @@ source_script() {
         source "$script_path" "$@"
     fi
 }
-source_script install."$os".sh
 source_os_script() { source_script install."$os"."$1".sh; }
+[[ -z "$os" ]] || source_script install."$os".sh
 
 # run selected installers, either interactively or via command-line arguments
 list_installer_names() {
