@@ -45,12 +45,20 @@ install_postgres() {
     set -x
     sudo apt-get update
     sudo apt-get install -y postgresql
-    sudo apt-get install -y postgresql-plpython-`ls -1 /var/lib/postgresql/ | head -n 1`
+    local pgversion=$(dpkg -s postgresql | grep ^Depends: | awk '{print $2}' | sed 's/^postgresql-//')
+    sudo apt-get install -y postgresql-plpython-$pgversion
     if [ -z "${TRAVIS:-}" ]; then
+        # add user to postgresql and trust all connections to localhost
         sudo -u postgres dropuser --if-exists $USER || sudo -u postgres dropuser $USER || true
-        sudo -u postgres createuser --superuser --pwprompt $USER || true
-        (set +x
-        echo "Make sure you set the PGPASSWORD environment to the password you just entered, e.g.:"
-        echo "  export PGPASSWORD='pa\$\$w0rd'")
+        sudo -u postgres createuser --superuser $USER || true
+        tmp=$(mktemp /tmp/pg_hba.conf.XXXXXXX)
+        trap "rm -f $tmp" EXIT
+        {
+            echo 'host	all	all	127.0.0.1/32	trust'
+            echo 'host	all	all	::1/128	trust'
+            sudo cat /etc/postgresql/$pgversion/main/pg_hba.conf
+        } >$tmp
+        sudo tee /etc/postgresql/$pgversion/main/pg_hba.conf <$tmp >/dev/null
+        sudo service postgresql restart
     fi
 }
