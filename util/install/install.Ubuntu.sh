@@ -47,7 +47,10 @@ install_postgres() {
     sudo apt-get install -y postgresql
     sudo apt-get install -y postgresql-plpython-`ls -1 /var/lib/postgresql/ | head -n 1`
     if [ -z "${TRAVIS:-}" ]; then
-        sudo -u postgres dropuser --if-exists $USER
+        sudo -u postgres dropuser --if-exists $USER || sudo -u postgres dropuser $USER || true
         sudo -u postgres createuser --superuser --pwprompt $USER || true
+        (set +x
+        echo "Make sure you set the PGPASSWORD environment to the password you just entered, e.g.:"
+        echo "  export PGPASSWORD='pa\$\$w0rd'")
     fi
 }
