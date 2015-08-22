@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Text Chunking Example
 ---
 
 # Example: Text chunking

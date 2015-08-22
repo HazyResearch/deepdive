@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Factor Graph Grounding Output Reference
 ---
 
 # Factor Graph Grounding Output Schema Reference

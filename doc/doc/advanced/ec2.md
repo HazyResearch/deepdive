@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Using DeepDive on EC2
 ---
 
 # Using DeepDive on EC2

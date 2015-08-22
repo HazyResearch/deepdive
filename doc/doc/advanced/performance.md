@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Performance Tuning
 ---
 
 # Performance Tuning

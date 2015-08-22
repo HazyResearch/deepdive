@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Using DeepDive with Greenplum
 ---
 
 # Using DeepDive with Greenplum

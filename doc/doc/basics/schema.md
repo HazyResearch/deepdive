@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Declaring Inference Variables
 ---
 
 # Declaring inference variables in the schema

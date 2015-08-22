@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Creating a New Application
 ---
 
 # Writing a new DeepDive application

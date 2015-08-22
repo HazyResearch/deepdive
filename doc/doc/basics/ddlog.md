@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Writing Applications in DDlog
 ---
 
 # Writing Applications in DDlog

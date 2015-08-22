@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Using DeepDive on Ubuntu
 ---
 
 # DeepDive Install on Ubuntu 12.04

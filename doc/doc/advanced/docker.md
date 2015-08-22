@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Using DeepDive with Docker
 ---
 
 # Using DeepDive with Docker

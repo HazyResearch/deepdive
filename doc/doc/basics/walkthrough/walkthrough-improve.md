@@ -1,5 +1,6 @@
 ---
 layout: default
+title: "Tutorial: Improving the Results"
 ---
 
 # Example Application: Improving the Results

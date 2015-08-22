@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Using DeepDive with MySQL / MySQL Cluster
 ---
 
 # Using DeepDive with MySQL / MySQL Cluster

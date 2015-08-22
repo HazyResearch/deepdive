@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Running an Application
 ---
 
 # Running a DeepDive application

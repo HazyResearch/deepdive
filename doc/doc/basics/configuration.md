@@ -1,5 +1,6 @@
 ---
 layout: default
+title: deepdive.conf Reference
 ---
 
 # Application configuration file reference

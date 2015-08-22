@@ -1,5 +1,6 @@
 ---
 layout: default
+title: MEMEX Human Trafficking
 source-url: https://docs.google.com/document/d/1u8kFtgz9l0CIiQh6DI4M9shEOezQIxmJvNgsDm4293A/edit
 ---
 

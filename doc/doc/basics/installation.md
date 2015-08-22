@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Installation Guide
 ---
 
 # DeepDive Installation Guide

@@ -176,7 +176,7 @@ and
 - [Running an application](doc/basics/running.html) <small>(outdated)</small>
 - [Calibration](doc/basics/calibration.html)
 - [Labeling data products](doc/basics/labeling.html)
-- [Text chunking application example](doc/basics/chunking.html)
+- [Text chunking example](doc/basics/chunking.html)
 - [Generic features library](doc/basics/gen_feats.html)
 - [High-speed sampler](doc/basics/sampler.html)
 - [`deepdive.conf` Reference](doc/basics/configuration.html)
