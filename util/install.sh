@@ -115,6 +115,25 @@ install_deepdive() {
     run_installer_for deepdive_from_release
     run_installer_for _deepdive_runtime_deps
 }
+# installs DeepDive examples and tests
+install_deepdive_examples_tests() {
+    local dest=deepdive-${RELEASE#v}
+    if [[ -s "$dest"/.downloaded ]]; then
+        echo "DeepDive examples and tests already downloaded at $(cd "$dest" && pwd)"
+    else
+        mkdir -p "$dest"
+        touch "$dest"/.downloaded
+        curl -fsSL https://github.com/HazyResearch/deepdive/archive/$RELEASE.tar.gz |
+        tar xvzf - -C . "$dest"/{examples,src/test/python,test,util/test}
+        date >"$dest"/.downloaded
+    fi
+}
+# runs tests against installed DeepDive
+install_run_deepdive_tests() {
+    run_installer_for deepdive_examples_tests
+    PATH="$PREFIX/bin:$PATH" \
+    deepdive-${RELEASE#v}/test/test-installed.sh
+}
 ################################################################################
 
 # detect operating system
