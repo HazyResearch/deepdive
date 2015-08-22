@@ -7,8 +7,6 @@ STAGE_DIR = dist/stage
 # path to the package to be built
 PACKAGE = $(dir $(STAGE_DIR))deepdive.tar.gz
 
-export STAGE_DIR
-
 .DEFAULT_GOAL := install
 
 ### dependency recipes ########################################################
@@ -94,6 +92,10 @@ test/%/scalatests.bats: test/postgresql/update-scalatests.bats.sh $(SCALA_TEST_S
 	# Regenerating .bats for Scala tests
 	$< >$@
 	chmod +x $@
+
+# make sure test is against the code built and staged by this Makefile
+DEEPDIVE_HOME := $(realpath $(STAGE_DIR))
+export DEEPDIVE_HOME
 
 include test/bats.mk
 
