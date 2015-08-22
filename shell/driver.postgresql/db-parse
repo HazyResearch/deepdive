@@ -15,7 +15,7 @@ echo "DBVARIANT=${dbtype}"
 echo "DBHOST=${host}"
 echo "DBPORT=${port}"
 echo "DBUSER=${user}"
-echo "DBPASSWORD='${password:-$PGPASSWORD}'"
+echo "DBPASSWORD='${password:-${PGPASSWORD:-}}'"
 echo "DBNAME=${dbname}"
 echo "export DBHOST DBPORT DBUSER DBPASSWORD DBNAME"
 
