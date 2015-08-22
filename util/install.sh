@@ -122,7 +122,7 @@ case $(uname) in
     Linux)
         if has apt-get && has debconf; then
             # Ubuntu/Debian
-            os=$(lsb_release -i | cut -f2)
+            os=Ubuntu
         # TODO support other Linux distros
         #elif [[ -e /etc/redhat-release ]]; then
         #    # CentOS/RedHat
