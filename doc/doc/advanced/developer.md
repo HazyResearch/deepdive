@@ -74,6 +74,13 @@ DeepDive source tree includes several git submodules and ports:
 
 #### <a name="build-test"></a> Building and Testing DeepDive
 
+* First, get DeepDive's source tree and move into it, by running:
+
+    ```bash
+    git clone https://github.com/HazyResearch/deepdive.git
+    cd deepdive
+    ```
+
 * To install all dependencies, run:
 
     ```bash
