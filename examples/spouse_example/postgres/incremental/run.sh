@@ -18,7 +18,7 @@ case $Mode in
     *) Mode=
 esac
 
-appConf="${DDlog%.ddl}${Mode:+.${Mode#--}}.application.conf"
+appConf="${DDlog%.ddlog}${Mode:+.${Mode#--}}.application.conf"
 userConf="$(dirname "$DDlog")"/application.conf
 
 # compile application.conf from DDlog if necessary

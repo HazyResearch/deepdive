@@ -43,7 +43,7 @@ Alternatively, you can try the handy scripts included incremental example we inc
 
 ```bash
 cd examples/spouse_example/postgres/incremental
-./0-setup.sh spouse_example.f1.ddl inc-base.out
+./0-setup.sh spouse_example.f1.ddlog inc-base.out
 ```
 
 
@@ -51,9 +51,9 @@ cd examples/spouse_example/postgres/incremental
 
 In order to make use of the incremental support of DeepDive, the application must be written in DDlog.
 Please refer to [DDlog tutorial][DDlog] for how to write your DeepDive application in DDlog.
-Let's assume you have put the DDlog program shown below in a file named `spouse_example.f1.ddl` under the application folder.
+Let's assume you have put the DDlog program shown below in a file named `spouse_example.f1.ddlog` under the application folder.
 
-<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/incremental/spouse_example.f1.ddl?footer=minimal">
+<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/incremental/spouse_example.f1.ddlog?footer=minimal">
 </script>
 
 In this walkthrough, we demonstrate an incremental development workflow by adding new features.
@@ -77,11 +77,11 @@ They are called active variables and active inference rules, and the names can b
 
 There is a script included in the example, and the materialization phase can be run using the following single command:
 ```bash
-./1-materialization_phase.sh spouse_example.f1.ddl inc-base.out
+./1-materialization_phase.sh spouse_example.f1.ddlog inc-base.out
 ```
 
 It will do the following:
-1. The DDlog program `spouse_example.f1.ddl` is compiled.
+1. The DDlog program `spouse_example.f1.ddlog` is compiled.
 2. The `extraction` and `inference` pipelines are run.
 3. A materialized base factor graph is produced under `./inc-base.out/` under the application directory.
 
@@ -89,23 +89,23 @@ It will do the following:
 ### Incremental Phase
 
 In the incremental phase, suppose you added feature 2 to your udf, `ext_has_spouse_features.f2.py`.
-Let's say you saved this modified udf in a file named `ext_has_spouse_features.f2.ddl`.
+Let's say you saved this modified udf in a file named `ext_has_spouse_features.f2.ddlog`.
 
 <script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/incremental/udf/ext_has_spouse_features.f2.py?footer=minimal&slice=27:39">
 </script>
 
 
 You need to mark in the DDlog program which udf has been modified to produce the correct incremental pipeline.
-Let's say you saved this modified DDlog program in a file named `spouse_example.f2.ddl`.
+Let's say you saved this modified DDlog program in a file named `spouse_example.f2.ddlog`.
 
-<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/incremental/spouse_example.f2.ddl?footer=minimal&slice=67:70">
+<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/incremental/spouse_example.f2.ddlog?footer=minimal&slice=54:58">
 </script>
 
 
 Finally, there is also a script included in the example, so the incremental phase can be done as simple as running the following command:
 
 ```bash
-./2-incremental_phase.sh spouse_example.f2.ddl ./inc-base.out/ ./inc-f1+f2.out/
+./2-incremental_phase.sh spouse_example.f2.ddlog ./inc-base.out/ ./inc-f1+f2.out/
 ```
 
 The incremental result computed from `./inc-base.out/` will be stored in `./inc-f1+f2.out/`.
@@ -117,7 +117,7 @@ The incremental phase can be repeated several times until you are satisfied with
 You need to run the following command before running another incremental phase:
 
 ```bash
-./3-cleanup.sh spouse_example.f2.ddl ./inc-f1+f2.out/
+./3-cleanup.sh spouse_example.f2.ddlog ./inc-f1+f2.out/
 ```
 
 
@@ -126,7 +126,7 @@ You need to run the following command before running another incremental phase:
 Once you decide to keep the current version, you can merge the incremental part into the base with the `--merge` mode:
 
 ```bash
-./4-merge.sh spouse_example.f1.ddl ./inc-base.out/
+./4-merge.sh spouse_example.f1.ddlog ./inc-base.out/
 ```
 
 Finally, you've finished a full workflow of the incremental application development cycle.
@@ -138,8 +138,8 @@ In contrast, you can see how the same application written in DDlog can be run fr
 
 ```bash
 export DBNAME=deepdive_spouse_noninc
-./0-setup.sh              spouse_example.f1+f2.ddl ./noninc-f1+f2.out/
-./9-nonincremental_run.sh spouse_example.f1+f2.ddl ./noninc-f1+f2.out/
+./0-setup.sh              spouse_example.f1+f2.ddlog ./noninc-f1+f2.out/
+./9-nonincremental_run.sh spouse_example.f1+f2.ddlog ./noninc-f1+f2.out/
 ```
 
 

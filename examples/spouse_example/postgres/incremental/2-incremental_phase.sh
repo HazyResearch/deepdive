@@ -4,7 +4,7 @@ set -eux
 cd "$(dirname "$0")"
 . env.sh
 
-DDlog=${1:-spouse_example.f2.ddl}
+DDlog=${1:-spouse_example.f2.ddlog}
 Base=${2:-inc-base.out}
 Out=${3:-inc-delta.out}
 

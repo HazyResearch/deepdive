@@ -4,7 +4,7 @@ set -eux
 cd "$(dirname "$0")"
 . env.sh
 
-DDlog=${1:-spouse_example.f1.ddl}
+DDlog=${1:-spouse_example.f1.ddlog}
 Out=${2:-inc-base.out}
 
 export BASEDIR=$Out
