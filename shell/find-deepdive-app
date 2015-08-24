@@ -8,12 +8,12 @@ at_deepdive_app_root() {
     [[ ( -e app.ddlog || ( -e deepdive.conf && -e schema.sql ) ) && -e db.url ]]
 }
 
-if [[ -d "${APP_HOME:-}" ]]; then
-    cd "$APP_HOME"
+if [[ -d "${DEEPDIVE_APP:-}" ]]; then
+    cd "$DEEPDIVE_APP"
     if at_deepdive_app_root; then
-        echo "$APP_HOME"
+        echo "$DEEPDIVE_APP"
     else
-        error "$APP_HOME: Not a DeepDive application: deepdive.conf, db.url, and schema.sql should be all present"
+        error "$DEEPDIVE_APP: \$DEEPDIVE_APP does not point to a DeepDive application: deepdive.conf, db.url, and schema.sql should be all present"
     fi
 else
     while ! at_deepdive_app_root && [[ $PWD != / ]]; do
@@ -23,6 +23,6 @@ else
     if at_deepdive_app_root; then
         pwd
     else
-        error "Not inside a DeepDive application: deepdive.conf, db.url, and schema.sql should be all present in a parent directory"
+        error "$PWD: Not inside a DeepDive application: deepdive.conf, db.url, and schema.sql should be all present in a parent directory"
     fi
 fi

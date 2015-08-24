@@ -10,9 +10,9 @@ eval "$(
 
 # parse URL for database
 url=${DEEPDIVE_DB_URL:-$(
-    APP_HOME=$(find-deepdive-app)
-    export APP_HOME
-    cat "$APP_HOME"/db.url
+    DEEPDIVE_APP=$(find-deepdive-app)
+    export DEEPDIVE_APP
+    cat "$DEEPDIVE_APP"/db.url
 )}
 
 # recognize the database type from the URL scheme

@@ -5,9 +5,9 @@
 set -eu
 
 # find the current application
-APP_HOME=$(find-deepdive-app)
-export APP_HOME
-cd "$APP_HOME"
+DEEPDIVE_APP=$(find-deepdive-app)
+export DEEPDIVE_APP
+cd "$DEEPDIVE_APP"
 
 . load-db-driver.sh
 
@@ -25,5 +25,8 @@ if [[ -e schema.sql ]]; then
 fi
 
 # load the input data
-! [[ -x input/init.sh ]] ||
+! [[ -x input/init.sh ]] || {
+    # XXX set the legacy environment variables
+    export APP_HOME=$DEEPDIVE_APP
     input/init.sh "$@"
+}

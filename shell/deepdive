@@ -50,7 +50,7 @@ fi
 # Process common options
 while getopts "C:" o; do
     case $o in
-        C) export APP_HOME=$OPTARG ;;
+        C) export DEEPDIVE_APP=$OPTARG ;;
     esac
 done
 shift $(($OPTIND - 1))
