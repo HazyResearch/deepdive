@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # A bash script for setting up environment for DeepDive tests that is supposed to be sourced from every .bats
 
-: ${STAGE_DIR:=dist/stage} # path to the staging area must be set
-
 # find out the path to the root of DeepDive's source tree
 DEEPDIVE_TEST_ROOT=$(cd "$(dirname "${BASH_SOURCE:-$0}")" && pwd)
 DEEPDIVE_SOURCE_ROOT=$(cd "$DEEPDIVE_TEST_ROOT/.." && pwd)
-DEEPDIVE_HOME="$DEEPDIVE_SOURCE_ROOT/$STAGE_DIR"
+
+# determine the DeepDive installation to run tests against (defaults to the staged one)
+: ${DEEPDIVE_HOME:=$(cd "$DEEPDIVE_SOURCE_ROOT" && echo "$PWD"/dist/stage)}
 
 # configure PATH and CLASSPATH for tests
 PATH="$DEEPDIVE_HOME/util:$DEEPDIVE_HOME/bin:$PATH"
-source "$DEEPDIVE_HOME"/env.sh
+! [[ -r "$DEEPDIVE_HOME"/env.sh ]] || source "$DEEPDIVE_HOME"/env.sh
 
 export \
     DEEPDIVE_TEST_ROOT \

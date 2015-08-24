@@ -2,10 +2,9 @@
 # A script to test whether the Greenplum tests should be done or not
 set -eu
 
+cd "$(dirname "$0")"
+. ./env.sh
 {
-    cd "$(dirname "$0")"
-    . ./env.sh
-
     # gpfdist should be on PATH to say Greenplum is there
     type gpfdist
     # also check database version

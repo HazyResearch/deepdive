@@ -12,7 +12,7 @@ This document explains how to install DeepDive on your system.
 
 We provide a simple installation method for the following supported systems:
 
-* Ubuntu Linux (12.04LTS, 14.04LTS, or later)
+* GNU/Linux: Debian (7, 8, or later) and Ubuntu (12.04LTS, 14.04LTS, or later)
     * [VirtualBox](https://help.ubuntu.com/community/VirtualBox)
     * [AWS EC2](../advanced/ec2.html)
     * [Docker](../advanced/docker.html)
@@ -29,9 +29,10 @@ You can install DeepDive and all its dependencies with a single command.
     ```
     $ bash <(curl -fsSL deepdive.stanford.edu/install)
     ### DeepDive installer for Mac
-    1) deepdive               3) deepdive_from_source
-    2) deepdive_from_release  4) postgres
-    # Select what to install (enter a number or q to quit)? 1
+    1) deepdive                 4) deepdive_from_source
+    2) deepdive_examples_tests  5) postgres
+    3) deepdive_from_release    6) run_deepdive_tests
+    # Select what to install (enter for all options, q to quit, or a number)? 1
     [...]
     ```
 
@@ -63,6 +64,10 @@ You can install DeepDive and all its dependencies with a single command.
     * [`postgres_xl`](../advanced/pgxl.html)
     * [`greenplum`](../advanced/greenplum.html)
     * [`mysql`](../advanced/mysql.html)
+
+5. You can verify whether your installation is correct using the `run_deepdive_tests` option in the installer.
+    It downloads all examples and tests for the DeepDive release and runs the tests using the installed one.
+    To only download the example applications, use the `deepdive_examples_tests` option.
 
 Congratulations! DeepDive is now installed on your system, and you can proceed to the [next steps](walkthrough/walkthrough.html).
 

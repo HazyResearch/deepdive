@@ -34,6 +34,7 @@ setup() {
 }
 
 @test "$DBVARIANT spouse example (piggy_extractor)" {
+    type javac >/dev/null || skip
     cd piggy_extractor || skip
     deepdive initdb
     deepdive run
