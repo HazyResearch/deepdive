@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Using DeepDive with Postgres-XL
 ---
 
 # Using DeepDive with Postgres-XL

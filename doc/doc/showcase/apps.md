@@ -1,5 +1,6 @@
 ---
 layout: default
+title: DeepDive Applications
 source-url: https://docs.google.com/document/d/1ruBshA-oSoqJ0CCqOQR9DIdBWlfeA3fQs8qytmZyWPE/edit
 ---
 

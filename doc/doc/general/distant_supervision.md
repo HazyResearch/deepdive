@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Distant Supervision
 ---
 
 # Distant supervision

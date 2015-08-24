@@ -1,5 +1,6 @@
 ---
 layout: default
+title: PaleoDeepDive
 ---
 
 # PaleoDeepDive: A System Walkthrough

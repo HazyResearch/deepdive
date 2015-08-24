@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Probabilistic Inference and Factor Graphs
 ---
 
 # Probabilistic Inference and Factor Graphs

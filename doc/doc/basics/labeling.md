@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Labeling Data Products
 ---
 
 # Labeling Data Products of DeepDive

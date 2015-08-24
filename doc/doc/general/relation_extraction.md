@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Relation Extraction
 ---
 
 # Relation Extraction

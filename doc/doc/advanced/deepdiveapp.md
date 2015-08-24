@@ -1,5 +1,6 @@
 ---
 layout: default
+title: DeepDive Application's Structure and Operations
 ---
 
 # DeepDive Application

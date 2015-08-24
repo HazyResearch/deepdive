@@ -1,5 +1,6 @@
 ---
 layout: default
+title: DeepDive Open Datasets
 ---
 
 # DeepDive Open Datasets

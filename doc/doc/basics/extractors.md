@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Writing Extractors
 ---
 
 # Writing extractors

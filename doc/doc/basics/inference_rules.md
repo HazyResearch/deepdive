@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Writing Inference Rules
 ---
 
 # Writing inference rules

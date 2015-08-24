@@ -1,5 +1,6 @@
 ---
 layout: default
+title: "Tutorial: Extras"
 ---
 
 # Example Application: Extras

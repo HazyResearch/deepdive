@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Incremental Workflow
 ---
 
 # Building an Incremental Application
