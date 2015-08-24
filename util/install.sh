@@ -154,7 +154,8 @@ case $(uname) in
             {
                 set -o pipefail
                 hint=$(lsb_release -i | cut -f2) ||
-                hint=$(head -1 /etc/redhat-release)
+                hint=$(head -1 /etc/redhat-release) ||
+                hint=  # give up finding hint
             } 2>/dev/null
             error "WARNING: Unsupported GNU/Linux distribution${hint:+: $hint}"
         fi

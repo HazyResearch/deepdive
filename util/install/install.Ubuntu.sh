@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # DeepDive installers for Debian/Ubuntu Linux
 
-LSB=$(lsb_release -ir | cut -f2)
+LSB=$(lsb_release -ir | cut -f2) || true
 case ${LSB} in
     Debian*8*|Debian*7*) true ;;
     Ubuntu*12.04|Ubuntu*14.04|Ubuntu*15.04) true ;;
