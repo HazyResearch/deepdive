@@ -21,7 +21,7 @@ dbtype=${url%%://*}
 # place the driver on PATH
 PATH="$DEEPDIVE_HOME"/util/driver."$dbtype":"$PATH"
 # make sure all operations are defined
-for op in parse init execute query
+for op in parse init execute query load
 do type db-$op &>/dev/null || error "db-$op operation not available for $dbtype"
 done
 
