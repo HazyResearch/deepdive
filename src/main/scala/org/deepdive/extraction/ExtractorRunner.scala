@@ -460,7 +460,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
       Helpers.executeCmd(splitCmdByPar);
     } catch {
       case e: Throwable =>
-        log.debug(s"Split by number of chunks is not supported. Try to use batch size ${linesPerSplit} to split...") 
+        log.debug(s"Split by number of chunks is not supported. Try to use batch size ${linesPerSplit} to split...")
         executeScriptOrFail(splitCmd, taskSender)
     }
 
