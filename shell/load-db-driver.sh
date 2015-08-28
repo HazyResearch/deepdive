@@ -7,13 +7,16 @@
 # the DeepDive application.
 ##
 eval "$(
+set -eu
+trap 'echo false' ERR
 
 # parse URL for database
-url=${DEEPDIVE_DB_URL:-$(
+url=${DEEPDIVE_DB_URL:-}
+if [[ -z "$url" ]]; then
     DEEPDIVE_APP=$(find-deepdive-app)
     export DEEPDIVE_APP
-    cat "$DEEPDIVE_APP"/db.url
-)}
+    url=$(cat "$DEEPDIVE_APP"/db.url)
+fi
 
 # recognize the database type from the URL scheme
 dbtype=${url%%://*}
