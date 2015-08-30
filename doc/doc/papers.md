@@ -11,6 +11,9 @@ root: "."
 - *Best Reference:* [Machine-compiled Macroevolutionary History of Phanerozoic Life.](http://arxiv.org/abs/1406.2963)
   Shanan E. Peters, Ce Zhang, Miron Livny, and C. Ré. PloS ONE.
 
+- [The Mobilize Center: an NIH big data to knowledge center to advance human movement research and improve mobility.](http://jamia.oxfordjournals.org/content/early/2015/08/13/jamia.ocv071.abstract) Joy P Ku, Jennifer L Hicks, Trevor Hastie, Jure Leskovec, C. Ré, and Scott L Delp. AMIA, 2015.
+- Large-scale extraction of gene interactions from full text literature using DeepDive. Emily Mallory, Ce Zhang, C. Ré, and Russ Altman. Bioinformatics 2015.
+- [A Demonstration of Data Labeling in Knowledge Base Construction.](http://cs.stanford.edu/people/chrismre/papers/p2148-shin-vldb-demo.pdf) Jaeho Shin, Mike Cafarella, and C. Ré. VLDB Demo, 2015.
 - [Elementary: Large-scale Knowledge-base Construction via Machine Learning and Statistical Inference.](http://www.cs.stanford.edu/people/chrismre/papers/elementary_journal.pdf)
   F. Niu, Ce Zhang, C. Ré, and J. Shavlik. IJSWIS, Special Issue on Knowledge Extraction from the Web, 2012.
 - [Stanford’s 2014 Slot Filling Systems.](http://i.stanford.edu/hazy/papers/2014kbp-systemdescription.pdf)
