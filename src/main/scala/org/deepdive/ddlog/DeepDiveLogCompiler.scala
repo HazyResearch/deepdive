@@ -598,13 +598,14 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           + (function.implementations mkString "\n  "))
 
       val blockName = ss.resolveExtractorBlockName(stmt)
+      val parallelism = stmt.parallelism map (s => s"\nparallelism: $s") getOrElse("")
       val extractor = s"""
         deepdive.extraction.extractors.${blockName} {
           input: \"\"\" ${new QueryCompiler(stmt.q, ss).generateSQL(TableAlias)}
           \"\"\"
           output_relation: \"${stmt.output}\"
           ${udfDetails.get}
-          ${ss.generateDependenciesOfCompiledBlockFor(List(stmt))}
+          ${ss.generateDependenciesOfCompiledBlockFor(List(stmt))}${parallelism}
         }
       """
       extractors += extractor

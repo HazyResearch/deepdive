@@ -101,7 +101,7 @@ case class SchemaDeclaration( a : Attribute
 case class FunctionDeclaration( functionName: String, inputType: FunctionInputOutputType,
   outputType: FunctionInputOutputType, implementations: List[FunctionImplementationDeclaration], mode: Option[String] = None) extends Statement
 case class ExtractionRule(headName: String, q : ConjunctiveQuery, supervision: Option[String] = None) extends Statement // Extraction rule
-case class FunctionCallRule(output: String, function: String, q : ConjunctiveQuery) extends Statement // Extraction rule
+case class FunctionCallRule(output: String, function: String, q : ConjunctiveQuery, parallelism: Option[Int]) extends Statement // Extraction rule
 case class InferenceRule(head: InferenceRuleHead, q : ConjunctiveQuery, weights : FactorWeight, mode: Option[String] = None) extends Statement // Weighted rule
 
 // Parser
@@ -303,9 +303,10 @@ class DeepDiveLogParser extends JavaTokenParsers {
         ConjunctiveQuery(head, disjunctiveBodies, isDistinct != None, limit map (_.toInt))
   }
 
+  def parallelism = "@parallelism" ~> "(" ~> integer <~ ")"
   def functionCallRule : Parser[FunctionCallRule] =
-    relationName ~ "+=" ~ functionName ~ conjunctiveQuery ^^ {
-      case (out ~ _ ~ func ~ cq) => FunctionCallRule(out, func, cq)
+    opt(parallelism) ~ relationName ~ "+=" ~ functionName ~ conjunctiveQuery ^^ {
+      case (parallelism ~ out ~ _ ~ func ~ cq) => FunctionCallRule(out, func, cq, parallelism)
     }
 
   def supervision = "@label" ~> "(" ~> variableName <~ ")"
