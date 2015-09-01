@@ -18,10 +18,8 @@ label2(
 q1?(wid INT).
 q2?(wid INT).
 
-@label(val)
-q1(wid) :- label1(wid, val).
-@label(val)
-q2(wid) :- label2(wid, val).
+q1(wid) = val :- label1(wid, val).
+q2(wid) = val :- label2(wid, val).
 
 @weight(fid)
 q1(wid) :- features(id, wid, fid, fval).
