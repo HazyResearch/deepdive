@@ -304,15 +304,23 @@ class DeepDiveLogParser extends JavaTokenParsers {
   }, (s) => s"${s}: unrecognized mode"))
 
   def parallelism = "@parallelism" ~> "(" ~> integer <~ ")"
+
+  def supervision = "=" ~> (variableName | "TRUE" | "FALSE")
+
+  def conjunctiveQueryWithSupervision  = // returns Parser[String], Parser[ConjunctiveQuery]
+    cqHeadTerms ~ opt("*") ~ opt("|" ~> decimalNumber) ~ opt(supervision) ~ ":-" ~ rep1sep(cqConjunctiveBody, ";") ^^ {
+      case (head ~ isDistinct ~ limit ~ sup ~ ":-" ~ disjunctiveBodies) =>
+        (sup, ConjunctiveQuery(head, disjunctiveBodies, isDistinct != None, limit map (_.toInt)))
+  }
+
   def functionCallRule : Parser[FunctionCallRule] =
     opt(functionMode) ~ opt(parallelism) ~ relationName ~ "+=" ~ functionName ~ conjunctiveQuery ^^ {
       case (mode ~ parallelism ~ out ~ _ ~ func ~ cq) => FunctionCallRule(out, func, cq, mode, parallelism)
     }
 
-  def supervision = "@label" ~> "(" ~> variableName <~ ")"
   def extractionRule =
-    opt(supervision) ~ relationName ~ conjunctiveQuery ^^ {
-      case (sup ~ head ~ cq) => ExtractionRule(head, cq, sup)
+    relationName ~ conjunctiveQueryWithSupervision ^^ {
+      case (head ~ cq) => ExtractionRule(head, cq._2, cq._1)
   }
 
   def factorWeight = "@weight" ~> "(" ~> rep1sep(expr, ",") <~ ")" ^^ { FactorWeight(_) }

@@ -63,12 +63,10 @@ dd_new_q2(wid) :-
     q2(wid);
     dd_delta_q2(wid).
 
-@label(val)
-dd_delta_q1(wid) :-
+dd_delta_q1(wid) = val :-
     dd_delta_label1(wid, val).
 
-@label(val)
-dd_delta_q2(wid) :-
+dd_delta_q2(wid) = val :-
     dd_delta_label2(wid, val).
 
 @weight(fid)
