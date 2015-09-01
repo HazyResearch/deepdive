@@ -299,6 +299,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
         ConjunctiveQuery(head, disjunctiveBodies, isDistinct != None, limit map (_.toInt))
   }
 
+<<<<<<< HEAD
   def functionMode = "@mode" ~> commit("(" ~> functionModeType <~ ")" ^? ({
     case "inc" => "inc"
   }, (s) => s"${s}: unrecognized mode"))
