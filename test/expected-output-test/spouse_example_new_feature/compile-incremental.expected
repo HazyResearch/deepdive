@@ -302,6 +302,10 @@ FROM dd_new_people_mentions R0, dd_delta_people_mentions R1
 
         deepdive.extraction.extractors.extraction_rule_29 {
           input: """ SELECT ARRAY_TO_STRING(R0.words, '~^~') AS column_0, R1.relation_id AS "has_spouse_candidates.R1.relation_id", R2.start_position AS "people_mentions.R2.start_position", R2.length AS "people_mentions.R2.length", R3.start_position AS "people_mentions.R3.start_position", R3.length AS "people_mentions.R3.length"
+FROM sentences R0, has_spouse_candidates R1, people_mentions R2, people_mentions R3
+        WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id 
+UNION ALL
+SELECT ARRAY_TO_STRING(R0.words, '~^~') AS column_0, R1.relation_id AS "has_spouse_candidates.R1.relation_id", R2.start_position AS "people_mentions.R2.start_position", R2.length AS "people_mentions.R2.length", R3.start_position AS "people_mentions.R3.start_position", R3.length AS "people_mentions.R3.length"
 FROM dd_delta_sentences R0, has_spouse_candidates R1, people_mentions R2, people_mentions R3
         WHERE R1.sentence_id = R0.sentence_id  AND R2.sentence_id = R0.sentence_id  AND R2.mention_id = R1.person1_id  AND R3.sentence_id = R0.sentence_id  AND R3.mention_id = R1.person2_id 
 UNION ALL

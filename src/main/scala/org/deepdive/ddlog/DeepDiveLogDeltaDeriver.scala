@@ -2,13 +2,21 @@ package org.deepdive.ddlog
 
 import scala.collection.mutable.ListBuffer
 
+
+object Mode extends Enumeration {
+  type Mode = Value
+  // NewInference: a new inference rule
+  // NewFunction: a new function call
+  // Normal: existing rules
+  val NewInference, NewFunction, Normal = Value
+}
+import Mode._
+
 object DeepDiveLogDeltaDeriver{
 
   // Default prefix for incremental tables
   val deltaPrefix = "dd_delta_"
   val newPrefix = "dd_new_"
-
-  var incrementalFunctionInput = new ListBuffer[String]()
 
   def transform(stmt: Statement): List[Statement] = stmt match {
     case s: SchemaDeclaration   => transform(s)
@@ -18,7 +26,7 @@ object DeepDiveLogDeltaDeriver{
     case s: InferenceRule       => transform(s)
   }
 
-  def transform(headName: String, cq: ConjunctiveQuery, mode: Option[String]): ConjunctiveQuery = {
+  def transform(headName: String, cq: ConjunctiveQuery, mode: Mode): ConjunctiveQuery = {
 
     // New head
     val incCqHead = transform(headName)
@@ -46,12 +54,12 @@ object DeepDiveLogDeltaDeriver{
       val incDeltaBodyAtoms = incDeltaBody collect { case a: BodyAtom => a }
       val incNewBodyAtoms   = incNewBody   collect { case a: BodyAtom => a }
 
-      var i = 0
-      var j = 0
-      var index = if (incrementalFunctionInput contains incCqHead) -1 else 0
-      if (mode == Some("inc")) {
+      if (mode == NewInference) {
         incCqBodies += incNewBody
       } else {
+        var i = 0
+        var j = 0
+        val index = if (mode == NewFunction) -1 else 0
         for (i <- index to (bodyAtoms.length - 1)) {
           var newBody = new ListBuffer[Body]()
           for (j <- 0 to (bodyAtoms.length - 1)) {
@@ -112,14 +120,12 @@ object DeepDiveLogDeltaDeriver{
   def transform(stmt: FunctionDeclaration): List[Statement] = {
     List(stmt.copy(
       inputType = stmt.inputType match {
-        case inTy: RelationTypeDeclaration =>
-          inTy.copy(names = inTy.names map {name => deltaPrefix + name})
+        case inTy: RelationTypeDeclaration => inTy
         case inTy: RelationTypeAlias =>
           inTy.copy(likeRelationName = deltaPrefix + inTy.likeRelationName)
       },
       outputType = stmt.outputType match {
-        case outTy: RelationTypeDeclaration =>
-          outTy.copy(names = outTy.names map {name => deltaPrefix + name})
+        case outTy: RelationTypeDeclaration => outTy
         case outTy: RelationTypeAlias =>
           outTy.copy(likeRelationName = deltaPrefix + outTy.likeRelationName)
       }
@@ -131,40 +137,29 @@ object DeepDiveLogDeltaDeriver{
   def transform(stmt: ExtractionRule): List[Statement] = {
     List(stmt.copy(
       headName = transform(stmt.headName),
-      q = transform(stmt.headName, stmt.q, None)))
+      q = transform(stmt.headName, stmt.q, Normal)))
   }
 
   // Incremental function call rule,
   // modify function input and output
   def transform(stmt: FunctionCallRule): List[Statement] = {
+    val mode = if (stmt.mode == Some("inc")) NewFunction else Normal
     List(stmt.copy(
       output = transform(stmt.output),
-      q = transform(stmt.output, stmt.q, None)))
+      q = transform(stmt.output, stmt.q, mode),
+      mode = None))
   }
 
   // Incremental inference rule,
   // create delta rules based on original extraction rule
   def transform(stmt: InferenceRule): List[Statement] = {
+    val mode = if (stmt.mode == Some("inc")) NewInference else Normal
     List(stmt.copy(head = stmt.head.copy(terms = stmt.head.terms map transform),
-      q = transform("", stmt.q, stmt.mode), mode = None))
-  }
-
-  def generateIncrementalFunctionInputList(program: DeepDiveLog.Program) {
-    program.foreach {
-      case x:FunctionDeclaration => if (x.mode == Some("inc")) {
-        x.inputType match {
-          case inTy: RelationTypeAlias => incrementalFunctionInput += deltaPrefix + inTy.likeRelationName
-          case _ =>
-        }
-      }
-      case _ =>
-    }
+      q = transform("", stmt.q, mode), mode = None))
   }
 
   def derive(program: DeepDiveLog.Program): DeepDiveLog.Program = {
     var incrementalProgram = new ListBuffer[Statement]()
-
-    generateIncrementalFunctionInputList(program)
 
     for (x <- program) {
       incrementalProgram = incrementalProgram ++ transform(x)
