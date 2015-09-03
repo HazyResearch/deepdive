@@ -101,7 +101,7 @@ case class SchemaDeclaration( a : Attribute
 case class FunctionDeclaration( functionName: String, inputType: FunctionInputOutputType,
   outputType: FunctionInputOutputType, implementations: List[FunctionImplementationDeclaration]) extends Statement
 case class ExtractionRule(headName: String, q : ConjunctiveQuery, supervision: Option[String] = None) extends Statement // Extraction rule
-case class FunctionCallRule(output: String, function: String, q : ConjunctiveQuery, mode: Option[String]) extends Statement // Extraction rule
+case class FunctionCallRule(output: String, function: String, q : ConjunctiveQuery, mode: Option[String], parallelism: Option[Int]) extends Statement // Extraction rule
 case class InferenceRule(head: InferenceRuleHead, q : ConjunctiveQuery, weights : FactorWeight, mode: Option[String] = None) extends Statement // Weighted rule
 
 // Parser
@@ -303,11 +303,10 @@ class DeepDiveLogParser extends JavaTokenParsers {
     case "inc" => "inc"
   }, (s) => s"${s}: unrecognized mode"))
 
+  def parallelism = "@parallelism" ~> "(" ~> integer <~ ")"
   def functionCallRule : Parser[FunctionCallRule] =
-    opt(functionMode) ~ relationName ~ "+=" ~ functionName ~ conjunctiveQuery ^^ {
-      case (mode ~ out ~ _ ~ func ~ cq) => {
-        FunctionCallRule(out, func, cq, mode)
-      }
+    opt(functionMode) ~ opt(parallelism) ~ relationName ~ "+=" ~ functionName ~ conjunctiveQuery ^^ {
+      case (mode ~ parallelism ~ out ~ _ ~ func ~ cq) => FunctionCallRule(out, func, cq, mode, parallelism)
     }
 
   def supervision = "@label" ~> "(" ~> variableName <~ ")"

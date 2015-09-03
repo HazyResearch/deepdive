@@ -172,7 +172,8 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   }
 
   def print(stmt: FunctionCallRule): String = {
-    ( stmt.mode map (s => s"""@mode("${s}")\n""") getOrElse "" ) +
+    ( stmt.mode map (s => s"""@mode("${s}")\n""") getOrElse("") ) +
+    ( stmt.parallelism map (s => s"@parallelism($s)\n") getOrElse("") ) +
     s"${stmt.output} += ${stmt.function}${print(stmt.q)}.\n"
   }
 

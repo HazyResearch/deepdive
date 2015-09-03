@@ -281,6 +281,7 @@ FROM dd_delta_sentences R0
           udf: ${APP_HOME}"/udf/ext_people.py"
           style: "tsv_extractor" 
           
+          parallelism: ${PARALLELISM}
         }
       
 
@@ -297,6 +298,7 @@ FROM dd_new_people_mentions R0, dd_delta_people_mentions R1
           udf: ${APP_HOME}"/udf/ext_has_spouse.py"
           style: "tsv_extractor" 
           dependencies: [ "extraction_rule_25" ,  "extraction_rule_11" ]
+          parallelism: ${PARALLELISM}
         }
       
 
@@ -325,6 +327,7 @@ FROM dd_new_sentences R0, dd_new_has_spouse_candidates R1, dd_new_people_mention
           udf: ${APP_HOME}"/udf/ext_has_spouse_features.py"
           style: "tsv_extractor" 
           dependencies: [ "extraction_rule_15" ,  "extraction_rule_27" ,  "extraction_rule_7" ,  "extraction_rule_11" ,  "extraction_rule_25" ]
+          parallelism: ${PARALLELISM}
         }
       
 
