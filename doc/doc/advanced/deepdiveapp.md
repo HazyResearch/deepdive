@@ -17,6 +17,8 @@ A DeepDive application is a directory that contains the following files and dire
 
     A URL representing the database configuration is supposed to be stored in this file.
     For example, `postgresql://user:password@localhost:5432/database_name` can be the line stored in it.
+    SSL connection can be specified in the URL by adding `?ssl=true` in the end.
+    For example, `postgresql://user:password@localhost:5432/database_name?ssl=true`.
 
 * `deepdive.conf`
 
