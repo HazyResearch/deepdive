@@ -16,8 +16,19 @@ db-init "$@"
 
 # make sure the necessary tables are all created
 if [[ -e app.ddlog ]]; then
-    # TODO export schema.sql from ddlog instead of running initdb pipeline
-    deepdive-run initdb
+    if [[ $# -gt 0 ]]; then
+        tmp=$(mktemp -d "${TMPDIR:-/tmp}"/deepdive-initdb.XXXXXXX)
+        trap 'rm -rf "$tmp"' EXIT
+        schema_json="$tmp"/schema.json
+        ddlog export-schema app.ddlog > "$schema_json"
+        for t in "$@"; do
+            deepdive-sql "DROP TABLE IF EXISTS $t CASCADE"
+            ddlog_initdb $schema_json $t | deepdive-sql
+        done
+    else
+        # TODO export schema.sql from ddlog instead of running initdb pipeline
+        deepdive-run initdb
+    fi
 fi
 # run all DDL statements in schema.sql if available
 if [[ -e schema.sql ]]; then
@@ -25,7 +36,7 @@ if [[ -e schema.sql ]]; then
 fi
 
 # load the input data
-! [[ -x input/init.sh ]] || {
+! [[ -x input/init.sh && $# -eq 0 ]] || {
     # XXX set the legacy environment variables
     export APP_HOME=$DEEPDIVE_APP
     input/init.sh "$@"

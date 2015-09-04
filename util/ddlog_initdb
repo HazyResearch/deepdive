@@ -1,0 +1,23 @@
+#! /usr/bin/env python
+# Generate create table statement given a ddlog exported schema and a table name.
+# Usage: ddlog_initdb SCHEMA.JSON TABLE_NAME
+
+import json, sys
+
+def main():
+  # load schema.json
+  with open(sys.argv[1]) as schema_file:
+    schema = json.load(schema_file)
+  table = sys.argv[2]
+  # the given table is not in the schema, do nothing
+  if table not in schema["relations"]:
+    print ""
+  else:
+    columns_json = schema["relations"][table]["columns"]
+    columns = range(len(columns_json))
+    for k, v in columns_json.iteritems():
+      columns[v["index"]] = "%s %s" %(k, v["type"])
+    print "CREATE TABLE %s(%s)\n" %(table, ", ".join(columns))
+
+if __name__ == "__main__":
+  main()

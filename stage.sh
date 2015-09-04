@@ -60,6 +60,7 @@ stage util/active.sh                                              util/
 stage util/calibration.py                                         util/
 stage util/calibration.plg                                        util/
 stage util/pgtsv_to_json                                          util/
+stage util/ddlog_initdb                                           util/
 
 # DDlog compiler
 stage util/ddlog                                                  bin/
