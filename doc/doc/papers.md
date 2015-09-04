@@ -40,6 +40,8 @@ root: "."
 - *Best Reference for Sampler:* [DimmWitted: A Study of Main-Memory Statistical Analytics.](http://arxiv.org/abs/1403.7550) Ce Zhang and C. Ré. VLDB 2014.
 - *Best Reference for Grounding:* [Tuffy: Scaling up Statistical Inference in Markov Logic Networks using an RDBMS.](http://www.cs.stanford.edu/people/chrismre/papers/tuffy-vldb11.pdf) F. Niu, C. Ré, A.Doan, and J.W. Shavlik. PVLDB 11.
 
+- Rapidly Mixing Gibbs Sampling for a Class of Factor Graphs Using Hierarchy Width. Christopher De Sa, Ce Zhang, Kunle Olukotun, and C. Ré. NIPS 2015 (Spotlight).
+- [Taming the Wild: A Unified Analysis of Hogwild!-Style Algorithms.](http://arxiv.org/abs/1506.06438) Christopher De Sa, Ce Zhang, Kunle Olukotun, and C. Ré. NIPS 2015.
 - [Towards High-Throughput Gibbs Sampling at Scale: A Study across Storage Managers.](http://www.cs.stanford.edu/people/chrismre/papers/elementary_sigmod.pdf) Ce Zhang and C. Ré. SIGMOD 2013
 - [An Asynchronous Parallel Stochastic Coordinate Descent Algorithm.](http://arxiv.org/abs/1311.1873) J. Liu, S. Wright, C. Ré, V. Bittorf, S. Sridhar. ICML 2014.
 - [Hogwild!: A Lock-Free Approach to Parallelizing Stochastic Gradient Descent.](http://i.stanford.edu/hazy/papers/hogwild-nips.pdf) F. Niu, B. Recht, C. Ré, and S. J. Wright. NIPS, 2011
