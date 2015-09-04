@@ -24,7 +24,7 @@ echo "DEEPDIVE_JDBC_DRIVER=org.postgresql.Driver"
 if [ ${ssl} = "true" ]; then
     echo "DEEPDIVE_JDBC_URL=jdbc:postgresql://$host${port:+:$port}/$dbname?ssl=true\&sslfactory=org.postgresql.ssl.NonValidatingFactory"
 else
-    echo "DEEPDIVE_JDBC_URL=jdbc:postgresql://$host${port:+:$port}/$dbname" 
+    echo "DEEPDIVE_JDBC_URL=jdbc:postgresql://$host${port:+:$port}/$dbname"
 fi
 echo "export DEEPDIVE_JDBC_DRIVER DEEPDIVE_JDBC_URL"
 
