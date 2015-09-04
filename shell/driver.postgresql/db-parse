@@ -21,7 +21,11 @@ echo "export DBHOST DBPORT DBUSER DBPASSWORD DBNAME"
 
 # more variables for Scala application.conf
 echo "DEEPDIVE_JDBC_DRIVER=org.postgresql.Driver"
-echo "DEEPDIVE_JDBC_URL=jdbc:postgresql://$host${port:+:$port}/$dbname"
+if [ ${ssl} = "true" ]; then
+    echo "DEEPDIVE_JDBC_URL=jdbc:postgresql://$host${port:+:$port}/$dbname?ssl=true\&sslfactory=org.postgresql.ssl.NonValidatingFactory"
+else
+    echo "DEEPDIVE_JDBC_URL=jdbc:postgresql://$host${port:+:$port}/$dbname" 
+fi
 echo "export DEEPDIVE_JDBC_DRIVER DEEPDIVE_JDBC_URL"
 
 # XXX several environment variables for legacy apps
@@ -29,4 +33,9 @@ echo "PGHOST=${host}"
 echo "PGPORT=${port}"
 echo "PGUSER=${user}"
 echo "PGPASSWORD=\$DBPASSWORD"
-echo "export PGHOST PGPORT PGUSER PGPASSWORD"
+if [ ${ssl} = "true"  ]; then
+    echo "PGSSLMODE=require"
+else
+    echo "PGSSLMODE=disable"
+fi
+echo "export PGHOST PGPORT PGUSER PGPASSWORD PGSSLMODE"
