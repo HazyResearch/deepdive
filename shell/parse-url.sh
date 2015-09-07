@@ -19,6 +19,4 @@ user=${user_password%:*}
 password=${user_password#$user}
 password=${password#:}
 dbname=${rest%\?*}
-rest1=${rest#$dbname?}
-ssl=${rest1#ssl=} # TODO we only support ssl parameter from the rest of the URL
-#dbname=${rest}  # TODO do we need to strip any parameters from the rest of the URL?
+querystring=${rest#$dbname}
