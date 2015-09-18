@@ -11,7 +11,7 @@ object Sampler {
 
   // Tells the Sampler to run inference
   case class Run(samplerCmd: String, samplerOptions: String, weightsFile: String, variablesFile: String,
-    factorsFile: String, edgesFile: String, metaFile: String, outputDir: String,
+    factorsFile: String, edgesFile: String, metaFile: String, featureMeta: String, outputDir: String,
     baseDir: Option[String], incMode: IncrementalMode)
 }
 
@@ -22,10 +22,10 @@ class Sampler extends Actor with ActorLogging {
 
   def receive = {
     case Sampler.Run(samplerCmd, samplerOptions, weightsFile, variablesFile,
-      factorsFile, edgesFile, metaFile, outputDir, baseDir, incMode) =>
+      factorsFile, edgesFile, metaFile, featureMeta, outputDir, baseDir, incMode) =>
       // Build the command
       val cmd = buildSamplerCmd(samplerCmd, samplerOptions, weightsFile, variablesFile,
-      factorsFile, edgesFile, metaFile, outputDir, baseDir.getOrElse(""), incMode)
+      factorsFile, edgesFile, metaFile, featureMeta, outputDir, baseDir.getOrElse(""), incMode)
       log.info(s"Executing: ${cmd.mkString(" ")}")
 
       // Handle the case where cmd! throw exception rather than return a value
@@ -62,7 +62,7 @@ class Sampler extends Actor with ActorLogging {
 
   // Build the command to run the sampler
   def buildSamplerCmd(samplerCmd: String, samplerOptions: String, weightsFile: String,
-    variablesFile: String, factorsFile: String, edgesFile: String, metaFile: String,
+    variablesFile: String, factorsFile: String, edgesFile: String, metaFile: String, featureMeta: String,
     outputDir: String, baseDir: String, incMode: IncrementalMode) = {
     incMode match {
       case MATERIALIZATION =>
@@ -78,6 +78,7 @@ class Sampler extends Actor with ActorLogging {
           "-w", weightsFile,
           "-v", variablesFile,
           "-f", factorsFile,
+	  "--feature_meta", featureMeta,
           "-e", edgesFile,
           "-m", metaFile,
           "-o", outputDir) ++ samplerOptions.split(" ")

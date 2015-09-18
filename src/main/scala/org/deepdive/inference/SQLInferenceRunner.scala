@@ -416,6 +416,16 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     }
   }
 
+  //THEO edit:
+  // output feature statistics file
+  def generateFeatureStats(du: DataLoader, dbSettings: DbSettings, groundingPath: String, groundingDir: String) {
+   du.unload(s"src_feature.meta", s"${groundingPath}/src_feature.meta", dbSettings,
+             s"""SELECT id AS weight_id, t1.metadata AS metadata
+              FROM (SELECT * FROM dd_weights_f_source_stock_feature_false UNION SELECT * FROM dd_weights_f_source_stock_feature_true) as t0,
+              (SELECT feature, metadata FROM feature_metadata) as t1
+              WHERE t1.feature = t0.\"source_features.feature\";""", groundingDir)
+  }
+
   def generateAcitve(groundingPath: String) {
     val cmd = s"${InferenceNamespace.getActiveScript}"
     log.debug("Executing: " + cmd)
@@ -964,6 +974,10 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
     // split grounding files and transform to binary format
     convertGroundingFormat(groundingPath)
+
+    // THEO edit:
+    // output feature statistics file
+    generateFeatureStats(du,dbSettings, groundingPath, groundingDir)
 
     // generate active compoenents for incremental
     dbSettings.incrementalMode match {
