@@ -69,6 +69,7 @@ has_spouse(rid) :-
     has_spouse_candidates(_, _, _, _, rid, _),
     has_spouse_features(rid, f).
 
+@mode("inc")
 @weight(3.0)
 has_spouse(rid2) = has_spouse(rid) :-
     has_spouse_candidates(a1, b1, _, _, rid, _),

@@ -60,8 +60,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
         "\"" + StringEscapeUtils.escapeJava(impl.command) + "\"" + styleStr
       }
     }
-    val modeStr = stmt.mode map (s => s"""@mode("${s}")\n""") getOrElse ""
-    s"""${modeStr}function ${stmt.functionName}
+    s"""function ${stmt.functionName}
        |    over ${inputType}
        | returns ${outputType}
        | ${(impls map {"implementation " + _}).mkString("\n ")}.
@@ -173,10 +172,13 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   }
 
   def print(stmt: FunctionCallRule): String = {
+    ( stmt.mode map (s => s"""@mode("${s}")\n""") getOrElse("") ) +
+    ( stmt.parallelism map (s => s"@parallelism($s)\n") getOrElse("") ) +
     s"${stmt.output} += ${stmt.function}${print(stmt.q)}.\n"
   }
 
   def print(stmt: InferenceRule): String = {
+    ( stmt.mode map (s => s"""@mode("${s}")\n""") getOrElse "" ) +
     ( s"@weight(${stmt.weights.variables map print mkString(", ")})\n"
     ) + print(stmt.head) + print(stmt.q) + ".\n"
   }

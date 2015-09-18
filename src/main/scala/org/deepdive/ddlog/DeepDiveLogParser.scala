@@ -99,9 +99,9 @@ case class SchemaDeclaration( a : Attribute
                             , annotation : List[Annotation] = List.empty // optional annotation
                             ) extends Statement // atom and whether this is a query relation.
 case class FunctionDeclaration( functionName: String, inputType: FunctionInputOutputType,
-  outputType: FunctionInputOutputType, implementations: List[FunctionImplementationDeclaration], mode: Option[String] = None) extends Statement
+  outputType: FunctionInputOutputType, implementations: List[FunctionImplementationDeclaration]) extends Statement
 case class ExtractionRule(headName: String, q : ConjunctiveQuery, supervision: Option[String] = None) extends Statement // Extraction rule
-case class FunctionCallRule(output: String, function: String, q : ConjunctiveQuery) extends Statement // Extraction rule
+case class FunctionCallRule(output: String, function: String, q : ConjunctiveQuery, mode: Option[String], parallelism: Option[Int]) extends Statement // Extraction rule
 case class InferenceRule(head: InferenceRuleHead, q : ConjunctiveQuery, weights : FactorWeight, mode: Option[String] = None) extends Statement // Weighted rule
 
 // Parser
@@ -276,19 +276,15 @@ class DeepDiveLogParser extends JavaTokenParsers {
       }
     )
 
-  def functionMode = "@mode" ~> commit("(" ~> functionModeType <~ ")" ^? ({
-    case "inc" => "inc"
-  }, (s) => s"${s}: unrecognized mode"))
-
   def functionDeclaration : Parser[FunctionDeclaration] =
-    ( opt(functionMode) ~ "function" ~ functionName ~ "over" ~ functionInputOutputType
+    ( "function" ~ functionName ~ "over" ~ functionInputOutputType
                              ~ "returns" ~ functionInputOutputType
                  ~ (functionImplementation+)
     ) ^^ {
-      case (mode ~ "function" ~ a ~ "over" ~ inTy
+      case ("function" ~ a ~ "over" ~ inTy
                            ~ "returns" ~ outTy
                        ~ implementationDecls) =>
-             FunctionDeclaration(a, inTy, outTy, implementationDecls, mode)
+             FunctionDeclaration(a, inTy, outTy, implementationDecls)
     }
 
   def cqBody: Parser[Body] = cond | quantifiedBody | atom
@@ -303,9 +299,14 @@ class DeepDiveLogParser extends JavaTokenParsers {
         ConjunctiveQuery(head, disjunctiveBodies, isDistinct != None, limit map (_.toInt))
   }
 
+  def functionMode = "@mode" ~> commit("(" ~> functionModeType <~ ")" ^? ({
+    case "inc" => "inc"
+  }, (s) => s"${s}: unrecognized mode"))
+
+  def parallelism = "@parallelism" ~> "(" ~> integer <~ ")"
   def functionCallRule : Parser[FunctionCallRule] =
-    relationName ~ "+=" ~ functionName ~ conjunctiveQuery ^^ {
-      case (out ~ _ ~ func ~ cq) => FunctionCallRule(out, func, cq)
+    opt(functionMode) ~ opt(parallelism) ~ relationName ~ "+=" ~ functionName ~ conjunctiveQuery ^^ {
+      case (mode ~ parallelism ~ out ~ _ ~ func ~ cq) => FunctionCallRule(out, func, cq, mode, parallelism)
     }
 
   def supervision = "@label" ~> "(" ~> variableName <~ ")"
