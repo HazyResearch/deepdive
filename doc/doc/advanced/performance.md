@@ -49,7 +49,7 @@ Java Virtual Machine. The default heap size is the minimum between one quarter o
 the physical memory and 1GB. If you use [SBT](http://www.scala-sbt.org/) to run
 a DeepDive application , you can set the heap size as follows:
 ```bash
-    SBT_OPTS="-Xmx8g" sbt "run -c path_to_deepdive.conf"
+    SBT_OPTS="-Xmx8g" deepdive run -c path_to_deepdive.conf
 ```
 
 ### Setting extractor parallelism and batch sizes
