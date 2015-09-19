@@ -28,7 +28,7 @@ this directory or overwrite files.
 Then, in `deepdive.conf`, specify the gpfdist settings in the `deepdive.db.default` as
 follows
 
-    deepdive.db.default {
+    db.default {
       gphost   : [host of gpfdist]
       gpport   : [port of gpfdist]
       gppath   : [**absolute path** of gpfdist directory]
@@ -40,7 +40,7 @@ gpfdist is running on (specified when starting gpfdist server).
 Finally, tell DeepDive to use parallel grounding by adding the following to
 `deepdive.conf`:
 
-    deepdive.inference.parallel_grounding: true
+    inference.parallel_grounding: true
 
 ### Setting the JVM heap size
 
@@ -49,7 +49,7 @@ Java Virtual Machine. The default heap size is the minimum between one quarter o
 the physical memory and 1GB. If you use [SBT](http://www.scala-sbt.org/) to run
 a DeepDive application , you can set the heap size as follows:
 ```bash
-    SBT_OPTS="-Xmx8g" sbt "run -c path_to_deepdive.conf"
+    SBT_OPTS="-Xmx8g" deepdive run -c path_to_deepdive.conf
 ```
 
 ### Setting extractor parallelism and batch sizes
