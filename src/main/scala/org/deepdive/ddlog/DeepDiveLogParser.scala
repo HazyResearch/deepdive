@@ -318,10 +318,16 @@ class DeepDiveLogParser extends JavaTokenParsers {
       case (mode ~ parallelism ~ out ~ _ ~ func ~ cq) => FunctionCallRule(out, func, cq, mode, parallelism)
     }
 
+  def oldstyleSupervision = "@label" ~> "(" ~> (variableName | "TRUE" | "FALSE") <~ ")"
+
   def extractionRule =
-    relationName ~ conjunctiveQueryWithSupervision ^^ {
+  ( relationName ~ conjunctiveQueryWithSupervision ^^ {
       case (head ~ cq) => ExtractionRule(head, cq._2, cq._1)
-  }
+    }
+  | oldstyleSupervision ~ relationName ~ conjunctiveQuery ^^ {
+      case (sup ~ head ~ cq) => ExtractionRule(head, cq, Some(sup))
+    }
+  )
 
   def factorWeight = "@weight" ~> "(" ~> rep1sep(expr, ",") <~ ")" ^^ { FactorWeight(_) }
   def inferenceMode = "@mode" ~> commit("(" ~> inferenceModeType <~ ")" ^? ({
