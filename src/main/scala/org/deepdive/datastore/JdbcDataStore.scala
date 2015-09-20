@@ -262,7 +262,7 @@ trait JdbcDataStore extends Logging {
   def existsFunction(function: String) : Boolean = {
     val sql = s"""
       SELECT EXISTS (
-        SELECT * 
+        SELECT *
         FROM information_schema.routines
         WHERE routine_name = '${function}'
       );
