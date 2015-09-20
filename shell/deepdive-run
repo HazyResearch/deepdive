@@ -93,12 +93,14 @@ fullConfig=$run_dir/deepdive.conf
     : ${Pipeline:=endtoend}
 
     # set PARALLELISM env var, use max parallelism if the variable is not set
-    if [[ $(uname) = 'Linux' ]]; then
-        parallelism=$(nproc)
-    else
-        parallelism=$(sysctl -n hw.ncpu)
-    fi
-    : ${PARALLELISM:=$parallelism}
+    : ${PARALLELISM:=$((
+        # Linux typically has coreutils which includes nproc
+        nproc ||
+        # OS X
+        sysctl -n hw.ncpu ||
+        # fall back to 1
+        echo 1
+    ) 2>/dev/null)}
     export PARALLELISM
 }
 
