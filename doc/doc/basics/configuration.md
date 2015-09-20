@@ -98,9 +98,7 @@ Both `:` and `=` are valid key-value separators.
 
 ## <a name="database" href="#"></a> Database connection
 
-<div class="alert alert-danger">(This section is outdated and only accurate up to release 0.6.x. <code>db.url</code> is the recommended place for configuration the database connection.)</div> <!-- TODO rewrite -->
-
-The configuration directives for the database connection must be specified
+The configuration directives for the database connection is option now (<code>db.url</code> is the recommended place), while it also can be specified
 inside a `db.default` section:
 
 ```bash
