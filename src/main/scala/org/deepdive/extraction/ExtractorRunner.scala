@@ -577,6 +577,14 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
       dataStore.executeSqlQueries("CREATE LANGUAGE plpythonu;")
     }
 
+    if (!dataStore.existsFunction("piggy_setup_package")) {
+      // Piggy extractor needs to run SQL query to setup
+      // the function `piggy_setup_package`. Therefore,
+      // if such a function does not exist in the current
+      // database, install it.
+      dataStore.executeSqlQueries(SQLFunctions.piggyExtractorDriverDeclaration, false)
+    }
+
     // Upload UDF directory and setup runtime env on DB nodes
     val udfDir = task.extractor.udfDir
     if (!new File(udfDir).exists()) {
