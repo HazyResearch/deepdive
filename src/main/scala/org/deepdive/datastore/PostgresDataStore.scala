@@ -178,7 +178,7 @@ class PostgresDataStore extends JdbcDataStore with Logging {
     if (!existsLanguage("plpgsql")) {
       executeSqlQueries("CREATE LANGUAGE plpgsql;")
     }
-    if (isUsingGreenplum || isUsingPostgresXL){ 
+    if (isUsingGreenplum || isUsingPostgresXL){
       // Only Greenplum and PostgresXL requires plpythonu by default.
       // Piggy extractor requires plpythonu, but then this
       // check should appear in Piggy's executor not here.
