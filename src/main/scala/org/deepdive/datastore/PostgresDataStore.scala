@@ -203,7 +203,6 @@ class PostgresDataStore extends JdbcDataStore with Logging {
           WHERE (host, port) IN (SELECT host, min(port) FROM pgxl_dual group by host);
       """)
     }
-    //executeSqlQueries(SQLFunctions.piggyExtractorDriverDeclaration, false)
   }
 
   // create fast sequence assign function for greenplum
