@@ -570,6 +570,13 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
       failTask(s"do not support ${task.extractor.style} on ${dbtype}.", taskSender)
     }
 
+    if (!dataStore.existsLanguage("plpythonu")) {
+      // Piggy extractor requires plpythonu,
+      // before execution, check whether the language exists.
+      // if not, install it.
+      dataStore.executeSqlQueries("CREATE LANGUAGE plpythonu;")
+    }
+
     // Upload UDF directory and setup runtime env on DB nodes
     val udfDir = task.extractor.udfDir
     if (!new File(udfDir).exists()) {
