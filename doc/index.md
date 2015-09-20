@@ -186,6 +186,7 @@ and
     - [Incremental DeepDive](doc/advanced/incremental.html)
 - Debugging a DeepDive Application
     - [Calibration](doc/basics/calibration.html)
+    - [Browsing data](doc/basics/browsing.html)
     - [Labeling data products](doc/basics/labeling.html)
     - [Generating negative examples](doc/basics/generating_negative_examples.html)
 - [Multinomial variables: Text chunking example](doc/basics/chunking.html)

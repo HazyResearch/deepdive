@@ -120,8 +120,8 @@ endif
 .PHONY: build-mindbender
 build-mindbender:
 	git submodule update --init mindbender
-	$(MAKE) -C mindbender
-	cp -f mindbender/mindbender-LATEST-*.sh util/mindbender
+	$(MAKE) -C mindbender clean-packages
+	$(MAKE) -C mindbender package
 
 .PHONY: build-ddlog
 build-ddlog:
