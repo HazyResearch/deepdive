@@ -43,6 +43,7 @@ stage shell/usage                                                 util/
 stage shell/deepdive-initdb                                       util/
 stage shell/deepdive-run                                          util/
 stage shell/deepdive-sql                                          util/
+stage shell/deepdive-load                                         util/
 
 stage shell/load-db-driver.sh                                     util/
 stage shell/driver.postgresql                                     util/
