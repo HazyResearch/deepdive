@@ -18,7 +18,7 @@ A DeepDive application is a directory that contains the following files and dire
     A URL representing the database configuration is supposed to be stored in this file.
     For example, `postgresql://user:password@localhost:5432/database_name` can be the line stored in it.
     SSL connection can be enabled by setting parameter `ssl` as true in the URL. More specially, parameter `sslfactory` allows user to specify which custom class to use for creating the SSLSocketFactory.
-    For example, the URL allows SSL connections to be made without validating the server''s certificate is `postgresql://user:password@localhost:5432/database_name?ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory`.
+    For example, the URL allows SSL connections to be made without validating the server's certificate is `postgresql://user:password@localhost:5432/database_name?ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory`.
 
 * `deepdive.conf`
 
