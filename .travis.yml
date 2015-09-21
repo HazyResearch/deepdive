@@ -40,7 +40,6 @@ before_install:
 
 install:
   - make depends
-  - util/install.sh postgres
   - make test-build  # XXX doing it here to hide the noise from sbt and unzip
 
 script:

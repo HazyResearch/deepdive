@@ -23,12 +23,12 @@ install__deepdive_runtime_deps() {
 
 install_postgres() {
     needs_brew
-    if has psql &&
-        brew list postgres | grep -q plpython  # XXX necessary for "CREATE LANGUAGE plpythonu"
+    if has psql
     then
         brew info postgres | grep 'postgres -D ' | bash &
     else
         brew uninstall postgres || true
-        brew install postgres --with-python  # XXX necessary for "CREATE LANGUAGE plpythonu"
+        brew install postgres
+        brew info postgres | grep 'postgres -D ' | bash &
     fi
 }
