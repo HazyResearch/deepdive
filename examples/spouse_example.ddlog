@@ -65,7 +65,6 @@ has_spouse_features +=
 // testing old syntax for supervision
 @label(l)
 has_spouse(rid) :- has_spouse_candidates(_, _, _, _, rid, l).
->>>>>>> Implemented new syntax for supervision rules
 // new syntax for above is:  has_spouse(rid) = l :- has_spouse_candidates(_, _, _, _, rid, l).
 
 @weight(f)

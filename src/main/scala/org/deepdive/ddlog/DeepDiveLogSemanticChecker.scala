@@ -160,8 +160,8 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
   def checkSupervisionLableType(s: ExtractionRule, expType: VariableType, SupVariable: VarPattern, b: BodyAtom) {
     b.terms.zipWithIndex.foreach {
       case (SupVariable, index) => {
-        val expColumnType = if (expType.isInstanceOf[BooleanType.type]) "boolean" else "int"
-        if (schemaDeclaration(b.name).a.types(index) != expColumnType) {
+        val expColumnType = if (expType.isInstanceOf[BooleanType.type]) "boolean" else "text"
+        if (schemaDeclaration(b.name).a.types(index).toLowerCase != expColumnType) {
           error(s, s"Unexpected supervision type")
         }
       }
@@ -180,15 +180,15 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
   def checkSupervisionLabelType(stmt: Statement) {
     stmt match {
       case s: ExtractionRule => {
-        val expectedVarType = schemaDeclaration(s.headName).variableType.get
         s.supervision match {
           case Some("TRUE") | Some("FALSE") => {
-            if (expectedVarType != BooleanType)
+            if (schemaDeclaration(s.headName).variableType.get != BooleanType)
               error(s, s"Unexpected supervision type")
           }
           case Some(varname) =>
             s.q.bodies.foreach { bodies: List[Body] =>
-              bodies.foreach { b => checkSupervisionLabelType(s, expectedVarType, VarPattern(varname), b) }
+              bodies.foreach { b =>
+                checkSupervisionLabelType(s, schemaDeclaration(s.headName).variableType.get, VarPattern(varname), b) }
             }
           case None =>
         }
