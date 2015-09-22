@@ -18,4 +18,5 @@ port=${port#:}
 user=${user_password%:*}
 password=${user_password#$user}
 password=${password#:}
-dbname=${rest}  # TODO do we need to strip any parameters from the rest of the URL?
+dbname=${rest%\?*}
+querystring=${rest#$dbname}
