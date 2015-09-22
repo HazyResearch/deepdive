@@ -315,6 +315,8 @@ But, as its name suggests, it piggybacks on the DB servers. Here is what's diffe
 
 See `examples/spouse_example/postgres/piggy_extractor/` for example extractors.
 
+Note that piggy_extractor only works with PostgreSQL-based databases that have [PL/Python (or plpythonu extension)](http://www.postgresql.org/docs/9.1/static/plpython.html) installed.
+
 
 ### <a name="plpy_extractor" href="#"></a> plpy_extractor (DEPRECATED)
 
