@@ -40,6 +40,10 @@ setup() {
 }
 
 @test "$DBVARIANT spouse example (piggy_extractor)" {
+    # requires postgres with python support
+    [[ $(deepdive sql eval "SELECT COUNT(*) FROM pg_language WHERE lanname = 'plpythonu'") -gt 0 ]] ||
+        deepdive sql "CREATE LANGUAGE plpythonu" ||
+        skip
     type javac >/dev/null || skip
     cd piggy_extractor || skip
     deepdive initdb
@@ -49,6 +53,10 @@ setup() {
 }
 
 @test "$DBVARIANT spouse example (plpy_extractor)" {
+    # requires postgres with python support
+    [[ $(deepdive sql eval "SELECT COUNT(*) FROM pg_language WHERE lanname = 'plpythonu'") -gt 0 ]] ||
+        deepdive sql "CREATE LANGUAGE plpythonu" ||
+        skip
     skip # TODO
     cd plpy_extractor || skip
     deepdive initdb
