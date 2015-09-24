@@ -68,15 +68,21 @@ deepdive help run
 ### Initializing Database
 
 ```bash
-deepdive initdb
+deepdive initdb [TABLE]
 ```
 
 This command initializes the underlying database configured for the application by creating necessary tables and loading the initial data into them.
-It makes sure the following:
+If `TABLE` is not given, it makes sure the following:
 
 1. The configured database is created.
-2. The tables defined in `schema.sql` are created.
-3. The data that exist under `input/` are loaded into the tables with the help of `load.sh`.
+2. The tables defined in `schema.sql` (for deepdive application) or `app.ddlog` (for ddlog application) are created.
+3. The data that exists under `input/` is loaded into the tables with the help of `init.sh`.
+
+If `TABLE` is given, it will make sure the following:
+
+1. The configured database is created.
+2. The given table is created.
+3. The data that exists under `input/` is loaded into the `TABLE` with the help of `init_TABLE.sh`.
 
 
 ### Running Pipelines

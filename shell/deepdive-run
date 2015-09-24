@@ -91,6 +91,17 @@ fullConfig=$run_dir/deepdive.conf
     ddlog compile "${ddlogFiles[@]}"
     export PIPELINE=  # XXX ddlog shouldn't emit this
     : ${Pipeline:=endtoend}
+
+    # set PARALLELISM env var, use max parallelism if the variable is not set
+    : ${PARALLELISM:=$((
+        # Linux typically has coreutils which includes nproc
+        nproc ||
+        # OS X
+        sysctl -n hw.ncpu ||
+        # fall back to 1
+        echo 1
+    ) 2>/dev/null)}
+    export PARALLELISM
 }
 
 # user's deepdive.conf overrides anything compiled from DDlog

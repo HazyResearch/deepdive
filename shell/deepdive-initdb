@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # deepdive-initdb -- Initializes the underlying database for the DeepDive application
 # > deepdive initdb
+# Initializes the whole database.
+#
+# > deepdive initdb TABLE
+# Initializes the given table.
 ##
 set -eu
 
@@ -14,19 +18,33 @@ cd "$DEEPDIVE_APP"
 # make sure database is created based on the database type
 db-init "$@"
 
-# make sure the necessary tables are all created
-if [[ -e app.ddlog ]]; then
-    # TODO export schema.sql from ddlog instead of running initdb pipeline
-    deepdive-run initdb
-fi
-# run all DDL statements in schema.sql if available
-if [[ -e schema.sql ]]; then
-    db-prompt <schema.sql
-fi
-
-# load the input data
-! [[ -x input/init.sh ]] || {
-    # XXX set the legacy environment variables
-    export APP_HOME=$DEEPDIVE_APP
-    input/init.sh "$@"
+generate_schema_json() {
+    tmp=$(mktemp -d "${TMPDIR:-/tmp}"/deepdive-initdb.XXXXXXX)
+    trap 'rm -rf "$tmp"' EXIT
+    schema_json="$tmp"/schema.json
+    ddlog export-schema app.ddlog > "$schema_json"
 }
+
+# if a list of table names given, initialize corresponding tables
+if [[ $# -gt 0 ]]; then
+    [[ -e app.ddlog ]] || error "deepdive initdb TABLE is only available for ddlog applications"
+    generate_schema_json
+    for t in "$@"; do
+        schema_json_to_sql $schema_json $t | deepdive-sql
+        if [[ -x input/init_$t.sh ]]; then
+            input/init_$t.sh
+        fi
+    done
+else # no arguments given, init database
+    if [[ -e app.ddlog ]]; then
+        generate_schema_json
+        schema_json_to_sql $schema_json | deepdive-sql
+    elif [[ -e schema.sql ]]; then
+        db-prompt <schema.sql
+    fi
+    ! [[ -x input/init.sh ]] || {
+        # XXX set the legacy environment variables
+        export APP_HOME=$DEEPDIVE_APP
+        input/init.sh "$@"
+    }
+fi
