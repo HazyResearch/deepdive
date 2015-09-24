@@ -59,7 +59,7 @@ sudo chown $USER:$USER $DATA_DIR
 
 
 echo "export PGXC_CTL_HOME=$TARGET_DIR/conf" | sudo tee -a /etc/profile
-source /etc/profile
+export PGXC_CTL_HOME=$TARGET_DIR/conf
 
 echo "/usr/local/lib" | sudo tee -a /etc/ld.so.conf
 echo "$TARGET_DIR/lib" | sudo tee -a /etc/ld.so.conf
@@ -87,7 +87,7 @@ if [ -f ~/.bashrc ]; then
 else
     echo "1s;^;export PATH=$TARGET_DIR/bin:\$PATH\n\n;" > ~/.bashrc
 fi
-source ~/.bashrc
+export PATH="$TARGET_DIR/bin:$PATH"
 
 
 mkdir -p ~/.ssh
