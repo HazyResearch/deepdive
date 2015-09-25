@@ -157,12 +157,13 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
     }
   }
 
-  def checkSupervisionLableType(s: ExtractionRule, expType: VariableType, SupVariable: VarPattern, b: BodyAtom) {
+  def checkSupervisionLabelType(s: ExtractionRule, expType: VariableType, supVariable: VarPattern, b: BodyAtom) {
     b.terms.zipWithIndex.foreach {
-      case (SupVariable, index) => {
+      case (`supVariable`, index) => {
         val expColumnType = if (expType.isInstanceOf[BooleanType.type]) "boolean" else "text"
         if (schemaDeclaration(b.name).a.types(index).toLowerCase != expColumnType) {
-          error(s, s"Unexpected supervision type")
+          val actualColumnType = schemaDeclaration(b.name).a.types(index).toLowerCase
+          error(s, s"Supervision column ${supVariable.name} should be ${expColumnType} type, but is ${actualColumnType} type")
         }
       }
       case _ =>
@@ -172,8 +173,8 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
   def checkSupervisionLabelType(s: ExtractionRule, expType: VariableType, supVariable: VarPattern, body: Body) {
     body match {
       case qb: QuantifiedBody => qb.bodies.foreach { b => checkSupervisionLabelType(s, expType, supVariable, b)}
-      case b: BodyAtom =>  checkSupervisionLableType(s, expType, supVariable, b)
-      case _: Cond =>
+      case b: BodyAtom =>  checkSupervisionLabelType(s, expType, supVariable, b)
+      case _ =>
     }
   }
 
@@ -182,8 +183,10 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
       case s: ExtractionRule => {
         s.supervision match {
           case Some("TRUE") | Some("FALSE") => {
-            if (schemaDeclaration(s.headName).variableType.get != BooleanType)
-              error(s, s"Unexpected supervision type")
+            if (schemaDeclaration(s.headName).variableType.get != BooleanType) {
+              val actualColumnType = schemaDeclaration(s.headName).variableType.get
+              error(s, s"Supervision column ${s.supervision} should be boolean type but is ${actualColumnType} type")
+            }
           }
           case Some(varname) =>
             s.q.bodies.foreach { bodies: List[Body] =>
