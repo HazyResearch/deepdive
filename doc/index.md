@@ -22,7 +22,7 @@ e.g., visualization tools like Tablaeu or analytics tools like Excel.
 
 DeepDive is a new type of data management system that enables one to
 tackle extraction, integration, and prediction problems in a single
-system, which allows users to rapidly construct sophisticated
+system, enabling users to rapidly construct sophisticated
 end-to-end data pipelines, such as, dark data BI systems. By
 allowing users to build their system end-to-end, users focus on the
 portion of their system that most directly improves the quality of
@@ -87,7 +87,7 @@ DeepDive differs from traditional systems in several ways:
   engine**. For the past few years, we have been working to make the
   underlying algorithms run as fast as possible. The techniques
   pioneered in this project are part of commercial and open source
-  tools including [MADlib](http://madlib.net/),
+  tools including [MADlib](http://madlib.net/),[Dato](http://blog.dato.com/parallel-ml-with-hogwild),
   [Impala](http://www.cloudera.com/content/cloudera/en/products-and-services/cdh/impala.html),
   a product from
   [Oracle](https://blogs.oracle.com/R/entry/low_rank_matrix_factorization_in),
@@ -128,7 +128,7 @@ background knowledge listed in the documentation below.
 
 ### Who develops DeepDive?
 
-DeepDive is project led by [Christopher Ré](http://cs.stanford.edu/people/chrismre/)
+DeepDive is a project led by [Christopher Ré](http://cs.stanford.edu/people/chrismre/)
 at Stanford University. Current group members include:
 [Michael Cafarella](http://web.eecs.umich.edu/~michjc/),
 Michael Fitzpatrick,
