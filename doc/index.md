@@ -87,7 +87,7 @@ DeepDive differs from traditional systems in several ways:
   engine**. For the past few years, we have been working to make the
   underlying algorithms run as fast as possible. The techniques
   pioneered in this project are part of commercial and open source
-  tools including [MADlib](http://madlib.net/),[Dato](http://blog.dato.com/parallel-ml-with-hogwild),
+  tools including [MADlib](http://madlib.net/), [Dato](http://blog.dato.com/parallel-ml-with-hogwild),
   [Impala](http://www.cloudera.com/content/cloudera/en/products-and-services/cdh/impala.html),
   a product from
   [Oracle](https://blogs.oracle.com/R/entry/low_rank_matrix_factorization_in),
