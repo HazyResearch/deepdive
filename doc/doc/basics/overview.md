@@ -6,7 +6,7 @@ title: System Overview
 # DeepDive system overview
 
 This document presents an overview of DeepDive as a system. It assumes that you
-are familiar with some general concepts like [inference and factor
+are familiar with some general concepts such as [inference and factor
 graphs](../general/inference.html), [relation
 extraction](../general/relation_extraction.html), and [distant
 supervision](../general/distant_supervision.html). It describes each step
@@ -41,15 +41,15 @@ inference. The user writes SQL queries to instruct the system about
 which variables to create. These queries usually involve tables populated during
 the extraction step. The variable nodes of the factor graph are connected to
 factors according to [inference rules](inference_rules.html) specified by the
-user, who also defines the factor functions which describe how the variables are
+user, who also defines the factor functions describing how the variables are
 related. The user can specify whether the factor weights should be constant or
 learned by the system (refer to the ['Writing inference rules'
 document](inference_rules.html) ).
 
-Grounding is the process of writing the graph to disk so that it can be used to
-perform inference. DeepDive writes the graph to a set of five files: one for
+Grounding is the process of writing the graph to disk so that it can be used when
+performing inference. DeepDive writes the graph to a set of five files: one for
 variables, one for factors, one for edges, one for weights, and one for metadata
-useful to the system. The format of these file is special so that they can be
+useful to the system. The format of these files is special so that they can be
 accepted as input by our [sampler](sampler.html).
 
 ## <a name="weight" href="#"></a> Weight learning
@@ -66,7 +66,7 @@ user can inspect them during the [calibration](calibration.html) of the process.
 
 ## <a name="inference" href="#"></a> Inference
 
-The final step consists in performing [marginal
+The final step consists of performing [marginal
 inference](../general/inference.html#marginal) on the factor graph variables to
 learn the probabilities of different values they can take over all [possible
 worlds](../general/inference.html#possibleworlds). DeepDive uses our
@@ -78,7 +78,7 @@ input, together with a number of arguments to specify the parameters for the
 learning procedure. The results of the inference step are written to the
 database. The user can write queries to [analyze the
 results](running.html#results). DeepDive also provides [calibration
-data](calibration.html) to evaluate the accuracy of the inference.
+data](calibration.html) to evaluate the accuracy of inference.
 
 <!-- TODO (All) Anything else we should add ? -->
 
