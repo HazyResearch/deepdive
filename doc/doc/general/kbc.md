@@ -7,7 +7,7 @@ title: Knowledge Base Construction
 
 Knowledge base construction (KBC) is the process of populating a knowledge base
 (KB) with facts (or assertions) extracted from data (e.g., text, audio, video,
-tables, diagrams, ...). For example,  one may want to build a medical knowledge
+tables, diagrams, etc.). For example,  one may want to build a medical knowledge
 base of interactions between drugs and diseases, a Paleobiology knowledge base
 to understand when and where did dinosaurs live, or a knowledge base of people's
 relationships such as spouse, parents or sibling. DeepDive can be used to
@@ -49,18 +49,18 @@ a list of the most important ones
 - **Mention-level data** are textual data with mentions of entities, such as
   sentences in web articles, e.g. sentences in New York Times articles.
 
-- <a name="linking" href="#"></a> **Entity linking** is the process to find out
-  which entity is a mention referring to. For example, "Barack", "Obama" or "the
+- <a name="linking" href="#"></a> **Entity linking** is the process of finding out
+  the underlying entity a mention is referring to. For example, "Barack", "Obama" or "the
   president" may refer to the same entity "Barack Obama", and entity linking is
-  the process to figure this out.
+  the process of figuring this out.
 
 - A **mention-level relation** is a relation among mentions rather than
   entities. For example, in a sentence "Barack and Michelle are married", the
-  two mentions "Barack" and "Michelle" has a mention-level relation of
+  two mentions "Barack" and "Michelle" have a mention-level relation of
   `has_spouse`.
 
 - An **entity-level relation** is a relation among entities. For example, the
-  entity "Barack Obama" and "Michelle Obama" has an entity-level relation of
+  entities "Barack Obama" and "Michelle Obama" have an entity-level relation of
   `has_spouse`.
 
 The relationships between these concepts (also known as the data model) is
@@ -84,7 +84,7 @@ raw articles in text format, while  the **output** of the system is a database
 (the KB) containing the desired (entity-level or mention-level) relations.
 
 As explained in the [System overview](../basics/overview.html), the steps to
-obtained the output are the following:
+obtain the output are as follows:
 
 1. data preprocessing
 2. feature extraction
@@ -94,7 +94,7 @@ obtained the output are the following:
 Specifically:
 
 1. In the **data preprocessing** step, DeepDive takes input data (articles in
-text format), loads them into a database, and parse the articles to obtain
+text format), loads them into a database, and parses the articles to obtain
 sentence-level information including words in each sentence, POS tags, named
 entity tags, etc.
 
@@ -109,19 +109,19 @@ factor graph, developers use a SQL-like declarative language to specify
 [inference rules](../basics/inference_rules.html).
 
 4. In the next step, DeepDive automatically performs **learning and statistical
-inference** on the generated factor graph.  learning, the values of [factor
+inference** on the generated factor graph. During the learning step, the values of [factor
 weights](inference.html) specified in inference rules are calculated.
 These weights represent, intuitively, the confidence in the rule. During the
 inference step, the marginal probabilities of the variables are computed, which,
 in some cases, can represent the probability that a specific fact is true.
 
 After inference, the results are stored in a set of database tables.  The
-developer can **get results** via a SQL query, **check results** with a
+developer can **get results** via an SQL query, **check results** with a
 [calibration plot](../basics/calibration.html), and perform **error analysis**
 to improve results.
 
-As an example of this data flow, Figure 3 demonstrates how a sentence "U.S
-President Barack Obama's wife Michelle Obama..." go through the process (In this
+As an example of this data flow, Figure 3 demonstrates how a sentence "U.S.
+President Barack Obama's wife Michelle Obama..." goes through the process (In this
 figure, we only highlight step 1--3):
 
 <p style="text-align: center;"><img src="{{site.baseurl}}/images/walkthrough/dataflow.png" alt="Data Flow" style="width: 75%; text-align: center;"/>
@@ -134,8 +134,8 @@ In the example above:
 1. During data preprocessing, the sentence is processed into words, POS tags and
 named entity tags;
 
-2. During feature extraction, DeepDive extracts (1) mentions of person and
-location, (2) candidate relations of `has_spouse`, and (3) `feature` of
+2. During feature extraction, DeepDive extracts (1) person mentions and
+location mentions, (2) candidate relations of `has_spouse`, and (3) `features` of
 candidate relations (such as words between mentions).
 
 3. In factor graph generation, DeepDive use rules written by developers (like
