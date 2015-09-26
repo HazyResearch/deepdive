@@ -10,7 +10,7 @@ be specified in an application configuration file.
 
 ## Overview of configuration structure
 
-**Global section**: all application configuration directives described in the rest of the document
+**Global section**: all application configuration directives described in the remainder of the document
 must appear inside a global `deepdive` section:
 
 ```bash
@@ -62,7 +62,7 @@ Links to these sections:
 
 ## Notation format
 
-DeepDive configuration file uses HOCON format. It is an extension of JSON. For a detailed specification, see [readme of HOCON](https://github.com/typesafehub/config/blob/master/HOCON.md#readme).
+The DeepDive configuration file uses HOCON format. It is an extension of JSON. For a detailed specification, see [readme of HOCON](https://github.com/typesafehub/config/blob/master/HOCON.md#readme).
 
 Below are some highlights of the notation format.
 
