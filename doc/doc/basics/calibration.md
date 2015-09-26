@@ -109,7 +109,7 @@ contains ten lines with five columns each:
 
 DeepDive places the inference results into ten buckets. Each bucket is
 associated to a probability interval from 0.0 to 1.0. The meaning of the last
-three columns is the:
+three columns is:
 
 
 - `num_predictions` is the number of variables in the probability bucket,
@@ -120,13 +120,13 @@ three columns is the:
   value of true. The number should be high for buckets with large
   probabilities and small for buckets with small probabilities since the actual value
   of these variables are true and with high probability they should be predicted as true.
-  Not that in this case only the holdout data is used.
+  Note that in this case only the holdout data is used.
 
 - `num_false` is the number of holdout variables in the probability bucket with the
   value of false. The number should be small for buckets with large
   probabilities and large for buckets with small probabilities since the actual value
   of these variables are false and with low probability they should be predicted as true.
-  Not that in this case only the holdout data is used.
+  Note that in this case only the holdout data is used.
 
 
 DeepDive also generates a calibration plot for each of the variables defined
@@ -134,26 +134,26 @@ in schema. The location of the plot is given in the DeepDive output of each run:
 
 13:05:28 [profiler] INFO  calibration plot written to $DEEPDIVE_HOME/out/2014-06-23T130346/calibration/has_spouse.is_true.png [0 ms]
 
-DeepDive also prints in its output the commands to generate the calibration
+DeepDive also prints to its output the commands to generate the calibration
 plots, so the user can create the plots manually.
 
 #### Interpreting calibration plots
 
-A typical calibration plot looks as follows:
+A typical calibration plot looks like:
 
 ![]({{site.baseurl}}/images/calibration_example.png)
 
 
 **The accuracy plot (a)** shows the ratio of correct positive predictions
 for each probability bucket. Ideally, the red line should follow the blue line,
-representing that the system finds high number of evidence positive predictions for higher probability buckets and for lower probability buckets the system finds less number of evidence positive predictions linearly. Which means for probability bucket of 0 there should be no positive prediction, and for 100% bucket all the predictions should be positive. The accuracy is defined as num_holdout_true / num_holdout_total.
+representing that the system finds a high number of evidence positive predictions for higher probability buckets and for lower probability buckets the system finds a smaller number of evidence positive predictions linearly. This means that for the probability bucket of 0 there should be no positive prediction, and for the 100% bucket all the predictions should be positive. The accuracy is defined as num_holdout_true / num_holdout_total.
 
-**Plots (b) and (c)** shows the number of total prediction on the test and the
+**Plots (b) and (c)** shows the number of total predictions on the test and the
 training set, respectively. Ideally these plots should follow a U-curve. That
 is, the systems makes many predictions with probability 0 (event that are likely
 to be false), and many predictions with probability > 0.9 (events that are
-likely to be true). Predictions in the range of 0.4 - 0.6 mean that the system
-is not sure, which may indicate that need more features to make predictions for
+likely to be true). Predictions in the range 0.4 - 0.6 mean that the system
+is not sure, which may indicate that more features are needed to make predictions for
 such events.
 
 Note that plots (a) and (b) can only be generated if a [holdout fraction was
@@ -181,8 +181,8 @@ There could many factors that lead to suboptimal results. Common ones are:
   evidence, or with negative evidence that is biased, the system will not be
   able to distinguish true events from false events. That is, it will generate
   many *false positives*. In the graph this is often indicated by having little
-  probability mass on the left (no U-shape) in plots b) and c), or/and by having
-  a low accuracy for high probabilities in plot a). Generating [negative
+  probability mass on the left (no U-shape) in plots (b) and (c), or/and by having
+  a low accuracy for high probabilities in plot (a). Generating [negative
   evidence](generating_negative_examples.html) can be somewhat of an art.
 
 - **Weight learning does not converge:** when DeepDive is unable to learn
