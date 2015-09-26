@@ -69,9 +69,9 @@ Finally, we declare a variable relation that we want DeepDive to predict the mar
 </script>
 
 ### Candidate Mapping and Supervision Rules
-A user-defined function for mapping candidates and supervision them is written in Python and declared as below with a name `ext_people`.
-The function is supposed to take as input a triple of sentence id, array of words, and array of NER tags of the words and output rows like the `people_mentions` relation.
-The Python implementation `udf/ext_people.py` takes the input as tab-separated values in each line and  outputs in the same format.
+A user-defined function for mapping candidates and supervision over them is written in Python and declared as below with a name `ext_people`.
+The function is supposed to take as input a triple of sentence id, array of words, and an array of NER tags of the words and outputs rows like the `people_mentions` relation.
+The Python implementation `udf/ext_people.py` takes as input tab-separated values in each line and outputs in the same format.
 
 <script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/ddlog/app.ddlog?footer=minimal&slice=41:45">
 </script>
@@ -81,7 +81,7 @@ Then this user-defined function `ext_people` can be called in the following way 
 <script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/ddlog/app.ddlog?footer=minimal&slice=45:49">
 </script>
 
-In a similar way, we can have another UDF map candidate relationships and supervise them.
+In a similar way, we can have another UDF to map candidate relationships and supervise them.
 
 <script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/ddlog/app.ddlog?footer=minimal&slice=49:58">
 </script>
