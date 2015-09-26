@@ -15,11 +15,11 @@ Incremental workflow is currently supported only on PostgreSQL.
 
 ## Incremental application workflow
 
-In building knowledge base construction, a typical scenario is the user has
+In building knowledge base construction systems, a typical scenario is the user has
 already built a knowledge base application, and wants to try new features or add
 new inference rules. We call the base case *materialization phase*, and the iterative process
-of adding features or inference rules *incremental phase*. The user will run materialization
-phase to materialize the base factor graph, and can run multiple incremental
+of adding features or inference rules *incremental phase*. The user runs the *materialization phase* 
+to materialize the base factor graph, and can run multiple incremental
 phase on top of the base factor  graph. Each incremental run is independent and
 is relative to the base run. Once the user is satisfied with the incremental
 experiments, the user can run  *merge phase* to merge the incremental part into
@@ -40,7 +40,7 @@ The incremental version of the spouse example is under [`examples/spouse_example
 The only difference is that all the arrays are transformed into string using array_to_string with delimiter '~^~' due to DDlog's limited support for array type.
 You can follow the [corresponding section in the original walkthrough](../basics/walkthrough/walkthrough.html#loading_data) to load the data.
 
-Alternatively, you can try the handy scripts included incremental example we include in the source tree.
+Alternatively, you can try the handy scripts included in the incremental example provided in the source tree.
 
 ```bash
 cd examples/spouse_example/postgres/incremental
@@ -66,9 +66,9 @@ Note that the [`run.sh` included in the incremental example](https://github.com/
 
 ### Materialization Phase
 
-Materialization phase is basically taking a snapshot of the current model that serves as a base for the following incremental phases.
+The materialization phase is basically taking a snapshot of the current model that serves as a base for the subsequent incremental phases.
 You need to specify which variables and inference rules you are going to vary in the following incremental phases.
-They are called active variables and active inference rules, and the names should be put into files `spouse_example.f1.active.vars` and `spouse_example.f1.active.rules`.
+They are called active variables and active inference rules, and the names should be put into the files `spouse_example.f1.active.vars` and `spouse_example.f1.active.rules`.
 
 <script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/incremental/spouse_example.f1.active.vars?footer=minimal">
 </script>
@@ -101,7 +101,7 @@ You need to mark in the DDlog program which rule corresponds to the added featur
 </script>
 
 
-There is also a script for incremental phase included in the example, and can be run as follows:
+There is also a script for the incremental phase included in the example and can be executed as follows:
 
 ```bash
 ./2-incremental_phase.sh spouse_example.f2.ddlog ./inc-base.out/ ./inc-f1+f2.out/
@@ -122,7 +122,7 @@ You need to run the following command before running another incremental phase:
 
 ### Merge Phase
 
-Once you decide to keep the current version, you can merge the incremental part into the base with the `--merge` mode:
+Once you decide to keep the current version, you can merge the incremental part into the base by using the `--merge` mode:
 
 ```bash
 ./4-merge.sh spouse_example.f1.ddlog ./inc-base.out/
