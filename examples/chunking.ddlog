@@ -12,7 +12,7 @@ words(
   word_id bigint,
   word text,
   pos text,
-  true_tag text).
+  true_tag int).
 
 word_features(
   word_id bigint,
