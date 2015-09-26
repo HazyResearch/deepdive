@@ -89,8 +89,7 @@ It will do the following:
 
 ### Incremental Phase
 
-In the incremental phase, suppose you added feature 2 to your udf, `ext_has_spouse_features.f2.py`.
-Let's say you saved this modified udf in a file named `ext_has_spouse_features.f2.py`.
+In the incremental phase, suppose you add feature 2 to your udf, and save this modified udf in a file named `ext_has_spouse_features.f2.py`.
 
 <script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/incremental/udf/ext_has_spouse_features.f2.py?footer=minimal&slice=27:39">
 </script>
