@@ -47,9 +47,9 @@ A DeepDive application is a directory that contains the following files and dire
 
 * `run/`
 
-    Each run of the DeepDive application has a corresponding subdirectory under this directory whose name contains the timestamp when the run was started, e.g., `run/20150618/223344.567890/`.
+    Each run of the DeepDive application has a corresponding subdirectory under this directory whose name contains the timestamp when the run started, e.g., `run/20150618/223344.567890/`.
     All output and log files that belong to the run are kept under that subdirectory.
-    There are a few symbolic links with mnemonic names to the most recently started run, last successful run, last failed run for handy access.
+    There are a few symbolic links with mnemonic names to the most recent run, last successful run, last failed run for handy access.
 
 [DDlog]: ../basics/ddlog.html
 [HOCON]: https://github.com/typesafehub/config/blob/master/HOCON.md#readme "Human Optimized Configuration Object Notation"
@@ -58,9 +58,9 @@ A DeepDive application is a directory that contains the following files and dire
 ## Operations
 
 There are several operations that are frequently performed on a DeepDive application.
-Any of the following command can be run under any subdirectory of a DeepDive application to perform a certain operation.
+Any of the following commands can be run under any subdirectory of a DeepDive application to perform a certain operation.
 
-To see all options for each command, such as specifying alternative configuration file for running, see the online help message with the `deepdive help` command.  For example:
+To see all options for each command, such as specifying an alternative configuration file for running, see the online help message with the `deepdive help` command.  For example:
 ```bash
 deepdive help run
 ```
@@ -71,7 +71,7 @@ deepdive help run
 deepdive initdb [TABLE]
 ```
 
-This command initializes the underlying database configured for the application by creating necessary tables and loading the initial data into them.
+This command initializes the underlying database configured for the application by creating the necessary tables and loading the initial data into them.
 If `TABLE` is not given, it makes sure the following:
 
 1. The configured database is created.
