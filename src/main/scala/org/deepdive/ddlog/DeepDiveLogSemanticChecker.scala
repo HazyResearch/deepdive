@@ -35,6 +35,7 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
     checkQuantifiedBody(stmt)
     checkWeight(stmt)
     checkVariableBindings(stmt)
+    checkSupervisionLabelType(stmt)
   }
 
   // iterate over all atoms contained in the body list and apply the checker
@@ -151,6 +152,55 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
       case s: InferenceRule => {
         if ((s.weights.variables collect { case x: ConstExpr => x }).size >= 2)
           error(stmt, s"Weight variables can contain at most one constant")
+      }
+      case _ =>
+    }
+  }
+
+  def checkSupervisionLabelType(s: ExtractionRule, expType: VariableType, supVariable: VarPattern, b: BodyAtom) {
+    b.terms.zipWithIndex.foreach {
+      case (`supVariable`, index) => {
+        val expColumnType =
+          if (expType.isInstanceOf[BooleanType.type])
+            // binary
+            "boolean"
+          else
+            // multinomial
+            "int"
+        if (schemaDeclaration(b.name).a.types(index).toLowerCase != expColumnType) {
+          val actualColumnType = schemaDeclaration(b.name).a.types(index).toLowerCase
+          error(s, s"Supervision column ${supVariable.name} should be ${expColumnType} type, but is ${actualColumnType} type")
+        }
+      }
+      case _ =>
+    }
+  }
+
+  def checkSupervisionLabelType(s: ExtractionRule, expType: VariableType, supVariable: VarPattern, body: Body) {
+    body match {
+      case qb: QuantifiedBody => qb.bodies.foreach { b => checkSupervisionLabelType(s, expType, supVariable, b)}
+      case b: BodyAtom =>  checkSupervisionLabelType(s, expType, supVariable, b)
+      case _ =>
+    }
+  }
+
+  def checkSupervisionLabelType(stmt: Statement) {
+    stmt match {
+      case s: ExtractionRule => {
+        s.supervision match {
+          case Some("TRUE") | Some("FALSE") => {
+            if (schemaDeclaration(s.headName).variableType.get != BooleanType) {
+              val actualColumnType = schemaDeclaration(s.headName).variableType.get
+              error(s, s"Supervision column ${s.supervision} should be boolean type but is ${actualColumnType} type")
+            }
+          }
+          case Some(varname) =>
+            s.q.bodies.foreach { bodies: List[Body] =>
+              bodies.foreach { b =>
+                checkSupervisionLabelType(s, schemaDeclaration(s.headName).variableType.get, VarPattern(varname), b) }
+            }
+          case None =>
+        }
       }
       case _ =>
     }

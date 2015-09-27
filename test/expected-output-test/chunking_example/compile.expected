@@ -35,7 +35,7 @@
      word_id bigint,
      word text,
      pos text,
-     true_tag text)
+     true_tag int)
             """
             style: "sql_extractor"
           }

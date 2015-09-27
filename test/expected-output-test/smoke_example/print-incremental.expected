@@ -70,12 +70,10 @@ dd_new_cancer(person_id) :-
     cancer(person_id);
     dd_delta_cancer(person_id).
 
-@label(l)
-dd_delta_smoke(pid) :-
+dd_delta_smoke(pid) = l :-
     dd_delta_person_smokes(pid, l).
 
-@label(l)
-dd_delta_cancer(pid) :-
+dd_delta_cancer(pid) = l :-
     dd_delta_person_has_cancer(pid, l).
 
 @weight(0.5)

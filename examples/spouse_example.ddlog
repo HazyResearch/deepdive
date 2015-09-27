@@ -62,8 +62,10 @@ has_spouse_features +=
   people_mentions(s, p1idx, p1len, _, person1_id),
   people_mentions(s, p2idx, p2len, _, person2_id).
 
+// testing old syntax for supervision
 @label(l)
 has_spouse(rid) :- has_spouse_candidates(_, _, _, _, rid, l).
+// new syntax for above is:  has_spouse(rid) = l :- has_spouse_candidates(_, _, _, _, rid, l).
 
 @weight(f)
 has_spouse(rid) :-
