@@ -18,7 +18,7 @@ Incremental workflow is currently supported only on PostgreSQL.
 In building knowledge base construction systems, a typical scenario is the user has
 already built a knowledge base application, and wants to try new features or add
 new inference rules. We call the base case *materialization phase*, and the iterative process
-of adding features or inference rules *incremental phase*. The user runs the *materialization phase* 
+of adding features or inference rules *incremental phase*. The user runs the *materialization phase*
 to materialize the base factor graph, and can run multiple incremental
 phase on top of the base factor  graph. Each incremental run is independent and
 is relative to the base run. Once the user is satisfied with the incremental
