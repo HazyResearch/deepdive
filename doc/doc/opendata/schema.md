@@ -6,15 +6,15 @@ title: DeepDive Open Datasets
 # Schema of DeepDive Open Datasets
 
 All DeeDive Open datasets can be loaded into a relational database
-as a table. 
+as a table.
 This page contains a description of the schema of this table.
 Note that the schema of this table
-is very similar to what was used in our 
+is very similar to what was used in our
 [walkthrough example](http://deepdive.stanford.edu/doc/basics/walkthrough/walkthrough.html),
 but with a few twists to represent more sophisticated provenance
 of each word.
 
-Each row of this table is a sentence. 
+Each row of this table is a sentence.
 The first column is `doc_id`, which is a text string
 specifying the ID of a document; the second column
 is `sentence_id`, which is an integer specifying
@@ -24,7 +24,7 @@ key.
 The next seven columns are arrays of texts or integers corresponding
 to the `ID`, `FORM`, `POSTAG`, `NERTAG`, `LEMMA`, `DEPREL`, and `HEAD`
 columns in the standard [CoNLL-X
-shared task](https://code.google.com/p/clearparser/wiki/DataFormat#CoNLL-X_format_(conll)). 
+shared task](https://code.google.com/p/clearparser/wiki/DataFormat#CoNLL-X_format_(conll)).
 Each element in an array corresponds to one word in CoNLL's format.
 
 The last column is called `provenance` which is an array of texts
