@@ -20,6 +20,7 @@ setup() {
 
 @test "incremental spouse example (F1, then F2 and Symmetry incrementally)" {
     export DBNAME=${DBPREFIX}_inc
+    export DEEPDIVE_DB_URL=${DEEPDIVE_DB_URL}_inc
     rm -rf inc.base.out inc.f1+f2.out inc.f1+f2+symmetry.out
     ./0-setup.sh                  spouse_example.f1.ddlog        inc.base.out
     # Prepare incremental runs with only F1 in base
@@ -34,6 +35,7 @@ setup() {
 
 @test "incremental spouse example's non-incremental run (F1+F2)" {
     export DBNAME=${DBPREFIX}_noninc
+    export DEEPDIVE_DB_URL=${DEEPDIVE_DB_URL}_noninc
     rm -rf noninc.f1+f2.out
     # Run as usual for F1+F2
     ./0-setup.sh               spouse_example.f1+f2.ddlog             noninc.f1+f2.out
@@ -42,6 +44,7 @@ setup() {
 
 @test "incremental spouse example's non-incremental run (F1+F2+Symmetry)" {
     export DBNAME=${DBPREFIX}_noninc
+    export DEEPDIVE_DB_URL=${DEEPDIVE_DB_URL}_noninc
     rm -rf noninc.f1+f2+symmetry.out
     # Run as usual for F1+F2+Symmetry
     ./0-setup.sh               spouse_example.f1+f2+symmetry.ddlog    noninc.f1+f2+symmetry.out
