@@ -19,20 +19,13 @@ applications.
 
 
 ## Running
+<!-- TODO This section overlaps too much with tutorial. Should be removed perhaps? -->
 
 Running an application is as simple as running the following command under the application directory:
 
 ```bash
 deepdive run
 ```
-
-As explained in the [Writing applications guide](writing.html) it is best to
-include the above command in a `run.sh` script responsible for
-
-- (if needed) create the database and the relations used by the application.
-- set the appropriate environmental variables (possibly by including a `env.sh`
-  script)
-- actually invoking DeepDive with the above command
 
 ### Example
 
