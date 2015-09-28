@@ -83,6 +83,7 @@ There is a script included in the example, and the materialization phase can be 
 ```
 
 It will do the following:
+
 1. Compile the DDlog program `spouse_example.f1.ddlog`.
 2. Run the `extraction` and `inference` pipelines.
 3. Produce a materialized base factor graph under `inc-base.out/` under the application directory.
