@@ -676,7 +676,7 @@ Developers can change the extractor UDF to `util/extractor_input_writer.py
 SAMPLE_FILE_PATH` to obtain sample extractor inputs in the file `SAMPLE_FILE_PATH`.
 
 For example, in our [walkthrough](walkthrough/walkthrough.html), to debug the extractor `ext_has_spouse_features`, just change
-`application.conf` to:
+`deepdive.conf` to:
 
  ```bash
 ext_has_spouse_features {

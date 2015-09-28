@@ -123,7 +123,7 @@ for row in sys.stdin:
 
 ### Feature Extraction
 
-To predict chunking label, we need to add features. We use three simple features: the word itself, its part-of-speech tag, and the part-of-speech tag of its previous word. We add an extractor in `application.conf`
+To predict chunking label, we need to add features. We use three simple features: the word itself, its part-of-speech tag, and the part-of-speech tag of its previous word. We add an extractor in `deepdive.conf`
 
     ext_features.input: """
       select w1.word_id as "w1.word_id", w1.word as "w1.word", w1.pos as "w1.pos",
@@ -192,7 +192,7 @@ for row in sys.stdin:
 
 ### Statistical Learning and Inference
 
-We will predicate the chunk tag for each word, which corresponds to `tag` column of `words` table. The variables are declared in `application.conf`:
+We will predicate the chunk tag for each word, which corresponds to `tag` column of `words` table. The variables are declared in `deepdive.conf`:
 
     schema.variables {
       words.tag: Categorical(13)

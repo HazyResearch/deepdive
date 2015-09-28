@@ -181,7 +181,7 @@ document, in this example, it means that this mention starts
 from the 19th word and ends at the 19th words of sentence 1676 in the
 document JOURNAL_105771.
 
-To extract this relation, the schema of the extractor in application.conf
+To extract this relation, the schema of the extractor in deepdive.conf
 is:
 
     ext_entity_temporal_local : {
