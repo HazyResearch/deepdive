@@ -63,14 +63,14 @@ fi
 # either use the path specified in DEEPDIVE_OUTPUT environment or command-line option -o, or create a fresh run directory by default
 if [[ -n "${DEEPDIVE_OUTPUT:-}" ]]; then
     run_id=$DEEPDIVE_OUTPUT
-    run_dir=$(if [[ "$run_id" = /* ]]; then
-           echo $run_id
-        else
-           echo $DEEPDIVE_APP/$run_id
-        fi)
+    if [[ "$run_id" = /* ]]; then
+        run_dir=$run_id
+    else
+        run_dir="$DEEPDIVE_APP/$run_id"
+    fi
 else
     run_id=$(date +%Y%m%d/%H%M%S.%N)
-    run_dir=$DEEPDIVE_APP/run/$run_id
+    run_dir="$DEEPDIVE_APP/run/$run_id"
 fi
 mkdir -p "$run_dir"
 DEEPDIVE_OUTPUT=$(cd "$run_dir" && pwd)
