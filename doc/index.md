@@ -143,6 +143,7 @@ and
 
 ### Updates &amp; Changelog
 
+- [Changelog for version 0.7.1-alpha](doc/changelog/0.7.1-alpha.html) (09/28/2015)
 - [Changelog for version 0.7.0-alpha](doc/changelog/0.7.0-alpha.html) (07/14/2015)
 - [Changelog for version 0.6.0-alpha](doc/changelog/0.6.0-alpha.html) (06/17/2015)
 - [Changelog for version 0.05-alpha](doc/changelog/0.05.01-alpha.html) (02/08/2015)

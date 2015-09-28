@@ -2,7 +2,7 @@
 # DeepDive Installer
 set -eu
 
-: ${RELEASE:=v0.7.0}    # the DeepDive release version to install
+: ${RELEASE:=v0.7.1}    # the DeepDive release version to install
 : ${PREFIX:=~/local}    # the path to install deepdive
 
 : ${INSTALLER_BRANCH:=${BRANCH:-v0.7.x}}    # the branch from which the installer scripts should be downloaded
