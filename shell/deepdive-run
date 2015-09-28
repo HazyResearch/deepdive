@@ -73,6 +73,7 @@ else
     run_dir="$DEEPDIVE_APP/run/$run_id"
 fi
 mkdir -p "$run_dir"
+mkdir -p run
 DEEPDIVE_OUTPUT=$(cd "$run_dir" && pwd)
 : ${DEEPDIVE_LOGFILE:="$DEEPDIVE_OUTPUT/log.txt"}
 export DEEPDIVE_OUTPUT DEEPDIVE_LOGFILE
