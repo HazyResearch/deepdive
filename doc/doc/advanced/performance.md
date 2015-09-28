@@ -42,16 +42,6 @@ Finally, tell DeepDive to use parallel grounding by adding the following to
 
     inference.parallel_grounding: true
 
-### Setting the JVM heap size
-
-Use the `-Xmx` flag to the `java` command to set the maximum heap size for the
-Java Virtual Machine. The default heap size is the minimum between one quarter of
-the physical memory and 1GB. If you use [SBT](http://www.scala-sbt.org/) to run
-a DeepDive application , you can set the heap size as follows:
-```bash
-    SBT_OPTS="-Xmx8g" deepdive run -c path_to_deepdive.conf
-```
-
 ### Setting extractor parallelism and batch sizes
 
 For `json_extracor` and `tsv_extractor`, you can execute multiple copies of an extractor in parallel using the
