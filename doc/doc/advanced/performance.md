@@ -11,37 +11,6 @@ Processing large amounts of data may expose bottlenecks in various parts of the
 system. The following sections show how to tune different parameters to obtain
 better performances.
 
-### <a name="parallelgrounding" href="#"></a> Parallel grounding
-[Grounding](../basics/overview.html#grounding) is the process of building the
-factor graph. If you are using Greenplum, you can enable parallel grounding to
-speed up the grounding phase, which makes use of Greenplum's parallel file
-system (gpfdist). To use parallel grounding, first make sure that Greenplum's file
-system server `gpfdist` is running locally, i.e., on the machine where you will
-run the DeepDive applications. If it is not running, you can use the following
-command to start gpfdist
-
-    gpfdist -d [directory] -p [port] &
-
-where you specify the directory for storing the files and the HTTP port to run on.
-The directory should be an **empty directory** since DeepDive will clean up
-this directory or overwrite files.
-Then, in `deepdive.conf`, specify the gpfdist settings in the `deepdive.db.default` as
-follows
-
-    db.default {
-      gphost   : [host of gpfdist]
-      gpport   : [port of gpfdist]
-      gppath   : [**absolute path** of gpfdist directory]
-    }
-
-where gphost, gpport, gppath are the host, port, and absolute path
-gpfdist is running on (specified when starting gpfdist server).
-
-Finally, tell DeepDive to use parallel grounding by adding the following to
-`deepdive.conf`:
-
-    inference.parallel_grounding: true
-
 ### Setting extractor parallelism and batch sizes
 
 For `json_extracor` and `tsv_extractor`, you can execute multiple copies of an extractor in parallel using the
