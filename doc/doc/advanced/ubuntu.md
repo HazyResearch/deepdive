@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Using DeepDive on Ubuntu
 ---
 
 # DeepDive Install on Ubuntu 12.04
@@ -19,12 +20,13 @@ sudo apt-get update
 sudo apt-get install openjdk-7-jdk icedtea-7-plugin
 ```
 
-Now, let’s install SBT. Use the following link to <a href="http://repo.scala-sbt.org/scalasbt/sbt-native-packages/org/scala-sbt/sbt/0.13.1/sbt.deb">download the debian file</a> or get it <a href="http://www.scala-sbt.org/release/docs/Getting-Started/Setup.html">from the site</a>. SBT has a dependence on curl, so first I’ll install that.
+Now, let’s install SBT. Following the <a href="http://www.scala-sbt.org/0.13/tutorial/Installing-sbt-on-Linux.html">official instruction</a>, run the commands below:
 
 ```bash
-sudo apt-get install curl
-cd /home/tom/Downloads
-sudo dpkg -i sbt.deb
+echo "deb https://dl.bintray.com/sbt/debian /" | sudo tee -a /etc/apt/sources.list.d/sbt.list
+sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 642AC823
+sudo apt-get update
+sudo apt-get install sbt
 ```
 
 Now I need to install PostgreSQL, which was by far the trickiest part. In this tutorial, I’m assuming that the computer you’re working on will also be the PostgreSQL host. It’s also important to note that DeepDive uses JSON, which is apparently not supported by PostgreSQL 9.1 and under. To install version 9.3, I’m going to use the instruction given by “Danny” in <a href="http://askubuntu.com/questions/186610/how-do-i-upgrade-to-postgres-9-2">this StackExchange post</a>, and just change the numbers to 9.3:

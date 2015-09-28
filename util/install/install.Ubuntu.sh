@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # DeepDive installers for Debian/Ubuntu Linux
 
-LSB=$(lsb_release -ir | cut -f2)
+LSB=$(lsb_release -ir | cut -f2) || true
 case ${LSB} in
     Debian*8*|Debian*7*) true ;;
     Ubuntu*12.04|Ubuntu*14.04|Ubuntu*15.04) true ;;
@@ -46,7 +46,6 @@ install_postgres() {
     sudo apt-get update
     sudo apt-get install -y postgresql
     local pgversion=$(ls -1 /var/lib/postgresql/ | head -n 1)
-    sudo apt-get install -y postgresql-plpython-$pgversion
     if [ -z "${TRAVIS:-}" ]; then
         # add user to postgresql and trust all connections to localhost
         sudo -u postgres dropuser --if-exists $USER || sudo -u postgres dropuser $USER || true

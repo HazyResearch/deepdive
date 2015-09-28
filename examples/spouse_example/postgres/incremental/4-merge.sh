@@ -3,10 +3,10 @@ set -eux
 cd "$(dirname "$0")"
 . env.sh
 
-DDlog=${1:-spouse_example.f1.ddl}
+DDlog=${1:-spouse_example.f1.ddlog}
 Out=${2:-inc-delta.out}
-ActiveVarsFile=${3:-${DDlog%.ddl}.active.vars}
-ActiveRulesFile=${4:-${DDlog%.ddl}.active.rules}
+ActiveVarsFile=${3:-${DDlog%.ddlog}.active.vars}
+ActiveRulesFile=${4:-${DDlog%.ddlog}.active.rules}
 
 export BASEDIR=$Out
 export DEEPDIVE_ACTIVE_INCREMENTAL_VARIABLES="$(sed 's/#.*$//' "$ActiveVarsFile" )"

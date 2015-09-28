@@ -1,5 +1,6 @@
 ---
 layout: default
+title: High-speed Sampler
 ---
 
 # The DimmWitted high-speed sampler

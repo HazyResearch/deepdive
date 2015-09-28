@@ -1,5 +1,6 @@
 ---
 layout: default
+title: "Tutorial: Extras"
 ---
 
 # Example Application: Extras
@@ -207,8 +208,8 @@ without NLP. We further add a line:
 pipeline.run: "nonlp"
 ```
 
-This directive instructs DeepDive to execute the "nonlp" pipeline by default, which only
-contains the "ext_people" extractor.
+This directive instructs DeepDive to execute the `nonlp` pipeline by default, which only
+contains the `ext_people` extractor.
 
 To run the pipeline `withnlp`, simply pass the name as a command-line argument:
 

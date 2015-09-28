@@ -1,5 +1,6 @@
 ---
 layout: default
+title: deepdive.conf Reference
 ---
 
 # Application configuration file reference
@@ -12,7 +13,7 @@ be specified in an application configuration file.
 **Global section**: all application configuration directives described in the rest of the document
 must appear inside a global `deepdive` section:
 
-```bash
+```
 deepdive {
  # All configuration directives go here
 }
@@ -21,7 +22,7 @@ deepdive {
 A starter template of `deepdive.conf` is below. You can found it in
 `examples/template/` in your `DEEPDIVE_HOME` installation directory:
 
-```bash
+```
 deepdive {
 
   # Put your variables here
@@ -97,12 +98,10 @@ Both `:` and `=` are valid key-value separators.
 
 ## <a name="database" href="#"></a> Database connection
 
-<div class="alert alert-danger">(This section is outdated and only accurate up to release 0.6.x. <code>db.url</code> is the recommended place for configuration the database connection.)</div> <!-- TODO rewrite -->
-
-The configuration directives for the database connection must be specified
+The configuration directives for the database connection is optional now (<code>db.url</code> is the recommended place), while it also can be specified
 inside a `db.default` section:
 
-```bash
+```
 deepdive {
   db.default {
     # Database connection parameters
@@ -115,21 +114,21 @@ The configuration directives for the database connection are the following:
 - `driver`: specify the JDBC driver to use. Currently only PostgreSQL is
   supported, so it must be "org.postgresql.Driver":
 
-    ```bash
+    ```
     driver   : "org.postgresql.Driver"
     ```
 
 - `url`: the URL of the database instance in [JDBC
   format](http://jdbc.postgresql.org/documentation/80/connect.html):
 
-    ```bash
+    ```
     url      : "jdbc:postgresql://[host]:[port]/[database_name]"
     ```
 
 - To support full deepdive functionality, the `host`, `port`, and
   `dbname` directives must also be specified:
 
-    ```bash
+    ```
     host     : [host]
     port     : [port]
     dbname   : [database_name]
@@ -137,21 +136,21 @@ The configuration directives for the database connection are the following:
 
 - `user`: the database user:
 
-    ```bash
+    ```
     user     : "deepdive"
     ```
 
 - `password`: the password for the database user
 
-    ```bash
+    ```
     password : "dbpassword"
     ```
 
 If you want to use <a
-href="../advanced/performance.html#parallelgrounding">parallel grounding</a>,
+href="../advanced/greenplum.html#parallelgrounding">parallel grounding</a>,
 you should also specify the following:
 
-```bash
+```
 gphost : [host of gpfdist]
 gpport : [port of gpfdist]
 gppath : [path to gpfdist directory]
@@ -164,7 +163,7 @@ You must also set `inference.parallel_grounding` to `true`.
 Configuration directives for executing [extractors](extractors.html) go in the
 `extraction` section, while extractor definitions go in the `extraction.extractors` section:
 
-```bash
+```
 deepdive {
   extraction {
     # extraction directives
@@ -181,7 +180,7 @@ There is currently only one available extraction configuration directive:
 - `parallelism`: specifies the maximum number of extractors to execute in
   parallel. The default value of `parallelism` is 1. E.g.:
 
-    ```bash
+    ```
     # 3 extractors can run in parallel if all their dependencies are met
     extraction.parallelism: 3
 
@@ -192,7 +191,7 @@ There is currently only one available extraction configuration directive:
 
 Each extractor definition is a section named with the name of the extractor:
 
-```bash
+```
 deepdive {
   # ...
   extraction.extractors {
@@ -224,7 +223,7 @@ to all styles:
 - `before`: specifies a shell command to run **before** executing the extractor.
   This is an optional directive.
 
-    ```bash
+    ```
     myExtractor {
       # ...
       style: "tsv_extractor"
@@ -237,7 +236,7 @@ to all styles:
 - `after`: specifies a shell command to run **after** the extractor has
   completed:
 
-    ```bash
+    ```
     myExtractor {
       # ...
       style: "sql_extractor"
@@ -252,7 +251,7 @@ to all styles:
   required order (in parallel if possible and `parallelism` has a value grater
   than 1). E.g.:
 
-    ```bash
+    ```
     extractor1 {
       # ...
     }
@@ -279,7 +278,7 @@ The following directives are only for the `json_extractor`, `tsv_extractor`, and
 - `input`: specifies the input to the extractor. For all the three extractor
   style above it can be a SQL query to run on the database, e.g.,:
 
-    ```bash
+    ```
     myExtractor {
       # ...
       style: "tsv_extractor"
@@ -292,7 +291,7 @@ The following directives are only for the `json_extractor`, `tsv_extractor`, and
     **Only** for extractors with style `json_extractor`, the `input` directive may
     specify a TSV or CSV file to use as input, e.g.,:
 
-    ```bash
+    ```
     myExtractor {
       # ...
       style: "json_extractor"
@@ -305,7 +304,7 @@ The following directives are only for the `json_extractor`, `tsv_extractor`, and
 - `output_relation`: specifies the name of the relation the extractor output
   should be written to. Must be an existing relation in the database. E.g.:
 
-    ```bash
+    ```
     myExtractor {
       # ...
       style: "plpy_extractor"
@@ -320,79 +319,8 @@ The following directives are only for the `json_extractor`, `tsv_extractor`, and
   guide](extractors.html) for details about the requirements for the UDF for
   different styles of extractors.
 
-In the following subsections we present the directives that are specific to each
-extractor style, if any.
+- Depending on the extractor style, additional directives may be necessary, such as `sql`, `cmd`, `parallelism`, `input_batch_size`, and `output_batch_size`.  Refer to the ['Writing extractors' guide](extractors.html) for details.
 
-#### <a name="json" href="#"></a> json\_extractor / tsv\_extractor
-
-- `parallelism`: specifies the number of instances of this extractor to be
-  executed in parallel. Tuples generated by the `input` query are sent (in
-  batches of size controlled by the `input_batch_size` directive) to each
-  instance in a round-robin fashion. This is an optional directive. Example
-  usage:
-
-    ```bash
-    myExtractor {
-      # ...
-      style: "json_extractor"
-      # ...
-      parallelism: 5
-      # ...
-    }
-    ```
-
-- `input_batch_size`: specifies the size of the batch of tuples to feed to each
-  instance of the extractor at each round-robin iteration. This is an optional directive. **The default value is 10000.**  Example usage:
-
-    ```bash
-    myExtractor {
-      # ...
-      style: "json_extractor"
-      # ...
-      parallelism: 5
-      # ...
-      input_batch_size: 5000
-      # ...
-    }
-    ```
-
-- `output_batch_size`: specifies how many tuples in the output of the extractor
-  are inserted into the `output_relation` at once. If the tuples are large, a
-  smaller value may avoid incurring in out of memory errors. This is an optional directive. **The default value is 50000.** Example usage:
-
-    ```bash
-    myExtractor {
-      # ...
-      style: "json_extractor"
-      # ...
-      output_batch_size: 5000
-      # ...
-    }
-    ```
-
-#### sql_extractor
-
-- `sql`: specifies the SQL command to execute. This option is mandatory for this
-  extractor style. Example usage:
-
-    ```bash
-    myExtractor {
-      style: "sql_extractor"
-      sql: """INSERT INTO titles VALUES (1, 'Moby Dick')"""
-    }
-    ```
-
-#### cmd_extractor
-
-- `cmd`: specifies the shell command to execte. This option is mandatory for
-  this extractor style. Example usage:
-
-    ```bash
-    myExtractor {
-      style: "cmd_extractor"
-      cmd: """python words.py"""
-    }
-    ```
 
 ## <a name="inference-opt" href="#"></a> Inference
 
@@ -407,7 +335,7 @@ Configuration directives to control the inference steps go in the global
   insert variables, factors, and weights in the database during the factor graph
   creation:
 
-    ```bash
+    ```
     inference.batch_size = 1000000
     ```
 
@@ -416,10 +344,10 @@ Configuration directives to control the inference steps go in the global
 - <a name="parallelgrounding" href="#"></a> `inference.parallel_grounding`. If
   set to `true` and you are using <a href="../advanced/greenplum.html">GreenPlum
   on DeepDive</a>, use <a
-  href="../advanced/performance.html#parallelgrounding">parallelism when
+  href="../advanced/greenplum.html#parallelgrounding">parallelism when
   grounding the graph</a>. Default is `false`.
 
-    ```bash
+    ```
     inference.parallel_grounding: true
     ```
 
@@ -432,7 +360,7 @@ Configuration directives to control the inference steps go in the global
   must be present.
 
 
-    ```bash
+    ```
     inference.skip_learning: true
     ```
     By default this directive is `false`.
@@ -457,7 +385,7 @@ Configuration directives to control the inference steps go in the global
 
     If `inference_skip_learning` is `false` (default) this directive is ignored.
 
-    ```bash
+    ```
     inference.skip_learning: true
     inference.weight_table: [weight table name]
     ```
@@ -468,7 +396,7 @@ Inference [schema](schema.html) directives define the variables used in the
 factor graph and their type. Inference schema directives go in the
 `schema.variables` section:
 
-```bash
+```
 deepdive {
   # ...
   schema.variables {
@@ -480,7 +408,7 @@ deepdive {
 
 A variable in DeepDive is defined by its name (table.column) and its type:
 
-```bash
+```
 person_smokes.smokes: Boolean
 person_has_cancer.has_cancer: Boolean
 ```
@@ -498,7 +426,7 @@ an in-depth discussion about writing inference rules.
 The definitions of inference rules for the factor graphs go in the
 `inference.factors` section:
 
-```bash
+```
 deepdive {
   inference.factors {
     rule1 {
@@ -533,15 +461,15 @@ The **mandatory** definition directives for each rule are:
 
   - a real number: the weight is the given number and not learned.
 
-  - "?": DeepDive learns a weight for all factors defined by this rule. All the
+  - `"?"`: DeepDive learns a weight for all factors defined by this rule. All the
     factors will share the same weight.
 
-  - "?(column_name)": DeepDive learns multiple weights, one for each different
+  - `"?(column_name)"`: DeepDive learns multiple weights, one for each different
     value in the column `column_name` in the result of `input_query`.
 
 An example inference rule is the following:
 
-```bash
+```
 smokes_cancer {
   input_query: """
       SELECT person_has_cancer.id as "person_has_cancer.id",
@@ -565,7 +493,7 @@ The available directives are:
 - `holdout_fraction`: specifies the fraction of training data to use for
   [holdout](calibration.html#holdout). E.g.:
 
-    ```bash
+    ```
     calibration {
       holdout_fraction: 0.25
     }
@@ -574,7 +502,7 @@ The available directives are:
   This must insert all variable IDs that are to be held out into the
   `dd_graph_variables_holdout` table through arbitrary SQL. E.g.:
 
-    ```bash
+    ```
     calibration {
       holdout_query: "INSERT INTO dd_graph_variables_holdout(variable_id) SELECT id FROM mytable WHERE predicate"
     }
@@ -585,7 +513,7 @@ The available directives are:
 
 - `observation_query`: specifies a custom query to be used to define observation only evidence. Observation only evidence will not be fitted during weight learning. So there will be 3 kinds of variables during learning -- evidence that will be fitted, evidence that will not be fitted and non-evidence variables. This query must insert all variable IDs that are observation only evidence into the `dd_graph_variables_observation` table through arbitrary SQL. E.g.:
 
-    ```bash
+    ```
     calibration {
       observation_query: "INSERT INTO dd_graph_variables_observation SELECT id FROM mytable WHERE predicate"
     }
@@ -602,13 +530,13 @@ section. Available directives are `pipeline.pipelines` and `pipeline.run`.
   the tasks are the names of the extractors or inference rules to be executed,
   as in the following example:
 
-    ```bash
+    ```
     pipeline.pipelines.myPipeline: [ "extractor1", "extractor2", "inferenceRule1" ]
     ```
 
 - `pipeline.run` specifies which pipeline to run, e.g.:
 
-    ```bash
+    ```
     pipeline.run : "myPipeline"
     ```
 
@@ -632,7 +560,7 @@ section. Available directives are `pipeline.pipelines` and `pipeline.run`.
   extractors** and use the factor graph contained in the specified directory for
   the learning and inference steps. Usage example:
 
-    ```bash
+    ```
     pipeline.relearn_from: "/PATH_TO_DEEPDIVE_HOME/out/2014-05-02T131658/"
     ```
 
@@ -643,7 +571,7 @@ The available directive are:
 
 - (Optional) `sampler.sampler_cmd`: the path to the sampler executable:
 
-    ```bash
+    ```
     sampler.sampler_cmd: "util/sampler-dw-mac gibbs"
     ```
 
@@ -655,7 +583,7 @@ The available directive are:
 
 - `sampler.sampler_args`: the arguments to the sampler executable:
 
-    ```bash
+    ```
     deepdive {
       sampler.sampler_args: "-l 1000 -s 1 -i 1000 --alpha 0.01"
     }

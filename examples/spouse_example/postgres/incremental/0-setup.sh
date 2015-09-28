@@ -4,7 +4,7 @@ set -eux
 cd "$(dirname "$0")"
 . env.sh
 
-DDlog=${1:-spouse_example.f1.ddl}
+DDlog=${1:-spouse_example.f1.ddlog}
 Out=${2:-inc-base.out}
 
 export BASEDIR=$Out
@@ -13,15 +13,4 @@ dropdb $DBNAME || true
 createdb $DBNAME
 
 ./run.sh "$DDlog" "" initdb "$Out"
-./generate-sentences_dump_noarray.csv.sh |
-psql $DBNAME -c "COPY sentences(
-    document_id,
-    sentence,
-    words,
-    lemma,
-    pos_tags,
-    dependencies,
-    ner_tags,
-    sentence_offset,
-    sentence_id
-) FROM STDIN CSV"
+./setup_database.sh $DBNAME

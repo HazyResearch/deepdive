@@ -33,6 +33,7 @@ stage() {
 # DeepDive shell
 stage shell/deepdive                                              bin/
 stage shell/deepdive-version                                      util/
+stage shell/deepdive-help                                         util/
 stage shell/deepdive-env                                          util/
 stage shell/find-deepdive-app                                     util/
 stage shell/parse-url.sh                                          util/
@@ -42,6 +43,7 @@ stage shell/usage                                                 util/
 stage shell/deepdive-initdb                                       util/
 stage shell/deepdive-run                                          util/
 stage shell/deepdive-sql                                          util/
+stage shell/deepdive-load                                         util/
 
 stage shell/load-db-driver.sh                                     util/
 stage shell/driver.postgresql                                     util/
@@ -58,6 +60,7 @@ stage util/tobinary.py                                            util/
 stage util/active.sh                                              util/
 stage util/calibration.py                                         util/
 stage util/calibration.plg                                        util/
+stage util/pgtsv_to_json                                          util/
 
 # DDlog compiler
 stage util/ddlog                                                  bin/

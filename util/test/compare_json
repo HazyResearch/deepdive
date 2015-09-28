@@ -1,0 +1,23 @@
+#!/usr/bin/env python
+# Compares two JSON strings passed over command-line arguments
+import sys,json,subprocess
+
+try:
+    global expected, actual
+    [expected, actual] = [json.loads(s) for s in sys.argv[1:]]
+except:
+    for s in sys.argv[1:]:
+        print s
+        print "####"
+    raise
+
+if expected == actual:
+    sys.exit(0)
+else:
+    # show the actual and diff
+    subprocess.call(["bash", "-c"
+        , "echo \"$2\"; diff -u <(echo \"$1\") <(echo \"$2\")", "--"
+        , json.dumps(expected, indent=2)
+        , json.dumps(  actual, indent=2)
+        ])
+    sys.exit(1)

@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Using DeepDive with Postgres-XL
 ---
 
 # Using DeepDive with Postgres-XL
@@ -40,6 +41,7 @@ We assume that the user executing these commands has sudo rights.
 ### Setting OS Parameters
 
 Set the following parameters in the `/etc/sysctl.d/50-pgxl.conf` file:
+
 ```
 sudo tee /etc/sysctl.d/50-pgxl.conf <<EOF
 kernel.sem = 1000  32000  32  1000
@@ -49,11 +51,13 @@ EOF
 ```
 
 After making these changes, run
+
 ```bash
 sudo sysctl --system
 ```
 
 Finally, adjust ssh settings in `/etc/ssh/ssh_config` and `/etc/ssh/sshd_config` files:
+
 ```
 sudo tee -a /etc/ssh/ssh_config <<EOF
 StrictHostKeyChecking no
@@ -63,6 +67,7 @@ MaxStartups 100
 EOF
 ```
 After that, run
+
 ```bash
 sudo service ssh restart
 ```
@@ -78,6 +83,7 @@ sudo localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-
 ```
 
 Now set `$TARGET_DIR` to the directory into which you would like to install XL.
+
 ```bash
 TARGET_DIR=/opt/pgxl
 sudo mkdir -p $TARGET_DIR
@@ -85,6 +91,7 @@ sudo chown $USER $TARGET_DIR
 ```
 
 Then create a file `/etc/ld.so.conf.d/pgxl.conf` for the `$TARGET_DIR`:
+
 ```bash
 sudo tee /etc/ld.so.conf.d/pgxl.conf <<EOF
 $TARGET_DIR/lib
@@ -95,6 +102,7 @@ The remaining parts of the installation do not require sudo rights. However, mak
 the user account doing the installation has write permissions to `$TARGET_DIR`.
 
 Create a build directory and download the XL sources.
+
 ```bash
 BUILD_DIR=~/pgxl_install
 mkdir -p $BUILD_DIR
@@ -104,6 +112,7 @@ tar -xzf pgxl-v9.2.tar.gz
 ```
 
 Now, you can build the sources.
+
 ```bash
 cd $BUILD_DIR/postgres-xl/
 ./configure --with-python --with-openssl --prefix $TARGET_DIR
@@ -112,6 +121,7 @@ make install
 ```
 
 Additionally modules can be added as follows.
+
 ```bash
 for pkg in btree_gin btree_gist earthdistance fuzzystrmatch hstore intagg intarray oid2name \
 pg_buffercache pgcrypto pgxc_clean pgxc_ctl pgxc_ddl pgxc_monitor stormstats \
@@ -124,6 +134,7 @@ done
 ### Configure ssh with localhost
 
 Now you need to generate ssh keys for `localhost`. Run:
+
 ```bash
 mkdir -p ~/.ssh
 chmod 700 ~/.ssh
@@ -151,12 +162,14 @@ mkdir -p $DATA_DIR
 ### Configure the XL database
 
 In order to run XL, we still need to create a file with configuration settings. Run
+
 ```bash
 mkdir -p $TARGET_DIR/conf
 ```
 
 Now, assuming that `$USER` is set to the account under which pgxl should execute, the
 following settings should provide a good starting point.
+
 ```bash
 USER_DB_PORT=5432
 MAX_USER_CONNECTIONS=100

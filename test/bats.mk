@@ -10,6 +10,17 @@ BATS_ROOT = $(TEST_ROOT)/bats
 export TEST_ROOT
 
 .PHONY: test test-build test-list
+test-list:
+	@echo "make test \\"
+	@$(TEST_LIST_COMMAND) | sed 's/$$/ \\/; s/^/   ONLY+=/p; s/^   ONLY+=/ EXCEPT+=/'
+	@echo " #"
+
+test: test-build
+test-build:
+
+test: $(BATS_ROOT)/bin/bats
+$(BATS_ROOT)/bin/bats:
+	git submodule update --init $(BATS_ROOT)
 # One can fine-tune the list of tests by setting environment variables
 # TEST_ONLY and TEST_EXCEPT, or passing the same glob patterns as Make
 # arguments ONLY and EXCEPT, e.g.:
@@ -21,17 +32,11 @@ TEST_EXCEPT ?=
 test: ONLY = $(TEST_ONLY)
 test: EXCEPT = $(TEST_EXCEPT)
 test: BATS_FILES = $(filter-out $(wildcard $(EXCEPT)),$(wildcard $(ONLY)))
-test: $(BATS_ROOT)/bin/bats $(BATS_FILES) test-build
+.SECONDEXPANSION:
+test: $$(BATS_FILES)
+test:
 	# Running $(shell $(TEST_ROOT)/bats/bin/bats -c $(BATS_FILES)) tests defined in $(words $(BATS_FILES)) .bats files
 	#  To test selectively, run:  make test   ONLY+=/path/to/bats/files
 	#  To exclude certain tests:  make test EXCEPT+=/path/to/bats/files
 	#  For a list of tests, run:  make test-list
 	$(BATS_ROOT)/bin/bats  $(BATS_FILES)
-test-build:
-$(BATS_ROOT)/bin/bats:
-	git submodule update --init $(BATS_ROOT)
-test-list:
-	@echo "make test \\"
-	@$(TEST_LIST_COMMAND) | sed 's/$$/ \\/; s/^/   ONLY+=/p; s/^   ONLY+=/ EXCEPT+=/'
-	@echo " #"
-

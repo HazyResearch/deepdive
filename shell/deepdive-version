@@ -31,9 +31,6 @@ Information on this build of deepdive follows.
   Build Operating System: $build_os
   Build Machine: $build_machine
 
-  Bundled Dependencies:
-$(ls depends/bundled | sed 's/^/    /')
-
   Running Operating System: $(uname)
   Running Machine: $(uname -m)
 

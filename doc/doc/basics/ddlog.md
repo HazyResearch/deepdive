@@ -1,11 +1,13 @@
 ---
 layout: default
+title: Writing Applications in DDlog
 ---
 
 # Writing Applications in DDlog
 
-DDlog is a declarative language for writing DeepDive applications in datalog-like syntax.
-The current version may not be able to express everything, but we plan to extend it to support Markov Logic Network syntax as well.
+DDlog is a higher-level language for writing DeepDive applications in succinct Datalog-like syntax.
+We are gradually extending the language to allow expression of advanced SQL queries used by complex extractors as well as a variety of factors with Markov Logic-like syntax.
+A reference for ddlog lanugage features can be found [here](https://github.com/HazyResearch/ddlog/wiki/DDlog-Language-Features).
 
 ## Writing a DDlog Program
 
@@ -17,13 +19,15 @@ A DDlog program consists of the following parts:
 4. Inference rules for describing dependency between the variables.
 
 We show how each part should look like using the [spouse example in our walk through](walkthrough/walkthrough.html).
+All DDlog code should be placed in a file named `app.ddlog` under the DeepDive application.
+A complete example written in DDlog can be found from [examples/spouse_example/postgres/ddlog](https://github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/ddlog)
+
 
 ### Basic Syntax
 
 Each declaration and rule ends with a period (`.`).
 The order of the rules have no meaning.
 Comments in DDlog begin with a hash (`#`) character.
-C/Java-style comments are also supported (`// comment` and `/* comment block */`), but we'll use hash comments in the rest of the document.
 
 ### Schema Declaration
 
@@ -34,133 +38,71 @@ The order doesn't matter, but it's a good idea to place them at the beginning be
 We need a relation for holding raw text of all source documents.
 Each relation has multiple columns whose name and type are declared one at a time separated by commas.
 
-```
-articles(
-  article_id text,
-  text       text).
-```
+<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/ddlog/app.ddlog?footer=minimal&slice=1:6">
+</script>
 
 #### Intermediate Relations
 We'll populate the following `sentences` relation by parsing sentences from every articles and collecting NLP tags.
 
-```
-sentences(
-  document_id     text,
-  sentence        text,
-  words           text,
-  lemma           text,
-  pos_tags        text,
-  dependencies    text,
-  ner_tags        text,
-  sentence_offset int,
-  sentence_id     text).
-```
+<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/ddlog/app.ddlog?footer=minimal&slice=6:17">
+</script>
 
-Then, we'll map candidate mentions of people in each sentence using the following `people_mentions` relation.
+Then, we'll map candidate mentions of people in each sentence using the following `people_mentions` relation (ignore `@` annotations).
 
-```
-people_mentions(
-  sentence_id    text,
-  start_position int,
-  length         int,
-  text           text,
-  mention_id     text).
-```
+<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/ddlog/app.ddlog?footer=minimal&slice=18:27">
+</script>
 
 Candidate mentions of spouse relationships from them will then be stored in `has_spouse_candidates`.
 
-```
-has_spouse_candidates(
-  person1_id  text,
-  person2_id  text,
-  sentence_id text,
-  description text,
-  relation_id text,
-  is_true boolean).
-```
+<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/ddlog/app.ddlog?footer=minimal&slice=27:35">
+</script>
 
 For each relationship candidate, we'll extract features.
 
-```
-has_spouse_features(
-  relation_id text,
-  feature     text).
-```
+<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/ddlog/app.ddlog?footer=minimal&slice=35:39">
+</script>
 
 #### Variable Relations
 Finally, we declare a variable relation that we want DeepDive to predict the marginal probability for us.
 
-```
-has_spouse?(relation_id text).
-```
+<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/ddlog/app.ddlog?footer=minimal&slice=39:41">
+</script>
 
 ### Candidate Mapping and Supervision Rules
 A user-defined function for mapping candidates and supervision them is written in Python and declared as below with a name `ext_people`.
 The function is supposed to take as input a triple of sentence id, array of words, and array of NER tags of the words and output rows like the `people_mentions` relation.
 The Python implementation `udf/ext_people.py` takes the input as tab-separated values in each line and  outputs in the same format.
 
-```
-function ext_people over like ext_people_input
-                 returns like people_mentions
-  implementation "udf/ext_people.py" handles tsv lines.
-```
+<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/ddlog/app.ddlog?footer=minimal&slice=41:45">
+</script>
 
 Then this user-defined function `ext_people` can be called in the following way to add more tuples to `people_mentions` taking triples from the `sentences` relation:
 
-```
-people_mentions :- !ext_people(ext_people_input).
-ext_people_input(s, words, ner_tags) :-
-  sentences(_1, _2, words, _3, _4, _5, ner_tags, _6, s).
-```
+<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/ddlog/app.ddlog?footer=minimal&slice=45:49">
+</script>
 
 In a similar way, we can have another UDF map candidate relationships and supervise them.
 
-```
-function ext_has_spouse over like ext_has_spouse_input
-                     returns like has_spouse_candidates
-  implementation "udf/ext_has_spouse.py" handles tsv lines.
-
-has_spouse_candidates :- !ext_has_spouse(ext_has_spouse_input).
-ext_has_spouse_input(s, p1_id, p1_text, p2_id, p2_text) :-
-  people_mentions(s, _1, _2, p1_text, p1_id),
-  people_mentions(s, _3, _4, p2_text, p2_id).
-```
+<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/ddlog/app.ddlog?footer=minimal&slice=49:58">
+</script>
 
 ### Feature Extraction Rules
 Also, we use a UDF to extract features for the candidate relationships.
 
-```
-function ext_has_spouse_features over like ext_has_spouse_features_input
-                              returns like has_spouse_features
-  implementation "udf/ext_has_spouse_features.py" handles tsv lines.
-
-has_spouse_features :- !ext_has_spouse_features(ext_has_spouse_features_input).
-ext_has_spouse_features_input(words, rid, p1idx, p1len, p2idx, p2len) :-
-  sentences(_1, _2, words, _3, _4, _5, _6, _7, s),
-  has_spouse_candidates(person1_id, person2_id, s, _8, rid, _9),
-  people_mentions(s, p1idx, p1len, _10, person1_id),
-  people_mentions(s, p2idx, p2len, _11, person2_id).
-```
-
+<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/ddlog/app.ddlog?footer=minimal&slice=58:69">
+</script>
 
 ### Inference Rules
+Now we need to generate variables from the candidate relation. This is through
+the *scoping rule*/*supervision rule* below. In the scoping rule, variables are generated from the
+body and distinct on the key given in the head. The supervision for the variables
+is annotated with `@label(l)`.
+
+<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/ddlog/app.ddlog?footer=minimal&slice=69:72">
+</script>
+
 Finally, we define a binary classifier for our boolean variable `has_spouse`.
-
-```
-has_spouse(rid) :-
-  has_spouse_candidates(_1, _2, _3, _4, rid, l),
-  has_spouse_features(rid, f)
-weight = f
-label = l.
-```
-
-
-## Compiling a DDlog Program
-Let's say we wrote everything described so far in a file called `spouse_example.ddl`.
-DeepDive's deepdive.conf can be compiled and run in the following way:
-
-```bash
-$DEEPDIVE_HOME/util/ddlog compile spouse_example.ddl >deepdive.conf
-
-deepdive run
-```
+<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/ddlog/app.ddlog?footer=minimal&slice=72:77">
+</script>
+In this rule, we define a classifier based on the features, and the weight is tied
+to the feature.

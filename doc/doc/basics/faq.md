@@ -1,32 +1,9 @@
 ---
 layout: default
+title: FAQ
 ---
 
 # DeepDive FAQ
-
-
-### I get a Java out of memory error, what should I do?
-
-Refer to the [Performance Tuning guide](../advanced/performance.html) and try the following:
-
-- Set the JVM heap size using the `-Xmx` option flag
-
-- If the errors happens while executing an JSON extractor, try decreasing the input
-  or output batch size for your extractors. See the [Configuration
-  reference](configuration.html#json) for details.
-
-- If the error happens while executing a database query and the query uses the
-        `array_agg` aggregate, try changing it to `array_accum`, which is a custom
-        aggregate that can be defined as:
-
-        ```sql
-        CREATE AGGREGATE array_accum (anyelement)
-        (
-                sfunc = array_append,
-                stype = anyarray,
-                initcond = '{}'
-        );
-        ```
 
 
 ### How can I debug my extractors?
@@ -62,7 +39,7 @@ rule2 {
 ### I am getting a "java.lang.UnsupportedClassVersionError" error. What can I do?
 
 This happens when you are using an older JRE version not supprted by DeepDive.
-Make sure you are using JRE version 1.7.0_45 or greater.
+Make sure you are using JRE version 1.7.0\_45 or greater.
 
 
 ### I am using Greenplum, and getting an "ERROR: Cannot parallelize an UPDATE
@@ -73,7 +50,7 @@ sure you distribute your tables in a correct way: do not use the column `id` as
 distribution key. Do not use a distribution key that is not initially assigned.
 
 
-### I am using a plpy_extractor and I get  "ERROR: could not access file
+### I am using a `plpy_extractor` and I get  "ERROR: could not access file
 "$libdir/plpython2": No such file or directory"
 
 Make sure your database server supports the PL/python language.

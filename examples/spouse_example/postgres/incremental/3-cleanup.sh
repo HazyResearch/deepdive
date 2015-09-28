@@ -3,7 +3,7 @@ set -eux
 cd "$(dirname "$0")"
 . env.sh
 
-DDlog=${1:-spouse_example.f2.ddl}
+DDlog=${1:-spouse_example.f2.ddlog}
 Out=${2:-inc-delta.out}
 
 export BASEDIR=$Out

@@ -127,8 +127,22 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       assume(TestHelper.getTestEnv != TestHelper.Mysql)
 
 
-      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "testtable",
-        "SELECT 5", null, t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
+      val task = new ExtractionTask(Extractor(
+        name = "testExtractor",
+        style = "json_extractor",
+        outputRelation = "testtable",
+        inputQuery = "SELECT 5",
+        udfDir = null,
+        udf = t3.getAbsolutePath,
+        parallelism = 1,
+        inputBatchSize = 1000,
+        outputBatchSize = 1000,
+        dependencies = Nil.toSet,
+        beforeScript = Some(t.getAbsolutePath),
+        afterScript = None,
+        sqlQuery = "",
+        cmd = None
+      ))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       //expectMsg("Done!")
@@ -164,9 +178,22 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
-      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "testtable",
-        "SELECT 5", null, t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some("/bin/i_am_not_exist"), None, "", None))
-
+      val task = new ExtractionTask(Extractor(
+        name = "testExtractor",
+        style = "json_extractor",
+        outputRelation = "testtable",
+        inputQuery = "SELECT 5",
+        udfDir = null,
+        udf = t3.getAbsolutePath,
+        parallelism = 1,
+        inputBatchSize = 1000,
+        outputBatchSize = 1000,
+        dependencies = Nil.toSet,
+        beforeScript = Some("/bin/i_am_not_exist"),
+        afterScript = None,
+        sqlQuery = "",
+        cmd = None
+      ))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
@@ -201,8 +228,22 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
-      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "testtable",
-        "SELECT 5", null, t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
+      val task = new ExtractionTask(Extractor(
+        name = "testExtractor",
+        style = "json_extractor",
+        outputRelation = "testtable",
+        inputQuery = "SELECT 5",
+        udfDir = null,
+        udf = t3.getAbsolutePath,
+        parallelism = 1,
+        inputBatchSize = 1000,
+        outputBatchSize = 1000,
+        dependencies = Nil.toSet,
+        beforeScript = Some(t.getAbsolutePath),
+        afterScript = None,
+        sqlQuery = "",
+        cmd = None
+      ))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
@@ -244,8 +285,22 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
-      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "testtable",
-        "SELECT 5", null, t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), Some(t4.getAbsolutePath), "", None))
+      val task = new ExtractionTask(Extractor(
+        name = "testExtractor",
+        style = "json_extractor",
+        outputRelation = "testtable",
+        inputQuery = "SELECT 5",
+        udfDir = null,
+        udf = t3.getAbsolutePath,
+        parallelism = 1,
+        inputBatchSize = 1000,
+        outputBatchSize = 1000,
+        dependencies = Nil.toSet,
+        beforeScript = Some(t.getAbsolutePath),
+        afterScript = Some(t4.getAbsolutePath),
+        sqlQuery = "",
+        cmd = None
+      ))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       //expectMsg("Done!")
@@ -284,9 +339,22 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       val t3 = java.io.File.createTempFile("test", ".py")
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
-      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "testtable",
-        "SELECT 5", null, t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, None, Some("/bin/i_am_not_exist"), "", None))
-
+      val task = new ExtractionTask(Extractor(
+        name = "testExtractor",
+        style = "json_extractor",
+        outputRelation = "testtable",
+        inputQuery = "SELECT 5",
+        udfDir = null,
+        udf = t3.getAbsolutePath,
+        parallelism = 1,
+        inputBatchSize = 1000,
+        outputBatchSize = 1000,
+        dependencies = Nil.toSet,
+        beforeScript = None,
+        afterScript = Some("/bin/i_am_not_exist"),
+        sqlQuery = "",
+        cmd = None
+      ))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
@@ -321,8 +389,22 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
-      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "testtable",
-        "SELECT 5", null, t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, None, Some(t.getAbsolutePath), "", None))
+      val task = new ExtractionTask(Extractor(
+        name = "testExtractor",
+        style = "json_extractor",
+        outputRelation = "testtable",
+        inputQuery = "SELECT 5",
+        udfDir = null,
+        udf = t3.getAbsolutePath,
+        parallelism = 1,
+        inputBatchSize = 1000,
+        outputBatchSize = 1000,
+        dependencies = Nil.toSet,
+        beforeScript = None,
+        afterScript = Some(t.getAbsolutePath),
+        sqlQuery = "",
+        cmd = None
+      ))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
@@ -345,8 +427,22 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         assert(numRecords === 1)
       }
 
-      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1",
-        "SELECT * FROM relation1", null, "/bin/cat", 1, 1000, 1000, Nil.toSet, None, None, "SELECT * FROM relation1", None))
+      val task = new ExtractionTask(Extractor(
+        name = "testExtractor",
+        style = "json_extractor",
+        outputRelation = "relation1",
+        inputQuery = "SELECT * FROM relation1",
+        udfDir = null,
+        udf = "/bin/cat",
+        parallelism = 1,
+        inputBatchSize = 1000,
+        outputBatchSize = 1000,
+        dependencies = Nil.toSet,
+        beforeScript = None,
+        afterScript = None,
+        sqlQuery = "SELECT * FROM relation1",
+        cmd = None
+      ))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       //expectMsg("Done!")
@@ -366,8 +462,18 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       assume(TestHelper.getTestEnv != TestHelper.Mysql)
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
-      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1",
-        "SELECT * FROM relation1", null, "/bin/cat", 1, 1000, 1000, Nil.toSet))
+      val task = new ExtractionTask(Extractor(
+        name = "testExtractor",
+        style = "json_extractor",
+        outputRelation = "relation1",
+        inputQuery = "SELECT * FROM relation1",
+        udfDir = null,
+        udf = "/bin/cat",
+        parallelism = 1,
+        inputBatchSize = 1000,
+        outputBatchSize = 1000,
+        dependencies = Nil.toSet
+      ))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       //expectMsg("Done!")
@@ -396,8 +502,22 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
         Json.parse(s"""{"key": ${i}}""").asInstanceOf[JsObject]
       }.toList
       dataStore.addBatch(batchData.iterator, "relation1")
-      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1",
-        "SELECT * FROM relation1", null, "/bin/cat", 4, 500, 200, Nil.toSet, None, None, "", None))
+      val task = new ExtractionTask(Extractor(
+        name = "testExtractor",
+        style = "json_extractor",
+        outputRelation = "relation1",
+        inputQuery = "SELECT * FROM relation1",
+        udfDir = null,
+        udf = "/bin/cat",
+        parallelism = 4,
+        inputBatchSize = 500,
+        outputBatchSize = 200,
+        dependencies = Nil.toSet,
+        beforeScript = None,
+        afterScript = None,
+        sqlQuery = "",
+        cmd = None
+      ))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       //expectMsg("Done!")
@@ -418,8 +538,22 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
       val failingExtractorFile = getClass.getResource("/failing_extractor.py").getFile
       dataStore.addBatch(List(Json.parse("""{"key": 5}""").asInstanceOf[JsObject]).iterator, "relation1")
-      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1",
-        "SELECT * FROM relation1", null, failingExtractorFile, 1, 1000, 1000, Nil.toSet, None, None, "", None))
+      val task = new ExtractionTask(Extractor(
+        name = "testExtractor",
+        style = "json_extractor",
+        outputRelation = "relation1",
+        inputQuery = "SELECT * FROM relation1",
+        udfDir = null,
+        udf = failingExtractorFile,
+        parallelism = 1,
+        inputBatchSize = 1000,
+        outputBatchSize = 1000,
+        dependencies = Nil.toSet,
+        beforeScript = None,
+        afterScript = None,
+        sqlQuery = "",
+        cmd = None
+      ))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
@@ -431,8 +565,22 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       assume(TestHelper.getTestEnv != TestHelper.Mysql)
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
-      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1",
-        "SELECT * FROM relation1", null, "/bin/cat", 1, 1000, 1000, Nil.toSet, Option("echo Hello"), Option("echo World"), "", None))
+      val task = new ExtractionTask(Extractor(
+        name = "testExtractor",
+        style = "json_extractor",
+        outputRelation = "relation1",
+        inputQuery = "SELECT * FROM relation1",
+        udfDir = null,
+        udf = "/bin/cat",
+        parallelism = 1,
+        inputBatchSize = 1000,
+        outputBatchSize = 1000,
+        dependencies = Nil.toSet,
+        beforeScript = Option("echo Hello"),
+        afterScript = Option("echo World"),
+        sqlQuery = "",
+        cmd = None
+      ))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       //expectMsg("Done!")
@@ -446,8 +594,21 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       assume(TestHelper.getTestEnv != TestHelper.Mysql)
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
-      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation5",
-        "relation1", null, "/bin/cat", 1, 1000, 1000, Nil.toSet,None, None, "", None))
+      val task = new ExtractionTask(Extractor(
+        name = "testExtractor",
+        style = "json_extractor",
+        outputRelation = "relation5",
+        inputQuery = "relation1",
+        udfDir = null,
+        udf = "/bin/cat",
+        parallelism = 1,
+        inputBatchSize = 1000,
+        outputBatchSize = 1000,
+        dependencies = Nil.toSet, beforeScript = None,
+        afterScript = None,
+        sqlQuery = "",
+        cmd = None
+      ))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
@@ -459,8 +620,22 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       assume(TestHelper.getTestEnv != TestHelper.Mysql)
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
-      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1",
-        "SELECT * FROM relation1", null, "/bin/cat", 1, 1000, 1000, Nil.toSet, Option("/bin/OHNO!"), Option("echo World"), "", None))
+      val task = new ExtractionTask(Extractor(
+        name = "testExtractor",
+        style = "json_extractor",
+        outputRelation = "relation1",
+        inputQuery = "SELECT * FROM relation1",
+        udfDir = null,
+        udf = "/bin/cat",
+        parallelism = 1,
+        inputBatchSize = 1000,
+        outputBatchSize = 1000,
+        dependencies = Nil.toSet,
+        beforeScript = Option("/bin/OHNO!"),
+        afterScript = Option("echo World"),
+        sqlQuery = "",
+        cmd = None
+      ))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
@@ -472,8 +647,22 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
       assume(TestHelper.getTestEnv != TestHelper.Mysql)
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
-      val task = new ExtractionTask(Extractor("testExtractor", "json_extractor", "relation1",
-        "SELECT * FROM relation1", null, "/bin/cat", 1, 1000, 1000, Nil.toSet, Option("echo Hello"), Option("/bin/OHNO!"), "", None))
+      val task = new ExtractionTask(Extractor(
+        name = "testExtractor",
+        style = "json_extractor",
+        outputRelation = "relation1",
+        inputQuery = "SELECT * FROM relation1",
+        udfDir = null,
+        udf = "/bin/cat",
+        parallelism = 1,
+        inputBatchSize = 1000,
+        outputBatchSize = 1000,
+        dependencies = Nil.toSet,
+        beforeScript = Option("echo Hello"),
+        afterScript = Option("/bin/OHNO!"),
+        sqlQuery = "",
+        cmd = None
+      ))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
@@ -511,8 +700,22 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
-      val task = new ExtractionTask(Extractor("testExtractor", "tsv_extractor", "testtable",
-        "SELECT 5", null, t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
+      val task = new ExtractionTask(Extractor(
+        name = "testExtractor",
+        style = "tsv_extractor",
+        outputRelation = "testtable",
+        inputQuery = "SELECT 5",
+        udfDir = null,
+        udf = t3.getAbsolutePath,
+        parallelism = 1,
+        inputBatchSize = 1000,
+        outputBatchSize = 1000,
+        dependencies = Nil.toSet,
+        beforeScript = Some(t.getAbsolutePath),
+        afterScript = None,
+        sqlQuery = "",
+        cmd = None
+      ))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       //expectMsg("Done!")
@@ -563,8 +766,22 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
-      val task = new ExtractionTask(Extractor("testExtractor", "tsv_extractor", "testtable",
-        "SELECT * FROM testtable", null, t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
+      val task = new ExtractionTask(Extractor(
+        name = "testExtractor",
+        style = "tsv_extractor",
+        outputRelation = "testtable",
+        inputQuery = "SELECT * FROM testtable",
+        udfDir = null,
+        udf = t3.getAbsolutePath,
+        parallelism = 1,
+        inputBatchSize = 1000,
+        outputBatchSize = 1000,
+        dependencies = Nil.toSet,
+        beforeScript = Some(t.getAbsolutePath),
+        afterScript = None,
+        sqlQuery = "",
+        cmd = None
+      ))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       //expectMsg("Done!")
@@ -626,8 +843,22 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
-      val task = new ExtractionTask(Extractor("testExtractor", "tsv_extractor", "testtable",
-        "SELECT * FROM testtable", null, t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
+      val task = new ExtractionTask(Extractor(
+      name = "testExtractor",
+style = "tsv_extractor",
+outputRelation = "testtable",
+        inputQuery = "SELECT * FROM testtable",
+udfDir = null,
+udf = t3.getAbsolutePath,
+parallelism = 1,
+inputBatchSize = 1000,
+outputBatchSize = 1000,
+dependencies = Nil.toSet,
+beforeScript = Some(t.getAbsolutePath),
+afterScript = None,
+sqlQuery = "",
+cmd = None
+        ))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       //expectMsg("Done!")
@@ -678,8 +909,22 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
         val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
-        val task = new ExtractionTask(Extractor("testExtractor", exttype, "testtable",
-          "SELECT * FROM testtable", null, t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
+        val task = new ExtractionTask(Extractor(
+          name = "testExtractor",
+          style = exttype,
+          outputRelation = "testtable",
+          inputQuery = "SELECT * FROM testtable",
+          udfDir = null,
+          udf = t3.getAbsolutePath,
+          parallelism = 1,
+          inputBatchSize = 1000,
+          outputBatchSize = 1000,
+          dependencies = Nil.toSet,
+          beforeScript = Some(t.getAbsolutePath),
+          afterScript = None,
+          sqlQuery = "",
+          cmd = None
+        ))
         actor ! ExtractorRunner.SetTask(task)
         watch(actor)
         expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
@@ -714,8 +959,22 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
         val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
-        val task = new ExtractionTask(Extractor("testExtractor", exttype, "testtable",
-          "AAAAAAAAAAAAAAAAAAAAAAAAA * FROM testtable", null, t3.getAbsolutePath, 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "", None))
+        val task = new ExtractionTask(Extractor(
+          name = "testExtractor",
+          style = exttype,
+          outputRelation = "testtable",
+          inputQuery = "AAAAAAAAAAAAAAAAAAAAAAAAA * FROM testtable",
+          udfDir = null,
+          udf = t3.getAbsolutePath,
+          parallelism = 1,
+          inputBatchSize = 1000,
+          outputBatchSize = 1000,
+          dependencies = Nil.toSet,
+          beforeScript = Some(t.getAbsolutePath),
+          afterScript = None,
+          sqlQuery = "",
+          cmd = None
+        ))
         actor ! ExtractorRunner.SetTask(task)
         watch(actor)
         expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
@@ -748,8 +1007,22 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
-      val task = new ExtractionTask(Extractor("testExtractor", "sql_extractor", "testtable",
-        "DELETE FROM testtable WHERE a='I should be in the table';", null, "", 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "DELETE FROM testtable WHERE a='I should be in the table';", None))
+      val task = new ExtractionTask(Extractor(
+        name = "testExtractor",
+        style = "sql_extractor",
+        outputRelation = "testtable",
+        inputQuery = "DELETE FROM testtable WHERE a='I should be in the table';",
+        udfDir = null,
+        udf = "",
+        parallelism = 1,
+        inputBatchSize = 1000,
+        outputBatchSize = 1000,
+        dependencies = Nil.toSet,
+        beforeScript = Some(t.getAbsolutePath),
+        afterScript = None,
+        sqlQuery = "DELETE FROM testtable WHERE a='I should be in the table';",
+        cmd = None
+      ))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       //expectMsg("Done!")
@@ -785,8 +1058,22 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
-      val task = new ExtractionTask(Extractor("testExtractor", "sql_extractor", "testtable",
-        "DELETEAAAAAA FROM testtable WHERE a='I should be in the table';", null, "", 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "DELETEAAAAAA FROM testtable WHERE a='I should be in the table';", None))
+      val task = new ExtractionTask(Extractor(
+        name = "testExtractor",
+        style = "sql_extractor",
+        outputRelation = "testtable",
+        inputQuery = "DELETEAAAAAA FROM testtable WHERE a='I should be in the table';",
+        udfDir = null,
+        udf = "",
+        parallelism = 1,
+        inputBatchSize = 1000,
+        outputBatchSize = 1000,
+        dependencies = Nil.toSet,
+        beforeScript = Some(t.getAbsolutePath),
+        afterScript = None,
+        sqlQuery = "DELETEAAAAAA FROM testtable WHERE a='I should be in the table';",
+        cmd = None
+      ))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
@@ -825,9 +1112,22 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
-      val task = new ExtractionTask(Extractor("testExtractor", "cmd_extractor", "testtable",
-        t4.getAbsolutePath, null, "", 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "",
-        Some(t4.getAbsolutePath)))
+      val task = new ExtractionTask(Extractor(
+        name = "testExtractor",
+        style = "cmd_extractor",
+        outputRelation = "testtable",
+        inputQuery = t4.getAbsolutePath,
+        udfDir = null,
+        udf = "",
+        parallelism = 1,
+        inputBatchSize = 1000,
+        outputBatchSize = 1000,
+        dependencies = Nil.toSet,
+        beforeScript = Some(t.getAbsolutePath),
+        afterScript = None,
+        sqlQuery = "",
+        cmd = Some(t4.getAbsolutePath)
+      ))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       //expectMsg("Done!")
@@ -870,9 +1170,22 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
 
       val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
 
-      val task = new ExtractionTask(Extractor("testExtractor", "cmd_extractor", "testtable",
-        t4.getAbsolutePath, null, "", 1, 1000, 1000, Nil.toSet, Some(t.getAbsolutePath), None, "",
-        Some(t4.getAbsolutePath)))
+      val task = new ExtractionTask(Extractor(
+        name = "testExtractor",
+        style = "cmd_extractor",
+        outputRelation = "testtable",
+        inputQuery = t4.getAbsolutePath,
+        udfDir = null,
+        udf = "",
+        parallelism = 1,
+        inputBatchSize = 1000,
+        outputBatchSize = 1000,
+        dependencies = Nil.toSet,
+        beforeScript = Some(t.getAbsolutePath),
+        afterScript = None,
+        sqlQuery = "",
+        cmd = Some(t4.getAbsolutePath)
+      ))
       actor ! ExtractorRunner.SetTask(task)
       watch(actor)
       expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])

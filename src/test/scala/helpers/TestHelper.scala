@@ -35,18 +35,20 @@ object TestHelper {
   }
 
   def getDbSettings() =
-      DbSettings(getDriverFromEnv,      // driver
-          System.getenv("DBCONNSTRING"),  // nrl
-          System.getenv("DBUSER"),        // user
-          System.getenv("DBPASSWORD"),    // password
-          System.getenv("DBNAME"),        // dbname
-          System.getenv("DBHOST"),
-          System.getenv("DBPORT"),
-          System.getenv("GPHOST"),
-          System.getenv("GPPATH"),
-          System.getenv("GPPORT"),
-          getGPLOADEnv(),
-          getIsIncrementalEnv())
+      DbSettings(
+        driver = getDriverFromEnv, // driver
+        url = System.getenv("DBCONNSTRING"), // nrl
+        user = System.getenv("DBUSER"), // user
+        password = System.getenv("DBPASSWORD"), // password
+        dbname = System.getenv("DBNAME"), // dbname
+        host = System.getenv("DBHOST"),
+        port = System.getenv("DBPORT"),
+        gphost = System.getenv("GPHOST"),
+        gppath = System.getenv("GPPATH"),
+        gpport = System.getenv("GPPORT"),
+        gpload = getGPLOADEnv(),
+        incrementalMode = getIsIncrementalEnv()
+      )
 
   def getConfig() = s"""
       deepdive.db.default {

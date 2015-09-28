@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+set -eu
+
+# TODO
+error "load command not supported for mysql"

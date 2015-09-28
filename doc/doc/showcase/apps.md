@@ -1,5 +1,6 @@
 ---
 layout: default
+title: DeepDive Applications
 source-url: https://docs.google.com/document/d/1ruBshA-oSoqJ0CCqOQR9DIdBWlfeA3fQs8qytmZyWPE/edit
 ---
 
@@ -18,7 +19,7 @@ Here are a list of notable public DeepDive applications.
 <a name="memex"></a>
 ### MEMEX / Human trafficking
 
-[MEMEX](http://www.darpa.mil/newsevents/releases/2014/02/09.aspx) is a DARPA program that explores how next generation search and extraction systems can help with real-world use cases.
+[MEMEX](http://www.darpa.mil/news-events/2014-02-09) is a DARPA program that explores how next generation search and extraction systems can help with real-world use cases.
 The initial application is the [fight against human trafficking](http://www.cbsnews.com/news/new-search-engine-exposes-the-dark-web/).
 In this application, the input is a portion of the public and dark web in which human traffickers are likely to (surreptitiously) post supply and demand information about illegal labor, sex workers, and more.
 DeepDive processes such documents to extract evidential data, such as names, addresses, phone numbers, job types, job requirements, information about rates of service, etc.
@@ -78,7 +79,7 @@ Understanding the interactions of small chemicals or drugs in the body is key fo
 However, the majority of this data resides in the biomedical literature and cannot be easily accessed.
 The Pharmacogenomics Knowledgebase (PharmGKB, [www.pharmgkb.org](http://www.pharmgkb.org)) is a high quality database that aims to annotate the relationships between drugs, genes, diseases, genetic variation, and pathways in the literature.
 With the exponential growth of the literature, manual curation requires prioritization of specific drugs or genes in order to stay up to date with current research.
-In collaboration with [Emily Mallory](http://bmi.stanford.edu/people-directory/current-students-postdocs.html#thirdyear) (PhD candidate in the Biomedical Informatics training program) and Prof. Russ Altman at Stanford, we are developing DeepDive applications in the field of pharmacogenomics.
+In collaboration with [Emily Mallory](http://bmi.stanford.edu/people-directory/current-students.html#fourthyear) (PhD candidate in the Biomedical Informatics training program) and Prof. Russ Altman at Stanford, we are developing DeepDive applications in the field of pharmacogenomics.
 Specifically, we use DeepDive to extract relations between genes, diseases, and drugs in order to predict novel pharmacological relationships.
 <p><figure style="width:80%; margin:0 auto;">
 <a href="https://www.pharmgkb.org/pathway/PA145011114"><img

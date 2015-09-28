@@ -11,7 +11,7 @@ build_info=(
     build_os_release="$(uname -r)"
     build_os_version="$(uname -v)"
     build_machine="$(uname -m)"
-    build_hostname="$(hostname -f)"
+    build_hostname="$(hostname -f || true)"
     version
     version_long
     version_commit

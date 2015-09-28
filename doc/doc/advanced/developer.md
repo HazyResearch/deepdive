@@ -1,5 +1,6 @@
 ---
 layout: default
+title: DeepDive Developer's Guide
 ---
 
 # DeepDive Developer's Guide

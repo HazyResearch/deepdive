@@ -143,6 +143,7 @@ and
 
 ### Updates &amp; Changelog
 
+- [Changelog for version 0.7.1-alpha](doc/changelog/0.7.1-alpha.html) (09/28/2015)
 - [Changelog for version 0.7.0-alpha](doc/changelog/0.7.0-alpha.html) (07/14/2015)
 - [Changelog for version 0.6.0-alpha](doc/changelog/0.6.0-alpha.html) (06/17/2015)
 - [Changelog for version 0.05-alpha](doc/changelog/0.05.01-alpha.html) (02/08/2015)
@@ -159,50 +160,55 @@ and
 #### Background
 
 - [Knowledge base construction](doc/general/kbc.html)
-- [Relation extraction](doc/general/relation_extraction.html)
-- [Distant supervision](doc/general/distant_supervision.html)
-- [Probabilistic inference and factor graphs](doc/general/inference.html)
+- [System overview and terminology](doc/basics/overview.html)
+    - [Probabilistic inference and factor graphs](doc/general/inference.html)
+    - [Relation extraction](doc/general/relation_extraction.html)
+    - [Distant supervision](doc/general/distant_supervision.html)
 
 #### Basics
 
-- [System overview and fundamental terminology](doc/basics/overview.html)
 - [Installation guide](doc/basics/installation.html)
-- [Creating a new application](doc/basics/writing.html)
-- [Writing extractors](doc/basics/extractors.html) <small>(outdated)</small>
-- [Declaring inference variables in the schema](doc/basics/schema.html)
-- [Writing inference rules](doc/basics/inference_rules.html)
-- [Inference rule function reference](doc/basics/inference_rule_functions.html)
-- [Generating negative examples](doc/basics/generating_negative_examples.html)
-- [Running an application](doc/basics/running.html) <small>(outdated)</small>
-- [Calibration](doc/basics/calibration.html)
-- [Labeling data products](doc/basics/labeling.html)
-- [Text chunking application example](doc/basics/chunking.html)
-- [Generic features library](doc/basics/gen_feats.html)
-- [High-speed sampler](doc/basics/sampler.html)
-- [`deepdive.conf` Reference](doc/basics/configuration.html)
-- [Writing applications in DDlog](doc/basics/ddlog.html)
+- Tutorial
+    - [Example application walk-through](doc/basics/walkthrough/walkthrough.html)
+    - [Improving the results](doc/basics/walkthrough/walkthrough-improve.html)
+    - [Extras](doc/basics/walkthrough/walkthrough-extras.html)
+- Writing and Running a DeepDive Application
+    - [DeepDive Application's Structure and Operations](doc/advanced/deepdiveapp.html)
+    - High-level (DDlog-based)
+        - [Writing applications in DDlog](doc/basics/ddlog.html)
+    - Low-level (SQL-based)
+        - [Creating a new application](doc/basics/writing.html)
+        - [Writing extractors](doc/basics/extractors.html)
+        - [Declaring inference variables in the schema](doc/basics/schema.html)
+        - [Writing inference rules](doc/basics/inference_rules.html)
+        - [Inference rule function reference](doc/basics/inference_rule_functions.html)
+        - [Running an application](doc/basics/running.html)
+    - [Generic features library](doc/basics/gen_feats.html)
+    - [Incremental DeepDive](doc/advanced/incremental.html)
+- Debugging a DeepDive Application
+    - [Calibration](doc/basics/calibration.html)
+    - [Browsing data](doc/basics/browsing.html)
+    - [Labeling data products](doc/basics/labeling.html)
+    - [Generating negative examples](doc/basics/generating_negative_examples.html)
+- [Multinomial variables: Text chunking example](doc/basics/chunking.html)
 - [FAQ](doc/basics/faq.html)
 
-#### Tutorial
-
-- [Example application walk-through](doc/basics/walkthrough/walkthrough.html)
-- [Improving the results](doc/basics/walkthrough/walkthrough-improve.html)
-- [Extras](doc/basics/walkthrough/walkthrough-extras.html)
 
 #### Advanced topics
 
-- [DeepDive Application's Structure and Operations](doc/advanced/deepdiveapp.html)
-- [Incremental DeepDive](doc/advanced/incremental.html)
-- [Performance tuning](doc/advanced/performance.html) <small>(outdated)</small>
-- [Using DeepDive with GreenPlum](doc/advanced/greenplum.html)
-- [Using DeepDive with Postgres-XL](doc/advanced/pgxl.html)
-- [Using DeepDive with MySQL / MySQL Cluster](doc/advanced/mysql.html)
-- [Using DeepDive on Ubuntu](doc/advanced/ubuntu.html)
+- Using DeepDive in Various Configurations
+    - [Using DeepDive with GreenPlum](doc/advanced/greenplum.html)
+    - [Using DeepDive with Postgres-XL](doc/advanced/pgxl.html)
+    - [Using DeepDive with MySQL / MySQL Cluster](doc/advanced/mysql.html)
+    - [Using DeepDive on Ubuntu](doc/advanced/ubuntu.html)
+    - [Using DeepDive on Amazon EC2](doc/advanced/ec2.html)
+    - [Using DeepDive on Docker](doc/advanced/docker.html)
+- References
+    - [`deepdive.conf` Reference](doc/basics/configuration.html)
+    - [High-speed sampler](doc/basics/sampler.html)
+    - [Factor graph grounding output reference](doc/advanced/factor_graph_schema.html)
+    - [Internal database schema](doc/advanced/reserved_tables.html)
 - [Tuffy and Markov Logic Networks (MLN)](doc/advanced/markov_logic_network.html)
-- [Amazon EC2 AMI guide](doc/advanced/ec2.html)
-- [Using DeepDive with Docker](doc/advanced/docker.html)
-- [Internal database schema](doc/advanced/reserved_tables.html)
-- [Factor graph grounding output reference](doc/advanced/factor_graph_schema.html)
 - [DeepDive Developer's Guide](doc/advanced/developer.html)
 
 ### Support

@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Knowledge Base Construction
 ---
 
 # Knowledge Base Construction

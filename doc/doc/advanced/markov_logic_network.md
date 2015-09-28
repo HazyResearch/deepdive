@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Tuffy and Markov Logic Networks (MLN)
 ---
 
 # Markov Logic Networks

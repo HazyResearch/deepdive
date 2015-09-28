@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Papers
 root: "."
 ---
 
@@ -10,6 +11,9 @@ root: "."
 - *Best Reference:* [Machine-compiled Macroevolutionary History of Phanerozoic Life.](http://arxiv.org/abs/1406.2963)
   Shanan E. Peters, Ce Zhang, Miron Livny, and C. Ré. PloS ONE.
 
+- [The Mobilize Center: an NIH big data to knowledge center to advance human movement research and improve mobility.](http://jamia.oxfordjournals.org/content/early/2015/08/13/jamia.ocv071.abstract) Joy P Ku, Jennifer L Hicks, Trevor Hastie, Jure Leskovec, C. Ré, and Scott L Delp. AMIA, 2015.
+- Large-scale extraction of gene interactions from full text literature using DeepDive. Emily Mallory, Ce Zhang, C. Ré, and Russ Altman. Bioinformatics 2015.
+- [A Demonstration of Data Labeling in Knowledge Base Construction.](http://cs.stanford.edu/people/chrismre/papers/p2148-shin-vldb-demo.pdf) Jaeho Shin, Mike Cafarella, and C. Ré. VLDB Demo, 2015.
 - [Elementary: Large-scale Knowledge-base Construction via Machine Learning and Statistical Inference.](http://www.cs.stanford.edu/people/chrismre/papers/elementary_journal.pdf)
   F. Niu, Ce Zhang, C. Ré, and J. Shavlik. IJSWIS, Special Issue on Knowledge Extraction from the Web, 2012.
 - [Stanford’s 2014 Slot Filling Systems.](http://i.stanford.edu/hazy/papers/2014kbp-systemdescription.pdf)
@@ -36,6 +40,8 @@ root: "."
 - *Best Reference for Sampler:* [DimmWitted: A Study of Main-Memory Statistical Analytics.](http://arxiv.org/abs/1403.7550) Ce Zhang and C. Ré. VLDB 2014.
 - *Best Reference for Grounding:* [Tuffy: Scaling up Statistical Inference in Markov Logic Networks using an RDBMS.](http://www.cs.stanford.edu/people/chrismre/papers/tuffy-vldb11.pdf) F. Niu, C. Ré, A.Doan, and J.W. Shavlik. PVLDB 11.
 
+- Rapidly Mixing Gibbs Sampling for a Class of Factor Graphs Using Hierarchy Width. Christopher De Sa, Ce Zhang, Kunle Olukotun, and C. Ré. NIPS 2015 (Spotlight).
+- [Taming the Wild: A Unified Analysis of Hogwild!-Style Algorithms.](http://arxiv.org/abs/1506.06438) Christopher De Sa, Ce Zhang, Kunle Olukotun, and C. Ré. NIPS 2015.
 - [Towards High-Throughput Gibbs Sampling at Scale: A Study across Storage Managers.](http://www.cs.stanford.edu/people/chrismre/papers/elementary_sigmod.pdf) Ce Zhang and C. Ré. SIGMOD 2013
 - [An Asynchronous Parallel Stochastic Coordinate Descent Algorithm.](http://arxiv.org/abs/1311.1873) J. Liu, S. Wright, C. Ré, V. Bittorf, S. Sridhar. ICML 2014.
 - [Hogwild!: A Lock-Free Approach to Parallelizing Stochastic Gradient Descent.](http://i.stanford.edu/hazy/papers/hogwild-nips.pdf) F. Niu, B. Recht, C. Ré, and S. J. Wright. NIPS, 2011

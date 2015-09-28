@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Using DeepDive with Greenplum
 ---
 
 # Using DeepDive with Greenplum
@@ -129,8 +130,7 @@ Be sure to **reboot** after changing these kernel parameters.
 
 Download Greenplum for your operating system. For a free Community Edition, you
 can find the download link and the official guide on the [GoPivotal
-website](http://www.gopivotal.com/products/pivotal-greenplum-database), or you
-can download it directly [here](http://downloads.cfapps.io/gpdb_db_el5_64).
+website](http://www.gopivotal.com/products/pivotal-greenplum-database).
 
 Install Greenplum using the downloaded package:
 
@@ -156,6 +156,7 @@ source /usr/local/greenplum-db/greenplum_path.sh
 ### Configure ssh with localhost
 
 Now you need to generate ssh keys for `localhost`. Run:
+
 ```bash
 $ gpssh-exkeys -h localhost
 ```
@@ -251,6 +252,36 @@ postgres=# \q
 ### Stop and Start the database server
 
 Use `gpstop` and `gpstart` to stop / start the Greenplum server at any time.
+
+### <a name="parallelgrounding" href="#"></a> Parallel grounding
+[Grounding](../basics/overview.html#grounding) is the process of building the
+factor graph. You can enable parallel grounding to speed up the grounding phase,
+which makes use of Greenplum's parallel file system (gpfdist). To use parallel
+grounding, first make sure that Greenplum's file system server `gpfdist` is running
+locally, i.e., on the machine where you will run the DeepDive applications.
+If it is not running, you can use the following command to start gpfdist
+
+    gpfdist -d [directory] -p [port] &
+
+where you specify the directory for storing the files and the HTTP port to run on.
+The directory should be an **empty directory** since DeepDive will clean up
+this directory or overwrite files.
+Then, in `deepdive.conf`, specify the gpfdist settings in the `deepdive.db.default` as
+follows
+
+    db.default {
+      gphost   : [host of gpfdist]
+      gpport   : [port of gpfdist]
+      gppath   : [**absolute path** of gpfdist directory]
+    }
+
+where gphost, gpport, gppath are the host, port, and absolute path
+gpfdist is running on (specified when starting gpfdist server).
+
+Finally, tell DeepDive to use parallel grounding by adding the following to
+`deepdive.conf`:
+
+    inference.parallel_grounding: true
 
 ## <a name="faq" href="#"></a> FAQs
 

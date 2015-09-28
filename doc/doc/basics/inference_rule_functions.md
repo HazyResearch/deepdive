@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Inference Rule Function Reference
 ---
 
 # Inference Rule Function Reference

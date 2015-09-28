@@ -88,10 +88,13 @@ include scala.mk  # for scala-build, scala-test-build, scala-assembly-jar, scala
 
 ### test recipes #############################################################
 
-test/%/scalatests.bats: test/postgresql/update-scalatests.bats.sh $(SCALA_TEST_SOURCES)
+test/*/scalatests/%.bats: test/postgresql/update-scalatests.bats.sh $(SCALA_TEST_SOURCES)
 	# Regenerating .bats for Scala tests
-	$< >$@
-	chmod +x $@
+	$<
+
+# make sure test is against the code built and staged by this Makefile
+DEEPDIVE_HOME := $(realpath $(STAGE_DIR))
+export DEEPDIVE_HOME
 
 # make sure test is against the code built and staged by this Makefile
 DEEPDIVE_HOME := $(realpath $(STAGE_DIR))
@@ -121,12 +124,12 @@ endif
 .PHONY: build-mindbender
 build-mindbender:
 	git submodule update --init mindbender
-	$(MAKE) -C mindbender
-	cp -f mindbender/mindbender-LATEST-*.sh util/mindbender
+	$(MAKE) -C mindbender clean-packages
+	$(MAKE) -C mindbender package
 
 .PHONY: build-ddlog
 build-ddlog:
 	git submodule update --init ddlog
 	$(MAKE) -C ddlog ddlog.jar
 	cp -f ddlog/ddlog.jar util/ddlog.jar
-
+test-build build: build-ddlog

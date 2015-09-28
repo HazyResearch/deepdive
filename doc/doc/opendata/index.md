@@ -1,5 +1,6 @@
 ---
 layout: default
+title: DeepDive Open Datasets
 ---
 
 # DeepDive Open Datasets
@@ -115,7 +116,7 @@ Each dataset is versioned with date, and with the MD5 checksum in the file name.
           <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false"> Download Full Corpus <span class="caret"></span>
           </button>
           <ul class="dropdown-menu" role="menu">
-            <!--<li><a href="http://i.stanford.edu/hazy/opendata/pmc/pmc_teaser_dddb_20150131_3eb5601f6acecd58527a0dc6e55d0de7.zip">DeepDive-ready DB Dump</a></li>-->
+            <li><a href="http://i.stanford.edu/hazy/opendata/pmc/pmc_dddb_full_20150927_3b20db570e2cb90ab81c5c6f63babc91.tar.bzip2">DeepDive-ready DB Dump</a></li>
             <li><a href="http://i.stanford.edu/hazy/opendata/pmc/pmc_full_conll_20150201_bb718da04c9553592d9a11a7f20d6543.zip">CoNLL-format Markups</a></li>
           </ul>
         </div>
@@ -123,7 +124,7 @@ Each dataset is versioned with date, and with the MD5 checksum in the file name.
           <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false"> Download Small Teaser <span class="caret"></span>
           </button>
           <ul class="dropdown-menu" role="menu">
-            <li><a href="http://i.stanford.edu/hazy/opendata/pmc/pmc_teaser_dddb_20150131_3eb5601f6acecd58527a0dc6e55d0de7.zip">DeepDive-ready DB Dump</a></li>
+            <li><a href="http://i.stanford.edu/hazy/opendata/pmc/pmc_dddb_teaser_20150927_a308edab8f6045dfdc71256bfb4f96d1.tar.bzip2">DeepDive-ready DB Dump</a></li>
             <li><a href="http://i.stanford.edu/hazy/opendata/pmc/pmc_teaser_conll_20150131_6d23f74f71cd26dbf1e9a7df52e6e404.zip">CoNLL-format Markups</a></li>
           </ul>
         </div>
@@ -177,7 +178,7 @@ Information obtained at [Jan 27, 2015](http://www.ncbi.nlm.nih.gov/pmc/tools/ope
           <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false"> Download Full Corpus <span class="caret"></span>
           </button>
           <ul class="dropdown-menu" role="menu">
-            <li><a href="http://i.stanford.edu/hazy/opendata/bmc/bmc_full_dddb_20150201_2abed5f1d8da6000216aa21d1b121ac6.zip">DeepDive-ready DB Dump</a></li>
+            <li><a href="http://i.stanford.edu/hazy/opendata/bmc/bmc_full_dddb_20150927_9651bf4a468cefcea30911050c2ca6db.tar.bzip2">DeepDive-ready DB Dump</a></li>
             <li><a href="http://i.stanford.edu/hazy/opendata/bmc/bmc_full_conll_20150201_f7536a38362cbc46460fb17a166a43c5.zip">CoNLL-format Markups</a></li>
           </ul>
         </div>
@@ -185,7 +186,7 @@ Information obtained at [Jan 27, 2015](http://www.ncbi.nlm.nih.gov/pmc/tools/ope
           <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false"> Download Small Teaser <span class="caret"></span>
           </button>
           <ul class="dropdown-menu" role="menu">
-            <li><a href="http://i.stanford.edu/hazy/opendata/bmc/bmc_teaser_dddb_20150131_ce9710530c7dfa6b541ef9f74ac9d150.zip">DeepDive-ready DB Dump</a></li>
+            <li><a href="http://i.stanford.edu/hazy/opendata/bmc/bmc_teaser_dddb_20150927_0aefd689219e55e3259ba3bb8bea349f.tar.bzip2">DeepDive-ready DB Dump</a></li>
             <li><a href="http://i.stanford.edu/hazy/opendata/bmc/bmc_teaser_conll_20150131_4e4404b9042e11d00c85407bdca1551e.zip">CoNLL-format Markups</a></li>
           </ul>
         </div>

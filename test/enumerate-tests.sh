@@ -14,5 +14,6 @@ for testDir in test/*/env.sh; do
     testShouldWork="$testDir"/should-work.sh
     ! [[ -x "$testShouldWork" ]] || "$testShouldWork" || continue
     list_executable_bats "$testDir"
+    list_executable_bats "$testDir"/scalatests
 done
 } | sort

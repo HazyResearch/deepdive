@@ -46,7 +46,12 @@ class InferenceManagerSpec(_system: ActorSystem) extends TestKit(_system) with F
     it("should work") {
       val actor = TestActorRef(actorProps)
       actor ! InferenceManager.RunInference(Seq(), 0.0, None, "javaArgs", "samplerOptions",
-        PipelineSettings(None, Nil, null, None), dbSettings)
+        PipelineSettings(
+          activePipelineName = None,
+          pipelines = Nil,
+          relearnFrom = null,
+          baseDir = None
+        ), dbSettings)
       sampler.expectMsgClass(classOf[Sampler.Run])
       sampler.reply("Done")
       expectMsg(())

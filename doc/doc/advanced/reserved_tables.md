@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Internal Database Schema
 ---
 
 # Internal database schema

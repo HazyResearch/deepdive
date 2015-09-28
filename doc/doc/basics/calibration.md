@@ -1,5 +1,6 @@
 ---
 layout: default
+title: Calibration
 ---
 
 # <a name="calibration" href="#"></a> Calibration

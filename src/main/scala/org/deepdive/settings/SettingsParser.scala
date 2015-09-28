@@ -1,253 +1,536 @@
 package org.deepdive.settings
 
-import org.deepdive.Logging
-import org.deepdive.Context
-import org.deepdive.helpers.Helpers
 import com.typesafe.config._
+import org.deepdive.{Context, Logging}
+
 import scala.collection.JavaConversions._
+import scala.language.postfixOps
 import scala.util.Try
+import scala.util.parsing.combinator.RegexParsers
 
 object SettingsParser extends Logging {
 
-   def loadFromConfig(rootConfig: Config) : Settings = {
-    val config = rootConfig.getConfig("deepdive")
+  val loadFromConfig =
+    getDeepDiveConfig _ andThen
+      loadDatabaseSettings andThen
+      loadSchemaSettings andThen
+      loadExtractionSettings andThen
+      loadInferenceSettings andThen
+      loadSamplerSettings andThen
+      loadCalibrationSettings andThen
+      loadPipelineSettings andThen
+      checkSettings
 
-    val inferenceSettings = loadInferenceSettings(config)
-    val dbSettings = loadDbSettings(config)
-    val schemaSettings = loadSchemaSettings(config)
-    val extractors = loadExtractionSettings(config)
-    val calibrationSettings = loadCalibrationSettings(config)
-    val samplerSettings = loadSamplerSettings(config)
-    val pipelineSettings = loadPipelineSettings(config)
+  def configEntries(config: Config): Iterable[(String, Config)] = {
+    config.root.keys map { key => key -> config.getConfig(key) }
+  }
+
+  private def getDeepDiveConfig(rootConfig: Config): Settings = {
+    Settings(config = (rootConfig withFallback ConfigFactory.load()) getConfig("deepdive"))
+  }
+
+  private def checkSettings(settings: Settings): Settings = {
+    // val dbDriver = config.getString("deepdive.db.default.driver")
+    val dbSettings = settings.dbSettings
+    dbSettings.dbname match {
+      case "" =>
+        sys.error(s"parsing dbname failed")
+      case _ =>
+    }
+
+    // check incremental settings
+    dbSettings.incrementalMode match {
+      case IncrementalMode.MATERIALIZATION | IncrementalMode.INCREMENTAL =>
+        if (!settings.pipelineSettings.baseDir.isDefined) {
+          log.error(s"base folder not set for incremental run")
+          Context.shutdown()
+        }
+      case _ =>
+    }
+
+    // Make sure the activePipelineName is defined
+    if (settings.pipelineSettings.activePipelineName.isDefined && settings.pipelineSettings.activePipeline.isEmpty) {
+      sys.error(s"${settings.pipelineSettings.activePipelineName.get}: No such pipeline defined")
+    }
+
+    log.info(settings.config.root.render(ConfigRenderOptions.concise().setFormatted(true)))
+    log.info(settings toString)
+
+    settings
+  }
+
+  private def loadDatabaseSettings(settings: Settings): Settings = {
+    var config = settings.config withFallback ConfigFactory.parseString(
+      """
+        |db.default {
+        |  driver   : ""
+        |  url      : ""
+        |  user     : ""
+        |  password : ""
+        |  dbname   : ""
+        |  host     : ""
+        |  port     : ""
+        |  gphost: ""
+        |  gpport: ""
+        |  gppath: ""
+        |  gpload: false
+        |  incremental_mode: ORIGINAL
+        |}
+        |
+        |schema {
+        |  keys {
+        |  }
+        |}
+        |
+        |inference {
+        |  parallel_grounding: false
+        |}
+      """.stripMargin)
+    var dbConfig = config.getConfig("db.default")
+    // strip trailing slash
+    val gppath: String = dbConfig.getString("gppath")
+    if (gppath endsWith "/")
+      dbConfig = dbConfig.withValue("gppath", ConfigValueFactory.fromAnyRef(
+        gppath stripSuffix ("/")))
 
     // Make sure that the variables related to the Greenplum distributed
     // filesystem are set if the user wants to use parallel grounding
-    if (dbSettings.gpload) {
-      if (dbSettings.gphost == "" || dbSettings.gpport == "" || dbSettings.gppath == "") {
-        throw new RuntimeException(s"Parallel Loading is set to true, but one of db.default.gphost, db.default.gpport, or db.default.gppath is not specified")
-      }
+    if (dbConfig.getBoolean("gpload") || config.getBoolean("inference.parallel_grounding")) {
+      if (dbConfig.getString("gphost").isEmpty || dbConfig.getString("gpport").isEmpty || gppath.isEmpty)
+        sys.error(s"Parallel Loading is set to true, but one of db.default.gphost, db.default.gpport, or db.default.gppath is not specified")
+    }
+    log.info(s"Database settings: user ${dbConfig.getString("user")}, dbname ${dbConfig.getString("dbname")}, host ${dbConfig.getString("host")}, port ${dbConfig.getString("port")}.")
+    if (dbConfig.getString("gphost") != "") {
+      log.info(s"GPFDIST settings: host ${dbConfig.getString("gphost")} port ${dbConfig.getString("gpport")} path ${gppath}")
     }
 
-    Settings(schemaSettings, extractors, inferenceSettings,
-      calibrationSettings, samplerSettings, pipelineSettings, dbSettings)
+    settings updatedConfig("db.default", dbConfig) copy(
+      dbSettings = DbSettings(
+        // TODO determine everything from DeepDive app's db.url
+        driver = dbConfig.getString("driver"),
+        url = dbConfig.getString("url"),
+        user = dbConfig.getString("user"),
+        password = dbConfig.getString("password"),
+        dbname = dbConfig.getString("dbname"),
+        host = dbConfig.getString("host"),
+        port = dbConfig.getString("port"),
+        gphost = dbConfig.getString("gphost"),
+        gppath = gppath,
+        gpport = dbConfig.getString("gpport"),
+        gpload = dbConfig.getBoolean("gpload") || config.getBoolean("inference.parallel_grounding"),
+        incrementalMode = dbConfig.getString("incremental_mode") match {
+          case "INCREMENTAL" => IncrementalMode.INCREMENTAL
+          case "MATERIALIZATION" => IncrementalMode.MATERIALIZATION
+          case "ORIGINAL" => IncrementalMode.ORIGINAL
+          case "MERGE" => IncrementalMode.ORIGINAL // XXX why does ddlog generate a MERGE mode?
+          case incremental_mode => sys.error(s"${incremental_mode}: Invalid incremental_mode for db.default")
+        },
+        keyMap = config.getConfig("schema.keys") match {
+          case keyConfig => keyConfig.root.keys map {
+            case table => table -> keyConfig.getStringList(table).distinct.toList
+          } toMap
+        })
+    )
   }
 
-  // Returns: case class DbSetting(driver: String, url: String, user: String, password: String, dbname: String, host: String, port: String)
-  private def loadDbSettings(config: Config) : DbSettings = {
-    val dbConfig = Try(config.getConfig("db.default")).getOrElse {
-      log.warning("No schema defined.")
-      return DbSettings(Helpers.PsqlDriver, null, null, null, null, null, null,
-        null, null, null, false, null)
-    }
-    val driver = Try(dbConfig.getString("driver")).getOrElse(null)
-    val url = Try(dbConfig.getString("url")).getOrElse(null)
-    val user = Try(dbConfig.getString("user")).getOrElse(null)
-    val password = Try(dbConfig.getString("password")).getOrElse(null)
-    val dbname = Try(dbConfig.getString("dbname")).getOrElse(null)
-    val host = Try(dbConfig.getString("host")).getOrElse(null)
-    val port = Try(dbConfig.getString("port")).getOrElse(null)
-    val gphost = Try(dbConfig.getString("gphost")).getOrElse("")
-    val gpport = Try(dbConfig.getString("gpport")).getOrElse("")
-    var gppath = Try(dbConfig.getString("gppath")).getOrElse("")
-    val parallelGrounding = Try(config.getConfig("inference").getBoolean("parallel_grounding")).getOrElse(false)
-    var gpload = Try(dbConfig.getBoolean("gpload")).getOrElse(false) || parallelGrounding
-    if (gppath.takeRight(1) == "/") gppath = gppath.take(gppath.length -1)
-    log.info(s"Database settings: user ${user}, dbname ${dbname}, host ${host}, port ${port}.")
-    if (gphost != "") {
-      log.info(s"GPFDIST settings: host ${gphost} port ${gpport} path ${gppath}")
-    }
-    val incrementalModeStr = Try(dbConfig.getString("incremental_mode")).getOrElse("ORIGINAL")
-    val incrementalMode = incrementalModeStr match {
-      case "INCREMENTAL" => IncrementalMode.INCREMENTAL
-      case "MATERIALIZATION" => IncrementalMode.MATERIALIZATION
-      case _ => IncrementalMode.ORIGINAL
-    }
-    val schemaConfig = Try(config.getConfig("schema")).getOrElse {
-      log.warning("No schema defined.")
-      null
-    }
-    val keyConfig = Try(schemaConfig.getConfig("keys")).getOrElse(null)
-    val keyMap = keyConfig match {
-      case null => null
-      case _ => {
-        val keyRelations = keyConfig.root.keySet.toList
-        val keyRelationsWithConfig = keyRelations.zip(keyRelations.map(keyConfig.getStringList))
-        keyRelationsWithConfig.groupBy(_._1).map { case (k,v) => (k,v.map(_._2).flatten.distinct)}
-      }
-    }
-    return DbSettings(driver, url, user, password, dbname, host, port,
-      gphost, gppath, gpport, gpload, incrementalMode, keyMap)
+  private def loadSchemaSettings(settings: Settings): Settings = {
+    val config = settings.config withFallback ConfigFactory.parseString(
+      """
+        |schema {
+        |  keys {
+        |  }
+        |  variables {
+        |  }
+        |  setup: null
+        |}
+      """.stripMargin)
+    val variableConfig = config.getConfig("schema.variables")
+    settings updatedConfig(config) copy(
+      schemaSettings = SchemaSettings(
+        // This is complicated because we encode variable schema by abusing HOCON syntax,
+        // e.g.: schema.variable { foo.bar: Boolean, table.column: Boolean }
+        // which is equivalent to schema.variable { foo { bar: Boolean }, table { column: Boolean } }
+        variables = configEntries(variableConfig) flatMap {
+          case (relationName, relationConf) => // table names
+            relationConf.root.keys map { attributeName => // attribute maps to table
+              val variableType = DataTypeParser.parseVariableType(relationConf.getString(attributeName))
+              s"${relationName}.${attributeName}" -> variableType
+            }
+        } toMap,
+        setupFile = Try(config.getString("schema.setup")) toOption
+      )
+    )
   }
 
 
-  private def loadSchemaSettings(config: Config) : SchemaSettings = {
-    val schemaConfig = Try(config.getConfig("schema")).getOrElse {
-      log.warning("No schema defined.")
-      return SchemaSettings(Nil.toMap, None)
-    }
-    val variableConfig = schemaConfig.getConfig("variables")
-    val relations = variableConfig.root.keySet.toList
-    val relationsWithConfig = relations.zip(relations.map(variableConfig.getConfig))
-    val variableMap = relationsWithConfig.flatMap { case(relation, relationConf) =>
-      relationConf.root.keySet.map { attributeName =>
-        val dataTypeStr = relationConf.getString(attributeName)
-        val dataType = DataTypeParser.parse(DataTypeParser.dataType, dataTypeStr).getOrElse {
-          throw new RuntimeException(s"Unknown data type: ${dataTypeStr}")
-        }
-        Tuple2(s"${relation}.${attributeName}", dataType)
-      }
-    }.toMap
-    val setupFile = Try(schemaConfig.getString("setup"))
-    SchemaSettings(variableMap, setupFile.toOption)
-  }
+  private def loadExtractionSettings(settings: Settings): Settings = {
+    var config = settings.config withFallback ConfigFactory.parseString(
+      """
+        |extraction {
+        |  parallelism: 1
+        |  extractors {
+        |  }
+        |}
+      """.stripMargin)
+    val extractorConfigDefaultBase =
+      """
+        |output_relation: null
+        |input: null
+        |udf: null
+        |parallelism: 1
+        |input_batch_size: 10000
+        |output_batch_size: 50000
+        |dependencies: []
+        |before: null
+        |after: null
+        |loader: ""
+      """.stripMargin
 
-  private def loadExtractionSettings(config: Config) : ExtractionSettings = {
-    val extractionConfig = Try(config.getConfig("extraction")).getOrElse {
-      return ExtractionSettings(Nil, 1)
-    }
-    val extractorParallelism = Try(extractionConfig.getInt("parallelism")).getOrElse(1)
-    val extractors = extractionConfig.getObject("extractors").keySet().map { extractorName =>
-      val extractorConfig = extractionConfig.getConfig(s"extractors.$extractorName")
-      val style = Try(extractorConfig.getString(s"style")).getOrElse("json_extractor")
+    val extractorConfigDefaults = Map(
+      "json_extractor" -> (extractorConfigDefaultBase),
+      "tsv_extractor" -> (extractorConfigDefaultBase),
+      "plpy_extractor" -> (extractorConfigDefaultBase),
+      "piggy_extractor" -> (extractorConfigDefaultBase +
+        """
+          |udf_dir: null
+        """.stripMargin),
+      "cmd_extractor" -> (extractorConfigDefaultBase +
+        """
+          |cmd: null
+        """.stripMargin),
+      "sql_extractor" -> (extractorConfigDefaultBase +
+        """
+          |sql: null
+        """.stripMargin)
+    )
+    val extractors = configEntries(config.getConfig("extraction.extractors")) map {
+      case (extractorName, extractorConfigRaw) =>
+      val style = Try(extractorConfigRaw.getString("style")).getOrElse("json_extractor")
+      val extractorConfig = extractorConfigRaw withFallback
+          ConfigFactory.parseString(extractorConfigDefaults(style))
+      config = config.withValue(s"extraction.extractors.${extractorName}", extractorConfig.root)
+      val extractor = Extractor(
+        name = extractorName,
+        style = style,
+        parallelism = extractorConfig.getInt("parallelism"),
+        inputBatchSize = extractorConfig.getInt("input_batch_size"),
+        outputBatchSize = extractorConfig.getInt("output_batch_size"),
+        dependencies = extractorConfig.getStringList("dependencies") toSet,
+        beforeScript = Try(extractorConfig.getString("before")) toOption,
+        afterScript = Try(extractorConfig.getString("after")) toOption
+      )
       style match {
-        case "json_extractor" | "plpy_extractor" | "tsv_extractor" | "piggy_extractor" =>
-          val outputRelation = extractorConfig.getString ("output_relation")
-          val inputQuery = InputQueryParser.parse (InputQueryParser.inputQueryExpr,
-            extractorConfig.getString (s"input") ).getOrElse {
-            throw new RuntimeException (s"parsing ${
-              extractorConfig.getString (s"input")
-            } failed")
+        case "json_extractor" |
+             "plpy_extractor" |
+             "tsv_extractor" |
+             "piggy_extractor" =>
+          val udfDir = Try(extractorConfig.getString("udf_dir")) toOption
+          val udf = extractorConfig.getString("udf")
+          style match {
+            case "piggy_extractor" if ((udfDir isEmpty) || udf == null) =>
+              sys.error("you must specify udf_dir and udf for piggy extractors")
+            case _ =>
           }
-          val udf = extractorConfig.getString (s"udf")
-          val udfDir = Try (extractorConfig.getString (s"udf_dir") ).getOrElse(null)
-          if (style == "piggy_extractor" && (udfDir == null || udf == null)) {
-            throw new RuntimeException("you must specify udf_dir and udf for piggy extractors")
-          }
-          val sqlQuery = Try (extractorConfig.getString (s"sql") ).getOrElse ("")
-          val cmd = Try (extractorConfig.getString ("cmd") ).toOption
-          val parallelism = Try (extractorConfig.getInt (s"parallelism") ).getOrElse (1)
-          val inputBatchSize = Try (extractorConfig.getInt (s"input_batch_size") ).getOrElse (10000)
-          val outputBatchSize = Try (extractorConfig.getInt (s"output_batch_size") ).getOrElse (50000)
-          val dependencies = Try (extractorConfig.getStringList ("dependencies").toSet).getOrElse (Set () )
-          val beforeScript = Try (extractorConfig.getString ("before") ).toOption
-          val afterScript = Try (extractorConfig.getString ("after") ).toOption
-          val loader = Try (extractorConfig.getString ("loader") ).getOrElse("")
-          val loaderConfigObj = Try (extractorConfig.getConfig ("loader_config") ).getOrElse(null)
-          val loaderConfig = loaderConfigObj match {
-            case null => null
-            case _ => LoaderConfig (
-                loaderConfigObj.getString("connection"),
-                loaderConfigObj.getString("schema"),
-                Try(loaderConfigObj.getInt("threads")).getOrElse(parallelism),
-                Try(loaderConfigObj.getInt("parallel_transactions")).getOrElse(60)
-            )
-          }
-          Extractor(extractorName, style, outputRelation, inputQuery, udfDir, udf, parallelism,
-            inputBatchSize, outputBatchSize, dependencies, beforeScript, afterScript, sqlQuery, cmd,
-            loader, loaderConfig)
+          extractor.copy(
+            outputRelation = extractorConfig.getString("output_relation"),
+            inputQuery = InputQueryParser.parseInputQuery(extractorConfig.getString("input")),
+            udfDir = udfDir orNull,
+            udf = udf,
+            loader = extractorConfig.getString("loader"),
+            loaderConfig = Try(extractorConfig.getConfig("loader_config")).toOption map {
+              case loaderConfigObj => LoaderConfig(
+                connection = loaderConfigObj.getString("connection"),
+                schemaFile = loaderConfigObj.getString("schema"),
+                // TODO instead of specifying default values here, try to augment settings.config
+                threads = Try(loaderConfigObj.getInt("threads")) getOrElse(extractor.parallelism),
+                parallelTransactions = Try(loaderConfigObj.getInt("parallel_transactions")) getOrElse(60)
+              )
+            } orNull
+          )
 
-        case "sql_extractor" | "cmd_extractor" =>
-          val sqlQuery = Try (extractorConfig.getString (s"sql") ).getOrElse ("")
-          val cmd = Try (extractorConfig.getString ("cmd") ).toOption
-          val dependencies = Try (extractorConfig.getStringList ("dependencies").toSet).getOrElse (Set () )
-          val beforeScript = Try (extractorConfig.getString ("before") ).toOption
-          val afterScript = Try (extractorConfig.getString ("after") ).toOption
-          Extractor(extractorName, style, "", null, null, "", 1,
-            10000, 50000, dependencies, beforeScript, afterScript, sqlQuery, cmd)
+        case "sql_extractor" =>
+          extractor.copy(
+            sqlQuery = extractorConfig.getString("sql")
+          )
+
+        case "cmd_extractor" =>
+          extractor.copy(
+            cmd = Try(extractorConfig.getString("cmd")) toOption
+          )
+
+        case _ =>
+          sys.error(s"${style}: Unrecognized extractor style")
       }
-    }.toList
-    ExtractionSettings(extractors, extractorParallelism)
+    }
+    settings updatedConfig(config) copy(
+      extractionSettings = ExtractionSettings(
+        extractors = extractors toList,
+        parallelism = config.getInt("extraction.parallelism")
+      )
+    )
   }
 
-  private def loadInferenceSettings(config: Config): InferenceSettings = {
-    val inferenceConfig = Try(config.getConfig("inference")).getOrElse {
-      return InferenceSettings(Nil, None, false, "", false)
+  private def loadInferenceSettings(settings: Settings): Settings = {
+    var config = settings.config withFallback ConfigFactory.parseString(
+      """
+        |inference {
+        |  skip_learning: false
+        |  weight_table: ""
+        |  parallel_grounding: false
+        |  batch_size: null
+        |  factors {
+        |  }
+        |}
+      """.stripMargin)
+    val skipLearning = config.getBoolean("inference.skip_learning")
+    val weightTable = config.getString("inference.weight_table")
+    val parallelGrounding = config.getBoolean("inference.parallel_grounding")
+    val batchSize = Try(config.getInt("inference.batch_size")).toOption
+    val factors = configEntries(config.getConfig("inference.factors")) map {
+      case (factorName, factorConfigRaw) =>
+        val factorConfig = factorConfigRaw withFallback ConfigFactory.parseString(
+          s"""
+            |input_query: null
+            |function: null
+            |weight: null
+            |weightPrefix: ${factorName}
+          """.stripMargin)
+        config = config.withValue(s"inference.factors.${factorName}", factorConfig.root)
+        FactorDesc(
+          name = factorName,
+          inputQuery = InputQueryParser.parseDatastoreInputQuery(factorConfig.getString("input_query")).query,
+          func = FactorFunctionParser.parseFactorFunction(factorConfig.getString("function")),
+          weight = FactorWeightParser.parseFactorWeight(factorConfig.getString("weight")),
+          weightPrefix = factorConfig.getString("weightPrefix")
+        )
     }
-    // These configs are currently disabled in grounding
-    // // Zifei's changes: Add capability to skip learning
-    val skipLearning = Try(inferenceConfig.getBoolean("skip_learning")).getOrElse(false)
-    val weightTable = Try(inferenceConfig.getString("weight_table")).getOrElse("")
-    val parallelGrounding = Try(inferenceConfig.getBoolean("parallel_grounding")).getOrElse(false)
-    // val skipLearning = false
-    // val weightTable = ""
-
-    // if (!weightTable.isEmpty() && skipLearning == false) {
-    //   log.error("inference.skip_learning must be true when inference.weight_table is assigned!")
-    //   throw new RuntimeException(s"skip_learning assertion failed")
-    // }
-
-    val batchSize = Try(inferenceConfig.getInt("batch_size")).toOption
-    val factorConfig = Try(inferenceConfig.getObject("factors")).getOrElse {
-      return InferenceSettings(Nil, batchSize, skipLearning, weightTable, parallelGrounding)
-    }
-    val factors = factorConfig.keySet().map { factorName =>
-      val factorConfig = inferenceConfig.getConfig(s"factors.$factorName")
-      val factorInputQuery = InputQueryParser.parse(InputQueryParser.DatastoreInputQueryExpr,
-        factorConfig.getString("input_query")).getOrElse {
-        throw new RuntimeException(s"parsing ${factorConfig.getString("input_query")} failed")
-      }.query
-      val factorFunction = FactorFunctionParser.parse(
-        FactorFunctionParser.factorFunc, factorConfig.getString("function")).getOrElse {
-        throw new RuntimeException(s"parsing ${factorConfig.getString("function")} failed")
-      }
-      val factorWeight = FactorWeightParser.parse(
-        FactorWeightParser.factorWeight, factorConfig.getString("weight")).getOrElse {
-        throw new RuntimeException(s"parsing ${factorConfig.getString("weight")} failed")
-      }
-      val factorWeightPrefix = Try(factorConfig.getString("weightPrefix")).getOrElse(factorName)
-      FactorDesc(factorName, factorInputQuery, factorFunction,
-          factorWeight, factorWeightPrefix)
-    }.toList
-    InferenceSettings(factors, batchSize, skipLearning, weightTable, parallelGrounding)
+    settings updatedConfig(config) copy(
+      inferenceSettings = InferenceSettings(
+        factors = factors toList,
+        insertBatchSize = batchSize,
+        skipLearning = skipLearning,
+        weightTable = weightTable,
+        parallelGrounding = parallelGrounding
+      )
+    )
   }
 
-  private def loadCalibrationSettings(config: Config) : CalibrationSettings = {
-    val calibrationConfig = Try(config.getConfig("calibration")).getOrElse {
-      return CalibrationSettings(0.0, None, None)
-    }
-    val holdoutFraction = Try(calibrationConfig.getDouble("holdout_fraction")).getOrElse(0.0)
-    val holdoutQuery = Try(calibrationConfig.getString("holdout_query")).toOption
-    val observationQuery = Try(calibrationConfig.getString("observation_query")).toOption
-
-    CalibrationSettings(holdoutFraction, holdoutQuery, observationQuery)
+  private def loadCalibrationSettings(settings: Settings): Settings = {
+    val config = settings.config withFallback ConfigFactory.parseString(
+      """
+        |calibration {
+        |  holdout_fraction: 0.0
+        |  holdout_query: null
+        |  observation_query: null
+        |}
+      """.stripMargin)
+    settings updatedConfig(config) copy(
+      calibrationSettings = CalibrationSettings(
+        holdoutFraction = config.getDouble("calibration.holdout_fraction"),
+        holdoutQuery = Try(config.getString("calibration.holdout_query")) toOption,
+        observationQuery = Try(config.getString("calibration.observation_query")) toOption
+      )
+    )
   }
 
-  private def loadSamplerSettings(config: Config) : SamplerSettings = {
-    val samplingConfig = config.getConfig("sampler")
-    val samplerCmd = samplingConfig.getString("sampler_cmd")
-
-    // Zifei's changes: Add capability to skip learning
-    // If skip learning, set "-l 0" in sampler
-    val skipLearning = Try(config.getConfig("inference").getBoolean("skip_learning")).getOrElse(false)
-    val samplerArgs = skipLearning match {
-      case false =>
-        samplingConfig.getString("sampler_args")
-      case true =>
-        samplingConfig.getString("sampler_args").replaceAll("""-l +[0-9]+ *""", """-l 0 """)
-    }
-    log.debug(s"samplerArgs: ${samplerArgs}")
-
-    SamplerSettings(samplerCmd, samplerArgs)
-
+  private def loadSamplerSettings(settings: Settings): Settings = {
+    val config = settings.config withFallback ConfigFactory.parseString(
+      """
+        |sampler {
+        |  sampler_cmd: "sampler-dw"
+        |  sampler_args: "-l 300 -s 1 -i 500 --alpha 0.1"
+        |}
+        |
+        |inference.skip_learning: false
+      """.stripMargin)
+    settings updatedConfig(config) copy(
+      samplerSettings = SamplerSettings(
+        samplerCmd = config.getString("sampler.sampler_cmd"),
+        samplerArgs = {
+          val args = config.getString("sampler.sampler_args")
+          if (!config.getBoolean("inference.skip_learning")) args
+          else args.replaceAll( """-l +[0-9]+ *""", """-l 0 """)
+        }
+      )
+    )
   }
 
-  private def loadPipelineSettings(config: Config) : PipelineSettings = {
-    val pipelineConfig = Try(config.getConfig("pipeline")).getOrElse {
-      return PipelineSettings(None, Nil, null, None)
-    }
-    val relearnFrom = Try(pipelineConfig.getString("relearn_from")).getOrElse(null)
-    val activePipeline = Try(pipelineConfig.getString("run")).toOption
-    val baseDir = Try(pipelineConfig.getString("base_dir")).toOption
-    if (relearnFrom == null) {
-      val pipelinesObj = Try(pipelineConfig.getObject("pipelines")).getOrElse {
-        return PipelineSettings(None, Nil, null, None)
-      }
-      val pipelines = pipelinesObj.keySet().map { pipelineName =>
-        val tasks = pipelineConfig.getStringList(s"pipelines.$pipelineName").toSet
-        Pipeline(pipelineName, tasks)
-      }.toList
-      return PipelineSettings(activePipeline, pipelines, relearnFrom, baseDir)
-    }
-    PipelineSettings(activePipeline, Nil, relearnFrom, baseDir)
+  private def loadPipelineSettings(settings: Settings): Settings = {
+    val config = settings.config withFallback ConfigFactory.parseString(
+      """
+        |pipeline {
+        |  run: null
+        |  pipelines {
+        |  }
+        |  relearn_from: null
+        |  base_dir: null
+        |}
+      """.stripMargin)
+    val relearnFrom = Try(config.getString("pipeline.relearn_from")).toOption
+    settings updatedConfig(config) copy(
+      pipelineSettings = PipelineSettings(
+        activePipelineName = Try(config.getString("pipeline.run")) toOption,
+        pipelines =
+          // TODO move this logic out of this parser
+          if (relearnFrom isDefined) Nil else {
+            val pipelineConfig = config.getConfig("pipeline.pipelines")
+            pipelineConfig.root.keys.toList.sorted.map { pipelineName =>
+              Pipeline(
+                id = pipelineName,
+                tasks = pipelineConfig.getStringList(pipelineName) toSet
+              )
+            }
+          },
+        relearnFrom = relearnFrom orNull,
+        baseDir = Try(config.getString("pipeline.base_dir")) toOption
+      )
+    )
   }
 }
+
+object DataTypeParser extends RegexParsers {
+  def CategoricalParser = "Categorical" ~> "(" ~> """\d+""".r <~ ")" ^^ { n => MultinomialType(n.toInt) }
+
+  def BooleanParser = "Boolean" ^^ { s => BooleanType }
+
+  def dataType = CategoricalParser | BooleanParser
+
+  def parseVariableType(dataTypeStr: String): VariableDataType with Product with Serializable = {
+    DataTypeParser.parse(DataTypeParser.dataType, dataTypeStr).getOrElse {
+      sys.error(s"Unknown data type: ${dataTypeStr}")
+    }
+  }
+
+}
+
+object FactorFunctionParser extends RegexParsers with Logging {
+  def relationOrField = """[\w]+""".r
+
+  def arrayDefinition = """\[\]""".r
+
+  def equalPredicate = """[0-9]+""".r
+
+  def implyFactorFunction = ("Imply" | "IMPLY") ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
+    ImplyFactorFunction(varList)
+  }
+
+  def orFactorFunction = ("Or" | "OR") ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
+    OrFactorFunction(varList)
+  }
+
+  def xorFactorFunction = ("Xor" | "XOR") ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
+    XorFactorFunction(varList)
+  }
+
+  def andFactorFunction = ("And" | "AND") ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
+    AndFactorFunction(varList)
+  }
+
+  def equalFactorFunction = ("Equal" | "EQUAL") ~> "(" ~> factorVariable ~ ("," ~> factorVariable) <~ ")" ^^ {
+    case v1 ~ v2 =>
+      EqualFactorFunction(List(v1, v2))
+  }
+
+  def isTrueFactorFunction = ("IsTrue" | "ISTRUE") ~> "(" ~> factorVariable <~ ")" ^^ { variable =>
+    IsTrueFactorFunction(List(variable))
+  }
+
+  def multinomialFactorFunction = ("Multinomial" | "MULTINOMIAL") ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
+    MultinomialFactorFunction(varList)
+  }
+
+  def linearFactorFunction = ("Linear" | "LINEAR") ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
+    LinearFactorFunction(varList)
+  }
+
+  def ratioFactorFunction = ("Ratio" | "RATIO") ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
+    RatioFactorFunction(varList)
+  }
+
+  def logicalFactorFunction = ("Logical" | "LOGICAL") ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
+    LogicalFactorFunction(varList)
+  }
+
+  def factorVariable = ("!" ?) ~ rep1sep(relationOrField, ".") ~ (arrayDefinition ?) ~
+    (("=" ~> equalPredicate) ?) ^^ {
+    case (isNegated ~ varList ~ isArray ~ predicate) =>
+      FactorFunctionVariable(
+        relation = varList.take(varList.size - 1).mkString("."),
+        field = varList.last,
+        isArray = isArray.isDefined,
+        isNegated = isNegated.isDefined,
+        predicate = readLong(predicate)
+      )
+  }
+
+  def readLong(predicate: Option[String]): Option[Long] = {
+    predicate match {
+      case Some(number) => Some(number.toLong)
+      case None => None
+    }
+  }
+
+  def factorFunc = implyFactorFunction | orFactorFunction | andFactorFunction |
+    equalFactorFunction | isTrueFactorFunction | xorFactorFunction | multinomialFactorFunction |
+    linearFactorFunction | ratioFactorFunction | logicalFactorFunction
+
+
+  def parseFactorFunction(factorFunction: String): FactorFunction with Product with Serializable = {
+    FactorFunctionParser.parse(
+      FactorFunctionParser.factorFunc, factorFunction).getOrElse {
+      sys.error(s"parsing ${factorFunction} failed")
+    }
+  }
+}
+
+object FactorWeightParser extends RegexParsers {
+  def relationOrField = """[^,()]+""".r
+
+  def weightVariable = relationOrField
+
+  def constantWeight = """-?[\d\.]+""".r ^^ { x => KnownFactorWeight(x.toDouble) }
+
+  def unknownWeight = "?" ~> ("(" ~> repsep(weightVariable, ",") <~ ")").? ^^ {
+    case Some(varList) => UnknownFactorWeight(varList.toList)
+    case _ => UnknownFactorWeight(List())
+  }
+
+  def factorWeight = constantWeight | unknownWeight
+
+  def parseFactorWeight(factorWeightExpr: String): FactorWeight with Product with Serializable = {
+    FactorWeightParser.parse(
+      FactorWeightParser.factorWeight, factorWeightExpr).getOrElse {
+      sys.error(s"parsing ${factorWeightExpr} failed")
+    }
+  }
+}
+
+object InputQueryParser extends RegexParsers {
+
+  def filenameExpr = "'" ~> """[^']+""".r <~ "'"
+
+  def CSVInputQueryExpr = "CSV" ~> "(" ~> filenameExpr <~ ")" ^^ { str => CSVInputQuery(str, ',') }
+
+  def TSVInputQueryExpr = "TSV" ~> "(" ~> filenameExpr <~ ")" ^^ { str => CSVInputQuery(str, '\t') }
+
+  def DatastoreInputQueryExpr = not("CSV") ~> not("TSV") ~> "[\\w\\W]+".r ^^ { str =>
+    val withoutColon = """;\s+\n?$""".r.replaceAllIn(str, "")
+    val result = """[\s\n]+""".r replaceAllIn(withoutColon, " ")
+    DatastoreInputQuery(result)
+  }
+
+  def inputQueryExpr = (CSVInputQueryExpr | TSVInputQueryExpr | DatastoreInputQueryExpr)
+
+  def parseDatastoreInputQuery(inputQuery: String): DatastoreInputQuery = {
+    InputQueryParser.parse(InputQueryParser.DatastoreInputQueryExpr, inputQuery).getOrElse {
+      sys.error(s"parsing ${inputQuery} failed")
+    }
+  }
+
+  def parseInputQuery(inputQuery: String): InputQuery = {
+    InputQueryParser.parse(InputQueryParser.inputQueryExpr, inputQuery).getOrElse {
+      sys.error(s"parsing ${inputQuery} failed")
+    }
+  }
+}
+

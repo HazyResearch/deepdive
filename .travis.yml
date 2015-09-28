@@ -40,7 +40,7 @@ before_install:
 
 install:
   - make depends
-  - util/install.sh postgres
+  - sudo apt-get install -qq -y postgresql-plpython-`ls -1 /var/lib/postgresql | head -n 1`  # XXX for piggy and plpy extractor tests
   - make test-build  # XXX doing it here to hide the noise from sbt and unzip
 
 script:

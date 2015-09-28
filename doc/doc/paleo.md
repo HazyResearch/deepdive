@@ -1,10 +1,9 @@
 ---
 layout: default
+title: PaleoDeepDive
 ---
 
 # PaleoDeepDive: A System Walkthrough
-
-<div class="alert alert-danger">(This page is outdated and only accurate up to release 0.6.x.)</div> <!-- TODO rewrite -->
 
 Here, we walk through the codebase that powers PaleoDeepDive, an application built upon the [DeepDive machine reading infrastructure](http://deepdive.stanford.edu).
 The code can be found [here](https://github.com/zhangce/pdd), and
@@ -84,9 +83,7 @@ An example row of this table is as follows.
 
 This row encodes the sentence
 
-```
-Edzf U, Ciudad Universitaria, Morelia, Michoacdn, México
-```
+> Edzf U, Ciudad Universitaria, Morelia, Michoacdn, México
 
 The columns wordidxs, words, poses, ners, lemmas, dep\_paths, and dep\_parents are
 defined by the NLP software and are consistent with our [other walkthrough](basics/walkthrough/walkthrough.html). The column
@@ -182,7 +179,7 @@ document, in this example, it means that this mention starts
 from the 19th word and ends at the 19th words of sentence 1676 in the
 document JOURNAL_105771.
 
-To extract this relation, the schema of the extractor in application.conf
+To extract this relation, the schema of the extractor in deepdive.conf
 is:
 
     ext_entity_temporal_local : {
@@ -258,7 +255,7 @@ The python script is as follows.
 
 This script contains three components.
 
-  - Line 5 - 12: Load a dictionary. One example entry of this dictionary is ```{"permian": "Permian|298.90000|252.17000"}```. The file ''intervals.tsv'' contains 1K intervals
+  - Line 5 - 12: Load a dictionary. One example entry of this dictionary is `{"permian": "Permian|298.90000|252.17000"}`. The file ''intervals.tsv'' contains 1K intervals
   from [PaleoDB](http://paleobiodb.org) and [Macrostrat](http://macrostrat.org). In this extractor, we do not attempt to discover
   new temporal intervals; however, we do discover new instances for other types of
   entities, e.g., taxon.
@@ -289,11 +286,9 @@ in this table is:
 
 This table has a similar structure to the table `entity_temporal`, above. The extractor attempts to encode the following rule:
 
-```
-If we extracted ''Pierre Shale'' as a formation entity mention candidate,
-then instances of the word ''Pierre'' in the same document are also a formation
-entity mention candidate.
-```
+> If we extracted ''Pierre Shale'' as a formation entity mention candidate,
+> then instances of the word ''Pierre'' in the same document are also a formation
+> entity mention candidate.
 
 To encode this rule, we create an extractor called ext\_entity\_formation\_global
 that will be run after an extractor called ext\_entity\_formation\_local
@@ -437,7 +432,7 @@ to produce this type of transformation on input tuples.
 This extractor contains four components.
 
   - Line 8 - 17. Load the dictionary for distant supervision from macrostrat. One entry
-  for the dictionary kb\_formation\_temporal is like ```{"pierre shale":{(66.0,89.8):1}}```.
+  for the dictionary kb\_formation\_temporal is like `{"pierre shale":{(66.0,89.8):1}}`.
   - Line 19 - 26. Load the input tuple from SQL queries.
   - Line 28 - 38. Check whether there exists one entry in kb\_formation\_temporal with the same formation and an overlap temporal interval.
   - Line 40 - 46. Produce output tuples based on the result of checking.
@@ -452,7 +447,7 @@ This extractor contains four components.
 Inferences rules are used to specify the correlation
 among random variables. Most of these inference
 rules have a similar form as the one in our
-[other workthroughs](basics/walkthrough/walkthrough.html), and here we show
+[other walkthroughs](basics/walkthrough/walkthrough.html), and here we show
 two examples.
 
     inference_rule_formation : {
