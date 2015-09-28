@@ -177,12 +177,12 @@ and
         - [Writing applications in DDlog](doc/basics/ddlog.html)
     - Low-level (SQL-based)
         - [Creating a new application](doc/basics/writing.html)
-        - [Writing extractors](doc/basics/extractors.html) <small>(outdated)</small>
+        - [Writing extractors](doc/basics/extractors.html)
         - [Declaring inference variables in the schema](doc/basics/schema.html)
         - [Writing inference rules](doc/basics/inference_rules.html)
         - [Inference rule function reference](doc/basics/inference_rule_functions.html)
+        - [Running an application](doc/basics/running.html)
     - [Generic features library](doc/basics/gen_feats.html)
-    - [Running an application](doc/basics/running.html) <small>(outdated)</small>
     - [Incremental DeepDive](doc/advanced/incremental.html)
 - Debugging a DeepDive Application
     - [Calibration](doc/basics/calibration.html)
@@ -202,7 +202,6 @@ and
     - [Using DeepDive on Ubuntu](doc/advanced/ubuntu.html)
     - [Using DeepDive on Amazon EC2](doc/advanced/ec2.html)
     - [Using DeepDive on Docker](doc/advanced/docker.html)
-    - [Performance tuning](doc/advanced/performance.html) <small>(outdated)</small>
 - References
     - [`deepdive.conf` Reference](doc/basics/configuration.html)
     - [High-speed sampler](doc/basics/sampler.html)

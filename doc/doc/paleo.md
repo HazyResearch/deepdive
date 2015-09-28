@@ -5,8 +5,6 @@ title: PaleoDeepDive
 
 # PaleoDeepDive: A System Walkthrough
 
-<div class="alert alert-danger">(This page is outdated and only accurate up to release 0.6.x.)</div> <!-- TODO rewrite -->
-
 Here, we walk through the codebase that powers PaleoDeepDive, an application built upon the [DeepDive machine reading infrastructure](http://deepdive.stanford.edu).
 The code can be found [here](https://github.com/zhangce/pdd), and
 one example data dump can be
@@ -183,7 +181,7 @@ document, in this example, it means that this mention starts
 from the 19th word and ends at the 19th words of sentence 1676 in the
 document JOURNAL_105771.
 
-To extract this relation, the schema of the extractor in application.conf
+To extract this relation, the schema of the extractor in deepdive.conf
 is:
 
     ext_entity_temporal_local : {
@@ -453,7 +451,7 @@ This extractor contains four components.
 Inferences rules are used to specify the correlation
 among random variables. Most of these inference
 rules have a similar form as the one in our
-[other workthroughs](basics/walkthrough/walkthrough.html), and here we show
+[other walkthroughs](basics/walkthrough/walkthrough.html), and here we show
 two examples.
 
     inference_rule_formation : {

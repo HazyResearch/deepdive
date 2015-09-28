@@ -5,8 +5,6 @@ title: Writing Extractors
 
 # Writing extractors
 
-<div class="alert alert-danger">(This page is outdated and only accurate up to release 0.6.x.)</div> <!-- TODO rewrite -->
-
 Extractors are a powerful functionality provided by DeepDive to streamline
 [feature extraction](overview.html#extractors). This document presents the
 different types of extractors supported by DeepDive. Please refer to the
@@ -19,16 +17,16 @@ DeepDive supports two classes of extractors: *row-wise* and *procedural*. Each
 class contains different extractor *styles*:
 
 - Row-wise extractors:
-  - [`json_extractor`](#json_extractor): highly flexible and compatible with
-  previous systems, but with limited performance (DEPRECATED!!!)
   - [`tsv_extractor`](#tsv_extractor): moderate flexibility and performance
-  - [`plpy_extractor`](#plpy_extractor): parallel database-built-in extractors
-  with seriously restricted flexibility because only the UDF function definition
-  is shipped to the DB  (DEPRECATED!!!)
   - [`piggy_extractor`](#piggy_extractor): a distributed language-agnostic pipe-based extractor driver.
   We ship the entire runtime environment (code, data, and pip libraries) to
   the DB server(s) and avoid multi-user collision by staging separate environments
   for concurrent users. See `examples/spouse_example/postgres/piggy_extractor/`.
+  - (DEPRECATED) [`json_extractor`](#json_extractor): highly flexible and compatible with
+  previous systems, but with limited performance
+  - (DEPRECATED) [`plpy_extractor`](#plpy_extractor): parallel database-built-in extractors
+  with seriously restricted flexibility because only the UDF function definition
+  is shipped to the DB
 
 - Procedural extractors:
   - [`sql_extractor`](#sql_extractor): a SQL command
@@ -80,111 +78,6 @@ deepdive {
 ```
 
 If `style` is not specified, the system assumes the extractor has style `json_extractor`.
-
-### <a name="json_extractor" href="#"></a> json_extractor (default, but DEPRECATED!!!)
-
-A `json_extractor` takes each tuple in the output of an `input` query (for
-example, a SQL statement), and produces new tuples as output. These tuples are
-written to an `output_relation`. The transformation function is defined by the
-value of the `udf` keyword, which can be an arbitrary executable or shell
-command.
-
-The following is an example of an extractor definition:
-
-```bash
-wordsExtractor {
-  style           : "json_extractor"
-  input           : """SELECT * FROM titles"""
-  output_relation : "words"
-  udf             : "words.py"
-}
-```
-
-#### Input to a json_extractor
-
-<!--
-Currently DeepDive supports two types of extractor inputs for `json_extractor`:
-
-**1. Executing a database query**
--->
-
-A SQL statement for PostgresSQL, as in the example above.
-
-<!--
-**2. Reading from a CSV or TSV File**
-
-Reading a file is useful for loading initial data. To specify which file to read
-and its format, the `input` directive of the extractor definition should look
-like the following:
-
-```bash
-input: CSV('path/to/file.csv')
-input: TSV('path/to/file.tsv')
-```
--->
-
-#### Writing the UDF for a json_extractor
-
-When a `json_extractor` is executed and if the `input` directive is a SQL query,
-DeepDive streams *[JSON](http://json.org/) objects* from the specified `input`
-to the *standard input* of the extractor UDF, one tuple per line. Such an object
-may look as follows:
-
-    { titles.title_id: 5, titles.title: "I am a title" }
-
-Columns names are always prefixed with the name of the table. For example, if
-your query includes a `name` column from the `people` table, then the
-corresponding JSON key would be called `people.name`. This also applies to
-aliases. For example, `SELECT people.name AS text` would result in a JSON key
-called `people.text`. Aggregates are prepended with a dot and do not include the
-relation name.  For example `SELECT COUNT(*) AS num FROM people GROUP BY
-people.name` would result in a JSON key called `.num`.
-
-
-If instead the `input` directive specifies reading from a CSV or TSV file, each
-line streamed to the standard input of the UDF is an *array*, as in:
-
-    ["1", "true", "Hello World", ""]
-
-The extractor UDF must output JSON objects to the *standard output*, one per
-line, independently of the format of the input. All output objects must have the
-same fields, so it may necessary to set the values for some fields to `null`.
-The following is an example of extractor output:
-
-    { title_id: 5, word: "I" }
-    { title_id: 5, word: "am" }
-    { title_id: 5, word: "a" }
-    { title_id: 5, word: "title" }
-  { title_id: 6, word: null }
-
-When emitting tuples from the extractor, only use the column name of the
-`output` relation, without the relation name. In other words, do not use JSON
-keys like `people.name`, but keys with names like `name`.
-
-You can debug the extractor UDF by writing to `stderr` instead of `stdout`.
-Anything written to `stderr` appears in the DeepDive log file.
-
-The following is an example of a`json_extractor` UDF written in Python:
-
-```python
-#! /usr/bin/env python
-
-import fileinput
-import json
-
-# For each input row
-for line in fileinput.input():
-  # Load the JSON object
-  row = json.loads(line)
-  if row["title"] is not None:
-    # Split the sentence by space
-    for word in set(row["title"].split(" ")):
-      # Output the word
-      print json.dumps({
-        "title_id": int(row["title_id"]),
-        "word": word
-      })
-```
 
 ### <a name="tsv_extractor" href="#"></a> tsv_extractor
 
@@ -296,6 +189,8 @@ for line in fileinput.input():
       print title_id + '\t' + word
 ```
 
+
+
 ### <a name="piggy_extractor" href="#"></a> piggy_extractor
 
 A `piggy_extractor` is similar to a `tsv_extractor`:
@@ -316,6 +211,152 @@ But, as its name suggests, it piggybacks on the DB servers. Here is what's diffe
 See `examples/spouse_example/postgres/piggy_extractor/` for example extractors.
 
 Note that piggy_extractor only works with PostgreSQL-based databases that have [PL/Python (or plpythonu extension)](http://www.postgresql.org/docs/9.1/static/plpython.html) installed.
+
+
+
+
+### <a id="sql_extractor" href="#"></a> sql_extractor
+
+The `sql_extractor` style is a meant to simplify the life of the user.
+Extractors with this style only update the data in database (without returnining
+anything). The following is an example of a `sql_extractor` definition:
+
+```bash
+wordsExtractor {
+  style : "sql_extractor"
+  sql   : """INSERT INTO titles VALUES (1, 'Moby Dick')"""
+}
+```
+
+The `sql` field contains the SQL query to execute. It is the user's
+responsibility to run `ANALYZE table_name` after updating the table for SQL
+optimization.
+
+
+
+### <a id="cmd_extractor" href="#"></a> cmd_extractor
+
+The `cmd_extractor` style allows the user to run a shell command. The following
+is an example of a `cmd_extractor` definition:
+
+```bash
+wordsExtractor {
+  style : "cmd_extractor"
+  cmd   : """python words.py"""
+}
+```
+
+The `cmd` field contains the shell command to execute.
+
+
+
+
+
+### <a name="json_extractor" href="#"></a> json_extractor (DEPRECATED)
+
+A `json_extractor` takes each tuple in the output of an `input` query (for
+example, a SQL statement), and produces new tuples as output. These tuples are
+written to an `output_relation`. The transformation function is defined by the
+value of the `udf` keyword, which can be an arbitrary executable or shell
+command.
+
+The following is an example of an extractor definition:
+
+```bash
+wordsExtractor {
+  style           : "json_extractor"
+  input           : """SELECT * FROM titles"""
+  output_relation : "words"
+  udf             : "words.py"
+}
+```
+
+#### Input to a json_extractor
+
+<!--
+Currently DeepDive supports two types of extractor inputs for `json_extractor`:
+
+**1. Executing a database query**
+-->
+
+A SQL statement for PostgresSQL, as in the example above.
+
+<!--
+**2. Reading from a CSV or TSV File**
+
+Reading a file is useful for loading initial data. To specify which file to read
+and its format, the `input` directive of the extractor definition should look
+like the following:
+
+```bash
+input: CSV('path/to/file.csv')
+input: TSV('path/to/file.tsv')
+```
+-->
+
+#### Writing the UDF for a json_extractor
+
+When a `json_extractor` is executed and if the `input` directive is a SQL query,
+DeepDive streams *[JSON](http://json.org/) objects* from the specified `input`
+to the *standard input* of the extractor UDF, one tuple per line. Such an object
+may look as follows:
+
+    { titles.title_id: 5, titles.title: "I am a title" }
+
+Columns names are always prefixed with the name of the table. For example, if
+your query includes a `name` column from the `people` table, then the
+corresponding JSON key would be called `people.name`. This also applies to
+aliases. For example, `SELECT people.name AS text` would result in a JSON key
+called `people.text`. Aggregates are prepended with a dot and do not include the
+relation name.  For example `SELECT COUNT(*) AS num FROM people GROUP BY
+people.name` would result in a JSON key called `.num`.
+
+
+If instead the `input` directive specifies reading from a CSV or TSV file, each
+line streamed to the standard input of the UDF is an *array*, as in:
+
+    ["1", "true", "Hello World", ""]
+
+The extractor UDF must output JSON objects to the *standard output*, one per
+line, independently of the format of the input. All output objects must have the
+same fields, so it may necessary to set the values for some fields to `null`.
+The following is an example of extractor output:
+
+    { title_id: 5, word: "I" }
+    { title_id: 5, word: "am" }
+    { title_id: 5, word: "a" }
+    { title_id: 5, word: "title" }
+  { title_id: 6, word: null }
+
+When emitting tuples from the extractor, only use the column name of the
+`output` relation, without the relation name. In other words, do not use JSON
+keys like `people.name`, but keys with names like `name`.
+
+You can debug the extractor UDF by writing to `stderr` instead of `stdout`.
+Anything written to `stderr` appears in the DeepDive log file.
+
+The following is an example of a`json_extractor` UDF written in Python:
+
+```python
+#! /usr/bin/env python
+
+import fileinput
+import json
+
+# For each input row
+for line in fileinput.input():
+  # Load the JSON object
+  row = json.loads(line)
+  if row["title"] is not None:
+    # Split the sentence by space
+    for word in set(row["title"].split(" ")):
+      # Output the word
+      print json.dumps({
+        "title_id": int(row["title_id"]),
+        "word": word
+      })
+```
+
 
 
 ### <a name="plpy_extractor" href="#"></a> plpy_extractor (DEPRECATED)
@@ -508,36 +549,10 @@ def run(sentence_id, words, gram_len):
   # return [[sentence_id, gram, ngram[ngram]] for gram in ngram]
 ```
 
-### <a id="sql_extractor" href="#"></a> sql_extractor
 
-The `sql_extractor` style is a meant to simplify the life of the user.
-Extractors with this style only update the data in database (without returnining
-anything). The following is an example of a `sql_extractor` definition:
 
-```bash
-wordsExtractor {
-  style : "sql_extractor"
-  sql   : """INSERT INTO titles VALUES (1, 'Moby Dick')"""
-}
-```
 
-The `sql` field contains the SQL query to execute. It is the user's
-responsibility to run `ANALYZE table_name` after updating the table for SQL
-optimization.
 
-### <a id="cmd_extractor" href="#"></a> cmd_extractor
-
-The `cmd_extractor` style allows the user to run a shell command. The following
-is an example of a `cmd_extractor` definition:
-
-```bash
-wordsExtractor {
-  style : "cmd_extractor"
-  cmd   : """python words.py"""
-}
-```
-
-The `cmd` field contains the shell command to execute.
 
 ## Additional extractor properties
 
@@ -663,7 +678,7 @@ Developers can change the extractor UDF to `util/extractor_input_writer.py
 SAMPLE_FILE_PATH` to obtain sample extractor inputs in the file `SAMPLE_FILE_PATH`.
 
 For example, in our [walkthrough](walkthrough/walkthrough.html), to debug the extractor `ext_has_spouse_features`, just change
-`application.conf` to:
+`deepdive.conf` to:
 
  ```bash
 ext_has_spouse_features {

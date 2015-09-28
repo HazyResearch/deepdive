@@ -61,7 +61,8 @@ section](walkthrough.html), and to improve the quality of the extractions.
 
 ### <a name="braindump" href="#"> </a> Using BrainDump to generate automatic reports
 
-<div class="alert alert-danger">(This section is outdated and only accurate up to release 0.6.x.)</div> <!-- TODO rewrite -->
+<div class="alert alert-danger">(This section is outdated and only accurate up to release 0.6.x.)</div>
+<!-- TODO rewrite -->
 
 We start by setting up [BrainDump](https://github.com/zifeishan/braindump), the
 automatic report generator for DeepDive. BrainDump creates a set of reports
