@@ -181,8 +181,8 @@ and
         - [Declaring inference variables in the schema](doc/basics/schema.html)
         - [Writing inference rules](doc/basics/inference_rules.html)
         - [Inference rule function reference](doc/basics/inference_rule_functions.html)
+        - [Running an application](doc/basics/running.html)
     - [Generic features library](doc/basics/gen_feats.html)
-    - [Running an application](doc/basics/running.html) <small>(outdated)</small>
     - [Incremental DeepDive](doc/advanced/incremental.html)
 - Debugging a DeepDive Application
     - [Calibration](doc/basics/calibration.html)

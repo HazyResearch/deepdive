@@ -5,9 +5,6 @@ title: Running an Application
 
 # Running a DeepDive application
 
-<div class="alert alert-danger">(This page is outdated and only accurate up to release 0.6.x.)</div>
-<!-- TODO rewrite -->
-
 This document describes how to run a DeepDive application, how to query the
 results of the analysis, and how to define *pipelines* to select a subset of
 extractor and/or inference rules to run.
@@ -23,13 +20,11 @@ applications.
 
 ## Running
 
-Running an application is as simple as running
+Running an application is as simple as running the following command under the application directory:
 
+```bash
+deepdive run
 ```
-deepdive -c $APP_HOME/application.conf
-```
-
-where `$APP_HOME` is the application directory.
 
 As explained in the [Writing applications guide](writing.html) it is best to
 include the above command in a `run.sh` script responsible for
@@ -47,30 +42,34 @@ format. The goal of the application is to extract spouse relationships between
 individuals from the raw text of the articles. In other words, we want DeepDive
 to compute information that can help us determining who is married to who.
 
-In the remainder of the document we denote the DeepDive installation directory
-as 'DEEPDIVE_HOME'.
+To get a copy of the spouse example, first run the following command:
 
+```bash
+bash <(curl -fsSL deepdive.stanford.edu/install) deepdive_examples_tests
+```
+
+All examples in the last DeepDive release will be downloaded to a `deepdive-VERSION` directory.
 Start by entering the 'spouse_example' directory:
 
 ```bash
-cd DEEPDIVE_HOME/examples/spouse_example
+cd deepdive-*/examples/spouse_example/postgres/tsv_extractor
 ```
 
 The data resides in the 'data/' subdirectory. The news articles are in the
 'data/articles_dump.csv' file. Have a look at this file to get a rough idea
 on what data DeepDive is processing.
 
-For this example run, we use the default 'json_extractor' extractor, residing in
-the 'default_extractor' directory. Other extractors like 'tsv_extractor' and
+For this example run, we use the 'tsv_extractor' extractor, residing in
+the 'default_extractor' directory. Other extractors like 'piggy_extractor', 'json_extractor', and
 'plpy_extractor' can also be found in the application directory. For more
 details on extractors, see the ["Writing extractors"](extractors.html) document.
 
 ```bash
-cd default_extractor
-./run.sh
+deepdive initdb
+deepdive run
 ```
 
-This script setups the database `deepdive_spouse_default` and run the
+The first command sets up the database `deepdive_spouse_default` and the second runs the
 application. The application takes about 100 seconds to complete. If the
 execution completes with success, the output will look like the following:
 
@@ -83,7 +82,7 @@ execution completes with success, the output will look like the following:
     13:05:28 [profiler] INFO  ext_has_spouse_features SUCCESS [37349 ms]
     13:05:28 [profiler] INFO  inference_grounding SUCCESS [34316 ms]
     13:05:28 [profiler] INFO  inference SUCCESS [14779 ms]
-    13:05:28 [profiler] INFO  calibration plot written to $DEEPDIVE_HOME/out/2014-06-23T130346/calibration/has_spouse.is_true.png [0 ms]
+    13:05:28 [profiler] INFO  calibration plot written to .../calibration/has_spouse.is_true.png [0 ms]
     13:05:28 [profiler] INFO  calibration SUCCESS [1133 ms]
     13:05:28 [profiler] INFO  --------------------------------------------------
     13:05:28 [taskManager] INFO  Completed task_id=report with Success(Success(()))
@@ -122,7 +121,7 @@ following example query would return some of the marriage relationships that
 have probability more than 0.9 to be true:
 
 ```bash
-psql -d deepdive_spouse_default -c "
+deepdive sql "
   SELECT description, expectation
   FROM has_spouse_is_true_inference
   WHERE expectation > 0.9 and expectation < 1
@@ -132,9 +131,9 @@ psql -d deepdive_spouse_default -c "
 
 The output is formatted as 'person1-person2' like in the following example:
 
-  description   | expectation
-----------------+-------------
- Obama-Michelle |       0.982
+      description   | expectation
+    ----------------+-------------
+     Obama-Michelle |       0.982
 
 This means that 'Obama' is married to 'Michelle' with probability of 0.982.
 
@@ -154,25 +153,24 @@ rules are active and should be executed. This is useful for debugging purposes.
 
 You can define custom pipelines by adding the following configuration directives:
 
-```bash
-        deepdive {
-          pipeline.run: myPipeline
-          pipeline.pipelines { myPipeline: [ extractor1 extractor2 inferenceRule1 ] }
-        }
-```
+    deepdive {
+      pipeline.run: myPipeline
+      pipeline.pipelines { myPipeline: [ extractor1 extractor2 inferenceRule1 ] }
+    }
 
 Refer to the [configuration reference](configuration.html#pipelines) for details
 about the syntax of these directives.
 
 When the `pipeline.run` directive is not specified, DeepDive executes all
 extractors and inference rules.
+The pipeline name can be specified as an argument to the `deepdive run` command.
 
 You can set `pipeline.relearn_from` to an output directory of a previous
 execution of DeepDive to use an existing factor graph for learning and
 inference:
 
     deepdive {
-      pipeline.relearn_from: "/PATH/TO/DEEPDIVE/HOME/out/2014-05-02T131658/"
+      pipeline.relearn_from: "/path/to/your/app/run/LATEST/"
     }
 
 In this case DeepDive would skip all extractors. This could be useful for tuning
