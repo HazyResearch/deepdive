@@ -46,7 +46,6 @@ install_postgres() {
     sudo apt-get update
     sudo apt-get install -y postgresql
     local pgversion=$(ls -1 /var/lib/postgresql/ | head -n 1)
-    sudo apt-get install -y postgresql-plpython-$pgversion
     if [ -z "${TRAVIS:-}" ]; then
         # add user to postgresql and trust all connections to localhost
         sudo -u postgres dropuser --if-exists $USER || sudo -u postgres dropuser $USER || true
