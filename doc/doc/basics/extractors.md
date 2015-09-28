@@ -479,7 +479,8 @@ yielded/returned tuple can be either:
         'sentence_id': sentence_id,
         'ngram': ngram,
         'count':ngram[gram]
-      }```
+      }
+    ```
 
 If you want to use functions other than `init` and `run`, you **must**
 define the functions inside `run`as nested functions. In the following
@@ -680,7 +681,7 @@ SAMPLE_FILE_PATH` to obtain sample extractor inputs in the file `SAMPLE_FILE_PAT
 For example, in our [walkthrough](walkthrough/walkthrough.html), to debug the extractor `ext_has_spouse_features`, just change
 `deepdive.conf` to:
 
- ```bash
+```bash
 ext_has_spouse_features {
   # Added "ORDER BY" and "LIMIT" to randomly sample a small amount of data
   input: """

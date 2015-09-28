@@ -77,6 +77,7 @@ They are called active variables and active inference rules, and the names can b
 </script>
 
 There is a script included in the example, and the materialization phase can be run using the following single command:
+
 ```bash
 ./1-materialization_phase.sh spouse_example.f1.ddlog inc-base.out
 ```

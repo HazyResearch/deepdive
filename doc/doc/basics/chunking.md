@@ -242,7 +242,8 @@ We also specify the holdout variables according to task description about traini
 
 Running `result/eval.sh` will give the evaluation results. Below are results for using different rules. We can see that by adding CRF rules, we get better results both for precision and recall.
 
-Logistic Regression
+#### Logistic Regression
+
 ```
   processed 47377 tokens with 23852 phrases; found: 23642 phrases; correct: 19156.
   accuracy:  89.56%; precision:  81.03%; recall:  80.31%; FB1:  80.67
@@ -259,7 +260,8 @@ Logistic Regression
 ```
 
 
-LR + Linear-Chain CRF
+#### LR + Linear-Chain CRF
+
 ```
   processed 47377 tokens with 23852 phrases; found: 22996 phrases; correct: 19746.
   accuracy:  91.58%; precision:  85.87%; recall:  82.79%; FB1:  84.30
@@ -276,7 +278,8 @@ LR + Linear-Chain CRF
                  VP: precision:  90.37%; recall:  90.21%; FB1:  90.29  4650
 ```
 
-LR + Linear-Chain CRF + Skip-Chain CRF
+#### LR + Linear-Chain CRF + Skip-Chain CRF
+
 ```
   processed 47377 tokens with 23852 phrases; found: 22950 phrases; correct: 19794.
   accuracy:  91.79%; precision:  86.25%; recall:  82.99%; FB1:  84.59
