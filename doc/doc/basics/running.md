@@ -5,7 +5,8 @@ title: Running an Application
 
 # Running a DeepDive application
 
-<div class="alert alert-danger">(This page is outdated and only accurate up to release 0.6.x.)</div> <!-- TODO rewrite -->
+<div class="alert alert-danger">(This page is outdated and only accurate up to release 0.6.x.)</div>
+<!-- TODO rewrite -->
 
 This document describes how to run a DeepDive application, how to query the
 results of the analysis, and how to define *pipelines* to select a subset of

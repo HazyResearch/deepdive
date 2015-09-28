@@ -5,8 +5,6 @@ title: PaleoDeepDive
 
 # PaleoDeepDive: A System Walkthrough
 
-<div class="alert alert-danger">(This page is outdated and only accurate up to release 0.6.x.)</div> <!-- TODO rewrite -->
-
 Here, we walk through the codebase that powers PaleoDeepDive, an application built upon the [DeepDive machine reading infrastructure](http://deepdive.stanford.edu).
 The code can be found [here](https://github.com/zhangce/pdd), and
 one example data dump can be
@@ -453,7 +451,7 @@ This extractor contains four components.
 Inferences rules are used to specify the correlation
 among random variables. Most of these inference
 rules have a similar form as the one in our
-[other workthroughs](basics/walkthrough/walkthrough.html), and here we show
+[other walkthroughs](basics/walkthrough/walkthrough.html), and here we show
 two examples.
 
     inference_rule_formation : {
