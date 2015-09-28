@@ -147,7 +147,7 @@ The configuration directives for the database connection are the following:
     ```
 
 If you want to use <a
-href="../advanced/performance.html#parallelgrounding">parallel grounding</a>,
+href="../advanced/greenplum.html#parallelgrounding">parallel grounding</a>,
 you should also specify the following:
 
 ```bash
@@ -343,7 +343,7 @@ Configuration directives to control the inference steps go in the global
 - <a name="parallelgrounding" href="#"></a> `inference.parallel_grounding`. If
   set to `true` and you are using <a href="../advanced/greenplum.html">GreenPlum
   on DeepDive</a>, use <a
-  href="../advanced/performance.html#parallelgrounding">parallelism when
+  href="../advanced/greenplum.html#parallelgrounding">parallelism when
   grounding the graph</a>. Default is `false`.
 
     ```bash

@@ -6,30 +6,6 @@ title: FAQ
 # DeepDive FAQ
 
 
-### I get a Java out of memory error, what should I do?
-
-Refer to the [Performance Tuning guide](../advanced/performance.html) and try the following:
-
-- Set the JVM heap size using the `-Xmx` option flag
-
-- If the errors happens while executing an JSON extractor, try decreasing the input
-  or output batch size for your extractors. See the [Configuration
-  reference](configuration.html#json) for details.
-
-- If the error happens while executing a database query and the query uses the
-        `array_agg` aggregate, try changing it to `array_accum`, which is a custom
-        aggregate that can be defined as:
-
-        ```sql
-        CREATE AGGREGATE array_accum (anyelement)
-        (
-                sfunc = array_append,
-                stype = anyarray,
-                initcond = '{}'
-        );
-        ```
-
-
 ### How can I debug my extractors?
 
 See [debugging extractors](extractors.html#debug_extractors) section in extractor documentation.
