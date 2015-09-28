@@ -37,7 +37,7 @@ the base part. The workflow can be summarized as follows.
 ### Preprocessing and loading data
 
 The incremental version of the spouse example is under [`examples/spouse_example/postgres/incremental`](https://github.com/HazyResearch/deepdive/tree/master/examples/spouse_example/postgres/incremental).
-The only difference is that all the arrays are transformed into string using array_to_string with delimiter '~^~' due to DDlog's limited support for array type.
+The only difference is that all the arrays are transformed into string using `array_to_string` with delimiter `'~^~'` due to DDlog's limited support for array type.
 You can follow the [corresponding section in the original walkthrough](../basics/walkthrough/walkthrough.html#loading_data) to load the data.
 
 Alternatively, you can try the handy scripts included in the incremental example provided in the source tree.

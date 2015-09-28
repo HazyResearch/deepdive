@@ -29,7 +29,7 @@ deepdive run
 
 ### Example
 
-As an example we now show how to run  the built-in 'spouse_example' application.
+As an example we now show how to run the built-in spouse\_example application.
 This example uses a news articles dataset. The articles are in plain text
 format. The goal of the application is to extract spouse relationships between
 individuals from the raw text of the articles. In other words, we want DeepDive
@@ -42,19 +42,19 @@ bash <(curl -fsSL deepdive.stanford.edu/install) deepdive_examples_tests
 ```
 
 All examples in the last DeepDive release will be downloaded to a `deepdive-VERSION` directory.
-Start by entering the 'spouse_example' directory:
+Start by entering the spouse\_example directory:
 
 ```bash
 cd deepdive-*/examples/spouse_example/postgres/tsv_extractor
 ```
 
-The data resides in the 'data/' subdirectory. The news articles are in the
-'data/articles_dump.csv' file. Have a look at this file to get a rough idea
+The data resides in the `data/` subdirectory. The news articles are in the
+`data/articles_dump.csv` file. Have a look at this file to get a rough idea
 on what data DeepDive is processing.
 
-For this example run, we use the 'tsv_extractor' extractor, residing in
-the 'default_extractor' directory. Other extractors like 'piggy_extractor', 'json_extractor', and
-'plpy_extractor' can also be found in the application directory. For more
+For this example run, we use the `tsv_extractor` extractor.
+Other extractors like `piggy_extractor`, `json_extractor`, and
+`plpy_extractor` can also be found in the application directory. For more
 details on extractors, see the ["Writing extractors"](extractors.html) document.
 
 ```bash
@@ -86,7 +86,7 @@ execution completes with success, the output will look like the following:
 ## <a name="results" href="#"></a> Results
 
 DeepDive stores all the results in the application database. For our example
-application, this is the 'deepdive_spouse_default' database.
+application, this is the `deepdive_spouse_default` database.
 
 For each query variable, DeepDive generates a view called
 `[TABLE]_[VARIABLE_NAME]_inference`, which contains the original data, augmented

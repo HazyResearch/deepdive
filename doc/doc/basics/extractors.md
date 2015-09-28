@@ -79,7 +79,7 @@ deepdive {
 
 If `style` is not specified, the system assumes the extractor has style `json_extractor`.
 
-### <a name="tsv_extractor" href="#"></a> tsv_extractor
+### <a name="tsv_extractor" href="#"></a> `tsv_extractor`
 
 A `tsv_extractor` is very similar to the default `json_extractor`, but its
 performance is optimized:
@@ -112,7 +112,7 @@ TSV files piped into the standard input of these instances.
 3. The outputs (to standard output) of the extractor UDF instances (also in
 TSV format) are loaded into the database with a COPY command.
 
-#### Input to a tsv_extractor
+#### Input to a `tsv_extractor`
 
 The `input` to a `tsv_extractor` must be a database query. For example
 
@@ -191,7 +191,7 @@ for line in fileinput.input():
 
 
 
-### <a name="piggy_extractor" href="#"></a> piggy_extractor
+### <a name="piggy_extractor" href="#"></a> `piggy_extractor`
 
 A `piggy_extractor` is similar to a `tsv_extractor`:
 
@@ -210,12 +210,12 @@ But, as its name suggests, it piggybacks on the DB servers. Here is what's diffe
 
 See `examples/spouse_example/postgres/piggy_extractor/` for example extractors.
 
-Note that piggy_extractor only works with PostgreSQL-based databases that have [PL/Python (or plpythonu extension)](http://www.postgresql.org/docs/9.1/static/plpython.html) installed.
+Note that `piggy_extractor` only works with PostgreSQL-based databases that have [PL/Python (or plpythonu extension)](http://www.postgresql.org/docs/9.1/static/plpython.html) installed.
 
 
 
 
-### <a id="sql_extractor" href="#"></a> sql_extractor
+### <a id="sql_extractor" href="#"></a> `sql_extractor`
 
 The `sql_extractor` style is a meant to simplify the life of the user.
 Extractors with this style only update the data in database (without returnining
@@ -234,7 +234,7 @@ optimization.
 
 
 
-### <a id="cmd_extractor" href="#"></a> cmd_extractor
+### <a id="cmd_extractor" href="#"></a> `cmd_extractor`
 
 The `cmd_extractor` style allows the user to run a shell command. The following
 is an example of a `cmd_extractor` definition:
@@ -252,7 +252,7 @@ The `cmd` field contains the shell command to execute.
 
 
 
-### <a name="json_extractor" href="#"></a> json_extractor (DEPRECATED)
+### <a name="json_extractor" href="#"></a> `json_extractor` (DEPRECATED)
 
 A `json_extractor` takes each tuple in the output of an `input` query (for
 example, a SQL statement), and produces new tuples as output. These tuples are
@@ -279,7 +279,7 @@ Currently DeepDive supports two types of extractor inputs for `json_extractor`:
 **1. Executing a database query**
 -->
 
-A SQL statement for PostgresSQL, as in the example above.
+A SQL statement for PostgreSQL, as in the example above.
 
 <!--
 **2. Reading from a CSV or TSV File**
@@ -294,7 +294,7 @@ input: TSV('path/to/file.tsv')
 ```
 -->
 
-#### Writing the UDF for a json_extractor
+#### Writing the UDF for a `json_extractor`
 
 When a `json_extractor` is executed and if the `input` directive is a SQL query,
 DeepDive streams *[JSON](http://json.org/) objects* from the specified `input`
@@ -335,7 +335,7 @@ keys like `people.name`, but keys with names like `name`.
 You can debug the extractor UDF by writing to `stderr` instead of `stdout`.
 Anything written to `stderr` appears in the DeepDive log file.
 
-The following is an example of a`json_extractor` UDF written in Python:
+The following is an example of a `json_extractor` UDF written in Python:
 
 ```python
 #! /usr/bin/env python
@@ -359,7 +359,7 @@ for line in fileinput.input():
 
 
 
-### <a name="plpy_extractor" href="#"></a> plpy_extractor (DEPRECATED)
+### <a name="plpy_extractor" href="#"></a> `plpy_extractor` (DEPRECATED)
 
 A `plpy_extractor` is a high-performance type of extractors for PostgreSQL /
 Greenplum databases. It avoids additional I/O by executing the extractor
@@ -463,7 +463,7 @@ return [(sentence_id, gram, ngram[gram]) for gram in ngram]
 ```
 
 or `yield` a tuple multiple times. Each tuple it yields will be inserted into
-the database, just like each printed JSON object in a json_extractor. Each
+the database, just like each printed JSON object in a `json_extractor`. Each
 yielded/returned tuple can be either:
 
 - an ordered list / tuple according to the order of `ddext.return` specification:

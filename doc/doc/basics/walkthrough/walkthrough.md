@@ -751,7 +751,7 @@ next section.
 Before that, let us mention the fact that  DeepDive generates [calibration
 plots](../calibration.html) for all variables defined in the schema to help with
 debugging. Let's take a look at the generated calibration plot, written to the
-file outputted in the summary report above (has_spouse.is_true.png). It should
+file outputted in the summary report above (`has_spouse.is_true.png`). It should
 look something like this:
 
 ![Calibration](../../../assets/walkthrough_has_spouse_is_true.png)
