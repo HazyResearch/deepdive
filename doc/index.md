@@ -177,7 +177,7 @@ and
         - [Writing applications in DDlog](doc/basics/ddlog.html)
     - Low-level (SQL-based)
         - [Creating a new application](doc/basics/writing.html)
-        - [Writing extractors](doc/basics/extractors.html) <small>(outdated)</small>
+        - [Writing extractors](doc/basics/extractors.html)
         - [Declaring inference variables in the schema](doc/basics/schema.html)
         - [Writing inference rules](doc/basics/inference_rules.html)
         - [Inference rule function reference](doc/basics/inference_rule_functions.html)
