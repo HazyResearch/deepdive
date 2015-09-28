@@ -73,6 +73,7 @@ else
     run_dir="$DEEPDIVE_APP/run/$run_id"
 fi
 mkdir -p "$run_dir"
+# creating the run folder is necessary as we will create symlinks run/RUNNING and run/LATEST below
 mkdir -p run
 DEEPDIVE_OUTPUT=$(cd "$run_dir" && pwd)
 : ${DEEPDIVE_LOGFILE:="$DEEPDIVE_OUTPUT/log.txt"}
