@@ -18,10 +18,10 @@ case $Mode in
     *) Mode=
 esac
 
-appConf="${DDlog%.ddlog}${Mode:+.${Mode#--}}.application.conf"
-userConf="$(dirname "$DDlog")"/application.conf
+appConf="${DDlog%.ddlog}${Mode:+.${Mode#--}}.deepdive.conf"
+userConf="$(dirname "$DDlog")"/deepdive.conf
 
-# compile application.conf from DDlog if necessary
+# compile deepdive.conf from DDlog if necessary
 [[ "$appConf" -nt "$DDlog" && "$appConf" -nt "$userConf" ]] || {
     ddlog compile $Mode "$DDlog"
     cat "$userConf"
@@ -32,9 +32,9 @@ appConf="$(cd "$(dirname "$appConf")" && pwd)/$(basename "$appConf")"
 Out=$(mkdir -p "$Out" && cd "$Out" && pwd)
 BASEDIR=${BASEDIR:+$(mkdir -p "$BASEDIR" && cd "$BASEDIR" && pwd)}
 
-# ddlog-generated application.conf contains a PIPELINE, so we must set it here
+# ddlog-generated deepdive.conf contains a PIPELINE, so we must set it here
 export PIPELINE=$Pipeline
 
 # run DeepDive, passing the rest of the arguments
 # TODO use deepdive run instead
-deepdive env java org.deepdive.Main -c "$appConf" -o "$Out"  "$@"
+deepdive run -c "$appConf" -o "$Out"  "$@"

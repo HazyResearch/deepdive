@@ -12,9 +12,11 @@ fi
 echo "Set DB_NAME to ${DBNAME}."
 echo "HOST is ${PGHOST}, PORT is ${PGPORT}."
 
-dropdb $DBNAME || true
-createdb $DBNAME
+# dropdb $DBNAME || true
+# createdb $DBNAME
 
-psql -d $DBNAME <./schema.sql
-bzcat ../../data/articles_dump.csv.bz2  | psql -d $DBNAME -c "COPY articles  FROM STDIN CSV"
-bzcat ../../data/sentences_dump.csv.bz2 | psql -d $DBNAME -c "COPY sentences FROM STDIN CSV"
+# psql -d $DBNAME <./schema.sql
+bzcat ../../data/articles_dump.csv.bz2  | deepdive sql "COPY articles  FROM STDIN CSV"
+bzcat ../../data/sentences_dump.csv.bz2 |
+if [[ -z ${INCREMENTAL_SPOUSE_EXAMPLE_LIMIT_SENTENCES:-} ]]; then cat; else head -n ${INCREMENTAL_SPOUSE_EXAMPLE_LIMIT_SENTENCES}; fi |
+deepdive sql "COPY sentences FROM STDIN CSV"

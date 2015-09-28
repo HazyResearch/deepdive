@@ -11,15 +11,15 @@ DeepDive. The example application is [the spouse example](../basics/walkthrough/
 This document assumes you are familiar with basic concepts in DeepDive and the
 spouse application tutorial.
 
-Incremental workflow is currently supported only on Postgres and MySQL, but not on Greenplum or Postgres-XL.
+Incremental workflow is currently supported only on PostgreSQL.
 
 ## Incremental application workflow
 
-In building knowledge base construction, a typical scenario is the user has
+In building knowledge base construction systems, a typical scenario is the user has
 already built a knowledge base application, and wants to try new features or add
-new data. We call the base case *materialization phase*, and the iterative process
-of adding features or data *incremental phase*. The user will run materialization
-phase to  materialize the base factor graph, and can run multiple incremental
+new inference rules. We call the base case *materialization phase*, and the iterative process
+of adding features or inference rules *incremental phase*. The user runs the *materialization phase*
+to materialize the base factor graph, and can run multiple incremental
 phase on top of the base factor  graph. Each incremental run is independent and
 is relative to the base run. Once the user is satisfied with the incremental
 experiments, the user can run  *merge phase* to merge the incremental part into
@@ -28,7 +28,7 @@ the base part. The workflow can be summarized as follows.
 1. Preprocess and load data.
 2. Write the DDlog program.
 3. Run *materialization phase* to materialize the base factor graph.
-4. Add features or add new data.
+4. Add features or inference rules.
 5. Run *incremental phase*.
 6. Repeat 4 and 5 until satisfied.
 7. Run *merge phase* to merge the incremental part into the base part.
@@ -40,7 +40,7 @@ The incremental version of the spouse example is under [`examples/spouse_example
 The only difference is that all the arrays are transformed into string using array_to_string with delimiter '~^~' due to DDlog's limited support for array type.
 You can follow the [corresponding section in the original walkthrough](../basics/walkthrough/walkthrough.html#loading_data) to load the data.
 
-Alternatively, you can try the handy scripts included incremental example we include in the source tree.
+Alternatively, you can try the handy scripts included in the incremental example provided in the source tree.
 
 ```bash
 cd examples/spouse_example/postgres/incremental
@@ -58,17 +58,17 @@ Let's assume you have put the DDlog program shown below in a file named `spouse_
 </script>
 
 In this walkthrough, we demonstrate an incremental development workflow by adding new features.
-In the udf `ext_has_spouse_features.f1.py`, suppose you had only feature 1 at the time of materialization phase.
-Then, suppose you want to try feature 2 as an incremental phase.
+In the udf `ext_has_spouse_features.f1.py`, suppose you have only feature 1 at the time of materialization phase.
+Then, you want to try feature 2 as an incremental phase.
 
 Note that the [`run.sh` included in the incremental example](https://github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/incremental/run.sh) takes care of compiling a given DDlog program into a particular mode.
 
 
 ### Materialization Phase
 
-Materialization phase is basically for taking a snapshot of the current model that serves as a base for the following incremental phases.
+The materialization phase is basically taking a snapshot of the current model that serves as a base for the subsequent incremental phases.
 You need to specify which variables and inference rules you are going to vary in the following incremental phases.
-They are called active variables and active inference rules, and the names can be put into files `spouse_example.f1.active.vars` and `spouse_example.f1.active.rules`.
+They are called active variables and active inference rules, and the names should be put into the files `spouse_example.f1.active.vars` and `spouse_example.f1.active.rules`.
 
 <script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/incremental/spouse_example.f1.active.vars?footer=minimal">
 </script>
@@ -83,28 +83,26 @@ There is a script included in the example, and the materialization phase can be 
 ```
 
 It will do the following:
-1. The DDlog program `spouse_example.f1.ddlog` is compiled.
-2. The `extraction` and `inference` pipelines are run.
-3. A materialized base factor graph is produced under `./inc-base.out/` under the application directory.
+1. Compile the DDlog program `spouse_example.f1.ddlog`.
+2. Run the `extraction` and `inference` pipelines.
+3. Produce a materialized base factor graph under `inc-base.out/` under the application directory.
 
 
 ### Incremental Phase
 
-In the incremental phase, suppose you added feature 2 to your udf, `ext_has_spouse_features.f2.py`.
-Let's say you saved this modified udf in a file named `ext_has_spouse_features.f2.ddlog`.
+In the incremental phase, suppose you add feature 2 to your udf, and save this modified udf in a file named `ext_has_spouse_features.f2.py`.
 
 <script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/incremental/udf/ext_has_spouse_features.f2.py?footer=minimal&slice=27:39">
 </script>
 
 
-You need to mark in the DDlog program which udf has been modified to produce the correct incremental pipeline.
-Let's say you saved this modified DDlog program in a file named `spouse_example.f2.ddlog`.
+You need to mark in the DDlog program which rule corresponds to the added features to produce the correct incremental pipeline.
 
-<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/incremental/spouse_example.f2.ddlog?footer=minimal&slice=54:58">
+<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/incremental/spouse_example.f2.ddlog?footer=minimal&slice=58:65">
 </script>
 
 
-Finally, there is also a script included in the example, so the incremental phase can be done as simple as running the following command:
+There is also a script for the incremental phase included in the example and can be executed as follows:
 
 ```bash
 ./2-incremental_phase.sh spouse_example.f2.ddlog ./inc-base.out/ ./inc-f1+f2.out/
@@ -125,7 +123,7 @@ You need to run the following command before running another incremental phase:
 
 ### Merge Phase
 
-Once you decide to keep the current version, you can merge the incremental part into the base with the `--merge` mode:
+Once you decide to keep the current version, you can merge the incremental part into the base by using the `--merge` mode:
 
 ```bash
 ./4-merge.sh spouse_example.f1.ddlog ./inc-base.out/
