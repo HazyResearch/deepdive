@@ -319,7 +319,7 @@ The following directives are only for the `json_extractor`, `tsv_extractor`, and
   guide](extractors.html) for details about the requirements for the UDF for
   different styles of extractors.
 
-For more information about different types of extractors can be found in ['Writing extractors' guide](extractors.html).
+Here ['Writing extractors' guide] you find examples to write and debug different types of extractors.
 
 ## <a name="inference-opt" href="#"></a> Inference
 
