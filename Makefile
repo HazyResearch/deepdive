@@ -44,7 +44,7 @@ release-%: GITHUB_REPO = HazyResearch/deepdive
 release-%: RELEASE_VERSION = $*
 release-%: RELEASE_PACKAGE = deepdive-$(RELEASE_VERSION)-$(shell uname).tar.gz
 release-%:
-	git tag --force $(RELEASE_VERSION)
+	git tag --annotate --force $(RELEASE_VERSION)
 	$(MAKE) RELEASE_VERSION=$(RELEASE_VERSION) $(PACKAGE)
 	ln -sfn $(PACKAGE) $(RELEASE_PACKAGE)
 	# Releasing $(RELEASE_PACKAGE) to GitHub
