@@ -114,7 +114,8 @@ for pkg in btree_gin btree_gist earthdistance fuzzystrmatch hstore intagg intarr
 pg_buffercache pgcrypto pgxc_clean pgxc_ctl pgxc_ddl pgxc_monitor stormstats \
 tablefunc tsearch2 unaccent; do
     cd $BUILD_DIR/postgres-xl/contrib/$pkg
-    make; make install
+    make || continue
+    make install
 done
 
 
