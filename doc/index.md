@@ -201,7 +201,6 @@ and
     - [Using DeepDive on Ubuntu](doc/advanced/ubuntu.html)
     - [Using DeepDive on Amazon EC2](doc/advanced/ec2.html)
     - [Using DeepDive on Docker](doc/advanced/docker.html)
-    - [Performance tuning](doc/advanced/performance.html) <small>(outdated)</small>
 - References
     - [`deepdive.conf` Reference](doc/basics/configuration.html)
     - [High-speed sampler](doc/basics/sampler.html)
