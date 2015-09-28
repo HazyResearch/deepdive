@@ -62,11 +62,15 @@ fi
 ## find the output directory for this run of the application
 # either use the path specified in DEEPDIVE_OUTPUT environment or command-line option -o, or create a fresh run directory by default
 if [[ -n "${DEEPDIVE_OUTPUT:-}" ]]; then
-    run_id=$(cd "$DEEPDIVE_OUTPUT" && pwd)
-    run_dir=$run_id
+    run_id=$DEEPDIVE_OUTPUT
+    run_dir=$(if [[ "$run_id" = /* ]]; then
+           echo $run_id
+        else
+           echo $DEEPDIVE_APP/$run_id
+        fi)
 else
     run_id=$(date +%Y%m%d/%H%M%S.%N)
-    run_dir=run/$run_id
+    run_dir=$DEEPDIVE_APP/run/$run_id
 fi
 mkdir -p "$run_dir"
 DEEPDIVE_OUTPUT=$(cd "$run_dir" && pwd)
@@ -123,7 +127,7 @@ export APP_HOME=$DEEPDIVE_APP
 
 ## run DeepDive
 # JVM directly executes everything currently
-java org.deepdive.Main -c "$fullConfig" -o "$DEEPDIVE_APP/$run_dir"
+java org.deepdive.Main -c "$fullConfig" -o "$run_dir"
 
 # point to the run with LATEST symlink
 ln -sfn "$run_id" run/LATEST
