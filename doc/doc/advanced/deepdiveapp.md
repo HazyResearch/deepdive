@@ -16,10 +16,23 @@ A DeepDive application is a directory that contains the following files and dire
 * `db.url`
 
     A URL representing the database configuration is supposed to be stored in this file.
-    For example, `postgresql://user:password@localhost:5432/database_name` can be the line stored in it.
+    For example, the following URL can be the line stored in it:
 
-    [SSL connections for PostgreSQL](https://jdbc.postgresql.org/documentation/91/ssl.html) can be enabled by setting parameter `ssl` as true in the URL, e.g.,  `postgresql://user:password@localhost:5432/database_name?ssl=true`.
-    If you use a self-signed certificate, you may want to disable validation with an extra `sslfactory` parameter: `postgresql://user:password@localhost:5432/database_name?ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory`.
+    ```
+    postgresql://user:password@localhost:5432/database_name
+    ```
+
+    [SSL connections for PostgreSQL](https://jdbc.postgresql.org/documentation/91/ssl.html) can be enabled by setting parameter `ssl` as true in the URL, e.g.:
+
+    ```
+    postgresql://user:password@localhost:5432/database_name?ssl=true
+    ```
+
+    If you use a self-signed certificate, you may want to disable validation with an extra `sslfactory` parameter:
+
+    ```
+    postgresql://user:password@localhost:5432/database_name?ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory
+    ```
 
 * `deepdive.conf`
 
@@ -61,6 +74,7 @@ There are several operations that are frequently performed on a DeepDive applica
 Any of the following command can be run under any subdirectory of a DeepDive application to perform a certain operation.
 
 To see all options for each command, such as specifying alternative configuration file for running, see the online help message with the `deepdive help` command.  For example:
+
 ```bash
 deepdive help run
 ```
@@ -118,6 +132,7 @@ deepdive sql "SELECT doc_id, COUNT(*) FROM sentences GROUP BY doc_id"
 ```
 
 To get the result as tab-separated values (TSV), or comma-separated values (CSV), use the following command:
+
 ```bash
 deepdive sql eval "SELECT doc_id, COUNT(*) FROM sentences GROUP BY doc_id" format=tsv
 deepdive sql eval "SELECT doc_id, COUNT(*) FROM sentences GROUP BY doc_id" format=csv header=1
