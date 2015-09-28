@@ -319,7 +319,8 @@ The following directives are only for the `json_extractor`, `tsv_extractor`, and
   guide](extractors.html) for details about the requirements for the UDF for
   different styles of extractors.
 
-Here ['Writing extractors' guide] you find examples to write and debug different types of extractors.
+- Depending on the extractor style, additional directives may be necessary, such as `sql`, `cmd`, `parallelism`, `input_batch_size`, and `output_batch_size`.  Refer to the ['Writing extractors' guide](extractors.html) for details.
+
 
 ## <a name="inference-opt" href="#"></a> Inference
 
