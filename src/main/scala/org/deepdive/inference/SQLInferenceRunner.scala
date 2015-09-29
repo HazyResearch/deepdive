@@ -977,7 +977,10 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
     // THEO edit:
     // output feature statistics file
-    generateFeatureStats(du,dbSettings, groundingPath, groundingDir)
+    dbSettings.features match {
+      case true => generateFeatureStats(du,dbSettings, groundingPath, groundingDir)
+      case false => 
+    }
 
     // generate active compoenents for incremental
     dbSettings.incrementalMode match {

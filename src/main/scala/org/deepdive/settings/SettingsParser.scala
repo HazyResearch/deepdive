@@ -75,6 +75,7 @@ object SettingsParser extends Logging {
         |  gppath: ""
         |  gpload: false
         |  incremental_mode: ORIGINAL
+	|  features: false
         |}
         |
         |schema {
@@ -118,6 +119,7 @@ object SettingsParser extends Logging {
         gppath = gppath,
         gpport = dbConfig.getString("gpport"),
         gpload = dbConfig.getBoolean("gpload") || config.getBoolean("inference.parallel_grounding"),
+        features = dbConfig.getBoolean("features"),
         incrementalMode = dbConfig.getString("incremental_mode") match {
           case "INCREMENTAL" => IncrementalMode.INCREMENTAL
           case "MATERIALIZATION" => IncrementalMode.MATERIALIZATION

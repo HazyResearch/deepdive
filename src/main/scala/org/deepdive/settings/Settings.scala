@@ -50,6 +50,7 @@ case class DbSettings(
   gppath: String = null,
   gpport: String = null,
   gpload: Boolean = false,
+  features: Boolean = false,
   incrementalMode: IncrementalMode.IncrementalMode = IncrementalMode.ORIGINAL,
   keyMap: Map[String, List[String]] = null
 )
