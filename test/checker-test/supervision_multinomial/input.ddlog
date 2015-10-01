@@ -1,0 +1,4 @@
+Q?(x int) Categorical(10).
+R(x int, label int).
+
+Q(x) = label :- R(x, label).

@@ -8,14 +8,13 @@ source "$BATS_TEST_DIRNAME"/../bats-template.bash  # for $TESTDIR, $it, etc.
 # some preconditions
 setup() {
     [ -e "$TESTDIR" ]
-    expectedError="$TESTDIR"/compile-error.expected
-    [ -e "$expectedError" ]
-    actualError=${expectedError%.expected}.actual
 }
 
 # check if input produces a compile error
-@test "$it compiles input" {
+@test "$it should produce an expected compilation error" {
+    expectedError="$TESTDIR"/compile-error.expected
+    [ -e "$expectedError" ] || skip
+    actualError=${expectedError%.expected}.actual
     ! ddlog check "$TESTDIR"/input.ddlog >/dev/null 2>"$actualError"
     diff "$expectedError" "$actualError"
 }
-
