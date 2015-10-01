@@ -1,0 +1,23 @@
+#!/usr/bin/env bats
+# Tests that should pass the semantic checker
+#
+# The test case here feeds a correct .ddlog into ddlog's check command.
+
+source "$BATS_TEST_DIRNAME"/../bats-template.bash  # for $TESTDIR, $it, etc.
+
+# some preconditions
+setup() {
+    [ -e "$TESTDIR" ]
+}
+
+# test if input passes the checker
+@test "$it should pass semantic checker" {
+    expectedError="$TESTDIR"/check.expected
+    if [ -e "$expectedError" ]; then
+        actualError=${expectedError%.expected}.actual
+        ddlog check "$TESTDIR"/input.ddlog >/dev/null 2>"$actualError"
+        diff "$expectedError" "$actualError"
+    else
+        ddlog check "$TESTDIR"/input.ddlog
+    fi
+}

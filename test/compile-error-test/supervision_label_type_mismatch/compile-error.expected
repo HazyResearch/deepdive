@@ -1,0 +1,4 @@
+[error] Supervision column label should be boolean type, but is text type
+Q(x) = label :-
+    R(x, label).
+
