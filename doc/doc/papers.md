@@ -6,6 +6,10 @@ root: "."
 
 # Papers
 
+#### DeepDive System Overview
+
+- *Best Reference:* [DeepDive: A Data Management System for Automatic Knowledge Base Construction.](http://pages.cs.wisc.edu/~czhang/zhang.thesis.pdf) Ce Zhang.Ph.D. Dissertation, University of Wisconsin-Madison, 2015.
+
 #### Applications
 
 - *Best Reference:* [Machine-compiled Macroevolutionary History of Phanerozoic Life.](http://arxiv.org/abs/1406.2963)
