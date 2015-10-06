@@ -420,10 +420,13 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
   // output feature statistics file
   def generateFeatureStats(du: DataLoader, dbSettings: DbSettings, groundingPath: String, groundingDir: String) {
    du.unload(s"src_feature.meta", s"${groundingPath}/src_feature.meta", dbSettings,
-             s"""SELECT id AS weight_id, t1.metadata AS metadata
-              FROM (SELECT * FROM dd_weights_f_source_stock_feature_false UNION SELECT * FROM dd_weights_f_source_stock_feature_true) as t0,
+             s"""SELECT id AS weight_id, table_name, t1.metadata AS metadata
+              FROM (
+                (SELECT \"source_features.feature\" AS feature_name, id, 'false_features' AS table_name FROM dd_weights_f_source_stock_feature_false) 
+                UNION 
+                (SELECT \"source_features.feature\" AS feature_name, id, 'true_features' AS table_name FROM dd_weights_f_source_stock_feature_true)) as t0,
               (SELECT feature, metadata FROM feature_metadata) as t1
-              WHERE t1.feature = t0.\"source_features.feature\";""", groundingDir)
+              WHERE t1.feature = t0.feature_name;""", groundingDir)
   }
 
   def generateAcitve(groundingPath: String) {
