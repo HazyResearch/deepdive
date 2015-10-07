@@ -25,10 +25,11 @@ libraryDependencies ++= List(
   "com.typesafe.play" %% "play-json" % "2.2.1",
   "mysql" % "mysql-connector-java" % "5.1.12",
   "net.sf.opencsv" % "opencsv" % "2.3",
-  "org.postgresql" % "postgresql" % "9.2-1003-jdbc4",
+  "org.postgresql" % "postgresql" % "9.4-1203-jdbc4",
   "org.scalatest" % "scalatest_2.10" % "2.0.RC2" % "test",
   "org.scalikejdbc" %% "scalikejdbc" % "[1.7,)",
   "org.scalikejdbc" %% "scalikejdbc-config" % "[1.7,)",
+  "org.apache.commons" % "commons-dbcp2" % "2.1.1",
   "play" %% "anorm" % "2.1.5"
 )
 

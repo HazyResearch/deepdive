@@ -17,10 +17,17 @@ trait JdbcDataStore extends Logging {
   def DB = scalikejdbc.DB
 
   /* Borrows a connection from the connection pool. You should close the connection when done. */
-  def borrowConnection() : Connection = ConnectionPool.borrow()
+  def borrowConnection() : Connection = {
+    val c = ConnectionPool.borrow()
+    sys.env.get("DEEPDIVE_SCHEMA") match {
+      case Some(schema) => c.setSchema(schema)
+      case None =>
+    } 
+    c
+  }
 
   /* Executes a block with a borrowed connection */
-  def withConnection[A](block: Connection => A) = using(ConnectionPool.borrow())(block)
+  def withConnection[A](block: Connection => A) = using(borrowConnection())(block)
 
   /* Closes the connection pool and all of its connections */
   def close() = ConnectionPool.closeAll()
@@ -110,7 +117,7 @@ trait JdbcDataStore extends Logging {
     val tuples = data.map { tuple =>
       columnNames.map(c => tuple.get(c).orElse(tuple.get(c.toLowerCase)).getOrElse(null))
     }.toSeq
-    val conn = ConnectionPool.borrow()
+    val conn = borrowConnection()
     val ps = conn.prepareStatement(s"""INSERT INTO ${outputRelation} (${columnNames.mkString(", ")})
       VALUES (${columnValues.mkString(", ")})""")
     try {
@@ -439,7 +446,8 @@ trait JdbcDataStore extends Logging {
 object JdbcDataStoreObject extends JdbcDataStore with Logging {
 
   class JdbcDBsWithEnv(envValue: String, configObj: Config) extends DBsWithEnv(envValue) {
-    override lazy val config = configObj
+    override lazy val config = configObj.withValue("deepdive.db.default.poolFactoryName",
+      ConfigValueFactory.fromAnyRef("commons-dbcp2"))
   }
 
   /* Initializes the data stores */
