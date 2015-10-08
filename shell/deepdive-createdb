@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# deepdive-initdb -- Initializes the underlying database for the DeepDive application
+# > deepdive initdb
+##
+set -eu
+
+# find the current application
+DEEPDIVE_APP=$(find-deepdive-app)
+export DEEPDIVE_APP
+cd "$DEEPDIVE_APP"
+
+. load-db-driver.sh
+
+# make sure database is created based on the database type
+db-init "$@"
+

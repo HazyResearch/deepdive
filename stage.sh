@@ -40,6 +40,7 @@ stage shell/parse-url.sh                                          util/
 stage shell/error                                                 util/
 stage shell/usage                                                 util/
 
+stage shell/deepdive-createdb                                     util/
 stage shell/deepdive-initdb                                       util/
 stage shell/deepdive-run                                          util/
 stage shell/deepdive-sql                                          util/

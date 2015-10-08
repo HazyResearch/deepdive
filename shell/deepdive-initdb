@@ -12,7 +12,7 @@ cd "$DEEPDIVE_APP"
 . load-db-driver.sh
 
 # make sure database is created based on the database type
-db-init "$@"
+#db-init "$@"
 
 # create schema
 DEEPDIVE_SCHEMA=${DEEPDIVE_SCHEMA:-}
