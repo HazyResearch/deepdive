@@ -56,7 +56,7 @@ trait PostgresInferenceRunnerComponent extends SQLInferenceRunnerComponent {
           WHERE ${columnName}=true GROUP BY bucket) b2 ON b1.bucket = b2.bucket
         LEFT JOIN (SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView}
           WHERE ${columnName}=false GROUP BY bucket) b3 ON b1.bucket = b3.bucket
-        ORDER BY b1.bucket ASC;
+        ORDER BY b1.bucket ASC
         """
 
     /**
@@ -71,7 +71,7 @@ trait PostgresInferenceRunnerComponent extends SQLInferenceRunnerComponent {
           WHERE ${columnName} = category GROUP BY bucket) b2 ON b1.bucket = b2.bucket
         LEFT JOIN (SELECT bucket, COUNT(*) AS num_incorrect from ${bucketedView}
           WHERE ${columnName} != category GROUP BY bucket) b3 ON b1.bucket = b3.bucket
-        ORDER BY b1.bucket ASC;
+        ORDER BY b1.bucket ASC
         """
   }
 }

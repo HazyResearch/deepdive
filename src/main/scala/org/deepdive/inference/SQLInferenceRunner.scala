@@ -154,7 +154,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
   def selectCalibrationDataSQL(name: String) = s"""
     SELECT bucket as "bucket", num_variables AS "num_variables",
       num_correct AS "num_correct", num_incorrect AS "num_incorrect"
-    FROM ${name};
+    FROM ${name}
   """
 
   def createMappedWeightsViewSQL = s"""
