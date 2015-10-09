@@ -22,6 +22,38 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
   // XXX make sure the outputDir is there, otherwise some tests fail
   new File(org.deepdive.Context.outputDir).mkdirs()
 
+  def bulkInsert(outputRelation: String, data: Iterator[Map[String, Any]])(implicit session: DBSession) = {
+    val columnNames = DB.getColumnNames(outputRelation).sorted
+    val columnValues = columnNames.map (x => "?")
+    val tuples = data.map { tuple =>
+      columnNames.map(c => tuple.get(c).orElse(tuple.get(c.toLowerCase)).getOrElse(null))
+    }.toSeq
+    val conn = dataStoreHelper.borrowConnection()
+    val ps = conn.prepareStatement(s"""INSERT INTO ${outputRelation} (${columnNames.mkString(", ")})
+      VALUES (${columnValues.mkString(", ")})""")
+    try {
+      for (tuple <- tuples) {
+        for((value, index) <- tuple.view.zipWithIndex) {
+          value match {
+            case z:Boolean => ps.setBoolean(index + 1, z)
+            case z:Byte => ps.setByte(index + 1, z)
+            case z:Int => ps.setInt(index + 1, z)
+            case z:Long => ps.setLong(index + 1, z)
+            case z:Float => ps.setFloat(index + 1, z)
+            case z:Double => ps.setDouble(index + 1, z)
+            case z:String => ps.setString(index + 1, z)
+            //case z:Date => ps.setDate(index + 1, z)
+            case z => ps.setObject(index + 1, z)
+          }
+        }
+        ps.addBatch()
+      }
+      ps.executeBatch()
+    } finally {
+      conn.close()
+    }
+  }
+
   /**********************
    * Note id must not be the first column,
    * since the first column is the distribution key in greenplum,
@@ -83,7 +115,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         // Insert sample data in first table
         SQL(s"""CREATE TABLE t1(is_correct boolean, id
           bigint);""").execute.apply()
-        dataStoreHelper.bulkInsert("t1", data_1.iterator)
+        bulkInsert("t1", data_1.iterator)
 
         // Create empty second table
         SQL(s"""CREATE TABLE t2(is_correct boolean, id
@@ -97,7 +129,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         // Insert sample data in third table
         SQL(s"""CREATE TABLE t3(is_correct boolean, id
           bigint);""").execute.apply()
-        dataStoreHelper.bulkInsert("t3", data_3.iterator)
+        bulkInsert("t3", data_3.iterator)
 
         // Define schema
         val schema = Map[String, VariableDataType]("t1.is_correct" ->
@@ -135,7 +167,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val data = (1 to 100).map { i =>
           Map("id" -> i, "is_correct" -> s"${i%2==0}".toBoolean)
         }
-        dataStoreHelper.bulkInsert("r1", data.iterator)
+        bulkInsert("r1", data.iterator)
 
         val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
 
@@ -194,7 +226,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val data = (1 to 100).map { i =>
           Map("id" -> i, "is_correct" -> s"${i%2==0}".toBoolean)
         }
-        dataStoreHelper.bulkInsert("r1", data.iterator)
+        bulkInsert("r1", data.iterator)
 
         val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
 
@@ -253,7 +285,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val data = (1 to 100).map { i =>
           Map("id" -> i, "weight" -> s"weight_${i}", "is_correct" -> s"${i%2==0}".toBoolean)
         }
-        dataStoreHelper.bulkInsert("r1", data.iterator)
+        bulkInsert("r1", data.iterator)
 
         val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
 
@@ -306,7 +338,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val data = (1 to 100).map { i =>
           Map("id" -> i, "weight" -> i, "is_correct" -> s"${i%2==0}".toBoolean)
         }
-        dataStoreHelper.bulkInsert("r1", data.iterator)
+        bulkInsert("r1", data.iterator)
 
         val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
 
@@ -349,7 +381,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val data = (1 to 100).map { i =>
           Map("id" -> i, "weight" -> i, "is_correct" -> s"${i%2==0}".toBoolean)
         }
-        dataStoreHelper.bulkInsert("r1", data.iterator)
+        bulkInsert("r1", data.iterator)
 
         val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
 
@@ -392,7 +424,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val data = (1 to 100).map { i =>
           Map("id" -> i, "weight" -> s"weight_${i}", "is_correct" -> s"${i%2==0}".toBoolean)
         }
-        dataStoreHelper.bulkInsert("r1", data.iterator)
+        bulkInsert("r1", data.iterator)
 
         val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
 
@@ -432,7 +464,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val data = (1 to 100).map { i =>
           Map("id" -> i, "is_correct" -> s"${i%2==0}".toBoolean)
         }
-        dataStoreHelper.bulkInsert("r1", data.iterator)
+        bulkInsert("r1", data.iterator)
 
         val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
 
@@ -471,8 +503,8 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
           Map("id" -> i, "weight" -> s"weight_${i}", "is_correct" -> s"${i%3==0}".toBoolean)
         }
 
-        dataStoreHelper.bulkInsert("r1", data1.iterator)
-        dataStoreHelper.bulkInsert("r2", data2.iterator)
+        bulkInsert("r1", data1.iterator)
+        bulkInsert("r2", data2.iterator)
 
         val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType, "r2.is_correct" -> BooleanType)
         val factorDesc = FactorDesc(
@@ -539,7 +571,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val data = (1 to 100).map { i =>
           Map("id" -> i, "weight" -> s"weight_${i}", "is_correct" -> s"${i%2==0}".toBoolean)
         }
-        dataStoreHelper.bulkInsert("r1", data.iterator)
+        bulkInsert("r1", data.iterator)
 
         val dbSettingsMat = dbSettings.copy(
           incrementalMode = IncrementalMode.MATERIALIZATION,
@@ -605,7 +637,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         }
         SQL(s"""CREATE VIEW dd_new_r1 AS SELECT * FROM r1 UNION
           SELECT * FROM dd_delta_r1;""").execute.apply()
-        dataStoreHelper.bulkInsert("dd_delta_r1", deltaData.iterator)
+        bulkInsert("dd_delta_r1", deltaData.iterator)
         val keyMap = Map[String, List[String]]("dd_delta_r1" -> List("weight"))
 
         val dbSettingsInc = DbSettings(dbSettings.driver, dbSettings.url, dbSettings.user,
@@ -659,7 +691,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val data = (1 to 100).map { i =>
           Map("id" -> i, "weight" -> s"weight_${i}", "class" -> i%3)
         }
-        dataStoreHelper.bulkInsert("r1", data.iterator)
+        bulkInsert("r1", data.iterator)
 
         val dbSettingsMat = dbSettings.copy(
           incrementalMode = IncrementalMode.MATERIALIZATION,
@@ -725,7 +757,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         }
         SQL(s"""CREATE VIEW dd_new_r1 AS SELECT * FROM r1 UNION
           SELECT * FROM dd_delta_r1;""").execute.apply()
-        dataStoreHelper.bulkInsert("dd_delta_r1", deltaData.iterator)
+        bulkInsert("dd_delta_r1", deltaData.iterator)
         val keyMap = Map[String, List[String]]("dd_delta_r1" -> List("weight"))
 
         val dbSettingsInc = dbSettings.copy(
@@ -773,18 +805,18 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
     describe("grounding the factor graph with Multinomial variables") {
 
-      it("should work with weight variables that are null")
-      {
+      it("should work with weight variables that are null") {
         cancelUnlessPostgres()
         inferenceRunner.init()
 
         // Create table with multinomial data
-        SQL(s"""CREATE TABLE r1(weight text,
+        SQL(
+          s"""CREATE TABLE r1(weight text,
           value bigint, id bigint);""").execute.apply()
         val data = (1 to 100).map { i =>
-          Map("id" -> i, "weight" -> s"weight_${i}", "value" -> (i%4))
+          Map("id" -> i, "weight" -> s"weight_${i}", "value" -> (i % 4))
         }
-        dataStoreHelper.bulkInsert("r1", data.iterator)
+        bulkInsert("r1", data.iterator)
 
         // Define the schema
         val schema = Map[String, VariableDataType]("r1.value" -> MultinomialType(4))
@@ -806,7 +838,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
           observationQuery = None
         ), false, "", dbSettings)
 
-        val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceRunner.WeightsTable}""")
+        val numWeights = SQL( s"""SELECT COUNT(*) AS "count" FROM ${inferenceRunner.WeightsTable}""")
           .map(rs => rs.long("count")).single.apply().get
         assert(numWeights === 4)
 
@@ -828,7 +860,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val data = (1 to 100).map { i =>
           Map("id" -> i, "weight" -> s"weight_${i%4}", "value" -> (i%4))
         }
-        dataStoreHelper.bulkInsert("r1", data.iterator)
+        bulkInsert("r1", data.iterator)
 
         // Define the schema
         val schema = Map[String, VariableDataType]("r1.value" -> MultinomialType(4))
@@ -872,7 +904,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val data = (1 to 100).map { i =>
           Map("id" -> i, "value" -> (i%4))
         }
-        dataStoreHelper.bulkInsert("r1", data.iterator)
+        bulkInsert("r1", data.iterator)
 
         // Define the schema
         val schema = Map[String, VariableDataType]("r1.value" -> MultinomialType(4))
@@ -924,7 +956,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val data = (1 to 100).map { i =>
           Map("id" -> i, "value" -> (i%4))
         }
-        dataStoreHelper.bulkInsert("r1", data.iterator)
+        bulkInsert("r1", data.iterator)
 
         // Define the schema
         val schema = Map[String, VariableDataType]("r1.value" -> MultinomialType(4))

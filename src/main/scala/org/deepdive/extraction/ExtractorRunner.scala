@@ -119,17 +119,9 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
       task.extractor.style match {
 
         case "json_extractor" =>
-          if (dbtype != Psql) {
-            failTask(s"do not support ${task.extractor.style} on ${dbtype}.", taskSender)
-          }
-
-          // Start the children workers
-          val workers = startWorkers(task)
-
-          // Schedule the input data to be sent to myself.
-          // We will then forward the data to our workers
-          Future { sendData(task, workers, taskSender) }
-          goto(Running) using Task(task, sender, workers)
+          failTask(s"${task.extractor.style} no longer supported.", taskSender)
+          runAfterScript(task, taskSender)
+          // TODO support json_extractor again using `deepdive-sql eval ... format=json`
 
         // TSV extractor: Get rid of scala file operations
         // COPY to a file, split files, and send to extractors
@@ -228,68 +220,6 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
       taskSender ! "Done!"
       stop
 
-  }
-
-  /* Starts all workers, watches them, and returns a round-robin fashion router */
-  private def startWorkers(task: ExtractionTask) : Router = {
-    log.info(s"Starting ${task.extractor.parallelism} children process workers")
-    // Start workers according to the specified parallelism
-    val workers = (1 to task.extractor.parallelism).map { i =>
-      val worker = context.actorOf(workerProps, s"processExecutor${i}")
-      // Deathwatch
-      context.watch(worker)
-      ActorRefRoutee(worker)
-    }
-    val router = Router(RoundRobinRoutingLogic(), workers)
-
-    // Send start broadcast to all workers
-    val startMessage = ProcessExecutor.Start(task.extractor.udf, task.extractor.outputBatchSize)
-    router.route(Broadcast(startMessage), self)
-    router
-
-  }
-
-  /* Queries the data store and gets all the data */
-  private def sendData(task: ExtractionTask, workers: Router, taskSender: ActorRef) {
-    log.info(s"Getting data from the data store and sending it to the workers. query='${task.extractor.inputQuery}'")
-    // Figure out where to get the input from
-    val extractorInput = task.extractor.inputQuery match {
-      case CSVInputQuery(filename, seperator) =>
-        FileDataUtils.queryAsJson[Unit](filename, seperator) _
-      case DatastoreInputQuery(query) =>
-        val totalBatchSize = workers.routees.size * task.extractor.inputBatchSize
-        dataStore.queryAsJson[Unit](query, Option(totalBatchSize)) _
-    }
-
-    // Forward output to the workers
-    try {
-      extractorInput {
-        iterator =>
-          val batchSize = workers.routees.size * task.extractor.inputBatchSize
-          iterator map (_.toString) grouped (batchSize) foreach {
-            chunk =>
-              val futures = chunk.grouped(task.extractor.inputBatchSize).map {
-                batch =>
-                  val msg = ProcessExecutor.Write(batch.mkString("\n"))
-                  val destinationWorker = workers.logic.select(msg, workers.routees).asInstanceOf[ActorRefRoutee].ref
-                  destinationWorker ? msg
-              }
-              val allRouteeAcks = Future.sequence(futures)
-              // Wait for all workers to write the data to the output stream to avoid overloading them
-              Await.result(allRouteeAcks, 1337.hours)
-          }
-      }
-    } catch {
-      case exception: Throwable =>
-        log.error(exception.toString)
-        taskSender ! Status.Failure(exception)
-        context.stop(self)
-        throw exception
-    }
-
-    // Notify all workers that they don't receive more data
-    workers.route(Broadcast(ProcessExecutor.CloseInputStream), self)
-    log.debug("all data was sent to workers.")
   }
 
 
