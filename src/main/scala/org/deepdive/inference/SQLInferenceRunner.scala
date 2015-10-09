@@ -21,7 +21,6 @@
 package org.deepdive.inference
 
 import java.io.{File, PrintWriter}
-import org.deepdive.calibration._
 import org.deepdive.datastore.JdbcDataStore
 import org.deepdive.datastore.DataLoader
 import org.deepdive.Logging
@@ -113,15 +112,6 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     ORDER BY mir.expectation DESC);
   """
 
-  def createBucketedCalibrationViewSQL(name: String, inferenceViewName: String, buckets: List[Bucket]) = {
-    val bucketCaseStatement = buckets.zipWithIndex.map { case(bucket, index) =>
-      s"WHEN expectation >= ${bucket.from} AND expectation <= ${bucket.to} THEN ${index}"
-    }.mkString("\n")
-    s"""CREATE OR REPLACE VIEW ${name} AS
-      SELECT ${inferenceViewName}.*, CASE ${bucketCaseStatement} END bucket
-      FROM ${inferenceViewName} ORDER BY bucket ASC;"""
-  }
-
   /**
    *  Create indexes for query table to speed up grounding. (this is useful for MySQL)
    *  Behavior may varies depending on different DBMS.
@@ -135,27 +125,6 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
    * on the join condition column.
    */
   def createIndexForJoinOptimization(relation: String, column: String) : Unit
-
-  /**
-   * This query is datastore-specific since it creates a view whose
-   * SELECT contains a subquery in the FROM clause.
-   * In Mysql the subqueries have to be created as views first.
-   */
-  def createCalibrationViewBooleanSQL(name: String, bucketedView: String, columnName: String) : String
-
-  /**
-   * This query is datastore-specific since it creates a view whose
-   * SELECT contains a subquery in the FROM clause.
-   */
-  def createCalibrationViewMultinomialSQL(name: String, bucketedView: String, columnName: String) : String
-
-  // end data store specific query
-
-  def selectCalibrationDataSQL(name: String) = s"""
-    SELECT bucket as "bucket", num_variables AS "num_variables",
-      num_correct AS "num_correct", num_incorrect AS "num_incorrect"
-    FROM ${name};
-  """
 
   def createMappedWeightsViewSQL = s"""
     CREATE OR REPLACE VIEW ${LearnedWeightsTable} AS
@@ -1010,33 +979,4 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     }
   }
 
-  def getCalibrationData(variable: String, dataType: VariableDataType,
-    buckets: List[Bucket]) : Map[Bucket, BucketData] = {
-
-    val Array(relationName, columnName) = variable.split('.')
-    val inferenceViewName = s"${relationName}_${columnName}_inference"
-    val bucketedViewName = s"${relationName}_${columnName}_inference_bucketed"
-    val calibrationViewName = s"${relationName}_${columnName}_calibration"
-
-    execute(createBucketedCalibrationViewSQL(bucketedViewName, inferenceViewName, buckets))
-    log.info(s"created calibration_view=${calibrationViewName}")
-    dataType match {
-      case BooleanType =>
-        execute(createCalibrationViewBooleanSQL(calibrationViewName, bucketedViewName, columnName))
-      case MultinomialType(_) =>
-        execute(createCalibrationViewMultinomialSQL(calibrationViewName, bucketedViewName, columnName))
-    }
-
-    val bucketData = dataStore.selectAsMap(selectCalibrationDataSQL(calibrationViewName)).map { row =>
-      val bucket = row("bucket")
-      val data = BucketData(
-        row.get("num_variables").map(_.asInstanceOf[Long]).getOrElse(0),
-        row.get("num_correct").map(_.asInstanceOf[Long]).getOrElse(0),
-        row.get("num_incorrect").map(_.asInstanceOf[Long]).getOrElse(0))
-      (bucket, data)
-    }.toMap
-    buckets.zipWithIndex.map { case (bucket, index) =>
-      (bucket, bucketData.get(index).getOrElse(BucketData(0,0,0)))
-    }.toMap
-  }
 }

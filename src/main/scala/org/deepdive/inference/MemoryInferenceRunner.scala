@@ -2,7 +2,6 @@ package org.deepdive.inference
 
 import au.com.bytecode.opencsv.{CSVWriter, CSVReader}
 import java.io.{File, FileWriter, FileReader}
-import org.deepdive.calibration._
 import org.deepdive.Logging
 import org.deepdive.settings._
 import scala.collection.mutable.{Map => MMap}
@@ -27,10 +26,6 @@ trait MemoryInferenceRunnerComponent extends InferenceRunnerComponent{
 
     def writebackInferenceResult(variableSchema: Map[String, _ <: VariableDataType],
       variableOutputFile: String, weightsOutputFile: String, dbSettings: DbSettings) : Unit = {
-    }
-
-    def getCalibrationData(variable: String, dataType: VariableDataType, buckets: List[Bucket]) : Map[Bucket, BucketData] = {
-      return Map[Bucket, BucketData]()
     }
 
   }

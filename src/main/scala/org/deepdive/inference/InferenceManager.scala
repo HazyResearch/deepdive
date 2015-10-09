@@ -6,7 +6,6 @@ import akka.pattern.{ask, pipe}
 import akka.util.Timeout
 import java.io.File
 import org.deepdive.TaskManager
-import org.deepdive.calibration._
 import org.deepdive.settings.{FactorDesc, VariableDataType}
 import org.deepdive.Context
 import org.deepdive.settings._
@@ -29,8 +28,6 @@ trait InferenceManager extends Actor with ActorLogging {
   def taskManager: ActorRef
   // Describes how to start the sampler
   def samplerProps : Props = Sampler.props
-  // Describes how to start the calibration data writer
-  def calibrationDataWriterProps = CalibrationDataWriter.props
 
   lazy val factorGraphDumpFileWeights = new File(s"${Context.outputDir}/graph.weights")
   lazy val factorGraphDumpFileVariables = new File(s"${Context.outputDir}/graph.variables")
@@ -71,19 +68,6 @@ trait InferenceManager extends Actor with ActorLogging {
       val result = runInference(factorDescs, holdoutFraction, holdoutQuery,
         samplerJavaArgs, samplerOptions, pipelineSettings, dbSettings)
       result pipeTo _sender
-
-    case InferenceManager.WriteCalibrationData =>
-      val _sender = sender
-      log.info("writing calibration data")
-      val calibrationWriter = context.actorOf(calibrationDataWriterProps)
-      // Get and write calibraton data for each variable
-      val futures = variableSchema.map { case(variable, dataType) =>
-        val filename = s"${Context.outputDir}/calibration/${variable}.tsv"
-        val data = inferenceRunner.getCalibrationData(variable, dataType, Bucket.ten)
-        calibrationWriter ? CalibrationDataWriter.WriteCalibrationData(filename, data)
-      }
-      Future.sequence(futures) pipeTo _sender
-      calibrationWriter ! PoisonPill
   }
 
   def runInference(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String],
@@ -140,7 +124,5 @@ object InferenceManager {
   // Runs the sampler with the given arguments
   case class RunInference(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String],
     samplerJavaArgs: String, samplerOptions: String, pipelineSettings: PipelineSettings, dbSettings: DbSettings)
-  // Writes calibration data to predefined files
-  case object WriteCalibrationData
 
 }

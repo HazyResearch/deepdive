@@ -1,7 +1,6 @@
 package org.deepdive.inference
 
 import org.deepdive.settings.FactorFunctionVariable
-import org.deepdive.calibration._
 import org.deepdive.settings._
 import java.io.File
 
@@ -29,13 +28,6 @@ trait InferenceRunner {
      */
     def writebackInferenceResult(variableSchema: Map[String, _ <: VariableDataType],
         variableOutputFile: String, weightsOutputFile: String, dbSettings: DbSettings) : Unit
-
-
-    /*
-     * Gets calibration data for the given buckets.
-     * writebackInferenceResult must be called before this method can be called.
-     */
-    def getCalibrationData(variable: String, dataType: VariableDataType, buckets: List[Bucket]) : Map[Bucket, BucketData]
 
 }
 

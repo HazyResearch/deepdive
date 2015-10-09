@@ -2,7 +2,6 @@ package org.deepdive.test.unit
 
 import akka.actor._
 import akka.testkit._
-import org.deepdive.calibration._
 import org.deepdive.inference._
 import org.deepdive.helpers.Helpers
 import org.deepdive.test.helpers._
@@ -26,7 +25,6 @@ class TestInferenceManager(
   )
   extends InferenceManager with MemoryInferenceRunnerComponent {
     override def samplerProps  = Props(classOf[Forwarder], samplerProbe)
-    override def calibrationDataWriterProps = Props(classOf[Forwarder], cdwProbe)
   }
 
 class InferenceManagerSpec(_system: ActorSystem) extends TestKit(_system) with FunSpecLike with ImplicitSender {
@@ -55,20 +53,6 @@ class InferenceManagerSpec(_system: ActorSystem) extends TestKit(_system) with F
       sampler.expectMsgClass(classOf[Sampler.Run])
       sampler.reply("Done")
       expectMsg(())
-    }
-  }
-
-  describe("Writing calibration data") {
-    it("should work") {
-      val actor = TestActorRef(actorProps)
-      actor ! InferenceManager.WriteCalibrationData
-      cdw.expectMsgClass(classOf[CalibrationDataWriter.WriteCalibrationData])
-      cdw.reply("Done")
-      cdw.expectMsgClass(classOf[CalibrationDataWriter.WriteCalibrationData])
-      cdw.reply("Done")
-      cdw.expectMsgClass(classOf[CalibrationDataWriter.WriteCalibrationData])
-      cdw.reply("Done")
-      expectMsg(List("Done", "Done", "Done"))
     }
   }
 

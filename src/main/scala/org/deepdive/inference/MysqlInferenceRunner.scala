@@ -3,7 +3,6 @@ package org.deepdive.inference
 import anorm._
 import au.com.bytecode.opencsv.CSVWriter
 import java.io._
-import org.deepdive.calibration._
 import org.deepdive.datastore._
 import org.deepdive.Logging
 import org.deepdive.settings._
@@ -140,27 +139,6 @@ trait MysqlInferenceRunnerComponent extends SQLInferenceRunnerComponent {
       PREPARE stmt FROM @sqlstmt;
       EXECUTE stmt;
     """
-    }
-
-    /**
-     * Calibration is very slow in MySQL so we materialize it and create indexes
-     */
-    override def createBucketedCalibrationViewSQL(name: String,
-        inferenceViewName: String, buckets: List[Bucket]) = {
-      val bucketCaseStatement = buckets.zipWithIndex.map {
-        case (bucket, index) =>
-          s"WHEN expectation >= ${bucket.from} AND expectation <= ${bucket.to} THEN ${index}"
-      }.mkString("\n")
-      s"""
-      DROP TABLE IF EXISTS ${name} CASCADE;
-
-      CREATE TABLE ${name} AS
-      SELECT ${inferenceViewName}.*, CASE ${bucketCaseStatement} END bucket
-      FROM ${inferenceViewName} ORDER BY bucket ASC;
-
-      CREATE INDEX ${name}_bucket_idx ON ${name}(bucket);
-
-      """
     }
 
     /**

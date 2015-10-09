@@ -10,7 +10,6 @@ import org.deepdive.extraction.{ExtractionManager, ExtractionTask}
 import org.deepdive.inference.{InferenceManager}
 import org.deepdive.inference.InferenceNamespace
 import org.deepdive.profiling._
-import org.deepdive.calibration._
 import scala.concurrent.duration._
 import scala.concurrent.{Future, Await}
 import scala.language.postfixOps
@@ -92,9 +91,6 @@ object DeepDive extends Logging {
         settings.samplerSettings.samplerArgs, settings.pipelineSettings, settings.dbSettings),
         inferenceManager, true)
 
-    val calibrationTask = Task("calibration", List("inference"),
-      InferenceManager.WriteCalibrationData, inferenceManager)
-
     val reportingTask = Task("report", List("calibration") ++ extractionTasks.map(_.id), Profiler.PrintReports, profiler, false)
 
     val terminationTask = Task("shutdown", List("report"), TaskManager.Shutdown, taskManager, false)
@@ -108,7 +104,7 @@ object DeepDive extends Logging {
         List(reportingTask, terminationTask)
       case _ =>
         extractionTasks ++ Seq(groundFactorGraphTask) ++
-        List(inferenceTask, calibrationTask, reportingTask, terminationTask)
+        List(inferenceTask, reportingTask, terminationTask)
     }
 
     // Create a default pipeline that executes all tasks

@@ -1,7 +1,6 @@
 package org.deepdive.test.unit
 
 import java.io.{File, FileOutputStream}
-import org.deepdive.calibration._
 import org.deepdive.inference._
 import org.deepdive.test._
 import org.scalatest._
@@ -983,51 +982,6 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
       }
 
     }
-
-    describe ("Getting the calibration data") {
-
-
-      it("should work for Boolean variables") {
-        cancelUnlessPostgres()
-        SQL(s"""create table t1_c1_inference(id bigint, c1 boolean,
-          category bigint, expectation double precision)""").execute.apply()
-        SQL("""insert into t1_c1_inference(c1, category, expectation) VALUES
-          (null, null, 0.31), (null, null, 0.93), (null, null, 0.97),
-          (false, null, 0.0), (true, null, 0.77), (true, null, 0.81)""").execute.apply()
-        val buckets = Bucket.ten
-        val result = inferenceRunner.getCalibrationData("t1.c1", BooleanType, buckets)
-        assert(result == buckets.zip(List(
-          BucketData(1, 0, 1),
-          BucketData(0, 0, 0),
-          BucketData(0, 0, 0),
-          BucketData(1, 0, 0),
-          BucketData(0, 0, 0),
-          BucketData(0, 0, 0),
-          BucketData(0, 0, 0),
-          BucketData(1, 1, 0),
-          BucketData(1, 1, 0),
-          BucketData(2, 0, 0)
-        )).toMap)
-      }
-
-      it("should work for categorical variables") {
-        cancelUnlessPostgres()
-         SQL(s"""create table t1_c1_inference(id bigint, c1 bigint,
-          category bigint, expectation double precision)""").execute.apply()
-         SQL("""insert into t1_c1_inference(c1, category, expectation) VALUES
-          (null, 0, 0.55), (null, 1, 0.55), (null, 2, 0.55),
-          (0, 0, 0.65), (0, 1, 0.95), (0, 2, 0.95),
-          (1, 0, 0.85), (1, 1, 0.95), (1, 2, 0.95)""").execute.apply()
-        val buckets = Bucket.ten
-        val result = inferenceRunner.getCalibrationData("t1.c1", MultinomialType(3), buckets)
-        assert(result(buckets(5)) == BucketData(3, 0, 0))
-        assert(result(buckets(6)) == BucketData(1, 1, 0))
-        assert(result(buckets(8)) == BucketData(1, 0, 1))
-        assert(result(buckets(9)) == BucketData(4, 1, 3))
-      }
-
-    }
-
   }
 
 }
