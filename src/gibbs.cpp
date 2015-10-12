@@ -1,5 +1,6 @@
 
 #include "gibbs.h"
+#include <cmath>
 
 /*
  * Parse input arguments
@@ -26,6 +27,16 @@ dd::CmdParser parse_input(int argc, char** argv){
   dd::CmdParser cmd_parser(app_name.c_str());
   cmd_parser.parse(new_args.size(), new_argv);
   return cmd_parser;
+}
+
+// compute number of NUMA-aware epochs for learning or inference
+int compute_n_epochs(int n_epoch, int n_numa_node, int n_datacopy) {
+  int n_valid_node = n_numa_node;
+  if (n_datacopy >= 1 && n_datacopy <= n_numa_node + 1) {
+    n_valid_node = n_datacopy;
+  }
+
+  return std::ceil((double)n_epoch / n_valid_node);
 }
 
 /**
@@ -102,8 +113,7 @@ void inc(dd::CmdParser & cmd_parser){
   // number of learning epochs
   // the factor graph is copied on each NUMA node, so the total epochs =
   // epochs specified / number of NUMA nodes
-  int numa_aware_n_learning_epoch = (int)(n_learning_epoch/n_numa_node) + 
-                            (n_learning_epoch%n_numa_node==0?0:1);
+  int numa_aware_n_learning_epoch = compute_n_epochs(n_learning_epoch, n_numa_node, n_datacopy);
 
   // learning
   gibbs.learn(numa_aware_n_learning_epoch, n_samples_per_learning_epoch, 
@@ -113,8 +123,7 @@ void inc(dd::CmdParser & cmd_parser){
   gibbs.dump_weights(is_quiet, 2);
 
   // number of inference epochs
-  int numa_aware_n_epoch = (int)(n_inference_epoch/n_numa_node) + 
-                            (n_inference_epoch%n_numa_node==0?0:1);
+  int numa_aware_n_epoch = compute_n_epochs(n_inference_epoch, n_numa_node, n_datacopy);
 
   // inference
   gibbs.inference(numa_aware_n_epoch, is_quiet, false, true);
@@ -172,8 +181,7 @@ void mat(dd::CmdParser & cmd_parser){
   // number of learning epochs
   // the factor graph is copied on each NUMA node, so the total epochs =
   // epochs specified / number of NUMA nodes
-  int numa_aware_n_learning_epoch = (int)(n_learning_epoch/n_numa_node) + 
-                            (n_learning_epoch%n_numa_node==0?0:1);
+  int numa_aware_n_learning_epoch = compute_n_epochs(n_learning_epoch, n_numa_node, n_datacopy);
 
   // learning
   gibbs.learn(numa_aware_n_learning_epoch, n_samples_per_learning_epoch, 
@@ -183,8 +191,7 @@ void mat(dd::CmdParser & cmd_parser){
   gibbs.dump_weights(is_quiet, 1);
 
   // number of inference epochs
-  int numa_aware_n_epoch = (int)(n_inference_epoch/n_numa_node) + 
-                            (n_inference_epoch%n_numa_node==0?0:1);
+  int numa_aware_n_epoch = compute_n_epochs(n_inference_epoch, n_numa_node, n_datacopy);
 
   // inference
   gibbs.inference(numa_aware_n_epoch, is_quiet, true, false);
@@ -284,8 +291,7 @@ void gibbs(dd::CmdParser & cmd_parser){
   // number of learning epochs
   // the factor graph is copied on each NUMA node, so the total epochs =
   // epochs specified / number of NUMA nodes
-  int numa_aware_n_learning_epoch = (int)(n_learning_epoch/n_numa_node) + 
-                            (n_learning_epoch%n_numa_node==0?0:1);
+  int numa_aware_n_learning_epoch = compute_n_epochs(n_learning_epoch, n_numa_node, n_datacopy);
 
   // learning
   gibbs.learn(numa_aware_n_learning_epoch, n_samples_per_learning_epoch, 
@@ -295,8 +301,7 @@ void gibbs(dd::CmdParser & cmd_parser){
   gibbs.dump_weights(is_quiet, 0);
 
   // number of inference epochs
-  int numa_aware_n_epoch = (int)(n_inference_epoch/n_numa_node) + 
-                            (n_inference_epoch%n_numa_node==0?0:1);
+  int numa_aware_n_epoch = compute_n_epochs(n_inference_epoch, n_numa_node, n_datacopy);
 
   // inference
   gibbs.inference(numa_aware_n_epoch, is_quiet, false, false);
