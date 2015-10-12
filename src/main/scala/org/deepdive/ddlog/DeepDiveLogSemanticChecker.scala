@@ -187,7 +187,7 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
 
   def checkSupervisionLabelType(stmt: Statement) {
     stmt match {
-      case s: ExtractionRule if schemaDeclaration contains s.headName => {
+      case s: ExtractionRule if (schemaDeclaration contains s.headName) && (schemaDeclaration(s.headName).variableType nonEmpty) => {
         val headType = schemaDeclaration(s.headName).variableType.get
         s.supervision match {
           case Some("TRUE") | Some("FALSE") => {

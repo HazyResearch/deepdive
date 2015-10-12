@@ -58,7 +58,9 @@ trait DeepDiveLogHandler {
     // run handler with the parsed program
     run(parsedProgram, config)
   } catch {
-    case e: RuntimeException => die(e.getMessage)
+    case e: RuntimeException =>
+      if (sys.env contains "DDLOG_STACK_TRACE") throw e
+      else die(e.getMessage)
   }
 
   def parseFiles(fileNames: List[String]): DeepDiveLog.Program = {
