@@ -212,8 +212,42 @@ FROM R R0
         }
       
 deepdive.pipeline.run: ${PIPELINE}
-deepdive.pipeline.pipelines.initdb: [init_S, init_R, init_Q, init_T]
-deepdive.pipeline.pipelines.extraction: [ext2_T_by_f, ext_S_by_f_1, ext_S_by_f, ext1_S_by_f, ext_T_by_f_1, ext1_T_by_f, ext_S, ext_T_by_f]
-deepdive.pipeline.pipelines.inference: [inf_istrue_Q, inf1_istrue_Q, inf_imply_Q_Q, inf1_imply_Q_Q]
-deepdive.pipeline.pipelines.endtoend: [ext2_T_by_f, ext_S_by_f_1, ext_S_by_f, ext1_S_by_f, ext_T_by_f_1, ext1_T_by_f, ext_S, ext_T_by_f, inf_istrue_Q, inf1_istrue_Q, inf_imply_Q_Q, inf1_imply_Q_Q]
-deepdive.pipeline.pipelines.cleanup: [cleanup]
+deepdive.pipeline.pipelines.initdb: [
+  init_S
+  init_R
+  init_Q
+  init_T
+]
+deepdive.pipeline.pipelines.extraction: [
+  ext2_T_by_f
+  ext_S_by_f_1
+  ext_S_by_f
+  ext1_S_by_f
+  ext_T_by_f_1
+  ext1_T_by_f
+  ext_S
+  ext_T_by_f
+]
+deepdive.pipeline.pipelines.inference: [
+  inf_istrue_Q
+  inf1_istrue_Q
+  inf_imply_Q_Q
+  inf1_imply_Q_Q
+]
+deepdive.pipeline.pipelines.endtoend: [
+  ext2_T_by_f
+  ext_S_by_f_1
+  ext_S_by_f
+  ext1_S_by_f
+  ext_T_by_f_1
+  ext1_T_by_f
+  ext_S
+  ext_T_by_f
+  inf_istrue_Q
+  inf1_istrue_Q
+  inf_imply_Q_Q
+  inf1_imply_Q_Q
+]
+deepdive.pipeline.pipelines.cleanup: [
+  cleanup
+]

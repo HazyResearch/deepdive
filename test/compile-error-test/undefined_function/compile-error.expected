@@ -1,4 +1,4 @@
 [error] function "ext" is not defined
-Q += ext(x)  :-
+Q += ext(x) :-
     a(x).
 

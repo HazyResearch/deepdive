@@ -21,7 +21,7 @@ c.label: Boolean
       }
     
 
-          deepdive.extraction.extractors.extraction_rule_3 {
+          deepdive.extraction.extractors.init_e {
             sql: """ DROP TABLE IF EXISTS e CASCADE;
             CREATE TABLE
             e(k int,
@@ -31,7 +31,7 @@ c.label: Boolean
             style: "sql_extractor"
           }
 
-          deepdive.extraction.extractors.extraction_rule_4 {
+          deepdive.extraction.extractors.init_f {
             sql: """ DROP TABLE IF EXISTS f CASCADE;
             CREATE TABLE
             f(k int,
@@ -41,7 +41,7 @@ c.label: Boolean
             style: "sql_extractor"
           }
 
-          deepdive.extraction.extractors.extraction_rule_0 {
+          deepdive.extraction.extractors.init_a {
             sql: """ DROP TABLE IF EXISTS a CASCADE;
             CREATE TABLE
             a(k int,
@@ -51,7 +51,7 @@ c.label: Boolean
             style: "sql_extractor"
           }
 
-          deepdive.extraction.extractors.extraction_rule_5 {
+          deepdive.extraction.extractors.init_b {
             sql: """ DROP TABLE IF EXISTS b CASCADE;
             CREATE TABLE
             b(k int,
@@ -61,7 +61,7 @@ c.label: Boolean
             style: "sql_extractor"
           }
 
-          deepdive.extraction.extractors.extraction_rule_1 {
+          deepdive.extraction.extractors.init_c {
             sql: """ DROP TABLE IF EXISTS c CASCADE;
             CREATE TABLE
             c(k int,
@@ -71,7 +71,7 @@ c.label: Boolean
             style: "sql_extractor"
           }
 
-          deepdive.extraction.extractors.extraction_rule_2 {
+          deepdive.extraction.extractors.init_d {
             sql: """ DROP TABLE IF EXISTS d CASCADE;
             CREATE TABLE
             d(k int,
@@ -93,7 +93,7 @@ c.label: Boolean
           style: "sql_extractor"
         }
 
-        deepdive.inference.factors.inference_rule_0 {
+        deepdive.inference.factors.inf_istrue_a {
           input_query: """
           SELECT R0.id AS "a.R0.id" , (R0.k + R1.p) AS "dd_weight_column_0" 
           FROM a R0, b R1
@@ -103,7 +103,7 @@ c.label: Boolean
         }
       
 
-        deepdive.inference.factors.inference_rule_1 {
+        deepdive.inference.factors.inf_istrue_c {
           input_query: """
           SELECT R0.id AS "c.R0.id" 
           FROM c R0, b R1
@@ -113,7 +113,7 @@ c.label: Boolean
         }
       
 
-        deepdive.inference.factors.inference_rule_2 {
+        deepdive.inference.factors.inf_istrue_d {
           input_query: """
           SELECT R0.id AS "d.R0.id" , R0.k AS "dd_weight_column_0" , R1.p AS "dd_weight_column_1" 
           FROM d R0, b R1
@@ -123,7 +123,7 @@ c.label: Boolean
         }
       
 
-        deepdive.inference.factors.inference_rule_3 {
+        deepdive.inference.factors.inf_istrue_e {
           input_query: """
           SELECT R0.id AS "e.R0.id" 
           FROM e R0, b R1
@@ -133,7 +133,7 @@ c.label: Boolean
         }
       
 
-        deepdive.inference.factors.inference_rule_4 {
+        deepdive.inference.factors.inf_istrue_f {
           input_query: """
           SELECT R0.id AS "f.R0.id" 
           FROM f R0, b R1
@@ -143,7 +143,28 @@ c.label: Boolean
         }
       
 deepdive.pipeline.run: ${PIPELINE}
-deepdive.pipeline.pipelines.initdb: [extraction_rule_3, extraction_rule_4, extraction_rule_0, extraction_rule_5, extraction_rule_1, extraction_rule_2]
-deepdive.pipeline.pipelines.inference: [inference_rule_0, inference_rule_1, inference_rule_2, inference_rule_3, inference_rule_4]
-deepdive.pipeline.pipelines.endtoend: [inference_rule_0, inference_rule_1, inference_rule_2, inference_rule_3, inference_rule_4]
-deepdive.pipeline.pipelines.cleanup: [cleanup]
+deepdive.pipeline.pipelines.initdb: [
+  init_e
+  init_f
+  init_a
+  init_b
+  init_c
+  init_d
+]
+deepdive.pipeline.pipelines.inference: [
+  inf_istrue_a
+  inf_istrue_c
+  inf_istrue_d
+  inf_istrue_e
+  inf_istrue_f
+]
+deepdive.pipeline.pipelines.endtoend: [
+  inf_istrue_a
+  inf_istrue_c
+  inf_istrue_d
+  inf_istrue_e
+  inf_istrue_f
+]
+deepdive.pipeline.pipelines.cleanup: [
+  cleanup
+]

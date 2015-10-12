@@ -332,9 +332,55 @@ FROM dd_delta_R R0
         }
       
 deepdive.pipeline.run: ${PIPELINE}
-deepdive.pipeline.pipelines.initdb: [init_dd_new_S, init_dd_delta_T, init_dd_new_T, init_dd_delta_S, init_dd_new_R, init_dd_delta_R, init_dd_new_Q, init_dd_delta_Q]
-deepdive.pipeline.pipelines.extraction: [ext_dd_new_R, ext_dd_delta_T_by_f, ext1_dd_delta_T_by_f, ext2_dd_delta_T_by_f, ext_dd_delta_S, ext_dd_new_T, ext_dd_new_S, ext_dd_delta_S_by_f, ext_dd_new_Q, ext_dd_delta_S_by_f_1, ext_dd_delta_T_by_f_1, ext1_dd_delta_S_by_f]
-deepdive.pipeline.pipelines.inference: [dd_delta_inf_istrue_Q, dd_delta_inf1_istrue_Q, dd_delta_inf_imply_Q_Q, dd_delta_inf1_imply_Q_Q]
-deepdive.pipeline.pipelines.endtoend: [ext_dd_new_R, ext_dd_delta_T_by_f, ext1_dd_delta_T_by_f, ext2_dd_delta_T_by_f, ext_dd_delta_S, ext_dd_new_T, ext_dd_new_S, ext_dd_delta_S_by_f, ext_dd_new_Q, ext_dd_delta_S_by_f_1, ext_dd_delta_T_by_f_1, ext1_dd_delta_S_by_f, dd_delta_inf_istrue_Q, dd_delta_inf1_istrue_Q, dd_delta_inf_imply_Q_Q, dd_delta_inf1_imply_Q_Q]
-deepdive.pipeline.pipelines.cleanup: [cleanup]
+deepdive.pipeline.pipelines.initdb: [
+  init_dd_new_S
+  init_dd_delta_T
+  init_dd_new_T
+  init_dd_delta_S
+  init_dd_new_R
+  init_dd_delta_R
+  init_dd_new_Q
+  init_dd_delta_Q
+]
+deepdive.pipeline.pipelines.extraction: [
+  ext_dd_new_R
+  ext_dd_delta_T_by_f
+  ext1_dd_delta_T_by_f
+  ext2_dd_delta_T_by_f
+  ext_dd_delta_S
+  ext_dd_new_T
+  ext_dd_new_S
+  ext_dd_delta_S_by_f
+  ext_dd_new_Q
+  ext_dd_delta_S_by_f_1
+  ext_dd_delta_T_by_f_1
+  ext1_dd_delta_S_by_f
+]
+deepdive.pipeline.pipelines.inference: [
+  dd_delta_inf_istrue_Q
+  dd_delta_inf1_istrue_Q
+  dd_delta_inf_imply_Q_Q
+  dd_delta_inf1_imply_Q_Q
+]
+deepdive.pipeline.pipelines.endtoend: [
+  ext_dd_new_R
+  ext_dd_delta_T_by_f
+  ext1_dd_delta_T_by_f
+  ext2_dd_delta_T_by_f
+  ext_dd_delta_S
+  ext_dd_new_T
+  ext_dd_new_S
+  ext_dd_delta_S_by_f
+  ext_dd_new_Q
+  ext_dd_delta_S_by_f_1
+  ext_dd_delta_T_by_f_1
+  ext1_dd_delta_S_by_f
+  dd_delta_inf_istrue_Q
+  dd_delta_inf1_istrue_Q
+  dd_delta_inf_imply_Q_Q
+  dd_delta_inf1_imply_Q_Q
+]
+deepdive.pipeline.pipelines.cleanup: [
+  cleanup
+]
 deepdive.pipeline.base_dir: ${BASEDIR}

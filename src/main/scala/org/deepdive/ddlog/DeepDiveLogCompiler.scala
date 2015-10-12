@@ -785,16 +785,16 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
   // generate application.conf pipelines
   def compilePipelines(ss: CompilationState): CompiledBlocks = {
     val run = "deepdive.pipeline.run: ${PIPELINE}"
-    val setup_database_pipeline = ((ss.schemaDeclarationGroupByHead map (_._2)).flatten map {s => ss.resolveExtractorBlockName(s)}).mkString(", ")
-    val initdb = if (setup_database_pipeline.length > 0) s"deepdive.pipeline.pipelines.initdb: [${setup_database_pipeline}]" else ""
-    val extraction = (ss.visible map {s => ss.resolveExtractorBlockName(s)}).mkString(", ")
-    val extraction_pipeline = if (extraction.length > 0) s"deepdive.pipeline.pipelines.extraction: [${extraction}]" else ""
-    val inference = (ss.inferenceRules map {s => ss.resolveInferenceBlockName(s)}).mkString(", ")
-    val inference_pipeline = if (inference.length > 0) s"deepdive.pipeline.pipelines.inference: [${inference}]" else ""
-    val endtoend = List(extraction, inference).filter(_ != "").mkString(", ")
-    val endtoend_pipeline = if (endtoend.length > 0) s"deepdive.pipeline.pipelines.endtoend: [${endtoend}]" else ""
+    val setup_database_pipeline = ((ss.schemaDeclarationGroupByHead map (_._2)).flatten map {s => ss.resolveExtractorBlockName(s)}).mkString("\n  ")
+    val initdb = if (setup_database_pipeline.length > 0) s"deepdive.pipeline.pipelines.initdb: [\n  ${setup_database_pipeline}\n]" else ""
+    val extraction = (ss.visible map {s => ss.resolveExtractorBlockName(s)}).mkString("\n  ")
+    val extraction_pipeline = if (extraction.length > 0) s"deepdive.pipeline.pipelines.extraction: [\n  ${extraction}\n]" else ""
+    val inference = (ss.inferenceRules map {s => ss.resolveInferenceBlockName(s)}).mkString("\n  ")
+    val inference_pipeline = if (inference.length > 0) s"deepdive.pipeline.pipelines.inference: [\n  ${inference}\n]" else ""
+    val endtoend = List(extraction, inference).filter(_ != "").mkString("\n  ")
+    val endtoend_pipeline = if (endtoend.length > 0) s"deepdive.pipeline.pipelines.endtoend: [\n  ${endtoend}\n]" else ""
     val cleanup_pipeline = ss.mode match {
-      case INCREMENTAL | ORIGINAL => if (setup_database_pipeline.length > 0) s"deepdive.pipeline.pipelines.cleanup: [cleanup]" else ""
+      case INCREMENTAL | ORIGINAL => if (setup_database_pipeline.length > 0) s"deepdive.pipeline.pipelines.cleanup: [\n  cleanup\n]" else ""
       case _ => ""
     }
     val base_dir = ss.mode match {

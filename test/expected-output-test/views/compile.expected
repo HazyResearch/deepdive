@@ -17,7 +17,7 @@
       }
     
 
-          deepdive.extraction.extractors.extraction_rule_0 {
+          deepdive.extraction.extractors.init_R {
             sql: """ DROP TABLE IF EXISTS R CASCADE;
             CREATE TABLE
             R(a int,
@@ -33,7 +33,7 @@
           style: "sql_extractor"
         }
 
-      deepdive.extraction.extractors.extraction_rule_1 {
+      deepdive.extraction.extractors.ext_A {
         sql: """ DROP VIEW IF EXISTS A;
         CREATE VIEW A AS SELECT R0.a AS column_0, (R0.a + R0.b) AS column_1
 FROM R R0
@@ -44,18 +44,28 @@ FROM R R0
       }
     
 
-      deepdive.extraction.extractors.extraction_rule_2 {
+      deepdive.extraction.extractors.ext_B {
         sql: """ DROP VIEW IF EXISTS B;
         CREATE VIEW B AS SELECT R0.column_0 AS column_0, R1.b AS column_1
 FROM A R0, R R1
         WHERE R1.a = R0.column_1 
         """
         style: "sql_extractor"
-          dependencies: [ "extraction_rule_1" ]
+          dependencies: [ "ext_A" ]
       }
     
 deepdive.pipeline.run: ${PIPELINE}
-deepdive.pipeline.pipelines.initdb: [extraction_rule_0]
-deepdive.pipeline.pipelines.extraction: [extraction_rule_1, extraction_rule_2]
-deepdive.pipeline.pipelines.endtoend: [extraction_rule_1, extraction_rule_2]
-deepdive.pipeline.pipelines.cleanup: [cleanup]
+deepdive.pipeline.pipelines.initdb: [
+  init_R
+]
+deepdive.pipeline.pipelines.extraction: [
+  ext_A
+  ext_B
+]
+deepdive.pipeline.pipelines.endtoend: [
+  ext_A
+  ext_B
+]
+deepdive.pipeline.pipelines.cleanup: [
+  cleanup
+]

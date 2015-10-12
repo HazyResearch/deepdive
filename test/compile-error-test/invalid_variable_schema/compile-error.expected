@@ -1,6 +1,6 @@
 [error] variable relation contains reserved column "id" 
 c?(id int,
-  s text,
-  n int,
-  t text).
+   s text,
+   n int,
+   t text).
 

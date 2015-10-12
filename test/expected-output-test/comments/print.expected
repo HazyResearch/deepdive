@@ -4,6 +4,6 @@ S(a int,
   b text,
   c float).
 
-R(x)  :-
+R(x) :-
     S(x, y, z).
 

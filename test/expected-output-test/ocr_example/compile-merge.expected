@@ -17,7 +17,7 @@
       }
     
 
-      deepdive.extraction.extractors.extraction_rule_2 {
+      deepdive.extraction.extractors.ext_label2 {
         sql: """ TRUNCATE label2;
         INSERT INTO label2 SELECT R0.wid, R0.val
 FROM dd_new_label2 R0
@@ -28,7 +28,7 @@ FROM dd_new_label2 R0
       }
     
 
-      deepdive.extraction.extractors.extraction_rule_1 {
+      deepdive.extraction.extractors.ext_label1 {
         sql: """ TRUNCATE label1;
         INSERT INTO label1 SELECT R0.wid, R0.val
 FROM dd_new_label1 R0
@@ -39,7 +39,7 @@ FROM dd_new_label1 R0
       }
     
 
-      deepdive.extraction.extractors.extraction_rule_0 {
+      deepdive.extraction.extractors.ext_features {
         sql: """ TRUNCATE features;
         INSERT INTO features SELECT R0.id, R0.word_id, R0.feature_id, R0.feature_val
 FROM dd_new_features R0
@@ -50,5 +50,13 @@ FROM dd_new_features R0
       }
     
 deepdive.pipeline.run: ${PIPELINE}
-deepdive.pipeline.pipelines.extraction: [extraction_rule_2, extraction_rule_1, extraction_rule_0]
-deepdive.pipeline.pipelines.endtoend: [extraction_rule_2, extraction_rule_1, extraction_rule_0]
+deepdive.pipeline.pipelines.extraction: [
+  ext_label2
+  ext_label1
+  ext_features
+]
+deepdive.pipeline.pipelines.endtoend: [
+  ext_label2
+  ext_label1
+  ext_features
+]

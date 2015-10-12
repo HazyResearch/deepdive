@@ -13,22 +13,22 @@ b(k int,
   q text).
 
 @weight((x + y))
-a(x)  :-
+a(x) :-
     b(x, y, _).
 
 @weight("string")
-c(x)  :-
+c(x) :-
     b(x, y, _).
 
 @weight(x, y)
-d(x)  :-
+d(x) :-
     b(x, y, _).
 
 @weight(-10)
-e(x)  :-
+e(x) :-
     b(x, y, _).
 
 @weight(-0.3)
-f(x)  :-
+f(x) :-
     b(x, y, _).
 
