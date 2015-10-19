@@ -149,7 +149,9 @@ class PostgresDataStore extends JdbcDataStore with Logging {
     if (isUsingGreenplum()) {
       executeSqlQueries(s"SELECT fast_seqassign('${table.toLowerCase()}', ${startId});");
     } else if (isUsingPostgresXL) {
-      executeSqlQueries(s"SELECT copy_table_assign_ids_replace('public', '${table}', 'id', ${startId});");
+      val conn = borrowConnection()
+      executeSqlQueries(s"SELECT copy_table_assign_ids_replace('${conn.getSchema()}', '${table}', 'id', ${startId});");
+      conn.close()
     } else {
       executeSqlQueries(s"UPDATE ${table} SET id = nextval('${sequence}');")
     }
@@ -162,7 +164,9 @@ class PostgresDataStore extends JdbcDataStore with Logging {
 
   override def assignIdsOrdered(table: String, startId: Long, sequence: String, orderBy: String = "") : Long = {
     if (isUsingPostgresXL) {
-      executeSqlQueries(s"SELECT copy_table_assign_ids_replace('public', '${table}', 'id', ${startId}, '${orderBy}');");
+      val conn = borrowConnection()
+      executeSqlQueries(s"SELECT copy_table_assign_ids_replace('${conn.getSchema()}', '${table}', 'id', ${startId}, '${orderBy}');");
+      conn.close()
     } else {
       throw new UnsupportedOperationException()
     }
