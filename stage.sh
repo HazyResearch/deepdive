@@ -46,11 +46,11 @@ stage shell/deepdive-sql                                          util/
 stage shell/deepdive-load                                         util/
 
 stage shell/load-db-driver.sh                                     util/
-stage shell/driver.postgresql                                     util/
-stage shell/driver.greenplum                                      util/
-stage shell/driver.postgresql-xl                                  util/
-stage shell/driver.mysql                                          util/
-stage shell/driver.mysqlcluster                                   util/
+stage shell/db-driver/postgresql                                  util/db-driver/
+stage shell/db-driver/greenplum                                   util/db-driver/
+stage shell/db-driver/postgresql-xl                               util/db-driver/
+stage shell/db-driver/mysql                                       util/db-driver/
+stage shell/db-driver/mysqlcluster                                util/db-driver/
 
 # DeepDive core
 stage target/scala-2.10/deepdive-assembly-*.jar                   lib/deepdive.jar || true  # when testing, .jar may be missing
