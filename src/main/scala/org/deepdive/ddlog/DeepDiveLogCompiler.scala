@@ -136,13 +136,48 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
     throw new RuntimeException(message)
   }
 
+  def optionalIndex(idx: Int) =
+    if (idx < 1) "" else s"${idx}"
+
   // Given a statement, resolve its name for the compiled extractor block.
-  def resolveExtractorBlockName(s: Statement): String = s"extraction_rule_${statements indexOf s}"
+  def resolveExtractorBlockName(s: Statement): String = s match {
+    case d: SchemaDeclaration => s"init_${d.a.name}"
+    case e: ExtractionRule => s"ext_${e.headName}"
+    case f: FunctionCallRule => s"ext${
+      // Extra numbering is necessary because there can be many function calls to the same head relation
+      // XXX This comes right after the prefix to prevent potential collision with user's name
+      val functionCallsForSameOutputAndFunction =
+        (functionCallRuleGroupByOutput getOrElse(f.output, Set.empty) toList).filter (_.function == f.function)
+      val idx = functionCallsForSameOutputAndFunction indexOf f
+      optionalIndex(idx)
+    }_${f.output}_by_${f.function}"
+    case _ => sys.error(s"${s}: Cannot determine extractor block name for rule")
+  }
 
   // Given an inference rule, resolve its name for the compiled inference block.
-  def resolveInferenceBlockName(s: InferenceRule): String = mode match {
-    case INCREMENTAL => s"dd_delta_inference_rule_${inferenceRules indexOf s}"
-    case _ =>           s"inference_rule_${inferenceRules indexOf s}"
+  def resolveInferenceBlockName(s: InferenceRule): String = {
+    val factorFuncName: String = s.head.function.toString.toLowerCase
+    val idxInInferenceRulesSharingHead = inferenceRules filter(_.head equals s.head) indexOf(s)
+    mode match {
+      case INCREMENTAL => s"dd_delta_inf${
+        // XXX This comes right after the prefix to prevent potential collision with user's name
+        optionalIndex(idxInInferenceRulesSharingHead)
+      }_${
+        factorFuncName
+      }_${
+        s.head.terms map {_.name stripPrefix("dd_new_")} mkString("_")
+      }"
+      case _ =>           s"inf${
+        // XXX This comes right after the prefix to prevent potential collision with user's name
+        optionalIndex(idxInInferenceRulesSharingHead)
+      }_${
+        // function name
+        factorFuncName
+      }_${
+        // followed by variable names
+        s.head.terms map {_.name} mkString("_")
+      }"
+    }
   }
 
   // Given a variable, resolve it.  TODO: This should give a warning,
@@ -750,16 +785,16 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
   // generate application.conf pipelines
   def compilePipelines(ss: CompilationState): CompiledBlocks = {
     val run = "deepdive.pipeline.run: ${PIPELINE}"
-    val setup_database_pipeline = ((ss.schemaDeclarationGroupByHead map (_._2)).flatten map {s => ss.resolveExtractorBlockName(s)}).mkString(", ")
-    val initdb = if (setup_database_pipeline.length > 0) s"deepdive.pipeline.pipelines.initdb: [${setup_database_pipeline}]" else ""
-    val extraction = (ss.visible map {s => ss.resolveExtractorBlockName(s)}).mkString(", ")
-    val extraction_pipeline = if (extraction.length > 0) s"deepdive.pipeline.pipelines.extraction: [${extraction}]" else ""
-    val inference = (ss.inferenceRules map {s => ss.resolveInferenceBlockName(s)}).mkString(", ")
-    val inference_pipeline = if (inference.length > 0) s"deepdive.pipeline.pipelines.inference: [${inference}]" else ""
-    val endtoend = List(extraction, inference).filter(_ != "").mkString(", ")
-    val endtoend_pipeline = if (endtoend.length > 0) s"deepdive.pipeline.pipelines.endtoend: [${endtoend}]" else ""
+    val setup_database_pipeline = ((ss.schemaDeclarationGroupByHead map (_._2)).flatten map {s => ss.resolveExtractorBlockName(s)}).mkString("\n  ")
+    val initdb = if (setup_database_pipeline.length > 0) s"deepdive.pipeline.pipelines.initdb: [\n  ${setup_database_pipeline}\n]" else ""
+    val extraction = (ss.visible map {s => ss.resolveExtractorBlockName(s)}).mkString("\n  ")
+    val extraction_pipeline = if (extraction.length > 0) s"deepdive.pipeline.pipelines.extraction: [\n  ${extraction}\n]" else ""
+    val inference = (ss.inferenceRules map {s => ss.resolveInferenceBlockName(s)}).mkString("\n  ")
+    val inference_pipeline = if (inference.length > 0) s"deepdive.pipeline.pipelines.inference: [\n  ${inference}\n]" else ""
+    val endtoend = List(extraction, inference).filter(_ != "").mkString("\n  ")
+    val endtoend_pipeline = if (endtoend.length > 0) s"deepdive.pipeline.pipelines.endtoend: [\n  ${endtoend}\n]" else ""
     val cleanup_pipeline = ss.mode match {
-      case INCREMENTAL | ORIGINAL => if (setup_database_pipeline.length > 0) s"deepdive.pipeline.pipelines.cleanup: [cleanup]" else ""
+      case INCREMENTAL | ORIGINAL => if (setup_database_pipeline.length > 0) s"deepdive.pipeline.pipelines.cleanup: [\n  cleanup\n]" else ""
       case _ => ""
     }
     val base_dir = ss.mode match {

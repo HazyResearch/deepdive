@@ -18,7 +18,7 @@ q2.label: Boolean
       }
     
 
-          deepdive.extraction.extractors.extraction_rule_1 {
+          deepdive.extraction.extractors.init_label1 {
             sql: """ DROP TABLE IF EXISTS label1 CASCADE;
             CREATE TABLE
             label1(wid INT,
@@ -27,7 +27,7 @@ q2.label: Boolean
             style: "sql_extractor"
           }
 
-          deepdive.extraction.extractors.extraction_rule_0 {
+          deepdive.extraction.extractors.init_features {
             sql: """ DROP TABLE IF EXISTS features CASCADE;
             CREATE TABLE
             features(id BIGSERIAL,
@@ -38,7 +38,7 @@ q2.label: Boolean
             style: "sql_extractor"
           }
 
-          deepdive.extraction.extractors.extraction_rule_2 {
+          deepdive.extraction.extractors.init_label2 {
             sql: """ DROP TABLE IF EXISTS label2 CASCADE;
             CREATE TABLE
             label2(wid INT,
@@ -47,7 +47,7 @@ q2.label: Boolean
             style: "sql_extractor"
           }
 
-          deepdive.extraction.extractors.extraction_rule_3 {
+          deepdive.extraction.extractors.init_q1 {
             sql: """ DROP TABLE IF EXISTS q1 CASCADE;
             CREATE TABLE
             q1(wid INT,
@@ -57,7 +57,7 @@ q2.label: Boolean
             style: "sql_extractor"
           }
 
-          deepdive.extraction.extractors.extraction_rule_4 {
+          deepdive.extraction.extractors.init_q2 {
             sql: """ DROP TABLE IF EXISTS q2 CASCADE;
             CREATE TABLE
             q2(wid INT,
@@ -78,7 +78,7 @@ q2.label: Boolean
           style: "sql_extractor"
         }
 
-      deepdive.extraction.extractors.extraction_rule_5 {
+      deepdive.extraction.extractors.ext_q1 {
         sql: """ 
         INSERT INTO q1 SELECT DISTINCT R0.wid, 0 AS id, R0.val AS label
           FROM label1 R0
@@ -90,7 +90,7 @@ q2.label: Boolean
       }
     
 
-      deepdive.extraction.extractors.extraction_rule_6 {
+      deepdive.extraction.extractors.ext_q2 {
         sql: """ 
         INSERT INTO q2 SELECT DISTINCT R0.wid, 0 AS id, R0.val AS label
           FROM label2 R0
@@ -102,7 +102,7 @@ q2.label: Boolean
       }
     
 
-        deepdive.inference.factors.inference_rule_0 {
+        deepdive.inference.factors.inf_istrue_q1 {
           input_query: """
           SELECT R0.id AS "q1.R0.id" , R1.feature_id AS "dd_weight_column_0" 
           FROM q1 R0, features R1
@@ -112,7 +112,7 @@ q2.label: Boolean
         }
       
 
-        deepdive.inference.factors.inference_rule_1 {
+        deepdive.inference.factors.inf_istrue_q2 {
           input_query: """
           SELECT R0.id AS "q2.R0.id" , R1.feature_id AS "dd_weight_column_0" 
           FROM q2 R0, features R1
@@ -122,8 +122,27 @@ q2.label: Boolean
         }
       
 deepdive.pipeline.run: ${PIPELINE}
-deepdive.pipeline.pipelines.initdb: [extraction_rule_1, extraction_rule_0, extraction_rule_2, extraction_rule_3, extraction_rule_4]
-deepdive.pipeline.pipelines.extraction: [extraction_rule_5, extraction_rule_6]
-deepdive.pipeline.pipelines.inference: [inference_rule_0, inference_rule_1]
-deepdive.pipeline.pipelines.endtoend: [extraction_rule_5, extraction_rule_6, inference_rule_0, inference_rule_1]
-deepdive.pipeline.pipelines.cleanup: [cleanup]
+deepdive.pipeline.pipelines.initdb: [
+  init_label1
+  init_features
+  init_label2
+  init_q1
+  init_q2
+]
+deepdive.pipeline.pipelines.extraction: [
+  ext_q1
+  ext_q2
+]
+deepdive.pipeline.pipelines.inference: [
+  inf_istrue_q1
+  inf_istrue_q2
+]
+deepdive.pipeline.pipelines.endtoend: [
+  ext_q1
+  ext_q2
+  inf_istrue_q1
+  inf_istrue_q2
+]
+deepdive.pipeline.pipelines.cleanup: [
+  cleanup
+]

@@ -1,7 +1,0 @@
-@textspan(from="start_pos", length="len")
-mention_candidate(doc_id text,
-                  @textspan_start
-                  start_pos int,
-                  @textspan_length
-                  len int).
-

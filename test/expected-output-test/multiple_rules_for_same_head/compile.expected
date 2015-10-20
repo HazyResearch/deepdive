@@ -1,0 +1,253 @@
+
+  deepdive.db.default {
+    driver: "org.postgresql.Driver"
+    url: "jdbc:postgresql://"${PGHOST}":"${PGPORT}"/"${DBNAME}
+    user: ${PGUSER}
+    password: ${PGPASSWORD}
+    dbname: ${DBNAME}
+    host: ${PGHOST}
+    port: ${PGPORT}
+    incremental_mode: ORIGINAL
+    }
+    
+
+
+      deepdive.schema.variables {
+        Q.label: Boolean
+      }
+    
+
+          deepdive.extraction.extractors.init_S {
+            sql: """ DROP TABLE IF EXISTS S CASCADE;
+            CREATE TABLE
+            S(a int)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_R {
+            sql: """ DROP TABLE IF EXISTS R CASCADE;
+            CREATE TABLE
+            R(a int,
+ b int)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_Q {
+            sql: """ DROP TABLE IF EXISTS Q CASCADE;
+            CREATE TABLE
+            Q(x int,
+ id bigint,
+ label boolean)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_T {
+            sql: """ DROP TABLE IF EXISTS T CASCADE;
+            CREATE TABLE
+            T(a int)
+            """
+            style: "sql_extractor"
+          }
+
+        deepdive.extraction.extractors.cleanup {
+          sql: """
+          TRUNCATE S;
+          TRUNCATE R;
+          TRUNCATE Q;
+          TRUNCATE T;
+          """
+          style: "sql_extractor"
+        }
+
+      deepdive.extraction.extractors.ext_S {
+        sql: """ 
+        INSERT INTO S SELECT R0.a AS "R.R0.a"
+FROM R R0, R R1
+        WHERE R1.a = R0.b  AND R0.a > 100
+UNION ALL
+SELECT R0.a AS "R.R0.a"
+FROM R R0, R R1
+        WHERE R1.a = R0.b  AND R0.a < -100
+UNION ALL
+SELECT R0.a AS "R.R0.a"
+FROM R R0, R R1
+        WHERE R1.a = R0.b  AND R0.a = 0
+        """
+        style: "sql_extractor"
+          
+      }
+    
+
+        deepdive.extraction.extractors.ext_T_by_f {
+          input: """ SELECT R0.a AS "R.R0.a", R0.b AS "R.R0.b"
+FROM R R0
+        WHERE R0.a > 1000
+          """
+          output_relation: "T"
+          udf: ${APP_HOME}"//bin/false"
+          style: "tsv_extractor" 
+          
+          parallelism: ${PARALLELISM}
+        }
+      
+
+        deepdive.extraction.extractors.ext1_T_by_f {
+          input: """ SELECT R0.a AS "R.R0.a", R0.b AS "R.R0.b"
+FROM R R0
+        WHERE (10 < R0.a AND R0.a < 20)
+          """
+          output_relation: "T"
+          udf: ${APP_HOME}"//bin/false"
+          style: "tsv_extractor" 
+          
+          parallelism: ${PARALLELISM}
+        }
+      
+
+        deepdive.extraction.extractors.ext2_T_by_f {
+          input: """ SELECT R0.a AS "R.R0.a", R0.b AS "R.R0.b"
+FROM R R0
+        WHERE (100 < R0.a AND R0.a < 200)
+          """
+          output_relation: "T"
+          udf: ${APP_HOME}"//bin/false"
+          style: "tsv_extractor" 
+          
+          parallelism: ${PARALLELISM}
+        }
+      
+
+        deepdive.extraction.extractors.ext_S_by_f {
+          input: """ SELECT R0.a AS "R.R0.a", R0.b AS "R.R0.b"
+FROM R R0
+        WHERE R0.a < 0
+          """
+          output_relation: "S"
+          udf: ${APP_HOME}"//bin/false"
+          style: "tsv_extractor" 
+          
+          parallelism: ${PARALLELISM}
+        }
+      
+
+        deepdive.extraction.extractors.ext1_S_by_f {
+          input: """ SELECT R0.a AS "R.R0.a", R0.b AS "R.R0.b"
+FROM R R0
+        WHERE R0.a > 0
+          """
+          output_relation: "S"
+          udf: ${APP_HOME}"//bin/false"
+          style: "tsv_extractor" 
+          
+          parallelism: ${PARALLELISM}
+        }
+      
+
+        deepdive.extraction.extractors.ext_T_by_f_1 {
+          input: """ SELECT R0.a AS "R.R0.a", R0.b AS "R.R0.b"
+FROM R R0
+        
+          """
+          output_relation: "T"
+          udf: ${APP_HOME}"//bin/false"
+          style: "tsv_extractor" 
+          
+          parallelism: ${PARALLELISM}
+        }
+      
+
+        deepdive.extraction.extractors.ext_S_by_f_1 {
+          input: """ SELECT R0.a AS "R.R0.a", R0.b AS "R.R0.b"
+FROM R R0
+        WHERE R0.a > 0
+          """
+          output_relation: "S"
+          udf: ${APP_HOME}"//bin/false"
+          style: "tsv_extractor" 
+          
+          parallelism: ${PARALLELISM}
+        }
+      
+
+        deepdive.inference.factors.inf_istrue_Q {
+          input_query: """
+          SELECT R0.id AS "Q.R0.id" , R0.x AS "dd_weight_column_0" 
+          FROM Q R0, S R1
+        WHERE R1.a = R0.x  AND R0.x > 1000"""
+          function: "Imply(Q.R0.label)"
+          weight: "?(dd_weight_column_0)"
+        }
+      
+
+        deepdive.inference.factors.inf1_istrue_Q {
+          input_query: """
+          SELECT R0.id AS "Q.R0.id" 
+          FROM Q R0, S R1
+        WHERE R1.a = R0.x  AND R0.x = 0"""
+          function: "Imply(Q.R0.label)"
+          weight: "1.0"
+        }
+      
+
+        deepdive.inference.factors.inf_imply_Q_Q {
+          input_query: """
+          SELECT R0.id AS "Q.R0.id" , R1.id AS "Q.R1.id" , R0.x AS "dd_weight_column_0" 
+          FROM Q R0, Q R1, S R2, R R3, S R4
+        WHERE R2.a = R0.x  AND R3.a = R0.x  AND R3.b = R1.x  AND R4.a = R1.x """
+          function: "Imply(Q.R0.label, Q.R1.label)"
+          weight: "?(dd_weight_column_0)"
+        }
+      
+
+        deepdive.inference.factors.inf1_imply_Q_Q {
+          input_query: """
+          SELECT R0.id AS "Q.R0.id" , R1.id AS "Q.R1.id" 
+          FROM Q R0, Q R1, S R2, R R3, S R4
+        WHERE R2.a = R0.x  AND R3.a = R0.x  AND R3.b = R1.x  AND R4.a = R1.x  AND (R0.x + R1.x) < 1000"""
+          function: "Imply(Q.R0.label, Q.R1.label)"
+          weight: "-10.0"
+        }
+      
+deepdive.pipeline.run: ${PIPELINE}
+deepdive.pipeline.pipelines.initdb: [
+  init_S
+  init_R
+  init_Q
+  init_T
+]
+deepdive.pipeline.pipelines.extraction: [
+  ext2_T_by_f
+  ext_S_by_f_1
+  ext_S_by_f
+  ext1_S_by_f
+  ext_T_by_f_1
+  ext1_T_by_f
+  ext_S
+  ext_T_by_f
+]
+deepdive.pipeline.pipelines.inference: [
+  inf_istrue_Q
+  inf1_istrue_Q
+  inf_imply_Q_Q
+  inf1_imply_Q_Q
+]
+deepdive.pipeline.pipelines.endtoend: [
+  ext2_T_by_f
+  ext_S_by_f_1
+  ext_S_by_f
+  ext1_S_by_f
+  ext_T_by_f_1
+  ext1_T_by_f
+  ext_S
+  ext_T_by_f
+  inf_istrue_Q
+  inf1_istrue_Q
+  inf_imply_Q_Q
+  inf1_imply_Q_Q
+]
+deepdive.pipeline.pipelines.cleanup: [
+  cleanup
+]

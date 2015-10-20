@@ -1,4 +1,4 @@
 [error] Variable y must have bindings
-Q(y)  :-
+Q(y) :-
     a(x).
 

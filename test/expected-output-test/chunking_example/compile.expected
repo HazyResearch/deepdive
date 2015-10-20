@@ -17,7 +17,7 @@
       }
     
 
-          deepdive.extraction.extractors.extraction_rule_0 {
+          deepdive.extraction.extractors.init_words_raw {
             sql: """ DROP TABLE IF EXISTS words_raw CASCADE;
             CREATE TABLE
             words_raw(word_id bigserial,
@@ -28,7 +28,7 @@
             style: "sql_extractor"
           }
 
-          deepdive.extraction.extractors.extraction_rule_1 {
+          deepdive.extraction.extractors.init_words {
             sql: """ DROP TABLE IF EXISTS words CASCADE;
             CREATE TABLE
             words(sent_id bigint,
@@ -40,7 +40,7 @@
             style: "sql_extractor"
           }
 
-          deepdive.extraction.extractors.extraction_rule_3 {
+          deepdive.extraction.extractors.init_tag {
             sql: """ DROP TABLE IF EXISTS tag CASCADE;
             CREATE TABLE
             tag(word_id bigint,
@@ -50,7 +50,7 @@
             style: "sql_extractor"
           }
 
-          deepdive.extraction.extractors.extraction_rule_2 {
+          deepdive.extraction.extractors.init_word_features {
             sql: """ DROP TABLE IF EXISTS word_features CASCADE;
             CREATE TABLE
             word_features(word_id bigint,
@@ -69,7 +69,7 @@
           style: "sql_extractor"
         }
 
-      deepdive.extraction.extractors.extraction_rule_8 {
+      deepdive.extraction.extractors.ext_tag {
         sql: """ 
         INSERT INTO tag SELECT DISTINCT R0.sent_id, 0 AS id, R0.true_tag AS label
           FROM words R0
@@ -77,11 +77,11 @@
           
         """
         style: "sql_extractor"
-          dependencies: [ "extraction_rule_5" ]
+          dependencies: [ "ext_words_by_ext_training" ]
       }
     
 
-        deepdive.extraction.extractors.extraction_rule_5 {
+        deepdive.extraction.extractors.ext_words_by_ext_training {
           input: """ SELECT R0.word_id AS "words_raw.R0.word_id", R0.word AS "words_raw.R0.word", R0.pos AS "words_raw.R0.pos", R0.tag AS "words_raw.R0.tag"
 FROM words_raw R0
         
@@ -94,7 +94,7 @@ FROM words_raw R0
         }
       
 
-        deepdive.extraction.extractors.extraction_rule_7 {
+        deepdive.extraction.extractors.ext_word_features_by_ext_features {
           input: """ SELECT R0.word_id AS "words.R0.word_id", R0.word AS "words.R0.word", R0.pos AS "words.R0.pos", R1.word AS "words.R1.word", R1.pos AS "words.R1.pos"
 FROM words R0, words R1
         WHERE R1.sent_id = R0.sent_id 
@@ -102,12 +102,12 @@ FROM words R0, words R1
           output_relation: "word_features"
           udf: ${APP_HOME}"/udf/ext_features.py"
           style: "tsv_extractor" 
-          dependencies: [ "extraction_rule_5" ]
+          dependencies: [ "ext_words_by_ext_training" ]
           parallelism: ${PARALLELISM}
         }
       
 
-        deepdive.inference.factors.inference_rule_0 {
+        deepdive.inference.factors.inf_istrue_tag {
           input_query: """
           SELECT R0.id AS "tag.R0.id" , R1.feature AS "dd_weight_column_0" 
           FROM tag R0, word_features R1
@@ -117,8 +117,26 @@ FROM words R0, words R1
         }
       
 deepdive.pipeline.run: ${PIPELINE}
-deepdive.pipeline.pipelines.initdb: [extraction_rule_0, extraction_rule_1, extraction_rule_3, extraction_rule_2]
-deepdive.pipeline.pipelines.extraction: [extraction_rule_8, extraction_rule_5, extraction_rule_7]
-deepdive.pipeline.pipelines.inference: [inference_rule_0]
-deepdive.pipeline.pipelines.endtoend: [extraction_rule_8, extraction_rule_5, extraction_rule_7, inference_rule_0]
-deepdive.pipeline.pipelines.cleanup: [cleanup]
+deepdive.pipeline.pipelines.initdb: [
+  init_words_raw
+  init_words
+  init_tag
+  init_word_features
+]
+deepdive.pipeline.pipelines.extraction: [
+  ext_tag
+  ext_words_by_ext_training
+  ext_word_features_by_ext_features
+]
+deepdive.pipeline.pipelines.inference: [
+  inf_istrue_tag
+]
+deepdive.pipeline.pipelines.endtoend: [
+  ext_tag
+  ext_words_by_ext_training
+  ext_word_features_by_ext_features
+  inf_istrue_tag
+]
+deepdive.pipeline.pipelines.cleanup: [
+  cleanup
+]

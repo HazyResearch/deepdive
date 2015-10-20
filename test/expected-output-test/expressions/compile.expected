@@ -17,7 +17,7 @@
       }
     
 
-          deepdive.extraction.extractors.extraction_rule_1 {
+          deepdive.extraction.extractors.init_b {
             sql: """ DROP TABLE IF EXISTS b CASCADE;
             CREATE TABLE
             b(k int,
@@ -28,7 +28,7 @@
             style: "sql_extractor"
           }
 
-          deepdive.extraction.extractors.extraction_rule_0 {
+          deepdive.extraction.extractors.init_a {
             sql: """ DROP TABLE IF EXISTS a CASCADE;
             CREATE TABLE
             a(k int)
@@ -36,7 +36,7 @@
             style: "sql_extractor"
           }
 
-          deepdive.extraction.extractors.extraction_rule_2 {
+          deepdive.extraction.extractors.init_c {
             sql: """ DROP TABLE IF EXISTS c CASCADE;
             CREATE TABLE
             c(s text,
@@ -55,7 +55,7 @@
           style: "sql_extractor"
         }
 
-      deepdive.extraction.extractors.extraction_rule_9 {
+      deepdive.extraction.extractors.ext_E {
         sql: """ DROP VIEW IF EXISTS E;
         CREATE VIEW E AS SELECT (R0.k :: INT) AS column_0
 FROM b R0
@@ -66,7 +66,7 @@ FROM b R0
       }
     
 
-      deepdive.extraction.extractors.extraction_rule_25 {
+      deepdive.extraction.extractors.ext_X {
         sql: """ DROP VIEW IF EXISTS X;
         CREATE VIEW X AS SELECT R0.k AS column_0
 FROM b R0, c R1
@@ -77,7 +77,7 @@ FROM b R0, c R1
       }
     
 
-      deepdive.extraction.extractors.extraction_rule_18 {
+      deepdive.extraction.extractors.ext_N {
         sql: """ DROP VIEW IF EXISTS N;
         CREATE VIEW N AS SELECT R0.k AS column_0
 FROM b R0
@@ -88,7 +88,7 @@ FROM b R0
       }
     
 
-      deepdive.extraction.extractors.extraction_rule_21 {
+      deepdive.extraction.extractors.ext_T {
         sql: """ DROP VIEW IF EXISTS T;
         CREATE VIEW T AS SELECT R0.k AS column_0
 FROM b R0 LEFT OUTER JOIN c R1_0 ON R1_0.n = R0.k  AND R1_0.s > R0.p
@@ -99,7 +99,7 @@ FROM b R0 LEFT OUTER JOIN c R1_0 ON R1_0.n = R0.k  AND R1_0.s > R0.p
       }
     
 
-      deepdive.extraction.extractors.extraction_rule_14 {
+      deepdive.extraction.extractors.ext_J {
         sql: """ DROP VIEW IF EXISTS J;
         CREATE VIEW J AS SELECT R0.k AS column_0
 FROM b R0
@@ -110,7 +110,7 @@ FROM b R0
       }
     
 
-      deepdive.extraction.extractors.extraction_rule_22 {
+      deepdive.extraction.extractors.ext_U {
         sql: """ DROP VIEW IF EXISTS U;
         CREATE VIEW U AS SELECT R0_0.k AS column_0
 FROM b R0_0 ON  FULL OUTER JOIN c R1_0 ON R1_0.n = R0_0.k 
@@ -121,7 +121,7 @@ FROM b R0_0 ON  FULL OUTER JOIN c R1_0 ON R1_0.n = R0_0.k
       }
     
 
-      deepdive.extraction.extractors.extraction_rule_10 {
+      deepdive.extraction.extractors.ext_F {
         sql: """ DROP VIEW IF EXISTS F;
         CREATE VIEW F AS SELECT ((R0.k :: INT) + (R0.r :: INT)) AS column_0
 FROM b R0
@@ -132,7 +132,7 @@ FROM b R0
       }
     
 
-      deepdive.extraction.extractors.extraction_rule_5 {
+      deepdive.extraction.extractors.ext_A {
         sql: """ DROP VIEW IF EXISTS A;
         CREATE VIEW A AS SELECT (R0.k + (R0.r * (R0.k + R0.r))) AS column_0
 FROM b R0
@@ -143,7 +143,7 @@ FROM b R0
       }
     
 
-      deepdive.extraction.extractors.extraction_rule_17 {
+      deepdive.extraction.extractors.ext_M {
         sql: """ DROP VIEW IF EXISTS M;
         CREATE VIEW M AS SELECT R0.k AS column_0
 FROM b R0
@@ -154,7 +154,7 @@ FROM b R0
       }
     
 
-      deepdive.extraction.extractors.extraction_rule_13 {
+      deepdive.extraction.extractors.ext_I {
         sql: """ DROP VIEW IF EXISTS I;
         CREATE VIEW I AS SELECT R0.k AS column_0
 FROM b R0
@@ -165,7 +165,7 @@ FROM b R0
       }
     
 
-      deepdive.extraction.extractors.extraction_rule_11 {
+      deepdive.extraction.extractors.ext_G {
         sql: """ DROP VIEW IF EXISTS G;
         CREATE VIEW G AS SELECT R0.k AS column_0
 FROM b R0
@@ -176,7 +176,7 @@ FROM b R0
       }
     
 
-      deepdive.extraction.extractors.extraction_rule_24 {
+      deepdive.extraction.extractors.ext_V {
         sql: """ DROP VIEW IF EXISTS V;
         CREATE VIEW V AS SELECT R0.n AS column_0
 FROM c R0, a R1
@@ -187,7 +187,7 @@ FROM c R0, a R1
       }
     
 
-      deepdive.extraction.extractors.extraction_rule_3 {
+      deepdive.extraction.extractors.ext_Q {
         sql: """ DROP VIEW IF EXISTS Q;
         CREATE VIEW Q AS SELECT DISTINCT ('test' :: TEXT) AS column_0, 123 AS column_1, R0.k AS column_2, unnest(R1.q) AS column_3
 FROM a R0, b R1, c R2
@@ -198,7 +198,7 @@ FROM a R0, b R1, c R2
       }
     
 
-      deepdive.extraction.extractors.extraction_rule_16 {
+      deepdive.extraction.extractors.ext_L {
         sql: """ DROP VIEW IF EXISTS L;
         CREATE VIEW L AS SELECT DISTINCT R0.k AS column_0
 FROM b R0
@@ -209,7 +209,7 @@ FROM b R0
       }
     
 
-      deepdive.extraction.extractors.extraction_rule_6 {
+      deepdive.extraction.extractors.ext_B {
         sql: """ DROP VIEW IF EXISTS B;
         CREATE VIEW B AS SELECT func((R0.k + (R0.r + R0.k))) AS column_0
 FROM b R0
@@ -220,7 +220,7 @@ FROM b R0
       }
     
 
-      deepdive.extraction.extractors.extraction_rule_4 {
+      deepdive.extraction.extractors.ext_P {
         sql: """ DROP VIEW IF EXISTS P;
         CREATE VIEW P AS SELECT R1.p AS column_0, R1.q AS column_1, MAX(R1.r) AS column_2
 FROM a R0, b R1
@@ -232,7 +232,7 @@ FROM a R0, b R1
       }
     
 
-      deepdive.extraction.extractors.extraction_rule_7 {
+      deepdive.extraction.extractors.ext_C {
         sql: """ DROP VIEW IF EXISTS C;
         CREATE VIEW C AS SELECT func(func(func(R0.k))) AS column_0
 FROM b R0
@@ -243,7 +243,7 @@ FROM b R0
       }
     
 
-      deepdive.extraction.extractors.extraction_rule_12 {
+      deepdive.extraction.extractors.ext_H {
         sql: """ DROP VIEW IF EXISTS H;
         CREATE VIEW H AS SELECT R0.k AS column_0
 FROM b R0
@@ -254,7 +254,7 @@ FROM b R0
       }
     
 
-      deepdive.extraction.extractors.extraction_rule_23 {
+      deepdive.extraction.extractors.ext_W {
         sql: """ DROP VIEW IF EXISTS W;
         CREATE VIEW W AS SELECT R0.k AS column_0
 FROM a R0
@@ -265,7 +265,7 @@ FROM a R0
       }
     
 
-      deepdive.extraction.extractors.extraction_rule_15 {
+      deepdive.extraction.extractors.ext_K {
         sql: """ DROP VIEW IF EXISTS K;
         CREATE VIEW K AS SELECT R0.k AS column_0
 FROM b R0
@@ -276,7 +276,7 @@ FROM b R0
       }
     
 
-      deepdive.extraction.extractors.extraction_rule_19 {
+      deepdive.extraction.extractors.ext_O {
         sql: """ DROP VIEW IF EXISTS O;
         CREATE VIEW O AS SELECT R0.k AS column_0
 FROM b R0
@@ -287,7 +287,7 @@ FROM b R0
       }
     
 
-      deepdive.extraction.extractors.extraction_rule_8 {
+      deepdive.extraction.extractors.ext_D {
         sql: """ DROP VIEW IF EXISTS D;
         CREATE VIEW D AS SELECT (func((R0.k * func2((R0.r + R0.k)))) + R0.k) AS column_0
 FROM b R0
@@ -298,7 +298,7 @@ FROM b R0
       }
     
 
-      deepdive.extraction.extractors.extraction_rule_20 {
+      deepdive.extraction.extractors.ext_S {
         sql: """ DROP VIEW IF EXISTS S;
         CREATE VIEW S AS SELECT R0.k AS column_0
 FROM b R0 LEFT OUTER JOIN c R1_0 ON R1_0.n = R0.k 
@@ -309,7 +309,61 @@ FROM b R0 LEFT OUTER JOIN c R1_0 ON R1_0.n = R0.k
       }
     
 deepdive.pipeline.run: ${PIPELINE}
-deepdive.pipeline.pipelines.initdb: [extraction_rule_1, extraction_rule_0, extraction_rule_2]
-deepdive.pipeline.pipelines.extraction: [extraction_rule_21, extraction_rule_7, extraction_rule_12, extraction_rule_20, extraction_rule_16, extraction_rule_25, extraction_rule_19, extraction_rule_22, extraction_rule_3, extraction_rule_4, extraction_rule_18, extraction_rule_8, extraction_rule_10, extraction_rule_13, extraction_rule_23, extraction_rule_5, extraction_rule_9, extraction_rule_14, extraction_rule_17, extraction_rule_11, extraction_rule_24, extraction_rule_15, extraction_rule_6]
-deepdive.pipeline.pipelines.endtoend: [extraction_rule_21, extraction_rule_7, extraction_rule_12, extraction_rule_20, extraction_rule_16, extraction_rule_25, extraction_rule_19, extraction_rule_22, extraction_rule_3, extraction_rule_4, extraction_rule_18, extraction_rule_8, extraction_rule_10, extraction_rule_13, extraction_rule_23, extraction_rule_5, extraction_rule_9, extraction_rule_14, extraction_rule_17, extraction_rule_11, extraction_rule_24, extraction_rule_15, extraction_rule_6]
-deepdive.pipeline.pipelines.cleanup: [cleanup]
+deepdive.pipeline.pipelines.initdb: [
+  init_b
+  init_a
+  init_c
+]
+deepdive.pipeline.pipelines.extraction: [
+  ext_M
+  ext_Q
+  ext_B
+  ext_U
+  ext_F
+  ext_I
+  ext_N
+  ext_T
+  ext_A
+  ext_P
+  ext_K
+  ext_E
+  ext_W
+  ext_J
+  ext_D
+  ext_O
+  ext_L
+  ext_G
+  ext_X
+  ext_S
+  ext_C
+  ext_V
+  ext_H
+]
+deepdive.pipeline.pipelines.endtoend: [
+  ext_M
+  ext_Q
+  ext_B
+  ext_U
+  ext_F
+  ext_I
+  ext_N
+  ext_T
+  ext_A
+  ext_P
+  ext_K
+  ext_E
+  ext_W
+  ext_J
+  ext_D
+  ext_O
+  ext_L
+  ext_G
+  ext_X
+  ext_S
+  ext_C
+  ext_V
+  ext_H
+]
+deepdive.pipeline.pipelines.cleanup: [
+  cleanup
+]

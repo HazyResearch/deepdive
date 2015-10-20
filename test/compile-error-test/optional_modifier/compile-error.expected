@@ -1,5 +1,5 @@
 [error] One and only one atom should be supplied in OPTIONAL modifier
-Q(y, z)  :-
+Q(y, z) :-
     a(x),
     OPTIONAL[x > 1].
 
