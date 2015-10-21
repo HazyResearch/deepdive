@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# escape4sh -- Escape given command-line arguments as a string that
+#              is safe to use as input for shells, e.g., sh -c ...
+# 
+# > sh -c "$(escape4sh ARG...)"
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-01-24
+shopt -s extglob
+first=
+for arg; do
+    case $arg in
+        +([A-Za-z0-9,.:/=+_-]))
+            echo -n "${first:+ }$arg"
+            ;;
+        *)
+            echo -n "${first:+ }'${arg//\'/\'\\\'\'}'"
+            ;;
+    esac
+    first=no
+done
+echo
