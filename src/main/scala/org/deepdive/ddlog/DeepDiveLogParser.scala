@@ -206,7 +206,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
     )
 
   // conditional expressions
-  def compareOperator = "LIKE" | ">" | "<" | ">=" | "<=" | "!=" | "=" | "IS" | "IS NOT"
+  def compareOperator = "LIKE" | ">" | "<" | ">=" | "<=" | "!=" | "=" | "IS NOT" | "IS"
 
   def cond : Parser[Cond] =
     ( acond ~ (";") ~ cond ^^ { case (lhs ~ op ~ rhs) =>
