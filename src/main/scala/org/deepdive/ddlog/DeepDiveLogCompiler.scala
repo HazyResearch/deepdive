@@ -641,6 +641,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           output_relation: \"${stmt.output}\"
           ${udfDetails.get}
           ${ss.generateDependenciesOfCompiledBlockFor(List(stmt))}
+          input_batch_size: $${INPUT_BATCH_SIZE}
           parallelism: ${parallelism}
         }
       """

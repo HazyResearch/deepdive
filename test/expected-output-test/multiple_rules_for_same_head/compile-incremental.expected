@@ -198,6 +198,7 @@ FROM dd_delta_R R0
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
+          input_batch_size: ${INPUT_BATCH_SIZE} 
           parallelism: ${PARALLELISM}
         }
       
@@ -211,6 +212,7 @@ FROM dd_delta_R R0
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
+          input_batch_size: ${INPUT_BATCH_SIZE} 
           parallelism: ${PARALLELISM}
         }
       
@@ -224,6 +226,7 @@ FROM dd_delta_R R0
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
+          input_batch_size: ${INPUT_BATCH_SIZE} 
           parallelism: ${PARALLELISM}
         }
       
@@ -237,6 +240,7 @@ FROM dd_delta_R R0
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
+          input_batch_size: ${INPUT_BATCH_SIZE} 
           parallelism: ${PARALLELISM}
         }
       
@@ -250,6 +254,7 @@ FROM dd_delta_R R0
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
+          input_batch_size: ${INPUT_BATCH_SIZE} 
           parallelism: ${PARALLELISM}
         }
       
@@ -263,6 +268,7 @@ FROM dd_delta_R R0
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
+          input_batch_size: ${INPUT_BATCH_SIZE} 
           parallelism: ${PARALLELISM}
         }
       
@@ -276,6 +282,7 @@ FROM dd_delta_R R0
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
+          input_batch_size: ${INPUT_BATCH_SIZE} 
           parallelism: ${PARALLELISM}
         }
       
