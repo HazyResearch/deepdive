@@ -119,6 +119,7 @@ FROM sentences R0
           udf: ${APP_HOME}"/udf/ext_people.py"
           style: "tsv_extractor" 
           
+          input_batch_size: ${INPUT_BATCH_SIZE} 
           parallelism: ${PARALLELISM}
         }
       
@@ -132,6 +133,7 @@ FROM people_mentions R0, people_mentions R1
           udf: ${APP_HOME}"/udf/ext_has_spouse.py"
           style: "tsv_extractor" 
           dependencies: [ "ext_people_mentions_by_ext_people" ]
+          input_batch_size: ${INPUT_BATCH_SIZE} 
           parallelism: ${PARALLELISM}
         }
       
@@ -145,6 +147,7 @@ FROM sentences R0, has_spouse_candidates R1, people_mentions R2, people_mentions
           udf: ${APP_HOME}"/udf/ext_has_spouse_features.py"
           style: "tsv_extractor" 
           dependencies: [ "ext_has_spouse_candidates_by_ext_has_spouse" ,  "ext_people_mentions_by_ext_people" ]
+          input_batch_size: ${INPUT_BATCH_SIZE} 
           parallelism: ${PARALLELISM}
         }
       
