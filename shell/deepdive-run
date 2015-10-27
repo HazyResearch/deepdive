@@ -109,8 +109,9 @@ fullConfig=$run_dir/deepdive.conf
     ) 2>/dev/null)}
     export PARALLELISM
     
-    # set INPUT_BATCH_SIZE env var 
-    ! [[ -e "$INPUT_BATCH_SIZE" ]] || export INPUT_BATCH_SIZE=10000
+    # set INPUT_BATCH_SIZE env var
+    : ${INPUT_BATCH_SIZE:=10000}
+    export INPUT_BATCH_SIZE 
 }
 
 # user's deepdive.conf overrides anything compiled from DDlog
