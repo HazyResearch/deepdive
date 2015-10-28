@@ -594,7 +594,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
         if (isForIncremental(stmts(0).headName) && !(ss.isQueryTerm(stmts(0).headName)))
           s"TRUNCATE ${stmts(0).headName};"
         else ""
-      } else s"DROP VIEW IF EXISTS ${stmts(0).headName};"
+      } else s"DROP VIEW IF EXISTS ${stmts(0).headName} CASCADE;"
     }
     val createTable = ss.mode match {
       case MERGE => true
