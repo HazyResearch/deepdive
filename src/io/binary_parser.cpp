@@ -37,7 +37,6 @@ Meta read_meta(string meta_file)
 	getline(file, meta.weights_file, ',');
 	getline(file, meta.variables_file, ',');
 	getline(file, meta.factors_file, ',');
-	getline(file, meta.edges_file, ',');
 	file.close();
 	return meta;
 }
@@ -161,81 +160,51 @@ long long read_factors(string filename, dd::FactorGraph &fg)
     ifstream file;
     file.open(filename.c_str(), ios::in | ios::binary);
     long long count = 0;
-    long long id;
+    long long variable_id;
     long long weightid;
     short type;
     long long edge_count;
+    long long equal_predicate;
+    char padding;
+    bool ispositive;
     while (file.good()) {
-        file.read((char *)&id, 8);
         file.read((char *)&weightid, 8);
         file.read((char *)&type, 2);
+        file.read((char *)&equal_predicate, 8);
         if (!file.read((char *)&edge_count, 8)) break;
 
-        id = bswap_64(id);
         weightid = bswap_64(weightid);
         type = bswap_16(type);
         edge_count = bswap_64(edge_count);
+        equal_predicate = bswap_64(equal_predicate);
 
         count++;
-        fg.factors[fg.c_nfactor] = dd::Factor(id, weightid, type, edge_count);
+        fg.factors[fg.c_nfactor] = dd::Factor(fg.c_nfactor, weightid, type, edge_count);
+
+
+        for (long long position = 0; position < edge_count; position++) {
+            file.read((char *)&variable_id, 8);
+            file.read((char *)&padding, 1);
+            variable_id = bswap_64(variable_id);
+            ispositive = padding;
+
+            // wrong id
+            if(variable_id >= fg.n_var || variable_id < 0){
+                assert(false);
+            }
+
+            // add variables to factors
+            if (fg.variables[variable_id].domain_type == DTYPE_BOOLEAN) {
+                fg.factors[fg.c_nfactor].tmp_variables.push_back(
+                    dd::VariableInFactor(variable_id, fg.variables[variable_id].upper_bound, variable_id, position, ispositive));
+            } else {
+                fg.factors[fg.c_nfactor].tmp_variables.push_back(
+                    dd::VariableInFactor(variable_id, position, ispositive, equal_predicate));
+            }
+            fg.variables[variable_id].tmp_factor_ids.push_back(fg.c_nfactor);
+        }
         fg.c_nfactor ++;
     }
     file.close();
     return count;
 }
-
-long long read_edges(string filename, dd::FactorGraph &fg)
-{
-    ifstream file;
-    file.open(filename.c_str(), ios::in | ios::binary);
-    long long count = 0;
-    long long variable_id;
-    long long factor_id;
-    long long position;
-    bool ispositive;
-    char padding;
-    long long equal_predicate;
-    while (file.good()) {
-        // read fields
-        file.read((char *)&variable_id, 8);
-        file.read((char *)&factor_id, 8);
-        file.read((char *)&position, 8);
-        file.read((char *)&padding, 1);
-        if (!file.read((char *)&equal_predicate, 8)) break;
-        
-        variable_id = bswap_64(variable_id);
-        factor_id = bswap_64(factor_id);
-        position = bswap_64(position);
-        ispositive = padding;
-        equal_predicate = bswap_64(equal_predicate);
-        
-        count++;
-        // printf("varid=%lli, factorid=%lli, position=%lli, predicate=%lli\n", variable_id, factor_id, position, equal_predicate);
-
-        //std::cout << variable_id << std::endl;
-
-        // wrong id
-    	if(variable_id >= fg.n_var || variable_id < 0){
-    	  assert(false);
-    	}
-
-    	if(factor_id >= fg.n_factor || factor_id < 0){
-    	  std::cout << "wrong fid = " << factor_id << std::endl;
-    	  assert(false);
-        }
-
-        // add variables to factors
-        if (fg.variables[variable_id].domain_type == DTYPE_BOOLEAN) {
-            fg.factors[factor_id].tmp_variables.push_back(
-                dd::VariableInFactor(variable_id, fg.variables[variable_id].upper_bound, variable_id, position, ispositive));
-        } else {
-            fg.factors[factor_id].tmp_variables.push_back(
-                dd::VariableInFactor(variable_id, position, ispositive, equal_predicate));
-        }
-        fg.variables[variable_id].tmp_factor_ids.push_back(factor_id);
-
-    }
-    file.close();
-    return count;   
-}
-

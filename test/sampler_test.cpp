@@ -21,12 +21,12 @@ protected:
 		sampler(dd::SingleThreadSampler(&fg, false, 0, false)) {}
 
 	virtual void SetUp() {
-		const char* argv[23] = {
+		const char* argv[21] = {
 			"dw", "gibbs", "-w", "./test/coin/graph.weights", "-v", "./test/coin/graph.variables", 
-			"-f", "./test/coin/graph.factors", "-e", "./test/coin/graph.edges", "-m", "./test/coin/graph.meta",
+			"-f", "./test/coin/graph.factors", "-m", "./test/coin/graph.meta",
 			"-o", ".", "-l", "100", "-i", "100", "-s", "1", "--alpha", "0.1", ""
 		};
-		dd::CmdParser cmd_parser = parse_input(23, (char **)argv);
+		dd::CmdParser cmd_parser = parse_input(21, (char **)argv);
 		fg.load(cmd_parser, false, 0);
   }
 

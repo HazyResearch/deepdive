@@ -17,13 +17,13 @@ using namespace dd;
 // where the first one is value, the second is count
 TEST(MultinomialTest, LearningAndInference) {
 
-	const char* argv[23] = {
+	const char* argv[21] = {
 		"dw", "gibbs", "-w", "./test/multinomial/graph.weights", "-v", "./test/multinomial/graph.variables", 
-		"-f", "./test/multinomial/graph.factors", "-e", "./test/multinomial/graph.edges", "-m", "./test/multinomial/graph.meta",
+		"-f", "./test/multinomial/graph.factors", "-m", "./test/multinomial/graph.meta",
 		"-o", "./test/multinomial/", "-l", "2000", "-i", "2000", "-s", "1", "--alpha", "0.01", "--diminish 0.999"
 	};
 
-	dd::CmdParser cmd_parser = parse_input(23, (char **)argv);
+	dd::CmdParser cmd_parser = parse_input(21, (char **)argv);
 	gibbs(cmd_parser);
 
 	std::ifstream fin("./test/multinomial/inference_result.out.text");
