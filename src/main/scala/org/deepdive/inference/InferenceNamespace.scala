@@ -65,18 +65,4 @@ object InferenceNamespace {
     }
   }
 
-  // converting format scripts
-  val utilFolder = "util"
-  val formatConvertingScriptName = "tobinary.py"
-  val formatConvertingWorkerName = "format_converter"
-
-  def getFormatConvertingScriptPath : String = {
-    new File(s"${Context.deepdiveHome}/${utilFolder}/${formatConvertingScriptName}").getCanonicalPath()
-  }
-  def getFormatConvertingWorkerPath : String = {
-    new File(s"${Context.deepdiveHome}/${utilFolder}/${formatConvertingWorkerName}").getCanonicalPath()
-  }
-
-  def getActiveScript : String = new File(s"${Context.deepdiveHome}/${utilFolder}/active.sh").getCanonicalPath()
-
 }
