@@ -506,15 +506,14 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
       it("format converter should work (flat/array type)") {
         cancelUnlessPostgres()
         val resourceFolder = new File(getClass.getResource("/format_converter").toURI).getAbsolutePath
-        val converter = InferenceNamespace.getFormatConvertingWorkerPath
         val variableFile = s"${resourceFolder}/dd_variables"
         val factorFile = s"${resourceFolder}/dd_factors"
         val weightFile = s"${resourceFolder}/dd_weights"
         val edgeFile = s"${resourceFolder}/dd_edges"
 
-        s"${converter} variable ${variableFile}".!
-        s"${converter} factor ${factorFile} 2 1 1".!
-        s"${converter} weight ${weightFile}".!
+        s"format_converter variable ${variableFile}".!
+        s"format_converter factor ${factorFile} 2 1 1".!
+        s"format_converter weight ${weightFile}".!
 
         var cmp = s"cmp ${variableFile}.bin ${variableFile}_expected.bin"
         assert(cmp.! == 0)
