@@ -97,579 +97,321 @@ class ExtractorRunnerSpec(_system: ActorSystem) extends TestKit(_system) with Im
   }
   // lazy implicit val session = ds.DB.autoCommitSession()
 
-  describe("Running extractor-type-independent task (e.g., before/after script)"){
-
-    it("should work for before script"){
-      execute(dataStore, "drop table if exists testtable;")
-      execute(dataStore, "create table testtable ( a text );")
-      val t = java.io.File.createTempFile("test", ".sh")
-      val t2 = java.io.File.createTempFile("test", ".tsv")
-      val t3 = java.io.File.createTempFile("test", ".py")
-
-      log.info(t.getAbsolutePath)
-
-      writeToFile(t, s"""
-        | echo "I should be in the table" > ${t2.getAbsolutePath}
-        | echo "I should also be in the table" >> ${t2.getAbsolutePath}
-      """.stripMargin)
-
-      writeToFile(t3,
-     s"""|#! /usr/bin/python
-         |import json
-         |for l in open('${t2.getAbsolutePath}'):
-         |  print json.dumps({'a':l.strip()})
-         |
-      |""".stripMargin)
-
-      val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
-
-      // TODO do not run json_extractor for MySQL
-      assume(TestHelper.getTestEnv != TestHelper.Mysql)
-
-
-      val task = new ExtractionTask(Extractor(
-        name = "testExtractor",
-        style = "json_extractor",
-        outputRelation = "testtable",
-        inputQuery = "SELECT 5",
-        udfDir = null,
-        udf = t3.getAbsolutePath,
-        parallelism = 1,
-        inputBatchSize = 1000,
-        outputBatchSize = 1000,
-        dependencies = Nil.toSet,
-        beforeScript = Some(t.getAbsolutePath),
-        afterScript = None,
-        sqlQuery = "",
-        cmd = None
-      ))
-      actor ! ExtractorRunner.SetTask(task)
-      watch(actor)
-      //expectMsg("Done!")
-      //expectTerminated(actor)
-      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
-      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
-
-
-      dataStore.DB.readOnly { implicit session =>
-        val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
-          .map(rs => rs.long("count")).single.apply().get
-        assert(numRecords === 2)
-      }
-
-      execute(dataStore, "DELETE FROM testtable WHERE a='I should be in the table';");
-      execute(dataStore, "DELETE FROM testtable WHERE a='I should also be in the table';");
-
-      dataStore.DB.readOnly { implicit session =>
-        val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
-          .map(rs => rs.long("count")).single.apply().get
-        assert(numRecords === 0)
-      }
-    }
-
-    it("should fail if before script is not executable"){
-
-      val t = java.io.File.createTempFile("test", ".sh")
-      val t2 = java.io.File.createTempFile("test", ".tsv")
-      val t3 = java.io.File.createTempFile("test", ".py")
-
-      // TODO do not run json_extractor for MySQL
-      assume(TestHelper.getTestEnv != TestHelper.Mysql)
-
-
-      val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
-      val task = new ExtractionTask(Extractor(
-        name = "testExtractor",
-        style = "json_extractor",
-        outputRelation = "testtable",
-        inputQuery = "SELECT 5",
-        udfDir = null,
-        udf = t3.getAbsolutePath,
-        parallelism = 1,
-        inputBatchSize = 1000,
-        outputBatchSize = 1000,
-        dependencies = Nil.toSet,
-        beforeScript = Some("/bin/i_am_not_exist"),
-        afterScript = None,
-        sqlQuery = "",
-        cmd = None
-      ))
-      actor ! ExtractorRunner.SetTask(task)
-      watch(actor)
-      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
-      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
-
-    }
-
-    it("should fail if before script is executable but contains errors"){
-
-      // TODO do not run json_extractor for MySQL
-      assume(TestHelper.getTestEnv != TestHelper.Mysql)
-      execute(dataStore, "drop table if exists testtable;")
-      execute(dataStore, "create table testtable ( a text );")
-      val t = java.io.File.createTempFile("test", ".py")
-      val t2 = java.io.File.createTempFile("test", ".tsv")
-      val t3 = java.io.File.createTempFile("test", ".py")
-
-      log.info(t.getAbsolutePath)
-
-      writeToFile(t,
-      s"""|#! /usr/bin/python
-          | echo "I should also be in the table" >> ${t2.getAbsolutePath}
-      """.stripMargin)
-
-      writeToFile(t3,
-     s"""|#! /usr/bin/python
-         |import json
-         |for l in open('${t2.getAbsolutePath}'):
-         |  print json.dumps({'a':l.strip()})
-         |
-      |""".stripMargin)
-
-      val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
-
-      val task = new ExtractionTask(Extractor(
-        name = "testExtractor",
-        style = "json_extractor",
-        outputRelation = "testtable",
-        inputQuery = "SELECT 5",
-        udfDir = null,
-        udf = t3.getAbsolutePath,
-        parallelism = 1,
-        inputBatchSize = 1000,
-        outputBatchSize = 1000,
-        dependencies = Nil.toSet,
-        beforeScript = Some(t.getAbsolutePath),
-        afterScript = None,
-        sqlQuery = "",
-        cmd = None
-      ))
-      actor ! ExtractorRunner.SetTask(task)
-      watch(actor)
-      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
-      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
-
-    }
-
-    it("should work for after script"){
-
-      // TODO do not run json_extractor for MySQL
-      assume(TestHelper.getTestEnv != TestHelper.Mysql)
-      execute(dataStore, "drop table if exists testtable;")
-      execute(dataStore, "create table testtable ( a text );")
-      val t = java.io.File.createTempFile("test", ".sh")
-      val t2 = java.io.File.createTempFile("test", ".tsv")
-      val t3 = java.io.File.createTempFile("test", ".py")
-      val t4 = java.io.File.createTempFile("test", ".sh")
-
-      log.info(t.getAbsolutePath)
-
-      writeToFile(t, s"""
-        | echo "I should be in the table" > ${t2.getAbsolutePath}
-        | echo "I should also be in the table" >> ${t2.getAbsolutePath}
-      """.stripMargin)
-
-      writeToFile(t3,
-     s"""|#! /usr/bin/python
-         |import json
-         |for l in open('${t2.getAbsolutePath}'):
-         |  print json.dumps({'a':l.strip()})
-         |
-      |""".stripMargin)
-
-
-      writeToFile(t4, s"""
-        | ${sqlScriptPrefix} "INSERT INTO testtable VALUES ('Hello!');"
-        | ${sqlScriptPrefix} "INSERT INTO testtable VALUES('Aloha!');"
-      """.stripMargin)
-
-      val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
-
-      val task = new ExtractionTask(Extractor(
-        name = "testExtractor",
-        style = "json_extractor",
-        outputRelation = "testtable",
-        inputQuery = "SELECT 5",
-        udfDir = null,
-        udf = t3.getAbsolutePath,
-        parallelism = 1,
-        inputBatchSize = 1000,
-        outputBatchSize = 1000,
-        dependencies = Nil.toSet,
-        beforeScript = Some(t.getAbsolutePath),
-        afterScript = Some(t4.getAbsolutePath),
-        sqlQuery = "",
-        cmd = None
-      ))
-      actor ! ExtractorRunner.SetTask(task)
-      watch(actor)
-      //expectMsg("Done!")
-      //expectTerminated(actor)
-      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
-      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
-
-      dataStore.DB.readOnly { implicit session =>
-        val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
-          .map(rs => rs.long("count")).single.apply().get
-        assert(numRecords === 4)
-      }
-
-      execute(dataStore, "DELETE FROM testtable WHERE a='I should be in the table';");
-      execute(dataStore, "DELETE FROM testtable WHERE a='I should also be in the table';");
-      execute(dataStore, "DELETE FROM testtable WHERE a='Hello!';");
-      execute(dataStore, "DELETE FROM testtable WHERE a='Aloha!';");
-
-      dataStore.DB.readOnly { implicit session =>
-        val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
-          .map(rs => rs.long("count")).single.apply().get
-        assert(numRecords === 0)
-      }
-
-    }
-
-    it("should fail if after script is not executable"){
-
-      // TODO do not run json_extractor for MySQL
-      assume(TestHelper.getTestEnv != TestHelper.Mysql)
-      execute(dataStore, "drop table if exists testtable;")
-      execute(dataStore, "create table testtable ( a text );")
-
-      val t = java.io.File.createTempFile("test", ".sh")
-      val t2 = java.io.File.createTempFile("test", ".tsv")
-      val t3 = java.io.File.createTempFile("test", ".py")
-
-      val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
-      val task = new ExtractionTask(Extractor(
-        name = "testExtractor",
-        style = "json_extractor",
-        outputRelation = "testtable",
-        inputQuery = "SELECT 5",
-        udfDir = null,
-        udf = t3.getAbsolutePath,
-        parallelism = 1,
-        inputBatchSize = 1000,
-        outputBatchSize = 1000,
-        dependencies = Nil.toSet,
-        beforeScript = None,
-        afterScript = Some("/bin/i_am_not_exist"),
-        sqlQuery = "",
-        cmd = None
-      ))
-      actor ! ExtractorRunner.SetTask(task)
-      watch(actor)
-      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
-      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
-
-    }
-
-    it("should fail if after script is executable but contains errors"){
-
-      // TODO do not run json_extractor for MySQL
-      assume(TestHelper.getTestEnv != TestHelper.Mysql)
-      execute(dataStore, "drop table if exists testtable;")
-      execute(dataStore, "create table testtable ( a text );")
-      val t = java.io.File.createTempFile("test", ".py")
-      val t2 = java.io.File.createTempFile("test", ".tsv")
-      val t3 = java.io.File.createTempFile("test", ".py")
-
-      log.info(t.getAbsolutePath)
-
-      writeToFile(t,
-      s"""|#! /usr/bin/python
-          | echo "I should also be in the table" >> ${t2.getAbsolutePath}
-      """.stripMargin)
-
-      writeToFile(t3,
-     s"""|#! /usr/bin/python
-         |import json
-         |for l in open('${t2.getAbsolutePath}'):
-         |  print json.dumps({'a':l.strip()})
-         |
-      |""".stripMargin)
-
-      val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
-
-      val task = new ExtractionTask(Extractor(
-        name = "testExtractor",
-        style = "json_extractor",
-        outputRelation = "testtable",
-        inputQuery = "SELECT 5",
-        udfDir = null,
-        udf = t3.getAbsolutePath,
-        parallelism = 1,
-        inputBatchSize = 1000,
-        outputBatchSize = 1000,
-        dependencies = Nil.toSet,
-        beforeScript = None,
-        afterScript = Some(t.getAbsolutePath),
-        sqlQuery = "",
-        cmd = None
-      ))
-      actor ! ExtractorRunner.SetTask(task)
-      watch(actor)
-      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
-      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
-    }
-  }
-
-  describe("Running an json_extractor extraction task") {
-
-    it("should work without parallelism") {
-      // TODO do not run json_extractor for MySQL
-      assume(TestHelper.getTestEnv != TestHelper.Mysql)
-
-      val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
-      dataStore.addBatch(List(Json.parse("""{"key": 5}""").asInstanceOf[JsObject]).iterator, "relation1")
-
-      dataStore.DB.readOnly { implicit session =>
-        val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM relation1""")
-          .map(rs => rs.long("count")).single.apply().get
-        assert(numRecords === 1)
-      }
-
-      val task = new ExtractionTask(Extractor(
-        name = "testExtractor",
-        style = "json_extractor",
-        outputRelation = "relation1",
-        inputQuery = "SELECT * FROM relation1",
-        udfDir = null,
-        udf = "/bin/cat",
-        parallelism = 1,
-        inputBatchSize = 1000,
-        outputBatchSize = 1000,
-        dependencies = Nil.toSet,
-        beforeScript = None,
-        afterScript = None,
-        sqlQuery = "SELECT * FROM relation1",
-        cmd = None
-      ))
-      actor ! ExtractorRunner.SetTask(task)
-      watch(actor)
-      //expectMsg("Done!")
-      //expectTerminated(actor)
-      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
-      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
-
-      dataStore.DB.readOnly { implicit session =>
-        val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM relation1""")
-          .map(rs => rs.long("count")).single.apply().get
-        assert(numRecords === 2)
-      }
-    }
-
-    it("should work when the input is empty") {
-      // TODO do not run json_extractor for MySQL
-      assume(TestHelper.getTestEnv != TestHelper.Mysql)
-
-      val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
-      val task = new ExtractionTask(Extractor(
-        name = "testExtractor",
-        style = "json_extractor",
-        outputRelation = "relation1",
-        inputQuery = "SELECT * FROM relation1",
-        udfDir = null,
-        udf = "/bin/cat",
-        parallelism = 1,
-        inputBatchSize = 1000,
-        outputBatchSize = 1000,
-        dependencies = Nil.toSet
-      ))
-      actor ! ExtractorRunner.SetTask(task)
-      watch(actor)
-      //expectMsg("Done!")
-      //expectTerminated(actor)
-      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
-      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
-
-      dataStore.DB.readOnly { implicit session =>
-        val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM relation1""")
-          .map(rs => rs.long("count")).single.apply().get
-        assert(numRecords === 0)
-      }
-    }
-
-    it("should work with parallelism") {
-      // TODO do not run json_extractor for MySQL
-      assume(TestHelper.getTestEnv != TestHelper.Mysql)
-
-
-      // TODO do not run json_extractor for MySQL
-      assume(TestHelper.getTestEnv != TestHelper.Mysql)
-
-
-      val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
-      val batchData = (1 to 1000).map { i =>
-        Json.parse(s"""{"key": ${i}}""").asInstanceOf[JsObject]
-      }.toList
-      dataStore.addBatch(batchData.iterator, "relation1")
-      val task = new ExtractionTask(Extractor(
-        name = "testExtractor",
-        style = "json_extractor",
-        outputRelation = "relation1",
-        inputQuery = "SELECT * FROM relation1",
-        udfDir = null,
-        udf = "/bin/cat",
-        parallelism = 4,
-        inputBatchSize = 500,
-        outputBatchSize = 200,
-        dependencies = Nil.toSet,
-        beforeScript = None,
-        afterScript = None,
-        sqlQuery = "",
-        cmd = None
-      ))
-      actor ! ExtractorRunner.SetTask(task)
-      watch(actor)
-      //expectMsg("Done!")
-      //expectTerminated(actor)
-      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
-      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
-      dataStore.DB.readOnly { implicit session =>
-        val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM relation1""")
-          .map(rs => rs.long("count")).single.apply().get
-        assert(numRecords === 2000)
-      }
-    }
-
-    it("should return failure when the task failes") {
-      // TODO do not run json_extractor for MySQL
-      assume(TestHelper.getTestEnv != TestHelper.Mysql)
-
-      val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
-      val failingExtractorFile = getClass.getResource("/failing_extractor.py").getFile
-      dataStore.addBatch(List(Json.parse("""{"key": 5}""").asInstanceOf[JsObject]).iterator, "relation1")
-      val task = new ExtractionTask(Extractor(
-        name = "testExtractor",
-        style = "json_extractor",
-        outputRelation = "relation1",
-        inputQuery = "SELECT * FROM relation1",
-        udfDir = null,
-        udf = failingExtractorFile,
-        parallelism = 1,
-        inputBatchSize = 1000,
-        outputBatchSize = 1000,
-        dependencies = Nil.toSet,
-        beforeScript = None,
-        afterScript = None,
-        sqlQuery = "",
-        cmd = None
-      ))
-      actor ! ExtractorRunner.SetTask(task)
-      watch(actor)
-      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
-      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
-    }
-
-    it("should correctly execute the before and after scripts") {
-      // TODO do not run json_extractor for MySQL
-      assume(TestHelper.getTestEnv != TestHelper.Mysql)
-
-      val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
-      val task = new ExtractionTask(Extractor(
-        name = "testExtractor",
-        style = "json_extractor",
-        outputRelation = "relation1",
-        inputQuery = "SELECT * FROM relation1",
-        udfDir = null,
-        udf = "/bin/cat",
-        parallelism = 1,
-        inputBatchSize = 1000,
-        outputBatchSize = 1000,
-        dependencies = Nil.toSet,
-        beforeScript = Option("echo Hello"),
-        afterScript = Option("echo World"),
-        sqlQuery = "",
-        cmd = None
-      ))
-      actor ! ExtractorRunner.SetTask(task)
-      watch(actor)
-      //expectMsg("Done!")
-      //expectTerminated(actor)
-      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
-      expectMsgAnyClassOf(classOf[String], classOf[Terminated])
-    }
-
-    it("should return a failure when the query is invalid") {
-      // TODO do not run json_extractor for MySQL
-      assume(TestHelper.getTestEnv != TestHelper.Mysql)
-
-      val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
-      val task = new ExtractionTask(Extractor(
-        name = "testExtractor",
-        style = "json_extractor",
-        outputRelation = "relation5",
-        inputQuery = "relation1",
-        udfDir = null,
-        udf = "/bin/cat",
-        parallelism = 1,
-        inputBatchSize = 1000,
-        outputBatchSize = 1000,
-        dependencies = Nil.toSet, beforeScript = None,
-        afterScript = None,
-        sqlQuery = "",
-        cmd = None
-      ))
-      actor ! ExtractorRunner.SetTask(task)
-      watch(actor)
-      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
-      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
-    }
-
-    it("should return a failure when the before script crashes") {
-      // TODO do not run json_extractor for MySQL
-      assume(TestHelper.getTestEnv != TestHelper.Mysql)
-
-      val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
-      val task = new ExtractionTask(Extractor(
-        name = "testExtractor",
-        style = "json_extractor",
-        outputRelation = "relation1",
-        inputQuery = "SELECT * FROM relation1",
-        udfDir = null,
-        udf = "/bin/cat",
-        parallelism = 1,
-        inputBatchSize = 1000,
-        outputBatchSize = 1000,
-        dependencies = Nil.toSet,
-        beforeScript = Option("/bin/OHNO!"),
-        afterScript = Option("echo World"),
-        sqlQuery = "",
-        cmd = None
-      ))
-      actor ! ExtractorRunner.SetTask(task)
-      watch(actor)
-      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
-      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
-    }
-
-    it("should return a failure when the after script crashes") {
-      // TODO do not run json_extractor for MySQL
-      assume(TestHelper.getTestEnv != TestHelper.Mysql)
-
-      val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
-      val task = new ExtractionTask(Extractor(
-        name = "testExtractor",
-        style = "json_extractor",
-        outputRelation = "relation1",
-        inputQuery = "SELECT * FROM relation1",
-        udfDir = null,
-        udf = "/bin/cat",
-        parallelism = 1,
-        inputBatchSize = 1000,
-        outputBatchSize = 1000,
-        dependencies = Nil.toSet,
-        beforeScript = Option("echo Hello"),
-        afterScript = Option("/bin/OHNO!"),
-        sqlQuery = "",
-        cmd = None
-      ))
-      actor ! ExtractorRunner.SetTask(task)
-      watch(actor)
-      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
-      expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
-    }
-
-  }
+  // describe("Running extractor-type-independent task (e.g., before/after script)"){
+
+  //   it("should work for before script"){
+  //     execute(dataStore, "drop table if exists testtable;")
+  //     execute(dataStore, "create table testtable ( a text );")
+  //     val t = java.io.File.createTempFile("test", ".sh")
+  //     val t2 = java.io.File.createTempFile("test", ".tsv")
+  //     val t3 = java.io.File.createTempFile("test", ".py")
+
+  //     log.info(t.getAbsolutePath)
+
+  //     writeToFile(t, s"""
+  //       | echo "I should be in the table" > ${t2.getAbsolutePath}
+  //       | echo "I should also be in the table" >> ${t2.getAbsolutePath}
+  //     """.stripMargin)
+
+  //     writeToFile(t3,
+  //    s"""|#! /usr/bin/python
+  //        |import json
+  //        |for l in open('${t2.getAbsolutePath}'):
+  //        |  print json.dumps({'a':l.strip()})
+  //        |
+  //     |""".stripMargin)
+
+  //     val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
+
+  //     // TODO do not run json_extractor for MySQL
+  //     assume(TestHelper.getTestEnv != TestHelper.Mysql)
+
+
+  //     val task = new ExtractionTask(Extractor(
+  //       name = "testExtractor",
+  //       style = "json_extractor",
+  //       outputRelation = "testtable",
+  //       inputQuery = "SELECT 5",
+  //       udfDir = null,
+  //       udf = t3.getAbsolutePath,
+  //       parallelism = 1,
+  //       inputBatchSize = 1000,
+  //       outputBatchSize = 1000,
+  //       dependencies = Nil.toSet,
+  //       beforeScript = Some(t.getAbsolutePath),
+  //       afterScript = None,
+  //       sqlQuery = "",
+  //       cmd = None
+  //     ))
+  //     actor ! ExtractorRunner.SetTask(task)
+  //     watch(actor)
+  //     //expectMsg("Done!")
+  //     //expectTerminated(actor)
+  //     expectMsgAnyClassOf(classOf[String], classOf[Terminated])
+  //     expectMsgAnyClassOf(classOf[String], classOf[Terminated])
+
+
+  //     dataStore.DB.readOnly { implicit session =>
+  //       val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
+  //         .map(rs => rs.long("count")).single.apply().get
+  //       assert(numRecords === 2)
+  //     }
+
+  //     execute(dataStore, "DELETE FROM testtable WHERE a='I should be in the table';");
+  //     execute(dataStore, "DELETE FROM testtable WHERE a='I should also be in the table';");
+
+  //     dataStore.DB.readOnly { implicit session =>
+  //       val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
+  //         .map(rs => rs.long("count")).single.apply().get
+  //       assert(numRecords === 0)
+  //     }
+  //   }
+
+  //   it("should fail if before script is not executable"){
+
+  //     val t = java.io.File.createTempFile("test", ".sh")
+  //     val t2 = java.io.File.createTempFile("test", ".tsv")
+  //     val t3 = java.io.File.createTempFile("test", ".py")
+
+  //     // TODO do not run json_extractor for MySQL
+  //     assume(TestHelper.getTestEnv != TestHelper.Mysql)
+
+
+  //     val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
+  //     val task = new ExtractionTask(Extractor(
+  //       name = "testExtractor",
+  //       style = "json_extractor",
+  //       outputRelation = "testtable",
+  //       inputQuery = "SELECT 5",
+  //       udfDir = null,
+  //       udf = t3.getAbsolutePath,
+  //       parallelism = 1,
+  //       inputBatchSize = 1000,
+  //       outputBatchSize = 1000,
+  //       dependencies = Nil.toSet,
+  //       beforeScript = Some("/bin/i_am_not_exist"),
+  //       afterScript = None,
+  //       sqlQuery = "",
+  //       cmd = None
+  //     ))
+  //     actor ! ExtractorRunner.SetTask(task)
+  //     watch(actor)
+  //     expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
+  //     expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
+
+  //   }
+
+  //   it("should fail if before script is executable but contains errors"){
+
+  //     // TODO do not run json_extractor for MySQL
+  //     assume(TestHelper.getTestEnv != TestHelper.Mysql)
+  //     execute(dataStore, "drop table if exists testtable;")
+  //     execute(dataStore, "create table testtable ( a text );")
+  //     val t = java.io.File.createTempFile("test", ".py")
+  //     val t2 = java.io.File.createTempFile("test", ".tsv")
+  //     val t3 = java.io.File.createTempFile("test", ".py")
+
+  //     log.info(t.getAbsolutePath)
+
+  //     writeToFile(t,
+  //     s"""|#! /usr/bin/python
+  //         | echo "I should also be in the table" >> ${t2.getAbsolutePath}
+  //     """.stripMargin)
+
+  //     writeToFile(t3,
+  //    s"""|#! /usr/bin/python
+  //        |import json
+  //        |for l in open('${t2.getAbsolutePath}'):
+  //        |  print json.dumps({'a':l.strip()})
+  //        |
+  //     |""".stripMargin)
+
+  //     val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
+
+  //     val task = new ExtractionTask(Extractor(
+  //       name = "testExtractor",
+  //       style = "json_extractor",
+  //       outputRelation = "testtable",
+  //       inputQuery = "SELECT 5",
+  //       udfDir = null,
+  //       udf = t3.getAbsolutePath,
+  //       parallelism = 1,
+  //       inputBatchSize = 1000,
+  //       outputBatchSize = 1000,
+  //       dependencies = Nil.toSet,
+  //       beforeScript = Some(t.getAbsolutePath),
+  //       afterScript = None,
+  //       sqlQuery = "",
+  //       cmd = None
+  //     ))
+  //     actor ! ExtractorRunner.SetTask(task)
+  //     watch(actor)
+  //     expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
+  //     expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
+
+  //   }
+
+  //   it("should work for after script"){
+
+  //     // TODO do not run json_extractor for MySQL
+  //     assume(TestHelper.getTestEnv != TestHelper.Mysql)
+  //     execute(dataStore, "drop table if exists testtable;")
+  //     execute(dataStore, "create table testtable ( a text );")
+  //     val t = java.io.File.createTempFile("test", ".sh")
+  //     val t2 = java.io.File.createTempFile("test", ".tsv")
+  //     val t3 = java.io.File.createTempFile("test", ".py")
+  //     val t4 = java.io.File.createTempFile("test", ".sh")
+
+  //     log.info(t.getAbsolutePath)
+
+  //     writeToFile(t, s"""
+  //       | echo "I should be in the table" > ${t2.getAbsolutePath}
+  //       | echo "I should also be in the table" >> ${t2.getAbsolutePath}
+  //     """.stripMargin)
+
+  //     writeToFile(t3,
+  //    s"""|#! /usr/bin/python
+  //        |import json
+  //        |for l in open('${t2.getAbsolutePath}'):
+  //        |  print json.dumps({'a':l.strip()})
+  //        |
+  //     |""".stripMargin)
+
+
+  //     writeToFile(t4, s"""
+  //       | ${sqlScriptPrefix} "INSERT INTO testtable VALUES ('Hello!');"
+  //       | ${sqlScriptPrefix} "INSERT INTO testtable VALUES('Aloha!');"
+  //     """.stripMargin)
+
+  //     val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
+
+  //     val task = new ExtractionTask(Extractor(
+  //       name = "testExtractor",
+  //       style = "json_extractor",
+  //       outputRelation = "testtable",
+  //       inputQuery = "SELECT 5",
+  //       udfDir = null,
+  //       udf = t3.getAbsolutePath,
+  //       parallelism = 1,
+  //       inputBatchSize = 1000,
+  //       outputBatchSize = 1000,
+  //       dependencies = Nil.toSet,
+  //       beforeScript = Some(t.getAbsolutePath),
+  //       afterScript = Some(t4.getAbsolutePath),
+  //       sqlQuery = "",
+  //       cmd = None
+  //     ))
+  //     actor ! ExtractorRunner.SetTask(task)
+  //     watch(actor)
+  //     //expectMsg("Done!")
+  //     //expectTerminated(actor)
+  //     expectMsgAnyClassOf(classOf[String], classOf[Terminated])
+  //     expectMsgAnyClassOf(classOf[String], classOf[Terminated])
+
+  //     dataStore.DB.readOnly { implicit session =>
+  //       val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
+  //         .map(rs => rs.long("count")).single.apply().get
+  //       assert(numRecords === 4)
+  //     }
+
+  //     execute(dataStore, "DELETE FROM testtable WHERE a='I should be in the table';");
+  //     execute(dataStore, "DELETE FROM testtable WHERE a='I should also be in the table';");
+  //     execute(dataStore, "DELETE FROM testtable WHERE a='Hello!';");
+  //     execute(dataStore, "DELETE FROM testtable WHERE a='Aloha!';");
+
+  //     dataStore.DB.readOnly { implicit session =>
+  //       val numRecords = SQL(s"""SELECT COUNT(*) AS "count" FROM testtable;""")
+  //         .map(rs => rs.long("count")).single.apply().get
+  //       assert(numRecords === 0)
+  //     }
+
+  //   }
+
+  //   it("should fail if after script is not executable"){
+
+  //     // TODO do not run json_extractor for MySQL
+  //     assume(TestHelper.getTestEnv != TestHelper.Mysql)
+  //     execute(dataStore, "drop table if exists testtable;")
+  //     execute(dataStore, "create table testtable ( a text );")
+
+  //     val t = java.io.File.createTempFile("test", ".sh")
+  //     val t2 = java.io.File.createTempFile("test", ".tsv")
+  //     val t3 = java.io.File.createTempFile("test", ".py")
+
+  //     val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
+  //     val task = new ExtractionTask(Extractor(
+  //       name = "testExtractor",
+  //       style = "json_extractor",
+  //       outputRelation = "testtable",
+  //       inputQuery = "SELECT 5",
+  //       udfDir = null,
+  //       udf = t3.getAbsolutePath,
+  //       parallelism = 1,
+  //       inputBatchSize = 1000,
+  //       outputBatchSize = 1000,
+  //       dependencies = Nil.toSet,
+  //       beforeScript = None,
+  //       afterScript = Some("/bin/i_am_not_exist"),
+  //       sqlQuery = "",
+  //       cmd = None
+  //     ))
+  //     actor ! ExtractorRunner.SetTask(task)
+  //     watch(actor)
+  //     expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
+  //     expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
+
+  //   }
+
+  //   it("should fail if after script is executable but contains errors"){
+
+  //     // TODO do not run json_extractor for MySQL
+  //     assume(TestHelper.getTestEnv != TestHelper.Mysql)
+  //     execute(dataStore, "drop table if exists testtable;")
+  //     execute(dataStore, "create table testtable ( a text );")
+  //     val t = java.io.File.createTempFile("test", ".py")
+  //     val t2 = java.io.File.createTempFile("test", ".tsv")
+  //     val t3 = java.io.File.createTempFile("test", ".py")
+
+  //     log.info(t.getAbsolutePath)
+
+  //     writeToFile(t,
+  //     s"""|#! /usr/bin/python
+  //         | echo "I should also be in the table" >> ${t2.getAbsolutePath}
+  //     """.stripMargin)
+
+  //     writeToFile(t3,
+  //    s"""|#! /usr/bin/python
+  //        |import json
+  //        |for l in open('${t2.getAbsolutePath}'):
+  //        |  print json.dumps({'a':l.strip()})
+  //        |
+  //     |""".stripMargin)
+
+  //     val actor = system.actorOf(ExtractorRunner.props(dataStore, dbSettings))
+
+  //     val task = new ExtractionTask(Extractor(
+  //       name = "testExtractor",
+  //       style = "json_extractor",
+  //       outputRelation = "testtable",
+  //       inputQuery = "SELECT 5",
+  //       udfDir = null,
+  //       udf = t3.getAbsolutePath,
+  //       parallelism = 1,
+  //       inputBatchSize = 1000,
+  //       outputBatchSize = 1000,
+  //       dependencies = Nil.toSet,
+  //       beforeScript = None,
+  //       afterScript = Some(t.getAbsolutePath),
+  //       sqlQuery = "",
+  //       cmd = None
+  //     ))
+  //     actor ! ExtractorRunner.SetTask(task)
+  //     watch(actor)
+  //     expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
+  //     expectMsgAnyClassOf(classOf[Status.Failure], classOf[Terminated])
+  //   }
+  // }
+
 
   describe("Running an TSV extractor"){
 

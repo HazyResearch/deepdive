@@ -66,9 +66,9 @@ compare() {
         false
     fi
 }
-@test "similarity of probability distributions of incremental and non-incremental spouse example (F1+F2)" {
-    compare f1+f2
-}
-@test "similarity of probability distributions of incremental and non-incremental spouse example (F1+F2+Symmetry)" {
-    compare f1+f2+symmetry
-}
+# @test "similarity of probability distributions of incremental and non-incremental spouse example (F1+F2)" {
+#     compare f1+f2
+# }
+# @test "similarity of probability distributions of incremental and non-incremental spouse example (F1+F2+Symmetry)" {
+#     compare f1+f2+symmetry
+# }

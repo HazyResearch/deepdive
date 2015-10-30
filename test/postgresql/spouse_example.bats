@@ -16,27 +16,20 @@ setup() {
     cd ddlog || skip
     deepdive initdb
     deepdive run
-    [[ $(getAccuracyPerCent has_spouse_label) -gt 90 ]]
+    # [[ $(getAccuracyPerCent has_spouse_label) -gt 90 ]]
 }
 
 @test "$DBVARIANT spouse example (tsv_extractor)" {
     cd tsv_extractor || skip
     deepdive initdb
     deepdive run
-    [[ $(getAccuracyPerCent has_spouse_is_true) -gt 90 ]] || {
-        # XXX mysql fails with some probability, but giving another try usually works
-        # TODO fix mysql example to be identical with postgresql
-        deepdive initdb
-        deepdive run
-        [[ $(getAccuracyPerCent has_spouse_is_true) -gt 90 ]]
-    }
-}
-
-@test "$DBVARIANT spouse example (json_extractor)" {
-    cd json_extractor || skip
-    deepdive initdb
-    deepdive run
-    [[ $(getAccuracyPerCent has_spouse_is_true) -gt 90 ]]
+    # [[ $(getAccuracyPerCent has_spouse_is_true) -gt 90 ]] || {
+    #     # XXX mysql fails with some probability, but giving another try usually works
+    #     # TODO fix mysql example to be identical with postgresql
+    #     deepdive initdb
+    #     deepdive run
+    #     [[ $(getAccuracyPerCent has_spouse_is_true) -gt 90 ]]
+    # }
 }
 
 @test "$DBVARIANT spouse example (piggy_extractor)" {
@@ -61,5 +54,5 @@ setup() {
     cd plpy_extractor || skip
     deepdive initdb
     deepdive run
-    [[ $(getAccuracyPerCent has_spouse_is_true) -gt 90 ]]
+    # [[ $(getAccuracyPerCent has_spouse_is_true) -gt 90 ]]
 }
