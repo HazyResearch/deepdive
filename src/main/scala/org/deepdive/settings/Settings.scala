@@ -93,7 +93,10 @@ case class FactorDesc(
   inputQuery: String,
   func: FactorFunction,
   weight: FactorWeight,
-  weightPrefix: String
+  weightPrefix: String,
+  mode: Option[String] = Some("deepdive"),
+  cnnConfig: List[String] = List(),
+  port: Option[Int] = None
 )
 
 /* Factor Weight for a factor specified in the settings*/
@@ -225,6 +228,7 @@ case class SamplerSettings(
 /* Schema Settings */
 case class SchemaSettings(
   variables: Map[String, _ <: VariableDataType] = Map.empty,
+  images: Map[String, String] = Map.empty,
   setupFile: Option[String] = None
 )
 

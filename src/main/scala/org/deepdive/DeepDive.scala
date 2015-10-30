@@ -60,7 +60,7 @@ object DeepDive extends Logging {
     val profiler = system.actorOf(Profiler.props, "profiler")
     val taskManager = system.actorOf(TaskManager.props, "taskManager")
     val inferenceManager = system.actorOf(InferenceManager.props(
-      taskManager, settings.schemaSettings.variables, settings.dbSettings), "inferenceManager")
+      taskManager, settings.schemaSettings, settings.dbSettings), "inferenceManager")
     val extractionManager = system.actorOf(
       ExtractionManager.props(settings.extractionSettings.parallelism, settings.dbSettings),
       "extractionManager")
@@ -86,7 +86,10 @@ object DeepDive extends Logging {
     val groundFactorGraphTask = Task("inference_grounding", extractionTasks.map(_.id),
       groundFactorGraphMsg, inferenceManager)
 
-    val inferenceTask = Task("inference", extractionTasks.map(_.id) ++ Seq("inference_grounding"),
+    val groundCNNMsg = InferenceManager.GroundCNN(activeFactors)
+    val groundCNNTask = Task("cnn_grounding", List("inference_grounding"), groundCNNMsg, inferenceManager)
+
+    val inferenceTask = Task("inference", extractionTasks.map(_.id) ++ Seq("inference_grounding", "cnn_grounding"),
       InferenceManager.RunInference(activeFactors, settings.calibrationSettings.holdoutFraction,
         settings.calibrationSettings.holdoutQuery, settings.samplerSettings.samplerCmd,
         settings.samplerSettings.samplerArgs, settings.pipelineSettings, settings.dbSettings),
@@ -107,8 +110,8 @@ object DeepDive extends Logging {
       case 0 =>
         List(reportingTask, terminationTask)
       case _ =>
-        extractionTasks ++ Seq(groundFactorGraphTask) ++
-        List(inferenceTask, calibrationTask, reportingTask, terminationTask)
+        extractionTasks ++
+        List(groundFactorGraphTask, groundCNNTask, inferenceTask, calibrationTask, reportingTask, terminationTask)
     }
 
     // Create a default pipeline that executes all tasks
@@ -128,7 +131,7 @@ object DeepDive extends Logging {
     val postExtraction = activeFactors.size match {
       case 0 =>
         Set("report", "shutdown")
-      case _ => Set("inference_grounding", "inference", "calibration", "report", "shutdown")
+      case _ => Set("inference_grounding", "cnn_grounding", "inference", "calibration", "report", "shutdown")
     }
     if (activeFactors.size == 0) {
       log.info("No active factors. Skip inference.")

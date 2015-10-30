@@ -12,7 +12,8 @@ object Sampler {
   // Tells the Sampler to run inference
   case class Run(samplerCmd: String, samplerOptions: String, weightsFile: String, variablesFile: String,
     factorsFile: String, edgesFile: String, metaFile: String, outputDir: String,
-    baseDir: Option[String], incMode: IncrementalMode)
+    baseDir: Option[String], incMode: IncrementalMode, cnnPortsFile: String,
+    fusionMode: Boolean)
 }
 
 /* Runs inferece on a dumped factor graph. */
@@ -22,10 +23,10 @@ class Sampler extends Actor with ActorLogging {
 
   def receive = {
     case Sampler.Run(samplerCmd, samplerOptions, weightsFile, variablesFile,
-      factorsFile, edgesFile, metaFile, outputDir, baseDir, incMode) =>
+      factorsFile, edgesFile, metaFile, outputDir, baseDir, incMode, cnnPortsFile, fusionMode) =>
       // Build the command
       val cmd = buildSamplerCmd(samplerCmd, samplerOptions, weightsFile, variablesFile,
-      factorsFile, edgesFile, metaFile, outputDir, baseDir.getOrElse(""), incMode)
+      factorsFile, edgesFile, metaFile, outputDir, baseDir.getOrElse(""), incMode, cnnPortsFile, fusionMode)
       log.info(s"Executing: ${cmd.mkString(" ")}")
 
       // Handle the case where cmd! throw exception rather than return a value
@@ -63,7 +64,8 @@ class Sampler extends Actor with ActorLogging {
   // Build the command to run the sampler
   def buildSamplerCmd(samplerCmd: String, samplerOptions: String, weightsFile: String,
     variablesFile: String, factorsFile: String, edgesFile: String, metaFile: String,
-    outputDir: String, baseDir: String, incMode: IncrementalMode) = {
+    outputDir: String, baseDir: String, incMode: IncrementalMode, cnnPortsFile: String,
+    fusionMode: Boolean) = {
     incMode match {
       case MATERIALIZATION =>
         samplerCmd.split(" ").toSeq ++ Seq(
@@ -81,7 +83,9 @@ class Sampler extends Actor with ActorLogging {
           "-f", factorsFile,
           "-e", edgesFile,
           "-m", metaFile,
-          "-o", outputDir) ++ samplerOptions.split(" ")
+          "-o", outputDir) ++
+        samplerOptions.split(" ") ++
+        ( if (fusionMode) Seq("--cnn_ports", cnnPortsFile, "--fusion") else Seq() )
       }
     }
 

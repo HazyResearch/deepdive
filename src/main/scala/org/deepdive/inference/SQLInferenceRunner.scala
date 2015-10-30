@@ -20,7 +20,7 @@
  */
 package org.deepdive.inference
 
-import java.io.{File, PrintWriter}
+import java.io._
 import org.deepdive.calibration._
 import org.deepdive.datastore.JdbcDataStore
 import org.deepdive.datastore.DataLoader
@@ -320,9 +320,9 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
       // IF:
       //  in observation table, in evidence table => Observation 2
-      //  in holdout table => Query 1
+      //  in holdout table => Query 0
       //  not in observation table, not in holdout table, in evidence table => Evidence 1
-      //  else => Query 1
+      //  else => Query 0
       val variableTypeTable = InferenceNamespace.getVariableTypeTableName(relation)
       dataStore.dropAndCreateTableAs(variableTypeTable,
         s"""SELECT t0.id, CASE WHEN t2.variable_id IS NOT NULL AND ${column} IS NOT NULL THEN 2
@@ -888,6 +888,112 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     }
   }
 
+  // ground cnn
+  def groundCNN(schema: SchemaSettings, factorDescs: Seq[FactorDesc], dbSettings: DbSettings) {
+
+    val du = new DataLoader
+    val groundingDir = getFileNameFromPath(Context.outputDir)
+    val groundingPath = dbSettings.gpload match {
+      case false => Context.outputDir
+      case true => new java.io.File(dbSettings.gppath + s"/${groundingDir}").getCanonicalPath()
+    }
+
+
+    // build a map relation -> label column
+    val labelSchema = schema.variables.keys.map(v => v.split('.')(0) -> v.split('.')(1)).toMap
+
+    // ground each cnn
+    factorDescs.filter(_.mode == Some("cnn")).foreach { case factorDesc =>
+
+      log.info("Generating cnn files for " + factorDesc.name)
+
+      // for cnn rules, there should be only one variable
+      assert(factorDesc.func.variables.size == 1)
+
+      val variable = factorDesc.func.variables(0)
+      val relation = variable.headRelation
+      var fileCol = ""
+      var path = ""
+      schema.images.foreach { case (variable, p) =>
+        val Array(rel, file) = variable.split('.')
+        if (rel == relation) {
+          fileCol = file
+          path = p
+        }
+      }
+
+      val train_listfile = s"train_${factorDesc.name}.txt"
+      val test_listfile = s"test_${factorDesc.name}.txt"
+      val train_lmdb = s"train_${factorDesc.name}_lmdb"
+      val test_lmdb = s"test_${factorDesc.name}_lmdb"
+
+      val variableTypeTable = InferenceNamespace.getVariableTypeTableName(relation)
+
+      val cnn_table = s"dd_cnn_${factorDesc.name}"
+      log.info(relation)
+      log.info(cnn_table)
+      labelSchema.keys.foreach(x => log.info(x))
+
+      dataStore.dropAndCreateTableAs(cnn_table,
+        s"""SELECT t0.${fileCol} AS file, t0.${labelSchema.get(relation).get} :: INT AS label, t0.id, t1.__dd_variable_type__ AS type
+        FROM ${relation} t0, ${variableTypeTable} t1
+        WHERE t0.id = t1.id""")
+
+      du.unload(train_listfile,
+        s"${groundingPath}/${train_listfile}", dbSettings,
+        s"""SELECT file, label, id FROM ${cnn_table} WHERE type != 0""",
+        groundingDir)
+
+      du.unload(test_listfile,
+        s"${groundingPath}/${test_listfile}", dbSettings,
+        s"""SELECT file, label, id FROM ${cnn_table} WHERE type = 0""",
+        groundingDir)
+
+      var nTrain : Long = 0
+      issueQuery(s"SELECT COUNT(*) FROM ${cnn_table} WHERE type != 0") { rs =>
+        nTrain = rs.getLong(1)
+      }
+
+      // config files for the sampler
+      val configFile = s"cnn.config.${factorDesc.port.get}"
+      val pw = new PrintWriter(new File(s"${groundingPath}/${configFile}"))
+      // from the solver.prototxt, find the number of iterations...
+      // TODO this is unreliable, comments could mess things up
+      val lines = io.Source.fromFile(factorDesc.cnnConfig(0)).getLines.map(_.trim).filterNot(_.startsWith("#")).mkString("\n")
+      val trainIteration = "max_iter[^:]*:.*".r.findFirstIn(lines).get.split(":")(1).trim
+      val testIteration = "test_iter[^:]*:.*".r.findFirstIn(lines).get.split(":")(1).trim
+      val testInterval = "test_interval[^:]*:.*".r.findFirstIn(lines).get.split(":")(1).trim
+      pw.write(nTrain.toString + "\n")
+      pw.write(trainIteration + "\n")
+      pw.write(testIteration + "\n")
+      pw.write(testInterval + "\n")
+      pw.close()
+
+
+      // generate config files
+      Helpers.executeCmd(Seq("sed", s"s#TRAIN_TEST_PROTOTXT#${groundingPath}/train_test.prototxt#g", factorDesc.cnnConfig(0)) #> new java.io.File(s"${groundingPath}/solver.prototxt"))
+      Helpers.executeCmd(Seq("sed", 
+        s"s#TRAIN_LMDB#${groundingPath}/${train_lmdb}#g;" +
+        s"s#TEST_LMDB#${groundingPath}/${test_lmdb}#g;",
+        factorDesc.cnnConfig(1)) #> new java.io.File(s"${groundingPath}/train_test.prototxt"))
+
+      // lmdb
+      Helpers.executeCmd(s"${InferenceNamespace.getConvertImageScript} ${path}/ ${groundingPath}/${train_listfile} ${groundingPath}/${train_lmdb}")
+      Helpers.executeCmd(s"${InferenceNamespace.getConvertImageScript} ${path}/ ${groundingPath}/${test_listfile} ${groundingPath}/${test_lmdb}")
+
+    }
+
+    // file that contains ports for all cnn
+    val portFile = new java.io.File(s"${groundingPath}/cnn.ports")
+    log.info(s"Writing port information to ${groundingPath}/cnn.ports")
+    val pw = new PrintWriter(new File(s"${groundingPath}/cnn.ports"))
+    factorDescs.filter(_.mode == Some("cnn")).foreach { f =>
+      pw.write(f.port.get.toString + "\n")
+    }
+    pw.close()
+
+  }
+
 
   /** Ground the factor graph to file
    *
@@ -913,7 +1019,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
    * TODO: This method is way too long and needs to be split, also for testing
    * purposes
    */
-  def groundFactorGraph(schema: Map[String, _ <: VariableDataType], factorDescs: Seq[FactorDesc],
+  def groundFactorGraph(schema: SchemaSettings, factorDescs: Seq[FactorDesc],
     calibrationSettings: CalibrationSettings, skipLearning: Boolean, weightTable: String,
     dbSettings: DbSettings) {
 
@@ -937,8 +1043,8 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     }
 
     val schemaForGrounding = dbSettings.incrementalMode match {
-      case IncrementalMode.INCREMENTAL => schema.filter(_._1.startsWith("dd_delta_"))
-      case _ => schema
+      case IncrementalMode.INCREMENTAL => schema.variables.filter(_._1.startsWith("dd_delta_"))
+      case _ => schema.variables
     }
 
     // assign variable id - sequential and unique
@@ -948,7 +1054,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     assignHoldout(schemaForGrounding, calibrationSettings)
 
     // generate cardinality tables
-    generateCardinalityTables(schema)
+    generateCardinalityTables(schema.variables)
 
     // generate factor meta data
     groundFactorMeta(du, factorDescs, dbSettings, groundingPath)
@@ -986,7 +1092,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
   /**
    * This function is executed when sampler finished.
    */
-  def writebackInferenceResult(variableSchema: Map[String, _ <: VariableDataType],
+  def writebackInferenceResult(schema: SchemaSettings,
     variableOutputFile: String, weightsOutputFile: String, dbSettings: DbSettings) = {
 
     execute(createInferenceResultSQL)
@@ -999,7 +1105,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
     // Each (relation, column) tuple is a variable in the plate model.
      // Find all (relation, column) combinations
-    val relationsColumns = variableSchema.keys map (_.split('.')) map {
+    val relationsColumns = schema.variables.keys map (_.split('.')) map {
       case Array(relation, column) => (relation, column)
     }
 

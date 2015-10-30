@@ -142,9 +142,12 @@ object SettingsParser extends Logging {
         |  variables {
         |  }
         |  setup: null
+        |  images {
+        |  }
         |}
       """.stripMargin)
     val variableConfig = config.getConfig("schema.variables")
+    val fileConfig = config.getConfig("schema.images")
     settings updatedConfig(config) copy(
       schemaSettings = SchemaSettings(
         // This is complicated because we encode variable schema by abusing HOCON syntax,
@@ -157,7 +160,13 @@ object SettingsParser extends Logging {
               s"${relationName}.${attributeName}" -> variableType
             }
         } toMap,
-        setupFile = Try(config.getString("schema.setup")) toOption
+        setupFile = Try(config.getString("schema.setup")) toOption,
+        images = configEntries(fileConfig) flatMap {
+          case (relationName, relationConf) => // table names
+            relationConf.root.keys map { attributeName => // attribute maps to table
+              s"${relationName}.${attributeName}" -> relationConf.getString(attributeName)
+            }
+        } toMap
       )
     )
   }
@@ -294,6 +303,8 @@ object SettingsParser extends Logging {
             |function: null
             |weight: null
             |weightPrefix: ${factorName}
+            |mode: "deepdive"
+            |cnn_configurations: []
           """.stripMargin)
         config = config.withValue(s"inference.factors.${factorName}", factorConfig.root)
         FactorDesc(
@@ -301,7 +312,10 @@ object SettingsParser extends Logging {
           inputQuery = InputQueryParser.parseDatastoreInputQuery(factorConfig.getString("input_query")).query,
           func = FactorFunctionParser.parseFactorFunction(factorConfig.getString("function")),
           weight = FactorWeightParser.parseFactorWeight(factorConfig.getString("weight")),
-          weightPrefix = factorConfig.getString("weightPrefix")
+          weightPrefix = factorConfig.getString("weightPrefix"),
+          mode = Try(factorConfig.getString("mode")).toOption,
+          cnnConfig = factorConfig.getStringList("cnn_configurations") toList,
+          port = Try(factorConfig.getInt("port")).toOption
         )
     }
     settings updatedConfig(config) copy(

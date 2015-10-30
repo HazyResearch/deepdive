@@ -14,6 +14,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{Future, Await}
 import scala.language.postfixOps
 import scala.util.Try
+import scala.sys.process._
 
 /* Manages the Factor and Variable relations in the database */
 trait InferenceManager extends Actor with ActorLogging {
@@ -24,7 +25,7 @@ trait InferenceManager extends Actor with ActorLogging {
 
   def dbSettings: DbSettings
   // All variables used in the system with their types
-  def variableSchema: Map[String, _ <: VariableDataType]
+  def schema: SchemaSettings
   // Reference to the task manager
   def taskManager: ActorRef
   // Describes how to start the sampler
@@ -37,6 +38,7 @@ trait InferenceManager extends Actor with ActorLogging {
   lazy val factorGraphDumpFileFactors = new File(s"${Context.outputDir}/graph.factors")
   lazy val factorGraphDumpFileEdges = new File(s"${Context.outputDir}/graph.edges")
   lazy val factorGraphDumpFileMeta = new File(s"${Context.outputDir}/graph.meta")
+  lazy val cnnPortFile = new File(s"${Context.outputDir}/cnn.ports")
   lazy val SamplingOutputDir = new File(s"${Context.outputDir}")
   lazy val SamplingOutputFile = new File(s"${SamplingOutputDir}/inference_result.out.text")
   lazy val SamplingOutputFileWeights = new File(s"${SamplingOutputDir}/inference_result.out.weights.text")
@@ -56,8 +58,20 @@ trait InferenceManager extends Actor with ActorLogging {
       val _sender = sender
       try {
         inferenceRunner.asInstanceOf[SQLInferenceRunner]
-          .groundFactorGraph(variableSchema, factorDescs, calibrationSettings,
+          .groundFactorGraph(schema, factorDescs, calibrationSettings,
             skipLearning, weightTable, dbSettings)
+        sender ! "OK"
+      } catch {
+        // If some exception is thrown, terminate DeepDive
+        case e: Throwable =>
+        sender ! Status.Failure(e)
+        context.stop(self)
+      }
+    case InferenceManager.GroundCNN(factorDescs) =>
+      val _sender = sender
+      try {
+        inferenceRunner.asInstanceOf[SQLInferenceRunner]
+          .groundCNN(schema, factorDescs, dbSettings)
         sender ! "OK"
       } catch {
         // If some exception is thrown, terminate DeepDive
@@ -77,7 +91,7 @@ trait InferenceManager extends Actor with ActorLogging {
       log.info("writing calibration data")
       val calibrationWriter = context.actorOf(calibrationDataWriterProps)
       // Get and write calibraton data for each variable
-      val futures = variableSchema.map { case(variable, dataType) =>
+      val futures = schema.variables.map { case(variable, dataType) =>
         val filename = s"${Context.outputDir}/calibration/${variable}.tsv"
         val data = inferenceRunner.getCalibrationData(variable, dataType, Bucket.ten)
         calibrationWriter ? CalibrationDataWriter.WriteCalibrationData(filename, data)
@@ -89,18 +103,25 @@ trait InferenceManager extends Actor with ActorLogging {
   def runInference(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String],
     samplerJavaArgs: String, samplerOptions: String, pipelineSettings: PipelineSettings, dbSettings: DbSettings) = {
 
+    val fusionMode = !( factorDescs.filter(_.mode == Some("cnn")).isEmpty );
+    factorDescs.filter(_.mode == Some("cnn")).foreach { f =>
+      val cmd = Process(s"caffe train -solver ${Context.outputDir}/solver.prototxt", None, "PORT" -> f.port.get.toString)
+      val caffe = cmd.run
+    }
+
     val sampler = context.actorOf(samplerProps, "sampler")
 
     val samplingResult = sampler ? Sampler.Run(samplerJavaArgs, samplerOptions,
       factorGraphDumpFileWeights.getCanonicalPath, factorGraphDumpFileVariables.getCanonicalPath,
       factorGraphDumpFileFactors.getCanonicalPath, factorGraphDumpFileEdges.getCanonicalPath,
       factorGraphDumpFileMeta.getCanonicalPath, SamplingOutputDir.getCanonicalPath,
-      pipelineSettings.baseDir, dbSettings.incrementalMode)
+      pipelineSettings.baseDir, dbSettings.incrementalMode, cnnPortFile.getCanonicalPath, fusionMode)
+
     // Kill the sampler after it's done :)
     sampler ! PoisonPill
     samplingResult.map { x =>
       inferenceRunner.writebackInferenceResult(
-      variableSchema, SamplingOutputFile.getCanonicalPath,
+      schema, SamplingOutputFile.getCanonicalPath,
       SamplingOutputFileWeights.getCanonicalPath, dbSettings)
     }
   }
@@ -110,23 +131,23 @@ trait InferenceManager extends Actor with ActorLogging {
 object InferenceManager {
 
   /* An inference manager that uses postgres as its datastore */
-  class PostgresInferenceManager(val taskManager: ActorRef, val variableSchema: Map[String, _ <: VariableDataType], val dbSettings: DbSettings)
+  class PostgresInferenceManager(val taskManager: ActorRef, val schema: SchemaSettings, val dbSettings: DbSettings)
     extends InferenceManager with PostgresInferenceRunnerComponent {
     lazy val inferenceRunner = new PostgresInferenceRunner(dbSettings)
   }
 
   /* An inference manager that uses postgres as its datastore */
-  class MysqlInferenceManager(val taskManager: ActorRef, val variableSchema: Map[String, _ <: VariableDataType], val dbSettings: DbSettings)
+  class MysqlInferenceManager(val taskManager: ActorRef, val schema: SchemaSettings, val dbSettings: DbSettings)
     extends InferenceManager with MysqlInferenceRunnerComponent {
     lazy val inferenceRunner = new MysqlInferenceRunner(dbSettings)
   }
 
-  def props(taskManager: ActorRef, variableSchema: Map[String, _ <: VariableDataType],
+  def props(taskManager: ActorRef, schema: SchemaSettings,
     dbSettings: DbSettings) = {
     dbSettings.driver match {
-       case "org.postgresql.Driver" => Props(classOf[PostgresInferenceManager], taskManager, variableSchema, dbSettings)
+       case "org.postgresql.Driver" => Props(classOf[PostgresInferenceManager], taskManager, schema, dbSettings)
 
-       case "com.mysql.jdbc.Driver" => Props(classOf[MysqlInferenceManager], taskManager, variableSchema, dbSettings)
+       case "com.mysql.jdbc.Driver" => Props(classOf[MysqlInferenceManager], taskManager, schema, dbSettings)
     }
   }
 
@@ -142,5 +163,7 @@ object InferenceManager {
     samplerJavaArgs: String, samplerOptions: String, pipelineSettings: PipelineSettings, dbSettings: DbSettings)
   // Writes calibration data to predefined files
   case object WriteCalibrationData
+  // ground cnn
+  case class GroundCNN(factorDescs: Seq[FactorDesc])
 
 }

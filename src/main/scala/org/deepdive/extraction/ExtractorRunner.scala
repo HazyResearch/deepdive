@@ -298,7 +298,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
    */
   private def executeScriptOrFail(script: String, failureReceiver: ActorRef) : Unit = {
     try {
-      Helpers.executeCmd(script);
+      Helpers.executeFile(script);
     } catch {
       case e: Throwable =>
         log.error(e.toString)
@@ -432,7 +432,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
     delWriter.close()
     executeScriptOrFail(delTmpFile.getAbsolutePath(), taskSender)
 
-    // Helpers.executeCmd(delCmd) // This won't work because of escaping issues?
+    // Helpers.executeFile(delCmd) // This won't work because of escaping issues?
 
     try {
       dl.unload(fname, psqlFilePath, dbSettings, s"${inputQuery}", "")

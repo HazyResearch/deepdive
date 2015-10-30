@@ -18,7 +18,7 @@ trait InferenceRunner {
     def BatchSize : Option[Int]
 
     /* Generate a grounded graph based on the factor description */
-    def groundFactorGraph(schema: Map[String, _ <: VariableDataType],
+    def groundFactorGraph(schema: SchemaSettings,
         factorDescs: Seq[FactorDesc], calibrationSettings: CalibrationSettings,
         skipLearning: Boolean, weightTable: String, dbSettings: DbSettings = null) : Unit
 
@@ -27,7 +27,7 @@ trait InferenceRunner {
      * The given file is a space-separated file with three columns:
      * VariableID, LastSampleValue, ExpectedValue
      */
-    def writebackInferenceResult(variableSchema: Map[String, _ <: VariableDataType],
+    def writebackInferenceResult(schema: SchemaSettings,
         variableOutputFile: String, weightsOutputFile: String, dbSettings: DbSettings) : Unit
 
 

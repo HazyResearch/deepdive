@@ -101,12 +101,12 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         dataStoreHelper.bulkInsert("t3", data_3.iterator)
 
         // Define schema
-        val schema = Map[String, VariableDataType]("t1.is_correct" ->
+        val schema = SchemaSettings(variables = Map[String, VariableDataType]("t1.is_correct" ->
           BooleanType, "t2.is_correct" -> BooleanType, "t3.is_correct" ->
-          BooleanType)
+          BooleanType))
 
         // Assign variable id - sequential and unique
-        inferenceRunner.assignVariablesIds(schema, dbSettings)
+        inferenceRunner.assignVariablesIds(schema.variables, dbSettings)
 
         // Check the results
         val minIdt1 = SQL(s"""SELECT min(id) FROM t1""" ).map(rs =>
@@ -138,7 +138,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         }
         dataStoreHelper.bulkInsert("r1", data.iterator)
 
-        val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
+        val schema = SchemaSettings(variables = Map[String, VariableDataType]("r1.is_correct" -> BooleanType))
 
         // Build the factor description
         val factorDesc = FactorDesc(
@@ -197,7 +197,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         }
         dataStoreHelper.bulkInsert("r1", data.iterator)
 
-        val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
+        val schema = SchemaSettings(variables = Map[String, VariableDataType]("r1.is_correct" -> BooleanType))
 
         // Build the factor description
         val factorDesc = FactorDesc(
@@ -256,7 +256,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         }
         dataStoreHelper.bulkInsert("r1", data.iterator)
 
-        val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
+        val schema = SchemaSettings(variables = Map[String, VariableDataType]("r1.is_correct" -> BooleanType))
 
         // Build the factor description
         val factorDesc = FactorDesc(
@@ -309,7 +309,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         }
         dataStoreHelper.bulkInsert("r1", data.iterator)
 
-        val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
+        val schema = SchemaSettings(variables = Map[String, VariableDataType]("r1.is_correct" -> BooleanType))
 
         // Build the factor description
         val factorDesc = FactorDesc(
@@ -352,7 +352,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         }
         dataStoreHelper.bulkInsert("r1", data.iterator)
 
-        val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
+        val schema = SchemaSettings(variables = Map[String, VariableDataType]("r1.is_correct" -> BooleanType))
 
         // Build the factor description
         val factorDesc = FactorDesc(
@@ -395,7 +395,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         }
         dataStoreHelper.bulkInsert("r1", data.iterator)
 
-        val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
+        val schema = SchemaSettings(variables = Map[String, VariableDataType]("r1.is_correct" -> BooleanType))
 
         // Build the factor description
         val factorDesc = FactorDesc(
@@ -435,7 +435,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         }
         dataStoreHelper.bulkInsert("r1", data.iterator)
 
-        val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
+        val schema = SchemaSettings(variables = Map[String, VariableDataType]("r1.is_correct" -> BooleanType))
 
         // Build the factor description
         val factorDesc = FactorDesc(
@@ -475,7 +475,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         dataStoreHelper.bulkInsert("r1", data1.iterator)
         dataStoreHelper.bulkInsert("r2", data2.iterator)
 
-        val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType, "r2.is_correct" -> BooleanType)
+        val schema = SchemaSettings(variables = Map[String, VariableDataType]("r1.is_correct" -> BooleanType, "r2.is_correct" -> BooleanType))
         val factorDesc = FactorDesc(
           name = "testFactor",
           inputQuery =
@@ -548,7 +548,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
           keyMap = null
         )
 
-        val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
+        val schema = SchemaSettings(variables = Map[String, VariableDataType]("r1.is_correct" -> BooleanType))
 
         // Build the factor description
         val factorDesc = FactorDesc(
@@ -627,7 +627,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
           weightPrefix = "weight_prefix"
         )
 
-        val schemaInc = Map[String, VariableDataType]("dd_delta_r1.is_correct" -> BooleanType)
+        val schemaInc = SchemaSettings(variables = Map[String, VariableDataType]("dd_delta_r1.is_correct" -> BooleanType))
 
         // Ground the graph
         inferenceRunner.groundFactorGraph(schemaInc, Seq(factorDescInc),
@@ -668,7 +668,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
           keyMap = null
         )
 
-        val schema = Map[String, VariableDataType]("r1.class" -> MultinomialType(3))
+        val schema = SchemaSettings(variables = Map[String, VariableDataType]("r1.class" -> MultinomialType(3)))
 
         // Build the factor description
         val factorDesc = FactorDesc(
@@ -747,8 +747,8 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
           weightPrefix = "weight_prefix"
         )
 
-        val schemaInc = Map[String, VariableDataType]("dd_delta_r1.class" -> MultinomialType(3),
-          "dd_new_r1.class" -> MultinomialType(3))
+        val schemaInc = SchemaSettings(variables = Map[String, VariableDataType]("dd_delta_r1.class" -> MultinomialType(3),
+          "dd_new_r1.class" -> MultinomialType(3)))
 
         // Ground the graph
         inferenceRunner.groundFactorGraph(schemaInc, Seq(factorDescInc),
@@ -789,7 +789,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         dataStoreHelper.bulkInsert("r1", data.iterator)
 
         // Define the schema
-        val schema = Map[String, VariableDataType]("r1.value" -> MultinomialType(4))
+        val schema = SchemaSettings(variables = Map[String, VariableDataType]("r1.value" -> MultinomialType(4)))
 
         // Build the factor description
         val factorDesc = FactorDesc(
@@ -833,7 +833,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         dataStoreHelper.bulkInsert("r1", data.iterator)
 
         // Define the schema
-        val schema = Map[String, VariableDataType]("r1.value" -> MultinomialType(4))
+        val schema = SchemaSettings(variables = Map[String, VariableDataType]("r1.value" -> MultinomialType(4)))
 
         // Build the factor description
         val factorDesc = FactorDesc(
@@ -877,7 +877,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         dataStoreHelper.bulkInsert("r1", data.iterator)
 
         // Define the schema
-        val schema = Map[String, VariableDataType]("r1.value" -> MultinomialType(4))
+        val schema = SchemaSettings(variables = Map[String, VariableDataType]("r1.value" -> MultinomialType(4)))
 
         // Build the factor description
         val factorDesc = FactorDesc(
@@ -929,7 +929,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         dataStoreHelper.bulkInsert("r1", data.iterator)
 
         // Define the schema
-        val schema = Map[String, VariableDataType]("r1.value" -> MultinomialType(4))
+        val schema = SchemaSettings(variables = Map[String, VariableDataType]("r1.value" -> MultinomialType(4)))
 
         // Build the factor description
         val factorDesc = FactorDesc(
@@ -968,13 +968,13 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
 
       val variablesFile = getClass.getResource("/inference/sample_result.variables.text").getFile
       val weightsFile = getClass.getResource("/inference/sample_result.weights.text").getFile
-      val schema = Map[String, VariableDataType]("has_spouse.is_true" -> BooleanType)
+      val schema = SchemaSettings(variables = Map[String, VariableDataType]("has_spouse.is_true" -> BooleanType))
 
       it("should work") {
         cancelUnlessPostgres()
         inferenceRunner.init()
         val holdoutFraction = 0.0
-        inferenceRunner.groundFactorGraph(Map(), Seq(), CalibrationSettings(
+        inferenceRunner.groundFactorGraph(SchemaSettings(), Seq(), CalibrationSettings(
           holdoutFraction = holdoutFraction,
           holdoutQuery = None,
           observationQuery = None

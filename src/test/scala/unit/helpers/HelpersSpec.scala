@@ -17,7 +17,7 @@ class HelpersSpec extends FunSpec with BeforeAndAfter {
       writer.println(s"mkdir -p ${Context.outputDir} && touch ${testPath}")
       writer.close()
 
-      Helpers.executeCmd(bashFile.getAbsolutePath())
+      Helpers.executeFile(bashFile.getAbsolutePath())
       val testFile = new File(s"${testPath}")
       assert(testFile.exists() === true)
 
@@ -31,7 +31,7 @@ class HelpersSpec extends FunSpec with BeforeAndAfter {
       writer.println(s"bad")
       writer.close()
       intercept[RuntimeException] {
-        Helpers.executeCmd(bashFile.getAbsolutePath())
+        Helpers.executeFile(bashFile.getAbsolutePath())
       }
       bashFile.delete()
     }

@@ -99,10 +99,21 @@ object Helpers extends Logging {
    *
    *  @throws RuntimeException if failed
    */
-  def executeCmd(cmd: String) : Unit = {
+  def executeFile(cmd: String) : Unit = {
     // Make the file executable, if necessary
     val file = new java.io.File(cmd)
     if (file.isFile) file.setExecutable(true, false)
+    log.info(s"""Executing command: "$cmd" """)
+    val exitValue = cmd!(ProcessLogger(out => log.info(out)))
+    // Depending on the exit value we return success or throw an exception
+    exitValue match {
+      case 0 =>
+      case _ => throw new RuntimeException(s"Failure when executing script: ${cmd}")
+    }
+  }
+
+  // executes a shell command
+  def executeCmd(cmd: ProcessBuilder) : Unit = {
     log.info(s"""Executing command: "$cmd" """)
     val exitValue = cmd!(ProcessLogger(out => log.info(out)))
     // Depending on the exit value we return success or throw an exception
@@ -135,7 +146,7 @@ object Helpers extends Logging {
     writer.println(s"${cmd}")
     writer.close()
     try {
-      executeCmd(file.getAbsolutePath())
+      executeFile(file.getAbsolutePath())
     } finally {
       // Delete the tmp file when finished
       file.delete();

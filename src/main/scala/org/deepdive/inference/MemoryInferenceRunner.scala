@@ -17,7 +17,7 @@ trait MemoryInferenceRunnerComponent extends InferenceRunnerComponent{
     def init() = {
     }
 
-    def groundFactorGraph(schema: Map[String, _ <: VariableDataType],
+    def groundFactorGraph(schema: SchemaSettings,
       factorDescs: Seq[FactorDesc], calibrationSettings: CalibrationSettings,
       skipLearning: Boolean, weightTable: String, dbSettings: DbSettings) : Unit = {
 
@@ -25,7 +25,7 @@ trait MemoryInferenceRunnerComponent extends InferenceRunnerComponent{
 
     def BatchSize = None
 
-    def writebackInferenceResult(variableSchema: Map[String, _ <: VariableDataType],
+    def writebackInferenceResult(variableSchema: SchemaSettings,
       variableOutputFile: String, weightsOutputFile: String, dbSettings: DbSettings) : Unit = {
     }
 

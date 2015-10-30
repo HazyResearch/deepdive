@@ -46,7 +46,7 @@ trait MysqlInferenceRunnerComponent extends SQLInferenceRunnerComponent {
       val writer = new PrintWriter(tmpFile)
       writer.println(s"${writebackCmd}")
       writer.close()
-      Helpers.executeCmd(tmpFile.getAbsolutePath())
+      Helpers.executeFile(tmpFile.getAbsolutePath())
       tmpFile.delete()
     }
 

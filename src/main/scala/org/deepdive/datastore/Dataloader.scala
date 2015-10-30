@@ -145,7 +145,7 @@ class DataLoader extends JdbcDataStore with Logging {
       cmdwriter.close()
 
       log.info(cmd)
-      Helpers.executeCmd(cmdfile.getAbsolutePath())
+      Helpers.executeFile(cmdfile.getAbsolutePath())
       cmdfile.delete()
       loadyaml.delete()
     } else {
@@ -172,7 +172,7 @@ class DataLoader extends JdbcDataStore with Logging {
       log.info(writebackCmd)
       writer.println(writebackCmd)
       writer.close()
-      Helpers.executeCmd(cmdfile.getAbsolutePath())
+      Helpers.executeFile(cmdfile.getAbsolutePath())
       cmdfile.delete()
     }
   }
@@ -212,7 +212,7 @@ class DataLoader extends JdbcDataStore with Logging {
     log.info(writebackCmd)
     writer.println(writebackCmd)
     writer.close()
-    Helpers.executeCmd(cmdfile.getAbsolutePath())
+    Helpers.executeFile(cmdfile.getAbsolutePath())
     cmdfile.delete()
   }
 
