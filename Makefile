@@ -140,4 +140,4 @@ build-ddlog:
 	git submodule update --init ddlog
 	$(MAKE) -C ddlog ddlog.jar
 	cp -f ddlog/ddlog.jar util/ddlog.jar
-test-build build: build-ddlog
+test-build build: build-ddlog build-sampler

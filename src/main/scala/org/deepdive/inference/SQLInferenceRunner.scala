@@ -402,8 +402,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
   def convertGroundingFormat(groundingPath: String) {
     log.info("Converting grounding file format...")
     // TODO: this python script is dangerous and ugly. It changes too many states!
-    val cmd = s"python ${InferenceNamespace.getFormatConvertingScriptPath} ${groundingPath} " +
-        s"${InferenceNamespace.getFormatConvertingWorkerPath} ${Context.outputDir}"
+    val cmd = Seq("sh", "-c", s"cd ${groundingPath} && tobinary.py . format_converter ${Context.outputDir}")
     log.debug("Executing: " + cmd)
     val exitValue = cmd!(ProcessLogger(
       out => log.info(out),
@@ -417,7 +416,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
   }
 
   def generateAcitve(groundingPath: String) {
-    val cmd = s"${InferenceNamespace.getActiveScript}"
+    val cmd = s"active.sh"
     log.debug("Executing: " + cmd)
     val exitValue = cmd!(ProcessLogger(
       out => log.info(out),
