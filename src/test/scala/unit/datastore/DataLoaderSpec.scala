@@ -85,33 +85,14 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with Logging {
       val tsvFile = getClass.getResource("/dataloader1.tsv").getFile
       du.load(new File(tsvFile).getAbsolutePath(), "dataloader1", dbSettings)
 
-      // JdbcDataStoreObject.executeSqlQueryWithCallback(sql)(op)
-      var result1 = ""
-      var result2 = false
-      var result3 = ""
-      var result4 = 0
-      JdbcDataStoreObject.executeSqlQueryWithCallback(s"""SELECT * FROM dataloader1 WHERE id = 0""") { rs =>
-        result1 = rs.getString("feature")
-        result2 = rs.getBoolean("is_correct")
-      }
-      JdbcDataStoreObject.executeSqlQueryWithCallback(s"""SELECT * FROM dataloader1 WHERE is_correct = false""") { rs =>
-        result3 = rs.getString("feature")
-        result4 = rs.getInt("id")
-      }
-
-//      val result1 = SQL(s"""SELECT * FROM loader WHERE id = 0""").map(rs => rs.string("feature")).single.apply().get
-//      val result2 = SQL(s"""SELECT * FROM loader WHERE id = 0""").map(rs => rs.boolean("is_correct")).single.apply().get
-//      val result3 = SQL(s"""SELECT * FROM loader WHERE is_correct = false""").map(rs => rs.string("feature")).single.apply()
-//      val result4 = SQL(s"""SELECT * FROM loader WHERE is_correct = false""").map(rs => rs.int("id")).single.apply().get
-
-      log.debug(s"DEBUG: GET RESULT ${result1}")
-      log.debug(s"DEBUG: GET RESULT ${result2}")
-      log.debug(s"DEBUG: GET RESULT ${result3}")
-      log.debug(s"DEBUG: GET RESULT ${result4}")
+      val result1 = SQL(s"""SELECT * FROM dataloader1 WHERE id = 0""").map(rs => rs.string("feature")).single.apply().get
+      val result2 = SQL(s"""SELECT * FROM dataloader1 WHERE id = 0""").map(rs => rs.boolean("is_correct")).single.apply().get
+      val result3 = SQL(s"""SELECT * FROM dataloader1 WHERE is_correct = false""").map(rs => rs.string("feature")).single.apply()
+      val result4 = SQL(s"""SELECT * FROM dataloader1 WHERE is_correct = false""").map(rs => rs.int("id")).single.apply().get
 
       assert(result1 === "hi")
       assert(result2 === true)
-      assert(result3 === null)
+      assert(result3 === None)
       assert(result4 === 100)
     }
 
@@ -121,26 +102,14 @@ class DataLoaderSpec extends FunSpec with BeforeAndAfter with Logging {
       val tsvFile = getClass.getResource("/dataloader1.tsv").getFile
       val filePath = new File(tsvFile).getParent() + "/dataloader*.tsv"
       du.load(filePath, "dataloader1", dbSettings)
-      // val result1 = SQL(s"""SELECT * FROM loader WHERE id = 0""").map(rs => rs.string("feature")).single.apply().get
-      // val result2 = SQL(s"""SELECT * FROM loader WHERE id = 0""").map(rs => rs.boolean("is_correct")).single.apply().get
-      // val result3 = SQL(s"""SELECT * FROM loader WHERE is_correct = false""").map(rs => rs.string("feature")).single.apply()
-      // val result4 = SQL(s"""SELECT * FROM loader WHERE is_correct = false""").map(rs => rs.int("id")).single.apply().get
-      var result1 = ""
-      var result2 = false
-      var result3 = ""
-      var result4 = 0
-      JdbcDataStoreObject.executeSqlQueryWithCallback(s"""SELECT * FROM dataloader1 WHERE id = 0""") { rs =>
-        result1 = rs.getString("feature")
-        result2 = rs.getBoolean("is_correct")
-      }
-      JdbcDataStoreObject.executeSqlQueryWithCallback(s"""SELECT * FROM dataloader1 WHERE is_correct = false""") { rs =>
-        result3 = rs.getString("feature")
-        result4 = rs.getInt("id")
-      }
+      val result1 = SQL(s"""SELECT * FROM dataloader1 WHERE id = 0""").map(rs => rs.string("feature")).single.apply().get
+      val result2 = SQL(s"""SELECT * FROM dataloader1 WHERE id = 0""").map(rs => rs.boolean("is_correct")).single.apply().get
+      val result3 = SQL(s"""SELECT * FROM dataloader1 WHERE is_correct = false""").map(rs => rs.string("feature")).single.apply()
+      val result4 = SQL(s"""SELECT * FROM dataloader1 WHERE is_correct = false""").map(rs => rs.int("id")).single.apply().get
 
       assert(result1 === "hi")
       assert(result2 === true)
-      assert(result3 === null)
+      assert(result3 === None)
       assert(result4 === 100)
     }
 

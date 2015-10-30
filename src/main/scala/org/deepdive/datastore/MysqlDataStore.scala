@@ -106,11 +106,7 @@ class MysqlDataStore extends JdbcDataStore with Logging {
   // assign senquential ids to table's id column
   override def assignIds(table: String, startId: Long, sequence: String) : Long = {
     executeSqlQueries(s"UPDATE ${table} SET id = ${nextVal(sequence)};")
-    var count : Long = 0
-    executeSqlQueryWithCallback(s"""SELECT COUNT(*) FROM ${table};""") { rs =>
-      count = rs.getLong(1)
-    }
-    return count
+    executeSqlQueryGetLong(s"SELECT COUNT(*) FROM ${table};")
   }
 
 

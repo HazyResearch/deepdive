@@ -29,34 +29,6 @@ trait JdbcDataStore extends Logging {
 
   def init() : Unit = {}
 
-  /**
-   * Issues a single SQL query that can return results, and perform {@code op}
-   * as callback function
-   */
-  def executeSqlQueryWithCallback(sql: String)
-          (op: (java.sql.ResultSet) => Unit) = {
-    log.debug("Executing SQL with callback... " + sql)
-    val conn = borrowConnection()
-    try {
-      conn.setAutoCommit(false);
-      val stmt = conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY,
-        java.sql.ResultSet.CONCUR_READ_ONLY);
-      stmt.setFetchSize(5000);
-      val rs = stmt.executeQuery(sql)
-      while(rs.next()){
-        op(rs)
-      }
-    } catch {
-      // SQL cmd exception
-      case exception : Throwable =>
-      log.error(exception.toString)
-      throw exception
-    } finally {
-      conn.close()
-    }
-  }
-
-
   def prepareStatement(query: String)
           (op: (java.sql.PreparedStatement) => Unit) = {
     val conn = borrowConnection()
@@ -88,6 +60,30 @@ trait JdbcDataStore extends Logging {
       case 0 =>
       case c => throw new RuntimeException(s"Failure (exit status = ${c}) while executing SQL: ${sql}")
     }
+  }
+
+  def executeSqlQueryGetTSV(sql: String, index: Int) : String = {
+    log.debug("Executing SQL:\n" + sql)
+    val sqlCmd = Seq("deepdive-sql", "eval", sql.stripSuffix(";"))
+    var result = ""
+    val exitValue = sqlCmd ! (ProcessLogger(out => result = out))
+    exitValue match {
+      case 0 =>
+      case c => throw new RuntimeException(s"Failure (exit status = ${c}) while executing SQL: ${sql}")
+    }
+    result.split("\t")(index)
+  }
+
+  // execute a SQL query and get boolean result
+  def executeSqlQueryGetBoolean(sql: String, index: Int = 0) : Boolean = {
+    val result = executeSqlQueryGetTSV(sql, index)
+    result == "t"
+  }
+
+  // execute a SQL query and get long result
+  def executeSqlQueryGetLong(sql: String, index: Int = 0) : Long = {
+    val result = executeSqlQueryGetTSV(sql, index)
+    result.toLong
   }
 
   // check if the given table name is deepdive's internal table, if not throw exception
@@ -153,11 +149,7 @@ trait JdbcDataStore extends Logging {
       SELECT 1
       FROM   pg_language
       WHERE  lanname = '${language}');"""
-    var exists = false
-    executeSqlQueryWithCallback(sql) { rs =>
-      exists = rs.getBoolean(1)
-    }
-    return exists
+    executeSqlQueryGetBoolean(sql)
   }
 
   // return if a function of the same name exists in
@@ -170,29 +162,17 @@ trait JdbcDataStore extends Logging {
         WHERE routine_name = '${function}'
       );
     """
-    var exists = false
-    executeSqlQueryWithCallback(sql) { rs =>
-      exists = rs.getBoolean(1)
-    }
-    return exists
+    executeSqlQueryGetBoolean(sql)
   }
 
   // check whether greenplum is used
   def isUsingGreenplum() : Boolean = {
-    var usingGreenplum = false
-    executeSqlQueryWithCallback("""SELECT version() LIKE '%Greenplum%';""") { rs =>
-      usingGreenplum = rs.getBoolean(1)
-    }
-    return usingGreenplum
+    executeSqlQueryGetBoolean("SELECT version() LIKE '%Greenplum%';")
   }
 
   // check whether postgres-xl is used
   lazy val isUsingPostgresXL : Boolean = {
-    var usingXL = false
-    executeSqlQueryWithCallback("""SELECT version() LIKE '%Postgres-XL%';""") { rs =>
-      usingXL = rs.getBoolean(1)
-    }
-    usingXL
+    executeSqlQueryGetBoolean("SELECT version() LIKE '%Postgres-XL%';")
   }
 
   def unlogged = if (isUsingPostgresXL) "UNLOGGED" else ""

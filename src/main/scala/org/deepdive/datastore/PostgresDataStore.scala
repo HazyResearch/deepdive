@@ -153,11 +153,7 @@ class PostgresDataStore extends JdbcDataStore with Logging {
     } else {
       executeSqlQueries(s"UPDATE ${table} SET id = nextval('${sequence}');")
     }
-    var count : Long = 0
-    executeSqlQueryWithCallback(s"""SELECT COUNT(*) FROM ${table};""") { rs =>
-      count = rs.getLong(1)
-    }
-    return count
+    executeSqlQueryGetLong(s"""SELECT COUNT(*) FROM ${table};""", 0)
   }
 
   override def assignIdsOrdered(table: String, startId: Long, sequence: String, orderBy: String = "") : Long = {
@@ -166,11 +162,7 @@ class PostgresDataStore extends JdbcDataStore with Logging {
     } else {
       throw new UnsupportedOperationException()
     }
-    var count : Long = 0
-    executeSqlQueryWithCallback(s"""SELECT COUNT(*) FROM ${table};""") { rs =>
-      count = rs.getLong(1)
-    }
-    return count
+    executeSqlQueryGetLong(s"""SELECT COUNT(*) FROM ${table};""")
   }
 
   override def init() : Unit = {
@@ -223,11 +215,7 @@ class PostgresDataStore extends JdbcDataStore with Logging {
         WHERE  table_schema = 'public'
         AND    table_name = '${table.toLowerCase}'
       );"""
-    var exists = false
-    executeSqlQueryWithCallback(sql) { rs =>
-      exists = rs.getBoolean(1)
-    }
-    return exists;
+    executeSqlQueryGetBoolean(sql)
   }
 
 }

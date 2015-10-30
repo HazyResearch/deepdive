@@ -71,14 +71,6 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     dataStore.executeSqlQueries(sql)
   }
 
-  /**
-   * Issues a single SQL query that can return results, and perform {@code op}
-   * as callback function
-   */
-  def issueQuery(sql: String)(op: (java.sql.ResultSet) => Unit) = {
-    dataStore.executeSqlQueryWithCallback(sql)(op)
-  }
-
   def copyLastWeightsSQL = {
    val distribution = if (dataStore.isUsingPostgresXL) "DISTRIBUTE BY REPLICATION" else ""
    s"""
@@ -112,12 +104,6 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     ORDER BY mir.expectation DESC);
   """
 
-  /**
-   *  Create indexes for query table to speed up grounding. (this is useful for MySQL)
-   *  Behavior may varies depending on different DBMS.
-   */
-  def createIndexesForQueryTable(queryTable: String, weightVariables: Seq[String]) : Unit
-
   // ========= Datastore specific queries  ============
 
   /**
@@ -146,19 +132,6 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     return new java.io.File(path).getName()
   }
 
-  /**
-   * Returns a column type. Applicable for all DBMSs.
-   */
-  def checkColumnType(table: String, column: String): String = {
-    var colType = ""
-    issueQuery(s"select data_type from information_schema.columns " +
-        s"where table_name='${table}' and column_name='${column}';") { rs =>
-        colType = rs.getString(1)
-      }
-    log.debug(s"Column type for ${table}: ${colType}")
-    return colType
-  }
-
   // assign variable id - sequential and unique
   def assignVariablesIds(schema: Map[String, _ <: VariableDataType], dbSettings: DbSettings) {
     // fast sequential id assign function
@@ -178,11 +151,8 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
   // assign variable ids for incremental
   def assignVariableIdsIncremental(schema: Map[String, _ <: VariableDataType], dbSettings: DbSettings) {
-    var idoffset : Long = 0
-    issueQuery(s""" SELECT num_variables FROM ${InferenceNamespace.getIncrementalMetaTableName()}""") {
-      rs => idoffset = rs.getLong(1)
-      execute(s"ALTER SEQUENCE ${IdSequence} RESTART ${idoffset}")
-    }
+    var idoffset : Long = dataStore.executeSqlQueryGetLong(s""" SELECT num_variables FROM ${InferenceNamespace.getIncrementalMetaTableName()}""", 0)
+    execute(s"ALTER SEQUENCE ${IdSequence} RESTART ${idoffset}")
 
     schema.foreach { case(variable, dataType) =>
       val Array(relation, column) = variable.split('.')
@@ -310,10 +280,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
       val incCondition = dbSettings.incrementalMode match {
         case IncrementalMode.INCREMENTAL => {
-          var numVariablesMat : Long = 0
-          issueQuery(s""" SELECT num_variables FROM ${InferenceNamespace.getIncrementalMetaTableName()}""") {
-            rs => numVariablesMat = rs.getLong(1)
-          }
+          val numVariablesMat : Long = dataStore.executeSqlQueryGetLong(s""" SELECT num_variables FROM ${InferenceNamespace.getIncrementalMetaTableName()}""", 0)
           s"""AND (t0.id >= ${numVariablesMat})"""
         }
         case _ => ""
@@ -335,9 +302,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         var numVariables : Long = 0
         schema.foreach { case(variable, dataType) =>
           var Array(relation, column) = variable.split('.')
-          issueQuery(s"SELECT COUNT(*) FROM ${relation}") { rs =>
-            numVariables += rs.getLong(1)
-          }
+          numVariables += dataStore.executeSqlQueryGetLong(s"SELECT COUNT(*) FROM ${relation}", 0)
         }
         execute(s"""UPDATE ${InferenceNamespace.getIncrementalMetaTableName()}
           SET num_variables = ${numVariables}; """)
@@ -453,13 +418,9 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
     dbSettings.incrementalMode match {
       case IncrementalMode.INCREMENTAL =>  {
-        issueQuery(s""" SELECT num_weights FROM ${InferenceNamespace.getIncrementalMetaTableName()}""") { rs =>
-          cweightid = rs.getLong(1)
-        }
+        cweightid = dataStore.executeSqlQueryGetLong(s""" SELECT num_weights FROM ${InferenceNamespace.getIncrementalMetaTableName()}""", 0)
         execute(s"ALTER SEQUENCE ${weightidSequence} RESTART ${cweightid}")
-        issueQuery(s""" SELECT num_factors FROM ${InferenceNamespace.getIncrementalMetaTableName()}""") { rs =>
-          factorid = rs.getLong(1)
-        }
+        factorid = dataStore.executeSqlQueryGetLong(s""" SELECT num_factors FROM ${InferenceNamespace.getIncrementalMetaTableName()}""", 0)
         execute(s"ALTER SEQUENCE ${factoridSequence} RESTART ${factorid}")
       }
       case _ =>
@@ -533,10 +494,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       // maintain incremental meta data
       dbSettings.incrementalMode match {
         case IncrementalMode.MATERIALIZATION => {
-          var numFactors : Long = 0
-          issueQuery(s"SELECT COUNT(*) FROM ${querytable}") { rs =>
-            numFactors += rs.getLong(1)
-          }
+          val numFactors : Long = dataStore.executeSqlQueryGetLong(s"SELECT COUNT(*) FROM ${querytable}", 0)
           execute(s"""UPDATE ${InferenceNamespace.getIncrementalMetaTableName()}
             SET num_factors = ${numFactors};""")
         }
@@ -616,10 +574,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       def updateIncWeightMeta() {
         dbSettings.incrementalMode match {
           case IncrementalMode.MATERIALIZATION => {
-            var numWeights : Long = 0
-            issueQuery(s"SELECT COUNT(*) FROM ${weighttableForThisFactor}") { rs =>
-              numWeights += rs.getLong(1)
-            }
+            val numWeights : Long = dataStore.executeSqlQueryGetLong(s"SELECT COUNT(*) FROM ${weighttableForThisFactor}")
             execute(s"""UPDATE ${InferenceNamespace.getIncrementalMetaTableName()}
               SET num_weights = ${numWeights}""")
           }
@@ -630,10 +585,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       // condition for incremental mode
       val incCondition = dbSettings.incrementalMode match {
         case IncrementalMode.INCREMENTAL => {
-          var numWeightsMat : Long = 0
-          issueQuery(s""" SELECT num_weights FROM ${InferenceNamespace.getIncrementalMetaTableName()}""") {
-            rs => numWeightsMat = rs.getLong(1)
-          }
+          val numWeightsMat : Long = dataStore.executeSqlQueryGetLong(s""" SELECT num_weights FROM ${InferenceNamespace.getIncrementalMetaTableName()}""")
           s"""WHERE id >= ${numWeightsMat}"""
         }
         case _ => ""
@@ -666,10 +618,9 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         // check null weight (only if there are weight variables)
         if (hasWeightVariables) {
           val weightChecklist = factorDesc.weight.variables.map(v => s""" ${dataStore.quoteColumn(v)} IS NULL """).mkString("AND")
-          issueQuery(s"SELECT COUNT(*) FROM ${querytable} WHERE ${weightChecklist}") { rs =>
-            if (rs.getLong(1) > 0) {
-              throw new RuntimeException("Weight variable has null values")
-            }
+          val count = dataStore.executeSqlQueryGetLong(s"SELECT COUNT(*) FROM ${querytable} WHERE ${weightChecklist}", 0)
+          if (count > 0) {
+            throw new RuntimeException("Weight variable has null values")
           }
         }
 
@@ -849,10 +800,9 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
   def createIncrementalMetaData() {
     dataStore.dropAndCreateTable(InferenceNamespace.getIncrementalMetaTableName(),
       s"id int, num_variables bigint, num_factors bigint, num_weights bigint")
-    issueQuery(s"SELECT COUNT(*) FROM ${InferenceNamespace.getIncrementalMetaTableName()}") {
-      rs => if (rs.getLong(1) == 0) {
-        execute(s""" INSERT INTO ${InferenceNamespace.getIncrementalMetaTableName()} VALUES (0, 0, 0, 0); """)
-      }
+    val count = dataStore.executeSqlQueryGetLong(s"SELECT COUNT(*) FROM ${InferenceNamespace.getIncrementalMetaTableName()}")
+    if (count == 0) {
+      execute(s""" INSERT INTO ${InferenceNamespace.getIncrementalMetaTableName()} VALUES (0, 0, 0, 0); """)
     }
   }
 
