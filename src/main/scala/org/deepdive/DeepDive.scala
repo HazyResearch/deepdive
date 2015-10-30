@@ -91,7 +91,7 @@ object DeepDive extends Logging {
         settings.samplerSettings.samplerArgs, settings.pipelineSettings, settings.dbSettings),
         inferenceManager, true)
 
-    val reportingTask = Task("report", List("calibration") ++ extractionTasks.map(_.id), Profiler.PrintReports, profiler, false)
+    val reportingTask = Task("report", List("inference") ++ extractionTasks.map(_.id), Profiler.PrintReports, profiler, false)
 
     val terminationTask = Task("shutdown", List("report"), TaskManager.Shutdown, taskManager, false)
 
