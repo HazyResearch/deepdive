@@ -510,7 +510,6 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val variableFile = s"${resourceFolder}/dd_variables"
         val factorFile = s"${resourceFolder}/dd_factors"
         val weightFile = s"${resourceFolder}/dd_weights"
-        val edgeFile = s"${resourceFolder}/dd_edges"
 
         s"${converter} variable ${variableFile}".!
         s"${converter} factor ${factorFile} 2 1 1".!
@@ -522,256 +521,254 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         assert(cmp.! == 0)
         cmp = s"cmp ${weightFile}.bin ${weightFile}_expected.bin"
         assert(cmp.! == 0)
-        cmp = s"cmp ${factorFile}_edges.bin ${edgeFile}_expected.bin"
-        assert(cmp.! == 0)
 
       }
 
     }
 
-    describe("test incremental grounding") {
+    // describe("test incremental grounding") {
 
-      it("should work with materialization and incremental modes (boolean)") {
-        cancelUnlessPostgres()
-        inferenceRunner.init()
+    //   it("should work with materialization and incremental modes (boolean)") {
+    //     cancelUnlessPostgres()
+    //     inferenceRunner.init()
 
-        // Insert sample data
-        SQL(s"""CREATE TABLE r1(weight text,
-          is_correct boolean, id bigint);""").execute.apply()
-        val data = (1 to 100).map { i =>
-          Map("id" -> i, "weight" -> s"weight_${i}", "is_correct" -> s"${i%2==0}".toBoolean)
-        }
-        dataStoreHelper.bulkInsert("r1", data.iterator)
+    //     // Insert sample data
+    //     SQL(s"""CREATE TABLE r1(weight text,
+    //       is_correct boolean, id bigint);""").execute.apply()
+    //     val data = (1 to 100).map { i =>
+    //       Map("id" -> i, "weight" -> s"weight_${i}", "is_correct" -> s"${i%2==0}".toBoolean)
+    //     }
+    //     dataStoreHelper.bulkInsert("r1", data.iterator)
 
-        val dbSettingsMat = dbSettings.copy(
-          incrementalMode = IncrementalMode.MATERIALIZATION,
-          keyMap = null
-        )
+    //     val dbSettingsMat = dbSettings.copy(
+    //       incrementalMode = IncrementalMode.MATERIALIZATION,
+    //       keyMap = null
+    //     )
 
-        val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
+    //     val schema = Map[String, VariableDataType]("r1.is_correct" -> BooleanType)
 
-        // Build the factor description
-        val factorDesc = FactorDesc(
-          name = "testFactor",
-          inputQuery =
-            """SELECT id AS "r1.R0.id", weight AS "dd_weight_column_0", is_correct AS "r1.R0.is_correct"
-            FROM r1 R0""",
-          func = IsTrueFactorFunction(Seq("r1.R0.is_correct")),
-          weight = UnknownFactorWeight(List("dd_weight_column_0")),
-          weightPrefix = "weight_prefix"
-        )
-        val holdoutFraction = 0.0
+    //     // Build the factor description
+    //     val factorDesc = FactorDesc(
+    //       name = "testFactor",
+    //       inputQuery =
+    //         """SELECT id AS "r1.R0.id", weight AS "dd_weight_column_0", is_correct AS "r1.R0.is_correct"
+    //         FROM r1 R0""",
+    //       func = IsTrueFactorFunction(Seq("r1.R0.is_correct")),
+    //       weight = UnknownFactorWeight(List("dd_weight_column_0")),
+    //       weightPrefix = "weight_prefix"
+    //     )
+    //     val holdoutFraction = 0.0
 
-        // Ground the graph
-        inferenceRunner.groundFactorGraph(schema, Seq(factorDesc),
-          CalibrationSettings(
-            holdoutFraction = holdoutFraction,
-            holdoutQuery = None,
-            observationQuery = None
-          ), false, "", dbSettingsMat)
+    //     // Ground the graph
+    //     inferenceRunner.groundFactorGraph(schema, Seq(factorDesc),
+    //       CalibrationSettings(
+    //         holdoutFraction = holdoutFraction,
+    //         holdoutQuery = None,
+    //         observationQuery = None
+    //       ), false, "", dbSettingsMat)
 
-        // check results
-        val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceRunner.WeightsTable}""")
-          .map(rs => rs.long("count")).single.apply().get
-        assert(numWeights === 100)
+    //     // check results
+    //     val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceRunner.WeightsTable}""")
+    //       .map(rs => rs.long("count")).single.apply().get
+    //     assert(numWeights === 100)
 
-        val numFactors = SQL(s"""SELECT COUNT(*) AS "count" FROM dd_query_testFactor""")
-          .map(rs => rs.long("count")).single.apply().get
-        assert(numFactors === 100)
+    //     val numFactors = SQL(s"""SELECT COUNT(*) AS "count" FROM dd_query_testFactor""")
+    //       .map(rs => rs.long("count")).single.apply().get
+    //     assert(numFactors === 100)
 
-        val numVariables = SQL(s"""SELECT COUNT(*) AS "count" FROM r1""")
-          .map(rs => rs.long("count")).single.apply().get
-        assert(numVariables === 100)
+    //     val numVariables = SQL(s"""SELECT COUNT(*) AS "count" FROM r1""")
+    //       .map(rs => rs.long("count")).single.apply().get
+    //     assert(numVariables === 100)
 
-        val numVariablesMeta = SQL(s"""SELECT num_variables AS "count"
-          FROM ${InferenceNamespace.getIncrementalMetaTableName()}""")
-          .map(rs => rs.long("count")).single.apply().get
-        assert(numVariablesMeta === 100)
+    //     val numVariablesMeta = SQL(s"""SELECT num_variables AS "count"
+    //       FROM ${InferenceNamespace.getIncrementalMetaTableName()}""")
+    //       .map(rs => rs.long("count")).single.apply().get
+    //     assert(numVariablesMeta === 100)
 
-        val numFactorsMeta = SQL(s"""SELECT num_factors AS "count"
-          FROM ${InferenceNamespace.getIncrementalMetaTableName()}""")
-          .map(rs => rs.long("count")).single.apply().get
-        assert(numFactorsMeta === 100)
+    //     val numFactorsMeta = SQL(s"""SELECT num_factors AS "count"
+    //       FROM ${InferenceNamespace.getIncrementalMetaTableName()}""")
+    //       .map(rs => rs.long("count")).single.apply().get
+    //     assert(numFactorsMeta === 100)
 
-        val numWeightsMeta = SQL(s"""SELECT num_weights AS "count"
-          FROM ${InferenceNamespace.getIncrementalMetaTableName()}""")
-          .map(rs => rs.long("count")).single.apply().get
-        assert(numWeightsMeta === 100)
+    //     val numWeightsMeta = SQL(s"""SELECT num_weights AS "count"
+    //       FROM ${InferenceNamespace.getIncrementalMetaTableName()}""")
+    //       .map(rs => rs.long("count")).single.apply().get
+    //     assert(numWeightsMeta === 100)
 
-        // incremental phase
+    //     // incremental phase
 
-        SQL(s"""CREATE TABLE dd_delta_r1(weight text,
-          is_correct boolean, id bigint);""").execute.apply()
-        val deltaData = (91 to 110).map { i =>
-          Map("id" -> i, "weight" -> s"weight_${i}", "is_correct" -> s"${i%2==0}".toBoolean)
-        }
-        SQL(s"""CREATE VIEW dd_new_r1 AS SELECT * FROM r1 UNION
-          SELECT * FROM dd_delta_r1;""").execute.apply()
-        dataStoreHelper.bulkInsert("dd_delta_r1", deltaData.iterator)
-        val keyMap = Map[String, List[String]]("dd_delta_r1" -> List("weight"))
+    //     SQL(s"""CREATE TABLE dd_delta_r1(weight text,
+    //       is_correct boolean, id bigint);""").execute.apply()
+    //     val deltaData = (91 to 110).map { i =>
+    //       Map("id" -> i, "weight" -> s"weight_${i}", "is_correct" -> s"${i%2==0}".toBoolean)
+    //     }
+    //     SQL(s"""CREATE VIEW dd_new_r1 AS SELECT * FROM r1 UNION
+    //       SELECT * FROM dd_delta_r1;""").execute.apply()
+    //     dataStoreHelper.bulkInsert("dd_delta_r1", deltaData.iterator)
+    //     val keyMap = Map[String, List[String]]("dd_delta_r1" -> List("weight"))
 
-        val dbSettingsInc = DbSettings(dbSettings.driver, dbSettings.url, dbSettings.user,
-          dbSettings.password, dbSettings.dbname, dbSettings.host, dbSettings.port,
-          dbSettings.gphost, dbSettings.gppath, dbSettings.gpport, dbSettings.gpload,
-          IncrementalMode.INCREMENTAL, keyMap)
+    //     val dbSettingsInc = DbSettings(dbSettings.driver, dbSettings.url, dbSettings.user,
+    //       dbSettings.password, dbSettings.dbname, dbSettings.host, dbSettings.port,
+    //       dbSettings.gphost, dbSettings.gppath, dbSettings.gpport, dbSettings.gpload,
+    //       IncrementalMode.INCREMENTAL, keyMap)
 
-        // Build the factor description
-        val factorDescInc = FactorDesc(
-          name = "dd_new_testFactor",
-          inputQuery =
-            """SELECT id AS "dd_new_r1.R0.id", weight AS "dd_weight_column_0",
-            is_correct AS "dd_new_r1.R0.is_correct"
-            FROM dd_new_r1 R0""",
-          func = IsTrueFactorFunction(Seq("dd_new_r1.R0.is_correct")),
-          weight = UnknownFactorWeight(List("dd_weight_column_0")),
-          weightPrefix = "weight_prefix"
-        )
+    //     // Build the factor description
+    //     val factorDescInc = FactorDesc(
+    //       name = "dd_new_testFactor",
+    //       inputQuery =
+    //         """SELECT id AS "dd_new_r1.R0.id", weight AS "dd_weight_column_0",
+    //         is_correct AS "dd_new_r1.R0.is_correct"
+    //         FROM dd_new_r1 R0""",
+    //       func = IsTrueFactorFunction(Seq("dd_new_r1.R0.is_correct")),
+    //       weight = UnknownFactorWeight(List("dd_weight_column_0")),
+    //       weightPrefix = "weight_prefix"
+    //     )
 
-        val schemaInc = Map[String, VariableDataType]("dd_delta_r1.is_correct" -> BooleanType)
+    //     val schemaInc = Map[String, VariableDataType]("dd_delta_r1.is_correct" -> BooleanType)
 
-        // Ground the graph
-        inferenceRunner.groundFactorGraph(schemaInc, Seq(factorDescInc),
-          CalibrationSettings(
-            holdoutFraction = holdoutFraction,
-            holdoutQuery = None,
-            observationQuery = None
-          ), false, "", dbSettingsInc)
+    //     // Ground the graph
+    //     inferenceRunner.groundFactorGraph(schemaInc, Seq(factorDescInc),
+    //       CalibrationSettings(
+    //         holdoutFraction = holdoutFraction,
+    //         holdoutQuery = None,
+    //         observationQuery = None
+    //       ), false, "", dbSettingsInc)
 
-        // Check the result
-        val numWeightsInc = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceRunner.WeightsTable}""")
-          .map(rs => rs.long("count")).single.apply().get
-        assert(numWeightsInc === 10)
+    //     // Check the result
+    //     val numWeightsInc = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceRunner.WeightsTable}""")
+    //       .map(rs => rs.long("count")).single.apply().get
+    //     assert(numWeightsInc === 10)
 
-        val numFactorsInc = SQL(s"""SELECT COUNT(*) AS "count" FROM dd_query_dd_new_testFactor""")
-          .map(rs => rs.long("count")).single.apply().get
-        assert(numFactorsInc === 10)
+    //     val numFactorsInc = SQL(s"""SELECT COUNT(*) AS "count" FROM dd_query_dd_new_testFactor""")
+    //       .map(rs => rs.long("count")).single.apply().get
+    //     assert(numFactorsInc === 10)
 
-        val numVariablesInc = SQL(s"""SELECT COUNT(*) AS "count" FROM dd_delta_r1""")
-          .map(rs => rs.long("count")).single.apply().get
-        assert(numVariablesInc === 20)
-      }
+    //     val numVariablesInc = SQL(s"""SELECT COUNT(*) AS "count" FROM dd_delta_r1""")
+    //       .map(rs => rs.long("count")).single.apply().get
+    //     assert(numVariablesInc === 20)
+    //   }
 
-      it("should work with materialization and incremental modes (multinomial)") {
-        cancelUnlessPostgres()
-        inferenceRunner.init()
+    //   it("should work with materialization and incremental modes (multinomial)") {
+    //     cancelUnlessPostgres()
+    //     inferenceRunner.init()
 
-        // Insert sample data
-        SQL(s"""CREATE TABLE r1(weight text,
-          class int, id bigint);""").execute.apply()
-        val data = (1 to 100).map { i =>
-          Map("id" -> i, "weight" -> s"weight_${i}", "class" -> i%3)
-        }
-        dataStoreHelper.bulkInsert("r1", data.iterator)
+    //     // Insert sample data
+    //     SQL(s"""CREATE TABLE r1(weight text,
+    //       class int, id bigint);""").execute.apply()
+    //     val data = (1 to 100).map { i =>
+    //       Map("id" -> i, "weight" -> s"weight_${i}", "class" -> i%3)
+    //     }
+    //     dataStoreHelper.bulkInsert("r1", data.iterator)
 
-        val dbSettingsMat = dbSettings.copy(
-          incrementalMode = IncrementalMode.MATERIALIZATION,
-          keyMap = null
-        )
+    //     val dbSettingsMat = dbSettings.copy(
+    //       incrementalMode = IncrementalMode.MATERIALIZATION,
+    //       keyMap = null
+    //     )
 
-        val schema = Map[String, VariableDataType]("r1.class" -> MultinomialType(3))
+    //     val schema = Map[String, VariableDataType]("r1.class" -> MultinomialType(3))
 
-        // Build the factor description
-        val factorDesc = FactorDesc(
-          name = "testFactor",
-          inputQuery =
-            """SELECT id AS "r1.R0.id", weight AS "dd_weight_column_0", class AS "r1.R0.class"
-            FROM r1 R0""",
-          func = MultinomialFactorFunction(Seq("r1.R0.class")),
-          weight = UnknownFactorWeight(List("dd_weight_column_0")),
-          weightPrefix = "weight_prefix"
-        )
-        val holdoutFraction = 0.0
+    //     // Build the factor description
+    //     val factorDesc = FactorDesc(
+    //       name = "testFactor",
+    //       inputQuery =
+    //         """SELECT id AS "r1.R0.id", weight AS "dd_weight_column_0", class AS "r1.R0.class"
+    //         FROM r1 R0""",
+    //       func = MultinomialFactorFunction(Seq("r1.R0.class")),
+    //       weight = UnknownFactorWeight(List("dd_weight_column_0")),
+    //       weightPrefix = "weight_prefix"
+    //     )
+    //     val holdoutFraction = 0.0
 
-        // Ground the graph
-        inferenceRunner.groundFactorGraph(schema, Seq(factorDesc),
-          CalibrationSettings(
-            holdoutFraction = holdoutFraction,
-            holdoutQuery = None,
-            observationQuery = None
-          ), false, "", dbSettingsMat)
+    //     // Ground the graph
+    //     inferenceRunner.groundFactorGraph(schema, Seq(factorDesc),
+    //       CalibrationSettings(
+    //         holdoutFraction = holdoutFraction,
+    //         holdoutQuery = None,
+    //         observationQuery = None
+    //       ), false, "", dbSettingsMat)
 
-        // check results
-        val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceRunner.WeightsTable}""")
-          .map(rs => rs.long("count")).single.apply().get
-        assert(numWeights === 300)
+    //     // check results
+    //     val numWeights = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceRunner.WeightsTable}""")
+    //       .map(rs => rs.long("count")).single.apply().get
+    //     assert(numWeights === 300)
 
-        val numFactors = SQL(s"""SELECT COUNT(*) AS "count" FROM dd_query_testFactor""")
-          .map(rs => rs.long("count")).single.apply().get
-        assert(numFactors === 100)
+    //     val numFactors = SQL(s"""SELECT COUNT(*) AS "count" FROM dd_query_testFactor""")
+    //       .map(rs => rs.long("count")).single.apply().get
+    //     assert(numFactors === 100)
 
-        val numVariables = SQL(s"""SELECT COUNT(*) AS "count" FROM r1""")
-          .map(rs => rs.long("count")).single.apply().get
-        assert(numVariables === 100)
+    //     val numVariables = SQL(s"""SELECT COUNT(*) AS "count" FROM r1""")
+    //       .map(rs => rs.long("count")).single.apply().get
+    //     assert(numVariables === 100)
 
-        val numVariablesMeta = SQL(s"""SELECT num_variables AS "count"
-          FROM ${InferenceNamespace.getIncrementalMetaTableName()}""")
-          .map(rs => rs.long("count")).single.apply().get
-        assert(numVariablesMeta === 100)
+    //     val numVariablesMeta = SQL(s"""SELECT num_variables AS "count"
+    //       FROM ${InferenceNamespace.getIncrementalMetaTableName()}""")
+    //       .map(rs => rs.long("count")).single.apply().get
+    //     assert(numVariablesMeta === 100)
 
-        val numFactorsMeta = SQL(s"""SELECT num_factors AS "count"
-          FROM ${InferenceNamespace.getIncrementalMetaTableName()}""")
-          .map(rs => rs.long("count")).single.apply().get
-        assert(numFactorsMeta === 100)
+    //     val numFactorsMeta = SQL(s"""SELECT num_factors AS "count"
+    //       FROM ${InferenceNamespace.getIncrementalMetaTableName()}""")
+    //       .map(rs => rs.long("count")).single.apply().get
+    //     assert(numFactorsMeta === 100)
 
-        val numWeightsMeta = SQL(s"""SELECT num_weights AS "count"
-          FROM ${InferenceNamespace.getIncrementalMetaTableName()}""")
-          .map(rs => rs.long("count")).single.apply().get
-        assert(numWeightsMeta === 300)
+    //     val numWeightsMeta = SQL(s"""SELECT num_weights AS "count"
+    //       FROM ${InferenceNamespace.getIncrementalMetaTableName()}""")
+    //       .map(rs => rs.long("count")).single.apply().get
+    //     assert(numWeightsMeta === 300)
 
-        // incremental phase
+    //     // incremental phase
 
-        SQL(s"""CREATE TABLE dd_delta_r1(weight text,
-          class int, id bigint);""").execute.apply()
-        val deltaData = (91 to 110).map { i =>
-          Map("id" -> i, "weight" -> s"weight_${i}", "class" -> i%3)
-        }
-        SQL(s"""CREATE VIEW dd_new_r1 AS SELECT * FROM r1 UNION
-          SELECT * FROM dd_delta_r1;""").execute.apply()
-        dataStoreHelper.bulkInsert("dd_delta_r1", deltaData.iterator)
-        val keyMap = Map[String, List[String]]("dd_delta_r1" -> List("weight"))
+    //     SQL(s"""CREATE TABLE dd_delta_r1(weight text,
+    //       class int, id bigint);""").execute.apply()
+    //     val deltaData = (91 to 110).map { i =>
+    //       Map("id" -> i, "weight" -> s"weight_${i}", "class" -> i%3)
+    //     }
+    //     SQL(s"""CREATE VIEW dd_new_r1 AS SELECT * FROM r1 UNION
+    //       SELECT * FROM dd_delta_r1;""").execute.apply()
+    //     dataStoreHelper.bulkInsert("dd_delta_r1", deltaData.iterator)
+    //     val keyMap = Map[String, List[String]]("dd_delta_r1" -> List("weight"))
 
-        val dbSettingsInc = dbSettings.copy(
-          incrementalMode = IncrementalMode.INCREMENTAL,
-          keyMap = keyMap
-        )
+    //     val dbSettingsInc = dbSettings.copy(
+    //       incrementalMode = IncrementalMode.INCREMENTAL,
+    //       keyMap = keyMap
+    //     )
 
-        // Build the factor description
-        val factorDescInc = FactorDesc(
-          name = "dd_new_testFactor",
-          inputQuery =
-            """SELECT id AS "dd_new_r1.R0.id", weight AS "dd_weight_column_0",
-            class AS "dd_new_r1.R0.class"
-            FROM dd_new_r1 R0""",
-          func = MultinomialFactorFunction(Seq("dd_new_r1.R0.class")),
-          weight = UnknownFactorWeight(List("dd_weight_column_0")),
-          weightPrefix = "weight_prefix"
-        )
+    //     // Build the factor description
+    //     val factorDescInc = FactorDesc(
+    //       name = "dd_new_testFactor",
+    //       inputQuery =
+    //         """SELECT id AS "dd_new_r1.R0.id", weight AS "dd_weight_column_0",
+    //         class AS "dd_new_r1.R0.class"
+    //         FROM dd_new_r1 R0""",
+    //       func = MultinomialFactorFunction(Seq("dd_new_r1.R0.class")),
+    //       weight = UnknownFactorWeight(List("dd_weight_column_0")),
+    //       weightPrefix = "weight_prefix"
+    //     )
 
-        val schemaInc = Map[String, VariableDataType]("dd_delta_r1.class" -> MultinomialType(3),
-          "dd_new_r1.class" -> MultinomialType(3))
+    //     val schemaInc = Map[String, VariableDataType]("dd_delta_r1.class" -> MultinomialType(3),
+    //       "dd_new_r1.class" -> MultinomialType(3))
 
-        // Ground the graph
-        inferenceRunner.groundFactorGraph(schemaInc, Seq(factorDescInc),
-          CalibrationSettings(
-            holdoutFraction = holdoutFraction,
-            holdoutQuery = None,
-            observationQuery = None
-          ), false, "", dbSettingsInc)
+    //     // Ground the graph
+    //     inferenceRunner.groundFactorGraph(schemaInc, Seq(factorDescInc),
+    //       CalibrationSettings(
+    //         holdoutFraction = holdoutFraction,
+    //         holdoutQuery = None,
+    //         observationQuery = None
+    //       ), false, "", dbSettingsInc)
 
-        // Check the result
-        val numWeightsInc = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceRunner.WeightsTable}""")
-          .map(rs => rs.long("count")).single.apply().get
-        assert(numWeightsInc === 30)
+    //     // Check the result
+    //     val numWeightsInc = SQL(s"""SELECT COUNT(*) AS "count" FROM ${inferenceRunner.WeightsTable}""")
+    //       .map(rs => rs.long("count")).single.apply().get
+    //     assert(numWeightsInc === 30)
 
-        val numFactorsInc = SQL(s"""SELECT COUNT(*) AS "count" FROM dd_query_dd_new_testFactor""")
-          .map(rs => rs.long("count")).single.apply().get
-        assert(numFactorsInc === 10)
+    //     val numFactorsInc = SQL(s"""SELECT COUNT(*) AS "count" FROM dd_query_dd_new_testFactor""")
+    //       .map(rs => rs.long("count")).single.apply().get
+    //     assert(numFactorsInc === 10)
 
-        val numVariablesInc = SQL(s"""SELECT COUNT(*) AS "count" FROM dd_delta_r1""")
-          .map(rs => rs.long("count")).single.apply().get
-        assert(numVariablesInc === 20)
-      }
-    }
+    //     val numVariablesInc = SQL(s"""SELECT COUNT(*) AS "count" FROM dd_delta_r1""")
+    //       .map(rs => rs.long("count")).single.apply().get
+    //     assert(numVariablesInc === 20)
+    //   }
+    // }
 
     describe("grounding the factor graph with Multinomial variables") {
 

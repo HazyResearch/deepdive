@@ -84,7 +84,6 @@ if INPUTFOLDER != OUTPUTFOLDER:
 os.system("mv {0}/dd_weights.bin {1}/graph.weights".format(INPUTFOLDER, OUTPUTFOLDER))
 os.system("cat {0}/dd_variables/* > {1}/graph.variables".format(INPUTFOLDER, OUTPUTFOLDER))
 os.system("cat {0}/dd_factors/dd_factors*factors.bin > {1}/graph.factors".format(INPUTFOLDER, OUTPUTFOLDER))
-os.system("cat {0}/dd_factors/dd_factors*edges.bin > {1}/graph.edges".format(INPUTFOLDER, OUTPUTFOLDER))
 
 
 # clean up folder

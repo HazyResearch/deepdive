@@ -479,9 +479,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     var cweightid : Long = 0
     var factorid : Long = 0
     val weightidSequence = "dd_weight_sequence"
-    val factoridSequence = "dd_factor_sequence"
     execute(dataStore.createSequenceFunction(weightidSequence));
-    execute(dataStore.createSequenceFunction(factoridSequence));
 
     dbSettings.incrementalMode match {
       case IncrementalMode.INCREMENTAL =>  {
@@ -489,10 +487,6 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
           cweightid = rs.getLong(1)
         }
         execute(s"ALTER SEQUENCE ${weightidSequence} RESTART ${cweightid}")
-        issueQuery(s""" SELECT num_factors FROM ${InferenceNamespace.getIncrementalMetaTableName()}""") { rs =>
-          factorid = rs.getLong(1)
-        }
-        execute(s"ALTER SEQUENCE ${factoridSequence} RESTART ${factorid}")
       }
       case _ =>
     }
@@ -528,39 +522,6 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
       // Ground new factor table based on input query
       dataStore.dropAndCreateTableAs(querytable, factorDesc.inputQuery)
-
-
-      // Assign Id for new factor table, reuse Id if factor already exists other wise assign new Id
-
-      execute(s"""ALTER TABLE ${querytable} ADD COLUMN id bigint;""")
-
-      // for incremental mode, delete duplicates (tuples that exist in base table) from delta table
-      dbSettings.incrementalMode match {
-        case IncrementalMode.INCREMENTAL => {
-          // Create new save
-          val baseFactorTable = InferenceNamespace.getBaseTableName(querytable)
-          // if adding new inference rule, the original rule does not exist
-          val exists = dataStore.existsTable(baseFactorTable)
-          if (exists) {
-            val factorJoinlist = factorDesc.func.variables.map(
-              v => s""" t0.${dataStore.quoteColumn(s"${v.relation}.id")}
-                |= t1.${dataStore.quoteColumn(s"${InferenceNamespace.getBaseTableName(v.relation)}.id")}
-                |""".stripMargin.replaceAll("\n", " ")).mkString("AND")
-            val weightJoinlist = factorDesc.weight.variables.map(v => {
-              s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)}"""
-            }).mkString("AND")
-            val joinList = Seq(factorJoinlist, weightJoinlist).mkString(" AND ")
-
-            // delete the tuples that have duplicates in the base table
-            deleteDuplicatesFromDelta(querytable, joinList)
-          }
-        }
-        case _ => {
-        }
-      }
-
-      // handle factor id
-      factorid += dataStore.assignIds(querytable.toLowerCase(), factorid, factoridSequence)
 
       // maintain incremental meta data
       dbSettings.incrementalMode match {
@@ -718,7 +679,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         // do not need DISTINCT in this sql, since for every tuple in the querytable,
         // there is only one matching tuple in the weighttableForThisFactor
         du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
-          s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
+          s"""SELECT t1.id AS weight_id, ${idcols}
            FROM ${querytable} t0, ${weighttableForThisFactor} t1
            ${weightJoinCondition};""", groundingDir)
 
@@ -767,7 +728,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
             ${incCondition};""")
 
           du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
-            s"SELECT id AS factor_id, ${cweightid} AS weight_id, ${idcols} FROM ${querytable} ORDER BY id",
+            s"SELECT ${cweightid} AS weight_id, ${idcols} FROM ${querytable}",
             groundingDir)
 
           // increment weight id
@@ -840,9 +801,9 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
           execute(dataStore.analyzeTable(weighttableForThisFactor))
 
           du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
-            s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
+            s"""SELECT t1.id AS weight_id, ${idcols}
              FROM ${querytable} t0, ${weighttableForThisFactor} t1
-             WHERE ${weightJoinlist} AND t1.cardinality = '${cardinalityKey}' ORDER BY t0.id;""",
+             WHERE ${weightJoinlist} AND t1.cardinality = '${cardinalityKey}';""",
              groundingDir)
         }
       }
