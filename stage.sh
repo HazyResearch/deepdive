@@ -71,11 +71,11 @@ stage util/ddlog.jar                                              lib/
 stage ddlib/ddlib                                                 lib/python/
 
 # DimmWitted sampler
-if ! [[ -e "$STAGE_DIR"/util/sampler-dw ]]; then
 case $(uname) in
 Linux)
     stage util/ndbloader/ndbloader-linux                          util/ndbloader
     stage util/format_converter_linux                             util/format_converter
+    [[ "$STAGE_DIR"/lib/ -nt util/sampler-dw-linux-lib.zip ]] || # XXX skip unzip if possible
     unzip -o util/sampler-dw-linux-lib.zip                     -d "$STAGE_DIR"/lib/
     #stage sampler/dw                                             util/sampler-dw # TODO
     stage util/sampler-dw-linux                                   util/
@@ -85,6 +85,7 @@ Linux)
 Darwin)
     stage util/ndbloader/ndbloader-mac                            util/ndbloader
     stage util/format_converter_mac                               util/format_converter
+    [[ "$STAGE_DIR"/lib/ -nt util/sampler-dw-mac-lib.zip ]] || # XXX skip unzip if possible
     ditto -xk util/sampler-dw-mac-lib.zip                         "$STAGE_DIR"/lib/
     stage util/sampler-dw-mac                                     util/
     stage util/sampler-dw-mac.sh                                  util/
@@ -94,7 +95,6 @@ Darwin)
     echo >&2 "$(uname): Unsupported OS"; false
     ;;
 esac
-fi
 
 # piggy extractor helper
 stage util/piggy_prepare.py                                       util/
