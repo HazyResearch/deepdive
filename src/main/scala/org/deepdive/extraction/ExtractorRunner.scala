@@ -450,7 +450,7 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
     val splitPrefix = s"${actualDumpedPath}-"
     val linesPerSplit = task.extractor.inputBatchSize
     val maxParallel = task.extractor.parallelism
-    val splitNum = maxParallel * 10
+    val splitNum = maxParallel
     val splitCmdByPar = s"split -a 10 -n l/${splitNum} " + actualDumpedPath + s" ${splitPrefix}"
     val splitCmd = s"split -a 10 -l ${linesPerSplit} " + actualDumpedPath + s" ${splitPrefix}"
 
