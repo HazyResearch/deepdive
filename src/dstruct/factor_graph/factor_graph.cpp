@@ -133,9 +133,34 @@ void dd::FactorGraph::update_weight(const Variable & variable){
   }
 }
 
+// sort according to id
+template <class OBJTOSORT>
+class idsorter : public std::binary_function<OBJTOSORT, OBJTOSORT, bool>{
+public:
+  inline bool operator()(const OBJTOSORT & left, const OBJTOSORT & right){
+    return left.id < right.id;
+  }
+};
+
+// Load factor graph from files
+// It contains two different mode: original mode and incremental mode.
+// The logic for this function is:
+// original:
+//   1. read variables
+//   2. read weights
+//   3. sort variables and weights by id
+//   4. read factors
+// incremental:
+//   1. read variables
+//   2. read weights
+//   3. sort variables and weights by id
+//   4. read factors
+//   5. sort factors by id
+//   6. read edges
 void dd::FactorGraph::load(const CmdParser & cmd, const bool is_quiet, int inc){
 
   // get factor graph file names from command line arguments
+  std::string filename_edges;
   std::string filename_factors;
   std::string filename_variables;
   std::string filename_weights;
@@ -143,6 +168,7 @@ void dd::FactorGraph::load(const CmdParser & cmd, const bool is_quiet, int inc){
     filename_weights    = cmd.original_folder->getValue() + "/graph.weights";
     filename_variables  = cmd.original_folder->getValue() + "/graph.variables";
     filename_factors    = cmd.original_folder->getValue() + "/graph.factors";
+    filename_edges      = cmd.original_folder->getValue() + "/graph.edges";
   } else {
     filename_weights    = cmd.weight_file->getValue();
     filename_variables  = cmd.variable_file->getValue();
@@ -175,22 +201,43 @@ void dd::FactorGraph::load(const CmdParser & cmd, const bool is_quiet, int inc){
     std::cout << "LOADED WEIGHTS: #" << n_loaded << std::endl;
   }
 
-  // sort the above components
-  // NOTE This is very important, as read_edges assume variables,
-  // factors and weights are ordered so that their id is the index 
-  // where they are stored in the array
-  this->sort_by_id();
+  // sort variables and weighs
+  std::sort(&variables[0], &variables[n_var], idsorter<Variable>());
+  std::sort(&weights[0], &weights[n_weight], idsorter<Weight>()); 
+  this->sorted = true;
+  infrs->init(variables, weights);
 
   // load factors
-  n_loaded = read_factors(filename_factors, *this);
+  if (inc)
+    n_loaded = read_factors_inc(filename_factors, *this);
+  else
+    n_loaded = read_factors(filename_factors, *this);
   if(cmd.delta_folder->getValue() != ""){
     std::cout << "Loading delta..." << cmd.delta_folder->getValue() + "/graph.factors" << std::endl;
-    n_loaded += read_factors(cmd.delta_folder->getValue() + "/graph.factors", *this);
+    n_loaded += read_factors_inc(cmd.delta_folder->getValue() + "/graph.factors", *this);
   }
 
   assert(n_loaded == n_factor);
   if (!is_quiet) {
     std::cout << "LOADED FACTORS: #" << n_loaded << std::endl;
+  }
+
+  if (inc) {
+    // sort edges
+    // NOTE This is very important, as read_edges assume variables,
+    // factors and weights are ordered so that their id is the index 
+    // where they are stored in the array
+    std::sort(&factors[0], &factors[n_factor], idsorter<Factor>());
+    // load edges
+    n_loaded = read_edges_inc(filename_edges, *this);
+    if(cmd.delta_folder->getValue() != ""){
+      std::cout << "Loading delta..." << std::endl;
+      n_loaded += read_edges_inc(cmd.delta_folder->getValue() + "/graph.edges", *this);
+    }
+
+    if (!is_quiet) {
+      std::cout << "LOADED EDGES: #" << n_loaded << std::endl;
+    }
   }
 
   // load active variables
@@ -266,23 +313,6 @@ void dd::FactorGraph::load(const CmdParser & cmd, const bool is_quiet, int inc){
     fin.close();
   }
 
-}
-
-// sort according to id
-template <class OBJTOSORT>
-class idsorter : public std::binary_function<OBJTOSORT, OBJTOSORT, bool>{
-public:
-  inline bool operator()(const OBJTOSORT & left, const OBJTOSORT & right){
-    return left.id < right.id;
-  }
-};
-
-void dd::FactorGraph::sort_by_id() {
-  // sort variables, and weights by id
-  std::sort(&variables[0], &variables[n_var], idsorter<Variable>());
-  std::sort(&weights[0], &weights[n_weight], idsorter<Weight>()); 
-  this->sorted = true;
-  infrs->init(variables, weights);
 }
 
 bool dd::compare_position(const VariableInFactor& x, const VariableInFactor& y) {

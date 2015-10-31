@@ -70,6 +70,7 @@ void inc(dd::CmdParser & cmd_parser){
   std::string weight_file = original_folder + "/graph.weights";
   std::string variable_file = original_folder + "/graph.variables";
   std::string factor_file = original_folder + "/graph.factors";
+  std::string edge_file = original_folder + "/graph.edges";
 
   std::string delta_fg_file = delta_folder + "/graph.meta";
 
@@ -149,6 +150,7 @@ void mat(dd::CmdParser & cmd_parser){
   std::string weight_file = original_folder + "/graph.weights";
   std::string variable_file = original_folder + "/graph.variables";
   std::string factor_file = original_folder + "/graph.factors";
+  std::string edge_file = original_folder + "/graph.edges";
 
   int n_learning_epoch = cmd_parser.n_learning_epoch->getValue();
   int n_samples_per_learning_epoch = cmd_parser.n_samples_per_learning_epoch->getValue();

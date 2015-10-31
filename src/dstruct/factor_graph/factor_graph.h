@@ -180,13 +180,6 @@ namespace dd{
     void load(const CmdParser & cmd, const bool is_quiet, int inc);
 
     /**
-     * Sorts the variables, factors, and weights in ascending id order.
-     * This is important as later these components are stored in array, and
-     * sorting them will faciliate accessing them by id.
-     */
-    void sort_by_id();
-
-    /**
      * Construct the edge-based store of factor graph in compact_factors, etc.
      * Refer to the class member comments for more detail.
      */
