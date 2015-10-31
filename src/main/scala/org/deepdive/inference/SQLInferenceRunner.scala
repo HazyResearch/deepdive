@@ -399,10 +399,16 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
   // convert grounding file format to be compatible with sampler
   // for more information about format, please refer to deepdive's website
-  def convertGroundingFormat(groundingPath: String) {
+  def convertGroundingFormat(groundingPath: String, dbSettings: DbSettings) {
     log.info("Converting grounding file format...")
     // TODO: this python script is dangerous and ugly. It changes too many states!
-    val cmd = Seq("sh", "-c", s"cd ${groundingPath} && tobinary.py . format_converter ${Context.outputDir}")
+    var cmd = Seq("")
+    dbSettings.incrementalMode match {
+      case IncrementalMode.INCREMENTAL | IncrementalMode.MATERIALIZATION =>
+        cmd = Seq("sh", "-c", s"cd ${groundingPath} && tobinary.py . format_converter ${Context.outputDir} inc")
+      case _ =>
+        cmd = Seq("sh", "-c", s"cd ${groundingPath} && tobinary.py . format_converter ${Context.outputDir} original")
+    } 
     log.debug("Executing: " + cmd)
     val exitValue = cmd!(ProcessLogger(
       out => log.info(out),
@@ -478,7 +484,13 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     var cweightid : Long = 0
     var factorid : Long = 0
     val weightidSequence = "dd_weight_sequence"
+    val factoridSequence = "dd_factor_sequence"
     execute(dataStore.createSequenceFunction(weightidSequence));
+    dbSettings.incrementalMode match {
+      case IncrementalMode.INCREMENTAL | IncrementalMode.MATERIALIZATION =>
+        execute(dataStore.createSequenceFunction(factoridSequence));
+      case _ =>
+    }    
 
     dbSettings.incrementalMode match {
       case IncrementalMode.INCREMENTAL =>  {
@@ -486,6 +498,10 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
           cweightid = rs.getLong(1)
         }
         execute(s"ALTER SEQUENCE ${weightidSequence} RESTART ${cweightid}")
+        issueQuery(s""" SELECT num_factors FROM ${InferenceNamespace.getIncrementalMetaTableName()}""") { rs =>
+          factorid = rs.getLong(1)   
+        }    
+        execute(s"ALTER SEQUENCE ${factoridSequence} RESTART ${factorid}")
       }
       case _ =>
     }
@@ -521,6 +537,45 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
       // Ground new factor table based on input query
       dataStore.dropAndCreateTableAs(querytable, factorDesc.inputQuery)
+
+      // Assign Id for new factor table, reuse Id if factor already exists other wise assign new Id
+      dbSettings.incrementalMode match {
+        case IncrementalMode.INCREMENTAL | IncrementalMode.MATERIALIZATION =>
+          execute(s"""ALTER TABLE ${querytable} ADD COLUMN id bigint;""")
+        case _ =>
+      }
+
+      // for incremental mode, delete duplicates (tuples that exist in base table) from delta table
+      dbSettings.incrementalMode match {
+        case IncrementalMode.INCREMENTAL => {
+          // Create new save
+          val baseFactorTable = InferenceNamespace.getBaseTableName(querytable)
+          // if adding new inference rule, the original rule does not exist
+          val exists = dataStore.existsTable(baseFactorTable)
+          if (exists) {
+            val factorJoinlist = factorDesc.func.variables.map(
+              v => s""" t0.${dataStore.quoteColumn(s"${v.relation}.id")}
+                |= t1.${dataStore.quoteColumn(s"${InferenceNamespace.getBaseTableName(v.relation)}.id")}
+                |""".stripMargin.replaceAll("\n", " ")).mkString("AND")
+            val weightJoinlist = factorDesc.weight.variables.map(v => {
+              s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)}"""
+            }).mkString("AND")
+            val joinList = Seq(factorJoinlist, weightJoinlist).mkString(" AND ")
+
+            // delete the tuples that have duplicates in the base table
+            deleteDuplicatesFromDelta(querytable, joinList)
+          }
+        }
+        case _ => {
+        }
+      }
+
+      // handle factor id
+      dbSettings.incrementalMode match {
+        case IncrementalMode.INCREMENTAL | IncrementalMode.MATERIALIZATION =>
+          factorid += dataStore.assignIds(querytable.toLowerCase(), factorid, factoridSequence)
+        case _ =>
+      }
 
       // maintain incremental meta data
       dbSettings.incrementalMode match {
@@ -677,10 +732,19 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
         // do not need DISTINCT in this sql, since for every tuple in the querytable,
         // there is only one matching tuple in the weighttableForThisFactor
-        du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
-          s"""SELECT t1.id AS weight_id, ${idcols}
-           FROM ${querytable} t0, ${weighttableForThisFactor} t1
-           ${weightJoinCondition};""", groundingDir)
+        dbSettings.incrementalMode match {
+          case IncrementalMode.INCREMENTAL | IncrementalMode.MATERIALIZATION =>
+            du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
+              s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
+               FROM ${querytable} t0, ${weighttableForThisFactor} t1
+               ${weightJoinCondition};""", groundingDir)
+          case _ =>
+            du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
+              s"""SELECT t1.id AS weight_id, ${idcols}
+               FROM ${querytable} t0, ${weighttableForThisFactor} t1
+               ${weightJoinCondition};""", groundingDir)
+        }
+
 
         execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, description)
           SELECT id, isfixed, initvalue, ${weightDesc} FROM ${weighttableForThisFactor}
@@ -726,9 +790,16 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
             SELECT id, isfixed, initvalue, cardinality, ${weightDesc} FROM ${weighttableForThisFactor}
             ${incCondition};""")
 
-          du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
-            s"SELECT ${cweightid} AS weight_id, ${idcols} FROM ${querytable}",
-            groundingDir)
+          dbSettings.incrementalMode match {
+            case IncrementalMode.INCREMENTAL | IncrementalMode.MATERIALIZATION =>
+              du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
+                s"SELECT id AS factor_id, ${cweightid} AS weight_id, ${idcols} FROM ${querytable} ORDER BY id",
+                 groundingDir)
+            case _ =>
+              du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
+                s"SELECT ${cweightid} AS weight_id, ${idcols} FROM ${querytable}",
+                 groundingDir)
+          }
 
           // increment weight id
           cweightid += count
@@ -799,11 +870,20 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
           execute(dataStore.analyzeTable(querytable))
           execute(dataStore.analyzeTable(weighttableForThisFactor))
 
-          du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
-            s"""SELECT t1.id AS weight_id, ${idcols}
-             FROM ${querytable} t0, ${weighttableForThisFactor} t1
-             WHERE ${weightJoinlist} AND t1.cardinality = '${cardinalityKey}';""",
-             groundingDir)
+          dbSettings.incrementalMode match {
+            case IncrementalMode.INCREMENTAL | IncrementalMode.MATERIALIZATION =>
+              du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
+                s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
+                 FROM ${querytable} t0, ${weighttableForThisFactor} t1
+                 WHERE ${weightJoinlist} AND t1.cardinality = '${cardinalityKey}'""",
+                 groundingDir)
+            case _ =>
+              du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
+                s"""SELECT t1.id AS weight_id, ${idcols}
+                 FROM ${querytable} t0, ${weighttableForThisFactor} t1
+                 WHERE ${weightJoinlist} AND t1.cardinality = '${cardinalityKey}';""",
+                 groundingDir)
+          }
         }
       }
     }
@@ -925,7 +1005,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
     execute(createInferenceResultWeightsSQL)
 
     // split grounding files and transform to binary format
-    convertGroundingFormat(groundingPath)
+    convertGroundingFormat(groundingPath, dbSettings)
 
     // generate active compoenents for incremental
     dbSettings.incrementalMode match {
