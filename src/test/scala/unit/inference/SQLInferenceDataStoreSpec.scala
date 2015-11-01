@@ -511,7 +511,7 @@ trait SQLInferenceRunnerSpec extends FunSpec with BeforeAndAfter { this: SQLInfe
         val weightFile = s"${resourceFolder}/dd_weights"
 
         s"format_converter variable ${variableFile}".!
-        s"format_converter factor ${factorFile} 2 1 1 original".!
+        s"format_converter factor ${factorFile} 2 1 original 1".!
         s"format_converter weight ${weightFile}".!
 
         var cmp = s"cmp ${variableFile}.bin ${variableFile}_expected.bin"

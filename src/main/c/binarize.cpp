@@ -295,9 +295,11 @@ int main(int argc, char** argv){
   } else if(app.compare("weight")==0){
     load_weight(argv[2]);
   } else if(app.compare("factor")==0){
-    std::string inc(argv[6]);
-    if (inc.compare("inc") == 0) load_factor_with_fid(argv[2], atoi(argv[3]), atoi(argv[4]), &argv[5]);
-    else load_factor(argv[2], atoi(argv[3]), atoi(argv[4]), &argv[5]);
+    std::string inc(argv[5]);
+    if (inc.compare("inc") == 0 || inc.compare("mat") == 0)
+      load_factor_with_fid(argv[2], atoi(argv[3]), atoi(argv[4]), &argv[6]);
+    else
+      load_factor(argv[2], atoi(argv[3]), atoi(argv[4]), &argv[6]);
   } else if (app.compare("active") == 0) {
     load_active(argv[2]);
   } else {

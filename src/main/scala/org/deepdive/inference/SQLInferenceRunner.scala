@@ -408,7 +408,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         cmd = Seq("sh", "-c", s"cd ${groundingPath} && tobinary.py . format_converter ${Context.outputDir} inc")
       case _ =>
         cmd = Seq("sh", "-c", s"cd ${groundingPath} && tobinary.py . format_converter ${Context.outputDir} original")
-    } 
+    }
     log.debug("Executing: " + cmd)
     val exitValue = cmd!(ProcessLogger(
       out => log.info(out),
@@ -490,7 +490,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       case IncrementalMode.INCREMENTAL | IncrementalMode.MATERIALIZATION =>
         execute(dataStore.createSequenceFunction(factoridSequence));
       case _ =>
-    }    
+    }
 
     dbSettings.incrementalMode match {
       case IncrementalMode.INCREMENTAL =>  {
@@ -499,8 +499,8 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         }
         execute(s"ALTER SEQUENCE ${weightidSequence} RESTART ${cweightid}")
         issueQuery(s""" SELECT num_factors FROM ${InferenceNamespace.getIncrementalMetaTableName()}""") { rs =>
-          factorid = rs.getLong(1)   
-        }    
+          factorid = rs.getLong(1)
+        }
         execute(s"ALTER SEQUENCE ${factoridSequence} RESTART ${factorid}")
       }
       case _ =>
