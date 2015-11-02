@@ -13,7 +13,6 @@
         -w "$fg"/graph.weights \
         -v "$fg"/graph.variables \
         -f "$fg"/graph.factors \
-        -e "$fg"/graph.edges \
         -m "$fg"/graph.meta \
         -o "$fg" \
         -l 300 -i 500 -s 1 --alpha 0.1 --learn_non_evidence

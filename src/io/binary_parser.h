@@ -14,7 +14,7 @@ typedef struct {
 	string weights_file; 
 	string variables_file;
 	string factors_file;
-	string edges_file;
+  string edges_file;
 } Meta;
 
 /**
@@ -35,13 +35,18 @@ long long read_weights(string filename, dd::FactorGraph &);
 long long read_variables(string filename, dd::FactorGraph &);
 
 /**
- * Loads factors from the given file into the given factor graph
+ * Loads factors from the given file into the given factor graph (original mode)
  */
 long long read_factors(string filename, dd::FactorGraph &);
 
 /**
- * Loads edges from the given file into the given factor graph
+ * Loads factors from the given file into the given factor graph (incremental mode)
  */
-long long read_edges(string filename, dd::FactorGraph &);
+long long read_factors_inc(string filename, dd::FactorGraph &);
+
+/**
+ * Loads edges from the given file into the given factor graph (incremental mode)
+ */
+long long read_edges_inc(string filename, dd::FactorGraph &);    
 
 #endif

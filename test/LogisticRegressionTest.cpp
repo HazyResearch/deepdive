@@ -15,14 +15,12 @@ using namespace dd;
 // 1 weight, 18 factors, and 18 edges. Variables of id 0-8 are evidence: id 0-7 
 // positive and id 8 negative.
 TEST(LogisticRegressionTest, INFERENCE) {
-
-	const char* argv[23] = {
+	const char* argv[21] = {
 		"dw", "gibbs", "-w", "./test/coin/graph.weights", "-v", "./test/coin/graph.variables", 
-		"-f", "./test/coin/graph.factors", "-e", "./test/coin/graph.edges", "-m", "./test/coin/graph.meta",
+		"-f", "./test/coin/graph.factors", "-m", "./test/coin/graph.meta",
 		"-o", ".", "-l", "800", "-i", "300", "-s", "1", "--alpha", "0.1", "--diminish 0.995"
 	};
-
-	dd::CmdParser cmd_parser = parse_input(23, (char **)argv);
+	dd::CmdParser cmd_parser = parse_input(21, (char **)argv);
 	gibbs(cmd_parser);
 
 	std::ifstream fin("./inference_result.out.text");
@@ -48,13 +46,13 @@ TEST(LogisticRegressionTest, INFERENCE) {
 	fin_weight.close();
 
 	// test sample_evidence
-	const char* argv2[24] = {
+	const char* argv2[22] = {
 		"dw", "gibbs", "-w", "./test/coin/graph.weights", "-v", "./test/coin/graph.variables", 
-		"-f", "./test/coin/graph.factors", "-e", "./test/coin/graph.edges", "-m", "./test/coin/graph.meta",
+		"-f", "./test/coin/graph.factors", "-m", "./test/coin/graph.meta",
 		"-o", ".", "-l", "800", "-i", "300", "-s", "1", "--alpha", "0.1", "--diminish 0.995", "--sample_evidence"
 	};
 
-	cmd_parser = parse_input(24, (char **)argv2);
+	cmd_parser = parse_input(22, (char **)argv2);
 	gibbs(cmd_parser);
 
 	fin.open("./inference_result.out.text");

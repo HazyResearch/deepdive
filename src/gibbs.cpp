@@ -213,13 +213,12 @@ void gibbs(dd::CmdParser & cmd_parser){
   std::string weight_file = cmd_parser.weight_file->getValue();
   std::string variable_file = cmd_parser.variable_file->getValue();
   std::string factor_file = cmd_parser.factor_file->getValue();
-  std::string edge_file = cmd_parser.edge_file->getValue();
 
   std::string output_folder = cmd_parser.output_folder->getValue();
 
   // check arguments
   if (fg_file == "" || weight_file == "" || variable_file == "" || factor_file == "" ||
-      edge_file == "" || output_folder == "") {
+      output_folder == "") {
     std::cout << "factor graph files not specified" << std::endl;
     exit(1);
   }
@@ -255,7 +254,6 @@ void gibbs(dd::CmdParser & cmd_parser){
     std::cout << std::endl;
     std::cout << "#################GIBBS SAMPLING#################" << std::endl;
     std::cout << "# fg_file            : " << fg_file << std::endl;
-    std::cout << "# edge_file          : " << edge_file << std::endl;
     std::cout << "# weight_file        : " << weight_file << std::endl;
     std::cout << "# variable_file      : " << variable_file << std::endl;
     std::cout << "# factor_file        : " << factor_file << std::endl;

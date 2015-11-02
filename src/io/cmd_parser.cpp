@@ -14,7 +14,7 @@ namespace dd{
         delta_folder = new TCLAP::ValueArg<std::string>("j","delta_folder","Folder of delta factor graph",false,"","string"); 
 
         fg_file = new TCLAP::ValueArg<std::string>("m","fg_meta","factor graph metadata file",false,"","string"); 
-        edge_file = new TCLAP::ValueArg<std::string>("e","edges","edges file",false,"","string"); 
+        edge_file = new TCLAP::ValueArg<std::string>("e","edges","edges file",false,"","string");
         weight_file = new TCLAP::ValueArg<std::string>("w","weights","weights file",false,"","string"); 
         variable_file = new TCLAP::ValueArg<std::string>("v","variables","variables file",false,"","string"); 
         factor_file = new TCLAP::ValueArg<std::string>("f","factors","factors file",false,"","string"); 
