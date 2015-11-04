@@ -24,7 +24,7 @@ define CMD_factor
 endef
 
 define TOUCH
-mkdir -p $(@D) && touch $@
+touch $@
 endef
 
 .DEFAULT: help

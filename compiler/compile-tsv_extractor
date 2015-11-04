@@ -16,6 +16,7 @@ set -euo pipefail
 \(.before // "")
 
 deepdive sql eval \(.input | @sh) format=tsv |
+pv -c | pv -cl |
 bash -c \(.udf | @sh) |
 deepdive sql \("COPY \(.output_relation) FROM STDIN" | @sh)
 
