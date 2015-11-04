@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# compile-json_extractor -- Compiles given extractor specified in JSON into a form executable by DeepDive
+set -eu
+
+ExtractorName=$1; shift
+ExtractorSpec=$1; shift
+
+error "$ExtractorName: ${0##*compile-}: Compiler not implemented yet"

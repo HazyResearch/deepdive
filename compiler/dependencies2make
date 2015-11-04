@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# dependencies2make -- Generates a GNU Make recipes corresponding to the input dependency graph in JSON
+##
+exec -a "$0" jq -r '
+def mktarget(suffix): "\(.).\(suffix)";
+def mktargets(suffix): map(mktarget(suffix)) | join(" ");
+def mktarget: mktarget("done");
+def mktargets: mktargets("done");
+
+# make variables
+"
+# default commands
+define CMD_data
+# $@
+endef
+define CMD_pipeline
+# $@
+endef
+define CMD_process
+# $@
+endef
+define CMD_factor
+# $@
+endef
+
+define TOUCH
+mkdir -p $(@D) && touch $@
+endef
+
+.DEFAULT: help
+help:
+	@echo make list
+	@echo make all
+	@echo make reset
+list:
+	@printf \"make %s\\n\" \(keys | mktargets)
+	@echo \"make     FOO.reset       # resets  FOO.done\"
+	@echo \"make -tB FOO.done        # assumes FOO.done\"
+	@echo \"make TOUCH=    FOO.done  # shows what still needs to run to get FOO.done\"
+	@echo \"make TOUCH= -B FOO.done  # shows everything that needs to run to get FOO.done\"
+all: \(keys | mktargets)
+reset: \(keys | mktargets("reset"))
+.PHONY: help list all reset %.reset
+
+", ( to_entries[]
+
+# make target and recipe for every node in the dependency graph
+| "
+\(.key | mktarget): \(.value | mktargets)
+	$(CMD_\(.key | sub("/.*"; "")))
+	@$(TOUCH)
+\(.key | mktarget("reset")):
+	rm -f \(.key | mktarget("done"))
+"
+
+# pipelines are special
+, if .key | startswith("pipeline/") then "
+.PHONY: \(.key | mktarget)
+" else empty end
+
+)'

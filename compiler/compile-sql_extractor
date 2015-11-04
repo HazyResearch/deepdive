@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# compile-sql_extractor -- Compiles given extractor specified in JSON into a form executable by DeepDive
+set -eu
+
+ExtractorName=$1; shift
+ExtractorSpec=$1; shift
+
+ExtractorName=$ExtractorName \
+ExtractorStyle=${0##*compile-} \
+jq -r <<<"$ExtractorSpec" >run.sh '
+"#!/usr/bin/env bash
+# \(env.ExtractorStyle)  \(env.ExtractorName)
+# \(. | @json)
+set -euo pipefail
+
+\(.before // "")
+
+deepdive sql \(.sql | @sh)
+
+\(.after // "")
+"
+'
+chmod +x run.sh

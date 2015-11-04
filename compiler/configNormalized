@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# configNormalized -- Normalizes deepdive.conf in JSON to use qualified names
+#
+# - extractor names are prefixed with process/*
+# - factor names are prefixed with factor/*
+# - pipeline names are prefixed with pipeline/*
+# - output_relation names are prefixed with data/* and kept under a new key _output
+# - dependencies are rewritten with qualified names under a new key _dependencies
+##
+exec -a "$0" jq '.deepdive as $deepdive
+
+# qualify extractor names and output relations
+| .deepdive.extraction.extractors |= with_entries
+    ( .key |= "process/\(.)"
+    | .value |= ( ._dependencies = .dependencies
+                | ._dependencies |= (. // [] | map("process/\(.)"))
+                | ._output = (.output_relation | if . then "data/\(.)" else null end)
+                )
+    )
+# qualify factor names
+| .deepdive.inference.factors |= with_entries
+    ( .key |= "factor/\(.)"
+    | .value |= ( ._dependencies = .dependencies
+                | ._dependencies |= (. // [] | map("process/\(.)"))
+                | ._output = (.output_relation | if . then "data/\(.)" else null end)
+                )
+    )
+
+# qualify names in pipelines
+| .deepdive.pipeline.pipelines |= with_entries
+    ( .key as $p
+    | .key |= "pipeline/\(.)"
+    | .value |= map(  if $deepdive.extraction.extractors[.] then "process/\(.)"
+                    elif $deepdive.inference.factors[.]     then "factor/\(.)"
+                    else error("\(.): Neither an extractor or inference rule in pipeline \($p)")
+                    end
+                   )
+    )
+
+'

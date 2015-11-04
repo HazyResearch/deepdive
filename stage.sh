@@ -45,6 +45,21 @@ stage shell/deepdive-run                                          util/
 stage shell/deepdive-sql                                          util/
 stage shell/deepdive-load                                         util/
 
+stage compiler/deepdive-compile                                   util/
+stage compiler/hocon2json                                         util/
+stage src/main/resources/application.conf                         etc/deepdive-default.conf
+stage compiler/configNormalized                                   util/
+stage compiler/config2dependencies                                util/
+stage compiler/dependencies2make                                  util/
+stage compiler/config2compilation-plan                            util/
+stage compiler/compile-tsv_extractor                              util/
+stage compiler/compile-sql_extractor                              util/
+stage compiler/compile-cmd_extractor                              util/
+stage compiler/compile-json_extractor                             util/
+stage compiler/compile-plpy_extractor                             util/
+stage compiler/compile-piggy_extractor                            util/
+stage compiler/compile-sql_factor                                 util/
+
 stage shell/load-db-driver.sh                                     util/
 stage shell/db-driver/postgresql                                  util/db-driver/
 stage shell/db-driver/greenplum                                   util/db-driver/
