@@ -9,13 +9,13 @@
     port: ${PGPORT}
     incremental_mode: ORIGINAL
     }
-    
+
 
 
       deepdive.schema.variables {
-        
+
       }
-    
+
 
           deepdive.extraction.extractors.init_R {
             sql: """ DROP TABLE IF EXISTS R CASCADE;
@@ -34,26 +34,26 @@
         }
 
       deepdive.extraction.extractors.ext_A {
-        sql: """ DROP VIEW IF EXISTS A;
+        sql: """ DROP VIEW IF EXISTS A CASCADE;
         CREATE VIEW A AS SELECT R0.a AS column_0, (R0.a + R0.b) AS column_1
 FROM R R0
-        
+
         """
         style: "sql_extractor"
-          
+
       }
-    
+
 
       deepdive.extraction.extractors.ext_B {
-        sql: """ DROP VIEW IF EXISTS B;
+        sql: """ DROP VIEW IF EXISTS B CASCADE;
         CREATE VIEW B AS SELECT R0.column_0 AS column_0, R1.b AS column_1
 FROM A R0, R R1
-        WHERE R1.a = R0.column_1 
+        WHERE R1.a = R0.column_1
         """
         style: "sql_extractor"
           dependencies: [ "ext_A" ]
       }
-    
+
 deepdive.pipeline.run: ${PIPELINE}
 deepdive.pipeline.pipelines.initdb: [
   init_R

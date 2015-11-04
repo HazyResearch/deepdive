@@ -9,13 +9,13 @@
     port: ${PGPORT}
     incremental_mode: ORIGINAL
     }
-    
+
 
 
       deepdive.schema.variables {
-        
+
       }
-    
+
 
           deepdive.extraction.extractors.init_b {
             sql: """ DROP TABLE IF EXISTS b CASCADE;
@@ -56,258 +56,258 @@
         }
 
       deepdive.extraction.extractors.ext_E {
-        sql: """ DROP VIEW IF EXISTS E;
+        sql: """ DROP VIEW IF EXISTS E CASCADE;
         CREATE VIEW E AS SELECT (R0.k :: INT) AS column_0
 FROM b R0
-        
+
         """
         style: "sql_extractor"
-          
+
       }
-    
+
 
       deepdive.extraction.extractors.ext_X {
-        sql: """ DROP VIEW IF EXISTS X;
+        sql: """ DROP VIEW IF EXISTS X CASCADE;
         CREATE VIEW X AS SELECT R0.k AS column_0
 FROM b R0, c R1
-        WHERE R1.n = R0.k 
+        WHERE R1.n = R0.k
         """
         style: "sql_extractor"
-          
+
       }
-    
+
 
       deepdive.extraction.extractors.ext_N {
-        sql: """ DROP VIEW IF EXISTS N;
+        sql: """ DROP VIEW IF EXISTS N CASCADE;
         CREATE VIEW N AS SELECT R0.k AS column_0
 FROM b R0
         WHERE EXISTS (SELECT 1 FROM c R1_0 WHERE R1_0.n = R0.k  AND R1_0.s > 'a')
         """
         style: "sql_extractor"
-          
+
       }
-    
+
 
       deepdive.extraction.extractors.ext_T {
-        sql: """ DROP VIEW IF EXISTS T;
+        sql: """ DROP VIEW IF EXISTS T CASCADE;
         CREATE VIEW T AS SELECT R0.k AS column_0
 FROM b R0 LEFT OUTER JOIN c R1_0 ON R1_0.n = R0.k  AND R1_0.s > R0.p
         WHERE R1_0.s > R0.p
         """
         style: "sql_extractor"
-          
+
       }
-    
+
 
       deepdive.extraction.extractors.ext_J {
-        sql: """ DROP VIEW IF EXISTS J;
+        sql: """ DROP VIEW IF EXISTS J CASCADE;
         CREATE VIEW J AS SELECT R0.k AS column_0
 FROM b R0
         WHERE ((R0.k + R0.r) = 100 OR (NOT R0.k > 50))
         """
         style: "sql_extractor"
-          
+
       }
-    
+
 
       deepdive.extraction.extractors.ext_U {
-        sql: """ DROP VIEW IF EXISTS U;
+        sql: """ DROP VIEW IF EXISTS U CASCADE;
         CREATE VIEW U AS SELECT R0_0.k AS column_0
-FROM b R0_0 ON  FULL OUTER JOIN c R1_0 ON R1_0.n = R0_0.k 
-        
+FROM b R0_0 ON  FULL OUTER JOIN c R1_0 ON R1_0.n = R0_0.k
+
         """
         style: "sql_extractor"
-          
+
       }
-    
+
 
       deepdive.extraction.extractors.ext_F {
-        sql: """ DROP VIEW IF EXISTS F;
+        sql: """ DROP VIEW IF EXISTS F CASCADE;
         CREATE VIEW F AS SELECT ((R0.k :: INT) + (R0.r :: INT)) AS column_0
 FROM b R0
-        
+
         """
         style: "sql_extractor"
-          
+
       }
-    
+
 
       deepdive.extraction.extractors.ext_A {
-        sql: """ DROP VIEW IF EXISTS A;
+        sql: """ DROP VIEW IF EXISTS A CASCADE;
         CREATE VIEW A AS SELECT (R0.k + (R0.r * (R0.k + R0.r))) AS column_0
 FROM b R0
-        
+
         """
         style: "sql_extractor"
-          
+
       }
-    
+
 
       deepdive.extraction.extractors.ext_M {
-        sql: """ DROP VIEW IF EXISTS M;
+        sql: """ DROP VIEW IF EXISTS M CASCADE;
         CREATE VIEW M AS SELECT R0.k AS column_0
 FROM b R0
         WHERE EXISTS (SELECT 1 FROM c R1_0 WHERE R1_0.n = R0.k )
         """
         style: "sql_extractor"
-          
+
       }
-    
+
 
       deepdive.extraction.extractors.ext_I {
-        sql: """ DROP VIEW IF EXISTS I;
+        sql: """ DROP VIEW IF EXISTS I CASCADE;
         CREATE VIEW I AS SELECT R0.k AS column_0
 FROM b R0
         WHERE ((R0.k + R0.r) = 100 OR (R0.k > 50 AND R0.r < 10))
         """
         style: "sql_extractor"
-          
+
       }
-    
+
 
       deepdive.extraction.extractors.ext_G {
-        sql: """ DROP VIEW IF EXISTS G;
+        sql: """ DROP VIEW IF EXISTS G CASCADE;
         CREATE VIEW G AS SELECT R0.k AS column_0
 FROM b R0
         WHERE (R0.k + R0.r) = 100
         """
         style: "sql_extractor"
-          
+
       }
-    
+
 
       deepdive.extraction.extractors.ext_V {
-        sql: """ DROP VIEW IF EXISTS V;
+        sql: """ DROP VIEW IF EXISTS V CASCADE;
         CREATE VIEW V AS SELECT R0.n AS column_0
 FROM c R0, a R1
-        WHERE R1.k = R0.n 
+        WHERE R1.k = R0.n
         """
         style: "sql_extractor"
-          
+
       }
-    
+
 
       deepdive.extraction.extractors.ext_Q {
-        sql: """ DROP VIEW IF EXISTS Q;
+        sql: """ DROP VIEW IF EXISTS Q CASCADE;
         CREATE VIEW Q AS SELECT DISTINCT ('test' :: TEXT) AS column_0, 123 AS column_1, R0.k AS column_2, unnest(R1.q) AS column_3
 FROM a R0, b R1, c R2
         WHERE R1.k = R0.k  AND R2.s = (R1.p || R1.q) AND R2.n = 10 AND R2.t = 'foo' AND (R1.r > 100 OR ((NOT R1.r < 20) AND R1.r < 50))
         """
         style: "sql_extractor"
-          
+
       }
-    
+
 
       deepdive.extraction.extractors.ext_L {
-        sql: """ DROP VIEW IF EXISTS L;
+        sql: """ DROP VIEW IF EXISTS L CASCADE;
         CREATE VIEW L AS SELECT DISTINCT R0.k AS column_0
 FROM b R0
         LIMIT 100
         """
         style: "sql_extractor"
-          
+
       }
-    
+
 
       deepdive.extraction.extractors.ext_B {
-        sql: """ DROP VIEW IF EXISTS B;
+        sql: """ DROP VIEW IF EXISTS B CASCADE;
         CREATE VIEW B AS SELECT func((R0.k + (R0.r + R0.k))) AS column_0
 FROM b R0
-        
+
         """
         style: "sql_extractor"
-          
+
       }
-    
+
 
       deepdive.extraction.extractors.ext_P {
-        sql: """ DROP VIEW IF EXISTS P;
+        sql: """ DROP VIEW IF EXISTS P CASCADE;
         CREATE VIEW P AS SELECT R1.p AS column_0, R1.q AS column_1, MAX(R1.r) AS column_2
 FROM a R0, b R1
-        WHERE R1.k = R0.k 
+        WHERE R1.k = R0.k
         GROUP BY R1.p, R1.q
         """
         style: "sql_extractor"
-          
+
       }
-    
+
 
       deepdive.extraction.extractors.ext_C {
-        sql: """ DROP VIEW IF EXISTS C;
+        sql: """ DROP VIEW IF EXISTS C CASCADE;
         CREATE VIEW C AS SELECT func(func(func(R0.k))) AS column_0
 FROM b R0
-        
+
         """
         style: "sql_extractor"
-          
+
       }
-    
+
 
       deepdive.extraction.extractors.ext_H {
-        sql: """ DROP VIEW IF EXISTS H;
+        sql: """ DROP VIEW IF EXISTS H CASCADE;
         CREATE VIEW H AS SELECT R0.k AS column_0
 FROM b R0
         WHERE ((R0.k + R0.r) = 100 AND R0.k > 50)
         """
         style: "sql_extractor"
-          
+
       }
-    
+
 
       deepdive.extraction.extractors.ext_W {
-        sql: """ DROP VIEW IF EXISTS W;
+        sql: """ DROP VIEW IF EXISTS W CASCADE;
         CREATE VIEW W AS SELECT R0.k AS column_0
 FROM a R0
         WHERE NOT EXISTS (SELECT 1 FROM c R1_0 WHERE NOT (R1_0.n < R0.k))
         """
         style: "sql_extractor"
-          
+
       }
-    
+
 
       deepdive.extraction.extractors.ext_K {
-        sql: """ DROP VIEW IF EXISTS K;
+        sql: """ DROP VIEW IF EXISTS K CASCADE;
         CREATE VIEW K AS SELECT R0.k AS column_0
 FROM b R0
         WHERE ((R0.k + R0.r) = 100 AND ((NOT R0.k > 50) OR R0.k = 40))
         """
         style: "sql_extractor"
-          
+
       }
-    
+
 
       deepdive.extraction.extractors.ext_O {
-        sql: """ DROP VIEW IF EXISTS O;
+        sql: """ DROP VIEW IF EXISTS O CASCADE;
         CREATE VIEW O AS SELECT R0.k AS column_0
 FROM b R0
         WHERE EXISTS (SELECT 1 FROM c R1_0, a R1_1 WHERE R1_0.n = R0.k  AND R1_1.k = R0.k )
         """
         style: "sql_extractor"
-          
+
       }
-    
+
 
       deepdive.extraction.extractors.ext_D {
-        sql: """ DROP VIEW IF EXISTS D;
+        sql: """ DROP VIEW IF EXISTS D CASCADE;
         CREATE VIEW D AS SELECT (func((R0.k * func2((R0.r + R0.k)))) + R0.k) AS column_0
 FROM b R0
-        
+
         """
         style: "sql_extractor"
-          
+
       }
-    
+
 
       deepdive.extraction.extractors.ext_S {
-        sql: """ DROP VIEW IF EXISTS S;
+        sql: """ DROP VIEW IF EXISTS S CASCADE;
         CREATE VIEW S AS SELECT R0.k AS column_0
-FROM b R0 LEFT OUTER JOIN c R1_0 ON R1_0.n = R0.k 
-        
+FROM b R0 LEFT OUTER JOIN c R1_0 ON R1_0.n = R0.k
+
         """
         style: "sql_extractor"
-          
+
       }
-    
+
 deepdive.pipeline.run: ${PIPELINE}
 deepdive.pipeline.pipelines.initdb: [
   init_b
