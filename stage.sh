@@ -60,6 +60,8 @@ stage compiler/compile-plpy_extractor                             util/
 stage compiler/compile-piggy_extractor                            util/
 stage compiler/compile-sql_factor                                 util/
 
+stage shell/deepdive-do                                           util/
+
 stage shell/load-db-driver.sh                                     util/
 stage shell/db-driver/postgresql                                  util/db-driver/
 stage shell/db-driver/greenplum                                   util/db-driver/

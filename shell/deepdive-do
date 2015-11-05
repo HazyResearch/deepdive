@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# deepdive-do -- Runs necessary processes to get something done
+# > deepdive do [RELATION|PIPELINE|EXTRACTOR]
+##
+set -eu
+
+DEEPDIVE_APP=$(find-deepdive-app)
+export DEEPDIVE_APP
+cd "$DEEPDIVE_APP"/run
+# TODO compile first?
+
+# TODO list targets if no args
+
+# find what exactly each argument refers to
+makeTargets=()
+for target; do
+    resolved=false
+    for kind in data pipeline process; do
+        makeTarget="$kind/$target.done"
+        if make -qB "$makeTarget" &>/dev/null; [[ $? -eq 1 ]]; then
+            makeTargets+=("$makeTarget")
+            resolved=true
+            break
+        fi
+    done
+    $resolved || error "$target: Unknown target"
+done
+
+# create a directory for running
+runDir=$(date +%Y%m%d/%H%M%S.%N)
+mkdir -p "$runDir"
+# make sure we clean up
+cleanup() {
+    [[ ! RUNNING -ef "$runDir" ]] || rm -f RUNNING
+}
+trap cleanup EXIT
+trap 'ln -sfn "$runDir" ABORTED' ERR
+ln -sfnv "$runDir" RUNNING
+
+# enumerate what's going to happen
+{
+echo "#!/bin/sh
+# run/$runDir/plan.sh -- Plan for $*
+"
+list-commands() {
+    make -ns "$@" CMD_process='$(@:.done=/run.sh)' "${makeTargets[@]}"
+}
+diff \
+    --old-line-format='#     %L' \
+    --unchanged-line-format='%L' \
+    --new-line-format='    %L' \
+    <(list-commands --always-make) \
+    <(list-commands) || true
+} | tee "$runDir"/plan.init.sh >"$runDir"/plan.sh
+
+# provide a chance to edit
+${EDITOR:-vi} "$runDir"/plan.sh &&
+    [[ "$runDir"/plan.sh -nt "$runDir"/plan.init.sh ]] ||
+    error "Canceled execution"
+
+
+# TODO run it
+APP_HOME=$PWD/.. \
+DEEPDIVE_APP=$PWD/.. \
+bash -euv "$runDir"/plan.sh
+# TODO logging
