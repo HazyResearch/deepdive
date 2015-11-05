@@ -414,6 +414,10 @@ object FactorFunctionParser extends RegexParsers with Logging {
     ImplyFactorFunction(varList)
   }
 
+  def imply3FactorFunction = ("Imply3" | "IMPLY3") ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
+    Imply3FactorFunction(varList)
+  }
+
   def orFactorFunction = ("Or" | "OR") ~> "(" ~> rep1sep(factorVariable, ",") <~ ")" ^^ { varList =>
     OrFactorFunction(varList)
   }
@@ -472,7 +476,7 @@ object FactorFunctionParser extends RegexParsers with Logging {
 
   def factorFunc = implyFactorFunction | orFactorFunction | andFactorFunction |
     equalFactorFunction | isTrueFactorFunction | xorFactorFunction | multinomialFactorFunction |
-    linearFactorFunction | ratioFactorFunction | logicalFactorFunction
+    linearFactorFunction | ratioFactorFunction | logicalFactorFunction | imply3FactorFunction
 
 
   def parseFactorFunction(factorFunction: String): FactorFunction with Product with Serializable = {
