@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# deepdive-do -- Runs necessary processes to get something done
+# > deepdive do TARGET...
+##
+set -eu
+
+. resolve-args-to-do.sh
+cd "$DEEPDIVE_APP"/run
+
+# create a directory for running
+runDir=$(date +%Y%m%d/%H%M%S.%N)
+mkdir -p "$runDir"
+# make sure we clean up
+cleanup() {
+    [[ ! RUNNING -ef "$runDir" ]] || rm -f RUNNING
+}
+abort() {
+    [[ ! -e "$runDir" ]] || ln -sfn "$runDir" ABORTED
+}
+trap cleanup EXIT
+trap abort ERR
+ln -sfnv "$runDir" RUNNING
+
+deepdive-plan "$@" |
+# insert a filename line
+sed '1 a\'$'\n''# run/'"$runDir"'/plan.sh\'$'\n' |
+tee "$runDir"/plan.init.sh >"$runDir"/plan.sh
+
+# provide a chance to edit
+${VISUAL:-${EDITOR:-vi}} "$runDir"/plan.sh &&
+[[ "$runDir"/plan.sh -nt "$runDir"/plan.init.sh ]] || {
+    cleanup
+    rm -rf "$runDir"
+    error "Canceled execution"
+}
+
+# run it
+APP_HOME=$PWD/.. \
+DEEPDIVE_APP=$PWD/.. \
+bash -euv "$runDir"/plan.sh
+# TODO logging under $runDir

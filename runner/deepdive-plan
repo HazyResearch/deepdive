@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# deepdive-plan -- Shows execution plan for given targets
+# > deepdive plan TARGET...
+##
+set -eu
+
+targets="$*"
+. resolve-args-to-do.sh
+
+# enumerate what's going to happen
+{
+echo "#!/usr/bin/env bash
+# execution plan for $targets
+"
+list-commands() {
+    make -C "$DEEPDIVE_APP"/run --dry-run --silent \
+        CMD_process='$(@:.done=/run.sh)' \
+        TOUCH='touch $@' \
+        "$@"
+}
+diff \
+    --old-line-format=': %L' \
+    --new-line-format='%L' \
+    --unchanged-line-format='%L' \
+    <(list-commands --always-make "$@") \
+    <(list-commands               "$@") || true
+} |
+sed '/#\{77,\}$/ a\
+\
+'

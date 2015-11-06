@@ -75,8 +75,11 @@ Generates skeleton source code for functions (UDFs) declared in DDlog under `udf
 #### `deepdive typecheck UDF`
 Checks source code for given function declared in DDlog with synthetic data.
 
-### Data Processing (Extraction)
-#### `deepdive extract RELATION...`
+### Data Processing
+#### `deepdive do SOMETHING...`
+#### `deepdive mark STATE SOMETHING...`
+#### `deepdive redo SOMETHING...`
+#### `deepdive plan SOMETHING...`
 
 ### Database Management
 #### `deepdive initdb`

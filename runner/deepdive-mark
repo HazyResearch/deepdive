@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# deepdive-mark -- Marks state of something to do
+# > deepdive mark done              TARGET...
+# > deepdive mark todo              TARGET...
+# > deepdive mark todo-from-scratch TARGET...
+# > deepdive mark all-new           TARGET...
+# > deepdive mark     new           TARGET...
+##
+set -eu
+
+[[ $# -gt 0 ]] || usage "$0" "Specify what to mark"
+[[ $# -gt 1 ]] || usage "$0" "No TARGET specified"
+
+State=$1; shift
+case $State in
+    "done"|new|all-new|todo|todo-from-scratch) ;;
+    "") ;;
+    *) error "$State: Unknown state. Can mark as 'done', 'new', 'all-new', 'todo', or 'todo-from-scratch' only"
+esac
+. resolve-args-to-do.sh
+
+case $State in
+    "done")
+        make -C "$DEEPDIVE_APP"/run --touch --silent "$@"
+        ;;
+
+    new)
+        cd "$DEEPDIVE_APP"/run
+        touch "$@"
+        ;;
+
+    all-new)
+        make -C "$DEEPDIVE_APP"/run --touch --silent --always-make "$@"
+        ;;
+
+    todo)
+        cd "$DEEPDIVE_APP"/run
+        # TODO for data/* mark the dependencies as undone too
+        rm -f "$@"
+        ;;
+
+    todo-from-scratch)
+        make -C "$DEEPDIVE_APP"/run --silent "${@/.done/.reset}"
+        ;;
+
+esac

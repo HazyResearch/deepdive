@@ -11,44 +11,49 @@ def mktargets: mktargets("done");
 "
 # default commands
 define CMD_data
-# $@
+# no-op
 endef
 define CMD_pipeline
-# $@
+# no-op
 endef
 define CMD_process
-# $@
+# no-op
 endef
 define CMD_factor
-# $@
+# no-op
 endef
-
 define TOUCH
-touch $@
 endef
 
 .DEFAULT: help
 help:
 	@echo make list
+	@echo make list-targets
 	@echo make all
 	@echo make reset
 list:
-	@printf \"make %s\\n\" \(keys | mktargets)
+	@printf \"%s\\n\" \(keys | map(@sh) | join(" "))
+list-targets:
+	@printf \"make %s\\n\" \(keys | map(mktarget | @sh) | join(" "))
 	@echo \"make     FOO.reset       # resets  FOO.done\"
 	@echo \"make -tB FOO.done        # assumes FOO.done\"
 	@echo \"make TOUCH=    FOO.done  # shows what still needs to run to get FOO.done\"
 	@echo \"make TOUCH= -B FOO.done  # shows everything that needs to run to get FOO.done\"
 all: \(keys | mktargets)
 reset: \(keys | mktargets("reset"))
-.PHONY: help list all reset %.reset
+.PHONY: help list list-targets all reset %.reset
 
 ", ( to_entries[]
 
 # make target and recipe for every node in the dependency graph
 | "
 \(.key | mktarget): \(.value | mktargets)
+	## \(.key) \("#" * (78 -(.key | length) -4))
+	# Done: $(shell [ -e $@ ] && date -r $@ -Iseconds 2>/dev/null || date -r $@ +%FT%T%z 2>/dev/null || echo no)
 	$(CMD_\(.key | sub("/.*"; "")))
-	@$(TOUCH)
+	$(TOUCH)
+	##############################################################################
+	
 \(.key | mktarget("reset")):
 	rm -f \(.key | mktarget("done"))
 "
