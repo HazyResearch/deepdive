@@ -52,6 +52,7 @@ stage src/main/resources/application.conf                         etc/deepdive-d
 stage compiler/configNormalized                                   util/
 stage compiler/config2dependencies                                util/
 stage compiler/dependencies2make                                  util/
+stage compiler/dependencies2dot                                   util/
 stage compiler/config2compilation-plan                            util/
 stage compiler/compile-tsv_extractor                              util/
 stage compiler/compile-sql_extractor                              util/

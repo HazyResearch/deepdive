@@ -45,11 +45,14 @@ hocon2json \
 # normalize config JSON
 configNormalized <compiled.deepdive.conf.json >compiled.config.json
 
-STEP "Analyzing dependencies to generate run/Makefile"
+STEP "Analyzing dependencies to generate run/Makefile and run/compiled.dataflow.svg"
 # derive a dependency graph from the extractors, factors, pipelines defined in deepdive.conf
 config2dependencies <compiled.config.json >compiled.dependencies.json
 # compile a Makefile from the dependency graph
 dependencies2make <compiled.dependencies.json >Makefile
+# compile an SVG from the dependency graph
+dependencies2dot <compiled.dependencies.json >compiled.dataflow.dot
+dot -Tsvg <compiled.dataflow.dot >compiled.dataflow.svg
 
 STEP "Compiling executable extractors and factor grounding instructions"
 # compile extractors and factors under process/ and factor/

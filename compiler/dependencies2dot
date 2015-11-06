@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# dependencies2dot -- Generates a DOT corresponding to the input dependency graph in JSON
+##
+exec -a "$0" jq -r '
+def nodeId: sub("/"; "/\n");
+def nodeType: sub("/.*$"; "");
+
+# node attributes by type
+{ data     : "shape=box3d  , color=\"#2222cc\""
+, factor   : "shape=rect   , color=\"#8822cc\""
+, process  : "shape=ellipse, color=\"#cc2222\""
+, pipeline : "shape=folder,  color=\"#ffcc22\""
+} as $nodeAttr |
+
+"
+digraph \"\(env.DEEPDIVE_APP | sub(".*/"; "")) data flow\" {
+    node [shape=box
+        ,fontsize=10
+        ,fontname=\"Ubuntu Mono,Envy Code R,Oxygen Mono,Consolas,Menlo,Monaco,Andale Mono\"
+    ];
+    edge [color=\"#999999\"];
+
+", ( to_entries[]
+
+# process nodes
+| "
+\"\(.key | nodeId)\" [\($nodeAttr[.key | nodeType])];
+"
+
+# dependency edges
+, "
+\"\(.value[] | nodeId)\" -> \"\(.key | nodeId)\" [
+label=\"\"
+\(
+# TODO different edge style by nodeType, e.g., dotted line to pipeline/
+# See: http://www.graphviz.org/doc/info/attrs.html#k:style
+""
+)
+];
+"
+
+), "
+
+}
+"'
