@@ -15,7 +15,7 @@ echo "#!/usr/bin/env bash
 list-commands() {
     make -C "$DEEPDIVE_APP"/run --dry-run --silent \
         CMD_process='$(@:.done=/run.sh)' \
-        TOUCH='touch $@' \
+        TOUCH='mark_done $(@:.done=)' \
         "$@"
 }
 diff \
