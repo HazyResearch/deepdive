@@ -41,7 +41,6 @@ stage shell/error                                                 util/
 stage shell/usage                                                 util/
 
 stage shell/deepdive-initdb                                       util/
-stage shell/deepdive-run                                          util/
 stage shell/deepdive-sql                                          util/
 stage shell/deepdive-load                                         util/
 
@@ -65,6 +64,7 @@ stage runner/deepdive-do                                          util/
 stage runner/deepdive-redo                                        util/
 stage runner/deepdive-mark                                        util/
 stage runner/resolve-args-to-do.sh                                util/
+stage runner/deepdive-run                                         util/
 
 stage shell/load-db-driver.sh                                     util/
 stage shell/db-driver/postgresql                                  util/db-driver/
