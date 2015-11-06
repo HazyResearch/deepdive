@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# deepdive-whereis -- Prints paths to files in DeepDive's installation
+# > deepdive whereis FILE...
+##
+set -eu
+
+for f; do
+    [[ -e "$DEEPDIVE_HOME/$f" ]] ||
+        error "$f: No such file in DeepDive installation"
+    echo "$DEEPDIVE_HOME/$f"
+done

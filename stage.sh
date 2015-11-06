@@ -35,10 +35,12 @@ stage shell/deepdive                                              bin/
 stage shell/deepdive-version                                      util/
 stage shell/deepdive-help                                         util/
 stage shell/deepdive-env                                          util/
+stage shell/deepdive-whereis                                      util/
 stage shell/find-deepdive-app                                     util/
 stage shell/parse-url.sh                                          util/
 stage shell/error                                                 util/
 stage shell/usage                                                 util/
+stage shell/deepdive_bash_completion.sh                           etc/
 
 stage shell/deepdive-initdb                                       util/
 stage shell/deepdive-sql                                          util/
