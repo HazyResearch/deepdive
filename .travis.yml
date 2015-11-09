@@ -37,10 +37,15 @@ env:
 before_install:
   # Check coding style before performing the build and tests
   - make checkstyle
+  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+  - sudo apt-get update -qq
+  - sudo apt-get install -y libnuma-dev
+  - sudo apt-get install -qq g++-4.8
+  - export CXX="g++-4.8" CC="gcc-4.8"
 
 install:
   - make depends
-  - util/install.sh postgres
+  - sudo apt-get install -qq -y postgresql-plpython-`ls -1 /var/lib/postgresql | head -n 1`  # XXX for piggy and plpy extractor tests
   - make test-build  # XXX doing it here to hide the noise from sbt and unzip
 
 script:

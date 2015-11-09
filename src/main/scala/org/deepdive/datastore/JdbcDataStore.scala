@@ -264,6 +264,23 @@ trait JdbcDataStore extends Logging {
     return exists
   }
 
+  // return if a function of the same name exists in
+  // Postgresql or Greenplum
+  def existsFunction(function: String) : Boolean = {
+    val sql = s"""
+      SELECT EXISTS (
+        SELECT *
+        FROM information_schema.routines
+        WHERE routine_name = '${function}'
+      );
+    """
+    var exists = false
+    executeSqlQueryWithCallback(sql) { rs =>
+      exists = rs.getBoolean(1)
+    }
+    return exists
+  }
+
   // check whether greenplum is used
   def isUsingGreenplum() : Boolean = {
     var usingGreenplum = false

@@ -156,6 +156,7 @@ source /usr/local/greenplum-db/greenplum_path.sh
 ### Configure ssh with localhost
 
 Now you need to generate ssh keys for `localhost`. Run:
+
 ```bash
 $ gpssh-exkeys -h localhost
 ```

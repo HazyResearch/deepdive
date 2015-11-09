@@ -61,9 +61,17 @@ You can install DeepDive and all its dependencies with a single command.
 
 4. Since DeepDive needs a database installation to run correctly.  You should use one of the provided installer options:
     * [`postgres`](http://wiki.postgresql.org/wiki/Detailed_installation_guides)
+        DeepDive works with most of the recent versions of PostgreSQL.
+        However, 9.3+ is recommended to use all functionality.
     * [`postgres_xl`](../advanced/pgxl.html)
+        DeepDive works with current release of PostgreSQL-XL, which is based on PostgreSQL 9.2.
+        PL/Python extension is required.
     * [`greenplum`](../advanced/greenplum.html)
+        DeepDive works with recent releases of Greenplum, which is based on PostgreSQL 8 that may lack some features that are required by some advanced DeepDive functionality.
+        PL/Python extension is required.
     * [`mysql`](../advanced/mysql.html)
+        DeepDive provides minimal support for MySQL and MySQL Cluster, but PostgreSQL-based databases are strongly recommended.
+
 
 5. You can verify whether your installation is correct using the `run_deepdive_tests` option in the installer.
     It downloads all examples and tests for the DeepDive release and runs the tests using the installed one.

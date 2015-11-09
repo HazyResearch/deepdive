@@ -182,8 +182,13 @@ class PostgresDataStore extends JdbcDataStore with Logging {
     if (!existsLanguage("plpgsql")) {
       executeSqlQueries("CREATE LANGUAGE plpgsql;")
     }
-    if (!existsLanguage("plpythonu")) {
-      executeSqlQueries("CREATE LANGUAGE plpythonu;")
+    if (isUsingGreenplum || isUsingPostgresXL){
+      // Only Greenplum and PostgresXL requires plpythonu by default.
+      // Piggy extractor requires plpythonu, but then this
+      // check should appear in Piggy's executor not here.
+      if (!existsLanguage("plpythonu")) {
+        executeSqlQueries("CREATE LANGUAGE plpythonu;")
+      }
     }
     executeSqlQueries("SET search_path to 'public'", false)
     if (isUsingPostgresXL) {
@@ -202,11 +207,11 @@ class PostgresDataStore extends JdbcDataStore with Logging {
           WHERE (host, port) IN (SELECT host, min(port) FROM pgxl_dual group by host);
       """)
     }
-    executeSqlQueries(SQLFunctions.piggyExtractorDriverDeclaration, false)
   }
 
   // create fast sequence assign function for greenplum
   override def createSpecialUDFs() : Unit = {
+    init()
     if (isUsingGreenplum()) {
       executeSqlQueries(SQLFunctions.fastSequenceAssignForGreenplum, false)
     } else if (isUsingPostgresXL) {

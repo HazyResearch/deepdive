@@ -143,6 +143,7 @@ and
 
 ### Updates &amp; Changelog
 
+- [Changelog for version 0.7.1-alpha](doc/changelog/0.7.1-alpha.html) (09/28/2015)
 - [Changelog for version 0.7.0-alpha](doc/changelog/0.7.0-alpha.html) (07/14/2015)
 - [Changelog for version 0.6.0-alpha](doc/changelog/0.6.0-alpha.html) (06/17/2015)
 - [Changelog for version 0.05-alpha](doc/changelog/0.05.01-alpha.html) (02/08/2015)
@@ -181,11 +182,12 @@ and
         - [Declaring inference variables in the schema](doc/basics/schema.html)
         - [Writing inference rules](doc/basics/inference_rules.html)
         - [Inference rule function reference](doc/basics/inference_rule_functions.html)
+        - [Running an application](doc/basics/running.html)
     - [Generic features library](doc/basics/gen_feats.html)
-    - [Running an application](doc/basics/running.html) <small>(outdated)</small>
     - [Incremental DeepDive](doc/advanced/incremental.html)
 - Debugging a DeepDive Application
     - [Calibration](doc/basics/calibration.html)
+    - [Browsing data](doc/basics/browsing.html)
     - [Labeling data products](doc/basics/labeling.html)
     - [Generating negative examples](doc/basics/generating_negative_examples.html)
 - [Multinomial variables: Text chunking example](doc/basics/chunking.html)

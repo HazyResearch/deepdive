@@ -44,7 +44,7 @@ release-%: GITHUB_REPO = HazyResearch/deepdive
 release-%: RELEASE_VERSION = $*
 release-%: RELEASE_PACKAGE = deepdive-$(RELEASE_VERSION)-$(shell uname).tar.gz
 release-%:
-	git tag --force $(RELEASE_VERSION)
+	git tag --annotate --force $(RELEASE_VERSION)
 	$(MAKE) RELEASE_VERSION=$(RELEASE_VERSION) $(PACKAGE)
 	ln -sfn $(PACKAGE) $(RELEASE_PACKAGE)
 	# Releasing $(RELEASE_PACKAGE) to GitHub
@@ -117,15 +117,27 @@ ifeq ($(shell uname),Darwin)
 	cp -f sampler/dw util/sampler-dw-mac
 endif
 
+# format_converter
+ifeq ($(shell uname),Linux)
+test-build build: util/format_converter_linux
+util/format_converter_linux: src/main/c/binarize.cpp
+	$(CXX) -Os -o $@ $^
+endif
+ifeq ($(shell uname),Darwin)
+test-build build: util/format_converter_mac
+util/format_converter_mac: src/main/c/binarize.cpp
+	$(CXX) -Os -o $@ $^
+endif
+
 .PHONY: build-mindbender
 build-mindbender:
 	git submodule update --init mindbender
-	$(MAKE) -C mindbender
-	cp -f mindbender/mindbender-LATEST-*.sh util/mindbender
+	$(MAKE) -C mindbender clean-packages
+	$(MAKE) -C mindbender package
 
 .PHONY: build-ddlog
 build-ddlog:
 	git submodule update --init ddlog
 	$(MAKE) -C ddlog ddlog.jar
 	cp -f ddlog/ddlog.jar util/ddlog.jar
-test-build build: build-ddlog
+test-build build: build-ddlog build-sampler

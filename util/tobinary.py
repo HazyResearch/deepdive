@@ -13,6 +13,7 @@ CHUNKSIZE = '10000000'
 INPUTFOLDER = sys.argv[1]
 transform_script = sys.argv[2]
 OUTPUTFOLDER = sys.argv[3]
+mode = sys.argv[4]
 
 # clean up folder
 os.system('rm -rf ' + INPUTFOLDER + "/dd_tmp")
@@ -30,9 +31,8 @@ for l in open(INPUTFOLDER + "/dd_factormeta"):
 
   print "SPLITTING", factor_name, "..."
   os.system('split -a 4 -l ' + CHUNKSIZE + ' ' + INPUTFOLDER + '/dd_factors_' + factor_name + '_out ' + INPUTFOLDER + '/dd_tmp/dd_factors_' + factor_name + '_out')
-
   print "BINARIZE ", factor_name, "..."
-  os.system('ls ' + INPUTFOLDER + '/dd_tmp | egrep "^dd_factors_' + factor_name + '_out"  | xargs -P 40 -I {} -n 1 sh -c \'' + transform_script + ' factor ' + INPUTFOLDER + '/dd_tmp/{} ' + function_id + ' ' + nvars + ' ' + (' '.join(positives)) + ' \' | awk \'{s+=$1} END {printf \"%.0f\\n\", s}\' >>' + INPUTFOLDER + "/dd_nedges_")
+  os.system('ls ' + INPUTFOLDER + '/dd_tmp | egrep "^dd_factors_' + factor_name + '_out"  | xargs -P 40 -I {} -n 1 sh -c \'' + transform_script + ' factor ' + INPUTFOLDER + '/dd_tmp/{} ' + function_id + ' ' + nvars + ' ' + mode + ' ' + (' '.join(positives)) + ' \' | awk \'{s+=$1} END {printf \"%.0f\\n\", s}\' >>' + INPUTFOLDER + "/dd_nedges_")
 
 # handle variables
 for f in os.listdir(INPUTFOLDER):
@@ -84,8 +84,8 @@ if INPUTFOLDER != OUTPUTFOLDER:
 os.system("mv {0}/dd_weights.bin {1}/graph.weights".format(INPUTFOLDER, OUTPUTFOLDER))
 os.system("cat {0}/dd_variables/* > {1}/graph.variables".format(INPUTFOLDER, OUTPUTFOLDER))
 os.system("cat {0}/dd_factors/dd_factors*factors.bin > {1}/graph.factors".format(INPUTFOLDER, OUTPUTFOLDER))
-os.system("cat {0}/dd_factors/dd_factors*edges.bin > {1}/graph.edges".format(INPUTFOLDER, OUTPUTFOLDER))
-
+if mode == 'inc':
+  os.system("cat {0}/dd_factors/dd_factors*edges.bin > {1}/graph.edges".format(INPUTFOLDER, OUTPUTFOLDER))
 
 # clean up folder
 print "Cleaning up files"

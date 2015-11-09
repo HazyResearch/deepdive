@@ -1,4 +1,5 @@
 /base
 /*.out
-/*.application.conf
+/*.deepdive.conf
 /log
+/run

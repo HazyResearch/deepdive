@@ -39,7 +39,7 @@ rule2 {
 ### I am getting a "java.lang.UnsupportedClassVersionError" error. What can I do?
 
 This happens when you are using an older JRE version not supprted by DeepDive.
-Make sure you are using JRE version 1.7.0_45 or greater.
+Make sure you are using JRE version 1.7.0\_45 or greater.
 
 
 ### I am using Greenplum, and getting an "ERROR: Cannot parallelize an UPDATE
@@ -50,7 +50,7 @@ sure you distribute your tables in a correct way: do not use the column `id` as
 distribution key. Do not use a distribution key that is not initially assigned.
 
 
-### I am using a plpy_extractor and I get  "ERROR: could not access file
+### I am using a `plpy_extractor` and I get  "ERROR: could not access file
 "$libdir/plpython2": No such file or directory"
 
 Make sure your database server supports the PL/python language.

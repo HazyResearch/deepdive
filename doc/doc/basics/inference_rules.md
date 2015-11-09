@@ -131,8 +131,8 @@ your query. For example, the following will **not** work:
         AND  friends.friend_id = p2.person_id
     ```
 
-          Your factor function variables would be called `person_smokes.p1.smokes` and
-          `person_smokes.p1.smokes`.
+    Your factor function variables would be called `person_smokes.p1.smokes` and
+    `person_smokes.p1.smokes`.
 
 ### Factor function
 

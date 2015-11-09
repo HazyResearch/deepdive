@@ -288,7 +288,7 @@ To define our extractors in DeepDive, we start by adding several lines
 into the `deepdive.extraction.extractors` block in `deepdive.conf`, which
 should already be present in the template:
 
-<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=17:57"></script>
+<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=7:47"></script>
 
 Note that we first create an extractor `ext_clear_table`, which is executed
 before any other extractor and empties the output tables of all other
@@ -449,7 +449,7 @@ We now tell DeepDive to create variables for the `is_true` column of the
 `has_spouse` table for probabilistic inference, by adding the following line
 to the `schema.variables` block in `deepdive.conf`:
 
-<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=12:17"></script>
+<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=2:7"></script>
 
 We now define an extractor that creates all candidate relations and inserts them
 into the table `has_spouse`. We call them *candidate relations* because we do
@@ -457,7 +457,7 @@ not know  whether or not they are actually expressing a marriage relation:
 that's for DeepDive to predict later. Add the following to `deepdive.conf` to
 define the extractor:
 
-<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=57:83"></script>
+<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=47:72"></script>
 
 Note that this extractor must be executed after our previously added extractor
 `ext_people`, so we specify the latter in the `dependencies` field.
@@ -578,7 +578,7 @@ For this new extractor:
 Create a new extractor for features, which will execute after the
 `ext_has_spouse_candidates` extractor:
 
-<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=82:107"></script>
+<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=72:97"></script>
 
 To create our extractor UDF, we make use of `ddlib`, our Python library that
 provides useful utilities such as `Span` to manipulate elements in sentences.
@@ -640,7 +640,7 @@ relationship among different random variables.
 
 Add the following lines to your `deepdive.conf`, in the `inference.factors` block:
 
-<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=109:141"></script>
+<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=99:131"></script>
 
 This rule generates a model similar to a logistic regression classifier: it uses
 a set of features to make a prediction about the expectation of the variable we
@@ -677,7 +677,7 @@ the column `id` of some random rows from the `has_spouse` mention table and
 add them into the table `dd_graph_variables_holdout`.
 Let's add it to `deepdive.conf`:
 
-<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=153:168"></script>
+<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=143:158"></script>
 
 At this point, the setup of the application is complete. Note that you can find
 all extractors, scripts, and the complete `deepdive.conf` file that we wrote
@@ -751,7 +751,7 @@ next section.
 Before that, let us mention the fact that  DeepDive generates [calibration
 plots](../calibration.html) for all variables defined in the schema to help with
 debugging. Let's take a look at the generated calibration plot, written to the
-file outputted in the summary report above (has_spouse.is_true.png). It should
+file outputted in the summary report above (`has_spouse.is_true.png`). It should
 look something like this:
 
 ![Calibration](../../../assets/walkthrough_has_spouse_is_true.png)
