@@ -80,7 +80,7 @@ long long read_variables(string filename, dd::FactorGraph &fg)
     file.open(filename.c_str(), ios::in | ios::binary);
     long long count = 0;
     long long id;
-    bool isevidence;
+    char isevidence;
     double initial_value;
     short type;
     long long edge_count;
@@ -118,10 +118,11 @@ long long read_variables(string filename, dd::FactorGraph &fg)
             exit(1);
         }
         bool is_evidence    = isevidence >= 1;
+        bool is_observation = isevidence == 2;
         double init_value   = is_evidence ? initial_value : 0;
 
         fg.variables[fg.c_nvar] = dd::Variable(id, type_const, is_evidence, 0, upper_bound,
-            init_value, init_value, edge_count);
+            init_value, init_value, edge_count, is_observation);
         fg.c_nvar++;
         if (is_evidence) {
             fg.n_evid++;

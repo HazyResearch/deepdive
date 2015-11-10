@@ -7,11 +7,13 @@ namespace dd{
     Variable::Variable(const long & _id, const int & _domain_type, 
              const bool & _is_evid, const VariableValue & _lower_bound,
              const VariableValue & _upper_bound, const VariableValue & _init_value, 
-             const VariableValue & _current_value, const int & _n_factors){
+             const VariableValue & _current_value, const int & _n_factors,
+             bool is_observation){
 
       this->id = _id;
       this->domain_type = _domain_type;
       this->is_evid = _is_evid;
+      this->is_observation = is_observation;
       this->lower_bound = _lower_bound;
       this->upper_bound = _upper_bound;
       this->assignment_evid = _init_value;

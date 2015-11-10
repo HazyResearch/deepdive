@@ -23,6 +23,7 @@ namespace dd{
     int domain_type;                // variable domain type, can be DTYPE_BOOLEAN or 
                                     // DTYPE_MULTINOMIAL
     bool is_evid;                   // whether the variable is evidence
+    bool is_observation;            // observed variable (fixed)
     VariableValue lower_bound;      // lower bound
     VariableValue upper_bound;      // upper bound
     
@@ -55,7 +56,8 @@ namespace dd{
     Variable(const long & _id, const int & _domain_type, 
              const bool & _is_evid, const VariableValue & _lower_bound,
              const VariableValue & _upper_bound, const VariableValue & _init_value, 
-             const VariableValue & _current_value, const int & _n_factors);
+             const VariableValue & _current_value, const int & _n_factors,
+             bool is_observation);
   };
 
   /**

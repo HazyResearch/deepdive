@@ -42,6 +42,7 @@ namespace dd{
     // using a sample of the variable.
     
     Variable & variable = p_fg->variables[vid];
+    if (variable.is_observation) return;
 
     if (!learn_non_evidence && !variable.is_evid) return;
 
@@ -145,6 +146,7 @@ namespace dd{
     // this function uses the same sampling technique as in sample_sgd_single_variable
 
     Variable & variable = this->p_fg->variables[vid];
+    if (variable.is_observation) return;
 
     if(is_inc){
       if(variable.domain_type == DTYPE_BOOLEAN || variable.domain_type == DTYPE_MULTINOMIAL) {
