@@ -254,6 +254,8 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
         f -> collectUsedRelations(f.q.bodies) }
       case e : ExtractionRule   => dependencies += {
         e -> collectUsedRelations(e.q.bodies) }
+      case e : InferenceRule    => dependencies += {
+        e -> collectUsedRelations(e.q.bodies) }
       case _ =>
     }
   }
@@ -610,6 +612,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
         sql: \"\"\" ${sqlCmdForCleanUp}
         ${sqlCmdForInsert} ${stmts(0).headName}${useAS} ${inputQueries.mkString("\nUNION ALL\n")}
         \"\"\"
+          output_relation: \"${stmts(0).headName}\"
         style: "sql_extractor"
           ${ss.generateDependenciesOfCompiledBlockFor(stmts)}
       }
@@ -740,6 +743,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           input_query: \"\"\"${inputQueries.mkString(" UNION ALL ")}\"\"\"
           function: "${func}"
           weight: "${weight}"
+          ${ss.generateDependenciesOfCompiledBlockFor(stmts)}
         }
       """
     }
