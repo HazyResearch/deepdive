@@ -51,6 +51,7 @@ stage compiler/hocon2json                                         util/
 stage src/main/resources/application.conf                         etc/deepdive-default.conf
 stage compiler/configExtended                                     util/
 stage compiler/configNormalized                                   util/
+stage compiler/configCompleted                                    util/
 stage compiler/config2dependencies                                util/
 stage compiler/dependencies2make                                  util/
 stage compiler/dependencies2dot                                   util/

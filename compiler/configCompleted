@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# configCompleted -- Extends normalized deepdive.conf further to include inference data flow
+##
+exec -a "$0" jq '.deepdive as $deepdive
+
+# define the statistical modeling processes
+| .deepdive.extraction.extractors += {
+        # grounding the factor graph
+        "process/model/grounding": {
+            _dependencies: (.deepdive.inference.factors | keys),
+            _output: "model/factorgraph",
+            style: "cmd_extractor",
+            cmd: "error \"Not implemented yet (should run grounding code)\""
+        },
+
+        # learning weights
+        "process/model/learning": {
+            _dependencies: ["model/factorgraph"],
+            _output: "model/weights",
+            style: "cmd_extractor",
+            cmd: "error \"Not implemented yet (should run sampler)\""
+        },
+
+        # performing inference
+        "process/model/inference": {
+            _dependencies: ["model/factorgraph", "model/weights"],
+            _output: "data/model/probabilities",
+            style: "cmd_extractor",
+            cmd: "error \"Not implemented yet (should run sampler)\""
+        },
+    }
+
+'

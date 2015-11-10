@@ -13,7 +13,7 @@ exec -a "$0" jq '.deepdive as $deepdive
         )) as $output_by_process |
     [ .deepdive.schema.relations | to_entries[]
     | select($output_by_process[.key] | not)
-    | { key: "init_\(.key)"
+    | { key: "init/\(.key)"
       , value: { style: "cmd_extractor"
                , cmd: "deepdive load \(.key | @sh)"
                , output_relation: .key

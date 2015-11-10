@@ -3,7 +3,7 @@
 ##
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2015-11-03
-set -eu
+set -euo pipefail
 
 DEEPDIVE_APP=$(find-deepdive-app)
 export DEEPDIVE_APP
@@ -62,7 +62,9 @@ hocon2json \
 # extend config with more builtin stuffs
 configExtended |
 # normalize config JSON
-configNormalized
+configNormalized |
+# add builtin nodes
+configCompleted
 } <compiled.deepdive.conf.json >compiled.config.json
 
 # validate/normalize the full deepdive.conf

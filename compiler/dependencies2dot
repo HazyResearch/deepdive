@@ -6,10 +6,11 @@ def nodeId: sub("/"; "/\n");
 def nodeType: sub("/.*$"; "");
 
 # node attributes by type
-{ data     : "shape=box3d  , color=\"#2222cc\", style=solid"
-, factor   : "shape=rect   , color=\"#8822cc\", style=solid"
-, process  : "shape=ellipse, color=\"#cc2222\", style=solid"
-, pipeline : "shape=folder , color=\"#ffcc22\", style=solid"
+{ data     : "shape=box3d    color=\"#2222cc\" style=solid"
+, factor   : "shape=rect     color=\"#8822cc\" style=solid"
+, process  : "shape=ellipse  color=\"#cc2222\" style=solid"
+, pipeline : "shape=folder   color=\"#ffcc22\" style=solid"
+, model    : "shape=septagon color=\"#ffffff\" style=filled fillcolor=\"#cc22cc\""
 } as $nodeAttr |
 
 "
@@ -25,7 +26,7 @@ digraph \"\(env.DEEPDIVE_APP | sub(".*/"; "")) data flow\" {
 
 # process nodes
 | "
-\"\(.key | nodeId)\" [\($nodeAttr[.key | nodeType])];
+\"\(.key | nodeId)\" [\($nodeAttr[.key | nodeType] // "")];
 "
 
 # dependency edges
@@ -36,7 +37,7 @@ label=\"\"
 # TODO different edge style by nodeType, e.g., dotted line to pipeline/
 # See: http://www.graphviz.org/doc/info/attrs.html#k:style
 if (.key | nodeType) == "pipeline" then
-    "style=dotted"
+    "style=dotted arrowhead=odiamond"
 else
     ""
 end
