@@ -4,7 +4,7 @@
 ##
 set -eu
 
-targets="$*"
+targets="${*%.done}"
 . resolve-args-to-do.sh
 
 # enumerate what's going to happen

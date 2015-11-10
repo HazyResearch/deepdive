@@ -2,7 +2,7 @@
 # deepdive-do -- Runs necessary processes to get something done
 # > deepdive do TARGET...
 ##
-set -eu
+set -euo pipefail
 
 . resolve-args-to-do.sh
 cd "$DEEPDIVE_APP"/run
@@ -24,18 +24,24 @@ ln -sfnv "$runDir" RUNNING
 deepdive-plan "$@" |
 # insert a filename line
 sed '1 a\'$'\n''# run/'"$runDir"'/plan.sh\'$'\n' |
-tee "$runDir"/plan.init.sh >"$runDir"/plan.sh
+tee "$runDir"/plan.orig.sh >"$runDir"/plan.sh
 
 # provide a chance to edit
 ${VISUAL:-${EDITOR:-vi}} "$runDir"/plan.sh &&
-[[ "$runDir"/plan.sh -nt "$runDir"/plan.init.sh ]] || {
+[[ "$runDir"/plan.sh -nt "$runDir"/plan.orig.sh ]] || {
     cleanup
     rm -rf "$runDir"
     error "Canceled execution"
 }
 
+# remove original unless modified
+! diff -q "$runDir"/plan{,.orig}.sh || rm -f "$runDir"/plan.orig.sh
+
 # run it
-APP_HOME=$PWD/.. \
-DEEPDIVE_APP=$PWD/.. \
-bash -euv "$runDir"/plan.sh
-# TODO logging under $runDir
+DEEPDIVE_ERROR_PREFIX="[ERROR] "  # prefixing error messages in logs
+DEEPDIVE_APP=$(cd .. && pwd -P)
+APP_HOME=$DEEPDIVE_APP # XXX legacy
+export DEEPDIVE_ERROR_PREFIX DEEPDIVE_APP APP_HOME
+bash -veu "$runDir"/plan.sh 2>&1 |
+# keep a log with timestamps
+ts "%F %H:%M:%.S $HOSTNAME" | tee "$runDir"/log.txt

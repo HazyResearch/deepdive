@@ -11,7 +11,7 @@ jq -r <<<"$ExtractorSpec" >run.sh '
 "#!/usr/bin/env bash
 # \(env.ExtractorStyle)  \(env.ExtractorName)
 # \(@json)
-set -euo pipefail
+set -xeuo pipefail
 
 \(.before // "")
 

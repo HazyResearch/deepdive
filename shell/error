@@ -10,14 +10,17 @@ if [[ -t 2 ]] && ${DEEPDIVE_COLOR:-true}; then
      after=b; b() { echo -ne '\033[0m'; }
 fi
 
+# use a prefix when specified
+: ${DEEPDIVE_ERROR_PREFIX:=}
+
 {
 $before
 for msg; do
     {
-        [[ -z "$DEEPDIVE_LOGERROR" ]] ||
-            echo "$msg" >>"$DEEPDIVE_LOGERROR"
+        [[ -z "${DEEPDIVE_LOGERROR:-}" ]] ||
+            echo "${DEEPDIVE_ERROR_PREFIX}$msg" >>"$DEEPDIVE_LOGERROR"
     } 2>/dev/null
-    echo "$msg"
+    echo "${DEEPDIVE_ERROR_PREFIX}$msg"
 done
 $after
 } >&2

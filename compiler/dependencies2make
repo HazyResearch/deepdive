@@ -49,7 +49,7 @@ reset: \(keys | mktargets("reset"))
 | "
 \(.key | mktarget): \(.value | mktargets)
 	## \(.key) \("#" * (78 -(.key | length) -4))
-	# Done: $(shell [ -e $@ ] && date -r $@ -Iseconds 2>/dev/null || date -r $@ +%FT%T%z 2>/dev/null || echo no)
+	# Done: $(shell format_timestamp $@ 2>/dev/null)
 	$(CMD_\(.key | sub("/.*"; "")))
 	$(TOUCH)
 	##############################################################################

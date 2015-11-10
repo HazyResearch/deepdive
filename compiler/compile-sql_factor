@@ -11,7 +11,7 @@ jq -r <<<"$FactorSpec" >run.sh '
 "#!/usr/bin/env bash
 # \(env.FactorStyle)  \(env.FactorName)
 # \(@json)
-set -euo pipefail
+set -xeuo pipefail
 
 # TODO
 # deepdive sql \(.input_query | @sh)
