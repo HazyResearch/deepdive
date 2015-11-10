@@ -2,6 +2,7 @@
 # config2compilation-plan -- Generates a compilation plan from normalized deepdive.conf in JSON
 ##
 exec -a "$0" jq -r '(
+
 # extractor compilation
 .deepdive.extraction.extractors | to_entries[] | "
 ( x=\(.key | @sh)
@@ -9,7 +10,8 @@ exec -a "$0" jq -r '(
   mkdir -p \"$x\" && cd \"$x\"
   compile-\(.value.style // empty | @sh) \"$x\" \(.value | @json | @sh)
 )"
-), (
+),(
+
 # factor grounding compilation
 .deepdive.inference.factors | to_entries[] | "
 ( x=\(.key | @sh)

@@ -10,7 +10,7 @@ FactorStyle=${0##*compile-} \
 jq -r <<<"$FactorSpec" >run.sh '
 "#!/usr/bin/env bash
 # \(env.FactorStyle)  \(env.FactorName)
-# \(. | @json)
+# \(@json)
 set -euo pipefail
 
 # TODO

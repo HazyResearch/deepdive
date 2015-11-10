@@ -14,6 +14,7 @@ exec -a "$0" jq '.deepdive as $deepdive
     ( .key |= "process/\(.)"
     | .value |= ( ._dependencies = .dependencies
                 | ._dependencies |= (. // [] | map("process/\(.)"))
+                | ._input = (.input_relations // [] | map("data/\(.)"))
                 | ._output = (.output_relation | if . then "data/\(.)" else null end)
                 )
     )
@@ -22,6 +23,7 @@ exec -a "$0" jq '.deepdive as $deepdive
     ( .key |= "factor/\(.)"
     | .value |= ( ._dependencies = .dependencies
                 | ._dependencies |= (. // [] | map("process/\(.)"))
+                | ._input = (.input_relations // [] | map("data/\(.)"))
                 | ._output = (.output_relation | if . then "data/\(.)" else null end)
                 )
     )

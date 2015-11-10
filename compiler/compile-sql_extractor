@@ -10,7 +10,7 @@ ExtractorStyle=${0##*compile-} \
 jq -r <<<"$ExtractorSpec" >run.sh '
 "#!/usr/bin/env bash
 # \(env.ExtractorStyle)  \(env.ExtractorName)
-# \(. | @json)
+# \(@json)
 set -euo pipefail
 
 \(.before // "")
