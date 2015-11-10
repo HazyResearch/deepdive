@@ -49,6 +49,7 @@ stage shell/deepdive-load                                         util/
 stage compiler/deepdive-compile                                   util/
 stage compiler/hocon2json                                         util/
 stage src/main/resources/application.conf                         etc/deepdive-default.conf
+stage compiler/configExtended                                     util/
 stage compiler/configNormalized                                   util/
 stage compiler/config2dependencies                                util/
 stage compiler/dependencies2make                                  util/

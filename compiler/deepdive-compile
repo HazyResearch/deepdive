@@ -13,9 +13,22 @@ cd "$DEEPDIVE_APP"
 STEP() { echo >&2 "$@"; }
 
 ## compile a full deepdive.conf from source code
-STEP "Compiling run/compiled.deepdive.conf"
+STEP "Compiling run/compiled.deepdive.conf and run/compiled.schema.json"
 mkdir -p run
-touch run/compiled.deepdive.conf
+# compile schema in JSON
+touch run/compiled.schema.json run/compiled.deepdive.conf
+if [[ -r app.ddlog ]]; then
+    ddlog export-schema app.ddlog
+else
+    echo '{}'
+fi |
+if [[ -r schema.json && -s schema.json ]]; then
+    # merge user's schema.json
+    SCHEMA_JSON="$(cat)" \
+    jq '(env.SCHEMA_JSON | fromjson) + .' schema.json
+else
+    cat
+fi >run/compiled.schema.json
 {
 # compile DDlog rules
 if [[ -r app.ddlog ]]; then
@@ -25,25 +38,35 @@ fi
 if [[ -r deepdive.conf ]]; then
     cat deepdive.conf
 fi
+# generate builtin extractors from schema
+echo -n "deepdive.schema "
+cat run/compiled.schema.json
 } >run/compiled.deepdive.conf
 cd run
 
-## validate/normalize the full deepdive.conf
-# TODO validate deepdive.conf
 STEP "Normalizing run/compiled.config.json"
 # produce a JSON from compiled deepdive.conf
+(
 # XXX some bogus variables in deepdive.conf added by DDlog compiler or in deepdive-default.conf
 APP_HOME='"$DEEPDIVE_APP"'
 PIPELINE=
 PARALLELISM=1
 INPUT_BATCH_SIZE=100000
 export APP_HOME PIPELINE PARALLELISM INPUT_BATCH_SIZE
+# convert HOCON into JSON
 hocon2json \
     compiled.deepdive.conf \
-    "$DEEPDIVE_HOME"/etc/deepdive-default.conf \
-    >compiled.deepdive.conf.json
+    "$DEEPDIVE_HOME"/etc/deepdive-default.conf
+) >compiled.deepdive.conf.json
+{
+# extend config with more builtin stuffs
+configExtended |
 # normalize config JSON
-configNormalized <compiled.deepdive.conf.json >compiled.config.json
+configNormalized
+} <compiled.deepdive.conf.json >compiled.config.json
+
+# validate/normalize the full deepdive.conf
+# TODO validate deepdive.conf
 
 STEP "Analyzing dependencies to generate run/Makefile and run/compiled.dataflow.svg"
 # derive a dependency graph from the extractors, factors, pipelines defined in deepdive.conf
@@ -54,7 +77,7 @@ dependencies2make <compiled.dependencies.json >Makefile
 dependencies2dot <compiled.dependencies.json >compiled.dataflow.dot
 dot -Tsvg <compiled.dataflow.dot >compiled.dataflow.svg
 
-STEP "Compiling executable extractors and factor grounding instructions"
+STEP "Compiling executable extractors and instructions for grounding factors"
 # compile extractors and factors under process/ and factor/
 config2compilation-plan <compiled.config.json >compiled.compilation-plan.sh
 bash -eu ./compiled.compilation-plan.sh

@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# configExtended -- Extends deepdive.conf in JSON with more default extractors
+#
+# - a deepdive-load extractor for relations declared in schema but lacking an extractor that outputs it
+##
+exec -a "$0" jq '.deepdive as $deepdive
+
+# add default extractors for loading data into base relations declared in schema
+| .deepdive.extraction.extractors += (
+    # first a handy map from relation to any process that outputs it
+    ( .deepdive.extraction.extractors | with_entries
+        ( { key: .value.output_relation, value: .key }
+        )) as $output_by_process |
+    [ .deepdive.schema.relations | to_entries[]
+    | select($output_by_process[.key] | not)
+    | { key: "init_\(.key)"
+      , value: { style: "cmd_extractor"
+               , cmd: "deepdive load \(.key | @sh)"
+               , output_relation: .key
+               } }
+    ] | from_entries )
+
+'

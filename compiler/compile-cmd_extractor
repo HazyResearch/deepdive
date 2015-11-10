@@ -5,4 +5,19 @@ set -eu
 ExtractorName=$1; shift
 ExtractorSpec=$1; shift
 
-error "$ExtractorName: ${0##*compile-}: Compiler not implemented yet"
+ExtractorName=$ExtractorName \
+ExtractorStyle=${0##*compile-} \
+jq -r <<<"$ExtractorSpec" >run.sh '
+"#!/usr/bin/env bash
+# \(env.ExtractorStyle)  \(env.ExtractorName)
+# \(@json)
+set -euo pipefail
+
+\(.before // "")
+
+\(.cmd)
+
+\(.after // "")
+"
+'
+chmod +x run.sh
