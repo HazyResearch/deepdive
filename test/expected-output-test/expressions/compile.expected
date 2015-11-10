@@ -17,52 +17,18 @@
       }
     
 
-          deepdive.extraction.extractors.init_b {
-            sql: """ DROP TABLE IF EXISTS b CASCADE;
-            CREATE TABLE
-            b(k int,
- p text,
- q text,
- r int)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_a {
-            sql: """ DROP TABLE IF EXISTS a CASCADE;
-            CREATE TABLE
-            a(k int)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_c {
-            sql: """ DROP TABLE IF EXISTS c CASCADE;
-            CREATE TABLE
-            c(s text,
- n int,
- t text)
-            """
-            style: "sql_extractor"
-          }
-
-        deepdive.extraction.extractors.cleanup {
-          sql: """
-          TRUNCATE b;
-          TRUNCATE a;
-          TRUNCATE c;
-          """
-          style: "sql_extractor"
-        }
-
       deepdive.extraction.extractors.ext_E {
         sql: """ DROP VIEW IF EXISTS E;
         CREATE VIEW E AS SELECT (R0.k :: INT) AS column_0
 FROM b R0
         
         """
+          output_relation: "E"
         style: "sql_extractor"
           
+          input_relations: [
+            b
+          ]
       }
     
 
@@ -72,8 +38,13 @@ FROM b R0
 FROM b R0, c R1
         WHERE R1.n = R0.k 
         """
+          output_relation: "X"
         style: "sql_extractor"
           
+          input_relations: [
+            b
+            c
+          ]
       }
     
 
@@ -83,8 +54,13 @@ FROM b R0, c R1
 FROM b R0
         WHERE EXISTS (SELECT 1 FROM c R1_0 WHERE R1_0.n = R0.k  AND R1_0.s > 'a')
         """
+          output_relation: "N"
         style: "sql_extractor"
           
+          input_relations: [
+            b
+            c
+          ]
       }
     
 
@@ -94,8 +70,13 @@ FROM b R0
 FROM b R0 LEFT OUTER JOIN c R1_0 ON R1_0.n = R0.k  AND R1_0.s > R0.p
         WHERE R1_0.s > R0.p
         """
+          output_relation: "T"
         style: "sql_extractor"
           
+          input_relations: [
+            b
+            c
+          ]
       }
     
 
@@ -105,8 +86,12 @@ FROM b R0 LEFT OUTER JOIN c R1_0 ON R1_0.n = R0.k  AND R1_0.s > R0.p
 FROM b R0
         WHERE ((R0.k + R0.r) = 100 OR (NOT R0.k > 50))
         """
+          output_relation: "J"
         style: "sql_extractor"
           
+          input_relations: [
+            b
+          ]
       }
     
 
@@ -116,8 +101,13 @@ FROM b R0
 FROM b R0_0 ON  FULL OUTER JOIN c R1_0 ON R1_0.n = R0_0.k 
         
         """
+          output_relation: "U"
         style: "sql_extractor"
           
+          input_relations: [
+            b
+            c
+          ]
       }
     
 
@@ -127,8 +117,12 @@ FROM b R0_0 ON  FULL OUTER JOIN c R1_0 ON R1_0.n = R0_0.k
 FROM b R0
         
         """
+          output_relation: "F"
         style: "sql_extractor"
           
+          input_relations: [
+            b
+          ]
       }
     
 
@@ -138,8 +132,12 @@ FROM b R0
 FROM b R0
         
         """
+          output_relation: "A"
         style: "sql_extractor"
           
+          input_relations: [
+            b
+          ]
       }
     
 
@@ -149,8 +147,13 @@ FROM b R0
 FROM b R0
         WHERE EXISTS (SELECT 1 FROM c R1_0 WHERE R1_0.n = R0.k )
         """
+          output_relation: "M"
         style: "sql_extractor"
           
+          input_relations: [
+            b
+            c
+          ]
       }
     
 
@@ -160,8 +163,12 @@ FROM b R0
 FROM b R0
         WHERE ((R0.k + R0.r) = 100 OR (R0.k > 50 AND R0.r < 10))
         """
+          output_relation: "I"
         style: "sql_extractor"
           
+          input_relations: [
+            b
+          ]
       }
     
 
@@ -171,8 +178,12 @@ FROM b R0
 FROM b R0
         WHERE (R0.k + R0.r) = 100
         """
+          output_relation: "G"
         style: "sql_extractor"
           
+          input_relations: [
+            b
+          ]
       }
     
 
@@ -182,8 +193,13 @@ FROM b R0
 FROM c R0, a R1
         WHERE R1.k = R0.n 
         """
+          output_relation: "V"
         style: "sql_extractor"
           
+          input_relations: [
+            c
+            a
+          ]
       }
     
 
@@ -193,8 +209,14 @@ FROM c R0, a R1
 FROM a R0, b R1, c R2
         WHERE R1.k = R0.k  AND R2.s = (R1.p || R1.q) AND R2.n = 10 AND R2.t = 'foo' AND (R1.r > 100 OR ((NOT R1.r < 20) AND R1.r < 50))
         """
+          output_relation: "Q"
         style: "sql_extractor"
           
+          input_relations: [
+            a
+            b
+            c
+          ]
       }
     
 
@@ -204,8 +226,12 @@ FROM a R0, b R1, c R2
 FROM b R0
         LIMIT 100
         """
+          output_relation: "L"
         style: "sql_extractor"
           
+          input_relations: [
+            b
+          ]
       }
     
 
@@ -215,8 +241,12 @@ FROM b R0
 FROM b R0
         
         """
+          output_relation: "B"
         style: "sql_extractor"
           
+          input_relations: [
+            b
+          ]
       }
     
 
@@ -227,8 +257,13 @@ FROM a R0, b R1
         WHERE R1.k = R0.k 
         GROUP BY R1.p, R1.q
         """
+          output_relation: "P"
         style: "sql_extractor"
           
+          input_relations: [
+            a
+            b
+          ]
       }
     
 
@@ -238,8 +273,12 @@ FROM a R0, b R1
 FROM b R0
         
         """
+          output_relation: "C"
         style: "sql_extractor"
           
+          input_relations: [
+            b
+          ]
       }
     
 
@@ -249,8 +288,12 @@ FROM b R0
 FROM b R0
         WHERE ((R0.k + R0.r) = 100 AND R0.k > 50)
         """
+          output_relation: "H"
         style: "sql_extractor"
           
+          input_relations: [
+            b
+          ]
       }
     
 
@@ -260,8 +303,13 @@ FROM b R0
 FROM a R0
         WHERE NOT EXISTS (SELECT 1 FROM c R1_0 WHERE NOT (R1_0.n < R0.k))
         """
+          output_relation: "W"
         style: "sql_extractor"
           
+          input_relations: [
+            a
+            c
+          ]
       }
     
 
@@ -271,8 +319,12 @@ FROM a R0
 FROM b R0
         WHERE ((R0.k + R0.r) = 100 AND ((NOT R0.k > 50) OR R0.k = 40))
         """
+          output_relation: "K"
         style: "sql_extractor"
           
+          input_relations: [
+            b
+          ]
       }
     
 
@@ -282,8 +334,14 @@ FROM b R0
 FROM b R0
         WHERE EXISTS (SELECT 1 FROM c R1_0, a R1_1 WHERE R1_0.n = R0.k  AND R1_1.k = R0.k )
         """
+          output_relation: "O"
         style: "sql_extractor"
           
+          input_relations: [
+            b
+            c
+            a
+          ]
       }
     
 
@@ -293,8 +351,12 @@ FROM b R0
 FROM b R0
         
         """
+          output_relation: "D"
         style: "sql_extractor"
           
+          input_relations: [
+            b
+          ]
       }
     
 
@@ -304,16 +366,16 @@ FROM b R0
 FROM b R0 LEFT OUTER JOIN c R1_0 ON R1_0.n = R0.k 
         
         """
+          output_relation: "S"
         style: "sql_extractor"
           
+          input_relations: [
+            b
+            c
+          ]
       }
     
 deepdive.pipeline.run: ${PIPELINE}
-deepdive.pipeline.pipelines.initdb: [
-  init_b
-  init_a
-  init_c
-]
 deepdive.pipeline.pipelines.extraction: [
   ext_M
   ext_Q
@@ -363,7 +425,4 @@ deepdive.pipeline.pipelines.endtoend: [
   ext_C
   ext_V
   ext_H
-]
-deepdive.pipeline.pipelines.cleanup: [
-  cleanup
 ]

@@ -17,30 +17,18 @@
       }
     
 
-          deepdive.extraction.extractors.init_R {
-            sql: """ DROP TABLE IF EXISTS R CASCADE;
-            CREATE TABLE
-            R(a int,
- b int)
-            """
-            style: "sql_extractor"
-          }
-
-        deepdive.extraction.extractors.cleanup {
-          sql: """
-          TRUNCATE R;
-          """
-          style: "sql_extractor"
-        }
-
       deepdive.extraction.extractors.ext_A {
         sql: """ DROP VIEW IF EXISTS A;
         CREATE VIEW A AS SELECT R0.a AS column_0, (R0.a + R0.b) AS column_1
 FROM R R0
         
         """
+          output_relation: "A"
         style: "sql_extractor"
           
+          input_relations: [
+            R
+          ]
       }
     
 
@@ -50,14 +38,16 @@ FROM R R0
 FROM A R0, R R1
         WHERE R1.a = R0.column_1 
         """
+          output_relation: "B"
         style: "sql_extractor"
           dependencies: [ "ext_A" ]
+          input_relations: [
+            A
+            R
+          ]
       }
     
 deepdive.pipeline.run: ${PIPELINE}
-deepdive.pipeline.pipelines.initdb: [
-  init_R
-]
 deepdive.pipeline.pipelines.extraction: [
   ext_A
   ext_B
@@ -65,7 +55,4 @@ deepdive.pipeline.pipelines.extraction: [
 deepdive.pipeline.pipelines.endtoend: [
   ext_A
   ext_B
-]
-deepdive.pipeline.pipelines.cleanup: [
-  cleanup
 ]

@@ -28,98 +28,6 @@ q1.label: Boolean
       }
     
 
-          deepdive.extraction.extractors.init_dd_new_label2 {
-            sql: """ DROP TABLE IF EXISTS dd_new_label2 CASCADE;
-            CREATE TABLE
-            dd_new_label2(wid INT,
-             val BOOLEAN)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_dd_delta_label1 {
-            sql: """ DROP TABLE IF EXISTS dd_delta_label1 CASCADE;
-            CREATE TABLE
-            dd_delta_label1(wid INT,
-               val BOOLEAN)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_dd_new_label1 {
-            sql: """ DROP TABLE IF EXISTS dd_new_label1 CASCADE;
-            CREATE TABLE
-            dd_new_label1(wid INT,
-             val BOOLEAN)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_dd_delta_features {
-            sql: """ DROP TABLE IF EXISTS dd_delta_features CASCADE;
-            CREATE TABLE
-            dd_delta_features(id BIGSERIAL,
-                 word_id INT,
-                 feature_id INT,
-                 feature_val BOOLEAN)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_dd_delta_q2 {
-            sql: """ DROP TABLE IF EXISTS dd_delta_q2 CASCADE;
-            CREATE TABLE
-            dd_delta_q2(wid INT,
-           id bigint,
-           label boolean)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_dd_delta_label2 {
-            sql: """ DROP TABLE IF EXISTS dd_delta_label2 CASCADE;
-            CREATE TABLE
-            dd_delta_label2(wid INT,
-               val BOOLEAN)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_dd_new_features {
-            sql: """ DROP TABLE IF EXISTS dd_new_features CASCADE;
-            CREATE TABLE
-            dd_new_features(id BIGSERIAL,
-               word_id INT,
-               feature_id INT,
-               feature_val BOOLEAN)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_dd_delta_q1 {
-            sql: """ DROP TABLE IF EXISTS dd_delta_q1 CASCADE;
-            CREATE TABLE
-            dd_delta_q1(wid INT,
-           id bigint,
-           label boolean)
-            """
-            style: "sql_extractor"
-          }
-
-        deepdive.extraction.extractors.cleanup {
-          sql: """
-          TRUNCATE dd_new_label2;
-          TRUNCATE dd_delta_label1;
-          TRUNCATE dd_new_label1;
-          TRUNCATE dd_delta_features;
-          TRUNCATE dd_delta_q2;
-          TRUNCATE dd_delta_label2;
-          TRUNCATE dd_new_features;
-          TRUNCATE dd_delta_q1;
-          """
-          style: "sql_extractor"
-        }
-
       deepdive.extraction.extractors.ext_dd_new_label2 {
         sql: """ TRUNCATE dd_new_label2;
         INSERT INTO dd_new_label2 SELECT R0.wid, R0.val
@@ -130,8 +38,13 @@ SELECT R0.wid, R0.val
 FROM dd_delta_label2 R0
         
         """
+          output_relation: "dd_new_label2"
         style: "sql_extractor"
           
+          input_relations: [
+            label2
+            dd_delta_label2
+          ]
       }
     
 
@@ -147,8 +60,13 @@ SELECT DISTINCT R0.wid, id, label
         
           
         """
+          output_relation: "dd_new_q1"
         style: "sql_extractor"
           dependencies: [ "ext_dd_delta_q1" ]
+          input_relations: [
+            q1
+            dd_delta_q1
+          ]
       }
     
 
@@ -162,8 +80,13 @@ SELECT R0.wid, R0.val
 FROM dd_delta_label1 R0
         
         """
+          output_relation: "dd_new_label1"
         style: "sql_extractor"
           
+          input_relations: [
+            label1
+            dd_delta_label1
+          ]
       }
     
 
@@ -174,8 +97,12 @@ FROM dd_delta_label1 R0
         
           
         """
+          output_relation: "dd_delta_q2"
         style: "sql_extractor"
           
+          input_relations: [
+            dd_delta_label2
+          ]
       }
     
 
@@ -189,8 +116,13 @@ SELECT R0.id, R0.word_id, R0.feature_id, R0.feature_val
 FROM dd_delta_features R0
         
         """
+          output_relation: "dd_new_features"
         style: "sql_extractor"
           
+          input_relations: [
+            features
+            dd_delta_features
+          ]
       }
     
 
@@ -201,8 +133,12 @@ FROM dd_delta_features R0
         
           
         """
+          output_relation: "dd_delta_q1"
         style: "sql_extractor"
           
+          input_relations: [
+            dd_delta_label1
+          ]
       }
     
 
@@ -218,8 +154,13 @@ SELECT DISTINCT R0.wid, id, label
         
           
         """
+          output_relation: "dd_new_q2"
         style: "sql_extractor"
           dependencies: [ "ext_dd_delta_q2" ]
+          input_relations: [
+            q2
+            dd_delta_q2
+          ]
       }
     
 
@@ -230,6 +171,11 @@ SELECT DISTINCT R0.wid, id, label
         WHERE R1.word_id = R0.wid """
           function: "Imply(dd_new_q1.R0.label)"
           weight: "?(dd_weight_column_0)"
+          
+          input_relations: [
+            dd_new_q1
+            dd_delta_features
+          ]
         }
       
 
@@ -240,21 +186,14 @@ SELECT DISTINCT R0.wid, id, label
         WHERE R1.word_id = R0.wid """
           function: "Imply(dd_new_q2.R0.label)"
           weight: "?(dd_weight_column_0)"
+          
+          input_relations: [
+            dd_new_q2
+            dd_delta_features
+          ]
         }
       
 deepdive.pipeline.run: ${PIPELINE}
-deepdive.pipeline.pipelines.initdb: [
-  init_dd_new_label2
-  init_dd_delta_label1
-  init_dd_new_q1
-  init_dd_new_label1
-  init_dd_delta_features
-  init_dd_delta_q2
-  init_dd_delta_label2
-  init_dd_new_features
-  init_dd_delta_q1
-  init_dd_new_q2
-]
 deepdive.pipeline.pipelines.extraction: [
   ext_dd_delta_q1
   ext_dd_new_q1
@@ -278,8 +217,5 @@ deepdive.pipeline.pipelines.endtoend: [
   ext_dd_new_q2
   dd_delta_inf_istrue_q1
   dd_delta_inf_istrue_q2
-]
-deepdive.pipeline.pipelines.cleanup: [
-  cleanup
 ]
 deepdive.pipeline.base_dir: ${BASEDIR}

@@ -23,8 +23,12 @@
 FROM dd_new_sentences R0
         
         """
+          output_relation: "sentences"
         style: "sql_extractor"
           
+          input_relations: [
+            dd_new_sentences
+          ]
       }
     
 
@@ -34,8 +38,12 @@ FROM dd_new_sentences R0
 FROM dd_new_has_spouse_candidates R0
         
         """
+          output_relation: "has_spouse_candidates"
         style: "sql_extractor"
           
+          input_relations: [
+            dd_new_has_spouse_candidates
+          ]
       }
     
 
@@ -45,8 +53,12 @@ FROM dd_new_has_spouse_candidates R0
 FROM dd_new_articles R0
         
         """
+          output_relation: "articles"
         style: "sql_extractor"
           
+          input_relations: [
+            dd_new_articles
+          ]
       }
     
 
@@ -56,8 +68,12 @@ FROM dd_new_articles R0
 FROM dd_new_has_spouse_features R0
         
         """
+          output_relation: "has_spouse_features"
         style: "sql_extractor"
           
+          input_relations: [
+            dd_new_has_spouse_features
+          ]
       }
     
 
@@ -67,8 +83,12 @@ FROM dd_new_has_spouse_features R0
 FROM dd_new_people_mentions R0
         
         """
+          output_relation: "people_mentions"
         style: "sql_extractor"
           
+          input_relations: [
+            dd_new_people_mentions
+          ]
       }
     
 deepdive.pipeline.run: ${PIPELINE}

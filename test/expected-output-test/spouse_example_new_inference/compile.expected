@@ -17,87 +17,6 @@
       }
     
 
-          deepdive.extraction.extractors.init_sentences {
-            sql: """ DROP TABLE IF EXISTS sentences CASCADE;
-            CREATE TABLE
-            sentences(document_id text,
-         sentence text,
-         words text[],
-         lemma text[],
-         pos_tags text[],
-         dependencies text[],
-         ner_tags text[],
-         sentence_offset int,
-         sentence_id text)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_has_spouse_candidates {
-            sql: """ DROP TABLE IF EXISTS has_spouse_candidates CASCADE;
-            CREATE TABLE
-            has_spouse_candidates(person1_id text,
-                     person2_id text,
-                     sentence_id text,
-                     description text,
-                     relation_id text,
-                     is_true boolean)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_has_spouse {
-            sql: """ DROP TABLE IF EXISTS has_spouse CASCADE;
-            CREATE TABLE
-            has_spouse(relation_id text,
-          id bigint,
-          label boolean)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_articles {
-            sql: """ DROP TABLE IF EXISTS articles CASCADE;
-            CREATE TABLE
-            articles(article_id text,
-        text text)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_has_spouse_features {
-            sql: """ DROP TABLE IF EXISTS has_spouse_features CASCADE;
-            CREATE TABLE
-            has_spouse_features(relation_id text,
-                   feature text)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_people_mentions {
-            sql: """ DROP TABLE IF EXISTS people_mentions CASCADE;
-            CREATE TABLE
-            people_mentions(sentence_id text,
-               start_position int,
-               length int,
-               text text,
-               mention_id text)
-            """
-            style: "sql_extractor"
-          }
-
-        deepdive.extraction.extractors.cleanup {
-          sql: """
-          TRUNCATE sentences;
-          TRUNCATE has_spouse_candidates;
-          TRUNCATE has_spouse;
-          TRUNCATE articles;
-          TRUNCATE has_spouse_features;
-          TRUNCATE people_mentions;
-          """
-          style: "sql_extractor"
-        }
-
       deepdive.extraction.extractors.ext_has_spouse {
         sql: """ 
         INSERT INTO has_spouse SELECT DISTINCT R0.relation_id, 0 AS id, R0.is_true AS label
@@ -105,8 +24,12 @@
         
           
         """
+          output_relation: "has_spouse"
         style: "sql_extractor"
           dependencies: [ "ext_has_spouse_candidates_by_ext_has_spouse" ]
+          input_relations: [
+            has_spouse_candidates
+          ]
       }
     
 
@@ -119,6 +42,9 @@ FROM sentences R0
           udf: ${APP_HOME}"/udf/ext_people.py"
           style: "tsv_extractor" 
           
+          input_relations: [
+            sentences
+          ]
           input_batch_size: ${INPUT_BATCH_SIZE}
           parallelism: ${PARALLELISM}
         }
@@ -133,6 +59,9 @@ FROM people_mentions R0, people_mentions R1
           udf: ${APP_HOME}"/udf/ext_has_spouse.py"
           style: "tsv_extractor" 
           dependencies: [ "ext_people_mentions_by_ext_people" ]
+          input_relations: [
+            people_mentions
+          ]
           input_batch_size: ${INPUT_BATCH_SIZE}
           parallelism: ${PARALLELISM}
         }
@@ -147,6 +76,11 @@ FROM sentences R0, has_spouse_candidates R1, people_mentions R2, people_mentions
           udf: ${APP_HOME}"/udf/ext_has_spouse_features.py"
           style: "tsv_extractor" 
           dependencies: [ "ext_has_spouse_candidates_by_ext_has_spouse" ,  "ext_people_mentions_by_ext_people" ]
+          input_relations: [
+            sentences
+            has_spouse_candidates
+            people_mentions
+          ]
           input_batch_size: ${INPUT_BATCH_SIZE}
           parallelism: ${PARALLELISM}
         }
@@ -159,6 +93,12 @@ FROM sentences R0, has_spouse_candidates R1, people_mentions R2, people_mentions
         WHERE R1.relation_id = R0.relation_id  AND R2.relation_id = R0.relation_id """
           function: "Imply(has_spouse.R0.label)"
           weight: "?(dd_weight_column_0)"
+          dependencies: [ "ext_has_spouse_candidates_by_ext_has_spouse" ,  "ext_has_spouse_features_by_ext_has_spouse_features" ]
+          input_relations: [
+            has_spouse
+            has_spouse_candidates
+            has_spouse_features
+          ]
         }
       
 
@@ -169,17 +109,14 @@ FROM sentences R0, has_spouse_candidates R1, people_mentions R2, people_mentions
         WHERE R2.relation_id = R1.relation_id  AND R3.person1_id = R2.person2_id  AND R3.person2_id = R2.person1_id  AND R3.relation_id = R0.relation_id """
           function: "Equal(has_spouse.R0.label, has_spouse.R1.label)"
           weight: "3.0"
+          dependencies: [ "ext_has_spouse_candidates_by_ext_has_spouse" ]
+          input_relations: [
+            has_spouse
+            has_spouse_candidates
+          ]
         }
       
 deepdive.pipeline.run: ${PIPELINE}
-deepdive.pipeline.pipelines.initdb: [
-  init_sentences
-  init_has_spouse_candidates
-  init_has_spouse
-  init_articles
-  init_has_spouse_features
-  init_people_mentions
-]
 deepdive.pipeline.pipelines.extraction: [
   ext_has_spouse
   ext_people_mentions_by_ext_people
@@ -197,7 +134,4 @@ deepdive.pipeline.pipelines.endtoend: [
   ext_has_spouse_features_by_ext_has_spouse_features
   inf_istrue_has_spouse
   inf_equal_has_spouse_has_spouse
-]
-deepdive.pipeline.pipelines.cleanup: [
-  cleanup
 ]

@@ -244,6 +244,7 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
       functionCallRuleGroupByOutput.toSeq).groupBy(_._1).mapValues(_.map(_._2).toList)
 
     def collectUsedRelations(bodies: List[List[Body]]): Set[Statement] = {
+      // FIXME need to be recursively defined on QuantifiedBody
       (bodies.flatten collect { case x: BodyAtom => x.name }
       flatMap (stmtByHeadName get _)).toSet.flatten.flatten
     }
@@ -270,6 +271,18 @@ class CompilationState( statements : DeepDiveLog.Program, config : DeepDiveLog.C
       s"dependencies: [${depStr}]"
     }
   }
+
+  def collectUsedRelations1(body: Body): List[String] = body match {
+    case a: BodyAtom => List(a.name)
+    case q: QuantifiedBody => collectUsedRelations(q.bodies)
+    case _ => List.empty
+  }
+  def collectUsedRelations(bodies: List[Body]): List[String] = bodies flatMap collectUsedRelations1
+  val relationNamesUsedByStatement = statements collect {
+      case f : FunctionCallRule => f -> (f.q.bodies flatMap collectUsedRelations distinct)
+      case e : ExtractionRule   => e -> (e.q.bodies flatMap collectUsedRelations distinct)
+      case e : InferenceRule    => e -> (e.q.bodies flatMap collectUsedRelations distinct)
+    } toMap
 }
 
 // This is responsible for compiling a single conjunctive query
@@ -615,6 +628,9 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           output_relation: \"${stmts(0).headName}\"
         style: "sql_extractor"
           ${ss.generateDependenciesOfCompiledBlockFor(stmts)}
+          input_relations: [${
+            (stmts flatMap ss.relationNamesUsedByStatement distinct
+            ) mkString("\n            ", "\n            ", "\n          ")}]
       }
     """
     List(extractor)
@@ -644,6 +660,9 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           output_relation: \"${stmt.output}\"
           ${udfDetails.get}
           ${ss.generateDependenciesOfCompiledBlockFor(List(stmt))}
+          input_relations: [${
+            (List(stmt) flatMap ss.relationNamesUsedByStatement distinct
+            ) mkString("\n            ", "\n            ", "\n          ")}]
           input_batch_size: $${INPUT_BATCH_SIZE}
           parallelism: ${parallelism}
         }
@@ -744,6 +763,11 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
           function: "${func}"
           weight: "${weight}"
           ${ss.generateDependenciesOfCompiledBlockFor(stmts)}
+          input_relations: [${
+            val relationsInHead = stmts flatMap (_.head.terms map (_.name))
+            val relationsInBody = stmts flatMap ss.relationNamesUsedByStatement
+            ((relationsInHead ++ relationsInBody) distinct
+            ) mkString("\n            ", "\n            ", "\n          ")}]
         }
       """
     }
@@ -790,23 +814,17 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
   // generate application.conf pipelines
   def compilePipelines(ss: CompilationState): CompiledBlocks = {
     val run = "deepdive.pipeline.run: ${PIPELINE}"
-    val setup_database_pipeline = ((ss.schemaDeclarationGroupByHead map (_._2)).flatten map {s => ss.resolveExtractorBlockName(s)}).mkString("\n  ")
-    val initdb = if (setup_database_pipeline.length > 0) s"deepdive.pipeline.pipelines.initdb: [\n  ${setup_database_pipeline}\n]" else ""
     val extraction = (ss.visible map {s => ss.resolveExtractorBlockName(s)}).mkString("\n  ")
     val extraction_pipeline = if (extraction.length > 0) s"deepdive.pipeline.pipelines.extraction: [\n  ${extraction}\n]" else ""
     val inference = (ss.inferenceRules map {s => ss.resolveInferenceBlockName(s)}).mkString("\n  ")
     val inference_pipeline = if (inference.length > 0) s"deepdive.pipeline.pipelines.inference: [\n  ${inference}\n]" else ""
     val endtoend = List(extraction, inference).filter(_ != "").mkString("\n  ")
     val endtoend_pipeline = if (endtoend.length > 0) s"deepdive.pipeline.pipelines.endtoend: [\n  ${endtoend}\n]" else ""
-    val cleanup_pipeline = ss.mode match {
-      case INCREMENTAL | ORIGINAL => if (setup_database_pipeline.length > 0) s"deepdive.pipeline.pipelines.cleanup: [\n  cleanup\n]" else ""
-      case _ => ""
-    }
     val base_dir = ss.mode match {
       case MATERIALIZATION | INCREMENTAL => "deepdive.pipeline.base_dir: ${BASEDIR}"
       case _ => ""
     }
-    List(run, initdb, extraction_pipeline, inference_pipeline, endtoend_pipeline, cleanup_pipeline, base_dir).filter(_ != "")
+    List(run, extraction_pipeline, inference_pipeline, endtoend_pipeline, base_dir).filter(_ != "")
   }
 
   // generate variable schema statements
@@ -849,7 +867,6 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     val state = new CompilationState( programToCompile, config )
 
     val body = new ListBuffer[String]()
-    body ++= compileSchemaDeclarations((state.schemaDeclarationGroupByHead map (_._2)).flatten.toList, state)
     state.extractionRuleGroupByHead foreach {keyVal => body ++= compileExtractionRules(keyVal._2, state)}
     state.functionCallList          foreach {func   => body ++= compileFunctionCallRules(List(func), state)}
     state.inferenceRules            foreach {inf    => body ++= compileInferenceRules(List(inf), state)}

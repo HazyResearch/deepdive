@@ -23,8 +23,12 @@
 FROM dd_new_label2 R0
         
         """
+          output_relation: "label2"
         style: "sql_extractor"
           
+          input_relations: [
+            dd_new_label2
+          ]
       }
     
 
@@ -34,8 +38,12 @@ FROM dd_new_label2 R0
 FROM dd_new_label1 R0
         
         """
+          output_relation: "label1"
         style: "sql_extractor"
           
+          input_relations: [
+            dd_new_label1
+          ]
       }
     
 
@@ -45,8 +53,12 @@ FROM dd_new_label1 R0
 FROM dd_new_features R0
         
         """
+          output_relation: "features"
         style: "sql_extractor"
           
+          input_relations: [
+            dd_new_features
+          ]
       }
     
 deepdive.pipeline.run: ${PIPELINE}
