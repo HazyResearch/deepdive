@@ -28,6 +28,14 @@ exec -a "$0" jq '.deepdive as $deepdive
             style: "cmd_extractor",
             cmd: "error \"Not implemented yet (should run sampler)\""
         },
+
+        # calibration plots
+        "process/model/calibration": {
+            _dependencies: ["data/model/probabilities"],
+            _output: "data/model/calibration-plots",
+            style: "cmd_extractor",
+            cmd: "error \"Not implemented yet (should run a script)\""
+        },
     }
 
 '
