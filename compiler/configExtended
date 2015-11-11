@@ -22,7 +22,7 @@ exec -a "$0" jq '.deepdive as $deepdive
     | select($output_by_process[.key] | not)
     | { key: "init/relation/\(.key)"
       , value: { style: "cmd_extractor"
-               , cmd: "deepdive load \(.key | @sh)"
+               , cmd: "deepdive initdb \(.key | @sh) && deepdive load \(.key | @sh)"
                , dependencies: [ "init/db" ]
                , output_relation: .key
                } }

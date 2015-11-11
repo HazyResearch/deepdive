@@ -1,26 +1,79 @@
 #!/usr/bin/env bash
-# deepdive-load -- Loads a table from a file or Pipe's output.
-# You must either have the DEEPDIVE_DB_URL environment set to a proper URL or
-# run this command under a DeepDive application where the URL is set in a db.url file.
+# deepdive-load -- Loads a given relation's data
+# > deepdive load RELATION [SOURCE...]
+# Initializes given RELATION in the database and loads data from SOURCE.
+# When SOURCE is unspecified, the data is loaded from files found on path
+# input/RELATION.* under the DeepDive application.
 #
-# > deepdive load table file format
+# This command must be run under an environment whose DEEPDIVE_DB_URL variable
+# is set to a proper URL, or under a DeepDive application where the URL is set
+# in the db.url file.
 #
-# > deepdive load sentences sentences.tsv tsv
-# > deepdive load sentences sentences.csv csv
+# For example:
 #
+# > deepdive load sentences
+# creates table 'sentences' and loads data from input/sentences.tsv if there
+# is one.
+#
+# > deepdive load sentences path/to/sentences.tsv
+# creates table 'sentences' and loads data from path/to/sentences.tsv.
+#
+# > deepdive load sentences sentences.csv.bz2
+# creates table 'sentences' and loads from a compressed CSV file.
 ##
 set -eu
 
-# parse database settings
+[[ $# -gt 0 ]] || error "Missing RELATION to load"
+Relation=$1; shift
+
+DEEPDIVE_APP=$(find-deepdive-app)
+export DEEPDIVE_APP
 . load-db-driver.sh
 
-[[ $# -gt 1 ]] || error "Missing table name or file name"
-
-table=$1; shift
-file=$1; shift
-if [[ $# -gt 0 ]]; then
-    format=$1; shift
-else
-    format=tsv
+# when no SOURCE is specified, look under input/
+if [[ $# -eq 0 ]]; then
+    cd "$DEEPDIVE_APP"
+    initsh=input/init_"$Relation".sh
+    # check if init_RELATION.sh script is available
+    if [[ -x "$initsh" ]]; then
+        echo "Loading $Relation via $initsh"
+        exec "$initsh"
+    fi
+    # search under input/RELATION.*
+    for Path in input/"$Relation".{tsv,csv,json-seq}{,.bz2,.gz,.sh}; do
+        [[ -e "$Path" ]] || continue
+        break
+    done
+    [[ -e "$Path" ]] ||
+        error "input/$Relation.*: No data source found for $Relation"
+    # use the found path
+    set -- "$Path"
 fi
-db-load $table $file $format
+
+# determine the format and how to decompress if needed
+case $1 in
+    *.tsv|*.tsv.*)           format=tsv      ;;
+    *.csv|*.csv.*)           format=csv      ;;
+    *.json-seq|*.json-seq.*) format=json-seq ;;
+    *)
+        [[ -n ${DEEPDIVE_LOAD_FORMAT:-} ]] ||
+            error "$1: Unrecognized format, specify DEEPDIVE_LOAD_FORMAT="
+        format=$DEEPDIVE_LOAD_FORMAT
+esac
+case $1 in
+    *.bz2) decompress=bzcat ;;
+    *.gz)  decompress=zcat  ;;
+    *.sh)  decompress=bash  ;;
+    *)     decompress=
+esac
+
+# load the data
+echo "Loading $Relation from $* ($format format)"
+if [[ -n "$decompress" ]]; then
+    # replace original path arguments with process substitutions
+    load() { db-load "$Relation" "$format" "$@"; }
+    eval "load $(seq $# | sed 's/.*/ <($decompress "$&")/')"
+else
+    # otherwise, just call the driver to load from the sources
+    db-load "$Relation" "$format" "$@"
+fi

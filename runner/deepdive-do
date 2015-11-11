@@ -23,7 +23,7 @@ ln -sfnv "$runDir" RUNNING
 
 deepdive-plan "$@" |
 # insert a filename line
-sed '1 a\'$'\n''# run/'"$runDir"'/plan.sh\'$'\n' |
+sed '1 i\'$'\n''# run/'"$runDir"'/plan.sh\'$'\n' |
 tee "$runDir"/plan.orig.sh >"$runDir"/plan.sh
 
 # provide a chance to edit

@@ -9,8 +9,7 @@ targets="${*%.done}"
 
 # enumerate what's going to happen
 {
-echo "#!/usr/bin/env bash
-# execution plan for $targets
+echo "# execution plan for $targets
 "
 list-commands() {
     make -C "$DEEPDIVE_APP"/run --dry-run --silent \

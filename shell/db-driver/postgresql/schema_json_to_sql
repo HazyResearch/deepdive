@@ -27,11 +27,11 @@ def main():
     print ' '.join([generate_create_table_sql(schema, table) for table in schema["relations"].keys()])
   else:
     table = sys.argv[2]
-    # the given table is not in the schema, do nothing
-    if table not in schema["relations"]:
-      print ""
-    else:
+    # the given table is not in the schema, exit with error
+    if table in schema["relations"]:
       print generate_create_table_sql(schema, table)
+    else:
+      sys.exit(1)
 
 if __name__ == "__main__":
   main()
