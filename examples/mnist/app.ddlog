@@ -1,0 +1,15 @@
+
+images(file text, label int, is_training boolean).
+
+variables? (
+@image_path("PATH")
+file text,
+is_training boolean)
+Categorical(10).
+
+@label(l)
+variables(file, t) :- images(file, l, t).
+
+@cnn("solver.prototxt", "train_test.prototxt")
+variables(file, t) :- images(file, l, t).
+
