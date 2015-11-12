@@ -50,8 +50,9 @@ if [[ $# -gt 0 ]]; then
             ;;
 
         *)
-            # otherwise, we just execute the SQL passing through rest of the arguments
-            exec db-execute "$sql" "$@"
+            # otherwise, we just execute the non-empty SQL passing through rest of the arguments
+            [[ -z "${sql//[[:space:]]/}" ]] ||
+                exec db-execute "$sql" "$@"
     esac
 else
     exec db-prompt "$@"

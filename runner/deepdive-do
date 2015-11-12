@@ -26,13 +26,15 @@ deepdive-plan "$@" |
 sed '1 i\'$'\n''# run/'"$runDir"'/plan.sh\'$'\n' |
 tee "$runDir"/plan.orig.sh >"$runDir"/plan.sh
 
-# provide a chance to edit
-${VISUAL:-${EDITOR:-vi}} "$runDir"/plan.sh &&
-[[ "$runDir"/plan.sh -nt "$runDir"/plan.orig.sh ]] || {
-    cleanup
-    rm -rf "$runDir"
-    error "Canceled execution"
-}
+# provide a chance to edit plan in a tty unless told not to ask
+if [[ -t 0 && -t 1 && $EDITOR != true && $EDITOR != : && ${DEEPDIVE_PLAN_EDIT:-true} ]]; then
+    ${VISUAL:-${EDITOR:-vi}} "$runDir"/plan.sh &&
+    [[ "$runDir"/plan.sh -nt "$runDir"/plan.orig.sh ]] || {
+        cleanup
+        rm -rf "$runDir"
+        error "Canceled execution"
+    }
+fi
 
 # remove original unless modified
 ! diff -q "$runDir"/plan{,.orig}.sh || rm -f "$runDir"/plan.orig.sh

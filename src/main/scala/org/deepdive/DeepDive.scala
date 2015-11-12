@@ -142,7 +142,9 @@ object DeepDive extends Logging {
     }
 
     // limit the tasks to the ones specified
-    val activeTaskIds = activePipeline.tasks.toList.intersect(taskList) ++ List("shutdown")
+    val activeTaskIds =
+      if (taskList isEmpty) activePipeline.tasks.toList
+      else activePipeline.tasks.toList.intersect(taskList) ++ List("shutdown")
 
     // We remove all tasks dependencies that are not in the pipeline
     val filteredTasks = allTasks.filter(t => activeTaskIds.contains(t.id)).map { task =>

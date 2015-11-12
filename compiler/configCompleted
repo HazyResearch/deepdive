@@ -17,11 +17,11 @@ exec -a "$0" jq '.deepdive_ as $deepdive
                 # TODO run factor queries and grounding queries directly from here or via database drivers
                 set +x; . load-db-driver.sh; set -x
                 export DEEPDIVE_LOGFILE=factorgraph/grounding.log
-                mv -f \"$DEEPDIVE_LOGFILE\" \"$DEEPDIVE_LOGFILE\"~
+                [[ ! -e \"$DEEPDIVE_LOGFILE\" ]] || mv -f \"$DEEPDIVE_LOGFILE\" \"$DEEPDIVE_LOGFILE\"~
                 java org.deepdive.Main -c <(
                     set +x
                     echo \("deepdive \(.deepdive | @json)" | @sh)
-                    echo \("deepdive.pipeline.pipelines.grounding: [\(.deepdive.inference.factors | keys | join(" "))]" | @sh)
+                    echo \("deepdive.pipeline.pipelines.grounding: [\(.deepdive.inference.factors | keys | join(", "))]" | @sh)
                     echo \("deepdive.pipeline.run: grounding" | @sh)
                 ) -o factorgraph -t inference_grounding
 

@@ -7,9 +7,9 @@ export SUBSAMPLE_NUM_WORDS_TRAIN SUBSAMPLE_NUM_WORDS_TEST
 
 @test "$DBVARIANT chunking example" {
     cd "$BATS_TEST_DIRNAME"/chunking_example || skip
-    deepdive initdb
     DEEPDIVE_CONFIG_EXTRA='deepdive.calibration.holdout_query: "INSERT INTO dd_graph_variables_holdout(variable_id) SELECT id FROM words WHERE word_id > '${SUBSAMPLE_NUM_WORDS_TRAIN}'"' \
-    deepdive run
+    deepdive compile
+    deepdive redo process/init/db data/model/{weights,probabilities}
 
     f1score=$(printf '%.0f' $(
         result/eval.sh | tee /dev/stderr | sed -n '/^accuracy:/ s/.* FB1: *//p'))

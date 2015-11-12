@@ -8,6 +8,17 @@ exec -a "$0" jq '
 # duplicate the original deepdive config object
 .deepdive_ = .deepdive | .deepdive_ as $deepdive
 
+# make sure at least they are empty objects
+| .deepdive_.schema                |= . + {}
+| .deepdive_.schema.variables      |= . + {}
+| .deepdive_.schema.relations      |= . + {}
+| .deepdive_.extraction            |= . + {}
+| .deepdive_.extraction.extractors |= . + {}
+| .deepdive_.inference             |= . + {}
+| .deepdive_.inference.factors     |= . + {}
+| .deepdive_.pipeline              |= . + {}
+| .deepdive_.pipeline.pipelines    |= . + {}
+
 # add an database initialization extractor
 | .deepdive_.extraction.extractors +=
     { "init/db": { style: "cmd_extractor"
@@ -21,7 +32,7 @@ exec -a "$0" jq '
     ( $deepdive.extraction.extractors | with_entries
     ( { key: (.value.output_relation // empty), value: .key }
         )) as $output_by_process |
-    [ $deepdive.schema.relations | to_entries[]
+    [ $deepdive.schema.relations // {} | to_entries[]
     | select($output_by_process[.key] | not)
     | { key: "init/relation/\(.key)"
       , value: { style: "cmd_extractor"

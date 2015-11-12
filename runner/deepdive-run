@@ -20,6 +20,8 @@
 ##
 set -eu
 
+error '`deepdive run` command is deprecated. Use `deepdive do` instead.' || true
+
 ## parse command-line options
 ddlogFiles=()
 while getopts "C:c:o:" o; do
@@ -130,19 +132,6 @@ export APP_HOME=$DEEPDIVE_APP
 ## run DeepDive
 # JVM directly executes everything currently
 java org.deepdive.Main -c "$fullConfig" -o "$run_dir"
-
-# TODO deepdive compile
-# TODO deepdive do data/model/probabilities
-
-
-## TODO
-#DEEPDIVE_EXEC_ENV=local # TODO move to shell/deepdive
-## TODO pass a list of extractors to run
-#java org.deepdive.DeepDiveExtractorCompiler -c "$fullConfig" -o "$run_dir"/extractors/ --exec_env "$DEEPDIVE_EXEC_ENV"
-## TODO compiler has to generate a run-all.sh, which is a list of scripts for running all extractors, sorted by their dependency
-#"$run_dir"/extractors/run-all.sh
-## TODO run-all.sh can simply call other individual extractor scripts
-## TODO each ext script compiled from ExtractorSettings object in the Settings`
 
 # point to the run with LATEST symlink
 ln -sfn "$run_id" run/LATEST

@@ -38,6 +38,10 @@ fi
 if [[ -r deepdive.conf ]]; then
     cat deepdive.conf
 fi
+# any extra config present in DEEPDIVE_CONFIG_EXTRA environment gets more priority
+if [[ -n "${DEEPDIVE_CONFIG_EXTRA:-}" ]]; then
+    echo "$DEEPDIVE_CONFIG_EXTRA"
+fi
 # generate builtin extractors from schema
 echo -n "deepdive.schema "
 cat run/compiled.schema.json

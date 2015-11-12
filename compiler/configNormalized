@@ -20,6 +20,7 @@ exec -a "$0" jq '.deepdive_ as $deepdive
                 | .output_ = (.output_relation | if . then "data/\(.)" else null end)
                 )
     )
+
 # qualify factor names
 | .deepdive_.inference.factors |= with_entries
     ( .key |= "factor/\(.)"
