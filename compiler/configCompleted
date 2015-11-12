@@ -149,7 +149,60 @@ exec -a "$0" jq '.deepdive_ as $deepdive
             dependencies_: ["data/model/probabilities"],
             output_: "model/calibration-plots",
             style: "cmd_extractor",
-            cmd: "error \"Not implemented yet (should run a script)\""
+            cmd: "
+                num_buckets=10
+                create_calibration_view() {
+                    table=$1 column=$2
+                    deepdive sql \"
+                        DROP VIEW IF EXISTS ${table}_${column}_calibration CASCADE;
+                        CREATE OR REPLACE VIEW ${table}_${column}_calibration AS (
+                        WITH bucketed AS (
+                            SELECT ${column} AS label
+                                 , CASE
+                                     WHEN expectation = 1 THEN $(($num_buckets - 1))
+                                     ELSE FLOOR(expectation * ${num_buckets})
+                                   END AS bucket
+                            FROM ${table}_${column}_inference
+                        )
+
+                         SELECT universe.bucket                             AS bucket
+                              , universe.count                              AS num_variables
+                              , positive.count                              AS num_correct
+                              , negative.count                              AS num_incorrect
+                              , universe.bucket        / $num_buckets.      AS probability_lo
+                              , (universe.bucket +  1) / ${num_buckets}.    AS probability_hi
+                              , (universe.bucket + .5) / ${num_buckets}.    AS probability
+                              , positive.count::FLOAT  / (
+                                positive.count + negative.count)            AS accuracy
+                              , positive.count + negative.count             AS num_predictions_test
+                              , universe.count                              AS num_predictions_whole
+                           FROM (
+                                 SELECT bucket, COUNT(*) AS count
+                                   FROM bucketed
+                                  GROUP BY bucket
+                                ) universe
+                           LEFT JOIN (
+                                 SELECT bucket, COUNT(*) AS count
+                                   FROM bucketed
+                                  WHERE label = true
+                                  GROUP BY bucket
+                                ) positive ON universe.bucket = positive.bucket
+                           LEFT JOIN (
+                                 SELECT bucket, COUNT(*) AS count
+                                   FROM bucketed
+                                  WHERE label = false
+                                  GROUP BY bucket
+                                ) negative ON universe.bucket = negative.bucket
+                          ORDER BY universe.bucket
+                          )
+                    \"
+                }
+                \($deepdive.schema.variables | keys | map(
+                . as $relationName | $deepdive.schema.variables[$relationName] | keys[] |
+                . as $columnName | "
+                create_calibration_view \($relationName | @sh) \($columnName | @sh)
+                ") | join("\n"))
+            "
         },
 
         # TODO processes for incremental workflow: process/model/incremental/materialization, process/model/incremental/learning, process/model/incremental/inference
