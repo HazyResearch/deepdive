@@ -15,19 +15,19 @@ setup() {
 @test "$DBVARIANT spouse example (ddlog)" {
     cd ddlog || skip
     deepdive compile
-    deepdive redo process/init/db data/model/probabilities
+    deepdive redo process/init/db model/calibration-plots
     [[ $(getAccuracyPerCent has_spouse_label) -gt 90 ]]
 }
 
 @test "$DBVARIANT spouse example (tsv_extractor)" {
     cd tsv_extractor || skip
     deepdive compile
-    deepdive redo process/init/db data/model/probabilities
+    deepdive redo process/init/db model/calibration-plots
     [[ $(getAccuracyPerCent has_spouse_is_true) -gt 90 ]] || {
         # XXX mysql fails with some probability, but giving another try usually works
         # TODO fix mysql example to be identical with postgresql
         deepdive compile
-        deepdive redo process/init/db data/model/probabilities
+        deepdive redo process/init/db model/calibration-plots
         [[ $(getAccuracyPerCent has_spouse_is_true) -gt 90 ]]
     }
 }
@@ -36,7 +36,7 @@ setup() {
     skip
     cd json_extractor || skip
     deepdive compile
-    deepdive redo process/init/db data/model/probabilities
+    deepdive redo process/init/db model/calibration-plots
     [[ $(getAccuracyPerCent has_spouse_is_true) -gt 90 ]]
 }
 
@@ -49,7 +49,7 @@ setup() {
     type javac >/dev/null || skip
     cd piggy_extractor || skip
     deepdive compile
-    deepdive redo process/init/db data/model/probabilities
+    deepdive redo process/init/db model/calibration-plots
     # TODO piggy doesn't have proper inference rules
     # [[ $(getAccuracyPerCent has_spouse_is_true) -gt 90 ]]
 }
@@ -63,6 +63,6 @@ setup() {
     skip # TODO
     cd plpy_extractor || skip
     deepdive compile
-    deepdive redo process/init/db data/model/probabilities
+    deepdive redo process/init/db model/calibration-plots
     [[ $(getAccuracyPerCent has_spouse_is_true) -gt 90 ]]
 }
