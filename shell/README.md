@@ -17,7 +17,7 @@ DDlog code is expected to be kept in `app.ddlog`, and all configuration blocks m
 UDF code is expected to be kept under `udf/`.
 
 #### Executable Code
-In order to run the application, DeepDive compiles the user's source code into code that is readily executable, such as shell scripts and Makefiles.   
+In order to run the application, DeepDive compiles the user's source code into code that is readily executable, such as shell scripts and Makefiles.
 
 The compiled code is kept under `run/process/`.
 

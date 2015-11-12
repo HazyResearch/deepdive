@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # escape4sh -- Escape given command-line arguments as a string that
 #              is safe to use as input for shells, e.g., sh -c ...
-# 
-# > sh -c "$(escape4sh ARG...)"
 #
+# > sh -c "$(escape4sh ARG...)"
+##
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-01-24
 shopt -s extglob

@@ -53,7 +53,7 @@ reset: \(keys | mktargets("reset"))
 	$(CMD_\(.key | sub("/.*"; "")))
 	$(TOUCH)
 	##############################################################################
-	
+
 \(.key | mktarget("reset")):
 	rm -f \(.key | mktarget("done"))
 "
