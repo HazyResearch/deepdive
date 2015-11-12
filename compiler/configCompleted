@@ -10,7 +10,17 @@ exec -a "$0" jq '.deepdive as $deepdive
             _dependencies: (.deepdive.inference.factors | keys),
             _output: "model/factorgraph",
             style: "cmd_extractor",
-            cmd: "error \"Not implemented yet (should run grounding code)\""
+            # TODO run factor queries and grounding queries directly from here or via database drivers
+            cmd: "
+                set +x; . load-db-driver.sh; set -x
+                mkdir -p ../../../model/factorgraph
+                cd ../../../model
+                java org.deepdive.Main -c <(
+                    echo deepdive \(.deepdive_orig | @json | @sh)
+                    echo deepdive.pipeline.pipelines.grounding: [\(.deepdive_orig.inference.factors | keys | join(" "))]
+                    echo deepdive.pipeline.run: grounding
+                ) -o factorgraph -t \"inference_grounding\"
+                "
         },
 
         # learning weights
@@ -18,7 +28,18 @@ exec -a "$0" jq '.deepdive as $deepdive
             _dependencies: ["model/factorgraph"],
             _output: "model/weights",
             style: "cmd_extractor",
-            cmd: "error \"Not implemented yet (should run sampler)\""
+            # TODO run sampler directly
+            cmd: "
+                set +x; . load-db-driver.sh; set -x
+                mkdir -p ../../../model/weights
+                cd ../../../model
+                java org.deepdive.Main -c <(
+                    echo deepdive \(.deepdive_orig | @json | @sh)
+                    echo deepdive.pipeline.pipelines.grounding: [\(.deepdive_orig.inference.factors | keys | join(" "))]
+                    echo deepdive.pipeline.run: grounding
+                ) -o model/factorgraph -t \"inference\"
+                cp -f factorgraph/{graph.weights,inference_result.out.*} weights/
+                "
         },
 
         # performing inference
@@ -26,7 +47,20 @@ exec -a "$0" jq '.deepdive as $deepdive
             _dependencies: ["model/factorgraph", "model/weights"],
             _output: "data/model/probabilities",
             style: "cmd_extractor",
-            cmd: "error \"Not implemented yet (should run sampler)\""
+            # TODO run sampler directly
+            cmd: "
+                set +x; . load-db-driver.sh; set -x
+                mkdir -p ../../../model/weights
+                cd ../../../model
+                java org.deepdive.Main -c <(
+                    echo deepdive \(.deepdive_orig | @json | @sh)
+                    echo deepdive.pipeline.pipelines.grounding: [\(.deepdive_orig.inference.factors | keys | join(" "))]
+                    echo deepdive.pipeline.run: grounding
+                    echo deepdive.inference.skip_learning: true
+                    echo deepdive.inference.relearn_from: true
+                ) -o model/factorgraph -t \"inference\"
+                cp -f factorgraph/{graph.weights,inference_result.out.*} weights/
+                "
         },
 
         # calibration plots

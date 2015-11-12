@@ -9,6 +9,9 @@
 ##
 exec -a "$0" jq '.deepdive as $deepdive
 
+# FIXME keep the normalized config under deepdive_
+| .deepdive_orig = .deepdive
+
 # qualify extractor names and output relations
 | .deepdive.extraction.extractors |= with_entries
     ( .key |= "process/\(.)"

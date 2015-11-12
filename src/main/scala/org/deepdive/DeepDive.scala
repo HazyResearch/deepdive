@@ -19,7 +19,7 @@ import scala.util.{Try, Success, Failure}
 
 object DeepDive extends Logging {
 
-  def run(config: Config, outputDir: String) {
+  def run(config: Config, outputDir: String, taskList: List[String]) {
 
     // Initialize and get the actor system
     val system = Context.system
@@ -103,7 +103,7 @@ object DeepDive extends Logging {
     log.debug(s"Total number of factors: ${settings.inferenceSettings.factors.size}")
 
     // If no extractors and factors, no tasks should be run
-    val allTasks = settings.extractionSettings.extractors.size + settings.inferenceSettings.factors.size match {
+    var allTasks = settings.extractionSettings.extractors.size + settings.inferenceSettings.factors.size match {
       case 0 =>
         List(reportingTask, terminationTask)
       case _ =>
@@ -144,9 +144,12 @@ object DeepDive extends Logging {
       case _ => relearnPipeline
     }
 
+    // limit the tasks to the ones specified
+    val activeTaskIds = activePipeline.tasks.toList.intersect(taskList) ++ List("shutdown")
+
     // We remove all tasks dependencies that are not in the pipeline
-    val filteredTasks = allTasks.filter(t => activePipeline.tasks.contains(t.id)).map { task =>
-      val newDependencies = task.dependencies.filter(activePipeline.tasks.contains(_))
+    val filteredTasks = allTasks.filter(t => activeTaskIds.contains(t.id)).map { task =>
+      val newDependencies = task.dependencies.intersect(activeTaskIds toList)
       task.copy(dependencies=newDependencies)
     }
 

@@ -12,6 +12,7 @@ jq -r <<<"$FactorSpec" >run.sh '
 # \(env.FactorStyle)  \(env.FactorName)
 # \(@json)
 set -xeuo pipefail
+cd \"$(dirname \"$0\")\"
 
 # TODO
 # deepdive sql \(.input_query | @sh)

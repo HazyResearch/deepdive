@@ -12,6 +12,7 @@ jq -r <<<"$ExtractorSpec" >run.sh '
 # \(env.ExtractorStyle)  \(env.ExtractorName)
 # \(@json)
 set -xeuo pipefail
+cd \"$(dirname \"$0\")\"
 
 \(.before // "")
 
