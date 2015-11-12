@@ -3,22 +3,25 @@
 #
 # - a deepdive-load extractor for relations declared in schema but lacking an extractor that outputs it
 ##
-exec -a "$0" jq '.deepdive as $deepdive
+exec -a "$0" jq '
+
+# duplicate the original deepdive config object
+.deepdive_ = .deepdive | .deepdive_ as $deepdive
 
 # add an database initialization extractor
-| .deepdive.extraction.extractors +=
+| .deepdive_.extraction.extractors +=
     { "init/db": { style: "cmd_extractor"
                  , cmd: "deepdive initdb"
                  }
     }
 
 # add initialization extractors that loads data into base relations declared in schema
-| .deepdive.extraction.extractors += (
+| .deepdive_.extraction.extractors += (
     # first a handy map from relation to any process that outputs it
-    ( .deepdive.extraction.extractors | with_entries
+    ( $deepdive.extraction.extractors | with_entries
     ( { key: (.value.output_relation // empty), value: .key }
         )) as $output_by_process |
-    [ .deepdive.schema.relations | to_entries[]
+    [ $deepdive.schema.relations | to_entries[]
     | select($output_by_process[.key] | not)
     | { key: "init/relation/\(.key)"
       , value: { style: "cmd_extractor"

@@ -1,27 +1,27 @@
 #!/usr/bin/env bash
 # config2dependencies -- Derives a dependency graph from deepdive.conf in JSON
 ##
-exec -a "$0" jq '.deepdive as $deepdive
+exec -a "$0" jq '.deepdive_ as $deepdive
 
 # a handy map to find input data for extractors
-| ( .deepdive.extraction.extractors | with_entries(.value |= ._output)
+| ( $deepdive.extraction.extractors | with_entries(.value |= .output_)
   ) as $output_relation
 
 # form a dependency graph
 | [ # every process/* and the processes or input data it depends on
-    ( .deepdive.extraction.extractors | to_entries[]
-    | .value |= ((._dependencies // [] | map($output_relation[.] // .)) + ._input | unique)
+    ( $deepdive.extraction.extractors | to_entries[]
+    | .value |= ((.dependencies_ // [] | map($output_relation[.] // .)) + .input_ | unique)
     )
   , # every factor/* and the processes that it depends on
-    ( .deepdive.inference.factors | to_entries[]
-    | .value |= ((._dependencies // [] | map($output_relation[.] // .)) + ._input | unique)
+    ( $deepdive.inference.factors | to_entries[]
+    | .value |= ((.dependencies_ // [] | map($output_relation[.] // .)) + .input_ | unique)
     )
   , # every data/* and the processes that output it
     ( $output_relation | to_entries | map(select(.value)) | group_by(.value)[]
     | { key: .[0].value, value: map(.key) }
     )
   , # every pipeline/* and the processes that it depends on
-    ( .deepdive.pipeline.pipelines | to_entries[]
+    ( $deepdive.pipeline.pipelines | to_entries[]
     )
   ]
 | from_entries'

@@ -1,22 +1,25 @@
 #!/usr/bin/env bash
 # config2compilation-plan -- Generates a compilation plan from normalized deepdive.conf in JSON
 ##
-exec -a "$0" jq -r '(
+exec -a "$0" jq -r '.deepdive_ as $deepdive
+| (
 
 # extractor compilation
-.deepdive.extraction.extractors | to_entries[] | "
+.deepdive_.extraction.extractors | to_entries[] | "
 ( x=\(.key | @sh)
   echo >&2 \"Compiling run/$x\"
   mkdir -p \"$x\" && cd \"$x\"
   compile-\(.value.style // empty | @sh) \"$x\" \(.value | @json | @sh)
 )"
+
 ),(
 
 # factor grounding compilation
-.deepdive.inference.factors | to_entries[] | "
+.deepdive_.inference.factors | to_entries[] | "
 ( x=\(.key | @sh)
   echo >&2 \"Compiling run/$x\"
   mkdir -p \"$x\" && cd \"$x\"
   compile-sql_factor \"$x\" \(.value | @json | @sh)
 )"
+
 )'

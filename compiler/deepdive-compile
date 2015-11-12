@@ -44,8 +44,8 @@ cat run/compiled.schema.json
 } >run/compiled.deepdive.conf
 cd run
 
-STEP "Normalizing run/compiled.config.json"
 # produce a JSON from compiled deepdive.conf
+STEP "Converting HOCON to JSON as run/compiled.deepdive.conf.json"
 (
 # XXX some bogus variables in deepdive.conf added by DDlog compiler or in deepdive-default.conf
 APP_HOME='"$DEEPDIVE_APP"'
@@ -58,6 +58,7 @@ hocon2json \
     compiled.deepdive.conf \
     "$DEEPDIVE_HOME"/etc/deepdive-default.conf
 ) >compiled.deepdive.conf.json
+STEP "Adding built-in processes in dataflow as normalized run/compiled.config.json"
 {
 # extend config with more builtin stuffs
 configExtended |

@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # configCompleted -- Extends normalized deepdive.conf further to include inference data flow
 ##
-exec -a "$0" jq '.deepdive as $deepdive
+exec -a "$0" jq '.deepdive_ as $deepdive
 
 # define the statistical modeling processes
-| .deepdive.extraction.extractors += {
+| .deepdive_.extraction.extractors += {
         # grounding the factor graph
         "process/model/grounding": {
-            _dependencies: (.deepdive.inference.factors | keys),
-            _output: "model/factorgraph",
+            dependencies_: ($deepdive.inference.factors | keys),
+            output_: "model/factorgraph",
             style: "cmd_extractor",
             # TODO run factor queries and grounding queries directly from here or via database drivers
             cmd: "
@@ -16,8 +16,8 @@ exec -a "$0" jq '.deepdive as $deepdive
                 mkdir -p ../../../model/factorgraph
                 cd ../../../model
                 java org.deepdive.Main -c <(
-                    echo deepdive \(.deepdive_orig | @json | @sh)
-                    echo deepdive.pipeline.pipelines.grounding: [\(.deepdive_orig.inference.factors | keys | join(" "))]
+                    echo deepdive \(.deepdive | @json | @sh)
+                    echo deepdive.pipeline.pipelines.grounding: [\(.deepdive.inference.factors | keys | join(" "))]
                     echo deepdive.pipeline.run: grounding
                 ) -o factorgraph -t \"inference_grounding\"
                 "
@@ -25,8 +25,8 @@ exec -a "$0" jq '.deepdive as $deepdive
 
         # learning weights
         "process/model/learning": {
-            _dependencies: ["model/factorgraph"],
-            _output: "model/weights",
+            dependencies_: ["model/factorgraph"],
+            output_: "model/weights",
             style: "cmd_extractor",
             # TODO run sampler directly
             cmd: "
@@ -34,8 +34,8 @@ exec -a "$0" jq '.deepdive as $deepdive
                 mkdir -p ../../../model/weights
                 cd ../../../model
                 java org.deepdive.Main -c <(
-                    echo deepdive \(.deepdive_orig | @json | @sh)
-                    echo deepdive.pipeline.pipelines.grounding: [\(.deepdive_orig.inference.factors | keys | join(" "))]
+                    echo deepdive \(.deepdive | @json | @sh)
+                    echo deepdive.pipeline.pipelines.grounding: [\(.deepdive.inference.factors | keys | join(" "))]
                     echo deepdive.pipeline.run: grounding
                 ) -o model/factorgraph -t \"inference\"
                 cp -f factorgraph/{graph.weights,inference_result.out.*} weights/
@@ -44,8 +44,8 @@ exec -a "$0" jq '.deepdive as $deepdive
 
         # performing inference
         "process/model/inference": {
-            _dependencies: ["model/factorgraph", "model/weights"],
-            _output: "data/model/probabilities",
+            dependencies_: ["model/factorgraph", "model/weights"],
+            output_: "data/model/probabilities",
             style: "cmd_extractor",
             # TODO run sampler directly
             cmd: "
@@ -53,8 +53,8 @@ exec -a "$0" jq '.deepdive as $deepdive
                 mkdir -p ../../../model/weights
                 cd ../../../model
                 java org.deepdive.Main -c <(
-                    echo deepdive \(.deepdive_orig | @json | @sh)
-                    echo deepdive.pipeline.pipelines.grounding: [\(.deepdive_orig.inference.factors | keys | join(" "))]
+                    echo deepdive \(.deepdive | @json | @sh)
+                    echo deepdive.pipeline.pipelines.grounding: [\(.deepdive.inference.factors | keys | join(" "))]
                     echo deepdive.pipeline.run: grounding
                     echo deepdive.inference.skip_learning: true
                     echo deepdive.inference.relearn_from: true
@@ -65,8 +65,8 @@ exec -a "$0" jq '.deepdive as $deepdive
 
         # calibration plots
         "process/model/calibration": {
-            _dependencies: ["data/model/probabilities"],
-            _output: "data/model/calibration-plots",
+            dependencies_: ["data/model/probabilities"],
+            output_: "data/model/calibration-plots",
             style: "cmd_extractor",
             cmd: "error \"Not implemented yet (should run a script)\""
         },
