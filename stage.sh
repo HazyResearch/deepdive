@@ -46,6 +46,11 @@ stage shell/deepdive-initdb                                       util/
 stage shell/deepdive-sql                                          util/
 stage shell/deepdive-load                                         util/
 
+# runtime dependencies
+stage depends/jq                                                  util/
+stage depends/ts                                                  util/
+stage depends/dot                                                 util/
+
 stage compiler/deepdive-compile                                   util/
 stage compiler/hocon2json                                         util/
 stage src/main/resources/application.conf                         etc/deepdive-default.conf

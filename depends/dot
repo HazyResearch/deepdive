@@ -1,0 +1,7 @@
+#!/bin/sh
+# TODO embed graphviz dot executable in deepdive
+next=`type -ap dot | grep -vxF "$0" | head -1`
+[ -z "$next" ] || exec "$next" "$@"
+
+# fall back to no-op
+:
