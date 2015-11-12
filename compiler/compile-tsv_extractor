@@ -17,8 +17,7 @@ cd \"$(dirname \"$0\")\"
 \(.before // "")
 
 deepdive sql eval \(.input | @sh) format=tsv |
-pv --cursor --name \(env.ExtractorName | @sh)             2>/dev/tty |
-pv --cursor --name \(env.ExtractorName | @sh) --line-mode 2>/dev/tty |
+show_progress \(env.ExtractorName | @sh) |
 bash -c \(.udf | @sh) |
 deepdive sql \("COPY \(.output_relation) FROM STDIN" | @sh)
 

@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# show_progress -- Shows data flow progress by lines and bytes
+# > show_progress NAME
+##
+set -euo pipefail
+Name=${1:-}
+: ${DEEPDIVE_PROGRESS_FD:=2}
+# TODO embed pv(1) in deepdive
+eval 'mindbender hack pv 2>&'$DEEPDIVE_PROGRESS_FD' --cursor ${Name:+--name "$Name"}' |
+eval 'mindbender hack pv 2>&'$DEEPDIVE_PROGRESS_FD' --cursor ${Name:+--name "$Name"} --line-mode'

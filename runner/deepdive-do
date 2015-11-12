@@ -41,9 +41,10 @@ fi
 
 # run it
 DEEPDIVE_ERROR_PREFIX="[ERROR] "  # prefixing error messages in logs
+: ${DEEPDIVE_PROGRESS_FD:=3}  # file descriptor to pass stderr down to our show_progress(1) command
 DEEPDIVE_APP=$(cd .. && pwd -P)
 APP_HOME=$DEEPDIVE_APP # XXX legacy
-export DEEPDIVE_ERROR_PREFIX DEEPDIVE_APP APP_HOME
-bash -veu "$runDir"/plan.sh 2>&1 |
+export DEEPDIVE_ERROR_PREFIX DEEPDIVE_PROGRESS_FD DEEPDIVE_APP APP_HOME
+eval 'bash -veu "$runDir"/plan.sh '$DEEPDIVE_PROGRESS_FD'>&2 2>&1' |
 # keep a log with timestamps
 ts "%F %H:%M:%.S $HOSTNAME" | tee "$runDir"/log.txt
