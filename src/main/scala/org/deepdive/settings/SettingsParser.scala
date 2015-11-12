@@ -53,8 +53,8 @@ object SettingsParser extends Logging {
       sys.error(s"${settings.pipelineSettings.activePipelineName.get}: No such pipeline defined")
     }
 
-    log.info(settings.config.root.render(ConfigRenderOptions.concise().setFormatted(true)))
-    log.info(settings toString)
+//    log.info(settings.config.root.render(ConfigRenderOptions.concise().setFormatted(true)))
+//    log.info(settings toString)
 
     settings
   }

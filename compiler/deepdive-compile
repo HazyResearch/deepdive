@@ -45,7 +45,7 @@ cat run/compiled.schema.json
 cd run
 
 # produce a JSON from compiled deepdive.conf
-STEP "Converting HOCON to JSON as run/compiled.deepdive.conf.json"
+STEP "Converting into JSON as run/compiled.deepdive.conf.json"
 (
 # XXX some bogus variables in deepdive.conf added by DDlog compiler or in deepdive-default.conf
 APP_HOME='"$DEEPDIVE_APP"'

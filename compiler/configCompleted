@@ -3,73 +3,158 @@
 ##
 exec -a "$0" jq '.deepdive_ as $deepdive
 
-# define the statistical modeling processes
+# define the statistical inference processes
 | .deepdive_.extraction.extractors += {
+
         # grounding the factor graph
         "process/model/grounding": {
             dependencies_: ($deepdive.inference.factors | keys),
             output_: "model/factorgraph",
             style: "cmd_extractor",
-            # TODO run factor queries and grounding queries directly from here or via database drivers
-            cmd: "
+            cmd: "mkdir -p ../../../model && cd ../../../model
+                mkdir -p factorgraph
+
+                # TODO run factor queries and grounding queries directly from here or via database drivers
                 set +x; . load-db-driver.sh; set -x
-                mkdir -p ../../../model/factorgraph
-                cd ../../../model
+                export DEEPDIVE_LOGFILE=factorgraph/grounding.log
+                mv -f \"$DEEPDIVE_LOGFILE\" \"$DEEPDIVE_LOGFILE\"~
                 java org.deepdive.Main -c <(
-                    echo deepdive \(.deepdive | @json | @sh)
-                    echo deepdive.pipeline.pipelines.grounding: [\(.deepdive.inference.factors | keys | join(" "))]
-                    echo deepdive.pipeline.run: grounding
-                ) -o factorgraph -t \"inference_grounding\"
-                "
+                    set +x
+                    echo \("deepdive \(.deepdive | @json)" | @sh)
+                    echo \("deepdive.pipeline.pipelines.grounding: [\(.deepdive.inference.factors | keys | join(" "))]" | @sh)
+                    echo \("deepdive.pipeline.run: grounding" | @sh)
+                ) -o factorgraph -t inference_grounding
+
+                # drop graph. prefix from file names
+                cd factorgraph
+                mv -f graph.variables variables
+                mv -f graph.factors   factors
+                mv -f graph.edges     edges
+                mv -f graph.weights   weights
+                mv -f graph.meta      meta
+            "
         },
 
-        # learning weights
+        # learning weights and doing inference (since we had to load the graph anyway)
         "process/model/learning": {
             dependencies_: ["model/factorgraph"],
             output_: "model/weights",
             style: "cmd_extractor",
-            # TODO run sampler directly
-            cmd: "
-                set +x; . load-db-driver.sh; set -x
-                mkdir -p ../../../model/weights
-                cd ../../../model
-                java org.deepdive.Main -c <(
-                    echo deepdive \(.deepdive | @json | @sh)
-                    echo deepdive.pipeline.pipelines.grounding: [\(.deepdive.inference.factors | keys | join(" "))]
-                    echo deepdive.pipeline.run: grounding
-                ) -o model/factorgraph -t \"inference\"
-                cp -f factorgraph/{graph.weights,inference_result.out.*} weights/
-                "
+            cmd: "mkdir -p ../../../model && cd ../../../model
+                mkdir -p weights
+                [ -d factorgraph ] || error \"No factorgraph found\"
+                # run inference engine for learning and inference
+                \($deepdive.sampler.sampler_cmd // "sampler-dw gibbs") \\
+                    -w factorgraph/weights \\
+                    -v factorgraph/variables \\
+                    -f factorgraph/factors \\
+                    -e factorgraph/edges \\
+                    -m factorgraph/meta \\
+                    -o weights \\
+                    \($deepdive.sampler.sampler_args // "#")
+                mkdir -p probabilities
+                mv -f weights/inference_result.out.text probabilities/
+            "
         },
 
         # performing inference
         "process/model/inference": {
             dependencies_: ["model/factorgraph", "model/weights"],
+            output_: "model/probabilities",
+            style: "cmd_extractor",
+            cmd: "mkdir -p ../../../model && cd ../../../model
+                [ -d factorgraph ] || error \"No factorgraph found\"
+                if [[ factorgraph/weights -nt probabilities/inference_result.out.text ]]; then
+                    # no need to run inference unless the weights are fresher
+                    # XXX this skipping may cause confusion
+                    # run sampler for performing inference with given weights without learning
+                    \($deepdive.sampler.sampler_cmd // "sampler-dw gibbs") \\
+                        -l 0 \\
+                        -w factorgraph/weights \\
+                        -v factorgraph/variables \\
+                        -f factorgraph/factors \\
+                        -e factorgraph/edges \\
+                        -m factorgraph/meta \\
+                        -o weights \\
+                        \($deepdive.sampler.sampler_args // "#")
+                    mkdir -p probabilities
+                    mv -f weights/inference_result.out.text probabilities/
+                fi
+            "
+        },
+
+        # loading learning/inference results back to database
+        "process/model/load_weights": {
+            dependencies_: ["model/weights"],
+            output_: "data/model/weights",
+            style: "cmd_extractor",
+            cmd: "mkdir -p ../../../model && cd ../../../model
+                # load weights to database
+                deepdive sql \("
+                    DROP TABLE IF EXISTS dd_inference_result_weights CASCADE;
+                    CREATE TABLE dd_inference_result_weights(
+                      id bigint primary key,
+                      weight double precision);
+                " | @sh)
+                cat weights/inference_result.out.weights.text |
+                tr \(" "|@sh) \("\\t"|@sh) | DEEPDIVE_LOAD_FORMAT=tsv \\
+                deepdive load dd_inference_result_weights /dev/stdin
+
+                # create views
+                deepdive sql \("
+                    CREATE OR REPLACE VIEW dd_inference_result_weights_mapping AS
+                    SELECT dd_graph_weights.*, dd_inference_result_weights.weight FROM
+                    dd_graph_weights JOIN dd_inference_result_weights ON dd_graph_weights.id = dd_inference_result_weights.id
+                    ORDER BY abs(weight) DESC;
+
+                    CREATE OR REPLACE VIEW dd_inference_result_variables_mapped_weights AS
+                    SELECT * FROM dd_inference_result_weights_mapping
+                    ORDER BY abs(weight) DESC;
+                " | @sh)
+            "
+        },
+        "process/model/load_probabilities": {
+            dependencies_: ["model/probabilities"],
             output_: "data/model/probabilities",
             style: "cmd_extractor",
-            # TODO run sampler directly
-            cmd: "
-                set +x; . load-db-driver.sh; set -x
-                mkdir -p ../../../model/weights
-                cd ../../../model
-                java org.deepdive.Main -c <(
-                    echo deepdive \(.deepdive | @json | @sh)
-                    echo deepdive.pipeline.pipelines.grounding: [\(.deepdive.inference.factors | keys | join(" "))]
-                    echo deepdive.pipeline.run: grounding
-                    echo deepdive.inference.skip_learning: true
-                    echo deepdive.inference.relearn_from: true
-                ) -o model/factorgraph -t \"inference\"
-                cp -f factorgraph/{graph.weights,inference_result.out.*} weights/
-                "
+            cmd: "mkdir -p ../../../model && cd ../../../model
+                # load weights to database
+                deepdive sql \("
+                    DROP TABLE IF EXISTS dd_inference_result_variables CASCADE;
+                    CREATE UNLOGGED TABLE dd_inference_result_variables(
+                      id bigint,
+                      category bigint,
+                      expectation double precision);
+                " | @sh)
+                cat probabilities/inference_result.out.text |
+                tr \(" "|@sh) \("\\t"|@sh) | DEEPDIVE_LOAD_FORMAT=tsv \\
+                deepdive load dd_inference_result_variables /dev/stdin
+
+                # create a view for each app schema variable
+                deepdive sql \(
+                    $deepdive.schema.variables | keys | map(
+                    . as $relationName | $deepdive.schema.variables[$relationName] | keys[] |
+                    . as $columnName | "
+                        CREATE OR REPLACE VIEW \($relationName)_\($columnName)_inference AS
+                        (SELECT \($relationName).*, mir.category, mir.expectation FROM
+                        \($relationName), dd_inference_result_variables mir
+                        WHERE \($relationName).id = mir.id
+                        ORDER BY mir.expectation DESC);
+                    ") | join("\n") | @sh)
+            "
         },
 
         # calibration plots
         "process/model/calibration": {
             dependencies_: ["data/model/probabilities"],
-            output_: "data/model/calibration-plots",
+            output_: "model/calibration-plots",
             style: "cmd_extractor",
             cmd: "error \"Not implemented yet (should run a script)\""
         },
+
+        # TODO processes for incremental workflow: process/model/incremental/materialization, process/model/incremental/learning, process/model/incremental/inference
+
+
     }
 
 '

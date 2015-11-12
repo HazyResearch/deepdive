@@ -33,8 +33,6 @@ object DeepDive extends Logging {
     // If relearn_from specified, set output dir to that dir and skip everything
     val relearnFrom = settings.pipelineSettings.relearnFrom
 
-    log.debug(s"relearnFrom=${relearnFrom}")
-
     Context.outputDir = relearnFrom match {
       case null => outputDir
       case _ => relearnFrom
@@ -43,7 +41,6 @@ object DeepDive extends Logging {
     // Create the output directory
     val outputDirFile = new File(outputDir)
     outputDirFile.mkdirs()
-    log.debug(s"outputDir=${Context.outputDir}")
 
     // Setup the data store
     JdbcDataStoreObject.init(config)
