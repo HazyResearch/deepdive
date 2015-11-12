@@ -9,6 +9,8 @@
 ##
 exec -a "$0" jq '.deepdive_ as $deepdive
 
+# TODO add default fields to all extractors and factors
+
 # qualify extractor names and output relations
 | .deepdive_.extraction.extractors |= with_entries
     ( .key |= "process/\(.)"

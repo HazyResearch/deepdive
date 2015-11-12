@@ -68,8 +68,10 @@ configNormalized |
 configCompleted
 } <compiled.deepdive.conf.json >compiled.config.json
 
-# validate/normalize the full deepdive.conf
-# TODO validate deepdive.conf
+# validate/normalize the compiled.config.json
+# TODO check if all input/output_relation exists in schema
+# TODO check if all processes/pipelines depend on defined processes
+# TODO check if all processes have required fields
 
 STEP "Analyzing dependencies to generate run/Makefile and run/compiled.dataflow.svg"
 # derive a dependency graph from the extractors, factors, pipelines defined in deepdive.conf
