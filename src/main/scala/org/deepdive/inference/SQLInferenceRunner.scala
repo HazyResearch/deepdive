@@ -972,7 +972,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
       // generate config files
       Helpers.executeCmd(Seq("sed", s"s#TRAIN_TEST_PROTOTXT#${groundingPath}/train_test.prototxt#g", factorDesc.cnnConfig(0)) #> new java.io.File(s"${groundingPath}/solver.prototxt"))
-      Helpers.executeCmd(Seq("sed", 
+      Helpers.executeCmd(Seq("sed",
         s"s#TRAIN_LMDB#${groundingPath}/${train_lmdb}#g;" +
         s"s#TEST_LMDB#${groundingPath}/${test_lmdb}#g;",
         factorDesc.cnnConfig(1)) #> new java.io.File(s"${groundingPath}/train_test.prototxt"))
