@@ -8,7 +8,7 @@ _deepdive() {
     cur=${COMP_WORDS[COMP_CWORD]}
     prev=${COMP_WORDS[COMP_CWORD-1]}
     first=${COMP_WORDS[1]}
-    opts=$(
+    opts=`
         list_deepdive_targets() {
             deepdive plan 2>&1 >/dev/null | sed '1d'
         }
@@ -37,7 +37,7 @@ _deepdive() {
                         ;;
                 esac
         esac
-    )
+    `
     COMPREPLY=($(compgen -W "${opts}" -- ${cur}))
 }
 complete -F _deepdive deepdive
