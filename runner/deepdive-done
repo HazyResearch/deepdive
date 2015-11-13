@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# deepdive-done -- Checks whether given targets are all done
+# > deepdive done TARGET...
+# Exits with status 0 if all are done, otherwise 1.
+##
+set -eu
+. resolve-args-to-do.sh
+exec make -C "$DEEPDIVE_APP"/run --dry-run --silent --question "$@"
