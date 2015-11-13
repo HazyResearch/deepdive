@@ -88,5 +88,8 @@ dot -Tsvg <compiled.dataflow.dot >compiled.dataflow.svg
 
 STEP "Compiling executable extractors and instructions for grounding factors"
 # compile extractors and factors under process/ and factor/
+# TODO A better idea would be to compile another JSON intermediate
+# representation (IR) for codegen that can be almost directly mapped to the
+# final shell scripts.
 config2compilation-plan <compiled.config.json >compiled.compilation-plan.sh
 bash -eu ./compiled.compilation-plan.sh
