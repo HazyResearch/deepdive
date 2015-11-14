@@ -1,7 +1,0 @@
-#!/bin/sh
-# TODO embed jq executable in deepdive
-next=`type -ap jq | grep -vxF "$0" | head -1`
-[ -z "$next" ] || exec "$next" "$@"
-
-# fall back to mindbender's jq
-exec mindbender hack jq "$@"

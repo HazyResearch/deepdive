@@ -17,6 +17,7 @@ services:
 cache:
   directories:
     - $HOME/.ivy2/cache
+    - depends/.build
 
 env:
   global:
