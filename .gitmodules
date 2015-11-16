@@ -10,3 +10,6 @@
 [submodule "test/bats"]
 	path = test/bats
 	url = https://github.com/sstephenson/bats.git
+[submodule "compiler/hocon2json"]
+	path = compiler/hocon2json
+	url = https://github.com/netj/hocon2json.git

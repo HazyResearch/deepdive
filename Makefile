@@ -117,9 +117,15 @@ ifeq ($(shell uname),Darwin)
 	cp -f sampler/dw util/sampler-dw-mac
 endif
 
+.PHONY: build-hocon2json
+build-hocon2json:
+	git submodule update --init compiler/hocon2json
+	cd compiler/hocon2json && project/sbt/sbt assembly
+test-build build: build-hocon2json
+
 .PHONY: build-mindbender
 build-mindbender:
-	git submodule update --init mindbender
+	git submodule update --recursive --init mindbender
 	$(MAKE) -C mindbender clean-packages
 	$(MAKE) -C mindbender package
 
