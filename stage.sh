@@ -62,6 +62,7 @@ stage util/calibration.py                                         util/
 stage util/calibration.plg                                        util/
 stage util/pgtsv_to_json                                          util/
 stage util/convert_imageset                                       util/
+stage util/compute_image_mean                                     util/
 
 # DDlog compiler
 stage util/ddlog                                                  bin/

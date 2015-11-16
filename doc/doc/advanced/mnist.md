@@ -130,12 +130,16 @@ These protobuf files are basically the same as the solver and network protobuf f
 
 In `solver.prototxt`, use the following to specify the net
 ```
-net: "TRAIN_TEXT_PROTOTXT"
+net: TRAIN_TEXT_PROTOTXT
 ```
 
 In `train_test.prototxt`, use `"TRAIN_LMDB"` or `"TEST_LMDB"` for the source of data layer
 ```
-source: "TRAIN_LMDB"
+source: TRAIN_LMDB
+```
+If we want to subtract the image mean from each image, use `IMAGE_MEAN` for image mean file
+```
+mean_file: IMAGE_MEAN
 ```
 
 DeepDive uses image id to communicate with Caffe. We need to add image id to data layers, loss layers and accuracy layers.

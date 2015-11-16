@@ -80,5 +80,6 @@ object InferenceNamespace {
   def getActiveScript : String = new File(s"${Context.deepdiveHome}/${utilFolder}/active.sh").getCanonicalPath()
 
   def getConvertImageScript : String = new File(s"${Context.deepdiveHome}/${utilFolder}/convert_imageset").getCanonicalPath()
+  def getImageMeanScript : String = new File(s"${Context.deepdiveHome}/${utilFolder}/compute_image_mean").getCanonicalPath()
 
 }

@@ -926,6 +926,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       val test_listfile = s"test_${factorDesc.name}.txt"
       val train_lmdb = s"train_${factorDesc.name}_lmdb"
       val test_lmdb = s"test_${factorDesc.name}_lmdb"
+      val imageMean = s"image_mean.binaryproto"
 
       val variableTypeTable = InferenceNamespace.getVariableTypeTableName(relation)
 
@@ -971,15 +972,17 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
 
 
       // generate config files
-      Helpers.executeCmd(Seq("sed", s"s#TRAIN_TEST_PROTOTXT#${groundingPath}/train_test.prototxt#g", factorDesc.cnnConfig(0)) #> new java.io.File(s"${groundingPath}/solver.prototxt"))
+      Helpers.executeCmd(Seq("sed", s"""s#TRAIN_TEST_PROTOTXT#"${groundingPath}/train_test.prototxt"#g""", factorDesc.cnnConfig(0)) #> new java.io.File(s"${groundingPath}/solver.prototxt"))
       Helpers.executeCmd(Seq("sed",
-        s"s#TRAIN_LMDB#${groundingPath}/${train_lmdb}#g;" +
-        s"s#TEST_LMDB#${groundingPath}/${test_lmdb}#g;",
+        s"""s#TRAIN_LMDB#"${groundingPath}/${train_lmdb}"#g;""" +
+        s"""s#TEST_LMDB#"${groundingPath}/${test_lmdb}"#g;""" +
+        s"""s#IMAGE_MEAN#"${groundingPath}/${imageMean}"#g;""",
         factorDesc.cnnConfig(1)) #> new java.io.File(s"${groundingPath}/train_test.prototxt"))
 
       // lmdb
       Helpers.executeCmd(s"${InferenceNamespace.getConvertImageScript} ${path}/ ${groundingPath}/${train_listfile} ${groundingPath}/${train_lmdb}")
       Helpers.executeCmd(s"${InferenceNamespace.getConvertImageScript} ${path}/ ${groundingPath}/${test_listfile} ${groundingPath}/${test_lmdb}")
+      Helpers.executeCmd(s"${InferenceNamespace.getImageMeanScript} ${groundingPath}/${train_lmdb} ${groundingPath}/${imageMean}")
 
     }
 
