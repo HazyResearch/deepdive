@@ -96,7 +96,8 @@ case class FactorDesc(
   weightPrefix: String,
   mode: Option[String] = Some("deepdive"),
   cnnConfig: List[String] = List(),
-  port: Option[Int] = None
+  port: Option[Int] = None,
+  gpu: Option[Int] = None
 )
 
 /* Factor Weight for a factor specified in the settings*/

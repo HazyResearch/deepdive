@@ -105,7 +105,7 @@ trait InferenceManager extends Actor with ActorLogging {
 
     val fusionMode = !( factorDescs.filter(_.mode == Some("cnn")).isEmpty );
     factorDescs.filter(_.mode == Some("cnn")).foreach { f =>
-      val cmd = Process(s"caffe train -solver ${Context.outputDir}/solver.prototxt", None, "PORT" -> f.port.get.toString)
+      val cmd = Process(s"caffe train -solver ${Context.outputDir}/solver.prototxt -gpu ${f.gpu.get}", None, "PORT" -> f.port.get.toString)
       val caffe = cmd.run
     }
 

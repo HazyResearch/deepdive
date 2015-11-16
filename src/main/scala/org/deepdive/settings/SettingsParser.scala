@@ -315,7 +315,8 @@ object SettingsParser extends Logging {
           weightPrefix = factorConfig.getString("weightPrefix"),
           mode = Try(factorConfig.getString("mode")).toOption,
           cnnConfig = factorConfig.getStringList("cnn_configurations") toList,
-          port = Try(factorConfig.getInt("port")).toOption
+          port = Try(factorConfig.getInt("port")).toOption,
+          gpu = Try(factorConfig.getInt("gpu")).toOption
         )
     }
     settings updatedConfig(config) copy(
