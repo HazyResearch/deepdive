@@ -55,8 +55,8 @@ Categorical(10).
 ```
 
 This says the variable relation has two keys, `file` and `is_training`.
-The `file` column is declared as paths to images through the annotation `@image_path`.
-Note we need to replace `PATH` with the actual absolute path to the image data.
+Note we need to replace `PATH` with the actual absolute path to the folder that contains image data.
+The `file` column is declared as paths to images through the annotation `@image_path`, relative to the `PATH` above.
 In our example, it's the absolute path to `data/` folder.
 The variables are multinomial with 10 classes.
 

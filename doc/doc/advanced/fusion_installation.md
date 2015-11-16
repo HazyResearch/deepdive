@@ -10,8 +10,8 @@ Fusion currently only runs on Linux.
 
 Dependencies
 
+* libsodium (required by zeromq)
 * zeromq
-
 
 Installation steps.
 
@@ -31,7 +31,7 @@ The branch can be cloned using the following command.
     git clone https://github.com/feiranwang/caffe.git -b fusion
     ```
 
-Note in `Makefile.config`, add corresponding zeromq folders to `INCLUDE_DIRS` and `LIBRARY_DIRS`.
+Note if you install zeromq and libsodium in a non-standard location, you need to add corresponding libsodium and zeromq folders to `INCLUDE_DIRS` and `LIBRARY_DIRS` in `Makefile.config`.
 For example, if zeromq is install in `zeromq_folder`, then add `zeromq_folder/include` to `INCLUDE_DIRS`, and `zeromq_folder/lib` to `LIBRARY_DIRS`.
 
 After Caffe installation, build Caffe.
