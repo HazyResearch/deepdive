@@ -121,7 +121,7 @@ exec -a "$0" jq '.deepdive_ as $deepdive
                 # load weights to database
                 deepdive sql \("
                     DROP TABLE IF EXISTS dd_inference_result_variables CASCADE;
-                    CREATE UNLOGGED TABLE dd_inference_result_variables(
+                    CREATE TABLE dd_inference_result_variables(
                       id bigint,
                       category bigint,
                       expectation double precision);

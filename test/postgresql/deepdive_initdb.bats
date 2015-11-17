@@ -38,6 +38,7 @@ setup() {
 
 @test "$DBVARIANT initdb from ddlog" {
     cd ddlog || skip
+    deepdive compile
     deepdive initdb articles
     [[ $(deepdive sql eval "SELECT * FROM articles" format=csv header=1) = 'article_id,text' ]]
     deepdive sql "INSERT INTO articles VALUES ('foo', 'bar')"
