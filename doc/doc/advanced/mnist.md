@@ -152,6 +152,16 @@ Add a thrid bottom blob to loss layers and accuracy layers
 bottom: "imgid"
 ```
 
+Currently, fusion only supports `SoftmaxWithLoss` layer for training and `Accuracy` layer for testing.
+So make sure in `SoftmaxWithLoss` layer, we have
+```
+include { phase: TRAIN }
+```
+and in `Accuracy` layer, we have
+```
+include { phase: TEST }
+```
+
 ## Running the application
 
 We're all set to run the application. Let's run the `endtoend` pipeline
