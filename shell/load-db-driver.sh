@@ -26,9 +26,8 @@ do type db-$op &>/dev/null || error "db-$op operation not available for $dbtype"
 done
 
 # default environment setup script
-echo "DEEPDIVE_DB_URL=${url}"
-echo 'PATH="$DEEPDIVE_HOME"/util/db-driver/'"${dbtype}"':"$PATH"'
-echo "export DEEPDIVE_DB_URL PATH"
+escape4sh export DEEPDIVE_DB_URL="${url}"
+escape4sh export PATH="$DEEPDIVE_HOME"/util/db-driver/"${dbtype}":"$PATH"
 
 # parse the URL and print necessary environment setup script
 db-parse "$url"

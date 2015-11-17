@@ -10,12 +10,12 @@ format=${1:?No FORMAT given}; shift
 # See: https://dev.mysql.com/doc/refman/5.7/en/load-data.html
 case $format in
     tsv)
-        cat "$@" | db-execute "LOAD DATA INFILE '/dev/stdin' INTO TABLE $table
+        cat "$@" | db-execute "LOAD DATA LOCAL INFILE '/dev/stdin' INTO TABLE $table
             FIELDS TERMINATED BY '\t'"
         ;;
     csv)
         cat "$@" | db-execute "
-            LOAD DATA INFILE '/dev/stdin' INTO TABLE $table
+            LOAD DATA LOCAL INFILE '/dev/stdin' INTO TABLE $table
               FIELDS TERMINATED BY ',' ENCLOSED BY '\"'
               LINES TERMINATED BY '\r\n'"
               # TODO if header=true, "IGNORE 1 LINES"

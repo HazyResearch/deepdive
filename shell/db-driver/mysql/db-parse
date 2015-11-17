@@ -9,16 +9,14 @@ set -eu
 : ${user:=$USER} ${port:=3306}
 
 # map to environment variables for mysql
-echo "DBTYPE=mysql"
-echo "DBVARIANT=${dbtype}"
-echo "DBHOST=${host}"
-echo "DBPORT=${port}"
-echo "DBUSER=${user}"
-echo "DBPASSWORD=${password}"
-echo "DBNAME=${dbname}"
-echo "export DBHOST DBPORT DBUSER DBPASSWORD DBNAME"
+escape4sh export "DBTYPE=mysql"
+escape4sh export "DBVARIANT=${dbtype}"
+escape4sh export "DBHOST=${host}"
+escape4sh export "DBPORT=${port}"
+escape4sh export "DBUSER=${user}"
+escape4sh export "DBPASSWORD=${password}"
+escape4sh export "DBNAME=${dbname}"
 
 # more variables for Scala application.conf
-echo "DEEPDIVE_JDBC_DRIVER=com.mysql.jdbc.Driver"
-echo "DEEPDIVE_JDBC_URL=jdbc:mysql://$host${port:+:$port}/$dbname"
-echo "export DEEPDIVE_JDBC_DRIVER DEEPDIVE_JDBC_URL"
+escape4sh export "DEEPDIVE_JDBC_DRIVER=com.mysql.jdbc.Driver"
+escape4sh export "DEEPDIVE_JDBC_URL=jdbc:mysql://$host${port:+:$port}/$dbname"
