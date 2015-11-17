@@ -120,7 +120,9 @@ endif
 .PHONY: build-hocon2json
 build-hocon2json:
 	git submodule update --init compiler/hocon2json
-	cd compiler/hocon2json && project/sbt/sbt assembly
+	cd compiler/hocon2json && \
+	    ls target/scala-2.10/hocon2json-assembly-*.jar >/dev/null || \
+	    project/sbt/sbt assembly
 test-build build: build-hocon2json
 
 .PHONY: build-mindbender
