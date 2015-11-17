@@ -16,7 +16,6 @@ depends:
 	# Installing and Checking dependencies...
 	util/install.sh _deepdive_build_deps _deepdive_runtime_deps
 
-
 ### install recipes ###########################################################
 
 .PHONY: install
@@ -85,6 +84,11 @@ endif
 
 include scala.mk  # for scala-build, scala-test-build, scala-assembly-jar, scala-clean, etc. targets
 
+# how to build runtime dependencies to bundle
+depends/.build/bundled: depends/bundle-runtime-dependencies.sh
+	PACKAGENAME=deepdive  $<
+test-build build: depends/.build/bundled
+
 
 ### test recipes #############################################################
 
@@ -106,34 +110,35 @@ checkstyle:
 ### submodule build recipes ###################################################
 
 .PHONY: build-sampler
-build-sampler:
-	git submodule update --init sampler
-	[ -e sampler/lib/gtest -a -e sampler/lib/tclap ] || $(MAKE) -C sampler dep
-	$(MAKE) -C sampler dw
-ifeq ($(shell uname),Linux)
-	cp -f sampler/dw util/sampler-dw-linux
-endif
-ifeq ($(shell uname),Darwin)
-	cp -f sampler/dw util/sampler-dw-mac
-endif
+SAMPLER=sampler
+build-sampler: $(SAMPLER)/dw
+$(SAMPLER)/dw:
+	git submodule update --init $(SAMPLER)
+	[ -e $(SAMPLER)/lib/gtest -a -e $(SAMPLER)/lib/tclap ] || $(MAKE) -C $(SAMPLER) dep
+	$(MAKE) -C $(SAMPLER) dw
 
 .PHONY: build-hocon2json
-build-hocon2json:
-	git submodule update --init compiler/hocon2json
-	cd compiler/hocon2json && \
-	    ls target/scala-2.10/hocon2json-assembly-*.jar >/dev/null || \
-	    project/sbt/sbt assembly
-test-build build: build-hocon2json
+HOCON2JSON=compiler/hocon2json
+build-hocon2json: $(HOCON2JSON)/target/scala-2.10/hocon2json-assembly-*.jar
+$(HOCON2JSON)/hocon2json.scala:
+	git submodule update --init $(HOCON2JSON)
+$(HOCON2JSON)/target/scala-2.10/hocon2json-assembly-*.jar: $(HOCON2JSON)/hocon2json.scala
+	cd $(<D) && project/sbt/sbt assembly
+test-build build: $(HOCON2JSON)/target/scala-2.10/hocon2json-assembly-*.jar
 
 .PHONY: build-mindbender
+MINDBENDER=mindbender
 build-mindbender:
-	git submodule update --recursive --init mindbender
-	$(MAKE) -C mindbender clean-packages
-	$(MAKE) -C mindbender package
+	git submodule update --recursive --init $(MINDBENDER)
+	$(MAKE) -C $(MINDBENDER) clean-packages
+	$(MAKE) -C $(MINDBENDER) package
 
 .PHONY: build-ddlog
-build-ddlog:
-	git submodule update --init ddlog
-	$(MAKE) -C ddlog ddlog.jar
-	cp -f ddlog/ddlog.jar util/ddlog.jar
-test-build build: build-ddlog
+DDLOG=ddlog
+build-ddlog: $(DDLOG)/ddlog.jar
+DDLOG_SOURCES=$(DDLOG)/Makefile $(wildcard $(DDLOG)/src/**/*.scala)
+$(DDLOG_SOURCES):
+	git submodule update --init $(DDLOG)
+ddlog/ddlog.jar: $(DDLOG_SOURCES)
+	$(MAKE) -C $(DDLOG) ddlog.jar
+test-build build: $(DDLOG)/ddlog.jar

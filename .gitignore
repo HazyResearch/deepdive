@@ -15,8 +15,6 @@
 /project/project
 /dist
 /doc/_*local*
-/util/ddlog.jar
-/util/mindbender
 /.github-release-assets
 /deepdive-*.tar.gz
 

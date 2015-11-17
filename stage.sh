@@ -40,6 +40,7 @@ stage shell/find-deepdive-app                                     util/
 stage shell/parse-url.sh                                          util/
 stage shell/error                                                 util/
 stage shell/usage                                                 util/
+stage shell/escape4sh                                             util/
 stage shell/deepdive_bash_completion.sh                           etc/
 
 stage shell/deepdive-initdb                                       util/
@@ -48,7 +49,7 @@ stage shell/deepdive-load                                         util/
 
 stage compiler/deepdive-compile                                   util/
 stage compiler/hocon2json/hocon2json.sh                           util/hocon2json
-stage compiler/hocon2json/target/scala-2.10/hocon2json-*.jar      util/hocon2json.jar
+stage compiler/hocon2json/hocon2json.jar                          util/hocon2json.jar
 stage src/main/resources/application.conf                         etc/deepdive-default.conf
 stage compiler/configExtended                                     util/
 stage compiler/configNormalized                                   util/
@@ -95,8 +96,7 @@ stage util/pgtsv_to_json                                          util/
 
 # DDlog compiler
 stage util/ddlog                                                  bin/
-stage util/ddlog.jar                                              lib/
-#stage ddlog/ddlog.jar                                            lib/ # TODO
+stage ddlog/ddlog.jar                                              lib/
 
 # DDlib
 stage ddlib/ddlib                                                 lib/python/
@@ -108,8 +108,7 @@ Linux)
     stage util/ndbloader/ndbloader-linux                          util/ndbloader
     stage util/format_converter_linux                             util/format_converter
     unzip -o util/sampler-dw-linux-lib.zip                     -d "$STAGE_DIR"/lib/
-    #stage sampler/dw                                             util/sampler-dw # TODO
-    stage util/sampler-dw-linux                                   util/
+    stage sampler/dw                                              util/sampler-dw-linux
     stage util/sampler-dw-linux.sh                                util/
     ln -sfn sampler-dw-linux.sh                                   "$STAGE_DIR"/util/sampler-dw
     ;;
@@ -117,7 +116,7 @@ Darwin)
     stage util/ndbloader/ndbloader-mac                            util/ndbloader
     stage util/format_converter_mac                               util/format_converter
     ditto -xk util/sampler-dw-mac-lib.zip                         "$STAGE_DIR"/lib/
-    stage util/sampler-dw-mac                                     util/
+    stage sampler/dw                                              util/sampler-dw-mac
     stage util/sampler-dw-mac.sh                                  util/
     ln -sfn sampler-dw-mac.sh                                     "$STAGE_DIR"/util/sampler-dw
     ;;
@@ -137,6 +136,4 @@ stage util/ddext_input_sql_translator.py                          util/
 stage mindbender/mindbender-LATEST-$(uname)-x86_64.sh             bin/mindbender || true  # keeping it optional for now
 
 # runtime dependencies after building them from source
-PACKAGENAME=deepdive \
-depends/bundle-runtime-dependencies.sh
 stage depends/.build/bundled                                      lib/
