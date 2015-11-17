@@ -28,6 +28,98 @@ q1.label: Boolean
       }
     
 
+          deepdive.extraction.extractors.init_dd_new_label2 {
+            sql: """ DROP TABLE IF EXISTS dd_new_label2 CASCADE;
+            CREATE TABLE
+            dd_new_label2(wid INT,
+             val BOOLEAN)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_delta_label1 {
+            sql: """ DROP TABLE IF EXISTS dd_delta_label1 CASCADE;
+            CREATE TABLE
+            dd_delta_label1(wid INT,
+               val BOOLEAN)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_new_label1 {
+            sql: """ DROP TABLE IF EXISTS dd_new_label1 CASCADE;
+            CREATE TABLE
+            dd_new_label1(wid INT,
+             val BOOLEAN)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_delta_features {
+            sql: """ DROP TABLE IF EXISTS dd_delta_features CASCADE;
+            CREATE TABLE
+            dd_delta_features(id BIGSERIAL,
+                 word_id INT,
+                 feature_id INT,
+                 feature_val BOOLEAN)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_delta_q2 {
+            sql: """ DROP TABLE IF EXISTS dd_delta_q2 CASCADE;
+            CREATE TABLE
+            dd_delta_q2(wid INT,
+           id bigint,
+           label boolean)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_delta_label2 {
+            sql: """ DROP TABLE IF EXISTS dd_delta_label2 CASCADE;
+            CREATE TABLE
+            dd_delta_label2(wid INT,
+               val BOOLEAN)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_new_features {
+            sql: """ DROP TABLE IF EXISTS dd_new_features CASCADE;
+            CREATE TABLE
+            dd_new_features(id BIGSERIAL,
+               word_id INT,
+               feature_id INT,
+               feature_val BOOLEAN)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_delta_q1 {
+            sql: """ DROP TABLE IF EXISTS dd_delta_q1 CASCADE;
+            CREATE TABLE
+            dd_delta_q1(wid INT,
+           id bigint,
+           label boolean)
+            """
+            style: "sql_extractor"
+          }
+
+        deepdive.extraction.extractors.cleanup {
+          sql: """
+          TRUNCATE dd_new_label2;
+          TRUNCATE dd_delta_label1;
+          TRUNCATE dd_new_label1;
+          TRUNCATE dd_delta_features;
+          TRUNCATE dd_delta_q2;
+          TRUNCATE dd_delta_label2;
+          TRUNCATE dd_new_features;
+          TRUNCATE dd_delta_q1;
+          """
+          style: "sql_extractor"
+        }
+
       deepdive.extraction.extractors.ext_dd_new_label2 {
         sql: """ TRUNCATE dd_new_label2;
         INSERT INTO dd_new_label2 SELECT R0.wid, R0.val
@@ -219,3 +311,18 @@ deepdive.pipeline.pipelines.endtoend: [
   dd_delta_inf_istrue_q2
 ]
 deepdive.pipeline.base_dir: ${BASEDIR}
+deepdive.pipeline.pipelines.initdb: [
+  init_dd_new_label2
+  init_dd_delta_label1
+  init_dd_new_q1
+  init_dd_new_label1
+  init_dd_delta_features
+  init_dd_delta_q2
+  init_dd_delta_label2
+  init_dd_new_features
+  init_dd_delta_q1
+  init_dd_new_q2
+]
+deepdive.pipeline.pipelines.cleanup: [
+  cleanup
+]

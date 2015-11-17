@@ -23,6 +23,79 @@ dd_new_Q.label: Boolean
       }
     
 
+          deepdive.extraction.extractors.init_dd_new_S {
+            sql: """ DROP TABLE IF EXISTS dd_new_S CASCADE;
+            CREATE TABLE
+            dd_new_S(a int)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_delta_T {
+            sql: """ DROP TABLE IF EXISTS dd_delta_T CASCADE;
+            CREATE TABLE
+            dd_delta_T(a int)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_new_T {
+            sql: """ DROP TABLE IF EXISTS dd_new_T CASCADE;
+            CREATE TABLE
+            dd_new_T(a int)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_delta_S {
+            sql: """ DROP TABLE IF EXISTS dd_delta_S CASCADE;
+            CREATE TABLE
+            dd_delta_S(a int)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_new_R {
+            sql: """ DROP TABLE IF EXISTS dd_new_R CASCADE;
+            CREATE TABLE
+            dd_new_R(a int,
+        b int)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_delta_R {
+            sql: """ DROP TABLE IF EXISTS dd_delta_R CASCADE;
+            CREATE TABLE
+            dd_delta_R(a int,
+          b int)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_delta_Q {
+            sql: """ DROP TABLE IF EXISTS dd_delta_Q CASCADE;
+            CREATE TABLE
+            dd_delta_Q(x int,
+          id bigint,
+          label boolean)
+            """
+            style: "sql_extractor"
+          }
+
+        deepdive.extraction.extractors.cleanup {
+          sql: """
+          TRUNCATE dd_new_S;
+          TRUNCATE dd_delta_T;
+          TRUNCATE dd_new_T;
+          TRUNCATE dd_delta_S;
+          TRUNCATE dd_new_R;
+          TRUNCATE dd_delta_R;
+          TRUNCATE dd_delta_Q;
+          """
+          style: "sql_extractor"
+        }
+
       deepdive.extraction.extractors.ext_dd_new_S {
         sql: """ TRUNCATE dd_new_S;
         INSERT INTO dd_new_S SELECT R0.a
@@ -382,3 +455,16 @@ deepdive.pipeline.pipelines.endtoend: [
   dd_delta_inf1_imply_Q_Q
 ]
 deepdive.pipeline.base_dir: ${BASEDIR}
+deepdive.pipeline.pipelines.initdb: [
+  init_dd_new_S
+  init_dd_delta_T
+  init_dd_new_T
+  init_dd_delta_S
+  init_dd_new_R
+  init_dd_delta_R
+  init_dd_new_Q
+  init_dd_delta_Q
+]
+deepdive.pipeline.pipelines.cleanup: [
+  cleanup
+]

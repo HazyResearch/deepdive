@@ -28,6 +28,114 @@ dd_delta_smoke.label: Boolean
       }
     
 
+          deepdive.extraction.extractors.init_dd_delta_friends {
+            sql: """ DROP TABLE IF EXISTS dd_delta_friends CASCADE;
+            CREATE TABLE
+            dd_delta_friends(person_id bigint,
+                friend_id bigint)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_delta_smoke {
+            sql: """ DROP TABLE IF EXISTS dd_delta_smoke CASCADE;
+            CREATE TABLE
+            dd_delta_smoke(person_id bigint,
+              id bigint,
+              label boolean)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_new_person_has_cancer {
+            sql: """ DROP TABLE IF EXISTS dd_new_person_has_cancer CASCADE;
+            CREATE TABLE
+            dd_new_person_has_cancer(person_id bigint,
+                        has_cancer boolean)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_delta_person {
+            sql: """ DROP TABLE IF EXISTS dd_delta_person CASCADE;
+            CREATE TABLE
+            dd_delta_person(person_id bigint,
+               name text)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_new_person {
+            sql: """ DROP TABLE IF EXISTS dd_new_person CASCADE;
+            CREATE TABLE
+            dd_new_person(person_id bigint,
+             name text)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_delta_person_has_cancer {
+            sql: """ DROP TABLE IF EXISTS dd_delta_person_has_cancer CASCADE;
+            CREATE TABLE
+            dd_delta_person_has_cancer(person_id bigint,
+                          has_cancer boolean)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_delta_cancer {
+            sql: """ DROP TABLE IF EXISTS dd_delta_cancer CASCADE;
+            CREATE TABLE
+            dd_delta_cancer(person_id bigint,
+               id bigint,
+               label boolean)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_delta_person_smokes {
+            sql: """ DROP TABLE IF EXISTS dd_delta_person_smokes CASCADE;
+            CREATE TABLE
+            dd_delta_person_smokes(person_id bigint,
+                      smokes boolean)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_new_person_smokes {
+            sql: """ DROP TABLE IF EXISTS dd_new_person_smokes CASCADE;
+            CREATE TABLE
+            dd_new_person_smokes(person_id bigint,
+                    smokes boolean)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_new_friends {
+            sql: """ DROP TABLE IF EXISTS dd_new_friends CASCADE;
+            CREATE TABLE
+            dd_new_friends(person_id bigint,
+              friend_id bigint)
+            """
+            style: "sql_extractor"
+          }
+
+        deepdive.extraction.extractors.cleanup {
+          sql: """
+          TRUNCATE dd_delta_friends;
+          TRUNCATE dd_delta_smoke;
+          TRUNCATE dd_new_person_has_cancer;
+          TRUNCATE dd_delta_person;
+          TRUNCATE dd_new_person;
+          TRUNCATE dd_delta_person_has_cancer;
+          TRUNCATE dd_delta_cancer;
+          TRUNCATE dd_delta_person_smokes;
+          TRUNCATE dd_new_person_smokes;
+          TRUNCATE dd_new_friends;
+          """
+          style: "sql_extractor"
+        }
+
       deepdive.extraction.extractors.ext_dd_delta_smoke {
         sql: """ 
         INSERT INTO dd_delta_smoke SELECT DISTINCT R0.person_id, 0 AS id, R0.smokes AS label
@@ -242,3 +350,20 @@ deepdive.pipeline.pipelines.endtoend: [
   dd_delta_inf_imply_smoke_smoke
 ]
 deepdive.pipeline.base_dir: ${BASEDIR}
+deepdive.pipeline.pipelines.initdb: [
+  init_dd_delta_friends
+  init_dd_delta_smoke
+  init_dd_new_person_has_cancer
+  init_dd_delta_person
+  init_dd_new_person
+  init_dd_delta_person_has_cancer
+  init_dd_new_smoke
+  init_dd_delta_cancer
+  init_dd_new_cancer
+  init_dd_delta_person_smokes
+  init_dd_new_person_smokes
+  init_dd_new_friends
+]
+deepdive.pipeline.pipelines.cleanup: [
+  cleanup
+]

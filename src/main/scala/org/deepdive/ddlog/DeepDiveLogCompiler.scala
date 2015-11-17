@@ -824,7 +824,20 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
       case MATERIALIZATION | INCREMENTAL => "deepdive.pipeline.base_dir: ${BASEDIR}"
       case _ => ""
     }
-    List(run, extraction_pipeline, inference_pipeline, endtoend_pipeline, base_dir).filter(_ != "")
+    List(run, extraction_pipeline, inference_pipeline, endtoend_pipeline, base_dir).filter(_ != "") ++ (
+    // FIXME remove the following after fully supporting incremental uops
+    // XXX initdb pipeline and CREATE TABLE extractors has been moved to deepdive
+    ss.mode match {
+      case INCREMENTAL =>
+        val setup_database_pipeline = ((ss.schemaDeclarationGroupByHead map (_._2)).flatten map {s => ss.resolveExtractorBlockName(s)}).mkString("\n  ")
+        val initdb = if (setup_database_pipeline.length > 0) s"deepdive.pipeline.pipelines.initdb: [\n  ${setup_database_pipeline}\n]" else ""
+        val cleanup_pipeline = ss.mode match {
+          case INCREMENTAL | ORIGINAL => if (setup_database_pipeline.length > 0) s"deepdive.pipeline.pipelines.cleanup: [\n  cleanup\n]" else ""
+          case _ => ""
+        }
+        List(initdb, cleanup_pipeline)
+      case _ => List.empty
+    }) // FIXME remove above after fully supporting incremental uops
   }
 
   // generate variable schema statements
@@ -867,6 +880,11 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
     val state = new CompilationState( programToCompile, config )
 
     val body = new ListBuffer[String]()
+    config.mode match {
+      case INCREMENTAL =>
+        body ++= compileSchemaDeclarations((state.schemaDeclarationGroupByHead map (_._2)).flatten.toList, state)
+      case _ =>
+    }
     state.extractionRuleGroupByHead foreach {keyVal => body ++= compileExtractionRules(keyVal._2, state)}
     state.functionCallList          foreach {func   => body ++= compileFunctionCallRules(List(func), state)}
     state.inferenceRules            foreach {inf    => body ++= compileInferenceRules(List(inf), state)}

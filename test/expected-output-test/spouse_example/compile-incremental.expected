@@ -23,6 +23,151 @@ dd_new_has_spouse.label: Boolean
       }
     
 
+          deepdive.extraction.extractors.init_dd_delta_articles {
+            sql: """ DROP TABLE IF EXISTS dd_delta_articles CASCADE;
+            CREATE TABLE
+            dd_delta_articles(article_id text,
+                 text text)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_new_people_mentions {
+            sql: """ DROP TABLE IF EXISTS dd_new_people_mentions CASCADE;
+            CREATE TABLE
+            dd_new_people_mentions(sentence_id text,
+                      start_position int,
+                      length int,
+                      text text,
+                      mention_id text)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_delta_has_spouse_features {
+            sql: """ DROP TABLE IF EXISTS dd_delta_has_spouse_features CASCADE;
+            CREATE TABLE
+            dd_delta_has_spouse_features(relation_id text,
+                            feature text)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_new_articles {
+            sql: """ DROP TABLE IF EXISTS dd_new_articles CASCADE;
+            CREATE TABLE
+            dd_new_articles(article_id text,
+               text text)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_new_has_spouse_candidates {
+            sql: """ DROP TABLE IF EXISTS dd_new_has_spouse_candidates CASCADE;
+            CREATE TABLE
+            dd_new_has_spouse_candidates(person1_id text,
+                            person2_id text,
+                            sentence_id text,
+                            description text,
+                            relation_id text,
+                            is_true boolean)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_new_has_spouse_features {
+            sql: """ DROP TABLE IF EXISTS dd_new_has_spouse_features CASCADE;
+            CREATE TABLE
+            dd_new_has_spouse_features(relation_id text,
+                          feature text)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_new_sentences {
+            sql: """ DROP TABLE IF EXISTS dd_new_sentences CASCADE;
+            CREATE TABLE
+            dd_new_sentences(document_id text,
+                sentence text,
+                words text[],
+                lemma text[],
+                pos_tags text[],
+                dependencies text[],
+                ner_tags text[],
+                sentence_offset int,
+                sentence_id text)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_delta_people_mentions {
+            sql: """ DROP TABLE IF EXISTS dd_delta_people_mentions CASCADE;
+            CREATE TABLE
+            dd_delta_people_mentions(sentence_id text,
+                        start_position int,
+                        length int,
+                        text text,
+                        mention_id text)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_delta_has_spouse_candidates {
+            sql: """ DROP TABLE IF EXISTS dd_delta_has_spouse_candidates CASCADE;
+            CREATE TABLE
+            dd_delta_has_spouse_candidates(person1_id text,
+                              person2_id text,
+                              sentence_id text,
+                              description text,
+                              relation_id text,
+                              is_true boolean)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_delta_sentences {
+            sql: """ DROP TABLE IF EXISTS dd_delta_sentences CASCADE;
+            CREATE TABLE
+            dd_delta_sentences(document_id text,
+                  sentence text,
+                  words text[],
+                  lemma text[],
+                  pos_tags text[],
+                  dependencies text[],
+                  ner_tags text[],
+                  sentence_offset int,
+                  sentence_id text)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_delta_has_spouse {
+            sql: """ DROP TABLE IF EXISTS dd_delta_has_spouse CASCADE;
+            CREATE TABLE
+            dd_delta_has_spouse(relation_id text,
+                   id bigint,
+                   label boolean)
+            """
+            style: "sql_extractor"
+          }
+
+        deepdive.extraction.extractors.cleanup {
+          sql: """
+          TRUNCATE dd_delta_articles;
+          TRUNCATE dd_new_people_mentions;
+          TRUNCATE dd_delta_has_spouse_features;
+          TRUNCATE dd_new_articles;
+          TRUNCATE dd_new_has_spouse_candidates;
+          TRUNCATE dd_new_has_spouse_features;
+          TRUNCATE dd_new_sentences;
+          TRUNCATE dd_delta_people_mentions;
+          TRUNCATE dd_delta_has_spouse_candidates;
+          TRUNCATE dd_delta_sentences;
+          TRUNCATE dd_delta_has_spouse;
+          """
+          style: "sql_extractor"
+        }
+
       deepdive.extraction.extractors.ext_dd_new_people_mentions {
         sql: """ TRUNCATE dd_new_people_mentions;
         INSERT INTO dd_new_people_mentions SELECT R0.sentence_id, R0.start_position, R0.length, R0.text, R0.mention_id
@@ -287,3 +432,20 @@ deepdive.pipeline.pipelines.endtoend: [
   dd_delta_inf_istrue_has_spouse
 ]
 deepdive.pipeline.base_dir: ${BASEDIR}
+deepdive.pipeline.pipelines.initdb: [
+  init_dd_delta_articles
+  init_dd_new_people_mentions
+  init_dd_delta_has_spouse_features
+  init_dd_new_articles
+  init_dd_new_has_spouse_candidates
+  init_dd_new_has_spouse_features
+  init_dd_new_sentences
+  init_dd_delta_people_mentions
+  init_dd_delta_has_spouse_candidates
+  init_dd_delta_sentences
+  init_dd_delta_has_spouse
+  init_dd_new_has_spouse
+]
+deepdive.pipeline.pipelines.cleanup: [
+  cleanup
+]
