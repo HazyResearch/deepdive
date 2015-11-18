@@ -125,7 +125,7 @@ build-mindbender:
 
 .PHONY: build-ddlog
 build-ddlog:
-	# git submodule update --init ddlog
+	git submodule update --init ddlog
 	$(MAKE) -C ddlog ddlog.jar
 	cp -f ddlog/ddlog.jar util/ddlog.jar
 test-build build: build-ddlog
