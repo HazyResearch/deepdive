@@ -56,6 +56,7 @@ addons:
 
 install:
 #  - make depends # XXX does not work on container-based infra
+  - export CXX="g++-4.8" CC="gcc-4.8" # necessary for building sampler
   - make test-build
 
 script:
