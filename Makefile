@@ -112,10 +112,12 @@ checkstyle:
 .PHONY: build-sampler
 SAMPLER=sampler
 build-sampler: $(SAMPLER)/dw
-$(SAMPLER)/dw:
+$(SAMPLER)/src:
 	git submodule update --init $(SAMPLER)
+$(SAMPLER)/dw: $(SAMPLER)/src
 	[ -e $(SAMPLER)/lib/gtest -a -e $(SAMPLER)/lib/tclap ] || $(MAKE) -C $(SAMPLER) dep
 	$(MAKE) -C $(SAMPLER) dw
+test-build build: $(SAMPLER)/dw
 
 .PHONY: build-hocon2json
 HOCON2JSON=compiler/hocon2json

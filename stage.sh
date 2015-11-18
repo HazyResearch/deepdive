@@ -6,7 +6,10 @@ set -eu
 STAGE_DIR=${1:-dist/stage}
 stage() {
     local src=$1 dst=$2
-    [[ -e "$src" ]]
+    [[ -e "$src" ]] || {
+        echo >&2 "$src: No such file to stage"
+        false
+    }
     dst="$STAGE_DIR/$dst"
     dstdir=$(dirname "$dst.")
     [[ -d "$dstdir" ]] || mkdir -p "$dstdir"
