@@ -5,5 +5,5 @@
 ##
 set -eu
 
-PGPASSWORD=$DBPASSWORD \
-exec psql -h $DBHOST -p $DBPORT -U $DBUSER -d $DBNAME "$@"
+PGPASSWORD="$DBPASSWORD" \
+exec psql -h "$DBHOST" -p "$DBPORT" -U "$DBUSER" -d "$DBNAME" "$@"
