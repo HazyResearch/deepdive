@@ -49,7 +49,7 @@ stage shell/deepdive-load                                         util/
 
 stage compiler/deepdive-compile                                   util/
 stage compiler/hocon2json/hocon2json.sh                           util/hocon2json
-stage compiler/hocon2json/hocon2json.jar                          util/hocon2json.jar
+stage compiler/hocon2json/target/scala-2.10/hocon2json-assembly-*.jar  util/hocon2json.jar
 stage src/main/resources/application.conf                         etc/deepdive-default.conf
 stage compiler/configExtended                                     util/
 stage compiler/configNormalized                                   util/
