@@ -128,6 +128,18 @@ $(HOCON2JSON)/target/scala-2.10/hocon2json-assembly-*.jar: $(HOCON2JSON)/hocon2j
 	cd $(<D) && project/sbt/sbt assembly
 test-build build: $(HOCON2JSON)/target/scala-2.10/hocon2json-assembly-*.jar
 
+# format_converter
+ifeq ($(shell uname),Linux)
+test-build build: util/format_converter_linux
+util/format_converter_linux: src/main/c/binarize.cpp
+	$(CXX) -Os -o $@ $^
+endif
+ifeq ($(shell uname),Darwin)
+test-build build: util/format_converter_mac
+util/format_converter_mac: src/main/c/binarize.cpp
+	$(CXX) -Os -o $@ $^
+endif
+
 .PHONY: build-mindbender
 MINDBENDER=mindbender
 build-mindbender:

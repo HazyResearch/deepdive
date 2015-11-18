@@ -79,7 +79,6 @@ class Sampler extends Actor with ActorLogging {
           "-w", weightsFile,
           "-v", variablesFile,
           "-f", factorsFile,
-          "-e", edgesFile,
           "-m", metaFile,
           "-o", outputDir) ++ samplerOptions.split(" ")
       }
