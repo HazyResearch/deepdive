@@ -19,6 +19,10 @@
 /util/mindbender
 /.github-release-assets
 /deepdive-*.tar.gz
+/util/sampler-dw-linux
+/util/sampler-dw-mac
+/util/format_converter_linux
+/util/format_converter_mac
 
 /src/test/resources/format_converter/*.bin
 /examples/**/*.pyc
