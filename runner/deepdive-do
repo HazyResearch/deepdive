@@ -16,6 +16,9 @@ if deepdive-done "$@"; then
     exit 0
 fi
 
+# load drivers configured for this application
+. load-db-driver.sh
+
 # create a directory for running
 runDir=$(date +%Y%m%d/%H%M%S.%N)
 mkdir -p "$runDir"

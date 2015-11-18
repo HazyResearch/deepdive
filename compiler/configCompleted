@@ -147,58 +147,11 @@ exec -a "$0" jq '.deepdive_ as $deepdive
             output_: "model/calibration-plots",
             style: "cmd_extractor",
             cmd: "
-                num_buckets=10
-                create_calibration_view() {
-                    table=$1 column=$2
-                    deepdive sql \"
-                        DROP VIEW IF EXISTS ${table}_${column}_inference_bucketed CASCADE;
-                        CREATE OR REPLACE VIEW ${table}_${column}_inference_bucketed AS
-                            SELECT ${column} AS label
-                                 , CASE
-                                     WHEN expectation = 1 THEN $(($num_buckets - 1))
-                                     ELSE FLOOR(expectation * ${num_buckets})
-                                   END AS bucket
-                            FROM ${table}_${column}_inference
-                        ;
-
-                        DROP VIEW IF EXISTS ${table}_${column}_calibration CASCADE;
-                        CREATE OR REPLACE VIEW ${table}_${column}_calibration AS
-                         SELECT universe.bucket                             AS bucket
-                              , universe.count                              AS num_variables
-                              , positive.count                              AS num_correct
-                              , negative.count                              AS num_incorrect
-                              , universe.bucket        / $num_buckets.      AS probability_lo
-                              , (universe.bucket +  1) / ${num_buckets}.    AS probability_hi
-                              , (universe.bucket + .5) / ${num_buckets}.    AS probability
-                              , 1.0 * positive.count / (
-                                positive.count + negative.count)            AS accuracy
-                              , positive.count + negative.count             AS num_predictions_test
-                              , universe.count                              AS num_predictions_whole
-                           FROM (
-                                 SELECT bucket, COUNT(*) AS count
-                                   FROM ${table}_${column}_inference_bucketed
-                                  GROUP BY bucket
-                                ) universe
-                           LEFT JOIN (
-                                 SELECT bucket, COUNT(*) AS count
-                                   FROM ${table}_${column}_inference_bucketed
-                                  WHERE label = true
-                                  GROUP BY bucket
-                                ) positive ON universe.bucket = positive.bucket
-                           LEFT JOIN (
-                                 SELECT bucket, COUNT(*) AS count
-                                   FROM ${table}_${column}_inference_bucketed
-                                  WHERE label = false
-                                  GROUP BY bucket
-                                ) negative ON universe.bucket = negative.bucket
-                          ORDER BY universe.bucket
-                        ;
-                    \"
-                }
+                DEEPDIVE_CALIBRATION_NUM_BUCKETS=10
                 \($deepdive.schema.variables | keys | map(
                 . as $relationName | $deepdive.schema.variables[$relationName] | keys[] |
                 . as $columnName | "
-                create_calibration_view \($relationName | @sh) \($columnName | @sh)
+                db-create_calibration_view \($relationName | @sh) \($columnName | @sh)
                 ") | join("\n"))
             "
         },
