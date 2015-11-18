@@ -44,6 +44,7 @@ stage shell/parse-url.sh                                          util/
 stage shell/error                                                 util/
 stage shell/usage                                                 util/
 stage shell/escape4sh                                             util/
+stage shell/logging-with-ts                                       util/
 stage shell/deepdive_bash_completion.sh                           etc/
 
 stage shell/deepdive-initdb                                       util/
