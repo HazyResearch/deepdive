@@ -30,9 +30,13 @@ trap cleanup EXIT
 trap abort ERR
 ln -sfnv "$runDir" RUNNING
 
-deepdive-plan "$@" |
-# insert a filename line
-sed '1 i\'$'\n''# run/'"$runDir"'/plan.sh\'$'\n' |
+{
+    # some metadata
+    echo "# on $HOSTNAME: deepdive do $targets"
+    echo "# run/$runDir/plan.sh"
+    # and the plan
+    deepdive-plan "$@"
+} |
 tee "$runDir"/plan.orig.sh >"$runDir"/plan.sh
 
 # provide a chance to edit plan in a tty unless told not to ask
@@ -56,4 +60,4 @@ APP_HOME=$DEEPDIVE_APP # XXX legacy
 export DEEPDIVE_ERROR_PREFIX DEEPDIVE_PROGRESS_FD DEEPDIVE_APP APP_HOME
 eval 'bash -veu "$runDir"/plan.sh '$DEEPDIVE_PROGRESS_FD'>&2 2>&1' |
 # keep a log with timestamps
-ts "%F %H:%M:%.S $HOSTNAME" | tee "$runDir"/log.txt
+ts "%F %H:%M:%.S" | tee "$runDir"/log.txt
