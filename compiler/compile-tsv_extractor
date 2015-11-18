@@ -19,7 +19,8 @@ cd \"$(dirname \"$0\")\"
 deepdive sql eval \(.input | @sh) format=tsv |
 show_progress \(env.ExtractorName | @sh) |
 bash -c \(.udf | @sh) |
-deepdive sql \("COPY \(.output_relation) FROM STDIN" | @sh)
+DEEPDIVE_LOAD_FORMAT=tsv \\
+deepdive load \(.output_relation | @sh) /dev/stdin
 
 \(.after // "")
 "

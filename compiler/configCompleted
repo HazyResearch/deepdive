@@ -146,7 +146,7 @@ exec -a "$0" jq '.deepdive_ as $deepdive
 
         # calibration plots
         "process/model/calibration": {
-            dependencies_: ["data/model/probabilities"],
+            dependencies_: ["data/model/probabilities", "process/model/load_probabilities"],
             output_: "model/calibration-plots",
             style: "cmd_extractor",
             cmd: "
@@ -154,17 +154,18 @@ exec -a "$0" jq '.deepdive_ as $deepdive
                 create_calibration_view() {
                     table=$1 column=$2
                     deepdive sql \"
-                        DROP VIEW IF EXISTS ${table}_${column}_calibration CASCADE;
-                        CREATE OR REPLACE VIEW ${table}_${column}_calibration AS (
-                        WITH bucketed AS (
+                        DROP VIEW IF EXISTS ${table}_${column}_inference_bucketed CASCADE;
+                        CREATE OR REPLACE VIEW ${table}_${column}_inference_bucketed AS
                             SELECT ${column} AS label
                                  , CASE
                                      WHEN expectation = 1 THEN $(($num_buckets - 1))
                                      ELSE FLOOR(expectation * ${num_buckets})
                                    END AS bucket
                             FROM ${table}_${column}_inference
-                        )
+                        ;
 
+                        DROP VIEW IF EXISTS ${table}_${column}_calibration CASCADE;
+                        CREATE OR REPLACE VIEW ${table}_${column}_calibration AS
                          SELECT universe.bucket                             AS bucket
                               , universe.count                              AS num_variables
                               , positive.count                              AS num_correct
@@ -172,29 +173,29 @@ exec -a "$0" jq '.deepdive_ as $deepdive
                               , universe.bucket        / $num_buckets.      AS probability_lo
                               , (universe.bucket +  1) / ${num_buckets}.    AS probability_hi
                               , (universe.bucket + .5) / ${num_buckets}.    AS probability
-                              , positive.count::FLOAT  / (
+                              , 1.0 * positive.count / (
                                 positive.count + negative.count)            AS accuracy
                               , positive.count + negative.count             AS num_predictions_test
                               , universe.count                              AS num_predictions_whole
                            FROM (
                                  SELECT bucket, COUNT(*) AS count
-                                   FROM bucketed
+                                   FROM ${table}_${column}_inference_bucketed
                                   GROUP BY bucket
                                 ) universe
                            LEFT JOIN (
                                  SELECT bucket, COUNT(*) AS count
-                                   FROM bucketed
+                                   FROM ${table}_${column}_inference_bucketed
                                   WHERE label = true
                                   GROUP BY bucket
                                 ) positive ON universe.bucket = positive.bucket
                            LEFT JOIN (
                                  SELECT bucket, COUNT(*) AS count
-                                   FROM bucketed
+                                   FROM ${table}_${column}_inference_bucketed
                                   WHERE label = false
                                   GROUP BY bucket
                                 ) negative ON universe.bucket = negative.bucket
                           ORDER BY universe.bucket
-                          )
+                        ;
                     \"
                 }
                 \($deepdive.schema.variables | keys | map(
