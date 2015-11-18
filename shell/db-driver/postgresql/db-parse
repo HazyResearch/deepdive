@@ -9,25 +9,37 @@ set -eu
 : ${user:=$USER} ${port:=5432}
 
 # map to environment variables for psql
-escape4sh export "DBTYPE=postgresql"
-escape4sh export "DBVARIANT=${dbtype}"
-escape4sh export "DBHOST=${host}"
-escape4sh export "DBPORT=${port}"
-escape4sh export "DBUSER=${user}"
-escape4sh export "DBPASSWORD=${password:-${PGPASSWORD:-}}"
-escape4sh export "DBNAME=${dbname}"
+echo "DBTYPE=postgresql"
+# TODO proper escaping of rhs
+echo "DBVARIANT=${dbtype}"
+echo "DBHOST=${host}"
+echo "DBPORT=${port}"
+echo "DBUSER=${user}"
+echo "DBPASSWORD='${password:-${PGPASSWORD:-}}'"
+echo "DBNAME=${dbname}"
+echo "export DBHOST DBPORT DBUSER DBPASSWORD DBNAME"
 
 # more variables for Scala application.conf
-escape4sh export "DEEPDIVE_JDBC_DRIVER=org.postgresql.Driver"
+echo "DEEPDIVE_JDBC_DRIVER=org.postgresql.Driver"
 
-escape4sh export "DEEPDIVE_JDBC_URL=jdbc:postgresql://$host${port:+:$port}/$dbname$querystring"
+echo "DEEPDIVE_JDBC_URL='jdbc:postgresql://$host${port:+:$port}/$dbname$querystring'"
+echo "export DEEPDIVE_JDBC_DRIVER DEEPDIVE_JDBC_URL"
 
 # XXX several environment variables for legacy apps
-escape4sh export "PGHOST=${host}"
-escape4sh export "PGPORT=${port}"
-escape4sh export "PGUSER=${user}"
-echo 'export PGPASSWORD=$DBPASSWORD'
+# TODO Pass through $DEEPDIVE_DB_URL to Postgresql >= 9.2 since it natively supports URIs
+# TODO try to translate all params in URI to environment variables or keyword=value string
+# See: http://www.postgresql.org/docs/8.1/static/libpq-envars.html
+# See: http://www.postgresql.org/docs/9.2/static/libpq-connect.html#LIBPQ-CONNSTRING
+echo "PGHOST=${host}"
+echo "PGPORT=${port}"
+echo "PGUSER=${user}"
+echo "PGPASSWORD=\$DBPASSWORD"
 case $querystring in
-    *ssl=true*) escape4sh export "PGSSLMODE=require" ;;
-    *)          escape4sh export "PGSSLMODE=disable"
+    *sslmode=*)
+        sslmode=${querystring#*sslmode=}; sslmode=${sslmode%&*} # FIXME this is brittle, need a proper URL querystring parsing, perhaps from ../parse-url.sh
+        echo "DEEPDIVE_JDBC_URL+='&ssl=true'"
+        echo "PGSSLMODE=${sslmode}" ;;
+    *ssl=true*) echo "PGSSLMODE=require" ;;
+    *) echo "PGSSLMODE=prefer"
 esac
+echo "export PGHOST PGPORT PGUSER PGPASSWORD PGSSLMODE"
