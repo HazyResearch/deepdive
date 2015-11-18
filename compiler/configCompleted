@@ -29,7 +29,6 @@ exec -a "$0" jq '.deepdive_ as $deepdive
                 cd factorgraph
                 mv -f graph.variables variables
                 mv -f graph.factors   factors
-                mv -f graph.edges     edges
                 mv -f graph.weights   weights
                 mv -f graph.meta      meta
             "
@@ -48,7 +47,6 @@ exec -a "$0" jq '.deepdive_ as $deepdive
                     -w factorgraph/weights \\
                     -v factorgraph/variables \\
                     -f factorgraph/factors \\
-                    -e factorgraph/edges \\
                     -m factorgraph/meta \\
                     -o weights \\
                     \($deepdive.sampler.sampler_args // "#")
@@ -73,7 +71,6 @@ exec -a "$0" jq '.deepdive_ as $deepdive
                         -w factorgraph/weights \\
                         -v factorgraph/variables \\
                         -f factorgraph/factors \\
-                        -e factorgraph/edges \\
                         -m factorgraph/meta \\
                         -o weights \\
                         \($deepdive.sampler.sampler_args // "#")
