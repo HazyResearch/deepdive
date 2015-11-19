@@ -50,7 +50,7 @@ release-%:
 	ln -sfn $(PACKAGE) $(RELEASE_PACKAGE)
 	# Releasing $(RELEASE_PACKAGE) to GitHub
 	# (Make sure GITHUB_OAUTH_TOKEN is set directly or via ~/.netrc or OS X Keychain)
-	util/upload-github-release-asset \
+	util/build/upload-github-release-asset \
 	    file=$(RELEASE_PACKAGE) \
 	    repo=$(GITHUB_REPO) \
 	    tag=$(RELEASE_VERSION)
@@ -63,7 +63,7 @@ define STAGING_COMMANDS
 	# staging all executable code and runtime data under $(STAGE_DIR)/
 	./stage.sh $(STAGE_DIR)
 	# record version and build info
-	util/generate-build-info.sh >$(STAGE_DIR)/.build-info.sh
+	util/build/generate-build-info.sh >$(STAGE_DIR)/.build-info.sh
 endef
 
 .PHONY: build
