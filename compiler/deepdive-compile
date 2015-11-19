@@ -8,11 +8,13 @@ set -euo pipefail
 DEEPDIVE_APP=$(find-deepdive-app)
 export DEEPDIVE_APP
 cd "$DEEPDIVE_APP"
+
 . load-db-driver.sh
+mkdir -p run
 
 # log all the compilation steps and stderr with timestamps
 exec 2> >(
-    cd "$DEEPDIVE_APP"/run
+    cd run
     [[ ! -e compile.log ]] || mv -f compile.log{,~}
     logging-with-ts ./compile.log >&2
 )
@@ -20,7 +22,6 @@ STEP() { echo "$@"; } >&2
 
 ## compile a full deepdive.conf from source code
 STEP "Compiling run/compiled.deepdive.conf and run/compiled.schema.json"
-mkdir -p run
 # compile schema in JSON
 touch run/compiled.schema.json run/compiled.deepdive.conf
 if [[ -r app.ddlog ]]; then
