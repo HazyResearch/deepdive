@@ -20,10 +20,6 @@ cache:
     - $HOME/.ivy2/cache
     - depends/.build
     - .build/submodule
-    - sampler/dw
-    - ddlog/ddlog.jar
-    - ddlog/target/scala-2.10/ddlog-assembly-0.1-SNAPSHOT.jar
-    - compiler/hocon2json/target/scala-2.10/hocon2json-assembly-0.1-SNAPSHOT.jar
 
 env:
   global:

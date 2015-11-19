@@ -52,8 +52,8 @@ stage shell/deepdive-sql                                          util/
 stage shell/deepdive-load                                         util/
 
 stage compiler/deepdive-compile                                   util/
-stage compiler/hocon2json/hocon2json.sh                           util/hocon2json
-stage compiler/hocon2json/target/scala-2.10/hocon2json-assembly-*.jar  util/hocon2json.jar
+stage .build/submodule/compiler/hocon2json/hocon2json.sh                                util/hocon2json
+stage .build/submodule/compiler/hocon2json/target/scala-2.10/hocon2json-assembly-*.jar  util/hocon2json.jar
 stage src/main/resources/application.conf                         etc/deepdive-default.conf
 stage compiler/configExtended                                     util/
 stage compiler/configNormalized                                   util/
@@ -100,7 +100,7 @@ stage util/pgtsv_to_json                                          util/
 
 # DDlog compiler
 stage util/ddlog                                                  bin/
-stage ddlog/ddlog.jar                                              lib/
+stage .build/submodule/ddlog/target/scala-2.10/ddlog-assembly-0.1-SNAPSHOT.jar  lib/ddlog.jar
 
 # DDlib
 stage ddlib/ddlib                                                 lib/python/
@@ -112,7 +112,7 @@ Linux)
     stage util/format_converter_linux                             util/format_converter
     [[ "$STAGE_DIR"/lib/ -nt util/sampler-dw-linux-lib.zip ]] || # XXX skip unzip if possible
     unzip -o util/sampler-dw-linux-lib.zip                     -d "$STAGE_DIR"/lib/
-    stage sampler/dw                                              util/sampler-dw-linux
+    stage .build/submodule/sampler/dw                             util/sampler-dw-linux
     stage util/sampler-dw-linux.sh                                util/
     ln -sfn sampler-dw-linux.sh                                   "$STAGE_DIR"/util/sampler-dw
     ;;
@@ -121,7 +121,7 @@ Darwin)
     stage util/format_converter_mac                               util/format_converter
     [[ "$STAGE_DIR"/lib/ -nt util/sampler-dw-mac-lib.zip ]] || # XXX skip unzip if possible
     ditto -xk util/sampler-dw-mac-lib.zip                         "$STAGE_DIR"/lib/
-    stage sampler/dw                                              util/sampler-dw-mac
+    stage .build/submodule/sampler/dw                             util/sampler-dw-mac
     stage util/sampler-dw-mac.sh                                  util/
     ln -sfn sampler-dw-mac.sh                                     "$STAGE_DIR"/util/sampler-dw
     ;;
@@ -137,7 +137,7 @@ stage util/ddext.py                                               util/
 stage util/ddext_input_sql_translator.py                          util/
 
 # Mindbender
-stage mindbender/mindbender-LATEST-$(uname)-x86_64.sh             bin/mindbender || true  # keeping it optional for now
+stage .build/submodule/mindbender/mindbender-LATEST-$(uname)-x86_64.sh  bin/mindbender || true  # keeping it optional for now
 
 # runtime dependencies after building them from source
 stage depends/.build/bundled                                      lib/
