@@ -13,3 +13,6 @@
 [submodule "compiler/hocon2json"]
 	path = compiler/hocon2json
 	url = https://github.com/netj/hocon2json.git
+[submodule "depends/buildkit"]
+	path = depends/buildkit
+	url = https://github.com/netj/buildkit.git
