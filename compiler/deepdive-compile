@@ -10,8 +10,13 @@ export DEEPDIVE_APP
 cd "$DEEPDIVE_APP"
 . load-db-driver.sh
 
-mv -f "$DEEPDIVE_APP"/run/compile.log{,~}
-STEP() { echo "$@" | logging-with-ts "$DEEPDIVE_APP"/run/compile.log; } >&2
+# log all the compilation steps and stderr with timestamps
+exec 2> >(
+    cd "$DEEPDIVE_APP"/run
+    [[ ! -e compile.log ]] || mv -f compile.log{,~}
+    logging-with-ts ./compile.log >&2
+)
+STEP() { echo "$@"; } >&2
 
 ## compile a full deepdive.conf from source code
 STEP "Compiling run/compiled.deepdive.conf and run/compiled.schema.json"
@@ -93,5 +98,4 @@ STEP "Compiling executable extractors and instructions for grounding factors"
 # representation (IR) for codegen that can be almost directly mapped to the
 # final shell scripts.
 config2compilation-plan <compiled.config.json >compiled.compilation-plan.sh
-bash -eu ./compiled.compilation-plan.sh 2>&1 |
-logging-with-ts ./compile.log >&2
+bash -eu ./compiled.compilation-plan.sh
