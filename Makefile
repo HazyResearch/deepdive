@@ -4,6 +4,8 @@
 PREFIX = ~/local
 # path to the staging area
 STAGE_DIR = dist/stage
+# path to the area for keeping track of build
+BUILD_DIR = .build
 # path to the package to be built
 PACKAGE = $(dir $(STAGE_DIR))deepdive.tar.gz
 
@@ -111,22 +113,15 @@ checkstyle:
 
 .PHONY: build-sampler
 SAMPLER=sampler
-build-sampler: $(SAMPLER)/dw
-$(SAMPLER)/src:
-	git submodule update --init $(SAMPLER)
-$(SAMPLER)/dw: $(SAMPLER)/src
-	[ -e $(SAMPLER)/lib/gtest -a -e $(SAMPLER)/lib/tclap ] || $(MAKE) -C $(SAMPLER) dep
-	$(MAKE) -C $(SAMPLER) dw
-test-build build: $(SAMPLER)/dw
+build-sampler:
+	@util/build/build-submodule-if-needed $(SAMPLER)
+test-build build: build-sampler
 
 .PHONY: build-hocon2json
 HOCON2JSON=compiler/hocon2json
-build-hocon2json: $(HOCON2JSON)/target/scala-2.10/hocon2json-assembly-*.jar
-$(HOCON2JSON)/hocon2json.scala:
-	git submodule update --init $(HOCON2JSON)
-$(HOCON2JSON)/target/scala-2.10/hocon2json-assembly-*.jar: $(HOCON2JSON)/hocon2json.scala
-	cd $(<D) && project/sbt/sbt assembly
-test-build build: $(HOCON2JSON)/target/scala-2.10/hocon2json-assembly-*.jar
+build-hocon2json:
+	@util/build/build-submodule-if-needed $(HOCON2JSON)
+test-build build: build-hocon2json
 
 # format_converter
 ifeq ($(shell uname),Linux)
@@ -143,16 +138,10 @@ endif
 .PHONY: build-mindbender
 MINDBENDER=mindbender
 build-mindbender:
-	git submodule update --recursive --init $(MINDBENDER)
-	$(MAKE) -C $(MINDBENDER) clean-packages
-	$(MAKE) -C $(MINDBENDER) package
+	@util/build/build-submodule-if-needed $(MINDBENDER)
 
 .PHONY: build-ddlog
 DDLOG=ddlog
-build-ddlog: $(DDLOG)/ddlog.jar
-DDLOG_SOURCES=$(DDLOG)/Makefile $(wildcard $(DDLOG)/src/**/*.scala)
-$(DDLOG_SOURCES):
-	git submodule update --init $(DDLOG)
-ddlog/ddlog.jar: $(DDLOG_SOURCES)
-	$(MAKE) -C $(DDLOG) ddlog.jar
-test-build build: $(DDLOG)/ddlog.jar
+build-ddlog:
+	@util/build/build-submodule-if-needed $(DDLOG)
+test-build build: build-ddlog
