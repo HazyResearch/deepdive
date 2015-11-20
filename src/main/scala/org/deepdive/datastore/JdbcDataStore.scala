@@ -22,7 +22,7 @@ trait JdbcDataStore extends Logging {
     sys.env.get("DEEPDIVE_SCHEMA") match {
       case Some(schema) => c.setSchema(schema)
       case None =>
-    } 
+    }
     c
   }
 
