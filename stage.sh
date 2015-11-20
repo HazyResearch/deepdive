@@ -83,10 +83,9 @@ Linux)
     ln -sfn sampler-dw-linux.sh                                   "$STAGE_DIR"/util/sampler-dw
     ;;
 Darwin)
+    otool -L util/sampler-dw-mac | grep 'dylib' | sed 's/(.*)//' | awk '{print $1}' | xargs cp -t "$STAGE_DIR"/lib/
     stage util/ndbloader/ndbloader-mac                            util/ndbloader
     stage util/format_converter_mac                               util/format_converter
-    [[ "$STAGE_DIR"/lib/ -nt util/sampler-dw-mac-lib.zip ]] || # XXX skip unzip if possible
-    ditto -xk util/sampler-dw-mac-lib.zip                         "$STAGE_DIR"/lib/
     stage util/sampler-dw-mac                                     util/
     stage util/sampler-dw-mac.sh                                  util/
     ln -sfn sampler-dw-mac.sh                                     "$STAGE_DIR"/util/sampler-dw
