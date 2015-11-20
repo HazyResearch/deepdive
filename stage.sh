@@ -73,20 +73,19 @@ stage ddlib/ddlib                                                 lib/python/
 # DimmWitted sampler
 case $(uname) in
 Linux)
+    # copy sampler libraries
+    ldd util/sampler-dw-linux | grep '=>' | awk '{print $3}' | sort -u | grep -v '^(' | xargs cp -t "$STAGE_DIR"/lib/
     stage util/ndbloader/ndbloader-linux                          util/ndbloader
     stage util/format_converter_linux                             util/format_converter
-    [[ "$STAGE_DIR"/lib/ -nt util/sampler-dw-linux-lib.zip ]] || # XXX skip unzip if possible
-    unzip -o util/sampler-dw-linux-lib.zip                     -d "$STAGE_DIR"/lib/
     #stage sampler/dw                                             util/sampler-dw # TODO
     stage util/sampler-dw-linux                                   util/
     stage util/sampler-dw-linux.sh                                util/
     ln -sfn sampler-dw-linux.sh                                   "$STAGE_DIR"/util/sampler-dw
     ;;
 Darwin)
+    otool -L util/sampler-dw-mac | grep 'dylib' | sed 's/(.*)//' | awk '{print $1}' | xargs cp -t "$STAGE_DIR"/lib/
     stage util/ndbloader/ndbloader-mac                            util/ndbloader
     stage util/format_converter_mac                               util/format_converter
-    [[ "$STAGE_DIR"/lib/ -nt util/sampler-dw-mac-lib.zip ]] || # XXX skip unzip if possible
-    ditto -xk util/sampler-dw-mac-lib.zip                         "$STAGE_DIR"/lib/
     stage util/sampler-dw-mac                                     util/
     stage util/sampler-dw-mac.sh                                  util/
     ln -sfn sampler-dw-mac.sh                                     "$STAGE_DIR"/util/sampler-dw
