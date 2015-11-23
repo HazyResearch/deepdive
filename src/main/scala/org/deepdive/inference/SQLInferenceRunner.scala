@@ -976,7 +976,8 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       Helpers.executeCmd(Seq("sed",
         s"""s#TRAIN_LMDB#"${groundingPath}/${train_lmdb}"#g;""" +
         s"""s#TEST_LMDB#"${groundingPath}/${test_lmdb}"#g;""" +
-        s"""s#IMAGE_MEAN#"${groundingPath}/${imageMean}"#g;""",
+        s"""s#IMAGE_MEAN#"${groundingPath}/${imageMean}"#g;""" +
+        s"s#NUM_OUTPUT#${schema.variables.get(variable.key).get.cardinality}#g",
         factorDesc.cnnConfig(1)) #> new java.io.File(s"${groundingPath}/train_test.prototxt"))
 
       // lmdb
