@@ -2,7 +2,7 @@
 images(file text, label int, is_training boolean).
 
 variables? (
-@image_path("PATH")
+@image_path("data")
 file text,
 is_training boolean)
 Categorical(10).

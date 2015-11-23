@@ -48,16 +48,14 @@ Now, we need to declare the variable relation in `app.ddlog`:
 
 ```
 variables? (
-@image_path("PATH")
+@image_path("data")
 file text,
 is_training boolean)
 Categorical(10).
 ```
 
 This says the variable relation has two keys, `file` and `is_training`.
-Note we need to replace `PATH` with the actual absolute path to the folder that contains image data.
-The `file` column is declared as paths to images through the annotation `@image_path`, relative to the `PATH` above.
-In our example, it's the absolute path to `data/` folder.
+The `file` column is declared as paths to images through the annotation `@image_path`, relative to the `data` folder.
 The variables are multinomial with 10 classes.
 
 Now, DeepDive will initialize the database for us if we run the following command:
