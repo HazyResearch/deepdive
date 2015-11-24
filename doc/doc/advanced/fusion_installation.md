@@ -10,8 +10,8 @@ Fusion currently only runs on Linux.
 
 Dependencies
 
-* libsodium (required by zeromq)
-* zeromq
+* libsodium 1.0.5 (required by zeromq)
+* zeromq 4.1.3
 
 Installation steps.
 
