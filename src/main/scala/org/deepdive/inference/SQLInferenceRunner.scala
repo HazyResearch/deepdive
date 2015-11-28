@@ -964,10 +964,13 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       val trainIteration = "max_iter[^:]*:.*".r.findFirstIn(lines).get.split(":")(1).trim
       val testIteration = "test_iter[^:]*:.*".r.findFirstIn(lines).get.split(":")(1).trim
       val testInterval = "test_interval[^:]*:.*".r.findFirstIn(lines).get.split(":")(1).trim
+      val lines2 = io.Source.fromFile(factorDesc.cnnConfig(1)).getLines.map(_.trim).filterNot(_.startsWith("#")).mkString("\n")
+      val batch_size = "batch_size[^:]*:.*".r.findFirstIn(lines2).get.split(":")(1).trim
       pw.write(nTrain.toString + "\n")
       pw.write(trainIteration + "\n")
       pw.write(testIteration + "\n")
       pw.write(testInterval + "\n")
+      pw.write(batch_size + "\n")
       pw.close()
 
 
