@@ -176,6 +176,19 @@ DeepDive will run learning and inference on the given network.
 Caffe outputs will also be printed on the screen.
 After the run, we can check the results in the same way as a usual DeepDive application.
 
+
+## Using a pretrained Caffe model
+
+To use a pretrained Caffe model, use the following annotation for the inference rule
+
+```
+@cnn("solver.prototxt", "train_test.prototxt", "iter_5000.caffemodel")
+```
+
+where the first prototxt should contain specification for `test_iter`, and make sure the combination of test batch size and test iterations cover all examples.
+The third argument is a pretrained caffe model.
+
+
 ## DeepDive.conf
 
 Fusion can also be written in `deepdive.conf`.

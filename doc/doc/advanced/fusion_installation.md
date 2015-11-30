@@ -12,6 +12,7 @@ Dependencies
 
 * libsodium 1.0.5 (required by zeromq)
 * zeromq 4.1.3
+* Postgresql 9.3.4
 
 Installation steps.
 

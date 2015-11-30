@@ -103,9 +103,16 @@ trait InferenceManager extends Actor with ActorLogging {
   def runInference(factorDescs: Seq[FactorDesc], holdoutFraction: Double, holdoutQuery: Option[String],
     samplerJavaArgs: String, samplerOptions: String, pipelineSettings: PipelineSettings, dbSettings: DbSettings) = {
 
-    val fusionMode = !( factorDescs.filter(_.mode == Some("cnn")).isEmpty );
+    val fusionMode = !( factorDescs.filter(x => x.mode == Some("cnn") || x.mode == Some("cnn_pretrained")).isEmpty );
     factorDescs.filter(_.mode == Some("cnn")).foreach { f =>
       val cmd = Process(s"caffe train -solver ${Context.outputDir}/solver.prototxt -gpu ${f.gpu.get}", None, "PORT" -> f.port.get.toString)
+      val caffe = cmd.run
+    }
+    factorDescs.filter(_.mode == Some("cnn_pretrained")).foreach { f =>
+      val iter = io.Source.fromFile(s"${Context.outputDir}/cnn.config.${f.port.get}").mkString.split("\n")(2).toInt
+      val cmdStr = s"caffe test -model ${Context.outputDir}/train_test.prototxt -gpu ${f.gpu.get} -weights ${f.cnnConfig(2)} -iterations ${iter}"
+      log.info(cmdStr)
+      val cmd = Process(cmdStr, None, "PORT" -> f.port.get.toString)
       val caffe = cmd.run
     }
 
