@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# dependencies2make -- Generates a GNU Make recipes corresponding to the input dependency graph in JSON
+# compile-dependencies2make -- Generates a GNU Make recipes corresponding to the input dependency graph in JSON
 ##
 exec -a "$0" jq -r '
 def mktarget(suffix): "\(.).\(suffix)";

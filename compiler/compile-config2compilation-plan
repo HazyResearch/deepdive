@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# config2compilation-plan -- Generates a compilation plan from normalized deepdive.conf in JSON
+# compile-config2compilation-plan -- Generates a compilation plan from normalized deepdive.conf in JSON
 ##
 exec -a "$0" jq -r '.deepdive_ as $deepdive
 | (

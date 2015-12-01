@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# configExtended -- Extends deepdive.conf in JSON with more default extractors
+# compile-config_before_normalized -- Extends deepdive.conf in JSON with more default extractors
 #
 # - a deepdive-load extractor for relations declared in schema but lacking an extractor that outputs it
 ##

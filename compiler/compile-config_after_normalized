@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# configCompleted -- Extends normalized deepdive.conf further to include inference data flow
+# compile-config_after_normalized -- Extends normalized deepdive.conf further to include inference data flow
 ##
 exec -a "$0" jq '.deepdive_ as $deepdive
 

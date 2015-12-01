@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# configNormalized -- Normalizes deepdive.conf in JSON to use qualified names
+# compile-config_normalized -- Normalizes deepdive.conf in JSON to use qualified names
 #
 # - extractor names are prefixed with process/*
 # - factor names are prefixed with factor/*

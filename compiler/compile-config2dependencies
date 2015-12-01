@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# config2dependencies -- Derives a dependency graph from deepdive.conf in JSON
+# compile-config2dependencies -- Derives a dependency graph from deepdive.conf in JSON
 ##
 exec -a "$0" jq '.deepdive_ as $deepdive
 
