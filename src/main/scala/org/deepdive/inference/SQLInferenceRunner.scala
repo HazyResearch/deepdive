@@ -998,10 +998,10 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         factorDesc.cnnConfig(1)) #> new java.io.File(s"${groundingPath}/train_test.prototxt"))
 
       // lmdb
-      Helpers.executeCmd(s"${InferenceNamespace.getConvertImageScript} --shuffle ${path}/ ${groundingPath}/${test_listfile} ${groundingPath}/${test_lmdb}")
+      Helpers.executeCmd(s"convert_imageset_withid --shuffle ${path}/ ${groundingPath}/${test_listfile} ${groundingPath}/${test_lmdb}")
       if (!isPretrained) {
-        Helpers.executeCmd(s"${InferenceNamespace.getConvertImageScript} --shuffle ${path}/ ${groundingPath}/${train_listfile} ${groundingPath}/${train_lmdb}")
-        Helpers.executeCmd(s"${InferenceNamespace.getImageMeanScript} ${groundingPath}/${train_lmdb} ${groundingPath}/${imageMean}")
+        Helpers.executeCmd(s"convert_imageset_withid --shuffle ${path}/ ${groundingPath}/${train_listfile} ${groundingPath}/${train_lmdb}")
+        Helpers.executeCmd(s"compute_image_mean ${groundingPath}/${train_lmdb} ${groundingPath}/${imageMean}")
       }
 
     }
