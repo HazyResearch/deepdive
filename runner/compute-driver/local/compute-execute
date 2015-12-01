@@ -8,25 +8,65 @@
 # $ export DEEPDIVE_NUM_PROCESSES=2
 # $ compute-execute input_sql=... command=... output_relation=...
 ##
-set -eu
+set -euo pipefail
+
+# load compute configuration
+eval "$(jq2sh <<<"$DEEPDIVE_COMPUTER_CONFIG" \
+    num_processes='.num_processes' \
+    #
+)"
+# respect the DEEPDIVE_NUM_PROCESSES environment
+num_processes=${DEEPDIVE_NUM_PROCESSES:-${num_processes:-$(
+        # detect number of processor cores
+        nproc=$(
+            # Linux typically has coreutils which includes nproc
+            nproc ||
+            # OS X
+            sysctl -n hw.ncpu ||
+            # fall back to 1
+            echo 1
+        )
+        if [[ $nproc -gt 1 ]]; then
+            # leave one processor out
+            let nproc-=1
+        elif [[ $nproc -lt 1 ]]; then
+            nproc=1
+        fi
+        echo $nproc
+    )}}
 
 # declare all input arguments
 declare -- "$@"
 
-# load configuration
-eval "$(jq2sh <<<"$DEEPDIVE_COMPUTER_CONFIG" \
-        num_processes='.num_processes' \
-        #
-    )"
-num_processes=${DEEPDIVE_NUM_PROCESSES:-${num_processes:-$(nproc 2>/dev/null || echo 1)}}
+# show configuration
+echo "Executing with the following configuration:"
+echo " num_processes=$num_processes"
+echo
 
-# unload input data for the process from the database
-deepdive sql eval "$input_sql" format="$DEEPDIVE_LOAD_FORMAT" |
-show_progress "$DEEPDIVE_CURRENT_PROCESS_NAME input" |
+# set up named pipes for parallel processes
+for i in $(seq $num_processes); do
+    rm -f  process-$i.{input,output}
+    mkfifo process-$i.{input,output}
+done
+# make sure named pipes are cleaned up upon exit
+trap 'rm -f process-*.{input,output}' EXIT
+# now spawn processes attached to the named pipes in reverse order (from sink to source)
 
-# TODO split input and spawn $DEEPDIVE_NUM_PROCESSES processes
-sh -c "$command" |
-
+# use mkmimo again to merge outputs of multiple processes into a single stream
+mkmimo process-*.output \> /dev/stdout |
 # load the output data to the database
 show_progress "$DEEPDIVE_CURRENT_PROCESS_NAME output" |
-deepdive load "$output_relation" /dev/stdin
+deepdive load "$output_relation" /dev/stdin &
+
+# spawn multiple processes attached to the pipes
+for i in $(seq $num_processes); do
+    sh -c "$command" <process-$i.input >process-$i.output &
+done
+
+# unload data from the database and pour into the pipes
+deepdive sql eval "$input_sql" format="$DEEPDIVE_LOAD_FORMAT" |
+show_progress "$DEEPDIVE_CURRENT_PROCESS_NAME input" |
+# use mkmimo to distribute input data to multiple processes
+mkmimo /dev/stdin \> process-*.input &
+
+wait  # until everything is done

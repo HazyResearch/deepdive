@@ -145,3 +145,8 @@ DDLOG=ddlog
 build-ddlog:
 	@util/build/build-submodule-if-needed $(DDLOG) target/scala-2.10/ddlog-assembly-0.1-SNAPSHOT.jar
 test-build build: build-ddlog
+
+.PHONY: build-mkmimo
+build-mkmimo:
+	@util/build/build-submodule-if-needed util/mkmimo mkmimo
+test-build build: build-mkmimo
