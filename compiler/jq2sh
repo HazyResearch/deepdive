@@ -14,7 +14,7 @@ jqProgram=
 for nameEqValueQuery; do
     name=${nameEqValueQuery%%=*}
     valueQuery=${nameEqValueQuery#$name=}
-    jqProgram+=",\"$name=\\(@sh($valueQuery))\""
+    jqProgram+=",\"$name=\\($valueQuery | tostring | @sh)\""
 done
 
 # run jq to transform input JSON into a shell script

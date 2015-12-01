@@ -4,31 +4,9 @@ A DeepDive application can be configured to run its extractors on multiple compu
 Operators defined by each compute driver are used by extractor execution plans compiled from `deepdive.extraction.extractor` blocks defined in the DeepDive application's deepdive.conf.
 
 ## Core Compute Driver Operators
-Every compute driver must implement the following operators.
+Every compute driver must implement the following operator.
 
-1. `compute-prepare-input SQL`
-    * Prepares the input data for the extractor by running `SQL` against the database.
-2. `compute-prepare-code FILE/COMMAND`
-    * Prepares the code for the extractor.
-3. `compute-has-completed`
-    * Checks whether all computation has completed.
-4. `compute-start-remaining`
-    * Starts the execution of the extractor for parts of the computation that have not run yet.
-    * Restarts any failed parts.
-5. `compute-collect-output TABLE`
-    * Collects completed parts of computation and loads it to `TABLE` in the database.
-
-6. `compute-stop`
-    * Stops the execution.
-7. `compute-cleanup`
-    * Cleans up any temporary state after completion.
-
-8. `compute-is-running`
-    * Checks whether the extractor is running.
-9. `compute-progress`
-    * Enumerates all parts of computation and their states: completed/running/waiting.
-10. `compute-reset`
-    * Resets the state, so the extractor can be run from scratch again.
+1. `compute-execute input_query=SQL command=COMMAND output_relation=TABLE`
 
 
 ## Compiled Extractor
@@ -42,21 +20,15 @@ For example, a `tsv_extractor` with an input SQL and a Python UDF script will be
 
 ```bash
 #!/usr/bin/env bash
-# run/RUNNING/extractors/example_tsv_extractor/run.sh
+# run/process/ext_example_tsv_extractor/run.sh
+set -xeuo pipefail
 cd "$(dirname "$0")"
-compute-prepare-input "$input_query"
-compute-prepare-code "$udfOrCmd"
 
-trap compute-stop EXIT
-while ! compute-has-completed; do
-    compute-start-remaining
-    sleep $DEEPDIVE_COMPUTER_POLL_INTERVAL
-    compute-collect-output "$output_relation"
-done
-compute-stop
-trap - EXIT
-
-compute-cleanup
+compute-execute \
+    input_query=... \
+    command=... \
+    output_relation=... \
+    #
 ```
 
 ### Extractor with only SQL

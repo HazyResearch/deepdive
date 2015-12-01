@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# local/compute-execute -- Executes a process locally using all available processors
+# $ compute-execute input_sql=... command=... output_relation=...
+#
+# To limit the number of parallel processes, set the DEEPDIVE_NUM_PROCESSES
+# environment or the 'deepdive.computers.local.num_processes' in
+# computers.conf:
+# $ export DEEPDIVE_NUM_PROCESSES=2
+# $ compute-execute input_sql=... command=... output_relation=...
+##
+set -eu
+
+# declare all input arguments
+declare -- "$@"
+
+# load configuration
+eval "$(jq2sh <<<"$DEEPDIVE_COMPUTER_CONFIG" \
+        num_processes='.num_processes' \
+        #
+    )"
+num_processes=${DEEPDIVE_NUM_PROCESSES:-${num_processes:-$(nproc 2>/dev/null || echo 1)}}
+
+# unload input data for the process from the database
+deepdive sql eval "$input_sql" format="$DEEPDIVE_LOAD_FORMAT" |
+show_progress "$DEEPDIVE_CURRENT_PROCESS_NAME input" |
+
+# TODO split input and spawn $DEEPDIVE_NUM_PROCESSES processes
+sh -c "$command" |
+
+# load the output data to the database
+show_progress "$DEEPDIVE_CURRENT_PROCESS_NAME output" |
+deepdive load "$output_relation" /dev/stdin

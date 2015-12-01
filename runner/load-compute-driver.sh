@@ -13,7 +13,7 @@ if [[ -z "${DEEPDIVE_COMPUTER_TYPE:-}" ]]; then
     eval "$(
     DEEPDIVE_APP=$(find-deepdive-app)
     export DEEPDIVE_APP
-    hocon2json "$DEEPDIVE_APP"/computers.conf "$DEEPDIVE_HOME"/util/computers-default.conf | jq2sh \
+    hocon2json <(cat "$DEEPDIVE_APP"/computers.conf 2>/dev/null || echo '{}') "$DEEPDIVE_HOME"/util/computers-default.conf | jq2sh \
         DEEPDIVE_COMPUTER='.deepdive.computer' \
         DEEPDIVE_COMPUTER_TYPE='.deepdive.computers[.deepdive.computer].type' \
         DEEPDIVE_COMPUTER_CONFIG='.deepdive.computers[.deepdive.computer]' \
@@ -23,8 +23,8 @@ if [[ -z "${DEEPDIVE_COMPUTER_TYPE:-}" ]]; then
     # place the driver on PATH
     PATH="$DEEPDIVE_HOME"/util/compute-driver/"$DEEPDIVE_COMPUTER_TYPE":"$PATH"
     # make sure all operations are defined
-    for op in prepare start stop
-    do type compute-$op &>/dev/null || error "compute-$op operation not available for $DEEPDIVE_COMPUTER_TYPE"
+    for op in execute
+    do type compute-$op &>/dev/null || error "$DEEPDIVE_COMPUTER_TYPE compute driver does not provide compute-$op operation"
     done
 
     # set up the environment for using the configured computer

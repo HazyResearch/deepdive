@@ -44,6 +44,7 @@ stage shell/parse-url.sh                                          util/
 stage shell/error                                                 util/
 stage shell/usage                                                 util/
 stage shell/escape4sh                                             util/
+stage compiler/jq2sh                                              util/
 stage shell/logging-with-ts                                       util/
 stage shell/deepdive_bash_completion.sh                           etc/
 
@@ -80,6 +81,10 @@ stage runner/mark_done                                            util/
 stage runner/resolve-args-to-do.sh                                util/
 stage runner/show_progress                                        util/
 stage runner/deepdive-run                                         util/
+
+stage runner/load-compute-driver.sh                               util/
+stage runner/compute-driver/local                                 util/compute-driver/
+stage runner/computers-default.conf                               util/
 
 stage shell/load-db-driver.sh                                     util/
 stage shell/db-driver/postgresql                                  util/db-driver/

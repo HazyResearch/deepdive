@@ -16,11 +16,14 @@ cd \"$(dirname \"$0\")\"
 
 \(.before // "")
 
-deepdive sql eval \(.input | @sh) format=tsv |
-show_progress \(env.ExtractorName | @sh) |
-bash -c \(.udf | @sh) |
-DEEPDIVE_LOAD_FORMAT=tsv \\
-deepdive load \(.output_relation | @sh) /dev/stdin
+export DEEPDIVE_CURRENT_PROCESS_NAME=\(env.ExtractorName | @sh)
+export DEEPDIVE_LOAD_FORMAT=tsv
+
+compute-execute \\
+    input_sql=\(.input | @sh) \\
+    command=\(.udf | @sh) \\
+    output_relation=\(.output_relation | @sh) \\
+    #
 
 \(.after // "")
 "

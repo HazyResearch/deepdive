@@ -18,6 +18,7 @@ fi
 
 # load drivers configured for this application
 . load-db-driver.sh
+. load-compute-driver.sh
 
 # create a directory for running
 runDir=$(date +%Y%m%d/%H%M%S.%N)
