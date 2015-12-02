@@ -1,0 +1,14 @@
+{
+  "relations": {
+    "coin": {
+      "columns": {
+        "is_correct": {
+          "type": "boolean",
+          "index": 0
+        }
+      },
+      "variable_type": "boolean",
+      "variable_cardinality": 2
+    }
+  }
+}

@@ -1,7 +1,3 @@
-#!/usr/bin/env bash
-set -eu
-
-deepdive sql "
 insert into coin(is_correct) values
         (true), (true), (true), (true),
         (true), (true), (true), (true),
@@ -9,4 +5,3 @@ insert into coin(is_correct) values
         (NULL), (NULL), (NULL), (NULL),
         (NULL), (NULL), (NULL), (NULL),
         (NULL);
-"
