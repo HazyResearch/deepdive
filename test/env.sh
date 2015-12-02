@@ -20,7 +20,8 @@ DEEPDIVE_SOURCE_ROOT=$(cd "$DEEPDIVE_TEST_ROOT/.." && pwd)
 }
 
 # configure PATH and CLASSPATH for tests
-PATH="$DEEPDIVE_HOME/util:$DEEPDIVE_HOME/bin:$PATH"
+# TODO reuse shell/deepdive
+PATH="$DEEPDIVE_HOME/util:$DEEPDIVE_HOME/bin:$DEEPDIVE_HOME/lib/bundled/.all/bin:$PATH"
 ! [[ -r "$DEEPDIVE_HOME"/env.sh ]] || source "$DEEPDIVE_HOME"/env.sh
 
 export \
