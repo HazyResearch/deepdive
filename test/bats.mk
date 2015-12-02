@@ -27,7 +27,7 @@ $(BATS_ROOT)/bin/bats:
 #   $ make test ONLY+=$(TEST_ROOT)/foo/*.bats EXCEPT+=$(TEST_ROOT)/*/unit_tests.bats
 #   $ TEST_ONLY=$(TEST_ROOT)/foo/*.bats  make test EXCEPT+=$(TEST_ROOT)/*/unit_tests.bats
 #   $ TEST_ONLY=$(TEST_ROOT)/foo/*.bats TEST_EXCEPT=$(TEST_ROOT)/*/unit_tests.bats   make test
-TEST_ONLY ?= $(shell $(TEST_LIST_COMMAND))
+TEST_ONLY ?= $(shell mkdir -p $(STAGE_DIR) && $(TEST_LIST_COMMAND))
 TEST_EXCEPT ?=
 test: ONLY = $(TEST_ONLY)
 test: EXCEPT = $(TEST_EXCEPT)
