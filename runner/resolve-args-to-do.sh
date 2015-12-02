@@ -9,6 +9,10 @@ export DEEPDIVE_APP
 [[ -e "$DEEPDIVE_APP"/run/Makefile ]] ||
     error "$DEEPDIVE_APP: Not compiled yet, please run first: deepdive compile"
 
+# when our make commands are nested under an outer make, e.g., our own `make
+# test`, some special environment variables can screw things up, so clear them
+unset MAKEFLAGS MFLAGS MAKEOVERRIDES MAKELEVEL
+
 # find what exactly each argument refers to
 if [[ $# -gt 0 ]]; then
     makeTargets=()
