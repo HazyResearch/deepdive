@@ -87,6 +87,7 @@ endif
 include scala.mk  # for scala-build, scala-test-build, scala-assembly-jar, scala-clean, etc. targets
 
 # how to build runtime dependencies to bundle
+.PHONY: depends/.build/bundled
 depends/.build/bundled: depends/bundle-runtime-dependencies.sh
 	PACKAGENAME=deepdive  $<
 test-build build: depends/.build/bundled
