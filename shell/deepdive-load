@@ -40,7 +40,7 @@ if [[ $# -eq 0 ]]; then
         exec "$initsh"
     fi
     # search under input/RELATION.*
-    for Path in input/"$Relation".{tsv,csv,json-seq}{,.bz2,.gz,.sh}; do
+    for Path in input/"$Relation".{tsv,csv,json-seq,sql}{,.bz2,.gz,.sh}; do
         [[ -e "$Path" ]] || continue
         break
     done
@@ -50,17 +50,23 @@ if [[ $# -eq 0 ]]; then
     set -- "$Path"
 fi
 
+# load each path given as arguments
+for path; do
+
 # determine the format and how to decompress if needed
-case $1 in
+load() { db-load "$Relation" "$format" "$1"; }
+case $path in
     *.tsv|*.tsv.*)           format=tsv      ;;
     *.csv|*.csv.*)           format=csv      ;;
     *.json-seq|*.json-seq.*) format=json-seq ;;
+    *.sql|*.sql.*)           format=sql
+        load() { db-execute "$(cat "$1")"; } ;;
     *)
         [[ -n ${DEEPDIVE_LOAD_FORMAT:-} ]] ||
-            error "$1: Unrecognized format, specify DEEPDIVE_LOAD_FORMAT="
+            error "$path: Unrecognized format, specify DEEPDIVE_LOAD_FORMAT="
         format=$DEEPDIVE_LOAD_FORMAT
 esac
-case $1 in
+case $path in
     *.bz2) decompress=bzcat ;;
     *.gz)  decompress=zcat  ;;
     *.sh)  decompress=bash  ;;
@@ -68,12 +74,12 @@ case $1 in
 esac
 
 # load the data
-echo "Loading $Relation from $* ($format format)"
+echo "Loading $Relation from $path ($format format)"
 if [[ -n "$decompress" ]]; then
-    # replace original path arguments with process substitutions
-    load() { db-load "$Relation" "$format" "$@"; }
-    eval "load $(seq $# | sed 's/.*/ <($decompress "$&")/')"
+    # after decompressing if needed
+    load <($decompress "$path")
 else
-    # otherwise, just call the driver to load from the sources
-    db-load "$Relation" "$format" "$@"
+    load "$path"
 fi
+
+done
