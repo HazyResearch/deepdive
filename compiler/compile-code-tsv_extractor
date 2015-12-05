@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# compile-code-tsv_extractor -- Compiles tsv_extractors in the normalized JSON into code executable by the runner
+exec jq '.deepdive_ as $deepdive
+
+| .deepdive_.extraction.extractors | to_entries[]
+| .value.name = .key | .value
+| select(.style == "tsv_extractor")
+| {
+    path: "\(.name)/run.sh",
+    mode: "+x",
+    content: "#!/usr/bin/env bash
+# \(.style)  \(.name)
+# \(@json)
+set -xeuo pipefail
+cd \"$(dirname \"$0\")\"
+
+\(.before // "")
+
+export DEEPDIVE_CURRENT_PROCESS_NAME=\(.name | @sh)
+export DEEPDIVE_LOAD_FORMAT=tsv
+
+compute-execute \\
+    input_sql=\(.input | @sh) \\
+    command=\(.udf | @sh) \\
+    output_relation=\(.output_relation | @sh) \\
+    #
+
+\(.after // "")
+"
+}'

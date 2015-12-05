@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# compile-code-sql_factor -- Generates the grounding instruction for given factor specified in JSON into a form executable by DeepDive
+exec jq '.deepdive_ as $deepdive
+
+| .deepdive_.inference.factors | to_entries[]
+| .value.name = .key | .value
+| {
+    path: "\(.name)/run.sh",
+    mode: "+x",
+    content: "#!/usr/bin/env bash
+# \(.style)  \(.name)
+# \(@json)
+set -xeuo pipefail
+cd \"$(dirname \"$0\")\"
+
+# TODO
+# deepdive sql \(.input_query | @sh)
+
+# TODO record \(.name) in the model/ to use the when invoking deepdive.jar for the actual grounding
+
+error \("Grounding factor \(.name) not implemented yet" | @sh)
+"
+}'

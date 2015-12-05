@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# compile-cmd_extractor -- Compiles given cmd_extractors in the normalized JSON into a form executable by DeepDive
+exec jq '.deepdive_ as $deepdive
+
+| .deepdive_.extraction.extractors | to_entries[]
+| .value.name = .key | .value
+| select(.style == "cmd_extractor")
+| {
+    path: "\(.name)/run.sh",
+    mode: "+x",
+    content: "#!/usr/bin/env bash
+# \(.style)  \(.name)
+# \(@json)
+set -xeuo pipefail
+cd \"$(dirname \"$0\")\"
+
+\(.before // "")
+
+export DEEPDIVE_CURRENT_PROCESS_NAME=\(.name | @sh)
+\(.cmd)
+
+\(.after // "")
+" }'
