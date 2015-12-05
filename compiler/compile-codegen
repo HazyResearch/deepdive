@@ -10,5 +10,5 @@ x=\(.path | @sh)
 echo >&2 \"Generating run/$x\"
 mkdir -p \"$(dirname \"$x\")\"
 echo \(.content | @sh) >\"$x\"
-\(.mode | if . then "chmod \(@sh) \"$x\"" else "" end) 
+\(.mode | if . then "chmod \(@sh) \"$x\"" else "" end)
 "')"
