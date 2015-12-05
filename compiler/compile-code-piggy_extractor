@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# compile-code-plpy_extractor -- TODO Compiles plpy_extractors in the normalized JSON into code executable by the runner
+exec jq '.deepdive_ as $deepdive
+
+| .deepdive_.extraction.extractors | to_entries[]
+| .value.name = .key | .value
+| select(.style == "plpy_extractor")
+| error("\(.name): Compilation of \(.style) unsupported")
+' "$@"

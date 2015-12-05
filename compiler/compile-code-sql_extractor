@@ -21,4 +21,4 @@ deepdive sql \(.sql | @sh)
 
 \(.after // "")
 "
-}'
+}' "$@"

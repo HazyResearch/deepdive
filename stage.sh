@@ -63,8 +63,11 @@ stage compiler/compile-config2dependencies                        util/
 stage compiler/compile-dependencies2make                          util/
 stage compiler/compile-dependencies2dot                           util/
 stage compiler/compile-code-tsv_extractor                         util/
+stage compiler/compile-code-json_extractor                        util/
 stage compiler/compile-code-sql_extractor                         util/
 stage compiler/compile-code-cmd_extractor                         util/
+stage compiler/compile-code-piggy_extractor                       util/
+stage compiler/compile-code-plpy_extractor                        util/
 stage compiler/compile-code-sql_factor                            util/
 stage compiler/compile-codegen                                    util/
 

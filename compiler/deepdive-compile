@@ -93,7 +93,7 @@ compile-dependencies2make <compiled.dependencies.json >Makefile
 compile-dependencies2dot <compiled.dependencies.json >compiled.dataflow.dot
 dot -Tsvg <compiled.dataflow.dot >compiled.dataflow.svg
 
-STEP "Compiling executable code for extractors and factors"
+STEP "Compiling executable code for extractors and factors as run/compiled.code.json"
 # compile extractors and factors under process/ and factor/
 # TODO A better idea would be to compile another JSON intermediate
 # representation (IR) for codegen that can be almost directly mapped to the
@@ -102,7 +102,7 @@ rm -f compiled.code-*.json
 for cc in "$DEEPDIVE_HOME"/util/compile-code-*; do
     cc=${cc##*/}
     name=${cc#compile-code-}
-    $cc <compiled.config.json >compiled.code-$name.json
+    $cc compiled.config.json >compiled.code-$name.json
 done
 cat compiled.code-*.json |
 jq -s . >compiled.code.json

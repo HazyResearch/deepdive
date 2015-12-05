@@ -27,4 +27,4 @@ compute-execute \\
 
 \(.after // "")
 "
-}'
+}' "$@"

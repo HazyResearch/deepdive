@@ -20,4 +20,4 @@ cd \"$(dirname \"$0\")\"
 
 error \("Grounding factor \(.name) not implemented yet" | @sh)
 "
-}'
+}' "$@"

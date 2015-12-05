@@ -20,4 +20,4 @@ export DEEPDIVE_CURRENT_PROCESS_NAME=\(.name | @sh)
 \(.cmd)
 
 \(.after // "")
-" }'
+" }' "$@"
