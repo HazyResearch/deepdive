@@ -4,6 +4,9 @@
 ##
 set -euo pipefail
 
+: ${DEEPDIVE_PLAN_EDIT:=true} ${VISUAL:=${EDITOR:=vi}}
+: ${DEEPDIVE_PROGRESS_FD:=3}  # file descriptor to pass stderr down to our show_progress(1) command
+
 targets="$*"
 . resolve-args-to-do.sh
 cd "$DEEPDIVE_APP"/run
@@ -44,8 +47,8 @@ ln -sfnv "$runDir" RUNNING
 tee "$runDir"/plan.orig.sh >"$runDir"/plan.sh
 
 # provide a chance to edit plan in a tty unless told not to ask
-if [[ -t 0 && -t 1 && $EDITOR != true && $EDITOR != : && ${DEEPDIVE_PLAN_EDIT:-true} ]]; then
-    ${VISUAL:-${EDITOR:-vi}} "$runDir"/plan.sh &&
+if [[ -t 0 && -t 1 && $EDITOR != true && $EDITOR != : && $DEEPDIVE_PLAN_EDIT ]]; then
+    $VISUAL "$runDir"/plan.sh &&
     [[ "$runDir"/plan.sh -nt "$runDir"/plan.orig.sh ]] || {
         cleanup
         rm -rf "$runDir"
@@ -58,7 +61,6 @@ fi
 
 # run it
 DEEPDIVE_ERROR_PREFIX="[ERROR] "  # prefixing error messages in logs
-: ${DEEPDIVE_PROGRESS_FD:=3}  # file descriptor to pass stderr down to our show_progress(1) command
 DEEPDIVE_APP=$(cd .. && pwd -P)
 APP_HOME=$DEEPDIVE_APP # XXX legacy
 export DEEPDIVE_ERROR_PREFIX DEEPDIVE_PROGRESS_FD DEEPDIVE_APP APP_HOME

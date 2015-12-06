@@ -20,6 +20,9 @@
 ##
 set -eu
 
+: ${DEEPDIVE_OUTPUT:=}        # output path can be overriden
+: ${DEEPDIVE_CONFIG_EXTRA:=}  # deepdive.conf can be augmented with extra content
+
 error '`deepdive run` command is deprecated. Use `deepdive do` instead.' || true
 
 ## parse command-line options
@@ -63,7 +66,7 @@ fi
 
 ## find the output directory for this run of the application
 # either use the path specified in DEEPDIVE_OUTPUT environment or command-line option -o, or create a fresh run directory by default
-if [[ -n "${DEEPDIVE_OUTPUT:-}" ]]; then
+if [[ -n "$DEEPDIVE_OUTPUT" ]]; then
     run_id=$DEEPDIVE_OUTPUT
     if [[ "$run_id" = /* ]]; then
         run_dir=$run_id
@@ -121,7 +124,7 @@ export INPUT_BATCH_SIZE
     cat "$DEEPDIVE_CONFIG"
 
 # any extra config present in DEEPDIVE_CONFIG_EXTRA environment gets more priority
-[[ -z "${DEEPDIVE_CONFIG_EXTRA:-}" ]] ||
+[[ -z "$DEEPDIVE_CONFIG_EXTRA" ]] ||
     echo "$DEEPDIVE_CONFIG_EXTRA"
 
 # finally, the pipeline passed over command-line overrides everything

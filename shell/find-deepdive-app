@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 # find-deepdive-app -- Recognizes which DeepDive application current working directory belongs to
+#
+# Uses $DEEPDIVE_APP environment if available.
+##
 set -eu
 
 # locate application root

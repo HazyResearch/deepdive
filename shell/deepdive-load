@@ -23,6 +23,9 @@
 ##
 set -eu
 
+# skip detection of the data format and assume
+: ${DEEPDIVE_LOAD_FORMAT:=}
+
 [[ $# -gt 0 ]] || error "Missing RELATION to load"
 Relation=$1; shift
 
@@ -53,19 +56,25 @@ fi
 # load each path given as arguments
 for path; do
 
-# determine the format and how to decompress if needed
-load() { db-load "$Relation" "$format" "$1"; }
-case $path in
-    *.tsv|*.tsv.*)           format=tsv      ;;
-    *.csv|*.csv.*)           format=csv      ;;
-    *.json-seq|*.json-seq.*) format=json-seq ;;
-    *.sql|*.sql.*)           format=sql
-        load() { db-execute "$(cat "$1")"; } ;;
-    *)
-        [[ -n ${DEEPDIVE_LOAD_FORMAT:-} ]] ||
-            error "$path: Unrecognized format, specify DEEPDIVE_LOAD_FORMAT="
-        format=$DEEPDIVE_LOAD_FORMAT
+# determine the format
+if [[ -n "$DEEPDIVE_LOAD_FORMAT" ]]; then
+    # assume a format when explicitly specified
+    format=$DEEPDIVE_LOAD_FORMAT
+else
+    case $path in
+        *.tsv|*.tsv.*)           format=tsv      ;;
+        *.csv|*.csv.*)           format=csv      ;;
+        *.json-seq|*.json-seq.*) format=json-seq ;;
+        *.sql|*.sql.*)           format=sql      ;;
+        *) error "$path: Unrecognized format, specify DEEPDIVE_LOAD_FORMAT="
+    esac
+fi
+# and how to load it
+case $format in
+    sql) load() { db-execute "$(cat "$1")"; } ;;
+    *)   load() { db-load "$Relation" "$format" "$1"; }
 esac
+# and how to decompress if needed
 case $path in
     *.bz2) decompress=bzcat ;;
     *.gz)  decompress=zcat  ;;

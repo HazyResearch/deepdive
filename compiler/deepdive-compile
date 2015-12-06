@@ -5,6 +5,8 @@
 # Created: 2015-11-03
 set -euo pipefail
 
+: ${DEEPDIVE_CONFIG_EXTRA:=}  # deepdive.conf can be augmented with extra content
+
 DEEPDIVE_APP=$(find-deepdive-app)
 export DEEPDIVE_APP
 cd "$DEEPDIVE_APP"
@@ -46,7 +48,7 @@ if [[ -r deepdive.conf ]]; then
     cat deepdive.conf
 fi
 # any extra config present in DEEPDIVE_CONFIG_EXTRA environment gets more priority
-if [[ -n "${DEEPDIVE_CONFIG_EXTRA:-}" ]]; then
+if [[ -n "$DEEPDIVE_CONFIG_EXTRA" ]]; then
     echo "$DEEPDIVE_CONFIG_EXTRA"
 fi
 # generate builtin extractors from schema
