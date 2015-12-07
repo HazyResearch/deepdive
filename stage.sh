@@ -90,6 +90,7 @@ stage target/scala-2.10/deepdive-assembly-*.jar                   lib/deepdive.j
 # DeepDive utilities
 stage util/tobinary.py                                            util/
 stage util/active.sh                                              util/
+stage util/draw_calibration_plot                                  util/
 stage util/calibration.py                                         util/
 stage util/calibration.plg                                        util/
 stage util/pgtsv_to_json                                          util/

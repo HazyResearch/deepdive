@@ -10,11 +10,18 @@ exec jq '.deepdive_ as $deepdive
         output_: "model/calibration-plots",
         style: "cmd_extractor",
         cmd: "
+            d=../../../model/calibration-plots && mkdir -p \"$d\" && cd \"$d\"
+            # XXX a legacy location under the current run directory for backward compatibility
+            extraOutput=\"${DEEPDIVE_OUTPUT:-../../RUNNING}\"/calibration && mkdir -p \"$extraOutput\"
             DEEPDIVE_CALIBRATION_NUM_BUCKETS=10
             \($deepdive.schema.variables | keys | map(
             . as $relationName | $deepdive.schema.variables[$relationName] | keys[] |
             . as $columnName | "
+            # create a view and draw a calibration plot for \($relationName)_\($columnName)
             db-create_calibration_view \($relationName | @sh) \($columnName | @sh)
+            draw_calibration_plot      \($relationName | @sh) \($columnName | @sh)
+            # XXX keeping a duplicate copy under the current run directory for backward compatibility
+            cp -a \("\($relationName)_\($columnName)" | @sh).* \"$extraOutput\"/
             ") | join("\n"))
         "
     }
