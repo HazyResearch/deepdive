@@ -28,13 +28,13 @@ if [[ $# -eq 0 ]]; then
         input/init.sh
     fi
     # initialize relations declared in schema
-    [[ ! -e "$DEEPDIVE_APP"/run/compiled.schema.json ]] ||
-    deepdive-sql "$(schema_json_to_sql "$DEEPDIVE_APP"/run/compiled.schema.json)"
+    [[ ! -e "$DEEPDIVE_APP"/run/compiled/schema.json ]] ||
+    deepdive-sql "$(schema_json_to_sql "$DEEPDIVE_APP"/run/compiled/schema.json)"
 else
     # if a list of table names given, initialize corresponding tables
-    [[ -e "$DEEPDIVE_APP"/run/compiled.schema.json ]] ||
+    [[ -e "$DEEPDIVE_APP"/run/compiled/schema.json ]] ||
         error "$DEEPDIVE_APP: Not compiled yet, please run: deepdive compile"
     for Relation; do
-        deepdive-sql "$(schema_json_to_sql "$DEEPDIVE_APP"/run/compiled.schema.json "$Relation")"
+        deepdive-sql "$(schema_json_to_sql "$DEEPDIVE_APP"/run/compiled/schema.json "$Relation")"
     done
 fi

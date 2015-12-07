@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# compile-config-2.03-calibration_plots -- Adds processes for producing calibration plots
+##
+exec jq '.deepdive_ as $deepdive
+| .deepdive_.extraction.extractors += {
+
+    # calibration plots
+    "process/model/calibration": {
+        dependencies_: ["data/model/probabilities", "process/model/load_probabilities"],
+        output_: "model/calibration-plots",
+        style: "cmd_extractor",
+        cmd: "
+            DEEPDIVE_CALIBRATION_NUM_BUCKETS=10
+            \($deepdive.schema.variables | keys | map(
+            . as $relationName | $deepdive.schema.variables[$relationName] | keys[] |
+            . as $columnName | "
+            db-create_calibration_view \($relationName | @sh) \($columnName | @sh)
+            ") | join("\n"))
+        "
+    }
+
+}
+' "$@"

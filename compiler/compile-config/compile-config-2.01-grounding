@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# compile-config-2.01-grounding -- Adds processes for grounding the factor graph
+##
+exec jq '.deepdive_ as $deepdive
+| .deepdive_.extraction.extractors += {
+
+    # grounding the factor graph
+    "process/model/grounding": {
+        dependencies_: ($deepdive.inference.factors | keys),
+        output_: "model/factorgraph",
+        style: "cmd_extractor",
+        cmd: "mkdir -p ../../../model && cd ../../../model
+            mkdir -p factorgraph
+
+            # TODO run factor queries and grounding queries directly from here or via database drivers
+            set +x; . load-db-driver.sh; set -x
+            export DEEPDIVE_LOGFILE=factorgraph/grounding.log
+            [[ ! -e \"$DEEPDIVE_LOGFILE\" ]] || mv -f \"$DEEPDIVE_LOGFILE\" \"$DEEPDIVE_LOGFILE\"~
+            java org.deepdive.Main -c <(
+                set +x
+                echo \("deepdive \(.deepdive | @json)" | @sh)
+                echo \("deepdive.pipeline.pipelines.grounding: [\(.deepdive.inference.factors | keys | join(", "))]" | @sh)
+                echo \("deepdive.pipeline.run: grounding" | @sh)
+            ) -o factorgraph -t inference_grounding
+
+            # drop graph. prefix from file names
+            cd factorgraph
+            mv -f graph.variables variables
+            mv -f graph.factors   factors
+            mv -f graph.weights   weights
+            mv -f graph.meta      meta
+        "
+    }
+
+}
+' "$@"

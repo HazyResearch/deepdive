@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# compile-config-0.00-init_objects -- Initializes the deepdive_ object for compilation
+##
+exec jq '
+
+# duplicate the original deepdive config object
+.deepdive_ = .deepdive | .deepdive_ as $deepdive
+
+# make sure at least they are empty objects
+| .deepdive_.schema                |= . + {}
+| .deepdive_.schema.variables      |= . + {}
+| .deepdive_.schema.relations      |= . + {}
+| .deepdive_.extraction            |= . + {}
+| .deepdive_.extraction.extractors |= . + {}
+| .deepdive_.inference             |= . + {}
+| .deepdive_.inference.factors     |= . + {}
+| .deepdive_.pipeline              |= . + {}
+| .deepdive_.pipeline.pipelines    |= . + {}
+
+' "$@"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # compile-dependencies2dot -- Generates a DOT corresponding to the input dependency graph in JSON
 ##
-exec -a "$0" jq -r '
+exec jq -r '
 def nodeId: sub("/"; "/\n");
 def nodeType: sub("/.*$"; "");
 
@@ -50,4 +50,4 @@ end
 ), "
 
 }
-"'
+"' "$@"

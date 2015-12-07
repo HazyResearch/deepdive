@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# compile-config_normalized -- Normalizes deepdive.conf in JSON to use qualified names
+# compile-config-1.00-qualified_names -- Normalizes config to use qualified names
 #
 # - extractor names are prefixed with process/*
 # - factor names are prefixed with factor/*
@@ -7,7 +7,7 @@
 # - output_relation names are prefixed with data/* and kept under a new key output_
 # - dependencies are rewritten with qualified names under a new key dependencies_
 ##
-exec -a "$0" jq '.deepdive_ as $deepdive
+exec jq '.deepdive_ as $deepdive
 
 # TODO add default fields to all extractors and factors
 
@@ -42,4 +42,4 @@ exec -a "$0" jq '.deepdive_ as $deepdive
                    )
     )
 
-'
+' "$@"

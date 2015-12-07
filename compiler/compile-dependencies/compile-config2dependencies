@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # compile-config2dependencies -- Derives a dependency graph from deepdive.conf in JSON
 ##
-exec -a "$0" jq '.deepdive_ as $deepdive
+exec jq '.deepdive_ as $deepdive
 
 # a handy map to find input data for extractors
 | ( $deepdive.extraction.extractors | with_entries(.value |= .output_)
@@ -24,4 +24,4 @@ exec -a "$0" jq '.deepdive_ as $deepdive
     ( $deepdive.pipeline.pipelines | to_entries[]
     )
   ]
-| from_entries'
+| from_entries' "$@"

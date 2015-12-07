@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# compile-config-0.02-input_loaders -- Adds default data loading processes for base relations
+#
+# - a deepdive-load extractor for relations declared in schema but lacking an extractor that outputs it
+##
+exec jq '.deepdive_ as $deepdive |
+
+# add initialization extractors that loads data into base relations declared in schema
+.deepdive_.extraction.extractors += (
+    # first a handy map from relation to any process that outputs it
+    ( $deepdive.extraction.extractors | with_entries
+    ( { key: (.value.output_relation // empty), value: .key }
+        )) as $output_by_process |
+    [ $deepdive.schema.relations // {} | to_entries[]
+    | select($output_by_process[.key] | not)
+    | { key: "init/relation/\(.key)"
+      , value: { style: "cmd_extractor"
+               , cmd: "deepdive initdb \(.key | @sh) && deepdive load \(.key | @sh)"
+               , dependencies: [ "init/db" ]
+               , output_relation: .key
+               } }
+    ] | from_entries )
+
+' "$@"

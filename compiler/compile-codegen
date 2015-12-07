@@ -4,10 +4,9 @@
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2015-12-05
 set -euo pipefail
-eval "$(jq -r '.[]
-| "
+eval "$(jq -r '"
 x=\(.path | @sh)
-echo >&2 \"Generating run/$x\"
+echo >&2 \" run/$x\"
 mkdir -p \"$(dirname \"$x\")\"
 echo \(.content | @sh) >\"$x\"
 \(.mode | if . then "chmod \(@sh) \"$x\"" else "" end)

@@ -56,19 +56,9 @@ stage compiler/deepdive-compile                                   util/
 stage .build/submodule/compiler/hocon2json/hocon2json.sh                                util/hocon2json
 stage .build/submodule/compiler/hocon2json/target/scala-2.10/hocon2json-assembly-*.jar  util/hocon2json.jar
 stage src/main/resources/application.conf                         etc/deepdive-default.conf
-stage compiler/compile-config_before_normalized                   util/
-stage compiler/compile-config_normalized                          util/
-stage compiler/compile-config_after_normalized                    util/
-stage compiler/compile-config2dependencies                        util/
-stage compiler/compile-dependencies2make                          util/
-stage compiler/compile-dependencies2dot                           util/
-stage compiler/compile-code-tsv_extractor                         util/
-stage compiler/compile-code-json_extractor                        util/
-stage compiler/compile-code-sql_extractor                         util/
-stage compiler/compile-code-cmd_extractor                         util/
-stage compiler/compile-code-piggy_extractor                       util/
-stage compiler/compile-code-plpy_extractor                        util/
-stage compiler/compile-code-sql_factor                            util/
+stage compiler/compile-config                                     util/
+stage compiler/compile-dependencies                               util/
+stage compiler/compile-code                                       util/
 stage compiler/compile-codegen                                    util/
 
 stage runner/deepdive-plan                                        util/
