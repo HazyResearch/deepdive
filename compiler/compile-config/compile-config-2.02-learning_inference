@@ -13,7 +13,8 @@ exec jq '.deepdive_ as $deepdive
             mkdir -p weights
             [ -d factorgraph ] || error \"No factorgraph found\"
             # run inference engine for learning and inference
-            \($deepdive.sampler.sampler_cmd // "sampler-dw gibbs") \\
+            \($deepdive.sampler.sampler_cmd // "sampler-dw") \\
+                gibbs \\
                 -w factorgraph/weights \\
                 -v factorgraph/variables \\
                 -f factorgraph/factors \\
@@ -36,7 +37,8 @@ exec jq '.deepdive_ as $deepdive
                 # no need to run inference unless the weights are fresher
                 # XXX this skipping may cause confusion
                 # run sampler for performing inference with given weights without learning
-                \($deepdive.sampler.sampler_cmd // "sampler-dw gibbs") \\
+                \($deepdive.sampler.sampler_cmd // "sampler-dw") \\
+                    gibbs \\
                     -l 0 \\
                     -w factorgraph/weights \\
                     -v factorgraph/variables \\
