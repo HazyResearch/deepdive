@@ -14,18 +14,29 @@ cd "$DEEPDIVE_APP"
 . load-db-driver.sh
 mkdir -p run
 
+# create a fresh working directory for compiling
+compileDir=$(date +%Y%m%d/%H%M%S.%N)
+mkdir -p "run/$compileDir"
 # log all the compilation steps and stderr with timestamps
-exec 2> >(
-    cd run
-    [[ ! -e compile.log ]] || mv -f compile.log{,~}
-    logging-with-ts ./compile.log >&2
-)
+exec 3>&2 2> >(logging-with-ts run/"$compileDir"/compile.log >&2)
 STEP() { echo "$@"; } >&2
+# bookkeep some symlinks
+cleanup() {
+    cd "$DEEPDIVE_APP"/run
+    [[ ! COMPILING -ef "$compileDir" ]] || rm -f COMPILING
+} >&3
+abort() {
+    cd "$DEEPDIVE_APP"
+    [[ ! -e run/"$compileDir" ]] || ln -sfnv "$compileDir" run/ABORTED.COMPILING
+} >&3
+trap cleanup EXIT
+trap abort ERR HUP QUIT INT TERM
+ln -sfnv "$compileDir" run/COMPILING >&2
 
 ## compile a full deepdive.conf from source code
-STEP "Compiling run/compiled.deepdive.conf and run/compiled.schema.json"
+STEP "Compiling run/compiled/deepdive.conf and run/compiled/schema.json"
 # compile schema in JSON
-touch run/compiled.schema.json run/compiled.deepdive.conf
+touch run/"$compileDir"/schema.json run/"$compileDir"/deepdive.conf
 if [[ -r app.ddlog ]]; then
     ddlog export-schema app.ddlog
 else
@@ -37,7 +48,7 @@ if [[ -r schema.json && -s schema.json ]]; then
     jq '(env.SCHEMA_JSON | fromjson) + .' schema.json
 else
     cat
-fi >run/compiled.schema.json
+fi >run/"$compileDir"/schema.json
 {
 # compile DDlog rules
 if [[ -r app.ddlog ]]; then
@@ -53,12 +64,12 @@ if [[ -n "$DEEPDIVE_CONFIG_EXTRA" ]]; then
 fi
 # generate builtin extractors from schema
 echo -n "deepdive.schema "
-cat run/compiled.schema.json
-} >run/compiled.deepdive.conf
-cd run
+cat run/"$compileDir"/schema.json
+} >run/"$compileDir"/deepdive.conf
+cd run/"$compileDir"
 
 # produce a JSON from compiled deepdive.conf
-STEP "Converting into JSON as run/compiled.deepdive.conf.json"
+STEP "Converting into JSON as run/compiled/deepdive.conf.json"
 (
 # XXX some bogus variables in deepdive.conf added by DDlog compiler or in deepdive-default.conf
 APP_HOME='"$DEEPDIVE_APP"'
@@ -68,10 +79,10 @@ INPUT_BATCH_SIZE=100000
 export APP_HOME PIPELINE PARALLELISM INPUT_BATCH_SIZE
 # convert HOCON into JSON
 hocon2json \
-    compiled.deepdive.conf \
+    deepdive.conf \
     "$DEEPDIVE_HOME"/etc/deepdive-default.conf
-) >compiled.deepdive.conf.json
-STEP "Adding built-in processes in dataflow as normalized run/compiled.config.json"
+) >deepdive.conf.json
+STEP "Adding built-in processes in dataflow as normalized run/compiled/config.json"
 {
 # extend config with more builtin stuffs
 compile-config_before_normalized |
@@ -79,35 +90,42 @@ compile-config_before_normalized |
 compile-config_normalized |
 # add builtin nodes
 compile-config_after_normalized
-} <compiled.deepdive.conf.json >compiled.config.json
+} <deepdive.conf.json >config.json
 
-# validate/normalize the compiled.config.json
+# validate/normalize the compiled/config.json
 # TODO check if all input/output_relation exists in schema
 # TODO check if all processes/pipelines depend on defined processes
 # TODO check if all processes have required fields
 
-STEP "Analyzing dependencies to generate run/Makefile and run/compiled.dataflow.svg"
+STEP "Analyzing dependencies to generate run/Makefile and run/compiled/dataflow.svg"
 # derive a dependency graph from the extractors, factors, pipelines defined in deepdive.conf
-compile-config2dependencies <compiled.config.json >compiled.dependencies.json
+compile-config2dependencies <config.json >dependencies.json
 # compile a Makefile from the dependency graph
-compile-dependencies2make <compiled.dependencies.json >Makefile
+compile-dependencies2make <dependencies.json >Makefile
 # compile an SVG from the dependency graph
-compile-dependencies2dot <compiled.dependencies.json >compiled.dataflow.dot
-dot -Tsvg <compiled.dataflow.dot >compiled.dataflow.svg
+compile-dependencies2dot <dependencies.json >dataflow.dot
+dot -Tsvg <dataflow.dot >dataflow.svg
 
-STEP "Compiling executable code for extractors and factors as run/compiled.code.json"
+STEP "Compiling executable code for extractors and factors as run/compiled/code.json"
 # compile extractors and factors under process/ and factor/
-# TODO A better idea would be to compile another JSON intermediate
-# representation (IR) for codegen that can be almost directly mapped to the
-# final shell scripts.
-rm -f compiled.code-*.json
 for cc in "$DEEPDIVE_HOME"/util/compile-code-*; do
     cc=${cc##*/}
     name=${cc#compile-code-}
-    $cc compiled.config.json >compiled.code-$name.json
+    $cc config.json >code-$name.json
 done
-cat compiled.code-*.json |
-jq -s . >compiled.code.json
+cat code-*.json |
+jq -s . >code.json
+# TODO check path name collisions in code-*.json
+# mark everything compiled as read-only
+chmod a-w *
 
+# generate actual code under run/
+cd "$DEEPDIVE_APP"/run
 STEP "Generating executable files under run/process/*"
-compile-codegen <compiled.code.json
+compile-codegen <"$compileDir"/code.json
+ln -sfn compiled/Makefile .
+
+# point to the successfully compiled one, leaving the previous one as backup
+cd "$DEEPDIVE_APP"
+[[ ! -e run/compiled ]] || mv -fv --no-target-directory run/compiled run/compiled~
+ln -sfnv "$compileDir" run/compiled >&2

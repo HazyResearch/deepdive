@@ -28,10 +28,12 @@ runDir=$(date +%Y%m%d/%H%M%S.%N)
 mkdir -p "$runDir"
 # make sure we clean up
 cleanup() {
+    cd "$DEEPDIVE_APP"/run
     [[ ! RUNNING -ef "$runDir" ]] || rm -f RUNNING
 }
 abort() {
-    [[ ! -e "$runDir" ]] || ln -sfn "$runDir" ABORTED
+    cd "$DEEPDIVE_APP"
+    [[ ! -e run/"$runDir" ]] || ln -sfnv "$runDir" run/ABORTED
 }
 trap cleanup EXIT
 trap abort ERR
@@ -65,5 +67,12 @@ DEEPDIVE_APP=$(cd .. && pwd -P)
 APP_HOME=$DEEPDIVE_APP # XXX legacy
 export DEEPDIVE_ERROR_PREFIX DEEPDIVE_PROGRESS_FD DEEPDIVE_APP APP_HOME
 eval 'bash -veu "$runDir"/plan.sh '$DEEPDIVE_PROGRESS_FD'>&2 2>&1' |
+{
+ln -sfn run.log "$runDir"/log.txt # XXX for backward compatibility with pre-0.7.x, keep a symlink
 # keep a log with timestamps on each line
-logging-with-ts "$runDir"/log.txt
+logging-with-ts "$runDir"/run.log
+}
+
+# leave a symlink to the latest successful run
+cd "$DEEPDIVE_APP"
+ln -sfnv "$runDir" run/LATEST
