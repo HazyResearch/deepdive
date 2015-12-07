@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# deepdive-compute -- Runs a UDF using a computer against the database
+# > export DEEPDIVE_COMPUTER=...
+# > deepdive compute input_sql=... command=... output_relation=...
+##
+set -eu
+
+# parse settings
+. load-db-driver.sh
+. load-compute-driver.sh
+
+exec compute-execute "$@"

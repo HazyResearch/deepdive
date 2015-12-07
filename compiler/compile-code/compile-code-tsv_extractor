@@ -19,7 +19,7 @@ cd \"$(dirname \"$0\")\"
 export DEEPDIVE_CURRENT_PROCESS_NAME=\(.name | @sh)
 export DEEPDIVE_LOAD_FORMAT=tsv
 
-compute-execute \\
+deepdive compute \\
     input_sql=\(.input | @sh) \\
     command=\(.udf | @sh) \\
     output_relation=\(.output_relation | @sh) \\

@@ -72,6 +72,7 @@ stage runner/resolve-args-to-do.sh                                util/
 stage runner/show_progress                                        util/
 stage runner/deepdive-run                                         util/
 
+stage runner/deepdive-compute                                     util/
 stage runner/load-compute-driver.sh                               util/
 stage runner/compute-driver/local                                 util/compute-driver/
 stage runner/computers-default.conf                               util/
