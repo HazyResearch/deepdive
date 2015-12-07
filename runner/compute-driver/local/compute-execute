@@ -38,10 +38,18 @@ num_processes=${DEEPDIVE_NUM_PROCESSES:-${num_processes:-$(
 # declare all input arguments
 declare -- "$@"
 
+# some derived values
+output_relation_tmp="dd_tmp_${output_relation}"
+
 # show configuration
 echo "Executing with the following configuration:"
 echo " num_processes=$num_processes"
+echo " output_relation_tmp=$output_relation_tmp"
 echo
+
+# use an empty temporary table as a sink instead of TRUNCATE'ing the output_relation
+deepdive initdb "$output_relation"
+deepdive sql "CREATE TABLE $output_relation_tmp (LIKE $output_relation);"
 
 # set up named pipes for parallel processes
 for i in $(seq $num_processes); do
@@ -54,9 +62,9 @@ trap 'rm -f process-*.{input,output}' EXIT
 
 # use mkmimo again to merge outputs of multiple processes into a single stream
 mkmimo process-*.output \> /dev/stdout |
-# load the output data to the database
+# load the output data to the temporary table in the database
 show_progress "$DEEPDIVE_CURRENT_PROCESS_NAME output" |
-deepdive load "$output_relation" /dev/stdin &
+deepdive load "$output_relation_tmp" /dev/stdin &
 
 # spawn multiple processes attached to the pipes
 for i in $(seq $num_processes); do
@@ -70,3 +78,14 @@ show_progress "$DEEPDIVE_CURRENT_PROCESS_NAME input" |
 mkmimo /dev/stdin \> process-*.input &
 
 wait  # until everything is done
+
+# rename the new temporary table
+# TODO maybe use PostgreSQL's schema support here?
+deepdive sql "
+    DROP TABLE IF EXISTS ${output_relation}_old;
+    ALTER TABLE ${output_relation}     RENAME TO ${output_relation}_old;
+" || true
+deepdive sql "
+    ALTER TABLE ${output_relation_tmp} RENAME TO ${output_relation};
+    DROP TABLE IF EXISTS ${output_relation}_old;
+"
