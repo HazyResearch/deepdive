@@ -22,6 +22,9 @@ def main():
   # load schema.json
   with open(sys.argv[1]) as schema_file:
     schema = json.load(schema_file)
+  if "relations" not in schema:
+    # nothing to do
+    sys.exit(0)
   # initialize all tables
   if len(sys.argv) <= 2:
     print ' '.join([generate_create_table_sql(schema, table) for table in (schema["relations"].keys() if "relations" in schema else [])])
