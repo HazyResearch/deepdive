@@ -25,6 +25,11 @@ deepdive sql eval "
       FROM $calibration_view
 " format=tsv >"$tsv"
 
-# then, produce the PNG image
-# with gnuplot
-gnuplot -e "input_file=\"$tsv\";output_file=\"$png\"" "$DEEPDIVE_HOME"/util/calibration.plg
+# then, produce the calibration plot
+# as PNG image with gnuplot
+gnuplot -e "input_file=\"$tsv\";output_file=\"$png\"" "$DEEPDIVE_HOME"/util/calibration.plg ||
+    # or try Python with Matplotlib if that fails
+    calibration.py "$tsv" "$png" ||
+    # Matplotlib has issues with virtualenv, so try with system python if that fails
+    /usr/bin/python "$DEEPDIVE_HOME"/util/calibration.py "$tsv" "$png" ||
+    true
