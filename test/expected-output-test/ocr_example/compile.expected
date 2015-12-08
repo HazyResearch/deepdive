@@ -18,66 +18,6 @@ q2.label: Boolean
       }
     
 
-          deepdive.extraction.extractors.init_label1 {
-            sql: """ DROP TABLE IF EXISTS label1 CASCADE;
-            CREATE TABLE
-            label1(wid INT,
-      val BOOLEAN)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_features {
-            sql: """ DROP TABLE IF EXISTS features CASCADE;
-            CREATE TABLE
-            features(id BIGSERIAL,
-        word_id INT,
-        feature_id INT,
-        feature_val BOOLEAN)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_label2 {
-            sql: """ DROP TABLE IF EXISTS label2 CASCADE;
-            CREATE TABLE
-            label2(wid INT,
-      val BOOLEAN)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_q1 {
-            sql: """ DROP TABLE IF EXISTS q1 CASCADE;
-            CREATE TABLE
-            q1(wid INT,
-  id bigint,
-  label boolean)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_q2 {
-            sql: """ DROP TABLE IF EXISTS q2 CASCADE;
-            CREATE TABLE
-            q2(wid INT,
-  id bigint,
-  label boolean)
-            """
-            style: "sql_extractor"
-          }
-
-        deepdive.extraction.extractors.cleanup {
-          sql: """
-          TRUNCATE label1;
-          TRUNCATE features;
-          TRUNCATE label2;
-          TRUNCATE q1;
-          TRUNCATE q2;
-          """
-          style: "sql_extractor"
-        }
-
       deepdive.extraction.extractors.ext_q1 {
         sql: """ 
         INSERT INTO q1 SELECT DISTINCT R0.wid, 0 AS id, R0.val AS label
@@ -85,8 +25,12 @@ q2.label: Boolean
         
           
         """
+          output_relation: "q1"
         style: "sql_extractor"
           
+          input_relations: [
+            label1
+          ]
       }
     
 
@@ -97,8 +41,12 @@ q2.label: Boolean
         
           
         """
+          output_relation: "q2"
         style: "sql_extractor"
           
+          input_relations: [
+            label2
+          ]
       }
     
 
@@ -109,6 +57,11 @@ q2.label: Boolean
         WHERE R1.word_id = R0.wid """
           function: "Imply(q1.R0.label)"
           weight: "?(dd_weight_column_0)"
+          
+          input_relations: [
+            q1
+            features
+          ]
         }
       
 
@@ -119,16 +72,14 @@ q2.label: Boolean
         WHERE R1.word_id = R0.wid """
           function: "Imply(q2.R0.label)"
           weight: "?(dd_weight_column_0)"
+          
+          input_relations: [
+            q2
+            features
+          ]
         }
       
 deepdive.pipeline.run: ${PIPELINE}
-deepdive.pipeline.pipelines.initdb: [
-  init_label1
-  init_features
-  init_label2
-  init_q1
-  init_q2
-]
 deepdive.pipeline.pipelines.extraction: [
   ext_q1
   ext_q2
@@ -142,7 +93,4 @@ deepdive.pipeline.pipelines.endtoend: [
   ext_q2
   inf_istrue_q1
   inf_istrue_q2
-]
-deepdive.pipeline.pipelines.cleanup: [
-  cleanup
 ]

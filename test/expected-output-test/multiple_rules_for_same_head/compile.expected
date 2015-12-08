@@ -17,51 +17,6 @@
       }
     
 
-          deepdive.extraction.extractors.init_S {
-            sql: """ DROP TABLE IF EXISTS S CASCADE;
-            CREATE TABLE
-            S(a int)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_R {
-            sql: """ DROP TABLE IF EXISTS R CASCADE;
-            CREATE TABLE
-            R(a int,
- b int)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_Q {
-            sql: """ DROP TABLE IF EXISTS Q CASCADE;
-            CREATE TABLE
-            Q(x int,
- id bigint,
- label boolean)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_T {
-            sql: """ DROP TABLE IF EXISTS T CASCADE;
-            CREATE TABLE
-            T(a int)
-            """
-            style: "sql_extractor"
-          }
-
-        deepdive.extraction.extractors.cleanup {
-          sql: """
-          TRUNCATE S;
-          TRUNCATE R;
-          TRUNCATE Q;
-          TRUNCATE T;
-          """
-          style: "sql_extractor"
-        }
-
       deepdive.extraction.extractors.ext_S {
         sql: """ 
         INSERT INTO S SELECT R0.a AS "R.R0.a"
@@ -76,8 +31,12 @@ SELECT R0.a AS "R.R0.a"
 FROM R R0, R R1
         WHERE R1.a = R0.b  AND R0.a = 0
         """
+          output_relation: "S"
         style: "sql_extractor"
           
+          input_relations: [
+            R
+          ]
       }
     
 
@@ -90,7 +49,10 @@ FROM R R0
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
-          input_batch_size: ${INPUT_BATCH_SIZE} 
+          input_relations: [
+            R
+          ]
+          input_batch_size: ${INPUT_BATCH_SIZE}
           parallelism: ${PARALLELISM}
         }
       
@@ -104,7 +66,10 @@ FROM R R0
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
-          input_batch_size: ${INPUT_BATCH_SIZE} 
+          input_relations: [
+            R
+          ]
+          input_batch_size: ${INPUT_BATCH_SIZE}
           parallelism: ${PARALLELISM}
         }
       
@@ -118,7 +83,10 @@ FROM R R0
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
-          input_batch_size: ${INPUT_BATCH_SIZE} 
+          input_relations: [
+            R
+          ]
+          input_batch_size: ${INPUT_BATCH_SIZE}
           parallelism: ${PARALLELISM}
         }
       
@@ -132,7 +100,10 @@ FROM R R0
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
-          input_batch_size: ${INPUT_BATCH_SIZE} 
+          input_relations: [
+            R
+          ]
+          input_batch_size: ${INPUT_BATCH_SIZE}
           parallelism: ${PARALLELISM}
         }
       
@@ -146,7 +117,10 @@ FROM R R0
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
-          input_batch_size: ${INPUT_BATCH_SIZE} 
+          input_relations: [
+            R
+          ]
+          input_batch_size: ${INPUT_BATCH_SIZE}
           parallelism: ${PARALLELISM}
         }
       
@@ -160,7 +134,10 @@ FROM R R0
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
-          input_batch_size: ${INPUT_BATCH_SIZE} 
+          input_relations: [
+            R
+          ]
+          input_batch_size: ${INPUT_BATCH_SIZE}
           parallelism: ${PARALLELISM}
         }
       
@@ -174,7 +151,10 @@ FROM R R0
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
-          input_batch_size: ${INPUT_BATCH_SIZE} 
+          input_relations: [
+            R
+          ]
+          input_batch_size: ${INPUT_BATCH_SIZE}
           parallelism: ${PARALLELISM}
         }
       
@@ -186,6 +166,11 @@ FROM R R0
         WHERE R1.a = R0.x  AND R0.x > 1000"""
           function: "Imply(Q.R0.label)"
           weight: "?(dd_weight_column_0)"
+          dependencies: [ "ext1_S_by_f" ,  "ext_S" ,  "ext_S_by_f_1" ,  "ext_S_by_f" ]
+          input_relations: [
+            Q
+            S
+          ]
         }
       
 
@@ -196,6 +181,11 @@ FROM R R0
         WHERE R1.a = R0.x  AND R0.x = 0"""
           function: "Imply(Q.R0.label)"
           weight: "1.0"
+          dependencies: [ "ext1_S_by_f" ,  "ext_S" ,  "ext_S_by_f_1" ,  "ext_S_by_f" ]
+          input_relations: [
+            Q
+            S
+          ]
         }
       
 
@@ -206,6 +196,12 @@ FROM R R0
         WHERE R2.a = R0.x  AND R3.a = R0.x  AND R3.b = R1.x  AND R4.a = R1.x """
           function: "Imply(Q.R0.label, Q.R1.label)"
           weight: "?(dd_weight_column_0)"
+          dependencies: [ "ext1_S_by_f" ,  "ext_S" ,  "ext_S_by_f_1" ,  "ext_S_by_f" ]
+          input_relations: [
+            Q
+            S
+            R
+          ]
         }
       
 
@@ -216,15 +212,15 @@ FROM R R0
         WHERE R2.a = R0.x  AND R3.a = R0.x  AND R3.b = R1.x  AND R4.a = R1.x  AND (R0.x + R1.x) < 1000"""
           function: "Imply(Q.R0.label, Q.R1.label)"
           weight: "-10.0"
+          dependencies: [ "ext1_S_by_f" ,  "ext_S" ,  "ext_S_by_f_1" ,  "ext_S_by_f" ]
+          input_relations: [
+            Q
+            S
+            R
+          ]
         }
       
 deepdive.pipeline.run: ${PIPELINE}
-deepdive.pipeline.pipelines.initdb: [
-  init_S
-  init_R
-  init_Q
-  init_T
-]
 deepdive.pipeline.pipelines.extraction: [
   ext2_T_by_f
   ext_S_by_f_1
@@ -254,7 +250,4 @@ deepdive.pipeline.pipelines.endtoend: [
   inf1_istrue_Q
   inf_imply_Q_Q
   inf1_imply_Q_Q
-]
-deepdive.pipeline.pipelines.cleanup: [
-  cleanup
 ]

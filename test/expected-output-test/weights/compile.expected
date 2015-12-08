@@ -21,78 +21,6 @@ c.label: Boolean
       }
     
 
-          deepdive.extraction.extractors.init_e {
-            sql: """ DROP TABLE IF EXISTS e CASCADE;
-            CREATE TABLE
-            e(k int,
- id bigint,
- label boolean)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_f {
-            sql: """ DROP TABLE IF EXISTS f CASCADE;
-            CREATE TABLE
-            f(k int,
- id bigint,
- label boolean)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_a {
-            sql: """ DROP TABLE IF EXISTS a CASCADE;
-            CREATE TABLE
-            a(k int,
- id bigint,
- label boolean)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_b {
-            sql: """ DROP TABLE IF EXISTS b CASCADE;
-            CREATE TABLE
-            b(k int,
- p int,
- q text)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_c {
-            sql: """ DROP TABLE IF EXISTS c CASCADE;
-            CREATE TABLE
-            c(k int,
- id bigint,
- label boolean)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_d {
-            sql: """ DROP TABLE IF EXISTS d CASCADE;
-            CREATE TABLE
-            d(k int,
- id bigint,
- label boolean)
-            """
-            style: "sql_extractor"
-          }
-
-        deepdive.extraction.extractors.cleanup {
-          sql: """
-          TRUNCATE e;
-          TRUNCATE f;
-          TRUNCATE a;
-          TRUNCATE b;
-          TRUNCATE c;
-          TRUNCATE d;
-          """
-          style: "sql_extractor"
-        }
-
         deepdive.inference.factors.inf_istrue_a {
           input_query: """
           SELECT R0.id AS "a.R0.id" , (R0.k + R1.p) AS "dd_weight_column_0" 
@@ -100,6 +28,11 @@ c.label: Boolean
         WHERE R1.k = R0.k """
           function: "Imply(a.R0.label)"
           weight: "?(dd_weight_column_0)"
+          
+          input_relations: [
+            a
+            b
+          ]
         }
       
 
@@ -110,6 +43,11 @@ c.label: Boolean
         WHERE R1.k = R0.k """
           function: "Imply(c.R0.label)"
           weight: "?"
+          
+          input_relations: [
+            c
+            b
+          ]
         }
       
 
@@ -120,6 +58,11 @@ c.label: Boolean
         WHERE R1.k = R0.k """
           function: "Imply(d.R0.label)"
           weight: "?(dd_weight_column_0, dd_weight_column_1)"
+          
+          input_relations: [
+            d
+            b
+          ]
         }
       
 
@@ -130,6 +73,11 @@ c.label: Boolean
         WHERE R1.k = R0.k """
           function: "Imply(e.R0.label)"
           weight: "-10"
+          
+          input_relations: [
+            e
+            b
+          ]
         }
       
 
@@ -140,17 +88,14 @@ c.label: Boolean
         WHERE R1.k = R0.k """
           function: "Imply(f.R0.label)"
           weight: "-0.3"
+          
+          input_relations: [
+            f
+            b
+          ]
         }
       
 deepdive.pipeline.run: ${PIPELINE}
-deepdive.pipeline.pipelines.initdb: [
-  init_e
-  init_f
-  init_a
-  init_b
-  init_c
-  init_d
-]
 deepdive.pipeline.pipelines.inference: [
   inf_istrue_a
   inf_istrue_c
@@ -164,7 +109,4 @@ deepdive.pipeline.pipelines.endtoend: [
   inf_istrue_d
   inf_istrue_e
   inf_istrue_f
-]
-deepdive.pipeline.pipelines.cleanup: [
-  cleanup
 ]

@@ -17,58 +17,6 @@
       }
     
 
-          deepdive.extraction.extractors.init_words_raw {
-            sql: """ DROP TABLE IF EXISTS words_raw CASCADE;
-            CREATE TABLE
-            words_raw(word_id bigserial,
-         word text,
-         pos text,
-         tag text)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_words {
-            sql: """ DROP TABLE IF EXISTS words CASCADE;
-            CREATE TABLE
-            words(sent_id bigint,
-     word_id bigint,
-     word text,
-     pos text,
-     true_tag int)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_tag {
-            sql: """ DROP TABLE IF EXISTS tag CASCADE;
-            CREATE TABLE
-            tag(word_id bigint,
-   id bigint,
-   label int)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_word_features {
-            sql: """ DROP TABLE IF EXISTS word_features CASCADE;
-            CREATE TABLE
-            word_features(word_id bigint,
-             feature text)
-            """
-            style: "sql_extractor"
-          }
-
-        deepdive.extraction.extractors.cleanup {
-          sql: """
-          TRUNCATE words_raw;
-          TRUNCATE words;
-          TRUNCATE tag;
-          TRUNCATE word_features;
-          """
-          style: "sql_extractor"
-        }
-
       deepdive.extraction.extractors.ext_tag {
         sql: """ 
         INSERT INTO tag SELECT DISTINCT R0.sent_id, 0 AS id, R0.true_tag AS label
@@ -76,8 +24,12 @@
         
           
         """
+          output_relation: "tag"
         style: "sql_extractor"
           dependencies: [ "ext_words_by_ext_training" ]
+          input_relations: [
+            words
+          ]
       }
     
 
@@ -89,8 +41,11 @@ FROM words_raw R0
           output_relation: "words"
           udf: ${APP_HOME}"/udf/ext_training.py"
           style: "tsv_extractor" 
-         
-          input_batch_size: ${INPUT_BATCH_SIZE} 
+          
+          input_relations: [
+            words_raw
+          ]
+          input_batch_size: ${INPUT_BATCH_SIZE}
           parallelism: ${PARALLELISM}
         }
       
@@ -104,7 +59,10 @@ FROM words R0, words R1
           udf: ${APP_HOME}"/udf/ext_features.py"
           style: "tsv_extractor" 
           dependencies: [ "ext_words_by_ext_training" ]
-          input_batch_size: ${INPUT_BATCH_SIZE} 
+          input_relations: [
+            words
+          ]
+          input_batch_size: ${INPUT_BATCH_SIZE}
           parallelism: ${PARALLELISM}
         }
       
@@ -116,15 +74,14 @@ FROM words R0, words R1
         WHERE R1.word_id = R0.word_id """
           function: "Multinomial(tag.R0.label)"
           weight: "?(dd_weight_column_0)"
+          dependencies: [ "ext_word_features_by_ext_features" ]
+          input_relations: [
+            tag
+            word_features
+          ]
         }
       
 deepdive.pipeline.run: ${PIPELINE}
-deepdive.pipeline.pipelines.initdb: [
-  init_words_raw
-  init_words
-  init_tag
-  init_word_features
-]
 deepdive.pipeline.pipelines.extraction: [
   ext_tag
   ext_words_by_ext_training
@@ -138,7 +95,4 @@ deepdive.pipeline.pipelines.endtoend: [
   ext_words_by_ext_training
   ext_word_features_by_ext_features
   inf_istrue_tag
-]
-deepdive.pipeline.pipelines.cleanup: [
-  cleanup
 ]

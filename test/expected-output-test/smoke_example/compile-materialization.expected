@@ -18,74 +18,6 @@ cancer.label: Boolean
       }
     
 
-          deepdive.extraction.extractors.init_person_smokes {
-            sql: """ DROP TABLE IF EXISTS person_smokes CASCADE;
-            CREATE TABLE
-            person_smokes(person_id bigint,
-             smokes boolean)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_smoke {
-            sql: """ DROP TABLE IF EXISTS smoke CASCADE;
-            CREATE TABLE
-            smoke(person_id bigint,
-     id bigint,
-     label boolean)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_cancer {
-            sql: """ DROP TABLE IF EXISTS cancer CASCADE;
-            CREATE TABLE
-            cancer(person_id bigint,
-      id bigint,
-      label boolean)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_friends {
-            sql: """ DROP TABLE IF EXISTS friends CASCADE;
-            CREATE TABLE
-            friends(person_id bigint,
-       friend_id bigint)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_person_has_cancer {
-            sql: """ DROP TABLE IF EXISTS person_has_cancer CASCADE;
-            CREATE TABLE
-            person_has_cancer(person_id bigint,
-                 has_cancer boolean)
-            """
-            style: "sql_extractor"
-          }
-
-          deepdive.extraction.extractors.init_person {
-            sql: """ DROP TABLE IF EXISTS person CASCADE;
-            CREATE TABLE
-            person(person_id bigint,
-      name text)
-            """
-            style: "sql_extractor"
-          }
-
-        deepdive.extraction.extractors.cleanup {
-          sql: """
-          TRUNCATE person_smokes;
-          TRUNCATE smoke;
-          TRUNCATE cancer;
-          TRUNCATE friends;
-          TRUNCATE person_has_cancer;
-          TRUNCATE person;
-          """
-          style: "sql_extractor"
-        }
-
       deepdive.extraction.extractors.ext_cancer {
         sql: """ 
         INSERT INTO cancer SELECT DISTINCT R0.person_id, 0 AS id, R0.has_cancer AS label
@@ -93,8 +25,12 @@ cancer.label: Boolean
         
           
         """
+          output_relation: "cancer"
         style: "sql_extractor"
           
+          input_relations: [
+            person_has_cancer
+          ]
       }
     
 
@@ -105,8 +41,12 @@ cancer.label: Boolean
         
           
         """
+          output_relation: "smoke"
         style: "sql_extractor"
           
+          input_relations: [
+            person_smokes
+          ]
       }
     
 
@@ -117,6 +57,12 @@ cancer.label: Boolean
         WHERE R1.person_id = R0.person_id  AND R2.person_id = R0.person_id """
           function: "Imply(smoke.R0.label, cancer.R1.label)"
           weight: "0.5"
+          
+          input_relations: [
+            smoke
+            cancer
+            person_smokes
+          ]
         }
       
 
@@ -127,17 +73,14 @@ cancer.label: Boolean
         WHERE R2.person_id = R0.person_id  AND R2.friend_id = R1.person_id """
           function: "Imply(smoke.R0.label, smoke.R1.label)"
           weight: "0.4"
+          
+          input_relations: [
+            smoke
+            friends
+          ]
         }
       
 deepdive.pipeline.run: ${PIPELINE}
-deepdive.pipeline.pipelines.initdb: [
-  init_person_smokes
-  init_smoke
-  init_cancer
-  init_friends
-  init_person_has_cancer
-  init_person
-]
 deepdive.pipeline.pipelines.extraction: [
   ext_cancer
   ext_smoke

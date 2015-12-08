@@ -106,8 +106,13 @@ SELECT R0.a
 FROM dd_delta_S R0
         
         """
+          output_relation: "dd_new_S"
         style: "sql_extractor"
           dependencies: [ "ext_dd_delta_S" ,  "ext1_dd_delta_S_by_f" ,  "ext_dd_delta_S_by_f" ,  "ext_dd_delta_S_by_f_1" ]
+          input_relations: [
+            S
+            dd_delta_S
+          ]
       }
     
 
@@ -121,8 +126,13 @@ SELECT R0.a
 FROM dd_delta_T R0
         
         """
+          output_relation: "dd_new_T"
         style: "sql_extractor"
           dependencies: [ "ext_dd_delta_T_by_f" ,  "ext1_dd_delta_T_by_f" ,  "ext2_dd_delta_T_by_f" ,  "ext_dd_delta_T_by_f_1" ]
+          input_relations: [
+            T
+            dd_delta_T
+          ]
       }
     
 
@@ -152,8 +162,14 @@ SELECT R0.a AS "dd_new_R.R0.a"
 FROM dd_new_R R0, dd_delta_R R1
         WHERE R1.a = R0.b  AND R0.a = 0
         """
+          output_relation: "dd_delta_S"
         style: "sql_extractor"
           dependencies: [ "ext_dd_new_R" ]
+          input_relations: [
+            dd_delta_R
+            R
+            dd_new_R
+          ]
       }
     
 
@@ -167,8 +183,13 @@ SELECT R0.a, R0.b
 FROM dd_delta_R R0
         
         """
+          output_relation: "dd_new_R"
         style: "sql_extractor"
           
+          input_relations: [
+            R
+            dd_delta_R
+          ]
       }
     
 
@@ -184,8 +205,13 @@ SELECT DISTINCT R0.x, id, label
         
           
         """
+          output_relation: "dd_new_Q"
         style: "sql_extractor"
           
+          input_relations: [
+            Q
+            dd_delta_Q
+          ]
       }
     
 
@@ -198,7 +224,10 @@ FROM dd_delta_R R0
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
-          input_batch_size: ${INPUT_BATCH_SIZE} 
+          input_relations: [
+            dd_delta_R
+          ]
+          input_batch_size: ${INPUT_BATCH_SIZE}
           parallelism: ${PARALLELISM}
         }
       
@@ -212,7 +241,10 @@ FROM dd_delta_R R0
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
-          input_batch_size: ${INPUT_BATCH_SIZE} 
+          input_relations: [
+            dd_delta_R
+          ]
+          input_batch_size: ${INPUT_BATCH_SIZE}
           parallelism: ${PARALLELISM}
         }
       
@@ -226,7 +258,10 @@ FROM dd_delta_R R0
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
-          input_batch_size: ${INPUT_BATCH_SIZE} 
+          input_relations: [
+            dd_delta_R
+          ]
+          input_batch_size: ${INPUT_BATCH_SIZE}
           parallelism: ${PARALLELISM}
         }
       
@@ -240,7 +275,10 @@ FROM dd_delta_R R0
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
-          input_batch_size: ${INPUT_BATCH_SIZE} 
+          input_relations: [
+            dd_delta_R
+          ]
+          input_batch_size: ${INPUT_BATCH_SIZE}
           parallelism: ${PARALLELISM}
         }
       
@@ -254,7 +292,10 @@ FROM dd_delta_R R0
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
-          input_batch_size: ${INPUT_BATCH_SIZE} 
+          input_relations: [
+            dd_delta_R
+          ]
+          input_batch_size: ${INPUT_BATCH_SIZE}
           parallelism: ${PARALLELISM}
         }
       
@@ -268,7 +309,10 @@ FROM dd_delta_R R0
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
-          input_batch_size: ${INPUT_BATCH_SIZE} 
+          input_relations: [
+            dd_delta_R
+          ]
+          input_batch_size: ${INPUT_BATCH_SIZE}
           parallelism: ${PARALLELISM}
         }
       
@@ -282,7 +326,10 @@ FROM dd_delta_R R0
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
-          input_batch_size: ${INPUT_BATCH_SIZE} 
+          input_relations: [
+            dd_delta_R
+          ]
+          input_batch_size: ${INPUT_BATCH_SIZE}
           parallelism: ${PARALLELISM}
         }
       
@@ -294,6 +341,11 @@ FROM dd_delta_R R0
         WHERE R1.a = R0.x  AND R0.x > 1000"""
           function: "Imply(dd_new_Q.R0.label)"
           weight: "?(dd_weight_column_0)"
+          dependencies: [ "ext_dd_delta_S" ,  "ext1_dd_delta_S_by_f" ,  "ext_dd_delta_S_by_f" ,  "ext_dd_delta_S_by_f_1" ]
+          input_relations: [
+            dd_new_Q
+            dd_delta_S
+          ]
         }
       
 
@@ -304,6 +356,11 @@ FROM dd_delta_R R0
         WHERE R1.a = R0.x  AND R0.x = 0"""
           function: "Imply(dd_new_Q.R0.label)"
           weight: "1.0"
+          dependencies: [ "ext_dd_delta_S" ,  "ext1_dd_delta_S_by_f" ,  "ext_dd_delta_S_by_f" ,  "ext_dd_delta_S_by_f_1" ]
+          input_relations: [
+            dd_new_Q
+            dd_delta_S
+          ]
         }
       
 
@@ -320,6 +377,16 @@ FROM dd_delta_R R0
         WHERE R2.a = R0.x  AND R3.a = R0.x  AND R3.b = R1.x  AND R4.a = R1.x """
           function: "Imply(dd_new_Q.R0.label, dd_new_Q.R1.label)"
           weight: "?(dd_weight_column_0)"
+          dependencies: [ "ext_dd_new_R" ,  "ext_dd_delta_S_by_f" ,  "ext1_dd_delta_S_by_f" ,  "ext_dd_new_S" ,  "ext_dd_delta_S_by_f_1" ,  "ext_dd_delta_S" ]
+          input_relations: [
+            dd_new_Q
+            dd_delta_S
+            R
+            S
+            dd_new_S
+            dd_delta_R
+            dd_new_R
+          ]
         }
       
 
@@ -336,19 +403,19 @@ FROM dd_delta_R R0
         WHERE R2.a = R0.x  AND R3.a = R0.x  AND R3.b = R1.x  AND R4.a = R1.x  AND (R0.x + R1.x) < 1000"""
           function: "Imply(dd_new_Q.R0.label, dd_new_Q.R1.label)"
           weight: "-10.0"
+          dependencies: [ "ext_dd_new_R" ,  "ext_dd_delta_S_by_f" ,  "ext1_dd_delta_S_by_f" ,  "ext_dd_new_S" ,  "ext_dd_delta_S_by_f_1" ,  "ext_dd_delta_S" ]
+          input_relations: [
+            dd_new_Q
+            dd_delta_S
+            R
+            S
+            dd_new_S
+            dd_delta_R
+            dd_new_R
+          ]
         }
       
 deepdive.pipeline.run: ${PIPELINE}
-deepdive.pipeline.pipelines.initdb: [
-  init_dd_new_S
-  init_dd_delta_T
-  init_dd_new_T
-  init_dd_delta_S
-  init_dd_new_R
-  init_dd_delta_R
-  init_dd_new_Q
-  init_dd_delta_Q
-]
 deepdive.pipeline.pipelines.extraction: [
   ext_dd_new_R
   ext_dd_delta_T_by_f
@@ -387,7 +454,17 @@ deepdive.pipeline.pipelines.endtoend: [
   dd_delta_inf_imply_Q_Q
   dd_delta_inf1_imply_Q_Q
 ]
+deepdive.pipeline.base_dir: ${BASEDIR}
+deepdive.pipeline.pipelines.initdb: [
+  init_dd_new_S
+  init_dd_delta_T
+  init_dd_new_T
+  init_dd_delta_S
+  init_dd_new_R
+  init_dd_delta_R
+  init_dd_new_Q
+  init_dd_delta_Q
+]
 deepdive.pipeline.pipelines.cleanup: [
   cleanup
 ]
-deepdive.pipeline.base_dir: ${BASEDIR}

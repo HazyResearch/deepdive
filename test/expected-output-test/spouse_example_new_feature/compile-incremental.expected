@@ -178,8 +178,13 @@ SELECT R0.sentence_id, R0.start_position, R0.length, R0.text, R0.mention_id
 FROM dd_delta_people_mentions R0
         
         """
+          output_relation: "dd_new_people_mentions"
         style: "sql_extractor"
           dependencies: [ "ext_dd_delta_people_mentions_by_ext_people" ]
+          input_relations: [
+            people_mentions
+            dd_delta_people_mentions
+          ]
       }
     
 
@@ -193,8 +198,13 @@ SELECT R0.article_id, R0.text
 FROM dd_delta_articles R0
         
         """
+          output_relation: "dd_new_articles"
         style: "sql_extractor"
           
+          input_relations: [
+            articles
+            dd_delta_articles
+          ]
       }
     
 
@@ -208,8 +218,13 @@ SELECT R0.person1_id, R0.person2_id, R0.sentence_id, R0.description, R0.relation
 FROM dd_delta_has_spouse_candidates R0
         
         """
+          output_relation: "dd_new_has_spouse_candidates"
         style: "sql_extractor"
           dependencies: [ "ext_dd_delta_has_spouse_candidates_by_ext_has_spouse" ]
+          input_relations: [
+            has_spouse_candidates
+            dd_delta_has_spouse_candidates
+          ]
       }
     
 
@@ -223,8 +238,13 @@ SELECT R0.relation_id, R0.feature
 FROM dd_delta_has_spouse_features R0
         
         """
+          output_relation: "dd_new_has_spouse_features"
         style: "sql_extractor"
           dependencies: [ "ext_dd_delta_has_spouse_features_by_ext_has_spouse_features" ]
+          input_relations: [
+            has_spouse_features
+            dd_delta_has_spouse_features
+          ]
       }
     
 
@@ -238,8 +258,13 @@ SELECT R0.document_id, R0.sentence, R0.words, R0.lemma, R0.pos_tags, R0.dependen
 FROM dd_delta_sentences R0
         
         """
+          output_relation: "dd_new_sentences"
         style: "sql_extractor"
           
+          input_relations: [
+            sentences
+            dd_delta_sentences
+          ]
       }
     
 
@@ -250,8 +275,12 @@ FROM dd_delta_sentences R0
         
           
         """
+          output_relation: "dd_delta_has_spouse"
         style: "sql_extractor"
           dependencies: [ "ext_dd_delta_has_spouse_candidates_by_ext_has_spouse" ]
+          input_relations: [
+            dd_delta_has_spouse_candidates
+          ]
       }
     
 
@@ -267,8 +296,13 @@ SELECT DISTINCT R0.relation_id, id, label
         
           
         """
+          output_relation: "dd_new_has_spouse"
         style: "sql_extractor"
           dependencies: [ "ext_dd_delta_has_spouse" ]
+          input_relations: [
+            has_spouse
+            dd_delta_has_spouse
+          ]
       }
     
 
@@ -281,7 +315,10 @@ FROM dd_delta_sentences R0
           udf: ${APP_HOME}"/udf/ext_people.py"
           style: "tsv_extractor" 
           
-          input_batch_size: ${INPUT_BATCH_SIZE} 
+          input_relations: [
+            dd_delta_sentences
+          ]
+          input_batch_size: ${INPUT_BATCH_SIZE}
           parallelism: ${PARALLELISM}
         }
       
@@ -299,7 +336,12 @@ FROM dd_new_people_mentions R0, dd_delta_people_mentions R1
           udf: ${APP_HOME}"/udf/ext_has_spouse.py"
           style: "tsv_extractor" 
           dependencies: [ "ext_dd_delta_people_mentions_by_ext_people" ,  "ext_dd_new_people_mentions" ]
-          input_batch_size: ${INPUT_BATCH_SIZE} 
+          input_relations: [
+            dd_delta_people_mentions
+            people_mentions
+            dd_new_people_mentions
+          ]
+          input_batch_size: ${INPUT_BATCH_SIZE}
           parallelism: ${PARALLELISM}
         }
       
@@ -329,7 +371,18 @@ FROM dd_new_sentences R0, dd_new_has_spouse_candidates R1, dd_new_people_mention
           udf: ${APP_HOME}"/udf/ext_has_spouse_features.py"
           style: "tsv_extractor" 
           dependencies: [ "ext_dd_delta_has_spouse_candidates_by_ext_has_spouse" ,  "ext_dd_new_sentences" ,  "ext_dd_delta_people_mentions_by_ext_people" ,  "ext_dd_new_people_mentions" ,  "ext_dd_new_has_spouse_candidates" ]
-          input_batch_size: ${INPUT_BATCH_SIZE} 
+          input_relations: [
+            sentences
+            has_spouse_candidates
+            people_mentions
+            dd_delta_sentences
+            dd_new_sentences
+            dd_delta_has_spouse_candidates
+            dd_new_has_spouse_candidates
+            dd_delta_people_mentions
+            dd_new_people_mentions
+          ]
+          input_batch_size: ${INPUT_BATCH_SIZE}
           parallelism: ${PARALLELISM}
         }
       
@@ -344,23 +397,17 @@ FROM dd_new_sentences R0, dd_new_has_spouse_candidates R1, dd_new_people_mention
         WHERE R1.relation_id = R0.relation_id  AND R2.relation_id = R0.relation_id """
           function: "Imply(dd_new_has_spouse.R0.label)"
           weight: "?(dd_weight_column_0)"
+          dependencies: [ "ext_dd_delta_has_spouse_candidates_by_ext_has_spouse" ,  "ext_dd_new_has_spouse_candidates" ,  "ext_dd_delta_has_spouse_features_by_ext_has_spouse_features" ]
+          input_relations: [
+            dd_new_has_spouse
+            dd_delta_has_spouse_candidates
+            has_spouse_features
+            dd_new_has_spouse_candidates
+            dd_delta_has_spouse_features
+          ]
         }
       
 deepdive.pipeline.run: ${PIPELINE}
-deepdive.pipeline.pipelines.initdb: [
-  init_dd_delta_articles
-  init_dd_new_people_mentions
-  init_dd_delta_has_spouse_features
-  init_dd_new_articles
-  init_dd_new_has_spouse_candidates
-  init_dd_new_has_spouse_features
-  init_dd_new_sentences
-  init_dd_delta_people_mentions
-  init_dd_delta_has_spouse_candidates
-  init_dd_delta_sentences
-  init_dd_delta_has_spouse
-  init_dd_new_has_spouse
-]
 deepdive.pipeline.pipelines.extraction: [
   ext_dd_new_has_spouse_candidates
   ext_dd_delta_has_spouse_candidates_by_ext_has_spouse
@@ -389,7 +436,21 @@ deepdive.pipeline.pipelines.endtoend: [
   ext_dd_new_articles
   dd_delta_inf_istrue_has_spouse
 ]
+deepdive.pipeline.base_dir: ${BASEDIR}
+deepdive.pipeline.pipelines.initdb: [
+  init_dd_delta_articles
+  init_dd_new_people_mentions
+  init_dd_delta_has_spouse_features
+  init_dd_new_articles
+  init_dd_new_has_spouse_candidates
+  init_dd_new_has_spouse_features
+  init_dd_new_sentences
+  init_dd_delta_people_mentions
+  init_dd_delta_has_spouse_candidates
+  init_dd_delta_sentences
+  init_dd_delta_has_spouse
+  init_dd_new_has_spouse
+]
 deepdive.pipeline.pipelines.cleanup: [
   cleanup
 ]
-deepdive.pipeline.base_dir: ${BASEDIR}
