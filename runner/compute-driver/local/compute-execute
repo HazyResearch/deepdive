@@ -10,6 +10,8 @@
 ##
 set -euo pipefail
 
+: ${DEEPDIVE_PREFIX_TABLE_TEMPORARY:=dd_tmp_} ${DEEPDIVE_PREFIX_TABLE_OLD:=dd_old_}
+
 # load compute configuration
 eval "$(jq2sh <<<"$DEEPDIVE_COMPUTER_CONFIG" \
     num_processes='.num_processes' \
@@ -39,7 +41,7 @@ num_processes=${DEEPDIVE_NUM_PROCESSES:-${num_processes:-$(
 declare -- "$@"
 
 # some derived values
-output_relation_tmp="dd_tmp_${output_relation}"
+output_relation_tmp="${DEEPDIVE_PREFIX_TABLE_TEMPORARY}${output_relation}"
 
 # show configuration
 echo "Executing with the following configuration:"
@@ -49,7 +51,10 @@ echo
 
 # use an empty temporary table as a sink instead of TRUNCATE'ing the output_relation
 deepdive-initdb "$output_relation"
-deepdive-sql "CREATE TABLE $output_relation_tmp (LIKE $output_relation);"
+deepdive-sql "
+    DROP TABLE IF EXISTS $output_relation_tmp;
+    CREATE TABLE $output_relation_tmp (LIKE $output_relation);
+"
 
 # set up named pipes for parallel processes
 for i in $(seq $num_processes); do
@@ -82,11 +87,12 @@ wait  # until everything is done
 # rename the new temporary table
 # TODO maybe use PostgreSQL's schema support here?
 echo "Replacing $output_relation with $output_relation_tmp"
+output_relation_old="${DEEPDIVE_PREFIX_TABLE_OLD}${output_relation}"
 deepdive-sql "
-    DROP TABLE IF EXISTS ${output_relation}_old;
-    ALTER TABLE ${output_relation}     RENAME TO ${output_relation}_old;
+    DROP TABLE IF EXISTS ${output_relation_old};
+    ALTER TABLE ${output_relation}     RENAME TO ${output_relation_old};
 " || true
 deepdive-sql "
     ALTER TABLE ${output_relation_tmp} RENAME TO ${output_relation};
-    DROP TABLE IF EXISTS ${output_relation}_old;
+    DROP TABLE IF EXISTS ${output_relation_old};
 "
