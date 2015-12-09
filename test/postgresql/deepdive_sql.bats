@@ -2,7 +2,7 @@
 # Tests for `deepdive sql` command
 
 . "$BATS_TEST_DIRNAME"/env.sh >&2
-PATH="$DEEPDIVE_SOURCE_ROOT/util/test:$PATH"
+PATH="$DEEPDIVE_SOURCE_ROOT/util/build/test:$PATH"
 
 setup() {
     db-execute "SELECT 1" &>/dev/null || db-init
