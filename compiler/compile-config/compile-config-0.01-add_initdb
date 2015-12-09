@@ -10,4 +10,6 @@ exec jq '.deepdive_ as $deepdive |
                  }
     }
 
+# TODO connect all extractors and factors with no dependency to init/db
+
 ' "$@"

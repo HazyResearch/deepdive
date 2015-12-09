@@ -111,6 +111,7 @@ ln -sfn "$config" config.json
 # TODO check if all input/output_relation exists in schema
 # TODO check if all processes/pipelines depend on defined processes
 # TODO check if all processes have required fields
+# TODO check if all base relations have something in input/ to load
 
 STEP "Analyzing data flow dependencies to compile:"
 # derive a dependency graph from the extractors, factors, pipelines defined in deepdive.conf
