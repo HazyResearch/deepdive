@@ -89,6 +89,7 @@ stage shell/db-driver/mysqlcluster                                util/db-driver
 stage target/scala-2.10/deepdive-assembly-*.jar                   lib/deepdive.jar || true  # when testing, .jar may be missing
 
 # DeepDive utilities
+stage util/partition_id_range                                     util/
 stage util/tobinary.py                                            util/
 stage util/active.sh                                              util/
 stage util/draw_calibration_plot                                  util/
