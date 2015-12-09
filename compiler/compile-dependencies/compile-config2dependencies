@@ -20,8 +20,8 @@ exec jq '.deepdive_ as $deepdive
     ( $output_relation | to_entries | map(select(.value)) | group_by(.value)[]
     | { key: .[0].value, value: map(.key) }
     )
-  , # every pipeline/* and the processes that it depends on
-    ( $deepdive.pipeline.pipelines | to_entries[]
-    )
+#  , # every pipeline/* and the processes that it depends on
+#    ( $deepdive.pipeline.pipelines | to_entries[]
+#    )
   ]
 | from_entries' "$@"
