@@ -1,16 +1,19 @@
 #!/usr/bin/env bash
 # compile-config-2.01-grounding -- Adds processes for grounding the factor graph
 ##
-exec jq '.deepdive_ as $deepdive
+exec jq '
+def merge(objects): reduce objects as $es ({}; . + $es);
+.deepdive_ as $deepdive
+
 | .deepdive_.extraction.extractors += {
 
     # grounding the factor graph
-    "process/model/grounding": {
+    "process/grounding/legacy": {
         dependencies_: ($deepdive.inference.factors | keys),
-        output_: "model/factorgraph",
+        output_: "model/factorgraph.legacy",
         style: "cmd_extractor",
         cmd: "mkdir -p ../../../model && cd ../../../model
-            mkdir -p factorgraph
+            mkdir -p factorgraph.legacy
 
             # TODO run factor queries and grounding queries directly from here or via database drivers
             set +x; . load-db-driver.sh; set -x
@@ -21,16 +24,220 @@ exec jq '.deepdive_ as $deepdive
                 echo \("deepdive \(.deepdive | @json)" | @sh)
                 echo \("deepdive.pipeline.pipelines.grounding: [\(.deepdive.inference.factors | keys | join(", "))]" | @sh)
                 echo \("deepdive.pipeline.run: grounding" | @sh)
-            ) -o factorgraph -t inference_grounding
+            ) -o factorgraph.legacy -t inference_grounding
 
             # drop graph. prefix from file names
-            cd factorgraph
+            cd factorgraph.legacy
             mv -f graph.variables variables
             mv -f graph.factors   factors
             mv -f graph.weights   weights
             mv -f graph.meta      meta
         "
+    },
+
+    # consecutive variable id range should be partitioned first by counting the variables
+    "process/grounding/variable_id_partition": {
+        dependencies_: [
+            # id partition depends on all variable tables
+            $deepdive.schema.variables | keys[] | "data/\(.)"
+        ],
+        style: "cmd_extractor",
+        cmd: "
+        error Not implemented
+        "
+    },
+
+    # each variable gets the consecutive ids assigned to its rows and dumped into tsv (below)
+
+    # each inference rule input_query is run to materialize the factors and the distinct weights used in them
+
+    # in between the two steps for grounding all factors, weight id range must be decided serially
+    "process/grounding/weight_id_partition": {
+        dependencies_: [
+            $deepdive.inference.factors | keys[]
+            | "process/grounding/\(.)/materialize_weights"
+        ],
+        style: "cmd_extractor", cmd: "
+        error Not implemented
+
+        # decide the model/grounding/*.weight_base_id
+        \( [ $deepdive.inference.factors | keys[] | ltrimstr("factor/")
+           | "
+           deepdive sql eval \("SELECT COUNT(*) FROM dd_weights_\(.)" | @sh) >model/grounding/\(@sh).weights_count
+           "
+           ] | join(""))
+           # TODO use .weights_count to create .weights_base_id
+
+        # set up a union view for all weight tables (dd_graph_weights)
+        deepdive sql \("CREATE VIEW dd_graph_weights AS \(
+            # TODO determine $weightPrefix
+            "foobar" as $weightPrefix |
+            [ $deepdive.inference.factors | keys[] | ltrimstr("factor/")
+            | "(SELECT id, isfixed, initvalue, cardinality, \($weightPrefix) FROM dd_weights_\(.))"
+            ] | join(" UNION ALL ")
+        )" | @sh)
+        "
+    },
+
+    # each inference rule gets weight ids actually assigned and the factors and weights are dumped into tsv (below)
+
+    # at the very end, everything grounded must be laid down in a format the sampler can load from
+    "process/grounding/combine": {
+        dependencies_: [(
+            $deepdive.schema.variables | to_entries[]
+            | .key as $relationName | .value | keys[] | . as $columnName
+            | "process/grounding/variable/\($relationName)_\($columnName)/dump"
+        ), (
+            $deepdive.inference.factors | keys[] | ltrimstr("factor/")
+            | "process/grounding/factor/\(.)/dump"
+        )],
+        output_: "model/factorgraph",
+        style: "cmd_extractor", cmd: "
+        error Not implemented
+
+        # TODO generate meta
+        # TODO concatenate every binaries dumped so far
+        # a la: tobinary.py variables/ factors/ weights/ meta
+        "
     }
 
 }
+
+# for each variable add some processes for grounding
+| .deepdive_.extraction.extractors += merge($deepdive.schema.variables | to_entries[]
+    | .key                                  as $relationName
+    | .value | to_entries[]
+        | .key                              as $columnName
+        | .value                            as $varType
+        | "\($relationName)_\($columnName)" as $varName
+        # TODO handle $varType == Multinomial specially
+        | {
+
+            # a process for assigning id to every variable according to the partition
+            "process/grounding/variable/\($varName)/assign_id": {
+                dependencies_: [
+                    "process/grounding/variable_id_partition"
+                ],
+                style: "cmd_extractor", cmd: "
+                table=\($relationName | @sh)
+                column=\($columnName | @sh)
+
+                # TODO assign id to all rows according to the paritition
+                "
+            },
+
+            # a process for dumping each variable table
+            "process/grounding/variable/\($varName)/dump": {
+                dependencies_: [
+                    "process/grounding/variable/\($varName)/assign_id"
+                ],
+                style: "cmd_extractor", cmd: "
+                error Not implemented
+                table=\($relationName | @sh)
+                column=\($columnName | @sh)
+
+                # TODO dump the variable table as tsv
+                #   joining the holdout query to determine type of each row
+
+                # TODO binarize variable
+                # to model/grounding/variable/\($varName).bin,
+                "
+            }
+
+            # TODO cardinality setup for multinomial
+
+        })
+
+
+# for each inference rule, add some processes for grounding the factors and weights
+| .deepdive_.extraction.extractors += merge($deepdive.inference.factors | to_entries[]
+    | (.key | ltrimstr("factor/")) as $factorName
+    | .value
+
+    # parse the inference rule weight field
+    | .weight_ = (.weight | gsub("^\\s+|\\s+$"; ""))
+    | .weight_ |= (
+        if startswith("?")? then
+            # unknown weight, find parameters
+            { is_fixed: false
+            , params: (ltrimstr("?(") | rtrimstr(")") | split("\\s*,\\s"))
+            , init_value: 0.0
+            }
+        else
+            # fixed weight
+            { is_fixed: true
+            , params: []
+            , init_value: tonumber
+            }
+        end)
+
+    | {
+        # add a process for grounding factors
+        "process/grounding/factor/\($factorName)/materialize_weights": {
+            # materializing each factor requires the dependent variables to have their id assigned
+            dependencies_: [
+                .input_[]
+                | ltrimstr("data/") as $relationName
+                | $deepdive.schema.variables[$relationName] | keys? | .[]
+                | . as $columnName
+                | "process/grounding/variable/\($relationName)_\($columnName)/assign_id"
+            ],
+            # other non-variable tables are also necessary
+            input_: [ .input_[]
+                | select(ltrimstr("data/") | $deepdive.schema.variables[.] | not)
+            ],
+            style: "cmd_extractor", cmd: "
+            error Not implemented
+
+            # TODO materialize user input_query
+            deepdive sql \("CREATE TABLE dd_query_\($factorName) AS
+                \(.input_query)
+            " | @sh)
+
+            # find distinct weights
+            # TODO cast to BIGINT etc
+            deepdive sql \("CREATE TABLE dd_weights_\($factorName) AS
+                SELECT \(.weight_.params +
+                    [ "\(.weight_.is_fixed  ) AS isfixed"
+                    , "\(.weight_.init_value) AS initvalue"
+                    , "-1                     AS id"
+                    ] | join(", "))
+                  FROM dd_query_\($factorName)
+                 GROUP BY \(.weight_.params | join(", "))
+            " | @sh)
+            "
+        },
+
+        # add a process for grounding weights per inference rule
+        "process/grounding/factor/\($factorName)/assign_weight_id": {
+            dependencies_: [
+                "process/grounding/weight_id_partition"
+            ],
+            style: "cmd_extractor", cmd: "
+            error Not implemented
+
+            # TODO assign weight id according to the partition
+            weight_base_id=$(cat model/grounding/factor/\($factorName | @sh).weights_base_id)
+            db-assign_sequential_id dd_weights_\($factorName | @sh) $weight_base_id
+            "
+        },
+
+        # add a process for grounding factors and weights
+        "process/grounding/factor/\($factorName)/dump": {
+            dependencies_: [
+                "process/grounding/factor/\($factorName)/assign_weight_id"
+            ],
+            style: "cmd_extractor", cmd: "
+            error Not implemented
+
+            # TODO dump the factors joining the assigned weight ids
+            # TODO binarize factors
+
+            # TODO dump the weights (except the description column)
+            # TODO binarize weights
+            "
+        }
+
+    })
+
 ' "$@"
