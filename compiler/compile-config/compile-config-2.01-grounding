@@ -13,7 +13,7 @@ def merge(objects): reduce objects as $es ({}; . + $es);
         output_: "model/factorgraph",
         style: "cmd_extractor",
         cmd: "mkdir -p ../../../model && cd ../../../model
-            mkdir -p factorgraph.legacy
+            mkdir -p factorgraph
 
             # TODO run factor queries and grounding queries directly from here or via database drivers
             set +x; . load-db-driver.sh; set -x
@@ -24,10 +24,10 @@ def merge(objects): reduce objects as $es ({}; . + $es);
                 echo \("deepdive \(.deepdive | @json)" | @sh)
                 echo \("deepdive.pipeline.pipelines.grounding: [\(.deepdive.inference.factors | keys | join(", "))]" | @sh)
                 echo \("deepdive.pipeline.run: grounding" | @sh)
-            ) -o factorgraph.legacy -t inference_grounding
+            ) -o factorgraph -t inference_grounding
 
             # drop graph. prefix from file names
-            cd factorgraph.legacy
+            cd factorgraph
             mv -f graph.variables variables
             mv -f graph.factors   factors
             mv -f graph.weights   weights
