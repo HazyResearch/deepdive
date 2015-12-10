@@ -10,7 +10,7 @@ def merge(objects): reduce objects as $es ({}; . + $es);
     # grounding the factor graph
     "process/grounding/legacy": {
         dependencies_: ($deepdive.inference.factors | keys),
-        output_: "model/factorgraph.legacy",
+        output_: "model/factorgraph",
         style: "cmd_extractor",
         cmd: "mkdir -p ../../../model && cd ../../../model
             mkdir -p factorgraph.legacy
@@ -108,7 +108,7 @@ def merge(objects): reduce objects as $es ({}; . + $es);
             $deepdive.inference.factors | keys[] | ltrimstr("factor/")
             | "process/grounding/factor/\(.)/dump"
         )],
-        output_: "model/factorgraph",
+        output_: "model/factorgraph.new",
         style: "cmd_extractor", cmd: "
         error Not implemented
 
