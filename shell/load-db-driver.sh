@@ -32,6 +32,7 @@ for op in \
     prompt \
     load \
     create_calibration_view \
+    assign_sequential_id \
     ;
 do type db-$op &>/dev/null || error "db-$op operation not available for $dbtype"
 done
