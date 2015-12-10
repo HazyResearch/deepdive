@@ -48,10 +48,6 @@ stage compiler/jq2sh                                              util/
 stage shell/logging-with-ts                                       util/
 stage shell/deepdive_bash_completion.sh                           etc/
 
-stage shell/deepdive-initdb                                       util/
-stage shell/deepdive-sql                                          util/
-stage shell/deepdive-load                                         util/
-
 stage compiler/deepdive-compile                                   util/
 stage .build/submodule/compiler/hocon2json/hocon2json.sh                                util/hocon2json
 stage .build/submodule/compiler/hocon2json/target/scala-2.10/hocon2json-assembly-*.jar  util/hocon2json.jar
@@ -78,24 +74,27 @@ stage runner/compute-driver/local                                 util/compute-d
 stage runner/computers-default.conf                               util/
 stage .build/submodule/util/mkmimo/mkmimo                         util/
 
-stage shell/load-db-driver.sh                                     util/
-stage shell/db-driver/postgresql                                  util/db-driver/
-stage shell/db-driver/greenplum                                   util/db-driver/
-stage shell/db-driver/postgresql-xl                               util/db-driver/
-stage shell/db-driver/mysql                                       util/db-driver/
-stage shell/db-driver/mysqlcluster                                util/db-driver/
+stage database/deepdive-initdb                                    util/
+stage database/deepdive-sql                                       util/
+stage database/deepdive-load                                      util/
+stage database/load-db-driver.sh                                  util/
+stage database/db-driver/postgresql                               util/db-driver/
+stage database/db-driver/greenplum                                util/db-driver/
+stage database/db-driver/postgresql-xl                            util/db-driver/
+stage database/db-driver/mysql                                    util/db-driver/
+stage database/db-driver/mysqlcluster                             util/db-driver/
+stage database/partition_id_range                                 util/
+stage database/pgtsv_to_json                                      util/
 
 # DeepDive core
 stage target/scala-2.10/deepdive-assembly-*.jar                   lib/deepdive.jar || true  # when testing, .jar may be missing
 
 # DeepDive utilities
-stage util/partition_id_range                                     util/
 stage util/tobinary.py                                            util/
 stage util/active.sh                                              util/
 stage util/draw_calibration_plot                                  util/
 stage util/calibration.py                                         util/
 stage util/calibration.plg                                        util/
-stage util/pgtsv_to_json                                          util/
 
 # DDlog compiler
 stage util/ddlog                                                  bin/
