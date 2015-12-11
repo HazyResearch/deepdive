@@ -130,9 +130,9 @@ def asSqlLiteral: "'\''\(tostring | gsub("'\''"; "'\'\''"))'\''";
         }
 
         # set up a union view for all weight tables (dd_graph_weights)
-        deepdive sql \("DROP TABLE IF EXISTS dd_graph_weights;" | @sh) || true
+        deepdive sql \("DROP TABLE IF EXISTS dd_graph_weights CASCADE;" | @sh) || true
         deepdive sql \("
-            DROP VIEW IF EXISTS dd_graph_weights;
+            DROP VIEW IF EXISTS dd_graph_weights CASCADE;
             CREATE VIEW dd_graph_weights AS \($deepdive.inference.factors | to_entries | map(
                     (.key | ltrimstr("factor/")) as $factorName | .value
                     | ( [ ("\($factorName)-" | asSqlLiteral)
@@ -246,16 +246,16 @@ def asSqlLiteral: "'\''\(tostring | gsub("'\''"; "'\'\''"))'\''";
 
                 # materialize user input_query for the factor
                 deepdive sql \("dd_query_\($factorName)" as $factorTable | "
-                    DROP TABLE IF EXISTS \($factorTable);
+                    DROP TABLE IF EXISTS \($factorTable) CASCADE;
                     CREATE TABLE \($factorTable) AS
                         \(.input_query);
                 " | @sh)
 
-                \("dd_weights_\($factorName)" as $weightsTable | "
-                deepdive sql \("DROP TABLE IF EXISTS \($weightsTable);" | @sh) || true
                 # find distinct weights for the factor
-                deepdive sql \((.weight_.params | map(asSqlIdent)) as $paramsAsSqlIdents | "
-                    DROP VIEW IF EXISTS \($weightsTable);
+                \(("dd_weights_\($factorName)" | asSqlIdent) as $weightsTable | "
+                deepdive sql \("DROP TABLE IF EXISTS \($weightsTable) CASCADE;" | @sh) || true
+                deepdive sql \((if .weight_.is_fixed then [] else .weight_.params | map(asSqlIdent) end) as $paramsAsSqlIdents | "
+                    DROP VIEW IF EXISTS \($weightsTable) CASCADE;
                     CREATE TABLE \($weightsTable) AS
                         SELECT \(
                             [ $paramsAsSqlIdents[]
@@ -264,8 +264,10 @@ def asSqlLiteral: "'\''\(tostring | gsub("'\''"; "'\'\''"))'\''";
                             # TODO cast to BIGINT
                             , "-1                     AS id"
                             ] | join(", "))
-                          FROM dd_query_\($factorName)
-                         GROUP BY \($paramsAsSqlIdents | join(", "));
+                         \(if $paramsAsSqlIdents | length == 0 then ""
+                         else "FROM dd_query_\($factorName)
+                              GROUP BY \($paramsAsSqlIdents | join(", "))"
+                         end);
                 " | @sh)
                 ")
             "
