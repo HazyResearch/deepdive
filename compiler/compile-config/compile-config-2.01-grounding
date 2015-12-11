@@ -3,7 +3,41 @@
 ##
 exec jq '
 def merge(objects): reduce objects as $es ({}; . + $es);
+
+# See: http://www.postgresql.org/docs/current/static/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS
+def asSqlIdent: "\"\( tostring  # anything can be turned into a SQL identifier if they are inside double quotes
+                    | gsub("\""; "\"\"") # even double quote themselves (in fact, PostgreSQL says \0 cannot be included)
+                    )\"";
+
+# a handy way to turn things into SQL string literals (as it is hard to write single quote within single quote in this Bash script)
+def asSqlLiteral: "'\''\(tostring | gsub("'\''"; "'\'\''"))'\''";
+
 .deepdive_ as $deepdive
+
+# parse weight field for every inference rules as weight_ field
+| .deepdive_.inference.factors |= with_entries(
+    (.key | ltrimstr("factor/")) as $factorName | .value |=
+    ( .weight_ = (.weight | gsub("^\\s+|\\s+$"; ""))
+    | .weight_ |= (
+        if startswith("?")? then
+            # unknown weight, find parameters
+            { is_fixed: false
+            , params: (ltrimstr("?") | ltrimstr("(") | rtrimstr(")") | split("\\s*,\\s"))
+            , init_value: 0.0
+            }
+        else
+            # fixed weight
+            { is_fixed: true
+            , params: []
+            , init_value: tonumber
+            }
+        end
+        )
+    )
+)
+
+| .deepdive_ as $deepdive  # necessary since we just mutated it
+
 
 | .deepdive_.extraction.extractors += {
 
@@ -48,18 +82,18 @@ def merge(objects): reduce objects as $es ({}; . + $es);
         RANGE_BEGIN=0 \\
         partition_id_range \($deepdive.schema.variables | keys | map(@sh) | join(" ")) | {
             # record the base
-            variableCount=0
+            variableCountTotal=0
             while read table begin excludeEnd; do
                 varPath=\"$DEEPDIVE_GROUNDING_DIR\"/variable/${table}
                 mkdir -p \"$varPath\"
                 cd \"$varPath\"
-                echo $begin               >id_begin
-                echo $excludeEnd         >id_exclude_end
+                echo $begin                      >id_begin
+                echo $excludeEnd                 >id_exclude_end
                 echo $(( $excludeEnd - $begin )) >count
-                variableCount=$excludeEnd
+                variableCountTotal=$excludeEnd
             done
             # record the final count
-            echo $variableCount >\"$DEEPDIVE_GROUNDING_DIR\"/variable_count
+            echo $variableCountTotal >\"$DEEPDIVE_GROUNDING_DIR\"/variable_count
         }
         "
     },
@@ -75,24 +109,39 @@ def merge(objects): reduce objects as $es ({}; . + $es);
             | "process/grounding/\(.)/materialize_weights"
         ],
         style: "cmd_extractor", cmd: "
-        error Not implemented
+        : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
 
-        # decide the model/grounding/*.weight_base_id
-        \( [ $deepdive.inference.factors | keys[] | ltrimstr("factor/")
-           | "
-           deepdive sql eval \("SELECT COUNT(*) FROM dd_weights_\(.)" | @sh) >model/grounding/\(@sh).weights_count
-           "
-           ] | join(""))
-           # TODO use .weights_count to create .weights_base_id
+        # partition the id range for weights
+        RANGE_BEGIN=0 \\
+        partition_id_range \($deepdive.inference.factors | keys | map(
+                ltrimstr("factor/") | "dd_weights_\(.)" | @sh) | join(" ")) | {
+            weightsCountTotal=0
+            while read table begin excludeEnd; do
+                factor=${table#dd_weights_}
+                facPath=\"$DEEPDIVE_GROUNDING_DIR\"/factor/${factor}
+                mkdir -p \"$facPath\"
+                cd \"$facPath\"
+                echo $begin                      >weights_id_begin
+                echo $excludeEnd                 >weights_id_exclude_end
+                echo $(( $excludeEnd - $begin )) >weights_count
+                weightsCountTotal=$excludeEnd
+            done
+            echo $weightsCountTotal >\"$DEEPDIVE_GROUNDING_DIR\"/factor/weights_count
+        }
 
         # set up a union view for all weight tables (dd_graph_weights)
-        deepdive sql \("CREATE VIEW dd_graph_weights AS \(
-            # TODO determine $weightPrefix
-            "foobar" as $weightPrefix |
-            [ $deepdive.inference.factors | keys[] | ltrimstr("factor/")
-            | "(SELECT id, isfixed, initvalue, cardinality, \($weightPrefix) FROM dd_weights_\(.))"
-            ] | join(" UNION ALL ")
-        )" | @sh)
+        deepdive sql \("DROP TABLE IF EXISTS dd_graph_weights;" | @sh) || true
+        deepdive sql \("
+            DROP VIEW IF EXISTS dd_graph_weights;
+            CREATE VIEW dd_graph_weights AS \($deepdive.inference.factors | to_entries | map(
+                    (.key | ltrimstr("factor/")) as $factorName | .value
+                    | ( [ ("\($factorName)-" | asSqlLiteral)
+                        , (.weight_.params[] | "CASE WHEN \(asSqlIdent) IS NULL THEN '\'''\'' ELSE CAST(\(asSqlIdent) AS TEXT) END")
+                        ] | join(" ||\("-" | asSqlLiteral)|| ") | "\(.) AS description") as $weightDescExpr
+                    | "(SELECT id, isfixed, initvalue, \($weightDescExpr) FROM dd_weights_\($factorName))"
+                    # TODO cardinality column for multinomial
+                ) | join(" UNION ALL ")
+            );" | @sh)
         "
     },
 
@@ -137,7 +186,6 @@ def merge(objects): reduce objects as $es ({}; . + $es);
                 ],
                 style: "cmd_extractor", cmd: "
                 : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
-                : ${DEEPDIVE_VARIABLE_ID_COLUMN:=${DEEPDIVE_ID_COLUMN:=id}}
                 table=\($relationName | @sh)
                 #column=\($columnName | @sh)
 
@@ -145,7 +193,8 @@ def merge(objects): reduce objects as $es ({}; . + $es);
                 baseId=$(cat id_begin)
 
                 # assign id to all rows according to the paritition
-                db-assign_sequential_id $table $DEEPDIVE_VARIABLE_ID_COLUMN $baseId
+                # TODO parameterize id column?
+                db-assign_sequential_id $table id $baseId
                 "
             },
 
@@ -176,26 +225,7 @@ def merge(objects): reduce objects as $es ({}; . + $es);
 
 # for each inference rule, add some processes for grounding the factors and weights
 | .deepdive_.extraction.extractors += merge($deepdive.inference.factors | to_entries[]
-    | (.key | ltrimstr("factor/")) as $factorName
-    | .value
-
-    # parse the inference rule weight field
-    | .weight_ = (.weight | gsub("^\\s+|\\s+$"; ""))
-    | .weight_ |= (
-        if startswith("?")? then
-            # unknown weight, find parameters
-            { is_fixed: false
-            , params: (ltrimstr("?(") | rtrimstr(")") | split("\\s*,\\s"))
-            , init_value: 0.0
-            }
-        else
-            # fixed weight
-            { is_fixed: true
-            , params: []
-            , init_value: tonumber
-            }
-        end)
-
+    | (.key | ltrimstr("factor/")) as $factorName | .value
     | {
         # add a process for grounding factors
         "process/grounding/factor/\($factorName)/materialize_weights": {
@@ -212,24 +242,32 @@ def merge(objects): reduce objects as $es ({}; . + $es);
                 | select(ltrimstr("data/") | $deepdive.schema.variables[.] | not)
             ],
             style: "cmd_extractor", cmd: "
-            error Not implemented
+                : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
 
-            # TODO materialize user input_query
-            deepdive sql \("CREATE TABLE dd_query_\($factorName) AS
-                \(.input_query)
-            " | @sh)
+                # materialize user input_query for the factor
+                deepdive sql \("dd_query_\($factorName)" as $factorTable | "
+                    DROP TABLE IF EXISTS \($factorTable);
+                    CREATE TABLE \($factorTable) AS
+                        \(.input_query);
+                " | @sh)
 
-            # find distinct weights
-            # TODO cast to BIGINT etc
-            deepdive sql \("CREATE TABLE dd_weights_\($factorName) AS
-                SELECT \(.weight_.params +
-                    [ "\(.weight_.is_fixed  ) AS isfixed"
-                    , "\(.weight_.init_value) AS initvalue"
-                    , "-1                     AS id"
-                    ] | join(", "))
-                  FROM dd_query_\($factorName)
-                 GROUP BY \(.weight_.params | join(", "))
-            " | @sh)
+                \("dd_weights_\($factorName)" as $weightsTable | "
+                deepdive sql \("DROP TABLE IF EXISTS \($weightsTable);" | @sh) || true
+                # find distinct weights for the factor
+                deepdive sql \((.weight_.params | map(asSqlIdent)) as $paramsAsSqlIdents | "
+                    DROP VIEW IF EXISTS \($weightsTable);
+                    CREATE TABLE \($weightsTable) AS
+                        SELECT \(
+                            [ $paramsAsSqlIdents[]
+                            , "\(.weight_.is_fixed  ) AS isfixed"
+                            , "\(.weight_.init_value) AS initvalue"
+                            # TODO cast to BIGINT
+                            , "-1                     AS id"
+                            ] | join(", "))
+                          FROM dd_query_\($factorName)
+                         GROUP BY \($paramsAsSqlIdents | join(", "));
+                " | @sh)
+                ")
             "
         },
 
@@ -239,11 +277,13 @@ def merge(objects): reduce objects as $es ({}; . + $es);
                 "process/grounding/weight_id_partition"
             ],
             style: "cmd_extractor", cmd: "
-            error Not implemented
+                : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
 
-            # TODO assign weight id according to the partition
-            weight_base_id=$(cat model/grounding/factor/\($factorName | @sh).weights_base_id)
-            db-assign_sequential_id dd_weights_\($factorName | @sh) $weight_base_id
+                cd \"$DEEPDIVE_GROUNDING_DIR\"/factor/\($factorName | @sh)
+                baseId=$(cat weights_id_begin)
+
+                # assign weight ids according to the partition
+                db-assign_sequential_id \("dd_weights_\($factorName)" | @sh) id $baseId
             "
         },
 
@@ -253,13 +293,14 @@ def merge(objects): reduce objects as $es ({}; . + $es);
                 "process/grounding/factor/\($factorName)/assign_weight_id"
             ],
             style: "cmd_extractor", cmd: "
-            error Not implemented
+                : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
+                error Not implemented
 
-            # TODO dump the factors joining the assigned weight ids
-            # TODO binarize factors
+                # TODO dump the factors joining the assigned weight ids
+                # TODO binarize factors
 
-            # TODO dump the weights (except the description column)
-            # TODO binarize weights
+                # TODO dump the weights (except the description column)
+                # TODO binarize weights
             "
         }
 
