@@ -29,9 +29,9 @@ using namespace std;
      ((unsigned short int) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8)))
 
 // read variables and convert to binary format
-void load_var(std::string filename) {
-  std::ifstream fin(filename.c_str());
-  std::ofstream fout((filename + ".bin").c_str(), std::ios::binary | std::ios::out);
+void load_var(std::string input_filename, std::string output_filename) {
+  std::ifstream fin(input_filename.c_str());
+  std::ofstream fout(output_filename.c_str(), std::ios::binary | std::ios::out);
 
   long vid;
   int is_evidence;
@@ -63,9 +63,9 @@ void load_var(std::string filename) {
 
 
 // convert weights
-void load_weight(std::string filename) {
-  std::ifstream fin(filename.c_str());
-  std::ofstream fout((filename + ".bin").c_str(), std::ios::binary | std::ios::out);
+void load_weight(std::string input_filename, std::string output_filename) {
+  std::ifstream fin(input_filename.c_str());
+  std::ofstream fout(output_filename.c_str(), std::ios::binary | std::ios::out);
 
   long wid;
   int isfixed;
@@ -86,10 +86,10 @@ void load_weight(std::string filename) {
 
 // load factors
 // fid, wid, vids
-void load_factor_with_fid(std::string filename, short funcid, long nvar, char** positives) {
-  std::ifstream fin(filename.c_str());
-  std::ofstream fout((filename + "_factors.bin").c_str(), std::ios::binary | std::ios::out);
-  std::ofstream fedgeout((filename + "_edges.bin").c_str(), std::ios::binary | std::ios::out);
+void load_factor_with_fid(std::string input_filename, std::string output_factors_filename, std::string output_edges_filename, short funcid, long nvar, char** positives) {
+  std::ifstream fin(input_filename.c_str());
+  std::ofstream fout(output_factors_filename.c_str(), std::ios::binary | std::ios::out);
+  std::ofstream fedgeout(output_edges_filename.c_str(), std::ios::binary | std::ios::out);
 
   long factorid = 0;
   long weightid = 0;
@@ -191,9 +191,9 @@ void load_factor_with_fid(std::string filename, short funcid, long nvar, char** 
 
 // load factors
 // wid, vids
-void load_factor(std::string filename, short funcid, long nvar, char** positives) {
-  std::ifstream fin(filename.c_str());
-  std::ofstream fout((filename + "_factors.bin").c_str(), std::ios::binary | std::ios::out);
+void load_factor(std::string input_filename, std::string output_filename, short funcid, long nvar, char** positives) {
+  std::ifstream fin(input_filename.c_str());
+  std::ofstream fout(output_filename.c_str(), std::ios::binary | std::ios::out);
 
   long weightid = 0;
   long variableid = 0;
@@ -275,9 +275,9 @@ void load_factor(std::string filename, short funcid, long nvar, char** positives
   fout.close();
 }
 
-void load_active(std::string filename) {
-  std::ifstream fin(filename.c_str());
-  std::ofstream fout((filename + ".bin").c_str(), std::ios::binary);
+void load_active(std::string input_filename, std::string output_filename) {
+  std::ifstream fin(input_filename.c_str());
+  std::ofstream fout(output_filename.c_str(), std::ios::binary);
 
   long id;
   while (fin >> id) {
@@ -291,17 +291,17 @@ void load_active(std::string filename) {
 int main(int argc, char** argv){
   std::string app(argv[1]);
   if(app.compare("variable")==0){
-    load_var(argv[2]);
+    load_var(argv[2], argv[3]);
   } else if(app.compare("weight")==0){
-    load_weight(argv[2]);
+    load_weight(argv[2], argv[3]);
   } else if(app.compare("factor")==0){
-    std::string inc(argv[5]);
+    std::string inc(argv[6]);
     if (inc.compare("inc") == 0 || inc.compare("mat") == 0)
-      load_factor_with_fid(argv[2], atoi(argv[3]), atoi(argv[4]), &argv[6]);
+      load_factor_with_fid(argv[2], argv[3], argv[7], atoi(argv[4]), atoi(argv[5]), &argv[8]);
     else
-      load_factor(argv[2], atoi(argv[3]), atoi(argv[4]), &argv[6]);
+      load_factor(argv[2], argv[3], atoi(argv[4]), atoi(argv[5]), &argv[7]);
   } else if (app.compare("active") == 0) {
-    load_active(argv[2]);
+    load_active(argv[2], argv[3]);
   } else {
     std::cout << "Unsupported type" << std::endl;
     exit(1);
