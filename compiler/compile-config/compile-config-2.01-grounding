@@ -90,7 +90,6 @@ def asSqlLiteral: "'\''\(tostring | gsub("'\''"; "'\'\''"))'\''";
         cmd: "mkdir -p ../../../model && cd ../../../model
             mkdir -p factorgraph
 
-            # TODO run factor queries and grounding queries directly from here or via database drivers
             set +x; . load-db-driver.sh; set -x
             export DEEPDIVE_LOGFILE=factorgraph/grounding.log
             [[ ! -e \"$DEEPDIVE_LOGFILE\" ]] || mv -f \"$DEEPDIVE_LOGFILE\" \"$DEEPDIVE_LOGFILE\"~
@@ -116,8 +115,7 @@ def asSqlLiteral: "'\''\(tostring | gsub("'\''"; "'\'\''"))'\''";
             # id partition depends on all variable tables
             $deepdive.schema.variables | keys[] | "data/\(.)"
         ],
-        style: "cmd_extractor",
-        cmd: "
+        style: "cmd_extractor", cmd: "
         : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
 
         RANGE_BEGIN=0 \\
@@ -139,7 +137,46 @@ def asSqlLiteral: "'\''\(tostring | gsub("'\''"; "'\'\''"))'\''";
         "
     },
 
-    # each variable gets the consecutive ids assigned to its rows and dumped into tsv (below)
+    # each variable gets the consecutive ids assigned to its rows (below)
+    # app-wide holdout query is executed
+    "process/grounding/variable_holdout": {
+        dependencies_: [
+            $deepdive.schema.variables | keys[] | "process/grounding/variable/\(.)/assign_id"
+        ],
+        style: "cmd_extractor", cmd: "
+        : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
+        for sql in \(
+            [ " DROP TABLE IF EXISTS dd_graph_variables_holdout CASCADE;
+              CREATE TABLE dd_graph_variables_holdout(variable_id BIGINT PRIMARY KEY);
+              "
+            , if $deepdive.calibration.holdout_query then
+                # run user holdout query if configured
+                $deepdive.calibration.holdout_query
+              else
+                # otherwise, randomly select from evidence variables of each variable table
+                $deepdive.schema.variables | to_entries[]
+                | .key as $relationName | .value | to_entries[] | .key as $columnName | "
+                    INSERT INTO dd_graph_variables_holdout
+                    SELECT \($deepdiveVariableIdColumn | asSqlIdent)
+                      FROM \($relationName | asSqlIdent)
+                     WHERE \($columnName | asSqlIdent) IS NOT NULL
+                       AND RANDOM() < \($deepdive.calibration.holdout_fraction)
+                    ;
+                "
+              end
+            , " DROP TABLE IF EXISTS dd_graph_variables_observation CASCADE;
+              CREATE TABLE dd_graph_variables_observation(variable_id BIGINT PRIMARY KEY);
+              "
+            , if $deepdive.calibration.observation_query then
+                # run user holdout query if configured
+                $deepdive.calibration.holdout_query
+              else empty end
+            ] | map(@sh) | join(" "))
+        do deepdive sql \"$sql\"
+        done
+        "
+    },
+    # then variables are dumped into tsv (below)
 
     # each inference rule input_query is run to materialize the factors and the distinct weights used in them
 
@@ -202,7 +239,6 @@ def asSqlLiteral: "'\''\(tostring | gsub("'\''"; "'\'\''"))'\''";
         style: "cmd_extractor", cmd: "
         error Not implemented
 
-        # TODO generate meta
         # TODO concatenate every binaries dumped so far
         # a la: tobinary.py variables/ factors/ weights/ meta
         "
@@ -238,23 +274,62 @@ def asSqlLiteral: "'\''\(tostring | gsub("'\''"; "'\'\''"))'\''";
                 "
             },
 
+            # TODO easier way to do holdout per variable
+
             # a process for dumping each variable table
             "process/grounding/variable/\($varName)/dump": {
                 dependencies_: [
-                    "process/grounding/variable/\($varName)/assign_id"
+                    "process/grounding/variable_holdout"
+                  # XXX below can be omitted for now
+                  #, "process/grounding/variable/\($varName)/assign_id"
                 ],
                 style: "cmd_extractor", cmd: "
                 : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
                 table=\($relationName | @sh)
                 #column=\($columnName | @sh)
 
-                error Not implemented
+                varPath=\"$DEEPDIVE_GROUNDING_DIR\"/variable/\($varName | @sh)
+                mkdir -p \"$varPath\"
+                cd \"$varPath\"
+                rm -f variables-*.bin
+                export DEEPDIVE_LOAD_FORMAT=tsv
 
-                # TODO dump the variable table as tsv
-                #   joining the holdout query to determine type of each row
-
-                # TODO binarize variable
-                # to model/grounding/variable/\($varName).bin,
+                # dump the variables, joining the holdout query to determine the type of each variable
+                deepdive compute \\
+                    input_sql=\("
+                    SELECT id
+                         , variable_role
+                         , CASE WHEN variable_role = 0 THEN 0
+                                ELSE CAST(CAST(label AS INT) AS FLOAT)
+                            END AS init_value
+                         , variable_type
+                         , cardinality
+                      FROM (
+                          SELECT \($deepdiveVariableIdColumn | asSqlIdent) AS id
+                             , CASE WHEN               observation.variable_id IS NOT NULL
+                                     AND variables.\($columnName | asSqlIdent) IS NOT NULL THEN 2
+                                    WHEN                   holdout.variable_id IS NOT NULL THEN 0
+                                    WHEN variables.\($columnName | asSqlIdent) IS NOT NULL THEN 1
+                                                                                           ELSE 0
+                               END AS variable_role
+                             , variables.\($columnName | asSqlIdent) AS label
+                             , \(
+                                    # TODO multinomial
+                                    0  # for Boolean variables
+                                ) AS variable_type
+                             , \(
+                                    # TODO multinomial
+                                    2
+                                ) AS cardinality
+                          FROM            \($relationName | asSqlIdent)  variables
+                          LEFT OUTER JOIN dd_graph_variables_holdout     holdout     ON variables.\($deepdiveVariableIdColumn | asSqlIdent) =     holdout.variable_id
+                          LEFT OUTER JOIN dd_graph_variables_observation observation ON variables.\($deepdiveVariableIdColumn | asSqlIdent) = observation.variable_id
+                      ) variables
+                    " | @sh) \\
+                    command=\("
+                        format_converter variable /dev/stdin variables.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin
+                    " | @sh) \\
+                    output_relation=
                 "
             }
 
@@ -347,7 +422,7 @@ def asSqlLiteral: "'\''\(tostring | gsub("'\''"; "'\'\''"))'\''";
                 deepdive compute \\
                     input_sql=\("
                         SELECT weights.id AS weight_id
-                            , \(.function_.variables | map("\(.relation).\($deepdiveVariableIdColumn)" | asSqlIdent) | join(", "))
+                            , \(.function_.variables | map("factors.\("\(.relation).\($deepdiveVariableIdColumn)" | asSqlIdent)") | join(", "))
                           FROM dd_query_\($factorName) factors
                              , dd_weights_\($factorName) weights
                         \(if .weight_.params | length == 0 then ""
