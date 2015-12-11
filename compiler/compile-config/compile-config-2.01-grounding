@@ -4,6 +4,8 @@
 exec jq '
 def merge(objects): reduce objects as $es ({}; . + $es);
 
+def trimWhitespace: gsub("^\\s+|\\s+$"; "");
+
 # See: http://www.postgresql.org/docs/current/static/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS
 def asSqlIdent: "\"\( tostring  # anything can be turned into a SQL identifier if they are inside double quotes
                     | gsub("\""; "\"\"") # even double quote themselves (in fact, PostgreSQL says \0 cannot be included)
@@ -13,16 +15,20 @@ def asSqlIdent: "\"\( tostring  # anything can be turned into a SQL identifier i
 def asSqlLiteral: "'\''\(tostring | gsub("'\''"; "'\'\''"))'\''";
 
 .deepdive_ as $deepdive
+| "id" as $deepdiveVariableIdColumn
 
-# parse weight field for every inference rules as weight_ field
+# parse function and weight fields for every inference rules as function_ and weight_
 | .deepdive_.inference.factors |= with_entries(
     (.key | ltrimstr("factor/")) as $factorName | .value |=
-    ( .weight_ = (.weight | gsub("^\\s+|\\s+$"; ""))
-    | .weight_ |= (
+
+    # parse the weight field
+    ( .weight_ = (.weight | trimWhitespace |
         if startswith("?")? then
             # unknown weight, find parameters
             { is_fixed: false
-            , params: (ltrimstr("?") | ltrimstr("(") | rtrimstr(")") | split("\\s*,\\s"))
+            , params: (ltrimstr("?") | trimWhitespace
+                | ltrimstr("(") | rtrimstr(")") | trimWhitespace
+                | if length == 0 then [] else  split("\\s*,\\s*") end)
             , init_value: 0.0
             }
         else
@@ -31,7 +37,42 @@ def asSqlLiteral: "'\''\(tostring | gsub("'\''"; "'\'\''"))'\''";
             , params: []
             , init_value: tonumber
             }
-        end
+        end)
+
+    # parse the function field
+    | .function_ = (.function | trimWhitespace
+        | capture("^ (?<name>.+)
+                \\s* \\(
+                \\s* (?<variables>.+)
+                \\s* \\)
+                   $"; "x") // error("\(.): Failed parsing function field for deepdive.inference.factors.\($factorName)")
+        | .variables |= [ trimWhitespace | splits("\\s*,\\s*")
+            # parse arguments to the function or predicate (variables)
+            | capture("^ (?<isNegated>!)?
+                    \\s* (?<relation>.+)
+                    \\s* \\.
+                    \\s* (?<field>[^.]+)
+                    \\s* (?<isArray>\\[\\])?
+                    \\s* (?: = (?<equalsTo> \\d+))?
+                       $"; "x") // error("\(.): Failed parsing variable argument for function for deepdive.inference.factors.\($factorName)")
+            | .isNegated |= (length > 0)
+            | .isArray   |= (length > 0)
+            | .equalsTo  |= (if . then tonumber else null end)
+            ]
+        | .id =
+            # map function name to the code used by sampler (case insensitive)
+            { imply       : 0
+            , or          : 1
+            , and         : 2
+            , equal       : 3
+            , istrue      : 4
+            , multinomial : 5
+            , linear      : 7
+            , ratio       : 8
+            , logical     : 9
+            , imply3      : 11
+            }[.name | ascii_downcase] //
+                error("\(.name): deepdive.inference.factors.\($factorName) uses an unrecognized function")
         )
     )
 )
@@ -106,7 +147,7 @@ def asSqlLiteral: "'\''\(tostring | gsub("'\''"; "'\'\''"))'\''";
     "process/grounding/weight_id_partition": {
         dependencies_: [
             $deepdive.inference.factors | keys[]
-            | "process/grounding/\(.)/materialize_weights"
+            | "process/grounding/\(.)/materialize"
         ],
         style: "cmd_extractor", cmd: "
         : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
@@ -193,8 +234,7 @@ def asSqlLiteral: "'\''\(tostring | gsub("'\''"; "'\'\''"))'\''";
                 baseId=$(cat id_begin)
 
                 # assign id to all rows according to the paritition
-                # TODO parameterize id column?
-                db-assign_sequential_id $table id $baseId
+                db-assign_sequential_id $table \($deepdiveVariableIdColumn | @sh) $baseId
                 "
             },
 
@@ -228,7 +268,7 @@ def asSqlLiteral: "'\''\(tostring | gsub("'\''"; "'\'\''"))'\''";
     | (.key | ltrimstr("factor/")) as $factorName | .value
     | {
         # add a process for grounding factors
-        "process/grounding/factor/\($factorName)/materialize_weights": {
+        "process/grounding/factor/\($factorName)/materialize": {
             # materializing each factor requires the dependent variables to have their id assigned
             dependencies_: [
                 .input_[]
@@ -244,18 +284,18 @@ def asSqlLiteral: "'\''\(tostring | gsub("'\''"; "'\'\''"))'\''";
             style: "cmd_extractor", cmd: "
                 : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
 
-                # materialize user input_query for the factor
+                # materialize user input_query for the factor into a dd_query_* table
                 deepdive sql \("dd_query_\($factorName)" as $factorTable | "
                     DROP TABLE IF EXISTS \($factorTable) CASCADE;
                     CREATE TABLE \($factorTable) AS
                         \(.input_query);
                 " | @sh)
 
-                # find distinct weights for the factor
+                # find distinct weights for the factor into a dd_weights_* table
                 \(("dd_weights_\($factorName)" | asSqlIdent) as $weightsTable | "
-                deepdive sql \("DROP TABLE IF EXISTS \($weightsTable) CASCADE;" | @sh) || true
+                deepdive sql \("DROP VIEW IF EXISTS \($weightsTable) CASCADE;" | @sh) || true
                 deepdive sql \((if .weight_.is_fixed then [] else .weight_.params | map(asSqlIdent) end) as $paramsAsSqlIdents | "
-                    DROP VIEW IF EXISTS \($weightsTable) CASCADE;
+                    DROP TABLE IF EXISTS \($weightsTable) CASCADE;
                     CREATE TABLE \($weightsTable) AS
                         SELECT \(
                             [ $paramsAsSqlIdents[]
@@ -296,13 +336,47 @@ def asSqlLiteral: "'\''\(tostring | gsub("'\''"; "'\'\''"))'\''";
             ],
             style: "cmd_extractor", cmd: "
                 : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
-                error Not implemented
+                facPath=\"$DEEPDIVE_GROUNDING_DIR\"/factor/\($factorName | @sh)
+                mkdir -p \"$facPath\"
+                cd \"$facPath\"
+                rm -f factors.part-*.bin weights.part-*.bin
+                export DEEPDIVE_LOAD_FORMAT=tsv
 
-                # TODO dump the factors joining the assigned weight ids
-                # TODO binarize factors
+                # dump the factors joining the assigned weight ids, converting into binary format for the sampler
+                DEEPDIVE_CURRENT_PROCESS_NAME=\"${DEEPDIVE_CURRENT_PROCESS_NAME}.factors\" \\
+                deepdive compute \\
+                    input_sql=\("
+                        SELECT weights.id AS weight_id
+                            , \(.function_.variables | map("\(.relation).\($deepdiveVariableIdColumn)" | asSqlIdent) | join(", "))
+                          FROM dd_query_\($factorName) factors
+                             , dd_weights_\($factorName) weights
+                        \(if .weight_.params | length == 0 then ""
+                        else "WHERE \(.weight_.params | map(
+                            "factors.\(asSqlIdent) = weights.\(asSqlIdent)"
+                            ) | join(" AND "))"
+                        end)
+                    " | @sh) \\
+                    command=\("
+                        format_converter factor /dev/stdin factors.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin \(.function_.id
+                            ) \(.function_.variables | length
+                            ) original \(.function_.variables | map(if .isNegated then "0" else "1" end) | join(" ")
+                            )
+                    " | @sh) \\
+                    output_relation=
 
-                # TODO dump the weights (except the description column)
-                # TODO binarize weights
+                # dump the weights (except the description column), converting into binary format for the sampler
+                DEEPDIVE_CURRENT_PROCESS_NAME=\"${DEEPDIVE_CURRENT_PROCESS_NAME}.weights\" \\
+                deepdive compute \\
+                    input_sql=\("
+                        SELECT id
+                             , isfixed
+                             , COALESCE(initvalue, 0)
+                          FROM dd_weights_\($factorName)
+                    " | @sh) \\
+                    command=\("
+                        format_converter weight /dev/stdin weights.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin
+                    " | @sh) \\
+                    output_relation=
             "
         }
 

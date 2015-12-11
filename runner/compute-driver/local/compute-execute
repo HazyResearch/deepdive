@@ -40,59 +40,96 @@ num_processes=${DEEPDIVE_NUM_PROCESSES:-${num_processes:-$(
 # declare all input arguments
 declare -- "$@"
 
-# some derived values
-output_relation_tmp="${DEEPDIVE_PREFIX_TABLE_TEMPORARY}${output_relation}"
-
 # show configuration
 echo "Executing with the following configuration:"
 echo " num_processes=$num_processes"
-echo " output_relation_tmp=$output_relation_tmp"
-echo
 
-# use an empty temporary table as a sink instead of TRUNCATE'ing the output_relation
-deepdive-initdb "$output_relation"
-deepdive-sql "
-    DROP TABLE IF EXISTS $output_relation_tmp;
-    CREATE TABLE $output_relation_tmp (LIKE $output_relation);
-"
+# XXX there are conditional branches below depending on whether input_sql
+# and/or output_relation is given, to support four use cases:
+# 1) executing command while streaming data from/to the database
+# 2) input-only command which has no output to the database and streams from the database
+# 3) output-only command which has no input from the database and streams to the database
+# 4) database-independent command which simply runs in parallel
 
-# set up named pipes for parallel processes
-for i in $(seq $num_processes); do
-    rm -f  process-$i.{input,output}
-    mkfifo process-$i.{input,output}
-done
-# make sure named pipes are cleaned up upon exit
+# prepare a temporary output table when output_relation is given
+if [[ -n $output_relation ]]; then
+    # some derived values
+    output_relation_tmp="${DEEPDIVE_PREFIX_TABLE_TEMPORARY}${output_relation}"
+
+    # show configuration
+    echo " output_relation_tmp=$output_relation_tmp"
+    echo
+
+    # use an empty temporary table as a sink instead of TRUNCATE'ing the output_relation
+    deepdive-initdb "$output_relation"
+    deepdive-sql "
+        DROP TABLE IF EXISTS $output_relation_tmp;
+        CREATE TABLE $output_relation_tmp (LIKE $output_relation);
+    "
+fi
+
+# set up named pipes for parallel processes and make sure they are cleaned up upon exit
+[[ -z $input_sql       ]] || for i in $(seq $num_processes); do rm -f process-$i.input ; mkfifo process-$i.input ; done
+[[ -z $output_relation ]] || for i in $(seq $num_processes); do rm -f process-$i.output; mkfifo process-$i.output; done
 trap 'rm -f process-*.{input,output}' EXIT
 # now spawn processes attached to the named pipes in reverse order (from sink to source)
 
-# use mkmimo again to merge outputs of multiple processes into a single stream
-mkmimo process-*.output \> /dev/stdout |
-# load the output data to the temporary table in the database
-show_progress "$DEEPDIVE_CURRENT_PROCESS_NAME output" |
-deepdive-load "$output_relation_tmp" /dev/stdin &
+if [[ -n $output_relation ]]; then
+    # use mkmimo again to merge outputs of multiple processes into a single stream
+    mkmimo process-*.output \> /dev/stdout |
+    # load the output data to the temporary table in the database
+    show_progress "$DEEPDIVE_CURRENT_PROCESS_NAME output" |
+    deepdive-load "$output_relation_tmp" /dev/stdin &
+fi
 
 # spawn multiple processes attached to the pipes
-for i in $(seq $num_processes); do
-    sh -c "$command" <process-$i.input >process-$i.output &
-done
+if [[ -n $output_relation && -n $input_sql ]]; then # process with input from/output to database
+    for i in $(seq $num_processes); do
+        DEEPDIVE_CURRENT_PROCESS_INDEX=$i \
+        sh -c "$command" <process-$i.input >process-$i.output &
+    done
+elif [[ -n $input_sql ]]; then # input-only process
+    for i in $(seq $num_processes); do
+        DEEPDIVE_CURRENT_PROCESS_INDEX=$i \
+        sh -c "$command" <process-$i.input &
+    done
+elif [[ -n $output_relation ]]; then # output-only process
+    for i in $(seq $num_processes); do
+        DEEPDIVE_CURRENT_PROCESS_INDEX=$i \
+        sh -c "$command" >process-$i.output &
+    done
+else # neither output_relation nor input_sql specified
+    for i in $(seq $num_processes); do
+        DEEPDIVE_CURRENT_PROCESS_INDEX=$i \
+        sh -c "$command" &
+    done
+fi
 
-# unload data from the database and pour into the pipes
-deepdive-sql eval "$input_sql" format="$DEEPDIVE_LOAD_FORMAT" |
-show_progress "$DEEPDIVE_CURRENT_PROCESS_NAME input" |
-# use mkmimo to distribute input data to multiple processes
-mkmimo /dev/stdin \> process-*.input &
+if [[ -n $input_sql ]]; then
+    # unload data from the database and pour into the pipes
+    deepdive-sql eval "$input_sql" format="$DEEPDIVE_LOAD_FORMAT" |
+    show_progress "$DEEPDIVE_CURRENT_PROCESS_NAME input" |
+    # use mkmimo to distribute input data to multiple processes
+    mkmimo /dev/stdin \> process-*.input &
+fi
 
-wait  # until everything is done
+wait  # until everything is done ##############################################
 
-# rename the new temporary table
-# TODO maybe use PostgreSQL's schema support here?
-echo "Replacing $output_relation with $output_relation_tmp"
-output_relation_old="${DEEPDIVE_PREFIX_TABLE_OLD}${output_relation}"
-deepdive-sql "
-    DROP TABLE IF EXISTS ${output_relation_old};
-    ALTER TABLE ${output_relation}     RENAME TO ${output_relation_old};
-" || true
-deepdive-sql "
-    ALTER TABLE ${output_relation_tmp} RENAME TO ${output_relation};
-    DROP TABLE IF EXISTS ${output_relation_old};
-"
+if [[ -n $output_relation ]]; then
+    # rename the new temporary table
+    # TODO maybe use PostgreSQL's schema support here?
+    echo "Replacing $output_relation with $output_relation_tmp"
+    output_relation_old="${DEEPDIVE_PREFIX_TABLE_OLD}${output_relation}"
+    deepdive-sql "
+        DROP TABLE IF EXISTS ${output_relation_old};
+        ALTER TABLE ${output_relation}     RENAME TO ${output_relation_old};
+    " || true
+    deepdive-sql "
+        ALTER TABLE ${output_relation_tmp} RENAME TO ${output_relation};
+        DROP TABLE IF EXISTS ${output_relation_old};
+    "
+    # and analyze the table to speed up future queries
+    deepdive-sql "
+        ANALYZE ${output_relation};
+    "
+fi
