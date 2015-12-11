@@ -85,7 +85,7 @@ def asSqlLiteral: "'\''\(tostring | gsub("'\''"; "'\'\''"))'\''";
     # grounding the factor graph
     "process/grounding/legacy": {
         dependencies_: ($deepdive.inference.factors | keys),
-        output_: "model/factorgraph",
+        output_: "model/factorgraph.legacy",
         style: "cmd_extractor",
         cmd: "mkdir -p ../../../model && cd ../../../model
             mkdir -p factorgraph
@@ -235,12 +235,41 @@ def asSqlLiteral: "'\''\(tostring | gsub("'\''"; "'\'\''"))'\''";
             $deepdive.inference.factors | keys[] | ltrimstr("factor/")
             | "process/grounding/factor/\(.)/dump"
         )],
-        output_: "model/factorgraph.new",
+        output_: "model/factorgraph",
         style: "cmd_extractor", cmd: "
-        error Not implemented
+        : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
+        : ${DEEPDIVE_FACTORGRAPH_DIR:=\"$DEEPDIVE_APP\"/run/model/factorgraph}
 
-        # TODO concatenate every binaries dumped so far
-        # a la: tobinary.py variables/ factors/ weights/ meta
+        rm -rf   \"$DEEPDIVE_FACTORGRAPH_DIR\"
+        mkdir -p \"$DEEPDIVE_FACTORGRAPH_DIR\"
+        cd \"$DEEPDIVE_FACTORGRAPH_DIR\"
+
+        # create symlinks to the grounded binaries by enumerating variables and factors
+        for v in \([$deepdive.schema.variables | keys[] | @sh] | join(" ")); do
+            mkdir -p variables/\"$v\"
+            ( cd variables/\"$v\" && ln -sfn \"$DEEPDIVE_GROUNDING_DIR\"/variable/\"$v\"/variables.part-*.bin . )
+        done
+        for f in \([$deepdive.inference.factors | keys[] | ltrimstr("factor/") | @sh] | join(" ")); do
+            mkdir -p {factors,weights}/\"$f\"
+            ( cd factors/\"$f\" && ln -sfn \"$DEEPDIVE_GROUNDING_DIR\"/factor/\"$f\"/factors.part-*.bin . )
+            ( cd weights/\"$f\" && ln -sfn \"$DEEPDIVE_GROUNDING_DIR\"/factor/\"$f\"/weights.part-*.bin . )
+        done
+
+        # generate the metadata for the sampler
+        {
+            sumup() { { tr '\''\\n'\'' +; echo 0; } | bc; }
+            # first line with counts of variables and edges in the graph
+            counts=()
+            counts+=($(cat \"$DEEPDIVE_GROUNDING_DIR\"/factor/weights_count))
+            # sum up the number of factors and edges
+            counts+=($(cat \"$DEEPDIVE_GROUNDING_DIR\"/variable_count))
+            counts+=($(cat \"$DEEPDIVE_GROUNDING_DIR\"/factor/*/nfactors.part-* | sumup))
+            counts+=($(cat \"$DEEPDIVE_GROUNDING_DIR\"/factor/*/nedges.part-*   | sumup))
+            IFS=,; echo \"${counts[*]}\"
+            # second line with file paths
+            paths=(\"$PWD\"/{weights,variables,factors,edges})
+            IFS=,; echo \"${paths[*]}\"
+        } >meta
         "
     }
 
@@ -414,7 +443,7 @@ def asSqlLiteral: "'\''\(tostring | gsub("'\''"; "'\'\''"))'\''";
                 facPath=\"$DEEPDIVE_GROUNDING_DIR\"/factor/\($factorName | @sh)
                 mkdir -p \"$facPath\"
                 cd \"$facPath\"
-                rm -f factors.part-*.bin weights.part-*.bin
+                rm -f {factors,weights}.part-*.bin n{factors,edges}.part-*
                 export DEEPDIVE_LOAD_FORMAT=tsv
 
                 # dump the factors joining the assigned weight ids, converting into binary format for the sampler
@@ -432,10 +461,14 @@ def asSqlLiteral: "'\''\(tostring | gsub("'\''"; "'\'\''"))'\''";
                         end)
                     " | @sh) \\
                     command=\("
+                        # also record the factor count
+                        tee >(wc -l >nfactors.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}) |
                         format_converter factor /dev/stdin factors.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin \(.function_.id
                             ) \(.function_.variables | length
                             ) original \(.function_.variables | map(if .isNegated then "0" else "1" end) | join(" ")
-                            )
+                            ) |
+                        # and the edge count
+                        tee nedges.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}
                     " | @sh) \\
                     output_relation=
 
