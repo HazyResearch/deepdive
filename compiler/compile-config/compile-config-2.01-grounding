@@ -369,7 +369,7 @@ def asSqlLiteral: "'\''\(tostring | gsub("'\''"; "'\'\''"))'\''";
                 deepdive compute \\
                     input_sql=\("
                         SELECT id
-                             , isfixed
+                             , CASE WHEN isfixed THEN 1 ELSE 0 END
                              , COALESCE(initvalue, 0)
                           FROM dd_weights_\($factorName)
                     " | @sh) \\

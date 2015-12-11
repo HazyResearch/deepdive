@@ -32,6 +32,7 @@ using namespace std;
 void load_var(std::string input_filename, std::string output_filename) {
   std::ifstream fin(input_filename.c_str());
   std::ofstream fout(output_filename.c_str(), std::ios::binary | std::ios::out);
+  long count = 0;
 
   long vid;
   int is_evidence;
@@ -55,7 +56,10 @@ void load_var(std::string input_filename, std::string output_filename) {
     fout.write((char*)&type, 2);
     fout.write((char *)&edge_count, 8);
     fout.write((char*)&cardinality, 8);
+
+    ++count;
   }
+  std::cout << count <<std::endl;
 
   fin.close();
   fout.close();
@@ -66,6 +70,7 @@ void load_var(std::string input_filename, std::string output_filename) {
 void load_weight(std::string input_filename, std::string output_filename) {
   std::ifstream fin(input_filename.c_str());
   std::ofstream fout(output_filename.c_str(), std::ios::binary | std::ios::out);
+  long count = 0;
 
   long wid;
   int isfixed;
@@ -78,7 +83,10 @@ void load_weight(std::string input_filename, std::string output_filename) {
     fout.write((char*)&wid, 8);
     fout.write((char*)&isfixed, 1);
     fout.write((char*)&initval, 8);
+
+    ++count;
   }
+  std::cout << count <<std::endl;
 
   fin.close();
   fout.close();
@@ -278,12 +286,16 @@ void load_factor(std::string input_filename, std::string output_filename, short 
 void load_active(std::string input_filename, std::string output_filename) {
   std::ifstream fin(input_filename.c_str());
   std::ofstream fout(output_filename.c_str(), std::ios::binary);
+  long count = 0;
 
   long id;
   while (fin >> id) {
     id = bswap_64(id);
     fout.write((char*)&id, 8);
+    ++count;
   }
+  std::cout << count << std::endl;
+
   fin.close();
   fout.close();
 }
@@ -303,7 +315,7 @@ int main(int argc, char** argv){
   } else if (app.compare("active") == 0) {
     load_active(argv[2], argv[3]);
   } else {
-    std::cout << "Unsupported type" << std::endl;
+    std::cerr << "Unsupported type" << std::endl;
     exit(1);
   }
   return 0;
