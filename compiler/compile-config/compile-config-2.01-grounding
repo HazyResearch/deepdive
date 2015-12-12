@@ -1,7 +1,7 @@
-#!/usr/bin/env bash
+#!/usr/bin/env jq -f
 # compile-config-2.01-grounding -- Adds processes for grounding the factor graph
 ##
-exec jq '
+
 def merge(objects): reduce objects as $es ({}; . + $es);
 
 def trimWhitespace: gsub("^\\s+|\\s+$"; "");
@@ -12,7 +12,7 @@ def asSqlIdent: "\"\( tostring  # anything can be turned into a SQL identifier i
                     )\"";
 
 # a handy way to turn things into SQL string literals (as it is hard to write single quote within single quote in this Bash script)
-def asSqlLiteral: "'\''\(tostring | gsub("'\''"; "'\'\''"))'\''";
+def asSqlLiteral: "'\(tostring | gsub("'"; "''"))'";
 
 .deepdive_ as $deepdive
 | "id" as $deepdiveVariableIdColumn
@@ -214,7 +214,7 @@ def asSqlLiteral: "'\''\(tostring | gsub("'\''"; "'\'\''"))'\''";
             CREATE VIEW dd_graph_weights AS \($deepdive.inference.factors | to_entries | map(
                     (.key | ltrimstr("factor/")) as $factorName | .value
                     | ( [ ("\($factorName)-" | asSqlLiteral)
-                        , (.weight_.params[] | "CASE WHEN \(asSqlIdent) IS NULL THEN '\'''\'' ELSE CAST(\(asSqlIdent) AS TEXT) END")
+                        , (.weight_.params[] | "CASE WHEN \(asSqlIdent) IS NULL THEN '' ELSE CAST(\(asSqlIdent) AS TEXT) END")
                         ] | join(" ||\("-" | asSqlLiteral)|| ") | "\(.) AS description") as $weightDescExpr
                     | "(SELECT id, isfixed, initvalue, \($weightDescExpr) FROM dd_weights_\($factorName))"
                     # TODO cardinality column for multinomial
@@ -257,7 +257,7 @@ def asSqlLiteral: "'\''\(tostring | gsub("'\''"; "'\'\''"))'\''";
 
         # generate the metadata for the sampler
         {
-            sumup() { { tr '\''\\n'\'' +; echo 0; } | bc; }
+            sumup() { { tr '\\n' +; echo 0; } | bc; }
             # first line with counts of variables and edges in the graph
             counts=()
             counts+=($(cat \"$DEEPDIVE_GROUNDING_DIR\"/factor/weights_count))
@@ -490,4 +490,3 @@ def asSqlLiteral: "'\''\(tostring | gsub("'\''"; "'\'\''"))'\''";
 
     })
 
-' "$@"
