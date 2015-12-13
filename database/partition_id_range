@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # partition_id_range -- Parititions a sequential range of numbers for a given set of database tables
+#
 # $ partition_id_range TABLE...
 # Runs SELECT COUNT(*) query against every TABLE to find consecutive integer
 # ranges that can assign a unique integer for every row in each TABLE.
@@ -11,11 +12,14 @@
 #
 # $ RANGE_EXCLUDE_END=10000 partition_id_range ...
 # Allows to stop the partition early when a range to be assigned goes over a limit.
+#
+# $ RANGE_STEP=17 partition_id_range ...
+# Allows to assign the range with a step size other than +1.
 ##
 set -euo pipefail
 
 # default values
-: ${RANGE_BEGIN:=0} ${RANGE_EXCLUDE_END:=}
+: ${RANGE_BEGIN:=0} ${RANGE_EXCLUDE_END:=} ${RANGE_STEP:=1}
 
 # argument check
 [[ $# -gt 0 ]] || usage "$0" "At least one TABLE must be given"
@@ -31,7 +35,7 @@ start=$RANGE_BEGIN tableBefore=
 while [[ $# -gt 0 ]]; do
     Table=$1; shift
     count=$(deepdive sql eval "SELECT COUNT(*) FROM $Table")
-    exclude_end=$(( $start + $count ))
+    exclude_end=$(( $start + $count * $RANGE_STEP ))
     [[ -z $RANGE_EXCLUDE_END || $exclude_end -lt $RANGE_EXCLUDE_END ]] || break  # stop paritioning when the end is reached
     output "$Table" $start $exclude_end
     start=$exclude_end
