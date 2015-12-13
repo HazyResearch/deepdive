@@ -129,7 +129,5 @@ if [[ -n $output_relation ]]; then
         DROP TABLE IF EXISTS ${output_relation_old};
     "
     # and analyze the table to speed up future queries
-    deepdive-sql "
-        ANALYZE ${output_relation};
-    "
+    db-analyze "${output_relation}"
 fi

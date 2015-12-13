@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# db-analyze -- Analyzes statistics of given table to speed up future queries for PostgreSQL
+# > db-analyze TABLE
+##
+set -eu
+
+table=${1:?No TABLE given}
+
+# See: http://www.postgresql.org/docs/8.2/static/sql-analyze.html
+exec db-execute "ANALYZE $table;"

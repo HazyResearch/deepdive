@@ -31,6 +31,7 @@ for op in \
     query \
     prompt \
     load \
+    analyze \
     create_calibration_view \
     assign_sequential_id \
     ;
