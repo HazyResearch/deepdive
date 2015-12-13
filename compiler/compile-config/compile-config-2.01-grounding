@@ -5,7 +5,9 @@
 ###############################################################################
 def merge(objects): reduce objects as $es ({}; . + $es);
 
-def trimWhitespace: gsub("^\\s+|\\s+$"; "");
+def trimWhitespace: gsub("^\\s+|\\s+$"; ""; "m");
+
+def nullOr(expr): if type == "null" then null else expr end;
 
 ###############################################################################
 ## helper functions for SQL generation
@@ -50,9 +52,9 @@ def mapJoinOrEmptyString(prefix)                      : mapJoinOrEmptyString(pre
 
 # compile SQL expression: table.column or generic expression
 def asSqlExpr:
-    if .expr                then .expr
-    elif .table and .column then "\(.table | asSqlIdent).\(.column | asSqlIdent)"
-    elif .column            then .column | asSqlIdent
+    if has("expr")                       then .expr | tostring
+    elif has("table") and has("column") then "\(.table | asSqlIdent).\(.column | asSqlIdent)"
+    elif has("column")                   then .column | asSqlIdent
     else error("Neither keys .expr or .column found for SQL expression in \(tostring)")
     end;
 # compile `expression AS alias` in the field list of SELECT clauses
@@ -60,11 +62,11 @@ def asSqlExprAlias:
     (asSqlExpr) + (.alias | mapJoinOrEmptyString(" AS "; asSqlIdent));
 # compile `table alias` mainly for the FROM or JOIN clauses
 def asSqlTableAlias(asSql):
-    if .table then
+    if has("table") then
         (.table | asSqlIdent) +
         (.alias | mapJoinOrEmptyString(" "; asSqlIdent))
-    elif .sql then
-        "(\(.sql | asSql))" +
+    elif has("sql") then
+        "(\(.sql | asSql)) " +
         (.alias // error(".alias must be set for subquery \(.sql | tostring)") | asSqlIdent)
     else error("Neither keys .table or .sql found for FROM clause in \(tostring)")
     end;
@@ -79,30 +81,30 @@ def asSqlJoinTypeTableAlias(asSql):
 # compile SQL conditional expressions for WHILE, HAVING, and JOIN ON clauses
 # TODO maybe these comparisons should be folded into asSqlExpr
 def asSqlCondition:
-    def asSqlBinaryComparison(op):
-        if type == "null" then
-            null
-        elif type == "array" and length == 2 then
+    def asSqlBinaryComparison(op): nullOr(
+        if type == "array" and length == 2 then
             "\(.[0] | asSqlExpr) \(op) \(.[1] | asSqlExpr)"
         else error("Comparison '\(op)' expects exactly two expressions as an array, but found: \(tostring)")
-        end;
+        end);
     (.eq | asSqlBinaryComparison("=" )) //
     (.gt | asSqlBinaryComparison(">" )) //
     (.ge | asSqlBinaryComparison(">=")) //
     (.le | asSqlBinaryComparison("<=")) //
     (.lt | asSqlBinaryComparison("<" )) //
+    (.isNull   | nullOr("\(asSqlExpr) IS NULL")) //
+    (.isntNull | nullOr("\(asSqlExpr) IS NOT NULL")) //
     error("Unrecognized SQL condition \(tostring)");
 # a more structured way to generate a SQL (Structured! Query Language) SELECT query than assembling strings
 # which turns an object in a particular format into SQL, taking care of many escaping issues
 def asSql:
-    [ (.SELECT  |mapJoinOrEmptyString("SELECT "   ; asSqlExprAlias                                  ; ", "))
-    , (.FROM    |mapJoinOrEmptyString("FROM "     ; asSqlTableAlias(asSql)                          ; ", "))
-    , (.JOIN    |mapJoinOrEmptyString("\(asSqlJoinTypeTableAlias(asSql)) \(.ON | asSqlCondition)"   ; " " ))
-    , (.WHERE   |mapJoinOrEmptyString("WHERE "    ; asSqlCondition                                  ; " AND " ))
-    , (.GROUP_BY|mapJoinOrEmptyString("GROUP BY " ; asSqlExpr                                       ; ", "    ))
-    , (.HAVING  |mapJoinOrEmptyString("HAVING "   ; asSqlCondition                                  ; " AND " ))
-    , (.ORDER_BY|mapJoinOrEmptyString("ORDER BY " ; "\(.expr | asSqlExpr) \(.order // "ASC")"       ; ", "    ))
-    ] | join("\n");
+    [ (.SELECT  |mapJoinOrEmptyString("SELECT "   ; asSqlExprAlias                                      ; "\n     , "))
+    , (.FROM    |mapJoinOrEmptyString("FROM "     ; asSqlTableAlias(asSql)                              ; ", "))
+    , (.JOIN    |mapJoinOrEmptyString(""; "\(asSqlJoinTypeTableAlias(asSql)) ON \(.ON | asSqlCondition)"; " " ))
+    , (.WHERE   |mapJoinOrEmptyString("WHERE "    ; asSqlCondition                                      ; " AND " ))
+    , (.GROUP_BY|mapJoinOrEmptyString("GROUP BY " ; asSqlExpr                                           ; ", "    ))
+    , (.HAVING  |mapJoinOrEmptyString("HAVING "   ; asSqlCondition                                      ; " AND " ))
+    , (.ORDER_BY|mapJoinOrEmptyString("ORDER BY " ; "\(.expr | asSqlExpr) \(.order // "ASC")"           ; ", "    ))
+    ] | join("\n") | trimWhitespace;
 ## finally, a test case
 #if
 #    { SELECT:
@@ -262,12 +264,21 @@ def asSql:
                 # otherwise, randomly select from evidence variables of each variable table
                 $deepdive.schema.variables | to_entries[]
                 | .key as $relationName | .value | to_entries[] | .key as $columnName | "
-                    INSERT INTO dd_graph_variables_holdout
-                    SELECT \($deepdiveVariableIdColumn | asSqlIdent)
-                      FROM \($relationName | asSqlIdent)
-                     WHERE \($columnName | asSqlIdent) IS NOT NULL
-                       AND RANDOM() < \($deepdive.calibration.holdout_fraction)
-                    ;
+                    INSERT INTO dd_graph_variables_holdout \(
+                    { SELECT:
+                        [ { column: $deepdiveVariableIdColumn }
+                        ]
+                    , FROM:
+                        [ { table: $relationName }
+                        ]
+                    , WHERE:
+                        [ { isntNull: { column: $columnName } }
+                        , { lt: [ { expr: "RANDOM()" }
+                                , { expr: $deepdive.calibration.holdout_fraction }
+                                ]
+                          }
+                        ]
+                    } | asSql);
                 "
               end
             , " DROP TABLE IF EXISTS dd_graph_variables_observation CASCADE;
@@ -320,14 +331,29 @@ def asSql:
         deepdive sql \("DROP TABLE IF EXISTS dd_graph_weights CASCADE;" | @sh) || true
         deepdive sql \("
             DROP VIEW IF EXISTS dd_graph_weights CASCADE;
-            CREATE VIEW dd_graph_weights AS \($deepdive.inference.factors | to_entries | map(
-                    (.key | ltrimstr("factor/")) as $factorName | .value
-                    | ( [ ("\($factorName)-" | asSqlLiteral)
-                        , (.weight_.params[] | "CASE WHEN \(asSqlIdent) IS NULL THEN '' ELSE CAST(\(asSqlIdent) AS TEXT) END")
-                        ] | join(" ||\("-" | asSqlLiteral)|| ") | "\(.) AS description") as $weightDescExpr
-                    | "(SELECT id, isfixed, initvalue, \($weightDescExpr) FROM dd_weights_\($factorName))"
-                    # TODO cardinality column for multinomial
-                ) | join(" UNION ALL ")
+            CREATE VIEW dd_graph_weights AS \(
+                [ $deepdive.inference.factors | to_entries[] |
+                    (.key | ltrimstr("factor/")) as $factorName | .value |
+                    { SELECT:
+                        [ { column: "id" }
+                        , { column: "isfixed" }
+                        , { column: "initvalue" }
+                        , { alias: "description", expr:
+                                [ ("\($factorName)-" | asSqlLiteral)
+                                , (.weight_.params[] |
+                                    "CASE WHEN \(asSqlIdent) IS NULL THEN ''
+                                          ELSE CAST(\(asSqlIdent) AS TEXT)
+                                      END"
+                                  )
+                                ] | join(" ||\("-" | asSqlLiteral)|| ")
+                          }
+                        # TODO cardinality column for multinomial
+                        ]
+                    , FROM:
+                        [ { table: "dd_weights_\($factorName)" }
+                        ]
+                    } | asSql | "(\(.))"
+                ] | join(" UNION ALL ")
             );" | @sh)
         "
     },
@@ -438,36 +464,67 @@ def asSql:
 
                 # dump the variables, joining the holdout query to determine the type of each variable
                 deepdive compute \\
-                    input_sql=\("
-                    SELECT id
-                         , variable_role
-                         , CASE WHEN variable_role = 0 THEN 0
-                                ELSE CAST(CAST(label AS INT) AS FLOAT)
-                            END AS init_value
-                         , variable_type
-                         , cardinality
-                      FROM (
-                          SELECT \($deepdiveVariableIdColumn | asSqlIdent) AS id
-                             , CASE WHEN               observation.variable_id IS NOT NULL
-                                     AND variables.\($columnName | asSqlIdent) IS NOT NULL THEN 2
-                                    WHEN                   holdout.variable_id IS NOT NULL THEN 0
-                                    WHEN variables.\($columnName | asSqlIdent) IS NOT NULL THEN 1
-                                                                                           ELSE 0
-                               END AS variable_role
-                             , variables.\($columnName | asSqlIdent) AS label
-                             , \(
-                                    # TODO multinomial
-                                    0  # for Boolean variables
-                                ) AS variable_type
-                             , \(
-                                    # TODO multinomial
-                                    2
-                                ) AS cardinality
-                          FROM            \($relationName | asSqlIdent)  variables
-                          LEFT OUTER JOIN dd_graph_variables_holdout     holdout     ON variables.\($deepdiveVariableIdColumn | asSqlIdent) =     holdout.variable_id
-                          LEFT OUTER JOIN dd_graph_variables_observation observation ON variables.\($deepdiveVariableIdColumn | asSqlIdent) = observation.variable_id
-                      ) variables
-                    " | @sh) \\
+                    input_sql=\(
+                    { SELECT:
+                        [ { column: "id" }
+                        , { column: "variable_role" }
+                        , { alias: "init_value", expr:
+                            "CASE WHEN variable_role = 0 THEN 0
+                                  ELSE CAST(CAST(label AS INT) AS FLOAT)
+                              END" }
+                        , { column: "variable_type" }
+                        , { column: "cardinality" }
+                        ]
+                    , FROM:
+                        [ { alias: "variables", sql:
+                            { SELECT:
+                                [ { alias: "id", column: $deepdiveVariableIdColumn }
+                                , { alias: "variable_role", expr:
+                                      "CASE WHEN               observation.variable_id IS NOT NULL
+                                             AND variables.\($columnName | asSqlIdent) IS NOT NULL THEN 2
+                                            WHEN                   holdout.variable_id IS NOT NULL THEN 0
+                                            WHEN variables.\($columnName | asSqlIdent) IS NOT NULL THEN 1
+                                                                                                   ELSE 0
+                                        END" }
+                                , { alias: "label", table: "variables", column: $columnName }
+                                , { alias: "variable_type", expr: (
+                                        # TODO multinomial
+                                        0  # for Boolean variables
+                                    ) }
+                                , { alias: "cardinality", expr: (
+                                        # TODO multinomial
+                                        2
+                                    ) }
+                                ]
+                            , FROM:
+                                [ { alias: "variables", table: $relationName }
+                                ]
+                            , JOIN:
+                                [ { LEFT_OUTER:
+                                    { alias: "holdout"
+                                    , table: "dd_graph_variables_holdout"
+                                    }
+                                  , ON: { eq:
+                                            [ { table: "variables", column: $deepdiveVariableIdColumn }
+                                            , { table: "holdout"  , column: "variable_id" }
+                                            ]
+                                        }
+                                  }
+                                , { LEFT_OUTER:
+                                    { alias: "observation"
+                                    , table: "dd_graph_variables_observation"
+                                    }
+                                  , ON: { eq:
+                                            [ { table: "variables"  , column: $deepdiveVariableIdColumn }
+                                            , { table: "observation", column: "variable_id" }
+                                            ]
+                                        }
+                                  }
+                                ]
+                            }
+                          }
+                        ]
+                    } | asSql | @sh) \\
                     command=\("
                         format_converter variable /dev/stdin variables.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin
                     " | @sh) \\
@@ -511,20 +568,27 @@ def asSql:
                 # find distinct weights for the factor into a dd_weights_* table
                 \(("dd_weights_\($factorName)" | asSqlIdent) as $weightsTable | "
                 deepdive sql \("DROP VIEW IF EXISTS \($weightsTable) CASCADE;" | @sh) || true
-                deepdive sql \((if .weight_.is_fixed then [] else .weight_.params | map(asSqlIdent) end) as $paramsAsSqlIdents | "
+                deepdive sql \("
                     DROP TABLE IF EXISTS \($weightsTable) CASCADE;
-                    CREATE TABLE \($weightsTable) AS
-                        SELECT \(
-                            [ $paramsAsSqlIdents[]
-                            , "\(.weight_.is_fixed  ) AS isfixed"
-                            , "\(.weight_.init_value) AS initvalue"
-                            # TODO cast to BIGINT
-                            , "-1                     AS id"
-                            ] | join(", "))
-                         \(if $paramsAsSqlIdents | length == 0 then ""
-                         else "FROM dd_query_\($factorName)
-                              GROUP BY \($paramsAsSqlIdents | join(", "))"
-                         end);
+                    CREATE TABLE \($weightsTable) AS \(
+                        { SELECT:
+                            [ ( .weight_.params[] | { column: . } )
+                            , { expr: .weight_.is_fixed  , alias: "isfixed" }
+                            , { expr: .weight_.init_value, alias: "initvalue" }
+                            , { expr: -1                 , alias: "id" }  # TODO cast to BIGINT?
+                            ]
+                        # when weight is parameterized, find all distinct ones
+                        , FROM:
+                            (if .weight_.params | length == 0 then [] else
+                                [ { table: "dd_query_\($factorName)" }
+                                ]
+                            end)
+                        , GROUP_BY:
+                            (if .weight_.params | length == 0 then [] else
+                                [ ( .weight_.params[] | { column: . } )
+                                ]
+                            end)
+                        } | asSql);
                 " | @sh)
                 ")
             "
@@ -562,18 +626,26 @@ def asSql:
                 # dump the factors joining the assigned weight ids, converting into binary format for the sampler
                 DEEPDIVE_CURRENT_PROCESS_NAME=\"${DEEPDIVE_CURRENT_PROCESS_NAME}.factors\" \\
                 deepdive compute \\
-                    input_sql=\("
-                        SELECT weights.id AS weight_id
-                            , \(.function_.variables | map("factors.\("\(.relation).\($deepdiveVariableIdColumn)" | asSqlIdent)") | join(", "))
-                          FROM dd_query_\($factorName) factors
-                             , dd_weights_\($factorName) weights
-                        \(if .weight_.params | length == 0 then ""
-                        else "WHERE \(.weight_.params | map(
-                            "factors.\(asSqlIdent) = weights.\(asSqlIdent)"
-                            ) | join(" AND "))"
-                            # TODO multinomial
-                        end)
-                    " | @sh) \\
+                    input_sql=\(
+                        { SELECT:
+                            [ { table: "weights", column: "id", alias: "weight_id" }
+                            , ( .function_.variables[] |
+                                { table: "factors", column: "\(.relation).\($deepdiveVariableIdColumn)" }
+                              )
+                            ]
+                        , FROM:
+                            [ { table: "dd_query_\($factorName)"  , alias: "factors" }
+                            , { table: "dd_weights_\($factorName)", alias: "weights" }
+                            ]
+                        , WHERE:
+                            [ .weight_.params[] |
+                                { eq: [ { table: "factors", column: . }
+                                      , { table: "weights", column: . }
+                                      ]
+                                }
+                            # TODO multinomial should dump the weight_id for the first class
+                            ]
+                        } | asSql | @sh) \\
                     command=\("
                         # also record the factor count
                         tee >(wc -l >nfactors.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}) |
@@ -589,12 +661,14 @@ def asSql:
                 # dump the weights (except the description column), converting into binary format for the sampler
                 DEEPDIVE_CURRENT_PROCESS_NAME=\"${DEEPDIVE_CURRENT_PROCESS_NAME}.weights\" \\
                 deepdive compute \\
-                    input_sql=\("
-                        SELECT id
-                             , CASE WHEN isfixed THEN 1 ELSE 0 END
-                             , COALESCE(initvalue, 0)
-                          FROM dd_weights_\($factorName)
-                    " | @sh) \\
+                    input_sql=\(
+                        { SELECT:
+                            [ { column: "id" }
+                            , { expr: "CASE WHEN isfixed THEN 1 ELSE 0 END" }
+                            , { expr: "COALESCE(initvalue, 0)" }
+                            ]
+                        , FROM: [ { table:"dd_weights_\($factorName)" } ]
+                        } | asSql | @sh) \\
                     command=\("
                         format_converter weight /dev/stdin weights.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin
                     " | @sh) \\
