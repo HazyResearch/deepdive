@@ -25,4 +25,4 @@ case $header in
     *) error "$header: unrecognized value for HEADER"
 esac
 
-exec db-prompt -e "$sql" "${prompt_options[@]}" "$@"
+exec db-execute "$sql" "${prompt_options[@]}" "$@"

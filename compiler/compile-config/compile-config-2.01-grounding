@@ -52,7 +52,7 @@ def mapJoinOrEmptyString(prefix)                      : mapJoinOrEmptyString(pre
 
 # compile SQL expression: table.column or generic expression
 def asSqlExpr:
-    if has("expr")                       then .expr | tostring
+    if has("expr")                       then .expr | tostring  # TODO support more structured expressions, e.g., binary operators and asSqlCondition
     elif has("table") and has("column") then "\(.table | asSqlIdent).\(.column | asSqlIdent)"
     elif has("column")                   then .column | asSqlIdent
     else error("Neither keys .expr or .column found for SQL expression in \(tostring)")
@@ -188,6 +188,7 @@ def asSql:
 | .deepdive_.extraction.extractors += {
 
     # grounding the factor graph
+    # TODO remove me
     "process/grounding/legacy": {
         dependencies_: ($deepdive.inference.factors | keys),
         output_: "model/factorgraph.legacy",
@@ -342,7 +343,7 @@ def asSql:
                                 [ ("\($factorName)-" | asSqlLiteral)
                                 , (.weight_.params[] |
                                     "CASE WHEN \(asSqlIdent) IS NULL THEN ''
-                                          ELSE CAST(\(asSqlIdent) AS TEXT)
+                                          ELSE \(asSqlIdent) || ''  -- XXX CAST(... AS TEXT) unsupported by MySQL
                                       END"
                                   )
                                 ] | join(" ||\("-" | asSqlLiteral)|| ")
@@ -470,7 +471,7 @@ def asSql:
                         , { column: "variable_role" }
                         , { alias: "init_value", expr:
                             "CASE WHEN variable_role = 0 THEN 0
-                                  ELSE CAST(CAST(label AS INT) AS FLOAT)
+                                  ELSE (CASE WHEN label THEN 1 ELSE 0 END) + 0.0
                               END" }
                         , { column: "variable_type" }
                         , { column: "cardinality" }
