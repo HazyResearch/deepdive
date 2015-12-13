@@ -1,0 +1,3 @@
+#!/bin/sh
+# jq-f -- a shebang interpreter for using jq executable files in a portable way
+exec jq -f "$@"

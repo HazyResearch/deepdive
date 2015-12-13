@@ -1,4 +1,4 @@
-#!/usr/bin/env jq -f
+#!/usr/bin/env jq-f
 # compile-config-2.01-grounding -- Adds processes for grounding the factor graph
 ##
 
