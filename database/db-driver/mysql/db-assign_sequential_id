@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 # db-assign_sequential_id -- Assigns a unique integer to every row for a table using a MySQL user-defined variable
 # > eval "$(db-parse "$url")"
-# > db-assign_sequential_id TABLE COLUMN BEGIN_ID
+# > db-assign_sequential_id TABLE COLUMN BEGIN_ID [INCREMENT]
 ##
 set -euo pipefail
 
 [[ $# -gt 0 ]] || usage "$0" "Missing TABLE"
 [[ $# -gt 1 ]] || usage "$0" "Missing COLUMN"
 [[ $# -gt 2 ]] || usage "$0" "Missing BEGIN_ID"
-Table=$1 Column=$2 BeginId=$3
+Table=$1 Column=$2 BeginId=$3 Increment=${4:-1}
 
 # Use user-defined variable to assign sequential integers
 # See: http://dev.mysql.com/doc/refman/5.0/en/user-variables.html
 db-execute "
     SET @id = $BeginId - 1;
-    UPDATE $Table SET $Column = @id := @id + 1;
+    UPDATE $Table SET $Column = @id := @id + $Increment;
 "
