@@ -122,6 +122,8 @@ def asSql:
 .deepdive_ as $deepdive
 | "id" as $deepdiveVariableIdColumn
 
+# TODO parse variable schema (mainly to find Multinomial cardinality)
+
 # parse function and weight fields for every inference rules as function_ and weight_
 | .deepdive_.inference.factors |= with_entries(
     (.key | ltrimstr("factor/")) as $factorName | .value |=
@@ -348,9 +350,10 @@ def asSql:
                                   )
                                 ] | join(" ||\("-" | asSqlLiteral)|| ")
                           }
-                        # TODO cardinality column for multinomial
+                        # TODO cardinality (actually class) column for multinomial as an offset to the id
                         ]
                     , FROM:
+                        # TODO use exploded view for multinomial
                         [ { table: "dd_weights_\($factorName)" }
                         ]
                     } | asSql | "(\(.))"
@@ -422,7 +425,6 @@ def asSql:
         | .key               as $columnName
         | .value             as $varType
         | "\($relationName)" as $varName
-        # TODO handle $varType == Multinomial specially
         | {
 
             # a process for assigning id to every variable according to the partition
@@ -440,6 +442,8 @@ def asSql:
 
                 # assign id to all rows according to the paritition
                 db-assign_sequential_id $table \($deepdiveVariableIdColumn | @sh) $baseId
+
+                # TODO generate_series multinomial classes
                 "
             },
 
@@ -473,6 +477,7 @@ def asSql:
                             "CASE WHEN variable_role = 0 THEN 0
                                   ELSE (CASE WHEN label THEN 1 ELSE 0 END) + 0.0
                               END" }
+                              # TODO multinomial
                         , { column: "variable_type" }
                         , { column: "cardinality" }
                         ]
@@ -532,8 +537,6 @@ def asSql:
                     output_relation=
                 "
             }
-
-            # TODO cardinality setup for multinomial
 
         })
 
@@ -606,6 +609,8 @@ def asSql:
                 cd \"$DEEPDIVE_GROUNDING_DIR\"/factor/\($factorName | @sh)
                 baseId=$(cat weights_id_begin)
 
+                # TODO consider step size = product of cardinalities for multinomial factors
+
                 # assign weight ids according to the partition
                 db-assign_sequential_id \("dd_weights_\($factorName)" | @sh) id $baseId
             "
@@ -669,6 +674,7 @@ def asSql:
                             , { expr: "COALESCE(initvalue, 0)" }
                             ]
                         , FROM: [ { table:"dd_weights_\($factorName)" } ]
+                        # TODO use exploded view with all combination of multinomial classes
                         } | asSql | @sh) \\
                     command=\("
                         format_converter weight /dev/stdin weights.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin
