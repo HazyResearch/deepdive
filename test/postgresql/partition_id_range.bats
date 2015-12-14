@@ -6,7 +6,7 @@ setup() {
     db-execute "SELECT 1" &>/dev/null || db-init
 }
 
-@test "partition_id_range works with a single table" {
+@test "$DBVARIANT partition_id_range works with a single table" {
     N=100
     # create a table for test
     deepdive sql "
@@ -26,7 +26,7 @@ setup() {
     deepdive sql "DROP TABLE foo;"
 }
 
-@test "partition_id_range works with many tables" {
+@test "$DBVARIANT partition_id_range works with many tables" {
     T=${RANDOM:0:1} # number of tables <= 10
     let ++T # which needs to be at least one
     # create many tables for test with random cardinalities
@@ -62,7 +62,9 @@ setup() {
     done
 }
 
-@test "partition_id_range fails on empty tables" {
+# TODO test RANGE_STEP
+
+@test "$DBVARIANT partition_id_range fails on empty tables" {
     ! partition_id_range
 }
 

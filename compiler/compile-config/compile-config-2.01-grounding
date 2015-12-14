@@ -120,9 +120,38 @@ def asSql:
 ###############################################################################
 
 .deepdive_ as $deepdive
+
+# some global variables
 | "id" as $deepdiveVariableIdColumn
 
-# TODO parse variable schema (mainly to find Multinomial cardinality)
+# parse variable schema to define some names (mainly to find Multinomial cardinality)
+| .deepdive_.schema.variables_ = [
+    $deepdive.schema.variables | to_entries[]
+    | .key as $relationName | .value | to_entries
+        | if length != 1 then error("Every relation in deepdive.schema.variables must have one and only one column declared as a variable, but \($relationName) has \(length)") else .[] end
+        | .key as $columnName | .value as $variableType |
+        { name                  : $relationName
+        , nameForInternalTables : "\($relationName)_\($columnName)"
+        , table                 : $relationName
+        , column                : $columnName
+        } + (
+            # parse variable type
+            $variableType | trimWhitespace | ascii_downcase |
+            capture("^(?:
+                        (?<isBooleanType>     boolean)
+                      | (?<isMultinomialType> multinomial)
+                            \\s* \\(
+                            \\s* (?<cardinality> \\d+)
+                            \\s* \\)
+                      )$"; "xmi") //
+                error("deepdive.schema.variables.\($relationName).\($columnName
+                    ) has an unrecognized type: \($variableType | @json)")
+        ) |
+        if .isBooleanType then .type = "boolean" | .cardinality = 2
+        elif .isMultinomialType then .type = "multinomial"
+        else .
+        end
+]
 
 # parse function and weight fields for every inference rules as function_ and weight_
 | .deepdive_.inference.factors |= with_entries(
@@ -152,7 +181,8 @@ def asSql:
                 \\s* \\(
                 \\s* (?<variables>.+)
                 \\s* \\)
-                   $"; "x") // error("\(.): Failed parsing function field for deepdive.inference.factors.\($factorName)")
+                   $"; "x") // error("deepdive.inference.factors.\($factorName
+                        ) has an unrecognized function: \(@json)")
         | .variables |= [ trimWhitespace | splits("\\s*,\\s*")
             # parse arguments to the function or predicate (variables)
             | capture("^ (?<isNegated>!)?
@@ -161,7 +191,8 @@ def asSql:
                     \\s* (?<field>[^.]+)
                     \\s* (?<isArray>\\[\\])?
                     \\s* (?: = (?<equalsTo> \\d+))?
-                       $"; "x") // error("\(.): Failed parsing variable argument for function for deepdive.inference.factors.\($factorName)")
+                       $"; "x") // error("deepdive.inference.factors.\($factorName
+                            ) has an unrecognized variable argument: \(@json)")
             | .isNegated |= (length > 0)
             | .isArray   |= (length > 0)
             | .equalsTo  |= (if . then tonumber else null end)
@@ -179,7 +210,8 @@ def asSql:
             , logical     : 9
             , imply3      : 11
             }[.name | ascii_downcase] //
-                error("\(.name): deepdive.inference.factors.\($factorName) uses an unrecognized function")
+                error("deepdive.inference.factors.\($factorName
+                    ) uses an unrecognized function: \(.name | @json)")
         )
     )
 )
@@ -222,13 +254,13 @@ def asSql:
     "process/grounding/variable_id_partition": {
         dependencies_: [
             # id partition depends on all variable tables
-            $deepdive.schema.variables | keys[] | "data/\(.)"
+            $deepdive.schema.variables_[] | "data/\(.table)"
         ],
         style: "cmd_extractor", cmd: "
         : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
 
         RANGE_BEGIN=0 \\
-        partition_id_range \($deepdive.schema.variables | keys | map(@sh) | join(" ")) | {
+        partition_id_range \($deepdive.schema.variables_ | map(.table | @sh) | join(" ")) | {
             # record the base
             variableCountTotal=0
             while read table begin excludeEnd; do
@@ -252,7 +284,7 @@ def asSql:
     # app-wide holdout query is executed
     "process/grounding/variable_holdout": {
         dependencies_: [
-            $deepdive.schema.variables | keys[] | "process/grounding/variable/\(.)/assign_id"
+            $deepdive.schema.variables_[] | "process/grounding/variable/\(.name)/assign_id"
         ],
         style: "cmd_extractor", cmd: "
         : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
@@ -265,17 +297,16 @@ def asSql:
                 $deepdive.calibration.holdout_query
               else
                 # otherwise, randomly select from evidence variables of each variable table
-                $deepdive.schema.variables | to_entries[]
-                | .key as $relationName | .value | to_entries[] | .key as $columnName | "
+                $deepdive.schema.variables_[] | "
                     INSERT INTO dd_graph_variables_holdout \(
                     { SELECT:
                         [ { column: $deepdiveVariableIdColumn }
                         ]
                     , FROM:
-                        [ { table: $relationName }
+                        [ { table: .table }
                         ]
                     , WHERE:
-                        [ { isntNull: { column: $columnName } }
+                        [ { isntNull: { column: .column } }
                         , { lt: [ { expr: "RANDOM()" }
                                 , { expr: $deepdive.calibration.holdout_fraction }
                                 ]
@@ -371,9 +402,8 @@ def asSql:
     # at the very end, everything grounded must be laid down in a format the sampler can load from
     "process/grounding/combine": {
         dependencies_: [(
-            $deepdive.schema.variables | to_entries[]
-            | .key as $relationName | .value | keys[] | . as $columnName
-            | "process/grounding/variable/\($relationName)/dump"
+            $deepdive.schema.variables_[]
+            | "process/grounding/variable/\(.name)/dump"
         ), (
             $deepdive.inference.factors | keys[] | ltrimstr("factor/")
             | "process/grounding/factor/\(.)/dump"
@@ -388,7 +418,7 @@ def asSql:
         cd \"$DEEPDIVE_FACTORGRAPH_DIR\"
 
         # create symlinks to the grounded binaries by enumerating variables and factors
-        for v in \([$deepdive.schema.variables | keys[] | @sh] | join(" ")); do
+        for v in \([$deepdive.schema.variables_[] | .name | @sh] | join(" ")); do
             mkdir -p variables/\"$v\"
             ( cd variables/\"$v\" && ln -sfn \"$DEEPDIVE_GROUNDING_DIR\"/variable/\"$v\"/variables.part-*.bin . )
         done
@@ -419,126 +449,120 @@ def asSql:
 }
 
 # for each variable add some processes for grounding
-| .deepdive_.extraction.extractors += merge($deepdive.schema.variables | to_entries[]
-    | .key                   as $relationName
-    | .value | to_entries[]
-        | .key               as $columnName
-        | .value             as $varType
-        | "\($relationName)" as $varName
-        | {
+| .deepdive_.extraction.extractors += merge($deepdive.schema.variables_[] | {
 
-            # a process for assigning id to every variable according to the partition
-            "process/grounding/variable/\($varName)/assign_id": {
-                dependencies_: [
-                    "process/grounding/variable_id_partition"
-                ],
-                style: "cmd_extractor", cmd: "
-                : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
-                table=\($relationName | @sh)
-                #column=\($columnName | @sh)
+    # a process for assigning id to every variable according to the partition
+    "process/grounding/variable/\(.name)/assign_id": {
+        dependencies_: [
+            "process/grounding/variable_id_partition"
+        ],
+        style: "cmd_extractor", cmd: "
+        : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
+        table=\(.table | @sh)
+        #column=\(.column | @sh)
 
-                cd \"$DEEPDIVE_GROUNDING_DIR\"/variable/${table}
-                baseId=$(cat id_begin)
+        cd \"$DEEPDIVE_GROUNDING_DIR\"/variable/${table}
+        baseId=$(cat id_begin)
 
-                # assign id to all rows according to the paritition
-                db-assign_sequential_id $table \($deepdiveVariableIdColumn | @sh) $baseId
+        # assign id to all rows according to the paritition
+        db-assign_sequential_id $table \($deepdiveVariableIdColumn | @sh) $baseId
 
-                # TODO generate_series multinomial classes
-                "
-            },
+        # TODO generate_series multinomial classes
+        "
+    },
 
-            # TODO easier way to do holdout per variable
+    # TODO easier way to do holdout per variable
 
-            # a process for dumping each variable table
-            "process/grounding/variable/\($varName)/dump": {
-                dependencies_: [
-                    "process/grounding/variable_holdout"
-                  # XXX below can be omitted for now
-                  #, "process/grounding/variable/\($varName)/assign_id"
-                ],
-                style: "cmd_extractor", cmd: "
-                : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
-                table=\($relationName | @sh)
-                #column=\($columnName | @sh)
+    # a process for dumping each variable table
+    "process/grounding/variable/\(.name)/dump": {
+        dependencies_: [
+            "process/grounding/variable_holdout"
+          # XXX below can be omitted for now
+          #, "process/grounding/variable/\(.name)/assign_id"
+        ],
+        style: "cmd_extractor", cmd: "
+        : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
+        table=\(.table | @sh)
+        #column=\(.column | @sh)
 
-                varPath=\"$DEEPDIVE_GROUNDING_DIR\"/variable/\($varName | @sh)
-                mkdir -p \"$varPath\"
-                cd \"$varPath\"
-                rm -f variables-*.bin
-                export DEEPDIVE_LOAD_FORMAT=tsv
+        varPath=\"$DEEPDIVE_GROUNDING_DIR\"/variable/\(.name | @sh)
+        mkdir -p \"$varPath\"
+        cd \"$varPath\"
+        rm -f variables-*.bin
+        export DEEPDIVE_LOAD_FORMAT=tsv
 
-                # dump the variables, joining the holdout query to determine the type of each variable
-                deepdive compute \\
-                    input_sql=\(
+        # dump the variables, joining the holdout query to determine the type of each variable
+        deepdive compute \\
+            input_sql=\(
+            { SELECT:
+                [ { column: "id" }
+                , { column: "variable_role" }
+                , { alias: "init_value", expr:
+                    "CASE WHEN variable_role = 0 THEN 0
+                          ELSE (CASE WHEN label THEN 1 ELSE 0 END) + 0.0
+                      END" }
+                      # TODO multinomial
+                , { column: "variable_type" }
+                , { column: "cardinality" }
+                ]
+            , FROM:
+                [ { alias: "variables", sql:
                     { SELECT:
-                        [ { column: "id" }
-                        , { column: "variable_role" }
-                        , { alias: "init_value", expr:
-                            "CASE WHEN variable_role = 0 THEN 0
-                                  ELSE (CASE WHEN label THEN 1 ELSE 0 END) + 0.0
-                              END" }
-                              # TODO multinomial
-                        , { column: "variable_type" }
-                        , { column: "cardinality" }
+                        [ { alias: "id", column: $deepdiveVariableIdColumn }
+                        , { alias: "variable_role", expr:
+                              "CASE WHEN               observation.variable_id IS NOT NULL
+                                     AND variables.\(.column | asSqlIdent) IS NOT NULL THEN 2
+                                    WHEN                   holdout.variable_id IS NOT NULL THEN 0
+                                    WHEN variables.\(.column | asSqlIdent) IS NOT NULL THEN 1
+                                                                                           ELSE 0
+                                END" }
+                        , { alias: "label", table: "variables", column: .column }
+                        , { alias: "variable_type", expr: (
+                                # TODO multinomial
+                                0  # for Boolean variables
+                            ) }
+                        , { alias: "cardinality", expr: (
+                                # TODO multinomial
+                                2
+                            ) }
                         ]
                     , FROM:
-                        [ { alias: "variables", sql:
-                            { SELECT:
-                                [ { alias: "id", column: $deepdiveVariableIdColumn }
-                                , { alias: "variable_role", expr:
-                                      "CASE WHEN               observation.variable_id IS NOT NULL
-                                             AND variables.\($columnName | asSqlIdent) IS NOT NULL THEN 2
-                                            WHEN                   holdout.variable_id IS NOT NULL THEN 0
-                                            WHEN variables.\($columnName | asSqlIdent) IS NOT NULL THEN 1
-                                                                                                   ELSE 0
-                                        END" }
-                                , { alias: "label", table: "variables", column: $columnName }
-                                , { alias: "variable_type", expr: (
-                                        # TODO multinomial
-                                        0  # for Boolean variables
-                                    ) }
-                                , { alias: "cardinality", expr: (
-                                        # TODO multinomial
-                                        2
-                                    ) }
-                                ]
-                            , FROM:
-                                [ { alias: "variables", table: $relationName }
-                                ]
-                            , JOIN:
-                                [ { LEFT_OUTER:
-                                    { alias: "holdout"
-                                    , table: "dd_graph_variables_holdout"
-                                    }
-                                  , ON: { eq:
-                                            [ { table: "variables", column: $deepdiveVariableIdColumn }
-                                            , { table: "holdout"  , column: "variable_id" }
-                                            ]
-                                        }
-                                  }
-                                , { LEFT_OUTER:
-                                    { alias: "observation"
-                                    , table: "dd_graph_variables_observation"
-                                    }
-                                  , ON: { eq:
-                                            [ { table: "variables"  , column: $deepdiveVariableIdColumn }
-                                            , { table: "observation", column: "variable_id" }
-                                            ]
-                                        }
-                                  }
-                                ]
+                        [ { alias: "variables", table: .table }
+                        ]
+                    , JOIN:
+                        [ { LEFT_OUTER:
+                            { alias: "holdout"
+                            , table: "dd_graph_variables_holdout"
                             }
+                          , ON: { eq:
+                                    [ { table: "variables", column: $deepdiveVariableIdColumn }
+                                    , { table: "holdout"  , column: "variable_id" }
+                                    ]
+                                }
+                          }
+                        , { LEFT_OUTER:
+                            { alias: "observation"
+                            , table: "dd_graph_variables_observation"
+                            }
+                          , ON: { eq:
+                                    [ { table: "variables"  , column: $deepdiveVariableIdColumn }
+                                    , { table: "observation", column: "variable_id" }
+                                    ]
+                                }
                           }
                         ]
-                    } | asSql | @sh) \\
-                    command=\("
-                        format_converter variable /dev/stdin variables.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin
-                    " | @sh) \\
-                    output_relation=
-                "
-            }
+                    }
+                  }
+                ]
+            } | asSql | @sh) \\
+            command=\("
+                format_converter variable /dev/stdin variables.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin
+            " | @sh) \\
+            output_relation=
+        "
+    }
 
-        })
+})
 
 
 # for each inference rule, add some processes for grounding the factors and weights
@@ -551,8 +575,8 @@ def asSql:
             dependencies_: [
                 .input_[]
                 | ltrimstr("data/") as $relationName
-                | $deepdive.schema.variables[$relationName] | keys? | .[]
-                | . as $columnName
+                # TODO use $deepdive.schema.variables_ instead?
+                | $deepdive.schema.variables[$relationName] | keys?
                 | "process/grounding/variable/\($relationName)/assign_id"
             ],
             # other non-variable tables are also necessary
