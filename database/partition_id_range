@@ -14,7 +14,11 @@
 # Allows to stop the partition early when a range to be assigned goes over a limit.
 #
 # $ RANGE_STEP=17 partition_id_range ...
-# Allows to assign the range with a step size other than +1.
+# Allows to assign the default range with a step size other than +1.
+#
+# $ partition_id_range TABLE_1:RANGE_STEP_1 TABLE_2:RANGE_STEP_2 ...
+# To use a different step size for each table, it can be appended to each TABLE
+# followed by a colon.
 ##
 set -euo pipefail
 
@@ -33,10 +37,16 @@ output() {
 # assign a range of integers to each table by counting how many rows are in the previous one
 start=$RANGE_BEGIN tableBefore=
 while [[ $# -gt 0 ]]; do
-    Table=$1; shift
-    count=$(deepdive sql eval "SELECT COUNT(*) FROM $Table")
-    exclude_end=$(( $start + $count * $RANGE_STEP ))
+    TableAndStep=$1; shift
+    # parse table and step size from each argument
+    table=${TableAndStep%:*}
+    step=${TableAndStep#$table}
+    step=${step#:}
+    step=${step:-$RANGE_STEP}
+    # count rows to update the range
+    count=$(deepdive sql eval "SELECT COUNT(*) FROM $table")
+    exclude_end=$(( $start + $count * $step ))
     [[ -z $RANGE_EXCLUDE_END || $exclude_end -lt $RANGE_EXCLUDE_END ]] || break  # stop paritioning when the end is reached
-    output "$Table" $start $exclude_end
+    output "$table" $start $exclude_end
     start=$exclude_end
 done

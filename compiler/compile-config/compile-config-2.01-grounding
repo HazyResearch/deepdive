@@ -129,7 +129,8 @@ def asSql:
 | "dd_graph_weights"               as $deepdiveGlobalWeightsTable
 | "dd_query_"                      as $deepdivePrefixForFactorsTable # TODO correct prefix to dd_factors_?
 | "dd_weights_"                    as $deepdivePrefixForWeightsTable
-| "dd_classes_"                    as $deepdivePrefixForMultinomialClassesTable
+| "dd_weightsmulti_"               as $deepdivePrefixForMultinomialWeightsTable
+| "dd_classes_"                    as $deepdivePrefixForVariableClassesTable
 
 # parse variable schema to define some names (mainly to find Multinomial cardinality)
 | .deepdive_.schema.variables_ = [
@@ -141,7 +142,7 @@ def asSql:
         { variableName         : $relationName
         , variablesTable       : $relationName
         , variablesLabelColumn : $columnName
-        , variableClassesTable : "\($deepdivePrefixForMultinomialClassesTable)\($relationName)"
+        , variableClassesTable : "\($deepdivePrefixForVariableClassesTable)\($relationName)"
         } + (
             # parse variable type
             $variableType | trimWhitespace | ascii_downcase |
@@ -162,6 +163,7 @@ def asSql:
 ]
 # create a map to make it easy to access a variable by its name
 | .deepdive_.schema.variables_byName = (.deepdive_.schema.variables_ | map({key: .variableName, value: .}) | from_entries)
+| .deepdive_ as $deepdive  # necessary since we just mutated it
 
 # parse inference rules, especially the function and weight fields as function_ and weight_
 | .deepdive_.inference.factors_ = [
@@ -202,22 +204,34 @@ def asSql:
                 \\s* \\)
                    $"; "x") // error("deepdive.inference.factors.\($factorName
                         ) has an unrecognized function: \(@json)")
+        | .name |= ascii_downcase
+        # parse arguments to the function or predicate (variables)
         | .variables |= [ trimWhitespace | splits("\\s*,\\s*")
-            # parse arguments to the function or predicate (variables)
-            | capture("^ (?<isNegated>!)?
-                    \\s* (?<relation>.+)
-                    \\s* \\.
-                    \\s* (?<field>[^.]+)
-                    \\s* (?<isArray>\\[\\])?
+            | capture("^ (?<isNegated> !      )?
+                    \\s* (?<columnLabel>
+                            (?<columnPrefix>
+                                (?<name> [^.]+ )
+                    \\s*        \\. (?: [^.]+ \\. )*
+                            )
+                    \\s*    (?: [^.]+ )
+                         )
+                    \\s* (?<field>     .+     )
+                    \\s* (?<isArray>   \\[\\] )?
                     \\s* (?: = (?<equalsTo> \\d+))?
                        $"; "x") // error("deepdive.inference.factors.\($factorName
                             ) has an unrecognized variable argument: \(@json)")
             | .isNegated |= (length > 0)
             | .isArray   |= (length > 0)
             | .equalsTo  |= (if . then tonumber else null end)
+            | .columnId   = "\(.columnPrefix)\($deepdiveVariableIdColumn)"
+            # link this variable reference to its schema definition to simplify compilation
+            | .schema     = $deepdive.schema.variables_byName[.name] //
+                error("deepdive.inference.factors.\($factorName).function refers to an undefined variable: \(.name)")
             ]
+        # assign the ordinal index to each variable
+        | .variables |= [ . as $vars | range($vars | length) | . as $i | $vars[$i] | .ordinal = $i ]
+        # map function name to the code used by sampler (case insensitive)
         | .id =
-            # map function name to the code used by sampler (case insensitive)
             { imply       : 0
             , or          : 1
             , and         : 2
@@ -228,14 +242,20 @@ def asSql:
             , ratio       : 8
             , logical     : 9
             , imply3      : 11
-            }[.name | ascii_downcase] //
+            }[.name] //
                 error("deepdive.inference.factors.\($factorName
                     ) uses an unrecognized function: \(.name | @json)")
         )
+        # TODO check if all .variables type are categorical for multinomial function
+
+    # XXX set up an exploded table to dump for multinomial factors
+    | .weightsTableForDumping =
+        if .function_.name != "multinomial" then .weightsTable
+        else "\($deepdivePrefixForMultinomialWeightsTable)\($factorName)"
+        end
 ]
 # create a map to make it easy to access a factor by its name
 | .deepdive_.inference.factors_byName = (.deepdive_.inference.factors_ | map({key: .factorName, value: .}) | from_entries)
-
 | .deepdive_ as $deepdive  # necessary since we just mutated it
 
 
@@ -365,8 +385,13 @@ def asSql:
         : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
 
         # partition the id range for weights
-        RANGE_BEGIN=0 \\
-        partition_id_range \($deepdive.inference.factors_ | map(.weightsTable | @sh) | join(" ")) | {
+        RANGE_BEGIN=0 RANGE_STEP=1 \\
+        partition_id_range \([ $deepdive.inference.factors_[] | "\(.weightsTable | @sh)\(
+                if .function_.name != "multinomial" then ""
+                else ":$(( \([ .function_.variables[]
+                             | .schema.variableCardinality
+                             | tostring ] | join("*")) ))"
+                end)" ] | join(" ")) | {
             weightsCountTotal=0
             while read table begin excludeEnd; do
                 factor=${table#\($deepdivePrefixForWeightsTable | @sh)}
@@ -380,6 +405,20 @@ def asSql:
             done
             echo $weightsCountTotal >\"$DEEPDIVE_GROUNDING_DIR\"/factor/weights_count
         }
+        "
+    },
+
+    "process/grounding/global_weight_table": {
+        dependencies_: [
+            $deepdive.inference.factors_[] |
+            if .function_.name == "multinomial" then
+                "process/grounding/factor/\(.factorName)/assign_weight_id"
+            else
+                "process/grounding/factor/\(.factorName)/materialize"
+            end
+        ],
+        style: "cmd_extractor", cmd: "
+        : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
 
         # set up a union view for all weight tables (\($deepdiveGlobalWeightsTable | asSqlIdent))
         deepdive sql \("DROP TABLE IF EXISTS \($deepdiveGlobalWeightsTable | asSqlIdent) CASCADE;" | @sh) || true
@@ -400,11 +439,13 @@ def asSql:
                                   )
                                 ] | join(" ||\("-" | asSqlLiteral)|| ")
                           }
-                        # TODO cardinality (actually class) column for multinomial as an offset to the id
+                        , { alias: "cardinality", expr:
+                                [ .function_.variables[] | .schema.variableCardinality | tostring
+                                ] | join(" * ")
+                          }
                         ]
                     , FROM:
-                        # TODO use exploded view for multinomial
-                        [ { table: .weightsTable }
+                        [ { table: .weightsTableForDumping }
                         ]
                     } | asSql | "(\(.))"
                 ] | join(" UNION ALL ")
@@ -426,6 +467,8 @@ def asSql:
         ), (
             $deepdive.inference.factors_[]
             | "process/grounding/factor/\(.factorName)/dump"
+        ), (
+            "process/grounding/global_weight_table"
         )],
         output_: "model/factorgraph",
         style: "cmd_extractor", cmd: "
@@ -491,7 +534,7 @@ def asSql:
             # generate a table holding all classes for categorical variables
             # that can be cross joined with weights tables for factors over
             # those variables
-            db-generate_series \(.variableClassesTable | @sh) 0 \(.variableCardinality - 1)
+            db-generate_series \(.variableClassesTable | @sh) 0 \(.variableCardinality - 1 | tostring)
             "
         else "" end
         )
@@ -624,16 +667,15 @@ def asSql:
             " | @sh)
 
             # find distinct weights for the factors into a separate table
-            \("
-            deepdive sql \("DROP VIEW IF EXISTS \(.weightsTable) CASCADE;" | @sh) || true
+            deepdive sql \("DROP VIEW IF EXISTS \(.weightsTable | asSqlIdent) CASCADE;" | @sh) || true
             deepdive sql \("
-                DROP TABLE IF EXISTS \(.weightsTable) CASCADE;
-                CREATE TABLE \(.weightsTable) AS \(
+                DROP TABLE IF EXISTS \(.weightsTable | asSqlIdent) CASCADE;
+                CREATE TABLE \(.weightsTable | asSqlIdent) AS \(
                     { SELECT:
                         [ ( .weight_.params[] | { column: . } )
-                        , { expr: .weight_.is_fixed  , alias: "isfixed" }
-                        , { expr: .weight_.init_value, alias: "initvalue" }
-                        , { expr: -1                 , alias: "id" }  # TODO cast to BIGINT?
+                        , { alias: "isfixed"  , expr: .weight_.is_fixed   }
+                        , { alias: "initvalue", expr: .weight_.init_value }
+                        , { alias: "id"       , expr: -1                  }  # TODO cast to BIGINT?
                         ]
                     # when weight is parameterized, find all distinct ones
                     , FROM:
@@ -648,7 +690,6 @@ def asSql:
                         end)
                     } | asSql);
             " | @sh)
-            ")
         "
     },
 
@@ -662,19 +703,58 @@ def asSql:
 
             cd \"$DEEPDIVE_GROUNDING_DIR\"/factor/\(.factorName | @sh)
             baseId=$(cat weights_id_begin)
-            \( # consider step size = product of cardinalities for multinomial factors
-            if .function_.name == "multinomial" then
-                "inc=\(
-                    reduce .function_.variables[] as $var (1;
-                        . * $deepdive.schema.variables_byName[$var.relation].variableCardinality)
-                )"
+            inc=1
+            \( if .function_.name != "multinomial" then ""
             else
-                "inc=1"
-            end
-            )
+                "# since this is a multinomial factor, each factor will have as many weights as the product of cardinalities of all involved variables
+                \( [ .function_.variables[] |
+                    "let inc*=\(.schema.variableCardinality | tostring)  # cardinality of variable \(.name)"
+                ] | join("\n") )"
+            end)
 
             # assign weight ids according to the partition
             db-assign_sequential_id \(.weightsTable | @sh) id $baseId $inc
+
+            \( if .function_.name != "multinomial" then "" else "
+            # set up an exploded weights view that cross joins the base weights table with the classes of categorical variables
+            deepdive sql \("
+                DROP TABLE IF EXISTS \(.weightsTableForDumping | asSqlIdent);
+            " | @sh) || true
+            deepdive sql \("
+                DROP VIEW IF EXISTS \(.weightsTableForDumping | asSqlIdent);
+                CREATE VIEW \(.weightsTableForDumping | asSqlIdent) AS \(
+                    { SELECT:
+                        [ ( .weight_.params[]
+                        | { column: .          , table: "weights" } )
+                        , { column: "isfixed"  , table: "weights" }
+                        , { column: "initvalue", table: "weights" }
+                        # fill in the ids of weights for every combination of classes
+                        , { alias: "id", expr: "\"weights\".\"id\" + (\(
+                                def offsetExpr(i): .[i].schema as $v |
+                                    if i == 0 then "" # except the very first variable
+                                    else # the offset for the previous ones are multiplied by this one's cardinality
+                                        "(\(offsetExpr(i-1)))*\($v.variableCardinality | tostring) + "
+                                    end
+                                    # and current variable's class number is added as the least significant digit
+                                    + "\"c\(i)\".\"class\""
+                                    ;
+                                .function_.variables | offsetExpr(length-1)
+                            ))" }
+                        # generate a class combination identifier
+                        , { alias: "class", expr:
+                            [ .function_.variables[]
+                            | "\"c\(.ordinal)\".\"class\"" ] | join(" || ',' || ")
+                          }
+                        ]
+                    , FROM:
+                        [ { alias: "weights", table: .weightsTable }
+                        # cross join each weight with the classes of all involved categorical variables
+                        , ( .function_.variables[]
+                        | { alias: "c\(.ordinal)", table: .schema.variableClassesTable } )
+                        ]
+                    } | asSql);
+                " | @sh)"
+            end)
         "
     },
 
@@ -698,7 +778,7 @@ def asSql:
                     { SELECT:
                         [ { table: "weights", column: "id", alias: "weight_id" }
                         , ( .function_.variables[] |
-                            { table: "factors", column: "\(.relation).\($deepdiveVariableIdColumn)" }
+                            { table: "factors", column: .columnId }
                           )
                         ]
                     , FROM:
@@ -725,11 +805,6 @@ def asSql:
                 " | @sh) \\
                 output_relation=
 
-            \(
-            # TODO set up a view cross joining the base weights table with the classes of categorical variables
-            ""
-            )
-
             # dump the weights (except the description column), converting into binary format for the sampler
             DEEPDIVE_CURRENT_PROCESS_NAME=\"${DEEPDIVE_CURRENT_PROCESS_NAME}.weights\" \\
             deepdive compute \\
@@ -739,8 +814,7 @@ def asSql:
                         , { expr: "CASE WHEN isfixed THEN 1 ELSE 0 END" }
                         , { expr: "COALESCE(initvalue, 0)" }
                         ]
-                    , FROM: [ { table: .weightsTable } ]
-                    # TODO use exploded view with all combination of multinomial classes
+                    , FROM: [ { table: .weightsTableForDumping } ]
                     } | asSql | @sh) \\
                 command=\("
                     format_converter weight /dev/stdin weights.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin
