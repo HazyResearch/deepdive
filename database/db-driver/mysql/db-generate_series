@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# db-generate_series -- Generates a table holding given number of rows using MySQL
+# > eval "$(db-parse "$url")"
+# > db-generate_series TABLE FIRST LAST [INCREMENT]
+##
+set -euo pipefail
+
+[[ $# -gt 0 ]] || usage "$0" "Missing TABLE"
+[[ $# -gt 1 ]] || usage "$0" "Missing FIRST"
+[[ $# -gt 2 ]] || usage "$0" "Missing LAST"
+Table=$1 First=$2 Last=$3 Increment=${4:-1}
+
+db-execute "
+    DROP VIEW IF EXISTS $Table CASCADE;
+" || true
+db-exeucte "
+    DROP TABLE IF EXISTS $Table CASCADE;
+    CREATE TABLE $Table(\"class\" BIGINT);
+"
+
+# generate numbers with seq(1) and add it to the table
+seq $First $Increment $Last | db-load "$Table" tsv
+# XXX there may be a more efficient solution for this

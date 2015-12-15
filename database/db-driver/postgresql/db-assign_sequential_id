@@ -14,7 +14,6 @@ Table=$1 Column=$2 BeginId=$3 Increment=${4:-1}
 # See: http://www.postgresql.org/docs/current/static/sql-createsequence.html
 seq="dd_seq_${Table}_${Column}"
 
-# TODO fork greenplum and pgxl to vary this method
 db-execute "
     DROP SEQUENCE IF EXISTS $seq CASCADE;
     CREATE TEMPORARY SEQUENCE $seq INCREMENT BY $Increment MINVALUE -1 START $BeginId;

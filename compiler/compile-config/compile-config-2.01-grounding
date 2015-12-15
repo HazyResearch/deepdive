@@ -129,6 +129,7 @@ def asSql:
 | "dd_graph_weights"               as $deepdiveGlobalWeightsTable
 | "dd_query_"                      as $deepdivePrefixForFactorsTable # TODO correct prefix to dd_factors_?
 | "dd_weights_"                    as $deepdivePrefixForWeightsTable
+| "dd_classes_"                    as $deepdivePrefixForMultinomialClassesTable
 
 # parse variable schema to define some names (mainly to find Multinomial cardinality)
 | .deepdive_.schema.variables_ = [
@@ -140,24 +141,27 @@ def asSql:
         { variableName         : $relationName
         , variablesTable       : $relationName
         , variablesLabelColumn : $columnName
+        , variableClassesTable : "\($deepdivePrefixForMultinomialClassesTable)\($relationName)"
         } + (
             # parse variable type
             $variableType | trimWhitespace | ascii_downcase |
             capture("^(?:
-                        (?<isBooleanType>     boolean)
-                      | (?<isMultinomialType> multinomial)
+                        (?<isBooleanType>     boolean     )
+                      | (?<isCategoricalType> categorical )
                             \\s* \\(
-                            \\s* (?<cardinality> \\d+)
+                            \\s* (?<variableCardinality> \\d+)
                             \\s* \\)
                       )$"; "xmi") //
                 error("deepdive.schema.variables.\($relationName).\($columnName
                     ) has an unrecognized type: \($variableType | @json)")
         ) |
-        if .isBooleanType then .type = "boolean" | .cardinality = 2
-        elif .isMultinomialType then .type = "multinomial"
+        if   .isBooleanType     then .variableType = "boolean"     | .variableCardinality = 2
+        elif .isCategoricalType then .variableType = "categorical" | .variableCardinality |= tonumber
         else .
         end
 ]
+# create a map to make it easy to access a variable by its name
+| .deepdive_.schema.variables_byName = (.deepdive_.schema.variables_ | map({key: .variableName, value: .}) | from_entries)
 
 # parse inference rules, especially the function and weight fields as function_ and weight_
 | .deepdive_.inference.factors_ = [
@@ -229,6 +233,8 @@ def asSql:
                     ) uses an unrecognized function: \(.name | @json)")
         )
 ]
+# create a map to make it easy to access a factor by its name
+| .deepdive_.inference.factors_byName = (.deepdive_.inference.factors_ | map({key: .factorName, value: .}) | from_entries)
 
 | .deepdive_ as $deepdive  # necessary since we just mutated it
 
@@ -479,7 +485,16 @@ def asSql:
         # assign id to all rows according to the paritition
         db-assign_sequential_id $table \($deepdiveVariableIdColumn | @sh) $baseId
 
-        # TODO generate_series multinomial classes
+        \(
+        if .variableType == "categorical" then
+            "
+            # generate a table holding all classes for categorical variables
+            # that can be cross joined with weights tables for factors over
+            # those variables
+            db-generate_series \(.variableClassesTable | @sh) 0 \(.variableCardinality - 1)
+            "
+        else "" end
+        )
         "
     },
 
@@ -510,9 +525,13 @@ def asSql:
                 , { column: "variable_role" }
                 , { alias: "init_value", expr:
                     "CASE WHEN variable_role = 0 THEN 0
-                          ELSE (CASE WHEN label THEN 1 ELSE 0 END) + 0.0
+                          ELSE (\(
+                            if   .variableType == "boolean"     then "CASE WHEN label THEN 1 ELSE 0 END" # XXX a portable way to turn boolean to integers in SQL, CAST(label AS INT) does not work for MySQL
+                            elif .variableType == "categorical" then "label"
+                            else error("Internal error: Unknown variableType: \(.variableType)")
+                            end
+                            )) + 0.0
                       END" }
-                      # TODO multinomial
                 , { column: "variable_type" }
                 , { column: "cardinality" }
                 ]
@@ -529,12 +548,13 @@ def asSql:
                                 END" }
                         , { alias: "label", table: "variables", column: .variablesLabelColumn }
                         , { alias: "variable_type", expr: (
-                                # TODO multinomial
-                                0  # for Boolean variables
+                                if   .variableType == "boolean"     then 0
+                                elif .variableType == "categorical" then 1
+                                else error("Internal error: Unknown variableType: \(.variableType)")
+                                end
                             ) }
                         , { alias: "cardinality", expr: (
-                                # TODO multinomial
-                                2
+                                .variableCardinality
                             ) }
                         ]
                     , FROM:
@@ -583,15 +603,15 @@ def asSql:
         # materializing each factor requires the dependent variables to have their id assigned
         dependencies_: [
             .input_[]
-            | ltrimstr("data/") as $relationName
-            # TODO use $deepdive.schema.variables_ instead?
-            | $deepdive.schema.variables[$relationName] | keys?
+            | ltrimstr("data/")
+            | $deepdive.schema.variables_byName[.]
+            | select(type != "null")
             # the involved variables must have their ids all assigned
-            | "process/grounding/variable/\($relationName)/assign_id"
+            | "process/grounding/variable/\(.variableName)/assign_id"?
         ],
         # other non-variable tables are also necessary
         input_: [ .input_[]
-            | select(ltrimstr("data/") | $deepdive.schema.variables[.] | not)
+            | select(ltrimstr("data/") | in($deepdive.schema.variables_byName) | not)
         ],
         style: "cmd_extractor", cmd: "
             : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
@@ -642,11 +662,19 @@ def asSql:
 
             cd \"$DEEPDIVE_GROUNDING_DIR\"/factor/\(.factorName | @sh)
             baseId=$(cat weights_id_begin)
-
-            # TODO consider step size = product of cardinalities for multinomial factors
+            \( # consider step size = product of cardinalities for multinomial factors
+            if .function_.name == "multinomial" then
+                "inc=\(
+                    reduce .function_.variables[] as $var (1;
+                        . * $deepdive.schema.variables_byName[$var.relation].variableCardinality)
+                )"
+            else
+                "inc=1"
+            end
+            )
 
             # assign weight ids according to the partition
-            db-assign_sequential_id \(.weightsTable | @sh) id $baseId
+            db-assign_sequential_id \(.weightsTable | @sh) id $baseId $inc
         "
     },
 
@@ -683,7 +711,6 @@ def asSql:
                                   , { table: "weights", column: . }
                                   ]
                             }
-                        # TODO multinomial should dump the weight_id for the first class
                         ]
                     } | asSql | @sh) \\
                 command=\("
@@ -697,6 +724,11 @@ def asSql:
                     tee nedges.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}
                 " | @sh) \\
                 output_relation=
+
+            \(
+            # TODO set up a view cross joining the base weights table with the classes of categorical variables
+            ""
+            )
 
             # dump the weights (except the description column), converting into binary format for the sampler
             DEEPDIVE_CURRENT_PROCESS_NAME=\"${DEEPDIVE_CURRENT_PROCESS_NAME}.weights\" \\

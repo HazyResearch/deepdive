@@ -34,6 +34,7 @@ for op in \
     analyze \
     create_calibration_view \
     assign_sequential_id \
+    generate_series \
     ;
 do type db-$op &>/dev/null || error "db-$op operation not available for $dbtype"
 done
