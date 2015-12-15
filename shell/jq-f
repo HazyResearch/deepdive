@@ -1,3 +1,6 @@
 #!/bin/sh
 # jq-f -- a shebang interpreter for using jq executable files in a portable way
-exec jq -f "$@"
+set -e
+f=$1; shift
+d=`dirname "$f"`
+exec jq -f "$f" -L "$d" "$@"
