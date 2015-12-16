@@ -15,7 +15,7 @@ include "sql";
 | "dd_query_"                      as $deepdivePrefixForFactorsTable # TODO correct prefix to dd_factors_?
 | "dd_weights_"                    as $deepdivePrefixForWeightsTable
 | "dd_weightsmulti_"               as $deepdivePrefixForMultinomialWeightsTable
-| "dd_classes_"                    as $deepdivePrefixForVariableClassesTable
+| "dd_categories_"                 as $deepdivePrefixForVariableCategoriesTable
 
 ###############################################################################
 
@@ -29,7 +29,7 @@ include "sql";
         { variableName         : $relationName
         , variablesTable       : $relationName
         , variablesLabelColumn : $columnName
-        , variableClassesTable : "\($deepdivePrefixForVariableClassesTable)\($relationName)"
+        , variableCategoriesTable : "\($deepdivePrefixForVariableCategoriesTable)\($relationName)"
         } + (
             # parse variable type
             $variableType | trimWhitespace | ascii_downcase |
@@ -235,10 +235,10 @@ include "sql";
         \(
         if .variableType == "categorical" then
             "
-            # generate a table holding all classes for categorical variables
+            # generate a table holding all categories for categorical variables
             # that can be cross joined with weights tables for factors over
             # those variables
-            db-generate_series \(.variableClassesTable | @sh) 0 \(.variableCardinality - 1 | tostring)
+            db-generate_series \(.variableCategoriesTable | @sh) 0 \(.variableCardinality - 1 | tostring)
             "
         else "" end
         )
@@ -569,7 +569,7 @@ include "sql";
             db-assign_sequential_id \(.weightsTable | @sh) id $baseId $inc
 
             \( if .function_.name != "multinomial" then "" else "
-            # set up an exploded weights view that cross joins the base weights table with the classes of categorical variables
+            # set up an exploded weights view that cross joins the base weights table with the categories of categorical variables
             deepdive sql \("
                 DROP TABLE IF EXISTS \(.weightsTableForDumping | asSqlIdent);
             " | @sh) || true
@@ -581,29 +581,29 @@ include "sql";
                         | { column: .          , table: "weights" } )
                         , { column: "isfixed"  , table: "weights" }
                         , { column: "initvalue", table: "weights" }
-                        # fill in the ids of weights for every combination of classes
+                        # fill in the ids of weights for every combination of categories
                         , { alias: "id", expr: "\"weights\".\"id\" + (\(
                                 def offsetExpr(i): .[i].schema as $v |
                                     if i == 0 then "" # except the very first variable
                                     else # the offset for the previous ones are multiplied by this one's cardinality
                                         "(\(offsetExpr(i-1)))*\($v.variableCardinality | tostring) + "
                                     end
-                                    # and current variable's class number is added as the least significant digit
-                                    + "\"c\(i)\".\"class\""
+                                    # and current variable's category number is added as the least significant digit
+                                    + "\"c\(i)\".\"category\""
                                     ;
                                 .function_.variables | offsetExpr(length-1)
                             ))" }
-                        # generate a class combination identifier
-                        , { alias: "class", expr:
+                        # generate a category combination identifier
+                        , { alias: "category", expr:
                             [ .function_.variables[]
-                            | "\"c\(.ordinal)\".\"class\"" ] | join(" || ',' || ")
+                            | "\"c\(.ordinal)\".\"category\"" ] | join(" || ',' || ")
                           }
                         ]
                     , FROM:
                         [ { alias: "weights", table: .weightsTable }
-                        # cross join each weight with the classes of all involved categorical variables
+                        # cross join each weight with the categories of all involved categorical variables
                         , ( .function_.variables[]
-                        | { alias: "c\(.ordinal)", table: .schema.variableClassesTable } )
+                        | { alias: "c\(.ordinal)", table: .schema.variableCategoriesTable } )
                         ]
                     } | asSql);
                 " | @sh)"
