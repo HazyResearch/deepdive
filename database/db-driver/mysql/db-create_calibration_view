@@ -12,42 +12,36 @@ column=${2:?The COLUMN holding the variable must be given, e.g., is_true}
 : ${DEEPDIVE_CALIBRATION_NUM_BUCKETS:=10}
 num_buckets=$DEEPDIVE_CALIBRATION_NUM_BUCKETS
 
-deepdive sql "
-DROP VIEW IF EXISTS    dd_bucketed_${table}_${column}_inference CASCADE;
-CREATE OR REPLACE VIEW dd_bucketed_${table}_${column}_inference AS
+db-create view "dd_bucketed_${table}_${column}_inference" as "
     SELECT ${column} AS label
          , CASE
              WHEN expectation = 1 THEN $(($num_buckets - 1))
              ELSE FLOOR(expectation * ${num_buckets})
            END AS bucket
     FROM ${table}_${column}_inference
-;
+"
 
-DROP VIEW IF EXISTS    dd_bucketed_${table}_${column}_inference_all CASCADE;
-CREATE OR REPLACE VIEW dd_bucketed_${table}_${column}_inference_all AS
+db-create view "dd_bucketed_${table}_${column}_inference_all" as "
     SELECT bucket, COUNT(*) AS count
       FROM dd_bucketed_${table}_${column}_inference
      GROUP BY bucket
-;
+"
 
-DROP VIEW IF EXISTS    dd_bucketed_${table}_${column}_inference_positive CASCADE;
-CREATE OR REPLACE VIEW dd_bucketed_${table}_${column}_inference_positive AS
+db-create view "dd_bucketed_${table}_${column}_inference_positive" as "
     SELECT bucket, COUNT(*) AS count
       FROM dd_bucketed_${table}_${column}_inference
      WHERE label = true
      GROUP BY bucket
-;
+"
 
-DROP VIEW IF EXISTS    dd_bucketed_${table}_${column}_inference_negative CASCADE;
-CREATE OR REPLACE VIEW dd_bucketed_${table}_${column}_inference_negative AS
+db-create view "dd_bucketed_${table}_${column}_inference_negative" as "
     SELECT bucket, COUNT(*) AS count
       FROM dd_bucketed_${table}_${column}_inference
      WHERE label = false
      GROUP BY bucket
-;
+"
 
-DROP VIEW IF EXISTS    ${table}_${column}_calibration CASCADE;
-CREATE OR REPLACE VIEW ${table}_${column}_calibration AS
+db-create view "${table}_${column}_calibration" as "
     SELECT universe.bucket                             AS bucket
          , universe.count                              AS num_variables
          , positive.count                              AS num_correct
@@ -63,5 +57,4 @@ CREATE OR REPLACE VIEW ${table}_${column}_calibration AS
       LEFT JOIN dd_bucketed_${table}_${column}_inference_positive positive ON universe.bucket = positive.bucket
       LEFT JOIN dd_bucketed_${table}_${column}_inference_negative negative ON universe.bucket = negative.bucket
      ORDER BY universe.bucket
-;
 "

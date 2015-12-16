@@ -30,6 +30,7 @@ for op in \
     execute \
     query \
     prompt \
+    create \
     load \
     analyze \
     create_calibration_view \
