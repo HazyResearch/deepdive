@@ -35,8 +35,13 @@ case $State in
 
     todo)
         cd "$DEEPDIVE_APP"/run
-        # TODO for data/* mark the dependencies as undone too
-        rm -f "$@"
+        # for non process/* targets, e.g., data/*, also marking their dependencies as undone
+        eval 'set -- "$@" '"$(
+            targets=${*%.done} jq -r <compiled/dependencies.json '
+                .[ env.targets | splits(" ") | select(startswith("process/") | not)
+                ][] | "\(.).done" | @sh
+            ' | tr '\n' ' ')"
+        rm -fv "$@"
         ;;
 
     todo-from-scratch)
