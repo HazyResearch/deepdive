@@ -61,26 +61,24 @@
         style: "cmd_extractor",
         cmd: "mkdir -p ../../../model && cd ../../../model
             # load weights to database
-            deepdive sql \("
-                DROP TABLE IF EXISTS dd_inference_result_weights CASCADE;
-                CREATE TABLE dd_inference_result_weights(
-                  id bigint primary key,
-                  weight double precision);
-            " | @sh)
+            deepdive db create table dd_inference_result_weights \\
+                id:BIGINT:'PRIMARY KEY' \\
+                weight:'DOUBLE PRECISION' \\
+                #
             cat weights/inference_result.out.weights.text |
             tr \(" "|@sh) \("\\t"|@sh) | DEEPDIVE_LOAD_FORMAT=tsv \\
             deepdive load dd_inference_result_weights /dev/stdin
 
             # create views
-            deepdive sql \("
-                CREATE OR REPLACE VIEW dd_inference_result_weights_mapping AS
+            deepdive db create view dd_inference_result_weights_mapping as \("
                 SELECT dd_graph_weights.*, dd_inference_result_weights.weight FROM
                 dd_graph_weights JOIN dd_inference_result_weights ON dd_graph_weights.id = dd_inference_result_weights.id
-                ORDER BY abs(weight) DESC;
+                ORDER BY abs(weight) DESC
+            " | @sh)
 
-                CREATE OR REPLACE VIEW dd_inference_result_variables_mapped_weights AS
+            deepdive db create view dd_inference_result_variables_mapped_weights as \("
                 SELECT * FROM dd_inference_result_weights_mapping
-                ORDER BY abs(weight) DESC;
+                ORDER BY abs(weight) DESC
             " | @sh)
         "
     },
@@ -90,28 +88,24 @@
         style: "cmd_extractor",
         cmd: "mkdir -p ../../../model && cd ../../../model
             # load weights to database
-            deepdive sql \("
-                DROP TABLE IF EXISTS dd_inference_result_variables CASCADE;
-                CREATE TABLE dd_inference_result_variables(
-                  id bigint,
-                  category bigint,
-                  expectation double precision);
-            " | @sh)
+            deepdive db create table dd_inference_result_variables \\
+                id:BIGINT \\
+                category:BIGINT \\
+                expectation:'DOUBLE PRECISION' \\
+                #
             cat probabilities/inference_result.out.text |
             tr \(" "|@sh) \("\\t"|@sh) | DEEPDIVE_LOAD_FORMAT=tsv \\
             deepdive load dd_inference_result_variables /dev/stdin
 
             # create a view for each app schema variable
-            deepdive sql \(
-                $deepdive.schema.variables | keys | map(
-                . as $relationName | $deepdive.schema.variables[$relationName] | keys[] |
-                . as $columnName | "
-                    CREATE OR REPLACE VIEW \($relationName)_\($columnName)_inference AS
-                    (SELECT \($relationName).*, mir.category, mir.expectation FROM
-                    \($relationName), dd_inference_result_variables mir
-                    WHERE \($relationName).id = mir.id
-                    ORDER BY mir.expectation DESC);
-                ") | join("\n") | @sh)
+            \([ $deepdive.schema.variables_[] | "
+            deepdive db create view \("\(.variablesTable)_\(.variablesLabelColumn)_inference" | @sh) as \("
+                SELECT \(.variablesTable).*, mir.category, mir.expectation FROM
+                \(.variablesTable), dd_inference_result_variables mir
+                WHERE \(.variablesTable).id = mir.id
+                ORDER BY mir.expectation DESC
+                " | @sh)"
+            ] | join("\n"))
         "
     }
 

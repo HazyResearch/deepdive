@@ -14,15 +14,13 @@
             # XXX a legacy location under the current run directory for backward compatibility
             extraOutput=\"${DEEPDIVE_OUTPUT:-../../RUNNING}\"/calibration && mkdir -p \"$extraOutput\"
             DEEPDIVE_CALIBRATION_NUM_BUCKETS=10
-            \($deepdive.schema.variables | keys | map(
-            . as $relationName | $deepdive.schema.variables[$relationName] | keys[] |
-            . as $columnName | "
-            # create a view and draw a calibration plot for \($relationName)_\($columnName)
-            db-create_calibration_view \($relationName | @sh) \($columnName | @sh)
-            draw_calibration_plot      \($relationName | @sh) \($columnName | @sh)
+            \([ $deepdive.schema.variables_[] | "
+            # create a view and draw a calibration plot for variable \(.name)
+            deepdive db create_calibration_view \(.variablesTable | @sh) \(.variablesLabelColumn | @sh)
+            draw_calibration_plot      \(.variablesTable | @sh) \(.variablesLabelColumn | @sh)
             # XXX keeping a duplicate copy under the current run directory for backward compatibility
-            cp -a \("\($relationName)_\($columnName)" | @sh).* \"$extraOutput\"/
-            ") | join("\n"))
+            cp -a \("\(.variablesTable)_\(.variablesLabelColumn)" | @sh).* \"$extraOutput\"/
+            "] | join("\n"))
         "
     }
 

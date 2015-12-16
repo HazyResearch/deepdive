@@ -12,6 +12,7 @@ column=${2:?The COLUMN holding the variable must be given, e.g., is_true}
 : ${DEEPDIVE_CALIBRATION_NUM_BUCKETS:=10}
 num_buckets=$DEEPDIVE_CALIBRATION_NUM_BUCKETS
 
+# TODO drop ${column} from the table names
 db-create view "${table}_${column}_calibration" as "
     WITH bucketed AS (
         SELECT ${column} AS label
