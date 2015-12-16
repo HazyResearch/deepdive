@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# deepdive-check -- Checks errors in compiled DeepDive app
+#
+# $ deepdive check -a
+# Runs all checks.
+#
+# $ deepdive check -l
+# Lists names of all checks.
+#
+# $ deepdive check NAME [ARGUMENT...]
+# Runs a specific check with NAME and optional ARGUMENTs.
+##
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2015-12-16
+set -euo pipefail
+
+## parse options
+Mode=run_one_checker
+while getopts "al" o; do
+    case $o in
+        a)
+            Mode=run_all_checkers
+            ;;
+        l)
+            Mode=list_all_checkers
+            ;;
+    esac
+done
+shift $(($OPTIND - 1))
+
+## functions provided for accessing the checkers
+# how to run one checker with optional arguments
+run_one_checker() {
+    [[ $# -gt 0 ]] || usage "$0" "Missing CHECKER"
+    app-has-been-compiled compiled/config.json
+    local name=$1; shift
+    local chkr="$DEEPDIVE_HOME"/util/compile-check/compile-check-"$name"
+    [[ -x "$chkr" ]] ||
+        error "$name: No executable checker found"
+    chkr=${chkr##*/}
+    name=${chkr#compile-check-}
+    "$chkr" run/compiled/config.json "$@" ||
+        error "FAILED deepdive check $name"
+}
+
+# how to run all available checkers
+run_all_checkers() {
+    local allCheckPassed=true
+    local chkr= name=
+    for chkr in "$DEEPDIVE_HOME"/util/compile-check/compile-check-*; do
+        [[ -x "$chkr" ]] || continue
+        chkr=${chkr##*/}
+        name=${chkr#compile-check-}
+        echo "checking if $name"
+        run_one_checker "$name" >/dev/null ||
+            allCheckPassed=false
+    done
+    # TODO check if all extractor with output_relation is transitively dependent on process/init/db
+    # TODO check if all extractors had required fields
+    # TODO check if all inference rules had required fields
+    # TODO check if all compiled processes have required fields
+    # TODO check if all udfs tsv_extractor test fires correctly
+    $allCheckPassed
+}
+
+# how to enumerate all available checkers
+list_all_checkers() {
+    (
+    cd "$DEEPDIVE_HOME"/util/compile-check
+    find compile-check-* -perm -a+x | sed 's/^compile-check-//'
+    )
+}
+
+## launch the asked function in the right environment
+DEEPDIVE_APP=$(find-deepdive-app)
+export DEEPDIVE_APP
+cd "$DEEPDIVE_APP"
+
+PATH="$DEEPDIVE_HOME"/util/compile-check:"$PATH"
+"$Mode" "$@"

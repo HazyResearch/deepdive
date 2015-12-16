@@ -11,7 +11,7 @@ DEEPDIVE_APP=$(find-deepdive-app)
 export DEEPDIVE_APP
 cd "$DEEPDIVE_APP"
 
-. load-db-driver.sh
+. load-db-driver.sh  # XXX necessary for hocon2json to resolve some environment variables, which may be irrelevant once Scala codebase is dropped
 mkdir -p run
 
 # create a fresh working directory for compiling
@@ -37,6 +37,7 @@ ln -sfnv "$compileDir" run/COMPILING >&2
 PATH="$DEEPDIVE_HOME"/util/compile-config:"$PATH"
 PATH="$DEEPDIVE_HOME"/util/compile-code:"$PATH"
 PATH="$DEEPDIVE_HOME"/util/compile-dependencies:"$PATH"
+export DEEPDIVE_ERROR_PREFIX="[ERROR] "
 
 ## compile a full deepdive.conf from source code
 STEP "Parsing DeepDive application ($DEEPDIVE_APP) to generate:"
@@ -107,11 +108,8 @@ done
 STEP " run/compiled/config.json"
 ln -sfn "$config" config.json
 
-# validate/normalize the compiled/config.json
-# TODO check if all input/output_relation exists in schema
-# TODO check if all processes/pipelines depend on defined processes
-# TODO check if all processes have required fields
-# TODO check if all base relations have something in input/ to load
+STEP "Validating run/compiled/config.json:"
+deepdive-check -a 2>&1 | sed 's/^/ /' >&2
 
 STEP "Analyzing data flow dependencies to compile:"
 # derive a dependency graph from the extractors, factors, pipelines defined in deepdive.conf
@@ -123,6 +121,7 @@ compile-dependencies2make <dependencies.json -r >Makefile
 STEP " run/compiled/dataflow.svg"
 compile-dependencies2dot <dependencies.json -r >dataflow.dot
 dot -Tsvg <dataflow.dot >dataflow.svg
+STEP "  (file://$(pwd -P)/dataflow.svg)"  # XXX a handy file: URL for opening in a browser
 
 STEP "Compiling executable code into:"
 # compile extractors and factors under process/ and factor/

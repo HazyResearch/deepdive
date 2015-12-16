@@ -5,9 +5,8 @@
 DEEPDIVE_APP=$(find-deepdive-app)
 export DEEPDIVE_APP
 
-# check if already compiled first
-[[ -e "$DEEPDIVE_APP"/run/Makefile ]] ||
-    error "$DEEPDIVE_APP: Not compiled yet, please run first: deepdive compile"
+# check if already fully compiled first
+app-has-been-compiled
 
 # when our make commands are nested under an outer make, e.g., our own `make
 # test`, some special environment variables can screw things up, so clear them

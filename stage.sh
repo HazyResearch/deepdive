@@ -50,10 +50,13 @@ stage shell/logging-with-ts                                       util/
 stage shell/deepdive_bash_completion.sh                           etc/
 
 stage compiler/deepdive-compile                                   util/
+stage compiler/deepdive-check                                     util/
+stage compiler/app-has-been-compiled                              util/
 stage .build/submodule/compiler/hocon2json/hocon2json.sh                                util/hocon2json
 stage .build/submodule/compiler/hocon2json/target/scala-2.10/hocon2json-assembly-*.jar  util/hocon2json.jar
 stage src/main/resources/application.conf                         etc/deepdive-default.conf
 stage compiler/compile-config                                     util/
+stage compiler/compile-check                                      util/
 stage compiler/compile-dependencies                               util/
 stage compiler/compile-code                                       util/
 stage compiler/compile-codegen                                    util/
