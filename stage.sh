@@ -75,6 +75,7 @@ stage runner/compute-driver/local                                 util/compute-d
 stage runner/computers-default.conf                               util/
 stage .build/submodule/util/mkmimo/mkmimo                         util/
 
+stage database/deepdive-db                                        util/
 stage database/deepdive-initdb                                    util/
 stage database/deepdive-sql                                       util/
 stage database/deepdive-load                                      util/

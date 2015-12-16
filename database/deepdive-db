@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# deepdive-db -- Exposes lower level database operations provided by the driver
+# > deepdive db OPERATION [ARG...]
+#
+# OPERATION can be one of the following:
+# > deepdive db create
+# > deepdive db load
+# > deepdive db execute
+# > deepdive db query
+# > deepdive db prompt
+# > deepdive db analyze
+# > deepdive db parse
+# > deepdive db init
+# > deepdive db assign_sequential_id
+# > deepdive db generate_series
+# > deepdive db create_calibration_view
+##
+set -eu
+
+# parse database settings and load the driver
+. load-db-driver.sh
+
+[[ $# -gt 0 ]] || {
+    usage "$0" "Missing db COMMAND"
+    # TODO enumerate what commands are available dynamically, a la deepdive-help
+}
+Command=$1; shift
+if type db-"$Command" &>/dev/null; then
+    exec db-"$Command" "$@"
+else
+    usage "$0" "$Command: No such db operation"
+fi
