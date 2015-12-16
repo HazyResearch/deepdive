@@ -109,8 +109,8 @@ case $(uname) in
 Linux)
     stage util/ndbloader/ndbloader-linux                          util/ndbloader
     stage util/format_converter_linux                             util/format_converter
-    [[ "$STAGE_DIR"/lib/ -nt util/sampler-dw-linux-lib.zip ]] || # XXX skip unzip if possible
-    unzip -o util/sampler-dw-linux-lib.zip                     -d "$STAGE_DIR"/lib/
+    # copy shared libraries required by the sampler
+    ldd .build/submodule/sampler/dw | grep '=>' | awk '{print $3}' | sort -u | grep -v '^(' | xargs cp -vt "$STAGE_DIR"/lib/
     stage .build/submodule/sampler/dw                             util/sampler-dw-linux
     stage util/sampler-dw-linux.sh                                util/
     ln -sfn sampler-dw-linux.sh                                   "$STAGE_DIR"/util/sampler-dw
@@ -118,8 +118,8 @@ Linux)
 Darwin)
     stage util/ndbloader/ndbloader-mac                            util/ndbloader
     stage util/format_converter_mac                               util/format_converter
-    [[ "$STAGE_DIR"/lib/ -nt util/sampler-dw-mac-lib.zip ]] || # XXX skip unzip if possible
-    ditto -xk util/sampler-dw-mac-lib.zip                         "$STAGE_DIR"/lib/
+    # copy shared libraries required by the sampler
+    otool -L .build/submodule/sampler/dw | grep 'dylib' | sed 's/(.*)//' | awk '{print $1}' | grep -v '^/usr/lib/' | xargs cp -vt "$STAGE_DIR"/lib/
     stage .build/submodule/sampler/dw                             util/sampler-dw-mac
     stage util/sampler-dw-mac.sh                                  util/
     ln -sfn sampler-dw-mac.sh                                     "$STAGE_DIR"/util/sampler-dw
