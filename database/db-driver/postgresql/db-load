@@ -9,10 +9,12 @@ format=${1:?No FORMAT given}; shift
 
 case $format in
     tsv)
-        cat "$@" | db-execute "COPY $table FROM STDIN"
+        cat "$@" | show_progress input_to "loading $table" -- \
+            db-execute "COPY $table FROM STDIN"
         ;;
     csv)
-        cat "$@" | db-execute "COPY $table FROM STDIN CSV"
+        cat "$@" | show_progress input_to "loading $table" -- \
+            db-execute "COPY $table FROM STDIN CSV"
         ;;
     *) error "$format: unsupported format by PostgreSQL driver" ;;
 esac
