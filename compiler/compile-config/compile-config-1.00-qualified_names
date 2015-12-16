@@ -42,3 +42,5 @@
                    )
     )
 
+# turn all extractors into processes in the execution plan under compilation
+| .deepdive_.execution.processes += .deepdive_.extraction.extractors

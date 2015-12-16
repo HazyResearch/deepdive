@@ -150,7 +150,7 @@ include "sql";
 
 # how to ground the factor graph in the old way with legacy Scala code
 # TODO remove me as we drop the scala codebase
-| .deepdive_.extraction.extractors += {
+| .deepdive_.execution.processes += {
     "process/grounding/legacy": {
         dependencies_: ($deepdive.inference.factors_ | map(.factorNameQualified)),
         output_: "model/factorgraph.legacy",
@@ -184,7 +184,7 @@ include "sql";
 ## variable_id_partition
 # Grounding begins by counting the variables to partition a range of
 # non-negative integers for assigning the variable ids.
-| .deepdive_.extraction.extractors += {
+| .deepdive_.execution.processes += {
     "process/grounding/variable_id_partition": {
         dependencies_: [
             # id partition depends on all variable tables
@@ -217,7 +217,7 @@ include "sql";
 ## variable/*/assign_id
 # Each variable table then gets the range of integers assigned to the id column
 # of every row.
-| .deepdive_.extraction.extractors += merge($deepdive.schema.variables_[] | {
+| .deepdive_.execution.processes += merge($deepdive.schema.variables_[] | {
     "process/grounding/variable/\(.variableName)/assign_id": {
         dependencies_: [
             "process/grounding/variable_id_partition"
@@ -251,7 +251,7 @@ include "sql";
 # (app-wide) holdout query, or by taking a random sample of a user-defined
 # fraction.
 # TODO easier way to do holdout per variable?
-| .deepdive_.extraction.extractors += {
+| .deepdive_.execution.processes += {
     "process/grounding/variable_holdout": {
         dependencies_: [
             $deepdive.schema.variables_[]
@@ -301,7 +301,7 @@ include "sql";
 
 ## variable/*/dump
 # Then each variable table is dumped into a set of binary files for the inference engine.
-| .deepdive_.extraction.extractors += merge($deepdive.schema.variables_[] | {
+| .deepdive_.execution.processes += merge($deepdive.schema.variables_[] | {
     "process/grounding/variable/\(.variableName)/dump": {
         dependencies_: [
             "process/grounding/variable_holdout"
@@ -402,7 +402,7 @@ include "sql";
 ## factor/*/materialize
 # Each inference rule's SQL query is run to materialize the factors and the
 # distinct weights used in them.
-| .deepdive_.extraction.extractors += merge($deepdive.inference.factors_[] | {
+| .deepdive_.execution.processes += merge($deepdive.inference.factors_[] | {
     # add a process for grounding factors
     "process/grounding/factor/\(.factorName)/materialize": {
         # materializing each factor requires the dependent variables to have their id assigned
@@ -451,7 +451,7 @@ include "sql";
 
 ## weight_id_partition
 # The weight ids must be first partitioned by counting them.
-| .deepdive_.extraction.extractors += {
+| .deepdive_.execution.processes += {
     "process/grounding/weight_id_partition": {
         dependencies_: [
             $deepdive.inference.factors_[]
@@ -488,7 +488,7 @@ include "sql";
 
 ## global_weight_table
 # To view the weights learned by the inference engine later, set up an app-wide table.
-| .deepdive_.extraction.extractors += {
+| .deepdive_.execution.processes += {
     "process/grounding/global_weight_table": {
         dependencies_: [
             $deepdive.inference.factors_[] |
@@ -535,7 +535,7 @@ include "sql";
 
 ## factor/*/assign_weight_id
 # Each inference rule gets its weight ids actually assigned.
-| .deepdive_.extraction.extractors += merge($deepdive.inference.factors_[] | {
+| .deepdive_.execution.processes += merge($deepdive.inference.factors_[] | {
     "process/grounding/factor/\(.factorName)/assign_weight_id": {
         dependencies_: [
             "process/grounding/weight_id_partition"
@@ -602,7 +602,7 @@ include "sql";
 
 ## factor/*/dump
 # The factors and weights are dumped into a set of binary files for the inference engine.
-| .deepdive_.extraction.extractors += merge($deepdive.inference.factors_[] | {
+| .deepdive_.execution.processes += merge($deepdive.inference.factors_[] | {
     # add a process for grounding factors and weights
     "process/grounding/factor/\(.factorName)/dump": {
         dependencies_: [
@@ -677,7 +677,7 @@ include "sql";
 ###############################################################################
 
 # Finally, put together everything dumped into a layout the inference engine can easily load from
-| .deepdive_.extraction.extractors += {
+| .deepdive_.execution.processes += {
     "process/grounding/combine": {
         dependencies_: [(
             $deepdive.schema.variables_[]

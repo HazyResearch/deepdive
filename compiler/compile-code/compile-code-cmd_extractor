@@ -3,7 +3,7 @@
 ##
 .deepdive_ as $deepdive
 
-| .deepdive_.extraction.extractors | to_entries[]
+| $deepdive.execution.processes | to_entries[]
 | .value.name = .key | .value
 | select(.style == "cmd_extractor")
 | {

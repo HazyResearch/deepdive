@@ -2,7 +2,7 @@
 # compile-config-2.03-calibration_plots -- Adds processes for producing calibration plots
 ##
 .deepdive_ as $deepdive
-| .deepdive_.extraction.extractors += {
+| .deepdive_.execution.processes += {
 
     # calibration plots
     "process/model/calibration": {

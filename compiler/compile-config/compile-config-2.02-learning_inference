@@ -2,7 +2,7 @@
 # compile-config-2.02-grounding -- Adds processes for performing inference with the grounded factor graph
 ##
 .deepdive_ as $deepdive
-| .deepdive_.extraction.extractors += {
+| .deepdive_.execution.processes += {
 
     # learning weights and doing inference (since we had to load the graph anyway)
     "process/model/learning": {

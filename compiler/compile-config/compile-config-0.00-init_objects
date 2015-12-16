@@ -16,3 +16,6 @@
 | .deepdive_.pipeline              |= . + {}
 | .deepdive_.pipeline.pipelines    |= . + {}
 
+# make sure our intermediate representation for execution plan set up
+| .deepdive_.execution             |= . + {}
+| .deepdive_.execution.processes   |= . + {}

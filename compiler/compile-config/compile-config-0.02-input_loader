@@ -3,20 +3,21 @@
 #
 # - a deepdive-load extractor for relations declared in schema but lacking an extractor that outputs it
 ##
-.deepdive_ as $deepdive |
+.deepdive_ as $deepdive
 
-# add initialization extractors that loads data into base relations declared in schema
-.deepdive_.extraction.extractors += (
+# add initialization processes that loads data into base relations declared in schema
+| .deepdive_.execution.processes += (
     # first a handy map from relation to any process that outputs it
     ( $deepdive.extraction.extractors
     | with_entries({ key: (.value.output_relation // empty), value: .key })
     ) as $process_defining_the_relation |
     [ $deepdive.schema.relations // {} | to_entries[]
     | select($process_defining_the_relation[.key] | not)
-    | { key: "init/relation/\(.key)"
+    | { key: "process/init/relation/\(.key)"
       , value: { style: "cmd_extractor"
                , cmd: "deepdive initdb \(.key | @sh) && deepdive load \(.key | @sh)"
-               , dependencies: [ "init/db" ]
+               , dependencies_: [ "process/init/db" ]
                , output_relation: .key
+               , output_: "data/\(.key)"
                } }
     ] | from_entries )

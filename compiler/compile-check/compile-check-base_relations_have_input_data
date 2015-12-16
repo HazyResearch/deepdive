@@ -3,10 +3,10 @@
 ##
 set -euo pipefail
 jq -r '
-.deepdive_ as $deepdive |
-$deepdive.extraction.extractors | to_entries[] |
-select(.key | startswith("process/init/relation/")) |
-.value.output_relation
+.deepdive_ as $deepdive
+| $deepdive.execution.processes | to_entries[]
+| select(.key | startswith("process/init/relation/"))
+| .value.output_relation
 ' "$@" |
 {
 if [[ -x "$DEEPDIVE_APP"/input/init.sh ]]; then
