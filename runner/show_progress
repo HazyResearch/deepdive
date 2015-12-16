@@ -1,10 +1,48 @@
 #!/usr/bin/env bash
 # show_progress -- Shows data flow progress by lines and bytes
-# > show_progress NAME
+# > show_progress input_to    NAME [PV_OPTS...] -- COMMAND [ARG...]
+# > show_progress output_from NAME [PV_OPTS...] -- COMMAND [ARG...]
 ##
 set -euo pipefail
-Name=${1:?Missing NAME}; shift
+
+[[ $# -gt 0 ]] || usage "$0" "Missing input_to or output_from"
+InOut=$1; shift
+[[ $# -gt 0 ]] || usage "$0" "Missing NAME"
+Name=$1; shift
+
+[[ $# -gt 0 ]] || usage "$0" "Missing COMMAND"
+PipeViewOpts=()
+while [[ $# -gt 0 && $1 != "--" ]]; do
+    PipeViewOpts+=("$1"); shift
+done
+[[ $1 = "--" ]] || usage "$0" "Missing -- before COMMAND"
+shift
+
+# the file descriptor to show the progress bar
 : ${DEEPDIVE_PROGRESS_FD:=2}
-# TODO embed pv(1) in deepdive
-eval 'pv 2>&'$DEEPDIVE_PROGRESS_FD' --wait --cursor ${Name:+--name "$Name"}             "$@"' |
-eval 'pv 2>&'$DEEPDIVE_PROGRESS_FD' --wait --cursor ${Name:+--name "$Name"} --line-mode "$@"'
+if ! [[ -t $DEEPDIVE_PROGRESS_FD ]]; then
+    # just execute given COMMAND if the file descriptor is not a tty
+    exec "$@"
+else
+    # add some default pv(1) options
+    PipeViewOpts+=(
+        ${Name:+--name "$Name"}
+        --wait
+        --cursor
+    )
+    case $InOut in
+        input_to) eval '
+            pv 2>&'"$DEEPDIVE_PROGRESS_FD"' "${PipeViewOpts[@]}" |
+            pv 2>&'"$DEEPDIVE_PROGRESS_FD"' "${PipeViewOpts[@]}" --line-mode |
+            "$@"
+            ' ;;
+
+        output_from) eval '
+            "$@" |
+            pv 2>&'"$DEEPDIVE_PROGRESS_FD"' "${PipeViewOpts[@]}" |
+            pv 2>&'"$DEEPDIVE_PROGRESS_FD"' "${PipeViewOpts[@]}" --line-mode
+            ' ;;
+
+        *) error "$InOut: Cannot show progress, only 'input_to' and 'output_from' are supported"
+    esac
+fi
