@@ -106,7 +106,7 @@ DeepDive source tree includes several git submodules and ports:
 * To build most of what's under DeepDive's source tree and install at `~/local/`, run:
 
     ```bash
-    make  # or make install
+    make install
     ```
 
     Overriding the `PREFIX` variable allows the installation destination to be changed.  For example:

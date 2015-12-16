@@ -9,7 +9,7 @@ BUILD_DIR = .build
 # path to the package to be built
 PACKAGE = $(dir $(STAGE_DIR))deepdive.tar.gz
 
-.DEFAULT_GOAL := install
+.DEFAULT_GOAL := test-build
 
 ### dependency recipes ########################################################
 
