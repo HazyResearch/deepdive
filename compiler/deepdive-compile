@@ -109,7 +109,7 @@ STEP " run/compiled/config.json"
 ln -sfn "$config" config.json
 
 STEP "Validating run/compiled/config.json:"
-deepdive-check -a 2>&1 | sed 's/^/ /' >&2
+deepdive-check -a -c "$PWD"/config.json 2>&1 | sed 's/^/ /' >&2
 
 STEP "Analyzing data flow dependencies to compile:"
 # derive a dependency graph from the extractors, factors, pipelines defined in deepdive.conf

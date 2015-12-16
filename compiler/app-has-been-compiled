@@ -13,9 +13,9 @@ export DEEPDIVE_APP
 
 [[ $# -gt 0 ]] ||
     # default set of expected compilation results
-    set -- compiled/schema.json compiled/config.json compiled/Makefile Makefile process/
+    set -- "$DEEPDIVE_APP"/run/{compiled/{{schema,config}.json,Makefile},Makefile,process/}
 
 for path; do
-    [[ -e "$DEEPDIVE_APP"/run/"$path" ]] ||
+    [[ -e "$path" ]] ||
         error "$DEEPDIVE_APP: Not compiled yet, please run first: deepdive compile"
 done

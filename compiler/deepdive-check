@@ -9,6 +9,9 @@
 #
 # $ deepdive check NAME [ARGUMENT...]
 # Runs a specific check with NAME and optional ARGUMENTs.
+#
+# $ deepdive check -a -c CONFIG_JSON_PATH
+# Runs all checkers against a config.json different than run/compiled/config.json.
 ##
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2015-12-16
@@ -16,13 +19,17 @@ set -euo pipefail
 
 ## parse options
 Mode=run_one_checker
-while getopts "al" o; do
+ConfigPath="run/compiled/config.json"
+while getopts "alc:" o; do
     case $o in
         a)
             Mode=run_all_checkers
             ;;
         l)
             Mode=list_all_checkers
+            ;;
+        c)
+            ConfigPath=$OPTARG
             ;;
     esac
 done
@@ -32,14 +39,14 @@ shift $(($OPTIND - 1))
 # how to run one checker with optional arguments
 run_one_checker() {
     [[ $# -gt 0 ]] || usage "$0" "Missing CHECKER"
-    app-has-been-compiled compiled/config.json
+    app-has-been-compiled "$ConfigPath"
     local name=$1; shift
     local chkr="$DEEPDIVE_HOME"/util/compile-check/compile-check-"$name"
     [[ -x "$chkr" ]] ||
         error "$name: No executable checker found"
     chkr=${chkr##*/}
     name=${chkr#compile-check-}
-    "$chkr" run/compiled/config.json "$@" ||
+    "$chkr" "${ConfigPath#$PWD/}" "$@" ||
         error "FAILED deepdive check $name"
 }
 
