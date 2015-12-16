@@ -238,7 +238,7 @@ include "sql";
             # generate a table holding all categories for categorical variables
             # that can be cross joined with weights tables for factors over
             # those variables
-            db-generate_series \(.variableCategoriesTable | @sh) 0 \(.variableCardinality - 1 | tostring)
+            db-generate_series \(.variableCategoriesTable | @sh) category 0 \(.variableCardinality - 1 | tostring)
             "
         else "" end
         )
@@ -529,10 +529,12 @@ include "sql";
                                   )
                                 ] | join(" ||\("-" | asSqlLiteral)|| ")
                           }
-                        , { alias: "cardinality", expr:
-                                [ .function_.variables[] | .schema.variableCardinality | tostring
-                                ] | join(" * ")
-                          }
+                        , if .function_.name != "multinomial" then
+                            # TODO maybe '1' is a better one for boolean variables?
+                            { alias: "categories", expr: "NULL" }
+                        else # multinomial factor weights table have a "categories" column
+                            { column: "categories" }
+                        end
                         ]
                     , FROM:
                         [ { table: .weightsTableForDumping }
@@ -594,9 +596,12 @@ include "sql";
                                 .function_.variables | offsetExpr(length-1)
                             ))" }
                         # generate a category combination identifier
-                        , { alias: "category", expr:
-                            [ .function_.variables[]
-                            | "\"c\(.ordinal)\".\"category\"" ] | join(" || ',' || ")
+                        , { alias: "categories", expr: (
+                            .function_.variables | if length > 1 then
+                                [ .[] | "\"c\(.ordinal)\".\"category\"" ] | join(" || ',' || ")
+                            else
+                                "\"c0\".\"category\" || ''"
+                            end)
                           }
                         ]
                     , FROM:

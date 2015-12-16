@@ -1,19 +1,20 @@
 #!/usr/bin/env bash
 # db-generate_series -- Generates a table holding given number of rows using PostgreSQL generate_series function
 # > eval "$(db-parse "$url")"
-# > db-generate_series TABLE FIRST LAST [INCREMENT]
+# > db-generate_series TABLE COLUMN FIRST LAST [INCREMENT]
 ##
 set -euo pipefail
 
 [[ $# -gt 0 ]] || usage "$0" "Missing TABLE"
-[[ $# -gt 1 ]] || usage "$0" "Missing FIRST"
-[[ $# -gt 2 ]] || usage "$0" "Missing LAST"
-Table=$1 First=$2 Last=$3 Increment=${4:-1}
+[[ $# -gt 1 ]] || usage "$0" "Missing COLUMN"
+[[ $# -gt 2 ]] || usage "$0" "Missing FIRST"
+[[ $# -gt 3 ]] || usage "$0" "Missing LAST"
+Table=$1 Column=$2 First=$3 Last=$4 Increment=${5:-1}
 
 db-execute "
     DROP TABLE IF EXISTS $Table CASCADE;
 " || true
 db-execute "
     DROP VIEW IF EXISTS $Table CASCADE;
-    CREATE VIEW $Table AS SELECT generate_series($First, $Last, $Increment) AS \"class\";
+    CREATE VIEW $Table AS SELECT generate_series($First, $Last, $Increment) AS \"$Column\";
 "
