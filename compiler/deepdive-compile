@@ -118,10 +118,10 @@ STEP "Analyzing data flow dependencies to compile:"
 compile-config2dependencies <config.json >dependencies.json
 # compile a Makefile from the dependency graph
 STEP " run/Makefile"
-compile-dependencies2make <dependencies.json >Makefile
+compile-dependencies2make <dependencies.json -r >Makefile
 # compile an SVG from the dependency graph
 STEP " run/compiled/dataflow.svg"
-compile-dependencies2dot <dependencies.json >dataflow.dot
+compile-dependencies2dot <dependencies.json -r >dataflow.dot
 dot -Tsvg <dataflow.dot >dataflow.svg
 
 STEP "Compiling executable code into:"

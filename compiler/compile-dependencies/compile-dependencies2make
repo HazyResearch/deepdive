@@ -1,7 +1,7 @@
-#!/usr/bin/env bash
+#!/usr/bin/env jq-f
 # compile-dependencies2make -- Generates a GNU Make recipes corresponding to the input dependency graph in JSON
 ##
-exec jq -r '
+
 def mktarget(suffix): "\(.).\(suffix)";
 def mktargets(suffix): map(mktarget(suffix)) | join(" ");
 def mktarget: mktarget("done");
@@ -63,4 +63,4 @@ reset: \(keys | mktargets("reset"))
 .PHONY: \(.key | mktarget)
 " else empty end
 
-)' "$@"
+)

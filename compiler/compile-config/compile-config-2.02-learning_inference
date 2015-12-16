@@ -1,7 +1,7 @@
-#!/usr/bin/env bash
+#!/usr/bin/env jq-f
 # compile-config-2.02-grounding -- Adds processes for performing inference with the grounded factor graph
 ##
-exec jq '.deepdive_ as $deepdive
+.deepdive_ as $deepdive
 | .deepdive_.extraction.extractors += {
 
     # learning weights and doing inference (since we had to load the graph anyway)
@@ -116,4 +116,3 @@ exec jq '.deepdive_ as $deepdive
     }
 
 }
-' "$@"

@@ -1,6 +1,7 @@
-#!/usr/bin/env bash
+#!/usr/bin/env jq-f
 # compile-code-tsv_extractor -- Compiles tsv_extractors in the normalized JSON into code executable by the runner
-exec jq '.deepdive_ as $deepdive
+##
+.deepdive_ as $deepdive
 
 | .deepdive_.extraction.extractors | to_entries[]
 | .value.name = .key | .value
@@ -27,4 +28,4 @@ deepdive compute \\
 
 \(.after // "")
 "
-}' "$@"
+}

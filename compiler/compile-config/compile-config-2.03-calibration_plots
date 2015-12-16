@@ -1,7 +1,7 @@
-#!/usr/bin/env bash
+#!/usr/bin/env jq-f
 # compile-config-2.03-calibration_plots -- Adds processes for producing calibration plots
 ##
-exec jq '.deepdive_ as $deepdive
+.deepdive_ as $deepdive
 | .deepdive_.extraction.extractors += {
 
     # calibration plots
@@ -27,4 +27,3 @@ exec jq '.deepdive_ as $deepdive
     }
 
 }
-' "$@"

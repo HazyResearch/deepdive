@@ -1,6 +1,7 @@
-#!/usr/bin/env bash
+#!/usr/bin/env jq-f
 # compile-cmd_extractor -- Compiles given cmd_extractors in the normalized JSON into a form executable by DeepDive
-exec jq '.deepdive_ as $deepdive
+##
+.deepdive_ as $deepdive
 
 | .deepdive_.extraction.extractors | to_entries[]
 | .value.name = .key | .value
@@ -20,4 +21,4 @@ export DEEPDIVE_CURRENT_PROCESS_NAME=\(.name | @sh)
 \(.cmd)
 
 \(.after // "")
-" }' "$@"
+" }

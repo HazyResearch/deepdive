@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env jq-f
 # compile-config-1.00-qualified_names -- Normalizes config to use qualified names
 #
 # - extractor names are prefixed with process/*
@@ -7,7 +7,7 @@
 # - output_relation names are prefixed with data/* and kept under a new key output_
 # - dependencies are rewritten with qualified names under a new key dependencies_
 ##
-exec jq '.deepdive_ as $deepdive
+.deepdive_ as $deepdive
 
 # TODO add default fields to all extractors and factors
 
@@ -42,4 +42,3 @@ exec jq '.deepdive_ as $deepdive
                    )
     )
 
-' "$@"

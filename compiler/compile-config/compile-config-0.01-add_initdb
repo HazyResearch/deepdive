@@ -1,7 +1,7 @@
-#!/usr/bin/env bash
+#!/usr/bin/env jq-f
 # compile-config-0.01-add_initdb -- Adds an extractor for initialzing database
 ##
-exec jq '.deepdive_ as $deepdive |
+.deepdive_ as $deepdive |
 
 # add a database initialization extractor
 .deepdive_.extraction.extractors +=
@@ -11,5 +11,3 @@ exec jq '.deepdive_ as $deepdive |
     }
 
 # TODO connect all extractors and factors with no dependency to init/db
-
-' "$@"
