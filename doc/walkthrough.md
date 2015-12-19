@@ -754,7 +754,7 @@ debugging. Let's take a look at the generated calibration plot, written to the
 file outputted in the summary report above (`has_spouse.is_true.png`). It should
 look something like this:
 
-![Calibration]({{site.baseurl}}/assets/walkthrough_has_spouse_is_true.png)
+![Calibration]({{site.baseurl}}/images/walkthrough/has_spouse_is_true.png)
 
 The calibration plots contain useful information that help you to improve the
 quality of your predictions. For actionable advice about interpreting
