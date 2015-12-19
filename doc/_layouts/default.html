@@ -1,29 +1,29 @@
+<!DOCTYPE html>
 <html>
 
   <head>
-    <meta charset='utf-8' />
-    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
-    <meta name="description" content="DeepDive" />
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="DeepDive">
     <link rel="canonical" href="http://deepdive.stanford.edu">
-    <link rel="stylesheet" type="text/css" href="{{ site.baseurl }}/assets/deepdive.css" />
+    <link rel="stylesheet" type="text/css" href="{{ site.baseurl }}/assets/deepdive.css">
     <script src="{{ site.baseurl }}/assets/deepdive.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% if page.title %}{{ page.title }} - {% endif %}DeepDive</title>
   </head>
 
   <body>
-      {% include googleanalytics.html %}
-      <a href="https://github.com/HazyResearch/deepdive" target="_blank"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>
+      <a href="https://github.com/HazyResearch/deepdive" target="_blank" class="hidden-xs"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>
 
       <div id="header">
         <div class="container">
           <row>
-            <div class="col-md-4 col-md-offset-1">
+            <div class="col-md-4">
               <a href="{{ site.baseurl }}/" class="deepdive-logo">
               <img src="{{ site.baseurl }}/images/header_logo.png" style="width: 250px;"/>
               </a>
             </div>
-            <div class="col-md-6 col-md-offset-1">
+            <div class="col-md-8">
               <ul class="list-unstyled list-inline" id="header-nav">
                 <!--<li><a href="{{ site.baseurl }}/">Home</a></li>-->
                 <li><a href="{{ site.baseurl }}/installation">Download</a></li>
@@ -40,7 +40,7 @@
       </div>
 
       {% if page.path == "index.md" # Only for Front Page %}
-      <section id="carousel" style="margin-top:30px; margin-bottom: -20px;">
+      <section id="carousel" style="margin-top:30px; margin-bottom: -50px;">
       <div class="container">
         <div id="deepdive-carousel" class="carousel slide" data-ride="carousel" data-pause="false" data-wrap="true">
           <!-- Indicators -->
@@ -52,21 +52,24 @@
             <li data-target="#deepdive-carousel" data-slide-to="4"></li>
             <li data-target="#deepdive-carousel" data-slide-to="5"></li>
           </ol>
+          <style>
+              #deepdive-carousel .carousel-indicators li        {     border-color: #ccc !important; }
+              #deepdive-carousel .carousel-indicators li.active { background-color: #ccc !important; }
+          </style>
           <!-- Wrapper for slides -->
-          <div class="carousel-inner">
+          <div class="carousel-inner" style="padding-bottom: 55px;">
             <div class="item active">
               <a href="https://github.com/HazyResearch/deepdive">
               <img src="{{ site.baseurl }}/images/carousel/deepdive.png" alt="DeepDive Release">
               </a>
-              <!-- <div class="carousel-caption">
-                  DeepDive Release 0.4.2
-              </div> -->
+              <div class="carousel-caption">&nbsp;</div>
             </div>
 
             <div class="item">
               <a href="#">
               <img src="{{ site.baseurl }}/images/carousel/dark-data.png" alt="Dark Data">
               </a>
+              <div class="carousel-caption"></div>
               <!-- <div class="carousel-caption">
                   MEMEX project
               </div> -->
@@ -166,7 +169,6 @@
         </div>
       </footer>
 
-
-
+      {% include googleanalytics.html %}
   </body>
 </html>
