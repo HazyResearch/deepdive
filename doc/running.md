@@ -10,11 +10,11 @@ results of the analysis, and how to define *pipelines* to select a subset of
 extractor and/or inference rules to run.
 
 This document assumes that DeepDive is installed and the database server is
-running. See the [Installation guide](installation.html) for details.
+running. See the [Installation guide](installation) for details.
 
 We refer the interested reader to the ["Writing a new
-application"](writing.html) document or to the
-[Walktrough](walkthrough.html) for details about writing DeepDive
+application"](writing) document or to the
+[Walktrough](walkthrough) for details about writing DeepDive
 applications.
 
 
@@ -55,7 +55,7 @@ on what data DeepDive is processing.
 For this example run, we use the `tsv_extractor` extractor.
 Other extractors like `piggy_extractor`, `json_extractor`, and
 `plpy_extractor` can also be found in the application directory. For more
-details on extractors, see the ["Writing extractors"](extractors.html) document.
+details on extractors, see the ["Writing extractors"](extractors) document.
 
 ```bash
 deepdive initdb
@@ -137,7 +137,7 @@ learned values sorted by absolute value.
 
 Calibration plots allow to evaluate the quality of the results. For more details
 about inspecting the learned weights and using calibration plots, see the
-[Calibration guide](calibration.html).
+[Calibration guide](calibration).
 
 ## <a name="pipelines" href="#"></a> Pipelines
 
@@ -151,7 +151,7 @@ You can define custom pipelines by adding the following configuration directives
       pipeline.pipelines { myPipeline: [ extractor1 extractor2 inferenceRule1 ] }
     }
 
-Refer to the [configuration reference](configuration.html#pipelines) for details
+Refer to the [configuration reference](configuration#pipelines) for details
 about the syntax of these directives.
 
 When the `pipeline.run` directive is not specified, DeepDive executes all

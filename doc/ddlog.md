@@ -18,7 +18,7 @@ A DDlog program consists of the following parts:
 3. Scope rules for defining the domain of the variables.
 4. Inference rules for describing dependency between the variables.
 
-We show how each part should look like using the [spouse example in our walk through](walkthrough.html).
+We show how each part should look like using the [spouse example in our walk through](walkthrough).
 All DDlog code should be placed in a file named `app.ddlog` under the DeepDive application.
 A complete example written in DDlog can be found from [examples/spouse_example/postgres/ddlog](https://github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/ddlog)
 

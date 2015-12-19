@@ -1,5 +1,8 @@
 # quick install URL
 RedirectTemp  /install  https://github.com/HazyResearch/deepdive/raw/master/util/install.sh
 
+# allow URLs without .html extensions
+Options +MultiViews
+
 # redirect legacy URLs to new place
-RedirectMatch temp  (.*)/doc/(?:basics/walkthrough|basics|advanced|general)/(.*?)$  $1/doc/$2
+RedirectMatch temp  (.*)/doc/(?:basics/walkthrough|basics|advanced|general)/(.*?)(?:\.html)?$  $1/doc/$2

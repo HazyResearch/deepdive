@@ -10,9 +10,9 @@ Networks](http://en.wikipedia.org/wiki/Markov_logic_network) (MLNs). This piece 
 work takes the program parser of [Tuffy](http://i.stanford.edu/hazy/hazy/tuffy/)
 to generate a database containing all atoms in the MLN and a Deepdive program
 containing the formulas in the MLN as Deepdive [inference
-rules](inference_rules.html). The generated Deepdive program will be
+rules](inference_rules). The generated Deepdive program will be
 then fed into Deepdive for [marginal inference or weight
-learning](inference.html). Deepdive is able to achieve higher
+learning](inference). Deepdive is able to achieve higher
 precision, handle larger MLNs, and perform the computation faster than the
 original Tuffy system.
 
@@ -36,7 +36,7 @@ MLN examples can be found in directories with name ending in `_mln` under
 directory). Each directory contains the following files:
 
 - `env_conf.sh` is the database configuration file.
-- [application.conf](configuration.html) is the Deepdive program
+- [application.conf](configuration) is the Deepdive program
         template. Only the Deepdive sampler parameters and the global parameters
         except the database settings in this file can be changed.
 - `prog.mln` defines the predicates and formulas of the MLN.
@@ -67,7 +67,7 @@ The `run.sh` script will do the following work:
 - Call Deepdive to solve the problem specified in `application_auto.conf`.
 
 The results, the marginals or weights, are stored in the
-[database](reserved_tables.html) and in `DEEPDIVE_HOME/out/` once the execuption
+[database](reserved_tables) and in `DEEPDIVE_HOME/out/` once the execuption
 of Deepdive is complete.
 
 ### Behavior Specification

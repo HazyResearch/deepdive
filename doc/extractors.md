@@ -6,9 +6,9 @@ title: Writing Extractors
 # Writing extractors
 
 Extractors are a powerful functionality provided by DeepDive to streamline
-[feature extraction](overview.html#extractors). This document presents the
+[feature extraction](overview#extractors). This document presents the
 different types of extractors supported by DeepDive. Please refer to the
-[Configuration reference](configuration.html#extractors) for a more structured
+[Configuration reference](configuration#extractors) for a more structured
 presentation of each definition directive.
 
 ## Styles of extractors
@@ -573,7 +573,7 @@ wordsExtractor {
 ```
 
 If an extractor specified in dependencies does not exist or is not in the
-active [pipeline](running.html#pipelines), that extractor will be ignored.
+active [pipeline](running#pipelines), that extractor will be ignored.
 
 ### <a name="parallelism" href="#"></a> Parallelism
 You can execute multiple independent extractors in parallel by setting
@@ -678,7 +678,7 @@ output whatever it receives as input from STDIN to the file.
 Developers can change the extractor UDF to `util/extractor_input_writer.py
 SAMPLE_FILE_PATH` to obtain sample extractor inputs in the file `SAMPLE_FILE_PATH`.
 
-For example, in our [walkthrough](walkthrough.html), to debug the extractor `ext_has_spouse_features`, just change
+For example, in our [walkthrough](walkthrough), to debug the extractor `ext_has_spouse_features`, just change
 `deepdive.conf` to:
 
 ```bash

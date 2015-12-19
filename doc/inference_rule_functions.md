@@ -6,7 +6,7 @@ title: Inference Rule Function Reference
 # Inference Rule Function Reference
 
 This document lists and describes all functions that can be used in the
-`function` directive when [writing inference rules](inference_rules.html).
+`function` directive when [writing inference rules](inference_rules).
 
 ### Variable Negation
 Variables can be negated by prefixing them with a `!`, as in `Or(A,!B)`.

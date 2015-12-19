@@ -6,7 +6,7 @@ title: Incremental Workflow
 # Building an Incremental Application
 
 This document describes how to build an incremental application using [DDlog][] and
-DeepDive. The example application is [the spouse example](walkthrough.html).
+DeepDive. The example application is [the spouse example](walkthrough).
 
 This document assumes you are familiar with basic concepts in DeepDive and the
 spouse application tutorial.
@@ -38,7 +38,7 @@ the base part. The workflow can be summarized as follows.
 
 The incremental version of the spouse example is under [`examples/spouse_example/postgres/incremental`](https://github.com/HazyResearch/deepdive/tree/master/examples/spouse_example/postgres/incremental).
 The only difference is that all the arrays are transformed into string using `array_to_string` with delimiter `'~^~'` due to DDlog's limited support for array type.
-You can follow the [corresponding section in the original walkthrough](walkthrough.html#loading_data) to load the data.
+You can follow the [corresponding section in the original walkthrough](walkthrough#loading_data) to load the data.
 
 Alternatively, you can try the handy scripts included in the incremental example provided in the source tree.
 
@@ -144,4 +144,4 @@ export DBNAME=deepdive_spouse_noninc
 ```
 
 
-[DDlog]: ddlog.html
+[DDlog]: ddlog

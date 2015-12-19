@@ -38,7 +38,7 @@ A DeepDive application is a directory that contains the following files and dire
 
     Extra configuration not expressed in the DDlog program is in this file.
     Extractors, and inference rules can be also be written in [HOCON][] syntax in this file, although DDlog is the recommended way.
-    See the [Configuration Reference](configuration.html) for full details.
+    See the [Configuration Reference](configuration) for full details.
 
 * `schema.sql`
 
@@ -64,7 +64,7 @@ A DeepDive application is a directory that contains the following files and dire
     All output and log files that belong to the run are kept under that subdirectory.
     There are a few symbolic links with mnemonic names to the most recently started run, last successful run, last failed run for handy access.
 
-[DDlog]: ddlog.html
+[DDlog]: ddlog
 [HOCON]: https://github.com/typesafehub/config/blob/master/HOCON.md#readme "Human Optimized Configuration Object Notation"
 
 

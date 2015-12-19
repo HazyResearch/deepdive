@@ -6,7 +6,7 @@ title: High-speed Sampler
 # The DimmWitted high-speed sampler
 
 This document briefly presents DimmWitted, a high-speed [Gibbs
-sampler](inference.html#gibbs) for DeepDive.
+sampler](inference#gibbs) for DeepDive.
 
 
 In `deepdive.conf`, you can change the sampler executable as follows:
@@ -20,7 +20,7 @@ deepdive {
 Use `sampler-dw-mac` or `sampler-dw-linux` depending on which type
 of system your are on.
 
-Since [version 0.03](changelog/0.03-alpha.html), DeepDive automatically
+Since [version 0.03](changelog/0.03-alpha), DeepDive automatically
 chooses the correct executable based on the system environment, so we recommend to
 omit the `sampler_cmd` directive.
 

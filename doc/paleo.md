@@ -13,9 +13,9 @@ found [here](https://github.com/zhangce/pdd/tree/master/example_data).
 ## Prerequisite
 
 To fully understand PaleoDeepDive, it is useful to first go through the online tutorial for DeepDive,
-which provides an overview of [basic concepts](walkthrough.html)
+which provides an overview of [basic concepts](walkthrough)
 and an example of
-[how relations between people, locations, and organizations](walkthrough.html) are inferred.
+[how relations between people, locations, and organizations](walkthrough) are inferred.
 In this document, you will see how similar approaches can be applied
 to paleontology in order to extract relations between
 biological taxa, geological rock formations, geographic locations, and geological time intervals.
@@ -86,7 +86,7 @@ This row encodes the sentence
 > Edzf U, Ciudad Universitaria, Morelia, Michoacdn, México
 
 The columns wordidxs, words, poses, ners, lemmas, dep\_paths, and dep\_parents are
-defined by the NLP software and are consistent with our [other walkthrough](walkthrough.html). The column
+defined by the NLP software and are consistent with our [other walkthrough](walkthrough). The column
 bounding_boxes contains a list of strings, one for each word. For each word,
 the string defines a bounding box containing that word in the PDF. As an example, `p1l809t1151r871b1181`, defines a box on page 1, left margin 809, top margin 1151, right margin 871, and bottom margin 1181 (units are in pixels).
 
@@ -202,7 +202,7 @@ is:
     }
 
 If you have difficulty in understanding this syntax, please refer to
-our [more general walkthrough for DeepDive](walkthrough.html) first.
+our [more general walkthrough for DeepDive](walkthrough) first.
 This extractor goes through the sentence table, and for each sentence,
 it executes the extractor in ext\_temporal\_local.py.
 
@@ -332,7 +332,7 @@ all sentences in the same document and the corresponding entity mentions.
 <a id="distant_supervision" href="#"> </a>
 ### Distant Supervision
 
-One special class of feature extractors are those used for [distant supervision](relation_extraction.html), which is a key technique that we used to produce training labels.
+One special class of feature extractors are those used for [distant supervision](relation_extraction), which is a key technique that we used to produce training labels.
 Here, the relation `relation_formationtemporal` is used as an example.
 
 The feature extractor that we used to distantly supervise the relation
@@ -447,7 +447,7 @@ This extractor contains four components.
 Inferences rules are used to specify the correlation
 among random variables. Most of these inference
 rules have a similar form as the one in our
-[other walkthroughs](walkthrough.html), and here we show
+[other walkthroughs](walkthrough), and here we show
 two examples.
 
     inference_rule_formation : {

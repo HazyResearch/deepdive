@@ -8,7 +8,7 @@ title: FAQ
 
 ### How can I debug my extractors?
 
-See [debugging extractors](extractors.html#debug_extractors) section in extractor documentation.
+See [debugging extractors](extractors#debug_extractors) section in extractor documentation.
 
 ### Can I have features for dictionary entries with precise terms (e.g.,
 Cretaceous), and less-precise terms (e.g., Recent, Word)?
@@ -58,7 +58,7 @@ Make sure your database server supports the PL/python language.
 ### During sampling, I get an "error while loading shared libraries: libnuma.so.1"
 
 Make sure you have configured the dependencies of the DimmWitted
-[sampler](sampler.html) and that you properly set the necessary environmental
-variables. Refer to the [Installation guide](installation.html#sampler) for
+[sampler](sampler) and that you properly set the necessary environmental
+variables. Refer to the [Installation guide](installation#sampler) for
 details.
 

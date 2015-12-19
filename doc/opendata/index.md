@@ -7,7 +7,7 @@ title: DeepDive Open Datasets
 
 
 Over the last few years, our collaborators have used DeepDive to build over [a dozen different
-applications](../showcase/apps.html). Often, these applications are interesting because of the sheer volume of documents that one can read--millions of documents or billions of Web pages. However, many researchers can't get started on these problems because NLP preprocessing is simply too expensive and painful. With the generous support of Condor CHTC, we have been fortunate to be have a ready supply of CPU hours for our own projects. The datasets below have taken over 5+ million CPU hours to produce. It’s time that we gave back to the NLP community that has given us so many good ideas for our own systems.
+applications](../showcase/apps). Often, these applications are interesting because of the sheer volume of documents that one can read--millions of documents or billions of Web pages. However, many researchers can't get started on these problems because NLP preprocessing is simply too expensive and painful. With the generous support of Condor CHTC, we have been fortunate to be have a ready supply of CPU hours for our own projects. The datasets below have taken over 5+ million CPU hours to produce. It’s time that we gave back to the NLP community that has given us so many good ideas for our own systems.
 
 
 Our work would not be possible without open data. As a result, our group decided to enhance as many [Creative Commons
@@ -28,7 +28,7 @@ datasets](http://creativecommons.org/) as we can find. Below, we describe the da
 <img src="https://pbs.twimg.com/profile_images/722745234/nlp-logo-4x4_400x400.jpg" style="width:65px;"/></a>
 </center>
 <div style="margin-top:10px;">
-We would like to thank the HTCondor research group and the <a href="http://chtc.cs.wisc.edu/">Center for High Throughput Computing (CHTC)</a> at the University of Wisconsin-Madison, who have provided millions of machine hours to our group. Thank you, Miron Livny. We would also like to thank the <a href="http://nlp.stanford.edu/index.shtml">Stanford Natural Language Processing Group</a>, whose tools we use in many of our applications. DeepDive is also generously supported by <a href="../support.html">our sponsors</a>.
+We would like to thank the HTCondor research group and the <a href="http://chtc.cs.wisc.edu/">Center for High Throughput Computing (CHTC)</a> at the University of Wisconsin-Madison, who have provided millions of machine hours to our group. Thank you, Miron Livny. We would also like to thank the <a href="http://nlp.stanford.edu/index.shtml">Stanford Natural Language Processing Group</a>, whose tools we use in many of our applications. DeepDive is also generously supported by <a href="../support">our sponsors</a>.
 </div>
 </div>
 </div>
@@ -42,7 +42,7 @@ most datasets, we provide data in both formats.
   - **DeepDive-ready DB Dump.** In this format, the
   data is a database table that can be loaded directly
   into a database with PostgreSQL or Greenplum. The schema of this
-  table is the same as what we used in our [walkthrough example](../walkthrough.html)
+  table is the same as what we used in our [walkthrough example](../walkthrough)
   such that you can start building your own DeepDive applications
   immediately after download.
 

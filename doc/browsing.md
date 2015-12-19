@@ -6,7 +6,7 @@ title: Browsing DeepDive Data
 # Browsing DeepDive Data
 
 This document describes how one can easily bring up an interactive search interface to browse data produced by DeepDive as well as its input/source data.
-Your DeepDive application must be [written in DDlog](ddlog.html) to be able to use this functionality.
+Your DeepDive application must be [written in DDlog](ddlog) to be able to use this functionality.
 
 Currently, the functionality only works with PostgreSQL versions 9.3 or later because it relies on the `to_json()` support.
 We plan to lift this limitation soon and support Greenplum/PostgreSQL-XL as well as to grow the underlying [Elasticsearch][] cluster for applications with large data.
@@ -78,7 +78,7 @@ DeepDive applications written in DDlog typically use multiple relations falling 
 3. Relation that holds predictions (random variables)
     * whose expectation predicted by DeepDive
 
-For example, in the spouse example we use in [DeepDive's tutorial](walkthrough.html), the relations are:
+For example, in the spouse example we use in [DeepDive's tutorial](walkthrough), the relations are:
 
 1. Source
     * `articles`
@@ -137,7 +137,7 @@ It is in fact an [AngularJS template](https://docs.angularjs.org/guide/templates
 For extractions, `source` variable may also point to its provenance source object.
 
 Here's an example for rendering `has_spouse_candidates` in the spouse example as highlighted text spans with two colors.
-The `mindtagger-word-array` and `mindtagger-highlight-words` are AngularJS directives provided by [Mindtagger, a tool for labeling data](labeling.html).
+The `mindtagger-word-array` and `mindtagger-highlight-words` are AngularJS directives provided by [Mindtagger, a tool for labeling data](labeling).
 <script src="https://gist-it.appspot.com/github.com/HazyResearch/mindbender/blob/master/examples/spouse_example/mindbender/search-template/has_spouse_candidates.html?footer=minimal">
 </script>
 

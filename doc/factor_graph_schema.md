@@ -5,8 +5,8 @@ title: Factor Graph Grounding Output Reference
 
 # Factor Graph Grounding Output Schema Reference
 
-[Grounding](overview.html#grounding) is the process of building the
-factor graph and dumping it to files that the [sampler](sampler.html)
+[Grounding](overview#grounding) is the process of building the
+factor graph and dumping it to files that the [sampler](sampler)
 can take as input. DeepDive uses a custom binary format to encode the factor
 graph. It generates four files, one each for weights, variables, factors, and
 edges. All files resides in the `out/` directory of the latest run. The format
@@ -45,7 +45,7 @@ Edges
     equalPredicate  long    8
 
 
-*Note*: from [version 0.03](changelog/0.03-alpha.html), the edgeCount field
+*Note*: from [version 0.03](changelog/0.03-alpha), the edgeCount field
 in Variables is always -1.
 
 The systems also generates a metadata file which contains a single line in

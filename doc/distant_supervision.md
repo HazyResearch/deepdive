@@ -23,6 +23,6 @@ then label each pair of "Barack Obama" and "Michelle Obama" that appear in the
 same sentence as a positive example for our marriage relation. This way we can
 easily generate a large amount of (possibly noisy) training data. Applying
 distant supervision to get positive examples for a particular relation is easy,
-but [generating negative examples](generating_negative_examples.html)
+but [generating negative examples](generating_negative_examples)
 is more of an art than a science.
 

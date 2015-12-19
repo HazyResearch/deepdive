@@ -54,7 +54,7 @@ step. This is where many machine learning approaches break down: they treat
 training or input data as "correct" and make predictions using this assumption.
 
 DeepDive makes good use of uncertainty to improve predictions during the
-[probabilistic inference](inference.html) step. For example, DeepDive may figure
+[probabilistic inference](inference) step. For example, DeepDive may figure
 out that a certain mention of "Barack" is only 60% likely to actually refer to
 "Barack Obama", and use this fact to discount the impact of that mention on the
 final result for the entity "Barack Obama". DeepDive can also make use the
