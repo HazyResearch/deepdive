@@ -15,6 +15,7 @@ DEPLOY_DIR = /afs/cs/group/infolab/deepdive/www
 GITHUB_REPO_URL = https://github.com/HazyResearch/deepdive
 WEBSITE_CNAME = deepdive.stanford.edu
 WEBSITE_BASEURL = http://$(WEBSITE_CNAME)
+TEST_HOST = localhost
 TEST_PORT = 4000
 
 
@@ -27,14 +28,14 @@ LINKCHECKER_OPTIONS = --timeout 30 \
 .PHONY: test
 test: jekyll
 	# Launching a server for testing...
-	jekyll serve --host localhost --port $(TEST_PORT) --baseurl "" --watch
+	jekyll serve --host $(TEST_HOST) --port $(TEST_PORT) --baseurl "" --watch
 
 .PHONY: linkcheck linkcheck-deployed
 linkcheck: jekyll linkchecker
 	# Checking broken links locally
-	jekyll serve --host localhost --port $(TEST_PORT) --baseurl "" & \
+	jekyll serve --host $(TEST_HOST) --port $(TEST_PORT) --baseurl "" & \
 	    trap "kill -TERM $$!" EXIT; sleep 3; \
-	linkchecker $(LINKCHECKER_OPTIONS) http://localhost:$(TEST_PORT)/
+	linkchecker $(LINKCHECKER_OPTIONS) http://$(TEST_HOST):$(TEST_PORT)/
 linkcheck-deployed: jekyll linkchecker
 	# Checking broken links from deployed website
 	linkchecker $(LINKCHECKER_OPTIONS) $(WEBSITE_BASEURL)/
