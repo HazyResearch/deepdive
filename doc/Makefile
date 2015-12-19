@@ -17,6 +17,13 @@ WEBSITE_CNAME = deepdive.stanford.edu
 WEBSITE_BASEURL = http://$(WEBSITE_CNAME)
 TEST_PORT = 4000
 
+
+IGNORE_URL = $(shell sed <.linkchecker.ignore-urls -e 's/[[:space:]]*\#.*$$//' -e '/^[[:space:]]*$$/d')
+LINKCHECKER_OPTIONS = --timeout 30 \
+                      --check-extern --anchors \
+                      $(IGNORE_URL:%=--ignore-url='%') \
+                      #
+
 .PHONY: test
 test: jekyll
 	# Launching a server for testing...
@@ -27,10 +34,10 @@ linkcheck: jekyll linkchecker
 	# Checking broken links locally
 	jekyll serve --host localhost --port $(TEST_PORT) --baseurl "" & \
 	    trap "kill -TERM $$!" EXIT; sleep 3; \
-	linkchecker --timeout 30 --check-extern http://localhost:$(TEST_PORT)/
+	linkchecker $(LINKCHECKER_OPTIONS) http://localhost:$(TEST_PORT)/
 linkcheck-deployed: jekyll linkchecker
 	# Checking broken links from deployed website
-	linkchecker --timeout 30 --check-extern $(WEBSITE_BASEURL)/
+	linkchecker $(LINKCHECKER_OPTIONS) $(WEBSITE_BASEURL)/
 
 .PHONY: deploy
 deploy: jekyll

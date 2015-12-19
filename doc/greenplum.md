@@ -6,7 +6,7 @@ title: Using DeepDive with Greenplum
 # Using DeepDive with Greenplum
 
 This document describes how to install and configure
-[Greenplum](http://www.gopivotal.com/products/pivotal-greenplum-database) to work
+[Greenplum](http://pivotal.io/big-data/pivotal-greenplum) to work
 with DeepDive. It also describes one caveat needed in writing queries when using
 Greenplum, and some [FAQs](#faq) about using Greenplum.
 
@@ -129,8 +129,8 @@ Be sure to **reboot** after changing these kernel parameters.
 ### Running the Greenplum Installer
 
 Download Greenplum for your operating system. For a free Community Edition, you
-can find the download link and the official guide on the [GoPivotal
-website](http://www.gopivotal.com/products/pivotal-greenplum-database).
+can find the download link and the official guide on the [Pivotal
+website](http://pivotal.io/big-data/pivotal-greenplum).
 
 Install Greenplum using the downloaded package:
 
