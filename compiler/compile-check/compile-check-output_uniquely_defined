@@ -1,0 +1,20 @@
+#!/usr/bin/env jq-f
+# compile-check-output_uniquely_defined -- Checks if all outputs are defined by one process
+# Note that this is not equivalent to limiting every process to create only one output.
+##
+.deepdive_ as $deepdive |
+
+# a handy map for checking whether a relation has a defining process
+[ $deepdive.execution.processes | to_entries[]
+| { output: (.value.output_ as $o | try $o[] catch $o // empty)
+  , byProcess: .key
+  }
+]
+| group_by(.output)[]
+
+# check every output has a unique process that defines it
+| if length == 1 then .[0] |
+    "'\(.output)' has a unique process '\(.byProcess)' that outputs it"
+else
+    error("'\(.[0].output)' is output by more than one process: \(map("'\(.byProcess)'") | join(" "))")
+end

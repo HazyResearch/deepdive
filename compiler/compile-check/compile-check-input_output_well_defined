@@ -9,7 +9,6 @@
 ) as $process_defining_the_relation |
 
 # check every compiled process
-# TODO move compiled processes into a separate object, e.g., $deepdive.execution.processes?
 $deepdive.execution.processes | to_entries[] |
 .key as $extractorName | .value |
 
