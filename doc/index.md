@@ -202,7 +202,6 @@ and
     - [Using DeepDive with MySQL / MySQL Cluster](mysql)
     - [Using DeepDive on Ubuntu](ubuntu)
     - [Using DeepDive on Amazon EC2](ec2)
-    - [Using DeepDive on Docker](docker)
 - References
     - [`deepdive.conf` Reference](configuration)
     - [High-speed sampler](sampler)

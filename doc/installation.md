@@ -15,7 +15,6 @@ We provide a simple installation method for the following supported systems:
 * GNU/Linux: Debian (7, 8, or later) and Ubuntu (12.04LTS, 14.04LTS, or later)
     * [VirtualBox](https://help.ubuntu.com/community/VirtualBox)
     * [AWS EC2](ec2)
-    * [Docker](docker)
 * Mac OS X with [Homebrew](http://brew.sh)
 
 You can install DeepDive and all its dependencies with a single command.
