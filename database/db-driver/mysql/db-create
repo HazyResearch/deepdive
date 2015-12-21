@@ -1,1 +1,23 @@
-../postgresql/db-create
+#!/usr/bin/env bash
+# db-create -- Creates a table or view with given definition for MySQL
+# See: postgresql/db-create
+##
+set -euo pipefail
+
+baseImplementation="$(dirname "$0")"/../postgresql/db-create
+
+# override one exceptional case for MySQL: db-create table FOO like BAR
+if [[ $# -ge 4 ]] && [[ $1 = "table" && $3 = "like" ]]; then
+    Table=$2 AnotherTable=$4
+    tableDef=" (LIKE $AnotherTable)" # LIKE without the INCLUDING ALL clause
+
+    # make sure no view is on our way
+    db-execute "DROP VIEW IF EXISTS $Table CASCADE;" || true
+    # actually create the table
+    db-execute "
+        DROP TABLE IF EXISTS $Table CASCADE;
+        CREATE TABLE $Table $tableDef;
+    "
+else
+    exec "$baseImplementation" "$@"
+fi

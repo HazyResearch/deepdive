@@ -9,6 +9,9 @@
 #
 # > db-create table TABLE [COLUMN:TYPE[:CONSTRAINT]]...
 # Creates a new table named TABLE with given column definitions.
+#
+# > db-create table TABLE like ANOTHER_TABLE
+# Creates a new table named TABLE after the schema of ANOTHER_TABLE.
 ##
 set -euo pipefail
 
@@ -29,12 +32,20 @@ case $What in
                 tableDef=" AS $Query"
                 ;;
 
+            like) # create like another table
+                [[ $# -gt 1 ]] || usage "$0" "Missing arguments"
+                AnotherTable=$2
+                tableDef=" (LIKE $AnotherTable INCLUDING ALL)" # preserving all bells and whistles
+                ;;
+
             *) # create table with column definitions
                 tableDef=
                 for columnDef; do
                     # parse COLUMN:TYPE[:CONSTRAINT]
                     column=${columnDef%%:*}
-                    typeConstraint=${columnDef#$column:}
+                    typeConstraint=${columnDef#$column}
+                    typeConstraint=${typeConstraint#:}
+                    [[ -n "$typeConstraint" ]] || usage "$0" "$columnDef: Missing :TYPE[:CONSTRAINT]"
                     type=${typeConstraint%%:*}
                     constraint=${typeConstraint#$type}
                     constraint=${constraint#:}
@@ -44,10 +55,10 @@ case $What in
         esac
         # make sure no view is on our way
         db-execute "DROP VIEW IF EXISTS $Table CASCADE;" || true
-        # actually create a table
+        # actually create the table
         db-execute "
             DROP TABLE IF EXISTS $Table CASCADE;
-            CREATE $What $Table $tableDef;
+            CREATE TABLE $Table $tableDef;
         "
         ;;
 
@@ -56,7 +67,7 @@ case $What in
         Query=$2
         # make sure no table is on our way
         db-execute "DROP TABLE IF EXISTS $Table CASCADE;" || true
-        # actually create a table
+        # actually create the view
         db-execute "
             DROP VIEW IF EXISTS $Table CASCADE;
             CREATE VIEW $Table AS $Query;
