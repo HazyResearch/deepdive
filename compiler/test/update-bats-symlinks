@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Updates symlinks to the .bats.template
+
+for tmpl in {.,}*.bats.template; do
+    [[ -e "$tmpl" ]] || continue
+    testCaseGroup=${tmpl%.bats.template}
+    testCaseGroup=${testCaseGroup#.}
+    rm -f "$testCaseGroup"-*.bats
+    for testCase in "$testCaseGroup"-*; do
+        [[ -d "$testCase" ]] || continue
+        ln -sfnv "$tmpl" "$testCase".bats
+    done
+done

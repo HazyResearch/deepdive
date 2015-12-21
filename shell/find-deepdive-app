@@ -8,7 +8,7 @@ set -eu
 # locate application root
 at_deepdive_app_root() {
     # recognize an app directory as defined in ../doc/doc/advanced/deepdiveapp.md
-    [[ ( -e app.ddlog || ( -e deepdive.conf && -e schema.sql ) ) && -e db.url ]]
+    [[ ( -e app.ddlog || ( -e deepdive.conf && ( -e schema.sql || -e schema.json ) ) ) && -e db.url ]]
 }
 
 if [[ -d "${DEEPDIVE_APP:-}" ]]; then
