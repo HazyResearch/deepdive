@@ -160,9 +160,9 @@ and
 #### Background
 
 - [Knowledge base construction](kbc)
+    - [Relation extraction](relation_extraction)
 - [System overview and terminology](overview)
     - [Probabilistic inference and factor graphs](inference)
-    - [Relation extraction](relation_extraction)
     - [Distant supervision](distant_supervision)
 
 #### Basics
@@ -181,29 +181,29 @@ and
         - [Writing extractors](extractors)
         - [Declaring inference variables in the schema](schema)
         - [Writing inference rules](inference_rules)
-        - [Inference rule function reference](inference_rule_functions)
-        - [Running an application](running)
+    - [Running an application](running)
     - [Generic features library](gen_feats)
-    - [Incremental DeepDive](incremental)
 - Debugging a DeepDive Application
     - [Calibration](calibration)
     - [Browsing data](browsing)
     - [Labeling data products](labeling)
     - [Generating negative examples](generating_negative_examples)
-- [Multinomial variables: Text chunking example](chunking)
-- [FAQ](faq)
 
 
 #### Advanced topics
 
+- [Multinomial variables: Text chunking example](chunking)
+- [FAQ](faq)
 - Using DeepDive in Various Configurations
     - [Using DeepDive with GreenPlum](greenplum)
     - [Using DeepDive with Postgres-XL](pgxl)
     - [Using DeepDive with MySQL / MySQL Cluster](mysql)
     - [Using DeepDive on Ubuntu](ubuntu)
     - [Using DeepDive on Amazon EC2](ec2)
+    - [Incremental DeepDive](incremental)
 - References
     - [`deepdive.conf` Reference](configuration)
+    - [Inference rule function reference](inference_rule_functions)
     - [High-speed sampler](sampler)
     - [Factor graph grounding output reference](factor_graph_schema)
     - [Internal database schema](reserved_tables)
