@@ -13,7 +13,7 @@
             mkdir -p weights
             [ -d factorgraph ] || error \"No factorgraph found\"
             # run inference engine for learning and inference
-            flatten() { find -L \"$@\" -type f -exec cat {} +; }
+            flatten() { find -L \"$@\" -type f -exec bzcat {} +; }
             \($deepdive.sampler.sampler_cmd // "sampler-dw") \\
                 gibbs \\
                 -w <(flatten factorgraph/weights) \\
@@ -38,7 +38,7 @@
                 # no need to run inference unless the weights are fresher
                 # XXX this skipping may cause confusion
                 # run sampler for performing inference with given weights without learning
-                flatten() { find -L \"$@\" -type f -exec cat {} +; }
+                flatten() { find -L \"$@\" -type f -exec bzcat {} +; }
                 \($deepdive.sampler.sampler_cmd // "sampler-dw") \\
                     gibbs \\
                     -l 0 \\
