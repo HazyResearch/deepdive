@@ -66,6 +66,7 @@ if [[ -n $output_relation ]]; then
 fi
 
 # set up named pipes for parallel processes and make sure they are cleaned up upon exit
+rm -f process-*.{input,output}
 [[ -z $input_sql       ]] || for i in $(seq $num_processes); do rm -f process-$i.input ; mkfifo process-$i.input ; done
 [[ -z $output_relation ]] || for i in $(seq $num_processes); do rm -f process-$i.output; mkfifo process-$i.output; done
 trap 'rm -f process-*.{input,output}' EXIT

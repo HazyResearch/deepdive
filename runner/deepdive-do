@@ -4,6 +4,13 @@
 ##
 set -euo pipefail
 
+# make sure this is a leader of its own process group
+[[ -n ${DEEPDIVE_KEEP_PROCESS_GROUP:-} ]] ||
+[[ $(ps -o pgid= $$) = $$ ]] ||
+    # or, respawn itself in a new process group
+    DEEPDIVE_KEEP_PROCESS_GROUP=1 \
+    exec setsid "$0" "$@"
+
 : ${DEEPDIVE_PLAN_EDIT:=true} ${VISUAL:=${EDITOR:=vi}}
 : ${DEEPDIVE_PROGRESS_FD:=3}  # file descriptor to pass stderr down to our show_progress(1) command
 
@@ -31,13 +38,58 @@ cleanup() {
     cd "$DEEPDIVE_APP"/run
     [[ ! RUNNING -ef "$runDir" ]] || rm -f RUNNING
 }
-abort() {
-    cd "$DEEPDIVE_APP"
-    [[ ! -e run/"$runDir" ]] || ln -sfnv "$runDir" run/ABORTED
-}
 trap cleanup EXIT
 trap abort ERR
 ln -sfnv "$runDir" RUNNING
+
+# forward signals to the process group to make sure no dangling processes remain
+signals="HUP INT QUIT TERM"
+pgid=$(echo $(ps -o pgid= -p $$))
+list_pg_pids() {
+    # find the processes in the same process group
+    local ppid=$BASHPID
+    ps -axo pid=,ppid=,pgid= |
+        grep "[[:space:]]$pgid$" |
+        # excluding bash itself as well as these grep and ps processes here
+        grep -v "^$$[[:space:]]" |
+        grep -v "[[:space:]]$ppid[[:space:]]" |
+        grep -v "[[:space:]]$$[[:space:]]" |
+        # and leave just the PIDs
+        cut -d' ' -f1
+}
+signal_pg() {
+    local sig=$1
+    # send given signal to the process group
+    list_pg_pids | xargs kill -$sig 2>/dev/null || true
+}
+keep_signal_pg() {
+    local sig=$1
+    # make sure all processes in this process group, hence its descendent are terminated
+    # (sometimes UDF processes don't terminate upon signals sent from tty)
+    echo "Sending SIG$sig to process group $pgid"
+    trap 'keep_signal_pg KILL' $signals  # or send KILL if it receives signal once again
+    signal_pg $sig
+    case $sig in KILL) return; esac  # just KILLed everyone and end of story
+    # until no process remains in the process group
+    # keep sending the same signal with increasing interval
+    local timeout=1
+    while [[ -n $(list_pg_pids) ]]; do
+        echo "Processes still alive, sending SIG$sig again to process group $pgid in $timeout secs"
+        sleep $timeout && signal_pg $sig && let timeout*=2 || {
+            # or send KILL if something goes wrong
+            keep_signal_pg KILL
+            return 1
+        }
+    done
+}
+abort() {
+    # leave an ABORTED symlink
+    cd "$DEEPDIVE_APP"
+    [[ ! -e run/"$runDir" ]] || ln -sfnv "$runDir" run/ABORTED
+}
+for sig in $signals
+do trap "keep_signal_pg TERM" $sig  # XXX sending TERM instead of $sig as some children don't respond to other ones
+done
 
 {
     # some metadata
