@@ -16,7 +16,7 @@ set -euo pipefail
 
 targets="$*"
 . resolve-args-to-do.sh
-cd "$DEEPDIVE_APP"/run
+cd "$DEEPDIVE_APP"
 
 if deepdive-done "$@"; then
     echo "All done at $(format_timestamp $(ls -t "$@" | head -1)):"
@@ -32,15 +32,21 @@ fi
 
 # create a directory for running
 runDir=$(date +%Y%m%d/%H%M%S.%N)
-mkdir -p "$runDir"
-# make sure we clean up
+mkdir -p run/"$runDir"
+# make sure we clean up upon exit
 cleanup() {
-    cd "$DEEPDIVE_APP"/run
-    [[ ! RUNNING -ef "$runDir" ]] || rm -f RUNNING
+    cd "$DEEPDIVE_APP"
+    [[ ! run/RUNNING -ef run/"$runDir" ]] || rm -f run/RUNNING
 }
 trap cleanup EXIT
+abort() {
+    # leave an ABORTED symlink upon error
+    cd "$DEEPDIVE_APP"
+    [[ ! -e run/"$runDir" ]] || ln -sfnv "$runDir" run/ABORTED
+}
 trap abort ERR
-ln -sfnv "$runDir" RUNNING
+ln -sfnv "$runDir" run/LATEST
+ln -sfnv "$runDir" run/RUNNING
 
 # forward signals to the process group to make sure no dangling processes remain
 signals="HUP INT QUIT TERM"
@@ -82,15 +88,12 @@ keep_signal_pg() {
         }
     done
 }
-abort() {
-    # leave an ABORTED symlink
-    cd "$DEEPDIVE_APP"
-    [[ ! -e run/"$runDir" ]] || ln -sfnv "$runDir" run/ABORTED
-}
 for sig in $signals
 do trap "keep_signal_pg TERM" $sig  # XXX sending TERM instead of $sig as some children don't respond to other ones
 done
 
+# prepare the execution plan for given targets
+cd "$DEEPDIVE_APP"/run
 {
     # some metadata
     echo "# on $HOSTNAME: deepdive do $targets"
@@ -128,4 +131,5 @@ logging-with-ts "$runDir"/run.log
 
 # leave a symlink to the latest successful run
 cd "$DEEPDIVE_APP"
-ln -sfnv "$runDir" run/LATEST
+[[ ! -e run/FINISHED ]] || mv -fv --no-target-directory run/FINISHED run/FINISHED~
+ln -sfnv "$runDir" run/FINISHED

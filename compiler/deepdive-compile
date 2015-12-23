@@ -22,16 +22,17 @@ exec 3>&2 2> >(logging-with-ts run/"$compileDir"/compile.log >&2)
 STEP() { echo "$@"; } >&2
 # bookkeep some symlinks
 cleanup() {
-    cd "$DEEPDIVE_APP"/run
-    [[ ! COMPILING -ef "$compileDir" ]] || rm -f COMPILING
+    cd "$DEEPDIVE_APP"
+    [[ ! run/RUNNING.COMPILE -ef run/"$compileDir" ]] || rm -f run/RUNNING.COMPILE
 } >&3
 abort() {
     cd "$DEEPDIVE_APP"
-    [[ ! -e run/"$compileDir" ]] || ln -sfnv "$compileDir" run/ABORTED.COMPILING
+    [[ ! -e run/"$compileDir" ]] || ln -sfnv "$compileDir" run/ABORTED.COMPILE
 } >&3
 trap cleanup EXIT
 trap abort ERR HUP QUIT INT TERM
-ln -sfnv "$compileDir" run/COMPILING >&2
+ln -sfnv "$compileDir" run/LATEST.COMPILE >&2
+ln -sfnv "$compileDir" run/RUNNING.COMPILE >&2
 
 # augment PATH to access compiler components
 PATH="$DEEPDIVE_HOME"/util/compile-config:"$PATH"
