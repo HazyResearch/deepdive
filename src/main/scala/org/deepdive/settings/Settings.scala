@@ -130,6 +130,9 @@ abstract class DiscreteFactorFunction extends FactorFunction {
 /* A factor function of fom A and B and C ... -> Z */
 case class ImplyFactorFunction(variables: Seq[FactorFunctionVariable]) extends BooleanFactorFunction
 
+/* A factor function of fom A and B and C ... -> Z, NOTE this function has -1, 0, 1 in its truth table */
+case class Imply3FactorFunction(variables: Seq[FactorFunctionVariable]) extends BooleanFactorFunction
+
 /* A factor function describing A or B or C ... */
 case class OrFactorFunction(variables: Seq[FactorFunctionVariable]) extends BooleanFactorFunction
 

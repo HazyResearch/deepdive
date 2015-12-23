@@ -41,7 +41,6 @@ void load_var(std::string filename) {
   long cardinality;
 
   edge_count = bswap_64(edge_count);
-  // std::cerr << filename << " " << inc << std::endl;
 
   while (fin >> vid >> is_evidence >> initial_value >> type >> cardinality) {
     // endianess
@@ -87,7 +86,7 @@ void load_weight(std::string filename) {
 
 // load factors
 // fid, wid, vids
-void load_factor(std::string filename, short funcid, long nvar, char** positives) {
+void load_factor_with_fid(std::string filename, short funcid, long nvar, char** positives) {
   std::ifstream fin(filename.c_str());
   std::ofstream fout((filename + "_factors.bin").c_str(), std::ios::binary | std::ios::out);
   std::ofstream fedgeout((filename + "_edges.bin").c_str(), std::ios::binary | std::ios::out);
@@ -190,6 +189,92 @@ void load_factor(std::string filename, short funcid, long nvar, char** positives
   fedgeout.close();
 }
 
+// load factors
+// wid, vids
+void load_factor(std::string filename, short funcid, long nvar, char** positives) {
+  std::ifstream fin(filename.c_str());
+  std::ofstream fout((filename + "_factors.bin").c_str(), std::ios::binary | std::ios::out);
+
+  long weightid = 0;
+  long variableid = 0;
+  long nedge = 0;
+  long predicate = funcid == 5 ? -1 : 1;
+  vector<int> positives_vec;
+  vector<long> variables;
+
+  funcid = bswap_16(funcid);
+
+  for (int i = 0; i < nvar; i++) {
+    positives_vec.push_back(atoi(positives[i]));
+  }
+
+  predicate = bswap_64(predicate);
+
+  const char field_delim = '\t'; // tsv file delimiter
+  const char array_delim = ','; // array delimiter
+  string line;
+  while (getline(fin, line)) {
+    string field;
+    istringstream ss(line);
+    variables.clear();
+
+    // weightid
+    getline(ss, field, field_delim);
+    weightid = atol(field.c_str());
+    weightid = bswap_64(weightid);
+
+    fout.write((char *)&weightid, 8);
+    fout.write((char *)&funcid, 2);
+
+    uint64_t position = 0;
+    uint64_t position_big;
+    long n_vars = 0;
+
+    for (long i = 0; i < nvar; i++) {
+      getline(ss, field, field_delim);
+
+      // array type
+      if (field.at(0) == '{') {
+        string subfield;
+        istringstream ss1(field);
+        ss1.get(); // get '{'
+        bool ended = false;
+        while (getline(ss1, subfield, array_delim)) {
+          if (subfield.at(subfield.length() - 1) == '}') {
+            ended = true;
+            subfield = subfield.substr(0, subfield.length() - 1);
+          }
+          variableid = atol(subfield.c_str());
+          variableid = bswap_64(variableid);
+          variables.push_back(variableid);
+
+          nedge++;
+          n_vars++;
+          if (ended) break;
+        }
+      } else {
+        variableid = atol(field.c_str());
+        variableid = bswap_64(variableid);
+        variables.push_back(variableid);
+
+        nedge++;
+        n_vars++;
+      }
+    }
+    n_vars = bswap_64(n_vars);
+    fout.write((char *)&predicate, 8);
+    fout.write((char *)&n_vars, 8);
+    for (long i = 0; i < variables.size(); i++) {
+      fout.write((char *)&variables[i], 8);
+      fout.write((char *)&positives_vec[i], 1);
+    }
+  }
+  std::cout << nedge << std::endl;
+
+  fin.close();
+  fout.close();
+}
+
 void load_active(std::string filename) {
   std::ifstream fin(filename.c_str());
   std::ofstream fout((filename + ".bin").c_str(), std::ios::binary);
@@ -205,13 +290,16 @@ void load_active(std::string filename) {
 
 int main(int argc, char** argv){
   std::string app(argv[1]);
-  // std::cerr << app << " " << argv[2] << " " << argv[3] << std::endl;
   if(app.compare("variable")==0){
     load_var(argv[2]);
   } else if(app.compare("weight")==0){
     load_weight(argv[2]);
   } else if(app.compare("factor")==0){
-    load_factor(argv[2], atoi(argv[3]), atoi(argv[4]), &argv[5]);
+    std::string inc(argv[5]);
+    if (inc.compare("inc") == 0 || inc.compare("mat") == 0)
+      load_factor_with_fid(argv[2], atoi(argv[3]), atoi(argv[4]), &argv[6]);
+    else
+      load_factor(argv[2], atoi(argv[3]), atoi(argv[4]), &argv[6]);
   } else if (app.compare("active") == 0) {
     load_active(argv[2]);
   } else {
