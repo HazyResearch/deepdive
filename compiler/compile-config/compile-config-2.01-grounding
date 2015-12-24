@@ -105,7 +105,7 @@ include "sql";
                     \\s*        \\. (?: [^.]+ \\. )*
                             )
                     \\s*    (?<columnLabelName>
-                                [^.]+
+                                [^.]+?
                             )
                          )
                     \\s* (?<isArray>   \\[\\] )?
@@ -137,8 +137,19 @@ include "sql";
             }[.name] //
                 error("deepdive.inference.factors.\($factorName
                     ) uses an unrecognized function: \(.name | @json)")
-        )
+
+        # check required/permitted number of parameters
+        | if .name == "istrue" and (.variables | length) != 1
+        then error("deepdive.inference.factors.\($factorName).function: '\(
+            .name)' must be over exactly one variable but found \(.variables | length)")
+        else . end
+        | if .name == "equal" and (.variables | length) != 2
+        then error("deepdive.inference.factors.\($factorName).function: '\(
+            .name)' must be over exactly two variables but found \(.variables | length)")
+        else . end
+
         # TODO check if all .variables type are categorical for multinomial function
+        )
 
     # XXX set up an exploded table to dump for multinomial factors
     | .weightsTableForDumping =

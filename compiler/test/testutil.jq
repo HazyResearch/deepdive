@@ -5,7 +5,11 @@
 def TEST(description; valuesToTest; expectations):
     try (
         { what: description
-        , valueUnderTest: valuesToTest
+        , valueUnderTest:
+            ( if type == "object" and (keys | length) == 2 and has("what") and has("valueUnderTest")
+            then .valueUnderTest | valuesToTest  # gracefully handle nested TEST
+            else valuesToTest
+            end)
         } | expectations
     ) catch error("Unexpected \(description): \(.)");
 

@@ -45,3 +45,7 @@ bats *.bats
     ./update-bats-symlinks
     ```
 
+4. For `should_accept-*` tests, an optional executable for validating the compiled result can be added:
+
+    * `validate-compiled-config` which runs against `run/compiled/config.json`
+    * `validate-compiled-code` which runs against `run/compiled/code-*.json`

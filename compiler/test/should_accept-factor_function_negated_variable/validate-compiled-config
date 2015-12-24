@@ -1,0 +1,20 @@
+#!/usr/bin/env jq-f
+include "../testutil";
+
+TEST("parsed factor function"; .deepdive_.inference.factors_byName.test_factor.function_;
+    EXPECT_EQ( "should have correct name"                ; .name               ; "or" ),
+    EXPECT_EQ( "should have correct number of variables" ; .variables | length ; 2    ),
+
+    TEST("first variable"; .variables[0];
+        EXPECT_EQ( "should have correct variable name"        ; .name        ; "x"         ),
+        EXPECT_EQ( "should have correct variable columnId"    ; .columnId    ; "x.id"      ),
+        EXPECT_EQ( "should have correct variable columnLabel" ; .columnLabel ; "x.is_true" ),
+    empty),
+
+    TEST("first variable"; .variables[1];
+        EXPECT_EQ( "should have correct variable name"        ; .name        ; "y"         ),
+        EXPECT_EQ( "should have correct variable columnId"    ; .columnId    ; "y.id"      ),
+        EXPECT_EQ( "should have correct variable columnLabel" ; .columnLabel ; "y.is_true" ),
+    empty),
+
+empty)
