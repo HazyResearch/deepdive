@@ -7,6 +7,9 @@ set -euo pipefail
 
 : ${DEEPDIVE_CONFIG_EXTRA:=}  # deepdive.conf can be augmented with extra content
 
+: ${DEEPDIVE_COMPILE_INPUT_JSON:=} # compiling app.ddlog and merging deepdive.conf and schema.json can be skipped by specifying a precompiled deepdive.conf.json
+: ${DEEPDIVE_COMPILE_SKIP_DATAFLOW:=} ${DEEPDIVE_COMPILE_SKIP_CODEGEN:=} # some codegen steps can be disabled
+
 DEEPDIVE_APP=$(find-deepdive-app)
 export DEEPDIVE_APP
 cd "$DEEPDIVE_APP"
@@ -41,6 +44,7 @@ PATH="$DEEPDIVE_HOME"/util/compile-dependencies:"$PATH"
 export DEEPDIVE_ERROR_PREFIX="[ERROR] "
 
 ## compile a full deepdive.conf from source code
+if ! [[ -e $DEEPDIVE_COMPILE_INPUT_JSON ]]; then
 STEP "Parsing DeepDive application ($DEEPDIVE_APP) to generate:"
 STEP " run/compiled/schema.json"
 # compile schema in JSON
@@ -96,6 +100,14 @@ hocon2json \
     "$DEEPDIVE_HOME"/etc/deepdive-default.conf
 ) >deepdive.conf.json
 
+else
+STEP "Loading precompiled DeepDive application from $DEEPDIVE_COMPILE_INPUT_JSON to generate:"
+STEP " run/compiled/deepdive.conf.json"
+cp -pf "$DEEPDIVE_COMPILE_INPUT_JSON" run/"$compileDir"/deepdive.conf.json
+cd run/"$compileDir"
+# TODO STEP " run/compiled/schema.json"
+fi
+
 STEP "Normalizing and adding built-in processes to the data flow to compile:"
 config=deepdive.conf.json
 for cc in "$DEEPDIVE_HOME"/util/compile-config/compile-config-*; do
@@ -112,6 +124,7 @@ ln -sfn "$config" config.json
 STEP "Validating run/compiled/config.json:"
 deepdive-check -a -c "$PWD"/config.json 2>&1 | sed 's/^/ /' >&2
 
+if [[ -z $DEEPDIVE_COMPILE_SKIP_DATAFLOW ]]; then
 STEP "Analyzing data flow dependencies to compile:"
 # derive a dependency graph from the extractors, factors, pipelines defined in deepdive.conf
 compile-config2dependencies <config.json >dependencies.json
@@ -123,6 +136,7 @@ STEP " run/compiled/dataflow.svg"
 compile-dependencies2dot <dependencies.json -r >dataflow.dot
 dot -Tsvg <dataflow.dot >dataflow.svg
 STEP "  (file://$(pwd -P)/dataflow.svg)"  # XXX a handy file: URL for opening in a browser
+fi
 
 STEP "Compiling executable code into:"
 # compile extractors and factors under process/ and factor/
@@ -136,12 +150,14 @@ done
 # mark everything compiled as read-only
 chmod a-w *
 
+if [[ -z $DEEPDIVE_COMPILE_SKIP_CODEGEN ]]; then
 # generate actual code under run/
 cd "$DEEPDIVE_APP"/run
 STEP "Generating executable files:"
 cat "$compileDir"/code-*.json |
 compile-codegen
 ln -sfn compiled/Makefile .
+fi
 
 # point to the successfully compiled one, leaving the previous one as backup
 {

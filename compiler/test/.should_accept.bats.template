@@ -14,7 +14,8 @@ testName=${testName#.} # optional dot prefix for hiding the .bats file
 
 @test "compiler $testName" {
     cd "$BATS_TEST_DIRNAME/$testName"
-    deepdive compile
+    deepdive compile ||
+    DEEPDIVE_COMPILE_INPUT_JSON= deepdive compile
     if [[ -x validate-compiled-config ]]; then
         echo "Validating run/compiled/config.json"
         ./validate-compiled-config -r run/compiled/config.json
