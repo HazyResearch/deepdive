@@ -1,0 +1,10 @@
+#!/usr/bin/env jq-f
+include "../testutil";
+
+TEST("parsed variable datatype"; .deepdive_.schema.variables_byName.tag;
+    EXPECT_EQ( "should have correct name"         ; .variableName         ; "tag"         ),
+    EXPECT_EQ( "should have correct type"         ; .variableType         ; "categorical" ),
+    EXPECT_EQ( "should have correct cardinality"  ; .variableCardinality  ; 5             ),
+    EXPECT_EQ( "should have correct table"        ; .variablesTable       ; "tag"         ),
+    EXPECT_EQ( "should have correct label column" ; .variablesLabelColumn ; "category"    ),
+empty)
