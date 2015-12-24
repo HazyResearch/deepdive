@@ -42,8 +42,10 @@ include "sql";
                       )$"; "xmi") //
                 error("deepdive.schema.variables.\($relationName).\($columnName
                     ) has an unrecognized type: \($variableType | @json)")
-        ) |
-        if   .isBooleanType     then .variableType = "boolean"     | .variableCardinality = 2
+        )
+        | .isBooleanType     |= (length > 0)
+        | .isCategoricalType |= (length > 0)
+        | if .isBooleanType     then .variableType = "boolean"     | .variableCardinality = 2
         elif .isCategoricalType then .variableType = "categorical" | .variableCardinality |= tonumber
         else .
         end
@@ -57,6 +59,7 @@ include "sql";
     $deepdive.inference.factors | to_entries[]
     | .key as $factorNameQualified
     | (.key | ltrimstr("factor/")) as $factorName | .value
+    | . as $factorObject
 
     # some useful names for compilation
     | .factorNameQualified = $factorNameQualified
@@ -65,13 +68,13 @@ include "sql";
     | .weightsTable = "\($deepdivePrefixForWeightsTable)\($factorName)"
 
     # parse the weight field
-    | .weight_ = (.weight | trimWhitespace
-        | if startswith("?")? then
+    | .weight_ = try (.weight | tostring | trimWhitespace
+        | if startswith("?") then
             # unknown weight, find parameters
             { is_fixed: false
             , params: (ltrimstr("?") | trimWhitespace
                 | ltrimstr("(") | rtrimstr(")") | trimWhitespace
-                | if length == 0 then [] else  split("\\s*,\\s*") end)
+                | if length == 0 then [] else split("\\s*,\\s*"; "") end)
             , init_value: 0.0
             }
         else
@@ -81,7 +84,8 @@ include "sql";
             , init_value: tonumber
             }
         end
-        )
+        ) catch error("deepdive.inference.factors.\($factorName).weight unrecognized: \(
+            $factorObject.weight | @json)")
 
     # parse the function field
     | .function_ = (.function | trimWhitespace
@@ -100,13 +104,14 @@ include "sql";
                                 (?<name> [^.]+ )
                     \\s*        \\. (?: [^.]+ \\. )*
                             )
-                    \\s*    (?: [^.]+ )
+                    \\s*    (?<columnLabelName>
+                                [^.]+
+                            )
                          )
-                    \\s* (?<field>     .+     )
                     \\s* (?<isArray>   \\[\\] )?
                     \\s* (?: = (?<equalsTo> \\d+))?
                        $"; "x") // error("deepdive.inference.factors.\($factorName
-                            ) has an unrecognized variable argument: \(@json)")
+                            ).function has an unrecognized variable argument: \(@json)")
             | .isNegated |= (length > 0)
             | .isArray   |= (length > 0)
             | .equalsTo  |= (if . then tonumber else null end)
