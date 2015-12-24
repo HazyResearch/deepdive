@@ -21,7 +21,8 @@ esac
 
 case $State in
     "done")
-        make -C "$DEEPDIVE_APP"/run --touch --silent "$@"
+        # XXX cannot use make's --touch as it doesn't ensure parent directories exist
+        make -C "$DEEPDIVE_APP"/run TOUCH='mkdir -p $(@D) && touch $@' --silent "$@"
         ;;
 
     new)
@@ -30,7 +31,8 @@ case $State in
         ;;
 
     all-new)
-        make -C "$DEEPDIVE_APP"/run --touch --silent --always-make "$@"
+        # XXX cannot use make's --touch as it doesn't ensure parent directories exist
+        make -C "$DEEPDIVE_APP"/run TOUCH='mkdir -p $(@D) && touch $@' --silent --always-make "$@"
         ;;
 
     todo)
