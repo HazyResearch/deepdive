@@ -13,7 +13,7 @@ export DEEPDIVE_APP
 
 [[ $# -gt 0 ]] ||
     # default set of expected compilation results
-    set -- "$DEEPDIVE_APP"/run/{compiled/{{schema,config}.json,Makefile},Makefile,process/}
+    set -- "$DEEPDIVE_APP"/run/{compiled/{schema,config}.json,Makefile,process/}
 
 for path; do
     [[ -e "$path" ]] ||

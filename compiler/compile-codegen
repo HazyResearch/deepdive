@@ -4,10 +4,25 @@
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2015-12-05
 set -euo pipefail
-eval "$(jq -r '"
-x=\(.path | @sh)
+eval "$(jq -r '
+@sh "
+x=\(.path)
 echo >&2 \" run/$x\"
-mkdir -p \"$(dirname \"$x\")\"
-echo \(.content | @sh) >\"$x\"
-\(.mode | if . then "chmod \(@sh) \"$x\"" else "" end)
-"')"
+# ensure parent dir exists
+xd=\"$(dirname \"$x\")\"
+mkdir -p \"$xd\"
+# move existing files/dirs out of the way
+if [[ -e \"$x\" ]]; then
+    chmod +w \"$x\" \"$xd\" || true
+    mv -f --no-target-directory \"$x\" \"$x\"~
+fi
+# write contents
+echo \(.content) >\"$x\"
+"
+
++ (.mode | if . then @sh "
+# adjust mode
+chmod \(.) \"$x\""
+else ""
+end)
+')"

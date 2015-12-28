@@ -57,7 +57,6 @@ stage .build/submodule/compiler/hocon2json/target/scala-2.10/hocon2json-assembly
 stage src/main/resources/application.conf                         etc/deepdive-default.conf
 stage compiler/compile-config                                     util/
 stage compiler/compile-check                                      util/
-stage compiler/compile-dependencies                               util/
 stage compiler/compile-code                                       util/
 stage compiler/compile-codegen                                    util/
 

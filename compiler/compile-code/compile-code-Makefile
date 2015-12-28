@@ -1,11 +1,14 @@
 #!/usr/bin/env jq-f
-# compile-dependencies2make -- Generates a GNU Make recipes corresponding to the input dependency graph in JSON
+# compile-code-Makefile -- Generates a GNU Makefile with recipes for the compiled processes considering their dependencies
 ##
 
 def mktarget(suffix): "\(.).\(suffix)";
 def mktargets(suffix): map(mktarget(suffix)) | join(" ");
 def mktarget: mktarget("done");
 def mktargets: mktargets("done");
+
+.deepdive_.execution.dependencies |
+{ path: "Makefile", content: [
 
 # make variables
 "
@@ -64,3 +67,5 @@ reset: \(keys | mktargets("reset"))
 " else empty end
 
 )
+
+] | join("") }

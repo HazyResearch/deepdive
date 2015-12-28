@@ -1,5 +1,5 @@
 #!/usr/bin/env jq-f
-# compile-config2dependencies -- Derives a dependency graph from deepdive.conf in JSON
+# compile-config-9.99-dependencies -- Derives a dependency graph for easier Makefile and .dot codegen
 ##
 .deepdive_ as $deepdive
 
@@ -8,7 +8,8 @@
   ) as $output_relation
 
 # form a dependency graph
-| [ # every process/* and the processes or input data it depends on
+| .deepdive_.execution.dependencies =
+( [ # every process/* and the processes or input data it depends on
     ( $deepdive.execution.processes | to_entries[]
     | .value |= ((.dependencies_ // [] | map($output_relation[.] // .)) + .input_ | unique)
     )
@@ -25,3 +26,4 @@
 #    )
   ]
 | from_entries
+)

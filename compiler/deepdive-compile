@@ -40,7 +40,6 @@ ln -sfnv "$compileDir" run/RUNNING.COMPILE >&2
 # augment PATH to access compiler components
 PATH="$DEEPDIVE_HOME"/util/compile-config:"$PATH"
 PATH="$DEEPDIVE_HOME"/util/compile-code:"$PATH"
-PATH="$DEEPDIVE_HOME"/util/compile-dependencies:"$PATH"
 export DEEPDIVE_ERROR_PREFIX="[ERROR] "
 
 ## compile a full deepdive.conf from source code
@@ -128,20 +127,6 @@ ln -sfn "$config" config.json
 STEP "Validating run/compiled/config.json:"
 deepdive-check -a -c "$PWD"/config.json 'compiled_*' 2>&1 | sed 's/^/ /' >&2
 
-if [[ -z $DEEPDIVE_COMPILE_SKIP_DATAFLOW ]]; then
-STEP "Analyzing data flow dependencies to compile:"
-# derive a dependency graph from the extractors, factors, pipelines defined in deepdive.conf
-compile-config2dependencies <config.json >dependencies.json
-# compile a Makefile from the dependency graph
-STEP " run/Makefile"
-compile-dependencies2make <dependencies.json -r >Makefile
-# compile an SVG from the dependency graph
-STEP " run/compiled/dataflow.svg"
-compile-dependencies2dot <dependencies.json -r >dataflow.dot
-dot -Tsvg <dataflow.dot >dataflow.svg
-STEP "  (file://$(pwd -P)/dataflow.svg)"  # XXX a handy file: URL for opening in a browser
-fi
-
 STEP "Compiling executable code into:"
 # compile extractors and factors under process/ and factor/
 for cc in "$DEEPDIVE_HOME"/util/compile-code/compile-code-*; do
@@ -151,17 +136,24 @@ for cc in "$DEEPDIVE_HOME"/util/compile-code/compile-code-*; do
     STEP " run/compiled/code-$name.json"
     "$cc" config.json >code-$name.json
 done
+
+#STEP "Validating run/compiled/code-*.json:"
+#deepdive-check -a -c "$PWD"/code-\*.json 'codegen_*' 2>&1 | sed 's/^/ /' >&2
 # TODO check path name collisions in code-*.json
+
 # mark everything compiled as read-only
 chmod a-w *
 
 if [[ -z $DEEPDIVE_COMPILE_SKIP_CODEGEN ]]; then
 # generate actual code under run/
 cd "$DEEPDIVE_APP"/run
-STEP "Generating executable files:"
+STEP "Generating files:"
 cat "$compileDir"/code-*.json |
 compile-codegen
-ln -sfn compiled/Makefile .
+# some postprocessing over generated files
+dot -Tsvg <dataflow.dot >dataflow.svg
+STEP " run/dataflow.svg"
+STEP "  (file://$(pwd -P)/dataflow.svg)"  # XXX a handy file: URL for opening in a browser
 fi
 
 # point to the successfully compiled one, leaving the previous one as backup

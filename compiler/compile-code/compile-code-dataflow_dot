@@ -1,5 +1,5 @@
 #!/usr/bin/env jq-f
-# compile-dependencies2dot -- Generates a DOT corresponding to the input dependency graph in JSON
+# compile-code-dataflow_dot -- Generates dependency graph of processes in Graphviz DOT language
 ##
 
 def nodeId: sub("/"; "/\n");
@@ -13,6 +13,8 @@ def nodeType: sub("/.*$"; "");
 , model    : "shape=septagon color=\"#ffffff\" style=filled fillcolor=\"#cc22cc\""
 } as $nodeAttr |
 
+.deepdive_.execution.dependencies |
+{ path: "dataflow.dot", content: [
 "
 digraph \"\(env.DEEPDIVE_APP | sub(".*/"; "")) data flow\" {
     graph[rankdir=BT  # bottom-to-top drawing (or RL/right-to-left may also make sense)
@@ -51,3 +53,4 @@ end
 
 }
 "
+] | join("") }
