@@ -114,6 +114,7 @@ deepdive-check -a -c "$PWD"/deepdive.conf.json 'input_*' 2>&1 | sed 's/^/ /' >&2
 STEP "Normalizing and adding built-in processes to the data flow to compile:"
 config=deepdive.conf.json
 for cc in "$DEEPDIVE_HOME"/util/compile-config/compile-config-*; do
+    [[ -x "$cc" ]] || continue
     cc=${cc##*/}
     name=${cc#compile-config-}
     output=config-$name.json
@@ -144,6 +145,7 @@ fi
 STEP "Compiling executable code into:"
 # compile extractors and factors under process/ and factor/
 for cc in "$DEEPDIVE_HOME"/util/compile-code/compile-code-*; do
+    [[ -x "$cc" ]] || continue
     cc=${cc##*/}
     name=${cc#compile-code-}
     STEP " run/compiled/code-$name.json"

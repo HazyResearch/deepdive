@@ -1,9 +1,0 @@
-#!/usr/bin/env jq-f
-# compile-code-piggy_extractor -- TODO Compiles piggy_extractors in the normalized JSON into code executable by the runner
-##
-.deepdive_ as $deepdive
-
-| $deepdive.execution.processes | to_entries[]
-| .value.name = .key | .value
-| select(.style == "piggy_extractor")
-| error("\(.name): Compilation of \(.style) unsupported")
