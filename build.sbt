@@ -27,8 +27,8 @@ libraryDependencies ++= List(
   "net.sf.opencsv" % "opencsv" % "2.3",
   "org.postgresql" % "postgresql" % "9.4-1203-jdbc4",
   "org.scalatest" % "scalatest_2.10" % "2.0.RC2" % "test",
-  "org.scalikejdbc" %% "scalikejdbc" % "[1.7,)",
-  "org.scalikejdbc" %% "scalikejdbc-config" % "[1.7,)",
+  "org.scalikejdbc" %% "scalikejdbc" % "[1.7,2.2.10)",
+  "org.scalikejdbc" %% "scalikejdbc-config" % "[1.7,2.2.10)",
   "org.apache.commons" % "commons-dbcp2" % "2.1.1",
   "play" %% "anorm" % "2.1.5"
 )
