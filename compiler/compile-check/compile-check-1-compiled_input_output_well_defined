@@ -1,5 +1,5 @@
 #!/usr/bin/env jq-f
-# compile-check-input_output_well_defined -- Checks if all inputs and outputs of compiled processes are well-defined
+# compile-check-1-compiled_input_output_well_defined -- Checks if all inputs and outputs of compiled processes are well-defined
 ##
 .deepdive_ as $deepdive |
 

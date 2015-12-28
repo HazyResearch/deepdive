@@ -1,0 +1,40 @@
+#!/usr/bin/env jq-f
+# compile-check-0-input_extractors -- Checks sanity of all defined extractors
+##
+
+{ cmd_extractor: ["cmd"]
+, sql_extractor: ["sql"]
+, tsv_extractor: ["input", "udf", "output_relation"]
+#, json_extractor: ["input", "udf", "output_relation"] # TODO
+} as $requiredFieldsByExtractorStyle |
+
+.deepdive.extraction.extractors // {} | to_entries[] |
+.key as $extractorName |
+"deepdive.extraction.extractors.\($extractorName)" as $extractorId |
+.value |
+
+# sanity check for extractor names
+( $extractorName |
+if test("[A-Za-z_][A-Za-z0-9_]*"; "") then
+    "\($extractorId) has valid name"
+else
+    error("\($extractorId) has an invalid character in its name: \(@json)")
+end),
+
+# sanity check for extractor styles
+( if .style | in($requiredFieldsByExtractorStyle) then
+    "\($extractorId) has valid style"
+else
+    error("\($extractorId).style unsupported: \(.style | @json)")
+end),
+
+# santiy check for required fields for specific extractor style
+( $requiredFieldsByExtractorStyle[.style] as $requiredFields |
+  ($requiredFields | map(@json) | join(" ")) as $requiredFieldsPretty |
+  if any(.[$requiredFields[]]; . == null) | not then
+    "\($extractorId) has all required fields: \($requiredFieldsPretty)"
+else
+    error("\($extractorId) must have all required fields: \($requiredFieldsPretty)")
+end),
+
+empty

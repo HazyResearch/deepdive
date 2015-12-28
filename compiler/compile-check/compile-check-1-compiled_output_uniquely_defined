@@ -1,5 +1,5 @@
 #!/usr/bin/env jq-f
-# compile-check-output_uniquely_defined -- Checks if all outputs are defined by one process
+# compile-check-1-compiled_output_uniquely_defined -- Checks if all outputs are defined by one process
 # Note that this is not equivalent to limiting every process to create only one output.
 ##
 .deepdive_ as $deepdive |

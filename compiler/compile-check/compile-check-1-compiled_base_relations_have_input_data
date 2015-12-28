@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# compile-check-base_relations_have_input_data -- Checks if all extensional relations have corresponding input data
+# compile-check-1-compiled_base_relations_have_input_data -- Checks if all extensional relations have corresponding input data
 ##
 set -euo pipefail
 jq -r '
