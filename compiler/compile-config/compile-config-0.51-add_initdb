@@ -1,5 +1,5 @@
 #!/usr/bin/env jq-f
-# compile-config-0.01-add_initdb -- Adds an extractor for initialzing database
+# compile-config-0.51-add_initdb -- Adds an extractor for initialzing database
 ##
 .deepdive_ as $deepdive
 

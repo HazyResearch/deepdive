@@ -1,0 +1,113 @@
+#!/usr/bin/env jq-f
+# compile-config-0.02-parse_inference_rules -- Parses inference rules in deepdive.inference.factors
+##
+include "constants";
+include "util";
+
+.deepdive_ as $deepdive
+
+# parse inference rules, especially the function and weight fields as function_ and weight_
+| .deepdive_.inference.factors_ = [
+    $deepdive.inference.factors | to_entries[]
+    | .key as $factorNameQualified
+    | ($factorNameQualified | ltrimstr("factor/")) as $factorName
+    | .value | . as $factorObject
+
+    # some useful names for compilation
+    | .factorName = $factorName
+    | .factorsTable = "\(deepdivePrefixForFactorsTable)\($factorName)"
+    | .weightsTable = "\(deepdivePrefixForWeightsTable)\($factorName)"
+
+    # parse the weight field
+    | .weight_ = try (.weight | tostring | trimWhitespace
+        | if startswith("?") then
+            # unknown weight, find parameters
+            { is_fixed: false
+            , params: (ltrimstr("?") | trimWhitespace
+                | ltrimstr("(") | rtrimstr(")") | trimWhitespace
+                | if length == 0 then [] else split("\\s*,\\s*"; "") end)
+            , init_value: 0.0
+            }
+        else
+            # fixed weight
+            { is_fixed: true
+            , params: []
+            , init_value: tonumber
+            }
+        end
+        ) catch error("deepdive.inference.factors.\($factorName).weight unrecognized: \(
+            $factorObject.weight | @json)")
+
+    # parse the function field
+    | .function_ = (.function | trimWhitespace
+        | capture("^ (?<name>.+)
+                \\s* \\(
+                \\s* (?<variables>.+)
+                \\s* \\)
+                   $"; "x") // error("deepdive.inference.factors.\($factorName
+                        ) has an unrecognized function: \(@json)")
+        | .name |= ascii_downcase
+        # parse arguments to the function or predicate (variables)
+        | .variables |= [ trimWhitespace | splits("\\s*,\\s*")
+            | capture("^ (?<isNegated> !      )?
+                    \\s* (?<columnLabel>
+                            (?<columnPrefix>
+                                (?<name> [^.]+ )
+                    \\s*        \\. (?: [^.]+ \\. )*
+                            )
+                    \\s*    (?<columnLabelName>
+                                [^.]+?
+                            )
+                         )
+                    \\s* (?<isArray>   \\[\\] )?
+                    \\s* (?: = (?<equalsTo> \\d+))?
+                       $"; "x") // error("deepdive.inference.factors.\($factorName
+                            ).function has an unrecognized variable argument: \(@json)")
+            | .isNegated |= (length > 0)
+            | .isArray   |= (length > 0)
+            | .equalsTo  |= (if . then tonumber else null end)
+            | .columnId   = "\(.columnPrefix)\(deepdiveVariableIdColumn)"
+            # link this variable reference to its schema definition to simplify compilation
+            | .schema     = $deepdive.schema.variables_byName[.name] //
+                error("deepdive.inference.factors.\($factorName).function refers to an undefined variable: \(.name)")
+            ]
+        # assign the ordinal index to each variable
+        | .variables |= [ . as $vars | range($vars | length) | . as $i | $vars[$i] | .ordinal = $i ]
+        # map function name (case insensitive) to the code used in the binary format for the inference engine
+        | .id =
+            { imply       : 0
+            , or          : 1
+            , and         : 2
+            , equal       : 3
+            , istrue      : 4
+            , multinomial : 5
+            , linear      : 7
+            , ratio       : 8
+            , logical     : 9
+            , imply3      : 11
+            }[.name] //
+                error("deepdive.inference.factors.\($factorName
+                    ) uses an unrecognized function: \(.name | @json)")
+
+        # check required/permitted number of parameters
+        | if .name == "istrue" and (.variables | length) != 1
+        then error("deepdive.inference.factors.\($factorName).function: '\(
+            .name)' must be over exactly one variable but found \(.variables | length)")
+        else . end
+        | if .name == "equal" and (.variables | length) != 2
+        then error("deepdive.inference.factors.\($factorName).function: '\(
+            .name)' must be over exactly two variables but found \(.variables | length)")
+        else . end
+
+        # TODO check if all .variables type are categorical for multinomial function
+        )
+
+    # XXX set up an exploded table to dump for multinomial factors
+    | .weightsTableForDumping =
+        if .function_.name != "multinomial" then .weightsTable
+        else "\(deepdivePrefixForMultinomialWeightsTable)\($factorName)"
+        end
+]
+
+# create a map to make it easy to access a factor by its name
+| .deepdive_.inference.factors_byName = (.deepdive_.inference.factors_ | map({key: .factorName, value: .}) | from_entries)

@@ -2,173 +2,17 @@
 # compile-config-2.01-grounding -- Adds processes for grounding the factor graph
 ##
 
+include "constants";
 include "util";
 include "sql";
 
 .deepdive_ as $deepdive
 
-# some names for constants
-| "id"                             as $deepdiveVariableIdColumn
-| "dd_graph_variables_holdout"     as $deepdiveGlobalHoldoutTable
-| "dd_graph_variables_observation" as $deepdiveGlobalObservationTable
-| "dd_graph_weights"               as $deepdiveGlobalWeightsTable
-| "dd_query_"                      as $deepdivePrefixForFactorsTable # TODO correct prefix to dd_factors_?
-| "dd_weights_"                    as $deepdivePrefixForWeightsTable
-| "dd_weightsmulti_"               as $deepdivePrefixForMultinomialWeightsTable
-| "dd_categories_"                 as $deepdivePrefixForVariableCategoriesTable
-
-###############################################################################
-
-# parse variable schema to define some names (mainly to find Multinomial cardinality)
-| .deepdive_.schema.variables_ = [
-    $deepdive.schema.variables | to_entries[]
-    | .key as $relationName | .value | to_entries
-        | if length != 1 then error("deepdive.schema.variables.\($relationName) has \(length
-            ) columns declared as variable. Every relation can have up to one column declared as a variable") else .[] end
-        | .key as $columnName | .value as $variableType |
-        { variableName         : $relationName
-        , variablesTable       : $relationName
-        , variablesLabelColumn : $columnName
-        , variableCategoriesTable : "\($deepdivePrefixForVariableCategoriesTable)\($relationName)"
-        } + (
-            # parse variable type
-            $variableType | trimWhitespace | ascii_downcase |
-            capture("^(?:
-                        (?<isBooleanType>     boolean     )
-                      | (?<isCategoricalType> categorical )
-                            \\s* \\(
-                            \\s* (?<variableCardinality> \\d+)
-                            \\s* \\)
-                      )$"; "xmi") //
-                error("deepdive.schema.variables.\($relationName).\($columnName
-                    ) has an unrecognized type: \($variableType | @json)")
-        )
-        | .isBooleanType     |= (length > 0)
-        | .isCategoricalType |= (length > 0)
-        | if .isBooleanType     then .variableType = "boolean"     | .variableCardinality = 2
-        elif .isCategoricalType then .variableType = "categorical" | .variableCardinality |= tonumber
-        else .
-        end
-]
-# create a map to make it easy to access a variable by its name
-| .deepdive_.schema.variables_byName = (.deepdive_.schema.variables_ | map({key: .variableName, value: .}) | from_entries)
-| .deepdive_ as $deepdive  # necessary since we just mutated it
-
-# parse inference rules, especially the function and weight fields as function_ and weight_
-| .deepdive_.inference.factors_ = [
-    $deepdive.inference.factors | to_entries[]
-    | .key as $factorNameQualified
-    | (.key | ltrimstr("factor/")) as $factorName | .value
-    | . as $factorObject
-
-    # some useful names for compilation
-    | .factorNameQualified = $factorNameQualified
-    | .factorName = $factorName
-    | .factorsTable = "\($deepdivePrefixForFactorsTable)\($factorName)"
-    | .weightsTable = "\($deepdivePrefixForWeightsTable)\($factorName)"
-
-    # parse the weight field
-    | .weight_ = try (.weight | tostring | trimWhitespace
-        | if startswith("?") then
-            # unknown weight, find parameters
-            { is_fixed: false
-            , params: (ltrimstr("?") | trimWhitespace
-                | ltrimstr("(") | rtrimstr(")") | trimWhitespace
-                | if length == 0 then [] else split("\\s*,\\s*"; "") end)
-            , init_value: 0.0
-            }
-        else
-            # fixed weight
-            { is_fixed: true
-            , params: []
-            , init_value: tonumber
-            }
-        end
-        ) catch error("deepdive.inference.factors.\($factorName).weight unrecognized: \(
-            $factorObject.weight | @json)")
-
-    # parse the function field
-    | .function_ = (.function | trimWhitespace
-        | capture("^ (?<name>.+)
-                \\s* \\(
-                \\s* (?<variables>.+)
-                \\s* \\)
-                   $"; "x") // error("deepdive.inference.factors.\($factorName
-                        ) has an unrecognized function: \(@json)")
-        | .name |= ascii_downcase
-        # parse arguments to the function or predicate (variables)
-        | .variables |= [ trimWhitespace | splits("\\s*,\\s*")
-            | capture("^ (?<isNegated> !      )?
-                    \\s* (?<columnLabel>
-                            (?<columnPrefix>
-                                (?<name> [^.]+ )
-                    \\s*        \\. (?: [^.]+ \\. )*
-                            )
-                    \\s*    (?<columnLabelName>
-                                [^.]+?
-                            )
-                         )
-                    \\s* (?<isArray>   \\[\\] )?
-                    \\s* (?: = (?<equalsTo> \\d+))?
-                       $"; "x") // error("deepdive.inference.factors.\($factorName
-                            ).function has an unrecognized variable argument: \(@json)")
-            | .isNegated |= (length > 0)
-            | .isArray   |= (length > 0)
-            | .equalsTo  |= (if . then tonumber else null end)
-            | .columnId   = "\(.columnPrefix)\($deepdiveVariableIdColumn)"
-            # link this variable reference to its schema definition to simplify compilation
-            | .schema     = $deepdive.schema.variables_byName[.name] //
-                error("deepdive.inference.factors.\($factorName).function refers to an undefined variable: \(.name)")
-            ]
-        # assign the ordinal index to each variable
-        | .variables |= [ . as $vars | range($vars | length) | . as $i | $vars[$i] | .ordinal = $i ]
-        # map function name (case insensitive) to the code used in the binary format for the inference engine
-        | .id =
-            { imply       : 0
-            , or          : 1
-            , and         : 2
-            , equal       : 3
-            , istrue      : 4
-            , multinomial : 5
-            , linear      : 7
-            , ratio       : 8
-            , logical     : 9
-            , imply3      : 11
-            }[.name] //
-                error("deepdive.inference.factors.\($factorName
-                    ) uses an unrecognized function: \(.name | @json)")
-
-        # check required/permitted number of parameters
-        | if .name == "istrue" and (.variables | length) != 1
-        then error("deepdive.inference.factors.\($factorName).function: '\(
-            .name)' must be over exactly one variable but found \(.variables | length)")
-        else . end
-        | if .name == "equal" and (.variables | length) != 2
-        then error("deepdive.inference.factors.\($factorName).function: '\(
-            .name)' must be over exactly two variables but found \(.variables | length)")
-        else . end
-
-        # TODO check if all .variables type are categorical for multinomial function
-        )
-
-    # XXX set up an exploded table to dump for multinomial factors
-    | .weightsTableForDumping =
-        if .function_.name != "multinomial" then .weightsTable
-        else "\($deepdivePrefixForMultinomialWeightsTable)\($factorName)"
-        end
-]
-# create a map to make it easy to access a factor by its name
-| .deepdive_.inference.factors_byName = (.deepdive_.inference.factors_ | map({key: .factorName, value: .}) | from_entries)
-| .deepdive_ as $deepdive  # necessary since we just mutated it
-
-
-###############################################################################
-
 # how to ground the factor graph in the old way with legacy Scala code
 # TODO remove me as we drop the scala codebase
 | .deepdive_.execution.processes += {
     "process/grounding/legacy": {
-        dependencies_: ($deepdive.inference.factors_ | map(.factorNameQualified)),
+        dependencies_: ($deepdive.inference.factors_ | map("factor/\(.factorName)")),
         output_: "model/factorgraph.legacy",
         style: "cmd_extractor",
         cmd: "mkdir -p ../../../model && cd ../../../model
@@ -246,7 +90,7 @@ include "sql";
         baseId=$(cat id_begin)
 
         # assign id to all rows according to the paritition
-        deepdive db assign_sequential_id $table \($deepdiveVariableIdColumn | @sh) $baseId
+        deepdive db assign_sequential_id $table \(deepdiveVariableIdColumn | @sh) $baseId
 
         \(
         if .variableType == "categorical" then
@@ -276,10 +120,10 @@ include "sql";
         style: "cmd_extractor", cmd: "
         : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
 
-        deepdive db create table \($deepdiveGlobalHoldoutTable | @sh) \\
+        deepdive db create table \(deepdiveGlobalHoldoutTable | @sh) \\
             variable_id:BIGINT:'PRIMARY KEY' \\
             #
-        deepdive db create table \($deepdiveGlobalObservationTable | @sh) \\
+        deepdive db create table \(deepdiveGlobalObservationTable | @sh) \\
             variable_id:BIGINT:'PRIMARY KEY' \\
             #
         \([ if $deepdive.calibration.holdout_query then
@@ -288,9 +132,9 @@ include "sql";
           else
             # otherwise, randomly select from evidence variables of each variable table
             $deepdive.schema.variables_[] | "
-                INSERT INTO \($deepdiveGlobalHoldoutTable | asSqlIdent) \(
+                INSERT INTO \(deepdiveGlobalHoldoutTable | asSqlIdent) \(
                 { SELECT:
-                    [ { column: $deepdiveVariableIdColumn }
+                    [ { column: deepdiveVariableIdColumn }
                     ]
                 , FROM:
                     [ { table: .variablesTable }
@@ -355,7 +199,7 @@ include "sql";
             , FROM:
                 [ { alias: "variables", sql:
                     { SELECT:
-                        [ { alias: "id", column: $deepdiveVariableIdColumn }
+                        [ { alias: "id", column: deepdiveVariableIdColumn }
                         , { alias: "variable_role", expr:
                               "CASE WHEN               observation.variable_id IS NOT NULL
                                      AND variables.\(.variablesLabelColumn | asSqlIdent) IS NOT NULL THEN 2
@@ -380,20 +224,20 @@ include "sql";
                     , JOIN:
                         [ { LEFT_OUTER:
                             { alias: "holdout"
-                            , table: $deepdiveGlobalHoldoutTable
+                            , table: deepdiveGlobalHoldoutTable
                             }
                           , ON: { eq:
-                                    [ { table: "variables", column: $deepdiveVariableIdColumn }
+                                    [ { table: "variables", column: deepdiveVariableIdColumn }
                                     , { table: "holdout"  , column: "variable_id" }
                                     ]
                                 }
                           }
                         , { LEFT_OUTER:
                             { alias: "observation"
-                            , table: $deepdiveGlobalObservationTable
+                            , table: deepdiveGlobalObservationTable
                             }
                           , ON: { eq:
-                                    [ { table: "variables"  , column: $deepdiveVariableIdColumn }
+                                    [ { table: "variables"  , column: deepdiveVariableIdColumn }
                                     , { table: "observation", column: "variable_id" }
                                     ]
                                 }
@@ -487,7 +331,7 @@ include "sql";
                 end)" ] | join(" ")) | {
             weightsCountTotal=0
             while read table begin excludeEnd; do
-                factor=${table#\($deepdivePrefixForWeightsTable | @sh)}
+                factor=${table#\(deepdivePrefixForWeightsTable | @sh)}
                 facPath=\"$DEEPDIVE_GROUNDING_DIR\"/factor/${factor}
                 mkdir -p \"$facPath\"
                 cd \"$facPath\"
@@ -517,8 +361,8 @@ include "sql";
         style: "cmd_extractor", cmd: "
         : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
 
-        # set up a union view for all weight tables (\($deepdiveGlobalWeightsTable | asSqlIdent))
-        deepdive db create view \($deepdiveGlobalWeightsTable | @sh) as \(
+        # set up a union view for all weight tables (\(deepdiveGlobalWeightsTable | asSqlIdent))
+        deepdive db create view \(deepdiveGlobalWeightsTable | @sh) as \(
             [ $deepdive.inference.factors_[] |
                 { SELECT:
                     [ { column: "id" }
