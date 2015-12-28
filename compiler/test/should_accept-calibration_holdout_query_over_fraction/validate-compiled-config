@@ -1,0 +1,7 @@
+#!/usr/bin/env jq-f
+include "../testutil";
+
+TEST("calibration settings"; .deepdive_.calibration;
+    EXPECT_EQ( "should have no holdout_fraction"   ; .holdout_fraction ; null       ),
+    EXPECT_EQ( "should have correct holdout_query" ; .holdout_query    ; "SELECT 0" ),
+empty)

@@ -8,6 +8,7 @@ for tmpl in {.,}*.bats.template; do
     rm -f "$testCaseGroup"-*.bats
     for testCase in "$testCaseGroup"-*; do
         [[ -d "$testCase" ]] || continue
+        [[ ! -e "$testCase".skip ]] || continue
         ln -sfnv "$tmpl" "$testCase".bats
     done
 done

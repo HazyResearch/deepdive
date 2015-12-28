@@ -14,5 +14,10 @@ testName=${testName#.} # optional dot prefix for hiding the .bats file
 
 @test "compiler $testName" {
     cd "$BATS_TEST_DIRNAME/$testName"
-    ! deepdive compile
+    if ! deepdive compile; then
+        echo "deepdive-compile rejected the app with error"
+        # TODO check specific error message as well
+    else
+        echo "deepdive-compile did not return error"; false
+    fi
 }
