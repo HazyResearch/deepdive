@@ -17,9 +17,9 @@ if [[ $# -gt 0 ]]; then
     makeTargets=()
     for target; do
         resolved=false
-        for fmt in %s %s.done data/%s.done pipeline/%s.done process/%s.done; do
+        for fmt in %s %s.done {data,process,data/model,model,process/{model,grounding{,/{factor,variable}}}}/%s.done; do
             makeTarget=$(printf "$fmt" "$target")
-            if make -C "$DEEPDIVE_APP"/run -qB "$makeTarget" &>/dev/null; [[ $? -eq 1 ]]; then
+            if [[ $(make -C "$DEEPDIVE_APP"/run -p | sed 's/:.*$//' | grep -cxF "$makeTarget") -gt 0 ]]; then
                 makeTargets+=("$makeTarget")
                 resolved=true
                 break
