@@ -39,7 +39,8 @@ case $State in
         cd "$DEEPDIVE_APP"/run
         # for non process/* targets, e.g., data/*, also marking their dependencies as undone
         eval 'set -- "$@" '"$(
-            targets=${*%.done} jq -r <compiled/dependencies.json '
+            targets=${*%.done} jq -r <compiled/config.json '
+                .deepdive_.execution.dependencies |
                 .[ env.targets | splits(" ") | select(startswith("process/") | not)
                 ][] | "\(.).done" | @sh
             ' | tr '\n' ' ')"
