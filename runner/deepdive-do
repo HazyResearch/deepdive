@@ -115,10 +115,12 @@ abort() {
     [[ ! -e run/"$runDir" ]] || ln -sfnv "$runDir" run/ABORTED
 }
 trap abort ERR
+cd "$DEEPDIVE_APP"
 ln -sfnv "$runDir" run/RUNNING
 ln -sfnv "$runDir" run/LATEST
 
 # run it
+cd "$DEEPDIVE_APP"/run
 DEEPDIVE_ERROR_PREFIX="[ERROR] "  # prefixing error messages in logs
 DEEPDIVE_APP=$(cd .. && pwd -P)
 APP_HOME=$DEEPDIVE_APP # XXX legacy
