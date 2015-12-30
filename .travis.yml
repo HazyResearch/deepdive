@@ -67,7 +67,3 @@ script:
   # Check broken links in documentation
   # TODO check only when doc/ has changed
   #- make -C doc/ linkcheck
-
-after_success:
-  # Report test coverage
-  - sbt coverageReport coveralls
