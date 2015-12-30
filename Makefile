@@ -104,6 +104,7 @@ DEEPDIVE_HOME := $(realpath $(STAGE_DIR))
 export DEEPDIVE_HOME
 
 include test/bats.mk
+TEST_LIST_COMMAND = mkdir -p $(STAGE_DIR) && $(TEST_ROOT)/enumerate-tests.sh
 
 .PHONY: checkstyle
 checkstyle:
