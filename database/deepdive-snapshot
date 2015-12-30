@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# deepdive-snapshot -- Manages database schemas for a DeepDive application.
+# > deepdive snapshot
+# Prints help message
+#
+# > deepdive snapshot use SNAPSHOT
+# 
+# > deepdive snapshot list
+# > deepdive snapshot create
+# > deepdive snapshot drop
+#
+##
+set -eu
+
+# parse database settings
+. load-db-driver.sh
+
+# process optional first SQL argument
+if [[ $# -gt 0 ]]; then
+    cmd=$1; shift
+    # there could be a mode argument we recognize before the SQL
+    case $cmd in
+        use|create|drop)
+            if [[ $# -gt 0 ]]; then
+                schema=$1; shift
+            else
+                error "Missing schema name"
+            fi
+            ;;
+    esac
+
+    case $cmd in
+        use)
+            # We need the name of the current db; we can get it from db.url
+            # or query it from the db
+            db=$(deepdive sql "\COPY (SELECT current_database()) TO STDOUT")
+            deepdive-sql "ALTER DATABASE $db SET search_path = $schema"
+            ;;
+        current)
+            deepdive-sql "\COPY (SELECT setting FROM pg_settings WHERE name='search_path') 
+                TO STDOUT"
+            ;;
+        list)
+            # We can get all schemas from the information_schema, but we must
+            # exclude system schemas starting with pg_ and the information_schema
+            # itself.
+            deepdive-sql "\COPY (SELECT schema_name FROM information_schema.schemata) 
+                TO STDOUT" | grep -v '^pg_' | grep -v information_schema
+            ;;
+        create)
+            deepdive-sql "CREATE SCHEMA $schema"
+            ;;
+        drop)
+            deepdive-sql "DROP SCHEMA $schema CASCADE"
+            ;;
+        *)
+            error "Unknown command"
+    esac
+else
+    echo "Usage"
+fi

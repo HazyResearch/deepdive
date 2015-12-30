@@ -30,6 +30,12 @@ if [[ $# -eq 0 ]]; then
     # initialize relations declared in schema
     [[ ! -e "$DEEPDIVE_APP"/run/compiled/schema.json ]] ||
     deepdive-sql "$(schema_json_to_sql "$DEEPDIVE_APP"/run/compiled/schema.json)"
+
+elif [[ "$1" == "-s" ]]; then
+    # initialize relations declared in schema, but don't drop the database
+    [[ ! -e "$DEEPDIVE_APP"/run/compiled/schema.json ]] ||
+    deepdive-sql "$(schema_json_to_sql "$DEEPDIVE_APP"/run/compiled/schema.json)"
+
 else
     # if a list of table names given, initialize corresponding tables
     [[ -e "$DEEPDIVE_APP"/run/compiled/schema.json ]] ||

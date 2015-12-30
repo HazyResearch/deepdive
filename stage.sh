@@ -90,6 +90,7 @@ stage database/db-driver/mysql                                    util/db-driver
 stage database/db-driver/mysqlcluster                             util/db-driver/
 stage database/partition_id_range                                 util/
 stage database/pgtsv_to_json                                      util/
+stage database/deepdive-snapshot                                  util/
 
 # DeepDive core
 stage target/scala-2.10/deepdive-assembly-*.jar                   lib/deepdive.jar || true  # when testing, .jar may be missing
