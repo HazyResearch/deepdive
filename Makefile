@@ -113,15 +113,13 @@ checkstyle:
 ### submodule build recipes ###################################################
 
 .PHONY: build-sampler
-SAMPLER=sampler
 build-sampler:
-	@util/build/build-submodule-if-needed $(SAMPLER) dw
+	@util/build/build-submodule-if-needed sampler dw
 test-build build: build-sampler
 
 .PHONY: build-hocon2json
-HOCON2JSON=compiler/hocon2json
 build-hocon2json:
-	@util/build/build-submodule-if-needed $(HOCON2JSON) hocon2json.sh target/scala-2.10/hocon2json-assembly-0.1-SNAPSHOT.jar
+	@util/build/build-submodule-if-needed compiler/hocon2json hocon2json.sh target/scala-2.10/hocon2json-assembly-0.1-SNAPSHOT.jar
 test-build build: build-hocon2json
 
 # format_converter
@@ -140,14 +138,12 @@ runner/setsid: runner/setsid.c
 	$(CC) -Os -std=c9x -o $@ $^
 
 .PHONY: build-mindbender
-MINDBENDER=mindbender
 build-mindbender:
-	@util/build/build-submodule-if-needed $(MINDBENDER) mindbender-LATEST-Darwin-x86_64.sh
+	@util/build/build-submodule-if-needed mindbender mindbender-LATEST.sh
 
 .PHONY: build-ddlog
-DDLOG=ddlog
 build-ddlog:
-	@util/build/build-submodule-if-needed $(DDLOG) target/scala-2.10/ddlog-assembly-0.1-SNAPSHOT.jar
+	@util/build/build-submodule-if-needed ddlog target/scala-2.10/ddlog-assembly-0.1-SNAPSHOT.jar
 test-build build: build-ddlog
 
 .PHONY: build-mkmimo

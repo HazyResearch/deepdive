@@ -140,7 +140,7 @@ stage util/ddext.py                                               util/
 stage util/ddext_input_sql_translator.py                          util/
 
 # Mindbender
-stage .build/submodule/mindbender/mindbender-LATEST-$(uname)-x86_64.sh  bin/mindbender || true  # keeping it optional for now
+stage .build/submodule/mindbender/mindbender-LATEST.sh            bin/mindbender || true  # keeping it optional for now
 
 # runtime dependencies after building them from source
 stage depends/.build/bundled                                      lib/

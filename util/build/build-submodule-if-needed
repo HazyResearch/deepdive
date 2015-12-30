@@ -3,6 +3,8 @@
 # > util/build/build-submodule-if-needed SUBMODULE_PATH
 set -euo pipefail
 
+: ${ALWAYS_BUILD_SUBMODULE:=false}  # always runs build script when set to true
+
 Submodule=${1:?A path to a Git submodule must be given}; shift
 
 # some implied file paths
@@ -11,17 +13,28 @@ build_cache=.build/submodule/"$Submodule"
 build_sh="$Submodule".build.sh
 
 # some sanity checks
-commit_current=$(git submodule status "$Submodule" | awk '{print $1}') || {
-    echo >&2 "$Submodule: Not a submodule?"
+submodule_status=$(git submodule status "$Submodule") || {
+    echo "# ERROR: $Submodule: Not a submodule?"
     false
-}
+} >&2
 [[ -x "$build_sh" ]] || {
-    echo >&2 "$build_sh: No build executable found for the submodule"; false
-}
+    echo "# ERROR: $build_sh: No executable build script found for the submodule"
+    false
+} >&2
+commit_current=$(cut -b2-41 <<<"$submodule_status")
 
-# make sure the submodule is there
-[[ -e "$Submodule"/.git ]] ||
+# make sure the submodule is initialized
+! grep -q '^-' <<<"$submodule_status" ||
     (PS4=; set -x; git submodule update --init "$Submodule")
+
+# make sure the submodule commit matches the one in the index or HEAD
+# (modified content, untracked content are okay, we just always run the build script in that case)
+! grep -qv '^ ' <(git submodule status "$Submodule") || {
+    echo "# ERROR: submodule $Submodule has different commit checked out, retry after running either:"
+    echo "  git submodule update $Submodule  # to drop changes and checkout the recorded one, or:"
+    echo "  git add $Submodule               # to use the currently checked out one"
+    false
+} >&2
 
 # how to actually build the submodule
 build_submodule() {
@@ -34,7 +47,7 @@ build_submodule() {
         mkdir -p "$(dirname "$build_cache/$f")"
         (
         set -x
-        cp -a "$Submodule/$f" "$build_cache/$f"
+        cp -a -L "$Submodule/$f" "$build_cache/$f"
         )
     done
     # record built commit id
@@ -44,10 +57,11 @@ build_submodule() {
     exit
 }
 
-# if the submodule is dirty, just build it
+# if the submodule is dirty with modified or untracked content, just build it
 is_clean=$(
     cd "$Submodule"
-    if [[ $(git status --porcelain | wc -l) -eq 0 ]]; then
+    if ! $ALWAYS_BUILD_SUBMODULE &&
+        [[ $(git status --porcelain | wc -l) -eq 0 ]]; then
         echo true
     else
         echo false
