@@ -8,3 +8,6 @@ mkdir -p .build
 [[ -e buildkit/.git ]] || git submodule update --init buildkit
 PATH="$PWD"/buildkit:"$PATH"
 buildkit/depends/module.build
+
+# drop some unused, large binaries
+rm -f .build/bundled/{.all,graphviz/prefix}/bin/{cluster,edgepaint,gvmap*}
