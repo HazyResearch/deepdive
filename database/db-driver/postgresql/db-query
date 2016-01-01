@@ -52,7 +52,7 @@ case $format in
                        AND NOT attisdropped
                      ORDER BY attnum
                 ) TO STDOUT
-            " |
+            " -v QUIET=1 |
             # quote each line
             sed "s/'/'\\''/g; s/^/'/; s/\$/'/" | tr '\n' ' ')
             # next, use our conversion script to transform to valid JSON object per line
