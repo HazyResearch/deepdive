@@ -134,9 +134,6 @@ test-build build: util/format_converter_mac
 util/format_converter_mac: src/main/c/binarize.cpp
 	$(CXX) -Os -o $@ $^
 endif
-test-build build: runner/setsid
-runner/setsid: runner/setsid.c
-	$(CC) -Os -std=c9x -o $@ $^
 
 .PHONY: build-mindbender
 build-mindbender:
