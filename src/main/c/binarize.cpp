@@ -88,6 +88,7 @@ void load_weight(std::string filename) {
 // load factors
 // fid, wid, vids
 void load_factor(std::string filename, short funcid, long nvar, char** positives) {
+  // std::cout << filename << " " << funcid << " " << nvar << " " << positives << std::endl;
   std::ifstream fin(filename.c_str());
   std::ofstream fout((filename + "_factors.bin").c_str(), std::ios::binary | std::ios::out);
   std::ofstream fedgeout((filename + "_edges.bin").c_str(), std::ios::binary | std::ios::out);

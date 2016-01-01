@@ -287,6 +287,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       val cardinalityValues = dataType match {
         case BooleanType => "('00001')"
         case MultinomialType(x) => (0 to x-1).map (n => s"""('${"%05d".format(n)}')""").mkString(", ")
+        case RealNumberType => "('00000')"
       }
       val cardinalityTableName = InferenceNamespace.getCardinalityTableName(relation, column)
       dataStore.dropAndCreateTable(cardinalityTableName, "cardinality text")
@@ -311,6 +312,7 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
       val cardinality = dataType match {
         case BooleanType => 2
         case MultinomialType(x) => x.toInt
+        case RealNumberType => 0
       }
 
       // Create a table to denote variable type - query, evidence, observation
@@ -334,7 +336,11 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         LEFT OUTER JOIN ${VariablesObservationTable} t2 ON t0.id=t2.variable_id""")
 
       // dump variables
-      val initvalueCast = dataStore.cast(dataStore.cast(column, "int"), "float")
+      // val initvalueCast = dataStore.cast(dataStore.cast(column, "int"), "float")
+      val initvalueCast = dataType match {
+        case RealNumberType => dataStore.cast(column, "float")
+        case _ => dataStore.cast(dataStore.cast(column, "int"), "float")
+      }
       // Sen
       // du.unload(s"dd_variables_${relation}", s"${groundingPath}/dd_variables_${relation}",
       val groundingDir = getFileNameFromPath(groundingPath)
@@ -671,62 +677,31 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
         case _ => ""
       }
 
-      if (factorDesc.func.getClass.getSimpleName != "MultinomialFactorFunction") {
+      factorDesc.func.getClass.getSimpleName match {
 
-        // branch if weight variables present
-        val hasWeightVariables = !(isFixed || weightlist == "")
-        hasWeightVariables match {
-          // create a table that only contains one row (one weight)
-          case false => dataStore.dropAndCreateTableAs(weighttableForThisFactor,
-            s"""SELECT ${dataStore.cast(isFixed, "int")} AS isfixed, ${dataStore.cast(initvalue, "float")} AS initvalue,
-              ${dataStore.cast(-1, "bigint")} AS id;""")
-          // create one weight for each different element in weightlist.
-          case true => dataStore.dropAndCreateTableAs(weighttableForThisFactor,
-            s"""SELECT ${weightlist}, ${dataStore.cast(isFixed, "int")} AS isfixed,
-            ${dataStore.cast(initvalue, "float")} AS initvalue, ${dataStore.cast(-1, "bigint")} AS id
-            FROM ${querytable}
-            GROUP BY ${weightlist}""")
-        }
+      case "LRFactorFunction" => {
+        dataStore.dropAndCreateTable(weighttableForThisFactor, "index int, isfixed int, initvalue float, id bigint")
+        val weightValues = (0 to factorDesc.func.asInstanceOf[LRFactorFunction].featureDimension - 1) map
+          (x => s"(${x}, 0, 0, -1)") mkString(", ")
+        execute(s"INSERT INTO ${weighttableForThisFactor} VALUES ${weightValues}")
 
-        // assign weight id for incremental, use previous weight id if we have seen that weight before,
-        // otherwise, assign new id
         cweightid += handleWeightIds("", false)
 
-        // maintain incremental meta data
-        updateIncWeightMeta()
-
-        // check null weight (only if there are weight variables)
-        if (hasWeightVariables) {
-          val weightChecklist = factorDesc.weight.variables.map(v => s""" ${dataStore.quoteColumn(v)} IS NULL """).mkString("AND")
-          issueQuery(s"SELECT COUNT(*) FROM ${querytable} WHERE ${weightChecklist}") { rs =>
-            if (rs.getLong(1) > 0) {
-              throw new RuntimeException("Weight variable has null values")
-            }
-          }
-        }
-
-        // dump factors
-        // do not have join conditions if there are no weight variables, and t1 will only have 1 row
-        val weightJoinCondition = hasWeightVariables match {
-          case true => "WHERE " + factorDesc.weight.variables.map(
-              v => s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)} """).mkString("AND")
-          case false => ""
-        }
         execute(dataStore.analyzeTable(querytable))
         execute(dataStore.analyzeTable(weighttableForThisFactor))
 
-        // do not need DISTINCT in this sql, since for every tuple in the querytable,
-        // there is only one matching tuple in the weighttableForThisFactor
         du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
           s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
            FROM ${querytable} t0, ${weighttableForThisFactor} t1
-           ${weightJoinCondition};""", groundingDir)
+           WHERE t0.index = t1.index""", groundingDir)
 
         execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, description)
-          SELECT id, isfixed, initvalue, ${weightDesc} FROM ${weighttableForThisFactor}
-          ${incCondition};""")
+          SELECT id, isfixed, initvalue, ${dataStore.concat(Seq(s"'${factorDesc.weightPrefix}-'", dataStore.cast("index", "text")), "")}
+          FROM ${weighttableForThisFactor}""")
+      }
 
-      } else if (factorDesc.func.getClass.getSimpleName == "MultinomialFactorFunction") {
+      case "MultinomialFactorFunction" =>
+
         // TODO needs better code reuse
         // handle multinomial
         // generate cardinality table for each variable
@@ -845,7 +820,62 @@ trait SQLInferenceRunner extends InferenceRunner with Logging {
              WHERE ${weightJoinlist} AND t1.cardinality = '${cardinalityKey}' ORDER BY t0.id;""",
              groundingDir)
         }
+      case _ =>
+        // branch if weight variables present
+        val hasWeightVariables = !(isFixed || weightlist == "")
+        hasWeightVariables match {
+          // create a table that only contains one row (one weight)
+          case false => dataStore.dropAndCreateTableAs(weighttableForThisFactor,
+            s"""SELECT ${dataStore.cast(isFixed, "int")} AS isfixed, ${dataStore.cast(initvalue, "float")} AS initvalue,
+              ${dataStore.cast(-1, "bigint")} AS id;""")
+          // create one weight for each different element in weightlist.
+          case true => dataStore.dropAndCreateTableAs(weighttableForThisFactor,
+            s"""SELECT ${weightlist}, ${dataStore.cast(isFixed, "int")} AS isfixed,
+            ${dataStore.cast(initvalue, "float")} AS initvalue, ${dataStore.cast(-1, "bigint")} AS id
+            FROM ${querytable}
+            GROUP BY ${weightlist}""")
+        }
+
+        // assign weight id for incremental, use previous weight id if we have seen that weight before,
+        // otherwise, assign new id
+        cweightid += handleWeightIds("", false)
+
+        // maintain incremental meta data
+        updateIncWeightMeta()
+
+        // check null weight (only if there are weight variables)
+        if (hasWeightVariables) {
+          val weightChecklist = factorDesc.weight.variables.map(v => s""" ${dataStore.quoteColumn(v)} IS NULL """).mkString("AND")
+          issueQuery(s"SELECT COUNT(*) FROM ${querytable} WHERE ${weightChecklist}") { rs =>
+            if (rs.getLong(1) > 0) {
+              throw new RuntimeException("Weight variable has null values")
+            }
+          }
+        }
+
+        // dump factors
+        // do not have join conditions if there are no weight variables, and t1 will only have 1 row
+        val weightJoinCondition = hasWeightVariables match {
+          case true => "WHERE " + factorDesc.weight.variables.map(
+              v => s""" t0.${dataStore.quoteColumn(v)} = t1.${dataStore.quoteColumn(v)} """).mkString("AND")
+          case false => ""
+        }
+        execute(dataStore.analyzeTable(querytable))
+        execute(dataStore.analyzeTable(weighttableForThisFactor))
+
+        // do not need DISTINCT in this sql, since for every tuple in the querytable,
+        // there is only one matching tuple in the weighttableForThisFactor
+        du.unload(s"${outfile}", s"${groundingPath}/${outfile}", dbSettings,
+          s"""SELECT t0.id AS factor_id, t1.id AS weight_id, ${idcols}
+           FROM ${querytable} t0, ${weighttableForThisFactor} t1
+           ${weightJoinCondition};""", groundingDir)
+
+        execute(s"""INSERT INTO ${WeightsTable}(id, isfixed, initvalue, description)
+          SELECT id, isfixed, initvalue, ${weightDesc} FROM ${weighttableForThisFactor}
+          ${incCondition};""")
+
       }
+
     }
 
     if (skipLearning) {

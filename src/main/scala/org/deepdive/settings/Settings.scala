@@ -161,6 +161,9 @@ case class RatioFactorFunction(variables: Seq[FactorFunctionVariable]) extends B
 /* A factor function describing logical semantics, (A -> Z) or (B -> Z) or (C -> Z)*/
 case class LogicalFactorFunction(variables: Seq[FactorFunctionVariable]) extends BooleanFactorFunction
 
+/* logistic regression */
+case class LRFactorFunction(variables: Seq[FactorFunctionVariable], featureDimension: Int) extends BooleanFactorFunction
+
 /* A variable used in a Factor function */
 case class FactorFunctionVariable(relation: String, field: String, isArray: Boolean = false,
   isNegated: Boolean = false, predicate: Option[Long] = None) {
@@ -242,4 +245,9 @@ case object BooleanType extends VariableDataType {
 }
 case class MultinomialType(cardinality: Int) extends VariableDataType {
   override def toString() = s"Multinomial(${cardinality})"
+}
+
+case object RealNumberType extends VariableDataType {
+  def cardinality = 0
+  override def toString() = "Real"
 }
