@@ -10,13 +10,13 @@ setup() {
 }
 
 @test "$DBVARIANT deepdive load csv works" {
-    deepdive load foo_load "$BATS_TEST_DIRNAME"/test_load/test.csv
+    deepdive load foo_load "${BATS_TEST_FILENAME%.bats}"/test.csv
     [[ $(deepdive sql eval "select * from foo_load" format=csv) = '123,foo bar,"{how,are,you}"' ]]
     db-execute "DROP TABLE IF EXISTS foo_load;"
 }
 
 @test "$DBVARIANT deepdive load tsv works" {
-    deepdive load foo_load "$BATS_TEST_DIRNAME"/test_load/test.tsv
+    deepdive load foo_load "${BATS_TEST_FILENAME%.bats}"/test.csv
     [[ $(deepdive sql eval "select * from foo_load" format=csv) = '123,foo bar,"{how,are,you}"' ]]
     db-execute "DROP TABLE IF EXISTS foo_load;"
 }
