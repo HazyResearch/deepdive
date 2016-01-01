@@ -30,6 +30,7 @@ else
         --wait
         --cursor
     )
+    trap "stty echo <&'"$DEEPDIVE_PROGRESS_FD"' || true" EXIT # to restore sometimes garbled terminal
     case $InOut in
         input_to) eval '
             pv 2>&'"$DEEPDIVE_PROGRESS_FD"' "${PipeViewOpts[@]}" |
@@ -43,6 +44,8 @@ else
             pv 2>&'"$DEEPDIVE_PROGRESS_FD"' "${PipeViewOpts[@]}" --line-mode
             ' ;;
 
-        *) error "$InOut: Cannot show progress, only 'input_to' and 'output_from' are supported"
+        *)
+            trap - EXIT  # no need to mess around with the terminal
+            error "$InOut: Cannot show progress, only 'input_to' and 'output_from' are supported"
     esac
 fi
