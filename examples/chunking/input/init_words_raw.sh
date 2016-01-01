@@ -9,4 +9,4 @@ if [[ -n ${SUBSAMPLE_NUM_WORDS_TRAIN:-} && -n ${SUBSAMPLE_NUM_WORDS_TEST:-} ]]; 
 else
     cat ./train_null_terminated.txt ./test_null_terminated.txt
 fi |
-deepdive sql "copy words_raw(word, pos, tag) from STDIN delimiter ' ' null 'null'"
+deepdive sql "\copy words_raw(word, pos, tag) from PSTDIN delimiter ' ' null 'null'"

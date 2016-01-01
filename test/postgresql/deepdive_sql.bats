@@ -13,7 +13,7 @@ setup() {
         CREATE TEMP TABLE foo(a INT);
         INSERT INTO foo VALUES (1), (2), (3), (4);
         COPY(SELECT SUM(a) AS sum FROM foo) TO STDOUT
-        ")
+        " | tee /dev/stderr | tail -1)
     [[ $result = 10 ]]
 }
 
