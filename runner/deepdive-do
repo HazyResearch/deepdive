@@ -19,6 +19,7 @@ targets="$*"
 cd "$DEEPDIVE_APP"
 
 if deepdive-done "$@"; then
+    cd run
     echo "All done at $(format_timestamp $(ls -t "$@" | head -1)):"
     echo " $targets"
     echo "To see more details, use: deepdive plan"
@@ -93,7 +94,6 @@ tee "$runDir"/plan.orig.sh >"$runDir"/plan.sh
 if [[ -t 0 && -t 1 && $EDITOR != true && $EDITOR != : && $DEEPDIVE_PLAN_EDIT ]]; then
     $VISUAL "$runDir"/plan.sh &&
     [[ "$runDir"/plan.sh -nt "$runDir"/plan.orig.sh ]] || {
-        cleanup
         rm -rf "$runDir"
         error "Canceled execution"
     }
