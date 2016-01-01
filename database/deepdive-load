@@ -40,7 +40,7 @@ if [[ $# -eq 0 ]]; then
     # check if init_RELATION.sh script is available
     if [[ -x "$initsh" ]]; then
         echo "Loading $Relation via $initsh"
-        exec "$initsh"
+        exec "$initsh" "$@"
     fi
     # search under input/RELATION.*
     for Path in input/"$Relation".{tsv,csv,json-seq,sql}{,.bz2,.gz,.sh}; do
