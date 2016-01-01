@@ -29,12 +29,12 @@ set -eu
 [[ $# -gt 0 ]] || error "Missing RELATION to load"
 Relation=$1; shift
 
-DEEPDIVE_APP=$(find-deepdive-app)
-export DEEPDIVE_APP
-. load-db-driver.sh
-
 # when no SOURCE is specified, look under input/
 if [[ $# -eq 0 ]]; then
+    DEEPDIVE_APP=$(find-deepdive-app)
+    export DEEPDIVE_APP
+    . load-db-driver.sh
+
     cd "$DEEPDIVE_APP"
     initsh=input/init_"$Relation".sh
     # check if init_RELATION.sh script is available
