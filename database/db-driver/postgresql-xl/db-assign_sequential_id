@@ -8,7 +8,7 @@ set -euo pipefail
 [[ $# -gt 0 ]] || usage "$0" "Missing TABLE"
 [[ $# -gt 1 ]] || usage "$0" "Missing COLUMN"
 [[ $# -gt 2 ]] || usage "$0" "Missing BEGIN_ID"
-Table=$1 Column=$2 BeginId=$3
+Table=$1 Column=$2 BeginId=$3 Increment=${4:-1}
 
 # Use a PostgreSQL-XL PL/pgSQL UDF to assign IDs fast
 # See: http://www.postgresql.org/docs/9.2/static/sql-createlanguage.html
@@ -20,6 +20,7 @@ db-execute "
       table_name character varying,
       col_name character varying,
       start_id bigint,
+      increment bigint,
       order_by character varying DEFAULT '')
     RETURNS TEXT AS
     \$\$
@@ -29,7 +30,7 @@ db-execute "
       table_new text := quote_ident(schema_name) || '.' || quote_ident(table_name || '__new');
       cols text[] := ARRAY(SELECT
                         CASE lower(attname)
-                        WHEN lower(col_name) THEN start_id || ' + (row_number() over (' || order_by || ')) - 1'
+                        WHEN lower(col_name) THEN start_id || ' + ((row_number() over (' || order_by || ')) - 1) * ' || increment
                         ELSE quote_ident(attname)
                         END
                       FROM   pg_attribute
@@ -49,14 +50,5 @@ db-execute "
     END;
     \$\$ LANGUAGE 'plpgsql';
 
-    SELECT copy_table_assign_ids_replace('public', '$Table', '$Column', $BeginId);
-" && exit
-
-# Fall back to using PostgreSQL sequence generator named after the table and column
-# See: http://www.postgresql.org/docs/current/static/sql-createsequence.html
-seq="dd_seq_${Table}_${Column}"
-deepdive sql "
-    DROP SEQUENCE IF EXISTS $seq CASCADE;
-    CREATE TEMPORARY SEQUENCE $seq MINVALUE -1 START $BeginId;
-    UPDATE $Table SET $Column = nextval('$seq');
+    SELECT copy_table_assign_ids_replace('public', '$Table', '$Column', $BeginId, $Increment);
 "
