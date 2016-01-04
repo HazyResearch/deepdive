@@ -101,8 +101,8 @@ stage util/calibration.py                                         util/
 stage util/calibration.plg                                        util/
 
 # DDlog compiler
-stage util/ddlog                                                  bin/
-stage .build/submodule/ddlog/target/scala-2.10/ddlog-assembly-0.1-SNAPSHOT.jar  lib/ddlog.jar
+stage compiler/ddlog-wrapper.sh                                   bin/ddlog
+stage .build/submodule/compiler/ddlog/target/scala-2.10/ddlog-assembly-0.1-SNAPSHOT.jar  lib/ddlog.jar
 
 # DDlib
 stage ddlib/ddlib                                                 lib/python/

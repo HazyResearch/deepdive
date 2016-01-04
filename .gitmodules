@@ -4,8 +4,8 @@
 [submodule "mindbender"]
 	path = mindbender
 	url = https://github.com/netj/mindbender.git
-[submodule "ddlog"]
-	path = ddlog
+[submodule "compiler/ddlog"]
+	path = compiler/ddlog
 	url = https://github.com/HazyResearch/ddlog.git
 [submodule "test/bats"]
 	path = test/bats
