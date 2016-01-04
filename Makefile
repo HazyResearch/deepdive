@@ -95,10 +95,6 @@ test-build build: depends/.build/bundled
 
 ### test recipes #############################################################
 
-test/*/scalatests/%.bats: test/postgresql/update-scalatests.bats.sh $(SCALA_TEST_SOURCES)
-	# Regenerating .bats for Scala tests
-	$<
-
 # make sure test is against the code built and staged by this Makefile
 DEEPDIVE_HOME := $(realpath $(STAGE_DIR))
 export DEEPDIVE_HOME
