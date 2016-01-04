@@ -145,4 +145,4 @@ stage util/ddext_input_sql_translator.py                          util/
 stage .build/submodule/util/mindbender/mindbender-LATEST.sh       bin/mindbender || true  # keeping it optional for now
 
 # runtime dependencies after building them from source
-stage depends/.build/bundled                                      lib/
+stage extern/.build/bundled                                       lib/
