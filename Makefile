@@ -58,6 +58,12 @@ release-%:
 
 ### build recipes #############################################################
 
+# binary format converter for sampler
+inference/format_converter: inference/format_converter.cc
+	$(CXX) -Os -o $@ $^
+test-build build: inference/format_converter
+
+
 # common build steps between build and test-build targets
 define STAGING_COMMANDS
 	# staging all executable code and runtime data under $(STAGE_DIR)/
@@ -110,26 +116,16 @@ checkstyle:
 ### submodule build recipes ###################################################
 
 .PHONY: build-sampler
-build-sampler:
-	@util/build/build-submodule-if-needed sampler dw
-test-build build: build-sampler
+build-sampler: build-dimmwitted
+.PHONY: build-dimmwitted
+build-dimmwitted:
+	@util/build/build-submodule-if-needed inference/dimmwitted dw
+test-build build: build-dimmwitted
 
 .PHONY: build-hocon2json
 build-hocon2json:
 	@util/build/build-submodule-if-needed compiler/hocon2json hocon2json.sh target/scala-2.10/hocon2json-assembly-0.1-SNAPSHOT.jar
 test-build build: build-hocon2json
-
-# format_converter
-ifeq ($(shell uname),Linux)
-test-build build: util/format_converter_linux
-util/format_converter_linux: src/main/c/binarize.cpp
-	$(CXX) -Os -o $@ $^
-endif
-ifeq ($(shell uname),Darwin)
-test-build build: util/format_converter_mac
-util/format_converter_mac: src/main/c/binarize.cpp
-	$(CXX) -Os -o $@ $^
-endif
 
 .PHONY: build-mindbender
 build-mindbender:

@@ -1,5 +1,5 @@
-[submodule "sampler"]
-	path = sampler
+[submodule "inference/dimmwitted"]
+	path = inference/dimmwitted
 	url = https://github.com/HazyResearch/sampler.git
 [submodule "mindbender"]
 	path = mindbender

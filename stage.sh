@@ -111,26 +111,29 @@ stage ddlib/ddlib                                                 lib/python/
 case $(uname) in
 Linux)
     stage util/ndbloader/ndbloader-linux                          util/ndbloader
-    stage util/format_converter_linux                             util/format_converter
-    # copy shared libraries required by the sampler
-    ldd .build/submodule/sampler/dw | grep '=>' | awk '{print $3}' | sort -u | grep -v '^(' | xargs cp -vt "$STAGE_DIR"/lib/
-    stage .build/submodule/sampler/dw                             util/sampler-dw-linux
-    stage util/sampler-dw-linux.sh                                util/
-    ln -sfn sampler-dw-linux.sh                                   "$STAGE_DIR"/util/sampler-dw
+    # copy shared libraries required by the dimmwitted sampler
+    ldd .build/submodule/inference/dimmwitted/dw | grep '=>' |
+    awk '{print $3}' | sort -u | grep -v '^(' |
+    grep -v '^/lib/' |
+    xargs cp -vt "$STAGE_DIR"/lib/
+    stage .build/submodule/inference/dimmwitted/dw                util/sampler-dw.bin
+    stage inference/dimmwitted-wrapper.linux.sh                   util/sampler-dw
     ;;
 Darwin)
     stage util/ndbloader/ndbloader-mac                            util/ndbloader
-    stage util/format_converter_mac                               util/format_converter
-    # copy shared libraries required by the sampler
-    otool -L .build/submodule/sampler/dw | grep 'dylib' | sed 's/(.*)//' | awk '{print $1}' | grep -v '^/usr/lib/' | xargs cp -vt "$STAGE_DIR"/lib/
-    stage .build/submodule/sampler/dw                             util/sampler-dw-mac
-    stage util/sampler-dw-mac.sh                                  util/
-    ln -sfn sampler-dw-mac.sh                                     "$STAGE_DIR"/util/sampler-dw
+    # copy shared libraries required by the dimmwitted sampler
+    otool -L .build/submodule/inference/dimmwitted/dw |
+    grep 'dylib' | sed 's/(.*)//' | awk '{print $1}' | sort -u |
+    grep -v '^/usr/lib/' |
+    xargs cp -vt "$STAGE_DIR"/lib/
+    stage .build/submodule/inference/dimmwitted/dw                util/sampler-dw.bin
+    stage inference/dimmwitted-wrapper.mac.sh                     util/sampler-dw
     ;;
 *)
     echo >&2 "$(uname): Unsupported OS"; false
     ;;
 esac
+stage inference/format_converter                                  util/format_converter
 
 # piggy extractor helper
 stage util/piggy_prepare.py                                       util/
