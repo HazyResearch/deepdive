@@ -40,40 +40,40 @@ Nearly all DeepDive development activities happen over GitHub.
 
 DeepDive is written in several programming languages.
 
-* Scala is the main language for generating SQL queries and shell scripts that run the actual data pipeline, defined by the user's extractors and inference rules.
+* [Bash](https://en.wikibooks.org/wiki/Bash_Shell_Scripting) and [jq](https://stedolan.github.io/jq/) are the main programming languages for generating SQL queries and shell scripts that run the actual data pipeline, defined by the user's extractors and inference rules.
 * C++ is used for writing the [high performance Gibbs sampler](https://github.com/HazyResearch/sampler) that takes care of learning and inference of the model defined by user's inference rules.
-* Bash and Python scripts are used for other parts.
+* C is used for the [high performance data router, mkmimo](https://github.com/netj/mkmimo) that enables executing many UDF processes in parallel efficiently.
 * Python is the main language we use for the udfs in our examples.
+* Scala and other mini languages are used for other minor parts.
 
 #### DeepDive Code Structure
 
-* `src/main/scala/` contains the main Scala code.
-* `shell/` contains the code for the general `deepdive` command-line interface.
 * `compiler/` contains the code that compiles DeepDive application configuration into an execution plan.
-* `runner/` contains the engine for running the execution plan compiled by the compiler.
-* `util/` contains utility scripts and binaries.
-* `test/` and `src/test/` contains the test code.
-* `ddlib/` contains the ddlib Python library that helps users write feature extractors.
+* `database/` contains database drivers as well as code implementing other database operations.
+* `ddlib/` contains the ddlib Python library that helps users write their applications.
 * `doc/` contains the Markdown/Jekyll source for the DeepDive website and documentation.
-* `depends/` contains scripts for building and bundling runtime dependencies.
 * `examples/` contains the DeepDive examples.
-* `dist/` is the default location where the built executables and runtime data will be staged.
+* `extern/` contains scripts for building and bundling runtime dependencies from external 3rd parties.
+* `inference/` contains the engine and necessary utilities for statistical learning and inference.
+* `runner/` contains the engine for running the execution plan compiled by the compiler.
+* `shell/` contains the code for the general `deepdive` command-line interface.
+* `test/` at the top as well as `*/test/` under each subdirectory contain the test code.
+* `util/` contains other utilities for installation, build, and development.
 
 DeepDive build is controlled by several files:
 
 * `Makefile` takes care of the overall build process.
-* `sbt/`, `scala.mk`, `build.sbt`, and `project/` contains the build tool and configuration for Scala.
-* `stage.sh` contains the commands that stages built code under `dist/`.
+* `stage.sh` contains the commands that stages built code under `dist/`, which is the default location where the built executables and runtime data will be staged.
 * `test/bats.mk` contains the Make recipes for running tests written in [BATS](https://github.com/sstephenson/bats) under `test/`.
+* `test/enumerate-tests.sh` and `test/*/should-work.sh` determines the .bats files to run for `make test`.
 * `.travis.yml` enables our continuous integration builds and tests at [Travis CI](https://travis-ci.org/HazyResearch/deepdive), which are triggered every time a new commit is pushed to our GitHub repository.
-* `Dockerfile` defines how a new Docker image for DeepDive is generated.
 
 DeepDive source tree includes several git submodules and ports:
 
-* [`sampler/`](https://github.com/HazyResearch/sampler) is the DimmWitted Gibbs sampler.
-* [`mindbender/`](https://github.com/HazyResearch/mindbender) is the collection of tools supporting development, such as Mindtagger.
-* [`ddlog/`](https://github.com/HazyResearch/ddlog) is the DDlog compiler.
-* `mln/` contains a [Tuffy](http://i.stanford.edu/hazy/hazy/tuffy/) port.
+* [`compiler/ddlog/`](https://github.com/HazyResearch/ddlog) is the DDlog compiler.
+* [`inference/dimmwitted/`](https://github.com/HazyResearch/sampler) is the DimmWitted Gibbs sampler.
+* [`runner/mkmimo/`](https://github.com/netj/mkmimo) is a data routing component that is used for executing parallel UDF processes and efficiently streaming data through them.
+* [`util/mindbender/`](https://github.com/HazyResearch/mindbender) is the collection of tools supporting development, such as Mindtagger.
 
 
 #### <a name="build-test"></a> Building and Testing DeepDive
@@ -185,8 +185,4 @@ To deploy changes to the main website, run:
 make -C doc/ deploy
 ```
 
-
-#### Scala Style Guide
-
-Please follow the [Scala Style Guide](http://docs.scala-lang.org/style/) when contributing.
 
