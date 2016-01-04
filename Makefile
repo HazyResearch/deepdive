@@ -138,5 +138,5 @@ test-build build: build-ddlog
 
 .PHONY: build-mkmimo
 build-mkmimo:
-	@util/build/build-submodule-if-needed util/mkmimo mkmimo
+	@util/build/build-submodule-if-needed runner/mkmimo mkmimo
 test-build build: build-mkmimo
