@@ -63,34 +63,12 @@ inference/format_converter: inference/format_converter.cc
 	$(CXX) -Os -o $@ $^
 test-build build: inference/format_converter
 
-
-# common build steps between build and test-build targets
-define STAGING_COMMANDS
+# common build steps
+test-build build:
 	# staging all executable code and runtime data under $(STAGE_DIR)/
 	./stage.sh $(STAGE_DIR)
 	# record version and build info
 	util/build/generate-build-info.sh >$(STAGE_DIR)/.build-info.sh
-endef
-
-.PHONY: build
-build: scala-assembly-jar
-	$(STAGING_COMMANDS)
-	# record production environment settings
-	echo 'export CLASSPATH="$$DEEPDIVE_HOME"/lib/deepdive.jar' >$(STAGE_DIR)/env.sh
-
-test-build: scala-test-build
-	$(STAGING_COMMANDS)
-	# record test-specific environment settings
-	echo "export CLASSPATH='$$(cat $(SCALA_TEST_CLASSPATH_EXPORTED))'" >$(STAGE_DIR)/env.sh
-
-# use bundled SBT launcher when necessary
-PATH += :$(shell pwd)/sbt
-# XXX For some inexplicable reason on OS X, the default SHELL (/bin/sh) won't pickup the extended PATH, so overriding it to bash.
-ifeq ($(shell uname),Darwin)
-export SHELL := /bin/bash
-endif
-
-include scala.mk  # for scala-build, scala-test-build, scala-assembly-jar, scala-clean, etc. targets
 
 # how to build external runtime dependencies to bundle
 .PHONY: extern/.build/bundled

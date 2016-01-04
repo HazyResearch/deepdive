@@ -40,8 +40,6 @@ if [ -z "${DEEPDIVE_SHELL:-}" ]; then
     #  make sure ddlib in Python is available
     PYTHONPATH="$DEEPDIVE_HOME"/lib/python:"${PYTHONPATH:+:$PYTHONPATH}"
     export PYTHONPATH
-    #  import extra environment setup
-    source "$DEEPDIVE_HOME"/env.sh
 
     export DEEPDIVE_SHELL=$0
 fi
