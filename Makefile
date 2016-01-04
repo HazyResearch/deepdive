@@ -9,7 +9,7 @@ BUILD_DIR = .build
 # path to the package to be built
 PACKAGE = $(dir $(STAGE_DIR))deepdive.tar.gz
 
-.DEFAULT_GOAL := test-build
+.DEFAULT_GOAL := build
 
 ### dependency recipes ########################################################
 
@@ -61,23 +61,29 @@ release-%:
 # binary format converter for sampler
 inference/format_converter: inference/format_converter.cc
 	$(CXX) -Os -o $@ $^
-test-build build: inference/format_converter
+build: inference/format_converter
 
 # common build steps
-test-build build:
+BUILD_INFO=$(STAGE_DIR)/.build-info.sh
+build:
 	# staging all executable code and runtime data under $(STAGE_DIR)/
 	./stage.sh $(STAGE_DIR)
 	# record version and build info
-	util/build/generate-build-info.sh >$(STAGE_DIR)/.build-info.sh
+	util/build/generate-build-info.sh >$(BUILD_INFO)
 
 # how to build external runtime dependencies to bundle
 .PHONY: extern/.build/bundled
 extern/.build/bundled: extern/bundle-runtime-dependencies.sh
 	PACKAGENAME=deepdive  $<
-test-build build: extern/.build/bundled
+build: extern/.build/bundled
 
 
 ### test recipes #############################################################
+
+# before testing on a clean source tree, make sure it's built at least once
+test-build: $(BUILD_INFO)
+$(BUILD_INFO):
+	$(MAKE) build
 
 # make sure test is against the code built and staged by this Makefile
 DEEPDIVE_HOME := $(realpath $(STAGE_DIR))
@@ -98,12 +104,12 @@ build-sampler: build-dimmwitted
 .PHONY: build-dimmwitted
 build-dimmwitted:
 	@util/build/build-submodule-if-needed inference/dimmwitted dw
-test-build build: build-dimmwitted
+build: build-dimmwitted
 
 .PHONY: build-hocon2json
 build-hocon2json:
 	@util/build/build-submodule-if-needed compiler/hocon2json hocon2json.sh target/scala-2.10/hocon2json-assembly-0.1-SNAPSHOT.jar
-test-build build: build-hocon2json
+build: build-hocon2json
 
 .PHONY: build-mindbender
 build-mindbender:
@@ -112,9 +118,9 @@ build-mindbender:
 .PHONY: build-ddlog
 build-ddlog:
 	@util/build/build-submodule-if-needed compiler/ddlog target/scala-2.10/ddlog-assembly-0.1-SNAPSHOT.jar
-test-build build: build-ddlog
+build: build-ddlog
 
 .PHONY: build-mkmimo
 build-mkmimo:
 	@util/build/build-submodule-if-needed runner/mkmimo mkmimo
-test-build build: build-mkmimo
+build: build-mkmimo
