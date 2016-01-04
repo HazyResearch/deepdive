@@ -129,7 +129,7 @@ test-build build: build-hocon2json
 
 .PHONY: build-mindbender
 build-mindbender:
-	@util/build/build-submodule-if-needed mindbender mindbender-LATEST.sh
+	@util/build/build-submodule-if-needed util/mindbender mindbender-LATEST.sh
 
 .PHONY: build-ddlog
 build-ddlog:
