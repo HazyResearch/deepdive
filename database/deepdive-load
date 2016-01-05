@@ -5,6 +5,10 @@
 # optionally specified COLUMNs.  When SOURCE is unspecified, the data is loaded
 # from files found on path input/RELATION.* under the DeepDive application.
 #
+# When RELATION is a random variable and no COLUMN is specified, the SOURCE are
+# expected to contain the `label` column at the end, in addition to all
+# user-defined ones.
+#
 # This command must be run under an environment whose DEEPDIVE_DB_URL variable
 # is set to a proper URL, or under a DeepDive application where the URL is set
 # in the db.url file.
@@ -68,8 +72,9 @@ else
     . load-db-driver.sh
 fi
 
-# find the columns to load (when $Relation is a random variable to exclude the
-# internal ones when no $Columns were explicitly specified)
+# find the columns to load (when no $Columns were explicitly specified and
+# $Relation is a random variable, load the user-defined columns with the
+# internal label column but nothing else)
 if [[ -z "$Columns" && -e "$DEEPDIVE_APP" ]] && app-has-been-compiled; then
     Columns=$(
         cd "$DEEPDIVE_APP"
@@ -79,7 +84,7 @@ if [[ -z "$Columns" && -e "$DEEPDIVE_APP" ]] && app-has-been-compiled; then
             if .variable_type then
                 .columns | to_entries |
                 sort_by(.value.index) |
-                map(.key) | join(",")
+                map(.key)+["label"] | join(",")
             else
                 empty
             end
