@@ -1,0 +1,49 @@
+#!/usr/bin/env jq-f
+# compile-check-0-input_schema_wellformed -- Checks if schema variables are well formed
+##
+include "util";
+
+.deepdive.schema.variables // {} | to_entries[] |
+.key as $relationName |
+"deepdive.schema.variables.\($relationName)" as $variableRelationId |
+.value |
+
+# sanity check for variable table name
+( $relationName |
+if test("^[A-Za-z_][A-Za-z0-9_]*$"; "") then
+    "\($variableRelationId) has a valid table name: \(@json)"
+else
+    error("\($variableRelationId) has an invalid character in its table name: \(@json)")
+end),
+
+# sanity check for a single column
+( if type == "object" and (keys | length) == 1 then
+    "\($variableRelationId) has one label column defined: \(keys | @json)"
+else
+    error("\($variableRelationId) must have only one column defined as a variable, but found: \(keys | @json)")
+end),
+
+( to_entries[] |
+.key as $columnName |
+"\($variableRelationId).\(.key)" as $variableId |
+.value |
+
+    # sanity check for variable column name
+    ( $columnName |
+    if test("^[A-Za-z_][A-Za-z0-9_]*$"; "") then
+        "\($variableId) has a valid column name"
+    else
+        error("\($variableId) has an invalid character in its column name: \(@json)")
+    end),
+
+    # sanity check for variable type
+    ( tostring | trimWhitespace |
+    if match("^(?: Boolean | Categorical \\( \\d+ \\) )"; "x") then
+        "\($variableId) has a valid type"
+    else
+        error("\($variableId) has an invalid type: \(@json)")
+    end),
+
+empty),
+
+empty

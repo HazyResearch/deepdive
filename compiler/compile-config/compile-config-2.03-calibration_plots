@@ -1,0 +1,27 @@
+#!/usr/bin/env jq-f
+# compile-config-2.03-calibration_plots -- Adds processes for producing calibration plots
+##
+.deepdive_ as $deepdive
+| .deepdive_.execution.processes += {
+
+    # calibration plots
+    "process/model/calibration": {
+        dependencies_: ["data/model/probabilities", "process/model/load_probabilities"],
+        output_: "model/calibration-plots",
+        style: "cmd_extractor",
+        cmd: "
+            d=../../../model/calibration-plots && mkdir -p \"$d\" && cd \"$d\"
+            # XXX a legacy location under the current run directory for backward compatibility
+            extraOutput=\"${DEEPDIVE_OUTPUT:-../../RUNNING}\"/calibration && mkdir -p \"$extraOutput\"
+            DEEPDIVE_CALIBRATION_NUM_BUCKETS=10
+            \([ $deepdive.schema.variables_[] | "
+            # create a view and draw a calibration plot for variable \(.name)
+            deepdive db create_calibration_view \(.variablesTable | @sh) \(.variablesLabelColumn | @sh)
+            draw_calibration_plot      \(.variablesTable | @sh) \(.variablesLabelColumn | @sh)
+            # XXX keeping a duplicate copy under the current run directory for backward compatibility
+            cp -a \("\(.variablesTable)_\(.variablesLabelColumn)" | @sh).* \"$extraOutput\"/
+            "] | join("\n"))
+        "
+    }
+
+}

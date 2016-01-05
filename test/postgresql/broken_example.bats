@@ -5,6 +5,7 @@
 
 @test "$DBVARIANT DeepDive returns error for a broken application" {
     cd "$BATS_TEST_DIRNAME"/broken_example || skip
-    deepdive initdb
-    ! deepdive run
+    ! deepdive compile ||
+    ! deepdive redo process/init/db ||
+    ! deepdive redo data/model/{weights,probabilities}
 }

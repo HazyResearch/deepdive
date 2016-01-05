@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# db-analyze -- Analyzes statistics of given table to speed up future queries for MySQL
+# > db-analyze TABLE
+##
+set -eu
+
+table=${1:?No TABLE given}
+
+# See: https://dev.mysql.com/doc/refman/
+exec db-execute "ANALYZE TABLE $table;"

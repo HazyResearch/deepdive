@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# db-load -- Loads file to the MySQL database configured for a DeepDive application
+# > db-load TABLE FORMAT [SOURCE...]
+##
+set -eu
+
+table=${1:?No TABLE given}; shift
+format=${1:?No FORMAT given}; shift
+
+# See: https://dev.mysql.com/doc/refman/5.7/en/load-data.html
+case $format in
+    tsv)
+        cat "$@" | show_progress input_to "loading $table" -- \
+            db-execute "LOAD DATA LOCAL INFILE '/dev/stdin' INTO TABLE $table
+              FIELDS TERMINATED BY '\t'"
+        ;;
+    csv)
+        cat "$@" | show_progress input_to "loading $table" -- \
+            db-execute "LOAD DATA LOCAL INFILE '/dev/stdin' INTO TABLE $table
+              FIELDS TERMINATED BY ',' ENCLOSED BY '\"'
+              LINES TERMINATED BY '\r\n'"
+              # TODO if header=true, "IGNORE 1 LINES"
+        ;;
+    *) error "$format: unsupported format by MySQL driver" ;;
+esac

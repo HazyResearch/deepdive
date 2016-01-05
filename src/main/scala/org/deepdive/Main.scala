@@ -16,6 +16,7 @@ object Main extends App with Logging {
   // Parsing command-line options
   case class CliOptions(
       configFile: File = null,
+      taskList: List[String] = List.empty,
       outputDir: File = defaultOutputDir)
   val parser = new scopt.OptionParser[CliOptions]("scopt") {
     head("deepdive", "0.7.1")
@@ -25,6 +26,9 @@ object Main extends App with Logging {
     opt[File]('o', "output-dir") valueName("<outputDir>") action { (x,c) =>
       c.copy(outputDir = x)
     } text("Output directory for all files (calibration data, graph data)")
+    opt[String]('t', "tasks") valueName("<taskList>") action { (x,c) =>
+      c.copy(taskList = x.split(",").toList)
+    } text("List of tasks to run")
   }
 
   val options = parser.parse(args, CliOptions()).getOrElse(null)
@@ -37,7 +41,7 @@ object Main extends App with Logging {
       val userConfig = ConfigFactory.parseFile(options.configFile)
       val defaultConfig = ConfigFactory.load
       val resolvedConfig = userConfig.withFallback(defaultConfig).resolve()
-      DeepDive.run(resolvedConfig, options.outputDir.getCanonicalPath)
+      DeepDive.run(resolvedConfig, options.outputDir.getCanonicalPath, options.taskList)
 
   }
 

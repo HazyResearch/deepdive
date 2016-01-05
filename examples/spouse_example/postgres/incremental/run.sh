@@ -35,6 +35,19 @@ BASEDIR=${BASEDIR:+$(mkdir -p "$BASEDIR" && cd "$BASEDIR" && pwd)}
 # ddlog-generated deepdive.conf contains a PIPELINE, so we must set it here
 export PIPELINE=$Pipeline
 
+# XXX workaround to play nice with the new deepdive-compile and initdb
+case $PIPELINE in
+    initdb)
+        case $Mode in
+            --incremental) ;;
+            *)
+                ln -sfnv "$DDlog" app.ddlog
+                deepdive compile
+                exec deepdive initdb
+        esac
+        ;;
+esac
+
 # run DeepDive, passing the rest of the arguments
 # TODO use deepdive run instead
-deepdive run -c "$appConf" -o "$Out"  "$@"
+deepdive run -c "$appConf" -o "$Out"  "$Pipeline" "$@"

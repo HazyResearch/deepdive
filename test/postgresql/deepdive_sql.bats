@@ -2,7 +2,7 @@
 # Tests for `deepdive sql` command
 
 . "$BATS_TEST_DIRNAME"/env.sh >&2
-PATH="$DEEPDIVE_SOURCE_ROOT/util/test:$PATH"
+PATH="$DEEPDIVE_SOURCE_ROOT/util/build/test:$PATH"
 
 setup() {
     db-execute "SELECT 1" &>/dev/null || db-init
@@ -13,7 +13,7 @@ setup() {
         CREATE TEMP TABLE foo(a INT);
         INSERT INTO foo VALUES (1), (2), (3), (4);
         COPY(SELECT SUM(a) AS sum FROM foo) TO STDOUT
-        ")
+        " | tee /dev/stderr | tail -1)
     [[ $result = 10 ]]
 }
 

@@ -1,3 +1,4 @@
+sudo: false  # to use container-based infra, see: http://docs.travis-ci.com/user/migrating-from-legacy/
 notifications:
   email:
     - deepdive-dev@lists.stanford.edu
@@ -17,6 +18,8 @@ services:
 cache:
   directories:
     - $HOME/.ivy2/cache
+    - depends/.build
+    - .build/submodule
 
 env:
   global:
@@ -37,16 +40,25 @@ env:
 before_install:
   # Check coding style before performing the build and tests
   - make checkstyle
-  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
-  - sudo apt-get update -qq
-  - sudo apt-get install -y libnuma-dev
-  - sudo apt-get install -qq g++-4.8
-  - export CXX="g++-4.8" CC="gcc-4.8"
+
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test  # for gcc 4.8
+    packages:
+    - gnuplot
+    - bc
+    - bzip2
+    - unzip # remove after getting rid of sampler lib zip files
+      # for building sampler
+    - libnuma-dev
+    - gcc-4.8
+    - g++-4.8
 
 install:
-  - make depends
-  - sudo apt-get install -qq -y postgresql-plpython-`ls -1 /var/lib/postgresql | head -n 1`  # XXX for piggy and plpy extractor tests
-  - make test-build  # XXX doing it here to hide the noise from sbt and unzip
+#  - make depends # XXX does not work on container-based infra
+  - export CXX="g++-4.8" CC="gcc-4.8" # necessary for building sampler
+  - make test-build
 
 script:
   # Run all tests
@@ -55,7 +67,3 @@ script:
   # Check broken links in documentation
   # TODO check only when doc/ has changed
   #- make -C doc/ linkcheck
-
-after_success:
-  # Report test coverage
-  - sbt coverageReport coveralls

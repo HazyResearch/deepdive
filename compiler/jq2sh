@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# jq2sh -- Transform input JSON with jq queries into shell assignments
+# > jq2sh DEEPDIVE_COMPUTER='.deepdive.computer' DEEPDIVE_COMPUTER_CONFIG='.deepdive.computers[.deepdive.computer]'
+# Produces the following output:
+#   DEEPDIVE_COMPUTER=local
+#   DEEPDIVE_COMPUTER_CONFIG='{"type":"local"}'
+# For an input JSON:
+#   {"deepdive":{"computer":"local", "computers":{"local":{"type":"local"}, ...}, ...}}
+##
+set -eu
+
+# assemble a jq program
+jqProgram=
+for nameEqValueQuery; do
+    name=${nameEqValueQuery%%=*}
+    valueQuery=${nameEqValueQuery#$name=}
+    jqProgram+=",\"$name=\\($valueQuery | (. // \"\" | tostring) | @sh)\""
+done
+
+# run jq to transform input JSON into a shell script
+exec jq -c -r "${jqProgram#,}"

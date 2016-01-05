@@ -35,7 +35,7 @@ for l in open(INPUTFOLDER + "/dd_factormeta"):
   CHUNKSIZE = str(int(math.ceil(float(os.popen('wc -l ' + INPUTFOLDER + '/dd_factors_' + factor_name + '_out').read().split(  )[0]) / CORES)))
   os.system('split -a 4 -l ' + CHUNKSIZE + ' ' + INPUTFOLDER + '/dd_factors_' + factor_name + '_out ' + INPUTFOLDER + '/dd_tmp/dd_factors_' + factor_name + '_out')
   print "BINARIZE ", factor_name, "..."
-  os.system('ls ' + INPUTFOLDER + '/dd_tmp | egrep "^dd_factors_' + factor_name + '_out"  | xargs -P ' + str(CORES) + ' -I {} -n 1 sh -c \'' + transform_script + ' factor ' + INPUTFOLDER + '/dd_tmp/{} ' + function_id + ' ' + nvars + ' ' + mode + ' ' + (' '.join(positives)) + ' \' | awk \'{s+=$1} END {printf \"%.0f\\n\", s}\' >>' + INPUTFOLDER + "/dd_nedges_")
+  os.system('ls ' + INPUTFOLDER + '/dd_tmp | egrep "^dd_factors_' + factor_name + '_out"  | xargs -P ' + str(CORES) + ' -I {} -n 1 sh -c \'' + transform_script + ' factor ' + INPUTFOLDER + '/dd_tmp/{} ' + INPUTFOLDER + '/dd_tmp/{}_factors.bin ' + function_id + ' ' + nvars + ' ' + mode + ' ' + (INPUTFOLDER + '/dd_tmp/{}_edges.bin ' if mode == 'inc' else '') + (' '.join(positives)) + ' \' | awk \'{s+=$1} END {printf \"%.0f\\n\", s}\' >>' + INPUTFOLDER + "/dd_nedges_")
 
 # handle variables
 for f in os.listdir(INPUTFOLDER):
@@ -46,11 +46,11 @@ for f in os.listdir(INPUTFOLDER):
     os.system('split -a 4 -l ' + CHUNKSIZE + ' ' + INPUTFOLDER + '/' + f + ' ' + INPUTFOLDER + '/dd_tmp/' + f)
 
     print "BINARIZE ", f, "..."
-    os.system('ls ' + INPUTFOLDER + '/dd_tmp | egrep "^' + f + '"  | xargs -P ' + str(CORES) + ' -I {} -n 1 sh -c \'' + transform_script + ' variable ' + INPUTFOLDER + '/dd_tmp/{} \'')
+    os.system('ls ' + INPUTFOLDER + '/dd_tmp | egrep "^' + f + '"  | xargs -P ' + str(CORES) + ' -I {} -n 1 sh -c \'' + transform_script + ' variable ' + INPUTFOLDER + '/dd_tmp/{} ' + INPUTFOLDER + '/dd_tmp/{}.bin \'')
 
 # handle weights
 print "BINARIZE ", 'weights', "..."
-os.system(transform_script + ' weight ' + INPUTFOLDER + '/dd_weights')
+os.system(transform_script + ' weight ' + INPUTFOLDER + '/dd_weights ' + INPUTFOLDER + '/dd_weights.bin')
 
 # move files
 os.system('rm -rf ' + INPUTFOLDER + "/dd_factors")

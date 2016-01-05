@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+# build-submodule-if-needed -- Builds a Git submodule if necessary
+# > util/build/build-submodule-if-needed SUBMODULE_PATH
+set -euo pipefail
+
+: ${ALWAYS_BUILD_SUBMODULE:=false}  # always runs build script when set to true
+
+Submodule=${1:?A path to a Git submodule must be given}; shift
+
+# some implied file paths
+build_info=.build/submodule/"$Submodule".built
+build_cache=.build/submodule/"$Submodule"
+build_sh="$Submodule".build.sh
+
+# some sanity checks
+submodule_status=$(git submodule status "$Submodule") || {
+    echo "# ERROR: $Submodule: Not a submodule?"
+    false
+} >&2
+[[ -x "$build_sh" ]] || {
+    echo "# ERROR: $build_sh: No executable build script found for the submodule"
+    false
+} >&2
+commit_current=$(cut -b2-41 <<<"$submodule_status")
+
+# make sure the submodule is initialized
+! grep -q '^-' <<<"$submodule_status" ||
+    (PS4=; set -x; git submodule update --init "$Submodule")
+
+# make sure the submodule commit matches the one in the index or HEAD
+# (modified content, untracked content are okay, we just always run the build script in that case)
+! grep -qv '^ ' <(git submodule status "$Submodule") || {
+    echo "# ERROR: submodule $Submodule has different commit checked out, retry after running either:"
+    echo "  git submodule update $Submodule  # to drop changes and checkout the recorded one, or:"
+    echo "  git add $Submodule               # to use the currently checked out one"
+    false
+} >&2
+
+# how to actually build the submodule
+build_submodule() {
+    # build with the script
+    echo "./$build_sh"
+    bash -eux "$build_sh"
+    # cache built files
+    for f; do
+        rm -rf "$build_cache/$f"
+        mkdir -p "$(dirname "$build_cache/$f")"
+        (
+        set -x
+        cp -a -L "$Submodule/$f" "$build_cache/$f"
+        )
+    done
+    # record built commit id
+    mkdir -p "$(dirname "$build_info")"
+    commit_built=$(git submodule status "$Submodule" | awk '{print $1}' | tee "$build_info")
+    echo >&2 "# submodule $Submodule: built $commit_built"
+    exit
+}
+
+# if the submodule is dirty with modified or untracked content, just build it
+is_clean=$(
+    cd "$Submodule"
+    if ! $ALWAYS_BUILD_SUBMODULE &&
+        [[ $(git status --porcelain | wc -l) -eq 0 ]]; then
+        echo true
+    else
+        echo false
+    fi
+)
+$is_clean || build_submodule "$@"
+
+# if previous build info exists, only proceed to build if something's new
+[[ -e "$build_info" ]] || build_submodule "$@"
+commit_built=$(head -1 <"$build_info")
+[[ "$commit_built" = "$commit_current" ]] || build_submodule "$@"
+
+echo >&2 "# submodule $Submodule: already built $commit_built"

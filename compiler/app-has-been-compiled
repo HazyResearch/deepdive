@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# app-has-been-compiled -- Checks if the current DeepDive application has been already compiled
+# $ app-has-been-compiled
+# Checks if all expected compilation results exist.
+#
+# $ app-has-been-compiled FILE...
+# Checks only the given FILEs under $DEEPDIVE_APP/run/ exist.
+##
+set -eu
+
+DEEPDIVE_APP=$(find-deepdive-app)
+export DEEPDIVE_APP
+
+[[ $# -gt 0 ]] ||
+    # default set of expected compilation results
+    set -- "$DEEPDIVE_APP"/run/{compiled/{schema,config}.json,Makefile,process/}
+
+for path; do
+    [[ -e "$path" ]] ||
+        error "$DEEPDIVE_APP: Not compiled yet, please run first: deepdive compile"
+done

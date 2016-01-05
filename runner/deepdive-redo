@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# deepdive-redo -- Runs processes after marking them as 'todo'
+# > deepdive redo TARGET...
+##
+set -eu
+
+[[ $# -gt 0 ]] || usage "$0" "No TARGET to redo given"
+
+deepdive-mark todo "$@"
+exec deepdive-do "$@"

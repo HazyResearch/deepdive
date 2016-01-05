@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# compile-codegen -- Generates files from the compiled code represented in JSON
+##
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2015-12-05
+set -euo pipefail
+eval "$(jq -r '
+@sh "
+x=\(.path)
+echo >&2 \" run/$x\"
+# ensure parent dir exists
+xd=\"$(dirname \"$x\")\"
+mkdir -p \"$xd\"
+# move existing files/dirs out of the way
+if [[ -e \"$x\" ]]; then
+    chmod +w \"$x\" \"$xd\" || true
+    mv -f --no-target-directory \"$x\" \"$x\"~
+fi
+# write contents
+echo \(.content) >\"$x\"
+"
+
++ (.mode | if . then @sh "
+# adjust mode
+chmod \(.) \"$x\""
+else ""
+end)
+')"

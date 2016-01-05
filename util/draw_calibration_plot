@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# calibration_plot -- Produces calibration plot for an application variable
+# $ calibration_plot TABLE COLUMN
+# Produces files TABLE_COLUMN.tsv and TABLE_COLUMN.png on the current working directory.
+##
+set -euo pipefail
+
+[[ $# -gt 0 ]] || usage "$0" "TABLE missing"
+Table=$1; shift
+[[ $# -gt 0 ]] || usage "$0" "COLUMN missing"
+Column=$1; shift
+
+variable="${Table}_${Column}"
+calibration_view="$variable"_calibration
+tsv="$variable".tsv
+png="$variable".png
+
+# first, get the data in tsv from the database
+deepdive sql eval "
+    SELECT probability_lo
+         , probability_hi
+         , num_variables
+         , num_correct
+         , num_incorrect
+      FROM $calibration_view
+" format=tsv >"$tsv"
+
+# then, produce the calibration plot
+# as PNG image with gnuplot
+gnuplot -e "input_file=\"$tsv\";output_file=\"$png\"" "$DEEPDIVE_HOME"/util/calibration.plg ||
+    # or try Python with Matplotlib if that fails
+    calibration.py "$tsv" "$png" ||
+    # Matplotlib has issues with virtualenv, so try with system python if that fails
+    /usr/bin/python "$DEEPDIVE_HOME"/util/calibration.py "$tsv" "$png" ||
+    true

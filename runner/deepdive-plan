@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# deepdive-plan -- Shows execution plan for given targets
+# > deepdive plan TARGET...
+##
+set -euo pipefail
+
+targets="${*%.done}"
+. resolve-args-to-do.sh
+
+# use make --dry-run to list all commands to run for given targets
+list-commands() {
+    make -C "$DEEPDIVE_APP"/run --dry-run --silent \
+        CMD_process='$(@:.done=/run.sh)' \
+        TOUCH='mark_done $(@:.done=)' \
+        "$@"
+}
+commands=$(list-commands "$@") ||
+    error "Error in process dependencies found for $targets"
+
+# enumerate what's going to happen
+{
+echo "# execution plan for $targets
+"
+diff \
+    --old-line-format=': %L' \
+    --new-line-format='%L' \
+    --unchanged-line-format='%L' \
+    <(list-commands --always-make "$@") \
+    - <<<"$commands" || true
+} |
+sed '/#\{77,\}$/ a\
+\
+'

@@ -1,0 +1,9 @@
+#!/usr/bin/env jq-f
+# compile-code-json_extractor -- TODO Compiles json_extractors in the normalized JSON into code executable by the runner
+##
+.deepdive_ as $deepdive
+
+| $deepdive.execution.processes | to_entries[]
+| .value.name = .key | .value
+| select(.style == "json_extractor")
+| error("\(.name): Compilation of \(.style) unsupported")

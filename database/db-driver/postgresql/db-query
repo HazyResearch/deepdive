@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# db-query -- Evaluates given SQL query against the PostgreSQL database configured for a DeepDive application
+# > eval "$(db-parse "$url")"
+# > db-query SQL FORMAT HEADER
+##
+set -eu
+
+sql=${1:?No SQL given}; shift
+format=${1:?No FORMAT given}; shift
+header=${1:?No HEADER given}; shift
+
+copy_option=
+case $format in
+    tsv)
+        case $header in
+            0) ;;
+            1)
+                # XXX HEADER is only available for PostgreSQL's csv format
+                # hence the following workaround
+                db-execute "COPY (SELECT * FROM ($sql) result LIMIT 0) TO STDOUT csv HEADER" |
+                python -c 'import sys, csv; print "\t".join([c.replace("\t", "\\t") for c in csv.reader([sys.stdin.readline()], delimiter=",", quotechar="\"").next()])'
+                ;;
+            *) error "$header: unrecognized value for HEADER"
+        esac
+        ;;
+    csv)
+        copy_option+=" csv"
+        case $header in
+            0) ;;
+            1) copy_option+=" HEADER" ;;
+            *) error "$header: unrecognized value for HEADER"
+        esac
+        ;;
+    json)
+        # make sure we stop if db-execute or db-query go wrong that sit before the last pipe
+        set -o pipefail
+        if db-execute "SELECT to_json(pg_type) FROM pg_type LIMIT 0" &>/dev/null; then
+            # use the preferred to_json() method if supported
+            db-query "SELECT to_json(result) FROM ($sql) result" csv 0 |
+            sed 's/^"//; s/"$//; s/""/"/g'
+        else
+            # otherwise, fallback to our own workaround
+            # first, we need to figure out the what types are output by user's SQL
+            # XXX This does not handle multidimensional (nested) arrays!
+            namesAndTypes=$(db-execute "
+                CREATE TEMP TABLE __to_json_temp AS SELECT * FROM ($sql) result LIMIT 0;
+                COPY (
+                    SELECT attname || ':' || format_type(atttypid, atttypmod) AS nameAndType
+                      FROM pg_attribute
+                     WHERE attrelid = '__to_json_temp'::regclass
+                       AND attnum > 0
+                       AND NOT attisdropped
+                     ORDER BY attnum
+                ) TO STDOUT
+            " -v QUIET=1 |
+            # quote each line
+            sed "s/'/'\\''/g; s/^/'/; s/\$/'/" | tr '\n' ' ')
+            # next, use our conversion script to transform to valid JSON object per line
+            db-execute "COPY ($sql) TO STDOUT" | eval "pgtsv_to_json $namesAndTypes"
+        fi
+        exit $?  # all done, no need to go further
+        ;;
+    *) error "$format: unsupported format by PostgreSQL driver" ;; # TODO
+esac
+
+exec db-execute "COPY ($sql) TO STDOUT${copy_option:+ $copy_option}" "$@"

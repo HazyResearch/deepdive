@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# deepdive-initdb -- Initializes the underlying database for the DeepDive application
+# > deepdive initdb
+# Initializes the whole database configured for the DeepDive application.
+#
+# > deepdive initdb RELATION...
+# Initializes only the given RELATIONs.
+##
+set -eu
+
+# find the current application
+DEEPDIVE_APP=$(find-deepdive-app)
+export DEEPDIVE_APP
+cd "$DEEPDIVE_APP"
+
+. load-db-driver.sh
+
+if [[ $# -eq 0 ]]; then
+    # no arguments given, init database
+    # TODO confirmation before destroying the database?
+    db-init "$@"
+    # XXX run schema.sql
+    if [[ -r schema.sql ]]; then
+        db-prompt <schema.sql
+    fi
+    # run init script
+    if [[ -x input/init.sh ]]; then
+        input/init.sh
+    fi
+    # initialize relations declared in schema
+    [[ ! -e "$DEEPDIVE_APP"/run/compiled/schema.json ]] ||
+    deepdive-sql "$(schema_json_to_sql "$DEEPDIVE_APP"/run/compiled/schema.json)"
+else
+    # if a list of table names given, initialize corresponding tables
+    [[ -e "$DEEPDIVE_APP"/run/compiled/schema.json ]] ||
+        error "$DEEPDIVE_APP: Not compiled yet, please run: deepdive compile"
+    for Relation; do
+        deepdive-sql "$(schema_json_to_sql "$DEEPDIVE_APP"/run/compiled/schema.json "$Relation")"
+    done
+fi

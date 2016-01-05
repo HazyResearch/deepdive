@@ -1,0 +1,145 @@
+#!/usr/bin/env bash
+# deepdive-do -- Runs necessary processes to get something done
+# > deepdive do TARGET...
+##
+set -euo pipefail
+
+: ${DEEPDIVE_PLAN_EDIT:=true} ${VISUAL:=${EDITOR:=vi}}
+: ${DEEPDIVE_PROGRESS_FD:=3}  # file descriptor to pass stderr down to our show_progress(1) command
+
+targets="$*"
+. resolve-args-to-do.sh
+cd "$DEEPDIVE_APP"
+
+if deepdive-done "$@"; then
+    cd run
+    echo "All done at $(format_timestamp $(ls -t "$@" | head -1)):"
+    echo " $targets"
+    echo "To see more details, use: deepdive plan"
+    echo "To redo them anyway, use: deepdive redo"
+    exit 0
+fi
+
+# load drivers configured for this application
+. load-db-driver.sh
+. load-compute-driver.sh
+
+# create a directory for running
+runDir=$(date +%Y%m%d/%H%M%S.%N)
+mkdir -p run/"$runDir"
+
+# forward signals to descendants to make sure no dangling processes remain
+signals="HUP INT QUIT TERM"
+list_descendant_pids() {
+    local pid=$$
+    local ppid=$BASHPID
+    # find the descendent processes
+    ps ax -o pid=,ppid= |
+    sed '
+        # trim whitespaces
+        s/[[:space:]][[:space:]]*/ /; s/^ //; s/ $//
+        # exclude bash itself as well as these sed, tsort, and ps processes here
+        /[[:space:]]'"$ppid"'$/d
+        # emit the original pid-ppid edge
+        p
+        # inject an edge from bash to everyone else to create a cycle
+        s/^/'"$pid"' /; s/[[:space:]][^[:space:]]*$//
+    '  |
+    # use tsort to find the injected cycle from the mutated process tree
+    tsort 2>&1 |
+    sed '
+        /^tsort: /!d
+        /input contains a loop:$/d
+        s/^tsort: //
+    ' |
+    sort -u |
+    # exclude bash and subshell
+    grep -vxF "$pid"$'\n'"$ppid"
+}
+signal_pg() {
+    local sig=$1
+    # send given signal to the process group
+    list_descendant_pids | xargs kill -$sig 2>/dev/null || true
+}
+keep_signal_pg() {
+    local sig=$1
+    # make sure all processes in this process group, hence its descendent are terminated
+    # (sometimes UDF processes don't terminate upon signals sent from tty)
+    echo "Sending SIG$sig to descendants of PID $$"
+    trap 'keep_signal_pg KILL' $signals  # or send KILL if it receives signal once again
+    signal_pg $sig
+    case $sig in KILL) return; esac  # just KILLed everyone and end of story
+    # until no process remains in the process group
+    # keep sending the same signal with increasing interval
+    local timeout=1
+    while [[ -n $(list_descendant_pids) ]]; do
+        echo "Processes still alive, sending SIG$sig again to descendants of PID $$ in $timeout secs"
+        sleep $timeout && signal_pg $sig && let timeout*=2 || {
+            # or send KILL if something goes wrong
+            keep_signal_pg KILL
+            return 1
+        }
+    done
+}
+for sig in $signals
+do trap "keep_signal_pg TERM" $sig  # XXX sending TERM instead of $sig as some children don't respond to other ones
+done
+
+# prepare the execution plan for given targets
+cd "$DEEPDIVE_APP"/run
+{
+    # some metadata
+    echo "# on $HOSTNAME: deepdive do $targets"
+    echo "# run/$runDir/plan.sh"
+    # and the plan
+    deepdive-plan "$@"
+} |
+tee "$runDir"/plan.orig.sh >"$runDir"/plan.sh
+
+# provide a chance to edit plan in a tty unless told not to ask
+if [[ -t 0 && -t 1 && $EDITOR != true && $EDITOR != : && $DEEPDIVE_PLAN_EDIT ]]; then
+    $VISUAL "$runDir"/plan.sh &&
+    [[ "$runDir"/plan.sh -nt "$runDir"/plan.orig.sh ]] || {
+        rm -rf "$runDir"
+        error "Canceled execution"
+    }
+fi
+
+# remove original unless modified
+! diff -q "$runDir"/plan{,.orig}.sh || rm -f "$runDir"/plan.orig.sh
+
+# maintain a few convenience symlinks
+#  making sure we clean up upon exit
+cleanup() {
+    cd "$DEEPDIVE_APP"
+    [[ ! run/RUNNING -ef run/"$runDir" ]] || rm -f run/RUNNING
+}
+trap cleanup EXIT
+#  and leaving an ABORTED symlink upon error
+abort() {
+    cd "$DEEPDIVE_APP"
+    [[ ! -e run/"$runDir" ]] || ln -sfnv "$runDir" run/ABORTED
+}
+trap abort ERR
+cd "$DEEPDIVE_APP"
+ln -sfnv "$runDir" run/RUNNING
+ln -sfnv "$runDir" run/LATEST
+
+# run it
+cd "$DEEPDIVE_APP"/run
+DEEPDIVE_ERROR_PREFIX="[ERROR] "  # prefixing error messages in logs
+DEEPDIVE_APP=$(cd .. && pwd -P)
+APP_HOME=$DEEPDIVE_APP # XXX legacy
+DEEPDIVE_OUTPUT=$(cd "$runDir" && pwd)
+export DEEPDIVE_ERROR_PREFIX DEEPDIVE_PROGRESS_FD DEEPDIVE_APP APP_HOME DEEPDIVE_OUTPUT
+eval 'bash -veu "$runDir"/plan.sh '$DEEPDIVE_PROGRESS_FD'>&2 2>&1' |
+{
+ln -sfn run.log "$runDir"/log.txt # XXX for backward compatibility with pre-0.7.x, keep a symlink
+# keep a log with timestamps on each line
+logging-with-ts "$runDir"/run.log
+}
+
+# leave a symlink to the latest successful run
+cd "$DEEPDIVE_APP"
+[[ ! -e run/FINISHED ]] || mv -fv --no-target-directory run/FINISHED run/FINISHED~
+ln -sfnv "$runDir" run/FINISHED

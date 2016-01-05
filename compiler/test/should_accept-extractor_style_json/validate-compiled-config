@@ -1,0 +1,12 @@
+#!/usr/bin/env jq-f
+include "../testutil";
+.deepdive as $deepdive |
+
+TEST("compiled extractor process"; .deepdive_.execution.processes["process/test_extractor"];
+    EXPECT_EQ( "should have correct style"           ; .style           ; $deepdive.extraction.extractors.test_extractor.style           ),
+    EXPECT_EQ( "should have correct input"           ; .input           ; $deepdive.extraction.extractors.test_extractor.input           ),
+    EXPECT_EQ( "should have correct udf"             ; .udf             ; $deepdive.extraction.extractors.test_extractor.udf             ),
+    EXPECT_EQ( "should have correct output_relation" ; .output_relation ; $deepdive.extraction.extractors.test_extractor.output_relation ),
+    EXPECT_EQ( "should have no sql"                  ; .sql             ; null                                                           ),
+    EXPECT_EQ( "should have no cmd"                  ; .cmd             ; null                                                           ),
+empty)

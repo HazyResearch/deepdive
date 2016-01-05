@@ -1,0 +1,35 @@
+#!/usr/bin/env jq-f
+# compile-check-1-compiled_dependencies_correct -- Checks if all dependencies after compilation refer to well-defined processes and data
+##
+.deepdive_ as $deepdive |
+
+# check every compiled process
+$deepdive.execution.processes | to_entries[] |
+.key as $extractorName | .value |
+
+# if named correctly
+(
+    select($extractorName | startswith("process/") | not) |
+    error("\($extractorName): All extractor names should start with 'process/'")
+),
+
+# if dependencies all refer to well-defined processes and data, etc.
+(
+    [ .dependencies_[]?
+    | select(
+        (startswith("process/") and in($deepdive.execution.processes)
+      # TODO factor/ aren't really used, so remove?
+      or startswith("factor/")  and (ltrimstr("factor/") | in($deepdive.inference.factors_byName))
+      or startswith("data/")    and (ltrimstr("data/")   | in($deepdive.schema.relations)
+                                                           # XXX assume user is doing the right thing if schema.json is empty
+                                                           or ($deepdive.schema.relations | length == 0))
+      or startswith("data/model/")
+      or startswith("model/")
+        ) | not)
+    ] |
+    if length == 0 then "\($extractorName) dependencies well-defined"
+    else error("\($extractorName) has undefined dependencies: \(join(" "))")
+    end
+),
+
+empty

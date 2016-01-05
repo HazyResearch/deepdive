@@ -1,0 +1,144 @@
+#!/usr/bin/env bash
+# deepdive-run -- Runs a pipeline of the DeepDive application
+# > deepdive run
+# Runs the default pipeline defined in deepdive.conf.
+#
+# > deepdive run PIPELINE
+# Runs the pipeline named PIPELINE defined in deepdive.conf.
+#
+# > deepdive run -C /path/to/app
+# Runs the application located on a different path than current working directory.
+#
+# > deepdive run -c application.conf
+# Runs the application defined in an alternative configuration file than deepdive.conf.
+#
+# > deepdive run -o /path/to/different/output/dir
+# Runs the application with an alternative output directory.
+#
+# > deepdive run -d /path/to/program.ddlog
+# Runs the application compiled from the given DDlog program.
+##
+set -eu
+
+: ${DEEPDIVE_OUTPUT:=}        # output path can be overriden
+: ${DEEPDIVE_CONFIG_EXTRA:=}  # deepdive.conf can be augmented with extra content
+
+error '`deepdive run` command is deprecated. Use `deepdive do` instead.' || true
+
+## parse command-line options
+ddlogFiles=()
+while getopts "C:c:o:" o; do
+    case $o in
+        C) DEEPDIVE_APP=$OPTARG ;;
+        c) DEEPDIVE_CONFIG=$OPTARG ;;
+        o) DEEPDIVE_OUTPUT=$OPTARG ;;
+        d) ddlogFiles+=("$OPTARG") ;;
+        *) usage "$0" "Illegal option given"
+    esac
+done
+shift $(($OPTIND - 1))
+
+Pipeline=
+[[ $# -eq 0 ]] || {
+    Pipeline=$1; shift
+}
+
+## find the current application
+# either specified with -C option or via DEEPDIVE_APP environment
+DEEPDIVE_APP=$(find-deepdive-app)
+export DEEPDIVE_APP
+cd "$DEEPDIVE_APP"
+
+# find the configuration file for the application
+# defaults to deepdive.conf, which can be overriden via command-line option -c or DEEPDIVE_CONFIG environment
+: ${DEEPDIVE_CONFIG:=$PWD/deepdive.conf}
+export DEEPDIVE_CONFIG
+
+# load database driver for the application
+. load-db-driver.sh
+
+# discover DDlog program if none were specified
+ddlogMain=app.ddlog
+if [[ ${#ddlogFiles[@]} -eq 0 && -e "$ddlogMain" ]]; then
+    ddlogFiles=("$ddlogMain")
+fi
+
+
+## find the output directory for this run of the application
+# either use the path specified in DEEPDIVE_OUTPUT environment or command-line option -o, or create a fresh run directory by default
+if [[ -n "$DEEPDIVE_OUTPUT" ]]; then
+    run_id=$DEEPDIVE_OUTPUT
+    if [[ "$run_id" = /* ]]; then
+        run_dir=$run_id
+    else
+        run_dir="$DEEPDIVE_APP/$run_id"
+    fi
+else
+    run_id=$(date +%Y%m%d/%H%M%S.%N)
+    run_dir="$DEEPDIVE_APP/run/$run_id"
+fi
+mkdir -p "$run_dir"
+# creating the run folder is necessary as we will create symlinks run/RUNNING and run/LATEST below
+mkdir -p run
+DEEPDIVE_OUTPUT=$(cd "$run_dir" && pwd)
+: ${DEEPDIVE_LOGFILE:="$DEEPDIVE_OUTPUT/log.txt"}
+export DEEPDIVE_OUTPUT DEEPDIVE_LOGFILE
+
+# point to the output directory with RUNNING symlink for convenience while it's running
+ln -sfn "$run_id" run/RUNNING
+trap "! [[ run/RUNNING -ef $run_dir ]] || rm -f run/RUNNING" EXIT
+trap "ln -sfn $run_id run/ABORTED" ERR
+
+
+## prepare the DeepDive configuration
+# To make it possible to integrate DDlog and to override certain configs,
+# an extended version of deepdive.conf is produced under the output directory,
+# collecting more configs from command-line and environment.
+fullConfig=$run_dir/deepdive.conf
+{
+
+# compile DDlog codes first if there're any
+[[ ${#ddlogFiles[@]} -eq 0 ]] || {
+    ddlog compile "${ddlogFiles[@]}"
+    export PIPELINE=  # XXX ddlog shouldn't emit this
+    : ${Pipeline:=endtoend}
+
+    # set PARALLELISM env var, use max parallelism if the variable is not set
+    : ${PARALLELISM:=$((
+        # Linux typically has coreutils which includes nproc
+        nproc ||
+        # OS X
+        sysctl -n hw.ncpu ||
+        # fall back to 1
+        echo 1
+    ) 2>/dev/null)}
+    export PARALLELISM
+}
+
+# set INPUT_BATCH_SIZE env var
+: ${INPUT_BATCH_SIZE:=10000}
+export INPUT_BATCH_SIZE
+
+# user's deepdive.conf overrides anything compiled from DDlog
+! [[ -e "$DEEPDIVE_CONFIG" ]] ||
+    cat "$DEEPDIVE_CONFIG"
+
+# any extra config present in DEEPDIVE_CONFIG_EXTRA environment gets more priority
+[[ -z "$DEEPDIVE_CONFIG_EXTRA" ]] ||
+    echo "$DEEPDIVE_CONFIG_EXTRA"
+
+# finally, the pipeline passed over command-line overrides everything
+[[ -z "$Pipeline" ]] ||
+    echo "deepdive.pipeline.run: $Pipeline"
+
+} >"$fullConfig"
+
+# XXX set the legacy environment variables
+export APP_HOME=$DEEPDIVE_APP
+
+## run DeepDive
+# JVM directly executes everything currently
+java org.deepdive.Main -c "$fullConfig" -o "$run_dir"
+
+# point to the run with LATEST symlink
+ln -sfn "$run_id" run/LATEST

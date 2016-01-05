@@ -1,0 +1,56 @@
+#!/usr/bin/env jq-f
+# compile-code-dataflow_dot -- Generates dependency graph of processes in Graphviz DOT language
+##
+
+def nodeId: sub("/"; "/\n");
+def nodeType: sub("/.*$"; "");
+
+# node attributes by type
+{ data     : "shape=box3d    color=\"#2222cc\" style=solid"
+, factor   : "shape=rect     color=\"#8822cc\" style=solid"
+, process  : "shape=ellipse  color=\"#cc2222\" style=solid"
+, pipeline : "shape=folder   color=\"#ffcc22\" style=solid"
+, model    : "shape=septagon color=\"#ffffff\" style=filled fillcolor=\"#cc22cc\""
+} as $nodeAttr |
+
+.deepdive_.execution.dependencies |
+{ path: "dataflow.dot", content: [
+"
+digraph \"\(env.DEEPDIVE_APP | sub(".*/"; "")) data flow\" {
+    graph[rankdir=BT  # bottom-to-top drawing (or RL/right-to-left may also make sense)
+    ];
+    node [shape=box
+         ,style=dotted
+         ,fontsize=10
+         ,fontname=\"Ubuntu Mono,Envy Code R,Oxygen Mono,Consolas,Menlo,Monaco,Andale Mono\"
+    ];
+    edge [color=\"#999999\"];
+
+", ( to_entries[]
+
+# process nodes
+| "
+\"\(.key | nodeId)\" [\($nodeAttr[.key | nodeType] // "")];
+"
+
+# dependency edges
+, "
+\"\(.value[] | nodeId)\" -> \"\(.key | nodeId)\" [
+label=\"\"
+\(
+# TODO different edge style by nodeType, e.g., dotted line to pipeline/
+# See: http://www.graphviz.org/doc/info/attrs.html#k:style
+if (.key | nodeType) == "pipeline" then
+    "style=dotted arrowhead=odiamond"
+else
+    ""
+end
+)
+];
+"
+
+), "
+
+}
+"
+] | join("") }

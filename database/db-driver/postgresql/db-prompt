@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# db-prompt -- Starts a prompt for the PostgreSQL database configured for a DeepDive application
+# > eval "$(db-parse "$url")"
+# > db-prompt
+##
+set -eu
+
+PGPASSWORD="$DBPASSWORD" \
+exec psql -h "$DBHOST" -p "$DBPORT" -U "$DBUSER" -d "$DBNAME" "$@"

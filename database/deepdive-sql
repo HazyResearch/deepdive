@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# deepdive-sql -- Runs a SQL query against the database for the DeepDive application
+# > deepdive sql
+# Starts a SQL prompt for the underlying database.
+#
+# You must either have the DEEPDIVE_DB_URL environment set to a proper URL or
+# run this command under a DeepDive application where the URL is set in a db.url file.
+#
+# > deepdive sql "SELECT ..."
+# > deepdive sql "INSERT ..."
+# > deepdive sql "UPDATE ..."
+# > deepdive sql "CREATE ..."
+# Executes given SQL query against the underlying database and prints the
+# result in a database-specific format.
+#
+# > deepdive sql eval "SELECT ..." [format=FORMAT] [header=1]
+# Evaluates a given SQL query and prints the result in the specified FORMAT.
+# FORMAT can be tsv, csv, or json, and defaults to tsv format.
+# Prints the header line for tsv and csv format when header=1 is given.
+##
+set -eu
+
+# parse database settings
+. load-db-driver.sh
+
+# process optional first SQL argument
+if [[ $# -gt 0 ]]; then
+    sql=$1; shift
+    # there could be a mode argument we recognize before the SQL
+    case $sql in
+        eval)
+            # get the SQL argument
+            sql_mode=$sql
+            if [[ $# -gt 0 ]]; then
+                sql=$1; shift
+            else
+                error "Missing SQL statement for '$sql_mode' mode"
+            fi
+            # parse rest of the optional arguments
+            eval "$(
+                # default options
+                format=tsv
+                header=0
+                [[ $# -eq 0 ]] || declare -- "$@"
+                for opt in format header
+                do printf "$opt=%q; " "${!opt:-}"
+                done
+            )"
+            exec db-query "$sql" "$format" "$header"
+            ;;
+
+        *)
+            # otherwise, we just execute the non-empty SQL passing through rest of the arguments
+            [[ -z "${sql//[[:space:]]/}" ]] ||
+                exec db-execute "$sql" "$@"
+    esac
+else
+    exec db-prompt "$@"
+fi

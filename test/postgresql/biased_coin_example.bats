@@ -5,8 +5,8 @@
 
 @test "$DBVARIANT biased coin example" {
     cd "$BATS_TEST_DIRNAME"/biased_coin_example || skip
-    deepdive initdb
-    deepdive run
+    deepdive compile
+    deepdive redo process/init/db data/model/{weights,probabilities}
 
     # weight should be around log(#positive) / log(#negative) ~= 2.1
     [[ $(deepdive sql eval "

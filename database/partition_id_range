@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# partition_id_range -- Parititions a sequential range of numbers for a given set of database tables
+#
+# $ partition_id_range TABLE...
+# Runs SELECT COUNT(*) query against every TABLE to find consecutive integer
+# ranges that can assign a unique integer for every row in each TABLE.
+# Outputs TABLE and the half open range as integer to the begin with and the
+# exclusive upper bound delineated with TABs.
+#
+# $ RANGE_BEGIN=123 partition_id_range ...
+# Allows to change the beginning integer to a begin with.
+#
+# $ RANGE_EXCLUDE_END=10000 partition_id_range ...
+# Allows to stop the partition early when a range to be assigned goes over a limit.
+#
+# $ RANGE_STEP=17 partition_id_range ...
+# Allows to assign the default range with a step size other than +1.
+#
+# $ partition_id_range TABLE_1:RANGE_STEP_1 TABLE_2:RANGE_STEP_2 ...
+# To use a different step size for each table, it can be appended to each TABLE
+# followed by a colon.
+##
+set -euo pipefail
+
+# default values
+: ${RANGE_BEGIN:=0} ${RANGE_EXCLUDE_END:=} ${RANGE_STEP:=1}
+
+# argument check
+[[ $# -gt 0 ]] || usage "$0" "At least one TABLE must be given"
+
+# output format is table, begin, exclude_end with TABs separating them
+output() {
+    local table=$1 start=$2 exclude_end=$3
+    printf '%s\t%s\t%s\n' "$table" "$start" "$exclude_end"
+}
+
+# assign a range of integers to each table by counting how many rows are in the previous one
+start=$RANGE_BEGIN tableBefore=
+while [[ $# -gt 0 ]]; do
+    TableAndStep=$1; shift
+    # parse table and step size from each argument
+    table=${TableAndStep%:*}
+    step=${TableAndStep#$table}
+    step=${step#:}
+    step=${step:-$RANGE_STEP}
+    # count rows to update the range
+    count=$(deepdive sql eval "SELECT COUNT(*) FROM $table")
+    exclude_end=$(( $start + $count * $step ))
+    [[ -z $RANGE_EXCLUDE_END || $exclude_end -lt $RANGE_EXCLUDE_END ]] || break  # stop paritioning when the end is reached
+    output "$table" $start $exclude_end
+    start=$exclude_end
+done

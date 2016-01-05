@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# db-create_calibration_view -- Creates a variable's *_calibration view in a PostgreSQL database
+# > eval "$(db-parse "$url")"
+# > export DEEPDIVE_CALIBRATION_NUM_BUCKETS=10
+# > db-create_calibration_view TABLE COLUMN
+##
+set -euo pipefail
+
+table=${1:?The TABLE holding the variable must be given, e.g., has_spouse}
+column=${2:?The COLUMN holding the variable must be given, e.g., is_true}
+
+: ${DEEPDIVE_CALIBRATION_NUM_BUCKETS:=10}
+num_buckets=$DEEPDIVE_CALIBRATION_NUM_BUCKETS
+
+# TODO drop ${column} from the table names
+db-create view "${table}_${column}_calibration" as "
+    WITH bucketed AS (
+        SELECT ${column} AS label
+             , CASE
+                 WHEN expectation = 1 THEN $(($num_buckets - 1))
+                 ELSE FLOOR(expectation * ${num_buckets})
+               END AS bucket
+        FROM ${table}_${column}_inference
+    )
+    SELECT universe.bucket                             AS bucket
+         , universe.count                              AS num_variables
+         , positive.count                              AS num_correct
+         , negative.count                              AS num_incorrect
+         , universe.bucket        / $num_buckets.      AS probability_lo
+         , (universe.bucket +  1) / ${num_buckets}.    AS probability_hi
+         , (universe.bucket + .5) / ${num_buckets}.    AS probability
+         , positive.count::FLOAT  / (
+           positive.count + negative.count)            AS accuracy
+         , positive.count + negative.count             AS num_predictions_test
+         , universe.count                              AS num_predictions_whole
+      FROM (
+            SELECT bucket, COUNT(*) AS count
+              FROM bucketed
+             GROUP BY bucket
+           ) universe
+      LEFT JOIN (
+            SELECT bucket, COUNT(*) AS count
+              FROM bucketed
+             WHERE label = true
+             GROUP BY bucket
+           ) positive ON universe.bucket = positive.bucket
+      LEFT JOIN (
+            SELECT bucket, COUNT(*) AS count
+              FROM bucketed
+             WHERE label = false
+             GROUP BY bucket
+           ) negative ON universe.bucket = negative.bucket
+     ORDER BY universe.bucket
+"

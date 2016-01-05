@@ -1,0 +1,29 @@
+#!/usr/bin/env jq-f
+# compile-config-9.99-dependencies -- Derives a dependency graph for easier Makefile and .dot codegen
+##
+.deepdive_ as $deepdive
+
+# a handy map to find input data for extractors
+| ( $deepdive.execution.processes | with_entries(.value |= .output_)
+  ) as $output_relation
+
+# form a dependency graph
+| .deepdive_.execution.dependencies =
+( [ # every process/* and the processes or input data it depends on
+    ( $deepdive.execution.processes | to_entries[]
+    | .value |= ((.dependencies_ // [] | map($output_relation[.] // .)) + .input_ | unique)
+    )
+  , # every factor/* and the processes that it depends on
+    ( $deepdive.inference.factors | to_entries[]
+    | .value |= ((.dependencies_ // [] | map($output_relation[.] // .)) + .input_ | unique)
+    )
+  , # every data/* and the processes that output it
+    ( $output_relation | to_entries | map(select(.value)) | group_by(.value)[]
+    | { key: .[0].value, value: map(.key) }
+    )
+#  , # every pipeline/* and the processes that it depends on
+#    ( $deepdive.pipeline.pipelines | to_entries[]
+#    )
+  ]
+| from_entries
+)

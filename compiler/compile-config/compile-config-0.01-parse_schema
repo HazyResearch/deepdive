@@ -1,0 +1,42 @@
+#!/usr/bin/env jq-f
+# compile-config-0.02-parse_schema -- Parses variables in deepdive.schema
+##
+include "constants";
+include "util";
+
+.deepdive_ as $deepdive
+
+# parse variable schema to define some names (mainly to find Multinomial cardinality)
+| .deepdive_.schema.variables_ = [
+    $deepdive.schema.variables | to_entries[]
+    | .key as $relationName | .value | to_entries
+        | if length != 1 then error("deepdive.schema.variables.\($relationName) has \(length
+            ) columns declared as variable. Every relation can have up to one column declared as a variable") else .[] end
+        | .key as $columnName | .value as $variableType |
+        { variableName         : $relationName
+        , variablesTable       : $relationName
+        , variablesLabelColumn : $columnName
+        , variableCategoriesTable : "\(deepdivePrefixForVariableCategoriesTable)\($relationName)"
+        } + (
+            # parse variable type
+            $variableType | trimWhitespace | ascii_downcase |
+            capture("^(?:
+                        (?<isBooleanType>     boolean     )
+                      | (?<isCategoricalType> categorical )
+                            \\s* \\(
+                            \\s* (?<variableCardinality> \\d+)
+                            \\s* \\)
+                      )$"; "xmi") //
+                error("deepdive.schema.variables.\($relationName).\($columnName
+                    ) has an unrecognized type: \($variableType | @json)")
+        )
+        | .isBooleanType     |= (length > 0)
+        | .isCategoricalType |= (length > 0)
+        | if .isBooleanType     then .variableType = "boolean"     | .variableCardinality = 2
+        elif .isCategoricalType then .variableType = "categorical" | .variableCardinality |= tonumber
+        else .
+        end
+]
+
+# create a map to make it easy to access a variable by its name
+| .deepdive_.schema.variables_byName = (.deepdive_.schema.variables_ | map({key: .variableName, value: .}) | from_entries)

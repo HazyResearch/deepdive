@@ -1,0 +1,11 @@
+#!/usr/bin/env jq-f
+# compile-config-0.02-parse_calibration -- Parses deepdive.calibration settings
+##
+
+.deepdive_ as $deepdive
+
+| .deepdive_.calibration |=
+    # holdout_query should have priority when both holdout_query and holdout_fraction are specified
+    ( if .holdout_query == null or .holdout_fraction == null then .
+    else .holdout_fraction = null
+    end)

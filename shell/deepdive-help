@@ -6,6 +6,8 @@
 # Created: 2015-07-30
 set -eu
 
+: ${TMPDIR:=/tmp}
+
 if [[ $# -gt 0 ]]; then
     Cmd=$1; shift
     exe=deepdive-"$Cmd"
@@ -22,7 +24,7 @@ fi
 echo
 echo "# Available COMMANDs are:"
 IFS=:
-tmp=$(mktemp -d "${TMPDIR:-/tmp}"/deepdive-usage.XXXXXXX)
+tmp=$(mktemp -d "$TMPDIR"/deepdive-usage.XXXXXXX)
 trap 'rm -rf "$tmp"' EXIT
 for path in $PATH; do
     for exe in "$path"/deepdive-*; do

@@ -1,0 +1,14 @@
+#!/usr/bin/env jq-f
+# compile-config-0.51-add_initdb -- Adds an extractor for initialzing database
+##
+.deepdive_ as $deepdive
+
+# add a database initialization process
+| .deepdive_.execution.processes +=
+    { "process/init/db":
+        { style: "cmd_extractor"
+        , cmd: "deepdive initdb"
+        }
+    }
+
+# TODO connect all extractors and factors with no dependency to init/db

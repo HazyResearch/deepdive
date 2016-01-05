@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# compile-check-1-compiled_base_relations_have_input_data -- Checks if all extensional relations have corresponding input data
+##
+set -euo pipefail
+jq -r '
+.deepdive_ as $deepdive
+| $deepdive.execution.processes | to_entries[]
+| select(.key | startswith("process/init/relation/"))
+| .value.output_relation
+' "$@" |
+{
+if [[ -x "$DEEPDIVE_APP"/input/init.sh ]]; then
+    DEEPDIVE_ERROR_PREFIX="[WARNING] "
+    error "input/init.sh should load all base relations: $(tr '\n' ' ')" || true
+else
+    # check if every base relation has a corresponding file that can be loaded by deepdive-load
+    while read baseRelation; do
+        dataExists=false
+        for f in "$DEEPDIVE_APP"/input/{"$baseRelation".{csv,tsv,sql}{,.sh,gz,bz2},init_"$baseRelation".sh}; do
+            [[ -e "$f" ]] || continue
+            dataExists=true
+            break
+        done
+        $dataExists ||
+            error "base relation '$baseRelation' must have data to load at: input/$baseRelation.*"
+    done
+fi
+}

@@ -1,0 +1,132 @@
+#!/usr/bin/env bash
+# deepdive-check -- Checks errors in compiled DeepDive app
+#
+# $ deepdive check -a
+# Runs all checks.
+#
+# $ deepdive check -a NAME...
+# Runs checks whose NAMEs are specified.
+#
+# $ deepdive check -l
+# Lists names of all checks.
+#
+# $ deepdive check NAME [ARGUMENT...]
+# Runs a specific check with NAME and optional ARGUMENTs.
+#
+# $ deepdive check -a -c CONFIG_JSON_PATH
+# Runs all checkers against a config.json different than run/compiled/config.json.
+##
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2015-12-16
+set -euo pipefail
+
+: ${DEEPDIVE_CHECK_HOME:="$DEEPDIVE_HOME/util/compile-check"}
+
+## parse options
+Mode=run_one_checker
+ConfigPath="run/compiled/config.json"
+while getopts "alc:" o; do
+    case $o in
+        a)
+            Mode=run_all_checkers
+            ;;
+        l)
+            Mode=list_all_checkers
+            ;;
+        c)
+            ConfigPath=$OPTARG
+            ;;
+    esac
+done
+shift $(($OPTIND - 1))
+
+## functions provided for accessing the checkers
+# how to resolve names of checkers to full paths
+resolve_checker_paths() {
+    local arr=$1; shift
+    local name= chkr=
+    chkrs=() # XXX not declared as local intentionally
+    for name; do
+        for chkr in "$DEEPDIVE_CHECK_HOME"/compile-check-*-$name; do
+            [[ -e "$chkr" ]] ||
+                if [[ -e "$name" ]]; then
+                    chkrs+=("$name")
+                    break
+                else
+                    error "$name: Unknown check"
+                fi
+            chkrs+=("$chkr")
+        done
+    done
+    eval "$arr"'=("${chkrs[@]}")'
+}
+
+# how to run a specific checker by full path
+run_one_checker_by_path() {
+    local chkr=$1; shift
+    local name=${chkr##"$DEEPDIVE_CHECK_HOME"/}
+    name=${name#compile-check-*-}
+    "$chkr" "${ConfigPath#$PWD/}" "$@" ||
+        error "FAILED deepdive check $name"
+}
+
+# how to run one checker by name or path with optional arguments
+run_one_checker() {
+    [[ $# -gt 0 ]] || usage "$0" "Missing NAME"
+    app-has-been-compiled "$ConfigPath"
+    local name=$1; shift
+    local chkrs=
+    resolve_checker_paths chkrs "$name"
+    if [[ ${#chkrs[@]} -eq 1 ]]; then
+        local chkr=${chkrs[0]}
+        [[ -x "$chkr" ]] ||
+            error "$name: No executable checker found"
+        run_one_checker_by_path "$chkr" "$@"
+    else
+        error "$name: NAME must be unambiguous, which may refer to:" \
+            "${chkrs[@]#"$DEEPDIVE_CHECK_HOME"/compile-check-*-}"
+    fi
+}
+
+# how to run all available checkers or the specified ones
+run_all_checkers() {
+    local allCheckPassed=true
+    local chkr=
+    if [[ $# -eq 0 ]]; then
+        # run all checkers
+        set -- "$DEEPDIVE_CHECK_HOME"/compile-check-*
+    else
+        # run specified checkers by resolving their full path names
+        local chkrs=
+        resolve_checker_paths chkrs "$@"
+        set -- "${chkrs[@]}"
+    fi
+    for chkr; do
+        [[ -x "$chkr" ]] || continue
+        local name=${chkr##"$DEEPDIVE_CHECK_HOME"/}
+        name=${name#compile-check-*-}
+        echo "checking if $name"
+        run_one_checker_by_path "$chkr" >/dev/null ||
+            allCheckPassed=false
+    done
+    # TODO check if all extractor with output_relation is transitively dependent on process/init/db
+    # TODO check if all inference rules had required fields
+    # TODO check if all compiled processes have required fields
+    # TODO check if all udfs tsv_extractor test fires correctly
+    $allCheckPassed
+}
+
+# how to enumerate all available checkers
+list_all_checkers() {
+    (
+    cd "$DEEPDIVE_CHECK_HOME"
+    find compile-check-* -perm -a+x | sed 's/^compile-check-[^-]*-//'
+    )
+}
+
+## launch the asked function in the right environment
+DEEPDIVE_APP=$(find-deepdive-app)
+export DEEPDIVE_APP
+cd "$DEEPDIVE_APP"
+
+"$Mode" "$@"

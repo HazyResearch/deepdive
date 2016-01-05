@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# db-query -- Evaluates given SQL query against the MySQL database configured for a DeepDive application
+# > eval "$(db-parse "$url")"
+# > db-query SQL FORMAT HEADER
+##
+set -eu
+
+sql=${1:?No SQL given}; shift
+format=${1:?No FORMAT given}; shift
+header=${1:?No HEADER given}; shift
+
+prompt_options=(--batch)
+case $format in
+    tsv) ;;
+    csv) sql+="
+        INTO OUTFILE '/dev/stdout'
+        FIELDS TERMINATED BY ','
+        ENCLOSED BY '\"'
+        LINES TERMINATED BY '\n'";;
+    *) error "$format: unsupported format by MySQL driver" ;; # TODO
+esac
+case $header in
+    0) prompt_options+=(--skip-column-names) ;;
+    1) prompt_options+=(--column-names)  ;;
+    *) error "$header: unrecognized value for HEADER"
+esac
+
+exec db-execute "$sql" "${prompt_options[@]}" "$@"

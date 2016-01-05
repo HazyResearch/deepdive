@@ -48,11 +48,14 @@ DeepDive is written in several programming languages.
 #### DeepDive Code Structure
 
 * `src/main/scala/` contains the main Scala code.
-* `shell/` contains the scripts used by the `deepdive` command-line interface.
+* `shell/` contains the code for the general `deepdive` command-line interface.
+* `compiler/` contains the code that compiles DeepDive application configuration into an execution plan.
+* `runner/` contains the engine for running the execution plan compiled by the compiler.
 * `util/` contains utility scripts and binaries.
+* `test/` and `src/test/` contains the test code.
 * `ddlib/` contains the ddlib Python library that helps users write feature extractors.
-* `src/test/` and `test/` contains the test code.
 * `doc/` contains the Markdown/Jekyll source for the DeepDive website and documentation.
+* `depends/` contains scripts for building and bundling runtime dependencies.
 * `examples/` contains the DeepDive examples.
 * `dist/` is the default location where the built executables and runtime data will be staged.
 
@@ -82,16 +85,28 @@ DeepDive source tree includes several git submodules and ports:
     cd deepdive
     ```
 
-* To install all dependencies, run:
+* To install all build and runtime dependencies, run:
 
     ```bash
     make depends
     ```
 
+    Or, if you don't have even `make` installed:
+
+    ```bash
+    util/install.sh _deepdive_build_deps _deepdive_runtime_deps
+    ```
+
+    Basically, DeepDive requires C/C++ compiler, JDK, Python, and several libraries with headers to build from source.
+    `install__deepdive_build_deps` in `util/install/install.Ubuntu.sh` script enumerates most of the build dependencies as APT packages.
+    You may easily find corresponding packages for your platform and install them.
+    On the other hand, most of the runtime dependencies will be built and bundled (see: `depends/bundled/`), so eventually users will just grab a DeepDive binary and run it without having to waste time on installing the correct software packages.
+
+
 * To build most of what's under DeepDive's source tree and install at `~/local/`, run:
 
     ```bash
-    make  # or make install
+    make install
     ```
 
     Overriding the `PREFIX` variable allows the installation destination to be changed.  For example:
@@ -107,6 +122,9 @@ DeepDive source tree includes several git submodules and ports:
     ```
 
     Note that at least one of PostgreSQL, MySQL, or Greenplum database must be running to run the tests.
+
+    By setting `TEST_DBHOST` environment to a `user:password@hostname`, it is possible to specify against which database the tests should run.
+    For specifying non-default ports for different database types, there are more specific variables: `TEST_POSTGRES_DBHOST`, `TEST_GREENPLUM_DBHOST`, and `TEST_MYSQL_DBHOST`.
 
 * To run tests selectively, use `ONLY` and `EXCEPT` Make variables for `make test`.
 

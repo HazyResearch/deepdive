@@ -14,9 +14,8 @@
 /project/target
 /project/project
 /dist
+/.build
 /doc/_*local*
-/util/ddlog.jar
-/util/mindbender
 /.github-release-assets
 /deepdive-*.tar.gz
 /util/sampler-dw-linux

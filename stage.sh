@@ -6,7 +6,10 @@ set -eu
 STAGE_DIR=${1:-dist/stage}
 stage() {
     local src=$1 dst=$2
-    [[ -e "$src" ]]
+    [[ -e "$src" ]] || {
+        echo >&2 "$src: No such file to stage"
+        false
+    }
     dst="$STAGE_DIR/$dst"
     dstdir=$(dirname "$dst.")
     [[ -d "$dstdir" ]] || mkdir -p "$dstdir"
@@ -35,22 +38,57 @@ stage shell/deepdive                                              bin/
 stage shell/deepdive-version                                      util/
 stage shell/deepdive-help                                         util/
 stage shell/deepdive-env                                          util/
+stage shell/deepdive-whereis                                      util/
 stage shell/find-deepdive-app                                     util/
 stage shell/parse-url.sh                                          util/
 stage shell/error                                                 util/
 stage shell/usage                                                 util/
+stage shell/escape4sh                                             util/
+stage compiler/jq2sh                                              util/
+stage shell/jq-f                                                  util/
+stage shell/logging-with-ts                                       util/
+stage shell/deepdive_bash_completion.sh                           etc/
 
-stage shell/deepdive-initdb                                       util/
-stage shell/deepdive-run                                          util/
-stage shell/deepdive-sql                                          util/
-stage shell/deepdive-load                                         util/
+stage compiler/deepdive-compile                                   util/
+stage compiler/deepdive-check                                     util/
+stage compiler/app-has-been-compiled                              util/
+stage .build/submodule/compiler/hocon2json/hocon2json.sh                                util/hocon2json
+stage .build/submodule/compiler/hocon2json/target/scala-2.10/hocon2json-assembly-*.jar  util/hocon2json.jar
+stage src/main/resources/application.conf                         etc/deepdive-default.conf
+stage compiler/compile-config                                     util/
+stage compiler/compile-check                                      util/
+stage compiler/compile-code                                       util/
+stage compiler/compile-codegen                                    util/
 
-stage shell/load-db-driver.sh                                     util/
-stage shell/driver.postgresql                                     util/
-stage shell/driver.greenplum                                      util/
-stage shell/driver.postgresql-xl                                  util/
-stage shell/driver.mysql                                          util/
-stage shell/driver.mysqlcluster                                   util/
+stage runner/deepdive-plan                                        util/
+stage runner/deepdive-do                                          util/
+stage runner/deepdive-redo                                        util/
+stage runner/deepdive-mark                                        util/
+stage runner/deepdive-done                                        util/
+stage runner/format_timestamp                                     util/
+stage runner/mark_done                                            util/
+stage runner/resolve-args-to-do.sh                                util/
+stage runner/show_progress                                        util/
+stage runner/deepdive-run                                         util/
+
+stage runner/deepdive-compute                                     util/
+stage runner/load-compute-driver.sh                               util/
+stage runner/compute-driver/local                                 util/compute-driver/
+stage runner/computers-default.conf                               util/
+stage .build/submodule/util/mkmimo/mkmimo                         util/
+
+stage database/deepdive-db                                        util/
+stage database/deepdive-initdb                                    util/
+stage database/deepdive-sql                                       util/
+stage database/deepdive-load                                      util/
+stage database/load-db-driver.sh                                  util/
+stage database/db-driver/postgresql                               util/db-driver/
+stage database/db-driver/greenplum                                util/db-driver/
+stage database/db-driver/postgresql-xl                            util/db-driver/
+stage database/db-driver/mysql                                    util/db-driver/
+stage database/db-driver/mysqlcluster                             util/db-driver/
+stage database/partition_id_range                                 util/
+stage database/pgtsv_to_json                                      util/
 
 # DeepDive core
 stage target/scala-2.10/deepdive-assembly-*.jar                   lib/deepdive.jar || true  # when testing, .jar may be missing
@@ -58,14 +96,13 @@ stage target/scala-2.10/deepdive-assembly-*.jar                   lib/deepdive.j
 # DeepDive utilities
 stage util/tobinary.py                                            util/
 stage util/active.sh                                              util/
+stage util/draw_calibration_plot                                  util/
 stage util/calibration.py                                         util/
 stage util/calibration.plg                                        util/
-stage util/pgtsv_to_json                                          util/
 
 # DDlog compiler
 stage util/ddlog                                                  bin/
-stage util/ddlog.jar                                              lib/
-#stage ddlog/ddlog.jar                                            lib/ # TODO
+stage .build/submodule/ddlog/target/scala-2.10/ddlog-assembly-0.1-SNAPSHOT.jar  lib/ddlog.jar
 
 # DDlib
 stage ddlib/ddlib                                                 lib/python/
@@ -73,20 +110,20 @@ stage ddlib/ddlib                                                 lib/python/
 # DimmWitted sampler
 case $(uname) in
 Linux)
-    # copy sampler libraries
-    ldd util/sampler-dw-linux | grep '=>' | awk '{print $3}' | sort -u | grep -v '^(' | xargs cp -t "$STAGE_DIR"/lib/
     stage util/ndbloader/ndbloader-linux                          util/ndbloader
     stage util/format_converter_linux                             util/format_converter
-    #stage sampler/dw                                             util/sampler-dw # TODO
-    stage util/sampler-dw-linux                                   util/
+    # copy shared libraries required by the sampler
+    ldd .build/submodule/sampler/dw | grep '=>' | awk '{print $3}' | sort -u | grep -v '^(' | xargs cp -vt "$STAGE_DIR"/lib/
+    stage .build/submodule/sampler/dw                             util/sampler-dw-linux
     stage util/sampler-dw-linux.sh                                util/
     ln -sfn sampler-dw-linux.sh                                   "$STAGE_DIR"/util/sampler-dw
     ;;
 Darwin)
-    otool -L util/sampler-dw-mac | grep 'dylib' | sed 's/(.*)//' | awk '{print $1}' | xargs cp -t "$STAGE_DIR"/lib/
     stage util/ndbloader/ndbloader-mac                            util/ndbloader
     stage util/format_converter_mac                               util/format_converter
-    stage util/sampler-dw-mac                                     util/
+    # copy shared libraries required by the sampler
+    otool -L .build/submodule/sampler/dw | grep 'dylib' | sed 's/(.*)//' | awk '{print $1}' | grep -v '^/usr/lib/' | xargs cp -vt "$STAGE_DIR"/lib/
+    stage .build/submodule/sampler/dw                             util/sampler-dw-mac
     stage util/sampler-dw-mac.sh                                  util/
     ln -sfn sampler-dw-mac.sh                                     "$STAGE_DIR"/util/sampler-dw
     ;;
@@ -102,4 +139,7 @@ stage util/ddext.py                                               util/
 stage util/ddext_input_sql_translator.py                          util/
 
 # Mindbender
-stage mindbender/mindbender-LATEST-$(uname)-x86_64.sh             bin/mindbender || true  # keeping it optional for now
+stage .build/submodule/mindbender/mindbender-LATEST.sh            bin/mindbender || true  # keeping it optional for now
+
+# runtime dependencies after building them from source
+stage depends/.build/bundled                                      lib/

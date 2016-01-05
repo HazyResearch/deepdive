@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# db-parse -- Parses URL for MySQL database set up for a DeepDive application
+# > db-parse "$url"
+set -eu
+
+. parse-url.sh "$@"
+
+# default values
+: ${user:=$USER} ${port:=3306}
+
+# map to environment variables for mysql
+escape4sh export "DBTYPE=mysql"
+escape4sh export "DBVARIANT=${dbtype}"
+escape4sh export "DBHOST=${host}"
+escape4sh export "DBPORT=${port}"
+escape4sh export "DBUSER=${user}"
+escape4sh export "DBPASSWORD=${password}"
+escape4sh export "DBNAME=${dbname}"
+
+# more variables for Scala application.conf
+escape4sh export "DEEPDIVE_JDBC_DRIVER=com.mysql.jdbc.Driver"
+escape4sh export "DEEPDIVE_JDBC_URL=jdbc:mysql://$host${port:+:$port}/$dbname"

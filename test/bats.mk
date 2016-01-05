@@ -5,8 +5,9 @@
 
 # some default locations
 TEST_ROOT = test
-TEST_LIST_COMMAND = $(TEST_ROOT)/enumerate-tests.sh
 BATS_ROOT = $(TEST_ROOT)/bats
+# a command to enumerate all .bats files to test
+TEST_LIST_COMMAND = find $(TEST_ROOT) -path $(BATS_ROOT) -prune -false -o -name '*.bats'
 export TEST_ROOT
 
 .PHONY: test test-build test-list
@@ -39,4 +40,10 @@ test:
 	#  To test selectively, run:  make test   ONLY+=/path/to/bats/files
 	#  To exclude certain tests:  make test EXCEPT+=/path/to/bats/files
 	#  For a list of tests, run:  make test-list
-	$(BATS_ROOT)/bin/bats  $(BATS_FILES)
+	@if [ $(words $(BATS_FILES)) -gt 0 ]; \
+	then \
+	    echo "$(BATS_ROOT)/bin/bats \\"; \
+	        printf '  %s \\\n' $(BATS_FILES); \
+	        echo '  #'; \
+	    $(BATS_ROOT)/bin/bats  $(BATS_FILES); \
+	fi

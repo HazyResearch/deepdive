@@ -79,3 +79,9 @@ You can install DeepDive and all its dependencies with a single command.
 
 Congratulations! DeepDive is now installed on your system, and you can proceed to the [next steps](walkthrough/walkthrough.html).
 
+
+
+## Installing from Source
+
+Using the quick installation method is recommended unless you want to use a development branch or modify DeepDive engine itself.
+If you still want to build DeepDive from source code yourself, follow the [developer's guide](../advanced/developer.html#build-test).

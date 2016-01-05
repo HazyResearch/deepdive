@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# db-init -- Initializes MySQL database for a DeepDive application
+# > eval "$(db-parse "$url")"
+# > db-init
+##
+set -eu
+
+{
+mysqladmin -h "$DBHOST" -P "$DBPORT" -u "$DBUSER" --password="$DBPASSWORD" -f drop   "$DBNAME" || true
+mysqladmin -h "$DBHOST" -P "$DBPORT" -u "$DBUSER" --password="$DBPASSWORD" -f create "$DBNAME"
+
+# Create a RANDOM() function to be more compatible with PostgreSQL
+# See: http://mysql-0v34c10ck.blogspot.com/2011/05/random-number-range-picker.html
+db-execute '
+    DROP FUNCTION IF EXISTS "RANDOM";
+    DELIMITER $$
+    CREATE FUNCTION RANDOM()
+        RETURNS DOUBLE
+    BEGIN
+        RETURN RAND();
+    END $$
+    DELIMITER ;
+'
+} >/dev/null

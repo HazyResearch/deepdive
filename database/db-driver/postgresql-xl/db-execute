@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# db-execute -- Executes a given SQL query against the PostgreSQL database configured for a DeepDive application
+# > eval "$(db-parse "$url")"
+# > db-execute SQL
+##
+set -eu
+
+sql=${1:?No SQL given}; shift
+
+exec db-prompt -v ON_ERROR_STOP=1 -f <(echo "$sql") "$@"

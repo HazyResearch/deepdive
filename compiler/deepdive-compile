@@ -1,0 +1,164 @@
+#!/usr/bin/env bash
+# deepdive-compile -- Compiles DeepDive source code into executables under run/
+##
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2015-11-03
+set -euo pipefail
+
+: ${DEEPDIVE_CONFIG_EXTRA:=}  # deepdive.conf can be augmented with extra content
+
+: ${DEEPDIVE_COMPILE_INPUT_JSON:=} # compiling app.ddlog and merging deepdive.conf and schema.json can be skipped by specifying a precompiled deepdive.conf.json
+: ${DEEPDIVE_COMPILE_SKIP_DATAFLOW:=} ${DEEPDIVE_COMPILE_SKIP_CODEGEN:=} # some codegen steps can be disabled
+
+DEEPDIVE_APP=$(find-deepdive-app)
+export DEEPDIVE_APP
+cd "$DEEPDIVE_APP"
+
+. load-db-driver.sh  # XXX necessary for hocon2json to resolve some environment variables, which may be irrelevant once Scala codebase is dropped
+mkdir -p run
+
+# create a fresh working directory for compiling
+compileDir=$(date +%Y%m%d/%H%M%S.%N)
+mkdir -p "run/$compileDir"
+# log all the compilation steps and stderr with timestamps
+exec 3>&2 2> >(logging-with-ts run/"$compileDir"/compile.log >&2)
+STEP() { echo "$@"; } >&2
+# bookkeep some symlinks
+cleanup() {
+    cd "$DEEPDIVE_APP"
+    [[ ! run/RUNNING.COMPILE -ef run/"$compileDir" ]] || rm -f run/RUNNING.COMPILE
+} >&3
+abort() {
+    cd "$DEEPDIVE_APP"
+    [[ ! -e run/"$compileDir" ]] || ln -sfnv "$compileDir" run/ABORTED.COMPILE
+} >&3
+trap cleanup EXIT
+trap abort ERR HUP QUIT INT TERM
+ln -sfnv "$compileDir" run/LATEST.COMPILE >&2
+ln -sfnv "$compileDir" run/RUNNING.COMPILE >&2
+
+# augment PATH to access compiler components
+PATH="$DEEPDIVE_HOME"/util/compile-config:"$PATH"
+PATH="$DEEPDIVE_HOME"/util/compile-code:"$PATH"
+export DEEPDIVE_ERROR_PREFIX="[ERROR] "
+
+## compile a full deepdive.conf from source code
+if ! [[ -e $DEEPDIVE_COMPILE_INPUT_JSON ]]; then
+STEP "Parsing DeepDive application ($DEEPDIVE_APP) to generate:"
+STEP " run/compiled/schema.json"
+# compile schema in JSON
+touch run/"$compileDir"/schema.json run/"$compileDir"/deepdive.conf
+if [[ -r app.ddlog ]]; then
+    STEP "  from app.ddlog"
+    ddlog export-schema app.ddlog
+else
+    echo '{}'
+fi |
+if [[ -r schema.json && -s schema.json ]]; then
+    # merge user's schema.json
+    STEP "  from schema.json"
+    SCHEMA_JSON="$(cat)" \
+    jq '(env.SCHEMA_JSON | fromjson) + .' schema.json
+else
+    cat
+fi >run/"$compileDir"/schema.json
+STEP " run/compiled/deepdive.conf"
+{
+# compile DDlog rules
+if [[ -r app.ddlog ]]; then
+    STEP "  from app.ddlog"
+    ddlog compile app.ddlog
+fi
+# append user's deepdive.conf
+if [[ -r deepdive.conf ]]; then
+    STEP "  from deepdive.conf"
+    cat deepdive.conf
+fi
+# any extra config present in DEEPDIVE_CONFIG_EXTRA environment gets more priority
+if [[ -n "$DEEPDIVE_CONFIG_EXTRA" ]]; then
+    STEP "  from \$DEEPDIVE_CONFIG_EXTRA"
+    echo "$DEEPDIVE_CONFIG_EXTRA"
+fi
+# include the schema as well
+echo -n "deepdive.schema "
+cat run/"$compileDir"/schema.json
+} >run/"$compileDir"/deepdive.conf
+cd run/"$compileDir"
+# produce a JSON from compiled deepdive.conf
+STEP " run/compiled/deepdive.conf.json"
+(
+# XXX some bogus variables in deepdive.conf added by DDlog compiler or in deepdive-default.conf
+APP_HOME='"$DEEPDIVE_APP"'
+PIPELINE=
+PARALLELISM=1
+INPUT_BATCH_SIZE=100000
+export APP_HOME PIPELINE PARALLELISM INPUT_BATCH_SIZE
+# convert HOCON into JSON
+hocon2json \
+    deepdive.conf \
+    "$DEEPDIVE_HOME"/etc/deepdive-default.conf
+) >deepdive.conf.json
+
+else
+STEP "Loading precompiled DeepDive application from $DEEPDIVE_COMPILE_INPUT_JSON to generate:"
+STEP " run/compiled/deepdive.conf.json"
+cp -pf "$DEEPDIVE_COMPILE_INPUT_JSON" run/"$compileDir"/deepdive.conf.json
+cd run/"$compileDir"
+# TODO STEP " run/compiled/schema.json"
+fi
+
+STEP "Performing sanity checks on run/compiled/deepdive.conf.json:"
+deepdive-check -a -c "$PWD"/deepdive.conf.json 'input_*' 2>&1 | sed 's/^/ /' >&2
+
+STEP "Normalizing and adding built-in processes to the data flow to compile:"
+config=deepdive.conf.json
+for cc in "$DEEPDIVE_HOME"/util/compile-config/compile-config-*; do
+    [[ -x "$cc" ]] || continue
+    cc=${cc##*/}
+    name=${cc#compile-config-}
+    output=config-$name.json
+    STEP " run/compiled/$output"
+    "$cc" "$config" >"$output"
+    config=$output  # process the output with the next config compiler
+done
+STEP " run/compiled/config.json"
+ln -sfn "$config" config.json
+
+STEP "Validating run/compiled/config.json:"
+deepdive-check -a -c "$PWD"/config.json 'compiled_*' 2>&1 | sed 's/^/ /' >&2
+
+STEP "Compiling executable code into:"
+# compile extractors and factors under process/ and factor/
+for cc in "$DEEPDIVE_HOME"/util/compile-code/compile-code-*; do
+    [[ -x "$cc" ]] || continue
+    cc=${cc##*/}
+    name=${cc#compile-code-}
+    STEP " run/compiled/code-$name.json"
+    "$cc" config.json >code-$name.json
+done
+
+#STEP "Validating run/compiled/code-*.json:"
+#deepdive-check -a -c "$PWD"/code-\*.json 'codegen_*' 2>&1 | sed 's/^/ /' >&2
+# TODO check path name collisions in code-*.json
+
+# mark everything compiled as read-only
+chmod a-w *
+
+if [[ -z $DEEPDIVE_COMPILE_SKIP_CODEGEN ]]; then
+# generate actual code under run/
+cd "$DEEPDIVE_APP"/run
+STEP "Generating files:"
+cat "$compileDir"/code-*.json |
+compile-codegen
+# some postprocessing over generated files
+dot -Tsvg <dataflow.dot >dataflow.svg
+STEP " run/dataflow.svg"
+STEP "  (file://$(pwd -P)/dataflow.svg)"  # XXX a handy file: URL for opening in a browser
+fi
+
+# point to the successfully compiled one, leaving the previous one as backup
+{
+    cd "$DEEPDIVE_APP"
+    [[ ! -e run/compiled ]] || mv -fv --no-target-directory run/compiled run/compiled~
+    ln -sfnv "$compileDir" run/compiled
+} >&2

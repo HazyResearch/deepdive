@@ -1,0 +1,7 @@
+#!/usr/bin/env jq-f
+include "../testutil";
+
+TEST("parsed weight"; .deepdive_.inference.factors_byName.test_factor.weight_;
+    EXPECT_EQ( "should have correct is_fixed" ; .is_fixed ; false                            ),
+    EXPECT_EQ( "should have correct params"   ; .params   ; ["x.R0.feature", "x.R1.feature"] ),
+empty)

@@ -4,10 +4,12 @@
 PREFIX = ~/local
 # path to the staging area
 STAGE_DIR = dist/stage
+# path to the area for keeping track of build
+BUILD_DIR = .build
 # path to the package to be built
 PACKAGE = $(dir $(STAGE_DIR))deepdive.tar.gz
 
-.DEFAULT_GOAL := install
+.DEFAULT_GOAL := test-build
 
 ### dependency recipes ########################################################
 
@@ -15,7 +17,6 @@ PACKAGE = $(dir $(STAGE_DIR))deepdive.tar.gz
 depends:
 	# Installing and Checking dependencies...
 	util/install.sh _deepdive_build_deps _deepdive_runtime_deps
-
 
 ### install recipes ###########################################################
 
@@ -49,7 +50,7 @@ release-%:
 	ln -sfn $(PACKAGE) $(RELEASE_PACKAGE)
 	# Releasing $(RELEASE_PACKAGE) to GitHub
 	# (Make sure GITHUB_OAUTH_TOKEN is set directly or via ~/.netrc or OS X Keychain)
-	util/upload-github-release-asset \
+	util/build/upload-github-release-asset \
 	    file=$(RELEASE_PACKAGE) \
 	    repo=$(GITHUB_REPO) \
 	    tag=$(RELEASE_VERSION)
@@ -62,7 +63,7 @@ define STAGING_COMMANDS
 	# staging all executable code and runtime data under $(STAGE_DIR)/
 	./stage.sh $(STAGE_DIR)
 	# record version and build info
-	util/generate-build-info.sh >$(STAGE_DIR)/.build-info.sh
+	util/build/generate-build-info.sh >$(STAGE_DIR)/.build-info.sh
 endef
 
 .PHONY: build
@@ -85,6 +86,12 @@ endif
 
 include scala.mk  # for scala-build, scala-test-build, scala-assembly-jar, scala-clean, etc. targets
 
+# how to build runtime dependencies to bundle
+.PHONY: depends/.build/bundled
+depends/.build/bundled: depends/bundle-runtime-dependencies.sh
+	PACKAGENAME=deepdive  $<
+test-build build: depends/.build/bundled
+
 
 ### test recipes #############################################################
 
@@ -97,6 +104,7 @@ DEEPDIVE_HOME := $(realpath $(STAGE_DIR))
 export DEEPDIVE_HOME
 
 include test/bats.mk
+TEST_LIST_COMMAND = mkdir -p $(STAGE_DIR) && $(TEST_ROOT)/enumerate-tests.sh
 
 .PHONY: checkstyle
 checkstyle:
@@ -107,15 +115,13 @@ checkstyle:
 
 .PHONY: build-sampler
 build-sampler:
-	git submodule update --init sampler
-	[ -e sampler/lib/gtest -a -e sampler/lib/tclap ] || $(MAKE) -C sampler dep
-	$(MAKE) -C sampler dw
-ifeq ($(shell uname),Linux)
-	cp -f sampler/dw util/sampler-dw-linux
-endif
-ifeq ($(shell uname),Darwin)
-	cp -f sampler/dw util/sampler-dw-mac
-endif
+	@util/build/build-submodule-if-needed sampler dw
+test-build build: build-sampler
+
+.PHONY: build-hocon2json
+build-hocon2json:
+	@util/build/build-submodule-if-needed compiler/hocon2json hocon2json.sh target/scala-2.10/hocon2json-assembly-0.1-SNAPSHOT.jar
+test-build build: build-hocon2json
 
 # format_converter
 ifeq ($(shell uname),Linux)
@@ -131,13 +137,14 @@ endif
 
 .PHONY: build-mindbender
 build-mindbender:
-	git submodule update --init mindbender
-	$(MAKE) -C mindbender clean-packages
-	$(MAKE) -C mindbender package
+	@util/build/build-submodule-if-needed mindbender mindbender-LATEST.sh
 
 .PHONY: build-ddlog
 build-ddlog:
-	git submodule update --init ddlog
-	$(MAKE) -C ddlog ddlog.jar
-	cp -f ddlog/ddlog.jar util/ddlog.jar
-test-build build: build-ddlog build-sampler
+	@util/build/build-submodule-if-needed ddlog target/scala-2.10/ddlog-assembly-0.1-SNAPSHOT.jar
+test-build build: build-ddlog
+
+.PHONY: build-mkmimo
+build-mkmimo:
+	@util/build/build-submodule-if-needed util/mkmimo mkmimo
+test-build build: build-mkmimo

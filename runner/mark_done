@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# mark_done -- Marks given targets as done
+# > mark_done TARGET...
+##
+set -eu
+for t; do
+    mkdir -p "$(dirname "$t")"
+    touch "$t".done
+done

@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# db-parse -- Parses URL for PostgreSQL database set up for a DeepDive application
+# > db-parse "$url"
+set -eu
+
+. parse-url.sh "$@"
+
+# default values
+: ${user:=$USER} ${port:=5432}
+
+# map to environment variables for psql
+echo "DBTYPE=postgresql"
+# TODO proper escaping of rhs
+echo "DBVARIANT=${dbtype}"
+echo "DBHOST=${host}"
+echo "DBPORT=${port}"
+echo "DBUSER=${user}"
+echo "DBPASSWORD='${password:-${PGPASSWORD:-}}'"
+echo "DBNAME=${dbname}"
+echo "export DBHOST DBPORT DBUSER DBPASSWORD DBNAME"
+
+# more variables for Scala application.conf
+echo "DEEPDIVE_JDBC_DRIVER=org.postgresql.Driver"
+
+echo "DEEPDIVE_JDBC_URL='jdbc:postgresql://$host${port:+:$port}/$dbname$querystring'"
+echo "export DEEPDIVE_JDBC_DRIVER DEEPDIVE_JDBC_URL"
+
+# XXX several environment variables for legacy apps
+# TODO Pass through $DEEPDIVE_DB_URL to Postgresql >= 9.2 since it natively supports URIs
+# TODO try to translate all params in URI to environment variables or keyword=value string
+# See: http://www.postgresql.org/docs/8.1/static/libpq-envars.html
+# See: http://www.postgresql.org/docs/9.2/static/libpq-connect.html#LIBPQ-CONNSTRING
+echo "PGHOST=${host}"
+echo "PGPORT=${port}"
+echo "PGUSER=${user}"
+echo "PGPASSWORD=\$DBPASSWORD"
+case $querystring in
+    *sslmode=*)
+        sslmode=${querystring#*sslmode=}; sslmode=${sslmode%&*} # FIXME this is brittle, need a proper URL querystring parsing, perhaps from ../parse-url.sh
+        echo "DEEPDIVE_JDBC_URL+='&ssl=true'"
+        echo "PGSSLMODE=${sslmode}" ;;
+    *ssl=true*) echo "PGSSLMODE=require" ;;
+    *) echo "PGSSLMODE=prefer"
+esac
+echo "export PGHOST PGPORT PGUSER PGPASSWORD PGSSLMODE"
