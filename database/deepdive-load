@@ -13,6 +13,12 @@
 # is set to a proper URL, or under a DeepDive application where the URL is set
 # in the db.url file.
 #
+# The format of each SOURCE is determined by the filename extension, such as
+# `.tsv` or `.csv`.  Defining the DEEPDIVE_LOAD_FORMAT environment to tsv, csv,
+# or sql assumes a particular format, ignoring the filename.  Defining
+# DEEPDIVE_LOAD_FORMAT_DEFAULT environment will fallback to the specified
+# format when it cannot be determined from the filename.
+#
 # For example:
 #
 # > deepdive load sentences
@@ -24,11 +30,14 @@
 #
 # > deepdive load sentences sentences.csv.bz2
 # creates table 'sentences' and loads from a compressed CSV file.
+#
+# > deepdive load sentences sentences.csv.sh
+# creates table 'sentences' and loads the CSV output of a shell script.
 ##
 set -eu
 
-# skip detection of the data format and assume
-: ${DEEPDIVE_LOAD_FORMAT:=}
+# fallback to a data format or skip detection of it and assume a particular one
+: ${DEEPDIVE_LOAD_FORMAT_DEFAULT:=} ${DEEPDIVE_LOAD_FORMAT:=}
 
 [[ $# -gt 0 ]] || error "Missing RELATION to load"
 Relation=$1; shift
@@ -92,43 +101,68 @@ if [[ -z "$Columns" && -e "$DEEPDIVE_APP" ]] && app-has-been-compiled; then
     )
 fi
 
-# load each path given as arguments
-# TODO group paths by format, and batch call to load to support parallel load
-for path; do
-
-# determine the format
-if [[ -n "$DEEPDIVE_LOAD_FORMAT" ]]; then
-    # assume a format when explicitly specified
-    format=$DEEPDIVE_LOAD_FORMAT
-else
-    case $path in
-        *.tsv|*.tsv.*)           format=tsv      ;;
-        *.csv|*.csv.*)           format=csv      ;;
-        *.json-seq|*.json-seq.*) format=json-seq ;;
-        *.sql|*.sql.*)           format=sql      ;;
-        *) error "$path: Unrecognized format, specify DEEPDIVE_LOAD_FORMAT="
+# how to load a set of source expressions
+# (eval is used here to support process substitution for on-the-fly decompression)
+currentFormat= pathsInFormat=() sourcesInFormat=
+loadQueued() {
+    [[ -n ${currentFormat:=$DEEPDIVE_LOAD_FORMAT_DEFAULT} ]] ||
+        error "Specify DEEPDIVE_LOAD_FORMAT= or DEEPDIVE_LOAD_FORMAT_DEFAULT="
+    echo "Loading $Relation${Columns:+($Columns)} from ${pathsInFormat[*]:-/dev/stdin} ($currentFormat format)"
+    case $currentFormat in
+        sql)
+            # FIXME this argument can grow huge and become problematic
+            db-execute "$(eval "cat $sourcesInFormat")"
+            ;;
+        *)
+            eval 'db-load "$Relation" "$Columns" "$currentFormat" '"$sourcesInFormat"
     esac
-fi
-# and how to load it
-case $format in
-    sql) load() { db-execute "$(cat "$@")"; } ;;
-    *)   load() { db-load "$Relation" "$Columns" "$format" "$@"; }
-esac
-# and how to decompress if needed
-case $path in
-    *.bz2) decompress=bzcat ;;
-    *.gz)  decompress=zcat  ;;
-    *.sh)  decompress=bash  ;;
-    *)     decompress=
-esac
+}
+queue() {
+    pathsInFormat+=("$1")
+    sourcesInFormat+="$2 "
+}
 
-# load the data
-echo "Loading $Relation from $path ($format format)"
-if [[ -n "$decompress" ]]; then
-    # after decompressing if needed
-    load <($decompress "$path")
-else
-    load "$path"
-fi
+# assume a particular format when explicitly specified
+currentFormat=$DEEPDIVE_LOAD_FORMAT
 
+# group given paths by format, and batch call to load to support parallel load
+format=$currentFormat
+for path; do
+    # determine the format
+    if [[ -z "$DEEPDIVE_LOAD_FORMAT" ]]; then
+        case $path in
+            *.tsv|*.tsv.*)           format=tsv      ;;
+            *.csv|*.csv.*)           format=csv      ;;
+            *.json-seq|*.json-seq.*) format=json-seq ;;
+            *.sql|*.sql.*)           format=sql      ;;
+            *)
+                [[ -n "$DEEPDIVE_LOAD_FORMAT_DEFAULT" ]] ||
+                    error "$path: Unrecognized format, specify DEEPDIVE_LOAD_FORMAT= or DEEPDIVE_LOAD_FORMAT_DEFAULT="
+                format=$DEEPDIVE_LOAD_FORMAT_DEFAULT
+        esac
+    fi
+    # and how to decompress if needed
+    case $path in
+        *.bz2) decompress=bzcat ;;
+        *.gz)  decompress=zcat  ;;
+        *.sh)  decompress=bash  ;;
+        *)     decompress=
+    esac
+
+    # load once the format changes
+    if [[ "$format" != "$currentFormat" ]]; then
+        [[ -z "$currentFormat" ]] || loadQueued
+        currentFormat=$format pathsInFormat=() sourcesInFormat=
+    fi
+
+    # queue a source expression
+    if [[ -n "$decompress" ]]; then
+        # wrapped with decompression process if needed
+        queue "$path" "<($(escape4sh "$decompress" "$path"))"
+    else
+        queue "$path" "$(escape4sh "$path")"
+    fi
 done
+
+# load everything queued so far
+loadQueued
