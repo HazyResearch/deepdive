@@ -254,7 +254,7 @@ postgres=# \q
 Use `gpstop` and `gpstart` to stop / start the Greenplum server at any time.
 
 ### <a name="parallelgrounding" href="#"></a> Parallel grounding
-[Grounding](overview#grounding) is the process of building the
+[Grounding](overview.md#grounding) is the process of building the
 factor graph. You can enable parallel grounding to speed up the grounding phase,
 which makes use of Greenplum's parallel file system (gpfdist). To use parallel
 grounding, first make sure that Greenplum's file system server `gpfdist` is running

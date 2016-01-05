@@ -6,7 +6,7 @@ title: Writing Inference Rules
 # Writing inference rules
 
 Inference rules describe how to build the [factor
-graph](inference). Each rule
+graph](inference.md). Each rule
 consists of three components:
 
 - The **input query** specifies the variables to create. It is a SQL query that
@@ -138,10 +138,10 @@ your query. For example, the following will **not** work:
 
 The factor function defines which variables should be connected to the factor,
 and how they are related. All variables used in a factor function must have been
-previously defined in the [schema](schema).
+previously defined in the [schema](schema.md).
 
 DeepDive supports [several types of factor
-functions](inference_rule_functions). One example of a factor function is
+functions](inference_rule_functions.md). One example of a factor function is
 the `Imply` function, which expresses a first-order logic statement. For
 example, `Imply(B, C, A)` means "if B and C, then A".
 
@@ -175,7 +175,7 @@ large weights have a greater impact on variables than factors with small
 weights. Factor weights are real numbers, and are relative to each other. You
 can assign factor weights manually, or you can let DeepDive learn weights
 automatically. In order to learn weights automatically, you must have enough
-[training data](relation_extraction) available. The weight can
+[training data](relation_extraction.md) available. The weight can
 also be a function of variables, in which case each factor will get a different
 weight depending on the variable value.
 
@@ -194,7 +194,7 @@ someFactor.weight: ?(people.gender)
 If the system already learned the weights for your factor graphs, you can tell
 DeepDive to skip learning them again by setting `inference.skip_learning` in the
 application configuration file. Refer to the [Configuration
-reference](configuration#skip_learning) for more details about this option.
+reference](configuration.md#skip_learning) for more details about this option.
 
 #### Custom weight table
 
@@ -202,7 +202,7 @@ You can specify a table for the factor weights by setting
 `inference.weight_table` along with `inference.skip_learning` (learning will be
 skeep). This is useful to learn the weights once and use the model for later
 inference tasks. Refer to the [Configuration
-reference](configuration#weight_table) for more details about this option
+reference](configuration.md#weight_table) for more details about this option
 and the schema of the weight table. -->
 
 <!-- TODO (MR) All that follows must go somewhere else
@@ -210,7 +210,7 @@ and the schema of the weight table. -->
 ### Evidence and Query variables
 
 Evidence is training data that is used to automatically learn [factor
-weights](inference_rules). DeepDive will treat variables with existing
+weights](inference_rules.md). DeepDive will treat variables with existing
 values as evidence. In the above example, rows in the *people* table with a
 `true` or `false` value in the *smokes* or *has_cancer* column will be treated
 as evidence for that variable. Cells without a value (NULL) value will be

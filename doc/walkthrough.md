@@ -9,7 +9,7 @@ This document describes how to **build an application to extract mention-level
 marriage (`has_spouse`) relation between two people from text** in DeepDive.
 
 This document assumes you are familiar with basic concepts in DeepDive and in
-[Knowledge Base Construction](kbc). Please refer to other
+[Knowledge Base Construction](kbc.md). Please refer to other
 [documents]({{site.baseurl}}#documentation) to learn more about these topics.
 
 ## <a name="high_level_picture" href="#"> </a> High-level picture of the application
@@ -31,7 +31,7 @@ At a high level, we will go through the following steps:
   - Extract mentions of people in the text
   - Extract all candidate pairs of people that possibly participate in a
     `has_spouse` relation and prepare training data by
-    [distant supervision](relation_extraction)
+    [distant supervision](relation_extraction.md)
     using an existing knowledge base
   - Add features to `has_spouse` candidates
 3. Generate the factor graph as specified by inference rules
@@ -40,14 +40,14 @@ At a high level, we will go through the following steps:
 <!--
 We will use `tsv_extractors` for our
 extractors. A similar example application with implementations for the
-[different types of extractors](extractors) is available under
+[different types of extractors](extractors.md) is available under
 `$DEEPDIVE_HOME/examples/spouse_example`.
 -->
 
-This tutorial assumes that you [installed DeepDive](installation). The
+This tutorial assumes that you [installed DeepDive](installation.md). The
 installation directory of DeepDive is denoted as`$DEEPDIVE_HOME`. The database
 system used for this tutorial is PostgreSQL. If you followed the [DeepDive
-installation guide](installation) and all tests completed successfully,
+installation guide](installation.md) and all tests completed successfully,
 then your PostgreSQL server should already be running.
 You can run the following command to set the correct path for `DEEPDIVE_HOME` if you're at the top of DeepDive's source tree:
 
@@ -76,9 +76,9 @@ The complete example code is in `$DEEPDIVE_HOME/examples/spouse_example`.
 
 Other sections:
 
-- [How to examine / improve results](walkthrough-improve)
+- [How to examine / improve results](walkthrough-improve.md)
 - [Extras: preprocessing, NLP, pipelines, debugging
-  extractor](walkthrough-extras)
+  extractor](walkthrough-extras.md)
 
 ## <a name="preparation" href="#"></a> Preparation
 
@@ -91,7 +91,7 @@ A DeepDive application is a filesystem directory that contains the following fil
 * `udf/`
 
 In this section, we will create each of them either from scratch or by copying from the template.
-You can find more detail from the page about the [structure of a DeepDive app](deepdiveapp).
+You can find more detail from the page about the [structure of a DeepDive app](deepdiveapp.md).
 
 ### Application Directory
 First, we create a new directory `app/spouse` for our application under the DeepDive source tree.
@@ -126,7 +126,7 @@ echo postgresql://localhost/deepdive_spouse >./db.url
 
 The `schema.sql` file should contain all `CREATE TABLE` SQL statements necessary for creating the tables that hold the input data as well as the data we extract with DeepDive.
 We can copy this one from DeepDive's source tree using the command below.
-For a detailed reference of how these tables should be created, refer to the [Preparing the Data Tables section](walkthrough-extras#data_tables) in the appendix.
+For a detailed reference of how these tables should be created, refer to the [Preparing the Data Tables section](walkthrough-extras.md#data_tables) in the appendix.
 
 ```bash
 cp $DEEPDIVE_HOME/examples/tutorial_example/step1-basic/schema.sql ./
@@ -172,7 +172,7 @@ For any DeepDive application, there's a set of input data from which we want to 
 For example, in this tutorial the text corpus of news articles and a set of known interpersonal relationships are the input data.
 Instead of starting from the raw text, we'll assume the corpus has been already preprocessed with an NLP (Natural Language Processing) toolkit, and consider the input as a set of sentences parsed and tagged with NLP markups.
 If you have your own text corpus and need to start from raw text, you should perform NLP steps on the corpus before continuing to the rest of the data flow.
-Refer to the [nlp_extractor section of this tutorial](walkthrough-extras#nlp_extractor) to find out how NLP can be done within DeepDive.
+Refer to the [nlp_extractor section of this tutorial](walkthrough-extras.md#nlp_extractor) to find out how NLP can be done within DeepDive.
 
 #### Input Data
 We made a sample input dataset for this tutorial available online.
@@ -223,7 +223,7 @@ The output should look like the following:
 (4 rows)
 ```
 
-- The `sentences` table now holds the sentences preprocessed by an [NLP extractor](walkthrough-extras#nlp_extractor).
+- The `sentences` table now holds the sentences preprocessed by an [NLP extractor](walkthrough-extras.md#nlp_extractor).
     It contains tokenized words, lemmatized words, part of speech (POS) tags, named entity recognition (NER) tags, and dependency paths for each sentence.
 - Other tables are currently empty, and will be populated during the candidate generation and the feature extraction steps in the following sections.
 
@@ -244,7 +244,7 @@ cp $DEEPDIVE_HOME/examples/tutorial_example/step1-basic/input/init.sh ./input/
 
 ### <a name="feature_extraction" href="#"></a> Step 2: Candidate Generation and Feature Extraction
 
-Our next step is to write several [extractors](extractors) for candidate
+Our next step is to write several [extractors](extractors.md) for candidate
 generation and feature extraction.
 
 In this step, we create three extractors in Python. The Python
@@ -320,7 +320,7 @@ reads output lines from *stdout* of the process, and loads these lines into the
 after the `ext_clear_table` extractor has completed.
 
 For additional information about extractors, refer to the ['Writing extractors'
-guide](extractors).
+guide](extractors.md).
 
 We then create a `udf` directory to store the scripts:
 
@@ -341,7 +341,7 @@ This `udf/ext_people.py` Python script takes sentence records as input, and
 outputs a people mention record for each set of one or more continuous words
 with NER tag `PERSON` in the sentence.
 To get a sample of the inputs to the extractor, refer to [getting example
-inputs](walkthrough-extras#debug_extractors) section in the Extras.
+inputs](walkthrough-extras.md#debug_extractors) section in the Extras.
 To add debug output, you can print to *stderr* instead of stdout, and the
 messages would appear on the terminal, as well as in the DeepDive log file
 (`run/LATEST/log.txt`).
@@ -399,7 +399,7 @@ In order to train the system to decide whether a candidate is indeed expressing
 a marriage relation, we also need to generate some *training data*. However, it
 is hard to find ground truth on whether two mentions participate in `has_spouse`
 relation. Therefore, we use [distant
-supervision](distant_supervision) rules that generate
+supervision](distant_supervision.md) rules that generate
 mention-level training data by heuristically mapping them to known entity-level
 relations in an existing knowledge base.
 
@@ -463,7 +463,7 @@ Note that this extractor must be executed after our previously added extractor
 `ext_people`, so we specify the latter in the `dependencies` field.
 
 When generating relation candidates, we also generate training data using
-[distant supervision](distant_supervision). There are some
+[distant supervision](distant_supervision.md). There are some
 pairs of people that we know for sure are married, and we can use them as
 training data for DeepDive. Similarly, if we know that two people are not
 married, we can use them as negative training examples. In our case we will be
@@ -508,7 +508,7 @@ the relation candidates:
 We can now run the system by executing `deepdive run` and check
 the output relation `has_spouse`. `deepdive run` will run the full pipeline with all
 extractors. If you only want to run the new
-extractor, refer to the [Pipeline section](walkthrough-extras#pipelines) in the appendix.
+extractor, refer to the [Pipeline section](walkthrough-extras.md#pipelines) in the appendix.
 
 We can look at some relation candidate generated by the `ext_has_spouse`
 extractor:
@@ -558,7 +558,7 @@ The features we use are:
 
 3. whether the last word of the two persons' name (last name) is the same.
 
-We will refine these features [later](walkthrough-improve).
+We will refine these features [later](walkthrough-improve.md).
 
 For this new extractor:
 
@@ -582,7 +582,7 @@ Create a new extractor for features, which will execute after the
 
 To create our extractor UDF, we make use of `ddlib`, our Python library that
 provides useful utilities such as `Span` to manipulate elements in sentences.
-Make sure you followed the [installation guide](installation#ddlib) to
+Make sure you followed the [installation guide](installation.md#ddlib) to
 properly use `ddlib`.
 
 Create the script `udf/ext_has_spouse_features.py` with the following content:
@@ -631,7 +631,7 @@ The results should look like:
 ### <a name="inference_rules" href="#"></a> Step 3: Writing inference rules and defining holdout
 
 Now we need to specify how DeepDive should generate the [factor
-graph](inference) to perform probabilistic learning and inference.
+graph](inference.md) to perform probabilistic learning and inference.
 We want to predict the `is_true` column of the `has_spouse` table based on the
 features we have extracted, by assigning to each feature a weight that DeepDive
 will learn from the training data. This is one of the simplest inference rules
@@ -645,7 +645,7 @@ Add the following lines to your `deepdive.conf`, in the `inference.factors` bloc
 This rule generates a model similar to a logistic regression classifier: it uses
 a set of features to make a prediction about the expectation of the variable we
 are interested in. For each row in the *input query* we are creating a
-[factor](inference) that is connected to the
+[factor](inference.md) that is connected to the
 `has_spouse.is_true` variable and whose weight is learned by DeepDive on the
 basis of the `feature` column value (i.e., of the features).
 
@@ -658,10 +658,10 @@ Note that the syntax requires the users to **explicitly select** in the `input_q
 When selecting these column, users must explicitly alias `id` to
 `[relation_name].id` and `[variable]` to `[relation_name].[variable]` in order
 for the system to use them. For additional information, refer to the [inference
-rule guide](inference_rules).
+rule guide](inference_rules.md).
 
 Now that we have defined inference rules, DeepDive will automatically
-[ground](overview#grounding) the factor graph using these rules, then
+[ground](overview.md#grounding) the factor graph using these rules, then
 perform the learning to figure out the feature weights, and the inference to
 compute the probabilities to associate to candidate relations.
 
@@ -749,7 +749,7 @@ We see that the results do not seem very good, but we will improve them in the
 next section.
 
 Before that, let us mention the fact that  DeepDive generates [calibration
-plots](calibration) for all variables defined in the schema to help with
+plots](calibration.md) for all variables defined in the schema to help with
 debugging. Let's take a look at the generated calibration plot, written to the
 file outputted in the summary report above (`has_spouse.is_true.png`). It should
 look something like this:
@@ -758,8 +758,8 @@ look something like this:
 
 The calibration plots contain useful information that help you to improve the
 quality of your predictions. For actionable advice about interpreting
-calibration plots, refer to the [calibration guide](calibration).
+calibration plots, refer to the [calibration guide](calibration.md).
 
-In the [next section](walkthrough-improve), we will discuss several ways to
+In the [next section](walkthrough-improve.md), we will discuss several ways to
 analyze and improve the quality of our application.
 

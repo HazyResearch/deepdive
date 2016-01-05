@@ -30,7 +30,7 @@ For example, every human trafficking investigation pursued by the Human Traffick
 DeepDive is the [main extracted data provider](http://www.forbes.com/sites/thomasbrewster/2015/04/17/darpa-nasa-and-partners-show-off-memex/) for MEMEX.  See also, [60 minutes](http://www.cbsnews.com/news/new-search-engine-exposes-the-dark-web/), [Scientific American](http://www.scientificamerican.com/article/human-traffickers-caught-on-hidden-internet/), [Wall St. Journal](http://www.wsj.com/articles/sleuthing-search-engine-even-better-than-google-1423703464), [BBC](http://www.bbc.com/news/technology-31808104), and [Wired](http://www.wired.com/2015/02/darpa-memex-dark-web/). It is supporting actual [investigations](http://www.defenseone.com/technology/2015/02/darpas-new-search-engine-puts-google-dust/105342) and perhaps new usecases in the war on [terror](http://www.cnn.com/2015/05/12/politics/pentagon-isis-dark-web-google-internet/index.html).
 
 
-Here is a detailed description of [DeepDive's role in MEMEX](memex).
+Here is a detailed description of [DeepDive's role in MEMEX](memex.md).
 <p><img src="{{site.baseurl}}/images/showcase/memex-human-trafficking.jpg"></p>
 
 

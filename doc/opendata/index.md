@@ -7,7 +7,7 @@ title: DeepDive Open Datasets
 
 
 Over the last few years, our collaborators have used DeepDive to build over [a dozen different
-applications](../showcase/apps). Often, these applications are interesting because of the sheer volume of documents that one can read--millions of documents or billions of Web pages. However, many researchers can't get started on these problems because NLP preprocessing is simply too expensive and painful. With the generous support of Condor CHTC, we have been fortunate to be have a ready supply of CPU hours for our own projects. The datasets below have taken over 5+ million CPU hours to produce. It’s time that we gave back to the NLP community that has given us so many good ideas for our own systems.
+applications](../showcase/apps.md). Often, these applications are interesting because of the sheer volume of documents that one can read--millions of documents or billions of Web pages. However, many researchers can't get started on these problems because NLP preprocessing is simply too expensive and painful. With the generous support of Condor CHTC, we have been fortunate to be have a ready supply of CPU hours for our own projects. The datasets below have taken over 5+ million CPU hours to produce. It’s time that we gave back to the NLP community that has given us so many good ideas for our own systems.
 
 
 Our work would not be possible without open data. As a result, our group decided to enhance as many [Creative Commons
@@ -42,7 +42,7 @@ most datasets, we provide data in both formats.
   - **DeepDive-ready DB Dump.** In this format, the
   data is a database table that can be loaded directly
   into a database with PostgreSQL or Greenplum. The schema of this
-  table is the same as what we used in our [walkthrough example](../walkthrough)
+  table is the same as what we used in our [walkthrough example](../walkthrough.md)
   such that you can start building your own DeepDive applications
   immediately after download.
 

@@ -1,5 +1,5 @@
 source:      .
-safe:        true
+safe:        false  # need _plugins/rewrite_md_links.rb to generate correct links
 baseurl:     http://deepdive.stanford.edu
 markdown:    redcarpet
 exclude:

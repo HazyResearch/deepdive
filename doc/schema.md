@@ -10,7 +10,7 @@ performs inference and give details about how to use [Categorical/Multinomial
 variables](#multinomial).
 
 DeepDive requires the user to specify the name and type of the random variables
-on which to perform [inference](inference). Currently DeepDive
+on which to perform [inference](inference.md). Currently DeepDive
 support Boolean (i.e., Bernoulli) variables and Categorical/Multinomial
 variables. Random variables and their types are declared in the
 `schema.variables` section of the `deepdive.conf` file. The following is an
@@ -69,4 +69,4 @@ weight for each possible assignment of variables in the multinomial factor.
 We include a typical usage example of multinomial variables in the chunking
 example under `examples/chunking`. A walkthrough this example, detailing how to
 specify Conditional Random Fields and perform Multi-class Logistic Regression is
-available [here](chunking).
+available [here](chunking.md).

@@ -14,7 +14,7 @@ We provide a simple installation method for the following supported systems:
 
 * GNU/Linux: Debian (7, 8, or later) and Ubuntu (12.04LTS, 14.04LTS, or later)
     * [VirtualBox](https://help.ubuntu.com/community/VirtualBox)
-    * [AWS EC2](ec2)
+    * [AWS EC2](ec2.md)
 * Mac OS X with [Homebrew](http://brew.sh)
 
 You can install DeepDive and all its dependencies with a single command.
@@ -45,7 +45,7 @@ You can install DeepDive and all its dependencies with a single command.
         ```
     * For installation with `deepdive_from_source` option, extra build dependencies are installed, and DeepDive source tree is cloned at `./deepdive`, then executables are installed under `~/local/bin/`.
     You can run tests in DeepDive's source tree to make sure everything will run fine.
-    See the [developer's guide](developer#build-test) for more details.
+    See the [developer's guide](developer.md#build-test) for more details.
 
         ```bash
         cd ./deepdive
@@ -62,13 +62,13 @@ You can install DeepDive and all its dependencies with a single command.
     * [`postgres`](http://wiki.postgresql.org/wiki/Detailed_installation_guides)
         DeepDive works with most of the recent versions of PostgreSQL.
         However, 9.3+ is recommended to use all functionality.
-    * [`postgres_xl`](pgxl)
+    * [`postgres_xl`](pgxl.md)
         DeepDive works with current release of PostgreSQL-XL, which is based on PostgreSQL 9.2.
         PL/Python extension is required.
-    * [`greenplum`](greenplum)
+    * [`greenplum`](greenplum.md)
         DeepDive works with recent releases of Greenplum, which is based on PostgreSQL 8 that may lack some features that are required by some advanced DeepDive functionality.
         PL/Python extension is required.
-    * [`mysql`](mysql)
+    * [`mysql`](mysql.md)
         DeepDive provides minimal support for MySQL and MySQL Cluster, but PostgreSQL-based databases are strongly recommended.
 
 
@@ -76,11 +76,11 @@ You can install DeepDive and all its dependencies with a single command.
     It downloads all examples and tests for the DeepDive release and runs the tests using the installed one.
     To only download the example applications, use the `deepdive_examples_tests` option.
 
-Congratulations! DeepDive is now installed on your system, and you can proceed to the [next steps](walkthrough).
+Congratulations! DeepDive is now installed on your system, and you can proceed to the [next steps](walkthrough.md).
 
 
 
 ## Installing from Source
 
 Using the quick installation method is recommended unless you want to use a development branch or modify DeepDive engine itself.
-If you still want to build DeepDive from source code yourself, follow the [developer's guide](developer#build-test).
+If you still want to build DeepDive from source code yourself, follow the [developer's guide](developer.md#build-test).

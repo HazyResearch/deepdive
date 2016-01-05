@@ -7,7 +7,7 @@ title: "Tutorial: Improving the Results"
 
 This document describes how to improve the marriage relation mention extractor
 built in [Example Application: A Mention-Level Extraction
-System](walkthrough).
+System](walkthrough.md).
 
 <a name="improve" href="#"> </a>
 
@@ -24,8 +24,8 @@ System](walkthrough).
 
 Other sections in the tutorial:
 
-- [A Mention-Level Extraction System](walkthrough)
-- [Extras: preprocessing, NLP, pipelines, debugging extractor](walkthrough-extras)
+- [A Mention-Level Extraction System](walkthrough.md)
+- [Extras: preprocessing, NLP, pipelines, debugging extractor](walkthrough-extras.md)
 
 
 
@@ -56,7 +56,7 @@ the quality of the extractions, analyze the systematic errors made by DeepDive,
 and therefore improve the quality of an application. In this section, we
 describe how to set up and use these tools to evaluate the results obtained by
 running the application we developed in the [previous
-section](walkthrough), and to improve the quality of the extractions.
+section](walkthrough.md), and to improve the quality of the extractions.
 
 
 ### <a name="braindump" href="#"> </a> Using BrainDump to generate automatic reports
@@ -290,7 +290,7 @@ them are indeed representing marriage relations, how many are not, and why are
 non-correct candidates assigned a high probability. This task is called *error
 analysis*.
 
-Deepdive includes a tool named [MindTagger](labeling) that simplifies
+Deepdive includes a tool named [MindTagger](labeling.md) that simplifies
 the execution of error analysis.
 
 
@@ -298,13 +298,13 @@ the execution of error analysis.
 ### <a name="mindtagger" href="#"> </a> Using MindTagger to label results
 
 We now conduct the error analysis based on our initial spouse relation mention
-extractor developed in the [first part of the tutorial](walkthrough).
+extractor developed in the [first part of the tutorial](walkthrough.md).
 
-We use [MindTagger](labeling) to inspect and label 100 extractions.
+We use [MindTagger](labeling.md) to inspect and label 100 extractions.
 A random sample of 100 extractions is usually sufficiently large to correctly
 assess precision and to identify the most common sources of error. For more
 information about the labeling process, please refer to the
-[MindTagger](labeling) page, which describes in depth how to use the
+[MindTagger](labeling.md) page, which describes in depth how to use the
 tool, with specific examples that use the spouse application.
 
 The goal of the labeling task with MindTagger is to identify categories of
@@ -355,7 +355,7 @@ MindTagger:
 ```
 
 We can now open a browser, go to `localhost:8000` and perform the labeling of
-the extractions as described in the [MindTagger](labeling)
+the extractions as described in the [MindTagger](labeling.md)
 documentation. You should be able to see an interface like the following
 screenshot:
 
@@ -382,7 +382,7 @@ a sign of overfitting.
 
 With the goal of improving the quality of the extractions, in the next
 section we first describe how to easily enrich the set of features using the
-[generic feature library](gen_feats) included in Deepdive, and then
+[generic feature library](gen_feats.md) included in Deepdive, and then
 describe how to mitigate overfitting by letting the system select a
 regularization parameter automatically.
 
@@ -399,7 +399,7 @@ often than not, this is not the case, as we saw in the previous section. Indeed
 high precision, is known to be challenging.
 
 Based on our multi-year experience developing high-quality KBC systems, we
-developed a [generic feature library](gen_feats) which is included in
+developed a [generic feature library](gen_feats.md) which is included in
 DeepDive as part of the `ddlib` utility library. The generic feature library
 automatically generates sets of features that are "generic" in the sense that they
 are not specifically designed for a particular application or domain, but they
@@ -407,7 +407,7 @@ have been proven to be powerful and sufficient to obtain good quality results.
 
 We now briefly introduce the use of the generic feature library in our example
 application. We refer the reader to the documentation of the [generic feature
-library](gen_feats) for more information about which features are
+library](gen_feats.md) for more information about which features are
 generated and details on how to use the library.
 
 The generic features library allows to incorporate some application-specific
@@ -444,7 +444,7 @@ following:
 The dictionaries are loaded by calling the `ddlib.load_dictionary` function,
 while the set of features is obtained through the
 `ddlib.get_generic_features_relation`. More details about the generic feature
-library can be found in its [documentation](gen_feats).
+library can be found in its [documentation](gen_feats.md).
 
 The generic feature library uses additional columns of the `sentences` table to
 generate the feature, therefore we need to modify the `input` of the
@@ -458,7 +458,7 @@ version of `deepdive.conf` is available at
 ### <a name="regularization" href="#"> </a> Mitigate overfitting with automatic regularization
 
 In order to mitigate the effect of overfitting, we can use a functionality
-offered by the [DimmWitted! Sampler](sampler) to automatically pick
+offered by the [DimmWitted! Sampler](sampler.md) to automatically pick
 (from a user-specified set) a good value for *regularization*. Regularization is a
 standard machine learning technique to mitigate the effect of overfitting.
 It is critical when we use the generic feature library, since the library
@@ -478,7 +478,7 @@ general to pass arguments to the sampler, we can add the following line to
 <script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step2-generic-features/deepdive.conf?footer=minimal&slice=163:168"></script>
 
 For an explanation of all the parameters passed to the sampler, check the
-[sampler documentation](sampler).
+[sampler documentation](sampler.md).
 
 Now that we have performed some changes to the application (generic feature
 library, and automatic regularization) we can run the application again by

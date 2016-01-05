@@ -66,28 +66,28 @@ this is the case, the summary report should look like this:
 DeepDive assumes the table schema for the application is defined in the `schema.sql` file as `CREATE TABLE` statements.
 All tables used by any of the extractors and inference rules must be created by this file.
 It is **mandatory** for **all tables** that will contain variables to have a **unique primary key called `id`**.
-If these tables are populated by an [extractor](extractors), the extractor should fill the `id` column with `NULL` values.
-Any data that should be populated for the extractors should be loaded by the `input/init.sh` script as [demonstrated in the walkthrough](walkthrough#loading_data).
+If these tables are populated by an [extractor](extractors.md), the extractor should fill the `id` column with `NULL` values.
+Any data that should be populated for the extractors should be loaded by the `input/init.sh` script as [demonstrated in the walkthrough](walkthrough.md#loading_data).
 
 
 ### <a name="extractors" href="#"></a> 3. Writing extractors
 
-DeepDive supports [multiple types of extractors](extractors) to perform
-[feature extraction](overview#extractors). The output of an extractor is
+DeepDive supports [multiple types of extractors](extractors.md) to perform
+[feature extraction](overview.md#extractors). The output of an extractor is
 written back to the data store by DeepDive, and can be used in other extractors
 and/or during the inference step. Users can also specify extractors that simply
 execute SQL queries or an arbitrary shell commands. The ['Writing
-extractors'](extractors) document contains an in-depth description of the
+extractors'](extractors.md) document contains an in-depth description of the
 available types of extractors complete with examples.
 
 
 ###<a name="schema" href="#"></a> 4. Writing the inference schema
 
 The schema is used to define the [query variable nodes of the factor
-graph](inference#variables). Each variable has a data type
+graph](inference.md#variables). Each variable has a data type
 associated with it. Currently, DeepDive supports Boolean variables and
-[Multinomial/Categorical variables](schema#multinomial). See the ['Defining
-inference variables in the schema'](schema) for more information and
+[Multinomial/Categorical variables](schema.md#multinomial). See the ['Defining
+inference variables in the schema'](schema.md) for more information and
 examples.
 
 
@@ -115,19 +115,19 @@ smokes_cancer {
 ```
 
 DeepDive's language can express complex relationships that use extracted
-features. Refer to the [guide for writing inference rules](inference_rules)
-and to the ['Inference Rule Function Reference'](inference_rule_functions)
+features. Refer to the [guide for writing inference rules](inference_rules.md)
+and to the ['Inference Rule Function Reference'](inference_rule_functions.md)
 for in-depth information about writing inference rules.
 
 
 ### 6. Running, testing, and evaluating the results
 
 For details about running an application and querying the results see the
-[appropriate document](running). Writing an application is an iterative
+[appropriate document](running.md). Writing an application is an iterative
 process that requires progressive specification and refinements of extractors,
 schema, and inference rules. DeepDive tries to simplify this task by providing
 *calibration data* and plots, as explained in the [calibration
-guide](calibration). While testing extractors and inference rules, it can be
+guide](calibration.md). While testing extractors and inference rules, it can be
 useful to execute only a subset of them. This is possible by [configuring
-pipelines](running#pipelines).
+pipelines](running.md#pipelines).
 

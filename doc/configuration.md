@@ -160,7 +160,7 @@ You must also set `inference.parallel_grounding` to `true`.
 
 ## <a name="extraction" href="#"></a> Extraction and extractors
 
-Configuration directives for executing [extractors](extractors) go in the
+Configuration directives for executing [extractors](extractors.md) go in the
 `extraction` section, while extractor definitions go in the `extraction.extractors` section:
 
 ```
@@ -210,13 +210,13 @@ deepdive {
 }
 ```
 
-Different styles of [extractors](extractors) are defined using different
+Different styles of [extractors](extractors.md) are defined using different
 sets of directives. There is nevertheless a subset of directives that are common
 to all styles:
 
 - `style`: specifies the style of the extractor. Can take the values
   `json_extractor`, `tsv_extractor`, `plpy_extractor`, `sql_extractor`, or
-  `cmd_extractor`. See the ['Writing extractors' document](extractors) for
+  `cmd_extractor`. See the ['Writing extractors' document](extractors.md) for
   details about the different styles of extractors. This is a mandatory
   directive.
 
@@ -270,7 +270,7 @@ to all styles:
     ```
 
   If an extractor specified in dependencies does not exist or is not in the
-  active [pipeline](running#pipelines), that extractor will be ignored.
+  active [pipeline](running.md#pipelines), that extractor will be ignored.
 
 - `input_relations`: takes an array of relation names that this extractor depends on.  Similar to `dependencies`, all extractors whose `output_relation` exists in this array will be executed before this extractor.
 
@@ -318,10 +318,10 @@ The following directives are only for the `json_extractor`, `tsv_extractor`, and
 
 - `udf`: specifies the extractor User Defined Function (UDF). This is a shell
   command or a script that is executed. Refer to the ['Writing extractors'
-  guide](extractors) for details about the requirements for the UDF for
+  guide](extractors.md) for details about the requirements for the UDF for
   different styles of extractors.
 
-- Depending on the extractor style, additional directives may be necessary, such as `sql`, `cmd`, `parallelism`, `input_batch_size`, and `output_batch_size`.  Refer to the ['Writing extractors' guide](extractors) for details.
+- Depending on the extractor style, additional directives may be necessary, such as `sql`, `cmd`, `parallelism`, `input_batch_size`, and `output_batch_size`.  Refer to the ['Writing extractors' guide](extractors.md) for details.
 
 
 ## <a name="inference-opt" href="#"></a> Inference
@@ -394,7 +394,7 @@ Configuration directives to control the inference steps go in the global
 
 ## <a name="inference_schema" href="#"></a> Inference schema
 
-Inference [schema](schema) directives define the variables used in the
+Inference [schema](schema.md) directives define the variables used in the
 factor graph and their type. Inference schema directives go in the
 `schema.variables` section:
 
@@ -422,7 +422,7 @@ DeepDive currently supports Boolean and Multinomial variables.
 
 ## <a name="inference_rules" href="#"></a> Inference rules
 
-*Note:* refer to ['Writing inference rules' document](inference_rules) for
+*Note:* refer to ['Writing inference rules' document](inference_rules.md) for
 an in-depth discussion about writing inference rules.
 
 The definitions of inference rules for the factor graphs go in the
@@ -454,7 +454,7 @@ The **mandatory** definition directives for each rule are:
 
 - `function`: specifies the factor function and the variables connected by the
   factor. Refer to the [Inference rule function
-  reference](inference_rule_functions) for details about the available
+  reference](inference_rule_functions.md) for details about the available
   functions. Example usage:
 
 - `weight`: specifies whether the weight of the factor should be a specified
@@ -489,11 +489,11 @@ smokes_cancer {
 
 ## <a name="calibration" href="#"></a> Calibration / Holdout
 
-Directive for [calibration](calibration) go to the `calibration` section.
+Directive for [calibration](calibration.md) go to the `calibration` section.
 The available directives are:
 
 - `holdout_fraction`: specifies the fraction of training data to use for
-  [holdout](calibration#holdout). E.g.:
+  [holdout](calibration.md#holdout). E.g.:
 
     ```
     calibration {
@@ -524,7 +524,7 @@ The available directives are:
 
 ## <a name="pipelines" href="#"></a> Pipelines
 
-[Pipelines](running#pipelines) specification directives go in the global `deepdive`
+[Pipelines](running.md#pipelines) specification directives go in the global `deepdive`
 section. Available directives are `pipeline.pipelines` and `pipeline.run`.
 
 - `pipeline.pipelines` is a section containing a list of one or more
@@ -577,7 +577,7 @@ The available directive are:
     sampler.sampler_cmd: "util/sampler-dw-mac gibbs"
     ```
 
-    Since [version 0.03](changelog/0.03-alpha), DeepDive automatically
+    Since [version 0.03](changelog/0.03-alpha.md), DeepDive automatically
     chooses the correct executable based on your operating system (between
     `"util/sampler-dw-linux gibbs"` and `"util/sampler-dw-mac gibbs"`), so
     we recommend to
@@ -593,5 +593,5 @@ The available directive are:
     The default `sampler_args` are: `"-l 300 -s 1 -i 500 --alpha 0.1"`.
 
     For a list and the meaning of the arguments, please refer to the
-    [documentation of our DimmWitted sampler](sampler).
+    [documentation of our DimmWitted sampler](sampler.md).
 

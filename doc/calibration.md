@@ -6,7 +6,7 @@ title: Calibration
 # <a name="calibration" href="#"></a> Calibration
 
 One of the most important aspects of DeepDive is its iterative workflow. After
-having performed [probabilistic inference](inference) using
+having performed [probabilistic inference](inference.md) using
 DeepDive, it is crucial to evaluate the results and act on the feedback that the
 system provides to improve the accuracy. DeepDive produces *calibration plots*
 to help the user with this task.
@@ -66,7 +66,7 @@ Specification for these fields:
 - **id**: the unique identifier for the weight
 - **initial_value**: the initial value for the weight
 - **is_fixed**: whether the weight is fixed (cannot be changed during learning)
-- **cardinality**: the cardinality of this factor. Meaningful for [multinomial factors](chunking).
+- **cardinality**: the cardinality of this factor. Meaningful for [multinomial factors](chunking.md).
 - **description**: description of the weight, composed by [the name of inference rule]-[the specified value of "weight" in inference rule]
 - **weight**: the learned weight value
 
@@ -101,7 +101,7 @@ distant supervision rules.
 ### Calibration data and plots
 
 The system generates a calibration data file for each variable defined in the
-[schema](schema). The output log contains the path of these files. By
+[schema](schema.md). The output log contains the path of these files. By
 default, they are placed in `target/calibration/[variable_name].tsv`. Each file
 contains ten lines with five columns each:
 
@@ -194,11 +194,11 @@ There could many factors that lead to suboptimal results. Common ones are:
   the other hand, if results converge too fast to a local optimum, the user can try
   increasing the number of learning iterations, increase the learning rate, or
   using a slower decay. Check the [DimmWitted sampler
-  documentation](sampler) for more details.
+  documentation](sampler.md) for more details.
 
 - **Weight learning converges to a local optimum**: the user can try increasing
   the learning rate, or using a slower decay.  Check the [DimmWitted sampler
-  documentation](sampler) for more details.
+  documentation](sampler.md) for more details.
 
 ### Recall Errors
 

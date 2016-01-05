@@ -34,9 +34,9 @@ of a variable in the corresponding table.
 
 Description of each schema:
 
-- `dd_graph_variables_holdout`: a table that contains all variable ids that are used for holdout. Can be used for custom holdout by a [holdout query](calibration#custom_holdout).
+- `dd_graph_variables_holdout`: a table that contains all variable ids that are used for holdout. Can be used for custom holdout by a [holdout query](calibration.md#custom_holdout).
 
-- `dd_graph_variables_observation`: a table that contains all variable ids that are evidence that will not be fitted during learning. An usage example of this table can be found [here](configuration#calibration).
+- `dd_graph_variables_observation`: a table that contains all variable ids that are evidence that will not be fitted during learning. An usage example of this table can be found [here](configuration.md#calibration).
 
 - `dd_graph_weights`: a table that contains all the materialized weights.
 
@@ -55,7 +55,7 @@ Description of each schema:
 - `dd_feature_statistics`: a view that joins `dd_inference_result_weights_mapping` and `dd_feature_statistics_support`. It gathers all distinct feature descriptions, weights, and number of positive, negative examples and query variables.
     - Non-unary factors will have NULL values in the statistics columns.
 
-- `dd_query_[RULE_NAME]`: a table that is defined by the input query of an [inference rule](inference_rules). You can use it as a feature table in BrainDump.
+- `dd_query_[RULE_NAME]`: a table that is defined by the input query of an [inference rule](inference_rules.md). You can use it as a feature table in BrainDump.
 
 - `dd_weight_[RULE_NAME]`: a table that stores initial weights for factors, used internally.
 

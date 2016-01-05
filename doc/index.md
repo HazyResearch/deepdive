@@ -34,12 +34,12 @@ how DeepDive systems produce higher quality data in less
 time. DeepDive-based systems are used by users without machine
 learning expertise in a number of domains from paleobiology to
 genomics to human trafficking, see our
-[showcase](showcase/apps) for examples.
+[showcase](showcase/apps.md) for examples.
 
 DeepDive is a **trained system** that uses machine learning to cope
 with various forms of noise and imprecision. DeepDive is designed to
 make it easy for users to train the system through low-level feedback
-via the [MindTagger interface](labeling) and rich,
+via the [MindTagger interface](labeling.md) and rich,
 structured domain knowledge via rules. DeepDive wants to enable
 experts who do not have machine learning expertise. One of DeepDive's
 key technical innovations is the ability to solve the statistical
@@ -59,7 +59,7 @@ DeepDive differs from traditional systems in several ways:
 - DeepDive is aware that **data is often noisy and imprecise**: names
   are misspelled, natural language is ambiguous, and humans make
   mistakes. Taking such imprecision into account, DeepDive computes
-  [calibrated](calibration) probabilities for every
+  [calibrated](calibration.md) probabilities for every
   assertion it makes. For example, if DeepDive produces a fact with
   probability 0.9, the fact is 90% likely to be true.
 
@@ -71,13 +71,13 @@ DeepDive differs from traditional systems in several ways:
 - DeepDive
   allows developers to **use their knowledge of a given domain** to
   improve the quality of the results by [writing simple
-  rules](inference_rules) that inform the inference
+  rules](inference_rules.md) that inform the inference
   (learning) process.  DeepDive can also take into account user
   feedback on the correctness of the predictions, to improve the
   predictions.
 
 - DeepDive is able to use the data to [learn
-  "distantly"](distant_supervision). In contrast,
+  "distantly"](distant_supervision.md). In contrast,
   most machine learning systems require tedious training for each
   prediction. In fact, many DeepDive applications, especially at early
   stages, need no traditional training data at all!
@@ -97,14 +97,14 @@ DeepDive differs from traditional systems in several ways:
   Adam](http://www.wired.com/2014/07/microsoft-adam/) and other major
   web companies.
 
-For more details, check out [our papers](papers).
+For more details, check out [our papers](papers.md).
 
 
 ### What is DeepDive used for?
 
-Examples of DeepDive applications are described in our [showcase page](showcase/apps).
+Examples of DeepDive applications are described in our [showcase page](showcase/apps.md).
 
-- [MEMEX](showcase/apps#memex). Supporting the fight against human trafficking, which was recently featured on [Forbes](http://www.forbes.com/sites/thomasbrewster/2015/04/17/darpa-nasa-and-partners-show-off-memex/) and is now actively used by [law enforcement agencies](http://humantraffickingcenter.org/posts-by-htc-associates/memex-helps-find-human-trafficking-cases-online/).
+- [MEMEX](showcase/apps.md#memex). Supporting the fight against human trafficking, which was recently featured on [Forbes](http://www.forbes.com/sites/thomasbrewster/2015/04/17/darpa-nasa-and-partners-show-off-memex/) and is now actively used by [law enforcement agencies](http://humantraffickingcenter.org/posts-by-htc-associates/memex-helps-find-human-trafficking-cases-online/).
 
 - [PaleoDeepDive](https://www.youtube.com/watch?v=Cj2-dQ2nwoY) - A knowledge base for Paleobiologists with quality higher than human volunteers
 
@@ -113,7 +113,7 @@ Examples of DeepDive applications are described in our [showcase page](showcase/
 - [Wisci](https://www.youtube.com/watch?v=Q1IpE9_pBu4) - Enriching Wikipedia with structured data
 
 These examples are described in the [showcase
-page](showcase/apps).  The complete code for these examples
+page](showcase/apps.md).  The complete code for these examples
 is available with DeepDive (where permitted). DeepDive is currently
 used in other domains with even more collaborators. Stay tuned, and
 [get in touch with us](mailto:contact.hazy@gmail.com) to talk about
@@ -143,73 +143,73 @@ and
 
 ### Updates &amp; Changelog
 
-- [Changelog for version 0.7.1-alpha](changelog/0.7.1-alpha) (09/28/2015)
-- [Changelog for version 0.7.0-alpha](changelog/0.7.0-alpha) (07/14/2015)
-- [Changelog for version 0.6.0-alpha](changelog/0.6.0-alpha) (06/17/2015)
-- [Changelog for version 0.05-alpha](changelog/0.05.01-alpha) (02/08/2015)
-- [Changelog for version 0.04.2-alpha](changelog/0.04.2-alpha) (12/23/2014)
-- [Changelog for version 0.04.1-alpha](changelog/0.04.1-alpha) (11/25/2014)
-- [Changelog for version 0.04-alpha](changelog/0.04-alpha) (11/19/2014)
-- [Changelog for version 0.03.2-alpha](changelog/0.03.2-alpha) (09/16/2014)
-- [Changelog for version 0.03.1-alpha](changelog/0.03.1-alpha) (08/15/2014)
-- [Changelog for version 0.03-alpha](changelog/0.03-alpha) (05/07/2014)
-- [Changelog for version 0.02-alpha](changelog/0.02-alpha) (03/12/2014)
+- [Changelog for version 0.7.1-alpha](changelog/0.7.1-alpha.md) (09/28/2015)
+- [Changelog for version 0.7.0-alpha](changelog/0.7.0-alpha.md) (07/14/2015)
+- [Changelog for version 0.6.0-alpha](changelog/0.6.0-alpha.md) (06/17/2015)
+- [Changelog for version 0.05-alpha](changelog/0.05.01-alpha.md) (02/08/2015)
+- [Changelog for version 0.04.2-alpha](changelog/0.04.2-alpha.md) (12/23/2014)
+- [Changelog for version 0.04.1-alpha](changelog/0.04.1-alpha.md) (11/25/2014)
+- [Changelog for version 0.04-alpha](changelog/0.04-alpha.md) (11/19/2014)
+- [Changelog for version 0.03.2-alpha](changelog/0.03.2-alpha.md) (09/16/2014)
+- [Changelog for version 0.03.1-alpha](changelog/0.03.1-alpha.md) (08/15/2014)
+- [Changelog for version 0.03-alpha](changelog/0.03-alpha.md) (05/07/2014)
+- [Changelog for version 0.02-alpha](changelog/0.02-alpha.md) (03/12/2014)
 
 ### <a name="documentation" href="#"></a> Documentation
 
 #### Background
 
-- [Knowledge base construction](kbc)
-    - [Relation extraction](relation_extraction)
-- [System overview and terminology](overview)
-    - [Probabilistic inference and factor graphs](inference)
-    - [Distant supervision](distant_supervision)
+- [Knowledge base construction](kbc.md)
+    - [Relation extraction](relation_extraction.md)
+- [System overview and terminology](overview.md)
+    - [Probabilistic inference and factor graphs](inference.md)
+    - [Distant supervision](distant_supervision.md)
 
 #### Basics
 
-- [Installation guide](installation)
+- [Installation guide](installation.md)
 - Tutorial
-    - [Example application walk-through](walkthrough)
-    - [Improving the results](walkthrough-improve)
-    - [Extras](walkthrough-extras)
+    - [Example application walk-through](walkthrough.md)
+    - [Improving the results](walkthrough-improve.md)
+    - [Extras](walkthrough-extras.md)
 - Writing and Running a DeepDive Application
-    - [DeepDive Application's Structure and Operations](deepdiveapp)
+    - [DeepDive Application's Structure and Operations](deepdiveapp.md)
     - High-level (DDlog-based)
-        - [Writing applications in DDlog](ddlog)
+        - [Writing applications in DDlog](ddlog.md)
     - Low-level (SQL-based)
-        - [Creating a new application](writing)
-        - [Writing extractors](extractors)
-        - [Declaring inference variables in the schema](schema)
-        - [Writing inference rules](inference_rules)
-    - [Running an application](running)
-    - [Generic features library](gen_feats)
+        - [Creating a new application](writing.md)
+        - [Writing extractors](extractors.md)
+        - [Declaring inference variables in the schema](schema.md)
+        - [Writing inference rules](inference_rules.md)
+    - [Running an application](running.md)
+    - [Generic features library](gen_feats.md)
 - Debugging a DeepDive Application
-    - [Calibration](calibration)
-    - [Browsing data](browsing)
-    - [Labeling data products](labeling)
-    - [Generating negative examples](generating_negative_examples)
+    - [Calibration](calibration.md)
+    - [Browsing data](browsing.md)
+    - [Labeling data products](labeling.md)
+    - [Generating negative examples](generating_negative_examples.md)
 
 
 #### Advanced topics
 
-- [Multinomial variables: Text chunking example](chunking)
-- [FAQ](faq)
+- [Multinomial variables: Text chunking example](chunking.md)
+- [FAQ](faq.md)
 - Using DeepDive in Various Configurations
-    - [Using DeepDive with GreenPlum](greenplum)
-    - [Using DeepDive with Postgres-XL](pgxl)
-    - [Using DeepDive with MySQL / MySQL Cluster](mysql)
-    - [Using DeepDive on Ubuntu](ubuntu)
-    - [Using DeepDive on Amazon EC2](ec2)
-    - [Incremental DeepDive](incremental)
+    - [Using DeepDive with GreenPlum](greenplum.md)
+    - [Using DeepDive with Postgres-XL](pgxl.md)
+    - [Using DeepDive with MySQL / MySQL Cluster](mysql.md)
+    - [Using DeepDive on Ubuntu](ubuntu.md)
+    - [Using DeepDive on Amazon EC2](ec2.md)
+    - [Incremental DeepDive](incremental.md)
 - References
-    - [`deepdive.conf` Reference](configuration)
-    - [Inference rule function reference](inference_rule_functions)
-    - [High-speed sampler](sampler)
-    - [Factor graph grounding output reference](factor_graph_schema)
-    - [Internal database schema](reserved_tables)
-- [Tuffy and Markov Logic Networks (MLN)](markov_logic_network)
-- [DeepDive Developer's Guide](developer)
+    - [`deepdive.conf` Reference](configuration.md)
+    - [Inference rule function reference](inference_rule_functions.md)
+    - [High-speed sampler](sampler.md)
+    - [Factor graph grounding output reference](factor_graph_schema.md)
+    - [Internal database schema](reserved_tables.md)
+- [Tuffy and Markov Logic Networks (MLN)](markov_logic_network.md)
+- [DeepDive Developer's Guide](developer.md)
 
 ### Support
 
-We gratefully acknowledge the support of [our sponsors](support).
+We gratefully acknowledge the support of [our sponsors](support.md).

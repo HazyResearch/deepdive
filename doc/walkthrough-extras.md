@@ -6,7 +6,7 @@ title: "Tutorial: Extras"
 # Example Application: Extras
 
 This document contains the extra section for the [Example Application: A Mention-Level
-Extraction System](walkthrough) document.
+Extraction System](walkthrough.md) document.
 
 ### Contents
 
@@ -19,8 +19,8 @@ Extraction System](walkthrough) document.
 
 Other sections:
 
-- [A Mention-Level Extraction System](walkthrough)
-- [Improving the results](walkthrough-improve)
+- [A Mention-Level Extraction System](walkthrough.md)
+- [Improving the results](walkthrough-improve.md)
 
 
 ### <a id="data_tables" href="#"></a> Preparing Data Tables
@@ -48,7 +48,7 @@ The `input/` directory contains several text dumps:
 - `sentences_dump.csv` contains a dataset of parsed sentences. If you
   want to know how to get this dataset from articles, refer to [NLP
   extractor](#nlp_extractor) section.
-- `sentences_dump_large.csv` contains a larger dataset of parsed sentences used in [Improving the results: adding more data](walkthrough-improve#error-analysis-2) section.
+- `sentences_dump_large.csv` contains a larger dataset of parsed sentences used in [Improving the results: adding more data](walkthrough-improve.md#error-analysis-2) section.
 
 Finally, it loads the prepared sentences into our database with a command like the following:
 
@@ -119,7 +119,7 @@ first step, DeepDive provides a pre-built extractor which uses the
 to split documents into sentences and tag them.
 
 One instance of output of the NLP extractor is the `sentences` table used in
-[the tutorial](walkthrough).
+[the tutorial](walkthrough.md).
 
 To start using an NLP extractor, we first load all your articles into our
 database. We start by creating a table:
@@ -185,7 +185,7 @@ file. Sometimes you only want to run some of your extractors to test them, or to
 save time when the output of an early extractor hasn't changed. The NLP
 extractor is a good example of this. It takes a long time to run, and its output
 will be the same every time, so we don't want to run it more than once. DeepDive
-allows you to define different [pipelines](running#pipelines) for this purpose, by
+allows you to define different [pipelines](running.md#pipelines) for this purpose, by
 adding the following to your `deepdive.conf`:
 
 ```bash
@@ -222,6 +222,6 @@ deepdive run withnlp
 ### Debugging Extractors by getting example inputs
 
 "What do my extractor inputs look like?" Developers might find it helpful to
-print input to extractors to some temporary files. For a general instruction to debug extractors, refer to [debugging section in extractor documentation](extractors#debug_extractors).
+print input to extractors to some temporary files. For a general instruction to debug extractors, refer to [debugging section in extractor documentation](extractors.md#debug_extractors).
 
 

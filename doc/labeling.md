@@ -37,7 +37,7 @@ Therefore, producing the right sample for correct estimation is Mindtagger user'
 
 ### Use Case 1: Measuring Precision of the Spouse Example
 
-In the following few steps, we explain how Mindtagger can help you perform a precision estimation task using the [spouse example in our walkthrough](walkthrough).
+In the following few steps, we explain how Mindtagger can help you perform a precision estimation task using the [spouse example in our walkthrough](walkthrough.md).
 
 #### 1. Prepare the data items to inspect
 
