@@ -3,16 +3,14 @@ person (
     name text
     ).
 
-person_has_cancer (
+person_has_cancer? (
     person_id bigint,
-    has_cancer boolean,
-    id bigint
+    has_cancer boolean
 ).
 
-person_smokes (
+person_smokes? (
     person_id bigint,
-    smokes boolean,
-    id bigint
+    smokes boolean
 ).
 
 friends (
