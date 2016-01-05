@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # deepdive-load -- Loads a given relation's data
-# > deepdive load RELATION [SOURCE...]
-# Initializes given RELATION in the database and loads data from SOURCE.
-# When SOURCE is unspecified, the data is loaded from files found on path
-# input/RELATION.* under the DeepDive application.
+# > deepdive load RELATION[(COLUMN[,COLUMN]...)] [SOURCE...]
+# Initializes given RELATION in the database and loads data from SOURCE for
+# optionally specified COLUMNs.  When SOURCE is unspecified, the data is loaded
+# from files found on path input/RELATION.* under the DeepDive application.
 #
 # This command must be run under an environment whose DEEPDIVE_DB_URL variable
 # is set to a proper URL, or under a DeepDive application where the URL is set
@@ -28,6 +28,16 @@ set -eu
 
 [[ $# -gt 0 ]] || error "Missing RELATION to load"
 Relation=$1; shift
+Columns=
+
+# parse optional columns following relation name
+case $Relation in
+    *"("*")")
+        # keep column names separate
+        Columns="${Relation#*"("}"
+        Columns=${Columns%")"}
+        Relation=${Relation%%"("*}
+esac
 
 # when no SOURCE is specified, look under input/
 if [[ $# -eq 0 ]]; then
@@ -51,9 +61,34 @@ if [[ $# -eq 0 ]]; then
         error "input/$Relation.*: No data source found for $Relation"
     # use the found path
     set -- "$Path"
+else
+    # rely on the app if found (optional)
+    DEEPDIVE_APP=$(find-deepdive-app 2>/dev/null) || true
+    export DEEPDIVE_APP
+    . load-db-driver.sh
+fi
+
+# find the columns to load (when $Relation is a random variable to exclude the
+# internal ones when no $Columns were explicitly specified)
+if [[ -z "$Columns" && -e "$DEEPDIVE_APP" ]] && app-has-been-compiled; then
+    Columns=$(
+        cd "$DEEPDIVE_APP"
+        Relation=$Relation \
+        jq -r '
+            .deepdive_.schema.relations[env.Relation] |
+            if .variable_type then
+                .columns | to_entries |
+                sort_by(.value.index) |
+                map(.key) | join(",")
+            else
+                empty
+            end
+        ' run/compiled/config.json
+    )
 fi
 
 # load each path given as arguments
+# TODO group paths by format, and batch call to load to support parallel load
 for path; do
 
 # determine the format
@@ -71,8 +106,8 @@ else
 fi
 # and how to load it
 case $format in
-    sql) load() { db-execute "$(cat "$1")"; } ;;
-    *)   load() { db-load "$Relation" "$format" "$1"; }
+    sql) load() { db-execute "$(cat "$@")"; } ;;
+    *)   load() { db-load "$Relation" "$Columns" "$format" "$@"; }
 esac
 # and how to decompress if needed
 case $path in
