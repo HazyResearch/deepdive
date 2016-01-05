@@ -74,7 +74,6 @@ stage runner/format_timestamp                                     util/
 stage runner/mark_done                                            util/
 stage runner/resolve-args-to-do.sh                                util/
 stage runner/show_progress                                        util/
-stage runner/deepdive-run                                         util/
 
 stage runner/deepdive-compute                                     util/
 stage runner/load-compute-driver.sh                               util/
