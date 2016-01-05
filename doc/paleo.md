@@ -5,7 +5,7 @@ title: PaleoDeepDive
 
 # PaleoDeepDive: A System Walkthrough
 
-Here, we walk through the codebase that powers PaleoDeepDive, an application built upon the [DeepDive machine reading infrastructure]({{site.baseurl}}).
+Here, we walk through the codebase that powers PaleoDeepDive, an application built upon the [DeepDive machine reading infrastructure](index.md).
 The code can be found [here](https://github.com/zhangce/pdd), and
 one example data dump can be
 found [here](https://github.com/zhangce/pdd/tree/master/example_data).
@@ -25,7 +25,7 @@ biological taxa, geological rock formations, geographic locations, and geologica
 
 The goal of PaleoDeepDive is to build a factor graph, like the following, and then estiamte the probabilities associated with each variable and relation. A more detailed description of factor graphs and their use in the PaleoDeepDive can be found in our [technical report](http://arxiv.org/abs/1406.2963).
 
-<p style="text-align: center;"><img src="{{site.baseurl}}/images/paleo/Pipeline3.png" alt="Data Model" style="width: 60%; text-align: center;"/>
+<p style="text-align: center;"><img src="images/paleo/Pipeline3.png" alt="Data Model" style="width: 60%; text-align: center;"/>
   <br />
   <strong>Illustration of the factor graph built in this walkthrough.</strong>
 </p>

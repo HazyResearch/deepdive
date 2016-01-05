@@ -506,7 +506,7 @@ Information obtained at [Jan 27, 2015](http://en.wikipedia.org/wiki/Wikipedia:Te
 
 <div class="panel panel-default" style="position:relative;">
   <div style="position:absolute; left: -20px; top: -30px;">
-   <img src="{{site.baseurl}}/images/coming_soon.png" style="width:200px;">
+   <img src="../images/coming_soon.png" style="width:200px;">
   </div>
   <div class="panel-heading">Quick Statistics & Downloads</div>
   <table class="table">
@@ -570,7 +570,7 @@ snapshot of the [Common Crawl Corpus](http://commoncrawl.org/), which is a corpu
 
 <div class="panel panel-default" style="position:relative;">
   <div style="position:absolute; left: -20px; top: -30px;">
-   <img src="{{site.baseurl}}/images/coming_soon.png" style="width:200px;">
+   <img src="../images/coming_soon.png" style="width:200px;">
   </div>
   <div class="panel-heading">Quick Statistics & Downloads</div>
   <table class="table">

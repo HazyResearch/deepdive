@@ -161,7 +161,7 @@ PORT=12345 ./examples/labeling/start-mindtagger.sh
 #### 4. Mark each prediction as correct or not
 Now, you can point your browser to the URL displayed in the output of Mindtagger (or `http://localhost:8000` if that doesn't work).
 The following screenshot shows the annotation task in progress.
-![Screenshot of Mindtagger precision task in progress]({{site.baseurl}}/images/mindtagger_screenshot.png)
+![Screenshot of Mindtagger precision task in progress](images/mindtagger_screenshot.png)
 
 For precision mode, Mindtagger provides dedicated buttons colored green/red for marking whether each item is relevant or not as the value for `is_correct` tag.
 You should inspect each item, and mark your judgement by pushing the right button.
@@ -176,7 +176,7 @@ These tags will be very useful later for clustering the false positive errors ba
 
 While making progress on inspecting every item, you can quickly check how many items were labeled with each tag using the "Tags" dropdown on the top-right corner.
 
-![Screenshot of tags frequency display in Mindtagger]({{site.baseurl}}/images/mindtagger_screenshot_tags.png)
+![Screenshot of tags frequency display in Mindtagger](images/mindtagger_screenshot_tags.png)
 
 
 #### 6. Export annotations
@@ -184,7 +184,7 @@ While making progress on inspecting every item, you can quickly check how many i
 Suppose you want to augment the ground truth with the `is_correct` tags you've marked on each item through this task.
 Using Mindtagger's export tags feature ("Export" on the top-right), you can download the tag data as SQL with UPDATE or INSERT statements, as well as CSV/TSV or JSON.
 
-![Screenshot of exporting tags from Mindtagger]({{site.baseurl}}/images/mindtagger_screenshot_export.png)
+![Screenshot of exporting tags from Mindtagger](images/mindtagger_screenshot_export.png)
 
 The downloaded SQL file will look like the following, ready to fill in the `is_correct` column of the `has_spouse` table in your database:
 
@@ -319,7 +319,7 @@ Now, we can use the following Mindtagger template to enumerate the extra feature
 Now, you can see all the features next to their learned weights as below.
 By looking at the features through this task, you may discover some good or bad features, and can come up with a more data-driven idea for improving the application's performance on your next iteration.
 
-![]({{site.baseurl}}/images/mindtagger_screenshot_with_features.png)
+![](images/mindtagger_screenshot_with_features.png)
 
 
 

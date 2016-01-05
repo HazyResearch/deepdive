@@ -10,7 +10,7 @@ marriage (`has_spouse`) relation between two people from text** in DeepDive.
 
 This document assumes you are familiar with basic concepts in DeepDive and in
 [Knowledge Base Construction](kbc.md). Please refer to other
-[documents]({{site.baseurl}}#documentation) to learn more about these topics.
+[documents](index.md#documentation) to learn more about these topics.
 
 ## <a name="high_level_picture" href="#"> </a> High-level picture of the application
 
@@ -754,7 +754,7 @@ debugging. Let's take a look at the generated calibration plot, written to the
 file outputted in the summary report above (`has_spouse.is_true.png`). It should
 look something like this:
 
-![Calibration]({{site.baseurl}}/images/walkthrough/has_spouse_is_true.png)
+![Calibration](images/walkthrough/has_spouse_is_true.png)
 
 The calibration plots contain useful information that help you to improve the
 quality of your predictions. For actionable advice about interpreting

@@ -31,7 +31,7 @@ DeepDive is the [main extracted data provider](http://www.forbes.com/sites/thoma
 
 
 Here is a detailed description of [DeepDive's role in MEMEX](memex.md).
-<p><img src="{{site.baseurl}}/images/showcase/memex-human-trafficking.jpg"></p>
+<p><img src="../images/showcase/memex-human-trafficking.jpg"></p>
 
 
 <a name="tac-kbp"></a>
@@ -50,14 +50,14 @@ We applied similar techniques as our solution to the TAC-KBP challenge -- namely
 The extraction and inference results include millions of common properties of people and organizations, as well as confidence scores and provenance.
 They are used to augment a Wikipedia mirror, where we supplement human-authored page content and infoboxes with related facts, references, excerpts, and videos discovered by DeepDive.
 Wisci also accepts user feedback and learns from it.
-<p style="text-align:center;"><img style="width:80%;" src="{{site.baseurl}}/images/showcase/wisci.png"></p>
+<p style="text-align:center;"><img style="width:80%;" src="../images/showcase/wisci.png"></p>
 
 
 <a name="geo-paleo"></a>
 ### Geology and Paleontology
 [Geology](http://en.wikipedia.org/wiki/Geology) studies history of the solid Earth; [paleontology](http://en.wikipedia.org/wiki/Paleontology) studies fossils and ancient organisms. At the core of both disciplines are discovery and knowledge sharing. In particular, the research communities have maintained two live databases: [Macrostrat](https://macrostrat.org/#about), which contains tens of thousands of rock units and their attributes, and the [Paleobiology Database](https://paleobiodb.org/#/) (PBDB), which contains hundreds of thousands of taxonomic names and their attributes. However, both projects require researchers to laboriously sift through massive amounts of scientific publications, find relevant statements, and manually enter them into the database. For example, PBDB has taken approximately nine continuous person years to read from roughly 40K documents in the past two decades.
 In collaboration with [Prof. Shanan Peters](http://geoscience.wisc.edu/geoscience/people/faculty/shanan-peters/) at UW-Madison, we developed two DeepDive programs, [GeoDeepDive](http://www.cs.stanford.edu/people/chrismre/papers/gdd_demo.pdf) and [PaleoDeepDive](http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0113523), that process roughly 300K scientific documents (including text, tables, and figures). On the document set covered by both DeepDive and PBDB contributors (12K), DeepDive achieves recall roughly 2.5X that of humans, and precision that is as high as or higher than humans.
-<p style="text-align:center;"><img style="width:80%;" src="{{site.baseurl}}/images/showcase/paleontology.jpg"></p>
+<p style="text-align:center;"><img style="width:80%;" src="../images/showcase/paleontology.jpg"></p>
 
 
 <a name="genetics"></a>
@@ -70,7 +70,7 @@ Because OMIM is curated by humans, it has been growing at a rate of [roughly 50 
 In collaboration with [Prof.
 Gill Bejerano](http://bejerano.stanford.edu/pi.html) at Stanford, we are developing DeepDive applications in the field of [medical genetics](http://en.wikipedia.org/wiki/Medical_genetics).
 Specifically, we use DeepDive to extract mentions of genes, diseases, and phenotypes from the literature, and statistically infer their relationships.
-<p><img src="{{site.baseurl}}/images/showcase/genetics.jpg"></p>
+<p><img src="../images/showcase/genetics.jpg"></p>
 
 
 <a name="pharmacogenomics"></a>
@@ -83,7 +83,7 @@ In collaboration with [Emily Mallory](http://bmi.stanford.edu/people-directory/c
 Specifically, we use DeepDive to extract relations between genes, diseases, and drugs in order to predict novel pharmacological relationships.
 <p><figure style="width:80%; margin:0 auto;">
 <a href="https://www.pharmgkb.org/pathway/PA145011114"><img
-    src="{{site.baseurl}}/images/showcase/PA145011114.png" style="display:block; margin:0 auto;"></a>
+    src="../images/showcase/PA145011114.png" style="display:block; margin:0 auto;"></a>
 <figcaption><small>
 <div>
   M. Whirl-Carrillo, E.M. McDonagh, J. M. Hebert, L. Gong, K. Sangkuhl, C.F. Thorn, R.B. Altman and T.E. Klein.

@@ -23,8 +23,8 @@ the fact, representing the system's confidence that the fact is true (refer to
 the ['Probabilistic inference' document](inference.md) for more details
 about this concept).
 
-<!-- ![Data flow]({{site.baseurl}}/images/walkthrough/example_hasspouse.png) -->
-<p style="text-align: center;"><img src="{{site.baseurl}}/images/walkthrough/example_hasspouse.png" alt="Data flow" style="width: 50%; text-align: center;"/>
+<!-- ![Data flow](images/walkthrough/example_hasspouse.png) -->
+<p style="text-align: center;"><img src="images/walkthrough/example_hasspouse.png" alt="Data flow" style="width: 50%; text-align: center;"/>
   <br />
   <strong>Figure 1: An example KBC application</strong>
 </p>
@@ -66,7 +66,7 @@ a list of the most important ones
 The relationships between these concepts (also known as the data model) is
 represented in Figure 2 below.
 
-<p style="text-align: center;"><img src="{{site.baseurl}}/images/walkthrough/datamodel.png" alt="Data Model" style="width: 60%; text-align: center;"/>
+<p style="text-align: center;"><img src="images/walkthrough/datamodel.png" alt="Data Model" style="width: 60%; text-align: center;"/>
   <br />
   <strong>Figure 2: Data model for KBC</strong>
 </p>
@@ -124,7 +124,7 @@ As an example of this data flow, Figure 3 demonstrates how a sentence "U.S
 President Barack Obama's wife Michelle Obama..." go through the process (In this
 figure, we only highlight step 1--3):
 
-<p style="text-align: center;"><img src="{{site.baseurl}}/images/walkthrough/dataflow.png" alt="Data Flow" style="width: 75%; text-align: center;"/>
+<p style="text-align: center;"><img src="images/walkthrough/dataflow.png" alt="Data Flow" style="width: 75%; text-align: center;"/>
   <br />
   <strong>Figure 3: Data flow for KBC</strong>
 </p>

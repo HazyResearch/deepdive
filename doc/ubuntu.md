@@ -7,7 +7,7 @@ title: Using DeepDive on Ubuntu
 
 Many thanks to Tom Mulholland for providing this guide.
 
-After having <a href="http://stackoverflow.com/questions/22469188/deepdive-installation-postgresql-error">many problems</a> installing the <a href="{{site.baseurl}}">DeepDive project</a> on Ubuntu, I decided to write out a detailed guide. These problems were based on the output from the `test.sh` file provided with the source - I can't speak to the functionality of the source just yet (just starting to learn).
+After having <a href="http://stackoverflow.com/questions/22469188/deepdive-installation-postgresql-error">many problems</a> installing the [DeepDive project](index.md) on Ubuntu, I decided to write out a detailed guide. These problems were based on the output from the `test.sh` file provided with the source - I can't speak to the functionality of the source just yet (just starting to learn).
 
 Because I messed up a few configuration files, and this is still early in my Ubuntu experience, I decided to reinstall the OS (Precise 12.04) and redo everything from scratch. So, this guide is based off of a clean version of Ubuntu 12.04, after installing all relevant updates (via Update Manager) as of 20-Mar-2014.
 

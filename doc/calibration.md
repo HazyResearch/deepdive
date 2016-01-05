@@ -141,7 +141,7 @@ plots, so the user can create the plots manually.
 
 A typical calibration plot looks as follows:
 
-![]({{site.baseurl}}/images/calibration_example.png)
+![](images/calibration_example.png)
 
 
 **The accuracy plot (a)** shows the ratio of correct positive predictions

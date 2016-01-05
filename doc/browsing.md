@@ -56,7 +56,7 @@ mindbender search gui
 
 Point your browser to <http://localhost:8000/#/search> to start searching and browsing the indexed relations.
 
-![Screenshot of DeepDive's GUI for Browsing Data]({{site.baseurl}}/images/browsing_screenshot.png)
+![Screenshot of DeepDive's GUI for Browsing Data](images/browsing_screenshot.png)
 
 [Elasticsearch manual on query string syntax](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#query-string-syntax) tells you how to formulate sophisticated query strings that can limit fields, do wildcards, fuzzy search, regular expressions, filtering, and grouping with boolean operators.
 
@@ -143,11 +143,11 @@ The `mindtagger-word-array` and `mindtagger-highlight-words` are AngularJS direc
 
 Without the template, the GUI would render by default a `has_spouse_candidates` in a hard-to-read format:
 
-![`has_spouse_candidates` without a Presentation Template]({{site.baseurl}}/images/browsing_without_presentation_template.png)
+![`has_spouse_candidates` without a Presentation Template](images/browsing_without_presentation_template.png)
 
 This is improved as shown below by creating the template above in the application:
 
-![`has_spouse_candidates` with a proper Presentation Template]({{site.baseurl}}/images/browsing_with_presentation_template.png)
+![`has_spouse_candidates` with a proper Presentation Template](images/browsing_with_presentation_template.png)
 
 ### AngularJS Extensions
 To define further AngularJS extensions, such as directives or filters to be used in the templates, define a `mindbender.extensions` module in `./mindbender/extensions.coffee` or `./mindbender/extensions.js`.

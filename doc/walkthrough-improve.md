@@ -359,7 +359,7 @@ the extractions as described in the [MindTagger](labeling.md)
 documentation. You should be able to see an interface like the following
 screenshot:
 
-![Screenshot of labeling interface in Mindtagger]({{site.baseurl}}/images/tutorial-labeling.png)
+![Screenshot of labeling interface in Mindtagger](images/tutorial-labeling.png)
 
 
 In the directory `$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/labeling`,
@@ -568,7 +568,7 @@ select it).
 
 You should be able to see the interface similar as below:
 
-![Screenshot of recall-labeling interface]({{site.baseurl}}/images/tutorial-labeling-recall.png)
+![Screenshot of recall-labeling interface](images/tutorial-labeling-recall.png)
 
 The labelling task to compute recall is only slightly more complex than the task
 for precision. You should look at each presented candidate and at the value of the
@@ -591,7 +591,7 @@ plus red").
 
 The above screenshot shows an example of "correct" extraction, and below shows an example of "missed" candidates:
 
-![Screenshot of recall-labeling interface]({{site.baseurl}}/images/tutorial-labeling-recall-missed.png)
+![Screenshot of recall-labeling interface](images/tutorial-labeling-recall-missed.png)
 
 We performed the labeling over 1,000 candidates, and found a recall of 19%.
 While this is not very
