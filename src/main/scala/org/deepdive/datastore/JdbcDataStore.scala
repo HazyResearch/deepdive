@@ -292,7 +292,8 @@ trait JdbcDataStore extends Logging {
     usingXL
   }
 
-  def unlogged = if (isUsingPostgresXL) "UNLOGGED" else ""
+  // Do not use unlogged any more since it has occational failures on PGXL
+  def unlogged = ""
 
   // ========================================
   // Extraction
