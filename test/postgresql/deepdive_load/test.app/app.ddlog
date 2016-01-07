@@ -1,0 +1,1 @@
+variable_table_declared_in_app?(doc_id text, start int, length int).
