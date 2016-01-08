@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# db-unload -- Unloads a SQL query to a set of sinks
+# > db-unload QUERY FORMAT SINK...
+##
+set -eu
+
+[[ $# -gt 0 ]] || usage "$0" "Missing QUERY"
+query=$1; shift
+[[ $# -gt 0 ]] || usage "$0" "Missing FORMAT"
+format=$1; shift
+[[ $# -gt 0 ]] || usage "$0" "Missing SINK"
+
+case $format in
+    tsv)
+        i=1 nsinks=$#
+        partition_integers $(db-query "SELECT COUNT(*) FROM ($query) R" tsv 0) $nsinks |
+        while read limit offset end; do
+            sink=$1; shift
+            show_progress output_from "unloading [$i/$nsinks]" -- \
+            db-query "SELECT * FROM ($query) R LIMIT $limit OFFSET $offset" tsv 0 >$sink &
+            let ++i
+        done
+        wait
+        ;;
+    *) error "$format: unsupported format by PostgreSQL driver" ;;
+esac

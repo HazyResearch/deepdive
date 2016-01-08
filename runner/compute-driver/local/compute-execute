@@ -15,6 +15,8 @@ set -euo pipefail
 # load compute configuration
 eval "$(jq2sh <<<"$DEEPDIVE_COMPUTER_CONFIG" \
     num_processes='.num_processes' \
+    num_parallel_unloads='.num_parallel_unloads' \
+    num_parallel_loads='.num_parallel_loads' \
     #
 )"
 # respect the DEEPDIVE_NUM_PROCESSES environment
@@ -36,13 +38,17 @@ num_processes=${DEEPDIVE_NUM_PROCESSES:-${num_processes:-$(
         fi
         echo $nproc
     )}}
+num_parallel_unloads=${DEEPDIVE_NUM_PARALLEL_UNLOADS:-${num_parallel_unloads:-2}}
+num_parallel_loads=${DEEPDIVE_NUM_PARALLEL_LOADS:-${num_parallel_loads:-2}}
 
 # declare all input arguments
 declare -- "$@"
 
 # show configuration
 echo "Executing with the following configuration:"
-echo " num_processes=$num_processes"
+echo " DEEPDIVE_NUM_PROCESSES=$num_processes"
+echo " DEEPDIVE_NUM_PARALLEL_UNLOADS=$num_parallel_unloads"
+echo " DEEPDIVE_NUM_PARALLEL_LOADS=$num_parallel_loads"
 
 # XXX there are conditional branches below depending on whether input_sql
 # and/or output_relation is given, to support four use cases:
@@ -66,22 +72,10 @@ if [[ -n $output_relation ]]; then
 fi
 
 # set up named pipes for parallel processes and make sure they are cleaned up upon exit
-rm -f process-*.{input,output}
 [[ -z $input_sql       ]] || for i in $(seq $num_processes); do rm -f process-$i.input ; mkfifo process-$i.input ; done
 [[ -z $output_relation ]] || for i in $(seq $num_processes); do rm -f process-$i.output; mkfifo process-$i.output; done
-trap 'rm -f process-*.{input,output}' EXIT
+trap 'rm -f process-*.{input,output} unload-* load-*' EXIT
 # now spawn processes attached to the named pipes in reverse order (from sink to source)
-
-if [[ -n $output_relation ]]; then
-    # use mkmimo again to merge outputs of multiple processes into a single stream
-    mkmimo process-*.output \> /dev/stdout |
-    # load the output data to the temporary table in the database
-    # XXX hiding default progress bar from deepdive-load
-    # TODO abbreviate this env into a show_progress option, e.g., recursive=false
-    show_progress input_to "$DEEPDIVE_CURRENT_PROCESS_NAME output" -- \
-    env DEEPDIVE_PROGRESS_FD=2 \
-    deepdive-load "$output_relation_tmp" /dev/stdin &
-fi
 
 # spawn multiple processes attached to the pipes
 if [[ -n $output_relation && -n $input_sql ]]; then # process with input from/output to database
@@ -106,12 +100,22 @@ else # neither output_relation nor input_sql specified
     done
 fi
 
+if [[ -n $output_relation ]]; then
+    # set up pipes for parallel loads
+    rm -f load-*; for i in $(seq $num_parallel_loads); do mkfifo load-$i; done
+    # use mkmimo again to merge outputs of multiple processes into a single stream
+    mkmimo process-*.output \> load-* &
+    # load the output data to the temporary table in the database
+    deepdive-load "$output_relation_tmp" load-* &
+fi
+
 if [[ -n $input_sql ]]; then
+    # set up pipes for parallel unloads
+    rm -f unload-*; for i in $(seq $num_parallel_unloads); do mkfifo unload-$i; done
     # unload data from the database and pour into the pipes
-    show_progress output_from "$DEEPDIVE_CURRENT_PROCESS_NAME input" -- \
-    deepdive-sql eval "$input_sql" format="$DEEPDIVE_LOAD_FORMAT" |
+    deepdive-db unload "$input_sql" "$DEEPDIVE_LOAD_FORMAT" unload-* &
     # use mkmimo to distribute input data to multiple processes
-    mkmimo /dev/stdin \> process-*.input &
+    mkmimo unload-* \> process-*.input &
 fi
 
 wait  # until everything is done ##############################################

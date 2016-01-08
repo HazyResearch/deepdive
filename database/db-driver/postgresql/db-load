@@ -14,8 +14,13 @@ format=$1; shift
 table="$table${columns:+($columns)}"
 case $format in
     tsv)
-        cat "$@" | show_progress input_to "loading $table" -- \
-            db-execute "\COPY $table FROM PSTDIN"
+        i=1 nsources=$#
+        for source; do
+            show_progress input_to "loading $table [$i/$nsources]" -- \
+            db-execute "\COPY $table FROM PSTDIN" <"$source" &
+            let ++i
+        done
+        wait
         ;;
     csv)
         cat "$@" | show_progress input_to "loading $table" -- \
