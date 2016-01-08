@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# db-create -- Creates a table or view with given definition for MySQL
+# db-create -- Creates a table or view with given definition for MySQL/Greenplum
 # See: postgresql/db-create
 ##
 set -euo pipefail
