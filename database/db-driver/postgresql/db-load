@@ -12,19 +12,32 @@ columns=$1; shift
 format=$1; shift
 
 table="$table${columns:+($columns)}"
-case $format in
-    tsv)
-        i=1 nsources=$#
+
+# load in parallel from multiple sources
+do_load() {
+    local sql=$1; shift
+    local nsources=$#
+    if [[ $nsources -gt 1 ]]; then
+        local i=1
         for source; do
             show_progress input_to "loading $table [$i/$nsources]" -- \
-            db-execute "\COPY $table FROM PSTDIN" <"$source" &
+            db-execute "$sql" <"$source" &
             let ++i
         done
         wait
+    else
+        source=$1; shift
+        exec show_progress input_to "loading $table" -- \
+        db-execute "$sql" <"$source"
+    fi
+}
+
+case $format in
+    tsv)
+        do_load "\COPY $table FROM PSTDIN" "$@"
         ;;
     csv)
-        cat "$@" | show_progress input_to "loading $table" -- \
-            db-execute "\COPY $table FROM PSTDIN CSV"
+        do_load "\COPY $table FROM PSTDIN CSV" "$@"
         ;;
     *) error "$format: unsupported format by PostgreSQL driver" ;;
 esac

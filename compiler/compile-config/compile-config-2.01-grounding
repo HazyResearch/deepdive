@@ -177,6 +177,7 @@ include "sql";
         cd \"$varPath\"
         find . -name 'variables-*.bin' -exec rm -rf {} +
         export DEEPDIVE_LOAD_FORMAT=tsv
+        export DEEPDIVE_UNLOAD_MATERIALIZED=false
 
         # dump the variables, joining the holdout query to determine the type of each variable
         deepdive compute \\
@@ -479,6 +480,7 @@ include "sql";
                     -o -name 'nweights.part-*.bin' \\
                     \\) -exec rm -rf {} +
             export DEEPDIVE_LOAD_FORMAT=tsv
+            export DEEPDIVE_UNLOAD_MATERIALIZED=false
 
             # dump the factors joining the assigned weight ids, converting into binary format for the inference engine
             DEEPDIVE_CURRENT_PROCESS_NAME=\"${DEEPDIVE_CURRENT_PROCESS_NAME}.factors\" \\
