@@ -175,7 +175,7 @@ include "sql";
         varPath=\"$DEEPDIVE_GROUNDING_DIR\"/variable/\(.variableName | @sh)
         mkdir -p \"$varPath\"
         cd \"$varPath\"
-        find . -name 'variables-*.bin' -exec rm -rf {} +
+        find . -name 'variables.part-*.bin' -exec rm -rf {} +
         export DEEPDIVE_LOAD_FORMAT=tsv
         export DEEPDIVE_UNLOAD_MATERIALIZED=false
 
@@ -475,9 +475,9 @@ include "sql";
             mkdir -p \"$facPath\"
             cd \"$facPath\"
             find . \\( -name  'factors.part-*.bin' \\
-                    -o -name 'nfactors.part-*.bin' \\
+                    -o -name 'nfactors.part-*'     \\
                     -o -name  'weights.part-*.bin' \\
-                    -o -name 'nweights.part-*.bin' \\
+                    -o -name 'nweights.part-*'     \\
                     \\) -exec rm -rf {} +
             export DEEPDIVE_LOAD_FORMAT=tsv
             export DEEPDIVE_UNLOAD_MATERIALIZED=false
