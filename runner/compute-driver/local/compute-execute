@@ -125,10 +125,10 @@ if [[ -n $output_relation ]]; then
     # TODO maybe use PostgreSQL's schema support here?
     echo "Replacing $output_relation with $output_relation_tmp"
     output_relation_old="${DEEPDIVE_PREFIX_TABLE_OLD}${output_relation}"
-    deepdive-sql "DROP TABLE IF EXISTS ${output_relation_old};" || true
+    deepdive-sql "DROP TABLE IF EXISTS ${output_relation_old} CASCADE;" 2>/dev/null || true
     deepdive-sql "ALTER TABLE ${output_relation}     RENAME TO ${output_relation_old};"
     deepdive-sql "ALTER TABLE ${output_relation_tmp} RENAME TO ${output_relation};"
-    deepdive-sql "DROP TABLE IF EXISTS ${output_relation_old};" || true
+    deepdive-sql "DROP TABLE IF EXISTS ${output_relation_old} CASCADE;" 2>/dev/null || true
     # and analyze the table to speed up future queries
     db-analyze "${output_relation}"
 fi

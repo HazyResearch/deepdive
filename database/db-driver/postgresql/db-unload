@@ -48,7 +48,7 @@ case $format in
             done < <(partition_integers $(db-query "SELECT COUNT(*) FROM $tmpTable" "$format" 0) $nsinks)
             wait
             ! $tmpTableWasMaterialized ||
-                db-execute "DROP TABLE IF EXISTS $tmpTable"
+                db-execute "DROP TABLE IF EXISTS $tmpTable CASCADE" 2>/dev/null || true
         else
             sink=$1; shift
             STEP "unloading to $sink: $(escape4sh "$query")"
