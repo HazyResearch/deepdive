@@ -88,6 +88,7 @@ stage database/deepdive-initdb                                    util/
 stage database/deepdive-sql                                       util/
 stage database/deepdive-create                                    util/
 stage database/deepdive-load                                      util/
+stage database/deepdive-unload                                    util/
 stage database/load-db-driver.sh                                  util/
 stage database/db-driver/postgresql                               util/db-driver/
 stage database/db-driver/greenplum                                util/db-driver/
