@@ -142,8 +142,16 @@ for path; do
     fi
     # and how to decompress if needed
     case $path in
-        *.bz2) decompress=bzcat ;;
-        *.gz)  decompress=zcat  ;;
+        *.bz2)
+            if type pbzip2 &>/dev/null
+            then decompress="pbzip2 -d -k -c"
+            else decompress=" bzip2 -d -k -c"
+            fi ;;
+        *.gz)
+            if type pigz &>/dev/null
+            then decompress="pigz -d -k -c"
+            else decompress="gzip -d -k -c"
+            fi ;;
         *.sh)  decompress=bash  ;;
         *)     decompress=
     esac
@@ -157,7 +165,7 @@ for path; do
     # queue a source expression
     if [[ -n "$decompress" ]]; then
         # wrapped with decompression process if needed
-        queue "$path" "<($(escape4sh "$decompress" "$path"))"
+        queue "$path" "<($decompress $(escape4sh "$path"))"
     else
         queue "$path" "$(escape4sh "$path")"
     fi

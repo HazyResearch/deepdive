@@ -56,7 +56,7 @@ if [[ $# -eq 0 ]]; then
 
     cd "$DEEPDIVE_APP"
     # search under input/RELATION.*
-    for Path in input/"$Relation".{tsv,csv,json-seq,sql}{,.bz2,.gz,.sh}; do
+    for Path in input/"$Relation".{tsv,csv}{,.bz2,.gz}; do
         [[ -e "$Path" ]] || continue
         break
     done
@@ -124,8 +124,16 @@ for path; do
     fi
     # and how to compress if needed
     case $path in
-        *.bz2) compress=bzcat ;;
-        *.gz)  compress=zcat  ;;
+        *.bz2)
+            if type pbzip2 &>/dev/null
+            then compress=pbzip2
+            else compress=bzip2
+            fi ;;
+        *.gz)
+            if type pigz &>/dev/null
+            then compress=pigz
+            else compress=gzip
+            fi ;;
         *)     compress=
     esac
 
@@ -138,7 +146,7 @@ for path; do
     # queue a sink expression
     if [[ -n "$compress" ]]; then
         # wrapped with decompression process if needed
-        queue "$path" ">($(escape4sh "$compress" "$path"))"
+        queue "$path" ">($(escape4sh "$compress") >$(escape4sh "$path"))"
     else
         queue "$path" "$(escape4sh "$path")"
     fi
