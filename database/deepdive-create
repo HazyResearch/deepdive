@@ -45,7 +45,8 @@ case $What in
             exec db-execute "$sql"
         else
             # show warning if the table exists in app schema
-            if app-has-been-compiled &>/dev/null &&
+            if DEEPDIVE_APP=$(find-deepdive-app) &&
+                    app-has-been-compiled &>/dev/null &&
                     sql=$(schema_json_to_sql "$DEEPDIVE_APP"/run/compiled/schema.json "$Table"); then
                 warning "$Table: Already defined in schema, overriding its definition"
             fi

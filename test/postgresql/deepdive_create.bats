@@ -131,5 +131,10 @@ numcolumns() {
     # fails for others
     ! deepdive create table nonexistent
     [ $(numcolumns nonexistent) -eq 0 ]
+
+    # should allow overriding schema relations (with warnings)
+    deepdive create table variable_table_declared_in_app x:INT
+    [ $(numcolumns variable_table_declared_in_app) -eq 1 ]
+
     cd -
 }

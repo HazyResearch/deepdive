@@ -27,4 +27,3 @@ for msg; do
 done
 $after
 } >&2
-false
