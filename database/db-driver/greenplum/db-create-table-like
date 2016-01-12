@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# db-create-table-like -- Creates a table like another (in Greenplum), coping with existing ones
+# $ export CREATE_TABLE_TYPE=... CREATE_TABLE_EXTRA_CLAUSES=...
+# $ export CREATE_IF_NOT_EXISTS=1
+# $ export DROP_VIEW_TYPE=... DROP_TABLE_TYPE=...
+# $ db-create-table-like TABLE ANOTHER_TABLE
+##
+set -euo pipefail
+
+[[ $# -gt 0 ]] || usage "$0" "Missing TABLE name"
+Table=$1; shift
+[[ $# -gt 0 ]] || usage "$0" "Missing ANOTHER_TABLE name"
+AnotherTable=$1; shift
+
+# figuring out distribution column using psql's \d output
+# which looks either like `Distributed by: (foo, bar, ...)` or `Distributed randomly`
+distributedBy=$(
+    db-execute "\\d $AnotherTable" |
+    grep '^Distributed ' |
+    sed 's/Distributed by: /Distributed by /'
+)
+
+tableDef=" (LIKE $AnotherTable) $distributedBy"
+
+exec db-create-table "$Table" "$tableDef"

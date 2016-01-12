@@ -120,10 +120,10 @@ include "sql";
         style: "cmd_extractor", cmd: "
         : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
 
-        deepdive db create table \(deepdiveGlobalHoldoutTable | @sh) \\
+        deepdive create table \(deepdiveGlobalHoldoutTable | @sh) \\
             variable_id:BIGINT:'PRIMARY KEY' \\
             #
-        deepdive db create table \(deepdiveGlobalObservationTable | @sh) \\
+        deepdive create table \(deepdiveGlobalObservationTable | @sh) \\
             variable_id:BIGINT:'PRIMARY KEY' \\
             #
         \([ if $deepdive.calibration.holdout_query then
@@ -282,10 +282,10 @@ include "sql";
             : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
 
             # materialize factors using user input_query that pulls in assigned ids to involved variables
-            deepdive db create table \(.factorsTable | @sh) as \(.input_query | @sh)
+            deepdive create table \(.factorsTable | @sh) as \(.input_query | @sh)
 
             # find distinct weights for the factors into a separate table
-            deepdive db create table \(.weightsTable | @sh) as \(
+            deepdive create table \(.weightsTable | @sh) as \(
                 { SELECT:
                     [ ( .weight_.params[] | { column: . } )
                     , { alias: "isfixed"  , expr: .weight_.is_fixed   }
@@ -362,7 +362,7 @@ include "sql";
         : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
 
         # set up a union view for all weight tables (\(deepdiveGlobalWeightsTable | asSqlIdent))
-        deepdive db create view \(deepdiveGlobalWeightsTable | @sh) as \(
+        deepdive create view \(deepdiveGlobalWeightsTable | @sh) as \(
             [ $deepdive.inference.factors_[] |
                 { SELECT:
                     [ { column: "id" }
@@ -420,7 +420,7 @@ include "sql";
 
             \( if .function_.name != "multinomial" then "" else "
             # set up an exploded weights view that cross joins the base weights table with the categories of categorical variables
-            deepdive db create view \(.weightsTableForDumping | @sh) as \(
+            deepdive create view \(.weightsTableForDumping | @sh) as \(
                 { SELECT:
                     [ ( .weight_.params[]
                     | { column: .          , table: "weights" } )

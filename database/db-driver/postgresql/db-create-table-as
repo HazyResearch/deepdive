@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# db-create-table-as -- Creates a table from a SELECT query, coping with existing ones
+# $ export CREATE_TABLE_TYPE=... CREATE_TABLE_EXTRA_CLAUSES=...
+# $ export CREATE_IF_NOT_EXISTS=1
+# $ export DROP_VIEW_TYPE=... DROP_TABLE_TYPE=...
+# $ db-create-table-as TABLE SELECT_QUERY
+##
+set -euo pipefail
+
+[[ $# -gt 0 ]] || usage "$0" "Missing TABLE name"
+Table=$1; shift
+[[ $# -gt 0 ]] || usage "$0" "Missing SELECT_QUERY"
+Query=$1; shift
+
+tableDef=" AS $Query"
+
+exec db-create-table "$Table" "$tableDef"

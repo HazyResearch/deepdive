@@ -42,6 +42,7 @@ stage shell/deepdive-whereis                                      util/
 stage shell/find-deepdive-app                                     util/
 stage shell/parse-url.sh                                          util/
 stage shell/error                                                 util/
+stage shell/warning                                               util/
 stage shell/usage                                                 util/
 stage shell/escape4sh                                             util/
 stage compiler/jq2sh                                              util/
@@ -80,6 +81,7 @@ stage .build/submodule/util/mkmimo/mkmimo                         util/
 stage database/deepdive-db                                        util/
 stage database/deepdive-initdb                                    util/
 stage database/deepdive-sql                                       util/
+stage database/deepdive-create                                    util/
 stage database/deepdive-load                                      util/
 stage database/load-db-driver.sh                                  util/
 stage database/db-driver/postgresql                               util/db-driver/

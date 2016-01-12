@@ -1,0 +1,124 @@
+{
+  "relations": {
+    "sentences": {
+      "columns": {
+        "lemma": {
+          "type": "TEXT",
+          "index": 3
+        },
+        "document_id": {
+          "type": "bigint",
+          "index": 0
+        },
+        "sentence_offset": {
+          "type": "bigint",
+          "index": 7
+        },
+        "ner_tags": {
+          "type": "TEXT",
+          "index": 6
+        },
+        "words": {
+          "type": "TEXT",
+          "index": 2
+        },
+        "pos_tags": {
+          "type": "TEXT",
+          "index": 4
+        },
+        "dependencies": {
+          "type": "TEXT",
+          "index": 5
+        },
+        "sentence": {
+          "type": "text",
+          "index": 1
+        },
+        "sentence_id": {
+          "type": "VARCHAR(255)",
+          "index": 8
+        }
+      }
+    },
+    "has_spouse": {
+      "columns": {
+        "description": {
+          "type": "text",
+          "index": 3
+        },
+        "person2_id": {
+          "type": "VARCHAR(255)",
+          "index": 1
+        },
+        "person1_id": {
+          "type": "VARCHAR(255)",
+          "index": 0
+        },
+        "id": {
+          "type": "bigint",
+          "index": 6
+        },
+        "is_true": {
+          "type": "boolean",
+          "index": 4
+        },
+        "relation_id": {
+          "type": "VARCHAR(255)",
+          "index": 5
+        },
+        "sentence_id": {
+          "type": "VARCHAR(255)",
+          "index": 2
+        }
+      }
+    },
+    "articles": {
+      "columns": {
+        "article_id": {
+          "type": "bigint",
+          "index": 0
+        },
+        "text": {
+          "type": "text",
+          "index": 1
+        }
+      }
+    },
+    "has_spouse_features": {
+      "columns": {
+        "relation_id": {
+          "type": "VARCHAR(255)",
+          "index": 0
+        },
+        "feature": {
+          "type": "text",
+          "index": 1
+        }
+      }
+    },
+    "people_mentions": {
+      "columns": {
+        "text": {
+          "type": "TEXT",
+          "index": 3
+        },
+        "length": {
+          "type": "int",
+          "index": 2
+        },
+        "mention_id": {
+          "type": "VARCHAR(255)",
+          "index": 4
+        },
+        "start_position": {
+          "type": "int",
+          "index": 1
+        },
+        "sentence_id": {
+          "type": "VARCHAR(255)",
+          "index": 0
+        }
+      }
+    }
+  }
+}

@@ -61,7 +61,7 @@
         style: "cmd_extractor",
         cmd: "mkdir -p ../../../model && cd ../../../model
             # load weights to database
-            deepdive db create table dd_inference_result_weights \\
+            deepdive create table dd_inference_result_weights \\
                 id:BIGINT:'PRIMARY KEY' \\
                 weight:'DOUBLE PRECISION' \\
                 #
@@ -70,13 +70,13 @@
             deepdive load dd_inference_result_weights /dev/stdin
 
             # create views
-            deepdive db create view dd_inference_result_weights_mapping as \("
+            deepdive create view dd_inference_result_weights_mapping as \("
                 SELECT dd_graph_weights.*, dd_inference_result_weights.weight FROM
                 dd_graph_weights JOIN dd_inference_result_weights ON dd_graph_weights.id = dd_inference_result_weights.id
                 ORDER BY abs(weight) DESC
             " | @sh)
 
-            deepdive db create view dd_inference_result_variables_mapped_weights as \("
+            deepdive create view dd_inference_result_variables_mapped_weights as \("
                 SELECT * FROM dd_inference_result_weights_mapping
                 ORDER BY abs(weight) DESC
             " | @sh)
@@ -88,7 +88,7 @@
         style: "cmd_extractor",
         cmd: "mkdir -p ../../../model && cd ../../../model
             # load weights to database
-            deepdive db create table dd_inference_result_variables \\
+            deepdive create table dd_inference_result_variables \\
                 id:BIGINT \\
                 category:BIGINT \\
                 expectation:'DOUBLE PRECISION' \\
@@ -99,7 +99,7 @@
 
             # create a view for each app schema variable
             \([ $deepdive.schema.variables_[] | "
-            deepdive db create view \("\(.variablesTable)_\(.variablesLabelColumn)_inference" | @sh) as \("
+            deepdive create view \("\(.variablesTable)_\(.variablesLabelColumn)_inference" | @sh) as \("
                 SELECT \(.variablesTable).*, mir.category, mir.expectation FROM
                 \(.variablesTable), dd_inference_result_variables mir
                 WHERE \(.variablesTable).id = mir.id

@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# db-create-table -- Creates a table from its definition, coping with existing ones
+# $ export CREATE_TABLE_TYPE=... CREATE_TABLE_EXTRA_CLAUSES=...
+# $ export CREATE_IF_NOT_EXISTS=1
+# $ export DROP_VIEW_TYPE=... DROP_TABLE_TYPE=...
+# $ db-create-table TABLE TABLE_DEFINITION_SQL
+##
+set -euo pipefail
+
+: ${CREATE_TABLE_TYPE:=} ${CREATE_TABLE_EXTRA_CLAUSES:=}
+: ${CREATE_IF_NOT_EXISTS:=}
+: ${DROP_VIEW_TYPE:=} ${DROP_TABLE_TYPE:=}
+
+[[ $# -gt 0 ]] || usage "$0" "Missing TABLE name"
+Table=$1; shift
+[[ $# -gt 0 ]] || usage "$0" "Missing TABLE_DEFINITION_SQL"
+TableDef=$1; shift
+
+[[ -n $CREATE_IF_NOT_EXISTS ]] || db-execute "DROP $DROP_VIEW_TYPE  VIEW  $Table CASCADE" &>/dev/null || true
+[[ -n $CREATE_IF_NOT_EXISTS ]] || db-execute "DROP $DROP_TABLE_TYPE TABLE $Table CASCADE" &>/dev/null || true
+exec db-execute "CREATE $CREATE_TABLE_TYPE TABLE ${CREATE_IF_NOT_EXISTS:+IF NOT EXISTS} $Table $TableDef $CREATE_TABLE_EXTRA_CLAUSES"

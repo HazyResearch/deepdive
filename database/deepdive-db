@@ -3,7 +3,10 @@
 # > deepdive db OPERATION [ARG...]
 #
 # OPERATION can be one of the following:
-# > deepdive db create
+# > deepdive db create-table-def
+# > deepdive db create-table-as
+# > deepdive db create-table-like
+# > deepdive db create-view-as
 # > deepdive db load
 # > deepdive db execute
 # > deepdive db query
