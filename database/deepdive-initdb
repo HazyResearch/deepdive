@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# deepdive-initdb -- Initializes the underlying database for the DeepDive application
+# deepdive-initdb -- (DEPRECATED) Initializes the underlying database for the DeepDive application
 # > deepdive initdb
 # Initializes the whole database configured for the DeepDive application.
 #

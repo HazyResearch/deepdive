@@ -109,7 +109,7 @@ run_all_checkers() {
         run_one_checker_by_path "$chkr" >/dev/null ||
             allCheckPassed=false
     done
-    # TODO check if all extractor with output_relation is transitively dependent on process/init/db
+    # TODO check if all extractor with output_relation is transitively dependent on process/init/app
     # TODO check if all inference rules had required fields
     # TODO check if all compiled processes have required fields
     # TODO check if all udfs tsv_extractor test fires correctly
