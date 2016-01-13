@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
 # db-load -- Loads file to the PostgreSQL database configured for a DeepDive application
-# > db-load TABLE FORMAT [SOURCE...]
+# > db-load TABLE COLUMNS FORMAT [SOURCE...]
 ##
 set -eu
 
-table=${1:?No TABLE given}; shift
-format=${1:?No FORMAT given}; shift
+[[ $# -gt 0 ]] || usage "$0" "No TABLE given"
+table=$1; shift
+[[ $# -gt 0 ]] || usage "$0" "No COLUMNS given"
+columns=$1; shift
+[[ $# -gt 0 ]] || usage "$0" "No FORMAT given"
+format=$1; shift
 
+table="$table${columns:+($columns)}"
 case $format in
     tsv)
         cat "$@" | show_progress input_to "loading $table" -- \
