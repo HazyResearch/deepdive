@@ -1,35 +1,21 @@
+# build byproducts
+/dist
+/.build
+/.github-release-assets
+/deepdive-*.tar.gz
+/inference/format_converter
+
 # misc.
 .DS_Store
 *~
-#*#
+\#*#
 *.sublime-project
 *.sublime-workspace
 .cache
-.classpath
-.project
-.settings
-.idea
 
-/target
-/project/target
-/project/project
-/dist
-/.build
 /doc/_*local*
-/.github-release-assets
-/deepdive-*.tar.gz
-/util/sampler-dw-linux
-/util/sampler-dw-mac
-/util/format_converter_linux
-/util/format_converter_mac
 
-/src/test/resources/format_converter/*.bin
 /examples/**/*.pyc
 /examples/tutorial_example/*/experiment-reports/latest
 /examples/spouse_example/data/sentences_dump_large.csv
 /examples/spouse_example/data/spouses.tsv
-
-/app
-.mindtagger.conf.json
-/out
-/log
