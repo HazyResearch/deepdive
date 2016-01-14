@@ -520,6 +520,8 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
 
   def isForIncremental(name: String) = name startsWith "dd_new_"
 
+  def escape4sh(arg: String): String = s"'${arg.replaceAll("'", "'\\''")}'"
+
   // Generate schema and cleanup part for database
   def compileSchemaDeclarations(stmts: List[SchemaDeclaration], ss: CompilationState): CompiledBlocks = {
     var schemas = new ListBuffer[String]()
@@ -618,15 +620,25 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
         (isForIncremental(stmts(0).headName) &&
         !(ss.isQueryTerm(stmts(0).headName)))
     }
-    val sqlCmdForInsert  = if (createTable) "INSERT INTO" else "CREATE VIEW"
-    val useAS            = if (createTable) "" else " AS"
     val extractor = s"""
       deepdive.extraction.extractors.${blockName} {
-        sql: \"\"\" ${sqlCmdForCleanUp}
-        ${sqlCmdForInsert} ${stmts(0).headName}${useAS} ${inputQueries.mkString("\nUNION ALL\n")}
+        cmd: \"\"\"
+${if (createTable) {
+	s"""
+	# TODO use temporary table
+	# TODO proper escaping for inputQueries argument
+	deepdive create table "${stmts(0).headName}"
+	deepdive sql ${escape4sh(s"INSERT INTO ${stmts(0).headName} ${inputQueries.mkString("\nUNION ALL\n")}")}
+	# TODO rename temporary table to replace output_relation
+	"""
+} else {
+	s"""
+	deepdive create view ${stmts(0).headName} as ${escape4sh(inputQueries.mkString("\nUNION ALL\n"))}
+	"""
+}}
         \"\"\"
           output_relation: \"${stmts(0).headName}\"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           ${ss.generateDependenciesOfCompiledBlockFor(stmts)}
           input_relations: [${
             (stmts flatMap ss.relationNamesUsedByStatement distinct
