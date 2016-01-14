@@ -18,10 +18,6 @@ cd \"$(dirname \"$0\")\"
 \(.before // "")
 
 export DEEPDIVE_CURRENT_PROCESS_NAME=\(.name | @sh)
-\(if .output_relation
-then "deepdive create table \(.output_relation | @sh)"
-else ""
-end)
 deepdive sql \(.sql | @sh)
 
 \(.after // "")
