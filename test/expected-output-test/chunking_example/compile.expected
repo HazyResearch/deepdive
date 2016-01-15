@@ -18,14 +18,19 @@
     
 
       deepdive.extraction.extractors.ext_tag {
-        sql: """ 
-        INSERT INTO tag SELECT DISTINCT R0.sent_id, 0 AS id, R0.true_tag AS label
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "tag"
+	deepdive sql 'INSERT INTO tag SELECT DISTINCT R0.sent_id, 0 AS id, R0.true_tag AS label
           FROM words R0
         
-          
+          '
+	# TODO rename temporary table to replace output_relation
+	
         """
           output_relation: "tag"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           dependencies: [ "ext_words_by_ext_training" ]
           input_relations: [
             words

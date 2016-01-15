@@ -97,17 +97,22 @@ dd_new_Q.label: Boolean
         }
 
       deepdive.extraction.extractors.ext_dd_new_S {
-        sql: """ TRUNCATE dd_new_S;
-        INSERT INTO dd_new_S SELECT R0.a
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_new_S"
+	deepdive sql 'INSERT INTO dd_new_S SELECT R0.a
 FROM S R0
         
 UNION ALL
 SELECT R0.a
 FROM dd_delta_S R0
-        
+        '
+	# TODO rename temporary table to replace output_relation
+	
         """
           output_relation: "dd_new_S"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           dependencies: [ "ext_dd_delta_S" ,  "ext1_dd_delta_S_by_f" ,  "ext_dd_delta_S_by_f" ,  "ext_dd_delta_S_by_f_1" ]
           input_relations: [
             S
@@ -117,17 +122,22 @@ FROM dd_delta_S R0
     
 
       deepdive.extraction.extractors.ext_dd_new_T {
-        sql: """ TRUNCATE dd_new_T;
-        INSERT INTO dd_new_T SELECT R0.a
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_new_T"
+	deepdive sql 'INSERT INTO dd_new_T SELECT R0.a
 FROM T R0
         
 UNION ALL
 SELECT R0.a
 FROM dd_delta_T R0
-        
+        '
+	# TODO rename temporary table to replace output_relation
+	
         """
           output_relation: "dd_new_T"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           dependencies: [ "ext_dd_delta_T_by_f" ,  "ext1_dd_delta_T_by_f" ,  "ext2_dd_delta_T_by_f" ,  "ext_dd_delta_T_by_f_1" ]
           input_relations: [
             T
@@ -137,8 +147,11 @@ FROM dd_delta_T R0
     
 
       deepdive.extraction.extractors.ext_dd_delta_S {
-        sql: """ 
-        INSERT INTO dd_delta_S SELECT R0.a AS "dd_delta_R.R0.a"
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_delta_S"
+	deepdive sql 'INSERT INTO dd_delta_S SELECT R0.a AS "dd_delta_R.R0.a"
 FROM dd_delta_R R0, R R1
         WHERE R1.a = R0.b  AND R0.a > 100
 UNION ALL
@@ -160,10 +173,12 @@ FROM dd_delta_R R0, R R1
 UNION ALL
 SELECT R0.a AS "dd_new_R.R0.a"
 FROM dd_new_R R0, dd_delta_R R1
-        WHERE R1.a = R0.b  AND R0.a = 0
+        WHERE R1.a = R0.b  AND R0.a = 0'
+	# TODO rename temporary table to replace output_relation
+	
         """
           output_relation: "dd_delta_S"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           dependencies: [ "ext_dd_new_R" ]
           input_relations: [
             dd_delta_R
@@ -174,17 +189,22 @@ FROM dd_new_R R0, dd_delta_R R1
     
 
       deepdive.extraction.extractors.ext_dd_new_R {
-        sql: """ TRUNCATE dd_new_R;
-        INSERT INTO dd_new_R SELECT R0.a, R0.b
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_new_R"
+	deepdive sql 'INSERT INTO dd_new_R SELECT R0.a, R0.b
 FROM R R0
         
 UNION ALL
 SELECT R0.a, R0.b
 FROM dd_delta_R R0
-        
+        '
+	# TODO rename temporary table to replace output_relation
+	
         """
           output_relation: "dd_new_R"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           
           input_relations: [
             R
@@ -194,8 +214,9 @@ FROM dd_delta_R R0
     
 
       deepdive.extraction.extractors.ext_dd_new_Q {
-        sql: """ 
-        CREATE VIEW dd_new_Q AS SELECT DISTINCT R0.x, id, label
+        cmd: """
+
+	deepdive create view dd_new_Q as 'SELECT DISTINCT R0.x, id, label
           FROM Q R0
         
           
@@ -203,10 +224,11 @@ UNION ALL
 SELECT DISTINCT R0.x, id, label
           FROM dd_delta_Q R0
         
-          
+          '
+	
         """
           output_relation: "dd_new_Q"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           
           input_relations: [
             Q

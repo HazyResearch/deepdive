@@ -121,17 +121,22 @@ q1.label: Boolean
         }
 
       deepdive.extraction.extractors.ext_dd_new_label2 {
-        sql: """ TRUNCATE dd_new_label2;
-        INSERT INTO dd_new_label2 SELECT R0.wid, R0.val
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_new_label2"
+	deepdive sql 'INSERT INTO dd_new_label2 SELECT R0.wid, R0.val
 FROM label2 R0
         
 UNION ALL
 SELECT R0.wid, R0.val
 FROM dd_delta_label2 R0
-        
+        '
+	# TODO rename temporary table to replace output_relation
+	
         """
           output_relation: "dd_new_label2"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           
           input_relations: [
             label2
@@ -141,8 +146,9 @@ FROM dd_delta_label2 R0
     
 
       deepdive.extraction.extractors.ext_dd_new_q1 {
-        sql: """ 
-        CREATE VIEW dd_new_q1 AS SELECT DISTINCT R0.wid, id, label
+        cmd: """
+
+	deepdive create view dd_new_q1 as 'SELECT DISTINCT R0.wid, id, label
           FROM q1 R0
         
           
@@ -150,10 +156,11 @@ UNION ALL
 SELECT DISTINCT R0.wid, id, label
           FROM dd_delta_q1 R0
         
-          
+          '
+	
         """
           output_relation: "dd_new_q1"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           dependencies: [ "ext_dd_delta_q1" ]
           input_relations: [
             q1
@@ -163,17 +170,22 @@ SELECT DISTINCT R0.wid, id, label
     
 
       deepdive.extraction.extractors.ext_dd_new_label1 {
-        sql: """ TRUNCATE dd_new_label1;
-        INSERT INTO dd_new_label1 SELECT R0.wid, R0.val
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_new_label1"
+	deepdive sql 'INSERT INTO dd_new_label1 SELECT R0.wid, R0.val
 FROM label1 R0
         
 UNION ALL
 SELECT R0.wid, R0.val
 FROM dd_delta_label1 R0
-        
+        '
+	# TODO rename temporary table to replace output_relation
+	
         """
           output_relation: "dd_new_label1"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           
           input_relations: [
             label1
@@ -183,14 +195,19 @@ FROM dd_delta_label1 R0
     
 
       deepdive.extraction.extractors.ext_dd_delta_q2 {
-        sql: """ 
-        INSERT INTO dd_delta_q2 SELECT DISTINCT R0.wid, 0 AS id, R0.val AS label
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_delta_q2"
+	deepdive sql 'INSERT INTO dd_delta_q2 SELECT DISTINCT R0.wid, 0 AS id, R0.val AS label
           FROM dd_delta_label2 R0
         
-          
+          '
+	# TODO rename temporary table to replace output_relation
+	
         """
           output_relation: "dd_delta_q2"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           
           input_relations: [
             dd_delta_label2
@@ -199,17 +216,22 @@ FROM dd_delta_label1 R0
     
 
       deepdive.extraction.extractors.ext_dd_new_features {
-        sql: """ TRUNCATE dd_new_features;
-        INSERT INTO dd_new_features SELECT R0.id, R0.word_id, R0.feature_id, R0.feature_val
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_new_features"
+	deepdive sql 'INSERT INTO dd_new_features SELECT R0.id, R0.word_id, R0.feature_id, R0.feature_val
 FROM features R0
         
 UNION ALL
 SELECT R0.id, R0.word_id, R0.feature_id, R0.feature_val
 FROM dd_delta_features R0
-        
+        '
+	# TODO rename temporary table to replace output_relation
+	
         """
           output_relation: "dd_new_features"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           
           input_relations: [
             features
@@ -219,14 +241,19 @@ FROM dd_delta_features R0
     
 
       deepdive.extraction.extractors.ext_dd_delta_q1 {
-        sql: """ 
-        INSERT INTO dd_delta_q1 SELECT DISTINCT R0.wid, 0 AS id, R0.val AS label
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_delta_q1"
+	deepdive sql 'INSERT INTO dd_delta_q1 SELECT DISTINCT R0.wid, 0 AS id, R0.val AS label
           FROM dd_delta_label1 R0
         
-          
+          '
+	# TODO rename temporary table to replace output_relation
+	
         """
           output_relation: "dd_delta_q1"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           
           input_relations: [
             dd_delta_label1
@@ -235,8 +262,9 @@ FROM dd_delta_features R0
     
 
       deepdive.extraction.extractors.ext_dd_new_q2 {
-        sql: """ 
-        CREATE VIEW dd_new_q2 AS SELECT DISTINCT R0.wid, id, label
+        cmd: """
+
+	deepdive create view dd_new_q2 as 'SELECT DISTINCT R0.wid, id, label
           FROM q2 R0
         
           
@@ -244,10 +272,11 @@ UNION ALL
 SELECT DISTINCT R0.wid, id, label
           FROM dd_delta_q2 R0
         
-          
+          '
+	
         """
           output_relation: "dd_new_q2"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           dependencies: [ "ext_dd_delta_q2" ]
           input_relations: [
             q2

@@ -19,14 +19,19 @@ q2.label: Boolean
     
 
       deepdive.extraction.extractors.ext_q1 {
-        sql: """ 
-        INSERT INTO q1 SELECT DISTINCT R0.wid, 0 AS id, R0.val AS label
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "q1"
+	deepdive sql 'INSERT INTO q1 SELECT DISTINCT R0.wid, 0 AS id, R0.val AS label
           FROM label1 R0
         
-          
+          '
+	# TODO rename temporary table to replace output_relation
+	
         """
           output_relation: "q1"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           
           input_relations: [
             label1
@@ -35,14 +40,19 @@ q2.label: Boolean
     
 
       deepdive.extraction.extractors.ext_q2 {
-        sql: """ 
-        INSERT INTO q2 SELECT DISTINCT R0.wid, 0 AS id, R0.val AS label
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "q2"
+	deepdive sql 'INSERT INTO q2 SELECT DISTINCT R0.wid, 0 AS id, R0.val AS label
           FROM label2 R0
         
-          
+          '
+	# TODO rename temporary table to replace output_relation
+	
         """
           output_relation: "q2"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           
           input_relations: [
             label2
