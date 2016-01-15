@@ -520,7 +520,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
 
   def isForIncremental(name: String) = name startsWith "dd_new_"
 
-  def escape4sh(arg: String): String = s"'${arg.replaceAll("'", "'\\''")}'"
+  def escape4sh(arg: String): String = s"'${arg.replaceAll("'", "'\\\''")}'"
 
   // Generate schema and cleanup part for database
   def compileSchemaDeclarations(stmts: List[SchemaDeclaration], ss: CompilationState): CompiledBlocks = {
