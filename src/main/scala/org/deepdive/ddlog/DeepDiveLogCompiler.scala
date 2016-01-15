@@ -626,7 +626,6 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
 ${if (createTable) {
 	s"""
 	# TODO use temporary table
-	# TODO proper escaping for inputQueries argument
 	deepdive create table "${stmts(0).headName}"
 	deepdive sql ${escape4sh(s"INSERT INTO ${stmts(0).headName} ${inputQueries.mkString("\nUNION ALL\n")}")}
 	# TODO rename temporary table to replace output_relation
