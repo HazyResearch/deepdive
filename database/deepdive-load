@@ -110,8 +110,7 @@ loadQueued() {
     echo "Loading $Relation${Columns:+($Columns)} from ${pathsInFormat[*]:-/dev/stdin} ($currentFormat format)"
     case $currentFormat in
         sql)
-            # FIXME this argument can grow huge and become problematic
-            db-execute "$(eval "cat $sourcesInFormat")"
+            eval "cat $sourcesInFormat" | db-prompt
             ;;
         *)
             eval 'db-load "$Relation" "$Columns" "$currentFormat" '"$sourcesInFormat"
