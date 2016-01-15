@@ -49,7 +49,7 @@ object SettingsParser extends Logging {
     }
 
     // Make sure the activePipelineName is defined
-    if (settings.pipelineSettings.activePipelineName.isDefined && settings.pipelineSettings.activePipeline.isEmpty) {
+    if (settings.pipelineSettings.activePipelineName.isDefined && settings.pipelineSettings.activePipeline.isEmpty && settings.pipelineSettings.relearnFrom.isEmpty()) {
       sys.error(s"${settings.pipelineSettings.activePipelineName.get}: No such pipeline defined")
     }
 
@@ -372,7 +372,7 @@ object SettingsParser extends Logging {
         activePipelineName = Try(config.getString("pipeline.run")) toOption,
         pipelines =
           // TODO move this logic out of this parser
-          if (relearnFrom isDefined) Nil else {
+          if (relearnFrom.isDefined) Nil else {
             val pipelineConfig = config.getConfig("pipeline.pipelines")
             pipelineConfig.root.keys.toList.sorted.map { pipelineName =>
               Pipeline(
