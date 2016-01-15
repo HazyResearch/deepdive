@@ -3,11 +3,10 @@ notifications:
   email:
     - deepdive-dev@lists.stanford.edu
 language:
-  - scala
+  - c
+  - cpp
   - python
-scala:
-  - "2.10.5"
-sbt_args:
+  - scala
 jdk:
   - openjdk7
 python:
@@ -49,7 +48,6 @@ addons:
     - gnuplot
     - bc
     - bzip2
-    - unzip # remove after getting rid of sampler lib zip files
       # for building sampler
     - libnuma-dev
     - gcc-4.8

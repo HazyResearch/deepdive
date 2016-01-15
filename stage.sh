@@ -50,17 +50,22 @@ stage shell/jq-f                                                  util/
 stage shell/logging-with-ts                                       util/
 stage shell/deepdive_bash_completion.sh                           etc/
 
+# DeepDive compiler
 stage compiler/deepdive-compile                                   util/
 stage compiler/deepdive-check                                     util/
 stage compiler/app-has-been-compiled                              util/
-stage .build/submodule/compiler/hocon2json/hocon2json.sh                                util/hocon2json
-stage .build/submodule/compiler/hocon2json/target/scala-2.10/hocon2json-assembly-*.jar  util/hocon2json.jar
-stage src/main/resources/application.conf                         etc/deepdive-default.conf
+stage compiler/deepdive-default.conf                              etc/
 stage compiler/compile-config                                     util/
 stage compiler/compile-check                                      util/
 stage compiler/compile-code                                       util/
 stage compiler/compile-codegen                                    util/
 
+stage compiler/ddlog-wrapper.sh                                   bin/ddlog
+stage .build/submodule/compiler/ddlog/target/scala-2.10/ddlog-assembly-0.1-SNAPSHOT.jar  lib/ddlog.jar
+stage .build/submodule/compiler/hocon2json/hocon2json.sh                                util/hocon2json
+stage .build/submodule/compiler/hocon2json/target/scala-2.10/hocon2json-assembly-*.jar  util/hocon2json.jar
+
+# DeepDive execution planner and runner
 stage runner/deepdive-plan                                        util/
 stage runner/deepdive-do                                          util/
 stage runner/deepdive-redo                                        util/
@@ -70,14 +75,14 @@ stage runner/format_timestamp                                     util/
 stage runner/mark_done                                            util/
 stage runner/resolve-args-to-do.sh                                util/
 stage runner/show_progress                                        util/
-stage runner/deepdive-run                                         util/
 
 stage runner/deepdive-compute                                     util/
 stage runner/load-compute-driver.sh                               util/
 stage runner/compute-driver/local                                 util/compute-driver/
 stage runner/computers-default.conf                               util/
-stage .build/submodule/util/mkmimo/mkmimo                         util/
+stage .build/submodule/runner/mkmimo/mkmimo                       util/
 
+# DeepDive database operations and drivers
 stage database/deepdive-db                                        util/
 stage database/deepdive-initdb                                    util/
 stage database/deepdive-sql                                       util/
@@ -88,60 +93,44 @@ stage database/db-driver/postgresql                               util/db-driver
 stage database/db-driver/greenplum                                util/db-driver/
 stage database/db-driver/postgresql-xl                            util/db-driver/
 stage database/db-driver/mysql                                    util/db-driver/
-stage database/db-driver/mysqlcluster                             util/db-driver/
 stage database/partition_id_range                                 util/
 stage database/pgtsv_to_json                                      util/
-
-# DeepDive core
-stage target/scala-2.10/deepdive-assembly-*.jar                   lib/deepdive.jar || true  # when testing, .jar may be missing
-
-# DeepDive utilities
-stage util/tobinary.py                                            util/
-stage util/active.sh                                              util/
-stage util/draw_calibration_plot                                  util/
-stage util/calibration.py                                         util/
-stage util/calibration.plg                                        util/
-
-# DDlog compiler
-stage util/ddlog                                                  bin/
-stage .build/submodule/ddlog/target/scala-2.10/ddlog-assembly-0.1-SNAPSHOT.jar  lib/ddlog.jar
 
 # DDlib
 stage ddlib/ddlib                                                 lib/python/
 
-# DimmWitted sampler
+# DeepDive inference engine and supporting utilities
 case $(uname) in
 Linux)
-    stage util/ndbloader/ndbloader-linux                          util/ndbloader
-    stage util/format_converter_linux                             util/format_converter
-    # copy shared libraries required by the sampler
-    ldd .build/submodule/sampler/dw | grep '=>' | awk '{print $3}' | sort -u | grep -v '^(' | xargs cp -vt "$STAGE_DIR"/lib/
-    stage .build/submodule/sampler/dw                             util/sampler-dw-linux
-    stage util/sampler-dw-linux.sh                                util/
-    ln -sfn sampler-dw-linux.sh                                   "$STAGE_DIR"/util/sampler-dw
+    # copy shared libraries required by the dimmwitted sampler
+    ldd .build/submodule/inference/dimmwitted/dw | grep '=>' |
+    awk '{print $3}' | sort -u | grep -v '^(' |
+    grep -v '^/lib/' |
+    xargs cp -vt "$STAGE_DIR"/lib/
+    stage .build/submodule/inference/dimmwitted/dw                util/sampler-dw.bin
+    stage inference/dimmwitted-wrapper.linux.sh                   util/sampler-dw
     ;;
 Darwin)
-    stage util/ndbloader/ndbloader-mac                            util/ndbloader
-    stage util/format_converter_mac                               util/format_converter
-    # copy shared libraries required by the sampler
-    otool -L .build/submodule/sampler/dw | grep 'dylib' | sed 's/(.*)//' | awk '{print $1}' | grep -v '^/usr/lib/' | xargs cp -vt "$STAGE_DIR"/lib/
-    stage .build/submodule/sampler/dw                             util/sampler-dw-mac
-    stage util/sampler-dw-mac.sh                                  util/
-    ln -sfn sampler-dw-mac.sh                                     "$STAGE_DIR"/util/sampler-dw
+    # copy shared libraries required by the dimmwitted sampler
+    otool -L .build/submodule/inference/dimmwitted/dw |
+    grep 'dylib' | sed 's/(.*)//' | awk '{print $1}' | sort -u |
+    grep -v '^/usr/lib/' |
+    xargs cp -vt "$STAGE_DIR"/lib/
+    stage .build/submodule/inference/dimmwitted/dw                util/sampler-dw.bin
+    stage inference/dimmwitted-wrapper.mac.sh                     util/sampler-dw
     ;;
 *)
     echo >&2 "$(uname): Unsupported OS"; false
     ;;
 esac
+stage inference/format_converter                                  util/format_converter
 
-# piggy extractor helper
-stage util/piggy_prepare.py                                       util/
-# plpy extractor helpers
-stage util/ddext.py                                               util/
-stage util/ddext_input_sql_translator.py                          util/
+# DeepDive utilities
+stage util/draw_calibration_plot                                  util/
+stage util/calibration.py                                         util/
+stage util/calibration.plg                                        util/
 
-# Mindbender
-stage .build/submodule/mindbender/mindbender-LATEST.sh            bin/mindbender || true  # keeping it optional for now
+stage .build/submodule/util/mindbender/mindbender-LATEST.sh       bin/mindbender || true  # keeping it optional for now
 
 # runtime dependencies after building them from source
-stage depends/.build/bundled                                      lib/
+stage extern/.build/bundled                                       lib/

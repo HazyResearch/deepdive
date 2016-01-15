@@ -23,6 +23,15 @@ teardown() {
     [[ $(deepdive sql eval "select * from foo_load" format=csv) = '123,foo bar,"{how,are,you}"' ]]
 }
 
+@test "$DBVARIANT deepdive load sql works with huge input" {
+    n=10000
+    db-execute "DROP TABLE IF EXISTS foo_load; CREATE TABLE foo_load(a INT, b text);"
+    seq $n | sed 's/.*/INSERT INTO foo_load(a,b) VALUES (&,'\''&&&&&&&&&'\'');/' >huge.sql
+    deepdive load foo_load huge.sql
+    [[ $(deepdive sql eval "select count(*) from foo_load") -eq $n ]]
+    rm -f huge.sql
+}
+
 @test "$DBVARIANT deepdive load with columns works" {
     n=10
     DEEPDIVE_LOAD_FORMAT=tsv  deepdive load "foo_load(a,b)" <(paste <(seq $n) <(yes | head -$n))
