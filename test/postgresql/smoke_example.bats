@@ -6,5 +6,5 @@
 @test "$DBVARIANT smoke example" {
     cd "${BATS_TEST_FILENAME%.bats}"/ || skip
     deepdive compile
-    deepdive redo process/init/db data/model/probabilities
+    deepdive redo process/init/app data/model/probabilities
 }

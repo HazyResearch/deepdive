@@ -1,0 +1,26 @@
+#!/usr/bin/env jq-f
+# compile-config-0.51-add_init_app -- Adds an extractor for initialzing the application
+##
+.deepdive_ as $deepdive
+
+# add a database initialization process
+| .deepdive_.execution.processes +=
+    { "process/init/app":
+        { style: "cmd_extractor"
+        , cmd: "
+        deepdive db init
+
+        cd \"$DEEPDIVE_APP\"
+        # run legacy schema.sql
+        if [[ -r schema.sql ]]; then
+            deepdive db prompt <schema.sql
+        fi
+        # run legacy init script
+        if [[ -x input/init.sh ]]; then
+            input/init.sh
+        fi
+        "
+        }
+    }
+
+# TODO connect all extractors and factors with no dependency to init/app

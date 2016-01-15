@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# warning -- Show warning message
+##
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2016-01-12
+
+# use prefix and a log file when specified
+: ${DEEPDIVE_WARNING_PREFIX:=}
+# whether to use colored output
+: ${DEEPDIVE_COLOR:=true}
+
+before= after=
+if [[ -t 2 ]] && $DEEPDIVE_COLOR; then
+    # TODO check terminal's color support
+    before=a; a() { echo -ne '\033[33m'; }
+     after=b; b() { echo -ne '\033[0m'; }
+fi
+
+{
+$before
+for msg; do
+    {
+        [[ -z "$DEEPDIVE_LOGERROR" ]] ||
+            echo "${DEEPDIVE_WARNING_PREFIX}$msg" >>"$DEEPDIVE_LOGERROR"
+    } 2>/dev/null
+    echo "${DEEPDIVE_WARNING_PREFIX}$msg"
+done
+$after
+} >&2

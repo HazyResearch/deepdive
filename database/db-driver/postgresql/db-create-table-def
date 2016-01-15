@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# db-create-table-def -- Creates a table from column definitions, coping with existing ones
+# $ export CREATE_TABLE_TYPE=... CREATE_TABLE_EXTRA_CLAUSES=...
+# $ export CREATE_IF_NOT_EXISTS=1
+# $ export DROP_VIEW_TYPE=... DROP_TABLE_TYPE=...
+# $ db-create-table-def TABLE [COLUMN:TYPE[:CONSTRAINT]]...
+##
+set -euo pipefail
+
+[[ $# -gt 0 ]] || usage "$0" "Missing TABLE name"
+Table=$1; shift
+
+# create table with column definitions
+tableDef=
+for columnDef; do
+    # parse COLUMN:TYPE[:CONSTRAINT]
+    column=${columnDef%%:*}
+    typeConstraint=${columnDef#$column}
+    typeConstraint=${typeConstraint#:}
+    [[ -n "$typeConstraint" ]] || usage "$0" "$columnDef: Missing :TYPE[:CONSTRAINT]"
+    type=${typeConstraint%%:*}
+    constraint=${typeConstraint#$type}
+    constraint=${constraint#:}
+    tableDef+=", $column $type $constraint"
+done
+tableDef="( ${tableDef#,} )"
+
+exec db-create-table "$Table" "$tableDef"

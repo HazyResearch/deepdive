@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# deepdive-create -- Creates a table/view in the database
+#
+# > deepdive create table TABLE
+# Creates a table as defined in app.ddlog or schema.json.
+#
+# > deepdive create table TABLE as SELECT_QUERY
+# > deepdive create view  TABLE as SELECT_QUERY
+# Creates a table or view named TABLE with the result of given SELECT query,
+# dropping existing table or view with the same name.
+#
+# > deepdive create table TABLE [COLUMN:TYPE[:CONSTRAINT]]...
+# Creates a new table named TABLE with given column definitions.
+#
+# > deepdive create table TABLE like ANOTHER_TABLE
+# Creates a new table named TABLE after the schema of ANOTHER_TABLE.
+#
+# > deepdive create table-if-not-exists TABLE [...]
+# Creates table if it does not exists already.
+#
+# > deepdive create SPECIAL_TYPE table TABLE ...
+# > deepdive create SPECIAL_TYPE view  TABLE ...
+# Creates a SPECIAL_TYPE table/view, such as "GLOBAL UNLOGGED" table or
+# "MATERIALIZED" view.
+##
+set -euo pipefail
+
+# parse database settings and load the driver
+. load-db-driver.sh
+
+[[ $# -gt 0 ]] || usage "$0" "What to create (table or view) must be given"
+What=$1; shift
+
+[[ $# -gt 0 ]] || usage "$0" "Missing TABLE name"
+Table=$1; shift
+# TODO double quote table names and column names?
+
+case $What in
+    table)
+        if [[ $# -eq 0 ]]; then
+            DEEPDIVE_APP=$(find-deepdive-app)
+            app-has-been-compiled
+            sql=$(schema_json_to_sql "$DEEPDIVE_APP"/run/compiled/schema.json "$Table") ||
+                error "$Table: No such table defined in schema"
+            exec db-execute "$sql"
+        else
+            # show warning if the table exists in app schema
+            if DEEPDIVE_APP=$(find-deepdive-app) &&
+                    app-has-been-compiled &>/dev/null &&
+                    sql=$(schema_json_to_sql "$DEEPDIVE_APP"/run/compiled/schema.json "$Table"); then
+                warning "$Table: Already defined in schema, overriding its definition"
+            fi
+            # create table from given definition
+            case $1 in
+                as) # create as query
+                    [[ $# -gt 1 ]] || usage "$0" "Missing SELECT_QUERY"
+                    Query=$2
+                    exec db-create-table-as "$Table" "$Query"
+                    ;;
+
+                like) # create like another table
+                    [[ $# -gt 1 ]] || usage "$0" "Missing ANOTHER_TABLE name"
+                    AnotherTable=$2
+                    exec db-create-table-like "$Table" "$AnotherTable"
+                    ;;
+
+                *) # create table from column definitions
+                    exec db-create-table-def "$Table" "$@"
+            esac
+        fi
+        ;;
+
+    view)
+        [[ $# -gt 1 && $1 = "as" ]] || usage "$0" "SELECT_QUERY for the view must be specified, followed by 'as'"
+        Query=$2
+        exec db-create-view-as "$Table" "$Query"
+        ;;
+
+    # recognize table-if-not-exists
+    table-if-not-exists)
+        CREATE_IF_NOT_EXISTS=1 exec "$0" "${What%-if-not-exists}" "$Table" "$@"
+        ;;
+
+    *)
+        # recognize the table/view type modifier that precedes them
+        case $Table in
+            table)
+                CREATE_TABLE_TYPE="$What" exec "$0" "$Table" "$@"
+                ;;
+            view)
+                CREATE_VIEW_TYPE="$What" exec "$0" "$Table" "$@"
+                ;;
+
+            *)
+                error "$What cannot be created: Only 'table' or 'view' can be created"
+        esac
+esac

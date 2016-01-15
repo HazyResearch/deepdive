@@ -30,7 +30,11 @@ for op in \
     execute \
     query \
     prompt \
-    create \
+    create-table \
+    create-table-def \
+    create-table-as \
+    create-table-like \
+    create-view-as \
     load \
     analyze \
     create_calibration_view \

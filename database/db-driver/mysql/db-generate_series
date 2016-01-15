@@ -11,7 +11,7 @@ set -euo pipefail
 [[ $# -gt 3 ]] || usage "$0" "Missing LAST"
 Table=$1 Column=$2 First=$3 Last=$4 Increment=${5:-1}
 
-db-create table "$Table" "$Column":BIGINT
+db-create-table-def "$Table" "$Column":BIGINT
 
 # generate numbers with seq(1) and add it to the table
 seq $First $Increment $Last | db-load "$Table" tsv

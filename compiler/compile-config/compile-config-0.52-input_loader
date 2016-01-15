@@ -15,8 +15,8 @@
     | select($process_defining_the_relation[.key] | not)
     | { key: "process/init/relation/\(.key)"
       , value: { style: "cmd_extractor"
-               , cmd: "deepdive initdb \(.key | @sh) && deepdive load \(.key | @sh)"
-               , dependencies_: [ "process/init/db" ]
+               , cmd: "deepdive create table \(.key | @sh) && deepdive load \(.key | @sh)"
+               , dependencies_: [ "process/init/app" ]
                , output_relation: .key
                , output_: "data/\(.key)"
                } }

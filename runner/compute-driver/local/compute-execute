@@ -61,8 +61,8 @@ if [[ -n $output_relation ]]; then
     echo
 
     # use an empty temporary table as a sink instead of TRUNCATE'ing the output_relation
-    deepdive-initdb "$output_relation"
-    db-create table "$output_relation_tmp" like "$output_relation"
+    deepdive-create table-if-not-exists "$output_relation"
+    db-create-table-like "$output_relation_tmp" "$output_relation"
 fi
 
 # set up named pipes for parallel processes and make sure they are cleaned up upon exit

@@ -12,7 +12,7 @@ column=${2:?The COLUMN holding the variable must be given, e.g., is_true}
 : ${DEEPDIVE_CALIBRATION_NUM_BUCKETS:=10}
 num_buckets=$DEEPDIVE_CALIBRATION_NUM_BUCKETS
 
-db-create view "dd_bucketed_${table}_${column}_inference" as "
+db-create-view-as "dd_bucketed_${table}_${column}_inference" "
     SELECT ${column} AS label
          , CASE
              WHEN expectation = 1 THEN $(($num_buckets - 1))
@@ -21,27 +21,27 @@ db-create view "dd_bucketed_${table}_${column}_inference" as "
     FROM ${table}_${column}_inference
 "
 
-db-create view "dd_bucketed_${table}_${column}_inference_all" as "
+db-create-view-as "dd_bucketed_${table}_${column}_inference_all" "
     SELECT bucket, COUNT(*) AS count
       FROM dd_bucketed_${table}_${column}_inference
      GROUP BY bucket
 "
 
-db-create view "dd_bucketed_${table}_${column}_inference_positive" as "
+db-create-view-as "dd_bucketed_${table}_${column}_inference_positive" "
     SELECT bucket, COUNT(*) AS count
       FROM dd_bucketed_${table}_${column}_inference
      WHERE label = true
      GROUP BY bucket
 "
 
-db-create view "dd_bucketed_${table}_${column}_inference_negative" as "
+db-create-view-as "dd_bucketed_${table}_${column}_inference_negative" "
     SELECT bucket, COUNT(*) AS count
       FROM dd_bucketed_${table}_${column}_inference
      WHERE label = false
      GROUP BY bucket
 "
 
-db-create view "${table}_${column}_calibration" as "
+db-create-view-as "${table}_${column}_calibration" "
     SELECT universe.bucket                             AS bucket
          , universe.count                              AS num_variables
          , positive.count                              AS num_correct
