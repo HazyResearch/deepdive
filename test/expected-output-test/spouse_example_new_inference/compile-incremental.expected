@@ -169,17 +169,22 @@ dd_new_has_spouse.label: Boolean
         }
 
       deepdive.extraction.extractors.ext_dd_new_people_mentions {
-        sql: """ TRUNCATE dd_new_people_mentions;
-        INSERT INTO dd_new_people_mentions SELECT R0.sentence_id, R0.start_position, R0.length, R0.text, R0.mention_id
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_new_people_mentions"
+	deepdive sql 'INSERT INTO dd_new_people_mentions SELECT R0.sentence_id, R0.start_position, R0.length, R0.text, R0.mention_id
 FROM people_mentions R0
         
 UNION ALL
 SELECT R0.sentence_id, R0.start_position, R0.length, R0.text, R0.mention_id
 FROM dd_delta_people_mentions R0
-        
+        '
+	# TODO rename temporary table to replace output_relation
+	
         """
           output_relation: "dd_new_people_mentions"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           dependencies: [ "ext_dd_delta_people_mentions_by_ext_people" ]
           input_relations: [
             people_mentions
@@ -189,17 +194,22 @@ FROM dd_delta_people_mentions R0
     
 
       deepdive.extraction.extractors.ext_dd_new_articles {
-        sql: """ TRUNCATE dd_new_articles;
-        INSERT INTO dd_new_articles SELECT R0.article_id, R0.text
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_new_articles"
+	deepdive sql 'INSERT INTO dd_new_articles SELECT R0.article_id, R0.text
 FROM articles R0
         
 UNION ALL
 SELECT R0.article_id, R0.text
 FROM dd_delta_articles R0
-        
+        '
+	# TODO rename temporary table to replace output_relation
+	
         """
           output_relation: "dd_new_articles"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           
           input_relations: [
             articles
@@ -209,17 +219,22 @@ FROM dd_delta_articles R0
     
 
       deepdive.extraction.extractors.ext_dd_new_has_spouse_candidates {
-        sql: """ TRUNCATE dd_new_has_spouse_candidates;
-        INSERT INTO dd_new_has_spouse_candidates SELECT R0.person1_id, R0.person2_id, R0.sentence_id, R0.description, R0.relation_id, R0.is_true
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_new_has_spouse_candidates"
+	deepdive sql 'INSERT INTO dd_new_has_spouse_candidates SELECT R0.person1_id, R0.person2_id, R0.sentence_id, R0.description, R0.relation_id, R0.is_true
 FROM has_spouse_candidates R0
         
 UNION ALL
 SELECT R0.person1_id, R0.person2_id, R0.sentence_id, R0.description, R0.relation_id, R0.is_true
 FROM dd_delta_has_spouse_candidates R0
-        
+        '
+	# TODO rename temporary table to replace output_relation
+	
         """
           output_relation: "dd_new_has_spouse_candidates"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           dependencies: [ "ext_dd_delta_has_spouse_candidates_by_ext_has_spouse" ]
           input_relations: [
             has_spouse_candidates
@@ -229,17 +244,22 @@ FROM dd_delta_has_spouse_candidates R0
     
 
       deepdive.extraction.extractors.ext_dd_new_has_spouse_features {
-        sql: """ TRUNCATE dd_new_has_spouse_features;
-        INSERT INTO dd_new_has_spouse_features SELECT R0.relation_id, R0.feature
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_new_has_spouse_features"
+	deepdive sql 'INSERT INTO dd_new_has_spouse_features SELECT R0.relation_id, R0.feature
 FROM has_spouse_features R0
         
 UNION ALL
 SELECT R0.relation_id, R0.feature
 FROM dd_delta_has_spouse_features R0
-        
+        '
+	# TODO rename temporary table to replace output_relation
+	
         """
           output_relation: "dd_new_has_spouse_features"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           dependencies: [ "ext_dd_delta_has_spouse_features_by_ext_has_spouse_features" ]
           input_relations: [
             has_spouse_features
@@ -249,17 +269,22 @@ FROM dd_delta_has_spouse_features R0
     
 
       deepdive.extraction.extractors.ext_dd_new_sentences {
-        sql: """ TRUNCATE dd_new_sentences;
-        INSERT INTO dd_new_sentences SELECT R0.document_id, R0.sentence, R0.words, R0.lemma, R0.pos_tags, R0.dependencies, R0.ner_tags, R0.sentence_offset, R0.sentence_id
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_new_sentences"
+	deepdive sql 'INSERT INTO dd_new_sentences SELECT R0.document_id, R0.sentence, R0.words, R0.lemma, R0.pos_tags, R0.dependencies, R0.ner_tags, R0.sentence_offset, R0.sentence_id
 FROM sentences R0
         
 UNION ALL
 SELECT R0.document_id, R0.sentence, R0.words, R0.lemma, R0.pos_tags, R0.dependencies, R0.ner_tags, R0.sentence_offset, R0.sentence_id
 FROM dd_delta_sentences R0
-        
+        '
+	# TODO rename temporary table to replace output_relation
+	
         """
           output_relation: "dd_new_sentences"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           
           input_relations: [
             sentences
@@ -269,14 +294,19 @@ FROM dd_delta_sentences R0
     
 
       deepdive.extraction.extractors.ext_dd_delta_has_spouse {
-        sql: """ 
-        INSERT INTO dd_delta_has_spouse SELECT DISTINCT R0.relation_id, 0 AS id, R0.is_true AS label
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_delta_has_spouse"
+	deepdive sql 'INSERT INTO dd_delta_has_spouse SELECT DISTINCT R0.relation_id, 0 AS id, R0.is_true AS label
           FROM dd_delta_has_spouse_candidates R0
         
-          
+          '
+	# TODO rename temporary table to replace output_relation
+	
         """
           output_relation: "dd_delta_has_spouse"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           dependencies: [ "ext_dd_delta_has_spouse_candidates_by_ext_has_spouse" ]
           input_relations: [
             dd_delta_has_spouse_candidates
@@ -285,8 +315,9 @@ FROM dd_delta_sentences R0
     
 
       deepdive.extraction.extractors.ext_dd_new_has_spouse {
-        sql: """ 
-        CREATE VIEW dd_new_has_spouse AS SELECT DISTINCT R0.relation_id, id, label
+        cmd: """
+
+	deepdive create view dd_new_has_spouse as 'SELECT DISTINCT R0.relation_id, id, label
           FROM has_spouse R0
         
           
@@ -294,10 +325,11 @@ UNION ALL
 SELECT DISTINCT R0.relation_id, id, label
           FROM dd_delta_has_spouse R0
         
-          
+          '
+	
         """
           output_relation: "dd_new_has_spouse"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           dependencies: [ "ext_dd_delta_has_spouse" ]
           input_relations: [
             has_spouse

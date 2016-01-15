@@ -137,14 +137,19 @@ dd_delta_smoke.label: Boolean
         }
 
       deepdive.extraction.extractors.ext_dd_delta_smoke {
-        sql: """ 
-        INSERT INTO dd_delta_smoke SELECT DISTINCT R0.person_id, 0 AS id, R0.smokes AS label
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_delta_smoke"
+	deepdive sql 'INSERT INTO dd_delta_smoke SELECT DISTINCT R0.person_id, 0 AS id, R0.smokes AS label
           FROM dd_delta_person_smokes R0
         
-          
+          '
+	# TODO rename temporary table to replace output_relation
+	
         """
           output_relation: "dd_delta_smoke"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           
           input_relations: [
             dd_delta_person_smokes
@@ -153,17 +158,22 @@ dd_delta_smoke.label: Boolean
     
 
       deepdive.extraction.extractors.ext_dd_new_person_has_cancer {
-        sql: """ TRUNCATE dd_new_person_has_cancer;
-        INSERT INTO dd_new_person_has_cancer SELECT R0.person_id, R0.has_cancer
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_new_person_has_cancer"
+	deepdive sql 'INSERT INTO dd_new_person_has_cancer SELECT R0.person_id, R0.has_cancer
 FROM person_has_cancer R0
         
 UNION ALL
 SELECT R0.person_id, R0.has_cancer
 FROM dd_delta_person_has_cancer R0
-        
+        '
+	# TODO rename temporary table to replace output_relation
+	
         """
           output_relation: "dd_new_person_has_cancer"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           
           input_relations: [
             person_has_cancer
@@ -173,17 +183,22 @@ FROM dd_delta_person_has_cancer R0
     
 
       deepdive.extraction.extractors.ext_dd_new_person {
-        sql: """ TRUNCATE dd_new_person;
-        INSERT INTO dd_new_person SELECT R0.person_id, R0.name
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_new_person"
+	deepdive sql 'INSERT INTO dd_new_person SELECT R0.person_id, R0.name
 FROM person R0
         
 UNION ALL
 SELECT R0.person_id, R0.name
 FROM dd_delta_person R0
-        
+        '
+	# TODO rename temporary table to replace output_relation
+	
         """
           output_relation: "dd_new_person"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           
           input_relations: [
             person
@@ -193,8 +208,9 @@ FROM dd_delta_person R0
     
 
       deepdive.extraction.extractors.ext_dd_new_smoke {
-        sql: """ 
-        CREATE VIEW dd_new_smoke AS SELECT DISTINCT R0.person_id, id, label
+        cmd: """
+
+	deepdive create view dd_new_smoke as 'SELECT DISTINCT R0.person_id, id, label
           FROM smoke R0
         
           
@@ -202,10 +218,11 @@ UNION ALL
 SELECT DISTINCT R0.person_id, id, label
           FROM dd_delta_smoke R0
         
-          
+          '
+	
         """
           output_relation: "dd_new_smoke"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           dependencies: [ "ext_dd_delta_smoke" ]
           input_relations: [
             smoke
@@ -215,14 +232,19 @@ SELECT DISTINCT R0.person_id, id, label
     
 
       deepdive.extraction.extractors.ext_dd_delta_cancer {
-        sql: """ 
-        INSERT INTO dd_delta_cancer SELECT DISTINCT R0.person_id, 0 AS id, R0.has_cancer AS label
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_delta_cancer"
+	deepdive sql 'INSERT INTO dd_delta_cancer SELECT DISTINCT R0.person_id, 0 AS id, R0.has_cancer AS label
           FROM dd_delta_person_has_cancer R0
         
-          
+          '
+	# TODO rename temporary table to replace output_relation
+	
         """
           output_relation: "dd_delta_cancer"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           
           input_relations: [
             dd_delta_person_has_cancer
@@ -231,8 +253,9 @@ SELECT DISTINCT R0.person_id, id, label
     
 
       deepdive.extraction.extractors.ext_dd_new_cancer {
-        sql: """ 
-        CREATE VIEW dd_new_cancer AS SELECT DISTINCT R0.person_id, id, label
+        cmd: """
+
+	deepdive create view dd_new_cancer as 'SELECT DISTINCT R0.person_id, id, label
           FROM cancer R0
         
           
@@ -240,10 +263,11 @@ UNION ALL
 SELECT DISTINCT R0.person_id, id, label
           FROM dd_delta_cancer R0
         
-          
+          '
+	
         """
           output_relation: "dd_new_cancer"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           dependencies: [ "ext_dd_delta_cancer" ]
           input_relations: [
             cancer
@@ -253,17 +277,22 @@ SELECT DISTINCT R0.person_id, id, label
     
 
       deepdive.extraction.extractors.ext_dd_new_person_smokes {
-        sql: """ TRUNCATE dd_new_person_smokes;
-        INSERT INTO dd_new_person_smokes SELECT R0.person_id, R0.smokes
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_new_person_smokes"
+	deepdive sql 'INSERT INTO dd_new_person_smokes SELECT R0.person_id, R0.smokes
 FROM person_smokes R0
         
 UNION ALL
 SELECT R0.person_id, R0.smokes
 FROM dd_delta_person_smokes R0
-        
+        '
+	# TODO rename temporary table to replace output_relation
+	
         """
           output_relation: "dd_new_person_smokes"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           
           input_relations: [
             person_smokes
@@ -273,17 +302,22 @@ FROM dd_delta_person_smokes R0
     
 
       deepdive.extraction.extractors.ext_dd_new_friends {
-        sql: """ TRUNCATE dd_new_friends;
-        INSERT INTO dd_new_friends SELECT R0.person_id, R0.friend_id
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_new_friends"
+	deepdive sql 'INSERT INTO dd_new_friends SELECT R0.person_id, R0.friend_id
 FROM friends R0
         
 UNION ALL
 SELECT R0.person_id, R0.friend_id
 FROM dd_delta_friends R0
-        
+        '
+	# TODO rename temporary table to replace output_relation
+	
         """
           output_relation: "dd_new_friends"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           
           input_relations: [
             friends

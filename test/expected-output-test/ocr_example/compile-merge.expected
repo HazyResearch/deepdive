@@ -18,13 +18,18 @@
     
 
       deepdive.extraction.extractors.ext_label2 {
-        sql: """ TRUNCATE label2;
-        INSERT INTO label2 SELECT R0.wid, R0.val
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "label2"
+	deepdive sql 'INSERT INTO label2 SELECT R0.wid, R0.val
 FROM dd_new_label2 R0
-        
+        '
+	# TODO rename temporary table to replace output_relation
+	
         """
           output_relation: "label2"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           
           input_relations: [
             dd_new_label2
@@ -33,13 +38,18 @@ FROM dd_new_label2 R0
     
 
       deepdive.extraction.extractors.ext_label1 {
-        sql: """ TRUNCATE label1;
-        INSERT INTO label1 SELECT R0.wid, R0.val
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "label1"
+	deepdive sql 'INSERT INTO label1 SELECT R0.wid, R0.val
 FROM dd_new_label1 R0
-        
+        '
+	# TODO rename temporary table to replace output_relation
+	
         """
           output_relation: "label1"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           
           input_relations: [
             dd_new_label1
@@ -48,13 +58,18 @@ FROM dd_new_label1 R0
     
 
       deepdive.extraction.extractors.ext_features {
-        sql: """ TRUNCATE features;
-        INSERT INTO features SELECT R0.id, R0.word_id, R0.feature_id, R0.feature_val
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "features"
+	deepdive sql 'INSERT INTO features SELECT R0.id, R0.word_id, R0.feature_id, R0.feature_val
 FROM dd_new_features R0
-        
+        '
+	# TODO rename temporary table to replace output_relation
+	
         """
           output_relation: "features"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           
           input_relations: [
             dd_new_features

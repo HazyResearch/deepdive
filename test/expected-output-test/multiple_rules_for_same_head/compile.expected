@@ -18,8 +18,11 @@
     
 
       deepdive.extraction.extractors.ext_S {
-        sql: """ 
-        INSERT INTO S SELECT R0.a AS "R.R0.a"
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "S"
+	deepdive sql 'INSERT INTO S SELECT R0.a AS "R.R0.a"
 FROM R R0, R R1
         WHERE R1.a = R0.b  AND R0.a > 100
 UNION ALL
@@ -29,10 +32,12 @@ FROM R R0, R R1
 UNION ALL
 SELECT R0.a AS "R.R0.a"
 FROM R R0, R R1
-        WHERE R1.a = R0.b  AND R0.a = 0
+        WHERE R1.a = R0.b  AND R0.a = 0'
+	# TODO rename temporary table to replace output_relation
+	
         """
           output_relation: "S"
-        style: "sql_extractor"
+        style: "cmd_extractor"
           
           input_relations: [
             R
