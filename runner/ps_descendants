@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# ps_descendants -- Lists all descendant PIDs of given PID as well as those sharing the PGID
+# $ ps_descendants PID
+##
+set -eu
+
+[[ $# -gt 0 ]] || usage "$0" "Missing PID"
+
+# how to access PID-PPID-PGID snapshot
+ps_snapshot=$(
+    exec ps ax -o pid=,ppid=,pgid= |
+    exec sed '
+        s/[[:space:]][[:space:]]*/ /; s/^ //; s/ $//  # tidy whitespaces
+    '
+)
+pid_ppid() {
+    sed <<<"$ps_snapshot" '
+        s/[[:space:]][^[:space:]]*$//  # project to PID-PPID
+    '
+}
+pid_pgid() {
+    sed <<<"$ps_snapshot" '
+        s/[[:space:]][^[:space:]]*[[:space:]]/ /  # project to PID-PGID
+    '
+}
+# how to find cycles in a graph
+pids_in_cycle() {
+    # use tsort to find the injected cycle from the mutated process tree
+    tsort 2>&1 |
+    sed '
+        /^tsort: /!d
+        /input contains a loop:$/d
+        s/^tsort: //
+    ' |
+    sort -u
+}
+# how to find the ancestor processes, i.e., parent, parent of parent, and so on
+ancestors() {
+    local pid=$1
+    {
+        # form a cycle by creating an edge from root to given PID
+        echo 1 $pid
+        pid_ppid
+    } |
+    pids_in_cycle
+}
+# how to find the descendant processes, i.e., children, children of children
+descendants() {
+    local pid=$1
+    pid_ppid |
+    sed '
+        p                                              # emit the original PID-PPID edge
+        s/^/'"$pid"' /; s/[[:space:]][^[:space:]]*$//  # inject an edge from bash to everyone else to create a cycle
+    ' |
+    pids_in_cycle
+}
+# how to find the processes sharing the PGID
+same_process_group() {
+    local pid=$1
+    local pgid=$(sed <<<"$ps_snapshot" '
+        /^'"$pid"'[[:space:]]/!d
+        s/.*[[:space:]]//
+    ')
+    # assume it was a process group leader, i.e., the PGID was the same as PID if not found
+    pgid=${pgid:-$pid}
+    pid_pgid |
+    sed '
+        /[[:space:]]'"$pgid"'$/!d  # select lines with the PGID
+        s/[[:space:]].*$//         # project to PID
+    '
+}
+
+pid=$1; shift
+this=$BASHPID
+{
+    # list descendants reachable via PID-PPID
+    descendants "$pid"
+    # as well as those in the same process group
+    same_process_group "$pid" | grep -vxf <(
+        # except descendants of the highest ancestor other than PID 1
+        grandestparent=$(ancestors "$pid" | grep -vxF 1 | head -1)
+        descendants "$grandestparent"
+    )
+} | sort -u |
+grep -vxf <(
+    # exclude the process itself
+    echo $pid
+    # and this one's descendants
+    descendants $this
+    #echo "$ps_snapshot" >&2
+) || true
