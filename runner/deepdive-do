@@ -33,7 +33,7 @@ signals="HUP INT QUIT TERM"
 signal_pg() {
     local sig=$1
     # send given signal to the process group
-    ps_descendants $$ | xargs kill -$sig || true
+    exec ps_descendants $$ | xargs kill -$sig || true
 }
 keep_signal_pg() {
     local sig=$1
@@ -46,7 +46,7 @@ keep_signal_pg() {
     # until no process remains in the process group
     # keep sending the same signal with increasing interval
     local timeout=1
-    while [[ -n $(ps_descendants $$) ]]; do
+    while [[ -n $(exec ps_descendants $$) ]]; do
         echo "Processes still alive, sending SIG$sig again to descendants of PID $$ in $timeout secs"
         sleep $timeout && signal_pg $sig && let timeout*=2 || {
             # or send KILL if something goes wrong
