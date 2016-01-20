@@ -55,7 +55,7 @@ case $format in
             # spawn gpfdist processes
             locations=()
             port=$GPFDIST_PORT_BASE
-            i=0
+            i=1
             for sink; do
                 sinkHost=$HOSTNAME
                 # TODO support sinks on remote hosts, potentially created by
