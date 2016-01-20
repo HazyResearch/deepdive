@@ -33,7 +33,7 @@ signals="HUP INT QUIT TERM"
 signal_pg() {
     local sig=$1
     # send given signal to the process group
-    exec ps_descendants $$ | xargs kill -$sig || true
+    exec ps_descendants $$ | xargs -t kill -$sig || true
 }
 keep_signal_pg() {
     local sig=$1
@@ -87,6 +87,8 @@ fi
 cleanup() {
     cd "$DEEPDIVE_APP"
     [[ ! run/RUNNING -ef run/"$runDir" ]] || rm -f run/RUNNING
+    # make sure no descendant processes are left behind
+    [[ -z $(exec ps_descendants $$) ]] || keep_signal_pg TERM
 }
 trap cleanup EXIT
 #  and leaving an ABORTED symlink upon error
