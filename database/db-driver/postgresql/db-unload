@@ -34,10 +34,10 @@ case $format in
                     [[ -z $DEEPDIVE_UNLOAD_MATERIALIZED ]] && $queryHasJOINs; then
                 tmpTable="dd_unload_$(sha1sum <<<"$query" | cut -b1-40)"
                 STEP "materializing query result before parallel unload (export DEEPDIVE_UNLOAD_MATERIALIZED=false to skip)"
-                db-create table "$tmpTable" as "$query"
+                db-create-table-as "$tmpTable" "$query"
                 tmpTableWasMaterialized=true
             elif $queryHasJOINs; then
-                STEP "skipping materializing JOIN query before parallel unload since DEEPDIVE_UNLOAD_MATERIALIZED=true"
+                STEP "skipping materializing JOIN query before parallel unload as DEEPDIVE_UNLOAD_MATERIALIZED isn't true"
             fi
             STEP "partitioning query result into $nsinks for parallel unload"
             while read limit offset end; do
