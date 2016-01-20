@@ -39,6 +39,11 @@ case $format in
             cleanup() {
                 # terminate all gpfdist processes that were started
                 kill -TERM $(cat "$tmpDir"/gpfdist-*.pid)
+                # make sure all sinks are at least once opened and closed
+                # e.g., when only a few gpfdist recives records, some named
+                # pipe sinks may not get any activity, hanging the other end
+                for sink in "$tmpDir"/sink-*; do timeout 1s tee -a "$sink" </dev/null & done
+                wait || true
                 rm -rf "$tmpDir"
             }
             trap cleanup EXIT
@@ -75,6 +80,8 @@ case $format in
                 else
                     spawn_gpfdist -d "$sinkDir"
                     locations+=("gpfdist://$sinkHost:$port/$sinkName")
+                    # keep a symlink with consistent name for easier cleanup
+                    ln -sfn "$(cd "$sinkDir" && pwd)/$sinkName" "$tmpDir"/sink-$i
                 fi
                 let ++i ++port
             done
