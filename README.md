@@ -3,7 +3,7 @@ DimmWitted
 
 # How fast is DimmWitted?
 
-  - On Amazon EC2's FREE MACHINE (512M memory, 1 core). We can sample 3.6M varialbes/seconds.
+  - On Amazon EC2's FREE MACHINE (512M memory, 1 core). We can sample 3.6M variables/seconds.
   - On a 2-node Amazon EC2 machine, sampling 7 billion random variables, each of which has 10 features, takes 3 minutes. This means we can run inference for all living human beings on this planet with $15 (100 samples!)
   - On Macbook, DimmWitted runs 10x faster than DeepDive's default sampler.
 
