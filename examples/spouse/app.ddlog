@@ -1,0 +1,9 @@
+# example DeepDive application for finding spouse relationships in news articles
+
+articles(
+    id text,
+    content text
+    # TODO more fields if needed
+).
+
+# TODO
