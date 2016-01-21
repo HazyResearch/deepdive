@@ -1,7 +1,9 @@
 # example DeepDive application for finding spouse relationships in news articles
-
+@source
 articles(
+    @key
     id text,
+    @searchable
     content text
     # TODO more fields if needed
 ).
