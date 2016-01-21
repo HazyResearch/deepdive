@@ -1,3 +1,15 @@
+sudo: false  # to use container-based infra, see: http://docs.travis-ci.com/user/migrating-from-legacy/
+addons:
+  apt:
+    sources:
+    # for gcc 4.8
+    - ubuntu-toolchain-r-test
+    packages:
+    # for building sampler
+    - libnuma-dev
+    - gcc-4.8
+    - g++-4.8
+
 language: cpp
 notifications:
   email:
