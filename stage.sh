@@ -94,6 +94,7 @@ stage runner/ps_descendants                                       util/
 stage runner/deepdive-compute                                     util/
 stage runner/load-compute-driver.sh                               util/
 stage runner/compute-driver/local                                 util/compute-driver/
+stage runner/compute-driver/torque                                util/compute-driver/
 stage runner/computers-default.conf                               util/
 stage .build/submodule/runner/mkmimo/mkmimo                       util/
 

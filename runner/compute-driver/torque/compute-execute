@@ -1,0 +1,135 @@
+#!/usr/bin/env bash
+# torque/compute-execute -- Executes a process remotely using the Torque scheduler
+# $ compute-execute input_sql=... command=... output_relation=...
+#
+# To limit the number of parallel processes, set the DEEPDIVE_NUM_PROCESSES
+# environment or the 'deepdive.computers.local.num_processes' in
+# computers.conf:
+# $ export DEEPDIVE_NUM_PROCESSES=2
+# $ compute-execute input_sql=... command=... output_relation=...
+##
+set -euo pipefail
+
+: ${DEEPDIVE_PREFIX_TABLE_TEMPORARY:=dd_tmp_} ${DEEPDIVE_PREFIX_TABLE_OLD:=dd_old_}
+
+# load compute configuration
+eval "$(jq2sh <<<"$DEEPDIVE_COMPUTER_CONFIG" \
+    num_processes='.num_processes' \
+    ssh_user='.ssh_user' \
+    ssh_host='.ssh_host' \
+    remote_home='.remote_home' \
+    #
+)"
+# respect the DEEPDIVE_NUM_PROCESSES environment
+num_processes=${DEEPDIVE_NUM_PROCESSES:-${num_processes:-$(
+        # detect number of processor cores
+        nproc=$(
+            # Linux typically has coreutils which includes nproc
+            nproc ||
+            # OS X
+            sysctl -n hw.ncpu ||
+            # fall back to 1
+            echo 1
+        )
+        if [[ $nproc -gt 1 ]]; then
+            # leave one processor out
+            let nproc-=1
+        elif [[ $nproc -lt 1 ]]; then
+            nproc=1
+        fi
+        echo $nproc
+    )}}
+
+# declare all input arguments
+declare -- "$@"
+
+REMOTE_DEEPDIVE_APP="$remote_home/$(basename $DEEPDIVE_APP)"
+ssh_info="${ssh_user}@${ssh_host}"
+
+# show configuration
+echo "Executing with the following configuration:"
+echo " num_processes=$num_processes"
+echo " ssh_user=$ssh_user"
+echo " ssh_host=$ssh_host"
+echo " remote_home=$remote_home"
+
+echo "DEEPDIVE_APP = $DEEPDIVE_APP"
+echo "REMOTE_DEEPDIVE_APP = $remote_home/$(basename $DEEPDIVE_APP)"
+echo "DEEPDIVE_CURRENT_PROCESS_NAME = $DEEPDIVE_CURRENT_PROCESS_NAME"
+
+# Copy application folder to remote shared directory
+# This fails if $DEEPDIVE_APP exists at $remote_home. What do?
+scp -r $DEEPDIVE_APP $ssh_info:$remote_home
+
+# Prepare submission script
+# XXX there are conditional branches below depending on whether input_sql
+# and/or output_relation is given, to support four use cases. Depending on
+# the cases, need to generate various submission scripts. 
+# 1) executing command while streaming data from/to the database
+# 2) input-only command which has no output to the database and streams from the database
+# 3) output-only command which has no input from the database and streams to the database
+# 4) database-independent command which simply runs in parallel
+{
+    echo "#PBS -N $DEEPDIVE_CURRENT_PROCESS_NAME"
+    echo "#PBS -o $REMOTE_DEEPDIVE_APP/run/$DEEPDIVE_CURRENT_PROCESS_NAME/remote.out"
+    echo
+    echo "export DEEPDIVE_APP=\"$REMOTE_DEEPDIVE_APP\""
+    echo '"$SHELL"'" -c \"$command\" < \"$remote_home/$DEEPDIVE_CURRENT_PROCESS_NAME/remote.in\""
+} | 
+ssh $ssh_info "cat > $REMOTE_DEEPDIVE_APP/run/$DEEPDIVE_CURRENT_PROCESS_NAME/remote.sh"
+
+# Prepare input data
+if [[ -n $input_sql ]]; then
+    deepdive-sql eval "$input_sql" format="$DEEPDIVE_LOAD_FORMAT" |
+    ssh $ssh_info "cat > $REMOTE_DEEPDIVE_APP/run/$DEEPDIVE_CURRENT_PROCESS_NAME/remote.in"
+fi
+
+# Submit job
+#ssh $ssh_info "qsub $job"
+echo "Job submitted"
+# Up until here first. 
+exit
+
+# Poll for status
+# XXX: Do what if fail? 
+
+# prepare a temporary output table when output_relation is given
+if [[ -n $output_relation ]]; then
+    # some derived values
+    output_relation_tmp="${DEEPDIVE_PREFIX_TABLE_TEMPORARY}${output_relation}"
+
+    # show configuration
+    echo " output_relation_tmp=$output_relation_tmp"
+    echo
+
+    # use an empty temporary table as a sink instead of TRUNCATE'ing the output_relation
+    deepdive-create table-if-not-exists "$output_relation"
+    db-create-table-like "$output_relation_tmp" "$output_relation"
+
+    ssh $ssh_info "cat $remote_home/$DEEPDIVE_CURRENT_PROCESS_NAME.out" |
+
+    # use mkmimo again to merge outputs of multiple processes into a single stream
+    #mkmimo process-*.output \> /dev/stdout |
+
+    # load the output data to the temporary table in the database
+    # XXX hiding default progress bar from deepdive-load
+    # TODO abbreviate this env into a show_progress option, e.g., recursive=false
+    #show_progress input_to "$DEEPDIVE_CURRENT_PROCESS_NAME output" -- \
+    #env DEEPDIVE_PROGRESS_FD=2 \
+
+    # As opposed to local, this should be a blocking process, since we don't use
+    # mkmimo.
+    # TODO I am really unsure as to how to show the progress here.
+    deepdive-load "$output_relation_tmp"
+
+    # rename the new temporary table
+    # TODO maybe use PostgreSQL's schema support here?
+    echo "Replacing $output_relation with $output_relation_tmp"
+    output_relation_old="${DEEPDIVE_PREFIX_TABLE_OLD}${output_relation}"
+    deepdive-sql "DROP TABLE IF EXISTS ${output_relation_old};" || true
+    deepdive-sql "ALTER TABLE ${output_relation}     RENAME TO ${output_relation_old};"
+    deepdive-sql "ALTER TABLE ${output_relation_tmp} RENAME TO ${output_relation};"
+    deepdive-sql "DROP TABLE IF EXISTS ${output_relation_old};" || true
+    # and analyze the table to speed up future queries
+    db-analyze "${output_relation}"
+fi
