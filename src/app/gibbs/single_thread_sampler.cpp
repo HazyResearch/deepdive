@@ -208,7 +208,7 @@ namespace dd{
           varlen_potential_buffer.push_back(0.0);
         }
 
-        if(variable.is_evid == false){
+        if(variable.is_evid == false || sample_evidence) {
           sum = -100000.0;
           acc = 0.0;
           multi_proposal = -1;
