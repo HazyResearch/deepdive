@@ -91,7 +91,7 @@ labeled_spouse_candidates(
     p1_id text,
     @key
     p2_id text,
-    label Boolean 
+    label boolean
 ).
 
 labeled_spouse_candidates(p1,p2,TRUE) :-
