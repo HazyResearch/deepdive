@@ -21,36 +21,24 @@ def extract(doc_id, sentence_index, tokens, ner_tags):
             doc_id,
             sentence_index,
             begin_index,
-            end_index
+            end_index,
         ]
 
-# TODO uncomment below once ddlib is ready
-#import deepdive
-#deepdive.tsv_extractor(
-#    input_format=[
-#        ( "doc_id"           , "text"   ),
-#        ( "sentence_index"   , "int"    ),
-#        ( "tokens"           , "text[]" ),
-#        ( "ner_tags"         , "text[]" ),
-#        ],
-#    output_format=[
-#        ( "mention_id"       , "text"   ),
-#        ( "mention_text"     , "text"   ),
-#        ( "doc_id"           , "text"   ),
-#        ( "sentence_index"   , "int"    ),
-#        ( "begin_index"      , "int"    ),
-#        ( "end_index"        , "int"    ),
-#        ],
-#    generator=extract
-#)
-
-# TODO remove below once ddlib is ready
-import sys
-for line in sys.stdin:
-    doc_id,sentence_index,tokens,ner_tags = line.split("\t")
-    sentence_index = int(sentence_index)
-    pgarray = lambda s: s[1:-2].split(",")
-    tokens = pgarray(tokens)
-    ner_tags = pgarray(ner_tags)
-    for t in extract(doc_id,sentence_index,tokens,ner_tags):
-        print "\t".join(map(str, t))
+import deepdive
+deepdive.tsv_extractor(
+    input_format=[
+        ( "doc_id"           , "text"   ),
+        ( "sentence_index"   , "int"    ),
+        ( "tokens"           , "text[]" ),
+        ( "ner_tags"         , "text[]" ),
+        ],
+    output_format=[
+        ( "mention_id"       , "text"   ),
+        ( "mention_text"     , "text"   ),
+        ( "doc_id"           , "text"   ),
+        ( "sentence_index"   , "int"    ),
+        ( "begin_index"      , "int"    ),
+        ( "end_index"        , "int"    ),
+        ],
+    generator=extract
+)

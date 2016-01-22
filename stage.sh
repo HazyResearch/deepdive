@@ -99,6 +99,7 @@ stage database/tsv2json                                           util/
 
 # DDlib
 stage ddlib/ddlib                                                 lib/python/
+stage ddlib/deepdive.py                                           lib/python/
 
 # DeepDive inference engine and supporting utilities
 case $(uname) in

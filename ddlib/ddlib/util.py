@@ -103,7 +103,7 @@ TYPE_CHECKERS = {
   'boolean' : lambda x : type(x) == bool
 }
 
-def print_pgtsv_element(x, t, d=0):
+def print_pgtsv_element(x, n, t, d=0):
   """Checks element x against type string t, then prints in PG-TSV format if a match"""
   # Handle NULLs first
   if x is None:
@@ -117,15 +117,17 @@ def print_pgtsv_element(x, t, d=0):
     if not hasattr(x, '__iter__'):
       raise ValueError("Mismatch between array type and non-iterable in output row:\n%s" % x)
     else:
-      return '{%s}' % ','.join(print_pgtsv_element(e, t[:-2], d=d+1) for e in x)
+      return '{%s}' % ','.join(print_pgtsv_element(e, n, t[:-2], d=d+1) for e in x)
 
   # Else check type & print, hanlding special case of string in array
   try:
     checker = TYPE_CHECKERS[t]
   except KeyError:
     raise Exception("Unsupported type: %s" % t)
-  if not checker(t):
-    raise Exception("Incorrect type in output row element:\n%s" % x)
+  if not checker(x):
+    raise Exception("Output column '%(name)s' of type %(declared_type)s has incorrect value of %(value_type)s: '%(value)s'" % {
+        name:n, declared_type:t, value_type:type(x), value:x,
+    })
   if d > 0 and t == 'text':
     return '"%s"' % str(tok).replace('\\', '\\\\').replace('"', '\\\\"')
   else:
@@ -137,14 +139,14 @@ class PGTSVPrinter:
   Initialized with a list of type strings
   Prints out Postgres-format TSV output lines
   """
-  def __init__(self, types):
-    self.types = types
+  def __init__(self, fields):
+    self.fields = fields
 
   def write(self, out):
-    if len(out) != len(self.types):
+    if len(out) != len(self.fields):
       raise ValueError("Wrong number of attributes for output row:\n%s" % out_row)
     else:
-      print '\t'.join(print_pgtsv_element(x, t) for x,t in zip(out, self.types))
+      print '\t'.join(print_pgtsv_element(x, n, t) for x,(n,t) in zip(out, self.fields))
 
 
 def tsv_extractor(input_format, output_format, generator):
@@ -162,8 +164,8 @@ def tsv_extractor(input_format, output_format, generator):
   parser = PGTSVParser(input_format)
 
   # Create the output parser
-  printer = PGTSVPrinter([f[1] for f in output_format])
+  printer = PGTSVPrinter(output_format)
 
   for row in parser.parse_stdin():
-    for out_row in generator(row):
+    for out_row in generator(**row._asdict()):
       printer.write(out_row)
