@@ -28,7 +28,7 @@ DeepDive will automatically create the table, execute the script and load the ta
 input/articles.tsv.sh
 ```
 The aforementioned script reads a sample of the corpus (provided as lines of json objects), and then using the [jq](https://stedolan.github.io/jq/) language extracts the fields `id` (for docuemnt id) and `content` from each entry and converts those to `tsv` format.
- 
+
 Next, we need to define the schema of this `articles` table in our `app.ddlog` file; we add the following lines:
 ```
 # example DeepDive application for finding spouse relationships in news articles
@@ -57,7 +57,7 @@ save and exit to accept, and DeepDive will run, creating the table and then fetc
 Our goal is to first extract a collection of known married couples from DBpedia and then load this into the `spouses_dbpedia` table in our database.
 
 #### Extracting the DBpedia Data
-To extract known married couples, we used the DBpedia dump present in [Google's BigQuery platform](https://bigquery.cloud.google.com). 
+To extract known married couples, we used the DBpedia dump present in [Google's BigQuery platform](https://bigquery.cloud.google.com).
 First we extracted the URI, name and spouse information from the dbpedia `person` table records in BigQuery for which the field `name` is not NULL. We used the following query:
 
 ```
@@ -70,14 +70,14 @@ We stored the result of the above query in a local project table `dbpedia.validn
 ```
 SELECT t1.name, t2.name
 FROM [dbpedia.validnames] AS t1
-JOIN EACH [dbpedia.validnames] AS t2 
+JOIN EACH [dbpedia.validnames] AS t2
 ON t1.spouse = t2.URI
 ```
 The output of the above query was stored in a new table named `dbpedia.spouseraw`. Finally, we used the following query to remove symmetric duplicates.
 
 ```
 SELECT p1, p2
-FROM 
+FROM
   (SELECT t1_name as p1, t2_name as p2
   FROM [dbpedia.spouseraw]),
   (SELECT t2_name as p1, t1_name as p2
@@ -95,13 +95,13 @@ input/spouses_dbpedia.csv.bz2
 Notice that for DeepDive to load the data to the corresponding database table the name of the input data has to be stored in the directory `input/` and has the same name as the target database table. To load the data we execute the command:
 ```bash
 deepdive do spouses_dbpedia
-``` 
+```
 
 ##Corpus Exploration with Mindbender (Optional)
 
 This part of the tutorial is optional and focuses on how the user can browse through the input corpus via an automatically generated web-interface. The reader can safelly skip this part.
 
-### DDlog Annotations for Automated Mindtagger 
+### DDlog Annotations for Automated Mindtagger
 ```
 @source
 articles(
