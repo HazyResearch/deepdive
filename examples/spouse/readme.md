@@ -7,7 +7,7 @@ however the full finalized example application is in this directory, which the r
 First, we need to fetch the raw data which we'll be using.
 In general for a DeepDive application one might want to get:
   1. **Input data**: In this case, we'll be extracting our spouse relation mentions from a [set of raw text news articles](http://research.signalmedia.co/newsir16/signal-dataset.html)
-  2. **Distant supervision data:** Instead of using directly supervised training data, we'll use a technique known as [distant supervision](http://deepdive.stanford.edu/doc/general/distant_supervision.html).  Specifically here, we'll download a structured dataset of known married couples from [Freebase](https://www.freebase.com/), and use this to programatically supervise examples in our input data.
+  2. **Distant supervision data:** Instead of using directly supervised training data, we'll use a technique known as [distant supervision](http://deepdive.stanford.edu/doc/general/distant_supervision.html).  Specifically here, we'll download a structured dataset of known married couples from [DBpedia](http://wiki.dbpedia.org/), and use this to programatically supervise examples in our input data.
 
 ### Basic setup
 First of all, make sure that DeepDive has been [installed](http://deepdive.stanford.edu/doc/basics/installation.html)!
@@ -55,7 +55,41 @@ DeepDive will output an execution plan, which will pop up in your default text e
 save and exit to accept, and DeepDive will run, creating the table and then fetching & loading the data!
 
 
+### Generating and Loading the Distant Supervision Data
+Our goal is to first extract a collection of known married couples from DBpedia and then load this into the `spouses_dbpedia` table in our database.
 
+#### Extracting the DBpedia Data
+To extract known married couples, we used the DBpedia dump present in [Google`s BigQuery platform](https://bigquery.cloud.google.com). 
+First we extracted the URI, name and spouce information from the dbpedia `person` table records in BigQuery for which the field `name` is not NULL. We used the following query:
+
+```
+SELECT URI,name, spouse
+FROM [fh-bigquery:dbpedia.person]
+where name <> "NULL"
+```
+We stored the result of the above query in a local project table `dbpedia.validnames` and perform a self-join to obtain the pairs of married couples.
+
+```
+SELECT t1.name, t2.name
+FROM [dbpedia.validnames] AS t1
+JOIN EACH [dbpedia.validnames] AS t2 
+ON t1.spouse = t2.URI
+```
+The output of the above query was stored in a new table named `dbpedia.spouseraw`. Finally, we used the following query to remove symmetric duplicates.
+
+```
+SELECT p1, p2
+FROM 
+  (SELECT t1_name as p1, t2_name as p2
+  FROM [dbpedia.spouseraw]),
+  (SELECT t2_name as p1, t1_name as p2
+  FROM [dbpedia.spouseraw])
+WHERE p1 < p2
+```
+The output of this query was stored in a local file `spousesraw.csv`. The file contained duplicate rows and noisy rows where the name field contained a string where the given name family name and multiple aliases where concatenated and reported in a string including the characters `{` and `}`. Using the unix commands `sed`, `sort` and `uniq` we first removed the lines containing characters `{` and `}` and then duplicate entries. This resulted in an input file `spouses_dbpedia.csv` containing 6,126 entries of married couples.
+
+#### Loading to Database
+ 
 **TODO: Describe how to load any data from freebase.**
 
 
