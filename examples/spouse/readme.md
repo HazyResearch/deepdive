@@ -32,11 +32,8 @@ The aforementioned script reads a sample of the corpus (provided as lines of jso
 Next, we need to define the schema of this `articles` table in our `app.ddlog` file; we add the following lines:
 ```
 # example DeepDive application for finding spouse relationships in news articles
-@source
 articles(
-    @key
     id text,
-    @searchable
     content text
 ).
 ```
@@ -103,6 +100,18 @@ deepdive do spouses_dbpedia
 ##Corpus Exploration with Mindbender (Optional)
 
 1. Describe the annotations added in the basic articles relation.
+
+```
+# example DeepDive application for finding spouse relationships in news articles
+@source
+articles(
+    @key
+    id text,
+    @searchable
+    content text
+).
+```
+
 2. Describe how to setup mindbender.
 3. Describe which commands to run to get the mindbender environment up and running.
 
