@@ -8,4 +8,9 @@ articles(
     # TODO more fields if needed
 ).
 
+
+spouses_dbpedia(
+   person1_name text,
+   person2_name text
+).
 # TODO
