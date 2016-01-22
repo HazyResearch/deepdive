@@ -59,8 +59,8 @@ save and exit to accept, and DeepDive will run, creating the table and then fetc
 Our goal is to first extract a collection of known married couples from DBpedia and then load this into the `spouses_dbpedia` table in our database.
 
 #### Extracting the DBpedia Data
-To extract known married couples, we used the DBpedia dump present in [Google`s BigQuery platform](https://bigquery.cloud.google.com). 
-First we extracted the URI, name and spouce information from the dbpedia `person` table records in BigQuery for which the field `name` is not NULL. We used the following query:
+To extract known married couples, we used the DBpedia dump present in [Google's BigQuery platform](https://bigquery.cloud.google.com). 
+First we extracted the URI, name and spouse information from the dbpedia `person` table records in BigQuery for which the field `name` is not NULL. We used the following query:
 
 ```
 SELECT URI,name, spouse
@@ -86,7 +86,7 @@ FROM
   FROM [dbpedia.spouseraw])
 WHERE p1 < p2
 ```
-The output of this query was stored in a local file `spousesraw.csv`. The file contained duplicate rows and noisy rows where the name field contained a string where the given name family name and multiple aliases where concatenated and reported in a string including the characters `{` and `}`. Using the unix commands `sed`, `sort` and `uniq` we first removed the lines containing characters `{` and `}` and then duplicate entries. This resulted in an input file `spouses_dbpedia.csv` containing 6,126 entries of married couples.
+The output of this query was stored in a local file `spousesraw.csv`. The file contained duplicate rows (BigQuery does not support `distinct`) and noisy rows where the name field contained a string where the given name family name and multiple aliases where concatenated and reported in a string including the characters `{` and `}`. Using the unix commands `sed`, `sort` and `uniq` we first removed the lines containing characters `{` and `}` and then duplicate entries. This resulted in an input file `spouses_dbpedia.csv` containing 6,126 entries of married couples.
 
 #### Loading to Database
  
