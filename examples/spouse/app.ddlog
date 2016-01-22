@@ -8,9 +8,12 @@ articles(
     # TODO more fields if needed
 ).
 
+@source
 spouses_dbpedia(
-   person1_name text,
-   person2_name text
+    @key
+    person1_name text,
+    @key
+    person2_name text
 ).
 
 ## NLP markup #################################################################
