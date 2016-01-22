@@ -1,21 +1,20 @@
 #!/usr/bin/env python
-import deepdive
+from deepdive import *
 
-@deepdive.tsv_extractor(
-    input_format=[
+@tsv_extractor
+@over(
         ( "doc_id"           , "text"   ),
         ( "sentence_index"   , "int"    ),
         ( "tokens"           , "text[]" ),
         ( "ner_tags"         , "text[]" ),
-        ],
-    output_format=[
+    )
+@returns(
         ( "mention_id"       , "text"   ),
         ( "mention_text"     , "text"   ),
         ( "doc_id"           , "text"   ),
         ( "sentence_index"   , "int"    ),
         ( "begin_index"      , "int"    ),
         ( "end_index"        , "int"    ),
-        ],
     )
 def extract(doc_id, sentence_index, tokens, ner_tags):
     """

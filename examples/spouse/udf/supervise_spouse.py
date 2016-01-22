@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-import deepdive
+from deepdive import *
 
-@deepdive.tsv_extractor(
-    input_format=[
+@tsv_extractor
+@over(
         ( "p1_id"             , "text"   ),
         ( "p1_begin"          , "int"    ),
         ( "p1_end"            , "int"    ),
@@ -18,12 +18,11 @@ import deepdive
         ( "ner_tags"          , "text[]" ),
         ( "dep_types"         , "text[]" ),
         ( "dep_token_indexes" , "int[]"  ),
-        ],
-    output_format=[
+    )
+@returns(
         ( "p1_id" , "text"    ),
         ( "p2_id" , "text"    ),
         ( "label" , "boolean" ),
-        ],
     )
 # heuristic rules for finding positive/negative examples of spouse relationship mentions
 def supervise(

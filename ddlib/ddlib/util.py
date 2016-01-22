@@ -149,26 +149,52 @@ class PGTSVPrinter:
       print '\t'.join(print_pgtsv_element(x, n, t) for x,(n,t) in zip(out, self.fields))
 
 
-def tsv_extractor(input_format, output_format):
+# function decorators to be used directly in UDF implementations
+def over(*name_type_pairs):
   """
-  When a generator function is decorated with this (i.e., @tsv_extractor(...)
+  When a function is decorated with this (i.e., @over(...) preceding the def
+  line), the pairs of column name and type given as arguments are kept as the
+  function's attribute to supply other decorators, such as @tsv_extractor, with
+  information for deciding how to parse the input lines.
+  """
+  def decorate(f):
+    setattr(f, "input_format", name_type_pairs)
+    return f
+  return decorate
+
+def returns(*name_type_pairs):
+  """
+  When a function is decorated with this (i.e., @returns(...) preceding the def
+  line), the pairs of column name and type given as arguments are kept as the
+  function's attribute to supply other decorators, such as @tsv_extractor, with
+  information for deciding how to format the output lines.
+  """
+  def decorate(f):
+    setattr(f, "output_format", name_type_pairs)
+    return f
+  return decorate
+
+def tsv_extractor(generator):
+  """
+  When a generator function is decorated with this (i.e., @tsv_extractor
   preceding the def line), standard input is parsed as Postgres-style TSV
   (PGTSV) input rows, the function is applied to generate output rows, and then
   checks that each line of this generator is in the output format before
   printing back as PGTSV rows.
   """
-  def decorate(generator):
-    # Check generator function
-    if not isgeneratorfunction(generator):
-      raise ValueError("The generator function must be a *generator* i.e. use yield not return")
+  # Expects the input and output formats to have been decorated with @over and @returns
+  input_format = generator.input_format
+  output_format = generator.output_format
+  # Check generator function
+  if not isgeneratorfunction(generator):
+    raise ValueError("The generator function must be a *generator* i.e. use yield not return")
 
-    # Create the input parser
-    parser = PGTSVParser(input_format)
+  # Create the input parser
+  parser = PGTSVParser(input_format)
 
-    # Create the output parser
-    printer = PGTSVPrinter(output_format)
+  # Create the output parser
+  printer = PGTSVPrinter(output_format)
 
-    for row in parser.parse_stdin():
-      for out_row in generator(**row._asdict()):
-        printer.write(out_row)
-  return decorate
+  for row in parser.parse_stdin():
+    for out_row in generator(**row._asdict()):
+      printer.write(out_row)
