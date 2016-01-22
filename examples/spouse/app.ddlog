@@ -44,7 +44,9 @@ person_mention(
     @key
     mention_id text,
     mention_text text,
+    @references(relation="sentences", column="doc_id", alias="appears_in")
     doc_id text,
+    @references(relation="sentences", column="sentence_index")
     sentence_index int,
     begin_index int,
     end_index int
@@ -72,8 +74,10 @@ spouse_candidate(
     #   p1 person_mention, p2 person_mention
     # then expand them into their multi-@key columns by itself.
     @key
+    @references(relation="person_mention", column="mention_id", alias="p1")
     p1_id text,
     @key
+    @references(relation="person_mention", column="mention_id", alias="p2")
     p2_id text
 ).
 
