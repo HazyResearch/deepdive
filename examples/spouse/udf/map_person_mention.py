@@ -11,14 +11,17 @@ def extract(doc_id, sentence_index, tokens, ner_tags):
         while end_index < num_tokens and ner_tags[end_index] == "PERSON":
             end_index += 1
         end_index -= 1
+        # generate a mention identifier
+        mention_id = "%s_%d_%d_%d" % (doc_id, sentence_index, begin_index, end_index)
         mention_text = " ".join(map(lambda i: tokens[i], xrange(begin_index, end_index + 1)))
         # Output a tuple for each PERSON phrase
         yield [
+            mention_id,
+            mention_text,
             doc_id,
             sentence_index,
             begin_index,
-            end_index,
-            mention_text
+            end_index
         ]
 
 # TODO uncomment below once ddlib is ready
@@ -31,11 +34,12 @@ def extract(doc_id, sentence_index, tokens, ner_tags):
 #        ( "ner_tags"         , "text[]" ),
 #        ],
 #    output_format=[
+#        ( "mention_id"       , "text"   ),
+#        ( "mention_text"     , "text"   ),
 #        ( "doc_id"           , "text"   ),
 #        ( "sentence_index"   , "int"    ),
 #        ( "begin_index"      , "int"    ),
 #        ( "end_index"        , "int"    ),
-#        ( "mention_text"     , "text"   ),
 #        ],
 #    generator=extract
 #)
@@ -44,6 +48,7 @@ def extract(doc_id, sentence_index, tokens, ner_tags):
 import sys
 for line in sys.stdin:
     doc_id,sentence_index,tokens,ner_tags = line.split("\t")
+    sentence_index = int(sentence_index)
     pgarray = lambda s: s[1:-2].split(",")
     tokens = pgarray(tokens)
     ner_tags = pgarray(ner_tags)

@@ -42,14 +42,12 @@ sentences +=
 @extraction
 person_mention(
     @key
+    mention_id text,
+    mention_text text,
     doc_id text,
-    @key
     sentence_index int,
-    @key
     begin_index int,
-    @key
-    end_index int,
-    text text
+    end_index int
 ).
 
 function map_person_mention over (
@@ -66,6 +64,22 @@ person_mention += map_person_mention(
 ) :- sentences(
     doc_id, sentence_index, sentence_text, tokens, lemmas, pos_tags, ner_tags, dep_types, dep_token_indexes
 ).
+
+@extraction
+spouse_candidate(
+    # TODO Here, ideally ddlog should allow us to write something like:
+    #   p1 person_mention, p2 person_mention
+    # then expand them into their multi-@key columns by itself.
+    @key
+    p1_id text,
+    @key
+    p2_id text
+).
+
+spouse_candidate(p1, p2) :-
+    person_mention(p1, same_doc, same_sentence, p1_begin, _, _),
+    person_mention(p2, same_doc, same_sentence, p2_begin, _, _),
+    p1_begin != p2_begin.
 ###############################################################################
 
 # TODO
