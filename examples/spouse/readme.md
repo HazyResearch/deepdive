@@ -27,7 +27,8 @@ DeepDive will automatically create the table, execute the script and load the ta
 ```bash
 input/articles.tsv.sh
 ```
-
+The aforementioned script reads a sample of the corpus (provided as lines of json objects), and then using the [jq](https://stedolan.github.io/jq/) language extracts the fields `id` (for docuemnt id) and `content` from each entry and converts those to `tsv` format.
+ 
 Next, we need to define the schema of this `articles` table in our `app.ddlog` file; we add the following lines:
 ```
 # example DeepDive application for finding spouse relationships in news articles
