@@ -62,8 +62,9 @@ function map_person_mention over (
 person_mention += map_person_mention(
     doc_id, sentence_index, tokens, ner_tags
 ) :- sentences(
-    doc_id, sentence_index, sentence_text, tokens, lemmas, pos_tags, ner_tags, dep_types, dep_token_indexes
-).
+        doc_id, sentence_index, sentence_text,
+        tokens, lemmas, pos_tags, ner_tags, dep_types, dep_token_indexes
+    ).
 
 @extraction
 spouse_candidate(
@@ -85,8 +86,8 @@ spouse_candidate(p1, p2) :-
 
 ## Distant Supervision ########################################################
 
-# Labeled candidates
-labeled_spouse_candidates(
+# distant supervision using data from DBpedia
+spouse_label_dbpedia(
     @key
     p1_id text,
     @key
@@ -94,7 +95,7 @@ labeled_spouse_candidates(
     label boolean
 ).
 
-labeled_spouse_candidates(p1,p2,TRUE) :-
+spouse_label_dbpedia(p1,p2,TRUE) :-
   spouse_candidate(p1,p2),
   person_mention(p1,p1_name,_,_,_,_),
   person_mention(p2,p2_name,_,_,_,_),
@@ -105,3 +106,35 @@ labeled_spouse_candidates(p1,p2,TRUE) :-
     lower(n1) = lower(p2_name)].
 
 # TODO
+
+# supervision by heuristic rules in a UDF
+function supervise over (
+        p1_id text, p1_begin int, p1_end int,
+        p2_id text, p2_begin int, p2_end int,
+        doc_id         text,
+        sentence_index int,
+        sentence_text  text,
+        tokens         text[],
+        lemmas         text[],
+        pos_tags       text[],
+        ner_tags       text[],
+        doc_offsets    int[],
+        dep_types      text[],
+        dep_tokens     int[]
+    ) returns (
+        p1_id text, p2_id text, label bool
+    )
+    implementation "udf/supervise_spouse.py" handles tsv lines.
+
+spouse_label_heuristic += supervise(
+    p1_id, p1_begin, p1_end,
+    p2_id, p2_begin, p2_end,
+    doc_id, sentence_index, sentence_text,
+    tokens, lemmas, pos_tags, ner_tags, dep_types, dep_token_indexes
+) :- spouse_candidate(p1_id, p2_id),
+    person_mention(p1_id, p1_text, doc_id, sentence_index, p1_begin, p1_end),
+    person_mention(p2_id, p2_text,      _,              _, p2_begin, p2_end),
+    sentences(
+        doc_id, sentence_index, sentence_text,
+        tokens, lemmas, pos_tags, ner_tags, dep_types, dep_token_indexes
+    ).
