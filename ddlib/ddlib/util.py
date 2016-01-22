@@ -51,8 +51,8 @@ def parse_pgtsv_element(s, t, sep='|^|', sep2='|~|', d=0):
     else:
       split = s.split(sep)
     return [parse_pgtsv_element(ss, t[:-2], sep=sep2, d=d+1) for ss in split]
-  
-  # Else parse using parser 
+
+  # Else parse using parser
   else:
     try:
       parser = TYPE_PARSERS[t]
@@ -130,7 +130,7 @@ def print_pgtsv_element(x, t, d=0):
     return '"%s"' % str(tok).replace('\\', '\\\\').replace('"', '\\\\"')
   else:
     return str(x)
-      
+
 
 class PGTSVPrinter:
   """
@@ -145,7 +145,7 @@ class PGTSVPrinter:
       raise ValueError("Wrong number of attributes for output row:\n%s" % out_row)
     else:
       print '\t'.join(print_pgtsv_element(x, t) for x,t in zip(out, self.types))
-    
+
 
 def tsv_extractor(input_format, output_format, generator):
   """
