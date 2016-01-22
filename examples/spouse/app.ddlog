@@ -8,4 +8,26 @@ articles(
     # TODO more fields if needed
 ).
 
+## NLP markup #################################################################
+sentences( doc_id         text
+         , sentence_index int
+         , sentence_text  text
+         , tokens         text[]
+         , lemmas         text[]
+         , pos_tags       text[]
+         , ner_tags       text[]
+         , doc_offsets    int[]
+         , dep_types      text[]
+         , dep_tokens     int[]
+         ).
+
+function nlp_markup over ( doc_id text, content text )
+                 returns rows like sentences
+  implementation "udf/nlp_markup.sh" handles tsv lines.
+
+sentences +=
+  nlp_markup(doc_id, content) :-
+  articles(doc_id, content).
+###############################################################################
+
 # TODO
