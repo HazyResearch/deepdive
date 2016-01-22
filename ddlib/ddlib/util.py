@@ -1,7 +1,7 @@
-from collections import namedtuple
+from collections import namedtuple,OrderedDict
 import re
 import sys
-from inspect import isgeneratorfunction
+from inspect import isgeneratorfunction,getargspec
 
 def print_error(err_string):
   """Function to write to stderr"""
@@ -85,7 +85,9 @@ class PGTSVParser:
     row = Row()
     attribs = line.rstrip().split('\t')
     if len(attribs) != len(self.fields):
-      raise ValueError("Wrong number of attributes for input row:\n%s" % line)
+      raise ValueError("Expected %(num_rows_declared)d attributes, but found %(num_rows_found)d in input row:\n%(row)s" % dict(
+        num_rows_declared=len(self.fields), num_rows_found=len(attribs), row=row,
+      ))
     for i,attrib in enumerate(attribs):
       field_name, field_type = self.fields[i]
       setattr(row, field_name, parse_pgtsv_element(attrib, field_type))
@@ -125,9 +127,9 @@ def print_pgtsv_element(x, n, t, d=0):
   except KeyError:
     raise Exception("Unsupported type: %s" % t)
   if not checker(x):
-    raise Exception("Output column '%(name)s' of type %(declared_type)s has incorrect value of %(value_type)s: '%(value)s'" % {
-        name:n, declared_type:t, value_type:type(x), value:x,
-    })
+    raise Exception("Output column '%(name)s' of type %(declared_type)s has incorrect value of %(value_type)s: '%(value)s'" % dict(
+        name=n, declared_type=t, value_type=type(x), value=x,
+    ))
   if d > 0 and t == 'text':
     return '"%s"' % str(tok).replace('\\', '\\\\').replace('"', '\\\\"')
   else:
@@ -144,36 +146,54 @@ class PGTSVPrinter:
 
   def write(self, out):
     if len(out) != len(self.fields):
-      raise ValueError("Wrong number of attributes for output row:\n%s" % out_row)
+      raise ValueError("Expected %(num_rows_declared)d attributes, but found %(num_rows_found)d in output row:\n%(row)s" % dict(
+        num_rows_declared=len(self.fields), num_rows_found=len(out), row=out,
+      ))
     else:
       print '\t'.join(print_pgtsv_element(x, n, t) for x,(n,t) in zip(out, self.fields))
 
 
-# function decorators to be used directly in UDF implementations
-def over(*name_type_pairs):
-  """
-  When a function is decorated with this (i.e., @over(...) preceding the def
-  line), the pairs of column name and type given as arguments are kept as the
-  function's attribute to supply other decorators, such as @tsv_extractor, with
-  information for deciding how to parse the input lines.
-  """
-  def decorate(f):
-    setattr(f, "input_format", name_type_pairs)
-    return f
-  return decorate
+# how to get types specified as default values of a function
+def format_from_args_defaults_of(aFunctionOrFormat):
+  if hasattr(aFunctionOrFormat, '__call__'):
+    # TODO in Python3, support types in function annotations (PEP 3107: https://www.python.org/dev/peps/pep-3107/)
+    spec = getargspec(aFunctionOrFormat)
+    return zip(spec.args, spec.defaults)
+  else:
+    return aFunctionOrFormat
 
-def returns(*name_type_pairs):
-  """
-  When a function is decorated with this (i.e., @returns(...) preceding the def
-  line), the pairs of column name and type given as arguments are kept as the
-  function's attribute to supply other decorators, such as @tsv_extractor, with
-  information for deciding how to format the output lines.
-  """
-  def decorate(f):
-    setattr(f, "output_format", name_type_pairs)
-    return f
-  return decorate
 
+## function decorators to be used directly in UDF implementations
+
+# decorators for input and output formats
+def format_decorator(attrName):
+  def decorator(*name_type_pairs, **name_type_dict):
+    """
+    When a function is decorated with this (e.g., @returns(...) or @over(...)
+    preceding the def line), the pairs of column name and type given as
+    arguments are kept as the function's attribute to supply other decorators,
+    such as @tsv_extractor, with information for deciding how to parse the
+    input lines or format the output lines.
+    """
+    # check single argument case with a function or dict
+    if len(name_type_pairs) == 1:
+      if hasattr(name_type_pairs[0], '__call__'):
+        name_type_pairs = format_from_args_defaults_of(name_type_pairs[0])
+      elif type(name_type_pairs[0]) in [dict, OrderedDict]:
+        name_type_pairs = name_type_pairs[0]
+        # XXX @over(collection.OrderedDict(foo="type", bar="type", ...)) doesn't work
+        # as Python forgets the order when calling with keyword argument binding.
+    # merge dictionaries
+    name_type_pairs = list(name_type_pairs) + name_type_dict.items()
+    def decorate(f):
+      setattr(f, attrName, name_type_pairs)
+      return f
+    return decorate
+  return decorator
+over    = format_decorator("input_format")
+returns = format_decorator("output_format")
+
+# decorators that initiate the main extractor loop
 def tsv_extractor(generator):
   """
   When a generator function is decorated with this (i.e., @tsv_extractor
@@ -183,11 +203,21 @@ def tsv_extractor(generator):
   printing back as PGTSV rows.
   """
   # Expects the input and output formats to have been decorated with @over and @returns
-  input_format = generator.input_format
-  output_format = generator.output_format
+  try:
+    # @over has precedence over default values of function arguments
+    input_format = generator.input_format
+  except AttributeError:
+    input_format = format_from_args_defaults_of(generator)
+  try:
+    output_format = generator.output_format
+    # also support function argument defaults for output_format for symmetry
+    output_format = format_from_args_defaults_of(output_format)
+  except AttributeError:
+    raise ValueError("The function must be decorated with @returns")
+    # TODO or maybe just skip type checking if @returns isn't present?
   # Check generator function
   if not isgeneratorfunction(generator):
-    raise ValueError("The generator function must be a *generator* i.e. use yield not return")
+    raise ValueError("The function must be a *generator*, i.e., use yield not return")
 
   # Create the input parser
   parser = PGTSVParser(input_format)
