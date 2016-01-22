@@ -130,6 +130,14 @@ function supervise over (
     )
     implementation "udf/supervise_spouse.py" handles tsv lines.
 
+spouse_label_heuristic(
+    @key
+    p1_id text,
+    @key
+    p2_id text,
+    label boolean
+).
+
 spouse_label_heuristic += supervise(
     p1_id, p1_begin, p1_end,
     p2_id, p2_begin, p2_end,
