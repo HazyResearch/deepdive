@@ -89,9 +89,15 @@ WHERE p1 < p2
 The output of this query was stored in a local file `spousesraw.csv`. The file contained duplicate rows (BigQuery does not support `distinct`) and noisy rows where the name field contained a string where the given name family name and multiple aliases where concatenated and reported in a string including the characters `{` and `}`. Using the unix commands `sed`, `sort` and `uniq` we first removed the lines containing characters `{` and `}` and then duplicate entries. This resulted in an input file `spouses_dbpedia.csv` containing 6,126 entries of married couples.
 
 #### Loading to Database
- 
-**TODO: Describe how to load any data from freebase.**
 
+We compress and store `spouses_dbpedia.csv` under the path:
+```bash
+input/spouses_dbpedia.csv.bz2
+```
+Notice that for DeepDive to load the data to the corresponding database table the name of the input data has to be stored in the directory `input/` and has the same name as the target database table. To load the data we execute the command:
+```bash
+deepdive do spouses_dbpedia
+``` 
 
 ##Corpus Exploration with Mindbender (Optional)
 
