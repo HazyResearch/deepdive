@@ -99,10 +99,10 @@ deepdive do spouses_dbpedia
 
 ##Corpus Exploration with Mindbender (Optional)
 
-1. Describe the annotations added in the basic articles relation.
+This part of the tutorial is optional and focuses on how the user can browse through the input corpus via an automatically generated web-interface. The reader can safelly skip this part.
 
+### DDlog Annotations for Automated Mindtagger 
 ```
-# example DeepDive application for finding spouse relationships in news articles
 @source
 articles(
     @key
