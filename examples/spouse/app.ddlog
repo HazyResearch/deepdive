@@ -8,6 +8,14 @@ articles(
     # TODO more fields if needed
 ).
 
+@source
+spouses_dbpedia(
+    @key
+    person1_name text,
+    @key
+    person2_name text
+).
+
 ## NLP markup #################################################################
 sentences( doc_id         text
          , sentence_index int
@@ -28,6 +36,50 @@ function nlp_markup over ( doc_id text, content text )
 sentences +=
   nlp_markup(doc_id, content) :-
   articles(doc_id, content).
+###############################################################################
+
+## Candidate mapping ##########################################################
+@extraction
+person_mention(
+    @key
+    mention_id text,
+    mention_text text,
+    doc_id text,
+    sentence_index int,
+    begin_index int,
+    end_index int
+).
+
+function map_person_mention over (
+        doc_id text,
+        sentence_index int,
+        tokens text[],
+        ner_tags text[]
+    )
+    returns rows like person_mention
+    implementation "udf/map_person_mention.py" handles tsv lines.
+
+person_mention += map_person_mention(
+    doc_id, sentence_index, tokens, ner_tags
+) :- sentences(
+    doc_id, sentence_index, sentence_text, tokens, lemmas, pos_tags, ner_tags, dep_types, dep_token_indexes
+).
+
+@extraction
+spouse_candidate(
+    # TODO Here, ideally ddlog should allow us to write something like:
+    #   p1 person_mention, p2 person_mention
+    # then expand them into their multi-@key columns by itself.
+    @key
+    p1_id text,
+    @key
+    p2_id text
+).
+
+spouse_candidate(p1, p2) :-
+    person_mention(p1, same_doc, same_sentence, p1_begin, _, _),
+    person_mention(p2, same_doc, same_sentence, p2_begin, _, _),
+    p1_begin != p2_begin.
 ###############################################################################
 
 # TODO
