@@ -37,4 +37,12 @@ def supervise(
     # TODO her husband
     # negative examples
     # TODO ?
-    pass
+
+    # TODO remove below
+    x = random.random()
+    if x > 0.8:
+        yield [p1_id, p2_id, True]
+    elif x < 0.2:
+        yield [p1_id, p2_id, False]
+    else:
+        pass
