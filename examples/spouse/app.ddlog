@@ -77,9 +77,31 @@ spouse_candidate(
 ).
 
 spouse_candidate(p1, p2) :-
-    person_mention(p1, same_doc, same_sentence, p1_begin, _, _),
-    person_mention(p2, same_doc, same_sentence, p2_begin, _, _),
+    person_mention(p1, _, same_doc, same_sentence, p1_begin, _),
+    person_mention(p2, _, same_doc, same_sentence, p2_begin, _),
     p1_begin != p2_begin.
 ###############################################################################
+
+
+## Distant Supervision ########################################################
+
+# Labeled candidates
+labeled_spouse_candidates(
+    @key
+    p1_id text,
+    @key
+    p2_id text,
+    label Boolean 
+).
+
+labeled_spouse_candidates(p1,p2,TRUE) :-
+  spouse_candidate(p1,p2),
+  person_mention(p1,p1_name,_,_,_,_),
+  person_mention(p2,p2_name,_,_,_,_),
+  spouses_dbpedia(n1, n2),
+  [lower(n1) = lower(p1_name),
+    lower(n2) = lower(p2_name);
+    lower(n2) = lower(p1_name),
+    lower(n1) = lower(p2_name)].
 
 # TODO
