@@ -149,23 +149,26 @@ class PGTSVPrinter:
       print '\t'.join(print_pgtsv_element(x, n, t) for x,(n,t) in zip(out, self.fields))
 
 
-def tsv_extractor(input_format, output_format, generator):
+def tsv_extractor(input_format, output_format):
   """
-  This function parses Postgres-style TSV (PGTSV) input rows,
-  applies a function which must be a generator object to each row,
-  and then checks that each line of this generator is in the output format before
-  printing back as PGTSV rows
+  When a generator function is decorated with this (i.e., @tsv_extractor(...)
+  preceding the def line), standard input is parsed as Postgres-style TSV
+  (PGTSV) input rows, the function is applied to generate output rows, and then
+  checks that each line of this generator is in the output format before
+  printing back as PGTSV rows.
   """
-  # Check generator function
-  if not isgeneratorfunction(generator):
-    raise ValueError("The generator function must be a *generator* i.e. use yield not return")
+  def decorate(generator):
+    # Check generator function
+    if not isgeneratorfunction(generator):
+      raise ValueError("The generator function must be a *generator* i.e. use yield not return")
 
-  # Create the input parser
-  parser = PGTSVParser(input_format)
+    # Create the input parser
+    parser = PGTSVParser(input_format)
 
-  # Create the output parser
-  printer = PGTSVPrinter(output_format)
+    # Create the output parser
+    printer = PGTSVPrinter(output_format)
 
-  for row in parser.parse_stdin():
-    for out_row in generator(**row._asdict()):
-      printer.write(out_row)
+    for row in parser.parse_stdin():
+      for out_row in generator(**row._asdict()):
+        printer.write(out_row)
+  return decorate

@@ -1,22 +1,7 @@
 #!/usr/bin/env python
-
-# heuristic rules for finding positive/negative examples of spouse relationship mentions
-def supervise(
-        p1_id, p1_begin, p1_end,
-        p2_id, p2_begin, p2_end,
-        doc_id, sentence_index, sentence_text,
-        tokens, lemmas, pos_tags, ner_tags, dep_types, dep_token_indexes
-    ):
-    # TODO ddlib generic features
-    # rules for positive examples
-    # TODO his wife
-    # TODO her husband
-    # negative examples
-    # TODO ?
-    pass
-
 import deepdive
-deepdive.tsv_extractor(
+
+@deepdive.tsv_extractor(
     input_format=[
         ( "p1_id"             , "text"   ),
         ( "p1_begin"          , "int"    ),
@@ -39,5 +24,18 @@ deepdive.tsv_extractor(
         ( "p2_id" , "text"    ),
         ( "label" , "boolean" ),
         ],
-    generator=supervise
-)
+    )
+# heuristic rules for finding positive/negative examples of spouse relationship mentions
+def supervise(
+        p1_id, p1_begin, p1_end,
+        p2_id, p2_begin, p2_end,
+        doc_id, sentence_index, sentence_text,
+        tokens, lemmas, pos_tags, ner_tags, dep_types, dep_token_indexes
+    ):
+    # TODO ddlib generic features
+    # rules for positive examples
+    # TODO his wife
+    # TODO her husband
+    # negative examples
+    # TODO ?
+    pass

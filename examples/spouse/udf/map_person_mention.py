@@ -1,7 +1,26 @@
 #!/usr/bin/env python
+import deepdive
 
-# Find phrases that are continuous words tagged with PERSON.
+@deepdive.tsv_extractor(
+    input_format=[
+        ( "doc_id"           , "text"   ),
+        ( "sentence_index"   , "int"    ),
+        ( "tokens"           , "text[]" ),
+        ( "ner_tags"         , "text[]" ),
+        ],
+    output_format=[
+        ( "mention_id"       , "text"   ),
+        ( "mention_text"     , "text"   ),
+        ( "doc_id"           , "text"   ),
+        ( "sentence_index"   , "int"    ),
+        ( "begin_index"      , "int"    ),
+        ( "end_index"        , "int"    ),
+        ],
+    )
 def extract(doc_id, sentence_index, tokens, ner_tags):
+    """
+    Finds phrases that are continuous words tagged with PERSON.
+    """
     num_tokens = len(ner_tags)
     # find all first indexes of series of tokens tagged as PERSON
     first_indexes = (i for i in xrange(num_tokens) if ner_tags[i] == "PERSON" and (i == 0 or ner_tags[i-1] != "PERSON"))
@@ -23,22 +42,3 @@ def extract(doc_id, sentence_index, tokens, ner_tags):
             begin_index,
             end_index,
         ]
-
-import deepdive
-deepdive.tsv_extractor(
-    input_format=[
-        ( "doc_id"           , "text"   ),
-        ( "sentence_index"   , "int"    ),
-        ( "tokens"           , "text[]" ),
-        ( "ner_tags"         , "text[]" ),
-        ],
-    output_format=[
-        ( "mention_id"       , "text"   ),
-        ( "mention_text"     , "text"   ),
-        ( "doc_id"           , "text"   ),
-        ( "sentence_index"   , "int"    ),
-        ( "begin_index"      , "int"    ),
-        ( "end_index"        , "int"    ),
-        ],
-    generator=extract
-)
