@@ -12,3 +12,7 @@
 @test "escape4sh gives empty output for no arguments" {
     [ -z "$(escape4sh)" ]
 }
+
+@test "escape4sh works with newlines and special whitespace characters" {
+    [ "$(sh -xc "$(escape4sh echo a $'b\n c' $'\td\r\ne' f)")" = $'a b\n c \td\r\ne f' ]
+}
