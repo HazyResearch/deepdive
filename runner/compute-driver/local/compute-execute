@@ -71,6 +71,7 @@ rm -f process-*.{input,output}
 [[ -z $output_relation ]] || for i in $(seq $num_processes); do rm -f process-$i.output; mkfifo process-$i.output; done
 trap 'rm -f process-*.{input,output}' EXIT
 # now spawn processes attached to the named pipes in reverse order (from sink to source)
+pids_command=() pids_load=() pids_unload=()
 
 if [[ -n $output_relation ]]; then
     # use mkmimo again to merge outputs of multiple processes into a single stream
@@ -81,6 +82,7 @@ if [[ -n $output_relation ]]; then
     show_progress input_to "$DEEPDIVE_CURRENT_PROCESS_NAME output" -- \
     env DEEPDIVE_PROGRESS_FD=2 \
     deepdive-load "$output_relation_tmp" /dev/stdin &
+    pids_load+=($!)
 fi
 
 # spawn multiple processes attached to the pipes
@@ -88,21 +90,25 @@ if [[ -n $output_relation && -n $input_sql ]]; then # process with input from/ou
     for i in $(seq $num_processes); do
         DEEPDIVE_CURRENT_PROCESS_INDEX=$i \
         "$SHELL" -c "$command" <process-$i.input >process-$i.output &
+        pids_command+=($!)
     done
 elif [[ -n $input_sql ]]; then # input-only process
     for i in $(seq $num_processes); do
         DEEPDIVE_CURRENT_PROCESS_INDEX=$i \
         "$SHELL" -c "$command" <process-$i.input &
+        pids_command+=($!)
     done
 elif [[ -n $output_relation ]]; then # output-only process
     for i in $(seq $num_processes); do
         DEEPDIVE_CURRENT_PROCESS_INDEX=$i \
         "$SHELL" -c "$command" >process-$i.output &
+        pids_command+=($!)
     done
 else # neither output_relation nor input_sql specified
     for i in $(seq $num_processes); do
         DEEPDIVE_CURRENT_PROCESS_INDEX=$i \
         "$SHELL" -c "$command" &
+        pids_command+=($!)
     done
 fi
 
@@ -112,8 +118,21 @@ if [[ -n $input_sql ]]; then
     deepdive-sql eval "$input_sql" format="$DEEPDIVE_LOAD_FORMAT" |
     # use mkmimo to distribute input data to multiple processes
     mkmimo /dev/stdin \> process-*.input &
+    pids_unload+=($!)
 fi
 
+# make sure all the child processes finishes without error
+all_finishes_ok() {
+    local what=$1; shift
+    local pid=
+    for pid in "$@"; do
+        wait $pid ||
+            error "${what:+$what: }PID $pid: finished with non-zero exit status ($?)"
+    done
+}
+[[ ${#pids_command[@]} -eq 0 ]] || all_finishes_ok "command=$(escape4sh "$command")" "${pids_command[@]}"
+[[ ${#pids_load[@]}    -eq 0 ]] || all_finishes_ok "deepdive-load"                   "${pids_load[@]}"
+[[ ${#pids_unload[@]}  -eq 0 ]] || all_finishes_ok "deepdive-unload"                 "${pids_unload[@]}"
 wait  # until everything is done ##############################################
 
 if [[ -n $output_relation ]]; then
