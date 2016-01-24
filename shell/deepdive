@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# DeepDive shell
+# DeepDive
 # Usage: deepdive COMMAND [ARG]...
 ##
 # Generated: 2015-06-19
@@ -53,10 +53,17 @@ while getopts "C:" o; do
 done
 shift $(($OPTIND - 1))
 
+# show usage with deepdive version at the first line
+usage_with_version() {
+    . "$DEEPDIVE_HOME"/.build-info.sh
+    echo "# DeepDive ($version)"
+    usage "$0" "$@" | tail -n +2
+    [[ $# -eq 0 ]]
+}
 
 # Process input arguments
 [ $# -gt 0 ] || {
-    usage "$0" "No COMMAND given" || true
+    usage_with_version "No COMMAND given" || true
     echo
     deepdive-help | sed -n '/^# Available COMMANDs/,$p'
     false
@@ -69,7 +76,7 @@ exe=deepdive-"$Cmd"
 if type "$exe" &>/dev/null; then
     set -- "$exe" "$@"
 else
-    usage "$0" "$Cmd: invalid COMMAND"
+    usage_with_version "$Cmd: invalid COMMAND"
 fi
 
 
