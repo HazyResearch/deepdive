@@ -26,7 +26,7 @@ sentences( doc_id         text
          , ner_tags       text[]
          , doc_offsets    int[]
          , dep_types      text[]
-         , dep_tokens     int[]
+         , dep_tokens    int[]
          ).
 
 function nlp_markup over ( doc_id text, content text )
@@ -63,10 +63,7 @@ function map_person_mention over (
 
 person_mention += map_person_mention(
     doc_id, sentence_index, tokens, ner_tags
-) :- sentences(
-        doc_id, sentence_index, sentence_text,
-        tokens, lemmas, pos_tags, ner_tags, dep_types, dep_token_indexes
-    ).
+) :- sentences(doc_id, sentence_index, _, tokens, _, _, ner_tags, _, _, _).
 
 @extraction
 spouse_candidate(
@@ -87,6 +84,47 @@ spouse_candidate(p1, p2) :-
     p1_begin != p2_begin.
 ###############################################################################
 
+## Feature Extraction #########################################################
+
+# Feature extraction (using DDLIB via a UDF) at the relation level
+# TODO: add @extraction flag here?
+spouse_feature(
+    @key
+    @references(relation="person_mention", column="mention_id", alias="p1")
+    p1_id text,
+    @key
+    @references(relation="person_mention", column="mention_id", alias="p2")
+    p2_id text,
+    feature text
+).
+
+function extract_spouse_features over (
+        p1_id text,
+        p2_id text,
+        p1_begin_index int,
+        p1_end_index int,
+        p2_begin_index int,
+        p2_end_index int,
+        doc_id text,
+        sent_index int,
+        tokens text[],
+        lemmas text[],
+        pos_tags text[],
+        ner_tags text[],
+        dep_types text[],
+        dep_tokens int[]
+    )
+    returns rows like spouse_feature
+    implementation "udf/extract_spouse_features.py" handles tsv lines.
+
+spouse_feature += extract_spouse_features(
+  p1_id, p2_id, p1_begin_index, p1_end_index, p2_begin_index, p2_end_index,
+  doc_id, sent_index, tokens, lemmas, pos_tags, ner_tags, dep_types, dep_tokens) :- 
+  person_mention(p1_id, _, doc_id, sent_index, p1_begin_index, p1_end_index),
+  person_mention(p2_id, _, doc_id, sent_index, p2_begin_index, p2_end_index),
+  sentences(doc_id, sent_index, _, tokens, lemmas, pos_tags, ner_tags, _, dep_types, dep_tokens
+).
+###############################################################################
 
 ## Distant Supervision ########################################################
 
@@ -124,7 +162,7 @@ function supervise over (
         ner_tags       text[],
         doc_offsets    int[],
         dep_types      text[],
-        dep_tokens     int[]
+        dep_tokens    int[]
     ) returns (
         p1_id text, p2_id text, label bool
     )
@@ -142,11 +180,11 @@ spouse_label_heuristic += supervise(
     p1_id, p1_begin, p1_end,
     p2_id, p2_begin, p2_end,
     doc_id, sentence_index, sentence_text,
-    tokens, lemmas, pos_tags, ner_tags, dep_types, dep_token_indexes
+    tokens, lemmas, pos_tags, ner_tags, doc_offsets, dep_types, dep_token_indexes
 ) :- spouse_candidate(p1_id, p2_id),
     person_mention(p1_id, p1_text, doc_id, sentence_index, p1_begin, p1_end),
     person_mention(p2_id, p2_text,      _,              _, p2_begin, p2_end),
     sentences(
         doc_id, sentence_index, sentence_text,
-        tokens, lemmas, pos_tags, ner_tags, dep_types, dep_token_indexes
+        tokens, lemmas, pos_tags, ner_tags, doc_offsets, dep_types, dep_token_indexes
     ).

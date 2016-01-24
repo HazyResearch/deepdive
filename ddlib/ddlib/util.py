@@ -28,6 +28,7 @@ def parse_pgtsv_element(s, t, sep='|^|', sep2='|~|', d=0):
   based on provided type and type-parser dictionary
   """
   # Quoting only will occur within a psql array with strings
+
   quoted = (s[0] == '"' and s[-1] == '"')
   if quoted and d > 0:
     if t == 'text':
