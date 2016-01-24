@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # DeepDive
 # Usage: deepdive COMMAND [ARG]...
+#
+# To enable bash completion for deepdive commands, run:
+# $ source $(deepdive whereis installed etc/deepdive_bash_completion.sh)
+#
 ##
 # Generated: 2015-06-19
 set -eu
