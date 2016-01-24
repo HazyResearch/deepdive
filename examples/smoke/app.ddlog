@@ -15,3 +15,10 @@ friends (
     person_id bigint,
     friend_id bigint
 ).
+
+@weight(0.5)
+person_smokes(p) => person_has_cancer(p) :- person(p, _).
+
+@weight(0.4)
+person_smokes(p1) => person_smokes(p2) :-
+    person(p1, _), person(p2, _), friends(p1, p2).
