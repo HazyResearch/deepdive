@@ -8,8 +8,6 @@
 ##
 set -eu
 
-deepdive compile
-
 if [[ $# -eq 0 ]]; then
     # no arguments given, initialize the database as part of the app
     DEEPDIVE_PLAN_EDIT=false deepdive redo init/app

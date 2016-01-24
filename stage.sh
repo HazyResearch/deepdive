@@ -66,6 +66,7 @@ stage .build/submodule/compiler/hocon2json/hocon2json.sh                        
 stage .build/submodule/compiler/hocon2json/target/scala-2.10/hocon2json-assembly-*.jar  util/hocon2json.jar
 
 # DeepDive execution planner and runner
+stage runner/deepdive-run                                         util/
 stage runner/deepdive-plan                                        util/
 stage runner/deepdive-do                                          util/
 stage runner/deepdive-redo                                        util/

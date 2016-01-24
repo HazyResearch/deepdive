@@ -36,7 +36,7 @@ _deepdive() {
                 ;;
             *)
                 case $first in
-                    plan|"do"|redo)
+                    plan|"do"|redo|run)
                         list_deepdive_targets
                         ;;
                     mark)
