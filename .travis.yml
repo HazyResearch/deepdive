@@ -1,3 +1,7 @@
+notifications:
+  email:
+    - deepdive-dev@lists.stanford.edu
+
 sudo: false  # to use container-based infra, see: http://docs.travis-ci.com/user/migrating-from-legacy/
 addons:
   apt:
@@ -9,15 +13,20 @@ addons:
     - libnuma-dev
     - gcc-4.8
     - g++-4.8
+cache:
+  directories:
+    # dependencies
+    - lib/gtest
+    - lib/tclap
 
 language: cpp
-notifications:
-  email:
-    - deepdive-dev@lists.stanford.edu
-before_install:
-  - export CXX="g++-4.8" CC="gcc-4.8"
-install: make dep
 compiler:
   - gcc
-# Change this to your needs
+
+before_install:
+  - export CXX="g++-4.8" CC="gcc-4.8"
+install:
+  # skip preparing dependencies if they're cached
+  - test -e lib/gtest/libgtest.a -a -d lib/tclap/include/tclap || make dep
+  - make
 script: make test
