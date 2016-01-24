@@ -1,0 +1,19 @@
+features(
+    word_id     INT,
+    feature_id  INT,
+    feature_val BOOLEAN
+).
+
+feature_names(
+    fid     INT,
+    fname   TEXT
+).
+
+label1?(wid   INT).
+label2?(wid   INT).
+
+@weight(feature_id)
+label1(word_id) :- features(word_id, feature_id, _).
+
+@weight(feature_id)
+label2(word_id) :- features(word_id, feature_id, _).
