@@ -71,8 +71,8 @@ cd "$DEEPDIVE_APP"/run
 tee "$runDir"/plan.orig.sh >"$runDir"/plan.sh
 
 # provide a chance to edit plan in a tty unless told not to ask
-if [[ -t 0 && -t 1 && $EDITOR != true && $EDITOR != : && $DEEPDIVE_PLAN_EDIT ]]; then
-    $VISUAL "$runDir"/plan.sh &&
+if [[ -t 0 && -t 1 && $VISUAL != true && $VISUAL != : ]] && $DEEPDIVE_PLAN_EDIT; then
+    $VISUAL "$runDir"/plan.sh || true  # ignore error from user's visual editor and rely on timestamp
     [[ "$runDir"/plan.sh -nt "$runDir"/plan.orig.sh ]] || {
         rm -rf "$runDir"
         error "Canceled execution"
