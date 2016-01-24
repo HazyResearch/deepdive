@@ -15,7 +15,7 @@ url=${DEEPDIVE_DB_URL:-}
 if [[ -z "$url" ]]; then
     DEEPDIVE_APP=$(find-deepdive-app)
     export DEEPDIVE_APP
-    url=$(cat "$DEEPDIVE_APP"/db.url)
+    url=$(eval echo "$(cat "$DEEPDIVE_APP"/db.url)")
 fi
 
 # recognize the database type from the URL scheme
