@@ -3,7 +3,7 @@
 ##
 
 # skip adding learning/inference processes unless one for grounding is there
-if .deepdive_.execution.processes | has("process/grounding/combine") | not then . else
+if .deepdive_.execution.processes | has("process/grounding/combine_factorgraph") | not then . else
 
 .deepdive_ as $deepdive
 | .deepdive_.execution.processes += {

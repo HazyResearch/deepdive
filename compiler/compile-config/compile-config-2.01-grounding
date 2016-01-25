@@ -512,7 +512,7 @@ then . else
 
 # Finally, put together everything dumped into a layout the inference engine can easily load from
 | .deepdive_.execution.processes += {
-    "process/grounding/combine": {
+    "process/grounding/combine_factorgraph": {
         dependencies_: [(
             $deepdive.schema.variables_[]
             | "process/grounding/variable/\(.variableName)/dump"
