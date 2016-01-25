@@ -6,4 +6,7 @@ TEST("compiled execution processes"; .deepdive_.execution.processes;
     EXPECT_NE( "should have the test_extractor process"      ;  .["process/test_extractor"]                                  ;  null ),
     EXPECT_EQ( "should have no grounding processes"          ;  [keys[] | select(startswith("process/grounding/"))] | length ;  0    ),
     EXPECT_EQ( "should have no learning/inference processes" ;  [keys[] | select(startswith("process/model/"))]     | length ;  0    ),
+    TEST("the test_extractor process"; .["process/test_extractor"];
+        EXPECT_EQ( "should depend on the init/app process"   ;  .dependencies_ ;  ["process/init/app"] ),
+    empty),
 empty)

@@ -1,0 +1,18 @@
+#!/usr/bin/env jq-f
+# compile-config-9.98-ensure_init_app -- Ensures process/init/app precedes all other processes
+##
+.deepdive_ as $deepdive
+
+| .deepdive_.execution.processes |= with_entries(
+    if .key == "process/init/app" then . else
+        .value |=
+            # simply add init/app to all processes whose dependencies are empty
+            # (This is a good approximation to making all processes depend on
+            #  init/app, as any process with non-empty dependencies will depend
+            #  on some other ones who ultimately has to depend on it, unless
+            #  there's a cycle in the dependency.)
+            ( if .dependencies_ | length > 0 then .
+            else .dependencies_ = ["process/init/app"]
+            end)
+    end
+)
