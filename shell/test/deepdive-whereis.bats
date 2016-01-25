@@ -2,9 +2,9 @@
 . "$BATS_TEST_DIRNAME"/env.sh >&2
 
 @test "deepdive whereis usage" {
-    ! deepdive whereis
-    ! deepdive whereis app
-    ! deepdive whereis installed
+    ! deepdive whereis || false
+    ! deepdive whereis app || false
+    ! deepdive whereis installed || false
     deepdive whereis bin/deepdive
 }
 
@@ -31,11 +31,11 @@ app_paths=(
 @test "deepdive whereis app should return error properly" {
     # on non-existent paths
     cd "$app"
-    ! deepdive whereis app non-existent/path
-    ! deepdive whereis app deepdive.conf non-existent/path/between-existing-ones app.ddlog
+    ! deepdive whereis app non-existent/path || false
+    ! deepdive whereis app deepdive.conf non-existent/path/between-existing-ones app.ddlog || false
     # outside an app
     cd /
-    ! deepdive whereis app deepdive.conf
+    ! deepdive whereis app deepdive.conf || false
 }
 
 installed_paths=(
@@ -64,8 +64,8 @@ installed_paths=(
 @test "deepdive whereis installed should return error properly" {
     # on non-existent paths
     cd /
-    ! deepdive whereis installed non-existent/path
-    ! deepdive whereis installed bin/deepdive non-existent/path/between-existing-ones etc/deepdive-default.conf
+    ! deepdive whereis installed non-existent/path || false
+    ! deepdive whereis installed bin/deepdive non-existent/path/between-existing-ones etc/deepdive-default.conf || false
 }
 
 @test "deepdive whereis works with mixed app and installed" {
@@ -82,6 +82,6 @@ installed_paths=(
     cmp <(deepdive whereis "${app_paths[@]}" "${installed_paths[@]}") <(printf "$app/%s\n" "${app_paths[@]}"; printf "$DEEPDIVE_HOME/%s\n" "${installed_paths[@]}")
 
     # aborts on non-existent paths
-    ! deepdive whereis non-existent/path
-    ! deepdive whereis bin/deepdive non-existent/path/between-existing-ones deepdive.conf
+    ! deepdive whereis non-existent/path || false
+    ! deepdive whereis bin/deepdive non-existent/path/between-existing-ones deepdive.conf || false
 }

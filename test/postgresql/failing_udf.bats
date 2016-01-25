@@ -8,7 +8,7 @@
     deepdive compile
     deepdive redo process/init/app
     deepdive redo process/fine_extractor
-    ! deepdive redo process/failing_cmd_extractor
-    ! deepdive redo process/failing_tsv_extractor
-    ! deepdive redo process/failing_sql_extractor
+    ! deepdive redo process/failing_cmd_extractor || false
+    ! deepdive redo process/failing_tsv_extractor || false
+    ! deepdive redo process/failing_sql_extractor || false
 }

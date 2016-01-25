@@ -11,8 +11,8 @@ teardown() {
 @test "ps_descendants usage" {
     # should accept exactly one PID
     ps_descendants 1
-    ! ps_descendants
-    ! ps_descendants 123 456
+    ! ps_descendants || false
+    ! ps_descendants 123 456 || false
 }
 
 @test "ps_descendants basic" {
