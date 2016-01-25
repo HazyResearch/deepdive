@@ -18,6 +18,7 @@ eval "$(jq2sh <<<"$DEEPDIVE_COMPUTER_CONFIG" \
     ssh_user='.ssh_user' \
     ssh_host='.ssh_host' \
     remote_home='.remote_home' \
+    poll_period_secs='.poll_period_secs' \
     #
 )"
 # respect the DEEPDIVE_NUM_PROCESSES environment
@@ -59,6 +60,7 @@ echo "DEEPDIVE_CURRENT_PROCESS_NAME = $DEEPDIVE_CURRENT_PROCESS_NAME"
 
 # Copy application folder to remote shared directory
 # This fails if $DEEPDIVE_APP exists at $remote_home. What do?
+echo "Copying deepdive app to remote node"
 scp -r $DEEPDIVE_APP $ssh_info:$remote_home
 
 # Prepare submission script
@@ -69,6 +71,7 @@ scp -r $DEEPDIVE_APP $ssh_info:$remote_home
 # 2) input-only command which has no output to the database and streams from the database
 # 3) output-only command which has no input from the database and streams to the database
 # 4) database-independent command which simply runs in parallel
+echo "Preparing submission script at remote node"
 {
     echo "#PBS -N $DEEPDIVE_CURRENT_PROCESS_NAME"
     echo "#PBS -o $REMOTE_DEEPDIVE_APP/run/$DEEPDIVE_CURRENT_PROCESS_NAME/remote.out"
@@ -85,13 +88,20 @@ if [[ -n $input_sql ]]; then
 fi
 
 # Submit job
-#ssh $ssh_info "qsub $job"
+JOB_ID=$(ssh $ssh_info "qsub -V $REMOTE_DEEPDIVE_APP/run/$DEEPDIVE_CURRENT_PROCESS_NAME/remote.sh")
 echo "Job submitted"
-# Up until here first. 
-exit
 
 # Poll for status
-# XXX: Do what if fail? 
+poll_status() {
+  ssh $ssh_info "qstat -f -1 $JOB_ID | grep job_state | sed 's/.*job_state = //'"
+}
+
+echo -n "Waiting for job id $JOB_ID to complete"
+while [ "$(poll_status)" != "S" ]; do
+  echo -n "."
+  sleep $poll_period_secs
+done
+echo "done!"
 
 # prepare a temporary output table when output_relation is given
 if [[ -n $output_relation ]]; then
