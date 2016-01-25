@@ -2,6 +2,8 @@ from collections import namedtuple,OrderedDict
 import re
 import sys
 from inspect import isgeneratorfunction,getargspec
+import csv
+from StringIO import StringIO
 
 def print_error(err_string):
   """Function to write to stderr"""
@@ -22,14 +24,14 @@ TYPE_PARSERS = {
   'boolean' : lambda x : BOOL_PARSER(x.lower().strip())
 }
 
+
 def parse_pgtsv_element(s, t, sep='|^|', sep2='|~|', d=0):
   """
   Parse an element in psql-compatible tsv format, i.e. {-format arrays
   based on provided type and type-parser dictionary
   """
   # Quoting only will occur within a psql array with strings
-
-  quoted = (s[0] == '"' and s[-1] == '"')
+  quoted = (len(s) > 1 and s[0] == '"' and s[-1] == '"')
   if quoted and d > 0:
     if t == 'text':
       s = s[1:-1]
@@ -48,7 +50,7 @@ def parse_pgtsv_element(s, t, sep='|^|', sep2='|~|', d=0):
   # Handle lists recursively
   elif '[]' in t:
     if s[0] == '{' and s[-1] == '}':
-      split = s[1:-1].split(',')
+      split = list(csv.reader(StringIO(s[1:-1])))[0]
     else:
       split = s.split(sep)
     return [parse_pgtsv_element(ss, t[:-2], sep=sep2, d=d+1) for ss in split]

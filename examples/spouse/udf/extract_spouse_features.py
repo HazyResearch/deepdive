@@ -22,7 +22,7 @@ def extract(p1_id="text", p2_id="text", p1_begin_index="int", p1_end_index="int"
         lemma=lemmas[i],
         pos=pos_tags[i],
         ner=ner_tags[i],
-        dep_par=dep_parents[i],
+        dep_par=dep_parents[i] - 1,  # Note that as stored from CoreNLP 0 is ROOT, but for DDLIB -1 is ROOT
         dep_label=dep_types[i]))
 
     # Create DDLIB Spans for the two person mentions
