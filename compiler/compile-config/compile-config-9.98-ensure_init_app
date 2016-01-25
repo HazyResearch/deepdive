@@ -11,7 +11,8 @@
             #  init/app, as any process with non-empty dependencies will depend
             #  on some other ones who ultimately has to depend on it, unless
             #  there's a cycle in the dependency.)
-            ( if .dependencies_ | length > 0 then .
+            ( if (.dependencies_ | length) > 0
+              or (.input_ | length) > 0 then .
             else .dependencies_ = ["process/init/app"]
             end)
     end
