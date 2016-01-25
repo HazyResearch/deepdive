@@ -10,16 +10,13 @@ object DeepDiveLogSchemaExporter extends DeepDiveLogHandler {
 
   def jsonMap(kvs: (String, Any)*): Map[String, Any] = kvs toMap
 
-  def export(decl: SchemaDeclaration): (String, JSONObject) = {
-    var schema = jsonMap(
-//      "name" -> decl.a.name // XXX redundant but potentially useful
-    )
+  def export(decl: SchemaDeclaration, extra: (String, Any)*): (String, JSONObject) = {
+    var schema = jsonMap(extra:_*)
     // column names with types and annotations
     schema += "columns" -> JSONObject(
       decl.a.terms.zipWithIndex map {
         case (name, i) =>
           var columnSchema = jsonMap(
-//              "name" -> name, // XXX redundant but potentially useful
               "type" -> decl.a.types(i)
           )
           columnSchema += "index" -> i
@@ -63,9 +60,30 @@ object DeepDiveLogSchemaExporter extends DeepDiveLogHandler {
   override def run(parsedProgram: DeepDiveLog.Program, config: DeepDiveLog.Config) = {
     val program = parsedProgram  // TODO derive the program based on config.mode?
 
+    // first find out names of the relations that have SchemaDeclaration
+    val declaredNames = program collect {
+      case decl: SchemaDeclaration => decl.a.name
+    }
+
+    // then print schema in JSON
     println(JSONObject(Map(
       "relations" -> JSONObject(program collect {
           case decl: SchemaDeclaration => export(decl)
+          case rule: ExtractionRule if ! (declaredNames contains rule.headName) =>
+            // for extraction rules whose head is not declared already,
+            // make sure a schema entry is added
+            export(SchemaDeclaration(
+                a = Attribute(
+                  name = rule.headName,
+                  terms = rule.q.headTerms.indices map { i => s"column_${i}" } toList,
+                  types = rule.q.headTerms map { _ => "UNKNOWN" },
+                  annotations = rule.q.headTerms map { _ => List.empty }
+                ),
+                isQuery = false,
+                variableType = None
+              ),
+              "type" -> "view"
+            )
         } toMap)
     )))
   }
