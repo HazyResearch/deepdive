@@ -1,6 +1,10 @@
 #!/usr/bin/env jq-f
-# compile-config-2.02-grounding -- Adds processes for performing inference with the grounded factor graph
+# compile-config-2.02-learning_inference -- Adds processes for performing inference with the grounded factor graph
 ##
+
+# skip adding learning/inference processes unless one for grounding is there
+if .deepdive_.execution.processes | has("process/grounding/combine") | not then . else
+
 .deepdive_ as $deepdive
 | .deepdive_.execution.processes += {
 
@@ -110,3 +114,5 @@
     }
 
 }
+
+end

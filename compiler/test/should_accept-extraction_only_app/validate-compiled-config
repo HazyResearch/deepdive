@@ -1,0 +1,9 @@
+#!/usr/bin/env jq-f
+include "../testutil";
+
+TEST("compiled execution processes"; .deepdive_.execution.processes;
+    EXPECT_NE( "should have the init/app process"            ;  .["process/init/app"]                                        ;  null ),
+    EXPECT_NE( "should have the test_extractor process"      ;  .["process/test_extractor"]                                  ;  null ),
+    EXPECT_EQ( "should have no grounding processes"          ;  [keys[] | select(startswith("process/grounding/"))] | length ;  0    ),
+    EXPECT_EQ( "should have no learning/inference processes" ;  [keys[] | select(startswith("process/model/"))]     | length ;  0    ),
+empty)

@@ -6,6 +6,11 @@ include "constants";
 include "util";
 include "sql";
 
+# skip adding grounding processes unless there are variables and factors defined
+if (.deepdive_.schema.variables_  | length) == 0
+or (.deepdive_.inference.factors_ | length) == 0
+then . else
+
 .deepdive_ as $deepdive
 
 ###############################################################################
@@ -566,3 +571,5 @@ include "sql";
         ")
     }
 }
+
+end
