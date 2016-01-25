@@ -1,0 +1,4 @@
+foo(x INT).
+
+# bar does not have an explicit schema declaration
+bar(x, x*2) :- foo(x).
