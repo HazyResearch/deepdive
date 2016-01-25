@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 from deepdive import *
+import random
 
 @tsv_extractor
 @returns(lambda
         p1_id = "text"   ,
         p2_id = "text"   ,
-        label = "boolean",
+        label = "int",
     :[])
 # heuristic rules for finding positive/negative examples of spouse relationship mentions
 def supervise(
@@ -25,8 +26,8 @@ def supervise(
     # TODO remove below
     x = random.random()
     if x > 0.8:
-        yield [p1_id, p2_id, True]
+        yield [p1_id, p2_id, 1]
     elif x < 0.2:
-        yield [p1_id, p2_id, False]
+        yield [p1_id, p2_id, -1]
     else:
         pass

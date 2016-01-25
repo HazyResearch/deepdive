@@ -134,10 +134,10 @@ spouse_label_dbpedia(
     p1_id text,
     @key
     p2_id text,
-    label boolean
+    label int
 ).
 
-spouse_label_dbpedia(p1,p2,TRUE) :-
+spouse_label_dbpedia(p1,p2,1) :-
   spouse_candidate(p1,p2),
   person_mention(p1,p1_name,_,_,_,_),
   person_mention(p2,p2_name,_,_,_,_),
@@ -160,11 +160,10 @@ function supervise over (
         lemmas         text[],
         pos_tags       text[],
         ner_tags       text[],
-        doc_offsets    int[],
         dep_types      text[],
         dep_tokens    int[]
     ) returns (
-        p1_id text, p2_id text, label bool
+        p1_id text, p2_id text, label int
     )
     implementation "udf/supervise_spouse.py" handles tsv lines.
 
@@ -173,18 +172,98 @@ spouse_label_heuristic(
     p1_id text,
     @key
     p2_id text,
-    label boolean
+    label int
 ).
 
 spouse_label_heuristic += supervise(
     p1_id, p1_begin, p1_end,
     p2_id, p2_begin, p2_end,
     doc_id, sentence_index, sentence_text,
-    tokens, lemmas, pos_tags, ner_tags, doc_offsets, dep_types, dep_token_indexes
+    tokens, lemmas, pos_tags, ner_tags, dep_types, dep_token_indexes
 ) :- spouse_candidate(p1_id, p2_id),
     person_mention(p1_id, p1_text, doc_id, sentence_index, p1_begin, p1_end),
     person_mention(p2_id, p2_text,      _,              _, p2_begin, p2_end),
     sentences(
         doc_id, sentence_index, sentence_text,
-        tokens, lemmas, pos_tags, ner_tags, doc_offsets, dep_types, dep_token_indexes
+        tokens, lemmas, pos_tags, ner_tags, _, dep_types, dep_token_indexes
     ).
+
+# We do majority vote to aggregate labels from distant supervision
+spouse_label(
+    @key
+    p1_id text,
+    @key
+    p2_id text,
+    label boolean
+).
+
+# TODO: Remove these after merging latest pull request (#468)!
+q_agg(
+  @key
+  p1_id text,
+  @key
+  p2_id text,
+  label int
+).
+q_t(
+  @key
+  p1_id text,
+  @key
+  p2_id text,
+  label boolean
+).
+q_n(
+  @key
+  p1_id text,
+  @key
+  p2_id text,
+  label boolean
+).
+q_f(
+  @key
+  p1_id text,
+  @key
+  p2_id text,
+  label boolean
+).
+
+q_agg(p1_id, p2_id, SUM(label)) :-
+  spouse_label_dbpedia(p1_id, p2_id, label);
+  spouse_label_heuristic(p1_id, p2_id, label).
+
+q_t(p1_id, p2_id, TRUE) :- q_agg(p1_id, p2_id, label), [label > 0].
+
+q_n(p1_id, p2_id, NULL) :- q_agg(p1_id, p2_id, label), [label = 0].
+
+q_f(p1_id, p2_id, FALSE) :- q_agg(p1_id, p2_id, label), [label < 0].
+
+spouse_label(p1_id, p2_id, l) :-
+  q_t(p1_id, p2_id, l); q_n(p1_id, p2_id, l); q_f(p1_id, p2_id, l).
+
+###############################################################################
+
+## Inference Rules ############################################################
+
+# We specify the random variables in our factor graph, which we wish to do inference over
+has_spouse?(p1_id text, p2_id text).
+
+# We specify the labels for the spouse relation
+@label(l)
+has_spouse(p1_id, p2_id) :- spouse_label(p1_id, p2_id, l).
+
+# Features
+@weight(f)
+has_spouse(p1_id, p2_id) :-
+  spouse_candidate(p1_id, p2_id),
+  spouse_feature(p1_id, p2_id, f).
+
+# Inference rule: Symmetry
+@weight(3.0)
+has_spouse(p1_id, p2_id) => has_spouse(p2_id, p1_id) :-
+  spouse_candidate(p1_id, p2_id).
+
+# Inference rule: Only one marriage
+@weight(-1.0)
+has_spouse(p1_id, p2_id) => has_spouse(p1_id, p3_id) :-
+  spouse_candidate(p1_id, p2_id),
+  spouse_candidate(p1_id, p3_id).
