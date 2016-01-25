@@ -1,10 +1,20 @@
 #!/usr/bin/env bash
 # deepdive-mark -- Marks state of something to do
-# > deepdive mark done              TARGET...
-# > deepdive mark todo              TARGET...
-# > deepdive mark todo-from-scratch TARGET...
-# > deepdive mark all-new           TARGET...
-# > deepdive mark     new           TARGET...
+#
+# To assume certain TARGETs are already done:
+# > deepdive mark done  TARGET...
+#
+# To mark certain TARGETs as new, so the ones depending on it can be repeated:
+# > deepdive mark all-new  TARGET...
+# > deepdive mark     new  TARGET...
+#
+# To mark TARGETs shall be done again:
+# > deepdive mark todo  TARGET...
+# To mark TARGETs shall be done again including their dependencies:
+# > deepdive mark todo-from-scratch  TARGET...
+#
+# To cancel the latest changes made to the state of TARGETs:
+# > deepdive mark restore  TARGET...
 ##
 set -eu
 
@@ -13,9 +23,9 @@ set -eu
 
 State=$1; shift
 case $State in
-    "done"|new|all-new|todo|todo-from-scratch) ;;
+    "done"|new|all-new|todo|todo-from-scratch|restore) ;;
     "") ;;
-    *) error "$State: Unknown state. Can mark as 'done', 'new', 'all-new', 'todo', or 'todo-from-scratch' only"
+    *) error "$State: Unknown state. Can mark as 'done', 'new', 'all-new', 'todo', or 'todo-from-scratch' only, or 'restore'"
 esac
 . resolve-args-to-do.sh
 
@@ -35,7 +45,7 @@ case $State in
         make -C "$DEEPDIVE_APP"/run TOUCH='mkdir -p $(@D) && touch $@' --silent --always-make "$@"
         ;;
 
-    todo)
+    todo|restore)
         cd "$DEEPDIVE_APP"/run
         # for non process/* targets, e.g., data/*, also marking their dependencies as undone
         eval 'set -- "$@" '"$(
@@ -44,11 +54,14 @@ case $State in
                 .[ env.targets | splits(" ") | select(startswith("process/") | not)
                 ][] | "\(.).done" | @sh
             ' | tr '\n' ' ')"
-        rm -fv "$@"
+        case $State in
+            todo)      reset_timestamp "$@" ;;
+            restore) restore_timestamp "$@" ;;
+        esac
         ;;
 
     todo-from-scratch)
-        make -C "$DEEPDIVE_APP"/run --silent "${@/.done/.reset}"
+        make -C "$DEEPDIVE_APP"/run --silent "${@/.done/.reset}" RESET=reset_timestamp
         ;;
 
 esac

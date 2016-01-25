@@ -73,6 +73,8 @@ stage runner/deepdive-redo                                        util/
 stage runner/deepdive-mark                                        util/
 stage runner/deepdive-done                                        util/
 stage runner/format_timestamp                                     util/
+stage runner/reset_timestamp                                      util/
+stage runner/restore_timestamp                                    util/
 stage runner/mark_done                                            util/
 stage runner/resolve-args-to-do.sh                                util/
 stage runner/show_progress                                        util/

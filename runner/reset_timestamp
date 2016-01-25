@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# reset_timestamp -- Resets timestamp files by putting them aside
+# > reset_timestamp TIMESTAMP_FILE...
+##
+set -eu
+
+for ts in "$@"; do
+    [[ -e "$ts" ]] || continue
+    mv -v -f --no-target-directory "$ts" "$ts~"
+done
