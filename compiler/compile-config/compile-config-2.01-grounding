@@ -175,7 +175,7 @@ include "sql";
         varPath=\"$DEEPDIVE_GROUNDING_DIR\"/variable/\(.variableName | @sh)
         mkdir -p \"$varPath\"
         cd \"$varPath\"
-        find . -name 'variables-*.bin' -exec rm -rf {} +
+        find . -name 'variables.part-*.bin.bz2' -exec rm -rf {} +
         export DEEPDIVE_LOAD_FORMAT=tsv
 
         # dump the variables, joining the holdout query to determine the type of each variable
@@ -248,7 +248,7 @@ include "sql";
                 ]
             } | asSql | @sh) \\
             command=\("
-                format_converter variable /dev/stdin variables.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin
+                format_converter variable /dev/stdin >(pbzip2 >variables.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2)
             " | @sh) \\
             output_relation=
         "
@@ -473,10 +473,10 @@ include "sql";
             facPath=\"$DEEPDIVE_GROUNDING_DIR\"/factor/\(.factorName | @sh)
             mkdir -p \"$facPath\"
             cd \"$facPath\"
-            find . \\( -name  'factors.part-*.bin' \\
-                    -o -name 'nfactors.part-*.bin' \\
-                    -o -name  'weights.part-*.bin' \\
-                    -o -name 'nweights.part-*.bin' \\
+            find . \\( -name  'factors.part-*.bin.bz2' \\
+                    -o -name 'nfactors.part-*'         \\
+                    -o -name  'weights.part-*.bin.bz2' \\
+                    -o -name 'nweights.part-*'         \\
                     \\) -exec rm -rf {} +
             export DEEPDIVE_LOAD_FORMAT=tsv
 
@@ -505,7 +505,7 @@ include "sql";
                 command=\("
                     # also record the factor count
                     tee >(wc -l >nfactors.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}) |
-                    format_converter factor /dev/stdin factors.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin \(.function_.id
+                    format_converter factor /dev/stdin >(pbzip2 >factors.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2) \(.function_.id
                         ) \(.function_.variables | length
                         ) original \(.function_.variables | map(if .isNegated then "0" else "1" end) | join(" ")
                         ) |
@@ -526,7 +526,7 @@ include "sql";
                     , FROM: [ { table: .weightsTableForDumping } ]
                     } | asSql | @sh) \\
                 command=\("
-                    format_converter weight /dev/stdin weights.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin
+                    format_converter weight /dev/stdin >(pbzip2 >weights.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2)
                 " | @sh) \\
                 output_relation=
         "
@@ -565,15 +565,15 @@ include "sql";
         for v in \($variableNames); do
             mkdir -p variables/\"$v\"
             find \"$DEEPDIVE_GROUNDING_DIR\"/variable/\"$v\" \\
-                -name 'variables.part-*.bin' -exec ln -sfnv -t variables/\"$v\"/ {} + \\
+                -name 'variables.part-*.bin.bz2' -exec ln -sfnv -t variables/\"$v\"/ {} + \\
                 #
         done
         for f in \($factorNames); do
             mkdir -p {factors,weights}/\"$f\"
             find \"$DEEPDIVE_GROUNDING_DIR\"/factor/\"$f\" \\
-                -name 'factors.part-*.bin' -exec ln -sfnv -t factors/\"$f\"/ {} + \\
+                -name 'factors.part-*.bin.bz2' -exec ln -sfnv -t factors/\"$f\"/ {} + \\
                 -o \\
-                -name 'weights.part-*.bin' -exec ln -sfnv -t weights/\"$f\"/ {} + \\
+                -name 'weights.part-*.bin.bz2' -exec ln -sfnv -t weights/\"$f\"/ {} + \\
                 #
         done
 
