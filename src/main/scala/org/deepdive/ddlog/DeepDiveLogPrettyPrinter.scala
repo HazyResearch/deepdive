@@ -91,7 +91,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
         (ifCondExprPairs map {
           case (ifCond, thenExpr) => s"if ${print(ifCond)} then ${print(thenExpr)}"
         }) ++ List(optElseExpr map print mkString(""))
-      ) mkString(" else ")
+      ) mkString("", "\n\telse ", "\n\tend")
     }
   }
 
@@ -136,7 +136,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
     case b: QuantifiedBody => print(b)
   }
 
-  def print(cq: ConjunctiveQuery): String = {
+  def print(cq: ConjunctiveQuery, optSupervision: Option[Expr] = None): String = {
 
     def printBodyList(b: List[Body]) = {
       s"${(b map print).mkString(",\n    ")}"
@@ -149,7 +149,9 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
     val headStrTmp  = cq.headTerms map print mkString(", ")
     val headStr     = if (headStrTmp isEmpty) "" else s"(${headStrTmp})"
 
-    headStr + distinctStr + limitStr + " :-\n    " + bodyStr
+    headStr + (
+      optSupervision map { sv => s" = ${print(sv)}" } getOrElse("")
+    ) + distinctStr + limitStr + " :-\n    " + bodyStr
   }
 
   def print(a: HeadAtom) : String = {
@@ -172,8 +174,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   }
 
   def print(stmt: ExtractionRule): String = {
-    (stmt.supervision map (s => s"@label(${print(s)})\n") getOrElse("")) +
-      stmt.headName + print(stmt.q) + ".\n"
+    stmt.headName + print(stmt.q, stmt.supervision) + ".\n"
   }
 
   def print(stmt: FunctionCallRule): String = {

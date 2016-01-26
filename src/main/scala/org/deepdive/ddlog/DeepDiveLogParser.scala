@@ -304,11 +304,16 @@ class DeepDiveLogParser extends JavaTokenParsers {
 
   def cqHeadTerms = "(" ~> rep1sep(expr, ",") <~ ")"
 
+  def conjunctiveQueryBody : Parser[ConjunctiveQuery] =
+    opt("*") ~ opt("|" ~> decimalNumber) ~ ":-" ~ rep1sep(cqConjunctiveBody, ";") ^^ {
+      case (isDistinct ~ limit ~ ":-" ~ disjunctiveBodies) =>
+        ConjunctiveQuery(List.empty, disjunctiveBodies, isDistinct != None, limit map (_.toInt))
+    }
+
   def conjunctiveQuery : Parser[ConjunctiveQuery] =
-    cqHeadTerms ~ opt("*") ~ opt("|" ~> decimalNumber) ~ ":-" ~ rep1sep(cqConjunctiveBody, ";") ^^ {
-      case (head ~ isDistinct ~ limit ~ ":-" ~ disjunctiveBodies) =>
-        ConjunctiveQuery(head, disjunctiveBodies, isDistinct != None, limit map (_.toInt))
-  }
+    cqHeadTerms ~ conjunctiveQueryBody ^^ {
+      case (head ~ cq) => cq.copy(headTerms = head)
+    }
 
   def functionMode = "@mode" ~> commit("(" ~> functionModeType <~ ")" ^? ({
     case "inc" => "inc"
@@ -321,12 +326,23 @@ class DeepDiveLogParser extends JavaTokenParsers {
       case (mode ~ parallelism ~ out ~ _ ~ func ~ cq) => FunctionCallRule(out, func, cq, mode, parallelism)
     }
 
-  def supervisionAnnotation = ("@label" | "@supervise") ~> "(" ~> expr <~ ")"
+  def supervisionAnnotation = "@label" ~> "(" ~> expr <~ ")"
+
+  def conjunctiveQueryWithSupervision : Parser[ConjunctiveQuery] =
+    cqHeadTerms ~ opt("*") ~ opt("|" ~> decimalNumber) ~ ":-" ~ rep1sep(cqConjunctiveBody, ";") ^^ {
+      case (head ~ isDistinct ~ limit ~ ":-" ~ disjunctiveBodies) =>
+        ConjunctiveQuery(head, disjunctiveBodies, isDistinct != None, limit map (_.toInt))
+  }
 
   def extractionRule =
-    opt(supervisionAnnotation) ~ relationName ~ conjunctiveQuery ^^ {
-      case (sup ~ head ~ cq) => ExtractionRule(head, cq, sup)
-    }
+    ( opt(supervisionAnnotation) ~ relationName ~ conjunctiveQuery ^^ {
+        case (sup ~ head ~ cq) => ExtractionRule(head, cq, sup)
+      }
+    | relationName ~ cqHeadTerms ~ ("=" ~> expr) ~ conjunctiveQueryBody ^^ {
+        case (head ~ headTerms ~ sup ~ cq) =>
+          ExtractionRule(head, cq.copy(headTerms = headTerms), Some(sup))
+      }
+    )
 
   def factorWeight = "@weight" ~> "(" ~> rep1sep(expr, ",") <~ ")" ^^ { FactorWeight(_) }
   def inferenceMode = "@mode" ~> commit("(" ~> inferenceModeType <~ ")" ^? ({
