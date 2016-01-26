@@ -65,7 +65,7 @@ setup() {
 # TODO test RANGE_STEP
 
 @test "$DBVARIANT partition_id_range fails on empty tables" {
-    ! partition_id_range
+    ! partition_id_range || false
 }
 
 # TODO add more tests

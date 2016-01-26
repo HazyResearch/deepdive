@@ -1,0 +1,86 @@
+---
+layout: default
+title: Installation Guide
+---
+
+# DeepDive Installation Guide
+
+DeepDive runs on Linux or Mac OS X.
+This document explains how to install DeepDive on your system.
+
+## Quick Installation
+
+We provide a simple installation method for the following supported systems:
+
+* GNU/Linux: Debian (7, 8, or later) and Ubuntu (12.04LTS, 14.04LTS, or later)
+    * [VirtualBox](https://help.ubuntu.com/community/VirtualBox)
+    * [AWS EC2](ec2.md)
+* Mac OS X with [Homebrew](http://brew.sh)
+
+You can install DeepDive and all its dependencies with a single command.
+
+1. Open your terminal and run this:
+   <pre style="width:80%; margin:0 auto; padding:20px;"><code><big style="font-size:175%;">bash <(curl -fsSL deepdive.stanford.edu/install)</big></code></pre>
+
+2. Select `deepdive` or `deepdive_from_release` when asked.
+    Choose the latter option if you simply want to install DeepDive without any of its runtime dependencies.
+
+    ```
+    $ bash <(curl -fsSL deepdive.stanford.edu/install)
+    ### DeepDive installer for Mac
+    1) deepdive                 4) deepdive_from_source
+    2) deepdive_examples_tests  5) postgres
+    3) deepdive_from_release    6) run_deepdive_tests
+    # Select what to install (enter for all options, q to quit, or a number)? 1
+    [...]
+    ```
+
+    Here are some more details of each options:
+    * For installation with the `deepdive` option, All runtime dependencies are installed.
+    Note that some steps may ask your password.
+    * If you don't have permission to install the dependencies, you may want to use the `deepdive_from_release` option and ask the system administrator to install DeepDive's runtime dependencies with the following command.
+
+        ```bash
+        bash <(curl -fsSL deepdive.stanford.edu/install) _deepdive_runtime_deps
+        ```
+    * For installation with `deepdive_from_source` option, extra build dependencies are installed, and DeepDive source tree is cloned at `./deepdive`, then executables are installed under `~/local/bin/`.
+    You can run tests in DeepDive's source tree to make sure everything will run fine.
+    See the [developer's guide](developer.md#build-test) for more details.
+
+        ```bash
+        cd ./deepdive
+        make test
+        ```
+
+3. To use the `deepdive` command on a regular basis, it is recommended to add the following line to your `~/.bash_profile`.  Otherwise, you need to always type its full path: `~/local/bin/deepdive`.
+
+    ```
+    export PATH=~/local/bin:"$PATH"
+    ```
+
+4. Since DeepDive needs a database installation to run correctly.  You should use one of the provided installer options:
+    * [`postgres`](http://wiki.postgresql.org/wiki/Detailed_installation_guides)
+        DeepDive works with most of the recent versions of PostgreSQL.
+        However, 9.3+ is recommended to use all functionality.
+    * [`postgres_xl`](pgxl.md)
+        DeepDive works with current release of PostgreSQL-XL, which is based on PostgreSQL 9.2.
+        PL/Python extension is required.
+    * [`greenplum`](greenplum.md)
+        DeepDive works with recent releases of Greenplum, which is based on PostgreSQL 8 that may lack some features that are required by some advanced DeepDive functionality.
+        PL/Python extension is required.
+    * [`mysql`](mysql.md)
+        DeepDive provides minimal support for MySQL and MySQL Cluster, but PostgreSQL-based databases are strongly recommended.
+
+
+5. You can verify whether your installation is correct using the `run_deepdive_tests` option in the installer.
+    It downloads all examples and tests for the DeepDive release and runs the tests using the installed one.
+    To only download the example applications, use the `deepdive_examples_tests` option.
+
+Congratulations! DeepDive is now installed on your system, and you can proceed to the [next steps](walkthrough.md).
+
+
+
+## Installing from Source
+
+Using the quick installation method is recommended unless you want to use a development branch or modify DeepDive engine itself.
+If you still want to build DeepDive from source code yourself, follow the [developer's guide](developer.md#build-test).

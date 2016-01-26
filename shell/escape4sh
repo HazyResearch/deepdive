@@ -6,6 +6,15 @@
 ##
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-01-24
-[[ $# -eq 0 ]] ||
-    printf '%s\n' "$@" |
-    jq --raw-input --raw-output --join-output '@sh, " "'
+[[ $# -eq 0 ]] || {
+    # construct a jq expression that applies shell escaping for each given argument
+    i=0 jqExpr=
+    for a; do
+        let ++i
+        argsExpr+=' --arg a'$i' "$'$i'"'
+        jqExpr+='($a'$i' | @sh), '
+    done
+    jqExpr=${jqExpr%, }
+    # then run it
+    eval "jq --null-input --raw-output $argsExpr '[$jqExpr] | join(\" \")'"
+}

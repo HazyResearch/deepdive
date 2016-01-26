@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Updates symlinks to the .bats.template
+set -euo pipefail
+cd "$(dirname "$0")"
 
 for tmpl in {.,}*.bats.template; do
     [[ -e "$tmpl" ]] || continue

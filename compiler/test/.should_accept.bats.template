@@ -17,7 +17,7 @@ testName=${testName#.} # optional dot prefix for hiding the .bats file
     deepdive compile || {
         [[ -e "$DEEPDIVE_COMPILE_INPUT_JSON" ]] &&
         echo '# Retrying without cached $DEEPDIVE_COMPILE_INPUT_JSON' &&
-        DEEPDIVE_COMPILE_INPUT_JSON= deepdive compile
+        DEEPDIVE_COMPILE_INPUT_JSON= deepdive compile || false
     }
     if [[ -x validate-compiled-config ]]; then
         echo "# Validating run/compiled/config.json"

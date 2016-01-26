@@ -13,7 +13,6 @@ body ul, body ol {
 #header {
   color: #fff;
   background-color: #08608A;
-  height: 80px;
   padding: 10px 0px;
 }
 
@@ -23,13 +22,13 @@ body ul, body ol {
 #header #header-nav li {margin-right: 10px; }
 
 #footer {
-  color: #ccc;
+  color: #ccc !important;
   background-color: #08608A;
-  height: 60px;
   padding: 20px 0px;
 }
 
-#footer p { font-size: small; color: #fff;}
+#footer p { font-size: small; color: #ccc;}
+#footer a { color: #fff !important; }
 
 #main {
   padding-top: 20px;

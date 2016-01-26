@@ -1,6 +1,10 @@
 #!/usr/bin/env jq-f
 # compile-config-2.03-calibration_plots -- Adds processes for producing calibration plots
 ##
+
+# skip adding process for calibration plots unless one for inference is there
+if .deepdive_.execution.processes | has("process/model/inference") | not then . else
+
 .deepdive_ as $deepdive
 | .deepdive_.execution.processes += {
 
@@ -25,3 +29,5 @@
     }
 
 }
+
+end

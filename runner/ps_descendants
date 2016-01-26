@@ -1,0 +1,68 @@
+#!/usr/bin/env python
+# ps_descendants -- Lists all descendant PIDs of given PID as well as those sharing the PGID
+# $ ps_descendants PID
+##
+
+import sys,os,subprocess,re
+
+if len(sys.argv) != 2:
+    os.execvp("usage", ["usage", sys.argv[0], "Missing PID"])
+
+PID = sys.argv[1]
+
+# list of children PIDs
+ps_children = {}
+ppid_by_pid = {}
+# PIDs by PGID
+ps_by_pgid = {}
+pgid_by_pid = {}
+
+# take a snapshot of PIDs, PPIDs, PGIDs using ps command, and index them in a handy way
+ps_snapshot = subprocess.check_output(["ps", "ax", "-o", "ppid=,pid=,pgid="])
+pid_self = str(os.getpid())
+for line in ps_snapshot.split("\n"):
+    line = line.strip()
+    if len(line) == 0: break
+    ppid,pid,pgid = re.compile(r" +").split(line)
+    # avoid indexing this process' children as well as itself
+    if ppid == pid_self or pid == pid_self: continue
+    # index PPID edge
+    if ppid not in ps_children: ps_children[ppid] = set()
+    ps_children[ppid].add(pid)
+    ppid_by_pid[pid] = ppid
+    # group by PGID
+    if pgid not in ps_by_pgid: ps_by_pgid[pgid] = set()
+    ps_by_pgid[pgid].add(pid)
+    pgid_by_pid[pid] = pgid
+
+def descendants(pid):
+    ds = set([pid])
+    if pid in ps_children:
+        for c in ps_children[pid]:
+            ds |= descendants(c)
+    return ds
+
+def ancestors(pid):
+    ppids = []
+    while pid in ppid_by_pid:
+        ppid = ppid_by_pid[pid]
+        ppids.insert(0, ppid)
+        pid = ppid
+    return ppids
+
+# list descendants reachable via PID-PPID
+pids = descendants(PID)
+# as well as those in the same process group except descendants of the highest ancestor other than PID 1
+PGID = pgid_by_pid[PID] if PID in pgid_by_pid else PID
+if PGID in ps_by_pgid:
+    ppids = [p for p in ancestors(PID) if p not in ["0", "1"]]
+    pids |= ps_by_pgid[PGID] - (
+            descendants(ppids[0]) if len(ppids) > 0 else set()
+            )
+
+# excluding the given PID as well as this Python process itself
+pids -= set([PID])
+
+# output PIDs
+if len(pids) > 0:
+    print "\n".join(pids)

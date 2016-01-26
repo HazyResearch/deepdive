@@ -1,1 +1,1 @@
-postgresql://localhost/deepdive_smoke
+postgresql://localhost/deepdive_smoke_$USER

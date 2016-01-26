@@ -6,38 +6,12 @@ include "constants";
 include "util";
 include "sql";
 
+# skip adding grounding processes unless there are variables and factors defined
+if (.deepdive_.schema.variables_  | length) == 0
+or (.deepdive_.inference.factors_ | length) == 0
+then . else
+
 .deepdive_ as $deepdive
-
-# how to ground the factor graph in the old way with legacy Scala code
-# TODO remove me as we drop the scala codebase
-| .deepdive_.execution.processes += {
-    "process/grounding/legacy": {
-        dependencies_: ($deepdive.inference.factors_ | map("factor/\(.factorName)")),
-        output_: "model/factorgraph.legacy",
-        style: "cmd_extractor",
-        cmd: "mkdir -p ../../../model && cd ../../../model
-            mkdir -p factorgraph
-
-            set +x; . load-db-driver.sh; set -x
-            export DEEPDIVE_LOGFILE=factorgraph/grounding.log
-            [[ ! -e \"$DEEPDIVE_LOGFILE\" ]] || mv -f \"$DEEPDIVE_LOGFILE\" \"$DEEPDIVE_LOGFILE\"~
-            java org.deepdive.Main -c <(
-                set +x
-                echo \("deepdive \(.deepdive | @json)" | @sh)
-                echo \("deepdive.pipeline.pipelines.grounding: [\($deepdive.inference.factors_ | map(.factorName) | join(", "))]" | @sh)
-                echo \("deepdive.pipeline.run: grounding" | @sh)
-            ) -o factorgraph -t inference_grounding
-
-            # drop graph. prefix from file names
-            cd factorgraph
-            mv -f graph.variables variables
-            mv -f graph.factors   factors
-            mv -f graph.weights   weights
-            mv -f graph.meta      meta
-        "
-    }
-}
-
 
 ###############################################################################
 
@@ -538,7 +512,7 @@ include "sql";
 
 # Finally, put together everything dumped into a layout the inference engine can easily load from
 | .deepdive_.execution.processes += {
-    "process/grounding/combine": {
+    "process/grounding/combine_factorgraph": {
         dependencies_: [(
             $deepdive.schema.variables_[]
             | "process/grounding/variable/\(.variableName)/dump"
@@ -597,3 +571,5 @@ include "sql";
         ")
     }
 }
+
+end
