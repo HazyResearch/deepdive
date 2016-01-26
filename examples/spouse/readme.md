@@ -112,6 +112,28 @@ articles(
 ).
 ```
 
+### Installing Mindbender
+**_TODO: Put in proper way to do this!?_**
+Given that `DEEPDIVE_ROOT` is a variable containing the path to the root of the deepdive repo, if you are on linux run:
+```bash
+wget -O ${DEEPDIVE_ROOT}/dist/stage/bin/mindbender https://github.com/HazyResearch/mindbender/releases/download/v0.2.1/mindbender-v0.2.1-Linux-x86_64.sh
+```
+for other versions see [the releases page](https://github.com/HazyResearch/mindbender/releases).  Then make sure that this location is on your path:
+```bash
+export PATH=${DEEPDIVE_ROOT}/dist/stage/bin:$PATH
+```
+
+### Running Mindbender
+First, generate the input for mindtagger:
+```bash
+TODO
+```
+Next, start mindtagger:
+```bash
+TODO
+```
+
+
 2. Describe how to setup mindbender.
 3. Describe which commands to run to get the mindbender environment up and running.
 
