@@ -17,25 +17,27 @@ def supervise(
         tokens="text[]", lemmas="text[]", pos_tags="text[]", ner_tags="text[]",
         dep_types="text[]", dep_token_indexes="int[]",
     ):
+
+    MARRIED = frozenset(["wife", "husband"])
+    FAMILY = frozenset(["mother", "father", "sister", "brother"])
+
     # Rules for positive examples
     # Rule 1: Sentences that contain (<Person Candidate 1>)([ A-Za-z]+)(wife|husband)([ A-Za-z]+)(<Person Candidate 2>)
-    
     cand1_last_lemma = min(p1_end, p2_end)
     cand2_first_lemma = max(p1_begin, p2_begin)
-    intermediate_lemma = lemma[cand1_last_lemma+1:cand2_first_lemma]
-    if ("wife" in intermediate_lemma) or ("husband" in intermediate_lemma):
+    intermediate_lemmas = lemmas[cand1_last_lemma+1:cand2_first_lemma]
+    if len(MARRIED.intersection(intermediate_lemmas)) > 0:
 	yield [p1_id, p2_id, 1, 'pos:wife_husband_between']
     else:
         pass
-    
     
     # Rule 2: Sentences that contain (<Person Candidate 1>)(and)?(<Person Candidate 2>)([ A-Za-z]+)(married)
     cand1_last_lemma = min(p1_end, p2_end)
     cand2_first_lemma = max(p1_begin, p2_begin)
     cand2_last_lemma = max(p1_end,p2_end)
-    intermediate_lemma = tokens[cand1_last_lemma+1:cand2_first_lemma]
-    tail_lemmas = tokens[cand2_last_lemma+1:]
-    if ("and" in intermediate_lemma) and ("married" in tail_lemmas):
+    intermediate_lemmas = tokens[cand1_last_lemma+1:cand2_first_lemma]
+    tail_lemmas = lemmas[cand2_last_lemma+1:]
+    if ("and" in intermediate_lemmas) and ("married" in tail_lemmas):
 	yield [p1_id, p2_id, 1, 'pos:married_after']
     else:
 	pass
@@ -45,9 +47,8 @@ def supervise(
     # Rule 1: Sentences that contain familial relations (<Person Candidate 1>)([ A-Za-z]+)(brother|stster|father|mother)([ A-Za-z]+)(<Person Candidate 2>)
     cand1_last_lemma = min(p1_end, p2_end)
     cand2_first_lemma = max(p1_begin, p2_begin)
-    intermediate_lemma = lemma[cand1_last_lemma+1:cand2_first_lemma]
-    if ("mother" in intermediate_lemma) or ("father" in intermediate_lemma) or ("sister" in intermediate_lemma) or ("brother" in intermediate_lemma):
+    intermediate_lemmas = lemmas[cand1_last_lemma+1:cand2_first_lemma]
+    if len(FAMILY.intersection(intermediate_lemmas)) > 0:
         yield [p1_id, p2_id, -1, 'neg:familial_between']
     else:
         pass
-
