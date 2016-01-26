@@ -93,7 +93,7 @@ FROM b R0 LEFT OUTER JOIN c R1_0 ON R1_0.n = R0.k  AND R1_0.s > R0.p
 
 	deepdive create view J as 'SELECT R0.k AS column_0
 FROM b R0
-        WHERE R0.k + (R0.r = 100) OR NOT R0.k > 50'
+        WHERE (R0.k + R0.r) = 100 OR NOT R0.k > 50'
 	
         """
           output_relation: "J"
@@ -180,7 +180,7 @@ FROM b R0
 
 	deepdive create view I as 'SELECT R0.k AS column_0
 FROM b R0
-        WHERE R0.k + (R0.r = 100) OR (R0.k > 50 AND R0.r < 10)'
+        WHERE (R0.k + R0.r) = 100 OR (R0.k > 50 AND R0.r < 10)'
 	
         """
           output_relation: "I"
@@ -197,7 +197,7 @@ FROM b R0
 
 	deepdive create view G as 'SELECT R0.k AS column_0
 FROM b R0
-        WHERE R0.k + (R0.r = 100)'
+        WHERE (R0.k + R0.r) = 100'
 	
         """
           output_relation: "G"
@@ -321,7 +321,7 @@ FROM b R0
 
 	deepdive create view H as 'SELECT R0.k AS column_0
 FROM b R0
-        WHERE R0.k + (R0.r = 100) AND R0.k > 50'
+        WHERE (R0.k + R0.r) = 100 AND R0.k > 50'
 	
         """
           output_relation: "H"
@@ -356,7 +356,7 @@ FROM a R0
 
 	deepdive create view K as 'SELECT R0.k AS column_0
 FROM b R0
-        WHERE R0.k + (R0.r = 100) AND (NOT R0.k > 50 OR R0.k = 40)'
+        WHERE (R0.k + R0.r) = 100 AND (NOT R0.k > 50 OR R0.k = 40)'
 	
         """
           output_relation: "K"

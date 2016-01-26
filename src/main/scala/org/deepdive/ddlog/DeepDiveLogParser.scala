@@ -190,16 +190,17 @@ class DeepDiveLogParser extends JavaTokenParsers {
   // expression
   def expr : Parser[Expr] =
     ( lexpr ~ operator ~ expr ^^ { case (lhs ~ op ~ rhs) => BinaryOpExpr(lhs, op, rhs) }
-    | lexpr ~ compareOperator ~ expr ^^ { case (lhs ~ op ~ rhs) => BinaryOpExpr(lhs, op, rhs) }
     | lexpr ~ typeOperator ~ columnType ^^ { case (lhs ~ _ ~ rhs) => TypecastExpr(lhs, rhs) }
     | lexpr
     )
 
+  def cexpr =
+    ( expr ~ compareOperator ~ expr ^^ { case (lhs ~ op ~ rhs) => BinaryOpExpr(lhs, op, rhs) }
+    | expr
+    )
+
   def lexpr =
-    ( functionName ~ "(" ~ rep1sep(expr, ",") ~ ")" ^^ {
-        case (name ~ _ ~ args ~ _) => FuncExpr(name, args, (aggregationFunctions contains name))
-      }
-    | "if" ~> (cond ~ ("then" ~> expr) ~ rep(elseIfExprs) ~ opt("else" ~> expr)) <~ "end" ^^ {
+    ( "if" ~> (cond ~ ("then" ~> expr) ~ rep(elseIfExprs) ~ opt("else" ~> expr)) <~ "end" ^^ {
         case (ifCond ~ thenExpr ~ elseIfs ~ optElseExpr) =>
           IfThenElseExpr((ifCond, thenExpr) :: elseIfs, optElseExpr)
       }
@@ -208,6 +209,9 @@ class DeepDiveLogParser extends JavaTokenParsers {
     | integer ^^ { IntConst(_) }
     | ("TRUE" | "FALSE") ^^ { x => BooleanConst(x.toBoolean) }
     | "NULL" ^^ { _ => new NullConst }
+    | functionName ~ "(" ~ rep1sep(expr, ",") ~ ")" ^^ {
+        case (name ~ _ ~ args ~ _) => FuncExpr(name, args, (aggregationFunctions contains name))
+      }
     | variableName ^^ { VarExpr(_) }
     | "(" ~> expr <~ ")"
     )
@@ -236,7 +240,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
     | bcond
     )
   def bcond : Parser[Cond] =
-    ( expr ^^ ExprCond
+    ( cexpr ^^ ExprCond
     | "[" ~> cond <~ "]"
     )
 

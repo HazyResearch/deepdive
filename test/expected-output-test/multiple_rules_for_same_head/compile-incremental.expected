@@ -416,13 +416,13 @@ FROM dd_delta_R R0
           input_query: """
           SELECT R0.id AS "dd_new_Q.R0.id" , R1.id AS "dd_new_Q.R1.id" 
           FROM dd_new_Q R0, dd_new_Q R1, dd_delta_S R2, R R3, S R4
-        WHERE R2.a = R0.x  AND R3.a = R0.x  AND R3.b = R1.x  AND R4.a = R1.x  AND R0.x + (R1.x < 1000) UNION ALL 
+        WHERE R2.a = R0.x  AND R3.a = R0.x  AND R3.b = R1.x  AND R4.a = R1.x  AND (R0.x + R1.x) < 1000 UNION ALL 
           SELECT R0.id AS "dd_new_Q.R0.id" , R1.id AS "dd_new_Q.R1.id" 
           FROM dd_new_Q R0, dd_new_Q R1, dd_new_S R2, dd_delta_R R3, S R4
-        WHERE R2.a = R0.x  AND R3.a = R0.x  AND R3.b = R1.x  AND R4.a = R1.x  AND R0.x + (R1.x < 1000) UNION ALL 
+        WHERE R2.a = R0.x  AND R3.a = R0.x  AND R3.b = R1.x  AND R4.a = R1.x  AND (R0.x + R1.x) < 1000 UNION ALL 
           SELECT R0.id AS "dd_new_Q.R0.id" , R1.id AS "dd_new_Q.R1.id" 
           FROM dd_new_Q R0, dd_new_Q R1, dd_new_S R2, dd_new_R R3, dd_delta_S R4
-        WHERE R2.a = R0.x  AND R3.a = R0.x  AND R3.b = R1.x  AND R4.a = R1.x  AND R0.x + (R1.x < 1000)"""
+        WHERE R2.a = R0.x  AND R3.a = R0.x  AND R3.b = R1.x  AND R4.a = R1.x  AND (R0.x + R1.x) < 1000"""
           function: "Imply(dd_new_Q.R0.label, dd_new_Q.R1.label)"
           weight: "-10.0"
           dependencies: [ "ext_dd_new_R" ,  "ext_dd_delta_S_by_f" ,  "ext1_dd_delta_S_by_f" ,  "ext_dd_new_S" ,  "ext_dd_delta_S_by_f_1" ,  "ext_dd_delta_S" ]
