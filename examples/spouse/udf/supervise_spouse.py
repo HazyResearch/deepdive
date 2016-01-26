@@ -16,18 +16,37 @@ def supervise(
         tokens="text[]", lemmas="text[]", pos_tags="text[]", ner_tags="text[]",
         dep_types="text[]", dep_token_indexes="int[]",
     ):
-    # TODO ddlib generic features
-    # rules for positive examples
-    # TODO his wife
-    # TODO her husband
-    # negative examples
-    # TODO ?
+    # Rules for positive examples
+    # Rule 1: Sentences that contain (<Person Candidate 1>)([ A-Za-z]+)(wife|husband)([ A-Za-z]+)(<Person Candidate 2>)
+    
+    cand1_last_lemma = min(p1_end, p2_end)
+    cand2_first_lemma = max(p1_begin, p2_begin)
+    intermediate_lemma = lemma[cand1_last_lemma+1:cand2_first_lemma]
+    if ("wife" in intermediate_lemma) or ("husband" in intermediate_lemma):
+	yield [p1_id, p2_id, 1]
+    else:
+        pass
+    
+    
+    # Rule 2: Sentences that contain (<Person Candidate 1>)(and)?(<Person Candidate 2>)([ A-Za-z]+)(married)
+    cand1_last_lemma = min(p1_end, p2_end)
+    cand2_first_lemma = max(p1_begin, p2_begin)
+    cand2_last_lemma = max(p1_end,p2_end)
+    intermediate_lemma = tokens[cand1_last_lemma+1:cand2_first_lemma]
+    tail_lemmas = tokens[cand2_last_lemma+1:]
+    if ("and" in intermediate_lemma) and ("married" in tail_lemmas):
+	yield [p1_id, p2_id, 1]
+    else:
+	pass
 
-    # TODO remove below
-    x = random.random()
-    if x > 0.8:
-        yield [p1_id, p2_id, 1]
-    elif x < 0.2:
+    # Rules for negative examples
+    
+    # Rule 1: Sentences that contain familial relations (<Person Candidate 1>)([ A-Za-z]+)(brother|stster|father|mother)([ A-Za-z]+)(<Person Candidate 2>)
+    cand1_last_lemma = min(p1_end, p2_end)
+    cand2_first_lemma = max(p1_begin, p2_begin)
+    intermediate_lemma = lemma[cand1_last_lemma+1:cand2_first_lemma]
+    if ("mother" in intermediate_lemma) or ("father" in intermediate_lemma) or ("sister" in intermediate_lemma) or ("brother" in intermediate_lemma):
         yield [p1_id, p2_id, -1]
     else:
         pass
+
