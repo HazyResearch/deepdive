@@ -11,6 +11,12 @@ setup() {
     [ -e "$TESTDIR" ]
 }
 
+expectedOutputExistsFor() {
+    expectedOutput="$TESTDIR"/"$1".expected
+    actualOutput="${expectedOutput%.expected}".actual
+    [ -e "$expectedOutput" ]
+}
+
 ## tests for basic compilation and pretty-printing
 
 # check if example can be parsed
@@ -29,7 +35,7 @@ setup() {
 
 # check if print is idempotent
 @test "$it parses and prints what it prints (idempotent)" {
-    printed=$TESTDIR/printed.actual
+    printed="$TESTDIR"/printed.actual
     ddlog print "$TESTDIR"/input.ddlog >"$printed" || skip
     ddlog print "$printed" >"$TESTDIR"/printed-printed.actual
     diff "$printed" "$TESTDIR"/printed-printed.actual
@@ -38,27 +44,28 @@ setup() {
 
 # compare the compiled output with what's expected
 @test "$it compiles input as expected" {
-    expectedOutput=$TESTDIR/compile.expected
-    actualOutput=${expectedOutput%.expected}.actual
-    [ -e "$expectedOutput" ] || skip
+    expectedOutputExistsFor "compile" || skip
     ddlog compile "$TESTDIR"/input.ddlog >"$actualOutput"
     diff "$expectedOutput" "$actualOutput"
 }
 
 # compare the pretty-printed output with what's expected
 @test "$it prints input as expected" {
-    expectedOutput=$TESTDIR/print.expected
-    actualOutput=${expectedOutput%.expected}.actual
-    [ -e "$expectedOutput" ] || skip
+    expectedOutputExistsFor "print" || skip
     ddlog print "$TESTDIR"/input.ddlog >"$actualOutput"
+    diff "$expectedOutput" "$actualOutput"
+}
+
+# compare the desugared output with what's expected
+@test "$it desugars as expected" {
+    expectedOutputExistsFor "desugar" || skip
+    ddlog print --desugar "$TESTDIR"/input.ddlog >"$actualOutput"
     diff "$expectedOutput" "$actualOutput"
 }
 
 # compare the export-schema output with what's expected
 @test "$it exports schema and annotations as expected" {
-    expectedOutput=$TESTDIR/export-schema.expected
-    actualOutput=${expectedOutput%.expected}.actual
-    [ -e "$expectedOutput" ] || skip
+    expectedOutputExistsFor "export-schema" || skip
     ddlog export-schema "$TESTDIR"/input.ddlog >"$actualOutput"
     diff "$expectedOutput" "$actualOutput"
 }
@@ -68,18 +75,14 @@ setup() {
 
 # compare the compiled output of the incremental version with what's expected
 @test "$it compiles --incremental input as expected" {
-    expectedOutput=$TESTDIR/compile-incremental.expected
-    actualOutput=${expectedOutput%.expected}.actual
-    [ -e "$expectedOutput" ] || skip
+    expectedOutputExistsFor "compile-incremental" || skip
     ddlog compile --incremental "$TESTDIR"/input.ddlog >"$actualOutput"
     diff "$expectedOutput" "$actualOutput"
 }
 
 # compare the pretty-printed output of the incremental version with what's expected
 @test "$it prints --incremental input as expected" {
-    expectedOutput=$TESTDIR/print-incremental.expected
-    actualOutput=${expectedOutput%.expected}.actual
-    [ -e "$expectedOutput" ] || skip
+    expectedOutputExistsFor "print-incremental" || skip
     ddlog print --incremental "$TESTDIR"/input.ddlog >"$actualOutput"
     diff "$expectedOutput" "$actualOutput"
 }
@@ -88,9 +91,7 @@ setup() {
 
 # compare the compiled output of the merge version with what's expected
 @test "$it compiles --merge input as expected" {
-    expectedOutput=$TESTDIR/compile-merge.expected
-    actualOutput=${expectedOutput%.expected}.actual
-    [ -e "$expectedOutput" ] || skip
+    expectedOutputExistsFor "compile-merge" || skip
     ddlog compile --merge "$TESTDIR"/input.ddlog >"$actualOutput"
     diff "$expectedOutput" "$actualOutput"
 }
@@ -99,9 +100,7 @@ setup() {
 
 # compare the compiled output of the merge version with what's expected
 @test "$it compiles --materialization input as expected" {
-    expectedOutput=$TESTDIR/compile-materialization.expected
-    actualOutput=${expectedOutput%.expected}.actual
-    [ -e "$expectedOutput" ] || skip
+    expectedOutputExistsFor "compile-materialization" || skip
     ddlog compile --materialization "$TESTDIR"/input.ddlog >"$actualOutput"
     diff "$expectedOutput" "$actualOutput"
 }
