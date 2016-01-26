@@ -87,6 +87,11 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
       }
       case BinaryOpExpr(lhs, op, rhs) => s"(${print(lhs)} ${op} ${print(rhs)})"
       case TypecastExpr(lhs, rhs) => s"(${print(lhs)} :: ${rhs})"
+      case IfThenElseExpr(ifCondExprPairs, optElseExpr) => (
+        (ifCondExprPairs map {
+          case (ifCond, thenExpr) => s"if ${print(ifCond)} then ${print(thenExpr)}"
+        }) ++ List(optElseExpr map print mkString(""))
+      ) mkString(" else ")
     }
   }
 

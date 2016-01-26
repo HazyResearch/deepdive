@@ -23,6 +23,7 @@ case class NullConst extends ConstExpr
 case class FuncExpr(function: String, args: List[Expr], isAggregation: Boolean) extends Expr
 case class BinaryOpExpr(lhs: Expr, op: String, rhs: Expr) extends Expr
 case class TypecastExpr(lhs: Expr, rhs: String) extends Expr
+case class IfThenElseExpr(ifCondThenExprPairs: List[(Cond, Expr)], elseExpr: Option[Expr]) extends Expr
 
 sealed trait Pattern
 case class VarPattern(name: String) extends Pattern
@@ -181,7 +182,8 @@ class DeepDiveLogParser extends JavaTokenParsers {
       }
     }
 
-  def operator = "||" | "+" | "-" | "*" | "/" | "&" | "%"
+  def operator =
+    ( "||" | "+" | "-" | "*" | "/" | "&" | "%" )
   def typeOperator = "::"
   val aggregationFunctions = Set("MAX", "SUM", "MIN", "ARRAY_ACCUM", "ARRAY_AGG", "COUNT")
 
@@ -196,6 +198,10 @@ class DeepDiveLogParser extends JavaTokenParsers {
     ( functionName ~ "(" ~ rep1sep(expr, ",") ~ ")" ^^ {
         case (name ~ _ ~ args ~ _) => FuncExpr(name, args, (aggregationFunctions contains name))
       }
+    | "if" ~> (cond ~ ("then" ~> expr) ~ rep(elseIfExprs) ~ opt("else" ~> expr)) <~ "end" ^^ {
+        case (ifCond ~ thenExpr ~ elseIfs ~ optElseExpr) =>
+          IfThenElseExpr((ifCond, thenExpr) :: elseIfs, optElseExpr)
+      }
     | stringLiteralAsString ^^ { StringConst(_) }
     | double ^^ { DoubleConst(_) }
     | integer ^^ { IntConst(_) }
@@ -204,6 +210,11 @@ class DeepDiveLogParser extends JavaTokenParsers {
     | variableName ^^ { VarExpr(_) }
     | "(" ~> expr <~ ")"
     )
+
+  def elseIfExprs =
+    ("else" ~> "if" ~> cond) ~ ("then" ~> expr) ^^ {
+      case (ifCond ~ thenExpr) => (ifCond, thenExpr)
+    }
 
   // conditional expressions
   def compareOperator = "LIKE" | ">" | "<" | ">=" | "<=" | "!=" | "=" | "IS NOT" | "IS"

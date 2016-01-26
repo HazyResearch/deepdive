@@ -371,6 +371,11 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
         val resovledLhs = compileExpr(lhs)
         s"(${resovledLhs} :: ${rhs})"
       }
+      case IfThenElseExpr(ifCondThenExprPairs, optElseExpr) => {
+        (ifCondThenExprPairs map {
+          case (ifCond, thenExpr) => s"WHEN ${compileCond(ifCond)} THEN ${compileExpr(thenExpr)}"
+        }) ++ List(optElseExpr map compileExpr mkString("ELSE ", "", ""))
+      } mkString("CASE ", "\n     ", "\nEND")
     }
   }
 
