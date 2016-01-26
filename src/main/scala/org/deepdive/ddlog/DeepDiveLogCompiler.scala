@@ -375,7 +375,7 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
         (ifCondThenExprPairs map {
           case (ifCond, thenExpr) => s"WHEN ${compileCond(ifCond)} THEN ${compileExpr(thenExpr)}"
         }) ++ List(optElseExpr map compileExpr mkString("ELSE ", "", ""))
-      } mkString("CASE ", "\n     ", "\nEND")
+      } mkString("\nCASE ", "\n     ", "\nEND")
     }
   }
 
@@ -584,7 +584,7 @@ object DeepDiveLogCompiler extends DeepDiveLogHandler {
         if (stmt.supervision != None) {
           if (stmt.q.bodies.length > 1) ss.error(s"Scoping rule does not allow disjunction.\n")
           val headStr = qc.generateSQLHead(NoAlias)
-          val labelCol = qc.compileVariable(stmt.supervision.get)
+          val labelCol = qc.compileExpr(stmt.supervision.get)
           inputQueries += s"""SELECT DISTINCT ${ headStr }, 0 AS id, ${labelCol} AS label
           ${ qc.generateSQLBody(cqBody) }
           """

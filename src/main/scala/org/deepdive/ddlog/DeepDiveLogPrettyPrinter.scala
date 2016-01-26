@@ -136,7 +136,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
     case b: QuantifiedBody => print(b)
   }
 
-  def print(cq: ConjunctiveQuery, supervision: String = ""): String = {
+  def print(cq: ConjunctiveQuery): String = {
 
     def printBodyList(b: List[Body]) = {
       s"${(b map print).mkString(",\n    ")}"
@@ -149,7 +149,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
     val headStrTmp  = cq.headTerms map print mkString(", ")
     val headStr     = if (headStrTmp isEmpty) "" else s"(${headStrTmp})"
 
-    headStr + distinctStr + limitStr + supervision + " :-\n    " + bodyStr
+    headStr + distinctStr + limitStr + " :-\n    " + bodyStr
   }
 
   def print(a: HeadAtom) : String = {
@@ -172,8 +172,8 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   }
 
   def print(stmt: ExtractionRule): String = {
-      var supervision = stmt.supervision map (s => s" = ${s}") getOrElse("");
-      stmt.headName + print(stmt.q, supervision) + ".\n"
+    (stmt.supervision map (s => s"@label(${print(s)})\n") getOrElse("")) +
+      stmt.headName + print(stmt.q) + ".\n"
   }
 
   def print(stmt: FunctionCallRule): String = {

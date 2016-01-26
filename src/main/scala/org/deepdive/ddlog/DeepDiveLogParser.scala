@@ -101,7 +101,7 @@ case class SchemaDeclaration( a : Attribute
                             ) extends Statement // atom and whether this is a query relation.
 case class FunctionDeclaration( functionName: String, inputType: FunctionInputOutputType,
   outputType: FunctionInputOutputType, implementations: List[FunctionImplementationDeclaration]) extends Statement
-case class ExtractionRule(headName: String, q : ConjunctiveQuery, supervision: Option[String] = None) extends Statement // Extraction rule
+case class ExtractionRule(headName: String, q : ConjunctiveQuery, supervision: Option[Expr] = None) extends Statement // Extraction rule
 case class FunctionCallRule(output: String, function: String, q : ConjunctiveQuery, mode: Option[String], parallelism: Option[Int]) extends Statement // Extraction rule
 case class InferenceRule(head: InferenceRuleHead, q : ConjunctiveQuery, weights : FactorWeight, mode: Option[String] = None) extends Statement // Weighted rule
 
@@ -316,29 +316,17 @@ class DeepDiveLogParser extends JavaTokenParsers {
 
   def parallelism = "@parallelism" ~> "(" ~> integer <~ ")"
 
-  def supervision = "=" ~> (variableName | "TRUE" | "FALSE")
-
-  def conjunctiveQueryWithSupervision  = // returns Parser[String], Parser[ConjunctiveQuery]
-    cqHeadTerms ~ opt("*") ~ opt("|" ~> decimalNumber) ~ opt(supervision) ~ ":-" ~ rep1sep(cqConjunctiveBody, ";") ^^ {
-      case (head ~ isDistinct ~ limit ~ sup ~ ":-" ~ disjunctiveBodies) =>
-        (sup, ConjunctiveQuery(head, disjunctiveBodies, isDistinct != None, limit map (_.toInt)))
-  }
-
   def functionCallRule : Parser[FunctionCallRule] =
     opt(functionMode) ~ opt(parallelism) ~ relationName ~ "+=" ~ functionName ~ conjunctiveQuery ^^ {
       case (mode ~ parallelism ~ out ~ _ ~ func ~ cq) => FunctionCallRule(out, func, cq, mode, parallelism)
     }
 
-  def oldstyleSupervision = "@label" ~> "(" ~> (variableName | "TRUE" | "FALSE") <~ ")"
+  def supervisionAnnotation = ("@label" | "@supervise") ~> "(" ~> expr <~ ")"
 
   def extractionRule =
-  ( relationName ~ conjunctiveQueryWithSupervision ^^ {
-      case (head ~ cq) => ExtractionRule(head, cq._2, cq._1)
+    opt(supervisionAnnotation) ~ relationName ~ conjunctiveQuery ^^ {
+      case (sup ~ head ~ cq) => ExtractionRule(head, cq, sup)
     }
-  | oldstyleSupervision ~ relationName ~ conjunctiveQuery ^^ {
-      case (sup ~ head ~ cq) => ExtractionRule(head, cq, Some(sup))
-    }
-  )
 
   def factorWeight = "@weight" ~> "(" ~> rep1sep(expr, ",") <~ ")" ^^ { FactorWeight(_) }
   def inferenceMode = "@mode" ~> commit("(" ~> inferenceModeType <~ ")" ^? ({
