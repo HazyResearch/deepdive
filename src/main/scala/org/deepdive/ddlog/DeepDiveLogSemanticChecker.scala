@@ -35,6 +35,7 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
     checkQuantifiedBody(stmt)
     checkWeight(stmt)
     checkVariableBindings(stmt)
+    checkSupervisionLabelType(stmt)
   }
 
   // iterate over all atoms contained in the body list and apply the checker
@@ -180,6 +181,29 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
     body match {
       case qb: QuantifiedBody => qb.bodies.foreach { b => checkSupervisionLabelType(s, expType, supVariable, b)}
       case b: BodyAtom =>  checkSupervisionLabelType(s, expType, supVariable, b)
+      case _ =>
+    }
+  }
+
+  def checkSupervisionLabelType(stmt: Statement) {
+    stmt match {
+      case s: ExtractionRule if (schemaDeclaration contains s.headName) && (schemaDeclaration(s.headName).variableType nonEmpty) => {
+        val headType = schemaDeclaration(s.headName).variableType.get
+        s.supervision foreach {
+          case b: BooleanConst => {
+            if (headType != BooleanType) {
+              error(s, s"Supervision column ${s.supervision} should be boolean type but is ${headType} type")
+            }
+          }
+          case VarExpr(varname) =>
+            s.q.bodies.foreach { bodies: List[Body] =>
+              bodies.foreach { b =>
+                checkSupervisionLabelType(s, headType, VarPattern(varname), b) }
+            }
+          case _ =>
+            // XXX assume the rest of the expressions are correct
+        }
+      }
       case _ =>
     }
   }
