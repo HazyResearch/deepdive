@@ -53,7 +53,7 @@ case class RuleAnnotation(name: String, args: List[String])
 
 // condition
 sealed trait Cond extends Body
-case class ComparisonCond(lhs: Expr, op: String, rhs: Expr) extends Cond
+case class ExprCond(expr: Expr) extends Cond
 case class NegationCond(cond: Cond) extends Cond
 case class CompoundCond(lhs: Cond, op: LogicOperator.LogicOperator, rhs: Cond) extends Cond
 
@@ -190,11 +190,12 @@ class DeepDiveLogParser extends JavaTokenParsers {
   // expression
   def expr : Parser[Expr] =
     ( lexpr ~ operator ~ expr ^^ { case (lhs ~ op ~ rhs) => BinaryOpExpr(lhs, op, rhs) }
+    | lexpr ~ compareOperator ~ expr ^^ { case (lhs ~ op ~ rhs) => BinaryOpExpr(lhs, op, rhs) }
     | lexpr ~ typeOperator ~ columnType ^^ { case (lhs ~ _ ~ rhs) => TypecastExpr(lhs, rhs) }
     | lexpr
     )
 
-  def lexpr : Parser[Expr] =
+  def lexpr =
     ( functionName ~ "(" ~ rep1sep(expr, ",") ~ ")" ^^ {
         case (name ~ _ ~ args ~ _) => FuncExpr(name, args, (aggregationFunctions contains name))
       }
@@ -235,9 +236,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
     | bcond
     )
   def bcond : Parser[Cond] =
-    ( expr ~ compareOperator ~ expr ^^ { case (lhs ~ op ~ rhs) =>
-        ComparisonCond(lhs, op, rhs)
-      }
+    ( expr ^^ ExprCond
     | "[" ~> cond <~ "]"
     )
 
@@ -298,7 +297,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
              FunctionDeclaration(a, inTy, outTy, implementationDecls)
     }
 
-  def cqBody: Parser[Body] = cond | quantifiedBody | atom
+  def cqBody: Parser[Body] = quantifiedBody | atom | cond
 
   def cqConjunctiveBody: Parser[List[Body]] = rep1sep(cqBody, ",")
 

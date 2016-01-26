@@ -214,6 +214,10 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
     case FuncExpr(function, args, agg) => args flatMap collectUsedVars toSet
     case BinaryOpExpr(lhs, op, rhs) => collectUsedVars(lhs) ++ collectUsedVars(rhs)
     case TypecastExpr(lhs, rhs) => collectUsedVars(lhs)
+    case IfThenElseExpr(ifCondThenExprs, optElseExpr) =>
+      (ifCondThenExprs flatMap { case (ifCond, thenExpr) =>
+        collectUsedVars(ifCond) ++ collectUsedVars(thenExpr)
+      } toSet) ++ (optElseExpr.toSet flatMap { e:Expr => collectUsedVars(e) })
     case _ => Set()
   }
 
@@ -229,7 +233,7 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
   }
 
   def collectUsedVars(cond: Cond) : Set[String] = cond match {
-    case ComparisonCond(lhs, op, rhs) => collectUsedVars(lhs) ++ collectUsedVars(rhs)
+    case ExprCond(e)                  => collectUsedVars(e)
     case CompoundCond(lhs, op, rhs)   => collectUsedVars(lhs) ++ collectUsedVars(rhs)
     case NegationCond(c)              => collectUsedVars(c)
   }
@@ -259,7 +263,7 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
       if (varUndefined nonEmpty) error(stmt, s"Variable ${varUndefined mkString(", ")} must have bindings")
     }
     stmt match {
-      case s: ExtractionRule => checkCq(s.q)
+      case s: ExtractionRule => checkCq(s.q, (s.supervision.toSet flatMap { e:Expr => collectUsedVars(e) }))
       case s: InferenceRule  => checkCq(s.q, (s.weights.variables flatMap collectUsedVars toSet))
       case _ =>
     }

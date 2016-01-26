@@ -349,7 +349,8 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
   }
 
   // resolve an expression
-  def compileExpr(e: Expr) : String = {
+  def compileExpr(e: Expr) : String = compileExpr(e, 0)
+  def compileExpr(e: Expr, level: Int) : String = {
     e match {
       case VarExpr(name) => compileVariable(name)
       case NullConst() => "NULL"
@@ -363,9 +364,10 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
         resolved
       }
       case BinaryOpExpr(lhs, op, rhs) => {
-        val resovledLhs = compileExpr(lhs)
-        val resovledRhs = compileExpr(rhs)
-        s"(${resovledLhs} ${op} ${resovledRhs})"
+        val resovledLhs = compileExpr(lhs, level + 1)
+        val resovledRhs = compileExpr(rhs, level + 1)
+        val sql = s"${resovledLhs} ${op} ${resovledRhs}"
+        if (level == 0) sql else s"(${sql})"
       }
       case TypecastExpr(lhs, rhs) => {
         val resovledLhs = compileExpr(lhs)
@@ -380,18 +382,19 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
   }
 
   // resolve a condition
-  def compileCond(cond: Cond) : String = {
+  def compileCond(cond: Cond) : String = compileCond(cond, 0)
+  def compileCond(cond: Cond, level: Int) : String = {
     cond match {
-      case ComparisonCond(lhs, op, rhs) =>
-        s"${compileExpr(lhs)} ${op} ${compileExpr(rhs)}"
-      case NegationCond(c) => s"(NOT ${compileCond(c)})"
+      case ExprCond(e) => compileExpr(e)
+      case NegationCond(c) => s"NOT ${compileCond(c, level + 1)}"
       case CompoundCond(lhs, op, rhs) => {
-        val resolvedLhs = s"${compileCond(lhs)}"
-        val resolvedRhs = s"${compileCond(rhs)}"
-        op match {
-          case LogicOperator.AND => s"(${resolvedLhs} AND ${resolvedRhs})"
-          case LogicOperator.OR  => s"(${resolvedLhs} OR ${resolvedRhs})"
+        val resolvedLhs = s"${compileCond(lhs, level + 1)}"
+        val resolvedRhs = s"${compileCond(rhs, level + 1)}"
+        val sql = op match {
+          case LogicOperator.AND => s"${resolvedLhs} AND ${resolvedRhs}"
+          case LogicOperator.OR  => s"${resolvedLhs} OR ${resolvedRhs}"
         }
+        if (level == 0) sql else s"(${sql})"
       }
       case _ => ""
     }

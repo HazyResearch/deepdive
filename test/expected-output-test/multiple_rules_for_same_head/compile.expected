@@ -65,7 +65,7 @@ FROM R R0
         deepdive.extraction.extractors.ext1_T_by_f {
           input: """ SELECT R0.a AS "R.R0.a", R0.b AS "R.R0.b"
 FROM R R0
-        WHERE (10 < R0.a AND R0.a < 20)
+        WHERE 10 < R0.a AND R0.a < 20
           """
           output_relation: "T"
           udf: ${APP_HOME}"//bin/false"
@@ -82,7 +82,7 @@ FROM R R0
         deepdive.extraction.extractors.ext2_T_by_f {
           input: """ SELECT R0.a AS "R.R0.a", R0.b AS "R.R0.b"
 FROM R R0
-        WHERE (100 < R0.a AND R0.a < 200)
+        WHERE 100 < R0.a AND R0.a < 200
           """
           output_relation: "T"
           udf: ${APP_HOME}"//bin/false"
@@ -171,7 +171,7 @@ FROM R R0
         WHERE R1.a = R0.x  AND R0.x > 1000"""
           function: "Imply(Q.R0.label)"
           weight: "?(dd_weight_column_0)"
-          dependencies: [ "ext1_S_by_f" ,  "ext_S" ,  "ext_S_by_f_1" ,  "ext_S_by_f" ]
+          dependencies: [ "ext1_S_by_f" ,  "ext_S_by_f_1" ,  "ext_S" ,  "ext_S_by_f" ]
           input_relations: [
             Q
             S
@@ -186,7 +186,7 @@ FROM R R0
         WHERE R1.a = R0.x  AND R0.x = 0"""
           function: "Imply(Q.R0.label)"
           weight: "1.0"
-          dependencies: [ "ext1_S_by_f" ,  "ext_S" ,  "ext_S_by_f_1" ,  "ext_S_by_f" ]
+          dependencies: [ "ext1_S_by_f" ,  "ext_S_by_f_1" ,  "ext_S" ,  "ext_S_by_f" ]
           input_relations: [
             Q
             S
@@ -201,7 +201,7 @@ FROM R R0
         WHERE R2.a = R0.x  AND R3.a = R0.x  AND R3.b = R1.x  AND R4.a = R1.x """
           function: "Imply(Q.R0.label, Q.R1.label)"
           weight: "?(dd_weight_column_0)"
-          dependencies: [ "ext1_S_by_f" ,  "ext_S" ,  "ext_S_by_f_1" ,  "ext_S_by_f" ]
+          dependencies: [ "ext1_S_by_f" ,  "ext_S_by_f_1" ,  "ext_S" ,  "ext_S_by_f" ]
           input_relations: [
             Q
             S
@@ -214,10 +214,10 @@ FROM R R0
           input_query: """
           SELECT R0.id AS "Q.R0.id" , R1.id AS "Q.R1.id" 
           FROM Q R0, Q R1, S R2, R R3, S R4
-        WHERE R2.a = R0.x  AND R3.a = R0.x  AND R3.b = R1.x  AND R4.a = R1.x  AND (R0.x + R1.x) < 1000"""
+        WHERE R2.a = R0.x  AND R3.a = R0.x  AND R3.b = R1.x  AND R4.a = R1.x  AND R0.x + (R1.x < 1000)"""
           function: "Imply(Q.R0.label, Q.R1.label)"
           weight: "-10.0"
-          dependencies: [ "ext1_S_by_f" ,  "ext_S" ,  "ext_S_by_f_1" ,  "ext_S_by_f" ]
+          dependencies: [ "ext1_S_by_f" ,  "ext_S_by_f_1" ,  "ext_S" ,  "ext_S_by_f" ]
           input_relations: [
             Q
             S

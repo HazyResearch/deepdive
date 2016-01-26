@@ -12,50 +12,50 @@ c(s text,
 Q(("test" :: TEXT), 123, id, unnest(y)) * :-
     a(id),
     b(id, x, y, z),
-    c((x || y), 10, "foo"),
+    c(x || y, 10, "foo"),
     [z > 100; [[!z < 20], z < 50]].
 
 P(y, z, MAX(w)) :-
     a(x),
     b(x, y, z, w).
 
-A((x + (w * (x + w)))) :-
+A(x + (w * (x + w))) :-
     b(x, y, z, w).
 
-B(func((x + (w + x)))) :-
+B(func(x + (w + x))) :-
     b(x, y, z, w).
 
 C(func(func(func(x)))) :-
     b(x, y, z, w).
 
-D((func((x * func2((w + x)))) + x)) :-
+D(func(x * func2(w + x)) + x) :-
     b(x, y, z, w).
 
 E((x :: INT)) :-
     b(x, y, z, w).
 
-F(((x :: INT) + (w :: INT))) :-
+F((x :: INT) + (w :: INT)) :-
     b(x, y, z, w).
 
 G(x) :-
     b(x, y, z, w),
-    (x + w) = 100.
+    x + (w = 100).
 
 H(x) :-
     b(x, y, z, w),
-    [(x + w) = 100, x > 50].
+    [x + (w = 100), x > 50].
 
 I(x) :-
     b(x, y, z, w),
-    [(x + w) = 100; [x > 50, w < 10]].
+    [x + (w = 100); [x > 50, w < 10]].
 
 J(x) :-
     b(x, y, z, w),
-    [(x + w) = 100; [!x > 50]].
+    [x + (w = 100); [!x > 50]].
 
 K(x) :-
     b(x, y, z, w),
-    [(x + w) = 100, [[!x > 50]; x = 40]].
+    [x + (w = 100), [[!x > 50]; x = 40]].
 
 L(x) * | 100 :-
     b(x, y, z, w).

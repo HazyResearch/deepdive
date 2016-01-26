@@ -73,7 +73,8 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   }
 
   // print an expression
-  def print(e: Expr) : String = {
+  def print(e: Expr) : String = print(e, 0)
+  def print(e: Expr, level: Int) : String = {
     e match {
       case VarExpr(name) => name
       case NullConst() => "NULL"
@@ -85,12 +86,15 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
         val resolvedArgs = args map (x => print(x))
         s"${function}(${resolvedArgs.mkString(", ")})"
       }
-      case BinaryOpExpr(lhs, op, rhs) => s"(${print(lhs)} ${op} ${print(rhs)})"
+      case BinaryOpExpr(lhs, op, rhs) => {
+        val p = s"${print(lhs, level + 1)} ${op} ${print(rhs, level + 1)}"
+        if (level == 0) p else s"(${p})"
+      }
       case TypecastExpr(lhs, rhs) => s"(${print(lhs)} :: ${rhs})"
       case IfThenElseExpr(ifCondExprPairs, optElseExpr) => (
         (ifCondExprPairs map {
           case (ifCond, thenExpr) => s"if ${print(ifCond)} then ${print(thenExpr)}"
-        }) ++ List(optElseExpr map print mkString(""))
+        }) ++ (optElseExpr map print toList)
       ) mkString("", "\n\telse ", "\n\tend")
     }
   }
@@ -119,7 +123,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   // print a condition
   def print(cond: Cond) : String = {
     cond match {
-      case ComparisonCond(lhs, op, rhs) => s"${print(lhs)} ${op} ${print(rhs)}"
+      case ExprCond(e) => print(e)
       case NegationCond(c) => s"[!${print(c)}]"
       case CompoundCond(lhs, op, rhs) => {
         op match {
