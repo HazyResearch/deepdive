@@ -4,9 +4,10 @@ import random
 
 @tsv_extractor
 @returns(lambda
-        p1_id = "text"   ,
-        p2_id = "text"   ,
-        label = "int",
+        p1_id =   "text",
+        p2_id =   "text",
+        label =   "int" ,
+        rule_id = "text",
     :[])
 # heuristic rules for finding positive/negative examples of spouse relationship mentions
 def supervise(
@@ -23,7 +24,7 @@ def supervise(
     cand2_first_lemma = max(p1_begin, p2_begin)
     intermediate_lemma = lemma[cand1_last_lemma+1:cand2_first_lemma]
     if ("wife" in intermediate_lemma) or ("husband" in intermediate_lemma):
-	yield [p1_id, p2_id, 1]
+	yield [p1_id, p2_id, 1, 'pos:wife_husband_between']
     else:
         pass
     
@@ -35,7 +36,7 @@ def supervise(
     intermediate_lemma = tokens[cand1_last_lemma+1:cand2_first_lemma]
     tail_lemmas = tokens[cand2_last_lemma+1:]
     if ("and" in intermediate_lemma) and ("married" in tail_lemmas):
-	yield [p1_id, p2_id, 1]
+	yield [p1_id, p2_id, 1, 'pos:married_after']
     else:
 	pass
 
@@ -46,7 +47,7 @@ def supervise(
     cand2_first_lemma = max(p1_begin, p2_begin)
     intermediate_lemma = lemma[cand1_last_lemma+1:cand2_first_lemma]
     if ("mother" in intermediate_lemma) or ("father" in intermediate_lemma) or ("sister" in intermediate_lemma) or ("brother" in intermediate_lemma):
-        yield [p1_id, p2_id, -1]
+        yield [p1_id, p2_id, -1, 'neg:familial_between']
     else:
         pass
 
