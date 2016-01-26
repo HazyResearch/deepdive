@@ -895,8 +895,10 @@ ${if (createTable) {
         case MATERIALIZATION => parsedProgram
         case MERGE => DeepDiveLogMergeDeriver.derive(parsedProgram)
       }
+    // desugar
+    val programToCompileDesugared = DeepDiveLogDesugarRewriter.derive(programToCompile)
     // take an initial pass to analyze the parsed program
-    val state = new CompilationState( programToCompile, config )
+    val state = new CompilationState( programToCompileDesugared, config )
 
     val body = new ListBuffer[String]()
     config.mode match {
@@ -914,7 +916,7 @@ ${if (createTable) {
       :::
       compileVariableKey(state)
       :::
-      compileVariableSchema(programToCompile, state)
+      compileVariableSchema(programToCompileDesugared, state)
       :::
       body.toList
       :::
