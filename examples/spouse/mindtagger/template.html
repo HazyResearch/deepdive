@@ -18,7 +18,7 @@
               <th>Feature</th>
           </tr></thead>
           <tbody>
-            <tr ng-repeat="feature in item.features | parsedArray:'postgres'">
+            <tr ng-repeat="feature in item.features | parsedArray:'postgres' track by $index">
               <td class="text-right">{{(item.weights | parsedArray:'postgres')[$index] | number:6}}</td>
               <th>{{feature}}</th>
             </tr>

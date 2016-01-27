@@ -23,7 +23,7 @@ def supervise(
 
   # Constants
   MARRIED = frozenset(["wife", "husband"])
-  FAMILY = frozenset(["mother", "father", "sister", "brother"])
+  FAMILY = frozenset(["mother", "father", "sister", "brother", "brother-in-law"])
   MAX_DIST = 10
 
   # Common data objects
