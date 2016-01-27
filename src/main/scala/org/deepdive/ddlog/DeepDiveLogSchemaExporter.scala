@@ -60,10 +60,6 @@ object DeepDiveLogSchemaExporter extends DeepDiveLogHandler {
   override def run(parsedProgram: DeepDiveLog.Program, config: DeepDiveLog.Config) = {
     var programToExport = parsedProgram  // TODO derive the program based on config.mode?
 
-    if (config.useDesugared) {
-      programToExport = DeepDiveLogDesugarRewriter.derive(programToExport)
-    }
-
     // first find out names of the relations that have SchemaDeclaration
     val declaredNames = programToExport collect {
       case decl: SchemaDeclaration => decl.a.name

@@ -57,8 +57,15 @@ trait DeepDiveLogHandler {
   def run(config: DeepDiveLog.Config): Unit = try {
     // parse each file into a single program
     val parsedProgram = parseFiles(config.inputFiles)
+
+    // desugar if needed
+    val programToRun =
+      if (config.useDesugared)
+        DeepDiveLogDesugarRewriter.derive(parsedProgram)
+      else parsedProgram
+
     // run handler with the parsed program
-    run(parsedProgram, config)
+    run(programToRun, config)
   } catch {
     case e: RuntimeException =>
       if (sys.env contains "DDLOG_STACK_TRACE") throw e
