@@ -1,3 +1,8 @@
 /run
 /udf/bazaar
 /search
+/mindbender/*.js
+/mindbender/*.js.map
+/mindtagger/.mindtagger.conf.json
+/mindtagger/input.csv
+/mindtagger/tags.json
