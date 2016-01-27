@@ -203,7 +203,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
         case MERGE => DeepDiveLogMergeDeriver.derive(parsedProgram)
       }
     // desugar if requested
-    if (config.printDesugared)
+    if (config.useDesugared)
       programToPrint = DeepDiveLogDesugarRewriter.derive(programToPrint)
     // pretty print in original syntax
     programToPrint foreach {stmt => println(print(stmt))}
