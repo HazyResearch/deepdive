@@ -44,8 +44,12 @@ num_processes=${DEEPDIVE_NUM_PROCESSES:-${num_processes:-$(
 # declare all input arguments
 declare -- "$@"
 
-REMOTE_DEEPDIVE_APP="$remote_home/$(basename $DEEPDIVE_APP)"
 ssh_info="${ssh_user}@${ssh_host}"
+REMOTE_DEEPDIVE_APP="$remote_home/$(basename $DEEPDIVE_APP)"
+REMOTE_SH_DIR="$REMOTE_DEEPDIVE_APP/run/$DEEPDIVE_CURRENT_PROCESS_NAME/remote.sh"
+REMOTE_IN_DIR="$REMOTE_DEEPDIVE_APP/run/$DEEPDIVE_CURRENT_PROCESS_NAME/remote.in"
+REMOTE_OUT_DIR="$REMOTE_DEEPDIVE_APP/run/$DEEPDIVE_CURRENT_PROCESS_NAME/remote.out"
+REMOTE_ERR_DIR="$REMOTE_DEEPDIVE_APP/run/$DEEPDIVE_CURRENT_PROCESS_NAME/remote.err"
 
 # show configuration
 echo "Executing with the following configuration:"
@@ -53,6 +57,7 @@ echo " num_processes=$num_processes"
 echo " ssh_user=$ssh_user"
 echo " ssh_host=$ssh_host"
 echo " remote_home=$remote_home"
+echo " poll_period_secs=$poll_period_secs"
 
 echo "DEEPDIVE_APP = $DEEPDIVE_APP"
 echo "REMOTE_DEEPDIVE_APP = $remote_home/$(basename $DEEPDIVE_APP)"
@@ -61,7 +66,9 @@ echo "DEEPDIVE_CURRENT_PROCESS_NAME = $DEEPDIVE_CURRENT_PROCESS_NAME"
 # Copy application folder to remote shared directory
 # This fails if $DEEPDIVE_APP exists at $remote_home. What do?
 echo "Copying deepdive app to remote node"
-scp -r $DEEPDIVE_APP $ssh_info:$remote_home
+rsync -aH $DEEPDIVE_APP $ssh_info:$remote_home
+
+set -x
 
 # Prepare submission script
 # XXX there are conditional branches below depending on whether input_sql
@@ -71,33 +78,55 @@ scp -r $DEEPDIVE_APP $ssh_info:$remote_home
 # 2) input-only command which has no output to the database and streams from the database
 # 3) output-only command which has no input from the database and streams to the database
 # 4) database-independent command which simply runs in parallel
+
+# We can use the environment variable PBS_ARRAYID when submitting this job as a job 
+# array.
 echo "Preparing submission script at remote node"
 {
     echo "#PBS -N $DEEPDIVE_CURRENT_PROCESS_NAME"
-    echo "#PBS -o $REMOTE_DEEPDIVE_APP/run/$DEEPDIVE_CURRENT_PROCESS_NAME/remote.out"
+    echo "#PBS -o $REMOTE_OUT_DIR"
+    echo "#PBS -e $REMOTE_ERR_DIR"
     echo
     echo "export DEEPDIVE_APP=\"$REMOTE_DEEPDIVE_APP\""
-    echo '"$SHELL"'" -c \"$command\" < \"$remote_home/$DEEPDIVE_CURRENT_PROCESS_NAME/remote.in\""
+    echo '"$SHELL"'" -c \"$command\" < \"$REMOTE_IN_DIR\""
 } | 
-ssh $ssh_info "cat > $REMOTE_DEEPDIVE_APP/run/$DEEPDIVE_CURRENT_PROCESS_NAME/remote.sh"
+ssh $ssh_info "cat > $REMOTE_SH_DIR"
 
 # Prepare input data
 if [[ -n $input_sql ]]; then
     deepdive-sql eval "$input_sql" format="$DEEPDIVE_LOAD_FORMAT" |
-    ssh $ssh_info "cat > $REMOTE_DEEPDIVE_APP/run/$DEEPDIVE_CURRENT_PROCESS_NAME/remote.in"
+    ssh $ssh_info "cat > $REMOTE_IN_DIR"
 fi
 
-# Submit job
-JOB_ID=$(ssh $ssh_info "qsub -V $REMOTE_DEEPDIVE_APP/run/$DEEPDIVE_CURRENT_PROCESS_NAME/remote.sh")
-echo "Job submitted"
+# Submit job to remote node. 
+compute_submit() {
+  # XXX: These are the correct commands, but need workaround for Macs due to 
+  # Kerberos issue. 
+  #ssh $ssh_info "qsub -V $REMOTE_DEEPDIVE_APP/run/$DEEPDIVE_CURRENT_PROCESS_NAME/remote.sh"
 
-# Poll for status
-poll_status() {
+  # XXX: Right now, using this script to allow qsub to run, however this will
+  # prompt user for password in the middle of the script, not elegant. 
+  ssh $ssh_info "kinit -r 30d; qsub -V $REMOTE_SH_DIR" 
+}
+
+# Poll for status. Should return I for incomplete, S for success, or F for fail.
+compute_status() {
   ssh $ssh_info "qstat -f -1 $JOB_ID | grep job_state | sed 's/.*job_state = //'"
 }
 
+# Submit job
+exec 5>&1
+JOB_ID="$(compute_submit | tee >(cat - >&5) | grep $ssh_host)"
+echo "Job ID: '$JOB_ID'"
+if [[ "$JOB_ID" != *"$ssh_host" ]]; then
+  echo "Job submission failed with the following error:"
+  printf "$JOB_ID"
+  error
+fi
+echo "Job submitted"
+
 echo -n "Waiting for job id $JOB_ID to complete"
-while [ "$(poll_status)" != "S" ]; do
+while [[ "$(compute_status)" != "S" ]] && ssh -q $ssh_info "[[ ! -f $REMOTE_OUT_DIR ]]"; do
   echo -n "."
   sleep $poll_period_secs
 done
@@ -116,7 +145,7 @@ if [[ -n $output_relation ]]; then
     deepdive-create table-if-not-exists "$output_relation"
     db-create-table-like "$output_relation_tmp" "$output_relation"
 
-    ssh $ssh_info "cat $remote_home/$DEEPDIVE_CURRENT_PROCESS_NAME.out" |
+    ssh $ssh_info "cat $REMOTE_OUT_DIR" |
 
     # use mkmimo again to merge outputs of multiple processes into a single stream
     #mkmimo process-*.output \> /dev/stdout |
