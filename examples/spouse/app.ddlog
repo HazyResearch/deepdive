@@ -191,8 +191,9 @@ spouse_label_resolved(p1_id, p2_id, SUM(vote)) :- spouse_label(p1_id, p2_id, vot
 has_spouse?(p1_id text, p2_id text).
 
 # We specify the labels for the spouse relation
-@label(if l > 0 then TRUE else if l < 0 then FALSE else NULL end)
-has_spouse(p1_id, p2_id) :- spouse_label_resolved(p1_id, p2_id, l).
+has_spouse(p1_id, p2_id) = if l > 0 then TRUE
+                      else if l < 0 then FALSE
+                      else NULL end :- spouse_label_resolved(p1_id, p2_id, l).
 
 # Features
 @weight(f)
