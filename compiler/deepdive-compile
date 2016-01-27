@@ -50,7 +50,7 @@ STEP " run/compiled/schema.json"
 touch run/"$compileDir"/schema.json run/"$compileDir"/deepdive.conf
 if [[ -r app.ddlog ]]; then
     STEP "  from app.ddlog"
-    ddlog export-schema app.ddlog
+    ddlog export-schema --desugar app.ddlog
 else
     echo '{}'
 fi |
@@ -67,7 +67,7 @@ STEP " run/compiled/deepdive.conf"
 # compile DDlog rules
 if [[ -r app.ddlog ]]; then
     STEP "  from app.ddlog"
-    ddlog compile app.ddlog
+    ddlog compile --desugar app.ddlog
 fi
 # append user's deepdive.conf
 if [[ -r deepdive.conf ]]; then
