@@ -40,7 +40,7 @@ case class OuterModifier extends BodyModifier
 case class AllModifier extends BodyModifier
 
 case class Attribute(name : String, terms : List[String], types : List[String], annotations : List[List[Annotation]])
-case class ConjunctiveQuery(headTerms: List[Expr], bodies: List[List[Body]], isDistinct: Boolean, limit: Option[Int])
+case class ConjunctiveQuery(headTerms: List[Expr], bodies: List[List[Body]], isDistinct: Boolean = false, limit: Option[Int] = None)
 case class Column(name : String // name of the column
                  , t : String // type of the column
                  , annotation: List[Annotation] = List.empty // optional annotation
