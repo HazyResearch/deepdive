@@ -1,0 +1,18 @@
+<a mb-search-link="{{extraction.p1.mention_text}}"><strong>{{extraction.p1.mention_text}}</strong></a>
+--
+<a mb-search-link="{{extraction.p2.mention_text}}"><strong>{{extraction.p2.mention_text}}</strong></a>
+<br> E=<strong>{{extraction.expectation}}</strong>
+<br><small class="text-muted">See all
+    <a mb-search-link='feature:* "{{extraction.p1_id}}@{{extraction.p2_id}}"'>features</a>
+    /
+    <a mb-search-link='label:*   "{{extraction.p1_id}}@{{extraction.p2_id}}"'>labels</a>
+</small>
+
+<small class="text-muted">
+    in <a mb-search-only="sentences" mb-search-link="{{extraction.p1.doc_id}} sentence_index:{{extraction.p1.sentence_index}}">sentence {{extraction.p1.sentence_index}}</a>
+    in <a mb-search-only="articles"  mb-search-link="{{extraction.p1.doc_id}}">article({{extraction.p1.doc_id}})</a>:
+</small>
+<div mindtagger-word-array="source.tokens">
+    <mindtagger-highlight-words from="extraction.p1.begin_index" to="extraction.p1.end_index" with-style="background-color: yellow;"/>
+    <mindtagger-highlight-words from="extraction.p2.begin_index" to="extraction.p2.end_index" with-style="background-color: cyan;"/>
+</div>
