@@ -86,9 +86,14 @@ spouse_candidate(
     p2_name text
 ).
 
+num_people(doc_id, sentence_index, COUNT(p)) :-
+    person_mention(p, _, doc_id, sentence_index, _, _).
+
 spouse_candidate(p1, p1_name, p2, p2_name) :-
+    num_people(same_doc, same_sentence, num_p),
     person_mention(p1, p1_name, same_doc, same_sentence, p1_begin, _),
     person_mention(p2, p2_name, same_doc, same_sentence, p2_begin, _),
+    num_p < 5,
     p1_begin != p2_begin.
 ###############################################################################
 
