@@ -1,3 +1,19 @@
+## Random variable to predict #################################################
+
+# This application's goal is to predict whether a given pair of person mention
+# are indicating a spouse relationship or not.
+@extraction
+has_spouse?(
+    @key
+    @references(relation="person_mention", column="mention_id", alias="p1")
+    p1_id text,
+    @key
+    @references(relation="person_mention", column="mention_id", alias="p2")
+    p2_id text
+).
+
+## Input Data #################################################################
+
 # example DeepDive application for finding spouse relationships in news articles
 @source
 articles(
@@ -20,31 +36,33 @@ spouses_dbpedia(
 ## NLP markup #################################################################
 @source
 sentences(
-        @key
-        @distributed_by
-        #@references(relation="articles", column="id")
-        doc_id         text,
-        @key
-        sentence_index int,
-        @searchable
-        sentence_text  text,
-        tokens         text[],
-        lemmas         text[],
-        pos_tags       text[],
-        ner_tags       text[],
-        doc_offsets    int[],
-        dep_types      text[],
-        dep_tokens     int[]
-        ).
+    @key
+    @distributed_by
+    #@references(relation="articles", column="id")
+    doc_id         text,
+    @key
+    sentence_index int,
+    @searchable
+    sentence_text  text,
+    tokens         text[],
+    lemmas         text[],
+    pos_tags       text[],
+    ner_tags       text[],
+    doc_offsets    int[],
+    dep_types      text[],
+    dep_tokens     int[]
+).
 
-function nlp_markup over ( doc_id text, content text )
-                 returns rows like sentences
-  implementation "udf/nlp_markup.sh" handles tsv lines.
+function nlp_markup over (
+        doc_id text,
+        content text
+    ) returns rows like sentences
+    implementation "udf/nlp_markup.sh" handles tsv lines.
 
 sentences +=
   nlp_markup(doc_id, content) :-
   articles(doc_id, content).
-###############################################################################
+
 
 ## Candidate mapping ##########################################################
 @extraction
@@ -67,8 +85,7 @@ function map_person_mention over (
         sentence_index int,
         tokens text[],
         ner_tags text[]
-    )
-    returns rows like person_mention
+    ) returns rows like person_mention
     implementation "udf/map_person_mention.py" handles tsv lines.
 
 person_mention += map_person_mention(
@@ -93,13 +110,13 @@ spouse_candidate(p1, p1_name, p2, p2_name) :-
     person_mention(p1, p1_name, same_doc, same_sentence, p1_begin, _),
     person_mention(p2, p2_name, same_doc, same_sentence, p2_begin, _),
     num_p < 5,
+    p1_name != p2_name,
     p1_begin != p2_begin.
-###############################################################################
+
 
 ## Feature Extraction #########################################################
 
 # Feature extraction (using DDLIB via a UDF) at the relation level
-# TODO: add @extraction flag here?
 @extraction
 spouse_feature(
     @key
@@ -127,8 +144,7 @@ function extract_spouse_features over (
         ner_tags text[],
         dep_types text[],
         dep_tokens int[]
-    )
-    returns rows like spouse_feature
+    ) returns rows like spouse_feature
     implementation "udf/extract_spouse_features.py" handles tsv lines.
 
 spouse_feature += extract_spouse_features(
@@ -138,33 +154,33 @@ spouse_feature += extract_spouse_features(
   person_mention(p2_id, _, doc_id, sent_index, p2_begin_index, p2_end_index),
   sentences(doc_id, sent_index, _, tokens, lemmas, pos_tags, ner_tags, _, dep_types, dep_tokens
 ).
-###############################################################################
+
 
 ## Distant Supervision ########################################################
-@extraction
+
+# TODO ideally this relation schema declaration should be omitted
 spouse_label(
     @key
-    @references(relation="has_spouse", column="p1_id", alias="has_spouse")
     p1_id text,
     @key
-    @references(relation="has_spouse", column="p2_id", alias="has_spouse")
     p2_id text,
-    @navigable
     label int,
-    @navigable
     rule_id text
 ).
 
+# make sure all pairs in spouse_candidate are considered as unsupervised examples
+has_spouse(p1, p2) = NULL :- spouse_candidate(p1, _, p2, _).
+
 # distant supervision using data from DBpedia
-spouse_label(p1,p2, 1, "dbpedia_spouse") :-
-  spouse_candidate(p1, p1_name, p2, p2_name),
-  spouses_dbpedia(n1, n2),
-  [lower(n1) = lower(p1_name),
-    lower(n2) = lower(p2_name);
-    lower(n2) = lower(p1_name),
-    lower(n1) = lower(p2_name)].
+@rule("from_dbpedia")
+has_spouse(p1,p2) = TRUE :-
+  spouse_candidate(p1, p1_name, p2, p2_name), spouses_dbpedia(n1, n2),
+  [ lower(n1) = lower(p1_name), lower(n2) = lower(p2_name) ;
+    lower(n2) = lower(p1_name), lower(n1) = lower(p2_name) ].
 
 # supervision by heuristic rules in a UDF
+@rule(r)
+has_spouse(p1_id, p2_id) = l :- spouse_label(p1_id, p2_id, l, r).
 function supervise over (
         p1_id text, p1_begin int, p1_end int,
         p2_id text, p2_begin int, p2_end int,
@@ -181,7 +197,6 @@ function supervise over (
         p1_id text, p2_id text, label int, rule_id text
     )
     implementation "udf/supervise_spouse.py" handles tsv lines.
-
 spouse_label += supervise(
     p1_id, p1_begin, p1_end,
     p2_id, p2_begin, p2_end,
@@ -196,31 +211,7 @@ spouse_label += supervise(
     ).
 
 
-# make sure the rest of spouse_candidate are included as unsupervised examples
-spouse_label(p1_id, p2_id, 0, NULL) :- spouse_candidate(p1_id, _, p2_id, _).
-
-# resolve multiple labels by majority vote (summing the labels in {-1,0,1})
-spouse_label_resolved(p1_id, p2_id, SUM(vote)) :- spouse_label(p1_id, p2_id, vote, rule_id).
-
-###############################################################################
-
 ## Inference Rules ############################################################
-
-# We specify the random variables in our factor graph, which we wish to do inference over
-@extraction
-has_spouse?(
-    @key
-    @references(relation="person_mention", column="mention_id", alias="p1")
-    p1_id text,
-    @key
-    @references(relation="person_mention", column="mention_id", alias="p2")
-    p2_id text
-).
-
-# We specify the labels for the spouse relation
-has_spouse(p1_id, p2_id) = if l > 0 then TRUE
-                      else if l < 0 then FALSE
-                      else NULL end :- spouse_label_resolved(p1_id, p2_id, l).
 
 # Features
 @weight(f)
