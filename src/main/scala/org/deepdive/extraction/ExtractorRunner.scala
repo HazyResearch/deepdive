@@ -694,9 +694,9 @@ class ExtractorRunner(dataStore: JdbcDataStore, dbSettings: DbSettings) extends 
     val hostname = localhost.getHostName
     val pkgname = Helpers.slugify(hostname) + '_' + Helpers.md5Hash(localhost.toString + udfDir)
     var sql = "SELECT piggy_setup_package(?, ?)"
-    if (dataStore.isUsingPostgresXL) {
-      sql += " FROM pgxl_dual_hosts"
-    }
+    //if (dataStore.isUsingPostgresXL) {
+    //  sql += " FROM pgxl_dual_hosts"
+    //}
     var remotePath: String = null
     dataStore.prepareStatement(sql) { ps =>
       ps.setString(1, pkgname)
