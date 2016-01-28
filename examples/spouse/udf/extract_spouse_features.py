@@ -28,7 +28,7 @@ def extract(p1_id="text", p2_id="text", p1_begin_index="int", p1_end_index="int"
     # Create DDLIB Spans for the two person mentions
     p1_span = ddlib.Span(begin_word_id=p1_begin_index, length=(p1_end_index-p1_begin_index+1))
     p2_span = ddlib.Span(begin_word_id=p2_begin_index, length=(p2_end_index-p2_begin_index+1))
-    
+
     # Generate the generic features using DDLIB
     for feature in ddlib.get_generic_features_relation(sent, p1_span, p2_span):
       yield [p1_id, p2_id, feature]

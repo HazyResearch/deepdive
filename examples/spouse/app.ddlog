@@ -150,7 +150,7 @@ function extract_spouse_features over (
 
 spouse_feature += extract_spouse_features(
   p1_id, p2_id, p1_begin_index, p1_end_index, p2_begin_index, p2_end_index,
-  doc_id, sent_index, tokens, lemmas, pos_tags, ner_tags, dep_types, dep_tokens) :- 
+  doc_id, sent_index, tokens, lemmas, pos_tags, ner_tags, dep_types, dep_tokens) :-
   person_mention(p1_id, _, doc_id, sent_index, p1_begin_index, p1_end_index),
   person_mention(p2_id, _, doc_id, sent_index, p2_begin_index, p2_end_index),
   sentences(doc_id, sent_index, _, tokens, lemmas, pos_tags, ner_tags, _, dep_types, dep_tokens
