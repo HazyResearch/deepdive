@@ -47,7 +47,7 @@ def supervise(
   #         (<P1>)([ A-Za-z]+)(wife|husband)([ A-Za-z]+)(<P2>)
   if len(MARRIED.intersection(intermediate_lemmas)) > 0:
       yield spouse._replace(label=1, type='pos:wife_husband_between')
-  
+
   # Rule: Sentences that contain and ... married
   #         (<P1>)(and)?(<P2>)([ A-Za-z]+)(married)
   if ("and" in intermediate_lemmas) and ("married" in tail_lemmas):
