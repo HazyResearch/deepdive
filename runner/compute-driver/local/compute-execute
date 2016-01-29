@@ -38,8 +38,8 @@ num_processes=${DEEPDIVE_NUM_PROCESSES:-${num_processes:-$(
         fi
         echo $nproc
     )}}
-num_parallel_unloads=${DEEPDIVE_NUM_PARALLEL_UNLOADS:-${num_parallel_unloads:-2}}
-num_parallel_loads=${DEEPDIVE_NUM_PARALLEL_LOADS:-${num_parallel_loads:-2}}
+num_parallel_unloads=${DEEPDIVE_NUM_PARALLEL_UNLOADS:-${num_parallel_unloads:-1}}
+num_parallel_loads=${DEEPDIVE_NUM_PARALLEL_LOADS:-${num_parallel_loads:-1}}
 
 # declare all input arguments
 declare -- "$@"

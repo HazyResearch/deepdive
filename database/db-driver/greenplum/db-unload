@@ -3,7 +3,8 @@
 # > db-unload QUERY FORMAT SINK...
 #
 # GPFDIST_DISABLE=1 will fallback to PostgreSQL driver's unloading with
-# parallel connections.
+# parallel connections, which MAY RESULT IN INCORRECT RESULT UNLESS QUERY IS
+# TOTALLY ORDERED BY COLUMNS WITH NO DUPLICATE VALUES!
 #
 # GPFDIST_PORT_BASE (defaults to 10000) is the base port number for the gpfdist
 # processes.
@@ -30,7 +31,15 @@ case $format in
         if [[ $nsinks -gt 1 ]]; then
             if [[ -n $GPFDIST_DISABLE ]]; then
                 # fallback to PostgreSQL's driver if gpfdist is disabled
+                # XXX usually results in incorrect output
                 exec "$DEEPDIVE_HOME"/util/db-driver/postgresql/db-unload "$query" "$format" "$@"
+                # FIXME Can we find a general way to use the PG driver's
+                # parallel connection approach for GP, which seems to be
+                # significantly faster than using gpfdist?
+                # E.g., instead of range partitioning the row range which
+                # cannot be used for partitioning the rows exactly, maybe
+                # we can partition the domain of gp_segment_id and assign a few
+                # to each connections, assuming the #conn << #segments.
             fi
 
             tmpTable="dd_unload_$(sha1sum <<<"$query" | cut -b1-40)"
