@@ -42,22 +42,22 @@
 
 
 /* active & hover links */
-.bs-docs-sidebar .nav>.active>a, 
-.bs-docs-sidebar .nav>li>a:hover, 
+.bs-docs-sidebar .nav>.active>a,
+.bs-docs-sidebar .nav>li>a:hover,
 .bs-docs-sidebar .nav>li>a:focus {
-    color: #08608A;                 
-    text-decoration: none;          
-    background-color: transparent;  
-    border-left-color: #08608A; 
+    color: #08608A;
+    text-decoration: none;
+    background-color: transparent;
+    border-left-color: #08608A;
 }
 /* all active links */
-.bs-docs-sidebar .nav>.active>a, 
+.bs-docs-sidebar .nav>.active>a,
 .bs-docs-sidebar .nav>.active:hover>a,
 .bs-docs-sidebar .nav>.active:focus>a {
     font-weight: 700;
 }
 /* nested active links */
-.bs-docs-sidebar .nav .nav>.active>a, 
+.bs-docs-sidebar .nav .nav>.active>a,
 .bs-docs-sidebar .nav .nav>.active:hover>a,
 .bs-docs-sidebar .nav .nav>.active:focus>a {
     font-weight: 500;
@@ -65,9 +65,9 @@
 
 /* hide inactive nested list */
 .bs-docs-sidebar .nav .nav {
-    display: none;           
+    display: none;
 }
 /* show active nested list */
 .bs-docs-sidebar .nav>.active>.nav {
-    display: block;           
+    display: block;
 }
