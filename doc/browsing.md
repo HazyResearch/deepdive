@@ -138,7 +138,7 @@ For extractions, `source` variable may also point to its provenance source objec
 
 Here's an example for rendering `has_spouse_candidates` in the spouse example as highlighted text spans with two colors.
 The `mindtagger-word-array` and `mindtagger-highlight-words` are AngularJS directives provided by [Mindtagger, a tool for labeling data](labeling.md).
-<script src="https://gist-it.appspot.com/github.com/HazyResearch/mindbender/blob/master/examples/spouse_example/mindbender/search-template/has_spouse_candidates.html?footer=minimal">
+<script defer src="https://gist-it.appspot.com/github.com/HazyResearch/mindbender/blob/master/examples/spouse_example/mindbender/search-template/has_spouse_candidates.html?footer=minimal">
 </script>
 
 Without the template, the GUI would render by default a `has_spouse_candidates` in a hard-to-read format:
@@ -153,5 +153,5 @@ This is improved as shown below by creating the template above in the applicatio
 To define further AngularJS extensions, such as directives or filters to be used in the templates, define a `mindbender.extensions` module in `./mindbender/extensions.coffee` or `./mindbender/extensions.js`.
 This can be very useful if you need to share some template fragments or scripts across many browsable relations.
 
-<script src="https://gist-it.appspot.com/github.com/HazyResearch/mindbender/blob/master/gui/backend/extensions.coffee?footer=minimal">
+<script defer src="https://gist-it.appspot.com/github.com/HazyResearch/mindbender/blob/master/gui/backend/extensions.coffee?footer=minimal">
 </script>

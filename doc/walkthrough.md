@@ -288,7 +288,7 @@ To define our extractors in DeepDive, we start by adding several lines
 into the `deepdive.extraction.extractors` block in `deepdive.conf`, which
 should already be present in the template:
 
-<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=7:47"></script>
+<script defer src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=7:47"></script>
 
 Note that we first create an extractor `ext_clear_table`, which is executed
 before any other extractor and empties the output tables of all other
@@ -335,7 +335,7 @@ representing mentions of people. The script should contain the following code:
 (a copy of this script is also available from
 `$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/udf/ext_people.py`):
 
-<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/udf/ext_people.py?footer=minimal"></script>
+<script defer src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/udf/ext_people.py?footer=minimal"></script>
 
 This `udf/ext_people.py` Python script takes sentence records as input, and
 outputs a people mention record for each set of one or more continuous words
@@ -449,7 +449,7 @@ We now tell DeepDive to create variables for the `is_true` column of the
 `has_spouse` table for probabilistic inference, by adding the following line
 to the `schema.variables` block in `deepdive.conf`:
 
-<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=2:7"></script>
+<script defer src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=2:7"></script>
 
 We now define an extractor that creates all candidate relations and inserts them
 into the table `has_spouse`. We call them *candidate relations* because we do
@@ -457,7 +457,7 @@ not know  whether or not they are actually expressing a marriage relation:
 that's for DeepDive to predict later. Add the following to `deepdive.conf` to
 define the extractor:
 
-<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=47:72"></script>
+<script defer src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=47:72"></script>
 
 Note that this extractor must be executed after our previously added extractor
 `ext_people`, so we specify the latter in the `dependencies` field.
@@ -503,7 +503,7 @@ perfect.
 We now create a script `udf/ext_has_spouse.py` to generate and label
 the relation candidates:
 
-<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/udf/ext_has_spouse.py?footer=minimal"></script>
+<script defer src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/udf/ext_has_spouse.py?footer=minimal"></script>
 
 We can now run the system by executing `deepdive run` and check
 the output relation `has_spouse`. `deepdive run` will run the full pipeline with all
@@ -578,7 +578,7 @@ For this new extractor:
 Create a new extractor for features, which will execute after the
 `ext_has_spouse_candidates` extractor:
 
-<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=72:97"></script>
+<script defer src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=72:97"></script>
 
 To create our extractor UDF, we make use of `ddlib`, our Python library that
 provides useful utilities such as `Span` to manipulate elements in sentences.
@@ -590,7 +590,7 @@ Create the script `udf/ext_has_spouse_features.py` with the following content:
 (a copy of this script is also available from
 `$DEEPDIVE_HOME/examples/tutorial_example/step1-basic/udf/ext_has_spouse_features.py`)
 
-<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/udf/ext_has_spouse_features.py?footer=minimal"></script>
+<script defer src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/udf/ext_has_spouse_features.py?footer=minimal"></script>
 
 As before, you can run the system by executing `deepdive run` and check the output
 relation `has_spouse_features`:
@@ -640,7 +640,7 @@ relationship among different random variables.
 
 Add the following lines to your `deepdive.conf`, in the `inference.factors` block:
 
-<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=99:131"></script>
+<script defer src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=99:131"></script>
 
 This rule generates a model similar to a logistic regression classifier: it uses
 a set of features to make a prediction about the expectation of the variable we
@@ -677,7 +677,7 @@ the column `id` of some random rows from the `has_spouse` mention table and
 add them into the table `dd_graph_variables_holdout`.
 Let's add it to `deepdive.conf`:
 
-<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=143:158"></script>
+<script defer src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step1-basic/deepdive.conf?footer=minimal&slice=143:158"></script>
 
 At this point, the setup of the application is complete. Note that you can find
 all extractors, scripts, and the complete `deepdive.conf` file that we wrote

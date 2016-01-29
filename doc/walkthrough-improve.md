@@ -439,7 +439,7 @@ be found in
 copied over the old one in `udf/`. The content of the script are the
 following:
 
-<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step2-generic-features/udf/ext_has_spouse_features.py?footer=minimal"></script>
+<script defer src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step2-generic-features/udf/ext_has_spouse_features.py?footer=minimal"></script>
 
 The dictionaries are loaded by calling the `ddlib.load_dictionary` function,
 while the set of features is obtained through the
@@ -452,7 +452,7 @@ generate the feature, therefore we need to modify the `input` of the
 version of `deepdive.conf` is available at
 `$DEEPDIVE_HOME/examples/tutorial_example/step2-generic-features/deepdive.conf`):
 
-<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step2-generic-features/deepdive.conf?footer=minimal&slice=72:102"></script>
+<script defer src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step2-generic-features/deepdive.conf?footer=minimal&slice=72:102"></script>
 
 
 ### <a name="regularization" href="#"> </a> Mitigate overfitting with automatic regularization
@@ -475,7 +475,7 @@ To specify a set of regularization parameters among which to choose, and in
 general to pass arguments to the sampler, we can add the following line to
 `deepdive.conf`, in the `deepdive` section:
 
-<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step2-generic-features/deepdive.conf?footer=minimal&slice=163:168"></script>
+<script defer src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/tutorial_example/step2-generic-features/deepdive.conf?footer=minimal&slice=163:168"></script>
 
 For an explanation of all the parameters passed to the sampler, check the
 [sampler documentation](sampler.md).

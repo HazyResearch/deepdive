@@ -54,7 +54,7 @@ In order to make use of the incremental support of DeepDive, the application mus
 Please refer to [DDlog tutorial][DDlog] for how to write your DeepDive application in DDlog.
 Let's assume you have put the DDlog program shown below in a file named `spouse_example.f1.ddlog` under the application folder.
 
-<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/incremental/spouse_example.f1.ddlog?footer=minimal">
+<script defer src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/incremental/spouse_example.f1.ddlog?footer=minimal">
 </script>
 
 In this walkthrough, we demonstrate an incremental development workflow by adding new features.
@@ -70,10 +70,10 @@ The materialization phase is basically taking a snapshot of the current model th
 You need to specify which variables and inference rules you are going to vary in the following incremental phases.
 They are called active variables and active inference rules, and the names should be put into the files `spouse_example.f1.active.vars` and `spouse_example.f1.active.rules`.
 
-<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/incremental/spouse_example.f1.active.vars?footer=minimal">
+<script defer src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/incremental/spouse_example.f1.active.vars?footer=minimal">
 </script>
 
-<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/incremental/spouse_example.f1.active.rules?footer=minimal">
+<script defer src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/incremental/spouse_example.f1.active.rules?footer=minimal">
 </script>
 
 There is a script included in the example, and the materialization phase can be run using the following single command:
@@ -93,13 +93,13 @@ It will do the following:
 
 In the incremental phase, suppose you add feature 2 to your udf, and save this modified udf in a file named `ext_has_spouse_features.f2.py`.
 
-<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/incremental/udf/ext_has_spouse_features.f2.py?footer=minimal&slice=27:39">
+<script defer src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/incremental/udf/ext_has_spouse_features.f2.py?footer=minimal&slice=27:39">
 </script>
 
 
 You need to mark in the DDlog program which rule corresponds to the added features to produce the correct incremental pipeline.
 
-<script src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/incremental/spouse_example.f2.ddlog?footer=minimal&slice=58:65">
+<script defer src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/incremental/spouse_example.f2.ddlog?footer=minimal&slice=58:65">
 </script>
 
 
