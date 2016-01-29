@@ -166,34 +166,125 @@ and
     - [Probabilistic inference and factor graphs](inference.md)
     - [Distant supervision](distant_supervision.md)
 
-#### Basics
-
-- [Installation guide](installation.md)
-- Tutorial
-    - [Example application walk-through](walkthrough.md)
-    - [Improving the results](walkthrough-improve.md)
-    - [Extras](walkthrough-extras.md)
-- Writing and Running a DeepDive Application
-    - [DeepDive Application's Structure and Operations](deepdiveapp.md)
-    - High-level (DDlog-based)
-        - [Writing applications in DDlog](ddlog.md)
-    - Low-level (SQL-based)
-        - [Creating a new application](writing.md)
-        - [Writing extractors](extractors.md)
-        - [Declaring inference variables in the schema](schema.md)
-        - [Writing inference rules](inference_rules.md)
-    - [Running an application](running.md)
-    - [Generic features library](gen_feats.md)
+#### DeepDive Application Development
+- [How DeepDive applications are typically developed](develop-cycle.md) NEW
+    <br><todo>
+    - Show a diagram of the development cycle, whose blocks link to its own page</todo>
+    - Migrate <s>[Creating a new application](writing.md)</s>
+    </todo>
+- [What a DeepDive application looks like](deepdiveapp.md)
+    <br><todo>
+    Keep Structure section and renew
+    </todo>
+- Writing a DeepDive Application
+    - [Defining data processing in DDlog](writing-dataflow-ddlog.md) NEW
+        <br><todo>Migrate <s>[Writing applications in DDlog](ddlog.md)</s></todo>
+    - [Writing user-defined functions in Python](writing-udf-python.md) NEW
+        <br><todo>
+        - Migrate (mostly tsv_extractor) from <s>[Writing extractors](extractors.md)</s>
+        - `@tsv_extractor`, `@returns(...)`, function parameter default values, `yield`
+            <br>(<https://github.com/HazyResearch/deepdive/issues/236#issuecomment-176375095>)
+        </todo>
+    - [Specifying a statistical model in DDlog](writing-model-ddlog.md) NEW
+        <br><todo>
+        - Migrate <s>[Declaring inference variables in the schema](schema.md)</s>
+        - Migrate <s>[Writing inference rules](inference_rules.md)</s>
+        </todo>
+- Running a DeepDive Application
+    - [Compiling a DeepDive application](ops-compiling.md) NEW
+        <br><todo>Document
+        - `deepdive compile`, `deepdive check` commands
+        - why/what/where it compiles
+        - `run/process/**/run.sh`
+        - `run/dataflow.svg` and `run/Makefile`
+        - `run/data/`, `run/model/`
+        - when to compile
+        </todo>
+    - [Managing input data and data products](ops-data.md) NEW
+        <br><todo>Document
+        - `deepdive load`, `deepdive unload`, `deepdive sql`, `deepdive db` commands
+        - where input/output data resides
+        - `input/RELATION.*` convention
+        - how they are moved-in/out and managed
+        - (Later, `deepdive snapshot` for PG schema support will be added here.)
+        </todo>
+    - [Controlling execution of data processing](ops-execution.md) NEW
+        <br><todo>
+        - `deepdive do`, `deepdive plan` commands
+        - `deepdive mark`, `deepdive redo` commands and timestamps under `run/process/**/*.done`
+        - `process/init/app`, `process/model/calibration` `all` special targets
+        - `deepdive run`, `deepdive initdb` shorthands
+        - Migrate the Operations section from <s>[DeepDive Application Structure and Operations](deepdiveapp.md)</s>
+        - Migrate <s>[Running an application](running.md)</s>
+        </todo>
+    - [Statistical model operations (learning and inference)](ops-model.md) NEW
+        <br><todo>
+        - grounding factor graphs
+            - `deepdive redo variable_id_partition combine_factorgraph`
+        - learning weights
+            - `deepdive do learning`
+        - performing inference
+            - `deepdive do inference`
+        - reusing weights
+            - `deepdive model` command for managing weights and factor graphs
+        - Migrate whatever piece in <s>[Running an application](running.md)</s>
+        </todo>
 - Debugging a DeepDive Application
+    - [Debugging UDFs](debugging-udf.md) NEW
+        <br><todo>
+        - `deepdive redo process/...`
+        - `deepdive env python udf/fn.py`
+        - `deepdive check testfire udf/fn.py` will be added here?
+        </todo>
     - [Calibration](calibration.md)
+        <br><todo>
+        - Renew details: screen dump, paths
+        - Update to new spouse example
+        </todo>
     - [Browsing data](browsing.md)
     - [Labeling data products](labeling.md)
+        <br><todo>
+        - Update to new spouse example
+        </todo>
     - [Generating negative examples](generating_negative_examples.md)
+
+
+#### Examples
+
+<!-- Serious/End-to-end Examples -->
+- [Spouse mention extraction from news articles](example-spouse.md) NEW
+    <br><todo>Migrate
+    - examples/spouse/README.md
+    - <s>[Example application walk-through](walkthrough.md)</s>
+    - <s>[Improving the results](walkthrough-improve.md)</s>
+    - <s>[Extras](walkthrough-extras.md)</s>
+    </todo>
+- [Table extraction](example-table.md) NEW
+    <br><todo>If possible?</todo>
+- [Image classification supervised by text](example-fusion_text_image_labels.md) NEW
+    <br><todo>If possible?</todo>
+- <todo>OCR example?</todo>
+- <todo>What other good examples can we quickly polish and put here?</todo>
+
+<!-- Toy Examples -->
+- [Cancer/Smoke/Friends inference: a classical toy example for MLNs](example-smoke.md) NEW
+    <br><todo>
+    - Modernize the example code
+    - and migrate content from examples/smoke/README.md
+    </todo>
+- [Text chunking with Multinomial](example-chunking.md)
+    <br><todo>
+    - Modernize the example code
+    - and migrate content from <s>[old page](chunking.md)</s>
+    </todo>
+- [Biased Coin](example-biased_coin.md) NEW
+    <br><todo>
+    Is this worth documenting here, or just keep it as a test case?
+    </todo>
 
 
 #### Advanced topics
 
-- [Multinomial variables: Text chunking example](chunking.md)
 - [FAQ](faq.md)
 - Using DeepDive in Various Configurations
     - [Using DeepDive with GreenPlum](greenplum.md)
@@ -204,6 +295,7 @@ and
     - [Incremental DeepDive](incremental.md)
 - References
     - [`deepdive.conf` Reference](configuration.md)
+    - [Generic features library](gen_feats.md)
     - [Inference rule function reference](inference_rule_functions.md)
     - [High-speed sampler](sampler.md)
     - [Factor graph grounding output reference](factor_graph_schema.md)

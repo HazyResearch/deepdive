@@ -133,3 +133,14 @@ p img {
   margin: 10px 0px;
   border: 1px solid #eee;
 }
+
+todo {
+    display: inline-block;
+    padding: 5px;
+    color: black;
+    background-color: yellow;
+    font-size: 0.8em;
+}
+todo:before {
+    content: "TODO: "
+}
