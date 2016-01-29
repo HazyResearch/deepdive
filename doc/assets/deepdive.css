@@ -6,4 +6,5 @@
 {% include css/bootstrap.min.css %}
 {% include css/font-awesome.min.css %}
 {% include css/pygment_trac.css %}
+{% include css/bs-docs-sidebar.css %}
 {% include css/site.css %}

@@ -144,11 +144,44 @@
 
       <section id="main">
         <div class="container">
-          <row>
+          <div class="row">
+          {% if page.toc %}
+            <div class="col-md-9">
+              {{ content }}
+            </div>
+            <nav id="toc" class="col-md-3 bs-docs-sidebar"></nav>
+            <script>
+                $("#toc").toc({
+                    noBackToTopLinks: true,
+                    title: "",
+                    showEffect: "fadeIn",
+                    headers: "h2, h3, h4, h5, h6"
+                });
+                // sprinkle some class names for style
+                $("#toc")
+                    .find("ol, ul")
+                        .addClass("nav nav-stacked")
+                    .end()
+                    .children().filter("ol, ul")
+                        .attr({ id: "sidebar" })
+                        .addClass("fixed")
+                    ;
+                $("body").scrollspy({
+                    target: ".bs-docs-sidebar",
+                    offset: 0
+                });
+                $("#sidebar").affix({
+                    offset: {
+                      top: 80
+                    }
+                });
+            </script>
+          {% else %}
             <div class="col-md-10 col-md-offset-1">
               {{ content }}
             </div>
-          </row>
+          {% endif %}
+          </div>
         </div>
       </section>
 

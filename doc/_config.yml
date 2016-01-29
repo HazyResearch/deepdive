@@ -2,6 +2,13 @@ source:      .
 safe:        false  # need _plugins/rewrite_md_links.rb to generate correct links
 baseurl:     http://deepdive.stanford.edu
 markdown:    redcarpet
+redcarpet:
+  extensions:
+#   - no_intra_emphasis
+#   - fenced_code_blocks
+#   - autolink
+#   - tables
+    - with_toc_data
 exclude:
   - params.json
   - "*.graffle"
