@@ -48,13 +48,13 @@ deploy: jekyll
 	# Building site...
 	echo 'baseurl:	$(WEBSITE_BASEURL)' >_config.baseurl.yml
 	jekyll build --config _config.yml,_config.baseurl.yml
-	rm -f _config.baseurl.yml
 	echo $(WEBSITE_CNAME) > _site/CNAME # create a CNAME file to put on server
 	# Deploying site...
 	@read -p"WARNING! Continue to overwrite all files in $(DEPLOY_USER_HOST):$(DEPLOY_DIR)? "
 	ssh $(DEPLOY_USER_HOST) 'mkdir -p $(DEPLOY_DIR)'
 	rsync -av --delete-after _site/ $(DEPLOY_USER_HOST):$(DEPLOY_DIR)/
 	@echo "Deployed to $(WEBSITE_BASEURL)"
+	rm -f _config.baseurl.yml
 
 .PHONY: jekyll linkchecker
 jekyll:
