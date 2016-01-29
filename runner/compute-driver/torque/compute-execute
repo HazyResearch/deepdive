@@ -19,6 +19,7 @@ eval "$(jq2sh <<<"$DEEPDIVE_COMPUTER_CONFIG" \
     ssh_host='.ssh_host' \
     remote_home='.remote_home' \
     poll_period_secs='.poll_period_secs' \
+    excludes='.excludes' \
     #
 )"
 # respect the DEEPDIVE_NUM_PROCESSES environment
@@ -59,6 +60,7 @@ echo " ssh_user=$ssh_user"
 echo " ssh_host=$ssh_host"
 echo " remote_home=$remote_home"
 echo " poll_period_secs=$poll_period_secs"
+echo " excludes=$excludes"
 
 echo "DEEPDIVE_APP = $DEEPDIVE_APP"
 echo "REMOTE_DEEPDIVE_APP = $remote_home/$(basename $DEEPDIVE_APP)"
@@ -73,8 +75,6 @@ rsync -aH $DEEPDIVE_APP $ssh_info:$remote_home
 # process/grounding/factor/inf_istrue_has_spouse fails since the directory
 # doesn't exist. 
 ssh $ssh_info "mkdir -p $REMOTE_CWD"
-
-set -x
 
 # Prepare submission script
 # XXX there are conditional branches below depending on whether input_sql
@@ -106,13 +106,13 @@ fi
 
 # Submit job to remote node. 
 compute_submit() {
-  # XXX: These are the correct commands, but need workaround for Macs due to 
-  # Kerberos issue. 
-  #ssh $ssh_info "qsub -V $REMOTE_DEEPDIVE_APP/run/$DEEPDIVE_CURRENT_PROCESS_NAME/remote.sh"
-
-  # XXX: Right now, using this script to allow qsub to run, however this will
-  # prompt user for password in the middle of the script, not elegant. 
-  ssh $ssh_info "kinit -r 30d; qsub -V $REMOTE_SH_DIR" 
+  # XXX: Technically, this is all we need under the assumption that the user
+  # can do passwordless SSH. These are the correct commands, but need
+  # workaround for Macs due to Kerberos issue.
+  #ssh $ssh_info "qsub -V $REMOTE_SH_DIR"
+  
+  # XXX: Workaround for Mac OS X users which can't forward Kerberos tickets. 
+  ssh $ssh_info "env KRB5CCNAME=FILE:$KRB_DIR qsub -V $REMOTE_SH_DIR" 
 }
 
 # Poll for status. Should return I for incomplete, S for success, or F for fail.
@@ -120,12 +120,19 @@ compute_status() {
   ssh $ssh_info "qstat -f -1 $JOB_ID | grep job_state | sed 's/.*job_state = //'"
 }
 
+# Ensure Kerberos authentication is succesful for user. 
+KRB_DIR="/tmp/krb5cc_${ssh_user}_deepdive"
+if ! ssh $ssh_info "klist -c $KRB_DIR > /dev/null"; then
+  echo "Kerberos credentials not found in host"
+  ssh -t $ssh_info "kinit -r 30d -c $KRB_DIR"
+else 
+  echo "Kerberos credentials found at $ssh_info:$KRB_DIR"
+fi
+
 # Submit job. 
 # This is a hack that supposedly prints out the output of ssh asking for the 
 # password. But the output seems to not be flushed to stdout. 
-exec 5>&1
-JOB_ID="$(compute_submit | tee >(cat - >&5) | grep $ssh_host)"
-echo "Job ID: '$JOB_ID'"
+JOB_ID="$(compute_submit | grep $ssh_host)"
 if [[ "$JOB_ID" != *"$ssh_host" ]]; then
   echo "Job submission failed with the following error:"
   printf "$JOB_ID"
@@ -133,6 +140,7 @@ if [[ "$JOB_ID" != *"$ssh_host" ]]; then
 fi
 echo "Job submitted"
 
+# Poll status
 echo -n "Waiting for job id $JOB_ID to complete"
 while [[ "$(compute_status)" != "S" ]] && ssh -q $ssh_info "[[ ! -f $REMOTE_OUT_DIR ]]"; do
   echo -n "."
@@ -163,9 +171,6 @@ if [[ -n $output_relation ]]; then
     # load the output data to the temporary table in the database
     # XXX hiding default progress bar from deepdive-load
     # TODO abbreviate this env into a show_progress option, e.g., recursive=false
-    # TODO I am really unsure as to how to show the progress here. This might work
-    # As opposed to local, this should be a blocking process, since we don't use
-    # mkmimo.
     show_progress input_to "$DEEPDIVE_CURRENT_PROCESS_NAME output" -- \
     env DEEPDIVE_PROGRESS_FD=2 \
     deepdive-load "$output_relation_tmp" /dev/stdin
