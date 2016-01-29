@@ -2,6 +2,7 @@
 layout: default
 title: Acknowledgement
 root: "."
+no_toc: true
 ---
 
 # Support

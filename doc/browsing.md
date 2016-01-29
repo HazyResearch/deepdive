@@ -112,14 +112,14 @@ One of the main consumers of DDlog annotations is the search interface.  It enab
 #### `@extraction([label])` relations
 A relation that holds extracted data can be annotated as `@extraction` with an optional label.
 In the search interface, `@extraction` relation becomes a searchable "type" and every tuple of it becomes the unit of search results.  If an extraction is represented by many DDlog relations all associated through `@references`, only the primary relation needs such annotation, e.g., only `people_mentions` and `has_spouse_candidates` need `@extraction` because `has_spouse_features` holds extra information related to `has_spouse_candidates`.
-#### `@searchable([relation, …])` columns
+#### `@searchable([relation, ...])` columns
 Any column annotated with `@searchable` that's directly or indirectly associated with an `@extraction` relation (or a relation that corresponds to a searchable type) is indexed for searching and appears in the result highlighted.  Optionally, names of the `@extraction` relations can be specified as arguments to limit the search indexes the column participates in.
 #### `@source([label])` relations
 A relation that holds the input/source data to DeepDive should be annotated as `@source` with optional label.  The `@source` relations themselves become a searchable type in the search interface as well.  Every `@extraction` relation is supposed to record its provenance in column(s) that `@references` one of the `@source` relations.
 There are two reasons why `@source` relations are explicitly annotated.  First, since the typically larger `@source` relations may change less frequently than the `@extraction`s derived from them as the DeepDive application evolves, we can avoid reindexing a large part of the data that stays mostly invariant.  Specifically, Elasticsearch's parent-child mapping is used to decouple the frequently changing `@extraction`s from their `@source`s.  Second, given how the searchable data to be indexed is determined from the annotations, `@source` relations provide natural breaking points while following the association links between relations.  In other words, because independent `@extraction`s can reference a `@source` relation as its provenance, to make each `@extraction` searchable, we may end up collecting data for all other `@extraction`s from the same `@source`.
 
 ### Annotation for aggregation / faceted search
-#### `@navigable([relation, …])` columns
+#### `@navigable([relation, ...])` columns
 Similar to `@searchable`, any column annotated with `@navigable` that's directly or indirectly associated with a relation that corresponds to a searchable type is indexed for faceted navigation.  Upon every search, handful of significant terms or value ranges found for the column will appear with their approximate counts to help narrowing down the search result.  For example, if `has_spouse_candidates.is_true` column is annotated as `@navigable`, every search result will show how many were distantly supervised as positive and negative examples among the result and quickly drill down to them.
 
 ### Annotation for presentation

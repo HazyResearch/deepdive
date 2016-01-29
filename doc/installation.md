@@ -1,6 +1,7 @@
 ---
 layout: default
 title: Installation Guide
+no_toc: true
 ---
 
 # DeepDive Installation Guide

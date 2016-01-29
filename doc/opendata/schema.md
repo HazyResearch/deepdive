@@ -1,6 +1,7 @@
 ---
 layout: default
 title: DeepDive Open Datasets
+no_toc: true
 ---
 
 # Schema of DeepDive Open Datasets

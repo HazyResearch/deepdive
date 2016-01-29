@@ -1,7 +1,6 @@
 ---
 layout: default
 title: "Tutorial: Walk-through with an Example"
-toc: true
 ---
 
 # Example Application: A Mention-Level Extraction System

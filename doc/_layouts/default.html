@@ -145,7 +145,11 @@
       <section id="main">
         <div class="container">
           <div class="row">
-          {% if page.toc %}
+          {% if page.no_toc %}
+            <div class="col-md-10 col-md-offset-1">
+              {{ content }}
+            </div>
+          {% else %}
             <div class="col-md-9">
               {{ content }}
             </div>
@@ -166,20 +170,17 @@
                         .attr({ id: "sidebar" })
                         .addClass("fixed")
                     ;
-                $("body").scrollspy({
-                    target: ".bs-docs-sidebar",
-                    offset: 0
-                });
                 $("#sidebar").affix({
                     offset: {
                       top: 80
                     }
                 });
+                $("body").scrollspy({
+                    target: ".bs-docs-sidebar",
+                    offset: 1
+                });
+                setTimeout(function(){ $("body").scrollspy("refresh"); }, 1000);
             </script>
-          {% else %}
-            <div class="col-md-10 col-md-offset-1">
-              {{ content }}
-            </div>
           {% endif %}
           </div>
         </div>

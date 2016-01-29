@@ -1,6 +1,7 @@
 ---
 layout: default
 root: "."
+no_toc: true
 ---
 
 ### What does DeepDive do?

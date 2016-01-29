@@ -4,7 +4,7 @@ title: DeepDive Applications
 source-url: https://docs.google.com/document/d/1ruBshA-oSoqJ0CCqOQR9DIdBWlfeA3fQs8qytmZyWPE/edit
 ---
 
-## DeepDive Applications
+# DeepDive Applications
 
 Here are a list of notable public DeepDive applications.
 
@@ -17,7 +17,7 @@ Here are a list of notable public DeepDive applications.
 
 
 <a name="memex"></a>
-### MEMEX / Human trafficking
+## MEMEX / Human trafficking
 
 [MEMEX](http://www.darpa.mil/news-events/2014-02-09) is a DARPA program that explores how next generation search and extraction systems can help with real-world use cases.
 The initial application is the [fight against human trafficking](http://www.cbsnews.com/news/new-search-engine-exposes-the-dark-web/).
@@ -35,7 +35,7 @@ Here is a detailed description of [DeepDive's role in MEMEX](memex.md).
 
 
 <a name="tac-kbp"></a>
-### TAC-KBP Challenge
+## TAC-KBP Challenge
 TAC-KBP (Text Analysis Conference, Knowledge Base Population track, organized by NIST) is a research competition where the task is to extract common properties of people and organizations (e.g., age, birthplace, spouses, and shareholders) from a few million of newswire and web documents -- this task is also termed [Slot Filling](http://surdeanu.info/kbp2014/KBP2014_TaskDefinition_EnglishSlotFilling_1.1.pdf).
 In the 2014 evaluation, 31 US and international teams participated in the competition, including [a solution based on DeepDive](http://i.stanford.edu/hazy/papers/2014kbp-systemdescription.pdf) from Stanford.
 The DeepDive based solution achieved **the highest precision, recall, and F1** among all submissions.
@@ -43,7 +43,7 @@ The DeepDive based solution achieved **the highest precision, recall, and F1** a
 
 
 <a name="wisci"></a>
-### Wisci(-pedia)
+## Wisci(-pedia)
 Wisci is a first incarnation of the &ldquo;[encyclopedia built by the machines, for the people](https://www.youtube.com/watch?v=Q1IpE9_pBu4)&rdquo; vision.
 (It was developed by the Hazy research group when the team was at University of Wisconsin-Madison. Hence the project name.)
 We applied similar techniques as our solution to the TAC-KBP challenge -- namely [NLP, distant supervision, and probabilistic inference](http://www.cs.stanford.edu/people/chrismre/papers/deepdive_vlds.pdf) -- over the ClueWeb09 corpus that contains 500 million web pages.
@@ -54,14 +54,14 @@ Wisci also accepts user feedback and learns from it.
 
 
 <a name="geo-paleo"></a>
-### Geology and Paleontology
+## Geology and Paleontology
 [Geology](http://en.wikipedia.org/wiki/Geology) studies history of the solid Earth; [paleontology](http://en.wikipedia.org/wiki/Paleontology) studies fossils and ancient organisms. At the core of both disciplines are discovery and knowledge sharing. In particular, the research communities have maintained two live databases: [Macrostrat](https://macrostrat.org/#about), which contains tens of thousands of rock units and their attributes, and the [Paleobiology Database](https://paleobiodb.org/#/) (PBDB), which contains hundreds of thousands of taxonomic names and their attributes. However, both projects require researchers to laboriously sift through massive amounts of scientific publications, find relevant statements, and manually enter them into the database. For example, PBDB has taken approximately nine continuous person years to read from roughly 40K documents in the past two decades.
 In collaboration with [Prof. Shanan Peters](http://geoscience.wisc.edu/geoscience/people/faculty/shanan-peters/) at UW-Madison, we developed two DeepDive programs, [GeoDeepDive](http://www.cs.stanford.edu/people/chrismre/papers/gdd_demo.pdf) and [PaleoDeepDive](http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0113523), that process roughly 300K scientific documents (including text, tables, and figures). On the document set covered by both DeepDive and PBDB contributors (12K), DeepDive achieves recall roughly 2.5X that of humans, and precision that is as high as or higher than humans.
 <p style="text-align:center;"><img style="width:80%;" src="../images/showcase/paleontology.jpg"></p>
 
 
 <a name="genetics"></a>
-### Medical Genetics
+## Medical Genetics
 The body of literature in life sciences has been [growing at accelerating speeds](http://www.nlm.nih.gov/bsd/index_stats_comp.html) to the extent that it has been unrealistic for scientists to perform research solely based on reading and memorization (even with the help of keyword search).
 As a result, there have been numerous initiatives to build structured knowledge bases from literature.
 For example, [OMIM](http://omim.org/) is an authoritative database of human genes and genetic disorders.
@@ -74,7 +74,7 @@ Specifically, we use DeepDive to extract mentions of genes, diseases, and phenot
 
 
 <a name="pharmacogenomics"></a>
-### Pharmacogenomics
+## Pharmacogenomics
 Understanding the interactions of small chemicals or drugs in the body is key for drug discovery.
 However, the majority of this data resides in the biomedical literature and cannot be easily accessed.
 The Pharmacogenomics Knowledgebase (PharmGKB, [www.pharmgkb.org](http://www.pharmgkb.org)) is a high quality database that aims to annotate the relationships between drugs, genes, diseases, genetic variation, and pathways in the literature.
