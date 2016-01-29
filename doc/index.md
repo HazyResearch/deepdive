@@ -207,7 +207,6 @@ and
     - [High-speed sampler](sampler.md)
     - [Factor graph grounding output reference](factor_graph_schema.md)
     - [Internal database schema](reserved_tables.md)
-- [Tuffy and Markov Logic Networks (MLN)](markov_logic_network.md)
 - [DeepDive Developer's Guide](developer.md)
 
 ### Support
