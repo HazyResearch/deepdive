@@ -28,7 +28,7 @@ object DeepDiveLog {
     val commonProgramOpts = List(
     )
     head("DDlog Compiler", "0.0.1")
-    cmd("sql")                         required() action { (_, c) => c.copy(handler = DeepDiveLogQueryCompiler)   } text("Compiles a SQL query to run against the program") children(
+    cmd("query")                       required() action { (_, c) => c.copy(handler = DeepDiveLogQueryCompiler)   } text("Compiles a SQL query to run against the program") children(
       arg[String]("QUERY")             required() action { (q, c) => c.copy(query = q) }                            text("DDLog query to compile against the program")
       )
     cmd("compile")                     required() action { (_, c) => c.copy(handler = DeepDiveLogCompiler)        } text("Compiles a deepdive.conf")

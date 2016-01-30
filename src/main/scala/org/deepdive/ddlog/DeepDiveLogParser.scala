@@ -412,18 +412,15 @@ class DeepDiveLogParser extends JavaTokenParsers {
     }
 
   def queryWithOptionalHeadTerms =
-    (repsep(expr, ",") ~ opt("*") ~ opt("|" ~> decimalNumber)) ~ ("?-" ~> rep1sep(cqConjunctiveBody, ";")) ^^ {
-      // optional head terms without parentheses
-      case (headTerms ~ isDistinct ~ limit) ~ disjunctiveBodies =>
+    ((("(" ~> rep1sep(expr, ",") <~ ")") | repsep(expr, ",")) // head terms with parentheses or optionally without
+      ~ opt("*") ~ opt("|" ~> decimalNumber)) ~ ("?-" ~> cqConjunctiveBody) ^^ {
+      case (headTerms ~ isDistinct ~ limit) ~ body =>
         val headTermsToUse =
           if (headTerms nonEmpty) headTerms else {
-            val definedVars = disjunctiveBodies flatMap {
-                _ flatMap DeepDiveLogSemanticChecker.collectDefinedVars
-              }
+            val definedVars = body flatMap DeepDiveLogSemanticChecker.collectDefinedVars
             definedVars map VarExpr
-            // TODO get common variables from bodies for the headTerms
           }
-        ConjunctiveQuery(headTermsToUse, disjunctiveBodies, isDistinct != None, limit map (_.toInt))
+        ConjunctiveQuery(headTermsToUse, List(body), isDistinct != None, limit map (_.toInt))
     }
 
   def parseQuery(inputQuery: String): DeepDiveLog.Query = {
