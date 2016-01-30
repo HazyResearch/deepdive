@@ -24,9 +24,12 @@ teardown() {
 }
 
 @test "$DBVARIANT deepdive load sql works with huge input" {
-    n=10000
+    n=100 m=99900
     db-execute "DROP TABLE IF EXISTS foo_load; CREATE TABLE foo_load(a INT, b text);"
-    seq $n | sed 's/.*/INSERT INTO foo_load(a,b) VALUES (&,'\''&&&&&&&&&'\'');/' >huge.sql
+    {
+        seq $m | sed 's/.*/-- comment/'  # generate a huge amount of comments to bloat the input sql file
+        seq $n | sed 's/.*/INSERT INTO foo_load(a,b) VALUES (&,'\''&&&&&&&&&'\'');/'
+    } >huge.sql
     deepdive load foo_load huge.sql
     [[ $(deepdive sql eval "select count(*) from foo_load") -eq $n ]]
     rm -f huge.sql

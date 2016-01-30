@@ -30,36 +30,10 @@ mkdir -p run/"$runDir"
 
 # forward signals to descendants to make sure no dangling processes remain
 signals="HUP INT QUIT TERM"
-list_descendant_pids() {
-    local pid=$$
-    local ppid=$BASHPID
-    # find the descendent processes
-    ps ax -o pid=,ppid= |
-    sed '
-        # trim whitespaces
-        s/[[:space:]][[:space:]]*/ /; s/^ //; s/ $//
-        # exclude bash itself as well as these sed, tsort, and ps processes here
-        /[[:space:]]'"$ppid"'$/d
-        # emit the original pid-ppid edge
-        p
-        # inject an edge from bash to everyone else to create a cycle
-        s/^/'"$pid"' /; s/[[:space:]][^[:space:]]*$//
-    '  |
-    # use tsort to find the injected cycle from the mutated process tree
-    tsort 2>&1 |
-    sed '
-        /^tsort: /!d
-        /input contains a loop:$/d
-        s/^tsort: //
-    ' |
-    sort -u |
-    # exclude bash and subshell
-    grep -vxF "$pid"$'\n'"$ppid"
-}
 signal_pg() {
     local sig=$1
     # send given signal to the process group
-    list_descendant_pids | xargs kill -$sig 2>/dev/null || true
+    exec ps_descendants $$ | xargs -t kill -$sig || true
 }
 keep_signal_pg() {
     local sig=$1
@@ -72,7 +46,7 @@ keep_signal_pg() {
     # until no process remains in the process group
     # keep sending the same signal with increasing interval
     local timeout=1
-    while [[ -n $(list_descendant_pids) ]]; do
+    while [[ -n $(exec ps_descendants $$) ]]; do
         echo "Processes still alive, sending SIG$sig again to descendants of PID $$ in $timeout secs"
         sleep $timeout && signal_pg $sig && let timeout*=2 || {
             # or send KILL if something goes wrong
@@ -113,6 +87,8 @@ fi
 cleanup() {
     cd "$DEEPDIVE_APP"
     [[ ! run/RUNNING -ef run/"$runDir" ]] || rm -f run/RUNNING
+    # make sure no descendant processes are left behind
+    [[ -z $(exec ps_descendants $$) ]] || keep_signal_pg TERM
 }
 trap cleanup EXIT
 #  and leaving an ABORTED symlink upon error
