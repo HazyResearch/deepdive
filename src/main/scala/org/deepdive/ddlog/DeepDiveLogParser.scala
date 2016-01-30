@@ -39,7 +39,9 @@ case class OuterModifier extends BodyModifier
 case class AllModifier extends BodyModifier
 
 case class Attribute(name : String, terms : List[String], types : List[String], annotations : List[List[Annotation]])
-case class ConjunctiveQuery(headTerms: List[Expr], bodies: List[List[Body]], isDistinct: Boolean, limit: Option[Int])
+case class ConjunctiveQuery(headTerms: List[Expr], bodies: List[List[Body]], isDistinct: Boolean, limit: Option[Int],
+                            isForQuery: Boolean = false // XXX This flag is not ideal, but minimizes the impact of query treatment when compared to creating another case class
+                           )
 case class Column(name : String // name of the column
                  , t : String // type of the column
                  , annotation: List[Annotation] = List.empty // optional annotation
@@ -420,7 +422,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
             val definedVars = body flatMap DeepDiveLogSemanticChecker.collectDefinedVars
             definedVars map VarExpr
           }
-        ConjunctiveQuery(headTermsToUse, List(body), isDistinct != None, limit map (_.toInt))
+        ConjunctiveQuery(headTermsToUse, List(body), isDistinct != None, limit map (_.toInt), isForQuery = true)
     }
 
   def parseQuery(inputQuery: String): DeepDiveLog.Query = {

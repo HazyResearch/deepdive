@@ -8,12 +8,15 @@ object DeepDiveLogQueryCompiler extends DeepDiveLogHandler {
     val (query, extraRules) = (new DeepDiveLogParser).parseQuery(config.query)
 
     // TODO make sure extraRules don't have name clashes with program
-    // TODO run SemanticChecker
+
+    // run typical checks for correct semantics
+    val programToCheck = ExtractionRule(q = query, headName = "") :: extraRules ++ program
+    DeepDiveLogSemanticChecker.run(programToCheck, config)
 
     // use schema declarations, etc. in given program
     val compilationState = new CompilationState(
       config = config,
-      statements = program ++ extraRules
+      statements = extraRules ++ program
     )
     val sql = (extraRules collect {
       // compile supporting rules as CREATE TEMP TABLE queries
