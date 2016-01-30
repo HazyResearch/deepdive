@@ -52,14 +52,14 @@ expectedOutputExistsFor() {
 # compare the pretty-printed output with what's expected
 @test "$it prints input as expected" {
     expectedOutputExistsFor "print" || skip
-    ddlog print "$TESTDIR"/input.ddlog >"$actualOutput"
+    ddlog print --skip-desugar "$TESTDIR"/input.ddlog >"$actualOutput"
     diff "$expectedOutput" "$actualOutput"
 }
 
 # compare the desugared output with what's expected
 @test "$it desugars as expected" {
     expectedOutputExistsFor "desugar" || skip
-    ddlog print --desugar "$TESTDIR"/input.ddlog >"$actualOutput"
+    ddlog print "$TESTDIR"/input.ddlog >"$actualOutput"
     diff "$expectedOutput" "$actualOutput"
 }
 
