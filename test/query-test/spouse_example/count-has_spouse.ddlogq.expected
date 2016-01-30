@@ -1,0 +1,3 @@
+SELECT COUNT(R0.relation_id) AS column_0
+FROM has_spouse R0
+        

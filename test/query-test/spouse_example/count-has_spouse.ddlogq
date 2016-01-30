@@ -1,0 +1,1 @@
+COUNT(r) ?- has_spouse(r).
