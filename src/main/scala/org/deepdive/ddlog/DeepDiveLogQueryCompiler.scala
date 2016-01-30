@@ -7,7 +7,8 @@ object DeepDiveLogQueryCompiler extends DeepDiveLogHandler {
   override def run(program: Program, config: Config): Unit = {
     val (query, extraRules) = (new DeepDiveLogParser).parseQuery(config.query)
 
-    // TODO make sure extraRules don't have name clashes with program
+    // make sure extraRules don't have name clashes with the program
+    DeepDiveLogSemanticChecker.checkNoRedefinition(program, extraRules)
 
     // run typical checks for correct semantics
     val programToCheck = ExtractionRule(q = query, headName = "") :: extraRules ++ program
