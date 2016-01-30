@@ -390,10 +390,9 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def program : Parser[DeepDiveLog.Program] = phrase(rep1(statement <~ "."))
 
   def parseProgram(inputProgram: CharSequence, fileName: Option[String] = None): List[Statement] = {
-    parse(program, inputProgram) match {
-      case result: Success[_] => result.get
-      case error:  NoSuccess  => throw new RuntimeException(fileName.getOrElse("") + error.toString())
-    }
+    val result = parse(program, inputProgram)
+    if (result successful) result.get
+    else sys.error(fileName.getOrElse("") + result.toString)
   }
 
   def parseProgramFile(fileName: String): List[Statement] = {
@@ -401,4 +400,36 @@ class DeepDiveLogParser extends JavaTokenParsers {
     try parseProgram(source.getLines mkString "\n", Some(fileName))
     finally source.close()
   }
+
+  // query is a conjunctive query with optional projection and extraction rules
+  def query : Parser[DeepDiveLog.Query] =
+    rep(normalRule <~ ".") ~ (queryWithOptionalHeadTerms <~ ".") ^^ { case rules ~ q => (q, rules) }
+
+  def normalRule: Parser[ExtractionRule] =
+    relationName ~ conjunctiveQuery ^^ {
+      case headName ~ cq =>
+        ExtractionRule(headName = headName, q = cq)
+    }
+
+  def queryWithOptionalHeadTerms =
+    (repsep(expr, ",") ~ opt("*") ~ opt("|" ~> decimalNumber)) ~ ("?-" ~> rep1sep(cqConjunctiveBody, ";")) ^^ {
+      // optional head terms without parentheses
+      case (headTerms ~ isDistinct ~ limit) ~ disjunctiveBodies =>
+        val headTermsToUse =
+          if (headTerms nonEmpty) headTerms else {
+            val definedVars = disjunctiveBodies flatMap {
+                _ flatMap DeepDiveLogSemanticChecker.collectDefinedVars
+              }
+            definedVars map VarExpr
+            // TODO get common variables from bodies for the headTerms
+          }
+        ConjunctiveQuery(headTermsToUse, disjunctiveBodies, isDistinct != None, limit map (_.toInt))
+    }
+
+  def parseQuery(inputQuery: String): DeepDiveLog.Query = {
+    val result = parse(phrase(query), inputQuery)
+    if (result successful) result.get
+    else sys.error(result.toString)
+  }
+
 }

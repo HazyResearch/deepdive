@@ -504,7 +504,7 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
         ${ optionalClause("WHERE", generateWhereClause(body, "")) }${groupbyStr}${limitStr}"""
   }
 
-  def generateSQL(aliasStyle: AliasStyle) = {
+  def generateSQL(aliasStyle: AliasStyle = ViewAlias) = {
     val head = generateSQLHead(aliasStyle)
     val body = cq.bodies map generateSQLBody
     body map { b => s"SELECT ${head}\n${b}" } mkString("\nUNION ALL\n")
