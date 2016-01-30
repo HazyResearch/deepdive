@@ -449,8 +449,8 @@ then . else
             cd \"$facPath\"
             find . \\( -name  'factors.part-*.bin.bz2' \\
                     -o -name 'nfactors.part-*'         \\
+                    -o -name   'nedges.part-*'         \\
                     -o -name  'weights.part-*.bin.bz2' \\
-                    -o -name 'nweights.part-*'         \\
                     \\) -exec rm -rf {} +
             export DEEPDIVE_LOAD_FORMAT=tsv
 
