@@ -22,11 +22,14 @@ format_duration() {
   fi
 }
 
-if [ -e $@ ]; then
-    ts=$(date -r $@ -Iseconds 2>/dev/null || date -r $@ +%FT%T%z)
-    nsecs=$(( $(date +%s) - $(date -r $@ +%s) ))
+[[ $# -gt 0 ]] || usage "$0" "Missing TIMESTAMP_FILE"
+
+for file; do
+    [[ -e "$file" ]] || continue
+    ts=$(date -r "$file" -Iseconds 2>/dev/null || date -r "$file" +%FT%T%z)
+    nsecs=$(( $(date +%s) - $(date -r "$file" +%s) ))
     dur=$(format_duration $nsecs)
     echo "$ts (${dur## } ago)"
-else
-    echo no
-fi
+    exit
+done
+echo N/A

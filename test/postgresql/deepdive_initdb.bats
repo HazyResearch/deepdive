@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# Tests for initdb
+# Tests for deepdive db init
 
 . "$BATS_TEST_DIRNAME"/env.sh >&2
 
@@ -39,7 +39,8 @@ setup() {
 @test "$DBVARIANT initdb from ddlog" {
     cd ddlog || skip
     deepdive compile
-    deepdive initdb articles
+    deepdive db init
+    deepdive create table articles
     [[ $(deepdive sql eval "SELECT * FROM articles" format=csv header=1) = 'article_id,text' ]]
     deepdive sql "INSERT INTO articles VALUES ('foo', 'bar')"
 }

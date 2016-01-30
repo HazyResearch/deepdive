@@ -1,1 +1,1 @@
-postgresql://localhost/deepdive_chunking
+postgresql://localhost/deepdive_chunking_$USER

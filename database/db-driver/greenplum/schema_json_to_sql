@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 # Generate create table statement given a ddlog exported schema and a table name.
-# Usage: ddlog_initdb SCHEMA.JSON TABLE_NAME
+# Usage: schema_json_to_sql SCHEMA.JSON TABLE_NAME
 
 #This is a variation of the postgresql driver's version.
 #It generates the extra sql component "DISTRIBUTED BY (column_name(s))" when the annotation @distributed_by is added below one or several columns in a table declaration in ddlog

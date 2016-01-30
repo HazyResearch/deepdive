@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
 # show_progress -- Shows data flow progress by lines and bytes
-# > show_progress input_to    NAME [PV_OPTS...] -- COMMAND [ARG...]
-# > show_progress output_from NAME [PV_OPTS...] -- COMMAND [ARG...]
+# > show_progress input_to    NAME [OPTION...] -- COMMAND [ARG...]
+# > show_progress output_from NAME [OPTION...] -- COMMAND [ARG...]
+#
+# Recognized OPTIONs are:
+#  total_bytes=NUM_BYTES
+#  total_lines=NUM_LINES
+# where NUM_BYTES and NUM_LINES are estimates and can be bash expressions,
+# e.g., $(deepdive sql eval "SELECT COUNT(*) FROM ...").
 ##
 set -euo pipefail
 
@@ -11,12 +17,22 @@ InOut=$1; shift
 Name=$1; shift
 
 [[ $# -gt 0 ]] || usage "$0" "Missing COMMAND"
-PipeViewOpts=()
+# parse extra options until --
+Options=()
 while [[ $# -gt 0 && $1 != "--" ]]; do
-    PipeViewOpts+=("$1"); shift
+    Options+=("$1"); shift
 done
 [[ $1 = "--" ]] || usage "$0" "Missing -- before COMMAND"
 shift
+
+# map options to pv flags
+PipeViewOpts=()
+pv_format="%N %t %b %a (%r)"
+[[ ${#Options[@]} -eq 0 ]] || declare -- "${Options[@]}"
+: ${total_bytes:=} ${total_lines:=}
+# if total size estimate is given show progress bar and ETA
+pv_format_bytes=$pv_format; [[ -z $total_bytes ]] || pv_format_bytes+=" %p %e"
+pv_format_lines=$pv_format; [[ -z $total_lines ]] || pv_format_lines+=" %p %e"
 
 # the file descriptor to show the progress bar
 : ${DEEPDIVE_PROGRESS_FD:=2}
@@ -27,21 +43,20 @@ else
     # add some default pv(1) options
     PipeViewOpts+=(
         ${Name:+--name "$Name"}
-        --wait
         --cursor
     )
     trap "stty echo <&'"$DEEPDIVE_PROGRESS_FD"' || true" EXIT # to restore sometimes garbled terminal
     case $InOut in
         input_to) eval '
-            pv 2>&'"$DEEPDIVE_PROGRESS_FD"' "${PipeViewOpts[@]}" |
-            pv 2>&'"$DEEPDIVE_PROGRESS_FD"' "${PipeViewOpts[@]}" --line-mode |
+            pv 2>&'"$DEEPDIVE_PROGRESS_FD"' "${PipeViewOpts[@]}" --format="$pv_format_bytes" '"${total_bytes:+--size="$total_bytes"}"' |
+            pv 2>&'"$DEEPDIVE_PROGRESS_FD"' "${PipeViewOpts[@]}" --format="$pv_format_lines" '"${total_lines:+--size="$total_lines"}"' --line-mode |
             "$@"
             ' ;;
 
         output_from) eval '
             "$@" |
-            pv 2>&'"$DEEPDIVE_PROGRESS_FD"' "${PipeViewOpts[@]}" |
-            pv 2>&'"$DEEPDIVE_PROGRESS_FD"' "${PipeViewOpts[@]}" --line-mode
+            pv 2>&'"$DEEPDIVE_PROGRESS_FD"' "${PipeViewOpts[@]}" --format="$pv_format_bytes" '"${total_bytes:+--size="$total_bytes"}"' |
+            pv 2>&'"$DEEPDIVE_PROGRESS_FD"' "${PipeViewOpts[@]}" --format="$pv_format_lines" '"${total_lines:+--size="$total_lines"}"' --line-mode
             ' ;;
 
         *)

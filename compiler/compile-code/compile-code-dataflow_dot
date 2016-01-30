@@ -7,9 +7,7 @@ def nodeType: sub("/.*$"; "");
 
 # node attributes by type
 { data     : "shape=box3d    color=\"#2222cc\" style=solid"
-, factor   : "shape=rect     color=\"#8822cc\" style=solid"
 , process  : "shape=ellipse  color=\"#cc2222\" style=solid"
-, pipeline : "shape=folder   color=\"#ffcc22\" style=solid"
 , model    : "shape=septagon color=\"#ffffff\" style=filled fillcolor=\"#cc22cc\""
 } as $nodeAttr |
 
