@@ -1,15 +1,32 @@
-language: cpp
 notifications:
   email:
     - deepdive-dev@lists.stanford.edu
-before_install:
-  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
-  - sudo apt-get update -qq
-  - sudo apt-get install -y libnuma-dev
-  - if [ "$CXX" = "g++" ]; then sudo apt-get install -qq g++-4.8; fi
-  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
-install: make dep
+
+sudo: false  # to use container-based infra, see: http://docs.travis-ci.com/user/migrating-from-legacy/
+addons:
+  apt:
+    sources:
+    # for gcc 4.8
+    - ubuntu-toolchain-r-test
+    packages:
+    # for building sampler
+    - libnuma-dev
+    - gcc-4.8
+    - g++-4.8
+cache:
+  directories:
+    # dependencies
+    - lib/gtest
+    - lib/tclap
+
+language: cpp
 compiler:
   - gcc
-# Change this to your needs
+
+before_install:
+  - export CXX="g++-4.8" CC="gcc-4.8"
+install:
+  # skip preparing dependencies if they're cached
+  - test -e lib/gtest/libgtest.a -a -d lib/tclap/include/tclap || make dep
+  - make
 script: make test
