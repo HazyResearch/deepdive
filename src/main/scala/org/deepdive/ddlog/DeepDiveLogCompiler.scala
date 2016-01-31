@@ -68,7 +68,7 @@ object AliasStyle extends Enumeration {
   type AliasStyle = Value
   // TableStyle: tableName.R{tableIndex}.columnName
   // ViewStyle: column_{columnIndex}
-  val ViewAlias, TableAlias, NoAlias = Value
+  val ViewAlias, TableAlias, NoAlias, UseVariableAsAlias = Value
 }
 import AliasStyle._
 
@@ -346,6 +346,7 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
       case _ => s" AS column_${cq.headTerms indexOf e}"
     }
     case ViewAlias => s" AS column_${cq.headTerms indexOf e}"
+    case UseVariableAsAlias => s""" AS "${DeepDiveLogPrettyPrinter.print(e)}""""
   }
 
   // resolve an expression

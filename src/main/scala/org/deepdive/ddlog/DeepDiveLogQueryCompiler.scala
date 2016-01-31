@@ -27,7 +27,7 @@ object DeepDiveLogQueryCompiler extends DeepDiveLogHandler {
           qc.generateSQL(AliasStyle.ViewAlias)}"""
     }) ++ List({
       // compile the query
-      s"""${new QueryCompiler(query, compilationState).generateSQL()}"""
+      s"""${new QueryCompiler(query, compilationState).generateSQL(AliasStyle.UseVariableAsAlias)}"""
     }) mkString(";\n\n")
     println(sql)
   }
