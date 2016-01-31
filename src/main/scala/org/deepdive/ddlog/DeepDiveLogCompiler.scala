@@ -499,10 +499,41 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
     }
 
     // limit clause
-    val limitStr = optionalClause("LIMIT", cq.limit.getOrElse("").toString)
+    val limitStr = optionalClause("\nLIMIT", cq.limit.getOrElse("").toString)
+
+    // order by clause by handling any @order_by annotations
+    val orderbyStr =
+      if (cq.headTermAnnotations.size != cq.headTerms.size) "" // invalid annotations
+      else {
+        val ORDER_BY_ANNOTATION_NAMES = Set("order_by")
+        val orderByAnnos = cq.headTermAnnotations map {
+          case annos => annos collectFirst {
+            case anno if ORDER_BY_ANNOTATION_NAMES contains anno.name => anno
+          }
+        }
+        val orderByExprs = cq.headTerms.zip(orderByAnnos).zipWithIndex collect {
+          case ((e, Some(orderByAnno)), i) =>
+            // TODO factor out annotation argument handling
+            val isAscending = // the "dir" or first argument of the annotation decides the sort order, defaulting to ASCending
+              orderByAnno.args collect {
+                case Left(argsMap) => (argsMap getOrElse("dir", "ASC")).toString == "ASC"
+                case Right(dir :: _) => dir.toString == "ASC"
+              } getOrElse(true)
+            val priority = // the priority or second argument decides the key index
+              orderByAnno.args collect {
+                case Left(argsMap) => (argsMap getOrElse("priority", i+1)).toString.toInt
+                case Right(_ :: priority :: _) => priority.toString.toInt
+              } getOrElse(i+1)
+            (e, isAscending, priority)
+        } sortBy { _._3 }
+        optionalClause("\nORDER BY", orderByExprs map {
+            case (e, isAscending, _) => s"${compileExpr(e)} ${if (isAscending) "ASC" else "DESC"}"
+          } mkString(", ")
+        )
+      }
 
     s"""FROM ${ generateFromClause(body, "") }
-        ${ optionalClause("WHERE", generateWhereClause(body, "")) }${groupbyStr}${limitStr}"""
+        ${ optionalClause("WHERE", generateWhereClause(body, "")) }${groupbyStr}${orderbyStr}${limitStr}"""
   }
 
   def generateSQL(aliasStyle: AliasStyle = ViewAlias) = {

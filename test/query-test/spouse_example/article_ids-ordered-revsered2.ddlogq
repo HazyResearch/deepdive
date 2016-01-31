@@ -1,0 +1,1 @@
+@order_by("DESC") id ?- articles(id, _).

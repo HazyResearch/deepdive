@@ -40,7 +40,10 @@ case class AllModifier extends BodyModifier
 
 case class Attribute(name : String, terms : List[String], types : List[String], annotations : List[List[Annotation]])
 case class ConjunctiveQuery(headTerms: List[Expr], bodies: List[List[Body]], isDistinct: Boolean, limit: Option[Int],
-                            isForQuery: Boolean = false // XXX This flag is not ideal, but minimizes the impact of query treatment when compared to creating another case class
+                            // optional annotations for head terms
+                            headTermAnnotations: List[List[Annotation]] = List.empty,
+                            // XXX This flag is not ideal, but minimizes the impact of query treatment when compared to creating another case class
+                            isForQuery: Boolean = false
                            )
 case class Column(name : String // name of the column
                  , t : String // type of the column
@@ -296,6 +299,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def cqHeadTerms = "(" ~> rep1sep(expr, ",") <~ ")"
 
   def conjunctiveQuery : Parser[ConjunctiveQuery] =
+    // TODO fill headTermAnnotations as done in queryWithOptionalHeadTerms to support @order_by
     cqHeadTerms ~ opt("*") ~ opt("|" ~> decimalNumber) ~ ":-" ~ rep1sep(cqConjunctiveBody, ";") ^^ {
       case (head ~ isDistinct ~ limit ~ ":-" ~ disjunctiveBodies) =>
         ConjunctiveQuery(head, disjunctiveBodies, isDistinct != None, limit map (_.toInt))
@@ -414,16 +418,26 @@ class DeepDiveLogParser extends JavaTokenParsers {
     }
 
   def queryWithOptionalHeadTerms =
-    ((("(" ~> rep1sep(expr, ",") <~ ")") | repsep(expr, ",")) // head terms with parentheses or optionally without
+    ((("(" ~> rep1sep(annotatedHeadTerm, ",") <~ ")") | repsep(annotatedHeadTerm, ",")) // head terms with parentheses or optionally without
       ~ opt("*") ~ opt("|" ~> decimalNumber)) ~ ("?-" ~> cqConjunctiveBody) ^^ {
-      case (headTerms ~ isDistinct ~ limit) ~ body =>
+      case (headTermsZippedWithAnnotations ~ isDistinct ~ limit) ~ body =>
+        val (headTerms, headTermAnnos) = headTermsZippedWithAnnotations unzip
         val headTermsToUse =
           if (headTerms nonEmpty) headTerms else {
             val definedVars = body flatMap DeepDiveLogSemanticChecker.collectDefinedVars
             definedVars map VarExpr
           }
-        ConjunctiveQuery(headTermsToUse, List(body), isDistinct != None, limit map (_.toInt), isForQuery = true)
+        ConjunctiveQuery(
+          headTerms = headTermsToUse,
+          headTermAnnotations = headTermAnnos,
+          bodies = List(body),
+          isDistinct = isDistinct != None,
+          limit = limit map (_.toInt),
+          isForQuery = true
+        )
     }
+
+  def annotatedHeadTerm = rep(annotation) ~ expr ^^ { case anno ~ e => (e, anno) }
 
   def parseQuery(inputQuery: String): DeepDiveLog.Query = {
     val result = parse(phrase(query), inputQuery)
