@@ -171,7 +171,7 @@ FROM R R0
         WHERE R1.a = R0.x  AND R0.x > 1000"""
           function: "Imply(Q.R0.label)"
           weight: "?(dd_weight_column_0)"
-          dependencies: [ "ext_S_by_f" ,  "ext_S" ,  "ext1_S_by_f" ,  "ext_S_by_f_1" ]
+          dependencies: [ "ext_S_by_f_1" ,  "ext_S" ,  "ext1_S_by_f" ,  "ext_S_by_f" ]
           input_relations: [
             Q
             S
@@ -186,7 +186,7 @@ FROM R R0
         WHERE R1.a = R0.x  AND R0.x = 0"""
           function: "Imply(Q.R0.label)"
           weight: "1.0"
-          dependencies: [ "ext_S_by_f" ,  "ext_S" ,  "ext1_S_by_f" ,  "ext_S_by_f_1" ]
+          dependencies: [ "ext_S_by_f_1" ,  "ext_S" ,  "ext1_S_by_f" ,  "ext_S_by_f" ]
           input_relations: [
             Q
             S
@@ -201,7 +201,7 @@ FROM R R0
         WHERE R2.a = R0.x  AND R3.a = R0.x  AND R3.b = R1.x  AND R4.a = R1.x """
           function: "Imply(Q.R0.label, Q.R1.label)"
           weight: "?(dd_weight_column_0)"
-          dependencies: [ "ext_S_by_f" ,  "ext_S" ,  "ext1_S_by_f" ,  "ext_S_by_f_1" ]
+          dependencies: [ "ext_S_by_f_1" ,  "ext_S" ,  "ext1_S_by_f" ,  "ext_S_by_f" ]
           input_relations: [
             Q
             S
@@ -217,7 +217,7 @@ FROM R R0
         WHERE R2.a = R0.x  AND R3.a = R0.x  AND R3.b = R1.x  AND R4.a = R1.x  AND (R0.x + R1.x) < 1000"""
           function: "Imply(Q.R0.label, Q.R1.label)"
           weight: "-10.0"
-          dependencies: [ "ext_S_by_f" ,  "ext_S" ,  "ext1_S_by_f" ,  "ext_S_by_f_1" ]
+          dependencies: [ "ext_S_by_f_1" ,  "ext_S" ,  "ext1_S_by_f" ,  "ext_S_by_f" ]
           input_relations: [
             Q
             S

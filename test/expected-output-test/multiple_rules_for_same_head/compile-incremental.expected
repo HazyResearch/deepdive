@@ -113,7 +113,7 @@ FROM dd_delta_S R0
         """
           output_relation: "dd_new_S"
         style: "cmd_extractor"
-          dependencies: [ "ext_dd_delta_S" ,  "ext1_dd_delta_S_by_f" ,  "ext_dd_delta_S_by_f" ,  "ext_dd_delta_S_by_f_1" ]
+          dependencies: [ "ext_dd_delta_S" ,  "ext_dd_delta_S_by_f_1" ,  "ext_dd_delta_S_by_f" ,  "ext1_dd_delta_S_by_f" ]
           input_relations: [
             S
             dd_delta_S
@@ -363,7 +363,7 @@ FROM dd_delta_R R0
         WHERE R1.a = R0.x  AND R0.x > 1000"""
           function: "Imply(dd_new_Q.R0.label)"
           weight: "?(dd_weight_column_0)"
-          dependencies: [ "ext_dd_delta_S" ,  "ext1_dd_delta_S_by_f" ,  "ext_dd_delta_S_by_f" ,  "ext_dd_delta_S_by_f_1" ]
+          dependencies: [ "ext_dd_delta_S" ,  "ext_dd_delta_S_by_f_1" ,  "ext_dd_delta_S_by_f" ,  "ext1_dd_delta_S_by_f" ]
           input_relations: [
             dd_new_Q
             dd_delta_S
@@ -378,7 +378,7 @@ FROM dd_delta_R R0
         WHERE R1.a = R0.x  AND R0.x = 0"""
           function: "Imply(dd_new_Q.R0.label)"
           weight: "1.0"
-          dependencies: [ "ext_dd_delta_S" ,  "ext1_dd_delta_S_by_f" ,  "ext_dd_delta_S_by_f" ,  "ext_dd_delta_S_by_f_1" ]
+          dependencies: [ "ext_dd_delta_S" ,  "ext_dd_delta_S_by_f_1" ,  "ext_dd_delta_S_by_f" ,  "ext1_dd_delta_S_by_f" ]
           input_relations: [
             dd_new_Q
             dd_delta_S
