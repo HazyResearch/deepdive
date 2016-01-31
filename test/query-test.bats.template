@@ -14,6 +14,7 @@ setup() {
     ddlog print "$TESTDIR"/*.ddlog >/dev/null
 
     # for each query
+    hasFailedAny=false
     for q in "$TESTDIR"/*.ddlogq; do
         expectedOutput="$q".expected
         expectedError="$q"-error.expected
@@ -23,12 +24,14 @@ setup() {
         if [ -e "$expectedError" ]; then
             expectedOutput=$expectedError
             # query is expected to have parse errors
-            ! ddlog query "$(cat $q)" "$TESTDIR"/*.ddlog >/dev/null 2>"$actualOutput"
+            ! ddlog query "$(cat $q)" "$TESTDIR"/*.ddlog >/dev/null 2>"$actualOutput" || hasFailedAny=true
         else
             # query is supposed to parse without errors
-            ddlog query "$(cat $q)" "$TESTDIR"/*.ddlog  >"$actualOutput"
+            ddlog query "$(cat $q)" "$TESTDIR"/*.ddlog  >"$actualOutput" || hasFailedAny=true
         fi
         # see if there's any difference
-        diff "$expectedOutput" "$actualOutput"
+        diff "$expectedOutput" "$actualOutput" || hasFailedAny=true
+        echo; echo; echo
     done
+    ! $hasFailedAny || false
 }
