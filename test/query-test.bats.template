@@ -16,7 +16,7 @@ setup() {
     # for each query
     for q in "$TESTDIR"/*.ddlogq; do
         expectedOutput="$q".expected
-        expectedError="$q".error-expected
+        expectedError="$q"-error.expected
         [ -e "$expectedOutput" ] || [ -e "$expectedError" ] || continue
         echo "Compiling $q"
         actualOutput="$q".actual
