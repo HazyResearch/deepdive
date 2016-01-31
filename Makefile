@@ -46,6 +46,14 @@ test: export CLASSPATH = $(realpath $(JAR))
 
 endif # TEST_JAR
 
+actual-expected:
+	for expected in test/*/*/*.expected; do \
+	    actual=${expected%.expected}.actual; \
+	    [[ "$actual" -nt "$expected" ]] && \
+	    ! diff -q "$actual" "$expected" || continue; \
+	    cp -vf "$actual" "$expected"; \
+	done
+
 # test coverage report
 .PHONY: test-coverage coveralls
 test-coverage:
