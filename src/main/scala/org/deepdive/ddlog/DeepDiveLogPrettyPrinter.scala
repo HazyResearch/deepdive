@@ -73,7 +73,8 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   }
 
   // print an expression
-  def print(e: Expr) : String = {
+  def print(e: Expr) : String = print(e, 0)
+  def print(e: Expr, level: Int) : String = {
     e match {
       case VarExpr(name) => name
       case NullConst() => "NULL"
@@ -85,8 +86,16 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
         val resolvedArgs = args map (x => print(x))
         s"${function}(${resolvedArgs.mkString(", ")})"
       }
-      case BinaryOpExpr(lhs, op, rhs) => s"(${print(lhs)} ${op} ${print(rhs)})"
+      case BinaryOpExpr(lhs, op, rhs) => {
+        val p = s"${print(lhs, level + 1)} ${op} ${print(rhs, level + 1)}"
+        if (level == 0) p else s"(${p})"
+      }
       case TypecastExpr(lhs, rhs) => s"(${print(lhs)} :: ${rhs})"
+      case IfThenElseExpr(ifCondExprPairs, optElseExpr) => (
+        (ifCondExprPairs map {
+          case (ifCond, thenExpr) => s"if ${print(ifCond)} then ${print(thenExpr)}"
+        }) ++ (optElseExpr map print toList)
+      ) mkString("", "\n\telse ", "\n\tend")
     }
   }
 
@@ -114,7 +123,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   // print a condition
   def print(cond: Cond) : String = {
     cond match {
-      case ComparisonCond(lhs, op, rhs) => s"${print(lhs)} ${op} ${print(rhs)}"
+      case ExprCond(e) => print(e)
       case NegationCond(c) => s"[!${print(c)}]"
       case CompoundCond(lhs, op, rhs) => {
         op match {
@@ -131,7 +140,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
     case b: QuantifiedBody => print(b)
   }
 
-  def print(cq: ConjunctiveQuery, supervision: String = ""): String = {
+  def print(cq: ConjunctiveQuery, optSupervision: Option[Expr] = None): String = {
 
     def printBodyList(b: List[Body]) = {
       s"${(b map print).mkString(",\n    ")}"
@@ -145,7 +154,9 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
     val headStr     = if (headStrTmp isEmpty) "" else s"(${headStrTmp})"
 
     val headBodySeparator = if (cq.isForQuery) "?-" else ":-"
-    headStr + distinctStr + limitStr + supervision + s" ${headBodySeparator}\n    " + bodyStr
+    headStr + (
+      optSupervision map { sv => s" = ${print(sv)}" } getOrElse("")
+    ) + distinctStr + limitStr + s" ${headBodySeparator}\n    " + bodyStr
   }
 
   def print(a: HeadAtom) : String = {
@@ -168,8 +179,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   }
 
   def print(stmt: ExtractionRule): String = {
-      var supervision = stmt.supervision map (s => s" = ${s}") getOrElse("");
-      stmt.headName + print(stmt.q, supervision) + ".\n"
+    stmt.headName + print(stmt.q, stmt.supervision) + ".\n"
   }
 
   def print(stmt: FunctionCallRule): String = {
