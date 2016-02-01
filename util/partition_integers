@@ -6,6 +6,11 @@ import sys
 M = int(sys.argv[1])
 N = int(sys.argv[2])
 
+# input sanity check
+if not (M >= 0 and N > 0):
+    sys.stderr.writeln("%d must be non-negative and %d must be positive integers" % (M, N))
+    sys.exit(1)
+
 k = float(M)/N
 
 begin = 0
