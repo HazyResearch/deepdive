@@ -189,18 +189,19 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
     stmt match {
       case s: ExtractionRule if (schemaDeclaration contains s.headName) && (schemaDeclaration(s.headName).variableType nonEmpty) => {
         val headType = schemaDeclaration(s.headName).variableType.get
-        s.supervision match {
-          case Some("TRUE") | Some("FALSE") => {
+        s.supervision foreach {
+          case b: BooleanConst => {
             if (headType != BooleanType) {
               error(s, s"Supervision column ${s.supervision} should be boolean type but is ${headType} type")
             }
           }
-          case Some(varname) =>
+          case VarExpr(varname) =>
             s.q.bodies.foreach { bodies: List[Body] =>
               bodies.foreach { b =>
                 checkSupervisionLabelType(s, headType, VarPattern(varname), b) }
             }
-          case None =>
+          case _ =>
+            // XXX assume the rest of the expressions are correct
         }
       }
       case _ =>
@@ -213,6 +214,10 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
     case FuncExpr(function, args, agg) => args flatMap collectUsedVars toSet
     case BinaryOpExpr(lhs, op, rhs) => collectUsedVars(lhs) ++ collectUsedVars(rhs)
     case TypecastExpr(lhs, rhs) => collectUsedVars(lhs)
+    case IfThenElseExpr(ifCondThenExprs, optElseExpr) =>
+      (ifCondThenExprs flatMap { case (ifCond, thenExpr) =>
+        collectUsedVars(ifCond) ++ collectUsedVars(thenExpr)
+      } toSet) ++ (optElseExpr.toSet flatMap { e:Expr => collectUsedVars(e) })
     case _ => Set()
   }
 
@@ -228,7 +233,7 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
   }
 
   def collectUsedVars(cond: Cond) : Set[String] = cond match {
-    case ComparisonCond(lhs, op, rhs) => collectUsedVars(lhs) ++ collectUsedVars(rhs)
+    case ExprCond(e)                  => collectUsedVars(e)
     case CompoundCond(lhs, op, rhs)   => collectUsedVars(lhs) ++ collectUsedVars(rhs)
     case NegationCond(c)              => collectUsedVars(c)
   }
@@ -258,7 +263,7 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
       if (varUndefined nonEmpty) error(stmt, s"Variable ${varUndefined mkString(", ")} must have bindings")
     }
     stmt match {
-      case s: ExtractionRule => checkCq(s.q)
+      case s: ExtractionRule => checkCq(s.q, (s.supervision.toSet flatMap { e:Expr => collectUsedVars(e) }))
       case s: InferenceRule  => checkCq(s.q, (s.weights.variables flatMap collectUsedVars toSet))
       case _ =>
     }

@@ -1,7 +1,7 @@
 R(a int,
   b int).
 
-A(x, (x + y)) :-
+A(x, x + y) :-
     R(x, y).
 
 B(x, z) :-

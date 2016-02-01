@@ -32,25 +32,92 @@ FROM R R0, R R1
 UNION ALL
 SELECT R0.a AS "R.R0.a"
 FROM R R0, R R1
-        WHERE R1.a = R0.b  AND R0.a = 0'
+        WHERE R1.a = R0.b  AND R0.a = 0
+UNION ALL
+SELECT R0.a AS "S_0.R0.a"
+FROM S_0 R0
+        
+UNION ALL
+SELECT R0.a AS "S_1.R0.a"
+FROM S_1 R0
+        
+UNION ALL
+SELECT R0.a AS "S_2.R0.a"
+FROM S_2 R0
+        '
 	# TODO rename temporary table to replace output_relation
 	
         """
           output_relation: "S"
         style: "cmd_extractor"
-          
+          dependencies: [ "ext_S_0_by_f" ,  "ext_S_1_by_f" ,  "ext_S_2_by_f_1" ]
           input_relations: [
             R
+            S_0
+            S_1
+            S_2
           ]
       }
     
 
-        deepdive.extraction.extractors.ext_T_by_f {
+      deepdive.extraction.extractors.ext_T__3 {
+        cmd: """
+
+	deepdive create view T__3 as 'SELECT R0.a AS column_0
+FROM T R0
+        '
+	
+        """
+          output_relation: "T__3"
+        style: "cmd_extractor"
+          dependencies: [ "ext_T" ]
+          input_relations: [
+            T
+          ]
+      }
+    
+
+      deepdive.extraction.extractors.ext_T {
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "T"
+	deepdive sql 'INSERT INTO T SELECT R0.a AS "T___0.R0.a"
+FROM T___0 R0
+        
+UNION ALL
+SELECT R0.a AS "T___1.R0.a"
+FROM T___1 R0
+        
+UNION ALL
+SELECT R0.a AS "T___2.R0.a"
+FROM T___2 R0
+        
+UNION ALL
+SELECT R0.a AS "T___3.R0.a"
+FROM T___3 R0
+        '
+	# TODO rename temporary table to replace output_relation
+	
+        """
+          output_relation: "T"
+        style: "cmd_extractor"
+          dependencies: [ "ext_T___0_by_f" ,  "ext_T___1_by_f" ,  "ext_T___2_by_f" ,  "ext_T___3_by_f_1" ]
+          input_relations: [
+            T___0
+            T___1
+            T___2
+            T___3
+          ]
+      }
+    
+
+        deepdive.extraction.extractors.ext_T___0_by_f {
           input: """ SELECT R0.a AS "R.R0.a", R0.b AS "R.R0.b"
 FROM R R0
         WHERE R0.a > 1000
           """
-          output_relation: "T"
+          output_relation: "T___0"
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
@@ -62,12 +129,12 @@ FROM R R0
         }
       
 
-        deepdive.extraction.extractors.ext1_T_by_f {
+        deepdive.extraction.extractors.ext_T___1_by_f {
           input: """ SELECT R0.a AS "R.R0.a", R0.b AS "R.R0.b"
 FROM R R0
-        WHERE (10 < R0.a AND R0.a < 20)
+        WHERE 10 < R0.a AND R0.a < 20
           """
-          output_relation: "T"
+          output_relation: "T___1"
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
@@ -79,12 +146,12 @@ FROM R R0
         }
       
 
-        deepdive.extraction.extractors.ext2_T_by_f {
+        deepdive.extraction.extractors.ext_T___2_by_f {
           input: """ SELECT R0.a AS "R.R0.a", R0.b AS "R.R0.b"
 FROM R R0
-        WHERE (100 < R0.a AND R0.a < 200)
+        WHERE 100 < R0.a AND R0.a < 200
           """
-          output_relation: "T"
+          output_relation: "T___2"
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
@@ -96,12 +163,12 @@ FROM R R0
         }
       
 
-        deepdive.extraction.extractors.ext_S_by_f {
+        deepdive.extraction.extractors.ext_S_0_by_f {
           input: """ SELECT R0.a AS "R.R0.a", R0.b AS "R.R0.b"
 FROM R R0
         WHERE R0.a < 0
           """
-          output_relation: "S"
+          output_relation: "S_0"
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
@@ -113,12 +180,12 @@ FROM R R0
         }
       
 
-        deepdive.extraction.extractors.ext1_S_by_f {
+        deepdive.extraction.extractors.ext_S_1_by_f {
           input: """ SELECT R0.a AS "R.R0.a", R0.b AS "R.R0.b"
 FROM R R0
         WHERE R0.a > 0
           """
-          output_relation: "S"
+          output_relation: "S_1"
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
@@ -130,12 +197,12 @@ FROM R R0
         }
       
 
-        deepdive.extraction.extractors.ext_T_by_f_1 {
+        deepdive.extraction.extractors.ext_T___3_by_f_1 {
           input: """ SELECT R0.a AS "R.R0.a", R0.b AS "R.R0.b"
 FROM R R0
         
           """
-          output_relation: "T"
+          output_relation: "T___3"
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
@@ -147,12 +214,12 @@ FROM R R0
         }
       
 
-        deepdive.extraction.extractors.ext_S_by_f_1 {
+        deepdive.extraction.extractors.ext_S_2_by_f_1 {
           input: """ SELECT R0.a AS "R.R0.a", R0.b AS "R.R0.b"
 FROM R R0
         WHERE R0.a > 0
           """
-          output_relation: "S"
+          output_relation: "S_2"
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
@@ -171,7 +238,7 @@ FROM R R0
         WHERE R1.a = R0.x  AND R0.x > 1000"""
           function: "Imply(Q.R0.label)"
           weight: "?(dd_weight_column_0)"
-          dependencies: [ "ext1_S_by_f" ,  "ext_S" ,  "ext_S_by_f_1" ,  "ext_S_by_f" ]
+          dependencies: [ "ext_S" ]
           input_relations: [
             Q
             S
@@ -186,7 +253,7 @@ FROM R R0
         WHERE R1.a = R0.x  AND R0.x = 0"""
           function: "Imply(Q.R0.label)"
           weight: "1.0"
-          dependencies: [ "ext1_S_by_f" ,  "ext_S" ,  "ext_S_by_f_1" ,  "ext_S_by_f" ]
+          dependencies: [ "ext_S" ]
           input_relations: [
             Q
             S
@@ -201,7 +268,7 @@ FROM R R0
         WHERE R2.a = R0.x  AND R3.a = R0.x  AND R3.b = R1.x  AND R4.a = R1.x """
           function: "Imply(Q.R0.label, Q.R1.label)"
           weight: "?(dd_weight_column_0)"
-          dependencies: [ "ext1_S_by_f" ,  "ext_S" ,  "ext_S_by_f_1" ,  "ext_S_by_f" ]
+          dependencies: [ "ext_S" ]
           input_relations: [
             Q
             S
@@ -217,7 +284,7 @@ FROM R R0
         WHERE R2.a = R0.x  AND R3.a = R0.x  AND R3.b = R1.x  AND R4.a = R1.x  AND (R0.x + R1.x) < 1000"""
           function: "Imply(Q.R0.label, Q.R1.label)"
           weight: "-10.0"
-          dependencies: [ "ext1_S_by_f" ,  "ext_S" ,  "ext_S_by_f_1" ,  "ext_S_by_f" ]
+          dependencies: [ "ext_S" ]
           input_relations: [
             Q
             S
@@ -227,14 +294,16 @@ FROM R R0
       
 deepdive.pipeline.run: ${PIPELINE}
 deepdive.pipeline.pipelines.extraction: [
-  ext2_T_by_f
-  ext_S_by_f_1
-  ext_S_by_f
-  ext1_S_by_f
-  ext_T_by_f_1
-  ext1_T_by_f
+  ext_S_1_by_f
+  ext_T
+  ext_S_2_by_f_1
+  ext_S_0_by_f
+  ext_T___3_by_f_1
+  ext_T__3
+  ext_T___2_by_f
+  ext_T___0_by_f
   ext_S
-  ext_T_by_f
+  ext_T___1_by_f
 ]
 deepdive.pipeline.pipelines.inference: [
   inf_istrue_Q
@@ -243,14 +312,16 @@ deepdive.pipeline.pipelines.inference: [
   inf1_imply_Q_Q
 ]
 deepdive.pipeline.pipelines.endtoend: [
-  ext2_T_by_f
-  ext_S_by_f_1
-  ext_S_by_f
-  ext1_S_by_f
-  ext_T_by_f_1
-  ext1_T_by_f
+  ext_S_1_by_f
+  ext_T
+  ext_S_2_by_f_1
+  ext_S_0_by_f
+  ext_T___3_by_f_1
+  ext_T__3
+  ext_T___2_by_f
+  ext_T___0_by_f
   ext_S
-  ext_T_by_f
+  ext_T___1_by_f
   inf_istrue_Q
   inf1_istrue_Q
   inf_imply_Q_Q

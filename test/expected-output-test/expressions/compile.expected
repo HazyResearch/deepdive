@@ -93,7 +93,7 @@ FROM b R0 LEFT OUTER JOIN c R1_0 ON R1_0.n = R0.k  AND R1_0.s > R0.p
 
 	deepdive create view J as 'SELECT R0.k AS column_0
 FROM b R0
-        WHERE ((R0.k + R0.r) = 100 OR (NOT R0.k > 50))'
+        WHERE (R0.k + R0.r) = 100 OR NOT R0.k > 50'
 	
         """
           output_relation: "J"
@@ -126,7 +126,7 @@ FROM b R0_0 ON  FULL OUTER JOIN c R1_0 ON R1_0.n = R0_0.k
       deepdive.extraction.extractors.ext_F {
         cmd: """
 
-	deepdive create view F as 'SELECT ((R0.k :: INT) + (R0.r :: INT)) AS column_0
+	deepdive create view F as 'SELECT (R0.k :: INT) + (R0.r :: INT) AS column_0
 FROM b R0
         '
 	
@@ -143,7 +143,7 @@ FROM b R0
       deepdive.extraction.extractors.ext_A {
         cmd: """
 
-	deepdive create view A as 'SELECT (R0.k + (R0.r * (R0.k + R0.r))) AS column_0
+	deepdive create view A as 'SELECT R0.k + (R0.r * (R0.k + R0.r)) AS column_0
 FROM b R0
         '
 	
@@ -180,7 +180,7 @@ FROM b R0
 
 	deepdive create view I as 'SELECT R0.k AS column_0
 FROM b R0
-        WHERE ((R0.k + R0.r) = 100 OR (R0.k > 50 AND R0.r < 10))'
+        WHERE (R0.k + R0.r) = 100 OR (R0.k > 50 AND R0.r < 10)'
 	
         """
           output_relation: "I"
@@ -232,7 +232,7 @@ FROM c R0, a R1
 
 	deepdive create view Q as 'SELECT DISTINCT ('\''test'\'' :: TEXT) AS column_0, 123 AS column_1, R0.k AS column_2, unnest(R1.q) AS column_3
 FROM a R0, b R1, c R2
-        WHERE R1.k = R0.k  AND R2.s = (R1.p || R1.q) AND R2.n = 10 AND R2.t = '\''foo'\'' AND (R1.r > 100 OR ((NOT R1.r < 20) AND R1.r < 50))'
+        WHERE R1.k = R0.k  AND R2.s = R1.p || R1.q AND R2.n = 10 AND R2.t = '\''foo'\'' AND R1.r > 100 OR (NOT R1.r < 20 AND R1.r < 50)'
 	
         """
           output_relation: "Q"
@@ -266,7 +266,7 @@ FROM b R0
       deepdive.extraction.extractors.ext_B {
         cmd: """
 
-	deepdive create view B as 'SELECT func((R0.k + (R0.r + R0.k))) AS column_0
+	deepdive create view B as 'SELECT func(R0.k + (R0.r + R0.k)) AS column_0
 FROM b R0
         '
 	
@@ -321,7 +321,7 @@ FROM b R0
 
 	deepdive create view H as 'SELECT R0.k AS column_0
 FROM b R0
-        WHERE ((R0.k + R0.r) = 100 AND R0.k > 50)'
+        WHERE (R0.k + R0.r) = 100 AND R0.k > 50'
 	
         """
           output_relation: "H"
@@ -356,7 +356,7 @@ FROM a R0
 
 	deepdive create view K as 'SELECT R0.k AS column_0
 FROM b R0
-        WHERE ((R0.k + R0.r) = 100 AND ((NOT R0.k > 50) OR R0.k = 40))'
+        WHERE (R0.k + R0.r) = 100 AND (NOT R0.k > 50 OR R0.k = 40)'
 	
         """
           output_relation: "K"
@@ -390,7 +390,7 @@ FROM b R0
       deepdive.extraction.extractors.ext_D {
         cmd: """
 
-	deepdive create view D as 'SELECT (func((R0.k * func2((R0.r + R0.k)))) + R0.k) AS column_0
+	deepdive create view D as 'SELECT func(R0.k * func2(R0.r + R0.k)) + R0.k AS column_0
 FROM b R0
         '
 	

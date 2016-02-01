@@ -20,7 +20,7 @@
       deepdive.extraction.extractors.ext_A {
         cmd: """
 
-	deepdive create view A as 'SELECT R0.a AS column_0, (R0.a + R0.b) AS column_1
+	deepdive create view A as 'SELECT R0.a AS column_0, R0.a + R0.b AS column_1
 FROM R R0
         '
 	

@@ -1,0 +1,14 @@
+labels_resolved(x INT, l INT).
+q?(x INT).
+
+q(x) = if l > 0 then TRUE
+       else if l < 0 then FALSE
+       else NULL
+       end :- labels_resolved(x, l).
+
+labels(x INT, l BOOLEAN).
+p(x, if abs(l) > 10 then TRUE else FALSE end) :- labels(x, l).
+p(x, if x % 10 = 0 then FALSE end) :- labels(x, l).
+
+labels_resolved(x, SUM(if label IS NULL then 0 else if label = TRUE then 1 else -1 end)) :-
+    labels(x, label).

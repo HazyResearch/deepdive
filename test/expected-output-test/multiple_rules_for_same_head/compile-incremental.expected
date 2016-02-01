@@ -31,10 +31,50 @@ dd_new_Q.label: Boolean
             style: "sql_extractor"
           }
 
+          deepdive.extraction.extractors.init_dd_delta_S_0 {
+            sql: """ DROP TABLE IF EXISTS dd_delta_S_0 CASCADE;
+            CREATE TABLE
+            dd_delta_S_0(a int)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_new_T___0 {
+            sql: """ DROP TABLE IF EXISTS dd_new_T___0 CASCADE;
+            CREATE TABLE
+            dd_new_T___0(a int)
+            """
+            style: "sql_extractor"
+          }
+
           deepdive.extraction.extractors.init_dd_delta_T {
             sql: """ DROP TABLE IF EXISTS dd_delta_T CASCADE;
             CREATE TABLE
             dd_delta_T(a int)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_new_T___1 {
+            sql: """ DROP TABLE IF EXISTS dd_new_T___1 CASCADE;
+            CREATE TABLE
+            dd_new_T___1(a int)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_delta_T_2 {
+            sql: """ DROP TABLE IF EXISTS dd_delta_T_2 CASCADE;
+            CREATE TABLE
+            dd_delta_T_2(a int)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_new_S_2 {
+            sql: """ DROP TABLE IF EXISTS dd_new_S_2 CASCADE;
+            CREATE TABLE
+            dd_new_S_2(a int)
             """
             style: "sql_extractor"
           }
@@ -55,6 +95,22 @@ dd_new_Q.label: Boolean
             style: "sql_extractor"
           }
 
+          deepdive.extraction.extractors.init_dd_new_T___3 {
+            sql: """ DROP TABLE IF EXISTS dd_new_T___3 CASCADE;
+            CREATE TABLE
+            dd_new_T___3(a int)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_delta_T___0 {
+            sql: """ DROP TABLE IF EXISTS dd_delta_T___0 CASCADE;
+            CREATE TABLE
+            dd_delta_T___0(a int)
+            """
+            style: "sql_extractor"
+          }
+
           deepdive.extraction.extractors.init_dd_new_R {
             sql: """ DROP TABLE IF EXISTS dd_new_R CASCADE;
             CREATE TABLE
@@ -64,11 +120,59 @@ dd_new_Q.label: Boolean
             style: "sql_extractor"
           }
 
+          deepdive.extraction.extractors.init_dd_delta_S_2 {
+            sql: """ DROP TABLE IF EXISTS dd_delta_S_2 CASCADE;
+            CREATE TABLE
+            dd_delta_S_2(a int)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_new_S_1 {
+            sql: """ DROP TABLE IF EXISTS dd_new_S_1 CASCADE;
+            CREATE TABLE
+            dd_new_S_1(a int)
+            """
+            style: "sql_extractor"
+          }
+
           deepdive.extraction.extractors.init_dd_delta_R {
             sql: """ DROP TABLE IF EXISTS dd_delta_R CASCADE;
             CREATE TABLE
             dd_delta_R(a int,
           b int)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_new_T___2 {
+            sql: """ DROP TABLE IF EXISTS dd_new_T___2 CASCADE;
+            CREATE TABLE
+            dd_new_T___2(a int)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_delta_T___3 {
+            sql: """ DROP TABLE IF EXISTS dd_delta_T___3 CASCADE;
+            CREATE TABLE
+            dd_delta_T___3(a int)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_delta_S_1 {
+            sql: """ DROP TABLE IF EXISTS dd_delta_S_1 CASCADE;
+            CREATE TABLE
+            dd_delta_S_1(a int)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_delta_T___1 {
+            sql: """ DROP TABLE IF EXISTS dd_delta_T___1 CASCADE;
+            CREATE TABLE
+            dd_delta_T___1(a int)
             """
             style: "sql_extractor"
           }
@@ -83,15 +187,55 @@ dd_new_Q.label: Boolean
             style: "sql_extractor"
           }
 
+          deepdive.extraction.extractors.init_dd_new_T_2 {
+            sql: """ DROP TABLE IF EXISTS dd_new_T_2 CASCADE;
+            CREATE TABLE
+            dd_new_T_2(a int)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_new_S_0 {
+            sql: """ DROP TABLE IF EXISTS dd_new_S_0 CASCADE;
+            CREATE TABLE
+            dd_new_S_0(a int)
+            """
+            style: "sql_extractor"
+          }
+
+          deepdive.extraction.extractors.init_dd_delta_T___2 {
+            sql: """ DROP TABLE IF EXISTS dd_delta_T___2 CASCADE;
+            CREATE TABLE
+            dd_delta_T___2(a int)
+            """
+            style: "sql_extractor"
+          }
+
         deepdive.extraction.extractors.cleanup {
           sql: """
           TRUNCATE dd_new_S;
+          TRUNCATE dd_delta_S_0;
+          TRUNCATE dd_new_T___0;
           TRUNCATE dd_delta_T;
+          TRUNCATE dd_new_T___1;
+          TRUNCATE dd_delta_T_2;
+          TRUNCATE dd_new_S_2;
           TRUNCATE dd_new_T;
           TRUNCATE dd_delta_S;
+          TRUNCATE dd_new_T___3;
+          TRUNCATE dd_delta_T___0;
           TRUNCATE dd_new_R;
+          TRUNCATE dd_delta_S_2;
+          TRUNCATE dd_new_S_1;
           TRUNCATE dd_delta_R;
+          TRUNCATE dd_new_T___2;
+          TRUNCATE dd_delta_T___3;
+          TRUNCATE dd_delta_S_1;
+          TRUNCATE dd_delta_T___1;
           TRUNCATE dd_delta_Q;
+          TRUNCATE dd_new_T_2;
+          TRUNCATE dd_new_S_0;
+          TRUNCATE dd_delta_T___2;
           """
           style: "sql_extractor"
         }
@@ -113,10 +257,120 @@ FROM dd_delta_S R0
         """
           output_relation: "dd_new_S"
         style: "cmd_extractor"
-          dependencies: [ "ext_dd_delta_S" ,  "ext1_dd_delta_S_by_f" ,  "ext_dd_delta_S_by_f" ,  "ext_dd_delta_S_by_f_1" ]
+          dependencies: [ "ext_dd_delta_S" ]
           input_relations: [
             S
             dd_delta_S
+          ]
+      }
+    
+
+      deepdive.extraction.extractors.ext_dd_new_T___0 {
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_new_T___0"
+	deepdive sql 'INSERT INTO dd_new_T___0 SELECT R0.a
+FROM T___0 R0
+        
+UNION ALL
+SELECT R0.a
+FROM dd_delta_T___0 R0
+        '
+	# TODO rename temporary table to replace output_relation
+	
+        """
+          output_relation: "dd_new_T___0"
+        style: "cmd_extractor"
+          dependencies: [ "ext_dd_delta_T___0_by_f" ]
+          input_relations: [
+            T___0
+            dd_delta_T___0
+          ]
+      }
+    
+
+      deepdive.extraction.extractors.ext_dd_delta_T {
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_delta_T"
+	deepdive sql 'INSERT INTO dd_delta_T SELECT R0.a AS "dd_delta_T___0.R0.a"
+FROM dd_delta_T___0 R0
+        
+UNION ALL
+SELECT R0.a AS "dd_delta_T___1.R0.a"
+FROM dd_delta_T___1 R0
+        
+UNION ALL
+SELECT R0.a AS "dd_delta_T___2.R0.a"
+FROM dd_delta_T___2 R0
+        
+UNION ALL
+SELECT R0.a AS "dd_delta_T___3.R0.a"
+FROM dd_delta_T___3 R0
+        '
+	# TODO rename temporary table to replace output_relation
+	
+        """
+          output_relation: "dd_delta_T"
+        style: "cmd_extractor"
+          dependencies: [ "ext_dd_delta_T___0_by_f" ,  "ext_dd_delta_T___1_by_f" ,  "ext_dd_delta_T___2_by_f" ,  "ext_dd_delta_T___3_by_f_1" ]
+          input_relations: [
+            dd_delta_T___0
+            dd_delta_T___1
+            dd_delta_T___2
+            dd_delta_T___3
+          ]
+      }
+    
+
+      deepdive.extraction.extractors.ext_dd_new_T___1 {
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_new_T___1"
+	deepdive sql 'INSERT INTO dd_new_T___1 SELECT R0.a
+FROM T___1 R0
+        
+UNION ALL
+SELECT R0.a
+FROM dd_delta_T___1 R0
+        '
+	# TODO rename temporary table to replace output_relation
+	
+        """
+          output_relation: "dd_new_T___1"
+        style: "cmd_extractor"
+          dependencies: [ "ext_dd_delta_T___1_by_f" ]
+          input_relations: [
+            T___1
+            dd_delta_T___1
+          ]
+      }
+    
+
+      deepdive.extraction.extractors.ext_dd_new_S_2 {
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_new_S_2"
+	deepdive sql 'INSERT INTO dd_new_S_2 SELECT R0.a
+FROM S_2 R0
+        
+UNION ALL
+SELECT R0.a
+FROM dd_delta_S_2 R0
+        '
+	# TODO rename temporary table to replace output_relation
+	
+        """
+          output_relation: "dd_new_S_2"
+        style: "cmd_extractor"
+          dependencies: [ "ext_dd_delta_S_2_by_f_1" ]
+          input_relations: [
+            S_2
+            dd_delta_S_2
           ]
       }
     
@@ -138,7 +392,7 @@ FROM dd_delta_T R0
         """
           output_relation: "dd_new_T"
         style: "cmd_extractor"
-          dependencies: [ "ext_dd_delta_T_by_f" ,  "ext1_dd_delta_T_by_f" ,  "ext2_dd_delta_T_by_f" ,  "ext_dd_delta_T_by_f_1" ]
+          dependencies: [ "ext_dd_delta_T" ]
           input_relations: [
             T
             dd_delta_T
@@ -173,17 +427,57 @@ FROM dd_delta_R R0, R R1
 UNION ALL
 SELECT R0.a AS "dd_new_R.R0.a"
 FROM dd_new_R R0, dd_delta_R R1
-        WHERE R1.a = R0.b  AND R0.a = 0'
+        WHERE R1.a = R0.b  AND R0.a = 0
+UNION ALL
+SELECT R0.a AS "dd_delta_S_0.R0.a"
+FROM dd_delta_S_0 R0
+        
+UNION ALL
+SELECT R0.a AS "dd_delta_S_1.R0.a"
+FROM dd_delta_S_1 R0
+        
+UNION ALL
+SELECT R0.a AS "dd_delta_S_2.R0.a"
+FROM dd_delta_S_2 R0
+        '
 	# TODO rename temporary table to replace output_relation
 	
         """
           output_relation: "dd_delta_S"
         style: "cmd_extractor"
-          dependencies: [ "ext_dd_new_R" ]
+          dependencies: [ "ext_dd_new_R" ,  "ext_dd_delta_S_0_by_f" ,  "ext_dd_delta_S_1_by_f" ,  "ext_dd_delta_S_2_by_f_1" ]
           input_relations: [
             dd_delta_R
             R
             dd_new_R
+            dd_delta_S_0
+            dd_delta_S_1
+            dd_delta_S_2
+          ]
+      }
+    
+
+      deepdive.extraction.extractors.ext_dd_new_T___3 {
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_new_T___3"
+	deepdive sql 'INSERT INTO dd_new_T___3 SELECT R0.a
+FROM T___3 R0
+        
+UNION ALL
+SELECT R0.a
+FROM dd_delta_T___3 R0
+        '
+	# TODO rename temporary table to replace output_relation
+	
+        """
+          output_relation: "dd_new_T___3"
+        style: "cmd_extractor"
+          dependencies: [ "ext_dd_delta_T___3_by_f_1" ]
+          input_relations: [
+            T___3
+            dd_delta_T___3
           ]
       }
     
@@ -213,6 +507,73 @@ FROM dd_delta_R R0
       }
     
 
+      deepdive.extraction.extractors.ext_dd_new_S_1 {
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_new_S_1"
+	deepdive sql 'INSERT INTO dd_new_S_1 SELECT R0.a
+FROM S_1 R0
+        
+UNION ALL
+SELECT R0.a
+FROM dd_delta_S_1 R0
+        '
+	# TODO rename temporary table to replace output_relation
+	
+        """
+          output_relation: "dd_new_S_1"
+        style: "cmd_extractor"
+          dependencies: [ "ext_dd_delta_S_1_by_f" ]
+          input_relations: [
+            S_1
+            dd_delta_S_1
+          ]
+      }
+    
+
+      deepdive.extraction.extractors.ext_dd_new_T___2 {
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_new_T___2"
+	deepdive sql 'INSERT INTO dd_new_T___2 SELECT R0.a
+FROM T___2 R0
+        
+UNION ALL
+SELECT R0.a
+FROM dd_delta_T___2 R0
+        '
+	# TODO rename temporary table to replace output_relation
+	
+        """
+          output_relation: "dd_new_T___2"
+        style: "cmd_extractor"
+          dependencies: [ "ext_dd_delta_T___2_by_f" ]
+          input_relations: [
+            T___2
+            dd_delta_T___2
+          ]
+      }
+    
+
+      deepdive.extraction.extractors.ext_dd_delta_T__3 {
+        cmd: """
+
+	deepdive create view dd_delta_T__3 as 'SELECT R0.a AS column_0
+FROM dd_delta_T R0
+        '
+	
+        """
+          output_relation: "dd_delta_T__3"
+        style: "cmd_extractor"
+          dependencies: [ "ext_dd_delta_T" ]
+          input_relations: [
+            dd_delta_T
+          ]
+      }
+    
+
       deepdive.extraction.extractors.ext_dd_new_Q {
         cmd: """
 
@@ -237,12 +598,62 @@ SELECT DISTINCT R0.x, id, label
       }
     
 
-        deepdive.extraction.extractors.ext_dd_delta_T_by_f {
+      deepdive.extraction.extractors.ext_dd_new_T_2 {
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_new_T_2"
+	deepdive sql 'INSERT INTO dd_new_T_2 SELECT R0.a
+FROM T_2 R0
+        
+UNION ALL
+SELECT R0.a
+FROM dd_delta_T_2 R0
+        '
+	# TODO rename temporary table to replace output_relation
+	
+        """
+          output_relation: "dd_new_T_2"
+        style: "cmd_extractor"
+          
+          input_relations: [
+            T_2
+            dd_delta_T_2
+          ]
+      }
+    
+
+      deepdive.extraction.extractors.ext_dd_new_S_0 {
+        cmd: """
+
+	# TODO use temporary table
+	deepdive create table "dd_new_S_0"
+	deepdive sql 'INSERT INTO dd_new_S_0 SELECT R0.a
+FROM S_0 R0
+        
+UNION ALL
+SELECT R0.a
+FROM dd_delta_S_0 R0
+        '
+	# TODO rename temporary table to replace output_relation
+	
+        """
+          output_relation: "dd_new_S_0"
+        style: "cmd_extractor"
+          dependencies: [ "ext_dd_delta_S_0_by_f" ]
+          input_relations: [
+            S_0
+            dd_delta_S_0
+          ]
+      }
+    
+
+        deepdive.extraction.extractors.ext_dd_delta_T___0_by_f {
           input: """ SELECT R0.a AS "dd_delta_R.R0.a", R0.b AS "dd_delta_R.R0.b"
 FROM dd_delta_R R0
         WHERE R0.a > 1000
           """
-          output_relation: "dd_delta_T"
+          output_relation: "dd_delta_T___0"
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
@@ -254,12 +665,12 @@ FROM dd_delta_R R0
         }
       
 
-        deepdive.extraction.extractors.ext1_dd_delta_T_by_f {
+        deepdive.extraction.extractors.ext_dd_delta_T___1_by_f {
           input: """ SELECT R0.a AS "dd_delta_R.R0.a", R0.b AS "dd_delta_R.R0.b"
 FROM dd_delta_R R0
-        WHERE (10 < R0.a AND R0.a < 20)
+        WHERE 10 < R0.a AND R0.a < 20
           """
-          output_relation: "dd_delta_T"
+          output_relation: "dd_delta_T___1"
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
@@ -271,12 +682,12 @@ FROM dd_delta_R R0
         }
       
 
-        deepdive.extraction.extractors.ext2_dd_delta_T_by_f {
+        deepdive.extraction.extractors.ext_dd_delta_T___2_by_f {
           input: """ SELECT R0.a AS "dd_delta_R.R0.a", R0.b AS "dd_delta_R.R0.b"
 FROM dd_delta_R R0
-        WHERE (100 < R0.a AND R0.a < 200)
+        WHERE 100 < R0.a AND R0.a < 200
           """
-          output_relation: "dd_delta_T"
+          output_relation: "dd_delta_T___2"
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
@@ -288,12 +699,12 @@ FROM dd_delta_R R0
         }
       
 
-        deepdive.extraction.extractors.ext_dd_delta_S_by_f {
+        deepdive.extraction.extractors.ext_dd_delta_S_0_by_f {
           input: """ SELECT R0.a AS "dd_delta_R.R0.a", R0.b AS "dd_delta_R.R0.b"
 FROM dd_delta_R R0
         WHERE R0.a < 0
           """
-          output_relation: "dd_delta_S"
+          output_relation: "dd_delta_S_0"
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
@@ -305,12 +716,12 @@ FROM dd_delta_R R0
         }
       
 
-        deepdive.extraction.extractors.ext1_dd_delta_S_by_f {
+        deepdive.extraction.extractors.ext_dd_delta_S_1_by_f {
           input: """ SELECT R0.a AS "dd_delta_R.R0.a", R0.b AS "dd_delta_R.R0.b"
 FROM dd_delta_R R0
         WHERE R0.a > 0
           """
-          output_relation: "dd_delta_S"
+          output_relation: "dd_delta_S_1"
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
@@ -322,12 +733,12 @@ FROM dd_delta_R R0
         }
       
 
-        deepdive.extraction.extractors.ext_dd_delta_T_by_f_1 {
+        deepdive.extraction.extractors.ext_dd_delta_T___3_by_f_1 {
           input: """ SELECT R0.a AS "dd_delta_R.R0.a", R0.b AS "dd_delta_R.R0.b"
 FROM dd_delta_R R0
         
           """
-          output_relation: "dd_delta_T"
+          output_relation: "dd_delta_T___3"
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
@@ -339,12 +750,12 @@ FROM dd_delta_R R0
         }
       
 
-        deepdive.extraction.extractors.ext_dd_delta_S_by_f_1 {
+        deepdive.extraction.extractors.ext_dd_delta_S_2_by_f_1 {
           input: """ SELECT R0.a AS "dd_delta_R.R0.a", R0.b AS "dd_delta_R.R0.b"
 FROM dd_delta_R R0
         WHERE R0.a > 0
           """
-          output_relation: "dd_delta_S"
+          output_relation: "dd_delta_S_2"
           udf: ${APP_HOME}"//bin/false"
           style: "tsv_extractor" 
           
@@ -363,7 +774,7 @@ FROM dd_delta_R R0
         WHERE R1.a = R0.x  AND R0.x > 1000"""
           function: "Imply(dd_new_Q.R0.label)"
           weight: "?(dd_weight_column_0)"
-          dependencies: [ "ext_dd_delta_S" ,  "ext1_dd_delta_S_by_f" ,  "ext_dd_delta_S_by_f" ,  "ext_dd_delta_S_by_f_1" ]
+          dependencies: [ "ext_dd_delta_S" ]
           input_relations: [
             dd_new_Q
             dd_delta_S
@@ -378,7 +789,7 @@ FROM dd_delta_R R0
         WHERE R1.a = R0.x  AND R0.x = 0"""
           function: "Imply(dd_new_Q.R0.label)"
           weight: "1.0"
-          dependencies: [ "ext_dd_delta_S" ,  "ext1_dd_delta_S_by_f" ,  "ext_dd_delta_S_by_f" ,  "ext_dd_delta_S_by_f_1" ]
+          dependencies: [ "ext_dd_delta_S" ]
           input_relations: [
             dd_new_Q
             dd_delta_S
@@ -399,7 +810,7 @@ FROM dd_delta_R R0
         WHERE R2.a = R0.x  AND R3.a = R0.x  AND R3.b = R1.x  AND R4.a = R1.x """
           function: "Imply(dd_new_Q.R0.label, dd_new_Q.R1.label)"
           weight: "?(dd_weight_column_0)"
-          dependencies: [ "ext_dd_new_R" ,  "ext_dd_delta_S_by_f" ,  "ext1_dd_delta_S_by_f" ,  "ext_dd_new_S" ,  "ext_dd_delta_S_by_f_1" ,  "ext_dd_delta_S" ]
+          dependencies: [ "ext_dd_new_S" ,  "ext_dd_delta_S" ,  "ext_dd_new_R" ]
           input_relations: [
             dd_new_Q
             dd_delta_S
@@ -425,7 +836,7 @@ FROM dd_delta_R R0
         WHERE R2.a = R0.x  AND R3.a = R0.x  AND R3.b = R1.x  AND R4.a = R1.x  AND (R0.x + R1.x) < 1000"""
           function: "Imply(dd_new_Q.R0.label, dd_new_Q.R1.label)"
           weight: "-10.0"
-          dependencies: [ "ext_dd_new_R" ,  "ext_dd_delta_S_by_f" ,  "ext1_dd_delta_S_by_f" ,  "ext_dd_new_S" ,  "ext_dd_delta_S_by_f_1" ,  "ext_dd_delta_S" ]
+          dependencies: [ "ext_dd_new_S" ,  "ext_dd_delta_S" ,  "ext_dd_new_R" ]
           input_relations: [
             dd_new_Q
             dd_delta_S
@@ -439,18 +850,28 @@ FROM dd_delta_R R0
       
 deepdive.pipeline.run: ${PIPELINE}
 deepdive.pipeline.pipelines.extraction: [
+  ext_dd_delta_T___1_by_f
+  ext_dd_new_T___3
   ext_dd_new_R
-  ext_dd_delta_T_by_f
-  ext1_dd_delta_T_by_f
-  ext2_dd_delta_T_by_f
+  ext_dd_new_T_2
+  ext_dd_delta_S_0_by_f
+  ext_dd_new_T___0
+  ext_dd_delta_T__3
+  ext_dd_new_S_2
+  ext_dd_delta_S_2_by_f_1
+  ext_dd_delta_S_1_by_f
+  ext_dd_delta_T
   ext_dd_delta_S
   ext_dd_new_T
+  ext_dd_new_S_0
+  ext_dd_new_T___2
+  ext_dd_delta_T___3_by_f_1
   ext_dd_new_S
-  ext_dd_delta_S_by_f
   ext_dd_new_Q
-  ext_dd_delta_S_by_f_1
-  ext_dd_delta_T_by_f_1
-  ext1_dd_delta_S_by_f
+  ext_dd_delta_T___0_by_f
+  ext_dd_new_S_1
+  ext_dd_new_T___1
+  ext_dd_delta_T___2_by_f
 ]
 deepdive.pipeline.pipelines.inference: [
   dd_delta_inf_istrue_Q
@@ -459,18 +880,28 @@ deepdive.pipeline.pipelines.inference: [
   dd_delta_inf1_imply_Q_Q
 ]
 deepdive.pipeline.pipelines.endtoend: [
+  ext_dd_delta_T___1_by_f
+  ext_dd_new_T___3
   ext_dd_new_R
-  ext_dd_delta_T_by_f
-  ext1_dd_delta_T_by_f
-  ext2_dd_delta_T_by_f
+  ext_dd_new_T_2
+  ext_dd_delta_S_0_by_f
+  ext_dd_new_T___0
+  ext_dd_delta_T__3
+  ext_dd_new_S_2
+  ext_dd_delta_S_2_by_f_1
+  ext_dd_delta_S_1_by_f
+  ext_dd_delta_T
   ext_dd_delta_S
   ext_dd_new_T
+  ext_dd_new_S_0
+  ext_dd_new_T___2
+  ext_dd_delta_T___3_by_f_1
   ext_dd_new_S
-  ext_dd_delta_S_by_f
   ext_dd_new_Q
-  ext_dd_delta_S_by_f_1
-  ext_dd_delta_T_by_f_1
-  ext1_dd_delta_S_by_f
+  ext_dd_delta_T___0_by_f
+  ext_dd_new_S_1
+  ext_dd_new_T___1
+  ext_dd_delta_T___2_by_f
   dd_delta_inf_istrue_Q
   dd_delta_inf1_istrue_Q
   dd_delta_inf_imply_Q_Q
@@ -479,13 +910,29 @@ deepdive.pipeline.pipelines.endtoend: [
 deepdive.pipeline.base_dir: ${BASEDIR}
 deepdive.pipeline.pipelines.initdb: [
   init_dd_new_S
+  init_dd_delta_S_0
+  init_dd_new_T___0
   init_dd_delta_T
+  init_dd_new_T___1
+  init_dd_delta_T_2
+  init_dd_new_S_2
   init_dd_new_T
   init_dd_delta_S
+  init_dd_new_T___3
+  init_dd_delta_T___0
   init_dd_new_R
+  init_dd_delta_S_2
+  init_dd_new_S_1
   init_dd_delta_R
+  init_dd_new_T___2
+  init_dd_delta_T___3
+  init_dd_delta_S_1
   init_dd_new_Q
+  init_dd_delta_T___1
   init_dd_delta_Q
+  init_dd_new_T_2
+  init_dd_new_S_0
+  init_dd_delta_T___2
 ]
 deepdive.pipeline.pipelines.cleanup: [
   cleanup

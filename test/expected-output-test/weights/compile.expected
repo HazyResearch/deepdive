@@ -23,7 +23,7 @@ c.label: Boolean
 
         deepdive.inference.factors.inf_istrue_a {
           input_query: """
-          SELECT R0.id AS "a.R0.id" , (R0.k + R1.p) AS "dd_weight_column_0" 
+          SELECT R0.id AS "a.R0.id" , R0.k + R1.p AS "dd_weight_column_0" 
           FROM a R0, b R1
         WHERE R1.k = R0.k """
           function: "Imply(a.R0.label)"

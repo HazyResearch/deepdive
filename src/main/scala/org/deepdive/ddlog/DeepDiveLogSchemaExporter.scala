@@ -58,16 +58,16 @@ object DeepDiveLogSchemaExporter extends DeepDiveLogHandler {
   }
 
   override def run(parsedProgram: DeepDiveLog.Program, config: DeepDiveLog.Config) = {
-    val program = parsedProgram  // TODO derive the program based on config.mode?
+    var programToExport = parsedProgram  // TODO derive the program based on config.mode?
 
     // first find out names of the relations that have SchemaDeclaration
-    val declaredNames = program collect {
+    val declaredNames = programToExport collect {
       case decl: SchemaDeclaration => decl.a.name
     }
 
     // then print schema in JSON
     println(JSONObject(Map(
-      "relations" -> JSONObject(program collect {
+      "relations" -> JSONObject(programToExport collect {
           case decl: SchemaDeclaration => export(decl)
           case rule: ExtractionRule if ! (declaredNames contains rule.headName) =>
             // for extraction rules whose head is not declared already,

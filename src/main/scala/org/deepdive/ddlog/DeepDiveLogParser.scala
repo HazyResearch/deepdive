@@ -23,6 +23,7 @@ case class NullConst extends ConstExpr
 case class FuncExpr(function: String, args: List[Expr], isAggregation: Boolean) extends Expr
 case class BinaryOpExpr(lhs: Expr, op: String, rhs: Expr) extends Expr
 case class TypecastExpr(lhs: Expr, rhs: String) extends Expr
+case class IfThenElseExpr(ifCondThenExprPairs: List[(Cond, Expr)], elseExpr: Option[Expr]) extends Expr
 
 sealed trait Pattern
 case class VarPattern(name: String) extends Pattern
@@ -39,7 +40,7 @@ case class OuterModifier extends BodyModifier
 case class AllModifier extends BodyModifier
 
 case class Attribute(name : String, terms : List[String], types : List[String], annotations : List[List[Annotation]])
-case class ConjunctiveQuery(headTerms: List[Expr], bodies: List[List[Body]], isDistinct: Boolean, limit: Option[Int])
+case class ConjunctiveQuery(headTerms: List[Expr], bodies: List[List[Body]], isDistinct: Boolean = false, limit: Option[Int] = None)
 case class Column(name : String // name of the column
                  , t : String // type of the column
                  , annotation: List[Annotation] = List.empty // optional annotation
@@ -52,7 +53,7 @@ case class RuleAnnotation(name: String, args: List[String])
 
 // condition
 sealed trait Cond extends Body
-case class ComparisonCond(lhs: Expr, op: String, rhs: Expr) extends Cond
+case class ExprCond(expr: Expr) extends Cond
 case class NegationCond(cond: Cond) extends Cond
 case class CompoundCond(lhs: Cond, op: LogicOperator.LogicOperator, rhs: Cond) extends Cond
 
@@ -100,7 +101,7 @@ case class SchemaDeclaration( a : Attribute
                             ) extends Statement // atom and whether this is a query relation.
 case class FunctionDeclaration( functionName: String, inputType: FunctionInputOutputType,
   outputType: FunctionInputOutputType, implementations: List[FunctionImplementationDeclaration]) extends Statement
-case class ExtractionRule(headName: String, q : ConjunctiveQuery, supervision: Option[String] = None) extends Statement // Extraction rule
+case class ExtractionRule(headName: String, q : ConjunctiveQuery, supervision: Option[Expr] = None) extends Statement // Extraction rule
 case class FunctionCallRule(output: String, function: String, q : ConjunctiveQuery, mode: Option[String], parallelism: Option[Int]) extends Statement // Extraction rule
 case class InferenceRule(head: InferenceRuleHead, q : ConjunctiveQuery, weights : FactorWeight, mode: Option[String] = None) extends Statement // Weighted rule
 
@@ -181,7 +182,8 @@ class DeepDiveLogParser extends JavaTokenParsers {
       }
     }
 
-  def operator = "||" | "+" | "-" | "*" | "/" | "&" | "%"
+  def operator =
+    ( "||" | "+" | "-" | "*" | "/" | "&" | "%" )
   def typeOperator = "::"
   val aggregationFunctions = Set("MAX", "SUM", "MIN", "ARRAY_ACCUM", "ARRAY_AGG", "COUNT")
 
@@ -192,21 +194,35 @@ class DeepDiveLogParser extends JavaTokenParsers {
     | lexpr
     )
 
-  def lexpr : Parser[Expr] =
-    ( functionName ~ "(" ~ rep1sep(expr, ",") ~ ")" ^^ {
-        case (name ~ _ ~ args ~ _) => FuncExpr(name, args, (aggregationFunctions contains name))
+  def cexpr =
+    ( expr ~ compareOperator ~ expr ^^ { case (lhs ~ op ~ rhs) => BinaryOpExpr(lhs, op, rhs) }
+    | expr
+    )
+
+  def lexpr =
+    ( "if" ~> (cond ~ ("then" ~> expr) ~ rep(elseIfExprs) ~ opt("else" ~> expr)) <~ "end" ^^ {
+        case (ifCond ~ thenExpr ~ elseIfs ~ optElseExpr) =>
+          IfThenElseExpr((ifCond, thenExpr) :: elseIfs, optElseExpr)
       }
     | stringLiteralAsString ^^ { StringConst(_) }
     | double ^^ { DoubleConst(_) }
     | integer ^^ { IntConst(_) }
     | ("TRUE" | "FALSE") ^^ { x => BooleanConst(x.toBoolean) }
     | "NULL" ^^ { _ => new NullConst }
+    | functionName ~ "(" ~ rep1sep(expr, ",") ~ ")" ^^ {
+        case (name ~ _ ~ args ~ _) => FuncExpr(name, args, (aggregationFunctions contains name))
+      }
     | variableName ^^ { VarExpr(_) }
     | "(" ~> expr <~ ")"
     )
 
+  def elseIfExprs =
+    ("else" ~> "if" ~> cond) ~ ("then" ~> expr) ^^ {
+      case (ifCond ~ thenExpr) => (ifCond, thenExpr)
+    }
+
   // conditional expressions
-  def compareOperator = "LIKE" | ">" | "<" | ">=" | "<=" | "!=" | "=" | "IS NOT" | "IS"
+  def compareOperator = "LIKE" | ">" | "<" | ">=" | "<=" | "!=" | "=" | "IS" ~ "NOT" ^^ { _ => "IS NOT" } | "IS"
 
   def cond : Parser[Cond] =
     ( acond ~ (";") ~ cond ^^ { case (lhs ~ op ~ rhs) =>
@@ -224,9 +240,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
     | bcond
     )
   def bcond : Parser[Cond] =
-    ( expr ~ compareOperator ~ expr ^^ { case (lhs ~ op ~ rhs) =>
-        ComparisonCond(lhs, op, rhs)
-      }
+    ( cexpr ^^ ExprCond
     | "[" ~> cond <~ "]"
     )
 
@@ -287,17 +301,22 @@ class DeepDiveLogParser extends JavaTokenParsers {
              FunctionDeclaration(a, inTy, outTy, implementationDecls)
     }
 
-  def cqBody: Parser[Body] = cond | quantifiedBody | atom
+  def cqBody: Parser[Body] = quantifiedBody | atom | cond
 
   def cqConjunctiveBody: Parser[List[Body]] = rep1sep(cqBody, ",")
 
   def cqHeadTerms = "(" ~> rep1sep(expr, ",") <~ ")"
 
+  def conjunctiveQueryBody : Parser[ConjunctiveQuery] =
+    opt("*") ~ opt("|" ~> decimalNumber) ~ ":-" ~ rep1sep(cqConjunctiveBody, ";") ^^ {
+      case (isDistinct ~ limit ~ ":-" ~ disjunctiveBodies) =>
+        ConjunctiveQuery(List.empty, disjunctiveBodies, isDistinct != None, limit map (_.toInt))
+    }
+
   def conjunctiveQuery : Parser[ConjunctiveQuery] =
-    cqHeadTerms ~ opt("*") ~ opt("|" ~> decimalNumber) ~ ":-" ~ rep1sep(cqConjunctiveBody, ";") ^^ {
-      case (head ~ isDistinct ~ limit ~ ":-" ~ disjunctiveBodies) =>
-        ConjunctiveQuery(head, disjunctiveBodies, isDistinct != None, limit map (_.toInt))
-  }
+    cqHeadTerms ~ conjunctiveQueryBody ^^ {
+      case (head ~ cq) => cq.copy(headTerms = head)
+    }
 
   def functionMode = "@mode" ~> commit("(" ~> functionModeType <~ ")" ^? ({
     case "inc" => "inc"
@@ -305,29 +324,28 @@ class DeepDiveLogParser extends JavaTokenParsers {
 
   def parallelism = "@parallelism" ~> "(" ~> integer <~ ")"
 
-  def supervision = "=" ~> (variableName | "TRUE" | "FALSE")
-
-  def conjunctiveQueryWithSupervision  = // returns Parser[String], Parser[ConjunctiveQuery]
-    cqHeadTerms ~ opt("*") ~ opt("|" ~> decimalNumber) ~ opt(supervision) ~ ":-" ~ rep1sep(cqConjunctiveBody, ";") ^^ {
-      case (head ~ isDistinct ~ limit ~ sup ~ ":-" ~ disjunctiveBodies) =>
-        (sup, ConjunctiveQuery(head, disjunctiveBodies, isDistinct != None, limit map (_.toInt)))
-  }
-
   def functionCallRule : Parser[FunctionCallRule] =
     opt(functionMode) ~ opt(parallelism) ~ relationName ~ "+=" ~ functionName ~ conjunctiveQuery ^^ {
       case (mode ~ parallelism ~ out ~ _ ~ func ~ cq) => FunctionCallRule(out, func, cq, mode, parallelism)
     }
 
-  def oldstyleSupervision = "@label" ~> "(" ~> (variableName | "TRUE" | "FALSE") <~ ")"
+  def supervisionAnnotation = "@label" ~> "(" ~> expr <~ ")"
+
+  def conjunctiveQueryWithSupervision : Parser[ConjunctiveQuery] =
+    cqHeadTerms ~ opt("*") ~ opt("|" ~> decimalNumber) ~ ":-" ~ rep1sep(cqConjunctiveBody, ";") ^^ {
+      case (head ~ isDistinct ~ limit ~ ":-" ~ disjunctiveBodies) =>
+        ConjunctiveQuery(head, disjunctiveBodies, isDistinct != None, limit map (_.toInt))
+  }
 
   def extractionRule =
-  ( relationName ~ conjunctiveQueryWithSupervision ^^ {
-      case (head ~ cq) => ExtractionRule(head, cq._2, cq._1)
-    }
-  | oldstyleSupervision ~ relationName ~ conjunctiveQuery ^^ {
-      case (sup ~ head ~ cq) => ExtractionRule(head, cq, Some(sup))
-    }
-  )
+    ( opt(supervisionAnnotation) ~ relationName ~ conjunctiveQuery ^^ {
+        case (sup ~ head ~ cq) => ExtractionRule(head, cq, sup)
+      }
+    | relationName ~ cqHeadTerms ~ ("=" ~> expr) ~ conjunctiveQueryBody ^^ {
+        case (head ~ headTerms ~ sup ~ cq) =>
+          ExtractionRule(head, cq.copy(headTerms = headTerms), Some(sup))
+      }
+    )
 
   def factorWeight = "@weight" ~> "(" ~> rep1sep(expr, ",") <~ ")" ^^ { FactorWeight(_) }
   def inferenceMode = "@mode" ~> commit("(" ~> inferenceModeType <~ ")" ^? ({

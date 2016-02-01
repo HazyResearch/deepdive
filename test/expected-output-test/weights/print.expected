@@ -12,7 +12,7 @@ b(k int,
   p int,
   q text).
 
-@weight((x + y))
+@weight(x + y)
 a(x) :-
     b(x, y, _).
 

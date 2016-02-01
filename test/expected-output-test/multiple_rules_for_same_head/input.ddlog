@@ -34,3 +34,7 @@ Q(a) :- S(a), a = 0.
 Q(a) => Q(b) :- S(a), R(a, b), S(b).
 @weight(-10.0)
 Q(a) => Q(b) :- S(a), R(a, b), S(b), a + b < 1000.
+
+# make sure desugars without name clashes
+T_2(a int).
+T__3(x) :- T(x).
