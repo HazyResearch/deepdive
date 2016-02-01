@@ -215,7 +215,7 @@ sets of directives. There is nevertheless a subset of directives that are common
 to all styles:
 
 - `style`: specifies the style of the extractor. Can take the values
-  `json_extractor`, `tsv_extractor`, `plpy_extractor`, `sql_extractor`, or
+  `tsv_extractor`, `plpy_extractor`, `sql_extractor`, or
   `cmd_extractor`. See the ['Writing extractors' document](extractors.md) for
   details about the different styles of extractors. This is a mandatory
   directive.
@@ -274,11 +274,11 @@ to all styles:
 
 - `input_relations`: takes an array of relation names that this extractor depends on.  Similar to `dependencies`, all extractors whose `output_relation` exists in this array will be executed before this extractor.
 
-The following directives are only for the `json_extractor`, `tsv_extractor`, and
+The following directives are only for the `tsv_extractor`, and
 `plpy_extractor` styles. They are **mandatory** for these styles.
 
-- `input`: specifies the input to the extractor. For all the three extractor
-  style above it can be a SQL query to run on the database, e.g.,:
+- `input`: specifies the input to the extractor. For all the extractor
+  styles above it can be a SQL query to run on the database, e.g.,:
 
     ```
     myExtractor {
@@ -286,19 +286,6 @@ The following directives are only for the `json_extractor`, `tsv_extractor`, and
       style: "tsv_extractor"
       # ...
       input: """SELECT * FROM titles"""
-      # ...
-    }
-    ```
-
-    **Only** for extractors with style `json_extractor`, the `input` directive may
-    specify a TSV or CSV file to use as input, e.g.,:
-
-    ```
-    myExtractor {
-      # ...
-      style: "json_extractor"
-      # ...
-      input: CSV(pathtofile.csv) # or TSV(pathtofile.tsv)
       # ...
     }
     ```
