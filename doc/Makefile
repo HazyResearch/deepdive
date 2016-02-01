@@ -52,7 +52,7 @@ deploy: jekyll
 	# Deploying site...
 	@read -p"WARNING! Continue to overwrite all files in $(DEPLOY_USER_HOST):$(DEPLOY_DIR)? "
 	ssh $(DEPLOY_USER_HOST) 'mkdir -p $(DEPLOY_DIR)'
-	rsync -av --delete-after _site/ $(DEPLOY_USER_HOST):$(DEPLOY_DIR)/
+	rsync -rtlHv --delete-after _site/ $(DEPLOY_USER_HOST):$(DEPLOY_DIR)/
 	@echo "Deployed to $(WEBSITE_BASEURL)"
 	rm -f _config.baseurl.yml
 

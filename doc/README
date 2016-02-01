@@ -56,5 +56,5 @@ personal web page:
     make deploy \
       DEPLOY_USER_HOST=cardinal.stanford.edu \
       DEPLOY_DIR=WWW/tmp/deepdive \
-      WEBSITE_BASEURL=http://web.stanford.edu/~$USER/tmp/deepdive
+      WEBSITE_BASEURL=https://web.stanford.edu/~$USER/tmp/deepdive
 
