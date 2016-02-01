@@ -110,6 +110,7 @@ if [[ -n $output_relation ]]; then
     rm -f output_computed-*; for i in $(seq $num_parallel_loads); do mkfifo output_computed-$i; done
     # use mkmimo again to merge outputs of multiple processes into a single stream
     mkmimo process-*.output \> output_computed-* &
+    pids_load+=($!)
     # load the output data to the temporary table in the database
     deepdive-load "$output_relation_tmp" output_computed-* &
     pids_load+=($!)
@@ -120,6 +121,7 @@ if [[ -n $input_sql ]]; then
     rm -f feed_processes-*; for i in $(seq $num_parallel_unloads); do mkfifo feed_processes-$i; done
     # unload data from the database and pour into the pipes
     deepdive-db unload "$input_sql" "$DEEPDIVE_LOAD_FORMAT" feed_processes-* &
+    pids_unload+=($!)
     # use mkmimo to distribute input data to multiple processes
     mkmimo feed_processes-* \> process-*.input &
     pids_unload+=($!)
@@ -130,8 +132,10 @@ all_finishes_ok() {
     local what=$1; shift
     local pid=
     for pid in "$@"; do
-        wait $pid ||
+        wait $pid || {
+            kill -TERM "${pids_command[@]}" "${pids_load[@]}" "${pids_unload[@]}"
             error "${what:+$what: }PID $pid: finished with non-zero exit status ($?)"
+        }
     done
 }
 [[ ${#pids_command[@]} -eq 0 ]] || all_finishes_ok "command=$(escape4sh "$command")" "${pids_command[@]}"
