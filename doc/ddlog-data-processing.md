@@ -35,19 +35,24 @@ First of all, we declare the relations we use throughout the program.  These rel
 The order doesn't matter, but it's a good idea to place them at the beginning because that makes it easier to understand.
 
 #### Relations Syntax
-    relation_name(
-      column1_name  column1_type,
-      column2_name  column2_type,
-      ...).
-
+```
+relation_name(
+  column1_name  column1_type,
+  column2_name  column2_type,
+  ...).
+```
 Similar to a SQL table definition, a schema declaration is just the name of a relation followed by a comma separated list of the columns and their types.
 
 Below is a real example from [the spouse example TODO] (add real link here).
-
-<script defer src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/ddlog/app.ddlog?footer=minimal&slice=36:38">
-</script>
-
-Here we are defining a relation named "has_spouse_features" with two columns, named "relation_id" and "feature" respectively.  In this case, they are both of type "text" but ddlog supports other types as well, including int, text[] and others.  For more details, see the [reference guide TODO](add real link here).
+```
+article(
+  id int,
+  length int,
+  author text,
+  words text[]).
+```
+Here we are defining a relation named "article" with four columns, named "id", "length", "author" and "words" respectively. Each column has it's own type, here utilizing `int`, `text` and `text[]`.
+[//]:  Comment?
 
 #### Variable Relations
 Finally, we declare a variable relation that we want DeepDive to predict the marginal probability for us.
