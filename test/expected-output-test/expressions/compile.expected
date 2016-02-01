@@ -251,7 +251,8 @@ FROM a R0, b R1, c R2
 
 	deepdive create view L as 'SELECT DISTINCT R0.k AS column_0
 FROM b R0
-        LIMIT 100'
+        
+LIMIT 100'
 	
         """
           output_relation: "L"

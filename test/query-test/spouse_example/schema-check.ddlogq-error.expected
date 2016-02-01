@@ -1,0 +1,4 @@
+[error] "articles": number of columns in the query does not match number of columns in the schema
+(id) ?-
+    articles(id).
+

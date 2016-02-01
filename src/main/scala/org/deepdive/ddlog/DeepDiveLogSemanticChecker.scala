@@ -288,4 +288,23 @@ object DeepDiveLogSemanticChecker extends DeepDiveLogHandler {
   // function declaration
   var functionDeclaration : Map[String, FunctionDeclaration] = new HashMap[String, FunctionDeclaration]()
 
+  // partial function that returns relation name defined by the rule
+  def definedRelationName(rule: Statement): Option[String] = rule match {
+    case decl: SchemaDeclaration  => Some(decl.a.name)
+    case rule: ExtractionRule     => Some(rule.headName)
+    case fncall: FunctionCallRule => Some(fncall.output)
+    case _                        => None
+  }
+
+  // shorthand for checking if a set of more rules redefine anything in existing rules
+  // (useful for checking queries against a program)
+  def checkNoRedefinition(existingRules: List[Statement], moreRules: List[Statement]) = {
+    val relationsDefinedByProgram = existingRules flatMap definedRelationName
+    val relationsDefinedByExtraRules =  moreRules flatMap definedRelationName
+    val relationsRedefinedByExtraRules = relationsDefinedByExtraRules intersect relationsDefinedByProgram
+    if (relationsRedefinedByExtraRules nonEmpty)
+      sys.error(s"Following relations must not be redefined: ${
+        relationsRedefinedByExtraRules map {"'"+_+"'"} mkString(", ")}")
+  }
+
 }

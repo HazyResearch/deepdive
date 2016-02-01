@@ -40,7 +40,12 @@ case class OuterModifier extends BodyModifier
 case class AllModifier extends BodyModifier
 
 case class Attribute(name : String, terms : List[String], types : List[String], annotations : List[List[Annotation]])
-case class ConjunctiveQuery(headTerms: List[Expr], bodies: List[List[Body]], isDistinct: Boolean = false, limit: Option[Int] = None)
+case class ConjunctiveQuery(headTerms: List[Expr], bodies: List[List[Body]], isDistinct: Boolean = false, limit: Option[Int] = None,
+                            // optional annotations for head terms
+                            headTermAnnotations: List[List[Annotation]] = List.empty,
+                            // XXX This flag is not ideal, but minimizes the impact of query treatment when compared to creating another case class
+                            isForQuery: Boolean = false
+                           )
 case class Column(name : String // name of the column
                  , t : String // type of the column
                  , annotation: List[Annotation] = List.empty // optional annotation
@@ -301,20 +306,21 @@ class DeepDiveLogParser extends JavaTokenParsers {
              FunctionDeclaration(a, inTy, outTy, implementationDecls)
     }
 
-  def cqBody: Parser[Body] = quantifiedBody | atom | cond
+  def cqBody: Parser[Body] = quantifiedBody | atom | lcond
 
   def cqConjunctiveBody: Parser[List[Body]] = rep1sep(cqBody, ",")
 
   def cqHeadTerms = "(" ~> rep1sep(expr, ",") <~ ")"
 
-  def conjunctiveQueryBody : Parser[ConjunctiveQuery] =
-    opt("*") ~ opt("|" ~> decimalNumber) ~ ":-" ~ rep1sep(cqConjunctiveBody, ";") ^^ {
-      case (isDistinct ~ limit ~ ":-" ~ disjunctiveBodies) =>
+  def conjunctiveQueryBody(separator: Parser[_] = ":-") : Parser[ConjunctiveQuery] =
+    opt("*") ~ opt("|" ~> decimalNumber) ~ separator ~ rep1sep(cqConjunctiveBody, ";") ^^ {
+      case (isDistinct ~ limit ~ _ ~ disjunctiveBodies) =>
         ConjunctiveQuery(List.empty, disjunctiveBodies, isDistinct != None, limit map (_.toInt))
     }
 
   def conjunctiveQuery : Parser[ConjunctiveQuery] =
-    cqHeadTerms ~ conjunctiveQueryBody ^^ {
+    // TODO fill headTermAnnotations as done in queryWithOptionalHeadTerms to support @order_by
+    cqHeadTerms ~ conjunctiveQueryBody() ^^ {
       case (head ~ cq) => cq.copy(headTerms = head)
     }
 
@@ -331,17 +337,11 @@ class DeepDiveLogParser extends JavaTokenParsers {
 
   def supervisionAnnotation = "@label" ~> "(" ~> expr <~ ")"
 
-  def conjunctiveQueryWithSupervision : Parser[ConjunctiveQuery] =
-    cqHeadTerms ~ opt("*") ~ opt("|" ~> decimalNumber) ~ ":-" ~ rep1sep(cqConjunctiveBody, ";") ^^ {
-      case (head ~ isDistinct ~ limit ~ ":-" ~ disjunctiveBodies) =>
-        ConjunctiveQuery(head, disjunctiveBodies, isDistinct != None, limit map (_.toInt))
-  }
-
   def extractionRule =
     ( opt(supervisionAnnotation) ~ relationName ~ conjunctiveQuery ^^ {
         case (sup ~ head ~ cq) => ExtractionRule(head, cq, sup)
       }
-    | relationName ~ cqHeadTerms ~ ("=" ~> expr) ~ conjunctiveQueryBody ^^ {
+    | relationName ~ cqHeadTerms ~ ("=" ~> expr) ~ conjunctiveQueryBody() ^^ {
         case (head ~ headTerms ~ sup ~ cq) =>
           ExtractionRule(head, cq.copy(headTerms = headTerms), Some(sup))
       }
@@ -408,10 +408,9 @@ class DeepDiveLogParser extends JavaTokenParsers {
   def program : Parser[DeepDiveLog.Program] = phrase(rep1(statement <~ "."))
 
   def parseProgram(inputProgram: CharSequence, fileName: Option[String] = None): List[Statement] = {
-    parse(program, inputProgram) match {
-      case result: Success[_] => result.get
-      case error:  NoSuccess  => throw new RuntimeException(fileName.getOrElse("") + error.toString())
-    }
+    val result = parse(program, inputProgram)
+    if (result successful) result.get
+    else sys.error(fileName.getOrElse("") + result.toString)
   }
 
   def parseProgramFile(fileName: String): List[Statement] = {
@@ -419,4 +418,40 @@ class DeepDiveLogParser extends JavaTokenParsers {
     try parseProgram(source.getLines mkString "\n", Some(fileName))
     finally source.close()
   }
+
+  // query is a conjunctive query with optional projection and extraction rules
+  def query : Parser[DeepDiveLog.Query] =
+    rep(normalRule <~ ".") ~ (queryWithOptionalHeadTerms <~ ".") ^^ { case rules ~ q => (q, rules) }
+
+  def normalRule: Parser[ExtractionRule] =
+    relationName ~ conjunctiveQuery ^^ {
+      case headName ~ cq =>
+        ExtractionRule(headName = headName, q = cq)
+    }
+
+  def queryWithOptionalHeadTerms =
+    ((("(" ~> rep1sep(annotatedHeadTerm, ",") <~ ")") | repsep(annotatedHeadTerm, ",")) // head terms with parentheses or optionally without
+      ~ conjunctiveQueryBody("?-")) ^^ {
+      case headTermsZippedWithAnnotations ~ cq =>
+        val (headTerms, headTermAnnos) = headTermsZippedWithAnnotations unzip
+        val headTermsToUse =
+          if (headTerms nonEmpty) headTerms else {
+            val definedVars = cq.bodies map {_ flatMap DeepDiveLogSemanticChecker.collectDefinedVars} reduce {_ intersect _}
+            definedVars map VarExpr
+          }
+        cq.copy(
+          headTerms = headTermsToUse,
+          headTermAnnotations = headTermAnnos,
+          isForQuery = true
+        )
+    }
+
+  def annotatedHeadTerm = rep(annotation) ~ expr ^^ { case anno ~ e => (e, anno) }
+
+  def parseQuery(inputQuery: String): DeepDiveLog.Query = {
+    val result = parse(phrase(query), inputQuery)
+    if (result successful) result.get
+    else sys.error(result.toString)
+  }
+
 }

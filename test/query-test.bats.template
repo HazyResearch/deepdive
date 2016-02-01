@@ -1,0 +1,37 @@
+#!/usr/bin/env bats
+# Expected output tests for queries with optional base programs
+
+source "$BATS_TEST_DIRNAME"/../bats-template.bash  # for $TESTDIR, $it, etc.
+
+# some preconditions
+setup() {
+    [ -e "$TESTDIR" ]
+}
+
+# check if example can be parsed
+@test "$it compiles all queries as expected" {
+    # all ddlog files for this test should be parsed as a precondition
+    ddlog print "$TESTDIR"/*.ddlog >/dev/null
+
+    # for each query
+    hasFailedAny=false
+    for q in "$TESTDIR"/*.ddlogq; do
+        expectedOutput="$q".expected
+        expectedError="$q"-error.expected
+        [ -e "$expectedOutput" ] || [ -e "$expectedError" ] || continue
+        echo "Compiling $q"
+        actualOutput="$q".actual
+        if [ -e "$expectedError" ]; then
+            expectedOutput=$expectedError
+            # query is expected to have parse errors
+            ! ddlog query "$(cat $q)" "$TESTDIR"/*.ddlog >/dev/null 2>"$actualOutput" || hasFailedAny=true
+        else
+            # query is supposed to parse without errors
+            ddlog query "$(cat $q)" "$TESTDIR"/*.ddlog  >"$actualOutput" || hasFailedAny=true
+        fi
+        # see if there's any difference
+        diff "$expectedOutput" "$actualOutput" || hasFailedAny=true
+        echo; echo; echo
+    done
+    ! $hasFailedAny || false
+}

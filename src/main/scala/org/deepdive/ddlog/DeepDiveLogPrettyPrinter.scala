@@ -153,9 +153,10 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
     val headStrTmp  = cq.headTerms map print mkString(", ")
     val headStr     = if (headStrTmp isEmpty) "" else s"(${headStrTmp})"
 
+    val headBodySeparator = if (cq.isForQuery) "?-" else ":-"
     headStr + (
       optSupervision map { sv => s" = ${print(sv)}" } getOrElse("")
-    ) + distinctStr + limitStr + " :-\n    " + bodyStr
+    ) + distinctStr + limitStr + s" ${headBodySeparator}\n    " + bodyStr
   }
 
   def print(a: HeadAtom) : String = {

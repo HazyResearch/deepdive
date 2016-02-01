@@ -1,0 +1,1 @@
+?- articles(id, _), id < 100; articles(id, _), id > 100000.

@@ -16,24 +16,31 @@ object DeepDiveLog {
   import Mode._
 
   type Program = List[Statement]
+  type Query = (ConjunctiveQuery, List[Statement])
 
   case class Config
   (handler: DeepDiveLogHandler = null
    , inputFiles: List[String] = List()
+   , query: String = null
    , mode: Mode = ORIGINAL
    , skipDesugar: Boolean = false
   )
-  val parser = new scopt.OptionParser[Config]("ddlog") {
+  val commandLine = new scopt.OptionParser[Config]("ddlog") {
+    val commonProgramOpts = List(
+    )
     head("DDlog Compiler", "0.0.1")
-    cmd("compile")                     required() action { (_, c) => c.copy(handler = DeepDiveLogCompiler)        }
-    cmd("print")                       required() action { (_, c) => c.copy(handler = DeepDiveLogPrettyPrinter)   }
-    cmd("check")                       required() action { (_, c) => c.copy(handler = DeepDiveLogSemanticChecker) }
-    cmd("export-schema")               required() action { (_, c) => c.copy(handler = DeepDiveLogSchemaExporter)  }
+    cmd("query")                       required() action { (_, c) => c.copy(handler = DeepDiveLogQueryCompiler)   } text("Compiles a SQL query to run against the program") children(
+      arg[String]("QUERY")             required() action { (q, c) => c.copy(query = q) }                            text("DDLog query to compile against the program")
+      )
+    cmd("compile")                     required() action { (_, c) => c.copy(handler = DeepDiveLogCompiler)        } text("Compiles a deepdive.conf")
+    cmd("print")                       required() action { (_, c) => c.copy(handler = DeepDiveLogPrettyPrinter)   } text("Prints given program after parsing")
+    cmd("check")                       required() action { (_, c) => c.copy(handler = DeepDiveLogSemanticChecker) } text("Checks if given program is valid")
+    cmd("export-schema")               required() action { (_, c) => c.copy(handler = DeepDiveLogSchemaExporter)  } text("Exports given program in JSON")
     opt[Unit]('i', "incremental")      optional() action { (_, c) => c.copy(mode    = INCREMENTAL)                } text("Whether to derive delta rules")
     opt[Unit]("materialization")       optional() action { (_, c) => c.copy(mode    = MATERIALIZATION)            } text("Whether to materialize origin data")
     opt[Unit]("merge")                 optional() action { (_, c) => c.copy(mode    = MERGE)                      } text("Whether to merge delta data")
     opt[Unit]("skip-desugar")          optional() action { (_, c) => c.copy(skipDesugar = true)                   } text("Whether to skip desugaring and assume no sugar")
-    arg[String]("FILE...") unbounded() required() action { (f, c) => c.copy(inputFiles = c.inputFiles ++ List(f)) } text("Input DDLog programs files")
+    arg[String]("FILE...") minOccurs(0) unbounded() action { (f, c) => c.copy(inputFiles = c.inputFiles ++ List(f)) } text("Path to DDLog program files")
     checkConfig { c =>
       if (c.handler == null) failure("No command specified")
       else success
@@ -41,17 +48,19 @@ object DeepDiveLog {
   }
 
   def main(args: Array[String]) = {
-    parser.parse(args, Config()) match {
+    commandLine.parse(args, Config()) match {
       case Some(config) =>
         config.handler.run(config)
       case None =>
         System.err.println("[error] ")
     }
   }
+
 }
 
 // An abstraction of DeepDiveLog handlers
 trait DeepDiveLogHandler {
+
   def run(program: DeepDiveLog.Program, config: DeepDiveLog.Config): Unit
 
   def run(config: DeepDiveLog.Config): Unit = try {

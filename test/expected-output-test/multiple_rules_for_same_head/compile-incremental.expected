@@ -810,7 +810,7 @@ FROM dd_delta_R R0
         WHERE R2.a = R0.x  AND R3.a = R0.x  AND R3.b = R1.x  AND R4.a = R1.x """
           function: "Imply(dd_new_Q.R0.label, dd_new_Q.R1.label)"
           weight: "?(dd_weight_column_0)"
-          dependencies: [ "ext_dd_new_S" ,  "ext_dd_delta_S" ,  "ext_dd_new_R" ]
+          dependencies: [ "ext_dd_new_R" ,  "ext_dd_new_S" ,  "ext_dd_delta_S" ]
           input_relations: [
             dd_new_Q
             dd_delta_S
@@ -836,7 +836,7 @@ FROM dd_delta_R R0
         WHERE R2.a = R0.x  AND R3.a = R0.x  AND R3.b = R1.x  AND R4.a = R1.x  AND (R0.x + R1.x) < 1000"""
           function: "Imply(dd_new_Q.R0.label, dd_new_Q.R1.label)"
           weight: "-10.0"
-          dependencies: [ "ext_dd_new_S" ,  "ext_dd_delta_S" ,  "ext_dd_new_R" ]
+          dependencies: [ "ext_dd_new_R" ,  "ext_dd_new_S" ,  "ext_dd_delta_S" ]
           input_relations: [
             dd_new_Q
             dd_delta_S
