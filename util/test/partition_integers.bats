@@ -5,11 +5,12 @@ cd "$BATS_TMPDIR"
 
 check_correct_output() {
     local m=$1 n=$2
-    tee \
-        >(wc -l >num_lines) \
-        >(awk 'BEGIN{ m = 0 } { m += $1 } END { print m }' >sum) \
-        >(awk '{ ++lineno; if ($1 != ($3 - $2 + 1)) { print lineno } }' >incorrect_lines) \
-        #
+    # crunch actual output
+    cat >actual_output
+    wc -l <actual_output >num_lines
+    ((sed 's/ .*$//' | tr '\n' +; echo 0) | bc) <actual_output >sum
+    (sed 's/ /+(/; s/ /-/; s/$/)/' | bc | grep -nvxF '1'  | sed 's/:.*//') <actual_output >incorrect_lines
+    rm -f actual_output
     # check number of partitions
     local n_actual=$(cat num_lines; rm -f num_lines)
     echo "num_output_partitions: $n_actual = $n ?"
