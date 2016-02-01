@@ -3,12 +3,17 @@ layout: default
 title: Compiling a DeepDive application
 ---
 
-TO ADD: - More info about the "why" it compiles.
-        - check that app.ddlog has been correcly introduced before.
-        - check that the fact that input data must be located in input/ (with symlinks or not) is previously defined. In particular, precise the link in the "DeepDive commands" section.
-        - proof read the "Interesting compiled files" section.
-        - maybe split "intersting compiled files" and a "where are compiled files stored?"
-        - run/Makefile ?
+<todo>
+TO ADD:
+
+* More info about the "why" it compiles.
+* check that app.ddlog has been correcly introduced before.
+* check that the fact that input data must be located in input/ (with symlinks or not) is previously defined. In particular, precise the link in the "DeepDive commands" section.
+* proof read the "Interesting compiled files" section.
+* maybe split "intersting compiled files" and a "where are compiled files stored?"
+* run/Makefile ?
+
+</todo>
 
 # Compiling a DeepDive application
 
