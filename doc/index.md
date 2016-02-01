@@ -173,9 +173,6 @@ and
     - Migrate <s>[Creating a new application](writing.md)</s>
     </todo>
 - [What a DeepDive application looks like](deepdiveapp.md)
-    <br><todo>
-    Keep Structure section and renew
-    </todo>
 - Writing a DeepDive Application
     - [Defining data processing in DDlog](writing-dataflow-ddlog.md) NEW
         <br><todo>Migrate <s>[Writing applications in DDlog](ddlog.md)</s></todo>

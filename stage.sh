@@ -66,12 +66,15 @@ stage .build/submodule/compiler/hocon2json/hocon2json.sh                        
 stage .build/submodule/compiler/hocon2json/target/scala-2.10/hocon2json-assembly-*.jar  util/hocon2json.jar
 
 # DeepDive execution planner and runner
+stage runner/deepdive-run                                         util/
 stage runner/deepdive-plan                                        util/
 stage runner/deepdive-do                                          util/
 stage runner/deepdive-redo                                        util/
 stage runner/deepdive-mark                                        util/
 stage runner/deepdive-done                                        util/
 stage runner/format_timestamp                                     util/
+stage runner/reset_timestamp                                      util/
+stage runner/restore_timestamp                                    util/
 stage runner/mark_done                                            util/
 stage runner/resolve-args-to-do.sh                                util/
 stage runner/show_progress                                        util/
@@ -84,11 +87,13 @@ stage runner/computers-default.conf                               util/
 stage .build/submodule/runner/mkmimo/mkmimo                       util/
 
 # DeepDive database operations and drivers
+stage database/deepdive-query                                     util/
 stage database/deepdive-db                                        util/
 stage database/deepdive-initdb                                    util/
 stage database/deepdive-sql                                       util/
 stage database/deepdive-create                                    util/
 stage database/deepdive-load                                      util/
+stage database/deepdive-unload                                    util/
 stage database/load-db-driver.sh                                  util/
 stage database/db-driver/postgresql                               util/db-driver/
 stage database/db-driver/greenplum                                util/db-driver/
@@ -96,9 +101,12 @@ stage database/db-driver/postgresql-xl                            util/db-driver
 stage database/db-driver/mysql                                    util/db-driver/
 stage database/partition_id_range                                 util/
 stage database/pgtsv_to_json                                      util/
+stage database/tsv2json                                           util/
+stage util/partition_integers                                     util/
 
 # DDlib
 stage ddlib/ddlib                                                 lib/python/
+stage ddlib/deepdive.py                                           lib/python/
 
 # DeepDive inference engine and supporting utilities
 case $(uname) in

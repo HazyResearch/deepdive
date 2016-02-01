@@ -1,11 +1,44 @@
 #!/usr/bin/env bash
-# deepdive-whereis -- Prints paths to files in DeepDive's installation
+# deepdive-whereis -- Finds absolute paths to files in the app or DeepDive installation
 # > deepdive whereis FILE...
+# > deepdive whereis app FILE...
+# > deepdive whereis installed FILE...
 ##
 set -eu
 
+# determine path prefixes to resolve relative paths against
+prefixes=() where=
+case $1 in
+    app)
+        shift
+        DEEPDIVE_APP=$(find-deepdive-app)
+        prefixes+=("$DEEPDIVE_APP/")
+        where+=" or the current DeepDive app"
+        ;;
+    installed)
+        shift
+        prefixes+=("$DEEPDIVE_HOME/")
+        where+=" or DeepDive installation"
+        ;;
+    *)
+        # by default search the app, then the installation
+        if DEEPDIVE_APP=$(find-deepdive-app) &>/dev/null; then
+            prefixes+=("$DEEPDIVE_APP/")
+            where+=" or the current DeepDive app"
+        fi
+        prefixes+=("$DEEPDIVE_HOME/")
+        where+=" or DeepDive installation"
+esac
+where=${where# or }
+[[ $# -gt 0 ]] || usage "$0" "Missing FILE"
+
+# resolve absolute paths
 for f; do
-    [[ -e "$DEEPDIVE_HOME/$f" ]] ||
-        error "$f: No such file in DeepDive installation"
-    echo "$DEEPDIVE_HOME/$f"
+    found=false
+    for p in "${prefixes[@]}"; do
+        [[ -e "$p$f" ]] || continue
+        echo "$p$f"
+        found=true
+    done
+    $found || error "$f: No such file in $where"
 done

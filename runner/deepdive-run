@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# deepdive-run -- Runs the current DeepDive app end-to-end
+#
+# The following:
+# > deepdive run
+# is equivalent to:
+# > deepdive redo process/init/app model/calibration-plots
+#
+# When extra arguments are specified, such as:
+# > deepdive run TARGET...
+# then it is equivalent to:
+# > deepdive redo init/app TARGET...
+##
+set -euo pipefail
+
+# default target
+[[ $# -gt 0 ]] || set -- model/calibration-plots
+
+exec deepdive-redo process/init/app "$@"

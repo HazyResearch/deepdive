@@ -17,16 +17,16 @@ numcolumns() {
 }
 
 @test "$DBVARIANT deepdive create fails on incorrect usage" {
-    ! deepdive create
-    ! deepdive create table
-    ! deepdive create view
-    ! deepdive create table-if-not-exists
-    ! deepdive create view-if-not-exists
-    ! deepdive create table foo as
-    ! deepdive create table as foo
-    ! deepdive create table foo like
-    ! deepdive create table like bar
-    ! deepdive create something awesome please
+    ! deepdive create || false
+    ! deepdive create table || false
+    ! deepdive create view || false
+    ! deepdive create table-if-not-exists || false
+    ! deepdive create view-if-not-exists || false
+    ! deepdive create table foo as || false
+    ! deepdive create table as foo || false
+    ! deepdive create table foo like || false
+    ! deepdive create table like bar || false
+    ! deepdive create something awesome please || false
     # TODO check if usage is shown
 }
 
@@ -48,7 +48,7 @@ numcolumns() {
     [ $(deepdive sql eval "SELECT SUM(x) FROM foo") -eq 123 ]
 
     # only SELECT queries should work
-    ! deepdive create table foo as "INSERT INTO foo VALUES (456)"
+    ! deepdive create table foo as "INSERT INTO foo VALUES (456)" || false
     [ $(numcolumns foo) -eq 0 ]
 }
 
@@ -97,7 +97,7 @@ numcolumns() {
     [ $(deepdive sql eval "SELECT SUM(x) FROM bar") -eq 456 ]
 
     # only SELECT queries should work
-    ! deepdive create view bar as "INSERT INTO foo VALUES (789)"
+    ! deepdive create view bar as "INSERT INTO foo VALUES (789)" || false
     [ $(numcolumns bar) -eq 0 ]
     [ $(numcolumns foo) -eq 1 ]
 
@@ -114,7 +114,7 @@ numcolumns() {
 @test "$DBVARIANT deepdive create table foo outside app fails" {
     mkdir -p tmp || skip "Cannot create directory: tmp"
     cd tmp
-    ! deepdive create table foo
+    ! deepdive create table foo || false
     cd -
     rmdir tmp
 }
@@ -129,7 +129,7 @@ numcolumns() {
     [ $(numcolumns variable_table_declared_in_app) -gt 0 ]
 
     # fails for others
-    ! deepdive create table nonexistent
+    ! deepdive create table nonexistent || false
     [ $(numcolumns nonexistent) -eq 0 ]
 
     # should allow overriding schema relations (with warnings)

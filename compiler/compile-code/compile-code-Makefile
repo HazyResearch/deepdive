@@ -27,6 +27,9 @@ define CMD_factor
 endef
 define TOUCH
 endef
+define RESET
+rm -f
+endef
 
 .DEFAULT: help
 help:
@@ -52,13 +55,13 @@ reset: \(keys | mktargets("reset"))
 | "
 \(.key | mktarget): \(.value | mktargets)
 	## \(.key) \("#" * (78 -(.key | length) -4))
-	# Done: $(shell format_timestamp $@ 2>/dev/null)
+	# Done: $(shell format_timestamp $@ $@~ 2>/dev/null)
 	$(CMD_\(.key | sub("/.*"; "")))
 	$(TOUCH)
 	##############################################################################
 
 \(.key | mktarget("reset")):
-	rm -f \(.key | mktarget("done"))
+	$(RESET) \(.key | mktarget("done"))
 "
 
 # pipelines are special

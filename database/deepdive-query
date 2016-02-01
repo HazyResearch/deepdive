@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# deepdive-query -- Runs a DDlog query against the database for the DeepDive application
+# > deepdive query DDLOG_QUERY
+#
+# You must either have the DEEPDIVE_DB_URL environment set to a proper URL or
+# run this command under a DeepDive application where the URL is set in a db.url file.
+#
+# > deepdive query -n DDLOG_QUERY
+# Just shows the SQL query instead of actually running it through the `deepdive sql` command.
+#
+# > deepdive query DDLOG_QUERY format=FORMAT [header=1]
+# Evaluates a given DDlog query and prints the result in the specified FORMAT.
+# FORMAT can be tsv, csv, or json, and defaults to tsv format.
+# Prints the header line for tsv and csv format when header=1 is given.
+##
+set -euo pipefail
+
+JustShowSQL=false
+while getopts "n" o; do
+    case $o in
+        n)
+            JustShowSQL=true
+            ;;
+    esac
+done
+shift $(($OPTIND - 1))
+
+[[ $# -gt 0 ]] || usage "$0" "Missing DDLOG_QUERY"
+DDlogQuery=$1; shift
+
+DEEPDIVE_APP=$(find-deepdive-app)
+export DEEPDIVE_APP
+cd "$DEEPDIVE_APP"
+
+sql=$(ddlog query "$DDlogQuery" app.ddlog)
+if $JustShowSQL; then
+    echo "$sql"
+elif [[ $# -gt 0 ]]; then
+    exec deepdive-sql eval "$sql" "$@"
+else
+    exec deepdive-sql "$sql"
+fi
