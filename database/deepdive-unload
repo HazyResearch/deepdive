@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
-# deepdive-load -- Loads a given relation's data
-# > deepdive load RELATION[(COLUMN[,COLUMN]...)] [SOURCE...]
-# Initializes given RELATION in the database and loads data from SOURCE for
-# optionally specified COLUMNs.  When SOURCE is unspecified, the data is loaded
-# from files found on path input/RELATION.* under the DeepDive application.
+# deepdive-unload -- Unloads a given relation's data
+# > deepdive unload RELATION[(COLUMN[,COLUMN]...)] [SINK...]
+# Unloads given RELATION's data from the database to given SINKs for
+# optionally specified COLUMNs.  When SINK is unspecified, the data is unloaded
+# to input/RELATION.* under the DeepDive application.
 #
-# When RELATION is a random variable and no COLUMN is specified, the SOURCE are
-# expected to contain the `label` column at the end, in addition to all
+# When RELATION is a random variable and no COLUMN is specified, the unloaded
+# data will contain the `label` column at the end, in addition to all
 # user-defined ones.
 #
 # This command must be run under an environment whose DEEPDIVE_DB_URL variable
 # is set to a proper URL, or under a DeepDive application where the URL is set
 # in the db.url file.
 #
-# The format of each SOURCE is determined by the filename extension, such as
+# The format of each SINK is determined by the filename extension, such as
 # `.tsv` or `.csv`.  Defining the DEEPDIVE_LOAD_FORMAT environment to tsv, csv,
 # or sql assumes a particular format, ignoring the filename.  Defining
 # DEEPDIVE_LOAD_FORMAT_DEFAULT environment will fallback to the specified
@@ -21,18 +21,14 @@
 #
 # For example:
 #
-# > deepdive load sentences
-# creates table 'sentences' and loads data from input/sentences.tsv if there
-# is one.
+# > deepdive unload sentences
+# unloads table 'sentences' to input/sentences.tsv.
 #
-# > deepdive load sentences path/to/sentences.tsv
-# creates table 'sentences' and loads data from path/to/sentences.tsv.
+# > deepdive unload sentences path/to/sentences.tsv
+# unloads table 'sentences' to path/to/sentences.tsv.
 #
-# > deepdive load sentences sentences.csv.bz2
-# creates table 'sentences' and loads from a compressed CSV file.
-#
-# > deepdive load sentences sentences.csv.sh
-# creates table 'sentences' and loads the CSV output of a shell script.
+# > deepdive unload sentences sentences.csv.bz2
+# unloads table 'sentences' to a compressed CSV file.
 ##
 set -eu
 
@@ -52,26 +48,20 @@ case $Relation in
         Relation=${Relation%%"("*}
 esac
 
-# when no SOURCE is specified, look under input/
+# when no SINK is specified, look under input/
 if [[ $# -eq 0 ]]; then
     DEEPDIVE_APP=$(find-deepdive-app)
     export DEEPDIVE_APP
     . load-db-driver.sh
 
     cd "$DEEPDIVE_APP"
-    initsh=input/init_"$Relation".sh
-    # check if init_RELATION.sh script is available
-    if [[ -x "$initsh" ]]; then
-        echo "Loading $Relation via $initsh"
-        exec "$initsh" "$@"
-    fi
     # search under input/RELATION.*
-    for Path in input/"$Relation".{tsv,csv,json-seq,sql}{,.bz2,.gz,.sh}; do
+    for Path in input/"$Relation".{tsv,csv}{,.bz2,.gz}; do
         [[ -e "$Path" ]] || continue
         break
     done
     [[ -e "$Path" ]] ||
-        usage "$0" "input/$Relation.*: No data source found for $Relation"
+        Path="input/$Relation.${DEEPDIVE_LOAD_FORMAT:-${DEEPDIVE_LOAD_FORMAT_DEFAULT:-tsv}}"
     # use the found path
     set -- "$Path"
 else
@@ -101,30 +91,24 @@ if [[ -z "$Columns" && -e "$DEEPDIVE_APP" ]] && app-has-been-compiled; then
     )
 fi
 
-# how to load a set of source expressions
-# (eval is used here to support process substitution for on-the-fly decompression)
-currentFormat= pathsInFormat=() sourcesInFormat=
-loadQueued() {
+# how to unload to a set of sink expressions
+# (eval is used here to support process substitution for on-the-fly compression)
+currentFormat= pathsInFormat=() sinksInFormat=
+unloadQueued() {
     [[ -n ${currentFormat:=$DEEPDIVE_LOAD_FORMAT_DEFAULT} ]] ||
         error "Specify DEEPDIVE_LOAD_FORMAT= or DEEPDIVE_LOAD_FORMAT_DEFAULT="
-    echo "Loading $Relation${Columns:+($Columns)} from ${pathsInFormat[*]:-/dev/stdin} ($currentFormat format)"
-    case $currentFormat in
-        sql)
-            eval "cat $sourcesInFormat" | db-prompt
-            ;;
-        *)
-            eval 'db-load "$Relation" "$Columns" "$currentFormat" '"$sourcesInFormat"
-    esac
+    echo "Unloading $Relation${Columns:+($Columns)} to ${pathsInFormat[*]:-/dev/stdout} ($currentFormat format)"
+    eval 'db-unload "SELECT ${Columns:-"*"} FROM $Relation" "$currentFormat" '"$sinksInFormat"
 }
 queue() {
     pathsInFormat+=("$1")
-    sourcesInFormat+="$2 "
+    sinksInFormat+="$2 "
 }
 
 # assume a particular format when explicitly specified
 currentFormat=$DEEPDIVE_LOAD_FORMAT
 
-# group given paths by format, and batch call to load to support parallel load
+# group given paths by format, and batch call to unload to support parallel unload
 format=$currentFormat
 for path; do
     # determine the format
@@ -132,44 +116,41 @@ for path; do
         case $path in
             *.tsv|*.tsv.*)           format=tsv      ;;
             *.csv|*.csv.*)           format=csv      ;;
-            *.json-seq|*.json-seq.*) format=json-seq ;;
-            *.sql|*.sql.*)           format=sql      ;;
             *)
                 [[ -n "$DEEPDIVE_LOAD_FORMAT_DEFAULT" ]] ||
                     error "$path: Unrecognized format, specify DEEPDIVE_LOAD_FORMAT= or DEEPDIVE_LOAD_FORMAT_DEFAULT="
                 format=$DEEPDIVE_LOAD_FORMAT_DEFAULT
         esac
     fi
-    # and how to decompress if needed
+    # and how to compress if needed
     case $path in
         *.bz2)
             if type pbzip2 &>/dev/null
-            then decompress="pbzip2 -d -k -c"
-            else decompress=" bzip2 -d -k -c"
+            then compress=pbzip2
+            else compress=bzip2
             fi ;;
         *.gz)
             if type pigz &>/dev/null
-            then decompress="pigz -d -k -c"
-            else decompress="gzip -d -k -c"
+            then compress=pigz
+            else compress=gzip
             fi ;;
-        *.sh)  decompress=bash  ;;
-        *)     decompress=
+        *)     compress=
     esac
 
-    # load once the format changes
+    # unload once the format changes
     if [[ "$format" != "$currentFormat" ]]; then
-        [[ -z "$currentFormat" ]] || loadQueued
-        currentFormat=$format pathsInFormat=() sourcesInFormat=
+        [[ -z "$currentFormat" ]] || unloadQueued
+        currentFormat=$format pathsInFormat=() sinksInFormat=
     fi
 
-    # queue a source expression
-    if [[ -n "$decompress" ]]; then
+    # queue a sink expression
+    if [[ -n "$compress" ]]; then
         # wrapped with decompression process if needed
-        queue "$path" "<($decompress $(escape4sh "$path"))"
+        queue "$path" ">($(escape4sh "$compress") >$(escape4sh "$path"))"
     else
         queue "$path" "$(escape4sh "$path")"
     fi
 done
 
-# load everything queued so far
-loadQueued
+# unload everything queued so far
+unloadQueued

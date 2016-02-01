@@ -36,6 +36,7 @@ for op in \
     create-table-like \
     create-view-as \
     load \
+    unload \
     analyze \
     create_calibration_view \
     assign_sequential_id \

@@ -151,6 +151,7 @@ then . else
         cd \"$varPath\"
         find . -name 'variables.part-*.bin.bz2' -exec rm -rf {} +
         export DEEPDIVE_LOAD_FORMAT=tsv
+        export DEEPDIVE_UNLOAD_MATERIALIZED=false
 
         # dump the variables, joining the holdout query to determine the type of each variable
         deepdive compute \\
@@ -453,6 +454,7 @@ then . else
                     -o -name  'weights.part-*.bin.bz2' \\
                     \\) -exec rm -rf {} +
             export DEEPDIVE_LOAD_FORMAT=tsv
+            export DEEPDIVE_UNLOAD_MATERIALIZED=false
 
             # dump the factors joining the assigned weight ids, converting into binary format for the inference engine
             DEEPDIVE_CURRENT_PROCESS_NAME=\"${DEEPDIVE_CURRENT_PROCESS_NAME}.factors\" \\
