@@ -306,7 +306,7 @@ class DeepDiveLogParser extends JavaTokenParsers {
              FunctionDeclaration(a, inTy, outTy, implementationDecls)
     }
 
-  def cqBody: Parser[Body] = quantifiedBody | atom | cond
+  def cqBody: Parser[Body] = quantifiedBody | atom | lcond
 
   def cqConjunctiveBody: Parser[List[Body]] = rep1sep(cqBody, ",")
 

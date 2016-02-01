@@ -317,7 +317,7 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
       }
     }
 
-    generateCanonicalVarFromBodies(cq.bodies(0), "")
+    cq.bodies foreach { generateCanonicalVarFromBodies(_, "") }
   }
   generateCanonicalVar() // initialize
 
