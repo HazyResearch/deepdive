@@ -1,1 +1,1 @@
-postgresql://localhost/deepdive_ocr
+postgresql://localhost/deepdive_ocr_$USER

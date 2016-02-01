@@ -1,0 +1,16 @@
+<span ng-if="extraction.label > 0" class="text-success">
+    <i class="fa fa-thumbs-up"></i>
+    Supervised as +{{extraction.label}} by <strong><tt>{{extraction.rule_id}}</tt></strong>
+</span>
+<span ng-if="extraction.label < 0" class="text-danger">
+    <i class="fa fa-thumbs-down"></i>
+    Supervised as {{extraction.label}} by <strong><tt>{{extraction.rule_id}}</tt></strong>
+</span>
+<span ng-if="extraction.label == 0" class="text-warning">
+    <i class="fa fa-question-circle"></i>
+    Unsupervised
+</span>
+
+<small>vote for
+<blockquote class="text-muted" deepdive-visualized-data="{_type:'has_spouse', _source: extraction.has_spouse}"></blockquote>
+</small>

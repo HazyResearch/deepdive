@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 # Generate create table statement given a ddlog exported schema and a table name.
-# Usage: ddlog_initdb SCHEMA.JSON TABLE_NAME
+# Usage: schema_json_to_sql SCHEMA.JSON TABLE_NAME
 
 import json, sys
 

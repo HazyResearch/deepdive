@@ -1,8 +1,6 @@
-@document
 articles(
-  article_id text,
-  @document_content
-  text       text).
+  doc_id   text,
+  doc_text text).
 
 sentences(
   document_id     text,
@@ -15,12 +13,10 @@ sentences(
   sentence_offset int,
   sentence_id     text).
 
-@textspan
+
 people_mentions(
   sentence_id    text,
-  @textspan_start
   start_position int,
-  @textspan_length
   length         int,
   text           text,
   mention_id     text).
@@ -38,6 +34,34 @@ has_spouse_features(
   feature     text).
 
 has_spouse?(relation_id text).
+
+
+## NLP markup #################################################################
+
+sentences_processed( doc_id         text
+                   , sentence_index int
+                   , sentence_text  text
+                   , tokens         text[]
+                   , lemmas         text[]
+                   , pos_tags       text[]
+                   , ner_tags       text[]
+                   , doc_offsets    int[]
+                   , dep_types      text[]
+                   , dep_tokens     int[]
+                   ).
+
+function nlp_markup over ( doc_id text, content text )
+                 returns rows like sentences_processed
+  implementation "udf/nlp_markup.sh" handles tsv lines.
+
+sentences_processed +=
+  nlp_markup(doc_id, content) :-
+  articles(doc_id, content).
+
+sentences(doc_id, sentence_text, tokens, lemmas, pos_tags, dep_types, ner_tags, sentence_index, (doc_id || "@" || sentence_index)) :-
+  sentences_processed(doc_id, sentence_index, sentence_text, tokens, lemmas, pos_tags, ner_tags, doc_offsets, dep_types, dep_tokens).
+
+###############################################################################
 
 function ext_people over (sentence_id text, words text, ner_tags text)
                  returns rows like people_mentions

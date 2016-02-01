@@ -7,4 +7,13 @@ set -eu
 [[ $# -gt 0 ]] || usage "$0" "No TARGET to redo given"
 
 deepdive-mark todo "$@"
-exec deepdive-do "$@"
+onexit() {
+    # restore timestamps if needed
+    case $? in
+        130)  # when deepdive-do was canceled
+            deepdive-mark restore "$@"
+            ;;
+    esac
+}
+trap 'onexit "$@"' EXIT
+deepdive-do "$@"

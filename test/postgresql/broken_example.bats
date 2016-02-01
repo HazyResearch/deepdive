@@ -7,5 +7,5 @@
     cd "$BATS_TEST_DIRNAME"/broken_example || skip
     ! deepdive compile ||
     ! deepdive redo process/init/app ||
-    ! deepdive redo data/model/{weights,probabilities}
+    ! deepdive redo data/model/{weights,probabilities} || false
 }

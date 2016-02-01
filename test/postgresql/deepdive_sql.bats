@@ -26,7 +26,7 @@ setup() {
         CREATE;
         INSERT;
         SELECT 1
-        "
+        " || false
 }
 
 @test "$DBVARIANT deepdive sql stops on error" {
@@ -34,27 +34,27 @@ setup() {
         CREATE TEMP TABLE foo(id INT);
         INSERT INTO foo SELECT id FROM __non_existent_table__$$;
         SELECT 1
-        "
+        " || false
 }
 
 @test "$DBVARIANT deepdive sql eval fails on empty SQL" {
-    ! deepdive sql eval ""
+    ! deepdive sql eval "" || false
 }
 
 @test "$DBVARIANT deepdive sql eval fails on bad SQL" {
-    ! deepdive sql eval "SELECT FROM WHERE"
+    ! deepdive sql eval "SELECT FROM WHERE" || false
 }
 
 @test "$DBVARIANT deepdive sql eval fails on non-SELECT SQL" {
-    ! deepdive sql eval "CREATE TEMP TABLE foo(id INT)"
+    ! deepdive sql eval "CREATE TEMP TABLE foo(id INT)" || false
 }
 
 @test "$DBVARIANT deepdive sql eval fails on multiple SQL" {
-    ! deepdive sql eval "CREATE TEMP TABLE foo(id INT); SELECT 1"
+    ! deepdive sql eval "CREATE TEMP TABLE foo(id INT); SELECT 1" || false
 }
 
 @test "$DBVARIANT deepdive sql eval fails on trailing semicolon" {
-    ! deepdive sql eval "SELECT 1;"
+    ! deepdive sql eval "SELECT 1;" || false
 }
 
 
