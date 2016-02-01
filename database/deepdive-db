@@ -8,6 +8,7 @@
 # > deepdive db create-table-like
 # > deepdive db create-view-as
 # > deepdive db load
+# > deepdive db unload
 # > deepdive db execute
 # > deepdive db query
 # > deepdive db prompt

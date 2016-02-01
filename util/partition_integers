@@ -1,0 +1,21 @@
+#!/usr/bin/env python
+# partition_integers -- Partitions integer range into even ranges
+##
+import sys
+
+M = int(sys.argv[1])
+N = int(sys.argv[2])
+
+# input sanity check
+if not (M >= 0 and N > 0):
+    sys.stderr.writeln("%d must be non-negative and %d must be positive integers" % (M, N))
+    sys.exit(1)
+
+k = float(M)/N
+
+begin = 0
+for i in xrange(N):
+    l = int(round(k * (i+1)) - begin)
+    end = begin + l - 1
+    print l, begin, end
+    begin = end + 1
