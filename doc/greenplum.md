@@ -3,10 +3,9 @@ layout: default
 title: Using DeepDive with Greenplum
 ---
 
-TO ADD:
-- check the Installation process. Is it still true with the new release ? (Maybe ask in particular Johannes or Sen). In particular the Parallel grounding, does it still work that way ?
-- Discuss DEEPDIVE_NUM_PARALLEL_UNLOADS=...
-- Caveats of GPFDIST_DISABLE=true
+<todo> - check the Installation process. Is it still true with the new release ? (Maybe ask in particular Johannes or Sen). In particular the Parallel grounding, does it still work that way ?
+- Discuss DEEPDIVE\_NUM\_PARALLEL\_UNLOADS=...
+- Caveats of GPFDIST\_DISABLE=true </todo>
 
 # Using DeepDive with Greenplum
 
