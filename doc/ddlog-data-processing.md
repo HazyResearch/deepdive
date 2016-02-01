@@ -34,33 +34,20 @@ Comments in DDlog begin with a hash (`#`) character.
 First of all, we declare the relations we use throughout the program.  These relations refer to tables that will appear in your database.  See [deepdive sql TODO](fill in with real link) for details on how to interact with the database.
 The order doesn't matter, but it's a good idea to place them at the beginning because that makes it easier to understand.
 
-#### Source Relations
-We need a relation for holding raw text of all source documents.
-Each relation has multiple columns whose name and type are declared one at a time separated by commas.
+#### Relations Syntax
+    relation_name(
+      column1_name  column1_type,
+      column2_name  column2_type,
+      ...).
 
-<script defer src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/ddlog/app.ddlog?footer=minimal&slice=1:6">
+Similar to a SQL table definition, a schema declaration is just the name of a relation followed by a comma separated list of the columns and their types.
+
+Below is a real example from [the spouse example TODO] (add real link here).
+
+<script defer src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/ddlog/app.ddlog?footer=minimal&slice=36:38">
 </script>
 
-#### Intermediate Relations
-We'll populate the following `sentences` relation by parsing sentences from every articles and collecting NLP tags.
-
-<script defer src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/ddlog/app.ddlog?footer=minimal&slice=6:17">
-</script>
-
-Then, we'll map candidate mentions of people in each sentence using the following `people_mentions` relation (ignore `@` annotations).
-
-<script defer src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/ddlog/app.ddlog?footer=minimal&slice=18:27">
-</script>
-
-Candidate mentions of spouse relationships from them will then be stored in `has_spouse_candidates`.
-
-<script defer src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/ddlog/app.ddlog?footer=minimal&slice=27:35">
-</script>
-
-For each relationship candidate, we'll extract features.
-
-<script defer src="https://gist-it.appspot.com/github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/ddlog/app.ddlog?footer=minimal&slice=35:39">
-</script>
+Here we are defining a relation named "has_spouse_features" with two columns, named "relation_id" and "feature" respectively.  In this case, they are both of type "text" but ddlog supports other types as well, including int, text[] and others.  For more details, see the [reference guide TODO](add real link here).
 
 #### Variable Relations
 Finally, we declare a variable relation that we want DeepDive to predict the marginal probability for us.
