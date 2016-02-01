@@ -403,7 +403,7 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
 
   // generate SQL SELECT cluase
   def generateSQLHead(aliasStyle: AliasStyle) = {
-    val head = cq.headTerms map { expr =>
+    val head = if (cq.headTerms isEmpty) "*" else cq.headTerms map { expr =>
       compileExpr(expr) + compileAlias(expr, aliasStyle)
     } mkString(", ")
     val distinctStr = if (cq.isDistinct) "DISTINCT " else ""
