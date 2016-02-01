@@ -19,11 +19,11 @@ check_correct_output() {
     echo "sum_partition_sizes: $sum = $m ?"
     [[ $sum -eq $m ]]
     # check if any line contained incorrect ranges
-    if [[ -s incorrect_lines ]]; then
+    ! [[ -s incorrect_lines ]] || {
         echo "incorrect ranges at lines:"
         cat incorrect_lines; rm -f incorrect_lines
         false
-    fi
+    }
 }
 
 @test "partition_integers usage" {
