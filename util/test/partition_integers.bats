@@ -12,15 +12,16 @@ check_correct_output() {
         #
     # check number of partitions
     local n_actual=$(cat num_lines; rm -f num_lines)
-    echo >&2 num_output_partitions=$n_actual
+    echo "num_output_partitions: $n_actual = $n ?"
     [[ $n_actual -eq $n ]]
     # check if they all sum up to m
     local sum=$(cat sum; rm -f sum)
-    echo "$sum = $m ?"
+    echo "sum_partition_sizes: $sum = $m ?"
     [[ $sum -eq $m ]]
     # check if any line contained incorrect ranges
     if [[ -s incorrect_lines ]]; then
-        cat >&2 incorrect_lines; rm -f incorrect_lines
+        echo "incorrect ranges at lines:"
+        cat incorrect_lines; rm -f incorrect_lines
         false
     fi
 }
