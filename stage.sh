@@ -87,6 +87,7 @@ stage runner/computers-default.conf                               util/
 stage .build/submodule/runner/mkmimo/mkmimo                       util/
 
 # DeepDive database operations and drivers
+stage database/deepdive-query                                     util/
 stage database/deepdive-db                                        util/
 stage database/deepdive-initdb                                    util/
 stage database/deepdive-sql                                       util/
