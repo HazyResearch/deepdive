@@ -1,9 +1,5 @@
----
-layout: default
-title: Writing Applications in DDlog
----
 
-# Writing Applications in DDlog
+# DDlog
 
 DDlog is a higher-level language for writing DeepDive applications in succinct Datalog-like syntax.
 We are gradually extending the language to allow expression of advanced SQL queries used by complex extractors as well as a variety of factors with Markov Logic-like syntax.
@@ -94,5 +90,14 @@ function classify_articles over (id int, author text, length int, words text[])
   implementation "udf/classify.py" handles tsv lines.
 ```
 
-Also note that the input is similar to the articles relation, but the fields are in a different order.  This is on purpose to show that the input need not match the relation defintion exactly.  We will see how this comes into play in the Function Call Rules below. 
+Also note that the input is similar to the articles relation, but the fields are in a different order.  This is on purpose to show that the input need not match the relation defintion exactly.  We will see how this comes into play in the Function Call Rules below.
+
+### Function Call Rules
+The functions defined above can be used to fill rows into a relation.  The syntax below will be used to call the classify function to fill the classified_articles relation using data from the articles relation.
+```
+classified_articles += classify_articles(id, author, length, words) :- 
+  article(id, length, author words)
+```
+
+The classify_articles function is being called on the input from articles and the output is being fed into classified_articles.  Note that the articles relation fields are in a different order than the input for the classify_articles function.  This is to demonstrate that the columns are referenced by name so they can be reordered or omitted when calling the function as needed.
 
