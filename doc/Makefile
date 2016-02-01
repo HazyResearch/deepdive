@@ -18,6 +18,11 @@ WEBSITE_BASEURL = http://$(WEBSITE_CNAME)
 TEST_HOST = localhost
 TEST_PORT = 4000
 
+# localize required Ruby gems
+GEM_HOME ?= $(shell pwd)/.gems
+export GEM_HOME
+PATH := $(shell pwd)/.gems/bin:$(PATH)
+REQUIRED_GEMS = jekyll redcarpet
 
 IGNORE_URL = $(shell sed <.linkchecker.ignore-urls -e 's/[[:space:]]*\#.*$$//' -e '/^[[:space:]]*$$/d')
 LINKCHECKER_OPTIONS = --timeout 30 \
@@ -58,7 +63,7 @@ deploy: jekyll
 
 .PHONY: jekyll linkchecker
 jekyll:
-	type jekyll || gem install jekyll
+	type jekyll || gem2.0 install $(REQUIRED_GEMS) || gem install $(REQUIRED_GEMS)
 linkchecker:
 	type linkchecker >/dev/null || pip install linkchecker --use-mirrors
 
