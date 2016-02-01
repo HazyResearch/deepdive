@@ -1,3 +1,29 @@
+# Tutorial: Extracting Mentions of Spouses From The News
+
+In this tutorial, we show an example of a prototypical task that DeepDive is often applied to:
+extraction of _structured information_ from _unstructured or 'dark' data_ such as webpages, text documents, images, etc.
+While DeepDive can be used as a more general platform for statistical learning and data processing,
+most of the tooling described herein has been built for this type of use case,
+based on our experience [successfully applying DeepDive to a variety of real-world problems of this type](http://deepdive.stanford.edu/doc/showcase/apps.html).
+
+In this setting, our goal is to take in a set of unstructured (and/or structured) inputs,
+and populate a relation database table with extracted outputs,
+along with marginal probabilities for each extraction representing DeepDive's confidence in the extraction.
+More formally, we write a DeepDive application to extract _relations_ and their constituent _entities_ or _attributes_, according to a specified schema;
+this task is often referred to as **"relation extraction"**.
+Accordingly, we describe an example scenario where we are trying to extract _mentions of_*
+human relations from unstructured text news articles.
+
+We first outline the high-level steps we'll follow:
+1. **Input Data \& Candidate Extraction:**
+2. **Distant Supervision:**
+3. **Model Specification:**
+4. **Labeling, Error Analysis \& Debugging:**
+
+*_Note the distinction between extraction of facts and mentions of facts. In this tutorial, we do the latter, however DeepDive supports further downstream methods for tackling the former task in a principled manner._
+
+# TODO...
+
 # Extracting Spouse Relationships from News Articles: An end-to-end illustrative Deepdive Example
 
 We'll walk through this tutorial as if the reader were starting from scratch,
