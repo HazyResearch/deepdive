@@ -37,7 +37,7 @@ body ul, body ol {
   padding: 20px 0px;
 }
 
-#footer p { font-size: small; color: #ccc;}
+#footer p { font-size: 14px; color: #ccc;}
 #footer a { color: #fff !important; }
 
 #main {
