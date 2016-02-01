@@ -20,7 +20,7 @@ clean: scala-clean
 	rm -f $(JAR) $(wildcard test/*/*/*.actual)
 	find test/ -name '*.bats' -type l -exec rm -f {} +
 
-PATH += :$(shell pwd)/project/sbt
+PATH := $(shell pwd)/project/sbt:$(PATH)
 export PATH
 ifeq ($(shell uname),Darwin)
 SHELL := /bin/bash  # Mac requires SHELL to be forced to bash
