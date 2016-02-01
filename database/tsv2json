@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# tsv2json -- Converts TSV lines into JSON lines
+#
+# $ tsv2json KEY_FOR_EACH_COLUMN... <input.tsv >output.json
+# The KEY_FOR_EACH_COLUMN defines the mapping between column position to the
+# key for the corresponding JSON object.
+##
+set -euo pipefail
+
+# from given keys for each column, compose a jq program that construct such object
+jqObjConstructor=
+columnIndex=0
+for keyForColumn; do
+    jqObjConstructor+=", \"$keyForColumn\": .[$columnIndex]"
+    let ++columnIndex
+done
+jqObjConstructor="{${jqObjConstructor#, }}"
+
+# run jq that parses each TSV line and construct a corresponding JSON object
+exec jq -R -c 'split("\t") | map(
+    if . == "\\N" then null
+    else
+        # handle TSV escape sequences
+        gsub("\\\\n"  ; "\n") |
+        gsub("\\\\t"  ; "\t") |
+        gsub("\\\\r"  ; "\r") |
+        gsub("\\\\b"  ; "\b") |
+        gsub("\\\\(.)"; "$1")
+    end
+) | '"$jqObjConstructor"

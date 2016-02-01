@@ -1,0 +1,16 @@
+<a mb-search-link="{{extraction.mention_text}}"><strong>{{extraction.mention_text}}</strong></a>
+
+<small class="text-muted">
+    in <a mb-search-only="sentences" mb-search-link="{{extraction.doc_id}} sentence_index:{{extraction.sentence_index}}">sentence {{extraction.sentence_index}}</a>
+    in <a mb-search-only="articles"  mb-search-link="{{extraction.doc_id}}">article({{extraction.doc_id}})</a>:
+</small>
+<div mindtagger-word-array="source.tokens">
+    <mindtagger-highlight-words from="extraction.begin_index" to="extraction.end_index" with-style="background-color: yellow;"/>
+</div>
+<!--
+<p>{{
+    source.sentence_text | limitTo:(source.doc_offsets[extraction.begin_index] - source.doc_offsets[0])
+}}<strong>{{extraction.mention_text}}</strong>{{
+    source.sentence_text | limitTo:null:(source.doc_offsets[extraction.end_index] - source.doc_offsets[0])
+}}</p>
+-->

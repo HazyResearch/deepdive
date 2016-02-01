@@ -1,0 +1,10 @@
+<div ng-if="searchResult">
+    <p>{{source.content | limitTo:500}}<span ng-if="source.content.length > 500">...</span></p>
+</div>
+<div ng-if="!searchResult">
+    <p>{{source.content}}</p>
+</div>
+
+<small>See anything
+    <a mb-search-link="{{source.id}}">related to article({{source.id}})</a>
+</small>

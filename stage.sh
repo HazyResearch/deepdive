@@ -101,10 +101,12 @@ stage database/db-driver/postgresql-xl                            util/db-driver
 stage database/db-driver/mysql                                    util/db-driver/
 stage database/partition_id_range                                 util/
 stage database/pgtsv_to_json                                      util/
+stage database/tsv2json                                           util/
 stage util/partition_integers                                     util/
 
 # DDlib
 stage ddlib/ddlib                                                 lib/python/
+stage ddlib/deepdive.py                                           lib/python/
 
 # DeepDive inference engine and supporting utilities
 case $(uname) in
