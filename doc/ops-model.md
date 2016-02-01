@@ -27,7 +27,7 @@ For convenience, the learned weights can be loaded in the DeepDive database usin
 deepdive do weights
 ```
 
-This will create a comprehensive view of the weights under `dd_inference_result_weights_mapping` view. You can inspect the weights corresponding to a a given relation by querying this view. 
+This will create a comprehensive view of the weights under `dd_inference_result_weights_mapping` view. You can inspect the weights corresponding to a a given relation by querying this view.
 
 
 ## Inference
@@ -38,3 +38,4 @@ deepdive do inference
 ```
 
 When running this command, DeepDive will perform marginal inference on the factor graph variables to learn the probabilities of different values they can take over all possible worlds using Gibbs sampling. Using these probabilities, we compute the expectation of a certain relation and store it in the appropriate database table. By convention, DeepDive calls these tables `variable_id_inference_label`, where variable_id is the target relation we are trying to infer.
+
