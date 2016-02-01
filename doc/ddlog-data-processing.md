@@ -95,7 +95,7 @@ Also note that the input is similar to the articles relation, but the fields are
 ### Function Call Rules
 The functions defined above can be used to fill rows into a relation.  The syntax below will be used to call the classify function to fill the classified_articles relation using data from the articles relation.
 ```
-classified_articles += classify_articles(id, author, length, words) :- 
+classified_articles += classify_articles(id, author, length, words) :-
   article(id, length, author words)
 ```
 
