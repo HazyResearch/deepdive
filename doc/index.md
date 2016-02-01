@@ -293,20 +293,44 @@ and
 #### Advanced topics
 
 - [FAQ](faq.md)
+    <br><todo>
+    - `DDLOG_STACK_TRACE=1`
+    </todo>
 - Using DeepDive in Various Configurations
     - [Using DeepDive with GreenPlum](greenplum.md)
+        <br><todo>
+        - Migrate <https://github.com/HazyResearch/greenplum-howto>
+        - Discuss `@distributed_by` column annotation
+        - Discuss `DEEPDIVE_NUM_PARALLEL_UNLOADS=...`
+        - Caveats of `GPFDIST_DISABLE=true`
+        </todo>
     - [Using DeepDive with Postgres-XL](pgxl.md)
-    - [Using DeepDive with MySQL / MySQL Cluster](mysql.md)
-    - [Using DeepDive on Ubuntu](ubuntu.md)
     - [Using DeepDive on Amazon EC2](ec2.md)
-    - [Incremental DeepDive](incremental.md)
+    - [Using DeepDive in Docker](using-docker.md)
+        <br><todo>
+        - This is very popular question, so we should at least leave some hints after trying something out.
+        - Usually people have trouble connecting PostgreSQL instance with the DeepDive instance itself.
+        </todo>
 - References
     - [`deepdive.conf` Reference](configuration.md)
+        <br><todo>
+        - Drop deprecated extractor styles
+        </tody>
     - [Generic features library](gen_feats.md)
     - [Inference rule function reference](inference_rule_functions.md)
+        <br><todo>
+        - Add DDlog syntax for each factor types
+        </tody>
     - [High-speed sampler](sampler.md)
     - [Factor graph grounding output reference](factor_graph_schema.md)
+        <br><todo>
+        - <https://github.com/HazyResearch/deepdive/issues/439>
+        </tody>
     - [Internal database schema](reserved_tables.md)
+        <br><todo>
+        - Several things have changed, update accordingly.
+        - Rename `dd_query_*` -> `dd_factor_*`?
+        </tody>
 - [DeepDive Developer's Guide](developer.md)
 
 ### Support
