@@ -1,3 +1,7 @@
+---
+layout: default
+title: Defining Data Processing in DDlog
+---
 
 # DDlog
 
