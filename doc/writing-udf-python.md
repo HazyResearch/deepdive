@@ -5,7 +5,7 @@ title: Writing user-defined functions in Python
 
 # Writing user-defined functions in Python
 
-In the previous section [Defining Data Processing in DDlog](writing-dataflow-ddlog.md) we saw that we can write UDFs for various purposes including extraction and supervision.  We saw how to define the function in ddlog and to call it in order to write it's output to a defined relation.  In this section we will look into the python files to see an example structure and see some utilities that DeepDive provides to make writing UDFs easier.  
+In the previous section [Defining Data Processing in DDlog](writing-dataflow-ddlog.md) we saw that we can write UDFs for various purposes including extraction and supervision.  We saw how to define the function in ddlog and to call it in order to write it's output to a defined relation.  In this section we will look into the python files to see an example structure and see some utilities that DeepDive provides to make writing UDFs easier.
 
 
 Note that DeepDive supports running any executable but here we demonstrate an example in Python because DeepDive's ddlib provides utilities to easily parse the input rows and format the output rows.
@@ -21,20 +21,20 @@ article(
   length int,
   author text,
   words text[]).
-  
+
 classified_articles(
   article_id int,
   classification text).
-  
+
 function classify_articles over (id int, author text, length int, words text[])
   return rows like article
   implementation "udf/classify.py" handles tsv lines.
-  
+
 classified_articles += classify_articles(id, author, length, words) :-
   article(id, length, author words)
 ```
 
-Given the above app.ddlog we can run `deepdive do classify_articles`.  This will envoke a python script called 'udf/classify.py' giving as input the rows in tsv format from 'article' and expecting an output that will fit into classified articles (namely, a tsv row with an int and a string for the article_id and class).  A separate page outlines how to [debug UDFs](debugging-udf.md).  
+Given the above app.ddlog we can run `deepdive do classify_articles`.  This will envoke a python script called 'udf/classify.py' giving as input the rows in tsv format from 'article' and expecting an output that will fit into classified articles (namely, a tsv row with an int and a string for the article_id and class).  A separate page outlines how to [debug UDFs](debugging-udf.md).
 
 ## ddlib - @tsv_extractor, @returns, default parameters
 
@@ -53,7 +53,7 @@ bio_words = [...]
 @tsv_extractor
 @returns(lambda
         article_id       = "int",
-        classification   = "text", 
+        classification   = "text",
     :[])
 def extract(article_id="int", author="text", length="int", words="text[]"):
     """
@@ -67,7 +67,7 @@ def extract(article_id="int", author="text", length="int", words="text[]"):
     for word in words:
       if word in bio_words:
         yeild [article_id, 'bio']
-      
+
     yeild [article_id, 'unknown']
 ```
 
@@ -79,7 +79,7 @@ The `@tsv_extractor` decoration can be used on the main function that will take 
 
 ### @returns
 
-Similar to the ddlog definition, ddlib needs to know what format your output will be from the `@tsv_extractor` function to correctly format it into tsv.  It is passed a lambda function which has as its parameters the fields that will be output.  The default value of the parameter must be the type of that parameter.  The body of the lambda is ignored and can be left as an empty list (`[]`) in all cases. 
+Similar to the ddlog definition, ddlib needs to know what format your output will be from the `@tsv_extractor` function to correctly format it into tsv.  It is passed a lambda function which has as its parameters the fields that will be output.  The default value of the parameter must be the type of that parameter.  The body of the lambda is ignored and can be left as an empty list (`[]`) in all cases.
 
 ### Default parameters
 

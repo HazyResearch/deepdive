@@ -10,7 +10,7 @@ title: Specifying a statistical model in DDlog
 
 This document describe how to [declare random variables](#variable_relations) on which DeepDive performs inference, how to [label](#labeling_variables) these variables and how to write [inference rules](#inference_rules).
 
-First, variable relations on which DeepDive will predict the marginal probability are to be declared. 
+First, variable relations on which DeepDive will predict the marginal probability are to be declared.
 
 
 ## <a name="variable_relations" href="#"></a> Variable Relations
@@ -19,7 +19,7 @@ DeepDive requires the user to specify the name and type of the random variables 
 
 ### Boolean variable
 
-The following is an example of defining the schema with two Boolean variables. 
+The following is an example of defining the schema with two Boolean variables.
 
 ```
 has_spouse?(p1_id text, p2_id text).
@@ -47,15 +47,15 @@ has_spouse(p1_id, p2_id) = if l > 0 then TRUE
                       else NULL end :- spouse_label_resolved(p1_id, p2_id, l).
 ```
 
-where `spouse_label_resolved` is a dataset of pairs of people for which some labels are known. 
+where `spouse_label_resolved` is a dataset of pairs of people for which some labels are known.
 
 
 ## <a name="inference_rules" href="#"></a> Writing inference rules
 
-Inference rules describe how to build the [factor graph](inference.md). 
+Inference rules describe how to build the [factor graph](inference.md).
 Each rule consists of three components:
 
-- The **variable relation(s)**. 
+- The **variable relation(s)**.
 - The **factor function** which defines how to connect the variable relation(s) to each factor, and how these variables are related to each other.
 - the **factor weight** that describes the confidence in the relationship expressed by the factor. This is used during probabilistic inference. Weights can be constants, or automatically learned based on training data.
 
@@ -89,5 +89,5 @@ Or     : A1 v A2 v ... v An
 IsTrue : A
 ```
 
-where _As_ are variable relations. 
+where _As_ are variable relations.
 

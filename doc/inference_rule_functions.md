@@ -82,14 +82,14 @@ has a weight for each variable assignment. This function always evaluates to tru
     A(x) ^ B(x) ^ C(x) :- ... (conjunctive query body)
 
 ### Equal function
-    
+
     # A = B
     A(x) = B(x) :- ... (conjunctive query body)
 
 ### IsTrue function
-    
+
     A(x) :- ... (conjunctive query body)
 
 ### Multinomial function
-    
+
     Multinomial(A(x)) :- ... (conjunctive query body)
