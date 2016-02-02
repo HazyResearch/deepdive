@@ -9,7 +9,7 @@ This simple toy example uses a classical Markov Logic Network example to show pr
 
 ###Inference rules
 
-The objectives in this example are to predict whether a person smokes, and whether a person has cancer with a some probability using the factor function `imply(A,B)`. Here, `imply(A,B)` means that if `A` is true, then `B` is also true.
+The objectives in this example are to infer whether a person smokes, and whether a person has cancer with a some probability using the factor function `imply(A,B)`. Here, `imply(A,B)` means that if `A` is true, then `B` is also true.
 
 We introduce two rules:
         1. If person A smokes, then A might have a cancer.
@@ -52,11 +52,13 @@ deepdive {
 }
 
 ```
+### <a name="Setting Up" href="#"></a> Setting Up
 
-### <a name="Running the Example" href="#"></a> Running the Example
+Before running the example, please check that DeepDive has been properly [installed](http://deepdive.stanford.edu/doc/basics/installation.html) and the necessary files (app.ddlog, db.url, and deepdive.conf) and directory (input/) that are associated with this example are stored in the current working directory. Input directory should have data files (friends.tsv, person_has_cancer.tsv, person_smokes.tsv, and person.tsv). In order to use DeepDive a database instance must be running to accept requests, and the database location must be specified in the db.url. You can refer to the detailed [walkthrough](http://deepdive.stanford.edu/doc/basics/walkthrough/walkthrough.html) to setup the environemnt.
 
-Before running the example make sure DeepDive has been properly [installed](http://deepdive.stanford.edu/doc/basics/installation.html), and the necessary files (app.ddlog, db.url, and deepdive.conf) and directory (input/) that are associated with this example are stored in the current working directory. Input directory should have data files (friends.tsv  person_has_cancer.tsv  person_smokes.tsv  person.tsv). In order to use DeepDive a database instance must be running to accept requests, and the database location must be specified in the db.url. You can refer to the detailed [walkthrough](http://deepdive.stanford.edu/doc/basics/walkthrough/walkthrough.html) to setup the environemnt.
-We first have to compile the code using the following command.
+### <a name="Running" href="#"></a> Running
+
+Now you are ready to run the example. First, you have to compile the code using the following command.
 ```bash
 deepdive compile
 ```
@@ -69,3 +71,57 @@ To run the entire pipeline you can run the following command.
 deepdive run
 ```
 This will display a plan for deepdive to run your pipeline. To start the pipeline, exit the editor with *:wq* command.
+
+### <a name="Results" href="#"></a> Results
+
+Once the pipeline has completed running, you can view the results in the database using sql or ddlog command. The entire database should look like this:
+
+```bash
+                                            List of relations
+ Schema |                         Name                         | Type  | Owner |    Size    | Description
+--------+------------------------------------------------------+-------+-------+------------+-------------
+ public | dd_graph_variables_holdout                           | table | user | 0 bytes    |
+ public | dd_graph_variables_observation                       | table | user | 0 bytes    |
+ public | dd_graph_weights                                     | view  | user | 0 bytes    |
+ public | dd_inference_result_variables                        | table | user | 8192 bytes |
+ public | dd_query_inf_imply_person_smokes_person_has_cancer   | table | user | 8192 bytes |
+ public | dd_query_inf_imply_person_smokes_person_smokes       | table | user | 8192 bytes |
+ public | dd_weights_inf_imply_person_smokes_person_has_cancer | table | user | 16 kB      |
+ public | dd_weights_inf_imply_person_smokes_person_smokes     | table | user | 16 kB      |
+ public | friends                                              | table | user | 8192 bytes |
+ public | person                                               | table | user | 16 kB      |
+ public | person_has_cancer                                    | table | user | 8192 bytes |
+ public | person_has_cancer_label_calibration                  | view  | user | 0 bytes    |
+ public | person_has_cancer_label_inference                    | view  | user | 0 bytes    |
+ public | person_smokes                                        | table | user | 8192 bytes |
+ public | person_smokes_label_calibration                      | view  | user | 0 bytes    |
+ public | person_smokes_label_inference                        | view  | user | 0 bytes    |
+(16 rows)
+```
+Tables person, friends, person_has_cancer, and person_smokes told the input data we specified in the input/ directory. To see what DeepDive infered from our data you can look at person_smokes_label_inference and  person_has_cancer_label_inference. The two views should look like the following: 
+
+```bash
+#person_smokes_label_inference
+ person_id | id | label | category | expectation
+-----------+----+-------+----------+-------------
+         4 |  9 |       |        1 |       0.643
+         2 |  7 |       |        1 |       0.506
+         6 | 11 |       |        1 |       0.468
+         5 | 10 |       |        1 |       0.451
+(4 rows)
+
+#person_has_cancer_label_inference
+ person_id | id | label | category | expectation
+-----------+----+-------+----------+-------------
+         3 |  2 |       |        1 |       0.635
+         1 |  0 |       |        1 |       0.614
+         6 |  5 |       |        1 |        0.57
+         2 |  1 |       |        1 |       0.563
+         4 |  3 |       |        1 |       0.563
+         5 |  4 |       |        1 |       0.551
+(6 rows)
+```
+
+The `id` column is for internal usage and can be ignored by the user and `person_id` is the user defined ID in the input data. You can see that DeepDive uses the given data and inference rules to predict whether a person smokes and whether a person has cancer with some expectation.   
+
+
