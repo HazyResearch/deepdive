@@ -84,9 +84,11 @@ Disjunctive cases are expressed with multiple bodies separated by semicolons.
 For example, the following program states that the tuples of `Q` are derived
 from `R` and `S`, where the second column of `R` is *unified* with the first column
 of `S`, i.e., the body is a equi-join between `R` and `S`.
+
 ```
 Q(x, y) :- R(x, y), S(y).
 ```
+
 Here, `Q(x, y)` is the head, and `R(x, y)` and `S(y)` are body *atoms*. `x` and `y`
 are *variables* of the rule.
 
@@ -96,6 +98,7 @@ to the head relation. Expressions in the body atom will become a condition.
 Note datalog's semantics is based on unification of variables/expressions:
 variables with the same name are unified, and an expression in the body atom
 is unified with its corresponding column. A comprehensive example is shown below.
+
 ```
 a(k int).
 b(k int, p text, q text, r int).
@@ -103,9 +106,11 @@ c(s text, n int, t text).
 
 Q("test", f(123), id) :- a(id), b(id, x,y,z), c(x || y,10,"foo").
 ```
+
 Here the ouptut is a tuple of string literal "text", a function `f` operating on 123,
 and id produced by body.
 In the body, the conditions are compiled to
+
 ```
 a.k = b.k -- unifying variable id in a(id) and b(id, ...)
 AND c.n = 10  -- unifying literal 10 with the column in c(...,10,...)
@@ -119,9 +124,11 @@ Conditions are put at the same level of body atoms, and collectively with body a
 defined the output to the head. Conjunctive conditions are seperated by comma, and
 disjunctive conditions are separated by semicolon. Conditions can be arbitrarily
 nested by putting inside square brackets. For example,
+
 ```
 Q(x) :- b(x,y,z,w), [x + w = 100; [!x > 50, w < 10]].
 ```
+
 The conditions are `(x + w = 100) OR ((NOT x > 50) AND w < 10)`.
 
 ### Placeholder
@@ -133,9 +140,11 @@ Using aggregation functions in the head atom columns indicates doing a group by
 on the rest of columns, and an aggregate .
 Supported aggregation functions are SUM, MAX, MIN, ARRAY_AGG, COUNT.
 For example,
+
 ```
 Q(a,b,MAX(c)) :- R(a,b,c).
 ```
+
 will group by the first and second columns of `R`, and take the max of the third column.
 
 
@@ -143,6 +152,7 @@ will group by the first and second columns of `R`, and take the max of the third
 DeepDive allows the user to define their own functions.  These functions will read a relation line by line and then output to another relation.  Therefore, when we define a function in DDlog, we must define it's input structure, output structure and how it is implemented.
 
 If we are writing a UDF to classify the articles above into a set of classes, we might have another relation
+
 ```
 classified_articles(
   article_id int,
@@ -150,6 +160,7 @@ classified_articles(
 ```
 
 The implementation of our UDF will be in a file called "udf/classify.py".  (Note: this is saying that it is a python script that is in the 'udf' folder but DeepDive can execute any type of executable).  The syntax for defining the function is
+
 ```
 function classify_articles over (id int, author text, length int, words text[])
   return (article_id int, class text)
@@ -168,6 +179,7 @@ Also note that the input is similar to the articles relation, but the fields are
 
 ### Function Call Rules
 The functions defined above can be used to fill rows into a relation.  The syntax below will be used to call the classify function to fill the classified_articles relation using data from the articles relation.
+
 ```
 classified_articles += classify_articles(id, author, length, words) :-
   article(id, length, author words)
