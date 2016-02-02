@@ -189,14 +189,7 @@ and
         </todo>
 - Running a DeepDive Application
     - [Compiling a DeepDive application](ops-compiling.md)
-    - [Managing input data and data products](ops-data.md) NEW
-        <br><todo>Document
-        - `deepdive load`, `deepdive unload`, `deepdive sql`, `deepdive db` commands
-        - where input/output data resides
-        - `input/RELATION.*` convention
-        - how they are moved-in/out and managed
-        - (Later, `deepdive snapshot` for PG schema support will be added here.)
-        </todo>
+    - [Managing input data and data products](ops-data.md)
     - [Controlling execution of data processing](ops-execution.md) NEW
         <br><todo>
         - `deepdive do`, `deepdive plan` commands

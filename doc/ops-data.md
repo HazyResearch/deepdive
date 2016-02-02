@@ -5,7 +5,48 @@ title: Managing input data and data products
 
 # Managing input data and data products
 
-## Running Queries in DDlog
+<br><todo>Document
+
+- `deepdive load`, `deepdive unload`, `deepdive sql`, `deepdive db` commands
+- where input/output data resides
+- `input/RELATION.*` convention
+- how they are moved-in/out and managed
+- (Later, `deepdive snapshot` for PG schema support will be added here.)
+
+</todo>
+
+## Organizing input data
+
+All input data for a DeepDive application should be kept under the `input/` directory.
+DeepDive will rely on a naming convention and assume data for a relation <code>*foo*</code> declared in `app.ddlog` exists at path <code>input/*foo*.*extension*</code> where <code>*extension*</code> can be one of `tsv`, `csv`, `tsv.bz2`, `csv.bz2`, `tsv.gz`, `csv.gz`, `tsv.sh`, `csv.sh` to indicate the format as well as what format it is compressed in, or whether it's a shell script that emits such data or a file containing the data itself.
+For example, in the [spouse example](example-spouse.md), the `input/articles.tsv.sh` is a shell script that produces lines with tab-separated values for the "articles" relation.
+
+
+## Loading Data to the Database
+
+To load such input data for a relation *foo*, run:
+
+```bash
+deepdive load foo
+```
+
+To load data from a particular source such as `/tmp/source.tsv` or multiple sources `/tmp/source-1.tsv`, `/tmp/source-2.tsv.bz2` instead, they can passed over as extra arguments:
+
+```bash
+deepdive load foo  /tmp/source-1.tsv /tmp/source-2.tsv.bz2
+```
+
+
+## Unloading Data Products from the Database
+
+```bash
+deepdive unload foo  dump-1.tsv dump-2.csv.bz2
+```
+
+
+## Running Queries against the Database
+
+### Running Queries in DDlog
 
 ```bash
 # easy browsing
@@ -52,7 +93,7 @@ deepdive query '?- has_spouse_candidates(_,_,_,desc,id,_).'  format=csv >candida
 
 
 
-## Running Queries in SQL
+### Running Queries in SQL
 
 ```bash
 deepdive sql
@@ -73,3 +114,24 @@ To get the result as tab-separated values (TSV), or comma-separated values (CSV)
 deepdive sql eval "SELECT doc_id, COUNT(*) FROM sentences GROUP BY doc_id" format=tsv
 deepdive sql eval "SELECT doc_id, COUNT(*) FROM sentences GROUP BY doc_id" format=csv header=1
 ```
+
+
+## Other Database Operations
+
+### Initializing the database
+
+```bash
+deepdive db init
+```
+
+### Creating tables in the database
+
+```bash
+deepdive create table foo
+deepdive create table foo as 'SELECT ...'
+```
+
+```bash
+deepdive create view bar as 'SELECT ...'
+```
+
