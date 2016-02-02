@@ -10,9 +10,11 @@ A reference for ddlog lanugage features can be found [here](https://github.com/H
 A DDlog program consists of the following parts:
 
 1. Schema declarations (eg. relational tables)
-2. Data transformation rules
-  a. User Defined Functions (UDFs)
-  b. Function Call Rules
+2. Normal Datalog Rules
+  1. Conditions
+3. Data transformation rules
+  1. User Defined Functions (UDFs)
+  2. Function Call Rules
 
 
 All DDlog code should be placed in a file named `app.ddlog` under the DeepDive application.
