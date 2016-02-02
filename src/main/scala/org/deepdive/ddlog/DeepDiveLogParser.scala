@@ -436,8 +436,9 @@ class DeepDiveLogParser extends JavaTokenParsers {
         val (headTerms, headTermAnnos) = headTermsZippedWithAnnotations unzip
         val headTermsToUse =
           if (headTerms nonEmpty) headTerms else {
-            val definedVars = cq.bodies map {_ flatMap DeepDiveLogSemanticChecker.collectDefinedVars} reduce {_ intersect _}
-            definedVars map VarExpr
+            val definedVarsByBodies = cq.bodies map { _ flatMap DeepDiveLogSemanticChecker.collectDefinedVars }
+            val definedVarsCommon = definedVarsByBodies reduce {_ intersect _}
+            definedVarsCommon.toSet.toList map VarExpr
           }
         cq.copy(
           headTerms = headTermsToUse,
