@@ -788,6 +788,7 @@ ${if (createTable) {
               case Some(BooleanType)        => "Imply"
               case Some(MultinomialType(_)) => "Multinomial"
             }
+            case FactorFunction.Multinomial => "Multinomial"
           }
           func = s"""${function}(${funcBody.mkString(", ")})"""
         }
