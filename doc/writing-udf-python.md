@@ -38,6 +38,40 @@ Given the above app.ddlog we can run `deepdive do classify_articles`.  This will
 
 ## ddlib - @tsv_extractor, @returns, default parameters
 
+DeepDive (specifically ddlib) provides some function decorators to simplify parsing and formatting input and output respectively.  Let's look an example python script and then describe the components.  Note that if you plan to use these features you'll need to use @tsv_extractor, @returns and set default parameters for all the parameters of that function.  You must include all three components discribed below or else this will not work.
+
+This trival UDF checks to see if the authors of the article are in a known set and assigns a class based on that.  If the author is not recognized, we try to look for words that appear in a predefined set.  Finally, if nothing matches, we simply set another catch all class.  Note that the classes themselves here are completely user defined.
+
+```
+#!/usr/bin/env python
+from deepdive import *
+
+compsci_authors = [...]
+bio_authors = [...]
+bio_words = [...]
+
+@tsv_extractor
+@returns(lambda
+        article_id       = "int",
+        class            = "text", 
+    :[])
+def extract(article_id="int", author="text", length="int", words="text[]"):
+    """
+    Classify articles.
+    """
+    if author in compsci_authors:
+      yeild [article_id, 'cs']
+    if author in bio_authors:
+      yeild [article_id, 'bio']
+
+    for word in words:
+      if word in bio_words:
+        yeild [article_id, 'bio']
+      
+    yeild [article_id, 'unknown']
+```
+
+Note that for these decorators you'll need to `import deepdive`
 
 ### @tsv_extractor
 
