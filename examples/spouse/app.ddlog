@@ -173,7 +173,7 @@ spouse_label(
 ).
 
 # make sure all pairs in spouse_candidate are considered as unsupervised examples
-spouse_label(p1, p2) = NULL :- spouse_candidate(p1, _, p2, _).
+has_spouse(p1, p2) = NULL :- spouse_candidate(p1, _, p2, _).
 
 # distant supervision using data from DBpedia
 spouse_label(p1,p2, 1, "from_dbpedia") :-
