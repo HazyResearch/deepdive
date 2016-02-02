@@ -3,23 +3,23 @@ layout: default
 title: Using DeepDive with Greenplum
 ---
 
-<todo> - check the Installation process. Is it still true with the new release ? (Maybe ask in particular Johannes or Sen). In particular the Parallel grounding, does it still work that way ?
-- Discuss DEEPDIVE\_NUM\_PARALLEL\_UNLOADS=...
-- Caveats of GPFDIST\_DISABLE=true </todo>
+<todo> - check the Installation process. Is it still true with the new release ? (Maybe ask in particular Johannes or Sen).
+- Can the section Parallel grounding be now removed ?
+- check discussion about DEEPDIVE\_NUM\_PARALLEL\_UNLOADS=... and GPFDIST\_DISABLE=true </todo>
 
 # Using DeepDive with Greenplum
 
 This document describes how to install and configure
 [Greenplum](http://pivotal.io/big-data/pivotal-greenplum) to work
-with DeepDive. It also describes one caveat needed in writing queries when using
-Greenplum, and some [FAQs](#faq) about using Greenplum.
+with DeepDive. It describes some [specifications](#using_greenplum) when using Greenplum, how to [install](#installing_greenplum) and some [FAQs](#faq) about using Greenplum.
 
-After installing Greenplum, DeepDive should work well with it. Apart from the
-following caveat below, you should not observe any difference from running PostgreSQL.
+After installing Greenplum, DeepDive should work well with it and no difference should be observed from running PostgreSQL, except an increase in speed.
 
-## Important Caveat
+## <a name="using_greenplum" href="#"></a> Greenplum - specific configurations
 
-For Greenplum to work optimally, `distributed by` clauses should be added in all the tables declarations. For that, when declaring a table in `app.ddlog`, add the annotation `@distributed_by` in front of the column for which the table should be distributed by. For instance, in the spouse example, to distribute the table _sentences_ by the column _doc_id_ (in addition to other annotations), the following declaration should be written:
+### Distributed by clauses
+
+For Greenplum to work optimally, `distributed by` clauses should be added in all the tables declarations. For that, when declaring a table in `app.ddlog`, the annotation `@distributed_by` must be added in front of the column for which the table should be distributed by. For instance, in the spouse example, to distribute the table _sentences_ by the column _doc\_id_ (in addition to other annotations), the following declaration should be written:
 
 ```
 sentences(
@@ -42,15 +42,19 @@ sentences(
 ```
 As seen in this example, the annotation `@distributed_by` can be easily added to other existing annotations. If DeepDive is run with PostgreSQL, the annotations `@distributed_by` will simply be ignored, allowing the same `app.ddlog` to be easily run under PostgreSQL and Greenplum.
 
-The `db.url` should explicit that you are working with Greenplum, being for instance `greenplum://localhost:6432/spouse`.
-
-**Do not use the column `id`** as the distribution key. **Do not use** a distribution key that is **not initially assigned**.
+The `db.url` should explicit that Greenplum is used, being for instance `greenplum://localhost:6432/spouse`.
 
 Refer to the [Greenplum
-manual](http://media.gpadmin.me/wp-content/uploads/2012/11/GPDBAGuide.pdf) for
-more information.
+manual](http://media.gpadmin.me/wp-content/uploads/2012/11/GPDBAGuide.pdf) for more information.
 
-## Installation
+### Parallel unloading and grounding
+
+Greenplum allows DeepDive to speed up by loading and unloading data in parallel. The number of parallel processes can be manually fixed by setting the environment variable `DEEPDIVE_NUM_PARALLEL_UNLOADS=...`
+
+DeepDive will automatically use Greenplum's file system server `gpfdist` to speed up the grounding. If the parralel grounding should be disabled, export the environment variable `GPFDIST_DISABLE=true`.
+
+
+## <a name="installing_greenplum" href="#"></a> Installation
 We now describe how to install Greenplum and configure it to be used with
 DeepDive. The steps were tested to install Greenplum on CentOS 5.6 x64. For
 demonstration purposes only, the presentation is limited to the single-node mode
