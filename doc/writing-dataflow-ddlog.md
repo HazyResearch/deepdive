@@ -46,6 +46,7 @@ relation_name(
 Similar to a SQL table definition, a schema declaration is just the name of a relation followed by a comma separated list of the columns and their types.
 
 Below is a realistic example.
+
 ```
 article(
   id int,
