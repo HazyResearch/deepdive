@@ -122,8 +122,9 @@ compute_status() {
 
 # Ensure Kerberos authentication is succesful for user. 
 KRB_DIR="/tmp/krb5cc_${ssh_user}_deepdive"
-if ! ssh $ssh_info "klist -c $KRB_DIR > /dev/null"; then
-  echo "Kerberos credentials not found in host"
+if ! ssh $ssh_info "klist -s -c $KRB_DIR > /dev/null"; then
+  echo "Kerberos credentials either expired or not found in remote node."
+  echo "Please reenter password."
   ssh -t $ssh_info "kinit -r 30d -c $KRB_DIR"
 else 
   echo "Kerberos credentials found at $ssh_info:$KRB_DIR"
