@@ -36,4 +36,4 @@ for row in sys.stdin:
         features.add(w2_pos)
 
         for f in features:
-                print '\t'.join([word_id, f, '\N'])
+                print '\t'.join([word_id, f])
