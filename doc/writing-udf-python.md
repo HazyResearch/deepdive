@@ -13,6 +13,28 @@ Note that DeepDive supports running any executable but here we demonstrate an ex
 
 ## General Guidelines
 
+Let's continue the example from [Defining Data Processing in DDlog](writing-dataflow-ddlog.md) and see what the UDF looks like in Python.  For convenience, we'll display the two relations, the function in ddlog and the function call here.
+
+```
+article(
+  id int,
+  length int,
+  author text,
+  words text[]).
+  
+classified_articles(
+  article_id int,
+  class text).
+  
+function classify_articles over (id int, author text, length int, words text[])
+  return rows like article
+  implementation "udf/classify.py" handles tsv lines.
+  
+classified_articles += classify_articles(id, author, length, words) :-
+  article(id, length, author words)
+```
+
+Given the above app.ddlog we can run `deepdive do classify_articles`.  This will envoke a python script called 'udf/classify.py' giving as input the rows in tsv format from 'article' and expecting an output that will fit into classified articles (namely, a tsv row with an int and a string for the article_id and class).  A separate page outlines how to [debug UDFs](debugging-udf.md).  
 
 ## ddlib - @tsv_extractor, @returns, default parameters
 
