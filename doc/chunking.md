@@ -35,9 +35,9 @@ The full example is under `examples/chunking` directory. The structure of this d
 
 To run this example, perform the following steps:
 
-1. Run `deepdive initdb`
-1. Run `deepdive run`
-2. Run `result/eval.sh` to evaluate the results
+1. Run `deepdive compile`
+2. Run `deepdive run`
+3. Run `result/eval.sh` to evaluate the results
 
 
 ## Example Walkthrough
@@ -51,13 +51,15 @@ The application performs the following high-level steps:
 
 ### Data Preprocessing
 
-The train and test data consist of words, their part-of-speech tag and the chunk tags as derived from the WSJ corpus. The raw data is first copied into into table `words_raw`, and then is processed to convert the chunk labels to integer indexes. This extractor is defined in `deepdive.conf` using the following code:
+The train and test data consist of words, their part-of-speech tag and the chunk tags as derived from the WSJ corpus. The raw data is first copied into into table `words_raw`, and then is processed to convert the chunk labels to integer indexes. This extractor is defined in `app.ddlog` using the following code:
 
-    ext_training {
-      input: "select * from words_raw"
-      output_relation: "words"
-      udf: ${APP_HOME}"/udf/ext_training.py"
-    }
+    function ext_training
+      over rows like words_raw
+      returns rows like words
+      implementation "udf/ext_training.py" handles tsv lines.
+
+    words +=
+      ext_training(wid, word, pos, tag) :- words_raw(wid, word, pos, tag).
 
 
 The input table `words_raw` looks like
@@ -73,66 +75,21 @@ The output table `words` looks like
            1 |       1 | Confidence | NN  | B-NP     |   0 |  0
 
 
-The user-defined function `udf/ext_training.py` looks like this:
-
-```python
-#! /usr/bin/env python
-
-# extract training data
-
-import json, sys
-
-tagNames = ['NP', 'VP', 'PP', 'ADJP', 'ADVP', 'SBAR', 'O', 'PRT', 'CONJP', 'INTJ', 'LST', 'B', '']
-sentID = 1
-
-# for each word
-for row in sys.stdin:
-  obj = json.loads(row)
-
-  # get tag
-  # extractor bug!
-  if 'tag' in obj.keys():
-    tag = obj['tag']
-    if (tag != None and tag != 'O'):
-      tag = tag.split('-')[1]
-
-    if tag not in tagNames:
-      tag = ''
-
-    print json.dumps({
-      'sent_id' : sentID,
-      'word_id' : obj['word_id'],
-      'word'    : obj['word'],
-      'pos'     : obj['pos'],
-      'true_tag': obj['tag'],
-      'tag'     : tagNames.index(tag)
-    })
-
-  else:
-    sentID += 1
-    print json.dumps({
-      'sent_id' : None,
-      'word_id' : obj['word_id'],
-      'word'    : None,
-      'pos'     : None,
-      'true_tag': None,
-      'tag'     : tagNames.index('')
-    })
-```
-
+The user-defined function can be found in `udf/ext_training.py`.
 
 ### Feature Extraction
 
-To predict chunking label, we need to add features. We use three simple features: the word itself, its part-of-speech tag, and the part-of-speech tag of its previous word. We add an extractor in `deepdive.conf`
+To predict chunking label, we need to add features. We use three simple features: the word itself, its part-of-speech tag, and the part-of-speech tag of its previous word. We add an extractor in `app.ddlog`
 
-    ext_features.input: """
-      select w1.word_id as "w1.word_id", w1.word as "w1.word", w1.pos as "w1.pos",
-        w2.word as "w2.word", w2.pos as "w2.pos"
-      from words w1, words w2
-      where w1.word_id = w2.word_id + 1 and w1.word is not null"""
-    ext_features.output_relation: "word_features"
-    ext_features.udf: ${APP_HOME}"/udf/ext_features.py"
-    ext_features.dependencies: ["ext_training"]
+    function ext_features
+      over (word_id1 bigint, word1 text, pos1 text, word2 text, pos2 text)
+      returns rows like word_features
+      implementation "udf/ext_features.py" handles tsv lines.
+
+    word_features +=
+      ext_features(word_id1, word1, pos1, word2, pos2) :-
+      words(sent_id, word_id1, word1, pos1, _, _),
+      words(sent_id, word_id2, word2, pos2, _, _).
 
 where the input is generating 2-grams from `words` table, which looks like
 
@@ -148,94 +105,40 @@ The output will look like
           15 | pos=NNS      |
           15 | prev_pos=NN  |
 
-The user-defined function is
-
-```python
-#! /usr/bin/env python
-
-import json
-import sys
-
-def tostr(s):
-  return '' if s is None else str(s)
-
-# for each word
-for row in sys.stdin:
-  obj = json.loads(row)
-
-  features = set()
-  # sys.stderr.write(str(obj))
-
-  # features
-  w1_word = 'word=' + tostr(obj["w1.word"])
-  w1_pos = 'pos=' + tostr(obj["w1.pos"])
-
-  if 'w2.word' in obj.keys():
-    w2_word = 'prev_word=' + tostr(obj["w2.word"])
-    w2_pos = 'prev_pos=' + tostr(obj["w2.pos"])
-  else:
-    w2_word = 'prev_word='
-    w2_pos = 'prev_pos='
-  #w3_word = 'next_word=' + tostr(obj["words_raw.w3.word"])
-  #w3_pos = 'next_pos=' + tostr(obj["words_raw.w3.pos"])
-
-  features.add(w1_word)
-  features.add(w1_pos)
-  features.add(w2_pos)
-
-  for f in features:
-    print json.dumps({
-      "word_id": obj["w1.word_id"],
-      'feature': f
-    })
-```
+The user-defined function can be in `udf/ext_features.py`.
 
 ### Statistical Learning and Inference
 
-We will predicate the chunk tag for each word, which corresponds to `tag` column of `words` table. The variables are declared in `deepdive.conf`:
+We will predicate the chunk tag for each word, which corresponds to `tag` column of `words` table. The variables are declared in `app.ddlog`:
 
-    schema.variables {
-      words.tag: Categorical(13)
-    }
+    tag?(word_id bigint) Categorical(13).
 
 Here, we have 13 types of chunk tags `NP, VP, PP, ADJP, ADVP, SBAR, O, PRT, CONJP, INTJ, LST, B, null` according to CoNLL-2000 task description. We have three rules, logistic regression, linear-chain CRF, and skip-chain CRF. The logistic regression rule is
 
-    factor_feature {
-      input_query: """select words.id as "words.id", words.tag as "words.tag", word_features.feature as "feature"
-        from words, word_features
-        where words.word_id = word_features.word_id and words.word is not null"""
-      function: "Multinomial(words.tag)"
-      weight: "?(feature)"
-    }
+    @weight(f)
+    tag(word_id) :- word_features(word_id, f).
 
 To express conditional random field, just use `Multinomial` factor to link variables that could interact with each other (For more information about CRF, see [this tutorial on CRF](http://people.cs.umass.edu/~mccallum/papers/crf-tutorial.pdf). The following rule links labels of neiboring words
 
-    factor_linear_chain_crf {
-      input_query: """select w1.id as "words.w1.id", w2.id as "words.w2.id", w1.tag as "words.w1.tag", w2.tag as "words.w2.tag"
-        from words w1, words w2
-        where w2.word_id = w1.word_id + 1"""
-      function: "Multinomial(words.w1.tag, words.w2.tag)"
-      weight: "?"
-    }
+    @weight("?")
+    Multinomial(tag(word_id_1), tag(word_id_2)) :-
+      words(_, word_id_1, _, _, _, _),
+      words(_, word_id_2, _, _, _, _),
+      word_id_2=word_id_1+1.
 
 It is similar with skip-chain CRF, where we have skip edges that link labels of identical words.
 
-    factor_skip_chain_crf {
-      input_query: """select *
-      from
-        (select w1.id as "words.w1.id", w2.id as "words.w2.id", w1.tag as "words.w1.tag", w2.tag as "words.w2.tag",
-          row_number() over (partition by w1.id) as rn
-        from words w1, words w2
-        where w1.tag is not null and w1.sent_id = w2.sent_id and w1.word = w2.word and w1.id < w2.id) scrf
-      where scrf.rn = 1"""
-      function: "Multinomial(words.w1.tag, words.w2.tag)"
-      weight: "?"
-    }
+    @weight("?")
+    Multinomial(tag(word_id_1), tag(word_id_2)) :-
+      words(sent_id, word_id_1, word, _, _, tag),
+      words(sent_id, word_id_2, word, _, _, _),
+      tag != NULL,
+      word_id_1<word_id_2.
 
-We also specify the holdout variables according to task description about training and test data.
+We also specify the holdout variables according to task description about training and test data in `deepdive.conf`.
 
     calibration {
-      holdout_query: "INSERT INTO dd_graph_variables_holdout(variable_id) SELECT id FROM words WHERE word_id > 220663"
+      holdout_query: "INSERT INTO dd_graph_variables_holdout(variable_id) SELECT id FROM tag WHERE word_id > 220663"
     }
 
 ### Evaluation Results

@@ -14,7 +14,7 @@ sentID = 1
 # for each word
 for row in sys.stdin:
         # obj = json.loads(row)
-        word_id, word, pos, ori_tag, idcol = row.rstrip().split('\t')
+        word_id, word, pos, ori_tag = row.rstrip().split('\t')
         tag = ori_tag
         # get tag
         # TODO json extractor bug...
@@ -26,14 +26,12 @@ for row in sys.stdin:
                         tag = ''
 
                 print '\t'.join([str(_) for _ in
-                        sentID, word_id, word, pos, ori_tag, tagNames.index(tag),
-                        '\N'  # explicitly output NULL  for "id"
+                        sentID, word_id, word, pos, ori_tag, tagNames.index(tag)
                         ])
         else:
                 sentID += 1
                 print '\t'.join([str(_) for _ in
-                        '\N', word_id, '\N', '\N', '\N', tagNames.index(''),
-                        '\N'  # explicitly output NULL  for "id"
+                        '\N', word_id, '\N', '\N', '\N', tagNames.index('')
                         ])
                 # print json.dumps({
                 #       'sent_id' : None,
