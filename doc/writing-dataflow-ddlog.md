@@ -33,7 +33,7 @@ Comments in DDlog begin with a hash (`#`) character.
 
 ### Schema Declaration
 
-First of all, we declare the relations we use throughout the program.  These relations refer to tables that will appear in your database.  See [deepdive sql TODO](fill in with real link) for details on how to interact with the database.
+First of all, we declare the relations we use throughout the program.  These relations refer to tables that will appear in your database.  See [deepdive sql](ops-data.md) for details on how to interact with the database.
 The order doesn't matter, but it's a good idea to place them at the beginning because that makes it easier to understand.
 
 #### Relations Syntax
