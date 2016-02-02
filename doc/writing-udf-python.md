@@ -53,7 +53,7 @@ bio_words = [...]
 @tsv_extractor
 @returns(lambda
         article_id       = "int",
-        class            = "text", 
+        classification   = "text", 
     :[])
 def extract(article_id="int", author="text", length="int", words="text[]"):
     """
