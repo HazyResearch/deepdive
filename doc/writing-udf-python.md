@@ -24,7 +24,7 @@ article(
   
 classified_articles(
   article_id int,
-  class text).
+  classification text).
   
 function classify_articles over (id int, author text, length int, words text[])
   return rows like article
@@ -75,8 +75,12 @@ Note that for these decorators you'll need to `import deepdive`
 
 ### @tsv_extractor
 
+The `@tsv_extractor` decoration can be used on the main function that will take the input and return the output as defined in ddlog.  This lets DeepDive know which function to call when running the script.
 
 ### @returns
 
+Similar to the ddlog definition, ddlib needs to know what format your output will be from the `@tsv_extractor` function to correctly format it into tsv.  It is passed a lambda function which has as its parameters the fields that will be output.  The default value of the parameter must be the type of that parameter.  The body of the lambda is ignored and can be left as an empty list (`[]`) in all cases. 
 
 ### Default parameters
+
+Similar to the `@returns` decorator above, ddlib also needs to know what is the input the function is expecting.  However, in this case, we leverage the function signature to define the input.  The parameters are the correctly ordered fields of the relation that is being input to the function.  The default value for each parameter is the data type of that field.
