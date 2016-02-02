@@ -174,8 +174,7 @@ and
     </todo>
 - [What a DeepDive application looks like](deepdiveapp.md)
 - Writing a DeepDive Application
-    - [Defining data processing in DDlog](writing-dataflow-ddlog.md) NEW
-        <br><todo>Migrate <s>[Writing applications in DDlog](ddlog.md)</s></todo>
+    - [Defining data flow in DDlog](writing-dataflow-ddlog.md)
     - [Writing user-defined functions in Python](writing-udf-python.md) NEW
         <br><todo>
         - Migrate (mostly tsv_extractor) from <s>[Writing extractors](extractors.md)</s>

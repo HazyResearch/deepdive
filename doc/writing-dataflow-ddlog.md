@@ -1,9 +1,9 @@
 ---
 layout: default
-title: Defining Data Processing in DDlog
+title: Defining Data Flow in DDlog
 ---
 
-# DDlog
+# Defining Data Flow in DDlog
 
 DDlog is a higher-level language for writing DeepDive applications in succinct Datalog-like syntax.
 We are gradually extending the language to allow expression of advanced SQL queries used by complex extractors as well as a variety of factors with Markov Logic-like syntax.
@@ -13,16 +13,19 @@ A reference for ddlog lanugage features can be found [here](https://github.com/H
 
 A DDlog program consists of the following parts:
 
-1. Schema declarations (eg. relational tables)
-2. Normal Datalog Rules
-  1. Conditions
-3. Data transformation rules
-  1. User Defined Functions (UDFs)
-  2. Function Call Rules
+1. Schema declarations for relations
+2. Normal datalog-like rules
+    1. Relation derived (head atom)
+    2. Relations used (body atoms)
+    3. Conditions
+3. User defined functions (UDFs)
+    1. Function declarations
+    2. Function call rules
+4. Inference rules
 
-
-All DDlog code should be placed in a file named `app.ddlog` under the DeepDive application.
-A complete example written in DDlog can be found from [examples/spouse_example/postgres/ddlog](https://github.com/HazyResearch/deepdive/blob/master/examples/spouse_example/postgres/ddlog)
+All DDlog code should be placed in a file named [`app.ddlog` under the DeepDive application](deepdiveapp.md#app-ddlog).
+The [tutorial](example-spouse.md) describes a complete end-to-end example written in DDlog in greater detail, while we describe here the general language features for defining the data flow between relations.
+The [DDlog language constructs for specifying a statistical inference model](writing-model-ddlog.md) is described in another page.
 
 
 ### Basic Syntax
@@ -33,7 +36,9 @@ Comments in DDlog begin with a hash (`#`) character.
 
 ### Schema Declaration
 
-First of all, we declare the relations we use throughout the program.  These relations refer to tables that will appear in your database.  See [deepdive sql](ops-data.md) for details on how to interact with the database.
+First of all, we declare the relations we use throughout the program.
+These relations refer to tables that will appear in your database.
+See [deepdive sql](ops-data.md) for details on how to interact with the database.
 The order doesn't matter, but it's a good idea to place them at the beginning because that makes it easier to understand.
 
 #### Relations Syntax
@@ -89,7 +94,7 @@ of `S`, i.e., the body is a equi-join between `R` and `S`.
 Q(x, y) :- R(x, y), S(y).
 ```
 
-Here, `Q(x, y)` is the head, and `R(x, y)` and `S(y)` are body *atoms*. `x` and `y`
+Here, `Q(x, y)` is the *head atom*, and `R(x, y)` and `S(y)` are *body atoms*. `x` and `y`
 are *variables* of the rule.
 
 ### Expressions
