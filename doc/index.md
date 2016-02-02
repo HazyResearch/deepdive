@@ -188,15 +188,7 @@ and
         - Migrate <s>[Writing inference rules](inference_rules.md)</s>
         </todo>
 - Running a DeepDive Application
-    - [Compiling a DeepDive application](ops-compiling.md) NEW
-        <br><todo>Document
-        - `deepdive compile`, `deepdive check` commands
-        - why/what/where it compiles
-        - `run/process/**/run.sh`
-        - `run/dataflow.svg` and `run/Makefile`
-        - `run/data/`, `run/model/`
-        - when to compile
-        </todo>
+    - [Compiling a DeepDive application](ops-compiling.md)
     - [Managing input data and data products](ops-data.md) NEW
         <br><todo>Document
         - `deepdive load`, `deepdive unload`, `deepdive sql`, `deepdive db` commands
