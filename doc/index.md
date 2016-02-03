@@ -132,9 +132,12 @@ background knowledge listed in the documentation below.
 DeepDive is project led by [Christopher Ré](http://cs.stanford.edu/people/chrismre/)
 at Stanford University. Current group members include:
 [Michael Cafarella](http://web.eecs.umich.edu/~michjc/),
-Michael Fitzpatrick,
+Xiao Cheng,
 [Raphael Hoffman](http://raphaelhoffmann.com/),
+Dan Iter,
+Thomas Palomares,
 Alex Ratner,
+Theodoros Rekatsinas,
 [Zifei Shan](http://www.zifeishan.org/),
 [Jaeho Shin](http://cs.stanford.edu/~netj/),
 Feiran Wang,
