@@ -182,10 +182,33 @@ from deepdive import *
         end_index        = "int"  ,
     :[])
 def extract(doc_id="text", sentence_index="int", tokens="text[]", ner_tags="text[]"):
+    """
+    Finds phrases that are continuous words tagged with PERSON.
+    """
+    num_tokens = len(ner_tags)
+    # find all first indexes of series of tokens tagged as PERSON
+    first_indexes = (i for i in xrange(num_tokens) if ner_tags[i] == "PERSON" and (i == 0 or ner_tags[i-1] != "PERSON"))
+    for begin_index in first_indexes:
+        # find the end of the PERSON phrase (consecutive tokens tagged as PERSON)
+        end_index = begin_index + 1
+        while end_index < num_tokens and ner_tags[end_index] == "PERSON":
+            end_index += 1
+        end_index -= 1
+        # generate a mention identifier
+        mention_id = "%s_%d_%d_%d" % (doc_id, sentence_index, begin_index, end_index)
+        mention_text = " ".join(map(lambda i: tokens[i], xrange(begin_index, end_index + 1)))
+        # Output a tuple for each PERSON phrase
+        yield [
+            mention_id,
+            mention_text,
+            doc_id,
+            sentence_index,
+            begin_index,
+            end_index,
+        ]
 ```
-Nest, we go on to write a simple function which extracts and tags all subsequences of tokens having the NER tag "PERSON".
+Above, we write a simple function which extracts and tags all subsequences of tokens having the NER tag "PERSON".
 Note that the `extract` function must be a generator, i.e. use a `yield` statement to return output rows.
-To see the full implemention, refer to the source code in `udf/map_person_mention.py`.
 
 Finally, we specify that the function will be applied to rows from the `sentences` table and append to the `person_mention` table:
 ```
