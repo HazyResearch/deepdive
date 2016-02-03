@@ -175,12 +175,7 @@ and
 - [What a DeepDive application looks like](deepdiveapp.md)
 - Writing a DeepDive Application
     - [Defining data flow in DDlog](writing-dataflow-ddlog.md)
-    - [Writing user-defined functions in Python](writing-udf-python.md) NEW
-        <br><todo>
-        - Migrate (mostly tsv_extractor) from <s>[Writing extractors](extractors.md)</s>
-        - `@tsv_extractor`, `@returns(...)`, function parameter default values, `yield`
-            <br>(<https://github.com/HazyResearch/deepdive/issues/236#issuecomment-176375095>)
-        </todo>
+    - [Writing user-defined functions in Python](writing-udf-python.md)
     - [Specifying a statistical model in DDlog](writing-model-ddlog.md) NEW
         <br><todo>
         - Migrate <s>[Declaring inference variables in the schema](schema.md)</s>

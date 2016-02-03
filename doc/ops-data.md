@@ -5,13 +5,6 @@ title: Managing input data and data products
 
 # Managing input data and data products
 
-## Organizing input data
-
-All input data for a DeepDive application should be kept under the `input/` directory.
-DeepDive will rely on a naming convention and assume data for a relation <code>*foo*</code> declared in `app.ddlog` exists at path <code>input/*foo*.*extension*</code> where <code>*extension*</code> can be one of `tsv`, `csv`, `tsv.bz2`, `csv.bz2`, `tsv.gz`, `csv.gz`, `tsv.sh`, `csv.sh` to indicate in what format it is serialized as well as how it is compressed, or whether it's a shell script that emits such data or a file containing the data itself.
-For example, in the [spouse example](example-spouse.md), the `input/articles.tsv.sh` is a shell script that produces lines with tab-separated values for the "articles" relation.
-
-
 ## Preparing the Database for the DeepDive app
 
 The database for the DeepDive application is configured through [the `db.url` file](deepdiveapp.md#db-url).
@@ -48,6 +41,14 @@ To create a table only if it does not exist, the following command can be used i
 ```bash
 deepdive create table-if-not-exists foo ...
 ```
+
+
+## Organizing input data
+
+All input data for a DeepDive application should be kept under the `input/` directory.
+DeepDive will rely on a naming convention and assume data for a relation <code>*foo*</code> declared in `app.ddlog` exists at path <code>input/*foo*.*extension*</code> where <code>*extension*</code> can be one of `tsv`, `csv`, `tsv.bz2`, `csv.bz2`, `tsv.gz`, `csv.gz`, `tsv.sh`, `csv.sh` to indicate in what format it is serialized as well as how it is compressed, or whether it's a shell script that emits such data or a file containing the data itself.
+For example, in the [spouse example](example-spouse.md), the `input/articles.tsv.sh` is a shell script that produces lines with tab-separated values for the "articles" relation.
+
 
 
 ## Moving Data In and Out of the Database
