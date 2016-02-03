@@ -141,19 +141,6 @@ Feiran Wang,
 and
 [Ce Zhang](http://pages.cs.wisc.edu/~czhang/).
 
-### Updates &amp; Changelog
-
-- [Changelog for version 0.7.1-alpha](changelog/0.7.1-alpha.md) (09/28/2015)
-- [Changelog for version 0.7.0-alpha](changelog/0.7.0-alpha.md) (07/14/2015)
-- [Changelog for version 0.6.0-alpha](changelog/0.6.0-alpha.md) (06/17/2015)
-- [Changelog for version 0.05-alpha](changelog/0.05.01-alpha.md) (02/08/2015)
-- [Changelog for version 0.04.2-alpha](changelog/0.04.2-alpha.md) (12/23/2014)
-- [Changelog for version 0.04.1-alpha](changelog/0.04.1-alpha.md) (11/25/2014)
-- [Changelog for version 0.04-alpha](changelog/0.04-alpha.md) (11/19/2014)
-- [Changelog for version 0.03.2-alpha](changelog/0.03.2-alpha.md) (09/16/2014)
-- [Changelog for version 0.03.1-alpha](changelog/0.03.1-alpha.md) (08/15/2014)
-- [Changelog for version 0.03-alpha](changelog/0.03-alpha.md) (05/07/2014)
-- [Changelog for version 0.02-alpha](changelog/0.02-alpha.md) (03/12/2014)
 
 ### <a name="documentation" href="#"></a> Documentation
 
@@ -307,6 +294,22 @@ and
         - Rename `dd_query_*` -> `dd_factor_*`?
         </tody>
 - [DeepDive Developer's Guide](developer.md)
+
+
+### Updates &amp; Changelog
+
+- [Changelog for version 0.7.1-alpha](changelog/0.7.1-alpha.md) (09/28/2015)
+- [Changelog for version 0.7.0-alpha](changelog/0.7.0-alpha.md) (07/14/2015)
+- [Changelog for version 0.6.0-alpha](changelog/0.6.0-alpha.md) (06/17/2015)
+- [Changelog for version 0.05-alpha](changelog/0.05.01-alpha.md) (02/08/2015)
+- [Changelog for version 0.04.2-alpha](changelog/0.04.2-alpha.md) (12/23/2014)
+- [Changelog for version 0.04.1-alpha](changelog/0.04.1-alpha.md) (11/25/2014)
+- [Changelog for version 0.04-alpha](changelog/0.04-alpha.md) (11/19/2014)
+- [Changelog for version 0.03.2-alpha](changelog/0.03.2-alpha.md) (09/16/2014)
+- [Changelog for version 0.03.1-alpha](changelog/0.03.1-alpha.md) (08/15/2014)
+- [Changelog for version 0.03-alpha](changelog/0.03-alpha.md) (05/07/2014)
+- [Changelog for version 0.02-alpha](changelog/0.02-alpha.md) (03/12/2014)
+
 
 ### Support
 
