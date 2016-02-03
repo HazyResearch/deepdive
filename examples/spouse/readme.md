@@ -11,8 +11,7 @@ and populate a relation database table with extracted outputs,
 along with marginal probabilities for each extraction representing DeepDive's confidence in the extraction.
 More formally, we write a DeepDive application to extract mentions of _relations_ and their constituent _entities_ or _attributes_, according to a specified schema;
 this task is often referred to as **_relation extraction_**.*
-Accordingly, we'll walk through an example scenario where we wish to extract mentions of
-spousal relations from news articles.
+Accordingly, we'll walk through an example scenario where we wish to extract mentions of two people being spouses from news articles.
 
 The high-level steps we'll follow are:
 
