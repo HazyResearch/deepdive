@@ -17,7 +17,7 @@ eval "$(jq2sh <<<"$DEEPDIVE_COMPUTER_CONFIG" \
     num_processes='.num_processes' \
     ssh_user='.ssh_user' \
     ssh_host='.ssh_host' \
-    remote_home='.remote_home' \
+    remote_dir='.remote_dir' \
     poll_period_secs='.poll_period_secs' \
     excludes='.excludes' \
     #
@@ -45,10 +45,20 @@ num_processes=${DEEPDIVE_NUM_PROCESSES:-${num_processes:-$(
 # declare all input arguments
 declare -- "$@"
 
-ssh_info="${ssh_user}@${ssh_host}"
-REMOTE_DEEPDIVE_APP="$remote_home/$(basename $DEEPDIVE_APP)"
-REMOTE_CWD="$REMOTE_DEEPDIVE_APP/run/$DEEPDIVE_CURRENT_PROCESS_NAME"
+SSH_INFO="${ssh_user}@${ssh_host}"
+
+# App directory variables
+# TODO Change APP_IDENTIFIER to actually be the sha1sum of hostname and absolute
+# remote path
+APP_IDENTIFIER="app/$(basename $DEEPDIVE_APP)"
+REMOTE_DEEPDIVE_APP="$remote_dir/$APP_IDENTIFIER"
+
+# Current working directory variables.
+# TODO: Change "run" to include some session ID to allow multiple processes
+# running.
+REMOTE_CWD="$remote_dir/run/$DEEPDIVE_CURRENT_PROCESS_NAME"
 REMOTE_SH_DIR="$REMOTE_CWD/remote.sh"
+# TODO: Decoupling input to reduce data transfers. 
 REMOTE_IN_DIR="$REMOTE_CWD/remote.in"
 REMOTE_OUT_DIR="$REMOTE_CWD/remote.out"
 REMOTE_ERR_DIR="$REMOTE_CWD/remote.err"
@@ -58,23 +68,20 @@ echo "Executing with the following configuration:"
 echo " num_processes=$num_processes"
 echo " ssh_user=$ssh_user"
 echo " ssh_host=$ssh_host"
-echo " remote_home=$remote_home"
+echo " remote_dir=$remote_dir"
 echo " poll_period_secs=$poll_period_secs"
 echo " excludes=$excludes"
 
 echo "DEEPDIVE_APP = $DEEPDIVE_APP"
-echo "REMOTE_DEEPDIVE_APP = $remote_home/$(basename $DEEPDIVE_APP)"
+echo "REMOTE_DEEPDIVE_APP = $remote_dir/$(basename $DEEPDIVE_APP)"
 echo "DEEPDIVE_CURRENT_PROCESS_NAME = $DEEPDIVE_CURRENT_PROCESS_NAME"
 
-# Copy application folder to remote shared directory.
-echo "Copying deepdive app to remote node"
-rsync -aH $DEEPDIVE_APP $ssh_info:$remote_home
+# ensure all the directories needed exist in the remote node. 
+ssh $SSH_INFO "mkdir -p $(dirname $REMOTE_DEEPDIVE_APP)"
+ssh $SSH_INFO "mkdir -p $REMOTE_CWD"
 
-# Also ensure that REMOTE_CWD exists in remote shared directory. For some
-# reason, without the command below,
-# process/grounding/factor/inf_istrue_has_spouse fails since the directory
-# doesn't exist. 
-ssh $ssh_info "mkdir -p $REMOTE_CWD"
+echo "Copying deepdive app to remote node"
+rsync -aH $DEEPDIVE_APP $SSH_INFO:$(dirname $REMOTE_DEEPDIVE_APP)
 
 # Prepare submission script
 # XXX there are conditional branches below depending on whether input_sql
@@ -96,12 +103,12 @@ echo "Preparing submission script at remote node"
     echo "export DEEPDIVE_APP=\"$REMOTE_DEEPDIVE_APP\""
     echo '"$SHELL"'" -c \"$command\" < \"$REMOTE_IN_DIR\""
 } | 
-ssh $ssh_info "cat > $REMOTE_SH_DIR"
+ssh $SSH_INFO "cat > $REMOTE_SH_DIR"
 
 # Prepare input data
 if [[ -n $input_sql ]]; then
     deepdive-sql eval "$input_sql" format="$DEEPDIVE_LOAD_FORMAT" |
-    ssh $ssh_info "cat > $REMOTE_IN_DIR"
+    ssh $SSH_INFO "cat > $REMOTE_IN_DIR"
 fi
 
 # Submit job to remote node. 
@@ -109,25 +116,25 @@ compute_submit() {
   # XXX: Technically, this is all we need under the assumption that the user
   # can do passwordless SSH. These are the correct commands, but need
   # workaround for Macs due to Kerberos issue.
-  #ssh $ssh_info "qsub -V $REMOTE_SH_DIR"
+  #ssh $SSH_INFO "qsub -V $REMOTE_SH_DIR"
   
   # XXX: Workaround for Mac OS X users which can't forward Kerberos tickets. 
-  ssh $ssh_info "env KRB5CCNAME=FILE:$KRB_DIR qsub -V $REMOTE_SH_DIR" 
+  ssh $SSH_INFO "env KRB5CCNAME=FILE:$KRB_DIR qsub -V $REMOTE_SH_DIR" 
 }
 
 # Poll for status. Should return I for incomplete, S for success, or F for fail.
 compute_status() {
-  ssh $ssh_info "qstat -f -1 $JOB_ID | grep job_state | sed 's/.*job_state = //'"
+  ssh $SSH_INFO "qstat -f -1 $JOB_ID | grep job_state | sed 's/.*job_state = //'"
 }
 
 # Ensure Kerberos authentication is succesful for user. 
 KRB_DIR="/tmp/krb5cc_${ssh_user}_deepdive"
-if ! ssh $ssh_info "klist -s -c $KRB_DIR > /dev/null"; then
+if ! ssh $SSH_INFO "klist -s -c $KRB_DIR > /dev/null"; then
   echo "Kerberos credentials either expired or not found in remote node."
   echo "Please reenter password."
-  ssh -t $ssh_info "kinit -r 30d -c $KRB_DIR"
+  ssh -t $SSH_INFO "kinit -r 30d -c $KRB_DIR"
 else 
-  echo "Kerberos credentials found at $ssh_info:$KRB_DIR"
+  echo "Kerberos credentials found at $SSH_INFO:$KRB_DIR"
 fi
 
 # Submit job. 
@@ -143,7 +150,7 @@ echo "Job submitted"
 
 # Poll status
 echo -n "Waiting for job id $JOB_ID to complete"
-while [[ "$(compute_status)" != "S" ]] && ssh -q $ssh_info "[[ ! -f $REMOTE_OUT_DIR ]]"; do
+while [[ "$(compute_status)" != "S" ]] && ssh -q $SSH_INFO "[[ ! -f $REMOTE_OUT_DIR ]]"; do
   echo -n "."
   sleep $poll_period_secs
 done
@@ -164,7 +171,7 @@ if [[ -n $output_relation ]]; then
 
     # Stream output from remote submission node directly to stdin, and to 
     # deepdive load
-    ssh $ssh_info "cat $REMOTE_OUT_DIR" > /dev/stdout |
+    ssh $SSH_INFO "cat $REMOTE_OUT_DIR" > /dev/stdout |
 
     # use mkmimo again to merge outputs of multiple processes into a single stream
     #mkmimo process-*.output \> /dev/stdout |
