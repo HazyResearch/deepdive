@@ -26,6 +26,8 @@ For example, the following URL can be the line stored in it:
 postgresql://user:password@localhost:5432/database_name
 ```
 
+### PostgreSQL SSL
+
 [SSL connections for PostgreSQL](https://jdbc.postgresql.org/documentation/91/ssl.html) can be enabled by setting parameter `ssl` as true in the URL, e.g.:
 
 ```
@@ -41,14 +43,17 @@ postgresql://user:password@localhost:5432/database_name?ssl=true&sslfactory=org.
 ## input/
 
 Any data to be processed by this application is suggested to be kept under this directory.
+<todo>xref</todo>
 
 ## udf/
 
 Any user-defined function (UDF) code is suggested to be kept under this directory.
 They can be referenced from deepdive.conf with path names relative to the application root.
+<todo>xref</todo>
 
 ## run/
 
+<todo>xref</todo>
 Each run of the DeepDive application has a corresponding subdirectory under this directory whose name contains the timestamp when the run was started, e.g., `run/20150618/223344.567890/`.
 All output and log files that belong to the run are kept under that subdirectory.
 There are a few symbolic links with mnemonic names to the most recently started run, last successful run, last failed run for handy access.

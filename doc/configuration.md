@@ -96,6 +96,7 @@ Both `:` and `=` are valid key-value separators.
 
 
 
+<todo>remove database</todo>
 ## <a name="database" href="#"></a> Database connection
 
 The configuration directives for the database connection is optional now (<code>db.url</code> is the recommended place), while it also can be specified
