@@ -6,5 +6,8 @@ Options +MultiViews
 # and redirect /index to /
 RedirectTemp  /index  /
 
+# merged sponsors page to index
+RedirectTemp  /support  /#acknowledgment
+
 # redirect legacy URLs to new place
 RedirectMatch temp  (.*)/doc/(?:basics/walkthrough|basics|advanced|general)/(.*?)(?:\.html)?$  $1/doc/$2
