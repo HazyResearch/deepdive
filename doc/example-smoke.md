@@ -98,7 +98,7 @@ Once the pipeline has completed running, you can view the results in the databas
  public | person_smokes_label_inference                        | view  | user | 0 bytes    |
 (16 rows)
 ```
-Tables person, friends, person_has_cancer, and person_smokes told the input data we specified in the input/ directory. To see what DeepDive infered from our data you can look at person_smokes_label_inference and  person_has_cancer_label_inference. The two views should look like the following: 
+Tables person, friends, person_has_cancer, and person_smokes told the input data we specified in the input/ directory. To see what DeepDive infered from our data you can look at person_smokes_label_inference and  person_has_cancer_label_inference. The two views should look like the following:
 
 ```bash
 #person_smokes_label_inference
@@ -122,6 +122,6 @@ Tables person, friends, person_has_cancer, and person_smokes told the input data
 (6 rows)
 ```
 
-The `id` column is for internal usage and can be ignored by the user and `person_id` is the user defined ID in the input data. You can see that DeepDive uses the given data and inference rules to predict whether a person smokes and whether a person has cancer with some expectation.   
+The `id` column is for internal usage and can be ignored by the user and `person_id` is the user defined ID in the input data. You can see that DeepDive uses the given data and inference rules to predict whether a person smokes and whether a person has cancer with some expectation.
 
 
