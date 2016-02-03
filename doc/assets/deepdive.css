@@ -31,6 +31,8 @@ body ul, body ol {
 #header #header-nav { margin-top: 20px;}
 #header #header-nav li {margin-right: 10px; }
 
+#header-nav .fa { margin-right: 0.25em; }
+
 #footer {
   color: #ccc !important;
   background-color: #08608A;
