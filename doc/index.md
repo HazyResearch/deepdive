@@ -269,17 +269,21 @@ and
 
 ### Acknowledgment
 
-We gratefully acknowledge the support of the Defense Advanced
-Research Projects Agency (DARPA) XDATA Program under No.
-FA8750-12-2-0335 and DEFT Program under No. FA8750-13-2-0039, DARPA’s
-MEMEX program, the National Science Foundation (NSF) CAREER Award
-under No. IIS-1353606 and EarthCube Award under No. ACI-1343760, the
-Sloan Research Fellowship, the Office of Naval Research (ONR) under
-awards No. N000141210041 and No. N000141310129, the Moore Foundation,
-American Family Insurance, CHTC, Google, Lightspeed Ventures, and Toshiba.
-Any opinions, findings, and conclusions or recommendations expressed
-in this material are those of the authors and do not necessarily
-reflect the views of DARPA, AFRL, NSF, ONR, or the U.S. government.
+We gratefully acknowledge the support of
+the Defense Advanced Research Projects Agency (DARPA) XDATA Program under No. FA8750-12-2-0335
+and DEFT Program under No. FA8750-13-2-0039,
+DARPA's MEMEX program,
+the National Science Foundation (NSF) CAREER Award under No. IIS-1353606
+and EarthCube Award under No. ACI-1343760,
+the Sloan Research Fellowship,
+the Office of Naval Research (ONR) under awards No. N000141210041 and No. N000141310129,
+the Moore Foundation,
+American Family Insurance,
+CHTC,
+Google,
+Lightspeed Ventures,
+and Toshiba.
+Any opinions, findings, and conclusions or recommendations expressed in this material are those of the authors and do not necessarily reflect the views of DARPA, AFRL, NSF, ONR, or the U.S. government.
 
 <div class="text-center sponsor">
   <a href="http://www.darpa.mil"><img height="100px" src="http://i.stanford.edu/hazy/images/logos/darpa.jpg" style="margin-bottom:10px; margin-left:30px; margin-right:15px;"></a>
