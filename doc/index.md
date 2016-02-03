@@ -40,7 +40,7 @@ genomics to human trafficking, see our
 DeepDive is a **trained system** that uses machine learning to cope
 with various forms of noise and imprecision. DeepDive is designed to
 make it easy for users to train the system through low-level feedback
-via the [MindTagger interface](labeling.md) and rich,
+via the [Mindtagger interface](labeling.md) and rich,
 structured domain knowledge via rules. DeepDive wants to enable
 experts who do not have machine learning expertise. One of DeepDive's
 key technical innovations is the ability to solve the statistical
@@ -113,19 +113,15 @@ Examples of DeepDive applications are described in our [showcase page](showcase/
 
 - [Wisci](https://www.youtube.com/watch?v=Q1IpE9_pBu4) - Enriching Wikipedia with structured data
 
-These examples are described in the [showcase
-page](showcase/apps.md).  The complete code for these examples
-is available with DeepDive (where permitted). DeepDive is currently
-used in other domains with even more collaborators. Stay tuned, and
-[get in touch with us](mailto:contact.hazy@gmail.com) to talk about
-interesting projects.
+These examples are described in the [showcase page](showcase/apps.md).
+The complete code for these examples is available with DeepDive (where permitted).
+DeepDive is currently used in other domains with even more collaborators.
+Stay tuned, and [get in touch with us](mailto:deepdive-dev@googlegroups.com) to talk about interesting projects.
 
 ### Who should use DeepDive?
 
-Users should be familiar with SQL and Python to build applications on
-DeepDive or to integrate DeepDive with other tools. A developer who
-would like to modify and improve DeepDive must have some basic
-background knowledge listed in the documentation below.
+Users should be familiar with DDlog or SQL, working with relational databases, and Python to build DeepDive applications or to integrate DeepDive with other tools.
+A developer who wants to modify and improve DeepDive must have basic background knowledge mentioned in the [DeepDive developer's guide](developer.md#deepdive-code).
 
 ### Who develops DeepDive?
 
