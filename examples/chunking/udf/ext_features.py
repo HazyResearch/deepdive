@@ -1,22 +1,17 @@
 #! /usr/bin/env python
-
-import fileinput
-import json
-import itertools
-import sys
+from deepdive import *
 
 def tostr(s):
         # In TSV extractor, '\N' is NULL in psql, 'NULL' is NULL in mysql
         return '' if s is None or s in ['\N', 'NULL'] else str(s)
 
-# for each word
-for row in sys.stdin:
-        # obj = json.loads(row)
-        word_id, word1, pos1, word2, pos2 = row.rstrip().split('\t')
-
+@tsv_extractor
+@returns(lambda
+	word_id = 'int',
+	feature = 'text',
+	:[])
+def extract(word_id='int', word1='text', pos1='text', word2='text', pos2='text'):
         features = set()
-        # sys.stderr.write(str(obj))
-
         # features
         w1_word = 'word=' + tostr(word1)
         w1_pos = 'pos=' + tostr(pos1)
@@ -36,4 +31,4 @@ for row in sys.stdin:
         features.add(w2_pos)
 
         for f in features:
-                print '\t'.join([word_id, f])
+                yield [word_id, f]
