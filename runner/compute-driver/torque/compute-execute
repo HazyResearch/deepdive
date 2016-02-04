@@ -81,7 +81,7 @@ ssh $SSH_INFO "mkdir -p $(dirname $REMOTE_DEEPDIVE_APP)"
 ssh $SSH_INFO "mkdir -p $REMOTE_CWD"
 
 echo "Copying deepdive app to remote node"
-rsync -aH $DEEPDIVE_APP $SSH_INFO:$(dirname $REMOTE_DEEPDIVE_APP)
+rsync -aH $DEEPDIVE_APP/ $SSH_INFO:$REMOTE_DEEPDIVE_APP
 
 # Prepare submission script
 # XXX there are conditional branches below depending on whether input_sql
@@ -97,11 +97,20 @@ rsync -aH $DEEPDIVE_APP $SSH_INFO:$(dirname $REMOTE_DEEPDIVE_APP)
 echo "Preparing submission script at remote node"
 {
     echo "#PBS -N $DEEPDIVE_CURRENT_PROCESS_NAME"
+    if [[ $num_processes -gt 1 ]]; then
+        echo "#PBS -l ncpus=1,nodes=$num_processes"
+        echo "#PBS -t 0-$((num_processes - 1))"
+    fi
     echo "#PBS -o $REMOTE_OUT_DIR"
     echo "#PBS -e $REMOTE_ERR_DIR"
     echo
     echo "export DEEPDIVE_APP=\"$REMOTE_DEEPDIVE_APP\""
-    echo '"$SHELL"'" -c \"$command\" < \"$REMOTE_IN_DIR\""
+    if [[ $num_processes -gt 1 ]]; then
+        echo 'INPUT_ID=$(printf "%04d" $PBS_ARRAYID)'
+        echo '"$SHELL"'" -c \"$command\" < \"$REMOTE_IN_DIR."'$INPUT_ID'"\""
+    else
+        echo '"$SHELL"'" -c \"$command\" < \"$REMOTE_IN_DIR\""
+    fi
 } | 
 ssh $SSH_INFO "cat > $REMOTE_SH_DIR"
 
@@ -109,7 +118,18 @@ ssh $SSH_INFO "cat > $REMOTE_SH_DIR"
 if [[ -n $input_sql ]]; then
     deepdive-sql eval "$input_sql" format="$DEEPDIVE_LOAD_FORMAT" |
     ssh $SSH_INFO "cat > $REMOTE_IN_DIR"
+
+    # Only perform splitting if num_processes is more than 1
+    if [[ $num_processes -gt 1 ]]; then
+        { 
+            echo "REMOTE_IN_DIR=$REMOTE_IN_DIR"
+            echo "num_processes=$num_processes"
+            echo 'total_lines=$(wc -l <${REMOTE_IN_DIR})'
+            echo 'split -d -l $((total_lines / num_processes + 1)) -a 4 $REMOTE_IN_DIR $REMOTE_IN_DIR.'
+        } | ssh $SSH_INFO
+    fi
 fi
+
 
 # Submit job to remote node. 
 compute_submit() {
@@ -124,7 +144,12 @@ compute_submit() {
 
 # Poll for status. Should return I for incomplete, S for success, or F for fail.
 compute_status() {
-  ssh $SSH_INFO "qstat -f -1 $JOB_ID | grep job_state | sed 's/.*job_state = //'"
+    # turns out qstat really sucks since it doesn't deal with complete jobs. 
+    # ssh $SSH_INFO "qstat -f -1 $JOB_ID | grep job_state | sed 's/.*job_state = //'"
+
+    # at least for torque, tracejob seems to do the job much better. this
+    # will actually return the exit code of the job.
+    ssh $SSH_INFO "tracejob -q $1 | grep -o Exit_status=[0-9]*$ | sed 's/Exit_status=//g'"
 }
 
 # Ensure Kerberos authentication is succesful for user. 
@@ -140,21 +165,73 @@ fi
 # Submit job. 
 # This is a hack that supposedly prints out the output of ssh asking for the 
 # password. But the output seems to not be flushed to stdout. 
-JOB_ID="$(compute_submit | grep $ssh_host)"
-if [[ "$JOB_ID" != *"$ssh_host" ]]; then
+JOB_ID="$(compute_submit | grep $ssh_host | grep -o ^[0-9]*)"
+if [[ ! "$JOB_ID" -gt 0 ]]; then
   echo "Job submission failed with the following error:"
   printf "$JOB_ID"
   error
 fi
-echo "Job submitted"
+echo "Job submitted with job id $JOB_ID."
 
 # Poll status
-echo -n "Waiting for job id $JOB_ID to complete"
-while [[ "$(compute_status)" != "S" ]] && ssh -q $SSH_INFO "[[ ! -f $REMOTE_OUT_DIR ]]"; do
-  echo -n "."
-  sleep $poll_period_secs
+echo "Waiting for job id $JOB_ID to complete"
+STATUS=incomplete
+#while [[ "$(compute_status)" == "Q" ]] && ssh -q $SSH_INFO "[[ ! -f $REMOTE_OUT_DIR ]]"; do
+while [[ "$STATUS" == incomplete ]]; do
+    echo "Waiting for $poll_period_secs seconds..."
+    sleep $poll_period_secs
+
+    if [[ $num_processes -gt 1 ]]; then
+        COMPLETE_IDS=""
+        FAILED_IDS=""
+        INCOMPLETE_IDS=""
+        for i in `seq 0 $((num_processes - 1))`; do
+            RC=$(compute_status ${JOB_ID}[$i])
+            if [[ $RC -eq 0 ]] && ssh -q $SSH_INFO "[[ -f $REMOTE_OUT_DIR-$i ]]"; then
+                COMPLETE_IDS="$COMPLETE_IDS $i"
+            elif [[ $RC -gt 0 ]] || [[ $RC -lt 0 ]]; then
+                FAILED_IDS="$FAILED_IDS $i"
+            else
+                INCOMPLETE_IDS="$INCOMPLETE_IDS $i"
+            fi
+        done
+
+        echo "Completed jobs: $COMPLETE_IDS"
+        echo "Failed jobs: $FAILED_IDS"
+        echo "Incomplete jobs: $INCOMPLETE_IDS"
+
+        if [[ -z "$INCOMPLETE_IDS" ]]; then
+            # Job successful if all jobs succeed
+            if [[ -z "$FAILED_IDS" ]]; then
+                STATUS=complete
+            # If there is at least one job that failed, then fail.
+            else
+                STATUS=failed
+            fi
+        fi
+    else
+        RC=$(compute_status $JOB_ID)
+        if [[ $RC -eq 0 ]] && ssh -q $SSH_INFO "[[ -f $REMOTE_OUT_DIR ]]"; then
+            STATUS=complete
+        elif [[ $RC -gt 0 ]] || [[ $RC -lt 0 ]]; then
+            STATUS=failed
+        else
+            STATUS=incomplete
+        fi
+    fi
 done
-echo "done!"
+
+if [[ "$STATUS" == failed ]]; then
+    echo "Job failed!"
+    echo "Please inspect $ssh_host:$REMOTE_ERR_DIR for more information"
+    if [[ $num_processes -gt 1 ]]; then
+        echo "--- Multi-job report ---"
+        echo "Completed jobs: $COMPLETE_IDS"
+        echo "Failed jobs: $FAILED_IDS"
+        echo "Incomplete jobs: $INCOMPLETE_IDS"
+    fi
+    error
+fi
 
 # prepare a temporary output table when output_relation is given
 if [[ -n $output_relation ]]; then
@@ -171,8 +248,15 @@ if [[ -n $output_relation ]]; then
 
     # Stream output from remote submission node directly to stdin, and to 
     # deepdive load
-    ssh $SSH_INFO "cat $REMOTE_OUT_DIR" > /dev/stdout |
-
+    if [[ $num_processes -gt 1 ]]; then
+        extract="ssh $SSH_INFO \"cat $REMOTE_OUT_DIR-*\""
+    else
+        echo "Single process!!"
+        extract="ssh $SSH_INFO \"cat $REMOTE_OUT_DIR\""
+    fi
+    echo $extract
+    eval "$extract" > /dev/stdout |
+    
     # use mkmimo again to merge outputs of multiple processes into a single stream
     #mkmimo process-*.output \> /dev/stdout |
 
