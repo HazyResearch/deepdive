@@ -1,4 +1,5 @@
-# Tutorial: Extracting Mentions of Spouses From The News
+# Tutorial
+# Extracting Mentions of Spouses From The News
 
 In this tutorial, we show an example of a prototypical task that DeepDive is often applied to:
 extraction of _structured information_ from _unstructured or 'dark' data_ such as webpages, text documents, images, etc.
@@ -19,7 +20,7 @@ The high-level steps we'll follow are:
 
 2. **_Labels_: Distant Supervision** Next, we'll use various strategies to provide _supervision_ for our dataset, so that we can use machine learning to learn the weights of a model.
 
-3. **_Inference \& Learning_: Model Specification** Then, we'll specify the high-level configuration of our _model_.
+3. **_Learning \& Inference_: Model Specification** Then, we'll specify the high-level configuration of our _model_.
 
 4. **_Labeling, Error Analysis \& Debugging_** Finally, we'll show how to use DeepDive's labeling, error analysis and debugging tools.
 
@@ -349,7 +350,7 @@ We'll describe two basic categories of approaches:
 
 Finally, we'll describe a simple majority-vote approach to resolving multiple labels per example, which can be implemented within ddlog.
 
-### 3.1 Mapping from Secondary Data for Distant Supervision
+### 2.1 Mapping from Secondary Data for Distant Supervision
 First, we'll try using an external structured dataset of known married couples, from [DBpedia](http://wiki.dbpedia.org/), to distantly supervise our dataset.
 We'll download the relevant data, and then map it to our spouse candidate mentions.
 
@@ -421,7 +422,7 @@ spouse_label(p1,p2, 1, "from_dbpedia") :-
 ```
 It should be noted that there are many clear ways in which this rule could be improved (fuzzy matching, more restrictive conditions, etc.), but this serves as an example of one major type of distant supervision rule.
 
-### 3.2 Using heuristic rules for distant supervision
+### 2.2 Using heuristic rules for distant supervision
 We can also create a supervision rule which does not rely on any secondary structured dataset like DBpedia, but instead just uses some heuristic.
 We set up a ddlog function, `supervise`, which uses a UDF containing several heuristic rules over the mention and sentence attributes:
 ```
@@ -526,7 +527,7 @@ def supervise(
 Note that the rough theory behind this approach is that we don't need high-quality e.g. hand-labeled supervision to learn a high quality model;
 instead, using statistical learning, we can in fact recover high-quality models from a large set of low-quality- or **_noisy_**- labels.
 
-### 3.3 Resolving Multiple Labels Per Example with Majority Vote
+### 2.3 Resolving Multiple Labels Per Example with Majority Vote
 Finally, we implement a very simple majority vote procedure, all in ddlog, for resolving scenarios where a single spouse candidate mention has multiple conflicting labels.
 First, we sum the labels (which are all -1, 0, or 1):
 ```
@@ -546,8 +547,62 @@ has_spouse(p1, p2) = NULL :- spouse_candidate(p1, _, p2, _).
 Once again, to execute all of the above, just run `deepdive compile && deepdive do has_spouse` (recall that `deepdive do` will execute all upstream tasks as well, so this will execute all of the previous steps!).
 
 
-## 3. _Inference \& Learning_: Model Specification
-_**TODO**_
+## 3. _Learning \& Inference_: Model Specification
+Now, we need to specify the actual model that DeepDive will perform learning and inference over.
+At a high level, this boils down to specifying three things:
+1. What are the _variables_ of interest, that we want DeepDive to predict for us?
+2. What are the _features_ for each of these variables?
+3. What are the _connections_ between the variables?
+
+One we have specified the model in this way, DeepDive will _learn_ the parameters of the model (the weights of the features and potentially of the connections between variables), and then perform _statistical inference_ over the learned model to determine the most likely values of the variables of interest.
+
+For more advanced users: we are specifying a _factor graph_ where the features are unary factors, and then using SGD and Gibbs Sampling for learning and inference; further technical detail is available [here](#). 
+
+### 3.1 Specifying Prediction Variables
+In our case, we have one variable to predict per spouse candidate mention, namely, **is this mention actually indicating a spousal relation or not?**
+In other words, we want DeepDive to predict the value of a boolean variable for each spouse candidate mention, indicating whether it is true or not.
+We specify this in `app.ddlog` as follows:
+```
+@extraction
+has_spouse?(
+    @key
+    @references(relation="person_mention", column="mention_id", alias="p1")
+    p1_id text,
+    @key
+    @references(relation="person_mention", column="mention_id", alias="p2")
+    p2_id text
+).
+```
+
+DeepDive will predict not only the value of these variables, but also the marginal probabilities, i.e. the amount of confidence DeepDive has for each individual prediction.
+
+### 3.2 Specifying Features
+Next, we indicate (i) that each `has_spouse` variable will be connected to the features of the corresponding `spouse_candidate` row, (ii) that we wish DeepDive to learn the weights of these features from our distantly supervised data, and (iii) that the weight of a specific feature across all instances should be the same, as follows:
+``` 
+@weight(f)
+has_spouse(p1_id, p2_id) :-
+  spouse_candidate(p1_id, _, p2_id, _),
+  spouse_feature(p1_id, p2_id, f).
+```
+
+### 3.3 Specifying Connections Between Variables
+Finally, we can specify relations between the prediction variables, with either learned or given weights.
+Here, we'll specify two such rules, with fixed (given) weights that we specify.
+First, we define a _symmetry_ connection, namely specifying that if the model thinks a person mention `p1` and a person mention `p2` indicate a spousal relationship in a sentence, then it should also think that the reverse is true, i.e. that `p2` and `p1` indicate one too:
+```
+@weight(3.0)
+has_spouse(p1_id, p2_id) => has_spouse(p2_id, p1_id) :-
+  spouse_candidate(p1_id, _, p2_id, _).
+```
+
+Next, we specify a rule that the model should be strongly biased towards finding one marriage indication per person mention.
+We do this inversely, using a negative weight, as follows:
+```
+@weight(-1.0)
+has_spouse(p1_id, p2_id) => has_spouse(p1_id, p3_id) :-
+  spouse_candidate(p1_id, _, p2_id, _),
+  spouse_candidate(p1_id, _, p3_id, _).
+```
 
 ## 4. _Labeling, Error Analysis \& Debugging_
 _**TODO**_
