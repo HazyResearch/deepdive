@@ -10,6 +10,8 @@
 ##
 set -euo pipefail
 
+. commons
+
 : ${DEEPDIVE_PREFIX_TABLE_TEMPORARY:=dd_tmp_} ${DEEPDIVE_PREFIX_TABLE_OLD:=dd_old_}
 
 # load compute configuration
@@ -17,7 +19,8 @@ eval "$(jq2sh <<<"$DEEPDIVE_COMPUTER_CONFIG" \
     num_processes='.num_processes' \
     ssh_user='.ssh_user' \
     ssh_host='.ssh_host' \
-    remote_dir='.remote_dir' \
+    remote_deepdive_app_base='.remote_deepdive_app_base' \
+    remote_deepdive_cwd_base='.remote_deepdive_cwd_base' \
     poll_period_secs='.poll_period_secs' \
     excludes='.excludes' \
     #
@@ -46,42 +49,59 @@ num_processes=${DEEPDIVE_NUM_PROCESSES:-${num_processes:-$(
 declare -- "$@"
 
 SSH_INFO="${ssh_user}@${ssh_host}"
+LOCAL_USER="$(whoami)"
 
 # App directory variables
-# TODO Change APP_IDENTIFIER to actually be the sha1sum of hostname and absolute
-# remote path
-APP_IDENTIFIER="app/$(basename $DEEPDIVE_APP)"
-REMOTE_DEEPDIVE_APP="$remote_dir/$APP_IDENTIFIER"
+# APP_ID is used to isolate app folders that are uploaded to the same path
+# in the remote node. It is a hash of the local user name and the local absolute 
+# DeepDive application path. 
+APP_ID="app$(hash "$LOCAL_USER + $DEEPDIVE_APP" | cut -c1-7)"
+SESSION_ID="$(date +%Y%m%d/%H%M%S.%N)"
+
+# Either take the remote DeepDive app path specified by the user, or default to
+# remote dir. The app base directory is where DeepDive will create a new directory
+# called dd_app, and all apps will be copied to this directory.
+remote_deepdive_app_base=${remote_deepdive_app_base:-${remote_deepdive_cwd_base}}
+remote_deepdive_app="$remote_deepdive_app_base/dd_app/$APP_ID"
 
 # Current working directory variables.
 # TODO: Change "run" to include some session ID to allow multiple processes
 # running.
-REMOTE_CWD="$remote_dir/run/$DEEPDIVE_CURRENT_PROCESS_NAME"
-REMOTE_SH_DIR="$REMOTE_CWD/remote.sh"
+remote_deepdive_cwd="$remote_deepdive_cwd_base/dd_run/$APP_ID/$SESSION_ID"
+REMOTE_SH_DIR="$remote_deepdive_cwd/remote.sh"
 # TODO: Decoupling input to reduce data transfers. 
-REMOTE_IN_DIR="$REMOTE_CWD/remote.in"
-REMOTE_OUT_DIR="$REMOTE_CWD/remote.out"
-REMOTE_ERR_DIR="$REMOTE_CWD/remote.err"
+REMOTE_IN_DIR="$remote_deepdive_cwd/remote.in"
+REMOTE_OUT_DIR="$remote_deepdive_cwd/remote.out"
+REMOTE_ERR_DIR="$remote_deepdive_cwd/remote.err"
 
 # show configuration
 echo "Executing with the following configuration:"
 echo " num_processes=$num_processes"
 echo " ssh_user=$ssh_user"
 echo " ssh_host=$ssh_host"
-echo " remote_dir=$remote_dir"
+echo " remote_deepdive_app_base=$remote_deepdive_app_base"
+echo " remote_deepdive_cwd_base=$remote_deepdive_cwd_base"
 echo " poll_period_secs=$poll_period_secs"
 echo " excludes=$excludes"
-
+echo ""
 echo "DEEPDIVE_APP = $DEEPDIVE_APP"
-echo "REMOTE_DEEPDIVE_APP = $remote_dir/$(basename $DEEPDIVE_APP)"
 echo "DEEPDIVE_CURRENT_PROCESS_NAME = $DEEPDIVE_CURRENT_PROCESS_NAME"
+echo "DEEPDIVE_COMPUTER_CONFIG = $DEEPDIVE_COMPUTER_CONFIG"
+echo ""
+echo "Session information"
+echo " application id : $LOCAL_USER + $DEEPDIVE_APP -> $APP_ID"
+echo " session id     : $DEEPDIVE_CURRENT_PROCESS_NAME -> $APP_ID/$SESSION_ID"
+
+exit 1
 
 # ensure all the directories needed exist in the remote node. 
-ssh $SSH_INFO "mkdir -p $(dirname $REMOTE_DEEPDIVE_APP)"
-ssh $SSH_INFO "mkdir -p $REMOTE_CWD"
+ssh $SSH_INFO "mkdir -p $(dirname $remote_deepdive_app)"
+ssh $SSH_INFO "mkdir -p $remote_deepdive_cwd"
 
+# Slash at the end of DEEPDIVE_APP/ is important, so that rsync doesn't create
+# another folder inside $remote_deepdive_app
 echo "Copying deepdive app to remote node"
-rsync -aH $DEEPDIVE_APP/ $SSH_INFO:$REMOTE_DEEPDIVE_APP
+rsync -aH $DEEPDIVE_APP/ $SSH_INFO:$remote_deepdive_app
 
 # Prepare submission script
 # XXX there are conditional branches below depending on whether input_sql
@@ -104,7 +124,7 @@ echo "Preparing submission script at remote node"
     echo "#PBS -o $REMOTE_OUT_DIR"
     echo "#PBS -e $REMOTE_ERR_DIR"
     echo
-    echo "export DEEPDIVE_APP=\"$REMOTE_DEEPDIVE_APP\""
+    echo "export DEEPDIVE_APP=\"$remote_deepdive_app\""
     if [[ $num_processes -gt 1 ]]; then
         echo 'INPUT_ID=$(printf "%04d" $PBS_ARRAYID)'
         echo '"$SHELL"'" -c \"$command\" < \"$REMOTE_IN_DIR."'$INPUT_ID'"\""
