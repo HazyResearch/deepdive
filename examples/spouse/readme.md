@@ -550,8 +550,11 @@ Once again, to execute all of the above, just run `deepdive compile && deepdive 
 ## 3. _Learning \& Inference_: Model Specification
 Now, we need to specify the actual model that DeepDive will perform learning and inference over.
 At a high level, this boils down to specifying three things:
+
 1.  What are the _variables_ of interest, that we want DeepDive to predict for us?
+
 2.  What are the _features_ for each of these variables?
+
 3.  What are the _connections_ between the variables?
 
 One we have specified the model in this way, DeepDive will _learn_ the parameters of the model (the weights of the features and potentially of the connections between variables), and then perform _statistical inference_ over the learned model to determine the most likely values of the variables of interest.
