@@ -5,11 +5,13 @@
 # > deepdive model factorgraph
 # > deepdive model factorgraph keep [NAME]
 # > deepdive model factorgraph load [NAME]
+# > deepdive model factorgraph drop [NAME]
 #
 # > deepdive model learn
 # > deepdive model weights
 # > deepdive model weights keep [NAME]
 # > deepdive model weights load [NAME]
+# > deepdive model weights drop [NAME]
 #
 # > deepdive model infer
 ##
@@ -44,7 +46,7 @@ case $Command in
                 container="$DEEPDIVE_APP"/snapshot/model/"$What"
                 if [[ -d "$container" ]]; then
                     cd "$container"
-                    ls
+                    ls -t
                 fi
                 ;;
 
@@ -80,15 +82,15 @@ case $Command in
                 ln -sfnv "$Name" snapshot/model/"$What"/LAST
                 ;;
 
-            load)
+            load|drop)
                 if [[ $# -eq 0 ]]; then
-                    Name=LAST."$What"
-                    [[ -e "$DEEPDIVE_APP/snapshot/run/$Name" ]] ||
-                        error "\`deepdive $What keep\` has never been run yet"
+                    Name=LAST
+                    [[ -e "$DEEPDIVE_APP/snapshot/model/$What/$Name" ]] ||
+                        error "\`deepdive $What keep\` has never been run"
                 else
                     Name=$1; shift
                 fi
-                # determine where to load from
+                # determine the actual artifact
                 if [[ -d "$Name" ]]; then
                     src=$(cd "$Name" && pwd)
                     cd "$DEEPDIVE_APP"
@@ -98,15 +100,30 @@ case $Command in
                     [[ -e $src ]] ||
                         error "\`deepdive keep $What $Name\` has never run or $Name got removed"
                 fi
-                case $What in
-                    factorgraph)
-                        cd "$DEEPDIVE_APP"
-                        # TODO use (relative) symlink or cp -al instead of duplicating with rsync?
-                        rsync -avH --delete --copy-unsafe-links "$src"/factorgraph{,.done} run/model/
+                case $Command in
+                    load)
+                        case $What in
+                            factorgraph)
+                                cd "$DEEPDIVE_APP"
+                                # TODO use (relative) symlink or cp -al instead of duplicating with rsync?
+                                rsync -avH --delete --copy-unsafe-links "$src"/factorgraph{,.done} run/model/
+                                ;;
+                            weights)
+                                error TODO
+                                ;;
+                        esac
                         ;;
-                    weights)
-                        error TODO
-                        ;;
+                    drop)
+                        if [[ "$src" -ef snapshot/model/"$What"/LAST ]]; then
+                            rm -rfv "$src"/
+                            # replace LAST symlink if dropping that one
+                            next=$(deepdive-model "$What" list | grep -vxF LAST | head -1)
+                            [[ -z $next ]] ||
+                                ln -sfnv "$next" snapshot/model/"$What"/LAST
+                        else
+                            # or just remove all files
+                            rm -rfv "$src"/
+                        fi
                 esac
                 ;;
 

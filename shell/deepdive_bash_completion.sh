@@ -61,6 +61,7 @@ _deepdive() {
                                         echo keep
                                         echo list
                                         echo load
+                                        echo drop
                                 esac
                                 ;;
                             *)
