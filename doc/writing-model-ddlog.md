@@ -17,7 +17,7 @@ First, declare variable relations on which DeepDive predicts the marginal probab
 
 DeepDive requires the user to specify the name and type of the random variables on which to perform inference. Currently DeepDive supports Boolean (i.e., Bernoulli) variables and Categorical/Multinomial variables. Random variables and their types are declared in `app.ddlog`.
 
-### Boolean variable
+### Boolean variables
 
 The following is an example of defining a schema with two Boolean variables.
 
