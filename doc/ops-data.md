@@ -5,6 +5,8 @@ title: Managing input data and data products
 
 # Managing input data and data products
 
+<todo> should we precise that, in practice, everything is done by deepdive during a `deepdive do` process when the application is detailed in ddlog, here we just detail all the different commands possible ? or at least for the first section</todo>
+
 ## Preparing the Database for the DeepDive app
 
 The database for the DeepDive application is configured through [the `db.url` file](deepdiveapp.md#db-url).
@@ -46,7 +48,7 @@ deepdive create table-if-not-exists foo ...
 ## Organizing input data
 
 All input data for a DeepDive application should be kept under the `input/` directory.
-DeepDive will rely on a naming convention and assume data for a relation <code>*foo*</code> declared in `app.ddlog` exists at path <code>input/*foo*.*extension*</code> where <code>*extension*</code> can be one of `tsv`, `csv`, `tsv.bz2`, `csv.bz2`, `tsv.gz`, `csv.gz`, `tsv.sh`, `csv.sh` to indicate in what format it is serialized as well as how it is compressed, or whether it's a shell script that emits such data or a file containing the data itself.
+DeepDive will rely on a naming convention and assume data for a relation <code>*foo*</code> declared in `app.ddlog` (and not output by an extractor) exists at path <code>input/*foo*.*extension*</code> where <code>*extension*</code> can be one of `tsv`, `csv`, `sql` `tsv.bz2`, `csv.bz2`, `tsv.gz`, `csv.gz`, `tsv.sh`, `csv.sh`. This indicates in what format it is serialized as well as how it is compressed, or whether it's a shell script that emits such data or a file containing the data itself.
 For example, in the [spouse example](example-spouse.md), the `input/articles.tsv.sh` is a shell script that produces lines with tab-separated values for the "articles" relation.
 
 
@@ -96,7 +98,7 @@ This will unload partitions of the rows of relation *bar* to the given sinks in 
 
 It is possible to write simple queries against the database in DDlog and run them using the `deepdive query` command.
 A DDlog query begins with an optional list of expressions, followed by a separator `?-`, then a typical body of a conjunctive query in DDlog.
-Following are examples of actual queries that can be used against the data produced by DeepDive for the [spouse example](example-spouse.md) after running `deepdive run` command at least once.
+Following are examples of actual queries that can be used against the data produced by DeepDive for the [spouse example](example-spouse.md) after running `deepdive run` command at least once. <todo> Isn't this command depreciated for the new `deepdive do` ? </todo>
 
 #### Browsing Values
 
