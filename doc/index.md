@@ -126,15 +126,7 @@ and
 - Running a DeepDive Application
     - [Compiling a DeepDive application](ops-compiling.md)
     - [Managing input data and data products](ops-data.md)
-    - [Controlling execution of data processing](ops-execution.md) NEW
-        <br><todo>
-        - `deepdive do`, `deepdive plan` commands
-        - `deepdive mark`, `deepdive redo` commands and timestamps under `run/process/**/*.done`
-        - `process/init/app`, `process/model/calibration` `all` special targets
-        - `deepdive run`, `deepdive initdb` shorthands
-        - Migrate the Operations section from <s>[DeepDive Application Structure and Operations](deepdiveapp.md)</s>
-        - Migrate <s>[Running an application](running.md)</s>
-        </todo>
+    - [Controlling execution of data processing](ops-execution.md)
     - [Statistical model operations (learning and inference)](ops-model.md) NEW
         <br><todo>
         - grounding factor graphs
