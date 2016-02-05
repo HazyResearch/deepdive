@@ -119,7 +119,7 @@ function nlp_markup over (
     implementation "udf/nlp_markup.sh" handles tsv lines.
 ```
 
-Finally, we specify that this `nlp_markup` function should be run over each row from `articles`, and the output appended to `sentences`: 
+Finally, we specify that this `nlp_markup` function should be run over each row from `articles`, and the output appended to `sentences`:
 ```
 sentences +=
   nlp_markup(doc_id, content) :-
@@ -166,7 +166,7 @@ function map_person_mention over (
 ```
 
 We'll write a simple UDF in Python that will tag spans of contiguous tokens with the NER tag "PERSON" as person mentions (i.e. we'll essentially rely on CoreNLP's NER module).
-Note that we've already used a bash script as a UDF, and indeed any programming language can be used (DeepDive will just check the path specified in the top line, e.g. `#!/usr/bin/env python`)/ 
+Note that we've already used a bash script as a UDF, and indeed any programming language can be used (DeepDive will just check the path specified in the top line, e.g. `#!/usr/bin/env python`)/
 However DeepDive provides some convenient utilities for Python UDFs which handle all IO encoding/decoding.
 To write our UDF, we'll start by specifying that our UDF will handle tsv lines (as specified in the ddlog above);
 additionally we'll specify the exact type schema of both input and output, which DeepDive will check for us:
@@ -533,7 +533,7 @@ First, we sum the labels (which are all -1, 0, or 1):
 ```
 spouse_label_resolved(p1_id, p2_id, SUM(vote)) :- spouse_label(p1_id, p2_id, vote, rule_id).
 ```
-Then, we simply threshold, and add these labels to our decision variable table `has_spouse` (see next section for details here): 
+Then, we simply threshold, and add these labels to our decision variable table `has_spouse` (see next section for details here):
 ```
 has_spouse(p1_id, p2_id) = if l > 0 then TRUE
                       else if l < 0 then FALSE
@@ -559,7 +559,7 @@ At a high level, this boils down to specifying three things:
 
 One we have specified the model in this way, DeepDive will _learn_ the parameters of the model (the weights of the features and potentially of the connections between variables), and then perform _statistical inference_ over the learned model to determine the most likely values of the variables of interest.
 
-For more advanced users: we are specifying a _factor graph_ where the features are unary factors, and then using SGD and Gibbs Sampling for learning and inference; further technical detail is available [here](#). 
+For more advanced users: we are specifying a _factor graph_ where the features are unary factors, and then using SGD and Gibbs Sampling for learning and inference; further technical detail is available [here](#).
 
 ### 3.1 Specifying Prediction Variables
 In our case, we have one variable to predict per spouse candidate mention, namely, **is this mention actually indicating a spousal relation or not?**
@@ -581,7 +581,7 @@ DeepDive will predict not only the value of these variables, but also the margin
 
 ### 3.2 Specifying Features
 Next, we indicate (i) that each `has_spouse` variable will be connected to the features of the corresponding `spouse_candidate` row, (ii) that we wish DeepDive to learn the weights of these features from our distantly supervised data, and (iii) that the weight of a specific feature across all instances should be the same, as follows:
-``` 
+```
 @weight(f)
 has_spouse(p1_id, p2_id) :-
   spouse_candidate(p1_id, _, p2_id, _),

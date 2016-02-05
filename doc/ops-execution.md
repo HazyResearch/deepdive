@@ -156,13 +156,13 @@ DeepDive gives an output that looks like:
 : process/init/app/run.sh
 : mark_done process/init/app
 : ##############################################################################
-: 
+:
 : ## process/init/relation/articles ############################################
 : # Done: 2016-02-01T20:56:55-0800 (2d 23h 55m 4s ago)
 : process/init/relation/articles/run.sh
 : mark_done process/init/relation/articles
 : ##############################################################################
-: 
+:
 : ## data/articles #############################################################
 : # Done: 2016-02-01T20:56:55-0800 (2d 23h 55m 4s ago)
 : # no-op
@@ -301,15 +301,15 @@ DeepDive adds several built-in processes to the compiled data flow to ensure nec
         Denotes factor graph binary files under `run/model/factorgraph/`.
 
     * `model/weights`
-    
+
         Denotes text files that contain learned weights of the model under `run/model/weights/`.
 
     * `model/probabilities`
-    
+
         Denotes files holding the computed marginal probabilities under `run/model/probabilities/`
 
     * `model/calibration-plots`
-    
+
         Denotes calibration plot images and data files under `run/model/calibration-plots/`.
 
 * `data/model/*`

@@ -7,9 +7,9 @@ def tostr(s):
 
 @tsv_extractor
 @returns(lambda
-	word_id = 'int',
-	feature = 'text',
-	:[])
+        word_id = 'int',
+        feature = 'text',
+        :[])
 def extract(word_id='int', word1='text', pos1='text', word2='text', pos2='text'):
         features = set()
         # features

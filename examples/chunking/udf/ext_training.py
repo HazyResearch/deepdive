@@ -7,16 +7,16 @@ sentID = 1
 
 @tsv_extractor
 @returns(lambda
-	sent_id = "int",
-	word_id = "int",
+        sent_id = "int",
+        word_id = "int",
         word = "text",
         pos = "text",
         true_tag = "text",
         tag = "int",
-	:[])
+        :[])
 
 def extract(word_id="int", word="text", pos="text", ori_tag="text"):
-	global sentID
+        global sentID
         tag = ori_tag
         # get tag
         if ori_tag != '' and ori_tag is not None:
