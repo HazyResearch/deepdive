@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+# deepdive-model -- Supports working with the statistical inference model
+#
+# > deepdive model ground
+# > deepdive model factorgraph
+# > deepdive model factorgraph keep [NAME]
+# > deepdive model factorgraph load [NAME]
+#
+# > deepdive model learn
+# > deepdive model weights
+# > deepdive model weights keep [NAME]
+# > deepdive model weights load [NAME]
+#
+# > deepdive model infer
+##
+set -euo pipefail
+
+DEEPDIVE_APP=$(find-deepdive-app)
+export DEEPDIVE_APP
+
+[[ $# -gt 0 ]] || usage "$0" "Missing COMMAND"
+Command=$1; shift
+
+case $Command in
+    # shorthands for repeating groups of processes related to the model
+    ground)
+        exec deepdive-redo process/grounding/{variable_id_partition,combine_factorgraph}
+        ;;
+
+    learn)
+        exec deepdive-redo process/model/learning data/model/weights
+        ;;
+
+    infer)
+        exec deepdive-redo process/model/inference data/model/probabilities
+        ;;
+
+    # managment of artifacts related to the model
+    factorgraph|weights)
+        What=$Command; [[ $# -gt 0 ]] || set -- list  # defaults to listing
+        Command=$1; shift
+        case $Command in
+            list)
+                container="$DEEPDIVE_APP"/snapshot/model/"$What"
+                if [[ -d "$container" ]]; then
+                    cd "$container"
+                    ls
+                fi
+                ;;
+
+            keep)
+                if [[ $# -eq 0 ]]; then
+                    Name=$(date +%Y%m%d.%H%M%S)
+                else
+                    Name=$1; shift
+                fi
+                # determine where to keep: either in snapshot/model/ or $Name itself if it's a path
+                case $Name in
+                    */*)
+                        mkdir -p "$Name"
+                        dest=$(cd "$Name" && pwd)
+                        cd "$DEEPDIVE_APP"
+                        ;;
+                    *)
+                        cd "$DEEPDIVE_APP"
+                        dest=snapshot/model/"$What"/"$Name"
+                        mkdir -p "$dest"
+                esac
+                case $What in
+                    factorgraph)
+                        # TODO use cp -al instead of duplicating with rsync?
+                        rsync -avH --delete --copy-unsafe-links run/model/factorgraph{,.done} "$dest"/
+                        ;;
+                    weights)
+                        error TODO
+                        ;;
+                esac
+                # keep a LAST symlink pointing to the last
+                mkdir -p snapshot/model/"$What"
+                ln -sfnv "$Name" snapshot/model/"$What"/LAST
+                ;;
+
+            load)
+                if [[ $# -eq 0 ]]; then
+                    Name=LAST."$What"
+                    [[ -e "$DEEPDIVE_APP/snapshot/run/$Name" ]] ||
+                        error "\`deepdive $What keep\` has never been run yet"
+                else
+                    Name=$1; shift
+                fi
+                # determine where to load from
+                if [[ -d "$Name" ]]; then
+                    src=$(cd "$Name" && pwd)
+                    cd "$DEEPDIVE_APP"
+                else
+                    cd "$DEEPDIVE_APP"
+                    src="snapshot/model/$What/$Name"
+                    [[ -e $src ]] ||
+                        error "\`deepdive keep $What $Name\` has never run or $Name got removed"
+                fi
+                case $What in
+                    factorgraph)
+                        cd "$DEEPDIVE_APP"
+                        # TODO use (relative) symlink or cp -al instead of duplicating with rsync?
+                        rsync -avH --delete --copy-unsafe-links "$src"/factorgraph{,.done} run/model/
+                        ;;
+                    weights)
+                        error TODO
+                        ;;
+                esac
+                ;;
+
+            *)
+                usage "$0" "deepdive model: $What $Command: Unrecognized command"
+        esac
+        ;;
+
+    *)
+        usage "$0" "$Command: Unrecognized command"
+esac

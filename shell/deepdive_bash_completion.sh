@@ -49,6 +49,27 @@ _deepdive() {
                                 list_deepdive_targets
                         esac
                         ;;
+                    model)
+                        case $COMP_CWORD in
+                            2) deepdive model 2>/dev/null | sed '
+                                    /^deepdive model/!d
+                                    s/^deepdive model  *//; s/  *.*$//'
+                                ;;
+                            3)
+                                case ${COMP_WORDS[2]} in
+                                    factorgraph|weights)
+                                        echo keep
+                                        echo list
+                                        echo load
+                                esac
+                                ;;
+                            *)
+                                case ${COMP_WORDS[2]} in
+                                    factorgraph|weights)
+                                        deepdive model ${COMP_WORDS[2]} list
+                                esac
+                        esac
+                        ;;
                 esac
         esac
     `

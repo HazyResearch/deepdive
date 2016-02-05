@@ -436,7 +436,7 @@ then . else
 
 
 ## factor/*/dump
-# The factors and weights are dumped into a set of binary files for the inference engine.
+# The factors are dumped into a set of binary files for the inference engine.
 | .deepdive_.execution.processes += merge($deepdive.inference.factors_[] | {
     # add a process for grounding factors and weights
     "process/grounding/factor/\(.factorName)/dump": {
@@ -451,13 +451,11 @@ then . else
             find . \\( -name  'factors.part-*.bin.bz2' \\
                     -o -name 'nfactors.part-*'         \\
                     -o -name   'nedges.part-*'         \\
-                    -o -name  'weights.part-*.bin.bz2' \\
-                    \\) -exec rm -rf {} +
+                   \\) -exec rm -rf {} +
             export DEEPDIVE_LOAD_FORMAT=tsv
             export DEEPDIVE_UNLOAD_MATERIALIZED=false
 
             # dump the factors joining the assigned weight ids, converting into binary format for the inference engine
-            DEEPDIVE_CURRENT_PROCESS_NAME=\"${DEEPDIVE_CURRENT_PROCESS_NAME}.factors\" \\
             deepdive compute \\
                 input_sql=\(
                     { SELECT:
@@ -489,9 +487,29 @@ then . else
                     tee nedges.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}
                 " | @sh) \\
                 output_relation=
+        "
+    }
+})
+
+## factor/*/dump_weights
+# The factors and weights are dumped into a set of binary files for the inference engine.
+| .deepdive_.execution.processes += merge($deepdive.inference.factors_[] | {
+    # add a process for grounding factors and weights
+    "process/grounding/factor/\(.factorName)/dump_weights": {
+        dependencies_: [
+            "process/grounding/factor/\(.factorName)/assign_weight_id"
+        ],
+        style: "cmd_extractor", cmd: "
+            : ${DEEPDIVE_GROUNDING_DIR:=\"$DEEPDIVE_APP\"/run/model/grounding}
+            facPath=\"$DEEPDIVE_GROUNDING_DIR\"/factor/\(.factorName | @sh)
+            mkdir -p \"$facPath\"
+            cd \"$facPath\"
+            find . \\( -name  'weights.part-*.bin.bz2' \\
+                   \\) -exec rm -rf {} +
+            export DEEPDIVE_LOAD_FORMAT=tsv
+            export DEEPDIVE_UNLOAD_MATERIALIZED=false
 
             # dump the weights (except the description column), converting into binary format for the inference engine
-            DEEPDIVE_CURRENT_PROCESS_NAME=\"${DEEPDIVE_CURRENT_PROCESS_NAME}.weights\" \\
             deepdive compute \\
                 input_sql=\(
                     { SELECT:
@@ -521,6 +539,7 @@ then . else
         ), (
             $deepdive.inference.factors_[]
             | "process/grounding/factor/\(.factorName)/dump"
+            , "process/grounding/factor/\(.factorName)/dump_weights"
         ), (
             "process/grounding/global_weight_table"
         )],
