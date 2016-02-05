@@ -30,7 +30,7 @@ case $Command in
         ;;
 
     learn)
-        exec deepdive-redo process/model/learning data/model/weights
+        exec deepdive-redo process/model/learning data/model/{weights,probabilities}
         ;;
 
     infer)
@@ -74,7 +74,16 @@ case $Command in
                         rsync -avH --delete --copy-unsafe-links run/model/factorgraph{,.done} "$dest"/
                         ;;
                     weights)
-                        error TODO
+                        show_progress output_from "$dest" -- \
+                        deepdive sql eval "
+                            SELECT id
+                                 , isfixed
+                                 , initvalue
+                                 , description
+                                 , categories
+                              FROM dd_graph_weights
+                             WHERE initvalue <> 0
+                        " format=csv | pbzip2 >"$dest"/dd_graph_weights.csv.bz2
                         ;;
                 esac
                 # keep a LAST symlink pointing to the last

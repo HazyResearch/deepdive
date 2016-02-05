@@ -22,7 +22,7 @@ Options=()
 while [[ $# -gt 0 && $1 != "--" ]]; do
     Options+=("$1"); shift
 done
-[[ $1 = "--" ]] || usage "$0" "Missing -- before COMMAND"
+[[ ${1:-} = "--" ]] || usage "$0" "Missing -- before COMMAND"
 shift
 
 # map options to pv flags
