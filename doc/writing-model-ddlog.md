@@ -8,28 +8,28 @@ title: Specifying a statistical model in DDlog
 
 # Specifying a statistical model in DDlog
 
-This document describe how to [declare random variables](#variable_relations) on which DeepDive performs inference, how to [label](#labeling_variables) these variables and how to write [inference rules](#inference_rules).
+This document describes how to [declare random variables](#variable_relations) on which DeepDive performs inference, how to [label](#labeling_variables) these variables and how to write [inference rules](#inference_rules).
 
-First, variable relations on which DeepDive will predict the marginal probability are to be declared.
+First, declare variable relations on which DeepDive predicts the marginal probability.
 
 
 ## <a name="variable_relations" href="#"></a> Variable Relations
 
-DeepDive requires the user to specify the name and type of the random variables on which to perform inference. Currently DeepDive support Boolean (i.e., Bernoulli) variables and Categorical/Multinomial variables. Random variables and their types are declared in `app.ddlog`.
+DeepDive requires the user to specify the name and type of the random variables on which to perform inference. Currently DeepDive supports Boolean (i.e., Bernoulli) variables and Categorical/Multinomial variables. Random variables and their types are declared in `app.ddlog`.
 
 ### Boolean variable
 
-The following is an example of defining the schema with two Boolean variables.
+The following is an example of defining a schema with two Boolean variables.
 
 ```
 has_spouse?(p1_id text, p2_id text).
 ```
 
-A question mark after the relation name indicates that the relation is a variable relation containing random variables in the factor graph. The columns of the variable relation serve as a key of that relation. Here for instance, a variable relation has\_spouse is defined, and each different pair of `(p1_id, p2_id)` represents a different variable.
+A question mark after the relation name indicates that the relation is a variable relation containing random variables in the factor graph. The columns of the variable relation serve as a key of that relation. Here for instance, a variable relation `has_spouse` is defined, and each different pair of `(p1_id, p2_id)` represents a different variable.
 
 ### Categorical/Multinomial variables
 
-DeepDive supports multinomial variables, which take integer values ranging from 0 to a user-specified upper bound. The variable relation is defined similarly as a boolean variable where we add `Categorical(N)`, to specify that the variable domain is 0, 1, ..., N-1. For instance, in the chunking example <todo> add link </todo>, the declaration in `app.ddlog` is:
+DeepDive supports multinomial variables, which take integer values ranging from 0 to a user-specified upper bound. The variable relation is defined similarly as a Boolean variable where we add `Categorical(N)`, to specify that the variable domain is 0, 1, ..., N-1. For instance, in the [chunking example](chunking.md), the declaration in `app.ddlog` is:
 
 ```
 tag?(word_id bigint) Categorical(13).
@@ -55,11 +55,11 @@ where `spouse_label_resolved` is a dataset of pairs of people for which some lab
 Inference rules describe how to build the [factor graph](inference.md).
 Each rule consists of three components:
 
-- The **variable relation(s)**.
-- The **factor function** which defines how to connect the variable relation(s) to each factor, and how these variables are related to each other.
-- the **factor weight** that describes the confidence in the relationship expressed by the factor. This is used during probabilistic inference. Weights can be constants, or automatically learned based on training data.
+- **Variable relation(s)**.
+- **Factor function**, which defines how to connect the variable relation(s) to each factor, and how these variables are related to each other.
+- **Factor weight**, that describes the confidence in the relationship expressed by the factor. This is used during probabilistic inference. Weights can be constants, or automatically learned based on training data.
 
-For instance, in the spouse example, the inference rule defining whether the `has_spouse` variable between two entities is true or not is defined by:
+For instance, in the `has_spouse` example, the inference rule defining whether the `has_spouse` variable between two entities is true or not is written as:
 
 ```
 @weight(f)
