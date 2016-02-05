@@ -107,7 +107,8 @@ DEEPDIVE_ERROR_PREFIX="[ERROR] "  # prefixing error messages in logs
 DEEPDIVE_APP=$(cd .. && pwd -P)
 APP_HOME=$DEEPDIVE_APP # XXX legacy
 DEEPDIVE_OUTPUT=$(cd "$runDir" && pwd)
-export DEEPDIVE_ERROR_PREFIX DEEPDIVE_PROGRESS_FD DEEPDIVE_APP APP_HOME DEEPDIVE_OUTPUT
+DEEPDIVE_RUN_ID=$runDir
+export DEEPDIVE_ERROR_PREFIX DEEPDIVE_PROGRESS_FD DEEPDIVE_APP APP_HOME DEEPDIVE_OUTPUT DEEPDIVE_RUN_ID
 eval 'bash -veu "$runDir"/plan.sh '$DEEPDIVE_PROGRESS_FD'>&2 2>&1' |
 {
 ln -sfn run.log "$runDir"/log.txt # XXX for backward compatibility with pre-0.7.x, keep a symlink

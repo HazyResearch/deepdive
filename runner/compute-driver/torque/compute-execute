@@ -55,8 +55,9 @@ LOCAL_USER="$(whoami)"
 # APP_ID is used to isolate app folders that are uploaded to the same path
 # in the remote node. It is a hash of the local user name and the local absolute 
 # DeepDive application path. 
-APP_ID="app$(hash "$LOCAL_USER + $DEEPDIVE_APP" | cut -c1-7)"
-SESSION_ID="$(date +%Y%m%d/%H%M%S.%N)"
+APP_ID="$(hash "$LOCAL_USER + $DEEPDIVE_APP")"
+#SESSION_ID="$(date +%Y%m%d/%H%M%S.%N)"
+SESSION_ID="$DEEPDIVE_RUN_ID/$DEEPDIVE_CURRENT_PROCESS_NAME"
 
 # Either take the remote DeepDive app path specified by the user, or default to
 # remote dir. The app base directory is where DeepDive will create a new directory
@@ -212,6 +213,7 @@ while [[ "$STATUS" == incomplete ]]; do
         FAILED_IDS=""
         INCOMPLETE_IDS=""
         for i in `seq 0 $((num_processes - 1))`; do
+            # XXX: Very costly to check each status. 
             RC=$(compute_status ${JOB_ID}[$i])
             if [[ $RC -eq 0 ]] && ssh -q $SSH_INFO "[[ -f $REMOTE_OUT_DIR-$i ]]"; then
                 COMPLETE_IDS="$COMPLETE_IDS $i"
@@ -250,6 +252,10 @@ done
 if [[ "$STATUS" == failed ]]; then
     echo "Job failed!"
     echo "Please inspect $ssh_host:$REMOTE_ERR_DIR for more information"
+    echo "----------------------------------------------------------------"
+    ssh $SSH_INFO "tail +1 $REMOTE_ERR_DIR-*" 
+    echo "----------------------------------------------------------------"
+
     if [[ $num_processes -gt 1 ]]; then
         echo "--- Multi-job report ---"
         echo "Completed jobs: $COMPLETE_IDS"
