@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# commons -- Contains several convenience functions for the computers
+#
+##
+
+hash() {
+  input_str="$1"
+  if which "shasum" > /dev/null; then
+    h="shasum"
+  elif which "sha1sum" > /dev/null; then
+    h="sha1sum"
+  else
+    echo "Could not find SHA1 commands"
+    exit 1
+  fi
+   
+  echo "$input_str" | eval "$h" | cut -d' ' -f1
+}

@@ -22,7 +22,7 @@ eval "$(jq2sh <<<"$DEEPDIVE_COMPUTER_CONFIG" \
     remote_deepdive_app_base='.remote_deepdive_app_base' \
     remote_deepdive_cwd_base='.remote_deepdive_cwd_base' \
     poll_period_secs='.poll_period_secs' \
-    excludes='.excludes' \
+    excludes='.excludes | join("\t")' \
     #
 )"
 # respect the DEEPDIVE_NUM_PROCESSES environment
@@ -92,16 +92,22 @@ echo "Session information"
 echo " application id : $LOCAL_USER + $DEEPDIVE_APP -> $APP_ID"
 echo " session id     : $DEEPDIVE_CURRENT_PROCESS_NAME -> $APP_ID/$SESSION_ID"
 
-exit 1
-
 # ensure all the directories needed exist in the remote node. 
 ssh $SSH_INFO "mkdir -p $(dirname $remote_deepdive_app)"
 ssh $SSH_INFO "mkdir -p $remote_deepdive_cwd"
 
 # Slash at the end of DEEPDIVE_APP/ is important, so that rsync doesn't create
 # another folder inside $remote_deepdive_app
-echo "Copying deepdive app to remote node"
-rsync -aH $DEEPDIVE_APP/ $SSH_INFO:$remote_deepdive_app
+RSYNC_EXCLUDES=""
+for exclude in $excludes; do
+  # XXX: For some reason, if I enclose $exclude in double quotes and pass it
+  # to rsync, rsync will interpret it as '"$exclude"', and fail to find 
+  # $exclude.
+  RSYNC_EXCLUDES+="--exclude $exclude "
+done
+echo "Copying deepdive app to remote node."
+echo "Excluding $RSYNC_EXCLUDES"
+rsync -aH $RSYNC_EXCLUDES --progress $DEEPDIVE_APP/ $SSH_INFO:$remote_deepdive_app
 
 # Prepare submission script
 # XXX there are conditional branches below depending on whether input_sql
@@ -112,8 +118,8 @@ rsync -aH $DEEPDIVE_APP/ $SSH_INFO:$remote_deepdive_app
 # 3) output-only command which has no input from the database and streams to the database
 # 4) database-independent command which simply runs in parallel
 
-# We can use the environment variable PBS_ARRAYID when submitting this job as a job 
-# array.
+# XXX: Right now, submission script doesn't handle the case when there's no 
+# input_sql.
 echo "Preparing submission script at remote node"
 {
     echo "#PBS -N $DEEPDIVE_CURRENT_PROCESS_NAME"
