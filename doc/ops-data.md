@@ -5,13 +5,15 @@ title: Managing input data and data products
 
 # Managing input data and data products
 
-<todo> should we precise that, in practice, everything is done by deepdive during a `deepdive do` process when the application is detailed in ddlog, here we just detail all the different commands possible ? or at least for the first section</todo>
+DeepDive provides a handful of commands and conventions to manage input data to an application as well as the data produced by it.
+The actual processing of the data is discussed in a page about [executing the DeepDive application](ops-execution.md).
 
-## Preparing the Database for the DeepDive app
 
-The database for the DeepDive application is configured through [the `db.url` file](deepdiveapp.md#db-url).
+## Preparing the database for the DeepDive app
 
-### Initializing the Database
+The database for the DeepDive application is configured through [the `db.url` file](deepdiveapp.md#db-url) or that can be overridden with the `DEEPDIVE_DB_URL` environment variable.
+
+### Initializing the database
 
 To initialize the database in a clean state, also dropping it if necessary, run:
 
@@ -19,7 +21,7 @@ To initialize the database in a clean state, also dropping it if necessary, run:
 deepdive db init
 ```
 
-### Creating Tables in the Database
+### Creating tables in the database
 
 To make sure an empty table named *foo* is created in the database as declared in `app.ddlog`, run:
 
@@ -53,9 +55,9 @@ For example, in the [spouse example](example-spouse.md), the `input/articles.tsv
 
 
 
-## Moving Data In and Out of the Database
+## Moving data in and out of the database
 
-### Loading Data to the Database
+### Loading data to the database
 
 To load such input data for a relation *foo*, run:
 
@@ -76,9 +78,9 @@ When a data source provides only particular columns, they can be specified as fo
 deepdive load 'foo(x,y)'  only-x-y.csv
 ```
 
-If the destination to load is a [variable relation](writing-model-ddlog.md) <todo>link section</todo> and no columns are explicitly specified, then the sources are expected to provide an extra column at the right end that corresponds to each row's supervision label.
+If the destination to load is a [variable relation](writing-model-ddlog.md#variable-relations) and no columns are explicitly specified, then the sources are expected to provide an extra column at the right end that corresponds to each row's supervision label.
 
-### Unloading Data Products from the Database
+### Unloading data products from the database
 
 To unload data produced for a relation to files, such as *bar* into two sinks `dump-1.tsv` and `/data/dump-2.csv.bz2`, assuming you have the table populated in the database by [executing some data processing](ops-execution.md), run:
 
@@ -92,15 +94,15 @@ This will unload partitions of the rows of relation *bar* to the given sinks in 
 
 
 
-## Running Queries against the Database
+## Running queries against the database
 
-### Running Queries in DDlog
+### Running queries in ddlog
 
 It is possible to write simple queries against the database in DDlog and run them using the `deepdive query` command.
 A DDlog query begins with an optional list of expressions, followed by a separator `?-`, then a typical body of a conjunctive query in DDlog.
-Following are examples of actual queries that can be used against the data produced by DeepDive for the [spouse example](example-spouse.md) after running `deepdive run` command at least once. <todo> Isn't this command depreciated for the new `deepdive do` ? </todo>
+Following are examples of actual queries that can be used against the data produced by DeepDive for the [spouse example](example-spouse.md) after running `deepdive run` command at least once.
 
-#### Browsing Values
+#### Browsing values
 
 To browse values in a relation, variables can be placed at the columns of interest, such as `name1` and `name2` for the second and fourth columns of the `spouse_candidate` relation, and the wildcard `_` can be used for the rest to ignore them as follows:
 
@@ -108,7 +110,7 @@ To browse values in a relation, variables can be placed at the columns of intere
 deepdive query '?- spouse_candidate(_, name1, _, name2).'
 ```
 
-#### Joins, Selection, and Projections
+#### Joins, selection, and projections
 Finding values across multiple relations that satisfy certain conditions can be expressed in a succinct way.
 For example, finding the names of candidate pairs of spouse mentions in a document that contains a certain keyword, such as "President" can be written as:
 
@@ -161,7 +163,7 @@ deepdive query '
 For example, `@order_by("DESC", -1)`, `@order_by("DESC")`, `@order_by(priority=-1)` are all recognized.
 
 
-#### Limiting (Top *k*)
+#### Limiting (top *k*)
 By putting a number after the expressions separated by a pipe character, e.g., `| 10`, the number of tuples can be limited.
 For example, the following modified query shows the top 10 documents containing the most candidates:
 
@@ -175,7 +177,7 @@ deepdive query '
 ```
 
 
-#### Using More than One Rule
+#### Using more than one rule
 Sometimes one rule is not enough to express, so a query may define multiple temporary relations first.
 For example, to produce a histogram of the number of candidates per document, the counts must be counted, so two rules are necessary as shown below.
 
@@ -190,7 +192,7 @@ deepdive query '
     '
 ```
 
-#### Saving Results
+#### Saving results
 By providing the extra `format=tsv` or `format=csv` argument, the resulting tuples can be easily saved into a file.
 For example, the following command saves the names of candidates with their document id as a comma-separated file named `candidates-docs.csv`.
 
@@ -211,7 +213,7 @@ deepdive query -n '?- ...'
 
 
 
-### Running Queries in SQL
+### Running queries in SQL
 
 ```bash
 deepdive sql
