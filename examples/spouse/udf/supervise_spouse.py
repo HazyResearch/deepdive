@@ -39,7 +39,7 @@ def supervise(
   if len(intermediate_lemmas) > MAX_DIST:
     yield spouse._replace(label=-1, type='neg:far_apart')
 
-  # Rule: Candidates that are too far apart
+  # Rule: Candidates that have a third person in between
   if 'PERSON' in intermediate_ner_tags:
     yield spouse._replace(label=-1, type='neg:third_person_between')
 
