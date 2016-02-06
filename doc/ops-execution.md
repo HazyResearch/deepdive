@@ -335,7 +335,7 @@ There are several environment variables that can be tweaked to influence the exe
 
 * `DEEPDIVE_PLAN_EDIT`
 
-    Controls whether a chance to edit the execution plan shall be provided (when set to `true`) or not (when `false`).
+    Controls whether a chance to edit the execution plan is provided (when set to `true`) or not (when `false`).
 
 * `VISUAL` and `EDITOR`
 
