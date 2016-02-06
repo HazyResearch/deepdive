@@ -88,7 +88,7 @@ In particular, the following checks are made:
 
 * ```input_extractors_well_defined```: checks sanity of all defined extractors.
 * ```input_schema_wellformed```: checks if schema variables are well formed.
-* ```compiled_base_relations_have_input_data```: all the tables declared that are not filled by an extractor must have input data in `input/` that can be [loaded automatically](ops-data.md) <todo>link to input/ section</todo>.
+* ```compiled_base_relations_have_input_data```: all the tables declared that are not filled by an extractor must have input data in `input/` that can be [loaded automatically](ops-data.md#organizing-input-data).
 * ```compiled_dependencies_correct```: check that the dependencies are correct. In particular, in the application includes extractors in deepdive.conf, each output relation must be output by exactly one extractor.
 * ```compiled_input_output_well_defined```: checks if all inputs and outputs of compiled processes are well-defined.
 * ```compiled_output_uniquely_defined```: checks if all outputs in the compiled documents are defined by one process.
