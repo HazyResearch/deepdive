@@ -85,6 +85,7 @@ case $Command in
                                 SELECT 1 WHERE EXISTS (
                                     SELECT id FROM dd_graph_weights
                                      WHERE categories IS NULL)") ]]; then
+                            # TODO parallel unload
                             show_progress output_from "$dest" -- \
                             deepdive-sql eval "
                                 SELECT description
@@ -94,26 +95,27 @@ case $Command in
                                  WHERE wo.id = wi.id
                                    AND weight <> 0
                                    AND categories IS NULL -- to rule out multinomial
-                            " format=tsv | pbzip2 >"$dest"/dd_graph_weights.tsv.bz2
+                            " format=tsv | pbzip2 >"$dest"/dd_weights.tsv.bz2
                         fi
                         # dump non-zero weights for multinomial factors
                         if [[ -n $(deepdive-sql eval "
                                 SELECT 1 WHERE EXISTS (
                                     SELECT id FROM dd_graph_weights
                                      WHERE categories IS NOT NULL)") ]]; then
+                            # TODO parallel unload
                             # XXX ARRAY_AGG is postgres specific
                             show_progress output_from "$dest" -- \
                             deepdive-sql eval "
                                 SELECT description
+                                     , ARRAY_AGG(categories::TEXT)
                                      , ARRAY_AGG(weight)
-                                     , ARRAY_AGG(categories::text)
                                   FROM dd_inference_result_weights wo
                                      , dd_graph_weights            wi
                                  WHERE wo.id = wi.id
                                    AND weight <> 0
                                    AND categories IS NOT NULL -- to include multinomial only
                                  GROUP BY description
-                            " format=tsv | pbzip2 >"$dest"/dd_graph_weights.multinomial.tsv.bz2
+                            " format=tsv | pbzip2 >"$dest"/dd_weights.multinomial.tsv.bz2
                         fi
                         ;;
                 esac
@@ -149,7 +151,33 @@ case $Command in
                                 rsync -avH --delete --copy-unsafe-links "$src"/factorgraph{,.done} run/model/
                                 ;;
                             weights)
-                                error TODO
+                                weightTableName=dd_reuse_weights_"$Name"
+                                deepdive create table "$weightTableName" "description:TEXT" "category:TEXT" "weight:DOUBLE PRECISION"
+                                for weightFile in "$src"/dd_weights{,.multinomial}.tsv.bz2; do
+                                    [[ -e "$weightFile" ]] || continue
+                                    case $weightFile in
+                                        *.multinomial.tsv.bz2)
+                                            # first load the grouped data from file
+                                            deepdive create table "${weightTableName}_array" "description:TEXT" "categories::TEXT[]" "weights:DOUBLE PRECISION[]"
+                                            # TODO parallel load
+                                            deepdive load "${weightTableName}_array" "$weightFile"
+                                            # explode the group
+                                            deepdive sql "INSERT INTO $weightTableName
+                                                SELECT description
+                                                     , UNNEST(categories) AS category
+                                                     , UNNEST(weights)    AS weight
+                                                  FROM ${weightTableName}_array
+                                            "
+                                            deepdive sql "DROP TABLE ${weightTableName}_array"
+                                            ;;
+                                        *.tsv.bz2)
+                                            # TODO parallel load
+                                            deepdive load "$weightTableName" "$weightFile"
+                                            ;;
+                                        *)
+                                            error "$weightFile: Unsupported weights file"
+                                    esac
+                                done
                                 ;;
                         esac
                         ;;
