@@ -165,23 +165,23 @@ void dd::FactorGraph::load(const CmdParser & cmd, const bool is_quiet, int inc){
   std::string filename_variables;
   std::string filename_weights;
   if (inc) {
-    filename_weights    = cmd.original_folder->getValue() + "/graph.weights";
-    filename_variables  = cmd.original_folder->getValue() + "/graph.variables";
-    filename_factors    = cmd.original_folder->getValue() + "/graph.factors";
-    filename_edges      = cmd.original_folder->getValue() + "/graph.edges";
+    filename_weights    = cmd.original_folder + "/graph.weights";
+    filename_variables  = cmd.original_folder + "/graph.variables";
+    filename_factors    = cmd.original_folder + "/graph.factors";
+    filename_edges      = cmd.original_folder + "/graph.edges";
   } else {
-    filename_weights    = cmd.weight_file->getValue();
-    filename_variables  = cmd.variable_file->getValue();
-    filename_factors    = cmd.factor_file->getValue();
+    filename_weights    = cmd.weight_file;
+    filename_variables  = cmd.variable_file;
+    filename_factors    = cmd.factor_file;
   }
 
   // load variables
   long long n_loaded = read_variables(filename_variables, *this);
 
-  if(cmd.delta_folder->getValue() != ""){
+  if(cmd.delta_folder != ""){
     std::cout << "Loading delta..." << std::endl;
-    std::cout << cmd.delta_folder->getValue() + "/graph.variables" << std::endl;
-    n_loaded += read_variables(cmd.delta_folder->getValue() + "/graph.variables", *this);
+    std::cout << cmd.delta_folder + "/graph.variables" << std::endl;
+    n_loaded += read_variables(cmd.delta_folder + "/graph.variables", *this);
   }
   assert(n_loaded == n_var);
   if (!is_quiet) {
@@ -192,9 +192,9 @@ void dd::FactorGraph::load(const CmdParser & cmd, const bool is_quiet, int inc){
 
   // load weights
   n_loaded = read_weights(filename_weights, *this);
-  if(cmd.delta_folder->getValue() != ""){
+  if(cmd.delta_folder != ""){
     std::cout << "Loading delta..." << std::endl;
-    n_loaded += read_weights(cmd.delta_folder->getValue() + "/graph.weights", *this);
+    n_loaded += read_weights(cmd.delta_folder + "/graph.weights", *this);
   }
   assert(n_loaded == n_weight);
   if (!is_quiet) {
@@ -212,9 +212,9 @@ void dd::FactorGraph::load(const CmdParser & cmd, const bool is_quiet, int inc){
     n_loaded = read_factors_inc(filename_factors, *this);
   else
     n_loaded = read_factors(filename_factors, *this);
-  if(cmd.delta_folder->getValue() != ""){
-    std::cout << "Loading delta..." << cmd.delta_folder->getValue() + "/graph.factors" << std::endl;
-    n_loaded += read_factors_inc(cmd.delta_folder->getValue() + "/graph.factors", *this);
+  if(cmd.delta_folder != ""){
+    std::cout << "Loading delta..." << cmd.delta_folder + "/graph.factors" << std::endl;
+    n_loaded += read_factors_inc(cmd.delta_folder + "/graph.factors", *this);
   }
 
   assert(n_loaded == n_factor);
@@ -230,9 +230,9 @@ void dd::FactorGraph::load(const CmdParser & cmd, const bool is_quiet, int inc){
     std::sort(&factors[0], &factors[n_factor], idsorter<Factor>());
     // load edges
     n_loaded = read_edges_inc(filename_edges, *this);
-    if(cmd.delta_folder->getValue() != ""){
+    if(cmd.delta_folder != ""){
       std::cout << "Loading delta..." << std::endl;
-      n_loaded += read_edges_inc(cmd.delta_folder->getValue() + "/graph.edges", *this);
+      n_loaded += read_edges_inc(cmd.delta_folder + "/graph.edges", *this);
     }
 
     if (!is_quiet) {
@@ -241,7 +241,7 @@ void dd::FactorGraph::load(const CmdParser & cmd, const bool is_quiet, int inc){
   }
 
   // load active variables
-  std::string active_vars = cmd.original_folder->getValue() + "/active.variables";
+  std::string active_vars = cmd.original_folder + "/active.variables";
   long long active_id;
   std::ifstream file;
   file.open(active_vars.c_str(), ios::in | ios::binary);
@@ -252,7 +252,7 @@ void dd::FactorGraph::load(const CmdParser & cmd, const bool is_quiet, int inc){
   }
 
   // a slow, but good enough algorithm for connected components
-  std::string useful_training = cmd.original_folder->getValue() + "/mat_components_hasevids";
+  std::string useful_training = cmd.original_folder + "/mat_components_hasevids";
   std::ofstream fout2(useful_training.c_str());
   long long component_id = -1;
   for(long long vid=0;vid < n_var;vid++){
@@ -284,7 +284,7 @@ void dd::FactorGraph::load(const CmdParser & cmd, const bool is_quiet, int inc){
     }
     fout2 << component_id << " " << isuseful_for_training << std::endl;
   }
-  std::string component_file = cmd.original_folder->getValue() + "/mat_active_components";
+  std::string component_file = cmd.original_folder + "/mat_active_components";
   std::ofstream fout(component_file.c_str());
   for(long long vid=0;vid < n_var;vid++){
     const Variable & var = this->variables[vid];
@@ -303,7 +303,7 @@ void dd::FactorGraph::load(const CmdParser & cmd, const bool is_quiet, int inc){
   if(inc == 2){
     std::cout << "LOADING PREVIOUS WEIGHT..." << std::endl;
     this->old_weight_values = new float[n_weight];
-    std::ifstream fin(cmd.original_folder->getValue() + "/inference_result.out.weights.text");
+    std::ifstream fin(cmd.original_folder + "/inference_result.out.weights.text");
     long long wid;
     float weight;
     while(fin >> wid >> weight){

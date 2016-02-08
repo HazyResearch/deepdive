@@ -56,8 +56,8 @@ void inc(dd::CmdParser & cmd_parser){
   int n_numa_node = numa_max_node() + 1;
 
   // get command line arguments
-  std::string original_folder = cmd_parser.original_folder->getValue();
-  std::string delta_folder = cmd_parser.delta_folder->getValue();
+  std::string original_folder = cmd_parser.original_folder;
+  std::string delta_folder = cmd_parser.delta_folder;
 
   // check arguments
   if (original_folder == "" || delta_folder == "") {
@@ -76,21 +76,21 @@ void inc(dd::CmdParser & cmd_parser){
 
   std::string output_folder = delta_folder;
 
-  int n_learning_epoch = cmd_parser.n_learning_epoch->getValue();
-  int n_samples_per_learning_epoch = cmd_parser.n_samples_per_learning_epoch->getValue();
-  int n_inference_epoch = cmd_parser.n_inference_epoch->getValue();
+  int n_learning_epoch = cmd_parser.n_learning_epoch;
+  int n_samples_per_learning_epoch = cmd_parser.n_samples_per_learning_epoch;
+  int n_inference_epoch = cmd_parser.n_inference_epoch;
 
-  double stepsize = cmd_parser.stepsize->getValue();
-  double stepsize2 = cmd_parser.stepsize2->getValue();
+  double stepsize = cmd_parser.stepsize;
+  double stepsize2 = cmd_parser.stepsize2;
   // hack to support two parameters to specify step size
   if (stepsize == 0.01) stepsize = stepsize2;
-  double decay = cmd_parser.decay->getValue();
+  double decay = cmd_parser.decay;
 
-  int n_datacopy = cmd_parser.n_datacopy->getValue();
-  double reg_param = cmd_parser.reg_param->getValue();
-  bool is_quiet = cmd_parser.quiet->getValue();
+  int n_datacopy = cmd_parser.n_datacopy;
+  double reg_param = cmd_parser.reg_param;
+  bool is_quiet = cmd_parser.should_be_quiet;
 
-  regularization reg = cmd_parser.regularization->getValue() == "l1" ? REG_L1 : REG_L2;
+  regularization reg = cmd_parser.regularization == "l1" ? REG_L1 : REG_L2;
 
   Meta meta = read_meta(fg_file); 
   Meta meta2 = read_meta(delta_fg_file);
@@ -137,7 +137,7 @@ void mat(dd::CmdParser & cmd_parser){
   int n_numa_node = numa_max_node() + 1;
 
   // get command line arguments
-  std::string original_folder = cmd_parser.original_folder->getValue();
+  std::string original_folder = cmd_parser.original_folder;
 
   // check arguments
   if (original_folder == "") {
@@ -152,20 +152,20 @@ void mat(dd::CmdParser & cmd_parser){
   std::string factor_file = original_folder + "/graph.factors";
   std::string edge_file = original_folder + "/graph.edges";
 
-  int n_learning_epoch = cmd_parser.n_learning_epoch->getValue();
-  int n_samples_per_learning_epoch = cmd_parser.n_samples_per_learning_epoch->getValue();
-  int n_inference_epoch = cmd_parser.n_inference_epoch->getValue();
+  int n_learning_epoch = cmd_parser.n_learning_epoch;
+  int n_samples_per_learning_epoch = cmd_parser.n_samples_per_learning_epoch;
+  int n_inference_epoch = cmd_parser.n_inference_epoch;
 
-  double stepsize = cmd_parser.stepsize->getValue();
-  double stepsize2 = cmd_parser.stepsize2->getValue();
+  double stepsize = cmd_parser.stepsize;
+  double stepsize2 = cmd_parser.stepsize2;
   // hack to support two parameters to specify step size
   if (stepsize == 0.01) stepsize = stepsize2;
-  double decay = cmd_parser.decay->getValue();
+  double decay = cmd_parser.decay;
 
-  int n_datacopy = cmd_parser.n_datacopy->getValue();
-  double reg_param = cmd_parser.reg_param->getValue();
-  bool is_quiet = cmd_parser.quiet->getValue();
-  regularization reg = cmd_parser.regularization->getValue() == "l1" ? REG_L1 : REG_L2;
+  int n_datacopy = cmd_parser.n_datacopy;
+  double reg_param = cmd_parser.reg_param;
+  bool is_quiet = cmd_parser.should_be_quiet;
+  regularization reg = cmd_parser.regularization == "l1" ? REG_L1 : REG_L2;
 
   Meta meta = read_meta(fg_file); 
 
@@ -208,13 +208,13 @@ void gibbs(dd::CmdParser & cmd_parser){
   int n_thread_per_numa = (sysconf(_SC_NPROCESSORS_CONF))/(n_numa_node);
 
   // get command line arguments
-  std::string fg_file = cmd_parser.fg_file->getValue();
+  std::string fg_file = cmd_parser.fg_file;
 
-  std::string weight_file = cmd_parser.weight_file->getValue();
-  std::string variable_file = cmd_parser.variable_file->getValue();
-  std::string factor_file = cmd_parser.factor_file->getValue();
+  std::string weight_file = cmd_parser.weight_file;
+  std::string variable_file = cmd_parser.variable_file;
+  std::string factor_file = cmd_parser.factor_file;
 
-  std::string output_folder = cmd_parser.output_folder->getValue();
+  std::string output_folder = cmd_parser.output_folder;
 
   // check arguments
   if (fg_file == "" || weight_file == "" || variable_file == "" || factor_file == "" ||
@@ -223,23 +223,23 @@ void gibbs(dd::CmdParser & cmd_parser){
     exit(1);
   }
 
-  int n_learning_epoch = cmd_parser.n_learning_epoch->getValue();
-  int n_samples_per_learning_epoch = cmd_parser.n_samples_per_learning_epoch->getValue();
-  int n_inference_epoch = cmd_parser.n_inference_epoch->getValue();
+  int n_learning_epoch = cmd_parser.n_learning_epoch;
+  int n_samples_per_learning_epoch = cmd_parser.n_samples_per_learning_epoch;
+  int n_inference_epoch = cmd_parser.n_inference_epoch;
 
-  double stepsize = cmd_parser.stepsize->getValue();
-  double stepsize2 = cmd_parser.stepsize2->getValue();
+  double stepsize = cmd_parser.stepsize;
+  double stepsize2 = cmd_parser.stepsize2;
   // hack to support two parameters to specify step size
   if (stepsize == 0.01) stepsize = stepsize2;
-  double decay = cmd_parser.decay->getValue();
+  double decay = cmd_parser.decay;
 
-  int n_datacopy = cmd_parser.n_datacopy->getValue();
-  double reg_param = cmd_parser.reg_param->getValue();
-  bool is_quiet = cmd_parser.quiet->getValue();
-  bool sample_evidence = cmd_parser.sample_evidence->getValue();
-  int burn_in = cmd_parser.burn_in->getValue();
-  bool learn_non_evidence = cmd_parser.learn_non_evidence->getValue();
-  regularization reg = cmd_parser.regularization->getValue() == "l1" ? REG_L1 : REG_L2;
+  int n_datacopy = cmd_parser.n_datacopy;
+  double reg_param = cmd_parser.reg_param;
+  bool is_quiet = cmd_parser.should_be_quiet;
+  bool sample_evidence = cmd_parser.should_sample_evidence;
+  int burn_in = cmd_parser.burn_in;
+  bool learn_non_evidence = cmd_parser.should_learn_non_evidence;
+  regularization reg = cmd_parser.regularization == "l1" ? REG_L1 : REG_L2;
 
   Meta meta = read_meta(fg_file); 
 
