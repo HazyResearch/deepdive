@@ -11,6 +11,15 @@ if (.deepdive_.schema.variables_  | length) == 0
 or (.deepdive_.inference.factors_ | length) == 0
 then . else
 
+def factorWeightDescriptionSqlExpr:
+    [ ("\(.factorName)-" | asSqlLiteral)
+    , (.weight_.params[] |
+        "CASE WHEN \(asSqlIdent) IS NULL THEN ''
+              ELSE \(asSqlIdent) || ''  -- XXX CAST(... AS TEXT) unsupported by MySQL
+          END"
+      )
+    ] | join(" ||\("-" | asSqlLiteral)|| ");
+
 .deepdive_ as $deepdive
 
 ###############################################################################
@@ -343,14 +352,7 @@ then . else
                     [ { column: "id" }
                     , { column: "isfixed" }
                     , { column: "initvalue" }
-                    , { alias: "description", expr:
-                            [ ("\(.factorName)-" | asSqlLiteral)
-                            , (.weight_.params[] |
-                                "CASE WHEN \(asSqlIdent) IS NULL THEN ''
-                                      ELSE \(asSqlIdent) || ''  -- XXX CAST(... AS TEXT) unsupported by MySQL
-                                  END"
-                              )
-                            ] | join(" ||\("-" | asSqlLiteral)|| ")
+                    , { alias: "description", expr: factorWeightDescriptionSqlExpr
                       }
                     , if .function_.name != "multinomial" then
                         # TODO maybe '1' is a better one for boolean variables?
@@ -509,16 +511,45 @@ then . else
             export DEEPDIVE_LOAD_FORMAT=tsv
             export DEEPDIVE_UNLOAD_MATERIALIZED=false
 
+            # flag that signals whether to reuse weights or not
+            reuseFlag=\"$DEEPDIVE_GROUNDING_DIR\"/factor/weights.reuse
+
             # dump the weights (except the description column), converting into binary format for the inference engine
             deepdive compute \\
-                input_sql=\(
+                input_sql=\"$(if [[ -e \"$reuseFlag\" ]]; then
+                    echo \(
+                    # dump weights with initvalue from previously learned ones
+                    { SELECT:
+                        [ { table: "w", column: "id" }
+                        , { expr: "CASE WHEN w.isfixed THEN 1 ELSE 0 END" }
+                        , { expr: "COALESCE(reuse.weight, w.initvalue, 0)" }
+                        ]
+                    , FROM: [ { alias: "w", table: .weightsTableForDumping } ]
+                    , JOIN: { LEFT_OUTER: { alias: "reuse", table: deepdiveReuseWeightsTable }
+                            , ON: { and: [ { eq: [ { table: "reuse", column: "description" }
+                                                 , { expr: factorWeightDescriptionSqlExpr }
+                                                 ] }
+                                         , if .function_.name == "multinomial" then
+                                           { or: [ { isNull: { table: "reuse", column: "categories" } }
+                                                   , { eq: [ { table: "reuse", column: "categories" }
+                                                           , { table: "w",     column: "categories" }
+                                                           ] }
+                                                 ] }
+                                           else empty end
+                                         ] }
+                            }
+                    } | asSql | @sh)
+                else
+                    echo \(
+                    # dump weights from scratch
                     { SELECT:
                         [ { column: "id" }
                         , { expr: "CASE WHEN isfixed THEN 1 ELSE 0 END" }
                         , { expr: "COALESCE(initvalue, 0)" }
                         ]
                     , FROM: [ { table: .weightsTableForDumping } ]
-                    } | asSql | @sh) \\
+                    } | asSql | @sh)
+                fi)\" \\
                 command=\("
                     format_converter weight /dev/stdin >(pbzip2 >weights.part-${DEEPDIVE_CURRENT_PROCESS_INDEX}.bin.bz2)
                 " | @sh) \\

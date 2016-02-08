@@ -6,6 +6,7 @@ def deepdiveVariableIdColumn                :  "id"                             
 def deepdiveGlobalHoldoutTable              :  "dd_graph_variables_holdout"     ;
 def deepdiveGlobalObservationTable          :  "dd_graph_variables_observation" ;
 def deepdiveGlobalWeightsTable              :  "dd_graph_weights"               ;
+def deepdiveReuseWeightsTable               :  "dd_graph_weights_reuse"         ;
 def deepdivePrefixForFactorsTable           :  "dd_query_"                      ;  # TODO correct prefix to dd_factors_?
 def deepdivePrefixForWeightsTable           :  "dd_weights_"                    ;
 def deepdivePrefixForMultinomialWeightsTable:  "dd_weightsmulti_"               ;

@@ -58,9 +58,10 @@ _deepdive() {
                             3)
                                 case ${COMP_WORDS[2]} in
                                     factorgraph|weights)
-                                        echo keep
+                                        echo init
                                         echo list
-                                        echo load
+                                        echo keep
+                                        echo reuse
                                         echo drop
                                 esac
                                 ;;

@@ -2,18 +2,22 @@
 # deepdive-model -- Supports working with the statistical inference model
 #
 # > deepdive model ground
-# > deepdive model factorgraph
-# > deepdive model factorgraph keep [NAME]
-# > deepdive model factorgraph load [NAME]
-# > deepdive model factorgraph drop [NAME]
+# > deepdive model factorgraph init
+# > deepdive model factorgraph list
+# > deepdive model factorgraph keep  [NAME]
+# > deepdive model factorgraph reuse [NAME]
+# > deepdive model factorgraph drop  [NAME]
 #
 # > deepdive model learn
-# > deepdive model weights
-# > deepdive model weights keep [NAME]
-# > deepdive model weights load [NAME]
-# > deepdive model weights drop [NAME]
+# > deepdive model weights init
+# > deepdive model weights list
+# > deepdive model weights keep  [NAME]
+# > deepdive model weights reuse [NAME]
+# > deepdive model weights drop  [NAME]
 #
 # > deepdive model infer
+#
+# > deepdive model calibration
 ##
 set -euo pipefail
 
@@ -34,7 +38,11 @@ case $Command in
         ;;
 
     infer)
-        exec deepdive-redo process/model/inference data/model/probabilities
+        exec deepdive-redo process/model/inference data/model/{weights,probabilities}
+        ;;
+
+    calibration)
+        exec deepdive-redo model/calibration-plots
         ;;
 
     # managment of artifacts related to the model
@@ -70,6 +78,8 @@ case $Command in
                 esac
                 case $What in
                     factorgraph)
+                        # TODO keep database tables for grounding as well
+                        # TODO rsync run/model/grounding as well
                         # TODO use cp -al instead of duplicating with rsync?
                         rsync -avH --delete --copy-unsafe-links run/model/factorgraph{,.done} "$dest"/
                         ;;
@@ -124,7 +134,7 @@ case $Command in
                 ln -sfnv "$Name" snapshot/model/"$What"/LAST
                 ;;
 
-            load|drop)
+            reuse|drop)
                 if [[ $# -eq 0 ]]; then
                     Name=LAST
                     [[ -e "$DEEPDIVE_APP/snapshot/model/$What/$Name" ]] ||
@@ -143,16 +153,20 @@ case $Command in
                         error "\`deepdive keep $What $Name\` has never run or $Name got removed"
                 fi
                 case $Command in
-                    load)
+                    reuse)
                         case $What in
                             factorgraph)
                                 cd "$DEEPDIVE_APP"
                                 # TODO use (relative) symlink or cp -al instead of duplicating with rsync?
                                 rsync -avH --delete --copy-unsafe-links "$src"/factorgraph{,.done} run/model/
+                                # TODO load all table for grounding as well
                                 ;;
                             weights)
-                                weightTableName=dd_reuse_weights_"$Name"
-                                deepdive create table "$weightTableName" "description:TEXT" "category:TEXT" "weight:DOUBLE PRECISION"
+                                # TODO load into a unique table, then create a view with the following name
+                                weightTableName=dd_graph_weights_reuse
+                                weightsReuseFlag="$DEEPDIVE_APP"/run/model/grounding/factor/weights.reuse
+                                deepdive create table "$weightTableName" "description:TEXT" "categories:TEXT" "weight:DOUBLE PRECISION"
+                                rm -f "$weightsReuseFlag"
                                 for weightFile in "$src"/dd_weights{,.multinomial}.tsv.bz2; do
                                     [[ -e "$weightFile" ]] || continue
                                     case $weightFile in
@@ -162,9 +176,10 @@ case $Command in
                                             # TODO parallel load
                                             deepdive load "${weightTableName}_array" "$weightFile"
                                             # explode the group
+                                            # XXX UNNEST is postgres-specific
                                             deepdive sql "INSERT INTO $weightTableName
                                                 SELECT description
-                                                     , UNNEST(categories) AS category
+                                                     , UNNEST(categories) AS categories
                                                      , UNNEST(weights)    AS weight
                                                   FROM ${weightTableName}_array
                                             "
@@ -178,6 +193,13 @@ case $Command in
                                             error "$weightFile: Unsupported weights file"
                                     esac
                                 done
+                                # dump the new weights with corresponding id in the current factor graph
+                                mkdir -p "$(dirname "$weightsReuseFlag")"
+                                touch "$weightsReuseFlag"
+                                DEEPDIVE_PLAN_EDIT=false \
+                                deepdive-redo $(deepdive plan 2>&1 | grep '/dump_weights$') process/grounding/combine_factorgraph
+                                # mark weights as done (as well as learning) to make sure deepdive-model infer skips learning
+                                deepdive-mark done data/model/weights
                                 ;;
                         esac
                         ;;
@@ -192,6 +214,21 @@ case $Command in
                             # or just remove all files
                             rm -rfv "$src"/
                         fi
+                esac
+                ;;
+
+            init)
+                cd "$DEEPDIVE_APP"
+                case $What in
+                    factorgraph)
+                        deepdive-mark todo process/grounding/variable_id_partition
+                        rm -rfv run/model/{grounding,factorgraph{,.done}}
+                        ;;
+                    weights)
+                        rm -fv run/model/grounding/factor/weights.reuse
+                        DEEPDIVE_PLAN_EDIT=false \
+                        deepdive-redo $(deepdive plan 2>&1 | grep '/dump_weights$') process/grounding/combine_factorgraph
+                        ;;
                 esac
                 ;;
 
