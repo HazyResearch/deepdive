@@ -128,12 +128,16 @@ if [[ -n $input_sql ]]; then
 fi
 
 # make sure all the child processes finishes without error
+pids_all=()
+[[ ${#pids_command[@]} -eq 0 ]] || pids_all+=("${pids_command[@]}")
+[[ ${#pids_load[@]}    -eq 0 ]] || pids_all+=("${pids_load[@]}"   )
+[[ ${#pids_unload[@]}  -eq 0 ]] || pids_all+=("${pids_unload[@]}" )
 all_finishes_ok() {
     local what=$1; shift
     local pid=
     for pid in "$@"; do
         wait $pid || {
-            kill -TERM "${pids_command[@]}" "${pids_load[@]}" "${pids_unload[@]}"
+            kill -TERM "${pids_all[@]}"
             error "${what:+$what: }PID $pid: finished with non-zero exit status ($?)"
         }
     done
