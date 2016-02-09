@@ -219,7 +219,7 @@ has_spouse(p1_id, p2_id) = if l > 0 then TRUE
                       else NULL end :- spouse_label_resolved(p1_id, p2_id, l).
 
 # make sure all pairs in spouse_candidate are considered as unsupervised examples
-has_spouse(p1, p2) = NULL :- spouse_candidate(p1, _, p2, _).
+has_spouse(p1, p2) = NULL::BOOLEAN :- spouse_candidate(p1, _, p2, _).
 
 ###############################################################################
 
