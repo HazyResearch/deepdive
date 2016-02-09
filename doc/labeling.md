@@ -3,6 +3,12 @@ layout: default
 title: Labeling Data Products
 ---
 
+<br><todo>
+
+- Update to new spouse example
+
+</todo>
+
 # Labeling Data Products of DeepDive
 
 This document describes a common data labeling task one has to perform while developing DeepDive applications, and introduces a graphical user interface tool dedicated for accelerating such tasks.

@@ -154,7 +154,7 @@ todo {
     font-size: 0.8em;
 }
 todo::before {
-    content: "TODO: ";
+    content: "TODO ";
 }
 
 /* adds a dollar sign to make bash code blocks look like shell prompts */

@@ -3,6 +3,12 @@ layout: default
 title: Factor Graph Grounding Output Reference
 ---
 
+<br><todo>
+
+- <https://github.com/HazyResearch/deepdive/issues/439>
+
+</tody>
+
 # Factor Graph Grounding Output Schema Reference
 
 [Grounding](overview.md#grounding) is the process of building the
@@ -76,3 +82,4 @@ Edges
     position        long    8
     isPositive      bool    1
     equalPredicate  long    8
+

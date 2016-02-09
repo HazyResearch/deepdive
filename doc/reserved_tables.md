@@ -3,6 +3,13 @@ layout: default
 title: Internal Database Schema
 ---
 
+<br><todo>
+
+- Several things have changed, update accordingly.
+- Rename `dd_query_*` -> `dd_factor_*`?
+
+</tody>
+
 # Internal database schema
 
 The following tables are used internally by DeepDive. There can *not* be tables

@@ -3,6 +3,13 @@ layout: default
 title: "Tutorial: Simple DeepDive Example"
 ---
 
+<br><todo>
+
+- Modernize the example code
+- and migrate content from examples/smoke/README.md
+
+</todo>
+
 #Simple DeepDive Example: Cancer/Smoke/Friends Example
 
 This simple toy example uses a classical Markov Logic Network example to show probabilistic interence and factor graphs functionalities of DeepDive. You can read more about [probabilistic inference and factor graphs](http://deepdive.stanford.edu/doc/general/inference.html) in our detailed documentation.
@@ -16,6 +23,8 @@ We introduce two rules:
         2. If two people A and B are friends and A smokes, then B might also smoke.
 
 The following are examples of inference rules for the two forementioned rules (specified in the deepdive.conf file):
+
+<todo>ddlog</todo>
 
 ```bash
 deepdive {

@@ -8,6 +8,37 @@ title: Inference Rule Function Reference
 This document lists and describes all functions that can be used in the
 `function` directive when [writing inference rules](inference_rules.md).
 
+## DDlog Syntax
+<todo>describe more detail</todo>
+
+### Imply function
+
+    # B and C => A
+    B(x), C(x) => A(x) :- ... (conjunctive query body)
+
+### Or function
+
+    # A or B or C
+    A(x) v B(x) v C(x) :- ... (conjunctive query body)
+
+### And function
+
+    # A and B and C
+    A(x) ^ B(x) ^ C(x) :- ... (conjunctive query body)
+
+### Equal function
+
+    # A = B
+    A(x) = B(x) :- ... (conjunctive query body)
+
+### IsTrue function
+
+    A(x) :- ... (conjunctive query body)
+
+### Multinomial function
+
+    Multinomial(A(x)) :- ... (conjunctive query body)
+
 ### Variable Negation
 Variables can be negated by prefixing them with a `!`, as in `Or(A,!B)`.
 
@@ -63,33 +94,3 @@ true. It is restricted to one variable. One may implement a *Not* function using
 
 The *Multinomial* function allows multinomial variables as arguments, and
 has a weight for each variable assignment. This function always evaluates to true.
-
-## DDlog Syntax
-
-### Imply function
-
-    # B and C => A
-    B(x), C(x) => A(x) :- ... (conjunctive query body)
-
-### Or function
-
-    # A or B or C
-    A(x) v B(x) v C(x) :- ... (conjunctive query body)
-
-### And function
-
-    # A and B and C
-    A(x) ^ B(x) ^ C(x) :- ... (conjunctive query body)
-
-### Equal function
-
-    # A = B
-    A(x) = B(x) :- ... (conjunctive query body)
-
-### IsTrue function
-
-    A(x) :- ... (conjunctive query body)
-
-### Multinomial function
-
-    Multinomial(A(x)) :- ... (conjunctive query body)

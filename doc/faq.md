@@ -5,6 +5,11 @@ title: FAQ
 
 # DeepDive FAQ
 
+<br><todo>
+
+- `DDLOG_STACK_TRACE=1` to enable stack trace in ddlog compiler
+
+</todo>
 
 ### How can I debug my extractors?
 

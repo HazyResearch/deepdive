@@ -3,6 +3,13 @@ layout: default
 title: deepdive.conf Reference
 ---
 
+<br><todo>
+
+- Drop deprecated extractor styles
+- Drop database stuff
+
+</tody>
+
 # Application configuration file reference
 
 This document contains the description of each configuration directive that can
@@ -269,9 +276,6 @@ to all styles:
       # ...
     }
     ```
-
-  If an extractor specified in dependencies does not exist or is not in the
-  active [pipeline](running.md#pipelines), that extractor will be ignored.
 
 - `input_relations`: takes an array of relation names that this extractor depends on.  Similar to `dependencies`, all extractors whose `output_relation` exists in this array will be executed before this extractor.
 

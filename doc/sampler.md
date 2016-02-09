@@ -90,5 +90,5 @@ file, and learning and inference parameters:
         should be turned on if there exists a factor connecting evidence and non-evidence
         variables.
 
-You can see a detailed list by running `util/sampler-dw-mac gibbs --help` or `util/sampler-dw-linux gibbs --help`.
+You can see a detailed list by running `deepdive env sampler-dw gibbs --help`.
 

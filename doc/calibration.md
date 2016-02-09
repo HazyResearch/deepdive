@@ -3,6 +3,13 @@ layout: default
 title: Calibration
 ---
 
+<br><todo>
+
+- Renew details: screen dump, paths
+- Update to new spouse example
+
+</todo>
+
 # <a name="calibration" href="#"></a> Calibration
 
 One of the most important aspects of DeepDive is its iterative workflow. After

@@ -3,9 +3,13 @@ layout: default
 title: Using DeepDive with Greenplum
 ---
 
-<todo> - check the Installation process. Is it still true with the new release ? (Maybe ask in particular Johannes or Sen).
+<todo>
+
+- check the Installation process. Is it still true with the new release ? (Maybe ask in particular Johannes or Sen).
 - Can the section Parallel grounding be now removed ?
-- check discussion about DEEPDIVE\_NUM\_PARALLEL\_UNLOADS=... and GPFDIST\_DISABLE=true </todo>
+- check discussion about DEEPDIVE\_NUM\_PARALLEL\_UNLOADS=... and GPFDIST\_DISABLE=true
+
+</todo>
 
 # Using DeepDive with Greenplum
 
@@ -55,6 +59,8 @@ DeepDive will automatically use Greenplum's file system server `gpfdist` to spee
 
 
 ## <a name="installing_greenplum" href="#"></a> Installation
+<todo>Update to install from source, Migrate <https://github.com/HazyResearch/greenplum-howto></todo>
+
 We now describe how to install Greenplum and configure it to be used with
 DeepDive. The steps were tested to install Greenplum on CentOS 5.6 x64. For
 demonstration purposes only, the presentation is limited to the single-node mode
@@ -284,6 +290,7 @@ postgres=# \q
 Use `gpstop` and `gpstart` to stop / start the Greenplum server at any time.
 
 ### <a name="parallelgrounding" href="#"></a> Parallel grounding
+<todo>remove this: everything related to gpfdist is now done by db-driver internally</todo>
 [Grounding](overview.md#grounding) is the process of building the
 factor graph. You can enable parallel grounding to speed up the grounding phase,
 which makes use of Greenplum's parallel file system (gpfdist). To use parallel
