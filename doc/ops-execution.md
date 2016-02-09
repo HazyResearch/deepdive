@@ -72,9 +72,13 @@ The execution started can be interrupted at any time (with Ctrl-C or ^C) or abor
 
 ```bash
 deepdive do TARGET...
+```
+```
 ...
 ^C
 ...
+```
+```bash
 deepdive do TARGET...
 ```
 
@@ -89,6 +93,8 @@ For example, the sequence of two commands below is basically what `deepdive run`
 
 ```bash
 deepdive mark todo init/app calibration weights
+```
+```bash
 deepdive do        init/app calibration weights
 ```
 
@@ -108,9 +114,15 @@ Then the following sequence of commands skips all processes that `foo` depends o
 
 ```bash
 deepdive create table foo
+```
+```bash
 deepdive load foo /some/data/source.tsv
+```
+```bash
 deepdive mark new foo
+```
 
+```bash
 deepdive do bar_derived_from_foo
 ```
 
@@ -148,7 +160,7 @@ deepdive plan data/sentences
 
 DeepDive gives an output that looks like:
 
-```
+```bash
 # execution plan for sentences
 
 : ## process/init/app ##########################################################
@@ -180,7 +192,6 @@ mark_done process/ext_sentences_by_nlp_markup
 # no-op
 mark_done data/sentences
 ##############################################################################
-
 ```
 
 An execution plan is basically a shell script that invokes the actual run.sh compiled for each process.
@@ -191,7 +202,7 @@ Processes that have been already marked as done in the past are commented out (w
 DeepDive provides a `deepdive do` command that takes as input the target nodes in the data flow graph, presents the execution plan in an editor, then executes the final plan.
 Because of the provided chance to modify the generated execution plan, the user has complete control over what is executed, and override or skip certain processes if needed.
 
-```
+```bash
 deepdive do data/sentences
 ```
 
@@ -228,13 +239,13 @@ It allows a given node to be marked as:
 
 For example, if we mark a process as to be repeated using the following command:
 
-```
+```bash
 deepdive mark todo process/init/relation/articles
 ```
 
 Then `deepdive plan` will give an output like below to repeat the processes already marked as done in the past:
 
-```
+```bash
 # execution plan for sentences
 
 : ## process/init/app ##########################################################

@@ -5,6 +5,7 @@ title: Specifying a statistical model in DDlog
 
 <todo> - check distant supervision rule - should we write all the different inference rules here or just link to the ddlog wiki page ? </todo>
 
+Every DeepDive application can be viewed as defining a [statistical inference](inference.md) problem using every bits of [its input data](ops-data.md#organizing-input-data) and [data derived by a series of data processing steps](ops-execution.md#compiled-processes-and-data-flow).
 
 # Specifying a statistical model in DDlog
 

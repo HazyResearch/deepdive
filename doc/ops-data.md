@@ -35,8 +35,14 @@ This command ensures any existing table or view with the same name is dropped, a
 
 ```bash
 deepdive create table foo x:INT y:TEXT ...
+```
+```bash
 deepdive create table foo like bar
+```
+```bash
 deepdive create table foo as 'SELECT ...'
+```
+```bash
 deepdive create view bar as 'SELECT ...'
 ```
 
@@ -69,6 +75,8 @@ To load data from a particular source such as `source.tsv` or multiple sources `
 
 ```bash
 deepdive load foo  source.tsv
+```
+```bash
 deepdive load foo  /tmp/source-1.tsv /data/source-2.tsv.bz2
 ```
 
@@ -228,10 +236,12 @@ For example, the following command prints the number of sentences per document:
 deepdive sql "SELECT doc_id, COUNT(*) FROM sentences GROUP BY doc_id"
 ```
 
-To get the result as tab-separated values (TSV), or comma-separated values (CSV), use the following command:
+To get the result as tab-separated values (TSV), or comma-separated values (CSV), use the following commands:
 
 ```bash
 deepdive sql eval "SELECT doc_id, COUNT(*) FROM sentences GROUP BY doc_id" format=tsv
+```
+```bash
 deepdive sql eval "SELECT doc_id, COUNT(*) FROM sentences GROUP BY doc_id" format=csv header=1
 ```
 

@@ -153,6 +153,13 @@ todo {
     background-color: yellow;
     font-size: 0.8em;
 }
-todo:before {
-    content: "TODO: "
+todo::before {
+    content: "TODO: ";
+}
+
+/* adds a dollar sign to make bash code blocks look like shell prompts */
+/* need help from JS to activate this only for single line code blocks */
+code.language-bash:not(.multi-commands)::before {
+    content: "$ ";
+    opacity: 0.5;
 }

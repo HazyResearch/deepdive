@@ -108,6 +108,11 @@ and
     - [Probabilistic inference and factor graphs](inference.md)
     - [Distant supervision](distant_supervision.md)
 
+#### Getting Started
+
+- [Quick Start](quickstart.md)
+- [Tutorial: Spouse mention extraction from news articles](example-spouse.md)
+
 #### DeepDive Application Development
 - [How DeepDive applications are typically developed](develop-cycle.md) NEW
     <br><todo>
@@ -127,18 +132,7 @@ and
     - [Compiling a DeepDive application](ops-compiling.md)
     - [Managing input data and data products](ops-data.md)
     - [Controlling execution of data processing](ops-execution.md)
-    - [Statistical model operations (learning and inference)](ops-model.md) NEW
-        <br><todo>
-        - grounding factor graphs
-            - `deepdive redo variable_id_partition combine_factorgraph`
-        - learning weights
-            - `deepdive do learning`
-        - performing inference
-            - `deepdive do inference`
-        - reusing weights
-            - `deepdive model` command for managing weights and factor graphs
-        - Migrate whatever piece in <s>[Running an application](running.md)</s>
-        </todo>
+    - [Learning and inference with the statistical model](ops-model.md)
 - Debugging a DeepDive Application
     - [Debugging UDFs](debugging-udf.md) NEW
         <br><todo>
