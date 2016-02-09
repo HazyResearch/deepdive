@@ -105,13 +105,13 @@ and
 - [Quick Start](quickstart.md)
 - [Tutorial: Spouse mention extraction from news articles](example-spouse.md)
 
-#### Background
+#### Background Reading
 
+- [Relation extraction](relation_extraction.md)
+- [Probabilistic inference and factor graphs](inference.md)
+- [Distant supervision](distant_supervision.md)
+- [DeepDive system overview and terminologies](overview.md)
 - [Knowledge base construction](kbc.md)
-    - [Relation extraction](relation_extraction.md)
-- [System overview and terminology](overview.md)
-    - [Probabilistic inference and factor graphs](inference.md)
-    - [Distant supervision](distant_supervision.md)
 
 #### DeepDive Application Development
 - [How DeepDive applications are typically developed](develop-cycle.md) NEW
