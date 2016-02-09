@@ -9,8 +9,8 @@ This documents presents a high-level overview of **probabilistic inference** and
 an introduction to **factor graphs**, a model used by DeepDive to perform
 probabilistic inference.
 
-**Probabilistic inference** is the task of deriving the probability for one or
-more random variables to take a specific value or set of values. For example, a
+**Probabilistic inference** is the task of deriving the probability of one or
+more random variables taking a specific value or set of values. For example, a
 Bernoulli (Boolean) random variable may describe the event that John has cancer.
 Such a variable could take a value of 1 (John has cancer) or 0 (John does not
 have cancer). DeepDive uses probabilistic inference to estimate the probability
@@ -22,11 +22,11 @@ John is 78% likely to have cancer.
 A **factor graph** is a type of probabilistic graphical model. A factor graph
 has two types of nodes:
 
-- <a name="variables" href="#"></a> **Variables**, which can be either *evidence
+- <a name="variables" href="#"></a>**Variables**, which can be either *evidence
   variables* when their value is known, or *query variables* when their value
   should be predicted.
 
-- **Factors** define the relationships between variables in the graph. Each factor
+- **Factors**, which define the relationships between variables in the graph. Each factor
   can be connected to many variables and comes with a **factor function** to
   define the relationship between these variables. For example, if a factor
   node is connected to two variables nodes `A` and `B`, a possible factor
@@ -36,13 +36,13 @@ has two types of nodes:
   on its variables in relative terms. In other words, the weight encodes the
   confidence we have in the relationship expressed by the factor function. If
   the weight is high and positive, we are very confident in the function that
-  the factor encodes, if the weight is high and negative, we are confident that
+  the factor encodes; if the weight is high and negative, we are confident that
   the function is incorrect. The weight can be learned from training data, or
   assigned manually.
 
 <a name="possibleworlds" href="#"></a>
 A **possible world** is an assignment to every variable in a factor graph. The
-possible worlds are not usually equiprobable, but rather each possible world has
+possible worlds are not usually equiprobable; rather, each possible world has
 a different probability. The probability of a possible world is proportional to
 a weighted combination of all factor functions in the graph, evaluated at the
 assignments specified by the possible world. The weights can be assigned
@@ -62,12 +62,11 @@ possible worlds that contain the requested value for that variable.
 
 <a name="gibbs" href="#"></a>
 Exact inference is an intractable problem on factor graphs, but a commonly used
-method for inference is **Gibbs sampling**: the process starts from a random
-possible world and iterates over each variable `v`, computing a new value for it
-according to a probability computed by taking into account the factor functions
-of the factors that `v` is connected to and the values of the variables
-connected to such factors (this is known as the *Markov blanket* of `v`), then
-the process moves to a different variable and iterates. After enough iterations
+method in this domain is **Gibbs sampling**. The process starts from a random
+possible world and iterates over each variable `v`, updating its value 
+by taking into account the factor functions of the factors that `v` is connected 
+to and the values of the variables connected to those factors (this is known as 
+the *Markov blanket* of `v`). After enough iterations
 over the random variables, we can compute the number of iterations during which
 each variable had a specific value and use the ratio between this quantity and
 the total number of iterations as an estimate of the probability of the variable
@@ -91,8 +90,7 @@ is likely to have cancer" has a high weight and we are **sure** that John
 smokes, then we are also reasonably confident that John has cancer. However, if
 we are not sure whether or not John smokes, then we can not be sure about him
 having cancer either. In the latter case, both "John does not have cancer," and
-"John has cancer" would make the
-rule evaluate to true.
+"John has cancer" would make the rule evaluate to true.
 
 This is a subtle but very important point. Contrary to many traditional machine
 learning algorithms, which often assume that prior knowledge is exact and make
