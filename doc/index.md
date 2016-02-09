@@ -173,6 +173,7 @@ and
 
 ### Updates &amp; Changelog
 
+- [Changelog for version 0.8.0-alpha](changelog/0.8.0-alpha.md) (02/1X/2016)
 - [Changelog for version 0.7.1-alpha](changelog/0.7.1-alpha.md) (09/28/2015)
 - [Changelog for version 0.7.0-alpha](changelog/0.7.0-alpha.md) (07/14/2015)
 - [Changelog for version 0.6.0-alpha](changelog/0.6.0-alpha.md) (06/17/2015)
