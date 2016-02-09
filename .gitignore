@@ -19,6 +19,7 @@ lib/
 /test/bats
 
 # others
+tags
 .DS_Store
 inference_result.out*
 *.json

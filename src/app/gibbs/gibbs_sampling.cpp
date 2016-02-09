@@ -65,7 +65,7 @@ void dd::GibbsSampling::inference(const int & n_epoch, const bool is_quiet, cons
   for(int i_epoch=0;i_epoch<n_epoch;i_epoch++){
 
     if(is_inc){
-      std::string a = p_cmd_parser->original_folder->getValue() + 
+      std::string a = p_cmd_parser->original_folder +
           "/mat_samples.epoch_" + std::to_string(i_epoch) + "_numa_" + std::to_string(0) + ".text";
       std::cout << "Loading samples... " << a << std::endl;
       std::ifstream fin(a);
@@ -103,7 +103,7 @@ void dd::GibbsSampling::inference(const int & n_epoch, const bool is_quiet, cons
     if(is_mat){
       std::cout << "    | Dumping samples for materailization..." << std::endl;
       for(int i=0;i<=n_numa_nodes;i++){
-        std::string filename_text = p_cmd_parser->original_folder->getValue() + 
+        std::string filename_text = p_cmd_parser->original_folder +
           "/mat_samples.epoch_" + std::to_string(i_epoch) + "_numa_" + std::to_string(i) + ".text";
         std::ofstream fout(filename_text.c_str());
         for(long i=0;i<factorgraphs[0].n_var;i++){
@@ -284,11 +284,11 @@ void dd::GibbsSampling::dump_weights(const bool is_quiet, int inc){
   // dump learned weights
   std::string filename_text;
   if (inc == 0) { // original
-    filename_text = p_cmd_parser->output_folder->getValue();
+    filename_text = p_cmd_parser->output_folder;
   } else if (inc == 1) { // materialization
-    filename_text = p_cmd_parser->original_folder->getValue();
+    filename_text = p_cmd_parser->original_folder;
   } else { // incremental
-    filename_text = p_cmd_parser->delta_folder->getValue();
+    filename_text = p_cmd_parser->delta_folder;
   }
   filename_text += "/inference_result.out.weights.text";
   std::cout << "DUMPING... TEXT    : " << filename_text << std::endl;
@@ -364,11 +364,11 @@ void dd::GibbsSampling::aggregate_results_and_dump(const bool is_quiet, int inc)
   // dump inference results
   std::string filename_text;
   if (inc == 0) { // original
-    filename_text = p_cmd_parser->output_folder->getValue();
+    filename_text = p_cmd_parser->output_folder;
   } else if (inc == 1) { // materialization
-    filename_text = p_cmd_parser->original_folder->getValue();
+    filename_text = p_cmd_parser->original_folder;
   } else { // incremental
-    filename_text = p_cmd_parser->delta_folder->getValue();
+    filename_text = p_cmd_parser->delta_folder;
   }
 
   filename_text += "/inference_result.out.text";
