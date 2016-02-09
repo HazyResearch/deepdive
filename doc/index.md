@@ -102,8 +102,8 @@ and
 
 #### Getting Started
 
-- [Quick Start](quickstart.md) <todo/>
-- [Tutorial: Spouse mention extraction from news articles](example-spouse.md) <todo/>
+- [Quick Start](quickstart.md) <todo/> <todo/>
+- [Tutorial: Spouse mention extraction from news articles](example-spouse.md) <todo/> <todo/>
 
 #### Background Reading
 
@@ -114,19 +114,19 @@ and
 - [Knowledge base construction](kbc.md)
 
 #### DeepDive Application Development
-- [How DeepDive applications are typically developed](development-cycle.md) <todo/>
+- [How DeepDive applications are typically developed](development-cycle.md) <todo/> <todo/>
 - [What a DeepDive application looks like](deepdiveapp.md)
 - Writing a DeepDive Application
     - [Defining data flow in DDlog](writing-dataflow-ddlog.md)
     - [Writing user-defined functions in Python](writing-udf-python.md)
-    - [Specifying a statistical model in DDlog](writing-model-ddlog.md) <todo/>
+    - [Specifying a statistical model in DDlog](writing-model-ddlog.md) <todo/> <todo/>
 - Running a DeepDive Application
     - [Compiling a DeepDive application](ops-compiling.md)
     - [Managing input data and data products](ops-data.md)
     - [Controlling execution of data processing](ops-execution.md)
     - [Learning and inference with the statistical model](ops-model.md)
 - Debugging a DeepDive Application
-    - [Debugging UDFs](debugging-udf.md) <todo/>
+    - [Debugging UDFs](debugging-udf.md) <todo/> <todo/>
     - [Calibration](calibration.md) <todo/>
     - [Monitoring descriptive statistics of data](dashboard.md) <todo/>
     - [Browsing data](browsing.md)
@@ -160,7 +160,7 @@ and
     - [Using DeepDive with GreenPlum](greenplum.md)
     - [Using DeepDive with Postgres-XL](pgxl.md)
     - [Using DeepDive on Amazon EC2](ec2.md)
-    - [Using DeepDive in Docker](using-docker.md) <todo/>
+    - [Using DeepDive in Docker](using-docker.md) <todo/> <todo/>
 - References
     - [`deepdive.conf` Reference](configuration.md) <todo/>
     - [Generic features library](gen_feats.md)
