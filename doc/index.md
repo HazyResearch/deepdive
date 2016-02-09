@@ -157,7 +157,7 @@ and
 
 - [FAQ](faq.md) <todo/>
 - Using DeepDive in Various Configurations
-    - [Using DeepDive with GreenPlum](using-greenplum.md)
+    - [Using DeepDive with GreenPlum](using-greenplum.md) <todo/>
     - [Using DeepDive with Postgres-XL](using-pgxl.md)
     - [Using DeepDive on Amazon EC2](using-ec2.md)
     - [Using DeepDive in Docker](using-docker.md) <todo/> <todo/>
