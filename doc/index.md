@@ -108,6 +108,11 @@ and
     - [Probabilistic inference and factor graphs](inference.md)
     - [Distant supervision](distant_supervision.md)
 
+#### Getting Started
+
+- [Quick Start](quickstart.md)
+- [Tutorial: Spouse mention extraction from news articles](example-spouse.md)
+
 #### DeepDive Application Development
 - [How DeepDive applications are typically developed](develop-cycle.md) NEW
     <br><todo>
