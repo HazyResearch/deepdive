@@ -120,4 +120,3 @@ We refer the reader interested in additional details to other good resources:
   Algorithm](http://www.comm.utoronto.ca/~frank/papers/KFL01.pdf)
 - [Scalable Probabilistic Databases with Factor Graphs and
   MCMC](http://arxiv.org/pdf/1005.1934v1.pdf)
-
