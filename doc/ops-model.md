@@ -36,7 +36,7 @@ deepdive query '?- @expectation(E) has_spouse(p1,p2)'
 It shows a table that looks like below where the `expectation` column holds the inferred marginal probability for each variable:
 
 ```
-                      p1_id                       |                      p2_id                       | expectation 
+                      p1_id                       |                      p2_id                       | expectation
 --------------------------------------------------+--------------------------------------------------+-------------
  7b29861d-746b-450e-b9e5-52db4d17b15e_4_5_5       | 7b29861d-746b-450e-b9e5-52db4d17b15e_4_0_0       |       0.988
  ca1debc9-1685-4555-8eaf-1a74e8d10fcc_7_25_25     | ca1debc9-1685-4555-8eaf-1a74e8d10fcc_7_30_31     |       0.972
@@ -62,7 +62,7 @@ It shows a table that looks like below where the `expectation` column holds the 
  ec0dfe82-30b0-4017-8c33-258e2b2d7e35_16_9_9      | ec0dfe82-30b0-4017-8c33-258e2b2d7e35_16_4_5      |       0.923
  93d8795b-3dc6-43b9-b728-a1d27bd577af_3_23_23     | 93d8795b-3dc6-43b9-b728-a1d27bd577af_3_0_0       |       0.921
  5530e6a9-2f90-4f5b-bd1b-2d921ef694ef_2_18_18     | 5530e6a9-2f90-4f5b-bd1b-2d921ef694ef_2_10_11     |       0.918
-[...]                      
+[...]
 ```
 
 To better understand the inference result for debugging, please refer to the pages about [calibration](calibration.md), [Dashboard](dashboard.md), [labeling](labeling.md), and [browsing data](browsing.md).
@@ -153,7 +153,7 @@ deepdive sql "SELECT * FROM dd_inference_result_weights_mapping"
 ```
 
 ```
-    weight    |                      description                              
+    weight    |                      description
 --------------+---------------------------------------------------------------
       1.80754 | inf_istrue_has_spouse--INV_NGRAM_1_[wife]
       1.45959 | inf_istrue_has_spouse--NGRAM_1_[wife]
