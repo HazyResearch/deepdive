@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Tutorial: Spouse mention extraction from news articles
+title: "Tutorial: Spouse mention extraction from news articles"
 ---
 
 <br><todo>Migrate
