@@ -123,11 +123,7 @@ and
 - Writing a DeepDive Application
     - [Defining data flow in DDlog](writing-dataflow-ddlog.md)
     - [Writing user-defined functions in Python](writing-udf-python.md)
-    - [Specifying a statistical model in DDlog](writing-model-ddlog.md) NEW
-        <br><todo>
-        - Migrate <s>[Declaring inference variables in the schema](schema.md)</s>
-        - Migrate <s>[Writing inference rules](inference_rules.md)</s>
-        </todo>
+    - [Specifying a statistical model in DDlog](writing-model-ddlog.md)
 - Running a DeepDive Application
     - [Compiling a DeepDive application](ops-compiling.md)
     - [Managing input data and data products](ops-data.md)
