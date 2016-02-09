@@ -10,7 +10,7 @@ This document describes how to use DeepDive with
 [MySQL Cluster](http://www.mysql.com/products/cluster/).
 
 We still encourage developers to use PostgreSQL or
-[GreenPlum](greenplum.md) since it gives maximum functionality of
+[GreenPlum](using-greenplum.md) since it gives maximum functionality of
 DeepDive. However, DeepDive should also work well with MySQL or MySQL
 cluster, other than caveats below.
 
