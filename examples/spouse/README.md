@@ -31,7 +31,7 @@ First of all, make sure that DeepDive has been [installed](http://deepdive.stanf
 
 Next, DeepDive will store all data- input, intermediate, output, etc- in a relational database;
 currently, Postgres, Greenplum, and MySQL are supported, however Greenplum or Postgres are strongly recommended.
-To set the location of this database, we need to define a `db.url` file, e.g.:
+To set the location of this database, we need to configure a URL in the `db.url` file, e.g.:
 ```bash
 echo "[postgresql|greenplum]://[USER]@[HOST]:[PORT]/deepdive_spouse" > db.url
 ```
@@ -59,7 +59,7 @@ input/articles.tsv.sh
 ```
 The aforementioned script reads a sample of the corpus (provided as lines of json objects), and then using the [jq](https://stedolan.github.io/jq/) language extracts the fields `id` (for docuemnt id) and `content` from each entry and converts those to `tsv` format.
 
-Next, we need to define the schema of this `articles` table in our `app.ddlog` file; we add the following lines:
+Next, we need to declare the schema of this `articles` table in our `app.ddlog` file; we add the following lines:
 ```
 # example DeepDive application for finding spouse relationships in news articles
 articles(
@@ -84,7 +84,7 @@ save and exit to accept, and DeepDive will run, creating the table and then fetc
 Next, we'll use Stanford's [CoreNLP](http://stanfordnlp.github.io/CoreNLP/) natural language processing (NLP) system to add useful markups and structure to our input data.
 This step will split up our articles into sentences, and their component _tokens_ (roughly, the words).
 Additionally, we'll also get _lemmas_ (normalized word forms), _part-of-speech (POS) tags_, _named entity recognition (NER) tags_, and a dependency parse of the sentence.
-We specify the output schema of this step in our `app.ddlog`:
+We declare the output schema of this step in our `app.ddlog`:
 ```
 sentences(
     doc_id         text,
@@ -101,10 +101,10 @@ sentences(
 ```
 
 <!-- TODO let's drop this unless the key/distributed_by reveal something important
-Note that we define a compound key of `(doc_id, sentence_index)` for each sentence, and that we define a `distributed_by` attribute, e.g., primarily for Greenplum, using DDlog annotations.
+Note that we declare a compound key of `(doc_id, sentence_index)` for each sentence, and that we declare a `distributed_by` attribute, e.g., primarily for Greenplum, using DDlog annotations.
 -->
 
-Next we define a DDlog function which takes in the `doc_id` and `content` for an article, and returns rows conforming to the sentences schema we just defined, using the **user-defined function (UDF)** in `udf/nlp_markup.sh`.
+Next we declare a DDlog function which takes in the `doc_id` and `content` for an article, and returns rows conforming to the sentences schema we just declared, using the **user-defined function (UDF)** in `udf/nlp_markup.sh`.
 This UDF is a bash script which calls a [wrapper](https://github.com/HazyResearch/bazaar/tree/master/parser) around CoreNLP.
 ```
 function nlp_markup over (
@@ -131,7 +131,7 @@ Note that the previous steps- here, loading the articles- will _not_ be re-run (
 ### 1.3 Extracting Candidate Relation Mentions
 
 #### Extracting People
-Once again we first define the schema:
+Once again we first declare the schema:
 ```
 person_mention(
     mention_id text,
@@ -143,7 +143,7 @@ person_mention(
 ).
 ```
 We will be storing each person as a row referencing a sentence and beginning and ending indexes.
-Again we next define a function which references a UDF, and takes as input the sentence tokens and NER tags:
+Again we next declare a function which references a UDF, and takes as input the sentence tokens and NER tags:
 ```
 function map_person_mention over (
         doc_id text,
@@ -211,7 +211,7 @@ Again, to run, just compile \& execute- `deepdive compile && deepdive do person_
 #### Extracting Candidate Spouses (Pairs of People)
 Next, we'll take all pairs of **non-overlapping person mentions that co-occur in a sentence with less than 5 people total,** and consider these as the set of potential ('candidate') spouse mentions.
 We thus filter out sentences with large numbers of people for the purposes of this tutorial; however these could be included if desired.
-Again, to start, we define the schema for our `spouse_candidate` table- here just the two names, and the two person_mention IDs referred to:
+Again, to start, we declare the schema for our `spouse_candidate` table- here just the two names, and the two person_mention IDs referred to:
 ```
 spouse_candidate(
     p1_id text,
@@ -379,7 +379,7 @@ deepdive do spouses_dbpedia
 ```
 
 #### Supervising Spouse Candidates with DBpedia Data
-First we'll define a new table where we'll store the labels (referring to the spouse candidate mentions), with an integer value (`True=1, False=-1`) and a description (`rule_id`):
+First we'll declare a new table where we'll store the labels (referring to the spouse candidate mentions), with an integer value (`True=1, False=-1`) and a description (`rule_id`):
 ```
 spouse_label(
     p1_id text,
