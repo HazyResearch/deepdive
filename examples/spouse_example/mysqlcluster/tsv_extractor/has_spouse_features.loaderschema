@@ -1,3 +1,0 @@
-has_spouse_features nokey
-relation_id varchar
-feature text
