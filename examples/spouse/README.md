@@ -1,5 +1,4 @@
-# Tutorial
-# Extracting Mentions of Spouses From The News
+# Extracting mentions of spouses from the news
 
 In this tutorial, we show an example of a prototypical task that DeepDive is often applied to:
 extraction of _structured information_ from _unstructured or 'dark' data_ such as webpages, text documents, images, etc.
@@ -26,7 +25,12 @@ The high-level steps we'll follow are:
 
 *_Note the distinction between extraction of facts and mentions of facts. In this tutorial, we do the latter, however DeepDive supports further downstream methods for tackling the former task in a principled manner._
 
-## _0. Basic setup_
+
+
+
+
+
+## 0. Preparation
 First of all, make sure that DeepDive has been [installed](http://deepdive.stanford.edu/doc/basics/installation.html).
 
 Next, DeepDive will store all data- input, intermediate, output, etc- in a relational database;
@@ -40,7 +44,12 @@ echo "postgresql://$USER@$HOSTNAME:5432/deepdive_spouse_$USER" >db.url
 _Note: DeepDive will drop and then create this database if run from scratch- beware of pointing to an existing populated one!_
 
 
-## 1. _Inputs_: Loading Data, Candidate \& Feature Extraction
+
+
+
+
+
+## 1. Data processing
 
 In this section, we'll generate the traditional inputs of a statistical learning-type problem: candidate objects, represented by a set of features, which we will aim to classify as _actual_ spouse relation mentions or not.
 
@@ -51,7 +60,7 @@ We'll do this in four basic steps:
 3.  _Extracting candidate relation mentions_
 4.  _Extracting features for each candidate_
 
-### 1.1 Loading Raw Input Data
+### 1.1. Loading raw input data
 Our goal, first of all, is to download and load the raw text of the [articles](http://research.signalmedia.co/newsir16/signal-dataset.html)
 into an `articles` table in our database.
 We create a simple shell script that downloads & outputs the news articles in TSV format.
@@ -87,7 +96,7 @@ deepdive do articles
 DeepDive will output an execution plan, which will pop up in your default text editor;
 save and exit to accept, and DeepDive will run, creating the table and then fetching & loading the data!
 
-### 1.2 Preprocessing input data
+### 1.2. Adding NLP markups
 Next, we'll use Stanford's [CoreNLP](http://stanfordnlp.github.io/CoreNLP/) natural language processing (NLP) system to add useful markups and structure to our input data.
 This step will split up our articles into sentences, and their component _tokens_ (roughly, the words).
 Additionally, we'll also get _lemmas_ (normalized word forms), _part-of-speech (POS) tags_, _named entity recognition (NER) tags_, and a dependency parse of the sentence.
@@ -146,9 +155,9 @@ Note that the previous steps- here, loading the articles- will _not_ be re-run u
 deepdive mark todo articles
 ```
 
-### 1.3 Extracting Candidate Relation Mentions
+### 1.3. Extracting candidate relation mentions
 
-#### Extracting People
+#### Mentions of people
 Once again we first declare the schema:
 
 ```ddlog
@@ -182,6 +191,7 @@ To write our UDF, we'll start by specifying that our UDF will handle tsv lines (
 additionally we'll specify the exact type schema of both input and output, which DeepDive will check for us:
 
 ```python
+#!/usr/bin/env python
 from deepdive import *
 
 @tsv_extractor
@@ -237,7 +247,7 @@ Again, to run, just compile \& execute as in previous steps:
 deepdive compile && deepdive do person_mention
 ```
 
-#### Extracting Candidate Spouses (Pairs of People)
+#### Mentions of spouses (pairs of people)
 Next, we'll take all pairs of **non-overlapping person mentions that co-occur in a sentence with less than 5 people total,** and consider these as the set of potential ('candidate') spouse mentions.
 We thus filter out sentences with large numbers of people for the purposes of this tutorial; however these could be included if desired.
 Again, to start, we declare the schema for our `spouse_candidate` table- here just the two names, and the two person_mention IDs referred to:
@@ -273,7 +283,7 @@ Again, to run, just compile \& execute as in previous steps.
 deepdive compile && deepdive do spouse_candidate
 ```
 
-### 1.4 Extracting Features for each Candidate
+### 1.4. Extracting features for each candidate
 Finally, we will extract a set of **features** for each candidate:
 
 ```ddlog
@@ -292,6 +302,7 @@ DeepDive includes an automatic feature generation library, DDLIB, which we will 
 Although many state-of-the-art [applications](http://deepdive.stanford.edu/doc/showcase/apps.html) have been built using purely DDLIB-generated features, others can be used and/or added as well.  To use DDLIB, we create a list of ddlib `Word` objects, two ddlib `Span` objects, and then use the function `get_generic_features_relation`:
 
 ```python
+#!/usr/bin/env python
 from deepdive import *
 import ddlib
 
@@ -369,7 +380,12 @@ In most real world applications, a sufficiently large set of supervised labels i
 With DeepDive, we take the approach sometimes refered to as _distant supervision_ or _data programming_, where we instead generate a **noisy set of labels using a mix of mappings from secondary datasets \& other heuristic rules**.
 
 
-## 2. _Labels_: Distant Supervision
+
+
+
+
+
+## 2. Distant supervision with data & rules
 In this section, we'll use _distant supervision_ (or '_data programming_') to provide a noisy set of labels to supervise our candidate relation mentions, based on which we can train a machine learning model.
 
 We'll describe two basic categories of approaches:
@@ -379,11 +395,11 @@ We'll describe two basic categories of approaches:
 
 Finally, we'll describe a simple majority-vote approach to resolving multiple labels per example, which can be implemented within DDlog.
 
-### 2.1 Mapping from Secondary Data for Distant Supervision
+### 2.1. Mapping from secondary data for distant supervision
 First, we'll try using an external structured dataset of known married couples, from [DBpedia](http://wiki.dbpedia.org/), to distantly supervise our dataset.
 We'll download the relevant data, and then map it to our spouse candidate mentions.
 
-#### Extracting \& Downloading the DBpedia Data
+#### Extracting \& downloading the DBpedia data
 Our goal is to first extract a collection of known married couples from DBpedia and then load this into the `spouses_dbpedia` table in our database.
 To extract known married couples, we used the DBpedia dump present in [Google's BigQuery platform](https://bigquery.cloud.google.com).
 First we extracted the URI, name and spouse information from the dbpedia `person` table records in BigQuery for which the field `name` is not NULL. We used the following query:
@@ -417,7 +433,7 @@ WHERE p1 < p2
 
 The output of this query was stored in a local file `spousesraw.csv`. The file contained duplicate rows (BigQuery does not support `distinct`) and noisy rows where the name field contained a string where the given name family name and multiple aliases where concatenated and reported in a string including the characters `{` and `}`. Using the unix commands `sed`, `sort` and `uniq` we first removed the lines containing characters `{` and `}` and then duplicate entries. This resulted in an input file `spouses_dbpedia.csv` containing 6,126 entries of married couples.
 
-#### Loading to Database
+#### Loading DBpedia data to database
 We compress and store `spouses_dbpedia.csv` under the path:
 
 ```bash
@@ -430,7 +446,7 @@ Notice that for DeepDive to load the data to the corresponding database table th
 deepdive do spouses_dbpedia
 ```
 
-#### Supervising Spouse Candidates with DBpedia Data
+#### Supervising spouse candidates with DBpedia data
 First we'll declare a new table where we'll store the labels (referring to the spouse candidate mentions), with an integer value (`True=1, False=-1`) and a description (`rule_id`):
 
 ```ddlog
@@ -454,7 +470,7 @@ spouse_label(p1,p2, 1, "from_dbpedia") :-
 
 It should be noted that there are many clear ways in which this rule could be improved (fuzzy matching, more restrictive conditions, etc.), but this serves as an example of one major type of distant supervision rule.
 
-### 2.2 Using heuristic rules for distant supervision
+### 2.2. Using heuristic rules for distant supervision
 We can also create a supervision rule which does not rely on any secondary structured dataset like DBpedia, but instead just uses some heuristic.
 We set up a DDlog function, `supervise`, which uses a UDF containing several heuristic rules over the mention and sentence attributes:
 
@@ -491,6 +507,7 @@ spouse_label += supervise(
 ```
 
 The Python UDF contains several heuristic rules:
+
 * Candidates with person mentions that are too far apart in the sentence are marked as false.
 * Candidates with person mentions that have another person in between are marked as false.
 * Candidates with person mentions that have words like "wife" or "husband" in between are marked as true.
@@ -498,6 +515,7 @@ The Python UDF contains several heuristic rules:
 * Candidates with person mentions that have familial relation words in between are marked as false.
 
 ```python
+#!/usr/bin/env python
 from deepdive import *
 import random
 from collections import namedtuple
@@ -561,7 +579,7 @@ def supervise(
 Note that the rough theory behind this approach is that we don't need high-quality, e.g., hand-labeled supervision to learn a high quality model;
 instead, using statistical learning, we can in fact recover high-quality models from a large set of low-quality- or **_noisy_**- labels.
 
-### 2.3 Resolving Multiple Labels Per Example with Majority Vote
+### 2.3. Resolving multiple labels per example with majority vote
 Finally, we implement a very simple majority vote procedure, all in DDlog, for resolving scenarios where a single spouse candidate mention has multiple conflicting labels.
 First, we sum the labels (which are all -1, 0, or 1):
 
@@ -592,7 +610,12 @@ deepdive compile && deepdive do has_spouse
 Recall that `deepdive do` will execute all upstream tasks as well, so this will execute all of the previous steps!
 
 
-## 3. _Learning \& Inference_: Model Specification
+
+
+
+
+
+## 3. Learning \& inference: model specification
 Now, we need to specify the actual model that DeepDive will perform learning and inference over.
 At a high level, this boils down to specifying three things:
 
@@ -606,7 +629,7 @@ One we have specified the model in this way, DeepDive will _learn_ the parameter
 
 For more advanced users: we are specifying a _factor graph_ where the features are unary factors, and then using SGD and Gibbs Sampling for learning and inference; further technical detail is available [here](#).
 
-### 3.1 Specifying Prediction Variables
+### 3.1. Specifying prediction variables
 In our case, we have one variable to predict per spouse candidate mention, namely, **is this mention actually indicating a spousal relation or not?**
 In other words, we want DeepDive to predict the value of a boolean variable for each spouse candidate mention, indicating whether it is true or not.
 We specify this in `app.ddlog` as follows:
@@ -620,7 +643,7 @@ has_spouse?(
 
 DeepDive will predict not only the value of these variables, but also the marginal probabilities, i.e., the amount of confidence DeepDive has for each individual prediction.
 
-### 3.2 Specifying Features
+### 3.2. Specifying features
 Next, we indicate (i) that each `has_spouse` variable will be connected to the features of the corresponding `spouse_candidate` row, (ii) that we wish DeepDive to learn the weights of these features from our distantly supervised data, and (iii) that the weight of a specific feature across all instances should be the same, as follows:
 
 ```ddlog
@@ -630,7 +653,7 @@ has_spouse(p1_id, p2_id) :-
   spouse_feature(p1_id, p2_id, f).
 ```
 
-### 3.3 Specifying Connections Between Variables
+### 3.3. Specifying connections between variables
 Finally, we can specify relations between the prediction variables, with either learned or given weights.
 Here, we'll specify two such rules, with fixed (given) weights that we specify.
 First, we define a _symmetry_ connection, namely specifying that if the model thinks a person mention `p1` and a person mention `p2` indicate a spousal relationship in a sentence, then it should also think that the reverse is true, i.e., that `p2` and `p1` indicate one too:
@@ -651,14 +674,21 @@ has_spouse(p1_id, p2_id) => has_spouse(p1_id, p3_id) :-
   spouse_candidate(p1_id, _, p3_id, _).
 ```
 
-## 4. _Labeling, Error Analysis \& Debugging_
+
+
+
+
+
+
+
+## 4. Error Analysis & Debugging
 _**TODO**_
 
-### Corpus Exploration with Mindbender (Optional)
+### Corpus exploration with Mindbender
 
 This part of the tutorial is optional and focuses on how the user can browse through the input corpus via an automatically generated web-interface. The reader can safelly skip this part.
 
-#### DDlog Annotations for Automated Mindtagger
+#### DDlog annotations for browsing data
 
 ```ddlog
 @source
