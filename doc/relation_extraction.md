@@ -57,7 +57,7 @@ DeepDive makes good use of uncertainty to improve predictions during the
 [probabilistic inference](inference.md) step. For example, DeepDive may figure
 out that a certain mention of "Barack" is only 60% likely to actually refer to
 "Barack Obama", and use this fact to discount the impact of that mention on the
-final result for the entity "Barack Obama". DeepDive can also make use of 
+final result for the entity "Barack Obama". DeepDive can also make use of
 domain knowledge and allow users to encode rules such as "If Barack is married
 to Michelle, then Michelle is married to Barack" to improve the predictions.
 
