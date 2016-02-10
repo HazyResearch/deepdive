@@ -5,8 +5,8 @@ import pprint   # pretty print
 
 
 if __name__ == "__main__":
-	inpath = 'f52-c3-m1011/'
-	outpath = ''
+  inpath = 'f52-c3-m1011/'
+  outpath = ''
   # ...
   if len(sys.argv) == 3:
     inpath = sys.argv[1]
