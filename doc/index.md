@@ -103,7 +103,7 @@ and
 #### Getting Started
 
 - [Quick Start](quickstart.md) <todo/> <todo/>
-- [Tutorial: Spouse mention extraction from news articles](example-spouse.md) <todo/> <todo/>
+- [Tutorial: Extracting mentions of spouses from the news](example-spouse.md) <todo/>
 
 #### Background Reading
 
@@ -137,7 +137,7 @@ and
 #### Examples
 
 <!-- Serious/End-to-end Examples -->
-- [Spouse mention extraction from news articles](example-spouse.md) <todo/>
+- [Extracting mentions of spouses from the news](example-spouse.md)
 
 <!--
 - [Table extraction](example-table.md) NEW
