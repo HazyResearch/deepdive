@@ -203,7 +203,12 @@ from deepdive import *
         begin_index      = "int"  ,
         end_index        = "int"  ,
     :[])
-def extract(doc_id="text", sentence_index="int", tokens="text[]", ner_tags="text[]"):
+def extract(
+        doc_id="text",
+        sentence_index="int",
+        tokens="text[]",
+        ner_tags="text[]",
+    ):
     """
     Finds phrases that are continuous words tagged with PERSON.
     """
@@ -312,7 +317,22 @@ import ddlib
         p2_id   = "text" ,
         feature = "text" ,
     :[])
-def extract(p1_id="text", p2_id="text", p1_begin_index="int", p1_end_index="int", p2_begin_index="int", p2_end_index="int", doc_id="text", sent_index="int", tokens="text[]", lemmas="text[]", pos_tags="text[]", ner_tags="text[]", dep_types="text[]", dep_parents="int[]"):
+def extract(
+        p1_id          = "text",
+        p2_id          = "text",
+        p1_begin_index = "int",
+        p1_end_index   = "int",
+        p2_begin_index = "int",
+        p2_end_index   = "int",
+        doc_id         = "text",
+        sent_index     = "int",
+        tokens         = "text[]",
+        lemmas         = "text[]",
+        pos_tags       = "text[]",
+        ner_tags       = "text[]",
+        dep_types      = "text[]",
+        dep_parents    = "int[]",
+    ):
     """
     Uses DDLIB to generate features for the spouse relation.
     """
@@ -361,11 +381,11 @@ function extract_spouse_features over (
 
 spouse_feature += extract_spouse_features(
   p1_id, p2_id, p1_begin_index, p1_end_index, p2_begin_index, p2_end_index,
-  doc_id, sent_index, tokens, lemmas, pos_tags, ner_tags, dep_types, dep_tokens) :-
+  doc_id, sent_index, tokens, lemmas, pos_tags, ner_tags, dep_types, dep_tokens
+) :-
   person_mention(p1_id, _, doc_id, sent_index, p1_begin_index, p1_end_index),
   person_mention(p2_id, _, doc_id, sent_index, p2_begin_index, p2_end_index),
-  sentences(doc_id, sent_index, _, tokens, lemmas, pos_tags, ner_tags, _, dep_types, dep_tokens
-).
+  sentences(doc_id, sent_index, _, tokens, lemmas, pos_tags, ner_tags, _, dep_types, dep_tokens).
 ```
 
 Again, to run, just compile & execute as in previous steps.
@@ -497,7 +517,8 @@ spouse_label += supervise(
     p2_id, p2_begin, p2_end,
     doc_id, sentence_index, sentence_text,
     tokens, lemmas, pos_tags, ner_tags, dep_types, dep_token_indexes
-) :- spouse_candidate(p1_id, _, p2_id, _),
+) :-
+    spouse_candidate(p1_id, _, p2_id, _),
     person_mention(p1_id, p1_text, doc_id, sentence_index, p1_begin, p1_end),
     person_mention(p2_id, p2_text,      _,              _, p2_begin, p2_end),
     sentences(
