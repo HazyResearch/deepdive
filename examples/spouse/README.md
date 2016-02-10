@@ -1,4 +1,4 @@
-# Extracting mentions of spouses from the news
+# DeepDive Tutorial <small>Extracting mentions of spouses from the news</small>
 
 In this tutorial, we show an example of a prototypical task that DeepDive is often applied to:
 extraction of _structured information_ from _unstructured or 'dark' data_ such as web pages, text documents, images, etc.
