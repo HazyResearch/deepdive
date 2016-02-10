@@ -15,13 +15,13 @@ Accordingly, we'll walk through an example scenario where we wish to extract men
 
 The high-level steps we'll follow are:
 
-1. **_Inputs_: Loading Data, Candidate \& Feature Extraction** First, we'll extract a set of _candidate_ relation mentions, and a sparse _feature_ representation of each.
+1. **_Inputs_: Loading Data, Candidate & Feature Extraction** First, we'll extract a set of _candidate_ relation mentions, and a sparse _feature_ representation of each.
 
 2. **_Labels_: Distant Supervision** Next, we'll use various strategies to provide _supervision_ for our dataset, so that we can use machine learning to learn the weights of a model.
 
-3. **_Learning \& Inference_: Model Specification** Then, we'll specify the high-level configuration of our _model_.
+3. **_Learning & Inference_: Model Specification** Then, we'll specify the high-level configuration of our _model_.
 
-4. **_Labeling, Error Analysis \& Debugging_** Finally, we'll show how to use DeepDive's labeling, error analysis and debugging tools.
+4. **_Labeling, Error Analysis & Debugging_** Finally, we'll show how to use DeepDive's labeling, error analysis and debugging tools.
 
 *_Note the distinction between extraction of facts and mentions of facts. In this tutorial, we do the latter, however DeepDive supports further downstream methods for tackling the former task in a principled manner._
 
@@ -241,7 +241,7 @@ person_mention += map_person_mention(
 ) :- sentences(doc_id, sentence_index, _, tokens, _, _, ner_tags, _, _, _).
 ```
 
-Again, to run, just compile \& execute as in previous steps:
+Again, to run, just compile & execute as in previous steps:
 
 ```bash
 deepdive compile && deepdive do person_mention
@@ -277,7 +277,7 @@ spouse_candidate(p1, p1_name, p2, p2_name) :-
     p1_begin != p2_begin.
 ```
 
-Again, to run, just compile \& execute as in previous steps.
+Again, to run, just compile & execute as in previous steps.
 
 ```bash
 deepdive compile && deepdive do spouse_candidate
@@ -368,7 +368,7 @@ spouse_feature += extract_spouse_features(
 ).
 ```
 
-Again, to run, just compile \& execute as in previous steps.
+Again, to run, just compile & execute as in previous steps.
 
 ```bash
 deepdive compile && deepdive do spouse_feature
@@ -377,7 +377,7 @@ deepdive compile && deepdive do spouse_feature
 Now we have generated what looks more like the standard input to a machine learning problem- a set of objects, represented by sets of features, which we want to classify (here, as true or false mentions of a spousal relation).
 However, we **don't have any supervised labels** (i.e., a set of correct answers) for a machine learning algorithm to learn from!
 In most real world applications, a sufficiently large set of supervised labels is _not_ in fact available.
-With DeepDive, we take the approach sometimes refered to as _distant supervision_ or _data programming_, where we instead generate a **noisy set of labels using a mix of mappings from secondary datasets \& other heuristic rules**.
+With DeepDive, we take the approach sometimes refered to as _distant supervision_ or _data programming_, where we instead generate a **noisy set of labels using a mix of mappings from secondary datasets & other heuristic rules**.
 
 
 
@@ -399,7 +399,7 @@ Finally, we'll describe a simple majority-vote approach to resolving multiple la
 First, we'll try using an external structured dataset of known married couples, from [DBpedia](http://wiki.dbpedia.org/), to distantly supervise our dataset.
 We'll download the relevant data, and then map it to our spouse candidate mentions.
 
-#### Extracting \& downloading the DBpedia data
+#### Extracting & downloading the DBpedia data
 Our goal is to first extract a collection of known married couples from DBpedia and then load this into the `spouses_dbpedia` table in our database.
 To extract known married couples, we used the DBpedia dump present in [Google's BigQuery platform](https://bigquery.cloud.google.com).
 First we extracted the URI, name and spouse information from the dbpedia `person` table records in BigQuery for which the field `name` is not NULL. We used the following query:
@@ -615,7 +615,7 @@ Recall that `deepdive do` will execute all upstream tasks as well, so this will 
 
 
 
-## 3. Learning \& inference: model specification
+## 3. Learning & inference: model specification
 Now, we need to specify the actual model that DeepDive will perform learning and inference over.
 At a high level, this boils down to specifying three things:
 
