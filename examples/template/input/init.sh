@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# A script for initializing database and loading data into it
+# A script for initializing an application
 set -eu
 cd "$(dirname "$0")"
 
-# TODO use `deepdive sql "COPY ... FROM STDIN"` command to load initial data from files
-# deepdive sql "COPY table_name FROM STDIN" <table_name.tsv
+# TODO use `deepdive load TABLE FILE` command to load initial data from files
+# deepdive load "foo" foo.tsv
+# deepdive load "foo(column1,col2,col3)" foo_three_columns.tsv
