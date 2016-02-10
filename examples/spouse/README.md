@@ -55,10 +55,10 @@ In this section, we'll generate the traditional inputs of a statistical learning
 
 We'll do this in four basic steps:
 
-1.  Loading raw input data
-2.  Adding NLP markups
-3.  Extracting candidate relation mentions
-4.  Extracting features for each candidate
+1. Loading raw input data
+2. Adding NLP markups
+3. Extracting candidate relation mentions
+4. Extracting features for each candidate
 
 ### 1.1. Loading raw input data
 Our goal, first of all, is to download and load the raw text of the [articles](http://research.signalmedia.co/newsir16/signal-dataset.html)
@@ -135,9 +135,8 @@ function nlp_markup over (
 Finally, we specify that this `nlp_markup` function should be run over each row from `articles`, and the output appended to `sentences`:
 
 ```ddlog
-sentences +=
-  nlp_markup(doc_id, content) :-
-  articles(doc_id, content).
+sentences += nlp_markup(doc_id, content) :-
+    articles(doc_id, content).
 ```
 
 Again, to execute, we compile and then run:
@@ -243,7 +242,8 @@ Finally, we specify that the function will be applied to rows from the `sentence
 ```ddlog
 person_mention += map_person_mention(
     doc_id, sentence_index, tokens, ner_tags
-) :- sentences(doc_id, sentence_index, _, tokens, _, _, ner_tags, _, _, _).
+) :-
+    sentences(doc_id, sentence_index, _, tokens, _, _, ner_tags, _, _, _).
 ```
 
 Again, to run, just compile & execute as in previous steps:
@@ -339,15 +339,15 @@ def extract(
     # Create a DDLIB sentence object, which is just a list of DDLIB Word objects
     sent = []
     for i,t in enumerate(tokens):
-      sent.append(ddlib.Word(
-        begin_char_offset=None,
-        end_char_offset=None,
-        word=t,
-        lemma=lemmas[i],
-        pos=pos_tags[i],
-        ner=ner_tags[i],
-        dep_par=dep_parents[i] - 1,  # Note that as stored from CoreNLP 0 is ROOT, but for DDLIB -1 is ROOT
-        dep_label=dep_types[i]))
+        sent.append(ddlib.Word(
+            begin_char_offset=None,
+            end_char_offset=None,
+            word=t,
+            lemma=lemmas[i],
+            pos=pos_tags[i],
+            ner=ner_tags[i],
+            dep_par=dep_parents[i] - 1,  # Note that as stored from CoreNLP 0 is ROOT, but for DDLIB -1 is ROOT
+            dep_label=dep_types[i]))
 
     # Create DDLIB Spans for the two person mentions
     p1_span = ddlib.Span(begin_word_id=p1_begin_index, length=(p1_end_index-p1_begin_index+1))
@@ -355,7 +355,7 @@ def extract(
 
     # Generate the generic features using DDLIB
     for feature in ddlib.get_generic_features_relation(sent, p1_span, p2_span):
-      yield [p1_id, p2_id, feature]
+        yield [p1_id, p2_id, feature]
 ```
 
 Note that getting the input for this UDF requires joining the `person_mention` and `sentences` tables:
@@ -380,12 +380,12 @@ function extract_spouse_features over (
     implementation "udf/extract_spouse_features.py" handles tsv lines.
 
 spouse_feature += extract_spouse_features(
-  p1_id, p2_id, p1_begin_index, p1_end_index, p2_begin_index, p2_end_index,
-  doc_id, sent_index, tokens, lemmas, pos_tags, ner_tags, dep_types, dep_tokens
+    p1_id, p2_id, p1_begin_index, p1_end_index, p2_begin_index, p2_end_index,
+    doc_id, sent_index, tokens, lemmas, pos_tags, ner_tags, dep_types, dep_tokens
 ) :-
-  person_mention(p1_id, _, doc_id, sent_index, p1_begin_index, p1_end_index),
-  person_mention(p2_id, _, doc_id, sent_index, p2_begin_index, p2_end_index),
-  sentences(doc_id, sent_index, _, tokens, lemmas, pos_tags, ner_tags, _, dep_types, dep_tokens).
+    person_mention(p1_id, _, doc_id, sent_index, p1_begin_index, p1_end_index),
+    person_mention(p2_id, _, doc_id, sent_index, p2_begin_index, p2_end_index),
+    sentences(doc_id, sent_index, _, tokens, lemmas, pos_tags, ner_tags, _, dep_types, dep_tokens).
 ```
 
 Again, to run, just compile & execute as in previous steps.
@@ -410,8 +410,8 @@ In this section, we'll use _distant supervision_ (or '_data programming_') to pr
 
 We'll describe two basic categories of approaches:
 
-1.  Mapping from secondary data for distant supervision
-2.  Using heuristic rules for distant supervision
+1. Mapping from secondary data for distant supervision
+2. Using heuristic rules for distant supervision
 
 Finally, we'll describe a simple majority-vote approach to resolving multiple labels per example, which can be implemented within DDlog.
 
@@ -443,11 +443,8 @@ The output of the above query was stored in a new table named `dbpedia.spouseraw
 
 ```sql
 SELECT p1, p2
-FROM
-  (SELECT t1_name as p1, t2_name as p2
-  FROM [dbpedia.spouseraw]),
-  (SELECT t2_name as p1, t1_name as p2
-  FROM [dbpedia.spouseraw])
+FROM (SELECT t1_name as p1, t2_name as p2 FROM [dbpedia.spouseraw]),
+     (SELECT t2_name as p1, t1_name as p2 FROM [dbpedia.spouseraw])
 WHERE p1 < p2
 ```
 
@@ -483,9 +480,9 @@ Next we'll implement a simple distant supervision rule which labels any spouse m
 ```ddlog
 # distant supervision using data from DBpedia
 spouse_label(p1,p2, 1, "from_dbpedia") :-
-  spouse_candidate(p1, p1_name, p2, p2_name), spouses_dbpedia(n1, n2),
-  [ lower(n1) = lower(p1_name), lower(n2) = lower(p2_name) ;
-    lower(n2) = lower(p1_name), lower(n1) = lower(p2_name) ].
+    spouse_candidate(p1, p1_name, p2, p2_name), spouses_dbpedia(n1, n2),
+    [ lower(n1) = lower(p1_name), lower(n2) = lower(p2_name) ;
+      lower(n2) = lower(p1_name), lower(n1) = lower(p2_name) ].
 ```
 
 It should be noted that there are many clear ways in which this rule could be improved (fuzzy matching, more restrictive conditions, etc.), but this serves as an example of one major type of distant supervision rule.
@@ -552,49 +549,49 @@ SpouseLabel = namedtuple('SpouseLabel', 'p1_id, p2_id, label, type')
     :[])
 # heuristic rules for finding positive/negative examples of spouse relationship mentions
 def supervise(
-      p1_id="text", p1_begin="int", p1_end="int",
-      p2_id="text", p2_begin="int", p2_end="int",
-      doc_id="text", sentence_index="int", sentence_text="text",
-      tokens="text[]", lemmas="text[]", pos_tags="text[]", ner_tags="text[]",
-      dep_types="text[]", dep_token_indexes="int[]",
-  ):
+        p1_id="text", p1_begin="int", p1_end="int",
+        p2_id="text", p2_begin="int", p2_end="int",
+        doc_id="text", sentence_index="int", sentence_text="text",
+        tokens="text[]", lemmas="text[]", pos_tags="text[]", ner_tags="text[]",
+        dep_types="text[]", dep_token_indexes="int[]",
+    ):
 
-  # Constants
-  MARRIED = frozenset(["wife", "husband"])
-  FAMILY = frozenset(["mother", "father", "sister", "brother", "brother-in-law"])
-  MAX_DIST = 10
-
-  # Common data objects
-  p1_end_idx = min(p1_end, p2_end)
-  p2_start_idx = max(p1_begin, p2_begin)
-  p2_end_idx = max(p1_end,p2_end)
-  intermediate_lemmas = lemmas[p1_end_idx+1:p2_start_idx]
-  intermediate_ner_tags = ner_tags[p1_end_idx+1:p2_start_idx]
-  tail_lemmas = lemmas[p2_end_idx+1:]
-  spouse = SpouseLabel(p1_id=p1_id, p2_id=p2_id, label=None, type=None)
-
-  # Rule: Candidates that are too far apart
-  if len(intermediate_lemmas) > MAX_DIST:
-    yield spouse._replace(label=-1, type='neg:far_apart')
-
-  # Rule: Candidates that have a third person in between
-  if 'PERSON' in intermediate_ner_tags:
-    yield spouse._replace(label=-1, type='neg:third_person_between')
-
-  # Rule: Sentences that contain wife/husband in between
-  #         (<P1>)([ A-Za-z]+)(wife|husband)([ A-Za-z]+)(<P2>)
-  if len(MARRIED.intersection(intermediate_lemmas)) > 0:
-      yield spouse._replace(label=1, type='pos:wife_husband_between')
-
-  # Rule: Sentences that contain and ... married
-  #         (<P1>)(and)?(<P2>)([ A-Za-z]+)(married)
-  if ("and" in intermediate_lemmas) and ("married" in tail_lemmas):
-      yield spouse._replace(label=1, type='pos:married_after')
-
-  # Rule: Sentences that contain familial relations:
-  #         (<P1>)([ A-Za-z]+)(brother|stster|father|mother)([ A-Za-z]+)(<P2>)
-  if len(FAMILY.intersection(intermediate_lemmas)) > 0:
-      yield spouse._replace(label=-1, type='neg:familial_between')
+    # Constants
+    MARRIED = frozenset(["wife", "husband"])
+    FAMILY = frozenset(["mother", "father", "sister", "brother", "brother-in-law"])
+    MAX_DIST = 10
+    
+    # Common data objects
+    p1_end_idx = min(p1_end, p2_end)
+    p2_start_idx = max(p1_begin, p2_begin)
+    p2_end_idx = max(p1_end,p2_end)
+    intermediate_lemmas = lemmas[p1_end_idx+1:p2_start_idx]
+    intermediate_ner_tags = ner_tags[p1_end_idx+1:p2_start_idx]
+    tail_lemmas = lemmas[p2_end_idx+1:]
+    spouse = SpouseLabel(p1_id=p1_id, p2_id=p2_id, label=None, type=None)
+    
+    # Rule: Candidates that are too far apart
+    if len(intermediate_lemmas) > MAX_DIST:
+        yield spouse._replace(label=-1, type='neg:far_apart')
+    
+    # Rule: Candidates that have a third person in between
+    if 'PERSON' in intermediate_ner_tags:
+        yield spouse._replace(label=-1, type='neg:third_person_between')
+    
+    # Rule: Sentences that contain wife/husband in between
+    #         (<P1>)([ A-Za-z]+)(wife|husband)([ A-Za-z]+)(<P2>)
+    if len(MARRIED.intersection(intermediate_lemmas)) > 0:
+        yield spouse._replace(label=1, type='pos:wife_husband_between')
+    
+    # Rule: Sentences that contain and ... married
+    #         (<P1>)(and)?(<P2>)([ A-Za-z]+)(married)
+    if ("and" in intermediate_lemmas) and ("married" in tail_lemmas):
+        yield spouse._replace(label=1, type='pos:married_after')
+    
+    # Rule: Sentences that contain familial relations:
+    #         (<P1>)([ A-Za-z]+)(brother|stster|father|mother)([ A-Za-z]+)(<P2>)
+    if len(FAMILY.intersection(intermediate_lemmas)) > 0:
+        yield spouse._replace(label=-1, type='neg:familial_between')
 ```
 
 Note that the rough theory behind this approach is that we don't need high-quality, e.g., hand-labeled supervision to learn a high quality model;
@@ -640,11 +637,11 @@ Recall that `deepdive do` will execute all upstream tasks as well, so this will 
 Now, we need to specify the actual model that DeepDive will perform learning and inference over.
 At a high level, this boils down to specifying three things:
 
-1.  What are the _variables_ of interest, that we want DeepDive to predict for us?
+1. What are the _variables_ of interest, that we want DeepDive to predict for us?
 
-2.  What are the _features_ for each of these variables?
+2. What are the _features_ for each of these variables?
 
-3.  What are the _connections_ between the variables?
+3. What are the _connections_ between the variables?
 
 One we have specified the model in this way, DeepDive will _learn_ the parameters of the model (the weights of the features and potentially of the connections between variables), and then perform _statistical inference_ over the learned model to determine the most likely values of the variables of interest.
 
@@ -670,8 +667,8 @@ Next, we indicate (i) that each `has_spouse` variable will be connected to the f
 ```ddlog
 @weight(f)
 has_spouse(p1_id, p2_id) :-
-  spouse_candidate(p1_id, _, p2_id, _),
-  spouse_feature(p1_id, p2_id, f).
+    spouse_candidate(p1_id, _, p2_id, _),
+    spouse_feature(p1_id, p2_id, f).
 ```
 
 ### 3.3. Specifying connections between variables
@@ -682,7 +679,7 @@ First, we define a _symmetry_ connection, namely specifying that if the model th
 ```ddlog
 @weight(3.0)
 has_spouse(p1_id, p2_id) => has_spouse(p2_id, p1_id) :-
-  spouse_candidate(p1_id, _, p2_id, _).
+    spouse_candidate(p1_id, _, p2_id, _).
 ```
 
 Next, we specify a rule that the model should be strongly biased towards finding one marriage indication per person mention.
@@ -691,8 +688,8 @@ We do this inversely, using a negative weight, as follows:
 ```ddlog
 @weight(-1.0)
 has_spouse(p1_id, p2_id) => has_spouse(p1_id, p3_id) :-
-  spouse_candidate(p1_id, _, p2_id, _),
-  spouse_candidate(p1_id, _, p3_id, _).
+    spouse_candidate(p1_id, _, p2_id, _),
+    spouse_candidate(p1_id, _, p3_id, _).
 ```
 
 
