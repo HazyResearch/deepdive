@@ -67,8 +67,6 @@ articles(
     content text
 ).
 ```
-Note that we add decorators to denote that this is an input _source_,
-that the article id is a _key_ for the relation, and that the raw content should be _searchable_ in our analysis tools; more on this later on!
 
 Next, we compile our application, as we must do whenever we change `app.ddlog`:
 ```bash
@@ -83,20 +81,14 @@ DeepDive will output an execution plan, which will pop up in your default text e
 save and exit to accept, and DeepDive will run, creating the table and then fetching & loading the data!
 
 ### 1.2 Preprocessing input data
-Next, we'll use Stanford's [CoreNLP](http://stanfordnlp.github.io/CoreNLP/) natural language processing (NLP) system to add useful annotations and structure to our input data.
+Next, we'll use Stanford's [CoreNLP](http://stanfordnlp.github.io/CoreNLP/) natural language processing (NLP) system to add useful markups and structure to our input data.
 This step will split up our articles into sentences, and their component _tokens_ (roughly, the words).
 Additionally, we'll also get _lemmas_ (normalized word forms), _part-of-speech (POS) tags_, _named entity recognition (NER) tags_, and a dependency parse of the sentence.
 We specify the output schema of this step in our `app.ddlog`:
 ```
-@source
 sentences(
-    @key
-    @distributed_by
-    @references(relation="articles", column="id")
     doc_id         text,
-    @key
     sentence_index int,
-    @searchable
     sentence_text  text,
     tokens         text[],
     lemmas         text[],
@@ -107,7 +99,10 @@ sentences(
     dep_tokens     int[]
 ).
 ```
-Note that we define a compound key of `(doc_id, sentence_index)` for each sentence, and that we define a `distributed_by` attribute, e.g., primarily for Greenplum, using DDlog decorators.
+
+<!-- TODO let's drop this unless the key/distributed_by reveal something important
+Note that we define a compound key of `(doc_id, sentence_index)` for each sentence, and that we define a `distributed_by` attribute, e.g., primarily for Greenplum, using DDlog annotations.
+-->
 
 Next we define a DDlog function which takes in the `doc_id` and `content` for an article, and returns rows conforming to the sentences schema we just defined, using the **user-defined function (UDF)** in `udf/nlp_markup.sh`.
 This UDF is a bash script which calls a [wrapper](https://github.com/HazyResearch/bazaar/tree/master/parser) around CoreNLP.
@@ -138,16 +133,10 @@ Note that the previous steps- here, loading the articles- will _not_ be re-run (
 #### Extracting People
 Once again we first define the schema:
 ```
-@extraction
 person_mention(
-    @key
     mention_id text,
-    @searchable
     mention_text text,
-    @distributed_by
-    @references(relation="sentences", column="doc_id",         alias="appears_in")
     doc_id text,
-    @references(relation="sentences", column="sentence_index", alias="appears_in")
     sentence_index int,
     begin_index int,
     end_index int
@@ -251,15 +240,9 @@ Again, to run, just compile \& execute- `deepdive compile && deepdive do spouse_
 ### 1.4 Extracting Features for each Candidate
 Finally, we will extract a set of **features** for each candidate:
 ```
-@extraction
 spouse_feature(
-    @key
-    @references(relation="has_spouse", column="p1_id", alias="has_spouse")
     p1_id text,
-    @key
-    @references(relation="has_spouse", column="p2_id", alias="has_spouse")
     p2_id text,
-    @key
     feature text
 ).
 ```
@@ -398,17 +381,10 @@ deepdive do spouses_dbpedia
 #### Supervising Spouse Candidates with DBpedia Data
 First we'll define a new table where we'll store the labels (referring to the spouse candidate mentions), with an integer value (`True=1, False=-1`) and a description (`rule_id`):
 ```
-@extraction
 spouse_label(
-    @key
-    @references(relation="has_spouse", column="p1_id", alias="has_spouse")
     p1_id text,
-    @key
-    @references(relation="has_spouse", column="p2_id", alias="has_spouse")
     p2_id text,
-    @navigable
     label int,
-    @navigable
     rule_id text
 ).
 ```
@@ -566,13 +542,8 @@ In our case, we have one variable to predict per spouse candidate mention, namel
 In other words, we want DeepDive to predict the value of a boolean variable for each spouse candidate mention, indicating whether it is true or not.
 We specify this in `app.ddlog` as follows:
 ```
-@extraction
 has_spouse?(
-    @key
-    @references(relation="person_mention", column="mention_id", alias="p1")
     p1_id text,
-    @key
-    @references(relation="person_mention", column="mention_id", alias="p2")
     p2_id text
 ).
 ```
