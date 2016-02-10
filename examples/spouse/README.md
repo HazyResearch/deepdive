@@ -107,7 +107,7 @@ sentences(
     dep_tokens     int[]
 ).
 ```
-Note that we define a compound key of `(doc_id, sentence_index)` for each sentence, and that we define a `distributed_by` attribute for e.g. Greenplum, using DDlog decorators.
+Note that we define a compound key of `(doc_id, sentence_index)` for each sentence, and that we define a `distributed_by` attribute, e.g., primarily for Greenplum, using DDlog decorators.
 
 Next we define a DDlog function which takes in the `doc_id` and `content` for an article, and returns rows conforming to the sentences schema we just defined, using the **user-defined function (UDF)** in `udf/nlp_markup.sh`.
 This UDF is a bash script which calls a [wrapper](https://github.com/HazyResearch/bazaar/tree/master/parser) around CoreNLP.
@@ -131,7 +131,7 @@ Again, to execute, we compile and then run:
 deepdive compile
 deepdive do sentences
 ```
-Note that the previous steps- here, loading the articles- will _not_ be re-run (unless we specify that they should be, using e.g. `deepdive mark todo articles`).
+Note that the previous steps- here, loading the articles- will _not_ be re-run (unless we specify that they should be, using, e.g., `deepdive mark todo articles`).
 
 ### 1.3 Extracting Candidate Relation Mentions
 
@@ -165,8 +165,8 @@ function map_person_mention over (
     implementation "udf/map_person_mention.py" handles tsv lines.
 ```
 
-We'll write a simple UDF in Python that will tag spans of contiguous tokens with the NER tag "PERSON" as person mentions (i.e. we'll essentially rely on CoreNLP's NER module).
-Note that we've already used a bash script as a UDF, and indeed any programming language can be used (DeepDive will just check the path specified in the top line, e.g. `#!/usr/bin/env python`)/
+We'll write a simple UDF in Python that will tag spans of contiguous tokens with the NER tag "PERSON" as person mentions (i.e., we'll essentially rely on CoreNLP's NER module).
+Note that we've already used a bash script as a UDF, and indeed any programming language can be used (DeepDive will just check the path specified in the top line, e.g., `#!/usr/bin/env python`)/
 However DeepDive provides some convenient utilities for Python UDFs which handle all IO encoding/decoding.
 To write our UDF, we'll start by specifying that our UDF will handle tsv lines (as specified in the DDlog above);
 additionally we'll specify the exact type schema of both input and output, which DeepDive will check for us:
@@ -209,7 +209,7 @@ def extract(doc_id="text", sentence_index="int", tokens="text[]", ner_tags="text
         ]
 ```
 Above, we write a simple function which extracts and tags all subsequences of tokens having the NER tag "PERSON".
-Note that the `extract` function must be a generator, i.e. use a `yield` statement to return output rows.
+Note that the `extract` function must be a generator, i.e., use a `yield` statement to return output rows.
 
 Finally, we specify that the function will be applied to rows from the `sentences` table and append to the `person_mention` table:
 ```
@@ -335,7 +335,7 @@ spouse_feature += extract_spouse_features(
 Again, to run, just compile \& execute- `deepdive compile && deepdive do spouse_feature`- as in previous steps.
 
 Now we have generated what looks more like the standard input to a machine learning problem- a set of objects, represented by sets of features, which we want to classify (here, as true or false mentions of a spousal relation).
-However, we **don't have any supervised labels** (i.e. a set of correct answers) for a machine learning algorithm to learn from!
+However, we **don't have any supervised labels** (i.e., a set of correct answers) for a machine learning algorithm to learn from!
 In most real world applications, a sufficiently large set of supervised labels is _not_ in fact available.
 With DeepDive, we take the approach sometimes refered to as _distant supervision_ or _data programming_, where we instead generate a **noisy set of labels using a mix of mappings from secondary datasets \& other heuristic rules**.
 
@@ -524,7 +524,7 @@ def supervise(
       yield spouse._replace(label=-1, type='neg:familial_between')
 ```
 
-Note that the rough theory behind this approach is that we don't need high-quality e.g. hand-labeled supervision to learn a high quality model;
+Note that the rough theory behind this approach is that we don't need high-quality, e.g., hand-labeled supervision to learn a high quality model;
 instead, using statistical learning, we can in fact recover high-quality models from a large set of low-quality- or **_noisy_**- labels.
 
 ### 2.3 Resolving Multiple Labels Per Example with Majority Vote
@@ -577,7 +577,7 @@ has_spouse?(
 ).
 ```
 
-DeepDive will predict not only the value of these variables, but also the marginal probabilities, i.e. the amount of confidence DeepDive has for each individual prediction.
+DeepDive will predict not only the value of these variables, but also the marginal probabilities, i.e., the amount of confidence DeepDive has for each individual prediction.
 
 ### 3.2 Specifying Features
 Next, we indicate (i) that each `has_spouse` variable will be connected to the features of the corresponding `spouse_candidate` row, (ii) that we wish DeepDive to learn the weights of these features from our distantly supervised data, and (iii) that the weight of a specific feature across all instances should be the same, as follows:
@@ -591,7 +591,7 @@ has_spouse(p1_id, p2_id) :-
 ### 3.3 Specifying Connections Between Variables
 Finally, we can specify relations between the prediction variables, with either learned or given weights.
 Here, we'll specify two such rules, with fixed (given) weights that we specify.
-First, we define a _symmetry_ connection, namely specifying that if the model thinks a person mention `p1` and a person mention `p2` indicate a spousal relationship in a sentence, then it should also think that the reverse is true, i.e. that `p2` and `p1` indicate one too:
+First, we define a _symmetry_ connection, namely specifying that if the model thinks a person mention `p1` and a person mention `p2` indicate a spousal relationship in a sentence, then it should also think that the reverse is true, i.e., that `p2` and `p1` indicate one too:
 ```
 @weight(3.0)
 has_spouse(p1_id, p2_id) => has_spouse(p2_id, p1_id) :-
