@@ -1,4 +1,5 @@
 /input/*.csv
 /input/*.tsv
 /run
+/snapshot
 /udf/bazaar

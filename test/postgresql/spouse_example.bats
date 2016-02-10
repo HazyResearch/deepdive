@@ -3,7 +3,6 @@
 
 . "$BATS_TEST_DIRNAME"/env.sh >&2
 : ${SUBSAMPLE_NUM_SENTENCES:=3000}
-: ${SUBSAMPLE_NUM_SENTENCES:=3000}
 export SUBSAMPLE_NUM_SENTENCES
 export DEEPDIVE_CONFIG_EXTRA='
     deepdive.sampler.sampler_args: "-l 500 -i 500 -s 1 --alpha 0.05 --diminish 0.99"
@@ -21,9 +20,29 @@ setup() {
     deepdive compile
     # XXX skip testing NLP parser processes  # deepdive redo process/init/db model/calibration-plots
     deepdive redo process/init/app
+    deepdive model weights init
     deepdive mark done data/sentences
     deepdive create table sentences
     deepdive load sentences
+    deepdive redo model/calibration-plots
+    [[ $(getAccuracyPerCent has_spouse_label) -gt 90 ]]
+}
+
+@test "$DBVARIANT spouse example (ddlog) reuse weights" {
+    cd ddlog || skip
+    # keep the learned weights from a small corpus
+    deepdive model weights keep
+
+    # load larger corpus
+    deepdive create table sentences
+    SUBSAMPLE_NUM_SENTENCES=6000 \
+    deepdive load sentences
+    deepdive mark new sentences
+
+    # reuse the weights (skipping learning) and do inference
+    deepdive model weights reuse  # taking care of all extraction and grounding for larger data
+    deepdive model infer
+
     deepdive redo model/calibration-plots
     [[ $(getAccuracyPerCent has_spouse_label) -gt 90 ]]
 }
