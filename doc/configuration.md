@@ -3,13 +3,6 @@ layout: default
 title: deepdive.conf Reference
 ---
 
-<br><todo>
-
-- Drop deprecated extractor styles
-- Drop database stuff
-
-</tody>
-
 # Application configuration file reference
 
 This document contains the description of each configuration directive that can
@@ -44,10 +37,6 @@ deepdive {
   inference.factors {
   }
 
-  # Put your database connection tweaks here
-  db.default {
-  }
-
   # Specify a holdout fraction
   calibration.holdout_fraction: 0.00
 
@@ -58,7 +47,6 @@ In this template, the global section `deepdive` contains following major section
 
 Links to these sections:
 
-- [db](#database): database connections
 - [schema](#schema): variable schema
 - [extraction](#extraction): extraction tasks
 - [inference](#inference-opt): inference rules
@@ -101,71 +89,6 @@ Any text appearing after a `#` or `//` and before the next new line is considere
 
 Both `:` and `=` are valid key-value separators.
 
-
-
-<todo>remove database</todo>
-## <a name="database" href="#"></a> Database connection
-
-The configuration directives for the database connection is optional now (<code>db.url</code> is the recommended place), while it also can be specified
-inside a `db.default` section:
-
-```
-deepdive {
-  db.default {
-    # Database connection parameters
-  }
-}
-```
-
-The configuration directives for the database connection are the following:
-
-- `driver`: specify the JDBC driver to use. Currently only PostgreSQL is
-  supported, so it must be "org.postgresql.Driver":
-
-    ```
-    driver   : "org.postgresql.Driver"
-    ```
-
-- `url`: the URL of the database instance in [JDBC
-  format](http://jdbc.postgresql.org/documentation/80/connect.html):
-
-    ```
-    url      : "jdbc:postgresql://[host]:[port]/[database_name]"
-    ```
-
-- To support full deepdive functionality, the `host`, `port`, and
-  `dbname` directives must also be specified:
-
-    ```
-    host     : [host]
-    port     : [port]
-    dbname   : [database_name]
-    ```
-
-- `user`: the database user:
-
-    ```
-    user     : "deepdive"
-    ```
-
-- `password`: the password for the database user
-
-    ```
-    password : "dbpassword"
-    ```
-
-If you want to use <a
-href="greenplum#parallelgrounding">parallel grounding</a>,
-you should also specify the following:
-
-```
-gphost : [host of gpfdist]
-gpport : [port of gpfdist]
-gppath : [path to gpfdist directory]
-```
-
-You must also set `inference.parallel_grounding` to `true`.
-
 ## <a name="extraction" href="#"></a> Extraction and extractors
 
 Configuration directives for executing [extractors](extractors.md) go in the
@@ -182,18 +105,6 @@ deepdive {
   # ...
 }
 ```
-
-There is currently only one available extraction configuration directive:
-
-- `parallelism`: specifies the maximum number of extractors to execute in
-  parallel. The default value of `parallelism` is 1. E.g.:
-
-    ```
-    # 3 extractors can run in parallel if all their dependencies are met
-    extraction.parallelism: 3
-
-    #...
-    ```
 
 ### <a name="extractor" href="#"></a> Extractors definition
 
@@ -223,7 +134,7 @@ sets of directives. There is nevertheless a subset of directives that are common
 to all styles:
 
 - `style`: specifies the style of the extractor. Can take the values
-  `tsv_extractor`, `plpy_extractor`, `sql_extractor`, or
+  `tsv_extractor`, `sql_extractor`, or
   `cmd_extractor`. See the ['Writing extractors' document](extractors.md) for
   details about the different styles of extractors. This is a mandatory
   directive.
@@ -256,8 +167,7 @@ to all styles:
 
 - `dependencies`: takes an array of extractor names that this extractor depends
   on. The system resolves the dependency graph and execute the extractors in the
-  required order (in parallel if possible and `parallelism` has a value grater
-  than 1). E.g.:
+  required order. E.g.:
 
     ```
     extractor1 {
@@ -279,8 +189,8 @@ to all styles:
 
 - `input_relations`: takes an array of relation names that this extractor depends on.  Similar to `dependencies`, all extractors whose `output_relation` exists in this array will be executed before this extractor.
 
-The following directives are only for the `tsv_extractor`, and
-`plpy_extractor` styles. They are **mandatory** for these styles.
+The following directives are only for the `tsv_extractor` styles.
+They are **mandatory** for these styles.
 
 - `input`: specifies the input to the extractor. For all the extractor
   styles above it can be a SQL query to run on the database, e.g.,:
@@ -301,7 +211,7 @@ The following directives are only for the `tsv_extractor`, and
     ```
     myExtractor {
       # ...
-      style: "plpy_extractor"
+      style: "tsv_extractor"
       # ...
       output_relation: words
       # ...
@@ -313,7 +223,7 @@ The following directives are only for the `tsv_extractor`, and
   guide](extractors.md) for details about the requirements for the UDF for
   different styles of extractors.
 
-- Depending on the extractor style, additional directives may be necessary, such as `sql`, `cmd`, `parallelism`, `input_batch_size`, and `output_batch_size`.  Refer to the ['Writing extractors' guide](extractors.md) for details.
+- Depending on the extractor style, additional directives may be necessary, such as `sql`, `cmd`, `input_batch_size`, and `output_batch_size`.  Refer to the ['Writing extractors' guide](extractors.md) for details.
 
 
 ## <a name="inference-opt" href="#"></a> Inference
