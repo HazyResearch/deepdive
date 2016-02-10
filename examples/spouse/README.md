@@ -76,7 +76,7 @@ Next, we need to declare the schema of this `articles` table in our `app.ddlog` 
 
 ```ddlog
 articles(
-    id text,
+    id      text,
     content text
 ).
 ```
@@ -126,7 +126,7 @@ This UDF is a bash script which calls a [wrapper](https://github.com/HazyResearc
 
 ```ddlog
 function nlp_markup over (
-        doc_id text,
+        doc_id  text,
         content text
     ) returns rows like sentences
     implementation "udf/nlp_markup.sh" handles tsv lines.
@@ -161,12 +161,12 @@ Once again we first declare the schema:
 
 ```ddlog
 person_mention(
-    mention_id text,
-    mention_text text,
-    doc_id text,
+    mention_id     text,
+    mention_text   text,
+    doc_id         text,
     sentence_index int,
-    begin_index int,
-    end_index int
+    begin_index    int,
+    end_index      int
 ).
 ```
 
@@ -175,10 +175,10 @@ Again we next declare a function which references a UDF, and takes as input the 
 
 ```ddlog
 function map_person_mention over (
-        doc_id text,
+        doc_id         text,
         sentence_index int,
-        tokens text[],
-        ner_tags text[]
+        tokens         text[],
+        ner_tags       text[]
     ) returns rows like person_mention
     implementation "udf/map_person_mention.py" handles tsv lines.
 ```
@@ -195,18 +195,18 @@ from deepdive import *
 
 @tsv_extractor
 @returns(lambda
-        mention_id       = "text" ,
-        mention_text     = "text" ,
-        doc_id           = "text" ,
-        sentence_index   = "int"  ,
-        begin_index      = "int"  ,
-        end_index        = "int"  ,
+        mention_id       = "text",
+        mention_text     = "text",
+        doc_id           = "text",
+        sentence_index   = "int",
+        begin_index      = "int",
+        end_index        = "int",
     :[])
 def extract(
-        doc_id="text",
-        sentence_index="int",
-        tokens="text[]",
-        ner_tags="text[]",
+        doc_id         = "text",
+        sentence_index = "int",
+        tokens         = "text[]",
+        ner_tags       = "text[]",
     ):
     """
     Finds phrases that are continuous words tagged with PERSON.
@@ -259,9 +259,9 @@ Again, to start, we declare the schema for our `spouse_candidate` table—here j
 
 ```ddlog
 spouse_candidate(
-    p1_id text,
+    p1_id   text,
     p1_name text,
-    p2_id text,
+    p2_id   text,
     p2_name text
 ).
 ```
@@ -293,8 +293,8 @@ Finally, we will extract a set of **features** for each candidate:
 
 ```ddlog
 spouse_feature(
-    p1_id text,
-    p2_id text,
+    p1_id   text,
+    p2_id   text,
     feature text
 ).
 ```
@@ -313,9 +313,9 @@ import ddlib
 
 @tsv_extractor
 @returns(lambda
-        p1_id   = "text" ,
-        p2_id   = "text" ,
-        feature = "text" ,
+        p1_id   = "text",
+        p2_id   = "text",
+        feature = "text",
     :[])
 def extract(
         p1_id          = "text",
@@ -362,20 +362,20 @@ Note that getting the input for this UDF requires joining the `person_mention` a
 
 ```ddlog
 function extract_spouse_features over (
-        p1_id text,
-        p2_id text,
+        p1_id          text,
+        p2_id          text,
         p1_begin_index int,
-        p1_end_index int,
+        p1_end_index   int,
         p2_begin_index int,
-        p2_end_index int,
-        doc_id text,
-        sent_index int,
-        tokens text[],
-        lemmas text[],
-        pos_tags text[],
-        ner_tags text[],
-        dep_types text[],
-        dep_tokens int[]
+        p2_end_index   int,
+        doc_id         text,
+        sent_index     int,
+        tokens         text[],
+        lemmas         text[],
+        pos_tags       text[],
+        ner_tags       text[],
+        dep_types      text[],
+        dep_tokens     int[]
     ) returns rows like spouse_feature
     implementation "udf/extract_spouse_features.py" handles tsv lines.
 
@@ -468,9 +468,9 @@ First we'll declare a new table where we'll store the labels (referring to the s
 
 ```ddlog
 spouse_label(
-    p1_id text,
-    p2_id text,
-    label int,
+    p1_id   text,
+    p2_id   text,
+    label   int,
     rule_id text
 ).
 ```
@@ -503,7 +503,7 @@ function supervise over (
         pos_tags       text[],
         ner_tags       text[],
         dep_types      text[],
-        dep_tokens    int[]
+        dep_tokens     int[]
     ) returns (
         p1_id text, p2_id text, label int, rule_id text
     )
@@ -542,9 +542,9 @@ SpouseLabel = namedtuple('SpouseLabel', 'p1_id, p2_id, label, type')
 
 @tsv_extractor
 @returns(lambda
-        p1_id =   "text",
-        p2_id =   "text",
-        label =   "int" ,
+        p1_id   = "text",
+        p2_id   = "text",
+        label   = "int",
         rule_id = "text",
     :[])
 # heuristic rules for finding positive/negative examples of spouse relationship mentions
