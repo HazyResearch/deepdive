@@ -1,8 +1,14 @@
+tags(
+ tag_id int,
+ tag text  
+).
+
 words_raw(
-  word_id bigserial,
+  sent_id bigint,
+  word_id bigint,
   word text,
   pos text,
-  tag text).
+  true_tag text).
 
 words(
   sent_id bigint,
@@ -18,13 +24,16 @@ word_features(
 
 tag?(word_id bigint) Categorical(13).
 
-function ext_training
-  over rows like words_raw
-  returns rows like words
-  implementation "udf/ext_training.py" handles tsv lines.
-
-words +=
-  ext_training(wid, word, pos, tag) :- words_raw(wid, word, pos, tag).
+words(sent_id, word_id, word, pos, true_tag, tag_id) :-
+  words_raw(sent_id, word_id, word, pos, true_tag),
+  tags(tag_id, tag),
+  if true_tag = "B-UCP" then ""
+  else if true_tag = "I-UCP" then ""
+  else if strpos(true_tag, "-") > 0 then
+     split_part(true_tag, "-", 2)
+  else if true_tag = "O" then "O"
+  else ""
+  end = tag.
 
 function ext_features
   over (word_id1 bigint, word1 text, pos1 text, word2 text, pos2 text)
@@ -34,7 +43,9 @@ function ext_features
 word_features +=
   ext_features(word_id1, word1, pos1, word2, pos2) :-
   words(sent_id, word_id1, word1, pos1, _, _),
-  words(sent_id, word_id2, word2, pos2, _, _).
+  words(sent_id, word_id2, word2, pos2, _, _),
+  [word_id1 = word_id2 + 1],
+  word1 IS NOT NULL.
 
 @label(tag)
 tag(word_id) :- words(_, word_id, _, _, _, tag).
@@ -52,6 +63,6 @@ Multinomial(tag(word_id_1), tag(word_id_2)) :-
 Multinomial(tag(word_id_1), tag(word_id_2)) :-
   words(sent_id, word_id_1, word, _, _, tag),
   words(sent_id, word_id_2, word, _, _, _),
-  tag != NULL,
+  tag IS NOT NULL,
   word_id_1<word_id_2.
 
