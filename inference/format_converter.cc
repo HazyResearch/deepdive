@@ -24,6 +24,15 @@ using namespace std;
       | (((x) & 0x000000000000ff00ull) << 40)                                 \
       | (((x) & 0x00000000000000ffull) << 56))
 
+// 32-bit endian conversion
+// source: http://ftp.netbsd.org/pub/NetBSD/NetBSD-current/src/sys/sys/bswap.h
+#define	bswap_32(x) \
+	(__CAST(uint32_t, \
+	((((x) & 0xff000000) >> 24) | \
+	 (((x) & 0x00ff0000) >>  8) | \
+	 (((x) & 0x0000ff00) <<  8) | \
+	 (((x) & 0x000000ff) << 24))))
+
 // 16-bit endian conversion
 #define bswap_16(x) \
      ((unsigned short int) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8)))
@@ -65,6 +74,94 @@ void load_var(std::string input_filename, std::string output_filename) {
   fout.close();
 }
 
+// read variable labels and convert to binary format
+void load_labels(std::string input_filename, std::string output_filename) {
+  std::ifstream fin(input_filename.c_str());
+  std::ofstream fout(output_filename.c_str(), std::ios::binary | std::ios::out);
+  long count = 0;
+
+  long   vid;
+  int    distinct_labels;
+  unsigned char label_encoding;
+  unsigned short  pos_count;
+  unsigned short  neg_count;
+  float  rule_noise; 
+ 
+  const char field_delim = '\t'; // tsv file delimiter
+  const char array_delim = ','; // array delimiter
+  string line;
+  while (getline(fin,line)) {
+    string field;
+    istringstream ss(line);
+    
+    //variable id
+    getline(ss, field, field_delim);
+    vid = atol(field.c_str());
+    vid = bswap_64(vid);
+    fout.write((char*)&vid, 8);
+
+    //distinct label count
+    getline(ss, field, field_delim);
+    distinct_labels = atoi(field.c_str());
+    // distinct_labels == -1 -> FALSE label only
+    // distinct_labels ==  1 -> TRUE  label only
+    // distinct_labels ==  0 -> both labels
+    // Use two bits to indicate what kind of labels are generated for the variable
+    // 01 -> only FALSE
+    // 10 -> only TRUE
+    // 11 -> both FALSE and TRUE (TRUE always stored first)
+    if (distinct_labels == -1) {
+        label_encoding = 1;
+    } else if (distinct_labels == 1) {
+        label_encoding = 2;
+    } else {
+	label_encoding = 3;
+    }
+    fout.write((char*)&label_encoding,1);
+
+    // read noise-level for positive rules
+    if ((distinct_labels == 1)||(distinct_labels == 0)) {
+	// read positive labels count
+	getline(ss, field, field_delim);
+        pos_count = (unsigned short)atoi(field.c_str());
+	fout.write((char*)&bswap_16(pos_count),2)
+   
+        // read positive labels noise
+        getline(ss, field, field_delim);
+	istringstream ss1(field);
+	string rule_noise_str;
+        for (int i = 0; i < pos_count) {
+		getline(ss1,rule_noise_str,array_delim);
+		rule_noise = (float)atof(rule_noise_str.c_str());
+		rule_noise = bswap_32(rule_noise);
+		fout.write((char*)&rule_noise, 4);
+        }
+    }
+    // read noise-level for negative rules
+    if (distinct_labels == -1) {
+        // read negative labels count
+        getline(ss, field, field_delim);
+        neg_count = (unsigned short)atoi(field.c_str());
+        fout.write((char*)&bswap_16(neg_count),2)
+
+        // read positive labels noise
+        getline(ss, field, field_delim);
+        istringstream ss1(field);
+        string rule_noise_str;
+        for (int i = 0; i < neg_count) {
+                getline(ss1,rule_noise_str,array_delim);
+                rule_noise = (float)atof(rule_noise_str.c_str());
+                rule_noise = bswap_32(rule_noise);
+                fout.write((char*)&rule_noise, 4);
+        }
+    }   
+    ++count;
+  }
+  std::cout << count <<std::endl;
+
+  fin.close();
+  fout.close();
+}
 
 // convert weights
 void load_weight(std::string input_filename, std::string output_filename) {
@@ -306,6 +403,8 @@ int main(int argc, char** argv){
     load_var(argv[2], argv[3]);
   } else if(app.compare("weight")==0){
     load_weight(argv[2], argv[3]);
+  } else if(app.compare("labels")==0){
+    load_labels(argv[2],argv[3]);
   } else if(app.compare("factor")==0){
     std::string inc(argv[6]);
     if (inc.compare("inc") == 0 || inc.compare("mat") == 0)

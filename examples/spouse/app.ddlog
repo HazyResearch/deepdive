@@ -173,7 +173,7 @@ spouse_label(
 ).
 
 # make sure all pairs in spouse_candidate are considered as unsupervised examples
-spouse_label(p1, p2) = NULL :- spouse_candidate(p1, _, p2, _).
+spouse_label(p1, p2, 0, NULL) :- spouse_candidate(p1, _, p2, _).
 
 # distant supervision using data from DBpedia
 spouse_label(p1,p2, 1, "from_dbpedia") :-
@@ -224,6 +224,18 @@ has_spouse(p1_id, p2_id) = if l > 0 then TRUE
 ###############################################################################
 
 ## Inference Rules ############################################################
+
+# Data programming
+
+@weight(r)
+has_spouse(p1_id,p2_id) :- 
+   spouse_label(p1_id,p2_id,l,r),
+   [l=1].
+
+@weight(r)
+has_spouse(p1_id,p2_id) :- 
+   spouse_label(p1_id,p2_id,l,r),
+   [l=-1].
 
 # Features
 @weight(f)
