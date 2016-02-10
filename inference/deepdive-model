@@ -187,7 +187,7 @@ case $Command in
                                             ;;
                                         *.tsv.bz2)
                                             # TODO parallel load
-                                            deepdive load "$weightTableName" "$weightFile"
+                                            deepdive load "$weightTableName(description,weight)" "$weightFile"
                                             ;;
                                         *)
                                             error "$weightFile: Unsupported weights file"
@@ -196,10 +196,9 @@ case $Command in
                                 # dump the new weights with corresponding id in the current factor graph
                                 mkdir -p "$(dirname "$weightsReuseFlag")"
                                 touch "$weightsReuseFlag"
-                                DEEPDIVE_PLAN_EDIT=false \
                                 deepdive-redo $(deepdive plan 2>&1 | grep '/dump_weights$') process/grounding/combine_factorgraph
-                                # mark weights as done (as well as learning) to make sure deepdive-model infer skips learning
-                                deepdive-mark done data/model/weights
+                                # mark learning and weights as done to make sure `deepdive-model infer` skips it
+                                deepdive-mark done model/weights
                                 ;;
                         esac
                         ;;
@@ -226,8 +225,7 @@ case $Command in
                         ;;
                     weights)
                         rm -fv run/model/grounding/factor/weights.reuse
-                        DEEPDIVE_PLAN_EDIT=false \
-                        deepdive-redo $(deepdive plan 2>&1 | grep '/dump_weights$') process/grounding/combine_factorgraph
+                        deepdive-mark todo $(deepdive plan 2>&1 | grep '/dump_weights$')
                         ;;
                 esac
                 ;;
