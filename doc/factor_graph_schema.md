@@ -3,12 +3,6 @@ layout: default
 title: Factor Graph Grounding Output Reference
 ---
 
-<br><todo>
-
-- <https://github.com/HazyResearch/deepdive/issues/439>
-
-</tody>
-
 # Factor Graph Grounding Output Schema Reference
 
 [Grounding](overview.md#grounding) is the process of building the
@@ -63,7 +57,7 @@ comma-separated-values format with the following fields:
     Path to factors file
     Path to edges file
 
-** Incremental Grounding Schema Reference
+### Incremental Grounding Schema Reference
 
 For incremental grouding, the weights, variables, metadata files have the same format as above.
 There are two more files, factors and edges files, with the following format
