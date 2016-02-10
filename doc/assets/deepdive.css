@@ -163,3 +163,13 @@ code.language-bash:not(.multi-commands)::before {
     content: "$ ";
     opacity: 0.5;
 }
+
+/* adds a header for DDlog code blocks */
+code.language-ddlog::before {
+    display: block;
+    content: "In DDlog:";
+    font-weight: bold;
+    margin-bottom: 1em;
+    border-bottom: 1px dashed;
+    opacity: 0.4;
+}
