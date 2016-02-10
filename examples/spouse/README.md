@@ -1,7 +1,7 @@
 # Extracting mentions of spouses from the news
 
 In this tutorial, we show an example of a prototypical task that DeepDive is often applied to:
-extraction of _structured information_ from _unstructured or 'dark' data_ such as webpages, text documents, images, etc.
+extraction of _structured information_ from _unstructured or 'dark' data_ such as web pages, text documents, images, etc.
 While DeepDive can be used as a more general platform for statistical learning and data processing,
 most of the tooling described herein has been built for this type of use case,
 based on our experience successfully applying DeepDive to [a variety of real-world problems of this type](http://deepdive.stanford.edu/doc/showcase/apps.html).
@@ -70,7 +70,7 @@ DeepDive will automatically create the table, execute the script and load the ta
 input/articles.tsv.sh
 ```
 
-The aforementioned script reads a sample of the corpus (provided as lines of json objects), and then using the [jq](https://stedolan.github.io/jq/) language extracts the fields `id` (for docuemnt id) and `content` from each entry and converts those to TSV format.
+The aforementioned script reads a sample of the corpus (provided as lines of JSON objects), and then using the [jq](https://stedolan.github.io/jq/) language extracts the fields `id` (for document id) and `content` from each entry and converts those to TSV format.
 
 Next, we need to declare the schema of this `articles` table in our `app.ddlog` file; we add the following lines:
 
@@ -186,7 +186,7 @@ function map_person_mention over (
 We'll write a simple UDF in Python that will tag spans of contiguous tokens with the NER tag "PERSON" as person mentions (i.e., we'll essentially rely on CoreNLP's NER module).
 Note that we've already used a bash script as a UDF, and indeed any programming language can be used (DeepDive will just check the path specified in the top line, e.g., `#!/usr/bin/env python`)/
 However DeepDive provides some convenient utilities for Python UDFs which handle all IO encoding/decoding.
-To write our UDF, we'll start by specifying that our UDF will handle tsv lines (as specified in the DDlog above);
+To write our UDF, we'll start by specifying that our UDF will handle TSV lines (as specified in the DDlog above);
 additionally we'll specify the exact type schema of both input and output, which DeepDive will check for us:
 
 ```python
@@ -300,11 +300,11 @@ spouse_feature(
 ```
 
 The goal here is to represent each spouse candidate mention by a set of attributes or **_features_** which capture at least the key aspects of the mention, and then let a machine learning model learn how much each feature is correlated with our decision variable ('is this a spouse mention?').
-For those who have worked with machine learning systems before, note that we are using a sparse storage represenation-
+For those who have worked with machine learning systems before, note that we are using a sparse storage representation-
 you could think of a spouse candidate `(p1_id, p2_id)` as being represented by a vector of length `L = count(distinct(feature))`, consisting of all zeros except for at the indexes specified by the rows with key `(p1_id, p2_id)`.
 
-DeepDive includes an automatic feature generation library, DDLIB, which we will use here.
-Although many state-of-the-art [applications](http://deepdive.stanford.edu/doc/showcase/apps.html) have been built using purely DDLIB-generated features, others can be used and/or added as well.  To use DDLIB, we create a list of ddlib `Word` objects, two ddlib `Span` objects, and then use the function `get_generic_features_relation`:
+DeepDive includes an automatic feature generation library, DDlib, which we will use here.
+Although many state-of-the-art [applications](http://deepdive.stanford.edu/doc/showcase/apps.html) have been built using purely DDlib-generated features, others can be used and/or added as well.  To use DDlib, we create a list of `ddlib.Word` objects, two `ddlib.Span` objects, and then use the function `get_generic_features_relation`:
 
 ```python
 #!/usr/bin/env python
@@ -397,7 +397,7 @@ deepdive compile && deepdive do spouse_feature
 Now we have generated what looks more like the standard input to a machine learning problem—a set of objects, represented by sets of features, which we want to classify (here, as true or false mentions of a spousal relation).
 However, we **don't have any supervised labels** (i.e., a set of correct answers) for a machine learning algorithm to learn from!
 In most real world applications, a sufficiently large set of supervised labels is _not_ in fact available.
-With DeepDive, we take the approach sometimes refered to as _distant supervision_ or _data programming_, where we instead generate a **noisy set of labels using a mix of mappings from secondary datasets & other heuristic rules**.
+With DeepDive, we take the approach sometimes referred to as _distant supervision_ or _data programming_, where we instead generate a **noisy set of labels using a mix of mappings from secondary datasets & other heuristic rules**.
 
 
 
@@ -422,7 +422,7 @@ We'll download the relevant data, and then map it to our spouse candidate mentio
 #### Extracting & downloading the DBpedia data
 Our goal is to first extract a collection of known married couples from DBpedia and then load this into the `spouses_dbpedia` table in our database.
 To extract known married couples, we used the DBpedia dump present in [Google's BigQuery platform](https://bigquery.cloud.google.com).
-First we extracted the URI, name and spouse information from the dbpedia `person` table records in BigQuery for which the field `name` is not NULL. We used the following query:
+First we extracted the URI, name and spouse information from the DBpedia `person` table records in BigQuery for which the field `name` is not NULL. We used the following query:
 
 ```sql
 SELECT URI,name, spouse
@@ -448,7 +448,7 @@ FROM (SELECT t1_name as p1, t2_name as p2 FROM [dbpedia.spouseraw]),
 WHERE p1 < p2
 ```
 
-The output of this query was stored in a local file `spousesraw.csv`. The file contained duplicate rows (BigQuery does not support `distinct`) and noisy rows where the name field contained a string where the given name family name and multiple aliases where concatenated and reported in a string including the characters `{` and `}`. Using the unix commands `sed`, `sort` and `uniq` we first removed the lines containing characters `{` and `}` and then duplicate entries. This resulted in an input file `spouses_dbpedia.csv` containing 6,126 entries of married couples.
+The output of this query was stored in a local file `spousesraw.csv`. The file contained duplicate rows (BigQuery does not support `distinct`) and noisy rows where the name field contained a string where the given name family name and multiple aliases where concatenated and reported in a string including the characters `{` and `}`. Using the Unix commands `sed`, `sort` and `uniq` we first removed the lines containing characters `{` and `}` and then duplicate entries. This resulted in an input file `spouses_dbpedia.csv` containing 6,126 entries of married couples.
 
 #### Loading DBpedia data to database
 We compress and store `spouses_dbpedia.csv` under the path:
@@ -704,7 +704,7 @@ _**TODO**_
 
 ### Corpus exploration with Mindbender
 
-This part of the tutorial is optional and focuses on how the user can browse through the input corpus via an automatically generated web-interface. The reader can safelly skip this part.
+This part of the tutorial is optional and focuses on how the user can browse through the input corpus via an automatically generated web-interface. The reader can safely skip this part.
 
 #### DDlog annotations for browsing data
 
