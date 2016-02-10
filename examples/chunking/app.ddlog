@@ -1,6 +1,6 @@
 tags(
- tag_id int,
- tag text  
+  tag text,
+  tag_id int
 ).
 
 words_raw(
@@ -8,7 +8,8 @@ words_raw(
   word_id bigint,
   word text,
   pos text,
-  true_tag text).
+  true_tag text
+).
 
 words(
   sent_id bigint,
@@ -16,17 +17,19 @@ words(
   word text,
   pos text,
   true_tag text,
-  tag int).
+  tag int
+).
 
 word_features(
   word_id bigint,
-  feature text).
+  feature text
+).
 
 tag?(word_id bigint) Categorical(13).
 
 words(sent_id, word_id, word, pos, true_tag, tag_id) :-
   words_raw(sent_id, word_id, word, pos, true_tag),
-  tags(tag_id, tag),
+  tags(tag, tag_id),
   if true_tag = "B-UCP" then ""
   else if true_tag = "I-UCP" then ""
   else if strpos(true_tag, "-") > 0 then
