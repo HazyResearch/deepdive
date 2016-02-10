@@ -15,13 +15,13 @@ Accordingly, we'll walk through an example scenario where we wish to extract men
 
 The high-level steps we'll follow are:
 
-1. **_Inputs_: Loading Data, Candidate & Feature Extraction** First, we'll extract a set of _candidate_ relation mentions, and a sparse _feature_ representation of each.
+1. **Data processing.** First, we'll load the raw corpus, add NLP markups, extract a set of _candidate_ relation mentions, and a sparse _feature_ representation of each.
 
-2. **_Labels_: Distant Supervision** Next, we'll use various strategies to provide _supervision_ for our dataset, so that we can use machine learning to learn the weights of a model.
+2. **Distant supervision with data & rules.** Next, we'll use various strategies to provide _supervision_ for our dataset, so that we can use machine learning to learn the weights of a model.
 
-3. **_Learning & Inference_: Model Specification** Then, we'll specify the high-level configuration of our _model_.
+3. **Learning & inference: model specification.** Then, we'll specify the high-level configuration of our _model_.
 
-4. **_Labeling, Error Analysis & Debugging_** Finally, we'll show how to use DeepDive's labeling, error analysis and debugging tools.
+4. **Error analysis & debugging.** Finally, we'll show how to use DeepDive's labeling, error analysis and debugging tools.
 
 *_Note the distinction between extraction of facts and mentions of facts. In this tutorial, we do the latter, however DeepDive supports further downstream methods for tackling the former task in a principled manner._
 
@@ -55,10 +55,10 @@ In this section, we'll generate the traditional inputs of a statistical learning
 
 We'll do this in four basic steps:
 
-1.  _Loading raw input data_
-2.  _Preprocessing input data_
-3.  _Extracting candidate relation mentions_
-4.  _Extracting features for each candidate_
+1.  Loading raw input data
+2.  Adding NLP markups
+3.  Extracting candidate relation mentions
+4.  Extracting features for each candidate
 
 ### 1.1. Loading raw input data
 Our goal, first of all, is to download and load the raw text of the [articles](http://research.signalmedia.co/newsir16/signal-dataset.html)
@@ -681,7 +681,7 @@ has_spouse(p1_id, p2_id) => has_spouse(p1_id, p3_id) :-
 
 
 
-## 4. Error Analysis & Debugging
+## 4. Error analysis & debugging
 _**TODO**_
 
 ### Corpus exploration with Mindbender
