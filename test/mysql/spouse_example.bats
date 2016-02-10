@@ -1,1 +1,0 @@
-../postgresql/spouse_example.bats
