@@ -13,5 +13,5 @@ export SUBSAMPLE_NUM_WORDS_TRAIN SUBSAMPLE_NUM_WORDS_TEST
 
     f1score=$(printf '%.0f' $(
         result/eval.sh | tee /dev/stderr | sed -n '/^accuracy:/ s/.* FB1: *//p'))
-    [[ $f1score -ge 80 ]]
+    [[ $f1score -ge 78 ]]
 }

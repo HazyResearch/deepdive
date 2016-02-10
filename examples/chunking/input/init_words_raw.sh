@@ -9,6 +9,21 @@ if [[ -n ${SUBSAMPLE_NUM_WORDS_TRAIN:-} && -n ${SUBSAMPLE_NUM_WORDS_TEST:-} ]]; 
 else
     cat ./train_null_terminated.txt ./test_null_terminated.txt
 fi |
+awk '
+BEGIN {
+    SENT_ID=1
+    WORD_ID=1
+}
+{
+    if ($1 == "null" && $2 == "null" && $3 == "null" ) {
+        print "null", WORD_ID, $0
+            SENT_ID++
+    } else {
+        print SENT_ID, WORD_ID, $0
+    }
+    WORD_ID++
+}
+' |
 sed 's/ /	/g; s/null/\\N/g' |
 DEEPDIVE_LOAD_FORMAT=tsv \
-deepdive load "words_raw(word, pos, tag)" /dev/stdin
+deepdive load "words_raw(sent_id, word_id, word, pos, true_tag)" /dev/stdin
