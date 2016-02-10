@@ -63,9 +63,9 @@ possible worlds that contain the requested value for that variable.
 <a name="gibbs" href="#"></a>
 Exact inference is an intractable problem on factor graphs, but a commonly used
 method in this domain is **Gibbs sampling**. The process starts from a random
-possible world and iterates over each variable `v`, updating its value 
-by taking into account the factor functions of the factors that `v` is connected 
-to and the values of the variables connected to those factors (this is known as 
+possible world and iterates over each variable `v`, updating its value
+by taking into account the factor functions of the factors that `v` is connected
+to and the values of the variables connected to those factors (this is known as
 the *Markov blanket* of `v`). After enough iterations
 over the random variables, we can compute the number of iterations during which
 each variable had a specific value and use the ratio between this quantity and
