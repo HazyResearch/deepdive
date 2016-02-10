@@ -8,28 +8,28 @@ no_toc: true
 
 DeepDive is a system to extract value from [dark data](http://www.gartner.com/it-glossary/dark-data).
 Like dark matter, dark data is the great mass of data buried in text, tables, figures, and images, which lacks structure and so is essentially unprocessable by existing software.
-DeepDive helps bring dark data to light by creating structured data (SQL tables) from unstructured information (text documents) and integrate such data with an existing structured database.
+DeepDive helps bring dark data to light by creating structured data (SQL tables) from unstructured information (text documents) and integrating such data with an existing structured database.
 DeepDive is used to extract sophisticated relationships between entities and make inferences about facts involving those entities.
 DeepDive helps one process a wide variety of dark data and put the results into a database.
-Once in a database, one can use a variety of standard tools that consume structured data, e.g., visualization tools like Tablaeu or analytics tools like Excel.
+With the data in a database, one can use a variety of standard tools that consume structured data; e.g., visualization tools like Tablaeu or analytics tools like Excel.
 
 ### What is DeepDive?
 
-DeepDive is a new type of data management system that enables one to tackle extraction, integration, and prediction problems in a single system, which allows users to rapidly construct sophisticated end-to-end data pipelines, such as, dark data BI systems.
-By allowing users to build their system end-to-end, users focus on the portion of their system that most directly improves the quality of their application.
-In contrast, previous pipeline-based systems require developers to build extractors, integration code, and other components&mdash;without any clear idea of how their changes improve the quality of their data product.
+DeepDive is a new type of data management system that enables one to tackle extraction, integration, and prediction problems in a single system, which allows users to rapidly construct sophisticated end-to-end data pipelines, such as dark data BI (Business Intelligence) systems.
+By allowing users to build their system end-to-end, DeepDive allows users to focus on the portion of their system that most directly improves the quality of their application.
+By contrast, previous pipeline-based systems require developers to build extractors, integration code, and other components&mdash;without any clear idea of how their changes improve the quality of their data product.
 This simple insight is the key to how DeepDive systems produce higher quality data in less time.
-DeepDive-based systems are used by users without machine learning expertise in a number of domains from paleobiology to genomics to human trafficking, see our [showcase](showcase/apps.md) for examples.
+DeepDive-based systems are used by users without machine learning expertise in a number of domains from paleobiology to genomics to human trafficking; see our [showcase](showcase/apps.md) for examples.
 
 DeepDive is a **trained system** that uses machine learning to cope with various forms of noise and imprecision.
 DeepDive is designed to make it easy for users to train the system through low-level feedback via the [Mindtagger interface](labeling.md) and rich, structured domain knowledge via rules.
 DeepDive wants to enable experts who do not have machine learning expertise.
-One of DeepDive's key technical innovations is the ability to solve the statistical inference at massive scale.
+One of DeepDive's key technical innovations is the ability to solve statistical inference problems at massive scale.
 
 DeepDive differs from traditional systems in several ways:
 
 - DeepDive asks the developer to **think about features—not algorithms**.
-  In contrast, other machine learning systems require the developer think about which clustering algorithm, which classification algorithm, etc.
+  In contrast, other machine learning systems require the developer think about which clustering algorithm, which classification algorithm, etc. to use.
   In DeepDive's joint inference based approach, the user only specifies the necessary **signals or features**.
 
 - DeepDive systems can achieve high quality:
@@ -43,11 +43,11 @@ DeepDive differs from traditional systems in several ways:
   Applications built using DeepDive have extracted data from millions of documents, web pages, PDFs, tables, and figures.
 
 - DeepDive allows developers to **use their knowledge of a given domain** to improve the quality of the results by [writing simple rules](inference_rules.md) that inform the inference (learning) process.
-  DeepDive can also take into account user feedback on the correctness of the predictions, to improve the predictions.
+  DeepDive can also take into account user feedback on the correctness of the predictions to improve the predictions.
 
 - DeepDive is able to use the data to [learn "distantly"](distant_supervision.md).
   In contrast, most machine learning systems require tedious training for each prediction.
-  In fact, many DeepDive applications, especially at early stages, need no traditional training data at all!
+  In fact, many DeepDive applications, especially in early stages, need no traditional training data at all!
 
 - DeepDive's secret is a **scalable, high-performance inference and learning engine**.
   For the past few years, we have been working to make the underlying algorithms run as fast as possible.
