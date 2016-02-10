@@ -107,9 +107,9 @@ sentences(
     dep_tokens     int[]
 ).
 ```
-Note that we define a compound key of `(doc_id, sentence_index)` for each sentence, and that we define a `distributed_by` attribute for e.g. Greenplum, using ddlog decorators.
+Note that we define a compound key of `(doc_id, sentence_index)` for each sentence, and that we define a `distributed_by` attribute for e.g. Greenplum, using DDlog decorators.
 
-Next we define a ddlog function which takes in the `doc_id` and `content` for an article, and returns rows conforming to the sentences schema we just defined, using the **user-defined function (UDF)** in `udf/nlp_markup.sh`.
+Next we define a DDlog function which takes in the `doc_id` and `content` for an article, and returns rows conforming to the sentences schema we just defined, using the **user-defined function (UDF)** in `udf/nlp_markup.sh`.
 This UDF is a bash script which calls a [wrapper](https://github.com/HazyResearch/bazaar/tree/master/parser) around CoreNLP.
 ```
 function nlp_markup over (
@@ -168,7 +168,7 @@ function map_person_mention over (
 We'll write a simple UDF in Python that will tag spans of contiguous tokens with the NER tag "PERSON" as person mentions (i.e. we'll essentially rely on CoreNLP's NER module).
 Note that we've already used a bash script as a UDF, and indeed any programming language can be used (DeepDive will just check the path specified in the top line, e.g. `#!/usr/bin/env python`)/
 However DeepDive provides some convenient utilities for Python UDFs which handle all IO encoding/decoding.
-To write our UDF, we'll start by specifying that our UDF will handle tsv lines (as specified in the ddlog above);
+To write our UDF, we'll start by specifying that our UDF will handle tsv lines (as specified in the DDlog above);
 additionally we'll specify the exact type schema of both input and output, which DeepDive will check for us:
 ```python
 from deepdive import *
@@ -232,8 +232,8 @@ spouse_candidate(
 ).
 ```
 
-Next, for this operation we don't use any UDF script, instead relying entirely on ddlog operations.
-We simply construct a table of person counts, and then do a join with our filtering conditions; in ddlog this looks like:
+Next, for this operation we don't use any UDF script, instead relying entirely on DDlog operations.
+We simply construct a table of person counts, and then do a join with our filtering conditions; in DDlog this looks like:
 ```
 num_people(doc_id, sentence_index, COUNT(p)) :-
     person_mention(p, _, doc_id, sentence_index, _, _).
@@ -348,7 +348,7 @@ We'll describe two basic categories of approaches:
 1.  Mapping from secondary data for distant supervision
 2.  Using heuristic rules for distant supervision
 
-Finally, we'll describe a simple majority-vote approach to resolving multiple labels per example, which can be implemented within ddlog.
+Finally, we'll describe a simple majority-vote approach to resolving multiple labels per example, which can be implemented within DDlog.
 
 ### 2.1 Mapping from Secondary Data for Distant Supervision
 First, we'll try using an external structured dataset of known married couples, from [DBpedia](http://wiki.dbpedia.org/), to distantly supervise our dataset.
@@ -424,7 +424,7 @@ It should be noted that there are many clear ways in which this rule could be im
 
 ### 2.2 Using heuristic rules for distant supervision
 We can also create a supervision rule which does not rely on any secondary structured dataset like DBpedia, but instead just uses some heuristic.
-We set up a ddlog function, `supervise`, which uses a UDF containing several heuristic rules over the mention and sentence attributes:
+We set up a DDlog function, `supervise`, which uses a UDF containing several heuristic rules over the mention and sentence attributes:
 ```
 function supervise over (
         p1_id text, p1_begin int, p1_end int,
@@ -528,7 +528,7 @@ Note that the rough theory behind this approach is that we don't need high-quali
 instead, using statistical learning, we can in fact recover high-quality models from a large set of low-quality- or **_noisy_**- labels.
 
 ### 2.3 Resolving Multiple Labels Per Example with Majority Vote
-Finally, we implement a very simple majority vote procedure, all in ddlog, for resolving scenarios where a single spouse candidate mention has multiple conflicting labels.
+Finally, we implement a very simple majority vote procedure, all in DDlog, for resolving scenarios where a single spouse candidate mention has multiple conflicting labels.
 First, we sum the labels (which are all -1, 0, or 1):
 ```
 spouse_label_resolved(p1_id, p2_id, SUM(vote)) :- spouse_label(p1_id, p2_id, vote, rule_id).
