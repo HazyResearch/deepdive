@@ -93,8 +93,8 @@ Once the pipeline has completed running, you can view the results in the databas
  public | dd_graph_variables_observation                       | table | user | 0 bytes    |
  public | dd_graph_weights                                     | view  | user | 0 bytes    |
  public | dd_inference_result_variables                        | table | user | 8192 bytes |
- public | dd_query_inf_imply_person_smokes_person_has_cancer   | table | user | 8192 bytes |
- public | dd_query_inf_imply_person_smokes_person_smokes       | table | user | 8192 bytes |
+ public | dd_factors_inf_imply_person_smokes_person_has_cancer | table | user | 8192 bytes |
+ public | dd_factors_inf_imply_person_smokes_person_smokes     | table | user | 8192 bytes |
  public | dd_weights_inf_imply_person_smokes_person_has_cancer | table | user | 16 kB      |
  public | dd_weights_inf_imply_person_smokes_person_smokes     | table | user | 16 kB      |
  public | friends                                              | table | user | 8192 bytes |
