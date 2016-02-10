@@ -17,11 +17,18 @@ setup() {
 
 @test "$DBVARIANT spouse example" {
     deepdive compile
-    # XXX skip testing NLP parser processes  # deepdive redo process/init/db model/calibration-plots
+
+    # ensure CoreNLP build is skipped
+    mkdir -p udf/bazaar/parser/target
+    touch    udf/bazaar/parser/target/start
+    chmod +x udf/bazaar/parser/target/start
     deepdive redo process/init/app
+
+    # XXX skip testing NLP parser processes
     deepdive create table sentences
     deepdive load sentences
     deepdive mark done data/sentences
+
     deepdive redo model/calibration-plots
     [[ $(getAccuracyPerCent has_spouse_label) -gt 90 ]]
 }
