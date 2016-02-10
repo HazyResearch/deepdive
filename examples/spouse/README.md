@@ -190,48 +190,7 @@ To write our UDF, we'll start by specifying that our UDF will handle TSV lines (
 additionally we'll specify the exact type schema of both input and output, which DeepDive will check for us:
 
 ```python
-#!/usr/bin/env python
-from deepdive import *
-
-@tsv_extractor
-@returns(lambda
-        mention_id       = "text",
-        mention_text     = "text",
-        doc_id           = "text",
-        sentence_index   = "int",
-        begin_index      = "int",
-        end_index        = "int",
-    :[])
-def extract(
-        doc_id         = "text",
-        sentence_index = "int",
-        tokens         = "text[]",
-        ner_tags       = "text[]",
-    ):
-    """
-    Finds phrases that are continuous words tagged with PERSON.
-    """
-    num_tokens = len(ner_tags)
-    # find all first indexes of series of tokens tagged as PERSON
-    first_indexes = (i for i in xrange(num_tokens) if ner_tags[i] == "PERSON" and (i == 0 or ner_tags[i-1] != "PERSON"))
-    for begin_index in first_indexes:
-        # find the end of the PERSON phrase (consecutive tokens tagged as PERSON)
-        end_index = begin_index + 1
-        while end_index < num_tokens and ner_tags[end_index] == "PERSON":
-            end_index += 1
-        end_index -= 1
-        # generate a mention identifier
-        mention_id = "%s_%d_%d_%d" % (doc_id, sentence_index, begin_index, end_index)
-        mention_text = " ".join(map(lambda i: tokens[i], xrange(begin_index, end_index + 1)))
-        # Output a tuple for each PERSON phrase
-        yield [
-            mention_id,
-            mention_text,
-            doc_id,
-            sentence_index,
-            begin_index,
-            end_index,
-        ]
+{% include examples/spouse/udf/map_person_mention.py %}
 ```
 
 Above, we write a simple function which extracts and tags all subsequences of tokens having the NER tag "PERSON".
@@ -307,55 +266,7 @@ DeepDive includes an automatic feature generation library, DDlib, which we will 
 Although many state-of-the-art [applications](http://deepdive.stanford.edu/doc/showcase/apps.html) have been built using purely DDlib-generated features, others can be used and/or added as well.  To use DDlib, we create a list of `ddlib.Word` objects, two `ddlib.Span` objects, and then use the function `get_generic_features_relation`:
 
 ```python
-#!/usr/bin/env python
-from deepdive import *
-import ddlib
-
-@tsv_extractor
-@returns(lambda
-        p1_id   = "text",
-        p2_id   = "text",
-        feature = "text",
-    :[])
-def extract(
-        p1_id          = "text",
-        p2_id          = "text",
-        p1_begin_index = "int",
-        p1_end_index   = "int",
-        p2_begin_index = "int",
-        p2_end_index   = "int",
-        doc_id         = "text",
-        sent_index     = "int",
-        tokens         = "text[]",
-        lemmas         = "text[]",
-        pos_tags       = "text[]",
-        ner_tags       = "text[]",
-        dep_types      = "text[]",
-        dep_parents    = "int[]",
-    ):
-    """
-    Uses DDLIB to generate features for the spouse relation.
-    """
-    # Create a DDLIB sentence object, which is just a list of DDLIB Word objects
-    sent = []
-    for i,t in enumerate(tokens):
-        sent.append(ddlib.Word(
-            begin_char_offset=None,
-            end_char_offset=None,
-            word=t,
-            lemma=lemmas[i],
-            pos=pos_tags[i],
-            ner=ner_tags[i],
-            dep_par=dep_parents[i] - 1,  # Note that as stored from CoreNLP 0 is ROOT, but for DDLIB -1 is ROOT
-            dep_label=dep_types[i]))
-
-    # Create DDLIB Spans for the two person mentions
-    p1_span = ddlib.Span(begin_word_id=p1_begin_index, length=(p1_end_index-p1_begin_index+1))
-    p2_span = ddlib.Span(begin_word_id=p2_begin_index, length=(p2_end_index-p2_begin_index+1))
-
-    # Generate the generic features using DDLIB
-    for feature in ddlib.get_generic_features_relation(sent, p1_span, p2_span):
-        yield [p1_id, p2_id, feature]
+{% include examples/spouse/udf/extract_spouse_features.py %}
 ```
 
 Note that getting the input for this UDF requires joining the `person_mention` and `sentences` tables:
@@ -533,65 +444,7 @@ The Python UDF contains several heuristic rules:
 * Candidates with person mentions that have familial relation words in between are marked as false.
 
 ```python
-#!/usr/bin/env python
-from deepdive import *
-import random
-from collections import namedtuple
-
-SpouseLabel = namedtuple('SpouseLabel', 'p1_id, p2_id, label, type')
-
-@tsv_extractor
-@returns(lambda
-        p1_id   = "text",
-        p2_id   = "text",
-        label   = "int",
-        rule_id = "text",
-    :[])
-# heuristic rules for finding positive/negative examples of spouse relationship mentions
-def supervise(
-        p1_id="text", p1_begin="int", p1_end="int",
-        p2_id="text", p2_begin="int", p2_end="int",
-        doc_id="text", sentence_index="int", sentence_text="text",
-        tokens="text[]", lemmas="text[]", pos_tags="text[]", ner_tags="text[]",
-        dep_types="text[]", dep_token_indexes="int[]",
-    ):
-
-    # Constants
-    MARRIED = frozenset(["wife", "husband"])
-    FAMILY = frozenset(["mother", "father", "sister", "brother", "brother-in-law"])
-    MAX_DIST = 10
-    
-    # Common data objects
-    p1_end_idx = min(p1_end, p2_end)
-    p2_start_idx = max(p1_begin, p2_begin)
-    p2_end_idx = max(p1_end,p2_end)
-    intermediate_lemmas = lemmas[p1_end_idx+1:p2_start_idx]
-    intermediate_ner_tags = ner_tags[p1_end_idx+1:p2_start_idx]
-    tail_lemmas = lemmas[p2_end_idx+1:]
-    spouse = SpouseLabel(p1_id=p1_id, p2_id=p2_id, label=None, type=None)
-    
-    # Rule: Candidates that are too far apart
-    if len(intermediate_lemmas) > MAX_DIST:
-        yield spouse._replace(label=-1, type='neg:far_apart')
-    
-    # Rule: Candidates that have a third person in between
-    if 'PERSON' in intermediate_ner_tags:
-        yield spouse._replace(label=-1, type='neg:third_person_between')
-    
-    # Rule: Sentences that contain wife/husband in between
-    #         (<P1>)([ A-Za-z]+)(wife|husband)([ A-Za-z]+)(<P2>)
-    if len(MARRIED.intersection(intermediate_lemmas)) > 0:
-        yield spouse._replace(label=1, type='pos:wife_husband_between')
-    
-    # Rule: Sentences that contain and ... married
-    #         (<P1>)(and)?(<P2>)([ A-Za-z]+)(married)
-    if ("and" in intermediate_lemmas) and ("married" in tail_lemmas):
-        yield spouse._replace(label=1, type='pos:married_after')
-    
-    # Rule: Sentences that contain familial relations:
-    #         (<P1>)([ A-Za-z]+)(brother|stster|father|mother)([ A-Za-z]+)(<P2>)
-    if len(FAMILY.intersection(intermediate_lemmas)) > 0:
-        yield spouse._replace(label=-1, type='neg:familial_between')
+{% include examples/spouse/udf/supervise_spouse.py %}
 ```
 
 Note that the rough theory behind this approach is that we don't need high-quality, e.g., hand-labeled supervision to learn a high quality model;

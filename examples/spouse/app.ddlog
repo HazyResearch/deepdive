@@ -14,7 +14,6 @@ has_spouse?(
 
 ## Input Data #################################################################
 
-# example DeepDive application for finding spouse relationships in news articles
 @source
 articles(
     @key

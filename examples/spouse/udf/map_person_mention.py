@@ -3,14 +3,19 @@ from deepdive import *
 
 @tsv_extractor
 @returns(lambda
-        mention_id       = "text" ,
-        mention_text     = "text" ,
-        doc_id           = "text" ,
-        sentence_index   = "int"  ,
-        begin_index      = "int"  ,
-        end_index        = "int"  ,
+        mention_id       = "text",
+        mention_text     = "text",
+        doc_id           = "text",
+        sentence_index   = "int",
+        begin_index      = "int",
+        end_index        = "int",
     :[])
-def extract(doc_id="text", sentence_index="int", tokens="text[]", ner_tags="text[]"):
+def extract(
+        doc_id         = "text",
+        sentence_index = "int",
+        tokens         = "text[]",
+        ner_tags       = "text[]",
+    ):
     """
     Finds phrases that are continuous words tagged with PERSON.
     """
