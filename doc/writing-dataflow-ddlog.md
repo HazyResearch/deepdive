@@ -43,7 +43,7 @@ These relations are mapped to tables in the database configured for the DeepDive
 The [documentation for managing the database](ops-data.md) introduces various ways provided by DeepDive to interact with it.
 The order of declarations doesn't matter, but it's a good idea to place them at the beginning because that makes it easier to understand the rest of the rules that refer to the relations.
 
-```
+```ddlog
 relation_name(
   column1_name  column1_type,
   column2_name  column2_type,
@@ -55,7 +55,7 @@ Currently, DDlog maps the types directly to SQL, so any type supported by the un
 
 Below is a realistic example.
 
-```
+```ddlog
 article(
   id     int,
   length int,
@@ -72,7 +72,7 @@ Each column has it's own type, here utilizing `int`, `text` and `text[]`.
 Typical Datalog-like rules are used for defining how a relation is derived from other relations.
 For example, the following rule states that the tuples of relation `Q` are derived from relations `R` and `S`.
 
-```
+```ddlog
 Q(x, y) :- R(x, y), S(y).
 ```
 
@@ -91,7 +91,7 @@ A comprehensive example of expressions is shown below.
 
 <todo>cover all cases of expressions</todo>
 
-```
+```ddlog
 a(k int).
 b(k int, p text, q text, r int).
 c(s text, n int, t text).
@@ -163,7 +163,7 @@ Expressions can be arbitrarily nested, and parentheses can surround them <code>(
 It is possible to express values determined by conditional cases with a syntax of <code>if *expr* then *expr* else *expr* end</code>.
 For example, the following expresses a value 1 when variable `x` is positive, -1 when it's negative, otherwise `NULL`.
 
-```
+```ddlog
 if x > 0 then 1
 else if x < 0 then -1
 else NULL
@@ -175,7 +175,7 @@ More complex values can be expressed as applying predefined functions to a tuple
 Currently, DDlog directly maps the function *name* directly to SQL, so any function defined by the underlying database can be used, e.g., [PostgreSQL's functions](http://www.postgresql.org/docs/9.1/static/functions.html).
 For example, the following takes the absolute value using the `abs` function and the `power` function to square the value.
 
-```
+```ddlog
 power(abs(x - y), 2)
 ```
 
@@ -183,7 +183,7 @@ power(abs(x - y), 2)
 When a value needs to be turn into a different type, e.g., integer into a floating point, or vice versa, then a type casting syntax can follow the expression, i.e., <code>*expr* :: *type*</code>.
 For example, the following turns the variable in the denominator into a floating point number, so the ratio can be correctly computed:
 
-```
+```ddlog
 num_occurs / total :: FLOAT
 ```
 
@@ -193,7 +193,7 @@ A placeholder `_` can be used in the columns of body atoms, indicating no variab
 This is useful if only a subset of columns are needed for the derivation.
 For example, the following rule uses only two columns of `R` to define `Q`, and the rest of the columns are not bound to any variable:
 
-```
+```ddlog
 Q(x, y, x + y) :- R(x, _, _, y, _, _, _).
 ```
 
@@ -206,7 +206,7 @@ Exclamation (`!`) can precede a condition to negate it.
 Conditions can be arbitrarily nested by putting inside square brackets (<code>[*cond*, *cond*, ...; *cond*; ...]</code>).
 For example, the following rule takes the values for variable `x` from the first column of relation `b` that satisfy a certain condition with the fourth column of `b`.
 
-```
+```ddlog
 Q(x) :- b(x,_,_,w), [x + w = 100; [!x > 50, w < 10]].
 ```
 
@@ -214,14 +214,14 @@ Q(x) :- b(x,_,_,w), [x + w = 100; [!x > 50, w < 10]].
 Disjunctive cases can be expressed as multiple rules defining the same head, or as one rule having multiple bodies separated by semicolons (`;`).
 Take the following two rules as an example.
 
-```
+```ddlog
 Q(x, y) :- R(x, y), S(y).
 Q(x, y) :- T(x, y).
 ```
 
 They can be written as a single rule:
 
-```
+```ddlog
 Q(x, y) :- R(x, y), S(y); T(x, y).
 ```
 
@@ -238,7 +238,7 @@ DDlog recognizes the following aggregate functions:
 
 For example, the following rule groups all values of the third column of `R` by the first and second columns, then take the maximum value for deriving a tuple for `Q`.
 
-```
+```ddlog
 Q(a,b,MAX(c)) :- R(a,b,c).
 ```
 
@@ -249,7 +249,7 @@ Q(a,b,MAX(c)) :- R(a,b,c).
 Another way to derive a reduced number of tuples for the head is to use *quantified bodies*.
 Body atoms and conditions can be put under *quantifiers* to express existential (`EXISTS`) or universal (`ALL`) constraints over certain variables with the following syntax:
 
-```
+```ddlog
 body, ..., EXISTS[body, body, ...], body, ...
 body, ...,    ALL[body, body, ...], body, ...
 ```
@@ -259,7 +259,7 @@ For the variables used both inside and outside of the quantification, the relati
 This makes it possible to express complex conditions using derived values in relations.
 Here are two example rules using quantifiers:
 
-```
+```ddlog
 P(a) :- R(a, _), EXISTS[S(a, _)].
 Q(a) :- R(a, b),    ALL[S(a, c), c > b].
 ```
@@ -276,7 +276,7 @@ This quantifier roughly corresponds to *outer joins* in SQL.
 
 Here is an example rule using an optional quantifier:
 
-```
+```ddlog
 Q(a, c) :- R(a, b), OPTIONAL[S(a, c), c > b].
 ```
 It means `Q` contains every value of the first column of relation `R` paired with all values for the second column of relation `S` tuples that have the same value on the first column and the second column is greater than that of `R`, or `NULL` if no such value exists.

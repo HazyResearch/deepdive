@@ -18,7 +18,7 @@ To use user-defined functions in DDlog, they must be declared first then called 
 
 First, let's declare the schema of the two relations for our running example.
 
-```
+```ddlog
 article(
     id     int,
     url    text,
@@ -41,7 +41,7 @@ A function declaration states what input it takes and what output it returns as 
 In our example, suppose we will use only the `author` and `words` of each `article` to output the topic identified by its `id`, and the implementation will be kept in an executable file called `udf/classify.py`.
 The exact declaration for such function is shown below.
 
-```
+```ddlog
 function classify_articles over (id int, author text, words text[])
     returns (article_id int, topic text)
     implementation "udf/classify.py" handles tsv lines.
@@ -50,7 +50,7 @@ function classify_articles over (id int, author text, words text[])
 Notice that the column definitions of relation `classification` are repeated in the `returns` clause.
 This can be omitted by using the `rows like` syntax as shown below.
 
-```
+```ddlog
 function classify_articles over (id int, author text, words text[])
     return rows like classification
     implementation "udf/classify.py" handles tsv lines.
@@ -66,7 +66,7 @@ The function declared above can be called to derive tuples for another relation 
 The input tuples for the function call are derived using a syntax similar to a [normal derivation rule](writing-dataflow-ddlog.md).
 For example, the rule shown below calls the `classify_articles` function to fill the `classification` relation using a subset of columns from the `articles` relation.
 
-```
+```ddlog
 classification += classify_articles(id, author, words) :-
     article(id, _, _, author, words).
 ```
@@ -85,7 +85,7 @@ The input and output column types expected by the generator can be declared usin
 Let's look at a realistic example to describe how exactly they should be used in the code.
 Below is a near-complete code for the `udf/classify.py` declared as the implementation for the DDlog function `classify_articles`.
 
-```
+```python
 #!/usr/bin/env python
 from deepdive import *  # Required for @tsv_extractor, @over, and @returns
 

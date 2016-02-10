@@ -22,7 +22,7 @@ DeepDive requires the user to specify the name and type of the random variables 
 
 The following is an example of defining a schema with two Boolean variables.
 
-```
+```ddlog
 has_spouse?(p1_id text, p2_id text).
 ```
 
@@ -32,7 +32,7 @@ A question mark after the relation name indicates that the relation is a variabl
 
 DeepDive supports multinomial variables, which take integer values ranging from 0 to a user-specified upper bound. The variable relation is defined similarly as a Boolean variable where we add `Categorical(N)`, to specify that the variable domain is 0, 1, ..., N-1. For instance, in the [chunking example](chunking.md), the declaration in `app.ddlog` is:
 
-```
+```ddlog
 tag?(word_id bigint) Categorical(13).
 ```
 
@@ -44,7 +44,7 @@ The factor function for multinomial is `Multinomial`. It takes multinomial varia
 
 A supervision rule is used for scoping and supervising the random variables, i.e., defining variable set and training data. The training data is defined by linking a variable relation to a dataset for which some labels are known or defined by distant supervision. For instance, in the spouse example, we supervise the `has_spouse` variable by the following rule:
 
-```
+```ddlog
 has_spouse(p1_id, p2_id) = if l > 0 then TRUE
                       else if l < 0 then FALSE
                       else NULL end :- spouse_label_resolved(p1_id, p2_id, l).
@@ -64,7 +64,7 @@ Each rule consists of three components:
 
 For instance, in the `has_spouse` example, the inference rule defining whether the `has_spouse` variable between two entities is true or not is written as:
 
-```
+```ddlog
 @weight(f)
 has_spouse(p1_id, p2_id) :-
   spouse_candidate(p1_id, _, p2_id, _),
@@ -75,7 +75,7 @@ This rule means that each pair of people `(p1_id, p2_id)` in the `has_spouse` va
 
 The annotation `@weight(expression)` expresses the weight of the inference rule, which can be defined by a a feature or by a constant, such that in the _imply_ inference rule in the smoke example:
 
-```
+```ddlog
 @weight(3)
 smoke(x) => cancer(x) :- person(x).
 ```
@@ -84,7 +84,7 @@ This rule expresses that, if a person smokes, it implies he/she has a cancer. Th
 
 Supported DeepDive factor function and corresponding syntax are:
 
-```
+```ddlog
 Imply  : A1, A2, ... => An
 Equal  : A1 = A2 = ... = An
 And    : A1 ^ A2 ^ ... ^ An
@@ -188,7 +188,7 @@ consists of three components:
 
 The following is an example of an inference rule:
 
-```bash
+```hocon
 deepdive {
   inference.factors {
     smokes_cancer {
@@ -216,7 +216,7 @@ the variables that a factor is using, plus additional columns that are used to
 learn the weight of the factor. It usually takes the form of a join query
 using feature relations produced by extractors, as in the following example:
 
-```bash
+```hocon
     friends_smoke {
       input_query: """
           SELECT p1.id AS "person_smokes.p1.id",
@@ -308,7 +308,7 @@ functions](inference_rule_functions.md). One example of a factor function is
 the `Imply` function, which expresses a first-order logic statement. For
 example, `Imply(B, C, A)` means "if B and C, then A".
 
-```bash
+```hocon
     # If smokes.is_true, then has_cancer.is_true
     someFactor {
       function: "Imply(smokes.is_true, has_cancer.is_true)"
@@ -342,7 +342,7 @@ automatically. In order to learn weights automatically, you must have enough
 also be a function of variables, in which case each factor will get a different
 weight depending on the variable value.
 
-```bash
+```hocon
 # Known weight (10 can be treated as positive infinite)
 someFactor.weight: 10
 
@@ -403,7 +403,7 @@ variables. Random variables and their types are declared in the
 `schema.variables` section of the `deepdive.conf` file. The following is an
 example of defining the schema with two Boolean variables:
 
-```bash
+```hocon
 deepdive {
   schema.variables {
     person_smokes.smokes: Boolean
@@ -426,7 +426,7 @@ can declare it in the `schema.variables` directive in `deepdive.conf` using
 type `Categorical(N)`, to specify that the variable domain is be 0, 1, ..., N-1.
 The schema definition would be  look like
 
-```bash
+```hocon
 schema.variables {
   [table].[column]: Categorical(10)
 }
