@@ -54,19 +54,18 @@ We'll do this in four basic steps:
 ### 1.1 Loading Raw Input Data
 Our goal, first of all, is to download and load the raw text of the [articles](http://research.signalmedia.co/newsir16/signal-dataset.html)
 into an `articles` table in our database.
-We create a simple shell script that downloads & outputs the news articles in `tsv` format.
+We create a simple shell script that downloads & outputs the news articles in TSV format.
 DeepDive will automatically create the table, execute the script and load the table if we save it as:
 
 ```bash
 input/articles.tsv.sh
 ```
 
-The aforementioned script reads a sample of the corpus (provided as lines of json objects), and then using the [jq](https://stedolan.github.io/jq/) language extracts the fields `id` (for docuemnt id) and `content` from each entry and converts those to `tsv` format.
+The aforementioned script reads a sample of the corpus (provided as lines of json objects), and then using the [jq](https://stedolan.github.io/jq/) language extracts the fields `id` (for docuemnt id) and `content` from each entry and converts those to TSV format.
 
 Next, we need to declare the schema of this `articles` table in our `app.ddlog` file; we add the following lines:
 
 ```ddlog
-# example DeepDive application for finding spouse relationships in news articles
 articles(
     id text,
     content text
@@ -136,10 +135,16 @@ Again, to execute, we compile and then run:
 
 ```bash
 deepdive compile
+```
+```bash
 deepdive do sentences
 ```
 
-Note that the previous steps- here, loading the articles- will _not_ be re-run (unless we specify that they should be, using, e.g., `deepdive mark todo articles`).
+Note that the previous steps- here, loading the articles- will _not_ be re-run unless we specify that they should be, using, e.g.:
+
+```bash
+deepdive mark todo articles
+```
 
 ### 1.3 Extracting Candidate Relation Mentions
 
@@ -226,7 +231,11 @@ person_mention += map_person_mention(
 ) :- sentences(doc_id, sentence_index, _, tokens, _, _, ner_tags, _, _, _).
 ```
 
-Again, to run, just compile \& execute- `deepdive compile && deepdive do person_mention`- as in previous steps.
+Again, to run, just compile \& execute as in previous steps:
+
+```bash
+deepdive compile && deepdive do person_mention
+```
 
 #### Extracting Candidate Spouses (Pairs of People)
 Next, we'll take all pairs of **non-overlapping person mentions that co-occur in a sentence with less than 5 people total,** and consider these as the set of potential ('candidate') spouse mentions.
@@ -258,7 +267,11 @@ spouse_candidate(p1, p1_name, p2, p2_name) :-
     p1_begin != p2_begin.
 ```
 
-Again, to run, just compile \& execute- `deepdive compile && deepdive do spouse_candidate`- as in previous steps.
+Again, to run, just compile \& execute as in previous steps.
+
+```bash
+deepdive compile && deepdive do spouse_candidate
+```
 
 ### 1.4 Extracting Features for each Candidate
 Finally, we will extract a set of **features** for each candidate:
@@ -344,7 +357,11 @@ spouse_feature += extract_spouse_features(
 ).
 ```
 
-Again, to run, just compile \& execute- `deepdive compile && deepdive do spouse_feature`- as in previous steps.
+Again, to run, just compile \& execute as in previous steps.
+
+```bash
+deepdive compile && deepdive do spouse_feature
+```
 
 Now we have generated what looks more like the standard input to a machine learning problem- a set of objects, represented by sets of features, which we want to classify (here, as true or false mentions of a spousal relation).
 However, we **don't have any supervised labels** (i.e., a set of correct answers) for a machine learning algorithm to learn from!
@@ -566,7 +583,13 @@ We additionally make sure that all spouse candidate mentions _not_ labeled by a 
 has_spouse(p1, p2) = NULL :- spouse_candidate(p1, _, p2, _).
 ```
 
-Once again, to execute all of the above, just run `deepdive compile && deepdive do has_spouse` (recall that `deepdive do` will execute all upstream tasks as well, so this will execute all of the previous steps!).
+Once again, to execute all of the above, just run the following command:
+
+```bash
+deepdive compile && deepdive do has_spouse
+```
+
+Recall that `deepdive do` will execute all upstream tasks as well, so this will execute all of the previous steps!
 
 
 ## 3. _Learning \& Inference_: Model Specification
