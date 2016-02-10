@@ -33,7 +33,7 @@ The high-level steps we'll follow are:
 ## 0. Preparation
 First of all, make sure that DeepDive has been [installed](http://deepdive.stanford.edu/doc/basics/installation.html).
 
-Next, DeepDive will store all data- input, intermediate, output, etc- in a relational database;
+Next, DeepDive will store all data—input, intermediate, output, etc.—in a relational database;
 currently, Postgres, Greenplum, and MySQL are supported, however Greenplum or Postgres are strongly recommended.
 To set the location of this database, we need to configure a URL in the `db.url` file, e.g.:
 
@@ -41,7 +41,7 @@ To set the location of this database, we need to configure a URL in the `db.url`
 echo "postgresql://$USER@$HOSTNAME:5432/deepdive_spouse_$USER" >db.url
 ```
 
-_Note: DeepDive will drop and then create this database if run from scratch- beware of pointing to an existing populated one!_
+_Note: DeepDive will drop and then create this database if run from scratch—beware of pointing to an existing populated one!_
 
 
 
@@ -149,7 +149,7 @@ deepdive compile
 deepdive do sentences
 ```
 
-Note that the previous steps- here, loading the articles- will _not_ be re-run unless we specify that they should be, using, e.g.:
+Note that the previous steps—here, loading the articles—will _not_ be re-run unless we specify that they should be, using, e.g.:
 
 ```bash
 deepdive mark todo articles
@@ -250,7 +250,7 @@ deepdive compile && deepdive do person_mention
 #### Mentions of spouses (pairs of people)
 Next, we'll take all pairs of **non-overlapping person mentions that co-occur in a sentence with less than 5 people total,** and consider these as the set of potential ('candidate') spouse mentions.
 We thus filter out sentences with large numbers of people for the purposes of this tutorial; however these could be included if desired.
-Again, to start, we declare the schema for our `spouse_candidate` table- here just the two names, and the two person_mention IDs referred to:
+Again, to start, we declare the schema for our `spouse_candidate` table—here just the two names, and the two person_mention IDs referred to:
 
 ```ddlog
 spouse_candidate(
@@ -374,7 +374,7 @@ Again, to run, just compile & execute as in previous steps.
 deepdive compile && deepdive do spouse_feature
 ```
 
-Now we have generated what looks more like the standard input to a machine learning problem- a set of objects, represented by sets of features, which we want to classify (here, as true or false mentions of a spousal relation).
+Now we have generated what looks more like the standard input to a machine learning problem—a set of objects, represented by sets of features, which we want to classify (here, as true or false mentions of a spousal relation).
 However, we **don't have any supervised labels** (i.e., a set of correct answers) for a machine learning algorithm to learn from!
 In most real world applications, a sufficiently large set of supervised labels is _not_ in fact available.
 With DeepDive, we take the approach sometimes refered to as _distant supervision_ or _data programming_, where we instead generate a **noisy set of labels using a mix of mappings from secondary datasets & other heuristic rules**.
@@ -577,7 +577,7 @@ def supervise(
 ```
 
 Note that the rough theory behind this approach is that we don't need high-quality, e.g., hand-labeled supervision to learn a high quality model;
-instead, using statistical learning, we can in fact recover high-quality models from a large set of low-quality- or **_noisy_**- labels.
+instead, using statistical learning, we can in fact recover high-quality models from a large set of low-quality—or **_noisy_**—labels.
 
 ### 2.3. Resolving multiple labels per example with majority vote
 Finally, we implement a very simple majority vote procedure, all in DDlog, for resolving scenarios where a single spouse candidate mention has multiple conflicting labels.
