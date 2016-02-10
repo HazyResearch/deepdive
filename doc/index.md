@@ -162,12 +162,12 @@ and
     - [Using DeepDive on Amazon EC2](using-ec2.md)
     - [Using DeepDive in Docker](using-docker.md) <todo/> <todo/>
 - References
-    - [`deepdive.conf` Reference](configuration.md) <todo/>
+    - [`deepdive.conf` Reference](configuration.md)
     - [Generic features library](gen_feats.md)
-    - [Inference rule function reference](inference_rule_functions.md) <todo/>
-    - [High-speed sampler](sampler.md) <todo/>
-    - [Factor graph grounding output reference](factor_graph_schema.md) <todo/>
-    - [Internal database schema](reserved_tables.md) <todo/>
+    - [Inference rule function reference](inference_rule_functions.md)
+    - [High-speed sampler](sampler.md)
+    - [Factor graph grounding output reference](factor_graph_schema.md)
+    - [Internal database schema](reserved_tables.md)
 - [DeepDive Developer's Guide](developer.md)
 
 
