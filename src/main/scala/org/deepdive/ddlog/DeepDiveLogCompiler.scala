@@ -771,11 +771,9 @@ ${if (createTable) {
           ${ qc.generateSQLBody(fakeBody) }"""
         // factor function
         if (func.length == 0) {
-          val funcBody = (fakeBodyAtoms map {x =>
-          if (ss.variableTableNames contains x.name)
-            s"""${x.name}.R${fakeBody indexOf x}.label"""
-          else ""
-          }).filter(_ != "")
+          val funcBody = (headAsBody zip stmt.head.terms map { case(x, y) =>
+            s"""${if (y.isNegated) "!" else ""}${x.name}.R${fakeBody indexOf x}.label"""
+          })
 
           val function = stmt.head.function match {
             case FactorFunction.Imply  => "Imply"

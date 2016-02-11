@@ -161,7 +161,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
 
   def print(a: HeadAtom) : String = {
     val vars = a.terms map print
-    s"${a.name}(${vars.mkString(", ")})"
+    s"${if (a.isNegated) "!" else ""}${a.name}(${vars.mkString(", ")})"
   }
 
   def print(head: InferenceRuleHead) : String = {

@@ -4,3 +4,6 @@ Q?(x int).
 
 @weight(y)
 Q(x) => Q(y) :- R(x, y, z).
+
+@weight(y)
+Q(x) = !Q(y) :- R(x, y, z).
