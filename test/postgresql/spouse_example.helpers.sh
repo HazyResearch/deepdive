@@ -4,7 +4,7 @@
 getAccuracyPerCent() {
     local variable=${1:-has_spouse_label}
     deepdive sql eval "
-        SELECT 100 * (num_correct::REAL / (num_correct + CASE WHEN num_incorrect IS NULL THEN 0 ELSE num_incorrect END)) :: INT
+        SELECT 100 * (num_correct::REAL / (num_correct + num_incorrect)) :: INT
           FROM ${variable}_calibration
          WHERE bucket = 9
     " |
