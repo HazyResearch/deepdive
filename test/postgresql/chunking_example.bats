@@ -18,7 +18,7 @@ get_f1score() {
     deepdive redo process/init/app data/model/probabilities
     f1score=$(get_f1score)
     echo "f1score = $f1score"
-    [[ $f1score -ge 78 ]]
+    [[ $f1score -ge 75 ]]
 }
 
 @test "$DBVARIANT chunking example reuse weights" {
@@ -39,5 +39,5 @@ get_f1score() {
     # check quality
     f1score=$(get_f1score)
     echo "f1score = $f1score"
-    [[ $f1score -ge 75 ]]
+    [[ $f1score -ge 70 ]]
 }
