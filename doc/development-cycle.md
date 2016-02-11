@@ -5,147 +5,51 @@ title: DeepDive application development cycle
 
 # How DeepDive applications are typically developed
 
+All successful DeepDive applications that achieve high quality are never developed in a single shot;
+A basic version is first written that gives relatively poor result, then it is **improved iteratively** through a series of *error analysis* and debugging.
+DeepDive provides a suite of tools that aim to keep each development iteration as quick and easy as possible.
+
+<todo>add more links to relevant doc pages and papers</todo>
+
 ## 1. Write
+
+First of all, the user has to write in DDlog a schema that describes the input data as well as the data to be produced, along with how they should be processed and transformed.
+Normal derivation rules as well as *user-defined functions* (UDFs) written in Python or any other language can be used for defining the data processing parts.
+Then, using the processed data, a statistical inference model describing a set of random variables and their correlations can be defined also in DDlog to specify what kind of predictions are to be made by the system.
+
+How to write each of these parts [in a DeepDive application](deepdiveapp.md) is described in the following pages:
+
+- [Defining data flow in DDlog](writing-dataflow-ddlog.md)
+- [Writing user-defined functions in Python](writing-udf-python.md)
+- [Specifying a statistical model in DDlog](writing-model-ddlog.md)
+
+
 ## 2. Run
-## 3. Debug
 
-<br><todo>
+As soon as any new piece of the DeepDive application is written, the user can compile and run it incrementally.
+For example, after declaring the schema for the input text corpus, the actual data can be loaded into the database and queried.
+As more rules that transform the base input data or derived data are written, they can be executed incrementally.
+The statistical inference model can be constructed from the data according to what's specified in DDlog, and its parameters can be learned or reused to make predictions with their marginal probabilities.
 
-- Show a diagram of the development cycle, whose blocks link to its own page</todo>
-- Migrate below
+DeepDive provides a suite of commands and conventions to carry out these operations, which are documented in the following pages:
 
-</todo>
-
-----
-----
-----
-----
-----
-# Writing a new DeepDive application
-
-This document describes how to create a new application that uses DeepDive to
-analyze data.
-
-This task is composed by a number of steps:
-
-1. Creating the application skeleton
-2. Loading the data
-3. Writing extractors
-4. Writing the inference schema
-5. Writing inference rules
-6. Running, testing, and evaluating the results
+- [Compiling a DeepDive application](ops-compiling.md)
+- [Managing input data and data products](ops-data.md)
+- [Controlling execution of data processing](ops-execution.md)
+- [Learning and inference with the statistical model](ops-model.md)
 
 
-### 1. Creating the application skeleton
+## 3. Evaluate & Debug
 
-We start by creating a new folder `app/testapp` in the `deepdive` directory. All
-files for our application will reside in this directory.
+Based on our observation of [several successful DeepDive applications](showcase/apps.md), we can say that the more rapid the user moves through the development cycle, the more quick she acheives high-quality.
+By evaluating the predictions made by the system through formal error analysis supported by interactive tools, the user can identify the most common mode of errors after each iteration.
+Such information enables the user to focus on fixing the mistakes that caused such class of errors, instead of spending her time poorly on some corners that only give marginal improvement.
 
-```bash
-mkdir -p app/testapp
-cd app/testapp
-```
+DeepDive provides a suite of tools and guides to accelerate the development process, which are documented in the following pages:
 
-The DeepDive source tree provides simple templates for the `deepdive.conf` file.
-We copy these templates to our directory with the following commands:
-
-```bash
-cp -av ../../examples/template/. .
-```
-
-The database connection for the application can be configured in the `db.url` file, for example, to use the `deepdive_testapp` database on a local PostgreSQL installation:
-```bash
-echo postgresql://localhost/deepdive_testapp  >./db.url
-```
-
-The following command initializes an empty database:
-```bash
-deepdive initdb
-```
-
-Then we can run the following command to verify that everything is
-working correctly:
-
-```bash
-deepdive run
-```
-Since we have not defined any extractors or inference rules, the results will
-not be interesting, but DeepDive should run successfully from end to end. If
-this is the case, the summary report should look like this:
-
-    15:57:55 [profiler] INFO  --------------------------------------------------
-    15:57:55 [profiler] INFO  Summary Report
-    15:57:55 [profiler] INFO  --------------------------------------------------
-    15:57:55 [profiler] INFO  --------------------------------------------------
-
-
-### <a name="loading" href="#"></a> 2. Loading the data
-
-DeepDive assumes the table schema for the application is defined in the `schema.sql` file as `CREATE TABLE` statements.
-All tables used by any of the extractors and inference rules must be created by this file.
-It is **mandatory** for **all tables** that will contain variables to have a **unique primary key called `id`**.
-If these tables are populated by an [extractor](extractors.md), the extractor should fill the `id` column with `NULL` values.
-Any data that should be populated for the extractors should be loaded by the `input/init.sh` script as [demonstrated in the walkthrough](walkthrough.md#loading_data).
-
-
-### <a name="extractors" href="#"></a> 3. Writing extractors
-
-DeepDive supports [multiple types of extractors](extractors.md) to perform
-[feature extraction](overview.md#extractors). The output of an extractor is
-written back to the data store by DeepDive, and can be used in other extractors
-and/or during the inference step. Users can also specify extractors that simply
-execute SQL queries or an arbitrary shell commands. The ['Writing
-extractors'](extractors.md) document contains an in-depth description of the
-available types of extractors complete with examples.
-
-
-###<a name="schema" href="#"></a> 4. Writing the inference schema
-
-The schema is used to define the [query variable nodes of the factor
-graph](inference.md#variables). Each variable has a data type
-associated with it. Currently, DeepDive supports Boolean variables and
-[Multinomial/Categorical variables](schema.md#multinomial). See the ['Defining
-inference variables in the schema'](schema.md) for more information and
-examples.
-
-
-### <a name="inference" href="#"></a> 5. Writing inference rules
-
-DeepDive exposes a language to easily build factor graphs by writing *rules*
-that define the relationships between variables. For example, the following rule
-states that if a person smokes, he or she is likely to have cancer, and that the
-weight of the rule should be learned automatically based on training data
-(special value '?'):
-
-```bash
-smokes_cancer {
-  input_query: """
-      SELECT person_has_cancer.id as "person_has_cancer.id",
-             person_smokes.id as "person_smokes.id",
-             person_smokes.smokes as "person_smokes.smokes",
-             person_has_cancer.has_cancer as "person_has_cancer.has_cancer"
-        FROM person_has_cancer, person_smokes
-       WHERE person_has_cancer.person_id = person_smokes.person_id
-    """
-  function: "Imply(person_smokes.smokes, person_has_cancer.has_cancer)"
-  weight: "?"
-}
-```
-
-DeepDive's language can express complex relationships that use extracted
-features. Refer to the [guide for writing inference rules](inference_rules.md)
-and to the ['Inference Rule Function Reference'](inference_rule_functions.md)
-for in-depth information about writing inference rules.
-
-
-### 6. Running, testing, and evaluating the results
-
-For details about running an application and querying the results see the
-[appropriate document](running.md). Writing an application is an iterative
-process that requires progressive specification and refinements of extractors,
-schema, and inference rules. DeepDive tries to simplify this task by providing
-*calibration data* and plots, as explained in the [calibration
-guide](calibration.md). While testing extractors and inference rules, it can be
-useful to execute only a subset of them. This is possible by [configuring
-pipelines](running.md#pipelines).
-
+- [Debugging UDFs](debugging-udf.md)
+- [Labeling data products](labeling.md)
+- [Browsing data](browsing.md)
+- [Monitoring descriptive statistics of data](dashboard.md)
+- [Calibration](calibration.md)
+- [Generating negative examples](generating_negative_examples.md)
