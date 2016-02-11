@@ -133,6 +133,7 @@ Darwin)
     ;;
 esac
 stage inference/format_converter                                  util/format_converter
+stage inference/deepdive-model                                    util/
 
 # DeepDive utilities
 stage util/draw_calibration_plot                                  util/

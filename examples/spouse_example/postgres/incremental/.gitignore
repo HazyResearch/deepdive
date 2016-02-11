@@ -3,4 +3,5 @@
 /*.deepdive.conf
 /log
 /run
+/snapshot
 /app.ddlog

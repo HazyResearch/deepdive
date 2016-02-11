@@ -1,0 +1,240 @@
+#!/usr/bin/env bash
+# deepdive-model -- Supports working with the statistical inference model
+#
+# > deepdive model ground
+# > deepdive model factorgraph init
+# > deepdive model factorgraph list
+# > deepdive model factorgraph keep  [NAME]
+# > deepdive model factorgraph reuse [NAME]
+# > deepdive model factorgraph drop  [NAME]
+#
+# > deepdive model learn
+# > deepdive model weights init
+# > deepdive model weights list
+# > deepdive model weights keep  [NAME]
+# > deepdive model weights reuse [NAME]
+# > deepdive model weights drop  [NAME]
+#
+# > deepdive model infer
+#
+# > deepdive model calibration
+##
+set -euo pipefail
+
+DEEPDIVE_APP=$(find-deepdive-app)
+export DEEPDIVE_APP
+
+[[ $# -gt 0 ]] || usage "$0" "Missing COMMAND"
+Command=$1; shift
+
+case $Command in
+    # shorthands for repeating groups of processes related to the model
+    ground)
+        exec deepdive-redo process/grounding/{variable_id_partition,combine_factorgraph}
+        ;;
+
+    learn)
+        exec deepdive-redo process/model/learning data/model/{weights,probabilities}
+        ;;
+
+    infer)
+        exec deepdive-redo process/model/inference data/model/{weights,probabilities}
+        ;;
+
+    calibration)
+        exec deepdive-redo model/calibration-plots
+        ;;
+
+    # managment of artifacts related to the model
+    factorgraph|weights)
+        What=$Command; [[ $# -gt 0 ]] || set -- list  # defaults to listing
+        Command=$1; shift
+        case $Command in
+            list)
+                container="$DEEPDIVE_APP"/snapshot/model/"$What"
+                if [[ -d "$container" ]]; then
+                    cd "$container"
+                    ls -t
+                fi
+                ;;
+
+            keep)
+                if [[ $# -eq 0 ]]; then
+                    Name=$(date +%Y%m%d.%H%M%S)
+                else
+                    Name=$1; shift
+                fi
+                # determine where to keep: either in snapshot/model/ or $Name itself if it's a path
+                case $Name in
+                    */*)
+                        mkdir -p "$Name"
+                        dest=$(cd "$Name" && pwd)
+                        cd "$DEEPDIVE_APP"
+                        ;;
+                    *)
+                        cd "$DEEPDIVE_APP"
+                        dest=snapshot/model/"$What"/"$Name"
+                        mkdir -p "$dest"
+                esac
+                case $What in
+                    factorgraph)
+                        # TODO keep database tables for grounding as well
+                        # TODO rsync run/model/grounding as well
+                        # TODO use cp -al instead of duplicating with rsync?
+                        rsync -avH --delete --copy-unsafe-links run/model/factorgraph{,.done} "$dest"/
+                        ;;
+                    weights)
+                        # automatically load weights only if learning is already done
+                        if ! deepdive-"done" data/model/weights &&
+                             deepdive-"done" process/model/learning; then
+                            DEEPDIVE_PLAN_EDIT=false \
+                            deepdive-"do" data/model/weights
+                        fi
+                        # dump non-zero weights for boolean factors
+                        if [[ -n $(deepdive-sql eval "
+                                SELECT 1 WHERE EXISTS (
+                                    SELECT id FROM dd_graph_weights
+                                     WHERE categories IS NULL)") ]]; then
+                            # TODO parallel unload
+                            show_progress output_from "$dest" -- \
+                            deepdive-sql eval "
+                                SELECT description
+                                     , weight
+                                  FROM dd_inference_result_weights wo
+                                     , dd_graph_weights            wi
+                                 WHERE wo.id = wi.id
+                                   AND weight <> 0
+                                   AND categories IS NULL -- to rule out multinomial
+                            " format=tsv | pbzip2 >"$dest"/dd_weights.tsv.bz2
+                        fi
+                        # dump non-zero weights for multinomial factors
+                        if [[ -n $(deepdive-sql eval "
+                                SELECT 1 WHERE EXISTS (
+                                    SELECT id FROM dd_graph_weights
+                                     WHERE categories IS NOT NULL)") ]]; then
+                            # TODO parallel unload
+                            # XXX ARRAY_AGG is postgres specific
+                            show_progress output_from "$dest" -- \
+                            deepdive-sql eval "
+                                SELECT description
+                                     , ARRAY_AGG(categories::TEXT)
+                                     , ARRAY_AGG(weight)
+                                  FROM dd_inference_result_weights wo
+                                     , dd_graph_weights            wi
+                                 WHERE wo.id = wi.id
+                                   AND weight <> 0
+                                   AND categories IS NOT NULL -- to include multinomial only
+                                 GROUP BY description
+                            " format=tsv | pbzip2 >"$dest"/dd_weights.multinomial.tsv.bz2
+                        fi
+                        ;;
+                esac
+                # keep a LAST symlink pointing to the last
+                mkdir -p snapshot/model/"$What"
+                ln -sfnv "$Name" snapshot/model/"$What"/LAST
+                ;;
+
+            reuse|drop)
+                if [[ $# -eq 0 ]]; then
+                    Name=LAST
+                    [[ -e "$DEEPDIVE_APP/snapshot/model/$What/$Name" ]] ||
+                        error "\`deepdive $What keep\` has never been run"
+                else
+                    Name=$1; shift
+                fi
+                # determine the actual artifact
+                if [[ -d "$Name" ]]; then
+                    src=$(cd "$Name" && pwd)
+                    cd "$DEEPDIVE_APP"
+                else
+                    cd "$DEEPDIVE_APP"
+                    src="snapshot/model/$What/$Name"
+                    [[ -e $src ]] ||
+                        error "\`deepdive keep $What $Name\` has never run or $Name got removed"
+                fi
+                case $Command in
+                    reuse)
+                        case $What in
+                            factorgraph)
+                                cd "$DEEPDIVE_APP"
+                                # TODO use (relative) symlink or cp -al instead of duplicating with rsync?
+                                rsync -avH --delete --copy-unsafe-links "$src"/factorgraph{,.done} run/model/
+                                # TODO load all table for grounding as well
+                                ;;
+                            weights)
+                                # TODO load into a unique table, then create a view with the following name
+                                weightTableName=dd_graph_weights_reuse
+                                weightsReuseFlag="$DEEPDIVE_APP"/run/model/grounding/factor/weights.reuse
+                                deepdive create table "$weightTableName" "description:TEXT" "categories:TEXT" "weight:DOUBLE PRECISION"
+                                rm -f "$weightsReuseFlag"
+                                for weightFile in "$src"/dd_weights{,.multinomial}.tsv.bz2; do
+                                    [[ -e "$weightFile" ]] || continue
+                                    case $weightFile in
+                                        *.multinomial.tsv.bz2)
+                                            # first load the grouped data from file
+                                            deepdive create table "${weightTableName}_array" "description:TEXT" "categories::TEXT[]" "weights:DOUBLE PRECISION[]"
+                                            # TODO parallel load
+                                            deepdive load "${weightTableName}_array" "$weightFile"
+                                            # explode the group
+                                            # XXX UNNEST is postgres-specific
+                                            deepdive sql "INSERT INTO $weightTableName
+                                                SELECT description
+                                                     , UNNEST(categories) AS categories
+                                                     , UNNEST(weights)    AS weight
+                                                  FROM ${weightTableName}_array
+                                            "
+                                            deepdive sql "DROP TABLE ${weightTableName}_array"
+                                            ;;
+                                        *.tsv.bz2)
+                                            # TODO parallel load
+                                            deepdive load "$weightTableName(description,weight)" "$weightFile"
+                                            ;;
+                                        *)
+                                            error "$weightFile: Unsupported weights file"
+                                    esac
+                                done
+                                # dump the new weights with corresponding id in the current factor graph
+                                mkdir -p "$(dirname "$weightsReuseFlag")"
+                                touch "$weightsReuseFlag"
+                                deepdive-redo $(deepdive plan 2>&1 | grep '/dump_weights$') process/grounding/combine_factorgraph
+                                # mark learning and weights as done to make sure `deepdive-model infer` skips it
+                                deepdive-mark done model/weights
+                                ;;
+                        esac
+                        ;;
+                    drop)
+                        if [[ "$src" -ef snapshot/model/"$What"/LAST ]]; then
+                            rm -rfv "$src"/
+                            # replace LAST symlink if dropping that one
+                            next=$(deepdive-model "$What" list | grep -vxF LAST | head -1)
+                            [[ -z $next ]] ||
+                                ln -sfnv "$next" snapshot/model/"$What"/LAST
+                        else
+                            # or just remove all files
+                            rm -rfv "$src"/
+                        fi
+                esac
+                ;;
+
+            init)
+                cd "$DEEPDIVE_APP"
+                case $What in
+                    factorgraph)
+                        deepdive-mark todo process/grounding/variable_id_partition
+                        rm -rfv run/model/{grounding,factorgraph{,.done}}
+                        ;;
+                    weights)
+                        rm -fv run/model/grounding/factor/weights.reuse
+                        deepdive-mark todo $(deepdive plan 2>&1 | grep '/dump_weights$')
+                        ;;
+                esac
+                ;;
+
+            *)
+                usage "$0" "deepdive model: $What $Command: Unrecognized command"
+        esac
+        ;;
+
+    *)
+        usage "$0" "$Command: Unrecognized command"
+esac
