@@ -21,7 +21,6 @@ articles(
     id text,
     @searchable
     content text
-    # TODO more fields if needed
 ).
 
 @source
@@ -58,9 +57,8 @@ function nlp_markup over (
     ) returns rows like sentences
     implementation "udf/nlp_markup.sh" handles tsv lines.
 
-sentences +=
-  nlp_markup(doc_id, content) :-
-  articles(doc_id, content).
+sentences += nlp_markup(doc_id, content) :-
+    articles(doc_id, content).
 
 
 ## Candidate mapping ##########################################################
@@ -92,9 +90,6 @@ person_mention += map_person_mention(
 ) :- sentences(doc_id, sentence_index, _, tokens, _, _, ner_tags, _, _, _).
 
 spouse_candidate(
-    # TODO Here, ideally ddlog should allow us to write something like:
-    #   p1 person_mention, p2 person_mention
-    # then expand them into their multi-@key columns by itself.
     p1_id text,
     p1_name text,
     p2_id text,
@@ -116,7 +111,6 @@ spouse_candidate(p1, p1_name, p2, p2_name) :-
 ## Feature Extraction #########################################################
 
 # Feature extraction (using DDLIB via a UDF) at the relation level
-# TODO: add @extraction flag here?
 @extraction
 spouse_feature(
     @key
@@ -148,12 +142,12 @@ function extract_spouse_features over (
     implementation "udf/extract_spouse_features.py" handles tsv lines.
 
 spouse_feature += extract_spouse_features(
-  p1_id, p2_id, p1_begin_index, p1_end_index, p2_begin_index, p2_end_index,
-  doc_id, sent_index, tokens, lemmas, pos_tags, ner_tags, dep_types, dep_tokens) :-
-  person_mention(p1_id, _, doc_id, sent_index, p1_begin_index, p1_end_index),
-  person_mention(p2_id, _, doc_id, sent_index, p2_begin_index, p2_end_index),
-  sentences(doc_id, sent_index, _, tokens, lemmas, pos_tags, ner_tags, _, dep_types, dep_tokens
-).
+    p1_id, p2_id, p1_begin_index, p1_end_index, p2_begin_index, p2_end_index,
+    doc_id, sent_index, tokens, lemmas, pos_tags, ner_tags, dep_types, dep_tokens
+) :-
+    person_mention(p1_id, _, doc_id, sent_index, p1_begin_index, p1_end_index),
+    person_mention(p2_id, _, doc_id, sent_index, p2_begin_index, p2_end_index),
+    sentences(doc_id, sent_index, _, tokens, lemmas, pos_tags, ner_tags, _, dep_types, dep_tokens).
 
 
 ## Distant Supervision ########################################################
@@ -173,9 +167,10 @@ spouse_label(
 
 # distant supervision using data from DBpedia
 spouse_label(p1,p2, 1, "from_dbpedia") :-
-  spouse_candidate(p1, p1_name, p2, p2_name), spouses_dbpedia(n1, n2),
-  [ lower(n1) = lower(p1_name), lower(n2) = lower(p2_name) ;
-    lower(n2) = lower(p1_name), lower(n1) = lower(p2_name) ].
+    spouse_candidate(p1, p1_name, p2, p2_name),
+    spouses_dbpedia(n1, n2),
+    [ lower(n1) = lower(p1_name), lower(n2) = lower(p2_name) ;
+      lower(n2) = lower(p1_name), lower(n1) = lower(p2_name) ].
 
 # supervision by heuristic rules in a UDF
 function supervise over (
@@ -227,16 +222,16 @@ has_spouse(p1, p2) = NULL::BOOLEAN :- spouse_candidate(p1, _, p2, _).
 # Features
 @weight(f)
 has_spouse(p1_id, p2_id) :-
-  spouse_candidate(p1_id, _, p2_id, _),
-  spouse_feature(p1_id, p2_id, f).
+    spouse_candidate(p1_id, _, p2_id, _),
+    spouse_feature(p1_id, p2_id, f).
 
 # Inference rule: Symmetry
 @weight(3.0)
 has_spouse(p1_id, p2_id) => has_spouse(p2_id, p1_id) :-
-  spouse_candidate(p1_id, _, p2_id, _).
+    spouse_candidate(p1_id, _, p2_id, _).
 
 # Inference rule: Only one marriage
 @weight(-1.0)
 has_spouse(p1_id, p2_id) => has_spouse(p1_id, p3_id) :-
-  spouse_candidate(p1_id, _, p2_id, _),
-  spouse_candidate(p1_id, _, p3_id, _).
+    spouse_candidate(p1_id, _, p2_id, _),
+    spouse_candidate(p1_id, _, p3_id, _).
