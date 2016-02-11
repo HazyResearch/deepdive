@@ -47,3 +47,32 @@ setup() {
     echo "accuracy = $accuracyPerCent >= 90?"
     [[ $accuracyPerCent -ge 90 ]] || skip "accuracy=$accuracyPerCent < 90" # TODO fail test with low accuracy
 }
+
+@test "$DBVARIANT spouse example keep weights" {
+    # keep the learned weights from a small corpus
+    deepdive model weights keep
+}
+
+@test "$DBVARIANT spouse example load larger corpus" {
+    # load larger corpus
+    deepdive create table sentences
+    deepdive load sentences <(bzcat input/sentences-1000.tsv.bz2 | head -$((2 * $SUBSAMPLE_NUM_SENTENCES)))
+    deepdive mark done data/sentences
+    deepdive mark new data/sentences
+}
+
+@test "$DBVARIANT spouse example reuse weights" {
+    # reuse the weights (skipping learning) and do inference
+    deepdive model weights reuse  # taking care of all extraction and grounding for larger data
+}
+
+@test "$DBVARIANT spouse example skips learning" {
+    deepdive model infer
+    deepdive redo model/calibration-plots
+}
+
+@test "$DBVARIANT spouse example generalizes well" {
+    accuracyPerCent=$(getAccuracyPerCent has_spouse_label)
+    echo "accuracy = $accuracyPerCent >= 90?"
+    [[ $accuracyPerCent -ge 90 ]] || skip "accuracy=$accuracyPerCent < 90" # TODO fail test with low accuracy
+}

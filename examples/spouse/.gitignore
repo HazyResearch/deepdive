@@ -1,5 +1,6 @@
 /input/signalmedia
 /run
+/snapshot
 /udf/bazaar
 /search
 /mindbender/*.js

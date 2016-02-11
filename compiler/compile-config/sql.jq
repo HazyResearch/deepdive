@@ -84,6 +84,8 @@ def asSqlCondition:
     (.lt | asSqlBinaryComparison("<" )) //
     (.isNull   | nullOr("\(asSqlExpr) IS NULL")) //
     (.isntNull | nullOr("\(asSqlExpr) IS NOT NULL")) //
+    (.and | nullOr(    mapJoinString(""; asSqlCondition; " AND "))   ) //
+    (.or  | nullOr("(\(mapJoinString(""; asSqlCondition;  " OR ")))")) //
     error("Unrecognized SQL condition \(tostring)");
 # a more structured way to generate a SQL (Structured! Query Language) SELECT query than assembling strings
 # which turns an object in a particular format into SQL, taking care of many escaping issues
