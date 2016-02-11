@@ -86,7 +86,7 @@ object FactorFunction extends Enumeration {
   type FactorFunction = Value
   val  IsTrue, Imply, Or, And, Equal, Multinomial, Linear, Ratio = Value
 }
-case class HeadAtom(name : String, terms : List[Expr])
+case class HeadAtom(name : String, terms : List[Expr], isNegated: Boolean = false)
 case class InferenceRuleHead(function: FactorFunction.FactorFunction, terms: List[HeadAtom])
 
 
@@ -353,8 +353,8 @@ class DeepDiveLogParser extends JavaTokenParsers {
   }, (s) => s"${s}: unrecognized mode"))
 
   // factor functions
-  def headAtom = relationName ~ ("(" ~> rep1sep(expr, ",") <~ ")") ^^ {
-    case (r ~ expressions) => HeadAtom(r, expressions)
+  def headAtom = opt("!") ~ relationName ~ ("(" ~> rep1sep(expr, ",") <~ ")") ^^ {
+    case (isNegated ~ r ~ expressions) => HeadAtom(r, expressions, isNegated != None)
   }
 
   def implyHeadAtoms = rep1sep(headAtom, ",") ~ "=>" ~ headAtom ^^ {
