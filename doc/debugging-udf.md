@@ -1,32 +1,63 @@
 ---
 layout: default
-title: Debugging UDFs
+title: Debugging user-defined functions
 ---
 
-# Debugging UDFs
+# Debugging user-defined functions
 
-## Overview
+Many things can go wrong in user-defined functions, so debugging support is important for the user to write the code and easily verify that it works as expected.
+UDFs can be implemented in any programming language as long as they take the form of an executable that reads from *standard input* and writes to *standard output*.
+Here are some general tips for printing information to the log and running the UDFs in limited ways to help work through issues without needing to run the entire data flow of the DeepDive application.
 
-Since UDFs are user defined and can be implemented in a wide range of executable types, it is really up to the user to write the code and verify that it works as expected.  Here are some tips for how to print to logs and running the UDFs in limited ways to help work through issues without needing to run the entire DeepDive process.
 
-## Printing to log
+## Printing to the log
 
-Remember that the output of a UDF is tsv formatted data that gets loaded into a table.  Therefore anything printed to `standard out` for debugging will mangle the tsv structure and ultimately cause the UDF execution to fail.  The correct way to print log statements is to print to `standard error`.  Below is an example in python.
+Remember that the *standard output* of a UDF is already reserved for TSV formatted data that gets loaded into the database.
+Therefore when a typical print statement is used for debugging, it won't appear anywhere in the log but just mangle the TSV output stream and ultimately fail the UDF execution or corrupt its output.
+The correct way to print log statements is to print to the *standard error*.
+Below is an example in Python.
 
-```
+```python
+#!/usr/bin/env python
+from deepdive import *
 import sys
-print >>sys.stderr, 'This prints some_object to logs :', some_object
+
+@tsv_extractor
+@returns( ... )
+def extract( ... ):
+    ...
+    print >>sys.stderr, 'This prints some_object to logs :', some_object
+    ...
 ```
 
-During execution of the script, anything written to `standard error` will be printed to the console as well as to the run.log which can be found in the `run/LATEST/` directory.
+During execution of the script, anything written to *standard error* appears in the console as well as in the file named `run.log` under the `run/LATEST/` directory.
 
-## Exectuing UDFs with DeepDive
 
-To assist with debugging any issues that may be related to the environment in which the UDF is executed, DeepDive provides a command to execute the UDFs.  For example, for a python UDF in the `udf` directory named `fn.py`, it can be executed in DeepDive with the following command.
+## Executing UDFs within DeepDive's environment
 
+To assist with debugging issues in UDFs, DeepDive provides a wrapper command to directly execute it within the same environment it uses for the actual execution.
+
+Suppose a Python UDF at `udf/fn.py` imports `deepdive` and [`ddlib`](gen_feats.md) as suggested in the [guide for writing UDFs](writing-udf-python.md).
+When run normally as a Python script, it will give an error that looks like this:
+
+```bash
+python udf/fn.py
 ```
+```
+Traceback (most recent call last):
+  File "udf/fn.py", line 2, in <module>
+    from deepdive import *
+ImportError: No module named deepdive
+```
+
+Instead, by prefixing the command with `deepdive env`, they can be executed as if they were executed in the middle of DeepDive's data flow.
+
+```bash
 deepdive env python udf/fn.py
 ```
+
+This will take TSV rows from standard input and print TSV rows to standard output as well as debug logs to standard error, and therefore it can be debugged just like a normal Python program.
+
 <!--
 <todo>write</todo>
 <br><todo>
