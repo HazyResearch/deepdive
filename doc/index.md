@@ -114,7 +114,7 @@ and
 - [Knowledge base construction](kbc.md)
 
 #### DeepDive Application Development
-- [How DeepDive applications are typically developed](development-cycle.md) <todo/> <todo/>
+- [How DeepDive applications are typically developed](development-cycle.md)
 - [What a DeepDive application looks like](deepdiveapp.md)
 - Writing a DeepDive Application
     - [Defining data flow in DDlog](writing-dataflow-ddlog.md)
