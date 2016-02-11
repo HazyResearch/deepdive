@@ -23,17 +23,21 @@ db-create-view-as "${table}_${column}_calibration" "
         FROM ${table}_${column}_inference
     )
     SELECT universe.bucket                             AS bucket
-         , COALESCE(universe.count, 0)                 AS num_variables
+         , universe.count                              AS num_variables
          , COALESCE(positive.count, 0)                 AS num_correct
          , COALESCE(negative.count, 0)                 AS num_incorrect
-         , universe.bucket        / $num_buckets.      AS probability_lo
+         , (universe.bucket     ) / $num_buckets.      AS probability_lo
          , (universe.bucket +  1) / ${num_buckets}.    AS probability_hi
          , (universe.bucket + .5) / ${num_buckets}.    AS probability
-         , COALESCE(positive.count::FLOAT  / (
-           positive.count + negative.count), 0)        AS accuracy
+         , CASE WHEN COALESCE(positive.count, 0) +
+                     COALESCE(negative.count, 0) <> 0 THEN
+                COALESCE(positive.count, 0)::FLOAT / (
+                         COALESCE(positive.count, 0) +
+                         COALESCE(negative.count, 0) )
+           ELSE NULL END                               AS accuracy
          , COALESCE(positive.count, 0) +
            COALESCE(negative.count, 0)                 AS num_predictions_test
-         , COALESCE(universe.count, 0)                 AS num_predictions_whole
+         , universe.count                              AS num_predictions_whole
       FROM (
             SELECT bucket, COUNT(*) AS count
               FROM bucketed

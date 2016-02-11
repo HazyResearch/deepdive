@@ -43,17 +43,18 @@ db-create-view-as "dd_bucketed_${table}_${column}_inference_negative" "
 
 db-create-view-as "${table}_${column}_calibration" "
     SELECT universe.bucket                             AS bucket
-         , COALESCE(universe.count, 0)                 AS num_variables
+         , universe.count                              AS num_variables
          , COALESCE(positive.count, 0)                 AS num_correct
          , COALESCE(negative.count, 0)                 AS num_incorrect
-         , universe.bucket        / $num_buckets.      AS probability_lo
+         , (universe.bucket     ) / $num_buckets.      AS probability_lo
          , (universe.bucket +  1) / ${num_buckets}.    AS probability_hi
          , (universe.bucket + .5) / ${num_buckets}.    AS probability
          , 1.0 * COALESCE(positive.count / (
-           positive.count + negative.count)            AS accuracy
+               COALESCE(positive.count, 0) +
+               COALESCE(negative.count, 0) )           AS accuracy
          , COALESCE(positive.count, 0) +
            COALESCE(negative.count, 0)                 AS num_predictions_test
-         , COALESCE(universe.count, 0)                 AS num_predictions_whole
+         , universe.count                              AS num_predictions_whole
       FROM dd_bucketed_${table}_${column}_inference_all universe
       LEFT JOIN dd_bucketed_${table}_${column}_inference_positive positive ON universe.bucket = positive.bucket
       LEFT JOIN dd_bucketed_${table}_${column}_inference_negative negative ON universe.bucket = negative.bucket
