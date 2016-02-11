@@ -163,7 +163,7 @@ def factorWeightDescriptionSqlExpr:
         export DEEPDIVE_UNLOAD_MATERIALIZED=false
 
         # dump the variables, joining the holdout query to determine the type of each variable
-        deepdive compute \\
+        deepdive compute execute \\
             input_sql=\(
             { SELECT:
                 [ { column: "id" }
@@ -458,7 +458,7 @@ def factorWeightDescriptionSqlExpr:
             export DEEPDIVE_UNLOAD_MATERIALIZED=false
 
             # dump the factors joining the assigned weight ids, converting into binary format for the inference engine
-            deepdive compute \\
+            deepdive compute execute \\
                 input_sql=\(
                     { SELECT:
                         [ { table: "weights", column: "id", alias: "weight_id" }
@@ -515,7 +515,7 @@ def factorWeightDescriptionSqlExpr:
             reuseFlag=\"$DEEPDIVE_GROUNDING_DIR\"/factor/weights.reuse
 
             # dump the weights (except the description column), converting into binary format for the inference engine
-            deepdive compute \\
+            deepdive compute execute \\
                 input_sql=\"$(if [[ -e \"$reuseFlag\" ]]; then
                     echo \(
                     # dump weights with initvalue from previously learned ones

@@ -1,12 +1,21 @@
 #!/usr/bin/env bash
 # deepdive-compute -- Runs a UDF using a computer against the database
+# > deepdive compute COMMAND [NAME=VALUE]...
+#
 # > export DEEPDIVE_COMPUTER=...
-# > deepdive compute input_sql=... command=... output_relation=...
+# > deepdive compute execute input_sql=... command=... output_relation=...
 ##
 set -eu
+
+[[ $# -gt 0 ]] || usage "$0" "Missing COMMAND"
+Command=$1
 
 # parse settings
 . load-db-driver.sh
 . load-compute-driver.sh
 
-exec compute-execute "$@"
+if type compute-"$Command" &>/dev/null; then
+    exec compute-"$Command" "$@"
+else
+    error "$Command: No such command for deepdive compute"
+fi
