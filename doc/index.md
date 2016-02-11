@@ -126,7 +126,7 @@ and
     - [Controlling execution of data processing](ops-execution.md)
     - [Learning and inference with the statistical model](ops-model.md)
 - Debugging a DeepDive Application
-    - [Debugging UDFs](debugging-udf.md) <todo/> <todo/>
+    - [Debugging UDFs](debugging-udf.md)
     - [Calibration](calibration.md) <todo/>
     - [Monitoring descriptive statistics of data](dashboard.md) <todo/>
     - [Browsing data](browsing.md)
