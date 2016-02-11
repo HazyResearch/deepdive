@@ -6,6 +6,7 @@
 export DEEPDIVE_CONFIG_EXTRA='
     deepdive.sampler.sampler_args: "-l 500 -i 500 -s 1 --alpha 0.05 --diminish 0.99"
 '
+export DEEPDIVE_LOAD_FORMAT=tsv
 
 # load helpers
 . "$BATS_TEST_DIRNAME"/spouse_example.helpers.sh
@@ -28,7 +29,6 @@ setup() {
 @test "$DBVARIANT spouse example load corpus" {
     # XXX skip testing NLP parser processes
     deepdive create table sentences
-    DEEPDIVE_LOAD_FORMAT=tsv \
     deepdive load sentences <(bzcat input/sentences-1000.tsv.bz2 | head -$SUBSAMPLE_NUM_SENTENCES)
     deepdive mark done data/sentences
     deepdive mark new data/sentences
