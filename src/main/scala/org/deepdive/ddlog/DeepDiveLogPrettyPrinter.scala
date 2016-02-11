@@ -77,6 +77,7 @@ object DeepDiveLogPrettyPrinter extends DeepDiveLogHandler {
   def print(e: Expr, level: Int) : String = {
     e match {
       case VarExpr(name) => name
+      case ArrayExpr(name, index) => s"${name}[${index}]"
       case NullConst() => "NULL"
       case IntConst(value) => value.toString
       case DoubleConst(value) => value.toString

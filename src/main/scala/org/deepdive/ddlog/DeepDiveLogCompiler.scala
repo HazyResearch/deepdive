@@ -346,7 +346,7 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
       case _ => s" AS column_${cq.headTerms indexOf e}"
     }
     case ViewAlias => s" AS column_${cq.headTerms indexOf e}"
-    case UseVariableAsAlias => s""" AS "${DeepDiveLogPrettyPrinter.print(e)}""""
+    case UseVariableAsAlias => s""" AS "${DeepDiveLogPrettyPrinter.print(e)}"""" //"
   }
 
   // resolve an expression
@@ -354,6 +354,7 @@ class QueryCompiler(cq : ConjunctiveQuery, ss: CompilationState) {
   def compileExpr(e: Expr, level: Int) : String = {
     e match {
       case VarExpr(name) => compileVariable(name)
+      case ArrayExpr(name, index) => s"${compileVariable(name)}[${index}]"
       case NullConst() => "NULL"
       case IntConst(value) => value.toString
       case DoubleConst(value) => value.toString

@@ -14,6 +14,7 @@ case class Variable(varName : String, relName : String, index : Int )
 
 sealed trait Expr
 case class VarExpr(name: String) extends Expr
+case class ArrayExpr(name: String, index: Int) extends Expr
 sealed trait ConstExpr extends Expr
 case class StringConst(value: String) extends ConstExpr
 case class IntConst(value: Int) extends ConstExpr
@@ -216,6 +217,9 @@ class DeepDiveLogParser extends JavaTokenParsers {
     | "NULL" ^^ { _ => new NullConst }
     | functionName ~ "(" ~ rep1sep(expr, ",") ~ ")" ^^ {
         case (name ~ _ ~ args ~ _) => FuncExpr(name, args, (aggregationFunctions contains name))
+      }
+    | variableName ~ ("[" ~> """\d+""".r <~ "]") ^^ {
+        case (name ~ index) => ArrayExpr(name, index.toInt)
       }
     | variableName ^^ { VarExpr(_) }
     | "(" ~> expr <~ ")"

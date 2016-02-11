@@ -1,0 +1,11 @@
+R(x text[]).
+
+S(x text,
+  y text[]).
+
+T(x[3], z) :-
+    R(x),
+    S(z, y),
+    x[1] = y[1],
+    x[2] = y[2].
+

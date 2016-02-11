@@ -1,0 +1,43 @@
+
+  deepdive.db.default {
+    driver: "org.postgresql.Driver"
+    url: "jdbc:postgresql://"${PGHOST}":"${PGPORT}"/"${DBNAME}
+    user: ${PGUSER}
+    password: ${PGPASSWORD}
+    dbname: ${DBNAME}
+    host: ${PGHOST}
+    port: ${PGPORT}
+    incremental_mode: ORIGINAL
+    }
+    
+
+
+      deepdive.schema.variables {
+        
+      }
+    
+
+      deepdive.extraction.extractors.ext_T {
+        cmd: """
+
+  deepdive create view T as 'SELECT R0.x[3] AS column_0, R1.x AS column_1
+FROM R R0, S R1
+        WHERE R0.x[1] = R1.y[1] AND R0.x[2] = R1.y[2]'
+  
+        """
+          output_relation: "T"
+        style: "cmd_extractor"
+          
+          input_relations: [
+            R
+            S
+          ]
+      }
+    
+deepdive.pipeline.run: ${PIPELINE}
+deepdive.pipeline.pipelines.extraction: [
+  ext_T
+]
+deepdive.pipeline.pipelines.endtoend: [
+  ext_T
+]
