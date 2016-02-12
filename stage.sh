@@ -19,7 +19,7 @@ stage() {
     else
         # use install(1) for staging files when changed
         dstfile=$dst
-        case $dst in */) dstfile=$dst${src#*/}; esac
+        case $dst in */) dstfile=$dst${src##*/}; esac
         if [[ "$src" -nt "$dstfile" ]]; then
             if [[ -x "$src" ]]; then
                 set -x; install -m a=rx "$src" "$dst"
@@ -28,6 +28,17 @@ stage() {
                 set -x; install -m a=r  "$src" "$dst"
             fi
         fi
+    fi
+    { set +x; } &>/dev/null
+}
+symlink() {
+    local src=$1 dst=$2
+    dst="$STAGE_DIR/$dst"
+    dstdir=$(dirname "$dst.")
+    [[ -d "$dstdir" ]] || mkdir -p "$dstdir"
+    case $dst in */) dst=$dst${src##*/}; esac
+    if ! [[ -L "$dst" && $(readlink "$dst") = $src ]]; then
+        set -x; ln -sfn "$src" "$dst"
     fi
     { set +x; } &>/dev/null
 }
@@ -140,7 +151,8 @@ stage util/draw_calibration_plot                                  util/
 stage util/calibration.py                                         util/
 stage util/calibration.plg                                        util/
 
-stage .build/submodule/util/mindbender/mindbender-LATEST.sh       bin/mindbender || true  # keeping it optional for now
+stage .build/submodule/util/mindbender/@prefix@/                  mindbender/
+symlink ../mindbender/bin/mindbender                              bin/
 
 # runtime dependencies after building them from source
 stage extern/.build/bundled                                       lib/
